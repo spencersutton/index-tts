@@ -1,9 +1,10 @@
-import torch
-import numpy as np
 import re
+
+import numpy as np
 import soundfile
-from . import utils
-from . import commons
+import torch
+
+from . import commons, utils
 
 # from openvoice.text import text_to_sequence
 from .mel_processing import spectrogram_torch

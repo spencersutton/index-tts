@@ -15,20 +15,17 @@
 """HIFI-GAN"""
 
 import typing as tp
+
 import numpy as np
-from scipy.signal import get_window
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.nn import Conv1d
-from torch.nn import ConvTranspose1d
-from torch.nn.utils import remove_weight_norm
-from torch.nn.utils import weight_norm
-from torch.distributions.uniform import Uniform
-
+from scipy.signal import get_window
 from torch import sin
+from torch.distributions.uniform import Uniform
+from torch.nn import Conv1d, ConvTranspose1d
 from torch.nn.parameter import Parameter
-
+from torch.nn.utils import remove_weight_norm, weight_norm
 
 """hifigan based generator implementation.
 

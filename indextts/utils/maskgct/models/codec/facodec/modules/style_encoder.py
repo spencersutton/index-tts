@@ -5,10 +5,11 @@
 
 # This code is modified from https://github.com/sh-lee-prml/HierSpeechpp/blob/main/ttv_v1/styleencoder.py
 
-from . import attentions
-from torch import nn
 import torch
+from torch import nn
 from torch.nn import functional as F
+
+from . import attentions
 
 
 class Mish(nn.Module):

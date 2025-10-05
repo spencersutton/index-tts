@@ -16,6 +16,7 @@ import io
 import math
 import random
 import typing as tp
+
 import torch
 
 from ..binary import BitPacker, BitUnpacker

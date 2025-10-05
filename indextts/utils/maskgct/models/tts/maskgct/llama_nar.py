@@ -3,14 +3,16 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from transformers import LlamaConfig, LlamaModel
+import math
+from typing import List, Optional, Tuple, Union
+
 import torch
 import torch.nn as nn
-from typing import List, Optional, Tuple, Union
-import math
-
-from transformers.models.llama.modeling_llama import LlamaDecoderLayer
-from transformers.models.llama.modeling_llama import BaseModelOutputWithPast
+from transformers import LlamaConfig, LlamaModel
+from transformers.models.llama.modeling_llama import (
+    BaseModelOutputWithPast,
+    LlamaDecoderLayer,
+)
 
 
 # sinusoidal positional encoding

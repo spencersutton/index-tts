@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import math
+
 import torch
 import torch.nn as nn
 from torch.nn.utils import weight_norm
@@ -11,7 +12,6 @@ from torch.nn.utils import weight_norm
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize import (
     ResidualVQ,
 )
-
 from indextts.utils.maskgct.models.codec.amphion_codec.vocos import Vocos
 
 

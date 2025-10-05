@@ -6,6 +6,7 @@ import torch.nn.functional as F
 
 from transformers import GPT2Config, LogitsProcessorList
 from indextts.gpt.transformers_gpt2 import GPT2PreTrainedModel
+from indextts.gpt.transformers_generation_utils import GenerationMixin
 
 # from transformers import GPT2Config, GPT2PreTrainedModel, LogitsProcessorList
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
@@ -40,7 +41,7 @@ class ResBlock(nn.Module):
         return F.relu(self.net(x) + x)
 
 
-class GPT2InferenceModel(GPT2PreTrainedModel):
+class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
     def __init__(
         self, config, gpt, text_pos_emb, embeddings, norm, linear, kv_cache=False
     ):
@@ -198,8 +199,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel):
             cross_attentions=transformer_outputs.cross_attentions,
         )
 
-    @staticmethod
-    def _reorder_cache(past, beam_idx):
+    def _reorder_cache(self, past_key_values, beam_idx):
         """
         This function is used to re-order the :obj:`past_key_values` cache if
         :meth:`~transformers.PreTrainedModel.beam_search` or :meth:`~transformers.PreTrainedModel.beam_sample` is
@@ -210,7 +210,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel):
                 past_state.index_select(0, beam_idx.to(past_state.device))
                 for past_state in layer_past
             )
-            for layer_past in past
+            for layer_past in past_key_values
         )
 
 

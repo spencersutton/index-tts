@@ -439,4 +439,4 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
 
 if __name__ == "__main__":
     demo.queue(20)
-    demo.launch(server_name=cmd_args.host, server_port=cmd_args.port)
+    demo.launch(server_name=cmd_args.host, server_port=cmd_args.port, ssl_certfile="./certs/localhost.pem", ssl_keyfile="./certs/key.pem", ssl_verify=False)

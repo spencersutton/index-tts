@@ -181,7 +181,7 @@ class IndexTTS2:
         estimator_instance = self.s2mel.models["cfm"].estimator
         assert isinstance(estimator_instance, torch.nn.Module)
         cache_setup_function = estimator_instance.setup_caches
-        assert isinstance(cache_setup_function, torch.nn.Module)
+        assert callable(cache_setup_function)
         cache_setup_function(max_batch_size=1, max_seq_length=8192)
         self.s2mel.eval()
         print(">> s2mel weights restored from:", s2mel_path)
@@ -797,7 +797,6 @@ class IndexTTS2:
                     print(
                         f"wav shape: {wav.shape}", "min:", wav.min(), "max:", wav.max()
                     )
-                # wavs.append(wav[:, :-512])
                 wavs.append(wav.cpu())  # to cpu before saving
                 if stream_return:
                     yield wav.cpu()

@@ -1,6 +1,8 @@
 import os
 from subprocess import CalledProcessError
 
+from indextts.utils.maskgct.models.codec.kmeans.repcodec_model import RepCodec
+
 os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 import json
 import random
@@ -16,7 +18,8 @@ from huggingface_hub import hf_hub_download
 from modelscope import AutoModelForCausalLM
 from omegaconf import OmegaConf
 from safetensors.torch import load_model
-from transformers import AutoTokenizer, SeamlessM4TFeatureExtractor
+from transformers import AutoTokenizer, SeamlessM4TFeatureExtractor, Wav2Vec2BertModel
+from transformers.utils.generic import ModelOutput
 
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.s2mel.modules.audio import mel_spectrogram
@@ -29,8 +32,8 @@ from indextts.utils.maskgct_utils import build_semantic_codec, build_semantic_mo
 
 
 class IndexTTS2:
-    semantic_codec: torch.nn.Module
-    semantic_model: torch.nn.Module
+    semantic_codec: RepCodec
+    semantic_model: Wav2Vec2BertModel
     gpt: UnifiedVoice
     s2mel: MyModel
     bigvgan: "bigvgan.BigVGAN"
@@ -681,7 +684,7 @@ class IndexTTS2:
                             [emo_cond_emb.shape[-1]], device=text_tokens.device
                         ),
                         emo_vec=emovec,
-                        do_sample=True,
+                        do_sample=do_sample,
                         top_p=top_p,
                         top_k=top_k,
                         temperature=temperature,

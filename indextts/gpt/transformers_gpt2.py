@@ -28,7 +28,6 @@ from torch import nn
 from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
 
 from transformers.activations import ACT2FN
-import transformers
 
 from indextts.gpt.transformers_generation_utils import GenerationMixin
 from indextts.gpt.transformers_modeling_utils import PreTrainedModel

@@ -3,12 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import os, sys
-import os.path as osp
-import numpy as np
 import torch
-from torch import nn
-from torch.optim import Optimizer
 from functools import reduce
 from torch.optim import AdamW
 

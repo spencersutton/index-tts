@@ -2,9 +2,7 @@ import warnings
 from pathlib import Path
 
 import argbind
-import numpy as np
 import torch
-from audiotools import AudioSignal
 from tqdm import tqdm
 
 from dac import DACFile
@@ -68,7 +66,7 @@ def decode(
     output = Path(output)
     output.mkdir(parents=True, exist_ok=True)
 
-    for i in tqdm(range(len(input_files)), desc=f"Decoding files"):
+    for i in tqdm(range(len(input_files)), desc="Decoding files"):
         # Load file
         artifact = DACFile.load(input_files[i])
 

@@ -14,7 +14,7 @@ import torchaudio.functional as audio_F
 import numpy as np
 from ..alias_free_torch import *
 from torch.nn.utils import weight_norm
-from torch import nn, sin, pow
+from torch import sin, pow
 from einops.layers.torch import Rearrange
 from modules.dac.model.encodec import SConv1d
 

@@ -629,7 +629,7 @@ class IndexTTS2:
                 ],
             )
             print(
-                f"     Consider updating the BPE model or modifying the text to avoid unknown tokens."
+                "     Consider updating the BPE model or modifying the text to avoid unknown tokens."
             )
 
         if verbose:

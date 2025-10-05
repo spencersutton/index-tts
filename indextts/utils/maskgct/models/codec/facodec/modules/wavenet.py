@@ -5,7 +5,6 @@
 
 # This code is modified from https://github.com/sh-lee-prml/HierSpeechpp/blob/main/ttv_v1/modules.py
 
-import math
 import torch
 from torch import nn
 from torch.nn import functional as F

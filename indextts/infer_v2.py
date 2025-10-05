@@ -29,6 +29,29 @@ from indextts.utils.maskgct_utils import build_semantic_codec, build_semantic_mo
 
 
 class IndexTTS2:
+    semantic_codec: torch.nn.Module
+    semantic_model: torch.nn.Module
+    gpt: UnifiedVoice
+    s2mel: MyModel
+    bigvgan: "bigvgan.BigVGAN"
+    campplus_model: CAMPPlus
+    tokenizer: TextTokenizer
+    normalizer: TextNormalizer
+    extract_features: SeamlessM4TFeatureExtractor
+    emo_matrix: list[torch.Tensor]
+    spk_matrix: list[torch.Tensor]
+    cache_spk_cond: torch.Tensor | None
+    cache_s2mel_style: torch.Tensor | None
+    cache_spk_audio_prompt: str | None
+    cache_emo_cond: torch.Tensor | None
+    cache_emo_audio_prompt: str | None
+    cache_mel: torch.Tensor | None
+    dtype: torch.dtype | None
+    device: str
+    use_fp16: bool
+    use_cuda_kernel: bool
+    stop_mel_token: int
+
     def __init__(
         self,
         cfg_path="checkpoints/config.yaml",

@@ -100,7 +100,7 @@ class IndexTTS2:
 
         if use_deepspeed:
             try:
-                import deepspeed
+                import deepspeed  # noqa: F401
             except (ImportError, OSError, CalledProcessError) as e:
                 use_deepspeed = False
                 print(
@@ -384,20 +384,20 @@ class IndexTTS2:
     # Original inference mode
     def infer(
         self,
-        spk_audio_prompt,
-        text,
-        output_path,
-        emo_audio_prompt=None,
-        emo_alpha=1.0,
-        emo_vector=None,
-        use_emo_text=False,
-        emo_text=None,
-        use_random=False,
-        interval_silence=200,
-        verbose=False,
-        max_text_tokens_per_segment=120,
-        stream_return=False,
-        more_segment_before=0,
+        spk_audio_prompt: str,
+        text: str,
+        output_path: str,
+        emo_audio_prompt: str | None = None,
+        emo_alpha: float = 1.0,
+        emo_vector: list[float] | None = None,
+        use_emo_text: bool = False,
+        emo_text: str | None = None,
+        use_random: bool = False,
+        interval_silence: int = 200,
+        verbose: bool = False,
+        max_text_tokens_per_segment: int = 120,
+        stream_return: bool = False,
+        more_segment_before: int = 0,
         **generation_kwargs,
     ):
         if stream_return:
@@ -444,9 +444,9 @@ class IndexTTS2:
 
     def infer_generator(
         self,
-        spk_audio_prompt,
-        text,
-        output_path,
+        spk_audio_prompt: str,
+        text: str,
+        output_path: str,
         emo_audio_prompt=None,
         emo_alpha=1.0,
         emo_vector=None,

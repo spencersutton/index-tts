@@ -500,7 +500,6 @@ class IndexTTS2:
             attention_mask = attention_mask.to(self.device)
             spk_cond_emb = self.get_emb(input_features, attention_mask)
 
-            assert isinstance(self.semantic_codec.quantize, torch.nn.Module)
             _, S_ref = self.semantic_codec.quantize(spk_cond_emb)
             ref_mel = self.mel_fn(audio_22k.to(spk_cond_emb.device).float())
             ref_target_lengths = torch.LongTensor([ref_mel.size(2)]).to(ref_mel.device)
@@ -706,6 +705,7 @@ class IndexTTS2:
                     )
                     has_warned = True
 
+                assert isinstance(codes, torch.Tensor)
                 code_lens = torch.tensor(
                     [codes.shape[-1]], device=codes.device, dtype=codes.dtype
                 )
@@ -777,7 +777,9 @@ class IndexTTS2:
                         S_infer, ylens=target_lengths, n_quantizers=3, f0=None
                     )[0]
                     cat_condition = torch.cat([prompt_condition, cond], dim=1)
-                    vc_target = self.s2mel.models["cfm"].inference(
+                    inference_output = self.s2mel.models["cfm"].inference
+                    assert isinstance(inference_output, torch.nn.Module)
+                    vc_target = inference_output(
                         cat_condition,
                         torch.LongTensor([cat_condition.size(1)]).to(cond.device),
                         ref_mel,
@@ -786,6 +788,7 @@ class IndexTTS2:
                         diffusion_steps,
                         inference_cfg_rate=inference_cfg_rate,
                     )
+                    assert ref_mel is not None
                     vc_target = vc_target[:, :, ref_mel.size(-1) :]
                     s2mel_time += time.perf_counter() - m_start_time
 

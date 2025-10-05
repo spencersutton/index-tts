@@ -3,25 +3,19 @@ from subprocess import CalledProcessError
 
 os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 import json
+import random
 import re
 import time
 import warnings
 
 import librosa
 import torch
-import torchaudio
-from torch.nn.utils.rnn import pad_sequence
-
-warnings.filterwarnings("ignore", category=FutureWarning)
-warnings.filterwarnings("ignore", category=UserWarning)
-
-import random
-
-import safetensors
 import torch.nn.functional as F
+import torchaudio
 from huggingface_hub import hf_hub_download
 from modelscope import AutoModelForCausalLM
 from omegaconf import OmegaConf
+from safetensors.torch import load_model
 from transformers import AutoTokenizer, SeamlessM4TFeatureExtractor
 
 from indextts.gpt.model_v2 import UnifiedVoice
@@ -144,7 +138,7 @@ class IndexTTS2:
         semantic_code_ckpt = hf_hub_download(
             "amphion/MaskGCT", filename="semantic_codec/model.safetensors"
         )
-        safetensors.torch.load_model(semantic_codec, semantic_code_ckpt)
+        load_model(semantic_codec, semantic_code_ckpt)
         self.semantic_codec = semantic_codec.to(self.device)
         self.semantic_codec.eval()
         print(">> semantic_codec weights restored from: {}".format(semantic_code_ckpt))
@@ -237,7 +231,7 @@ class IndexTTS2:
         self.model_version = self.cfg.version if hasattr(self.cfg, "version") else None
 
     @torch.no_grad()
-    def get_emb(self, input_features, attention_mask):
+    def get_emb(self, input_features, attention_mask) -> torch.Tensor:
         vq_emb = self.semantic_model(
             input_features=input_features,
             attention_mask=attention_mask,
@@ -246,65 +240,6 @@ class IndexTTS2:
         feat = vq_emb.hidden_states[17]  # (B, T, C)
         feat = (feat - self.semantic_mean) / self.semantic_std
         return feat
-
-    def remove_long_silence(
-        self, codes: torch.Tensor, silent_token=52, max_consecutive=30
-    ):
-        """
-        Shrink special tokens (silent_token and stop_mel_token) in codes
-        codes: [B, T]
-        """
-        code_lens = []
-        codes_list = []
-        device = codes.device
-        dtype = codes.dtype
-        isfix = False
-        for i in range(0, codes.shape[0]):
-            code = codes[i]
-            if not torch.any(code == self.stop_mel_token).item():
-                len_ = code.size(0)
-            else:
-                stop_mel_idx = (code == self.stop_mel_token).nonzero(as_tuple=False)
-                len_ = stop_mel_idx[0].item() if len(stop_mel_idx) > 0 else code.size(0)
-
-            count = torch.sum(code == silent_token).item()
-            if count > max_consecutive:
-                ncode_idx = []
-                n = 0
-                for k in range(len_):
-                    assert code[k] != self.stop_mel_token, (
-                        f"stop_mel_token {self.stop_mel_token} should be shrinked here"
-                    )
-                    if code[k] != silent_token:
-                        ncode_idx.append(k)
-                        n = 0
-                    elif code[k] == silent_token and n < 10:
-                        ncode_idx.append(k)
-                        n += 1
-                # new code
-                len_ = len(ncode_idx)
-                codes_list.append(code[ncode_idx])
-                isfix = True
-            else:
-                # shrink to len_
-                codes_list.append(code[:len_])
-            code_lens.append(len_)
-        if isfix:
-            if len(codes_list) > 1:
-                codes = pad_sequence(
-                    codes_list, batch_first=True, padding_value=self.stop_mel_token
-                )
-            else:
-                codes = codes_list[0].unsqueeze(0)
-        else:
-            # unchanged
-            pass
-        # clip codes to max length
-        max_len = max(code_lens)
-        if max_len < codes.shape[1]:
-            codes = codes[:, :max_len]
-        code_lens = torch.tensor(code_lens, dtype=torch.long, device=device)
-        return codes, code_lens
 
     def interval_silence(self, wavs, sampling_rate=22050, interval_silence=200):
         """
@@ -349,7 +284,7 @@ class IndexTTS2:
 
     def _load_and_cut_audio(
         self, audio_path, max_audio_length_seconds, verbose=False, sr=None
-    ):
+    ) -> tuple[torch.Tensor, int]:
         if not sr:
             audio, sr = librosa.load(audio_path)
         else:
@@ -363,7 +298,7 @@ class IndexTTS2:
                     f"Audio too long ({audio.shape[1]} samples), truncating to {max_audio_samples} samples"
                 )
             audio = audio[:, :max_audio_samples]
-        return audio, sr
+        return audio, int(sr)
 
     def normalize_emo_vec(self, emo_vector, apply_bias=True):
         # apply biased emotion factors for better user experience,
@@ -447,17 +382,17 @@ class IndexTTS2:
         spk_audio_prompt: str,
         text: str,
         output_path: str,
-        emo_audio_prompt=None,
-        emo_alpha=1.0,
-        emo_vector=None,
-        use_emo_text=False,
-        emo_text=None,
-        use_random=False,
-        interval_silence=200,
-        verbose=False,
-        max_text_tokens_per_segment=120,
-        stream_return=False,
-        quick_streaming_tokens=0,
+        emo_audio_prompt: str | None = None,
+        emo_alpha: float = 1.0,
+        emo_vector: list[float] | None = None,
+        use_emo_text: bool = False,
+        emo_text: str | None = None,
+        use_random: bool = False,
+        interval_silence: int = 200,
+        verbose: bool = False,
+        max_text_tokens_per_segment: int = 120,
+        stream_return: bool = False,
+        quick_streaming_tokens: int = 0,
         **generation_kwargs,
     ):
         print(">> starting inference...")
@@ -559,6 +494,8 @@ class IndexTTS2:
             spk_cond_emb = self.cache_spk_cond
             ref_mel = self.cache_mel
 
+        emovec_mat = None
+        weight_vector = None
         if emo_vector is not None:
             weight_vector = torch.tensor(emo_vector).to(self.device)
             if use_random:
@@ -675,7 +612,7 @@ class IndexTTS2:
 
             m_start_time = time.perf_counter()
             with torch.no_grad():
-                with torch.amp.autocast(
+                with torch.autocast(
                     text_tokens.device.type,
                     enabled=self.dtype is not None,
                     dtype=self.dtype,
@@ -693,6 +630,7 @@ class IndexTTS2:
                     )
 
                     if emo_vector is not None:
+                        assert weight_vector is not None
                         emovec = emovec_mat + (1 - torch.sum(weight_vector)) * emovec
                         # emovec = emovec_mat
 
@@ -737,6 +675,7 @@ class IndexTTS2:
                 #                     print(f"codes shape: {codes.shape}, codes type: {codes.dtype}")
                 #                     print(f"code len: {code_lens}")
 
+                code_len = 0
                 code_lens = []
                 for code in codes:
                     if self.stop_mel_token not in code:
@@ -760,7 +699,7 @@ class IndexTTS2:
                 use_speed = (
                     torch.zeros(spk_cond_emb.size(0)).to(spk_cond_emb.device).long()
                 )
-                with torch.amp.autocast(
+                with torch.autocast(
                     text_tokens.device.type,
                     enabled=self.dtype is not None,
                     dtype=self.dtype,
@@ -786,7 +725,7 @@ class IndexTTS2:
                     gpt_forward_time += time.perf_counter() - m_start_time
 
                 dtype = None
-                with torch.amp.autocast(
+                with torch.autocast(
                     text_tokens.device.type, enabled=dtype is not None, dtype=dtype
                 ):
                     m_start_time = time.perf_counter()
@@ -830,7 +769,7 @@ class IndexTTS2:
                 wavs.append(wav.cpu())  # to cpu before saving
                 if stream_return:
                     yield wav.cpu()
-                    if silence == None:
+                    if silence is None:
                         silence = self.interval_silence(
                             wavs,
                             sampling_rate=sampling_rate,
@@ -954,7 +893,6 @@ class QwenEmotion:
         return emotion_dict
 
     def inference(self, text_input):
-        start = time.time()
         messages = [
             {"role": "system", "content": f"{self.prompt}"},
             {"role": "user", "content": f"{text_input}"},

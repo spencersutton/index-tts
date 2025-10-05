@@ -181,7 +181,7 @@ class IndexTTS2:
         estimator_instance = self.s2mel.models["cfm"].estimator
         assert isinstance(estimator_instance, torch.nn.Module)
         cache_setup_function = estimator_instance.setup_caches
-        assert callable(cache_setup_function)
+        assert isinstance(cache_setup_function, torch.nn.Module)
         cache_setup_function(max_batch_size=1, max_seq_length=8192)
         self.s2mel.eval()
         print(">> s2mel weights restored from:", s2mel_path)
@@ -309,9 +309,13 @@ class IndexTTS2:
             self.gr_progress(value, desc=desc)
 
     def _load_and_cut_audio(
-        self, audio_path, max_audio_length_seconds, verbose=False, sr=None
+        self,
+        audio_path: str,
+        max_audio_length_seconds: int,
+        verbose=False,
+        sr: int | float | None = None,
     ) -> tuple[torch.Tensor, int]:
-        if not sr:
+        if sr is None:
             audio, sr = librosa.load(audio_path)
         else:
             audio, _ = librosa.load(audio_path, sr=sr)
@@ -493,6 +497,7 @@ class IndexTTS2:
             attention_mask = attention_mask.to(self.device)
             spk_cond_emb = self.get_emb(input_features, attention_mask)
 
+            assert isinstance(self.semantic_codec.quantize, torch.nn.Module)
             _, S_ref = self.semantic_codec.quantize(spk_cond_emb)
             ref_mel = self.mel_fn(audio_22k.to(spk_cond_emb.device).float())
             ref_target_lengths = torch.LongTensor([ref_mel.size(2)]).to(ref_mel.device)

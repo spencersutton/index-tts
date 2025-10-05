@@ -778,8 +778,8 @@ class IndexTTS2:
                     )[0]
                     cat_condition = torch.cat([prompt_condition, cond], dim=1)
                     inference_output = self.s2mel.models["cfm"].inference
-                    assert isinstance(inference_output, torch.nn.Module)
-                    vc_target = inference_output(
+                    assert callable(inference_output)
+                    vc_target: torch.Tensor = inference_output(
                         cat_condition,
                         torch.LongTensor([cat_condition.size(1)]).to(cond.device),
                         ref_mel,
@@ -793,7 +793,8 @@ class IndexTTS2:
                     s2mel_time += time.perf_counter() - m_start_time
 
                     m_start_time = time.perf_counter()
-                    wav = self.bigvgan(vc_target.float()).squeeze().unsqueeze(0)
+                    audio_waveform: torch.Tensor = self.bigvgan(vc_target.float())
+                    wav = audio_waveform.squeeze().unsqueeze(0)
                     print(wav.shape)
                     bigvgan_time += time.perf_counter() - m_start_time
                     wav = wav.squeeze(1)

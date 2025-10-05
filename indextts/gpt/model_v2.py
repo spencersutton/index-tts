@@ -3,17 +3,16 @@ import functools
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-from transformers import GPT2Config, LogitsProcessorList
-from indextts.gpt.transformers_gpt2 import GPT2PreTrainedModel
-from indextts.gpt.transformers_generation_utils import GenerationMixin
-
-# from transformers import GPT2Config, GPT2PreTrainedModel, LogitsProcessorList
+from transformers import GPT2Config
+from transformers.cache_utils import DynamicCache
+from transformers.generation.logits_process import LogitsProcessorList
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 from transformers.utils.model_parallel_utils import assert_device_map, get_device_map
 
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.perceiver import PerceiverResampler
+from indextts.gpt.transformers_generation_utils import GenerationMixin
+from indextts.gpt.transformers_gpt2 import GPT2PreTrainedModel
 from indextts.utils.arch_util import AttentionBlock
 from indextts.utils.typical_sampling import TypicalLogitsWarper
 
@@ -96,6 +95,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
             past_key_values = None
         # only last token for inputs_ids if past is defined in kwargs
         if past_key_values:
+            past_key_values = DynamicCache.from_legacy_cache(past_key_values)
             input_ids = input_ids[:, -1].unsqueeze(-1)
             if token_type_ids is not None:
                 token_type_ids = token_type_ids[:, -1].unsqueeze(-1)

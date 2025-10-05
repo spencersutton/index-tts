@@ -223,7 +223,7 @@ class IndexTTS2:
         }
         self.mel_fn = lambda x: mel_spectrogram(x, **mel_fn_args)
 
-        # 缓存参考音频：
+        # Cache reference audio:
         self.cache_spk_cond = None
         self.cache_s2mel_style = None
         self.cache_s2mel_prompt = None
@@ -232,7 +232,7 @@ class IndexTTS2:
         self.cache_emo_audio_prompt = None
         self.cache_mel = None
 
-        # 进度引用显示（可选）
+        # Progress callback reference (optional)
         self.gr_progress = None
         self.model_version = self.cfg.version if hasattr(self.cfg, "version") else None
 
@@ -269,7 +269,6 @@ class IndexTTS2:
 
             count = torch.sum(code == silent_token).item()
             if count > max_consecutive:
-                # code = code.cpu().tolist()
                 ncode_idx = []
                 n = 0
                 for k in range(len_):
@@ -282,8 +281,6 @@ class IndexTTS2:
                     elif code[k] == silent_token and n < 10:
                         ncode_idx.append(k)
                         n += 1
-                    # if (k == 0 and code[k] == 52) or (code[k] == 52 and code[k-1] == 52):
-                    #    n += 1
                 # new code
                 len_ = len(ncode_idx)
                 codes_list.append(code[ncode_idx])
@@ -384,7 +381,7 @@ class IndexTTS2:
 
         return emo_vector
 
-    # 原始推理模式
+    # Original inference mode
     def infer(
         self,
         spk_audio_prompt,
@@ -507,7 +504,7 @@ class IndexTTS2:
             # must always use alpha=1.0 when we don't have an external reference voice
             emo_alpha = 1.0
 
-        # 如果参考音频改变了，才需要重新生成, 提升速度
+        # Only regenerate when the reference audio has changed, to improve speed
         if (
             self.cache_spk_cond is None
             or self.cache_spk_audio_prompt != spk_audio_prompt
@@ -542,10 +539,10 @@ class IndexTTS2:
             )
             feat = feat - feat.mean(
                 dim=0, keepdim=True
-            )  # feat2另外一个滤波器能量组特征[922, 80]
+            )  # feat2: another filter-bank energy feature [922, 80]
             style = self.campplus_model(
                 feat.unsqueeze(0)
-            )  # 参考音频的全局style2[1,192]
+            )  # Global style of the reference audio, shape [1, 192]
 
             prompt_condition = self.s2mel.models["length_regulator"](
                 S_ref, ylens=ref_target_lengths, n_quantizers=3, f0=None
@@ -797,6 +794,7 @@ class IndexTTS2:
                     inference_cfg_rate = 0.7
                     latent = self.s2mel.models["gpt_layer"](latent)
                     S_infer = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1))
+                    assert isinstance(S_infer, torch.Tensor)
                     S_infer = S_infer.transpose(1, 2)
                     S_infer = S_infer + latent
                     target_lengths = (code_lens * 1.72).long()
@@ -858,7 +856,7 @@ class IndexTTS2:
         # save audio
         wav = wav.cpu()  # to cpu
         if output_path:
-            # 直接保存音频到指定路径中
+            # Directly save the audio to the specified path
             if os.path.isfile(output_path):
                 os.remove(output_path)
                 print(">> remove old wav file:", output_path)
@@ -872,7 +870,7 @@ class IndexTTS2:
         else:
             if stream_return:
                 return None
-            # 返回以符合Gradio的格式要求
+            # Return in the format expected by Gradio
             wav_data = wav.type(torch.int16)
             wav_data = wav_data.numpy().T
             yield (sampling_rate, wav_data)
@@ -904,9 +902,9 @@ class QwenEmotion:
             "恐惧": "afraid",
             "反感": "disgusted",
             # TODO: the "低落" (melancholic) emotion will always be mapped to
-            # "悲伤" (sad) by QwenEmotion's text analysis. it doesn't know the
-            # difference between those emotions even if user writes exact words.
-            # SEE: `self.melancholic_words` for current workaround.
+            # "悲伤" (sad) by QwenEmotion's text analysis. It doesn't know the
+            # difference between those emotions even if the user writes exact words.
+            # SEE: `self.melancholic_words` for the current workaround.
             "低落": "melancholic",
             "惊讶": "surprised",
             "自然": "calm",
@@ -922,8 +920,8 @@ class QwenEmotion:
             "自然",
         ]
         self.melancholic_words = {
-            # emotion text phrases that will force QwenEmotion's "悲伤" (sad) detection
-            # to become "低落" (melancholic) instead, to fix limitations mentioned above.
+            # Emotion text phrases that will force QwenEmotion's "悲伤" (sad) detection
+            # to become "低落" (melancholic) instead, to work around the limitation mentioned above.
             "低落",
             "melancholy",
             "melancholic",
@@ -998,9 +996,9 @@ class QwenEmotion:
             }
             # print(">> dict result", content)
 
-        # workaround for QwenEmotion's inability to distinguish "悲伤" (sad) vs "低落" (melancholic).
-        # if we detect any of the IndexTTS "melancholic" words, we swap those vectors
-        # to encode the "sad" emotion as "melancholic" (instead of sadness).
+        # Workaround for QwenEmotion's inability to distinguish "悲伤" (sad) vs "低落" (melancholic).
+        # If we detect any of the IndexTTS "melancholic" words, we swap those vectors
+        # to represent the "sad" emotion as "melancholic" (instead of sadness).
         text_input_lower = text_input.lower()
         if any(word in text_input_lower for word in self.melancholic_words):
             # print(">> before vec swap", content)

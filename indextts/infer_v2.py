@@ -377,6 +377,8 @@ class IndexTTS2:
             except IndexError:
                 return None
 
+    cache_s2mel_prompt: torch.Tensor | None = None
+
     def infer_generator(
         self,
         spk_audio_prompt: str,
@@ -439,6 +441,8 @@ class IndexTTS2:
             # must always use alpha=1.0 when we don't have an external reference voice
             emo_alpha = 1.0
 
+        prompt_condition: torch.Tensor
+
         # Only regenerate when the reference audio has changed, to improve speed
         if (
             self.cache_spk_cond is None
@@ -490,6 +494,7 @@ class IndexTTS2:
             self.cache_mel = ref_mel
         else:
             style = self.cache_s2mel_style
+            assert self.cache_s2mel_prompt is not None
             prompt_condition = self.cache_s2mel_prompt
             spk_cond_emb = self.cache_spk_cond
             ref_mel = self.cache_mel
@@ -670,10 +675,6 @@ class IndexTTS2:
                 code_lens = torch.tensor(
                     [codes.shape[-1]], device=codes.device, dtype=codes.dtype
                 )
-                #                 if verbose:
-                #                     print(codes, type(codes))
-                #                     print(f"codes shape: {codes.shape}, codes type: {codes.dtype}")
-                #                     print(f"code len: {code_lens}")
 
                 code_len = 0
                 code_lens = []

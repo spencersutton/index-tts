@@ -139,7 +139,6 @@ class RepCodec(nn.Module):
         self.reset_parameters()
 
     def forward(self, x):
-
         # downsample
         if self.downsample_scale != None and self.downsample_scale > 1:
             x = x.transpose(1, 2)
@@ -174,7 +173,6 @@ class RepCodec(nn.Module):
         return x_rec, codebook_loss, all_indices
 
     def quantize(self, x):
-
         if self.downsample_scale != None and self.downsample_scale > 1:
             x = x.transpose(1, 2)
             x = self.down(x)

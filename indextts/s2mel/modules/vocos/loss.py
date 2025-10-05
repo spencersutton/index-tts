@@ -13,11 +13,20 @@ class MelSpecReconstructionLoss(nn.Module):
     """
 
     def __init__(
-        self, sample_rate: int = 24000, n_fft: int = 1024, hop_length: int = 256, n_mels: int = 100,
+        self,
+        sample_rate: int = 24000,
+        n_fft: int = 1024,
+        hop_length: int = 256,
+        n_mels: int = 100,
     ):
         super().__init__()
         self.mel_spec = torchaudio.transforms.MelSpectrogram(
-            sample_rate=sample_rate, n_fft=n_fft, hop_length=hop_length, n_mels=n_mels, center=True, power=1,
+            sample_rate=sample_rate,
+            n_fft=n_fft,
+            hop_length=hop_length,
+            n_mels=n_mels,
+            center=True,
+            power=1,
         )
 
     def forward(self, y_hat, y) -> torch.Tensor:
@@ -42,7 +51,9 @@ class GeneratorLoss(nn.Module):
     Generator Loss module. Calculates the loss for the generator based on discriminator outputs.
     """
 
-    def forward(self, disc_outputs: List[torch.Tensor]) -> Tuple[torch.Tensor, List[torch.Tensor]]:
+    def forward(
+        self, disc_outputs: List[torch.Tensor]
+    ) -> Tuple[torch.Tensor, List[torch.Tensor]]:
         """
         Args:
             disc_outputs (List[Tensor]): List of discriminator outputs.
@@ -51,7 +62,9 @@ class GeneratorLoss(nn.Module):
             Tuple[Tensor, List[Tensor]]: Tuple containing the total loss and a list of loss values from
                                          the sub-discriminators
         """
-        loss = torch.zeros(1, device=disc_outputs[0].device, dtype=disc_outputs[0].dtype)
+        loss = torch.zeros(
+            1, device=disc_outputs[0].device, dtype=disc_outputs[0].dtype
+        )
         gen_losses = []
         for dg in disc_outputs:
             l = torch.mean(torch.clamp(1 - dg, min=0))
@@ -67,7 +80,9 @@ class DiscriminatorLoss(nn.Module):
     """
 
     def forward(
-        self, disc_real_outputs: List[torch.Tensor], disc_generated_outputs: List[torch.Tensor]
+        self,
+        disc_real_outputs: List[torch.Tensor],
+        disc_generated_outputs: List[torch.Tensor],
     ) -> Tuple[torch.Tensor, List[torch.Tensor], List[torch.Tensor]]:
         """
         Args:
@@ -79,7 +94,9 @@ class DiscriminatorLoss(nn.Module):
                                                        the sub-discriminators for real outputs, and a list of
                                                        loss values for generated outputs.
         """
-        loss = torch.zeros(1, device=disc_real_outputs[0].device, dtype=disc_real_outputs[0].dtype)
+        loss = torch.zeros(
+            1, device=disc_real_outputs[0].device, dtype=disc_real_outputs[0].dtype
+        )
         r_losses = []
         g_losses = []
         for dr, dg in zip(disc_real_outputs, disc_generated_outputs):
@@ -97,7 +114,9 @@ class FeatureMatchingLoss(nn.Module):
     Feature Matching Loss module. Calculates the feature matching loss between feature maps of the sub-discriminators.
     """
 
-    def forward(self, fmap_r: List[List[torch.Tensor]], fmap_g: List[List[torch.Tensor]]) -> torch.Tensor:
+    def forward(
+        self, fmap_r: List[List[torch.Tensor]], fmap_g: List[List[torch.Tensor]]
+    ) -> torch.Tensor:
         """
         Args:
             fmap_r (List[List[Tensor]]): List of feature maps from real samples.

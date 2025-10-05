@@ -8,6 +8,7 @@ import json
 import argparse
 from torch.nn.parallel import DistributedDataParallel as DDP
 
+
 def str2bool(v):
     if isinstance(v, bool):
         return v
@@ -17,6 +18,7 @@ def str2bool(v):
         return False
     else:
         raise argparse.ArgumentTypeError("Boolean value expected.")
+
 
 class AttrDict(dict):
     def __init__(self, *args, **kwargs):
@@ -386,83 +388,111 @@ def normalize_f0(f0_sequence):
 
 
 class MyModel(nn.Module):
-    def __init__(self,args, use_emovec=False, use_gpt_latent=False):
+    def __init__(self, args, use_emovec=False, use_gpt_latent=False):
         super(MyModel, self).__init__()
         from indextts.s2mel.modules.flow_matching import CFM
         from indextts.s2mel.modules.length_regulator import InterpolateRegulator
-        
+
         length_regulator = InterpolateRegulator(
             channels=args.length_regulator.channels,
             sampling_ratios=args.length_regulator.sampling_ratios,
             is_discrete=args.length_regulator.is_discrete,
-            in_channels=args.length_regulator.in_channels if hasattr(args.length_regulator, "in_channels") else None,
-            vector_quantize=args.length_regulator.vector_quantize if hasattr(args.length_regulator, "vector_quantize") else False,
+            in_channels=args.length_regulator.in_channels
+            if hasattr(args.length_regulator, "in_channels")
+            else None,
+            vector_quantize=args.length_regulator.vector_quantize
+            if hasattr(args.length_regulator, "vector_quantize")
+            else False,
             codebook_size=args.length_regulator.content_codebook_size,
-            n_codebooks=args.length_regulator.n_codebooks if hasattr(args.length_regulator, "n_codebooks") else 1,
-            quantizer_dropout=args.length_regulator.quantizer_dropout if hasattr(args.length_regulator, "quantizer_dropout") else 0.0,
-            f0_condition=args.length_regulator.f0_condition if hasattr(args.length_regulator, "f0_condition") else False,
-            n_f0_bins=args.length_regulator.n_f0_bins if hasattr(args.length_regulator, "n_f0_bins") else 512,
+            n_codebooks=args.length_regulator.n_codebooks
+            if hasattr(args.length_regulator, "n_codebooks")
+            else 1,
+            quantizer_dropout=args.length_regulator.quantizer_dropout
+            if hasattr(args.length_regulator, "quantizer_dropout")
+            else 0.0,
+            f0_condition=args.length_regulator.f0_condition
+            if hasattr(args.length_regulator, "f0_condition")
+            else False,
+            n_f0_bins=args.length_regulator.n_f0_bins
+            if hasattr(args.length_regulator, "n_f0_bins")
+            else 512,
         )
 
         if use_gpt_latent:
-            self.models = nn.ModuleDict({
-                'cfm': CFM(args),
-                'length_regulator': length_regulator,
-                'gpt_layer': torch.nn.Sequential(torch.nn.Linear(1280, 256), torch.nn.Linear(256, 128), torch.nn.Linear(128, 1024))
-            })
+            self.models = nn.ModuleDict(
+                {
+                    "cfm": CFM(args),
+                    "length_regulator": length_regulator,
+                    "gpt_layer": torch.nn.Sequential(
+                        torch.nn.Linear(1280, 256),
+                        torch.nn.Linear(256, 128),
+                        torch.nn.Linear(128, 1024),
+                    ),
+                }
+            )
 
         else:
-            self.models = nn.ModuleDict({
-                'cfm': CFM(args),
-                'length_regulator': length_regulator
-            })
-    
+            self.models = nn.ModuleDict(
+                {"cfm": CFM(args), "length_regulator": length_regulator}
+            )
+
     def forward(self, x, target_lengths, prompt_len, cond, y):
-        x = self.models['cfm'](x, target_lengths, prompt_len, cond, y)
+        x = self.models["cfm"](x, target_lengths, prompt_len, cond, y)
         return x
-    
-    def forward2(self, S_ori,target_lengths,F0_ori):
-        x = self.models['length_regulator'](S_ori, ylens=target_lengths, f0=F0_ori)
+
+    def forward2(self, S_ori, target_lengths, F0_ori):
+        x = self.models["length_regulator"](S_ori, ylens=target_lengths, f0=F0_ori)
         return x
 
     def forward_emovec(self, x):
-        x = self.models['emo_layer'](x)
+        x = self.models["emo_layer"](x)
         return x
 
     def forward_emo_encoder(self, x):
-        x = self.models['emo_encoder'](x)
+        x = self.models["emo_encoder"](x)
         return x
 
-    def forward_gpt(self,x):
-        x = self.models['gpt_layer'](x)
+    def forward_gpt(self, x):
+        x = self.models["gpt_layer"](x)
         return x
-
 
 
 def build_model(args, stage="DiT"):
     if stage == "DiT":
         from modules.flow_matching import CFM
         from modules.length_regulator import InterpolateRegulator
-        
+
         length_regulator = InterpolateRegulator(
             channels=args.length_regulator.channels,
             sampling_ratios=args.length_regulator.sampling_ratios,
             is_discrete=args.length_regulator.is_discrete,
-            in_channels=args.length_regulator.in_channels if hasattr(args.length_regulator, "in_channels") else None,
-            vector_quantize=args.length_regulator.vector_quantize if hasattr(args.length_regulator, "vector_quantize") else False,
+            in_channels=args.length_regulator.in_channels
+            if hasattr(args.length_regulator, "in_channels")
+            else None,
+            vector_quantize=args.length_regulator.vector_quantize
+            if hasattr(args.length_regulator, "vector_quantize")
+            else False,
             codebook_size=args.length_regulator.content_codebook_size,
-            n_codebooks=args.length_regulator.n_codebooks if hasattr(args.length_regulator, "n_codebooks") else 1,
-            quantizer_dropout=args.length_regulator.quantizer_dropout if hasattr(args.length_regulator, "quantizer_dropout") else 0.0,
-            f0_condition=args.length_regulator.f0_condition if hasattr(args.length_regulator, "f0_condition") else False,
-            n_f0_bins=args.length_regulator.n_f0_bins if hasattr(args.length_regulator, "n_f0_bins") else 512,
+            n_codebooks=args.length_regulator.n_codebooks
+            if hasattr(args.length_regulator, "n_codebooks")
+            else 1,
+            quantizer_dropout=args.length_regulator.quantizer_dropout
+            if hasattr(args.length_regulator, "quantizer_dropout")
+            else 0.0,
+            f0_condition=args.length_regulator.f0_condition
+            if hasattr(args.length_regulator, "f0_condition")
+            else False,
+            n_f0_bins=args.length_regulator.n_f0_bins
+            if hasattr(args.length_regulator, "n_f0_bins")
+            else 512,
         )
         cfm = CFM(args)
         nets = Munch(
             cfm=cfm,
             length_regulator=length_regulator,
         )
-        
-    elif stage == 'codec':
+
+    elif stage == "codec":
         from dac.model.dac import Encoder
         from modules.quantize import (
             FAquantizer,
@@ -497,6 +527,7 @@ def build_model(args, stage="DiT"):
 
     elif stage == "mel_vocos":
         from modules.vocos import Vocos
+
         decoder = Vocos(args)
         nets = Munch(
             decoder=decoder,
@@ -565,6 +596,7 @@ def load_checkpoint(
 
     return model, optimizer, epoch, iters
 
+
 def load_checkpoint2(
     model,
     optimizer,
@@ -609,7 +641,7 @@ def load_checkpoint2(
             print("%s loaded" % key)
             model.models[key].load_state_dict(filtered_state_dict, strict=False)
     model.eval()
-#     _ = [model[key].eval() for key in model]
+    #     _ = [model[key].eval() for key in model]
 
     if not load_only_params:
         epoch = state["epoch"] + 1
@@ -622,6 +654,7 @@ def load_checkpoint2(
         iters = 0
 
     return model, optimizer, epoch, iters
+
 
 def recursive_munch(d):
     if isinstance(d, dict):

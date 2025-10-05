@@ -135,7 +135,7 @@ class FAcodecTrainer(CodecTrainer):
             for _, model in self.model.items():
                 self.logger.debug(model)
             self.logger.info(f"Building model done in {(end - start) / 1e6:.2f}ms")
-            self.logger.info(f"Model parameters: {self._count_parameters()/1e6:.2f}M")
+            self.logger.info(f"Model parameters: {self._count_parameters() / 1e6:.2f}M")
 
         # Build optimizers and schedulers
         with self.accelerator.main_process_first():
@@ -521,9 +521,9 @@ class FAcodecTrainer(CodecTrainer):
                 # Create the normalized F0 sequence with unvoiced frames
                 normalized_sequence = torch.zeros_like(F0_real[bib])
                 normalized_sequence[voiced_indices] = normalized_f0
-                normalized_sequence[~voiced_indices] = (
-                    -10
-                )  # Assign -10 to unvoiced frames
+                normalized_sequence[
+                    ~voiced_indices
+                ] = -10  # Assign -10 to unvoiced frames
 
                 gt_glob_f0s.append(mean_f0)
             else:

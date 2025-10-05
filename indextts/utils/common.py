@@ -44,11 +44,11 @@ def tokenize_by_CJK_char(line: str, do_upper_case=True) -> str:
       A new string tokenize by CJK char.
     """
     # The CJK ranges is from https://github.com/alvations/nltk/blob/79eed6ddea0d0a2c212c1060b477fc268fec4d4b/nltk/tokenize/util.py
-    CJK_RANGE_PATTERN = (
-        r"([\u1100-\u11ff\u2e80-\ua4cf\ua840-\uD7AF\uF900-\uFAFF\uFE30-\uFE4F\uFF65-\uFFDC\U00020000-\U0002FFFF])"
-    )
+    CJK_RANGE_PATTERN = r"([\u1100-\u11ff\u2e80-\ua4cf\ua840-\uD7AF\uF900-\uFAFF\uFE30-\uFE4F\uFF65-\uFFDC\U00020000-\U0002FFFF])"
     chars = re.split(CJK_RANGE_PATTERN, line.strip())
-    return " ".join([w.strip().upper() if do_upper_case else w.strip() for w in chars if w.strip()])
+    return " ".join(
+        [w.strip().upper() if do_upper_case else w.strip() for w in chars if w.strip()]
+    )
 
 
 def de_tokenized_by_CJK_char(line: str, do_lower_case=False) -> str:

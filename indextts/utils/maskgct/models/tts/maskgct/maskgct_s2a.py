@@ -218,9 +218,7 @@ class MaskGCT_S2A(nn.Module):
         if torch.rand(1) > cfg_scale:
             prompt_len = torch.randint(
                 min(x0.shape[1] // 4, 5), x0.shape[1] // 2, (x0.shape[0],)
-            ).to(
-                x0.device
-            )  # (B,)
+            ).to(x0.device)  # (B,)
         else:
             prompt_len = torch.zeros(x0.shape[0]).to(x0)  # (B,)
 
@@ -350,7 +348,6 @@ class MaskGCT_S2A(nn.Module):
         cfg=1.0,
         rescale_cfg=1.0,
     ):
-
         assert (
             len(n_timesteps) == self.num_quantizer
         )  # each layer has a number of steps

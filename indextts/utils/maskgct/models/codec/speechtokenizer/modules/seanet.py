@@ -70,9 +70,9 @@ class SEANetResnetBlock(nn.Module):
         true_skip: bool = True,
     ):
         super().__init__()
-        assert len(kernel_sizes) == len(
-            dilations
-        ), "Number of kernel sizes should match number of dilations"
+        assert len(kernel_sizes) == len(dilations), (
+            "Number of kernel sizes should match number of dilations"
+        )
         act = getattr(nn, activation) if activation != "Snake" else Snake1d
         hidden = dim // compress
         block = []

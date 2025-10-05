@@ -572,14 +572,13 @@ class RMVPE:
         # t3 = ttime()
         # print("hmvpe:%s\t%s\t%s\t%s"%(t1-t0,t2-t1,t3-t2,t3-t0))
         return f0
+
     def infer_from_audio_batch(self, audio, thred=0.03):
         # torch.cuda.synchronize()
         # t0 = ttime()
         if not torch.is_tensor(audio):
             audio = torch.from_numpy(audio)
-        mel = self.mel_extractor(
-            audio.float().to(self.device), center=True
-        )
+        mel = self.mel_extractor(audio.float().to(self.device), center=True)
         # print(123123123,mel.device.type)
         # torch.cuda.synchronize()
         # t1 = ttime()

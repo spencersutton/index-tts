@@ -63,7 +63,6 @@ class IndexTTS2:
     qwen_emo: "QwenEmotion"
     bpe_path: str
     emo_num: list[int]
-    mel_fn: Callable[[torch.Tensor], torch.Tensor]
     gr_progress: Callable[..., None] | None
 
     @property
@@ -143,6 +142,21 @@ class IndexTTS2:
         model.eval()
         print(">> bigvgan weights restored from:", name)
         return model
+
+    def mel_fn(self, x: float) -> torch.Tensor:
+        params = self.cfg.s2mel["preprocess_params"]
+        spect_params = params["spect_params"]
+        args = {
+            "n_fft": spect_params["n_fft"],
+            "win_size": spect_params["win_length"],
+            "hop_size": spect_params["hop_length"],
+            "num_mels": spect_params["n_mels"],
+            "sampling_rate": params["sr"],
+            "fmin": spect_params.get("fmin", 0),
+            "fmax": None if spect_params.get("fmax", "None") == "None" else 8000,
+            "center": False,
+        }
+        return mel_spectrogram(x, **args)
 
     def __init__(
         self,
@@ -255,25 +269,6 @@ class IndexTTS2:
 
         self.emo_matrix = list(torch.split(emo_matrix, self.emo_num))
         self.spk_matrix = list(torch.split(spk_matrix, self.emo_num))
-
-        mel_fn_args = {
-            "n_fft": self.cfg.s2mel["preprocess_params"]["spect_params"]["n_fft"],
-            "win_size": self.cfg.s2mel["preprocess_params"]["spect_params"][
-                "win_length"
-            ],
-            "hop_size": self.cfg.s2mel["preprocess_params"]["spect_params"][
-                "hop_length"
-            ],
-            "num_mels": self.cfg.s2mel["preprocess_params"]["spect_params"]["n_mels"],
-            "sampling_rate": self.cfg.s2mel["preprocess_params"]["sr"],
-            "fmin": self.cfg.s2mel["preprocess_params"]["spect_params"].get("fmin", 0),
-            "fmax": None
-            if self.cfg.s2mel["preprocess_params"]["spect_params"].get("fmax", "None")
-            == "None"
-            else 8000,
-            "center": False,
-        }
-        self.mel_fn = lambda x: mel_spectrogram(x, **mel_fn_args)
 
         # Cache reference audio:
         self.cache_spk_cond = None

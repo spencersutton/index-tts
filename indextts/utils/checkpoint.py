@@ -13,17 +13,17 @@
 # limitations under the License.
 
 import os
-import re
+from pathlib import Path
 
 import torch
 import yaml
 
 
-def load_checkpoint(model: torch.nn.Module, model_pth: str) -> dict:
+def load_checkpoint(model: torch.nn.Module, model_pth: Path) -> dict:
     checkpoint = torch.load(model_pth, map_location="cpu")
     checkpoint = checkpoint["model"] if "model" in checkpoint else checkpoint
     model.load_state_dict(checkpoint, strict=True)
-    info_path = re.sub(".pth$", ".yaml", model_pth)
+    info_path = model_pth.with_suffix(".yaml")
     configs = {}
     if os.path.exists(info_path):
         with open(info_path, "r") as fin:

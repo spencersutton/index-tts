@@ -22,10 +22,10 @@ from transformers import (
     Wav2Vec2BertModel,
 )
 from transformers.models.qwen3 import Qwen3ForCausalLM
+import bigvgan
 
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.s2mel.modules.audio import mel_spectrogram
-from indextts.s2mel.modules.bigvgan import bigvgan
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
 from indextts.s2mel.modules.commons import MyModel, load_checkpoint2
 from indextts.utils.checkpoint import load_checkpoint
@@ -150,9 +150,7 @@ class IndexTTS2:
         if self.use_cuda_kernel:
             # preload the CUDA kernel for BigVGAN
             try:
-                from indextts.s2mel.modules.bigvgan.alias_free_activation.cuda import (
-                    activation1d,
-                )
+                from bigvgan.alias_free_activation.cuda import activation1d
 
                 print(
                     ">> Preload custom CUDA kernel for BigVGAN",

@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+from typing import cast
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
@@ -29,6 +30,15 @@ def compute_codebook_perplexity(indices, codebook_size):
 
 
 class RepCodec(nn.Module):
+    codebook_size: int
+    codebook_dim: int
+    hidden_size: int
+    vocos_dim: int
+    vocos_intermediate_dim: int
+    vocos_num_layers: int
+    num_quantizers: int
+    downsample_scale: int
+
     def __init__(
         self,
         codebook_size=8192,
@@ -135,7 +145,7 @@ class RepCodec(nn.Module):
 
         self.reset_parameters()
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         # downsample
         if self.downsample_scale is not None and self.downsample_scale > 1:
             x = x.transpose(1, 2)
@@ -153,7 +163,7 @@ class RepCodec(nn.Module):
             all_commit_losses,
             all_codebook_losses,
             _,
-        ) = self.quantizer(x)
+        ) = cast(torch.Tensor, self.quantizer(x))
 
         # decoder
         x = self.decoder(quantized_out)
@@ -185,7 +195,7 @@ class RepCodec(nn.Module):
             all_commit_losses,
             all_codebook_losses,
             _,
-        ) = self.quantizer(x)
+        ) = cast(torch.Tensor, self.quantizer(x))
 
         if all_indices.shape[0] == 1:
             return all_indices.squeeze(0), quantized_out.transpose(1, 2)

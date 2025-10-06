@@ -42,11 +42,6 @@ def split_audio_whisper(audio_path, audio_name, target_dir="processed"):
 
         end_time = w.end
 
-        # calculate confidence
-        if len(w.words) > 0:
-            confidence = sum([s.probability for s in w.words]) / len(w.words)
-        else:
-            confidence = 0.0
         # clean text
         text = w.text.replace("...", "")
 

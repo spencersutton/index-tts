@@ -1,5 +1,3 @@
-import pytest
-from pathlib import Path
 from indextts.infer_v2 import IndexTTS2
 
 # Test skeletons for index-tts main functionality.

@@ -40,7 +40,6 @@ os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 
 
 class IndexTTS2:
-    semantic_codec: RepCodec
     semantic_model: Wav2Vec2BertModel
     semantic_mean: Tensor
     semantic_std: Tensor
@@ -65,6 +64,19 @@ class IndexTTS2:
     qwen_emo: "QwenEmotion"
     emo_num: list[int]
     gr_progress: Callable[..., None] | None
+
+    @property
+    @lru_cache(maxsize=1)
+    def semantic_codec(self) -> RepCodec:
+        model = build_semantic_codec(self.cfg.semantic_codec)
+        chkpt = hf_hub_download(
+            "amphion/MaskGCT", filename="semantic_codec/model.safetensors"
+        )
+        load_model(model, chkpt)
+        model = model.to(self.device)
+        model.eval()
+        print(">> semantic_codec weights restored from: {}".format(chkpt))
+        return model
 
     @property
     @lru_cache(maxsize=1)
@@ -249,15 +261,6 @@ class IndexTTS2:
         self.semantic_model.eval()
         self.semantic_mean = semantic_mean.to(self.device)
         self.semantic_std = semantic_std.to(self.device)
-
-        semantic_codec = build_semantic_codec(self.cfg.semantic_codec)
-        semantic_code_ckpt = hf_hub_download(
-            "amphion/MaskGCT", filename="semantic_codec/model.safetensors"
-        )
-        load_model(semantic_codec, semantic_code_ckpt)
-        self.semantic_codec = semantic_codec.to(self.device)
-        self.semantic_codec.eval()
-        print(">> semantic_codec weights restored from: {}".format(semantic_code_ckpt))
 
         emo_matrix = torch.load(self.model_dir / self.cfg.emo_matrix)
         emo_matrix = emo_matrix.to(self.device)

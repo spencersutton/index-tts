@@ -7,6 +7,7 @@ import warnings
 from subprocess import CalledProcessError
 from typing import Callable
 
+import bigvgan
 import librosa
 import torch
 import torch.nn.functional as F
@@ -22,7 +23,6 @@ from transformers import (
     Wav2Vec2BertModel,
 )
 from transformers.models.qwen3 import Qwen3ForCausalLM
-import bigvgan
 
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.s2mel.modules.audio import mel_spectrogram

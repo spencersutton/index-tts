@@ -4,7 +4,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from transformers import GPT2Config
-from transformers.cache_utils import DynamicCache
 from transformers.generation.logits_process import LogitsProcessorList
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 from transformers.utils.model_parallel_utils import assert_device_map, get_device_map

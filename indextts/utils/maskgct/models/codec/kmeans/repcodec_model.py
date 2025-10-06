@@ -14,6 +14,7 @@ from indextts.utils.maskgct.models.codec.kmeans.vocos import VocosBackbone
 def init_weights(m):
     if isinstance(m, nn.Conv1d):
         nn.init.trunc_normal_(m.weight, std=0.02)
+        assert m.bias is not None
         nn.init.constant_(m.bias, 0)
     if isinstance(m, nn.Linear):
         nn.init.trunc_normal_(m.weight, std=0.02)
@@ -91,7 +92,7 @@ class RepCodec(nn.Module):
         self.num_quantizers = num_quantizers
         self.downsample_scale = downsample_scale
 
-        if self.downsample_scale != None and self.downsample_scale > 1:
+        if self.downsample_scale is not None and self.downsample_scale > 1:
             self.down = nn.Conv1d(
                 self.hidden_size, self.hidden_size, kernel_size=3, stride=2, padding=1
             )
@@ -136,7 +137,7 @@ class RepCodec(nn.Module):
 
     def forward(self, x):
         # downsample
-        if self.downsample_scale != None and self.downsample_scale > 1:
+        if self.downsample_scale is not None and self.downsample_scale > 1:
             x = x.transpose(1, 2)
             x = self.down(x)
             x = F.gelu(x)
@@ -157,8 +158,9 @@ class RepCodec(nn.Module):
         # decoder
         x = self.decoder(quantized_out)
 
+        x_rec = None
         # up
-        if self.downsample_scale != None and self.downsample_scale > 1:
+        if self.downsample_scale is not None and self.downsample_scale > 1:
             x = x.transpose(1, 2)
             x = F.interpolate(x, scale_factor=2, mode="nearest")
             x_rec = self.up(x).transpose(1, 2)
@@ -169,7 +171,7 @@ class RepCodec(nn.Module):
         return x_rec, codebook_loss, all_indices
 
     def quantize(self, x):
-        if self.downsample_scale != None and self.downsample_scale > 1:
+        if self.downsample_scale is not None and self.downsample_scale > 1:
             x = x.transpose(1, 2)
             x = self.down(x)
             x = F.gelu(x)

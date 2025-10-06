@@ -89,7 +89,15 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
     def store_mel_emb(self, mel_emb):
         self.cached_mel_emb = mel_emb
 
-    def prepare_inputs_for_generation(self, input_ids, past_key_values=None, **kwargs):
+    def prepare_inputs_for_generation(
+        self,
+        input_ids: torch.Tensor,
+        past_key_values=None,
+        attention_mask: torch.LongTensor | None = None,
+        inputs_embeds: torch.FloatTensor | None = None,
+        cache_position: torch.LongTensor | None = None,
+        **kwargs,
+    ):
         token_type_ids = kwargs.get("token_type_ids", None)  # usually None
         if not self.kv_cache:
             past_key_values = None

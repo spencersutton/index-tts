@@ -1,5 +1,6 @@
 import os
 from subprocess import CalledProcessError
+from typing import Callable, Any
 
 from indextts.utils.maskgct.models.codec.kmeans.repcodec_model import RepCodec
 
@@ -19,7 +20,6 @@ from modelscope import AutoModelForCausalLM
 from omegaconf import OmegaConf
 from safetensors.torch import load_model
 from transformers import AutoTokenizer, SeamlessM4TFeatureExtractor, Wav2Vec2BertModel
-from transformers.utils.generic import ModelOutput
 
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.s2mel.modules.audio import mel_spectrogram
@@ -34,6 +34,8 @@ from indextts.utils.maskgct_utils import build_semantic_codec, build_semantic_mo
 class IndexTTS2:
     semantic_codec: RepCodec
     semantic_model: Wav2Vec2BertModel
+    semantic_mean: torch.Tensor
+    semantic_std: torch.Tensor
     gpt: UnifiedVoice
     s2mel: MyModel
     bigvgan: "bigvgan.BigVGAN"
@@ -49,11 +51,20 @@ class IndexTTS2:
     cache_emo_cond: torch.Tensor | None
     cache_emo_audio_prompt: str | None
     cache_mel: torch.Tensor | None
+    cache_s2mel_prompt: torch.Tensor | None
     dtype: torch.dtype | None
     device: str
     use_fp16: bool
     use_cuda_kernel: bool
     stop_mel_token: int
+    cfg: Any
+    model_dir: str
+    qwen_emo: "QwenEmotion"
+    gpt_path: str
+    bpe_path: str
+    emo_num: list[int]
+    mel_fn: Callable[[torch.Tensor], torch.Tensor]
+    gr_progress: Callable[..., None] | None
 
     def __init__(
         self,
@@ -152,13 +163,13 @@ class IndexTTS2:
         self.extract_features = SeamlessM4TFeatureExtractor.from_pretrained(
             "facebook/w2v-bert-2.0"
         )
-        self.semantic_model, self.semantic_mean, self.semantic_std = (
-            build_semantic_model(os.path.join(self.model_dir, self.cfg.w2v_stat))
+        semantic_model, semantic_mean, semantic_std = build_semantic_model(
+            os.path.join(self.model_dir, self.cfg.w2v_stat)
         )
-        self.semantic_model = self.semantic_model.to(self.device)
+        self.semantic_model = semantic_model.to(self.device)  # type: ignore[arg-type]
         self.semantic_model.eval()
-        self.semantic_mean = self.semantic_mean.to(self.device)
-        self.semantic_std = self.semantic_std.to(self.device)
+        self.semantic_mean = semantic_mean.to(self.device)
+        self.semantic_std = semantic_std.to(self.device)
 
         semantic_codec = build_semantic_codec(self.cfg.semantic_codec)
         semantic_code_ckpt = hf_hub_download(
@@ -270,7 +281,12 @@ class IndexTTS2:
         feat = (feat - self.semantic_mean) / self.semantic_std
         return feat
 
-    def interval_silence(self, wavs, sampling_rate=22050, interval_silence=200):
+    def interval_silence(
+        self,
+        wavs: list[torch.Tensor],
+        sampling_rate: int = 22050,
+        interval_silence: int = 200,
+    ) -> torch.Tensor:
         """
         Silences to be insert between generated segments.
         """
@@ -284,7 +300,12 @@ class IndexTTS2:
         sil_dur = int(sampling_rate * interval_silence / 1000.0)
         return torch.zeros(channel_size, sil_dur)
 
-    def insert_interval_silence(self, wavs, sampling_rate=22050, interval_silence=200):
+    def insert_interval_silence(
+        self,
+        wavs: list[torch.Tensor],
+        sampling_rate: int = 22050,
+        interval_silence: int = 200,
+    ) -> list[torch.Tensor]:
         """
         Insert silences between generated segments.
         wavs: List[torch.tensor]
@@ -307,7 +328,7 @@ class IndexTTS2:
 
         return wavs_list
 
-    def _set_gr_progress(self, value, desc):
+    def _set_gr_progress(self, value: float, desc: str) -> None:
         if self.gr_progress is not None:
             self.gr_progress(value, desc=desc)
 
@@ -315,7 +336,7 @@ class IndexTTS2:
         self,
         audio_path: str,
         max_audio_length_seconds: int,
-        verbose=False,
+        verbose: bool = False,
         sr: int | float | None = None,
     ) -> tuple[torch.Tensor, int]:
         if sr is None:
@@ -333,7 +354,9 @@ class IndexTTS2:
             audio = audio[:, :max_audio_samples]
         return audio, int(sr)
 
-    def normalize_emo_vec(self, emo_vector, apply_bias=True):
+    def normalize_emo_vec(
+        self, emo_vector: list[float], apply_bias: bool = True
+    ) -> list[float]:
         # apply biased emotion factors for better user experience,
         # by de-emphasizing emotions that can cause strange results
         if apply_bias:
@@ -527,6 +550,7 @@ class IndexTTS2:
             self.cache_mel = ref_mel
         else:
             style = self.cache_s2mel_style
+            assert style is not None
             assert self.cache_s2mel_prompt is not None
             prompt_condition = self.cache_s2mel_prompt
             spk_cond_emb = self.cache_spk_cond
@@ -853,7 +877,9 @@ class IndexTTS2:
             yield (sampling_rate, wav_data)
 
 
-def find_most_similar_cosine(query_vector, matrix):
+def find_most_similar_cosine(
+    query_vector: torch.Tensor, matrix: torch.Tensor
+) -> torch.Tensor:
     query_vector = query_vector.float()
     matrix = matrix.float()
 
@@ -863,7 +889,17 @@ def find_most_similar_cosine(query_vector, matrix):
 
 
 class QwenEmotion:
-    def __init__(self, model_dir):
+    model_dir: str
+    tokenizer: Any
+    model: Any
+    prompt: str
+    cn_key_to_en: dict[str, str]
+    desired_vector_order: list[str]
+    melancholic_words: set[str]
+    max_score: float
+    min_score: float
+
+    def __init__(self, model_dir: str) -> None:
         self.model_dir = model_dir
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_dir)
         self.model = AutoModelForCausalLM.from_pretrained(
@@ -909,10 +945,10 @@ class QwenEmotion:
         self.max_score = 1.2
         self.min_score = 0.0
 
-    def clamp_score(self, value):
+    def clamp_score(self, value: float) -> float:
         return max(self.min_score, min(self.max_score, value))
 
-    def convert(self, content):
+    def convert(self, content: dict[str, float]) -> dict[str, float]:
         # generate emotion vector dictionary:
         # - insert values in desired order (Python 3.7+ `dict` remembers insertion order)
         # - convert Chinese keys to English
@@ -930,7 +966,7 @@ class QwenEmotion:
 
         return emotion_dict
 
-    def inference(self, text_input):
+    def inference(self, text_input: str) -> dict[str, float]:
         messages = [
             {"role": "system", "content": f"{self.prompt}"},
             {"role": "user", "content": f"{text_input}"},

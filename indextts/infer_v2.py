@@ -276,7 +276,9 @@ class IndexTTS2:
         self.model_version = self.cfg.version if hasattr(self.cfg, "version") else None
 
     @torch.no_grad()
-    def get_emb(self, input_features, attention_mask) -> torch.Tensor:
+    def get_emb(
+        self, input_features: torch.Tensor, attention_mask: torch.Tensor
+    ) -> torch.Tensor:
         vq_emb = self.semantic_model(
             input_features=input_features,
             attention_mask=attention_mask,
@@ -522,8 +524,8 @@ class IndexTTS2:
             inputs = self.extract_features(
                 audio_16k, sampling_rate=16000, return_tensors="pt"
             )
-            input_features = inputs["input_features"]
-            attention_mask = inputs["attention_mask"]
+            input_features: torch.Tensor = inputs["input_features"]
+            attention_mask: torch.Tensor = inputs["attention_mask"]
             input_features = input_features.to(self.device)
             attention_mask = attention_mask.to(self.device)
             spk_cond_emb = self.get_emb(input_features, attention_mask)

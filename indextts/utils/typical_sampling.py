@@ -1,5 +1,7 @@
 import torch
-from transformers import TypicalLogitsWarper as BaseTypicalLogitsWarper
+from transformers.generation.logits_process import (
+    TypicalLogitsWarper as BaseTypicalLogitsWarper,
+)
 
 
 class TypicalLogitsWarper(BaseTypicalLogitsWarper):

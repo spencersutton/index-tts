@@ -43,7 +43,6 @@ class IndexTTS2:
     semantic_mean: torch.Tensor
     semantic_std: torch.Tensor
     gpt: UnifiedVoice
-    s2mel: MyModel
     bigvgan: "bigvgan.BigVGAN"
     tokenizer: TextTokenizer
     normalizer: TextNormalizer
@@ -81,6 +80,29 @@ class IndexTTS2:
         model = model.to(self.device)
         model.eval()
         print(">> campplus_model weights restored from:", path)
+        return model
+
+    @property
+    @lru_cache(maxsize=1)
+    def s2mel(self):
+        path = os.path.join(self.model_dir, self.cfg.s2mel_checkpoint)
+        model = MyModel(self.cfg.s2mel, use_gpt_latent=True)
+        model, _, _, _ = load_checkpoint2(
+            model,
+            None,
+            path,
+            load_only_params=True,
+            ignore_modules=[],
+            is_distributed=False,
+        )
+        assert isinstance(model, MyModel)
+        model = model.to(self.device)
+        estimator = model.models["cfm"].estimator
+        assert isinstance(estimator, torch.nn.Module)
+        assert callable(estimator.setup_caches)
+        estimator.setup_caches(max_batch_size=1, max_seq_length=8192)
+        model.eval()
+        print(">> s2mel weights restored from:", path)
         return model
 
     def __init__(
@@ -194,26 +216,6 @@ class IndexTTS2:
         self.semantic_codec = semantic_codec.to(self.device)
         self.semantic_codec.eval()
         print(">> semantic_codec weights restored from: {}".format(semantic_code_ckpt))
-
-        s2mel_path = os.path.join(self.model_dir, self.cfg.s2mel_checkpoint)
-        s2mel = MyModel(self.cfg.s2mel, use_gpt_latent=True)
-        s2mel, _, _, _ = load_checkpoint2(
-            s2mel,
-            None,
-            s2mel_path,
-            load_only_params=True,
-            ignore_modules=[],
-            is_distributed=False,
-        )
-        assert isinstance(s2mel, MyModel)
-        self.s2mel = s2mel.to(self.device)
-        estimator_instance = self.s2mel.models["cfm"].estimator
-        assert isinstance(estimator_instance, torch.nn.Module)
-        cache_setup_function = estimator_instance.setup_caches
-        assert callable(cache_setup_function)
-        cache_setup_function(max_batch_size=1, max_seq_length=8192)
-        self.s2mel.eval()
-        print(">> s2mel weights restored from:", s2mel_path)
 
         bigvgan_name = self.cfg.vocoder.name
         self.bigvgan = bigvgan.BigVGAN.from_pretrained(

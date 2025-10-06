@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import json
 import os
 import random
@@ -6,7 +7,7 @@ import time
 import warnings
 from pathlib import Path
 from subprocess import CalledProcessError
-from typing import Callable
+from typing import Callable, cast
 
 import bigvgan
 import librosa
@@ -15,7 +16,7 @@ import torch.nn.functional as F
 import torchaudio
 from huggingface_hub import hf_hub_download
 from modelscope import AutoModelForCausalLM
-from omegaconf import DictConfig, ListConfig, OmegaConf
+from omegaconf import OmegaConf
 from pyparsing import lru_cache
 from safetensors.torch import load_model
 from torch import Tensor
@@ -39,6 +40,23 @@ from indextts.utils.maskgct_utils import build_semantic_codec, build_semantic_mo
 os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 
 
+@dataclass
+class Config:
+    dataset: dict[str, object]
+    emo_matrix: str
+    emo_num: list[int]
+    gpt_checkpoint: str
+    gpt: dict
+    qwen_emo_path: str
+    s2mel_checkpoint: str
+    s2mel: dict
+    semantic_codec: str
+    spk_matrix: str
+    vocoder: dict
+    w2v_stat: str
+    version: str | None = None
+
+
 class IndexTTS2:
     semantic_model: Wav2Vec2BertModel
     semantic_mean: Tensor
@@ -59,7 +77,7 @@ class IndexTTS2:
     use_fp16: bool
     use_cuda_kernel: bool
     stop_mel_token: int
-    cfg: DictConfig | ListConfig
+    cfg: Config
     model_dir: Path
     qwen_emo: "QwenEmotion"
     emo_num: list[int]
@@ -134,11 +152,11 @@ class IndexTTS2:
     @lru_cache(maxsize=1)
     def tokenizer(self) -> TextTokenizer:
         print(">> loading tokenizer...")
-        path = self.model_dir / self.cfg.dataset["bpe_model"]
+        path = self.model_dir / str(self.cfg.dataset["bpe_model"])
         normalizer = TextNormalizer()
         normalizer.load()
         print(">> TextNormalizer loaded")
-        tokenizer = TextTokenizer(path, normalizer)
+        tokenizer = TextTokenizer(str(path), normalizer)
         print(">> bpe model loaded from:", path)
         return tokenizer
 
@@ -146,7 +164,7 @@ class IndexTTS2:
     @lru_cache(maxsize=1)
     def bigvgan(self) -> "bigvgan.BigVGAN":
         print(">> loading bigvgan...")
-        name = self.cfg.vocoder.name
+        name = self.cfg.vocoder["name"]
         model = bigvgan.BigVGAN.from_pretrained(
             name, use_cuda_kernel=self.use_cuda_kernel
         )
@@ -215,12 +233,12 @@ class IndexTTS2:
             self.use_cuda_kernel = False
             print(">> Be patient, it may take a while to run in CPU mode.")
 
-        self.cfg = OmegaConf.load(cfg_path)
+        self.cfg = cast(Config, OmegaConf.load(cfg_path))
         self.model_dir = Path(model_dir)
         self.dtype = torch.float16 if self.use_fp16 else None
-        self.stop_mel_token = self.cfg.gpt.stop_mel_token
+        self.stop_mel_token = self.cfg.gpt["stop_mel_token"]
 
-        self.qwen_emo = QwenEmotion(self.model_dir / self.cfg.qwen_emo_path)
+        self.qwen_emo = QwenEmotion(str(self.model_dir / self.cfg.qwen_emo_path))
 
         if use_deepspeed:
             try:
@@ -255,7 +273,7 @@ class IndexTTS2:
             "facebook/w2v-bert-2.0"
         )
         semantic_model, semantic_mean, semantic_std = build_semantic_model(
-            self.model_dir / self.cfg.w2v_stat
+            str(self.model_dir / self.cfg.w2v_stat)
         )
         self.semantic_model = semantic_model.to(self.device)  # type: ignore[arg-type]
         self.semantic_model.eval()

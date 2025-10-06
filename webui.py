@@ -6,6 +6,7 @@ import sys
 import threading
 import time
 import warnings
+from pathlib import Path
 
 import gradio as gr
 import pandas as pd
@@ -17,9 +18,9 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(current_dir)
-sys.path.append(os.path.join(current_dir, "indextts"))
+current_dir = Path(__file__).parent.resolve()
+sys.path.append(str(current_dir))
+sys.path.append(str(current_dir / "indextts"))
 
 
 parser = argparse.ArgumentParser(
@@ -62,7 +63,7 @@ parser.add_argument(
 )
 cmd_args = parser.parse_args()
 
-if not os.path.exists(cmd_args.model_dir):
+if not Path(cmd_args.model_dir).exists():
     print(
         f"Model directory {cmd_args.model_dir} does not exist. Please download the model first."
     )
@@ -75,8 +76,8 @@ for file in [
     "s2mel.pth",
     "wav2vec2bert_stats.pt",
 ]:
-    file_path = os.path.join(cmd_args.model_dir, file)
-    if not os.path.exists(file_path):
+    file_path = Path(cmd_args.model_dir) / file
+    if not file_path.exists():
         print(f"Required file {file_path} does not exist. Please download it.")
         sys.exit(1)
 
@@ -85,7 +86,7 @@ i18n = I18nAuto(language="Auto")
 MODE = "local"
 tts = IndexTTS2(
     model_dir=cmd_args.model_dir,
-    cfg_path=os.path.join(cmd_args.model_dir, "config.yaml"),
+    cfg_path=str(Path(cmd_args.model_dir) / "config.yaml"),
     use_fp16=cmd_args.fp16,
     use_deepspeed=cmd_args.deepspeed,
     use_cuda_kernel=cmd_args.cuda_kernel,
@@ -112,14 +113,14 @@ with open("examples/cases.jsonl", "r", encoding="utf-8") as f:
             continue
         example = json.loads(line)
         if example.get("emo_audio", None):
-            emo_audio_path = os.path.join("examples", example["emo_audio"])
+            emo_audio_path = Path("examples") / example["emo_audio"]
         else:
             emo_audio_path = None
 
         example_cases.append(
             [
-                os.path.join(
-                    "examples", example.get("prompt_audio", "sample_prompt.wav")
+                str(
+                    Path("examples") / example.get("prompt_audio", "sample_prompt.wav")
                 ),
                 EMO_CHOICES_ALL[example.get("emo_mode", 0)],
                 example.get("text"),
@@ -168,7 +169,7 @@ def gen_single(
 ):
     output_path = None
     if not output_path:
-        output_path = os.path.join("outputs", f"spk_{int(time.time())}.wav")
+        output_path = str(Path("outputs") / f"spk_{int(time.time())}.wav")
     # set gradio progress
     tts.gr_progress = progress
     (

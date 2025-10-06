@@ -103,7 +103,6 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
             past_key_values = None
         # only last token for inputs_ids if past is defined in kwargs
         if past_key_values:
-            past_key_values = DynamicCache.from_legacy_cache(past_key_values)
             input_ids = input_ids[:, -1].unsqueeze(-1)
             if token_type_ids is not None:
                 token_type_ids = token_type_ids[:, -1].unsqueeze(-1)
@@ -573,11 +572,11 @@ class UnifiedVoice(nn.Module):
 
     def get_logits(
         self,
-        speech_conditioning_inputs,
-        first_inputs,
-        first_head,
-        second_inputs=None,
-        second_head=None,
+        speech_conditioning_inputs: torch.Tensor,
+        first_inputs: torch.Tensor,
+        first_head: nn.Linear,
+        second_inputs: torch.Tensor | None = None,
+        second_head: nn.Linear | None = None,
         get_attns=False,
         return_latent=False,
     ):
@@ -599,6 +598,7 @@ class UnifiedVoice(nn.Module):
         enc = self.final_norm(enc)
 
         if return_latent:
+            assert second_inputs is not None
             return enc[:, : first_inputs.shape[1]], enc[:, -second_inputs.shape[1] :]
 
         first_logits = enc[:, : first_inputs.shape[1]]
@@ -606,6 +606,7 @@ class UnifiedVoice(nn.Module):
         first_logits = first_logits.permute(0, 2, 1)
         if second_inputs is not None:
             second_logits = enc[:, -second_inputs.shape[1] :]
+            assert second_head is not None
             second_logits = second_head(second_logits)
             second_logits = second_logits.permute(0, 2, 1)
             return first_logits, second_logits
@@ -635,6 +636,7 @@ class UnifiedVoice(nn.Module):
         elif self.condition_type == "gst":
             if speech_conditioning_input.ndim == 4:
                 speech_conditioning_input = speech_conditioning_input.squeeze(1)
+            assert isinstance(self.gst_encoder, nn.Module)
             conds = self.gst_encoder(
                 speech_conditioning_input.transpose(1, 2)
             )  # (b, 1, d)

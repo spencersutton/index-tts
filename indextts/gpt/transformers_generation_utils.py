@@ -292,7 +292,7 @@ class GenerateBeamEncoderDecoderOutput(ModelOutput):
             the model's documentation. Usually, a [`~cache_utils.Cache`] instance.
     """
 
-    sequences: torch.LongTensor = None
+    sequences: torch.LongTensor | None = None
     sequences_scores: Optional[torch.FloatTensor] = None
     scores: Optional[Tuple[torch.FloatTensor]] = None
     logits: Optional[Tuple[torch.FloatTensor]] = None

@@ -12,6 +12,7 @@ import librosa
 import torch
 import torch.nn.functional as F
 import torchaudio
+from torch import Tensor
 from huggingface_hub import hf_hub_download
 from modelscope import AutoModelForCausalLM
 from omegaconf import DictConfig, ListConfig, OmegaConf
@@ -40,19 +41,19 @@ os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 class IndexTTS2:
     semantic_codec: RepCodec
     semantic_model: Wav2Vec2BertModel
-    semantic_mean: torch.Tensor
-    semantic_std: torch.Tensor
+    semantic_mean: Tensor
+    semantic_std: Tensor
     normalizer: TextNormalizer
     extract_features: SeamlessM4TFeatureExtractor
-    emo_matrix: list[torch.Tensor]
-    spk_matrix: list[torch.Tensor]
-    cache_spk_cond: torch.Tensor | None
-    cache_s2mel_style: torch.Tensor | None
+    emo_matrix: list[Tensor]
+    spk_matrix: list[Tensor]
+    cache_spk_cond: Tensor | None
+    cache_s2mel_style: Tensor | None
     cache_spk_audio_prompt: str | None
-    cache_emo_cond: torch.Tensor | None
+    cache_emo_cond: Tensor | None
     cache_emo_audio_prompt: str | None
-    cache_mel: torch.Tensor | None
-    cache_s2mel_prompt: torch.Tensor | None
+    cache_mel: Tensor | None
+    cache_s2mel_prompt: Tensor | None
     dtype: torch.dtype | None
     device: str
     use_fp16: bool
@@ -143,7 +144,7 @@ class IndexTTS2:
         print(">> bigvgan weights restored from:", name)
         return model
 
-    def mel_fn(self, x: float) -> torch.Tensor:
+    def mel_fn(self, x: float) -> Tensor:
         params = self.cfg.s2mel["preprocess_params"]
         spect_params = params["spect_params"]
         args = {
@@ -284,9 +285,7 @@ class IndexTTS2:
         self.model_version = self.cfg.version if hasattr(self.cfg, "version") else None
 
     @torch.no_grad()
-    def get_emb(
-        self, input_features: torch.Tensor, attention_mask: torch.Tensor
-    ) -> torch.Tensor:
+    def get_emb(self, input_features: Tensor, attention_mask: Tensor) -> Tensor:
         vq_emb = self.semantic_model(
             input_features=input_features,
             attention_mask=attention_mask,
@@ -298,10 +297,10 @@ class IndexTTS2:
 
     def interval_silence(
         self,
-        wavs: list[torch.Tensor],
+        wavs: list[Tensor],
         sampling_rate: int = 22050,
         interval_silence: int = 200,
-    ) -> torch.Tensor:
+    ) -> Tensor:
         """
         Silences to be insert between generated segments.
         """
@@ -317,10 +316,10 @@ class IndexTTS2:
 
     def insert_interval_silence(
         self,
-        wavs: list[torch.Tensor],
+        wavs: list[Tensor],
         sampling_rate: int = 22050,
         interval_silence: int = 200,
-    ) -> list[torch.Tensor]:
+    ) -> list[Tensor]:
         """
         Insert silences between generated segments.
         wavs: List[torch.tensor]
@@ -353,7 +352,7 @@ class IndexTTS2:
         max_audio_length_seconds: int,
         verbose: bool = False,
         sr: int | float | None = None,
-    ) -> tuple[torch.Tensor, int]:
+    ) -> tuple[Tensor, int]:
         if sr is None:
             audio, sr = librosa.load(audio_path)
         else:
@@ -424,31 +423,29 @@ class IndexTTS2:
                 more_segment_before,
                 **generation_kwargs,
             )
-        else:
-            try:
-                return list(
-                    self.infer_generator(
-                        spk_audio_prompt,
-                        text,
-                        output_path,
-                        emo_audio_prompt,
-                        emo_alpha,
-                        emo_vector,
-                        use_emo_text,
-                        emo_text,
-                        use_random,
-                        interval_silence,
-                        verbose,
-                        max_text_tokens_per_segment,
-                        stream_return,
-                        more_segment_before,
-                        **generation_kwargs,
-                    )
-                )[0]
-            except IndexError:
-                return None
+        # Collect only the first yielded value from the generator without
+        # materializing the whole sequence. Using next(..., None) keeps the
+        # original behavior while being more efficient and clearer.
+        gen = self.infer_generator(
+            spk_audio_prompt,
+            text,
+            output_path,
+            emo_audio_prompt,
+            emo_alpha,
+            emo_vector,
+            use_emo_text,
+            emo_text,
+            use_random,
+            interval_silence,
+            verbose,
+            max_text_tokens_per_segment,
+            stream_return,
+            more_segment_before,
+            **generation_kwargs,
+        )
+        return next(gen, None)
 
-    cache_s2mel_prompt: torch.Tensor | None = None
+    cache_s2mel_prompt: Tensor | None = None
 
     def infer_generator(
         self,
@@ -512,7 +509,7 @@ class IndexTTS2:
             # must always use alpha=1.0 when we don't have an external reference voice
             emo_alpha = 1.0
 
-        prompt_condition: torch.Tensor
+        prompt_condition: Tensor
 
         # Only regenerate when the reference audio has changed, to improve speed
         if (
@@ -532,8 +529,8 @@ class IndexTTS2:
             inputs = self.extract_features(
                 audio_16k, sampling_rate=16000, return_tensors="pt"
             )
-            input_features: torch.Tensor = inputs["input_features"]
-            attention_mask: torch.Tensor = inputs["attention_mask"]
+            input_features: Tensor = inputs["input_features"]
+            attention_mask: Tensor = inputs["attention_mask"]
             input_features = input_features.to(self.device)
             attention_mask = attention_mask.to(self.device)
             spk_cond_emb = self.get_emb(input_features, attention_mask)
@@ -646,6 +643,7 @@ class IndexTTS2:
             print("segments count:", segments_count)
             print("max_text_tokens_per_segment:", max_text_tokens_per_segment)
             print(*segments, sep="\n")
+
         do_sample = generation_kwargs.pop("do_sample", True)
         top_p = generation_kwargs.pop("top_p", 0.8)
         top_k = generation_kwargs.pop("top_k", 30)
@@ -744,7 +742,7 @@ class IndexTTS2:
                     )
                     has_warned = True
 
-                assert isinstance(codes, torch.Tensor)
+                assert isinstance(codes, Tensor)
                 code_lens = torch.tensor(
                     [codes.shape[-1]], device=codes.device, dtype=codes.dtype
                 )
@@ -807,7 +805,7 @@ class IndexTTS2:
                     inference_cfg_rate = 0.7
                     latent = self.s2mel.models["gpt_layer"](latent)
                     S_infer = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1))
-                    assert isinstance(S_infer, torch.Tensor)
+                    assert isinstance(S_infer, Tensor)
                     S_infer = S_infer.transpose(1, 2)
                     S_infer = S_infer + latent
                     target_lengths = (code_lens * 1.72).long()
@@ -818,7 +816,7 @@ class IndexTTS2:
                     cat_condition = torch.cat([prompt_condition, cond], dim=1)
                     inference_output = self.s2mel.models["cfm"].inference
                     assert callable(inference_output)
-                    vc_target: torch.Tensor = inference_output(
+                    vc_target: Tensor = inference_output(
                         cat_condition,
                         torch.LongTensor([cat_condition.size(1)]).to(cond.device),
                         ref_mel,
@@ -832,7 +830,7 @@ class IndexTTS2:
                     s2mel_time += time.perf_counter() - m_start_time
 
                     m_start_time = time.perf_counter()
-                    audio_waveform: torch.Tensor = self.bigvgan(vc_target.float())
+                    audio_waveform: Tensor = self.bigvgan(vc_target.float())
                     wav = audio_waveform.squeeze().unsqueeze(0)
                     print(wav.shape)
                     bigvgan_time += time.perf_counter() - m_start_time
@@ -892,15 +890,12 @@ class IndexTTS2:
             yield (sampling_rate, wav_data)
 
 
-def find_most_similar_cosine(
-    query_vector: torch.Tensor, matrix: torch.Tensor
-) -> torch.Tensor:
+def find_most_similar_cosine(query_vector: Tensor, matrix: Tensor) -> Tensor:
     query_vector = query_vector.float()
     matrix = matrix.float()
 
     similarities = F.cosine_similarity(query_vector, matrix, dim=1)
-    most_similar_index = torch.argmax(similarities)
-    return most_similar_index
+    return torch.argmax(similarities)
 
 
 class QwenEmotion:

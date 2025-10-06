@@ -127,7 +127,6 @@ def hash_numpy_array(audio_path):
 
 
 def get_se(audio_path, vc_model, target_dir="processed", vad=True):
-    device = vc_model.device
     version = vc_model.version
     print("OpenVoice version:", version)
 

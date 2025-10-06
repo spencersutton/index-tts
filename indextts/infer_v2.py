@@ -5,7 +5,7 @@ import re
 import time
 import warnings
 from subprocess import CalledProcessError
-from typing import Any, Callable
+from typing import Callable
 
 import librosa
 import torch
@@ -13,9 +13,15 @@ import torch.nn.functional as F
 import torchaudio
 from huggingface_hub import hf_hub_download
 from modelscope import AutoModelForCausalLM
-from omegaconf import OmegaConf
+from omegaconf import DictConfig, ListConfig, OmegaConf
 from safetensors.torch import load_model
-from transformers import AutoTokenizer, SeamlessM4TFeatureExtractor, Wav2Vec2BertModel
+from transformers import (
+    AutoTokenizer,
+    Qwen2Tokenizer,
+    SeamlessM4TFeatureExtractor,
+    Wav2Vec2BertModel,
+)
+from transformers.models.qwen3 import Qwen3ForCausalLM
 
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.s2mel.modules.audio import mel_spectrogram
@@ -56,7 +62,7 @@ class IndexTTS2:
     use_fp16: bool
     use_cuda_kernel: bool
     stop_mel_token: int
-    cfg: Any
+    cfg: DictConfig | ListConfig
     model_dir: str
     qwen_emo: "QwenEmotion"
     gpt_path: str
@@ -889,8 +895,8 @@ def find_most_similar_cosine(
 
 class QwenEmotion:
     model_dir: str
-    tokenizer: Any
-    model: Any
+    tokenizer: Qwen2Tokenizer
+    model: Qwen3ForCausalLM
     prompt: str
     cn_key_to_en: dict[str, str]
     desired_vector_order: list[str]
@@ -976,11 +982,13 @@ class QwenEmotion:
             add_generation_prompt=True,
             enable_thinking=False,
         )
-        model_inputs = self.tokenizer([text], return_tensors="pt").to(self.model.device)
+        model_inputs = self.tokenizer([str(text)], return_tensors="pt").to(
+            self.model.device
+        )
 
         # conduct text completion
         generated_ids = self.model.generate(
-            **model_inputs,
+            **model_inputs,  # pyright: ignore[reportArgumentType]
             max_new_tokens=32768,
             pad_token_id=self.tokenizer.eos_token_id,
         )

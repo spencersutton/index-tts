@@ -4,6 +4,7 @@ import random
 import re
 import time
 import warnings
+from pathlib import Path
 from subprocess import CalledProcessError
 from typing import Callable
 
@@ -12,12 +13,12 @@ import librosa
 import torch
 import torch.nn.functional as F
 import torchaudio
-from torch import Tensor
 from huggingface_hub import hf_hub_download
 from modelscope import AutoModelForCausalLM
 from omegaconf import DictConfig, ListConfig, OmegaConf
 from pyparsing import lru_cache
 from safetensors.torch import load_model
+from torch import Tensor
 from transformers import (
     AutoTokenizer,
     Qwen2Tokenizer,
@@ -60,9 +61,8 @@ class IndexTTS2:
     use_cuda_kernel: bool
     stop_mel_token: int
     cfg: DictConfig | ListConfig
-    model_dir: str
+    model_dir: Path
     qwen_emo: "QwenEmotion"
-    bpe_path: str
     emo_num: list[int]
     gr_progress: Callable[..., None] | None
 
@@ -83,7 +83,7 @@ class IndexTTS2:
     @lru_cache(maxsize=1)
     def s2mel(self):
         print(">> loading s2mel...")
-        path = os.path.join(self.model_dir, self.cfg.s2mel_checkpoint)
+        path = self.model_dir / self.cfg.s2mel_checkpoint
         model = MyModel(self.cfg.s2mel, use_gpt_latent=True)
         model, _, _, _ = load_checkpoint2(
             model,
@@ -108,7 +108,7 @@ class IndexTTS2:
     def gpt(self) -> UnifiedVoice:
         print(">> loading gpt...")
         model = UnifiedVoice(**self.cfg.gpt)
-        path = os.path.join(self.model_dir, self.cfg.gpt_checkpoint)
+        path = self.model_dir / self.cfg.gpt_checkpoint
         load_checkpoint(model, path)
         model = model.to(self.device)
         if self.use_fp16:
@@ -122,7 +122,7 @@ class IndexTTS2:
     @lru_cache(maxsize=1)
     def tokenizer(self) -> TextTokenizer:
         print(">> loading tokenizer...")
-        path = os.path.join(self.model_dir, self.cfg.dataset["bpe_model"])
+        path = self.model_dir / self.cfg.dataset["bpe_model"]
         normalizer = TextNormalizer()
         normalizer.load()
         print(">> TextNormalizer loaded")
@@ -204,13 +204,11 @@ class IndexTTS2:
             print(">> Be patient, it may take a while to run in CPU mode.")
 
         self.cfg = OmegaConf.load(cfg_path)
-        self.model_dir = model_dir
+        self.model_dir = Path(model_dir)
         self.dtype = torch.float16 if self.use_fp16 else None
         self.stop_mel_token = self.cfg.gpt.stop_mel_token
 
-        self.qwen_emo = QwenEmotion(
-            os.path.join(self.model_dir, self.cfg.qwen_emo_path)
-        )
+        self.qwen_emo = QwenEmotion(self.model_dir / self.cfg.qwen_emo_path)
 
         if use_deepspeed:
             try:
@@ -245,7 +243,7 @@ class IndexTTS2:
             "facebook/w2v-bert-2.0"
         )
         semantic_model, semantic_mean, semantic_std = build_semantic_model(
-            os.path.join(self.model_dir, self.cfg.w2v_stat)
+            self.model_dir / self.cfg.w2v_stat
         )
         self.semantic_model = semantic_model.to(self.device)  # type: ignore[arg-type]
         self.semantic_model.eval()
@@ -261,11 +259,11 @@ class IndexTTS2:
         self.semantic_codec.eval()
         print(">> semantic_codec weights restored from: {}".format(semantic_code_ckpt))
 
-        emo_matrix = torch.load(os.path.join(self.model_dir, self.cfg.emo_matrix))
+        emo_matrix = torch.load(self.model_dir / self.cfg.emo_matrix)
         emo_matrix = emo_matrix.to(self.device)
         self.emo_num = list(self.cfg.emo_num)
 
-        spk_matrix = torch.load(os.path.join(self.model_dir, self.cfg.spk_matrix))
+        spk_matrix = torch.load(self.model_dir / self.cfg.spk_matrix)
         spk_matrix = spk_matrix.to(self.device)
 
         self.emo_matrix = list(torch.split(emo_matrix, self.emo_num))
@@ -451,7 +449,7 @@ class IndexTTS2:
         self,
         spk_audio_prompt: str,
         text: str,
-        output_path: str,
+        output_path: Path | str,
         emo_audio_prompt: str | None = None,
         emo_alpha: float = 1.0,
         emo_vector: list[float] | None = None,
@@ -870,12 +868,13 @@ class IndexTTS2:
         # save audio
         wav = wav.cpu()  # to cpu
         if output_path:
+            output_path = Path(output_path)
             # Directly save the audio to the specified path
-            if os.path.isfile(output_path):
-                os.remove(output_path)
+            if output_path.is_file():
+                output_path.unlink()
                 print(">> remove old wav file:", output_path)
-            if os.path.dirname(output_path) != "":
-                os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            if output_path.parent != "":
+                output_path.parent.mkdir(parents=True, exist_ok=True)
             torchaudio.save(output_path, wav.type(torch.int16), sampling_rate)
             print(">> wav file saved to:", output_path)
             if stream_return:

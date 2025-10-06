@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from transformers import GPT2Config
+from transformers.cache_utils import DynamicCache
 from transformers.generation.logits_process import LogitsProcessorList
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 from transformers.utils.model_parallel_utils import assert_device_map, get_device_map
@@ -88,20 +89,13 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
     def store_mel_emb(self, mel_emb):
         self.cached_mel_emb = mel_emb
 
-    def prepare_inputs_for_generation(
-        self,
-        input_ids: torch.Tensor,
-        past_key_values=None,
-        attention_mask: torch.LongTensor | None = None,
-        inputs_embeds: torch.FloatTensor | None = None,
-        cache_position: torch.LongTensor | None = None,
-        **kwargs,
-    ):
+    def prepare_inputs_for_generation(self, input_ids, past_key_values=None, **kwargs):
         token_type_ids = kwargs.get("token_type_ids", None)  # usually None
         if not self.kv_cache:
             past_key_values = None
         # only last token for inputs_ids if past is defined in kwargs
         if past_key_values:
+            past_key_values = DynamicCache.from_legacy_cache(past_key_values)
             input_ids = input_ids[:, -1].unsqueeze(-1)
             if token_type_ids is not None:
                 token_type_ids = token_type_ids[:, -1].unsqueeze(-1)
@@ -151,7 +145,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         )
         # Create embedding
         mel_len = self.cached_mel_emb.shape[1]
-        if input_ids is not None and input_ids.shape[1] != 1:
+        if input_ids.shape[1] != 1:
             text_inputs = input_ids[:, mel_len:]
             text_emb = self.embeddings(text_inputs)
             text_emb = text_emb + self.text_pos_embedding(text_emb)
@@ -164,7 +158,6 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
             emb = torch.cat([mel_emb, text_emb], dim=1)
         else:
             emb = self.embeddings(input_ids)
-            assert attention_mask is not None
             emb = emb + self.text_pos_embedding.get_fixed_embedding(
                 attention_mask.shape[1] - mel_len, attention_mask.device
             )
@@ -571,11 +564,11 @@ class UnifiedVoice(nn.Module):
 
     def get_logits(
         self,
-        speech_conditioning_inputs: torch.Tensor,
-        first_inputs: torch.Tensor,
-        first_head: nn.Linear,
-        second_inputs: torch.Tensor | None = None,
-        second_head: nn.Linear | None = None,
+        speech_conditioning_inputs,
+        first_inputs,
+        first_head,
+        second_inputs=None,
+        second_head=None,
         get_attns=False,
         return_latent=False,
     ):
@@ -597,7 +590,6 @@ class UnifiedVoice(nn.Module):
         enc = self.final_norm(enc)
 
         if return_latent:
-            assert second_inputs is not None
             return enc[:, : first_inputs.shape[1]], enc[:, -second_inputs.shape[1] :]
 
         first_logits = enc[:, : first_inputs.shape[1]]
@@ -605,7 +597,6 @@ class UnifiedVoice(nn.Module):
         first_logits = first_logits.permute(0, 2, 1)
         if second_inputs is not None:
             second_logits = enc[:, -second_inputs.shape[1] :]
-            assert second_head is not None
             second_logits = second_head(second_logits)
             second_logits = second_logits.permute(0, 2, 1)
             return first_logits, second_logits
@@ -635,7 +626,6 @@ class UnifiedVoice(nn.Module):
         elif self.condition_type == "gst":
             if speech_conditioning_input.ndim == 4:
                 speech_conditioning_input = speech_conditioning_input.squeeze(1)
-            assert isinstance(self.gst_encoder, nn.Module)
             conds = self.gst_encoder(
                 speech_conditioning_input.transpose(1, 2)
             )  # (b, 1, d)

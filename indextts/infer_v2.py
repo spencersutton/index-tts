@@ -42,9 +42,7 @@ class IndexTTS2:
     semantic_model: Wav2Vec2BertModel
     semantic_mean: torch.Tensor
     semantic_std: torch.Tensor
-    gpt: UnifiedVoice
     bigvgan: "bigvgan.BigVGAN"
-    tokenizer: TextTokenizer
     normalizer: TextNormalizer
     extract_features: SeamlessM4TFeatureExtractor
     emo_matrix: list[torch.Tensor]
@@ -64,7 +62,6 @@ class IndexTTS2:
     cfg: DictConfig | ListConfig
     model_dir: str
     qwen_emo: "QwenEmotion"
-    gpt_path: str
     bpe_path: str
     emo_num: list[int]
     mel_fn: Callable[[torch.Tensor], torch.Tensor]
@@ -104,6 +101,31 @@ class IndexTTS2:
         model.eval()
         print(">> s2mel weights restored from:", path)
         return model
+
+    @property
+    @lru_cache(maxsize=1)
+    def gpt(self) -> UnifiedVoice:
+        model = UnifiedVoice(**self.cfg.gpt)
+        path = os.path.join(self.model_dir, self.cfg.gpt_checkpoint)
+        load_checkpoint(model, path)
+        model = model.to(self.device)
+        if self.use_fp16:
+            model.eval().half()
+        else:
+            model.eval()
+        print(">> GPT weights restored from:", path)
+        return model
+
+    @property
+    @lru_cache(maxsize=1)
+    def tokenizer(self) -> TextTokenizer:
+        path = os.path.join(self.model_dir, self.cfg.dataset["bpe_model"])
+        normalizer = TextNormalizer()
+        normalizer.load()
+        print(">> TextNormalizer loaded")
+        tokenizer = TextTokenizer(path, normalizer)
+        print(">> bpe model loaded from:", path)
+        return tokenizer
 
     def __init__(
         self,
@@ -157,16 +179,6 @@ class IndexTTS2:
         self.qwen_emo = QwenEmotion(
             os.path.join(self.model_dir, self.cfg.qwen_emo_path)
         )
-
-        self.gpt = UnifiedVoice(**self.cfg.gpt)
-        self.gpt_path = os.path.join(self.model_dir, self.cfg.gpt_checkpoint)
-        load_checkpoint(self.gpt, self.gpt_path)
-        self.gpt = self.gpt.to(self.device)
-        if self.use_fp16:
-            self.gpt.eval().half()
-        else:
-            self.gpt.eval()
-        print(">> GPT weights restored from:", self.gpt_path)
 
         if use_deepspeed:
             try:
@@ -225,13 +237,6 @@ class IndexTTS2:
         self.bigvgan.remove_weight_norm()
         self.bigvgan.eval()
         print(">> bigvgan weights restored from:", bigvgan_name)
-
-        self.bpe_path = os.path.join(self.model_dir, self.cfg.dataset["bpe_model"])
-        self.normalizer = TextNormalizer()
-        self.normalizer.load()
-        print(">> TextNormalizer loaded")
-        self.tokenizer = TextTokenizer(self.bpe_path, self.normalizer)
-        print(">> bpe model loaded from:", self.bpe_path)
 
         emo_matrix = torch.load(os.path.join(self.model_dir, self.cfg.emo_matrix))
         emo_matrix = emo_matrix.to(self.device)

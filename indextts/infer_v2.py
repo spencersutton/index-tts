@@ -292,7 +292,7 @@ class IndexTTS2:
         """
 
         if not wavs or interval_silence <= 0:
-            return wavs
+            return torch.zeros(1, 0)  # Return empty tensor instead of list
 
         # get channel_size
         channel_size = wavs[0].size(0)
@@ -587,7 +587,7 @@ class IndexTTS2:
                 emo_audio_prompt, 15, verbose, sr=16000
             )
             emo_inputs = self.extract_features(
-                emo_audio, sampling_rate=16000, return_tensors="pt"
+                emo_audio.numpy(), sampling_rate=16000, return_tensors="pt"
             )
             emo_input_features = emo_inputs["input_features"]
             emo_attention_mask = emo_inputs["attention_mask"]

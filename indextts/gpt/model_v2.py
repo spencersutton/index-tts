@@ -153,7 +153,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         )
         # Create embedding
         mel_len = self.cached_mel_emb.shape[1]
-        if input_ids.shape[1] != 1:
+        if input_ids is not None and input_ids.shape[1] != 1:
             text_inputs = input_ids[:, mel_len:]
             text_emb = self.embeddings(text_inputs)
             text_emb = text_emb + self.text_pos_embedding(text_emb)
@@ -166,6 +166,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
             emb = torch.cat([mel_emb, text_emb], dim=1)
         else:
             emb = self.embeddings(input_ids)
+            assert attention_mask is not None
             emb = emb + self.text_pos_embedding.get_fixed_embedding(
                 attention_mask.shape[1] - mel_len, attention_mask.device
             )

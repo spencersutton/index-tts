@@ -15,6 +15,7 @@ import torchaudio
 from huggingface_hub import hf_hub_download
 from modelscope import AutoModelForCausalLM
 from omegaconf import DictConfig, ListConfig, OmegaConf
+from pyparsing import lru_cache
 from safetensors.torch import load_model
 from transformers import (
     AutoTokenizer,
@@ -44,7 +45,6 @@ class IndexTTS2:
     gpt: UnifiedVoice
     s2mel: MyModel
     bigvgan: "bigvgan.BigVGAN"
-    campplus_model: CAMPPlus
     tokenizer: TextTokenizer
     normalizer: TextNormalizer
     extract_features: SeamlessM4TFeatureExtractor
@@ -70,6 +70,18 @@ class IndexTTS2:
     emo_num: list[int]
     mel_fn: Callable[[torch.Tensor], torch.Tensor]
     gr_progress: Callable[..., None] | None
+
+    @property
+    @lru_cache(maxsize=1)
+    def campplus_model(self) -> CAMPPlus:
+        # load campplus_model
+        path = hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
+        model = CAMPPlus(feat_dim=80, embedding_size=192)
+        model.load_state_dict(torch.load(path, map_location="cpu"))
+        model = model.to(self.device)
+        model.eval()
+        print(">> campplus_model weights restored from:", path)
+        return model
 
     def __init__(
         self,
@@ -202,18 +214,6 @@ class IndexTTS2:
         cache_setup_function(max_batch_size=1, max_seq_length=8192)
         self.s2mel.eval()
         print(">> s2mel weights restored from:", s2mel_path)
-
-        # load campplus_model
-        campplus_ckpt_path = hf_hub_download(
-            "funasr/campplus", filename="campplus_cn_common.bin"
-        )
-        campplus_model = CAMPPlus(feat_dim=80, embedding_size=192)
-        campplus_model.load_state_dict(
-            torch.load(campplus_ckpt_path, map_location="cpu")
-        )
-        self.campplus_model = campplus_model.to(self.device)
-        self.campplus_model.eval()
-        print(">> campplus_model weights restored from:", campplus_ckpt_path)
 
         bigvgan_name = self.cfg.vocoder.name
         self.bigvgan = bigvgan.BigVGAN.from_pretrained(

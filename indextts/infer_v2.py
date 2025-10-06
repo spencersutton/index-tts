@@ -42,7 +42,6 @@ class IndexTTS2:
     semantic_model: Wav2Vec2BertModel
     semantic_mean: torch.Tensor
     semantic_std: torch.Tensor
-    bigvgan: "bigvgan.BigVGAN"
     normalizer: TextNormalizer
     extract_features: SeamlessM4TFeatureExtractor
     emo_matrix: list[torch.Tensor]
@@ -70,6 +69,7 @@ class IndexTTS2:
     @property
     @lru_cache(maxsize=1)
     def campplus_model(self) -> CAMPPlus:
+        print(">> loading campplus_model...")
         # load campplus_model
         path = hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
         model = CAMPPlus(feat_dim=80, embedding_size=192)
@@ -82,6 +82,7 @@ class IndexTTS2:
     @property
     @lru_cache(maxsize=1)
     def s2mel(self):
+        print(">> loading s2mel...")
         path = os.path.join(self.model_dir, self.cfg.s2mel_checkpoint)
         model = MyModel(self.cfg.s2mel, use_gpt_latent=True)
         model, _, _, _ = load_checkpoint2(
@@ -105,6 +106,7 @@ class IndexTTS2:
     @property
     @lru_cache(maxsize=1)
     def gpt(self) -> UnifiedVoice:
+        print(">> loading gpt...")
         model = UnifiedVoice(**self.cfg.gpt)
         path = os.path.join(self.model_dir, self.cfg.gpt_checkpoint)
         load_checkpoint(model, path)
@@ -119,6 +121,7 @@ class IndexTTS2:
     @property
     @lru_cache(maxsize=1)
     def tokenizer(self) -> TextTokenizer:
+        print(">> loading tokenizer...")
         path = os.path.join(self.model_dir, self.cfg.dataset["bpe_model"])
         normalizer = TextNormalizer()
         normalizer.load()
@@ -126,6 +129,20 @@ class IndexTTS2:
         tokenizer = TextTokenizer(path, normalizer)
         print(">> bpe model loaded from:", path)
         return tokenizer
+
+    @property
+    @lru_cache(maxsize=1)
+    def bigvgan(self) -> "bigvgan.BigVGAN":
+        print(">> loading bigvgan...")
+        name = self.cfg.vocoder.name
+        model = bigvgan.BigVGAN.from_pretrained(
+            name, use_cuda_kernel=self.use_cuda_kernel
+        )
+        model = model.to(self.device)
+        model.remove_weight_norm()
+        model.eval()
+        print(">> bigvgan weights restored from:", name)
+        return model
 
     def __init__(
         self,
@@ -228,15 +245,6 @@ class IndexTTS2:
         self.semantic_codec = semantic_codec.to(self.device)
         self.semantic_codec.eval()
         print(">> semantic_codec weights restored from: {}".format(semantic_code_ckpt))
-
-        bigvgan_name = self.cfg.vocoder.name
-        self.bigvgan = bigvgan.BigVGAN.from_pretrained(
-            bigvgan_name, use_cuda_kernel=self.use_cuda_kernel
-        )
-        self.bigvgan = self.bigvgan.to(self.device)
-        self.bigvgan.remove_weight_norm()
-        self.bigvgan.eval()
-        print(">> bigvgan weights restored from:", bigvgan_name)
 
         emo_matrix = torch.load(os.path.join(self.model_dir, self.cfg.emo_matrix))
         emo_matrix = emo_matrix.to(self.device)

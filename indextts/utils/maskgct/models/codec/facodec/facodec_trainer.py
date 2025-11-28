@@ -305,10 +305,6 @@ class FAcodecTrainer(CodecTrainer):
         # Finish training
         self.accelerator.wait_for_everyone()
         if self.accelerator.is_main_process:
-            path = os.path.join(
-                self.checkpoint_dir,
-                f"epoch-{self.epoch:04d}_step-{self.step:07d}",
-            )
             print("Saving..")
             state = {
                 "net": {key: self.model[key].state_dict() for key in self.model},
@@ -509,7 +505,6 @@ class FAcodecTrainer(CodecTrainer):
 
         self.optimizer.zero_grad()
         self.accelerator.backward(loss_d)
-        grad_norm_d = torch.nn.utils.clip_grad_norm_(self.model.discriminator.parameters(), 10.0)
         self.optimizer.step("discriminator")
         self.optimizer.scheduler(key="discriminator")
 

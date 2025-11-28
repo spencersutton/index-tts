@@ -42,7 +42,7 @@ def sample_vectors(samples, num):
 
 
 def kmeans(samples, num_clusters, num_iters=10, use_cosine_sim=False):
-    dim, dtype, device = samples.shape[-1], samples.dtype, samples.device
+    dim, dtype, _device = samples.shape[-1], samples.dtype, samples.device
 
     means = sample_vectors(samples, num_clusters)
 
@@ -155,7 +155,7 @@ class EuclideanCodebook(nn.Module):
         return quantize
 
     def latent2dist(self, x):
-        shape, dtype = x.shape, x.dtype
+        shape, _dtype = x.shape, x.dtype
         flatten = rearrange(x, "... d -> (...) d")
         embed = self.embed.t()  # (codebook_size, dim) -> (dim, codebook_size)
 
@@ -189,7 +189,7 @@ class SimpleCodebook(nn.Module):
         self.embed = nn.Embedding(self.codebook_size, self.dim)
 
     def forward(self, x):
-        shape, dtype = x.shape, x.dtype
+        shape, _dtype = x.shape, x.dtype
         flatten = rearrange(x, "... d -> (...) d")
         embed = self.embed.weight.t()  # (codebook_size, dim) -> (dim, codebook_size)
 
@@ -210,7 +210,7 @@ class SimpleCodebook(nn.Module):
         return quantize
 
     def latent2dist(self, x):
-        shape, dtype = x.shape, x.dtype
+        shape, _dtype = x.shape, x.dtype
         flatten = rearrange(x, "... d -> (...) d")
         embed = self.embed.weight.t()  # (codebook_size, dim) -> (dim, codebook_size)
 

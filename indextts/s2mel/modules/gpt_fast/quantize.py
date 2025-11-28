@@ -340,7 +340,6 @@ class WeightOnlyInt8Linear(torch.nn.Module):
     weight: torch.Tensor
 
     def __init__(self, in_features: int, out_features: int, bias: bool = True, device=None, dtype=None) -> None:
-        factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features

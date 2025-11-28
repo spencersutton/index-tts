@@ -115,4 +115,4 @@ explicit = true
 [tool.ruff]
 line-length = 120
 [tool.ruff.lint]
-extend-select = ["UP", "I", "ERA"]
+extend-select = ["UP", "I"]

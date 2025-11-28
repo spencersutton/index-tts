@@ -1,12 +1,12 @@
-import torch
-import librosa
 import json5
-from transformers import Wav2Vec2BertModel
+import librosa
 import numpy as np
+import torch
+from transformers import Wav2Vec2BertModel
 
+from indextts.utils.maskgct.models.codec.amphion_codec.codec import CodecDecoder, CodecEncoder
 from indextts.utils.maskgct.models.codec.kmeans.repcodec_model import RepCodec
 from indextts.utils.maskgct.models.tts.maskgct.maskgct_s2a import MaskGCT_S2A
-from indextts.utils.maskgct.models.codec.amphion_codec.codec import CodecEncoder, CodecDecoder
 
 
 def _load_config(config_fn, lowercase=False):

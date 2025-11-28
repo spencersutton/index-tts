@@ -15,10 +15,10 @@
 import typing as tp
 
 import numpy as np
-import torch.nn as nn
 import torch
+import torch.nn as nn
 
-from . import SConv1d, SConvTranspose1d, SLSTM
+from . import SLSTM, SConv1d, SConvTranspose1d
 
 
 @torch.jit.script

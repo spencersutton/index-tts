@@ -1,5 +1,6 @@
-import torch
 from functools import reduce
+
+import torch
 from torch.optim import AdamW
 
 

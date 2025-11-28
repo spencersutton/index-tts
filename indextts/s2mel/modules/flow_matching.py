@@ -1,10 +1,9 @@
 from abc import ABC
 
 import torch
+from tqdm import tqdm
 
 from indextts.s2mel.modules.diffusion_transformer import DiT
-
-from tqdm import tqdm
 
 
 class BASECFM(torch.nn.Module, ABC):

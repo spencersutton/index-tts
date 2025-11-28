@@ -5,35 +5,33 @@ os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 import json
 import re
 import time
+import warnings
+
 import librosa
 import torch
 import torchaudio
 from torch.nn.utils.rnn import pad_sequence
 
-import warnings
-
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
+import random
+
+import safetensors
+import torch.nn.functional as F
+from huggingface_hub import hf_hub_download
+from modelscope import AutoModelForCausalLM
 from omegaconf import OmegaConf
+from transformers import AutoTokenizer, SeamlessM4TFeatureExtractor
 
 from indextts.gpt.model_v2 import UnifiedVoice
-from indextts.utils.maskgct_utils import build_semantic_model, build_semantic_codec
-from indextts.utils.checkpoint import load_checkpoint
-from indextts.utils.front import TextNormalizer, TextTokenizer
-
-from indextts.s2mel.modules.commons import load_checkpoint2, MyModel
+from indextts.s2mel.modules.audio import mel_spectrogram
 from indextts.s2mel.modules.bigvgan import bigvgan
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
-from indextts.s2mel.modules.audio import mel_spectrogram
-
-from transformers import AutoTokenizer
-from modelscope import AutoModelForCausalLM
-from huggingface_hub import hf_hub_download
-import safetensors
-from transformers import SeamlessM4TFeatureExtractor
-import random
-import torch.nn.functional as F
+from indextts.s2mel.modules.commons import MyModel, load_checkpoint2
+from indextts.utils.checkpoint import load_checkpoint
+from indextts.utils.front import TextNormalizer, TextTokenizer
+from indextts.utils.maskgct_utils import build_semantic_codec, build_semantic_model
 
 
 class IndexTTS2:

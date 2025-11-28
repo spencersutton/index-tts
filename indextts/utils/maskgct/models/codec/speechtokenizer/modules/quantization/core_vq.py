@@ -39,10 +39,10 @@
 
 import typing as tp
 
-from einops import rearrange, repeat
 import torch
-from torch import nn
 import torch.nn.functional as F
+from einops import rearrange, repeat
+from torch import nn
 
 
 def default(val: tp.Any, d: tp.Any) -> tp.Any:

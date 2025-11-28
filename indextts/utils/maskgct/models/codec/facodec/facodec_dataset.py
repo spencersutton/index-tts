@@ -3,14 +3,12 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import torch
 import random
 
-import numpy as np
-
-import torchaudio
 import librosa
-
+import numpy as np
+import torch
+import torchaudio
 from utils.data_utils import *
 
 

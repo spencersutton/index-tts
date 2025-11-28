@@ -3,12 +3,13 @@
 # This code is modified from https://github.com/ZhangXInFD/SpeechTokenizer/blob/main/speechtokenizer/model.py
 # Licensed under Apache License 2.0
 
-from .modules.seanet import SEANetEncoder, SEANetDecoder
-from .modules.quantization import ResidualVectorQuantizer
+import numpy as np
+import torch
 import torch.nn as nn
 from einops import rearrange
-import torch
-import numpy as np
+
+from .modules.quantization import ResidualVectorQuantizer
+from .modules.seanet import SEANetDecoder, SEANetEncoder
 
 
 class SpeechTokenizer(nn.Module):

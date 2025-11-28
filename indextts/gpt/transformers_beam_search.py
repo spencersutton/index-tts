@@ -17,10 +17,8 @@ from collections import UserDict
 
 import numpy as np
 import torch
-
-from transformers.utils import add_start_docstrings
 from transformers.generation.beam_constraints import Constraint, ConstraintListState
-
+from transformers.utils import add_start_docstrings
 
 PROCESS_INPUTS_DOCSTRING = r"""
     Args:

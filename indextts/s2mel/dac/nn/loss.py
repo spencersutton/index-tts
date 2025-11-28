@@ -2,8 +2,7 @@ import typing
 
 import torch
 import torch.nn.functional as F
-from audiotools import AudioSignal
-from audiotools import STFTParams
+from audiotools import AudioSignal, STFTParams
 from torch import nn
 
 

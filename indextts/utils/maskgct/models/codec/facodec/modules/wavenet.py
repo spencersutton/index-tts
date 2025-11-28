@@ -6,10 +6,9 @@
 # This code is modified from https://github.com/sh-lee-prml/HierSpeechpp/blob/main/ttv_v1/modules.py
 
 import torch
+from modules.dac.model.encodec import SConv1d
 from torch import nn
 from torch.nn import functional as F
-
-from modules.dac.model.encodec import SConv1d
 
 from . import commons
 

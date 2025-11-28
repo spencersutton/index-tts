@@ -8,8 +8,8 @@ import math
 import os.path
 
 import torch
-from torch.nn import functional as F
 from munch import Munch
+from torch.nn import functional as F
 
 
 class AttrDict(dict):
@@ -207,11 +207,12 @@ def load_F0_models(path):
 
 
 # Generators
-from modules.dac.model.dac import Encoder, Decoder
-from .quantize import FAquantizer, FApredictors
+from modules.dac.model.dac import Decoder, Encoder
 
 # Discriminators
 from modules.dac.model.discriminator import Discriminator
+
+from .quantize import FApredictors, FAquantizer
 
 
 def build_model(args):

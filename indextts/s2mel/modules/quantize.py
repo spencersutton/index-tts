@@ -1,13 +1,13 @@
-from dac.nn.quantize import ResidualVectorQuantize
-from torch import nn
-from modules.wavenet import WN
 import torch
 import torchaudio
-from .alias_free_torch import *
-from torch.nn.utils import weight_norm
-from torch import sin, pow
-from einops.layers.torch import Rearrange
 from dac.model.encodec import SConv1d
+from dac.nn.quantize import ResidualVectorQuantize
+from einops.layers.torch import Rearrange
+from modules.wavenet import WN
+from torch import nn, pow, sin
+from torch.nn.utils import weight_norm
+
+from .alias_free_torch import *
 
 
 def init_weights(m):

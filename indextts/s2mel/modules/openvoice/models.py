@@ -1,15 +1,12 @@
 import math
+
 import torch
 from torch import nn
-from torch.nn import functional as F
-
-from . import commons
-from . import modules
-from . import attentions
-
 from torch.nn import Conv1d, ConvTranspose1d
-from torch.nn.utils import weight_norm, remove_weight_norm
+from torch.nn import functional as F
+from torch.nn.utils import remove_weight_norm, weight_norm
 
+from . import attentions, commons, modules
 from .commons import init_weights
 
 

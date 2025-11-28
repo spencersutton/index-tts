@@ -382,8 +382,10 @@ def main(
                     buffer.clear()
                 # print(, end='', flush=True)
         else:
+
             def callback(x):
                 return x
+
         t0 = time.perf_counter()
         import contextlib
 

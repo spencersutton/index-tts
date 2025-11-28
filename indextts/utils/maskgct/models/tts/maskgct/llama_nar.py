@@ -216,8 +216,6 @@ class DiffLlama(LlamaModel):
             nn.Linear(hidden_size * 4, hidden_size),
         )
 
-        # self.position_embedding = PositionalEncoding(hidden_size, dropout=0.0)
-
         self.cond_mlp = nn.Sequential(
             nn.Linear(hidden_size, hidden_size * 4),
             nn.SiLU(),
@@ -229,8 +227,6 @@ class DiffLlama(LlamaModel):
             layer.post_attention_layernorm = LlamaAdaptiveRMSNorm(hidden_size, dim_cond=hidden_size)
 
         self.post_init()
-
-        # self.reset_parameters()
 
     def _prepare_decoder_attention_mask(self, attention_mask, input_shape, inputs_embeds, past_key_values_length):
         # create noncausal mask

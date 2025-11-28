@@ -127,7 +127,6 @@ class ResidualVQ(nn.Module):
         all_indices = []
         for i, layer in enumerate(self.layers):
             quantized, indices = layer.forward_index(residual)
-            # residual = residual - quantized.detach()
             residual = residual - quantized
             quantized_out = quantized_out + quantized
             if flatten_idx:

@@ -415,7 +415,6 @@ class FAcodecTrainer(CodecTrainer):
             random_start = np.random.randint(0, mel_length - mel_seg_len) if mel_length != mel_seg_len else 0
             gt_mel_seg.append(mels[bib, :, random_start : random_start + mel_seg_len])
 
-            # w2v_seg.append(w2v_latent[bib, :, random_start:random_start + mel_seg_len])
             w2v_seg.append(phone_ids[bib, random_start : random_start + mel_seg_len])
 
             y = waves[bib][random_start * 300 : (random_start + mel_seg_len) * 300]
@@ -460,7 +459,6 @@ class FAcodecTrainer(CodecTrainer):
                 normalized_sequence = torch.zeros_like(F0_real[bib]) - 10.0
                 gt_glob_f0s.append(torch.tensor(0.0).to(self.accelerator.device))
 
-            # f0_targets.append(normalized_sequence[single_side_context // 200:-single_side_context // 200])
             f0_targets.append(normalized_sequence)
         f0_targets = torch.stack(f0_targets).to(self.accelerator.device)
         # fill nan with -10
@@ -684,5 +682,4 @@ class FAcodecTrainer(CodecTrainer):
 
     def _count_parameters(self):
         total_num = sum(sum(p.numel() for p in self.model[key].parameters()) for key in self.model)
-        # trainable_num = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
         return total_num

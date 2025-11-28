@@ -46,9 +46,6 @@ _vocoders = {
 
 # Forward call for generalized Inferencor
 _vocoder_forward_funcs = {
-    # "world": world_inference.synthesis_audios,
-    # "wavernn": wavernn_inference.synthesis_audios,
-    # "wavenet": wavenet_inference.synthesis_audios,
     "diffwave": diffusion_vocoder_inference.vocoder_inference,
     "nsfhifigan": gan_vocoder_inference.vocoder_inference,
     "bigvgan": gan_vocoder_inference.vocoder_inference,
@@ -59,9 +56,6 @@ _vocoder_forward_funcs = {
 
 # APIs for other tasks. e.g. SVC, TTS, TTA...
 _vocoder_infer_funcs = {
-    # "world": world_inference.synthesis_audios,
-    # "wavernn": wavernn_inference.synthesis_audios,
-    # "wavenet": wavenet_inference.synthesis_audios,
     "diffwave": diffusion_vocoder_inference.synthesis_audios,
     "nsfhifigan": gan_vocoder_inference.synthesis_audios,
     "bigvgan": gan_vocoder_inference.synthesis_audios,
@@ -462,13 +456,6 @@ def synthesis(
     vocoder_name = cfg.model.generator
 
     print(f"Synthesis audios using {vocoder_name} vocoder...")
-
-    ###### TODO: World Vocoder Refactor ######
-    # if vocoder_name == "world":
-    #     world_inference.synthesis_audios(
-    #         cfg, dataset_name, split, n_samples, pred, save_dir, tag
-    #     )
-    #     return
 
     # ====== Loading neural vocoder model ======
     vocoder = load_nnvocoder(cfg, vocoder_name, weights_file=vocoder_weight_file, from_multi_gpu=True)

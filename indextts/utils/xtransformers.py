@@ -306,6 +306,7 @@ class Scale(nn.Module):
 
     def forward(self, x, **kwargs):
         out = self.fn(x, **kwargs)
+
         def scale_fn(t):
             return t * self.value
 
@@ -323,6 +324,7 @@ class Rezero(nn.Module):
 
     def forward(self, x, **kwargs):
         out = self.fn(x, **kwargs)
+
         def rezero_fn(t):
             return t * self.g
 

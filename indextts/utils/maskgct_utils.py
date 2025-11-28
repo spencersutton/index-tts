@@ -1,4 +1,3 @@
-import json5
 import librosa
 import numpy as np
 import torch
@@ -7,46 +6,6 @@ from transformers import Wav2Vec2BertModel
 from indextts.utils.maskgct.models.codec.amphion_codec.codec import CodecDecoder, CodecEncoder
 from indextts.utils.maskgct.models.codec.kmeans.repcodec_model import RepCodec
 from indextts.utils.maskgct.models.tts.maskgct.maskgct_s2a import MaskGCT_S2A
-
-
-def _load_config(config_fn, lowercase=False):
-    """Load configurations into a dictionary
-
-    Args:
-        config_fn (str): path to configuration file
-        lowercase (bool, optional): whether changing keys to lower case. Defaults to False.
-
-    Returns:
-        dict: dictionary that stores configurations
-    """
-    with open(config_fn) as f:
-        data = f.read()
-    config_ = json5.loads(data)
-    if "base_config" in config_:
-        # load configurations from new path
-        p_config_path = os.path.join(os.getenv("WORK_DIR"), config_["base_config"])
-        p_config_ = _load_config(p_config_path)
-        config_ = override_config(p_config_, config_)
-    if lowercase:
-        # change keys in config_ to lower case
-        config_ = get_lowercase_keys_config(config_)
-    return config_
-
-
-def load_config(config_fn, lowercase=False):
-    """Load configurations into a dictionary
-
-    Args:
-        config_fn (str): path to configuration file
-        lowercase (bool, optional): _description_. Defaults to False.
-
-    Returns:
-        JsonHParams: an object that stores configurations
-    """
-    config_ = _load_config(config_fn, lowercase=lowercase)
-    # create an JsonHParams object with configuration dict
-    cfg = JsonHParams(**config_)
-    return cfg
 
 
 class JsonHParams:

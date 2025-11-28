@@ -62,7 +62,7 @@ class SnakeBeta(nn.Module):
             beta is initialized to 1 by default, higher values = higher-magnitude.
             alpha will be trained along with the rest of your model.
         """
-        super(SnakeBeta, self).__init__()
+        super().__init__()
         self.in_features = in_features
 
         # initialize alpha
@@ -141,7 +141,7 @@ def sequence_mask(length, max_length=None):
 
 class MFCC(nn.Module):
     def __init__(self, n_mfcc=40, n_mels=80):
-        super(MFCC, self).__init__()
+        super().__init__()
         self.n_mfcc = n_mfcc
         self.n_mels = n_mels
         self.norm = "ortho"
@@ -179,7 +179,7 @@ class FAquantizer(nn.Module):
         separate_prosody_encoder=False,
         timbre_norm=False,
     ):
-        super(FAquantizer, self).__init__()
+        super().__init__()
         conv1d_type = SConv1d  # if causal else nn.Conv1d
         self.prosody_quantizer = ResidualVectorQuantize(
             input_dim=in_dim,
@@ -577,7 +577,7 @@ class FApredictors(nn.Module):
         timbre_norm=False,
         use_gr_content_global_f0=False,
     ):
-        super(FApredictors, self).__init__()
+        super().__init__()
         self.f0_predictor = CNNLSTM(in_dim, 1, 2)
         self.phone_predictor = CNNLSTM(in_dim, 1024, 1)
         if timbre_norm:

@@ -21,7 +21,7 @@ class AdaptiveLayerNorm(nn.Module):
     r"""Adaptive Layer Normalization"""
 
     def __init__(self, d_model, norm) -> None:
-        super(AdaptiveLayerNorm, self).__init__()
+        super().__init__()
         self.project_layer = nn.Linear(d_model, 2 * d_model)
         self.norm = norm
         self.d_model = d_model

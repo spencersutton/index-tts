@@ -18,7 +18,7 @@ LRELU_SLOPE = 0.1
 
 class AMPBlock1(torch.nn.Module):
     def __init__(self, h, channels, kernel_size=3, dilation=(1, 3, 5), activation=None):
-        super(AMPBlock1, self).__init__()
+        super().__init__()
         self.h = h
 
         self.convs1 = nn.ModuleList(
@@ -116,7 +116,7 @@ class AMPBlock1(torch.nn.Module):
 
 class AMPBlock2(torch.nn.Module):
     def __init__(self, h, channels, kernel_size=3, dilation=(1, 3), activation=None):
-        super(AMPBlock2, self).__init__()
+        super().__init__()
         self.h = h
 
         self.convs = nn.ModuleList(
@@ -191,7 +191,7 @@ class BigVGAN(torch.nn.Module):
             h (dict)
             use_cuda_kernel (bool): whether to use custom cuda kernel for anti-aliased activation
         """
-        super(BigVGAN, self).__init__()
+        super().__init__()
         self.h = h
         self.h["use_cuda_kernel"] = use_cuda_kernel
 
@@ -344,7 +344,7 @@ class BigVGAN(torch.nn.Module):
 
 class DiscriminatorP(torch.nn.Module):
     def __init__(self, h, period, kernel_size=5, stride=3, use_spectral_norm=False):
-        super(DiscriminatorP, self).__init__()
+        super().__init__()
         self.period = period
         self.d_mult = h.discriminator_channel_mult
         norm_f = weight_norm if use_spectral_norm == False else spectral_norm
@@ -407,7 +407,7 @@ class DiscriminatorP(torch.nn.Module):
 
 class MultiPeriodDiscriminator(torch.nn.Module):
     def __init__(self, h):
-        super(MultiPeriodDiscriminator, self).__init__()
+        super().__init__()
         self.mpd_reshapes = h.mpd_reshapes
         print(f"mpd_reshapes: {self.mpd_reshapes}")
         discriminators = [DiscriminatorP(h, rs, use_spectral_norm=h.use_spectral_norm) for rs in self.mpd_reshapes]

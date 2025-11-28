@@ -60,7 +60,7 @@ class Snake(nn.Module):
             alpha is initialized to 1 by default, higher values = higher-frequency.
             alpha will be trained along with the rest of your model.
         """
-        super(Snake, self).__init__()
+        super().__init__()
         self.in_features = in_features
 
         # initialize alpha
@@ -107,7 +107,7 @@ class ResBlock(torch.nn.Module):
         kernel_size: int = 3,
         dilations: list[int] = [1, 3, 5],
     ):
-        super(ResBlock, self).__init__()
+        super().__init__()
         self.convs1 = nn.ModuleList()
         self.convs2 = nn.ModuleList()
 
@@ -164,7 +164,7 @@ class SineGen(torch.nn.Module):
     """
 
     def __init__(self, samp_rate, harmonic_num=0, sine_amp=0.1, noise_std=0.003, voiced_threshold=0):
-        super(SineGen, self).__init__()
+        super().__init__()
         self.sine_amp = sine_amp
         self.noise_std = noise_std
         self.harmonic_num = harmonic_num
@@ -231,7 +231,7 @@ class SourceModuleHnNSF(torch.nn.Module):
     def __init__(
         self, sampling_rate, upsample_scale, harmonic_num=0, sine_amp=0.1, add_noise_std=0.003, voiced_threshod=0
     ):
-        super(SourceModuleHnNSF, self).__init__()
+        super().__init__()
 
         self.sine_amp = sine_amp
         self.noise_std = add_noise_std
@@ -288,7 +288,7 @@ class HiFTGenerator(nn.Module):
         audio_limit: float = 0.99,
         f0_predictor: torch.nn.Module = None,
     ):
-        super(HiFTGenerator, self).__init__()
+        super().__init__()
 
         self.out_channels = 1
         self.nb_harmonics = nb_harmonics

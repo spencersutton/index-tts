@@ -4,7 +4,6 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 from dataclasses import dataclass
-from typing import Optional
 
 import torch
 import torch.nn as nn
@@ -143,8 +142,8 @@ class Transformer(nn.Module):
         self.layers = nn.ModuleList(TransformerBlock(config) for _ in range(config.n_layer))
         self.norm = AdaptiveLayerNorm(config.dim, RMSNorm(config.dim, eps=config.norm_eps))
 
-        self.freqs_cis: Optional[Tensor] = None
-        self.mask_cache: Optional[Tensor] = None
+        self.freqs_cis: Tensor | None = None
+        self.mask_cache: Tensor | None = None
         self.max_batch_size = -1
         self.max_seq_length = -1
 
@@ -181,11 +180,11 @@ class Transformer(nn.Module):
         self,
         x: Tensor,
         c: Tensor,
-        input_pos: Optional[Tensor] = None,
-        mask: Optional[Tensor] = None,
-        context: Optional[Tensor] = None,
-        context_input_pos: Optional[Tensor] = None,
-        cross_attention_mask: Optional[Tensor] = None,
+        input_pos: Tensor | None = None,
+        mask: Tensor | None = None,
+        context: Tensor | None = None,
+        context_input_pos: Tensor | None = None,
+        cross_attention_mask: Tensor | None = None,
     ) -> Tensor:
         assert self.freqs_cis is not None, "Caches must be initialized first"
         if mask is None:  # in case of non-causal model
@@ -246,10 +245,10 @@ class TransformerBlock(nn.Module):
         input_pos: Tensor,
         freqs_cis: Tensor,
         mask: Tensor,
-        context: Optional[Tensor] = None,
-        context_freqs_cis: Optional[Tensor] = None,
-        cross_attention_mask: Optional[Tensor] = None,
-        skip_in_x: Optional[Tensor] = None,
+        context: Tensor | None = None,
+        context_freqs_cis: Tensor | None = None,
+        cross_attention_mask: Tensor | None = None,
+        skip_in_x: Tensor | None = None,
     ) -> Tensor:
         c = None if self.time_as_token else c
         if self.uvit_skip_connection and skip_in_x is not None:
@@ -296,9 +295,9 @@ class Attention(nn.Module):
         x: Tensor,
         freqs_cis: Tensor,
         mask: Tensor,
-        input_pos: Optional[Tensor] = None,
-        context: Optional[Tensor] = None,
-        context_freqs_cis: Optional[Tensor] = None,
+        input_pos: Tensor | None = None,
+        context: Tensor | None = None,
+        context_freqs_cis: Tensor | None = None,
     ) -> Tensor:
         bsz, seqlen, _ = x.shape
 

@@ -167,7 +167,7 @@ class FAcodecTrainer(CodecTrainer):
                     ckpt_path = self._load_model(args.checkpoint, resume_type=args.resume_type)
                 end = time.monotonic_ns()
                 self.logger.info(f"Resuming from checkpoint done in {(end - start) / 1e6:.2f}ms")
-                self.checkpoints_path = json.load(open(os.path.join(ckpt_path, "ckpts.json"), "r"))
+                self.checkpoints_path = json.load(open(os.path.join(ckpt_path, "ckpts.json")))
 
             if self.accelerator.is_main_process:
                 os.makedirs(self.checkpoint_dir, exist_ok=True)
@@ -251,14 +251,14 @@ class FAcodecTrainer(CodecTrainer):
         while self.epoch < self.max_epoch:
             self.logger.info("\n")
             self.logger.info("-" * 32)
-            self.logger.info("Epoch {}: ".format(self.epoch))
+            self.logger.info(f"Epoch {self.epoch}: ")
 
             # Train and Validate
             train_total_loss, train_losses = self._train_epoch()
             for key, loss in train_losses.items():
-                self.logger.info("  |- Train/{} Loss: {:.6f}".format(key, loss))
+                self.logger.info(f"  |- Train/{key} Loss: {loss:.6f}")
                 self.accelerator.log(
-                    {"Epoch/Train {} Loss".format(key): loss},
+                    {f"Epoch/Train {key} Loss": loss},
                     step=self.epoch,
                 )
             self.accelerator.log(
@@ -312,10 +312,7 @@ class FAcodecTrainer(CodecTrainer):
         if self.accelerator.is_main_process:
             path = os.path.join(
                 self.checkpoint_dir,
-                "epoch-{:04d}_step-{:07d}".format(
-                    self.epoch,
-                    self.step,
-                ),
+                f"epoch-{self.epoch:04d}_step-{self.step:07d}",
             )
             print("Saving..")
             state = {
@@ -367,7 +364,7 @@ class FAcodecTrainer(CodecTrainer):
                 for key, _ in losses.items():
                     self.accelerator.log(
                         {
-                            "Step/Train {} Loss".format(key): losses[key],
+                            f"Step/Train {key} Loss": losses[key],
                         },
                         step=self.step,
                     )

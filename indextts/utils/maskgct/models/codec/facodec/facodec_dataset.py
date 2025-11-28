@@ -58,7 +58,7 @@ class FAcodecDataset(torch.utils.data.Dataset):
         return wave, mel
 
 
-class FAcodecCollator(object):
+class FAcodecCollator:
     """Zero-pads model inputs and targets based on number of frames per step"""
 
     def __init__(self, cfg):

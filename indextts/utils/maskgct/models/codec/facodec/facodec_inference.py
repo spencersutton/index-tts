@@ -16,7 +16,7 @@ import librosa
 from collections import OrderedDict
 
 
-class FAcodecInference(object):
+class FAcodecInference:
     def __init__(self, args=None, cfg=None):
         self.args = args
         self.cfg = cfg

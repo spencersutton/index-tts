@@ -75,7 +75,7 @@ _vocoder_infer_funcs = {
 }
 
 
-class VocoderInference(object):
+class VocoderInference:
     def __init__(self, args=None, cfg=None, infer_type="from_dataset"):
         super().__init__()
 
@@ -389,7 +389,7 @@ def load_nnvocoder(
     weights_file: a folder or a .pt path.
     from_multi_gpu: automatically remove the "module" string in state dicts if "True".
     """
-    print("Loading Vocoder from Weights file: {}".format(weights_file))
+    print(f"Loading Vocoder from Weights file: {weights_file}")
 
     # Build model
     model = _vocoders[vocoder_name](cfg)
@@ -465,7 +465,7 @@ def synthesis(
 
     vocoder_name = cfg.model.generator
 
-    print("Synthesis audios using {} vocoder...".format(vocoder_name))
+    print(f"Synthesis audios using {vocoder_name} vocoder...")
 
     ###### TODO: World Vocoder Refactor ######
     # if vocoder_name == "world":
@@ -481,7 +481,7 @@ def synthesis(
     # ====== Inference for predicted acoustic features ======
     # pred: (frame_len, n_mels) -> (n_mels, frame_len)
     mels_pred = tensorize([p.T for p in pred], device, n_samples)
-    print("For predicted mels, #sample = {}...".format(len(mels_pred)))
+    print(f"For predicted mels, #sample = {len(mels_pred)}...")
     audios_pred = _vocoder_infer_funcs[vocoder_name](
         cfg,
         vocoder,

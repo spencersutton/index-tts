@@ -19,7 +19,7 @@ def get_nonlinear(config_str, channels):
         elif name == "batchnorm_":
             nonlinear.add_module("batchnorm", nn.BatchNorm1d(channels, affine=False))
         else:
-            raise ValueError("Unexpected module ({}).".format(name))
+            raise ValueError(f"Unexpected module ({name}).")
     return nonlinear
 
 
@@ -51,7 +51,7 @@ class TDNNLayer(nn.Module):
     ):
         super(TDNNLayer, self).__init__()
         if padding < 0:
-            assert kernel_size % 2 == 1, "Expect equal paddings, but got even kernel size ({})".format(kernel_size)
+            assert kernel_size % 2 == 1, f"Expect equal paddings, but got even kernel size ({kernel_size})"
             padding = (kernel_size - 1) // 2 * dilation
         self.linear = nn.Conv1d(
             in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias
@@ -109,7 +109,7 @@ class CAMDenseTDNNLayer(nn.Module):
         memory_efficient=False,
     ):
         super(CAMDenseTDNNLayer, self).__init__()
-        assert kernel_size % 2 == 1, "Expect equal paddings, but got even kernel size ({})".format(kernel_size)
+        assert kernel_size % 2 == 1, f"Expect equal paddings, but got even kernel size ({kernel_size})"
         padding = (kernel_size - 1) // 2 * dilation
         self.memory_efficient = memory_efficient
         self.nonlinear1 = get_nonlinear(config_str, in_channels)

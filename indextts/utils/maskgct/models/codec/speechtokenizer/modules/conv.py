@@ -90,7 +90,7 @@ def pad_for_conv1d(x: torch.Tensor, kernel_size: int, stride: int, padding_total
 
 def pad1d(
     x: torch.Tensor,
-    paddings: tp.Tuple[int, int],
+    paddings: tuple[int, int],
     mode: str = "zero",
     value: float = 0.0,
 ):
@@ -113,7 +113,7 @@ def pad1d(
         return F.pad(x, paddings, mode, value)
 
 
-def unpad1d(x: torch.Tensor, paddings: tp.Tuple[int, int]):
+def unpad1d(x: torch.Tensor, paddings: tuple[int, int]):
     """Remove padding from x, handling properly zero padding. Only for 1d!"""
     padding_left, padding_right = paddings
     assert padding_left >= 0 and padding_right >= 0, (padding_left, padding_right)
@@ -132,7 +132,7 @@ class NormConv1d(nn.Module):
         *args,
         causal: bool = False,
         norm: str = "none",
-        norm_kwargs: tp.Dict[str, tp.Any] = {},
+        norm_kwargs: dict[str, tp.Any] = {},
         **kwargs,
     ):
         super().__init__()
@@ -155,7 +155,7 @@ class NormConv2d(nn.Module):
         self,
         *args,
         norm: str = "none",
-        norm_kwargs: tp.Dict[str, tp.Any] = {},
+        norm_kwargs: dict[str, tp.Any] = {},
         **kwargs,
     ):
         super().__init__()
@@ -179,7 +179,7 @@ class NormConvTranspose1d(nn.Module):
         *args,
         causal: bool = False,
         norm: str = "none",
-        norm_kwargs: tp.Dict[str, tp.Any] = {},
+        norm_kwargs: dict[str, tp.Any] = {},
         **kwargs,
     ):
         super().__init__()
@@ -202,7 +202,7 @@ class NormConvTranspose2d(nn.Module):
         self,
         *args,
         norm: str = "none",
-        norm_kwargs: tp.Dict[str, tp.Any] = {},
+        norm_kwargs: dict[str, tp.Any] = {},
         **kwargs,
     ):
         super().__init__()
@@ -231,7 +231,7 @@ class SConv1d(nn.Module):
         bias: bool = True,
         causal: bool = False,
         norm: str = "none",
-        norm_kwargs: tp.Dict[str, tp.Any] = {},
+        norm_kwargs: dict[str, tp.Any] = {},
         pad_mode: str = "reflect",
     ):
         super().__init__()
@@ -288,7 +288,7 @@ class SConvTranspose1d(nn.Module):
         causal: bool = False,
         norm: str = "none",
         trim_right_ratio: float = 1.0,
-        norm_kwargs: tp.Dict[str, tp.Any] = {},
+        norm_kwargs: dict[str, tp.Any] = {},
     ):
         super().__init__()
         self.convtr = NormConvTranspose1d(

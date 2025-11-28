@@ -53,7 +53,7 @@ def _load_config(config_fn, lowercase=False):
     Returns:
         dict: dictionary that stores configurations
     """
-    with open(config_fn, "r") as f:
+    with open(config_fn) as f:
         data = f.read()
     config_ = json5.loads(data)
     if "base_config" in config_:

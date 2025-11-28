@@ -125,7 +125,7 @@ class EuclideanCodebook(nn.Module):
     ):
         super().__init__()
         self.decay = decay
-        init_fn: tp.Union[tp.Callable[..., torch.Tensor], tp.Any] = uniform_init if not kmeans_init else torch.zeros
+        init_fn: tp.Callable[..., torch.Tensor] | tp.Any = uniform_init if not kmeans_init else torch.zeros
         embed = init_fn(codebook_size, dim)
 
         self.codebook_size = codebook_size
@@ -247,7 +247,7 @@ class VectorQuantization(nn.Module):
         self,
         dim: int,
         codebook_size: int,
-        codebook_dim: tp.Optional[int] = None,
+        codebook_dim: int | None = None,
         decay: float = 0.99,
         epsilon: float = 1e-5,
         kmeans_init: bool = True,
@@ -323,7 +323,7 @@ class ResidualVectorQuantization(nn.Module):
         super().__init__()
         self.layers = nn.ModuleList([VectorQuantization(**kwargs) for _ in range(num_quantizers)])
 
-    def forward(self, x, n_q: tp.Optional[int] = None, layers: tp.Optional[list] = None):
+    def forward(self, x, n_q: int | None = None, layers: list | None = None):
         quantized_out = 0.0
         residual = x
 
@@ -346,7 +346,7 @@ class ResidualVectorQuantization(nn.Module):
         out_losses, out_indices = map(torch.stack, (all_losses, all_indices))
         return quantized_out, out_indices, out_losses, out_quantized
 
-    def encode(self, x: torch.Tensor, n_q: tp.Optional[int] = None, st: tp.Optional[int] = None) -> torch.Tensor:
+    def encode(self, x: torch.Tensor, n_q: int | None = None, st: int | None = None) -> torch.Tensor:
         residual = x
         all_indices = []
         n_q = n_q or len(self.layers)

@@ -1,4 +1,3 @@
-# coding:utf-8
 import torch
 from functools import reduce
 from torch.optim import AdamW

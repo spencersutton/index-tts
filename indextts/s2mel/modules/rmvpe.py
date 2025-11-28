@@ -1,5 +1,4 @@
 import os
-from typing import List
 import numpy as np
 import torch
 
@@ -39,7 +38,7 @@ class STFT(torch.nn.Module):
         self.pad_amount = int(self.filter_length / 2)
         fourier_basis = np.fft.fft(np.eye(self.filter_length))
 
-        cutoff = int((self.filter_length / 2 + 1))
+        cutoff = int(self.filter_length / 2 + 1)
         fourier_basis = np.vstack([np.real(fourier_basis[:cutoff, :]), np.imag(fourier_basis[:cutoff, :])])
         forward_basis = torch.FloatTensor(fourier_basis)
         inverse_basis = torch.FloatTensor(np.linalg.pinv(fourier_basis))
@@ -206,7 +205,7 @@ class Encoder(nn.Module):
         self.out_channel = out_channels
 
     def forward(self, x: torch.Tensor):
-        concat_tensors: List[torch.Tensor] = []
+        concat_tensors: list[torch.Tensor] = []
         x = self.bn(x)
         for i, layer in enumerate(self.layers):
             t, x = layer(x)
@@ -291,7 +290,7 @@ class Decoder(nn.Module):
             self.layers.append(ResDecoderBlock(in_channels, out_channels, stride, n_blocks, momentum))
             in_channels = out_channels
 
-    def forward(self, x: torch.Tensor, concat_tensors: List[torch.Tensor]):
+    def forward(self, x: torch.Tensor, concat_tensors: list[torch.Tensor]):
         for i, layer in enumerate(self.layers):
             x = layer(x, concat_tensors[-1 - i])
         return x

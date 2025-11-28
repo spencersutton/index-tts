@@ -58,12 +58,12 @@ class SEANetResnetBlock(nn.Module):
     def __init__(
         self,
         dim: int,
-        kernel_sizes: tp.List[int] = [3, 1],
-        dilations: tp.List[int] = [1, 1],
+        kernel_sizes: list[int] = [3, 1],
+        dilations: list[int] = [1, 1],
         activation: str = "ELU",
         activation_params: dict = {"alpha": 1.0},
         norm: str = "weight_norm",
-        norm_params: tp.Dict[str, tp.Any] = {},
+        norm_params: dict[str, tp.Any] = {},
         causal: bool = False,
         pad_mode: str = "reflect",
         compress: int = 2,
@@ -141,11 +141,11 @@ class SEANetEncoder(nn.Module):
         dimension: int = 128,
         n_filters: int = 32,
         n_residual_layers: int = 1,
-        ratios: tp.List[int] = [8, 5, 4, 2],
+        ratios: list[int] = [8, 5, 4, 2],
         activation: str = "ELU",
         activation_params: dict = {"alpha": 1.0},
         norm: str = "weight_norm",
-        norm_params: tp.Dict[str, tp.Any] = {},
+        norm_params: dict[str, tp.Any] = {},
         kernel_size: int = 7,
         last_kernel_size: int = 7,
         residual_kernel_size: int = 3,
@@ -168,7 +168,7 @@ class SEANetEncoder(nn.Module):
 
         act = getattr(nn, activation) if activation != "Snake" else Snake1d
         mult = 1
-        model: tp.List[nn.Module] = [
+        model: list[nn.Module] = [
             SConv1d(
                 channels,
                 mult * n_filters,
@@ -272,13 +272,13 @@ class SEANetDecoder(nn.Module):
         dimension: int = 128,
         n_filters: int = 32,
         n_residual_layers: int = 1,
-        ratios: tp.List[int] = [8, 5, 4, 2],
+        ratios: list[int] = [8, 5, 4, 2],
         activation: str = "ELU",
         activation_params: dict = {"alpha": 1.0},
-        final_activation: tp.Optional[str] = None,
-        final_activation_params: tp.Optional[dict] = None,
+        final_activation: str | None = None,
+        final_activation_params: dict | None = None,
         norm: str = "weight_norm",
-        norm_params: tp.Dict[str, tp.Any] = {},
+        norm_params: dict[str, tp.Any] = {},
         kernel_size: int = 7,
         last_kernel_size: int = 7,
         residual_kernel_size: int = 3,
@@ -302,7 +302,7 @@ class SEANetDecoder(nn.Module):
 
         act = getattr(nn, activation) if activation != "Snake" else Snake1d
         mult = int(2 ** len(self.ratios))
-        model: tp.List[nn.Module] = [
+        model: list[nn.Module] = [
             SConv1d(
                 dimension,
                 mult * n_filters,

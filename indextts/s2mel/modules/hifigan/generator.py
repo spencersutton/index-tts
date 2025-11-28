@@ -14,7 +14,6 @@
 
 """HIFI-GAN"""
 
-import typing as tp
 import numpy as np
 from scipy.signal import get_window
 import torch
@@ -110,7 +109,7 @@ class ResBlock(torch.nn.Module):
         self,
         channels: int = 512,
         kernel_size: int = 3,
-        dilations: tp.List[int] = [1, 3, 5],
+        dilations: list[int] = [1, 3, 5],
     ):
         super(ResBlock, self).__init__()
         self.convs1 = nn.ModuleList()
@@ -282,13 +281,13 @@ class HiFTGenerator(nn.Module):
         nsf_alpha: float = 0.1,
         nsf_sigma: float = 0.003,
         nsf_voiced_threshold: float = 10,
-        upsample_rates: tp.List[int] = [8, 8],
-        upsample_kernel_sizes: tp.List[int] = [16, 16],
-        istft_params: tp.Dict[str, int] = {"n_fft": 16, "hop_len": 4},
-        resblock_kernel_sizes: tp.List[int] = [3, 7, 11],
-        resblock_dilation_sizes: tp.List[tp.List[int]] = [[1, 3, 5], [1, 3, 5], [1, 3, 5]],
-        source_resblock_kernel_sizes: tp.List[int] = [7, 11],
-        source_resblock_dilation_sizes: tp.List[tp.List[int]] = [[1, 3, 5], [1, 3, 5]],
+        upsample_rates: list[int] = [8, 8],
+        upsample_kernel_sizes: list[int] = [16, 16],
+        istft_params: dict[str, int] = {"n_fft": 16, "hop_len": 4},
+        resblock_kernel_sizes: list[int] = [3, 7, 11],
+        resblock_dilation_sizes: list[list[int]] = [[1, 3, 5], [1, 3, 5], [1, 3, 5]],
+        source_resblock_kernel_sizes: list[int] = [7, 11],
+        source_resblock_dilation_sizes: list[list[int]] = [[1, 3, 5], [1, 3, 5]],
         lrelu_slope: float = 0.1,
         audio_limit: float = 0.99,
         f0_predictor: torch.nn.Module = None,

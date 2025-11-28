@@ -244,7 +244,7 @@ class ForwardAttentionV2(nn.Module):
         self.memory_layer = LinearNorm(embedding_dim, attention_dim, bias=False, w_init_gain="tanh")
         self.v = LinearNorm(attention_dim, 1, bias=False)
         self.location_layer = LocationLayer(attention_location_n_filters, attention_location_kernel_size, attention_dim)
-        self.score_mask_value = -float(1e20)
+        self.score_mask_value = -1e20
 
     def get_alignment_energies(self, query, processed_memory, attention_weights_cat):
         """

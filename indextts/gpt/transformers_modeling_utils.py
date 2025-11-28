@@ -44,7 +44,6 @@ from transformers.configuration_utils import PretrainedConfig
 from transformers.dynamic_module_utils import custom_object_save
 from transformers.generation import GenerationConfig
 from indextts.gpt.transformers_generation_utils import GenerationMixin
-from transformers.generation import GenerationConfig
 
 
 from transformers.integrations import PeftAdapterMixin, deepspeed_config, is_deepspeed_zero3_enabled

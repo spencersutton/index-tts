@@ -5,7 +5,7 @@ import torch
 import torchaudio
 from .alias_free_torch import *
 from torch.nn.utils import weight_norm
-from torch import nn, sin, pow
+from torch import sin, pow
 from einops.layers.torch import Rearrange
 from dac.model.encodec import SConv1d
 

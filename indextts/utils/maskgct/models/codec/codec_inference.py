@@ -270,7 +270,7 @@ class VocoderInference(object):
                 checkpoint_path = checkpoint_dir
             else:
                 # Load the latest accelerator state dicts
-                ls = [str(i) for i in Path(checkpoint_dir).glob("*") if not "audio" in str(i)]
+                ls = [str(i) for i in Path(checkpoint_dir).glob("*") if "audio" not in str(i)]
                 ls.sort(
                     key=lambda x: int(x.split("/")[-1].split("_")[0].split("-")[-1]),
                     reverse=True,
@@ -423,7 +423,7 @@ def load_nnvocoder(
     else:
         # Load from accelerator state dict
         weights_file = os.path.join(weights_file, "checkpoint")
-        ls = [str(i) for i in Path(weights_file).glob("*") if not "audio" in str(i)]
+        ls = [str(i) for i in Path(weights_file).glob("*") if "audio" not in str(i)]
         ls.sort(key=lambda x: int(x.split("_")[-3].split("-")[-1]), reverse=True)
         checkpoint_path = ls[0]
         accelerator = accelerate.Accelerator()

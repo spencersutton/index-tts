@@ -565,7 +565,7 @@ class IndexTTS2:
                 "     Tokens which can't be encoded: ",
                 [t for t, id in zip(text_tokens_list, text_token_ids) if id == self.tokenizer.unk_token_id],
             )
-            print(f"     Consider updating the BPE model or modifying the text to avoid unknown tokens.")
+            print("     Consider updating the BPE model or modifying the text to avoid unknown tokens.")
 
         if verbose:
             print("text_tokens_list:", text_tokens_list)

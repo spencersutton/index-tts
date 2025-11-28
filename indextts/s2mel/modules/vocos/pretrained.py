@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Tuple, Union, Optional
+from typing import Any
 
 import torch
-import yaml
 from torch import nn
 from .heads import ISTFTHead
 from .models import VocosBackbone

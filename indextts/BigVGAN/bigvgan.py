@@ -11,7 +11,7 @@ from typing import Dict, Optional, Union
 
 import torch
 import torch.nn as nn
-from huggingface_hub import PyTorchModelHubMixin, hf_hub_download
+from huggingface_hub import hf_hub_download
 from torch.nn import Conv1d, ConvTranspose1d
 from torch.nn.utils import remove_weight_norm, weight_norm
 

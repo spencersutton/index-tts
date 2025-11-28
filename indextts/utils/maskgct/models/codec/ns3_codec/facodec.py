@@ -7,7 +7,6 @@ import numpy as np
 import torch
 from torch import nn, sin, pow
 from torch.nn import Parameter
-import torch.nn.functional as F
 from torch.nn.utils import weight_norm
 from .alias_free_torch import *
 from .quantize import *

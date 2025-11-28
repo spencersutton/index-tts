@@ -1009,9 +1009,7 @@ class GenerationMixin:
                 "in favour of `input_ids` or `decoder_input_ids` respectively.",
             )
         if generation_config.watermarking_config is not None:
-            processors.append(
-                generation_config.watermarking_config.construct_processor(self.config.vocab_size, device)
-            )
+            processors.append(generation_config.watermarking_config.construct_processor(self.config.vocab_size, device))
 
         # TODO (joao): find a strategy to specify the order of the processors
         processors = self._merge_criteria_processor_list(processors, logits_processor)
@@ -1053,9 +1051,7 @@ class GenerationMixin:
                 )
             if generation_config.epsilon_cutoff is not None and 0.0 < generation_config.epsilon_cutoff < 1.0:
                 processors.append(
-                    EpsilonLogitsWarper(
-                        epsilon=generation_config.epsilon_cutoff, min_tokens_to_keep=min_tokens_to_keep
-                    )
+                    EpsilonLogitsWarper(epsilon=generation_config.epsilon_cutoff, min_tokens_to_keep=min_tokens_to_keep)
                 )
             if generation_config.eta_cutoff is not None and 0.0 < generation_config.eta_cutoff < 1.0:
                 processors.append(
@@ -2673,9 +2669,7 @@ class GenerationMixin:
 
                 if output_hidden_states:
                     decoder_hidden_states += (
-                        (outputs.decoder_hidden_states,)
-                        if self.config.is_encoder_decoder
-                        else (outputs.hidden_states,)
+                        (outputs.decoder_hidden_states,) if self.config.is_encoder_decoder else (outputs.hidden_states,)
                     )
 
             if do_sample:  # sample
@@ -2878,9 +2872,7 @@ class GenerationMixin:
 
                 if output_hidden_states:
                     decoder_hidden_states += (
-                        (outputs.decoder_hidden_states,)
-                        if self.config.is_encoder_decoder
-                        else (outputs.hidden_states,)
+                        (outputs.decoder_hidden_states,) if self.config.is_encoder_decoder else (outputs.hidden_states,)
                     )
 
             # This is needed to properly delete outputs.logits which may be very large for this first iteration
@@ -3238,9 +3230,7 @@ class GenerationMixin:
 
                 if output_hidden_states:
                     decoder_hidden_states += (
-                        (outputs.decoder_hidden_states,)
-                        if self.config.is_encoder_decoder
-                        else (outputs.hidden_states,)
+                        (outputs.decoder_hidden_states,) if self.config.is_encoder_decoder else (outputs.hidden_states,)
                     )
 
             # token selection
@@ -3414,7 +3404,6 @@ class GenerationMixin:
         decoder_prompt_len = input_ids.shape[-1]  # record the prompt length of decoder
 
         while self._has_unfinished_sequences(this_peer_finished, synced_gpus, device=input_ids.device):
-
             # print("model_kwargs: ", model_kwargs)
             model_inputs = self.prepare_inputs_for_generation(input_ids, **model_kwargs)
 
@@ -3495,9 +3484,7 @@ class GenerationMixin:
                         cross_attentions += (outputs.cross_attentions,)
                 if output_hidden_states:
                     decoder_hidden_states += (
-                        (outputs.decoder_hidden_states,)
-                        if self.config.is_encoder_decoder
-                        else (outputs.hidden_states,)
+                        (outputs.decoder_hidden_states,) if self.config.is_encoder_decoder else (outputs.hidden_states,)
                     )
 
             # reshape for beam search
@@ -3830,9 +3817,7 @@ class GenerationMixin:
 
                 if output_hidden_states:
                     decoder_hidden_states += (
-                        (outputs.decoder_hidden_states,)
-                        if self.config.is_encoder_decoder
-                        else (outputs.hidden_states,)
+                        (outputs.decoder_hidden_states,) if self.config.is_encoder_decoder else (outputs.hidden_states,)
                     )
 
             input_ids = torch.cat([input_ids, current_tokens.unsqueeze(-1)], dim=-1)
@@ -4039,9 +4024,7 @@ class GenerationMixin:
 
                 if output_hidden_states:
                     decoder_hidden_states += (
-                        (outputs.decoder_hidden_states,)
-                        if self.config.is_encoder_decoder
-                        else (outputs.hidden_states,)
+                        (outputs.decoder_hidden_states,) if self.config.is_encoder_decoder else (outputs.hidden_states,)
                     )
 
             # reshape for beam search

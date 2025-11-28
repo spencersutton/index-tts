@@ -80,9 +80,7 @@ class Linear(torch.nn.Module):
             x = x.reshape(x.shape[0], x.shape[1], x.shape[2] * x.shape[3])
 
         if self.max_norm is not None:
-            self.w.weight.data = torch.renorm(
-                self.w.weight.data, p=2, dim=0, maxnorm=self.max_norm
-            )
+            self.w.weight.data = torch.renorm(self.w.weight.data, p=2, dim=0, maxnorm=self.max_norm)
 
         wx = self.w(x)
 

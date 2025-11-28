@@ -25,12 +25,8 @@ class CodecTrainer:
 
     def _init_accelerator(self):
         """Initialize the accelerator components."""
-        self.exp_dir = os.path.join(
-            os.path.abspath(self.cfg.log_dir), self.args.exp_name
-        )
-        project_config = ProjectConfiguration(
-            project_dir=self.exp_dir, logging_dir=os.path.join(self.exp_dir, "log")
-        )
+        self.exp_dir = os.path.join(os.path.abspath(self.cfg.log_dir), self.args.exp_name)
+        project_config = ProjectConfiguration(project_dir=self.exp_dir, logging_dir=os.path.join(self.exp_dir, "log"))
         self.accelerator = accelerate.Accelerator(
             gradient_accumulation_steps=self.cfg.train.gradient_accumulation_step,
             log_with=self.cfg.train.tracker,

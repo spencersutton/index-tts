@@ -61,11 +61,7 @@ class VectorQuantize(nn.Module):
     def forward(self, input):
         dtype = input.dtype
         flatten = input.reshape(-1, self.dim)
-        dist = (
-            flatten.pow(2).sum(1, keepdim=True)
-            - 2 * flatten @ self.embed
-            + self.embed.pow(2).sum(0, keepdim=True)
-        )
+        dist = flatten.pow(2).sum(1, keepdim=True) - 2 * flatten @ self.embed + self.embed.pow(2).sum(0, keepdim=True)
         _, embed_ind = (-dist).max(1)
         embed_onehot = F.one_hot(embed_ind, self.n_embed).type(dtype)
         embed_ind = embed_ind.view(*input.shape[:-1])
@@ -75,10 +71,7 @@ class VectorQuantize(nn.Module):
             self.ema_inplace(self.cluster_size, embed_onehot.sum(0), self.decay)
             embed_sum = flatten.transpose(0, 1) @ embed_onehot
             self.ema_inplace(self.embed_avg, embed_sum, self.decay)
-            cluster_size = (
-                self.laplace_smoothing(self.cluster_size, self.n_embed, self.eps)
-                * self.cluster_size.sum()
-            )
+            cluster_size = self.laplace_smoothing(self.cluster_size, self.n_embed, self.eps) * self.cluster_size.sum()
             embed_normalized = self.embed_avg / cluster_size.unsqueeze(0)
             self.embed.data.copy_(embed_normalized)
 
@@ -93,11 +86,7 @@ class VectorQuantize(nn.Module):
     def forward_index(self, input):
         dtype = input.dtype
         flatten = input.reshape(-1, self.dim)
-        dist = (
-            flatten.pow(2).sum(1, keepdim=True)
-            - 2 * flatten @ self.embed
-            + self.embed.pow(2).sum(0, keepdim=True)
-        )
+        dist = flatten.pow(2).sum(1, keepdim=True) - 2 * flatten @ self.embed + self.embed.pow(2).sum(0, keepdim=True)
         _, embed_ind = (-dist).max(1)
         embed_onehot = F.one_hot(embed_ind, self.n_embed).type(dtype)
         embed_ind = embed_ind.view(*input.shape[:-1])
@@ -112,9 +101,7 @@ class ResidualVQ(nn.Module):
 
     def __init__(self, *, num_quantizers, **kwargs):
         super().__init__()
-        self.layers = nn.ModuleList(
-            [VectorQuantize(**kwargs) for _ in range(num_quantizers)]
-        )
+        self.layers = nn.ModuleList([VectorQuantize(**kwargs) for _ in range(num_quantizers)])
 
     def forward(self, x):
         quantized_out = 0.0
@@ -126,9 +113,7 @@ class ResidualVQ(nn.Module):
             # Issue: https://github.com/lucidrains/vector-quantize-pytorch/issues/33
             # We found considering only the 1st layer VQ's graident results in better performance
             # residual = residual - quantized.detach() # considering all layers' graidents
-            residual = (
-                residual - quantized
-            )  # considering only the first layer's graident
+            residual = residual - quantized  # considering only the first layer's graident
             quantized_out = quantized_out + quantized
             all_losses.append(loss)
             all_perplexities.append(perplexity)
@@ -174,9 +159,7 @@ class Quantizer(nn.Module):
         codebook_size: int,
     ):
         super().__init__()
-        self.codebook = ResidualVQ(
-            dim=code_dim, num_quantizers=codebook_num, codebook_size=codebook_size
-        )
+        self.codebook = ResidualVQ(dim=code_dim, num_quantizers=codebook_num, codebook_size=codebook_size)
 
     def initial(self):
         self.codebook.initial()
@@ -204,9 +187,7 @@ class Conv1d1x1(nn.Conv1d):
     """1x1 Conv1d."""
 
     def __init__(self, in_channels, out_channels, bias=True):
-        super(Conv1d1x1, self).__init__(
-            in_channels, out_channels, kernel_size=1, bias=bias
-        )
+        super(Conv1d1x1, self).__init__(in_channels, out_channels, kernel_size=1, bias=bias)
 
 
 class Conv1d(nn.Module):
@@ -301,9 +282,7 @@ class ResidualUnit(nn.Module):
         nonlinear_activation_params={},
     ):
         super().__init__()
-        self.activation = getattr(nn, nonlinear_activation)(
-            **nonlinear_activation_params
-        )
+        self.activation = getattr(nn, nonlinear_activation)(**nonlinear_activation_params)
         self.conv1 = Conv1d(
             in_channels=in_channels,
             out_channels=out_channels,
@@ -321,13 +300,9 @@ class ResidualUnit(nn.Module):
 
 
 class Projector(nn.Module):
-    def __init__(
-        self, input_channels: int, code_dim: int, kernel_size=3, stride=1, bias=False
-    ):
+    def __init__(self, input_channels: int, code_dim: int, kernel_size=3, stride=1, bias=False):
         super().__init__()
-        self.project = Conv1d(
-            input_channels, code_dim, kernel_size=kernel_size, stride=stride, bias=bias
-        )
+        self.project = Conv1d(input_channels, code_dim, kernel_size=kernel_size, stride=stride, bias=bias)
 
     def forward(self, x):
         return self.project(x)
@@ -359,9 +334,7 @@ class EncoderBlock(nn.Module):
         self.conv = Conv1d(
             in_channels=in_channels,
             out_channels=out_channels,
-            kernel_size=(
-                3 if stride == 1 else (2 * stride)
-            ),  # special case: stride=1, do not use kernel=2
+            kernel_size=(3 if stride == 1 else (2 * stride)),  # special case: stride=1, do not use kernel=2
             stride=stride,
             bias=bias,
         )
@@ -580,9 +553,7 @@ class VevoRepCodec(nn.Module):
             bias=False,
         )
 
-        self.quantizer = Quantizer(
-            code_dim=code_dim, codebook_num=codebook_num, codebook_size=codebook_size
-        )
+        self.quantizer = Quantizer(code_dim=code_dim, codebook_num=codebook_num, codebook_size=codebook_size)
 
     def forward(self, x):
         x = self.encoder(x)

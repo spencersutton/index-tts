@@ -25,9 +25,7 @@ class ConvLayerNorm(nn.LayerNorm):
     before running the normalization and moves them back to original position right after.
     """
 
-    def __init__(
-        self, normalized_shape: tp.Union[int, tp.List[int], torch.Size], **kwargs
-    ):
+    def __init__(self, normalized_shape: tp.Union[int, tp.List[int], torch.Size], **kwargs):
         super().__init__(normalized_shape, **kwargs)
 
     def forward(self, x):

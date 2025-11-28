@@ -35,9 +35,7 @@ class LookupFreeQuantize(nn.Module):
 
         if self.input_dim != self.codebook_dim:
             self.in_project = WNConv1d(self.input_dim, self.codebook_dim, kernel_size=1)
-            self.out_project = WNConv1d(
-                self.codebook_dim, self.input_dim, kernel_size=1
-            )
+            self.out_project = WNConv1d(self.codebook_dim, self.input_dim, kernel_size=1)
 
         else:
             self.in_project = nn.Identity()
@@ -54,21 +52,13 @@ class LookupFreeQuantize(nn.Module):
         commit_loss = torch.zeros(z.shape[0], device=z.device)
         codebook_loss = torch.zeros(z.shape[0], device=z.device)
 
-        bits = (
-            2
-            ** torch.arange(self.codebook_dim, device=z.device)
-            .unsqueeze(0)
-            .unsqueeze(-1)
-            .long()
-        )  # (1, d, 1)
+        bits = 2 ** torch.arange(self.codebook_dim, device=z.device).unsqueeze(0).unsqueeze(-1).long()  # (1, d, 1)
         indices = (torch.round(z_e.clone().detach()).long() * bits).sum(1).long()
 
         return z_q, commit_loss, codebook_loss, indices, z_e
 
     def vq2emb(self, vq, out_proj=True):
-        emb = torch.zeros(
-            vq.shape[0], self.codebook_dim, vq.shape[-1], device=vq.device
-        )  # (B, d, T)
+        emb = torch.zeros(vq.shape[0], self.codebook_dim, vq.shape[-1], device=vq.device)  # (B, d, T)
         for i in range(self.codebook_dim):
             emb[:, i, :] = (vq % 2).float()
             vq = vq // 2

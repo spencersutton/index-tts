@@ -13,11 +13,20 @@ class MelSpecReconstructionLoss(nn.Module):
     """
 
     def __init__(
-        self, sample_rate: int = 24000, n_fft: int = 1024, hop_length: int = 256, n_mels: int = 100,
+        self,
+        sample_rate: int = 24000,
+        n_fft: int = 1024,
+        hop_length: int = 256,
+        n_mels: int = 100,
     ):
         super().__init__()
         self.mel_spec = torchaudio.transforms.MelSpectrogram(
-            sample_rate=sample_rate, n_fft=n_fft, hop_length=hop_length, n_mels=n_mels, center=True, power=1,
+            sample_rate=sample_rate,
+            n_fft=n_fft,
+            hop_length=hop_length,
+            n_mels=n_mels,
+            center=True,
+            power=1,
         )
 
     def forward(self, y_hat, y) -> torch.Tensor:

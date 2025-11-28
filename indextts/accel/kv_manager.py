@@ -104,9 +104,7 @@ class KVCacheManager:
         )
 
     @classmethod
-    def compute_block_hash(
-        cls, token_ids: List[int], parent_hash: Optional[bytes] = None
-    ) -> bytes:
+    def compute_block_hash(cls, token_ids: List[int], parent_hash: Optional[bytes] = None) -> bytes:
         hash_input = []
         if parent_hash is not None:
             hash_input.append(parent_hash)
@@ -135,11 +133,7 @@ class KVCacheManager:
 
         for i in range(sequence.num_blocks):
             token_ids = sequence.get_block_tokens(i)
-            block_hash = (
-                self.compute_block_hash(token_ids, parent_hash)
-                if len(token_ids) == self.block_size
-                else None
-            )
+            block_hash = self.compute_block_hash(token_ids, parent_hash) if len(token_ids) == self.block_size else None
             block_id = self.block_hash_to_id.get(block_hash) if block_hash else None
 
             if block_id is None or self.blocks[block_id].token_ids != token_ids:
@@ -186,11 +180,7 @@ class KVCacheManager:
         elif len(sequence) % self.block_size == 0:
             assert last_block.block_hash is None
             token_ids = sequence.get_block_tokens(sequence.num_blocks - 1)
-            parent_hash = (
-                self.blocks[block_table[-2]].block_hash
-                if len(block_table) > 1
-                else None
-            )
+            parent_hash = self.blocks[block_table[-2]].block_hash if len(block_table) > 1 else None
             block_hash = self.compute_block_hash(token_ids, parent_hash)
             last_block.update(block_hash, token_ids)
             self.block_hash_to_id[block_hash] = last_block.block_id

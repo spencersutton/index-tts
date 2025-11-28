@@ -58,9 +58,7 @@ def build_stable_quantized_cdf(
         raise ValueError("min_range must be at least 2.")
     if check:
         assert quantized_cdf[-1] <= 2**total_range_bits, quantized_cdf[-1]
-        if (
-            (quantized_cdf[1:] - quantized_cdf[:-1]) < min_range
-        ).any() or quantized_cdf[0] < min_range:
+        if ((quantized_cdf[1:] - quantized_cdf[:-1]) < min_range).any() or quantized_cdf[0] < min_range:
             raise ValueError("You must increase your total_range_bits.")
     return quantized_cdf
 
@@ -155,12 +153,8 @@ class ArithmeticCoder:
 
         range_low = 0 if symbol == 0 else quantized_cdf[symbol - 1].item()
         range_high = quantized_cdf[symbol].item() - 1
-        effective_low = int(
-            math.ceil(range_low * (self.delta / (2**self.total_range_bits)))
-        )
-        effective_high = int(
-            math.floor(range_high * (self.delta / (2**self.total_range_bits)))
-        )
+        effective_low = int(math.ceil(range_low * (self.delta / (2**self.total_range_bits))))
+        effective_high = int(math.floor(range_high * (self.delta / (2**self.total_range_bits))))
         assert self.low <= self.high
         self.high = self.low + effective_high
         self.low = self.low + effective_low
@@ -260,12 +254,8 @@ class ArithmeticDecoder:
             mid = (low_idx + high_idx) // 2
             range_low = quantized_cdf[mid - 1].item() if mid > 0 else 0
             range_high = quantized_cdf[mid].item() - 1
-            effective_low = int(
-                math.ceil(range_low * (self.delta / (2**self.total_range_bits)))
-            )
-            effective_high = int(
-                math.floor(range_high * (self.delta / (2**self.total_range_bits)))
-            )
+            effective_low = int(math.ceil(range_low * (self.delta / (2**self.total_range_bits))))
+            effective_high = int(math.floor(range_high * (self.delta / (2**self.total_range_bits))))
             low = effective_low + self.low
             high = effective_high + self.low
             if self.current >= low:

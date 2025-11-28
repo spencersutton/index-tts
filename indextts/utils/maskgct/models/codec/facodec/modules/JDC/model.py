@@ -11,6 +11,7 @@ Kum et al. - "Joint Detection and Classification of Singing Voice Melody Using
 Convolutional Recurrent Neural Networks" (2019)
 Link: https://www.semanticscholar.org/paper/Joint-Detection-and-Classification-of-Singing-Voice-Kum-Nam/60a2ad4c7db43bace75805054603747fcd062c0d
 """
+
 import torch
 from torch import nn
 
@@ -26,21 +27,15 @@ class JDCNet(nn.Module):
 
         # input = (b, 1, 31, 513), b = batch size
         self.conv_block = nn.Sequential(
-            nn.Conv2d(
-                in_channels=1, out_channels=64, kernel_size=3, padding=1, bias=False
-            ),  # out: (b, 64, 31, 513)
+            nn.Conv2d(in_channels=1, out_channels=64, kernel_size=3, padding=1, bias=False),  # out: (b, 64, 31, 513)
             nn.BatchNorm2d(num_features=64),
             nn.LeakyReLU(leaky_relu_slope, inplace=True),
             nn.Conv2d(64, 64, 3, padding=1, bias=False),  # (b, 64, 31, 513)
         )
 
         # res blocks
-        self.res_block1 = ResBlock(
-            in_channels=64, out_channels=128
-        )  # (b, 128, 31, 128)
-        self.res_block2 = ResBlock(
-            in_channels=128, out_channels=192
-        )  # (b, 192, 31, 32)
+        self.res_block1 = ResBlock(in_channels=64, out_channels=128)  # (b, 128, 31, 128)
+        self.res_block2 = ResBlock(in_channels=128, out_channels=192)  # (b, 192, 31, 32)
         self.res_block3 = ResBlock(in_channels=192, out_channels=256)  # (b, 256, 31, 8)
 
         # pool block
@@ -78,14 +73,10 @@ class JDCNet(nn.Module):
         )  # (b, 31, 512)
 
         # input: (b * 31, 512)
-        self.classifier = nn.Linear(
-            in_features=512, out_features=self.num_class
-        )  # (b * 31, num_class)
+        self.classifier = nn.Linear(in_features=512, out_features=self.num_class)  # (b * 31, num_class)
 
         # input: (b * 31, 512)
-        self.detector = nn.Linear(
-            in_features=512, out_features=2
-        )  # (b * 31, 2) - binary classifier
+        self.detector = nn.Linear(in_features=512, out_features=2)  # (b * 31, 2) - binary classifier
 
         # initialize weights
         self.apply(self.init_weights)
@@ -142,18 +133,12 @@ class JDCNet(nn.Module):
         poolblock_out = self.pool_block[2](poolblock_out)
 
         # (b, 256, 31, 2) => (b, 31, 256, 2) => (b, 31, 512)
-        classifier_out = (
-            poolblock_out.permute(0, 2, 1, 3).contiguous().view((-1, seq_len, 512))
-        )
-        classifier_out, _ = self.bilstm_classifier(
-            classifier_out
-        )  # ignore the hidden states
+        classifier_out = poolblock_out.permute(0, 2, 1, 3).contiguous().view((-1, seq_len, 512))
+        classifier_out, _ = self.bilstm_classifier(classifier_out)  # ignore the hidden states
 
         classifier_out = classifier_out.contiguous().view((-1, 512))  # (b * 31, 512)
         classifier_out = self.classifier(classifier_out)
-        classifier_out = classifier_out.view(
-            (-1, seq_len, self.num_class)
-        )  # (b, 31, num_class)
+        classifier_out = classifier_out.view((-1, seq_len, self.num_class))  # (b, 31, num_class)
 
         # sizes: (b, 31, 722), (b, 31, 2)
         # classifier output consists of predicted pitch classes per frame

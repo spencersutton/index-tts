@@ -109,14 +109,10 @@ class ResidualVQ(nn.Module):
             if self.training is False and i >= n_quantizers:
                 break
 
-            z_q_i, commit_loss_i, codebook_loss_i, indices_i, z_e_i = quantizer(
-                residual
-            )
+            z_q_i, commit_loss_i, codebook_loss_i, indices_i, z_e_i = quantizer(residual)
 
             # Create mask to apply quantizer dropout
-            mask = (
-                torch.full((z.shape[0],), fill_value=i, device=z.device) < n_quantizers
-            )
+            mask = torch.full((z.shape[0],), fill_value=i, device=z.device) < n_quantizers
             quantized_out = quantized_out + z_q_i * mask[:, None, None]
             residual = residual - z_q_i
 

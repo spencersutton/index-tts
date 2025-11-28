@@ -43,9 +43,7 @@ class FAcodecDataset(torch.utils.data.Dataset):
         self.mean, self.std = -4, 4
 
     def preprocess(self, wave):
-        wave_tensor = (
-            torch.from_numpy(wave).float() if isinstance(wave, np.ndarray) else wave
-        )
+        wave_tensor = torch.from_numpy(wave).float() if isinstance(wave, np.ndarray) else wave
         mel_tensor = self.to_mel(wave_tensor)
         mel_tensor = (torch.log(1e-5 + mel_tensor.unsqueeze(0)) - self.mean) / self.std
         return mel_tensor

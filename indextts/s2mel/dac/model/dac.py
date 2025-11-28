@@ -25,13 +25,13 @@ def init_weights(m):
 class ResidualUnit(nn.Module):
     def __init__(self, dim: int = 16, dilation: int = 1, causal: bool = False):
         super().__init__()
-        conv1d_type = SConv1d# if causal else WNConv1d
+        conv1d_type = SConv1d  # if causal else WNConv1d
         pad = ((7 - 1) * dilation) // 2
         self.block = nn.Sequential(
             Snake1d(dim),
-            conv1d_type(dim, dim, kernel_size=7, dilation=dilation, padding=pad, causal=causal, norm='weight_norm'),
+            conv1d_type(dim, dim, kernel_size=7, dilation=dilation, padding=pad, causal=causal, norm="weight_norm"),
             Snake1d(dim),
-            conv1d_type(dim, dim, kernel_size=1, causal=causal, norm='weight_norm'),
+            conv1d_type(dim, dim, kernel_size=1, causal=causal, norm="weight_norm"),
         )
 
     def forward(self, x):
@@ -45,7 +45,7 @@ class ResidualUnit(nn.Module):
 class EncoderBlock(nn.Module):
     def __init__(self, dim: int = 16, stride: int = 1, causal: bool = False):
         super().__init__()
-        conv1d_type = SConv1d# if causal else WNConv1d
+        conv1d_type = SConv1d  # if causal else WNConv1d
         self.block = nn.Sequential(
             ResidualUnit(dim // 2, dilation=1, causal=causal),
             ResidualUnit(dim // 2, dilation=3, causal=causal),
@@ -58,7 +58,7 @@ class EncoderBlock(nn.Module):
                 stride=stride,
                 padding=math.ceil(stride / 2),
                 causal=causal,
-                norm='weight_norm',
+                norm="weight_norm",
             ),
         )
 
@@ -76,9 +76,9 @@ class Encoder(nn.Module):
         lstm: int = 2,
     ):
         super().__init__()
-        conv1d_type = SConv1d# if causal else WNConv1d
+        conv1d_type = SConv1d  # if causal else WNConv1d
         # Create first convolution
-        self.block = [conv1d_type(1, d_model, kernel_size=7, padding=3, causal=causal, norm='weight_norm')]
+        self.block = [conv1d_type(1, d_model, kernel_size=7, padding=3, causal=causal, norm="weight_norm")]
 
         # Create EncoderBlocks that double channels as they downsample by `stride`
         for stride in strides:
@@ -93,7 +93,7 @@ class Encoder(nn.Module):
         # Create last convolution
         self.block += [
             Snake1d(d_model),
-            conv1d_type(d_model, d_latent, kernel_size=3, padding=1, causal=causal, norm='weight_norm'),
+            conv1d_type(d_model, d_latent, kernel_size=3, padding=1, causal=causal, norm="weight_norm"),
         ]
 
         # Wrap black into nn.Sequential
@@ -118,7 +118,7 @@ class Encoder(nn.Module):
 class DecoderBlock(nn.Module):
     def __init__(self, input_dim: int = 16, output_dim: int = 8, stride: int = 1, causal: bool = False):
         super().__init__()
-        conv1d_type = SConvTranspose1d #if causal else WNConvTranspose1d
+        conv1d_type = SConvTranspose1d  # if causal else WNConvTranspose1d
         self.block = nn.Sequential(
             Snake1d(input_dim),
             conv1d_type(
@@ -128,7 +128,7 @@ class DecoderBlock(nn.Module):
                 stride=stride,
                 padding=math.ceil(stride / 2),
                 causal=causal,
-                norm='weight_norm'
+                norm="weight_norm",
             ),
             ResidualUnit(output_dim, dilation=1, causal=causal),
             ResidualUnit(output_dim, dilation=3, causal=causal),
@@ -150,9 +150,9 @@ class Decoder(nn.Module):
         lstm: int = 2,
     ):
         super().__init__()
-        conv1d_type = SConv1d# if causal else WNConv1d
+        conv1d_type = SConv1d  # if causal else WNConv1d
         # Add first conv layer
-        layers = [conv1d_type(input_channel, channels, kernel_size=7, padding=3, causal=causal, norm='weight_norm')]
+        layers = [conv1d_type(input_channel, channels, kernel_size=7, padding=3, causal=causal, norm="weight_norm")]
 
         if lstm:
             layers += [SLSTM(channels, num_layers=lstm)]
@@ -166,7 +166,7 @@ class Decoder(nn.Module):
         # Add final conv layer
         layers += [
             Snake1d(output_dim),
-            conv1d_type(output_dim, d_out, kernel_size=7, padding=3, causal=causal, norm='weight_norm'),
+            conv1d_type(output_dim, d_out, kernel_size=7, padding=3, causal=causal, norm="weight_norm"),
             nn.Tanh(),
         ]
 
@@ -277,9 +277,7 @@ class DAC(BaseModel, CodecMixin):
                 Number of samples in input audio
         """
         z = self.encoder(audio_data)
-        z, codes, latents, commitment_loss, codebook_loss = self.quantizer(
-            z, n_quantizers
-        )
+        z, codes, latents, commitment_loss, codebook_loss = self.quantizer(z, n_quantizers)
         return z, codes, latents, commitment_loss, codebook_loss
 
     def decode(self, z: torch.Tensor):
@@ -343,9 +341,7 @@ class DAC(BaseModel, CodecMixin):
         """
         length = audio_data.shape[-1]
         audio_data = self.preprocess(audio_data, sample_rate)
-        z, codes, latents, commitment_loss, codebook_loss = self.encode(
-            audio_data, n_quantizers
-        )
+        z, codes, latents, commitment_loss, codebook_loss = self.encode(audio_data, n_quantizers)
 
         x = self.decode(z)
         return {
@@ -367,7 +363,7 @@ if __name__ == "__main__":
     for n, m in model.named_modules():
         o = m.extra_repr()
         p = sum([np.prod(p.size()) for p in m.parameters()])
-        fn = lambda o, p: o + f" {p/1e6:<.3f}M params."
+        fn = lambda o, p: o + f" {p / 1e6:<.3f}M params."
         setattr(m, "extra_repr", partial(fn, o=o, p=p))
     print(model)
     print("Total # of params: ", sum([np.prod(p.size()) for p in model.parameters()]))

@@ -74,7 +74,6 @@ class TextNormalizer:
     # 匹配常见英语缩写 's，仅用于替换为 is，不匹配所有 's
     ENGLISH_CONTRACTION_PATTERN = r"(what|where|who|which|how|t?here|it|s?he|that|this)'s"
 
-
     def use_chinese(self, s):
         has_chinese = bool(re.search(r"[\u4e00-\u9fff]", s))
         has_alpha = bool(re.search(r"[a-zA-Z]", s))
@@ -89,6 +88,7 @@ class TextNormalizer:
         # print(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
         # sys.path.append(model_dir)
         import platform
+
         if self.zh_normalizer is not None and self.en_normalizer is not None:
             return
         if platform.system() != "Linux":  # Mac and Windows
@@ -99,6 +99,7 @@ class TextNormalizer:
         else:
             from tn.chinese.normalizer import Normalizer as NormalizerZh
             from tn.english.normalizer import Normalizer as NormalizerEn
+
             # use new cache dir for build tagger rules with disable remove_interjections and remove_erhua
             cache_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tagger_cache")
             if not os.path.exists(cache_dir):
@@ -117,7 +118,7 @@ class TextNormalizer:
         if self.use_chinese(text):
             text = re.sub(TextNormalizer.ENGLISH_CONTRACTION_PATTERN, r"\1 is", text, flags=re.IGNORECASE)
             replaced_text, pinyin_list = self.save_pinyin_tones(text.rstrip())
-            
+
             replaced_text, original_name_list = self.save_names(replaced_text)
             try:
                 result = self.zh_normalizer.normalize(replaced_text)
@@ -346,7 +347,7 @@ class TextTokenizer:
         tokenized_str: List[str],
         split_tokens: List[str],
         max_text_tokens_per_segment: int,
-        quick_streaming_tokens: int = 0
+        quick_streaming_tokens: int = 0,
     ) -> List[List[str]]:
         """
         将tokenize后的结果按特定token进一步分割
@@ -361,15 +362,23 @@ class TextTokenizer:
             token = tokenized_str[i]
             current_segment.append(token)
             current_segment_tokens_len += 1
-            if not  ("," in split_tokens or "▁," in split_tokens ) and ("," in current_segment or "▁," in current_segment): 
+            if not ("," in split_tokens or "▁," in split_tokens) and (
+                "," in current_segment or "▁," in current_segment
+            ):
                 # 如果当前tokens中有,，则按,分割
                 sub_segments = TextTokenizer.split_segments_by_token(
-                    current_segment, [",", "▁,"], max_text_tokens_per_segment=max_text_tokens_per_segment, quick_streaming_tokens = quick_streaming_tokens
+                    current_segment,
+                    [",", "▁,"],
+                    max_text_tokens_per_segment=max_text_tokens_per_segment,
+                    quick_streaming_tokens=quick_streaming_tokens,
                 )
             elif "-" not in split_tokens and "-" in current_segment:
                 # 没有,，则按-分割
                 sub_segments = TextTokenizer.split_segments_by_token(
-                    current_segment, ["-"], max_text_tokens_per_segment=max_text_tokens_per_segment, quick_streaming_tokens = quick_streaming_tokens
+                    current_segment,
+                    ["-"],
+                    max_text_tokens_per_segment=max_text_tokens_per_segment,
+                    quick_streaming_tokens=quick_streaming_tokens,
                 )
             elif current_segment_tokens_len <= max_text_tokens_per_segment:
                 if token in split_tokens and current_segment_tokens_len > 2:
@@ -412,7 +421,10 @@ class TextTokenizer:
                 continue
             if len(merged_segments) == 0:
                 merged_segments.append(segment)
-            elif len(merged_segments[-1]) + len(segment) <= max_text_tokens_per_segment and total_token > quick_streaming_tokens:
+            elif (
+                len(merged_segments[-1]) + len(segment) <= max_text_tokens_per_segment
+                and total_token > quick_streaming_tokens
+            ):
                 merged_segments[-1] = merged_segments[-1] + segment
             # 或小于最大长度限制的一半，则合并
             elif len(merged_segments[-1]) + len(segment) <= max_text_tokens_per_segment / 2:
@@ -428,11 +440,17 @@ class TextTokenizer:
         "▁.",
         # "▁!", # unk
         "▁?",
-        "▁...", # ellipsis
+        "▁...",  # ellipsis
     ]
-    def split_segments(self, tokenized: List[str], max_text_tokens_per_segment=120, quick_streaming_tokens = 0) -> List[List[str]]:
+
+    def split_segments(
+        self, tokenized: List[str], max_text_tokens_per_segment=120, quick_streaming_tokens=0
+    ) -> List[List[str]]:
         return TextTokenizer.split_segments_by_token(
-            tokenized, self.punctuation_marks_tokens, max_text_tokens_per_segment=max_text_tokens_per_segment, quick_streaming_tokens = quick_streaming_tokens
+            tokenized,
+            self.punctuation_marks_tokens,
+            max_text_tokens_per_segment=max_text_tokens_per_segment,
+            quick_streaming_tokens=quick_streaming_tokens,
         )
 
 
@@ -509,9 +527,7 @@ if __name__ == "__main__":
         pinyin = tokenizer.convert_ids_to_tokens(id)
         if re.match(TextNormalizer.PINYIN_TONE_PATTERN, pinyin, re.IGNORECASE) is None:
             print(f"{pinyin} should be matched")
-    for badcase in [
-        "beta1", "better1", "voice2", "bala2", "babala2", "hunger2"
-    ]:
+    for badcase in ["beta1", "better1", "voice2", "bala2", "babala2", "hunger2"]:
         if re.match(TextNormalizer.PINYIN_TONE_PATTERN, badcase, re.IGNORECASE) is not None:
             print(f"{badcase} should not be matched!")
     # 不应该有 unk_token_id
@@ -524,7 +540,7 @@ if __name__ == "__main__":
         # 测试 normalize后的字符能被分词器识别
         print(f"`{ch}`", "->", tokenizer.sp_model.Encode(ch, out_type=str))
         print(f"` {ch}`", "->", tokenizer.sp_model.Encode(f" {ch}", out_type=str))
-    max_text_tokens_per_segment=120
+    max_text_tokens_per_segment = 120
     for i in range(len(cases)):
         print(f"原始文本: {cases[i]}")
         print(f"Normalized: {text_normalizer.normalize(cases[i])}")
@@ -537,7 +553,7 @@ if __name__ == "__main__":
                 print(f"  {j}, count:", len(segments[j]), ", tokens:", "".join(segments[j]))
                 if len(segments[j]) > max_text_tokens_per_segment:
                     print(f"Warning: segment {j} is too long, length: {len(segments[j])}")
-        #print(f"Token IDs (first 10): {codes[i][:10]}")
+        # print(f"Token IDs (first 10): {codes[i][:10]}")
         if tokenizer.unk_token in codes[i]:
             print(f"Warning: `{cases[i]}` contains UNKNOWN token")
         print(f"Decoded: {tokenizer.decode(codes[i], do_lower_case=True)}")

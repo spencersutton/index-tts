@@ -17,6 +17,7 @@ def find_multiple(n: int, k: int) -> int:
         return n
     return n + k - (n % k)
 
+
 class AdaptiveLayerNorm(nn.Module):
     r"""Adaptive Layer Normalization"""
 
@@ -85,17 +86,33 @@ transformer_configs = {
     "7B": dict(n_layer=32, n_head=32, dim=4096),
     "13B": dict(n_layer=40, n_head=40, dim=5120),
     "30B": dict(n_layer=60, n_head=52, dim=6656),
-    "34B": dict(n_layer=48, n_head=64, dim=8192, vocab_size=32000, n_local_heads=8, intermediate_size=22016,
-                rope_base=1000000),  # CodeLlama-34B-Python-hf
+    "34B": dict(
+        n_layer=48, n_head=64, dim=8192, vocab_size=32000, n_local_heads=8, intermediate_size=22016, rope_base=1000000
+    ),  # CodeLlama-34B-Python-hf
     "70B": dict(n_layer=80, n_head=64, dim=8192, n_local_heads=8, intermediate_size=28672),
     "Mistral-7B": dict(n_layer=32, n_head=32, n_local_heads=8, dim=4096, intermediate_size=14336, vocab_size=32000),
     "stories15M": dict(n_layer=6, n_head=6, dim=288),
     "stories110M": dict(n_layer=12, n_head=12, dim=768),
-
-    "llama-3-8b": dict(block_size=8192, n_layer=32, n_head=32, n_local_heads=8, dim=4096, intermediate_size=14336,
-                       vocab_size=128256, rope_base=500000),
-    "llama-3-70b": dict(block_size=8192, n_layer=80, n_head=64, n_local_heads=8, dim=8192, intermediate_size=28672,
-                        vocab_size=128256, rope_base=500000),
+    "llama-3-8b": dict(
+        block_size=8192,
+        n_layer=32,
+        n_head=32,
+        n_local_heads=8,
+        dim=4096,
+        intermediate_size=14336,
+        vocab_size=128256,
+        rope_base=500000,
+    ),
+    "llama-3-70b": dict(
+        block_size=8192,
+        n_layer=80,
+        n_head=64,
+        n_local_heads=8,
+        dim=8192,
+        intermediate_size=28672,
+        vocab_size=128256,
+        rope_base=500000,
+    ),
 }
 
 
@@ -103,8 +120,8 @@ class KVCache(nn.Module):
     def __init__(self, max_batch_size, max_seq_length, n_heads, head_dim, dtype=torch.bfloat16):
         super().__init__()
         cache_shape = (max_batch_size, n_heads, max_seq_length, head_dim)
-        self.register_buffer('k_cache', torch.zeros(cache_shape, dtype=dtype))
-        self.register_buffer('v_cache', torch.zeros(cache_shape, dtype=dtype))
+        self.register_buffer("k_cache", torch.zeros(cache_shape, dtype=dtype))
+        self.register_buffer("v_cache", torch.zeros(cache_shape, dtype=dtype))
 
     def update(self, input_pos, k_val, v_val):
         # input_pos: [S], k_val: [B, H, S, D]
@@ -143,10 +160,13 @@ class Transformer(nn.Module):
 
         if not self.training and use_kv_cache:
             for b in self.layers:
-                b.attention.kv_cache = KVCache(max_batch_size, max_seq_length, self.config.n_local_heads, head_dim, dtype).to(device)
+                b.attention.kv_cache = KVCache(
+                    max_batch_size, max_seq_length, self.config.n_local_heads, head_dim, dtype
+                ).to(device)
 
-        self.freqs_cis = precompute_freqs_cis(self.config.block_size, self.config.head_dim,
-                                              self.config.rope_base, dtype).to(device)
+        self.freqs_cis = precompute_freqs_cis(
+            self.config.block_size, self.config.head_dim, self.config.rope_base, dtype
+        ).to(device)
         self.causal_mask = torch.tril(torch.ones(self.max_seq_length, self.max_seq_length, dtype=torch.bool)).to(device)
         self.use_kv_cache = use_kv_cache
         self.uvit_skip_connection = self.config.uvit_skip_connection
@@ -157,17 +177,18 @@ class Transformer(nn.Module):
             self.layers_emit_skip = []
             self.layers_receive_skip = []
 
-    def forward(self,
-                x: Tensor,
-                c: Tensor,
-                input_pos: Optional[Tensor] = None,
-                mask: Optional[Tensor] = None,
-                context: Optional[Tensor] = None,
-                context_input_pos: Optional[Tensor] = None,
-                cross_attention_mask: Optional[Tensor] = None,
-                ) -> Tensor:
+    def forward(
+        self,
+        x: Tensor,
+        c: Tensor,
+        input_pos: Optional[Tensor] = None,
+        mask: Optional[Tensor] = None,
+        context: Optional[Tensor] = None,
+        context_input_pos: Optional[Tensor] = None,
+        cross_attention_mask: Optional[Tensor] = None,
+    ) -> Tensor:
         assert self.freqs_cis is not None, "Caches must be initialized first"
-        if mask is None: # in case of non-causal model
+        if mask is None:  # in case of non-causal model
             if not self.training and self.use_kv_cache:
                 mask = self.causal_mask[None, None, input_pos]
             else:
@@ -218,23 +239,26 @@ class TransformerBlock(nn.Module):
 
         self.time_as_token = config.time_as_token
 
-    def forward(self,
-                x: Tensor,
-                c: Tensor,
-                input_pos: Tensor,
-                freqs_cis: Tensor,
-                mask: Tensor,
-                context: Optional[Tensor] = None,
-                context_freqs_cis: Optional[Tensor] = None,
-                cross_attention_mask: Optional[Tensor] = None,
-                skip_in_x: Optional[Tensor] = None,
-                ) -> Tensor:
+    def forward(
+        self,
+        x: Tensor,
+        c: Tensor,
+        input_pos: Tensor,
+        freqs_cis: Tensor,
+        mask: Tensor,
+        context: Optional[Tensor] = None,
+        context_freqs_cis: Optional[Tensor] = None,
+        cross_attention_mask: Optional[Tensor] = None,
+        skip_in_x: Optional[Tensor] = None,
+    ) -> Tensor:
         c = None if self.time_as_token else c
         if self.uvit_skip_connection and skip_in_x is not None:
             x = self.skip_in_linear(torch.cat([x, skip_in_x], dim=-1))
         h = x + self.attention(self.attention_norm(x, c), freqs_cis, mask, input_pos)
         if self.has_cross_attention:
-            h = h + self.cross_attention(self.cross_attention_norm(h, c), freqs_cis, cross_attention_mask, input_pos, context, context_freqs_cis)
+            h = h + self.cross_attention(
+                self.cross_attention_norm(h, c), freqs_cis, cross_attention_mask, input_pos, context, context_freqs_cis
+            )
         out = h + self.feed_forward(self.ffn_norm(h, c))
         return out
 
@@ -267,14 +291,15 @@ class Attention(nn.Module):
     #         wv = state_dict.pop(prefix + "wv.weight")
     #         state_dict[prefix + "wqkv.weight"] = torch.cat([wq, wk, wv])
 
-    def forward(self,
-                x: Tensor,
-                freqs_cis: Tensor,
-                mask: Tensor,
-                input_pos: Optional[Tensor] = None,
-                context: Optional[Tensor] = None,
-                context_freqs_cis: Optional[Tensor] = None,
-                ) -> Tensor:
+    def forward(
+        self,
+        x: Tensor,
+        freqs_cis: Tensor,
+        mask: Tensor,
+        input_pos: Optional[Tensor] = None,
+        context: Optional[Tensor] = None,
+        context_freqs_cis: Optional[Tensor] = None,
+    ) -> Tensor:
         bsz, seqlen, _ = x.shape
 
         kv_size = self.n_local_heads * self.head_dim
@@ -333,10 +358,7 @@ class RMSNorm(nn.Module):
         return output * self.weight
 
 
-def precompute_freqs_cis(
-        seq_len: int, n_elem: int, base: int = 10000,
-        dtype: torch.dtype = torch.bfloat16
-) -> Tensor:
+def precompute_freqs_cis(seq_len: int, n_elem: int, base: int = 10000, dtype: torch.dtype = torch.bfloat16) -> Tensor:
     freqs = 1.0 / (base ** (torch.arange(0, n_elem, 2)[: (n_elem // 2)].float() / n_elem))
     t = torch.arange(seq_len, device=freqs.device)
     freqs = torch.outer(t, freqs)

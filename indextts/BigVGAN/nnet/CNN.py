@@ -132,7 +132,7 @@ class SincConv(nn.Module):
             pass
 
         else:
-            raise ValueError("Padding must be 'same', 'valid' or 'causal'. Got %s." % (self.padding))
+            raise ValueError(f"Padding must be 'same', 'valid' or 'causal'. Got {self.padding}.")
 
         sinc_filters = self._get_sinc_filters()
 
@@ -164,7 +164,7 @@ class SincConv(nn.Module):
 
         # Kernel size must be odd
         if self.kernel_size % 2 == 0:
-            raise ValueError("The field kernel size must be an odd number. Got %s." % (self.kernel_size))
+            raise ValueError(f"The field kernel size must be an odd number. Got {self.kernel_size}.")
         return in_channels
 
     def _get_sinc_filters(self):
@@ -471,7 +471,7 @@ class Conv1d(nn.Module):
 
         # Kernel size must be odd
         if not self.padding == "valid" and self.kernel_size % 2 == 0:
-            raise ValueError("The field kernel size must be an odd number. Got %s." % (self.kernel_size))
+            raise ValueError(f"The field kernel size must be an odd number. Got {self.kernel_size}.")
 
         return in_channels
 

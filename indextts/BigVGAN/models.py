@@ -347,7 +347,7 @@ class DiscriminatorP(torch.nn.Module):
         super().__init__()
         self.period = period
         self.d_mult = h.discriminator_channel_mult
-        norm_f = weight_norm if use_spectral_norm == False else spectral_norm
+        norm_f = weight_norm if not use_spectral_norm else spectral_norm
         self.convs = nn.ModuleList(
             [
                 norm_f(Conv2d(1, int(32 * self.d_mult), (kernel_size, 1), (stride, 1), padding=(get_padding(5, 1), 0))),
@@ -437,10 +437,10 @@ class DiscriminatorR(nn.Module):
         assert len(self.resolution) == 3, f"MRD layer requires list with len=3, got {self.resolution}"
         self.lrelu_slope = LRELU_SLOPE
 
-        norm_f = weight_norm if cfg.use_spectral_norm == False else spectral_norm
+        norm_f = weight_norm if not cfg.use_spectral_norm else spectral_norm
         if hasattr(cfg, "mrd_use_spectral_norm"):
             print(f"INFO: overriding MRD use_spectral_norm as {cfg.mrd_use_spectral_norm}")
-            norm_f = weight_norm if cfg.mrd_use_spectral_norm == False else spectral_norm
+            norm_f = weight_norm if not cfg.mrd_use_spectral_norm else spectral_norm
         self.d_mult = cfg.discriminator_channel_mult
         if hasattr(cfg, "mrd_channel_mult"):
             print(f"INFO: overriding mrd channel multiplier as {cfg.mrd_channel_mult}")

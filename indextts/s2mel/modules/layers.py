@@ -16,7 +16,7 @@ def _get_activation_fn(activ):
     elif activ == "swish":
         return lambda x: x * torch.sigmoid(x)
     else:
-        raise RuntimeError("Unexpected activ type %s, expected [relu, lrelu, swish]" % activ)
+        raise RuntimeError(f"Unexpected activ type {activ}, expected [relu, lrelu, swish]")
 
 
 class LinearNorm(torch.nn.Module):

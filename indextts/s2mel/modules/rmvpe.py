@@ -434,7 +434,7 @@ class MelSpectrogram(torch.nn.Module):
                 magnitude = F.pad(magnitude, (0, 0, 0, size - resize))
             magnitude = magnitude[:, :size, :] * self.win_length / win_length_new
         mel_output = torch.matmul(self.mel_basis, magnitude)
-        if self.is_half == True:
+        if self.is_half:
             mel_output = mel_output.half()
         log_mel_spec = torch.log(torch.clamp(mel_output, min=self.clamp))
         return log_mel_spec
@@ -453,7 +453,7 @@ class RMVPE:
             import onnxruntime as ort
 
             ort_session = ort.InferenceSession(
-                "%s/rmvpe.onnx" % os.environ["rmvpe_root"],
+                "{}/rmvpe.onnx".format(os.environ["rmvpe_root"]),
                 providers=["DmlExecutionProvider"],
             )
             self.model = ort_session
@@ -520,7 +520,7 @@ class RMVPE:
             hidden = hidden.squeeze(0).cpu().numpy()
         else:
             hidden = hidden[0]
-        if self.is_half == True:
+        if self.is_half:
             hidden = hidden.astype("float32")
 
         f0 = self.decode(hidden, thred=thred)
@@ -546,7 +546,7 @@ class RMVPE:
             hidden = hidden.cpu().numpy()
         else:
             pass
-        if self.is_half == True:
+        if self.is_half:
             hidden = hidden.astype("float32")
 
         f0s = []

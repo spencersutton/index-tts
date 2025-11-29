@@ -175,10 +175,7 @@ def generate(
     # create an empty tensor of the expected final shape and fill in the current tokens
     T = prompt.size(0)
     T_new = T + max_new_tokens
-    if interactive:
-        max_seq_length = 350
-    else:
-        max_seq_length = min(T_new, model.config.block_size)
+    max_seq_length = 350 if interactive else min(T_new, model.config.block_size)
 
     device, dtype = prompt.device, prompt.dtype
     max_seq_length = max_seq_length + speculate_k + 1 if is_speculative else max_seq_length
@@ -306,11 +303,10 @@ def main(
 
     rank = maybe_init_dist()
     use_tp = rank is not None
-    if use_tp:
-        if rank != 0:
-            # only print on rank 0
-            def print(*args, **kwargs) -> None:
-                return None
+    if use_tp and rank != 0:
+        # only print on rank 0
+        def print(*args, **kwargs) -> None:
+            return None
 
     print(f"Using device={device}")
     precision = torch.bfloat16
@@ -321,10 +317,7 @@ def main(
     t0 = time.time()
     model = _load_model(checkpoint_path, device, precision, use_tp)
 
-    if is_speculative:
-        draft_model = _load_model(draft_checkpoint_path, device, precision, use_tp)
-    else:
-        draft_model = None
+    draft_model = _load_model(draft_checkpoint_path, device, precision, use_tp) if is_speculative else None
 
     device_sync(device=device)  # MKG
     print(f"Time to load model: {time.time() - t0:.02f} seconds")

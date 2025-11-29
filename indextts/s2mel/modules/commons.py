@@ -257,10 +257,7 @@ def modify_w2v_forward(self, output_layer=15):
 
         hidden_states = self.dropout(hidden_states)
 
-        if self.embed_positions is not None:
-            relative_position_embeddings = self.embed_positions(hidden_states)
-        else:
-            relative_position_embeddings = None
+        relative_position_embeddings = self.embed_positions(hidden_states) if self.embed_positions is not None else None
 
         deepspeed_zero3_is_enabled = False
 
@@ -271,7 +268,7 @@ def modify_w2v_forward(self, output_layer=15):
             # add LayerDrop (see https://arxiv.org/abs/1909.11556 for description)
             dropout_probability = torch.rand([])
 
-            skip_the_layer = True if self.training and (dropout_probability < self.config.layerdrop) else False
+            skip_the_layer = bool(self.training and dropout_probability < self.config.layerdrop)
             if not skip_the_layer or deepspeed_zero3_is_enabled:
                 # under deepspeed zero3 all gpus must run in sync
                 if self.gradient_checkpointing and self.training:

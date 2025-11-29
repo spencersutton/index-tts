@@ -139,10 +139,7 @@ def rational_quadratic_spline(
     cumheights[..., -1] = top
     heights = cumheights[..., 1:] - cumheights[..., :-1]
 
-    if inverse:
-        bin_idx = searchsorted(cumheights, inputs)[..., None]
-    else:
-        bin_idx = searchsorted(cumwidths, inputs)[..., None]
+    bin_idx = searchsorted(cumheights, inputs)[..., None] if inverse else searchsorted(cumwidths, inputs)[..., None]
 
     input_cumwidths = cumwidths.gather(-1, bin_idx)[..., 0]
     input_bin_widths = widths.gather(-1, bin_idx)[..., 0]

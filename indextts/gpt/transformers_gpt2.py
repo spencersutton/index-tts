@@ -96,10 +96,7 @@ def load_tf_weights_in_gpt2(model, config, gpt2_checkpoint_path):
         name = name.split("/")
         pointer = model
         for m_name in name:
-            if re.fullmatch(r"[A-Za-z]+\d+", m_name):
-                scope_names = re.split(r"(\d+)", m_name)
-            else:
-                scope_names = [m_name]
+            scope_names = re.split(r"(\d+)", m_name) if re.fullmatch(r"[A-Za-z]+\d+", m_name) else [m_name]
             if scope_names[0] == "w" or scope_names[0] == "g":
                 pointer = getattr(pointer, "weight")
             elif scope_names[0] == "b":
@@ -324,10 +321,7 @@ class GPT2Attention(nn.Module):
             key = torch.cat((past_key, key), dim=-2)
             value = torch.cat((past_value, value), dim=-2)
 
-        if use_cache is True:
-            present = (key, value)
-        else:
-            present = None
+        present = (key, value) if use_cache is True else None
 
         if self.reorder_and_upcast_attn:
             attn_output, attn_weights = self._upcast_and_reordered_attn(query, key, value, attention_mask, head_mask)
@@ -543,7 +537,7 @@ class GPT2SdpaAttention(GPT2Attention):
 
         # We dispatch to SDPA's Flash Attention or Efficient kernels via this `is_causal` if statement instead of an inline conditional assignment
         # in SDPA to support both torch.compile's dynamic shapes and full graph options. An inline conditional prevents dynamic shapes from compiling.
-        is_causal = True if attention_mask is None and q_len > 1 and not is_cross_attention else False
+        is_causal = bool(attention_mask is None and q_len > 1 and not is_cross_attention)
 
         attn_output = torch.nn.functional.scaled_dot_product_attention(
             query,
@@ -656,10 +650,7 @@ class GPT2Block(nn.Module):
         # residual connection
         hidden_states = residual + feed_forward_hidden_states
 
-        if use_cache:
-            outputs = (hidden_states, *outputs)
-        else:
-            outputs = (hidden_states, *outputs[1:])
+        outputs = (hidden_states, *outputs) if use_cache else (hidden_states, *outputs[1:])
 
         return outputs  # hidden_states, present, (attentions, cross_attentions)
 
@@ -931,7 +922,7 @@ class GPT2Model(GPT2PreTrainedModel):
         )
         assert_device_map(self.device_map, len(self.h))
         self.model_parallel = True
-        self.first_device = "cpu" if "cpu" in self.device_map.keys() else "cuda:" + str(min(self.device_map.keys()))
+        self.first_device = "cpu" if "cpu" in self.device_map else "cuda:" + str(min(self.device_map.keys()))
         self.last_device = "cuda:" + str(max(self.device_map.keys()))
         self.wte = self.wte.to(self.first_device)
         self.wpe = self.wpe.to(self.first_device)
@@ -1074,7 +1065,7 @@ class GPT2Model(GPT2PreTrainedModel):
                 encoder_attention_mask = _prepare_4d_attention_mask_for_sdpa(
                     mask=encoder_attention_mask, dtype=inputs_embeds.dtype, tgt_len=input_shape[-1]
                 )
-            elif not self._attn_implementation == "flash_attention_2":
+            elif self._attn_implementation != "flash_attention_2":
                 encoder_attention_mask = self.invert_attention_mask(encoder_attention_mask)
         else:
             encoder_attention_mask = None
@@ -1093,12 +1084,11 @@ class GPT2Model(GPT2PreTrainedModel):
 
         output_shape = (-1, *input_shape[1:], hidden_states.size(-1))
 
-        if self.gradient_checkpointing and self.training:
-            if use_cache:
-                logger.warning_once(
-                    "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
-                )
-                use_cache = False
+        if self.gradient_checkpointing and self.training and use_cache:
+            logger.warning_once(
+                "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
+            )
+            use_cache = False
 
         presents = () if use_cache else None
         all_self_attentions = () if output_attentions else None

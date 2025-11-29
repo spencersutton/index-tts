@@ -445,7 +445,7 @@ def shard_checkpoint(
         shard_file = weights_name.replace(".bin", f"-{idx + 1:05d}-of-{len(sharded_state_dicts):05d}.bin")
         shard_file = shard_file.replace(".safetensors", f"-{idx + 1:05d}-of-{len(sharded_state_dicts):05d}.safetensors")
         shards[shard_file] = shard
-        for key in shard.keys():
+        for key in shard:
             weight_map[key] = shard_file
 
     # Add the metadata
@@ -627,10 +627,7 @@ def set_initialized_submodules(model, state_dict_keys):
 
 def _end_ptr(tensor: torch.Tensor) -> int:
     # extract the end of the pointer if the tensor is a slice of a bigger tensor
-    if tensor.nelement():
-        stop = tensor.view(-1)[-1].data_ptr() + tensor.element_size()
-    else:
-        stop = tensor.data_ptr()
+    stop = tensor.view(-1)[-1].data_ptr() + tensor.element_size() if tensor.nelement() else tensor.data_ptr()
     return stop
 
 
@@ -706,16 +703,16 @@ def _load_state_dict_into_model(model_to_load, state_dict, start_prefix, assign_
     renamed_gamma = {}
     renamed_beta = {}
     warning_msg = f"A pretrained model of type `{model_to_load.__class__.__name__}` "
-    for key in state_dict.keys():
+    for key in state_dict:
         new_key = None
         if "gamma" in key:
             # We add only the first key as an example
             new_key = key.replace("gamma", "weight")
-            renamed_gamma[key] = new_key if not renamed_gamma else renamed_gamma
+            renamed_gamma[key] = renamed_gamma if renamed_gamma else new_key
         if "beta" in key:
             # We add only the first key as an example
             new_key = key.replace("beta", "bias")
-            renamed_beta[key] = new_key if not renamed_beta else renamed_beta
+            renamed_beta[key] = renamed_beta if renamed_beta else new_key
         if new_key:
             old_keys.append(key)
             new_keys.append(new_key)
@@ -753,7 +750,7 @@ def _load_state_dict_into_model(model_to_load, state_dict, start_prefix, assign_
                 # In sharded models, each shard has only part of the full state_dict, so only gather
                 # parameters that are in the current state_dict.
                 named_parameters = dict(module.named_parameters(prefix=prefix[:-1], recurse=False))
-                params_to_gather = [named_parameters[k] for k in state_dict.keys() if k in named_parameters]
+                params_to_gather = [named_parameters[k] for k in state_dict if k in named_parameters]
                 if len(params_to_gather) > 0:
                     # because zero3 puts placeholders in model params, this context
                     # manager gathers (unpartitions) the params of the current layer, then loads from
@@ -865,16 +862,16 @@ def _load_state_dict_into_meta_model(
     renamed_beta = {}
     is_quantized = hf_quantizer is not None
     warning_msg = f"This model {type(model)}"
-    for key in state_dict.keys():
+    for key in state_dict:
         new_key = None
         if "gamma" in key:
             # We add only the first key as an example
             new_key = key.replace("gamma", "weight")
-            renamed_gamma[key] = new_key if not renamed_gamma else renamed_gamma
+            renamed_gamma[key] = renamed_gamma if renamed_gamma else new_key
         if "beta" in key:
             # We add only the first key as an example
             new_key = key.replace("beta", "bias")
-            renamed_beta[key] = new_key if not renamed_beta else renamed_beta
+            renamed_beta[key] = renamed_beta if renamed_beta else new_key
 
         # To reproduce `_load_state_dict_into_model` behaviour, we need to manually rename parametrized weigth norm, if necessary.
         if hasattr(nn.utils.parametrizations, "weight_norm"):
@@ -1619,7 +1616,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
             # use_flash_attention_2 takes priority over SDPA, hence SDPA treated in this elif.
             config = cls._check_and_enable_sdpa(
                 config,
-                hard_check_only=False if requested_attn_implementation is None else True,
+                hard_check_only=requested_attn_implementation is not None,
             )
 
             if (
@@ -1972,7 +1969,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                     f"Encoder module {encoder_pointer} does not match decoder module {decoder_pointer}"
                 )
 
-                all_encoder_weights = {module_name + "/" + sub_name for sub_name in encoder_modules.keys()}
+                all_encoder_weights = {module_name + "/" + sub_name for sub_name in encoder_modules}
                 encoder_layer_pos = 0
                 for name, module in decoder_modules.items():
                     if name.isdigit():
@@ -2877,7 +2874,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         # Handle the case where some state_dict keys shouldn't be saved
         if self._keys_to_ignore_on_save is not None:
             for ignore_key in self._keys_to_ignore_on_save:
-                if ignore_key in state_dict.keys():
+                if ignore_key in state_dict:
                     del state_dict[ignore_key]
         if safe_serialization:
             # Safetensors does not allow tensor aliasing.
@@ -2984,7 +2981,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
             if (
                 filename.startswith(weights_no_suffix)
                 and os.path.isfile(full_filename)
-                and filename not in state_dict_split.filename_to_tensors.keys()
+                and filename not in state_dict_split.filename_to_tensors
                 and is_main_process
                 and reg.fullmatch(filename_no_suffix) is not None
             ):
@@ -4049,10 +4046,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                 (torch_dtype == torch.float16) or hasattr(hf_quantizer, "use_keep_in_fp32_modules")
             )
 
-            if is_sharded:
-                loaded_state_dict_keys = sharded_metadata["all_checkpoint_keys"]
-            else:
-                loaded_state_dict_keys = list(state_dict.keys())
+            loaded_state_dict_keys = sharded_metadata["all_checkpoint_keys"] if is_sharded else list(state_dict.keys())
 
             if gguf_path is None and (low_cpu_mem_usage or (use_keep_in_fp32_modules and is_accelerate_available())):
                 # In case some weights need to be kept in float32 and accelerate is not installed,
@@ -5008,10 +5002,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
             if loss_type not in LOSS_MAPPING:
                 loss_groups = f"({'|'.join(LOSS_MAPPING)})"
                 loss_type = re.findall(loss_groups, self.__class__.__name__)
-                if len(loss_type) > 0:
-                    loss_type = loss_type[0]
-                else:
-                    loss_type = None
+                loss_type = loss_type[0] if len(loss_type) > 0 else None
         if loss_type is None or (loss_type not in LOSS_MAPPING and getattr(self.config, "loss_type", None) is not None):
             logger.warning_once(
                 f"`loss_type={loss_type}` was set in the config but it is unrecognised."

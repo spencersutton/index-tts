@@ -123,10 +123,7 @@ class CAMDenseTDNNLayer(nn.Module):
         return self.linear1(self.nonlinear1(x))
 
     def forward(self, x):
-        if self.training and self.memory_efficient:
-            x = cp.checkpoint(self.bn_function, x)
-        else:
-            x = self.bn_function(x)
+        x = cp.checkpoint(self.bn_function, x) if self.training and self.memory_efficient else self.bn_function(x)
         x = self.cam_layer(self.nonlinear2(x))
         return x
 
@@ -185,10 +182,7 @@ class DenseLayer(nn.Module):
         self.nonlinear = get_nonlinear(config_str, out_channels)
 
     def forward(self, x):
-        if len(x.shape) == 2:
-            x = self.linear(x.unsqueeze(dim=-1)).squeeze(dim=-1)
-        else:
-            x = self.linear(x)
+        x = self.linear(x.unsqueeze(dim=-1)).squeeze(dim=-1) if len(x.shape) == 2 else self.linear(x)
         x = self.nonlinear(x)
         return x
 

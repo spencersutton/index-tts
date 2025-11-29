@@ -90,7 +90,7 @@ def pick_and_pop(keys, d):
 
 def group_dict_by_key(cond, d):
     return_val = [{}, {}]
-    for key in d.keys():
+    for key in d:
         match = bool(cond(key))
         ind = int(not match)
         return_val[ind][key] = d[key]
@@ -426,7 +426,7 @@ class ShiftTokens(nn.Module):
         self.shifts = tuple(shifts)
 
     def forward(self, x, **kwargs):
-        mask = kwargs.get("mask", None)
+        mask = kwargs.get("mask")
         shifts = self.shifts
         segments = len(shifts)
         feats_per_shift = x.shape[-1] // segments

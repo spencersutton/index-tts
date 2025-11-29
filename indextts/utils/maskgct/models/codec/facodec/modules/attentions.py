@@ -364,10 +364,7 @@ class FFN(nn.Module):
 
     def forward(self, x, x_mask):
         x = self.conv_1(self.padding(x * x_mask))
-        if self.activation == "gelu":
-            x = x * torch.sigmoid(1.702 * x)
-        else:
-            x = torch.relu(x)
+        x = x * torch.sigmoid(1.702 * x) if self.activation == "gelu" else torch.relu(x)
         x = self.drop(x)
         x = self.conv_2(self.padding(x * x_mask))
         return x * x_mask

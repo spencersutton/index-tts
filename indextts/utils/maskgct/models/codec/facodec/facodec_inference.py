@@ -33,7 +33,7 @@ class FAcodecInference:
 
     def _load_checkpoint(self) -> None:
         sd = torch.load(self.args.checkpoint_path, map_location="cpu")
-        sd = sd["net"] if "net" in sd else sd
+        sd = sd.get("net", sd)
         new_params = {}
         for key, state_dict in sd.items():
             new_state_dict = OrderedDict()

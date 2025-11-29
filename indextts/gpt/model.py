@@ -85,7 +85,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel):
         self.cached_mel_emb = mel_emb
 
     def prepare_inputs_for_generation(self, input_ids, past_key_values=None, **kwargs):
-        token_type_ids = kwargs.get("token_type_ids", None)  # usually None
+        token_type_ids = kwargs.get("token_type_ids")  # usually None
         if not self.kv_cache:
             past_key_values = None
         # only last token for inputs_ids if past is defined in kwargs
@@ -94,8 +94,8 @@ class GPT2InferenceModel(GPT2PreTrainedModel):
             if token_type_ids is not None:
                 token_type_ids = token_type_ids[:, -1].unsqueeze(-1)
 
-        attention_mask = kwargs.get("attention_mask", None)
-        position_ids = kwargs.get("position_ids", None)
+        attention_mask = kwargs.get("attention_mask")
+        position_ids = kwargs.get("position_ids")
 
         if attention_mask is not None and position_ids is None:
             # create position_ids on the fly for batch generation
@@ -627,10 +627,7 @@ class UnifiedVoice(nn.Module):
         mel_codes, mel_targets = self.build_aligned_inputs_and_targets(
             mel_codes, self.start_mel_token, self.stop_mel_token
         )
-        if raw_mels is not None:
-            mel_inp = F.pad(raw_mels, (0, 8))
-        else:
-            mel_inp = mel_codes
+        mel_inp = F.pad(raw_mels, (0, 8)) if raw_mels is not None else mel_codes
         mel_emb = self.mel_embedding(mel_inp)
         mel_emb = mel_emb + self.mel_pos_embedding(mel_codes)
 

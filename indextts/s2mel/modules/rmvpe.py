@@ -453,7 +453,7 @@ class RMVPE:
             import onnxruntime as ort
 
             ort_session = ort.InferenceSession(
-                "{}/rmvpe.onnx".format(os.environ["rmvpe_root"]),
+                "{}/rmvpe.onnx".format(os.environ["RMVPE_ROOT"]),
                 providers=["DmlExecutionProvider"],
             )
             self.model = ort_session
@@ -466,10 +466,7 @@ class RMVPE:
                 ckpt = torch.load(model_path, map_location="cpu")
                 model.load_state_dict(ckpt)
                 model.eval()
-                if is_half:
-                    model = model.half()
-                else:
-                    model = model.float()
+                model = model.half() if is_half else model.float()
                 return model
 
             self.model = get_default_model()
@@ -516,10 +513,7 @@ class RMVPE:
         # torch.cuda.synchronize()
         # t2 = ttime()
         # print(234234,hidden.device.type)
-        if "privateuseone" not in str(self.device):
-            hidden = hidden.squeeze(0).cpu().numpy()
-        else:
-            hidden = hidden[0]
+        hidden = hidden.squeeze(0).cpu().numpy() if "privateuseone" not in str(self.device) else hidden[0]
         if self.is_half:
             hidden = hidden.astype("float32")
 

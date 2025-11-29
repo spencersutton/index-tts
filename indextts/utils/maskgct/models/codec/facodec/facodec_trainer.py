@@ -371,7 +371,7 @@ class FAcodecTrainer(CodecTrainer):
         # Get and log total losses
         self.accelerator.wait_for_everyone()
         epoch_total_loss = epoch_total_loss / len(self.train_dataloader) * self.cfg.train.gradient_accumulation_step
-        for key in epoch_losses.keys():
+        for key in epoch_losses:
             epoch_losses[key] = (
                 epoch_losses[key] / len(self.train_dataloader) * self.cfg.train.gradient_accumulation_step
             )

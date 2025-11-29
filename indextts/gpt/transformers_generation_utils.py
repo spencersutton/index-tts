@@ -673,11 +673,13 @@ class GenerationMixin:
         # exception: Donut checkpoints have task-specific decoder starts and don't expect a BOS token. Note that the
         # original checkpoints can't be detected through `self.__class__.__name__.lower()`, needing custom logic.
         # See: https://github.com/huggingface/transformers/pull/31470
-        elif "donut" in self.__class__.__name__.lower() or (
-            self.config.model_type == "vision-encoder-decoder" and "donut" in self.config.encoder.model_type.lower()
+        elif (
+            "donut" in self.__class__.__name__.lower()
+            or (
+                self.config.model_type == "vision-encoder-decoder" and "donut" in self.config.encoder.model_type.lower()
+            )
+            or self.config.model_type in ["whisper"]
         ):
-            pass
-        elif self.config.model_type in ["whisper"]:
             pass
         # user input but doesn't start with decoder_start_token_id -> prepend decoder_start_token_id (and adjust
         # decoder_attention_mask if provided)
@@ -1299,7 +1301,7 @@ class GenerationMixin:
     def _validate_model_kwargs(self, model_kwargs: dict[str, Any]) -> None:
         """Validates model kwargs for generation. Generate argument typos will also be caught here."""
         # If a `Cache` instance is passed, checks whether the model is compatible with it
-        if isinstance(model_kwargs.get("past_key_values", None), Cache) and not self._supports_cache_class:
+        if isinstance(model_kwargs.get("past_key_values"), Cache) and not self._supports_cache_class:
             raise ValueError(
                 f"{self.__class__.__name__} does not support an instance of `Cache` as `past_key_values`. Please "
                 "check the model documentation for supported cache formats."
@@ -1833,15 +1835,18 @@ class GenerationMixin:
             )
         if not is_torchdynamo_compiling():  # Checks that depend on tensor-dependent control flow
             if (
-                eos_token_tensor is not None
-                and isin_mps_friendly(elements=eos_token_tensor, test_elements=pad_token_tensor).any()
+                (
+                    eos_token_tensor is not None
+                    and isin_mps_friendly(elements=eos_token_tensor, test_elements=pad_token_tensor).any()
+                )
+                and kwargs_has_attention_mask is not None
+                and not kwargs_has_attention_mask
             ):
-                if kwargs_has_attention_mask is not None and not kwargs_has_attention_mask:
-                    logger.warning_once(
-                        "The attention mask is not set and cannot be inferred from input because pad token is same as "
-                        "eos token. As a consequence, you may observe unexpected behavior. Please pass your input's "
-                        "`attention_mask` to obtain reliable results."
-                    )
+                logger.warning_once(
+                    "The attention mask is not set and cannot be inferred from input because pad token is same as "
+                    "eos token. As a consequence, you may observe unexpected behavior. Please pass your input's "
+                    "`attention_mask` to obtain reliable results."
+                )
             if eos_token_tensor is not None and (
                 torch.is_floating_point(eos_token_tensor) or (eos_token_tensor < 0).any()
             ):
@@ -4434,10 +4439,7 @@ def _speculative_sampling(
         t = torch.multinomial(p_prime, num_samples=1).squeeze(1)[None, :]
 
         # The selected tokens include the matches (if any) plus the next sampled tokens
-        if n_matches > 0:
-            valid_tokens = torch.cat((new_candidate_input_ids[:, :n_matches], t), dim=-1)
-        else:
-            valid_tokens = t
+        valid_tokens = torch.cat((new_candidate_input_ids[:, :n_matches], t), dim=-1) if n_matches > 0 else t
 
     return valid_tokens, n_matches
 
@@ -4649,7 +4651,7 @@ def stack_model_outputs(model_outputs: list[ModelOutput], config: PretrainedConf
     # Use a dictionary comprehension to gather attributes from all objects and concatenate them
     concatenated_data = {
         k: _concat([getattr(model_output, k) for model_output in model_outputs])
-        for k in model_output_cls.__dataclass_fields__.keys()
+        for k in model_output_cls.__dataclass_fields__
     }
 
     # Return a new object of the inferred class with the concatenated attributes

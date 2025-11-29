@@ -116,25 +116,16 @@ class TransformerEncoderLayer(nn.Module):
 
         # self attention
         residual = x
-        if self.use_cln:
-            x = self.ln_1(x, conditon)
-        else:
-            x = self.ln_1(x)
+        x = self.ln_1(x, conditon) if self.use_cln else self.ln_1(x)
 
-        if key_padding_mask is not None:
-            key_padding_mask_input = ~(key_padding_mask.bool())
-        else:
-            key_padding_mask_input = None
+        key_padding_mask_input = ~key_padding_mask.bool() if key_padding_mask is not None else None
         x, _ = self.self_attn(query=x, key=x, value=x, key_padding_mask=key_padding_mask_input)
         x = F.dropout(x, self.encoder_dropout, training=self.training)
         x = residual + x
 
         # ffn
         residual = x
-        if self.use_cln:
-            x = self.ln_2(x, conditon)
-        else:
-            x = self.ln_2(x)
+        x = self.ln_2(x, conditon) if self.use_cln else self.ln_2(x)
         x = self.ffn(x)
         x = residual + x
 
@@ -202,9 +193,6 @@ class TransformerEncoder(nn.Module):
         for layer in self.layers:
             x = layer(x, key_padding_mask, condition)
 
-        if self.use_cln:
-            x = self.last_ln(x, condition)
-        else:
-            x = self.last_ln(x)
+        x = self.last_ln(x, condition) if self.use_cln else self.last_ln(x)
 
         return x

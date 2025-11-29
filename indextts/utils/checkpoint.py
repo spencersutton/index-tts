@@ -21,7 +21,7 @@ import yaml
 
 def load_checkpoint(model: torch.nn.Module, model_pth: str) -> dict:
     checkpoint = torch.load(model_pth, map_location="cpu")
-    checkpoint = checkpoint["model"] if "model" in checkpoint else checkpoint
+    checkpoint = checkpoint.get("model", checkpoint)
     model.load_state_dict(checkpoint, strict=True)
     info_path = re.sub(".pth$", ".yaml", model_pth)
     configs = {}

@@ -244,12 +244,7 @@ class MaskGCT_S2A(nn.Module):
                 if m.bias_v is not None:
                     nn.init.xavier_normal_(m.bias_v)
 
-            elif (
-                isinstance(m, nn.Conv1d)
-                or isinstance(m, nn.ConvTranspose1d)
-                or isinstance(m, nn.Conv2d)
-                or isinstance(m, nn.ConvTranspose2d)
-            ):
+            elif isinstance(m, (nn.Conv1d, nn.ConvTranspose1d, nn.Conv2d, nn.ConvTranspose2d)):
                 m.weight.data.normal_(0.0, 0.02)
 
             elif isinstance(m, nn.Linear):

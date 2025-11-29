@@ -304,10 +304,9 @@ class VectorQuantization(nn.Module):
 
         loss = torch.tensor([0.0], device=device, requires_grad=self.training)
 
-        if self.training:
-            if self.commitment_weight > 0:
-                commit_loss = F.mse_loss(quantize.detach(), x)
-                loss = loss + commit_loss * self.commitment_weight
+        if self.training and self.commitment_weight > 0:
+            commit_loss = F.mse_loss(quantize.detach(), x)
+            loss = loss + commit_loss * self.commitment_weight
 
         quantize = self.project_out(quantize)
         quantize = rearrange(quantize, "b n d -> b d n")

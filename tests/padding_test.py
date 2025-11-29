@@ -19,10 +19,7 @@ if __name__ == "__main__":
     import sys
 
     sys.path.append("..")
-    if len(sys.argv) > 1:
-        model_dir = sys.argv[1]
-    else:
-        model_dir = "checkpoints"
+    model_dir = sys.argv[1] if len(sys.argv) > 1 else "checkpoints"
     audio_prompt = "tests/sample_prompt.wav"
     tts = IndexTTS(cfg_path=f"{model_dir}/config.yaml", model_dir=model_dir, use_fp16=False, use_cuda_kernel=False)
     text = "晕 XUAN4 是 一 种 not very good GAN3 觉"

@@ -17,6 +17,9 @@ try:
 except:
     pass
 
+import builtins
+import contextlib
+
 from model import Transformer
 
 ##### Quantization Primitives ######
@@ -242,10 +245,8 @@ class GPTQQuantHandler(QuantHandler):
             pad_calibration_inputs,
         )
 
-        try:
+        with contextlib.suppress(builtins.BaseException):
             lm_eval.tasks.initialize_tasks()
-        except:
-            pass
         task_dict = get_task_dict(calibration_tasks)
         print("Obtaining GPTQ calibration inputs on: ", calibration_tasks)
 
@@ -416,10 +417,7 @@ class WeightOnlyInt4QuantHandler:
 
     @torch.no_grad()
     def create_quantized_state_dict(self, use_cuda=True):
-        if use_cuda:
-            device = "cuda"
-        else:
-            device = "cpu"
+        device = "cuda" if use_cuda else "cpu"
 
         cur_state_dict = self.mod.state_dict()
         for fqn, mod in self.mod.named_modules():

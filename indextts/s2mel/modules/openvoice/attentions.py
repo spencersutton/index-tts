@@ -67,7 +67,7 @@ class Encoder(nn.Module):
             if self.gin_channels != 0:
                 self.spk_emb_linear = nn.Linear(self.gin_channels, self.hidden_channels)
                 # vits2 says 3rd block, so idx is 2 by default
-                self.cond_layer_idx = kwargs["cond_layer_idx"] if "cond_layer_idx" in kwargs else 2
+                self.cond_layer_idx = kwargs.get("cond_layer_idx", 2)
                 # logging.debug(self.gin_channels, self.cond_layer_idx)
                 assert self.cond_layer_idx < self.n_layers, "cond_layer_idx should be less than n_layers"
         self.drop = nn.Dropout(p_dropout)
@@ -399,10 +399,7 @@ class FFN(nn.Module):
 
     def forward(self, x, x_mask):
         x = self.conv_1(self.padding(x * x_mask))
-        if self.activation == "gelu":
-            x = x * torch.sigmoid(1.702 * x)
-        else:
-            x = torch.relu(x)
+        x = x * torch.sigmoid(1.702 * x) if self.activation == "gelu" else torch.relu(x)
         x = self.drop(x)
         x = self.conv_2(self.padding(x * x_mask))
         return x * x_mask

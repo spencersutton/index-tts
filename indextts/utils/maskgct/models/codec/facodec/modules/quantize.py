@@ -639,14 +639,8 @@ class FApredictors(nn.Module):
             content_rev_latent += quantized[3]
         rev_content_pred = self.rev_content_predictor(content_rev_latent)[0]
 
-        if self.norm_f0:
-            timbre_rev_latent = quantized[0] + quantized[1] + quantized[3]
-        else:
-            timbre_rev_latent = quantized[1] + quantized[3]
-        if self.use_gr_x_timbre:
-            x_spk_pred = self.rev_timbre_predictor(timbre_rev_latent)[0]
-        else:
-            x_spk_pred = None
+        timbre_rev_latent = quantized[0] + quantized[1] + quantized[3] if self.norm_f0 else quantized[1] + quantized[3]
+        x_spk_pred = self.rev_timbre_predictor(timbre_rev_latent)[0] if self.use_gr_x_timbre else None
 
         preds = {
             "f0": f0_pred,
@@ -687,10 +681,7 @@ class FApredictors(nn.Module):
         rev_content_pred = self.rev_content_predictor(content_rev_latent)[0]
 
         timbre_rev_latent = prosody_latent + content_latent + residual_latent
-        if self.use_gr_x_timbre:
-            x_spk_pred = self.rev_timbre_predictor(timbre_rev_latent)[0]
-        else:
-            x_spk_pred = None
+        x_spk_pred = self.rev_timbre_predictor(timbre_rev_latent)[0] if self.use_gr_x_timbre else None
 
         preds = {
             "f0": f0_pred,

@@ -561,7 +561,7 @@ class FACodecDecoder(nn.Module):
         """Apply weight normalization module from all of the layers."""
 
         def _apply_weight_norm(m) -> None:
-            if isinstance(m, nn.Conv1d) or isinstance(m, nn.ConvTranspose1d):
+            if isinstance(m, (nn.Conv1d, nn.ConvTranspose1d)):
                 torch.nn.utils.weight_norm(m)
 
         self.apply(_apply_weight_norm)
@@ -1148,7 +1148,7 @@ class FACodecDecoderV2(nn.Module):
         """Apply weight normalization module from all of the layers."""
 
         def _apply_weight_norm(m) -> None:
-            if isinstance(m, nn.Conv1d) or isinstance(m, nn.ConvTranspose1d):
+            if isinstance(m, (nn.Conv1d, nn.ConvTranspose1d)):
                 torch.nn.utils.weight_norm(m)
 
         self.apply(_apply_weight_norm)

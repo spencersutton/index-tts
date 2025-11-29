@@ -22,7 +22,7 @@ class ResidualVQ(nn.Module):
         self.layers = nn.ModuleList([VQ(codebook_size=2**size, **kwargs) for size in codebook_size])
         self.num_quantizers = num_quantizers
         self.quantizer_dropout = kwargs.get("quantizer_dropout", 0.0)
-        self.dropout_type = kwargs.get("dropout_type", None)
+        self.dropout_type = kwargs.get("dropout_type")
 
     def forward(self, x, n_quantizers=None):
         quantized_out = 0.0

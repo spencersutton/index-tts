@@ -315,8 +315,7 @@ def get_state_dict_dtype(state_dict):
             return t.dtype
 
     # if no floating dtype was found return whatever the first dtype is
-    else:
-        return next(state_dict.values()).dtype
+    return next(state_dict.values()).dtype
 
 
 def dtype_byte_size(dtype):
@@ -1026,7 +1025,6 @@ class ModuleUtilsMixin:
         process = psutil.Process(os.getpid())
         mem = process.memory_info()
         module.mem_rss_pre_forward = mem.rss
-        return None
 
     @staticmethod
     def _hook_rss_memory_post_forward(module, *args, **kwargs) -> None:
@@ -1040,7 +1038,6 @@ class ModuleUtilsMixin:
         module.mem_rss_post_forward = mem.rss
         mem_rss_diff = module.mem_rss_post_forward - module.mem_rss_pre_forward
         module.mem_rss_diff = mem_rss_diff + (module.mem_rss_diff if hasattr(module, "mem_rss_diff") else 0)
-        return None
 
     def add_memory_hooks(self) -> None:
         """
@@ -5456,12 +5453,11 @@ def unwrap_model(model: nn.Module, recursive: bool = False) -> nn.Module:
             else:
                 kwargs["recursive"] = recursive
         return extract_model_from_parallel(model, **kwargs)
+    # since there could be multiple levels of wrapping, unwrap recursively
+    elif hasattr(model, "module"):
+        return unwrap_model(model.module)
     else:
-        # since there could be multiple levels of wrapping, unwrap recursively
-        if hasattr(model, "module"):
-            return unwrap_model(model.module)
-        else:
-            return model
+        return model
 
 
 def expand_device_map(device_map, param_names, start_prefix):

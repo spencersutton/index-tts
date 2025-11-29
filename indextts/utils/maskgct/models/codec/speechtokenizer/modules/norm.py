@@ -30,4 +30,3 @@ class ConvLayerNorm(nn.LayerNorm):
         x = einops.rearrange(x, "b ... t -> b t ...")
         x = super().forward(x)
         x = einops.rearrange(x, "b t ... -> b ... t")
-        return

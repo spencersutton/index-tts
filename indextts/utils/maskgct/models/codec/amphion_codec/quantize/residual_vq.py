@@ -5,7 +5,7 @@
 
 
 import torch
-import torch.nn as nn
+from torch import nn
 
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize.factorized_vector_quantize import (
     FactorizedVectorQuantize,

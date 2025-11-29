@@ -9,8 +9,8 @@ import os
 from pathlib import Path
 
 import torch
-import torch.nn as nn
 from huggingface_hub import PyTorchModelHubMixin, hf_hub_download
+from torch import nn
 from torch.nn import Conv1d, ConvTranspose1d
 from torch.nn.utils import remove_weight_norm, weight_norm
 

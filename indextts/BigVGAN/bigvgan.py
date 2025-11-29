@@ -9,12 +9,12 @@ import os
 from pathlib import Path
 
 import torch
-import torch.nn as nn
 from huggingface_hub import hf_hub_download
+from torch import nn
 from torch.nn import Conv1d, ConvTranspose1d
 from torch.nn.utils import remove_weight_norm, weight_norm
 
-import indextts.BigVGAN.activations as activations
+from indextts.BigVGAN import activations
 from indextts.BigVGAN.alias_free_activation.torch.act import Activation1d as TorchActivation1d
 from indextts.BigVGAN.ECAPA_TDNN import ECAPA_TDNN
 from indextts.BigVGAN.env import AttrDict

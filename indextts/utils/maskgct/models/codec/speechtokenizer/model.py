@@ -5,8 +5,8 @@
 
 import numpy as np
 import torch
-import torch.nn as nn
 from einops import rearrange
+from torch import nn
 
 from .modules.quantization import ResidualVectorQuantizer
 from .modules.seanet import SEANetDecoder, SEANetEncoder

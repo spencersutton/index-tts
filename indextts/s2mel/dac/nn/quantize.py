@@ -1,8 +1,8 @@
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange
+from torch import nn
 
 from indextts.s2mel.dac.nn.layers import WNConv1d
 

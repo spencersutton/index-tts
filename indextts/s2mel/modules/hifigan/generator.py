@@ -16,10 +16,9 @@
 
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 from scipy.signal import get_window
-from torch import sin
+from torch import nn, sin
 from torch.distributions.uniform import Uniform
 from torch.nn import Conv1d, ConvTranspose1d
 from torch.nn.parameter import Parameter

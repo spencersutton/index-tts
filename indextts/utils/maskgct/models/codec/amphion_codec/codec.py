@@ -6,7 +6,7 @@
 import math
 
 import torch
-import torch.nn as nn
+from torch import nn
 from torch.nn.utils import weight_norm
 
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize import (

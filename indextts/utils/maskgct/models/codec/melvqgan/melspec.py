@@ -5,8 +5,8 @@
 
 import numpy as np
 import torch
-import torch.nn as nn
 from librosa.filters import mel as librosa_mel_fn
+from torch import nn
 
 
 def dynamic_range_compression(x, C=1, clip_val=1e-5):

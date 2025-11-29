@@ -78,21 +78,6 @@ def get_extra_padding_for_conv1d(x: torch.Tensor, kernel_size: int, stride: int,
     return ideal_length - length
 
 
-def pad_for_conv1d(x: torch.Tensor, kernel_size: int, stride: int, padding_total: int = 0):
-    """Pad for a convolution to make sure that the last window is full.
-    Extra padding is added at the end. This is required to ensure that we can rebuild
-    an output of the same length, as otherwise, even with padding, some time steps
-    might get removed.
-    For instance, with total padding = 4, kernel size = 4, stride = 2:
-        0 0 1 2 3 4 5 0 0   # (0s are padding)
-        1   2   3           # (output frames of a convolution, last 0 is never used)
-        0 0 1 2 3 4 5 0     # (output of tr. conv., but pos. 5 is going to get removed as padding)
-            1 2 3 4         # once you removed padding, we are missing one time step !
-    """
-    extra_padding = get_extra_padding_for_conv1d(x, kernel_size, stride, padding_total)
-    return F.pad(x, (0, extra_padding))
-
-
 def pad1d(x: torch.Tensor, paddings: tuple[int, int], mode: str = "zero", value: float = 0.0):
     """Tiny wrapper around F.pad, just to allow for reflect padding on small input.
     If this is the case, we insert extra 0 padding to the right before the reflection happen.
@@ -110,15 +95,6 @@ def pad1d(x: torch.Tensor, paddings: tuple[int, int], mode: str = "zero", value:
         end = padded.shape[-1] - extra_pad
         return padded[..., :end]
     return F.pad(x, paddings, mode, value)
-
-
-def unpad1d(x: torch.Tensor, paddings: tuple[int, int]):
-    """Remove padding from x, handling properly zero padding. Only for 1d!"""
-    padding_left, padding_right = paddings
-    assert padding_left >= 0 and padding_right >= 0, (padding_left, padding_right)
-    assert (padding_left + padding_right) <= x.shape[-1]
-    end = x.shape[-1] - padding_right
-    return x[..., padding_left:end]
 
 
 class NormConv1d(nn.Module):
@@ -247,79 +223,3 @@ class SConv1d(nn.Module):
             padding_left = padding_total - padding_right
             x = pad1d(x, (padding_left, padding_right + extra_padding), mode=self.pad_mode)
         return self.conv(x)
-
-
-class SConvTranspose1d(nn.Module):
-    """ConvTranspose1d with some builtin handling of asymmetric or causal padding
-    and normalization.
-    """
-
-    def __init__(
-        self,
-        in_channels: int,
-        out_channels: int,
-        kernel_size: int,
-        stride: int = 1,
-        causal: bool = False,
-        norm: str = "none",
-        trim_right_ratio: float = 1.0,
-        norm_kwargs: dict[str, tp.Any] = {},
-        **kwargs,
-    ) -> None:
-        super().__init__()
-        self.convtr = NormConvTranspose1d(
-            in_channels, out_channels, kernel_size, stride, causal=causal, norm=norm, norm_kwargs=norm_kwargs
-        )
-        self.causal = causal
-        self.trim_right_ratio = trim_right_ratio
-        assert self.causal or self.trim_right_ratio == 1.0, (
-            "`trim_right_ratio` != 1.0 only makes sense for causal convolutions"
-        )
-        assert self.trim_right_ratio >= 0.0 and self.trim_right_ratio <= 1.0
-
-    def forward(self, x):
-        kernel_size = self.convtr.convtr.kernel_size[0]
-        stride = self.convtr.convtr.stride[0]
-        padding_total = kernel_size - stride
-
-        y = self.convtr(x)
-
-        # We will only trim fixed padding. Extra padding from `pad_for_conv1d` would be
-        # removed at the very end, when keeping only the right length for the output,
-        # as removing it here would require also passing the length at the matching layer
-        # in the encoder.
-        if self.causal:
-            # Trim the padding on the right according to the specified ratio
-            # if trim_right_ratio = 1.0, trim everything from right
-            padding_right = math.ceil(padding_total * self.trim_right_ratio)
-            padding_left = padding_total - padding_right
-            y = unpad1d(y, (padding_left, padding_right))
-        else:
-            # Asymmetric padding required for odd strides
-            padding_right = padding_total // 2
-            padding_left = padding_total - padding_right
-            y = unpad1d(y, (padding_left, padding_right))
-        return y
-
-
-class SLSTM(nn.Module):
-    """
-    LSTM without worrying about the hidden state, nor the layout of the data.
-    Expects input as convolutional layout.
-    """
-
-    def __init__(self, dimension: int, num_layers: int = 2, skip: bool = True) -> None:
-        super().__init__()
-        self.skip = skip
-        self.lstm = nn.LSTM(dimension, dimension, num_layers)
-        self.hidden = None
-
-    def forward(self, x):
-        x = x.permute(2, 0, 1)
-        if self.training:
-            y, _ = self.lstm(x)
-        else:
-            y, self.hidden = self.lstm(x, self.hidden)
-        if self.skip:
-            y = y + x
-        return y.permute(1, 2, 0)

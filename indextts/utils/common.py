@@ -1,26 +1,6 @@
 import re
 
 import torch
-import torchaudio
-
-MATPLOTLIB_FLAG = False
-
-
-def load_audio(audiopath, sampling_rate):
-    audio, sr = torchaudio.load(audiopath)
-
-    if audio.size(0) > 1:  # mix to mono
-        audio = audio[0].unsqueeze(0)
-
-    if sr != sampling_rate:
-        try:
-            audio = torchaudio.functional.resample(audio, sr, sampling_rate)
-        except Exception:
-            print(f"Warning: {audiopath}, wave shape: {audio.shape}, sample_rate: {sr}")
-            return None
-    # clip audio invalid values
-    audio.clip_(-1, 1)
-    return audio
 
 
 def tokenize_by_CJK_char(line: str, do_upper_case=True) -> str:
@@ -101,17 +81,3 @@ def make_pad_mask(lengths: torch.Tensor, max_len: int = 0) -> torch.Tensor:
     seq_range_expand = seq_range.unsqueeze(0).expand(batch_size, max_len)
     seq_length_expand = lengths.unsqueeze(-1)
     return seq_range_expand >= seq_length_expand
-
-
-def safe_log(x: torch.Tensor, clip_val: float = 1e-7) -> torch.Tensor:
-    """
-    Computes the element-wise logarithm of the input tensor with clipping to avoid near-zero values.
-
-    Args:
-        x (Tensor): Input tensor.
-        clip_val (float, optional): Minimum value to clip the input tensor. Defaults to 1e-7.
-
-    Returns:
-        Tensor: Element-wise logarithm of the input tensor with clipping applied.
-    """
-    return torch.log(torch.clip(x, min=clip_val))

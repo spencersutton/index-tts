@@ -4,7 +4,7 @@ Authors
  * Hwidong Na 2020
 """
 
-import torch  # noqa: F401
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 

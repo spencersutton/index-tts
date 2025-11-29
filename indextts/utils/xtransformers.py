@@ -1017,7 +1017,7 @@ class AttentionLayers(nn.Module):
             elif layer_type == "f":
                 out = block(x)
 
-            if layer_type == "a" or layer_type == "c" and present_key_values is not None:
+            if layer_type == "a" or (layer_type == "c" and present_key_values is not None):
                 present_key_values.append((k.detach(), v.detach()))
 
             if exists(post_branch_norm):

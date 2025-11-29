@@ -116,5 +116,5 @@ explicit = true
 line-length = 120
 
 [tool.ruff.lint]
-extend-select = ["UP", "I", "YTT"]
+extend-select = ["UP", "I", "YTT", "RUF"]
 ignore = ["E741", "E402"]

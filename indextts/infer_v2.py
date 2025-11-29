@@ -233,7 +233,7 @@ class IndexTTS2:
         codes_list = []
         device = codes.device
         isfix = False
-        for i in range(0, codes.shape[0]):
+        for i in range(codes.shape[0]):
             code = codes[i]
             if not torch.any(code == self.stop_mel_token).item():
                 len_ = code.size(0)

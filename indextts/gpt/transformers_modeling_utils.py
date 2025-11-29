@@ -1893,7 +1893,6 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         using `from_pretrained`. Any attempt to initialize outside of this function
         will be useless as the torch.nn.init function are all replaced with skip.
         """
-        pass
 
     def _initialize_weights(self, module) -> None:
         """
@@ -4262,7 +4261,6 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                 logger.info(
                     "Generation config file not found, using a generation config created from the model config."
                 )
-                pass
 
         # Dispatch model with hooks on all devices if necessary
         if device_map is not None:

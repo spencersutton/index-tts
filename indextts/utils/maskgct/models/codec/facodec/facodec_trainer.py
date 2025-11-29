@@ -175,7 +175,7 @@ class FAcodecTrainer(CodecTrainer):
         return FAcodecDataset, FAcodecCollator
 
     def _build_criterion(self):
-        criterions = dict()
+        criterions = {}
         stft_criterion = MultiScaleSTFTLoss()
         mel_criterion = MelSpectrogramLoss(
             n_mels=[5, 10, 20, 40, 80, 160, 320],

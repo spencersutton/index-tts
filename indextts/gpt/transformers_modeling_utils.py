@@ -3004,7 +3004,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                         f"Please upgrade accelerate with `pip install -U accelerate`"
                     )
                 # init state_dict for this shard
-                shard_state_dict = {name: "" for name in shard}
+                shard_state_dict = dict.fromkeys(shard, "")
                 for module_name in shard:
                     module = module_map[module_name]
                     # update state dict with onloaded parameters
@@ -4603,7 +4603,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                     if isinstance(resolved_archive_file, (list, tuple))
                     else resolved_archive_file
                 )
-                weight_map = {p: archive_file for p in original_loaded_keys}
+                weight_map = dict.fromkeys(original_loaded_keys, archive_file)
             else:
                 weight_map = {p: os.path.join(folder, f) for p, f in sharded_metadata["weight_map"].items()}
             offload_index = {

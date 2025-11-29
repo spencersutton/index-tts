@@ -64,11 +64,10 @@ class ScheduledSampler(Sampler):
         return num_of_batches * self.batch_size
 
     def __iter__(self):
-        iters = []
-        for dataset in self.concat_dataset.datasets:
-            iters.append(
-                SequentialSampler(dataset).__iter__() if self.holistic_shuffle else RandomSampler(dataset).__iter__()
-            )
+        iters = [
+            SequentialSampler(dataset).__iter__() if self.holistic_shuffle else RandomSampler(dataset).__iter__()
+            for dataset in self.concat_dataset.datasets
+        ]
         init_indices = [0, *self.concat_dataset.cumulative_sizes[:-1]]
         output_batches = []
         for dataset_idx in range(len(self.concat_dataset.datasets)):

@@ -109,7 +109,7 @@ class FAcodecTrainer(CodecTrainer):
             start = time.monotonic_ns()
             self.model = self._build_model()
             end = time.monotonic_ns()
-            for _, model in self.model.items():
+            for model in self.model.values():
                 self.logger.debug(model)
             self.logger.info(f"Building model done in {(end - start) / 1e6:.2f}ms")
             self.logger.info(f"Model parameters: {self._count_parameters() / 1e6:.2f}M")
@@ -135,7 +135,7 @@ class FAcodecTrainer(CodecTrainer):
         start = time.monotonic_ns()
         for k in self.model:
             self.model[k] = self.accelerator.prepare(self.model[k])
-        for k, v in self.optimizer.optimizers.items():
+        for k in self.optimizer.optimizers:
             self.optimizer.optimizers[k] = self.accelerator.prepare(self.optimizer.optimizers[k])
             self.optimizer.schedulers[k] = self.accelerator.prepare(self.optimizer.schedulers[k])
         end = time.monotonic_ns()
@@ -352,7 +352,7 @@ class FAcodecTrainer(CodecTrainer):
                     },
                     step=self.step,
                 )
-                for key, _ in losses.items():
+                for key in losses:
                     self.accelerator.log(
                         {
                             f"Step/Train {key} Loss": losses[key],

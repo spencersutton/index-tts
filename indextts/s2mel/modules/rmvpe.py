@@ -522,9 +522,7 @@ class RMVPE:
         if self.is_half:
             hidden = hidden.astype("float32")
 
-        f0s = []
-        for bib in range(hidden.shape[0]):
-            f0s.append(self.decode(hidden[bib], thred=thred))
+        f0s = [self.decode(hidden[bib], thred=thred) for bib in range(hidden.shape[0])]
         f0s = np.stack(f0s)
         f0s = torch.from_numpy(f0s).to(self.device)
         return f0s

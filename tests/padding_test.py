@@ -66,13 +66,10 @@ if __name__ == "__main__":
         assert len(pad_text_tokens) == batched_text_tokens.shape[0] and batched_text_tokens.ndim == 2
         batch_output = tts.gpt.inference_speech(auto_conditioning, batched_text_tokens, **kwargs)
         del pad_text_tokens
-    mismatch_idx = []
     print("baseline:", baseline.shape, baseline)
     print("--" * 10)
     print("baseline vs padded output:")
-    for i in range(len(output_for_padded)):
-        if not baseline.equal(output_for_padded[i]):
-            mismatch_idx.append(i)
+    mismatch_idx = [i for i in range(len(output_for_padded)) if not baseline.equal(output_for_padded[i])]
 
     if len(mismatch_idx) > 0:
         print("mismatch:", mismatch_idx)

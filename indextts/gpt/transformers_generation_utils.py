@@ -2892,10 +2892,8 @@ class GenerationMixin:
                 else:
                     new_key_values = []
                     for layer in past:
-                        items = []
                         # item is either the key or the value matrix
-                        for item in layer:
-                            items.append(item.repeat_interleave(top_k, dim=0))
+                        items = [item.repeat_interleave(top_k, dim=0) for item in layer]
                         new_key_values.append(tuple(items))
 
                     past = tuple(new_key_values)
@@ -3084,9 +3082,7 @@ class GenerationMixin:
                 else:
                     past_key_values = []
                     for layer in model_kwargs["past_key_values"]:
-                        layer_past_key_values = []
-                        for item in layer:
-                            layer_past_key_values.append(item[..., :-1, :])
+                        layer_past_key_values = [item[..., :-1, :] for item in layer]
                         past_key_values.append(tuple(layer_past_key_values))
                     model_kwargs["past_key_values"] = tuple(past_key_values)
 

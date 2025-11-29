@@ -12,10 +12,7 @@ def load_language_list(language):
 
 
 def scan_language_list():
-    language_list = []
-    for name in os.listdir(I18N_JSON_DIR):
-        if name.endswith(".json"):
-            language_list.append(name.split(".")[0])
+    language_list = [name.split(".")[0] for name in os.listdir(I18N_JSON_DIR) if name.endswith(".json")]
     return language_list
 
 

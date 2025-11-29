@@ -79,10 +79,7 @@ class CodecMixin:
         l_out = self.get_output_length(0)
         L = l_out
 
-        layers = []
-        for layer in self.modules():
-            if isinstance(layer, (nn.Conv1d, nn.ConvTranspose1d)):
-                layers.append(layer)
+        layers = [layer for layer in self.modules() if isinstance(layer, (nn.Conv1d, nn.ConvTranspose1d))]
 
         for layer in reversed(layers):
             d = layer.dilation[0]

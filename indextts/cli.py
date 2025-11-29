@@ -2,6 +2,8 @@ import os
 import sys
 import warnings
 
+from omegaconf import OmegaConf
+
 # Suppress warnings from tensorflow and other libraries
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -72,11 +74,20 @@ def main() -> None:
             args.fp16 = False  # Disable FP16 on CPU
             print("WARNING: Running on CPU may be slow.")
 
-    # TODO: Add CLI support for IndexTTS2.
-    from indextts.infer import IndexTTS
+    cfg = OmegaConf.load(args.config)
 
-    tts = IndexTTS(cfg_path=args.config, model_dir=args.model_dir, use_fp16=args.fp16, device=args.device)
-    tts.infer(audio_prompt=args.voice, text=args.text.strip(), output_path=output_path)
+    # Check for version 2.0 or higher
+    if hasattr(cfg, "version") and float(cfg.version) >= 2.0:
+        from indextts.infer_v2 import IndexTTS2
+
+        print(f">> Detected IndexTTS version {cfg.version}, using IndexTTS2 inference.")
+        tts = IndexTTS2(cfg_path=args.config, model_dir=args.model_dir, use_fp16=args.fp16, device=args.device)
+        tts.infer(spk_audio_prompt=args.voice, text=args.text.strip(), output_path=output_path)
+    else:
+        from indextts.infer import IndexTTS
+
+        tts = IndexTTS(cfg_path=args.config, model_dir=args.model_dir, use_fp16=args.fp16, device=args.device)
+        tts.infer(audio_prompt=args.voice, text=args.text.strip(), output_path=output_path)
 
 
 if __name__ == "__main__":

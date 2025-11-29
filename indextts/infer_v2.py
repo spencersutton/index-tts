@@ -613,7 +613,6 @@ class IndexTTS2:
 
                     if emo_vector is not None:
                         emovec = emovec_mat + (1 - torch.sum(weight_vector)) * emovec
-                        # emovec = emovec_mat
 
                     codes, speech_conditioning_latent = self.gpt.inference_speech(
                         spk_cond_emb,

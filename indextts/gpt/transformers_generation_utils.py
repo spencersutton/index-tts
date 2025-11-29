@@ -17,7 +17,7 @@ import inspect
 import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, NoReturn, Optional, Union
+from typing import TYPE_CHECKING, Any, NoReturn, Optional
 
 import numpy as np
 import torch
@@ -314,16 +314,16 @@ BeamSampleDecoderOnlyOutput = GenerateBeamDecoderOnlyOutput
 BeamSearchEncoderDecoderOutput = GenerateBeamEncoderDecoderOutput
 BeamSampleEncoderDecoderOutput = GenerateBeamEncoderDecoderOutput
 
-GreedySearchOutput = Union[GreedySearchEncoderDecoderOutput, GreedySearchDecoderOnlyOutput]
-SampleOutput = Union[SampleEncoderDecoderOutput, SampleDecoderOnlyOutput]
-BeamSearchOutput = Union[BeamSearchEncoderDecoderOutput, BeamSearchDecoderOnlyOutput]
-BeamSampleOutput = Union[BeamSampleEncoderDecoderOutput, BeamSampleDecoderOnlyOutput]
-ContrastiveSearchOutput = Union[ContrastiveSearchEncoderDecoderOutput, ContrastiveSearchDecoderOnlyOutput]
+GreedySearchOutput = GreedySearchEncoderDecoderOutput | GreedySearchDecoderOnlyOutput
+SampleOutput = SampleEncoderDecoderOutput | SampleDecoderOnlyOutput
+BeamSearchOutput = BeamSearchEncoderDecoderOutput | BeamSearchDecoderOnlyOutput
+BeamSampleOutput = BeamSampleEncoderDecoderOutput | BeamSampleDecoderOnlyOutput
+ContrastiveSearchOutput = ContrastiveSearchEncoderDecoderOutput | ContrastiveSearchDecoderOnlyOutput
 
 # Typing shortcuts
-GenerateNonBeamOutput = Union[GenerateDecoderOnlyOutput, GenerateEncoderDecoderOutput]
-GenerateBeamOutput = Union[GenerateBeamDecoderOnlyOutput, GenerateBeamEncoderDecoderOutput]
-GenerateOutput = Union[GenerateNonBeamOutput, GenerateBeamOutput]
+GenerateNonBeamOutput = GenerateDecoderOnlyOutput | GenerateEncoderDecoderOutput
+GenerateBeamOutput = GenerateBeamDecoderOnlyOutput | GenerateBeamEncoderDecoderOutput
+GenerateOutput = GenerateNonBeamOutput | GenerateBeamOutput
 
 
 class GenerationMixin:

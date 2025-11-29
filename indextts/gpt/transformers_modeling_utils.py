@@ -4402,7 +4402,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
             expected_keys_not_prefixed = [s for s in expected_keys if not s.startswith(prefix_)]
             expected_keys = [s[len(prefix_) :] if s.startswith(prefix_) else s for s in expected_keys]
         elif add_prefix_to_model:
-            expected_keys = [".".join([prefix, s]) for s in expected_keys]
+            expected_keys = [f"{prefix}.{s}" for s in expected_keys]
 
         missing_keys = sorted(set(expected_keys) - set(loaded_keys))
         unexpected_keys = set(loaded_keys) - set(expected_keys)
@@ -4413,7 +4413,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         if remove_prefix_from_model:
             model_buffers = {key[len(prefix_) :] if key.startswith(prefix_) else key for key in model_buffers}
         elif add_prefix_to_model:
-            model_buffers = {".".join([prefix, key]) for key in model_buffers}
+            model_buffers = {f"{prefix}.{key}" for key in model_buffers}
         unexpected_keys = sorted(unexpected_keys - model_buffers)
 
         model.tie_weights()
@@ -4433,7 +4433,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
             if remove_prefix_from_model:
                 group = [key[len(prefix_) :] if key.startswith(prefix_) else key for key in group]
             elif add_prefix_to_model:
-                group = [".".join([prefix, key]) for key in group]
+                group = [f"{prefix}.{key}" for key in group]
             missing_in_group = [k for k in missing_keys if k in group]
             if len(missing_in_group) > 0 and len(missing_in_group) < len(group):
                 missing_keys = [k for k in missing_keys if k not in missing_in_group]
@@ -4823,7 +4823,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                 prefix = f"{self.base_model_prefix}."
                 name = name[len(prefix) :] if name.startswith(prefix) else name
             elif add_prefix:
-                name = ".".join([self.base_model_prefix, name]) if len(name) > 0 else self.base_model_prefix
+                name = f"{self.base_model_prefix}.{name}" if len(name) > 0 else self.base_model_prefix
 
             if name in module_keys:
                 retrieved_modules.append(module)

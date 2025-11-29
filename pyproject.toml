@@ -129,6 +129,8 @@ extend-select = [
   "Q",
   "RSE",
   "SIM",
+  "FLY",
+  "NPY",
 ]
 ignore = [
   "ANN001",

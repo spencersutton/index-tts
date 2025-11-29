@@ -3,10 +3,9 @@
 
 import os
 import shutil
-from collections import UserDict
 
 
-class AttrDict(UserDict):
+class AttrDict(dict):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.__dict__ = self

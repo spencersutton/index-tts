@@ -95,13 +95,13 @@ def split_segments_latin(text, min_len=10):
         List[str]: list of output segments.
     """
     # deal with dirty text characters
-    text = re.sub("[。！？；]", ".", text)
-    text = re.sub("[，]", ",", text)
-    text = re.sub("[“”]", '"', text)
-    text = re.sub("[‘’]", "'", text)
+    text = re.sub(r"[。！？；]", ".", text)
+    text = re.sub(r"[，]", ",", text)
+    text = re.sub(r"[“”]", '"', text)
+    text = re.sub(r"[‘’]", "'", text)
     text = re.sub(r"[\<\>\(\)\[\]\"\«\»]+", "", text)
-    text = re.sub("[\n\t ]+", " ", text)
-    text = re.sub("([,.!?;])", r"\1 $#!", text)
+    text = re.sub(r"[\n\t ]+", " ", text)
+    text = re.sub(r"([,.!?;])", r"\1 $#!", text)
     # split
     segments = [s.strip() for s in text.split("$#!")]
     if len(segments[-1]) == 0:
@@ -148,12 +148,12 @@ def merge_short_segments_latin(sens):
 
 
 def split_segments_zh(text, min_len=10):
-    text = re.sub("[。！？；]", ".", text)
-    text = re.sub("[，]", ",", text)
+    text = re.sub(r"[。！？；]", ".", text)
+    text = re.sub(r"[，]", ",", text)
     # 将文本中的换行符、空格和制表符替换为空格
-    text = re.sub("[\n\t ]+", " ", text)
+    text = re.sub(r"[\n\t ]+", " ", text)
     # 在标点符号后添加一个空格
-    text = re.sub("([,.!?;])", r"\1 $#!", text)
+    text = re.sub(r"([,.!?;])", r"\1 $#!", text)
     # 分隔句子并去除前后空格
     # segments = [s.strip() for s in re.split('(。|！|？|；)', text)]
     segments = [s.strip() for s in text.split("$#!")]

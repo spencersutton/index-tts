@@ -256,17 +256,17 @@ class VectorQuantization(nn.Module):
         commitment_weight: float = 1.0,
     ) -> None:
         super().__init__()
-        _codebook_dim: int = default(codebook_dim, dim)
+        codebook_dim_: int = default(codebook_dim, dim)
 
-        requires_projection = _codebook_dim != dim
-        self.project_in = nn.Linear(dim, _codebook_dim) if requires_projection else nn.Identity()
-        self.project_out = nn.Linear(_codebook_dim, dim) if requires_projection else nn.Identity()
+        requires_projection = codebook_dim_ != dim
+        self.project_in = nn.Linear(dim, codebook_dim_) if requires_projection else nn.Identity()
+        self.project_out = nn.Linear(codebook_dim_, dim) if requires_projection else nn.Identity()
 
         self.epsilon = epsilon
         self.commitment_weight = commitment_weight
 
         self._codebook = EuclideanCodebook(
-            dim=_codebook_dim,
+            dim=codebook_dim_,
             codebook_size=codebook_size,
             kmeans_init=kmeans_init,
             kmeans_iters=kmeans_iters,

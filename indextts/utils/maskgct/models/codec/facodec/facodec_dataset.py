@@ -71,8 +71,8 @@ class FAcodecCollator:
         batch = [batch[bid] for bid in batch_indexes]
 
         nmels = batch[0][1].size(0)
-        max_mel_length = max([b[1].shape[1] for b in batch])
-        max_wave_length = max([b[0].size(0) for b in batch])
+        max_mel_length = max(b[1].shape[1] for b in batch)
+        max_wave_length = max(b[0].size(0) for b in batch)
 
         mels = torch.zeros((batch_size, nmels, max_mel_length)).float() - 10
         waves = torch.zeros((batch_size, max_wave_length)).float()

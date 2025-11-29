@@ -2479,7 +2479,7 @@ class GenerationMixin:
                 continue  # skip if there are no token alternatives to heal with
 
             # slightly favor original token to limit aggressive healing e.g. 'http' -> 'https'
-            seq_bias[(tail_id,)] += 1.0
+            seq_bias[tail_id,] += 1.0
             generation_config.update(sequence_bias=seq_bias)
 
             trimmed_ids = batch_ids[:-1]
@@ -3504,8 +3504,8 @@ class GenerationMixin:
                 probs = nn.functional.softmax(next_token_scores, dim=-1)
                 next_tokens = torch.multinomial(probs, num_samples=n_tokens_to_keep)
                 next_token_scores = torch.gather(next_token_scores, -1, next_tokens)
-                next_token_scores, _indices = torch.sort(next_token_scores, descending=True, dim=1)
-                next_tokens = torch.gather(next_tokens, -1, _indices)
+                next_token_scores, indices = torch.sort(next_token_scores, descending=True, dim=1)
+                next_tokens = torch.gather(next_tokens, -1, indices)
                 # print("*"*20, probs.shape, n_tokens_to_keep, next_token_scores.shape, next_tokens.shape)
                 # print("*"*20, time.time() - start)
             else:

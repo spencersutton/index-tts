@@ -60,7 +60,7 @@ class ScheduledSampler(Sampler):
 
     def __len__(self) -> int:
         # the number of batches with drop last
-        num_of_batches = sum([math.floor(len(dataset) / self.batch_size) for dataset in self.concat_dataset.datasets])
+        num_of_batches = sum(math.floor(len(dataset) / self.batch_size) for dataset in self.concat_dataset.datasets)
         return num_of_batches * self.batch_size
 
     def __iter__(self):

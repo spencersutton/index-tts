@@ -1026,11 +1026,11 @@ class GPT2Model(GPT2PreTrainedModel):
         hidden_states = inputs_embeds + position_embeds
 
         # Attention mask.
-        _use_sdpa = self._attn_implementation == "sdpa" and output_attentions is False and head_mask is None
+        use_sdpa = self._attn_implementation == "sdpa" and output_attentions is False and head_mask is None
         attention_mask = attention_mask.view(batch_size, -1) if attention_mask is not None else None
         if self._attn_implementation == "flash_attention_2":
             attention_mask = attention_mask if (attention_mask is not None and 0 in attention_mask) else None
-        elif _use_sdpa:
+        elif use_sdpa:
             attention_mask = _prepare_4d_causal_attention_mask_for_sdpa(
                 attention_mask=attention_mask,
                 input_shape=(batch_size, input_shape[-1]),
@@ -1061,7 +1061,7 @@ class GPT2Model(GPT2PreTrainedModel):
             encoder_hidden_shape = (encoder_batch_size, encoder_sequence_length)
             if encoder_attention_mask is None:
                 encoder_attention_mask = torch.ones(encoder_hidden_shape, device=device)
-            if _use_sdpa:
+            if use_sdpa:
                 encoder_attention_mask = _prepare_4d_attention_mask_for_sdpa(
                     mask=encoder_attention_mask, dtype=inputs_embeds.dtype, tgt_len=input_shape[-1]
                 )

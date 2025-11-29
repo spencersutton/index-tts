@@ -232,8 +232,6 @@ class FAquantizer(nn.Module):
                 causal=causal,
             )
             self.melspec_linear2 = conv1d_type(in_channels=256, out_channels=1024, kernel_size=1, causal=causal)
-        else:
-            pass
         self.separate_prosody_encoder = separate_prosody_encoder
 
         self.prob_random_mask_residual = 0.75

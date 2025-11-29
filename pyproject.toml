@@ -142,3 +142,4 @@ ignore = [
   "RUF002",
   "RUF003",
 ]
+unfixable = ["F401"]

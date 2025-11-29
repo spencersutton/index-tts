@@ -108,16 +108,16 @@ class SISDRLoss(nn.Module):
             mean_reference = 0
             mean_estimate = 0
 
-        _references = references - mean_reference
-        _estimates = estimates - mean_estimate
+        references_ = references - mean_reference
+        estimates_ = estimates - mean_estimate
 
-        references_projection = (_references**2).sum(dim=-2) + eps
-        references_on_estimates = (_estimates * _references).sum(dim=-2) + eps
+        references_projection = (references_**2).sum(dim=-2) + eps
+        references_on_estimates = (estimates_ * references_).sum(dim=-2) + eps
 
         scale = (references_on_estimates / references_projection).unsqueeze(1) if self.scaling else 1
 
-        e_true = scale * _references
-        e_res = _estimates - e_true
+        e_true = scale * references_
+        e_res = estimates_ - e_true
 
         signal = (e_true**2).sum(dim=1)
         noise = (e_res**2).sum(dim=1)

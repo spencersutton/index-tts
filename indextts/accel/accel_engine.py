@@ -403,7 +403,7 @@ class AccelInferenceEngine:
 
         self.current_sequences = sequences
 
-        prefill_ids, prefill_pos = self._prepare_prefill(sequences)
+        _prefill_ids, _prefill_pos = self._prepare_prefill(sequences)
 
         if tts_embeddings is not None and tts_mel_embedding is not None and tts_text_pos_embedding is not None:
             start_token_id = input_ids[0, -1] if input_ids.size(1) > 0 else 8192

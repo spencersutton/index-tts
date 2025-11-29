@@ -5308,7 +5308,7 @@ class SQuADHead(nn.Module):
 
         else:
             # during inference, compute the end logits based on beam search
-            bsz, slen, hsz = hidden_states.size()
+            _bsz, slen, hsz = hidden_states.size()
             start_log_probs = nn.functional.softmax(start_logits, dim=-1)  # shape (bsz, slen)
 
             start_top_log_probs, start_top_index = torch.topk(

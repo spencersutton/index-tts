@@ -306,18 +306,18 @@ class FAquantizer(nn.Module):
             (
                 z_p,
                 codes_p,
-                latents_p,
-                commitment_loss_p,
-                codebook_loss_p,
+                _latents_p,
+                _commitment_loss_p,
+                _codebook_loss_p,
             ) = self.prosody_quantizer(x, 1)
             outs += z_p.detach()
 
         (
             z_c,
             codes_c,
-            latents_c,
-            commitment_loss_c,
-            codebook_loss_c,
+            _latents_c,
+            _commitment_loss_c,
+            _codebook_loss_c,
         ) = self.content_quantizer(x, n_c)
         outs += z_c.detach()
 
@@ -326,9 +326,9 @@ class FAquantizer(nn.Module):
         (
             z_t,
             codes_t,
-            latents_t,
-            commitment_loss_t,
-            codebook_loss_t,
+            _latents_t,
+            _commitment_loss_t,
+            _codebook_loss_t,
         ) = self.timbre_quantizer(timbre_residual_feature, 2)
         outs += z_t  # we should not detach timbre
 
@@ -337,9 +337,9 @@ class FAquantizer(nn.Module):
         (
             z_r,
             codes_r,
-            latents_r,
-            commitment_loss_r,
-            codebook_loss_r,
+            _latents_r,
+            _commitment_loss_r,
+            _codebook_loss_r,
         ) = self.residual_quantizer(residual_feature, 3)
 
         return [codes_c, codes_p, codes_t, codes_r], [z_c, z_p, z_t, z_r]
@@ -373,8 +373,8 @@ class FAquantizer(nn.Module):
         else:
             (
                 z_p,
-                codes_p,
-                latents_p,
+                _codes_p,
+                _latents_p,
                 commitment_loss_p,
                 codebook_loss_p,
             ) = self.prosody_quantizer(x, 1)
@@ -382,8 +382,8 @@ class FAquantizer(nn.Module):
 
         (
             z_c,
-            codes_c,
-            latents_c,
+            _codes_c,
+            _latents_c,
             commitment_loss_c,
             codebook_loss_c,
         ) = self.content_quantizer(x, n_c)
@@ -393,8 +393,8 @@ class FAquantizer(nn.Module):
 
         (
             z_t,
-            codes_t,
-            latents_t,
+            _codes_t,
+            _latents_t,
             commitment_loss_t,
             codebook_loss_t,
         ) = self.timbre_quantizer(timbre_residual_feature, n_t)
@@ -404,8 +404,8 @@ class FAquantizer(nn.Module):
 
         (
             z_r,
-            codes_r,
-            latents_r,
+            _codes_r,
+            _latents_r,
             commitment_loss_r,
             codebook_loss_r,
         ) = self.residual_quantizer(residual_feature, 3)
@@ -482,7 +482,7 @@ class FAquantizer(nn.Module):
             (
                 z_p,
                 codes_p,
-                latents_p,
+                _latents_p,
                 commitment_loss_p,
                 codebook_loss_p,
             ) = self.prosody_quantizer(x, 1)
@@ -491,7 +491,7 @@ class FAquantizer(nn.Module):
         (
             z_c,
             codes_c,
-            latents_c,
+            _latents_c,
             commitment_loss_c,
             codebook_loss_c,
         ) = self.content_quantizer(x, n_c)
@@ -502,7 +502,7 @@ class FAquantizer(nn.Module):
         (
             z_r,
             codes_r,
-            latents_r,
+            _latents_r,
             commitment_loss_r,
             codebook_loss_r,
         ) = self.residual_quantizer(residual_feature, 3)

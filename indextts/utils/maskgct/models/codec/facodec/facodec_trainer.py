@@ -632,7 +632,7 @@ class FAcodecTrainer(CodecTrainer):
     def _inference(self, eval_wave):
         """Inference during training for test audios."""
         z = self.model.encoder(eval_wave[None, None, ...].to(self.accelerator.device).float())
-        z, quantized, commitment_loss, codebook_loss, timbre = self.model.quantizer(
+        z, _quantized, _commitment_loss, _codebook_loss, _timbre = self.model.quantizer(
             z, eval_wave[None, None, ...], n_c=self.cfg.model_params.n_c_codebooks
         )
         full_pred_wave = self.model.decoder(z)

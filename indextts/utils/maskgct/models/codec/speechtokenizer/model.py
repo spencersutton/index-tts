@@ -108,7 +108,7 @@ class SpeechTokenizer(nn.Module):
         """
         n_q = n_q if n_q else self.n_q
         e = self.encoder(x)
-        quantized, codes, commit_loss, quantized_list = self.quantizer(e, n_q=n_q, layers=layers)
+        quantized, _codes, commit_loss, quantized_list = self.quantizer(e, n_q=n_q, layers=layers)
         feature = rearrange(quantized_list[0], "b d t -> b t d")
         feature = self.transform(feature)
         o = self.decoder(quantized)
@@ -132,7 +132,7 @@ class SpeechTokenizer(nn.Module):
         """
         e = self.encoder(x)
         layers = layers if layers else list(range(self.n_q))
-        quantized, codes, commit_loss, quantized_list = self.quantizer(e, layers=layers)
+        _quantized, _codes, _commit_loss, quantized_list = self.quantizer(e, layers=layers)
         return quantized_list
 
     def encode(self, x: torch.tensor, n_q: int = None, st: int = None):

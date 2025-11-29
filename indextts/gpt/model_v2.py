@@ -685,18 +685,18 @@ class UnifiedVoice(nn.Module):
             ),
             1,
         )
-        text_inputs, text_targets = self.build_aligned_inputs_and_targets(
+        text_inputs, _text_targets = self.build_aligned_inputs_and_targets(
             text_inputs, self.start_text_token, self.stop_text_token
         )
         text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs)
-        mel_codes, mel_targets = self.build_aligned_inputs_and_targets(
+        mel_codes, _mel_targets = self.build_aligned_inputs_and_targets(
             mel_codes, self.start_mel_token, self.stop_mel_token
         )
 
         mel_emb = self.mel_embedding(mel_codes)
         mel_emb = mel_emb + self.mel_pos_embedding(mel_codes)
 
-        text_logits, mel_logits = self.get_logits(
+        _text_logits, mel_logits = self.get_logits(
             conds, text_emb, self.text_head, mel_emb, self.mel_head, get_attns=False, return_latent=True
         )
         return mel_logits[

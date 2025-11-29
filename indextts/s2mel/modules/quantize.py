@@ -222,15 +222,15 @@ class FAquantizer(nn.Module):
 
         x = x[:, :, :common_min_size]
 
-        z_p, codes_p, latents_p, commitment_loss_p, codebook_loss_p = self.prosody_quantizer(f0_input, 1)
+        z_p, codes_p, _latents_p, _commitment_loss_p, _codebook_loss_p = self.prosody_quantizer(f0_input, 1)
         outs += z_p.detach()
 
-        z_c, codes_c, latents_c, commitment_loss_c, codebook_loss_c = self.content_quantizer(x, 2)
+        z_c, codes_c, _latents_c, _commitment_loss_c, _codebook_loss_c = self.content_quantizer(x, 2)
         outs += z_c.detach()
 
         residual_feature = x - z_p.detach() - z_c.detach()
 
-        z_r, codes_r, latents_r, commitment_loss_r, codebook_loss_r = self.residual_quantizer(residual_feature, 3)
+        z_r, codes_r, _latents_r, _commitment_loss_r, _codebook_loss_r = self.residual_quantizer(residual_feature, 3)
 
         quantized = [z_p, z_c, z_r]
         codes = [codes_p, codes_c, codes_r]

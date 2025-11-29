@@ -325,7 +325,7 @@ class DiscreteVAE(nn.Module):
     def get_codebook_indices(self, images):
         img = self.norm(images)
         logits = self.encoder(img).permute((0, 2, 3, 1) if len(img.shape) == 4 else (0, 2, 1))
-        sampled, codes, _ = self.codebook(logits)
+        _sampled, codes, _ = self.codebook(logits)
         self.log_codes(codes)
         return codes
 
@@ -335,7 +335,7 @@ class DiscreteVAE(nn.Module):
             image_embeds = self.codebook.embed_code(img_seq)
         else:
             image_embeds = F.embedding(img_seq, self.codebook.codebook)
-        b, n, d = image_embeds.shape
+        _b, n, _d = image_embeds.shape
 
         kwargs = {}
         if self.positional_dims == 1:
@@ -353,7 +353,7 @@ class DiscreteVAE(nn.Module):
     def infer(self, img):
         img = self.norm(img)
         logits = self.encoder(img).permute((0, 2, 3, 1) if len(img.shape) == 4 else (0, 2, 1))
-        sampled, codes, commitment_loss = self.codebook(logits)
+        _sampled, codes, _commitment_loss = self.codebook(logits)
         return self.decode(codes)
 
     # Note: This module is not meant to be run in forward() except while training. It has special logic which performs

@@ -114,7 +114,7 @@ class Inference_Pipeline:
 
     @torch.no_grad()
     def get_scode(self, inputs):
-        semantic_code, feat = self.semantic_codec.quantize(inputs)
+        semantic_code, _feat = self.semantic_codec.quantize(inputs)
         return semantic_code
 
     @torch.no_grad()

@@ -56,9 +56,9 @@ class FAcodecInference:
         (
             z,
             quantized,
-            commitment_loss,
-            codebook_loss,
-            timbre,
+            _commitment_loss,
+            _codebook_loss,
+            _timbre,
             codes,
         ) = self.model.quantizer(
             z,
@@ -93,7 +93,7 @@ class FAcodecInference:
         reference_audio = torch.tensor(reference_audio).unsqueeze(0).float().to(self.device)
 
         z = self.model.encoder(source_audio[None, ...].to(self.device).float())
-        z, quantized, commitment_loss, codebook_loss, timbre = self.model.quantizer(
+        z, quantized, _commitment_loss, _codebook_loss, _timbre = self.model.quantizer(
             z,
             source_audio[None, ...].to(self.device).float(),
             n_c=self.cfg.model_params.n_c_codebooks,
@@ -102,10 +102,10 @@ class FAcodecInference:
         z_ref = self.model.encoder(reference_audio[None, ...].to(self.device).float())
         (
             z_ref,
-            quantized_ref,
-            commitment_loss_ref,
-            codebook_loss_ref,
-            timbre_ref,
+            _quantized_ref,
+            _commitment_loss_ref,
+            _codebook_loss_ref,
+            _timbre_ref,
         ) = self.model.quantizer(
             z_ref,
             reference_audio[None, ...].to(self.device).float(),

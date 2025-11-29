@@ -4670,7 +4670,7 @@ def _relative_top_filter(
     """
     scores_normalized = scores.log_softmax(dim=-1)
     baseline_scores_normalized = baseline_scores.log_softmax(dim=-1)
-    sorted_logits, sorted_indices = torch.sort(scores_normalized, descending=True)
+    sorted_logits, _sorted_indices = torch.sort(scores_normalized, descending=True)
     min_thresh = sorted_logits[..., min_tokens_to_keep - 1]
     probs_max = torch.max(scores_normalized, dim=-1).values
     probs_thresh = probs_max + np.log(relative_top)

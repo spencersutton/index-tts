@@ -47,7 +47,7 @@ class AMPBlock1(torch.nn.Module):
         kernel_size: int = 3,
         dilation: tuple = (1, 3, 5),
         activation: str | None = None,
-    ):
+    ) -> None:
         super().__init__()
 
         self.h = h
@@ -127,7 +127,7 @@ class AMPBlock1(torch.nn.Module):
 
         return x
 
-    def remove_weight_norm(self):
+    def remove_weight_norm(self) -> None:
         for l in self.convs1:
             remove_weight_norm(l)
         for l in self.convs2:
@@ -154,7 +154,7 @@ class AMPBlock2(torch.nn.Module):
         kernel_size: int = 3,
         dilation: tuple = (1, 3, 5),
         activation: str | None = None,
-    ):
+    ) -> None:
         super().__init__()
 
         self.h = h
@@ -213,7 +213,7 @@ class AMPBlock2(torch.nn.Module):
             x = xt + x
         return x
 
-    def remove_weight_norm(self):
+    def remove_weight_norm(self) -> None:
         for l in self.convs:
             remove_weight_norm(l)
 
@@ -245,7 +245,7 @@ class BigVGAN(
         - Ensure that the activation function is correctly specified in the hyperparameters (h.activation).
     """
 
-    def __init__(self, h: AttrDict, use_cuda_kernel: bool = False):
+    def __init__(self, h: AttrDict, use_cuda_kernel: bool = False) -> None:
         super().__init__()
         self.h = h
         self.h["use_cuda_kernel"] = use_cuda_kernel
@@ -391,7 +391,7 @@ class BigVGAN(
 
         return x, contrastive_loss
 
-    def remove_weight_norm(self):
+    def remove_weight_norm(self) -> None:
         try:
             print("Removing weight norm...")
             for l in self.ups:

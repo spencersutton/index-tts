@@ -11,7 +11,7 @@ from torch.nn import functional as F
 
 
 class StyleAdaptiveLayerNorm(nn.Module):
-    def __init__(self, normalized_shape, eps=1e-5):
+    def __init__(self, normalized_shape, eps=1e-5) -> None:
         super().__init__()
         self.in_dim = normalized_shape
         self.norm = nn.LayerNorm(self.in_dim, eps=eps, elementwise_affine=False)
@@ -33,7 +33,7 @@ class StyleAdaptiveLayerNorm(nn.Module):
 
 
 class PositionalEncoding(nn.Module):
-    def __init__(self, d_model, dropout, max_len=5000):
+    def __init__(self, d_model, dropout, max_len=5000) -> None:
         super().__init__()
 
         self.dropout = dropout
@@ -50,7 +50,7 @@ class PositionalEncoding(nn.Module):
 
 
 class TransformerFFNLayer(nn.Module):
-    def __init__(self, encoder_hidden, conv_filter_size, conv_kernel_size, encoder_dropout):
+    def __init__(self, encoder_hidden, conv_filter_size, conv_kernel_size, encoder_dropout) -> None:
         super().__init__()
 
         self.encoder_hidden = encoder_hidden
@@ -86,7 +86,7 @@ class TransformerEncoderLayer(nn.Module):
         conv_kernel_size,
         encoder_dropout,
         use_cln,
-    ):
+    ) -> None:
         super().__init__()
         self.encoder_hidden = encoder_hidden
         self.encoder_head = encoder_head
@@ -153,7 +153,7 @@ class TransformerEncoder(nn.Module):
         encoder_dropout=0.1,
         use_cln=False,
         cfg=None,
-    ):
+    ) -> None:
         super().__init__()
 
         self.encoder_layer = encoder_layer if encoder_layer is not None else cfg.encoder_layer

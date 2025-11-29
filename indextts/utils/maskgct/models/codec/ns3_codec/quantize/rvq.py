@@ -14,7 +14,7 @@ from .fvq import FactorizedVectorQuantize
 class ResidualVQ(nn.Module):
     """Follows Algorithm 1. in https://arxiv.org/pdf/2107.03312.pdf"""
 
-    def __init__(self, *, num_quantizers, codebook_size, **kwargs):
+    def __init__(self, *, num_quantizers, codebook_size, **kwargs) -> None:
         super().__init__()
         VQ = FactorizedVectorQuantize
         if type(codebook_size) == int:

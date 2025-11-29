@@ -44,7 +44,7 @@ from models.codec.facodec.optimizer import build_optimizer
 
 
 class FAcodecTrainer(CodecTrainer):
-    def __init__(self, args, cfg):
+    def __init__(self, args, cfg) -> None:
         super().__init__()
 
         self.args = args
@@ -200,7 +200,7 @@ class FAcodecTrainer(CodecTrainer):
         _ = [model[key].to(self.accelerator.device) for key in model]
         return model
 
-    def _built_helper_model(self):
+    def _built_helper_model(self) -> None:
         device = self.accelerator.device
         self.pitch_extractor = load_F0_models(self.cfg.F0_path).to(device)
 
@@ -231,7 +231,7 @@ class FAcodecTrainer(CodecTrainer):
 
         return optimizer
 
-    def train_loop(self):
+    def train_loop(self) -> None:
         """Training process"""
         self.accelerator.wait_for_everyone()
 

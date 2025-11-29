@@ -75,7 +75,7 @@ class SincConv(nn.Module):
         sample_rate=16000,
         min_low_hz=50,
         min_band_hz=50,
-    ):
+    ) -> None:
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -206,7 +206,7 @@ class SincConv(nn.Module):
 
         return filters
 
-    def _init_sinc_conv(self):
+    def _init_sinc_conv(self) -> None:
         """Initializes the parameters of the sinc_conv layer."""
 
         # Initialize filterbanks such that they are equally spaced in Mel scale
@@ -343,7 +343,7 @@ class Conv1d(nn.Module):
         weight_norm=False,
         conv_init=None,
         default_padding=0,
-    ):
+    ) -> None:
         super().__init__()
         self.kernel_size = kernel_size
         self.stride = stride
@@ -475,7 +475,7 @@ class Conv1d(nn.Module):
 
         return in_channels
 
-    def remove_weight_norm(self):
+    def remove_weight_norm(self) -> None:
         """Removes weight normalization at inference if used during training."""
         self.conv = nn.utils.remove_weight_norm(self.conv)
 

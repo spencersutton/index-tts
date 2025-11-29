@@ -18,7 +18,7 @@ from .quantize import *
 from .transformer import TransformerEncoder
 
 
-def init_weights(m):
+def init_weights(m) -> None:
     if isinstance(m, nn.Conv1d):
         nn.init.trunc_normal_(m.weight, std=0.02)
         nn.init.constant_(m.bias, 0)
@@ -33,7 +33,7 @@ def WNConvTranspose1d(*args, **kwargs):
 
 
 class CNNLSTM(nn.Module):
-    def __init__(self, indim, outdim, head, global_pred=False):
+    def __init__(self, indim, outdim, head, global_pred=False) -> None:
         super().__init__()
         self.global_pred = global_pred
         self.model = nn.Sequential(
@@ -72,7 +72,7 @@ class SnakeBeta(nn.Module):
         >>> x = a1(x)
     """
 
-    def __init__(self, in_features, alpha=1.0, alpha_trainable=True, alpha_logscale=False):
+    def __init__(self, in_features, alpha=1.0, alpha_trainable=True, alpha_logscale=False) -> None:
         """
         Initialization.
         INPUT:
@@ -117,7 +117,7 @@ class SnakeBeta(nn.Module):
 
 
 class ResidualUnit(nn.Module):
-    def __init__(self, dim: int = 16, dilation: int = 1):
+    def __init__(self, dim: int = 16, dilation: int = 1) -> None:
         super().__init__()
         pad = ((7 - 1) * dilation) // 2
         self.block = nn.Sequential(
@@ -132,7 +132,7 @@ class ResidualUnit(nn.Module):
 
 
 class EncoderBlock(nn.Module):
-    def __init__(self, dim: int = 16, stride: int = 1):
+    def __init__(self, dim: int = 16, stride: int = 1) -> None:
         super().__init__()
         self.block = nn.Sequential(
             ResidualUnit(dim // 2, dilation=1),
@@ -158,7 +158,7 @@ class FACodecEncoder(nn.Module):
         ngf=32,
         up_ratios=(2, 4, 5, 5),
         out_channels=1024,
-    ):
+    ) -> None:
         super().__init__()
         self.hop_length = np.prod(up_ratios)
         self.up_ratios = up_ratios
@@ -191,10 +191,10 @@ class FACodecEncoder(nn.Module):
     def inference(self, x):
         return self.block(x)
 
-    def remove_weight_norm(self):
+    def remove_weight_norm(self) -> None:
         """Remove weight normalization module from all of the layers."""
 
-        def _remove_weight_norm(m):
+        def _remove_weight_norm(m) -> None:
             try:
                 torch.nn.utils.remove_weight_norm(m)
             except ValueError:  # this module didn't have weight norm
@@ -202,21 +202,21 @@ class FACodecEncoder(nn.Module):
 
         self.apply(_remove_weight_norm)
 
-    def apply_weight_norm(self):
+    def apply_weight_norm(self) -> None:
         """Apply weight normalization module from all of the layers."""
 
-        def _apply_weight_norm(m):
+        def _apply_weight_norm(m) -> None:
             if isinstance(m, nn.Conv1d):
                 torch.nn.utils.weight_norm(m)
 
         self.apply(_apply_weight_norm)
 
-    def reset_parameters(self):
+    def reset_parameters(self) -> None:
         self.apply(init_weights)
 
 
 class DecoderBlock(nn.Module):
-    def __init__(self, input_dim: int = 16, output_dim: int = 8, stride: int = 1):
+    def __init__(self, input_dim: int = 16, output_dim: int = 8, stride: int = 1) -> None:
         super().__init__()
         self.block = nn.Sequential(
             Activation1d(activation=SnakeBeta(input_dim, alpha_logscale=True)),
@@ -264,7 +264,7 @@ class FACodecDecoder(nn.Module):
         use_gr_x_timbre=False,
         use_random_mask_residual=True,
         prob_random_mask_residual=0.75,
-    ):
+    ) -> None:
         super().__init__()
         self.hop_length = np.prod(up_ratios)
         self.ngf = ngf
@@ -546,10 +546,10 @@ class FACodecDecoder(nn.Module):
         x = self.model(x)
         return x
 
-    def remove_weight_norm(self):
+    def remove_weight_norm(self) -> None:
         """Remove weight normalization module from all of the layers."""
 
-        def _remove_weight_norm(m):
+        def _remove_weight_norm(m) -> None:
             try:
                 torch.nn.utils.remove_weight_norm(m)
             except ValueError:  # this module didn't have weight norm
@@ -557,16 +557,16 @@ class FACodecDecoder(nn.Module):
 
         self.apply(_remove_weight_norm)
 
-    def apply_weight_norm(self):
+    def apply_weight_norm(self) -> None:
         """Apply weight normalization module from all of the layers."""
 
-        def _apply_weight_norm(m):
+        def _apply_weight_norm(m) -> None:
             if isinstance(m, nn.Conv1d) or isinstance(m, nn.ConvTranspose1d):
                 torch.nn.utils.weight_norm(m)
 
         self.apply(_apply_weight_norm)
 
-    def reset_parameters(self):
+    def reset_parameters(self) -> None:
         self.apply(init_weights)
 
 
@@ -583,7 +583,7 @@ class FACodecRedecoder(nn.Module):
         codebook_size_prosody=10,
         codebook_size_content=10,
         codebook_size_residual=10,
-    ):
+    ) -> None:
         super().__init__()
         self.hop_length = np.prod(up_ratios)
         self.up_ratios = up_ratios
@@ -737,7 +737,7 @@ class FACodecEncoderV2(nn.Module):
         ngf=32,
         up_ratios=(2, 4, 5, 5),
         out_channels=1024,
-    ):
+    ) -> None:
         super().__init__()
         self.hop_length = np.prod(up_ratios)
         self.up_ratios = up_ratios
@@ -783,10 +783,10 @@ class FACodecEncoderV2(nn.Module):
     def get_prosody_feature(self, x):
         return self.mel_transform(x.squeeze(1))[:, :20, :]
 
-    def remove_weight_norm(self):
+    def remove_weight_norm(self) -> None:
         """Remove weight normalization module from all of the layers."""
 
-        def _remove_weight_norm(m):
+        def _remove_weight_norm(m) -> None:
             try:
                 torch.nn.utils.remove_weight_norm(m)
             except ValueError:  # this module didn't have weight norm
@@ -794,16 +794,16 @@ class FACodecEncoderV2(nn.Module):
 
         self.apply(_remove_weight_norm)
 
-    def apply_weight_norm(self):
+    def apply_weight_norm(self) -> None:
         """Apply weight normalization module from all of the layers."""
 
-        def _apply_weight_norm(m):
+        def _apply_weight_norm(m) -> None:
             if isinstance(m, nn.Conv1d):
                 torch.nn.utils.weight_norm(m)
 
         self.apply(_apply_weight_norm)
 
-    def reset_parameters(self):
+    def reset_parameters(self) -> None:
         self.apply(init_weights)
 
 
@@ -834,7 +834,7 @@ class FACodecDecoderV2(nn.Module):
         use_gr_x_timbre=False,
         use_random_mask_residual=True,
         prob_random_mask_residual=0.75,
-    ):
+    ) -> None:
         super().__init__()
         self.hop_length = np.prod(up_ratios)
         self.ngf = ngf
@@ -1133,10 +1133,10 @@ class FACodecDecoderV2(nn.Module):
         x = self.model(x)
         return x
 
-    def remove_weight_norm(self):
+    def remove_weight_norm(self) -> None:
         """Remove weight normalization module from all of the layers."""
 
-        def _remove_weight_norm(m):
+        def _remove_weight_norm(m) -> None:
             try:
                 torch.nn.utils.remove_weight_norm(m)
             except ValueError:  # this module didn't have weight norm
@@ -1144,14 +1144,14 @@ class FACodecDecoderV2(nn.Module):
 
         self.apply(_remove_weight_norm)
 
-    def apply_weight_norm(self):
+    def apply_weight_norm(self) -> None:
         """Apply weight normalization module from all of the layers."""
 
-        def _apply_weight_norm(m):
+        def _apply_weight_norm(m) -> None:
             if isinstance(m, nn.Conv1d) or isinstance(m, nn.ConvTranspose1d):
                 torch.nn.utils.weight_norm(m)
 
         self.apply(_apply_weight_norm)
 
-    def reset_parameters(self):
+    def reset_parameters(self) -> None:
         self.apply(init_weights)

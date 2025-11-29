@@ -7,7 +7,7 @@ from .attention import Attention
 
 
 class GPT2AccelAttention(nn.Module):
-    def __init__(self, config, layer_idx=None):
+    def __init__(self, config, layer_idx=None) -> None:
         super().__init__()
         self.config = config
         self.layer_idx = layer_idx
@@ -114,13 +114,13 @@ class GPT2AccelAttention(nn.Module):
 
 
 class GPT2AccelBlock(GPT2Block):
-    def __init__(self, config, layer_idx=None):
+    def __init__(self, config, layer_idx=None) -> None:
         super().__init__(config, layer_idx)
         self.attn = GPT2AccelAttention(config, layer_idx)
 
 
 class GPT2AccelModel(GPT2Model):
-    def __init__(self, config):
+    def __init__(self, config) -> None:
         super().__init__(config)
         self.h = nn.ModuleList([GPT2AccelBlock(config, layer_idx=i) for i in range(config.num_hidden_layers)])
 

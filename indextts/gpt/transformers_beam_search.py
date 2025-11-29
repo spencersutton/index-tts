@@ -165,7 +165,7 @@ class BeamSearchScorer(BeamScorer):
         num_beam_hyps_to_keep: int | None = 1,
         num_beam_groups: int | None = 1,
         max_length: int | None = None,
-    ):
+    ) -> None:
         self.num_beams = num_beams
         self.device = device
         self.length_penalty = length_penalty
@@ -460,7 +460,7 @@ class ConstrainedBeamSearchScorer(BeamScorer):
         num_beam_hyps_to_keep: int | None = 1,
         num_beam_groups: int | None = 1,
         max_length: int | None = None,
-    ):
+    ) -> None:
         self.num_beams = num_beams
         self.device = device
         self.length_penalty = length_penalty
@@ -924,7 +924,9 @@ class ConstrainedBeamSearchScorer(BeamScorer):
 
 
 class BeamHypotheses:
-    def __init__(self, num_beams: int, length_penalty: float, early_stopping: bool, max_length: int | None = None):
+    def __init__(
+        self, num_beams: int, length_penalty: float, early_stopping: bool, max_length: int | None = None
+    ) -> None:
         """
         Initialize n-best list of hypotheses.
         """
@@ -941,7 +943,7 @@ class BeamHypotheses:
                 " BeamScorer class instance at initialization time."
             )
 
-    def __len__(self):
+    def __len__(self) -> int:
         """
         Number of hypotheses in the list.
         """
@@ -953,7 +955,7 @@ class BeamHypotheses:
         sum_logprobs: float,
         beam_indices: torch.LongTensor | None = None,
         generated_len: int | None = None,
-    ):
+    ) -> None:
         """
         Add a new hypothesis to the list.
         """

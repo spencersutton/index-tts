@@ -30,7 +30,7 @@ class ScheduledSampler(Sampler):
         [3, 4, 5, 0, 1, 2, 6, 7, 8]
     """
 
-    def __init__(self, concat_dataset, batch_size, holistic_shuffle, logger=None, type="train"):
+    def __init__(self, concat_dataset, batch_size, holistic_shuffle, logger=None, type="train") -> None:
         if not isinstance(concat_dataset, ConcatDataset):
             raise ValueError(f"concat_dataset must be an instance of ConcatDataset, but got {type(concat_dataset)}")
         if not isinstance(batch_size, int):
@@ -58,7 +58,7 @@ class ScheduledSampler(Sampler):
                     f"The {type} dataset {dataset_name} has a length of {dataset_len}, which is smaller than the batch size {batch_size}. This may cause unexpected behavior."
                 )
 
-    def __len__(self):
+    def __len__(self) -> int:
         # the number of batches with drop last
         num_of_batches = sum([math.floor(len(dataset) / self.batch_size) for dataset in self.concat_dataset.datasets])
         return num_of_batches * self.batch_size

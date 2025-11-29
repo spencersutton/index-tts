@@ -65,14 +65,14 @@ def length_to_mask(length, max_len=None, dtype=None, device=None):
 class Conv1d(_Conv1d):
     """1D convolution. Skip transpose is used to improve efficiency."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(skip_transpose=True, *args, **kwargs)
 
 
 class BatchNorm1d(_BatchNorm1d):
     """1D batch normalization. Skip transpose is used to improve efficiency."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(skip_transpose=True, *args, **kwargs)
 
 
@@ -111,7 +111,7 @@ class TDNNBlock(nn.Module):
         dilation,
         activation=nn.ReLU,
         groups=1,
-    ):
+    ) -> None:
         super().__init__()
         self.conv = Conv1d(
             in_channels=in_channels,
@@ -153,7 +153,7 @@ class Res2NetBlock(torch.nn.Module):
     torch.Size([8, 120, 64])
     """
 
-    def __init__(self, in_channels, out_channels, scale=8, kernel_size=3, dilation=1):
+    def __init__(self, in_channels, out_channels, scale=8, kernel_size=3, dilation=1) -> None:
         super().__init__()
         assert in_channels % scale == 0
         assert out_channels % scale == 0
@@ -211,7 +211,7 @@ class SEBlock(nn.Module):
     torch.Size([8, 120, 64])
     """
 
-    def __init__(self, in_channels, se_channels, out_channels):
+    def __init__(self, in_channels, se_channels, out_channels) -> None:
         super().__init__()
 
         self.conv1 = Conv1d(in_channels=in_channels, out_channels=se_channels, kernel_size=1)
@@ -259,7 +259,7 @@ class AttentiveStatisticsPooling(nn.Module):
     torch.Size([8, 1, 128])
     """
 
-    def __init__(self, channels, attention_channels=128, global_context=True):
+    def __init__(self, channels, attention_channels=128, global_context=True) -> None:
         super().__init__()
 
         self.eps = 1e-12
@@ -370,7 +370,7 @@ class SERes2NetBlock(nn.Module):
         dilation=1,
         activation=torch.nn.ReLU,
         groups=1,
-    ):
+    ) -> None:
         super().__init__()
         self.out_channels = out_channels
         self.tdnn1 = TDNNBlock(
@@ -469,7 +469,7 @@ class ECAPA_TDNN(torch.nn.Module):
         se_channels=128,
         global_context=True,
         groups=[1, 1, 1, 1, 1],
-    ):
+    ) -> None:
         super().__init__()
         assert len(channels) == len(kernel_sizes)
         assert len(channels) == len(dilations)
@@ -604,7 +604,7 @@ class Classifier(torch.nn.Module):
         lin_blocks=0,
         lin_neurons=192,
         out_neurons=1211,
-    ):
+    ) -> None:
         super().__init__()
         self.blocks = nn.ModuleList()
 

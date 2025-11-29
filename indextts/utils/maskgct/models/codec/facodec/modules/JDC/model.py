@@ -21,7 +21,7 @@ class JDCNet(nn.Module):
     Joint Detection and Classification Network model for singing voice melody.
     """
 
-    def __init__(self, num_class=722, seq_len=31, leaky_relu_slope=0.01):
+    def __init__(self, num_class=722, seq_len=31, leaky_relu_slope=0.01) -> None:
         super().__init__()
         self.num_class = num_class
 
@@ -145,7 +145,7 @@ class JDCNet(nn.Module):
         return torch.abs(classifier_out.squeeze(-1)), GAN_feature, poolblock_out
 
     @staticmethod
-    def init_weights(m):
+    def init_weights(m) -> None:
         if isinstance(m, nn.Linear):
             nn.init.kaiming_uniform_(m.weight)
             if m.bias is not None:
@@ -164,7 +164,7 @@ class JDCNet(nn.Module):
 
 
 class ResBlock(nn.Module):
-    def __init__(self, in_channels: int, out_channels: int, leaky_relu_slope=0.01):
+    def __init__(self, in_channels: int, out_channels: int, leaky_relu_slope=0.01) -> None:
         super().__init__()
         self.downsample = in_channels != out_channels
 

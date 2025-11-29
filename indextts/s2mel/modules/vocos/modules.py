@@ -21,7 +21,7 @@ class ConvNeXtBlock(nn.Module):
         intermediate_dim: int,
         layer_scale_init_value: float,
         adanorm_num_embeddings: int | None = None,
-    ):
+    ) -> None:
         super().__init__()
         self.dwconv = nn.Conv1d(dim, dim, kernel_size=7, padding=3, groups=dim)  # depthwise conv
         self.adanorm = adanorm_num_embeddings is not None
@@ -67,7 +67,7 @@ class AdaLayerNorm(nn.Module):
         embedding_dim (int): Dimension of the embeddings.
     """
 
-    def __init__(self, num_embeddings: int, embedding_dim: int, eps: float = 1e-6):
+    def __init__(self, num_embeddings: int, embedding_dim: int, eps: float = 1e-6) -> None:
         super().__init__()
         self.eps = eps
         self.dim = embedding_dim
@@ -107,7 +107,7 @@ class ResBlock1(nn.Module):
         dilation: tuple[int, int, int] = (1, 3, 5),
         lrelu_slope: float = 0.1,
         layer_scale_init_value: float | None = None,
-    ):
+    ) -> None:
         super().__init__()
         self.lrelu_slope = lrelu_slope
         self.convs1 = nn.ModuleList(
@@ -178,7 +178,7 @@ class ResBlock1(nn.Module):
             x = xt + x
         return x
 
-    def remove_weight_norm(self):
+    def remove_weight_norm(self) -> None:
         for l in self.convs1:
             remove_weight_norm(l)
         for l in self.convs2:

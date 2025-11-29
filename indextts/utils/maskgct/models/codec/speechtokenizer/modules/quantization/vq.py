@@ -52,7 +52,7 @@ class ResidualVectorQuantizer(nn.Module):
         kmeans_init: bool = True,
         kmeans_iters: int = 50,
         threshold_ema_dead_code: int = 2,
-    ):
+    ) -> None:
         super().__init__()
         self.n_q = n_q
         self.dimension = dimension

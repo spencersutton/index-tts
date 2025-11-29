@@ -19,7 +19,7 @@ from .modules.commons import *
 
 
 class FAcodecInference:
-    def __init__(self, args=None, cfg=None):
+    def __init__(self, args=None, cfg=None) -> None:
         self.args = args
         self.cfg = cfg
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -31,7 +31,7 @@ class FAcodecInference:
         _ = [model[key].to(self.device) for key in model]
         return model
 
-    def _load_checkpoint(self):
+    def _load_checkpoint(self) -> None:
         sd = torch.load(self.args.checkpoint_path, map_location="cpu")
         sd = sd["net"] if "net" in sd else sd
         new_params = dict()
@@ -85,7 +85,7 @@ class FAcodecInference:
         return quantized, codes
 
     @torch.no_grad()
-    def voice_conversion(self, source, reference, output_dir):
+    def voice_conversion(self, source, reference, output_dir) -> None:
         source_audio = librosa.load(source, sr=self.cfg.preprocess_params.sr)[0]
         source_audio = torch.tensor(source_audio).unsqueeze(0).float().to(self.device)
 

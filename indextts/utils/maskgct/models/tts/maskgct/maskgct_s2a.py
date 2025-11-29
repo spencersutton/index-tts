@@ -69,7 +69,7 @@ class MaskGCT_S2A(nn.Module):
         cond_dim=1024,
         predict_layer_1=True,
         cfg=None,
-    ):
+    ) -> None:
         super().__init__()
 
         num_quantizer = cfg.num_quantizer if cfg is not None and hasattr(cfg, "num_quantizer") else num_quantizer
@@ -226,8 +226,8 @@ class MaskGCT_S2A(nn.Module):
         t = torch.clamp(t, 1e-5, 1.0)
         return self.loss_t(x0, x_mask, t, cond)
 
-    def reset_parameters(self):
-        def _reset_parameters(m):
+    def reset_parameters(self) -> None:
+        def _reset_parameters(m) -> None:
             if isinstance(m, nn.MultiheadAttention):
                 if m._qkv_same_embed_dim:
                     nn.init.normal_(m.in_proj_weight, std=0.02)

@@ -53,7 +53,7 @@ def scan_i18n_strings():
     return code_keys
 
 
-def update_i18n_json(json_file, standard_keys):
+def update_i18n_json(json_file, standard_keys) -> None:
     standard_keys = sorted(standard_keys)
     print(f" Process {json_file} ".center(TITLE_LEN, "="))
     # 读取 JSON 文件

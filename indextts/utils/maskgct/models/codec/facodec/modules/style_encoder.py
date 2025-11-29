@@ -13,7 +13,7 @@ from . import attentions
 
 
 class Mish(nn.Module):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
     def forward(self, x):
@@ -26,7 +26,7 @@ class Conv1dGLU(nn.Module):
     For GLU refer to https://arxiv.org/abs/1612.08083 paper.
     """
 
-    def __init__(self, in_channels, out_channels, kernel_size, dropout):
+    def __init__(self, in_channels, out_channels, kernel_size, dropout) -> None:
         super().__init__()
         self.out_channels = out_channels
         self.conv1 = nn.Conv1d(in_channels, 2 * out_channels, kernel_size=kernel_size, padding=2)
@@ -42,7 +42,7 @@ class Conv1dGLU(nn.Module):
 
 
 class StyleEncoder(torch.nn.Module):
-    def __init__(self, in_dim=513, hidden_dim=128, out_dim=256):
+    def __init__(self, in_dim=513, hidden_dim=128, out_dim=256) -> None:
         super().__init__()
 
         self.in_dim = in_dim  # Linear 513 wav2vec 2.0 1024

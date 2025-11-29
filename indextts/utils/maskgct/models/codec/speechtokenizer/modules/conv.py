@@ -133,7 +133,7 @@ class NormConv1d(nn.Module):
         norm: str = "none",
         norm_kwargs: dict[str, tp.Any] = {},
         **kwargs,
-    ):
+    ) -> None:
         super().__init__()
         self.conv = apply_parametrization_norm(nn.Conv1d(*args, **kwargs), norm)
         self.norm = get_norm_module(self.conv, causal, norm, **norm_kwargs)
@@ -156,7 +156,7 @@ class NormConv2d(nn.Module):
         norm: str = "none",
         norm_kwargs: dict[str, tp.Any] = {},
         **kwargs,
-    ):
+    ) -> None:
         super().__init__()
         self.conv = apply_parametrization_norm(nn.Conv2d(*args, **kwargs), norm)
         self.norm = get_norm_module(self.conv, causal=False, norm=norm, **norm_kwargs)
@@ -180,7 +180,7 @@ class NormConvTranspose1d(nn.Module):
         norm: str = "none",
         norm_kwargs: dict[str, tp.Any] = {},
         **kwargs,
-    ):
+    ) -> None:
         super().__init__()
         self.convtr = apply_parametrization_norm(nn.ConvTranspose1d(*args, **kwargs), norm)
         self.norm = get_norm_module(self.convtr, causal, norm, **norm_kwargs)
@@ -203,7 +203,7 @@ class NormConvTranspose2d(nn.Module):
         norm: str = "none",
         norm_kwargs: dict[str, tp.Any] = {},
         **kwargs,
-    ):
+    ) -> None:
         super().__init__()
         self.convtr = apply_parametrization_norm(nn.ConvTranspose2d(*args, **kwargs), norm)
         self.norm = get_norm_module(self.convtr, causal=False, norm=norm, **norm_kwargs)
@@ -232,7 +232,7 @@ class SConv1d(nn.Module):
         norm: str = "none",
         norm_kwargs: dict[str, tp.Any] = {},
         pad_mode: str = "reflect",
-    ):
+    ) -> None:
         super().__init__()
         # warn user on unusual setup between dilation and stride
         if stride > 1 and dilation > 1:
@@ -288,7 +288,7 @@ class SConvTranspose1d(nn.Module):
         norm: str = "none",
         trim_right_ratio: float = 1.0,
         norm_kwargs: dict[str, tp.Any] = {},
-    ):
+    ) -> None:
         super().__init__()
         self.convtr = NormConvTranspose1d(
             in_channels,

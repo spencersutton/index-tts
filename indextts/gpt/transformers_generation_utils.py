@@ -17,7 +17,7 @@ import inspect
 import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, NoReturn, Optional, Union
 
 import numpy as np
 import torch
@@ -787,7 +787,7 @@ class GenerationMixin:
             model_kwargs["cache_position"] = torch.cat((past_positions, new_positions))
         return model_kwargs
 
-    def _reorder_cache(self, past_key_values, beam_idx):
+    def _reorder_cache(self, past_key_values, beam_idx) -> NoReturn:
         raise NotImplementedError(
             f"Make sure that a `_reorder_cache` function is correctly implemented in {self.__class__.__module__} to"
             f" enable beam search for {self.__class__}"
@@ -1245,7 +1245,7 @@ class GenerationMixin:
 
         return transition_scores
 
-    def _validate_model_class(self):
+    def _validate_model_class(self) -> None:
         """
         Confirms that the model class is compatible with generation. If not, raises an exception that points to the
         right class to use.
@@ -1266,7 +1266,7 @@ class GenerationMixin:
                 f"names: {terminations_with_generation_support}."
             )
 
-    def _validate_assistant(self, assistant_model, tokenizer, assistant_tokenizer):
+    def _validate_assistant(self, assistant_model, tokenizer, assistant_tokenizer) -> None:
         if assistant_model is None:
             return
 
@@ -1296,7 +1296,7 @@ class GenerationMixin:
                     f"The main and assistant moedels have different tokenizers. Please provide `tokenizer` and `assistant_tokenizer` to `generate()` {doc_reference}."
                 )
 
-    def _validate_model_kwargs(self, model_kwargs: dict[str, Any]):
+    def _validate_model_kwargs(self, model_kwargs: dict[str, Any]) -> None:
         """Validates model kwargs for generation. Generate argument typos will also be caught here."""
         # If a `Cache` instance is passed, checks whether the model is compatible with it
         if isinstance(model_kwargs.get("past_key_values", None), Cache) and not self._supports_cache_class:
@@ -1356,7 +1356,7 @@ class GenerationMixin:
                 " generate arguments will also show up in this list)"
             )
 
-    def _validate_generated_length(self, generation_config, input_ids_length, has_default_max_length):
+    def _validate_generated_length(self, generation_config, input_ids_length, has_default_max_length) -> None:
         """Performs validation related to the resulting generated length"""
 
         # Can't throw warnings/exceptions during compilation
@@ -1780,7 +1780,7 @@ class GenerationMixin:
         generation_config: GenerationConfig,
         kwargs_has_attention_mask: bool | None = None,
         device: torch.device | str | None = None,
-    ):
+    ) -> None:
         """
         Prepares the special tokens for generation, overwriting the generation config with their processed versions
         converted to tensor.
@@ -2285,7 +2285,7 @@ class GenerationMixin:
 
             if generation_config.force_words_ids is not None:
 
-                def typeerror():
+                def typeerror() -> NoReturn:
                     raise ValueError(
                         "`force_words_ids` has to either be a `List[List[List[int]]]` or `List[List[int]]` "
                         f"of positive integers, but is {generation_config.force_words_ids}."

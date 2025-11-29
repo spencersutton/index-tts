@@ -50,7 +50,7 @@ def dvae_wav_to_mel(
 
 
 class Quantize(nn.Module):
-    def __init__(self, dim, n_embed, decay=0.99, eps=1e-5, balancing_heuristic=False, new_return_order=False):
+    def __init__(self, dim, n_embed, decay=0.99, eps=1e-5, balancing_heuristic=False, new_return_order=False) -> None:
         super().__init__()
 
         self.dim = dim
@@ -134,7 +134,7 @@ class Quantize(nn.Module):
 # In other words, attempts to force the discretization function to have a mean equal utilization across all discrete
 # values with the specified expected variance.
 class DiscretizationLoss(nn.Module):
-    def __init__(self, discrete_bins, dim, expected_variance, store_past=0):
+    def __init__(self, discrete_bins, dim, expected_variance, store_past=0) -> None:
         super().__init__()
         self.discrete_bins = discrete_bins
         self.dim = dim
@@ -170,7 +170,7 @@ class DiscretizationLoss(nn.Module):
 
 
 class ResBlock(nn.Module):
-    def __init__(self, chan, conv, activation):
+    def __init__(self, chan, conv, activation) -> None:
         super().__init__()
         self.net = nn.Sequential(
             conv(chan, chan, 3, padding=1),
@@ -185,7 +185,7 @@ class ResBlock(nn.Module):
 
 
 class UpsampledConv(nn.Module):
-    def __init__(self, conv, *args, **kwargs):
+    def __init__(self, conv, *args, **kwargs) -> None:
         super().__init__()
         assert "stride" in kwargs.keys()
         self.stride = kwargs["stride"]
@@ -220,7 +220,7 @@ class DiscreteVAE(nn.Module):
         record_codes=False,
         discretization_loss_averaging_steps=100,
         lr_quantizer_args={},
-    ):
+    ) -> None:
         super().__init__()
         has_resblocks = num_resnet_blocks > 0
 
@@ -382,7 +382,7 @@ class DiscreteVAE(nn.Module):
 
         return recon_loss, ssim_loss, commitment_loss, out
 
-    def log_codes(self, codes):
+    def log_codes(self, codes) -> None:
         # This is so we can debug the distribution of codes being learned.
         if self.record_codes and self.internal_step % 10 == 0:
             codes = codes.flatten()

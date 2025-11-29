@@ -12,7 +12,7 @@ from torch.nn.utils import weight_norm
 
 
 class FactorizedVectorQuantize(nn.Module):
-    def __init__(self, dim, codebook_size, codebook_dim, commitment, **kwargs):
+    def __init__(self, dim, codebook_size, codebook_dim, commitment, **kwargs) -> None:
         super().__init__()
         self.codebook_size = codebook_size
         self.codebook_dim = codebook_dim

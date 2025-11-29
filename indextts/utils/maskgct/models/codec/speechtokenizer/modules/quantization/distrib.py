@@ -44,7 +44,7 @@ def _is_complex_or_float(tensor):
     return torch.is_floating_point(tensor) or torch.is_complex(tensor)
 
 
-def _check_number_of_params(params: list[torch.Tensor]):
+def _check_number_of_params(params: list[torch.Tensor]) -> None:
     # utility function to check that the number of params in all workers is the same,
     # and thus avoid a deadlock with distributed all reduce.
     if not is_distributed() or not params:
@@ -60,7 +60,7 @@ def _check_number_of_params(params: list[torch.Tensor]):
         )
 
 
-def broadcast_tensors(tensors: tp.Iterable[torch.Tensor], src: int = 0):
+def broadcast_tensors(tensors: tp.Iterable[torch.Tensor], src: int = 0) -> None:
     """Broadcast the tensors from the given parameters to all workers.
     This can be used to ensure that all workers have the same model to start with.
     """
@@ -77,7 +77,7 @@ def broadcast_tensors(tensors: tp.Iterable[torch.Tensor], src: int = 0):
         handle.wait()
 
 
-def sync_buffer(buffers, average=True):
+def sync_buffer(buffers, average=True) -> None:
     """
     Sync grad for buffers. If average is False, broadcast instead of averaging.
     """
@@ -97,7 +97,7 @@ def sync_buffer(buffers, average=True):
             buffer.data /= world_size
 
 
-def sync_grad(params):
+def sync_grad(params) -> None:
     """
     Simpler alternative to DistributedDataParallel, that doesn't rely
     on any black magic. For simple models it can also be as fast.

@@ -41,7 +41,7 @@ class STFT(nn.Module):
         hop_length: int,
         win_length: int,
         center=True,
-    ):
+    ) -> None:
         super().__init__()
         self.center = center
         self.n_fft = n_fft
@@ -93,7 +93,7 @@ class ISTFT(nn.Module):
         padding (str, optional): Type of padding. Options are "center" or "same". Defaults to "same".
     """
 
-    def __init__(self, n_fft: int, hop_length: int, win_length: int, padding: str = "same"):
+    def __init__(self, n_fft: int, hop_length: int, win_length: int, padding: str = "same") -> None:
         super().__init__()
         if padding not in ["center", "same"]:
             raise ValueError("Padding must be 'center' or 'same'.")
@@ -171,7 +171,7 @@ class MDCT(nn.Module):
         padding (str, optional): Type of padding. Options are "center" or "same". Defaults to "same".
     """
 
-    def __init__(self, frame_len: int, padding: str = "same"):
+    def __init__(self, frame_len: int, padding: str = "same") -> None:
         super().__init__()
         if padding not in ["center", "same"]:
             raise ValueError("Padding must be 'center' or 'same'.")
@@ -226,7 +226,7 @@ class IMDCT(nn.Module):
         padding (str, optional): Type of padding. Options are "center" or "same". Defaults to "same".
     """
 
-    def __init__(self, frame_len: int, padding: str = "same"):
+    def __init__(self, frame_len: int, padding: str = "same") -> None:
         super().__init__()
         if padding not in ["center", "same"]:
             raise ValueError("Padding must be 'center' or 'same'.")
@@ -306,7 +306,7 @@ class ISTFTHead(FourierHead):
         padding (str, optional): Type of padding. Options are "center" or "same". Defaults to "same".
     """
 
-    def __init__(self, dim: int, n_fft: int, hop_length: int, padding: str = "same"):
+    def __init__(self, dim: int, n_fft: int, hop_length: int, padding: str = "same") -> None:
         super().__init__()
         out_dim = n_fft + 2
         self.out = torch.nn.Linear(dim, out_dim)
@@ -360,7 +360,7 @@ class IMDCTSymExpHead(FourierHead):
         padding: str = "same",
         sample_rate: int | None = None,
         clip_audio: bool = False,
-    ):
+    ) -> None:
         super().__init__()
         out_dim = mdct_frame_len // 2
         self.out = nn.Linear(dim, out_dim)
@@ -415,7 +415,7 @@ class IMDCTCosHead(FourierHead):
         mdct_frame_len: int,
         padding: str = "same",
         clip_audio: bool = False,
-    ):
+    ) -> None:
         super().__init__()
         self.clip_audio = clip_audio
         self.out = nn.Linear(dim, mdct_frame_len)
@@ -459,7 +459,7 @@ class ConvNeXtBlock(nn.Module):
         intermediate_dim: int,
         layer_scale_init_value: float,
         adanorm_num_embeddings: int | None = None,
-    ):
+    ) -> None:
         super().__init__()
         self.dwconv = nn.Conv1d(dim, dim, kernel_size=7, padding=3, groups=dim)  # depthwise conv
         self.adanorm = adanorm_num_embeddings is not None
@@ -505,7 +505,7 @@ class AdaLayerNorm(nn.Module):
         embedding_dim (int): Dimension of the embeddings.
     """
 
-    def __init__(self, num_embeddings: int, embedding_dim: int, eps: float = 1e-6):
+    def __init__(self, num_embeddings: int, embedding_dim: int, eps: float = 1e-6) -> None:
         super().__init__()
         self.eps = eps
         self.dim = embedding_dim
@@ -545,7 +545,7 @@ class ResBlock1(nn.Module):
         dilation: tuple[int, int, int] = (1, 3, 5),
         lrelu_slope: float = 0.1,
         layer_scale_init_value: float | None = None,
-    ):
+    ) -> None:
         super().__init__()
         self.lrelu_slope = lrelu_slope
         self.convs1 = nn.ModuleList(
@@ -649,7 +649,7 @@ class ResBlock1(nn.Module):
             x = xt + x
         return x
 
-    def remove_weight_norm(self):
+    def remove_weight_norm(self) -> None:
         for l in self.convs1:
             remove_weight_norm(l)
         for l in self.convs2:
@@ -698,7 +698,7 @@ class VocosBackbone(Backbone):
         num_layers: int,
         layer_scale_init_value: float | None = None,
         adanorm_num_embeddings: int | None = None,
-    ):
+    ) -> None:
         super().__init__()
         self.input_channels = input_channels
         self.embed = nn.Conv1d(input_channels, dim, kernel_size=7, padding=3)
@@ -722,7 +722,7 @@ class VocosBackbone(Backbone):
         self.final_layer_norm = nn.LayerNorm(dim, eps=1e-6)
         self.apply(self._init_weights)
 
-    def _init_weights(self, m):
+    def _init_weights(self, m) -> None:
         if isinstance(m, (nn.Conv1d, nn.Linear)):
             nn.init.trunc_normal_(m.weight, std=0.02)
             nn.init.constant_(m.bias, 0)
@@ -759,7 +759,7 @@ class VocosResNetBackbone(Backbone):
         dim,
         num_blocks,
         layer_scale_init_value=None,
-    ):
+    ) -> None:
         super().__init__()
         self.input_channels = input_channels
         self.embed = weight_norm(nn.Conv1d(input_channels, dim, kernel_size=3, padding=1))
@@ -787,7 +787,7 @@ class Vocos(nn.Module):
         padding: str = "same",
         adanorm_num_embeddings=None,
         cfg=None,
-    ):
+    ) -> None:
         super().__init__()
 
         input_channels = cfg.input_channels if cfg is not None and hasattr(cfg, "input_channels") else input_channels

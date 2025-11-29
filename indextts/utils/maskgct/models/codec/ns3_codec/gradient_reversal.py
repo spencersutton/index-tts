@@ -27,7 +27,7 @@ revgrad = GradientReversal.apply
 
 
 class GradientReversal(nn.Module):
-    def __init__(self, alpha):
+    def __init__(self, alpha) -> None:
         super().__init__()
         self.alpha = torch.tensor(alpha, requires_grad=False)
 

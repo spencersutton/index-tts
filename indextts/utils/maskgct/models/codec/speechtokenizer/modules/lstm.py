@@ -27,7 +27,7 @@ class SLSTM(nn.Module):
         num_layers: int = 2,
         skip: bool = True,
         bidirectional: bool = False,
-    ):
+    ) -> None:
         super().__init__()
         self.bidirectional = bidirectional
         self.skip = skip

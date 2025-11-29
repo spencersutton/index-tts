@@ -49,7 +49,7 @@ def default(val: tp.Any, d: tp.Any) -> tp.Any:
     return val if val is not None else d
 
 
-def ema_inplace(moving_avg, new, decay: float):
+def ema_inplace(moving_avg, new, decay: float) -> None:
     moving_avg.data.mul_(decay).add_(new, alpha=(1 - decay))
 
 
@@ -122,7 +122,7 @@ class EuclideanCodebook(nn.Module):
         decay: float = 0.99,
         epsilon: float = 1e-5,
         threshold_ema_dead_code: int = 2,
-    ):
+    ) -> None:
         super().__init__()
         self.decay = decay
         init_fn: tp.Callable[..., torch.Tensor] | tp.Any = uniform_init if not kmeans_init else torch.zeros
@@ -140,7 +140,7 @@ class EuclideanCodebook(nn.Module):
         self.register_buffer("embed_avg", embed.clone())
 
     @torch.jit.ignore
-    def init_embed_(self, data):
+    def init_embed_(self, data) -> None:
         if self.inited:
             return
 
@@ -152,11 +152,11 @@ class EuclideanCodebook(nn.Module):
         # Make sure all buffers across workers are in sync after initialization
         # broadcast_tensors(self.buffers())
 
-    def replace_(self, samples, mask):
+    def replace_(self, samples, mask) -> None:
         modified_codebook = torch.where(mask[..., None], sample_vectors(samples, self.codebook_size), self.embed)
         self.embed.data.copy_(modified_codebook)
 
-    def expire_codes_(self, batch_samples):
+    def expire_codes_(self, batch_samples) -> None:
         if self.threshold_ema_dead_code == 0:
             return
 
@@ -254,7 +254,7 @@ class VectorQuantization(nn.Module):
         kmeans_iters: int = 50,
         threshold_ema_dead_code: int = 2,
         commitment_weight: float = 1.0,
-    ):
+    ) -> None:
         super().__init__()
         _codebook_dim: int = default(codebook_dim, dim)
 
@@ -319,7 +319,7 @@ class ResidualVectorQuantization(nn.Module):
     Follows Algorithm 1. in https://arxiv.org/pdf/2107.03312.pdf
     """
 
-    def __init__(self, *, num_quantizers, **kwargs):
+    def __init__(self, *, num_quantizers, **kwargs) -> None:
         super().__init__()
         self.layers = nn.ModuleList([VectorQuantization(**kwargs) for _ in range(num_quantizers)])
 

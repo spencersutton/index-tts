@@ -17,7 +17,7 @@ LRELU_SLOPE = 0.1
 
 
 class AMPBlock1(torch.nn.Module):
-    def __init__(self, h, channels, kernel_size=3, dilation=(1, 3, 5), activation=None):
+    def __init__(self, h, channels, kernel_size=3, dilation=(1, 3, 5), activation=None) -> None:
         super().__init__()
         self.h = h
 
@@ -107,7 +107,7 @@ class AMPBlock1(torch.nn.Module):
 
         return x
 
-    def remove_weight_norm(self):
+    def remove_weight_norm(self) -> None:
         for l in self.convs1:
             remove_weight_norm(l)
         for l in self.convs2:
@@ -115,7 +115,7 @@ class AMPBlock1(torch.nn.Module):
 
 
 class AMPBlock2(torch.nn.Module):
-    def __init__(self, h, channels, kernel_size=3, dilation=(1, 3), activation=None):
+    def __init__(self, h, channels, kernel_size=3, dilation=(1, 3), activation=None) -> None:
         super().__init__()
         self.h = h
 
@@ -178,14 +178,14 @@ class AMPBlock2(torch.nn.Module):
 
         return x
 
-    def remove_weight_norm(self):
+    def remove_weight_norm(self) -> None:
         for l in self.convs:
             remove_weight_norm(l)
 
 
 class BigVGAN(torch.nn.Module):
     # this is our main BigVGAN model. Applies anti-aliased periodic activation for resblocks.
-    def __init__(self, h, use_cuda_kernel=False):
+    def __init__(self, h, use_cuda_kernel=False) -> None:
         """
         Args:
             h (dict)
@@ -319,7 +319,7 @@ class BigVGAN(torch.nn.Module):
 
         return x, contrastive_loss
 
-    def remove_weight_norm(self):
+    def remove_weight_norm(self) -> None:
         print("Removing weight norm...")
         for l in self.ups:
             for l_i in l:
@@ -343,7 +343,7 @@ class BigVGAN(torch.nn.Module):
 
 
 class DiscriminatorP(torch.nn.Module):
-    def __init__(self, h, period, kernel_size=5, stride=3, use_spectral_norm=False):
+    def __init__(self, h, period, kernel_size=5, stride=3, use_spectral_norm=False) -> None:
         super().__init__()
         self.period = period
         self.d_mult = h.discriminator_channel_mult
@@ -406,7 +406,7 @@ class DiscriminatorP(torch.nn.Module):
 
 
 class MultiPeriodDiscriminator(torch.nn.Module):
-    def __init__(self, h):
+    def __init__(self, h) -> None:
         super().__init__()
         self.mpd_reshapes = h.mpd_reshapes
         print(f"mpd_reshapes: {self.mpd_reshapes}")
@@ -430,7 +430,7 @@ class MultiPeriodDiscriminator(torch.nn.Module):
 
 
 class DiscriminatorR(nn.Module):
-    def __init__(self, cfg, resolution):
+    def __init__(self, cfg, resolution) -> None:
         super().__init__()
 
         self.resolution = resolution
@@ -484,7 +484,7 @@ class DiscriminatorR(nn.Module):
 
 
 class MultiResolutionDiscriminator(nn.Module):
-    def __init__(self, cfg, debug=False):
+    def __init__(self, cfg, debug=False) -> None:
         super().__init__()
         self.resolutions = cfg.resolutions
         assert len(self.resolutions) == 3, (

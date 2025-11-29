@@ -31,7 +31,7 @@ def snake(x, alpha):
 
 
 class Snake1d(nn.Module):
-    def __init__(self, channels):
+    def __init__(self, channels) -> None:
         super().__init__()
         self.alpha = nn.Parameter(torch.ones(1, channels, 1))
 
@@ -68,7 +68,7 @@ class SEANetResnetBlock(nn.Module):
         pad_mode: str = "reflect",
         compress: int = 2,
         true_skip: bool = True,
-    ):
+    ) -> None:
         super().__init__()
         assert len(kernel_sizes) == len(dilations), "Number of kernel sizes should match number of dilations"
         act = getattr(nn, activation) if activation != "Snake" else Snake1d
@@ -156,7 +156,7 @@ class SEANetEncoder(nn.Module):
         compress: int = 2,
         lstm: int = 2,
         bidirectional: bool = False,
-    ):
+    ) -> None:
         super().__init__()
         self.channels = channels
         self.dimension = dimension
@@ -290,7 +290,7 @@ class SEANetDecoder(nn.Module):
         lstm: int = 2,
         trim_right_ratio: float = 1.0,
         bidirectional: bool = False,
-    ):
+    ) -> None:
         super().__init__()
         self.dimension = dimension
         self.channels = channels
@@ -378,7 +378,7 @@ class SEANetDecoder(nn.Module):
         return y
 
 
-def test():
+def test() -> None:
     import torch
 
     encoder = SEANetEncoder()

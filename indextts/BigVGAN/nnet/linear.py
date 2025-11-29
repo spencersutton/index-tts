@@ -45,7 +45,7 @@ class Linear(torch.nn.Module):
         bias=True,
         max_norm=None,
         combine_dims=False,
-    ):
+    ) -> None:
         super().__init__()
         self.max_norm = max_norm
         self.combine_dims = combine_dims

@@ -14,7 +14,7 @@ def get_hparams_from_file(config_path):
 
 
 class HParams:
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         for k, v in kwargs.items():
             if type(v) == dict:
                 v = HParams(**v)
@@ -29,19 +29,19 @@ class HParams:
     def values(self):
         return self.__dict__.values()
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.__dict__)
 
     def __getitem__(self, key):
         return getattr(self, key)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, value) -> None:
         return setattr(self, key, value)
 
-    def __contains__(self, key):
+    def __contains__(self, key) -> bool:
         return key in self.__dict__
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__dict__.__repr__()
 
 

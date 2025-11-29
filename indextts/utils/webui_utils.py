@@ -1,13 +1,13 @@
 import gradio as gr
 
 
-def html_center(text, label="p"):
+def html_center(text, label="p") -> str:
     return f"""<div style="text-align: center; margin: 100; padding: 50;">
                 <{label} style="margin: 0; padding: 0;">{text}</{label}>
                 </div>"""
 
 
-def html_left(text, label="p"):
+def html_left(text, label="p") -> str:
     return f"""<div style="text-align: left; margin: 0; padding: 0;">
                 <{label} style="margin: 0; padding: 0;">{text}</{label}>
                 </div>"""

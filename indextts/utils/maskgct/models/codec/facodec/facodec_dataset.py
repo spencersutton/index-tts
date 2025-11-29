@@ -13,7 +13,7 @@ from utils.data_utils import *
 
 
 class FAcodecDataset(torch.utils.data.Dataset):
-    def __init__(self, cfg, dataset, is_valid=False):
+    def __init__(self, cfg, dataset, is_valid=False) -> None:
         """
         Args:
             cfg: config
@@ -43,7 +43,7 @@ class FAcodecDataset(torch.utils.data.Dataset):
         mel_tensor = (torch.log(1e-5 + mel_tensor.unsqueeze(0)) - self.mean) / self.std
         return mel_tensor
 
-    def __len__(self):
+    def __len__(self) -> int:
         # return len(self.data_list)
         return len(self.data_list)  # return a fixed number for testing
 
@@ -59,7 +59,7 @@ class FAcodecDataset(torch.utils.data.Dataset):
 class FAcodecCollator:
     """Zero-pads model inputs and targets based on number of frames per step"""
 
-    def __init__(self, cfg):
+    def __init__(self, cfg) -> None:
         self.cfg = cfg
 
     def __call__(self, batch):

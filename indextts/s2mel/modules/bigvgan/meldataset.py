@@ -199,7 +199,7 @@ class MelDataset(torch.utils.data.Dataset):
         fine_tuning=False,
         base_mels_path=None,
         is_seen=True,
-    ):
+    ) -> None:
         self.audio_files = training_files
         random.seed(1234)
         if shuffle:
@@ -329,5 +329,5 @@ class MelDataset(torch.utils.data.Dataset):
 
         return (mel.squeeze(), audio.squeeze(0), filename, mel_loss.squeeze())
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.audio_files)

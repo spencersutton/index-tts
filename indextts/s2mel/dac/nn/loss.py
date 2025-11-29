@@ -21,7 +21,7 @@ class L1Loss(nn.L1Loss):
     Implementation copied from: https://github.com/descriptinc/lyrebird-audiotools/blob/961786aa1a9d628cca0c0486e5885a457fe70c1a/audiotools/metrics/distance.py
     """
 
-    def __init__(self, attribute: str = "audio_data", weight: float = 1.0, **kwargs):
+    def __init__(self, attribute: str = "audio_data", weight: float = 1.0, **kwargs) -> None:
         self.attribute = attribute
         self.weight = weight
         super().__init__(**kwargs)
@@ -78,7 +78,7 @@ class SISDRLoss(nn.Module):
         zero_mean: int = True,
         clip_min: int | None = None,
         weight: float = 1.0,
-    ):
+    ) -> None:
         self.scaling = scaling
         self.reduction = reduction
         self.zero_mean = zero_mean
@@ -176,7 +176,7 @@ class MultiScaleSTFTLoss(nn.Module):
         weight: float = 1.0,
         match_stride: bool = False,
         window_type: str | None = None,
-    ):
+    ) -> None:
         super().__init__()
         self.stft_params = [
             STFTParams(
@@ -264,7 +264,7 @@ class MelSpectrogramLoss(nn.Module):
         mel_fmin: list[float] = [0.0, 0.0],
         mel_fmax: list[float] = [None, None],
         window_type: str | None = None,
-    ):
+    ) -> None:
         super().__init__()
         self.stft_params = [
             STFTParams(
@@ -327,7 +327,7 @@ class GANLoss(nn.Module):
     discriminator and the generator in separate functions.
     """
 
-    def __init__(self, discriminator):
+    def __init__(self, discriminator) -> None:
         super().__init__()
         self.discriminator = discriminator
 

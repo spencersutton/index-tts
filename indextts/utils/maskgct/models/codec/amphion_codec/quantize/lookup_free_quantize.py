@@ -23,7 +23,7 @@ class LookupFreeQuantize(nn.Module):
         input_dim,
         codebook_size,
         codebook_dim,
-    ):
+    ) -> None:
         super().__init__()
         self.input_dim = input_dim
         self.codebook_size = codebook_size

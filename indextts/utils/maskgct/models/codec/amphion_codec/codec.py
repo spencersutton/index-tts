@@ -34,7 +34,7 @@ def snake(x, alpha):
 
 
 class Snake1d(nn.Module):
-    def __init__(self, channels):
+    def __init__(self, channels) -> None:
         super().__init__()
         self.alpha = nn.Parameter(torch.ones(1, channels, 1))
 
@@ -42,7 +42,7 @@ class Snake1d(nn.Module):
         return snake(x, self.alpha)
 
 
-def init_weights(m):
+def init_weights(m) -> None:
     if isinstance(m, nn.Conv1d):
         nn.init.trunc_normal_(m.weight, std=0.02)
         nn.init.constant_(m.bias, 0)
@@ -52,7 +52,7 @@ def init_weights(m):
 
 
 class ResidualUnit(nn.Module):
-    def __init__(self, dim: int = 16, dilation: int = 1):
+    def __init__(self, dim: int = 16, dilation: int = 1) -> None:
         super().__init__()
         pad = ((7 - 1) * dilation) // 2
         self.block = nn.Sequential(
@@ -71,7 +71,7 @@ class ResidualUnit(nn.Module):
 
 
 class EncoderBlock(nn.Module):
-    def __init__(self, dim: int = 16, stride: int = 1):
+    def __init__(self, dim: int = 16, stride: int = 1) -> None:
         super().__init__()
         self.block = nn.Sequential(
             ResidualUnit(dim // 2, dilation=1),
@@ -99,7 +99,7 @@ class CodecEncoder(nn.Module):
         out_channels: int = 256,
         use_tanh: bool = False,
         cfg=None,
-    ):
+    ) -> None:
         super().__init__()
 
         d_model = cfg.d_model if cfg is not None else d_model
@@ -133,12 +133,12 @@ class CodecEncoder(nn.Module):
     def forward(self, x):
         return self.block(x)
 
-    def reset_parameters(self):
+    def reset_parameters(self) -> None:
         self.apply(init_weights)
 
 
 class DecoderBlock(nn.Module):
-    def __init__(self, input_dim: int = 16, output_dim: int = 8, stride: int = 1):
+    def __init__(self, input_dim: int = 16, output_dim: int = 8, stride: int = 1) -> None:
         super().__init__()
         self.block = nn.Sequential(
             Snake1d(input_dim),
@@ -188,7 +188,7 @@ class CodecDecoder(nn.Module):
         hop_size: int = 200,
         padding: str = "same",
         cfg=None,
-    ):
+    ) -> None:
         super().__init__()
 
         in_channels = cfg.in_channels if cfg is not None and hasattr(cfg, "in_channels") else in_channels
@@ -355,5 +355,5 @@ class CodecDecoder(nn.Module):
     def latent2dist(self, x, n_quantizers=None):
         return self.quantizer.latent2dist(x, n_quantizers=n_quantizers)
 
-    def reset_parameters(self):
+    def reset_parameters(self) -> None:
         self.apply(init_weights)

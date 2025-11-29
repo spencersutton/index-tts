@@ -27,7 +27,7 @@ class FactorizedVectorQuantize(nn.Module):
         commitment=0.005,
         codebook_loss_weight=1.0,
         use_l2_normlize=True,
-    ):
+    ) -> None:
         super().__init__()
         self.input_dim = input_dim
         self.codebook_size = codebook_size

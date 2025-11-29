@@ -15,7 +15,7 @@ LRELU_SLOPE = 0.1
 
 
 class LayerNorm(nn.Module):
-    def __init__(self, channels, eps=1e-5):
+    def __init__(self, channels, eps=1e-5) -> None:
         super().__init__()
         self.channels = channels
         self.eps = eps
@@ -38,7 +38,7 @@ class ConvReluNorm(nn.Module):
         kernel_size,
         n_layers,
         p_dropout,
-    ):
+    ) -> None:
         super().__init__()
         self.in_channels = in_channels
         self.hidden_channels = hidden_channels
@@ -82,7 +82,7 @@ class DDSConv(nn.Module):
     Dilated and Depth-Separable Convolution
     """
 
-    def __init__(self, channels, kernel_size, n_layers, p_dropout=0.0):
+    def __init__(self, channels, kernel_size, n_layers, p_dropout=0.0) -> None:
         super().__init__()
         self.channels = channels
         self.kernel_size = kernel_size
@@ -135,7 +135,7 @@ class WN(torch.nn.Module):
         n_layers,
         gin_channels=0,
         p_dropout=0,
-    ):
+    ) -> None:
         super().__init__()
         assert kernel_size % 2 == 1
         self.hidden_channels = hidden_channels
@@ -203,7 +203,7 @@ class WN(torch.nn.Module):
                 output = output + res_skip_acts
         return output * x_mask
 
-    def remove_weight_norm(self):
+    def remove_weight_norm(self) -> None:
         if self.gin_channels != 0:
             torch.nn.utils.remove_weight_norm(self.cond_layer)
         for l in self.in_layers:
@@ -213,7 +213,7 @@ class WN(torch.nn.Module):
 
 
 class ResBlock1(torch.nn.Module):
-    def __init__(self, channels, kernel_size=3, dilation=(1, 3, 5)):
+    def __init__(self, channels, kernel_size=3, dilation=(1, 3, 5)) -> None:
         super().__init__()
         self.convs1 = nn.ModuleList(
             [
@@ -302,7 +302,7 @@ class ResBlock1(torch.nn.Module):
             x = x * x_mask
         return x
 
-    def remove_weight_norm(self):
+    def remove_weight_norm(self) -> None:
         for l in self.convs1:
             remove_weight_norm(l)
         for l in self.convs2:
@@ -310,7 +310,7 @@ class ResBlock1(torch.nn.Module):
 
 
 class ResBlock2(torch.nn.Module):
-    def __init__(self, channels, kernel_size=3, dilation=(1, 3)):
+    def __init__(self, channels, kernel_size=3, dilation=(1, 3)) -> None:
         super().__init__()
         self.convs = nn.ModuleList(
             [
@@ -349,7 +349,7 @@ class ResBlock2(torch.nn.Module):
             x = x * x_mask
         return x
 
-    def remove_weight_norm(self):
+    def remove_weight_norm(self) -> None:
         for l in self.convs:
             remove_weight_norm(l)
 
@@ -376,7 +376,7 @@ class Flip(nn.Module):
 
 
 class ElementwiseAffine(nn.Module):
-    def __init__(self, channels):
+    def __init__(self, channels) -> None:
         super().__init__()
         self.channels = channels
         self.m = nn.Parameter(torch.zeros(channels, 1))
@@ -404,7 +404,7 @@ class ResidualCouplingLayer(nn.Module):
         p_dropout=0,
         gin_channels=0,
         mean_only=False,
-    ):
+    ) -> None:
         assert channels % 2 == 0, "channels should be divisible by 2"
         super().__init__()
         self.channels = channels
@@ -459,7 +459,7 @@ class ConvFlow(nn.Module):
         n_layers,
         num_bins=10,
         tail_bound=5.0,
-    ):
+    ) -> None:
         super().__init__()
         self.in_channels = in_channels
         self.filter_channels = filter_channels
@@ -519,7 +519,7 @@ class TransformerCouplingLayer(nn.Module):
         mean_only=False,
         wn_sharing_parameter=None,
         gin_channels=0,
-    ):
+    ) -> None:
         assert n_layers == 3, n_layers
         assert channels % 2 == 0, "channels should be divisible by 2"
         super().__init__()

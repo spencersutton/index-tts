@@ -54,7 +54,7 @@ class BatchNorm1d(nn.Module):
         track_running_stats=True,
         combine_batch_time=False,
         skip_transpose=False,
-    ):
+    ) -> None:
         super().__init__()
         self.combine_batch_time = combine_batch_time
         self.skip_transpose = skip_transpose
@@ -143,7 +143,7 @@ class BatchNorm2d(nn.Module):
         momentum=0.1,
         affine=True,
         track_running_stats=True,
-    ):
+    ) -> None:
         super().__init__()
 
         if input_shape is None and input_size is None:
@@ -211,7 +211,7 @@ class LayerNorm(nn.Module):
         input_shape=None,
         eps=1e-05,
         elementwise_affine=True,
-    ):
+    ) -> None:
         super().__init__()
         self.eps = eps
         self.elementwise_affine = elementwise_affine
@@ -279,7 +279,7 @@ class InstanceNorm1d(nn.Module):
         momentum=0.1,
         track_running_stats=True,
         affine=False,
-    ):
+    ) -> None:
         super().__init__()
 
         if input_shape is None and input_size is None:
@@ -355,7 +355,7 @@ class InstanceNorm2d(nn.Module):
         momentum=0.1,
         track_running_stats=True,
         affine=False,
-    ):
+    ) -> None:
         super().__init__()
 
         if input_shape is None and input_size is None:
@@ -426,7 +426,7 @@ class GroupNorm(nn.Module):
         num_groups=None,
         eps=1e-05,
         affine=True,
-    ):
+    ) -> None:
         super().__init__()
         self.eps = eps
         self.affine = affine
@@ -502,7 +502,7 @@ class ExponentialMovingAverage(nn.Module):
         per_channel: bool = False,
         trainable: bool = True,
         skip_transpose: bool = False,
-    ):
+    ) -> None:
         super().__init__()
         self._coeff_init = coeff_init
         self._per_channel = per_channel
@@ -606,7 +606,7 @@ class PCEN(nn.Module):
         trainable: bool = True,
         per_channel_smooth_coef: bool = True,
         skip_transpose: bool = False,
-    ):
+    ) -> None:
         super().__init__()
         self._smooth_coef = smooth_coef
         self._floor = floor

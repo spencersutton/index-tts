@@ -13,7 +13,7 @@ from .modules.seanet import SEANetDecoder, SEANetEncoder
 
 
 class SpeechTokenizer(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config) -> None:
         """
 
         Parameters

@@ -13,7 +13,7 @@ import torch._dynamo.config
 import torch._inductor.config
 
 
-def device_sync(device):
+def device_sync(device) -> None:
     if "cuda" in device:
         torch.cuda.synchronize(device)
     elif ("cpu" in device) or ("mps" in device):
@@ -309,7 +309,7 @@ def main(
     if use_tp:
         if rank != 0:
             # only print on rank 0
-            def print(*args, **kwargs):
+            def print(*args, **kwargs) -> None:
                 return None
 
     print(f"Using device={device}")
@@ -370,7 +370,7 @@ def main(
             period_id = tokenizer.encode(".")[0]
             done_generating = False
 
-            def callback(x):
+            def callback(x) -> None:
                 nonlocal done_generating
                 if done_generating:
                     return

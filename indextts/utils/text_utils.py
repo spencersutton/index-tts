@@ -3,7 +3,7 @@ import re
 from textstat import textstat
 
 
-def contains_chinese(text):
+def contains_chinese(text) -> bool:
     # 正则表达式，用于匹配中文字符 + 数字 -> 都认为是 zh
     if re.search(r"[\u4e00-\u9fff0-9]", text):
         return True

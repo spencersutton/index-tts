@@ -104,7 +104,7 @@ class ArithmeticCoder:
             be injected to rescale the initial range.
     """
 
-    def __init__(self, fo: tp.IO[bytes], total_range_bits: int = 24):
+    def __init__(self, fo: tp.IO[bytes], total_range_bits: int = 24) -> None:
         assert total_range_bits <= 30
         self.total_range_bits = total_range_bits
         self.packer = BitPacker(bits=1, fo=fo)  # we push single bits at a time.
@@ -119,7 +119,7 @@ class ArithmeticCoder:
         """Return the current range width."""
         return self.high - self.low + 1
 
-    def _flush_common_prefix(self):
+    def _flush_common_prefix(self) -> None:
         # If self.low and self.high start with the sames bits,
         # those won't change anymore as we always just increase the range
         # by powers of 2, and we can flush them out to the bit stream.
@@ -173,7 +173,7 @@ class ArithmeticCoder:
         assert self.max_bit <= 61, self.max_bit
         return outs
 
-    def flush(self):
+    def flush(self) -> None:
         """Flush the remaining information to the stream."""
         while self.max_bit >= 0:
             b1 = (self.low >> self.max_bit) & 1
@@ -198,7 +198,7 @@ class ArithmeticDecoder:
 
     """
 
-    def __init__(self, fo: tp.IO[bytes], total_range_bits: int = 24):
+    def __init__(self, fo: tp.IO[bytes], total_range_bits: int = 24) -> None:
         self.total_range_bits = total_range_bits
         self.low: int = 0
         self.high: int = 0
@@ -214,7 +214,7 @@ class ArithmeticDecoder:
     def delta(self) -> int:
         return self.high - self.low + 1
 
-    def _flush_common_prefix(self):
+    def _flush_common_prefix(self) -> None:
         # Given the current range [L, H], if both have a common prefix,
         # we know we can remove it from our representation to avoid handling large numbers.
         while self.max_bit >= 0:
@@ -276,7 +276,7 @@ class ArithmeticDecoder:
         return sym
 
 
-def test():
+def test() -> None:
     torch.manual_seed(1234)
     random.seed(1234)
     for _ in range(4):

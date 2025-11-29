@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class LayerNorm(nn.Module):
-    def __init__(self, channels, eps=1e-5):
+    def __init__(self, channels, eps=1e-5) -> None:
         super().__init__()
         self.channels = channels
         self.eps = eps
@@ -47,7 +47,7 @@ class Encoder(nn.Module):
         window_size=4,
         isflow=True,
         **kwargs,
-    ):
+    ) -> None:
         super().__init__()
         self.hidden_channels = hidden_channels
         self.filter_channels = filter_channels
@@ -130,7 +130,7 @@ class Decoder(nn.Module):
         proximal_bias=False,
         proximal_init=True,
         **kwargs,
-    ):
+    ) -> None:
         super().__init__()
         self.hidden_channels = hidden_channels
         self.filter_channels = filter_channels
@@ -212,7 +212,7 @@ class MultiHeadAttention(nn.Module):
         block_length=None,
         proximal_bias=False,
         proximal_init=False,
-    ):
+    ) -> None:
         super().__init__()
         assert channels % n_heads == 0
 
@@ -378,7 +378,7 @@ class FFN(nn.Module):
         p_dropout=0.0,
         activation=None,
         causal=False,
-    ):
+    ) -> None:
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels

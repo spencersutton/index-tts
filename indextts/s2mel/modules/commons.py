@@ -324,9 +324,9 @@ def plot_spectrogram_to_numpy(spectrogram):
     if not MATPLOTLIB_FLAG:
         import logging
 
-        import matplotlib
+        import matplotlib as mpl
 
-        matplotlib.use("Agg")
+        mpl.use("Agg")
         MATPLOTLIB_FLAG = True
         mpl_logger = logging.getLogger("matplotlib")
         mpl_logger.setLevel(logging.WARNING)

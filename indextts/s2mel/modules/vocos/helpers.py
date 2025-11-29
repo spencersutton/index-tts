@@ -1,10 +1,10 @@
-import matplotlib
+import matplotlib as mpl
 import numpy as np
 import torch
 from matplotlib import pyplot as plt
 from pytorch_lightning import Callback
 
-matplotlib.use("Agg")
+mpl.use("Agg")
 
 
 def save_figure_to_numpy(fig: plt.Figure) -> np.ndarray:

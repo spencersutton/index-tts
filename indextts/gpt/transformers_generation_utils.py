@@ -1745,7 +1745,6 @@ class GenerationMixin:
                 )
                 cache_class = QUANT_BACKEND_CLASSES_MAPPING[cache_config.backend]
 
-                # if cache_config.backend == "quanto" and not (is_optimum_quanto_available() or is_quanto_available()):
                 if cache_config.backend == "quanto" and not is_optimum_quanto_available():
                     raise ImportError(
                         "You need to install optimum-quanto in order to use KV cache quantization with optimum-quanto backend. "
@@ -3499,15 +3498,11 @@ class GenerationMixin:
             n_eos_tokens = eos_token_id.shape[0] if eos_token_id is not None else 0
             n_tokens_to_keep = max(2, 1 + n_eos_tokens) * num_beams
             if do_sample:
-                # import time
-                # start = time.time()
                 probs = nn.functional.softmax(next_token_scores, dim=-1)
                 next_tokens = torch.multinomial(probs, num_samples=n_tokens_to_keep)
                 next_token_scores = torch.gather(next_token_scores, -1, next_tokens)
                 next_token_scores, indices = torch.sort(next_token_scores, descending=True, dim=1)
                 next_tokens = torch.gather(next_tokens, -1, indices)
-                # print("*"*20, probs.shape, n_tokens_to_keep, next_token_scores.shape, next_tokens.shape)
-                # print("*"*20, time.time() - start)
             else:
                 next_token_scores, next_tokens = torch.topk(
                     next_token_scores, n_tokens_to_keep, dim=1, largest=True, sorted=True

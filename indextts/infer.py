@@ -151,7 +151,6 @@ class IndexTTS:
 
             count = torch.sum(code == silent_token).item()
             if count > max_consecutive:
-                # code = code.cpu().tolist()
                 ncode_idx = []
                 n = 0
                 for k in range(len_):

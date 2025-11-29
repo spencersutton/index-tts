@@ -70,7 +70,6 @@ def broadcast_tensors(tensors: tp.Iterable[torch.Tensor], src: int = 0) -> None:
     _check_number_of_params(tensors)
     handles = []
     for tensor in tensors:
-        # src = int(rank()) # added code
         handle = torch.distributed.broadcast(tensor.data, src=src, async_op=True)
         handles.append(handle)
     for handle in handles:

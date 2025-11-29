@@ -354,8 +354,6 @@ class IndexTTS:
         repetition_penalty = generation_kwargs.pop("repetition_penalty", 10.0)
         max_mel_tokens = generation_kwargs.pop("max_mel_tokens", 600)
         sampling_rate = 24000
-        # lang = "EN"
-        # lang = "ZH"
         wavs = []
         gpt_gen_time = 0
         gpt_forward_time = 0

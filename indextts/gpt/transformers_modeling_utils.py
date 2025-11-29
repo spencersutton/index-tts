@@ -362,7 +362,7 @@ def check_support_param_buffer_assignment(model_to_load, state_dict, start_prefi
         return False
 
     # If the model does, the incoming `state_dict` and the `model_to_load` must be the same dtype
-    first_key = list(model_to_load.state_dict().keys())[0]
+    first_key = next(iter(model_to_load.state_dict().keys()))
     if start_prefix + first_key in state_dict:
         return state_dict[start_prefix + first_key].dtype == model_to_load.state_dict()[first_key].dtype
 
@@ -1008,7 +1008,7 @@ def _load_state_dict_into_meta_model(
 def _add_variant(weights_name: str, variant: str | None = None) -> str:
     if variant is not None:
         splits = weights_name.split(".")
-        splits = splits[:-1] + [variant] + splits[-1:]
+        splits = [*splits[:-1], variant, *splits[-1:]]
         weights_name = ".".join(splits)
 
     return weights_name
@@ -3178,7 +3178,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         local_files_only: bool = False,
         token: str | bool | None = None,
         revision: str = "main",
-        use_safetensors: bool = None,
+        use_safetensors: bool | None = None,
         weights_only: bool = True,
         **kwargs,
     ) -> "PreTrainedModel":
@@ -4068,7 +4068,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
             import deepspeed
 
             logger.info("Detected DeepSpeed ZeRO-3: activating zero.init() for this model")
-            init_contexts = [deepspeed.zero.Init(config_dict_or_path=deepspeed_config())] + init_contexts
+            init_contexts = [deepspeed.zero.Init(config_dict_or_path=deepspeed_config()), *init_contexts]
         elif low_cpu_mem_usage:
             if not is_accelerate_available():
                 raise ImportError(
@@ -4688,7 +4688,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                     and hf_quantizer.quantization_config.quant_method == QuantizationMethod.TORCHAO
                     and hf_quantizer.quantization_config.quant_type == "int4_weight_only"
                 ):
-                    map_location = torch.device([d for d in device_map.values() if d not in ["cpu", "disk"]][0])
+                    map_location = torch.device(next(d for d in device_map.values() if d not in ["cpu", "disk"]))
                 state_dict = load_state_dict(
                     shard_file, is_quantized=is_quantized, map_location=map_location, weights_only=weights_only
                 )

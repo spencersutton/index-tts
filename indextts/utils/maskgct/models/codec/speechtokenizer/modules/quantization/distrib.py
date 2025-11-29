@@ -123,7 +123,7 @@ def average_metrics(metrics: dict[str, float], count=1.0):
         return metrics
     keys, values = zip(*metrics.items())
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    tensor = torch.tensor(list(values) + [1], device=device, dtype=torch.float32)
+    tensor = torch.tensor([*list(values), 1], device=device, dtype=torch.float32)
     tensor *= count
     all_reduce(tensor)
     averaged = (tensor[:-1] / tensor[-1]).cpu().tolist()

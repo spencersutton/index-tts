@@ -845,7 +845,7 @@ class GenerationMixin:
         encoder_input_ids: torch.LongTensor,
         prefix_allowed_tokens_fn: Callable[[int, torch.Tensor], list[int]],
         logits_processor: LogitsProcessorList | None,
-        device: str = None,
+        device: str | None = None,
         model_kwargs: dict[str, Any] | None = None,
         negative_prompt_ids: torch.Tensor | None = None,
         negative_prompt_attention_mask: torch.Tensor | None = None,
@@ -1613,7 +1613,7 @@ class GenerationMixin:
             # This is needed here if we don't want to make changes in accelerate in order to save execution_device
             # For offloaded case, we need to get the execution device, not just the device where it is offloaded
             if hasattr(self, "hf_device_map"):
-                main_device = [d for d in self.hf_device_map.values() if d not in ["cpu", "disk"]][0]
+                main_device = next(d for d in self.hf_device_map.values() if d not in ["cpu", "disk"])
                 execution_device_map = {
                     name: main_device if device in ["cpu", "disk"] else device
                     for name, device in self.hf_device_map.items()
@@ -4499,7 +4499,7 @@ def _ranking_fast(
     return selected_idx
 
 
-def _split(data, full_batch_size: int, num_hidden_layers: int, split_size: int = None):
+def _split(data, full_batch_size: int, num_hidden_layers: int, split_size: int | None = None):
     """
     Takes care of three cases:
     1. data is a tensor: e.g. last_hidden_state, pooler_output etc. split them on the batch_size dim

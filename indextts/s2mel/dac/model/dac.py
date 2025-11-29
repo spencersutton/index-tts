@@ -178,7 +178,7 @@ class DAC(BaseModel, CodecMixin):
         self,
         encoder_dim: int = 64,
         encoder_rates: list[int] = [2, 4, 8, 8],
-        latent_dim: int = None,
+        latent_dim: int | None = None,
         decoder_dim: int = 1536,
         decoder_rates: list[int] = [8, 8, 4, 2],
         n_codebooks: int = 9,
@@ -242,7 +242,7 @@ class DAC(BaseModel, CodecMixin):
     def encode(
         self,
         audio_data: torch.Tensor,
-        n_quantizers: int = None,
+        n_quantizers: int | None = None,
     ):
         """Encode given audio data and return quantized latent codes
 
@@ -299,8 +299,8 @@ class DAC(BaseModel, CodecMixin):
     def forward(
         self,
         audio_data: torch.Tensor,
-        sample_rate: int = None,
-        n_quantizers: int = None,
+        sample_rate: int | None = None,
+        n_quantizers: int | None = None,
     ):
         """Model forward pass
 

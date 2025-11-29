@@ -846,7 +846,7 @@ class AttentionLayers(nn.Module):
             default_block = ("a", "f")
 
         if macaron:
-            default_block = ("f",) + default_block
+            default_block = ("f", *default_block)
 
         # qk normalization
 
@@ -968,7 +968,7 @@ class AttentionLayers(nn.Module):
             if past_key_values is not None:
                 seq_len += past_key_values[0][0].shape[-2]
             max_rotary_emb_length = max(
-                list(map(lambda m: (m.shape[1] if exists(m) else 0) + seq_len, mems)) + [expected_seq_len]
+                [*list(map(lambda m: (m.shape[1] if exists(m) else 0) + seq_len, mems)), expected_seq_len]
             )
             rotary_pos_emb = self.rotary_pos_emb(max_rotary_emb_length, x.device)
 

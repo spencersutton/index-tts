@@ -329,7 +329,7 @@ class HiFTGenerator(nn.Module):
         # Down
         self.source_downs = nn.ModuleList()
         self.source_resblocks = nn.ModuleList()
-        downsample_rates = [1] + upsample_rates[::-1][:-1]
+        downsample_rates = [1, *upsample_rates[::-1][:-1]]
         downsample_cum_rates = np.cumprod(downsample_rates)
         for i, (u, k, d) in enumerate(
             zip(downsample_cum_rates[::-1], source_resblock_kernel_sizes, source_resblock_dilation_sizes)

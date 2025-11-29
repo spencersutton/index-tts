@@ -60,7 +60,7 @@ class ResidualVQ(nn.Module):
             ]
         )
 
-    def forward(self, z, n_quantizers: int = None):
+    def forward(self, z, n_quantizers: int | None = None):
         """
         Parameters
         ----------

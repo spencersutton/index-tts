@@ -101,7 +101,7 @@ def load_model(
     model_type: str = "44khz",
     model_bitrate: str = "8kbps",
     tag: str = "latest",
-    load_path: str = None,
+    load_path: str | None = None,
 ):
     if not load_path:
         load_path = download(model_type=model_type, model_bitrate=model_bitrate, tag=tag)

@@ -124,7 +124,7 @@ class CodecMixin:
         win_duration: float = 1.0,
         verbose: bool = False,
         normalize_db: float = -16,
-        n_quantizers: int = None,
+        n_quantizers: int | None = None,
     ) -> DACFile:
         """Processes an audio signal from a file or AudioSignal object into
         discrete codes. This function processes the signal in short windows,

@@ -69,7 +69,7 @@ class ScheduledSampler(Sampler):
             iters.append(
                 SequentialSampler(dataset).__iter__() if self.holistic_shuffle else RandomSampler(dataset).__iter__()
             )
-        init_indices = [0] + self.concat_dataset.cumulative_sizes[:-1]
+        init_indices = [0, *self.concat_dataset.cumulative_sizes[:-1]]
         output_batches = []
         for dataset_idx in range(len(self.concat_dataset.datasets)):
             cur_batch = []

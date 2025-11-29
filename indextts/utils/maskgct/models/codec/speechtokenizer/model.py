@@ -84,7 +84,7 @@ class SpeechTokenizer(nn.Module):
         model.load_state_dict(params)
         return model
 
-    def forward(self, x: torch.tensor, n_q: int = None, layers: list = [0]):
+    def forward(self, x: torch.tensor, n_q: int | None = None, layers: list = [0]):
         """
 
         Parameters
@@ -114,7 +114,7 @@ class SpeechTokenizer(nn.Module):
         o = self.decoder(quantized)
         return o, commit_loss, feature
 
-    def forward_feature(self, x: torch.tensor, layers: list = None):
+    def forward_feature(self, x: torch.tensor, layers: list | None = None):
         """
 
         Parameters
@@ -135,7 +135,7 @@ class SpeechTokenizer(nn.Module):
         _quantized, _codes, _commit_loss, quantized_list = self.quantizer(e, layers=layers)
         return quantized_list
 
-    def encode(self, x: torch.tensor, n_q: int = None, st: int = None):
+    def encode(self, x: torch.tensor, n_q: int | None = None, st: int | None = None):
         """
 
         Parameters

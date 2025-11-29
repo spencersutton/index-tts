@@ -266,7 +266,7 @@ def modify_w2v_forward(self, output_layer=15):
 
         for i, layer in enumerate(self.layers):
             if output_hidden_states:
-                all_hidden_states = all_hidden_states + (hidden_states,)
+                all_hidden_states = (*all_hidden_states, hidden_states)
 
             # add LayerDrop (see https://arxiv.org/abs/1909.11556 for description)
             dropout_probability = torch.rand([])
@@ -297,13 +297,13 @@ def modify_w2v_forward(self, output_layer=15):
                 layer_outputs = (None, None)
 
             if output_attentions:
-                all_self_attentions = all_self_attentions + (layer_outputs[1],)
+                all_self_attentions = (*all_self_attentions, layer_outputs[1])
 
             if i == output_layer - 1:
                 break
 
         if output_hidden_states:
-            all_hidden_states = all_hidden_states + (hidden_states,)
+            all_hidden_states = (*all_hidden_states, hidden_states)
 
         if not return_dict:
             return tuple(v for v in [hidden_states, all_hidden_states, all_self_attentions] if v is not None)
@@ -342,7 +342,7 @@ def plot_spectrogram_to_numpy(spectrogram):
 
     fig.canvas.draw()
     data = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8, sep="")
-    data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+    data = data.reshape((*fig.canvas.get_width_height()[::-1], 3))
     plt.close()
     return data
 

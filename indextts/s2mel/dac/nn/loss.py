@@ -76,7 +76,7 @@ class SISDRLoss(nn.Module):
         scaling: int = True,
         reduction: str = "mean",
         zero_mean: int = True,
-        clip_min: int = None,
+        clip_min: int | None = None,
         weight: float = 1.0,
     ):
         self.scaling = scaling
@@ -175,7 +175,7 @@ class MultiScaleSTFTLoss(nn.Module):
         pow: float = 2.0,
         weight: float = 1.0,
         match_stride: bool = False,
-        window_type: str = None,
+        window_type: str | None = None,
     ):
         super().__init__()
         self.stft_params = [
@@ -263,7 +263,7 @@ class MelSpectrogramLoss(nn.Module):
         match_stride: bool = False,
         mel_fmin: list[float] = [0.0, 0.0],
         mel_fmax: list[float] = [None, None],
-        window_type: str = None,
+        window_type: str | None = None,
     ):
         super().__init__()
         self.stft_params = [

@@ -36,21 +36,21 @@ from transformers.modeling_outputs import (
     SequenceClassifierOutputWithPast,
     TokenClassifierOutput,
 )
-from transformers.modeling_utils import SequenceSummary
 from transformers.models.gpt2.configuration_gpt2 import GPT2Config
-
-# from transformers.modeling_utils import PreTrainedModel, SequenceSummary
+from transformers.models.gpt2.modeling_gpt2 import GPT2SequenceSummary
 from transformers.pytorch_utils import Conv1D, find_pruneable_heads_and_indices, prune_conv1d_layer
-from transformers.utils import (
-    ModelOutput,
+from transformers.utils import logging
+from transformers.utils.doc import (
     add_code_sample_docstrings,
     add_start_docstrings,
     add_start_docstrings_to_model_forward,
+    replace_return_docstrings,
+)
+from transformers.utils.generic import ModelOutput
+from transformers.utils.import_utils import (
     get_torch_version,
     is_flash_attn_2_available,
     is_flash_attn_greater_or_equal_2_10,
-    logging,
-    replace_return_docstrings,
 )
 from transformers.utils.model_parallel_utils import assert_device_map, get_device_map
 
@@ -1340,7 +1340,7 @@ class GPT2DoubleHeadsModel(GPT2PreTrainedModel, GenerationMixin):
         config.num_labels = 1
         self.transformer = GPT2Model(config)
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
-        self.multiple_choice_head = SequenceSummary(config)
+        self.multiple_choice_head = GPT2SequenceSummary(config)
 
         # Model parallel
         self.model_parallel = False

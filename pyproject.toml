@@ -132,6 +132,7 @@ extend-select = [
   "FLY",
   "NPY",
   "PERF",
+  "FURB",
 ]
 ignore = [
   "ANN001",
@@ -144,5 +145,6 @@ ignore = [
   "RUF001",
   "RUF002",
   "RUF003",
+  "FURB118",
 ]
 unfixable = ["F401"]

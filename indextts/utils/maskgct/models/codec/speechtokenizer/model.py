@@ -106,7 +106,7 @@ class SpeechTokenizer(nn.Module):
             Output of RVQ's first layer. Shape: (batch, timesteps, dimension)
 
         """
-        n_q = n_q if n_q else self.n_q
+        n_q = n_q or self.n_q
         e = self.encoder(x)
         quantized, _codes, commit_loss, quantized_list = self.quantizer(e, n_q=n_q, layers=layers)
         feature = rearrange(quantized_list[0], "b d t -> b t d")
@@ -131,7 +131,7 @@ class SpeechTokenizer(nn.Module):
 
         """
         e = self.encoder(x)
-        layers = layers if layers else list(range(self.n_q))
+        layers = layers or list(range(self.n_q))
         _quantized, _codes, _commit_loss, quantized_list = self.quantizer(e, layers=layers)
         return quantized_list
 
@@ -156,7 +156,7 @@ class SpeechTokenizer(nn.Module):
         e = self.encoder(x)
         if st is None:
             st = 0
-        n_q = n_q if n_q else self.n_q
+        n_q = n_q or self.n_q
         codes = self.quantizer.encode(e, n_q=n_q, st=st)
         return codes
 

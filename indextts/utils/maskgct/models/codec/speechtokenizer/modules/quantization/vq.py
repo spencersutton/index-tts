@@ -87,7 +87,7 @@ class ResidualVectorQuantizer(nn.Module):
                 The quantized (or approximately quantized) representation with
                 the associated numbert quantizers and layer quantized required to return.
         """
-        n_q = n_q if n_q else self.n_q
+        n_q = n_q or self.n_q
         if layers and max(layers) >= n_q:
             raise ValueError(
                 f"Last layer index in layers: A {max(layers)}. Number of quantizers in RVQ: B {self.n_q}. A must less than B."
@@ -104,7 +104,7 @@ class ResidualVectorQuantizer(nn.Module):
             n_q (int): Number of quantizer used to quantize. Default: All quantizers.
             st (int): Start to encode input from which layers. Default: 0.
         """
-        n_q = n_q if n_q else self.n_q
+        n_q = n_q or self.n_q
         st = st or 0
         codes = self.vq.encode(x, n_q=n_q, st=st)
         return codes

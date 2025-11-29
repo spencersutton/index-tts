@@ -78,7 +78,7 @@ def bits_to_string(bits_array):
 
 
 def split_segment(text, min_len=10, language_str="[EN]"):
-    if language_str in ["EN"]:
+    if language_str == "EN":
         segments = split_segments_latin(text, min_len=min_len)
     else:
         segments = split_segments_zh(text, min_len=min_len)

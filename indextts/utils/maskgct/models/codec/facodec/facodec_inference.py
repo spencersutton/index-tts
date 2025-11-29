@@ -38,8 +38,7 @@ class FAcodecInference:
         for key, state_dict in sd.items():
             new_state_dict = OrderedDict()
             for k, v in state_dict.items():
-                if k.startswith("module."):
-                    k = k[7:]
+                k = k.removeprefix("module.")
                 new_state_dict[k] = v
             new_params[key] = new_state_dict
         for key in new_params:

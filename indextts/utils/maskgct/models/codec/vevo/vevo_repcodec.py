@@ -422,7 +422,7 @@ class DecoderBlock(nn.Module):
             )
 
         self.res_units = torch.nn.ModuleList()
-        for idx, dilation in enumerate(dilations):
+        for dilation in dilations:
             self.res_units += [
                 ResidualUnit(
                     out_channels,

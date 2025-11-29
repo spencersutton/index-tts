@@ -19,8 +19,7 @@ def load():
     cc_flag = []
     _, bare_metal_major, _ = _get_cuda_bare_metal_version(cpp_extension.CUDA_HOME)
     if int(bare_metal_major) >= 11:
-        cc_flag.append("-gencode")
-        cc_flag.append("arch=compute_80,code=sm_80")
+        cc_flag.extend(("-gencode", "arch=compute_80,code=sm_80"))
 
     # Build path
     srcpath = pathlib.Path(__file__).parent.absolute()

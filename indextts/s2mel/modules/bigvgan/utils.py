@@ -80,7 +80,7 @@ def scan_checkpoint(cp_dir, prefix, renamed_file=None):
     cp_list = glob.glob(pattern)
 
     if len(cp_list) > 0:
-        last_checkpoint_path = sorted(cp_list)[-1]
+        last_checkpoint_path = max(cp_list)
         print(f"[INFO] Resuming from checkpoint: '{last_checkpoint_path}'")
         return last_checkpoint_path
 

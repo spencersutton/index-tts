@@ -4,6 +4,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 from transformers import GPT2Config, GPT2PreTrainedModel
+from transformers.cache_utils import DynamicCache
 from transformers.generation.logits_process import LogitsProcessorList
 from transformers.generation.utils import GenerationMixin
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
@@ -150,6 +151,9 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
             emb = emb + self.text_pos_embedding.get_fixed_embedding(
                 attention_mask.shape[1] - mel_len, attention_mask.device
             )
+        # Convert legacy tuple cache to DynamicCache if needed
+        if past_key_values is not None and isinstance(past_key_values, tuple):
+            past_key_values = DynamicCache.from_legacy_cache(past_key_values)
         transformer_outputs = self.transformer(
             inputs_embeds=emb,
             past_key_values=past_key_values,

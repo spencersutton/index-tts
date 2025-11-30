@@ -11,11 +11,11 @@ from packaging import version
 from torch import einsum, nn
 
 
-def exists(val):
+def _exists(val):
     return val is not None
 
 
-def once(fn):
+def _once(fn):
     called = False
 
     @wraps(fn)
@@ -29,11 +29,11 @@ def once(fn):
     return inner
 
 
-print_once = once(print)
+print_once = _once(print)
 
 
 # main class
-class Attend(nn.Module):
+class _Attend(nn.Module):
     def __init__(self, dropout=0.0, causal=False, use_flash=False) -> None:
         super().__init__()
         self.dropout = dropout
@@ -65,7 +65,7 @@ class Attend(nn.Module):
             self.cuda_config = self.config(False, True, True)
 
     def get_mask(self, n, device):
-        if exists(self.mask) and self.mask.shape[-1] >= n:
+        if _exists(self.mask) and self.mask.shape[-1] >= n:
             return self.mask[:n, :n]
 
         mask = torch.ones((n, n), device=device, dtype=torch.bool).triu(1)
@@ -87,7 +87,7 @@ class Attend(nn.Module):
         # Check if mask exists and expand to compatible shape
         # The mask is B L, so it would have to be expanded to B H N L
 
-        if exists(mask):
+        if _exists(mask):
             mask = rearrange(mask, "b j -> b 1 1 j")
             mask = mask.expand(-1, heads, q_len, -1)
 
@@ -128,7 +128,7 @@ class Attend(nn.Module):
 
         # key padding mask
 
-        if exists(mask):
+        if _exists(mask):
             mask = rearrange(mask, "b j -> b 1 1 j")
             sim = sim.masked_fill(~mask, -torch.finfo(sim.dtype).max)
 
@@ -150,43 +150,43 @@ class Attend(nn.Module):
         return out
 
 
-def Sequential(*mods):
-    return nn.Sequential(*filter(exists, mods))
+def _Sequential(*mods):
+    return nn.Sequential(*filter(_exists, mods))
 
 
-def exists(x):
+def _exists(x):
     return x is not None
 
 
-def default(val, d):
-    if exists(val):
+def _default(val, d):
+    if _exists(val):
         return val
     return d() if callable(d) else d
 
 
-class RMSNorm(nn.Module):
+class _RMSNorm(nn.Module):
     def __init__(self, dim, scale=True, dim_cond=None) -> None:
         super().__init__()
-        self.cond = exists(dim_cond)
+        self.cond = _exists(dim_cond)
         self.to_gamma_beta = nn.Linear(dim_cond, dim * 2) if self.cond else None
 
         self.scale = dim**0.5
         self.gamma = nn.Parameter(torch.ones(dim)) if scale else None
 
     def forward(self, x, cond=None):
-        gamma = default(self.gamma, 1)
+        gamma = _default(self.gamma, 1)
         out = F.normalize(x, dim=-1) * self.scale * gamma
 
         if not self.cond:
             return out
 
-        assert exists(cond)
+        assert _exists(cond)
         gamma, beta = self.to_gamma_beta(cond).chunk(2, dim=-1)
         gamma, beta = (rearrange(t, "b d -> b 1 d") for t in (gamma, beta))
         return out * gamma + beta
 
 
-class CausalConv1d(nn.Conv1d):
+class _CausalConv1d(nn.Conv1d):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         (kernel_size,) = self.kernel_size
@@ -201,24 +201,24 @@ class CausalConv1d(nn.Conv1d):
         return super().forward(causal_padded_x)
 
 
-class GEGLU(nn.Module):
+class _GEGLU(nn.Module):
     def forward(self, x):
         x, gate = x.chunk(2, dim=-1)
         return F.gelu(gate) * x
 
 
-def FeedForward(dim, mult=4, causal_conv=False):
+def _FeedForward(dim, mult=4, causal_conv=False):
     dim_inner = int(dim * mult * 2 / 3)
 
     conv = None
     if causal_conv:
         conv = nn.Sequential(
             Rearrange("b n d -> b d n"),
-            CausalConv1d(dim_inner, dim_inner, 3),
+            _CausalConv1d(dim_inner, dim_inner, 3),
             Rearrange("b d n -> b n d"),
         )
 
-    return Sequential(nn.Linear(dim, dim_inner * 2), GEGLU(), conv, nn.Linear(dim_inner, dim))
+    return _Sequential(nn.Linear(dim, dim_inner * 2), _GEGLU(), conv, nn.Linear(dim_inner, dim))
 
 
 class PerceiverResampler(nn.Module):
@@ -234,7 +234,7 @@ class PerceiverResampler(nn.Module):
         use_flash_attn=False,
     ) -> None:
         super().__init__()
-        dim_context = default(dim_context, dim)
+        dim_context = _default(dim_context, dim)
 
         self.proj_context = nn.Linear(dim_context, dim) if dim_context != dim else nn.Identity()
 
@@ -246,19 +246,19 @@ class PerceiverResampler(nn.Module):
             self.layers.append(
                 nn.ModuleList(
                     [
-                        Attention(
+                        _Attention(
                             dim=dim,
                             dim_head=dim_head,
                             heads=heads,
                             use_flash=use_flash_attn,
                             cross_attn_include_queries=True,
                         ),
-                        FeedForward(dim=dim, mult=ff_mult),
+                        _FeedForward(dim=dim, mult=ff_mult),
                     ]
                 )
             )
 
-        self.norm = RMSNorm(dim)
+        self.norm = _RMSNorm(dim)
 
     def forward(self, x, mask=None):
         batch = x.shape[0]
@@ -274,7 +274,7 @@ class PerceiverResampler(nn.Module):
         return self.norm(latents)
 
 
-class Attention(nn.Module):
+class _Attention(nn.Module):
     def __init__(
         self,
         dim,
@@ -293,17 +293,17 @@ class Attention(nn.Module):
         self.cross_attn_include_queries = cross_attn_include_queries
 
         dim_inner = dim_head * heads
-        dim_context = default(dim_context, dim)
+        dim_context = _default(dim_context, dim)
 
-        self.attend = Attend(causal=causal, dropout=dropout, use_flash=use_flash)
+        self.attend = _Attend(causal=causal, dropout=dropout, use_flash=use_flash)
         self.to_q = nn.Linear(dim, dim_inner, bias=False)
         self.to_kv = nn.Linear(dim_context, dim_inner * 2, bias=False)
         self.to_out = nn.Linear(dim_inner, dim, bias=False)
 
     def forward(self, x, context=None, mask=None):
-        h, has_context = self.heads, exists(context)
+        h, has_context = self.heads, _exists(context)
 
-        context = default(context, x)
+        context = _default(context, x)
 
         if has_context and self.cross_attn_include_queries:
             context = torch.cat((x, context), dim=-2)

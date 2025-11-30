@@ -10,27 +10,23 @@ from torch import nn
 from torch.nn.utils import weight_norm
 
 
-def WNConv1d(*args, **kwargs):
+def _WNConv1d(*args, **kwargs):
     return weight_norm(nn.Conv1d(*args, **kwargs))
 
 
-def WNConvTranspose1d(*args, **kwargs):
-    return weight_norm(nn.ConvTranspose1d(*args, **kwargs))
-
-
-def l2norm(t):
+def _l2norm(t):
     return F.normalize(t, p=2, dim=-1)
 
 
-def ema_inplace(moving_avg, new, decay) -> None:
+def _ema_inplace(moving_avg, new, decay) -> None:
     moving_avg.data.mul_(decay).add_(new, alpha=(1 - decay))
 
 
-def laplace_smoothing(x, n_categories, eps=1e-5):
+def _laplace_smoothing(x, n_categories, eps=1e-5):
     return (x + eps) / (x.sum() + n_categories * eps)
 
 
-def sample_vectors(samples, num):
+def _sample_vectors(samples, num):
     num_samples, device = samples.shape[0], samples.device
 
     if num_samples >= num:
@@ -41,10 +37,10 @@ def sample_vectors(samples, num):
     return samples[indices]
 
 
-def kmeans(samples, num_clusters, num_iters=10, use_cosine_sim=False):
+def _kmeans(samples, num_clusters, num_iters=10, use_cosine_sim=False):
     dim, dtype, _device = samples.shape[-1], samples.dtype, samples.device
 
-    means = sample_vectors(samples, num_clusters)
+    means = _sample_vectors(samples, num_clusters)
 
     for _ in range(num_iters):
         if use_cosine_sim:
@@ -63,14 +59,14 @@ def kmeans(samples, num_clusters, num_iters=10, use_cosine_sim=False):
         new_means = new_means / bins_min_clamped[..., None]
 
         if use_cosine_sim:
-            new_means = l2norm(new_means)
+            new_means = _l2norm(new_means)
 
         means = torch.where(zero_mask[..., None], means, new_means)
 
     return means, bins
 
 
-class EuclideanCodebook(nn.Module):
+class _EuclideanCodebook(nn.Module):
     def __init__(
         self,
         dim,
@@ -104,14 +100,14 @@ class EuclideanCodebook(nn.Module):
         self.register_buffer("embed_avg", embed.clone())
 
     def init_embed_(self, data) -> None:
-        embed, cluster_size = kmeans(data, self.codebook_size, self.kmeans_iters)
+        embed, cluster_size = _kmeans(data, self.codebook_size, self.kmeans_iters)
         self.embed.data.copy_(embed)
         self.embed_avg.data.copy_(embed)
         self.cluster_size.data.copy_(cluster_size)
         self.initted.data.copy_(torch.Tensor([True]))
 
     def replace(self, samples, mask) -> None:
-        modified_codebook = torch.where(mask[..., None], sample_vectors(samples, self.codebook_size), self.embed)
+        modified_codebook = torch.where(mask[..., None], _sample_vectors(samples, self.codebook_size), self.embed)
         self.embed.data.copy_(modified_codebook)
 
     def expire_codes_(self, batch_samples) -> None:
@@ -140,10 +136,10 @@ class EuclideanCodebook(nn.Module):
         quantize = F.embedding(embed_ind, self.embed)
 
         if self.training:
-            ema_inplace(self.cluster_size, embed_onehot.sum(0), self.decay)
+            _ema_inplace(self.cluster_size, embed_onehot.sum(0), self.decay)
             embed_sum = flatten.t() @ embed_onehot  # (dim, ...) @ (..., codebook_size) -> (dim, codebook_size)
-            ema_inplace(self.embed_avg, embed_sum.t(), self.decay)
-            cluster_size = laplace_smoothing(self.cluster_size, self.codebook_size, self.eps) * self.cluster_size.sum()
+            _ema_inplace(self.embed_avg, embed_sum.t(), self.decay)
+            cluster_size = _laplace_smoothing(self.cluster_size, self.codebook_size, self.eps) * self.cluster_size.sum()
             embed_normalized = self.embed_avg / cluster_size.unsqueeze(1)
             self.embed.data.copy_(embed_normalized)
             self.expire_codes_(x)
@@ -173,7 +169,7 @@ class EuclideanCodebook(nn.Module):
         return dist, embed_ind, quantize
 
 
-class SimpleCodebook(nn.Module):
+class _SimpleCodebook(nn.Module):
     def __init__(
         self,
         dim,
@@ -281,15 +277,15 @@ class VectorQuantize(nn.Module):
         self.weight_init = weight_init
 
         if self.input_dim != self.codebook_dim:
-            self.in_project = WNConv1d(self.input_dim, self.codebook_dim, kernel_size=1)
-            self.out_project = WNConv1d(self.codebook_dim, self.input_dim, kernel_size=1)
+            self.in_project = _WNConv1d(self.input_dim, self.codebook_dim, kernel_size=1)
+            self.out_project = _WNConv1d(self.codebook_dim, self.input_dim, kernel_size=1)
 
         else:
             self.in_project = nn.Identity()
             self.out_project = nn.Identity()
 
         if self.codebook_type == "euclidean":
-            self.codebook = EuclideanCodebook(
+            self.codebook = _EuclideanCodebook(
                 self.codebook_dim,
                 codebook_size=self.codebook_size,
                 kmeans_init=self.kmeans_init,
@@ -300,7 +296,7 @@ class VectorQuantize(nn.Module):
                 weight_init=self.weight_init,
             )
         elif self.codebook_type == "simple":
-            self.codebook = SimpleCodebook(
+            self.codebook = _SimpleCodebook(
                 self.codebook_dim,
                 codebook_size=self.codebook_size,
                 use_l2_normlize=self.use_l2_normlize,

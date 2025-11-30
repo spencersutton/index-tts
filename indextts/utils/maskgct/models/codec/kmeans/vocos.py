@@ -9,7 +9,7 @@ from torch import nn
 from torch.nn.utils import remove_weight_norm, weight_norm
 
 
-class ConvNeXtBlock(nn.Module):
+class _ConvNeXtBlock(nn.Module):
     """ConvNeXt Block adapted from https://github.com/facebookresearch/ConvNeXt to 1D audio signal.
 
     Args:
@@ -32,7 +32,7 @@ class ConvNeXtBlock(nn.Module):
         self.dwconv = nn.Conv1d(dim, dim, kernel_size=7, padding=3, groups=dim)  # depthwise conv
         self.adanorm = adanorm_num_embeddings is not None
         if adanorm_num_embeddings:
-            self.norm = AdaLayerNorm(adanorm_num_embeddings, dim, eps=1e-6)
+            self.norm = _AdaLayerNorm(adanorm_num_embeddings, dim, eps=1e-6)
         else:
             self.norm = nn.LayerNorm(dim, eps=1e-6)
         self.pwconv1 = nn.Linear(dim, intermediate_dim)  # pointwise/1x1 convs, implemented with linear layers
@@ -64,7 +64,7 @@ class ConvNeXtBlock(nn.Module):
         return x
 
 
-class AdaLayerNorm(nn.Module):
+class _AdaLayerNorm(nn.Module):
     """
     Adaptive Layer Normalization module with learnable embeddings per `num_embeddings` classes
 
@@ -90,7 +90,7 @@ class AdaLayerNorm(nn.Module):
         return x
 
 
-class Backbone(nn.Module):
+class _Backbone(nn.Module):
     """Base class for the generator's backbone. It preserves the same temporal resolution across all layers."""
 
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
@@ -106,7 +106,7 @@ class Backbone(nn.Module):
         raise NotImplementedError("Subclasses must implement the forward method.")
 
 
-class VocosBackbone(Backbone):
+class VocosBackbone(_Backbone):
     """
     Vocos backbone module built with ConvNeXt blocks. Supports additional conditioning with Adaptive Layer Normalization
 
@@ -134,13 +134,13 @@ class VocosBackbone(Backbone):
         self.embed = nn.Conv1d(input_channels, dim, kernel_size=7, padding=3)
         self.adanorm = adanorm_num_embeddings is not None
         if adanorm_num_embeddings:
-            self.norm = AdaLayerNorm(adanorm_num_embeddings, dim, eps=1e-6)
+            self.norm = _AdaLayerNorm(adanorm_num_embeddings, dim, eps=1e-6)
         else:
             self.norm = nn.LayerNorm(dim, eps=1e-6)
         layer_scale_init_value = layer_scale_init_value or 1 / num_layers
         self.convnext = nn.ModuleList(
             [
-                ConvNeXtBlock(
+                _ConvNeXtBlock(
                     dim=dim,
                     intermediate_dim=intermediate_dim,
                     layer_scale_init_value=layer_scale_init_value,

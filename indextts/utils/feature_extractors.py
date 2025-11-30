@@ -5,7 +5,7 @@ from torch import nn
 from indextts.utils.common import safe_log
 
 
-class FeatureExtractor(nn.Module):
+class _FeatureExtractor(nn.Module):
     """Base class for feature extractors."""
 
     def forward(self, audio: torch.Tensor, **kwargs) -> torch.Tensor:
@@ -22,7 +22,7 @@ class FeatureExtractor(nn.Module):
         raise NotImplementedError("Subclasses must implement the forward method.")
 
 
-class MelSpectrogramFeatures(FeatureExtractor):
+class MelSpectrogramFeatures(_FeatureExtractor):
     def __init__(
         self,
         sample_rate=24000,

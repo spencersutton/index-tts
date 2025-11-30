@@ -6,7 +6,7 @@ from torch import nn
 from indextts.utils.xtransformers import RelativePositionBias
 
 
-def zero_module(module):
+def _zero_module(module):
     """
     Zero out the parameters of a module and return it.
     """
@@ -15,12 +15,12 @@ def zero_module(module):
     return module
 
 
-class GroupNorm32(nn.GroupNorm):
+class _GroupNorm32(nn.GroupNorm):
     def forward(self, x):
         return super().forward(x.float()).type(x.dtype)
 
 
-def normalization(channels):
+def _normalization(channels):
     """
     Make a standard normalization layer.
 
@@ -35,10 +35,10 @@ def normalization(channels):
     while channels % groups != 0:
         groups = int(groups / 2)
     assert groups > 2
-    return GroupNorm32(groups, channels)
+    return _GroupNorm32(groups, channels)
 
 
-class QKVAttentionLegacy(nn.Module):
+class _QKVAttentionLegacy(nn.Module):
     """
     A module which performs QKV attention. Matches legacy QKVAttention + input/output heads shaping
     """
@@ -100,12 +100,12 @@ class AttentionBlock(nn.Module):
                 f"q,k,v channels {channels} is not divisible by num_head_channels {num_head_channels}"
             )
             self.num_heads = channels // num_head_channels
-        self.norm = normalization(channels)
+        self.norm = _normalization(channels)
         self.qkv = nn.Conv1d(channels, channels * 3, 1)
         # split heads before split qkv
-        self.attention = QKVAttentionLegacy(self.num_heads)
+        self.attention = _QKVAttentionLegacy(self.num_heads)
 
-        self.proj_out = zero_module(nn.Conv1d(channels, channels, 1))
+        self.proj_out = _zero_module(nn.Conv1d(channels, channels, 1))
         if relative_pos_embeddings:
             self.relative_pos_embeddings = RelativePositionBias(
                 scale=(channels // self.num_heads) ** 0.5,

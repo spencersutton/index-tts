@@ -4,11 +4,11 @@ from transformers import Wav2Vec2BertModel
 from indextts.utils.maskgct.models.codec.kmeans.repcodec_model import RepCodec
 
 
-class JsonHParams:
+class _JsonHParams:
     def __init__(self, **kwargs) -> None:
         for k, v in kwargs.items():
             if type(v) == dict:
-                v = JsonHParams(**v)
+                v = _JsonHParams(**v)
             self[k] = v
 
     def keys(self):

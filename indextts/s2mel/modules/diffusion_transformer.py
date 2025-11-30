@@ -9,7 +9,7 @@ from indextts.s2mel.modules.gpt_fast.model import ModelArgs, Transformer
 from indextts.s2mel.modules.wavenet import WN
 
 
-def modulate(x, shift, scale):
+def _modulate(x, shift, scale):
     return x * (1 + scale.unsqueeze(1)) + shift.unsqueeze(1)
 
 
@@ -18,7 +18,7 @@ def modulate(x, shift, scale):
 #################################################################################
 
 
-class TimestepEmbedder(nn.Module):
+class _TimestepEmbedder(nn.Module):
     """
     Embeds scalar timesteps into vector representations.
     """
@@ -61,7 +61,7 @@ class TimestepEmbedder(nn.Module):
         return t_emb
 
 
-class FinalLayer(nn.Module):
+class _FinalLayer(nn.Module):
     """
     The final layer of DiT.
     """
@@ -74,7 +74,7 @@ class FinalLayer(nn.Module):
 
     def forward(self, x, c):
         shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
-        x = modulate(self.norm_final(x), shift, scale)
+        x = _modulate(self.norm_final(x), shift, scale)
         x = self.linear(x)
         return x
 
@@ -112,7 +112,7 @@ class DiT(torch.nn.Module):
 
         self.is_causal = args.DiT.is_causal
 
-        self.t_embedder = TimestepEmbedder(args.DiT.hidden_dim)
+        self.t_embedder = _TimestepEmbedder(args.DiT.hidden_dim)
 
         # self.style_embedder1 = weight_norm(nn.Linear(1024, args.DiT.hidden_dim, bias=True))
         # self.style_embedder2 = weight_norm(nn.Linear(1024, args.style_encoder.dim, bias=True))
@@ -122,7 +122,7 @@ class DiT(torch.nn.Module):
 
         self.final_layer_type = args.DiT.final_layer_type  # mlp or wavenet
         if self.final_layer_type == "wavenet":
-            self.t_embedder2 = TimestepEmbedder(args.wavenet.hidden_dim)
+            self.t_embedder2 = _TimestepEmbedder(args.wavenet.hidden_dim)
             self.conv1 = nn.Linear(args.DiT.hidden_dim, args.wavenet.hidden_dim)
             self.conv2 = nn.Conv1d(args.wavenet.hidden_dim, args.DiT.in_channels, 1)
             self.wavenet = WN(
@@ -134,7 +134,7 @@ class DiT(torch.nn.Module):
                 p_dropout=args.wavenet.p_dropout,
                 causal=False,
             )
-            self.final_layer = FinalLayer(args.wavenet.hidden_dim, 1, args.wavenet.hidden_dim)
+            self.final_layer = _FinalLayer(args.wavenet.hidden_dim, 1, args.wavenet.hidden_dim)
             self.res_projection = nn.Linear(
                 args.DiT.hidden_dim, args.wavenet.hidden_dim
             )  # residual connection from tranformer output to final output

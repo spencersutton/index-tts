@@ -1,9 +1,5 @@
-import math
-
 import torch
-from munch import Munch
 from torch import nn
-from torch.nn import functional as F
 
 
 @torch.jit.script
@@ -146,12 +142,3 @@ def load_checkpoint2(
         iters = 0
 
     return model, optimizer, epoch, iters
-
-
-def recursive_munch(d):
-    if isinstance(d, dict):
-        return Munch((k, recursive_munch(v)) for k, v in d.items())
-    elif isinstance(d, list):
-        return [recursive_munch(v) for v in d]
-    else:
-        return d

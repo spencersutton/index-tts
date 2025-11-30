@@ -23,7 +23,7 @@ def get_nonlinear(config_str, channels):
     return nonlinear
 
 
-def statistics_pooling(x, dim=-1, keepdim=False, unbiased=True, eps=1e-2):
+def _statistics_pooling(x, dim=-1, keepdim=False, unbiased=True, eps=1e-2):
     mean = x.mean(dim=dim)
     std = x.std(dim=dim, unbiased=unbiased)
     stats = torch.cat([mean, std], dim=-1)
@@ -34,7 +34,7 @@ def statistics_pooling(x, dim=-1, keepdim=False, unbiased=True, eps=1e-2):
 
 class StatsPool(nn.Module):
     def forward(self, x):
-        return statistics_pooling(x)
+        return _statistics_pooling(x)
 
 
 class TDNNLayer(nn.Module):
@@ -64,7 +64,7 @@ class TDNNLayer(nn.Module):
         return x
 
 
-class CAMLayer(nn.Module):
+class _CAMLayer(nn.Module):
     def __init__(self, bn_channels, out_channels, kernel_size, stride, padding, dilation, bias, reduction=2) -> None:
         super().__init__()
         self.linear_local = nn.Conv1d(
@@ -95,7 +95,7 @@ class CAMLayer(nn.Module):
         return seg
 
 
-class CAMDenseTDNNLayer(nn.Module):
+class _CAMDenseTDNNLayer(nn.Module):
     def __init__(
         self,
         in_channels,
@@ -115,7 +115,7 @@ class CAMDenseTDNNLayer(nn.Module):
         self.nonlinear1 = get_nonlinear(config_str, in_channels)
         self.linear1 = nn.Conv1d(in_channels, bn_channels, 1, bias=False)
         self.nonlinear2 = get_nonlinear(config_str, bn_channels)
-        self.cam_layer = CAMLayer(
+        self.cam_layer = _CAMLayer(
             bn_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias
         )
 
@@ -144,7 +144,7 @@ class CAMDenseTDNNBlock(nn.ModuleList):
     ) -> None:
         super().__init__()
         for i in range(num_layers):
-            layer = CAMDenseTDNNLayer(
+            layer = _CAMDenseTDNNLayer(
                 in_channels=in_channels + i * out_channels,
                 out_channels=out_channels,
                 bn_channels=bn_channels,

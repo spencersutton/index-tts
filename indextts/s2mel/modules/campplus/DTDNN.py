@@ -17,7 +17,7 @@ from indextts.s2mel.modules.campplus.layers import (
 )
 
 
-class FCM(nn.Module):
+class _FCM(nn.Module):
     def __init__(self, block=BasicResBlock, num_blocks=[2, 2], m_channels=32, feat_dim=80) -> None:
         super().__init__()
         self.in_planes = m_channels
@@ -64,7 +64,7 @@ class CAMPPlus(nn.Module):
     ) -> None:
         super().__init__()
 
-        self.head = FCM(feat_dim=feat_dim)
+        self.head = _FCM(feat_dim=feat_dim)
         channels = self.head.out_channels
 
         self.xvector = nn.Sequential(

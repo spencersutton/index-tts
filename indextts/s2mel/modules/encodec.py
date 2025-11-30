@@ -17,7 +17,7 @@ from torch.nn import functional as F
 from torch.nn.utils import spectral_norm, weight_norm
 
 
-class ConvLayerNorm(nn.LayerNorm):
+class _ConvLayerNorm(nn.LayerNorm):
     """
     Convolution-friendly LayerNorm that moves channels to last dimensions
     before running the normalization and moves them back to original position right after.
@@ -32,13 +32,13 @@ class ConvLayerNorm(nn.LayerNorm):
         x = einops.rearrange(x, "b t ... -> b ... t")
 
 
-CONV_NORMALIZATIONS = frozenset(
+_CONV_NORMALIZATIONS = frozenset(
     ["none", "weight_norm", "spectral_norm", "time_layer_norm", "layer_norm", "time_group_norm"]
 )
 
 
-def apply_parametrization_norm(module: nn.Module, norm: str = "none") -> nn.Module:
-    assert norm in CONV_NORMALIZATIONS
+def _apply_parametrization_norm(module: nn.Module, norm: str = "none") -> nn.Module:
+    assert norm in _CONV_NORMALIZATIONS
     if norm == "weight_norm":
         return weight_norm(module)
     elif norm == "spectral_norm":
@@ -49,14 +49,14 @@ def apply_parametrization_norm(module: nn.Module, norm: str = "none") -> nn.Modu
         return module
 
 
-def get_norm_module(module: nn.Module, causal: bool = False, norm: str = "none", **norm_kwargs) -> nn.Module:
+def _get_norm_module(module: nn.Module, causal: bool = False, norm: str = "none", **norm_kwargs) -> nn.Module:
     """Return the proper normalization module. If causal is True, this will ensure the returned
     module is causal, or return an error if the normalization doesn't support causal evaluation.
     """
-    assert norm in CONV_NORMALIZATIONS
+    assert norm in _CONV_NORMALIZATIONS
     if norm == "layer_norm":
         assert isinstance(module, nn.modules.conv._ConvNd)
-        return ConvLayerNorm(module.out_channels, **norm_kwargs)
+        return _ConvLayerNorm(module.out_channels, **norm_kwargs)
     elif norm == "time_group_norm":
         if causal:
             raise ValueError("GroupNorm doesn't support causal evaluation.")
@@ -66,7 +66,7 @@ def get_norm_module(module: nn.Module, causal: bool = False, norm: str = "none",
         return nn.Identity()
 
 
-def get_extra_padding_for_conv1d(x: torch.Tensor, kernel_size: int, stride: int, padding_total: int = 0) -> int:
+def _get_extra_padding_for_conv1d(x: torch.Tensor, kernel_size: int, stride: int, padding_total: int = 0) -> int:
     """See `pad_for_conv1d`."""
     length = x.shape[-1]
     n_frames = (length - kernel_size + padding_total) / stride + 1
@@ -74,7 +74,7 @@ def get_extra_padding_for_conv1d(x: torch.Tensor, kernel_size: int, stride: int,
     return ideal_length - length
 
 
-def pad1d(x: torch.Tensor, paddings: tuple[int, int], mode: str = "zero", value: float = 0.0):
+def _pad1d(x: torch.Tensor, paddings: tuple[int, int], mode: str = "zero", value: float = 0.0):
     """Tiny wrapper around F.pad, just to allow for reflect padding on small input.
     If this is the case, we insert extra 0 padding to the right before the reflection happen.
     """
@@ -94,7 +94,7 @@ def pad1d(x: torch.Tensor, paddings: tuple[int, int], mode: str = "zero", value:
         return F.pad(x, paddings, mode, value)
 
 
-class NormConv1d(nn.Module):
+class _NormConv1d(nn.Module):
     """Wrapper around Conv1d and normalization applied to this conv
     to provide a uniform interface across normalization approaches.
     """
@@ -103,8 +103,8 @@ class NormConv1d(nn.Module):
         self, *args, causal: bool = False, norm: str = "none", norm_kwargs: dict[str, tp.Any] = {}, **kwargs
     ) -> None:
         super().__init__()
-        self.conv = apply_parametrization_norm(nn.Conv1d(*args, **kwargs), norm)
-        self.norm = get_norm_module(self.conv, causal, norm, **norm_kwargs)
+        self.conv = _apply_parametrization_norm(nn.Conv1d(*args, **kwargs), norm)
+        self.norm = _get_norm_module(self.conv, causal, norm, **norm_kwargs)
         self.norm_type = norm
 
     def forward(self, x):
@@ -140,7 +140,7 @@ class SConv1d(nn.Module):
                 "SConv1d has been initialized with stride > 1 and dilation > 1"
                 f" (kernel_size={kernel_size} stride={stride}, dilation={dilation})."
             )
-        self.conv = NormConv1d(
+        self.conv = _NormConv1d(
             in_channels,
             out_channels,
             kernel_size,
@@ -162,13 +162,13 @@ class SConv1d(nn.Module):
         dilation = self.conv.conv.dilation[0]
         kernel_size = (kernel_size - 1) * dilation + 1  # effective kernel size with dilations
         padding_total = kernel_size - stride
-        extra_padding = get_extra_padding_for_conv1d(x, kernel_size, stride, padding_total)
+        extra_padding = _get_extra_padding_for_conv1d(x, kernel_size, stride, padding_total)
         if self.causal:
             # Left padding for causal
-            x = pad1d(x, (padding_total, extra_padding), mode=self.pad_mode)
+            x = _pad1d(x, (padding_total, extra_padding), mode=self.pad_mode)
         else:
             # Asymmetric padding required for odd strides
             padding_right = padding_total // 2
             padding_left = padding_total - padding_right
-            x = pad1d(x, (padding_left, padding_right + extra_padding), mode=self.pad_mode)
+            x = _pad1d(x, (padding_left, padding_right + extra_padding), mode=self.pad_mode)
         return self.conv(x)

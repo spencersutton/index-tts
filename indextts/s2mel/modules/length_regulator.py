@@ -6,16 +6,16 @@ from torch.nn import functional as F
 from indextts.s2mel.dac.nn.quantize import VectorQuantize
 from indextts.s2mel.modules.commons import sequence_mask
 
-f0_max = 1100.0
-f0_min = 50.0
-f0_mel_min = 1127 * np.log(1 + f0_min / 700)
-f0_mel_max = 1127 * np.log(1 + f0_max / 700)
+_f0_max = 1100.0
+_f0_min = 50.0
+_f0_mel_min = 1127 * np.log(1 + _f0_min / 700)
+_f0_mel_max = 1127 * np.log(1 + _f0_max / 700)
 
 
-def f0_to_coarse(f0, f0_bin):
+def _f0_to_coarse(f0, f0_bin):
     f0_mel = 1127 * (1 + f0 / 700).log()
-    a = (f0_bin - 2) / (f0_mel_max - f0_mel_min)
-    b = f0_mel_min * a - 1.0
+    a = (f0_bin - 2) / (_f0_mel_max - _f0_mel_min)
+    b = _f0_mel_min * a - 1.0
     f0_mel = torch.where(f0_mel > 0, f0_mel * a - b, f0_mel)
     # torch.clip_(f0_mel, min=1., max=float(f0_bin - 1))
     f0_coarse = torch.round(f0_mel).long()
@@ -125,7 +125,7 @@ class InterpolateRegulator(nn.Module):
                 x = x + self.f0_mask.unsqueeze(-1)
             else:
                 # quantized_f0 = torch.bucketize(f0, self.f0_bins.to(f0.device))  # (N, T)
-                quantized_f0 = f0_to_coarse(f0, self.n_f0_bins)
+                quantized_f0 = _f0_to_coarse(f0, self.n_f0_bins)
                 quantized_f0 = quantized_f0.clamp(0, self.n_f0_bins - 1).long()
                 f0_emb = self.f0_embedding(quantized_f0)
                 f0_emb = F.interpolate(f0_emb.transpose(1, 2).contiguous(), size=ylens.max(), mode="nearest")

@@ -124,14 +124,4 @@ def load_checkpoint2(
             model.models[key].load_state_dict(filtered_state_dict, strict=False)
     model.eval()
 
-    if not load_only_params:
-        epoch = state["epoch"] + 1
-        iters = state["iters"]
-        optimizer.load_state_dict(state["optimizer"])
-        optimizer.load_scheduler_state_dict(state["scheduler"])
-
-    else:
-        epoch = 0
-        iters = 0
-
-    return model, optimizer, epoch, iters
+    return model

@@ -182,11 +182,9 @@ class IndexTTS2:
 
         s2mel_path = os.path.join(self.model_dir, self.cfg.s2mel_checkpoint)
         s2mel = MyModel(self.cfg.s2mel, use_gpt_latent=True)
-        s2mel, _, _, _ = load_checkpoint2(
+        s2mel = load_checkpoint2(
             s2mel,
-            None,
             s2mel_path,
-            load_only_params=True,
             ignore_modules=[],
             is_distributed=False,
         )

@@ -5,35 +5,33 @@ os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 import json
 import re
 import time
+import warnings
+
 import librosa
 import torch
 import torchaudio
 from torch.nn.utils.rnn import pad_sequence
 
-import warnings
-
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
+import random
+
+import safetensors
+import torch.nn.functional as F
+from huggingface_hub import hf_hub_download
+from modelscope import AutoModelForCausalLM
 from omegaconf import OmegaConf
+from transformers import AutoTokenizer, SeamlessM4TFeatureExtractor
 
 from indextts.gpt.model_v2 import UnifiedVoice
-from indextts.utils.maskgct_utils import build_semantic_model, build_semantic_codec
-from indextts.utils.checkpoint import load_checkpoint
-from indextts.utils.front import TextNormalizer, TextTokenizer
-
-from indextts.s2mel.modules.commons import load_checkpoint2, MyModel
+from indextts.s2mel.modules.audio import mel_spectrogram
 from indextts.s2mel.modules.bigvgan import bigvgan
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
-from indextts.s2mel.modules.audio import mel_spectrogram
-
-from transformers import AutoTokenizer
-from modelscope import AutoModelForCausalLM
-from huggingface_hub import hf_hub_download
-import safetensors
-from transformers import SeamlessM4TFeatureExtractor
-import random
-import torch.nn.functional as F
+from indextts.s2mel.modules.commons import MyModel, load_checkpoint2
+from indextts.utils.checkpoint import load_checkpoint
+from indextts.utils.front import TextNormalizer, TextTokenizer
+from indextts.utils.maskgct_utils import build_semantic_codec, build_semantic_model
 
 
 class IndexTTS2:
@@ -134,7 +132,7 @@ class IndexTTS2:
         safetensors.torch.load_model(semantic_codec, semantic_code_ckpt)
         self.semantic_codec = semantic_codec.to(self.device)
         self.semantic_codec.eval()
-        print(">> semantic_codec weights restored from: {}".format(semantic_code_ckpt))
+        print(f">> semantic_codec weights restored from: {semantic_code_ckpt}")
 
         s2mel_path = os.path.join(self.model_dir, self.cfg.s2mel_checkpoint)
         s2mel = MyModel(self.cfg.s2mel, use_gpt_latent=True)
@@ -235,7 +233,7 @@ class IndexTTS2:
         codes_list = []
         device = codes.device
         isfix = False
-        for i in range(0, codes.shape[0]):
+        for i in range(codes.shape[0]):
             code = codes[i]
             if not torch.any(code == self.stop_mel_token).item():
                 len_ = code.size(0)
@@ -245,7 +243,6 @@ class IndexTTS2:
 
             count = torch.sum(code == silent_token).item()
             if count > max_consecutive:
-                # code = code.cpu().tolist()
                 ncode_idx = []
                 n = 0
                 for k in range(len_):
@@ -258,8 +255,6 @@ class IndexTTS2:
                     elif code[k] == silent_token and n < 10:
                         ncode_idx.append(k)
                         n += 1
-                    # if (k == 0 and code[k] == 52) or (code[k] == 52 and code[k-1] == 52):
-                    #    n += 1
                 # new code
                 len_ = len(ncode_idx)
                 codes_list.append(code[ncode_idx])
@@ -615,7 +610,6 @@ class IndexTTS2:
 
                     if emo_vector is not None:
                         emovec = emovec_mat + (1 - torch.sum(weight_vector)) * emovec
-                        # emovec = emovec_mat
 
                     codes, speech_conditioning_latent = self.gpt.inference_speech(
                         spk_cond_emb,
@@ -647,10 +641,6 @@ class IndexTTS2:
                     has_warned = True
 
                 code_lens = torch.tensor([codes.shape[-1]], device=codes.device, dtype=codes.dtype)
-                #                 if verbose:
-                #                     print(codes, type(codes))
-                #                     print(f"codes shape: {codes.shape}, codes type: {codes.dtype}")
-                #                     print(f"code len: {code_lens}")
 
                 code_lens = []
                 max_code_len = 0
@@ -723,7 +713,6 @@ class IndexTTS2:
                 wav = torch.clamp(32767 * wav, -32767.0, 32767.0)
                 if verbose:
                     print(f"wav shape: {wav.shape}", "min:", wav.min(), "max:", wav.max())
-                # wavs.append(wav[:, :-512])
                 wavs.append(wav.cpu())  # to cpu before saving
                 if stream_return:
                     yield wav.cpu()
@@ -867,18 +856,14 @@ class QwenEmotion:
             content = json.loads(content)
         except json.decoder.JSONDecodeError:
             # invalid JSON; fallback to manual string parsing
-            # print(">> parsing QwenEmotion response", content)
             content = {m.group(1): float(m.group(2)) for m in re.finditer(r'([^\s":.,]+?)"?\s*:\s*([\d.]+)', content)}
-            # print(">> dict result", content)
 
         # workaround for QwenEmotion's inability to distinguish "悲伤" (sad) vs "低落" (melancholic).
         # if we detect any of the IndexTTS "melancholic" words, we swap those vectors
         # to encode the "sad" emotion as "melancholic" (instead of sadness).
         text_input_lower = text_input.lower()
         if any(word in text_input_lower for word in self.melancholic_words):
-            # print(">> before vec swap", content)
             content["悲伤"], content["低落"] = content.get("低落", 0.0), content.get("悲伤", 0.0)
-            # print(">>  after vec swap", content)
 
         return self.convert(content)
 

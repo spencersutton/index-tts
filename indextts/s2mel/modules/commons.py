@@ -1,5 +1,4 @@
 import torch
-from munch import Munch
 from torch import nn
 
 

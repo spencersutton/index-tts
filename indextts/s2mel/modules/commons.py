@@ -64,22 +64,6 @@ class MyModel(nn.Module):
         x = self.models["cfm"](x, target_lengths, prompt_len, cond, y)
         return x
 
-    def forward2(self, S_ori, target_lengths, F0_ori):
-        x = self.models["length_regulator"](S_ori, ylens=target_lengths, f0=F0_ori)
-        return x
-
-    def forward_emovec(self, x):
-        x = self.models["emo_layer"](x)
-        return x
-
-    def forward_emo_encoder(self, x):
-        x = self.models["emo_encoder"](x)
-        return x
-
-    def forward_gpt(self, x):
-        x = self.models["gpt_layer"](x)
-        return x
-
     def enable_torch_compile(self) -> None:
         """Enable torch.compile optimization.
 

@@ -6,7 +6,6 @@
 
 import torch
 from torch import nn
-from torch.nn.utils import remove_weight_norm, weight_norm
 
 
 class _ConvNeXtBlock(nn.Module):

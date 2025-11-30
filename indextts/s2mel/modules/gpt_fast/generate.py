@@ -9,7 +9,6 @@ import time
 from pathlib import Path
 
 import torch
-import torch._dynamo.config
 import torch._inductor.config
 
 

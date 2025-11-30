@@ -155,7 +155,7 @@ class CAMDenseTDNNBlock(nn.ModuleList):
                 config_str=config_str,
                 memory_efficient=memory_efficient,
             )
-            self.add_module("tdnnd%d" % (i + 1), layer)
+            self.add_module(f"tdnnd{i + 1}", layer)
 
     def forward(self, x):
         for layer in self:

@@ -16,11 +16,11 @@ from indextts.utils.arch_util import AttentionBlock
 from indextts.utils.typical_sampling import TypicalLogitsWarper
 
 
-def null_position_embeddings(range, dim):
+def _null_position_embeddings(range, dim):
     return torch.zeros((range.shape[0], range.shape[1], dim), device=range.device)
 
 
-class ResBlock(nn.Module):
+class _ResBlock(nn.Module):
     """
     Basic residual convolutional block that uses GroupNorm.
     """
@@ -39,7 +39,7 @@ class ResBlock(nn.Module):
         return F.relu(self.net(x) + x)
 
 
-class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
+class _GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
     def __init__(self, config, gpt, text_pos_emb, embeddings, norm, linear, kv_cache=False) -> None:
         super().__init__(config)
         # Note: the argument named `text_pos_emb` here actually represents the mel position embedding
@@ -205,7 +205,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         )
 
 
-class ConditioningEncoder(nn.Module):
+class _ConditioningEncoder(nn.Module):
     def __init__(
         self, spec_dim, embedding_dim, attn_blocks=6, num_attn_heads=4, do_checkpointing=False, mean=False
     ) -> None:
@@ -227,7 +227,7 @@ class ConditioningEncoder(nn.Module):
             # return h[:, :, 0]
 
 
-class LearnedPositionEmbeddings(nn.Module):
+class _LearnedPositionEmbeddings(nn.Module):
     def __init__(self, seq_len, model_dim, init=0.02) -> None:
         super().__init__()
         self.emb = nn.Embedding(seq_len, model_dim)
@@ -242,7 +242,7 @@ class LearnedPositionEmbeddings(nn.Module):
         return self.emb(torch.tensor([ind], device=dev)).unsqueeze(0)
 
 
-def build_hf_gpt_transformer(layers, model_dim, heads, max_mel_seq_len, max_text_seq_len, checkpointing):
+def _build_hf_gpt_transformer(layers, model_dim, heads, max_mel_seq_len, max_text_seq_len, checkpointing):
     """
     GPT-2 implemented by the HuggingFace library.
     """
@@ -261,33 +261,33 @@ def build_hf_gpt_transformer(layers, model_dim, heads, max_mel_seq_len, max_text
     gpt = GPT2Model(gpt_config)
     # Override the built in positional embeddings
     del gpt.wpe
-    gpt.wpe = functools.partial(null_position_embeddings, dim=model_dim)
+    gpt.wpe = functools.partial(_null_position_embeddings, dim=model_dim)
     # Built-in token embeddings are unused.
     del gpt.wte
     return (
         gpt,
-        LearnedPositionEmbeddings(max_mel_seq_len, model_dim),
-        LearnedPositionEmbeddings(max_text_seq_len, model_dim),
+        _LearnedPositionEmbeddings(max_mel_seq_len, model_dim),
+        _LearnedPositionEmbeddings(max_text_seq_len, model_dim),
         None,
         None,
     )
 
 
-class MelEncoder(nn.Module):
+class _MelEncoder(nn.Module):
     def __init__(self, channels, mel_channels=80, resblocks_per_reduction=2) -> None:
         super().__init__()
         self.channels = channels
         self.encoder = nn.Sequential(
             nn.Conv1d(mel_channels, channels // 4, kernel_size=3, padding=1),
-            nn.Sequential(*[ResBlock(channels // 4) for _ in range(resblocks_per_reduction)]),
+            nn.Sequential(*[_ResBlock(channels // 4) for _ in range(resblocks_per_reduction)]),
             nn.Conv1d(channels // 4, channels // 2, kernel_size=3, stride=2, padding=1),
             nn.GroupNorm(channels // 16, channels // 2),
             nn.ReLU(),
-            nn.Sequential(*[ResBlock(channels // 2) for _ in range(resblocks_per_reduction)]),
+            nn.Sequential(*[_ResBlock(channels // 2) for _ in range(resblocks_per_reduction)]),
             nn.Conv1d(channels // 2, channels, kernel_size=3, stride=2, padding=1),
             nn.GroupNorm(channels // 8, channels),
             nn.ReLU(),
-            nn.Sequential(*[ResBlock(channels) for _ in range(resblocks_per_reduction)]),
+            nn.Sequential(*[_ResBlock(channels) for _ in range(resblocks_per_reduction)]),
         )
         self.reduction = 4
 
@@ -362,7 +362,7 @@ class UnifiedVoice(nn.Module):
         self.cond_mask_pad = nn.ConstantPad1d((self.cond_num, 0), True)
         self.emo_cond_mask_pad = nn.ConstantPad1d((1, 0), True)
         if condition_type == "perceiver":
-            self.conditioning_encoder = ConditioningEncoder(1024, model_dim, num_attn_heads=heads)
+            self.conditioning_encoder = _ConditioningEncoder(1024, model_dim, num_attn_heads=heads)
             self.perceiver_encoder = PerceiverResampler(model_dim, dim_context=model_dim, num_latents=self.cond_num)
         elif condition_type == "conformer_perceiver" or condition_type == "conformer_encoder":
             self.conditioning_encoder = ConformerEncoder(
@@ -382,7 +382,7 @@ class UnifiedVoice(nn.Module):
                     num_latents=self.cond_num,
                 )
         else:
-            self.conditioning_encoder = ConditioningEncoder(1024, model_dim, num_attn_heads=heads, mean=True)
+            self.conditioning_encoder = _ConditioningEncoder(1024, model_dim, num_attn_heads=heads, mean=True)
 
         self.emo_conditioning_encoder = ConformerEncoder(
             input_size=1024,
@@ -407,14 +407,14 @@ class UnifiedVoice(nn.Module):
         if use_mel_codes_as_input:
             self.mel_embedding = nn.Embedding(self.number_mel_codes, model_dim)
         else:
-            self.mel_embedding = MelEncoder(model_dim, resblocks_per_reduction=1)
+            self.mel_embedding = _MelEncoder(model_dim, resblocks_per_reduction=1)
         (
             self.gpt,
             self.mel_pos_embedding,
             self.text_pos_embedding,
             self.mel_layer_pos_embedding,
             self.text_layer_pos_embedding,
-        ) = build_hf_gpt_transformer(
+        ) = _build_hf_gpt_transformer(
             layers,
             model_dim,
             heads,
@@ -489,7 +489,7 @@ class UnifiedVoice(nn.Module):
                 use_cuda_graph=True,
             )
             print("acceleration engine initialized")
-        self.inference_model = GPT2InferenceModel(
+        self.inference_model = _GPT2InferenceModel(
             gpt_config,
             self.gpt,
             self.mel_pos_embedding,

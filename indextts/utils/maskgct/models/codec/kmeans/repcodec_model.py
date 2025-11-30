@@ -3,8 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import torch
-import torch.nn as nn
+from torch import nn
 from torch.nn import functional as F
 
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize import ResidualVQ
@@ -18,13 +17,6 @@ def init_weights(m) -> None:
     if isinstance(m, nn.Linear):
         nn.init.trunc_normal_(m.weight, std=0.02)
         nn.init.constant_(m.bias, 0)
-
-
-def compute_codebook_perplexity(indices, codebook_size):
-    indices = indices.flatten()
-    prob = torch.bincount(indices, minlength=codebook_size).float() / indices.size(0)
-    perp = torch.exp(-torch.sum(prob * torch.log(prob + 1e-10)))
-    return perp
 
 
 class RepCodec(nn.Module):
@@ -159,14 +151,3 @@ class RepCodec(nn.Module):
 
     def reset_parameters(self) -> None:
         self.apply(init_weights)
-
-
-if __name__ == "__main__":
-    repcodec = RepCodec(vocos_dim=1024, downsample_scale=2)
-    print(repcodec)
-    print(sum(p.numel() for p in repcodec.parameters()) / 1e6)
-    x = torch.randn(5, 10, 1024)
-    x_rec, codebook_loss, all_indices = repcodec(x)
-    print(x_rec.shape, codebook_loss, all_indices.shape)
-    vq_id, emb = repcodec.quantize(x)
-    print(vq_id.shape, emb.shape)

@@ -1,27 +1,12 @@
 import torch
-import torchaudio
-from dac.model.encodec import SConv1d
-from dac.nn.quantize import ResidualVectorQuantize
-from einops.layers.torch import Rearrange
-from modules.wavenet import WN
 from torch import nn, pow, sin
 from torch.nn.utils import weight_norm
 
 from .alias_free_torch import *
 
 
-def init_weights(m) -> None:
-    if isinstance(m, nn.Conv1d):
-        nn.init.trunc_normal_(m.weight, std=0.02)
-        nn.init.constant_(m.bias, 0)
-
-
 def WNConv1d(*args, **kwargs):
     return weight_norm(nn.Conv1d(*args, **kwargs))
-
-
-def WNConvTranspose1d(*args, **kwargs):
-    return weight_norm(nn.ConvTranspose1d(*args, **kwargs))
 
 
 class SnakeBeta(nn.Module):
@@ -99,140 +84,3 @@ class ResidualUnit(nn.Module):
 
     def forward(self, x):
         return x + self.block(x)
-
-
-class CNNLSTM(nn.Module):
-    def __init__(self, indim, outdim, head, global_pred=False) -> None:
-        super().__init__()
-        self.global_pred = global_pred
-        self.model = nn.Sequential(
-            ResidualUnit(indim, dilation=1),
-            ResidualUnit(indim, dilation=2),
-            ResidualUnit(indim, dilation=3),
-            Activation1d(activation=SnakeBeta(indim, alpha_logscale=True)),
-            Rearrange("b c t -> b t c"),
-        )
-        self.heads = nn.ModuleList([nn.Linear(indim, outdim) for i in range(head)])
-
-    def forward(self, x):
-        # x: [B, C, T]
-        x = self.model(x)
-        if self.global_pred:
-            x = torch.mean(x, dim=1, keepdim=False)
-        outs = [head(x) for head in self.heads]
-        return outs
-
-
-def sequence_mask(length, max_length=None):
-    if max_length is None:
-        max_length = length.max()
-    x = torch.arange(max_length, dtype=length.dtype, device=length.device)
-    return x.unsqueeze(0) < length.unsqueeze(1)
-
-
-class FAquantizer(nn.Module):
-    def __init__(
-        self,
-        in_dim=1024,
-        n_p_codebooks=1,
-        n_c_codebooks=2,
-        n_t_codebooks=2,
-        n_r_codebooks=3,
-        codebook_size=1024,
-        codebook_dim=8,
-        quantizer_dropout=0.5,
-        causal=False,
-        separate_prosody_encoder=False,
-        timbre_norm=False,
-    ) -> None:
-        super().__init__()
-        conv1d_type = SConv1d  # if causal else nn.Conv1d
-        self.prosody_quantizer = ResidualVectorQuantize(
-            input_dim=in_dim,
-            n_codebooks=n_p_codebooks,
-            codebook_size=codebook_size,
-            codebook_dim=codebook_dim,
-            quantizer_dropout=quantizer_dropout,
-        )
-
-        self.content_quantizer = ResidualVectorQuantize(
-            input_dim=in_dim,
-            n_codebooks=n_c_codebooks,
-            codebook_size=codebook_size,
-            codebook_dim=codebook_dim,
-            quantizer_dropout=quantizer_dropout,
-        )
-
-        self.residual_quantizer = ResidualVectorQuantize(
-            input_dim=in_dim,
-            n_codebooks=n_r_codebooks,
-            codebook_size=codebook_size,
-            codebook_dim=codebook_dim,
-            quantizer_dropout=quantizer_dropout,
-        )
-
-        self.melspec_linear = conv1d_type(in_channels=20, out_channels=256, kernel_size=1, causal=causal)
-        self.melspec_encoder = WN(
-            hidden_channels=256,
-            kernel_size=5,
-            dilation_rate=1,
-            n_layers=8,
-            gin_channels=0,
-            p_dropout=0.2,
-            causal=causal,
-        )
-        self.melspec_linear2 = conv1d_type(in_channels=256, out_channels=1024, kernel_size=1, causal=causal)
-
-        self.prob_random_mask_residual = 0.75
-
-        SPECT_PARAMS = {
-            "n_fft": 2048,
-            "win_length": 1200,
-            "hop_length": 300,
-        }
-        MEL_PARAMS = {
-            "n_mels": 80,
-        }
-
-        self.to_mel = torchaudio.transforms.MelSpectrogram(
-            n_mels=MEL_PARAMS["n_mels"], sample_rate=24000, **SPECT_PARAMS
-        )
-        self.mel_mean, self.mel_std = -4, 4
-        self.frame_rate = 24000 / 300
-        self.hop_length = 300
-
-    def preprocess(self, wave_tensor, n_bins=20):
-        mel_tensor = self.to_mel(wave_tensor.squeeze(1))
-        mel_tensor = (torch.log(1e-5 + mel_tensor) - self.mel_mean) / self.mel_std
-        return mel_tensor[:, :n_bins, : int(wave_tensor.size(-1) / self.hop_length)]
-
-    def forward(self, x, wave_segments):
-        outs = 0
-        prosody_feature = self.preprocess(wave_segments)
-
-        f0_input = prosody_feature  # (B, T, 20)
-        f0_input = self.melspec_linear(f0_input)
-        f0_input = self.melspec_encoder(
-            f0_input, torch.ones(f0_input.shape[0], 1, f0_input.shape[2]).to(f0_input.device).bool()
-        )
-        f0_input = self.melspec_linear2(f0_input)
-
-        common_min_size = min(f0_input.size(2), x.size(2))
-        f0_input = f0_input[:, :, :common_min_size]
-
-        x = x[:, :, :common_min_size]
-
-        z_p, codes_p, _latents_p, _commitment_loss_p, _codebook_loss_p = self.prosody_quantizer(f0_input, 1)
-        outs += z_p.detach()
-
-        z_c, codes_c, _latents_c, _commitment_loss_c, _codebook_loss_c = self.content_quantizer(x, 2)
-        outs += z_c.detach()
-
-        residual_feature = x - z_p.detach() - z_c.detach()
-
-        z_r, codes_r, _latents_r, _commitment_loss_r, _codebook_loss_r = self.residual_quantizer(residual_feature, 3)
-
-        quantized = [z_p, z_c, z_r]
-        codes = [codes_p, codes_c, codes_r]
-
-        return quantized, codes

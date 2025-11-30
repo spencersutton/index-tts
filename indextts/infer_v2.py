@@ -1,6 +1,9 @@
 import os
 from subprocess import CalledProcessError
 
+import safetensors.torch
+from transformers.utils.generic import ModelOutput
+
 os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 import json
 import re
@@ -99,7 +102,11 @@ class IndexTTS2:
 
         if use_deepspeed:
             try:
-                import deepspeed
+                import importlib.util
+
+                if importlib.util.find_spec("deepspeed") is None:
+                    use_deepspeed = False
+                    print(">> DeepSpeed not found. Falling back to normal inference.")
             except (ImportError, OSError, CalledProcessError) as e:
                 use_deepspeed = False
                 print(f">> Failed to load DeepSpeed. Falling back to normal inference. Error: {e}")
@@ -426,6 +433,7 @@ class IndexTTS2:
                 self.cache_mel = None
                 torch.cuda.empty_cache()
             audio, sr = self._load_and_cut_audio(spk_audio_prompt, 15, verbose)
+            sr = int(sr)
             audio_22k = torchaudio.transforms.Resample(sr, 22050)(audio)
             audio_16k = torchaudio.transforms.Resample(sr, 16000)(audio)
 
@@ -547,7 +555,7 @@ class IndexTTS2:
 
             m_start_time = time.perf_counter()
             with torch.no_grad():
-                with torch.amp.autocast(text_tokens.device.type, enabled=self.dtype is not None, dtype=self.dtype):
+                with torch.autocast(text_tokens.device.type, enabled=self.dtype is not None, dtype=self.dtype):
                     emovec = self.gpt.merge_emovec(
                         spk_cond_emb,
                         emo_cond_emb,
@@ -588,11 +596,8 @@ class IndexTTS2:
                     )
                     has_warned = True
 
+                assert not isinstance(codes, ModelOutput)
                 code_lens = torch.tensor([codes.shape[-1]], device=codes.device, dtype=codes.dtype)
-                #                 if verbose:
-                #                     print(codes, type(codes))
-                #                     print(f"codes shape: {codes.shape}, codes type: {codes.dtype}")
-                #                     print(f"code len: {code_lens}")
 
                 code_lens = []
                 max_code_len = 0
@@ -614,7 +619,7 @@ class IndexTTS2:
 
                 m_start_time = time.perf_counter()
                 use_speed = torch.zeros(spk_cond_emb.size(0)).to(spk_cond_emb.device).long()
-                with torch.amp.autocast(text_tokens.device.type, enabled=self.dtype is not None, dtype=self.dtype):
+                with torch.autocast(text_tokens.device.type, enabled=self.dtype is not None, dtype=self.dtype):
                     latent = self.gpt(
                         speech_conditioning_latent,
                         text_tokens,
@@ -630,7 +635,7 @@ class IndexTTS2:
                     gpt_forward_time += time.perf_counter() - m_start_time
 
                 dtype = None
-                with torch.amp.autocast(text_tokens.device.type, enabled=dtype is not None, dtype=dtype):
+                with torch.autocast(text_tokens.device.type, enabled=dtype is not None, dtype=dtype):
                     m_start_time = time.perf_counter()
                     diffusion_steps = 25
                     inference_cfg_rate = 0.7
@@ -653,6 +658,7 @@ class IndexTTS2:
                         diffusion_steps,
                         inference_cfg_rate=inference_cfg_rate,
                     )
+                    assert ref_mel is not None
                     vc_target = vc_target[:, :, ref_mel.size(-1) :]
                     s2mel_time += time.perf_counter() - m_start_time
 

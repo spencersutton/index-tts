@@ -4,24 +4,6 @@ import torch
 import torchaudio
 
 
-def load_audio(audiopath, sampling_rate):
-    audio, sr = torchaudio.load(audiopath)
-    # print(f"wave shape: {audio.shape}, sample_rate: {sr}")
-
-    if audio.size(0) > 1:  # mix to mono
-        audio = audio[0].unsqueeze(0)
-
-    if sr != sampling_rate:
-        try:
-            audio = torchaudio.functional.resample(audio, sr, sampling_rate)
-        except Exception:
-            print(f"Warning: {audiopath}, wave shape: {audio.shape}, sample_rate: {sr}")
-            return None
-    # clip audio invalid values
-    audio.clip_(-1, 1)
-    return audio
-
-
 def tokenize_by_CJK_char(line: str, do_upper_case=True) -> str:
     """
     Tokenize a line of text with CJK char.

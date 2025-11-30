@@ -1,13 +1,12 @@
 import torch
 import torchaudio
+from bigvgan.alias_free_activation.torch.act import Activation1d
 from dac.model.encodec import SConv1d
 from dac.nn.quantize import ResidualVectorQuantize
 from einops.layers.torch import Rearrange
 from modules.wavenet import WN
 from torch import nn, pow, sin
 from torch.nn.utils import weight_norm
-
-from .alias_free_torch import *
 
 
 def init_weights(m) -> None:

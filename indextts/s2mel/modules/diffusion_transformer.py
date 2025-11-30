@@ -1,12 +1,12 @@
-import torch
-from torch import nn
 import math
 
+import torch
+from torch import nn
+from torch.nn.utils import weight_norm
+
+from indextts.s2mel.modules.commons import sequence_mask
 from indextts.s2mel.modules.gpt_fast.model import ModelArgs, Transformer
 from indextts.s2mel.modules.wavenet import WN
-from indextts.s2mel.modules.commons import sequence_mask
-
-from torch.nn.utils import weight_norm
 
 
 def modulate(x, shift, scale):
@@ -137,9 +137,6 @@ class DiT(torch.nn.Module):
 
         self.t_embedder = TimestepEmbedder(args.DiT.hidden_dim)
 
-        # self.style_embedder1 = weight_norm(nn.Linear(1024, args.DiT.hidden_dim, bias=True))
-        # self.style_embedder2 = weight_norm(nn.Linear(1024, args.style_encoder.dim, bias=True))
-
         input_pos = torch.arange(16384)
         self.register_buffer("input_pos", input_pos)
 
@@ -209,7 +206,6 @@ class DiT(torch.nn.Module):
             class_dropout = True
         if not self.training and mask_content:
             class_dropout = True
-        # cond_in_module = self.cond_embedder if self.content_type == 'discrete' else self.cond_projection
         cond_in_module = self.cond_projection
 
         B, _, T = x.size()

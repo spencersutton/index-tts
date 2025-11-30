@@ -337,7 +337,6 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
                 num_beams,
                 repetition_penalty,
                 max_mel_tokens,
-                # typical_sampling, typical_mass,
             ]
 
         # we must use `gr.Dataset` to support dynamic UI rewrites, since `gr.Examples`

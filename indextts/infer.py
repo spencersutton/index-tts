@@ -65,19 +65,6 @@ class IndexTTS:
         self.dtype = torch.float16 if self.use_fp16 else None
         self.stop_mel_token = self.cfg.gpt.stop_mel_token
 
-        # Comment-off to load the VQ-VAE model for debugging tokenizer
-        #   https://github.com/index-tts/index-tts/issues/34
-        #
-        # from indextts.vqvae.xtts_dvae import DiscreteVAE
-        # self.dvae = DiscreteVAE(**self.cfg.vqvae)
-        # self.dvae_path = os.path.join(self.model_dir, self.cfg.dvae_checkpoint)
-        # load_checkpoint(self.dvae, self.dvae_path)
-        # self.dvae = self.dvae.to(self.device)
-        # if self.use_fp16:
-        #     self.dvae.eval().half()
-        # else:
-        #     self.dvae.eval()
-        # print(">> vqvae weights restored from:", self.dvae_path)
         self.gpt = UnifiedVoice(**self.cfg.gpt)
         self.gpt_path = os.path.join(self.model_dir, self.cfg.gpt_checkpoint)
         load_checkpoint(self.gpt, self.gpt_path)

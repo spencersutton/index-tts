@@ -154,10 +154,6 @@ def _Sequential(*mods):
     return nn.Sequential(*filter(_exists, mods))
 
 
-def _exists(x):
-    return x is not None
-
-
 def _default(val, d):
     if _exists(val):
         return val

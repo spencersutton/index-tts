@@ -6,7 +6,6 @@ from torch.nn import functional as F
 from indextts.s2mel.dac.nn.quantize import VectorQuantize
 from indextts.s2mel.modules.commons import sequence_mask
 
-# f0_bin = 256
 f0_max = 1100.0
 f0_min = 50.0
 f0_mel_min = 1127 * np.log(1 + f0_min / 700)

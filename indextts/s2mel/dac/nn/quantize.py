@@ -9,79 +9,6 @@ from einops import rearrange
 from indextts.s2mel.dac.nn.layers import WNConv1d
 
 
-class VectorQuantizeLegacy(nn.Module):
-    """
-    Implementation of VQ similar to Karpathy's repo:
-    https://github.com/karpathy/deep-vector-quantization
-    removed in-out projection
-    """
-
-    def __init__(self, input_dim: int, codebook_size: int):
-        super().__init__()
-        self.codebook_size = codebook_size
-        self.codebook = nn.Embedding(codebook_size, input_dim)
-
-    def forward(self, z, z_mask=None):
-        """Quantized the input tensor using a fixed codebook and returns
-        the corresponding codebook vectors
-
-        Parameters
-        ----------
-        z : Tensor[B x D x T]
-
-        Returns
-        -------
-        Tensor[B x D x T]
-            Quantized continuous representation of input
-        Tensor[1]
-            Commitment loss to train encoder to predict vectors closer to codebook
-            entries
-        Tensor[1]
-            Codebook loss to update the codebook
-        Tensor[B x T]
-            Codebook indices (quantized discrete representation of input)
-        Tensor[B x D x T]
-            Projected latents (continuous representation of input before quantization)
-        """
-
-        z_e = z
-        z_q, indices = self.decode_latents(z)
-
-        if z_mask is not None:
-            commitment_loss = (F.mse_loss(z_e, z_q.detach(), reduction="none").mean(1) * z_mask).sum() / z_mask.sum()
-            codebook_loss = (F.mse_loss(z_q, z_e.detach(), reduction="none").mean(1) * z_mask).sum() / z_mask.sum()
-        else:
-            commitment_loss = F.mse_loss(z_e, z_q.detach())
-            codebook_loss = F.mse_loss(z_q, z_e.detach())
-        z_q = z_e + (z_q - z_e).detach()  # noop in forward pass, straight-through gradient estimator in backward pass
-
-        return z_q, indices, z_e, commitment_loss, codebook_loss
-
-    def embed_code(self, embed_id):
-        return F.embedding(embed_id, self.codebook.weight)
-
-    def decode_code(self, embed_id):
-        return self.embed_code(embed_id).transpose(1, 2)
-
-    def decode_latents(self, latents):
-        encodings = rearrange(latents, "b d t -> (b t) d")
-        codebook = self.codebook.weight  # codebook: (N x D)
-
-        # L2 normalize encodings and codebook (ViT-VQGAN)
-        encodings = F.normalize(encodings)
-        codebook = F.normalize(codebook)
-
-        # Compute euclidean distance with codebook
-        dist = (
-            encodings.pow(2).sum(1, keepdim=True)
-            - 2 * encodings @ codebook.t()
-            + codebook.pow(2).sum(1, keepdim=True).t()
-        )
-        indices = rearrange((-dist).max(1)[1], "(b t) -> b t", b=latents.size(0))
-        z_q = self.decode_code(indices)
-        return z_q, indices
-
-
 class VectorQuantize(nn.Module):
     """
     Implementation of VQ similar to Karpathy's repo:
@@ -179,7 +106,7 @@ class ResidualVectorQuantize(nn.Module):
         input_dim: int = 512,
         n_codebooks: int = 9,
         codebook_size: int = 1024,
-        codebook_dim: Union[int, list] = 8,
+        codebook_dim: int | list = 8,
         quantizer_dropout: float = 0.0,
     ):
         super().__init__()
@@ -318,10 +245,3 @@ class ResidualVectorQuantize(nn.Module):
             z_q = z_q + z_q_i
 
         return z_q, torch.cat(z_p, dim=1), torch.stack(codes, dim=1)
-
-
-if __name__ == "__main__":
-    rvq = ResidualVectorQuantize(quantizer_dropout=True)
-    x = torch.randn(16, 512, 80)
-    y = rvq(x)
-    print(y["latents"].shape)

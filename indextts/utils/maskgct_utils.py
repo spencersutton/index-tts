@@ -33,22 +33,6 @@ def _load_config(config_fn, lowercase=False):
     return config_
 
 
-def load_config(config_fn, lowercase=False):
-    """Load configurations into a dictionary
-
-    Args:
-        config_fn (str): path to configuration file
-        lowercase (bool, optional): _description_. Defaults to False.
-
-    Returns:
-        JsonHParams: an object that stores configurations
-    """
-    config_ = _load_config(config_fn, lowercase=lowercase)
-    # create an JsonHParams object with configuration dict
-    cfg = JsonHParams(**config_)
-    return cfg
-
-
 class JsonHParams:
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
@@ -156,8 +140,6 @@ class Inference_Pipeline:
     @torch.no_grad()
     def get_scode(self, inputs):
         semantic_code, feat = self.semantic_codec.quantize(inputs)
-        # vq = self.semantic_codec.quantizer.vq2emb(semantic_code.unsqueeze(1))
-        # vq = vq.transpose(1,2)
         return semantic_code
 
     @torch.no_grad()

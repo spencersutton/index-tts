@@ -193,6 +193,46 @@ wheels = [
 ]
 
 [[package]]
+name = "auraloss"
+version = "0.4.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+    { name = "torch", version = "2.8.0", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'linux' and sys_platform != 'win32'" },
+    { name = "torch", version = "2.8.0+cu128", source = { registry = "https://download.pytorch.org/whl/cu128" }, marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ec/55/2a3bbafa3e947b972c81f852c6c31cc359a21848908f2aabd35b34b532e9/auraloss-0.4.0.tar.gz", hash = "sha256:86eb3bce81aaf579d9e2df59b0cae7ab8de793902c344af72f255d53c3d5c954", size = 17640, upload-time = "2023-04-21T09:21:46.686Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a6/ab/8df927d3f0951cf67ca5973d89b35bcbda1777a4c78bf90a853d02d91285/auraloss-0.4.0-py3-none-any.whl", hash = "sha256:7ca1cfff0d04db9c1269038a1c527fc38bc4756dd33bfff115889a3461d97d37", size = 16743, upload-time = "2023-04-21T09:21:44.905Z" },
+]
+
+[[package]]
+name = "bigvgan"
+version = "2.4.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "auraloss" },
+    { name = "huggingface-hub" },
+    { name = "librosa" },
+    { name = "matplotlib" },
+    { name = "ninja" },
+    { name = "nnaudio" },
+    { name = "numpy" },
+    { name = "pesq" },
+    { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "scipy", version = "1.16.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "soundfile" },
+    { name = "tensorboard" },
+    { name = "torch", version = "2.8.0", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'linux' and sys_platform != 'win32'" },
+    { name = "torch", version = "2.8.0+cu128", source = { registry = "https://download.pytorch.org/whl/cu128" }, marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+    { name = "tqdm" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/85/68/443f9578435b7cd89f2530999f26a24440bf8ceca7d55e0a0da052ba3bb1/bigvgan-2.4.1.tar.gz", hash = "sha256:384a52db57e4ae8866a308400aaff62169dd8bb0606fecdd8a261f7ba5f63e50", size = 21074043, upload-time = "2024-10-27T10:48:22.426Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b9/ab/d0d0a591078dbfb2ac76a23fb54975b98759c7c8f9198ee4befa9b348570/bigvgan-2.4.1-py3-none-any.whl", hash = "sha256:d6ed87550ed1cff48907cddfb8256377985c589be767fa0ec29f4f3571af4fa8", size = 40787, upload-time = "2024-10-27T10:48:17.399Z" },
+]
+
+[[package]]
 name = "brotli"
 version = "1.2.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1242,6 +1282,7 @@ version = "2.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "accelerate" },
+    { name = "bigvgan" },
     { name = "cn2an" },
     { name = "cython" },
     { name = "descript-audiotools" },
@@ -1285,6 +1326,7 @@ webui = [
 [package.metadata]
 requires-dist = [
     { name = "accelerate", specifier = ">=1.8.1" },
+    { name = "bigvgan", specifier = ">=2.4.1" },
     { name = "cn2an", specifier = ">=0.5.22" },
     { name = "cython", specifier = ">=3.0.7" },
     { name = "deepspeed", marker = "extra == 'deepspeed'", specifier = ">=0.17.1" },
@@ -2038,6 +2080,22 @@ wheels = [
 ]
 
 [[package]]
+name = "nnaudio"
+version = "0.3.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+    { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "scipy", version = "1.16.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "torch", version = "2.8.0", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'linux' and sys_platform != 'win32'" },
+    { name = "torch", version = "2.8.0+cu128", source = { registry = "https://download.pytorch.org/whl/cu128" }, marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/95/0d/ed73a11588aa8f21c166676d01cc84ad1ce2be6059c2461c793da434ed33/nnAudio-0.3.3.tar.gz", hash = "sha256:076697199811314d41714d563d9d72ed0808e7c2da2dacf11dd4e3069d4ec054", size = 38882, upload-time = "2024-02-13T05:58:32.414Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f2/8f/799c8cd59a710c58a5e4b7bbcc9a631025cd794b3a316fa9d30e297d5050/nnAudio-0.3.3-py3-none-any.whl", hash = "sha256:4ea1fdc4638b9cf53c9b58ca11a9d474105a2b58da8bb5f6e75416ba5ada5e46", size = 43604, upload-time = "2024-02-13T05:58:29.788Z" },
+]
+
+[[package]]
 name = "numba"
 version = "0.58.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2402,6 +2460,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/d4/de/53e0bcf53d13e005b
 wheels = [
     { url = "https://files.pythonhosted.org/packages/16/32/f8e3c85d1d5250232a5d3477a2a28cc291968ff175caeadaf3cc19ce0e4a/parso-0.8.5-py2.py3-none-any.whl", hash = "sha256:646204b5ee239c396d040b90f9e272e9a8017c630092bf59980beb62fd033887", size = 106668, upload-time = "2025-08-23T15:15:25.663Z" },
 ]
+
+[[package]]
+name = "pesq"
+version = "0.0.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/22/e6/f8bdcef3238ac10fb3ce37d150e9b03a152d971febd681f088c6e5e17d8e/pesq-0.0.4.tar.gz", hash = "sha256:b724b28f73fb638522982bd68e8c3c0957e2f45210639a460233b17aa7fc890b", size = 38702, upload-time = "2022-05-17T14:15:26.301Z" }
 
 [[package]]
 name = "pexpect"

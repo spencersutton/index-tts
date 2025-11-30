@@ -14,7 +14,8 @@ from tqdm import tqdm
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
-from indextts.BigVGAN.models import BigVGAN as Generator
+from bigvgan import BigVGAN as Generator
+
 from indextts.gpt.model import UnifiedVoice
 from indextts.utils.checkpoint import load_checkpoint
 from indextts.utils.feature_extractors import MelSpectrogramFeatures

@@ -1,31 +1,23 @@
-import os
-from subprocess import CalledProcessError
-
-import safetensors.torch
-from transformers.utils.generic import ModelOutput
-
-os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 import json
+import os
+import random
 import re
 import time
 import warnings
-
-import librosa
-import torch
-import torchaudio
-
-warnings.filterwarnings("ignore", category=FutureWarning)
-warnings.filterwarnings("ignore", category=UserWarning)
-
-import random
+from subprocess import CalledProcessError
 
 import bigvgan
+import librosa
 import safetensors
+import safetensors.torch
+import torch
 import torch.nn.functional as F
+import torchaudio
 from huggingface_hub import hf_hub_download
 from modelscope import AutoModelForCausalLM
 from omegaconf import OmegaConf
 from transformers import AutoTokenizer, SeamlessM4TFeatureExtractor
+from transformers.utils.generic import ModelOutput
 
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.s2mel.modules.audio import mel_spectrogram
@@ -34,6 +26,11 @@ from indextts.s2mel.modules.commons import MyModel, load_checkpoint2
 from indextts.utils.checkpoint import load_checkpoint
 from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.maskgct_utils import build_semantic_codec, build_semantic_model
+
+os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
+
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
 
 
 class IndexTTS2:

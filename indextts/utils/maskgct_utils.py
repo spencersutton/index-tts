@@ -34,21 +34,6 @@ def _load_config(config_fn, lowercase=False):
     return config_
 
 
-def load_config(config_fn, lowercase=False):
-    """Load configurations into a dictionary
-
-    Args:
-        config_fn (str): path to configuration file
-        lowercase (bool, optional): _description_. Defaults to False.
-
-    Returns:
-        JsonHParams: an object that stores configurations
-    """
-    config_ = _load_config(config_fn, lowercase=lowercase)
-    # create an JsonHParams object with configuration dict
-    return JsonHParams(**config_)
-
-
 class JsonHParams:
     def __init__(self, **kwargs) -> None:
         for k, v in kwargs.items():

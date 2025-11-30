@@ -345,8 +345,6 @@ class FAquantizer(nn.Module):
         return [codes_c, codes_p, codes_t, codes_r], [z_c, z_p, z_t, z_r]
 
     def forward(self, x, wave_segments, noise_added_flags, recon_noisy_flags, n_c=2, n_t=2):
-        # timbre = self.timbre_encoder(mels, sequence_mask(mel_lens, mels.size(-1)).unsqueeze(1))
-        # timbre = self.timbre_encoder(mel_segments, torch.ones(mel_segments.size(0), 1, mel_segments.size(2)).bool().to(mel_segments.device))
         outs = 0
         if self.separate_prosody_encoder:
             prosody_feature = self.preprocess(wave_segments)
@@ -446,7 +444,6 @@ class FAquantizer(nn.Module):
         wave_lens=None,
         return_codes=False,
     ):
-        # timbre = self.timbre_encoder(x, sequence_mask(mel_lens, mels.size(-1)).unsqueeze(1))
         if full_waves is None:
             mel = self.preprocess(wave_segments, n_bins=80)
             timbre = self.timbre_encoder(mel, torch.ones(mel.size(0), 1, mel.size(2)).bool().to(mel.device))

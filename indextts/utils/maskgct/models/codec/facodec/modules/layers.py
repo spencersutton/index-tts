@@ -326,15 +326,6 @@ class ForwardAttentionV2(nn.Module):
         if mask is not None:
             log_energy.data.masked_fill_(mask, self.score_mask_value)
 
-        # attention_weights = F.softmax(alignment, dim=1)
-
-        # content_score = log_energy.unsqueeze(1) #[B, MAX_TIME] -> [B, 1, MAX_TIME]
-        # log_alpha = log_alpha.unsqueeze(2) #[B, MAX_TIME] -> [B, MAX_TIME, 1]
-
-        # log_total_score = log_alpha + content_score
-
-        # previous_attention_weights = attention_weights_cat[:,0,:]
-
         log_alpha_shift_padded = []
         max_time = log_energy.size(1)
         for sft in range(2):
@@ -361,7 +352,6 @@ class PhaseShuffle2d(nn.Module):
         self.random = random.Random(1)
 
     def forward(self, x, move=None):
-        # x.size = (B, C, M, L)
         if move is None:
             move = self.random.randint(-self.n, self.n)
 
@@ -381,7 +371,6 @@ class PhaseShuffle1d(nn.Module):
         self.random = random.Random(1)
 
     def forward(self, x, move=None):
-        # x.size = (B, C, M, L)
         if move is None:
             move = self.random.randint(-self.n, self.n)
 

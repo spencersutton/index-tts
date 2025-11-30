@@ -65,7 +65,6 @@ class FAcodecCollator(object):
         self.cfg = cfg
 
     def __call__(self, batch):
-        # batch[0] = wave, mel, text, f0, speakerid
         batch_size = len(batch)
 
         # sort by mel length

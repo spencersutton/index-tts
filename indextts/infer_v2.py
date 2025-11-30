@@ -245,7 +245,6 @@ class IndexTTS2:
 
             count = torch.sum(code == silent_token).item()
             if count > max_consecutive:
-                # code = code.cpu().tolist()
                 ncode_idx = []
                 n = 0
                 for k in range(len_):
@@ -258,8 +257,6 @@ class IndexTTS2:
                     elif code[k] == silent_token and n < 10:
                         ncode_idx.append(k)
                         n += 1
-                    # if (k == 0 and code[k] == 52) or (code[k] == 52 and code[k-1] == 52):
-                    #    n += 1
                 # new code
                 len_ = len(ncode_idx)
                 codes_list.append(code[ncode_idx])
@@ -615,7 +612,6 @@ class IndexTTS2:
 
                     if emo_vector is not None:
                         emovec = emovec_mat + (1 - torch.sum(weight_vector)) * emovec
-                        # emovec = emovec_mat
 
                     codes, speech_conditioning_latent = self.gpt.inference_speech(
                         spk_cond_emb,

@@ -265,8 +265,6 @@ class BigVGAN(torch.nn.Module):
                 ch = h.upsample_initial_channel // (2 ** (i + 1))
                 self.conds.append(nn.Conv1d(h.speaker_embedding_dim, ch, 1))
 
-        # self.logit_scale = nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
-
     def forward(self, x, mel_ref, lens=None):
         speaker_embedding = self.speaker_encoder(mel_ref, lens)
         n_batch = x.size(0)

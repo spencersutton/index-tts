@@ -506,13 +506,10 @@ class FACodecDecoder(nn.Module):
                 res_mask = torch.from_numpy(res_mask).unsqueeze(1).unsqueeze(1)  # (B, 1, 1)
                 res_mask = res_mask.to(device=quantized[2].device, dtype=quantized[2].dtype)
                 x = quantized[0].detach() + quantized[1].detach() + quantized[2] * res_mask
-                # x = quantized_perturbe[0].detach() + quantized[1].detach() + quantized[2] * res_mask
             else:
                 x = quantized[0].detach() + quantized[1].detach() + quantized[2]
-                # x = quantized_perturbe[0].detach() + quantized[1].detach() + quantized[2]
         else:
             x = quantized[0].detach() + quantized[1].detach()
-            # x = quantized_perturbe[0].detach() + quantized[1].detach()
 
         if self.use_gr_x_timbre:
             (x_timbre,) = self.x_timbre_predictor(x)
@@ -1096,13 +1093,10 @@ class FACodecDecoderV2(nn.Module):
                 res_mask = torch.from_numpy(res_mask).unsqueeze(1).unsqueeze(1)  # (B, 1, 1)
                 res_mask = res_mask.to(device=quantized[2].device, dtype=quantized[2].dtype)
                 x = quantized[0].detach() + quantized[1].detach() + quantized[2] * res_mask
-                # x = quantized_perturbe[0].detach() + quantized[1].detach() + quantized[2] * res_mask
             else:
                 x = quantized[0].detach() + quantized[1].detach() + quantized[2]
-                # x = quantized_perturbe[0].detach() + quantized[1].detach() + quantized[2]
         else:
             x = quantized[0].detach() + quantized[1].detach()
-            # x = quantized_perturbe[0].detach() + quantized[1].detach()
 
         if self.use_gr_x_timbre:
             (x_timbre,) = self.x_timbre_predictor(x)

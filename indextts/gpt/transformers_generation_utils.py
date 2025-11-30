@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright 2020 The Google AI Language Team Authors, Facebook AI Research authors and The HuggingFace Inc. team.
 # Copyright (c) 2020, NVIDIA CORPORATION.  All rights reserved.
 #
@@ -34,20 +33,6 @@ from transformers.cache_utils import (
     StaticCache,
 )
 from transformers.configuration_utils import PretrainedConfig
-from transformers.integrations.deepspeed import is_deepspeed_zero3_enabled
-from transformers.integrations.fsdp import is_fsdp_managed_module
-from transformers.modeling_outputs import CausalLMOutputWithPast, Seq2SeqLMOutput
-from transformers.pytorch_utils import isin_mps_friendly
-from transformers.tokenization_utils import ExtensionsTrie
-from transformers.utils import (
-    ModelOutput,
-    is_accelerate_available,
-    is_hqq_available,
-    is_optimum_quanto_available,
-    # is_quanto_available,
-    is_torchdynamo_compiling,
-    logging,
-)
 from transformers.generation.beam_constraints import DisjunctiveConstraint, PhrasalConstraint
 from transformers.generation.beam_search import BeamScorer, BeamSearchScorer, ConstrainedBeamSearchScorer
 from transformers.generation.candidate_generator import (
@@ -678,8 +663,6 @@ class GenerationMixin:
         elif "donut" in self.__class__.__name__.lower() or (
             self.config.model_type == "vision-encoder-decoder" and "donut" in self.config.encoder.model_type.lower()
         ):
-            pass
-        elif self.config.model_type in ["whisper"]:
             pass
         # user input but doesn't start with decoder_start_token_id -> prepend decoder_start_token_id (and adjust
         # decoder_attention_mask if provided)
@@ -1745,7 +1728,6 @@ class GenerationMixin:
                 )
                 cache_class = QUANT_BACKEND_CLASSES_MAPPING[cache_config.backend]
 
-                # if cache_config.backend == "quanto" and not (is_optimum_quanto_available() or is_quanto_available()):
                 if cache_config.backend == "quanto" and not is_optimum_quanto_available():
                     raise ImportError(
                         "You need to install optimum-quanto in order to use KV cache quantization with optimum-quanto backend. "
@@ -3496,16 +3478,11 @@ class GenerationMixin:
             n_eos_tokens = eos_token_id.shape[0] if eos_token_id is not None else 0
             n_tokens_to_keep = max(2, 1 + n_eos_tokens) * num_beams
             if do_sample:
-                # import time
-                # start = time.time()
                 probs = nn.functional.softmax(next_token_scores, dim=-1)
                 next_tokens = torch.multinomial(probs, num_samples=n_tokens_to_keep)
                 next_token_scores = torch.gather(next_token_scores, -1, next_tokens)
                 next_token_scores, _indices = torch.sort(next_token_scores, descending=True, dim=1)
                 next_tokens = torch.gather(next_tokens, -1, _indices)
-                # print("*"*20, probs.shape, n_tokens_to_keep, next_token_scores.shape, next_tokens.shape)
-                # print("*"*20, time.time() - start)
-            else:
                 next_token_scores, next_tokens = torch.topk(
                     next_token_scores, n_tokens_to_keep, dim=1, largest=True, sorted=True
                 )

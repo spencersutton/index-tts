@@ -74,21 +74,6 @@ def get_extra_padding_for_conv1d(x: torch.Tensor, kernel_size: int, stride: int,
     return ideal_length - length
 
 
-def pad_for_conv1d(x: torch.Tensor, kernel_size: int, stride: int, padding_total: int = 0):
-    """Pad for a convolution to make sure that the last window is full.
-    Extra padding is added at the end. This is required to ensure that we can rebuild
-    an output of the same length, as otherwise, even with padding, some time steps
-    might get removed.
-    For instance, with total padding = 4, kernel size = 4, stride = 2:
-        0 0 1 2 3 4 5 0 0   # (0s are padding)
-        1   2   3           # (output frames of a convolution, last 0 is never used)
-        0 0 1 2 3 4 5 0     # (output of tr. conv., but pos. 5 is going to get removed as padding)
-            1 2 3 4         # once you removed padding, we are missing one time step !
-    """
-    extra_padding = get_extra_padding_for_conv1d(x, kernel_size, stride, padding_total)
-    return F.pad(x, (0, extra_padding))
-
-
 def pad1d(x: torch.Tensor, paddings: tuple[int, int], mode: str = "zero", value: float = 0.0):
     """Tiny wrapper around F.pad, just to allow for reflect padding on small input.
     If this is the case, we insert extra 0 padding to the right before the reflection happen.
@@ -137,23 +122,6 @@ class NormConv1d(nn.Module):
         return x
 
 
-class NormConv2d(nn.Module):
-    """Wrapper around Conv2d and normalization applied to this conv
-    to provide a uniform interface across normalization approaches.
-    """
-
-    def __init__(self, *args, norm: str = "none", norm_kwargs: dict[str, tp.Any] = {}, **kwargs) -> None:
-        super().__init__()
-        self.conv = apply_parametrization_norm(nn.Conv2d(*args, **kwargs), norm)
-        self.norm = get_norm_module(self.conv, causal=False, norm=norm, **norm_kwargs)
-        self.norm_type = norm
-
-    def forward(self, x):
-        x = self.conv(x)
-        x = self.norm(x)
-        return x
-
-
 class NormConvTranspose1d(nn.Module):
     """Wrapper around ConvTranspose1d and normalization applied to this conv
     to provide a uniform interface across normalization approaches.
@@ -166,22 +134,6 @@ class NormConvTranspose1d(nn.Module):
         self.convtr = apply_parametrization_norm(nn.ConvTranspose1d(*args, **kwargs), norm)
         self.norm = get_norm_module(self.convtr, causal, norm, **norm_kwargs)
         self.norm_type = norm
-
-    def forward(self, x):
-        x = self.convtr(x)
-        x = self.norm(x)
-        return x
-
-
-class NormConvTranspose2d(nn.Module):
-    """Wrapper around ConvTranspose2d and normalization applied to this conv
-    to provide a uniform interface across normalization approaches.
-    """
-
-    def __init__(self, *args, norm: str = "none", norm_kwargs: dict[str, tp.Any] = {}, **kwargs) -> None:
-        super().__init__()
-        self.convtr = apply_parametrization_norm(nn.ConvTranspose2d(*args, **kwargs), norm)
-        self.norm = get_norm_module(self.convtr, causal=False, norm=norm, **norm_kwargs)
 
     def forward(self, x):
         x = self.convtr(x)

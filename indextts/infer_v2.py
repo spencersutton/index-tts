@@ -473,7 +473,7 @@ class IndexTTS2:
             if use_random:
                 random_index = [random.randint(0, x - 1) for x in self.emo_num]
             else:
-                random_index = [find_most_similar_cosine(style, tmp) for tmp in self.spk_matrix]
+                random_index = [_find_most_similar_cosine(style, tmp) for tmp in self.spk_matrix]
 
             emo_matrix = [tmp[index].unsqueeze(0) for index, tmp in zip(random_index, self.emo_matrix)]
             emo_matrix = torch.cat(emo_matrix, 0)
@@ -717,7 +717,7 @@ class IndexTTS2:
             yield (sampling_rate, wav_data)
 
 
-def find_most_similar_cosine(query_vector, matrix):
+def _find_most_similar_cosine(query_vector, matrix):
     query_vector = query_vector.float()
     matrix = matrix.float()
 

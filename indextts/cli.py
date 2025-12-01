@@ -33,6 +33,15 @@ def main() -> None:
     parser.add_argument(
         "-d", "--device", type=str, default=None, help="Device to run the model on (cpu, cuda, mps, xpu)."
     )
+    parser.add_argument(
+        "--use_accel", action="store_true", default=False, help="Use acceleration engine (FlashAttention) for GPT"
+    )
+    parser.add_argument(
+        "--use_torch_compile", action="store_true", default=False, help="Use torch.compile for optimization"
+    )
+    parser.add_argument(
+        "--use_cuda_kernel", action="store_true", default=False, help="Use custom CUDA kernel for BigVGAN"
+    )
     args = parser.parse_args()
     if len(args.text.strip()) == 0:
         print("ERROR: Text is empty.")
@@ -81,7 +90,15 @@ def main() -> None:
         from indextts.infer_v2 import IndexTTS2
 
         print(f">> Detected IndexTTS version {cfg.version}, using IndexTTS2 inference.")
-        tts = IndexTTS2(cfg_path=args.config, model_dir=args.model_dir, use_fp16=args.fp16, device=args.device)
+        tts = IndexTTS2(
+            cfg_path=args.config,
+            model_dir=args.model_dir,
+            use_fp16=args.fp16,
+            device=args.device,
+            use_accel=args.use_accel,
+            use_torch_compile=args.use_torch_compile,
+            use_cuda_kernel=args.use_cuda_kernel,
+        )
         tts.infer(spk_audio_prompt=args.voice, text=args.text.strip(), output_path=output_path)
     else:
         from indextts.infer import IndexTTS

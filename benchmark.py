@@ -267,7 +267,7 @@ Examples:
         help="Path to the config file",
     )
     parser.add_argument(
-        "--model_dir",
+        "--model-dir",
         type=str,
         default="checkpoints",
         help="Path to the model directory",

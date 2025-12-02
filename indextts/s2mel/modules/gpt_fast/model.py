@@ -212,16 +212,10 @@ class Transformer(nn.Module):
                 mask = self.causal_mask[None, None, input_pos]
                 mask = mask[..., input_pos]
         freqs_cis = self.freqs_cis[input_pos]
-        if context is not None:
-            context_freqs_cis = self.freqs_cis[context_input_pos]
-        else:
-            context_freqs_cis = None
+        context_freqs_cis = self.freqs_cis[context_input_pos] if context is not None else None
         skip_in_x_list = []
         for i, layer in enumerate(self.layers):
-            if self.uvit_skip_connection and i in self.layers_receive_skip:
-                skip_in_x = skip_in_x_list.pop(-1)
-            else:
-                skip_in_x = None
+            skip_in_x = skip_in_x_list.pop(-1) if self.uvit_skip_connection and i in self.layers_receive_skip else None
             x = layer(x, c, input_pos, freqs_cis, mask, context, context_freqs_cis, cross_attention_mask, skip_in_x)
             if self.uvit_skip_connection and i in self.layers_emit_skip:
                 skip_in_x_list.append(x)

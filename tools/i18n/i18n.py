@@ -11,7 +11,7 @@ def load_language_list(language):
 
 
 def scan_language_list():
-    return [p.stem for p in I18N_JSON_DIR.iterdir() if p.suffix == ".json"]
+    return [p.stem for p in I18N_JSON_DIR.glob("*.json")]
 
 
 class I18nAuto:

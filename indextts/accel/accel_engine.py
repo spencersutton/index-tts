@@ -30,6 +30,18 @@ class Sampler(nn.Module):
         return torch.where(greedy_mask, greedy_tokens, sampled_tokens)
 
 
+class Sampler(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+
+    @torch.compile
+    def forward(self, logits: torch.Tensor, temperatures: torch.Tensor):
+        logits = logits.float().div_(temperatures.unsqueeze(dim=1))
+        probs = torch.softmax(logits, dim=-1)
+        sample_tokens = probs.div_(torch.empty_like(probs).exponential_(1).clamp_min_(1e-10)).argmax(dim=-1)
+        return sample_tokens
+
+
 class AccelInferenceEngine:
     def __init__(
         self,
@@ -453,10 +465,7 @@ class AccelInferenceEngine:
             logits = self.model.compute_logits(last_hidden)  # [batch_size, vocab_size]
 
         temperatures = self._prepare_sample(sequences, temperature)
-        if temperature > 0:
-            first_token = self.sampler(logits, temperatures)
-        else:
-            first_token = torch.argmax(logits, dim=-1)
+        first_token = self.sampler(logits, temperatures) if temperature > 0 else torch.argmax(logits, dim=-1)
 
         first_token_list = first_token.tolist()
 
@@ -506,10 +515,7 @@ class AccelInferenceEngine:
             reset_forward_context()
 
             temperatures = self._prepare_sample(sequences, temperature)
-            if temperature > 0:
-                next_token = self.sampler(logits, temperatures)
-            else:
-                next_token = torch.argmax(logits, dim=-1)
+            next_token = self.sampler(logits, temperatures) if temperature > 0 else torch.argmax(logits, dim=-1)
             next_token_list = next_token.tolist()
 
             for i, token_id in enumerate(next_token_list):
@@ -555,14 +561,3 @@ class AccelInferenceEngine:
         assert output.size(0) == batch_size, f"Output batch size mismatch: {output.size(0)} != {batch_size}"
 
         return output
-
-
-class Sampler(nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
-
-    @torch.compile
-    def forward(self, logits: torch.Tensor, temperatures: torch.Tensor):
-        logits = logits.float().div_(temperatures.unsqueeze(dim=1))
-        probs = torch.softmax(logits, dim=-1)
-        return probs.div_(torch.empty_like(probs).exponential_(1).clamp_min_(1e-10)).argmax(dim=-1)

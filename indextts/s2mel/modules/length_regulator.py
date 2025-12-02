@@ -105,10 +105,7 @@ class InterpolateRegulator(nn.Module):
                     x_emb += (n_quantizers > i + 1)[..., None, None] * emb(x[:, i + 1])
                 x = x_emb
             elif self.n_codebooks == 1:
-                if len(x.size()) == 2:
-                    x = self.embedding(x)
-                else:
-                    x = self.embedding(x[:, 0])
+                x = self.embedding(x) if len(x.size()) == 2 else self.embedding(x[:, 0])
         else:
             x = self.content_in_proj(x)
         # x in (B, T, D)

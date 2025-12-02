@@ -2,14 +2,6 @@ import numpy as np
 import torch
 import torch.utils.data
 from librosa.filters import mel as librosa_mel_fn
-from scipy.io.wavfile import read
-
-MAX_WAV_VALUE = 32768.0
-
-
-def load_wav(full_path):
-    sampling_rate, data = read(full_path)
-    return data, sampling_rate
 
 
 def dynamic_range_compression_torch(x: torch.Tensor, C: float = 1, clip_val: float = 1e-5) -> torch.Tensor:
@@ -18,11 +10,6 @@ def dynamic_range_compression_torch(x: torch.Tensor, C: float = 1, clip_val: flo
 
 def spectral_normalize_torch(magnitudes: torch.Tensor) -> torch.Tensor:
     output = dynamic_range_compression_torch(magnitudes)
-    return output
-
-
-def spectral_de_normalize_torch(magnitudes):
-    output = dynamic_range_decompression_torch(magnitudes)
     return output
 
 

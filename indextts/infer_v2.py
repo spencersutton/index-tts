@@ -295,7 +295,7 @@ class IndexTTS2:
         sil_dur = int(sampling_rate * interval_silence / 1000.0)
         sil_tensor = torch.zeros(channel_size, sil_dur)
 
-        wavs_list = []
+        wavs_list: list[torch.Tensor] = []
         for i, wav in enumerate(wavs):
             wavs_list.append(wav)
             if i < len(wavs) - 1:
@@ -303,7 +303,7 @@ class IndexTTS2:
 
         return wavs_list
 
-    def _set_gr_progress(self, value, desc) -> None:
+    def _set_gr_progress(self, value: float, desc: str) -> None:
         if self.gr_progress is not None:
             self.gr_progress(value, desc=desc)
 
@@ -402,22 +402,22 @@ class IndexTTS2:
 
     def infer_generator(
         self,
-        spk_audio_prompt,
-        text,
-        output_path,
-        emo_audio_prompt=None,
-        emo_alpha=1.0,
-        emo_vector=None,
-        use_emo_text=False,
-        emo_text=None,
-        use_random=False,
-        interval_silence=200,
-        verbose=False,
-        max_text_tokens_per_segment=120,
-        stream_return=False,
-        quick_streaming_tokens=0,
-        **generation_kwargs,
-    ):
+        spk_audio_prompt: str,
+        text: str,
+        output_path: str | None,
+        emo_audio_prompt: str | None = None,
+        emo_alpha: float = 1.0,
+        emo_vector: list[float] | None = None,
+        use_emo_text: bool = False,
+        emo_text: str | None = None,
+        use_random: bool = False,
+        interval_silence: int = 200,
+        verbose: bool = False,
+        max_text_tokens_per_segment: int = 120,
+        stream_return: bool = False,
+        quick_streaming_tokens: int = 0,
+        **generation_kwargs: Any,
+    ) -> Generator[torch.Tensor | None]:
         print(">> starting inference...")
         self._set_gr_progress(0, "starting inference...")
         if verbose:
@@ -752,7 +752,7 @@ assert ref_mel is not None
             yield (sampling_rate, wav_data)
 
 
-def find_most_similar_cosine(query_vector, matrix):
+def find_most_similar_cosine(query_vector: torch.Tensor, matrix: torch.Tensor):
     query_vector = query_vector.float()
     matrix = matrix.float()
 

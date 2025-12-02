@@ -18,7 +18,13 @@ from indextts.s2mel.modules.campplus.layers import (
 
 
 class FCM(nn.Module):
-    def __init__(self, block=BasicResBlock, num_blocks=[2, 2], m_channels=32, feat_dim=80) -> None:
+    def __init__(
+        self,
+        block: type[BasicResBlock] = BasicResBlock,
+        num_blocks: list[int] = [2, 2],
+        m_channels: int = 32,
+        feat_dim: int = 80,
+    ) -> None:
         super().__init__()
         self.in_planes = m_channels
         self.conv1 = nn.Conv2d(1, m_channels, kernel_size=3, stride=1, padding=1, bias=False)
@@ -54,13 +60,13 @@ class FCM(nn.Module):
 class CAMPPlus(nn.Module):
     def __init__(
         self,
-        feat_dim=80,
-        embedding_size=512,
-        growth_rate=32,
-        bn_size=4,
-        init_channels=128,
-        config_str="batchnorm-relu",
-        memory_efficient=True,
+        feat_dim: int = 80,
+        embedding_size: int = 512,
+        growth_rate: int = 32,
+        bn_size: int = 4,
+        init_channels: int = 128,
+        config_str: str = "batchnorm-relu",
+        memory_efficient: bool = True,
     ) -> None:
         super().__init__()
 
@@ -105,7 +111,7 @@ class CAMPPlus(nn.Module):
                 if m.bias is not None:
                     nn.init.zeros_(m.bias)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = x.permute(0, 2, 1)  # (B,T,F) => (B,F,T)
         x = self.head(x)
         x = self.xvector(x)

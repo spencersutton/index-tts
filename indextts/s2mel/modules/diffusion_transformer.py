@@ -38,7 +38,7 @@ class TimestepEmbedder(nn.Module):
         freqs = torch.exp(-math.log(self.max_period) * torch.arange(start=0, end=half, dtype=torch.float32) / half)
         self.register_buffer("freqs", freqs)
 
-    def timestep_embedding(self, t):
+    def timestep_embedding(self, t: torch.Tensor) -> torch.Tensor:
         """
         Create sinusoidal timestep embeddings.
         :param t: a 1-D Tensor of N indices, one per batch element.

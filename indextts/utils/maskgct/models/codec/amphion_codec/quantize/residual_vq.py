@@ -5,7 +5,7 @@
 
 
 import torch
-import torch.nn as nn
+from torch import nn
 
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize.factorized_vector_quantize import (
     FactorizedVectorQuantize,
@@ -106,8 +106,8 @@ class ResidualVQ(nn.Module):
 
             # Create mask to apply quantizer dropout
             mask = torch.full((z.shape[0],), fill_value=i, device=z.device) < n_quantizers
-            quantized_out = quantized_out + z_q_i * mask[:, None, None]
-            residual = residual - z_q_i
+            quantized_out += z_q_i * mask[:, None, None]
+            residual -= z_q_i
 
             commit_loss_i = (commit_loss_i * mask).mean()
             codebook_loss_i = (codebook_loss_i * mask).mean()
@@ -157,8 +157,8 @@ class ResidualVQ(nn.Module):
             all_dists.append(dist_i)
             all_indices.append(indices_i)
 
-            quantized_out = quantized_out + z_q_i
-            residual = residual - z_q_i
+            quantized_out += z_q_i
+            residual -= z_q_i
 
         all_dists = torch.stack(all_dists)
         all_indices = torch.stack(all_indices)

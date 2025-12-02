@@ -1,11 +1,9 @@
 import functools
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
+from torch import nn
 from transformers import GPT2Config, LogitsProcessorList
-
-# from transformers import GPT2Config, GPT2PreTrainedModel, LogitsProcessorList
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 from transformers.utils.model_parallel_utils import assert_device_map, get_device_map
 
@@ -140,7 +138,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel):
         if input_ids.shape[1] != 1:
             text_inputs = input_ids[:, mel_len:]
             text_emb = self.embeddings(text_inputs)
-            text_emb = text_emb + self.text_pos_embedding(text_emb)
+            text_emb += self.text_pos_embedding(text_emb)
             if self.cached_mel_emb.shape[0] != text_emb.shape[0]:
                 mel_emb = self.cached_mel_emb.repeat_interleave(text_emb.shape[0] // self.cached_mel_emb.shape[0], 0)
             else:  # this outcome only occurs once per loop in most cases
@@ -148,9 +146,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel):
             emb = torch.cat([mel_emb, text_emb], dim=1)
         else:
             emb = self.embeddings(input_ids)
-            emb = emb + self.text_pos_embedding.get_fixed_embedding(
-                attention_mask.shape[1] - mel_len, attention_mask.device
-            )
+            emb += self.text_pos_embedding.get_fixed_embedding(attention_mask.shape[1] - mel_len, attention_mask.device)
         transformer_outputs = self.transformer(
             inputs_embeds=emb,
             past_key_values=past_key_values,
@@ -349,7 +345,7 @@ class UnifiedVoice(nn.Module):
         if condition_type == "perceiver":
             self.conditioning_encoder = ConditioningEncoder(1024, model_dim, num_attn_heads=heads)
             self.perceiver_encoder = PerceiverResampler(model_dim, dim_context=model_dim, num_latents=self.cond_num)
-        elif condition_type == "conformer_perceiver" or condition_type == "conformer_encoder":
+        elif condition_type in {"conformer_perceiver", "conformer_encoder"}:
             self.conditioning_encoder = ConformerEncoder(
                 input_size=1024,
                 output_size=condition_module["output_size"],
@@ -677,7 +673,7 @@ class UnifiedVoice(nn.Module):
         )
 
         mel_emb = self.mel_embedding(mel_codes)
-        mel_emb = mel_emb + self.mel_pos_embedding(mel_codes)
+        mel_emb += self.mel_pos_embedding(mel_codes)
 
         _text_logits, mel_logits = self.get_logits(
             conds, text_emb, self.text_head, mel_emb, self.mel_head, get_attns=False, return_latent=True

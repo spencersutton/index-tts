@@ -88,7 +88,7 @@ class CAMPPlus(nn.Module):
                 memory_efficient=memory_efficient,
             )
             self.xvector.add_module("block%d" % (i + 1), block)
-            channels = channels + num_layers * growth_rate
+            channels += num_layers * growth_rate
             self.xvector.add_module(
                 "transit%d" % (i + 1), TransitLayer(channels, channels // 2, bias=False, config_str=config_str)
             )

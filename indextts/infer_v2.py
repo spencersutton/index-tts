@@ -140,7 +140,11 @@ class IndexTTS2:
 
         if use_deepspeed:
             try:
-                import deepspeed
+                import importlib.util
+
+                if importlib.util.find_spec("deepspeed") is None:
+                    use_deepspeed = False
+                    print(">> DeepSpeed not found. Falling back to normal inference.")
             except (ImportError, OSError, CalledProcessError) as e:
                 use_deepspeed = False
                 print(f">> Failed to load DeepSpeed. Falling back to normal inference. Error: {e}")

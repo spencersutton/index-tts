@@ -6,7 +6,6 @@
 
 import torch
 from torch import nn
-from torch.nn.utils import remove_weight_norm, weight_norm
 from torchaudio.functional.functional import _hz_to_mel, _mel_to_hz
 
 

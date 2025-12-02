@@ -64,7 +64,7 @@ dependencies = [
 webui = ["gradio>=5.45.0"]
 # To install the DeepSpeed support, use `uv sync --extra deepspeed` (or `--all-extras`).
 deepspeed = ["deepspeed>=0.17.1"]
-compile = []
+accelerate = ["flash-attn>=2.8.3"]
 
 [project.urls]
 Homepage = "https://github.com/index-tts/index-tts"
@@ -109,6 +109,9 @@ name = "pytorch-cuda"
 url = "https://download.pytorch.org/whl/cu128"
 # Only use this index when explicitly requested by `tool.uv.sources`.
 explicit = true
+
+[tool.uv.extra-build-dependencies]
+flash-attn = ["torch", "numpy"]
 
 [tool.ruff]
 line-length = 120

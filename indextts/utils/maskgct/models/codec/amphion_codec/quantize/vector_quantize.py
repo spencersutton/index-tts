@@ -281,7 +281,6 @@ class VectorQuantize(nn.Module):
         if self.input_dim != self.codebook_dim:
             self.in_project = WNConv1d(self.input_dim, self.codebook_dim, kernel_size=1)
             self.out_project = WNConv1d(self.codebook_dim, self.input_dim, kernel_size=1)
-
         else:
             self.in_project = nn.Identity()
             self.out_project = nn.Identity()

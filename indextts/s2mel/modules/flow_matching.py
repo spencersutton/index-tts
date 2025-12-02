@@ -1,4 +1,5 @@
 from abc import ABC
+from typing import cast
 
 import torch
 from tqdm import tqdm
@@ -187,6 +188,8 @@ class BASECFM(torch.nn.Module, ABC):
 
 
 class CFM(BASECFM):
+    estimator: DiT
+
     def __init__(self, args) -> None:
         super().__init__(args)
         if args.dit_type == "DiT":
@@ -203,8 +206,11 @@ class CFM(BASECFM):
         """
         if torch.distributed.is_initialized():
             torch._inductor.config.reorder_for_compute_comm_overlap = True
-        self.estimator = torch.compile(
-            self.estimator,
-            fullgraph=True,
-            dynamic=True,
+        self.estimator = cast(
+            DiT,
+            torch.compile(
+                self.estimator,
+                fullgraph=True,
+                dynamic=True,
+            ),
         )

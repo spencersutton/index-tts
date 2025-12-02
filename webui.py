@@ -215,25 +215,24 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
 
         experimental_checkbox = gr.Checkbox(label=i18n("显示实验功能"), value=False)
 
-        with gr.Accordion(i18n("功能设置")):
+        with gr.Accordion(i18n("功能设置")), gr.Row():
             # 情感控制选项部分
-            with gr.Row():
-                emo_control_method = gr.Radio(
-                    choices=EMO_CHOICES_OFFICIAL,
-                    type="index",
-                    value=EMO_CHOICES_OFFICIAL[0],
-                    label=i18n("情感控制方式"),
-                )
-                # we MUST have an extra, INVISIBLE list of *all* emotion control
-                # methods so that gr.Dataset() can fetch ALL control mode labels!
-                # otherwise, the gr.Dataset()'s experimental labels would be empty!
-                emo_control_method_all = gr.Radio(
-                    choices=EMO_CHOICES_ALL,
-                    type="index",
-                    value=EMO_CHOICES_ALL[0],
-                    label=i18n("情感控制方式"),
-                    visible=False,
-                )  # do not render
+            emo_control_method = gr.Radio(
+                choices=EMO_CHOICES_OFFICIAL,
+                type="index",
+                value=EMO_CHOICES_OFFICIAL[0],
+                label=i18n("情感控制方式"),
+            )
+            # we MUST have an extra, INVISIBLE list of *all* emotion control
+            # methods so that gr.Dataset() can fetch ALL control mode labels!
+            # otherwise, the gr.Dataset()'s experimental labels would be empty!
+            emo_control_method_all = gr.Radio(
+                choices=EMO_CHOICES_ALL,
+                type="index",
+                value=EMO_CHOICES_ALL[0],
+                label=i18n("情感控制方式"),
+                visible=False,
+            )  # do not render
         # 情感参考音频部分
         with gr.Group(visible=False) as emotion_reference_group, gr.Row():
             emo_upload = gr.Audio(label=i18n("上传情感参考音频"), type="filepath")

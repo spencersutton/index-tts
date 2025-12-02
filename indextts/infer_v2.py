@@ -14,9 +14,8 @@ import torch
 import torch.nn.functional as F
 import torchaudio
 from huggingface_hub import hf_hub_download
-from modelscope import AutoModelForCausalLM
 from omegaconf import OmegaConf
-from transformers import AutoTokenizer, SeamlessM4TFeatureExtractor
+from transformers import AutoModelForCausalLM, AutoTokenizer, SeamlessM4TFeatureExtractor
 from transformers.utils.generic import ModelOutput
 
 from indextts.gpt.model_v2 import UnifiedVoice

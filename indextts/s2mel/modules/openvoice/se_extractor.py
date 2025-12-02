@@ -40,11 +40,6 @@ def split_audio_whisper(audio_path, audio_name, target_dir="processed"):
 
         end_time = w.end
 
-        # calculate confidence
-        if len(w.words) > 0:
-            confidence = sum([s.probability for s in w.words]) / len(w.words)
-        else:
-            confidence = 0.0
         # clean text
         text = w.text.replace("...", "")
 
@@ -128,7 +123,6 @@ def hash_numpy_array(audio_path):
 
 
 def get_se(audio_path, vc_model, target_dir="processed", vad=True):
-    device = vc_model.device
     version = vc_model.version
     print("OpenVoice version:", version)
 

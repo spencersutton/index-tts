@@ -615,7 +615,6 @@ class FApredictors(nn.Module):
         prosody_latent = quantized[0]
         content_latent = quantized[1]
         timbre_latent = quantized[2]
-        residual_latent = quantized[3]
         content_pred = self.phone_predictor(content_latent)[0]
 
         if self.norm_f0:

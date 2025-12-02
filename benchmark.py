@@ -9,7 +9,7 @@ Usage:
     python benchmark.py -v <voice_file> [options]
 
 Examples:
-    # Basic benchmark with 10 runs
+    # Basic benchmark with 5 runs
     python benchmark.py -v outputs/mizora.ogg
 
     # Benchmark with custom text and warmup
@@ -106,8 +106,8 @@ def run_benchmark(
     text: str = "This is a benchmark test for IndexTTS inference performance.",
     config: str = "checkpoints/config.yaml",
     model_dir: str = "checkpoints",
-    num_runs: int = 10,
-    warmup_runs: int = 2,
+    num_runs: int = 5,
+    warmup_runs: int = 1,
     output_path: str | None = None,
     fp16: bool = False,
     device: str | None = None,
@@ -280,15 +280,15 @@ Examples:
         "-n",
         "--runs",
         type=int,
-        default=10,
-        help="Number of benchmark runs (default: 10)",
+        default=5,
+        help="Number of benchmark runs (default: 5)",
     )
     parser.add_argument(
         "-w",
         "--warmup",
         type=int,
-        default=2,
-        help="Number of warmup runs before benchmarking (default: 2)",
+        default=1,
+        help="Number of warmup runs before benchmarking (default: 1)",
     )
     parser.add_argument(
         "-o",

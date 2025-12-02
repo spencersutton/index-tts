@@ -60,7 +60,9 @@ class ResidualVQ(nn.Module):
             ]
         )
 
-    def forward(self, z, n_quantizers: int | None = None):
+    def forward(
+        self, z: torch.Tensor, n_quantizers: int | None = None
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Parameters
         ----------

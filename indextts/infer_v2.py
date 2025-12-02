@@ -734,7 +734,6 @@ class IndexTTS2:
                 wav = torch.clamp(32767 * wav, -32767.0, 32767.0)
                 if verbose:
                     print(f"wav shape: {wav.shape}", "min:", wav.min(), "max:", wav.max())
-                # wavs.append(wav[:, :-512])
                 wavs.append(wav.cpu())  # to cpu before saving
                 if stream_return:
                     yield wav.cpu()

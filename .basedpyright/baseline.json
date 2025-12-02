@@ -8774,16 +8774,6 @@
                 }
             }
         ],
-        "./indextts/s2mel/modules/wavenet.py": [
-            {
-                "code": "reportUnusedImport",
-                "range": {
-                    "startColumn": 35,
-                    "endColumn": 36,
-                    "lineCount": 1
-                }
-            }
-        ],
         "./indextts/utils/arch_util.py": [
             {
                 "code": "reportIncompatibleMethodOverride",

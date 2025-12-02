@@ -2,8 +2,7 @@ import math
 
 import torch
 from torch import nn
-
-from indextts.utils.xtransformers import RelativePositionBias
+from x_transformers.x_transformers import RelativePositionBias
 
 
 def zero_module(module: nn.Module) -> nn.Module:

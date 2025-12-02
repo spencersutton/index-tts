@@ -76,10 +76,7 @@ with Path("examples/cases.jsonl").open(encoding="utf-8") as f:
         if not line:
             continue
         example = json.loads(line)
-        if example.get("emo_audio", None):
-            emo_audio_path = Path("examples") / example["emo_audio"]
-        else:
-            emo_audio_path = None
+        emo_audio_path = str(Path("examples") / example["emo_audio"]) if example.get("emo_audio", None) else None
 
         example_cases.append([
             str(Path("examples") / example.get("prompt_audio", "sample_prompt.wav")),

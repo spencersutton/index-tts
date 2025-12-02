@@ -11,10 +11,7 @@ def load_language_list(language):
 
 
 def scan_language_list():
-    language_list = []
-    for path in I18N_JSON_DIR.iterdir():
-        if path.is_file() and path.name.endswith(".json"):
-            language_list.append(path.name.split(".")[0])
+    language_list = [p.stem for p in I18N_JSON_DIR.glob("*.json")]
     return language_list
 
 

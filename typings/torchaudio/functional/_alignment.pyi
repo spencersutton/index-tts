@@ -55,6 +55,7 @@ def forced_align(
     Note:
         The current version only supports ``batch_size==1``.
     """
+
 @dataclass
 class TokenSpan:
     """TokenSpan()

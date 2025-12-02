@@ -42,10 +42,7 @@ class WN(torch.nn.Module):
             self.in_layers.append(in_layer)
 
             # last one is not necessary
-            if i < n_layers - 1:
-                res_skip_channels = 2 * hidden_channels
-            else:
-                res_skip_channels = hidden_channels
+            res_skip_channels = 2 * hidden_channels if i < n_layers - 1 else hidden_channels
 
             res_skip_layer = conv1d_type(hidden_channels, res_skip_channels, 1, norm="weight_norm", causal=causal)
             self.res_skip_layers.append(res_skip_layer)

@@ -193,10 +193,8 @@ class ConditioningEncoder(nn.Module):
         self, spec_dim, embedding_dim, attn_blocks=6, num_attn_heads=4, do_checkpointing=False, mean=False
     ) -> None:
         super().__init__()
-        attn = []
         self.init = nn.Conv1d(spec_dim, embedding_dim, kernel_size=1)
-        for _ in range(attn_blocks):
-            attn.append(AttentionBlock(embedding_dim, num_attn_heads))
+        attn = [AttentionBlock(embedding_dim, num_attn_heads) for a in range(attn_blocks)]
         self.attn = nn.Sequential(*attn)
         self.dim = embedding_dim
         self.do_checkpointing = do_checkpointing
@@ -458,10 +456,7 @@ class UnifiedVoice(nn.Module):
             accel_gpt = GPT2AccelModel(gpt_config)
             accel_gpt.load_state_dict(self.gpt.state_dict(), strict=False)
 
-            if half:
-                accel_gpt = accel_gpt.half().cuda()
-            else:
-                accel_gpt = accel_gpt.cuda()
+            accel_gpt = accel_gpt.half().cuda() if half else accel_gpt.cuda()
             accel_gpt.eval()
 
             lm_head_with_norm = nn.Sequential(self.final_norm, self.mel_head)

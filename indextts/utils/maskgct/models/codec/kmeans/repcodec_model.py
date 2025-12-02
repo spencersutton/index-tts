@@ -10,7 +10,7 @@ from indextts.utils.maskgct.models.codec.amphion_codec.quantize import ResidualV
 from indextts.utils.maskgct.models.codec.kmeans.vocos import VocosBackbone
 
 
-def init_weights(m) -> None:
+def init_weights(m: nn.Module) -> None:
     if isinstance(m, nn.Conv1d):
         nn.init.trunc_normal_(m.weight, std=0.02)
         nn.init.constant_(m.bias, 0)

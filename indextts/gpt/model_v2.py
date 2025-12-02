@@ -3,9 +3,7 @@ import functools
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from transformers import GPT2Config, LogitsProcessorList
-from indextts.gpt.transformers_gpt2 import GPT2PreTrainedModel
 
 # from transformers import GPT2Config, GPT2PreTrainedModel, LogitsProcessorList
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
@@ -13,6 +11,7 @@ from transformers.utils.model_parallel_utils import assert_device_map, get_devic
 
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.perceiver import PerceiverResampler
+from indextts.gpt.transformers_gpt2 import GPT2PreTrainedModel
 from indextts.utils.arch_util import AttentionBlock
 from indextts.utils.typical_sampling import TypicalLogitsWarper
 
@@ -26,7 +25,7 @@ class ResBlock(nn.Module):
     Basic residual convolutional block that uses GroupNorm.
     """
 
-    def __init__(self, chan):
+    def __init__(self, chan) -> None:
         super().__init__()
         self.net = nn.Sequential(
             nn.Conv1d(chan, chan, kernel_size=3, padding=1),
@@ -41,7 +40,7 @@ class ResBlock(nn.Module):
 
 
 class GPT2InferenceModel(GPT2PreTrainedModel):
-    def __init__(self, config, gpt, text_pos_emb, embeddings, norm, linear, kv_cache=False):
+    def __init__(self, config, gpt, text_pos_emb, embeddings, norm, linear, kv_cache=False) -> None:
         super().__init__(config)
         # Note: the argument named `text_pos_emb` here actually represents the mel position embedding
         self.transformer = gpt
@@ -56,7 +55,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel):
         self.device_map = None
         self.cached_mel_emb = None
 
-    def parallelize(self, device_map=None):
+    def parallelize(self, device_map=None) -> None:
         self.device_map = (
             get_device_map(len(self.transformer.h), range(max(1, torch.cuda.device_count())))
             if device_map is None
@@ -67,7 +66,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel):
         self.lm_head = self.lm_head.to(self.transformer.first_device)
         self.model_parallel = True
 
-    def deparallelize(self):
+    def deparallelize(self) -> None:
         self.transformer.deparallelize()
         self.transformer = self.transformer.to("cpu")
         self.lm_head = self.lm_head.to("cpu")
@@ -79,14 +78,14 @@ class GPT2InferenceModel(GPT2PreTrainedModel):
     def get_output_embeddings(self):
         return self.lm_head
 
-    def set_output_embeddings(self, new_embeddings):
+    def set_output_embeddings(self, new_embeddings) -> None:
         self.lm_head = new_embeddings
 
-    def store_mel_emb(self, mel_emb):
+    def store_mel_emb(self, mel_emb) -> None:
         self.cached_mel_emb = mel_emb
 
     def prepare_inputs_for_generation(self, input_ids, past_key_values=None, **kwargs):
-        token_type_ids = kwargs.get("token_type_ids", None)  # usually None
+        token_type_ids = kwargs.get("token_type_ids")  # usually None
         if not self.kv_cache:
             past_key_values = None
         # only last token for inputs_ids if past is defined in kwargs
@@ -95,8 +94,8 @@ class GPT2InferenceModel(GPT2PreTrainedModel):
             if token_type_ids is not None:
                 token_type_ids = token_type_ids[:, -1].unsqueeze(-1)
 
-        attention_mask = kwargs.get("attention_mask", None)
-        position_ids = kwargs.get("position_ids", None)
+        attention_mask = kwargs.get("attention_mask")
+        position_ids = kwargs.get("position_ids")
 
         if attention_mask is not None and position_ids is None:
             # create position_ids on the fly for batch generation
@@ -179,7 +178,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel):
         lm_logits = self.lm_head(hidden_states)
 
         if not return_dict:
-            return (lm_logits,) + transformer_outputs[1:]
+            return (lm_logits, *transformer_outputs[1:])
 
         return CausalLMOutputWithCrossAttentions(
             loss=None,
@@ -204,12 +203,12 @@ class GPT2InferenceModel(GPT2PreTrainedModel):
 
 
 class ConditioningEncoder(nn.Module):
-    def __init__(self, spec_dim, embedding_dim, attn_blocks=6, num_attn_heads=4, do_checkpointing=False, mean=False):
+    def __init__(
+        self, spec_dim, embedding_dim, attn_blocks=6, num_attn_heads=4, do_checkpointing=False, mean=False
+    ) -> None:
         super().__init__()
-        attn = []
         self.init = nn.Conv1d(spec_dim, embedding_dim, kernel_size=1)
-        for a in range(attn_blocks):
-            attn.append(AttentionBlock(embedding_dim, num_attn_heads))
+        attn = [AttentionBlock(embedding_dim, num_attn_heads) for a in range(attn_blocks)]
         self.attn = nn.Sequential(*attn)
         self.dim = embedding_dim
         self.do_checkpointing = do_checkpointing
@@ -226,7 +225,7 @@ class ConditioningEncoder(nn.Module):
 
 
 class LearnedPositionEmbeddings(nn.Module):
-    def __init__(self, seq_len, model_dim, init=0.02):
+    def __init__(self, seq_len, model_dim, init=0.02) -> None:
         super().__init__()
         self.emb = nn.Embedding(seq_len, model_dim)
         # Initializing this way is standard for GPT-2
@@ -272,7 +271,7 @@ def build_hf_gpt_transformer(layers, model_dim, heads, max_mel_seq_len, max_text
 
 
 class MelEncoder(nn.Module):
-    def __init__(self, channels, mel_channels=80, resblocks_per_reduction=2):
+    def __init__(self, channels, mel_channels=80, resblocks_per_reduction=2) -> None:
         super().__init__()
         self.channels = channels
         self.encoder = nn.Sequential(
@@ -320,7 +319,7 @@ class UnifiedVoice(nn.Module):
         condition_module=None,
         emo_condition_module=None,
         use_accel=False,
-    ):
+    ) -> None:
         """
         Args:
             layers: Number of layers in transformer stack.
@@ -444,7 +443,7 @@ class UnifiedVoice(nn.Module):
         self.use_accel = use_accel
         self.accel_engine = None  # Will be initialized in post_init_gpt2_config
 
-    def post_init_gpt2_config(self, use_deepspeed=False, kv_cache=False, half=False):
+    def post_init_gpt2_config(self, use_deepspeed=False, kv_cache=False, half=False) -> None:
         seq_length = self.max_mel_tokens + self.max_text_tokens + 2
         gpt_config = GPT2Config(
             vocab_size=self.number_mel_codes,
@@ -466,16 +465,13 @@ class UnifiedVoice(nn.Module):
                     "flash_attn is required for acceleration but not installed. Please install from https://github.com/Dao-AILab/flash-attention/releases/"
                 )
 
-            from indextts.accel import GPT2AccelModel, AccelInferenceEngine
+            from indextts.accel import AccelInferenceEngine, GPT2AccelModel
 
             # Create accel model
             accel_gpt = GPT2AccelModel(gpt_config)
             accel_gpt.load_state_dict(self.gpt.state_dict(), strict=False)
 
-            if half:
-                accel_gpt = accel_gpt.half().cuda()
-            else:
-                accel_gpt = accel_gpt.cuda()
+            accel_gpt = accel_gpt.half().cuda() if half else accel_gpt.cuda()
             accel_gpt.eval()
 
             lm_head_with_norm = nn.Sequential(self.final_norm, self.mel_head)
@@ -684,18 +680,18 @@ class UnifiedVoice(nn.Module):
             ),
             1,
         )
-        text_inputs, text_targets = self.build_aligned_inputs_and_targets(
+        text_inputs, _text_targets = self.build_aligned_inputs_and_targets(
             text_inputs, self.start_text_token, self.stop_text_token
         )
         text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs)
-        mel_codes, mel_targets = self.build_aligned_inputs_and_targets(
+        mel_codes, _mel_targets = self.build_aligned_inputs_and_targets(
             mel_codes, self.start_mel_token, self.stop_mel_token
         )
 
         mel_emb = self.mel_embedding(mel_codes)
         mel_emb = mel_emb + self.mel_pos_embedding(mel_codes)
 
-        text_logits, mel_logits = self.get_logits(
+        _text_logits, mel_logits = self.get_logits(
             conds, text_emb, self.text_head, mel_emb, self.mel_head, get_attns=False, return_latent=True
         )
         return mel_logits[

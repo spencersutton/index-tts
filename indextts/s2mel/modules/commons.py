@@ -1,10 +1,12 @@
+import argparse
 import math
+from collections import UserDict
+
 import numpy as np
 import torch
+from munch import Munch
 from torch import nn
 from torch.nn import functional as F
-from munch import Munch
-import argparse
 
 
 def str2bool(v):
@@ -18,13 +20,13 @@ def str2bool(v):
         raise argparse.ArgumentTypeError("Boolean value expected.")
 
 
-class AttrDict(dict):
-    def __init__(self, *args, **kwargs):
-        super(AttrDict, self).__init__(*args, **kwargs)
+class AttrDict(UserDict):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
         self.__dict__ = self
 
 
-def init_weights(m, mean=0.0, std=0.01):
+def init_weights(m, mean=0.0, std=0.01) -> None:
     classname = m.__class__.__name__
     if classname.find("Conv") != -1:
         m.weight.data.normal_(mean, std)
@@ -83,7 +85,7 @@ def slice_segments_audio(x, ids_str, segment_size=4):
 
 
 def rand_slice_segments(x, x_lengths=None, segment_size=4):
-    b, d, t = x.size()
+    b, _d, t = x.size()
     if x_lengths is None:
         x_lengths = t
     ids_str_max = x_lengths - segment_size + 1
@@ -107,13 +109,13 @@ def get_timing_signal_1d(length, channels, min_timescale=1.0, max_timescale=1.0e
 
 
 def add_timing_signal_1d(x, min_timescale=1.0, max_timescale=1.0e4):
-    b, channels, length = x.size()
+    _b, channels, length = x.size()
     signal = get_timing_signal_1d(length, channels, min_timescale, max_timescale)
     return x + signal.to(dtype=x.dtype, device=x.device)
 
 
 def cat_timing_signal_1d(x, min_timescale=1.0, max_timescale=1.0e4, axis=1):
-    b, channels, length = x.size()
+    _b, channels, length = x.size()
     signal = get_timing_signal_1d(length, channels, min_timescale, max_timescale)
     return torch.cat([x, signal.to(dtype=x.dtype, device=x.device)], axis)
 
@@ -256,21 +258,18 @@ def modify_w2v_forward(self, output_layer=15):
 
         hidden_states = self.dropout(hidden_states)
 
-        if self.embed_positions is not None:
-            relative_position_embeddings = self.embed_positions(hidden_states)
-        else:
-            relative_position_embeddings = None
+        relative_position_embeddings = self.embed_positions(hidden_states) if self.embed_positions is not None else None
 
         deepspeed_zero3_is_enabled = False
 
         for i, layer in enumerate(self.layers):
             if output_hidden_states:
-                all_hidden_states = all_hidden_states + (hidden_states,)
+                all_hidden_states = (*all_hidden_states, hidden_states)
 
             # add LayerDrop (see https://arxiv.org/abs/1909.11556 for description)
             dropout_probability = torch.rand([])
 
-            skip_the_layer = True if self.training and (dropout_probability < self.config.layerdrop) else False
+            skip_the_layer = bool(self.training and dropout_probability < self.config.layerdrop)
             if not skip_the_layer or deepspeed_zero3_is_enabled:
                 # under deepspeed zero3 all gpus must run in sync
                 if self.gradient_checkpointing and self.training:
@@ -296,13 +295,13 @@ def modify_w2v_forward(self, output_layer=15):
                 layer_outputs = (None, None)
 
             if output_attentions:
-                all_self_attentions = all_self_attentions + (layer_outputs[1],)
+                all_self_attentions = (*all_self_attentions, layer_outputs[1])
 
             if i == output_layer - 1:
                 break
 
         if output_hidden_states:
-            all_hidden_states = all_hidden_states + (hidden_states,)
+            all_hidden_states = (*all_hidden_states, hidden_states)
 
         if not return_dict:
             return tuple(v for v in [hidden_states, all_hidden_states, all_self_attentions] if v is not None)
@@ -321,10 +320,11 @@ MATPLOTLIB_FLAG = False
 def plot_spectrogram_to_numpy(spectrogram):
     global MATPLOTLIB_FLAG
     if not MATPLOTLIB_FLAG:
-        import matplotlib
         import logging
 
-        matplotlib.use("Agg")
+        import matplotlib as mpl
+
+        mpl.use("Agg")
         MATPLOTLIB_FLAG = True
         mpl_logger = logging.getLogger("matplotlib")
         mpl_logger.setLevel(logging.WARNING)
@@ -340,7 +340,7 @@ def plot_spectrogram_to_numpy(spectrogram):
 
     fig.canvas.draw()
     data = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8, sep="")
-    data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+    data = data.reshape((*fig.canvas.get_width_height()[::-1], 3))
     plt.close()
     return data
 
@@ -369,8 +369,8 @@ def normalize_f0(f0_sequence):
 
 
 class MyModel(nn.Module):
-    def __init__(self, args, use_emovec=False, use_gpt_latent=False):
-        super(MyModel, self).__init__()
+    def __init__(self, args, use_emovec=False, use_gpt_latent=False) -> None:
+        super().__init__()
         from indextts.s2mel.modules.flow_matching import CFM
         from indextts.s2mel.modules.length_regulator import InterpolateRegulator
 
@@ -425,7 +425,7 @@ class MyModel(nn.Module):
         x = self.models["gpt_layer"](x)
         return x
 
-    def enable_torch_compile(self):
+    def enable_torch_compile(self) -> None:
         """Enable torch.compile optimization.
 
         This method applies torch.compile to the model for significant
@@ -548,7 +548,7 @@ def load_checkpoint(
             skipped_keys = set(params[key].keys()) - set(filtered_state_dict.keys())
             if skipped_keys:
                 print(f"Warning: Skipped loading some keys due to shape mismatch: {skipped_keys}")
-            print("%s loaded" % key)
+            print(f"{key} loaded")
             model[key].load_state_dict(filtered_state_dict, strict=False)
     _ = [model[key].eval() for key in model]
 
@@ -602,7 +602,7 @@ def load_checkpoint2(
             skipped_keys = set(params[key].keys()) - set(filtered_state_dict.keys())
             if skipped_keys:
                 print(f"Warning: Skipped loading some keys due to shape mismatch: {skipped_keys}")
-            print("%s loaded" % key)
+            print(f"{key} loaded")
             model.models[key].load_state_dict(filtered_state_dict, strict=False)
     model.eval()
 

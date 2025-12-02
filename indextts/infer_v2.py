@@ -249,9 +249,9 @@ class IndexTTS2:
         if self.use_torch_compile:
             print(">> Enabling torch.compile optimization")
             self.s2mel.enable_torch_compile()
-            # self.gpt = torch.compile(self.gpt)
+            self.gpt = torch.compile(self.gpt)
             # self.bigvgan = torch.compile(self.bigvgan)
-            # self.semantic_model = torch.compile(self.semantic_model)
+            self.semantic_model = torch.compile(self.semantic_model)
             print(">> torch.compile optimization enabled successfully")
 
         # 缓存参考音频：

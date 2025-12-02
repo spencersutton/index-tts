@@ -4,6 +4,8 @@ from typing import Any
 import torch
 from torch import nn
 
+from indextts.s2mel.modules.flow_matching import CFM
+
 
 @torch.jit.script
 def fused_add_tanh_sigmoid_multiply(
@@ -82,7 +84,9 @@ class MyModel(nn.Module):
         performance improvements during inference.
         """
         if "cfm" in self.models:
-            self.models["cfm"].enable_torch_compile()
+            cfm = self.models["cfm"]
+            assert isinstance(cfm, CFM)
+            cfm.enable_torch_compile()
 
 
 def load_checkpoint2(

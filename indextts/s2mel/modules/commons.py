@@ -80,8 +80,12 @@ class MyModel(nn.Module):
         This method applies torch.compile to the model for significant
         performance improvements during inference.
         """
+        from indextts.s2mel.modules.flow_matching import CFM
+
         if "cfm" in self.models:
-            self.models["cfm"].enable_torch_compile()
+            cfm = self.models["cfm"]
+            assert isinstance(cfm, CFM)
+            cfm.enable_torch_compile()
 
 
 def load_checkpoint2(

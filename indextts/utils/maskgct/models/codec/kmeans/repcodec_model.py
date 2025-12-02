@@ -10,7 +10,7 @@ from indextts.utils.maskgct.models.codec.amphion_codec.quantize import ResidualV
 from indextts.utils.maskgct.models.codec.kmeans.vocos import VocosBackbone
 
 
-def init_weights(m) -> None:
+def init_weights(m: nn.Module) -> None:
     if isinstance(m, nn.Conv1d):
         nn.init.trunc_normal_(m.weight, std=0.02)
         nn.init.constant_(m.bias, 0)
@@ -22,14 +22,14 @@ def init_weights(m) -> None:
 class RepCodec(nn.Module):
     def __init__(
         self,
-        codebook_size=8192,
-        hidden_size=1024,
-        codebook_dim=8,
-        vocos_dim=384,
-        vocos_intermediate_dim=2048,
-        vocos_num_layers=12,
-        num_quantizers=1,
-        downsample_scale=1,
+        codebook_size: int = 8192,
+        hidden_size: int = 1024,
+        codebook_dim: int = 8,
+        vocos_dim: int = 384,
+        vocos_intermediate_dim: int = 2048,
+        vocos_num_layers: int = 12,
+        num_quantizers: int = 1,
+        downsample_scale: int = 1,
         cfg=None,
     ) -> None:
         super().__init__()
@@ -94,7 +94,7 @@ class RepCodec(nn.Module):
 
         self.reset_parameters()
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         # downsample
         if self.downsample_scale is not None and self.downsample_scale > 1:
             x = x.transpose(1, 2)

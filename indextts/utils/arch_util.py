@@ -43,7 +43,7 @@ class QKVAttentionLegacy(nn.Module):
     A module which performs QKV attention. Matches legacy QKVAttention + input/output heads shaping
     """
 
-    def __init__(self, n_heads):
+    def __init__(self, n_heads) -> None:
         super().__init__()
         self.n_heads = n_heads
 
@@ -89,7 +89,7 @@ class AttentionBlock(nn.Module):
         num_head_channels=-1,
         do_checkpoint=True,
         relative_pos_embeddings=False,
-    ):
+    ) -> None:
         super().__init__()
         self.channels = channels
         self.do_checkpoint = do_checkpoint

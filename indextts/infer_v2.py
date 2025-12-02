@@ -5,35 +5,33 @@ os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 import json
 import re
 import time
+import warnings
+
 import librosa
 import torch
 import torchaudio
 from torch.nn.utils.rnn import pad_sequence
 
-import warnings
-
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
+import random
+
+import safetensors
+import torch.nn.functional as F
+from huggingface_hub import hf_hub_download
+from modelscope import AutoModelForCausalLM
 from omegaconf import OmegaConf
+from transformers import AutoTokenizer, SeamlessM4TFeatureExtractor
 
 from indextts.gpt.model_v2 import UnifiedVoice
-from indextts.utils.maskgct_utils import build_semantic_model, build_semantic_codec
-from indextts.utils.checkpoint import load_checkpoint
-from indextts.utils.front import TextNormalizer, TextTokenizer
-
-from indextts.s2mel.modules.commons import load_checkpoint2, MyModel
+from indextts.s2mel.modules.audio import mel_spectrogram
 from indextts.s2mel.modules.bigvgan import bigvgan
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
-from indextts.s2mel.modules.audio import mel_spectrogram
-
-from transformers import AutoTokenizer
-from modelscope import AutoModelForCausalLM
-from huggingface_hub import hf_hub_download
-import safetensors
-from transformers import SeamlessM4TFeatureExtractor
-import random
-import torch.nn.functional as F
+from indextts.s2mel.modules.commons import MyModel, load_checkpoint2
+from indextts.utils.checkpoint import load_checkpoint
+from indextts.utils.front import TextNormalizer, TextTokenizer
+from indextts.utils.maskgct_utils import build_semantic_codec, build_semantic_model
 
 
 class IndexTTS2:
@@ -47,7 +45,7 @@ class IndexTTS2:
         use_deepspeed=False,
         use_accel=False,
         use_torch_compile=False,
-    ):
+    ) -> None:
         """
         Args:
             cfg_path (str): path to the config file.
@@ -134,7 +132,7 @@ class IndexTTS2:
         safetensors.torch.load_model(semantic_codec, semantic_code_ckpt)
         self.semantic_codec = semantic_codec.to(self.device)
         self.semantic_codec.eval()
-        print(">> semantic_codec weights restored from: {}".format(semantic_code_ckpt))
+        print(f">> semantic_codec weights restored from: {semantic_code_ckpt}")
 
         s2mel_path = os.path.join(self.model_dir, self.cfg.s2mel_checkpoint)
         s2mel = MyModel(self.cfg.s2mel, use_gpt_latent=True)
@@ -235,7 +233,7 @@ class IndexTTS2:
         codes_list = []
         device = codes.device
         isfix = False
-        for i in range(0, codes.shape[0]):
+        for i in range(codes.shape[0]):
             code = codes[i]
             if not torch.any(code == self.stop_mel_token).item():
                 len_ = code.size(0)
@@ -317,7 +315,7 @@ class IndexTTS2:
 
         return wavs_list
 
-    def _set_gr_progress(self, value, desc):
+    def _set_gr_progress(self, value, desc) -> None:
         if self.gr_progress is not None:
             self.gr_progress(value, desc=desc)
 
@@ -390,25 +388,27 @@ class IndexTTS2:
             )
         else:
             try:
-                return list(
-                    self.infer_generator(
-                        spk_audio_prompt,
-                        text,
-                        output_path,
-                        emo_audio_prompt,
-                        emo_alpha,
-                        emo_vector,
-                        use_emo_text,
-                        emo_text,
-                        use_random,
-                        interval_silence,
-                        verbose,
-                        max_text_tokens_per_segment,
-                        stream_return,
-                        more_segment_before,
-                        **generation_kwargs,
+                return next(
+                    iter(
+                        self.infer_generator(
+                            spk_audio_prompt,
+                            text,
+                            output_path,
+                            emo_audio_prompt,
+                            emo_alpha,
+                            emo_vector,
+                            use_emo_text,
+                            emo_text,
+                            use_random,
+                            interval_silence,
+                            verbose,
+                            max_text_tokens_per_segment,
+                            stream_return,
+                            more_segment_before,
+                            **generation_kwargs,
+                        )
                     )
-                )[0]
+                )
             except IndexError:
                 return None
 
@@ -770,7 +770,7 @@ def find_most_similar_cosine(query_vector, matrix):
 
 
 class QwenEmotion:
-    def __init__(self, model_dir):
+    def __init__(self, model_dir) -> None:
         self.model_dir = model_dir
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_dir)
         self.model = AutoModelForCausalLM.from_pretrained(

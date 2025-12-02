@@ -75,7 +75,7 @@ class SincConv(nn.Module):
         sample_rate=16000,
         min_low_hz=50,
         min_band_hz=50,
-    ):
+    ) -> None:
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -132,7 +132,7 @@ class SincConv(nn.Module):
             pass
 
         else:
-            raise ValueError("Padding must be 'same', 'valid' or 'causal'. Got %s." % (self.padding))
+            raise ValueError(f"Padding must be 'same', 'valid' or 'causal'. Got {self.padding}.")
 
         sinc_filters = self._get_sinc_filters()
 
@@ -164,7 +164,7 @@ class SincConv(nn.Module):
 
         # Kernel size must be odd
         if self.kernel_size % 2 == 0:
-            raise ValueError("The field kernel size must be an odd number. Got %s." % (self.kernel_size))
+            raise ValueError(f"The field kernel size must be an odd number. Got {self.kernel_size}.")
         return in_channels
 
     def _get_sinc_filters(self):
@@ -206,7 +206,7 @@ class SincConv(nn.Module):
 
         return filters
 
-    def _init_sinc_conv(self):
+    def _init_sinc_conv(self) -> None:
         """Initializes the parameters of the sinc_conv layer."""
 
         # Initialize filterbanks such that they are equally spaced in Mel scale
@@ -229,7 +229,7 @@ class SincConv(nn.Module):
         self.band_hz_ = nn.Parameter(self.band_hz_)
 
         # Hamming window
-        n_lin = torch.linspace(0, (self.kernel_size / 2) - 1, steps=int((self.kernel_size / 2)))
+        n_lin = torch.linspace(0, (self.kernel_size / 2) - 1, steps=int(self.kernel_size / 2))
         self.window_ = 0.54 - 0.46 * torch.cos(2 * math.pi * n_lin / self.kernel_size)
 
         # Time axis  (only half is needed due to symmetry)
@@ -343,7 +343,7 @@ class Conv1d(nn.Module):
         weight_norm=False,
         conv_init=None,
         default_padding=0,
-    ):
+    ) -> None:
         super().__init__()
         self.kernel_size = kernel_size
         self.stride = stride
@@ -471,11 +471,11 @@ class Conv1d(nn.Module):
 
         # Kernel size must be odd
         if not self.padding == "valid" and self.kernel_size % 2 == 0:
-            raise ValueError("The field kernel size must be an odd number. Got %s." % (self.kernel_size))
+            raise ValueError(f"The field kernel size must be an odd number. Got {self.kernel_size}.")
 
         return in_channels
 
-    def remove_weight_norm(self):
+    def remove_weight_norm(self) -> None:
         """Removes weight normalization at inference if used during training."""
         self.conv = nn.utils.remove_weight_norm(self.conv)
 

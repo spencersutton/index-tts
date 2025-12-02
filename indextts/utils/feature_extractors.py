@@ -1,6 +1,7 @@
 import torch
 import torchaudio
 from torch import nn
+
 from indextts.utils.common import safe_log
 
 
@@ -33,7 +34,7 @@ class MelSpectrogramFeatures(FeatureExtractor):
         mel_fmax=None,
         normalize=False,
         padding="center",
-    ):
+    ) -> None:
         super().__init__()
         if padding not in ["center", "same"]:
             raise ValueError("Padding must be 'center' or 'same'.")

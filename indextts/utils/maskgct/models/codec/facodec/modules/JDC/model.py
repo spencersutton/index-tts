@@ -21,7 +21,7 @@ class JDCNet(nn.Module):
     Joint Detection and Classification Network model for singing voice melody.
     """
 
-    def __init__(self, num_class=722, seq_len=31, leaky_relu_slope=0.01):
+    def __init__(self, num_class=722, seq_len=31, leaky_relu_slope=0.01) -> None:
         super().__init__()
         self.num_class = num_class
 
@@ -144,14 +144,14 @@ class JDCNet(nn.Module):
         return torch.abs(classifier_out.squeeze(-1)), GAN_feature, poolblock_out
 
     @staticmethod
-    def init_weights(m):
+    def init_weights(m) -> None:
         if isinstance(m, nn.Linear):
             nn.init.kaiming_uniform_(m.weight)
             if m.bias is not None:
                 nn.init.constant_(m.bias, 0)
         elif isinstance(m, nn.Conv2d):
             nn.init.xavier_normal_(m.weight)
-        elif isinstance(m, nn.LSTM) or isinstance(m, nn.LSTMCell):
+        elif isinstance(m, (nn.LSTM, nn.LSTMCell)):
             for p in m.parameters():
                 if p.data is None:
                     continue
@@ -163,7 +163,7 @@ class JDCNet(nn.Module):
 
 
 class ResBlock(nn.Module):
-    def __init__(self, in_channels: int, out_channels: int, leaky_relu_slope=0.01):
+    def __init__(self, in_channels: int, out_channels: int, leaky_relu_slope=0.01) -> None:
         super().__init__()
         self.downsample = in_channels != out_channels
 
@@ -195,8 +195,5 @@ class ResBlock(nn.Module):
 
     def forward(self, x):
         x = self.pre_conv(x)
-        if self.downsample:
-            x = self.conv(x) + self.conv1by1(x)
-        else:
-            x = self.conv(x) + x
+        x = self.conv(x) + self.conv1by1(x) if self.downsample else self.conv(x) + x
         return x

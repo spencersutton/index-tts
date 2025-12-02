@@ -7,7 +7,7 @@ from .attention import Attention
 
 
 class GPT2AccelAttention(nn.Module):
-    def __init__(self, config, layer_idx=None):
+    def __init__(self, config, layer_idx=None) -> None:
         super().__init__()
         self.config = config
         self.layer_idx = layer_idx
@@ -103,24 +103,24 @@ class GPT2AccelAttention(nn.Module):
         return outputs
 
     def _split_heads(self, tensor, num_heads, head_dim):
-        new_shape = tensor.size()[:-1] + (num_heads, head_dim)
+        new_shape = (*tensor.size()[:-1], num_heads, head_dim)
         tensor = tensor.view(new_shape)
         return tensor.permute(0, 2, 1, 3)  # (batch, head, seq_length, head_features)
 
     def _merge_heads(self, tensor, num_heads, head_dim):
         tensor = tensor.permute(0, 2, 1, 3).contiguous()
-        new_shape = tensor.size()[:-2] + (num_heads * head_dim,)
+        new_shape = (*tensor.size()[:-2], num_heads * head_dim)
         return tensor.view(new_shape)
 
 
 class GPT2AccelBlock(GPT2Block):
-    def __init__(self, config, layer_idx=None):
+    def __init__(self, config, layer_idx=None) -> None:
         super().__init__(config, layer_idx)
         self.attn = GPT2AccelAttention(config, layer_idx)
 
 
 class GPT2AccelModel(GPT2Model):
-    def __init__(self, config):
+    def __init__(self, config) -> None:
         super().__init__(config)
         self.h = nn.ModuleList([GPT2AccelBlock(config, layer_idx=i) for i in range(config.num_hidden_layers)])
 

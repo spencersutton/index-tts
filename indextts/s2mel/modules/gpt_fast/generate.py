@@ -7,14 +7,13 @@ import itertools
 import sys
 import time
 from pathlib import Path
-from typing import Optional, Tuple
 
 import torch
 import torch._dynamo.config
 import torch._inductor.config
 
 
-def device_sync(device):
+def device_sync(device) -> None:
     if "cuda" in device:
         torch.cuda.synchronize(device)
     elif ("cpu" in device) or ("mps" in device):
@@ -44,7 +43,7 @@ def multinomial_sample_one_no_sync(probs_sort):  # Does multinomial sampling wit
     return torch.argmax(probs_sort / q, dim=-1, keepdim=True).to(dtype=torch.int)
 
 
-def logits_to_probs(logits, temperature: float = 1.0, top_k: Optional[int] = None):
+def logits_to_probs(logits, temperature: float = 1.0, top_k: int | None = None):
     logits = logits / max(temperature, 1e-5)
 
     if top_k is not None:
@@ -55,7 +54,7 @@ def logits_to_probs(logits, temperature: float = 1.0, top_k: Optional[int] = Non
     return probs
 
 
-def sample(logits, temperature: float = 1.0, top_k: Optional[int] = None):
+def sample(logits, temperature: float = 1.0, top_k: int | None = None):
     probs = logits_to_probs(logits[0, -1], temperature, top_k)
     idx_next = multinomial_sample_one_no_sync(probs)
     return idx_next, probs
@@ -69,7 +68,7 @@ def prefill(model: Transformer, x: torch.Tensor, input_pos: torch.Tensor, **samp
 
 def decode_one_token(
     model: Transformer, x: torch.Tensor, input_pos: torch.Tensor, **sampling_kwargs
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     # input_pos: [B, 1]
     assert input_pos.shape[-1] == 1
     logits = model(x, input_pos)
@@ -164,7 +163,7 @@ def generate(
     *,
     interactive: bool,
     draft_model: Transformer,
-    speculate_k: Optional[int] = 8,
+    speculate_k: int | None = 8,
     callback=lambda x: x,
     **sampling_kwargs,
 ) -> torch.Tensor:
@@ -176,10 +175,7 @@ def generate(
     # create an empty tensor of the expected final shape and fill in the current tokens
     T = prompt.size(0)
     T_new = T + max_new_tokens
-    if interactive:
-        max_seq_length = 350
-    else:
-        max_seq_length = min(T_new, model.config.block_size)
+    max_seq_length = 350 if interactive else min(T_new, model.config.block_size)
 
     device, dtype = prompt.device, prompt.dtype
     max_seq_length = max_seq_length + speculate_k + 1 if is_speculative else max_seq_length
@@ -229,7 +225,7 @@ def generate(
 def encode_tokens(tokenizer, string, bos=True, device=default_device):
     tokens = tokenizer.encode(string)
     if bos:
-        tokens = [tokenizer.bos_id()] + tokens
+        tokens = [tokenizer.bos_id(), *tokens]
     return torch.tensor(tokens, dtype=torch.int, device=device)
 
 
@@ -291,8 +287,8 @@ def main(
     checkpoint_path: Path = Path("checkpoints/meta-Transformer/Transformer-2-7b-chat-hf/model.pth"),
     compile: bool = True,
     compile_prefill: bool = False,
-    profile: Optional[Path] = None,
-    draft_checkpoint_path: Optional[Path] = None,
+    profile: Path | None = None,
+    draft_checkpoint_path: Path | None = None,
     speculate_k: int = 5,
     device=default_device,
 ) -> None:
@@ -307,11 +303,10 @@ def main(
 
     rank = maybe_init_dist()
     use_tp = rank is not None
-    if use_tp:
-        if rank != 0:
-            # only print on rank 0
-            def print(*args, **kwargs):
-                return None
+    if use_tp and rank != 0:
+        # only print on rank 0
+        def print(*args, **kwargs) -> None:
+            return None
 
     print(f"Using device={device}")
     precision = torch.bfloat16
@@ -322,10 +317,7 @@ def main(
     t0 = time.time()
     model = _load_model(checkpoint_path, device, precision, use_tp)
 
-    if is_speculative:
-        draft_model = _load_model(draft_checkpoint_path, device, precision, use_tp)
-    else:
-        draft_model = None
+    draft_model = _load_model(draft_checkpoint_path, device, precision, use_tp) if is_speculative else None
 
     device_sync(device=device)  # MKG
     print(f"Time to load model: {time.time() - t0:.02f} seconds")
@@ -371,11 +363,11 @@ def main(
             period_id = tokenizer.encode(".")[0]
             done_generating = False
 
-            def callback(x):
+            def callback(x) -> None:
                 nonlocal done_generating
                 if done_generating:
                     return
-                buffer.append(tokenizer.decode([period_id] + x.tolist())[1:])
+                buffer.append(tokenizer.decode([period_id, *x.tolist()])[1:])
                 if x.item() == tokenizer.eos_id():
                     done_generating = True
                 if len(buffer) == 4 or done_generating:

@@ -2,16 +2,14 @@ import os
 
 os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 import time
+import warnings
 from subprocess import CalledProcessError
-from typing import Dict, List
 
 import torch
 import torchaudio
-from torch.nn.utils.rnn import pad_sequence
 from omegaconf import OmegaConf
+from torch.nn.utils.rnn import pad_sequence
 from tqdm import tqdm
-
-import warnings
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -20,7 +18,6 @@ from indextts.BigVGAN.models import BigVGAN as Generator
 from indextts.gpt.model import UnifiedVoice
 from indextts.utils.checkpoint import load_checkpoint
 from indextts.utils.feature_extractors import MelSpectrogramFeatures
-
 from indextts.utils.front import TextNormalizer, TextTokenizer
 
 
@@ -32,7 +29,7 @@ class IndexTTS:
         use_fp16=True,
         device=None,
         use_cuda_kernel=None,
-    ):
+    ) -> None:
         """
         Args:
             cfg_path (str): path to the config file.
@@ -131,7 +128,7 @@ class IndexTTS:
         codes_list = []
         device = codes.device
         isfix = False
-        for i in range(0, codes.shape[0]):
+        for i in range(codes.shape[0]):
             code = codes[i]
             if not torch.any(code == self.stop_mel_token).item():
                 len_ = code.size(0)
@@ -172,18 +169,18 @@ class IndexTTS:
         code_lens = torch.tensor(code_lens, dtype=torch.long, device=device)
         return codes, code_lens
 
-    def bucket_segments(self, segments, bucket_max_size=4) -> List[List[Dict]]:
+    def bucket_segments(self, segments, bucket_max_size=4) -> list[list[dict]]:
         """
         Segment data bucketing.
         if ``bucket_max_size=1``, return all segments in one bucket.
         """
-        outputs: List[Dict] = []
+        outputs: list[dict] = []
         for idx, sent in enumerate(segments):
             outputs.append({"idx": idx, "sent": sent, "len": len(sent)})
 
         if len(outputs) > bucket_max_size:
             # split segments into buckets by segment length
-            buckets: List[List[Dict]] = []
+            buckets: list[list[dict]] = []
             factor = 1.5
             last_bucket = None
             last_bucket_sent_len_median = 0
@@ -209,8 +206,8 @@ class IndexTTS:
                     last_bucket_sent_len_median = last_bucket[mid]["len"]
             last_bucket = None
             # merge all buckets with size 1
-            out_buckets: List[List[Dict]] = []
-            only_ones: List[Dict] = []
+            out_buckets: list[list[dict]] = []
+            only_ones: list[dict] = []
             for b in buckets:
                 if len(b) == 1:
                     only_ones.append(b[0])
@@ -232,7 +229,7 @@ class IndexTTS:
             return out_buckets
         return [outputs]
 
-    def pad_tokens_cat(self, tokens: List[torch.Tensor]) -> torch.Tensor:
+    def pad_tokens_cat(self, tokens: list[torch.Tensor]) -> torch.Tensor:
         if self.model_version and self.model_version >= 1.5:
             # 1.5版本以上，直接使用stop_text_token 右侧填充，填充到最大长度
             # [1, N] -> [N,]
@@ -253,7 +250,7 @@ class IndexTTS:
         tokens = torch.cat(outputs, dim=0)
         return tokens
 
-    def torch_empty_cache(self):
+    def torch_empty_cache(self) -> None:
         try:
             if "cuda" in str(self.device):
                 torch.cuda.empty_cache()
@@ -262,7 +259,7 @@ class IndexTTS:
         except Exception:
             pass
 
-    def _set_gr_progress(self, value, desc):
+    def _set_gr_progress(self, value, desc) -> None:
         if self.gr_progress is not None:
             self.gr_progress(value, desc=desc)
 
@@ -350,7 +347,7 @@ class IndexTTS:
         bigvgan_time = 0
 
         # text processing
-        all_text_tokens: List[List[torch.Tensor]] = []
+        all_text_tokens: list[list[torch.Tensor]] = []
         self._set_gr_progress(0.1, "text processing...")
         bucket_max_size = segments_bucket_max_size if self.device != "cpu" else 1
         all_segments = self.bucket_segments(segments, bucket_max_size=bucket_max_size)
@@ -365,7 +362,7 @@ class IndexTTS:
                 bucket_max_size,
             )
         for segments in all_segments:
-            temp_tokens: List[torch.Tensor] = []
+            temp_tokens: list[torch.Tensor] = []
             all_text_tokens.append(temp_tokens)
             for item in segments:
                 sent = item["sent"]
@@ -385,37 +382,33 @@ class IndexTTS:
         processed_num = 0
         for item_tokens in all_text_tokens:
             batch_num = len(item_tokens)
-            if batch_num > 1:
-                batch_text_tokens = self.pad_tokens_cat(item_tokens)
-            else:
-                batch_text_tokens = item_tokens[0]
+            batch_text_tokens = self.pad_tokens_cat(item_tokens) if batch_num > 1 else item_tokens[0]
             processed_num += batch_num
             # gpt speech
             self._set_gr_progress(
                 0.2 + 0.3 * processed_num / all_batch_num, f"gpt speech inference {processed_num}/{all_batch_num}..."
             )
             m_start_time = time.perf_counter()
-            with torch.no_grad():
-                with torch.amp.autocast(
-                    batch_text_tokens.device.type, enabled=self.dtype is not None, dtype=self.dtype
-                ):
-                    temp_codes = self.gpt.inference_speech(
-                        auto_conditioning,
-                        batch_text_tokens,
-                        cond_mel_lengths=cond_mel_lengths,
-                        # text_lengths=text_len,
-                        do_sample=do_sample,
-                        top_p=top_p,
-                        top_k=top_k,
-                        temperature=temperature,
-                        num_return_sequences=autoregressive_batch_size,
-                        length_penalty=length_penalty,
-                        num_beams=num_beams,
-                        repetition_penalty=repetition_penalty,
-                        max_generate_length=max_mel_tokens,
-                        **generation_kwargs,
-                    )
-                    all_batch_codes.append(temp_codes)
+            with torch.no_grad(), torch.amp.autocast(
+                batch_text_tokens.device.type, enabled=self.dtype is not None, dtype=self.dtype
+            ):
+                temp_codes = self.gpt.inference_speech(
+                    auto_conditioning,
+                    batch_text_tokens,
+                    cond_mel_lengths=cond_mel_lengths,
+                    # text_lengths=text_len,
+                    do_sample=do_sample,
+                    top_p=top_p,
+                    top_k=top_k,
+                    temperature=temperature,
+                    num_return_sequences=autoregressive_batch_size,
+                    length_penalty=length_penalty,
+                    num_beams=num_beams,
+                    repetition_penalty=repetition_penalty,
+                    max_generate_length=max_mel_tokens,
+                    **generation_kwargs,
+                )
+                all_batch_codes.append(temp_codes)
             gpt_gen_time += time.perf_counter() - m_start_time
 
         # gpt latent

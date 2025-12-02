@@ -2,11 +2,10 @@ import sys
 
 import argbind
 
-
 STAGES = ["encode", "decode", "download"]
 
 
-def run(stage: str):
+def run(stage: str) -> None:
     """Run stages.
 
     Parameters

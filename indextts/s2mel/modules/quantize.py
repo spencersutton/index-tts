@@ -1,16 +1,16 @@
-from dac.nn.quantize import ResidualVectorQuantize
-from torch import nn
-from modules.wavenet import WN
 import torch
 import torchaudio
-from .alias_free_torch import *
-from torch.nn.utils import weight_norm
-from torch import sin, pow
-from einops.layers.torch import Rearrange
 from dac.model.encodec import SConv1d
+from dac.nn.quantize import ResidualVectorQuantize
+from einops.layers.torch import Rearrange
+from modules.wavenet import WN
+from torch import nn, pow, sin
+from torch.nn.utils import weight_norm
+
+from .alias_free_torch import *
 
 
-def init_weights(m):
+def init_weights(m) -> None:
     if isinstance(m, nn.Conv1d):
         nn.init.trunc_normal_(m.weight, std=0.02)
         nn.init.constant_(m.bias, 0)
@@ -42,7 +42,7 @@ class SnakeBeta(nn.Module):
         >>> x = a1(x)
     """
 
-    def __init__(self, in_features, alpha=1.0, alpha_trainable=True, alpha_logscale=False):
+    def __init__(self, in_features, alpha=1.0, alpha_trainable=True, alpha_logscale=False) -> None:
         """
         Initialization.
         INPUT:
@@ -53,7 +53,7 @@ class SnakeBeta(nn.Module):
             beta is initialized to 1 by default, higher values = higher-magnitude.
             alpha will be trained along with the rest of your model.
         """
-        super(SnakeBeta, self).__init__()
+        super().__init__()
         self.in_features = in_features
 
         # initialize alpha
@@ -87,7 +87,7 @@ class SnakeBeta(nn.Module):
 
 
 class ResidualUnit(nn.Module):
-    def __init__(self, dim: int = 16, dilation: int = 1):
+    def __init__(self, dim: int = 16, dilation: int = 1) -> None:
         super().__init__()
         pad = ((7 - 1) * dilation) // 2
         self.block = nn.Sequential(
@@ -102,7 +102,7 @@ class ResidualUnit(nn.Module):
 
 
 class CNNLSTM(nn.Module):
-    def __init__(self, indim, outdim, head, global_pred=False):
+    def __init__(self, indim, outdim, head, global_pred=False) -> None:
         super().__init__()
         self.global_pred = global_pred
         self.model = nn.Sequential(
@@ -144,8 +144,8 @@ class FAquantizer(nn.Module):
         causal=False,
         separate_prosody_encoder=False,
         timbre_norm=False,
-    ):
-        super(FAquantizer, self).__init__()
+    ) -> None:
+        super().__init__()
         conv1d_type = SConv1d  # if causal else nn.Conv1d
         self.prosody_quantizer = ResidualVectorQuantize(
             input_dim=in_dim,
@@ -222,15 +222,15 @@ class FAquantizer(nn.Module):
 
         x = x[:, :, :common_min_size]
 
-        z_p, codes_p, latents_p, commitment_loss_p, codebook_loss_p = self.prosody_quantizer(f0_input, 1)
+        z_p, codes_p, _latents_p, _commitment_loss_p, _codebook_loss_p = self.prosody_quantizer(f0_input, 1)
         outs += z_p.detach()
 
-        z_c, codes_c, latents_c, commitment_loss_c, codebook_loss_c = self.content_quantizer(x, 2)
+        z_c, codes_c, _latents_c, _commitment_loss_c, _codebook_loss_c = self.content_quantizer(x, 2)
         outs += z_c.detach()
 
         residual_feature = x - z_p.detach() - z_c.detach()
 
-        z_r, codes_r, latents_r, commitment_loss_r, codebook_loss_r = self.residual_quantizer(residual_feature, 3)
+        z_r, codes_r, _latents_r, _commitment_loss_r, _codebook_loss_r = self.residual_quantizer(residual_feature, 3)
 
         quantized = [z_p, z_c, z_r]
         codes = [codes_p, codes_c, codes_r]

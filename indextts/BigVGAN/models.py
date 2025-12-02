@@ -10,7 +10,6 @@ from torch.nn import Conv1d, Conv2d, ConvTranspose1d
 from torch.nn.utils import remove_weight_norm, spectral_norm, weight_norm
 
 import indextts.BigVGAN.activations as activations
-
 from indextts.BigVGAN.ECAPA_TDNN import ECAPA_TDNN
 from indextts.BigVGAN.utils import get_padding, init_weights
 
@@ -18,8 +17,8 @@ LRELU_SLOPE = 0.1
 
 
 class AMPBlock1(torch.nn.Module):
-    def __init__(self, h, channels, kernel_size=3, dilation=(1, 3, 5), activation=None):
-        super(AMPBlock1, self).__init__()
+    def __init__(self, h, channels, kernel_size=3, dilation=(1, 3, 5), activation=None) -> None:
+        super().__init__()
         self.h = h
 
         self.convs1 = nn.ModuleList(
@@ -108,7 +107,7 @@ class AMPBlock1(torch.nn.Module):
 
         return x
 
-    def remove_weight_norm(self):
+    def remove_weight_norm(self) -> None:
         for l in self.convs1:
             remove_weight_norm(l)
         for l in self.convs2:
@@ -116,8 +115,8 @@ class AMPBlock1(torch.nn.Module):
 
 
 class AMPBlock2(torch.nn.Module):
-    def __init__(self, h, channels, kernel_size=3, dilation=(1, 3), activation=None):
-        super(AMPBlock2, self).__init__()
+    def __init__(self, h, channels, kernel_size=3, dilation=(1, 3), activation=None) -> None:
+        super().__init__()
         self.h = h
 
         self.convs = nn.ModuleList(
@@ -179,20 +178,20 @@ class AMPBlock2(torch.nn.Module):
 
         return x
 
-    def remove_weight_norm(self):
+    def remove_weight_norm(self) -> None:
         for l in self.convs:
             remove_weight_norm(l)
 
 
 class BigVGAN(torch.nn.Module):
     # this is our main BigVGAN model. Applies anti-aliased periodic activation for resblocks.
-    def __init__(self, h, use_cuda_kernel=False):
+    def __init__(self, h, use_cuda_kernel=False) -> None:
         """
         Args:
             h (dict)
             use_cuda_kernel (bool): whether to use custom cuda kernel for anti-aliased activation
         """
-        super(BigVGAN, self).__init__()
+        super().__init__()
         self.h = h
         self.h["use_cuda_kernel"] = use_cuda_kernel
 
@@ -318,7 +317,7 @@ class BigVGAN(torch.nn.Module):
 
         return x, contrastive_loss
 
-    def remove_weight_norm(self):
+    def remove_weight_norm(self) -> None:
         print("Removing weight norm...")
         for l in self.ups:
             for l_i in l:
@@ -342,8 +341,8 @@ class BigVGAN(torch.nn.Module):
 
 
 class DiscriminatorP(torch.nn.Module):
-    def __init__(self, h, period, kernel_size=5, stride=3, use_spectral_norm=False):
-        super(DiscriminatorP, self).__init__()
+    def __init__(self, h, period, kernel_size=5, stride=3, use_spectral_norm=False) -> None:
+        super().__init__()
         self.period = period
         self.d_mult = h.discriminator_channel_mult
         norm_f = weight_norm if not use_spectral_norm else spectral_norm
@@ -405,10 +404,10 @@ class DiscriminatorP(torch.nn.Module):
 
 
 class MultiPeriodDiscriminator(torch.nn.Module):
-    def __init__(self, h):
-        super(MultiPeriodDiscriminator, self).__init__()
+    def __init__(self, h) -> None:
+        super().__init__()
         self.mpd_reshapes = h.mpd_reshapes
-        print("mpd_reshapes: {}".format(self.mpd_reshapes))
+        print(f"mpd_reshapes: {self.mpd_reshapes}")
         discriminators = [DiscriminatorP(h, rs, use_spectral_norm=h.use_spectral_norm) for rs in self.mpd_reshapes]
         self.discriminators = nn.ModuleList(discriminators)
 
@@ -429,20 +428,20 @@ class MultiPeriodDiscriminator(torch.nn.Module):
 
 
 class DiscriminatorR(nn.Module):
-    def __init__(self, cfg, resolution):
+    def __init__(self, cfg, resolution) -> None:
         super().__init__()
 
         self.resolution = resolution
-        assert len(self.resolution) == 3, "MRD layer requires list with len=3, got {}".format(self.resolution)
+        assert len(self.resolution) == 3, f"MRD layer requires list with len=3, got {self.resolution}"
         self.lrelu_slope = LRELU_SLOPE
 
         norm_f = weight_norm if not cfg.use_spectral_norm else spectral_norm
         if hasattr(cfg, "mrd_use_spectral_norm"):
-            print("INFO: overriding MRD use_spectral_norm as {}".format(cfg.mrd_use_spectral_norm))
+            print(f"INFO: overriding MRD use_spectral_norm as {cfg.mrd_use_spectral_norm}")
             norm_f = weight_norm if not cfg.mrd_use_spectral_norm else spectral_norm
         self.d_mult = cfg.discriminator_channel_mult
         if hasattr(cfg, "mrd_channel_mult"):
-            print("INFO: overriding mrd channel multiplier as {}".format(cfg.mrd_channel_mult))
+            print(f"INFO: overriding mrd channel multiplier as {cfg.mrd_channel_mult}")
             self.d_mult = cfg.mrd_channel_mult
 
         self.convs = nn.ModuleList(
@@ -483,13 +482,11 @@ class DiscriminatorR(nn.Module):
 
 
 class MultiResolutionDiscriminator(nn.Module):
-    def __init__(self, cfg, debug=False):
+    def __init__(self, cfg, debug=False) -> None:
         super().__init__()
         self.resolutions = cfg.resolutions
         assert len(self.resolutions) == 3, (
-            "MRD requires list of list with len=3, each element having a list with len=3. got {}".format(
-                self.resolutions
-            )
+            f"MRD requires list of list with len=3, each element having a list with len=3. got {self.resolutions}"
         )
         self.discriminators = nn.ModuleList([DiscriminatorR(cfg, resolution) for resolution in self.resolutions])
 

@@ -6,7 +6,7 @@ I18N_JSON_DIR: os.PathLike = os.path.join(os.path.dirname(os.path.relpath(__file
 
 
 def load_language_list(language):
-    with open(os.path.join(I18N_JSON_DIR, f"{language}.json"), "r", encoding="utf-8") as f:
+    with open(os.path.join(I18N_JSON_DIR, f"{language}.json"), encoding="utf-8") as f:
         language_list = json.load(f)
     return language_list
 
@@ -20,7 +20,7 @@ def scan_language_list():
 
 
 class I18nAuto:
-    def __init__(self, language=None):
+    def __init__(self, language=None) -> None:
         if language in ["Auto", None]:
             language = locale.getdefaultlocale()[0]
             # getlocale can't identify the system's language ((None, None))
@@ -32,7 +32,7 @@ class I18nAuto:
     def __call__(self, key):
         return self.language_map.get(key, key)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "Use Language: " + self.language
 
 

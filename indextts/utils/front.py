@@ -1,15 +1,16 @@
-# -*- coding: utf-8 -*-
 import os
-import traceback
 import re
-from typing import List, Union, overload
+import traceback
 import warnings
-from indextts.utils.common import tokenize_by_CJK_char, de_tokenized_by_CJK_char
+from typing import List, Union, overload
+
 from sentencepiece import SentencePieceProcessor
+
+from indextts.utils.common import de_tokenized_by_CJK_char, tokenize_by_CJK_char
 
 
 class TextNormalizer:
-    def __init__(self):
+    def __init__(self) -> None:
         self.zh_normalizer = None
         self.en_normalizer = None
         self.char_rep_map = {
@@ -84,7 +85,7 @@ class TextNormalizer:
         has_pinyin = bool(re.search(TextNormalizer.PINYIN_TONE_PATTERN, s, re.IGNORECASE))
         return has_pinyin
 
-    def load(self):
+    def load(self) -> None:
         # print(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
         # sys.path.append(model_dir)
         import platform
@@ -129,7 +130,7 @@ class TextNormalizer:
             result = self.restore_names(result, original_name_list)
             # 恢复拼音声调
             result = self.restore_pinyin_tones(result, pinyin_list)
-            pattern = re.compile("|".join(re.escape(p) for p in self.zh_char_rep_map.keys()))
+            pattern = re.compile("|".join(re.escape(p) for p in self.zh_char_rep_map))
             result = pattern.sub(lambda x: self.zh_char_rep_map[x.group()], result)
         else:
             try:
@@ -138,7 +139,7 @@ class TextNormalizer:
             except Exception:
                 result = text
                 print(traceback.format_exc())
-            pattern = re.compile("|".join(re.escape(p) for p in self.char_rep_map.keys()))
+            pattern = re.compile("|".join(re.escape(p) for p in self.char_rep_map))
             result = pattern.sub(lambda x: self.char_rep_map[x.group()], result)
         return result
 
@@ -165,7 +166,7 @@ class TextNormalizer:
         original_name_list = re.findall(name_pattern, original_text)
         if len(original_name_list) == 0:
             return (original_text, None)
-        original_name_list = list(set("".join(n) for n in original_name_list))
+        original_name_list = list({"".join(n) for n in original_name_list})
         transformed_text = original_text
         # 替换占位符 <n_a>、 <n_b>, ...
         for i, name in enumerate(original_name_list):
@@ -199,7 +200,7 @@ class TextNormalizer:
         original_pinyin_list = re.findall(origin_pinyin_pattern, original_text)
         if len(original_pinyin_list) == 0:
             return (original_text, None)
-        original_pinyin_list = list(set("".join(p) for p in original_pinyin_list))
+        original_pinyin_list = list({"".join(p) for p in original_pinyin_list})
         transformed_text = original_text
         # 替换为占位符 <pinyin_a>, <pinyin_b>, ...
         for i, pinyin in enumerate(original_pinyin_list):
@@ -230,7 +231,7 @@ class TextNormalizer:
 
 
 class TextTokenizer:
-    def __init__(self, vocab_file: str, normalizer: TextNormalizer = None):
+    def __init__(self, vocab_file: str, normalizer: TextNormalizer = None) -> None:
         self.vocab_file = vocab_file
         self.normalizer = normalizer
 
@@ -253,31 +254,31 @@ class TextTokenizer:
         return self.sp_model.GetPieceSize()
 
     @property
-    def unk_token(self):
+    def unk_token(self) -> str:
         return "<unk>"
 
     @property
-    def pad_token(self):
+    def pad_token(self) -> None:
         return None
 
     @property
-    def bos_token(self):
+    def bos_token(self) -> str:
         return "<s>"
 
     @property
-    def eos_token(self):
+    def eos_token(self) -> str:
         return "</s>"
 
     @property
-    def pad_token_id(self):
+    def pad_token_id(self) -> int:
         return -1
 
     @property
-    def bos_token_id(self):
+    def bos_token_id(self) -> int:
         return 0
 
     @property
-    def eos_token_id(self):
+    def eos_token_id(self) -> int:
         return 1
 
     @property
@@ -301,17 +302,17 @@ class TextTokenizer:
     def convert_ids_to_tokens(self, ids: int) -> str: ...
 
     @overload
-    def convert_ids_to_tokens(self, ids: List[int]) -> List[str]: ...
+    def convert_ids_to_tokens(self, ids: list[int]) -> list[str]: ...
 
-    def convert_ids_to_tokens(self, ids: Union[List[int], int]):
+    def convert_ids_to_tokens(self, ids: list[int] | int):
         return self.sp_model.IdToPiece(ids)
 
-    def convert_tokens_to_ids(self, tokens: Union[List[str], str]) -> List[int]:
+    def convert_tokens_to_ids(self, tokens: list[str] | str) -> list[int]:
         if isinstance(tokens, str):
             tokens = [tokens]
         return [self.sp_model.PieceToId(token) for token in tokens]
 
-    def tokenize(self, text: str) -> List[str]:
+    def tokenize(self, text: str) -> list[str]:
         return self.encode(text, out_type=str)
 
     def encode(self, text: str, **kwargs):
@@ -327,7 +328,7 @@ class TextTokenizer:
                 text = pre_tokenizer(text)
         return self.sp_model.Encode(text, out_type=kwargs.pop("out_type", int), **kwargs)
 
-    def batch_encode(self, texts: List[str], **kwargs):
+    def batch_encode(self, texts: list[str], **kwargs):
         # 预处理
         if self.normalizer:
             texts = [self.normalizer.normalize(text) for text in texts]
@@ -336,7 +337,7 @@ class TextTokenizer:
                 texts = [pre_tokenizer(text) for text in texts]
         return self.sp_model.Encode(texts, out_type=kwargs.pop("out_type", int), **kwargs)
 
-    def decode(self, ids: Union[List[int], int], do_lower_case=False, **kwargs):
+    def decode(self, ids: list[int] | int, do_lower_case=False, **kwargs):
         if isinstance(ids, int):
             ids = [ids]
         decoded = self.sp_model.Decode(ids, out_type=kwargs.pop("out_type", str), **kwargs)
@@ -344,18 +345,18 @@ class TextTokenizer:
 
     @staticmethod
     def split_segments_by_token(
-        tokenized_str: List[str],
-        split_tokens: List[str],
+        tokenized_str: list[str],
+        split_tokens: list[str],
         max_text_tokens_per_segment: int,
         quick_streaming_tokens: int = 0,
-    ) -> List[List[str]]:
+    ) -> list[list[str]]:
         """
         将tokenize后的结果按特定token进一步分割
         """
         # 处理特殊情况
         if len(tokenized_str) == 0:
             return []
-        segments: List[List[str]] = []
+        segments: list[list[str]] = []
         current_segment = []
         current_segment_tokens_len = 0
         for i in range(len(tokenized_str)):
@@ -382,11 +383,10 @@ class TextTokenizer:
                 )
             elif current_segment_tokens_len <= max_text_tokens_per_segment:
                 if token in split_tokens and current_segment_tokens_len > 2:
-                    if i < len(tokenized_str) - 1:
-                        if tokenized_str[i + 1] in ["'", "▁'"]:
-                            # 后续token是'，则不切分
-                            current_segment.append(tokenized_str[i + 1])
-                            i += 1
+                    if i < len(tokenized_str) - 1 and tokenized_str[i + 1] in ["'", "▁'"]:
+                        # 后续token是'，则不切分
+                        current_segment.append(tokenized_str[i + 1])
+                        i += 1
                     segments.append(current_segment)
                     current_segment = []
                     current_segment_tokens_len = 0
@@ -424,10 +424,7 @@ class TextTokenizer:
             elif (
                 len(merged_segments[-1]) + len(segment) <= max_text_tokens_per_segment
                 and total_token > quick_streaming_tokens
-            ):
-                merged_segments[-1] = merged_segments[-1] + segment
-            # 或小于最大长度限制的一半，则合并
-            elif len(merged_segments[-1]) + len(segment) <= max_text_tokens_per_segment / 2:
+            ) or len(merged_segments[-1]) + len(segment) <= max_text_tokens_per_segment / 2:
                 merged_segments[-1] = merged_segments[-1] + segment
             else:
                 merged_segments.append(segment)
@@ -444,8 +441,8 @@ class TextTokenizer:
     ]
 
     def split_segments(
-        self, tokenized: List[str], max_text_tokens_per_segment=120, quick_streaming_tokens=0
-    ) -> List[List[str]]:
+        self, tokenized: list[str], max_text_tokens_per_segment=120, quick_streaming_tokens=0
+    ) -> list[list[str]]:
         return TextTokenizer.split_segments_by_token(
             tokenized,
             self.punctuation_marks_tokens,
@@ -531,7 +528,7 @@ if __name__ == "__main__":
         if re.match(TextNormalizer.PINYIN_TONE_PATTERN, badcase, re.IGNORECASE) is not None:
             print(f"{badcase} should not be matched!")
     # 不应该有 unk_token_id
-    for t in set([*TextTokenizer.punctuation_marks_tokens, ",", "▁,", "-", "▁..."]):
+    for t in {*TextTokenizer.punctuation_marks_tokens, ",", "▁,", "-", "▁..."}:
         tokens = tokenizer.convert_tokens_to_ids(t)
         if tokenizer.unk_token_id in tokens:
             print(f"Warning: {t} is unknown token")

@@ -44,6 +44,85 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
 
+def _interval_silence(wavs: list[Tensor], sampling_rate: int = 22050, interval_silence: int = 200):
+    """
+    Silences to be insert between generated segments.
+    """
+
+    if not wavs or interval_silence <= 0:
+        return wavs
+
+    # get channel_size
+    channel_size = wavs[0].size(0)
+    # get silence tensor
+    sil_dur = int(sampling_rate * interval_silence / 1000.0)
+    return torch.zeros(channel_size, sil_dur)
+
+
+def _insert_interval_silence(
+    wavs: list[Tensor], sampling_rate: int = 22050, interval_silence: int = 200
+) -> list[Tensor]:
+    """
+    Insert silences between generated segments.
+    wavs: List[torch.tensor]
+    """
+
+    if not wavs or interval_silence <= 0:
+        return wavs
+
+    # get channel_size
+    channel_size = wavs[0].size(0)
+    # get silence tensor
+    sil_dur = int(sampling_rate * interval_silence / 1000.0)
+    sil_tensor = torch.zeros(channel_size, sil_dur)
+
+    wavs_list: list[Tensor] = []
+    for i, wav in enumerate(wavs):
+        wavs_list.append(wav)
+        if i < len(wavs) - 1:
+            wavs_list.append(sil_tensor)
+
+    return wavs_list
+
+
+def _load_and_cut_audio(
+    audio_path: str,
+    max_audio_length_seconds: float,
+    verbose: bool = False,
+    sr: int | None = None,
+) -> tuple[Tensor, int]:
+    if not sr:
+        audio, sr_loaded = librosa.load(audio_path)
+        sr = int(sr_loaded)
+    else:
+        audio, _ = librosa.load(audio_path, sr=sr)
+    audio = torch.tensor(audio).unsqueeze(0)
+    max_audio_samples = int(max_audio_length_seconds * sr)
+
+    if audio.shape[1] > max_audio_samples:
+        if verbose:
+            print(f"Audio too long ({audio.shape[1]} samples), truncating to {max_audio_samples} samples")
+        audio = audio[:, :max_audio_samples]
+    return audio, sr
+
+
+def normalize_emo_vec(emo_vector: list[float], apply_bias: bool = True) -> list[float]:
+    # apply biased emotion factors for better user experience,
+    # by de-emphasizing emotions that can cause strange results
+    if apply_bias:
+        # [happy, angry, sad, afraid, disgusted, melancholic, surprised, calm]
+        emo_bias = [0.9375, 0.875, 1.0, 1.0, 0.9375, 0.9375, 0.6875, 0.5625]
+        emo_vector = [vec * bias for vec, bias in zip(emo_vector, emo_bias)]
+
+    # the total emotion sum must be 0.8 or less
+    emo_sum = sum(emo_vector)
+    if emo_sum > 0.8:
+        scale_factor = 0.8 / emo_sum
+        emo_vector = [vec * scale_factor for vec in emo_vector]
+
+    return emo_vector
+
+
 class IndexTTS2:
     device: str
     use_fp16: bool
@@ -321,43 +400,6 @@ class IndexTTS2:
         if self.gr_progress is not None:
             self.gr_progress(value, desc=desc)
 
-    def _load_and_cut_audio(
-        self,
-        audio_path: str,
-        max_audio_length_seconds: float,
-        verbose: bool = False,
-        sr: int | None = None,
-    ) -> tuple[Tensor, int]:
-        if not sr:
-            audio, sr_loaded = librosa.load(audio_path)
-            sr = int(sr_loaded)
-        else:
-            audio, _ = librosa.load(audio_path, sr=sr)
-        audio = torch.tensor(audio).unsqueeze(0)
-        max_audio_samples = int(max_audio_length_seconds * sr)
-
-        if audio.shape[1] > max_audio_samples:
-            if verbose:
-                print(f"Audio too long ({audio.shape[1]} samples), truncating to {max_audio_samples} samples")
-            audio = audio[:, :max_audio_samples]
-        return audio, sr
-
-    def normalize_emo_vec(self, emo_vector: list[float], apply_bias: bool = True) -> list[float]:
-        # apply biased emotion factors for better user experience,
-        # by de-emphasizing emotions that can cause strange results
-        if apply_bias:
-            # [happy, angry, sad, afraid, disgusted, melancholic, surprised, calm]
-            emo_bias = [0.9375, 0.875, 1.0, 1.0, 0.9375, 0.9375, 0.6875, 0.5625]
-            emo_vector = [vec * bias for vec, bias in zip(emo_vector, emo_bias)]
-
-        # the total emotion sum must be 0.8 or less
-        emo_sum = sum(emo_vector)
-        if emo_sum > 0.8:
-            scale_factor = 0.8 / emo_sum
-            emo_vector = [vec * scale_factor for vec in emo_vector]
-
-        return emo_vector
-
     # 原始推理模式
     # Original inference mode
     def infer(
@@ -491,7 +533,7 @@ class IndexTTS2:
                 self.cache_s2mel_prompt = None
                 self.cache_mel = None
                 torch.cuda.empty_cache()
-            audio, sr = self._load_and_cut_audio(spk_audio_prompt, 15, verbose)
+            audio, sr = _load_and_cut_audio(spk_audio_prompt, 15, verbose)
             sr = int(sr)
             audio_22k = torchaudio.transforms.Resample(sr, 22050)(audio)
             audio_16k = torchaudio.transforms.Resample(sr, 16000)(audio)
@@ -545,7 +587,7 @@ assert self.cache_s2mel_style is not None
             if self.cache_emo_cond is not None:
                 self.cache_emo_cond = None
                 torch.cuda.empty_cache()
-            emo_audio, _ = self._load_and_cut_audio(emo_audio_prompt, 15, verbose, sr=16000)
+            emo_audio, _ = _load_and_cut_audio(emo_audio_prompt, 15, verbose, sr=16000)
             emo_inputs = self.extract_features(emo_audio, sampling_rate=16000, return_tensors="pt")
             emo_input_features = emo_inputs["input_features"]
             emo_attention_mask = emo_inputs["attention_mask"]

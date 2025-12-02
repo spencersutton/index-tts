@@ -3,10 +3,10 @@
 import re
 import traceback
 import warnings
-from pathlib import Path
-from typing import overload
+from typing import ClassVar, overload
 
 from sentencepiece import SentencePieceProcessor
+from wetext import Normalizer
 
 from indextts.utils.common import de_tokenized_by_CJK_char, tokenize_by_CJK_char
 
@@ -87,27 +87,11 @@ class TextNormalizer:
         return bool(re.search(TextNormalizer.PINYIN_TONE_PATTERN, s, re.IGNORECASE))
 
     def load(self) -> None:
-        import platform
-
         if self.zh_normalizer is not None and self.en_normalizer is not None:
             return
-        from wetext import Normalizer
 
-            self.zh_normalizer = Normalizer(remove_erhua=False, lang="zh", operator="tn")
-            self.en_normalizer = Normalizer(lang="en", operator="tn")
-        else:
-            from tn.chinese.normalizer import Normalizer as NormalizerZh
-            from tn.english.normalizer import Normalizer as NormalizerEn
-
-            # use new cache dir for build tagger rules with disable remove_interjections and remove_erhua
-            cache_dir = Path(__file__).resolve().parent / "tagger_cache"
-            if not Path(cache_dir).exists():
-                Path(cache_dir).mkdir(parents=True)
-                (Path(cache_dir) / ".gitignore").write_text("*\n", encoding="utf-8")
-            self.zh_normalizer = NormalizerZh(
-                cache_dir=cache_dir, remove_interjections=False, remove_erhua=False, overwrite_cache=False
-            )
-            self.en_normalizer = NormalizerEn(overwrite_cache=False)
+        self.zh_normalizer = Normalizer(remove_erhua=False, lang="zh", operator="tn")
+        self.en_normalizer = Normalizer(lang="en", operator="tn")
 
     def normalize(self, text: str) -> str:
         if not self.zh_normalizer or not self.en_normalizer:
@@ -322,6 +306,7 @@ class TextTokenizer:
 
     def batch_encode(self, texts: list[str], **kwargs):
         # 预处理
+        # Preprocessing
         if self.normalizer:
             texts = [self.normalizer.normalize(text) for text in texts]
         if len(self.pre_tokenizers) > 0:
@@ -344,8 +329,10 @@ class TextTokenizer:
     ) -> list[list[str]]:
         """
         将tokenize后的结果按特定token进一步分割
+        The tokenized result is further divided according to a specific token.
         """
         # 处理特殊情况
+        # Handle special cases
         if len(tokenized_str) == 0:
             return []
         segments: list[list[str]] = []
@@ -359,6 +346,7 @@ class TextTokenizer:
                 "," in current_segment or "▁," in current_segment
             ):
                 # 如果当前tokens中有,，则按,分割
+                # If there is ',' in the current tokens, then split by ','
                 sub_segments = TextTokenizer.split_segments_by_token(
                     current_segment,
                     [",", "▁,"],
@@ -367,6 +355,7 @@ class TextTokenizer:
                 )
             elif "-" not in split_tokens and "-" in current_segment:
                 # 没有,，则按-分割
+                # If there is no ',', then split by '-'
                 sub_segments = TextTokenizer.split_segments_by_token(
                     current_segment,
                     ["-"],
@@ -377,6 +366,7 @@ class TextTokenizer:
                 if token in split_tokens and current_segment_tokens_len > 2:
                     if i < len(tokenized_str) - 1 and tokenized_str[i + 1] in {"'", "▁'"}:
                         # 后续token是'，则不切分
+                        # If the next token is ', do not split
                         current_segment.append(tokenized_str[i + 1])
                         i += 1
                     segments.append(current_segment)
@@ -384,6 +374,7 @@ class TextTokenizer:
                     current_segment_tokens_len = 0
                 continue
             # 如果当前tokens的长度超过最大限制
+            # If the length of the current tokens exceeds the maximum limit
             else:
                 # 按照长度分割
                 sub_segments = []
@@ -405,6 +396,8 @@ class TextTokenizer:
             assert current_segment_tokens_len <= max_text_tokens_per_segment
             segments.append(current_segment)
         # 如果相邻的句子加起来长度小于最大限制，且此前token总数超过quick_streaming_tokens，则合并
+        # If the combined length of adjacent sentences is less than the maximum limit,
+        # and the total previous token count exceeds quick_streaming_tokens, then merge them
         merged_segments = []
         total_token = 0
         for segment in segments:
@@ -427,7 +420,6 @@ class TextTokenizer:
         "!",
         "?",
         "▁.",
-        # "▁!", # unk
         "▁?",
         "▁...",  # ellipsis
     ]

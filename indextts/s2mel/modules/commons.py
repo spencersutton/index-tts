@@ -25,7 +25,7 @@ def sequence_mask(length: torch.Tensor, max_length: torch.Tensor | None = None) 
 
 
 class MyModel(nn.Module):
-    def __init__(self, args, use_emovec: bool = False, use_gpt_latent: bool = False) -> None:
+    def __init__(self, args, use_gpt_latent: bool = False) -> None:
         super().__init__()
         from indextts.s2mel.modules.flow_matching import CFM
         from indextts.s2mel.modules.length_regulator import InterpolateRegulator
@@ -77,8 +77,12 @@ class MyModel(nn.Module):
         This method applies torch.compile to the model for significant
         performance improvements during inference.
         """
+        from indextts.s2mel.modules.flow_matching import CFM
+
         if "cfm" in self.models:
-            self.models["cfm"].enable_torch_compile()
+            cfm = self.models["cfm"]
+            assert isinstance(cfm, CFM)
+            cfm.enable_torch_compile()
 
 
 def load_checkpoint2(
@@ -120,14 +124,4 @@ def load_checkpoint2(
             model.models[key].load_state_dict(filtered_state_dict, strict=False)
     model.eval()
 
-    if not load_only_params:
-        epoch = state["epoch"] + 1
-        iters = state["iters"]
-        optimizer.load_state_dict(state["optimizer"])
-        optimizer.load_scheduler_state_dict(state["scheduler"])
-
-    else:
-        epoch = 0
-        iters = 0
-
-    return model, optimizer, epoch, iters
+    return model

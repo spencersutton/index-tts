@@ -3,15 +3,14 @@ import functools
 import torch
 import torch.nn.functional as F
 from torch import nn
-from transformers import GPT2Config, LogitsProcessorList
+from transformers import GenerationMixin, GPT2Config, GPT2PreTrainedModel, LogitsProcessorList
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 from transformers.utils.model_parallel_utils import assert_device_map, get_device_map
+from typing_extensions import assert_never
 
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.perceiver import PerceiverResampler
-from indextts.gpt.transformers_gpt2 import GPT2PreTrainedModel
 from indextts.utils.arch_util import AttentionBlock
-from indextts.utils.typical_sampling import TypicalLogitsWarper
 
 
 def null_position_embeddings(range, dim):
@@ -37,7 +36,7 @@ class ResBlock(nn.Module):
         return F.relu(self.net(x) + x)
 
 
-class GPT2InferenceModel(GPT2PreTrainedModel):
+class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
     def __init__(self, config, gpt, text_pos_emb, embeddings, norm, linear, kv_cache=False) -> None:
         super().__init__(config)
         # Note: the argument named `text_pos_emb` here actually represents the mel position embedding
@@ -657,7 +656,7 @@ class UnifiedVoice(nn.Module):
             )
             emo_vec_syn = self.emovec_layer(emo_vec_syn_ori)
             emo_vec = self.emo_layer(emo_vec_syn)
-assert emo_vec is not None
+            assert emo_vec is not None
 
         text_inputs = self.set_text_padding(text_inputs, text_lengths)
         text_inputs = F.pad(text_inputs, (0, 1), value=self.stop_text_token)

@@ -7,7 +7,7 @@ import math
 from dataclasses import dataclass
 
 import torch
-from torch import Tensor, nn
+from torch import nn
 from torch.nn import functional as F
 
 

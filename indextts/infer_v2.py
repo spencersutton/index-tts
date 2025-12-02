@@ -1,3 +1,4 @@
+import contextlib
 import json
 import os
 import random
@@ -126,6 +127,10 @@ class IndexTTS2:
             self.use_cuda_kernel = False
             print(">> Be patient, it may take a while to run in CPU mode.")
 
+        if self.device.startswith("cuda"):
+            with contextlib.suppress(AttributeError):
+                torch.set_float32_matmul_precision("high")
+
         self.cfg = OmegaConf.load(cfg_path)
         self.model_dir = model_dir
         self.dtype = torch.float16 if self.use_fp16 else None
@@ -198,12 +203,6 @@ class IndexTTS2:
         assert isinstance(cfm, CFM)
         cfm.estimator.setup_caches(max_batch_size=1, max_seq_length=8192)
 
-        # Enable torch.compile optimization if requested
-        if self.use_torch_compile:
-            print(">> Enabling torch.compile optimization")
-            self.s2mel.enable_torch_compile()
-            print(">> torch.compile optimization enabled successfully")
-
         self.s2mel.eval()
         print(">> s2mel weights restored from:", s2mel_path)
 
@@ -251,6 +250,15 @@ class IndexTTS2:
         }
         self.mel_fn = lambda x: mel_spectrogram(x, **mel_fn_args)
 
+        # Enable torch.compile optimization if requested
+        if self.use_torch_compile:
+            print(">> Enabling torch.compile optimization")
+            self.s2mel.enable_torch_compile()
+            # self.gpt = torch.compile(self.gpt)
+            # self.bigvgan = torch.compile(self.bigvgan)
+            # self.semantic_model = torch.compile(self.semantic_model)
+            print(">> torch.compile optimization enabled successfully")
+
         # 缓存参考音频：
         self.cache_spk_cond = None
         self.cache_s2mel_style = None
@@ -265,7 +273,7 @@ class IndexTTS2:
         self.gr_progress = None
         self.model_version = self.cfg.version if hasattr(self.cfg, "version") else None
 
-    @torch.no_grad()
+    @torch.inference_mode()
     def get_emb(self, input_features: torch.Tensor, attention_mask: torch.Tensor):
         vq_emb = self.semantic_model(
             input_features=input_features,
@@ -420,6 +428,7 @@ class IndexTTS2:
             except IndexError:
                 return None
 
+    @torch.inference_mode()
     def infer_generator(
         self,
         spk_audio_prompt: str,
@@ -610,7 +619,7 @@ assert self.cache_s2mel_style is not None
                 print("text_token_syms is same as segment tokens", text_token_syms == sent)
 
             m_start_time = time.perf_counter()
-            with torch.no_grad():
+            with torch.inference_mode():
                 with torch.autocast(text_tokens.device.type, enabled=self.dtype is not None, dtype=self.dtype):
                     emovec = self.gpt.merge_emovec(
                         spk_cond_emb,

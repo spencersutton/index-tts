@@ -86,16 +86,14 @@ class MyModel(nn.Module):
 
 
 def load_checkpoint2(
-    model,
-    optimizer,
-    path,
-    load_only_params=True,
-    ignore_modules=[],
-    is_distributed=False,
-    load_ema=False,
-):
-    state = torch.load(path, map_location="cpu")
-    params = state["net"]
+    model: MyModel,
+    path: str,
+    ignore_modules: list[str] = [],
+    is_distributed: bool = False,
+    load_ema: bool = False,
+) -> MyModel:
+    state: dict[str, Any] = torch.load(path, map_location="cpu")
+    params: dict[str, Any] = state["net"]
     if load_ema and "ema" in state:
         print("Loading EMA")
         for key in model.models:

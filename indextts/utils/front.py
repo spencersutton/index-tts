@@ -87,8 +87,6 @@ class TextNormalizer:
         return has_pinyin
 
     def load(self) -> None:
-        # print(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-        # sys.path.append(model_dir)
         import platform
 
         if self.zh_normalizer is not None and self.en_normalizer is not None:

@@ -3,7 +3,9 @@ import os
 import random
 import re
 import time
+import typing
 import warnings
+from collections.abc import Generator
 from subprocess import CalledProcessError
 from typing import Any
 
@@ -15,6 +17,7 @@ import torch
 import torch.nn.functional as F
 import torchaudio
 from huggingface_hub import hf_hub_download
+from numpy import ndarray
 from omegaconf import OmegaConf
 from transformers import AutoModelForCausalLM, AutoTokenizer, SeamlessM4TFeatureExtractor
 from transformers.utils.generic import ModelOutput
@@ -27,6 +30,9 @@ from indextts.utils.checkpoint import load_checkpoint
 from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.maskgct_utils import build_semantic_codec, build_semantic_model
 
+if typing.TYPE_CHECKING:
+    from gradio import Progress
+
 os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -34,6 +40,43 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 
 class IndexTTS2:
+    device: str
+    use_fp16: bool
+    use_cuda_kernel: bool
+    cfg: Any
+    model_dir: str
+    dtype: torch.dtype | None
+    stop_mel_token: int
+    use_accel: bool
+    use_torch_compile: bool
+    qwen_emo: "QwenEmotion"
+    gpt: "UnifiedVoice"
+    gpt_path: str
+    extract_features: SeamlessM4TFeatureExtractor
+    semantic_model: Any
+    semantic_mean: torch.Tensor
+    semantic_std: torch.Tensor
+    semantic_codec: Any
+    s2mel: Any
+    campplus_model: CAMPPlus
+    bigvgan: Any
+    bpe_path: str
+    normalizer: TextNormalizer
+    tokenizer: TextTokenizer
+    emo_matrix: tuple[torch.Tensor, ...] | torch.Tensor
+    emo_num: list[int]
+    spk_matrix: tuple[torch.Tensor, ...] | torch.Tensor
+    mel_fn: Any
+    cache_spk_cond: torch.Tensor | None
+    cache_s2mel_style: torch.Tensor | None
+    cache_s2mel_prompt: torch.Tensor | None
+    cache_spk_audio_prompt: str | None
+    cache_emo_cond: torch.Tensor | None
+    cache_emo_audio_prompt: str | None
+    cache_mel: torch.Tensor | None
+    gr_progress: Progress | None
+    model_version: Any
+
     def __init__(
         self,
         cfg_path: str = "checkpoints/config.yaml",
@@ -211,6 +254,7 @@ class IndexTTS2:
         self.cache_mel = None
 
         # 进度引用显示（可选）
+        # Progress reference display (optional)
         self.gr_progress = None
         self.model_version = self.cfg.version if hasattr(self.cfg, "version") else None
 
@@ -241,7 +285,7 @@ class IndexTTS2:
 
     def insert_interval_silence(
         self, wavs: list[torch.Tensor], sampling_rate: int = 22050, interval_silence: int = 200
-    ):
+    ) -> list[torch.Tensor]:
         """
         Insert silences between generated segments.
         wavs: List[torch.tensor]
@@ -256,7 +300,7 @@ class IndexTTS2:
         sil_dur = int(sampling_rate * interval_silence / 1000.0)
         sil_tensor = torch.zeros(channel_size, sil_dur)
 
-        wavs_list = []
+        wavs_list: list[torch.Tensor] = []
         for i, wav in enumerate(wavs):
             wavs_list.append(wav)
             if i < len(wavs) - 1:
@@ -274,9 +318,10 @@ class IndexTTS2:
         max_audio_length_seconds: float,
         verbose: bool = False,
         sr: int | None = None,
-    ):
+    ) -> tuple[torch.Tensor, int]:
         if not sr:
-            audio, sr = librosa.load(audio_path)
+            audio, sr_loaded = librosa.load(audio_path)
+            sr = int(sr_loaded)
         else:
             audio, _ = librosa.load(audio_path, sr=sr)
         audio = torch.tensor(audio).unsqueeze(0)
@@ -305,6 +350,7 @@ class IndexTTS2:
         return emo_vector
 
     # 原始推理模式
+    # Original inference mode
     def infer(
         self,
         spk_audio_prompt: str,
@@ -384,7 +430,7 @@ class IndexTTS2:
         stream_return: bool = False,
         quick_streaming_tokens: int = 0,
         **generation_kwargs: Any,
-    ):
+    ) -> Generator[torch.Tensor | None]:
         print(">> starting inference...")
         self._set_gr_progress(0, "starting inference...")
         if verbose:

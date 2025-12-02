@@ -4,8 +4,8 @@
 # LICENSE file in the root directory of this source tree.
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
+from torch import nn
 from torch.nn.utils import weight_norm
 
 
@@ -55,7 +55,7 @@ class LookupFreeQuantize(nn.Module):
         emb = torch.zeros(vq.shape[0], self.codebook_dim, vq.shape[-1], device=vq.device)  # (B, d, T)
         for i in range(self.codebook_dim):
             emb[:, i, :] = (vq % 2).float()
-            vq = vq // 2
+            vq //= 2
         if out_proj:
             emb = self.out_project(emb)
         return emb

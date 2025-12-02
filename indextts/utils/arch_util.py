@@ -1,7 +1,7 @@
 import math
 
 import torch
-import torch.nn as nn
+from torch import nn
 
 from indextts.utils.xtransformers import RelativePositionBias
 
@@ -68,7 +68,7 @@ class QKVAttentionLegacy(nn.Module):
         if mask is not None:
             # The proper way to do this is to mask before the softmax using -inf, but that doesn't work properly on CPUs.
             mask = mask.repeat(self.n_heads, 1).unsqueeze(1)
-            weight = weight * mask
+            weight *= mask
         a = torch.einsum("bts,bcs->bct", weight, v)
 
         return a.reshape(bs, -1, length)

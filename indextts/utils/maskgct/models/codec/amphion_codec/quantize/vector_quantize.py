@@ -4,9 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange, repeat
+from torch import nn
 from torch.nn.utils import weight_norm
 
 
@@ -60,7 +60,7 @@ def kmeans(samples, num_clusters, num_iters=10, use_cosine_sim=False):
 
         new_means = buckets.new_zeros(num_clusters, dim, dtype=dtype)
         new_means.scatter_add_(0, repeat(buckets, "n -> n d", d=dim), samples)
-        new_means = new_means / bins_min_clamped[..., None]
+        new_means /= bins_min_clamped[..., None]
 
         if use_cosine_sim:
             new_means = l2norm(new_means)

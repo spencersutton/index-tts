@@ -83,7 +83,7 @@ class AlibiPositionalBias(nn.Module):
 
         bias = torch.arange(j, device=device)
         bias = rearrange(bias, "j -> () () () j")
-        bias = bias * self.slopes
+        bias *= self.slopes
 
         num_heads_unalibied = h - bias.shape[1]
         bias = F.pad(bias, (0, 0, 0, 0, 0, num_heads_unalibied))
@@ -122,7 +122,7 @@ class LearnedAlibiPositionalBias(AlibiPositionalBias):
             bias = torch.tril(bias * past_slopes) + torch.triu(bias * future_slopes)
         else:
             slopes = get_slopes(self.learned_logslopes)
-            bias = bias * slopes
+            bias *= slopes
 
         return qk_dots + bias
 
@@ -243,7 +243,7 @@ class Residual(nn.Module):
 
     def forward(self, x, residual):
         if exists(self.residual_scale):
-            residual = residual * self.residual_scale
+            residual *= self.residual_scale
 
         return x + residual
 
@@ -256,7 +256,7 @@ class GRUGating(nn.Module):
 
     def forward(self, x, residual):
         if exists(self.residual_scale):
-            residual = residual * self.residual_scale
+            residual *= self.residual_scale
 
         gated_output = self.gru(rearrange(x, "b n d -> (b n) d"), rearrange(residual, "b n d -> (b n) d"))
 
@@ -488,8 +488,8 @@ class Attention(nn.Module):
         if exists(sinusoidal_emb):
             # in shortformer, the query would start at a position offset depending on the past cached memory
             offset = k_input.shape[-2] - q_input.shape[-2]
-            q_input = q_input + sinusoidal_emb(q_input, offset=offset)
-            k_input = k_input + sinusoidal_emb(k_input)
+            q_input += sinusoidal_emb(q_input, offset=offset)
+            k_input += sinusoidal_emb(k_input)
 
         q = self.to_q(q_input)
         k = self.to_k(k_input)
@@ -542,7 +542,7 @@ class Attention(nn.Module):
         mask_value = max_neg_value(dots)
 
         if exists(prev_attn):
-            dots = dots + prev_attn
+            dots += prev_attn
 
         pre_softmax_attn = dots.clone()
 
@@ -601,13 +601,13 @@ class Attention(nn.Module):
         out = einsum("b h i j, b h j d -> b h i d", attn, v)
 
         if head_scale:
-            out = out * self.head_scale_params
+            out *= self.head_scale_params
 
         out = rearrange(out, "b h n d -> b n (h d)")
 
         if exists(self.to_v_gate):
             gates = self.to_v_gate(x)
-            out = out * gates.sigmoid()
+            out *= gates.sigmoid()
 
         intermediates = Intermediates(pre_softmax_attn=pre_softmax_attn, post_softmax_attn=post_softmax_attn)
 
@@ -775,7 +775,7 @@ class AttentionLayers(nn.Module):
             residual_fn = GRUGating if gate_residual else Residual
             residual = residual_fn(dim, scale_residual=scale_residual)
 
-            layer_uses_qk_norm = use_qk_norm_attn and layer_type in ("a", "c")
+            layer_uses_qk_norm = use_qk_norm_attn and layer_type in {"a", "c"}
 
             pre_branch_norm = norm_fn() if pre_norm and not layer_uses_qk_norm else None
             post_branch_norm = norm_fn() if sandwich_norm or layer_uses_qk_norm else None
@@ -840,7 +840,7 @@ class AttentionLayers(nn.Module):
             if exists(pre_branch_norm):
                 x = pre_branch_norm(x, **norm_args)
 
-            if layer_type == "a" or layer_type == "c":
+            if layer_type in {"a", "c"}:
                 if past_key_values is not None:
                     layer_kv = past_key_values.pop(0)
                     layer_past = tuple(s.to(x.device) for s in layer_kv)
@@ -880,7 +880,7 @@ class AttentionLayers(nn.Module):
 
             x = residual_fn(out, residual)
 
-            if layer_type in ("a", "c"):
+            if layer_type in {"a", "c"}:
                 intermediates.append(inter)
 
             if layer_type == "a" and self.residual_attn:
@@ -953,7 +953,7 @@ class ViTransformerWrapper(nn.Module):
 
         cls_tokens = repeat(self.cls_token, "() n d -> b n d", b=b)
         x = torch.cat((cls_tokens, x), dim=1)
-        x = x + self.pos_embedding[:, : (n + 1)]
+        x += self.pos_embedding[:, : (n + 1)]
         x = self.dropout(x)
 
         x = self.attn_layers(x)
@@ -1028,7 +1028,7 @@ class TransformerWrapper(nn.Module):
     ):
         b, _n, _device, num_mem = *x.shape, x.device, self.num_memory_tokens
         x = self.token_emb(x)
-        x = x + self.pos_emb(x)
+        x += self.pos_emb(x)
         x = self.emb_dropout(x)
 
         x = self.project_emb(x)
@@ -1097,7 +1097,7 @@ class ContinuousTransformerWrapper(nn.Module):
         _b, _n, _, _device = *x.shape, x.device
 
         x = self.project_in(x)
-        x = x + self.pos_emb(x)
+        x += self.pos_emb(x)
         x = self.emb_dropout(x)
 
         x, intermediates = self.attn_layers(x, mask=mask, mems=mems, return_hiddens=True, **kwargs)

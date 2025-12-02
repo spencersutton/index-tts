@@ -1,6 +1,7 @@
 import os
 
 os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
+import operator
 import time
 import warnings
 from subprocess import CalledProcessError
@@ -186,7 +187,7 @@ class IndexTTS:
             last_bucket = None
             last_bucket_sent_len_median = 0
 
-            for sent in sorted(outputs, key=lambda x: x["len"]):
+            for sent in sorted(outputs, key=operator.itemgetter("len")):
                 current_sent_len = sent["len"]
                 if current_sent_len == 0:
                     print(">> skip empty segment")

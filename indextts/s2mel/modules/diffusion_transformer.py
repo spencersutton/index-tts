@@ -199,7 +199,7 @@ class DiT(torch.nn.Module):
             x_in = torch.cat([x_in, style[:, None, :].repeat(1, T, 1)], dim=-1)  # [2, 1863, 864]
 
         if class_dropout:  # False
-            x_in[..., self.in_channels :] = x_in[..., self.in_channels :] * 0  # 80维后全置为0
+            x_in[..., self.in_channels :] *= 0  # 80维后全置为0
 
         x_in = self.cond_x_merge_linear(x_in)  # (N, T, D) [2, 1863, 512]
 

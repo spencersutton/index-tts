@@ -443,7 +443,7 @@ class IndexTTS2:
             feat = torchaudio.compliance.kaldi.fbank(
                 audio_16k.to(ref_mel.device), num_mel_bins=80, dither=0, sample_frequency=16000
             )
-            feat = feat - feat.mean(dim=0, keepdim=True)  # feat2另外一个滤波器能量组特征[922, 80]
+            feat -= feat.mean(dim=0, keepdim=True)  # feat2另外一个滤波器能量组特征[922, 80]
             style = self.campplus_model(feat.unsqueeze(0))  # 参考音频的全局style2[1,192]
 
             prompt_condition = self.s2mel.models["length_regulator"](
@@ -633,7 +633,7 @@ class IndexTTS2:
                     latent = self.s2mel.models["gpt_layer"](latent)
                     S_infer = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1))
                     S_infer = S_infer.transpose(1, 2)
-                    S_infer = S_infer + latent
+                    S_infer += latent
                     target_lengths = (code_lens * 1.72).long()
 
                     cond = self.s2mel.models["length_regulator"](

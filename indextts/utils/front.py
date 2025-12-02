@@ -104,7 +104,7 @@ class TextNormalizer:
             cache_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tagger_cache")
             if not os.path.exists(cache_dir):
                 os.makedirs(cache_dir)
-                pathlib.Path(os.path.join(cache_dir, ".gitignore")).write_text("*\n")
+                pathlib.Path(os.path.join(cache_dir, ".gitignore")).write_text("*\n", encoding="utf-8")
             self.zh_normalizer = NormalizerZh(
                 cache_dir=cache_dir, remove_interjections=False, remove_erhua=False, overwrite_cache=False
             )
@@ -377,7 +377,7 @@ class TextTokenizer:
                 )
             elif current_segment_tokens_len <= max_text_tokens_per_segment:
                 if token in split_tokens and current_segment_tokens_len > 2:
-                    if i < len(tokenized_str) - 1 and tokenized_str[i + 1] in ["'", "▁'"]:
+                    if i < len(tokenized_str) - 1 and tokenized_str[i + 1] in {"'", "▁'"}:
                         # 后续token是'，则不切分
                         current_segment.append(tokenized_str[i + 1])
                         i += 1
@@ -419,7 +419,7 @@ class TextTokenizer:
                 len(merged_segments[-1]) + len(segment) <= max_text_tokens_per_segment
                 and total_token > quick_streaming_tokens
             ) or len(merged_segments[-1]) + len(segment) <= max_text_tokens_per_segment / 2:
-                merged_segments[-1] = merged_segments[-1] + segment
+                merged_segments[-1] += segment
             else:
                 merged_segments.append(segment)
         return merged_segments

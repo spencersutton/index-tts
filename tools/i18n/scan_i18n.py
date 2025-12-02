@@ -16,9 +16,7 @@ def extract_i18n_strings(node):
     i18n_strings = []
 
     if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "i18n":
-        for arg in node.args:
-            if isinstance(arg, ast.Str):
-                i18n_strings.append(arg.s)
+        i18n_strings.extend(arg.s for arg in node.args if isinstance(arg, ast.Str))
 
     for child_node in ast.iter_child_nodes(node):
         i18n_strings.extend(extract_i18n_strings(child_node))
@@ -36,14 +34,14 @@ def scan_i18n_strings():
     print(" Scanning Files and Extracting i18n Strings ".center(TITLE_LEN, "="))
     for filename in glob.iglob("**/*.py", recursive=True):
         try:
-            with open(filename, "r", encoding="utf-8") as f:
+            with open(filename, encoding="utf-8") as f:
                 code = f.read()
                 if "I18nAuto" in code:
                     tree = ast.parse(code)
                     i18n_strings = extract_i18n_strings(tree)
                     print(f"{filename.ljust(KEY_LEN * 3 // 2)}: {len(i18n_strings)}")
                     if SHOW_KEYS:
-                        print("\n".join([s for s in i18n_strings]))
+                        print("\n".join(list(i18n_strings)))
                     strings.extend(i18n_strings)
         except Exception as e:
             print(f"\033[31m[Failed] Error occur at {filename}: {e}\033[0m")
@@ -53,11 +51,11 @@ def scan_i18n_strings():
     return code_keys
 
 
-def update_i18n_json(json_file, standard_keys):
+def update_i18n_json(json_file, standard_keys) -> None:
     standard_keys = sorted(standard_keys)
     print(f" Process {json_file} ".center(TITLE_LEN, "="))
     # 读取 JSON 文件
-    with open(json_file, "r", encoding="utf-8") as f:
+    with open(json_file, encoding="utf-8") as f:
         json_data = json.load(f, object_pairs_hook=OrderedDict)
     # 打印处理前的 JSON 条目数
     len_before = len(json_data)

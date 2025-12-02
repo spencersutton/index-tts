@@ -10,8 +10,8 @@ import torch.nn as nn
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize.factorized_vector_quantize import (
     FactorizedVectorQuantize,
 )
-from indextts.utils.maskgct.models.codec.amphion_codec.quantize.vector_quantize import VectorQuantize
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize.lookup_free_quantize import LookupFreeQuantize
+from indextts.utils.maskgct.models.codec.amphion_codec.quantize.vector_quantize import VectorQuantize
 
 
 class ResidualVQ(nn.Module):
@@ -29,7 +29,7 @@ class ResidualVQ(nn.Module):
         quantizer_type: str = "vq",  # "vq" or "fvq" or "lfq"
         quantizer_dropout: float = 0.5,
         **kwargs,
-    ):
+    ) -> None:
         super().__init__()
 
         self.input_dim = input_dim
@@ -60,7 +60,7 @@ class ResidualVQ(nn.Module):
             ]
         )
 
-    def forward(self, z, n_quantizers: int = None):
+    def forward(self, z, n_quantizers: int | None = None):
         """
         Parameters
         ----------
@@ -104,7 +104,7 @@ class ResidualVQ(nn.Module):
             if self.training is False and i >= n_quantizers:
                 break
 
-            z_q_i, commit_loss_i, codebook_loss_i, indices_i, z_e_i = quantizer(residual)
+            z_q_i, commit_loss_i, codebook_loss_i, indices_i, _z_e_i = quantizer(residual)
 
             # Create mask to apply quantizer dropout
             mask = torch.full((z.shape[0],), fill_value=i, device=z.device) < n_quantizers

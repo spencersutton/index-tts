@@ -10,13 +10,11 @@ import math
 import typing as tp
 import warnings
 
+import einops
 import torch
 from torch import nn
 from torch.nn import functional as F
 from torch.nn.utils import spectral_norm, weight_norm
-
-
-import einops
 
 
 class ConvLayerNorm(nn.LayerNorm):
@@ -25,10 +23,10 @@ class ConvLayerNorm(nn.LayerNorm):
     before running the normalization and moves them back to original position right after.
     """
 
-    def __init__(self, normalized_shape: tp.Union[int, tp.List[int], torch.Size], **kwargs):
+    def __init__(self, normalized_shape: int | list[int] | torch.Size, **kwargs) -> None:
         super().__init__(normalized_shape, **kwargs)
 
-    def forward(self, x):
+    def forward(self, x) -> None:
         x = einops.rearrange(x, "b ... t -> b t ...")
         x = super().forward(x)
         x = einops.rearrange(x, "b t ... -> b ... t")
@@ -92,7 +90,7 @@ def pad_for_conv1d(x: torch.Tensor, kernel_size: int, stride: int, padding_total
     return F.pad(x, (0, extra_padding))
 
 
-def pad1d(x: torch.Tensor, paddings: tp.Tuple[int, int], mode: str = "zero", value: float = 0.0):
+def pad1d(x: torch.Tensor, paddings: tuple[int, int], mode: str = "zero", value: float = 0.0):
     """Tiny wrapper around F.pad, just to allow for reflect padding on small input.
     If this is the case, we insert extra 0 padding to the right before the reflection happen.
     """
@@ -112,7 +110,7 @@ def pad1d(x: torch.Tensor, paddings: tp.Tuple[int, int], mode: str = "zero", val
         return F.pad(x, paddings, mode, value)
 
 
-def unpad1d(x: torch.Tensor, paddings: tp.Tuple[int, int]):
+def unpad1d(x: torch.Tensor, paddings: tuple[int, int]):
     """Remove padding from x, handling properly zero padding. Only for 1d!"""
     padding_left, padding_right = paddings
     assert padding_left >= 0 and padding_right >= 0, (padding_left, padding_right)
@@ -127,8 +125,8 @@ class NormConv1d(nn.Module):
     """
 
     def __init__(
-        self, *args, causal: bool = False, norm: str = "none", norm_kwargs: tp.Dict[str, tp.Any] = {}, **kwargs
-    ):
+        self, *args, causal: bool = False, norm: str = "none", norm_kwargs: dict[str, tp.Any] = {}, **kwargs
+    ) -> None:
         super().__init__()
         self.conv = apply_parametrization_norm(nn.Conv1d(*args, **kwargs), norm)
         self.norm = get_norm_module(self.conv, causal, norm, **norm_kwargs)
@@ -145,7 +143,7 @@ class NormConv2d(nn.Module):
     to provide a uniform interface across normalization approaches.
     """
 
-    def __init__(self, *args, norm: str = "none", norm_kwargs: tp.Dict[str, tp.Any] = {}, **kwargs):
+    def __init__(self, *args, norm: str = "none", norm_kwargs: dict[str, tp.Any] = {}, **kwargs) -> None:
         super().__init__()
         self.conv = apply_parametrization_norm(nn.Conv2d(*args, **kwargs), norm)
         self.norm = get_norm_module(self.conv, causal=False, norm=norm, **norm_kwargs)
@@ -163,8 +161,8 @@ class NormConvTranspose1d(nn.Module):
     """
 
     def __init__(
-        self, *args, causal: bool = False, norm: str = "none", norm_kwargs: tp.Dict[str, tp.Any] = {}, **kwargs
-    ):
+        self, *args, causal: bool = False, norm: str = "none", norm_kwargs: dict[str, tp.Any] = {}, **kwargs
+    ) -> None:
         super().__init__()
         self.convtr = apply_parametrization_norm(nn.ConvTranspose1d(*args, **kwargs), norm)
         self.norm = get_norm_module(self.convtr, causal, norm, **norm_kwargs)
@@ -181,7 +179,7 @@ class NormConvTranspose2d(nn.Module):
     to provide a uniform interface across normalization approaches.
     """
 
-    def __init__(self, *args, norm: str = "none", norm_kwargs: tp.Dict[str, tp.Any] = {}, **kwargs):
+    def __init__(self, *args, norm: str = "none", norm_kwargs: dict[str, tp.Any] = {}, **kwargs) -> None:
         super().__init__()
         self.convtr = apply_parametrization_norm(nn.ConvTranspose2d(*args, **kwargs), norm)
         self.norm = get_norm_module(self.convtr, causal=False, norm=norm, **norm_kwargs)
@@ -208,10 +206,10 @@ class SConv1d(nn.Module):
         bias: bool = True,
         causal: bool = False,
         norm: str = "none",
-        norm_kwargs: tp.Dict[str, tp.Any] = {},
+        norm_kwargs: dict[str, tp.Any] = {},
         pad_mode: str = "reflect",
         **kwargs,
-    ):
+    ) -> None:
         super().__init__()
         # warn user on unusual setup between dilation and stride
         if stride > 1 and dilation > 1:
@@ -235,7 +233,7 @@ class SConv1d(nn.Module):
         self.pad_mode = pad_mode
 
     def forward(self, x):
-        B, C, T = x.shape
+        _B, _C, _T = x.shape
         kernel_size = self.conv.conv.kernel_size[0]
         stride = self.conv.conv.stride[0]
         dilation = self.conv.conv.dilation[0]
@@ -267,9 +265,9 @@ class SConvTranspose1d(nn.Module):
         causal: bool = False,
         norm: str = "none",
         trim_right_ratio: float = 1.0,
-        norm_kwargs: tp.Dict[str, tp.Any] = {},
+        norm_kwargs: dict[str, tp.Any] = {},
         **kwargs,
-    ):
+    ) -> None:
         super().__init__()
         self.convtr = NormConvTranspose1d(
             in_channels, out_channels, kernel_size, stride, causal=causal, norm=norm, norm_kwargs=norm_kwargs
@@ -312,7 +310,7 @@ class SLSTM(nn.Module):
     Expects input as convolutional layout.
     """
 
-    def __init__(self, dimension: int, num_layers: int = 2, skip: bool = True):
+    def __init__(self, dimension: int, num_layers: int = 2, skip: bool = True) -> None:
         super().__init__()
         self.skip = skip
         self.lstm = nn.LSTM(dimension, dimension, num_layers)

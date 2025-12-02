@@ -22,7 +22,7 @@ def snake(x, alpha):
 
 
 class Snake1d(nn.Module):
-    def __init__(self, channels):
+    def __init__(self, channels) -> None:
         super().__init__()
         self.alpha = nn.Parameter(torch.ones(1, channels, 1))
 

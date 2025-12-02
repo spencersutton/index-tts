@@ -34,7 +34,7 @@ print_once = once(print)
 
 # main class
 class Attend(nn.Module):
-    def __init__(self, dropout=0.0, causal=False, use_flash=False):
+    def __init__(self, dropout=0.0, causal=False, use_flash=False) -> None:
         super().__init__()
         self.dropout = dropout
         self.attn_dropout = nn.Dropout(dropout)
@@ -165,7 +165,7 @@ def default(val, d):
 
 
 class RMSNorm(nn.Module):
-    def __init__(self, dim, scale=True, dim_cond=None):
+    def __init__(self, dim, scale=True, dim_cond=None) -> None:
         super().__init__()
         self.cond = exists(dim_cond)
         self.to_gamma_beta = nn.Linear(dim_cond, dim * 2) if self.cond else None
@@ -182,12 +182,12 @@ class RMSNorm(nn.Module):
 
         assert exists(cond)
         gamma, beta = self.to_gamma_beta(cond).chunk(2, dim=-1)
-        gamma, beta = map(lambda t: rearrange(t, "b d -> b 1 d"), (gamma, beta))
+        gamma, beta = (rearrange(t, "b d -> b 1 d") for t in (gamma, beta))
         return out * gamma + beta
 
 
 class CausalConv1d(nn.Conv1d):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         (kernel_size,) = self.kernel_size
         (dilation,) = self.dilation
@@ -232,7 +232,7 @@ class PerceiverResampler(nn.Module):
         heads=8,
         ff_mult=4,
         use_flash_attn=False,
-    ):
+    ) -> None:
         super().__init__()
         dim_context = default(dim_context, dim)
 
@@ -286,7 +286,7 @@ class Attention(nn.Module):
         dropout=0.0,
         use_flash=False,
         cross_attn_include_queries=False,
-    ):
+    ) -> None:
         super().__init__()
         self.scale = dim_head**-0.5
         self.heads = heads
@@ -309,7 +309,7 @@ class Attention(nn.Module):
             context = torch.cat((x, context), dim=-2)
 
         q, k, v = (self.to_q(x), *self.to_kv(context).chunk(2, dim=-1))
-        q, k, v = map(lambda t: rearrange(t, "b n (h d) -> b h n d", h=h), (q, k, v))
+        q, k, v = (rearrange(t, "b n (h d) -> b h n d", h=h) for t in (q, k, v))
 
         out = self.attend(q, k, v, mask=mask)
 

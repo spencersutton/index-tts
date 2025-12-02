@@ -1,4 +1,5 @@
 import os
+import pathlib
 import re
 import traceback
 import warnings
@@ -10,7 +11,7 @@ from indextts.utils.common import de_tokenized_by_CJK_char, tokenize_by_CJK_char
 
 
 class TextNormalizer:
-    def __init__(self):
+    def __init__(self) -> None:
         self.zh_normalizer = None
         self.en_normalizer = None
         self.char_rep_map = {
@@ -85,7 +86,7 @@ class TextNormalizer:
         has_pinyin = bool(re.search(TextNormalizer.PINYIN_TONE_PATTERN, s, re.IGNORECASE))
         return has_pinyin
 
-    def load(self):
+    def load(self) -> None:
         # print(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
         # sys.path.append(model_dir)
         import platform
@@ -105,8 +106,7 @@ class TextNormalizer:
             cache_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tagger_cache")
             if not os.path.exists(cache_dir):
                 os.makedirs(cache_dir)
-                with open(os.path.join(cache_dir, ".gitignore"), "w") as f:
-                    f.write("*\n")
+                pathlib.Path(os.path.join(cache_dir, ".gitignore")).write_text("*\n")
             self.zh_normalizer = NormalizerZh(
                 cache_dir=cache_dir, remove_interjections=False, remove_erhua=False, overwrite_cache=False
             )
@@ -130,7 +130,7 @@ class TextNormalizer:
             result = self.restore_names(result, original_name_list)
             # 恢复拼音声调
             result = self.restore_pinyin_tones(result, pinyin_list)
-            pattern = re.compile("|".join(re.escape(p) for p in self.zh_char_rep_map.keys()))
+            pattern = re.compile("|".join(re.escape(p) for p in self.zh_char_rep_map))
             result = pattern.sub(lambda x: self.zh_char_rep_map[x.group()], result)
         else:
             try:
@@ -139,7 +139,7 @@ class TextNormalizer:
             except Exception:
                 result = text
                 print(traceback.format_exc())
-            pattern = re.compile("|".join(re.escape(p) for p in self.char_rep_map.keys()))
+            pattern = re.compile("|".join(re.escape(p) for p in self.char_rep_map))
             result = pattern.sub(lambda x: self.char_rep_map[x.group()], result)
         return result
 
@@ -166,7 +166,7 @@ class TextNormalizer:
         original_name_list = re.findall(name_pattern, original_text)
         if len(original_name_list) == 0:
             return (original_text, None)
-        original_name_list = list(set("".join(n) for n in original_name_list))
+        original_name_list = list({"".join(n) for n in original_name_list})
         transformed_text = original_text
         # 替换占位符 <n_a>、 <n_b>, ...
         for i, name in enumerate(original_name_list):
@@ -200,7 +200,7 @@ class TextNormalizer:
         original_pinyin_list = re.findall(origin_pinyin_pattern, original_text)
         if len(original_pinyin_list) == 0:
             return (original_text, None)
-        original_pinyin_list = list(set("".join(p) for p in original_pinyin_list))
+        original_pinyin_list = list({"".join(p) for p in original_pinyin_list})
         transformed_text = original_text
         # 替换为占位符 <pinyin_a>, <pinyin_b>, ...
         for i, pinyin in enumerate(original_pinyin_list):
@@ -227,7 +227,7 @@ class TextNormalizer:
 
 
 class TextTokenizer:
-    def __init__(self, vocab_file: str, normalizer: TextNormalizer = None):
+    def __init__(self, vocab_file: str, normalizer: TextNormalizer = None) -> None:
         self.vocab_file = vocab_file
         self.normalizer = normalizer
 
@@ -250,31 +250,31 @@ class TextTokenizer:
         return self.sp_model.GetPieceSize()
 
     @property
-    def unk_token(self):
+    def unk_token(self) -> str:
         return "<unk>"
 
     @property
-    def pad_token(self):
+    def pad_token(self) -> None:
         return None
 
     @property
-    def bos_token(self):
+    def bos_token(self) -> str:
         return "<s>"
 
     @property
-    def eos_token(self):
+    def eos_token(self) -> str:
         return "</s>"
 
     @property
-    def pad_token_id(self):
+    def pad_token_id(self) -> int:
         return -1
 
     @property
-    def bos_token_id(self):
+    def bos_token_id(self) -> int:
         return 0
 
     @property
-    def eos_token_id(self):
+    def eos_token_id(self) -> int:
         return 1
 
     @property
@@ -379,11 +379,10 @@ class TextTokenizer:
                 )
             elif current_segment_tokens_len <= max_text_tokens_per_segment:
                 if token in split_tokens and current_segment_tokens_len > 2:
-                    if i < len(tokenized_str) - 1:
-                        if tokenized_str[i + 1] in ["'", "▁'"]:
-                            # 后续token是'，则不切分
-                            current_segment.append(tokenized_str[i + 1])
-                            i += 1
+                    if i < len(tokenized_str) - 1 and tokenized_str[i + 1] in ["'", "▁'"]:
+                        # 后续token是'，则不切分
+                        current_segment.append(tokenized_str[i + 1])
+                        i += 1
                     segments.append(current_segment)
                     current_segment = []
                     current_segment_tokens_len = 0
@@ -525,7 +524,7 @@ if __name__ == "__main__":
         if re.match(TextNormalizer.PINYIN_TONE_PATTERN, badcase, re.IGNORECASE) is not None:
             print(f"{badcase} should not be matched!")
     # 不应该有 unk_token_id
-    for t in set([*TextTokenizer.punctuation_marks_tokens, ",", "▁,", "-", "▁..."]):
+    for t in {*TextTokenizer.punctuation_marks_tokens, ",", "▁,", "-", "▁..."}:
         tokens = tokenizer.convert_tokens_to_ids(t)
         if tokenizer.unk_token_id in tokens:
             print(f"Warning: {t} is unknown token")

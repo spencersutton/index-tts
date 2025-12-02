@@ -1,5 +1,4 @@
 import sys
-from typing import List, Optional
 
 import torch
 from torch import nn
@@ -14,7 +13,7 @@ from .kv_manager import KVCacheManager, Seq
 
 
 class Sampler(nn.Module):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
     @torch.compile
@@ -42,7 +41,7 @@ class AccelInferenceEngine:
         block_size: int = 256,
         num_blocks: int = 128,
         use_cuda_graph: bool = True,
-    ):
+    ) -> None:
         """
         Args:
             model: The GPT transformer model (should have accel attention)
@@ -76,7 +75,7 @@ class AccelInferenceEngine:
         self.graph_pool = None
         self.graph_captured = False
 
-    def _prepare_prefill(self, requests: List[Seq]):
+    def _prepare_prefill(self, requests: list[Seq]):
         input_ids = []
         positions = []
         cu_seqlens_q = [0]
@@ -135,7 +134,7 @@ class AccelInferenceEngine:
 
         return input_ids, positions
 
-    def _prepare_decode(self, requests: List[Seq]):
+    def _prepare_decode(self, requests: list[Seq]):
         if not requests:
             raise RuntimeError("FATAL: No requests provided to _prepare_decode!")
 
@@ -181,12 +180,12 @@ class AccelInferenceEngine:
 
         return input_ids, positions
 
-    def _prepare_sample(self, requests: List[Seq], temperature: float):
+    def _prepare_sample(self, requests: list[Seq], temperature: float):
         temperatures = [temperature] * len(requests)
         temperatures = torch.tensor(temperatures, dtype=torch.float32, pin_memory=True).cuda(non_blocking=True)
         return temperatures
 
-    def _capture_cuda_graphs(self, tts_mel_embedding=None, tts_text_pos_embedding=None):
+    def _capture_cuda_graphs(self, tts_mel_embedding=None, tts_text_pos_embedding=None) -> None:
         print("Capturing CUDA graphs for decode optimization...")
         max_bs = 8  # Support up to batch size 8
         max_num_blocks = (2048 + self.block_size - 1) // self.block_size
@@ -272,8 +271,8 @@ class AccelInferenceEngine:
         input_ids: torch.Tensor,
         positions: torch.Tensor,
         context: ForwardContext,
-        tts_mel_embedding: Optional[torch.nn.Module] = None,
-        tts_text_pos_embedding: Optional[torch.nn.Module] = None,
+        tts_mel_embedding: torch.nn.Module | None = None,
+        tts_text_pos_embedding: torch.nn.Module | None = None,
     ) -> torch.Tensor:
         bs = input_ids.size(0)
         use_tts_embedding = hasattr(self, "_tts_mode") and self._tts_mode
@@ -330,11 +329,11 @@ class AccelInferenceEngine:
         temperature: float = 1.0,
         top_k: int = 50,
         top_p: float = 1.0,
-        stop_tokens: Optional[List[int]] = None,
-        attention_mask: Optional[torch.Tensor] = None,
-        tts_embeddings: Optional[torch.Tensor] = None,  # TTS: [pad][cond][text] embeddings (87 tokens, NO start_mel)
-        tts_mel_embedding: Optional[torch.nn.Module] = None,  # TTS: mel_embedding layer
-        tts_text_pos_embedding: Optional[torch.nn.Module] = None,  # TTS: text_pos_embedding layer
+        stop_tokens: list[int] | None = None,
+        attention_mask: torch.Tensor | None = None,
+        tts_embeddings: torch.Tensor | None = None,  # TTS: [pad][cond][text] embeddings (87 tokens, NO start_mel)
+        tts_mel_embedding: torch.nn.Module | None = None,  # TTS: mel_embedding layer
+        tts_text_pos_embedding: torch.nn.Module | None = None,  # TTS: text_pos_embedding layer
     ) -> torch.Tensor:
         """
         Generate tokens.
@@ -404,7 +403,7 @@ class AccelInferenceEngine:
 
         self.current_sequences = sequences
 
-        prefill_ids, prefill_pos = self._prepare_prefill(sequences)
+        _prefill_ids, _prefill_pos = self._prepare_prefill(sequences)
 
         if tts_embeddings is not None and tts_mel_embedding is not None and tts_text_pos_embedding is not None:
             start_token_id = input_ids[0, -1] if input_ids.size(1) > 0 else 8192
@@ -455,10 +454,7 @@ class AccelInferenceEngine:
             logits = self.model.compute_logits(last_hidden)  # [batch_size, vocab_size]
 
         temperatures = self._prepare_sample(sequences, temperature)
-        if temperature > 0:
-            first_token = self.sampler(logits, temperatures)
-        else:
-            first_token = torch.argmax(logits, dim=-1)
+        first_token = self.sampler(logits, temperatures) if temperature > 0 else torch.argmax(logits, dim=-1)
 
         first_token_list = first_token.tolist()
 
@@ -509,10 +505,7 @@ class AccelInferenceEngine:
             reset_forward_context()
 
             temperatures = self._prepare_sample(sequences, temperature)
-            if temperature > 0:
-                next_token = self.sampler(logits, temperatures)
-            else:
-                next_token = torch.argmax(logits, dim=-1)
+            next_token = self.sampler(logits, temperatures) if temperature > 0 else torch.argmax(logits, dim=-1)
             next_token_list = next_token.tolist()
 
             for i, token_id in enumerate(next_token_list):
@@ -561,7 +554,7 @@ class AccelInferenceEngine:
 
 
 class Sampler(nn.Module):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
     @torch.compile

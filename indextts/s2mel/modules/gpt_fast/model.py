@@ -4,7 +4,6 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 from dataclasses import dataclass
-from typing import Optional
 
 import torch
 import torch.nn as nn
@@ -22,7 +21,7 @@ class AdaptiveLayerNorm(nn.Module):
     r"""Adaptive Layer Normalization"""
 
     def __init__(self, d_model, norm) -> None:
-        super(AdaptiveLayerNorm, self).__init__()
+        super().__init__()
         self.project_layer = nn.Linear(d_model, 2 * d_model)
         self.norm = norm
         self.d_model = d_model
@@ -82,42 +81,61 @@ class ModelArgs:
 
 
 transformer_configs = {
-    "CodeLlama-7b-Python-hf": dict(block_size=16384, vocab_size=32000, n_layer=32, dim=4096, rope_base=1000000),
-    "7B": dict(n_layer=32, n_head=32, dim=4096),
-    "13B": dict(n_layer=40, n_head=40, dim=5120),
-    "30B": dict(n_layer=60, n_head=52, dim=6656),
-    "34B": dict(
-        n_layer=48, n_head=64, dim=8192, vocab_size=32000, n_local_heads=8, intermediate_size=22016, rope_base=1000000
-    ),  # CodeLlama-34B-Python-hf
-    "70B": dict(n_layer=80, n_head=64, dim=8192, n_local_heads=8, intermediate_size=28672),
-    "Mistral-7B": dict(n_layer=32, n_head=32, n_local_heads=8, dim=4096, intermediate_size=14336, vocab_size=32000),
-    "stories15M": dict(n_layer=6, n_head=6, dim=288),
-    "stories110M": dict(n_layer=12, n_head=12, dim=768),
-    "llama-3-8b": dict(
-        block_size=8192,
-        n_layer=32,
-        n_head=32,
-        n_local_heads=8,
-        dim=4096,
-        intermediate_size=14336,
-        vocab_size=128256,
-        rope_base=500000,
-    ),
-    "llama-3-70b": dict(
-        block_size=8192,
-        n_layer=80,
-        n_head=64,
-        n_local_heads=8,
-        dim=8192,
-        intermediate_size=28672,
-        vocab_size=128256,
-        rope_base=500000,
-    ),
+    "CodeLlama-7b-Python-hf": {
+        "block_size": 16384,
+        "vocab_size": 32000,
+        "n_layer": 32,
+        "dim": 4096,
+        "rope_base": 1000000,
+    },
+    "7B": {"n_layer": 32, "n_head": 32, "dim": 4096},
+    "13B": {"n_layer": 40, "n_head": 40, "dim": 5120},
+    "30B": {"n_layer": 60, "n_head": 52, "dim": 6656},
+    "34B": {
+        "n_layer": 48,
+        "n_head": 64,
+        "dim": 8192,
+        "vocab_size": 32000,
+        "n_local_heads": 8,
+        "intermediate_size": 22016,
+        "rope_base": 1000000,
+    },  # CodeLlama-34B-Python-hf
+    "70B": {"n_layer": 80, "n_head": 64, "dim": 8192, "n_local_heads": 8, "intermediate_size": 28672},
+    "Mistral-7B": {
+        "n_layer": 32,
+        "n_head": 32,
+        "n_local_heads": 8,
+        "dim": 4096,
+        "intermediate_size": 14336,
+        "vocab_size": 32000,
+    },
+    "stories15M": {"n_layer": 6, "n_head": 6, "dim": 288},
+    "stories110M": {"n_layer": 12, "n_head": 12, "dim": 768},
+    "llama-3-8b": {
+        "block_size": 8192,
+        "n_layer": 32,
+        "n_head": 32,
+        "n_local_heads": 8,
+        "dim": 4096,
+        "intermediate_size": 14336,
+        "vocab_size": 128256,
+        "rope_base": 500000,
+    },
+    "llama-3-70b": {
+        "block_size": 8192,
+        "n_layer": 80,
+        "n_head": 64,
+        "n_local_heads": 8,
+        "dim": 8192,
+        "intermediate_size": 28672,
+        "vocab_size": 128256,
+        "rope_base": 500000,
+    },
 }
 
 
 class KVCache(nn.Module):
-    def __init__(self, max_batch_size, max_seq_length, n_heads, head_dim, dtype=torch.bfloat16):
+    def __init__(self, max_batch_size, max_seq_length, n_heads, head_dim, dtype=torch.bfloat16) -> None:
         super().__init__()
         cache_shape = (max_batch_size, n_heads, max_seq_length, head_dim)
         self.register_buffer("k_cache", torch.zeros(cache_shape, dtype=dtype))
@@ -143,12 +161,12 @@ class Transformer(nn.Module):
         self.layers = nn.ModuleList(TransformerBlock(config) for _ in range(config.n_layer))
         self.norm = AdaptiveLayerNorm(config.dim, RMSNorm(config.dim, eps=config.norm_eps))
 
-        self.freqs_cis: Optional[Tensor] = None
-        self.mask_cache: Optional[Tensor] = None
+        self.freqs_cis: Tensor | None = None
+        self.mask_cache: Tensor | None = None
         self.max_batch_size = -1
         self.max_seq_length = -1
 
-    def setup_caches(self, max_batch_size, max_seq_length, use_kv_cache=True):
+    def setup_caches(self, max_batch_size, max_seq_length, use_kv_cache=True) -> None:
         if self.max_seq_length >= max_seq_length and self.max_batch_size >= max_batch_size:
             return
         head_dim = self.config.dim // self.config.n_head
@@ -181,11 +199,11 @@ class Transformer(nn.Module):
         self,
         x: Tensor,
         c: Tensor,
-        input_pos: Optional[Tensor] = None,
-        mask: Optional[Tensor] = None,
-        context: Optional[Tensor] = None,
-        context_input_pos: Optional[Tensor] = None,
-        cross_attention_mask: Optional[Tensor] = None,
+        input_pos: Tensor | None = None,
+        mask: Tensor | None = None,
+        context: Tensor | None = None,
+        context_input_pos: Tensor | None = None,
+        cross_attention_mask: Tensor | None = None,
     ) -> Tensor:
         assert self.freqs_cis is not None, "Caches must be initialized first"
         if mask is None:  # in case of non-causal model
@@ -195,16 +213,10 @@ class Transformer(nn.Module):
                 mask = self.causal_mask[None, None, input_pos]
                 mask = mask[..., input_pos]
         freqs_cis = self.freqs_cis[input_pos]
-        if context is not None:
-            context_freqs_cis = self.freqs_cis[context_input_pos]
-        else:
-            context_freqs_cis = None
+        context_freqs_cis = self.freqs_cis[context_input_pos] if context is not None else None
         skip_in_x_list = []
         for i, layer in enumerate(self.layers):
-            if self.uvit_skip_connection and i in self.layers_receive_skip:
-                skip_in_x = skip_in_x_list.pop(-1)
-            else:
-                skip_in_x = None
+            skip_in_x = skip_in_x_list.pop(-1) if self.uvit_skip_connection and i in self.layers_receive_skip else None
             x = layer(x, c, input_pos, freqs_cis, mask, context, context_freqs_cis, cross_attention_mask, skip_in_x)
             if self.uvit_skip_connection and i in self.layers_emit_skip:
                 skip_in_x_list.append(x)
@@ -246,10 +258,10 @@ class TransformerBlock(nn.Module):
         input_pos: Tensor,
         freqs_cis: Tensor,
         mask: Tensor,
-        context: Optional[Tensor] = None,
-        context_freqs_cis: Optional[Tensor] = None,
-        cross_attention_mask: Optional[Tensor] = None,
-        skip_in_x: Optional[Tensor] = None,
+        context: Tensor | None = None,
+        context_freqs_cis: Tensor | None = None,
+        cross_attention_mask: Tensor | None = None,
+        skip_in_x: Tensor | None = None,
     ) -> Tensor:
         c = None if self.time_as_token else c
         if self.uvit_skip_connection and skip_in_x is not None:
@@ -264,7 +276,7 @@ class TransformerBlock(nn.Module):
 
 
 class Attention(nn.Module):
-    def __init__(self, config: ModelArgs, is_cross_attention: bool = False):
+    def __init__(self, config: ModelArgs, is_cross_attention: bool = False) -> None:
         super().__init__()
         assert config.dim % config.n_head == 0
 
@@ -288,9 +300,9 @@ class Attention(nn.Module):
         x: Tensor,
         freqs_cis: Tensor,
         mask: Tensor,
-        input_pos: Optional[Tensor] = None,
-        context: Optional[Tensor] = None,
-        context_freqs_cis: Optional[Tensor] = None,
+        input_pos: Tensor | None = None,
+        context: Tensor | None = None,
+        context_freqs_cis: Tensor | None = None,
     ) -> Tensor:
         bsz, seqlen, _ = x.shape
 
@@ -310,7 +322,7 @@ class Attention(nn.Module):
         q = apply_rotary_emb(q, freqs_cis)
         k = apply_rotary_emb(k, context_freqs_cis if context_freqs_cis is not None else freqs_cis)
 
-        q, k, v = map(lambda x: x.transpose(1, 2), (q, k, v))
+        q, k, v = (x.transpose(1, 2) for x in (q, k, v))
 
         if self.kv_cache is not None:
             k, v = self.kv_cache.update(input_pos, k, v)
@@ -337,7 +349,7 @@ class FeedForward(nn.Module):
 
 
 class RMSNorm(nn.Module):
-    def __init__(self, dim: int, eps: float = 1e-5):
+    def __init__(self, dim: int, eps: float = 1e-5) -> None:
         super().__init__()
         self.eps = eps
         self.weight = nn.Parameter(torch.ones(dim))

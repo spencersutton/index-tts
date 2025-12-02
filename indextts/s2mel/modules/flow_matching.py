@@ -26,7 +26,17 @@ class BASECFM(torch.nn.Module, ABC):
             self.zero_prompt_speech_token = False
 
     @torch.inference_mode()
-    def inference(self, mu, x_lens, prompt, style, f0, n_timesteps, temperature=1.0, inference_cfg_rate=0.5):
+    def inference(
+        self,
+        mu: torch.Tensor,
+        x_lens: torch.Tensor,
+        prompt: torch.Tensor,
+        style: torch.Tensor,
+        f0: None,
+        n_timesteps: int,
+        temperature: float = 1.0,
+        inference_cfg_rate: float = 0.5,
+    ):
         """Forward diffusion
 
         Args:
@@ -51,7 +61,17 @@ class BASECFM(torch.nn.Module, ABC):
         t_span = torch.linspace(0, 1, n_timesteps + 1, device=mu.device)
         return self.solve_euler(z, x_lens, prompt, mu, style, f0, t_span, inference_cfg_rate)
 
-    def solve_euler(self, x, x_lens, prompt, mu, style, f0, t_span, inference_cfg_rate=0.5):
+    def solve_euler(
+        self,
+        x: torch.Tensor,
+        x_lens: torch.Tensor,
+        prompt: torch.Tensor,
+        mu: torch.Tensor,
+        style: torch.Tensor,
+        f0: None,
+        t_span: torch.Tensor,
+        inference_cfg_rate: float = 0.5,
+    ):
         """
         Fixed euler solver for ODEs.
         Args:
@@ -116,7 +136,9 @@ class BASECFM(torch.nn.Module, ABC):
 
         return sol[-1]
 
-    def forward(self, x1, x_lens, prompt_lens, mu, style):
+    def forward(
+        self, x1: torch.Tensor, x_lens: torch.Tensor, prompt_lens: torch.Tensor, mu: torch.Tensor, style: torch.Tensor
+    ):
         """Computes diffusion loss
 
         Args:

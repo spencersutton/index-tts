@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import numpy as np
 import torch
 from torch import nn
@@ -14,7 +12,7 @@ f0_mel_min = 1127 * np.log(1 + f0_min / 700)
 f0_mel_max = 1127 * np.log(1 + f0_max / 700)
 
 
-def f0_to_coarse(f0, f0_bin):
+def f0_to_coarse(f0: torch.Tensor, f0_bin: int) -> torch.Tensor:
     f0_mel = 1127 * (1 + f0 / 700).log()
     a = (f0_bin - 2) / (f0_mel_max - f0_mel_min)
     b = f0_mel_min * a - 1.0
@@ -87,7 +85,13 @@ class InterpolateRegulator(nn.Module):
             if vector_quantize:
                 self.vq = VectorQuantize(channels, codebook_size, 8)
 
-    def forward(self, x, ylens=None, n_quantizers=None, f0=None):
+    def forward(
+        self,
+        x: torch.Tensor,
+        ylens: torch.Tensor | None = None,
+        n_quantizers: torch.Tensor | None = None,
+        f0: torch.Tensor | None = None,
+    ):
         # apply token drop
         if self.training:
             n_quantizers = torch.ones((x.shape[0],)) * self.n_codebooks

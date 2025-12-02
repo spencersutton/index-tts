@@ -56,7 +56,7 @@ class TextNormalizer:
             **self.char_rep_map,
         }
 
-    def match_email(self, email):
+    def match_email(self, email: str) -> bool:
         # 正则表达式匹配邮箱格式：数字英文@数字英文.英文
         pattern = r"^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]+$"
         return re.match(pattern, email) is not None
@@ -154,7 +154,7 @@ class TextNormalizer:
         pinyin = re.sub(pattern, repl, pinyin, flags=re.IGNORECASE)
         return pinyin.upper()
 
-    def save_names(self, original_text):
+    def save_names(self, original_text: str) -> tuple[str, list[str] | None]:
         """
         替换人名为占位符 <n_a>、 <n_b>, ...
         例如：克里斯托弗·诺兰 -> <n_a>
@@ -173,7 +173,7 @@ class TextNormalizer:
 
         return transformed_text, original_name_list
 
-    def restore_names(self, normalized_text, original_name_list):
+    def restore_names(self, normalized_text: str, original_name_list: list[str] | None) -> str:
         """
         恢复人名为原来的文字
         例如：<n_a> -> original_name_list[0]
@@ -188,7 +188,7 @@ class TextNormalizer:
             transformed_text = transformed_text.replace(f"<n_{number}>", name)
         return transformed_text
 
-    def save_pinyin_tones(self, original_text):
+    def save_pinyin_tones(self, original_text: str) -> tuple[str, list[str] | None]:
         """
         替换拼音声调为占位符 <pinyin_a>, <pinyin_b>, ...
         例如：xuan4 -> <pinyin_a>
@@ -207,7 +207,7 @@ class TextNormalizer:
 
         return transformed_text, original_pinyin_list
 
-    def restore_pinyin_tones(self, normalized_text, original_pinyin_list):
+    def restore_pinyin_tones(self, normalized_text: str, original_pinyin_list: list[str] | None) -> str:
         """
         恢复拼音中的音调数字（1-5）为原来的拼音
         例如：<pinyin_a> -> original_pinyin_list[0]
@@ -225,7 +225,7 @@ class TextNormalizer:
 
 
 class TextTokenizer:
-    def __init__(self, vocab_file: str, normalizer: TextNormalizer = None) -> None:
+    def __init__(self, vocab_file: str, normalizer: TextNormalizer | None = None) -> None:
         self.vocab_file = vocab_file
         self.normalizer = normalizer
 
@@ -424,7 +424,7 @@ class TextTokenizer:
                 merged_segments.append(segment)
         return merged_segments
 
-    punctuation_marks_tokens = [
+    punctuation_marks_tokens: ClassVar[list[str]] = [
         ".",
         "!",
         "?",

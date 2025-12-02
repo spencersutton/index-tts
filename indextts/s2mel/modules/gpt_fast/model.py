@@ -26,7 +26,7 @@ class AdaptiveLayerNorm(nn.Module):
         self.d_model = d_model
         self.eps = self.norm.eps
 
-    def forward(self, input: Tensor, embedding: Tensor = None) -> Tensor:
+    def forward(self, input: torch.Tensor, embedding: torch.Tensor = None) -> torch.Tensor:
         if embedding is None:
             return self.norm(input)
         weight, bias = torch.split(
@@ -160,8 +160,8 @@ class Transformer(nn.Module):
         self.layers = nn.ModuleList(TransformerBlock(config) for _ in range(config.n_layer))
         self.norm = AdaptiveLayerNorm(config.dim, RMSNorm(config.dim, eps=config.norm_eps))
 
-        self.freqs_cis: Tensor | None = None
-        self.mask_cache: Tensor | None = None
+        self.freqs_cis: torch.Tensor | None = None
+        self.mask_cache: torch.Tensor | None = None
         self.max_batch_size = -1
         self.max_seq_length = -1
 
@@ -196,14 +196,14 @@ class Transformer(nn.Module):
 
     def forward(
         self,
-        x: Tensor,
-        c: Tensor,
-        input_pos: Tensor | None = None,
-        mask: Tensor | None = None,
-        context: Tensor | None = None,
-        context_input_pos: Tensor | None = None,
-        cross_attention_mask: Tensor | None = None,
-    ) -> Tensor:
+        x: torch.Tensor,
+        c: torch.Tensor,
+        input_pos: torch.Tensor | None = None,
+        mask: torch.Tensor | None = None,
+        context: torch.Tensor | None = None,
+        context_input_pos: torch.Tensor | None = None,
+        cross_attention_mask: torch.Tensor | None = None,
+    ) -> torch.Tensor:
         assert self.freqs_cis is not None, "Caches must be initialized first"
         if mask is None:  # in case of non-causal model
             if not self.training and self.use_kv_cache:
@@ -252,16 +252,16 @@ class TransformerBlock(nn.Module):
 
     def forward(
         self,
-        x: Tensor,
-        c: Tensor,
-        input_pos: Tensor,
-        freqs_cis: Tensor,
-        mask: Tensor,
-        context: Tensor | None = None,
-        context_freqs_cis: Tensor | None = None,
-        cross_attention_mask: Tensor | None = None,
-        skip_in_x: Tensor | None = None,
-    ) -> Tensor:
+        x: torch.Tensor,
+        c: torch.Tensor,
+        input_pos: torch.Tensor,
+        freqs_cis: torch.Tensor,
+        mask: torch.Tensor,
+        context: torch.Tensor | None = None,
+        context_freqs_cis: torch.Tensor | None = None,
+        cross_attention_mask: torch.Tensor | None = None,
+        skip_in_x: torch.Tensor | None = None,
+    ) -> torch.Tensor:
         c = None if self.time_as_token else c
         if self.uvit_skip_connection and skip_in_x is not None:
             x = self.skip_in_linear(torch.cat([x, skip_in_x], dim=-1))
@@ -296,13 +296,13 @@ class Attention(nn.Module):
 
     def forward(
         self,
-        x: Tensor,
-        freqs_cis: Tensor,
-        mask: Tensor,
-        input_pos: Tensor | None = None,
-        context: Tensor | None = None,
-        context_freqs_cis: Tensor | None = None,
-    ) -> Tensor:
+        x: torch.Tensor,
+        freqs_cis: torch.Tensor,
+        mask: torch.Tensor,
+        input_pos: torch.Tensor | None = None,
+        context: torch.Tensor | None = None,
+        context_freqs_cis: torch.Tensor | None = None,
+    ) -> torch.Tensor:
         bsz, seqlen, _ = x.shape
 
         kv_size = self.n_local_heads * self.head_dim
@@ -343,7 +343,7 @@ class FeedForward(nn.Module):
         self.w3 = nn.Linear(config.dim, config.intermediate_size, bias=False)
         self.w2 = nn.Linear(config.intermediate_size, config.dim, bias=False)
 
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.w2(F.silu(self.w1(x)) * self.w3(x))
 
 
@@ -356,12 +356,14 @@ class RMSNorm(nn.Module):
     def _norm(self, x):
         return x * torch.rsqrt(torch.mean(x * x, dim=-1, keepdim=True) + self.eps)
 
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         output = self._norm(x.float()).type_as(x)
         return output * self.weight
 
 
-def precompute_freqs_cis(seq_len: int, n_elem: int, base: int = 10000, dtype: torch.dtype = torch.bfloat16) -> Tensor:
+def precompute_freqs_cis(
+    seq_len: int, n_elem: int, base: int = 10000, dtype: torch.dtype = torch.bfloat16
+) -> torch.Tensor:
     freqs = 1.0 / (base ** (torch.arange(0, n_elem, 2)[: (n_elem // 2)].float() / n_elem))
     t = torch.arange(seq_len, device=freqs.device)
     freqs = torch.outer(t, freqs)
@@ -370,7 +372,7 @@ def precompute_freqs_cis(seq_len: int, n_elem: int, base: int = 10000, dtype: to
     return cache.to(dtype=dtype)
 
 
-def apply_rotary_emb(x: Tensor, freqs_cis: Tensor) -> Tensor:
+def apply_rotary_emb(x: torch.Tensor, freqs_cis: torch.Tensor) -> torch.Tensor:
     xshaped = x.float().reshape(*x.shape[:-1], -1, 2)
     freqs_cis = freqs_cis.view(1, xshaped.size(1), 1, xshaped.size(3), 2)
     x_out2 = torch.stack(

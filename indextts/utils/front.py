@@ -3,7 +3,7 @@ import pathlib
 import re
 import traceback
 import warnings
-from typing import List, Union, overload
+from typing import overload
 
 from sentencepiece import SentencePieceProcessor
 

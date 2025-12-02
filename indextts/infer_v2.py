@@ -652,14 +652,17 @@ class IndexTTS2:
                     print(f"code len: {code_lens}")
 
                 m_start_time = time.perf_counter()
-                use_speed = torch.zeros(spk_cond_emb.size(0)).to(spk_cond_emb.device).long()
-                with torch.amp.autocast(text_tokens.device.type, enabled=self.dtype is not None, dtype=self.dtype):
+                with (
+                    torch.inference_mode(),
+                    torch.autocast(text_tokens.device.type, enabled=self.dtype is not None, dtype=self.dtype),
+                ):
+                    use_speed = torch.zeros(spk_cond_emb.size(0)).to(spk_cond_emb.device).long()
                     latent = self.gpt(
                         speech_conditioning_latent,
                         text_tokens,
                         torch.tensor([text_tokens.shape[-1]], device=text_tokens.device),
-                        codes,
-                        torch.tensor([codes.shape[-1]], device=text_tokens.device),
+                        code,
+                        torch.tensor([code.shape[-1]], device=text_tokens.device),
                         emo_cond_emb,
                         cond_mel_lengths=torch.tensor([spk_cond_emb.shape[-1]], device=text_tokens.device),
                         emo_cond_mel_lengths=torch.tensor([emo_cond_emb.shape[-1]], device=text_tokens.device),
@@ -669,12 +672,12 @@ class IndexTTS2:
                     gpt_forward_time += time.perf_counter() - m_start_time
 
                 dtype = None
-                with torch.amp.autocast(text_tokens.device.type, enabled=dtype is not None, dtype=dtype):
+                with torch.autocast(text_tokens.device.type, enabled=dtype is not None, dtype=dtype):
                     m_start_time = time.perf_counter()
                     diffusion_steps = 25
                     inference_cfg_rate = 0.7
                     latent = self.s2mel.models["gpt_layer"](latent)
-                    S_infer = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1))
+                    S_infer = self.semantic_codec.quantizer.vq2emb(code.unsqueeze(1))
                     S_infer = S_infer.transpose(1, 2)
                     S_infer += latent
                     target_lengths = (code_lens * 1.72).long()
@@ -683,9 +686,11 @@ class IndexTTS2:
                         S_infer, ylens=target_lengths, n_quantizers=3, f0=None
                     )[0]
                     cat_condition = torch.cat([prompt_condition, cond], dim=1)
+                    cfm = self.s2mel.models["cfm"]
                     assert isinstance(cfm, CFM)
                     assert ref_mel is not None
                     assert style is not None
+                    vc_target = cfm.inference(
                         cat_condition,
                         torch.LongTensor([cat_condition.size(1)]).to(cond.device),
                         ref_mel,
@@ -694,13 +699,14 @@ class IndexTTS2:
                         diffusion_steps,
                         inference_cfg_rate=inference_cfg_rate,
                     )
-assert ref_mel is not None
+                    assert ref_mel is not None
                     vc_target = vc_target[:, :, ref_mel.size(-1) :]
                     s2mel_time += time.perf_counter() - m_start_time
 
                     m_start_time = time.perf_counter()
                     wav = self.bigvgan(vc_target.float()).squeeze().unsqueeze(0)
-                    print(wav.shape)
+                    if verbose:
+                        print(wav.shape)
                     bigvgan_time += time.perf_counter() - m_start_time
                     wav = wav.squeeze(1)
 

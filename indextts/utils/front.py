@@ -208,7 +208,7 @@ class TextNormalizer:
 
 
 class TextTokenizer:
-    def __init__(self, vocab_file: str, normalizer: TextNormalizer = None) -> None:
+    def __init__(self, vocab_file: str, normalizer: TextNormalizer | None = None) -> None:
         self.vocab_file = vocab_file
         self.normalizer = normalizer
 

@@ -516,7 +516,7 @@ class IndexTTS2:
                 audio_16k.to(ref_mel.device), num_mel_bins=80, dither=0, sample_frequency=16000
             )
             feat = feat - feat.mean(dim=0, keepdim=True)  # feat2另外一个滤波器能量组特征[922, 80]
-            style = self.campplus_model(feat.unsqueeze(0))  # 参考音频的全局style2[1,192]
+            style: torch.Tensor = self.campplus_model(feat.unsqueeze(0))  # 参考音频的全局style2[1,192]
 
             prompt_condition = self.s2mel.models["length_regulator"](
                 S_ref, ylens=ref_target_lengths, n_quantizers=3, f0=None
@@ -528,6 +528,7 @@ class IndexTTS2:
             self.cache_spk_audio_prompt = spk_audio_prompt
             self.cache_mel = ref_mel
         else:
+            assert self.cache_s2mel_style is not None
             style = self.cache_s2mel_style
             prompt_condition = self.cache_s2mel_prompt
             spk_cond_emb = self.cache_spk_cond

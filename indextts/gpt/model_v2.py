@@ -7,8 +7,9 @@ from transformers import GPT2Config, GPT2PreTrainedModel
 from transformers.cache_utils import DynamicCache
 from transformers.generation.logits_process import LogitsProcessorList
 from transformers.generation.utils import GenerationMixin
-from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
+from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions, CausalLMOutputWithCrossAttentions
 from transformers.utils.model_parallel_utils import assert_device_map, get_device_map
+from typing_extensions import assert_never
 
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.perceiver import PerceiverResampler
@@ -540,42 +541,50 @@ class UnifiedVoice(nn.Module):
 
     def get_logits(
         self,
-        speech_conditioning_inputs,
-        first_inputs,
-        first_head,
-        second_inputs=None,
-        second_head=None,
-        get_attns=False,
-        return_latent=False,
-    ):
+        speech_conditioning_inputs: torch.Tensor,
+        first_inputs: torch.Tensor,
+        first_head: nn.Module,
+        second_inputs: torch.Tensor | None = None,
+        second_head: nn.Module | None = None,
+        get_attns: bool = False,
+        return_latent: bool = False,
+    ) -> torch.Tensor | tuple[torch.Tensor, ...]:
         if second_inputs is not None:
             emb = torch.cat([speech_conditioning_inputs, first_inputs, second_inputs], dim=1)
         else:
             emb = torch.cat([speech_conditioning_inputs, first_inputs], dim=1)
 
-        gpt_out = self.gpt(inputs_embeds=emb, return_dict=True, output_attentions=get_attns)
+        gpt_out: BaseModelOutputWithPastAndCrossAttentions = self.gpt(
+            inputs_embeds=emb, return_dict=True, output_attentions=get_attns
+        )
         if get_attns:
+            assert gpt_out.attentions is not None
             return gpt_out.attentions
 
         offset = speech_conditioning_inputs.shape[1]
+        assert gpt_out.last_hidden_state is not None
         enc = gpt_out.last_hidden_state[:, offset:]
-        enc = self.final_norm(enc)
+        enc: torch.Tensor = self.final_norm(enc)
 
         if return_latent:
+            assert second_inputs is not None
             return enc[:, : first_inputs.shape[1]], enc[:, -second_inputs.shape[1] :]
 
         first_logits = enc[:, : first_inputs.shape[1]]
-        first_logits = first_head(first_logits)
+        first_logits: torch.Tensor = first_head(first_logits)
         first_logits = first_logits.permute(0, 2, 1)
         if second_inputs is not None:
+            assert second_head is not None
             second_logits = enc[:, -second_inputs.shape[1] :]
-            second_logits = second_head(second_logits)
+            second_logits: torch.Tensor = second_head(second_logits)
             second_logits = second_logits.permute(0, 2, 1)
             return first_logits, second_logits
         else:
             return first_logits
 
-    def get_conditioning(self, speech_conditioning_input, cond_mel_lengths=None):
+    def get_conditioning(
+        self, speech_conditioning_input: torch.Tensor, cond_mel_lengths: torch.Tensor | None = None
+    ) -> torch.Tensor:
         if self.condition_type == "perceiver":
             if speech_conditioning_input.ndim == 4:
                 speech_conditioning_input = speech_conditioning_input.squeeze(1)
@@ -588,9 +597,12 @@ class UnifiedVoice(nn.Module):
             if self.condition_type == "conformer_perceiver":
                 conds_mask = self.cond_mask_pad(mask.squeeze(1))
                 conds = self.perceiver_encoder(speech_conditioning_input, conds_mask)  # (b, 32, d)
+            else:
+                assert_never(self.condition_type)
         elif self.condition_type == "gst":
             if speech_conditioning_input.ndim == 4:
                 speech_conditioning_input = speech_conditioning_input.squeeze(1)
+            assert isinstance(self.gst_encoder, nn.Module)
             conds = self.gst_encoder(speech_conditioning_input.transpose(1, 2))  # (b, 1, d)
         else:
             speech_conditioning_input = (
@@ -598,10 +610,11 @@ class UnifiedVoice(nn.Module):
                 if len(speech_conditioning_input.shape) == 3
                 else speech_conditioning_input
             )
-            conds = []
-            for j in range(speech_conditioning_input.shape[1]):
-                conds.append(self.conditioning_encoder(speech_conditioning_input[:, j]))
-            conds = torch.stack(conds, dim=1)
+            conds_list = [
+                self.conditioning_encoder(speech_conditioning_input[:, j])
+                for j in range(speech_conditioning_input.shape[1])
+            ]
+            conds = torch.stack(conds_list, dim=1)
             conds = conds.mean(dim=1)
             conds = conds.unsqueeze(1)
         return conds
@@ -616,18 +629,18 @@ class UnifiedVoice(nn.Module):
 
     def forward(
         self,
-        speech_conditioning_latent,
-        text_inputs,
-        text_lengths,
-        mel_codes,
-        mel_codes_lengths,
-        emo_speech_conditioning_latent,
-        cond_mel_lengths=None,
-        emo_cond_mel_lengths=None,
-        emo_vec=None,
-        use_speed=None,
-        do_spk_cond=False,
-    ):
+        speech_conditioning_latent: torch.Tensor,
+        text_inputs: torch.Tensor,
+        text_lengths: torch.Tensor,
+        mel_codes: torch.Tensor,
+        mel_codes_lengths: torch.Tensor,
+        emo_speech_conditioning_latent: torch.Tensor,
+        cond_mel_lengths: torch.Tensor | None = None,
+        emo_cond_mel_lengths: torch.Tensor | None = None,
+        emo_vec: torch.Tensor | None = None,
+        use_speed: torch.Tensor | None = None,
+        do_spk_cond: bool = False,
+    ) -> torch.Tensor:
         """
         Forward pass that uses both text and voice in either text conditioning mode or voice conditioning mode
 
@@ -654,6 +667,7 @@ class UnifiedVoice(nn.Module):
             )
             emo_vec_syn = self.emovec_layer(emo_vec_syn_ori)
             emo_vec = self.emo_layer(emo_vec_syn)
+            assert emo_vec is not None
 
         text_inputs = self.set_text_padding(text_inputs, text_lengths)
         text_inputs = F.pad(text_inputs, (0, 1), value=self.stop_text_token)
@@ -663,6 +677,8 @@ class UnifiedVoice(nn.Module):
 
         duration_emb = self.speed_emb(torch.zeros_like(use_speed))
         duration_emb_half = self.speed_emb(torch.ones_like(use_speed))
+        assert isinstance(duration_emb, torch.Tensor)
+        assert isinstance(duration_emb_half, torch.Tensor)
         conds = torch.cat(
             (
                 speech_conditioning_latent + emo_vec.unsqueeze(1),
@@ -763,7 +779,6 @@ class UnifiedVoice(nn.Module):
         cond_lengths: torch.Tensor | None = None,
         emo_cond_lengths: torch.Tensor | None = None,
         emo_vec: torch.Tensor | None = None,
-        use_speed: bool = False,
         input_tokens: torch.Tensor | None = None,
         num_return_sequences: int = 1,
         max_generate_length: int | None = None,

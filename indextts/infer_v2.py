@@ -877,22 +877,3 @@ class QwenEmotion:
             content["悲伤"], content["低落"] = content.get("低落", 0.0), content.get("悲伤", 0.0)
 
         return self.convert(content)
-
-
-if __name__ == "__main__":
-    prompt_wav = "examples/voice_01.wav"
-    text = "欢迎大家来体验indextts2，并给予我们意见与反馈，谢谢大家。"
-    tts = IndexTTS2(
-        cfg_path="checkpoints/config.yaml", model_dir="checkpoints", use_cuda_kernel=False, use_torch_compile=True
-    )
-    tts.infer(spk_audio_prompt=prompt_wav, text=text, output_path="gen.wav", verbose=True)
-    char_size = 5
-    import string
-
-    time_buckets = []
-    for i in range(10):
-        text = "".join(random.choices(string.ascii_letters, k=char_size))
-        start_time = time.time()
-        tts.infer(spk_audio_prompt=prompt_wav, text=text, output_path="gen.wav", verbose=True)
-        time_buckets.append(time.time() - start_time)
-    print(time_buckets)

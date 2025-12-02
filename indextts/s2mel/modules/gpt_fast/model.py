@@ -11,7 +11,7 @@ from torch import Tensor, nn
 from torch.nn import functional as F
 
 
-def scaled_dot_product_attention(q, k, v, attn_mask=None, dropout_p=0.0):
+def _scaled_dot_product_attention(q, k, v, attn_mask=None, dropout_p=0.0):
     if q.device.type == "mps":
         # Fallback for MPS to avoid torch.compile issues with native SDPA
         d_k = q.size(-1)
@@ -346,7 +346,7 @@ class Attention(nn.Module):
 
         k = k.repeat_interleave(self.n_head // self.n_local_heads, dim=1)
         v = v.repeat_interleave(self.n_head // self.n_local_heads, dim=1)
-        y = scaled_dot_product_attention(q, k, v, attn_mask=mask, dropout_p=0.0)
+        y = _scaled_dot_product_attention(q, k, v, attn_mask=mask, dropout_p=0.0)
 
         y = y.transpose(1, 2).contiguous().view(bsz, seqlen, self.head_dim * self.n_head)
 

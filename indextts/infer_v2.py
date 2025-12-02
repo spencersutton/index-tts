@@ -5,7 +5,7 @@ import re
 import time
 import typing
 import warnings
-from collections.abc import Generator, Sequence
+from collections.abc import Generator
 from subprocess import CalledProcessError
 from typing import Any
 
@@ -62,9 +62,9 @@ class IndexTTS2:
     bpe_path: str
     normalizer: TextNormalizer
     tokenizer: TextTokenizer
-    emo_matrix: Sequence[torch.Tensor]
+    emo_matrix: tuple[torch.Tensor, ...]
     emo_num: list[int]
-    spk_matrix: Sequence[torch.Tensor]
+    spk_matrix: tuple[torch.Tensor, ...]
     mel_fn: Any
     cache_spk_cond: torch.Tensor | None
     cache_s2mel_style: torch.Tensor | None
@@ -73,7 +73,8 @@ class IndexTTS2:
     cache_emo_cond: torch.Tensor | None
     cache_emo_audio_prompt: str | None
     cache_mel: torch.Tensor | None
-    gr_progress: Progress | None
+    if typing.TYPE_CHECKING:
+        gr_progress: Progress | None
     model_version: Any
 
     def __init__(

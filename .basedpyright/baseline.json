@@ -4428,22 +4428,6 @@
         ],
         "./indextts/infer_v2.py": [
             {
-                "code": "reportRedeclaration",
-                "range": {
-                    "startColumn": 4,
-                    "endColumn": 11,
-                    "lineCount": 1
-                }
-            },
-            {
-                "code": "reportUnnecessaryTypeIgnoreComment",
-                "range": {
-                    "startColumn": 92,
-                    "endColumn": 115,
-                    "lineCount": 1
-                }
-            },
-            {
                 "code": "reportUnknownLambdaType",
                 "range": {
                     "startColumn": 29,

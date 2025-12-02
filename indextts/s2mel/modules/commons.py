@@ -10,7 +10,7 @@ from torch import nn
 def fused_add_tanh_sigmoid_multiply(
     input_a: torch.Tensor,
     input_b: torch.Tensor,
-    n_channels: Sequence[int],
+    n_channels: torch.IntTensor,
 ) -> torch.Tensor:
     n_channels_int = int(n_channels[0])
     in_act = input_a + input_b

@@ -247,7 +247,7 @@ class IndexTTS2:
             "fmax": None if self.cfg.s2mel["preprocess_params"]["spect_params"].get("fmax", "None") == "None" else 8000,
             "center": False,
         }
-        self.mel_fn = lambda x: mel_spectrogram(x, **mel_fn_args)
+        self.mel_fn = lambda x: mel_spectrogram(x, **mel_fn_args)  # pyright: ignore[reportArgumentType]
 
         # Enable torch.compile optimization if requested
         if self.use_torch_compile:
@@ -258,7 +258,7 @@ class IndexTTS2:
             # This is critical because inference_speech() bypasses self.gpt()
             self.gpt.inference_model = torch.compile(self.gpt.inference_model, dynamic=True)
 
-            self.gpt = torch.compile(self.gpt)
+            self.gpt = cast(UnifiedVoice, torch.compile(self.gpt))
             # self.bigvgan = torch.compile(self.bigvgan)
             self.semantic_model = torch.compile(self.semantic_model)
             print(">> torch.compile optimization enabled successfully")
@@ -600,6 +600,8 @@ assert self.cache_s2mel_style is not None
         repetition_penalty = generation_kwargs.pop("repetition_penalty", 10.0)
         max_mel_tokens = generation_kwargs.pop("max_mel_tokens", 1500)
         sampling_rate = 22050
+        emovec_mat = None
+        weight_vector = None
 
         # [OPTIMIZATION] Pre-calculate emovec once before the loop
         with (
@@ -614,7 +616,7 @@ assert self.cache_s2mel_style is not None
                 alpha=emo_alpha,
             )
 
-            if emo_vector is not None:
+            if emo_vector is not None and weight_vector is not None:
                 emovec = emovec_mat + (1 - torch.sum(weight_vector)) * emovec
 
         wavs = []
@@ -737,6 +739,8 @@ assert self.cache_s2mel_style is not None
                     cat_condition = torch.cat([prompt_condition, cond], dim=1)
                     cfm = self.s2mel.models["cfm"]
                     assert isinstance(cfm, CFM)
+                    assert ref_mel is not None
+                    assert style is not None
                     vc_target = cfm.inference(
                         cat_condition,
                         torch.LongTensor([cat_condition.size(1)]).to(cond.device),

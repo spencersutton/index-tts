@@ -600,10 +600,11 @@ class UnifiedVoice(nn.Module):
                 if len(speech_conditioning_input.shape) == 3
                 else speech_conditioning_input
             )
-            conds = []
-            for j in range(speech_conditioning_input.shape[1]):
-                conds.append(self.conditioning_encoder(speech_conditioning_input[:, j]))
-            conds = torch.stack(conds, dim=1)
+            conds_list = [
+                self.conditioning_encoder(speech_conditioning_input[:, j])
+                for j in range(speech_conditioning_input.shape[1])
+            ]
+            conds = torch.stack(conds_list, dim=1)
             conds = conds.mean(dim=1)
             conds = conds.unsqueeze(1)
         return conds

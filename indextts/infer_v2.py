@@ -36,6 +36,7 @@ from indextts.utils.maskgct_utils import build_semantic_codec, build_semantic_mo
 if typing.TYPE_CHECKING:
     from gradio import Progress
 
+
 class IndexTTS2:
     device: str
     use_fp16: bool
@@ -243,16 +244,22 @@ class IndexTTS2:
         }
         self.mel_fn = functools.partial(mel_spectrogram, **mel_fn_args)
 
-        # 缓存参考音频：
-        self.cache_spk_cond = None
-        self.cache_s2mel_style = None
-        self.cache_s2mel_prompt = None
-        self.cache_spk_audio_prompt = None
-        self.cache_emo_cond = None
-        self.cache_emo_audio_prompt = None
-        self.cache_mel = None
+        # Enable torch.compile optimization if requested
+        if use_torch_compile:
+            print(">> Enabling torch.compile optimization")
+            self.s2mel.enable_torch_compile()
+
+            # Compile the inner inference model used for AR generation
+            # This is critical because inference_speech() bypasses self.gpt()
+            self.gpt.inference_model = torch.compile(self.gpt.inference_model, dynamic=True)
+
+            self.gpt = cast(UnifiedVoice, torch.compile(self.gpt))
+            # self.bigvgan = torch.compile(self.bigvgan)
+            self.semantic_model = torch.compile(self.semantic_model)
+            print(">> torch.compile optimization enabled successfully")
 
         # 进度引用显示（可选）
+        # Progress reference display (optional)
         self.gr_progress = None
         self.model_version = self.cfg.version if hasattr(self.cfg, "version") else None
 

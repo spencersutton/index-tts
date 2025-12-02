@@ -1,7 +1,6 @@
 import re
 
 import torch
-import torchaudio
 
 
 def tokenize_by_CJK_char(line: str, do_upper_case: bool = True) -> str:

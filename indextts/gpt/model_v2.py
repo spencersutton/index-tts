@@ -4,8 +4,6 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 from transformers import GPT2Config, LogitsProcessorList
-
-# from transformers import GPT2Config, GPT2PreTrainedModel, LogitsProcessorList
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 from transformers.utils.model_parallel_utils import assert_device_map, get_device_map
 
@@ -434,10 +432,7 @@ class UnifiedVoice(nn.Module):
             accel_gpt = GPT2AccelModel(gpt_config)
             accel_gpt.load_state_dict(self.gpt.state_dict(), strict=False)
 
-            if half:
-                accel_gpt = accel_gpt.half().cuda()
-            else:
-                accel_gpt = accel_gpt.cuda()
+            accel_gpt = accel_gpt.half().cuda() if half else accel_gpt.cuda()
             accel_gpt.eval()
 
             lm_head_with_norm = nn.Sequential(self.final_norm, self.mel_head)

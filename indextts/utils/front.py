@@ -1,3 +1,4 @@
+
 import re
 import traceback
 import warnings
@@ -102,7 +103,7 @@ class TextNormalizer:
             cache_dir = Path(__file__).resolve().parent / "tagger_cache"
             if not Path(cache_dir).exists():
                 Path(cache_dir).mkdir(parents=True)
-                (Path(cache_dir) / ".gitignore").write_text("*\n")
+                (Path(cache_dir) / ".gitignore").write_text("*\n", encoding="utf-8")
             self.zh_normalizer = NormalizerZh(
                 cache_dir=cache_dir, remove_interjections=False, remove_erhua=False, overwrite_cache=False
             )

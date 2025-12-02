@@ -15,6 +15,10 @@ def exists(val):
     return val is not None
 
 
+def exists(x):
+    return x is not None
+
+
 def once(fn):
     called = False
 
@@ -148,10 +152,6 @@ class Attend(nn.Module):
 
 def Sequential(*mods):
     return nn.Sequential(*filter(exists, mods))
-
-
-def exists(x):
-    return x is not None
 
 
 def default(val, d):

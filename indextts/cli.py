@@ -15,7 +15,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="IndexTTS Command Line")
     parser.add_argument("text", type=str, help="Text to be synthesized")
     parser.add_argument("-v", "--voice", type=str, required=True, help="Path to the audio prompt file (wav format)")
-    parser.add_argument("-o", "--output_path", type=str, default="gen.wav", help="Path to the output wav file")
+    parser.add_argument("-o", "--output-path", type=str, default="gen.wav", help="Path to the output wav file")
     parser.add_argument(
         "-c",
         "--config",
@@ -24,7 +24,7 @@ def main() -> None:
         help="Path to the config file. Default is 'checkpoints/config.yaml'",
     )
     parser.add_argument(
-        "--model_dir", type=str, default="checkpoints", help="Path to the model directory. Default is 'checkpoints'"
+        "--model-dir", type=str, default="checkpoints", help="Path to the model directory. Default is 'checkpoints'"
     )
     parser.add_argument("--fp16", action="store_true", default=False, help="Use FP16 for inference if available")
     parser.add_argument(
@@ -34,14 +34,15 @@ def main() -> None:
         "-d", "--device", type=str, default=None, help="Device to run the model on (cpu, cuda, mps, xpu)."
     )
     parser.add_argument(
-        "--use_accel", action="store_true", default=False, help="Use acceleration engine (FlashAttention) for GPT"
+        "--use-accel", action="store_true", default=False, help="Use acceleration engine (FlashAttention) for GPT"
     )
     parser.add_argument(
-        "--use_torch_compile", action="store_true", default=False, help="Use torch.compile for optimization"
+        "--use-torch-compile", action="store_true", default=False, help="Use torch.compile for optimization"
     )
     parser.add_argument(
-        "--use_cuda_kernel", action="store_true", default=False, help="Use custom CUDA kernel for BigVGAN"
+        "--use-cuda-kernel", action="store_true", default=False, help="Use custom CUDA kernel for BigVGAN"
     )
+    parser.add_argument("--use-deepspeed", action="store_true", default=False, help="Use DeepSpeed for inference")
     args = parser.parse_args()
     if len(args.text.strip()) == 0:
         print("ERROR: Text is empty.")
@@ -91,6 +92,7 @@ def main() -> None:
         use_accel=args.use_accel,
         use_torch_compile=args.use_torch_compile,
         use_cuda_kernel=args.use_cuda_kernel,
+        use_deepspeed=args.use_deepspeed,
     )
     tts.infer(spk_audio_prompt=args.voice, text=args.text.strip(), output_path=output_path)
 

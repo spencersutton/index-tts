@@ -70,7 +70,7 @@ class WN(torch.nn.Module):
             else:
                 g_l = torch.zeros_like(x_in)
 
-            acts = commons.fused_add_tanh_sigmoid_multiply(x_in, g_l, n_channels_tensor)
+            acts = commons.fused_add_tanh_sigmoid_multiply(x_in, g_l)
             acts = self.drop(acts)
 
             res_skip_acts = self.res_skip_layers[i](acts)

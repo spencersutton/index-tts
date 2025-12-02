@@ -9,12 +9,9 @@ from torch import nn
 def fused_add_tanh_sigmoid_multiply(
     input_a: torch.Tensor,
     input_b: torch.Tensor,
-    n_channels: torch.IntTensor,
 ) -> torch.Tensor:
-    n_channels_int = int(n_channels[0])
     in_act = input_a + input_b
-    # use torch.split to avoid dynamic slicing
-    t_act_part, s_act_part = torch.split(in_act, n_channels_int, dim=1)
+    t_act_part, s_act_part = torch.chunk(in_act, 2, dim=1)
     t_act = torch.tanh(t_act_part)
     s_act = torch.sigmoid(s_act_part)
     acts = t_act * s_act

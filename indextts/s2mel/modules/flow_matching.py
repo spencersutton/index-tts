@@ -209,7 +209,7 @@ class CFM(BASECFM):
         self.estimator = cast(
             DiT,
             torch.compile(
-            self.estimator,
+                self.estimator,
                 fullgraph=True,
                 dynamic=True,
             ),

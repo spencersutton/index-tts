@@ -150,7 +150,7 @@ class IndexTTS2:
         if self.use_cuda_kernel:
             # preload the CUDA kernel for BigVGAN
             try:
-                from indextts.s2mel.modules.bigvgan.alias_free_activation.cuda import activation1d
+                from bigvgan.alias_free_activation.cuda import activation1d
 
                 print(">> Preload custom CUDA kernel for BigVGAN", activation1d.anti_alias_activation_cuda)
             except Exception as e:

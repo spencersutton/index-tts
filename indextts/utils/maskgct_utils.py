@@ -7,7 +7,7 @@ from indextts.utils.maskgct.models.codec.kmeans.repcodec_model import RepCodec
 class JsonHParams:
     def __init__(self, **kwargs) -> None:
         for k, v in kwargs.items():
-            if type(v) == dict:
+            if isinstance(v, dict):
                 v = JsonHParams(**v)
             self[k] = v
 

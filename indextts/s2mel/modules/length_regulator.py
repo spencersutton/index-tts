@@ -2,7 +2,7 @@ from typing import Tuple
 
 import numpy as np
 import torch
-import torch.nn as nn
+from torch import nn
 from torch.nn import functional as F
 
 from indextts.s2mel.dac.nn.quantize import VectorQuantize
@@ -20,10 +20,10 @@ def f0_to_coarse(f0, f0_bin):
     b = f0_mel_min * a - 1.0
     f0_mel = torch.where(f0_mel > 0, f0_mel * a - b, f0_mel)
     f0_coarse = torch.round(f0_mel).long()
-    f0_coarse = f0_coarse * (f0_coarse > 0)
-    f0_coarse = f0_coarse + ((f0_coarse < 1) * 1)
-    f0_coarse = f0_coarse * (f0_coarse < f0_bin)
-    f0_coarse = f0_coarse + ((f0_coarse >= f0_bin) * (f0_bin - 1))
+    f0_coarse *= f0_coarse > 0
+    f0_coarse += (f0_coarse < 1) * 1
+    f0_coarse *= f0_coarse < f0_bin
+    f0_coarse += (f0_coarse >= f0_bin) * (f0_bin - 1)
     return f0_coarse
 
 
@@ -105,7 +105,7 @@ class InterpolateRegulator(nn.Module):
                 assert len(x.size()) == 3
                 x_emb = self.embedding(x[:, 0])
                 for i, emb in enumerate(self.extra_codebooks):
-                    x_emb = x_emb + (n_quantizers > i + 1)[..., None, None] * emb(x[:, i + 1])
+                    x_emb += (n_quantizers > i + 1)[..., None, None] * emb(x[:, i + 1])
                 x = x_emb
             elif self.n_codebooks == 1:
                 x = self.embedding(x) if len(x.size()) == 2 else self.embedding(x[:, 0])
@@ -121,13 +121,13 @@ class InterpolateRegulator(nn.Module):
             ylens = ylens.clamp(max=x.size(2)).long()
         if self.f0_condition:
             if f0 is None:
-                x = x + self.f0_mask.unsqueeze(-1)
+                x += self.f0_mask.unsqueeze(-1)
             else:
                 quantized_f0 = f0_to_coarse(f0, self.n_f0_bins)
                 quantized_f0 = quantized_f0.clamp(0, self.n_f0_bins - 1).long()
                 f0_emb = self.f0_embedding(quantized_f0)
                 f0_emb = F.interpolate(f0_emb.transpose(1, 2).contiguous(), size=ylens.max(), mode="nearest")
-                x = x + f0_emb
+                x += f0_emb
         out = self.model(x).transpose(1, 2).contiguous()
         if hasattr(self, "vq"):
             (

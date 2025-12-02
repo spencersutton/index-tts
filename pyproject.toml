@@ -41,7 +41,6 @@ dependencies = [
   "keras>=2.9.0",
   "librosa>=0.10.2.post1",
   "matplotlib>=3.8.2",
-  "modelscope>=1.27.0",
   "munch>=4.0.0",
   "numba>=0.58.1",
   "numpy>=1.26.2",
@@ -65,7 +64,7 @@ dependencies = [
 webui = ["gradio>=5.45.0"]
 # To install the DeepSpeed support, use `uv sync --extra deepspeed` (or `--all-extras`).
 deepspeed = ["deepspeed>=0.17.1"]
-compile = ["flash_attn>=2.8.3"]
+compile = []
 
 [project.urls]
 Homepage = "https://github.com/index-tts/index-tts"

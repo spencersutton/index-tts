@@ -1,6 +1,5 @@
 import torch
 from torch import nn
-from torch.nn import functional as F
 
 from indextts.s2mel.modules.encodec import SConv1d
 
@@ -55,9 +54,8 @@ class WN(torch.nn.Module):
             res_skip_layer = conv1d_type(hidden_channels, res_skip_channels, 1, norm="weight_norm", causal=causal)
             self.res_skip_layers.append(res_skip_layer)
 
-    def forward(self, x: torch.Tensor, x_mask: torch.Tensor, g: torch.Tensor | None = None, **kwargs):
+    def forward(self, x: torch.Tensor, x_mask: torch.Tensor, g: torch.Tensor | None = None):
         output = torch.zeros_like(x)
-        n_channels_tensor = torch.IntTensor([self.hidden_channels])
 
         if g is not None:
             g = self.cond_layer(g)

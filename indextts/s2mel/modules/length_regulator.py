@@ -65,12 +65,12 @@ class InterpolateRegulator(nn.Module):
 
         self.n_codebooks = n_codebooks
         if n_codebooks > 1:
-            self.extra_codebooks = nn.ModuleList([
-                nn.Embedding(codebook_size, channels) for _ in range(n_codebooks - 1)
-            ])
-            self.extra_codebook_mask_tokens = nn.ParameterList([
-                nn.Parameter(torch.zeros(1, channels)) for _ in range(n_codebooks - 1)
-            ])
+            self.extra_codebooks = nn.ModuleList(
+                [nn.Embedding(codebook_size, channels) for _ in range(n_codebooks - 1)]
+            )
+            self.extra_codebook_mask_tokens = nn.ParameterList(
+                [nn.Parameter(torch.zeros(1, channels)) for _ in range(n_codebooks - 1)]
+            )
         self.quantizer_dropout = quantizer_dropout
 
         if f0_condition:

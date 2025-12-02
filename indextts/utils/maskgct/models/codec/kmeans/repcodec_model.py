@@ -104,7 +104,6 @@ class RepCodec(nn.Module):
         self.reset_parameters()
 
     def forward(self, x):
-
         # downsample
         if self.downsample_scale is not None and self.downsample_scale > 1:
             x = x.transpose(1, 2)

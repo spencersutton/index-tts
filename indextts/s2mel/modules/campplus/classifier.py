@@ -16,7 +16,6 @@ class CosineClassifier(nn.Module):
         inter_dim=512,
         out_neurons=1000,
     ):
-
         super().__init__()
         self.blocks = nn.ModuleList()
 
@@ -45,7 +44,6 @@ class LinearClassifier(nn.Module):
         inter_dim=512,
         out_neurons=1000,
     ):
-
         super().__init__()
         self.blocks = nn.ModuleList()
 

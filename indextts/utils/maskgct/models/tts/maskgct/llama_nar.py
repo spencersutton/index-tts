@@ -277,7 +277,6 @@ class DiffLlama(LlamaModel):
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
     ) -> Union[Tuple, BaseModelOutputWithPast]:
-
         # retrieve some shape info
         batch_size, seq_length, _ = x.shape
 
@@ -475,7 +474,6 @@ class DiffLlamaPrefix(LlamaModel):
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
     ) -> Union[Tuple, BaseModelOutputWithPast]:
-
         # retrieve some shape info
 
         phone_embedding = self.cond_mlp(phone_embedding)  # (B, T, C)

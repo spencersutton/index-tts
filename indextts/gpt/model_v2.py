@@ -11,7 +11,6 @@ from typing_extensions import assert_never
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.perceiver import PerceiverResampler
 from indextts.utils.arch_util import AttentionBlock
-from indextts.utils.typical_sampling import TypicalLogitsWarper
 
 
 def null_position_embeddings(range, dim):

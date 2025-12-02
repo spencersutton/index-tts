@@ -20,6 +20,7 @@ import torchaudio
 from huggingface_hub import hf_hub_download
 from omegaconf import OmegaConf
 from torch import Tensor
+from torch.nn.utils.rnn import pad_sequence
 from transformers import AutoModelForCausalLM, AutoTokenizer, SeamlessM4TFeatureExtractor
 
 from indextts.gpt.model_v2 import UnifiedVoice
@@ -68,13 +69,17 @@ class IndexTTS2:
     emo_num: list[int]
     spk_matrix: tuple[Tensor, ...]
     mel_fn: Callable[[Tensor], Tensor]
-    cache_spk_cond: Tensor | None
-    cache_s2mel_style: Tensor | None
-    cache_s2mel_prompt: Tensor | None
-    cache_spk_audio_prompt: str | None
-    cache_emo_cond: Tensor | None
-    cache_emo_audio_prompt: str | None
-    cache_mel: Tensor | None
+
+    # 缓存参考音频：
+    # Cache reference audio:
+    cache_spk_cond: Tensor | None = None
+    cache_s2mel_style: Tensor | None = None
+    cache_s2mel_prompt: Tensor | None = None
+    cache_spk_audio_prompt: str | None = None
+    cache_emo_cond: Tensor | None = None
+    cache_emo_audio_prompt: str | None = None
+    cache_mel: Tensor | None = None
+
     if typing.TYPE_CHECKING:
         gr_progress: Progress | None
     model_version: Any
@@ -259,15 +264,6 @@ class IndexTTS2:
             # self.bigvgan = torch.compile(self.bigvgan)
             self.semantic_model = torch.compile(self.semantic_model)
             print(">> torch.compile optimization enabled successfully")
-
-        # 缓存参考音频：
-        self.cache_spk_cond = None
-        self.cache_s2mel_style = None
-        self.cache_s2mel_prompt = None
-        self.cache_spk_audio_prompt = None
-        self.cache_emo_cond = None
-        self.cache_emo_audio_prompt = None
-        self.cache_mel = None
 
         # 进度引用显示（可选）
         # Progress reference display (optional)
@@ -635,8 +631,6 @@ class IndexTTS2:
             # Handle empty segments if necessary
             pass
         else:
-            from torch.nn.utils.rnn import pad_sequence
-
             # Pad with stop_text_token (which is ignored by the model)
             text_tokens_batch = pad_sequence(
                 batch_text_tokens, batch_first=True, padding_value=self.gpt.stop_text_token

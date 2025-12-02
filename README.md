@@ -421,6 +421,8 @@ or visit the IndexTTS1 repository at <a href="https://github.com/index-tts/index
 5. [icefall](https://github.com/k2-fsa/icefall)
 6. [maskgct](https://github.com/open-mmlab/Amphion/tree/main/models/tts/maskgct)
 7. [seed-vc](https://github.com/Plachtaa/seed-vc)
+8. [x-transformers](https://github.com/lucidrains/x-transformers)
+9. [diffusers](https://github.com/huggingface/diffusers)
 
 ## Contributors in Bilibili
 We sincerely thank colleagues from different roles at Bilibili, whose combined efforts made the IndexTTS series possible.

@@ -87,8 +87,6 @@ class TextNormalizer:
         return has_pinyin
 
     def load(self) -> None:
-        # print(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-        # sys.path.append(model_dir)
         import platform
 
         if self.zh_normalizer is not None and self.en_normalizer is not None:
@@ -207,8 +205,6 @@ class TextNormalizer:
             number = chr(ord("a") + i)
             transformed_text = transformed_text.replace(pinyin, f"<pinyin_{number}>")
 
-        # print("original_text: ", original_text)
-        # print("transformed_text: ", transformed_text)
         return transformed_text, original_pinyin_list
 
     def restore_pinyin_tones(self, normalized_text, original_pinyin_list):
@@ -225,8 +221,6 @@ class TextNormalizer:
             number = chr(ord("a") + i)
             pinyin = self.correct_pinyin(pinyin)
             transformed_text = transformed_text.replace(f"<pinyin_{number}>", pinyin)
-        # print("normalized_text: ", normalized_text)
-        # print("transformed_text: ", transformed_text)
         return transformed_text
 
 

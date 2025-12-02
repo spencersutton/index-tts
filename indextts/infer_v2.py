@@ -804,9 +804,7 @@ class QwenEmotion:
             content = json.loads(content)
         except json.decoder.JSONDecodeError:
             # invalid JSON; fallback to manual string parsing
-            # print(">> parsing QwenEmotion response", content)
             content = {m.group(1): float(m.group(2)) for m in re.finditer(r'([^\s":.,]+?)"?\s*:\s*([\d.]+)', content)}
-            # print(">> dict result", content)
 
         # workaround for QwenEmotion's inability to distinguish "悲伤" (sad) vs "低落" (melancholic).
         # if we detect any of the IndexTTS "melancholic" words, we swap those vectors

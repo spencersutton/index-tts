@@ -68,19 +68,6 @@ class IndexTTS:
         self.dtype = torch.float16 if self.use_fp16 else None
         self.stop_mel_token = self.cfg.gpt.stop_mel_token
 
-        # Comment-off to load the VQ-VAE model for debugging tokenizer
-        #   https://github.com/index-tts/index-tts/issues/34
-        #
-        # from indextts.vqvae.xtts_dvae import DiscreteVAE
-        # self.dvae = DiscreteVAE(**self.cfg.vqvae)
-        # self.dvae_path = os.path.join(self.model_dir, self.cfg.dvae_checkpoint)
-        # load_checkpoint(self.dvae, self.dvae_path)
-        # self.dvae = self.dvae.to(self.device)
-        # if self.use_fp16:
-        #     self.dvae.eval().half()
-        # else:
-        #     self.dvae.eval()
-        # print(">> vqvae weights restored from:", self.dvae_path)
         self.gpt = UnifiedVoice(**self.cfg.gpt)
         self.gpt_path = os.path.join(self.model_dir, self.cfg.gpt_checkpoint)
         load_checkpoint(self.gpt, self.gpt_path)
@@ -332,7 +319,6 @@ class IndexTTS:
         else:
             cond_mel = self.cache_cond_mel
             cond_mel_frame = cond_mel.shape[-1]
-            pass
 
         auto_conditioning = cond_mel
         cond_mel_lengths = torch.tensor([cond_mel_frame], device=self.device)
@@ -496,7 +482,6 @@ class IndexTTS:
                     wav, _ = self.bigvgan(latent, auto_conditioning.transpose(1, 2))
                     bigvgan_time += time.perf_counter() - m_start_time
                     wav = wav.squeeze(1)
-                    pass
             wav = torch.clamp(32767 * wav, -32767.0, 32767.0)
             wavs.append(wav.cpu())  # to cpu before saving
 
@@ -564,7 +549,6 @@ class IndexTTS:
         else:
             cond_mel = self.cache_cond_mel
             cond_mel_frame = cond_mel.shape[-1]
-            pass
 
         self._set_gr_progress(0.1, "text processing...")
         auto_conditioning = cond_mel

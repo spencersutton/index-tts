@@ -381,7 +381,6 @@ def main(
                 if len(buffer) == 4 or done_generating:
                     print("".join(buffer), end="", flush=True)
                     buffer.clear()
-                # print(, end='', flush=True)
         else:
 
             def callback(x):

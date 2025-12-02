@@ -459,7 +459,6 @@ class UnifiedVoice(nn.Module):
         else:
             self.inference_model = self.inference_model.eval()
 
-        # self.inference_model = PrunedGPT2InferenceModel(gpt_config, self.gpt, self.mel_pos_embedding, self.mel_embedding, self.final_norm, self.mel_head)
         self.gpt.wte = self.mel_embedding
 
     def build_aligned_inputs_and_targets(self, input, start_token, stop_token):
@@ -543,7 +542,6 @@ class UnifiedVoice(nn.Module):
                 speech_conditioning_input.transpose(1, 2), cond_mel_lengths
             )  # (b, s, d), (b, 1, s)
             if self.condition_type == "conformer_perceiver":
-                # conds_mask = torch.cat([torch.ones((mask.shape[0], self.cond_num), dtype=torch.bool), mask.squeeze(1)], dim=1)
                 conds_mask = self.cond_mask_pad(mask.squeeze(1))
                 conds = self.perceiver_encoder(speech_conditioning_input, conds_mask)  # (b, 32, d)
         elif self.condition_type == "gst":
@@ -611,7 +609,6 @@ class UnifiedVoice(nn.Module):
                 raw_mels = raw_mels[:, :, : max_mel_len * 4]
 
         # Set padding areas within MEL (currently it is coded with the MEL code for <zero>).
-        # mel_codes_lengths = torch.div(wav_lengths, self.mel_length_compression, rounding_mode='trunc')
         mel_codes_lengths = torch.ceil(wav_lengths / self.mel_length_compression).long() + 1
         mel_codes = self.set_mel_padding(mel_codes, mel_codes_lengths)
         text_inputs = self.set_text_padding(text_inputs, text_lengths)

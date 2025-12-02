@@ -599,7 +599,6 @@ class UnifiedVoice(nn.Module):
                 speech_conditioning_input.transpose(1, 2), cond_mel_lengths
             )  # (b, s, d), (b, 1, s)
             if self.condition_type == "conformer_perceiver":
-                # conds_mask = torch.cat([torch.ones((mask.shape[0], self.cond_num), dtype=torch.bool), mask.squeeze(1)], dim=1)
                 conds_mask = self.cond_mask_pad(mask.squeeze(1))
                 conds = self.perceiver_encoder(speech_conditioning_input, conds_mask)  # (b, 32, d)
         elif self.condition_type == "gst":

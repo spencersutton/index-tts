@@ -4,8 +4,6 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 from transformers import GPT2Config, LogitsProcessorList
-
-# from transformers import GPT2Config, GPT2PreTrainedModel, LogitsProcessorList
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 from transformers.utils.model_parallel_utils import assert_device_map, get_device_map
 

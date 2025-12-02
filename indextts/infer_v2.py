@@ -233,10 +233,10 @@ class IndexTTS2:
         self.emo_num = list(self.cfg.emo_num)
 
         spk_matrix = torch.load(os.path.join(self.model_dir, self.cfg.spk_matrix))
-        self.spk_matrix = spk_matrix.to(self.device)
+        spk_matrix = spk_matrix.to(self.device)
 
-        self.emo_matrix = torch.split(self.emo_matrix, self.emo_num)
-        self.spk_matrix = torch.split(self.spk_matrix, self.emo_num)
+        self.emo_matrix = torch.split(emo_matrix, self.emo_num)
+        self.spk_matrix = torch.split(spk_matrix, self.emo_num)
 
         mel_fn_args = {
             "n_fft": self.cfg.s2mel["preprocess_params"]["spect_params"]["n_fft"],

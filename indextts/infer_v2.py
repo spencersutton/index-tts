@@ -234,7 +234,6 @@ class IndexTTS2:
         code_lens = []
         codes_list = []
         device = codes.device
-        dtype = codes.dtype
         isfix = False
         for i in range(0, codes.shape[0]):
             code = codes[i]
@@ -572,7 +571,6 @@ class IndexTTS2:
             print("segments count:", segments_count)
             print("max_text_tokens_per_segment:", max_text_tokens_per_segment)
             print(*segments, sep="\n")
-        do_sample = generation_kwargs.pop("do_sample", True)
         top_p = generation_kwargs.pop("top_p", 0.8)
         top_k = generation_kwargs.pop("top_k", 30)
         temperature = generation_kwargs.pop("temperature", 0.8)
@@ -840,7 +838,6 @@ class QwenEmotion:
         return emotion_dict
 
     def inference(self, text_input):
-        start = time.time()
         messages = [{"role": "system", "content": f"{self.prompt}"}, {"role": "user", "content": f"{text_input}"}]
         text = self.tokenizer.apply_chat_template(
             messages,

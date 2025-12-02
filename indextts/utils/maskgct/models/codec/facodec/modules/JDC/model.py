@@ -82,7 +82,6 @@ class JDCNet(nn.Module):
         self.apply(self.init_weights)
 
     def get_feature_GAN(self, x):
-        seq_len = x.shape[-2]
         x = x.float().transpose(-1, -2)
 
         convblock_out = self.conv_block(x)
@@ -96,7 +95,6 @@ class JDCNet(nn.Module):
         return poolblock_out.transpose(-1, -2)
 
     def get_feature(self, x):
-        seq_len = x.shape[-2]
         x = x.float().transpose(-1, -2)
 
         convblock_out = self.conv_block(x)

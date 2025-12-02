@@ -274,7 +274,7 @@ class IndexTTS2:
         self.model_version = self.cfg.version if hasattr(self.cfg, "version") else None
 
     @torch.inference_mode()
-    def get_emb(self, input_features: torch.Tensor, attention_mask: torch.Tensor):
+    def _get_emb(self, input_features: torch.Tensor, attention_mask: torch.Tensor):
         vq_emb = self.semantic_model(
             input_features=input_features,
             attention_mask=attention_mask,
@@ -284,7 +284,7 @@ class IndexTTS2:
         feat = (feat - self.semantic_mean) / self.semantic_std
         return feat
 
-    def interval_silence(self, wavs: list[torch.Tensor], sampling_rate: int = 22050, interval_silence: int = 200):
+    def _interval_silence(self, wavs: list[torch.Tensor], sampling_rate: int = 22050, interval_silence: int = 200):
         """
         Silences to be insert between generated segments.
         """
@@ -298,7 +298,7 @@ class IndexTTS2:
         sil_dur = int(sampling_rate * interval_silence / 1000.0)
         return torch.zeros(channel_size, sil_dur)
 
-    def insert_interval_silence(
+    def _insert_interval_silence(
         self, wavs: list[torch.Tensor], sampling_rate: int = 22050, interval_silence: int = 200
     ) -> list[torch.Tensor]:
         """
@@ -507,7 +507,7 @@ class IndexTTS2:
             attention_mask = inputs["attention_mask"]
             input_features = input_features.to(self.device)
             attention_mask = attention_mask.to(self.device)
-            spk_cond_emb = self.get_emb(input_features, attention_mask)
+            spk_cond_emb = self._get_emb(input_features, attention_mask)
 
             _, S_ref = self.semantic_codec.quantize(spk_cond_emb)
             ref_mel = self.mel_fn(audio_22k.to(spk_cond_emb.device).float())
@@ -556,7 +556,7 @@ class IndexTTS2:
             emo_attention_mask = emo_inputs["attention_mask"]
             emo_input_features = emo_input_features.to(self.device)
             emo_attention_mask = emo_attention_mask.to(self.device)
-            emo_cond_emb = self.get_emb(emo_input_features, emo_attention_mask)
+            emo_cond_emb = self._get_emb(emo_input_features, emo_attention_mask)
 
             self.cache_emo_cond = emo_cond_emb
             self.cache_emo_audio_prompt = emo_audio_prompt
@@ -760,14 +760,14 @@ class IndexTTS2:
                 if stream_return:
                     yield wav.cpu()
                     if silence is None:
-                        silence = self.interval_silence(
+                        silence = self._interval_silence(
                             wavs, sampling_rate=sampling_rate, interval_silence=interval_silence
                         )
                     yield silence
         end_time = time.perf_counter()
 
         self._set_gr_progress(0.9, "saving audio...")
-        wavs = self.insert_interval_silence(wavs, sampling_rate=sampling_rate, interval_silence=interval_silence)
+        wavs = self._insert_interval_silence(wavs, sampling_rate=sampling_rate, interval_silence=interval_silence)
         wav = torch.cat(wavs, dim=1)
         wav_length = wav.shape[-1] / sampling_rate
         print(f">> gpt_gen_time: {gpt_gen_time:.2f} seconds")

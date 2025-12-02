@@ -114,6 +114,7 @@ def run_benchmark(
     use_accel: bool = False,
     use_torch_compile: bool = False,
     use_cuda_kernel: bool = False,
+    use_deepspeed: bool = False,
     verbose: bool = False,
 ) -> BenchmarkResult:
     """
@@ -132,6 +133,7 @@ def run_benchmark(
         use_accel: Use acceleration engine
         use_torch_compile: Use torch.compile optimization
         use_cuda_kernel: Use custom CUDA kernel for BigVGAN
+        use_deepspeed: Use DeepSpeed for inference
         verbose: Print verbose output
 
     Returns:
@@ -168,6 +170,7 @@ def run_benchmark(
     print(f"  use-accel:         {use_accel}")
     print(f"  use-torch-compile: {use_torch_compile}")
     print(f"  use-cuda-kernel:   {use_cuda_kernel}")
+    print(f"  use-deepspeed:     {use_deepspeed}")
     print(f"{'=' * 60}\n")
 
     # Determine output path
@@ -187,6 +190,7 @@ def run_benchmark(
         use_accel=use_accel,
         use_torch_compile=use_torch_compile,
         use_cuda_kernel=use_cuda_kernel,
+        use_deepspeed=use_deepspeed,
     )
 
     startup_time = time.perf_counter() - startup_start
@@ -325,6 +329,12 @@ Examples:
         help="Use custom CUDA kernel for BigVGAN",
     )
     parser.add_argument(
+        "--use-deepspeed",
+        action="store_true",
+        default=False,
+        help="Use DeepSpeed for inference",
+    )
+    parser.add_argument(
         "--verbose",
         action="store_true",
         default=False,
@@ -372,6 +382,7 @@ Examples:
         use_accel=args.use_accel,
         use_torch_compile=args.use_torch_compile,
         use_cuda_kernel=args.use_cuda_kernel,
+        use_deepspeed=args.use_deepspeed,
         verbose=args.verbose,
     )
 
@@ -398,6 +409,7 @@ Examples:
                 "use_accel": args.use_accel,
                 "use_torch_compile": args.use_torch_compile,
                 "use_cuda_kernel": args.use_cuda_kernel,
+                "use_deepspeed": args.use_deepspeed,
             },
         }
         print(json.dumps(output, indent=2))

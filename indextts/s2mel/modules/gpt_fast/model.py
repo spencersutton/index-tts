@@ -3,11 +3,30 @@
 
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
+import math
 from dataclasses import dataclass
 
 import torch
 from torch import Tensor, nn
 from torch.nn import functional as F
+
+
+def scaled_dot_product_attention(q, k, v, attn_mask=None, dropout_p=0.0):
+    if q.device.type == "mps":
+        # Fallback for MPS to avoid torch.compile issues with native SDPA
+        d_k = q.size(-1)
+        scores = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(d_k)
+        if attn_mask is not None:
+            if attn_mask.dtype == torch.bool:
+                scores = scores.masked_fill(attn_mask.logical_not(), float("-inf"))
+            else:
+                scores = scores + attn_mask
+        attn = F.softmax(scores, dim=-1)
+        if dropout_p > 0.0:
+            attn = F.dropout(attn, p=dropout_p)
+        return torch.matmul(attn, v)
+    else:
+        return F.scaled_dot_product_attention(q, k, v, attn_mask=attn_mask, dropout_p=dropout_p)
 
 
 def find_multiple(n: int, k: int) -> int:
@@ -328,7 +347,7 @@ class Attention(nn.Module):
 
         k = k.repeat_interleave(self.n_head // self.n_local_heads, dim=1)
         v = v.repeat_interleave(self.n_head // self.n_local_heads, dim=1)
-        y = F.scaled_dot_product_attention(q, k, v, attn_mask=mask, dropout_p=0.0)
+        y = scaled_dot_product_attention(q, k, v, attn_mask=mask, dropout_p=0.0)
 
         y = y.transpose(1, 2).contiguous().view(bsz, seqlen, self.head_dim * self.n_head)
 

@@ -119,6 +119,10 @@ class IndexTTS2:
             self.use_cuda_kernel = False
             print(">> Be patient, it may take a while to run in CPU mode.")
 
+        if self.device.startswith("cuda"):
+            with contextlib.suppress(AttributeError):
+                torch.set_float32_matmul_precision("high")
+
         self.cfg = OmegaConf.load(cfg_path)
         self.model_dir = model_dir
         self.dtype = torch.float16 if self.use_fp16 else None

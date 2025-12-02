@@ -78,10 +78,7 @@ with open("examples/cases.jsonl", encoding="utf-8") as f:
         if not line:
             continue
         example = json.loads(line)
-        if example.get("emo_audio", None):
-            emo_audio_path = os.path.join("examples", example["emo_audio"])
-        else:
-            emo_audio_path = None
+        emo_audio_path = os.path.join("examples", example["emo_audio"]) if example.get("emo_audio", None) else None
 
         example_cases.append(
             [

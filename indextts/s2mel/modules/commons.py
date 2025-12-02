@@ -1,5 +1,6 @@
 import argparse
 import math
+from collections import UserDict
 
 import numpy as np
 import torch
@@ -19,7 +20,7 @@ def str2bool(v):
         raise argparse.ArgumentTypeError("Boolean value expected.")
 
 
-class AttrDict(dict):
+class AttrDict(UserDict):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.__dict__ = self

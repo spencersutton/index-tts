@@ -390,8 +390,9 @@ class IndexTTS:
                 0.2 + 0.3 * processed_num / all_batch_num, f"gpt speech inference {processed_num}/{all_batch_num}..."
             )
             m_start_time = time.perf_counter()
-            with torch.no_grad(), torch.amp.autocast(
-                batch_text_tokens.device.type, enabled=self.dtype is not None, dtype=self.dtype
+            with (
+                torch.no_grad(),
+                torch.amp.autocast(batch_text_tokens.device.type, enabled=self.dtype is not None, dtype=self.dtype),
             ):
                 temp_codes = self.gpt.inference_speech(
                     auto_conditioning,

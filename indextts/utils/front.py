@@ -1,4 +1,5 @@
 import os
+import pathlib
 import re
 import traceback
 import warnings
@@ -105,8 +106,7 @@ class TextNormalizer:
             cache_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tagger_cache")
             if not os.path.exists(cache_dir):
                 os.makedirs(cache_dir)
-                with open(os.path.join(cache_dir, ".gitignore"), "w") as f:
-                    f.write("*\n")
+                pathlib.Path(os.path.join(cache_dir, ".gitignore")).write_text("*\n")
             self.zh_normalizer = NormalizerZh(
                 cache_dir=cache_dir, remove_interjections=False, remove_erhua=False, overwrite_cache=False
             )

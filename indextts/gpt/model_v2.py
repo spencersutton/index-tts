@@ -207,10 +207,8 @@ class ConditioningEncoder(nn.Module):
         self, spec_dim, embedding_dim, attn_blocks=6, num_attn_heads=4, do_checkpointing=False, mean=False
     ) -> None:
         super().__init__()
-        attn = []
         self.init = nn.Conv1d(spec_dim, embedding_dim, kernel_size=1)
-        for a in range(attn_blocks):
-            attn.append(AttentionBlock(embedding_dim, num_attn_heads))
+        attn = [AttentionBlock(embedding_dim, num_attn_heads) for a in range(attn_blocks)]
         self.attn = nn.Sequential(*attn)
         self.dim = embedding_dim
         self.do_checkpointing = do_checkpointing

@@ -19,10 +19,7 @@ if __name__ == "__main__":
     import sys
 
     sys.path.append("..")
-    if len(sys.argv) > 1:
-        model_dir = sys.argv[1]
-    else:
-        model_dir = "checkpoints"
+    model_dir = sys.argv[1] if len(sys.argv) > 1 else "checkpoints"
     audio_prompt = "tests/sample_prompt.wav"
     tts = IndexTTS(cfg_path=f"{model_dir}/config.yaml", model_dir=model_dir, use_fp16=False, use_cuda_kernel=False)
     text = "晕 XUAN4 是 一 种 not very good GAN3 觉"
@@ -69,13 +66,10 @@ if __name__ == "__main__":
         assert len(pad_text_tokens) == batched_text_tokens.shape[0] and batched_text_tokens.ndim == 2
         batch_output = tts.gpt.inference_speech(auto_conditioning, batched_text_tokens, **kwargs)
         del pad_text_tokens
-    mismatch_idx = []
     print("baseline:", baseline.shape, baseline)
     print("--" * 10)
     print("baseline vs padded output:")
-    for i in range(len(output_for_padded)):
-        if not baseline.equal(output_for_padded[i]):
-            mismatch_idx.append(i)
+    mismatch_idx = [i for i in range(len(output_for_padded)) if not baseline.equal(output_for_padded[i])]
 
     if len(mismatch_idx) > 0:
         print("mismatch:", mismatch_idx)

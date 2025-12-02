@@ -17,7 +17,7 @@ import inspect
 import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, NoReturn
+from typing import TYPE_CHECKING, Any, Dict, List, NoReturn, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -2460,7 +2460,7 @@ class GenerationMixin:
                 continue  # skip if there are no token alternatives to heal with
 
             # slightly favor original token to limit aggressive healing e.g. 'http' -> 'https'
-            seq_bias[(tail_id,)] += 1.0
+            seq_bias[tail_id,] += 1.0
             generation_config.update(sequence_bias=seq_bias)
 
             trimmed_ids = batch_ids[:-1]
@@ -2874,10 +2874,8 @@ class GenerationMixin:
                 else:
                     new_key_values = []
                     for layer in past:
-                        items = []
                         # item is either the key or the value matrix
-                        for item in layer:
-                            items.append(item.repeat_interleave(top_k, dim=0))
+                        items = [item.repeat_interleave(top_k, dim=0) for item in layer]
                         new_key_values.append(tuple(items))
 
                     past = tuple(new_key_values)
@@ -3066,9 +3064,7 @@ class GenerationMixin:
                 else:
                     past_key_values = []
                     for layer in model_kwargs["past_key_values"]:
-                        layer_past_key_values = []
-                        for item in layer:
-                            layer_past_key_values.append(item[..., :-1, :])
+                        layer_past_key_values = [item[..., :-1, :] for item in layer]
                         past_key_values.append(tuple(layer_past_key_values))
                     model_kwargs["past_key_values"] = tuple(past_key_values)
 
@@ -3483,8 +3479,8 @@ class GenerationMixin:
                 probs = nn.functional.softmax(next_token_scores, dim=-1)
                 next_tokens = torch.multinomial(probs, num_samples=n_tokens_to_keep)
                 next_token_scores = torch.gather(next_token_scores, -1, next_tokens)
-                next_token_scores, _indices = torch.sort(next_token_scores, descending=True, dim=1)
-                next_tokens = torch.gather(next_tokens, -1, _indices)
+                next_token_scores, indices = torch.sort(next_token_scores, descending=True, dim=1)
+                next_tokens = torch.gather(next_tokens, -1, indices)
                 next_token_scores, next_tokens = torch.topk(
                     next_token_scores, n_tokens_to_keep, dim=1, largest=True, sorted=True
                 )

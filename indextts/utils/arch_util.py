@@ -47,7 +47,7 @@ class _QKVAttentionLegacy(nn.Module):
         self.n_heads = n_heads
 
     def forward(
-        self, qkv: torch.Tensor, mask: torch.Tensor | None = None, rel_pos: torch.Tensor | None = None
+        self, qkv: torch.Tensor, mask: torch.Tensor | None = None, rel_pos: nn.Module | None = None
     ) -> torch.Tensor:
         """
         Apply QKV attention.

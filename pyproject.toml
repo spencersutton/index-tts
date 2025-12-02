@@ -149,6 +149,7 @@ ignore = [
 unfixable = ["F401"]
 
 [dependency-groups]
-dev = [
-    "basedpyright>=1.34.0",
-]
+dev = ["basedpyright>=1.34.0"]
+
+[tool.pyright]
+reportUnusedCallResult = false

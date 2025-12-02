@@ -1,4 +1,5 @@
 import contextlib
+import functools
 import json
 import os
 import random
@@ -108,24 +109,24 @@ class IndexTTS2:
         """
         if device is not None:
             self.device = device
-            self.use_fp16 = False if device == "cpu" else use_fp16
-            self.use_cuda_kernel = use_cuda_kernel is not None and use_cuda_kernel and device.startswith("cuda")
+            use_fp16 = False if device == "cpu" else use_fp16
+            use_cuda_kernel = use_cuda_kernel is not None and use_cuda_kernel and device.startswith("cuda")
         elif torch.cuda.is_available():
             self.device = "cuda:0"
-            self.use_fp16 = use_fp16
-            self.use_cuda_kernel = use_cuda_kernel is None or use_cuda_kernel
+            use_fp16 = use_fp16
+            use_cuda_kernel = use_cuda_kernel is None or use_cuda_kernel
         elif hasattr(torch, "xpu") and torch.xpu.is_available():
             self.device = "xpu"
-            self.use_fp16 = use_fp16
-            self.use_cuda_kernel = False
+            use_fp16 = use_fp16
+            use_cuda_kernel = False
         elif hasattr(torch, "mps") and torch.backends.mps.is_available():
             self.device = "mps"
-            self.use_fp16 = False  # Use float16 on MPS is overhead than float32
-            self.use_cuda_kernel = False
+            use_fp16 = False  # Use float16 on MPS is overhead than float32
+            use_cuda_kernel = False
         else:
             self.device = "cpu"
-            self.use_fp16 = False
-            self.use_cuda_kernel = False
+            use_fp16 = False
+            use_cuda_kernel = False
             print(">> Be patient, it may take a while to run in CPU mode.")
 
         if self.device.startswith("cuda"):
@@ -133,23 +134,20 @@ class IndexTTS2:
                 torch.set_float32_matmul_precision("high")
 
         self.cfg = OmegaConf.load(cfg_path)
-        self.model_dir = model_dir
-        self.dtype = torch.float16 if self.use_fp16 else None
+        self.dtype = torch.float16 if use_fp16 else None
         self.stop_mel_token = self.cfg.gpt.stop_mel_token
-        self.use_accel = use_accel
-        self.use_torch_compile = use_torch_compile
 
-        self.qwen_emo = QwenEmotion(os.path.join(self.model_dir, self.cfg.qwen_emo_path))
+        self.qwen_emo = QwenEmotion(os.path.join(model_dir, self.cfg.qwen_emo_path))
 
-        self.gpt = UnifiedVoice(**self.cfg.gpt, use_accel=self.use_accel)
-        self.gpt_path = os.path.join(self.model_dir, self.cfg.gpt_checkpoint)
-        load_checkpoint(self.gpt, self.gpt_path)
+        self.gpt = UnifiedVoice(**self.cfg.gpt, use_accel=use_accel)
+        gpt_path = os.path.join(model_dir, self.cfg.gpt_checkpoint)
+        load_checkpoint(self.gpt, gpt_path)
         self.gpt = self.gpt.to(self.device)
-        if self.use_fp16:
+        if use_fp16:
             self.gpt.eval().half()
         else:
             self.gpt.eval()
-        print(">> GPT weights restored from:", self.gpt_path)
+        print(">> GPT weights restored from:", gpt_path)
 
         if use_deepspeed:
             try:
@@ -162,9 +160,9 @@ class IndexTTS2:
                 use_deepspeed = False
                 print(f">> Failed to load DeepSpeed. Falling back to normal inference. Error: {e}")
 
-        self.gpt.post_init_gpt2_config(use_deepspeed=use_deepspeed, kv_cache=True, half=self.use_fp16)
+        self.gpt.post_init_gpt2_config(use_deepspeed=use_deepspeed, kv_cache=True, half=use_fp16)
 
-        if self.use_cuda_kernel:
+        if use_cuda_kernel:
             # preload the CUDA kernel for BigVGAN
             try:
                 from bigvgan.alias_free_activation.cuda import activation1d
@@ -173,11 +171,11 @@ class IndexTTS2:
             except Exception as e:
                 print(">> Failed to load custom CUDA kernel for BigVGAN. Falling back to torch.")
                 print(f"{e!r}")
-                self.use_cuda_kernel = False
+                use_cuda_kernel = False
 
         self.extract_features = SeamlessM4TFeatureExtractor.from_pretrained("facebook/w2v-bert-2.0")
         self.semantic_model, self.semantic_mean, self.semantic_std = build_semantic_model(
-            os.path.join(self.model_dir, self.cfg.w2v_stat)
+            os.path.join(model_dir, self.cfg.w2v_stat)
         )
         self.semantic_model = self.semantic_model.to(self.device)
         self.semantic_model.eval()
@@ -191,7 +189,7 @@ class IndexTTS2:
         self.semantic_codec.eval()
         print(f">> semantic_codec weights restored from: {semantic_code_ckpt}")
 
-        s2mel_path = os.path.join(self.model_dir, self.cfg.s2mel_checkpoint)
+        s2mel_path = os.path.join(model_dir, self.cfg.s2mel_checkpoint)
         s2mel = MyModel(self.cfg.s2mel, use_gpt_latent=True)
         s2mel = load_checkpoint2(
             s2mel,
@@ -216,13 +214,13 @@ class IndexTTS2:
         print(">> campplus_model weights restored from:", campplus_ckpt_path)
 
         bigvgan_name = self.cfg.vocoder.name
-        self.bigvgan = bigvgan.BigVGAN.from_pretrained(bigvgan_name, use_cuda_kernel=self.use_cuda_kernel)
+        self.bigvgan = bigvgan.BigVGAN.from_pretrained(bigvgan_name, use_cuda_kernel=use_cuda_kernel)
         self.bigvgan = self.bigvgan.to(self.device)
         self.bigvgan.remove_weight_norm()
         self.bigvgan.eval()
         print(">> bigvgan weights restored from:", bigvgan_name)
 
-        self.bpe_path = os.path.join(self.model_dir, self.cfg.dataset["bpe_model"])
+        self.bpe_path = os.path.join(model_dir, self.cfg.dataset["bpe_model"])
         self.normalizer = TextNormalizer()
         self.normalizer.load()
         print(">> TextNormalizer loaded")
@@ -233,26 +231,27 @@ class IndexTTS2:
         self.emo_matrix = emo_matrix.to(self.device)
         self.emo_num = list(self.cfg.emo_num)
 
-        spk_matrix = torch.load(os.path.join(self.model_dir, self.cfg.spk_matrix))
+        spk_matrix = torch.load(os.path.join(model_dir, self.cfg.spk_matrix))
         spk_matrix = spk_matrix.to(self.device)
 
         self.emo_matrix = torch.split(emo_matrix, self.emo_num)
         self.spk_matrix = torch.split(spk_matrix, self.emo_num)
 
+        spect_params = self.cfg.s2mel["preprocess_params"]["spect_params"]
         mel_fn_args = {
-            "n_fft": self.cfg.s2mel["preprocess_params"]["spect_params"]["n_fft"],
-            "win_size": self.cfg.s2mel["preprocess_params"]["spect_params"]["win_length"],
-            "hop_size": self.cfg.s2mel["preprocess_params"]["spect_params"]["hop_length"],
-            "num_mels": self.cfg.s2mel["preprocess_params"]["spect_params"]["n_mels"],
+            "n_fft": spect_params["n_fft"],
+            "win_size": spect_params["win_length"],
+            "hop_size": spect_params["hop_length"],
+            "num_mels": spect_params["n_mels"],
             "sampling_rate": self.cfg.s2mel["preprocess_params"]["sr"],
-            "fmin": self.cfg.s2mel["preprocess_params"]["spect_params"].get("fmin", 0),
-            "fmax": None if self.cfg.s2mel["preprocess_params"]["spect_params"].get("fmax", "None") == "None" else 8000,
+            "fmin": spect_params.get("fmin", 0),
+            "fmax": None if spect_params.get("fmax", "None") == "None" else 8000,
             "center": False,
         }
-        self.mel_fn = lambda x: mel_spectrogram(x, **mel_fn_args)  # pyright: ignore[reportArgumentType]
+        self.mel_fn = functools.partial(mel_spectrogram, **mel_fn_args)
 
         # Enable torch.compile optimization if requested
-        if self.use_torch_compile:
+        if use_torch_compile:
             print(">> Enabling torch.compile optimization")
             self.s2mel.enable_torch_compile()
 
@@ -811,10 +810,9 @@ def find_most_similar_cosine(query_vector: torch.Tensor, matrix: torch.Tensor):
 
 class QwenEmotion:
     def __init__(self, model_dir: str) -> None:
-        self.model_dir = model_dir
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_dir)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_dir)
         self.model = AutoModelForCausalLM.from_pretrained(
-            self.model_dir,
+            model_dir,
             torch_dtype="float16",  # "auto"
             device_map="auto",
         )

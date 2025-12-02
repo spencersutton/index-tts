@@ -263,7 +263,7 @@ class IndexTTS2:
         self.gr_progress = None
         self.model_version = self.cfg.version if hasattr(self.cfg, "version") else None
 
-    @torch.no_grad()
+    @torch.inference_mode()
     def get_emb(self, input_features: torch.Tensor, attention_mask: torch.Tensor):
         vq_emb = self.semantic_model(
             input_features=input_features,
@@ -410,6 +410,7 @@ class IndexTTS2:
             except IndexError:
                 return None
 
+    @torch.inference_mode()
     def infer_generator(
         self,
         spk_audio_prompt: str,

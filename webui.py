@@ -44,7 +44,7 @@ for file in ["bpe.model", "gpt.pth", "config.yaml", "s2mel.pth", "wav2vec2bert_s
 
 import gradio as gr
 
-from indextts.infer_v2 import IndexTTS2
+from indextts.infer_v2 import IndexTTS2, normalize_emo_vec
 from tools.i18n.i18n import I18nAuto
 
 i18n = I18nAuto(language="Auto")
@@ -148,7 +148,7 @@ def gen_single(
         pass
     if emo_control_method == 2:  # emotion from custom vectors
         vec = [vec1, vec2, vec3, vec4, vec5, vec6, vec7, vec8]
-        vec = tts.normalize_emo_vec(vec, apply_bias=True)
+        vec = normalize_emo_vec(vec, apply_bias=True)
     else:
         # don't use the emotion vector inputs for the other modes
         vec = None

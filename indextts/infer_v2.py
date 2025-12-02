@@ -29,6 +29,7 @@ from indextts.s2mel.modules.audio import mel_spectrogram
 from indextts.s2mel.modules.bigvgan import bigvgan
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
 from indextts.s2mel.modules.commons import MyModel, load_checkpoint2
+from indextts.s2mel.modules.flow_matching import CFM
 from indextts.utils.checkpoint import load_checkpoint
 from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.maskgct_utils import build_semantic_codec, build_semantic_model
@@ -193,7 +194,9 @@ class IndexTTS2:
             is_distributed=False,
         )
         self.s2mel = s2mel.to(self.device)
-        self.s2mel.models["cfm"].estimator.setup_caches(max_batch_size=1, max_seq_length=8192)
+        cfm = self.s2mel.models["cfm"]
+        assert isinstance(cfm, CFM)
+        cfm.estimator.setup_caches(max_batch_size=1, max_seq_length=8192)
 
         # Enable torch.compile optimization if requested
         if self.use_torch_compile:
@@ -702,7 +705,9 @@ assert self.cache_s2mel_style is not None
                         S_infer, ylens=target_lengths, n_quantizers=3, f0=None
                     )[0]
                     cat_condition = torch.cat([prompt_condition, cond], dim=1)
-                    vc_target = self.s2mel.models["cfm"].inference(
+                    cfm = self.s2mel.models["cfm"]
+                    assert isinstance(cfm, CFM)
+                    vc_target = cfm.inference(
                         cat_condition,
                         torch.LongTensor([cat_condition.size(1)]).to(cond.device),
                         ref_mel,

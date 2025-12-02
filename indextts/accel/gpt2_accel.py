@@ -1,5 +1,5 @@
 import torch
-from torch import nn
+from torch import Tensor, nn
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions
 from transformers.models.gpt2.modeling_gpt2 import Conv1D, GPT2Block, GPT2Model
 
@@ -46,7 +46,7 @@ class GPT2AccelAttention(nn.Module):
 
     def forward(
         self,
-        hidden_states: torch.Tensor,
+        hidden_states: Tensor,
         layer_past=None,
         attention_mask=None,
         head_mask=None,

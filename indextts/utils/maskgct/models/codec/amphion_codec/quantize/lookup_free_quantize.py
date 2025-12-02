@@ -5,7 +5,7 @@
 
 import torch
 import torch.nn.functional as F
-from torch import nn
+from torch import Tensor, nn
 from torch.nn.utils import weight_norm
 
 
@@ -35,7 +35,7 @@ class LookupFreeQuantize(nn.Module):
             self.in_project = nn.Identity()
             self.out_project = nn.Identity()
 
-    def forward(self, z: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    def forward(self, z: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
         z_e = self.in_project(z)
         z_e = F.sigmoid(z_e)
 
@@ -51,7 +51,7 @@ class LookupFreeQuantize(nn.Module):
 
         return z_q, commit_loss, codebook_loss, indices, z_e
 
-    def vq2emb(self, vq: torch.Tensor, out_proj: bool = True) -> torch.Tensor:
+    def vq2emb(self, vq: Tensor, out_proj: bool = True) -> Tensor:
         emb = torch.zeros(vq.shape[0], self.codebook_dim, vq.shape[-1], device=vq.device)  # (B, d, T)
         for i in range(self.codebook_dim):
             emb[:, i, :] = (vq % 2).float()

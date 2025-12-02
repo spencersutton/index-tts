@@ -1,7 +1,7 @@
 import math
 
 import torch
-from torch import nn
+from torch import Tensor, nn
 from x_transformers.x_transformers import RelativePositionBias
 
 
@@ -15,7 +15,7 @@ def _zero_module(module: nn.Module) -> nn.Module:
 
 
 class _GroupNorm32(nn.GroupNorm):
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         return super().forward(x.float()).type(x.dtype)
 
 
@@ -46,9 +46,7 @@ class _QKVAttentionLegacy(nn.Module):
         super().__init__()
         self.n_heads = n_heads
 
-    def forward(
-        self, qkv: torch.Tensor, mask: torch.Tensor | None = None, rel_pos: nn.Module | None = None
-    ) -> torch.Tensor:
+    def forward(self, qkv: Tensor, mask: Tensor | None = None, rel_pos: nn.Module | None = None) -> Tensor:
         """
         Apply QKV attention.
 
@@ -118,7 +116,7 @@ class AttentionBlock(nn.Module):
         else:
             self.relative_pos_embeddings = None
 
-    def forward(self, x: torch.Tensor, mask: torch.Tensor | None = None) -> torch.Tensor:
+    def forward(self, x: Tensor, mask: Tensor | None = None) -> Tensor:
         b, c, *spatial = x.shape
         x = x.reshape(b, c, -1)
         qkv = self.qkv(self.norm(x))

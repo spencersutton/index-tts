@@ -13,13 +13,15 @@
 # limitations under the License.
 import re
 from pathlib import Path
+from collections.abc import Mapping
+from typing import Any
 
 import torch
 import yaml
 
 
-def load_checkpoint(model: torch.nn.Module, model_pth: str) -> dict:
-    checkpoint = torch.load(model_pth, map_location="cpu")
+def load_checkpoint(model: torch.nn.Module, model_pth: str) -> dict[str, object]:
+    checkpoint: Mapping[str, Any] = torch.load(model_pth, map_location="cpu")
     checkpoint = checkpoint.get("model", checkpoint)
     model.load_state_dict(checkpoint, strict=True)
     info_path = re.sub(r".pth$", ".yaml", model_pth)

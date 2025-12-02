@@ -19,7 +19,7 @@ import torch
 import yaml
 
 
-def load_checkpoint(model: torch.nn.Module, model_pth: str) -> dict:
+def load_checkpoint(model: torch.nn.Module, model_pth: str) -> dict[str, object]:
     checkpoint = torch.load(model_pth, map_location="cpu")
     checkpoint = checkpoint.get("model", checkpoint)
     model.load_state_dict(checkpoint, strict=True)

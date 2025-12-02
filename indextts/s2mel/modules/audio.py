@@ -1,14 +1,12 @@
 import torch
 from librosa.filters import mel as librosa_mel_fn
 
-MAX_WAV_VALUE = 32768.0
 
-
-def _dynamic_range_compression_torch(x, C=1, clip_val=1e-5):
+def _dynamic_range_compression_torch(x: torch.Tensor, C: float = 1, clip_val: float = 1e-5) -> torch.Tensor:
     return torch.log(torch.clamp(x, min=clip_val) * C)
 
 
-def _spectral_normalize_torch(magnitudes):
+def _spectral_normalize_torch(magnitudes: torch.Tensor) -> torch.Tensor:
     output = _dynamic_range_compression_torch(magnitudes)
     return output
 
@@ -17,7 +15,17 @@ _mel_basis = {}
 _hann_window = {}
 
 
-def mel_spectrogram(y, n_fft, num_mels, sampling_rate, hop_size, win_size, fmin, fmax, center=False):
+def mel_spectrogram(
+    y: torch.Tensor,
+    n_fft: int,
+    num_mels: int,
+    sampling_rate: int,
+    hop_size: int,
+    win_size: int,
+    fmin: float,
+    fmax: float,
+    center: bool = False,
+) -> torch.Tensor:
     global _mel_basis, _hann_window  # pylint: disable=global-statement
     if f"{sampling_rate!s}_{fmax!s}_{y.device!s}" not in _mel_basis:
         mel = librosa_mel_fn(sr=sampling_rate, n_fft=n_fft, n_mels=num_mels, fmin=fmin, fmax=fmax)

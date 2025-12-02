@@ -1,3 +1,4 @@
+import torch
 import torch.nn.functional as F
 from einops import rearrange
 from torch import nn
@@ -26,7 +27,7 @@ class VectorQuantize(nn.Module):
         self.out_proj = WNConv1d(codebook_dim, input_dim, kernel_size=1)
         self.codebook = nn.Embedding(codebook_size, codebook_dim)
 
-    def forward(self, z, z_mask=None):
+    def forward(self, z: torch.Tensor, z_mask: torch.Tensor | None = None):
         """Quantized the input tensor using a fixed codebook and returns
         the corresponding codebook vectors
 
@@ -66,13 +67,13 @@ class VectorQuantize(nn.Module):
 
         return z_q, commitment_loss, codebook_loss, indices, z_e
 
-    def embed_code(self, embed_id):
+    def embed_code(self, embed_id: torch.Tensor) -> torch.Tensor:
         return F.embedding(embed_id, self.codebook.weight)
 
-    def decode_code(self, embed_id):
+    def decode_code(self, embed_id: torch.Tensor) -> torch.Tensor:
         return self.embed_code(embed_id).transpose(1, 2)
 
-    def decode_latents(self, latents):
+    def decode_latents(self, latents: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         encodings = rearrange(latents, "b d t -> (b t) d")
         codebook = self.codebook.weight  # codebook: (N x D)
 

@@ -1,5 +1,4 @@
 # pyright: reportImportCycles=false
-from collections.abc import Sequence
 from typing import Any
 
 import torch

@@ -77,8 +77,12 @@ class MyModel(nn.Module):
         This method applies torch.compile to the model for significant
         performance improvements during inference.
         """
+        from indextts.s2mel.modules.flow_matching import CFM
+
         if "cfm" in self.models:
-            self.models["cfm"].enable_torch_compile()
+            cfm = self.models["cfm"]
+            assert isinstance(cfm, CFM)
+            cfm.enable_torch_compile()
 
 
 def load_checkpoint2(
@@ -120,14 +124,4 @@ def load_checkpoint2(
             model.models[key].load_state_dict(filtered_state_dict, strict=False)
     model.eval()
 
-    if not load_only_params:
-        epoch = state["epoch"] + 1
-        iters = state["iters"]
-        optimizer.load_state_dict(state["optimizer"])
-        optimizer.load_scheduler_state_dict(state["scheduler"])
-
-    else:
-        epoch = 0
-        iters = 0
-
-    return model, optimizer, epoch, iters
+    return model

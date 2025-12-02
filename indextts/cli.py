@@ -13,37 +13,51 @@ def main() -> None:
     import argparse
 
     parser = argparse.ArgumentParser(description="IndexTTS Command Line")
-    parser.add_argument("text", type=str, help="Text to be synthesized")
-    parser.add_argument("-v", "--voice", type=str, required=True, help="Path to the audio prompt file (wav format)")
-    parser.add_argument("-o", "--output-path", type=str, default="gen.wav", help="Path to the output wav file")
-    parser.add_argument(
+    _ = parser.add_argument("text", type=str, help="Text to be synthesized")
+    _ = parser.add_argument("-v", "--voice", type=str, required=True, help="Path to the audio prompt file (wav format)")
+    _ = parser.add_argument("-o", "--output-path", type=str, default="gen.wav", help="Path to the output wav file")
+    _ = parser.add_argument(
         "-c",
         "--config",
         type=str,
         default="checkpoints/config.yaml",
         help="Path to the config file. Default is 'checkpoints/config.yaml'",
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "--model-dir", type=str, default="checkpoints", help="Path to the model directory. Default is 'checkpoints'"
     )
-    parser.add_argument("--fp16", action="store_true", default=False, help="Use FP16 for inference if available")
-    parser.add_argument(
+    _ = parser.add_argument("--fp16", action="store_true", default=False, help="Use FP16 for inference if available")
+    _ = parser.add_argument(
         "-f", "--force", action="store_true", default=False, help="Force to overwrite the output file if it exists"
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "-d", "--device", type=str, default=None, help="Device to run the model on (cpu, cuda, mps, xpu)."
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "--use-accel", action="store_true", default=False, help="Use acceleration engine (FlashAttention) for GPT"
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "--use-torch-compile", action="store_true", default=False, help="Use torch.compile for optimization"
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "--use-cuda-kernel", action="store_true", default=False, help="Use custom CUDA kernel for BigVGAN"
     )
-    parser.add_argument("--use-deepspeed", action="store_true", default=False, help="Use DeepSpeed for inference")
+    _ = parser.add_argument("--use-deepspeed", action="store_true", default=False, help="Use DeepSpeed for inference")
     args = parser.parse_args()
+
+    assert isinstance(args.text, str)  # pyright: ignore[reportAny]
+    assert isinstance(args.voice, str)  # pyright: ignore[reportAny]
+    assert isinstance(args.config, str)  # pyright: ignore[reportAny]
+    assert isinstance(args.output_path, str)  # pyright: ignore[reportAny]
+    assert isinstance(args.model_dir, str)  # pyright: ignore[reportAny]
+    assert isinstance(args.device, (str, type(None)))  # pyright: ignore[reportAny]
+    assert isinstance(args.fp16, bool)  # pyright: ignore[reportAny]
+    assert isinstance(args.force, bool)  # pyright: ignore[reportAny]
+    assert isinstance(args.use_accel, bool)  # pyright: ignore[reportAny]
+    assert isinstance(args.use_torch_compile, bool)  # pyright: ignore[reportAny]
+    assert isinstance(args.use_cuda_kernel, bool)  # pyright: ignore[reportAny]
+    assert isinstance(args.use_deepspeed, bool)  # pyright: ignore[reportAny]
+
     if len(args.text.strip()) == 0:
         print("ERROR: Text is empty.")
         parser.print_help()

@@ -17,7 +17,6 @@ import torch
 import torch.nn.functional as F
 import torchaudio
 from huggingface_hub import hf_hub_download
-from numpy import ndarray
 from omegaconf import OmegaConf
 from transformers import AutoModelForCausalLM, AutoTokenizer, SeamlessM4TFeatureExtractor
 from transformers.utils.generic import ModelOutput
@@ -63,7 +62,7 @@ class IndexTTS2:
     bpe_path: str
     normalizer: TextNormalizer
     tokenizer: TextTokenizer
-    emo_matrix: tuple[torch.Tensor, ...] | torch.Tensor
+    emo_matrix: torch.Tensor
     emo_num: list[int]
     spk_matrix: tuple[torch.Tensor, ...] | torch.Tensor
     mel_fn: Any
@@ -209,7 +208,9 @@ class IndexTTS2:
         print(">> campplus_model weights restored from:", campplus_ckpt_path)
 
         bigvgan_name = self.cfg.vocoder.name
-        self.bigvgan = bigvgan.BigVGAN.from_pretrained(bigvgan_name, use_cuda_kernel=self.use_cuda_kernel)
+        self.bigvgan: bigvgan.BigVGAN = bigvgan.BigVGAN.from_pretrained(  # pyright: ignore[reportUnknownMemberType]
+            bigvgan_name, use_cuda_kernel=self.use_cuda_kernel
+        )
         self.bigvgan = self.bigvgan.to(self.device)
         self.bigvgan.remove_weight_norm()
         self.bigvgan.eval()
@@ -222,7 +223,7 @@ class IndexTTS2:
         self.tokenizer = TextTokenizer(self.bpe_path, self.normalizer)
         print(">> bpe model loaded from:", self.bpe_path)
 
-        emo_matrix = torch.load(os.path.join(self.model_dir, self.cfg.emo_matrix))
+        emo_matrix: torch.Tensor = torch.load(os.path.join(self.model_dir, self.cfg.emo_matrix))
         self.emo_matrix = emo_matrix.to(self.device)
         self.emo_num = list(self.cfg.emo_num)
 
@@ -766,7 +767,7 @@ class IndexTTS2:
             yield (sampling_rate, wav_data)
 
 
-def _find_most_similar_cosine(query_vector: torch.Tensor, matrix: torch.Tensor) -> int:
+def _find_most_similar_cosine(query_vector: torch.Tensor, matrix: torch.Tensor):
     query_vector = query_vector.float()
     matrix = matrix.float()
 

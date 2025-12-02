@@ -1,10 +1,18 @@
+# pyright: reportImportCycles=false
+from collections.abc import Sequence
+from typing import Any
+
 import torch
 from torch import nn
 
 
 @torch.jit.script
-def fused_add_tanh_sigmoid_multiply(input_a, input_b, n_channels):
-    n_channels_int = n_channels[0]
+def fused_add_tanh_sigmoid_multiply(
+    input_a: torch.Tensor,
+    input_b: torch.Tensor,
+    n_channels: Sequence[int],
+) -> torch.Tensor:
+    n_channels_int = int(n_channels[0])
     in_act = input_a + input_b
     # use torch.split to avoid dynamic slicing
     t_act_part, s_act_part = torch.split(in_act, n_channels_int, dim=1)
@@ -14,15 +22,15 @@ def fused_add_tanh_sigmoid_multiply(input_a, input_b, n_channels):
     return acts
 
 
-def sequence_mask(length, max_length=None):
+def sequence_mask(length: torch.Tensor, max_length: torch.Tensor | None = None) -> torch.Tensor:
     if max_length is None:
         max_length = length.max()
-    x = torch.arange(max_length, dtype=length.dtype, device=length.device)
+    x = torch.arange(int(max_length), dtype=length.dtype, device=length.device)
     return x.unsqueeze(0) < length.unsqueeze(1)
 
 
 class MyModel(nn.Module):
-    def __init__(self, args, use_emovec=False, use_gpt_latent=False) -> None:
+    def __init__(self, args, use_emovec: bool = False, use_gpt_latent: bool = False) -> None:
         super().__init__()
         from indextts.s2mel.modules.flow_matching import CFM
         from indextts.s2mel.modules.length_regulator import InterpolateRegulator
@@ -60,7 +68,14 @@ class MyModel(nn.Module):
         else:
             self.models = nn.ModuleDict({"cfm": CFM(args), "length_regulator": length_regulator})
 
-    def forward(self, x, target_lengths, prompt_len, cond, y):
+    def forward(
+        self,
+        x: torch.Tensor,
+        target_lengths: torch.Tensor,
+        prompt_len: int,
+        cond: torch.Tensor,
+        y: torch.Tensor,
+    ) -> torch.Tensor:
         x = self.models["cfm"](x, target_lengths, prompt_len, cond, y)
         return x
 
@@ -75,14 +90,14 @@ class MyModel(nn.Module):
 
 
 def load_checkpoint2(
-    model,
-    path,
-    ignore_modules=[],
-    is_distributed=False,
-    load_ema=False,
-):
-    state = torch.load(path, map_location="cpu")
-    params = state["net"]
+    model: MyModel,
+    path: str,
+    ignore_modules: list[str] = [],
+    is_distributed: bool = False,
+    load_ema: bool = False,
+) -> MyModel:
+    state: dict[str, Any] = torch.load(path, map_location="cpu")
+    params: dict[str, Any] = state["net"]
     if load_ema and "ema" in state:
         print("Loading EMA")
         for key in model.models:

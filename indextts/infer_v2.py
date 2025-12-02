@@ -33,6 +33,8 @@ from indextts.utils.checkpoint import load_checkpoint
 from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.maskgct_utils import build_semantic_codec, build_semantic_model
 
+if typing.TYPE_CHECKING:
+    from gradio import Progress
 
 class IndexTTS2:
     device: str

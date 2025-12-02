@@ -5,7 +5,7 @@ import re
 import time
 import typing
 import warnings
-from collections.abc import Generator
+from collections.abc import Generator, Sequence
 from subprocess import CalledProcessError
 from typing import Any
 
@@ -62,9 +62,9 @@ class IndexTTS2:
     bpe_path: str
     normalizer: TextNormalizer
     tokenizer: TextTokenizer
-    emo_matrix: torch.Tensor
+    emo_matrix: Sequence[torch.Tensor]
     emo_num: list[int]
-    spk_matrix: tuple[torch.Tensor, ...] | torch.Tensor
+    spk_matrix: Sequence[torch.Tensor]
     mel_fn: Any
     cache_spk_cond: torch.Tensor | None
     cache_s2mel_style: torch.Tensor | None
@@ -224,14 +224,14 @@ class IndexTTS2:
         print(">> bpe model loaded from:", self.bpe_path)
 
         emo_matrix: torch.Tensor = torch.load(os.path.join(self.model_dir, self.cfg.emo_matrix))
-        self.emo_matrix = emo_matrix.to(self.device)
+        emo_matrix = emo_matrix.to(self.device)
         self.emo_num = list(self.cfg.emo_num)
 
         spk_matrix = torch.load(os.path.join(self.model_dir, self.cfg.spk_matrix))
-        self.spk_matrix = spk_matrix.to(self.device)
+        spk_matrix = spk_matrix.to(self.device)
 
-        self.emo_matrix = torch.split(self.emo_matrix, self.emo_num)
-        self.spk_matrix = torch.split(self.spk_matrix, self.emo_num)
+        self.emo_matrix = torch.split(emo_matrix, self.emo_num)
+        self.spk_matrix = torch.split(spk_matrix, self.emo_num)
 
         mel_fn_args = {
             "n_fft": self.cfg.s2mel["preprocess_params"]["spect_params"]["n_fft"],

@@ -494,6 +494,7 @@ class IndexTTS2:
             self.cache_spk_audio_prompt = spk_audio_prompt
             self.cache_mel = ref_mel
         else:
+assert self.cache_s2mel_style is not None
             style = self.cache_s2mel_style
             prompt_condition = self.cache_s2mel_prompt
             spk_cond_emb = self.cache_spk_cond
@@ -687,6 +688,7 @@ class IndexTTS2:
                         diffusion_steps,
                         inference_cfg_rate=inference_cfg_rate,
                     )
+assert ref_mel is not None
                     vc_target = vc_target[:, :, ref_mel.size(-1) :]
                     s2mel_time += time.perf_counter() - m_start_time
 

@@ -68,13 +68,13 @@ class VectorQuantize(nn.Module):
 
         return z_q, commitment_loss, codebook_loss, indices, z_e
 
-    def embed_code(self, embed_id):
+    def embed_code(self, embed_id: torch.Tensor) -> torch.Tensor:
         return F.embedding(embed_id, self.codebook.weight)
 
-    def decode_code(self, embed_id):
+    def decode_code(self, embed_id: torch.Tensor) -> torch.Tensor:
         return self.embed_code(embed_id).transpose(1, 2)
 
-    def decode_latents(self, latents):
+    def decode_latents(self, latents: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         encodings = rearrange(latents, "b d t -> (b t) d")
         codebook = self.codebook.weight  # codebook: (N x D)
 

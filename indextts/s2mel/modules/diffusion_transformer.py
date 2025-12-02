@@ -9,7 +9,7 @@ from indextts.s2mel.modules.gpt_fast.model import ModelArgs, Transformer
 from indextts.s2mel.modules.wavenet import WN
 
 
-def modulate(x, shift, scale):
+def modulate(x: torch.Tensor, shift: torch.Tensor, scale: torch.Tensor) -> torch.Tensor:
     return x * (1 + scale.unsqueeze(1)) + shift.unsqueeze(1)
 
 
@@ -23,7 +23,7 @@ class TimestepEmbedder(nn.Module):
     Embeds scalar timesteps into vector representations.
     """
 
-    def __init__(self, hidden_size, frequency_embedding_size=256) -> None:
+    def __init__(self, hidden_size: int, frequency_embedding_size: int = 256) -> None:
         super().__init__()
         self.mlp = nn.Sequential(
             nn.Linear(frequency_embedding_size, hidden_size, bias=True),
@@ -66,13 +66,13 @@ class FinalLayer(nn.Module):
     The final layer of DiT.
     """
 
-    def __init__(self, hidden_size, patch_size, out_channels) -> None:
+    def __init__(self, hidden_size: int, patch_size: int, out_channels: int) -> None:
         super().__init__()
         self.norm_final = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
         self.linear = weight_norm(nn.Linear(hidden_size, patch_size * patch_size * out_channels, bias=True))
         self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(hidden_size, 2 * hidden_size, bias=True))
 
-    def forward(self, x, c):
+    def forward(self, x: torch.Tensor, c: torch.Tensor) -> torch.Tensor:
         shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
         x = modulate(self.norm_final(x), shift, scale)
         x = self.linear(x)
@@ -163,10 +163,19 @@ class DiT(torch.nn.Module):
         if self.style_as_token:
             self.style_in = nn.Linear(args.style_encoder.dim, args.DiT.hidden_dim)
 
-    def setup_caches(self, max_batch_size, max_seq_length) -> None:
+    def setup_caches(self, max_batch_size: int, max_seq_length: int) -> None:
         self.transformer.setup_caches(max_batch_size, max_seq_length, use_kv_cache=False)
 
-    def forward(self, x, prompt_x, x_lens, t, style, cond, mask_content=False):
+    def forward(
+        self,
+        x: torch.Tensor,
+        prompt_x: torch.Tensor,
+        x_lens: torch.Tensor,
+        t: torch.Tensor,
+        style: torch.Tensor,
+        cond: torch.Tensor,
+        mask_content: bool = False,
+    ):
         """
         x (torch.Tensor): random noise
         prompt_x (torch.Tensor): reference mel + zero mel

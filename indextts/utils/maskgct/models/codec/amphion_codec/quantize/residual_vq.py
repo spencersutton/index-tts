@@ -142,7 +142,7 @@ class ResidualVQ(nn.Module):
             quantized_out += quantizer.vq2emb(vq[idx])
         return quantized_out
 
-    def latent2dist(self, z, n_quantizers=None):
+    def latent2dist(self, z: torch.Tensor, n_quantizers: int | None = None) -> tuple[torch.Tensor, torch.Tensor]:
         quantized_out = 0.0
         residual = z
 

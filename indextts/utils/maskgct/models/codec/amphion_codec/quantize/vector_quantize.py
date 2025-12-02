@@ -14,23 +14,19 @@ def WNConv1d(*args, **kwargs):
     return weight_norm(nn.Conv1d(*args, **kwargs))
 
 
-def WNConvTranspose1d(*args, **kwargs):
-    return weight_norm(nn.ConvTranspose1d(*args, **kwargs))
-
-
-def l2norm(t):
+def l2norm(t: torch.Tensor) -> torch.Tensor:
     return F.normalize(t, p=2, dim=-1)
 
 
-def ema_inplace(moving_avg, new, decay) -> None:
+def ema_inplace(moving_avg: torch.Tensor, new: torch.Tensor, decay: float) -> None:
     moving_avg.data.mul_(decay).add_(new, alpha=(1 - decay))
 
 
-def laplace_smoothing(x, n_categories, eps=1e-5):
+def laplace_smoothing(x: torch.Tensor, n_categories: int, eps: float = 1e-5) -> torch.Tensor:
     return (x + eps) / (x.sum() + n_categories * eps)
 
 
-def sample_vectors(samples, num):
+def sample_vectors(samples: torch.Tensor, num: int) -> torch.Tensor:
     num_samples, device = samples.shape[0], samples.device
 
     if num_samples >= num:
@@ -41,8 +37,10 @@ def sample_vectors(samples, num):
     return samples[indices]
 
 
-def kmeans(samples, num_clusters, num_iters=10, use_cosine_sim=False):
-    dim, dtype, _device = samples.shape[-1], samples.dtype, samples.device
+def kmeans(
+    samples: torch.Tensor, num_clusters: int, num_iters: int = 10, use_cosine_sim: bool = False
+) -> tuple[torch.Tensor, torch.Tensor]:
+    dim, dtype, device = samples.shape[-1], samples.dtype, samples.device
 
     means = sample_vectors(samples, num_clusters)
 
@@ -73,14 +71,14 @@ def kmeans(samples, num_clusters, num_iters=10, use_cosine_sim=False):
 class EuclideanCodebook(nn.Module):
     def __init__(
         self,
-        dim,
-        codebook_size,
-        kmeans_init=False,
-        kmeans_iters=10,
-        decay=0.8,
-        eps=1e-5,
-        threshold_ema_dead_code=2,
-        weight_init=False,
+        dim: int,
+        codebook_size: int,
+        kmeans_init: bool = False,
+        kmeans_iters: int = 10,
+        decay: float = 0.8,
+        eps: float = 1e-5,
+        threshold_ema_dead_code: int = 2,
+        weight_init: bool = False,
     ) -> None:
         super().__init__()
 
@@ -103,18 +101,18 @@ class EuclideanCodebook(nn.Module):
         self.register_buffer("embed", embed)
         self.register_buffer("embed_avg", embed.clone())
 
-    def init_embed_(self, data) -> None:
+    def init_embed_(self, data: torch.Tensor) -> None:
         embed, cluster_size = kmeans(data, self.codebook_size, self.kmeans_iters)
         self.embed.data.copy_(embed)
         self.embed_avg.data.copy_(embed)
         self.cluster_size.data.copy_(cluster_size)
         self.initted.data.copy_(torch.Tensor([True]))
 
-    def replace(self, samples, mask) -> None:
+    def replace(self, samples: torch.Tensor, mask: torch.Tensor) -> None:
         modified_codebook = torch.where(mask[..., None], sample_vectors(samples, self.codebook_size), self.embed)
         self.embed.data.copy_(modified_codebook)
 
-    def expire_codes_(self, batch_samples) -> None:
+    def expire_codes_(self, batch_samples: torch.Tensor) -> None:
         if self.threshold_ema_dead_code == 0:
             return
 
@@ -124,7 +122,7 @@ class EuclideanCodebook(nn.Module):
         batch_samples = rearrange(batch_samples, "... d -> (...) d")
         self.replace(batch_samples, mask=expired_codes)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         shape, dtype = x.shape, x.dtype
         flatten = rearrange(x, "... d -> (...) d")
         embed = self.embed.t()  # (codebook_size, dim) -> (dim, codebook_size)
@@ -150,12 +148,12 @@ class EuclideanCodebook(nn.Module):
 
         return quantize, embed_ind
 
-    def vq2emb(self, vq):
+    def vq2emb(self, vq: torch.Tensor) -> torch.Tensor:
         quantize = F.embedding(vq, self.embed)
         return quantize
 
-    def latent2dist(self, x):
-        shape, _dtype = x.shape, x.dtype
+    def latent2dist(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        shape, dtype = x.shape, x.dtype
         flatten = rearrange(x, "... d -> (...) d")
         embed = self.embed.t()  # (codebook_size, dim) -> (dim, codebook_size)
 
@@ -188,7 +186,7 @@ class SimpleCodebook(nn.Module):
 
         self.embed = nn.Embedding(self.codebook_size, self.dim)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         shape, _dtype = x.shape, x.dtype
         flatten = rearrange(x, "... d -> (...) d")
         embed = self.embed.weight.t()  # (codebook_size, dim) -> (dim, codebook_size)
@@ -205,11 +203,11 @@ class SimpleCodebook(nn.Module):
 
         return quantize, embed_ind
 
-    def vq2emb(self, vq):
+    def vq2emb(self, vq: torch.Tensor) -> torch.Tensor:
         quantize = F.embedding(vq, self.embed.weight)
         return quantize
 
-    def latent2dist(self, x):
+    def latent2dist(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         shape, _dtype = x.shape, x.dtype
         flatten = rearrange(x, "... d -> (...) d")
         embed = self.embed.weight.t()  # (codebook_size, dim) -> (dim, codebook_size)
@@ -251,19 +249,19 @@ class VectorQuantize(nn.Module):
 
     def __init__(
         self,
-        input_dim,
-        codebook_size,
-        codebook_dim,
-        commitment=0.005,
-        codebook_loss_weight=1.0,
-        use_l2_normlize=False,
-        codebook_type="euclidean",  # "euclidean" or "simple"
-        kmeans_init=False,
-        kmeans_iters=10,
-        decay=0.8,
-        eps=1e-5,
-        threshold_ema_dead_code=2,
-        weight_init=False,
+        input_dim: int,
+        codebook_size: int,
+        codebook_dim: int,
+        commitment: float = 0.005,
+        codebook_loss_weight: float = 1.0,
+        use_l2_normlize: bool = False,
+        codebook_type: str = "euclidean",  # "euclidean" or "simple"
+        kmeans_init: bool = False,
+        kmeans_iters: int = 10,
+        decay: float = 0.8,
+        eps: float = 1e-5,
+        threshold_ema_dead_code: int = 2,
+        weight_init: bool = False,
     ) -> None:
         super().__init__()
         self.input_dim = input_dim
@@ -308,7 +306,7 @@ class VectorQuantize(nn.Module):
         else:
             raise NotImplementedError(f"codebook_type {self.codebook_type} is not implemented!")
 
-    def forward(self, z):
+    def forward(self, z: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Parameters
         ----------
@@ -346,20 +344,20 @@ class VectorQuantize(nn.Module):
 
         return z_q, commit_loss, codebook_loss, indices, z_e
 
-    def decode_latents(self, latents):
+    def decode_latents(self, latents: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         encodings = rearrange(latents, "b d t -> b t d")
         z_q, indices = self.codebook(encodings)
         z_q = z_q.transpose(1, 2)
         return z_q, indices
 
-    def vq2emb(self, vq, out_proj=True):
+    def vq2emb(self, vq: torch.Tensor, out_proj: bool = True) -> torch.Tensor:
         emb = self.codebook.vq2emb(vq)
         emb = emb.transpose(1, 2)
         if out_proj:
             emb = self.out_project(emb)
         return emb
 
-    def latent2dist(self, latents):
+    def latent2dist(self, latents: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         latents = rearrange(latents, "b d t -> b t d")
         dist, embed_ind, quantize = self.codebook.latent2dist(latents)
         return dist, embed_ind, quantize.transpose(1, 2)

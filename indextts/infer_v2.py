@@ -35,16 +35,54 @@ from indextts.utils.maskgct_utils import build_semantic_codec, build_semantic_mo
 
 
 class IndexTTS2:
+    device: str
+    use_fp16: bool
+    cfg: Any
+    model_dir: str
+    dtype: torch.dtype | None
+    stop_mel_token: int
+    qwen_emo: "QwenEmotion"
+    gpt: "UnifiedVoice"
+    extract_features: SeamlessM4TFeatureExtractor
+    semantic_model: Any
+    semantic_mean: torch.Tensor
+    semantic_std: torch.Tensor
+    semantic_codec: Any
+    s2mel: MyModel
+    campplus_model: CAMPPlus
+    bigvgan: "bigvgan.BigVGAN"
+    bpe_path: str
+    normalizer: TextNormalizer
+    tokenizer: TextTokenizer
+    emo_matrix: tuple[torch.Tensor, ...]
+    emo_num: list[int]
+    spk_matrix: tuple[torch.Tensor, ...]
+    mel_fn: Callable[[torch.Tensor], torch.Tensor]
+
+    # 缓存参考音频：
+    # Cache reference audio:
+    cache_spk_cond: torch.Tensor | None = None
+    cache_s2mel_style: torch.Tensor | None = None
+    cache_s2mel_prompt: torch.Tensor | None = None
+    cache_spk_audio_prompt: str | None = None
+    cache_emo_cond: torch.Tensor | None = None
+    cache_emo_audio_prompt: str | None = None
+    cache_mel: torch.Tensor | None = None
+
+    if typing.TYPE_CHECKING:
+        gr_progress: Progress | None
+    model_version: Any
+
     def __init__(
         self,
-        cfg_path="checkpoints/config.yaml",
-        model_dir="checkpoints",
-        use_fp16=False,
-        device=None,
-        use_cuda_kernel=None,
-        use_deepspeed=False,
-        use_accel=False,
-        use_torch_compile=False,
+        cfg_path: str = "checkpoints/config.yaml",
+        model_dir: str = "checkpoints",
+        use_fp16: bool = False,
+        device: str | None = None,
+        use_cuda_kernel: bool | None = None,
+        use_deepspeed: bool = False,
+        use_accel: bool = False,
+        use_torch_compile: bool = False,
     ) -> None:
         """
         Args:
@@ -178,7 +216,7 @@ class IndexTTS2:
         self.tokenizer = TextTokenizer(self.bpe_path, self.normalizer)
         print(">> bpe model loaded from:", self.bpe_path)
 
-        emo_matrix = torch.load(os.path.join(self.model_dir, self.cfg.emo_matrix))
+        emo_matrix: torch.Tensor = torch.load(os.path.join(model_dir, self.cfg.emo_matrix))
         self.emo_matrix = emo_matrix.to(self.device)
         self.emo_num = list(self.cfg.emo_num)
 
@@ -298,21 +336,21 @@ class IndexTTS2:
     # 原始推理模式
     def infer(
         self,
-        spk_audio_prompt,
-        text,
-        output_path,
-        emo_audio_prompt=None,
-        emo_alpha=1.0,
-        emo_vector=None,
-        use_emo_text=False,
-        emo_text=None,
-        use_random=False,
-        interval_silence=200,
-        verbose=False,
-        max_text_tokens_per_segment=120,
-        stream_return=False,
-        more_segment_before=0,
-        **generation_kwargs,
+        spk_audio_prompt: str,
+        text: str,
+        output_path: str | None,
+        emo_audio_prompt: str | None = None,
+        emo_alpha: float = 1.0,
+        emo_vector: list[float] | None = None,
+        use_emo_text: bool = False,
+        emo_text: str | None = None,
+        use_random: bool = False,
+        interval_silence: int = 200,
+        verbose: bool = False,
+        max_text_tokens_per_segment: int = 120,
+        stream_return: bool = False,
+        more_segment_before: int = 0,
+        **generation_kwargs: Any,
     ):
         if stream_return:
             return self.infer_generator(

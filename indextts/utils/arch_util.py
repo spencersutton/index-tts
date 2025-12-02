@@ -6,7 +6,7 @@ from torch import nn
 from indextts.utils.xtransformers import RelativePositionBias
 
 
-def zero_module(module):
+def zero_module(module: nn.Module) -> nn.Module:
     """
     Zero out the parameters of a module and return it.
     """
@@ -16,11 +16,11 @@ def zero_module(module):
 
 
 class GroupNorm32(nn.GroupNorm):
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         return super().forward(x.float()).type(x.dtype)
 
 
-def normalization(channels):
+def normalization(channels: int) -> nn.Module:
     """
     Make a standard normalization layer.
 
@@ -43,11 +43,13 @@ class QKVAttentionLegacy(nn.Module):
     A module which performs QKV attention. Matches legacy QKVAttention + input/output heads shaping
     """
 
-    def __init__(self, n_heads) -> None:
+    def __init__(self, n_heads: int) -> None:
         super().__init__()
         self.n_heads = n_heads
 
-    def forward(self, qkv, mask=None, rel_pos=None):
+    def forward(
+        self, qkv: torch.Tensor, mask: torch.Tensor | None = None, rel_pos: nn.Module | None = None
+    ) -> torch.Tensor:
         """
         Apply QKV attention.
 
@@ -84,11 +86,11 @@ class AttentionBlock(nn.Module):
 
     def __init__(
         self,
-        channels,
-        num_heads=1,
-        num_head_channels=-1,
-        do_checkpoint=True,
-        relative_pos_embeddings=False,
+        channels: int,
+        num_heads: int = 1,
+        num_head_channels: int = -1,
+        do_checkpoint: bool = True,
+        relative_pos_embeddings: bool = False,
     ) -> None:
         super().__init__()
         self.channels = channels
@@ -117,7 +119,7 @@ class AttentionBlock(nn.Module):
         else:
             self.relative_pos_embeddings = None
 
-    def forward(self, x, mask=None):
+    def forward(self, x: torch.Tensor, mask: torch.Tensor | None = None) -> torch.Tensor:
         b, c, *spatial = x.shape
         x = x.reshape(b, c, -1)
         qkv = self.qkv(self.norm(x))

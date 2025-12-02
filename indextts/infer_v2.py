@@ -3,6 +3,7 @@ import os
 import random
 import re
 import time
+import typing
 import warnings
 
 import librosa
@@ -31,6 +32,9 @@ from indextts.s2mel.modules.commons import MyModel, load_checkpoint2
 from indextts.utils.checkpoint import load_checkpoint
 from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.maskgct_utils import build_semantic_codec, build_semantic_model
+
+if typing.TYPE_CHECKING:
+    from gradio import Progress
 
 os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 
@@ -254,11 +258,12 @@ class IndexTTS2:
         self.cache_mel = None
 
         # 进度引用显示（可选）
+        # Progress reference display (optional)
         self.gr_progress = None
         self.model_version = self.cfg.version if hasattr(self.cfg, "version") else None
 
     @torch.no_grad()
-    def get_emb(self, input_features, attention_mask):
+    def get_emb(self, input_features: torch.Tensor, attention_mask: torch.Tensor):
         vq_emb = self.semantic_model(
             input_features=input_features,
             attention_mask=attention_mask,
@@ -268,7 +273,7 @@ class IndexTTS2:
         feat = (feat - self.semantic_mean) / self.semantic_std
         return feat
 
-    def interval_silence(self, wavs, sampling_rate=22050, interval_silence=200):
+    def interval_silence(self, wavs: list[torch.Tensor], sampling_rate: int = 22050, interval_silence: int = 200):
         """
         Silences to be insert between generated segments.
         """
@@ -282,7 +287,9 @@ class IndexTTS2:
         sil_dur = int(sampling_rate * interval_silence / 1000.0)
         return torch.zeros(channel_size, sil_dur)
 
-    def insert_interval_silence(self, wavs, sampling_rate=22050, interval_silence=200):
+    def insert_interval_silence(
+        self, wavs: list[torch.Tensor], sampling_rate: int = 22050, interval_silence: int = 200
+    ) -> list[torch.Tensor]:
         """
         Insert silences between generated segments.
         wavs: List[torch.tensor]
@@ -297,7 +304,7 @@ class IndexTTS2:
         sil_dur = int(sampling_rate * interval_silence / 1000.0)
         sil_tensor = torch.zeros(channel_size, sil_dur)
 
-        wavs_list = []
+        wavs_list: list[torch.Tensor] = []
         for i, wav in enumerate(wavs):
             wavs_list.append(wav)
             if i < len(wavs) - 1:
@@ -305,13 +312,20 @@ class IndexTTS2:
 
         return wavs_list
 
-    def _set_gr_progress(self, value, desc) -> None:
+    def _set_gr_progress(self, value: float, desc: str) -> None:
         if self.gr_progress is not None:
             self.gr_progress(value, desc=desc)
 
-    def _load_and_cut_audio(self, audio_path, max_audio_length_seconds, verbose=False, sr=None):
+    def _load_and_cut_audio(
+        self,
+        audio_path: str,
+        max_audio_length_seconds: float,
+        verbose: bool = False,
+        sr: int | None = None,
+    ) -> tuple[torch.Tensor, int]:
         if not sr:
-            audio, sr = librosa.load(audio_path)
+            audio, sr_loaded = librosa.load(audio_path)
+            sr = int(sr_loaded)
         else:
             audio, _ = librosa.load(audio_path, sr=sr)
         audio = torch.tensor(audio).unsqueeze(0)
@@ -323,7 +337,7 @@ class IndexTTS2:
             audio = audio[:, :max_audio_samples]
         return audio, sr
 
-    def normalize_emo_vec(self, emo_vector, apply_bias=True):
+    def normalize_emo_vec(self, emo_vector: list[float], apply_bias: bool = True) -> list[float]:
         # apply biased emotion factors for better user experience,
         # by de-emphasizing emotions that can cause strange results
         if apply_bias:
@@ -340,6 +354,7 @@ class IndexTTS2:
         return emo_vector
 
     # 原始推理模式
+    # Original inference mode
     def infer(
         self,
         spk_audio_prompt: str,
@@ -404,22 +419,22 @@ class IndexTTS2:
 
     def infer_generator(
         self,
-        spk_audio_prompt,
-        text,
-        output_path,
-        emo_audio_prompt=None,
-        emo_alpha=1.0,
-        emo_vector=None,
-        use_emo_text=False,
-        emo_text=None,
-        use_random=False,
-        interval_silence=200,
-        verbose=False,
-        max_text_tokens_per_segment=120,
-        stream_return=False,
-        quick_streaming_tokens=0,
-        **generation_kwargs,
-    ):
+        spk_audio_prompt: str,
+        text: str,
+        output_path: str | None,
+        emo_audio_prompt: str | None = None,
+        emo_alpha: float = 1.0,
+        emo_vector: list[float] | None = None,
+        use_emo_text: bool = False,
+        emo_text: str | None = None,
+        use_random: bool = False,
+        interval_silence: int = 200,
+        verbose: bool = False,
+        max_text_tokens_per_segment: int = 120,
+        stream_return: bool = False,
+        quick_streaming_tokens: int = 0,
+        **generation_kwargs: Any,
+    ) -> Generator[torch.Tensor | None]:
         print(">> starting inference...")
         self._set_gr_progress(0, "starting inference...")
         if verbose:
@@ -754,7 +769,7 @@ assert ref_mel is not None
             yield (sampling_rate, wav_data)
 
 
-def find_most_similar_cosine(query_vector, matrix):
+def find_most_similar_cosine(query_vector: torch.Tensor, matrix: torch.Tensor) -> int:
     query_vector = query_vector.float()
     matrix = matrix.float()
 
@@ -764,7 +779,7 @@ def find_most_similar_cosine(query_vector, matrix):
 
 
 class QwenEmotion:
-    def __init__(self, model_dir) -> None:
+    def __init__(self, model_dir: str) -> None:
         self.model_dir = model_dir
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_dir)
         self.model = AutoModelForCausalLM.from_pretrained(
@@ -801,10 +816,10 @@ class QwenEmotion:
         self.max_score = 1.2
         self.min_score = 0.0
 
-    def clamp_score(self, value):
+    def clamp_score(self, value: float) -> float:
         return max(self.min_score, min(self.max_score, value))
 
-    def convert(self, content):
+    def convert(self, content: dict[str, float]) -> dict[str, float]:
         # generate emotion vector dictionary:
         # - insert values in desired order (Python 3.7+ `dict` remembers insertion order)
         # - convert Chinese keys to English
@@ -822,7 +837,7 @@ class QwenEmotion:
 
         return emotion_dict
 
-    def inference(self, text_input):
+    def inference(self, text_input: str) -> dict[str, float]:
         messages = [{"role": "system", "content": f"{self.prompt}"}, {"role": "user", "content": f"{text_input}"}]
         text = self.tokenizer.apply_chat_template(
             messages,

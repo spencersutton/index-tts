@@ -6,7 +6,7 @@
 import torch
 import torch.nn.functional as F
 from einops import rearrange, repeat
-from torch import nn
+from torch import Tensor, nn
 from torch.nn.utils import weight_norm
 
 
@@ -95,7 +95,7 @@ class EuclideanCodebook(nn.Module):
         self.threshold_ema_dead_code = threshold_ema_dead_code
 
         self.register_buffer(
-            "initted", torch.Tensor([not kmeans_init])
+            "initted", Tensor([not kmeans_init])
         )  # if kmeans_init is True, then initted is False; otherwise, initted is True
         self.register_buffer("cluster_size", torch.zeros(codebook_size))
         self.register_buffer("embed", embed)
@@ -106,13 +106,13 @@ class EuclideanCodebook(nn.Module):
         self.embed.data.copy_(embed)
         self.embed_avg.data.copy_(embed)
         self.cluster_size.data.copy_(cluster_size)
-        self.initted.data.copy_(torch.Tensor([True]))
+        self.initted.data.copy_(Tensor([True]))
 
     def replace(self, samples: torch.Tensor, mask: torch.Tensor) -> None:
         modified_codebook = torch.where(mask[..., None], sample_vectors(samples, self.codebook_size), self.embed)
         self.embed.data.copy_(modified_codebook)
 
-    def expire_codes_(self, batch_samples: torch.Tensor) -> None:
+    def expire_codes_(self, batch_samples: Tensor) -> None:
         if self.threshold_ema_dead_code == 0:
             return
 
@@ -122,7 +122,7 @@ class EuclideanCodebook(nn.Module):
         batch_samples = rearrange(batch_samples, "... d -> (...) d")
         self.replace(batch_samples, mask=expired_codes)
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: Tensor) -> tuple[Tensor, Tensor]:
         shape, dtype = x.shape, x.dtype
         flatten = rearrange(x, "... d -> (...) d")
         embed = self.embed.t()  # (codebook_size, dim) -> (dim, codebook_size)
@@ -148,7 +148,7 @@ class EuclideanCodebook(nn.Module):
 
         return quantize, embed_ind
 
-    def vq2emb(self, vq: torch.Tensor) -> torch.Tensor:
+    def vq2emb(self, vq: Tensor) -> Tensor:
         quantize = F.embedding(vq, self.embed)
         return quantize
 
@@ -186,7 +186,7 @@ class SimpleCodebook(nn.Module):
 
         self.embed = nn.Embedding(self.codebook_size, self.dim)
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: Tensor) -> tuple[Tensor, Tensor]:
         shape, _dtype = x.shape, x.dtype
         flatten = rearrange(x, "... d -> (...) d")
         embed = self.embed.weight.t()  # (codebook_size, dim) -> (dim, codebook_size)
@@ -203,11 +203,11 @@ class SimpleCodebook(nn.Module):
 
         return quantize, embed_ind
 
-    def vq2emb(self, vq: torch.Tensor) -> torch.Tensor:
+    def vq2emb(self, vq: Tensor) -> Tensor:
         quantize = F.embedding(vq, self.embed.weight)
         return quantize
 
-    def latent2dist(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def latent2dist(self, x: Tensor) -> tuple[Tensor, Tensor, Tensor]:
         shape, _dtype = x.shape, x.dtype
         flatten = rearrange(x, "... d -> (...) d")
         embed = self.embed.weight.t()  # (codebook_size, dim) -> (dim, codebook_size)
@@ -305,23 +305,23 @@ class VectorQuantize(nn.Module):
         else:
             raise NotImplementedError(f"codebook_type {self.codebook_type} is not implemented!")
 
-    def forward(self, z: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    def forward(self, z: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
         """
         Parameters
         ----------
-        z: torch.Tensor[B x D x T]
+        z: Tensor[B x D x T]
 
         Returns
         -------
-        z_q: torch.Tensor[B x D x T]
+        z_q: Tensor[B x D x T]
             Quantized continuous representation of input
         commit_loss: Tensor[B]
             Commitment loss to train encoder to predict vectors closer to codebook entries
         codebook_loss: Tensor[B]
             Codebook loss to update the codebook
-        indices: torch.Tensor[B x T]
+        indices: Tensor[B x T]
             Codebook indices (quantized discrete representation of input)
-        z_e: torch.Tensor[B x D x T]
+        z_e: Tensor[B x D x T]
             Projected latents (continuous representation of input before quantization)
         """
 
@@ -343,20 +343,20 @@ class VectorQuantize(nn.Module):
 
         return z_q, commit_loss, codebook_loss, indices, z_e
 
-    def decode_latents(self, latents: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def decode_latents(self, latents: Tensor) -> tuple[Tensor, Tensor]:
         encodings = rearrange(latents, "b d t -> b t d")
         z_q, indices = self.codebook(encodings)
         z_q = z_q.transpose(1, 2)
         return z_q, indices
 
-    def vq2emb(self, vq: torch.Tensor, out_proj: bool = True) -> torch.Tensor:
+    def vq2emb(self, vq: Tensor, out_proj: bool = True) -> Tensor:
         emb = self.codebook.vq2emb(vq)
         emb = emb.transpose(1, 2)
         if out_proj:
             emb = self.out_project(emb)
         return emb
 
-    def latent2dist(self, latents: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def latent2dist(self, latents: Tensor) -> tuple[Tensor, Tensor, Tensor]:
         latents = rearrange(latents, "b d t -> b t d")
         dist, embed_ind, quantize = self.codebook.latent2dist(latents)
         return dist, embed_ind, quantize.transpose(1, 2)

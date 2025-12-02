@@ -12,7 +12,7 @@ import warnings
 
 import einops
 import torch
-from torch import nn
+from torch import Tensor, nn
 from torch.nn import functional as F
 from torch.nn.utils import spectral_norm, weight_norm
 
@@ -26,7 +26,7 @@ class ConvLayerNorm(nn.LayerNorm):
     def __init__(self, normalized_shape: int | list[int] | torch.Size, **kwargs) -> None:
         super().__init__(normalized_shape, **kwargs)
 
-    def forward(self, x: torch.Tensor) -> None:
+    def forward(self, x: Tensor) -> None:
         x = einops.rearrange(x, "b ... t -> b t ...")
         x = super().forward(x)
         x = einops.rearrange(x, "b t ... -> b ... t")
@@ -66,7 +66,7 @@ def get_norm_module(module: nn.Module, causal: bool = False, norm: str = "none",
         return nn.Identity()
 
 
-def get_extra_padding_for_conv1d(x: torch.Tensor, kernel_size: int, stride: int, padding_total: int = 0) -> int:
+def get_extra_padding_for_conv1d(x: Tensor, kernel_size: int, stride: int, padding_total: int = 0) -> int:
     """See `pad_for_conv1d`."""
     length = x.shape[-1]
     n_frames = (length - kernel_size + padding_total) / stride + 1
@@ -74,7 +74,7 @@ def get_extra_padding_for_conv1d(x: torch.Tensor, kernel_size: int, stride: int,
     return ideal_length - length
 
 
-def pad1d(x: torch.Tensor, paddings: tuple[int, int], mode: str = "zero", value: float = 0.0):
+def pad1d(x: Tensor, paddings: tuple[int, int], mode: str = "zero", value: float = 0.0):
     """Tiny wrapper around F.pad, just to allow for reflect padding on small input.
     If this is the case, we insert extra 0 padding to the right before the reflection happen.
     """
@@ -207,7 +207,7 @@ class SConv1d(nn.Module):
         self.causal = causal
         self.pad_mode = pad_mode
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         _B, _C, _T = x.shape
         kernel_size = self.conv.conv.kernel_size[0]
         stride = self.conv.conv.stride[0]

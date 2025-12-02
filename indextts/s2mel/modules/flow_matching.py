@@ -2,6 +2,7 @@ from abc import ABC
 from typing import cast
 
 import torch
+from torch import Tensor
 from tqdm import tqdm
 
 from indextts.s2mel.modules.diffusion_transformer import DiT
@@ -29,10 +30,10 @@ class BASECFM(torch.nn.Module, ABC):
     @torch.inference_mode()
     def inference(
         self,
-        mu: torch.Tensor,
-        x_lens: torch.Tensor,
-        prompt: torch.Tensor,
-        style: torch.Tensor,
+        mu: Tensor,
+        x_lens: Tensor,
+        prompt: Tensor,
+        style: Tensor,
         f0: None,
         n_timesteps: int,
         temperature: float = 1.0,
@@ -41,13 +42,13 @@ class BASECFM(torch.nn.Module, ABC):
         """Forward diffusion
 
         Args:
-            mu (torch.Tensor): semantic info of reference audio and altered audio
+            mu (Tensor): semantic info of reference audio and altered audio
                 shape: (batch_size, mel_timesteps(795+1069), 512)
-            x_lens (torch.Tensor): mel frames output
+            x_lens (Tensor): mel frames output
                 shape: (batch_size, mel_timesteps)
-            prompt (torch.Tensor): reference mel
+            prompt (Tensor): reference mel
                 shape: (batch_size, 80, 795)
-            style (torch.Tensor): reference global style
+            style (Tensor): reference global style
                 shape: (batch_size, 192)
             f0: None
             n_timesteps (int): number of diffusion steps
@@ -64,28 +65,28 @@ class BASECFM(torch.nn.Module, ABC):
 
     def solve_euler(
         self,
-        x: torch.Tensor,
-        x_lens: torch.Tensor,
-        prompt: torch.Tensor,
-        mu: torch.Tensor,
-        style: torch.Tensor,
+        x: Tensor,
+        x_lens: Tensor,
+        prompt: Tensor,
+        mu: Tensor,
+        style: Tensor,
         f0: None,
-        t_span: torch.Tensor,
+        t_span: Tensor,
         inference_cfg_rate: float = 0.5,
     ):
         """
         Fixed euler solver for ODEs.
         Args:
-            x (torch.Tensor): random noise
-            t_span (torch.Tensor): n_timesteps interpolated
+            x (Tensor): random noise
+            t_span (Tensor): n_timesteps interpolated
                 shape: (n_timesteps + 1,)
-            mu (torch.Tensor): semantic info of reference audio and altered audio
+            mu (Tensor): semantic info of reference audio and altered audio
                 shape: (batch_size, mel_timesteps(795+1069), 512)
-            x_lens (torch.Tensor): mel frames output
+            x_lens (Tensor): mel frames output
                 shape: (batch_size, mel_timesteps)
-            prompt (torch.Tensor): reference mel
+            prompt (Tensor): reference mel
                 shape: (batch_size, 80, 795)
-            style (torch.Tensor): reference global style
+            style (Tensor): reference global style
                 shape: (batch_size, 192)
         """
         t, _, _ = t_span[0], t_span[-1], t_span[1] - t_span[0]
@@ -137,20 +138,18 @@ class BASECFM(torch.nn.Module, ABC):
 
         return sol[-1]
 
-    def forward(
-        self, x1: torch.Tensor, x_lens: torch.Tensor, prompt_lens: torch.Tensor, mu: torch.Tensor, style: torch.Tensor
-    ):
+    def forward(self, x1: Tensor, x_lens: Tensor, prompt_lens: Tensor, mu: Tensor, style: Tensor):
         """Computes diffusion loss
 
         Args:
-            mu (torch.Tensor): semantic info of reference audio and altered audio
+            mu (Tensor): semantic info of reference audio and altered audio
                 shape: (batch_size, mel_timesteps(795+1069), 512)
             x1: mel
-            x_lens (torch.Tensor): mel frames output
+            x_lens (Tensor): mel frames output
                 shape: (batch_size, mel_timesteps)
-            prompt (torch.Tensor): reference mel
+            prompt (Tensor): reference mel
                 shape: (batch_size, 80, 795)
-            style (torch.Tensor): reference global style
+            style (Tensor): reference global style
                 shape: (batch_size, 192)
 
         Returns:

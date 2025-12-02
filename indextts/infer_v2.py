@@ -22,6 +22,7 @@ import torch.nn.functional as F
 from huggingface_hub import hf_hub_download
 from modelscope import AutoModelForCausalLM
 from omegaconf import OmegaConf
+from torch import Tensor
 from transformers import AutoModelForCausalLM, AutoTokenizer, SeamlessM4TFeatureExtractor
 
 from indextts.gpt.model_v2 import UnifiedVoice
@@ -54,8 +55,8 @@ class IndexTTS2:
     gpt: "UnifiedVoice"
     extract_features: SeamlessM4TFeatureExtractor
     semantic_model: Any
-    semantic_mean: torch.Tensor
-    semantic_std: torch.Tensor
+    semantic_mean: Tensor
+    semantic_std: Tensor
     semantic_codec: Any
     s2mel: MyModel
     campplus_model: CAMPPlus
@@ -63,7 +64,7 @@ class IndexTTS2:
     bpe_path: str
     normalizer: TextNormalizer
     tokenizer: TextTokenizer
-    emo_matrix: tuple[torch.Tensor, ...]
+    emo_matrix: tuple[Tensor, ...]
     emo_num: list[int]
     spk_matrix: tuple[torch.Tensor, ...]
     mel_fn: Callable[[torch.Tensor], torch.Tensor]
@@ -278,7 +279,7 @@ class IndexTTS2:
         self.model_version = self.cfg.version if hasattr(self.cfg, "version") else None
 
     @torch.inference_mode()
-    def get_emb(self, input_features: torch.Tensor, attention_mask: torch.Tensor):
+    def get_emb(self, input_features: Tensor, attention_mask: Tensor):
         vq_emb = self.semantic_model(
             input_features=input_features,
             attention_mask=attention_mask,
@@ -288,7 +289,7 @@ class IndexTTS2:
         feat = (feat - self.semantic_mean) / self.semantic_std
         return feat
 
-    def interval_silence(self, wavs: list[torch.Tensor], sampling_rate: int = 22050, interval_silence: int = 200):
+    def interval_silence(self, wavs: list[Tensor], sampling_rate: int = 22050, interval_silence: int = 200):
         """
         Silences to be insert between generated segments.
         """
@@ -303,8 +304,8 @@ class IndexTTS2:
         return torch.zeros(channel_size, sil_dur)
 
     def insert_interval_silence(
-        self, wavs: list[torch.Tensor], sampling_rate: int = 22050, interval_silence: int = 200
-    ) -> list[torch.Tensor]:
+        self, wavs: list[Tensor], sampling_rate: int = 22050, interval_silence: int = 200
+    ) -> list[Tensor]:
         """
         Insert silences between generated segments.
         wavs: List[torch.tensor]
@@ -319,7 +320,7 @@ class IndexTTS2:
         sil_dur = int(sampling_rate * interval_silence / 1000.0)
         sil_tensor = torch.zeros(channel_size, sil_dur)
 
-        wavs_list: list[torch.Tensor] = []
+        wavs_list: list[Tensor] = []
         for i, wav in enumerate(wavs):
             wavs_list.append(wav)
             if i < len(wavs) - 1:
@@ -337,7 +338,7 @@ class IndexTTS2:
         max_audio_length_seconds: float,
         verbose: bool = False,
         sr: int | None = None,
-    ) -> tuple[torch.Tensor, int]:
+    ) -> tuple[Tensor, int]:
         if not sr:
             audio, sr_loaded = librosa.load(audio_path)
             sr = int(sr_loaded)
@@ -450,7 +451,7 @@ class IndexTTS2:
         stream_return: bool = False,
         quick_streaming_tokens: int = 0,
         **generation_kwargs: Any,
-    ) -> Generator[torch.Tensor | None]:
+    ) -> Generator[Tensor | None]:
         print(">> starting inference...")
         self._set_gr_progress(0, "starting inference...")
         if verbose:

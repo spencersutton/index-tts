@@ -1,5 +1,6 @@
 import torch
 from librosa.filters import mel as librosa_mel_fn
+from torch import Tensor
 
 
 def dynamic_range_compression_torch(x: torch.Tensor, C: float = 1, clip_val: float = 1e-5) -> torch.Tensor:
@@ -16,7 +17,7 @@ hann_window = {}
 
 
 def mel_spectrogram(
-    y: torch.Tensor,
+    y: Tensor,
     n_fft: int,
     num_mels: int,
     sampling_rate: int,

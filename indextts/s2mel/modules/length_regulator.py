@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from torch import nn
+from torch import Tensor, nn
 from torch.nn import functional as F
 
 from indextts.s2mel.dac.nn.quantize import VectorQuantize
@@ -87,10 +87,10 @@ class InterpolateRegulator(nn.Module):
 
     def forward(
         self,
-        x: torch.Tensor,
-        ylens: torch.Tensor | None = None,
-        n_quantizers: torch.Tensor | None = None,
-        f0: torch.Tensor | None = None,
+        x: Tensor,
+        ylens: Tensor | None = None,
+        n_quantizers: Tensor | None = None,
+        f0: Tensor | None = None,
     ):
         # apply token drop
         if self.training:

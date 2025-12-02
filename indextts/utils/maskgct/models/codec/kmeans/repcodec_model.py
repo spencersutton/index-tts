@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import torch
-from torch import nn
+from torch import Tensor, nn
 from torch.nn import functional as F
 
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize import ResidualVQ
@@ -95,7 +95,7 @@ class RepCodec(nn.Module):
 
         self.reset_parameters()
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def forward(self, x: Tensor) -> tuple[Tensor, Tensor, Tensor]:
         # downsample
         if self.downsample_scale is not None and self.downsample_scale > 1:
             x = x.transpose(1, 2)

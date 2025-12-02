@@ -5,7 +5,7 @@
 
 
 import torch
-from torch import nn
+from torch import Tensor, nn
 
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize.factorized_vector_quantize import (
     FactorizedVectorQuantize,
@@ -60,9 +60,7 @@ class ResidualVQ(nn.Module):
             ]
         )
 
-    def forward(
-        self, z: torch.Tensor, n_quantizers: int | None = None
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    def forward(self, z: Tensor, n_quantizers: int | None = None) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
         """
         Parameters
         ----------
@@ -144,7 +142,7 @@ class ResidualVQ(nn.Module):
             quantized_out += quantizer.vq2emb(vq[idx])
         return quantized_out
 
-    def latent2dist(self, z: torch.Tensor, n_quantizers: int | None = None) -> tuple[torch.Tensor, torch.Tensor]:
+    def latent2dist(self, z: Tensor, n_quantizers: int | None = None) -> tuple[Tensor, Tensor]:
         quantized_out = 0.0
         residual = z
 

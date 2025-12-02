@@ -1,5 +1,5 @@
 import torch
-from torch import nn
+from torch import Tensor, nn
 
 from indextts.gpt.conformer.attention import MultiHeadedAttention, RelPositionMultiHeadedAttention
 from indextts.gpt.conformer.embedding import NoPositionalEncoding, PositionalEncoding, RelPositionalEncoding
@@ -36,7 +36,7 @@ class PositionwiseFeedForward(torch.nn.Module):
         self.dropout = torch.nn.Dropout(dropout_rate)
         self.w_2 = torch.nn.Linear(hidden_units, idim)
 
-    def forward(self, xs: torch.Tensor) -> torch.Tensor:
+    def forward(self, xs: Tensor) -> Tensor:
         """Forward function.
 
         Args:
@@ -103,20 +103,20 @@ class ConvolutionModule(nn.Module):
 
     def forward(
         self,
-        x: torch.Tensor,
-        mask_pad: torch.Tensor = torch.ones((0, 0, 0), dtype=torch.bool),
-        cache: torch.Tensor = torch.zeros((0, 0, 0)),
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+        x: Tensor,
+        mask_pad: Tensor = torch.ones((0, 0, 0), dtype=torch.bool),
+        cache: Tensor = torch.zeros((0, 0, 0)),
+    ) -> tuple[Tensor, Tensor]:
         """Compute convolution module.
         Args:
-            x (torch.Tensor): Input tensor (#batch, time, channels).
-            mask_pad (torch.Tensor): used for batch padding (#batch, 1, time),
+            x (Tensor): Input tensor (#batch, time, channels).
+            mask_pad (Tensor): used for batch padding (#batch, 1, time),
                 (0, 0, 0) means fake mask.
-            cache (torch.Tensor): left context cache, it is only
+            cache (Tensor): left context cache, it is only
                 used in causal convolution (#batch, channels, cache_t),
                 (0, 0, 0) meas fake cache.
         Returns:
-            torch.Tensor: Output tensor (#batch, time, channels).
+            Tensor: Output tensor (#batch, time, channels).
         """
         # exchange the temporal dimension and the feature dimension
         x = x.transpose(1, 2)  # (#batch, channels, time)
@@ -221,33 +221,33 @@ class ConformerEncoderLayer(nn.Module):
 
     def forward(
         self,
-        x: torch.Tensor,
-        mask: torch.Tensor,
-        pos_emb: torch.Tensor,
-        mask_pad: torch.Tensor = torch.ones((0, 0, 0), dtype=torch.bool),
-        att_cache: torch.Tensor = torch.zeros((0, 0, 0, 0)),
-        cnn_cache: torch.Tensor = torch.zeros((0, 0, 0, 0)),
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        x: Tensor,
+        mask: Tensor,
+        pos_emb: Tensor,
+        mask_pad: Tensor = torch.ones((0, 0, 0), dtype=torch.bool),
+        att_cache: Tensor = torch.zeros((0, 0, 0, 0)),
+        cnn_cache: Tensor = torch.zeros((0, 0, 0, 0)),
+    ) -> tuple[Tensor, Tensor, Tensor, Tensor]:
         """Compute encoded features.
 
         Args:
-            x (torch.Tensor): (#batch, time, size)
-            mask (torch.Tensor): Mask tensor for the input (#batch, time，time),
+            x (Tensor): (#batch, time, size)
+            mask (Tensor): Mask tensor for the input (#batch, time，time),
                 (0, 0, 0) means fake mask.
-            pos_emb (torch.Tensor): positional encoding, must not be None
+            pos_emb (Tensor): positional encoding, must not be None
                 for ConformerEncoderLayer.
-            mask_pad (torch.Tensor): batch padding mask used for conv module.
+            mask_pad (Tensor): batch padding mask used for conv module.
                 (#batch, 1，time), (0, 0, 0) means fake mask.
-            att_cache (torch.Tensor): Cache tensor of the KEY & VALUE
+            att_cache (Tensor): Cache tensor of the KEY & VALUE
                 (#batch=1, head, cache_t1, d_k * 2), head * d_k == size.
-            cnn_cache (torch.Tensor): Convolution cache in conformer layer
+            cnn_cache (Tensor): Convolution cache in conformer layer
                 (#batch=1, size, cache_t2)
         Returns:
-            torch.Tensor: Output tensor (#batch, time, size).
-            torch.Tensor: Mask tensor (#batch, time, time).
-            torch.Tensor: att_cache tensor,
+            Tensor: Output tensor (#batch, time, size).
+            Tensor: Mask tensor (#batch, time, time).
+            Tensor: att_cache tensor,
                 (#batch=1, head, cache_t1 + time, d_k * 2).
-            torch.Tensor: cnn_cahce tensor (#batch, size, cache_t2).
+            Tensor: cnn_cahce tensor (#batch, size, cache_t2).
         """
 
         # whether to use macaron style
@@ -387,9 +387,9 @@ class BaseEncoder(torch.nn.Module):
 
     def forward(
         self,
-        xs: torch.Tensor,
-        xs_lens: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+        xs: Tensor,
+        xs_lens: Tensor,
+    ) -> tuple[Tensor, Tensor]:
         """Embed positions in tensor.
 
         Args:
@@ -406,7 +406,7 @@ class BaseEncoder(torch.nn.Module):
         Returns:
             encoder output tensor xs, and subsampled masks
             xs: padded output tensor (B, T' ~= T/subsample_rate, D)
-            masks: torch.Tensor batch padding mask after subsample
+            masks: Tensor batch padding mask after subsample
                 (B, 1, T' ~= T/subsample_rate)
         """
         T = xs.size(1)

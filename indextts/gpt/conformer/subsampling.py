@@ -17,6 +17,7 @@
 """Subsampling layer definition."""
 
 import torch
+from torch import Tensor
 
 
 class BaseSubsampling(torch.nn.Module):
@@ -25,7 +26,7 @@ class BaseSubsampling(torch.nn.Module):
         self.right_context = 0
         self.subsampling_rate = 1
 
-    def position_encoding(self, offset: int | torch.Tensor, size: int) -> torch.Tensor:
+    def position_encoding(self, offset: int | Tensor, size: int) -> Tensor:
         return self.pos_enc.position_encoding(offset, size)
 
 
@@ -51,19 +52,17 @@ class LinearNoSubsampling(BaseSubsampling):
         self.right_context = 0
         self.subsampling_rate = 1
 
-    def forward(
-        self, x: torch.Tensor, x_mask: torch.Tensor, offset: int | torch.Tensor = 0
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def forward(self, x: Tensor, x_mask: Tensor, offset: int | Tensor = 0) -> tuple[Tensor, Tensor, Tensor]:
         """Input x.
 
         Args:
-            x (torch.Tensor): Input tensor (#batch, time, idim).
-            x_mask (torch.Tensor): Input mask (#batch, 1, time).
+            x (Tensor): Input tensor (#batch, time, idim).
+            x_mask (Tensor): Input mask (#batch, 1, time).
 
         Returns:
-            torch.Tensor: linear input tensor (#batch, time', odim),
+            Tensor: linear input tensor (#batch, time', odim),
                 where time' = time .
-            torch.Tensor: linear input mask (#batch, 1, time'),
+            Tensor: linear input mask (#batch, 1, time'),
                 where time' = time .
 
         """
@@ -97,21 +96,19 @@ class Conv2dSubsampling2(_BaseSubsampling):
         # 2 = (3 - 1) * 1
         self.right_context = 2
 
-    def forward(
-        self, x: torch.Tensor, x_mask: torch.Tensor, offset: int | torch.Tensor = 0
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def forward(self, x: Tensor, x_mask: Tensor, offset: int | Tensor = 0) -> tuple[Tensor, Tensor, Tensor]:
         """Subsample x.
 
         Args:
-            x (torch.Tensor): Input tensor (#batch, time, idim).
-            x_mask (torch.Tensor): Input mask (#batch, 1, time).
+            x (Tensor): Input tensor (#batch, time, idim).
+            x_mask (Tensor): Input mask (#batch, 1, time).
 
         Returns:
-            torch.Tensor: Subsampled tensor (#batch, time', odim),
+            Tensor: Subsampled tensor (#batch, time', odim),
                 where time' = time // 2.
-            torch.Tensor: Subsampled mask (#batch, 1, time'),
+            Tensor: Subsampled mask (#batch, 1, time'),
                 where time' = time // 2.
-            torch.Tensor: positional encoding
+            Tensor: positional encoding
 
         """
         x = x.unsqueeze(1)  # (b, c=1, t, f)
@@ -149,21 +146,19 @@ class Conv2dSubsampling4(BaseSubsampling):
         # 6 = (3 - 1) * 1 + (3 - 1) * 2
         self.right_context = 6
 
-    def forward(
-        self, x: torch.Tensor, x_mask: torch.Tensor, offset: int | torch.Tensor = 0
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def forward(self, x: Tensor, x_mask: Tensor, offset: int | Tensor = 0) -> tuple[Tensor, Tensor, Tensor]:
         """Subsample x.
 
         Args:
-            x (torch.Tensor): Input tensor (#batch, time, idim).
-            x_mask (torch.Tensor): Input mask (#batch, 1, time).
+            x (Tensor): Input tensor (#batch, time, idim).
+            x_mask (Tensor): Input mask (#batch, 1, time).
 
         Returns:
-            torch.Tensor: Subsampled tensor (#batch, time', odim),
+            Tensor: Subsampled tensor (#batch, time', odim),
                 where time' = time // 4.
-            torch.Tensor: Subsampled mask (#batch, 1, time'),
+            Tensor: Subsampled mask (#batch, 1, time'),
                 where time' = time // 4.
-            torch.Tensor: positional encoding
+            Tensor: positional encoding
 
         """
         x = x.unsqueeze(1)  # (b, c=1, t, f)
@@ -198,20 +193,18 @@ class Conv2dSubsampling6(BaseSubsampling):
         self.subsampling_rate = 6
         self.right_context = 10
 
-    def forward(
-        self, x: torch.Tensor, x_mask: torch.Tensor, offset: int | torch.Tensor = 0
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def forward(self, x: Tensor, x_mask: Tensor, offset: int | Tensor = 0) -> tuple[Tensor, Tensor, Tensor]:
         """Subsample x.
         Args:
-            x (torch.Tensor): Input tensor (#batch, time, idim).
-            x_mask (torch.Tensor): Input mask (#batch, 1, time).
+            x (Tensor): Input tensor (#batch, time, idim).
+            x_mask (Tensor): Input mask (#batch, 1, time).
 
         Returns:
-            torch.Tensor: Subsampled tensor (#batch, time', odim),
+            Tensor: Subsampled tensor (#batch, time', odim),
                 where time' = time // 6.
-            torch.Tensor: Subsampled mask (#batch, 1, time'),
+            Tensor: Subsampled mask (#batch, 1, time'),
                 where time' = time // 6.
-            torch.Tensor: positional encoding
+            Tensor: positional encoding
         """
         x = x.unsqueeze(1)  # (b, c, t, f)
         x = self.conv(x)
@@ -248,21 +241,19 @@ class Conv2dSubsampling8(BaseSubsampling):
         # 14 = (3 - 1) * 1 + (3 - 1) * 2 + (3 - 1) * 4
         self.right_context = 14
 
-    def forward(
-        self, x: torch.Tensor, x_mask: torch.Tensor, offset: int | torch.Tensor = 0
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def forward(self, x: Tensor, x_mask: Tensor, offset: int | Tensor = 0) -> tuple[Tensor, Tensor, Tensor]:
         """Subsample x.
 
         Args:
-            x (torch.Tensor): Input tensor (#batch, time, idim).
-            x_mask (torch.Tensor): Input mask (#batch, 1, time).
+            x (Tensor): Input tensor (#batch, time, idim).
+            x_mask (Tensor): Input mask (#batch, 1, time).
 
         Returns:
-            torch.Tensor: Subsampled tensor (#batch, time', odim),
+            Tensor: Subsampled tensor (#batch, time', odim),
                 where time' = time // 8.
-            torch.Tensor: Subsampled mask (#batch, 1, time'),
+            Tensor: Subsampled mask (#batch, 1, time'),
                 where time' = time // 8.
-            torch.Tensor: positional encoding
+            Tensor: positional encoding
         """
         x = x.unsqueeze(1)  # (b, c, t, f)
         x = self.conv(x)

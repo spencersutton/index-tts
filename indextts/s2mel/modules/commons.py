@@ -1,14 +1,14 @@
 from typing import Any
 
 import torch
-from torch import nn
+from torch import Tensor, nn
 
 
 @torch.jit.script
 def fused_add_tanh_sigmoid_multiply(
-    input_a: torch.Tensor,
-    input_b: torch.Tensor,
-) -> torch.Tensor:
+    input_a: Tensor,
+    input_b: Tensor,
+) -> Tensor:
     in_act = input_a + input_b
     t_act_part, s_act_part = torch.chunk(in_act, 2, dim=1)
     t_act = torch.tanh(t_act_part)
@@ -17,7 +17,7 @@ def fused_add_tanh_sigmoid_multiply(
     return acts
 
 
-def sequence_mask(length: torch.Tensor, max_length: torch.Tensor | None = None) -> torch.Tensor:
+def sequence_mask(length: Tensor, max_length: Tensor | None = None) -> Tensor:
     if max_length is None:
         max_length = length.max()
     x = torch.arange(int(max_length), dtype=length.dtype, device=length.device)
@@ -65,12 +65,12 @@ class MyModel(nn.Module):
 
     def forward(
         self,
-        x: torch.Tensor,
-        target_lengths: torch.Tensor,
+        x: Tensor,
+        target_lengths: Tensor,
         prompt_len: int,
-        cond: torch.Tensor,
-        y: torch.Tensor,
-    ) -> torch.Tensor:
+        cond: Tensor,
+        y: Tensor,
+    ) -> Tensor:
         x = self.models["cfm"](x, target_lengths, prompt_len, cond, y)
         return x
 

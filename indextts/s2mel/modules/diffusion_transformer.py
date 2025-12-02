@@ -1,7 +1,7 @@
 import math
 
 import torch
-from torch import nn
+from torch import Tensor, nn
 from torch.nn.utils import weight_norm
 
 from indextts.s2mel.modules.commons import sequence_mask
@@ -38,7 +38,7 @@ class TimestepEmbedder(nn.Module):
         freqs = torch.exp(-math.log(self.max_period) * torch.arange(start=0, end=half, dtype=torch.float32) / half)
         self.register_buffer("freqs", freqs)
 
-    def timestep_embedding(self, t: torch.Tensor) -> torch.Tensor:
+    def timestep_embedding(self, t: Tensor) -> Tensor:
         """
         Create sinusoidal timestep embeddings.
         :param t: a 1-D Tensor of N indices, one per batch element.
@@ -72,7 +72,7 @@ class FinalLayer(nn.Module):
         self.linear = weight_norm(nn.Linear(hidden_size, patch_size * patch_size * out_channels, bias=True))
         self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(hidden_size, 2 * hidden_size, bias=True))
 
-    def forward(self, x: torch.Tensor, c: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor, c: Tensor) -> Tensor:
         shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
         x = modulate(self.norm_final(x), shift, scale)
         x = self.linear(x)
@@ -165,25 +165,25 @@ class DiT(torch.nn.Module):
 
     def forward(
         self,
-        x: torch.Tensor,
-        prompt_x: torch.Tensor,
-        x_lens: torch.Tensor,
-        t: torch.Tensor,
-        style: torch.Tensor,
-        cond: torch.Tensor,
+        x: Tensor,
+        prompt_x: Tensor,
+        x_lens: Tensor,
+        t: Tensor,
+        style: Tensor,
+        cond: Tensor,
         mask_content: bool = False,
     ):
         """
-        x (torch.Tensor): random noise
-        prompt_x (torch.Tensor): reference mel + zero mel
+        x (Tensor): random noise
+        prompt_x (Tensor): reference mel + zero mel
             shape: (batch_size, 80, 795+1068)
-        x_lens (torch.Tensor): mel frames output
+        x_lens (Tensor): mel frames output
             shape: (batch_size, mel_timesteps)
-        t (torch.Tensor): radshape:
+        t (Tensor): radshape:
             shape: (batch_size)
-        style (torch.Tensor): reference global style
+        style (Tensor): reference global style
             shape: (batch_size, 192)
-        cond (torch.Tensor): semantic info of reference audio and altered audio
+        cond (Tensor): semantic info of reference audio and altered audio
             shape: (batch_size, mel_timesteps(795+1069), 512)
 
         """

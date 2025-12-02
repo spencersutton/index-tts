@@ -2,7 +2,7 @@ import os
 import sys
 import warnings
 
-from omegaconf import OmegaConf
+from indextts.infer_v2 import IndexTTS2
 
 # Suppress warnings from tensorflow and other libraries
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -83,28 +83,16 @@ def main() -> None:
             args.fp16 = False  # Disable FP16 on CPU
             print("WARNING: Running on CPU may be slow.")
 
-    cfg = OmegaConf.load(args.config)
-
-    # Check for version 2.0 or higher
-    if hasattr(cfg, "version") and float(cfg.version) >= 2.0:
-        from indextts.infer_v2 import IndexTTS2
-
-        print(f">> Detected IndexTTS version {cfg.version}, using IndexTTS2 inference.")
-        tts = IndexTTS2(
-            cfg_path=args.config,
-            model_dir=args.model_dir,
-            use_fp16=args.fp16,
-            device=args.device,
-            use_accel=args.use_accel,
-            use_torch_compile=args.use_torch_compile,
-            use_cuda_kernel=args.use_cuda_kernel,
-        )
-        tts.infer(spk_audio_prompt=args.voice, text=args.text.strip(), output_path=output_path)
-    else:
-        from indextts.infer import IndexTTS
-
-        tts = IndexTTS(cfg_path=args.config, model_dir=args.model_dir, use_fp16=args.fp16, device=args.device)
-        tts.infer(audio_prompt=args.voice, text=args.text.strip(), output_path=output_path)
+    tts = IndexTTS2(
+        cfg_path=args.config,
+        model_dir=args.model_dir,
+        use_fp16=args.fp16,
+        device=args.device,
+        use_accel=args.use_accel,
+        use_torch_compile=args.use_torch_compile,
+        use_cuda_kernel=args.use_cuda_kernel,
+    )
+    tts.infer(spk_audio_prompt=args.voice, text=args.text.strip(), output_path=output_path)
 
 
 if __name__ == "__main__":

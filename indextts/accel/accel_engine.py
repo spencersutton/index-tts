@@ -372,10 +372,7 @@ class AccelInferenceEngine:
                 flush=True,
             )
 
-        if tts_embeddings is not None:
-            actual_seq_len = tts_embeddings.size(1) + 1  # embeddings + start_mel_token
-        else:
-            actual_seq_len = input_ids.size(1)
+        actual_seq_len = tts_embeddings.size(1) + 1 if tts_embeddings is not None else input_ids.size(1)
 
         is_varlen_batch = (
             tts_embeddings is not None

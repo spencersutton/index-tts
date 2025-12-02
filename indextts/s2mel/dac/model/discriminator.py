@@ -131,15 +131,18 @@ class MRD(nn.Module):
         self.bands = bands
 
         ch = 32
-        convs = lambda: nn.ModuleList(
-            [
-                WNConv2d(2, ch, (3, 9), (1, 1), padding=(1, 4)),
-                WNConv2d(ch, ch, (3, 9), (1, 2), padding=(1, 4)),
-                WNConv2d(ch, ch, (3, 9), (1, 2), padding=(1, 4)),
-                WNConv2d(ch, ch, (3, 9), (1, 2), padding=(1, 4)),
-                WNConv2d(ch, ch, (3, 3), (1, 1), padding=(1, 1)),
-            ]
-        )
+
+        def convs():
+            return nn.ModuleList(
+                [
+                    WNConv2d(2, ch, (3, 9), (1, 1), padding=(1, 4)),
+                    WNConv2d(ch, ch, (3, 9), (1, 2), padding=(1, 4)),
+                    WNConv2d(ch, ch, (3, 9), (1, 2), padding=(1, 4)),
+                    WNConv2d(ch, ch, (3, 9), (1, 2), padding=(1, 4)),
+                    WNConv2d(ch, ch, (3, 3), (1, 1), padding=(1, 1)),
+                ]
+            )
+
         self.band_convs = nn.ModuleList([convs() for _ in range(len(self.bands))])
         self.conv_post = WNConv2d(ch, 1, (3, 3), (1, 1), padding=(1, 1), act=False)
 

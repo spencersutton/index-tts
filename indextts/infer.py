@@ -143,7 +143,6 @@ class IndexTTS:
         code_lens = []
         codes_list = []
         device = codes.device
-        dtype = codes.dtype
         isfix = False
         for i in range(0, codes.shape[0]):
             code = codes[i]

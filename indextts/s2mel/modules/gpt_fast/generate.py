@@ -234,7 +234,6 @@ def encode_tokens(tokenizer, string, bos=True, device=default_device):
 
 
 def _load_model(checkpoint_path, device, precision, use_tp):
-    use_cuda = "cuda" in device
     with torch.device("meta"):
         model = Transformer.from_name(checkpoint_path.parent.name)
 
@@ -311,7 +310,8 @@ def main(
     if use_tp:
         if rank != 0:
             # only print on rank 0
-            print = lambda *args, **kwargs: None
+            def print(*args, **kwargs):
+                return None
 
     print(f"Using device={device}")
     precision = torch.bfloat16
@@ -383,7 +383,10 @@ def main(
                     buffer.clear()
                 # print(, end='', flush=True)
         else:
-            callback = lambda x: x
+
+            def callback(x):
+                return x
+
         t0 = time.perf_counter()
         import contextlib
 

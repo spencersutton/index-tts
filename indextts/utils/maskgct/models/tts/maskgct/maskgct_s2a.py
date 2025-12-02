@@ -285,9 +285,9 @@ class MaskGCT_S2A(nn.Module):
         prompt_len = prompt_code.shape[1]
         target_len = cond.shape[1] - prompt_len
 
-        if x_mask == None:
+        if x_mask is None:
             x_mask = torch.ones(cond.shape[0], target_len).to(cond.device)  # (B, T)
-        if prompt_mask == None:
+        if prompt_mask is None:
             prompt_mask = torch.ones(cond.shape[0], prompt_len).to(cond.device)  # (B, prompt_len)
 
         cum = torch.zeros(x_mask.shape[0], x_mask.shape[1], self.hidden_size).to(x_mask.device)  # (B, T, hidden_size)

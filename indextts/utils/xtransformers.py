@@ -219,7 +219,7 @@ class AlibiPositionalBias(nn.Module):
         )
 
     def forward(self, qk_dots):
-        h, i, j, device = *qk_dots.shape[-3:], qk_dots.device
+        h, _i, j, device = *qk_dots.shape[-3:], qk_dots.device
 
         if exists(self.bias) and self.bias.shape[-1] >= j:
             return qk_dots + self.bias[..., :j]
@@ -306,7 +306,9 @@ class Scale(nn.Module):
 
     def forward(self, x, **kwargs):
         out = self.fn(x, **kwargs)
-        scale_fn = lambda t: t * self.value
+
+        def scale_fn(t):
+            return t * self.value
 
         if not isinstance(out, tuple):
             return scale_fn(out)
@@ -322,7 +324,9 @@ class Rezero(nn.Module):
 
     def forward(self, x, **kwargs):
         out = self.fn(x, **kwargs)
-        rezero_fn = lambda t: t * self.g
+
+        def rezero_fn(t):
+            return t * self.g
 
         if not isinstance(out, tuple):
             return rezero_fn(out)
@@ -946,7 +950,6 @@ class AttentionLayers(nn.Module):
         hiddens = []
         intermediates = []
         prev_attn = None
-        prev_cross_attn = None
 
         mems = mems.copy() if exists(mems) else [None] * self.num_attn_layers
         norm_args = {}
@@ -1028,7 +1031,7 @@ class AttentionLayers(nn.Module):
             if layer_type == "a" and self.residual_attn:
                 prev_attn = inter.pre_softmax_attn
             elif layer_type == "c" and self.cross_residual_attn:
-                prev_cross_attn = inter.pre_softmax_attn
+                pass
 
             if exists(post_main_norm):
                 x = post_main_norm(x, **norm_args)
@@ -1168,7 +1171,7 @@ class TransformerWrapper(nn.Module):
         use_cache=False,
         **kwargs,
     ):
-        b, n, device, num_mem = *x.shape, x.device, self.num_memory_tokens
+        b, _n, _device, num_mem = *x.shape, x.device, self.num_memory_tokens
         x = self.token_emb(x)
         x = x + self.pos_emb(x)
         x = self.emb_dropout(x)
@@ -1236,7 +1239,7 @@ class ContinuousTransformerWrapper(nn.Module):
         self.project_out = nn.Linear(dim, dim_out) if exists(dim_out) else nn.Identity()
 
     def forward(self, x, return_embeddings=False, mask=None, return_attn=False, mems=None, use_cache=False, **kwargs):
-        b, n, _, device = *x.shape, x.device
+        _b, _n, _, _device = *x.shape, x.device
 
         x = self.project_in(x)
         x = x + self.pos_emb(x)

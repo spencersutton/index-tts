@@ -112,7 +112,6 @@ explicit = true
 
 [tool.ruff]
 line-length = 120
-per-file-ignores = { "typings/**/*.pyi" = ["ANN401"] }
 
 [tool.ruff.lint]
 extend-select = [
@@ -146,6 +145,7 @@ ignore = [
   "RUF003",
   "FURB118",
 ]
+per-file-ignores = { "typings/**/*.pyi" = ["ANN401"] }
 unfixable = ["F401"]
 
 [dependency-groups]

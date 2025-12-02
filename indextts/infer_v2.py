@@ -23,6 +23,7 @@ from huggingface_hub import hf_hub_download
 from modelscope import AutoModelForCausalLM
 from omegaconf import OmegaConf
 from torch import Tensor
+from torch.nn.utils.rnn import pad_sequence
 from transformers import AutoModelForCausalLM, AutoTokenizer, SeamlessM4TFeatureExtractor
 
 from indextts.gpt.model_v2 import UnifiedVoice
@@ -263,15 +264,6 @@ class IndexTTS2:
             # self.bigvgan = torch.compile(self.bigvgan)
             self.semantic_model = torch.compile(self.semantic_model)
             print(">> torch.compile optimization enabled successfully")
-
-        # 缓存参考音频：
-        self.cache_spk_cond = None
-        self.cache_s2mel_style = None
-        self.cache_s2mel_prompt = None
-        self.cache_spk_audio_prompt = None
-        self.cache_emo_cond = None
-        self.cache_emo_audio_prompt = None
-        self.cache_mel = None
 
         # 进度引用显示（可选）
         # Progress reference display (optional)
@@ -638,8 +630,6 @@ assert self.cache_s2mel_style is not None
             # Handle empty segments if necessary
             pass
         else:
-            from torch.nn.utils.rnn import pad_sequence
-
             # Pad with stop_text_token (which is ignored by the model)
             text_tokens_batch = pad_sequence(
                 batch_text_tokens, batch_first=True, padding_value=self.gpt.stop_text_token

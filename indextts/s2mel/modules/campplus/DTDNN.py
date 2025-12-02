@@ -3,23 +3,23 @@
 
 from collections import OrderedDict
 
-from torch import nn
 import torch.nn.functional as F
+from torch import nn
 
 from indextts.s2mel.modules.campplus.layers import (
+    BasicResBlock,
+    CAMDenseTDNNBlock,
     DenseLayer,
     StatsPool,
     TDNNLayer,
-    CAMDenseTDNNBlock,
     TransitLayer,
-    BasicResBlock,
     get_nonlinear,
 )
 
 
 class FCM(nn.Module):
-    def __init__(self, block=BasicResBlock, num_blocks=[2, 2], m_channels=32, feat_dim=80):
-        super(FCM, self).__init__()
+    def __init__(self, block=BasicResBlock, num_blocks=[2, 2], m_channels=32, feat_dim=80) -> None:
+        super().__init__()
         self.in_planes = m_channels
         self.conv1 = nn.Conv2d(1, m_channels, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(m_channels)
@@ -61,8 +61,8 @@ class CAMPPlus(nn.Module):
         init_channels=128,
         config_str="batchnorm-relu",
         memory_efficient=True,
-    ):
-        super(CAMPPlus, self).__init__()
+    ) -> None:
+        super().__init__()
 
         self.head = FCM(feat_dim=feat_dim)
         channels = self.head.out_channels

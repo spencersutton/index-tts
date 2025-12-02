@@ -35,7 +35,7 @@ def set_forward_context(
     slot_mapping=None,
     context_lens=None,
     block_tables=None,
-):
+) -> None:
     global _FORWARD_CONTEXT
     _FORWARD_CONTEXT = ForwardContext(
         is_prefill,
@@ -49,7 +49,7 @@ def set_forward_context(
     )
 
 
-def reset_forward_context():
+def reset_forward_context() -> None:
     global _FORWARD_CONTEXT
     _FORWARD_CONTEXT = ForwardContext()
 
@@ -64,7 +64,7 @@ def store_kvcache_kernel(
     v_cache_ptr,
     slot_mapping_ptr,
     D: tl.constexpr,
-):
+) -> None:
     BLOCK_SIZE: tl.constexpr = 2048
     idx = tl.program_id(0)
     slot = tl.load(slot_mapping_ptr + idx)
@@ -92,14 +92,14 @@ def store_kvcache(
     k_cache: torch.Tensor,
     v_cache: torch.Tensor,
     slot_mapping: torch.Tensor,
-):
+) -> None:
     N, num_heads, head_dim = key.shape
     D = num_heads * head_dim
     assert key.stride(-1) == 1 and value.stride(-1) == 1
     assert key.stride(1) == head_dim and value.stride(1) == head_dim
     assert k_cache.stride(1) == D and v_cache.stride(1) == D
     assert slot_mapping.numel() == N
-    store_kvcache_kernel[(N,)](key, key.stride(0), value, value.stride(0), k_cache, v_cache, slot_mapping, D)
+    store_kvcache_kernel[N,](key, key.stride(0), value, value.stride(0), k_cache, v_cache, slot_mapping, D)
 
 
 class Attention(nn.Module):
@@ -109,7 +109,7 @@ class Attention(nn.Module):
         head_dim: int,
         scale: float,
         num_kv_heads: int,
-    ):
+    ) -> None:
         super().__init__()
         self.num_heads = num_heads
         self.head_dim = head_dim

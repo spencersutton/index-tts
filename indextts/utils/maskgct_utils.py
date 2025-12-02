@@ -1,12 +1,14 @@
-import torch
-import librosa
-import json5
-from transformers import Wav2Vec2BertModel
-import numpy as np
+import pathlib
 
+import json5
+import librosa
+import numpy as np
+import torch
+from transformers import Wav2Vec2BertModel
+
+from indextts.utils.maskgct.models.codec.amphion_codec.codec import CodecDecoder, CodecEncoder
 from indextts.utils.maskgct.models.codec.kmeans.repcodec_model import RepCodec
 from indextts.utils.maskgct.models.tts.maskgct.maskgct_s2a import MaskGCT_S2A
-from indextts.utils.maskgct.models.codec.amphion_codec.codec import CodecEncoder, CodecDecoder
 
 
 def _load_config(config_fn, lowercase=False):
@@ -19,8 +21,7 @@ def _load_config(config_fn, lowercase=False):
     Returns:
         dict: dictionary that stores configurations
     """
-    with open(config_fn, "r") as f:
-        data = f.read()
+    data = pathlib.Path(config_fn).read_text()
     config_ = json5.loads(data)
     if "base_config" in config_:
         # load configurations from new path
@@ -34,7 +35,7 @@ def _load_config(config_fn, lowercase=False):
 
 
 class JsonHParams:
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         for k, v in kwargs.items():
             if type(v) == dict:
                 v = JsonHParams(**v)
@@ -49,19 +50,19 @@ class JsonHParams:
     def values(self):
         return self.__dict__.values()
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.__dict__)
 
     def __getitem__(self, key):
         return getattr(self, key)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, value) -> None:
         return setattr(self, key, value)
 
-    def __contains__(self, key):
+    def __contains__(self, key) -> bool:
         return key in self.__dict__
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__dict__.__repr__()
 
 
@@ -108,7 +109,7 @@ class Inference_Pipeline:
         codec_decoder,
         s2a_model_1layer,
         s2a_model_full,
-    ):
+    ) -> None:
         self.semantic_model = semantic_model
         self.semantic_codec = semantic_codec
         self.semantic_mean = semantic_mean
@@ -139,7 +140,7 @@ class Inference_Pipeline:
 
     @torch.no_grad()
     def get_scode(self, inputs):
-        semantic_code, feat = self.semantic_codec.quantize(inputs)
+        semantic_code, _feat = self.semantic_codec.quantize(inputs)
         return semantic_code
 
     @torch.no_grad()

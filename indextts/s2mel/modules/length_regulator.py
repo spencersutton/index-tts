@@ -1,10 +1,12 @@
 from typing import Tuple
+
+import numpy as np
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
-from indextts.s2mel.modules.commons import sequence_mask
-import numpy as np
+
 from indextts.s2mel.dac.nn.quantize import VectorQuantize
+from indextts.s2mel.modules.commons import sequence_mask
 
 f0_max = 1100.0
 f0_min = 50.0
@@ -29,18 +31,18 @@ class InterpolateRegulator(nn.Module):
     def __init__(
         self,
         channels: int,
-        sampling_ratios: Tuple,
+        sampling_ratios: tuple,
         is_discrete: bool = False,
-        in_channels: int = None,  # only applies to continuous input
+        in_channels: int | None = None,  # only applies to continuous input
         vector_quantize: bool = False,  # whether to use vector quantization, only applies to continuous input
         codebook_size: int = 1024,  # for discrete only
-        out_channels: int = None,
+        out_channels: int | None = None,
         groups: int = 1,
         n_codebooks: int = 1,  # number of codebooks
         quantizer_dropout: float = 0.0,  # dropout for quantizer
         f0_condition: bool = False,
         n_f0_bins: int = 512,
-    ):
+    ) -> None:
         super().__init__()
         self.sampling_ratios = sampling_ratios
         out_channels = out_channels or channels
@@ -106,10 +108,7 @@ class InterpolateRegulator(nn.Module):
                     x_emb = x_emb + (n_quantizers > i + 1)[..., None, None] * emb(x[:, i + 1])
                 x = x_emb
             elif self.n_codebooks == 1:
-                if len(x.size()) == 2:
-                    x = self.embedding(x)
-                else:
-                    x = self.embedding(x[:, 0])
+                x = self.embedding(x) if len(x.size()) == 2 else self.embedding(x[:, 0])
         else:
             x = self.content_in_proj(x)
         # x in (B, T, D)

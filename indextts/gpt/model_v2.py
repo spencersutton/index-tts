@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from torch import nn
 from transformers import GPT2Config, GPT2PreTrainedModel
 from transformers.cache_utils import DynamicCache
-from transformers.generation.logits_process import LogitsProcessorList
+from transformers.generation.logits_process import LogitsProcessorList, TypicalLogitsWarper
 from transformers.generation.utils import GenerationMixin
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions, CausalLMOutputWithCrossAttentions
 from transformers.utils.model_parallel_utils import assert_device_map, get_device_map
@@ -14,7 +14,6 @@ from typing_extensions import assert_never
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.perceiver import PerceiverResampler
 from indextts.utils.arch_util import AttentionBlock
-from indextts.utils.typical_sampling import TypicalLogitsWarper
 
 
 def _null_position_embeddings(range, dim):

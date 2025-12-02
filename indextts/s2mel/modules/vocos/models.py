@@ -75,7 +75,7 @@ class VocosBackbone(Backbone):
             nn.init.constant_(m.bias, 0)
 
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
-        bandwidth_id = kwargs.get('bandwidth_id', None)
+        bandwidth_id = kwargs.get("bandwidth_id", None)
         x = self.embed(x)
         if self.adanorm:
             assert bandwidth_id is not None
@@ -101,7 +101,11 @@ class VocosResNetBackbone(Backbone):
     """
 
     def __init__(
-        self, input_channels, dim, num_blocks, layer_scale_init_value=None,
+        self,
+        input_channels,
+        dim,
+        num_blocks,
+        layer_scale_init_value=None,
     ):
         super().__init__()
         self.input_channels = input_channels

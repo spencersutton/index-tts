@@ -3,7 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -51,9 +50,7 @@ def kmeans(samples, num_clusters, num_iters=10, use_cosine_sim=False):
         if use_cosine_sim:
             dists = samples @ means.t()
         else:
-            diffs = rearrange(samples, "n d -> n () d") - rearrange(
-                means, "c d -> () c d"
-            )
+            diffs = rearrange(samples, "n d -> n () d") - rearrange(means, "c d -> () c d")
             dists = -(diffs**2).sum(dim=-1)
 
         buckets = dists.max(dim=-1).indices
@@ -114,9 +111,7 @@ class EuclideanCodebook(nn.Module):
         self.initted.data.copy_(torch.Tensor([True]))
 
     def replace(self, samples, mask):
-        modified_codebook = torch.where(
-            mask[..., None], sample_vectors(samples, self.codebook_size), self.embed
-        )
+        modified_codebook = torch.where(mask[..., None], sample_vectors(samples, self.codebook_size), self.embed)
         self.embed.data.copy_(modified_codebook)
 
     def expire_codes_(self, batch_samples):
@@ -137,11 +132,7 @@ class EuclideanCodebook(nn.Module):
         if not self.initted:
             self.init_embed_(flatten)
 
-        dist = -(
-            flatten.pow(2).sum(1, keepdim=True)
-            - 2 * flatten @ embed
-            + embed.pow(2).sum(0, keepdim=True)
-        )
+        dist = -(flatten.pow(2).sum(1, keepdim=True) - 2 * flatten @ embed + embed.pow(2).sum(0, keepdim=True))
 
         embed_ind = dist.max(dim=-1).indices
         embed_onehot = F.one_hot(embed_ind, self.codebook_size).type(dtype)
@@ -150,14 +141,9 @@ class EuclideanCodebook(nn.Module):
 
         if self.training:
             ema_inplace(self.cluster_size, embed_onehot.sum(0), self.decay)
-            embed_sum = (
-                flatten.t() @ embed_onehot
-            )  # (dim, ...) @ (..., codebook_size) -> (dim, codebook_size)
+            embed_sum = flatten.t() @ embed_onehot  # (dim, ...) @ (..., codebook_size) -> (dim, codebook_size)
             ema_inplace(self.embed_avg, embed_sum.t(), self.decay)
-            cluster_size = (
-                laplace_smoothing(self.cluster_size, self.codebook_size, self.eps)
-                * self.cluster_size.sum()
-            )
+            cluster_size = laplace_smoothing(self.cluster_size, self.codebook_size, self.eps) * self.cluster_size.sum()
             embed_normalized = self.embed_avg / cluster_size.unsqueeze(1)
             self.embed.data.copy_(embed_normalized)
             self.expire_codes_(x)
@@ -176,11 +162,7 @@ class EuclideanCodebook(nn.Module):
         if not self.initted:
             self.init_embed_(flatten)
 
-        dist = -(
-            flatten.pow(2).sum(1, keepdim=True)
-            - 2 * flatten @ embed
-            + embed.pow(2).sum(0, keepdim=True)
-        )
+        dist = -(flatten.pow(2).sum(1, keepdim=True) - 2 * flatten @ embed + embed.pow(2).sum(0, keepdim=True))
 
         embed_ind = dist.max(dim=-1).indices
         embed_ind = embed_ind.view(*shape[:-1])
@@ -215,11 +197,7 @@ class SimpleCodebook(nn.Module):
             flatten = F.normalize(flatten)
             embed = F.normalize(embed)
 
-        dist = -(
-            flatten.pow(2).sum(1, keepdim=True)
-            - 2 * flatten @ embed
-            + embed.pow(2).sum(0, keepdim=True)
-        )
+        dist = -(flatten.pow(2).sum(1, keepdim=True) - 2 * flatten @ embed + embed.pow(2).sum(0, keepdim=True))
 
         embed_ind = dist.max(dim=-1).indices
         embed_ind = embed_ind.view(*shape[:-1])
@@ -240,11 +218,7 @@ class SimpleCodebook(nn.Module):
             flatten = F.normalize(flatten)
             embed = F.normalize(embed)
 
-        dist = -(
-            flatten.pow(2).sum(1, keepdim=True)
-            - 2 * flatten @ embed
-            + embed.pow(2).sum(0, keepdim=True)
-        )
+        dist = -(flatten.pow(2).sum(1, keepdim=True) - 2 * flatten @ embed + embed.pow(2).sum(0, keepdim=True))
 
         embed_ind = dist.max(dim=-1).indices
         embed_ind = embed_ind.view(*shape[:-1])
@@ -308,9 +282,7 @@ class VectorQuantize(nn.Module):
 
         if self.input_dim != self.codebook_dim:
             self.in_project = WNConv1d(self.input_dim, self.codebook_dim, kernel_size=1)
-            self.out_project = WNConv1d(
-                self.codebook_dim, self.input_dim, kernel_size=1
-            )
+            self.out_project = WNConv1d(self.codebook_dim, self.input_dim, kernel_size=1)
 
         else:
             self.in_project = nn.Identity()
@@ -334,9 +306,7 @@ class VectorQuantize(nn.Module):
                 use_l2_normlize=self.use_l2_normlize,
             )
         else:
-            raise NotImplementedError(
-                f"codebook_type {self.codebook_type} is not implemented!"
-            )
+            raise NotImplementedError(f"codebook_type {self.codebook_type} is not implemented!")
 
     def forward(self, z):
         """
@@ -364,14 +334,8 @@ class VectorQuantize(nn.Module):
 
         # Compute commitment loss and codebook loss
         if self.training:
-            commit_loss = (
-                F.mse_loss(z_e, z_q.detach(), reduction="none").mean([1, 2])
-                * self.commitment
-            )
-            codebook_loss = (
-                F.mse_loss(z_q, z_e.detach(), reduction="none").mean([1, 2])
-                * self.codebook_loss_weight
-            )
+            commit_loss = F.mse_loss(z_e, z_q.detach(), reduction="none").mean([1, 2]) * self.commitment
+            codebook_loss = F.mse_loss(z_q, z_e.detach(), reduction="none").mean([1, 2]) * self.codebook_loss_weight
         else:
             commit_loss = torch.zeros(z.shape[0], device=z.device)
             codebook_loss = torch.zeros(z.shape[0], device=z.device)

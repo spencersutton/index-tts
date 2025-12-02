@@ -28,9 +28,7 @@ class Conv1dGLU(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, dropout):
         super(Conv1dGLU, self).__init__()
         self.out_channels = out_channels
-        self.conv1 = nn.Conv1d(
-            in_channels, 2 * out_channels, kernel_size=kernel_size, padding=2
-        )
+        self.conv1 = nn.Conv1d(in_channels, 2 * out_channels, kernel_size=kernel_size, padding=2)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
@@ -44,7 +42,6 @@ class Conv1dGLU(nn.Module):
 
 class StyleEncoder(torch.nn.Module):
     def __init__(self, in_dim=513, hidden_dim=128, out_dim=256):
-
         super().__init__()
 
         self.in_dim = in_dim  # Linear 513 wav2vec 2.0 1024
@@ -80,7 +77,6 @@ class StyleEncoder(torch.nn.Module):
         self.fc = nn.Conv1d(self.hidden_dim, self.out_dim, 1)
 
     def forward(self, x, mask=None):
-
         # spectral
         x = self.spectral(x) * mask
         # temporal

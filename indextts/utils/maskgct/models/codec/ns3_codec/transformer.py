@@ -3,7 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import numpy as np
 import torch
 import torch.nn as nn
 import math
@@ -38,9 +37,7 @@ class PositionalEncoding(nn.Module):
 
         self.dropout = dropout
         position = torch.arange(max_len).unsqueeze(1)
-        div_term = torch.exp(
-            torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model)
-        )
+        div_term = torch.exp(torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model))
         pe = torch.zeros(max_len, 1, d_model)
         pe[:, 0, 0::2] = torch.sin(position * div_term)
         pe[:, 0, 1::2] = torch.cos(position * div_term)
@@ -52,9 +49,7 @@ class PositionalEncoding(nn.Module):
 
 
 class TransformerFFNLayer(nn.Module):
-    def __init__(
-        self, encoder_hidden, conv_filter_size, conv_kernel_size, encoder_dropout
-    ):
+    def __init__(self, encoder_hidden, conv_filter_size, conv_kernel_size, encoder_dropout):
         super().__init__()
 
         self.encoder_hidden = encoder_hidden
@@ -74,9 +69,7 @@ class TransformerFFNLayer(nn.Module):
 
     def forward(self, x):
         # x: (B, T, d)
-        x = self.ffn_1(x.permute(0, 2, 1)).permute(
-            0, 2, 1
-        )  # (B, T, d) -> (B, d, T) -> (B, T, d)
+        x = self.ffn_1(x.permute(0, 2, 1)).permute(0, 2, 1)  # (B, T, d) -> (B, d, T) -> (B, T, d)
         x = F.relu(x)
         x = F.dropout(x, self.encoder_dropout, training=self.training)
         x = self.ffn_2(x)
@@ -108,9 +101,7 @@ class TransformerEncoderLayer(nn.Module):
             self.ln_1 = StyleAdaptiveLayerNorm(self.encoder_hidden)
             self.ln_2 = StyleAdaptiveLayerNorm(self.encoder_hidden)
 
-        self.self_attn = nn.MultiheadAttention(
-            self.encoder_hidden, self.encoder_head, batch_first=True
-        )
+        self.self_attn = nn.MultiheadAttention(self.encoder_hidden, self.encoder_head, batch_first=True)
 
         self.ffn = TransformerFFNLayer(
             self.encoder_hidden,
@@ -133,9 +124,7 @@ class TransformerEncoderLayer(nn.Module):
             key_padding_mask_input = ~(key_padding_mask.bool())
         else:
             key_padding_mask_input = None
-        x, _ = self.self_attn(
-            query=x, key=x, value=x, key_padding_mask=key_padding_mask_input
-        )
+        x, _ = self.self_attn(query=x, key=x, value=x, key_padding_mask=key_padding_mask_input)
         x = F.dropout(x, self.encoder_dropout, training=self.training)
         x = residual + x
 
@@ -166,24 +155,12 @@ class TransformerEncoder(nn.Module):
     ):
         super().__init__()
 
-        self.encoder_layer = (
-            encoder_layer if encoder_layer is not None else cfg.encoder_layer
-        )
-        self.encoder_hidden = (
-            encoder_hidden if encoder_hidden is not None else cfg.encoder_hidden
-        )
-        self.encoder_head = (
-            encoder_head if encoder_head is not None else cfg.encoder_head
-        )
-        self.conv_filter_size = (
-            conv_filter_size if conv_filter_size is not None else cfg.conv_filter_size
-        )
-        self.conv_kernel_size = (
-            conv_kernel_size if conv_kernel_size is not None else cfg.conv_kernel_size
-        )
-        self.encoder_dropout = (
-            encoder_dropout if encoder_dropout is not None else cfg.encoder_dropout
-        )
+        self.encoder_layer = encoder_layer if encoder_layer is not None else cfg.encoder_layer
+        self.encoder_hidden = encoder_hidden if encoder_hidden is not None else cfg.encoder_hidden
+        self.encoder_head = encoder_head if encoder_head is not None else cfg.encoder_head
+        self.conv_filter_size = conv_filter_size if conv_filter_size is not None else cfg.conv_filter_size
+        self.conv_kernel_size = conv_kernel_size if conv_kernel_size is not None else cfg.conv_kernel_size
+        self.encoder_dropout = encoder_dropout if encoder_dropout is not None else cfg.encoder_dropout
         self.use_cln = use_cln if use_cln is not None else cfg.use_cln
 
         if enc_emb_tokens != None:
@@ -192,9 +169,7 @@ class TransformerEncoder(nn.Module):
         else:
             self.use_enc_emb = False
 
-        self.position_emb = PositionalEncoding(
-            self.encoder_hidden, self.encoder_dropout
-        )
+        self.position_emb = PositionalEncoding(self.encoder_hidden, self.encoder_dropout)
 
         self.layers = nn.ModuleList([])
         self.layers.extend(

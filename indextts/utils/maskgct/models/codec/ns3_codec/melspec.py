@@ -1,13 +1,7 @@
 import torch
-import pyworld as pw
 import numpy as np
-import soundfile as sf
-import os
-from torchaudio.functional import pitch_shift
-import librosa
 from librosa.filters import mel as librosa_mel_fn
 import torch.nn as nn
-import torch.nn.functional as F
 
 
 def dynamic_range_compression(x, C=1, clip_val=1e-5):
@@ -61,9 +55,7 @@ class MelSpectrogram(nn.Module):
         mel_basis = {}
         hann_window = {}
 
-        mel = librosa_mel_fn(
-            sr=sampling_rate, n_fft=n_fft, n_mels=num_mels, fmin=fmin, fmax=fmax
-        )
+        mel = librosa_mel_fn(sr=sampling_rate, n_fft=n_fft, n_mels=num_mels, fmin=fmin, fmax=fmax)
         mel_basis = torch.from_numpy(mel).float()
         hann_window = torch.hann_window(win_size)
 

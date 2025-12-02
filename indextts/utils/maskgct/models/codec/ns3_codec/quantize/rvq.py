@@ -17,9 +17,7 @@ class ResidualVQ(nn.Module):
         VQ = FactorizedVectorQuantize
         if type(codebook_size) == int:
             codebook_size = [codebook_size] * num_quantizers
-        self.layers = nn.ModuleList(
-            [VQ(codebook_size=2**size, **kwargs) for size in codebook_size]
-        )
+        self.layers = nn.ModuleList([VQ(codebook_size=2**size, **kwargs) for size in codebook_size])
         self.num_quantizers = num_quantizers
         self.quantizer_dropout = kwargs.get("quantizer_dropout", 0.0)
         self.dropout_type = kwargs.get("dropout_type", None)
@@ -39,9 +37,7 @@ class ResidualVQ(nn.Module):
             if self.dropout_type == "linear":
                 dropout = torch.randint(1, self.num_quantizers + 1, (x.shape[0],))
             elif self.dropout_type == "exp":
-                dropout = torch.randint(
-                    1, int(math.log2(self.num_quantizers)), (x.shape[0],)
-                )
+                dropout = torch.randint(1, int(math.log2(self.num_quantizers)), (x.shape[0],))
                 dropout = torch.pow(2, dropout)
             n_dropout = int(x.shape[0] * self.quantizer_dropout)
             n_quantizers[:n_dropout] = dropout[:n_dropout]
@@ -52,10 +48,7 @@ class ResidualVQ(nn.Module):
                 break
             quantized, indices, loss = layer(residual)
 
-            mask = (
-                torch.full((x.shape[0],), fill_value=idx, device=x.device)
-                < n_quantizers
-            )
+            mask = torch.full((x.shape[0],), fill_value=idx, device=x.device) < n_quantizers
 
             residual = residual - quantized
 
@@ -67,9 +60,7 @@ class ResidualVQ(nn.Module):
             all_indices.append(indices)
             all_losses.append(loss)
             all_quantized.append(quantized)
-        all_losses, all_indices, all_quantized = map(
-            torch.stack, (all_losses, all_indices, all_quantized)
-        )
+        all_losses, all_indices, all_quantized = map(torch.stack, (all_losses, all_indices, all_quantized))
         return quantized_out, all_indices, all_losses, all_quantized
 
     def vq2emb(self, vq):

@@ -31,9 +31,7 @@ class SLSTM(nn.Module):
         super().__init__()
         self.bidirectional = bidirectional
         self.skip = skip
-        self.lstm = nn.LSTM(
-            dimension, dimension, num_layers, bidirectional=bidirectional
-        )
+        self.lstm = nn.LSTM(dimension, dimension, num_layers, bidirectional=bidirectional)
 
     def forward(self, x):
         x = x.permute(2, 0, 1)

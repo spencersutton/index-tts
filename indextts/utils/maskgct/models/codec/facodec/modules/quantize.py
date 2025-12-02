@@ -14,7 +14,7 @@ import torchaudio.functional as audio_F
 import numpy as np
 from ..alias_free_torch import *
 from torch.nn.utils import weight_norm
-from torch import nn, sin, pow
+from torch import sin, pow
 from einops.layers.torch import Rearrange
 from modules.dac.model.encodec import SConv1d
 
@@ -51,9 +51,7 @@ class SnakeBeta(nn.Module):
         >>> x = a1(x)
     """
 
-    def __init__(
-        self, in_features, alpha=1.0, alpha_trainable=True, alpha_logscale=False
-    ):
+    def __init__(self, in_features, alpha=1.0, alpha_trainable=True, alpha_logscale=False):
         """
         Initialization.
         INPUT:
@@ -208,9 +206,7 @@ class FAquantizer(nn.Module):
                 quantizer_dropout=quantizer_dropout,
             )
         else:
-            self.timbre_encoder = StyleEncoder(
-                in_dim=80, hidden_dim=512, out_dim=in_dim
-            )
+            self.timbre_encoder = StyleEncoder(in_dim=80, hidden_dim=512, out_dim=in_dim)
             self.timbre_linear = nn.Linear(1024, 1024 * 2)
             self.timbre_linear.bias.data[:1024] = 1
             self.timbre_linear.bias.data[1024:] = 0
@@ -225,9 +221,7 @@ class FAquantizer(nn.Module):
         )
 
         if separate_prosody_encoder:
-            self.melspec_linear = conv1d_type(
-                in_channels=20, out_channels=256, kernel_size=1, causal=causal
-            )
+            self.melspec_linear = conv1d_type(in_channels=20, out_channels=256, kernel_size=1, causal=causal)
             self.melspec_encoder = WN(
                 hidden_channels=256,
                 kernel_size=5,
@@ -237,9 +231,7 @@ class FAquantizer(nn.Module):
                 p_dropout=0.2,
                 causal=causal,
             )
-            self.melspec_linear2 = conv1d_type(
-                in_channels=256, out_channels=1024, kernel_size=1, causal=causal
-            )
+            self.melspec_linear2 = conv1d_type(in_channels=256, out_channels=1024, kernel_size=1, causal=causal)
         else:
             pass
         self.separate_prosody_encoder = separate_prosody_encoder
@@ -293,9 +285,7 @@ class FAquantizer(nn.Module):
             f0_input = self.melspec_linear(f0_input)
             f0_input = self.melspec_encoder(
                 f0_input,
-                torch.ones(f0_input.shape[0], 1, f0_input.shape[2])
-                .to(f0_input.device)
-                .bool(),
+                torch.ones(f0_input.shape[0], 1, f0_input.shape[2]).to(f0_input.device).bool(),
             )
             f0_input = self.melspec_linear2(f0_input)
 
@@ -354,9 +344,7 @@ class FAquantizer(nn.Module):
 
         return [codes_c, codes_p, codes_t, codes_r], [z_c, z_p, z_t, z_r]
 
-    def forward(
-        self, x, wave_segments, noise_added_flags, recon_noisy_flags, n_c=2, n_t=2
-    ):
+    def forward(self, x, wave_segments, noise_added_flags, recon_noisy_flags, n_c=2, n_t=2):
         # timbre = self.timbre_encoder(mels, sequence_mask(mel_lens, mels.size(-1)).unsqueeze(1))
         # timbre = self.timbre_encoder(mel_segments, torch.ones(mel_segments.size(0), 1, mel_segments.size(2)).bool().to(mel_segments.device))
         outs = 0
@@ -367,9 +355,7 @@ class FAquantizer(nn.Module):
             f0_input = self.melspec_linear(f0_input)
             f0_input = self.melspec_encoder(
                 f0_input,
-                torch.ones(f0_input.shape[0], 1, f0_input.shape[2])
-                .to(f0_input.device)
-                .bool(),
+                torch.ones(f0_input.shape[0], 1, f0_input.shape[2]).to(f0_input.device).bool(),
             )
             f0_input = self.melspec_linear2(f0_input)
 
@@ -445,15 +431,8 @@ class FAquantizer(nn.Module):
         outs += z_r * res_mask
 
         quantized = [z_p, z_c, z_t, z_r]
-        commitment_losses = (
-            commitment_loss_p
-            + commitment_loss_c
-            + commitment_loss_t
-            + commitment_loss_r
-        )
-        codebook_losses = (
-            codebook_loss_p + codebook_loss_c + codebook_loss_t + codebook_loss_r
-        )
+        commitment_losses = commitment_loss_p + commitment_loss_c + commitment_loss_t + commitment_loss_r
+        codebook_losses = codebook_loss_p + codebook_loss_c + codebook_loss_t + codebook_loss_r
 
         return outs, quantized, commitment_losses, codebook_losses
 
@@ -470,9 +449,7 @@ class FAquantizer(nn.Module):
         # timbre = self.timbre_encoder(x, sequence_mask(mel_lens, mels.size(-1)).unsqueeze(1))
         if full_waves is None:
             mel = self.preprocess(wave_segments, n_bins=80)
-            timbre = self.timbre_encoder(
-                mel, torch.ones(mel.size(0), 1, mel.size(2)).bool().to(mel.device)
-            )
+            timbre = self.timbre_encoder(mel, torch.ones(mel.size(0), 1, mel.size(2)).bool().to(mel.device))
         else:
             mel = self.preprocess(full_waves, n_bins=80)
             timbre = self.timbre_encoder(
@@ -487,9 +464,7 @@ class FAquantizer(nn.Module):
             f0_input = self.melspec_linear(f0_input)
             f0_input = self.melspec_encoder(
                 f0_input,
-                torch.ones(f0_input.shape[0], 1, f0_input.shape[2])
-                .to(f0_input.device)
-                .bool(),
+                torch.ones(f0_input.shape[0], 1, f0_input.shape[2]).to(f0_input.device).bool(),
             )
             f0_input = self.melspec_linear2(f0_input)
 
@@ -618,12 +593,8 @@ class FApredictors(nn.Module):
         self.use_gr_timbre_prosody = use_gr_timbre_prosody
         self.use_gr_x_timbre = use_gr_x_timbre
 
-        self.rev_f0_predictor = nn.Sequential(
-            GradientReversal(alpha=1.0), CNNLSTM(in_dim, 1, 2)
-        )
-        self.rev_content_predictor = nn.Sequential(
-            GradientReversal(alpha=1.0), CNNLSTM(in_dim, 1024, 1)
-        )
+        self.rev_f0_predictor = nn.Sequential(GradientReversal(alpha=1.0), CNNLSTM(in_dim, 1, 2))
+        self.rev_content_predictor = nn.Sequential(GradientReversal(alpha=1.0), CNNLSTM(in_dim, 1024, 1))
         self.rev_timbre_predictor = nn.Sequential(
             GradientReversal(alpha=1.0), CNNLSTM(in_dim, 20000, 1, global_pred=True)
         )

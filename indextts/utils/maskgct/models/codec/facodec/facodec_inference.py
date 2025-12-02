@@ -3,17 +3,13 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import shutil
 import warnings
-import argparse
 import torch
 import os
-import yaml
 
 warnings.simplefilter("ignore")
 
 from .modules.commons import *
-import time
 
 import torchaudio
 import librosa
@@ -92,9 +88,7 @@ class FAcodecInference(object):
         source_audio = torch.tensor(source_audio).unsqueeze(0).float().to(self.device)
 
         reference_audio = librosa.load(reference, sr=self.cfg.preprocess_params.sr)[0]
-        reference_audio = (
-            torch.tensor(reference_audio).unsqueeze(0).float().to(self.device)
-        )
+        reference_audio = torch.tensor(reference_audio).unsqueeze(0).float().to(self.device)
 
         z = self.model.encoder(source_audio[None, ...].to(self.device).float())
         z, quantized, commitment_loss, codebook_loss, timbre = self.model.quantizer(

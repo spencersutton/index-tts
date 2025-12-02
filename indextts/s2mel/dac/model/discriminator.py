@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from audiotools import AudioSignal
-from audiotools import ml
 from audiotools import STFTParams
 from einops import rearrange
 from torch.nn.utils import weight_norm
@@ -37,9 +36,7 @@ class MPD(nn.Module):
                 WNConv2d(1024, 1024, (5, 1), 1, padding=(2, 0)),
             ]
         )
-        self.conv_post = WNConv2d(
-            1024, 1, kernel_size=(3, 1), padding=(1, 0), act=False
-        )
+        self.conv_post = WNConv2d(1024, 1, kernel_size=(3, 1), padding=(1, 0), act=False)
 
     def pad_to_period(self, x):
         t = x.shape[-1]

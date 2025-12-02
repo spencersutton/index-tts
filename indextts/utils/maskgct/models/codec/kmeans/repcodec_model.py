@@ -3,13 +3,10 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from concurrent.futures import ALL_COMPLETED
-import numpy as np
 import torch
 import torch.nn as nn
 
 from torch.nn import functional as F
-from einops import rearrange, repeat
 
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize import ResidualVQ
 from indextts.utils.maskgct.models.codec.kmeans.vocos import VocosBackbone
@@ -45,45 +42,17 @@ class RepCodec(nn.Module):
         cfg=None,
     ):
         super().__init__()
-        codebook_size = (
-            cfg.codebook_size
-            if cfg is not None and hasattr(cfg, "codebook_size")
-            else codebook_size
-        )
-        codebook_dim = (
-            cfg.codebook_dim
-            if cfg is not None and hasattr(cfg, "codebook_dim")
-            else codebook_dim
-        )
-        hidden_size = (
-            cfg.hidden_size
-            if cfg is not None and hasattr(cfg, "hidden_size")
-            else hidden_size
-        )
-        vocos_dim = (
-            cfg.vocos_dim
-            if cfg is not None and hasattr(cfg, "vocos_dim")
-            else vocos_dim
-        )
+        codebook_size = cfg.codebook_size if cfg is not None and hasattr(cfg, "codebook_size") else codebook_size
+        codebook_dim = cfg.codebook_dim if cfg is not None and hasattr(cfg, "codebook_dim") else codebook_dim
+        hidden_size = cfg.hidden_size if cfg is not None and hasattr(cfg, "hidden_size") else hidden_size
+        vocos_dim = cfg.vocos_dim if cfg is not None and hasattr(cfg, "vocos_dim") else vocos_dim
         vocos_intermediate_dim = (
-            cfg.vocos_intermediate_dim
-            if cfg is not None and hasattr(cfg, "vocos_dim")
-            else vocos_intermediate_dim
+            cfg.vocos_intermediate_dim if cfg is not None and hasattr(cfg, "vocos_dim") else vocos_intermediate_dim
         )
-        vocos_num_layers = (
-            cfg.vocos_num_layers
-            if cfg is not None and hasattr(cfg, "vocos_dim")
-            else vocos_num_layers
-        )
-        num_quantizers = (
-            cfg.num_quantizers
-            if cfg is not None and hasattr(cfg, "num_quantizers")
-            else num_quantizers
-        )
+        vocos_num_layers = cfg.vocos_num_layers if cfg is not None and hasattr(cfg, "vocos_dim") else vocos_num_layers
+        num_quantizers = cfg.num_quantizers if cfg is not None and hasattr(cfg, "num_quantizers") else num_quantizers
         downsample_scale = (
-            cfg.downsample_scale
-            if cfg is not None and hasattr(cfg, "downsample_scale")
-            else downsample_scale
+            cfg.downsample_scale if cfg is not None and hasattr(cfg, "downsample_scale") else downsample_scale
         )
 
         self.codebook_size = codebook_size
@@ -96,12 +65,8 @@ class RepCodec(nn.Module):
         self.downsample_scale = downsample_scale
 
         if self.downsample_scale != None and self.downsample_scale > 1:
-            self.down = nn.Conv1d(
-                self.hidden_size, self.hidden_size, kernel_size=3, stride=2, padding=1
-            )
-            self.up = nn.Conv1d(
-                self.hidden_size, self.hidden_size, kernel_size=3, stride=1, padding=1
-            )
+            self.down = nn.Conv1d(self.hidden_size, self.hidden_size, kernel_size=3, stride=2, padding=1)
+            self.up = nn.Conv1d(self.hidden_size, self.hidden_size, kernel_size=3, stride=1, padding=1)
 
         self.encoder = nn.Sequential(
             VocosBackbone(
@@ -139,7 +104,6 @@ class RepCodec(nn.Module):
         self.reset_parameters()
 
     def forward(self, x):
-
         # downsample
         if self.downsample_scale != None and self.downsample_scale > 1:
             x = x.transpose(1, 2)
@@ -174,7 +138,6 @@ class RepCodec(nn.Module):
         return x_rec, codebook_loss, all_indices
 
     def quantize(self, x):
-
         if self.downsample_scale != None and self.downsample_scale > 1:
             x = x.transpose(1, 2)
             x = self.down(x)

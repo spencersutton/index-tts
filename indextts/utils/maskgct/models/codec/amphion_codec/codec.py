@@ -4,18 +4,12 @@
 # LICENSE file in the root directory of this source tree.
 
 import math
-import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from einops import rearrange
 from torch.nn.utils import weight_norm
 
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize import (
     ResidualVQ,
-    VectorQuantize,
-    FactorizedVectorQuantize,
-    LookupFreeQuantize,
 )
 
 from indextts.utils.maskgct.models.codec.amphion_codec.vocos import Vocos
@@ -197,76 +191,32 @@ class CodecDecoder(nn.Module):
     ):
         super().__init__()
 
-        in_channels = (
-            cfg.in_channels
-            if cfg is not None and hasattr(cfg, "in_channels")
-            else in_channels
-        )
+        in_channels = cfg.in_channels if cfg is not None and hasattr(cfg, "in_channels") else in_channels
         upsample_initial_channel = (
             cfg.upsample_initial_channel
             if cfg is not None and hasattr(cfg, "upsample_initial_channel")
             else upsample_initial_channel
         )
-        up_ratios = (
-            cfg.up_ratios
-            if cfg is not None and hasattr(cfg, "up_ratios")
-            else up_ratios
-        )
-        num_quantizers = (
-            cfg.num_quantizers
-            if cfg is not None and hasattr(cfg, "num_quantizers")
-            else num_quantizers
-        )
-        codebook_size = (
-            cfg.codebook_size
-            if cfg is not None and hasattr(cfg, "codebook_size")
-            else codebook_size
-        )
-        codebook_dim = (
-            cfg.codebook_dim
-            if cfg is not None and hasattr(cfg, "codebook_dim")
-            else codebook_dim
-        )
-        quantizer_type = (
-            cfg.quantizer_type
-            if cfg is not None and hasattr(cfg, "quantizer_type")
-            else quantizer_type
-        )
+        up_ratios = cfg.up_ratios if cfg is not None and hasattr(cfg, "up_ratios") else up_ratios
+        num_quantizers = cfg.num_quantizers if cfg is not None and hasattr(cfg, "num_quantizers") else num_quantizers
+        codebook_size = cfg.codebook_size if cfg is not None and hasattr(cfg, "codebook_size") else codebook_size
+        codebook_dim = cfg.codebook_dim if cfg is not None and hasattr(cfg, "codebook_dim") else codebook_dim
+        quantizer_type = cfg.quantizer_type if cfg is not None and hasattr(cfg, "quantizer_type") else quantizer_type
         quantizer_dropout = (
-            cfg.quantizer_dropout
-            if cfg is not None and hasattr(cfg, "quantizer_dropout")
-            else quantizer_dropout
+            cfg.quantizer_dropout if cfg is not None and hasattr(cfg, "quantizer_dropout") else quantizer_dropout
         )
-        commitment = (
-            cfg.commitment
-            if cfg is not None and hasattr(cfg, "commitment")
-            else commitment
-        )
+        commitment = cfg.commitment if cfg is not None and hasattr(cfg, "commitment") else commitment
         codebook_loss_weight = (
             cfg.codebook_loss_weight
             if cfg is not None and hasattr(cfg, "codebook_loss_weight")
             else codebook_loss_weight
         )
         use_l2_normlize = (
-            cfg.use_l2_normlize
-            if cfg is not None and hasattr(cfg, "use_l2_normlize")
-            else use_l2_normlize
+            cfg.use_l2_normlize if cfg is not None and hasattr(cfg, "use_l2_normlize") else use_l2_normlize
         )
-        codebook_type = (
-            cfg.codebook_type
-            if cfg is not None and hasattr(cfg, "codebook_type")
-            else codebook_type
-        )
-        kmeans_init = (
-            cfg.kmeans_init
-            if cfg is not None and hasattr(cfg, "kmeans_init")
-            else kmeans_init
-        )
-        kmeans_iters = (
-            cfg.kmeans_iters
-            if cfg is not None and hasattr(cfg, "kmeans_iters")
-            else kmeans_iters
-        )
+        codebook_type = cfg.codebook_type if cfg is not None and hasattr(cfg, "codebook_type") else codebook_type
+        kmeans_init = cfg.kmeans_init if cfg is not None and hasattr(cfg, "kmeans_init") else kmeans_init
+        kmeans_iters = cfg.kmeans_iters if cfg is not None and hasattr(cfg, "kmeans_iters") else kmeans_iters
         decay = cfg.decay if cfg is not None and hasattr(cfg, "decay") else decay
         eps = cfg.eps if cfg is not None and hasattr(cfg, "eps") else eps
         threshold_ema_dead_code = (
@@ -274,38 +224,20 @@ class CodecDecoder(nn.Module):
             if cfg is not None and hasattr(cfg, "threshold_ema_dead_code")
             else threshold_ema_dead_code
         )
-        weight_init = (
-            cfg.weight_init
-            if cfg is not None and hasattr(cfg, "weight_init")
-            else weight_init
-        )
-        use_vocos = (
-            cfg.use_vocos
-            if cfg is not None and hasattr(cfg, "use_vocos")
-            else use_vocos
-        )
-        vocos_dim = (
-            cfg.vocos_dim
-            if cfg is not None and hasattr(cfg, "vocos_dim")
-            else vocos_dim
-        )
+        weight_init = cfg.weight_init if cfg is not None and hasattr(cfg, "weight_init") else weight_init
+        use_vocos = cfg.use_vocos if cfg is not None and hasattr(cfg, "use_vocos") else use_vocos
+        vocos_dim = cfg.vocos_dim if cfg is not None and hasattr(cfg, "vocos_dim") else vocos_dim
         vocos_intermediate_dim = (
             cfg.vocos_intermediate_dim
             if cfg is not None and hasattr(cfg, "vocos_intermediate_dim")
             else vocos_intermediate_dim
         )
         vocos_num_layers = (
-            cfg.vocos_num_layers
-            if cfg is not None and hasattr(cfg, "vocos_num_layers")
-            else vocos_num_layers
+            cfg.vocos_num_layers if cfg is not None and hasattr(cfg, "vocos_num_layers") else vocos_num_layers
         )
         n_fft = cfg.n_fft if cfg is not None and hasattr(cfg, "n_fft") else n_fft
-        hop_size = (
-            cfg.hop_size if cfg is not None and hasattr(cfg, "hop_size") else hop_size
-        )
-        padding = (
-            cfg.padding if cfg is not None and hasattr(cfg, "padding") else padding
-        )
+        hop_size = cfg.hop_size if cfg is not None and hasattr(cfg, "hop_size") else hop_size
+        padding = cfg.padding if cfg is not None and hasattr(cfg, "padding") else padding
 
         if quantizer_type == "vq":
             self.quantizer = ResidualVQ(

@@ -3,9 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Union
 
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -64,18 +62,13 @@ class FactorizedVectorQuantize(nn.Module):
         z_q, indices = self.decode_latents(z_e)
 
         if self.training:
-            commitment_loss = (
-                F.mse_loss(z_e, z_q.detach(), reduction="none").mean([1, 2])
-                * self.commitment
-            )
+            commitment_loss = F.mse_loss(z_e, z_q.detach(), reduction="none").mean([1, 2]) * self.commitment
             codebook_loss = F.mse_loss(z_q, z_e.detach(), reduction="none").mean([1, 2])
             commit_loss = commitment_loss + codebook_loss
         else:
             commit_loss = torch.zeros(z.shape[0], device=z.device)
 
-        z_q = (
-            z_e + (z_q - z_e).detach()
-        )  # noop in forward pass, straight-through gradient estimator in backward pass
+        z_q = z_e + (z_q - z_e).detach()  # noop in forward pass, straight-through gradient estimator in backward pass
 
         z_q = rearrange(z_q, "b d t -> b t d")
         z_q = self.out_proj(z_q)

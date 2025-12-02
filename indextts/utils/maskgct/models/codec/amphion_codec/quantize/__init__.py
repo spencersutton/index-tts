@@ -9,3 +9,10 @@ from indextts.utils.maskgct.models.codec.amphion_codec.quantize.factorized_vecto
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize.lookup_free_quantize import LookupFreeQuantize
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize.residual_vq import ResidualVQ
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize.vector_quantize import VectorQuantize
+
+__all__ = [
+    "FactorizedVectorQuantize",
+    "LookupFreeQuantize",
+    "ResidualVQ",
+    "VectorQuantize",
+]

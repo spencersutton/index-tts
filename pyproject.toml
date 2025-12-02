@@ -112,6 +112,7 @@ explicit = true
 
 [tool.ruff]
 line-length = 120
+per-file-ignores = { "typings/**/*.pyi" = ["ANN401"] }
 
 [tool.ruff.lint]
 extend-select = [

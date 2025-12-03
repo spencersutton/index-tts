@@ -6,17 +6,21 @@ import re
 import time
 import typing
 import warnings
+from collections.abc import Callable, Generator
 from subprocess import CalledProcessError
+from typing import Any, cast
 
 import librosa
 import safetensors
 import torch
 import torchaudio
+from huggingface_hub import hf_hub_download
 from torch.nn.utils.rnn import pad_sequence
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
+import bigvgan
 import torch.nn.functional as F
 from modelscope import AutoModelForCausalLM
 from omegaconf import OmegaConf
@@ -24,7 +28,6 @@ from transformers import AutoTokenizer, SeamlessM4TFeatureExtractor
 
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.s2mel.modules.audio import mel_spectrogram
-from indextts.s2mel.modules.bigvgan import bigvgan
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
 from indextts.s2mel.modules.commons import MyModel, load_checkpoint2
 from indextts.s2mel.modules.flow_matching import CFM
@@ -39,7 +42,7 @@ if typing.TYPE_CHECKING:
 class IndexTTS2:
     device: str
     use_fp16: bool
-    cfg: Any
+    cfg: typing.Any
     model_dir: str
     dtype: torch.dtype | None
     stop_mel_token: int
@@ -670,7 +673,7 @@ class IndexTTS2:
                     code_len = len_[0].item() if len_.numel() > 0 else len(code)
 
                 code = code[:code_len].unsqueeze(0)  # (1, S)
-                code_lens = torch.Longtorch.Tensor([code_len]).to(self.device)
+                code_lens = torch.LongTensor([code_len]).to(self.device)
 
                 # Get corresponding text tokens for this segment (unpadded)
                 text_tokens = batch_text_tokens[seg_idx].unsqueeze(0)  # (1, L)

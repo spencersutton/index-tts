@@ -573,7 +573,9 @@ class UnifiedVoice(nn.Module):
         else:
             return first_logits
 
-    def get_conditioning(self, speech_conditioning_input: torch.Tensor, cond_mel_lengths: torch.Tensor | None = None) -> torch.Tensor:
+    def get_conditioning(
+        self, speech_conditioning_input: torch.Tensor, cond_mel_lengths: torch.Tensor | None = None
+    ) -> torch.Tensor:
         if self.condition_type == "perceiver":
             if speech_conditioning_input.ndim == 4:
                 speech_conditioning_input = speech_conditioning_input.squeeze(1)
@@ -656,7 +658,7 @@ class UnifiedVoice(nn.Module):
             )
             emo_vec_syn = self.emovec_layer(emo_vec_syn_ori)
             emo_vec = self.emo_layer(emo_vec_syn)
-assert emo_vec is not None
+            assert emo_vec is not None
 
         text_inputs = self.set_text_padding(text_inputs, text_lengths)
         text_inputs = F.pad(text_inputs, (0, 1), value=self.stop_text_token)

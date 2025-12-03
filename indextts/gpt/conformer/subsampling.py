@@ -72,7 +72,7 @@ class LinearNoSubsampling(BaseSubsampling):
         return x, pos_emb, x_mask
 
 
-class Conv2dSubsampling2(_BaseSubsampling):
+class Conv2dSubsampling2(BaseSubsampling):
     """Convolutional 2D subsampling (to 1/2 length).
 
     Args:

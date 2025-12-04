@@ -8,8 +8,9 @@ from indextts.infer_v2 import IndexTTS2
 
 if __debug__:
     import omegaconf
+    import torch
 
-    rich.traceback.install(suppress=[omegaconf])
+    rich.traceback.install(suppress=[omegaconf, torch])
 
 # Suppress warnings from tensorflow and other libraries
 warnings.filterwarnings("ignore", category=UserWarning)

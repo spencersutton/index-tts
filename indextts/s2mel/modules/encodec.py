@@ -114,55 +114,6 @@ class NormConv1d(nn.Module):
         return self.norm(x)
 
 
-class NormConv2d(nn.Module):
-    """Wrapper around Conv2d and normalization applied to this conv
-    to provide a uniform interface across normalization approaches.
-    """
-
-    def __init__(self, *args, norm: str = "none", norm_kwargs: dict[str, tp.Any] = {}, **kwargs) -> None:
-        super().__init__()
-        self.conv = apply_parametrization_norm(nn.Conv2d(*args, **kwargs), norm)
-        self.norm = get_norm_module(self.conv, causal=False, norm=norm, **norm_kwargs)
-        self.norm_type = norm
-
-    def forward(self, x):
-        x = self.conv(x)
-        return self.norm(x)
-
-
-class NormConvTranspose1d(nn.Module):
-    """Wrapper around ConvTranspose1d and normalization applied to this conv
-    to provide a uniform interface across normalization approaches.
-    """
-
-    def __init__(
-        self, *args, causal: bool = False, norm: str = "none", norm_kwargs: dict[str, tp.Any] = {}, **kwargs
-    ) -> None:
-        super().__init__()
-        self.convtr = apply_parametrization_norm(nn.ConvTranspose1d(*args, **kwargs), norm)
-        self.norm = get_norm_module(self.convtr, causal, norm, **norm_kwargs)
-        self.norm_type = norm
-
-    def forward(self, x):
-        x = self.convtr(x)
-        return self.norm(x)
-
-
-class NormConvTranspose2d(nn.Module):
-    """Wrapper around ConvTranspose2d and normalization applied to this conv
-    to provide a uniform interface across normalization approaches.
-    """
-
-    def __init__(self, *args, norm: str = "none", norm_kwargs: dict[str, tp.Any] = {}, **kwargs) -> None:
-        super().__init__()
-        self.convtr = apply_parametrization_norm(nn.ConvTranspose2d(*args, **kwargs), norm)
-        self.norm = get_norm_module(self.convtr, causal=False, norm=norm, **norm_kwargs)
-
-    def forward(self, x):
-        x = self.convtr(x)
-        return self.norm(x)
-
-
 class SConv1d(nn.Module):
     """Conv1d with some builtin handling of asymmetric or causal padding
     and normalization.

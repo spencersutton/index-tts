@@ -1396,6 +1396,7 @@ webui = [
 dev = [
     { name = "basedpyright" },
     { name = "pandas-stubs" },
+    { name = "rich" },
 ]
 
 [package.metadata]
@@ -1442,6 +1443,7 @@ provides-extras = ["webui", "deepspeed", "accelerate"]
 dev = [
     { name = "basedpyright", specifier = ">=1.34.0" },
     { name = "pandas-stubs", specifier = ">=2.3.3.251201" },
+    { name = "rich", specifier = ">=14.2.0" },
 ]
 
 [[package]]

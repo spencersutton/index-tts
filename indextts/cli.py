@@ -2,7 +2,14 @@ import os
 import sys
 import warnings
 
+import rich.traceback
+
 from indextts.infer_v2 import IndexTTS2
+
+if __debug__:
+    import omegaconf
+
+    rich.traceback.install(suppress=[omegaconf])
 
 # Suppress warnings from tensorflow and other libraries
 warnings.filterwarnings("ignore", category=UserWarning)

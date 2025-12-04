@@ -24,9 +24,8 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 import bigvgan
 import torch.nn.functional as F
-from modelscope import AutoModelForCausalLM
 from omegaconf import OmegaConf
-from transformers import AutoTokenizer, SeamlessM4TFeatureExtractor
+from transformers import AutoModelForCausalLM, AutoTokenizer, SeamlessM4TFeatureExtractor
 
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.s2mel.modules.audio import mel_spectrogram

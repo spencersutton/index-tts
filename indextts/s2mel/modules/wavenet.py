@@ -1,9 +1,8 @@
 import torch
 from torch import nn
 
+from indextts.s2mel.modules import commons
 from indextts.s2mel.modules.encodec import SConv1d
-
-from . import commons
 
 
 class WN(torch.nn.Module):

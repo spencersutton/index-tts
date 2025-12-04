@@ -115,6 +115,7 @@ explicit = true
 flash-attn = ["torch", "numpy"]
 
 [tool.ruff]
+preview = true
 line-length = 120
 
 [tool.ruff.lint]

@@ -240,18 +240,16 @@ class PerceiverResampler(nn.Module):
         self.layers = nn.ModuleList([])
         for _ in range(depth):
             self.layers.append(
-                nn.ModuleList(
-                    [
-                        Attention(
-                            dim=dim,
-                            dim_head=dim_head,
-                            heads=heads,
-                            use_flash=use_flash_attn,
-                            cross_attn_include_queries=True,
-                        ),
-                        FeedForward(dim=dim, mult=ff_mult),
-                    ]
-                )
+                nn.ModuleList([
+                    Attention(
+                        dim=dim,
+                        dim_head=dim_head,
+                        heads=heads,
+                        use_flash=use_flash_attn,
+                        cross_attn_include_queries=True,
+                    ),
+                    FeedForward(dim=dim, mult=ff_mult),
+                ])
             )
 
         self.norm = RMSNorm(dim)

@@ -32,9 +32,14 @@ class ConvLayerNorm(nn.LayerNorm):
         x = einops.rearrange(x, "b t ... -> b ... t")
 
 
-CONV_NORMALIZATIONS = frozenset(
-    ["none", "weight_norm", "spectral_norm", "time_layer_norm", "layer_norm", "time_group_norm"]
-)
+CONV_NORMALIZATIONS = frozenset([
+    "none",
+    "weight_norm",
+    "spectral_norm",
+    "time_layer_norm",
+    "layer_norm",
+    "time_group_norm",
+])
 
 
 def apply_parametrization_norm(module: nn.Module, norm: str = "none") -> nn.Module:

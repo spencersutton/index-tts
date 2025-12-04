@@ -111,9 +111,9 @@ def update_i18n_json(json_file, standard_keys) -> None:
     for value, keys in duplicate_items.items():
         if len(keys) > 1:
             print(
-                "\n".join(
-                    [f"\033[31m{'[Failed] Duplicate Value'.ljust(KEY_LEN)}: {key} -> {value}\033[0m" for key in keys]
-                )
+                "\n".join([
+                    f"\033[31m{'[Failed] Duplicate Value'.ljust(KEY_LEN)}: {key} -> {value}\033[0m" for key in keys
+                ])
             )
 
     if num_miss_translation > 0:

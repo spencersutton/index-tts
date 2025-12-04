@@ -171,3 +171,6 @@ reportImplicitOverride = false
 reportUnannotatedClassAttribute = false
 reportCallInDefaultInitializer = false
 reportUnknownVariableType = false
+
+[tool.ty.environment]
+extra-paths = ["./override"]

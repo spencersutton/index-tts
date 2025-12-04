@@ -1,5 +1,4 @@
 import contextlib
-import dataclasses
 import functools
 import json
 import os
@@ -8,7 +7,7 @@ import re
 import time
 import typing
 import warnings
-from collections.abc import Callable, Generator
+from collections.abc import Callable, Generator, Mapping
 from subprocess import CalledProcessError
 from typing import Any, cast
 
@@ -129,8 +128,8 @@ class IndexTTS2:
             with contextlib.suppress(AttributeError):
                 torch.set_float32_matmul_precision("high")
 
-        self.cfg = OmegaConf.structured(cfg_path)
-        OmegaConf.merge(self.cfg, OmegaConf.load(cfg_path))
+        cfg = cast(Mapping[str, Any], OmegaConf.load(cfg_path))
+        self.cfg = cast(CheckpointsConfig, cfg)
         self.model_dir = model_dir
         self.dtype = torch.float16 if self.use_fp16 else None
         self.stop_mel_token = self.cfg.gpt.stop_mel_token
@@ -139,7 +138,7 @@ class IndexTTS2:
 
         self.qwen_emo = QwenEmotion(os.path.join(self.model_dir, self.cfg.qwen_emo_path))
 
-        self.gpt = UnifiedVoice(**dataclasses.asdict(self.cfg.gpt), use_accel=self.use_accel)
+        self.gpt = UnifiedVoice(**cfg["gpt"], use_accel=self.use_accel)
         self.gpt_path = os.path.join(self.model_dir, self.cfg.gpt_checkpoint)
         load_checkpoint(self.gpt, self.gpt_path)
         self.gpt = self.gpt.to(self.device)

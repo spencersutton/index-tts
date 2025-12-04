@@ -65,7 +65,7 @@ dependencies = [
 webui = ["gradio>=5.45.0"]
 # To install the DeepSpeed support, use `uv sync --extra deepspeed` (or `--all-extras`).
 deepspeed = ["deepspeed>=0.17.1"]
-accelerate = ["flash-attn>=2.8.3"]
+accelerate = ["flash-attn>=2.8.3; sys_platform != 'darwin'"]
 
 [project.urls]
 Homepage = "https://github.com/index-tts/index-tts"

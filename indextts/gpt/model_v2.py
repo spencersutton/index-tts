@@ -1,4 +1,5 @@
 import functools
+import importlib.util
 
 import torch
 import torch.nn.functional as F
@@ -440,9 +441,7 @@ class UnifiedVoice(nn.Module):
 
         if self.use_accel and torch.cuda.is_available():
             # Check if flash attention is available
-            try:
-                import flash_attn
-            except ImportError:
+            if importlib.util.find_spec("flash_attn") is None:
                 raise ImportError(
                     "flash_attn is required for acceleration but not installed. Please install from https://github.com/Dao-AILab/flash-attention/releases/"
                 )

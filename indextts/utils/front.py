@@ -421,7 +421,6 @@ class TextTokenizer:
         "!",
         "?",
         "▁.",
-        # "▁!", # unk
         "▁?",
         "▁...",  # ellipsis
     ]

@@ -781,6 +781,26 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/38/10/a7f63e086c1e1c12e290c98363c748ef5ddd6313fde739d2aeccd5ed0cd4/deepspeed-0.17.1.tar.gz", hash = "sha256:6d6e21796982b9e024f489e1c211666cc6c0be6e344751368610b9d2da285d6e", size = 1547985, upload-time = "2025-06-09T22:53:11.543Z" }
 
 [[package]]
+name = "descript-audio-codec"
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "argbind" },
+    { name = "descript-audiotools" },
+    { name = "einops" },
+    { name = "numpy" },
+    { name = "torch", version = "2.8.0", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'linux' and sys_platform != 'win32'" },
+    { name = "torch", version = "2.8.0+cu128", source = { registry = "https://download.pytorch.org/whl/cu128" }, marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+    { name = "torchaudio", version = "2.8.0", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'linux' and sys_platform != 'win32'" },
+    { name = "torchaudio", version = "2.8.0+cu128", source = { registry = "https://download.pytorch.org/whl/cu128" }, marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+    { name = "tqdm" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/7b/89/022d30f42091b0228f24449d0083130d44a1f6d141ad67f2cc67e22679d2/descript-audio-codec-1.0.0.tar.gz", hash = "sha256:56a5a541128686821570756512d405534e9d7a978b34adf2510cfe981f0b00e0", size = 23711, upload-time = "2023-07-20T18:10:30.913Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6e/c4/93f7309eb40a9299c59a6637f13c21b08e585c569fee85901ccd55ce00f5/descript_audio_codec-1.0.0-py3-none-any.whl", hash = "sha256:7ecd1883040613d143494f27f199c11c7053a8a7f9fd2120568c5a98db926e61", size = 26933, upload-time = "2023-07-20T18:10:29.436Z" },
+]
+
+[[package]]
 name = "descript-audiotools"
 version = "0.7.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1351,6 +1371,7 @@ dependencies = [
     { name = "bigvgan" },
     { name = "cn2an" },
     { name = "cython" },
+    { name = "descript-audio-codec" },
     { name = "descript-audiotools" },
     { name = "einops" },
     { name = "ffmpeg-python" },
@@ -1406,6 +1427,7 @@ requires-dist = [
     { name = "cn2an", specifier = ">=0.5.22" },
     { name = "cython", specifier = ">=3.0.7" },
     { name = "deepspeed", marker = "extra == 'deepspeed'", specifier = ">=0.17.1" },
+    { name = "descript-audio-codec", specifier = ">=1.0.0" },
     { name = "descript-audiotools", specifier = ">=0.7.2" },
     { name = "einops", specifier = ">=0.8.1" },
     { name = "ffmpeg-python", specifier = ">=0.2.0" },

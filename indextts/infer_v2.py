@@ -6,8 +6,8 @@ import re
 import time
 import typing
 import warnings
-from pathlib import Path
 from collections.abc import Callable, Generator, Mapping
+from pathlib import Path
 from subprocess import CalledProcessError
 from typing import Any, cast
 
@@ -218,7 +218,7 @@ class IndexTTS2:
         self.bigvgan.eval()
         print(">> bigvgan weights restored from:", bigvgan_name)
 
-        self.bpe_path = Path(self.model_dir) / self.cfg.dataset["bpe_model"]
+        self.bpe_path = str(Path(self.model_dir) / self.cfg.dataset.bpe_model)
         self.normalizer = TextNormalizer()
         self.normalizer.load()
         print(">> TextNormalizer loaded")

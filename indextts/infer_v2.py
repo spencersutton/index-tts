@@ -16,6 +16,8 @@ import torch
 import torchaudio
 from huggingface_hub import hf_hub_download
 
+from indextts.config import CheckpointsConfig
+
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -41,7 +43,7 @@ if typing.TYPE_CHECKING:
 class IndexTTS2:
     device: str
     use_fp16: bool
-    cfg: typing.Any
+    cfg: CheckpointsConfig
     model_dir: str
     dtype: torch.dtype | None
     stop_mel_token: int

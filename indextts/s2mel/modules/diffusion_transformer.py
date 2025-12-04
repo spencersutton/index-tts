@@ -1,6 +1,7 @@
 import math
 
 import torch
+from config import S2MelConfig
 from torch import nn
 from torch.nn.utils import weight_norm
 
@@ -78,7 +79,7 @@ class FinalLayer(nn.Module):
 
 
 class DiT(torch.nn.Module):
-    def __init__(self, args) -> None:
+    def __init__(self, args: S2MelConfig) -> None:
         super().__init__()
         self.time_as_token = args.DiT.time_as_token if hasattr(args.DiT, "time_as_token") else False
         self.style_as_token = args.DiT.style_as_token if hasattr(args.DiT, "style_as_token") else False

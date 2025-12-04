@@ -4,7 +4,7 @@ from typing import cast
 import torch
 from tqdm import tqdm
 
-from indextts.s2mel.modules.commons import S2MelConfig
+from indextts.config import S2MelConfig
 from indextts.s2mel.modules.diffusion_transformer import DiT
 
 

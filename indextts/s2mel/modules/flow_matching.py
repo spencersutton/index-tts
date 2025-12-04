@@ -4,14 +4,12 @@ from typing import cast
 import torch
 from tqdm import tqdm
 
+from indextts.s2mel.modules.commons import S2MelConfig
 from indextts.s2mel.modules.diffusion_transformer import DiT
 
 
 class BASECFM(torch.nn.Module, ABC):
-    def __init__(
-        self,
-        args,
-    ) -> None:
+    def __init__(self, args: S2MelConfig) -> None:
         super().__init__()
         self.sigma_min = 1e-6
 
@@ -190,7 +188,7 @@ class BASECFM(torch.nn.Module, ABC):
 class CFM(BASECFM):
     estimator: DiT
 
-    def __init__(self, args) -> None:
+    def __init__(self, args: S2MelConfig) -> None:
         super().__init__(args)
         if args.dit_type == "DiT":
             self.estimator = DiT(args)

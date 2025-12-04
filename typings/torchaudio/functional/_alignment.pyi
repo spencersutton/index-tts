@@ -14,6 +14,7 @@ def forced_align(
     target_lengths: Tensor | None = ...,
     blank: int = ...,
 ) -> tuple[Tensor, Tensor]: ...
+
 @dataclass
 class TokenSpan:
     token: int

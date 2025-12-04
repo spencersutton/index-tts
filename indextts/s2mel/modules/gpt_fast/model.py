@@ -155,6 +155,9 @@ transformer_configs = {
 
 
 class KVCache(nn.Module):
+    k_cache: torch.Tensor
+    v_cache: torch.Tensor
+
     def __init__(self, max_batch_size, max_seq_length, n_heads, head_dim, dtype=torch.bfloat16) -> None:
         super().__init__()
         cache_shape = (max_batch_size, n_heads, max_seq_length, head_dim)

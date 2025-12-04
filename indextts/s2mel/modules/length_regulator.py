@@ -32,8 +32,8 @@ class InterpolateRegulator(nn.Module):
         self,
         channels: int,
         sampling_ratios: Sequence[int],
+        in_channels: int,  # only applies to continuous input
         is_discrete: bool = False,
-        in_channels: int | None = None,  # only applies to continuous input
         vector_quantize: bool = False,  # whether to use vector quantization, only applies to continuous input
         codebook_size: int = 1024,  # for discrete only
         out_channels: int | None = None,

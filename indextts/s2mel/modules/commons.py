@@ -36,7 +36,7 @@ class MyModel(nn.Module):
             channels=args.length_regulator.channels,
             sampling_ratios=args.length_regulator.sampling_ratios,
             is_discrete=args.length_regulator.is_discrete,
-            in_channels=args.length_regulator.in_channels if hasattr(args.length_regulator, "in_channels") else None,
+            in_channels=args.length_regulator.in_channels,
             vector_quantize=args.length_regulator.vector_quantize
             if hasattr(args.length_regulator, "vector_quantize")
             else False,

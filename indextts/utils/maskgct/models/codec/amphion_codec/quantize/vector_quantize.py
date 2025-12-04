@@ -40,7 +40,7 @@ def sample_vectors(samples: torch.Tensor, num: int) -> torch.Tensor:
 def kmeans(
     samples: torch.Tensor, num_clusters: int, num_iters: int = 10, use_cosine_sim: bool = False
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    dim, dtype, device = samples.shape[-1], samples.dtype, samples.device
+    dim, dtype, _device = samples.shape[-1], samples.dtype, samples.device
 
     means = sample_vectors(samples, num_clusters)
 
@@ -153,7 +153,7 @@ class EuclideanCodebook(nn.Module):
         return quantize
 
     def latent2dist(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        shape, dtype = x.shape, x.dtype
+        shape, _dtype = x.shape, x.dtype
         flatten = rearrange(x, "... d -> (...) d")
         embed = self.embed.t()  # (codebook_size, dim) -> (dim, codebook_size)
 

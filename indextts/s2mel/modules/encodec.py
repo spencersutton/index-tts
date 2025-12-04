@@ -209,6 +209,7 @@ class SConv1d(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         _B, _C, _T = x.shape
+        assert isinstance(self.conv.conv, nn.Conv1d)
         kernel_size = self.conv.conv.kernel_size[0]
         stride = self.conv.conv.stride[0]
         dilation = self.conv.conv.dilation[0]

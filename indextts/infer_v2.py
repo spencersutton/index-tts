@@ -12,7 +12,7 @@ from subprocess import CalledProcessError
 from typing import Any, cast
 
 import librosa
-import safetensors
+import safetensors.torch
 import torch
 import torchaudio
 from huggingface_hub import hf_hub_download

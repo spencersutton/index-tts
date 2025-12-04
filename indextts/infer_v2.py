@@ -6,12 +6,15 @@ import re
 import time
 import typing
 import warnings
+from collections.abc import Callable, Generator
 from subprocess import CalledProcessError
+from typing import Any, cast
 
 import librosa
 import safetensors
 import torch
 import torchaudio
+from huggingface_hub import hf_hub_download
 from torch.nn.utils.rnn import pad_sequence
 
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -670,7 +673,7 @@ class IndexTTS2:
                     code_len = len_[0].item() if len_.numel() > 0 else len(code)
 
                 code = code[:code_len].unsqueeze(0)  # (1, S)
-                code_lens = torch.Longtorch.Tensor([code_len]).to(self.device)
+                code_lens = torch.LongTensor([code_len]).to(self.device)
 
                 # Get corresponding text tokens for this segment (unpadded)
                 text_tokens = batch_text_tokens[seg_idx].unsqueeze(0)  # (1, L)

@@ -45,7 +45,7 @@ class AdaptiveLayerNorm(nn.Module):
         self.d_model = d_model
         self.eps = self.norm.eps
 
-    def forward(self, input: torch.Tensor, embedding: torch.Tensor = None) -> torch.Tensor:
+    def forward(self, input: torch.Tensor, embedding: torch.Tensor | None = None) -> torch.Tensor:
         if embedding is None:
             return self.norm(input)
         weight, bias = torch.split(

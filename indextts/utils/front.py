@@ -1,4 +1,5 @@
 
+
 import re
 import traceback
 import warnings
@@ -419,7 +420,6 @@ class TextTokenizer:
         "!",
         "?",
         "▁.",
-        # "▁!", # unk
         "▁?",
         "▁...",  # ellipsis
     ]

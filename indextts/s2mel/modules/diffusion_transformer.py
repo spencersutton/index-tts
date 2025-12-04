@@ -1,10 +1,10 @@
 import math
 
 import torch
-from config import S2MelConfig
 from torch import nn
 from torch.nn.utils import weight_norm
 
+from indextts.config import S2MelConfig
 from indextts.s2mel.modules.commons import sequence_mask
 from indextts.s2mel.modules.gpt_fast.model import ModelArgs, Transformer
 from indextts.s2mel.modules.wavenet import WN

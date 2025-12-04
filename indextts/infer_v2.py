@@ -1,5 +1,6 @@
 import contextlib
 import functools
+import json
 import os
 import random
 import re
@@ -235,15 +236,15 @@ class IndexTTS2:
         self.emo_matrix = torch.split(self.emo_matrix, self.emo_num)
         self.spk_matrix = torch.split(self.spk_matrix, self.emo_num)
 
-        spect_params = self.cfg.s2mel["preprocess_params"]["spect_params"]
+        spect_params = self.cfg.s2mel.preprocess_params.spect_params
         mel_fn_args = {
-            "n_fft": spect_params["n_fft"],
-            "win_size": spect_params["win_length"],
-            "hop_size": spect_params["hop_length"],
-            "num_mels": spect_params["n_mels"],
-            "sampling_rate": self.cfg.s2mel["preprocess_params"]["sr"],
-            "fmin": spect_params.get("fmin", 0),
-            "fmax": None if spect_params.get("fmax", "None") == "None" else 8000,
+            "n_fft": spect_params.n_fft,
+            "win_size": spect_params.win_length,
+            "hop_size": spect_params.hop_length,
+            "num_mels": spect_params.n_mels,
+            "sampling_rate": self.cfg.s2mel.preprocess_params.sr,
+            "fmin": spect_params.fmin or 0,
+            "fmax": None if spect_params.fmax == "None" else 8000,
             "center": False,
         }
         self.mel_fn = functools.partial(mel_spectrogram, **mel_fn_args)

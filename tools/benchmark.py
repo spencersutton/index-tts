@@ -432,53 +432,49 @@ Examples:
             writer = csv.writer(f)
 
             if not file_exists:
-                writer.writerow(
-                    [
-                        "Timestamp",
-                        "Text",
-                        "Text Length",
-                        "Voice File",
-                        "Device",
-                        "FP16",
-                        "Use Accel",
-                        "Use Torch Compile",
-                        "Use CUDA Kernel",
-                        "Use DeepSpeed",
-                        "Startup Time",
-                        "Warmup Runs",
-                        "Num Runs",
-                        "Mean Inference",
-                        "Std Dev",
-                        "Min",
-                        "Max",
-                        "Median",
-                        "Run Times",
-                    ]
-                )
+                writer.writerow([
+                    "Timestamp",
+                    "Text",
+                    "Text Length",
+                    "Voice File",
+                    "Device",
+                    "FP16",
+                    "Use Accel",
+                    "Use Torch Compile",
+                    "Use CUDA Kernel",
+                    "Use DeepSpeed",
+                    "Startup Time",
+                    "Warmup Runs",
+                    "Num Runs",
+                    "Mean Inference",
+                    "Std Dev",
+                    "Min",
+                    "Max",
+                    "Median",
+                    "Run Times",
+                ])
 
-            writer.writerow(
-                [
-                    datetime.now().isoformat(),
-                    result.text,
-                    len(result.text),
-                    args.voice,
-                    args.device if args.device else "auto",
-                    args.fp16,
-                    args.use_accel,
-                    args.use_torch_compile,
-                    args.use_cuda_kernel,
-                    args.use_deepspeed,
-                    f"{result.startup_time:.4f}",
-                    len(result.warmup_times),
-                    result.num_runs,
-                    f"{result.mean_inference:.4f}",
-                    f"{result.std_inference:.4f}",
-                    f"{result.min_inference:.4f}",
-                    f"{result.max_inference:.4f}",
-                    f"{result.median_inference:.4f}",
-                    str([f"{t:.4f}" for t in result.inference_times]),
-                ]
-            )
+            writer.writerow([
+                datetime.now().isoformat(),
+                result.text,
+                len(result.text),
+                args.voice,
+                args.device if args.device else "auto",
+                args.fp16,
+                args.use_accel,
+                args.use_torch_compile,
+                args.use_cuda_kernel,
+                args.use_deepspeed,
+                f"{result.startup_time:.4f}",
+                len(result.warmup_times),
+                result.num_runs,
+                f"{result.mean_inference:.4f}",
+                f"{result.std_inference:.4f}",
+                f"{result.min_inference:.4f}",
+                f"{result.max_inference:.4f}",
+                f"{result.median_inference:.4f}",
+                str([f"{t:.4f}" for t in result.inference_times]),
+            ])
         print(f"Results appended to {args.csv}")
 
 

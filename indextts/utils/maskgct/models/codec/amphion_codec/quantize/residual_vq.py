@@ -48,17 +48,15 @@ class ResidualVQ(nn.Module):
         else:
             raise ValueError(f"Unknown quantizer type {quantizer_type}")
 
-        self.quantizers = nn.ModuleList(
-            [
-                VQ(
-                    input_dim=input_dim,
-                    codebook_size=codebook_size,
-                    codebook_dim=codebook_dim,
-                    **kwargs,
-                )
-                for _ in range(num_quantizers)
-            ]
-        )
+        self.quantizers = nn.ModuleList([
+            VQ(
+                input_dim=input_dim,
+                codebook_size=codebook_size,
+                codebook_dim=codebook_dim,
+                **kwargs,
+            )
+            for _ in range(num_quantizers)
+        ])
 
     def forward(
         self, z: torch.Tensor, n_quantizers: int | None = None

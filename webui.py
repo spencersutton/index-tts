@@ -76,24 +76,22 @@ with open("examples/cases.jsonl", encoding="utf-8") as f:
         example = json.loads(line)
         emo_audio_path = os.path.join("examples", example["emo_audio"]) if example.get("emo_audio", None) else None
 
-        example_cases.append(
-            [
-                os.path.join("examples", example.get("prompt_audio", "sample_prompt.wav")),
-                EMO_CHOICES_ALL[example.get("emo_mode", 0)],
-                example.get("text"),
-                emo_audio_path,
-                example.get("emo_weight", 1.0),
-                example.get("emo_text", ""),
-                example.get("emo_vec_1", 0),
-                example.get("emo_vec_2", 0),
-                example.get("emo_vec_3", 0),
-                example.get("emo_vec_4", 0),
-                example.get("emo_vec_5", 0),
-                example.get("emo_vec_6", 0),
-                example.get("emo_vec_7", 0),
-                example.get("emo_vec_8", 0),
-            ]
-        )
+        example_cases.append([
+            os.path.join("examples", example.get("prompt_audio", "sample_prompt.wav")),
+            EMO_CHOICES_ALL[example.get("emo_mode", 0)],
+            example.get("text"),
+            emo_audio_path,
+            example.get("emo_weight", 1.0),
+            example.get("emo_text", ""),
+            example.get("emo_vec_1", 0),
+            example.get("emo_vec_2", 0),
+            example.get("emo_vec_3", 0),
+            example.get("emo_vec_4", 0),
+            example.get("emo_vec_5", 0),
+            example.get("emo_vec_6", 0),
+            example.get("emo_vec_7", 0),
+            example.get("emo_vec_8", 0),
+        ])
 
 
 def get_example_cases(include_experimental=False):

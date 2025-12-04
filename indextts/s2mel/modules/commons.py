@@ -52,15 +52,13 @@ class MyModel(nn.Module):
         )
 
         if use_gpt_latent:
-            self.models = nn.ModuleDict(
-                {
-                    "cfm": CFM(args),
-                    "length_regulator": length_regulator,
-                    "gpt_layer": torch.nn.Sequential(
-                        torch.nn.Linear(1280, 256), torch.nn.Linear(256, 128), torch.nn.Linear(128, 1024)
-                    ),
-                }
-            )
+            self.models = nn.ModuleDict({
+                "cfm": CFM(args),
+                "length_regulator": length_regulator,
+                "gpt_layer": torch.nn.Sequential(
+                    torch.nn.Linear(1280, 256), torch.nn.Linear(256, 128), torch.nn.Linear(128, 1024)
+                ),
+            })
 
         else:
             self.models = nn.ModuleDict({"cfm": CFM(args), "length_regulator": length_regulator})

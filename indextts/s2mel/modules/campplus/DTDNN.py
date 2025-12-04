@@ -75,14 +75,12 @@ class CAMPPlus(nn.Module):
         channels = self.head.out_channels
 
         self.xvector = nn.Sequential(
-            OrderedDict(
-                [
-                    (
-                        "tdnn",
-                        TDNNLayer(channels, init_channels, 5, stride=2, dilation=1, padding=-1, config_str=config_str),
-                    ),
-                ]
-            )
+            OrderedDict([
+                (
+                    "tdnn",
+                    TDNNLayer(channels, init_channels, 5, stride=2, dilation=1, padding=-1, config_str=config_str),
+                ),
+            ])
         )
         channels = init_channels
         for i, (num_layers, kernel_size, dilation) in enumerate(zip((12, 24, 16), (3, 3, 3), (1, 2, 2))):

@@ -82,7 +82,15 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
     def store_mel_emb(self, mel_emb) -> None:
         self.cached_mel_emb = mel_emb
 
-    def prepare_inputs_for_generation(self, input_ids, past_key_values=None, **kwargs):
+    def prepare_inputs_for_generation(
+        self,
+        input_ids,
+        past_key_values=None,
+        attention_mask=None,
+        inputs_embeds=None,
+        cache_position=None,
+        **kwargs,
+    ):
         token_type_ids = kwargs.get("token_type_ids")  # usually None
         if not self.kv_cache:
             past_key_values = None
@@ -92,7 +100,6 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
             if token_type_ids is not None:
                 token_type_ids = token_type_ids[:, -1].unsqueeze(-1)
 
-        attention_mask = kwargs.get("attention_mask")
         position_ids = kwargs.get("position_ids")
 
         if attention_mask is not None and position_ids is None:

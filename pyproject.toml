@@ -129,6 +129,7 @@ extend-select = [
   "NPY",
   "PERF",
   "PIE",
+  "PYI",
   "Q",
   "RSE",
   "RUF",

@@ -5406,24 +5406,6 @@
                 }
             }
         ],
-        "./indextts/s2mel/modules/commons.py": [
-            {
-                "code": "reportUnknownParameterType",
-                "range": {
-                    "startColumn": 23,
-                    "endColumn": 27,
-                    "lineCount": 1
-                }
-            },
-            {
-                "code": "reportMissingParameterType",
-                "range": {
-                    "startColumn": 23,
-                    "endColumn": 27,
-                    "lineCount": 1
-                }
-            }
-        ],
         "./indextts/s2mel/modules/diffusion_transformer.py": [
             {
                 "code": "reportIndexIssue",
@@ -5446,22 +5428,6 @@
                 "range": {
                     "startColumn": 22,
                     "endColumn": 23,
-                    "lineCount": 1
-                }
-            },
-            {
-                "code": "reportUnknownParameterType",
-                "range": {
-                    "startColumn": 23,
-                    "endColumn": 27,
-                    "lineCount": 1
-                }
-            },
-            {
-                "code": "reportMissingParameterType",
-                "range": {
-                    "startColumn": 23,
-                    "endColumn": 27,
                     "lineCount": 1
                 }
             },
@@ -6196,16 +6162,6 @@
                 "range": {
                     "startColumn": 20,
                     "endColumn": 21,
-                    "lineCount": 1
-                }
-            }
-        ],
-        "./indextts/s2mel/modules/wavenet.py": [
-            {
-                "code": "reportUnusedImport",
-                "range": {
-                    "startColumn": 35,
-                    "endColumn": 36,
                     "lineCount": 1
                 }
             }

@@ -3,6 +3,9 @@
 
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
+
+# Adapted from: https://github.com/meta-pytorch/gpt-fast/blob/main/model.py
+
 import math
 from dataclasses import dataclass
 

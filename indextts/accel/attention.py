@@ -1,4 +1,8 @@
+import sys
 from dataclasses import dataclass
+
+if sys.platform == "darwin":
+    raise ImportError("flash attention is not supported on MacOS.")
 
 import torch
 import triton

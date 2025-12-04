@@ -4,6 +4,8 @@ from typing import Any
 import torch
 from torch import nn
 
+from indextts.config import S2MelConfig
+
 
 @torch.jit.script
 def fused_add_tanh_sigmoid_multiply(
@@ -25,7 +27,7 @@ def sequence_mask(length: torch.Tensor, max_length: torch.Tensor | None = None) 
 
 
 class MyModel(nn.Module):
-    def __init__(self, args, use_gpt_latent: bool = False) -> None:
+    def __init__(self, args: S2MelConfig, use_gpt_latent: bool = False) -> None:
         super().__init__()
         from indextts.s2mel.modules.flow_matching import CFM
         from indextts.s2mel.modules.length_regulator import InterpolateRegulator

@@ -1,3 +1,5 @@
+from collections.abc import Sequence
+
 import numpy as np
 import torch
 from indextts.s2mel.dac.nn.quantize import VectorQuantize
@@ -28,7 +30,7 @@ class InterpolateRegulator(nn.Module):
     def __init__(
         self,
         channels: int,
-        sampling_ratios: tuple,
+        sampling_ratios: Sequence[int],
         is_discrete: bool = False,
         in_channels: int | None = None,  # only applies to continuous input
         vector_quantize: bool = False,  # whether to use vector quantization, only applies to continuous input

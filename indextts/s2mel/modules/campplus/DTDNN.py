@@ -1,6 +1,8 @@
 # Copyright 3D-Speaker (https://github.com/alibaba-damo-academy/3D-Speaker). All Rights Reserved.
 # Licensed under the Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
 
+# Copied from: https://github.com/modelscope/3D-Speaker/blob/main/speakerlab/models/campplus/DTDNN.py
+
 from collections import OrderedDict
 
 import torch.nn.functional as F
@@ -86,7 +88,7 @@ class CAMPPlus(nn.Module):
                 config_str=config_str,
                 memory_efficient=memory_efficient,
             )
-            self.xvector.add_module("block%d" % (i + 1), block)
+            self.xvector.add_module(f"block{i + 1}", block)
             channels += num_layers * growth_rate
             self.xvector.add_module(
                 "transit%d" % (i + 1), TransitLayer(channels, channels // 2, bias=False, config_str=config_str)

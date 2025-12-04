@@ -67,7 +67,7 @@ class BASECFM(torch.nn.Module, ABC):
         prompt: torch.Tensor,
         mu: torch.Tensor,
         style: torch.Tensor,
-        f0: None,
+        _f0: None,
         t_span: torch.Tensor,
         inference_cfg_rate: float = 0.5,
     ):

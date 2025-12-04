@@ -72,7 +72,7 @@ class SpectParams:
     win_length: int
     hop_length: int
     n_mels: int
-    fmin: int
+    fmin: int | None
     fmax: str | None
 
 
@@ -133,11 +133,16 @@ class WavenetConfig:
 
 
 @dataclass
+class StyleEncoderConfig:
+    dim: int
+
+
+@dataclass
 class S2MelConfig:
     preprocess_params: PreprocessParams
     dit_type: str
     reg_loss_type: str
-    style_encoder: dict[str, Any]
+    style_encoder: StyleEncoderConfig
     length_regulator: LengthRegulator
     DiT: DiTConfig
     wavenet: WavenetConfig

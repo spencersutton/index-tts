@@ -90,7 +90,7 @@ class InterpolateRegulator(nn.Module):
     def forward(
         self,
         x: torch.Tensor,
-        ylens: torch.Tensor | None = None,
+        ylens: torch.Tensor,
         n_quantizers: torch.Tensor | None = None,
         f0: torch.Tensor | None = None,
     ):

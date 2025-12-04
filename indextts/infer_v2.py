@@ -1,4 +1,5 @@
 import contextlib
+import dataclasses
 import functools
 import json
 import random
@@ -127,7 +128,8 @@ class IndexTTS2:
             with contextlib.suppress(AttributeError):
                 torch.set_float32_matmul_precision("high")
 
-        self.cfg = OmegaConf.load(cfg_path)
+        self.cfg = OmegaConf.structured(cfg_path)
+        OmegaConf.merge(self.cfg, OmegaConf.load(cfg_path))
         self.model_dir = model_dir
         self.dtype = torch.float16 if self.use_fp16 else None
         self.stop_mel_token = self.cfg.gpt.stop_mel_token
@@ -136,7 +138,7 @@ class IndexTTS2:
 
         self.qwen_emo = QwenEmotion(Path(self.model_dir) / self.cfg.qwen_emo_path)
 
-        self.gpt = UnifiedVoice(**self.cfg.gpt, use_accel=self.use_accel)
+        self.gpt = UnifiedVoice(**dataclasses.asdict(self.cfg.gpt), use_accel=self.use_accel)
         self.gpt_path = Path(self.model_dir) / self.cfg.gpt_checkpoint
         load_checkpoint(self.gpt, self.gpt_path)
         self.gpt = self.gpt.to(self.device)

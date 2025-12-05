@@ -664,6 +664,8 @@ class IndexTTS2:
 
             # Process each segment result
             for seg_idx, code in enumerate(codes_batch):
+                if verbose:
+                    print(f"Segment {seg_idx} raw code: {code}")
                 self._set_gr_progress(
                     0.2 + 0.7 * seg_idx / segments_count, f"speech synthesis {seg_idx + 1}/{segments_count}..."
                 )
@@ -674,6 +676,11 @@ class IndexTTS2:
                 else:
                     len_ = (code == self.stop_mel_token).nonzero(as_tuple=False)[0]
                     code_len = len_[0].item() if len_.numel() > 0 else len(code)
+
+                if code_len == 0:
+                    if verbose:
+                        print(f"Segment {seg_idx}: generated empty code, skipping.")
+                    continue
 
                 code = code[:code_len].unsqueeze(0)  # (1, S)
                 code_lens = torch.LongTensor([code_len]).to(self.device)
@@ -758,7 +765,7 @@ class IndexTTS2:
 
         self._set_gr_progress(0.9, "saving audio...")
         wavs = self.insert_interval_silence(wavs, sampling_rate=sampling_rate, interval_silence=interval_silence)
-        wav = torch.cat(wavs, dim=1)
+        wav = torch.zeros(1, 0) if len(wavs) == 0 else torch.cat(wavs, dim=1)
         wav_length = wav.shape[-1] / sampling_rate
         print(f">> gpt_gen_time: {gpt_gen_time:.2f} seconds")
         print(f">> gpt_forward_time: {gpt_forward_time:.2f} seconds")
@@ -766,7 +773,10 @@ class IndexTTS2:
         print(f">> bigvgan_time: {bigvgan_time:.2f} seconds")
         print(f">> Total inference time: {end_time - start_time:.2f} seconds")
         print(f">> Generated audio length: {wav_length:.2f} seconds")
-        print(f">> RTF: {(end_time - start_time) / wav_length:.4f}")
+        if wav_length > 0:
+            print(f">> RTF: {(end_time - start_time) / wav_length:.4f}")
+        else:
+            print(">> RTF: N/A (empty audio)")
 
         # save audio
         wav = wav.cpu()  # to cpu
@@ -806,7 +816,6 @@ class QwenEmotion:
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_dir)
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_dir,
-            torch_dtype="float16",  # "auto"
             device_map="auto",
         )
         self.prompt = "文本情感分类"

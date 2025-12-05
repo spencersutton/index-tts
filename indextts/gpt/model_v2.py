@@ -803,6 +803,9 @@ class UnifiedVoice(nn.Module):
             emo_cond_lengths = torch.tensor([emo_speech_condition.shape[-1]], device=speech_condition.device)
 
         speech_conditioning_latent = self.get_conditioning(speech_condition.transpose(1, 2), cond_lengths)
+        if torch.isnan(speech_conditioning_latent).any():
+            print(">> WARNING: speech_conditioning_latent contains NaNs!")
+
         if emo_vec is None:
             print("compute emo vec")
             emo_vec = self.get_emo_conditioning(emo_speech_condition.transpose(1, 2), emo_cond_lengths)
@@ -822,6 +825,13 @@ class UnifiedVoice(nn.Module):
             ),
             1,
         )
+        if torch.isnan(conds_latent).any():
+            print(">> WARNING: conds_latent contains NaNs!")
+            print(
+                f"speech_conditioning_latent stats: min={speech_conditioning_latent.min()}, max={speech_conditioning_latent.max()}"
+            )
+            print(f"emo_vec stats: min={emo_vec.min()}, max={emo_vec.max()}")
+
         input_ids, inputs_embeds, attention_mask = self.prepare_gpt_inputs(conds_latent, text_inputs)
         self.inference_model.store_mel_emb(inputs_embeds)
         if input_tokens is None:

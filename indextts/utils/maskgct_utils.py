@@ -1,6 +1,9 @@
+from collections.abc import ItemsView, KeysView, ValuesView
+
 import torch
 from transformers import Wav2Vec2BertModel
 
+from indextts.config import SemanticCodecConfig
 from indextts.utils.maskgct.models.codec.kmeans.repcodec_model import RepCodec
 
 
@@ -11,19 +14,19 @@ class JsonHParams:
                 v = JsonHParams(**v)
             self[k] = v
 
-    def keys(self):
+    def keys(self) -> KeysView[str]:
         return self.__dict__.keys()
 
-    def items(self):
+    def items(self) -> ItemsView[str, object]:
         return self.__dict__.items()
 
-    def values(self):
+    def values(self) -> ValuesView[object]:
         return self.__dict__.values()
 
     def __len__(self) -> int:
         return len(self.__dict__)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key) -> object:
         return getattr(self, key)
 
     def __setitem__(self, key, value) -> None:
@@ -36,7 +39,9 @@ class JsonHParams:
         return self.__dict__.__repr__()
 
 
-def build_semantic_model(path_="./models/tts/maskgct/ckpt/wav2vec2bert_stats.pt"):
+def build_semantic_model(
+    path_: str = "./models/tts/maskgct/ckpt/wav2vec2bert_stats.pt",
+) -> tuple[Wav2Vec2BertModel, torch.Tensor, torch.Tensor]:
     semantic_model = Wav2Vec2BertModel.from_pretrained("facebook/w2v-bert-2.0")
     semantic_model.eval()
     stat_mean_var = torch.load(path_)
@@ -45,7 +50,7 @@ def build_semantic_model(path_="./models/tts/maskgct/ckpt/wav2vec2bert_stats.pt"
     return semantic_model, semantic_mean, semantic_std
 
 
-def build_semantic_codec(cfg):
+def build_semantic_codec(cfg: SemanticCodecConfig) -> RepCodec:
     semantic_codec = RepCodec(cfg=cfg)
     semantic_codec.eval()
     return semantic_codec

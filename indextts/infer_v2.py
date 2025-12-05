@@ -15,7 +15,7 @@ import safetensors.torch
 import torch
 import torchaudio
 from huggingface_hub import hf_hub_download
-from torchcodec.decoders import AudioDecoder, AudioStreamMetadata
+from torchcodec.decoders import AudioDecoder
 from torchcodec.encoders import AudioEncoder
 
 from indextts.config import CheckpointsConfig
@@ -322,11 +322,9 @@ class IndexTTS2:
             self.gr_progress(value, desc=desc)
 
     def _load_and_cut_audio(self, audio_path, max_audio_length_seconds, verbose=False, sr=None):
-        decoder = AudioDecoder(audio_path)
-        assert isinstance(decoder.metadata, AudioStreamMetadata)
-        orig_sr = decoder.metadata.sample_rate
-        assert orig_sr is not None
-        audio = decoder.get_all_samples().data
+        samples = AudioDecoder(audio_path).get_all_samples()
+        orig_sr = samples.sample_rate
+        audio = samples.data
 
         # Convert to mono if stereo
         if audio.shape[0] > 1:

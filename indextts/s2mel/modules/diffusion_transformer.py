@@ -24,6 +24,8 @@ class TimestepEmbedder(nn.Module):
     Embeds scalar timesteps into vector representations.
     """
 
+    freqs: torch.Tensor
+
     def __init__(self, hidden_size: int, frequency_embedding_size: int = 256) -> None:
         super().__init__()
         self.mlp = nn.Sequential(
@@ -81,6 +83,8 @@ class FinalLayer(nn.Module):
 
 
 class DiT(torch.nn.Module):
+    input_pos: torch.Tensor
+
     def __init__(self, args: S2MelConfig) -> None:
         super().__init__()
         self.time_as_token = args.DiT.time_as_token if hasattr(args.DiT, "time_as_token") else False

@@ -7,7 +7,7 @@ import torchaudio
 from .backend import Backend
 from .common import AudioMetaData
 
-InputType: TypeAlias = BinaryIO | str | os.PathLike
+type InputType = BinaryIO | str | os.PathLike
 
 def info_audio(src: InputType, format: str | None, buffer_size: int = ...) -> AudioMetaData: ...
 def load_audio(

@@ -2,7 +2,7 @@ import json
 import locale
 import os
 
-I18N_JSON_DIR: os.PathLike = os.path.join(os.path.dirname(os.path.relpath(__file__)), "locale")
+I18N_JSON_DIR = os.path.join(os.path.dirname(os.path.relpath(__file__)), "locale")
 
 
 def load_language_list(language):
@@ -26,11 +26,11 @@ class I18nAuto:
         self.language = language
         self.language_map = load_language_list(language)
 
-    def __call__(self, key):
+    def __call__(self, key) -> str:
         return self.language_map.get(key, key)
 
     def __repr__(self) -> str:
-        return "Use Language: " + self.language
+        return f"Use Language: {self.language}"
 
 
 if __name__ == "__main__":

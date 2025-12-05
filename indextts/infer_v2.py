@@ -28,7 +28,7 @@ import torch.nn.functional as F
 from omegaconf import OmegaConf
 from transformers import AutoModelForCausalLM, AutoTokenizer, SeamlessM4TFeatureExtractor
 
-from indextts.gpt.model_v2 import UnifiedVoice
+from indextts.gpt.model_v2 import GPT2InferenceModel, UnifiedVoice
 from indextts.s2mel.modules.audio import mel_spectrogram
 from indextts.s2mel.modules.bigvgan import bigvgan
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
@@ -79,7 +79,7 @@ class IndexTTS2:
 
     if typing.TYPE_CHECKING:
         gr_progress: Progress | None
-    model_version: Any
+    model_version: float
 
     def __init__(
         self,
@@ -257,7 +257,7 @@ class IndexTTS2:
 
             # Compile the inner inference model used for AR generation
             # This is critical because inference_speech() bypasses self.gpt()
-            self.gpt.inference_model = torch.compile(self.gpt.inference_model, dynamic=True)
+            self.gpt.inference_model = cast(GPT2InferenceModel, torch.compile(self.gpt.inference_model, dynamic=True))
 
             self.gpt = cast(UnifiedVoice, torch.compile(self.gpt))
             # self.bigvgan = torch.compile(self.bigvgan)
@@ -267,7 +267,7 @@ class IndexTTS2:
         # 进度引用显示（可选）
         # Progress reference display (optional)
         self.gr_progress = None
-        self.model_version = self.cfg.version if hasattr(self.cfg, "version") else None
+        self.model_version = self.cfg.version
 
     @torch.inference_mode()
     def get_emb(self, input_features: torch.Tensor, attention_mask: torch.Tensor):
@@ -525,6 +525,7 @@ class IndexTTS2:
             self.cache_mel = ref_mel
         else:
             assert self.cache_s2mel_style is not None
+            assert self.cache_s2mel_prompt is not None
             style = self.cache_s2mel_style
             prompt_condition = self.cache_s2mel_prompt
             spk_cond_emb = self.cache_spk_cond

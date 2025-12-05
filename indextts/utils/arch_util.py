@@ -15,8 +15,8 @@ def zero_module(module: nn.Module) -> nn.Module:
 
 
 class GroupNorm32(nn.GroupNorm):
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return super().forward(x.float()).type(x.dtype)
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
+        return super().forward(input.float()).type(input.dtype)
 
 
 def normalization(channels: int) -> nn.Module:

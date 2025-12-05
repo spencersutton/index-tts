@@ -1,14 +1,17 @@
 import functools
 import importlib.util
+from typing import Literal, assert_never
 
 import torch
 import torch.nn.functional as F
 from torch import nn
 from transformers import GenerationMixin, GPT2Config, GPT2PreTrainedModel, LogitsProcessorList
-from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
+from transformers.generation.logits_process import TypicalLogitsWarper
+from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions, CausalLMOutputWithCrossAttentions
+from transformers.models.gpt2.modeling_gpt2 import GPT2Model
 from transformers.utils.model_parallel_utils import assert_device_map, get_device_map
-from typing_extensions import assert_never
 
+from indextts.config import ConditionModule
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.perceiver import PerceiverResampler
 from indextts.utils.arch_util import AttentionBlock
@@ -37,8 +40,26 @@ class ResBlock(nn.Module):
         return F.relu(self.net(x) + x)
 
 
+class LearnedPositionEmbeddings(nn.Module):
+    def __init__(self, seq_len, model_dim, init=0.02) -> None:
+        super().__init__()
+        self.emb = nn.Embedding(seq_len, model_dim)
+        # Initializing this way is standard for GPT-2
+        self.emb.weight.data.normal_(mean=0.0, std=init)
+
+    def forward(self, x):
+        sl = x.shape[1]
+        return self.emb(torch.arange(0, sl, device=x.device))
+
+    def get_fixed_embedding(self, ind, dev):
+        return self.emb(torch.tensor([ind], device=dev)).unsqueeze(0)
+
+
 class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
-    def __init__(self, config, gpt, text_pos_emb, embeddings, norm, linear, kv_cache=False) -> None:
+    lm_head: nn.Sequential
+    text_pos_embedding: LearnedPositionEmbeddings
+
+    def __init__(self, config, gpt: GPT2Model, text_pos_emb, embeddings, norm, linear, kv_cache=False) -> None:
         super().__init__(config)
         # Note: the argument named `text_pos_emb` here actually represents the mel position embedding
         self.transformer = gpt
@@ -121,7 +142,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
 
     def forward(
         self,
-        input_ids=None,
+        input_ids: torch.Tensor,
         past_key_values=None,
         attention_mask=None,
         token_type_ids=None,
@@ -153,6 +174,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
             emb = torch.cat([mel_emb, text_emb], dim=1)
         else:
             emb = self.embeddings(input_ids)
+            assert attention_mask is not None
             emb += self.text_pos_embedding.get_fixed_embedding(attention_mask.shape[1] - mel_len, attention_mask.device)
         transformer_outputs = self.transformer(
             inputs_embeds=emb,
@@ -215,22 +237,9 @@ class ConditioningEncoder(nn.Module):
             # return h[:, :, 0]
 
 
-class LearnedPositionEmbeddings(nn.Module):
-    def __init__(self, seq_len, model_dim, init=0.02) -> None:
-        super().__init__()
-        self.emb = nn.Embedding(seq_len, model_dim)
-        # Initializing this way is standard for GPT-2
-        self.emb.weight.data.normal_(mean=0.0, std=init)
-
-    def forward(self, x):
-        sl = x.shape[1]
-        return self.emb(torch.arange(0, sl, device=x.device))
-
-    def get_fixed_embedding(self, ind, dev):
-        return self.emb(torch.tensor([ind], device=dev)).unsqueeze(0)
-
-
-def build_hf_gpt_transformer(layers, model_dim, heads, max_mel_seq_len, max_text_seq_len, checkpointing):
+def build_hf_gpt_transformer(
+    layers, model_dim, heads, max_mel_seq_len, max_text_seq_len, checkpointing
+) -> tuple[GPT2Model, LearnedPositionEmbeddings, LearnedPositionEmbeddings, None, None]:
     """
     GPT-2 implemented by the HuggingFace library.
     """
@@ -286,30 +295,36 @@ class MelEncoder(nn.Module):
 
 
 class UnifiedVoice(nn.Module):
+    gst_encoder: nn.Module
+    condition_type: Literal["perceiver", "conformer_perceiver", "conformer_encoder", "gst", "default"]
+    inference_model: GPT2InferenceModel
+
     def __init__(
         self,
-        layers=8,
-        model_dim=512,
-        heads=8,
-        max_text_tokens=120,
-        max_mel_tokens=250,
-        max_conditioning_inputs=1,
-        mel_length_compression=1024,
-        number_text_tokens=256,
-        start_text_token=0,
-        stop_text_token=1,
-        number_mel_codes=8194,
-        start_mel_token=8192,
-        stop_mel_token=8193,
-        train_solo_embeddings=False,
-        use_mel_codes_as_input=True,
-        checkpointing=True,
-        types=1,
-        condition_num_latent=32,
-        condition_type="perceiver",
-        condition_module=None,
-        emo_condition_module=None,
-        use_accel=False,
+        layers: int = 8,
+        model_dim: int = 512,
+        heads: int = 8,
+        max_text_tokens: int = 120,
+        max_mel_tokens: int = 250,
+        max_conditioning_inputs: int = 1,
+        mel_length_compression: int = 1024,
+        number_text_tokens: int = 256,
+        start_text_token: int = 0,
+        stop_text_token: int = 1,
+        number_mel_codes: int = 8194,
+        start_mel_token: int = 8192,
+        stop_mel_token: int = 8193,
+        train_solo_embeddings: bool = False,
+        use_mel_codes_as_input: bool = True,
+        checkpointing: bool = True,
+        types: int = 1,
+        condition_num_latent: int = 32,
+        condition_type: Literal[
+            "perceiver", "conformer_perceiver", "conformer_encoder", "gst", "default"
+        ] = "perceiver",
+        condition_module: ConditionModule | None = None,
+        emo_condition_module: ConditionModule | None = None,
+        use_accel: bool = False,
     ) -> None:
         """
         Args:
@@ -353,38 +368,40 @@ class UnifiedVoice(nn.Module):
             self.conditioning_encoder = ConditioningEncoder(1024, model_dim, num_attn_heads=heads)
             self.perceiver_encoder = PerceiverResampler(model_dim, dim_context=model_dim, num_latents=self.cond_num)
         elif condition_type in {"conformer_perceiver", "conformer_encoder"}:
+            assert condition_module is not None, "condition_module must be provided for conformer based conditioning"
             self.conditioning_encoder = ConformerEncoder(
                 input_size=1024,
-                output_size=condition_module["output_size"],
-                linear_units=condition_module["linear_units"],
-                attention_heads=condition_module["attention_heads"],
-                num_blocks=condition_module["num_blocks"],
-                input_layer=condition_module["input_layer"],
+                output_size=condition_module.output_size,
+                linear_units=condition_module.linear_units,
+                attention_heads=condition_module.attention_heads,
+                num_blocks=condition_module.num_blocks,
+                input_layer=condition_module.input_layer,
             )
             if condition_type == "conformer_perceiver":
                 self.perceiver_encoder = PerceiverResampler(
                     model_dim,
-                    dim_context=condition_module["output_size"],
-                    ff_mult=condition_module["perceiver_mult"],
-                    heads=condition_module["attention_heads"],
+                    dim_context=condition_module.output_size,
+                    ff_mult=condition_module.perceiver_mult,
+                    heads=condition_module.attention_heads,
                     num_latents=self.cond_num,
                 )
         else:
             self.conditioning_encoder = ConditioningEncoder(1024, model_dim, num_attn_heads=heads, mean=True)
 
+        assert emo_condition_module is not None, "emo_condition_module must be provided for emotion conditioning"
         self.emo_conditioning_encoder = ConformerEncoder(
             input_size=1024,
-            output_size=emo_condition_module["output_size"],
-            linear_units=emo_condition_module["linear_units"],
-            attention_heads=emo_condition_module["attention_heads"],
-            num_blocks=emo_condition_module["num_blocks"],
-            input_layer=emo_condition_module["input_layer"],
+            output_size=emo_condition_module.output_size,
+            linear_units=emo_condition_module.linear_units,
+            attention_heads=emo_condition_module.attention_heads,
+            num_blocks=emo_condition_module.num_blocks,
+            input_layer=emo_condition_module.input_layer,
         )
         self.emo_perceiver_encoder = PerceiverResampler(
             1024,
-            dim_context=emo_condition_module["output_size"],
-            ff_mult=emo_condition_module["perceiver_mult"],
-            heads=emo_condition_module["attention_heads"],
+            dim_context=emo_condition_module.output_size,
+            ff_mult=emo_condition_module.perceiver_mult,
+            heads=emo_condition_module.attention_heads,
             num_latents=1,
         )
 
@@ -485,14 +502,14 @@ class UnifiedVoice(nn.Module):
             kv_cache=kv_cache,
         )
         if use_deepspeed and half and torch.cuda.is_available():
-            import deepspeed
+            import deepspeed  # ty:ignore[unresolved-import]
 
             self.ds_engine = deepspeed.init_inference(
                 model=self.inference_model, mp_size=1, replace_with_kernel_inject=True, dtype=torch.float16
             )
             self.inference_model = self.ds_engine.module.eval()
         elif use_deepspeed and torch.cuda.is_available():
-            import deepspeed
+            import deepspeed  # ty:ignore[unresolved-import]
 
             self.ds_engine = deepspeed.init_inference(
                 model=self.inference_model, mp_size=1, replace_with_kernel_inject=True, dtype=torch.float32
@@ -672,6 +689,7 @@ class UnifiedVoice(nn.Module):
         mel_codes = self.set_mel_padding(mel_codes, mel_codes_lengths)
         mel_codes = F.pad(mel_codes, (0, 1), value=self.stop_mel_token)
 
+        assert use_speed is not None
         duration_emb = self.speed_emb(torch.zeros_like(use_speed))
         duration_emb_half = self.speed_emb(torch.ones_like(use_speed))
         assert isinstance(duration_emb, torch.Tensor)
@@ -706,7 +724,7 @@ class UnifiedVoice(nn.Module):
         self,
         conditional_latents: torch.Tensor,
         text_inputs: torch.Tensor,
-    ):
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Prepare the inputs for the GPT2InferenceModel to generate.
         Args:

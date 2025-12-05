@@ -7,7 +7,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -17,13 +17,12 @@ from torch.nn.utils import remove_weight_norm, weight_norm
 
 from . import activations
 from .alias_free_activation.torch.act import Activation1d as TorchActivation1d
-from .env import AttrDict
 from .utils import get_padding, init_weights
 
 
-def load_hparams_from_json(path) -> AttrDict:
+def load_hparams_from_json(path) -> dict[str, Any]:
     data = Path(path).read_text()
-    return AttrDict(json.loads(data))
+    return json.loads(data)
 
 
 class AMPBlock1(torch.nn.Module):
@@ -32,7 +31,7 @@ class AMPBlock1(torch.nn.Module):
     AMPBlock1 has additional self.convs2 that contains additional Conv1d layers with a fixed dilation=1 followed by each layer in self.convs1
 
     Args:
-        h (AttrDict): Hyperparameters.
+        h (dict[str, Any]): Hyperparameters.
         channels (int): Number of convolution channels.
         kernel_size (int): Size of the convolution kernel. Default is 3.
         dilation (tuple): Dilation rates for the convolutions. Each dilation layer has two convolutions. Default is (1, 3, 5).
@@ -41,7 +40,7 @@ class AMPBlock1(torch.nn.Module):
 
     def __init__(
         self,
-        h: AttrDict,
+        h: dict[str, Any],
         channels: int,
         kernel_size: int = 3,
         dilation: tuple = (1, 3, 5),
@@ -96,12 +95,12 @@ class AMPBlock1(torch.nn.Module):
         # Activation functions
         if activation == "snake":
             self.activations = nn.ModuleList([
-                Activation1d(activation=activations.Snake(channels, alpha_logscale=h.snake_logscale))
+                Activation1d(activation=activations.Snake(channels, alpha_logscale=h["snake_logscale"]))
                 for _ in range(self.num_layers)
             ])
         elif activation == "snakebeta":
             self.activations = nn.ModuleList([
-                Activation1d(activation=activations.SnakeBeta(channels, alpha_logscale=h.snake_logscale))
+                Activation1d(activation=activations.SnakeBeta(channels, alpha_logscale=h["snake_logscale"]))
                 for _ in range(self.num_layers)
             ])
         else:
@@ -133,7 +132,7 @@ class AMPBlock2(torch.nn.Module):
     Unlike AMPBlock1, AMPBlock2 does not contain extra Conv1d layers with fixed dilation=1
 
     Args:
-        h (AttrDict): Hyperparameters.
+        h (dict[str, Any]): Hyperparameters.
         channels (int): Number of convolution channels.
         kernel_size (int): Size of the convolution kernel. Default is 3.
         dilation (tuple): Dilation rates for the convolutions. Each dilation layer has two convolutions. Default is (1, 3, 5).
@@ -142,7 +141,7 @@ class AMPBlock2(torch.nn.Module):
 
     def __init__(
         self,
-        h: AttrDict,
+        h: dict[str, Any],
         channels: int,
         kernel_size: int = 3,
         dilation: tuple = (1, 3, 5),
@@ -182,12 +181,12 @@ class AMPBlock2(torch.nn.Module):
         # Activation functions
         if activation == "snake":
             self.activations = nn.ModuleList([
-                Activation1d(activation=activations.Snake(channels, alpha_logscale=h.snake_logscale))
+                Activation1d(activation=activations.Snake(channels, alpha_logscale=h["snake_logscale"]))
                 for _ in range(self.num_layers)
             ])
         elif activation == "snakebeta":
             self.activations = nn.ModuleList([
-                Activation1d(activation=activations.SnakeBeta(channels, alpha_logscale=h.snake_logscale))
+                Activation1d(activation=activations.SnakeBeta(channels, alpha_logscale=h["snake_logscale"]))
                 for _ in range(self.num_layers)
             ])
         else:
@@ -221,7 +220,7 @@ class BigVGAN(
     New in BigVGAN-v2: it can optionally use optimized CUDA kernels for AMP (anti-aliased multi-periodicity) blocks.
 
     Args:
-        h (AttrDict): Hyperparameters.
+        h (dict[str, Any]): Hyperparameters.
         use_cuda_kernel (bool): If set to True, loads optimized CUDA kernels for AMP. This should be used for inference only, as training is not supported with CUDA kernels.
 
     Note:
@@ -229,7 +228,10 @@ class BigVGAN(
         - Ensure that the activation function is correctly specified in the hyperparameters (h.activation).
     """
 
-    def __init__(self, h: AttrDict, use_cuda_kernel: bool = False) -> None:
+    num_kernels: int
+    num_upsamples: int
+
+    def __init__(self, h: dict[str, Any], use_cuda_kernel: bool = False) -> None:
         super().__init__()
         self.h = h
         self.h["use_cuda_kernel"] = use_cuda_kernel
@@ -244,29 +246,29 @@ class BigVGAN(
         else:
             Activation1d = TorchActivation1d
 
-        self.num_kernels = len(h.resblock_kernel_sizes)
-        self.num_upsamples = len(h.upsample_rates)
+        self.num_kernels = len(h["resblock_kernel_sizes"])
+        self.num_upsamples = len(h["upsample_rates"])
 
         # Pre-conv
-        self.conv_pre = weight_norm(Conv1d(h.num_mels, h.upsample_initial_channel, 7, 1, padding=3))
+        self.conv_pre = weight_norm(Conv1d(h["num_mels"], h["upsample_initial_channel"], 7, 1, padding=3))
 
         # Define which AMPBlock to use. BigVGAN uses AMPBlock1 as default
-        if h.resblock == "1":
+        if h["resblock"] == "1":
             resblock_class = AMPBlock1
-        elif h.resblock == "2":
+        elif h["resblock"] == "2":
             resblock_class = AMPBlock2
         else:
-            raise ValueError(f"Incorrect resblock class specified in hyperparameters. Got {h.resblock}")
+            raise ValueError(f"Incorrect resblock class specified in hyperparameters. Got {h['resblock']}")
 
         # Transposed conv-based upsamplers. does not apply anti-aliasing
         self.ups = nn.ModuleList()
-        for i, (u, k) in enumerate(zip(h.upsample_rates, h.upsample_kernel_sizes)):
+        for i, (u, k) in enumerate(zip(h["upsample_rates"], h["upsample_kernel_sizes"])):
             self.ups.append(
                 nn.ModuleList([
                     weight_norm(
                         ConvTranspose1d(
-                            h.upsample_initial_channel // (2**i),
-                            h.upsample_initial_channel // (2 ** (i + 1)),
+                            h["upsample_initial_channel"] // (2**i),
+                            h["upsample_initial_channel"] // (2 ** (i + 1)),
                             k,
                             u,
                             padding=(k - u) // 2,
@@ -278,15 +280,19 @@ class BigVGAN(
         # Residual blocks using anti-aliased multi-periodicity composition modules (AMP)
         self.resblocks = nn.ModuleList()
         for i in range(len(self.ups)):
-            ch = h.upsample_initial_channel // (2 ** (i + 1))
-            for j, (k, d) in enumerate(zip(h.resblock_kernel_sizes, h.resblock_dilation_sizes)):
-                self.resblocks.append(resblock_class(h, ch, k, d, activation=h.activation))
+            ch = h["upsample_initial_channel"] // (2 ** (i + 1))
+            for j, (k, d) in enumerate(zip(h["resblock_kernel_sizes"], h["resblock_dilation_sizes"])):
+                self.resblocks.append(resblock_class(h, ch, k, d, activation=h["activation"]))
 
         # Post-conv
         activation_post = (
-            activations.Snake(ch, alpha_logscale=h.snake_logscale)
-            if h.activation == "snake"
-            else (activations.SnakeBeta(ch, alpha_logscale=h.snake_logscale) if h.activation == "snakebeta" else None)
+            activations.Snake(ch, alpha_logscale=h["snake_logscale"])
+            if h["activation"] == "snake"
+            else (
+                activations.SnakeBeta(ch, alpha_logscale=h["snake_logscale"])
+                if h["activation"] == "snakebeta"
+                else None
+            )
         )
         if activation_post is None:
             raise NotImplementedError(
@@ -322,16 +328,16 @@ class BigVGAN(
                     xs = self.resblocks[i * self.num_kernels + j](x)
                 else:
                     xs += self.resblocks[i * self.num_kernels + j](x)
+            assert xs is not None
             x = xs / self.num_kernels
 
         # Post-conv
         x = self.activation_post(x)
         x = self.conv_post(x)
         # Final tanh activation
-        if self.use_tanh_at_final:
-            x = torch.tanh(x)
-        else:
-            x = torch.clamp(x, min=-1.0, max=1.0)  # Bound the output to [-1, 1]
+        x = (
+            torch.tanh(x) if self.use_tanh_at_final else torch.clamp(x, min=-1.0, max=1.0)
+        )  # Bound the output to [-1, 1]
 
         return x
 

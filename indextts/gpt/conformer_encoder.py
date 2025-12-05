@@ -183,6 +183,8 @@ class ConformerEncoderLayer(nn.Module):
             False: x -> x + att(x)
     """
 
+    feed_forward: torch.nn.Module | None
+
     def __init__(
         self,
         size: int,
@@ -291,6 +293,7 @@ class ConformerEncoderLayer(nn.Module):
         if self.normalize_before:
             x = self.norm_ff(x)
 
+        assert self.feed_forward is not None
         x = residual + self.ff_scale * self.dropout(self.feed_forward(x))
         if not self.normalize_before:
             x = self.norm_ff(x)
@@ -302,6 +305,8 @@ class ConformerEncoderLayer(nn.Module):
 
 
 class BaseEncoder(torch.nn.Module):
+    encoders: torch.nn.ModuleList
+
     def __init__(
         self,
         input_size: int,

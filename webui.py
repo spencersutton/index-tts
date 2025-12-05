@@ -119,7 +119,7 @@ def gen_single(
     emo_text,
     emo_random,
     max_text_tokens_per_segment=120,
-    *args,
+    *args: float,
     progress=gr.Progress(),
 ):
     output_path = None
@@ -128,7 +128,7 @@ def gen_single(
     # set gradio progress
     tts.gr_progress = progress
     do_sample, top_p, top_k, temperature, length_penalty, num_beams, repetition_penalty, max_mel_tokens = args
-    kwargs = {
+    kwargs: dict[str, float | int | bool | None] = {
         "do_sample": bool(do_sample),
         "top_p": float(top_p),
         "top_k": int(top_k) if int(top_k) > 0 else None,
@@ -168,7 +168,7 @@ def gen_single(
         use_random=emo_random,
         verbose=cmd_args.verbose,
         max_text_tokens_per_segment=int(max_text_tokens_per_segment),
-        **kwargs,
+        **kwargs,  # ty:ignore[invalid-argument-type]
     )
     return gr.update(value=output, visible=True)
 

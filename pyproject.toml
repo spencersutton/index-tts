@@ -22,7 +22,7 @@ classifiers = [
 
   "Operating System :: OS Independent",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.13"
 dependencies = [
   # IMPORTANT: Always run `uv lock` or `uv lock --upgrade` to resolve dependencies
   # and update the lockfile after editing anything below.
@@ -41,11 +41,10 @@ dependencies = [
   "torchcodec>=0.7",
   "tqdm>=4.67.1",
   "transformers>=4.52.1,<4.56",
-  "x-transformers>=1.31.7",
   "wetext>=0.0.9",
-  "matplotlib>=3.10.7",
   "scipy>=1.15.3",
   "soundfile>=0.13.1",
+  "x-transformers>=2.11.23",
 ]
 
 [project.optional-dependencies]
@@ -158,6 +157,13 @@ reportImplicitOverride = false
 reportUnannotatedClassAttribute = false
 reportCallInDefaultInitializer = false
 reportUnknownVariableType = false
+
+[tool.ty.src]
+exclude = [
+  "./typings",
+  "indextts/utils/maskgct/models/codec/amphion_codec",
+  "indextts/s2mel",
+]
 
 [tool.ty.environment]
 extra-paths = ["./override"]

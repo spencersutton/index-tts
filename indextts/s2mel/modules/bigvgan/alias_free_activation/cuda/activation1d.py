@@ -19,7 +19,7 @@ class FusedAntiAliasActivation(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx, inputs, up_ftr, down_ftr, alpha, beta):
+    def forward(ctx, inputs, up_ftr, down_ftr, alpha, beta) -> torch.Tensor:
         activation_results = anti_alias_activation_cuda.forward(inputs, up_ftr, down_ftr, alpha, beta)
 
         return activation_results
@@ -31,6 +31,9 @@ class FusedAntiAliasActivation(torch.autograd.Function):
 
 
 class Activation1d(nn.Module):
+    upsample: UpSample1d
+    downsample: DownSample1d
+
     def __init__(
         self,
         activation,
@@ -56,10 +59,9 @@ class Activation1d(nn.Module):
             x = self.downsample(x)
             return x
         else:
-            if self.act.__class__.__name__ == "Snake":
-                beta = self.act.alpha.data  # Snake uses same params for alpha and beta
-            else:
-                beta = self.act.beta.data  # Snakebeta uses different params for alpha and beta
+            beta = (
+                self.act.alpha.data if self.act.__class__.__name__ == "Snake" else self.act.beta.data
+            )  # Snake uses same params for alpha and beta
             alpha = self.act.alpha.data
             if not self.act.alpha_logscale:  # Exp baked into cuda kernel, cancel it out with a log
                 alpha = torch.log(alpha)

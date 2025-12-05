@@ -69,6 +69,11 @@ def kmeans(
 
 
 class EuclideanCodebook(nn.Module):
+    embed: torch.Tensor
+    embed_avg: torch.Tensor
+    cluster_size: torch.Tensor
+    initted: torch.Tensor
+
     def __init__(
         self,
         dim: int,
@@ -172,6 +177,8 @@ class EuclideanCodebook(nn.Module):
 
 
 class SimpleCodebook(nn.Module):
+    embed: nn.Embedding
+
     def __init__(
         self,
         dim,

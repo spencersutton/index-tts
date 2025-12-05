@@ -9,6 +9,8 @@ from indextts.s2mel.modules.diffusion_transformer import DiT
 
 
 class BASECFM(torch.nn.Module, ABC):
+    estimator: torch.nn.Module | None
+
     def __init__(self, args: S2MelConfig) -> None:
         super().__init__()
         self.sigma_min = 1e-6

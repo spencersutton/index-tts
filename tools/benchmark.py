@@ -459,7 +459,7 @@ Examples:
                 result.text,
                 len(result.text),
                 args.voice,
-                args.device if args.device else "auto",
+                args.device or "auto",
                 args.fp16,
                 args.use_accel,
                 args.use_torch_compile,

@@ -20,6 +20,8 @@ class ResidualVQ(nn.Module):
     https://arxiv.org/abs/2107.03312
     """
 
+    num_quantizers: int
+
     def __init__(
         self,
         input_dim: int = 256,
@@ -94,7 +96,7 @@ class ResidualVQ(nn.Module):
             n_quantizers = self.num_quantizers
 
         if self.training:
-            n_quantizers = torch.ones((z.shape[0],)) * self.num_quantizers + 1
+            n_quantizers: torch.Tensor = torch.ones((z.shape[0],)) * self.num_quantizers + 1
             dropout = torch.randint(1, self.num_quantizers + 1, (z.shape[0],))
             n_dropout = int(z.shape[0] * self.quantizer_dropout)
             n_quantizers[:n_dropout] = dropout[:n_dropout]

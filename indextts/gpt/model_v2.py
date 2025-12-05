@@ -153,7 +153,13 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
             emb = torch.cat([mel_emb, text_emb], dim=1)
         else:
             emb = self.embeddings(input_ids)
-            emb += self.text_pos_embedding.get_fixed_embedding(attention_mask.shape[1] - mel_len, attention_mask.device)
+            # Fix off-by-one error in position embedding index
+            # attention_mask includes the current token, so length is S + generated + 1
+            # mel_len is S
+            # We want index: generated
+            # attention_mask.shape[1] - mel_len = generated + 1
+            # So we need to subtract 1
+            emb += self.text_pos_embedding.get_fixed_embedding(attention_mask.shape[1] - mel_len - 1, attention_mask.device)
         transformer_outputs = self.transformer(
             inputs_embeds=emb,
             past_key_values=past_key_values,
@@ -746,8 +752,8 @@ class UnifiedVoice(nn.Module):
                 pad = torch.zeros(
                     (padding, conditional_latents.size(-1)), dtype=text_emb.dtype, device=device
                 )  # [p, dim]
-                conds_text_emb.insert(0, pad)
-                attention_mask[:padding] = 0
+                conds_text_emb.insert(1, pad) # Insert padding between cond and text
+                attention_mask[conditional_latents.shape[1]:conditional_latents.shape[1]+padding] = 0 # Mask padding
             mel_emb = torch.cat(conds_text_emb)  # [s, dim]
             assert mel_emb.shape[0] == target_len, f"mel_emb.shape: {mel_emb.shape}, target_len: {target_len}"
             batched_mel_emb.append(mel_emb)
@@ -802,6 +808,8 @@ class UnifiedVoice(nn.Module):
         if emo_cond_lengths is None:
             emo_cond_lengths = torch.tensor([emo_speech_condition.shape[-1]], device=speech_condition.device)
 
+        verbose = True  # Force verbose for debugging
+
         speech_conditioning_latent = self.get_conditioning(speech_condition.transpose(1, 2), cond_lengths)
         if torch.isnan(speech_conditioning_latent).any():
             print(">> WARNING: speech_conditioning_latent contains NaNs!")
@@ -817,9 +825,28 @@ class UnifiedVoice(nn.Module):
         tmp = torch.zeros(text_inputs.size(0)).to(text_inputs.device)
         duration_emb = self.speed_emb(torch.zeros_like(tmp).long())
         duration_emb_half = self.speed_emb(torch.ones_like(tmp).long())
+
+        if verbose:
+            print(f"DEBUG: speech_conditioning_latent shape: {speech_conditioning_latent.shape}")
+            print(f"DEBUG: emo_vec shape: {emo_vec.shape}")
+
+        # Ensure emo_vec is (b, 1, d) for broadcasting
+        if emo_vec.ndim == 2:
+            emo_vec = emo_vec.unsqueeze(1)
+        elif emo_vec.ndim == 3 and emo_vec.shape[1] == 1:
+            pass  # Already (b, 1, d)
+        elif emo_vec.ndim == 3 and emo_vec.shape[1] != 1:
+            # Assuming it's (b, 1, 1, d) or something, try to squeeze?
+            # But if it is (b, 1, d) it matches.
+            pass
+
+        # Remove extra unsqueeze if it was there
+        # speech_conditioning_latent is (b, 32, d)
+        # emo_vec should be (b, 1, d)
+
         conds_latent = torch.cat(
             (
-                speech_conditioning_latent + emo_vec.unsqueeze(1),
+                speech_conditioning_latent + emo_vec,
                 duration_emb_half.unsqueeze(1),
                 duration_emb.unsqueeze(1),
             ),

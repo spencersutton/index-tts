@@ -184,6 +184,13 @@ class IndexTTS2:
         semantic_codec = build_semantic_codec(self.cfg.semantic_codec)
         semantic_code_ckpt = hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
         safetensors.torch.load_model(semantic_codec, semantic_code_ckpt)
+        
+        # Remove weight norm from the codec to avoid issues on MPS/CPU
+        from torch.nn.utils import remove_weight_norm
+        for module in semantic_codec.modules():
+            if hasattr(module, "weight_g"):
+                remove_weight_norm(module)
+                
         self.semantic_codec = semantic_codec.to(self.device)
         self.semantic_codec.eval()
         print(f">> semantic_codec weights restored from: {semantic_code_ckpt}")
@@ -384,7 +391,7 @@ class IndexTTS2:
                 emo_text,
                 use_random,
                 interval_silence,
-                verbose,
+                True,
                 max_text_tokens_per_segment,
                 stream_return,
                 more_segment_before,
@@ -405,7 +412,7 @@ class IndexTTS2:
                             emo_text,
                             use_random,
                             interval_silence,
-                            verbose,
+                            True,
                             max_text_tokens_per_segment,
                             stream_return,
                             more_segment_before,

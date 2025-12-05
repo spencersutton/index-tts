@@ -116,7 +116,7 @@ def main() -> None:
         use_cuda_kernel=args.use_cuda_kernel,
         use_deepspeed=args.use_deepspeed,
     )
-    tts.infer(spk_audio_prompt=args.voice, text=args.text.strip(), output_path=output_path)
+    tts.infer(spk_audio_prompt=args.voice, text=args.text.strip(), output_path=output_path, verbose=True)
 
 
 if __name__ == "__main__":

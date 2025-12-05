@@ -3,7 +3,6 @@ from collections.abc import Sequence
 import numpy as np
 import torch
 from indextts.s2mel.dac.nn.quantize import VectorQuantize
-from dac.nn.quantize import VectorQuantize
 from torch import nn
 from torch.nn import functional as F
 

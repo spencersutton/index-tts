@@ -1,5 +1,6 @@
 
 
+
 import re
 import traceback
 import warnings
@@ -219,7 +220,8 @@ class TextTokenizer:
         if self.normalizer:
             self.normalizer.load()
         # 加载词表
-        self.sp_model = SentencePieceProcessor(model_file=self.vocab_file)
+        self.sp_model = SentencePieceProcessor()
+        self.sp_model.Load(self.vocab_file)
 
         self.pre_tokenizers = [
             # 预处理器

@@ -381,7 +381,7 @@ class BigVGAN(
         strict: bool = False,  # Additional argument
         use_cuda_kernel: bool = False,
         **model_kwargs,
-    ):
+    ) -> "BigVGAN":
         """Load Pytorch pretrained weights and return the loaded model."""
 
         # Download and load hyperparameters (h) used by BigVGAN

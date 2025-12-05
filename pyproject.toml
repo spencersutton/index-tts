@@ -45,6 +45,7 @@ dependencies = [
   "torchcodec>=0.9.0",
   "matplotlib>=3.10.7",
   "scipy>=1.15.3",
+  "soundfile>=0.13.1",
 ]
 
 [project.optional-dependencies]

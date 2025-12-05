@@ -11,7 +11,6 @@ from collections.abc import Callable, Generator, Mapping
 from subprocess import CalledProcessError
 from typing import Any, cast
 
-import librosa
 import safetensors.torch
 import torch
 import torchaudio
@@ -323,11 +322,15 @@ class IndexTTS2:
             self.gr_progress(value, desc=desc)
 
     def _load_and_cut_audio(self, audio_path, max_audio_length_seconds, verbose=False, sr=None):
-        if not sr:
-            audio, sr = librosa.load(audio_path)
+        audio, orig_sr = torchaudio.load(audio_path)
+        # Convert to mono if stereo
+        if audio.shape[0] > 1:
+            audio = audio.mean(dim=0, keepdim=True)
+        # Resample if needed
+        if sr is not None and orig_sr != sr:
+            audio = torchaudio.functional.resample(audio, orig_sr, sr)
         else:
-            audio, _ = librosa.load(audio_path, sr=sr)
-        audio = torch.tensor(audio).unsqueeze(0)
+            sr = orig_sr
         max_audio_samples = int(max_audio_length_seconds * sr)
 
         if audio.shape[1] > max_audio_samples:

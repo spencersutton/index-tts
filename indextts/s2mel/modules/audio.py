@@ -1,5 +1,5 @@
 import torch
-from librosa.filters import mel as librosa_mel_fn
+import torchaudio.functional as F
 
 
 def dynamic_range_compression_torch(x: torch.Tensor, C: float = 1, clip_val: float = 1e-5) -> torch.Tensor:
@@ -22,15 +22,25 @@ def mel_spectrogram(
     hop_size: int,
     win_size: int,
     fmin: float,
-    fmax: float,
+    fmax: float | None,
     center: bool = False,
 ) -> torch.Tensor:
     global mel_basis, hann_window  # pylint: disable=global-statement
     if f"{sampling_rate!s}_{fmax!s}_{y.device!s}" not in mel_basis:
-        mel = librosa_mel_fn(sr=sampling_rate, n_fft=n_fft, n_mels=num_mels, fmin=fmin, fmax=fmax)
-        mel_basis[str(sampling_rate) + "_" + str(fmax) + "_" + str(y.device)] = (
-            torch.from_numpy(mel).float().to(y.device)
+        if fmax is None:
+            fmax = sampling_rate / 2.0
+        # Use torchaudio's melscale_fbanks instead of librosa's mel
+        mel = F.melscale_fbanks(
+            n_freqs=n_fft // 2 + 1,
+            f_min=fmin,
+            f_max=fmax,
+            n_mels=num_mels,
+            sample_rate=sampling_rate,
+            norm="slaney",
+            mel_scale="slaney",
         )
+        # Transpose to match librosa's output shape (n_mels, n_fft//2+1)
+        mel_basis[str(sampling_rate) + "_" + str(fmax) + "_" + str(y.device)] = mel.T.to(y.device)
         hann_window[str(sampling_rate) + "_" + str(y.device)] = torch.hann_window(win_size).to(y.device)
 
     y = torch.nn.functional.pad(

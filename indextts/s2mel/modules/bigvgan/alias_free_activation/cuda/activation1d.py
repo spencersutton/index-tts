@@ -1,6 +1,8 @@
 # Copyright (c) 2024 NVIDIA CORPORATION.
 #   Licensed under the MIT license.
 
+from typing import Never
+
 import torch
 import torch.nn as nn
 
@@ -25,7 +27,7 @@ class FusedAntiAliasActivation(torch.autograd.Function):
         return activation_results
 
     @staticmethod
-    def backward(ctx, output_grads):
+    def backward(ctx, output_grads) -> Never:
         raise NotImplementedError
         return output_grads, None, None
 

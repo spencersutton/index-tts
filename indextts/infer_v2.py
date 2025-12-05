@@ -16,8 +16,6 @@ import torch
 import torchaudio
 from huggingface_hub import hf_hub_download
 from torch.nn.utils.rnn import pad_sequence
-from torchcodec.decoders import AudioDecoder, AudioStreamMetadata
-from torchcodec.encoders import AudioEncoder
 
 from indextts.config import CheckpointsConfig
 
@@ -324,12 +322,7 @@ class IndexTTS2:
             self.gr_progress(value, desc=desc)
 
     def _load_and_cut_audio(self, audio_path, max_audio_length_seconds, verbose=False, sr=None):
-        decoder = AudioDecoder(audio_path)
-        assert isinstance(decoder.metadata, AudioStreamMetadata)
-        orig_sr = decoder.metadata.sample_rate
-        assert orig_sr is not None
-        audio = decoder.get_all_samples().data
-
+        audio, orig_sr = torchaudio.load(audio_path)
         # Convert to mono if stereo
         if audio.shape[0] > 1:
             audio = audio.mean(dim=0, keepdim=True)
@@ -787,12 +780,7 @@ class IndexTTS2:
                 print(">> remove old wav file:", output_path)
             if os.path.dirname(output_path) != "":
                 os.makedirs(os.path.dirname(output_path), exist_ok=True)
-
-            assert wav.dtype == torch.float32
-            assert wav.ndim == 2
-
-            encoder = AudioEncoder(wav, sample_rate=sampling_rate)
-            encoder.to_file(output_path)
+            torchaudio.save(output_path, wav.type(torch.int16), sampling_rate)
             print(">> wav file saved to:", output_path)
             if stream_return:
                 return None

@@ -1,7 +1,7 @@
 # Adapted from https://github.com/lucidrains/naturalspeech2-pytorch/blob/659bec7f7543e7747e809e950cc2f84242fbeec7/naturalspeech2_pytorch/naturalspeech2_pytorch.py#L532
 
-from collections import namedtuple
 from functools import wraps
+from typing import NamedTuple
 
 import torch
 import torch.nn.functional as F
@@ -32,8 +32,16 @@ def once(fn):
 print_once = once(print)
 
 
+class EfficientAttentionConfig(NamedTuple):
+    enable_flash: bool
+    enable_math: bool
+    enable_mem_efficient: bool
+
+
 # main class
 class Attend(nn.Module):
+    mask: torch.Tensor
+
     def __init__(self, dropout=0.0, causal=False, use_flash=False) -> None:
         super().__init__()
         self.dropout = dropout
@@ -48,7 +56,7 @@ class Attend(nn.Module):
         )
 
         # determine efficient attention configs for cuda and cpu
-        self.config = namedtuple("EfficientAttentionConfig", ["enable_flash", "enable_math", "enable_mem_efficient"])
+        self.config = EfficientAttentionConfig
         self.cpu_config = self.config(True, True, True)
         self.cuda_config = None
 
@@ -73,7 +81,8 @@ class Attend(nn.Module):
         return mask
 
     def flash_attn(self, q, k, v, mask=None):
-        _, heads, q_len, _, _k_len, is_cuda = *q.shape, k.shape[-2], q.is_cuda
+        _batch, heads, q_len, _dim = q.shape
+        _k_len, is_cuda = k.shape[-2], q.is_cuda
 
         # Recommended for multi-query single-key-value attention by Tri Dao
         # kv shape torch.Size([1, 512, 64]) -> torch.Size([1, 8, 512, 64])
@@ -96,7 +105,7 @@ class Attend(nn.Module):
         config = self.cuda_config if is_cuda else self.cpu_config
 
         # pytorch 2.0 flash attn: q, k, v, mask, dropout, causal, softmax_scale
-
+        assert config is not None
         with torch.backends.cuda.sdp_kernel(**config._asdict()):
             out = F.scaled_dot_product_attention(
                 q, k, v, attn_mask=mask, dropout_p=self.dropout if self.training else 0.0, is_causal=self.causal
@@ -161,10 +170,10 @@ def default(val, d):
 
 
 class RMSNorm(nn.Module):
-    def __init__(self, dim, scale=True, dim_cond=None) -> None:
+    def __init__(self, dim: int, scale: bool = True, dim_cond: int | None = None) -> None:
         super().__init__()
         self.cond = exists(dim_cond)
-        self.to_gamma_beta = nn.Linear(dim_cond, dim * 2) if self.cond else None
+        self.to_gamma_beta = nn.Linear(dim_cond, dim * 2) if dim_cond is not None else None
 
         self.scale = dim**0.5
         self.gamma = nn.Parameter(torch.ones(dim)) if scale else None
@@ -177,6 +186,7 @@ class RMSNorm(nn.Module):
             return out
 
         assert exists(cond)
+        assert self.to_gamma_beta is not None
         gamma, beta = self.to_gamma_beta(cond).chunk(2, dim=-1)
         gamma, beta = (rearrange(t, "b d -> b 1 d") for t in (gamma, beta))
         return out * gamma + beta
@@ -192,8 +202,8 @@ class CausalConv1d(nn.Conv1d):
         assert stride == 1
         self.causal_padding = dilation * (kernel_size - 1)
 
-    def forward(self, x):
-        causal_padded_x = F.pad(x, (self.causal_padding, 0), value=0.0)
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
+        causal_padded_x = F.pad(input, (self.causal_padding, 0), value=0.0)
         return super().forward(causal_padded_x)
 
 
@@ -302,7 +312,8 @@ class Attention(nn.Module):
         if has_context and self.cross_attn_include_queries:
             context = torch.cat((x, context), dim=-2)
 
-        q, k, v = (self.to_q(x), *self.to_kv(context).chunk(2, dim=-1))
+        k, v = self.to_kv(context).chunk(2, dim=-1)
+        q = self.to_q(x)
         q, k, v = (rearrange(t, "b n (h d) -> b h n d", h=h) for t in (q, k, v))
 
         out = self.attend(q, k, v, mask=mask)

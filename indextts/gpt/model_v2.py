@@ -198,7 +198,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
                 self.to(self.transformer.first_device)
             else:
                 torch.cuda.set_device(self.transformer.first_device)
-            hidden_states = hidden_states.to(self.lm_head.weight.device)
+            hidden_states = hidden_states.to(self.lm_head[1].weight.device)
 
         lm_logits = self.lm_head(hidden_states)
 

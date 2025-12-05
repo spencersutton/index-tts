@@ -2,10 +2,10 @@ from collections.abc import Sequence
 
 import numpy as np
 import torch
-from dac.nn.quantize import VectorQuantize
 from torch import nn
 from torch.nn import functional as F
 
+from indextts.s2mel.dac.nn.quantize import VectorQuantize
 from indextts.s2mel.modules.commons import sequence_mask
 
 f0_max = 1100.0

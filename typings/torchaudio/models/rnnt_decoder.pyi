@@ -5,7 +5,7 @@ import torch
 from torchaudio.models import RNNT
 
 __all__ = ["Hypothesis", "RNNTBeamSearch"]
-Hypothesis: TypeAlias = tuple[list[int], torch.Tensor, list[list[torch.Tensor]], float]
+type Hypothesis = tuple[list[int], torch.Tensor, list[list[torch.Tensor]], float]
 
 class RNNTBeamSearch(torch.nn.Module):
     def __init__(

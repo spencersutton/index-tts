@@ -25,11 +25,11 @@ class I18nAuto:
         self.language = language
         self.language_map = load_language_list(language)
 
-    def __call__(self, key):
+    def __call__(self, key) -> str:
         return self.language_map.get(key, key)
 
     def __repr__(self) -> str:
-        return "Use Language: " + self.language
+        return f"Use Language: {self.language}"
 
 
 if __name__ == "__main__":

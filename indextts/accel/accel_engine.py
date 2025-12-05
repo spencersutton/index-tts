@@ -3,6 +3,12 @@ import sys
 import torch
 from torch import nn
 
+from indextts.gpt.model_v2 import GPT2InferenceModel, LearnedPositionEmbeddings
+
+if sys.platform == "darwin":
+    raise ImportError("accel_engine is not supported on MacOS.")
+
+
 from .attention import (
     ForwardContext,
     get_forward_context,
@@ -196,7 +202,11 @@ class AccelInferenceEngine:
         temperatures = [temperature] * len(requests)
         return torch.tensor(temperatures, dtype=torch.float32, pin_memory=True).cuda(non_blocking=True)
 
-    def _capture_cuda_graphs(self, tts_mel_embedding=None, tts_text_pos_embedding=None) -> None:
+    def _capture_cuda_graphs(
+        self,
+        tts_mel_embedding: GPT2InferenceModel | None = None,
+        tts_text_pos_embedding: LearnedPositionEmbeddings | None = None,
+    ) -> None:
         print("Capturing CUDA graphs for decode optimization...")
         max_bs = 8  # Support up to batch size 8
         max_num_blocks = (2048 + self.block_size - 1) // self.block_size
@@ -282,8 +292,8 @@ class AccelInferenceEngine:
         input_ids: torch.Tensor,
         positions: torch.Tensor,
         context: ForwardContext,
-        tts_mel_embedding: torch.nn.Module | None = None,
-        tts_text_pos_embedding: torch.nn.Module | None = None,
+        tts_mel_embedding: GPT2InferenceModel | None = None,
+        tts_text_pos_embedding: LearnedPositionEmbeddings | None = None,
     ) -> torch.Tensor:
         bs = input_ids.size(0)
         use_tts_embedding = hasattr(self, "_tts_mode") and self._tts_mode
@@ -324,10 +334,13 @@ class AccelInferenceEngine:
         graph_vars["input_ids"][:bs] = input_ids
         graph_vars["positions"][:bs] = positions
         graph_vars["slot_mapping"].fill_(-1)
+        assert context.slot_mapping is not None
         graph_vars["slot_mapping"][:bs] = context.slot_mapping
         graph_vars["context_lens"].zero_()
+        assert context.context_lens is not None
         graph_vars["context_lens"][:bs] = context.context_lens
         graph_vars["block_tables"][:bs, :].fill_(-1)
+        assert context.block_tables is not None
         graph_vars["block_tables"][:bs, : context.block_tables.size(1)] = context.block_tables
         graph.replay()
 
@@ -343,8 +356,8 @@ class AccelInferenceEngine:
         stop_tokens: list[int] | None = None,
         attention_mask: torch.Tensor | None = None,
         tts_embeddings: torch.Tensor | None = None,  # TTS: [pad][cond][text] embeddings (87 tokens, NO start_mel)
-        tts_mel_embedding: torch.nn.Module | None = None,  # TTS: mel_embedding layer
-        tts_text_pos_embedding: torch.nn.Module | None = None,  # TTS: text_pos_embedding layer
+        tts_mel_embedding: GPT2InferenceModel | None = None,  # TTS: mel_embedding layer
+        tts_text_pos_embedding: LearnedPositionEmbeddings | None = None,  # TTS: text_pos_embedding layer
     ) -> torch.Tensor:
         """
         Generate tokens.
@@ -392,8 +405,9 @@ class AccelInferenceEngine:
             and (attention_mask.sum(dim=1) != attention_mask.size(1)).any()
         )
 
-        if is_varlen_batch:
-            seq_lens = [attention_mask[i].sum().item() for i in range(batch_size)]
+        seq_lens: list[int]
+        if is_varlen_batch and attention_mask is not None:
+            seq_lens = [int(attention_mask[i].sum().item()) for i in range(batch_size)]
         else:
             seq_lens = [actual_seq_len] * batch_size
 
@@ -535,6 +549,7 @@ class AccelInferenceEngine:
         pad_token = stop_tokens[0] if stop_tokens else 0
 
         if is_varlen_batch:
+            assert attention_mask is not None
             max_prompt_len = attention_mask.size(1)
             output_ids = []
 

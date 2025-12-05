@@ -16,10 +16,16 @@
 
 """Subsampling layer definition."""
 
+from abc import ABC
+
 import torch
 
+from indextts.gpt.conformer.embedding import NoPositionalEncoding, PositionalEncoding
 
-class BaseSubsampling(torch.nn.Module):
+
+class BaseSubsampling(torch.nn.Module, ABC):
+    pos_enc: PositionalEncoding | NoPositionalEncoding  # Module with position_encoding method
+
     def __init__(self) -> None:
         super().__init__()
         self.right_context = 0
@@ -39,7 +45,9 @@ class LinearNoSubsampling(BaseSubsampling):
 
     """
 
-    def __init__(self, idim: int, odim: int, dropout_rate: float, pos_enc_class: torch.nn.Module) -> None:
+    def __init__(
+        self, idim: int, odim: int, dropout_rate: float, pos_enc_class: NoPositionalEncoding | PositionalEncoding
+    ) -> None:
         """Construct an linear object."""
         super().__init__()
         self.out = torch.nn.Sequential(
@@ -82,7 +90,9 @@ class Conv2dSubsampling2(BaseSubsampling):
 
     """
 
-    def __init__(self, idim: int, odim: int, dropout_rate: float, pos_enc_class: torch.nn.Module) -> None:
+    def __init__(
+        self, idim: int, odim: int, dropout_rate: float, pos_enc_class: NoPositionalEncoding | PositionalEncoding
+    ) -> None:
         """Construct an Conv2dSubsampling4 object."""
         super().__init__()
         self.conv = torch.nn.Sequential(
@@ -132,7 +142,9 @@ class Conv2dSubsampling4(BaseSubsampling):
 
     """
 
-    def __init__(self, idim: int, odim: int, dropout_rate: float, pos_enc_class: torch.nn.Module) -> None:
+    def __init__(
+        self, idim: int, odim: int, dropout_rate: float, pos_enc_class: NoPositionalEncoding | PositionalEncoding
+    ) -> None:
         """Construct an Conv2dSubsampling4 object."""
         super().__init__()
         self.conv = torch.nn.Sequential(
@@ -183,7 +195,9 @@ class Conv2dSubsampling6(BaseSubsampling):
         pos_enc (torch.nn.Module): Custom position encoding layer.
     """
 
-    def __init__(self, idim: int, odim: int, dropout_rate: float, pos_enc_class: torch.nn.Module) -> None:
+    def __init__(
+        self, idim: int, odim: int, dropout_rate: float, pos_enc_class: NoPositionalEncoding | PositionalEncoding
+    ) -> None:
         """Construct an Conv2dSubsampling6 object."""
         super().__init__()
         self.conv = torch.nn.Sequential(
@@ -231,7 +245,9 @@ class Conv2dSubsampling8(BaseSubsampling):
 
     """
 
-    def __init__(self, idim: int, odim: int, dropout_rate: float, pos_enc_class: torch.nn.Module) -> None:
+    def __init__(
+        self, idim: int, odim: int, dropout_rate: float, pos_enc_class: NoPositionalEncoding | PositionalEncoding
+    ) -> None:
         """Construct an Conv2dSubsampling8 object."""
         super().__init__()
         self.conv = torch.nn.Sequential(

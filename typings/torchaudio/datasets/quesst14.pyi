@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional, Tuple, Union
 
 import torch
 from torch.utils.data import Dataset

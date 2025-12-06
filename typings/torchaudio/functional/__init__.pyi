@@ -1,7 +1,5 @@
-from torchaudio._internal.module_utils import dropping_support
 
 from ._alignment import TokenSpan, merge_tokens
-from ._alignment import forced_align as _forced_align
 from .filtering import (
     allpass_biquad,
     band_biquad,

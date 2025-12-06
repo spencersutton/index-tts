@@ -1,5 +1,4 @@
 from os import PathLike
-from typing import Union
 
 from torchaudio._internal.module_utils import dropping_support
 

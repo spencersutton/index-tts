@@ -1,6 +1,6 @@
 import os
 from abc import ABC, abstractmethod
-from typing import BinaryIO, Optional, Tuple, Union
+from typing import BinaryIO
 
 from torch import Tensor
 from torchaudio.io import CodecConfig

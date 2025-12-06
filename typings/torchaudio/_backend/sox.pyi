@@ -1,5 +1,5 @@
 import os
-from typing import BinaryIO, Optional, Tuple, Union
+from typing import BinaryIO
 
 import torch
 import torchaudio

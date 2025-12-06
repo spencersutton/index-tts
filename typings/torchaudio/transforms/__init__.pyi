@@ -1,4 +1,3 @@
-from torchaudio._internal.module_utils import dropping_class_support
 
 from ._multi_channel import MVDR, PSD, RTFMVDR, SoudenMVDR
 from ._transforms import (
@@ -33,9 +32,6 @@ from ._transforms import (
     TimeStretch,
     Vad,
     Vol,
-)
-from ._transforms import (
-    RNNTLoss as _RNNTLoss,
 )
 
 RNNTLoss = ...

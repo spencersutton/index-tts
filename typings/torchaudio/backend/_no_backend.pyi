@@ -1,6 +1,5 @@
 from collections.abc import Callable
 from pathlib import Path
-from typing import Optional, Tuple, Union
 
 from torch import Tensor
 from torchaudio import AudioMetaData

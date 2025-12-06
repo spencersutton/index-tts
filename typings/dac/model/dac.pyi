@@ -1,4 +1,3 @@
-from typing import List, Union
 
 import torch
 from audiotools.ml import BaseModel

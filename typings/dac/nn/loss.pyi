@@ -1,5 +1,4 @@
 import typing
-from typing import List
 
 from audiotools import AudioSignal
 from torch import nn

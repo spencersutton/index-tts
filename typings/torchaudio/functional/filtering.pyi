@@ -1,7 +1,5 @@
-from typing import Optional
 
 from torch import Tensor
-from torchaudio._extension import _IS_TORCHAUDIO_EXT_AVAILABLE
 
 def allpass_biquad(waveform: Tensor, sample_rate: int, central_freq: float, Q: float = ...) -> Tensor: ...
 def band_biquad(

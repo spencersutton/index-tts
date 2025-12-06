@@ -1,11 +1,7 @@
-import logging
 import os
 import sys
 
-import torchaudio.lib._torchaudio
-from torchaudio._internal.module_utils import fail_with_message, is_module_available, no_op
-
-from .utils import _check_cuda_version, _init_dll_path, _init_sox, _LazyImporter, _load_lib
+from .utils import _check_cuda_version
 
 _LG = ...
 __all__ = ["_IS_RIR_AVAILABLE", "_IS_TORCHAUDIO_EXT_AVAILABLE", "_check_cuda_version", "lazy_import_sox_ext"]

@@ -1,4 +1,3 @@
-from typing import Dict, List
 
 from torchaudio._internal.module_utils import dropping_support
 

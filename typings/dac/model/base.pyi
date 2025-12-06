@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Union
 
 import torch
 from audiotools import AudioSignal

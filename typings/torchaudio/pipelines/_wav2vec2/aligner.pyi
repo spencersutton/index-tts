@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import Dict, List
 
 from torch import Tensor
 from torchaudio.functional import TokenSpan

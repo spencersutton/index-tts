@@ -218,7 +218,7 @@ class IndexTTS2:
         self.semantic_mean = self.semantic_mean.to(self.device)
         self.semantic_std = self.semantic_std.to(self.device)
 
-        semantic_codec = build_semantic_codec(self.cfg.semantic_codec)
+        semantic_codec = build_semantic_codec()
         semantic_code_ckpt = hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
         safetensors.torch.load_model(semantic_codec, semantic_code_ckpt)
         self.semantic_codec = semantic_codec.to(self.device)

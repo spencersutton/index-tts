@@ -1,31 +1,18 @@
-# Development Tools.
-.mypy_cache/
-.ruff_cache/
 __pycache__/
-.idea/
-.vscode/
+.vscode
 
-# Environments.
-.venv*/
-venv*/
-conda_env*/
+outputs/
+temp.py
 
-# Python Bytecode.
-*.py[cod]
+# assets/
 
-# Distribution/Packaging.
-/build/
-/dist/
-*.egg-info/
-.pypirc
+temp_gpt2.py    
 
-# Operating System Junk.
-*.DS_Store
-Thumbs.db
-desktop.ini
+smoothquart.py
 
-# IndexTTS.
-/cache/
-/checkpoints/*
-!/checkpoints/*.yaml
-/outputs/
+
+checkpoints/*
+
+output.wav
+
+logs/

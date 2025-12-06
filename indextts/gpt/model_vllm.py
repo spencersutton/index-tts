@@ -1,100 +1,26 @@
+import uuid
+import os
 import functools
+import patch_vllm  # ⚠️ Monkey Patch, do not delete this line
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from transformers import GPT2Config, GPT2LMHeadModel, LogitsProcessorList
-from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
-from transformers.utils.model_parallel_utils import assert_device_map, get_device_map
+from transformers import AutoModelForCausalLM, GPT2Config, GPT2LMHeadModel, LogitsProcessorList
+
 from transformers import GPT2Config, GPT2Model
 
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.perceiver import PerceiverResampler
-from indextts.utils.arch_util import AttentionBlock
-from indextts.utils.typical_sampling import TypicalLogitsWarper
+
+from indextts.gpt.index_tts_gpt2_vllm_v1 import PLACEHOLDER_TOKEN, PLACEHOLDER_TOKEN_ID
+
+from vllm import AsyncLLMEngine, SamplingParams, TokensPrompt
+from vllm.v1.engine.async_llm import AsyncLLM
 
 
 def null_position_embeddings(range, dim):
     return torch.zeros((range.shape[0], range.shape[1], dim), device=range.device)
-
-
-class GPT2InferenceModel(GPT2LMHeadModel):
-    def __init__(self, config, gpt, text_pos_emb, audio_emb, norm, linear):
-        super().__init__(config)
-        self.transformer = gpt
-        self.text_pos_embedding = text_pos_emb
-        self.audio_emb = audio_emb
-        self.final_norm = norm
-        self.lm_head = linear
-
-    def store_mel_emb(self, mel_emb):
-        self.cached_mel_emb = mel_emb
-
-    def forward(
-        self,
-        input_ids=None,
-        past_key_values=None,
-        attention_mask=None,
-        token_type_ids=None,
-        position_ids=None,
-        head_mask=None,
-        inputs_embeds=None,
-        encoder_hidden_states=None,
-        encoder_attention_mask=None,
-        labels=None,
-        use_cache=None,
-        output_attentions=None,
-        output_hidden_states=None,
-        return_dict=None,
-        **kwargs,
-    ):
-        assert input_ids is None or input_ids.shape[1] == 1
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
-
-        # # Create embedding
-        mel_len = self.cached_mel_emb.shape[1]
-        if input_ids is not None:  #  and input_ids.shape[1] == 1
-            inputs_embeds = self.audio_emb(input_ids)
-            inputs_embeds = inputs_embeds + self.text_pos_embedding.get_fixed_embedding(
-                attention_mask.shape[1] - mel_len, attention_mask.device
-            )
-        transformer_outputs = self.transformer(
-            inputs_embeds=inputs_embeds,
-            past_key_values=past_key_values,
-            attention_mask=attention_mask,
-            token_type_ids=token_type_ids,
-            position_ids=position_ids,
-            head_mask=head_mask,
-            encoder_hidden_states=encoder_hidden_states,
-            encoder_attention_mask=encoder_attention_mask,
-            use_cache=use_cache,
-            output_attentions=output_attentions,
-            output_hidden_states=output_hidden_states,
-            return_dict=return_dict,
-        )
-        hidden_states = transformer_outputs[0]
-
-        # Set device for model parallelism
-        if self.model_parallel:
-            if torch.backends.mps.is_available():
-                self.to(self.transformer.first_device)
-            else:
-                torch.cuda.set_device(self.transformer.first_device)
-            hidden_states = hidden_states.to(self.lm_head.weight.device)
-
-        lm_logits = self.lm_head(self.final_norm(hidden_states))
-
-        if not return_dict:
-            return (lm_logits,) + transformer_outputs[1:]
-
-        return CausalLMOutputWithCrossAttentions(
-            loss=None,
-            logits=lm_logits,
-            past_key_values=transformer_outputs.past_key_values,
-            hidden_states=transformer_outputs.last_hidden_state,
-            attentions=transformer_outputs.attentions,
-            cross_attentions=transformer_outputs.cross_attentions,
-        )
 
 
 class LearnedPositionEmbeddings(nn.Module):
@@ -115,6 +41,7 @@ class LearnedPositionEmbeddings(nn.Module):
 class UnifiedVoice(nn.Module):
     def __init__(
         self,
+        vllm_model,
         layers=8,
         model_dim=512,
         heads=8,
@@ -130,6 +57,7 @@ class UnifiedVoice(nn.Module):
         stop_mel_token=8193,
         types=1,
         activation_function=None,
+        model_dir=None,
         condition_num_latent=32,
         condition_module=None,
         **kwargs,
@@ -201,11 +129,18 @@ class UnifiedVoice(nn.Module):
             use_cache=True,
         )
         self.gpt = GPT2Model(gpt_config)
-        # Override the built in positional embeddings
+        # self.gpt = AutoModelForCausalLM.from_pretrained(
+        #     os.path.join(model_dir, "gpt"),
+        #     # torch_dtype=torch.float16,
+        #     # device_map="auto",
+        #     # trust_remote_code=True,          # 若自定义模型类需打开
+        # ).transformer
         del self.gpt.wpe
         self.gpt.wpe = functools.partial(null_position_embeddings, dim=model_dim)
-        # Built-in token embeddings are unused.
         del self.gpt.wte
+        # self.gpt = self.gpt.to("cuda")  # .to(torch.float16)
+        # self.gpt.eval()
+
         self.mel_pos_embedding, self.text_pos_embedding = (
             LearnedPositionEmbeddings(max_mel_seq_len, model_dim),
             LearnedPositionEmbeddings(max_text_seq_len, model_dim),
@@ -214,7 +149,7 @@ class UnifiedVoice(nn.Module):
         self.mel_solo_embedding = 0
         self.text_solo_embedding = 0
 
-        self.final_norm = nn.LayerNorm(model_dim)
+        self.final_norm = nn.LayerNorm(model_dim)  # , dtype=torch.float16
         self.text_head = nn.Linear(model_dim, self.number_text_tokens * types + 1)
         self.mel_head = nn.Linear(model_dim, self.number_mel_codes)
 
@@ -223,33 +158,14 @@ class UnifiedVoice(nn.Module):
         for module in embeddings:
             module.weight.data.normal_(mean=0.0, std=0.02)
 
-    def post_init_gpt2_config(self, use_deepspeed=False, kv_cache=False, half=False, activation_function=None):
-        seq_length = self.max_mel_tokens + self.max_text_tokens + 2
-        gpt_config = GPT2Config(
-            vocab_size=self.number_mel_codes,
-            n_positions=self.max_mel_tokens + 2 + self.max_conditioning_inputs,
-            n_ctx=seq_length,
-            n_embd=self.model_dim,
-            n_layer=self.layers,
-            n_head=self.heads,
-            gradient_checkpointing=False,
-            activation_function=activation_function or "gelu_new",
-            use_cache=True,
-            bos_token_id=self.start_mel_token,
-            eos_token_id=self.stop_mel_token,
+        self.llm: AsyncLLM = vllm_model
+        self.sampling_params = SamplingParams(
+            temperature=1.0,
+            top_p=0.8,
+            top_k=30,  # 5, 30
+            repetition_penalty=10.0,  # 8.0
+            max_tokens=768,  # 605
         )
-        self.inference_model = GPT2InferenceModel(
-            gpt_config,
-            self.gpt,
-            self.mel_pos_embedding,
-            self.mel_embedding,
-            self.final_norm,
-            self.mel_head,
-            # kv_cache=kv_cache,
-        )
-        self.inference_model = self.inference_model.eval()
-
-        # self.gpt.wte = self.mel_embedding
 
     def build_aligned_inputs_and_targets(self, input, start_token, stop_token):
         inp = F.pad(input, (1, 0), value=start_token)
@@ -264,28 +180,13 @@ class UnifiedVoice(nn.Module):
         conds = self.perceiver_encoder(speech_conditioning_input, conds_mask)  # (b, 32, d)
         return conds
 
-    def inference_speech(
-        self,
-        speech_conditioning_latent,
-        text_inputs,
-        cond_mel_lengths=None,
-        input_tokens=None,
-        num_return_sequences=1,
-        max_generate_length=None,
-        typical_sampling=False,
-        typical_mass=0.9,
-        **hf_generate_kwargs,
-    ):
-
-        text_inputs = F.pad(text_inputs, (0, 1), value=self.stop_text_token)
+    async def inference_speech(self, speech_conditioning_latent, text_inputs, cond_mel_lengths=None):
         text_inputs, _ = self.build_aligned_inputs_and_targets(text_inputs, self.start_text_token, self.stop_text_token)
         text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs)
 
         # speech_conditioning_latent = self.get_conditioning(speech_conditioning_latent, cond_mel_lengths)
-        # conds = speech_conditioning_latent
         emb = torch.cat([speech_conditioning_latent, text_emb], dim=1)
-        self.inference_model.store_mel_emb(emb)
-        trunc_index = emb.shape[1] + 1
+        # trunc_index = emb.shape[1] + 1
 
         mel_start_emb = self.mel_embedding(
             torch.full(
@@ -301,24 +202,95 @@ class UnifiedVoice(nn.Module):
         mel_start_emb = mel_start_emb + self.mel_pos_embedding(mel_start_emb)
         inputs_embeds = torch.cat([emb, mel_start_emb], dim=1)
 
-        logits_processor = LogitsProcessorList()
-        max_length = (
-            trunc_index + self.max_mel_tokens - 1 if max_generate_length is None else trunc_index + max_generate_length
+        # fake_inputs = [idx for idx in range(inputs_embeds.shape[1])]
+        fake_inputs = PLACEHOLDER_TOKEN * 1  # [PLACEHOLDER_TOKEN_ID]
+        multi_modal_data = {"audio": {"audio_embeds": [inputs_embeds.squeeze(0).cpu()]}}
+        tokens_prompt = TokensPrompt(prompt=fake_inputs, multi_modal_data=multi_modal_data)
+        # tokens_prompt = TokensPrompt(prompt_token_ids=fake_inputs, multi_modal_data=multi_modal_data)
+        output_generator = self.llm.generate(
+            tokens_prompt, sampling_params=self.sampling_params, request_id=uuid.uuid4().hex
         )
-        gen = self.inference_model.generate(
-            inputs_embeds=inputs_embeds,
-            bos_token_id=self.start_mel_token,
-            pad_token_id=self.stop_mel_token,
-            eos_token_id=self.stop_mel_token,
-            return_dict_in_generate=True,
-            output_hidden_states=True,
-            max_length=max_length,
-            logits_processor=logits_processor,
-            num_return_sequences=num_return_sequences,
-            **hf_generate_kwargs,
+        # latent = []
+        async for output in output_generator:
+            # latent.append(output.hidden_states.clone())
+            pass
+        codes = output.outputs[0].token_ids[:-2]
+
+        # latent = torch.cat(latent[:-2], dim=0).unsqueeze(0)
+        # # latent = self.final_norm(latent.float())
+        # latent = latent.float()
+        # print("codes", len(codes), codes)
+        # print("latent", latent.shape, latent)
+        return codes  # , latent
+
+    def set_mel_padding(self, mel_input_tokens, mel_lengths):
+        """
+        Given mel tokens that are derived from a padded audio clip and the actual lengths of each batch element in
+        that audio clip, reformats the tokens with STOP_MEL_TOKEN in place of the zero padding. This is required
+        preformatting to create a working TTS model.
+        """
+        for b in range(len(mel_lengths)):
+            # Due to the convolutional nature of how these tokens are generated,
+            # it would be best if the model predicts a token past the actual last token.
+            actual_end = mel_lengths[b]
+            if actual_end < mel_input_tokens.shape[-1]:
+                mel_input_tokens[b, actual_end:] = self.stop_mel_token
+        return mel_input_tokens
+
+    def set_text_padding(self, text_input_tokens, text_lengths):
+        """
+        Given mel tokens that are derived from a padded audio clip and the actual lengths of each batch element in
+        that audio clip, reformats the tokens with STOP_MEL_TOKEN in place of the zero padding. This is required
+        preformatting to create a working TTS model.
+        """
+        for b in range(len(text_lengths)):
+            # Due to the convolutional nature of how these tokens are generated,
+            # it would be best if the model predicts a token past the actual last token.
+            actual_end = text_lengths[b]
+            if actual_end < text_input_tokens.shape[-1]:
+                text_input_tokens[b, actual_end:] = self.stop_text_token
+        return text_input_tokens
+
+    def forward(
+        self,
+        speech_conditioning_latent,
+        text_inputs,
+        text_lengths,
+        mel_codes,
+        wav_lengths,
+        cond_mel_lengths=None,
+        types=None,
+        text_first=True,
+        raw_mels=None,
+        return_attentions=False,
+        return_latent=True,
+        clip_inputs=False,
+    ):
+        # Set padding areas within MEL (currently it is coded with the MEL code for <zero>).
+        # mel_codes_lengths = torch.div(wav_lengths, self.mel_length_compression, rounding_mode='trunc')
+        mel_codes_lengths = torch.ceil(wav_lengths / self.mel_length_compression).long() + 1
+        mel_codes = self.set_mel_padding(mel_codes, mel_codes_lengths)
+
+        text_inputs = self.set_text_padding(text_inputs, text_lengths)
+        text_inputs = F.pad(text_inputs, (0, 1), value=self.stop_text_token)
+        mel_codes = F.pad(mel_codes, (0, 1), value=self.stop_mel_token)
+
+        conds = speech_conditioning_latent
+        text_inputs, text_targets = self.build_aligned_inputs_and_targets(
+            text_inputs, self.start_text_token, self.stop_text_token
         )
-        codes = gen.sequences[:, 1:]
-        latent = torch.cat(gen.hidden_states, dim=1)
-        latent = latent[:, trunc_index:-1]
-        latent = self.final_norm(latent)
-        return codes, latent  # [:, trunc_index:]
+        text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs)
+        mel_codes, mel_targets = self.build_aligned_inputs_and_targets(
+            mel_codes, self.start_mel_token, self.stop_mel_token
+        )
+        mel_inp = mel_codes
+        mel_emb = self.mel_embedding(mel_inp)
+        mel_emb = mel_emb + self.mel_pos_embedding(mel_codes)
+
+        emb = torch.cat([conds, text_emb, mel_emb], dim=1)
+        gpt_out = self.gpt(inputs_embeds=emb, return_dict=True)
+        offset = conds.shape[1]
+        enc = gpt_out.last_hidden_state[:, offset:]
+        enc = self.final_norm(enc)
+
+        return enc[:, -mel_emb.shape[1] :][:, :-2]

@@ -56,6 +56,11 @@ class LearnedPositionEmbeddings(nn.Module):
 class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
     lm_head: nn.Sequential
     text_pos_embedding: LearnedPositionEmbeddings
+    transformer: GPT2Model
+    kv_cache: bool
+    cached_mel_emb: torch.Tensor | None
+    device_map: dict[int, int] | None
+    model_parallel: bool
 
     def __init__(self, config, gpt: GPT2Model, text_pos_emb, embeddings, norm, linear, kv_cache=False) -> None:
         super().__init__(config)
@@ -85,7 +90,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
 
     def deparallelize(self) -> None:
         self.transformer.deparallelize()
-        self.transformer = self.transformer.to("cpu")
+        self.transformer = self.transformer.to("cpu")  # ty:ignore[invalid-argument-type]
         self.lm_head = self.lm_head.to("cpu")
         self.model_parallel = False
         torch.cuda.empty_cache()
@@ -193,7 +198,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         # Set device for model parallelism
         if self.model_parallel:
             if torch.backends.mps.is_available():
-                self.to(self.transformer.first_device)
+                self.to(self.transformer.first_device)  # ty:ignore[invalid-argument-type]
             else:
                 torch.cuda.set_device(self.transformer.first_device)
             hidden_states = hidden_states.to(self.lm_head[1].weight.device)
@@ -407,7 +412,7 @@ class UnifiedVoice(nn.Module):
             accel_gpt = GPT2AccelModel(gpt_config)
             accel_gpt.load_state_dict(self.gpt.state_dict(), strict=False)
 
-            accel_gpt = accel_gpt.half().cuda() if half else accel_gpt.cuda()
+            accel_gpt = accel_gpt.half().cuda() if half else accel_gpt.cuda()  # ty:ignore[missing-argument]
             accel_gpt.eval()
 
             lm_head_with_norm = nn.Sequential(self.final_norm, self.mel_head)

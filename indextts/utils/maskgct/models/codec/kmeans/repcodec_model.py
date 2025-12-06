@@ -2,7 +2,6 @@
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
-
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -22,40 +21,17 @@ def init_weights(m: nn.Module) -> None:
 
 
 class RepCodec(nn.Module):
-    def __init__(
-        self,
-        codebook_size: int = 8192,
-        hidden_size: int = 1024,
-        codebook_dim: int = 8,
-        vocos_dim: int = 384,
-        vocos_intermediate_dim: int = 2048,
-        vocos_num_layers: int = 12,
-        num_quantizers: int = 1,
-        downsample_scale: int = 1,
-        cfg=None,
-    ) -> None:
-        super().__init__()
-        codebook_size = cfg.codebook_size if cfg is not None and hasattr(cfg, "codebook_size") else codebook_size
-        codebook_dim = cfg.codebook_dim if cfg is not None and hasattr(cfg, "codebook_dim") else codebook_dim
-        hidden_size = cfg.hidden_size if cfg is not None and hasattr(cfg, "hidden_size") else hidden_size
-        vocos_dim = cfg.vocos_dim if cfg is not None and hasattr(cfg, "vocos_dim") else vocos_dim
-        vocos_intermediate_dim = (
-            cfg.vocos_intermediate_dim if cfg is not None and hasattr(cfg, "vocos_dim") else vocos_intermediate_dim
-        )
-        vocos_num_layers = cfg.vocos_num_layers if cfg is not None and hasattr(cfg, "vocos_dim") else vocos_num_layers
-        num_quantizers = cfg.num_quantizers if cfg is not None and hasattr(cfg, "num_quantizers") else num_quantizers
-        downsample_scale = (
-            cfg.downsample_scale if cfg is not None and hasattr(cfg, "downsample_scale") else downsample_scale
-        )
+    codebook_size = 8192
+    codebook_dim = 8
+    hidden_size = 1024
+    vocos_dim = 384
+    vocos_intermediate_dim = 2048
+    vocos_num_layers = 12
+    num_quantizers = 1
+    downsample_scale = 1
 
-        self.codebook_size = codebook_size
-        self.codebook_dim = codebook_dim
-        self.hidden_size = hidden_size
-        self.vocos_dim = vocos_dim
-        self.vocos_intermediate_dim = vocos_intermediate_dim
-        self.vocos_num_layers = vocos_num_layers
-        self.num_quantizers = num_quantizers
-        self.downsample_scale = downsample_scale
+    def __init__(self) -> None:
+        super().__init__()
 
         if self.downsample_scale is not None and self.downsample_scale > 1:
             self.down = nn.Conv1d(self.hidden_size, self.hidden_size, kernel_size=3, stride=2, padding=1)
@@ -83,10 +59,10 @@ class RepCodec(nn.Module):
         )
 
         self.quantizer = ResidualVQ(
-            input_dim=hidden_size,
-            num_quantizers=num_quantizers,
-            codebook_size=codebook_size,
-            codebook_dim=codebook_dim,
+            input_dim=self.hidden_size,
+            num_quantizers=self.num_quantizers,
+            codebook_size=self.codebook_size,
+            codebook_dim=self.codebook_dim,
             quantizer_type="fvq",
             quantizer_dropout=0.0,
             commitment=0.15,

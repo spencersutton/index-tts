@@ -175,7 +175,7 @@ class IndexTTS2:
 
         self.qwen_emo = QwenEmotion(os.path.join(self.model_dir, self.cfg.qwen_emo_path))
 
-        self.gpt = UnifiedVoice(**cfg["gpt"], use_accel=self.use_accel)
+        self.gpt = UnifiedVoice(use_accel=self.use_accel)
         self.gpt_path = os.path.join(self.model_dir, self.cfg.gpt_checkpoint)
         load_checkpoint(self.gpt, self.gpt_path)
         self.gpt = self.gpt.to(self.device)

@@ -1,6 +1,5 @@
 import functools
 import importlib.util
-from typing import Literal
 
 import torch
 import torch.nn.functional as F
@@ -11,7 +10,6 @@ from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttenti
 from transformers.models.gpt2.modeling_gpt2 import GPT2Model
 from transformers.utils.model_parallel_utils import assert_device_map, get_device_map
 
-from indextts.config import ConditionModule
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.perceiver import PerceiverResampler
 from indextts.utils.arch_util import AttentionBlock
@@ -238,7 +236,7 @@ class ConditioningEncoder(nn.Module):
 
 
 def build_hf_gpt_transformer(
-    layers, model_dim, heads, max_mel_seq_len, max_text_seq_len, checkpointing
+    layers, model_dim, heads, max_mel_seq_len, max_text_seq_len
 ) -> tuple[GPT2Model, LearnedPositionEmbeddings, LearnedPositionEmbeddings, None, None]:
     """
     GPT-2 implemented by the HuggingFace library.
@@ -252,8 +250,8 @@ def build_hf_gpt_transformer(
         n_embd=model_dim,
         n_layer=layers,
         n_head=heads,
-        gradient_checkpointing=checkpointing,
-        use_cache=not checkpointing,
+        gradient_checkpointing=True,
+        use_cache=False,
     )
     gpt = GPT2Model(gpt_config)
     # Override the built in positional embeddings
@@ -297,112 +295,64 @@ class MelEncoder(nn.Module):
 class UnifiedVoice(nn.Module):
     gst_encoder: nn.Module
     inference_model: GPT2InferenceModel
+    number_text_tokens = 12000
+    start_text_token = 0
+    stop_text_token = 1
+    number_mel_codes = 8194
+    start_mel_token = 8192
+    stop_mel_token = 8193
+    layers = 24
+    heads = 20
+    max_mel_tokens = 1815
+    max_text_tokens = 600
+    model_dim = 1280
+    max_conditioning_inputs = 1
+    mel_length_compression = 1024
+    cond_num = 32
+    mel_solo_embedding = 0
+    text_solo_embedding = 0
 
-    def __init__(
-        self,
-        layers: int = 8,
-        model_dim: int = 512,
-        heads: int = 8,
-        max_text_tokens: int = 120,
-        max_mel_tokens: int = 250,
-        max_conditioning_inputs: int = 1,
-        mel_length_compression: int = 1024,
-        number_text_tokens: int = 256,
-        start_text_token: int = 0,
-        stop_text_token: int = 1,
-        number_mel_codes: int = 8194,
-        start_mel_token: int = 8192,
-        stop_mel_token: int = 8193,
-        train_solo_embeddings: bool = False,
-        use_mel_codes_as_input: bool = True,
-        checkpointing: bool = True,
-        types: int = 1,
-        condition_num_latent: int = 32,
-        condition_type: Literal["conformer_perceiver"] = "conformer_perceiver",
-        condition_module: ConditionModule | None = None,
-        emo_condition_module: ConditionModule | None = None,
-        use_accel: bool = False,
-    ) -> None:
-        """
-        Args:
-            layers: Number of layers in transformer stack.
-            model_dim: Operating dimensions of the transformer
-            heads: Number of transformer heads. Must be divisible by model_dim. Recommend model_dim//64
-            max_text_tokens: Maximum number of text tokens that will be encountered by model.
-            max_mel_tokens: Maximum number of MEL tokens that will be encountered by model.
-            max_conditioning_inputs: Maximum number of conditioning inputs provided to the model. If (1), conditioning input can be of format (b,80,s), otherwise (b,n,80,s).
-            mel_length_compression: The factor between <number_input_samples> and <mel_tokens>. Used to compute MEL code padding given wav input length.
-            number_text_tokens:
-            start_text_token:
-            stop_text_token:
-            number_mel_codes:
-            start_mel_token:
-            stop_mel_token:
-            train_solo_embeddings:
-            use_mel_codes_as_input:
-            checkpointing:
-            condition_type: perceiver, gst or default encoder
-        """
+    def __init__(self, use_accel: bool = False) -> None:
         super().__init__()
-        self.number_text_tokens = number_text_tokens
-        self.start_text_token = start_text_token
-        self.stop_text_token = stop_text_token
-        self.number_mel_codes = number_mel_codes
-        self.start_mel_token = start_mel_token
-        self.stop_mel_token = stop_mel_token
-        self.layers = layers
-        self.heads = heads
-        self.max_mel_tokens = max_mel_tokens
-        self.max_text_tokens = max_text_tokens
-        self.model_dim = model_dim
-        self.max_conditioning_inputs = max_conditioning_inputs
-        self.mel_length_compression = mel_length_compression
-        self.cond_num = condition_num_latent
+
         self.cond_mask_pad = nn.ConstantPad1d((self.cond_num, 0), True)
         self.emo_cond_mask_pad = nn.ConstantPad1d((1, 0), True)
-        assert condition_type == "conformer_perceiver"
-        assert condition_module is not None, "condition_module must be provided for conformer based conditioning"
         self.conditioning_encoder = ConformerEncoder(
             input_size=1024,
-            output_size=condition_module.output_size,
-            linear_units=condition_module.linear_units,
-            attention_heads=condition_module.attention_heads,
-            num_blocks=condition_module.num_blocks,
-            input_layer=condition_module.input_layer,
+            output_size=512,
+            linear_units=2048,
+            attention_heads=8,
+            num_blocks=6,
+            input_layer="conv2d2",
         )
         self.perceiver_encoder = PerceiverResampler(
-            model_dim,
-            dim_context=condition_module.output_size,
-            ff_mult=condition_module.perceiver_mult,
-            heads=condition_module.attention_heads,
+            self.model_dim,
+            dim_context=512,
+            ff_mult=2,
+            heads=8,
             num_latents=self.cond_num,
         )
-
-        assert emo_condition_module is not None, "emo_condition_module must be provided for emotion conditioning"
         self.emo_conditioning_encoder = ConformerEncoder(
             input_size=1024,
-            output_size=emo_condition_module.output_size,
-            linear_units=emo_condition_module.linear_units,
-            attention_heads=emo_condition_module.attention_heads,
-            num_blocks=emo_condition_module.num_blocks,
-            input_layer=emo_condition_module.input_layer,
+            output_size=512,
+            linear_units=1024,
+            attention_heads=4,
+            num_blocks=4,
+            input_layer="conv2d2",
         )
         self.emo_perceiver_encoder = PerceiverResampler(
             1024,
-            dim_context=emo_condition_module.output_size,
-            ff_mult=emo_condition_module.perceiver_mult,
-            heads=emo_condition_module.attention_heads,
+            dim_context=512,
+            ff_mult=2,
+            heads=4,
             num_latents=1,
         )
 
-        self.text_embedding = nn.Embedding(self.number_text_tokens * types + 1, model_dim)
-        self.emo_layer = nn.Linear(model_dim, model_dim)
-        self.emovec_layer = nn.Linear(1024, model_dim)
+        self.text_embedding = nn.Embedding(self.number_text_tokens + 1, self.model_dim)
+        self.emo_layer = nn.Linear(self.model_dim, self.model_dim)
+        self.emovec_layer = nn.Linear(1024, self.model_dim)
 
-        if use_mel_codes_as_input:
-            self.mel_embedding = nn.Embedding(self.number_mel_codes, model_dim)
-        else:
-            self.mel_embedding = MelEncoder(model_dim, resblocks_per_reduction=1)
+        self.mel_embedding = nn.Embedding(self.number_mel_codes, self.model_dim)
         (
             self.gpt,
             self.mel_pos_embedding,
@@ -410,31 +360,23 @@ class UnifiedVoice(nn.Module):
             self.mel_layer_pos_embedding,
             self.text_layer_pos_embedding,
         ) = build_hf_gpt_transformer(
-            layers,
-            model_dim,
-            heads,
+            self.layers,
+            self.model_dim,
+            self.heads,
             self.max_mel_tokens + 2 + self.max_conditioning_inputs,
             self.max_text_tokens + 2,
-            checkpointing,
         )
-        if train_solo_embeddings:
-            self.mel_solo_embedding = nn.Parameter(torch.randn(1, 1, model_dim) * 0.02, requires_grad=True)
-            self.text_solo_embedding = nn.Parameter(torch.randn(1, 1, model_dim) * 0.02, requires_grad=True)
-        else:
-            self.mel_solo_embedding = 0
-            self.text_solo_embedding = 0
 
-        self.final_norm = nn.LayerNorm(model_dim)
-        self.text_head = nn.Linear(model_dim, self.number_text_tokens * types + 1)
-        self.mel_head = nn.Linear(model_dim, self.number_mel_codes)
+        self.final_norm = nn.LayerNorm(self.model_dim)
+        self.text_head = nn.Linear(self.model_dim, self.number_text_tokens + 1)
+        self.mel_head = nn.Linear(self.model_dim, self.number_mel_codes)
 
-        self.speed_emb = nn.Embedding(2, model_dim)
+        self.speed_emb = nn.Embedding(2, self.model_dim)
         self.speed_emb.weight.data.normal_(mean=0.0, std=0.0)
 
         # Initialize the embeddings per the GPT-2 scheme
         embeddings = [self.text_embedding]
-        if use_mel_codes_as_input:
-            embeddings.append(self.mel_embedding)
+        embeddings.append(self.mel_embedding)
         for module in embeddings:
             module.weight.data.normal_(mean=0.0, std=0.02)
 

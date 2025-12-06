@@ -489,12 +489,6 @@ Examples:
         print("ERROR: Number of runs must be at least 1.")
         sys.exit(1)
 
-    try:
-        import torch
-    except ImportError:
-        print("ERROR: PyTorch is not installed. Please install it first.")
-        sys.exit(1)
-
     # Run benchmark
     result = run_benchmark(
         voice_path=args.voice,

@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 import torch
-import torch._dynamo.config
 import torch._inductor.config
 
 

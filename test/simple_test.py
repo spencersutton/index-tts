@@ -1,9 +1,10 @@
 import argparse
+import random
 import threading
 import time
-import requests
 from collections import defaultdict
-import random
+
+import requests
 
 
 class TTSStressTester:
@@ -92,7 +93,7 @@ class TTSStressTester:
             avg_duration = sum(durations) / len(durations)
             max_duration = max(durations)
             min_duration = min(durations)
-            print(f"\n响应时间统计:")
+            print("\n响应时间统计:")
             print(f"平均: {avg_duration:.3f}秒")
             print(f"最大: {max_duration:.3f}秒")
             print(f"最小: {min_duration:.3f}秒")
@@ -132,7 +133,7 @@ if __name__ == "__main__":
         urls=args.urls, data=test_data, concurrency=args.concurrency, requests_per_thread=args.requests
     )
 
-    print(f"开始压力测试，配置参数：")
+    print("开始压力测试，配置参数：")
     print(f"目标服务: {', '.join(args.urls)}")
     print(f"并发线程: {args.concurrency}")
     print(f"单线程请求数: {args.requests}")

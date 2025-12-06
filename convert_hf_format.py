@@ -1,11 +1,12 @@
+import argparse
 import os
-from omegaconf import OmegaConf
+
 import torch
+from omegaconf import OmegaConf
 
 # from indextts.gpt.model import UnifiedVoice
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.utils.checkpoint import load_checkpoint
-import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--model_dir", type=str, default="")

@@ -1,14 +1,14 @@
-import torch
-import time
-from typing import Any, List, Optional, Tuple, Union
-
-from packaging import version
 import importlib
+from typing import Any, Optional
+
+import torch
+from packaging import version
 
 vllm_version = version.parse(importlib.import_module("vllm").__version__)
 
 # 在 vllm 中注册自定义的 GPT2TTSModel
 from vllm import ModelRegistry
+
 from indextts.gpt.index_tts_gpt2_vllm_v1 import GPT2TTSModel
 
 ModelRegistry.register_model("GPT2InferenceModel", GPT2TTSModel)
@@ -16,13 +16,13 @@ print("✅  Registry GPT2TTSModel to vllm")
 
 
 # 将 position_ids 减去 prefill 的长度再加 1，以便正确计算每一步 decode 的 position embedding
-from vllm.v1.worker.gpu_model_runner import GPUModelRunner
 import numpy as np
-from vllm.v1.core.sched.output import SchedulerOutput
-from vllm.v1.spec_decode.metadata import SpecDecodeMetadata
-from vllm.v1.attention.backends.utils import CommonAttentionMetadata
-from vllm.v1.kv_cache_interface import EncoderOnlyAttentionSpec
 from vllm.v1.attention.backends.gdn_attn import GDNAttentionMetadataBuilder
+from vllm.v1.attention.backends.utils import CommonAttentionMetadata
+from vllm.v1.core.sched.output import SchedulerOutput
+from vllm.v1.kv_cache_interface import EncoderOnlyAttentionSpec
+from vllm.v1.spec_decode.metadata import SpecDecodeMetadata
+from vllm.v1.worker.gpu_model_runner import GPUModelRunner
 
 
 def _prepare_inputs(

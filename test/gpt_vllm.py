@@ -1,11 +1,12 @@
 import asyncio
+import os
 import random
 import time
 import uuid
-import torch
-import os
-from typing import AsyncGenerator, List, Dict, Any
+from typing import Any, Dict, List
+
 import numpy as np
+import torch
 
 
 def set_seed(seed=42):
@@ -26,13 +27,12 @@ import sys
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-import patch_vllm  # ⚠️ Monkey Patch, do not delete this line
-
-from indextts.gpt.index_tts_gpt2_vllm_v1 import PLACEHOLDER_TOKEN, PLACEHOLDER_TOKEN_ID
 
 from vllm import SamplingParams, TokensPrompt
 from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.v1.engine.async_llm import AsyncLLM
+
+from indextts.gpt.index_tts_gpt2_vllm_v1 import PLACEHOLDER_TOKEN
 
 model_dir = os.path.join(root_dir, "checkpoints/IndexTTS-2-vLLM")
 

@@ -1,19 +1,12 @@
 import os
-import re
 import time
-from subprocess import CalledProcessError
 import traceback
-from typing import List
+import warnings
 
-import numpy as np
-import sentencepiece as spm
 import torch
 import torchaudio
-from torch.nn.utils.rnn import pad_sequence
 from omegaconf import OmegaConf
-from tqdm import tqdm
-
-import warnings
+from torch.nn.utils.rnn import pad_sequence
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -22,7 +15,6 @@ from indextts.BigVGAN.models import BigVGAN as Generator
 from indextts.gpt.model import UnifiedVoice
 from indextts.utils.checkpoint import load_checkpoint
 from indextts.utils.feature_extractors import MelSpectrogramFeatures
-
 from indextts.utils.front import TextNormalizer, TextTokenizer
 
 
@@ -83,7 +75,7 @@ class IndexTTS:
 
                 anti_alias_activation_cuda = load.load()
                 print(">> Preload custom CUDA kernel for BigVGAN", anti_alias_activation_cuda)
-            except Exception as ex:
+            except Exception:
                 traceback.print_exc()
                 print(">> Failed to load custom CUDA kernel for BigVGAN. Falling back to torch.")
                 self.use_cuda_kernel = False

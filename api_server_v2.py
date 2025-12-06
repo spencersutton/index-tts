@@ -1,18 +1,15 @@
-import os
-import asyncio
-import io
-import traceback
-from fastapi import FastAPI, Request, Response, File, UploadFile, Form
-from fastapi.responses import JSONResponse
-from contextlib import asynccontextmanager
-from fastapi.middleware.cors import CORSMiddleware
-import uvicorn
 import argparse
-import json
+import io
+import os
 import time
-import soundfile as sf
-from typing import List, Optional, Union
+import traceback
+from contextlib import asynccontextmanager
 
+import soundfile as sf
+import uvicorn
+from fastapi import FastAPI, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from loguru import logger
 
 logger.add("logs/api_server_v2.log", rotation="10 MB", retention=10, level="DEBUG", enqueue=True)

@@ -3,41 +3,28 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import glob
+import json
 import os
 import time
-import random
 from pathlib import Path
-import re
-import glob
 
-import accelerate
-import json
 import numpy as np
-import torch
-from accelerate.utils import ProjectConfiguration
-from torch.utils.data import DataLoader
-from tqdm import tqdm
-
 import torch
 import torch.nn.functional as F
 import torchaudio
-
 from accelerate.logging import get_logger
-
-from models.codec.facodec.facodec_dataset import FAcodecDataset, FAcodecCollator
-from models.codec.codec_sampler import build_samplers
-from models.codec.codec_trainer import CodecTrainer
-
-from modules.dac.nn.loss import (
-    MultiScaleSTFTLoss,
-    MelSpectrogramLoss,
-    GANLoss,
-    L1Loss,
-    FocalLoss,
-)
 from audiotools import AudioSignal
-
-from transformers import Wav2Vec2Processor, Wav2Vec2ForCTC
+from models.codec.codec_trainer import CodecTrainer
+from models.codec.facodec.facodec_dataset import FAcodecCollator, FAcodecDataset
+from modules.dac.nn.loss import (
+    FocalLoss,
+    L1Loss,
+    MelSpectrogramLoss,
+    MultiScaleSTFTLoss,
+)
+from tqdm import tqdm
+from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor
 
 try:
     import nemo.collections.asr as nemo_asr

@@ -1,22 +1,16 @@
-import uuid
-import os
 import functools
-import patch_vllm  # ⚠️ Monkey Patch, do not delete this line
+import uuid
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from transformers import AutoModelForCausalLM, GPT2Config, GPT2LMHeadModel, LogitsProcessorList
-
 from transformers import GPT2Config, GPT2Model
+from vllm import SamplingParams, TokensPrompt
+from vllm.v1.engine.async_llm import AsyncLLM
 
 from indextts.gpt.conformer_encoder import ConformerEncoder
+from indextts.gpt.index_tts_gpt2_vllm_v1 import PLACEHOLDER_TOKEN
 from indextts.gpt.perceiver import PerceiverResampler
-
-from indextts.gpt.index_tts_gpt2_vllm_v1 import PLACEHOLDER_TOKEN, PLACEHOLDER_TOKEN_ID
-
-from vllm import AsyncLLMEngine, SamplingParams, TokensPrompt
-from vllm.v1.engine.async_llm import AsyncLLM
 
 
 def null_position_embeddings(range, dim):

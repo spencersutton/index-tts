@@ -1,13 +1,7 @@
-import torch
-import pyworld as pw
 import numpy as np
-import soundfile as sf
-import os
-from torchaudio.functional import pitch_shift
-import librosa
-from librosa.filters import mel as librosa_mel_fn
+import torch
 import torch.nn as nn
-import torch.nn.functional as F
+from librosa.filters import mel as librosa_mel_fn
 
 
 def dynamic_range_compression(x, C=1, clip_val=1e-5):

@@ -3,37 +3,33 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import os
-import torch
 import json
-import json5
-import time
-import accelerate
+import os
 import random
-import numpy as np
 import shutil
-
-from pathlib import Path
-from tqdm import tqdm
+import time
 from glob import glob
+from pathlib import Path
+
+import accelerate
+import json5
+import numpy as np
+import torch
 from accelerate.logging import get_logger
-from torch.utils.data import DataLoader
-
-from models.vocoders.vocoder_dataset import (
-    VocoderDataset,
-    VocoderCollator,
-    VocoderConcatDataset,
-)
-
-from models.vocoders.gan.generator import bigvgan, hifigan, melgan, nsfhifigan, apnet
-from models.vocoders.flow.waveglow import waveglow
-from models.vocoders.diffusion.diffwave import diffwave
 from models.vocoders.autoregressive.wavenet import wavenet
 from models.vocoders.autoregressive.wavernn import wavernn
-
-from models.vocoders.gan import gan_vocoder_inference
 from models.vocoders.diffusion import diffusion_vocoder_inference
-
+from models.vocoders.diffusion.diffwave import diffwave
+from models.vocoders.flow.waveglow import waveglow
+from models.vocoders.gan import gan_vocoder_inference
+from models.vocoders.gan.generator import apnet, bigvgan, hifigan, melgan, nsfhifigan
+from models.vocoders.vocoder_dataset import (
+    VocoderCollator,
+    VocoderConcatDataset,
+    VocoderDataset,
+)
+from torch.utils.data import DataLoader
+from tqdm import tqdm
 from utils.io import save_audio
 
 _vocoders = {
@@ -270,7 +266,7 @@ class VocoderInference(object):
                 checkpoint_path = checkpoint_dir
             else:
                 # Load the latest accelerator state dicts
-                ls = [str(i) for i in Path(checkpoint_dir).glob("*") if not "audio" in str(i)]
+                ls = [str(i) for i in Path(checkpoint_dir).glob("*") if "audio" not in str(i)]
                 ls.sort(
                     key=lambda x: int(x.split("/")[-1].split("_")[0].split("-")[-1]),
                     reverse=True,
@@ -423,7 +419,7 @@ def load_nnvocoder(
     else:
         # Load from accelerator state dict
         weights_file = os.path.join(weights_file, "checkpoint")
-        ls = [str(i) for i in Path(weights_file).glob("*") if not "audio" in str(i)]
+        ls = [str(i) for i in Path(weights_file).glob("*") if "audio" not in str(i)]
         ls.sort(key=lambda x: int(x.split("_")[-3].split("-")[-1]), reverse=True)
         checkpoint_path = ls[0]
         accelerator = accelerate.Accelerator()
@@ -467,7 +463,7 @@ def synthesis(
 
     print("Synthesis audios using {} vocoder...".format(vocoder_name))
 
-    ###### TODO: World Vocoder Refactor ######
+    # TODO: World Vocoder Refactor ######
     # if vocoder_name == "world":
     #     world_inference.synthesis_audios(
     #         cfg, dataset_name, split, n_samples, pred, save_dir, tag

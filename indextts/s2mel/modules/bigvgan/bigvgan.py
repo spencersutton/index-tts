@@ -4,22 +4,21 @@
 # Adapted from https://github.com/jik876/hifi-gan under the MIT license.
 #   LICENSE is in incl_licenses directory.
 
-import os
 import json
+import os
 from pathlib import Path
-from typing import Optional, Union, Dict
+from typing import Dict, Optional, Union
 
 import torch
 import torch.nn as nn
+from huggingface_hub import PyTorchModelHubMixin, hf_hub_download
 from torch.nn import Conv1d, ConvTranspose1d
-from torch.nn.utils import weight_norm, remove_weight_norm
+from torch.nn.utils import remove_weight_norm, weight_norm
 
 from . import activations
-from .utils import init_weights, get_padding
 from .alias_free_activation.torch.act import Activation1d as TorchActivation1d
 from .env import AttrDict
-
-from huggingface_hub import PyTorchModelHubMixin, hf_hub_download
+from .utils import get_padding, init_weights
 
 
 def load_hparams_from_json(path) -> AttrDict:
@@ -402,13 +401,13 @@ class BigVGAN(
         # instantiate BigVGAN using h
         if use_cuda_kernel:
             print(
-                f"[WARNING] You have specified use_cuda_kernel=True during BigVGAN.from_pretrained(). Only inference is supported (training is not implemented)!"
+                "[WARNING] You have specified use_cuda_kernel=True during BigVGAN.from_pretrained(). Only inference is supported (training is not implemented)!"
             )
             print(
-                f"[WARNING] You need nvcc and ninja installed in your system that matches your PyTorch build is using to build the kernel. If not, the model will fail to initialize or generate incorrect waveform!"
+                "[WARNING] You need nvcc and ninja installed in your system that matches your PyTorch build is using to build the kernel. If not, the model will fail to initialize or generate incorrect waveform!"
             )
             print(
-                f"[WARNING] For detail, see the official GitHub repository: https://github.com/NVIDIA/BigVGAN?tab=readme-ov-file#using-custom-cuda-kernel-for-synthesis"
+                "[WARNING] For detail, see the official GitHub repository: https://github.com/NVIDIA/BigVGAN?tab=readme-ov-file#using-custom-cuda-kernel-for-synthesis"
             )
         model = cls(h, use_cuda_kernel=use_cuda_kernel)
 
@@ -436,7 +435,7 @@ class BigVGAN(
             model.load_state_dict(checkpoint_dict["generator"])
         except RuntimeError:
             print(
-                f"[INFO] the pretrained checkpoint does not contain weight norm. Loading the checkpoint after removing weight norm!"
+                "[INFO] the pretrained checkpoint does not contain weight norm. Loading the checkpoint after removing weight norm!"
             )
             model.remove_weight_norm()
             model.load_state_dict(checkpoint_dict["generator"])

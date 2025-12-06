@@ -12,14 +12,14 @@ import torch.nn.functional as F
 from tokenizer import get_tokenizer
 
 try:
+    from eval import evaluate, get_task_dict, lm_eval
     from GPTQ import GenericGPTQRunner, InputRecorder
-    from eval import get_task_dict, evaluate, lm_eval
 except:
     pass
 
 from model import Transformer
 
-##### Quantization Primitives ######
+# Quantization Primitives ######
 
 
 def dynamically_quantize_per_channel(x, quant_min, quant_max, target_dtype):
@@ -257,7 +257,7 @@ class GPTQQuantHandler(QuantHandler):
         inputs = input_recorder.get_recorded_inputs()
         assert inputs is not None, (
             f"No inputs were collected, use a task other than {calibration_tasks}, "
-            + f"use option pad_calibration_inputs, or decrease calibration_sequence_length (currently "
+            + "use option pad_calibration_inputs, or decrease calibration_sequence_length (currently "
             + f"{calibration_seq_length})"
         )
         print(f"Obtained {len(inputs[0].values)} calibration samples")
@@ -302,7 +302,7 @@ class GPTQQuantHandler(QuantHandler):
         pass
 
 
-##### Weight-only int8 per-channel quantized code ######
+# Weight-only int8 per-channel quantized code ######
 
 
 def replace_linear_weight_only_int8_per_channel(module):
@@ -351,7 +351,7 @@ class WeightOnlyInt8Linear(torch.nn.Module):
         return F.linear(input, self.weight.to(dtype=input.dtype)) * self.scales
 
 
-##### weight only int4 per channel groupwise quantized code ######
+# weight only int4 per channel groupwise quantized code ######
 
 
 def prepare_int4_weight_and_scales_and_zeros(weight_bf16, groupsize, inner_k_tiles):
@@ -434,8 +434,8 @@ class WeightOnlyInt4QuantHandler:
                 weight = mod.weight.data
                 if not _check_linear_int4_k(in_features, self.groupsize, self.inner_k_tiles):
                     if self.padding:
-                        from model import find_multiple
                         import torch.nn.functional as F
+                        from model import find_multiple
 
                         print(f"warning: {fqn} is padded to satisfy in_features % 1024 == 0")
                         padded_in_features = find_multiple(in_features, 1024)

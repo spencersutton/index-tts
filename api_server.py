@@ -1,18 +1,16 @@
-import os
-import asyncio
-import io
-import traceback
-from fastapi import FastAPI, Request, Response
-from fastapi.responses import JSONResponse, StreamingResponse
-from contextlib import asynccontextmanager
-from fastapi.middleware.cors import CORSMiddleware
-import uvicorn
 import argparse
+import io
 import json
-import asyncio
+import os
 import time
-import numpy as np
+import traceback
+from contextlib import asynccontextmanager
+
 import soundfile as sf
+import uvicorn
+from fastapi import FastAPI, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from indextts.infer_vllm import IndexTTS
 

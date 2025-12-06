@@ -3,18 +3,13 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import torch
 import random
 
-import numpy as np
-
-import torchaudio
 import librosa
-from torch.nn import functional as F
-
-from torch.nn.utils.rnn import pad_sequence
+import numpy as np
+import torch
+import torchaudio
 from utils.data_utils import *
-from models.codec.codec_dataset import CodecDataset
 
 
 class FAcodecDataset(torch.utils.data.Dataset):

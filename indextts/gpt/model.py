@@ -3,15 +3,11 @@ import functools
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from transformers import GPT2Config, GPT2LMHeadModel, LogitsProcessorList
+from transformers import GPT2Config, GPT2LMHeadModel, GPT2Model, LogitsProcessorList
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
-from transformers.utils.model_parallel_utils import assert_device_map, get_device_map
-from transformers import GPT2Config, GPT2Model
 
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.perceiver import PerceiverResampler
-from indextts.utils.arch_util import AttentionBlock
-from indextts.utils.typical_sampling import TypicalLogitsWarper
 
 
 def null_position_embeddings(range, dim):
@@ -53,7 +49,7 @@ class GPT2InferenceModel(GPT2LMHeadModel):
 
         # # Create embedding
         mel_len = self.cached_mel_emb.shape[1]
-        if input_ids is not None:  #  and input_ids.shape[1] == 1
+        if input_ids is not None:  # and input_ids.shape[1] == 1
             inputs_embeds = self.audio_emb(input_ids)
             inputs_embeds = inputs_embeds + self.text_pos_embedding.get_fixed_embedding(
                 attention_mask.shape[1] - mel_len, attention_mask.device

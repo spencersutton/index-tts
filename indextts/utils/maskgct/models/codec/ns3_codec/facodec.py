@@ -5,17 +5,17 @@
 
 import numpy as np
 import torch
-from torch import nn, sin, pow
-from torch.nn import Parameter
-import torch.nn.functional as F
-from torch.nn.utils import weight_norm
-from .alias_free_torch import *
-from .quantize import *
 from einops import rearrange
 from einops.layers.torch import Rearrange
-from .transformer import TransformerEncoder
+from torch import nn, pow, sin
+from torch.nn import Parameter
+from torch.nn.utils import weight_norm
+
+from .alias_free_torch import *
 from .gradient_reversal import GradientReversal
 from .melspec import MelSpectrogram
+from .quantize import *
+from .transformer import TransformerEncoder
 
 
 def init_weights(m):

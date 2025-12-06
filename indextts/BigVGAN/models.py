@@ -10,7 +10,6 @@ from torch.nn import Conv1d, Conv2d, ConvTranspose1d
 from torch.nn.utils import remove_weight_norm, spectral_norm, weight_norm
 
 import indextts.BigVGAN.activations as activations
-
 from indextts.BigVGAN.ECAPA_TDNN import ECAPA_TDNN
 from indextts.BigVGAN.utils import get_padding, init_weights
 
@@ -274,7 +273,7 @@ class BigVGAN(torch.nn.Module):
         else:
             x = x.transpose(1, 2)
 
-        ### bigVGAN ###
+        # bigVGAN ###
         # pre conv
         x = self.conv_pre(x)
 

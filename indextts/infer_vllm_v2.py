@@ -1,46 +1,36 @@
 import os
 import random
-import re
 import time
 import traceback
-from typing import List
 import uuid
+import warnings
 
 import librosa
+import safetensors
 import torch
 import torchaudio
+from loguru import logger
 
 # from torch.nn.utils.rnn import pad_sequence
 from omegaconf import OmegaConf
-from tqdm import tqdm
-from transformers import SeamlessM4TFeatureExtractor
-from transformers import AutoTokenizer
-from modelscope import AutoModelForCausalLM
-import safetensors
-from loguru import logger
-
-import warnings
+from transformers import AutoTokenizer, SeamlessM4TFeatureExtractor
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
-from indextts.BigVGAN.models import BigVGAN as Generator
-from indextts.gpt.model_vllm_v2 import UnifiedVoice
-from indextts.utils.checkpoint import load_checkpoint
-from indextts.utils.feature_extractors import MelSpectrogramFeatures
-from indextts.utils.maskgct_utils import build_semantic_model, build_semantic_codec
-from indextts.utils.front import TextNormalizer, TextTokenizer
-
-from indextts.s2mel.modules.commons import load_checkpoint2, MyModel
-from indextts.s2mel.modules.bigvgan import bigvgan
-from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
-from indextts.s2mel.modules.audio import mel_spectrogram
-
 import torch.nn.functional as F
-
 from vllm import SamplingParams, TokensPrompt
 from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.v1.engine.async_llm import AsyncLLM
+
+from indextts.gpt.model_vllm_v2 import UnifiedVoice
+from indextts.s2mel.modules.audio import mel_spectrogram
+from indextts.s2mel.modules.bigvgan import bigvgan
+from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
+from indextts.s2mel.modules.commons import MyModel, load_checkpoint2
+from indextts.utils.checkpoint import load_checkpoint
+from indextts.utils.front import TextNormalizer, TextTokenizer
+from indextts.utils.maskgct_utils import build_semantic_codec, build_semantic_model
 
 
 class IndexTTS2:
@@ -118,7 +108,7 @@ class IndexTTS2:
 
                 anti_alias_activation_cuda = load.load()
                 logger.info(f">> Preload custom CUDA kernel for BigVGAN {anti_alias_activation_cuda}")
-            except Exception as ex:
+            except Exception:
                 traceback.print_exc()
                 logger.info(">> Failed to load custom CUDA kernel for BigVGAN. Falling back to torch.")
                 self.use_cuda_kernel = False

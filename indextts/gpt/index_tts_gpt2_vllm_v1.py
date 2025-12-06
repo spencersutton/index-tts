@@ -1,37 +1,27 @@
 from typing import (
     Any,
     Dict,
-    Final,
     Iterable,
     List,
-    Literal,
     Mapping,
     Optional,
-    Protocol,
     Set,
     Tuple,
-    TypedDict,
-    TypeVar,
     Union,
-    Sequence,
 )
 
-import numpy as np
 import torch
 from torch import nn
 from transformers import BatchFeature
-
 from vllm.compilation.decorators import support_torch_compile
-from vllm.config import CacheConfig, VllmConfig
-from vllm.distributed.parallel_state import get_pp_group, get_tensor_model_parallel_world_size
+from vllm.config import VllmConfig
+from vllm.distributed.parallel_state import get_pp_group
 from vllm.model_executor.layers.logits_processor import LogitsProcessor
 from vllm.model_executor.layers.sampler import SamplerOutput, get_sampler
-from vllm.model_executor.layers.vocab_parallel_embedding import ParallelLMHead, VocabParallelEmbedding
+from vllm.model_executor.layers.vocab_parallel_embedding import ParallelLMHead
 from vllm.model_executor.model_loader.weight_utils import default_weight_loader
-from vllm.model_executor.sampling_metadata import SamplingMetadata
-from vllm.sequence import IntermediateTensors
-from vllm.model_executor.models.interfaces import SupportsPP
-
+from vllm.model_executor.models.gpt2 import GPT2Block  # , GPT2MLP, GPT2Attention
+from vllm.model_executor.models.interfaces import MultiModalEmbeddings, SupportsMultiModal, SupportsPP
 from vllm.model_executor.models.utils import (
     is_pp_missing_parameter,
     make_empty_intermediate_tensors_factory,
@@ -39,22 +29,20 @@ from vllm.model_executor.models.utils import (
     maybe_prefix,
     merge_multimodal_embeddings,
 )
-
-from vllm.model_executor.models.gpt2 import GPT2Block  # , GPT2MLP, GPT2Attention
-
-from vllm.model_executor.models.interfaces import SupportsMultiModal, MultiModalEmbeddings
+from vllm.model_executor.sampling_metadata import SamplingMetadata
 from vllm.multimodal import MULTIMODAL_REGISTRY
 from vllm.multimodal.inputs import MultiModalFieldConfig, MultiModalKwargsItems
+from vllm.multimodal.parse import DictEmbeddingItems, ModalityDataItems, MultiModalDataItems, MultiModalDataParser
 from vllm.multimodal.processing import (
     BaseMultiModalProcessor,
-    PromptReplacement,
     BaseProcessingInfo,
-    PromptInsertion,
+    PromptReplacement,
     PromptUpdate,
     PromptUpdateDetails,
 )
 from vllm.multimodal.profiling import BaseDummyInputsBuilder
-from vllm.multimodal.parse import MultiModalDataParser, DictEmbeddingItems, ModalityDataItems, MultiModalDataItems
+from vllm.sequence import IntermediateTensors
+
 # from vllm.model_executor.models.utils import merge_multimodal_embeddings
 
 PLACEHOLDER_TOKEN = "!"

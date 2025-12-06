@@ -1,8 +1,6 @@
 import os
 import sys
 import threading
-import time
-
 import warnings
 
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -12,11 +10,11 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 sys.path.append(os.path.join(current_dir, "indextts"))
 
+import argparse
+
 import gradio as gr
 
 from indextts.infer_vllm import IndexTTS
-
-import argparse
 
 parser = argparse.ArgumentParser(description="IndexTTS WebUI")
 parser.add_argument("--port", type=int, default=6006, help="Port to run the web UI on")

@@ -1,6 +1,7 @@
-from dataclasses import asdict, dataclass
 import os
+from dataclasses import asdict, dataclass
 from typing import List, Optional
+
 import requests
 
 SERVER_PORT = 6006

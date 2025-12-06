@@ -39,12 +39,10 @@
 
 import typing as tp
 
-from einops import rearrange, repeat
 import torch
-from torch import nn
 import torch.nn.functional as F
-
-from .distrib import broadcast_tensors, rank
+from einops import rearrange, repeat
+from torch import nn
 
 
 def default(val: tp.Any, d: tp.Any) -> tp.Any:

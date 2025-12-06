@@ -21,14 +21,10 @@ class CosineClassifier(nn.Module):
         self.blocks = nn.ModuleList()
 
         for index in range(num_blocks):
-            self.blocks.append(
-                DenseLayer(input_dim, inter_dim, config_str='batchnorm')
-            )
+            self.blocks.append(DenseLayer(input_dim, inter_dim, config_str="batchnorm"))
             input_dim = inter_dim
 
-        self.weight = nn.Parameter(
-            torch.FloatTensor(out_neurons, input_dim)
-        )
+        self.weight = nn.Parameter(torch.FloatTensor(out_neurons, input_dim))
         nn.init.xavier_uniform_(self.weight)
 
     def forward(self, x):
@@ -39,6 +35,7 @@ class CosineClassifier(nn.Module):
         # normalized
         x = F.linear(F.normalize(x), F.normalize(self.weight))
         return x
+
 
 class LinearClassifier(nn.Module):
     def __init__(
@@ -54,9 +51,7 @@ class LinearClassifier(nn.Module):
 
         self.nonlinear = nn.ReLU(inplace=True)
         for index in range(num_blocks):
-            self.blocks.append(
-                DenseLayer(input_dim, inter_dim, bias=True)
-            )
+            self.blocks.append(DenseLayer(input_dim, inter_dim, bias=True))
             input_dim = inter_dim
 
         self.linear = nn.Linear(input_dim, out_neurons, bias=True)

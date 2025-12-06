@@ -375,7 +375,7 @@ class DiscreteVAE(nn.Module):
             out, _ = self.decode(codes)
 
         # reconstruction loss
-        out = out[..., :img.shape[-1]]
+        out = out[..., : img.shape[-1]]
         recon_loss = self.loss_fn(img, out, reduction="mean")
         ssim_loss = torch.zeros(size=(1,)).cuda()
 

@@ -67,9 +67,7 @@ class MelSpectrogram(nn.Module):
         mel_basis = {}
         hann_window = {}
 
-        mel = librosa_mel_fn(
-            sr=sampling_rate, n_fft=n_fft, n_mels=num_mels, fmin=fmin, fmax=fmax
-        )
+        mel = librosa_mel_fn(sr=sampling_rate, n_fft=n_fft, n_mels=num_mels, fmin=fmin, fmax=fmax)
         mel_basis = torch.from_numpy(mel).float()
         hann_window = torch.hann_window(win_size)
 

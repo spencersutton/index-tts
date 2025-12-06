@@ -70,53 +70,21 @@ class MaskGCT_S2A(nn.Module):
     ):
         super().__init__()
 
-        num_quantizer = (
-            cfg.num_quantizer
-            if cfg is not None and hasattr(cfg, "num_quantizer")
-            else num_quantizer
-        )
-        hidden_size = (
-            cfg.hidden_size
-            if cfg is not None and hasattr(cfg, "hidden_size")
-            else hidden_size
-        )
-        num_layers = (
-            cfg.num_layers
-            if cfg is not None and hasattr(cfg, "num_layers")
-            else num_layers
-        )
-        num_heads = (
-            cfg.num_heads
-            if cfg is not None and hasattr(cfg, "num_heads")
-            else num_heads
-        )
-        codebook_size = (
-            cfg.codebook_size
-            if cfg is not None and hasattr(cfg, "codebook_size")
-            else codebook_size
-        )
-        cfg_scale = (
-            cfg.cfg_scale
-            if cfg is not None and hasattr(cfg, "cfg_scale")
-            else cfg_scale
-        )
+        num_quantizer = cfg.num_quantizer if cfg is not None and hasattr(cfg, "num_quantizer") else num_quantizer
+        hidden_size = cfg.hidden_size if cfg is not None and hasattr(cfg, "hidden_size") else hidden_size
+        num_layers = cfg.num_layers if cfg is not None and hasattr(cfg, "num_layers") else num_layers
+        num_heads = cfg.num_heads if cfg is not None and hasattr(cfg, "num_heads") else num_heads
+        codebook_size = cfg.codebook_size if cfg is not None and hasattr(cfg, "codebook_size") else codebook_size
+        cfg_scale = cfg.cfg_scale if cfg is not None and hasattr(cfg, "cfg_scale") else cfg_scale
         mask_layer_schedule = (
-            cfg.mask_layer_schedule
-            if cfg is not None and hasattr(cfg, "mask_layer_schedule")
-            else mask_layer_schedule
+            cfg.mask_layer_schedule if cfg is not None and hasattr(cfg, "mask_layer_schedule") else mask_layer_schedule
         )
         cond_codebook_size = (
-            cfg.cond_codebook_size
-            if cfg is not None and hasattr(cfg, "cond_codebook_size")
-            else cond_codebook_size
+            cfg.cond_codebook_size if cfg is not None and hasattr(cfg, "cond_codebook_size") else cond_codebook_size
         )
-        cond_dim = (
-            cfg.cond_dim if cfg is not None and hasattr(cfg, "cond_dim") else cond_dim
-        )
+        cond_dim = cfg.cond_dim if cfg is not None and hasattr(cfg, "cond_dim") else cond_dim
         predict_layer_1 = (
-            cfg.predict_layer_1
-            if cfg is not None and hasattr(cfg, "predict_layer_1")
-            else predict_layer_1
+            cfg.predict_layer_1 if cfg is not None and hasattr(cfg, "predict_layer_1") else predict_layer_1
         )
 
         self.num_quantizer = num_quantizer
@@ -133,19 +101,13 @@ class MaskGCT_S2A(nn.Module):
         self.layer_emb = nn.Embedding(self.num_quantizer, self.hidden_size)
         self.mask_emb = nn.Embedding(1, self.hidden_size)
 
-        self.token_emb = torch.nn.ModuleList(
-            [
-                nn.Embedding(self.codebook_size, self.hidden_size)
-                for _ in range(self.num_quantizer)
-            ]
-        )
+        self.token_emb = torch.nn.ModuleList([
+            nn.Embedding(self.codebook_size, self.hidden_size) for _ in range(self.num_quantizer)
+        ])
 
-        self.to_logits = torch.nn.ModuleList(
-            [
-                nn.Linear(self.hidden_size, self.codebook_size)
-                for _ in range(self.num_quantizer)
-            ]
-        )
+        self.to_logits = torch.nn.ModuleList([
+            nn.Linear(self.hidden_size, self.codebook_size) for _ in range(self.num_quantizer)
+        ])
 
         self.cond_emb = nn.Embedding(cond_codebook_size, self.hidden_size)
 
@@ -169,34 +131,17 @@ class MaskGCT_S2A(nn.Module):
                 mask_layer = torch.randint(1, self.num_quantizer, (1,)).to(t.device)
         elif self.mask_layer_schedule == "cosine":
             if self.predict_layer_1:
-                weights = torch.tensor(
-                    [
-                        np.cos(i / self.num_quantizer * np.pi / 2)
-                        for i in range(self.num_quantizer)
-                    ]
-                )
+                weights = torch.tensor([np.cos(i / self.num_quantizer * np.pi / 2) for i in range(self.num_quantizer)])
             else:
                 weights = torch.tensor(
-                    [0]
-                    + [
-                        np.cos((i - 1) / self.num_quantizer * np.pi / 2)
-                        for i in range(1, self.num_quantizer)
-                    ]
+                    [0] + [np.cos((i - 1) / self.num_quantizer * np.pi / 2) for i in range(1, self.num_quantizer)]
                 )
             mask_layer = torch.multinomial(weights, 1).to(t.device)
         elif self.mask_layer_schedule == "linear":
             if self.predict_layer_1:
-                weights = torch.tensor(
-                    [self.num_quantizer - i for i in range(self.num_quantizer)]
-                )
+                weights = torch.tensor([self.num_quantizer - i for i in range(self.num_quantizer)])
             else:
-                weights = torch.tensor(
-                    [0]
-                    + [
-                        self.num_quantizer - (i - 1)
-                        for i in range(1, self.num_quantizer)
-                    ]
-                )
+                weights = torch.tensor([0] + [self.num_quantizer - (i - 1) for i in range(1, self.num_quantizer)])
             weights = weights / weights.sum()
             mask_layer = torch.multinomial(weights, 1).to(t.device)
         # print(mask_layer)
@@ -216,21 +161,13 @@ class MaskGCT_S2A(nn.Module):
 
         # get prompt len
         if torch.rand(1) > cfg_scale:
-            prompt_len = torch.randint(
-                min(x0.shape[1] // 4, 5), x0.shape[1] // 2, (x0.shape[0],)
-            ).to(
-                x0.device
-            )  # (B,)
+            prompt_len = torch.randint(min(x0.shape[1] // 4, 5), x0.shape[1] // 2, (x0.shape[0],)).to(x0.device)  # (B,)
         else:
             prompt_len = torch.zeros(x0.shape[0]).to(x0)  # (B,)
 
         # get is prompt
         is_prompt = torch.zeros_like(x0[:, :, 0])  # (B, T)
-        col_indices = (
-            torch.arange(is_prompt.shape[1])
-            .repeat(is_prompt.shape[0], 1)
-            .to(prompt_len)
-        )  # (B, T)
+        col_indices = torch.arange(is_prompt.shape[1]).repeat(is_prompt.shape[0], 1).to(prompt_len)  # (B, T)
         is_prompt[col_indices < prompt_len.unsqueeze(1)] = 1  # (B, T) 1 if prompt
 
         for idx, token_emb_idx in enumerate(self.token_emb):
@@ -252,25 +189,17 @@ class MaskGCT_S2A(nn.Module):
 
                 mask = mask[..., None]  # (B, T, 1)
                 xt = (
-                    xt
-                    + mask * mask_token[:, None, :]
-                    + (1 - mask) * token_emb_idx(x0[:, :, idx])
+                    xt + mask * mask_token[:, None, :] + (1 - mask) * token_emb_idx(x0[:, :, idx])
                 )  # (B, T, hidden_size)
 
             else:
                 # prompt part don't need to be masked
-                xt = (
-                    xt
-                    + token_emb_idx(x0[:, :, idx]) * is_prompt[..., None]
-                    + mask_token * (1 - is_prompt[..., None])
-                )
+                xt = xt + token_emb_idx(x0[:, :, idx]) * is_prompt[..., None] + mask_token * (1 - is_prompt[..., None])
 
         return xt, new_t, mask_layer, mask, prompt_len, mask_prob
 
     def loss_t(self, x0, x_mask, t, cond=None):
-        xt, new_t, mask_layer, mask, prompt_len, mask_prob = self.forward_diffusion(
-            x0, t
-        )
+        xt, new_t, mask_layer, mask, prompt_len, mask_prob = self.forward_diffusion(x0, t)
         # xt: (B, T, hidden_size)
         # new_t: (B,)
         # mask_layer: (1,)
@@ -351,9 +280,7 @@ class MaskGCT_S2A(nn.Module):
         rescale_cfg=1.0,
     ):
 
-        assert (
-            len(n_timesteps) == self.num_quantizer
-        )  # each layer has a number of steps
+        assert len(n_timesteps) == self.num_quantizer  # each layer has a number of steps
 
         prompt_code = prompt  # (B, prompt_len, num_quantizer)
         prompt_len = prompt_code.shape[1]
@@ -362,13 +289,9 @@ class MaskGCT_S2A(nn.Module):
         if x_mask == None:
             x_mask = torch.ones(cond.shape[0], target_len).to(cond.device)  # (B, T)
         if prompt_mask == None:
-            prompt_mask = torch.ones(cond.shape[0], prompt_len).to(
-                cond.device
-            )  # (B, prompt_len)
+            prompt_mask = torch.ones(cond.shape[0], prompt_len).to(cond.device)  # (B, prompt_len)
 
-        cum = torch.zeros(x_mask.shape[0], x_mask.shape[1], self.hidden_size).to(
-            x_mask.device
-        )  # (B, T, hidden_size)
+        cum = torch.zeros(x_mask.shape[0], x_mask.shape[1], self.hidden_size).to(x_mask.device)  # (B, T, hidden_size)
 
         bsz, seq_len, _ = cum.shape
 
@@ -394,9 +317,7 @@ class MaskGCT_S2A(nn.Module):
             to_logits = self.to_logits[mask_layer]
             token_emb = self.token_emb[mask_layer]
             mask_layer = torch.tensor(mask_layer).to(x_mask.device).long().unsqueeze(0)
-            mask_layer_cond = self.layer_emb(mask_layer).unsqueeze(
-                1
-            )  # (1,) -> (1, 1, hidden_size)
+            mask_layer_cond = self.layer_emb(mask_layer).unsqueeze(1)  # (1,) -> (1, 1, hidden_size)
             temp_cond = cond + mask_layer_cond  # (B, T, hidden_size)
 
             mask_token = self.mask_emb(torch.zeros_like(mask_layer))  # (1, hidden_size)
@@ -408,9 +329,7 @@ class MaskGCT_S2A(nn.Module):
             # prompt_code: (B, prompt_len, num_quantizer)
             cur_prompt = 0
             for idx, emb in enumerate(self.token_emb):
-                cur_prompt = cur_prompt + emb(
-                    prompt_code[:, :, idx]
-                )  # (B, prompt_len, hidden_size)
+                cur_prompt = cur_prompt + emb(prompt_code[:, :, idx])  # (B, prompt_len, hidden_size)
 
             t_list = [1.0 - i * h for i in range(steps)]
             t_list.append(0.0)
@@ -421,18 +340,14 @@ class MaskGCT_S2A(nn.Module):
                 cur = cur + mask_token[:, None, :] * (max_layer - 1 - mask_layer)
 
                 xt_input = torch.cat([cur_prompt, cur], dim=1)  # (B, T, hidden_size)
-                xt_mask = torch.cat(
-                    [prompt_mask, x_mask], dim=1
-                )  # (B, T), mask is 0 for padding
+                xt_mask = torch.cat([prompt_mask, x_mask], dim=1)  # (B, T), mask is 0 for padding
 
                 embeds = self.diff_estimator(xt_input, t, temp_cond, xt_mask)
                 embeds = embeds[:, prompt_len:, :]
 
                 # cfg
                 if cfg > 0:
-                    mask_embeds = self.diff_estimator(
-                        cur, t, temp_cond[:, prompt_len:, :], x_mask
-                    )
+                    mask_embeds = self.diff_estimator(cur, t, temp_cond[:, prompt_len:, :], x_mask)
                     pos_emb_std = embeds.std()  # std(g_cond)
                     embeds = embeds + cfg * (embeds - mask_embeds)  # g_cfg
                     rescale_embeds = embeds * pos_emb_std / embeds.std()  # g_final
@@ -472,14 +387,10 @@ class MaskGCT_S2A(nn.Module):
 
                 if next_mask_num == 0:
                     break
-                scores = scores.masked_fill(
-                    ~mask.squeeze(-1), -torch.finfo(scores.dtype).max
-                )
+                scores = scores.masked_fill(~mask.squeeze(-1), -torch.finfo(scores.dtype).max)
 
                 mask_indices = scores.topk(next_mask_num, dim=-1).indices
-                mask = torch.zeros_like(scores, dtype=torch.bool).scatter(
-                    1, mask_indices, True
-                )
+                mask = torch.zeros_like(scores, dtype=torch.bool).scatter(1, mask_indices, True)
                 seq = seq.masked_fill(mask, 0)
 
                 mask = mask.unsqueeze(-1)

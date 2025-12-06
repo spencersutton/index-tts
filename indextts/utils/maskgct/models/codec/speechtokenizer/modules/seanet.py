@@ -70,9 +70,7 @@ class SEANetResnetBlock(nn.Module):
         true_skip: bool = True,
     ):
         super().__init__()
-        assert len(kernel_sizes) == len(
-            dilations
-        ), "Number of kernel sizes should match number of dilations"
+        assert len(kernel_sizes) == len(dilations), "Number of kernel sizes should match number of dilations"
         act = getattr(nn, activation) if activation != "Snake" else Snake1d
         hidden = dim // compress
         block = []
@@ -203,11 +201,7 @@ class SEANetEncoder(nn.Module):
 
             # Add downsampling layers
             model += [
-                (
-                    act(**activation_params)
-                    if activation != "Snake"
-                    else act(mult * n_filters)
-                ),
+                (act(**activation_params) if activation != "Snake" else act(mult * n_filters)),
                 SConv1d(
                     mult * n_filters,
                     mult * n_filters * 2,
@@ -222,17 +216,11 @@ class SEANetEncoder(nn.Module):
             mult *= 2
 
         if lstm:
-            model += [
-                SLSTM(mult * n_filters, num_layers=lstm, bidirectional=bidirectional)
-            ]
+            model += [SLSTM(mult * n_filters, num_layers=lstm, bidirectional=bidirectional)]
 
         mult = mult * 2 if bidirectional else mult
         model += [
-            (
-                act(**activation_params)
-                if activation != "Snake"
-                else act(mult * n_filters)
-            ),
+            (act(**activation_params) if activation != "Snake" else act(mult * n_filters)),
             SConv1d(
                 mult * n_filters,
                 dimension,
@@ -327,19 +315,13 @@ class SEANetDecoder(nn.Module):
         ]
 
         if lstm:
-            model += [
-                SLSTM(mult * n_filters, num_layers=lstm, bidirectional=bidirectional)
-            ]
+            model += [SLSTM(mult * n_filters, num_layers=lstm, bidirectional=bidirectional)]
 
         # Upsample to raw audio scale
         for i, ratio in enumerate(self.ratios):
             # Add upsampling layers
             model += [
-                (
-                    act(**activation_params)
-                    if activation != "Snake"
-                    else act(mult * n_filters)
-                ),
+                (act(**activation_params) if activation != "Snake" else act(mult * n_filters)),
                 SConvTranspose1d(
                     mult * n_filters,
                     mult * n_filters // 2,

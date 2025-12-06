@@ -18,7 +18,8 @@ class Vocos(nn.Module):
     """
 
     def __init__(
-        self, args,
+        self,
+        args,
     ):
         super().__init__()
         self.backbone = VocosBackbone(

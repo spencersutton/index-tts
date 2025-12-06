@@ -37,9 +37,7 @@ class SpeechTokenizer(nn.Module):
         self.n_q = config.get("n_q")
         self.downsample_rate = np.prod(config.get("strides"))
         if config.get("dimension") != config.get("semantic_dimension"):
-            self.transform = nn.Linear(
-                config.get("dimension"), config.get("semantic_dimension")
-            )
+            self.transform = nn.Linear(config.get("dimension"), config.get("semantic_dimension"))
         else:
             self.transform = nn.Identity()
         self.quantizer = ResidualVectorQuantizer(
@@ -109,9 +107,7 @@ class SpeechTokenizer(nn.Module):
         """
         n_q = n_q if n_q else self.n_q
         e = self.encoder(x)
-        quantized, codes, commit_loss, quantized_list = self.quantizer(
-            e, n_q=n_q, layers=layers
-        )
+        quantized, codes, commit_loss, quantized_list = self.quantizer(e, n_q=n_q, layers=layers)
         feature = rearrange(quantized_list[0], "b d t -> b t d")
         feature = self.transform(feature)
         o = self.decoder(quantized)

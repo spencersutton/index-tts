@@ -16,8 +16,7 @@ from torch.nn import Conv1d, ConvTranspose1d
 from torch.nn.utils import remove_weight_norm, weight_norm
 
 import indextts.BigVGAN.activations as activations
-from indextts.BigVGAN.alias_free_activation.torch.act import \
-    Activation1d as TorchActivation1d
+from indextts.BigVGAN.alias_free_activation.torch.act import Activation1d as TorchActivation1d
 from indextts.BigVGAN.ECAPA_TDNN import ECAPA_TDNN
 from indextts.BigVGAN.env import AttrDict
 from indextts.BigVGAN.utils import get_padding, init_weights
@@ -54,48 +53,41 @@ class AMPBlock1(torch.nn.Module):
 
         self.h = h
 
-        self.convs1 = nn.ModuleList(
-            [
-                weight_norm(
-                    Conv1d(
-                        channels,
-                        channels,
-                        kernel_size,
-                        stride=1,
-                        dilation=d,
-                        padding=get_padding(kernel_size, d),
-                    )
+        self.convs1 = nn.ModuleList([
+            weight_norm(
+                Conv1d(
+                    channels,
+                    channels,
+                    kernel_size,
+                    stride=1,
+                    dilation=d,
+                    padding=get_padding(kernel_size, d),
                 )
-                for d in dilation
-            ]
-        )
+            )
+            for d in dilation
+        ])
         self.convs1.apply(init_weights)
 
-        self.convs2 = nn.ModuleList(
-            [
-                weight_norm(
-                    Conv1d(
-                        channels,
-                        channels,
-                        kernel_size,
-                        stride=1,
-                        dilation=1,
-                        padding=get_padding(kernel_size, 1),
-                    )
+        self.convs2 = nn.ModuleList([
+            weight_norm(
+                Conv1d(
+                    channels,
+                    channels,
+                    kernel_size,
+                    stride=1,
+                    dilation=1,
+                    padding=get_padding(kernel_size, 1),
                 )
-                for _ in range(len(dilation))
-            ]
-        )
+            )
+            for _ in range(len(dilation))
+        ])
         self.convs2.apply(init_weights)
 
-        self.num_layers = len(self.convs1) + len(
-            self.convs2
-        )  # Total number of conv layers
+        self.num_layers = len(self.convs1) + len(self.convs2)  # Total number of conv layers
 
         # Select which Activation1d, lazy-load cuda version to ensure backward compatibility
         if self.h.get("use_cuda_kernel", False):
-            from alias_free_activation.cuda.activation1d import \
-                Activation1d as CudaActivation1d
+            from alias_free_activation.cuda.activation1d import Activation1d as CudaActivation1d
 
             Activation1d = CudaActivation1d
         else:
@@ -103,27 +95,15 @@ class AMPBlock1(torch.nn.Module):
 
         # Activation functions
         if activation == "snake":
-            self.activations = nn.ModuleList(
-                [
-                    Activation1d(
-                        activation=activations.Snake(
-                            channels, alpha_logscale=h.snake_logscale
-                        )
-                    )
-                    for _ in range(self.num_layers)
-                ]
-            )
+            self.activations = nn.ModuleList([
+                Activation1d(activation=activations.Snake(channels, alpha_logscale=h.snake_logscale))
+                for _ in range(self.num_layers)
+            ])
         elif activation == "snakebeta":
-            self.activations = nn.ModuleList(
-                [
-                    Activation1d(
-                        activation=activations.SnakeBeta(
-                            channels, alpha_logscale=h.snake_logscale
-                        )
-                    )
-                    for _ in range(self.num_layers)
-                ]
-            )
+            self.activations = nn.ModuleList([
+                Activation1d(activation=activations.SnakeBeta(channels, alpha_logscale=h.snake_logscale))
+                for _ in range(self.num_layers)
+            ])
         else:
             raise NotImplementedError(
                 "activation incorrectly specified. check the config file and look for 'activation'."
@@ -172,29 +152,26 @@ class AMPBlock2(torch.nn.Module):
 
         self.h = h
 
-        self.convs = nn.ModuleList(
-            [
-                weight_norm(
-                    Conv1d(
-                        channels,
-                        channels,
-                        kernel_size,
-                        stride=1,
-                        dilation=d,
-                        padding=get_padding(kernel_size, d),
-                    )
+        self.convs = nn.ModuleList([
+            weight_norm(
+                Conv1d(
+                    channels,
+                    channels,
+                    kernel_size,
+                    stride=1,
+                    dilation=d,
+                    padding=get_padding(kernel_size, d),
                 )
-                for d in dilation
-            ]
-        )
+            )
+            for d in dilation
+        ])
         self.convs.apply(init_weights)
 
         self.num_layers = len(self.convs)  # Total number of conv layers
 
         # Select which Activation1d, lazy-load cuda version to ensure backward compatibility
         if self.h.get("use_cuda_kernel", False):
-            from alias_free_activation.cuda.activation1d import \
-                Activation1d as CudaActivation1d
+            from alias_free_activation.cuda.activation1d import Activation1d as CudaActivation1d
 
             Activation1d = CudaActivation1d
         else:
@@ -202,27 +179,15 @@ class AMPBlock2(torch.nn.Module):
 
         # Activation functions
         if activation == "snake":
-            self.activations = nn.ModuleList(
-                [
-                    Activation1d(
-                        activation=activations.Snake(
-                            channels, alpha_logscale=h.snake_logscale
-                        )
-                    )
-                    for _ in range(self.num_layers)
-                ]
-            )
+            self.activations = nn.ModuleList([
+                Activation1d(activation=activations.Snake(channels, alpha_logscale=h.snake_logscale))
+                for _ in range(self.num_layers)
+            ])
         elif activation == "snakebeta":
-            self.activations = nn.ModuleList(
-                [
-                    Activation1d(
-                        activation=activations.SnakeBeta(
-                            channels, alpha_logscale=h.snake_logscale
-                        )
-                    )
-                    for _ in range(self.num_layers)
-                ]
-            )
+            self.activations = nn.ModuleList([
+                Activation1d(activation=activations.SnakeBeta(channels, alpha_logscale=h.snake_logscale))
+                for _ in range(self.num_layers)
+            ])
         else:
             raise NotImplementedError(
                 "activation incorrectly specified. check the config file and look for 'activation'."
@@ -240,7 +205,7 @@ class AMPBlock2(torch.nn.Module):
             remove_weight_norm(l)
 
 
-'''
+"""
     PyTorchModelHubMixin,
     library_name="bigvgan",
     repo_url="https://github.com/NVIDIA/BigVGAN",
@@ -248,7 +213,7 @@ class AMPBlock2(torch.nn.Module):
     pipeline_tag="audio-to-audio",
     license="mit",
     tags=["neural-vocoder", "audio-generation", "arxiv:2206.04658"],
-'''
+"""
 
 
 class BigVGAN(
@@ -274,8 +239,7 @@ class BigVGAN(
 
         # Select which Activation1d, lazy-load cuda version to ensure backward compatibility
         if self.h.get("use_cuda_kernel", False):
-            from alias_free_activation.cuda.activation1d import \
-                Activation1d as CudaActivation1d
+            from alias_free_activation.cuda.activation1d import Activation1d as CudaActivation1d
 
             Activation1d = CudaActivation1d
         else:
@@ -288,9 +252,7 @@ class BigVGAN(
         self.cond_in_each_up_layer = h.cond_d_vector_in_each_upsampling_layer
 
         # Pre-conv
-        self.conv_pre = weight_norm(
-            Conv1d(h.gpt_dim, h.upsample_initial_channel, 7, 1, padding=3)
-        )
+        self.conv_pre = weight_norm(Conv1d(h.gpt_dim, h.upsample_initial_channel, 7, 1, padding=3))
 
         # Define which AMPBlock to use. BigVGAN uses AMPBlock1 as default
         if h.resblock == "1":
@@ -298,49 +260,37 @@ class BigVGAN(
         elif h.resblock == "2":
             resblock_class = AMPBlock2
         else:
-            raise ValueError(
-                f"Incorrect resblock class specified in hyperparameters. Got {h.resblock}"
-            )
+            raise ValueError(f"Incorrect resblock class specified in hyperparameters. Got {h.resblock}")
 
         # Transposed conv-based upsamplers. does not apply anti-aliasing
         self.ups = nn.ModuleList()
         for i, (u, k) in enumerate(zip(h.upsample_rates, h.upsample_kernel_sizes)):
             self.ups.append(
-                nn.ModuleList(
-                    [
-                        weight_norm(
-                            ConvTranspose1d(
-                                h.upsample_initial_channel // (2**i),
-                                h.upsample_initial_channel // (2 ** (i + 1)),
-                                k,
-                                u,
-                                padding=(k - u) // 2,
-                            )
+                nn.ModuleList([
+                    weight_norm(
+                        ConvTranspose1d(
+                            h.upsample_initial_channel // (2**i),
+                            h.upsample_initial_channel // (2 ** (i + 1)),
+                            k,
+                            u,
+                            padding=(k - u) // 2,
                         )
-                    ]
-                )
+                    )
+                ])
             )
 
         # Residual blocks using anti-aliased multi-periodicity composition modules (AMP)
         self.resblocks = nn.ModuleList()
         for i in range(len(self.ups)):
             ch = h.upsample_initial_channel // (2 ** (i + 1))
-            for j, (k, d) in enumerate(
-                zip(h.resblock_kernel_sizes, h.resblock_dilation_sizes)
-            ):
-                self.resblocks.append(
-                    resblock_class(h, ch, k, d, activation=h.activation)
-                )
+            for j, (k, d) in enumerate(zip(h.resblock_kernel_sizes, h.resblock_dilation_sizes)):
+                self.resblocks.append(resblock_class(h, ch, k, d, activation=h.activation))
 
         # Post-conv
         activation_post = (
             activations.Snake(ch, alpha_logscale=h.snake_logscale)
             if h.activation == "snake"
-            else (
-                activations.SnakeBeta(ch, alpha_logscale=h.snake_logscale)
-                if h.activation == "snakebeta"
-                else None
-            )
+            else (activations.SnakeBeta(ch, alpha_logscale=h.snake_logscale) if h.activation == "snakebeta" else None)
         )
         if activation_post is None:
             raise NotImplementedError(
@@ -351,9 +301,7 @@ class BigVGAN(
 
         # Whether to use bias for the final conv_post. Default to True for backward compatibility
         self.use_bias_at_final = h.get("use_bias_at_final", True)
-        self.conv_post = weight_norm(
-            Conv1d(ch, 1, 7, 1, padding=3, bias=self.use_bias_at_final)
-        )
+        self.conv_post = weight_norm(Conv1d(ch, 1, 7, 1, padding=3, bias=self.use_bias_at_final))
 
         # Weight initialization
         for i in range(len(self.ups)):
@@ -378,8 +326,9 @@ class BigVGAN(
         contrastive_loss = None
         if n_batch * 2 == speaker_embedding.size(0):
             spe_emb_chunk1, spe_emb_chunk2 = speaker_embedding[:n_batch, :, :], speaker_embedding[n_batch:, :, :]
-            contrastive_loss = self.cal_clip_loss(spe_emb_chunk1.squeeze(1), spe_emb_chunk2.squeeze(1),
-                                                  self.logit_scale.exp())
+            contrastive_loss = self.cal_clip_loss(
+                spe_emb_chunk1.squeeze(1), spe_emb_chunk2.squeeze(1), self.logit_scale.exp()
+            )
 
             speaker_embedding = speaker_embedding[:n_batch, :, :]
         speaker_embedding = speaker_embedding.transpose(1, 2)

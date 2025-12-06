@@ -43,9 +43,9 @@ class Attend(nn.Module):
         self.register_buffer("mask", None, persistent=False)
 
         self.use_flash = use_flash
-        assert not (
-            use_flash and version.parse(torch.__version__) < version.parse("2.0.0")
-        ), "in order to use flash attention, you must be using pytorch 2.0 or above"
+        assert not (use_flash and version.parse(torch.__version__) < version.parse("2.0.0")), (
+            "in order to use flash attention, you must be using pytorch 2.0 or above"
+        )
 
         # determine efficient attention configs for cuda and cpu
         self.config = namedtuple("EfficientAttentionConfig", ["enable_flash", "enable_math", "enable_mem_efficient"])
@@ -244,18 +244,16 @@ class PerceiverResampler(nn.Module):
         self.layers = nn.ModuleList([])
         for _ in range(depth):
             self.layers.append(
-                nn.ModuleList(
-                    [
-                        Attention(
-                            dim=dim,
-                            dim_head=dim_head,
-                            heads=heads,
-                            use_flash=use_flash_attn,
-                            cross_attn_include_queries=True,
-                        ),
-                        FeedForward(dim=dim, mult=ff_mult),
-                    ]
-                )
+                nn.ModuleList([
+                    Attention(
+                        dim=dim,
+                        dim_head=dim_head,
+                        heads=heads,
+                        use_flash=use_flash_attn,
+                        cross_attn_include_queries=True,
+                    ),
+                    FeedForward(dim=dim, mult=ff_mult),
+                ])
             )
 
         self.norm = RMSNorm(dim)

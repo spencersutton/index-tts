@@ -30,25 +30,15 @@ class ScheduledSampler(Sampler):
         [3, 4, 5, 0, 1, 2, 6, 7, 8]
     """
 
-    def __init__(
-        self, concat_dataset, batch_size, holistic_shuffle, logger=None, type="train"
-    ):
+    def __init__(self, concat_dataset, batch_size, holistic_shuffle, logger=None, type="train"):
         if not isinstance(concat_dataset, ConcatDataset):
             raise ValueError(
-                "concat_dataset must be an instance of ConcatDataset, but got {}".format(
-                    type(concat_dataset)
-                )
+                "concat_dataset must be an instance of ConcatDataset, but got {}".format(type(concat_dataset))
             )
         if not isinstance(batch_size, int):
-            raise ValueError(
-                "batch_size must be an integer, but got {}".format(type(batch_size))
-            )
+            raise ValueError("batch_size must be an integer, but got {}".format(type(batch_size)))
         if not isinstance(holistic_shuffle, bool):
-            raise ValueError(
-                "holistic_shuffle must be a boolean, but got {}".format(
-                    type(holistic_shuffle)
-                )
-            )
+            raise ValueError("holistic_shuffle must be a boolean, but got {}".format(type(holistic_shuffle)))
 
         self.concat_dataset = concat_dataset
         self.batch_size = batch_size
@@ -64,9 +54,7 @@ class ScheduledSampler(Sampler):
                 affected_dataset_len.append(dataset_len)
 
         self.type = type
-        for dataset_name, dataset_len in zip(
-            affected_dataset_name, affected_dataset_len
-        ):
+        for dataset_name, dataset_len in zip(affected_dataset_name, affected_dataset_len):
             if not type == "valid":
                 logger.warning(
                     "The {} dataset {} has a length of {}, which is smaller than the batch size {}. This may cause unexpected behavior.".format(
@@ -76,21 +64,14 @@ class ScheduledSampler(Sampler):
 
     def __len__(self):
         # the number of batches with drop last
-        num_of_batches = sum(
-            [
-                math.floor(len(dataset) / self.batch_size)
-                for dataset in self.concat_dataset.datasets
-            ]
-        )
+        num_of_batches = sum([math.floor(len(dataset) / self.batch_size) for dataset in self.concat_dataset.datasets])
         return num_of_batches * self.batch_size
 
     def __iter__(self):
         iters = []
         for dataset in self.concat_dataset.datasets:
             iters.append(
-                SequentialSampler(dataset).__iter__()
-                if self.holistic_shuffle
-                else RandomSampler(dataset).__iter__()
+                SequentialSampler(dataset).__iter__() if self.holistic_shuffle else RandomSampler(dataset).__iter__()
             )
         init_indices = [0] + self.concat_dataset.cumulative_sizes[:-1]
         output_batches = []

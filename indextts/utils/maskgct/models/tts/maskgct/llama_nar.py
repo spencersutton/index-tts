@@ -74,9 +74,7 @@ class LlamaNARDecoderLayer(LlamaDecoderLayer):
         past_key_value: Optional[Tuple[torch.Tensor]] = None,
         output_attentions: Optional[bool] = False,
         use_cache: Optional[bool] = False,
-    ) -> Tuple[
-        torch.FloatTensor, Optional[Tuple[torch.FloatTensor, torch.FloatTensor]]
-    ]:
+    ) -> Tuple[torch.FloatTensor, Optional[Tuple[torch.FloatTensor, torch.FloatTensor]]]:
         """
         Args:
             hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
@@ -93,9 +91,7 @@ class LlamaNARDecoderLayer(LlamaDecoderLayer):
 
         residual = hidden_states
 
-        hidden_states = self.input_layernorm(
-            hidden_states, cond_embedding=cond_embedding
-        )
+        hidden_states = self.input_layernorm(hidden_states, cond_embedding=cond_embedding)
 
         # Self Attention
         hidden_states, self_attn_weights, present_key_value = self.self_attn(
@@ -110,9 +106,7 @@ class LlamaNARDecoderLayer(LlamaDecoderLayer):
 
         # Fully Connected
         residual = hidden_states
-        hidden_states = self.post_attention_layernorm(
-            hidden_states, cond_embedding=cond_embedding
-        )
+        hidden_states = self.post_attention_layernorm(hidden_states, cond_embedding=cond_embedding)
         hidden_states = self.mlp(hidden_states)
         hidden_states = residual + hidden_states
 
@@ -146,9 +140,7 @@ class LlamaNARDecoderLayer(LlamaDecoderLayer):
         past_key_value: Optional[Tuple[torch.Tensor]] = None,
         output_attentions: Optional[bool] = False,
         use_cache: Optional[bool] = False,
-    ) -> Tuple[
-        torch.FloatTensor, Optional[Tuple[torch.FloatTensor, torch.FloatTensor]]
-    ]:
+    ) -> Tuple[torch.FloatTensor, Optional[Tuple[torch.FloatTensor, torch.FloatTensor]]]:
         """
         Args:
             hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
@@ -165,9 +157,7 @@ class LlamaNARDecoderLayer(LlamaDecoderLayer):
 
         residual = hidden_states
 
-        hidden_states = self.input_layernorm(
-            hidden_states, cond_embedding=cond_embedding
-        )
+        hidden_states = self.input_layernorm(hidden_states, cond_embedding=cond_embedding)
 
         # Self Attention
         hidden_states, self_attn_weights, present_key_value = self.self_attn(
@@ -182,9 +172,7 @@ class LlamaNARDecoderLayer(LlamaDecoderLayer):
 
         # Fully Connected
         residual = hidden_states
-        hidden_states = self.post_attention_layernorm(
-            hidden_states, cond_embedding=cond_embedding
-        )
+        hidden_states = self.post_attention_layernorm(hidden_states, cond_embedding=cond_embedding)
         hidden_states = self.mlp(hidden_states)
         hidden_states = residual + hidden_states
 
@@ -209,20 +197,18 @@ class DiffLlama(LlamaModel):
     ):
         super().__init__(config)
 
-        self.layers = nn.ModuleList(
-            [
-                LlamaNARDecoderLayer(
-                    LlamaConfig(
-                        hidden_size=hidden_size,
-                        num_attention_heads=num_heads,
-                        max_position_embeddings=4096,
-                        intermediate_size=hidden_size * 4,
-                    ),
-                    layer_idx=i,
-                )
-                for i in range(num_layers)
-            ]
-        )
+        self.layers = nn.ModuleList([
+            LlamaNARDecoderLayer(
+                LlamaConfig(
+                    hidden_size=hidden_size,
+                    num_attention_heads=num_heads,
+                    max_position_embeddings=4096,
+                    intermediate_size=hidden_size * 4,
+                ),
+                layer_idx=i,
+            )
+            for i in range(num_layers)
+        ])
 
         self.norm = LlamaAdaptiveRMSNorm(hidden_size, dim_cond=hidden_size)
 
@@ -242,52 +228,38 @@ class DiffLlama(LlamaModel):
         )
 
         for layer in self.layers:
-            layer.input_layernorm = LlamaAdaptiveRMSNorm(
-                hidden_size, dim_cond=hidden_size
-            )
-            layer.post_attention_layernorm = LlamaAdaptiveRMSNorm(
-                hidden_size, dim_cond=hidden_size
-            )
+            layer.input_layernorm = LlamaAdaptiveRMSNorm(hidden_size, dim_cond=hidden_size)
+            layer.post_attention_layernorm = LlamaAdaptiveRMSNorm(hidden_size, dim_cond=hidden_size)
 
         self.post_init()
 
         # self.reset_parameters()
 
-    def _prepare_decoder_attention_mask(
-        self, attention_mask, input_shape, inputs_embeds, past_key_values_length
-    ):
+    def _prepare_decoder_attention_mask(self, attention_mask, input_shape, inputs_embeds, past_key_values_length):
         # create noncausal mask
         # [bsz, seq_len] -> [bsz, 1, tgt_seq_len, src_seq_len]
         combined_attention_mask = None
 
-        def _expand_mask(
-            mask: torch.Tensor, dtype: torch.dtype, tgt_len: Optional[int] = None
-        ):
+        def _expand_mask(mask: torch.Tensor, dtype: torch.dtype, tgt_len: Optional[int] = None):
             """
             Expands attention_mask from `[bsz, seq_len]` to `[bsz, 1, tgt_seq_len, src_seq_len]`.
             """
             bsz, src_len = mask.size()
             tgt_len = tgt_len if tgt_len is not None else src_len
 
-            expanded_mask = (
-                mask[:, None, None, :].expand(bsz, 1, tgt_len, src_len).to(dtype)
-            )
+            expanded_mask = mask[:, None, None, :].expand(bsz, 1, tgt_len, src_len).to(dtype)
 
             inverted_mask = 1.0 - expanded_mask
 
-            return inverted_mask.masked_fill(
-                inverted_mask.to(torch.bool), torch.finfo(dtype).min
-            )
+            return inverted_mask.masked_fill(inverted_mask.to(torch.bool), torch.finfo(dtype).min)
 
         if attention_mask is not None:
             # [bsz, seq_len] -> [bsz, 1, tgt_seq_len, src_seq_len]
-            expanded_attn_mask = _expand_mask(
-                attention_mask, inputs_embeds.dtype, tgt_len=input_shape[-1]
-            ).to(inputs_embeds.device)
+            expanded_attn_mask = _expand_mask(attention_mask, inputs_embeds.dtype, tgt_len=input_shape[-1]).to(
+                inputs_embeds.device
+            )
             combined_attention_mask = (
-                expanded_attn_mask
-                if combined_attention_mask is None
-                else expanded_attn_mask + combined_attention_mask
+                expanded_attn_mask if combined_attention_mask is None else expanded_attn_mask + combined_attention_mask
             )
 
         return combined_attention_mask
@@ -323,21 +295,13 @@ class DiffLlama(LlamaModel):
         inputs_embeds = x
         attention_mask = x_mask
 
-        output_attentions = (
-            output_attentions
-            if output_attentions is not None
-            else self.config.output_attentions
-        )
+        output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
-            output_hidden_states
-            if output_hidden_states is not None
-            else self.config.output_hidden_states
+            output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
         use_cache = use_cache if use_cache is not None else self.config.use_cache
 
-        return_dict = (
-            return_dict if return_dict is not None else self.config.use_return_dict
-        )
+        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         seq_length_with_past = seq_length
         past_key_values_length = 0
@@ -387,9 +351,7 @@ class DiffLlama(LlamaModel):
             if output_hidden_states:
                 all_hidden_states += (hidden_states,)
 
-            past_key_value = (
-                past_key_values[idx] if past_key_values is not None else None
-            )
+            past_key_value = past_key_values[idx] if past_key_values is not None else None
 
             if self.gradient_checkpointing and self.training:
                 raise NotImplementedError
@@ -434,20 +396,18 @@ class DiffLlamaPrefix(LlamaModel):
     ):
         super().__init__(config)
 
-        self.layers = nn.ModuleList(
-            [
-                LlamaNARDecoderLayer(
-                    LlamaConfig(
-                        hidden_size=hidden_size,
-                        num_attention_heads=num_heads,
-                        max_position_embeddings=4096,
-                        intermediate_size=hidden_size * 4,
-                    ),
-                    layer_idx=i,
-                )
-                for i in range(num_layers)
-            ]
-        )
+        self.layers = nn.ModuleList([
+            LlamaNARDecoderLayer(
+                LlamaConfig(
+                    hidden_size=hidden_size,
+                    num_attention_heads=num_heads,
+                    max_position_embeddings=4096,
+                    intermediate_size=hidden_size * 4,
+                ),
+                layer_idx=i,
+            )
+            for i in range(num_layers)
+        ])
 
         self.norm = LlamaAdaptiveRMSNorm(hidden_size, dim_cond=hidden_size)
 
@@ -465,52 +425,38 @@ class DiffLlamaPrefix(LlamaModel):
         )
 
         for layer in self.layers:
-            layer.input_layernorm = LlamaAdaptiveRMSNorm(
-                hidden_size, dim_cond=hidden_size
-            )
-            layer.post_attention_layernorm = LlamaAdaptiveRMSNorm(
-                hidden_size, dim_cond=hidden_size
-            )
+            layer.input_layernorm = LlamaAdaptiveRMSNorm(hidden_size, dim_cond=hidden_size)
+            layer.post_attention_layernorm = LlamaAdaptiveRMSNorm(hidden_size, dim_cond=hidden_size)
 
         self.embed_tokens = None
 
         self.post_init()
 
-    def _prepare_decoder_attention_mask(
-        self, attention_mask, input_shape, inputs_embeds, past_key_values_length
-    ):
+    def _prepare_decoder_attention_mask(self, attention_mask, input_shape, inputs_embeds, past_key_values_length):
         # create noncausal mask
         # [bsz, seq_len] -> [bsz, 1, tgt_seq_len, src_seq_len]
         combined_attention_mask = None
 
-        def _expand_mask(
-            mask: torch.Tensor, dtype: torch.dtype, tgt_len: Optional[int] = None
-        ):
+        def _expand_mask(mask: torch.Tensor, dtype: torch.dtype, tgt_len: Optional[int] = None):
             """
             Expands attention_mask from `[bsz, seq_len]` to `[bsz, 1, tgt_seq_len, src_seq_len]`.
             """
             bsz, src_len = mask.size()
             tgt_len = tgt_len if tgt_len is not None else src_len
 
-            expanded_mask = (
-                mask[:, None, None, :].expand(bsz, 1, tgt_len, src_len).to(dtype)
-            )
+            expanded_mask = mask[:, None, None, :].expand(bsz, 1, tgt_len, src_len).to(dtype)
 
             inverted_mask = 1.0 - expanded_mask
 
-            return inverted_mask.masked_fill(
-                inverted_mask.to(torch.bool), torch.finfo(dtype).min
-            )
+            return inverted_mask.masked_fill(inverted_mask.to(torch.bool), torch.finfo(dtype).min)
 
         if attention_mask is not None:
             # [bsz, seq_len] -> [bsz, 1, tgt_seq_len, src_seq_len]
-            expanded_attn_mask = _expand_mask(
-                attention_mask, inputs_embeds.dtype, tgt_len=input_shape[-1]
-            ).to(inputs_embeds.device)
+            expanded_attn_mask = _expand_mask(attention_mask, inputs_embeds.dtype, tgt_len=input_shape[-1]).to(
+                inputs_embeds.device
+            )
             combined_attention_mask = (
-                expanded_attn_mask
-                if combined_attention_mask is None
-                else expanded_attn_mask + combined_attention_mask
+                expanded_attn_mask if combined_attention_mask is None else expanded_attn_mask + combined_attention_mask
             )
 
         return combined_attention_mask
@@ -546,21 +492,13 @@ class DiffLlamaPrefix(LlamaModel):
 
         batch_size, seq_length, _ = inputs_embeds.shape
 
-        output_attentions = (
-            output_attentions
-            if output_attentions is not None
-            else self.config.output_attentions
-        )
+        output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
-            output_hidden_states
-            if output_hidden_states is not None
-            else self.config.output_hidden_states
+            output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
         use_cache = use_cache if use_cache is not None else self.config.use_cache
 
-        return_dict = (
-            return_dict if return_dict is not None else self.config.use_return_dict
-        )
+        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         seq_length_with_past = seq_length
         past_key_values_length = 0
@@ -610,9 +548,7 @@ class DiffLlamaPrefix(LlamaModel):
             if output_hidden_states:
                 all_hidden_states += (hidden_states,)
 
-            past_key_value = (
-                past_key_values[idx] if past_key_values is not None else None
-            )
+            past_key_value = past_key_values[idx] if past_key_values is not None else None
 
             if self.gradient_checkpointing and self.training:
                 raise NotImplementedError

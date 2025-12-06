@@ -25,9 +25,7 @@ def _get_activation_fn(activ):
     elif activ == "swish":
         return lambda x: x * torch.sigmoid(x)
     else:
-        raise RuntimeError(
-            "Unexpected activ type %s, expected [relu, lrelu, swish]" % activ
-        )
+        raise RuntimeError("Unexpected activ type %s, expected [relu, lrelu, swish]" % activ)
 
 
 class LinearNorm(torch.nn.Module):
@@ -35,9 +33,7 @@ class LinearNorm(torch.nn.Module):
         super(LinearNorm, self).__init__()
         self.linear_layer = torch.nn.Linear(in_dim, out_dim, bias=bias)
 
-        torch.nn.init.xavier_uniform_(
-            self.linear_layer.weight, gain=torch.nn.init.calculate_gain(w_init_gain)
-        )
+        torch.nn.init.xavier_uniform_(self.linear_layer.weight, gain=torch.nn.init.calculate_gain(w_init_gain))
 
     def forward(self, x):
         return self.linear_layer(x)
@@ -124,14 +120,9 @@ class CausualConv(nn.Module):
 class CausualBlock(nn.Module):
     def __init__(self, hidden_dim, n_conv=3, dropout_p=0.2, activ="lrelu"):
         super(CausualBlock, self).__init__()
-        self.blocks = nn.ModuleList(
-            [
-                self._get_conv(
-                    hidden_dim, dilation=3**i, activ=activ, dropout_p=dropout_p
-                )
-                for i in range(n_conv)
-            ]
-        )
+        self.blocks = nn.ModuleList([
+            self._get_conv(hidden_dim, dilation=3**i, activ=activ, dropout_p=dropout_p) for i in range(n_conv)
+        ])
 
     def forward(self, x):
         for block in self.blocks:
@@ -163,14 +154,9 @@ class ConvBlock(nn.Module):
     def __init__(self, hidden_dim, n_conv=3, dropout_p=0.2, activ="relu"):
         super().__init__()
         self._n_groups = 8
-        self.blocks = nn.ModuleList(
-            [
-                self._get_conv(
-                    hidden_dim, dilation=3**i, activ=activ, dropout_p=dropout_p
-                )
-                for i in range(n_conv)
-            ]
-        )
+        self.blocks = nn.ModuleList([
+            self._get_conv(hidden_dim, dilation=3**i, activ=activ, dropout_p=dropout_p) for i in range(n_conv)
+        ])
 
     def forward(self, x):
         for block in self.blocks:
@@ -211,9 +197,7 @@ class LocationLayer(nn.Module):
             stride=1,
             dilation=1,
         )
-        self.location_dense = LinearNorm(
-            attention_n_filters, attention_dim, bias=False, w_init_gain="tanh"
-        )
+        self.location_dense = LinearNorm(attention_n_filters, attention_dim, bias=False, w_init_gain="tanh")
 
     def forward(self, attention_weights_cat):
         processed_attention = self.location_conv(attention_weights_cat)
@@ -232,16 +216,10 @@ class Attention(nn.Module):
         attention_location_kernel_size,
     ):
         super(Attention, self).__init__()
-        self.query_layer = LinearNorm(
-            attention_rnn_dim, attention_dim, bias=False, w_init_gain="tanh"
-        )
-        self.memory_layer = LinearNorm(
-            embedding_dim, attention_dim, bias=False, w_init_gain="tanh"
-        )
+        self.query_layer = LinearNorm(attention_rnn_dim, attention_dim, bias=False, w_init_gain="tanh")
+        self.memory_layer = LinearNorm(embedding_dim, attention_dim, bias=False, w_init_gain="tanh")
         self.v = LinearNorm(attention_dim, 1, bias=False)
-        self.location_layer = LocationLayer(
-            attention_location_n_filters, attention_location_kernel_size, attention_dim
-        )
+        self.location_layer = LocationLayer(attention_location_n_filters, attention_location_kernel_size, attention_dim)
         self.score_mask_value = -float("inf")
 
     def get_alignment_energies(self, query, processed_memory, attention_weights_cat):
@@ -258,9 +236,7 @@ class Attention(nn.Module):
 
         processed_query = self.query_layer(query.unsqueeze(1))
         processed_attention_weights = self.location_layer(attention_weights_cat)
-        energies = self.v(
-            torch.tanh(processed_query + processed_attention_weights + processed_memory)
-        )
+        energies = self.v(torch.tanh(processed_query + processed_attention_weights + processed_memory))
 
         energies = energies.squeeze(-1)
         return energies
@@ -282,9 +258,7 @@ class Attention(nn.Module):
         attention_weights_cat: previous and cummulative attention weights
         mask: binary mask for padded data
         """
-        alignment = self.get_alignment_energies(
-            attention_hidden_state, processed_memory, attention_weights_cat
-        )
+        alignment = self.get_alignment_energies(attention_hidden_state, processed_memory, attention_weights_cat)
 
         if mask is not None:
             alignment.data.masked_fill_(mask, self.score_mask_value)
@@ -306,16 +280,10 @@ class ForwardAttentionV2(nn.Module):
         attention_location_kernel_size,
     ):
         super(ForwardAttentionV2, self).__init__()
-        self.query_layer = LinearNorm(
-            attention_rnn_dim, attention_dim, bias=False, w_init_gain="tanh"
-        )
-        self.memory_layer = LinearNorm(
-            embedding_dim, attention_dim, bias=False, w_init_gain="tanh"
-        )
+        self.query_layer = LinearNorm(attention_rnn_dim, attention_dim, bias=False, w_init_gain="tanh")
+        self.memory_layer = LinearNorm(embedding_dim, attention_dim, bias=False, w_init_gain="tanh")
         self.v = LinearNorm(attention_dim, 1, bias=False)
-        self.location_layer = LocationLayer(
-            attention_location_n_filters, attention_location_kernel_size, attention_dim
-        )
+        self.location_layer = LocationLayer(attention_location_n_filters, attention_location_kernel_size, attention_dim)
         self.score_mask_value = -float(1e20)
 
     def get_alignment_energies(self, query, processed_memory, attention_weights_cat):
@@ -332,9 +300,7 @@ class ForwardAttentionV2(nn.Module):
 
         processed_query = self.query_layer(query.unsqueeze(1))
         processed_attention_weights = self.location_layer(attention_weights_cat)
-        energies = self.v(
-            torch.tanh(processed_query + processed_attention_weights + processed_memory)
-        )
+        energies = self.v(torch.tanh(processed_query + processed_attention_weights + processed_memory))
 
         energies = energies.squeeze(-1)
         return energies
@@ -357,9 +323,7 @@ class ForwardAttentionV2(nn.Module):
         attention_weights_cat: previous and cummulative attention weights
         mask: binary mask for padded data
         """
-        log_energy = self.get_alignment_energies(
-            attention_hidden_state, processed_memory, attention_weights_cat
-        )
+        log_energy = self.get_alignment_energies(attention_hidden_state, processed_memory, attention_weights_cat)
 
         # log_energy =
 

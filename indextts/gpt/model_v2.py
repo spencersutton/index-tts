@@ -1,6 +1,6 @@
 import functools
 import importlib.util
-from typing import Literal, assert_never
+from typing import Literal
 
 import torch
 import torch.nn.functional as F
@@ -295,7 +295,6 @@ class MelEncoder(nn.Module):
 
 class UnifiedVoice(nn.Module):
     gst_encoder: nn.Module
-    condition_type: Literal["perceiver", "conformer_perceiver", "conformer_encoder", "gst", "default"]
     inference_model: GPT2InferenceModel
 
     def __init__(
@@ -318,9 +317,7 @@ class UnifiedVoice(nn.Module):
         checkpointing: bool = True,
         types: int = 1,
         condition_num_latent: int = 32,
-        condition_type: Literal[
-            "perceiver", "conformer_perceiver", "conformer_encoder", "gst", "default"
-        ] = "perceiver",
+        condition_type: Literal["conformer_perceiver"] = "conformer_perceiver",
         condition_module: ConditionModule | None = None,
         emo_condition_module: ConditionModule | None = None,
         use_accel: bool = False,
@@ -359,33 +356,26 @@ class UnifiedVoice(nn.Module):
         self.model_dim = model_dim
         self.max_conditioning_inputs = max_conditioning_inputs
         self.mel_length_compression = mel_length_compression
-        self.condition_type = condition_type
         self.cond_num = condition_num_latent
         self.cond_mask_pad = nn.ConstantPad1d((self.cond_num, 0), True)
         self.emo_cond_mask_pad = nn.ConstantPad1d((1, 0), True)
-        if condition_type == "perceiver":
-            self.conditioning_encoder = ConditioningEncoder(1024, model_dim, num_attn_heads=heads)
-            self.perceiver_encoder = PerceiverResampler(model_dim, dim_context=model_dim, num_latents=self.cond_num)
-        elif condition_type in {"conformer_perceiver", "conformer_encoder"}:
-            assert condition_module is not None, "condition_module must be provided for conformer based conditioning"
-            self.conditioning_encoder = ConformerEncoder(
-                input_size=1024,
-                output_size=condition_module.output_size,
-                linear_units=condition_module.linear_units,
-                attention_heads=condition_module.attention_heads,
-                num_blocks=condition_module.num_blocks,
-                input_layer=condition_module.input_layer,
-            )
-            if condition_type == "conformer_perceiver":
-                self.perceiver_encoder = PerceiverResampler(
-                    model_dim,
-                    dim_context=condition_module.output_size,
-                    ff_mult=condition_module.perceiver_mult,
-                    heads=condition_module.attention_heads,
-                    num_latents=self.cond_num,
-                )
-        else:
-            self.conditioning_encoder = ConditioningEncoder(1024, model_dim, num_attn_heads=heads, mean=True)
+        assert condition_type == "conformer_perceiver"
+        assert condition_module is not None, "condition_module must be provided for conformer based conditioning"
+        self.conditioning_encoder = ConformerEncoder(
+            input_size=1024,
+            output_size=condition_module.output_size,
+            linear_units=condition_module.linear_units,
+            attention_heads=condition_module.attention_heads,
+            num_blocks=condition_module.num_blocks,
+            input_layer=condition_module.input_layer,
+        )
+        self.perceiver_encoder = PerceiverResampler(
+            model_dim,
+            dim_context=condition_module.output_size,
+            ff_mult=condition_module.perceiver_mult,
+            heads=condition_module.attention_heads,
+            num_latents=self.cond_num,
+        )
 
         assert emo_condition_module is not None, "emo_condition_module must be provided for emotion conditioning"
         self.emo_conditioning_encoder = ConformerEncoder(
@@ -597,38 +587,11 @@ class UnifiedVoice(nn.Module):
     def get_conditioning(
         self, speech_conditioning_input: torch.Tensor, cond_mel_lengths: torch.Tensor | None = None
     ) -> torch.Tensor:
-        if self.condition_type == "perceiver":
-            if speech_conditioning_input.ndim == 4:
-                speech_conditioning_input = speech_conditioning_input.squeeze(1)
-            speech_conditioning_input = self.conditioning_encoder(speech_conditioning_input)  # (b, d, s)
-            conds = self.perceiver_encoder(speech_conditioning_input.transpose(1, 2))  # (b, 32, d)
-        elif self.condition_type == "conformer_perceiver":
-            speech_conditioning_input, mask = self.conditioning_encoder(
-                speech_conditioning_input.transpose(1, 2), cond_mel_lengths
-            )  # (b, s, d), (b, 1, s)
-            if self.condition_type == "conformer_perceiver":
-                conds_mask = self.cond_mask_pad(mask.squeeze(1))
-                conds = self.perceiver_encoder(speech_conditioning_input, conds_mask)  # (b, 32, d)
-            else:
-                assert_never(self.condition_type)
-        elif self.condition_type == "gst":
-            if speech_conditioning_input.ndim == 4:
-                speech_conditioning_input = speech_conditioning_input.squeeze(1)
-            assert isinstance(self.gst_encoder, nn.Module)
-            conds = self.gst_encoder(speech_conditioning_input.transpose(1, 2))  # (b, 1, d)
-        else:
-            speech_conditioning_input = (
-                speech_conditioning_input.unsqueeze(1)
-                if len(speech_conditioning_input.shape) == 3
-                else speech_conditioning_input
-            )
-            conds_list = [
-                self.conditioning_encoder(speech_conditioning_input[:, j])
-                for j in range(speech_conditioning_input.shape[1])
-            ]
-            conds = torch.stack(conds_list, dim=1)
-            conds = conds.mean(dim=1)
-            conds = conds.unsqueeze(1)
+        speech_conditioning_input, mask = self.conditioning_encoder(
+            speech_conditioning_input.transpose(1, 2), cond_mel_lengths
+        )  # (b, s, d), (b, 1, s)
+        conds_mask = self.cond_mask_pad(mask.squeeze(1))
+        conds = self.perceiver_encoder(speech_conditioning_input, conds_mask)  # (b, 32, d)
         return conds
 
     def get_emo_conditioning(self, speech_conditioning_input, cond_mel_lengths=None):

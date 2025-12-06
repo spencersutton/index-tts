@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-from typing import Any, Tuple
+from typing import Any
 
 from torch import Tensor
 from torchaudio._internal import module_utils as _mod_utils

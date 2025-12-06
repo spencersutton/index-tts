@@ -1,5 +1,4 @@
 from collections.abc import Iterator
-from typing import Optional
 
 from torch import Tensor
 from torio.io._streaming_media_encoder import CodecConfig

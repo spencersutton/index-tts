@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-from typing import Optional, Tuple, Union
 
 import torch
 from torch import Tensor

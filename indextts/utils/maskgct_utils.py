@@ -3,7 +3,6 @@ from collections.abc import ItemsView, KeysView, ValuesView
 import torch
 from transformers import Wav2Vec2BertModel
 
-from indextts.config import SemanticCodecConfig
 from indextts.utils.maskgct.models.codec.kmeans.repcodec_model import RepCodec
 
 
@@ -50,7 +49,5 @@ def build_semantic_model(
     return semantic_model, semantic_mean, semantic_std
 
 
-def build_semantic_codec(cfg: SemanticCodecConfig) -> RepCodec:
-    semantic_codec = RepCodec(cfg=cfg)
-    semantic_codec.eval()
-    return semantic_codec
+def build_semantic_codec() -> RepCodec:
+    return RepCodec().eval()

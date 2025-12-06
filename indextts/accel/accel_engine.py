@@ -22,7 +22,7 @@ class Sampler(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-    @torch.compile
+    @torch.compile(dynamic=True, mode="reduce-overhead")
     def forward(self, logits: torch.Tensor, temperatures: torch.Tensor):
         temperatures = temperatures.to(logits.device).clamp(min=1e-8)
         greedy_mask = temperatures < 1e-5

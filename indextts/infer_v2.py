@@ -489,6 +489,12 @@ class IndexTTS2:
         quick_streaming_tokens: int = 0,
         **generation_kwargs: Any,
     ) -> Generator[torch.Tensor | None]:
+        # Mark CUDA graph step begin at the start of each inference
+        # This tells PyTorch it's safe to reuse CUDA graph buffers
+        # Must be called in the worker thread before any compiled models run
+        if self.use_torch_compile and torch.cuda.is_available():
+            torch.compiler.cudagraph_mark_step_begin()
+
         print(">> starting inference...")
         self._set_gr_progress(0, "starting inference...")
         if verbose:
@@ -564,11 +570,14 @@ class IndexTTS2:
                 S_ref, ylens=ref_target_lengths, n_quantizers=3, f0=None
             )[0]
 
-            self.cache_spk_cond = spk_cond_emb
-            self.cache_s2mel_style = style
-            self.cache_s2mel_prompt = prompt_condition
+            # Clone tensors before caching to avoid CUDA graph tensor overwrite issues
+            # When torch.compile uses CUDA graphs, output tensors get reused/overwritten
+            # We must clone them to safely cache independent copies
+            self.cache_spk_cond = spk_cond_emb.clone()
+            self.cache_s2mel_style = style.clone()
+            self.cache_s2mel_prompt = prompt_condition.clone()
             self.cache_spk_audio_prompt = spk_audio_prompt
-            self.cache_mel = ref_mel
+            self.cache_mel = ref_mel.clone()
         else:
             assert self.cache_s2mel_style is not None
             assert self.cache_s2mel_prompt is not None

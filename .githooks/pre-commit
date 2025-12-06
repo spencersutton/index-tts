@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Repository pre-commit hook: run ruff format --preview on staged Python files
+# If formatting changes files, the hook will re-stage them and abort the commit so
+# you can review the formatted changes and re-run the commit.
+
+git_root=$(git rev-parse --show-toplevel 2>/dev/null || true)
+if [[ -z "$git_root" ]]; then
+	# Not a git repo (or git not available) — nothing to do
+	exit 0
+fi
+
+cd "$git_root"
+
+if ! command -v ruff >/dev/null 2>&1; then
+	echo "Warning: ruff not found in PATH — skipping formatting. Install ruff to enable formatting."
+	exit 0
+fi
+
+# Get staged files (added, copied, or modified)
+staged_files=$(git diff --name-only --cached --diff-filter=ACM || true)
+if [[ -z "$staged_files" ]]; then
+	exit 0
+fi
+
+# Filter python files
+py_files=()
+while IFS= read -r f; do
+	case "$f" in
+	*.py) py_files+=("$f") ;;
+	*) ;;
+	esac
+done <<<"$staged_files"
+
+if [[ ${#py_files[@]} -eq 0 ]]; then
+	# No python files to format
+	exit 0
+fi
+
+echo "Running: ruff format --preview on staged python files..."
+
+# Run ruff format --preview on these files. Ruff will write any changes to disk.
+# We pass --quiet so only relevant output appears in the hook.
+if ! ruff format --preview --quiet "${py_files[@]}"; then
+	echo "ruff format failed (non-zero exit). Aborting commit." >&2
+	exit 1
+fi
+
+# If files were changed, re-add them to the index.
+git add -- "${py_files[@]}"
+
+# If any of the files changed as a result of formatting (i.e., the staged contents differ from HEAD),
+# abort the commit so the dev can review the formatted changes and re-run the commit.
+if ! git diff --cached --quiet -- "${py_files[@]}"; then
+	echo "Some staged Python files were reformatted by ruff. The files have been re-staged."
+	echo "Please review the changes and re-run 'git commit' to include the formatting changes."
+	exit 1
+fi
+
+exit 0

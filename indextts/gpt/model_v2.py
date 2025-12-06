@@ -231,7 +231,6 @@ class ConditioningEncoder(nn.Module):
         if self.mean:
             return h.mean(dim=2)
         return h
-        # return h[:, :, 0]
 
 
 def build_hf_gpt_transformer(

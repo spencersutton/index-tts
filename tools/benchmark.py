@@ -25,10 +25,50 @@ import statistics
 import sys
 import time
 import warnings
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)
+
+
+def _get_audio_duration(path: str) -> float:
+    """Return the duration in seconds of an audio file.
+
+    Tries soundfile (pysoundfile) first, then falls back to wave for WAV files.
+    Returns 0.0 on failure.
+    """
+    if not path or not os.path.exists(path):
+        return 0.0
+
+    # try pysoundfile if available (supports many formats)
+    try:
+        import soundfile as sf
+
+        info = sf.info(path)
+        if hasattr(info, "duration") and info.duration is not None:
+            return float(info.duration)
+        # fallback: read frames and compute
+        data, sr = sf.read(path, always_2d=False)
+        frames = data.shape[0] if hasattr(data, "shape") else len(data)
+        return frames / float(sr) if sr and sr > 0 else 0.0
+    except Exception:
+        pass
+
+    # fallback for wav files using stdlib wave module
+    try:
+        import wave
+
+        if path.lower().endswith(".wav"):
+            with wave.open(path, "rb") as wf:
+                frames = wf.getnframes()
+                rate = wf.getframerate()
+                return frames / float(rate) if rate and rate > 0 else 0.0
+    except Exception:
+        pass
+
+    # can't determine duration
+    print(f"Warning: unable to determine audio duration for {path}")
+    return 0.0
 
 
 @dataclass
@@ -36,14 +76,31 @@ class BenchmarkResult:
     """Container for benchmark results."""
 
     startup_time: float
-    warmup_times: list[float]
-    inference_times: list[float]
     text: str
     num_runs: int
+    warmup_times: list[float] = field(default_factory=list)
+    inference_times: list[float] = field(default_factory=list)
+    # durations (seconds) of output audio produced by each run
+    warmup_durations: list[float] = field(default_factory=list)
+    inference_durations: list[float] = field(default_factory=list)
 
     @property
     def mean_inference(self) -> float:
         return statistics.mean(self.inference_times)
+
+    @property
+    def mean_duration(self) -> float:
+        """Mean duration of the generated audio over the benchmark runs.
+
+        Note: only includes durations where a positive value was recorded.
+        """
+        vals = [d for d in self.inference_durations if d and d > 0]
+        return statistics.mean(vals) if vals else 0.0
+
+    @property
+    def median_duration(self) -> float:
+        vals = [d for d in self.inference_durations if d and d > 0]
+        return statistics.median(vals) if vals else 0.0
 
     @property
     def std_inference(self) -> float:
@@ -60,6 +117,43 @@ class BenchmarkResult:
     @property
     def median_inference(self) -> float:
         return statistics.median(self.inference_times)
+
+    # RTF: real-time factor = inference_time / output_audio_duration
+    @property
+    def rtf_list(self) -> list[float]:
+        pairs = []
+        for t, d in zip(self.inference_times, self.inference_durations):
+            try:
+                if d and d > 0:
+                    pairs.append(t / d)
+            except Exception:
+                continue
+        return pairs
+
+    @property
+    def mean_rtf(self) -> float:
+        vals = self.rtf_list
+        return statistics.mean(vals) if vals else 0.0
+
+    @property
+    def std_rtf(self) -> float:
+        vals = self.rtf_list
+        return statistics.stdev(vals) if len(vals) > 1 else 0.0
+
+    @property
+    def min_rtf(self) -> float:
+        vals = self.rtf_list
+        return min(vals) if vals else 0.0
+
+    @property
+    def max_rtf(self) -> float:
+        vals = self.rtf_list
+        return max(vals) if vals else 0.0
+
+    @property
+    def median_rtf(self) -> float:
+        vals = self.rtf_list
+        return statistics.median(vals) if vals else 0.0
 
     def print_report(self) -> None:
         """Print a formatted benchmark report."""
@@ -85,6 +179,21 @@ class BenchmarkResult:
         print(f"  Max:      {self.max_inference:.3f}s")
         print(f"  Median:   {self.median_inference:.3f}s")
 
+        # durations
+        if any(d and d > 0 for d in self.inference_durations):
+            print("\n--- Output Durations (per-run) ---")
+            for i, d in enumerate(self.inference_durations, 1):
+                print(f"  Run {i:3d}: {d:.3f}s")
+
+        # RTF stats
+        if self.rtf_list:
+            print("\n--- Real-Time Factor (RTF) ---")
+            print(f"  Mean RTF:   {self.mean_rtf:.3f}")
+            print(f"  Std RTF:    {self.std_rtf:.3f}")
+            print(f"  Min RTF:    {self.min_rtf:.3f}")
+            print(f"  Max RTF:    {self.max_rtf:.3f}")
+            print(f"  Median RTF: {self.median_rtf:.3f}")
+
         print("\n--- Individual Run Times ---")
         for i, t in enumerate(self.inference_times, 1):
             print(f"  Run {i:3d}: {t:.3f}s")
@@ -95,6 +204,10 @@ class BenchmarkResult:
         print("\nSUMMARY:")
         print(f"  Startup overhead:      {self.startup_time:.3f}s (one-time cost)")
         print(f"  Per-inference time:    {self.mean_inference:.3f}s ± {self.std_inference:.3f}s")
+        if self.mean_duration:
+            print(f"  Mean output duration:  {self.mean_duration:.3f}s")
+        if self.mean_rtf:
+            print(f"  Mean RTF:              {self.mean_rtf:.3f} ± {self.std_rtf:.3f}")
         if self.warmup_times:
             first_warmup = self.warmup_times[0]
             print(f"  First run penalty:     {first_warmup - self.mean_inference:+.3f}s vs mean")
@@ -198,6 +311,7 @@ def run_benchmark(
 
     # Warmup runs
     warmup_times = []
+    warmup_durations = []
     if warmup_runs > 0:
         print(f"Running {warmup_runs} warmup inference(s)...")
         for i in range(warmup_runs):
@@ -210,11 +324,14 @@ def run_benchmark(
             )
             elapsed = time.perf_counter() - start
             warmup_times.append(elapsed)
+            # record produced output audio duration
+            warmup_durations.append(_get_audio_duration(output_path))
             print(f"  Warmup {i + 1}: {elapsed:.3f}s")
         print()
 
     # Benchmark runs
     inference_times = []
+    inference_durations = []
     print(f"Running {num_runs} benchmark inference(s)...")
     for i in range(num_runs):
         start = time.perf_counter()
@@ -226,12 +343,16 @@ def run_benchmark(
         )
         elapsed = time.perf_counter() - start
         inference_times.append(elapsed)
+        # read audio duration from the generated file
+        inference_durations.append(_get_audio_duration(output_path))
         print(f"  Run {i + 1}/{num_runs}: {elapsed:.3f}s")
 
     return BenchmarkResult(
         startup_time=startup_time,
         warmup_times=warmup_times,
         inference_times=inference_times,
+        warmup_durations=warmup_durations,
+        inference_durations=inference_durations,
         text=text,
         num_runs=num_runs,
     )
@@ -398,13 +519,22 @@ Examples:
         output = {
             "startup_time": result.startup_time,
             "warmup_times": result.warmup_times,
+            "warmup_durations": result.warmup_durations,
             "inference_times": result.inference_times,
+            "inference_durations": result.inference_durations,
             "statistics": {
                 "mean": result.mean_inference,
                 "std_dev": result.std_inference,
                 "min": result.min_inference,
                 "max": result.max_inference,
                 "median": result.median_inference,
+            },
+            "rtf": {
+                "mean": result.mean_rtf,
+                "std_dev": result.std_rtf,
+                "min": result.min_rtf,
+                "max": result.max_rtf,
+                "median": result.median_rtf,
             },
             "config": {
                 "text": result.text,
@@ -451,30 +581,48 @@ Examples:
                     "Min",
                     "Max",
                     "Median",
+                    "Mean Output Duration",
+                    "Median Output Duration",
+                    "Mean RTF",
+                    "Std RTF",
+                    "Min RTF",
+                    "Max RTF",
+                    "Median RTF",
                     "Run Times",
+                    "Run Durations",
+                    "Run RTFs",
                 ])
 
-            writer.writerow([
-                datetime.now().isoformat(),
-                result.text,
-                len(result.text),
-                args.voice,
-                args.device or "auto",
-                args.fp16,
-                args.use_accel,
-                args.use_torch_compile,
-                args.use_cuda_kernel,
-                args.use_deepspeed,
-                f"{result.startup_time:.4f}",
-                len(result.warmup_times),
-                result.num_runs,
-                f"{result.mean_inference:.4f}",
-                f"{result.std_inference:.4f}",
-                f"{result.min_inference:.4f}",
-                f"{result.max_inference:.4f}",
-                f"{result.median_inference:.4f}",
-                str([f"{t:.4f}" for t in result.inference_times]),
-            ])
+                writer.writerow([
+                    datetime.now().isoformat(),
+                    result.text,
+                    len(result.text),
+                    args.voice,
+                    args.device or "auto",
+                    args.fp16,
+                    args.use_accel,
+                    args.use_torch_compile,
+                    args.use_cuda_kernel,
+                    args.use_deepspeed,
+                    f"{result.startup_time:.4f}",
+                    len(result.warmup_times),
+                    result.num_runs,
+                    f"{result.mean_inference:.4f}",
+                    f"{result.std_inference:.4f}",
+                    f"{result.min_inference:.4f}",
+                    f"{result.max_inference:.4f}",
+                    f"{result.median_inference:.4f}",
+                    f"{result.mean_duration:.4f}",
+                    f"{result.median_duration:.4f}",
+                    f"{result.mean_rtf:.4f}",
+                    f"{result.std_rtf:.4f}",
+                    f"{result.min_rtf:.4f}",
+                    f"{result.max_rtf:.4f}",
+                    f"{result.median_rtf:.4f}",
+                    str([f"{t:.4f}" for t in result.inference_times]),
+                    str([f"{d:.4f}" for d in result.inference_durations]),
+                    str([f"{r:.4f}" for r in result.rtf_list]),
+                ])
         print(f"Results appended to {args.csv}")
 
 

@@ -30,6 +30,7 @@ parser.add_argument(
     "--cuda_kernel", action="store_true", default=False, help="Use CUDA kernel for inference if available"
 )
 parser.add_argument("--gui_seg_tokens", type=int, default=120, help="GUI: Max tokens per generation segment")
+parser.add_argument("--torch-compile", action="store_true", default=False, help="Use torch.compile for optimization")
 cmd_args = parser.parse_args()
 
 if not os.path.exists(cmd_args.model_dir):
@@ -54,6 +55,7 @@ tts = IndexTTS2(
     use_fp16=cmd_args.fp16,
     use_deepspeed=cmd_args.deepspeed,
     use_cuda_kernel=cmd_args.cuda_kernel,
+    use_torch_compile=cmd_args.torch_compile,
 )
 # 支持的语言列表
 EMO_CHOICES_ALL = [

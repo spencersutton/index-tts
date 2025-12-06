@@ -1,5 +1,4 @@
 from collections.abc import Callable
-from typing import List, Optional, Tuple, TypeAlias
 
 import torch
 from torchaudio.models import RNNT

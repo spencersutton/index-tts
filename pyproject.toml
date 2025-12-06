@@ -113,29 +113,28 @@ ignore = [
   "ANN401",
   "E402",
   "E741",
+  "FURB118",
   "RUF001",
   "RUF002",
   "RUF003",
-  "FURB118",
 ]
 per-file-ignores = { "typings/**/*.pyi" = ["ANN401"] }
-unfixable = ["F401"]
 
 [dependency-groups]
 dev = ["basedpyright>=1.34.0", "pandas-stubs>=2.3.3.251201", "rich>=14.2.0"]
 
 [tool.pyright]
 exclude = ["indextts/utils/maskgct/**"]
-reportUnusedCallResult = false
-reportExplicitAny = false
 reportAny = false
-reportImplicitStringConcatenation = false
-reportUnknownMemberType = false
-reportUnknownArgumentType = false
-reportImplicitOverride = false
-reportUnannotatedClassAttribute = false
 reportCallInDefaultInitializer = false
+reportExplicitAny = false
+reportImplicitOverride = false
+reportImplicitStringConcatenation = false
+reportUnannotatedClassAttribute = false
+reportUnknownArgumentType = false
+reportUnknownMemberType = false
 reportUnknownVariableType = false
+reportUnusedCallResult = false
 
 [tool.ty.src]
 exclude = [

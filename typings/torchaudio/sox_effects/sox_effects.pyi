@@ -1,4 +1,3 @@
-from typing import List, Optional, Tuple
 
 import torch
 from torchaudio._internal.module_utils import deprecated, dropping_support

@@ -1,4 +1,3 @@
-from typing import Optional
 
 def eval_env(var, default):  # -> bool:
     ...

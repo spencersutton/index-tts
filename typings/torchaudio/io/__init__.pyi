@@ -1,16 +1,4 @@
-from torchaudio._internal.module_utils import dropping_class_io_support, dropping_class_support, dropping_io_support
-from torio.io import (
-    CodecConfig as _CodecConfig,
-)
-from torio.io import (
-    StreamingMediaDecoder as _StreamReader,
-)
-from torio.io import (
-    StreamingMediaEncoder as _StreamWriter,
-)
 
-from ._effector import AudioEffector as _AudioEffector
-from ._playback import play_audio as _play_audio
 
 CodecConfig = ...
 StreamReader = ...

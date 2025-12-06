@@ -1,4 +1,3 @@
-from typing import Tuple, TypeAlias
 
 from torch import Tensor
 from torch.utils.data import Dataset

@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import List, Tuple
 
 import torch
 from torchaudio.models import RNNT, RNNTBeamSearch

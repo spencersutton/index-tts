@@ -45,6 +45,7 @@ dependencies = [
   "scipy>=1.15.3",
   "soundfile>=0.13.1",
   "x-transformers>=2.11.23",
+  "flash-attn",
 ]
 
 [project.optional-dependencies]
@@ -76,29 +77,7 @@ build-backend = "hatchling.build"
 no-build-isolation-package = ["deepspeed"]
 
 [tool.uv.sources]
-# Install PyTorch with CUDA support on Linux/Windows (CUDA doesn't exist for Mac).
-# NOTE: We must explicitly request them as `dependencies` above. These improved
-# versions will not be selected if they're only third-party dependencies.
-torch = [
-  { index = "pytorch-cuda", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
-]
-torchaudio = [
-  { index = "pytorch-cuda", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
-]
-torchvision = [
-  { index = "pytorch-cuda", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
-]
-
-[[tool.uv.index]]
-name = "pytorch-cuda"
-# Use PyTorch built for NVIDIA Toolkit version 12.8.
-# Available versions: https://pytorch.org/get-started/locally/
-url = "https://download.pytorch.org/whl/cu128"
-# Only use this index when explicitly requested by `tool.uv.sources`.
-explicit = true
-
-[tool.uv.extra-build-dependencies]
-flash-attn = ["torch", "numpy"]
+flash-attn = { url = "https://github.com/mjun0812/flash-attention-prebuild-wheels/releases/download/v0.5.2/flash_attn-2.8.3%2Bcu130torch2.9-cp313-cp313-linux_x86_64.whl" }
 
 [tool.ruff]
 line-length = 120

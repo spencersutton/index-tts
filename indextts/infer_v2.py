@@ -1,6 +1,7 @@
 import contextlib
 import functools
 import json
+import os
 import random
 import re
 import time
@@ -127,6 +128,42 @@ class IndexTTS2:
         if self.device.startswith("cuda"):
             with contextlib.suppress(AttributeError):
                 torch.set_float32_matmul_precision("high")
+
+        # Configure torch.compile inductor optimizations
+        if use_torch_compile:
+            # Enable persistent cache to avoid recompilation between runs
+            import torch._dynamo.config as dynamo_config
+
+            cache_dir = os.path.join(model_dir, ".torch_compile_cache")
+            Path(cache_dir).mkdir(exist_ok=True, parents=True)
+
+            # Set environment variables for caching (must be set before any compilation)
+            os.environ.setdefault("TORCHINDUCTOR_CACHE_DIR", cache_dir)
+            os.environ.setdefault("TORCHINDUCTOR_FX_GRAPH_CACHE", "1")  # Enable FX graph caching
+
+            # Suppress verbose compilation logs (set to True for debugging)
+            dynamo_config.verbose = False
+            # Cache compiled graphs to disk
+            dynamo_config.cache_size_limit = 256  # Increase cache size for large models
+
+            if self.device.startswith("cuda"):
+                try:
+                    import torch._inductor.config as inductor_config
+
+                    # Enable CUDA graphs for reduced kernel launch overhead
+                    inductor_config.triton.cudagraphs = True
+                    # Fuse more operations for better performance
+                    inductor_config.coordinate_descent_tuning = True
+                    # Enable frozen weights optimization (inference-only)
+                    inductor_config.freezing = True
+                    # Enable FX graph caching (persists compiled graphs to disk)
+                    inductor_config.fx_graph_cache = True
+                    # Remote cache for distributed setups (local file-based)
+                    inductor_config.fx_graph_remote_cache = False
+                except (ImportError, AttributeError):
+                    pass  # Older PyTorch versions may not have these options
+
+            print(f">> torch.compile cache directory: {cache_dir}")
 
         cfg = cast(Mapping[str, Any], OmegaConf.load(cfg_path))
         self.cfg = cast(CheckpointsConfig, cfg)
@@ -256,11 +293,23 @@ class IndexTTS2:
 
             # Compile the inner inference model used for AR generation
             # This is critical because inference_speech() bypasses self.gpt()
-            self.gpt.inference_model = cast(GPT2InferenceModel, torch.compile(self.gpt.inference_model, dynamic=True))
+            self.gpt.inference_model = cast(GPT2InferenceModel, torch.compile(self.gpt.inference_model))
 
             self.gpt = cast(UnifiedVoice, torch.compile(self.gpt))
-            # self.bigvgan = torch.compile(self.bigvgan)
+
+            # Compile BigVGAN only when not using custom CUDA kernels
+            # Custom CUDA kernels conflict with torch.compile tracing
+            if not self.use_cuda_kernel:
+                self.bigvgan = cast(bigvgan.BigVGAN, torch.compile(self.bigvgan))
+
             self.semantic_model = torch.compile(self.semantic_model)
+
+            # Compile semantic codec (RepCodec) for quantization operations
+            self.semantic_codec = torch.compile(self.semantic_codec)
+
+            # CAMPPlus is a small model - use reduce-overhead mode for lower kernel launch latency
+            self.campplus_model = cast(CAMPPlus, torch.compile(self.campplus_model, mode="reduce-overhead"))
+
             print(">> torch.compile optimization enabled successfully")
 
         # 进度引用显示（可选）

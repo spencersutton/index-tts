@@ -22,7 +22,7 @@ class Sampler(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-    @torch.compile
+    @torch.compile(dynamic=True, mode="reduce-overhead")
     def forward(self, logits: torch.Tensor, temperatures: torch.Tensor):
         temperatures = temperatures.to(logits.device).clamp(min=1e-8)
         greedy_mask = temperatures < 1e-5
@@ -34,18 +34,6 @@ class Sampler(nn.Module):
         sampled_tokens = probs.div_(q).argmax(dim=-1)
         greedy_tokens = logits.argmax(dim=-1)
         return torch.where(greedy_mask, greedy_tokens, sampled_tokens)
-
-
-class Sampler(nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
-
-    @torch.compile
-    def forward(self, logits: torch.Tensor, temperatures: torch.Tensor):
-        logits = logits.float().div_(temperatures.unsqueeze(dim=1))
-        probs = torch.softmax(logits, dim=-1)
-        sample_tokens = probs.div_(torch.empty_like(probs).exponential_(1).clamp_min_(1e-10)).argmax(dim=-1)
-        return sample_tokens
 
 
 class AccelInferenceEngine:

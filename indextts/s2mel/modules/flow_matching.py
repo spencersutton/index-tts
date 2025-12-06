@@ -90,6 +90,13 @@ class BASECFM(torch.nn.Module, ABC):
         """
         t, _, _ = t_span[0], t_span[-1], t_span[1] - t_span[0]
 
+        # Clone tensors to avoid CUDA graph tensor overwrite issues
+        # These tensors may come from a CUDA graph cache and need to be cloned
+        # before being used in concatenation operations within the loop
+        style = style.clone()
+        mu = mu.clone()
+        prompt = prompt.clone()
+
         # I am storing this because I can later plot it by putting a debugger here and saving it to a file
         # Or in future might add like a return_all_steps flag
         sol = []

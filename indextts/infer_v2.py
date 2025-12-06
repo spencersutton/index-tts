@@ -584,6 +584,7 @@ class IndexTTS2:
             print("segments count:", segments_count)
             print("max_text_tokens_per_segment:", max_text_tokens_per_segment)
             print(*segments, sep="\n")
+        do_sample = generation_kwargs.pop("do_sample", True)
         top_p = generation_kwargs.pop("top_p", 0.8)
         top_k = generation_kwargs.pop("top_k", 30)
         temperature = generation_kwargs.pop("temperature", 0.8)
@@ -650,7 +651,7 @@ class IndexTTS2:
                     cond_lengths=torch.tensor([spk_cond_emb.shape[-1]], device=self.device),
                     emo_cond_lengths=torch.tensor([emo_cond_emb.shape[-1]], device=self.device),
                     emo_vec=emovec,
-                    do_sample=True,
+                        do_sample=do_sample,
                     top_p=top_p,
                     top_k=top_k,
                     temperature=temperature,

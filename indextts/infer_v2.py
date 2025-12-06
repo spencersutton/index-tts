@@ -293,22 +293,27 @@ class IndexTTS2:
 
             # Compile the inner inference model used for AR generation
             # This is critical because inference_speech() bypasses self.gpt()
-            self.gpt.inference_model = cast(GPT2InferenceModel, torch.compile(self.gpt.inference_model))
+            self.gpt.inference_model = cast(GPT2InferenceModel, torch.compile(self.gpt.inference_model, dynamic=True))
 
             self.gpt = cast(UnifiedVoice, torch.compile(self.gpt))
 
             # Compile BigVGAN only when not using custom CUDA kernels
             # Custom CUDA kernels conflict with torch.compile tracing
             if not self.use_cuda_kernel:
-                self.bigvgan = cast(bigvgan.BigVGAN, torch.compile(self.bigvgan))
+                self.bigvgan = cast(
+                    bigvgan.BigVGAN,
+                    torch.compile(self.bigvgan, dynamic=True),
+                )
 
-            self.semantic_model = torch.compile(self.semantic_model)
+            self.semantic_model = torch.compile(self.semantic_model, dynamic=True)
 
             # Compile semantic codec (RepCodec) for quantization operations
-            self.semantic_codec = torch.compile(self.semantic_codec)
+            self.semantic_codec = torch.compile(self.semantic_codec, dynamic=True)
 
             # CAMPPlus is a small model - use reduce-overhead mode for lower kernel launch latency
-            self.campplus_model = cast(CAMPPlus, torch.compile(self.campplus_model, mode="reduce-overhead"))
+            self.campplus_model = cast(
+                CAMPPlus, torch.compile(self.campplus_model, dynamic=True, mode="reduce-overhead")
+            )
 
             print(">> torch.compile optimization enabled successfully")
 

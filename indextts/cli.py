@@ -1,5 +1,21 @@
 import os
 import sys
+
+# Profiling support
+_profiler = None
+if "--profile" in sys.argv:
+    try:
+        from viztracer import VizTracer
+
+        # Increase buffer size to 10M entries to prevent wrapping on long runs
+        # ignore_c_function=True reduces noise from builtins, but you can remove it if you need to see C calls
+        _profiler = VizTracer(tracer_entries=10000000, ignore_c_function=True)
+        _profiler.start()
+    except ImportError:
+        print("PROFILING ERROR: 'viztracer' is not installed.")
+        print("Please install it to use --profile: pip install viztracer")
+        sys.exit(1)
+
 import warnings
 
 import rich.traceback
@@ -51,6 +67,11 @@ def main() -> None:
         "--use-cuda-kernel", action="store_true", default=False, help="Use custom CUDA kernel for BigVGAN"
     )
     parser.add_argument("--use-deepspeed", action="store_true", default=False, help="Use DeepSpeed for inference")
+    parser.add_argument(
+        "--profile",
+        action="store_true",
+        help="Enable performance profiling (saves to indextts.json, requires viztracer)",
+    )
     args = parser.parse_args()
 
     assert isinstance(args.text, str)  # pyright: ignore[reportAny]
@@ -120,4 +141,14 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    finally:
+        if _profiler:
+            _profiler.stop()
+            _profiler.save("indextts.json")
+            print("\nProfiling data saved to indextts.json")
+            print("Visualization options:")
+            print("1. Perfetto (Recommended): Open https://ui.perfetto.dev/ and load indextts.json")
+            print("2. Chrome Tracing: Open chrome://tracing and load indextts.json")
+            print("3. VizTracer: vizviewer indextts.json")

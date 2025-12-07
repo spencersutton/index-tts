@@ -45,7 +45,6 @@ dependencies = [
   "scipy>=1.15.3",
   "soundfile>=0.13.1",
   "x-transformers>=2.11.23",
-  "flash-attn",
 ]
 
 [project.optional-dependencies]

@@ -380,7 +380,11 @@ class IndexTTS2:
             self.gr_progress(value, desc=desc)
 
     def _load_and_cut_audio(
-        self, audio_path: str, max_audio_length_seconds: float, verbose: bool = False, sr: int | None = None
+        self,
+        audio_path: str,
+        max_audio_length_seconds: float,
+        verbose: bool = False,
+        sr: int | None = None,
     ) -> tuple[Tensor, int]:
         samples = AudioDecoder(audio_path).get_all_samples()
         orig_sr = samples.sample_rate

@@ -20,7 +20,6 @@ Examples:
 """
 
 import argparse
-import pathlib
 import statistics
 import sys
 import time
@@ -38,7 +37,7 @@ def _get_audio_duration(path: Path) -> float:
     Tries soundfile (pysoundfile) first, then falls back to wave for WAV files.
     Returns 0.0 on failure.
     """
-    if not path or not pathlib.Path(path).exists():
+    if not path or not Path(path).exists():
         return 0.0
 
     # try pysoundfile if available (supports many formats)
@@ -479,11 +478,11 @@ Examples:
     args = parser.parse_args()
 
     # Validate inputs
-    if not pathlib.Path(args.voice).exists():
+    if not Path(args.voice).exists():
         print(f"ERROR: Voice prompt file {args.voice} does not exist.")
         sys.exit(1)
 
-    if not pathlib.Path(args.config).exists():
+    if not Path(args.config).exists():
         print(f"ERROR: Config file {args.config} does not exist.")
         sys.exit(1)
 
@@ -496,7 +495,7 @@ Examples:
         voice_path=args.voice,
         text=args.text,
         config=args.config,
-        model_dir=args.model_dir,
+        model_dir=Path(args.model_dir),
         num_runs=args.runs,
         warmup_runs=args.warmup,
         output_path=args.output,
@@ -552,9 +551,9 @@ Examples:
         import csv
         from datetime import datetime
 
-        file_exists = pathlib.Path(args.csv).is_file()
+        file_exists = Path(args.csv).is_file()
 
-        with pathlib.Path(args.csv).open(mode="a", newline="", encoding="utf-8") as f:
+        with Path(args.csv).open(mode="a", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
 
             if not file_exists:

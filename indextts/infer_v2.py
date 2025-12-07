@@ -175,7 +175,7 @@ class IndexTTS2:
         self.use_accel = use_accel
         self.use_torch_compile = use_torch_compile
 
-        self.qwen_emo = QwenEmotion(self.model_dir / self.cfg.qwen_emo_path)
+        self.qwen_emo = QwenEmotion(self.model_dir / Path(self.cfg.qwen_emo_path))
 
         self.gpt = UnifiedVoice(use_accel=self.use_accel)
         self.gpt_path = self.model_dir / self.cfg.gpt_checkpoint

@@ -6,6 +6,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch import Tensor
 
 if "sinc" in dir(torch):
     sinc = torch.sinc
@@ -13,7 +14,7 @@ else:
     # This code is adopted from adefossez's julius.core.sinc under the MIT License
     # https://adefossez.github.io/julius/julius/core.html
     #   LICENSE is in incl_licenses directory.
-    def sinc(x: torch.Tensor):
+    def sinc(x: Tensor):
         """
         Implementation of sinc, i.e. sin(pi * x) / (pi * x)
         __Warning__: Different to julius.sinc, the input is multiplied by `pi`!
@@ -58,7 +59,7 @@ def kaiser_sinc_filter1d(cutoff, half_width, kernel_size):  # return filter [1,1
 
 
 class LowPassFilter1d(nn.Module):
-    filter: torch.Tensor
+    filter: Tensor
 
     def __init__(
         self,

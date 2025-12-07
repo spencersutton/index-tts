@@ -5,8 +5,8 @@ from typing import Never
 
 import torch
 import torch.nn as nn
+from torch import Tensor
 
-# load fused CUDA kernel: this enables importing anti_alias_activation_cuda
 from ..cuda import load
 from ..torch.resample import DownSample1d, UpSample1d
 
@@ -21,7 +21,7 @@ class FusedAntiAliasActivation(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx, inputs, up_ftr, down_ftr, alpha, beta) -> torch.Tensor:
+    def forward(ctx, inputs, up_ftr, down_ftr, alpha, beta) -> Tensor:
         activation_results = anti_alias_activation_cuda.forward(inputs, up_ftr, down_ftr, alpha, beta)
 
         return activation_results

@@ -1,5 +1,5 @@
 import torch
-from torch import nn
+from torch import Tensor, nn
 
 from indextts.s2mel.modules import commons
 from indextts.s2mel.modules.encodec import SConv1d
@@ -53,7 +53,7 @@ class WN(torch.nn.Module):
             res_skip_layer = conv1d_type(hidden_channels, res_skip_channels, 1, norm="weight_norm", causal=causal)
             self.res_skip_layers.append(res_skip_layer)
 
-    def forward(self, x: torch.Tensor, x_mask: torch.Tensor, g: torch.Tensor | None = None) -> torch.Tensor:
+    def forward(self, x: Tensor, x_mask: Tensor, g: Tensor | None = None) -> Tensor:
         output = torch.zeros_like(x)
 
         if g is not None:

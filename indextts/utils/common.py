@@ -1,6 +1,7 @@
 import re
 
 import torch
+from torch import Tensor
 
 
 def tokenize_by_CJK_char(line: str, do_upper_case: bool = True) -> str:
@@ -58,15 +59,15 @@ def de_tokenized_by_CJK_char(line: str, do_lower_case: bool = False) -> str:
     return "".join(words)
 
 
-def make_pad_mask(lengths: torch.Tensor, max_len: int = 0) -> torch.Tensor:
+def make_pad_mask(lengths: Tensor, max_len: int = 0) -> Tensor:
     """Make mask tensor containing indices of padded part.
 
     See description of make_non_pad_mask.
 
     Args:
-        lengths (torch.Tensor): Batch of lengths (B,).
+        lengths (Tensor): Batch of lengths (B,).
     Returns:
-        torch.Tensor: Mask tensor containing indices of padded part.
+        Tensor: Mask tensor containing indices of padded part.
 
     Examples:
         >>> lengths = [5, 3, 2]

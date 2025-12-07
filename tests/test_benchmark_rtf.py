@@ -1,9 +1,9 @@
 import math
-import os
 import sys
+from pathlib import Path
 
 # ensure workspace root is on sys.path so tests can import tools.benchmark
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, (Path(__file__).parent / "..").resolve())
 
 from tools.benchmark import BenchmarkResult
 

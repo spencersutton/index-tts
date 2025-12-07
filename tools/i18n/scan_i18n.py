@@ -4,8 +4,9 @@ import json
 import os
 import pathlib
 from collections import OrderedDict
+from pathlib import Path
 
-I18N_JSON_DIR = os.path.join(os.path.dirname(os.path.relpath(__file__)), "locale")
+I18N_JSON_DIR = Path(__file__).parent / "locale"
 DEFAULT_LANGUAGE: str = "zh_CN"  # 默认语言
 TITLE_LEN: int = 60  # 标题显示长度
 KEY_LEN: int = 30  # 键名显示长度

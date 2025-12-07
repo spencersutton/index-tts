@@ -7,6 +7,7 @@ from torch import Tensor, nn
 from torch.nn import functional as F
 
 from indextts.s2mel.modules.commons import sequence_mask
+from indextts.s2mel.modules.quantize import VectorQuantize
 
 f0_max = 1100.0
 f0_min = 50.0

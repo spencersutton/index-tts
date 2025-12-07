@@ -334,13 +334,12 @@ class IndexTTS2:
         feat = vq_emb.hidden_states[17]  # (B, T, C)
         return (feat - self.semantic_mean) / self.semantic_std
 
-    def interval_silence(self, wavs: list[Tensor], sampling_rate: int = 22050, interval_silence: int = 200):
+    def interval_silence(self, wavs: list[Tensor], sampling_rate: int = 22050, interval_silence: int = 200) -> Tensor:
         """
         Silences to be insert between generated segments.
         """
-
-        if not wavs or interval_silence <= 0:
-            return wavs
+        assert interval_silence > 0, "interval_silence must be greater than 0"
+        assert len(wavs) > 0, "wavs list must not be empty"
 
         # get channel_size
         channel_size = wavs[0].size(0)
@@ -439,47 +438,29 @@ class IndexTTS2:
         stream_return: bool = False,
         more_segment_before: int = 0,
         **generation_kwargs: Any,
-    ):
+    ) -> Tensor | Generator[Tensor | None] | None:
+        gen = self.infer_generator(
+            spk_audio_prompt,
+            text,
+            output_path,
+            emo_audio_prompt,
+            emo_alpha,
+            emo_vector,
+            use_emo_text,
+            emo_text,
+            use_random,
+            interval_silence,
+            verbose,
+            max_text_tokens_per_segment,
+            stream_return,
+            more_segment_before,
+            **generation_kwargs,
+        )
         if stream_return:
-            return self.infer_generator(
-                spk_audio_prompt,
-                text,
-                output_path,
-                emo_audio_prompt,
-                emo_alpha,
-                emo_vector,
-                use_emo_text,
-                emo_text,
-                use_random,
-                interval_silence,
-                verbose,
-                max_text_tokens_per_segment,
-                stream_return,
-                more_segment_before,
-                **generation_kwargs,
-            )
+            return gen
+
         try:
-            return next(
-                iter(
-                    self.infer_generator(
-                        spk_audio_prompt,
-                        text,
-                        output_path,
-                        emo_audio_prompt,
-                        emo_alpha,
-                        emo_vector,
-                        use_emo_text,
-                        emo_text,
-                        use_random,
-                        interval_silence,
-                        verbose,
-                        max_text_tokens_per_segment,
-                        stream_return,
-                        more_segment_before,
-                        **generation_kwargs,
-                    )
-                )
-            )
+            return next(iter(gen))
         except IndexError:
             return None
 

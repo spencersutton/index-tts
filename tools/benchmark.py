@@ -20,24 +20,25 @@ Examples:
 """
 
 import argparse
-import os
+import pathlib
 import statistics
 import sys
 import time
 import warnings
 from dataclasses import dataclass, field
+from pathlib import Path
 
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 
-def _get_audio_duration(path: str) -> float:
+def _get_audio_duration(path: Path) -> float:
     """Return the duration in seconds of an audio file.
 
     Tries soundfile (pysoundfile) first, then falls back to wave for WAV files.
     Returns 0.0 on failure.
     """
-    if not path or not os.path.exists(path):
+    if not path or not pathlib.Path(path).exists():
         return 0.0
 
     # try pysoundfile if available (supports many formats)
@@ -58,8 +59,8 @@ def _get_audio_duration(path: str) -> float:
     try:
         import wave
 
-        if path.lower().endswith(".wav"):
-            with wave.open(path, "rb") as wf:
+        if path.suffix == ".wav":
+            with wave.open(str(path), "rb") as wf:
                 frames = wf.getnframes()
                 rate = wf.getframerate()
                 return frames / float(rate) if rate and rate > 0 else 0.0
@@ -217,11 +218,11 @@ class BenchmarkResult:
 def run_benchmark(
     voice_path: str,
     text: str = "This is a benchmark test for IndexTTS inference performance.",
-    config: str = "checkpoints/config.yaml",
-    model_dir: str = "checkpoints",
+    config: Path = Path("checkpoints/config.yaml"),
+    model_dir: Path = Path("checkpoints"),
     num_runs: int = 5,
     warmup_runs: int = 1,
-    output_path: str | None = None,
+    output_path: Path | None = None,
     fp16: bool = False,
     device: str | None = None,
     use_accel: bool = False,
@@ -287,9 +288,10 @@ def run_benchmark(
     print(f"{'=' * 60}\n")
 
     # Determine output path
+
     if output_path is None:
         temp_dir = tempfile.mkdtemp(prefix="indextts_benchmark_")
-        output_path = os.path.join(temp_dir, "benchmark_output.wav")
+        output_path = Path(temp_dir) / "benchmark_output.wav"
 
     # Measure startup time
     print("Loading model...")
@@ -477,11 +479,11 @@ Examples:
     args = parser.parse_args()
 
     # Validate inputs
-    if not os.path.exists(args.voice):
+    if not pathlib.Path(args.voice).exists():
         print(f"ERROR: Voice prompt file {args.voice} does not exist.")
         sys.exit(1)
 
-    if not os.path.exists(args.config):
+    if not pathlib.Path(args.config).exists():
         print(f"ERROR: Config file {args.config} does not exist.")
         sys.exit(1)
 
@@ -550,9 +552,9 @@ Examples:
         import csv
         from datetime import datetime
 
-        file_exists = os.path.isfile(args.csv)
+        file_exists = pathlib.Path(args.csv).is_file()
 
-        with open(args.csv, mode="a", newline="", encoding="utf-8") as f:
+        with pathlib.Path(args.csv).open(mode="a", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
 
             if not file_exists:

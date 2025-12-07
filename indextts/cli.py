@@ -1,5 +1,5 @@
-import os
 import sys
+from pathlib import Path
 
 # Profiling support
 _profiler = None
@@ -91,23 +91,23 @@ def main() -> None:
         print("ERROR: Text is empty.")
         parser.print_help()
         sys.exit(1)
-    if not os.path.exists(args.voice):
+    if not Path(args.voice).exists():
         print(f"Audio prompt file {args.voice} does not exist.")
         parser.print_help()
         sys.exit(1)
-    if not os.path.exists(args.config):
+    if not Path(args.config).exists():
         print(f"Config file {args.config} does not exist.")
         parser.print_help()
         sys.exit(1)
 
-    output_path = args.output_path
-    if os.path.exists(output_path):
+    output_path = Path(args.output_path)
+    if output_path.exists():
         if not args.force:
             print(f"ERROR: Output file {output_path} already exists. Use --force to overwrite.")
             parser.print_help()
             sys.exit(1)
         else:
-            os.remove(output_path)
+            output_path.unlink()
 
     try:
         import torch
@@ -128,8 +128,8 @@ def main() -> None:
             print("WARNING: Running on CPU may be slow.")
 
     tts = IndexTTS2(
-        cfg_path=args.config,
-        model_dir=args.model_dir,
+        cfg_path=Path(args.config),
+        model_dir=Path(args.model_dir),
         use_fp16=args.fp16,
         device=args.device,
         use_accel=args.use_accel,

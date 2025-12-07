@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any
 
 import torch
@@ -90,7 +91,7 @@ class MyModel(nn.Module):
 
 def load_checkpoint2(
     model: MyModel,
-    path: str,
+    path: Path,
     ignore_modules: list[str] = [],
     is_distributed: bool = False,
     load_ema: bool = False,

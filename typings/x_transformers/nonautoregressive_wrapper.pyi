@@ -42,7 +42,19 @@ class NonAutoregressiveWrapper(Module):
         use_simple_mdlm_loss_weight=...,
     ) -> None: ...
     @torch.no_grad()
-    def generate(self, batch_size=..., start_temperature=..., filter_thres=..., noise_level_scale=..., **kwargs): ...
+    def generate(
+        self,
+        batch_size=...,
+        start_temperature=...,
+        filter_thres=...,
+        noise_level_scale=...,
+        **kwargs,
+    ): ...
     def forward(
-        self, x, only_train_generator=..., only_train_critic=..., generator_sample_temperature=..., **kwargs
+        self,
+        x,
+        only_train_generator=...,
+        only_train_critic=...,
+        generator_sample_temperature=...,
+        **kwargs,
     ): ...

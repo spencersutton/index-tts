@@ -10,7 +10,12 @@ class L1Loss(nn.L1Loss):
 
 class SISDRLoss(nn.Module):
     def __init__(
-        self, scaling: int = ..., reduction: str = ..., zero_mean: int = ..., clip_min: int = ..., weight: float = ...
+        self,
+        scaling: int = ...,
+        reduction: str = ...,
+        zero_mean: int = ...,
+        clip_min: int = ...,
+        weight: float = ...,
     ) -> None: ...
     def forward(self, x: AudioSignal, y: AudioSignal):  # -> Tensor:
         ...

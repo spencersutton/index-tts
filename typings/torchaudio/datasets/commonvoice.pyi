@@ -4,7 +4,11 @@ from torch import Tensor
 from torch.utils.data import Dataset
 
 def load_commonvoice_item(
-    line: list[str], header: list[str], path: str, folder_audio: str, ext_audio: str
+    line: list[str],
+    header: list[str],
+    path: str,
+    folder_audio: str,
+    ext_audio: str,
 ) -> tuple[Tensor, int, dict[str, str]]: ...
 
 class COMMONVOICE(Dataset):

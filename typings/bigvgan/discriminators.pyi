@@ -7,7 +7,12 @@ from .env import AttrDict
 
 class DiscriminatorP(torch.nn.Module):
     def __init__(
-        self, h: AttrDict, period: list[int], kernel_size: int = ..., stride: int = ..., use_spectral_norm: bool = ...
+        self,
+        h: AttrDict,
+        period: list[int],
+        kernel_size: int = ...,
+        stride: int = ...,
+        use_spectral_norm: bool = ...,
     ) -> None: ...
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, list[torch.Tensor]]: ...
 
@@ -61,7 +66,13 @@ class MultiBandDiscriminator(nn.Module):
     ]: ...
 
 class DiscriminatorCQT(nn.Module):
-    def __init__(self, cfg: AttrDict, hop_length: int, n_octaves: int, bins_per_octave: int) -> None: ...
+    def __init__(
+        self,
+        cfg: AttrDict,
+        hop_length: int,
+        n_octaves: int,
+        bins_per_octave: int,
+    ) -> None: ...
     def get_2d_padding(self, kernel_size: tuple[int, int], dilation: tuple[int, int] = ...) -> tuple[int, int]: ...
     def forward(self, x: torch.tensor) -> tuple[torch.Tensor, list[torch.Tensor]]: ...
 

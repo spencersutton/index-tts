@@ -178,11 +178,21 @@ class ComputeDeltas(torch.nn.Module):
 
 class TimeStretch(torch.nn.Module):
     __constants__ = ...
-    def __init__(self, hop_length: int | None = ..., n_freq: int = ..., fixed_rate: float | None = ...) -> None: ...
+    def __init__(
+        self,
+        hop_length: int | None = ...,
+        n_freq: int = ...,
+        fixed_rate: float | None = ...,
+    ) -> None: ...
     def forward(self, complex_specgrams: Tensor, overriding_rate: float | None = ...) -> Tensor: ...
 
 class Fade(torch.nn.Module):
-    def __init__(self, fade_in_len: int = ..., fade_out_len: int = ..., fade_shape: str = ...) -> None: ...
+    def __init__(
+        self,
+        fade_in_len: int = ...,
+        fade_out_len: int = ...,
+        fade_shape: str = ...,
+    ) -> None: ...
     def forward(self, waveform: Tensor) -> Tensor: ...
 
 class _AxisMasking(torch.nn.Module):
@@ -222,7 +232,11 @@ class Vol(torch.nn.Module):
 
 class SlidingWindowCmn(torch.nn.Module):
     def __init__(
-        self, cmn_window: int = ..., min_cmn_window: int = ..., center: bool = ..., norm_vars: bool = ...
+        self,
+        cmn_window: int = ...,
+        min_cmn_window: int = ...,
+        center: bool = ...,
+        norm_vars: bool = ...,
     ) -> None: ...
     def forward(self, specgram: Tensor) -> Tensor: ...
 
@@ -284,9 +298,19 @@ class PitchShift(LazyModuleMixin, torch.nn.Module):
 
 class RNNTLoss(torch.nn.Module):
     def __init__(
-        self, blank: int = ..., clamp: float = ..., reduction: str = ..., fused_log_softmax: bool = ...
+        self,
+        blank: int = ...,
+        clamp: float = ...,
+        reduction: str = ...,
+        fused_log_softmax: bool = ...,
     ) -> None: ...
-    def forward(self, logits: Tensor, targets: Tensor, logit_lengths: Tensor, target_lengths: Tensor):  # -> Any:
+    def forward(
+        self,
+        logits: Tensor,
+        targets: Tensor,
+        logit_lengths: Tensor,
+        target_lengths: Tensor,
+    ):  # -> Any:
         ...
 
 class Convolve(torch.nn.Module):
@@ -309,7 +333,11 @@ class SpeedPerturbation(torch.nn.Module):
 
 class AddNoise(torch.nn.Module):
     def forward(
-        self, waveform: torch.Tensor, noise: torch.Tensor, snr: torch.Tensor, lengths: torch.Tensor | None = ...
+        self,
+        waveform: torch.Tensor,
+        noise: torch.Tensor,
+        snr: torch.Tensor,
+        lengths: torch.Tensor | None = ...,
     ) -> torch.Tensor: ...
 
 class Preemphasis(torch.nn.Module):

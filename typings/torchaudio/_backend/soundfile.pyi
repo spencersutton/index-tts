@@ -9,7 +9,11 @@ from .common import AudioMetaData
 
 class SoundfileBackend(Backend):
     @staticmethod
-    def info(uri: BinaryIO | str | os.PathLike, format: str | None, buffer_size: int = ...) -> AudioMetaData: ...
+    def info(
+        uri: BinaryIO | str | os.PathLike,
+        format: str | None,
+        buffer_size: int = ...,
+    ) -> AudioMetaData: ...
     @staticmethod
     def load(
         uri: BinaryIO | str | os.PathLike,

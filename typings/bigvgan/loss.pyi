@@ -33,12 +33,23 @@ class MultiScaleMelSpectrogramLoss(nn.Module):
     @functools.lru_cache(None)
     def get_mel_filters(sr, n_fft, n_mels, fmin, fmax) -> NDArray[Any, Any]: ...
     def mel_spectrogram(
-        self, wav, n_mels, fmin, fmax, window_length, hop_length, match_stride, window_type
+        self,
+        wav,
+        n_mels,
+        fmin,
+        fmax,
+        window_length,
+        hop_length,
+        match_stride,
+        window_type,
     ) -> Tensor: ...
     def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor: ...
 
 def feature_loss(fmap_r: list[list[torch.Tensor]], fmap_g: list[list[torch.Tensor]]) -> torch.Tensor: ...
 def discriminator_loss(
-    disc_real_outputs: list[torch.Tensor], disc_generated_outputs: list[torch.Tensor]
+    disc_real_outputs: list[torch.Tensor],
+    disc_generated_outputs: list[torch.Tensor],
 ) -> tuple[torch.Tensor, list[torch.Tensor], list[torch.Tensor]]: ...
-def generator_loss(disc_outputs: list[torch.Tensor]) -> tuple[torch.Tensor, list[torch.Tensor]]: ...
+def generator_loss(
+    disc_outputs: list[torch.Tensor],
+) -> tuple[torch.Tensor, list[torch.Tensor]]: ...

@@ -1,4 +1,3 @@
-
 import torch
 
 dict_format = ...

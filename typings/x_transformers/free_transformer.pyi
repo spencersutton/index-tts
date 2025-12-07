@@ -44,9 +44,21 @@ class FreeTransformer(Module):
     ) -> None: ...
     @property
     def device(self): ...
-    def encode_to_latents(self, decoder_head_embeds, mask=..., return_kl_loss=..., per_token_latents=...): ...
+    def encode_to_latents(
+        self,
+        decoder_head_embeds,
+        mask=...,
+        return_kl_loss=...,
+        per_token_latents=...,
+    ): ...
     @torch.no_grad()
     def generate(
-        self, prompts, seq_len, latents=..., filter_logits_fn=..., logit_filter_kwargs: dict = ..., use_kv_cache=...
+        self,
+        prompts,
+        seq_len,
+        latents=...,
+        filter_logits_fn=...,
+        logit_filter_kwargs: dict = ...,
+        use_kv_cache=...,
     ): ...
     def forward(self, seq, seq_for_latents=..., return_all_losses=...): ...

@@ -161,9 +161,9 @@ if __name__ == "__main__":
     try:
         main()
     finally:
-        if _profiler:
-            _profiler.stop()
-            _profiler.save("indextts.json")
+        if profiler:
+            profiler.stop()
+            profiler.save("indextts.json")
             print("\nProfiling data saved to indextts.json")
             print("Visualization options:")
             print("1. Perfetto (Recommended): Open https://ui.perfetto.dev/ and load indextts.json")

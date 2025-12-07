@@ -1,22 +1,6 @@
 import sys
-from pathlib import Path
-
-# Profiling support
-_profiler = None
-if "--profile" in sys.argv:
-    try:
-        from viztracer import VizTracer
-
-        # Increase buffer size to 10M entries to prevent wrapping on long runs
-        # ignore_c_function=True reduces noise from builtins, but you can remove it if you need to see C calls
-        _profiler = VizTracer(tracer_entries=10000000, ignore_c_function=True)
-        _profiler.start()
-    except ImportError:
-        print("PROFILING ERROR: 'viztracer' is not installed.")
-        print("Please install it to use --profile: pip install viztracer")
-        sys.exit(1)
-
 import warnings
+from pathlib import Path
 
 import rich.traceback
 
@@ -31,6 +15,9 @@ if __debug__:
 # Suppress warnings from tensorflow and other libraries
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)
+
+# Profiling support (start/stop only around inference)
+_profiler = None
 
 
 def main() -> None:
@@ -137,7 +124,37 @@ def main() -> None:
         use_cuda_kernel=args.use_cuda_kernel,
         use_deepspeed=args.use_deepspeed,
     )
-    tts.infer(spk_audio_prompt=args.voice, text=args.text.strip(), output_path=output_path)
+    # If profiling was requested, start profiler immediately before inference
+    if args.profile:
+        try:
+            from viztracer import VizTracer
+
+            # Increase buffer size to 10M entries to prevent wrapping on long runs
+            # ignore_c_function=True reduces noise from builtins, but you can remove it if you need to see C calls
+            _profiler = VizTracer(tracer_entries=10000000, ignore_c_function=True)
+            _profiler.start()
+        except ImportError:
+            print("PROFILING ERROR: 'viztracer' is not installed.")
+            print("Please install it to use --profile: pip install viztracer")
+            sys.exit(1)
+
+    # Run inference and ensure profiling only captures this call
+    try:
+        tts.infer(spk_audio_prompt=args.voice, text=args.text.strip(), output_path=output_path)
+    finally:
+        # Stop and save profiler immediately after inference so we only capture inference time
+        if args.profile and _profiler:
+            try:
+                _profiler.stop()
+                _profiler.save("indextts.json")
+                print("\nProfiling data saved to indextts.json")
+                print("Visualization options:")
+                print("1. Perfetto (Recommended): Open https://ui.perfetto.dev/ and load indextts.json")
+                print("2. Chrome Tracing: Open chrome://tracing and load indextts.json")
+                print("3. VizTracer: vizviewer indextts.json")
+            finally:
+                # Clear profiler so module-level finally will not attempt to stop it again
+                _profiler = None
 
 
 if __name__ == "__main__":

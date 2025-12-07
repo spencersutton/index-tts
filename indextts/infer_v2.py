@@ -36,6 +36,7 @@ from indextts.s2mel.modules.commons import MyModel, load_checkpoint2
 from indextts.s2mel.modules.flow_matching import CFM
 from indextts.utils.checkpoint import load_checkpoint
 from indextts.utils.front import TextNormalizer, TextTokenizer
+from indextts.utils.maskgct.models.codec.kmeans.repcodec_model import RepCodec
 from indextts.utils.maskgct_utils import build_semantic_codec, build_semantic_model
 
 if typing.TYPE_CHECKING:
@@ -55,7 +56,7 @@ class IndexTTS2:
     semantic_model: Any
     semantic_mean: torch.Tensor
     semantic_std: torch.Tensor
-    semantic_codec: Any
+    semantic_codec: RepCodec
     s2mel: MyModel
     campplus_model: CAMPPlus
     bigvgan: "bigvgan.BigVGAN"
@@ -308,7 +309,7 @@ class IndexTTS2:
             self.semantic_model = torch.compile(self.semantic_model, dynamic=True)
 
             # Compile semantic codec (RepCodec) for quantization operations
-            self.semantic_codec = torch.compile(self.semantic_codec, dynamic=True)
+            self.semantic_codec = cast(RepCodec, torch.compile(self.semantic_codec, dynamic=True))
 
             # CAMPPlus is a small model - use reduce-overhead mode for lower kernel launch latency
             self.campplus_model = cast(

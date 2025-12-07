@@ -11,23 +11,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-import os
-import re
 from collections.abc import Mapping
+from pathlib import Path
 from typing import Any
 
 import torch
 import yaml
 
 
-def load_checkpoint(model: torch.nn.Module, model_pth: str) -> dict[str, object]:
+def load_checkpoint(model: torch.nn.Module, model_pth: Path) -> dict[str, object]:
     checkpoint: Mapping[str, Any] = torch.load(model_pth, map_location="cpu")
     checkpoint = checkpoint.get("model", checkpoint)
     model.load_state_dict(checkpoint, strict=True)
-    info_path = re.sub(r".pth$", ".yaml", model_pth)
+    info_path = model_pth.with_suffix(".yaml")
     configs = {}
-    if os.path.exists(info_path):
-        with open(info_path, encoding="utf-8") as fin:
+    if info_path.exists():
+        with info_path.open(encoding="utf-8") as fin:
             configs = yaml.load(fin, Loader=yaml.FullLoader)
     return configs

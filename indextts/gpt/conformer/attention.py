@@ -22,7 +22,7 @@ import torch
 from torch import nn
 
 
-class MultiHeadedAttention(nn.Module):
+class _MultiHeadedAttention(nn.Module):
     """Multi-Head Attention layer.
 
     Args:
@@ -184,7 +184,7 @@ class MultiHeadedAttention(nn.Module):
         return self.forward_attention(v, scores, mask), new_cache
 
 
-class RelPositionMultiHeadedAttention(MultiHeadedAttention):
+class RelPositionMultiHeadedAttention(_MultiHeadedAttention):
     """Multi-Head Attention layer with relative position encoding.
     Paper: https://arxiv.org/abs/1901.02860
     Args:

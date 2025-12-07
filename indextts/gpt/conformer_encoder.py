@@ -2,10 +2,7 @@ import torch
 from torch import nn
 
 from indextts.gpt.conformer.attention import RelPositionMultiHeadedAttention
-from indextts.gpt.conformer.embedding import NoPositionalEncoding, PositionalEncoding, RelPositionalEncoding
-from indextts.gpt.conformer.subsampling import (
-    Conv2dSubsampling2,
-)
+from indextts.gpt.conformer.subsampling import Conv2dSubsampling2
 from indextts.utils.common import make_pad_mask
 
 
@@ -351,21 +348,7 @@ class _BaseEncoder(torch.nn.Module):
         super().__init__()
         self._output_size = output_size
 
-        if pos_enc_layer_type == "abs_pos":
-            pos_enc_class = PositionalEncoding
-        elif pos_enc_layer_type == "rel_pos":
-            pos_enc_class = RelPositionalEncoding
-        elif pos_enc_layer_type == "no_pos":
-            pos_enc_class = NoPositionalEncoding
-        else:
-            raise ValueError("unknown pos_enc_layer: " + pos_enc_layer_type)
-
-        self.embed = Conv2dSubsampling2(
-            input_size,
-            output_size,
-            dropout_rate,
-            pos_enc_class(output_size, dropout_rate),
-        )
+        self.embed = Conv2dSubsampling2(input_size, output_size, dropout_rate)
 
         self.normalize_before = normalize_before
         self.after_norm = torch.nn.LayerNorm(output_size, eps=1e-5)

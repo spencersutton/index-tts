@@ -2,7 +2,6 @@
 #   Licensed under the MIT license.
 
 import os
-import pathlib
 import subprocess
 from pathlib import Path
 
@@ -23,7 +22,7 @@ def load():
         cc_flag.extend(("-gencode", "arch=compute_80,code=sm_80"))
 
     # Build path
-    srcpath = pathlib.Path(__file__).parent.absolute()
+    srcpath = Path(__file__).parent.absolute()
     buildpath = srcpath / "build"
     _create_build_dir(buildpath)
 

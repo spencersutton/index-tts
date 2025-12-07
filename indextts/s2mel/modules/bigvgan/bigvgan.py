@@ -5,7 +5,6 @@
 #   LICENSE is in incl_licenses directory.
 
 import json
-import os
 from pathlib import Path
 from typing import Any
 
@@ -387,7 +386,7 @@ class BigVGAN(
         # Download and load hyperparameters (h) used by BigVGAN
         if Path(model_id).is_dir():
             print("Loading config.json from local directory")
-            config_file = os.path.join(model_id, "config.json")
+            config_file = Path(model_id) / "config.json"
         else:
             config_file = hf_hub_download(
                 repo_id=model_id,
@@ -418,7 +417,7 @@ class BigVGAN(
         # Download and load pretrained generator weight
         if Path(model_id).is_dir():
             print("Loading weights from local directory")
-            model_file = os.path.join(model_id, "bigvgan_generator.pt")
+            model_file = Path(model_id) / "bigvgan_generator.pt"
         else:
             print(f"Loading weights from {model_id}")
             model_file = hf_hub_download(

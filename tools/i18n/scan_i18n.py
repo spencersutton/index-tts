@@ -1,8 +1,5 @@
 import ast
-import glob
 import json
-import os
-import pathlib
 from collections import OrderedDict
 from pathlib import Path
 
@@ -34,14 +31,14 @@ def scan_i18n_strings():
     """
     strings = []
     print(" Scanning Files and Extracting i18n Strings ".center(TITLE_LEN, "="))
-    for filename in glob.iglob("**/*.py", recursive=True):
+    for filename in Path().rglob("*.py"):
         try:
-            with pathlib.Path(filename).open(encoding="utf-8") as f:
+            with filename.open(encoding="utf-8") as f:
                 code = f.read()
                 if "I18nAuto" in code:
                     tree = ast.parse(code)
                     i18n_strings = extract_i18n_strings(tree)
-                    print(f"{filename.ljust(KEY_LEN * 3 // 2)}: {len(i18n_strings)}")
+                    print(f"{str(filename).ljust(KEY_LEN * 3 // 2)}: {len(i18n_strings)}")
                     if SHOW_KEYS:
                         print("\n".join(list(i18n_strings)))
                     strings.extend(i18n_strings)
@@ -57,7 +54,7 @@ def update_i18n_json(json_file, standard_keys) -> None:
     standard_keys = sorted(standard_keys)
     print(f" Process {json_file} ".center(TITLE_LEN, "="))
     # 读取 JSON 文件
-    with pathlib.Path(json_file).open(encoding="utf-8") as f:
+    with Path(json_file).open(encoding="utf-8") as f:
         json_data = json.load(f, object_pairs_hook=OrderedDict)
     # 打印处理前的 JSON 条目数
     len_before = len(json_data)
@@ -123,7 +120,7 @@ def update_i18n_json(json_file, standard_keys) -> None:
     else:
         print("\033[32m[Passed] All Keys Translated\033[0m")
     # 将处理后的结果写入 JSON 文件
-    with pathlib.Path(json_file).open("w", encoding="utf-8") as f:
+    with Path(json_file).open("w", encoding="utf-8") as f:
         json.dump(json_data, f, ensure_ascii=False, indent=4, sort_keys=SORT_KEYS)
         f.write("\n")
     print(f" Updated {json_file} ".center(TITLE_LEN, "=") + "\n")
@@ -131,7 +128,6 @@ def update_i18n_json(json_file, standard_keys) -> None:
 
 if __name__ == "__main__":
     code_keys = scan_i18n_strings()
-    for json_file in os.listdir(I18N_JSON_DIR):
-        if json_file.endswith(r".json"):
-            json_file = os.path.join(I18N_JSON_DIR, json_file)
+    for json_file in I18N_JSON_DIR.iterdir():
+        if json_file.suffix == ".json":
             update_i18n_json(json_file, code_keys)

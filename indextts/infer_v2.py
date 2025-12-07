@@ -835,10 +835,11 @@ class IndexTTS2:
         wav = wav.cpu()  # to cpu
         if output_path:
             # 直接保存音频到指定路径中
-            if Path(output_path).is_file():
-                Path(output_path).unlink()
+            # Directly save audio to the specified path
+            if output_path.is_file():
+                output_path.unlink()
                 print(">> remove old wav file:", output_path)
-            if output_path.parent != "":
+            if not output_path.parent.exists():
                 output_path.parent.mkdir(exist_ok=True, parents=True)
 
             assert wav.dtype == torch.float32

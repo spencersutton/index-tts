@@ -85,7 +85,10 @@ def pad1d(x: Tensor, paddings: tuple[int, int], mode: str = "zero", value: float
     """
     length = x.shape[-1]
     padding_left, padding_right = paddings
-    assert padding_left >= 0 and padding_right >= 0, (padding_left, padding_right)
+    assert padding_left >= 0 and padding_right >= 0, (
+        padding_left,
+        padding_right,
+    )
     if mode == "reflect":
         max_pad = max(padding_left, padding_right)
         extra_pad = 0
@@ -105,7 +108,12 @@ class NormConv1d(nn.Module):
     """
 
     def __init__(
-        self, *args, causal: bool = False, norm: str = "none", norm_kwargs: dict[str, tp.Any] = {}, **kwargs
+        self,
+        *args,
+        causal: bool = False,
+        norm: str = "none",
+        norm_kwargs: dict[str, tp.Any] = {},
+        **kwargs,
     ) -> None:
         super().__init__()
         self.conv = apply_parametrization_norm(nn.Conv1d(*args, **kwargs), norm)
@@ -176,5 +184,9 @@ class SConv1d(nn.Module):
             # Asymmetric padding required for odd strides
             padding_right = padding_total // 2
             padding_left = padding_total - padding_right
-            x = pad1d(x, (padding_left, padding_right + extra_padding), mode=self.pad_mode)
+            x = pad1d(
+                x,
+                (padding_left, padding_right + extra_padding),
+                mode=self.pad_mode,
+            )
         return self.conv(x)

@@ -19,7 +19,11 @@ class UpSample1d(nn.Module):
         self.pad = self.kernel_size // ratio - 1
         self.pad_left = self.pad * self.stride + (self.kernel_size - self.stride) // 2
         self.pad_right = self.pad * self.stride + (self.kernel_size - self.stride + 1) // 2
-        filter = kaiser_sinc_filter1d(cutoff=0.5 / ratio, half_width=0.6 / ratio, kernel_size=self.kernel_size)
+        filter = kaiser_sinc_filter1d(
+            cutoff=0.5 / ratio,
+            half_width=0.6 / ratio,
+            kernel_size=self.kernel_size,
+        )
         self.register_buffer("filter", filter)
 
     # x: [B, C, T]

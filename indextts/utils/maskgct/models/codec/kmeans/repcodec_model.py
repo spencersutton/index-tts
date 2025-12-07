@@ -5,7 +5,9 @@
 from torch import nn
 from torch.nn import functional as F
 
-from indextts.utils.maskgct.models.codec.amphion_codec.quantize import ResidualVQ
+from indextts.utils.maskgct.models.codec.amphion_codec.quantize import (
+    ResidualVQ,
+)
 from indextts.utils.maskgct.models.codec.kmeans.vocos import VocosBackbone
 
 

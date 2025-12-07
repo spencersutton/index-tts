@@ -138,7 +138,14 @@ class BASECFM(torch.nn.Module, ABC):
 
         return sol[-1]
 
-    def forward(self, x1: Tensor, x_lens: Tensor, prompt_lens: Tensor, mu: Tensor, style: Tensor):
+    def forward(
+        self,
+        x1: Tensor,
+        x_lens: Tensor,
+        prompt_lens: Tensor,
+        mu: Tensor,
+        style: Tensor,
+    ):
         """Computes diffusion loss
 
         Args:
@@ -179,7 +186,8 @@ class BASECFM(torch.nn.Module, ABC):
         loss = 0
         for bib in range(b):
             loss += self.criterion(
-                estimator_out[bib, :, prompt_lens[bib] : x_lens[bib]], u[bib, :, prompt_lens[bib] : x_lens[bib]]
+                estimator_out[bib, :, prompt_lens[bib] : x_lens[bib]],
+                u[bib, :, prompt_lens[bib] : x_lens[bib]],
             )
         loss /= b
 

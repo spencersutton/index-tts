@@ -38,7 +38,11 @@ class TestStreamingEndToEnd(unittest.TestCase):
             # Initialize the TTS engine
             # We disable some optimizations to make initialization faster/safer for testing
             tts = IndexTTS2(
-                cfg_path=config_path, model_dir=checkpoint_dir, device=device, use_fp16=False, use_torch_compile=False
+                cfg_path=config_path,
+                model_dir=checkpoint_dir,
+                device=device,
+                use_fp16=False,
+                use_torch_compile=False,
             )
 
             text = "Hello world. This is a test of streaming inference."

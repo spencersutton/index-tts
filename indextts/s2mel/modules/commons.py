@@ -36,20 +36,8 @@ class MyModel(nn.Module):
         length_regulator = InterpolateRegulator(
             channels=args.length_regulator.channels,
             sampling_ratios=args.length_regulator.sampling_ratios,
-            is_discrete=args.length_regulator.is_discrete,
             in_channels=args.length_regulator.in_channels,
-            vector_quantize=args.length_regulator.vector_quantize
-            if hasattr(args.length_regulator, "vector_quantize")
-            else False,
             codebook_size=args.length_regulator.content_codebook_size,
-            n_codebooks=args.length_regulator.n_codebooks if hasattr(args.length_regulator, "n_codebooks") else 1,
-            quantizer_dropout=args.length_regulator.quantizer_dropout
-            if hasattr(args.length_regulator, "quantizer_dropout")
-            else 0.0,
-            f0_condition=args.length_regulator.f0_condition
-            if hasattr(args.length_regulator, "f0_condition")
-            else False,
-            n_f0_bins=args.length_regulator.n_f0_bins if hasattr(args.length_regulator, "n_f0_bins") else 512,
         )
 
         if use_gpt_latent:

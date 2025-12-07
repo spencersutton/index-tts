@@ -2,7 +2,6 @@
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
-import torch
 from torch import nn
 from torch.nn import functional as F
 
@@ -20,94 +19,51 @@ def init_weights(m: nn.Module) -> None:
         nn.init.constant_(m.bias, 0)
 
 
-class RepCodec(nn.Module):
-    codebook_size = 8192
-    codebook_dim = 8
-    hidden_size = 1024
-    vocos_dim = 384
-    vocos_intermediate_dim = 2048
-    vocos_num_layers = 12
-    num_quantizers = 1
-    downsample_scale = 1
+codebook_size = 8192
+codebook_dim = 8
+hidden_size = 1024
+vocos_dim = 384
+vocos_intermediate_dim = 2048
+vocos_num_layers = 12
+num_quantizers = 1
+downsample_scale = 1
 
+
+class RepCodec(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-        if self.downsample_scale is not None and self.downsample_scale > 1:
-            self.down = nn.Conv1d(self.hidden_size, self.hidden_size, kernel_size=3, stride=2, padding=1)
-            self.up = nn.Conv1d(self.hidden_size, self.hidden_size, kernel_size=3, stride=1, padding=1)
+        if downsample_scale is not None and downsample_scale > 1:
+            self.down = nn.Conv1d(hidden_size, hidden_size, kernel_size=3, stride=2, padding=1)
+            self.up = nn.Conv1d(hidden_size, hidden_size, kernel_size=3, stride=1, padding=1)
 
         self.encoder = nn.Sequential(
             VocosBackbone(
-                input_channels=self.hidden_size,
-                dim=self.vocos_dim,
-                intermediate_dim=self.vocos_intermediate_dim,
-                num_layers=self.vocos_num_layers,
+                input_channels=hidden_size,
+                dim=vocos_dim,
+                intermediate_dim=vocos_intermediate_dim,
+                num_layers=vocos_num_layers,
                 adanorm_num_embeddings=None,
             ),
-            nn.Linear(self.vocos_dim, self.hidden_size),
+            nn.Linear(vocos_dim, hidden_size),
         )
         self.decoder = nn.Sequential(
             VocosBackbone(
-                input_channels=self.hidden_size,
-                dim=self.vocos_dim,
-                intermediate_dim=self.vocos_intermediate_dim,
-                num_layers=self.vocos_num_layers,
+                input_channels=hidden_size,
+                dim=vocos_dim,
+                intermediate_dim=vocos_intermediate_dim,
+                num_layers=vocos_num_layers,
                 adanorm_num_embeddings=None,
             ),
-            nn.Linear(self.vocos_dim, self.hidden_size),
+            nn.Linear(vocos_dim, hidden_size),
         )
 
-        self.quantizer = ResidualVQ(
-            input_dim=self.hidden_size,
-            num_quantizers=self.num_quantizers,
-            codebook_size=self.codebook_size,
-            codebook_dim=self.codebook_dim,
-            quantizer_type="fvq",
-            quantizer_dropout=0.0,
-            commitment=0.15,
-            codebook_loss_weight=1.0,
-            use_l2_normlize=True,
-        )
+        self.quantizer = ResidualVQ()
 
         self.reset_parameters()
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        # downsample
-        if self.downsample_scale is not None and self.downsample_scale > 1:
-            x = x.transpose(1, 2)
-            x = self.down(x)
-            x = F.gelu(x)
-            x = x.transpose(1, 2)
-
-        # encoder
-        x = self.encoder(x.transpose(1, 2)).transpose(1, 2)
-
-        # vq
-        (
-            quantized_out,
-            all_indices,
-            all_commit_losses,
-            all_codebook_losses,
-            _,
-        ) = self.quantizer(x)
-
-        # decoder
-        x = self.decoder(quantized_out)
-
-        # up
-        if self.downsample_scale is not None and self.downsample_scale > 1:
-            x = x.transpose(1, 2)
-            x = F.interpolate(x, scale_factor=2, mode="nearest")
-            x_rec = self.up(x).transpose(1, 2)
-
-        codebook_loss = (all_codebook_losses + all_commit_losses).mean()
-        all_indices = all_indices
-
-        return x_rec, codebook_loss, all_indices
-
     def quantize(self, x):
-        if self.downsample_scale is not None and self.downsample_scale > 1:
+        if downsample_scale is not None and downsample_scale > 1:
             x = x.transpose(1, 2)
             x = self.down(x)
             x = F.gelu(x)

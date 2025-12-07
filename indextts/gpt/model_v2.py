@@ -14,11 +14,11 @@ from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.perceiver import PerceiverResampler
 
 
-def null_position_embeddings(range, dim):
+def _null_position_embeddings(range, dim):
     return torch.zeros((range.shape[0], range.shape[1], dim), device=range.device)
 
 
-class ResBlock(nn.Module):
+class _ResBlock(nn.Module):
     """
     Basic residual convolutional block that uses GroupNorm.
     """
@@ -217,7 +217,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         )
 
 
-def build_hf_gpt_transformer(
+def _build_hf_gpt_transformer(
     layers, model_dim, heads, max_mel_seq_len, max_text_seq_len
 ) -> tuple[GPT2Model, LearnedPositionEmbeddings, LearnedPositionEmbeddings, None, None]:
     """
@@ -238,7 +238,7 @@ def build_hf_gpt_transformer(
     gpt = GPT2Model(gpt_config)
     # Override the built in positional embeddings
     del gpt.wpe
-    gpt.wpe = functools.partial(null_position_embeddings, dim=model_dim)
+    gpt.wpe = functools.partial(_null_position_embeddings, dim=model_dim)
     # Built-in token embeddings are unused.
     del gpt.wte
     return (
@@ -250,31 +250,7 @@ def build_hf_gpt_transformer(
     )
 
 
-class MelEncoder(nn.Module):
-    def __init__(self, channels, mel_channels=80, resblocks_per_reduction=2) -> None:
-        super().__init__()
-        self.channels = channels
-        self.encoder = nn.Sequential(
-            nn.Conv1d(mel_channels, channels // 4, kernel_size=3, padding=1),
-            nn.Sequential(*[ResBlock(channels // 4) for _ in range(resblocks_per_reduction)]),
-            nn.Conv1d(channels // 4, channels // 2, kernel_size=3, stride=2, padding=1),
-            nn.GroupNorm(channels // 16, channels // 2),
-            nn.ReLU(),
-            nn.Sequential(*[ResBlock(channels // 2) for _ in range(resblocks_per_reduction)]),
-            nn.Conv1d(channels // 2, channels, kernel_size=3, stride=2, padding=1),
-            nn.GroupNorm(channels // 8, channels),
-            nn.ReLU(),
-            nn.Sequential(*[ResBlock(channels) for _ in range(resblocks_per_reduction)]),
-        )
-        self.reduction = 4
-
-    def forward(self, x):
-        for e in self.encoder:
-            x = e(x)
-        return x.permute(0, 2, 1)
-
-
-class UnifiedVoice(nn.Module):
+class _UnifiedVoice(nn.Module):
     gst_encoder: nn.Module
     inference_model: GPT2InferenceModel
     number_text_tokens = 12000
@@ -341,7 +317,7 @@ class UnifiedVoice(nn.Module):
             self.text_pos_embedding,
             self.mel_layer_pos_embedding,
             self.text_layer_pos_embedding,
-        ) = build_hf_gpt_transformer(
+        ) = _build_hf_gpt_transformer(
             self.layers,
             self.model_dim,
             self.heads,

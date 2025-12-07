@@ -23,7 +23,7 @@ import torch
 from indextts.gpt.conformer.embedding import NoPositionalEncoding, PositionalEncoding
 
 
-class BaseSubsampling(torch.nn.Module, ABC):
+class _BaseSubsampling(torch.nn.Module, ABC):
     pos_enc: PositionalEncoding | NoPositionalEncoding  # Module with position_encoding method
 
     def __init__(self) -> None:
@@ -35,7 +35,7 @@ class BaseSubsampling(torch.nn.Module, ABC):
         return self.pos_enc.position_encoding(offset, size)
 
 
-class LinearNoSubsampling(BaseSubsampling):
+class LinearNoSubsampling(_BaseSubsampling):
     """Linear transform the input without subsampling
 
     Args:
@@ -80,7 +80,7 @@ class LinearNoSubsampling(BaseSubsampling):
         return x, pos_emb, x_mask
 
 
-class Conv2dSubsampling2(BaseSubsampling):
+class Conv2dSubsampling2(_BaseSubsampling):
     """Convolutional 2D subsampling (to 1/2 length).
 
     Args:
@@ -132,7 +132,7 @@ class Conv2dSubsampling2(BaseSubsampling):
         return x, pos_emb, x_mask[:, :, 2::2]
 
 
-class Conv2dSubsampling4(BaseSubsampling):
+class Conv2dSubsampling4(_BaseSubsampling):
     """Convolutional 2D subsampling (to 1/4 length).
 
     Args:
@@ -186,7 +186,7 @@ class Conv2dSubsampling4(BaseSubsampling):
         return x, pos_emb, x_mask[:, :, 2::2][:, :, 2::2]
 
 
-class Conv2dSubsampling6(BaseSubsampling):
+class Conv2dSubsampling6(_BaseSubsampling):
     """Convolutional 2D subsampling (to 1/6 length).
     Args:
         idim (int): Input dimension.
@@ -235,7 +235,7 @@ class Conv2dSubsampling6(BaseSubsampling):
         return x, pos_emb, x_mask[:, :, 2::2][:, :, 4::3]
 
 
-class Conv2dSubsampling8(BaseSubsampling):
+class Conv2dSubsampling8(_BaseSubsampling):
     """Convolutional 2D subsampling (to 1/8 length).
 
     Args:

@@ -1,4 +1,3 @@
-
 import torch
 from torch import Tensor
 
@@ -20,7 +19,10 @@ class MVDR(torch.nn.Module):
         online: bool = ...,
     ) -> None: ...
     def forward(
-        self, specgram: torch.Tensor, mask_s: torch.Tensor, mask_n: torch.Tensor | None = ...
+        self,
+        specgram: torch.Tensor,
+        mask_s: torch.Tensor,
+        mask_n: torch.Tensor | None = ...,
     ) -> torch.Tensor: ...
 
 class RTFMVDR(torch.nn.Module):

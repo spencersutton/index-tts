@@ -1,4 +1,3 @@
-
 import argbind
 import dac
 from audiotools import ml
@@ -11,5 +10,10 @@ __MODEL_URLS__ = ...
 @argbind.bind(group="download", positional=True, without_prefix=True)
 def download(model_type: str = ..., model_bitrate: str = ..., tag: str = ...):  # -> Path:
     ...
-def load_model(model_type: str = ..., model_bitrate: str = ..., tag: str = ..., load_path: str = ...):  # -> DAC:
+def load_model(
+    model_type: str = ...,
+    model_bitrate: str = ...,
+    tag: str = ...,
+    load_path: str = ...,
+):  # -> DAC:
     ...

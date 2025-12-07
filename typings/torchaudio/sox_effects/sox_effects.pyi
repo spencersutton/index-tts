@@ -1,4 +1,3 @@
-
 import torch
 from torchaudio._internal.module_utils import deprecated, dropping_support
 
@@ -14,9 +13,16 @@ def shutdown_sox_effects():  # -> None:
 def effect_names() -> list[str]: ...
 @dropping_support
 def apply_effects_tensor(
-    tensor: torch.Tensor, sample_rate: int, effects: list[list[str]], channels_first: bool = ...
+    tensor: torch.Tensor,
+    sample_rate: int,
+    effects: list[list[str]],
+    channels_first: bool = ...,
 ) -> tuple[torch.Tensor, int]: ...
 @dropping_support
 def apply_effects_file(
-    path: str, effects: list[list[str]], normalize: bool = ..., channels_first: bool = ..., format: str | None = ...
+    path: str,
+    effects: list[list[str]],
+    normalize: bool = ...,
+    channels_first: bool = ...,
+    format: str | None = ...,
 ) -> tuple[torch.Tensor, int]: ...

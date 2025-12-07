@@ -1,13 +1,20 @@
-
 import torch
 from torch import Tensor
 from torch.nn import Module
 
 class Wav2Vec2Model(Module):
-    def __init__(self, feature_extractor: Module, encoder: Module, aux: Module | None = ...) -> None: ...
+    def __init__(
+        self,
+        feature_extractor: Module,
+        encoder: Module,
+        aux: Module | None = ...,
+    ) -> None: ...
     @torch.jit.export
     def extract_features(
-        self, waveforms: Tensor, lengths: Tensor | None = ..., num_layers: int | None = ...
+        self,
+        waveforms: Tensor,
+        lengths: Tensor | None = ...,
+        num_layers: int | None = ...,
     ) -> tuple[list[Tensor], Tensor | None]: ...
     def forward(self, waveforms: Tensor, lengths: Tensor | None = ...) -> tuple[Tensor, Tensor | None]: ...
 
@@ -20,7 +27,10 @@ class HuBERTPretrainModel(Module):
         feature_grad_mult: float | None,
     ) -> None: ...
     def forward(
-        self, waveforms: Tensor, labels: Tensor, audio_lengths: Tensor | None = ...
+        self,
+        waveforms: Tensor,
+        labels: Tensor,
+        audio_lengths: Tensor | None = ...,
     ) -> tuple[Tensor, Tensor | None]: ...
 
 def wav2vec2_model(

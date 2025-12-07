@@ -1,4 +1,3 @@
-
 import torch
 from audiotools.ml import BaseModel
 from torch import nn
@@ -52,7 +51,12 @@ class DAC(BaseModel, CodecMixin):
         ...
     def decode(self, z: torch.Tensor):  # -> Any:
         ...
-    def forward(self, audio_data: torch.Tensor, sample_rate: int = ..., n_quantizers: int = ...):  # -> dict[str, Any]:
+    def forward(
+        self,
+        audio_data: torch.Tensor,
+        sample_rate: int = ...,
+        n_quantizers: int = ...,
+    ):  # -> dict[str, Any]:
         ...
 
 if __name__ == "__main__":

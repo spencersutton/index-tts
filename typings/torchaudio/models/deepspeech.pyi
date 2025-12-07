@@ -3,9 +3,21 @@ import torch
 __all__ = ["DeepSpeech"]
 
 class FullyConnected(torch.nn.Module):
-    def __init__(self, n_feature: int, n_hidden: int, dropout: float, relu_max_clip: int = ...) -> None: ...
+    def __init__(
+        self,
+        n_feature: int,
+        n_hidden: int,
+        dropout: float,
+        relu_max_clip: int = ...,
+    ) -> None: ...
     def forward(self, x: torch.Tensor) -> torch.Tensor: ...
 
 class DeepSpeech(torch.nn.Module):
-    def __init__(self, n_feature: int, n_hidden: int = ..., n_class: int = ..., dropout: float = ...) -> None: ...
+    def __init__(
+        self,
+        n_feature: int,
+        n_hidden: int = ...,
+        n_class: int = ...,
+        dropout: float = ...,
+    ) -> None: ...
     def forward(self, x: torch.Tensor) -> torch.Tensor: ...

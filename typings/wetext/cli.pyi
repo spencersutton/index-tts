@@ -2,10 +2,19 @@ import click
 
 @click.command()
 @click.argument("text")
-@click.option("--lang", "-l", default="auto", type=click.Choice(["auto", "en", "zh", "ja"]))
+@click.option(
+    "--lang",
+    "-l",
+    default="auto",
+    type=click.Choice(["auto", "en", "zh", "ja"]),
+)
 @click.option("--operator", "-o", default="tn", type=click.Choice(["tn", "itn"]))
 @click.option("--fix-contractions", is_flag=True, help="Fix contractions.")
-@click.option("--traditional-to-simple", is_flag=True, help="Convert traditional Chinese to simplified Chinese.")
+@click.option(
+    "--traditional-to-simple",
+    is_flag=True,
+    help="Convert traditional Chinese to simplified Chinese.",
+)
 @click.option("--full-to-half", is_flag=True, help=...)
 @click.option("--remove-interjections", is_flag=True, help="Remove interjections.")
 @click.option("--remove-puncts", is_flag=True, help="Remove punctuation.")

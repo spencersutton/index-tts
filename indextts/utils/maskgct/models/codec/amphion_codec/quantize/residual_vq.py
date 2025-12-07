@@ -87,12 +87,13 @@ class ResidualVQ(nn.Module):
             all_quantized,
         )
 
-    def vq2emb(self, vq, n_quantizers=None):
+    def vq2emb(self, vq: Tensor, n_quantizers: int | None = None) -> Tensor:
         quantized_out = 0.0
         if n_quantizers is None:
             n_quantizers = self.num_quantizers
         if n_quantizers > 0:
             quantized_out += self.quantizer.vq2emb(vq[0])
+        assert isinstance(quantized_out, Tensor)
         return quantized_out
 
     def latent2dist(self, z: Tensor, n_quantizers: int | None = None) -> tuple[Tensor, Tensor]:

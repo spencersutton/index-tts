@@ -3,15 +3,15 @@ import json
 import sys
 import time
 import warnings
+from pathlib import Path
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
-from pathlib import Path
 
 import pandas as pd
 
-current_dir = (Path(__file__).resolve()).parent
+current_dir = Path(__file__).resolve().parent
 sys.path.append(str(current_dir))
 sys.path.append(str(current_dir / "indextts"))
 
@@ -53,7 +53,7 @@ from tools.i18n.i18n import I18nAuto
 i18n = I18nAuto(language="Auto")
 tts = IndexTTS2(
     model_dir=cmd_args.model_dir,
-    cfg_path=str(Path(cmd_args.model_dir) / "config.yaml"),
+    cfg_path=Path(cmd_args.model_dir) / "config.yaml",
     use_fp16=cmd_args.fp16,
     use_deepspeed=cmd_args.deepspeed,
     use_cuda_kernel=cmd_args.cuda_kernel,
@@ -78,10 +78,10 @@ with Path("examples/cases.jsonl").open(encoding="utf-8") as f:
         if not line:
             continue
         example = json.loads(line)
-        emo_audio_path = str(Path("examples") / example["emo_audio"]) if example.get("emo_audio", None) else None
+        emo_audio_path = Path("examples") / example["emo_audio"] if example.get("emo_audio", None) else None
 
         example_cases.append([
-            str(Path("examples") / example.get("prompt_audio", "sample_prompt.wav")),
+            Path("examples") / example.get("prompt_audio", "sample_prompt.wav"),
             EMO_CHOICES_ALL[example.get("emo_mode", 0)],
             example.get("text"),
             emo_audio_path,
@@ -205,7 +205,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
             prompt_audio = gr.Audio(
                 label=i18n("音色参考音频"), key="prompt_audio", sources=["upload", "microphone"], type="filepath"
             )
-            prompt_list = [p.name for p in Path("prompts").iterdir() if p.is_file()]
+            prompt_list = list(Path("prompts").iterdir())
             with gr.Column():
                 input_text_single = gr.TextArea(
                     label=i18n("文本"),

@@ -1,14 +1,10 @@
 import torch
 from torch import nn
 
-from indextts.gpt.conformer.attention import MultiHeadedAttention, RelPositionMultiHeadedAttention
+from indextts.gpt.conformer.attention import RelPositionMultiHeadedAttention
 from indextts.gpt.conformer.embedding import NoPositionalEncoding, PositionalEncoding, RelPositionalEncoding
 from indextts.gpt.conformer.subsampling import (
     Conv2dSubsampling2,
-    Conv2dSubsampling4,
-    Conv2dSubsampling6,
-    Conv2dSubsampling8,
-    LinearNoSubsampling,
 )
 from indextts.utils.common import make_pad_mask
 
@@ -364,20 +360,7 @@ class _BaseEncoder(torch.nn.Module):
         else:
             raise ValueError("unknown pos_enc_layer: " + pos_enc_layer_type)
 
-        if input_layer == "linear":
-            subsampling_class = LinearNoSubsampling
-        elif input_layer == "conv2d2":
-            subsampling_class = Conv2dSubsampling2
-        elif input_layer == "conv2d":
-            subsampling_class = Conv2dSubsampling4
-        elif input_layer == "conv2d6":
-            subsampling_class = Conv2dSubsampling6
-        elif input_layer == "conv2d8":
-            subsampling_class = Conv2dSubsampling8
-        else:
-            raise ValueError("unknown input_layer: " + input_layer)
-
-        self.embed = subsampling_class(
+        self.embed = Conv2dSubsampling2(
             input_size,
             output_size,
             dropout_rate,
@@ -480,40 +463,15 @@ class ConformerEncoder(_BaseEncoder):
 
         activation = torch.nn.SiLU()
 
-        # self-attention module definition
-        if pos_enc_layer_type != "rel_pos":
-            encoder_selfattn_layer = MultiHeadedAttention
-        else:
-            encoder_selfattn_layer = RelPositionMultiHeadedAttention
-        encoder_selfattn_layer_args = (
-            attention_heads,
-            output_size,
-            dropout_rate,
-        )
-
-        # feed-forward module definition
-        positionwise_layer = _PositionwiseFeedForward
-        positionwise_layer_args = (
-            output_size,
-            linear_units,
-            dropout_rate,
-            activation,
-        )
-        # convolution module definition
-        convolution_layer = _ConvolutionModule
-        convolution_layer_args = (
-            output_size,
-            cnn_module_kernel,
-            activation,
-        )
-
         self.encoders = torch.nn.ModuleList([
             _ConformerEncoderLayer(
                 output_size,
-                encoder_selfattn_layer(*encoder_selfattn_layer_args),
-                positionwise_layer(*positionwise_layer_args),
-                positionwise_layer(*positionwise_layer_args) if macaron_style else None,
-                convolution_layer(*convolution_layer_args) if use_cnn_module else None,
+                RelPositionMultiHeadedAttention(attention_heads, output_size, dropout_rate),
+                _PositionwiseFeedForward(output_size, linear_units, dropout_rate, activation),
+                _PositionwiseFeedForward(output_size, linear_units, dropout_rate, activation)
+                if macaron_style
+                else None,
+                _ConvolutionModule(output_size, cnn_module_kernel, activation) if use_cnn_module else None,
                 dropout_rate,
                 normalize_before,
                 concat_after,

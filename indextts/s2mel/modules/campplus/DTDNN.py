@@ -35,7 +35,14 @@ class FCM(nn.Module):
         self.layer1 = self._make_layer(block, m_channels, num_blocks[0], stride=2)
         self.layer2 = self._make_layer(block, m_channels, num_blocks[1], stride=2)
 
-        self.conv2 = nn.Conv2d(m_channels, m_channels, kernel_size=3, stride=(2, 1), padding=1, bias=False)
+        self.conv2 = nn.Conv2d(
+            m_channels,
+            m_channels,
+            kernel_size=3,
+            stride=(2, 1),
+            padding=1,
+            bias=False,
+        )
         self.bn2 = nn.BatchNorm2d(m_channels)
         self.out_channels = m_channels * (feat_dim // 8)
 
@@ -79,7 +86,15 @@ class CAMPPlus(nn.Module):
             OrderedDict([
                 (
                     "tdnn",
-                    TDNNLayer(channels, init_channels, 5, stride=2, dilation=1, padding=-1, config_str=config_str),
+                    TDNNLayer(
+                        channels,
+                        init_channels,
+                        5,
+                        stride=2,
+                        dilation=1,
+                        padding=-1,
+                        config_str=config_str,
+                    ),
                 ),
             ])
         )
@@ -98,14 +113,18 @@ class CAMPPlus(nn.Module):
             self.xvector.add_module(f"block{i + 1}", block)
             channels += num_layers * growth_rate
             self.xvector.add_module(
-                f"transit{i + 1}", TransitLayer(channels, channels // 2, bias=False, config_str=config_str)
+                f"transit{i + 1}",
+                TransitLayer(channels, channels // 2, bias=False, config_str=config_str),
             )
             channels //= 2
 
         self.xvector.add_module("out_nonlinear", get_nonlinear(config_str, channels))
 
         self.xvector.add_module("stats", StatsPool())
-        self.xvector.add_module("dense", DenseLayer(channels * 2, embedding_size, config_str="batchnorm_"))
+        self.xvector.add_module(
+            "dense",
+            DenseLayer(channels * 2, embedding_size, config_str="batchnorm_"),
+        )
 
         for m in self.modules():
             if isinstance(m, (nn.Conv1d, nn.Linear)):

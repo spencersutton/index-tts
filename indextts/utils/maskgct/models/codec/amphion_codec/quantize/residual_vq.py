@@ -76,7 +76,12 @@ class ResidualVQ(nn.Module):
 
         all_commit_losses, all_codebook_losses, all_indices, all_quantized = map(
             torch.stack,
-            (all_commit_losses, all_codebook_losses, all_indices, all_quantized),
+            (
+                all_commit_losses,
+                all_codebook_losses,
+                all_indices,
+                all_quantized,
+            ),
         )
 
         return (

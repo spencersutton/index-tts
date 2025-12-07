@@ -69,7 +69,6 @@ class _ConvolutionModule(nn.Module):
         # kernel_size should be an odd number for none causal convolution
         assert (kernel_size - 1) % 2 == 0
         padding = (kernel_size - 1) // 2
-        self.lorder = 0
 
         self.depthwise_conv = nn.Conv1d(
             channels,
@@ -118,20 +117,10 @@ class _ConvolutionModule(nn.Module):
         if mask_pad.size(2) > 0:  # time > 0
             x.masked_fill_(~mask_pad, 0.0)
 
-        if self.lorder > 0:
-            if cache.size(2) == 0:  # cache_t == 0
-                x = nn.functional.pad(x, (self.lorder, 0), "constant", 0.0)
-            else:
-                assert cache.size(0) == x.size(0)  # equal batch
-                assert cache.size(1) == x.size(1)  # equal channel
-                x = torch.cat((cache, x), dim=2)
-            assert x.size(2) > self.lorder
-            new_cache = x[:, :, -self.lorder :]
-        else:
-            # It's better we just return None if no cache is required,
-            # However, for JIT export, here we just fake one tensor instead of
-            # None.
-            new_cache = torch.zeros((0, 0, 0), dtype=x.dtype, device=x.device)
+        # It's better we just return None if no cache is required,
+        # However, for JIT export, here we just fake one tensor instead of
+        # None.
+        new_cache = torch.zeros((0, 0, 0), dtype=x.dtype, device=x.device)
 
         # GLU mechanism
         x = self.pointwise_conv1(x)  # (batch, 2*channel, dim)
@@ -139,11 +128,9 @@ class _ConvolutionModule(nn.Module):
 
         # 1D Depthwise Conv
         x = self.depthwise_conv(x)
-        if self.use_layer_norm:
-            x = x.transpose(1, 2)
+        x = x.transpose(1, 2)
         x = self.activation(self.norm(x))
-        if self.use_layer_norm:
-            x = x.transpose(1, 2)
+        x = x.transpose(1, 2)
         x = self.pointwise_conv2(x)
         # mask batch padding
         if mask_pad.size(2) > 0:  # time > 0
@@ -194,25 +181,14 @@ class _ConformerEncoderLayer(nn.Module):
         self.self_attn = self_attn
         self.feed_forward = feed_forward
         self.feed_forward_macaron = feed_forward_macaron
+        assert conv_module is not None
         self.conv_module = conv_module
         self.norm_ff = nn.LayerNorm(size, eps=1e-5)  # for the FNN module
         self.norm_mha = nn.LayerNorm(size, eps=1e-5)  # for the MHA module
-        if feed_forward_macaron is not None:
-            self.norm_ff_macaron = nn.LayerNorm(size, eps=1e-5)
-            self.ff_scale = 0.5
-        else:
-            self.ff_scale = 1.0
-        if self.conv_module is not None:
-            self.norm_conv = nn.LayerNorm(size, eps=1e-5)  # for the CNN module
-            self.norm_final = nn.LayerNorm(size, eps=1e-5)  # for the final output of the block
+        self.norm_conv = nn.LayerNorm(size, eps=1e-5)  # for the CNN module
+        self.norm_final = nn.LayerNorm(size, eps=1e-5)  # for the final output of the block
         self.dropout = nn.Dropout(dropout_rate)
         self.size = size
-        self.normalize_before = normalize_before
-        self.concat_after = concat_after
-        if self.concat_after:
-            self.concat_linear = nn.Linear(size + size, size)
-        else:
-            self.concat_linear = nn.Identity()
 
     def forward(
         self,
@@ -245,54 +221,29 @@ class _ConformerEncoderLayer(nn.Module):
             torch.Tensor: cnn_cahce tensor (#batch, size, cache_t2).
         """
 
-        # whether to use macaron style
-        if self.feed_forward_macaron is not None:
-            residual = x
-            if self.normalize_before:
-                x = self.norm_ff_macaron(x)
-            x = residual + self.ff_scale * self.dropout(self.feed_forward_macaron(x))
-            if not self.normalize_before:
-                x = self.norm_ff_macaron(x)
-
         # multi-headed self-attention module
         residual = x
-        if self.normalize_before:
-            x = self.norm_mha(x)
+        x = self.norm_mha(x)
 
         x_att, new_att_cache = self.self_attn(x, x, x, mask, pos_emb, att_cache)
-        if self.concat_after:
-            x_concat = torch.cat((x, x_att), dim=-1)
-            x = residual + self.concat_linear(x_concat)
-        else:
-            x = residual + self.dropout(x_att)
-        if not self.normalize_before:
-            x = self.norm_mha(x)
+        x = residual + self.dropout(x_att)
 
         # convolution module
         # Fake new cnn cache here, and then change it in conv_module
         new_cnn_cache = torch.zeros((0, 0, 0), dtype=x.dtype, device=x.device)
-        if self.conv_module is not None:
-            residual = x
-            if self.normalize_before:
-                x = self.norm_conv(x)
-            x, new_cnn_cache = self.conv_module(x, mask_pad, cnn_cache)
-            x = residual + self.dropout(x)
-
-            if not self.normalize_before:
-                x = self.norm_conv(x)
+        residual = x
+        x = self.norm_conv(x)
+        x, new_cnn_cache = self.conv_module(x, mask_pad, cnn_cache)
+        x = residual + self.dropout(x)
 
         # feed forward module
         residual = x
-        if self.normalize_before:
-            x = self.norm_ff(x)
+        x = self.norm_ff(x)
 
         assert self.feed_forward is not None
-        x = residual + self.ff_scale * self.dropout(self.feed_forward(x))
-        if not self.normalize_before:
-            x = self.norm_ff(x)
+        x = residual + self.dropout(self.feed_forward(x))
 
-        if self.conv_module is not None:
-            x = self.norm_final(x)
+        x = self.norm_final(x)
 
         return x, mask, new_att_cache, new_cnn_cache
 
@@ -387,8 +338,7 @@ class _BaseEncoder(torch.nn.Module):
         mask_pad = masks  # (B, 1, T/subsample_rate)
         for layer in self.encoders:
             xs, chunk_masks, _, _ = layer(xs, chunk_masks, pos_emb, mask_pad)
-        if self.normalize_before:
-            xs = self.after_norm(xs)
+        xs = self.after_norm(xs)
         # Here we assume the mask is not changed in encoder layers, so just
         # return the masks before encoder layers, and the masks will be used
         # for cross attention with decoder later
@@ -451,10 +401,8 @@ class ConformerEncoder(_BaseEncoder):
                 output_size,
                 RelPositionMultiHeadedAttention(attention_heads, output_size, dropout_rate),
                 _PositionwiseFeedForward(output_size, linear_units, dropout_rate, activation),
-                _PositionwiseFeedForward(output_size, linear_units, dropout_rate, activation)
-                if macaron_style
-                else None,
-                _ConvolutionModule(output_size, cnn_module_kernel, activation) if use_cnn_module else None,
+                None,
+                _ConvolutionModule(output_size, cnn_module_kernel, activation),
                 dropout_rate,
                 normalize_before,
                 concat_after,

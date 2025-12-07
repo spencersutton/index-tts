@@ -19,6 +19,7 @@
 from abc import ABC
 
 import torch
+from torch import Tensor
 
 from indextts.gpt.conformer.embedding import PositionalEncoding
 
@@ -31,7 +32,7 @@ class _BaseSubsampling(torch.nn.Module, ABC):
         self.right_context = 0
         self.subsampling_rate = 1
 
-    def position_encoding(self, offset: int | torch.Tensor, size: int) -> torch.Tensor:
+    def position_encoding(self, offset: int | Tensor, size: int) -> Tensor:
         return self.pos_enc.position_encoding(offset, size)
 
 
@@ -60,21 +61,19 @@ class Conv2dSubsampling2(_BaseSubsampling):
         # 2 = (3 - 1) * 1
         self.right_context = 2
 
-    def forward(
-        self, x: torch.Tensor, x_mask: torch.Tensor, offset: int | torch.Tensor = 0
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def forward(self, x: Tensor, x_mask: Tensor, offset: int | Tensor = 0) -> tuple[Tensor, Tensor, Tensor]:
         """Subsample x.
 
         Args:
-            x (torch.Tensor): Input tensor (#batch, time, idim).
-            x_mask (torch.Tensor): Input mask (#batch, 1, time).
+            x (Tensor): Input tensor (#batch, time, idim).
+            x_mask (Tensor): Input mask (#batch, 1, time).
 
         Returns:
-            torch.Tensor: Subsampled tensor (#batch, time', odim),
+            Tensor: Subsampled tensor (#batch, time', odim),
                 where time' = time // 2.
-            torch.Tensor: Subsampled mask (#batch, 1, time'),
+            Tensor: Subsampled mask (#batch, 1, time'),
                 where time' = time // 2.
-            torch.Tensor: positional encoding
+            Tensor: positional encoding
 
         """
         x = x.unsqueeze(1)  # (b, c=1, t, f)

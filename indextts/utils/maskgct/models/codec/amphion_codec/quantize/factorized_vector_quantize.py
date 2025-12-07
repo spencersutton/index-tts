@@ -2,11 +2,10 @@
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
-
 import torch
 import torch.nn.functional as F
 from einops import rearrange
-from torch import nn
+from torch import Tensor, nn
 from torch.nn.utils import weight_norm
 
 
@@ -27,23 +26,23 @@ class FactorizedVectorQuantize(nn.Module):
 
         self.codebook = nn.Embedding(self.codebook_size, self.codebook_dim)
 
-    def forward(self, z: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    def forward(self, z: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
         """
         Parameters
         ----------
-        z: torch.Tensor[B x D x T]
+        z: Tensor[B x D x T]
 
         Returns
         -------
-        z_q: torch.Tensor[B x D x T]
+        z_q: Tensor[B x D x T]
             Quantized continuous representation of input
         commit_loss: Tensor[B]
             Commitment loss to train encoder to predict vectors closer to codebook entries
         codebook_loss: Tensor[B]
             Codebook loss to update the codebook
-        indices: torch.Tensor[B x T]
+        indices: Tensor[B x T]
             Codebook indices (quantized discrete representation of input)
-        z_e: torch.Tensor[B x D x T]
+        z_e: Tensor[B x D x T]
             Projected latents (continuous representation of input before quantization)
         """
 
@@ -61,13 +60,13 @@ class FactorizedVectorQuantize(nn.Module):
 
         return z_q, commit_loss, codebook_loss, indices, z_e
 
-    def embed_code(self, embed_id: torch.Tensor) -> torch.Tensor:
+    def embed_code(self, embed_id: Tensor) -> Tensor:
         return F.embedding(embed_id, self.codebook.weight)
 
-    def decode_code(self, embed_id: torch.Tensor) -> torch.Tensor:
+    def decode_code(self, embed_id: Tensor) -> Tensor:
         return self.embed_code(embed_id).transpose(1, 2)
 
-    def decode_latents(self, latents: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def decode_latents(self, latents: Tensor) -> tuple[Tensor, Tensor]:
         encodings = rearrange(latents, "b d t -> (b t) d")
         codebook = self.codebook.weight
 
@@ -87,13 +86,13 @@ class FactorizedVectorQuantize(nn.Module):
 
         return z_q, indices
 
-    def vq2emb(self, vq: torch.Tensor, out_proj: bool = True) -> torch.Tensor:
+    def vq2emb(self, vq: Tensor, out_proj: bool = True) -> Tensor:
         emb = self.decode_code(vq)
         if out_proj:
             emb = self.out_project(emb)
         return emb
 
-    def latent2dist(self, latents: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def latent2dist(self, latents: Tensor) -> tuple[Tensor, Tensor, Tensor]:
         encodings = rearrange(latents, "b d t -> (b t) d")
         codebook = self.codebook.weight
 

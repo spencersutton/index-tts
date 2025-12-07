@@ -3,7 +3,7 @@ from collections.abc import Sequence
 import numpy as np
 import torch
 from indextts.s2mel.dac.nn.quantize import VectorQuantize
-from torch import nn
+from torch import Tensor, nn
 from torch.nn import functional as F
 
 from indextts.s2mel.modules.commons import sequence_mask
@@ -14,7 +14,7 @@ f0_mel_min = 1127 * np.log(1 + f0_min / 700)
 f0_mel_max = 1127 * np.log(1 + f0_max / 700)
 
 
-def f0_to_coarse(f0: torch.Tensor, f0_bin: int) -> torch.Tensor:
+def f0_to_coarse(f0: Tensor, f0_bin: int) -> Tensor:
     f0_mel = 1127 * (1 + f0 / 700).log()
     a = (f0_bin - 2) / (f0_mel_max - f0_mel_min)
     b = f0_mel_min * a - 1.0
@@ -88,10 +88,10 @@ class InterpolateRegulator(nn.Module):
 
     def forward(
         self,
-        x: torch.Tensor,
-        ylens: torch.Tensor,
-        n_quantizers: torch.Tensor | None = None,
-        f0: torch.Tensor | None = None,
+        x: Tensor,
+        ylens: Tensor,
+        n_quantizers: Tensor | None = None,
+        f0: Tensor | None = None,
     ):
         # apply token drop
         if self.training:

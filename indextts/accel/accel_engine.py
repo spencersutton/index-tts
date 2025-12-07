@@ -1,7 +1,7 @@
 import sys
 
 import torch
-from torch import nn
+from torch import Tensor, nn
 
 from indextts.gpt.model_v2 import GPT2InferenceModel, LearnedPositionEmbeddings
 
@@ -23,7 +23,7 @@ class Sampler(nn.Module):
         super().__init__()
 
     @torch.compile(dynamic=True, mode="reduce-overhead")
-    def forward(self, logits: torch.Tensor, temperatures: torch.Tensor):
+    def forward(self, logits: Tensor, temperatures: Tensor):
         temperatures = temperatures.to(logits.device).clamp(min=1e-8)
         greedy_mask = temperatures < 1e-5
         temp_for_scaling = torch.where(greedy_mask, 1.0, temperatures)
@@ -277,12 +277,12 @@ class AccelInferenceEngine:
 
     def _run_decode_with_graph(
         self,
-        input_ids: torch.Tensor,
-        positions: torch.Tensor,
+        input_ids: Tensor,
+        positions: Tensor,
         context: ForwardContext,
         tts_mel_embedding: GPT2InferenceModel | None = None,
         tts_text_pos_embedding: LearnedPositionEmbeddings | None = None,
-    ) -> torch.Tensor:
+    ) -> Tensor:
         bs = input_ids.size(0)
         use_tts_embedding = hasattr(self, "_tts_mode") and self._tts_mode
 
@@ -336,17 +336,17 @@ class AccelInferenceEngine:
 
     def generate(
         self,
-        input_ids: torch.Tensor,
+        input_ids: Tensor,
         max_new_tokens: int = 100,
         temperature: float = 1.0,
         top_k: int = 50,
         top_p: float = 1.0,
         stop_tokens: list[int] | None = None,
-        attention_mask: torch.Tensor | None = None,
-        tts_embeddings: torch.Tensor | None = None,  # TTS: [pad][cond][text] embeddings (87 tokens, NO start_mel)
+        attention_mask: Tensor | None = None,
+        tts_embeddings: Tensor | None = None,  # TTS: [pad][cond][text] embeddings (87 tokens, NO start_mel)
         tts_mel_embedding: GPT2InferenceModel | None = None,  # TTS: mel_embedding layer
         tts_text_pos_embedding: LearnedPositionEmbeddings | None = None,  # TTS: text_pos_embedding layer
-    ) -> torch.Tensor:
+    ) -> Tensor:
         """
         Generate tokens.
 

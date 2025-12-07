@@ -3,7 +3,7 @@ import importlib.util
 
 import torch
 import torch.nn.functional as F
-from torch import nn
+from torch import Tensor, nn
 from transformers import GenerationMixin, GPT2Config, GPT2PreTrainedModel, LogitsProcessorList
 from transformers.generation.logits_process import TypicalLogitsWarper
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions, CausalLMOutputWithCrossAttentions
@@ -57,7 +57,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
     text_pos_embedding: LearnedPositionEmbeddings
     transformer: GPT2Model
     kv_cache: bool
-    cached_mel_emb: torch.Tensor | None
+    cached_mel_emb: Tensor | None
     device_map: dict[int, int] | None
     model_parallel: bool
 
@@ -144,7 +144,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
 
     def forward(
         self,
-        input_ids: torch.Tensor,
+        input_ids: Tensor,
         past_key_values=None,
         attention_mask=None,
         token_type_ids=None,
@@ -445,14 +445,14 @@ class _UnifiedVoice(nn.Module):
 
     def get_logits(
         self,
-        speech_conditioning_inputs: torch.Tensor,
-        first_inputs: torch.Tensor,
+        speech_conditioning_inputs: Tensor,
+        first_inputs: Tensor,
         first_head: nn.Module,
-        second_inputs: torch.Tensor | None = None,
+        second_inputs: Tensor | None = None,
         second_head: nn.Module | None = None,
         get_attns: bool = False,
         return_latent: bool = False,
-    ) -> torch.Tensor | tuple[torch.Tensor, ...]:
+    ) -> Tensor | tuple[Tensor, ...]:
         if second_inputs is not None:
             emb = torch.cat([speech_conditioning_inputs, first_inputs, second_inputs], dim=1)
         else:
@@ -468,26 +468,24 @@ class _UnifiedVoice(nn.Module):
         offset = speech_conditioning_inputs.shape[1]
         assert gpt_out.last_hidden_state is not None
         enc = gpt_out.last_hidden_state[:, offset:]
-        enc: torch.Tensor = self.final_norm(enc)
+        enc: Tensor = self.final_norm(enc)
 
         if return_latent:
             assert second_inputs is not None
             return enc[:, : first_inputs.shape[1]], enc[:, -second_inputs.shape[1] :]
 
         first_logits = enc[:, : first_inputs.shape[1]]
-        first_logits: torch.Tensor = first_head(first_logits)
+        first_logits: Tensor = first_head(first_logits)
         first_logits = first_logits.permute(0, 2, 1)
         if second_inputs is not None:
             assert second_head is not None
             second_logits = enc[:, -second_inputs.shape[1] :]
-            second_logits: torch.Tensor = second_head(second_logits)
+            second_logits: Tensor = second_head(second_logits)
             second_logits = second_logits.permute(0, 2, 1)
             return first_logits, second_logits
         return first_logits
 
-    def get_conditioning(
-        self, speech_conditioning_input: torch.Tensor, cond_mel_lengths: torch.Tensor | None = None
-    ) -> torch.Tensor:
+    def get_conditioning(self, speech_conditioning_input: Tensor, cond_mel_lengths: Tensor | None = None) -> Tensor:
         speech_conditioning_input, mask = self.conditioning_encoder(
             speech_conditioning_input.transpose(1, 2), cond_mel_lengths
         )  # (b, s, d), (b, 1, s)
@@ -505,18 +503,18 @@ class _UnifiedVoice(nn.Module):
 
     def forward(
         self,
-        speech_conditioning_latent: torch.Tensor,
-        text_inputs: torch.Tensor,
-        text_lengths: torch.Tensor,
-        mel_codes: torch.Tensor,
-        mel_codes_lengths: torch.Tensor,
-        emo_speech_conditioning_latent: torch.Tensor,
-        cond_mel_lengths: torch.Tensor | None = None,
-        emo_cond_mel_lengths: torch.Tensor | None = None,
-        emo_vec: torch.Tensor | None = None,
-        use_speed: torch.Tensor | None = None,
+        speech_conditioning_latent: Tensor,
+        text_inputs: Tensor,
+        text_lengths: Tensor,
+        mel_codes: Tensor,
+        mel_codes_lengths: Tensor,
+        emo_speech_conditioning_latent: Tensor,
+        cond_mel_lengths: Tensor | None = None,
+        emo_cond_mel_lengths: Tensor | None = None,
+        emo_vec: Tensor | None = None,
+        use_speed: Tensor | None = None,
         do_spk_cond: bool = False,
-    ) -> torch.Tensor:
+    ) -> Tensor:
         """
         Forward pass that uses both text and voice in either text conditioning mode or voice conditioning mode
 
@@ -554,8 +552,8 @@ class _UnifiedVoice(nn.Module):
         assert use_speed is not None
         duration_emb = self.speed_emb(torch.zeros_like(use_speed))
         duration_emb_half = self.speed_emb(torch.ones_like(use_speed))
-        assert isinstance(duration_emb, torch.Tensor)
-        assert isinstance(duration_emb_half, torch.Tensor)
+        assert isinstance(duration_emb, Tensor)
+        assert isinstance(duration_emb_half, Tensor)
         conds = torch.cat(
             (
                 speech_conditioning_latent + emo_vec.unsqueeze(1),
@@ -584,9 +582,9 @@ class _UnifiedVoice(nn.Module):
 
     def prepare_gpt_inputs(
         self,
-        conditional_latents: torch.Tensor,
-        text_inputs: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        conditional_latents: Tensor,
+        text_inputs: Tensor,
+    ) -> tuple[Tensor, Tensor, Tensor]:
         """
         Prepare the inputs for the GPT2InferenceModel to generate.
         Args:
@@ -650,13 +648,13 @@ class _UnifiedVoice(nn.Module):
 
     def inference_speech(
         self,
-        speech_condition: torch.Tensor,
-        text_inputs: torch.Tensor,
-        emo_speech_condition: torch.Tensor | None = None,
-        cond_lengths: torch.Tensor | None = None,
-        emo_cond_lengths: torch.Tensor | None = None,
-        emo_vec: torch.Tensor | None = None,
-        input_tokens: torch.Tensor | None = None,
+        speech_condition: Tensor,
+        text_inputs: Tensor,
+        emo_speech_condition: Tensor | None = None,
+        cond_lengths: Tensor | None = None,
+        emo_cond_lengths: Tensor | None = None,
+        emo_vec: Tensor | None = None,
+        input_tokens: Tensor | None = None,
         num_return_sequences: int = 1,
         max_generate_length: int | None = None,
         typical_sampling: bool = False,
@@ -760,7 +758,7 @@ class _UnifiedVoice(nn.Module):
                 num_return_sequences=num_return_sequences,
                 **hf_generate_kwargs,
             )
-        if isinstance(output, torch.Tensor):
+        if isinstance(output, Tensor):
             return output[:, trunc_index:], speech_conditioning_latent
         # GenerateOutput
         output.sequences = output.sequences[:, trunc_index:]

@@ -16,6 +16,7 @@ import safetensors.torch
 import torch
 import torchaudio
 from huggingface_hub import hf_hub_download
+from torch import Tensor
 from torchcodec.decoders import AudioDecoder
 from torchcodec.encoders import AudioEncoder
 
@@ -54,8 +55,8 @@ class IndexTTS2:
     gpt: "_UnifiedVoice"
     extract_features: SeamlessM4TFeatureExtractor
     semantic_model: Any
-    semantic_mean: torch.Tensor
-    semantic_std: torch.Tensor
+    semantic_mean: Tensor
+    semantic_std: Tensor
     semantic_codec: RepCodec
     s2mel: MyModel
     campplus_model: CAMPPlus
@@ -63,20 +64,20 @@ class IndexTTS2:
     bpe_path: Path
     normalizer: TextNormalizer
     tokenizer: TextTokenizer
-    emo_matrix: tuple[torch.Tensor, ...]
+    emo_matrix: tuple[Tensor, ...]
     emo_num: list[int]
-    spk_matrix: tuple[torch.Tensor, ...]
-    mel_fn: Callable[[torch.Tensor], torch.Tensor]
+    spk_matrix: tuple[Tensor, ...]
+    mel_fn: Callable[[Tensor], Tensor]
 
     # 缓存参考音频：
     # Cache reference audio:
-    cache_spk_cond: torch.Tensor | None = None
-    cache_s2mel_style: torch.Tensor | None = None
-    cache_s2mel_prompt: torch.Tensor | None = None
+    cache_spk_cond: Tensor | None = None
+    cache_s2mel_style: Tensor | None = None
+    cache_s2mel_prompt: Tensor | None = None
     cache_spk_audio_prompt: str | None = None
-    cache_emo_cond: torch.Tensor | None = None
+    cache_emo_cond: Tensor | None = None
     cache_emo_audio_prompt: str | None = None
-    cache_mel: torch.Tensor | None = None
+    cache_mel: Tensor | None = None
 
     if typing.TYPE_CHECKING:
         gr_progress: Progress | None
@@ -264,11 +265,11 @@ class IndexTTS2:
         self.tokenizer = TextTokenizer(self.bpe_path, self.normalizer)
         print(">> bpe model loaded from:", self.bpe_path)
 
-        emo_matrix: torch.Tensor = torch.load(self.model_dir / self.cfg.emo_matrix)
+        emo_matrix: Tensor = torch.load(self.model_dir / self.cfg.emo_matrix)
         emo_matrix = emo_matrix.to(self.device)
         self.emo_num = list(self.cfg.emo_num)
 
-        spk_matrix: torch.Tensor = torch.load(self.model_dir / self.cfg.spk_matrix)
+        spk_matrix: Tensor = torch.load(self.model_dir / self.cfg.spk_matrix)
         spk_matrix = spk_matrix.to(self.device)
 
         self.emo_matrix = torch.split(emo_matrix, self.emo_num)
@@ -324,7 +325,7 @@ class IndexTTS2:
         self.model_version = self.cfg.version
 
     @torch.inference_mode()
-    def get_emb(self, input_features: torch.Tensor, attention_mask: torch.Tensor):
+    def get_emb(self, input_features: Tensor, attention_mask: Tensor):
         vq_emb = self.semantic_model(
             input_features=input_features,
             attention_mask=attention_mask,
@@ -333,7 +334,7 @@ class IndexTTS2:
         feat = vq_emb.hidden_states[17]  # (B, T, C)
         return (feat - self.semantic_mean) / self.semantic_std
 
-    def interval_silence(self, wavs: list[torch.Tensor], sampling_rate: int = 22050, interval_silence: int = 200):
+    def interval_silence(self, wavs: list[Tensor], sampling_rate: int = 22050, interval_silence: int = 200):
         """
         Silences to be insert between generated segments.
         """
@@ -348,8 +349,8 @@ class IndexTTS2:
         return torch.zeros(channel_size, sil_dur)
 
     def insert_interval_silence(
-        self, wavs: list[torch.Tensor], sampling_rate: int = 22050, interval_silence: int = 200
-    ) -> list[torch.Tensor]:
+        self, wavs: list[Tensor], sampling_rate: int = 22050, interval_silence: int = 200
+    ) -> list[Tensor]:
         """
         Insert silences between generated segments.
         wavs: List[torch.tensor]
@@ -364,7 +365,7 @@ class IndexTTS2:
         sil_dur = int(sampling_rate * interval_silence / 1000.0)
         sil_tensor = torch.zeros(channel_size, sil_dur)
 
-        wavs_list: list[torch.Tensor] = []
+        wavs_list: list[Tensor] = []
         for i, wav in enumerate(wavs):
             wavs_list.append(wav)
             if i < len(wavs) - 1:
@@ -494,7 +495,7 @@ class IndexTTS2:
         stream_return: bool = False,
         quick_streaming_tokens: int = 0,
         **generation_kwargs: Any,
-    ) -> Generator[torch.Tensor | None]:
+    ) -> Generator[Tensor | None]:
         # Mark CUDA graph step begin at the start of each inference
         # This tells PyTorch it's safe to reuse CUDA graph buffers
         # Must be called in the worker thread before any compiled models run
@@ -868,7 +869,7 @@ class IndexTTS2:
             yield (sampling_rate, wav_data)
 
 
-def find_most_similar_cosine(query_vector: torch.Tensor, matrix: torch.Tensor):
+def find_most_similar_cosine(query_vector: Tensor, matrix: Tensor):
     query_vector = query_vector.float()
     matrix = matrix.float()
 

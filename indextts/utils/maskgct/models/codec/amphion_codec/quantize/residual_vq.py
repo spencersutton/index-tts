@@ -3,11 +3,10 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-
 import torch
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize.lookup_free_quantize import LookupFreeQuantize
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize.vector_quantize import VectorQuantize
-from torch import nn
+from torch import Tensor, nn
 
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize.factorized_vector_quantize import (
     FactorizedVectorQuantize,
@@ -29,9 +28,7 @@ class ResidualVQ(nn.Module):
 
         self.quantizer = FactorizedVectorQuantize()
 
-    def forward(
-        self, z: torch.Tensor, n_quantizers: int | None = None
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    def forward(self, z: Tensor, n_quantizers: int | None = None) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
         """
         Parameters
         ----------
@@ -100,7 +97,7 @@ class ResidualVQ(nn.Module):
             quantized_out += self.quantizer.vq2emb(vq[0])
         return quantized_out
 
-    def latent2dist(self, z: torch.Tensor, n_quantizers: int | None = None) -> tuple[torch.Tensor, torch.Tensor]:
+    def latent2dist(self, z: Tensor, n_quantizers: int | None = None) -> tuple[Tensor, Tensor]:
         quantized_out = 0.0
         residual = z
 

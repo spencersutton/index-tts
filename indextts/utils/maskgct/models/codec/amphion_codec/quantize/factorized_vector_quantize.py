@@ -15,22 +15,15 @@ def WNConv1d(*args, **kwargs):
 
 
 class FactorizedVectorQuantize(nn.Module):
-    def __init__(
-        self,
-        input_dim,
-        codebook_size,
-        codebook_dim,
-        commitment=0.005,
-        codebook_loss_weight=1.0,
-        use_l2_normlize=True,
-    ) -> None:
+    input_dim: int = 1024
+    codebook_size: int = 8192
+    codebook_dim: int = 8
+    commitment: float = 0.15
+    codebook_loss_weight: float = 1.0
+    use_l2_normlize: bool = True
+
+    def __init__(self) -> None:
         super().__init__()
-        self.input_dim = input_dim
-        self.codebook_size = codebook_size
-        self.codebook_dim = codebook_dim
-        self.commitment = commitment
-        self.codebook_loss_weight = codebook_loss_weight
-        self.use_l2_normlize = use_l2_normlize
 
         if self.input_dim != self.codebook_dim:
             self.in_project = WNConv1d(self.input_dim, self.codebook_dim, kernel_size=1)

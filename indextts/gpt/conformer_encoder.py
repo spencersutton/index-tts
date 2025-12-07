@@ -20,7 +20,11 @@ class _PositionwiseFeedForward(torch.nn.Module):
     """
 
     def __init__(
-        self, idim: int, hidden_units: int, dropout_rate: float, activation: torch.nn.Module = torch.nn.ReLU()
+        self,
+        idim: int,
+        hidden_units: int,
+        dropout_rate: float,
+        activation: torch.nn.Module = torch.nn.ReLU(),
     ) -> None:
         """Construct a PositionwiseFeedForward object."""
         super().__init__()
@@ -44,7 +48,11 @@ class _ConvolutionModule(nn.Module):
     """ConvolutionModule in Conformer model."""
 
     def __init__(
-        self, channels: int, kernel_size: int = 15, activation: nn.Module = nn.ReLU(), bias: bool = True
+        self,
+        channels: int,
+        kernel_size: int = 15,
+        activation: nn.Module = nn.ReLU(),
+        bias: bool = True,
     ) -> None:
         """Construct an ConvolutionModule object.
         Args:

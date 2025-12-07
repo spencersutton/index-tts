@@ -224,7 +224,10 @@ class DiT(torch.nn.Module):
             x_in = torch.cat([t1.unsqueeze(1), x_in], dim=1)
 
         x_mask = (
-            sequence_mask(x_lens + self.style_as_token + self.time_as_token, max_length=x_in.size(1))
+            sequence_mask(
+                x_lens + self.style_as_token + self.time_as_token,
+                max_length=x_in.size(1),
+            )
             .to(x.device)
             .unsqueeze(1)
         )  # torch.Size([1, 1, 1863])True

@@ -4,11 +4,22 @@ import importlib.util
 import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
-from transformers import GenerationMixin, GPT2Config, GPT2PreTrainedModel, LogitsProcessorList
+from transformers import (
+    GenerationMixin,
+    GPT2Config,
+    GPT2PreTrainedModel,
+    LogitsProcessorList,
+)
 from transformers.generation.logits_process import TypicalLogitsWarper
-from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions, CausalLMOutputWithCrossAttentions
+from transformers.modeling_outputs import (
+    BaseModelOutputWithPastAndCrossAttentions,
+    CausalLMOutputWithCrossAttentions,
+)
 from transformers.models.gpt2.modeling_gpt2 import GPT2Model
-from transformers.utils.model_parallel_utils import assert_device_map, get_device_map
+from transformers.utils.model_parallel_utils import (
+    assert_device_map,
+    get_device_map,
+)
 
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.perceiver import PerceiverResampler
@@ -61,7 +72,16 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
     device_map: dict[int, int] | None
     model_parallel: bool
 
-    def __init__(self, config, gpt: GPT2Model, text_pos_emb, embeddings, norm, linear, kv_cache=False) -> None:
+    def __init__(
+        self,
+        config,
+        gpt: GPT2Model,
+        text_pos_emb,
+        embeddings,
+        norm,
+        linear,
+        kv_cache=False,
+    ) -> None:
         super().__init__(config)
         # Note: the argument named `text_pos_emb` here actually represents the mel position embedding
         self.transformer = gpt
@@ -78,7 +98,10 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
 
     def parallelize(self, device_map=None) -> None:
         self.device_map = (
-            get_device_map(len(self.transformer.h), range(max(1, torch.cuda.device_count())))
+            get_device_map(
+                len(self.transformer.h),
+                range(max(1, torch.cuda.device_count())),
+            )
             if device_map is None
             else device_map
         )
@@ -395,14 +418,20 @@ class UnifiedVoice(nn.Module):
             import deepspeed  # ty:ignore[unresolved-import]
 
             self.ds_engine = deepspeed.init_inference(
-                model=self.inference_model, mp_size=1, replace_with_kernel_inject=True, dtype=torch.float16
+                model=self.inference_model,
+                mp_size=1,
+                replace_with_kernel_inject=True,
+                dtype=torch.float16,
             )
             self.inference_model = self.ds_engine.module.eval()
         elif use_deepspeed and torch.cuda.is_available():
             import deepspeed  # ty:ignore[unresolved-import]
 
             self.ds_engine = deepspeed.init_inference(
-                model=self.inference_model, mp_size=1, replace_with_kernel_inject=True, dtype=torch.float32
+                model=self.inference_model,
+                mp_size=1,
+                replace_with_kernel_inject=True,
+                dtype=torch.float32,
             )
             self.inference_model = self.ds_engine.module.eval()
         else:
@@ -485,7 +514,11 @@ class UnifiedVoice(nn.Module):
             return first_logits, second_logits
         return first_logits
 
-    def get_conditioning(self, speech_conditioning_input: Tensor, cond_mel_lengths: Tensor | None = None) -> Tensor:
+    def get_conditioning(
+        self,
+        speech_conditioning_input: Tensor,
+        cond_mel_lengths: Tensor | None = None,
+    ) -> Tensor:
         speech_conditioning_input, mask = self.conditioning_encoder(
             speech_conditioning_input.transpose(1, 2), cond_mel_lengths
         )  # (b, s, d), (b, 1, s)
@@ -537,7 +570,8 @@ class UnifiedVoice(nn.Module):
 
         if emo_vec is None:
             emo_vec_syn_ori = self.get_emo_conditioning(
-                emo_speech_conditioning_latent.transpose(1, 2), emo_cond_mel_lengths
+                emo_speech_conditioning_latent.transpose(1, 2),
+                emo_cond_mel_lengths,
             )
             emo_vec_syn = self.emovec_layer(emo_vec_syn_ori)
             emo_vec = self.emo_layer(emo_vec_syn)
@@ -574,7 +608,13 @@ class UnifiedVoice(nn.Module):
         mel_emb += self.mel_pos_embedding(mel_codes)
 
         _text_logits, mel_logits = self.get_logits(
-            conds, text_emb, self.text_head, mel_emb, self.mel_head, get_attns=False, return_latent=True
+            conds,
+            text_emb,
+            self.text_head,
+            mel_emb,
+            self.mel_head,
+            get_attns=False,
+            return_latent=True,
         )
         return mel_logits[
             :, :-2
@@ -622,7 +662,9 @@ class UnifiedVoice(nn.Module):
             # pad left of [cond][text] -> [pad][cond][text]
             if padding > 0:
                 pad = torch.zeros(
-                    (padding, conditional_latents.size(-1)), dtype=text_emb.dtype, device=device
+                    (padding, conditional_latents.size(-1)),
+                    dtype=text_emb.dtype,
+                    device=device,
                 )  # [p, dim]
                 conds_text_emb.insert(0, pad)
                 attention_mask[:padding] = 0
@@ -770,7 +812,12 @@ class UnifiedVoice(nn.Module):
         return self.emo_layer(emo_vec_syn)
 
     def merge_emovec(
-        self, speech_conditioning_latent, emo_speech_conditioning_latent, cond_lengths, emo_cond_lengths, alpha=1.0
+        self,
+        speech_conditioning_latent,
+        emo_speech_conditioning_latent,
+        cond_lengths,
+        emo_cond_lengths,
+        alpha=1.0,
     ):
         emo_vec = self.get_emovec(emo_speech_conditioning_latent, emo_cond_lengths)
         base_vec = self.get_emovec(speech_conditioning_latent, cond_lengths)

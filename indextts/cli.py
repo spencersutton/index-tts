@@ -25,8 +25,20 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description="IndexTTS Command Line")
     parser.add_argument("text", type=str, help="Text to be synthesized")
-    parser.add_argument("-v", "--voice", type=str, required=True, help="Path to the audio prompt file (wav format)")
-    parser.add_argument("-o", "--output-path", type=str, default="gen.wav", help="Path to the output wav file")
+    parser.add_argument(
+        "-v",
+        "--voice",
+        type=str,
+        required=True,
+        help="Path to the audio prompt file (wav format)",
+    )
+    parser.add_argument(
+        "-o",
+        "--output-path",
+        type=str,
+        default="gen.wav",
+        help="Path to the output wav file",
+    )
     parser.add_argument(
         "-c",
         "--config",
@@ -35,25 +47,55 @@ def main() -> None:
         help="Path to the config file. Default is 'checkpoints/config.yaml'",
     )
     parser.add_argument(
-        "--model-dir", type=str, default="checkpoints", help="Path to the model directory. Default is 'checkpoints'"
-    )
-    parser.add_argument("--fp16", action="store_true", default=False, help="Use FP16 for inference if available")
-    parser.add_argument(
-        "-f", "--force", action="store_true", default=False, help="Force to overwrite the output file if it exists"
-    )
-    parser.add_argument(
-        "-d", "--device", type=str, default=None, help="Device to run the model on (cpu, cuda, mps, xpu)."
+        "--model-dir",
+        type=str,
+        default="checkpoints",
+        help="Path to the model directory. Default is 'checkpoints'",
     )
     parser.add_argument(
-        "--use-accel", action="store_true", default=False, help="Use acceleration engine (FlashAttention) for GPT"
+        "--fp16",
+        action="store_true",
+        default=False,
+        help="Use FP16 for inference if available",
     )
     parser.add_argument(
-        "--use-torch-compile", action="store_true", default=False, help="Use torch.compile for optimization"
+        "-f",
+        "--force",
+        action="store_true",
+        default=False,
+        help="Force to overwrite the output file if it exists",
     )
     parser.add_argument(
-        "--use-cuda-kernel", action="store_true", default=False, help="Use custom CUDA kernel for BigVGAN"
+        "-d",
+        "--device",
+        type=str,
+        default=None,
+        help="Device to run the model on (cpu, cuda, mps, xpu).",
     )
-    parser.add_argument("--use-deepspeed", action="store_true", default=False, help="Use DeepSpeed for inference")
+    parser.add_argument(
+        "--use-accel",
+        action="store_true",
+        default=False,
+        help="Use acceleration engine (FlashAttention) for GPT",
+    )
+    parser.add_argument(
+        "--use-torch-compile",
+        action="store_true",
+        default=False,
+        help="Use torch.compile for optimization",
+    )
+    parser.add_argument(
+        "--use-cuda-kernel",
+        action="store_true",
+        default=False,
+        help="Use custom CUDA kernel for BigVGAN",
+    )
+    parser.add_argument(
+        "--use-deepspeed",
+        action="store_true",
+        default=False,
+        help="Use DeepSpeed for inference",
+    )
     parser.add_argument(
         "--profile",
         action="store_true",
@@ -140,7 +182,11 @@ def main() -> None:
 
     # Run inference and ensure profiling only captures this call
     try:
-        tts.infer(spk_audio_prompt=args.voice, text=args.text.strip(), output_path=output_path)
+        tts.infer(
+            spk_audio_prompt=args.voice,
+            text=args.text.strip(),
+            output_path=output_path,
+        )
     finally:
         # Stop and save profiler immediately after inference so we only capture inference time
         if args.profile and profiler:

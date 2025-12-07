@@ -1,3 +1,4 @@
+
 import re
 import traceback
 import warnings
@@ -97,7 +98,12 @@ class TextNormalizer:
             print("Error, text normalizer is not initialized !!!")
             return ""
         if self.use_chinese(text):
-            text = re.sub(TextNormalizer.ENGLISH_CONTRACTION_PATTERN, r"\1 is", text, flags=re.IGNORECASE)
+            text = re.sub(
+                TextNormalizer.ENGLISH_CONTRACTION_PATTERN,
+                r"\1 is",
+                text,
+                flags=re.IGNORECASE,
+            )
             replaced_text, pinyin_list = self.save_pinyin_tones(text.rstrip())
 
             replaced_text, original_name_list = self.save_names(replaced_text)
@@ -114,7 +120,12 @@ class TextNormalizer:
             result = pattern.sub(lambda x: self.zh_char_rep_map[x.group()], result)
         else:
             try:
-                text = re.sub(TextNormalizer.ENGLISH_CONTRACTION_PATTERN, r"\1 is", text, flags=re.IGNORECASE)
+                text = re.sub(
+                    TextNormalizer.ENGLISH_CONTRACTION_PATTERN,
+                    r"\1 is",
+                    text,
+                    flags=re.IGNORECASE,
+                )
                 result = self.en_normalizer.normalize(text)
             except Exception:
                 result = text
@@ -364,7 +375,10 @@ class TextTokenizer:
                 )
             elif current_segment_tokens_len <= max_text_tokens_per_segment:
                 if token in split_tokens and current_segment_tokens_len > 2:
-                    if i < len(tokenized_str) - 1 and tokenized_str[i + 1] in {"'", "▁'"}:
+                    if i < len(tokenized_str) - 1 and tokenized_str[i + 1] in {
+                        "'",
+                        "▁'",
+                    }:
                         # 后续token是'，则不切分
                         # If the next token is ', do not split
                         current_segment.append(tokenized_str[i + 1])
@@ -425,7 +439,10 @@ class TextTokenizer:
     ]
 
     def split_segments(
-        self, tokenized: list[str], max_text_tokens_per_segment=120, quick_streaming_tokens=0
+        self,
+        tokenized: list[str],
+        max_text_tokens_per_segment=120,
+        quick_streaming_tokens=0,
     ) -> list[list[str]]:
         return TextTokenizer.split_segments_by_token(
             tokenized,

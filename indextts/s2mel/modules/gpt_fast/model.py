@@ -128,7 +128,13 @@ transformer_configs = {
         "intermediate_size": 22016,
         "rope_base": 1000000,
     },  # CodeLlama-34B-Python-hf
-    "70B": {"n_layer": 80, "n_head": 64, "dim": 8192, "n_local_heads": 8, "intermediate_size": 28672},
+    "70B": {
+        "n_layer": 80,
+        "n_head": 64,
+        "dim": 8192,
+        "n_local_heads": 8,
+        "intermediate_size": 28672,
+    },
     "Mistral-7B": {
         "n_layer": 32,
         "n_head": 32,
@@ -209,11 +215,17 @@ class Transformer(nn.Module):
         self.config = config
 
         self.layers = cast(
-            Iterable[TransformerBlock], nn.ModuleList(TransformerBlock(config) for _ in range(config.n_layer))
+            Iterable[TransformerBlock],
+            nn.ModuleList(TransformerBlock(config) for _ in range(config.n_layer)),
         )
         self.norm = AdaptiveLayerNorm(config.dim, RMSNorm(config.dim, eps=config.norm_eps))
 
-    def setup_caches(self, max_batch_size: int, max_seq_length: int, use_kv_cache: bool = True) -> None:
+    def setup_caches(
+        self,
+        max_batch_size: int,
+        max_seq_length: int,
+        use_kv_cache: bool = True,
+    ) -> None:
         if self.max_seq_length >= max_seq_length and self.max_batch_size >= max_batch_size:
             return
         head_dim = self.config.dim // self.config.n_head
@@ -226,11 +238,18 @@ class Transformer(nn.Module):
         if not self.training and use_kv_cache:
             for b in self.layers:
                 b.attention.kv_cache = KVCache(
-                    max_batch_size, max_seq_length, self.config.n_local_heads, head_dim, dtype
+                    max_batch_size,
+                    max_seq_length,
+                    self.config.n_local_heads,
+                    head_dim,
+                    dtype,
                 ).to(device)
 
         self.freqs_cis = precompute_freqs_cis(
-            self.config.block_size, self.config.head_dim, self.config.rope_base, dtype
+            self.config.block_size,
+            self.config.head_dim,
+            self.config.rope_base,
+            dtype,
         ).to(device)
         self.causal_mask = torch.tril(torch.ones(self.max_seq_length, self.max_seq_length, dtype=torch.bool)).to(device)
         self.use_kv_cache = use_kv_cache
@@ -265,7 +284,17 @@ class Transformer(nn.Module):
         skip_in_x_list = []
         for i, layer in enumerate(self.layers):
             skip_in_x = skip_in_x_list.pop(-1) if self.uvit_skip_connection and i in self.layers_receive_skip else None
-            x = layer(x, c, input_pos, freqs_cis, mask, context, context_freqs_cis, cross_attention_mask, skip_in_x)
+            x = layer(
+                x,
+                c,
+                input_pos,
+                freqs_cis,
+                mask,
+                context,
+                context_freqs_cis,
+                cross_attention_mask,
+                skip_in_x,
+            )
             if self.uvit_skip_connection and i in self.layers_emit_skip:
                 skip_in_x_list.append(x)
         return self.norm(x, c)
@@ -316,7 +345,12 @@ class TransformerBlock(nn.Module):
         h = x + self.attention(self.attention_norm(x, c), freqs_cis, mask, input_pos)
         if self.has_cross_attention:
             h += self.cross_attention(
-                self.cross_attention_norm(h, c), freqs_cis, cross_attention_mask, input_pos, context, context_freqs_cis
+                self.cross_attention_norm(h, c),
+                freqs_cis,
+                cross_attention_mask,
+                input_pos,
+                context,
+                context_freqs_cis,
             )
         return h + self.feed_forward(self.ffn_norm(h, c))
 
@@ -332,7 +366,11 @@ class Attention(nn.Module):
         # key, query, value projections for all heads, but in a batch
         if is_cross_attention:
             self.wq = nn.Linear(config.dim, config.n_head * config.head_dim, bias=False)
-            self.wkv = nn.Linear(config.context_dim, 2 * config.n_local_heads * config.head_dim, bias=False)
+            self.wkv = nn.Linear(
+                config.context_dim,
+                2 * config.n_local_heads * config.head_dim,
+                bias=False,
+            )
         else:
             self.wqkv = nn.Linear(config.dim, total_head_dim, bias=False)
         self.wo = nn.Linear(config.head_dim * config.n_head, config.dim, bias=False)
@@ -410,7 +448,12 @@ class RMSNorm(nn.Module):
         return output * self.weight
 
 
-def precompute_freqs_cis(seq_len: int, n_elem: int, base: int = 10000, dtype: torch.dtype = torch.bfloat16) -> Tensor:
+def precompute_freqs_cis(
+    seq_len: int,
+    n_elem: int,
+    base: int = 10000,
+    dtype: torch.dtype = torch.bfloat16,
+) -> Tensor:
     freqs = 1.0 / (base ** (torch.arange(0, n_elem, 2)[: (n_elem // 2)].float() / n_elem))
     t = torch.arange(seq_len, device=freqs.device)
     freqs = torch.outer(t, freqs)

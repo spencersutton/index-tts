@@ -112,7 +112,12 @@ class _Attend(nn.Module):
         assert config is not None
         with torch.backends.cuda.sdp_kernel(**config._asdict()):
             return F.scaled_dot_product_attention(
-                q, k, v, attn_mask=mask, dropout_p=self.dropout if self.training else 0.0, is_causal=self.causal
+                q,
+                k,
+                v,
+                attn_mask=mask,
+                dropout_p=self.dropout if self.training else 0.0,
+                is_causal=self.causal,
             )
 
     def forward(self, q, k, v, mask=None):

@@ -444,7 +444,9 @@ class AccelInferenceEngine:
 
         else:
             hidden_states = self.model(
-                input_ids=input_ids, attention_mask=attention_mask, return_dict=True
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                return_dict=True,
             ).last_hidden_state
 
         if is_varlen_batch:

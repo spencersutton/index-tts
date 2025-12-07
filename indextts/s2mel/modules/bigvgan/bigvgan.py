@@ -362,7 +362,7 @@ class BigVGAN(
         torch.save({"generator": self.state_dict()}, model_path)
 
         config_path = save_directory / "config.json"
-        with open(config_path, "w") as config_file:
+        with Path(config_path).open("w") as config_file:
             json.dump(self.h, config_file, indent=4)
 
     @classmethod
@@ -385,7 +385,7 @@ class BigVGAN(
         """Load Pytorch pretrained weights and return the loaded model."""
 
         # Download and load hyperparameters (h) used by BigVGAN
-        if os.path.isdir(model_id):
+        if Path(model_id).is_dir():
             print("Loading config.json from local directory")
             config_file = os.path.join(model_id, "config.json")
         else:
@@ -416,7 +416,7 @@ class BigVGAN(
         model = cls(h, use_cuda_kernel=use_cuda_kernel)
 
         # Download and load pretrained generator weight
-        if os.path.isdir(model_id):
+        if Path(model_id).is_dir():
             print("Loading weights from local directory")
             model_file = os.path.join(model_id, "bigvgan_generator.pt")
         else:

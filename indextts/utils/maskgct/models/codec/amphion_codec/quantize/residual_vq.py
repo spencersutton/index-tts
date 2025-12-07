@@ -20,45 +20,16 @@ class ResidualVQ(nn.Module):
     https://arxiv.org/abs/2107.03312
     """
 
-    num_quantizers: int
+    input_dim = 1024
+    num_quantizers = 1
+    codebook_size = 8192
+    codebook_dim = 8
+    quantizer_dropout = 0.0
 
-    def __init__(
-        self,
-        input_dim: int = 256,
-        num_quantizers: int = 8,
-        codebook_size: int = 1024,
-        codebook_dim: int = 256,
-        quantizer_type: str = "vq",  # "vq" or "fvq" or "lfq"
-        quantizer_dropout: float = 0.5,
-        **kwargs,
-    ) -> None:
+    def __init__(self) -> None:
         super().__init__()
 
-        self.input_dim = input_dim
-        self.num_quantizers = num_quantizers
-        self.codebook_size = codebook_size
-        self.codebook_dim = codebook_dim
-        self.quantizer_type = quantizer_type
-        self.quantizer_dropout = quantizer_dropout
-
-        if quantizer_type == "vq":
-            VQ = VectorQuantize
-        elif quantizer_type == "fvq":
-            VQ = FactorizedVectorQuantize
-        elif quantizer_type == "lfq":
-            VQ = LookupFreeQuantize
-        else:
-            raise ValueError(f"Unknown quantizer type {quantizer_type}")
-
-        self.quantizers = nn.ModuleList([
-            VQ(
-                input_dim=input_dim,
-                codebook_size=codebook_size,
-                codebook_dim=codebook_dim,
-                **kwargs,
-            )
-            for _ in range(num_quantizers)
-        ])
+        self.quantizers = nn.ModuleList([FactorizedVectorQuantize() for _ in range(self.num_quantizers)])
 
     def forward(
         self, z: torch.Tensor, n_quantizers: int | None = None

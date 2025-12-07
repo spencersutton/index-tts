@@ -1,11 +1,15 @@
-
 import torch
 from torch import Tensor, nn
 
 __all__ = ["Tacotron2"]
 
 class _LocationLayer(nn.Module):
-    def __init__(self, attention_n_filter: int, attention_kernel_size: int, attention_hidden_dim: int) -> None: ...
+    def __init__(
+        self,
+        attention_n_filter: int,
+        attention_kernel_size: int,
+        attention_hidden_dim: int,
+    ) -> None: ...
     def forward(self, attention_weights_cat: Tensor) -> Tensor: ...
 
 class _Attention(nn.Module):
@@ -32,12 +36,21 @@ class _Prenet(nn.Module):
 
 class _Postnet(nn.Module):
     def __init__(
-        self, n_mels: int, postnet_embedding_dim: int, postnet_kernel_size: int, postnet_n_convolution: int
+        self,
+        n_mels: int,
+        postnet_embedding_dim: int,
+        postnet_kernel_size: int,
+        postnet_n_convolution: int,
     ) -> None: ...
     def forward(self, x: Tensor) -> Tensor: ...
 
 class _Encoder(nn.Module):
-    def __init__(self, encoder_embedding_dim: int, encoder_n_convolution: int, encoder_kernel_size: int) -> None: ...
+    def __init__(
+        self,
+        encoder_embedding_dim: int,
+        encoder_n_convolution: int,
+        encoder_kernel_size: int,
+    ) -> None: ...
     def forward(self, x: Tensor, input_lengths: Tensor) -> Tensor: ...
 
 class _Decoder(nn.Module):
@@ -105,7 +118,11 @@ class Tacotron2(nn.Module):
         gate_threshold: float = ...,
     ) -> None: ...
     def forward(
-        self, tokens: Tensor, token_lengths: Tensor, mel_specgram: Tensor, mel_specgram_lengths: Tensor
+        self,
+        tokens: Tensor,
+        token_lengths: Tensor,
+        mel_specgram: Tensor,
+        mel_specgram_lengths: Tensor,
     ) -> tuple[Tensor, Tensor, Tensor, Tensor]: ...
     @torch.jit.export
     def infer(self, tokens: Tensor, lengths: Tensor | None = ...) -> tuple[Tensor, Tensor, Tensor]: ...

@@ -11,6 +11,17 @@ def log(t, eps=...): ...
 def calc_entropy_from_logits(logits): ...
 
 class EntropyBasedTokenizer(Module):
-    def __init__(self, decoder: Module, entropy_threshold: float, max_token_size: int | None = ...) -> None: ...
+    def __init__(
+        self,
+        decoder: Module,
+        entropy_threshold: float,
+        max_token_size: int | None = ...,
+    ) -> None: ...
     @torch.no_grad()
-    def forward(self, seq, lens=..., return_segmented_seq=..., decoder_forward_kwargs: dict = ...): ...
+    def forward(
+        self,
+        seq,
+        lens=...,
+        return_segmented_seq=...,
+        decoder_forward_kwargs: dict = ...,
+    ): ...

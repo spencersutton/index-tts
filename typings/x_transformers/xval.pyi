@@ -47,7 +47,11 @@ class XValTransformerWrapper(nn.Module):
 
 class XValAutoregressiveWrapper(nn.Module):
     def __init__(
-        self, net: XValTransformerWrapper, ignore_index=..., pad_value=..., numerical_loss_weight=...
+        self,
+        net: XValTransformerWrapper,
+        ignore_index=...,
+        pad_value=...,
+        numerical_loss_weight=...,
     ) -> None: ...
     @torch.no_grad()
     def generate(

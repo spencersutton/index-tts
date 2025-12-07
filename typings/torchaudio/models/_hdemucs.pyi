@@ -4,7 +4,13 @@ import torch
 from torch import nn
 
 class _ScaledEmbedding(torch.nn.Module):
-    def __init__(self, num_embeddings: int, embedding_dim: int, scale: float = ..., smooth: bool = ...) -> None: ...
+    def __init__(
+        self,
+        num_embeddings: int,
+        embedding_dim: int,
+        scale: float = ...,
+        smooth: bool = ...,
+    ) -> None: ...
     @property
     def weight(self) -> torch.Tensor: ...
     def forward(self, x: torch.Tensor) -> torch.Tensor: ...

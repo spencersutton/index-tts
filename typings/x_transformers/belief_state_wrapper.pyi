@@ -49,4 +49,9 @@ class BeliefStateWrapper(Module):
         decode_backwards=...,
         **kwargs,
     ): ...
-    def forward(self, seq, lens: Tensor | None = ..., loss_weight_by_fb_indices: callable | None = ...): ...
+    def forward(
+        self,
+        seq,
+        lens: Tensor | None = ...,
+        loss_weight_by_fb_indices: callable | None = ...,
+    ): ...

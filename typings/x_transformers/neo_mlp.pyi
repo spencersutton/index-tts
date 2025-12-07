@@ -12,5 +12,14 @@ class RandomFourierEmbed(Module):
     def forward(self, times): ...
 
 class NeoMLP(Module):
-    def __init__(self, *, dim_in, dim_hidden, dim_out, dim_model, depth, encoder_kwargs: dict = ...) -> None: ...
+    def __init__(
+        self,
+        *,
+        dim_in,
+        dim_hidden,
+        dim_out,
+        dim_model,
+        depth,
+        encoder_kwargs: dict = ...,
+    ) -> None: ...
     def forward(self, x, return_embeds=...): ...

@@ -31,7 +31,13 @@ def contrastive_decode_fn(expert_logits, amateur_logits, alpha=..., beta=...): .
 
 class AutoregressiveWrapper(Module):
     def __init__(
-        self, net, ignore_index=..., pad_value=..., mask_prob=..., add_attn_z_loss=..., next_embed_loss_weight=...
+        self,
+        net,
+        ignore_index=...,
+        pad_value=...,
+        mask_prob=...,
+        add_attn_z_loss=...,
+        next_embed_loss_weight=...,
     ) -> None: ...
     @torch.no_grad()
     @eval_decorator

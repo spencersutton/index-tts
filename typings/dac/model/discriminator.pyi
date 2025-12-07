@@ -22,7 +22,11 @@ BANDS = ...
 
 class MRD(nn.Module):
     def __init__(
-        self, window_length: int, hop_factor: float = ..., sample_rate: int = ..., bands: list = ...
+        self,
+        window_length: int,
+        hop_factor: float = ...,
+        sample_rate: int = ...,
+        bands: list = ...,
     ) -> None: ...
     def spectrogram(self, x):  # -> list[Tensor]:
         ...
@@ -31,7 +35,12 @@ class MRD(nn.Module):
 
 class Discriminator(ml.BaseModel):
     def __init__(
-        self, rates: list = ..., periods: list = ..., fft_sizes: list = ..., sample_rate: int = ..., bands: list = ...
+        self,
+        rates: list = ...,
+        periods: list = ...,
+        fft_sizes: list = ...,
+        sample_rate: int = ...,
+        bands: list = ...,
     ) -> None: ...
     def preprocess(self, y): ...
     def forward(self, x):  # -> list[Any]:

@@ -62,7 +62,9 @@ def masked_mean(t, mask=..., dim=...): ...
 def pad_at_dim(t, pad: tuple[int, int], dim=..., value=...): ...
 def or_reduce(masks): ...
 def orthog_project(x, y): ...
-def get_cached_kvs(cache: LayerIntermediates) -> list[tuple[Tensor, Tensor]]: ...
+def get_cached_kvs(
+    cache: LayerIntermediates,
+) -> list[tuple[Tensor, Tensor]]: ...
 def calc_entropy(t: Tensor, is_prob=...): ...
 def calc_z_loss(pre_softmax_attns: list[Tensor], mask=..., weight=...): ...
 def init_zero_(layer): ...
@@ -100,7 +102,15 @@ class RelativePositionBias(Module):
     def forward(self, i, j): ...
 
 class CoPE(Module):
-    def __init__(self, dim, heads, max_pos, soft_onehot=..., talking_heads=..., soft_onehot_temp=...) -> None: ...
+    def __init__(
+        self,
+        dim,
+        heads,
+        max_pos,
+        soft_onehot=...,
+        talking_heads=...,
+        soft_onehot_temp=...,
+    ) -> None: ...
     def forward(self, query, attn_logits): ...
 
 class DynamicPositionBias(Module):
@@ -126,7 +136,13 @@ class PerRowDataDependentAlibi(Module):
 
 class RotaryEmbedding(Module):
     def __init__(
-        self, dim, use_xpos=..., scale_base=..., interpolation_factor=..., base=..., base_rescale_factor=...
+        self,
+        dim,
+        use_xpos=...,
+        scale_base=...,
+        interpolation_factor=...,
+        base=...,
+        base_rescale_factor=...,
     ) -> None: ...
     def forward_from_seq_len(self, seq_len): ...
     @autocast("cuda", enabled=False)
@@ -183,7 +199,16 @@ class GRUGating(Module):
     def forward(self, x, residual, **kwargs): ...
 
 class HyperConnection(Module):
-    def __init__(self, dim, *, layer_index, num_residual_streams, num_input_views=..., tanh=..., **kwargs) -> None: ...
+    def __init__(
+        self,
+        dim,
+        *,
+        layer_index,
+        num_residual_streams,
+        num_input_views=...,
+        tanh=...,
+        **kwargs,
+    ) -> None: ...
     def prepare(self, residuals): ...
     def forward(self, x, residuals, *, beta): ...
 
@@ -566,7 +591,14 @@ class TransformerWrapper(Module):
 
 class XTransformer(Module):
     def __init__(
-        self, *, dim, tie_token_emb=..., ignore_index=..., pad_value=..., cross_attn_tokens_dropout=..., **kwargs
+        self,
+        *,
+        dim,
+        tie_token_emb=...,
+        ignore_index=...,
+        pad_value=...,
+        cross_attn_tokens_dropout=...,
+        **kwargs,
     ) -> None: ...
     @torch.no_grad()
     def generate(self, seq_in, seq_out_start, seq_len, mask=..., attn_mask=..., **kwargs): ...

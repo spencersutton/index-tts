@@ -1,5 +1,13 @@
-from .objective import SquimObjective, squim_objective_base, squim_objective_model
-from .subjective import SquimSubjective, squim_subjective_base, squim_subjective_model
+from .objective import (
+    SquimObjective,
+    squim_objective_base,
+    squim_objective_model,
+)
+from .subjective import (
+    SquimSubjective,
+    squim_subjective_base,
+    squim_subjective_model,
+)
 
 __all__ = [
     "SquimObjective",

@@ -33,7 +33,7 @@ def scan_i18n_strings():
     """
     strings = []
     print(" Scanning Files and Extracting i18n Strings ".center(TITLE_LEN, "="))
-    for filename in Path().glob("**/*.py"):
+    for filename in Path().rglob("*.py"):
         try:
             with filename.open(encoding="utf-8") as f:
                 code = f.read()

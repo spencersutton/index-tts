@@ -5,9 +5,8 @@
 
 from collections import OrderedDict
 
-import torch
 import torch.nn.functional as F
-from torch import nn
+from torch import Tensor, nn
 
 from indextts.s2mel.modules.campplus.layers import (
     BasicResBlock,
@@ -113,7 +112,7 @@ class CAMPPlus(nn.Module):
                 if m.bias is not None:
                     nn.init.zeros_(m.bias)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         x = x.permute(0, 2, 1)  # (B,T,F) => (B,F,T)
         x = self.head(x)
         return self.xvector(x)

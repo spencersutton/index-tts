@@ -1,15 +1,15 @@
 # Adapted from https://github.com/junjun3518/alias-free-torch under the Apache License 2.0
 #   LICENSE is in incl_licenses directory.
 
-import torch
 import torch.nn as nn
+from torch import Tensor
 from torch.nn import functional as F
 
 from .filter import LowPassFilter1d, kaiser_sinc_filter1d
 
 
 class UpSample1d(nn.Module):
-    filter: torch.Tensor
+    filter: Tensor
 
     def __init__(self, ratio=2, kernel_size=None) -> None:
         super().__init__()

@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 from packaging import version
-from torch import einsum, nn
+from torch import Tensor, einsum, nn
 
 
 def _exists(val):
@@ -44,7 +44,7 @@ class _EfficientAttentionConfig(NamedTuple):
 
 # main class
 class _Attend(nn.Module):
-    mask: torch.Tensor
+    mask: Tensor
 
     def __init__(self, dropout=0.0, causal=False, use_flash=False) -> None:
         super().__init__()
@@ -202,7 +202,7 @@ class _CausalConv1d(nn.Conv1d):
         assert stride == 1
         self.causal_padding = dilation * (kernel_size - 1)
 
-    def forward(self, input: torch.Tensor) -> torch.Tensor:
+    def forward(self, input: Tensor) -> Tensor:
         causal_padded_x = F.pad(input, (self.causal_padding, 0), value=0.0)
         return super().forward(causal_padded_x)
 

@@ -2,6 +2,7 @@ from collections.abc import ItemsView, KeysView, ValuesView
 from pathlib import Path
 
 import torch
+from torch import Tensor
 from transformers import Wav2Vec2BertModel
 
 from indextts.utils.maskgct.models.codec.kmeans.repcodec_model import RepCodec
@@ -41,7 +42,7 @@ class JsonHParams:
 
 def build_semantic_model(
     path_: Path = Path("./models/tts/maskgct/ckpt/wav2vec2bert_stats.pt"),
-) -> tuple[Wav2Vec2BertModel, torch.Tensor, torch.Tensor]:
+) -> tuple[Wav2Vec2BertModel, Tensor, Tensor]:
     semantic_model = Wav2Vec2BertModel.from_pretrained("facebook/w2v-bert-2.0")
     semantic_model.eval()
     stat_mean_var = torch.load(path_)

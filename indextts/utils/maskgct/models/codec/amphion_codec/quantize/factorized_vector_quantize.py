@@ -18,20 +18,12 @@ class FactorizedVectorQuantize(nn.Module):
     input_dim: int = 1024
     codebook_size: int = 8192
     codebook_dim: int = 8
-    commitment: float = 0.15
-    codebook_loss_weight: float = 1.0
-    use_l2_normlize: bool = True
 
     def __init__(self) -> None:
         super().__init__()
 
-        if self.input_dim != self.codebook_dim:
-            self.in_project = WNConv1d(self.input_dim, self.codebook_dim, kernel_size=1)
-            self.out_project = WNConv1d(self.codebook_dim, self.input_dim, kernel_size=1)
-
-        else:
-            self.in_project = nn.Identity()
-            self.out_project = nn.Identity()
+        self.in_project = WNConv1d(self.input_dim, self.codebook_dim, kernel_size=1)
+        self.out_project = WNConv1d(self.codebook_dim, self.input_dim, kernel_size=1)
 
         self.codebook = nn.Embedding(self.codebook_size, self.codebook_dim)
 
@@ -60,12 +52,8 @@ class FactorizedVectorQuantize(nn.Module):
         z_q, indices = self.decode_latents(z_e)
 
         # Compute commitment loss and codebook loss
-        if self.training:
-            commit_loss = F.mse_loss(z_e, z_q.detach(), reduction="none").mean([1, 2]) * self.commitment
-            codebook_loss = F.mse_loss(z_q, z_e.detach(), reduction="none").mean([1, 2]) * self.codebook_loss_weight
-        else:
-            commit_loss = torch.zeros(z.shape[0], device=z.device)
-            codebook_loss = torch.zeros(z.shape[0], device=z.device)
+        commit_loss = torch.zeros(z.shape[0], device=z.device)
+        codebook_loss = torch.zeros(z.shape[0], device=z.device)
 
         z_q = z_e + (z_q - z_e).detach()
 
@@ -84,12 +72,11 @@ class FactorizedVectorQuantize(nn.Module):
         codebook = self.codebook.weight
 
         # L2 normalize encodings and codebook
-        if self.use_l2_normlize:
-            encodings = F.normalize(encodings)
-            codebook = F.normalize(codebook)
+        encodings = F.normalize(encodings)
+        codebook = F.normalize(codebook)
 
         # Compute euclidean distance between encodings and codebook,
-        # if use_l2_normlize is True, the distance is equal to cosine distance
+        # the distance is equal to cosine distance
         dist = (
             encodings.pow(2).sum(1, keepdim=True)
             - 2 * encodings @ codebook.t()
@@ -111,12 +98,11 @@ class FactorizedVectorQuantize(nn.Module):
         codebook = self.codebook.weight
 
         # L2 normalize encodings and codebook
-        if self.use_l2_normlize:
-            encodings = F.normalize(encodings)
-            codebook = F.normalize(codebook)
+        encodings = F.normalize(encodings)
+        codebook = F.normalize(codebook)
 
         # Compute euclidean distance between encodings and codebook,
-        # if use_l2_normlize is True, the distance is equal to cosine distance
+        # the distance is equal to cosine distance
         dist = (
             encodings.pow(2).sum(1, keepdim=True)
             - 2 * encodings @ codebook.t()

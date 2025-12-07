@@ -33,7 +33,13 @@ class PositionalEncoding(torch.nn.Module):
     PE(pos, 2i+1) = cos(pos/(10000^(2i/dmodel)))
     """
 
-    def __init__(self, d_model: int, dropout_rate: float, max_len: int = 5000, reverse: bool = False) -> None:
+    def __init__(
+        self,
+        d_model: int,
+        dropout_rate: float,
+        max_len: int = 5000,
+        reverse: bool = False,
+    ) -> None:
         """Construct an PositionalEncoding object."""
         super().__init__()
         self.d_model = d_model

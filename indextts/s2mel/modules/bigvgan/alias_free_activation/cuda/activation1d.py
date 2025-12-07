@@ -69,5 +69,11 @@ class Activation1d(nn.Module):
                 alpha = torch.log(alpha)
                 beta = torch.log(beta)
 
-            x = FusedAntiAliasActivation.apply(x, self.upsample.filter, self.downsample.lowpass.filter, alpha, beta)
+            x = FusedAntiAliasActivation.apply(
+                x,
+                self.upsample.filter,
+                self.downsample.lowpass.filter,
+                alpha,
+                beta,
+            )
             return x

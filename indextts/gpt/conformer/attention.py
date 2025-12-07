@@ -73,7 +73,10 @@ class _MultiHeadedAttention(nn.Module):
         return q, k, v
 
     def forward_attention(
-        self, value: Tensor, scores: Tensor, mask: Tensor = torch.ones((0, 0, 0), dtype=torch.bool)
+        self,
+        value: Tensor,
+        scores: Tensor,
+        mask: Tensor = torch.ones((0, 0, 0), dtype=torch.bool),
     ) -> Tensor:
         """Compute attention context vector.
 
@@ -213,7 +216,11 @@ class RelPositionMultiHeadedAttention(_MultiHeadedAttention):
             Tensor: Output tensor.
         """
 
-        zero_pad = torch.zeros((x.size()[0], x.size()[1], x.size()[2], 1), device=x.device, dtype=x.dtype)
+        zero_pad = torch.zeros(
+            (x.size()[0], x.size()[1], x.size()[2], 1),
+            device=x.device,
+            dtype=x.dtype,
+        )
         x_padded = torch.cat([zero_pad, x], dim=-1)
 
         x_padded = x_padded.view(x.size()[0], x.size()[1], x.size(3) + 1, x.size(2))

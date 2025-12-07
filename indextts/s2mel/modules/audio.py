@@ -46,7 +46,9 @@ def mel_spectrogram(
         hann_window[str(sampling_rate) + "_" + str(y.device)] = torch.hann_window(win_size).to(y.device)
 
     y = torch.nn.functional.pad(
-        y.unsqueeze(1), (int((n_fft - hop_size) / 2), int((n_fft - hop_size) / 2)), mode="reflect"
+        y.unsqueeze(1),
+        (int((n_fft - hop_size) / 2), int((n_fft - hop_size) / 2)),
+        mode="reflect",
     )
     y = y.squeeze(1)
 
@@ -67,7 +69,10 @@ def mel_spectrogram(
 
     spec = torch.sqrt(spec.pow(2).sum(-1) + (1e-9))
 
-    spec = torch.matmul(mel_basis[str(sampling_rate) + "_" + str(fmax) + "_" + str(y.device)], spec)
+    spec = torch.matmul(
+        mel_basis[str(sampling_rate) + "_" + str(fmax) + "_" + str(y.device)],
+        spec,
+    )
     spec = spectral_normalize_torch(spec)
 
     return spec

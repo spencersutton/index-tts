@@ -23,21 +23,55 @@ parser = argparse.ArgumentParser(
 parser.add_argument("--verbose", action="store_true", default=False, help="Enable verbose mode")
 parser.add_argument("--port", type=int, default=7860, help="Port to run the web UI on")
 parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to run the web UI on")
-parser.add_argument("--model_dir", type=str, default="./checkpoints", help="Model checkpoints directory")
-parser.add_argument("--fp16", action="store_true", default=False, help="Use FP16 for inference if available")
-parser.add_argument("--deepspeed", action="store_true", default=False, help="Use DeepSpeed to accelerate if available")
 parser.add_argument(
-    "--cuda_kernel", action="store_true", default=False, help="Use CUDA kernel for inference if available"
+    "--model_dir",
+    type=str,
+    default="./checkpoints",
+    help="Model checkpoints directory",
 )
-parser.add_argument("--gui_seg_tokens", type=int, default=120, help="GUI: Max tokens per generation segment")
-parser.add_argument("--torch-compile", action="store_true", default=False, help="Use torch.compile for optimization")
+parser.add_argument(
+    "--fp16",
+    action="store_true",
+    default=False,
+    help="Use FP16 for inference if available",
+)
+parser.add_argument(
+    "--deepspeed",
+    action="store_true",
+    default=False,
+    help="Use DeepSpeed to accelerate if available",
+)
+parser.add_argument(
+    "--cuda_kernel",
+    action="store_true",
+    default=False,
+    help="Use CUDA kernel for inference if available",
+)
+parser.add_argument(
+    "--gui_seg_tokens",
+    type=int,
+    default=120,
+    help="GUI: Max tokens per generation segment",
+)
+parser.add_argument(
+    "--torch-compile",
+    action="store_true",
+    default=False,
+    help="Use torch.compile for optimization",
+)
 cmd_args = parser.parse_args()
 
 if not Path(cmd_args.model_dir).exists():
     print(f"Model directory {cmd_args.model_dir} does not exist. Please download the model first.")
     sys.exit(1)
 
-for file in ["bpe.model", "gpt.pth", "config.yaml", "s2mel.pth", "wav2vec2bert_stats.pt"]:
+for file in [
+    "bpe.model",
+    "gpt.pth",
+    "config.yaml",
+    "s2mel.pth",
+    "wav2vec2bert_stats.pt",
+]:
     file_path = Path(cmd_args.model_dir) / file
     if not file_path.exists():
         print(f"Required file {file_path} does not exist. Please download it.")
@@ -129,7 +163,16 @@ def gen_single(
         output_path = Path("outputs") / f"spk_{int(time.time())}.wav"
     # set gradio progress
     tts.gr_progress = progress
-    do_sample, top_p, top_k, temperature, length_penalty, num_beams, repetition_penalty, max_mel_tokens = args
+    (
+        do_sample,
+        top_p,
+        top_k,
+        temperature,
+        length_penalty,
+        num_beams,
+        repetition_penalty,
+        max_mel_tokens,
+    ) = args
     kwargs: dict[str, float | int | bool | None] = {
         "do_sample": bool(do_sample),
         "top_p": float(top_p),
@@ -202,7 +245,10 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
         with gr.Row():
             Path("prompts").mkdir(exist_ok=True, parents=True)
             prompt_audio = gr.Audio(
-                label=i18n("音色参考音频"), key="prompt_audio", sources=["upload", "microphone"], type="filepath"
+                label=i18n("音色参考音频"),
+                key="prompt_audio",
+                sources=["upload", "microphone"],
+                type="filepath",
             )
             prompt_list = list(Path("prompts").iterdir())
             with gr.Column():
@@ -246,15 +292,63 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
         # 情感向量控制部分
         with gr.Group(visible=False) as emotion_vector_group, gr.Row():
             with gr.Column():
-                vec1 = gr.Slider(label=i18n("喜"), minimum=0.0, maximum=1.0, value=0.0, step=0.05)
-                vec2 = gr.Slider(label=i18n("怒"), minimum=0.0, maximum=1.0, value=0.0, step=0.05)
-                vec3 = gr.Slider(label=i18n("哀"), minimum=0.0, maximum=1.0, value=0.0, step=0.05)
-                vec4 = gr.Slider(label=i18n("惧"), minimum=0.0, maximum=1.0, value=0.0, step=0.05)
+                vec1 = gr.Slider(
+                    label=i18n("喜"),
+                    minimum=0.0,
+                    maximum=1.0,
+                    value=0.0,
+                    step=0.05,
+                )
+                vec2 = gr.Slider(
+                    label=i18n("怒"),
+                    minimum=0.0,
+                    maximum=1.0,
+                    value=0.0,
+                    step=0.05,
+                )
+                vec3 = gr.Slider(
+                    label=i18n("哀"),
+                    minimum=0.0,
+                    maximum=1.0,
+                    value=0.0,
+                    step=0.05,
+                )
+                vec4 = gr.Slider(
+                    label=i18n("惧"),
+                    minimum=0.0,
+                    maximum=1.0,
+                    value=0.0,
+                    step=0.05,
+                )
             with gr.Column():
-                vec5 = gr.Slider(label=i18n("厌恶"), minimum=0.0, maximum=1.0, value=0.0, step=0.05)
-                vec6 = gr.Slider(label=i18n("低落"), minimum=0.0, maximum=1.0, value=0.0, step=0.05)
-                vec7 = gr.Slider(label=i18n("惊喜"), minimum=0.0, maximum=1.0, value=0.0, step=0.05)
-                vec8 = gr.Slider(label=i18n("平静"), minimum=0.0, maximum=1.0, value=0.0, step=0.05)
+                vec5 = gr.Slider(
+                    label=i18n("厌恶"),
+                    minimum=0.0,
+                    maximum=1.0,
+                    value=0.0,
+                    step=0.05,
+                )
+                vec6 = gr.Slider(
+                    label=i18n("低落"),
+                    minimum=0.0,
+                    maximum=1.0,
+                    value=0.0,
+                    step=0.05,
+                )
+                vec7 = gr.Slider(
+                    label=i18n("惊喜"),
+                    minimum=0.0,
+                    maximum=1.0,
+                    value=0.0,
+                    step=0.05,
+                )
+                vec8 = gr.Slider(
+                    label=i18n("平静"),
+                    minimum=0.0,
+                    maximum=1.0,
+                    value=0.0,
+                    step=0.05,
+                )
 
         with gr.Group(visible=False) as emo_text_group:
             create_experimental_warning_message()
@@ -267,7 +361,13 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
                 )
 
         with gr.Row(visible=False) as emo_weight_group:
-            emo_weight = gr.Slider(label=i18n("情感权重"), minimum=0.0, maximum=1.0, value=0.65, step=0.01)
+            emo_weight = gr.Slider(
+                label=i18n("情感权重"),
+                minimum=0.0,
+                maximum=1.0,
+                value=0.65,
+                step=0.01,
+            )
 
         with gr.Accordion(i18n("高级生成参数设置"), open=False, visible=True):
             with gr.Row():
@@ -276,18 +376,56 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
                         f"**{i18n('GPT2 采样设置')}** _{i18n('参数会影响音频多样性和生成速度详见')} [Generation strategies](https://huggingface.co/docs/transformers/main/en/generation_strategies)._"
                     )
                     with gr.Row():
-                        do_sample = gr.Checkbox(label="do_sample", value=True, info=i18n("是否进行采样"))
-                        temperature = gr.Slider(label="temperature", minimum=0.1, maximum=2.0, value=0.8, step=0.1)
+                        do_sample = gr.Checkbox(
+                            label="do_sample",
+                            value=True,
+                            info=i18n("是否进行采样"),
+                        )
+                        temperature = gr.Slider(
+                            label="temperature",
+                            minimum=0.1,
+                            maximum=2.0,
+                            value=0.8,
+                            step=0.1,
+                        )
                     with gr.Row():
-                        top_p = gr.Slider(label="top_p", minimum=0.0, maximum=1.0, value=0.8, step=0.01)
-                        top_k = gr.Slider(label="top_k", minimum=0, maximum=100, value=30, step=1)
-                        num_beams = gr.Slider(label="num_beams", value=3, minimum=1, maximum=10, step=1)
+                        top_p = gr.Slider(
+                            label="top_p",
+                            minimum=0.0,
+                            maximum=1.0,
+                            value=0.8,
+                            step=0.01,
+                        )
+                        top_k = gr.Slider(
+                            label="top_k",
+                            minimum=0,
+                            maximum=100,
+                            value=30,
+                            step=1,
+                        )
+                        num_beams = gr.Slider(
+                            label="num_beams",
+                            value=3,
+                            minimum=1,
+                            maximum=10,
+                            step=1,
+                        )
                     with gr.Row():
                         repetition_penalty = gr.Number(
-                            label="repetition_penalty", precision=None, value=10.0, minimum=0.1, maximum=20.0, step=0.1
+                            label="repetition_penalty",
+                            precision=None,
+                            value=10.0,
+                            minimum=0.1,
+                            maximum=20.0,
+                            step=0.1,
                         )
                         length_penalty = gr.Number(
-                            label="length_penalty", precision=None, value=0.0, minimum=-2.0, maximum=2.0, step=0.1
+                            label="length_penalty",
+                            precision=None,
+                            value=0.0,
+                            minimum=-2.0,
+                            maximum=2.0,
+                            step=0.1,
                         )
                     max_mel_tokens = gr.Slider(
                         label="max_mel_tokens",
@@ -301,7 +439,13 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
                 with gr.Column(scale=2):
                     gr.Markdown(f"**{i18n('分句设置')}** _{i18n('参数会影响音频质量和生成速度')}_")
                     with gr.Row():
-                        initial_value = max(20, min(tts.cfg.gpt.max_text_tokens, cmd_args.gui_seg_tokens))
+                        initial_value = max(
+                            20,
+                            min(
+                                tts.cfg.gpt.max_text_tokens,
+                                cmd_args.gui_seg_tokens,
+                            ),
+                        )
                         max_text_tokens_per_segment = gr.Slider(
                             label=i18n("分句最大Token数"),
                             value=initial_value,
@@ -315,7 +459,11 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
                         )
                     with gr.Accordion(i18n("预览分句结果"), open=True):
                         segments_preview = gr.Dataframe(
-                            headers=[i18n("序号"), i18n("分句内容"), i18n("Token数")],
+                            headers=[
+                                i18n("序号"),
+                                i18n("分句内容"),
+                                i18n("Token数"),
+                            ],
                             key="segments_preview",
                             wrap=True,
                         )
@@ -405,7 +553,8 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
             text_tokens_list = tts.tokenizer.tokenize(text)
 
             segments = tts.tokenizer.split_segments(
-                text_tokens_list, max_text_tokens_per_segment=int(max_text_tokens_per_segment)
+                text_tokens_list,
+                max_text_tokens_per_segment=int(max_text_tokens_per_segment),
             )
             data = []
             for i, s in enumerate(segments):
@@ -486,11 +635,15 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
     )
 
     input_text_single.change(
-        on_input_text_change, inputs=[input_text_single, max_text_tokens_per_segment], outputs=[segments_preview]
+        on_input_text_change,
+        inputs=[input_text_single, max_text_tokens_per_segment],
+        outputs=[segments_preview],
     )
 
     max_text_tokens_per_segment.change(
-        on_input_text_change, inputs=[input_text_single, max_text_tokens_per_segment], outputs=[segments_preview]
+        on_input_text_change,
+        inputs=[input_text_single, max_text_tokens_per_segment],
+        outputs=[segments_preview],
     )
 
     prompt_audio.upload(update_prompt_audio, inputs=[], outputs=[gen_button])

@@ -25,7 +25,11 @@ def get_nonlinear(config_str: str, channels: int) -> nn.Sequential:
 
 
 def statistics_pooling(
-    x: Tensor, dim: int = -1, keepdim: bool = False, unbiased: bool = True, eps: float = 1e-2
+    x: Tensor,
+    dim: int = -1,
+    keepdim: bool = False,
+    unbiased: bool = True,
+    eps: float = 1e-2,
 ) -> Tensor:
     mean = x.mean(dim=dim)
     std = x.std(dim=dim, unbiased=unbiased)
@@ -57,7 +61,13 @@ class TDNNLayer(nn.Module):
             assert kernel_size % 2 == 1, f"Expect equal paddings, but got even kernel size ({kernel_size})"
             padding = (kernel_size - 1) // 2 * dilation
         self.linear = nn.Conv1d(
-            in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias
+            in_channels,
+            out_channels,
+            kernel_size,
+            stride=stride,
+            padding=padding,
+            dilation=dilation,
+            bias=bias,
         )
         self.nonlinear = get_nonlinear(config_str, out_channels)
 
@@ -81,7 +91,13 @@ class CAMLayer(nn.Module):
     ) -> None:
         super().__init__()
         self.linear_local = nn.Conv1d(
-            bn_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias
+            bn_channels,
+            out_channels,
+            kernel_size,
+            stride=stride,
+            padding=padding,
+            dilation=dilation,
+            bias=bias,
         )
         self.linear1 = nn.Conv1d(bn_channels, bn_channels // reduction, 1)
         self.relu = nn.ReLU(inplace=True)
@@ -129,7 +145,13 @@ class CAMDenseTDNNLayer(nn.Module):
         self.linear1 = nn.Conv1d(in_channels, bn_channels, 1, bias=False)
         self.nonlinear2 = get_nonlinear(config_str, bn_channels)
         self.cam_layer = CAMLayer(
-            bn_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias
+            bn_channels,
+            out_channels,
+            kernel_size,
+            stride=stride,
+            padding=padding,
+            dilation=dilation,
+            bias=bias,
         )
 
     def bn_function(self, x):
@@ -178,7 +200,11 @@ class CAMDenseTDNNBlock(nn.ModuleList):
 
 class TransitLayer(nn.Module):
     def __init__(
-        self, in_channels: int, out_channels: int, bias: bool = True, config_str: str = "batchnorm-relu"
+        self,
+        in_channels: int,
+        out_channels: int,
+        bias: bool = True,
+        config_str: str = "batchnorm-relu",
     ) -> None:
         super().__init__()
         self.nonlinear = get_nonlinear(config_str, in_channels)
@@ -192,7 +218,11 @@ class TransitLayer(nn.Module):
 
 class DenseLayer(nn.Module):
     def __init__(
-        self, in_channels: int, out_channels: int, bias: bool = False, config_str: str = "batchnorm-relu"
+        self,
+        in_channels: int,
+        out_channels: int,
+        bias: bool = False,
+        config_str: str = "batchnorm-relu",
     ) -> None:
         super().__init__()
         self.linear = nn.Conv1d(in_channels, out_channels, 1, bias=bias)
@@ -209,7 +239,14 @@ class BasicResBlock(nn.Module):
 
     def __init__(self, in_planes: int, planes: int, stride: int = 1) -> None:
         super().__init__()
-        self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=3, stride=(stride, 1), padding=1, bias=False)
+        self.conv1 = nn.Conv2d(
+            in_planes,
+            planes,
+            kernel_size=3,
+            stride=(stride, 1),
+            padding=1,
+            bias=False,
+        )
         self.bn1 = nn.BatchNorm2d(planes)
         self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(planes)
@@ -217,7 +254,13 @@ class BasicResBlock(nn.Module):
         self.shortcut = nn.Sequential()
         if stride != 1 or in_planes != self.expansion * planes:
             self.shortcut = nn.Sequential(
-                nn.Conv2d(in_planes, self.expansion * planes, kernel_size=1, stride=(stride, 1), bias=False),
+                nn.Conv2d(
+                    in_planes,
+                    self.expansion * planes,
+                    kernel_size=1,
+                    stride=(stride, 1),
+                    bias=False,
+                ),
                 nn.BatchNorm2d(self.expansion * planes),
             )
 

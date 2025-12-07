@@ -15,21 +15,16 @@ from typing import Any, cast
 import numpy as np
 import safetensors.torch
 import torch
+import torch.nn.functional as F
 import torchaudio
 from huggingface_hub import hf_hub_download
+from omegaconf import OmegaConf
 from torch import Tensor
 from torchcodec.decoders import AudioDecoder
 from torchcodec.encoders import AudioEncoder
-
-from indextts.config import CheckpointsConfig
-
-warnings.filterwarnings("ignore", category=FutureWarning)
-warnings.filterwarnings("ignore", category=UserWarning)
-
-import torch.nn.functional as F
-from omegaconf import OmegaConf
 from transformers import AutoModelForCausalLM, AutoTokenizer, SeamlessM4TFeatureExtractor, Wav2Vec2BertModel
 
+from indextts.config import CheckpointsConfig
 from indextts.gpt.model_v2 import GPT2InferenceModel, UnifiedVoice
 from indextts.s2mel.modules.audio import mel_spectrogram
 from indextts.s2mel.modules.bigvgan import bigvgan
@@ -970,25 +965,3 @@ class QwenEmotion:
             content["悲伤"], content["低落"] = content.get("低落", 0.0), content.get("悲伤", 0.0)
 
         return self.convert(content)
-
-
-if __name__ == "__main__":
-    prompt_wav = Path("examples/voice_01.wav")
-    text = "欢迎大家来体验indextts2，并给予我们意见与反馈，谢谢大家。"
-    tts = IndexTTS2(
-        cfg_path=Path("checkpoints/config.yaml"),
-        model_dir=Path("checkpoints"),
-        use_cuda_kernel=False,
-        use_torch_compile=True,
-    )
-    tts.infer(spk_audio_prompt=prompt_wav, text=text, output_path=Path("gen.wav"), verbose=True)
-    char_size = 5
-    import string
-
-    time_buckets = []
-    for _ in range(10):
-        text = "".join(random.choices(string.ascii_letters, k=char_size))
-        start_time = time.time()
-        tts.infer(spk_audio_prompt=prompt_wav, text=text, output_path=Path("gen.wav"), verbose=True)
-        time_buckets.append(time.time() - start_time)
-    print(time_buckets)

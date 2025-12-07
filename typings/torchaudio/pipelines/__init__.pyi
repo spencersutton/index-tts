@@ -4,7 +4,12 @@ from ._source_separation_pipeline import (
     HDEMUCS_HIGH_MUSDB_PLUS,
     SourceSeparationBundle,
 )
-from ._squim_pipeline import SQUIM_OBJECTIVE, SQUIM_SUBJECTIVE, SquimObjectiveBundle, SquimSubjectiveBundle
+from ._squim_pipeline import (
+    SQUIM_OBJECTIVE,
+    SQUIM_SUBJECTIVE,
+    SquimObjectiveBundle,
+    SquimSubjectiveBundle,
+)
 from ._tts import (
     TACOTRON2_GRIFFINLIM_CHAR_LJSPEECH,
     TACOTRON2_GRIFFINLIM_PHONE_LJSPEECH,

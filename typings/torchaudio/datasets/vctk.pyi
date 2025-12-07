@@ -1,4 +1,3 @@
-
 from torch import Tensor
 from torch.utils.data import Dataset
 
@@ -7,6 +6,13 @@ _CHECKSUMS = ...
 type SampleType = tuple[Tensor, int, str, str, str]
 
 class VCTK_092(Dataset):
-    def __init__(self, root: str, mic_id: str = ..., download: bool = ..., url: str = ..., audio_ext=...) -> None: ...
+    def __init__(
+        self,
+        root: str,
+        mic_id: str = ...,
+        download: bool = ...,
+        url: str = ...,
+        audio_ext=...,
+    ) -> None: ...
     def __getitem__(self, n: int) -> SampleType: ...
     def __len__(self) -> int: ...

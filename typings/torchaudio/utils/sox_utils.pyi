@@ -1,4 +1,3 @@
-
 from torchaudio._internal.module_utils import dropping_support
 
 """Module to change the configuration of libsox, which is used by I/O functions like

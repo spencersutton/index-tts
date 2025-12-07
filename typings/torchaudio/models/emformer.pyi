@@ -1,4 +1,3 @@
-
 import torch
 
 __all__ = ["Emformer"]
@@ -79,7 +78,10 @@ class _EmformerImpl(torch.nn.Module):
     def forward(self, input: torch.Tensor, lengths: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]: ...
     @torch.jit.export
     def infer(
-        self, input: torch.Tensor, lengths: torch.Tensor, states: list[list[torch.Tensor]] | None = ...
+        self,
+        input: torch.Tensor,
+        lengths: torch.Tensor,
+        states: list[list[torch.Tensor]] | None = ...,
     ) -> tuple[torch.Tensor, torch.Tensor, list[list[torch.Tensor]]]: ...
 
 class Emformer(_EmformerImpl):

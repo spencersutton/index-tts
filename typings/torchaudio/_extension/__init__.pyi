@@ -4,7 +4,12 @@ import sys
 from .utils import _check_cuda_version
 
 _LG = ...
-__all__ = ["_IS_RIR_AVAILABLE", "_IS_TORCHAUDIO_EXT_AVAILABLE", "_check_cuda_version", "lazy_import_sox_ext"]
+__all__ = [
+    "_IS_RIR_AVAILABLE",
+    "_IS_TORCHAUDIO_EXT_AVAILABLE",
+    "_check_cuda_version",
+    "lazy_import_sox_ext",
+]
 if os.name == "nt" and (3, 8) <= sys.version_info < (3, 9): ...
 _IS_TORCHAUDIO_EXT_AVAILABLE = ...
 _IS_RIR_AVAILABLE = ...

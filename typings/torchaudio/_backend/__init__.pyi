@@ -1,9 +1,16 @@
-
 from torchaudio._internal.module_utils import deprecated
 
 from .common import AudioMetaData
 
-__all__ = ["AudioMetaData", "get_audio_backend", "info", "list_audio_backends", "load", "save", "set_audio_backend"]
+__all__ = [
+    "AudioMetaData",
+    "get_audio_backend",
+    "info",
+    "list_audio_backends",
+    "load",
+    "save",
+    "set_audio_backend",
+]
 info = ...
 load = ...
 save = ...

@@ -34,7 +34,16 @@ class AudioEffector:
         codec_config: CodecConfig | None = ...,
         pad_end: bool = ...,
     ) -> None: ...
-    def apply(self, waveform: Tensor, sample_rate: int, output_sample_rate: int | None = ...) -> Tensor: ...
+    def apply(
+        self,
+        waveform: Tensor,
+        sample_rate: int,
+        output_sample_rate: int | None = ...,
+    ) -> Tensor: ...
     def stream(
-        self, waveform: Tensor, sample_rate: int, frames_per_chunk: int, output_sample_rate: int | None = ...
+        self,
+        waveform: Tensor,
+        sample_rate: int,
+        frames_per_chunk: int,
+        output_sample_rate: int | None = ...,
     ) -> Iterator[Tensor]: ...

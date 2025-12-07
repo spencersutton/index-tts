@@ -1,4 +1,3 @@
-
 import torch
 import torch.nn as nn
 
@@ -15,7 +14,13 @@ class Encoder(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor: ...
 
 class SingleRNN(nn.Module):
-    def __init__(self, rnn_type: str, input_size: int, hidden_size: int, dropout: float = ...) -> None: ...
+    def __init__(
+        self,
+        rnn_type: str,
+        input_size: int,
+        hidden_size: int,
+        dropout: float = ...,
+    ) -> None: ...
     def forward(self, x: torch.Tensor) -> torch.Tensor: ...
 
 class DPRNN(nn.Module):

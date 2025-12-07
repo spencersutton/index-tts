@@ -1,4 +1,3 @@
-
 from ._alignment import TokenSpan, merge_tokens
 from .filtering import (
     allpass_biquad,

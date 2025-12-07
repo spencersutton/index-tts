@@ -7,14 +7,22 @@
 # Adapted from: https://github.com/meta-pytorch/gpt-fast/blob/main/model.py
 
 import math
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
+from typing import Self, cast
 
 import torch
 from torch import Tensor, nn
 from torch.nn import functional as F
 
 
-def scaled_dot_product_attention(q, k, v, attn_mask=None, dropout_p=0.0):
+def scaled_dot_product_attention(
+    q: Tensor,
+    k: Tensor,
+    v: Tensor,
+    attn_mask: Tensor | None = None,
+    dropout_p: float = 0.0,
+) -> Tensor:
     if q.device.type == "mps":
         # Fallback for MPS to avoid torch.compile issues with native SDPA
         d_k = q.size(-1)
@@ -41,7 +49,7 @@ def find_multiple(n: int, k: int) -> int:
 class AdaptiveLayerNorm(nn.Module):
     r"""Adaptive Layer Normalization"""
 
-    def __init__(self, d_model, norm) -> None:
+    def __init__(self, d_model: int, norm: nn.Module) -> None:
         super().__init__()
         self.project_layer = nn.Linear(d_model, 2 * d_model)
         self.norm = norm
@@ -66,17 +74,17 @@ class ModelArgs:
     n_layer: int = 32
     n_head: int = 32
     dim: int = 4096
-    intermediate_size: int = None
+    intermediate_size: int | None = None
     n_local_heads: int = -1
     head_dim: int = 64
-    rope_base: float = 10000
+    rope_base: int = 10000
     norm_eps: float = 1e-5
     has_cross_attention: bool = False
     context_dim: int = 0
     uvit_skip_connection: bool = False
     time_as_token: bool = False
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.n_local_heads == -1:
             self.n_local_heads = self.n_head
         if self.intermediate_size is None:
@@ -85,7 +93,7 @@ class ModelArgs:
             self.intermediate_size = find_multiple(n_hidden, 256)
 
     @classmethod
-    def from_name(cls, name: str):
+    def from_name(cls, name: str) -> Self:
         if name in transformer_configs:
             return cls(**transformer_configs[name])
         # fuzzy search
@@ -155,21 +163,29 @@ transformer_configs = {
 
 
 class KVCache(nn.Module):
-    k_cache: Tensor
-    v_cache: Tensor
+    k_cache: Tensor | None = None
+    v_cache: Tensor | None = None
 
-    def __init__(self, max_batch_size, max_seq_length, n_heads, head_dim, dtype=torch.bfloat16) -> None:
+    def __init__(
+        self,
+        max_batch_size: int,
+        max_seq_length: int,
+        n_heads: int,
+        head_dim: int,
+        dtype: torch.dtype = torch.bfloat16,
+    ) -> None:
         super().__init__()
         cache_shape = (max_batch_size, n_heads, max_seq_length, head_dim)
         self.register_buffer("k_cache", torch.zeros(cache_shape, dtype=dtype))
         self.register_buffer("v_cache", torch.zeros(cache_shape, dtype=dtype))
 
-    def update(self, input_pos, k_val, v_val):
+    def update(self, input_pos: Tensor, k_val: Tensor, v_val: Tensor) -> tuple[Tensor, Tensor]:
         # input_pos: [S], k_val: [B, H, S, D]
         assert input_pos.shape[0] == k_val.shape[2]
 
         k_out = self.k_cache
         v_out = self.v_cache
+        assert k_out is not None and v_out is not None
         k_out[:, :, input_pos] = k_val
         v_out[:, :, input_pos] = v_val
 
@@ -177,19 +193,27 @@ class KVCache(nn.Module):
 
 
 class Transformer(nn.Module):
+    max_batch_size = -1
+    max_seq_length = -1
+    freqs_cis: Tensor | None = None
+    mask_cache: Tensor | None = None
+    layers: "Iterable[TransformerBlock]"
+    causal_mask: Tensor | None = None
+    use_kv_cache: bool = False
+    uvit_skip_connection: bool = False
+    layers_emit_skip: Sequence[int] = []
+    layers_receive_skip: Sequence[int] = []
+
     def __init__(self, config: ModelArgs) -> None:
         super().__init__()
         self.config = config
 
-        self.layers = nn.ModuleList(TransformerBlock(config) for _ in range(config.n_layer))
+        self.layers = cast(
+            Iterable[TransformerBlock], nn.ModuleList(TransformerBlock(config) for _ in range(config.n_layer))
+        )
         self.norm = AdaptiveLayerNorm(config.dim, RMSNorm(config.dim, eps=config.norm_eps))
 
-        self.freqs_cis: Tensor | None = None
-        self.mask_cache: Tensor | None = None
-        self.max_batch_size = -1
-        self.max_seq_length = -1
-
-    def setup_caches(self, max_batch_size, max_seq_length, use_kv_cache=True) -> None:
+    def setup_caches(self, max_batch_size: int, max_seq_length: int, use_kv_cache: bool = True) -> None:
         if self.max_seq_length >= max_seq_length and self.max_batch_size >= max_batch_size:
             return
         head_dim = self.config.dim // self.config.n_head
@@ -230,6 +254,7 @@ class Transformer(nn.Module):
     ) -> Tensor:
         assert self.freqs_cis is not None, "Caches must be initialized first"
         if mask is None:  # in case of non-causal model
+            assert self.causal_mask is not None, "Caches must be initialized first"
             if not self.training and self.use_kv_cache:
                 mask = self.causal_mask[None, None, input_pos]
             else:
@@ -246,7 +271,7 @@ class Transformer(nn.Module):
         return self.norm(x, c)
 
     @classmethod
-    def from_name(cls, name: str):
+    def from_name(cls, name: str) -> "Transformer":
         return cls(ModelArgs.from_name(name))
 
 
@@ -276,7 +301,7 @@ class TransformerBlock(nn.Module):
     def forward(
         self,
         x: Tensor,
-        c: Tensor,
+        c: Tensor | None,
         input_pos: Tensor,
         freqs_cis: Tensor,
         mask: Tensor,
@@ -297,6 +322,8 @@ class TransformerBlock(nn.Module):
 
 
 class Attention(nn.Module):
+    kv_cache: KVCache | None
+
     def __init__(self, config: ModelArgs, is_cross_attention: bool = False) -> None:
         super().__init__()
         assert config.dim % config.n_head == 0
@@ -346,6 +373,7 @@ class Attention(nn.Module):
         q, k, v = (x.transpose(1, 2) for x in (q, k, v))
 
         if self.kv_cache is not None:
+            assert input_pos is not None, "input_pos must be provided when using kv_cache"
             k, v = self.kv_cache.update(input_pos, k, v)
 
         k = k.repeat_interleave(self.n_head // self.n_local_heads, dim=1)
@@ -374,7 +402,7 @@ class RMSNorm(nn.Module):
         self.eps = eps
         self.weight = nn.Parameter(torch.ones(dim))
 
-    def _norm(self, x):
+    def _norm(self, x: Tensor) -> Tensor:
         return x * torch.rsqrt(torch.mean(x * x, dim=-1, keepdim=True) + self.eps)
 
     def forward(self, x: Tensor) -> Tensor:

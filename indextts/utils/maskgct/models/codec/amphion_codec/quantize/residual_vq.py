@@ -22,12 +22,12 @@ class ResidualVQ(nn.Module):
     num_quantizers = 1
     codebook_size = 8192
     codebook_dim = 8
-    quantizer_dropout = 0.0
+    quantizer: FactorizedVectorQuantize
 
     def __init__(self) -> None:
         super().__init__()
 
-        self.quantizers = nn.ModuleList([FactorizedVectorQuantize() for _ in range(self.num_quantizers)])
+        self.quantizer = FactorizedVectorQuantize()
 
     def forward(
         self, z: torch.Tensor, n_quantizers: int | None = None
@@ -64,31 +64,20 @@ class ResidualVQ(nn.Module):
         if n_quantizers is None:
             n_quantizers = self.num_quantizers
 
-        if self.training:
-            n_quantizers: torch.Tensor = torch.ones((z.shape[0],)) * self.num_quantizers + 1
-            dropout = torch.randint(1, self.num_quantizers + 1, (z.shape[0],))
-            n_dropout = int(z.shape[0] * self.quantizer_dropout)
-            n_quantizers[:n_dropout] = dropout[:n_dropout]
-            n_quantizers = n_quantizers.to(z.device)
+        z_q_i, commit_loss_i, codebook_loss_i, indices_i, _z_e_i = self.quantizer(residual)
 
-        for i, quantizer in enumerate(self.quantizers):
-            if self.training is False and i >= n_quantizers:
-                break
+        # Create mask to apply quantizer dropout
+        mask = torch.full((z.shape[0],), fill_value=0, device=z.device) < n_quantizers
+        quantized_out += z_q_i * mask[:, None, None]
+        residual -= z_q_i
 
-            z_q_i, commit_loss_i, codebook_loss_i, indices_i, _z_e_i = quantizer(residual)
+        commit_loss_i = (commit_loss_i * mask).mean()
+        codebook_loss_i = (codebook_loss_i * mask).mean()
 
-            # Create mask to apply quantizer dropout
-            mask = torch.full((z.shape[0],), fill_value=i, device=z.device) < n_quantizers
-            quantized_out += z_q_i * mask[:, None, None]
-            residual -= z_q_i
-
-            commit_loss_i = (commit_loss_i * mask).mean()
-            codebook_loss_i = (codebook_loss_i * mask).mean()
-
-            all_commit_losses.append(commit_loss_i)
-            all_codebook_losses.append(codebook_loss_i)
-            all_indices.append(indices_i)
-            all_quantized.append(z_q_i)
+        all_commit_losses.append(commit_loss_i)
+        all_codebook_losses.append(codebook_loss_i)
+        all_indices.append(indices_i)
+        all_quantized.append(z_q_i)
 
         all_commit_losses, all_codebook_losses, all_indices, all_quantized = map(
             torch.stack,
@@ -107,10 +96,8 @@ class ResidualVQ(nn.Module):
         quantized_out = 0.0
         if n_quantizers is None:
             n_quantizers = self.num_quantizers
-        for idx, quantizer in enumerate(self.quantizers):
-            if idx >= n_quantizers:
-                break
-            quantized_out += quantizer.vq2emb(vq[idx])
+        if n_quantizers > 0:
+            quantized_out += self.quantizer.vq2emb(vq[0])
         return quantized_out
 
     def latent2dist(self, z: torch.Tensor, n_quantizers: int | None = None) -> tuple[torch.Tensor, torch.Tensor]:
@@ -123,10 +110,8 @@ class ResidualVQ(nn.Module):
         if n_quantizers is None:
             n_quantizers = self.num_quantizers
 
-        for i, quantizer in enumerate(self.quantizers):
-            if self.training is False and i >= n_quantizers:
-                break
-            dist_i, indices_i, z_q_i = quantizer.latent2dist(residual)
+        if n_quantizers > 0:
+            dist_i, indices_i, z_q_i = self.quantizer.latent2dist(residual)
             all_dists.append(dist_i)
             all_indices.append(indices_i)
 

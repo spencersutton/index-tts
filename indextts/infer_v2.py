@@ -8,6 +8,7 @@ import time
 import typing
 import warnings
 from collections.abc import Callable, Generator, Mapping
+from pathlib import Path
 from subprocess import CalledProcessError
 from typing import Any, cast
 
@@ -47,7 +48,7 @@ class IndexTTS2:
     device: str
     use_fp16: bool
     cfg: CheckpointsConfig
-    model_dir: str
+    model_dir: Path
     dtype: torch.dtype | None
     stop_mel_token: int
     qwen_emo: "QwenEmotion"
@@ -60,7 +61,7 @@ class IndexTTS2:
     s2mel: MyModel
     campplus_model: CAMPPlus
     bigvgan: "bigvgan.BigVGAN"
-    bpe_path: str
+    bpe_path: Path
     normalizer: TextNormalizer
     tokenizer: TextTokenizer
     emo_matrix: tuple[torch.Tensor, ...]
@@ -84,8 +85,8 @@ class IndexTTS2:
 
     def __init__(
         self,
-        cfg_path: str = "checkpoints/config.yaml",
-        model_dir: str = "checkpoints",
+        cfg_path: Path = Path("checkpoints/config.yaml"),
+        model_dir: Path = Path("checkpoints"),
         use_fp16: bool = False,
         device: str | None = None,
         use_cuda_kernel: bool | None = None,
@@ -135,11 +136,11 @@ class IndexTTS2:
             # Enable persistent cache to avoid recompilation between runs
             import torch._dynamo.config as dynamo_config
 
-            cache_dir = os.path.join(model_dir, ".torch_compile_cache")
-            os.makedirs(cache_dir, exist_ok=True)
+            cache_dir = model_dir / ".torch_compile_cache"
+            cache_dir.mkdir(exist_ok=True, parents=True)
 
             # Set environment variables for caching (must be set before any compilation)
-            os.environ.setdefault("TORCHINDUCTOR_CACHE_DIR", cache_dir)
+            os.environ.setdefault("TORCHINDUCTOR_CACHE_DIR", str(cache_dir))
             os.environ.setdefault("TORCHINDUCTOR_FX_GRAPH_CACHE", "1")  # Enable FX graph caching
 
             # Suppress verbose compilation logs (set to True for debugging)
@@ -174,10 +175,10 @@ class IndexTTS2:
         self.use_accel = use_accel
         self.use_torch_compile = use_torch_compile
 
-        self.qwen_emo = QwenEmotion(os.path.join(self.model_dir, self.cfg.qwen_emo_path))
+        self.qwen_emo = QwenEmotion(self.model_dir / self.cfg.qwen_emo_path)
 
         self.gpt = _UnifiedVoice(use_accel=self.use_accel)
-        self.gpt_path = os.path.join(self.model_dir, self.cfg.gpt_checkpoint)
+        self.gpt_path = self.model_dir / self.cfg.gpt_checkpoint
         load_checkpoint(self.gpt, self.gpt_path)
         self.gpt = self.gpt.to(self.device)
         if self.use_fp16:
@@ -212,7 +213,7 @@ class IndexTTS2:
 
         self.extract_features = SeamlessM4TFeatureExtractor.from_pretrained("facebook/w2v-bert-2.0")
         self.semantic_model, self.semantic_mean, self.semantic_std = build_semantic_model(
-            os.path.join(self.model_dir, self.cfg.w2v_stat)
+            self.model_dir / self.cfg.w2v_stat
         )
         self.semantic_model = self.semantic_model.to(self.device)
         self.semantic_model.eval()
@@ -226,7 +227,7 @@ class IndexTTS2:
         self.semantic_codec.eval()
         print(f">> semantic_codec weights restored from: {semantic_code_ckpt}")
 
-        s2mel_path = os.path.join(self.model_dir, self.cfg.s2mel_checkpoint)
+        s2mel_path = self.model_dir / self.cfg.s2mel_checkpoint
         s2mel = MyModel(self.cfg.s2mel, use_gpt_latent=True)
         s2mel = load_checkpoint2(
             s2mel,
@@ -257,18 +258,18 @@ class IndexTTS2:
         self.bigvgan.eval()
         print(">> bigvgan weights restored from:", bigvgan_name)
 
-        self.bpe_path = os.path.join(self.model_dir, self.cfg.dataset.bpe_model)
+        self.bpe_path = self.model_dir / self.cfg.dataset.bpe_model
         self.normalizer = TextNormalizer()
         self.normalizer.load()
         print(">> TextNormalizer loaded")
         self.tokenizer = TextTokenizer(self.bpe_path, self.normalizer)
         print(">> bpe model loaded from:", self.bpe_path)
 
-        emo_matrix: torch.Tensor = torch.load(os.path.join(model_dir, self.cfg.emo_matrix))
+        emo_matrix: torch.Tensor = torch.load(self.model_dir / self.cfg.emo_matrix)
         emo_matrix = emo_matrix.to(self.device)
         self.emo_num = list(self.cfg.emo_num)
 
-        spk_matrix: torch.Tensor = torch.load(os.path.join(self.model_dir, self.cfg.spk_matrix))
+        spk_matrix: torch.Tensor = torch.load(self.model_dir / self.cfg.spk_matrix)
         spk_matrix = spk_matrix.to(self.device)
 
         self.emo_matrix = torch.split(emo_matrix, self.emo_num)
@@ -420,7 +421,7 @@ class IndexTTS2:
         self,
         spk_audio_prompt: str,
         text: str,
-        output_path: str | None,
+        output_path: Path | None,
         emo_audio_prompt: str | None = None,
         emo_alpha: float = 1.0,
         emo_vector: list[float] | None = None,
@@ -483,7 +484,7 @@ class IndexTTS2:
         self,
         spk_audio_prompt: str,
         text: str,
-        output_path: str | None,
+        output_path: Path | None,
         emo_audio_prompt: str | None = None,
         emo_alpha: float = 1.0,
         emo_vector: list[float] | None = None,
@@ -844,11 +845,11 @@ class IndexTTS2:
         wav = wav.cpu()  # to cpu
         if output_path:
             # 直接保存音频到指定路径中
-            if os.path.isfile(output_path):
-                os.remove(output_path)
+            if Path(output_path).is_file():
+                Path(output_path).unlink()
                 print(">> remove old wav file:", output_path)
-            if os.path.dirname(output_path) != "":
-                os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            if output_path.parent != "":
+                output_path.parent.mkdir(exist_ok=True, parents=True)
 
             assert wav.dtype == torch.float32
             assert wav.ndim == 2
@@ -984,9 +985,12 @@ if __name__ == "__main__":
     prompt_wav = "examples/voice_01.wav"
     text = "欢迎大家来体验indextts2，并给予我们意见与反馈，谢谢大家。"
     tts = IndexTTS2(
-        cfg_path="checkpoints/config.yaml", model_dir="checkpoints", use_cuda_kernel=False, use_torch_compile=True
+        cfg_path=Path("checkpoints/config.yaml"),
+        model_dir=Path("checkpoints"),
+        use_cuda_kernel=False,
+        use_torch_compile=True,
     )
-    tts.infer(spk_audio_prompt=prompt_wav, text=text, output_path="gen.wav", verbose=True)
+    tts.infer(spk_audio_prompt=prompt_wav, text=text, output_path=Path("gen.wav"), verbose=True)
     char_size = 5
     import string
 
@@ -994,6 +998,6 @@ if __name__ == "__main__":
     for i in range(10):
         text = "".join(random.choices(string.ascii_letters, k=char_size))
         start_time = time.time()
-        tts.infer(spk_audio_prompt=prompt_wav, text=text, output_path="gen.wav", verbose=True)
+        tts.infer(spk_audio_prompt=prompt_wav, text=text, output_path=Path("gen.wav"), verbose=True)
         time_buckets.append(time.time() - start_time)
     print(time_buckets)

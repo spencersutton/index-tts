@@ -17,7 +17,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 # Profiling support (start/stop only around inference)
-_profiler = None
+profiler = None
 
 
 def main() -> None:
@@ -131,8 +131,8 @@ def main() -> None:
 
             # Increase buffer size to 10M entries to prevent wrapping on long runs
             # ignore_c_function=True reduces noise from builtins, but you can remove it if you need to see C calls
-            _profiler = VizTracer(tracer_entries=10000000, ignore_c_function=True)
-            _profiler.start()
+            profiler = VizTracer(tracer_entries=10000000, ignore_c_function=True)
+            profiler.start()
         except ImportError:
             print("PROFILING ERROR: 'viztracer' is not installed.")
             print("Please install it to use --profile: pip install viztracer")
@@ -143,10 +143,10 @@ def main() -> None:
         tts.infer(spk_audio_prompt=args.voice, text=args.text.strip(), output_path=output_path)
     finally:
         # Stop and save profiler immediately after inference so we only capture inference time
-        if args.profile and _profiler:
+        if args.profile and profiler:
             try:
-                _profiler.stop()
-                _profiler.save("indextts.json")
+                profiler.stop()
+                profiler.save("indextts.json")
                 print("\nProfiling data saved to indextts.json")
                 print("Visualization options:")
                 print("1. Perfetto (Recommended): Open https://ui.perfetto.dev/ and load indextts.json")
@@ -154,7 +154,7 @@ def main() -> None:
                 print("3. VizTracer: vizviewer indextts.json")
             finally:
                 # Clear profiler so module-level finally will not attempt to stop it again
-                _profiler = None
+                profiler = None
 
 
 if __name__ == "__main__":

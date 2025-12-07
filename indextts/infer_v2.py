@@ -12,6 +12,7 @@ from pathlib import Path
 from subprocess import CalledProcessError
 from typing import Any, cast
 
+import numpy as np
 import safetensors.torch
 import torch
 import torchaudio
@@ -438,7 +439,7 @@ class IndexTTS2:
         stream_return: bool = False,
         more_segment_before: int = 0,
         **generation_kwargs: Any,
-    ) -> Tensor | Generator[Tensor | None] | None:
+    ) -> Tensor | Generator[Tensor | Path | tuple[int, np.ndarray] | None] | Path | tuple[int, np.ndarray] | None:
         gen = self.infer_generator(
             spk_audio_prompt,
             text,
@@ -482,7 +483,7 @@ class IndexTTS2:
         stream_return: bool = False,
         quick_streaming_tokens: int = 0,
         **generation_kwargs: Any,
-    ) -> Generator[Tensor | None]:
+    ) -> Generator[Tensor | Path | tuple[int, np.ndarray] | None]:
         # Mark CUDA graph step begin at the start of each inference
         # This tells PyTorch it's safe to reuse CUDA graph buffers
         # Must be called in the worker thread before any compiled models run

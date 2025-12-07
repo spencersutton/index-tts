@@ -1,4 +1,5 @@
 import sys
+from pathlib import Path
 
 # Profiling support
 _profiler = None
@@ -16,7 +17,6 @@ if "--profile" in sys.argv:
         sys.exit(1)
 
 import warnings
-from pathlib import Path
 
 import rich.traceback
 
@@ -100,14 +100,14 @@ def main() -> None:
         parser.print_help()
         sys.exit(1)
 
-    output_path = args.output_path
-    if Path(output_path).exists():
+    output_path = Path(args.output_path)
+    if output_path.exists():
         if not args.force:
             print(f"ERROR: Output file {output_path} already exists. Use --force to overwrite.")
             parser.print_help()
             sys.exit(1)
         else:
-            Path(output_path).unlink()
+            output_path.unlink()
 
     try:
         import torch
@@ -128,8 +128,8 @@ def main() -> None:
             print("WARNING: Running on CPU may be slow.")
 
     tts = IndexTTS2(
-        cfg_path=args.config,
-        model_dir=args.model_dir,
+        cfg_path=Path(args.config),
+        model_dir=Path(args.model_dir),
         use_fp16=args.fp16,
         device=args.device,
         use_accel=args.use_accel,

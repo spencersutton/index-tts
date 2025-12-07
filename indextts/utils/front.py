@@ -1,9 +1,7 @@
-
-
-
 import re
 import traceback
 import warnings
+from pathlib import Path
 from typing import ClassVar, overload
 
 from sentencepiece import SentencePieceProcessor
@@ -209,19 +207,19 @@ class TextNormalizer:
 
 
 class TextTokenizer:
-    def __init__(self, vocab_file: str, normalizer: TextNormalizer | None = None) -> None:
+    def __init__(self, vocab_file: Path, normalizer: TextNormalizer | None = None) -> None:
         self.vocab_file = vocab_file
         self.normalizer = normalizer
 
         if self.vocab_file is None:
             raise ValueError("vocab_file is None")
-        if not Path(self.vocab_file).exists():
+        if not self.vocab_file.exists().exists():
             raise ValueError(f"vocab_file {self.vocab_file} does not exist")
         if self.normalizer:
             self.normalizer.load()
         # 加载词表
         self.sp_model = SentencePieceProcessor()
-        self.sp_model.Load(self.vocab_file)
+        self.sp_model.Load(str(self.vocab_file))
 
         self.pre_tokenizers = [
             # 预处理器

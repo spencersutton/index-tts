@@ -29,7 +29,7 @@ import torch.nn.functional as F
 from omegaconf import OmegaConf
 from transformers import AutoModelForCausalLM, AutoTokenizer, SeamlessM4TFeatureExtractor
 
-from indextts.gpt.model_v2 import GPT2InferenceModel, _UnifiedVoice
+from indextts.gpt.model_v2 import GPT2InferenceModel, UnifiedVoice
 from indextts.s2mel.modules.audio import mel_spectrogram
 from indextts.s2mel.modules.bigvgan import bigvgan
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
@@ -52,7 +52,7 @@ class IndexTTS2:
     dtype: torch.dtype | None
     stop_mel_token: int
     qwen_emo: "QwenEmotion"
-    gpt: "_UnifiedVoice"
+    gpt: "UnifiedVoice"
     extract_features: SeamlessM4TFeatureExtractor
     semantic_model: Any
     semantic_mean: Tensor
@@ -177,7 +177,7 @@ class IndexTTS2:
 
         self.qwen_emo = QwenEmotion(self.model_dir / self.cfg.qwen_emo_path)
 
-        self.gpt = _UnifiedVoice(use_accel=self.use_accel)
+        self.gpt = UnifiedVoice(use_accel=self.use_accel)
         self.gpt_path = self.model_dir / self.cfg.gpt_checkpoint
         load_checkpoint(self.gpt, self.gpt_path)
         self.gpt = self.gpt.to(self.device)
@@ -297,7 +297,7 @@ class IndexTTS2:
             # This is critical because inference_speech() bypasses self.gpt()
             self.gpt.inference_model = cast(GPT2InferenceModel, torch.compile(self.gpt.inference_model, dynamic=True))
 
-            self.gpt = cast(_UnifiedVoice, torch.compile(self.gpt))
+            self.gpt = cast(UnifiedVoice, torch.compile(self.gpt))
 
             # Compile BigVGAN only when not using custom CUDA kernels
             # Custom CUDA kernels conflict with torch.compile tracing

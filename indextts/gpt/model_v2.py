@@ -250,7 +250,7 @@ def _build_hf_gpt_transformer(
     )
 
 
-class _UnifiedVoice(nn.Module):
+class UnifiedVoice(nn.Module):
     gst_encoder: nn.Module
     inference_model: GPT2InferenceModel
     number_text_tokens = 12000

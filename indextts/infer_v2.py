@@ -27,7 +27,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 import torch.nn.functional as F
 from omegaconf import OmegaConf
-from transformers import AutoModelForCausalLM, AutoTokenizer, SeamlessM4TFeatureExtractor
+from transformers import AutoModelForCausalLM, AutoTokenizer, SeamlessM4TFeatureExtractor, Wav2Vec2BertModel
 
 from indextts.gpt.model_v2 import GPT2InferenceModel, UnifiedVoice
 from indextts.s2mel.modules.audio import mel_spectrogram
@@ -54,7 +54,7 @@ class IndexTTS2:
     qwen_emo: "QwenEmotion"
     gpt: "UnifiedVoice"
     extract_features: SeamlessM4TFeatureExtractor
-    semantic_model: Any
+    semantic_model: Wav2Vec2BertModel
     semantic_mean: Tensor
     semantic_std: Tensor
     semantic_codec: RepCodec
@@ -168,7 +168,7 @@ class IndexTTS2:
             print(f">> torch.compile cache directory: {cache_dir}")
 
         cfg = cast(Mapping[str, Any], OmegaConf.load(cfg_path))
-        self.cfg = cast(CheckpointsConfig, cfg)
+        self.cfg = cast(CheckpointsConfig, cfg)  # pyright: ignore[reportInvalidCast]
         self.model_dir = model_dir
         self.dtype = torch.float16 if self.use_fp16 else None
         self.stop_mel_token = self.cfg.gpt.stop_mel_token
@@ -215,7 +215,7 @@ class IndexTTS2:
         self.semantic_model, self.semantic_mean, self.semantic_std = build_semantic_model(
             self.model_dir / self.cfg.w2v_stat
         )
-        self.semantic_model = self.semantic_model.to(self.device)
+        self.semantic_model = self.semantic_model.to(self.device)  # pyright: ignore[reportArgumentType]
         self.semantic_model.eval()
         self.semantic_mean = self.semantic_mean.to(self.device)
         self.semantic_std = self.semantic_std.to(self.device)
@@ -307,7 +307,7 @@ class IndexTTS2:
                     torch.compile(self.bigvgan, dynamic=True),
                 )
 
-            self.semantic_model = torch.compile(self.semantic_model, dynamic=True)
+            self.semantic_model = cast(Wav2Vec2BertModel, torch.compile(self.semantic_model, dynamic=True))
 
             # Compile semantic codec (RepCodec) for quantization operations
             self.semantic_codec = cast(RepCodec, torch.compile(self.semantic_codec, dynamic=True))
@@ -377,7 +377,9 @@ class IndexTTS2:
         if self.gr_progress is not None:
             self.gr_progress(value, desc=desc)
 
-    def _load_and_cut_audio(self, audio_path, max_audio_length_seconds, verbose=False, sr=None):
+    def _load_and_cut_audio(
+        self, audio_path: str, max_audio_length_seconds: float, verbose: bool = False, sr: int | None = None
+    ) -> tuple[Tensor, int]:
         samples = AudioDecoder(audio_path).get_all_samples()
         orig_sr = samples.sample_rate
         audio = samples.data
@@ -398,7 +400,7 @@ class IndexTTS2:
             audio = audio[:, :max_audio_samples]
         return audio, sr
 
-    def normalize_emo_vec(self, emo_vector, apply_bias=True):
+    def normalize_emo_vec(self, emo_vector: list[float], apply_bias: bool = True) -> list[float]:
         # apply biased emotion factors for better user experience,
         # by de-emphasizing emotions that can cause strange results
         if apply_bias:
@@ -418,7 +420,7 @@ class IndexTTS2:
     # Original inference mode
     def infer(
         self,
-        spk_audio_prompt: str,
+        spk_audio_prompt: Path,
         text: str,
         output_path: Path | None,
         emo_audio_prompt: str | None = None,
@@ -480,10 +482,10 @@ class IndexTTS2:
     @torch.inference_mode()
     def infer_generator(
         self,
-        spk_audio_prompt: str,
+        spk_audio_prompt: Path,
         text: str,
         output_path: Path | None,
-        emo_audio_prompt: str | None = None,
+        emo_audio_prompt: Path | None = None,
         emo_alpha: float = 1.0,
         emo_vector: list[float] | None = None,
         use_emo_text: bool = False,

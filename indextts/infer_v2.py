@@ -836,21 +836,8 @@ class IndexTTS2:
         # save audio
         wav = wav.cpu()  # to cpu
         if output_path:
-            # 直接保存音频到指定路径中
-            # Directly save audio to the specified path
-            if output_path.is_file():
-                output_path.unlink()
-                print(">> remove old wav file:", output_path)
-            if not output_path.parent.exists():
-                output_path.parent.mkdir(exist_ok=True, parents=True)
+            save_to_file(output_path, wav, sampling_rate)
 
-            assert wav.dtype == torch.float32
-            assert wav.ndim == 2
-
-            encoder = AudioEncoder(wav, sample_rate=sampling_rate)
-            encoder.to_file(output_path)
-
-            print(">> wav file saved to:", output_path)
             if stream_return:
                 return None
             yield output_path
@@ -862,6 +849,23 @@ class IndexTTS2:
             wav_data = (wav * torch.iinfo(torch.int16).max).type(torch.int16)
             wav_data = wav_data.numpy().T
             yield (sampling_rate, wav_data)
+
+
+def save_to_file(output_path: Path, wav: Tensor, sampling_rate: int) -> None:
+    # 直接保存音频到指定路径中
+    # Directly save audio to the specified path
+    if output_path.is_file():
+        output_path.unlink()
+        print(">> remove old wav file:", output_path)
+    if not output_path.parent.exists():
+        output_path.parent.mkdir(exist_ok=True, parents=True)
+
+    assert wav.dtype == torch.float32
+    assert wav.ndim == 2
+
+    encoder = AudioEncoder(wav, sample_rate=sampling_rate)
+    encoder.to_file(output_path)
+    print(">> wav file saved to:", output_path)
 
 
 def _find_most_similar_cosine(query_vector: Tensor, matrix: Tensor):

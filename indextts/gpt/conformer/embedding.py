@@ -19,6 +19,7 @@ import math
 
 import torch
 import torch.nn.functional as F
+from torch import Tensor
 
 
 class PositionalEncoding(torch.nn.Module):
@@ -48,16 +49,16 @@ class PositionalEncoding(torch.nn.Module):
         pe = pe.unsqueeze(0)
         self.register_buffer("pe", pe)
 
-    def forward(self, x: torch.Tensor, offset: int | torch.Tensor = 0) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: Tensor, offset: int | Tensor = 0) -> tuple[Tensor, Tensor]:
         """Add positional encoding.
 
         Args:
-            x (torch.Tensor): Input. Its shape is (batch, time, ...)
+            x (Tensor): Input. Its shape is (batch, time, ...)
             offset (int, torch.tensor): position offset
 
         Returns:
-            torch.Tensor: Encoded tensor. Its shape is (batch, time, ...)
-            torch.Tensor: for compatibility to RelPositionalEncoding
+            Tensor: Encoded tensor. Its shape is (batch, time, ...)
+            Tensor: for compatibility to RelPositionalEncoding
         """
 
         self.pe = self.pe.to(x.device)
@@ -65,7 +66,7 @@ class PositionalEncoding(torch.nn.Module):
         x = x * self.xscale + pos_emb
         return self.dropout(x), self.dropout(pos_emb)
 
-    def position_encoding(self, offset: int | torch.Tensor, size: int, apply_dropout: bool = True) -> torch.Tensor:
+    def position_encoding(self, offset: int | Tensor, size: int, apply_dropout: bool = True) -> Tensor:
         """For getting encoding in a streaming fashion
 
         Attention!!!!!
@@ -79,11 +80,11 @@ class PositionalEncoding(torch.nn.Module):
             size (int): required size of position encoding
 
         Returns:
-            torch.Tensor: Corresponding encoding
+            Tensor: Corresponding encoding
         """
         # How to subscript a Union type:
         #   https://github.com/pytorch/pytorch/issues/69434
-        if isinstance(offset, int) or (isinstance(offset, torch.Tensor) and offset.dim() == 0):
+        if isinstance(offset, int) or (isinstance(offset, Tensor) and offset.dim() == 0):
             assert offset + size < self.max_len
             pos_emb = self.pe[:, offset : offset + size]
         else:  # for batched streaming decoding on GPU
@@ -112,13 +113,13 @@ class RelPositionalEncoding(PositionalEncoding):
         """Initialize class."""
         super().__init__(d_model, dropout_rate, max_len, reverse=True)
 
-    def forward(self, x: torch.Tensor, offset: int | torch.Tensor = 0) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: Tensor, offset: int | Tensor = 0) -> tuple[Tensor, Tensor]:
         """Compute positional encoding.
         Args:
-            x (torch.Tensor): Input tensor (batch, time, `*`).
+            x (Tensor): Input tensor (batch, time, `*`).
         Returns:
-            torch.Tensor: Encoded tensor (batch, time, `*`).
-            torch.Tensor: Positional embedding tensor (1, time, `*`).
+            Tensor: Encoded tensor (batch, time, `*`).
+            Tensor: Positional embedding tensor (1, time, `*`).
         """
         self.pe = self.pe.to(x.device)
         x *= self.xscale
@@ -134,10 +135,10 @@ class NoPositionalEncoding(torch.nn.Module):
         self.d_model = d_model
         self.dropout = torch.nn.Dropout(p=dropout_rate)
 
-    def forward(self, x: torch.Tensor, offset: int | torch.Tensor = 0) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: Tensor, offset: int | Tensor = 0) -> tuple[Tensor, Tensor]:
         """Just return zero vector for interface compatibility"""
         pos_emb = torch.zeros(1, x.size(1), self.d_model).to(x.device)
         return self.dropout(x), pos_emb
 
-    def position_encoding(self, offset: int | torch.Tensor, size: int) -> torch.Tensor:
+    def position_encoding(self, offset: int | Tensor, size: int) -> Tensor:
         return torch.zeros(1, size, self.d_model)

@@ -1,12 +1,13 @@
 import torch
 import torchaudio.functional as F
+from torch import Tensor
 
 
-def dynamic_range_compression_torch(x: torch.Tensor, C: float = 1, clip_val: float = 1e-5) -> torch.Tensor:
+def dynamic_range_compression_torch(x: Tensor, C: float = 1, clip_val: float = 1e-5) -> Tensor:
     return torch.log(torch.clamp(x, min=clip_val) * C)
 
 
-def spectral_normalize_torch(magnitudes: torch.Tensor) -> torch.Tensor:
+def spectral_normalize_torch(magnitudes: Tensor) -> Tensor:
     output = dynamic_range_compression_torch(magnitudes)
     return output
 
@@ -16,7 +17,7 @@ hann_window = {}
 
 
 def mel_spectrogram(
-    y: torch.Tensor,
+    y: Tensor,
     n_fft: int,
     num_mels: int,
     sampling_rate: int,
@@ -25,7 +26,7 @@ def mel_spectrogram(
     fmin: float,
     fmax: float | None,
     center: bool = False,
-) -> torch.Tensor:
+) -> Tensor:
     global mel_basis, hann_window  # pylint: disable=global-statement
     if f"{sampling_rate!s}_{fmax!s}_{y.device!s}" not in mel_basis:
         if fmax is None:

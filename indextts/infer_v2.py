@@ -241,12 +241,7 @@ class IndexTTS2:
         print(">> s2mel weights restored from:", s2mel_path)
 
         # load campplus_model
-        campplus_ckpt_path = hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
-        campplus_model = CAMPPlus(feat_dim=80, embedding_size=192)
-        campplus_model.load_state_dict(torch.load(campplus_ckpt_path, map_location="cpu"))
-        self.campplus_model = campplus_model.to(self.device)
-        self.campplus_model.eval()
-        print(">> campplus_model weights restored from:", campplus_ckpt_path)
+        self.init_campplus()
 
         bigvgan_name = self.cfg.vocoder.name
         self.bigvgan = bigvgan.BigVGAN.from_pretrained(bigvgan_name, use_cuda_kernel=self.use_cuda_kernel)
@@ -320,6 +315,14 @@ class IndexTTS2:
         # Progress reference display (optional)
         self.gr_progress = None
         self.model_version = self.cfg.version
+
+    def init_campplus(self):
+        campplus_ckpt_path = hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
+        campplus_model = CAMPPlus(feat_dim=80, embedding_size=192)
+        campplus_model.load_state_dict(torch.load(campplus_ckpt_path, map_location="cpu"))
+        self.campplus_model = campplus_model.to(self.device)
+        self.campplus_model.eval()
+        print(">> campplus_model weights restored from:", campplus_ckpt_path)
 
     @torch.inference_mode()
     def get_emb(self, input_features: Tensor, attention_mask: Tensor):
@@ -530,6 +533,7 @@ class IndexTTS2:
             emo_alpha = 1.0
 
         # 如果参考音频改变了，才需要重新生成, 提升速度
+        # Only regenerate if the reference audio has changed, to improve speed
         if self.cache_spk_cond is None or self.cache_spk_audio_prompt != spk_audio_prompt:
             if self.cache_spk_cond is not None:
                 self.cache_spk_cond = None

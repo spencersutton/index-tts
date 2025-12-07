@@ -7,7 +7,6 @@ from torch import Tensor, nn
 from torch.nn import functional as F
 
 from indextts.s2mel.modules.commons import sequence_mask
-from indextts.s2mel.modules.quantize import VectorQuantize
 
 f0_max = 1100.0
 f0_min = 50.0
@@ -84,8 +83,6 @@ class InterpolateRegulator(nn.Module):
 
         if not is_discrete:
             self.content_in_proj = nn.Linear(in_channels, channels)
-            if vector_quantize:
-                self.vq = VectorQuantize(channels, codebook_size, 8)
 
     def forward(
         self,

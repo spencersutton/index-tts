@@ -221,7 +221,7 @@ class IndexTTS2:
 
         semantic_codec = build_semantic_codec()
         semantic_code_ckpt = hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
-        safetensors.torch.load_model(semantic_codec, semantic_code_ckpt)
+        safetensors.torch.load_model(semantic_codec, semantic_code_ckpt, strict=False)
         self.semantic_codec = semantic_codec.to(self.device)
         self.semantic_codec.eval()
         print(f">> semantic_codec weights restored from: {semantic_code_ckpt}")

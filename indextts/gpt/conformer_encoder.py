@@ -13,7 +13,7 @@ from indextts.gpt.conformer.subsampling import (
 from indextts.utils.common import make_pad_mask
 
 
-class PositionwiseFeedForward(torch.nn.Module):
+class _PositionwiseFeedForward(torch.nn.Module):
     """Positionwise feed forward layer.
 
     FeedForward are appied on each position of the sequence.
@@ -47,7 +47,7 @@ class PositionwiseFeedForward(torch.nn.Module):
         return self.w_2(self.dropout(self.activation(self.w_1(xs))))
 
 
-class ConvolutionModule(nn.Module):
+class _ConvolutionModule(nn.Module):
     """ConvolutionModule in Conformer model."""
 
     def __init__(
@@ -159,7 +159,7 @@ class ConvolutionModule(nn.Module):
         return x.transpose(1, 2), new_cache
 
 
-class ConformerEncoderLayer(nn.Module):
+class _ConformerEncoderLayer(nn.Module):
     """Encoder layer module.
     Args:
         size (int): Input dimension.
@@ -304,7 +304,7 @@ class ConformerEncoderLayer(nn.Module):
         return x, mask, new_att_cache, new_cnn_cache
 
 
-class BaseEncoder(torch.nn.Module):
+class _BaseEncoder(torch.nn.Module):
     encoders: torch.nn.ModuleList
 
     def __init__(
@@ -429,7 +429,7 @@ class BaseEncoder(torch.nn.Module):
         return xs, masks
 
 
-class ConformerEncoder(BaseEncoder):
+class ConformerEncoder(_BaseEncoder):
     """Conformer encoder module."""
 
     def __init__(
@@ -492,7 +492,7 @@ class ConformerEncoder(BaseEncoder):
         )
 
         # feed-forward module definition
-        positionwise_layer = PositionwiseFeedForward
+        positionwise_layer = _PositionwiseFeedForward
         positionwise_layer_args = (
             output_size,
             linear_units,
@@ -500,7 +500,7 @@ class ConformerEncoder(BaseEncoder):
             activation,
         )
         # convolution module definition
-        convolution_layer = ConvolutionModule
+        convolution_layer = _ConvolutionModule
         convolution_layer_args = (
             output_size,
             cnn_module_kernel,
@@ -508,7 +508,7 @@ class ConformerEncoder(BaseEncoder):
         )
 
         self.encoders = torch.nn.ModuleList([
-            ConformerEncoderLayer(
+            _ConformerEncoderLayer(
                 output_size,
                 encoder_selfattn_layer(*encoder_selfattn_layer_args),
                 positionwise_layer(*positionwise_layer_args),

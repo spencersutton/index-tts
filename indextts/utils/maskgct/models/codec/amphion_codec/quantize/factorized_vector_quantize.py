@@ -9,10 +9,6 @@ from torch import Tensor, nn
 from torch.nn.utils import weight_norm
 
 
-def WNConv1d(*args, **kwargs):
-    return weight_norm(nn.Conv1d(*args, **kwargs))
-
-
 class FactorizedVectorQuantize(nn.Module):
     input_dim: int = 1024
     codebook_size: int = 8192
@@ -21,8 +17,8 @@ class FactorizedVectorQuantize(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-        self.in_project = WNConv1d(self.input_dim, self.codebook_dim, kernel_size=1)
-        self.out_project = WNConv1d(self.codebook_dim, self.input_dim, kernel_size=1)
+        self.in_project = weight_norm(nn.Conv1d(self.input_dim, self.codebook_dim, kernel_size=1))
+        self.out_project = weight_norm(nn.Conv1d(self.codebook_dim, self.input_dim, kernel_size=1))
 
         self.codebook = nn.Embedding(self.codebook_size, self.codebook_dim)
 

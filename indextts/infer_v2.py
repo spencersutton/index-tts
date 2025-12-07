@@ -715,12 +715,17 @@ class IndexTTS2:
                 torch.inference_mode(),
                 torch.autocast(text_tokens_batch.device.type, enabled=self.dtype is not None, dtype=self.dtype),
             ):
+                # Expand conditions to match batch size
+                batch_size = text_tokens_batch.size(0)
+                spk_cond_emb_batch = spk_cond_emb.expand(batch_size, -1, -1)
+                emo_cond_emb_batch = emo_cond_emb.expand(batch_size, -1, -1)
+
                 codes_batch, speech_conditioning_latent = self.gpt.inference_speech(
-                    spk_cond_emb,
+                    spk_cond_emb_batch,
                     text_tokens_batch,
-                    emo_cond_emb,
-                    cond_lengths=torch.tensor([spk_cond_emb.shape[-1]], device=self.device),
-                    emo_cond_lengths=torch.tensor([emo_cond_emb.shape[-1]], device=self.device),
+                    emo_cond_emb_batch,
+                    cond_lengths=torch.tensor([spk_cond_emb.shape[-1]] * batch_size, device=self.device),
+                    emo_cond_lengths=torch.tensor([emo_cond_emb.shape[-1]] * batch_size, device=self.device),
                     emo_vec=emovec,
                     do_sample=do_sample,
                     top_p=top_p,
@@ -772,7 +777,7 @@ class IndexTTS2:
                 ):
                     use_speed = torch.zeros(spk_cond_emb.size(0)).to(spk_cond_emb.device).long()
                     latent = self.gpt(
-                        speech_conditioning_latent,
+                        speech_conditioning_latent[seg_idx : seg_idx + 1],
                         text_tokens,
                         torch.tensor([text_tokens.shape[-1]], device=text_tokens.device),
                         code,

@@ -199,10 +199,7 @@ class CFM(BASECFM):
 
     def __init__(self, args: S2MelConfig) -> None:
         super().__init__(args)
-        if args.dit_type == "DiT":
-            self.estimator = DiT(args)
-        else:
-            raise NotImplementedError(f"Unknown diffusion type {args.dit_type}")
+        self.estimator = DiT(args)
 
     def enable_torch_compile(self) -> None:
         """Enable torch.compile optimization for the estimator model.

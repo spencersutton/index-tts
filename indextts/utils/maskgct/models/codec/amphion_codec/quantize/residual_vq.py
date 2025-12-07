@@ -20,10 +20,8 @@ class ResidualVQ(nn.Module):
     https://arxiv.org/abs/2107.03312
     """
 
-    input_dim = 1024
-    num_quantizers = 1
-    codebook_size = 8192
-    codebook_dim = 8
+    input_dim: int = 1024
+    num_quantizers: int = 1
     quantizer: FactorizedVectorQuantize
 
     def __init__(self) -> None:

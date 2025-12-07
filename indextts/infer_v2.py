@@ -74,9 +74,9 @@ class IndexTTS2:
     cache_spk_cond: Tensor | None = None
     cache_s2mel_style: Tensor | None = None
     cache_s2mel_prompt: Tensor | None = None
-    cache_spk_audio_prompt: str | None = None
+    cache_spk_audio_prompt: Path | None = None
     cache_emo_cond: Tensor | None = None
-    cache_emo_audio_prompt: str | None = None
+    cache_emo_audio_prompt: Path | None = None
     cache_mel: Tensor | None = None
 
     if typing.TYPE_CHECKING:
@@ -379,7 +379,7 @@ class IndexTTS2:
 
     def _load_and_cut_audio(
         self,
-        audio_path: str,
+        audio_path: Path,
         max_audio_length_seconds: float,
         verbose: bool = False,
         sr: int | None = None,
@@ -427,7 +427,7 @@ class IndexTTS2:
         spk_audio_prompt: Path,
         text: str,
         output_path: Path | None,
-        emo_audio_prompt: str | None = None,
+        emo_audio_prompt: Path | None = None,
         emo_alpha: float = 1.0,
         emo_vector: list[float] | None = None,
         use_emo_text: bool = False,
@@ -617,7 +617,7 @@ class IndexTTS2:
                 self.cache_emo_cond = None
                 torch.cuda.empty_cache()
             emo_audio, _ = self._load_and_cut_audio(emo_audio_prompt, 15, verbose, sr=16000)
-            emo_inputs = self.extract_features(emo_audio, sampling_rate=16000, return_tensors="pt")
+            emo_inputs = self.extract_features(emo_audio.numpy(), sampling_rate=16000, return_tensors="pt")
             emo_input_features = emo_inputs["input_features"]
             emo_attention_mask = emo_inputs["attention_mask"]
             emo_input_features = emo_input_features.to(self.device)
@@ -884,7 +884,7 @@ def find_most_similar_cosine(query_vector: Tensor, matrix: Tensor):
 
 
 class QwenEmotion:
-    def __init__(self, model_dir) -> None:
+    def __init__(self, model_dir: Path) -> None:
         self.model_dir = model_dir
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_dir)
         self.model = AutoModelForCausalLM.from_pretrained(
@@ -921,10 +921,10 @@ class QwenEmotion:
         self.max_score = 1.2
         self.min_score = 0.0
 
-    def clamp_score(self, value):
+    def clamp_score(self, value: float) -> float:
         return max(self.min_score, min(self.max_score, value))
 
-    def convert(self, content):
+    def convert(self, content: dict[str, float]) -> dict[str, float]:
         # generate emotion vector dictionary:
         # - insert values in desired order (Python 3.7+ `dict` remembers insertion order)
         # - convert Chinese keys to English
@@ -942,7 +942,7 @@ class QwenEmotion:
 
         return emotion_dict
 
-    def inference(self, text_input):
+    def inference(self, text_input: str) -> dict[str, float]:
         messages = [{"role": "system", "content": f"{self.prompt}"}, {"role": "user", "content": f"{text_input}"}]
         text = self.tokenizer.apply_chat_template(
             messages,
@@ -985,7 +985,7 @@ class QwenEmotion:
 
 
 if __name__ == "__main__":
-    prompt_wav = "examples/voice_01.wav"
+    prompt_wav = Path("examples/voice_01.wav")
     text = "欢迎大家来体验indextts2，并给予我们意见与反馈，谢谢大家。"
     tts = IndexTTS2(
         cfg_path=Path("checkpoints/config.yaml"),

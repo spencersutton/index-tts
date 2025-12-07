@@ -2,6 +2,7 @@ import ast
 import glob
 import json
 import os
+import pathlib
 from collections import OrderedDict
 
 I18N_JSON_DIR = os.path.join(os.path.dirname(os.path.relpath(__file__)), "locale")
@@ -34,7 +35,7 @@ def scan_i18n_strings():
     print(" Scanning Files and Extracting i18n Strings ".center(TITLE_LEN, "="))
     for filename in glob.iglob("**/*.py", recursive=True):
         try:
-            with open(filename, encoding="utf-8") as f:
+            with pathlib.Path(filename).open(encoding="utf-8") as f:
                 code = f.read()
                 if "I18nAuto" in code:
                     tree = ast.parse(code)
@@ -55,7 +56,7 @@ def update_i18n_json(json_file, standard_keys) -> None:
     standard_keys = sorted(standard_keys)
     print(f" Process {json_file} ".center(TITLE_LEN, "="))
     # 读取 JSON 文件
-    with open(json_file, encoding="utf-8") as f:
+    with pathlib.Path(json_file).open(encoding="utf-8") as f:
         json_data = json.load(f, object_pairs_hook=OrderedDict)
     # 打印处理前的 JSON 条目数
     len_before = len(json_data)
@@ -121,7 +122,7 @@ def update_i18n_json(json_file, standard_keys) -> None:
     else:
         print("\033[32m[Passed] All Keys Translated\033[0m")
     # 将处理后的结果写入 JSON 文件
-    with open(json_file, "w", encoding="utf-8") as f:
+    with pathlib.Path(json_file).open("w", encoding="utf-8") as f:
         json.dump(json_data, f, ensure_ascii=False, indent=4, sort_keys=SORT_KEYS)
         f.write("\n")
     print(f" Updated {json_file} ".center(TITLE_LEN, "=") + "\n")

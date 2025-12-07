@@ -4,6 +4,7 @@
 import os
 import pathlib
 import subprocess
+from pathlib import Path
 
 from torch.utils import cpp_extension
 
@@ -73,9 +74,9 @@ def _get_cuda_bare_metal_version(cuda_dir):
     return raw_output, bare_metal_major, bare_metal_minor
 
 
-def _create_build_dir(buildpath):
+def _create_build_dir(buildpath: Path):
     try:
-        os.mkdir(buildpath)
+        buildpath.mkdir()
     except OSError:
-        if not os.path.isdir(buildpath):
+        if not buildpath.is_dir():
             print(f"Creation of the build directory {buildpath} failed")

@@ -611,6 +611,7 @@ class UnifiedVoice(nn.Module):
         Args:
             conds_latent: (b, 32, dim) audio conditioning embedding by `get_conditioning()`
             text_inputs: (b, L)
+
         Returns:
             input_ids: (b, s+1) the input ids for the GPT2InferenceModel.generate()
             inputs_embeds: (b, s+1, dim) the input embeddings for the GPT2InferenceModel.forward()

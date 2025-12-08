@@ -1,5 +1,6 @@
 import functools
 import importlib.util
+import time
 
 import torch
 import torch.nn.functional as F
@@ -679,6 +680,7 @@ class UnifiedVoice(nn.Module):
         typical_mass: float = 0.9,
         **hf_generate_kwargs,
     ):
+        t0 = time.perf_counter()
         """Args:
         speech_condition: (b, d, frames) or (d, frames)
         text_inputs: (b, L)
@@ -697,12 +699,17 @@ class UnifiedVoice(nn.Module):
         if emo_cond_lengths is None:
             emo_cond_lengths = torch.tensor([emo_speech_condition.shape[-1]], device=speech_condition.device)
 
+        t1 = time.perf_counter()
         speech_conditioning_latent = self.get_conditioning(speech_condition.transpose(1, 2), cond_lengths)
+        print(f"get_conditioning: {time.perf_counter() - t1:.4f}s")
+
         if emo_vec is None:
             print("compute emo vec")
+            t2 = time.perf_counter()
             emo_vec = self.get_emo_conditioning(emo_speech_condition.transpose(1, 2), emo_cond_lengths)
             emo_vec = self.emovec_layer(emo_vec)
             emo_vec = self.emo_layer(emo_vec)
+            print(f"get_emo_conditioning: {time.perf_counter() - t2:.4f}s")
         else:
             print("Use the specified emotion vector")
 
@@ -717,8 +724,10 @@ class UnifiedVoice(nn.Module):
             ),
             1,
         )
+        t3 = time.perf_counter()
         input_ids, inputs_embeds, attention_mask = self.prepare_gpt_inputs(conds_latent, text_inputs)
         self.inference_model.store_mel_emb(inputs_embeds)
+        print(f"prepare_gpt_inputs: {time.perf_counter() - t3:.4f}s")
         if input_tokens is None:
             inputs = input_ids
         else:
@@ -752,6 +761,7 @@ class UnifiedVoice(nn.Module):
             else trunc_index + max_generate_length
         )
 
+        t4 = time.perf_counter()
         # Use accel engine if available (single sequence only)
         if self.accel_engine is not None and num_return_sequences == 1:
             output = self.accel_engine.generate(
@@ -776,6 +786,9 @@ class UnifiedVoice(nn.Module):
                 num_return_sequences=num_return_sequences,
                 **hf_generate_kwargs,
             )
+        print(f"generation: {time.perf_counter() - t4:.4f}s")
+        print(f"total inference_speech: {time.perf_counter() - t0:.4f}s")
+
         if isinstance(output, Tensor):
             return output[:, trunc_index:], speech_conditioning_latent
         # GenerateOutput

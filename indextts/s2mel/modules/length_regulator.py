@@ -50,7 +50,11 @@ class InterpolateRegulator(nn.Module):
         x = self.content_in_proj(x)
         # x in (B, T, D)
         mask = sequence_mask(ylens).unsqueeze(-1)
-        x = F.interpolate(x.transpose(1, 2).contiguous(), size=int(ylens.max()), mode="nearest")
+        x = F.interpolate(
+            x.transpose(1, 2).contiguous(),
+            size=int(ylens.max()),
+            mode="nearest",
+        )
 
         model_output = cast(Tensor, self.model(x))
         out = model_output.transpose(1, 2).contiguous()

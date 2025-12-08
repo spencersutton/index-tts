@@ -16,6 +16,8 @@ from torch import Tensor, nn
 from torch.nn import functional as F
 from torch.nn.utils import spectral_norm, weight_norm
 
+from indextts.util import patch_call
+
 
 class ConvLayerNorm(nn.LayerNorm):
     """
@@ -186,3 +188,6 @@ class SConv1d(nn.Module):
                 mode=self.pad_mode,
             )
         return self.conv(x)
+
+    @patch_call(forward, Tensor)
+    def __call__(self) -> None: ...

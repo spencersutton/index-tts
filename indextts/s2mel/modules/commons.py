@@ -1,5 +1,6 @@
+from collections.abc import MutableMapping
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import torch
 from torch import Tensor, nn
@@ -28,6 +29,14 @@ def sequence_mask(length: Tensor, max_length: Tensor | None = None) -> Tensor:
 
 
 class MyModel(nn.Module):
+    from indextts.s2mel.modules.flow_matching import CFM
+    from indextts.s2mel.modules.length_regulator import InterpolateRegulator
+
+    gpt_layer: nn.Sequential | None
+    cfm: CFM
+    length_regulator: InterpolateRegulator
+    models: MutableMapping[str, nn.Module]
+
     def __init__(self, args: S2MelConfig, use_gpt_latent: bool = False) -> None:
         super().__init__()
         from indextts.s2mel.modules.flow_matching import CFM
@@ -40,22 +49,23 @@ class MyModel(nn.Module):
             codebook_size=args.length_regulator.content_codebook_size,
         )
 
-        if use_gpt_latent:
-            self.models = nn.ModuleDict({
-                "cfm": CFM(args),
-                "length_regulator": length_regulator,
-                "gpt_layer": torch.nn.Sequential(
-                    torch.nn.Linear(1280, 256),
-                    torch.nn.Linear(256, 128),
-                    torch.nn.Linear(128, 1024),
-                ),
-            })
+        self.cfm = CFM(args)
+        self.length_regulator = length_regulator
+        self.models = cast(
+            MutableMapping[str, nn.Module],
+            nn.ModuleDict({
+                "cfm": self.cfm,
+                "length_regulator": self.length_regulator,
+            }),
+        )
 
-        else:
-            self.models = nn.ModuleDict({
-                "cfm": CFM(args),
-                "length_regulator": length_regulator,
-            })
+        if use_gpt_latent:
+            self.gpt_layer = torch.nn.Sequential(
+                torch.nn.Linear(1280, 256),
+                torch.nn.Linear(256, 128),
+                torch.nn.Linear(128, 1024),
+            )
+            self.models["gpt_layer"] = self.gpt_layer
 
     def forward(
         self,
@@ -65,7 +75,7 @@ class MyModel(nn.Module):
         cond: Tensor,
         y: Tensor,
     ) -> Tensor:
-        x = self.models["cfm"](x, target_lengths, prompt_len, cond, y)
+        x = self.cfm(x, target_lengths, prompt_len, cond, y)
         return x
 
     def enable_torch_compile(self) -> None:
@@ -74,12 +84,7 @@ class MyModel(nn.Module):
         This method applies torch.compile to the model for significant
         performance improvements during inference.
         """
-        from indextts.s2mel.modules.flow_matching import CFM
-
-        if "cfm" in self.models:
-            cfm = self.models["cfm"]
-            assert isinstance(cfm, CFM)
-            cfm.enable_torch_compile()
+        self.cfm.enable_torch_compile()
 
 
 def load_checkpoint2(
@@ -89,36 +94,29 @@ def load_checkpoint2(
     is_distributed: bool = False,
     load_ema: bool = False,
 ) -> MyModel:
-    state: dict[str, Any] = torch.load(path, map_location="cpu")
-    params: dict[str, Any] = state["net"]
+    state = cast(dict[str, Any], torch.load(path, map_location="cpu"))
+    params = cast(dict[str, Any], state["net"])
     if load_ema and "ema" in state:
         print("Loading EMA")
         for key in model.models:
-            i = 0
-            for param_name in params[key]:
+            ema_params = state["ema"][key][0]
+            for i, param_name in enumerate(params[key]):
                 if "input_pos" in param_name:
                     continue
-                assert params[key][param_name].shape == state["ema"][key][0][i].shape
-                params[key][param_name] = state["ema"][key][0][i].clone()
-                i += 1
-    for key in model.models:
+                assert params[key][param_name].shape == ema_params[i].shape
+                params[key][param_name] = ema_params[i].clone()
+    for key, module in model.models.items():
         if key in params and key not in ignore_modules:
+            state_dict = params[key]
             if not is_distributed:
-                # strip prefix of DDP (module.), create a new OrderedDict that does not contain the prefix
-                for k in list(params[key].keys()):
-                    if k.startswith("module."):
-                        params[key][k[len("module.") :]] = params[key][k]
-                        del params[key][k]
-            model_state_dict = model.models[key].state_dict()
-            # 过滤出形状匹配的键值对
-            filtered_state_dict = {
-                k: v for k, v in params[key].items() if k in model_state_dict and v.shape == model_state_dict[k].shape
-            }
-            skipped_keys = set(params[key].keys()) - set(filtered_state_dict.keys())
-            if skipped_keys:
-                print(f"Warning: Skipped loading some keys due to shape mismatch: {skipped_keys}")
+                state_dict = {k.removeprefix("module."): v for k, v in state_dict.items()}
+            model_state = module.state_dict()
+            filtered = {k: v for k, v in state_dict.items() if k in model_state and v.shape == model_state[k].shape}
+            skipped = set(state_dict) - set(filtered)
+            if skipped:
+                print(f"Warning: Skipped loading keys due to shape mismatch: {skipped}")
             print(f"{key} loaded")
-            model.models[key].load_state_dict(filtered_state_dict, strict=False)
+            module.load_state_dict(filtered, strict=False)
     model.eval()
 
     return model

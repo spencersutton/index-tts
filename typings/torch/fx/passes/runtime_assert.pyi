@@ -1,0 +1,13 @@
+from typing import TYPE_CHECKING
+
+from torch.fx._compatibility import compatibility
+from torch.fx.experimental.symbolic_shapes import ShapeEnv
+from torch.fx.graph_module import GraphModule
+
+if TYPE_CHECKING: ...
+__all__ = ["insert_deferred_runtime_asserts"]
+log = ...
+graph_code_log = ...
+
+@compatibility(is_backward_compatible=True)
+def insert_deferred_runtime_asserts(gm: GraphModule, shape_env: ShapeEnv, name: str, export: bool = ...) -> None: ...

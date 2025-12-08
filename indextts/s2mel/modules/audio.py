@@ -8,8 +8,7 @@ def dynamic_range_compression_torch(x: Tensor, C: float = 1, clip_val: float = 1
 
 
 def spectral_normalize_torch(magnitudes: Tensor) -> Tensor:
-    output = dynamic_range_compression_torch(magnitudes)
-    return output
+    return dynamic_range_compression_torch(magnitudes)
 
 
 mel_basis = {}
@@ -73,6 +72,4 @@ def mel_spectrogram(
         mel_basis[str(sampling_rate) + "_" + str(fmax) + "_" + str(y.device)],
         spec,
     )
-    spec = spectral_normalize_torch(spec)
-
-    return spec
+    return spectral_normalize_torch(spec)

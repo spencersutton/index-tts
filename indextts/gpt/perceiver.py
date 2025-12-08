@@ -118,7 +118,7 @@ class _Attend(nn.Module):
         # pytorch 2.0 flash attn: q, k, v, mask, dropout, causal, softmax_scale
         assert config is not None
         with torch.backends.cuda.sdp_kernel(**config._asdict()):
-            out = F.scaled_dot_product_attention(
+            return F.scaled_dot_product_attention(
                 q,
                 k,
                 v,
@@ -126,8 +126,6 @@ class _Attend(nn.Module):
                 dropout_p=self.dropout if self.training else 0.0,
                 is_causal=self.causal,
             )
-
-        return out
 
     def forward(
         self,
@@ -175,9 +173,7 @@ class _Attend(nn.Module):
 
         # aggregate values
 
-        out = einsum(f"b h i j, {kv_einsum_eq} -> b h i d", attn, v)
-
-        return out
+        return einsum(f"b h i j, {kv_einsum_eq} -> b h i d", attn, v)
 
 
 def _Sequential(*mods):

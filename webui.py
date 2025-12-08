@@ -219,8 +219,7 @@ def gen_single(
 
 
 def update_prompt_audio():
-    update_button = gr.update(interactive=True)
-    return update_button
+    return gr.update(interactive=True)
 
 
 def create_warning_message(warning_text):

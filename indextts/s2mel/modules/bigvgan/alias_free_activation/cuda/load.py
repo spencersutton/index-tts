@@ -71,7 +71,7 @@ def _get_cuda_bare_metal_version(cuda_dir):
     return raw_output, bare_metal_major, bare_metal_minor
 
 
-def _create_build_dir(buildpath: Path):
+def _create_build_dir(buildpath: Path) -> None:
     try:
         buildpath.mkdir()
     except OSError:

@@ -312,7 +312,7 @@ class _BaseEncoder(torch.nn.Module):
             or dyanmic chunk size(use_dynamic_chunk = True)
         global_cmvn (Optional[torch.nn.Module]): Optional GlobalCMVN module
         use_dynamic_left_chunk (bool): whether use dynamic left chunk in
-            dynamic chunk training
+            dynamic chunk training.
 
         """
         super().__init__()
@@ -384,7 +384,7 @@ class ConformerEncoder(_BaseEncoder):
         use_cnn_module: bool = True,
         cnn_module_kernel: int = 15,
     ) -> None:
-        """Construct ConformerEncoder
+        """Construct ConformerEncoder.
 
         Args:
             input_size to use_dynamic_chunk, see in BaseEncoder

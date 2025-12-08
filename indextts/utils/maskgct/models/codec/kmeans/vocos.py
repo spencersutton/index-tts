@@ -63,7 +63,7 @@ class ConvNeXtBlock(nn.Module):
 
 
 class AdaLayerNorm(nn.Module):
-    """Adaptive Layer Normalization module with learnable embeddings per `num_embeddings` classes
+    """Adaptive Layer Normalization module with learnable embeddings per `num_embeddings` classes.
 
     Args:
         num_embeddings (int): Number of embeddings.
@@ -100,11 +100,12 @@ class Backbone(nn.Module):
                     and H denotes the model dimension.
 
         """
-        raise NotImplementedError("Subclasses must implement the forward method.")
+        msg = "Subclasses must implement the forward method."
+        raise NotImplementedError(msg)
 
 
 class VocosBackbone(Backbone):
-    """Vocos backbone module built with ConvNeXt blocks. Supports additional conditioning with Adaptive Layer Normalization
+    """Vocos backbone module built with ConvNeXt blocks. Supports additional conditioning with Adaptive Layer Normalization.
 
     Args:
         input_channels (int): Number of input features channels.

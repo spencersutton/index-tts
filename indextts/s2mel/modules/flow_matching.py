@@ -34,7 +34,7 @@ class BASECFM(torch.nn.Module, ABC):
         temperature: float = 1.0,
         inference_cfg_rate: float = 0.5,
     ) -> Tensor:
-        """Forward diffusion
+        """Forward diffusion.
 
         Args:
             mu (Tensor): semantic info of reference audio and altered audio
@@ -139,7 +139,7 @@ class BASECFM(torch.nn.Module, ABC):
         mu: Tensor,
         style: Tensor,
     ) -> tuple[Tensor, Tensor]:
-        """Computes diffusion loss
+        """Computes diffusion loss.
 
         Args:
             mu (Tensor): semantic info of reference audio and altered audio

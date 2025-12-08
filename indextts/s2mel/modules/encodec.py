@@ -71,7 +71,8 @@ def get_norm_module(
         return ConvLayerNorm(module.out_channels, **norm_kwargs)
     if norm == "time_group_norm":
         if causal:
-            raise ValueError("GroupNorm doesn't support causal evaluation.")
+            msg = "GroupNorm doesn't support causal evaluation."
+            raise ValueError(msg)
         assert isinstance(module, nn.modules.conv._ConvNd)  # pyright: ignore[reportPrivateUsage]
         return nn.GroupNorm(1, module.out_channels, **norm_kwargs)
     return nn.Identity()
@@ -146,16 +147,19 @@ class SConv1d(nn.Module):
         bias: bool = True,
         causal: bool = False,
         norm: str = "none",
-        norm_kwargs: dict[str, tp.Any] = {},
+        norm_kwargs: dict[str, tp.Any] | None = None,
         pad_mode: str = "reflect",
         **kwargs: object,
     ) -> None:
+        if norm_kwargs is None:
+            norm_kwargs = {}
         super().__init__()
         # warn user on unusual setup between dilation and stride
         if stride > 1 and dilation > 1:
             warnings.warn(
                 "SConv1d has been initialized with stride > 1 and dilation > 1"
-                f" (kernel_size={kernel_size} stride={stride}, dilation={dilation})."
+                f" (kernel_size={kernel_size} stride={stride}, dilation={dilation}).",
+                stacklevel=2,
             )
         self.conv = NormConv1d(
             in_channels,

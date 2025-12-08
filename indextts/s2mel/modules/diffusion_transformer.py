@@ -86,6 +86,7 @@ class FinalLayer(nn.Module):
 
 HIDDEN_DIM: Final = 512
 NUM_HEADS: Final = 8
+CONTENT_DIM: Final = 512
 
 
 class DiT(torch.nn.Module):
@@ -107,20 +108,13 @@ class DiT(torch.nn.Module):
         self.in_channels = args.DiT.in_channels
         self.out_channels = args.DiT.in_channels
 
-        self.x_embedder = weight_norm(nn.Linear(args.DiT.in_channels, HIDDEN_DIM, bias=True))
-
-        self.content_type = args.DiT.content_type  # 'discrete' or 'continuous'
-        self.content_codebook_size = args.DiT.content_codebook_size  # for discrete content
-        self.content_dim = args.DiT.content_dim  # for continuous content
-        self.cond_embedder = nn.Embedding(args.DiT.content_codebook_size, HIDDEN_DIM)  # discrete content
-        self.cond_projection = nn.Linear(args.DiT.content_dim, HIDDEN_DIM, bias=True)  # continuous content
+        self.cond_projection = nn.Linear(CONTENT_DIM, HIDDEN_DIM, bias=True)  # continuous content
 
         self.t_embedder = TimestepEmbedder(HIDDEN_DIM)
 
         input_pos = torch.arange(16384)
         self.register_buffer("input_pos", input_pos)
 
-        self.final_layer_type = args.DiT.final_layer_type  # mlp or wavenet
         self.t_embedder2 = TimestepEmbedder(HIDDEN_DIM)
         self.conv1 = nn.Linear(HIDDEN_DIM, HIDDEN_DIM)
         self.conv2 = nn.Conv1d(HIDDEN_DIM, args.DiT.in_channels, 1)
@@ -138,10 +132,6 @@ class DiT(torch.nn.Module):
             HIDDEN_DIM, HIDDEN_DIM
         )  # residual connection from tranformer output to final output
 
-        self.class_dropout_prob = 0.1
-        self.content_mask_embedder = nn.Embedding(1, HIDDEN_DIM)
-
-        self.long_skip_connection = args.DiT.long_skip_connection
         self.skip_linear = nn.Linear(HIDDEN_DIM + args.DiT.in_channels, HIDDEN_DIM)
 
         self.cond_x_merge_linear = nn.Linear(
@@ -189,10 +179,6 @@ class DiT(torch.nn.Module):
         x_in = torch.cat([x, prompt_x, cond], dim=-1)  # 80+80+512=672 [2, 1863, 672]
 
         x_in = torch.cat([x_in, style[:, None, :].repeat(1, T, 1)], dim=-1)  # [2, 1863, 864]
-
-        assert not mask_content
-        if mask_content:  # False
-            x_in[..., self.in_channels :] *= 0  # 80维后全置为0
 
         x_in = self.cond_x_merge_linear(x_in)  # (N, T, D) [2, 1863, 512]
 

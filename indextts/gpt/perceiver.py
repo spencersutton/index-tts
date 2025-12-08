@@ -22,7 +22,7 @@ def _once(fn):
     def inner(x):
         nonlocal called
         if called:
-            return
+            return None
         called = True
         return fn(x)
 

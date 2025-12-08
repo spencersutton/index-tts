@@ -33,7 +33,7 @@ class BASECFM(torch.nn.Module, ABC):
         n_timesteps: int,
         temperature: float = 1.0,
         inference_cfg_rate: float = 0.5,
-    ):
+    ) -> Tensor:
         """Forward diffusion
 
         Args:
@@ -68,7 +68,7 @@ class BASECFM(torch.nn.Module, ABC):
         _f0: None,
         t_span: Tensor,
         inference_cfg_rate: float = 0.5,
-    ):
+    ) -> Tensor:
         """
         Fixed euler solver for ODEs.
         Args:
@@ -136,7 +136,7 @@ class BASECFM(torch.nn.Module, ABC):
         prompt_lens: Tensor,
         mu: Tensor,
         style: Tensor,
-    ):
+    ) -> tuple[Tensor, Tensor]:
         """Computes diffusion loss
 
         Args:
@@ -198,8 +198,8 @@ class CFM(BASECFM):
         """
         assert hasattr(torch.distributed, "is_initialized")
         if torch.distributed.is_initialized():
-            assert hasattr(torch._inductor, "config")
-            torch._inductor.config.reorder_for_compute_comm_overlap = True
+            assert hasattr(torch._inductor, "config")  # pyright: ignore[reportPrivateUsage]
+            torch._inductor.config.reorder_for_compute_comm_overlap = True  # pyright: ignore[reportPrivateUsage, reportAttributeAccessIssue]
         self.estimator = cast(
             DiT,
             torch.compile(

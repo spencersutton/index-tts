@@ -46,7 +46,12 @@ class _EfficientAttentionConfig(NamedTuple):
 class _Attend(nn.Module):
     mask: Tensor
 
-    def __init__(self, dropout=0.0, causal=False, use_flash=False) -> None:
+    def __init__(
+        self,
+        dropout: float = 0.0,
+        causal: bool = False,
+        use_flash: bool = False,
+    ) -> None:
         super().__init__()
         self.dropout = dropout
         self.attn_dropout = nn.Dropout(dropout)
@@ -76,7 +81,7 @@ class _Attend(nn.Module):
             _print_once("Non-A100 GPU detected, using math or mem efficient attention if input tensor is on cuda")
             self.cuda_config = self.config(False, True, True)
 
-    def get_mask(self, n, device):
+    def get_mask(self, n: int, device: torch.device) -> Tensor:
         if _exists(self.mask) and self.mask.shape[-1] >= n:
             return self.mask[:n, :n]
 
@@ -84,7 +89,13 @@ class _Attend(nn.Module):
         self.register_buffer("mask", mask, persistent=False)
         return mask
 
-    def flash_attn(self, q, k, v, mask=None):
+    def flash_attn(
+        self,
+        q: Tensor,
+        k: Tensor,
+        v: Tensor,
+        mask: Tensor | None = None,
+    ) -> Tensor:
         _batch, heads, q_len, _dim = q.shape
         _k_len, is_cuda = k.shape[-2], q.is_cuda
 
@@ -120,7 +131,13 @@ class _Attend(nn.Module):
                 is_causal=self.causal,
             )
 
-    def forward(self, q, k, v, mask=None):
+    def forward(
+        self,
+        q: Tensor,
+        k: Tensor,
+        v: Tensor,
+        mask: Tensor | None = None,
+    ) -> Tensor:
         """
         einstein notation
         b - batch

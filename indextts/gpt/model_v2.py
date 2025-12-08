@@ -25,41 +25,22 @@ from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.perceiver import PerceiverResampler
 
 
-def _null_position_embeddings(range, dim):
+def _null_position_embeddings(range: Tensor, dim: int):
     return torch.zeros((range.shape[0], range.shape[1], dim), device=range.device)
 
 
-class _ResBlock(nn.Module):
-    """
-    Basic residual convolutional block that uses GroupNorm.
-    """
-
-    def __init__(self, chan) -> None:
-        super().__init__()
-        self.net = nn.Sequential(
-            nn.Conv1d(chan, chan, kernel_size=3, padding=1),
-            nn.GroupNorm(chan // 8, chan),
-            nn.ReLU(),
-            nn.Conv1d(chan, chan, kernel_size=3, padding=1),
-            nn.GroupNorm(chan // 8, chan),
-        )
-
-    def forward(self, x):
-        return F.relu(self.net(x) + x)
-
-
 class LearnedPositionEmbeddings(nn.Module):
-    def __init__(self, seq_len, model_dim, init=0.02) -> None:
+    def __init__(self, seq_len: int, model_dim: int, init: float = 0.02) -> None:
         super().__init__()
         self.emb = nn.Embedding(seq_len, model_dim)
         # Initializing this way is standard for GPT-2
         self.emb.weight.data.normal_(mean=0.0, std=init)
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         sl = x.shape[1]
         return self.emb(torch.arange(0, sl, device=x.device))
 
-    def get_fixed_embedding(self, ind, dev):
+    def get_fixed_embedding(self, ind: int, dev: torch.device) -> Tensor:
         return self.emb(torch.tensor([ind], device=dev)).unsqueeze(0)
 
 
@@ -74,13 +55,13 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
 
     def __init__(
         self,
-        config,
+        config: GPT2Config,
         gpt: GPT2Model,
-        text_pos_emb,
-        embeddings,
-        norm,
-        linear,
-        kv_cache=False,
+        text_pos_emb: LearnedPositionEmbeddings,
+        embeddings: nn.Module,
+        norm: nn.Module,
+        linear: nn.Module,
+        kv_cache: bool = False,
     ) -> None:
         super().__init__(config)
         # Note: the argument named `text_pos_emb` here actually represents the mel position embedding
@@ -168,20 +149,20 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
     def forward(
         self,
         input_ids: Tensor,
-        past_key_values=None,
-        attention_mask=None,
-        token_type_ids=None,
-        position_ids=None,
-        head_mask=None,
-        inputs_embeds=None,
-        encoder_hidden_states=None,
-        encoder_attention_mask=None,
-        labels=None,
-        use_cache=None,
-        output_attentions=None,
-        output_hidden_states=None,
-        return_dict=None,
-    ):
+        past_key_values: tuple | None = None,
+        attention_mask: Tensor | None = None,
+        token_type_ids: Tensor | None = None,
+        position_ids: Tensor | None = None,
+        head_mask: Tensor | None = None,
+        inputs_embeds: Tensor | None = None,
+        encoder_hidden_states: Tensor | None = None,
+        encoder_attention_mask: Tensor | None = None,
+        labels: Tensor | None = None,
+        use_cache: bool | None = None,
+        output_attentions: bool | None = None,
+        output_hidden_states: bool | None = None,
+        return_dict: bool | None = None,
+    ) -> CausalLMOutputWithCrossAttentions:
         assert self.cached_mel_emb is not None
         assert inputs_embeds is None  # Not supported by this inference model.
         assert labels is None  # Training not supported by this inference model.

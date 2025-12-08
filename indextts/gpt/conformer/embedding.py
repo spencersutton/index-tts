@@ -90,7 +90,7 @@ class PositionalEncoding(torch.nn.Module):
         """
         # How to subscript a Union type:
         #   https://github.com/pytorch/pytorch/issues/69434
-        if isinstance(offset, int) or (isinstance(offset, Tensor) and offset.dim() == 0):
+        if isinstance(offset, int) or offset.dim() == 0:
             assert offset + size < self.max_len
             pos_emb = self.pe[:, offset : offset + size]
         else:  # for batched streaming decoding on GPU
@@ -146,5 +146,5 @@ class NoPositionalEncoding(torch.nn.Module):
         pos_emb = torch.zeros(1, x.size(1), self.d_model).to(x.device)
         return self.dropout(x), pos_emb
 
-    def position_encoding(self, offset: int | Tensor, size: int) -> Tensor:
+    def position_encoding(self, _offset: int | Tensor, size: int) -> Tensor:
         return torch.zeros(1, size, self.d_model)

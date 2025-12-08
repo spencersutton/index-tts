@@ -16,7 +16,7 @@ from torch import Tensor, nn
 from torch.nn import functional as F
 
 
-def scaled_dot_product_attention(
+def _scaled_dot_product_attention(
     q: Tensor,
     k: Tensor,
     v: Tensor,
@@ -40,7 +40,7 @@ def scaled_dot_product_attention(
         return F.scaled_dot_product_attention(q, k, v, attn_mask=attn_mask, dropout_p=dropout_p)
 
 
-def find_multiple(n: int, k: int) -> int:
+def _find_multiple(n: int, k: int) -> int:
     if n % k == 0:
         return n
     return n + k - (n % k)
@@ -90,14 +90,14 @@ class ModelArgs:
         if self.intermediate_size is None:
             hidden_dim = 4 * self.dim
             n_hidden = int(2 * hidden_dim / 3)
-            self.intermediate_size = find_multiple(n_hidden, 256)
+            self.intermediate_size = _find_multiple(n_hidden, 256)
 
     @classmethod
     def from_name(cls, name: str) -> Self:
-        if name in transformer_configs:
-            return cls(**transformer_configs[name])
+        if name in _transformer_configs:
+            return cls(**_transformer_configs[name])  # pyright: ignore[reportArgumentType]
         # fuzzy search
-        config = [config for config in transformer_configs if config.lower() in str(name).lower()]
+        config = [config for config in _transformer_configs if config.lower() in str(name).lower()]
 
         # We may have two or more configs matched (e.g. "7B" and "Mistral-7B"). Find the best config match,
         # take longer name (as it have more symbols matched)
@@ -105,10 +105,10 @@ class ModelArgs:
             config.sort(key=len, reverse=True)
             assert len(config[0]) != len(config[1]), name  # make sure only one 'best' match
 
-        return cls(**transformer_configs[config[0]])
+        return cls(**_transformer_configs[config[0]])  # pyright: ignore[reportArgumentType]
 
 
-transformer_configs = {
+_transformer_configs = {
     "CodeLlama-7b-Python-hf": {
         "block_size": 16384,
         "vocab_size": 32000,
@@ -229,7 +229,7 @@ class Transformer(nn.Module):
         if self.max_seq_length >= max_seq_length and self.max_batch_size >= max_batch_size:
             return
         head_dim = self.config.dim // self.config.n_head
-        max_seq_length = find_multiple(max_seq_length, 8)
+        max_seq_length = _find_multiple(max_seq_length, 8)
         self.max_seq_length = max_seq_length
         self.max_batch_size = max_batch_size
         dtype = self.norm.project_layer.weight.dtype
@@ -245,7 +245,7 @@ class Transformer(nn.Module):
                     dtype,
                 ).to(device)
 
-        self.freqs_cis = precompute_freqs_cis(
+        self.freqs_cis = _precompute_freqs_cis(
             self.config.block_size,
             self.config.head_dim,
             self.config.rope_base,
@@ -405,8 +405,8 @@ class Attention(nn.Module):
         k = k.view(bsz, context_seqlen, self.n_local_heads, self.head_dim)
         v = v.view(bsz, context_seqlen, self.n_local_heads, self.head_dim)
 
-        q = apply_rotary_emb(q, freqs_cis)
-        k = apply_rotary_emb(k, context_freqs_cis if context_freqs_cis is not None else freqs_cis)
+        q = _apply_rotary_emb(q, freqs_cis)
+        k = _apply_rotary_emb(k, context_freqs_cis if context_freqs_cis is not None else freqs_cis)
 
         q, k, v = (x.transpose(1, 2) for x in (q, k, v))
 
@@ -416,7 +416,7 @@ class Attention(nn.Module):
 
         k = k.repeat_interleave(self.n_head // self.n_local_heads, dim=1)
         v = v.repeat_interleave(self.n_head // self.n_local_heads, dim=1)
-        y = scaled_dot_product_attention(q, k, v, attn_mask=mask, dropout_p=0.0)
+        y = _scaled_dot_product_attention(q, k, v, attn_mask=mask, dropout_p=0.0)
 
         y = y.transpose(1, 2).contiguous().view(bsz, seqlen, self.head_dim * self.n_head)
 
@@ -449,7 +449,7 @@ class RMSNorm(nn.Module):
         return output * self.weight
 
 
-def precompute_freqs_cis(
+def _precompute_freqs_cis(
     seq_len: int,
     n_elem: int,
     base: int = 10000,
@@ -463,7 +463,7 @@ def precompute_freqs_cis(
     return cache.to(dtype=dtype)
 
 
-def apply_rotary_emb(x: Tensor, freqs_cis: Tensor) -> Tensor:
+def _apply_rotary_emb(x: Tensor, freqs_cis: Tensor) -> Tensor:
     xshaped = x.float().reshape(*x.shape[:-1], -1, 2)
     freqs_cis = freqs_cis.view(1, xshaped.size(1), 1, xshaped.size(3), 2)
     x_out2 = torch.stack(

@@ -2,12 +2,12 @@ import re
 import traceback
 import warnings
 from pathlib import Path
-from typing import ClassVar, overload
+from typing import ClassVar
 
 from sentencepiece import SentencePieceProcessor
 from wetext import Normalizer
 
-from indextts.utils.common import de_tokenized_by_CJK_char, tokenize_by_CJK_char
+from indextts.utils.common import tokenize_by_CJK_char
 
 
 class TextNormalizer:
@@ -76,7 +76,7 @@ class TextNormalizer:
     # 匹配常见英语缩写 's，仅用于替换为 is，不匹配所有 's
     ENGLISH_CONTRACTION_PATTERN = r"(what|where|who|which|how|t?here|it|s?he|that|this)'s"
 
-    def use_chinese(self, s):
+    def use_chinese(self, s: str) -> bool:
         has_chinese = bool(re.search(r"[\u4e00-\u9fff]", s))
         has_alpha = bool(re.search(r"[a-zA-Z]", s))
         is_email = self.match_email(s)
@@ -222,15 +222,13 @@ class TextTokenizer:
         self.vocab_file = vocab_file
         self.normalizer = normalizer
 
-        if self.vocab_file is None:
-            raise ValueError("vocab_file is None")
-        if not self.vocab_file.exists():
-            raise ValueError(f"vocab_file {self.vocab_file} does not exist")
-        if self.normalizer:
-            self.normalizer.load()
+        if not vocab_file.exists():
+            raise ValueError(f"vocab_file {vocab_file} does not exist")
+        if normalizer:
+            normalizer.load()
         # 加载词表
         self.sp_model = SentencePieceProcessor()
-        self.sp_model.Load(str(self.vocab_file))
+        self.sp_model.Load(str(vocab_file))
 
         self.pre_tokenizers = [
             # 预处理器
@@ -238,24 +236,8 @@ class TextTokenizer:
         ]
 
     @property
-    def vocab_size(self):
-        return self.sp_model.GetPieceSize()
-
-    @property
-    def unk_token(self) -> str:
-        return "<unk>"
-
-    @property
     def pad_token(self) -> None:
         return None
-
-    @property
-    def bos_token(self) -> str:
-        return "<s>"
-
-    @property
-    def eos_token(self) -> str:
-        return "</s>"
 
     @property
     def pad_token_id(self) -> int:
@@ -270,30 +252,8 @@ class TextTokenizer:
         return 1
 
     @property
-    def unk_token_id(self):
+    def unk_token_id(self) -> int:
         return self.sp_model.unk_id()
-
-    @property
-    def special_tokens_map(self):
-        return {
-            "unk_token": self.unk_token,
-            "pad_token": self.pad_token,
-            "bos_token": self.bos_token,
-            "eos_token": self.eos_token,
-        }
-
-    def get_vocab(self):
-        vocab = {self.convert_ids_to_tokens(i): i for i in range(self.vocab_size)}
-        return vocab
-
-    @overload
-    def convert_ids_to_tokens(self, ids: int) -> str: ...
-
-    @overload
-    def convert_ids_to_tokens(self, ids: list[int]) -> list[str]: ...
-
-    def convert_ids_to_tokens(self, ids: list[int] | int):
-        return self.sp_model.IdToPiece(ids)
 
     def convert_tokens_to_ids(self, tokens: list[str] | str) -> list[int]:
         if isinstance(tokens, str):
@@ -303,7 +263,7 @@ class TextTokenizer:
     def tokenize(self, text: str) -> list[str]:
         return self.encode(text, out_type=str)
 
-    def encode(self, text: str, **kwargs):
+    def encode(self, text: str, **kwargs: int) -> list[int] | list[str]:
         if len(text) == 0:
             return []
         if len(text.strip()) == 1:
@@ -315,22 +275,6 @@ class TextTokenizer:
             for pre_tokenizer in self.pre_tokenizers:
                 text = pre_tokenizer(text)
         return self.sp_model.Encode(text, out_type=kwargs.pop("out_type", int), **kwargs)
-
-    def batch_encode(self, texts: list[str], **kwargs):
-        # 预处理
-        # Preprocessing
-        if self.normalizer:
-            texts = [self.normalizer.normalize(text) for text in texts]
-        if len(self.pre_tokenizers) > 0:
-            for pre_tokenizer in self.pre_tokenizers:
-                texts = [pre_tokenizer(text) for text in texts]
-        return self.sp_model.Encode(texts, out_type=kwargs.pop("out_type", int), **kwargs)
-
-    def decode(self, ids: list[int] | int, do_lower_case=False, **kwargs):
-        if isinstance(ids, int):
-            ids = [ids]
-        decoded = self.sp_model.Decode(ids, out_type=kwargs.pop("out_type", str), **kwargs)
-        return de_tokenized_by_CJK_char(decoded, do_lower_case=do_lower_case)
 
     @staticmethod
     def split_segments_by_token(

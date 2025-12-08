@@ -20,7 +20,7 @@ from .utils import get_padding, init_weights
 
 
 def load_hparams_from_json(path) -> dict[str, Any]:
-    data = Path(path).read_text()
+    data = Path(path).read_text(encoding="utf-8")
     return json.loads(data)
 
 
@@ -349,11 +349,9 @@ class BigVGAN(
         x = self.activation_post(x)
         x = self.conv_post(x)
         # Final tanh activation
-        x = (
+        return (
             torch.tanh(x) if self.use_tanh_at_final else torch.clamp(x, min=-1.0, max=1.0)
         )  # Bound the output to [-1, 1]
-
-        return x
 
     def remove_weight_norm(self):
         try:
@@ -375,7 +373,7 @@ class BigVGAN(
         torch.save({"generator": self.state_dict()}, model_path)
 
         config_path = save_directory / "config.json"
-        with Path(config_path).open("w") as config_file:
+        with Path(config_path).open("w", encoding="utf-8") as config_file:
             json.dump(self.h, config_file, indent=4)
 
     @classmethod

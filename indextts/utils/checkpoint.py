@@ -11,12 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import torch
 import yaml
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 
 def load_checkpoint(model: torch.nn.Module, model_pth: Path) -> dict[str, object]:

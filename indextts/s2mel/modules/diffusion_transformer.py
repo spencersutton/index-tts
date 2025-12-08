@@ -57,8 +57,7 @@ class TimestepEmbedder(nn.Module):
         # https://github.com/openai/glide-text2im/blob/main/glide_text2im/nn.py
 
         args = self.scale * t[:, None].float() * self.freqs[None]
-        embedding = torch.cat([torch.cos(args), torch.sin(args)], dim=-1)
-        return embedding
+        return torch.cat([torch.cos(args), torch.sin(args)], dim=-1)
 
     def forward(self, t):
         t_freq = self.timestep_embedding(t)
@@ -195,6 +194,5 @@ class DiT(torch.nn.Module):
             x_res
         )  # long residual connection
         x = self.final_layer(x, t1).transpose(1, 2)
-        x = self.conv2(x)
+        return self.conv2(x)
         # x [2,80,1863]
-        return x

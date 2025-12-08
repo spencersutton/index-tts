@@ -31,8 +31,7 @@ class ConvLayerNorm(nn.LayerNorm):
     def forward(self, input: Tensor) -> Tensor:
         input = einops.rearrange(input, "b ... t -> b t ...")
         input = super().forward(input)
-        input = einops.rearrange(input, "b t ... -> b ... t")
-        return input
+        return einops.rearrange(input, "b t ... -> b ... t")
 
 
 CONV_NORMALIZATIONS = frozenset([

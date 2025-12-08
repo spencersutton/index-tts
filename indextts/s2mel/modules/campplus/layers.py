@@ -27,8 +27,7 @@ def get_nonlinear(config_str: str, channels: int) -> nn.Sequential:
 def statistics_pooling(x: Tensor) -> Tensor:
     mean = x.mean(dim=-1)
     std = x.std(dim=-1, unbiased=True)
-    stats = torch.cat([mean, std], dim=-1)
-    return stats
+    return torch.cat([mean, std], dim=-1)
 
 
 class StatsPool(nn.Module):

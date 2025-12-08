@@ -2,8 +2,7 @@ from collections.abc import Callable, Collection, Mapping
 from typing import Any, overload
 
 import torch
-import torch.nn as nn
-from torch import optim
+from torch import nn, optim
 from torch.distributed._shard.sharded_tensor import ShardedTensor
 
 __all__: list[str] = ...

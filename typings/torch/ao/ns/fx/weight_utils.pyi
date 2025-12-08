@@ -1,7 +1,7 @@
 from collections.abc import Callable
 
 import torch
-import torch.nn as nn
+from torch import nn
 from torch.fx import GraphModule
 from torch.fx.graph import Node
 

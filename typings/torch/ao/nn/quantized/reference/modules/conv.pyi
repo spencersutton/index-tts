@@ -1,7 +1,7 @@
 from typing import Any, Literal
 
 import torch
-import torch.nn as nn
+from torch import nn
 from torch.nn.common_types import _size_1_t
 
 from .utils import ReferenceQuantizedModule

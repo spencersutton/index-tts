@@ -3,8 +3,7 @@
 from typing import Any
 
 import torch
-import torch.nn as nn
-from torch import Tensor
+from torch import Tensor, nn
 
 from ..cuda import load
 from ..torch.resample import DownSample1d, UpSample1d
@@ -13,8 +12,7 @@ anti_alias_activation_cuda = load.load()
 
 
 class FusedAntiAliasActivation(torch.autograd.Function):
-    """
-    Assumes filter size 12, replication padding on upsampling/downsampling, and logscale alpha/beta parameters as inputs.
+    """Assumes filter size 12, replication padding on upsampling/downsampling, and logscale alpha/beta parameters as inputs.
     The hyperparameters are hard-coded in the kernel to maximize speed.
     NOTE: The fused kenrel is incorrect for Activation1d with different hyperparameters.
     """
@@ -59,20 +57,19 @@ class Activation1d(nn.Module):
             x = self.act(x)
             x = self.downsample(x)
             return x
-        else:
-            beta = (
-                self.act.alpha.data if self.act.__class__.__name__ == "Snake" else self.act.beta.data
-            )  # Snake uses same params for alpha and beta
-            alpha = self.act.alpha.data
-            if not self.act.alpha_logscale:  # Exp baked into cuda kernel, cancel it out with a log
-                alpha = torch.log(alpha)
-                beta = torch.log(beta)
+        beta = (
+            self.act.alpha.data if self.act.__class__.__name__ == "Snake" else self.act.beta.data
+        )  # Snake uses same params for alpha and beta
+        alpha = self.act.alpha.data
+        if not self.act.alpha_logscale:  # Exp baked into cuda kernel, cancel it out with a log
+            alpha = torch.log(alpha)
+            beta = torch.log(beta)
 
-            x = FusedAntiAliasActivation.apply(
-                x,
-                self.upsample.filter,
-                self.downsample.lowpass.filter,
-                alpha,
-                beta,
-            )
-            return x
+        x = FusedAntiAliasActivation.apply(
+            x,
+            self.upsample.filter,
+            self.downsample.lowpass.filter,
+            alpha,
+            beta,
+        )
+        return x

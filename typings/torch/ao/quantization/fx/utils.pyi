@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import torch
-import torch.nn as nn
+from torch import nn
 from torch.ao.quantization import QConfigAny, QuantType
 from torch.ao.quantization.qconfig_mapping import QConfigMapping
 from torch.fx import GraphModule

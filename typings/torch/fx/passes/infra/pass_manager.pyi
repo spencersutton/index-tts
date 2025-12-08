@@ -1,6 +1,6 @@
 from collections.abc import Callable
 
-import torch.nn as nn
+from torch import nn
 from torch.fx._compatibility import compatibility
 from torch.fx.passes.infra.pass_base import PassResult
 

@@ -31,7 +31,7 @@ def _scaled_dot_product_attention(
             if attn_mask.dtype == torch.bool:
                 scores = scores.masked_fill(attn_mask.logical_not(), float("-inf"))
             else:
-                scores = scores + attn_mask
+                scores += attn_mask
         attn = F.softmax(scores, dim=-1)
         if dropout_p > 0.0:
             attn = F.dropout(attn, p=dropout_p)

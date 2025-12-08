@@ -5,8 +5,10 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
 from transformers import (
+    Cache,
     GenerationMixin,
     GPT2Config,
+    GPT2Model,
     GPT2PreTrainedModel,
     LogitsProcessorList,
 )
@@ -15,18 +17,14 @@ from transformers.modeling_outputs import (
     BaseModelOutputWithPastAndCrossAttentions,
     CausalLMOutputWithCrossAttentions,
 )
-from transformers.models.gpt2.modeling_gpt2 import GPT2Model
-from transformers.utils.model_parallel_utils import (
-    assert_device_map,
-    get_device_map,
-)
+from transformers.utils.model_parallel_utils import assert_device_map, get_device_map
 
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.perceiver import PerceiverResampler
 
 
-def _null_position_embeddings(range: Tensor, dim: int):
-    return torch.zeros((range.shape[0], range.shape[1], dim), device=range.device)
+def _null_position_embeddings(input_range: Tensor, dim: int) -> Tensor:
+    return torch.zeros((input_range.shape[0], input_range.shape[1], dim), device=input_range.device)
 
 
 class LearnedPositionEmbeddings(nn.Module):
@@ -77,7 +75,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         self.device_map = None
         self.cached_mel_emb = None
 
-    def parallelize(self, device_map=None) -> None:
+    def parallelize(self, device_map: dict[int, int] | None = None) -> None:
         self.device_map = (
             get_device_map(
                 len(self.transformer.h),
@@ -100,32 +98,32 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         if torch.backends.mps.is_available():
             torch.mps.empty_cache()
 
-    def get_output_embeddings(self):
+    def get_output_embeddings(self) -> nn.Module:
         return self.lm_head
 
-    def set_output_embeddings(self, new_embeddings) -> None:
+    def set_output_embeddings(self, new_embeddings: nn.Module) -> None:
         self.lm_head = new_embeddings
 
-    def store_mel_emb(self, mel_emb) -> None:
+    def store_mel_emb(self, mel_emb: torch.Tensor) -> None:
         self.cached_mel_emb = mel_emb
 
     def prepare_inputs_for_generation(
         self,
-        input_ids,
-        past_key_values=None,
-        attention_mask=None,
-        inputs_embeds=None,
-        cache_position=None,
-        **kwargs,
-    ):
-        token_type_ids = kwargs.get("token_type_ids")  # usually None
+        input_ids: torch.LongTensor,
+        past_key_values: Cache | None = None,
+        attention_mask: torch.LongTensor | None = None,
+        inputs_embeds: torch.FloatTensor | None = None,
+        cache_position: torch.LongTensor | None = None,  # noqa: ARG002
+        **kwargs: Tensor,
+    ) -> dict:
+        inputs_embeds = kwargs.get("inputs_embeds")  # usually None
         if not self.kv_cache:
             past_key_values = None
         # only last token for inputs_ids if past is defined in kwargs
         if past_key_values:
             input_ids = input_ids[:, -1].unsqueeze(-1)
-            if token_type_ids is not None:
-                token_type_ids = token_type_ids[:, -1].unsqueeze(-1)
+            if inputs_embeds is not None:
+                inputs_embeds = inputs_embeds[:, -1].unsqueeze(-1)
 
         position_ids = kwargs.get("position_ids")
 
@@ -143,7 +141,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
             "use_cache": kwargs.get("use_cache"),
             "position_ids": position_ids,
             "attention_mask": attention_mask,
-            "token_type_ids": token_type_ids,
+            "token_type_ids": inputs_embeds,
         }
 
     def forward(
@@ -222,10 +220,13 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
 
 
 def _build_hf_gpt_transformer(
-    layers, model_dim, heads, max_mel_seq_len, max_text_seq_len
+    layers: int,
+    model_dim: int,
+    heads: int,
+    max_mel_seq_len: int,
+    max_text_seq_len: int,
 ) -> tuple[GPT2Model, LearnedPositionEmbeddings, LearnedPositionEmbeddings, None, None]:
     """GPT-2 implemented by the HuggingFace library."""
-    from transformers import GPT2Config, GPT2Model
 
     gpt_config = GPT2Config(
         vocab_size=256,  # Unused.

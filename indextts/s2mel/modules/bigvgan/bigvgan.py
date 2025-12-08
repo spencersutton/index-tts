@@ -6,7 +6,7 @@
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
 import torch
 import torch.nn as nn
@@ -204,6 +204,20 @@ class AMPBlock2(torch.nn.Module):
             remove_weight_norm(l)
 
 
+class BigVGANParams(TypedDict):
+    num_mels: int
+    upsample_initial_channel: int
+    upsample_rates: list[int]
+    upsample_kernel_sizes: list[int]
+    resblock_kernel_sizes: list[int]
+    resblock_dilation_sizes: list[tuple[int, ...]]
+    resblock: str
+    activation: str
+    snake_logscale: bool
+    use_bias_at_final: bool
+    use_tanh_at_final: bool
+
+
 class BigVGAN(
     torch.nn.Module,
     PyTorchModelHubMixin,
@@ -230,13 +244,13 @@ class BigVGAN(
     num_kernels: int
     num_upsamples: int
 
-    def __init__(self, h: dict[str, Any], use_cuda_kernel: bool = False) -> None:
+    def __init__(self, h: BigVGANParams, use_cuda_kernel: bool = False) -> None:
         super().__init__()
         self.h = h
-        self.h["use_cuda_kernel"] = use_cuda_kernel
+        ch = 0
 
         # Select which Activation1d, lazy-load cuda version to ensure backward compatibility
-        if self.h.get("use_cuda_kernel", False):
+        if use_cuda_kernel:
             from .alias_free_activation.cuda.activation1d import (
                 Activation1d as CudaActivation1d,
             )
@@ -262,6 +276,7 @@ class BigVGAN(
         # Transposed conv-based upsamplers. does not apply anti-aliasing
         self.ups = nn.ModuleList()
         for i, (u, k) in enumerate(zip(h["upsample_rates"], h["upsample_kernel_sizes"])):
+            assert isinstance(u, int) and isinstance(k, int)
             self.ups.append(
                 nn.ModuleList([
                     weight_norm(
@@ -369,15 +384,15 @@ class BigVGAN(
         cls,
         *,
         model_id: str,
-        revision: str,
-        cache_dir: str,
+        revision: str | None,
+        cache_dir: str | Path | None,
         force_download: bool,
         proxies: dict | None,
-        resume_download: bool,
+        resume_download: bool | None,
         local_files_only: bool,
         token: str | bool | None,
-        map_location: str = "cpu",  # Additional argument
-        strict: bool = False,  # Additional argument
+        map_location: str = "cpu",
+        strict: bool = False,
         use_cuda_kernel: bool = False,
         **model_kwargs,
     ) -> "BigVGAN":

@@ -118,9 +118,11 @@ class NormConv1d(nn.Module):
         *args,
         causal: bool = False,
         norm: str = "none",
-        norm_kwargs: dict[str, tp.Any] = {},
+        norm_kwargs: dict[str, tp.Any] | None = None,
         **kwargs: object,
     ) -> None:
+        if norm_kwargs is None:
+            norm_kwargs = {}
         super().__init__()
         self.conv = apply_parametrization_norm(nn.Conv1d(*args, **kwargs), norm)
         self.norm = get_norm_module(self.conv, causal, norm, **norm_kwargs)

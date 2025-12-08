@@ -121,6 +121,7 @@ class RelPositionalEncoding(PositionalEncoding):
 
     def forward(self, x: Tensor, offset: int | Tensor = 0) -> tuple[Tensor, Tensor]:
         """Compute positional encoding.
+
         Args:
             x (Tensor): Input tensor (batch, time, `*`).
 

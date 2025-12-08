@@ -608,6 +608,7 @@ class UnifiedVoice(nn.Module):
     ) -> tuple[Tensor, Tensor, Tensor]:
         """
         Prepare the inputs for the GPT2InferenceModel to generate.
+
         Args:
             conds_latent: (b, 32, dim) audio conditioning embedding by `get_conditioning()`
             text_inputs: (b, L)

@@ -94,7 +94,6 @@ extend-select = [
   "C4",
   "C90",
   "COM",
-  "D",
   "DOC",
   "DTZ",
   "E",
@@ -141,7 +140,21 @@ extend-select = [
   "W",
   "YTT",
 ]
-ignore = ["S101", "COM812", "RET507", "D403", "TC006", "T201", "B905"]
+ignore = [
+  "B905",
+  "COM812",
+  "DOC201",
+  "N812",
+  "PLR0913",
+  "RET507",
+  "S101",
+  "T201",
+  "TC006",
+  "PLR0917",
+  "FBT001",
+  "FBT002",
+  "FBT003",
+]
 per-file-ignores = { "typings/**/*.pyi" = ["ANN401"] }
 
 [dependency-groups]

@@ -298,7 +298,7 @@ class BigVGAN(
         self.resblocks = nn.ModuleList()
         for i in range(len(self.ups)):
             ch = h["upsample_initial_channel"] // (2 ** (i + 1))
-            for j, (k, d) in enumerate(zip(h["resblock_kernel_sizes"], h["resblock_dilation_sizes"])):
+            for k, d in zip(h["resblock_kernel_sizes"], h["resblock_dilation_sizes"]):
                 self.resblocks.append(resblock_class(h, ch, k, d, activation=h["activation"]))
 
         # Post-conv
@@ -393,9 +393,9 @@ class BigVGAN(
         local_files_only: bool,
         token: str | bool | None,
         map_location: str = "cpu",
-        strict: bool = False,
+        _strict: bool = False,
         use_cuda_kernel: bool = False,
-        **model_kwargs,
+        **_model_kwargs: object,
     ) -> "BigVGAN":
         """Load Pytorch pretrained weights and return the loaded model."""
         # Download and load hyperparameters (h) used by BigVGAN

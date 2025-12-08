@@ -2,8 +2,8 @@
 # Licensed under the Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
 
 # Copied from: https://github.com/modelscope/3D-Speaker/blob/main/speakerlab/models/campplus/DTDNN.py
-
 from collections import OrderedDict
+from collections.abc import Sequence
 
 import torch.nn.functional as F
 from torch import Tensor, nn
@@ -23,7 +23,7 @@ class FCM(nn.Module):
     def __init__(
         self,
         block: type[BasicResBlock] = BasicResBlock,
-        num_blocks: list[int] = [2, 2],
+        num_blocks: Sequence[int] = [2, 2],
         m_channels: int = 32,
         feat_dim: int = 80,
     ) -> None:

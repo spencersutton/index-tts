@@ -52,6 +52,7 @@ class BASECFM(torch.nn.Module, ABC):
         Returns:
             sample: generated mel-spectrogram
                 shape: (batch_size, 80, mel_timesteps)
+
         """
         B, T = mu.size(0), mu.size(1)
         z = torch.randn([B, self.in_channels, T], device=mu.device) * temperature
@@ -84,6 +85,7 @@ class BASECFM(torch.nn.Module, ABC):
                 shape: (batch_size, 80, 795)
             style (Tensor): reference global style
                 shape: (batch_size, 192)
+
         """
         assert self.estimator is not None
         t, _, _ = t_span[0], t_span[-1], t_span[1] - t_span[0]
@@ -155,6 +157,7 @@ class BASECFM(torch.nn.Module, ABC):
             loss: conditional flow matching loss
             y: conditional flow
                 shape: (batch_size, n_feats, mel_timesteps)
+
         """
         b, _, t = x1.shape
 

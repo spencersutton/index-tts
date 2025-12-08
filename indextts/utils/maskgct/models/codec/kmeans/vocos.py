@@ -17,6 +17,7 @@ class ConvNeXtBlock(nn.Module):
             Defaults to None.
         adanorm_num_embeddings (int, optional): Number of embeddings for AdaLayerNorm.
             None means non-conditional LayerNorm. Defaults to None.
+
     """
 
     def __init__(
@@ -68,6 +69,7 @@ class AdaLayerNorm(nn.Module):
     Args:
         num_embeddings (int): Number of embeddings.
         embedding_dim (int): Dimension of the embeddings.
+
     """
 
     def __init__(self, num_embeddings: int, embedding_dim: int, eps: float = 1e-6) -> None:
@@ -230,6 +232,7 @@ class Backbone(nn.Module):
         Returns:
             Tensor: Output of shape (B, L, H), where B is the batch size, L is the sequence length,
                     and H denotes the model dimension.
+
         """
         raise NotImplementedError("Subclasses must implement the forward method.")
 
@@ -246,6 +249,7 @@ class VocosBackbone(Backbone):
         layer_scale_init_value (float, optional): Initial value for layer scaling. Defaults to `1 / num_layers`.
         adanorm_num_embeddings (int, optional): Number of embeddings for AdaLayerNorm.
                                                 None means non-conditional model. Defaults to None.
+
     """
 
     def __init__(

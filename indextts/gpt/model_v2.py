@@ -616,6 +616,7 @@ class UnifiedVoice(nn.Module):
             input_ids: (b, s+1) the input ids for the GPT2InferenceModel.generate()
             inputs_embeds: (b, s+1, dim) the input embeddings for the GPT2InferenceModel.forward()
             attention_mask: (b, s+1) the attention mask for the GPT2InferenceModel.generate()
+
         """
         b, L = text_inputs.shape[:2]
         device = text_inputs.device
@@ -693,6 +694,7 @@ class UnifiedVoice(nn.Module):
             input_tokens: additional tokens for generation in shape (b, s) or (s,)
             max_generate_length: limit the number of generated tokens
             hf_generate_kwargs: kwargs for `GPT2InferenceModel.generate(**hf_generate_kwargs)`
+
         """
         if speech_condition.ndim == 2:
             speech_condition = speech_condition.unsqueeze(0)

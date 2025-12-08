@@ -1,0 +1,19 @@
+import torch.nn as nn
+
+__all__ = ["Linear"]
+
+class Linear(nn.Linear):
+    _FLOAT_MODULE = nn.Linear
+    def __init__(
+        self,
+        in_features,
+        out_features,
+        bias=...,
+        qconfig=...,
+        device=...,
+        dtype=...,
+    ) -> None: ...
+    def forward(self, input) -> Tensor: ...
+    @classmethod
+    def from_float(cls, mod, use_precomputed_fake_quant=...) -> Self: ...
+    def to_float(self) -> Linear: ...

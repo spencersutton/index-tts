@@ -25,7 +25,7 @@ class ConvLayerNorm(nn.LayerNorm):
     before running the normalization and moves them back to original position right after.
     """
 
-    def __init__(self, normalized_shape: int | list[int] | torch.Size, **kwargs: object) -> None:
+    def __init__(self, normalized_shape: int | list[int] | torch.Size, **kwargs) -> None:
         super().__init__(normalized_shape, **kwargs)
 
     def forward(self, input: Tensor) -> Tensor:
@@ -68,12 +68,12 @@ def get_norm_module(
     """
     assert norm in CONV_NORMALIZATIONS
     if norm == "layer_norm":
-        assert isinstance(module, nn.modules.conv._ConvNd)
+        assert isinstance(module, nn.modules.conv._ConvNd)  # pyright: ignore[reportPrivateUsage]
         return ConvLayerNorm(module.out_channels, **norm_kwargs)
     elif norm == "time_group_norm":
         if causal:
             raise ValueError("GroupNorm doesn't support causal evaluation.")
-        assert isinstance(module, nn.modules.conv._ConvNd)
+        assert isinstance(module, nn.modules.conv._ConvNd)  # pyright: ignore[reportPrivateUsage]
         return nn.GroupNorm(1, module.out_channels, **norm_kwargs)
     else:
         return nn.Identity()
@@ -121,14 +121,14 @@ class NormConv1d(nn.Module):
         causal: bool = False,
         norm: str = "none",
         norm_kwargs: dict[str, tp.Any] = {},
-        **kwargs,
+        **kwargs: object,
     ) -> None:
         super().__init__()
         self.conv = apply_parametrization_norm(nn.Conv1d(*args, **kwargs), norm)
         self.norm = get_norm_module(self.conv, causal, norm, **norm_kwargs)
         self.norm_type = norm
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         x = self.conv(x)
         x = self.norm(x)
         return x

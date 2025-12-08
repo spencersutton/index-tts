@@ -1,4 +1,3 @@
-from collections.abc import MutableMapping
 from pathlib import Path
 from typing import cast
 
@@ -35,7 +34,7 @@ class MyModel(nn.Module):
     gpt_layer: nn.Sequential | None
     cfm: CFM
     length_regulator: InterpolateRegulator
-    models: MutableMapping[str, nn.Module]
+    models: nn.ModuleDict
 
     def __init__(self, args: S2MelConfig, use_gpt_latent: bool = False) -> None:
         super().__init__()
@@ -51,13 +50,10 @@ class MyModel(nn.Module):
 
         self.cfm = CFM(args)
         self.length_regulator = length_regulator
-        self.models = cast(
-            MutableMapping[str, nn.Module],
-            nn.ModuleDict({
-                "cfm": self.cfm,
-                "length_regulator": self.length_regulator,
-            }),
-        )
+        self.models = nn.ModuleDict({
+            "cfm": self.cfm,
+            "length_regulator": self.length_regulator,
+        })
 
         if use_gpt_latent:
             self.gpt_layer = torch.nn.Sequential(

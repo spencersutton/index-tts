@@ -37,6 +37,7 @@ from indextts.s2mel.modules.bigvgan import bigvgan
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
 from indextts.s2mel.modules.commons import MyModel, load_checkpoint2
 from indextts.s2mel.modules.flow_matching import CFM
+from indextts.s2mel.modules.length_regulator import InterpolateRegulator
 from indextts.utils.checkpoint import load_checkpoint
 from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.maskgct.models.codec.kmeans.repcodec_model import RepCodec
@@ -593,9 +594,8 @@ class IndexTTS2:
             feat -= feat.mean(dim=0, keepdim=True)  # feat2另外一个滤波器能量组特征[922, 80]
             style = self.campplus_model(feat.unsqueeze(0))  # 参考音频的全局style2[1,192]
 
-            prompt_condition = self.s2mel.models["length_regulator"](
-                S_ref, ylens=ref_target_lengths, n_quantizers=3, f0=None
-            )[0]
+            length_regulator = cast(InterpolateRegulator, self.s2mel.models["length_regulator"])
+            prompt_condition = length_regulator(S_ref, ylens=ref_target_lengths, n_quantizers=3, f0=None)[0]
 
             # Clone tensors before caching to avoid CUDA graph tensor overwrite issues
             # When torch.compile uses CUDA graphs, output tensors get reused/overwritten

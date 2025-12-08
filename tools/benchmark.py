@@ -17,6 +17,7 @@ Examples:
 
     # Benchmark with torch.compile optimization
     python benchmark.py -v outputs/mizora.ogg --use_torch_compile
+
 """
 
 import argparse
@@ -251,6 +252,7 @@ def run_benchmark(
 
     Returns:
         BenchmarkResult with timing data
+
     """
     import tempfile
 

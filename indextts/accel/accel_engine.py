@@ -58,6 +58,7 @@ class AccelInferenceEngine:
             block_size: KV cache block size
             num_blocks: Total number of KV cache blocks
             use_cuda_graph: Whether to use CUDA Graph for decode optimization
+
         """
         self.model = model
         self.lm_head = lm_head
@@ -361,6 +362,7 @@ class AccelInferenceEngine:
 
         Returns:
             Generated token IDs [batch_size, total_len]
+
         """
         batch_size = input_ids.size(0)
         device = input_ids.device

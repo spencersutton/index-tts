@@ -28,10 +28,11 @@ class ConvLayerNorm(nn.LayerNorm):
     def __init__(self, normalized_shape: int | list[int] | torch.Size, **kwargs) -> None:
         super().__init__(normalized_shape, **kwargs)
 
-    def forward(self, x: Tensor) -> None:
-        x = einops.rearrange(x, "b ... t -> b t ...")
-        x = super().forward(x)
-        x = einops.rearrange(x, "b t ... -> b ... t")
+    def forward(self, input: Tensor) -> Tensor:
+        input = einops.rearrange(input, "b ... t -> b t ...")
+        input = super().forward(input)
+        input = einops.rearrange(input, "b t ... -> b ... t")
+        return input
 
 
 CONV_NORMALIZATIONS = frozenset([

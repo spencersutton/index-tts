@@ -226,7 +226,8 @@ class IndexTTS2:
         self.semantic_model, self.semantic_mean, self.semantic_std = build_semantic_model(
             self.model_dir / self.cfg.w2v_stat
         )
-        self.semantic_model = self.semantic_model.to(self.device)  # pyright: ignore[reportArgumentType]
+        self.semantic_model = self.semantic_model.to(self.device)  # ty:ignore[invalid-argument-type]
+        assert isinstance(self.semantic_model, Wav2Vec2BertModel)
         self.semantic_model.eval()
         self.semantic_mean = self.semantic_mean.to(self.device)
         self.semantic_std = self.semantic_std.to(self.device)
@@ -242,9 +243,8 @@ class IndexTTS2:
         s2mel = MyModel(self.cfg.s2mel, use_gpt_latent=True)
         s2mel = load_checkpoint2(s2mel, s2mel_path)
         self.s2mel = s2mel.to(self.device)
-        cfm = self.s2mel.models["cfm"]
-        assert isinstance(cfm, CFM)
-        cfm.estimator.setup_caches(max_batch_size=1, max_seq_length=8192)
+        assert self.s2mel.cfm.estimator is not None
+        self.s2mel.cfm.estimator.setup_caches(max_batch_size=1, max_seq_length=8192)
 
         self.s2mel.eval()
         print(">> s2mel weights restored from:", s2mel_path)

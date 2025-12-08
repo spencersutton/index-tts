@@ -27,8 +27,7 @@ def get_nonlinear(config_str: str, channels: int) -> nn.Sequential:
 def statistics_pooling(x: Tensor) -> Tensor:
     mean = x.mean(dim=-1)
     std = x.std(dim=-1, unbiased=True)
-    stats = torch.cat([mean, std], dim=-1)
-    return stats
+    return torch.cat([mean, std], dim=-1)
 
 
 class StatsPool(nn.Module):
@@ -65,8 +64,7 @@ class TDNNLayer(nn.Module):
 
     def forward(self, x):
         x = self.linear(x)
-        x = self.nonlinear(x)
-        return x
+        return self.nonlinear(x)
 
 
 class CAMLayer(nn.Module):
@@ -112,8 +110,7 @@ class CAMLayer(nn.Module):
             raise ValueError("Wrong segment pooling type.")
         shape = seg.shape
         seg = seg.unsqueeze(-1).expand(*shape, seg_len).reshape(*shape[:-1], -1)
-        seg = seg[..., : x.shape[-1]]
-        return seg
+        return seg[..., : x.shape[-1]]
 
 
 class CAMDenseTDNNLayer(nn.Module):
@@ -151,8 +148,7 @@ class CAMDenseTDNNLayer(nn.Module):
 
     def forward(self, x: Tensor) -> Tensor:
         x = cp.checkpoint(self.bn_function, x) if self.training and self.memory_efficient else self.bn_function(x)
-        x = self.cam_layer(self.nonlinear2(x))
-        return x
+        return self.cam_layer(self.nonlinear2(x))
 
 
 class CAMDenseTDNNBlock(nn.ModuleList):
@@ -204,8 +200,7 @@ class TransitLayer(nn.Module):
 
     def forward(self, x: Tensor) -> Tensor:
         x = self.nonlinear(x)
-        x = self.linear(x)
-        return x
+        return self.linear(x)
 
 
 class DenseLayer(nn.Module):
@@ -222,8 +217,7 @@ class DenseLayer(nn.Module):
 
     def forward(self, x: Tensor) -> Tensor:
         x = self.linear(x.unsqueeze(dim=-1)).squeeze(dim=-1) if len(x.shape) == 2 else self.linear(x)
-        x = self.nonlinear(x)
-        return x
+        return self.nonlinear(x)
 
 
 class BasicResBlock(nn.Module):
@@ -260,5 +254,4 @@ class BasicResBlock(nn.Module):
         out = F.relu(self.bn1(self.conv1(x)))
         out = self.bn2(self.conv2(out))
         out += self.shortcut(x)
-        out = F.relu(out)
-        return out
+        return F.relu(out)

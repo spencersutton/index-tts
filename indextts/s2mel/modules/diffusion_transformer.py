@@ -57,13 +57,11 @@ class TimestepEmbedder(nn.Module):
         # https://github.com/openai/glide-text2im/blob/main/glide_text2im/nn.py
 
         args = self.scale * t[:, None].float() * self.freqs[None]
-        embedding = torch.cat([torch.cos(args), torch.sin(args)], dim=-1)
-        return embedding
+        return torch.cat([torch.cos(args), torch.sin(args)], dim=-1)
 
     def forward(self, t):
         t_freq = self.timestep_embedding(t)
-        t_emb = self.mlp(t_freq)
-        return t_emb
+        return self.mlp(t_freq)
 
 
 class FinalLayer(nn.Module):
@@ -80,8 +78,7 @@ class FinalLayer(nn.Module):
     def forward(self, x: Tensor, c: Tensor) -> Tensor:
         shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
         x = modulate(self.norm_final(x), shift, scale)
-        x = self.linear(x)
-        return x
+        return self.linear(x)
 
 
 HIDDEN_DIM: Final = 512
@@ -197,6 +194,5 @@ class DiT(torch.nn.Module):
             x_res
         )  # long residual connection
         x = self.final_layer(x, t1).transpose(1, 2)
-        x = self.conv2(x)
+        return self.conv2(x)
         # x [2,80,1863]
-        return x

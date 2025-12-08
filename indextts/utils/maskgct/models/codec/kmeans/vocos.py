@@ -59,8 +59,7 @@ class ConvNeXtBlock(nn.Module):
             x = self.gamma * x
         x = x.transpose(1, 2)  # (B, T, C) -> (B, C, T)
 
-        x = residual + x
-        return x
+        return residual + x
 
 
 class AdaLayerNorm(nn.Module):
@@ -86,8 +85,7 @@ class AdaLayerNorm(nn.Module):
         scale = self.scale(cond_embedding_id)
         shift = self.shift(cond_embedding_id)
         x = nn.functional.layer_norm(x, (self.dim,), eps=self.eps)
-        x = x * scale + shift
-        return x
+        return x * scale + shift
 
 
 class Backbone(nn.Module):
@@ -168,5 +166,4 @@ class VocosBackbone(Backbone):
         x = x.transpose(1, 2)
         for conv_block in self.convnext:
             x = conv_block(x, cond_embedding_id=bandwidth_id)
-        x = self.final_layer_norm(x.transpose(1, 2))
-        return x
+        return self.final_layer_norm(x.transpose(1, 2))

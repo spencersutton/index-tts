@@ -47,14 +47,15 @@ CONV_NORMALIZATIONS = frozenset([
 
 def apply_parametrization_norm(module: nn.Module, norm: str = "none") -> nn.Module:
     assert norm in CONV_NORMALIZATIONS
-    if norm == "weight_norm":
-        return weight_norm(module)
-    elif norm == "spectral_norm":
-        return spectral_norm(module)
-    else:
-        # We already check was in CONV_NORMALIZATION, so any other choice
-        # doesn't need reparametrization.
-        return module
+    match norm:
+        case "weight_norm":
+            return weight_norm(module)
+        case "spectral_norm":
+            return spectral_norm(module)
+        case _:
+            # We already check was in CONV_NORMALIZATION, so any other choice
+            # doesn't need reparametrization.
+            return module
 
 
 def get_norm_module(
@@ -70,13 +71,12 @@ def get_norm_module(
     if norm == "layer_norm":
         assert isinstance(module, nn.modules.conv._ConvNd)  # pyright: ignore[reportPrivateUsage]
         return ConvLayerNorm(module.out_channels, **norm_kwargs)
-    elif norm == "time_group_norm":
+    if norm == "time_group_norm":
         if causal:
             raise ValueError("GroupNorm doesn't support causal evaluation.")
         assert isinstance(module, nn.modules.conv._ConvNd)  # pyright: ignore[reportPrivateUsage]
         return nn.GroupNorm(1, module.out_channels, **norm_kwargs)
-    else:
-        return nn.Identity()
+    return nn.Identity()
 
 
 def get_extra_padding_for_conv1d(x: Tensor, kernel_size: int, stride: int, padding_total: int = 0) -> int:
@@ -106,8 +106,7 @@ def pad1d(x: Tensor, paddings: tuple[int, int], mode: str = "zero", value: float
         padded = F.pad(x, paddings, mode, value)
         end = padded.shape[-1] - extra_pad
         return padded[..., :end]
-    else:
-        return F.pad(x, paddings, mode, value)
+    return F.pad(x, paddings, mode, value)
 
 
 class NormConv1d(nn.Module):

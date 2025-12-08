@@ -73,7 +73,7 @@ class PositionalEncoding(torch.nn.Module):
         return self.dropout(x), self.dropout(pos_emb)
 
     def position_encoding(self, offset: int | Tensor, size: int, apply_dropout: bool = True) -> Tensor:
-        """For getting encoding in a streaming fashion
+        """For getting encoding in a streaming fashion.
 
         Attention!!!!!
         we apply dropout only once at the whole utterance level in a none
@@ -138,7 +138,7 @@ class RelPositionalEncoding(PositionalEncoding):
 
 
 class NoPositionalEncoding(torch.nn.Module):
-    """No position encoding"""
+    """No position encoding."""
 
     def __init__(self, d_model: int, dropout_rate: float) -> None:
         super().__init__()
@@ -146,7 +146,7 @@ class NoPositionalEncoding(torch.nn.Module):
         self.dropout = torch.nn.Dropout(p=dropout_rate)
 
     def forward(self, x: Tensor, offset: int | Tensor = 0) -> tuple[Tensor, Tensor]:
-        """Just return zero vector for interface compatibility"""
+        """Just return zero vector for interface compatibility."""
         pos_emb = torch.zeros(1, x.size(1), self.d_model).to(x.device)
         return self.dropout(x), pos_emb
 

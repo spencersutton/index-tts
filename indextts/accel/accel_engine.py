@@ -6,7 +6,8 @@ from torch import Tensor, nn
 from indextts.gpt.model_v2 import GPT2InferenceModel, LearnedPositionEmbeddings
 
 if sys.platform == "darwin":
-    raise ImportError("accel_engine is not supported on MacOS.")
+    msg = "accel_engine is not supported on MacOS."
+    raise ImportError(msg)
 
 
 from .attention import (
@@ -56,7 +57,7 @@ class AccelInferenceEngine:
         head_dim: Dimension per head
         block_size: KV cache block size
         num_blocks: Total number of KV cache blocks
-        use_cuda_graph: Whether to use CUDA Graph for decode optimization
+        use_cuda_graph: Whether to use CUDA Graph for decode optimization.
 
         """
         self.model = model
@@ -142,7 +143,8 @@ class AccelInferenceEngine:
 
     def _prepare_decode(self, requests: list[Seq]):
         if not requests:
-            raise RuntimeError("FATAL: No requests provided to _prepare_decode!")
+            msg = "FATAL: No requests provided to _prepare_decode!"
+            raise RuntimeError(msg)
 
         input_ids = []
         positions = []
@@ -317,7 +319,8 @@ class AccelInferenceEngine:
         graph_vars = self.graph_vars
 
         if graph_vars is None:
-            raise RuntimeError("Graph variables not initialized")
+            msg = "Graph variables not initialized"
+            raise RuntimeError(msg)
 
         graph_vars["input_ids"][:bs] = input_ids
         graph_vars["positions"][:bs] = positions

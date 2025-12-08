@@ -26,7 +26,7 @@ def extract_i18n_strings(node):
 def scan_i18n_strings():
     """Scan the directory for all .py files (recursively)
     for each file, parse the code into an AST
-    for each AST, extract the i18n strings
+    for each AST, extract the i18n strings.
     """
     strings = []
     print(" Scanning Files and Extracting i18n Strings ".center(TITLE_LEN, "="))

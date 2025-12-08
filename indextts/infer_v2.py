@@ -331,7 +331,7 @@ class IndexTTS2:
         self.gr_progress = None
         self.model_version = self.cfg.version
 
-    def init_campplus(self):
+    def init_campplus(self) -> None:
         campplus_ckpt_path = hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
         campplus_model = CAMPPlus(feat_dim=80, embedding_size=192)
         campplus_model.load_state_dict(torch.load(campplus_ckpt_path, map_location="cpu"))
@@ -648,7 +648,11 @@ class IndexTTS2:
             )
             print(
                 "     Tokens which can't be encoded: ",
-                [t for t, id in zip(text_tokens_list, text_token_ids) if id == self.tokenizer.unk_token_id],
+                [
+                    t
+                    for t, id in zip(text_tokens_list, text_token_ids, strict=False)
+                    if id == self.tokenizer.unk_token_id
+                ],
             )
             print("     Consider updating the BPE model or modifying the text to avoid unknown tokens.")
 

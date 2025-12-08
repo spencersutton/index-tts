@@ -142,7 +142,7 @@ class _Attend(nn.Module):
         b - batch
         h - heads
         n, i, j - sequence length (base sequence length, source, target)
-        d - feature dimension
+        d - feature dimension.
         """
         n, device = q.shape[-2], q.device
 

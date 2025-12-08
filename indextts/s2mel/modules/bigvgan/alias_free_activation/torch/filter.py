@@ -73,9 +73,11 @@ class LowPassFilter1d(nn.Module):
         """kernel_size should be even number for stylegan3 setup, in this implementation, odd number is also possible."""
         super().__init__()
         if cutoff < -0.0:
-            raise ValueError("Minimum cutoff must be larger than zero.")
+            msg = "Minimum cutoff must be larger than zero."
+            raise ValueError(msg)
         if cutoff > 0.5:
-            raise ValueError("A cutoff above 0.5 does not make sense.")
+            msg = "A cutoff above 0.5 does not make sense."
+            raise ValueError(msg)
         self.kernel_size = kernel_size
         self.even = kernel_size % 2 == 0
         self.pad_left = kernel_size // 2 - int(self.even)

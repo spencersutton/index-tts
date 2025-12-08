@@ -379,7 +379,6 @@ class IndexTTS2:
         Insert silences between generated segments.
         wavs: List[torch.tensor]
         """
-
         if not wavs or interval_silence <= 0:
             return wavs
 

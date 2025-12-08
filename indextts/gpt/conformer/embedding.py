@@ -66,7 +66,6 @@ class PositionalEncoding(torch.nn.Module):
             Tensor: Encoded tensor. Its shape is (batch, time, ...)
             Tensor: for compatibility to RelPositionalEncoding
         """
-
         self.pe = self.pe.to(x.device)
         pos_emb = self.position_encoding(offset, x.size(1), False)
         x = x * self.xscale + pos_emb

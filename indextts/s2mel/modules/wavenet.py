@@ -17,7 +17,6 @@ class WN(torch.nn.Module):
         causal: bool = False,
     ) -> None:
         super().__init__()
-        conv1d_type = SConv1d
         assert kernel_size % 2 == 1
         self.hidden_channels = hidden_channels
         self.kernel_size = (kernel_size,)
@@ -26,12 +25,12 @@ class WN(torch.nn.Module):
         self.gin_channels = gin_channels
         self.p_dropout = p_dropout
 
-        self.in_layers = torch.nn.ModuleList()
-        self.res_skip_layers = torch.nn.ModuleList()
+        self.in_layers: list[SConv1d] = []
+        self.res_skip_layers: list[SConv1d] = []
         self.drop = nn.Dropout(p_dropout)
 
         if gin_channels != 0:
-            self.cond_layer = conv1d_type(
+            self.cond_layer = SConv1d(
                 gin_channels,
                 2 * hidden_channels * n_layers,
                 1,
@@ -41,7 +40,7 @@ class WN(torch.nn.Module):
         for i in range(n_layers):
             dilation = dilation_rate**i
             padding = int((kernel_size * dilation - dilation) / 2)
-            in_layer = conv1d_type(
+            in_layer = SConv1d(
                 hidden_channels,
                 2 * hidden_channels,
                 kernel_size,
@@ -55,7 +54,7 @@ class WN(torch.nn.Module):
             # last one is not necessary
             res_skip_channels = 2 * hidden_channels if i < n_layers - 1 else hidden_channels
 
-            res_skip_layer = conv1d_type(
+            res_skip_layer = SConv1d(
                 hidden_channels,
                 res_skip_channels,
                 1,

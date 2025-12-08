@@ -1,5 +1,5 @@
 import torch
-import torch.nn as nn
+from torch import nn
 
 def transform_wb_pesq_range(x: float) -> float: ...
 

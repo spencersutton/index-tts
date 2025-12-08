@@ -6,7 +6,7 @@ from enum import Enum
 from typing import IO, Any, TypeVar
 
 import torch
-import torch._weights_only_unpickler as _weights_only_unpickler
+from torch import _weights_only_unpickler
 from torch.types import FileLike, Storage
 
 __all__ = [

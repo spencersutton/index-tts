@@ -23,8 +23,7 @@ from typing import (
 
 import sympy
 import torch
-import torch.fx as fx
-from torch import Tensor
+from torch import Tensor, fx
 from torch._library.fake_class_registry import FakeScriptObject
 from torch._ops import OpOverload
 from torch.fx import GraphModule, Proxy, Tracer

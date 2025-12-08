@@ -1,7 +1,7 @@
 # pyright: reportAny=false, reportExplicitAny=false, reportUnknownParameterType=false, reportMissingParameterType=false
 
 import torch
-import torch.nn as nn
+from torch import nn
 
 from .env import AttrDict
 

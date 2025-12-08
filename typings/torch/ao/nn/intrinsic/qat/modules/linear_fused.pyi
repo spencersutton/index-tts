@@ -1,5 +1,5 @@
 import torch.ao.nn.intrinsic as nni
-import torch.nn as nn
+from torch import nn
 
 __all__ = ["LinearBn1d"]
 

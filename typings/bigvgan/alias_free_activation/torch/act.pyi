@@ -2,7 +2,7 @@
 
 from typing import Any
 
-import torch.nn as nn
+from torch import nn
 
 class Activation1d(nn.Module):
     def __init__(

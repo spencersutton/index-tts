@@ -5,9 +5,8 @@ import typing
 from typing import Any
 
 import torch
-import torch.nn as nn
 from numpy import NDArray, float64
-from torch import Tensor
+from torch import Tensor, nn
 
 class MultiScaleMelSpectrogramLoss(nn.Module):
     def __init__(

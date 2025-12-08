@@ -1,5 +1,5 @@
 import torch
-import torch.nn as nn
+from torch import nn
 
 class AttPool(nn.Module):
     def __init__(self, input_dim: int, att_dim: int) -> None: ...

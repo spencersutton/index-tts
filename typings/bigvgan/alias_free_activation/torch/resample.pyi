@@ -2,8 +2,7 @@
 
 from typing import Any
 
-import torch.nn as nn
-from torch import Tensor
+from torch import Tensor, nn
 
 class UpSample1d(nn.Module):
     def __init__(self, ratio=..., kernel_size=...) -> None: ...

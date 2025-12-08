@@ -2,7 +2,7 @@ from collections.abc import Callable
 from typing import Any
 
 import torch
-import torch.nn as nn
+from torch import nn
 from torch.ao.quantization.utils import Pattern
 
 from .backend_config import BackendConfig, DTypeConfig

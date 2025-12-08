@@ -194,7 +194,7 @@ class RelPositionMultiHeadedAttention(_MultiHeadedAttention):
         dropout_rate (float): Dropout rate.
     """
 
-    def __init__(self, n_head, n_feat, dropout_rate) -> None:
+    def __init__(self, n_head: int, n_feat: int, dropout_rate: float) -> None:
         """Construct an RelPositionMultiHeadedAttention object."""
         super().__init__(n_head, n_feat, dropout_rate)
         # linear transformation for positional encoding
@@ -206,7 +206,7 @@ class RelPositionMultiHeadedAttention(_MultiHeadedAttention):
         torch.nn.init.xavier_uniform_(self.pos_bias_u)
         torch.nn.init.xavier_uniform_(self.pos_bias_v)
 
-    def rel_shift(self, x, zero_triu: bool = False):
+    def rel_shift(self, x: Tensor, zero_triu: bool = False) -> Tensor:
         """Compute relative positinal encoding.
         Args:
             x (Tensor): Input tensor (batch, time, size).

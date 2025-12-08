@@ -11,6 +11,7 @@ from typing import Any, TypedDict
 import torch
 import torch.nn as nn
 from huggingface_hub import PyTorchModelHubMixin, hf_hub_download
+from torch import Tensor
 from torch.nn import Conv1d, ConvTranspose1d
 from torch.nn.utils import remove_weight_norm, weight_norm
 
@@ -107,7 +108,7 @@ class AMPBlock1(torch.nn.Module):
                 "activation incorrectly specified. check the config file and look for 'activation'."
             )
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         acts1, acts2 = self.activations[::2], self.activations[1::2]
         for c1, c2, a1, a2 in zip(self.convs1, self.convs2, acts1, acts2):
             xt = a1(x)

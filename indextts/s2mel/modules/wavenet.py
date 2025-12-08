@@ -25,8 +25,8 @@ class WN(torch.nn.Module):
         self.gin_channels = gin_channels
         self.p_dropout = p_dropout
 
-        self.in_layers: list[SConv1d] = []
-        self.res_skip_layers: list[SConv1d] = []
+        self.in_layers = torch.nn.ModuleList()
+        self.res_skip_layers = torch.nn.ModuleList()
         self.drop = nn.Dropout(p_dropout)
 
         if gin_channels != 0:

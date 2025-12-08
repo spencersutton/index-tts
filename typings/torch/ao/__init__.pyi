@@ -1,0 +1,12 @@
+from types import ModuleType
+from typing import TYPE_CHECKING as _TYPE_CHECKING
+
+from torch.ao import nn as nn
+from torch.ao import ns as ns
+from torch.ao import pruning as pruning
+from torch.ao import quantization as quantization
+
+if _TYPE_CHECKING: ...
+__all__ = ["nn", "ns", "pruning", "quantization"]
+
+def __getattr__(name: str) -> ModuleType: ...

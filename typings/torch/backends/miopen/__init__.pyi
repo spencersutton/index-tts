@@ -1,0 +1,14 @@
+from contextlib import contextmanager
+
+from torch.backends import PropModule
+
+def set_flags(_immediate=...) -> tuple[bool]: ...
+@contextmanager
+def flags(immediate=...) -> Generator[None, Any, None]: ...
+
+class MiopenModule(PropModule):
+    def __init__(self, m, name) -> None: ...
+
+    immediate = ...
+
+immediate: bool

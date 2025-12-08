@@ -359,9 +359,8 @@ class UnifiedVoice(nn.Module):
         if self.use_accel and torch.cuda.is_available():
             # Check if flash attention is available
             if importlib.util.find_spec("flash_attn") is None:
-                raise ImportError(
-                    "flash_attn is required for acceleration but not installed. Please install from https://github.com/Dao-AILab/flash-attention/releases/"
-                )
+                msg = "flash_attn is required for acceleration but not installed. Please install from https://github.com/Dao-AILab/flash-attention/releases/"
+                raise ImportError(msg)
 
             from indextts.accel import AccelInferenceEngine, GPT2AccelModel
 
@@ -524,7 +523,7 @@ class UnifiedVoice(nn.Module):
         use_speed: Tensor | None = None,
         do_spk_cond: bool = False,
     ) -> Tensor:
-        """Forward pass that uses both text and voice in either text conditioning mode or voice conditioning mode
+        """Forward pass that uses both text and voice in either text conditioning mode or voice conditioning mode.
 
         speech_conditioning_input: MEL float tensor, (b,1024)
         text_inputs: long tensor, (b,t)
@@ -685,7 +684,7 @@ class UnifiedVoice(nn.Module):
         cond_mel_lengths: lengths of the conditioning mel spectrograms in shape (b,) or (1,)
         input_tokens: additional tokens for generation in shape (b, s) or (s,)
         max_generate_length: limit the number of generated tokens
-        hf_generate_kwargs: kwargs for `GPT2InferenceModel.generate(**hf_generate_kwargs)`
+        hf_generate_kwargs: kwargs for `GPT2InferenceModel.generate(**hf_generate_kwargs)`.
 
         """
         if speech_condition.ndim == 2:
@@ -742,7 +741,8 @@ class UnifiedVoice(nn.Module):
         if typical_sampling:
             # employ custom typical sampling
             if not (typical_mass > 0.0 and typical_mass < 1.0):
-                raise ValueError(f"`typical_mass` has to be a float > 0 and < 1, but is {typical_mass}")
+                msg = f"`typical_mass` has to be a float > 0 and < 1, but is {typical_mass}"
+                raise ValueError(msg)
             min_tokens_to_keep = 2 if hf_generate_kwargs.get("num_beams", 1) > 1 else 1
             logits_processor.append(TypicalLogitsWarper(mass=typical_mass, min_tokens_to_keep=min_tokens_to_keep))
         max_length = (

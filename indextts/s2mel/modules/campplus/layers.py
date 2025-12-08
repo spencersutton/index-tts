@@ -20,7 +20,8 @@ def get_nonlinear(config_str: str, channels: int) -> nn.Sequential:
         elif name == "batchnorm_":
             nonlinear.add_module("batchnorm", nn.BatchNorm1d(channels, affine=False))
         else:
-            raise ValueError(f"Unexpected module ({name}).")
+            msg = f"Unexpected module ({name})."
+            raise ValueError(msg)
     return nonlinear
 
 
@@ -107,7 +108,8 @@ class CAMLayer(nn.Module):
         elif stype == "max":
             seg = F.max_pool1d(x, kernel_size=seg_len, stride=seg_len, ceil_mode=True)
         else:
-            raise ValueError("Wrong segment pooling type.")
+            msg = "Wrong segment pooling type."
+            raise ValueError(msg)
         shape = seg.shape
         seg = seg.unsqueeze(-1).expand(*shape, seg_len).reshape(*shape[:-1], -1)
         return seg[..., : x.shape[-1]]

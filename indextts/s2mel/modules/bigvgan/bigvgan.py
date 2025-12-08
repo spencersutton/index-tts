@@ -26,7 +26,7 @@ def load_hparams_from_json(path) -> dict[str, Any]:
 
 class AMPBlock1(torch.nn.Module):
     """AMPBlock applies Snake / SnakeBeta activation functions with trainable parameters that control periodicity, defined for each layer.
-    AMPBlock1 has additional self.convs2 that contains additional Conv1d layers with a fixed dilation=1 followed by each layer in self.convs1
+    AMPBlock1 has additional self.convs2 that contains additional Conv1d layers with a fixed dilation=1 followed by each layer in self.convs1.
 
     Args:
         h (dict[str, Any]): Hyperparameters.
@@ -103,8 +103,9 @@ class AMPBlock1(torch.nn.Module):
                 for _ in range(self.num_layers)
             ])
         else:
+            msg = "activation incorrectly specified. check the config file and look for 'activation'."
             raise NotImplementedError(
-                "activation incorrectly specified. check the config file and look for 'activation'.",
+                msg,
             )
 
     def forward(self, x: Tensor) -> Tensor:
@@ -118,7 +119,7 @@ class AMPBlock1(torch.nn.Module):
 
         return x
 
-    def remove_weight_norm(self):
+    def remove_weight_norm(self) -> None:
         for l in self.convs1:
             remove_weight_norm(l)
         for l in self.convs2:
@@ -127,7 +128,7 @@ class AMPBlock1(torch.nn.Module):
 
 class AMPBlock2(torch.nn.Module):
     """AMPBlock applies Snake / SnakeBeta activation functions with trainable parameters that control periodicity, defined for each layer.
-    Unlike AMPBlock1, AMPBlock2 does not contain extra Conv1d layers with fixed dilation=1
+    Unlike AMPBlock1, AMPBlock2 does not contain extra Conv1d layers with fixed dilation=1.
 
     Args:
         h (dict[str, Any]): Hyperparameters.
@@ -189,17 +190,18 @@ class AMPBlock2(torch.nn.Module):
                 for _ in range(self.num_layers)
             ])
         else:
+            msg = "activation incorrectly specified. check the config file and look for 'activation'."
             raise NotImplementedError(
-                "activation incorrectly specified. check the config file and look for 'activation'.",
+                msg,
             )
 
-    def forward(self, x):
-        for c, a in zip(self.convs, self.activations):
+    def forward(self, x) -> None:
+        for c, a in zip(self.convs, self.activations, strict=False):
             xt = a(x)
             xt = c(xt)
             x = xt + x
 
-    def remove_weight_norm(self):
+    def remove_weight_norm(self) -> None:
         for l in self.convs:
             remove_weight_norm(l)
 
@@ -271,7 +273,8 @@ class BigVGAN(
         elif h["resblock"] == "2":
             resblock_class = AMPBlock2
         else:
-            raise ValueError(f"Incorrect resblock class specified in hyperparameters. Got {h['resblock']}")
+            msg = f"Incorrect resblock class specified in hyperparameters. Got {h['resblock']}"
+            raise ValueError(msg)
 
         # Transposed conv-based upsamplers. does not apply anti-aliasing
         self.ups = nn.ModuleList()
@@ -309,8 +312,9 @@ class BigVGAN(
             )
         )
         if activation_post is None:
+            msg = "activation incorrectly specified. check the config file and look for 'activation'."
             raise NotImplementedError(
-                "activation incorrectly specified. check the config file and look for 'activation'.",
+                msg,
             )
 
         self.activation_post = Activation1d(activation=activation_post)
@@ -353,7 +357,7 @@ class BigVGAN(
             torch.tanh(x) if self.use_tanh_at_final else torch.clamp(x, min=-1.0, max=1.0)
         )  # Bound the output to [-1, 1]
 
-    def remove_weight_norm(self):
+    def remove_weight_norm(self) -> None:
         try:
             print("Removing weight norm...")
             for l in self.ups:

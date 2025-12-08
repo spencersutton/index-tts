@@ -218,7 +218,8 @@ class TextTokenizer:
         self.normalizer = normalizer
 
         if not vocab_file.exists():
-            raise ValueError(f"vocab_file {vocab_file} does not exist")
+            msg = f"vocab_file {vocab_file} does not exist"
+            raise ValueError(msg)
         if normalizer:
             normalizer.load()
         # 加载词表

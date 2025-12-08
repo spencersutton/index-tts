@@ -11,7 +11,7 @@ from indextts.infer_v2 import IndexTTS2
 
 
 class TestStreamingEndToEnd(unittest.TestCase):
-    def test_streaming_inference_real(self):
+    def test_streaming_inference_real(self) -> None:
         # Ensure we are in the root directory or paths are correct
         root_dir = Path(__file__).parent.parent
         checkpoint_dir = root_dir / "checkpoints"

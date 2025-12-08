@@ -1,4 +1,4 @@
-"""Typed dataclasses for checkpoints/config.yaml"""
+"""Typed dataclasses for checkpoints/config.yaml."""
 
 from __future__ import annotations
 

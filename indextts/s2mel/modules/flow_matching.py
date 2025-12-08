@@ -10,7 +10,7 @@ from indextts.s2mel.modules.diffusion_transformer import DiT
 
 
 class BASECFM(torch.nn.Module, ABC):
-    estimator: torch.nn.Module | None
+    estimator: DiT | None
 
     def __init__(self, args: S2MelConfig) -> None:
         super().__init__()
@@ -84,6 +84,7 @@ class BASECFM(torch.nn.Module, ABC):
             style (Tensor): reference global style
                 shape: (batch_size, 192)
         """
+        assert self.estimator is not None
         t, _, _ = t_span[0], t_span[-1], t_span[1] - t_span[0]
 
         # I am storing this because I can later plot it by putting a debugger here and saving it to a file
@@ -170,6 +171,7 @@ class BASECFM(torch.nn.Module, ABC):
             # range covered by prompt are set to 0
             y[bib, :, : prompt_lens[bib]] = 0
 
+        assert self.estimator is not None
         estimator_out = self.estimator(y, prompt, x_lens, t.squeeze(1).squeeze(1), style, mu, prompt_lens)
         loss = 0
         for bib in range(b):
@@ -183,8 +185,6 @@ class BASECFM(torch.nn.Module, ABC):
 
 
 class CFM(BASECFM):
-    estimator: DiT
-
     def __init__(self, args: S2MelConfig) -> None:
         super().__init__(args)
         self.estimator = DiT(args)
@@ -196,7 +196,9 @@ class CFM(BASECFM):
         performance improvements during inference. It also configures distributed
         training optimizations if applicable.
         """
+        assert hasattr(torch.distributed, "is_initialized")
         if torch.distributed.is_initialized():
+            assert hasattr(torch._inductor, "config")
             torch._inductor.config.reorder_for_compute_comm_overlap = True
         self.estimator = cast(
             DiT,

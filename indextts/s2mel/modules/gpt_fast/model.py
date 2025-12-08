@@ -49,7 +49,7 @@ def find_multiple(n: int, k: int) -> int:
 class AdaptiveLayerNorm(nn.Module):
     r"""Adaptive Layer Normalization"""
 
-    def __init__(self, d_model: int, norm: nn.Module) -> None:
+    def __init__(self, d_model: int, norm: "RMSNorm") -> None:
         super().__init__()
         self.project_layer = nn.Linear(d_model, 2 * d_model)
         self.norm = norm
@@ -426,6 +426,7 @@ class Attention(nn.Module):
 class FeedForward(nn.Module):
     def __init__(self, config: ModelArgs) -> None:
         super().__init__()
+        assert config.intermediate_size is not None
         self.w1 = nn.Linear(config.dim, config.intermediate_size, bias=False)
         self.w3 = nn.Linear(config.dim, config.intermediate_size, bias=False)
         self.w2 = nn.Linear(config.intermediate_size, config.dim, bias=False)

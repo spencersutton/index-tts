@@ -70,8 +70,7 @@ class BASECFM(torch.nn.Module, ABC):
         t_span: Tensor,
         inference_cfg_rate: float = 0.5,
     ) -> Tensor:
-        """
-        Fixed euler solver for ODEs.
+        """Fixed euler solver for ODEs.
 
         Args:
             x (Tensor): random noise

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Benchmark script for IndexTTS inference performance.
+"""Benchmark script for IndexTTS inference performance.
 
 This script separates startup time from inference time to allow accurate
 performance measurement of repeated inference runs.
@@ -231,8 +230,7 @@ def run_benchmark(
     use_deepspeed: bool = False,
     verbose: bool = False,
 ) -> BenchmarkResult:
-    """
-    Run the benchmark and return results.
+    """Run the benchmark and return results.
 
     Args:
         voice_path: Path to the voice prompt audio file

@@ -48,16 +48,15 @@ class AccelInferenceEngine:
         num_blocks: int = 128,
         use_cuda_graph: bool = True,
     ) -> None:
-        """
-        Args:
-            model: The GPT transformer model (should have accel attention)
-            lm_head: Language model head for generating logits
-            num_layers: Number of transformer layers
-            num_heads: Number of attention heads
-            head_dim: Dimension per head
-            block_size: KV cache block size
-            num_blocks: Total number of KV cache blocks
-            use_cuda_graph: Whether to use CUDA Graph for decode optimization
+        """Args:
+        model: The GPT transformer model (should have accel attention)
+        lm_head: Language model head for generating logits
+        num_layers: Number of transformer layers
+        num_heads: Number of attention heads
+        head_dim: Dimension per head
+        block_size: KV cache block size
+        num_blocks: Total number of KV cache blocks
+        use_cuda_graph: Whether to use CUDA Graph for decode optimization
 
         """
         self.model = model
@@ -348,8 +347,7 @@ class AccelInferenceEngine:
         tts_mel_embedding: GPT2InferenceModel | None = None,  # TTS: mel_embedding layer
         tts_text_pos_embedding: LearnedPositionEmbeddings | None = None,  # TTS: text_pos_embedding layer
     ) -> Tensor:
-        """
-        Generate tokens.
+        """Generate tokens.
 
         Args:
             input_ids: Input token IDs [batch_size, seq_len]

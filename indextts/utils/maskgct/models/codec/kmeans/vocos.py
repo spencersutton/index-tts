@@ -63,8 +63,7 @@ class ConvNeXtBlock(nn.Module):
 
 
 class AdaLayerNorm(nn.Module):
-    """
-    Adaptive Layer Normalization module with learnable embeddings per `num_embeddings` classes
+    """Adaptive Layer Normalization module with learnable embeddings per `num_embeddings` classes
 
     Args:
         num_embeddings (int): Number of embeddings.
@@ -92,8 +91,7 @@ class Backbone(nn.Module):
     """Base class for the generator's backbone. It preserves the same temporal resolution across all layers."""
 
     def forward(self, x: Tensor, **kwargs) -> Tensor:
-        """
-        Args:
+        """Args:
             x (Tensor): Input tensor of shape (B, C, L), where B is the batch size,
                         C denotes output features, and L is the sequence length.
 
@@ -106,8 +104,7 @@ class Backbone(nn.Module):
 
 
 class VocosBackbone(Backbone):
-    """
-    Vocos backbone module built with ConvNeXt blocks. Supports additional conditioning with Adaptive Layer Normalization
+    """Vocos backbone module built with ConvNeXt blocks. Supports additional conditioning with Adaptive Layer Normalization
 
     Args:
         input_channels (int): Number of input features channels.

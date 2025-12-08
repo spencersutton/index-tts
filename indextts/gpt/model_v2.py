@@ -224,9 +224,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
 def _build_hf_gpt_transformer(
     layers, model_dim, heads, max_mel_seq_len, max_text_seq_len
 ) -> tuple[GPT2Model, LearnedPositionEmbeddings, LearnedPositionEmbeddings, None, None]:
-    """
-    GPT-2 implemented by the HuggingFace library.
-    """
+    """GPT-2 implemented by the HuggingFace library."""
     from transformers import GPT2Config, GPT2Model
 
     gpt_config = GPT2Config(
@@ -426,8 +424,7 @@ class UnifiedVoice(nn.Module):
         return inp, tar
 
     def set_mel_padding(self, mel_input_tokens, mel_lengths):
-        """
-        Given mel tokens that are derived from a padded audio clip and the actual lengths of each batch element in
+        """Given mel tokens that are derived from a padded audio clip and the actual lengths of each batch element in
         that audio clip, reformats the tokens with STOP_MEL_TOKEN in place of the zero padding. This is required
         preformatting to create a working TTS model.
         """
@@ -440,8 +437,7 @@ class UnifiedVoice(nn.Module):
         return mel_input_tokens
 
     def set_text_padding(self, text_input_tokens, text_lengths):
-        """
-        Given mel tokens that are derived from a padded audio clip and the actual lengths of each batch element in
+        """Given mel tokens that are derived from a padded audio clip and the actual lengths of each batch element in
         that audio clip, reformats the tokens with STOP_MEL_TOKEN in place of the zero padding. This is required
         preformatting to create a working TTS model.
         """
@@ -528,8 +524,7 @@ class UnifiedVoice(nn.Module):
         use_speed: Tensor | None = None,
         do_spk_cond: bool = False,
     ) -> Tensor:
-        """
-        Forward pass that uses both text and voice in either text conditioning mode or voice conditioning mode
+        """Forward pass that uses both text and voice in either text conditioning mode or voice conditioning mode
 
         speech_conditioning_input: MEL float tensor, (b,1024)
         text_inputs: long tensor, (b,t)
@@ -604,8 +599,7 @@ class UnifiedVoice(nn.Module):
         conditional_latents: Tensor,
         text_inputs: Tensor,
     ) -> tuple[Tensor, Tensor, Tensor]:
-        """
-        Prepare the inputs for the GPT2InferenceModel to generate.
+        """Prepare the inputs for the GPT2InferenceModel to generate.
 
         Args:
             conds_latent: (b, 32, dim) audio conditioning embedding by `get_conditioning()`
@@ -685,14 +679,13 @@ class UnifiedVoice(nn.Module):
         typical_mass: float = 0.9,
         **hf_generate_kwargs,
     ):
-        """
-        Args:
-            speech_condition: (b, d, frames) or (d, frames)
-            text_inputs: (b, L)
-            cond_mel_lengths: lengths of the conditioning mel spectrograms in shape (b,) or (1,)
-            input_tokens: additional tokens for generation in shape (b, s) or (s,)
-            max_generate_length: limit the number of generated tokens
-            hf_generate_kwargs: kwargs for `GPT2InferenceModel.generate(**hf_generate_kwargs)`
+        """Args:
+        speech_condition: (b, d, frames) or (d, frames)
+        text_inputs: (b, L)
+        cond_mel_lengths: lengths of the conditioning mel spectrograms in shape (b,) or (1,)
+        input_tokens: additional tokens for generation in shape (b, s) or (s,)
+        max_generate_length: limit the number of generated tokens
+        hf_generate_kwargs: kwargs for `GPT2InferenceModel.generate(**hf_generate_kwargs)`
 
         """
         if speech_condition.ndim == 2:

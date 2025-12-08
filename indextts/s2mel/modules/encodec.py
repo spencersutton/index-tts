@@ -47,13 +47,15 @@ CONV_NORMALIZATIONS = frozenset([
 
 def apply_parametrization_norm(module: nn.Module, norm: str = "none") -> nn.Module:
     assert norm in CONV_NORMALIZATIONS
-    if norm == "weight_norm":
-        return weight_norm(module)
-    if norm == "spectral_norm":
-        return spectral_norm(module)
-    # We already check was in CONV_NORMALIZATION, so any other choice
-    # doesn't need reparametrization.
-    return module
+    match norm:
+        case "weight_norm":
+            return weight_norm(module)
+        case "spectral_norm":
+            return spectral_norm(module)
+        case _:
+            # We already check was in CONV_NORMALIZATION, so any other choice
+            # doesn't need reparametrization.
+            return module
 
 
 def get_norm_module(

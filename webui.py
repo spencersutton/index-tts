@@ -571,38 +571,39 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
         }
 
     def on_method_change(emo_control_method):
-        if emo_control_method == 1:  # emotion reference audio
-            return (
-                gr.update(visible=True),
-                gr.update(visible=False),
-                gr.update(visible=False),
-                gr.update(visible=False),
-                gr.update(visible=True),
-            )
-        if emo_control_method == 2:  # emotion vectors
-            return (
-                gr.update(visible=False),
-                gr.update(visible=True),
-                gr.update(visible=True),
-                gr.update(visible=False),
-                gr.update(visible=True),
-            )
-        if emo_control_method == 3:  # emotion text description
-            return (
-                gr.update(visible=False),
-                gr.update(visible=True),
-                gr.update(visible=False),
-                gr.update(visible=True),
-                gr.update(visible=True),
-            )
-        # 0: same as speaker voice
-        return (
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-        )
+        match emo_control_method:
+            case 1:  # emotion reference audio
+                return (
+                    gr.update(visible=True),
+                    gr.update(visible=False),
+                    gr.update(visible=False),
+                    gr.update(visible=False),
+                    gr.update(visible=True),
+                )
+            case 2:  # emotion vectors
+                return (
+                    gr.update(visible=False),
+                    gr.update(visible=True),
+                    gr.update(visible=True),
+                    gr.update(visible=False),
+                    gr.update(visible=True),
+                )
+            case 3:  # emotion text description
+                return (
+                    gr.update(visible=False),
+                    gr.update(visible=True),
+                    gr.update(visible=False),
+                    gr.update(visible=True),
+                    gr.update(visible=True),
+                )
+            case _:  # 0: same as speaker voice
+                return (
+                    gr.update(visible=False),
+                    gr.update(visible=False),
+                    gr.update(visible=False),
+                    gr.update(visible=False),
+                    gr.update(visible=False),
+                )
 
     emo_control_method.change(
         on_method_change,

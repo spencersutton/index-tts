@@ -36,8 +36,7 @@ def _scaled_dot_product_attention(
         if dropout_p > 0.0:
             attn = F.dropout(attn, p=dropout_p)
         return torch.matmul(attn, v)
-    else:
-        return F.scaled_dot_product_attention(q, k, v, attn_mask=attn_mask, dropout_p=dropout_p)
+    return F.scaled_dot_product_attention(q, k, v, attn_mask=attn_mask, dropout_p=dropout_p)
 
 
 def _find_multiple(n: int, k: int) -> int:

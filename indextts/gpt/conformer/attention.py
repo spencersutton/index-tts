@@ -208,6 +208,7 @@ class RelPositionMultiHeadedAttention(_MultiHeadedAttention):
 
     def rel_shift(self, x: Tensor, zero_triu: bool = False) -> Tensor:
         """Compute relative positinal encoding.
+
         Args:
             x (Tensor): Input tensor (batch, time, size).
             zero_triu (bool): If true, return the lower triangular part of
@@ -243,6 +244,7 @@ class RelPositionMultiHeadedAttention(_MultiHeadedAttention):
         cache: Tensor = torch.zeros((0, 0, 0, 0)),
     ) -> tuple[Tensor, Tensor]:
         """Compute 'Scaled Dot Product Attention' with rel. positional encoding.
+
         Args:
             query (Tensor): Query tensor (#batch, time1, size).
             key (Tensor): Key tensor (#batch, time2, size).

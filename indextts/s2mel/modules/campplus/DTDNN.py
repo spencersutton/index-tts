@@ -46,7 +46,13 @@ class FCM(nn.Module):
         self.bn2 = nn.BatchNorm2d(m_channels)
         self.out_channels = m_channels * (feat_dim // 8)
 
-    def _make_layer(self, block, planes, num_blocks, stride):
+    def _make_layer(
+        self,
+        block: type[BasicResBlock],
+        planes: int,
+        num_blocks: int,
+        stride: int,
+    ) -> nn.Sequential:
         strides = [stride] + [1] * (num_blocks - 1)
         layers = []
         for stride in strides:
@@ -54,7 +60,7 @@ class FCM(nn.Module):
             self.in_planes = planes * block.expansion
         return nn.Sequential(*layers)
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         x = x.unsqueeze(1)
         out = F.relu(self.bn1(self.conv1(x)))
         out = self.layer1(out)
@@ -81,22 +87,16 @@ class CAMPPlus(nn.Module):
         self.head = FCM(feat_dim=feat_dim)
         channels = self.head.out_channels
 
-        self.xvector = nn.Sequential(
-            OrderedDict([
-                (
-                    "tdnn",
-                    TDNNLayer(
-                        channels,
-                        init_channels,
-                        5,
-                        stride=2,
-                        dilation=1,
-                        padding=-1,
-                        config_str=config_str,
-                    ),
-                ),
-            ])
+        layer = TDNNLayer(
+            channels,
+            init_channels,
+            5,
+            stride=2,
+            dilation=1,
+            padding=-1,
+            config_str=config_str,
         )
+        self.xvector = nn.Sequential(OrderedDict([("tdnn", layer)]))
         channels = init_channels
         for i, (num_layers, kernel_size, dilation) in enumerate(zip((12, 24, 16), (3, 3, 3), (1, 2, 2))):
             block = CAMDenseTDNNBlock(
@@ -129,6 +129,7 @@ class CAMPPlus(nn.Module):
             if isinstance(m, (nn.Conv1d, nn.Linear)):
                 nn.init.kaiming_normal_(m.weight.data)
                 if m.bias is not None:
+                    assert isinstance(m.bias, Tensor)
                     nn.init.zeros_(m.bias)
 
     def forward(self, x: Tensor) -> Tensor:

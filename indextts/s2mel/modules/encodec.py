@@ -56,7 +56,12 @@ def apply_parametrization_norm(module: nn.Module, norm: str = "none") -> nn.Modu
     return module
 
 
-def get_norm_module(module: nn.Module, causal: bool = False, norm: str = "none", **norm_kwargs: object) -> nn.Module:
+def get_norm_module(
+    module: nn.Module,
+    causal: bool = False,
+    norm: str = "none",
+    **norm_kwargs: object,
+) -> nn.Module:
     """Return the proper normalization module. If causal is True, this will ensure the returned
     module is causal, or return an error if the normalization doesn't support causal evaluation.
     """

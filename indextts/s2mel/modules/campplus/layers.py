@@ -24,18 +24,10 @@ def get_nonlinear(config_str: str, channels: int) -> nn.Sequential:
     return nonlinear
 
 
-def statistics_pooling(
-    x: Tensor,
-    dim: int = -1,
-    keepdim: bool = False,
-    unbiased: bool = True,
-    eps: float = 1e-2,
-) -> Tensor:
-    mean = x.mean(dim=dim)
-    std = x.std(dim=dim, unbiased=unbiased)
+def statistics_pooling(x: Tensor) -> Tensor:
+    mean = x.mean(dim=-1)
+    std = x.std(dim=-1, unbiased=True)
     stats = torch.cat([mean, std], dim=-1)
-    if keepdim:
-        stats = stats.unsqueeze(dim=dim)
     return stats
 
 
@@ -152,10 +144,10 @@ class CAMDenseTDNNLayer(nn.Module):
             bias=bias,
         )
 
-    def bn_function(self, x):
+    def bn_function(self, x: Tensor) -> Tensor:
         return self.linear1(self.nonlinear1(x))
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         if self.training and self.memory_efficient:
             x = cp.checkpoint(self.bn_function, x)
         else:

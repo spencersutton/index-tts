@@ -1,6 +1,6 @@
 from collections.abc import MutableMapping
 from pathlib import Path
-from typing import Any, cast
+from typing import cast
 
 import torch
 from torch import Tensor, nn
@@ -87,36 +87,23 @@ class MyModel(nn.Module):
         self.cfm.enable_torch_compile()
 
 
-def load_checkpoint2(
-    model: MyModel,
-    path: Path,
-    ignore_modules: list[str] = [],
-    is_distributed: bool = False,
-    load_ema: bool = False,
-) -> MyModel:
-    state = cast(dict[str, Any], torch.load(path, map_location="cpu"))
-    params = cast(dict[str, Any], state["net"])
-    if load_ema and "ema" in state:
-        print("Loading EMA")
-        for key in model.models:
-            ema_params = state["ema"][key][0]
-            for i, param_name in enumerate(params[key]):
-                if "input_pos" in param_name:
-                    continue
-                assert params[key][param_name].shape == ema_params[i].shape
-                params[key][param_name] = ema_params[i].clone()
+def load_checkpoint2(model: MyModel, path: Path) -> MyModel:
+    state = cast(dict[str, dict[str, dict[str, Tensor]]], torch.load(path, map_location="cpu"))
+    params = state["net"]
+
     for key, module in model.models.items():
-        if key in params and key not in ignore_modules:
-            state_dict = params[key]
-            if not is_distributed:
-                state_dict = {k.removeprefix("module."): v for k, v in state_dict.items()}
-            model_state = module.state_dict()
-            filtered = {k: v for k, v in state_dict.items() if k in model_state and v.shape == model_state[k].shape}
-            skipped = set(state_dict) - set(filtered)
-            if skipped:
-                print(f"Warning: Skipped loading keys due to shape mismatch: {skipped}")
-            print(f"{key} loaded")
-            module.load_state_dict(filtered, strict=False)
+        if key not in params:
+            continue
+
+        state_dict = params[key]
+        state_dict = {k.removeprefix("module."): v for k, v in state_dict.items()}
+        model_state = module.state_dict()
+        filtered = {k: v for k, v in state_dict.items() if k in model_state and v.shape == model_state[k].shape}
+        skipped = set(state_dict) - set(filtered)
+        if skipped:
+            print(f"Warning: Skipped loading keys due to shape mismatch: {skipped}")
+        print(f"{key} loaded")
+        module.load_state_dict(filtered, strict=False)
     model.eval()
 
     return model

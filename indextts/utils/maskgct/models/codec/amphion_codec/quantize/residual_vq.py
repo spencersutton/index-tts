@@ -36,6 +36,7 @@ class ResidualVQ(nn.Module):
             (n_quantizers < self.n_codebooks ex: for quantizer dropout)
             Note: if `self.quantizer_dropout` is True, this argument is ignored
                 when in training mode, and a random number of quantizers is used.
+
         Returns
         -------
         "quantized_out" : Tensor[B x D x T]

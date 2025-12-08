@@ -212,6 +212,7 @@ class RelPositionMultiHeadedAttention(_MultiHeadedAttention):
             x (Tensor): Input tensor (batch, time, size).
             zero_triu (bool): If true, return the lower triangular part of
                 the matrix.
+
         Returns:
             Tensor: Output tensor.
         """

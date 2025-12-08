@@ -17,6 +17,7 @@ class _PositionwiseFeedForward(torch.nn.Module):
         hidden_units (int): The number of hidden units.
         dropout_rate (float): Dropout rate.
         activation (torch.nn.Module): Activation function
+
     """
 
     def __init__(
@@ -38,8 +39,10 @@ class _PositionwiseFeedForward(torch.nn.Module):
 
         Args:
             xs: input tensor (B, L, D)
+
         Returns:
             output tensor, (B, L, D)
+
         """
         return self.w_2(self.dropout(self.activation(self.w_1(xs))))
 
@@ -55,10 +58,12 @@ class _ConvolutionModule(nn.Module):
         bias: bool = True,
     ) -> None:
         """Construct an ConvolutionModule object.
+
         Args:
             channels (int): The number of channels of conv layers.
             kernel_size (int): Kernel size of conv layers.
             causal (int): Whether use causal convolution or not
+
         """
         super().__init__()
 
@@ -108,6 +113,7 @@ class _ConvolutionModule(nn.Module):
         cache: Tensor = torch.zeros((0, 0, 0)),
     ) -> tuple[Tensor, Tensor]:
         """Compute convolution module.
+
         Args:
             x (Tensor): Input tensor (#batch, time, channels).
             mask_pad (Tensor): used for batch padding (#batch, 1, time),
@@ -115,8 +121,10 @@ class _ConvolutionModule(nn.Module):
             cache (Tensor): left context cache, it is only
                 used in causal convolution (#batch, channels, cache_t),
                 (0, 0, 0) meas fake cache.
+
         Returns:
             Tensor: Output tensor (#batch, time, channels).
+
         """
         # exchange the temporal dimension and the feature dimension
         x = x.transpose(1, 2)  # (#batch, channels, time)
@@ -149,6 +157,7 @@ class _ConvolutionModule(nn.Module):
 
 class _ConformerEncoderLayer(nn.Module):
     """Encoder layer module.
+
     Args:
         size (int): Input dimension.
         self_attn (torch.nn.Module): Self-attention module instance.
@@ -169,6 +178,7 @@ class _ConformerEncoderLayer(nn.Module):
             output.
             True: x -> x + linear(concat(x, att(x)))
             False: x -> x + att(x)
+
     """
 
     feed_forward: torch.nn.Module | None
@@ -221,14 +231,15 @@ class _ConformerEncoderLayer(nn.Module):
                 (#batch=1, head, cache_t1, d_k * 2), head * d_k == size.
             cnn_cache (Tensor): Convolution cache in conformer layer
                 (#batch=1, size, cache_t2)
+
         Returns:
             Tensor: Output tensor (#batch, time, size).
             Tensor: Mask tensor (#batch, time, time).
             Tensor: att_cache tensor,
                 (#batch=1, head, cache_t1 + time, d_k * 2).
             Tensor: cnn_cahce tensor (#batch, size, cache_t2).
-        """
 
+        """
         # multi-headed self-attention module
         residual = x
         x = self.norm_mha(x)
@@ -272,37 +283,37 @@ class _BaseEncoder(torch.nn.Module):
         normalize_before: bool = True,
         concat_after: bool = False,
     ) -> None:
-        """
-        Args:
-            input_size (int): input dim
-            output_size (int): dimension of attention
-            attention_heads (int): the number of heads of multi head attention
-            linear_units (int): the hidden units number of position-wise feed
-                forward
-            num_blocks (int): the number of decoder blocks
-            dropout_rate (float): dropout rate
-            attention_dropout_rate (float): dropout rate in attention
-            positional_dropout_rate (float): dropout rate after adding
-                positional encoding
-            input_layer (str): input layer type.
-                optional [linear, conv2d, conv2d6, conv2d8]
-            pos_enc_layer_type (str): Encoder positional encoding layer type.
-                opitonal [abs_pos, scaled_abs_pos, rel_pos, no_pos]
-            normalize_before (bool):
-                True: use layer_norm before each sub-block of a layer.
-                False: use layer_norm after each sub-block of a layer.
-            concat_after (bool): whether to concat attention layer's input
-                and output.
-                True: x -> x + linear(concat(x, att(x)))
-                False: x -> x + att(x)
-            static_chunk_size (int): chunk size for static chunk training and
-                decoding
-            use_dynamic_chunk (bool): whether use dynamic chunk size for
-                training or not, You can only use fixed chunk(chunk_size > 0)
-                or dyanmic chunk size(use_dynamic_chunk = True)
-            global_cmvn (Optional[torch.nn.Module]): Optional GlobalCMVN module
-            use_dynamic_left_chunk (bool): whether use dynamic left chunk in
-                dynamic chunk training
+        """Args:
+        input_size (int): input dim
+        output_size (int): dimension of attention
+        attention_heads (int): the number of heads of multi head attention
+        linear_units (int): the hidden units number of position-wise feed
+            forward
+        num_blocks (int): the number of decoder blocks
+        dropout_rate (float): dropout rate
+        attention_dropout_rate (float): dropout rate in attention
+        positional_dropout_rate (float): dropout rate after adding
+            positional encoding
+        input_layer (str): input layer type.
+            optional [linear, conv2d, conv2d6, conv2d8]
+        pos_enc_layer_type (str): Encoder positional encoding layer type.
+            opitonal [abs_pos, scaled_abs_pos, rel_pos, no_pos]
+        normalize_before (bool):
+            True: use layer_norm before each sub-block of a layer.
+            False: use layer_norm after each sub-block of a layer.
+        concat_after (bool): whether to concat attention layer's input
+            and output.
+            True: x -> x + linear(concat(x, att(x)))
+            False: x -> x + att(x)
+        static_chunk_size (int): chunk size for static chunk training and
+            decoding
+        use_dynamic_chunk (bool): whether use dynamic chunk size for
+            training or not, You can only use fixed chunk(chunk_size > 0)
+            or dyanmic chunk size(use_dynamic_chunk = True)
+        global_cmvn (Optional[torch.nn.Module]): Optional GlobalCMVN module
+        use_dynamic_left_chunk (bool): whether use dynamic left chunk in
+            dynamic chunk training
+
         """
         super().__init__()
         self._output_size = output_size
@@ -338,6 +349,7 @@ class _BaseEncoder(torch.nn.Module):
             xs: padded output tensor (B, T' ~= T/subsample_rate, D)
             masks: Tensor batch padding mask after subsample
                 (B, 1, T' ~= T/subsample_rate)
+
         """
         T = xs.size(1)
         masks = ~make_pad_mask(xs_lens, T).unsqueeze(1)  # (B, 1, T)
@@ -387,8 +399,8 @@ class ConformerEncoder(_BaseEncoder):
             use_cnn_module (bool): Whether to use convolution module.
             cnn_module_kernel (int): Kernel size of convolution module.
             causal (bool): whether to use causal convolution or not.
-        """
 
+        """
         super().__init__(
             input_size,
             output_size,

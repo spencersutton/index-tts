@@ -66,6 +66,7 @@ def make_pad_mask(lengths: Tensor, max_len: int = 0) -> Tensor:
 
     Args:
         lengths (Tensor): Batch of lengths (B,).
+
     Returns:
         Tensor: Mask tensor containing indices of padded part.
 

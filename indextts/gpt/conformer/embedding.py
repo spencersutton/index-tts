@@ -123,6 +123,7 @@ class RelPositionalEncoding(PositionalEncoding):
         """Compute positional encoding.
         Args:
             x (Tensor): Input tensor (batch, time, `*`).
+
         Returns:
             Tensor: Encoded tensor (batch, time, `*`).
             Tensor: Positional embedding tensor (1, time, `*`).

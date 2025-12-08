@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from typing import cast
 
 import torch
 from torch import Tensor, nn
@@ -9,6 +10,8 @@ from indextts.util import patch_call
 
 
 class InterpolateRegulator(nn.Module):
+    model: nn.Sequential
+
     def __init__(
         self,
         channels: int,
@@ -47,21 +50,11 @@ class InterpolateRegulator(nn.Module):
         x = self.content_in_proj(x)
         # x in (B, T, D)
         mask = sequence_mask(ylens).unsqueeze(-1)
-        x = F.interpolate(x.transpose(1, 2).contiguous(), size=ylens.max(), mode="nearest")
+        x = F.interpolate(x.transpose(1, 2).contiguous(), size=int(ylens.max()), mode="nearest")
 
-        out = self.model(x).transpose(1, 2).contiguous()
-        if hasattr(self, "vq"):
-            (
-                out_q,
-                commitment_loss,
-                codebook_loss,
-                codes,
-                out,
-            ) = self.vq(out.transpose(1, 2))
-            out_q = out_q.transpose(1, 2)
-            return out_q * mask, ylens, codes, commitment_loss, codebook_loss
-        olens = ylens
-        return out * mask, olens, None, None, None
+        model_output = cast(Tensor, self.model(x))
+        out = model_output.transpose(1, 2).contiguous()
+        return out * mask, ylens, None, None, None
 
     @patch_call(forward)
     def __call__(self) -> None: ...

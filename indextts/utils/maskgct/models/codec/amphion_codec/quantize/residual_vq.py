@@ -12,8 +12,7 @@ from indextts.utils.maskgct.models.codec.amphion_codec.quantize.factorized_vecto
 
 
 class ResidualVQ(nn.Module):
-    """
-    Introduced in SoundStream: An end2end neural audio codec
+    """Introduced in SoundStream: An end2end neural audio codec
     https://arxiv.org/abs/2107.03312
     """
 
@@ -27,8 +26,7 @@ class ResidualVQ(nn.Module):
         self.quantizer = FactorizedVectorQuantize()
 
     def forward(self, z: Tensor, n_quantizers: int | None = None) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
-        """
-        Parameters
+        """Parameters
         ----------
         z : Tensor[B x D x T]
         n_quantizers : int, optional

@@ -2,8 +2,7 @@ import torch
 
 
 def show_device_list(backend: str) -> int:
-    """
-    Displays a list of all detected devices for a given PyTorch backend.
+    """Displays a list of all detected devices for a given PyTorch backend.
 
     Args:
         backend: The name of the device backend module (e.g., "cuda", "xpu").
@@ -62,8 +61,7 @@ def show_device_list(backend: str) -> int:
 
 
 def check_torch_devices() -> None:
-    """
-    Checks for the availability of various PyTorch hardware acceleration
+    """Checks for the availability of various PyTorch hardware acceleration
     platforms and prints information about the discovered devices.
     """
     print("Scanning for PyTorch hardware acceleration devices...\n")

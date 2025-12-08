@@ -7,8 +7,7 @@ from torch.nn import Parameter
 
 
 class Snake(nn.Module):
-    """
-    Implementation of a sine-based periodic activation function
+    """Implementation of a sine-based periodic activation function
     Shape:
         - Input: (B, C, T)
         - Output: (B, C, T), same shape as the input
@@ -24,8 +23,7 @@ class Snake(nn.Module):
     """
 
     def __init__(self, in_features, alpha=1.0, alpha_trainable=True, alpha_logscale=False) -> None:
-        """
-        Initialization.
+        """Initialization.
         INPUT:
             - in_features: shape of the input
             - alpha: trainable parameter
@@ -47,8 +45,7 @@ class Snake(nn.Module):
         self.no_div_by_zero = 0.000000001
 
     def forward(self, x):
-        """
-        Forward pass of the function.
+        """Forward pass of the function.
         Applies the function to the input elementwise.
         Snake ∶= x + 1/a * sin^2 (xa)
         """
@@ -59,8 +56,7 @@ class Snake(nn.Module):
 
 
 class SnakeBeta(nn.Module):
-    """
-    A modified Snake function which uses separate parameters for the magnitude of the periodic components
+    """A modified Snake function which uses separate parameters for the magnitude of the periodic components
     Shape:
         - Input: (B, C, T)
         - Output: (B, C, T), same shape as the input
@@ -77,8 +73,7 @@ class SnakeBeta(nn.Module):
     """
 
     def __init__(self, in_features, alpha=1.0, alpha_trainable=True, alpha_logscale=False) -> None:
-        """
-        Initialization.
+        """Initialization.
         INPUT:
             - in_features: shape of the input
             - alpha - trainable parameter that controls frequency
@@ -105,8 +100,7 @@ class SnakeBeta(nn.Module):
         self.no_div_by_zero = 0.000000001
 
     def forward(self, x):
-        """
-        Forward pass of the function.
+        """Forward pass of the function.
         Applies the function to the input elementwise.
         SnakeBeta ∶= x + 1/b * sin^2 (xa)
         """

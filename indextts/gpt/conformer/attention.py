@@ -216,6 +216,7 @@ class RelPositionMultiHeadedAttention(_MultiHeadedAttention):
 
         Returns:
             Tensor: Output tensor.
+
         """
         zero_pad = torch.zeros(
             (x.size()[0], x.size()[1], x.size()[2], 1),
@@ -260,6 +261,7 @@ class RelPositionMultiHeadedAttention(_MultiHeadedAttention):
             Tensor: Cache tensor (1, head, cache_t + time1, d_k * 2)
                 where `cache_t == chunk_size * num_decoding_left_chunks`
                 and `head * d_k == size`
+
         """
         q, k, v = self.forward_qkv(query, key, value)
         q = q.transpose(1, 2)  # (batch, time1, head, d_k)

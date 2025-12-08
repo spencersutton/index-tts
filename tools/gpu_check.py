@@ -10,6 +10,7 @@ def show_device_list(backend: str) -> int:
 
     Returns:
         The number of devices found if the backend is usable, otherwise 0.
+
     """
     backend_upper = backend.upper()
 

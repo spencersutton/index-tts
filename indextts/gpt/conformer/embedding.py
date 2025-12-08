@@ -65,6 +65,7 @@ class PositionalEncoding(torch.nn.Module):
         Returns:
             Tensor: Encoded tensor. Its shape is (batch, time, ...)
             Tensor: for compatibility to RelPositionalEncoding
+
         """
         self.pe = self.pe.to(x.device)
         pos_emb = self.position_encoding(offset, x.size(1), False)
@@ -86,6 +87,7 @@ class PositionalEncoding(torch.nn.Module):
 
         Returns:
             Tensor: Corresponding encoding
+
         """
         # How to subscript a Union type:
         #   https://github.com/pytorch/pytorch/issues/69434
@@ -127,6 +129,7 @@ class RelPositionalEncoding(PositionalEncoding):
         Returns:
             Tensor: Encoded tensor (batch, time, `*`).
             Tensor: Positional embedding tensor (1, time, `*`).
+
         """
         self.pe = self.pe.to(x.device)
         x *= self.xscale

@@ -142,11 +142,7 @@ division-by-zero = "warn"
 possibly-unresolved-reference = "warn"
 
 [tool.ty.src]
-exclude = [
-  "./typings",
-  "indextts/utils/maskgct/models/codec/amphion_codec",
-  "indextts/s2mel",
-]
+exclude = ["./typings", "./tools", "./tests"]
 
 [tool.ty.environment]
 extra-paths = ["./override"]

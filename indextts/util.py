@@ -3,5 +3,9 @@ from collections.abc import Callable
 from torch import nn
 
 
-def patch_call[**P, R](src_func: Callable[P, R]) -> Callable[..., Callable[P, R]]:
+def _returns_nn_module_call(*args):
     return nn.Module.__call__
+
+
+def patch_call[**P, R](src_func: Callable[P, R]) -> Callable[..., Callable[P, R]]:
+    return _returns_nn_module_call

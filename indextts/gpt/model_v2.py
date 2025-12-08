@@ -493,8 +493,7 @@ class UnifiedVoice(nn.Module):
             second_logits: Tensor = second_head(second_logits)
             second_logits = second_logits.permute(0, 2, 1)
             return first_logits, second_logits
-        else:
-            return first_logits
+        return first_logits
 
     def get_conditioning(
         self,

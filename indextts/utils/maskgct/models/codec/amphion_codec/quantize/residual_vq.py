@@ -48,7 +48,6 @@ class ResidualVQ(nn.Module):
         "all_codebook_losses" : Tensor[N]
         "all_quantized" : Tensor[N x B x D x T]
         """
-
         quantized_out = 0.0
         residual = z
 

@@ -217,7 +217,6 @@ class RelPositionMultiHeadedAttention(_MultiHeadedAttention):
         Returns:
             Tensor: Output tensor.
         """
-
         zero_pad = torch.zeros(
             (x.size()[0], x.size()[1], x.size()[2], 1),
             device=x.device,

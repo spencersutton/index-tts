@@ -138,8 +138,7 @@ class _Attend(nn.Module):
         v: Tensor,
         mask: Tensor | None = None,
     ) -> Tensor:
-        """
-        Einstein notation
+        """Einstein notation
         b - batch
         h - heads
         n, i, j - sequence length (base sequence length, source, target)

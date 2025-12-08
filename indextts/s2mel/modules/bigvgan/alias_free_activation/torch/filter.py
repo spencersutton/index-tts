@@ -14,8 +14,7 @@ else:
     # https://adefossez.github.io/julius/julius/core.html
     #   LICENSE is in incl_licenses directory.
     def sinc(x: Tensor):
-        """
-        Implementation of sinc, i.e. sin(pi * x) / (pi * x)
+        """Implementation of sinc, i.e. sin(pi * x) / (pi * x)
         __Warning__: Different to julius.sinc, the input is multiplied by `pi`!
         """
         return torch.where(
@@ -71,9 +70,7 @@ class LowPassFilter1d(nn.Module):
         padding_mode: str = "replicate",
         kernel_size: int = 12,
     ) -> None:
-        """
-        kernel_size should be even number for stylegan3 setup, in this implementation, odd number is also possible.
-        """
+        """kernel_size should be even number for stylegan3 setup, in this implementation, odd number is also possible."""
         super().__init__()
         if cutoff < -0.0:
             raise ValueError("Minimum cutoff must be larger than zero.")

@@ -99,16 +99,15 @@ class IndexTTS2:
         use_accel: bool = False,
         use_torch_compile: bool = False,
     ) -> None:
-        """
-        Args:
-            cfg_path (str): path to the config file.
-            model_dir (str): path to the model directory.
-            use_fp16 (bool): whether to use fp16.
-            device (str): device to use (e.g., 'cuda:0', 'cpu'). If None, it will be set automatically based on the availability of CUDA or MPS.
-            use_cuda_kernel (None | bool): whether to use BigVGan custom fused activation CUDA kernel, only for CUDA device.
-            use_deepspeed (bool): whether to use DeepSpeed or not.
-            use_accel (bool): whether to use acceleration engine for GPT2 or not.
-            use_torch_compile (bool): whether to use torch.compile for optimization or not.
+        """Args:
+        cfg_path (str): path to the config file.
+        model_dir (str): path to the model directory.
+        use_fp16 (bool): whether to use fp16.
+        device (str): device to use (e.g., 'cuda:0', 'cpu'). If None, it will be set automatically based on the availability of CUDA or MPS.
+        use_cuda_kernel (None | bool): whether to use BigVGan custom fused activation CUDA kernel, only for CUDA device.
+        use_deepspeed (bool): whether to use DeepSpeed or not.
+        use_accel (bool): whether to use acceleration engine for GPT2 or not.
+        use_torch_compile (bool): whether to use torch.compile for optimization or not.
 
         """
         if device is not None:
@@ -356,9 +355,7 @@ class IndexTTS2:
         sampling_rate: int = 22050,
         interval_silence: int = 200,
     ) -> Tensor:
-        """
-        Silences to be insert between generated segments.
-        """
+        """Silences to be insert between generated segments."""
         assert interval_silence > 0, "interval_silence must be greater than 0"
         assert len(wavs) > 0, "wavs list must not be empty"
 
@@ -374,8 +371,7 @@ class IndexTTS2:
         sampling_rate: int = 22050,
         interval_silence: int = 200,
     ) -> list[Tensor]:
-        """
-        Insert silences between generated segments.
+        """Insert silences between generated segments.
         wavs: List[torch.tensor]
         """
         if not wavs or interval_silence <= 0:

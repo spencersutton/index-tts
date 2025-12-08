@@ -498,7 +498,7 @@ class AccelInferenceEngine:
 
         remaining_tokens = max_new_tokens - 1
 
-        for _step in range(remaining_tokens):
+        for _ in range(remaining_tokens):
             decode_ids, decode_pos = self._prepare_decode(sequences)
 
             context = get_forward_context()

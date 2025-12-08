@@ -840,8 +840,7 @@ class IndexTTS2:
                     length_regulator = cast(InterpolateRegulator, self.s2mel.models["length_regulator"])
                     cond = length_regulator(S_infer, ylens=target_lengths, n_quantizers=3, f0=None)[0]
                     cat_condition = torch.cat([prompt_condition, cond], dim=1)
-                    cfm = self.s2mel.models["cfm"]
-                    assert isinstance(cfm, CFM)
+                    cfm = cast(CFM, self.s2mel.models["cfm"])
                     assert ref_mel is not None
                     assert style is not None
                     vc_target = cfm.inference(

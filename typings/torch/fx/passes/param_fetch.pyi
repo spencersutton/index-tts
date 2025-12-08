@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from typing import Any
 
-import torch.nn as nn
+from torch import nn
 from torch.fx._compatibility import compatibility
 from torch.fx.graph_module import GraphModule
 

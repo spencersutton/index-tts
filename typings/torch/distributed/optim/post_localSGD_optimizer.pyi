@@ -1,5 +1,5 @@
 import torch
-import torch.distributed.algorithms.model_averaging.averagers as averagers
+from torch.distributed.algorithms.model_averaging import averagers
 
 class PostLocalSGDOptimizer(torch.optim.Optimizer):
     def __init__(self, optim: torch.optim.Optimizer, averager: averagers.ModelAverager) -> None: ...

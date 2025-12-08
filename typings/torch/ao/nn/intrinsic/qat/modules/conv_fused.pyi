@@ -2,7 +2,7 @@ from typing import ClassVar
 
 import torch.ao.nn.intrinsic as nni
 import torch.ao.nn.qat as nnqat
-import torch.nn as nn
+from torch import nn
 
 __all__ = [
     "ConvBn1d",

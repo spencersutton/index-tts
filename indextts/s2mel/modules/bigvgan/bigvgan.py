@@ -9,9 +9,8 @@ from pathlib import Path
 from typing import Any, TypedDict
 
 import torch
-import torch.nn as nn
 from huggingface_hub import PyTorchModelHubMixin, hf_hub_download
-from torch import Tensor
+from torch import Tensor, nn
 from torch.nn import Conv1d, ConvTranspose1d
 from torch.nn.utils import remove_weight_norm, weight_norm
 
@@ -26,8 +25,7 @@ def load_hparams_from_json(path) -> dict[str, Any]:
 
 
 class AMPBlock1(torch.nn.Module):
-    """
-    AMPBlock applies Snake / SnakeBeta activation functions with trainable parameters that control periodicity, defined for each layer.
+    """AMPBlock applies Snake / SnakeBeta activation functions with trainable parameters that control periodicity, defined for each layer.
     AMPBlock1 has additional self.convs2 that contains additional Conv1d layers with a fixed dilation=1 followed by each layer in self.convs1
 
     Args:
@@ -36,6 +34,7 @@ class AMPBlock1(torch.nn.Module):
         kernel_size (int): Size of the convolution kernel. Default is 3.
         dilation (tuple): Dilation rates for the convolutions. Each dilation layer has two convolutions. Default is (1, 3, 5).
         activation (str): Activation function type. Should be either 'snake' or 'snakebeta'. Default is None.
+
     """
 
     def __init__(
@@ -59,7 +58,7 @@ class AMPBlock1(torch.nn.Module):
                     stride=1,
                     dilation=d,
                     padding=get_padding(kernel_size, d),
-                )
+                ),
             )
             for d in dilation
         ])
@@ -74,7 +73,7 @@ class AMPBlock1(torch.nn.Module):
                     stride=1,
                     dilation=1,
                     padding=get_padding(kernel_size, 1),
-                )
+                ),
             )
             for _ in range(len(dilation))
         ])
@@ -105,7 +104,7 @@ class AMPBlock1(torch.nn.Module):
             ])
         else:
             raise NotImplementedError(
-                "activation incorrectly specified. check the config file and look for 'activation'."
+                "activation incorrectly specified. check the config file and look for 'activation'.",
             )
 
     def forward(self, x: Tensor) -> Tensor:
@@ -127,8 +126,7 @@ class AMPBlock1(torch.nn.Module):
 
 
 class AMPBlock2(torch.nn.Module):
-    """
-    AMPBlock applies Snake / SnakeBeta activation functions with trainable parameters that control periodicity, defined for each layer.
+    """AMPBlock applies Snake / SnakeBeta activation functions with trainable parameters that control periodicity, defined for each layer.
     Unlike AMPBlock1, AMPBlock2 does not contain extra Conv1d layers with fixed dilation=1
 
     Args:
@@ -137,6 +135,7 @@ class AMPBlock2(torch.nn.Module):
         kernel_size (int): Size of the convolution kernel. Default is 3.
         dilation (tuple): Dilation rates for the convolutions. Each dilation layer has two convolutions. Default is (1, 3, 5).
         activation (str): Activation function type. Should be either 'snake' or 'snakebeta'. Default is None.
+
     """
 
     def __init__(
@@ -160,7 +159,7 @@ class AMPBlock2(torch.nn.Module):
                     stride=1,
                     dilation=d,
                     padding=get_padding(kernel_size, d),
-                )
+                ),
             )
             for d in dilation
         ])
@@ -191,7 +190,7 @@ class AMPBlock2(torch.nn.Module):
             ])
         else:
             raise NotImplementedError(
-                "activation incorrectly specified. check the config file and look for 'activation'."
+                "activation incorrectly specified. check the config file and look for 'activation'.",
             )
 
     def forward(self, x):
@@ -229,8 +228,7 @@ class BigVGAN(
     license="mit",
     tags=["neural-vocoder", "audio-generation", "arxiv:2206.04658"],
 ):
-    """
-    BigVGAN is a neural vocoder model that applies anti-aliased periodic activation for residual blocks (resblocks).
+    """BigVGAN is a neural vocoder model that applies anti-aliased periodic activation for residual blocks (resblocks).
     New in BigVGAN-v2: it can optionally use optimized CUDA kernels for AMP (anti-aliased multi-periodicity) blocks.
 
     Args:
@@ -240,6 +238,7 @@ class BigVGAN(
     Note:
         - The `use_cuda_kernel` parameter should be used for inference only, as training with CUDA kernels is not supported.
         - Ensure that the activation function is correctly specified in the hyperparameters (h.activation).
+
     """
 
     num_kernels: int
@@ -287,9 +286,9 @@ class BigVGAN(
                             k,
                             u,
                             padding=(k - u) // 2,
-                        )
-                    )
-                ])
+                        ),
+                    ),
+                ]),
             )
 
         # Residual blocks using anti-aliased multi-periodicity composition modules (AMP)
@@ -311,7 +310,7 @@ class BigVGAN(
         )
         if activation_post is None:
             raise NotImplementedError(
-                "activation incorrectly specified. check the config file and look for 'activation'."
+                "activation incorrectly specified. check the config file and look for 'activation'.",
             )
 
         self.activation_post = Activation1d(activation=activation_post)
@@ -372,7 +371,6 @@ class BigVGAN(
     # Additional methods for huggingface_hub support
     def _save_pretrained(self, save_directory: Path) -> None:
         """Save weights and config.json from a Pytorch model to a local directory."""
-
         model_path = save_directory / "bigvgan_generator.pt"
         torch.save({"generator": self.state_dict()}, model_path)
 
@@ -398,7 +396,6 @@ class BigVGAN(
         **model_kwargs,
     ) -> "BigVGAN":
         """Load Pytorch pretrained weights and return the loaded model."""
-
         # Download and load hyperparameters (h) used by BigVGAN
         if Path(model_id).is_dir():
             print("Loading config.json from local directory")
@@ -420,13 +417,13 @@ class BigVGAN(
         # instantiate BigVGAN using h
         if use_cuda_kernel:
             print(
-                "[WARNING] You have specified use_cuda_kernel=True during BigVGAN.from_pretrained(). Only inference is supported (training is not implemented)!"
+                "[WARNING] You have specified use_cuda_kernel=True during BigVGAN.from_pretrained(). Only inference is supported (training is not implemented)!",
             )
             print(
-                "[WARNING] You need nvcc and ninja installed in your system that matches your PyTorch build is using to build the kernel. If not, the model will fail to initialize or generate incorrect waveform!"
+                "[WARNING] You need nvcc and ninja installed in your system that matches your PyTorch build is using to build the kernel. If not, the model will fail to initialize or generate incorrect waveform!",
             )
             print(
-                "[WARNING] For detail, see the official GitHub repository: https://github.com/NVIDIA/BigVGAN?tab=readme-ov-file#using-custom-cuda-kernel-for-synthesis"
+                "[WARNING] For detail, see the official GitHub repository: https://github.com/NVIDIA/BigVGAN?tab=readme-ov-file#using-custom-cuda-kernel-for-synthesis",
             )
         model = cls(h, use_cuda_kernel=use_cuda_kernel)
 
@@ -454,7 +451,7 @@ class BigVGAN(
             model.load_state_dict(checkpoint_dict["generator"])
         except RuntimeError:
             print(
-                "[INFO] the pretrained checkpoint does not contain weight norm. Loading the checkpoint after removing weight norm!"
+                "[INFO] the pretrained checkpoint does not contain weight norm. Loading the checkpoint after removing weight norm!",
             )
             model.remove_weight_norm()
             model.load_state_dict(checkpoint_dict["generator"])

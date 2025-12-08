@@ -1,7 +1,6 @@
 from typing import Any
 
-import torch.nn as nn
-from torch import Tensor
+from torch import Tensor, nn
 
 from .utils import ReferenceQuantizedModule
 

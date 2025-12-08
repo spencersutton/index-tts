@@ -1,6 +1,6 @@
 from collections.abc import Callable
 
-import torch.nn as nn
+from torch import nn
 from torch.ao.quantization.utils import Pattern
 
 __all__ = [

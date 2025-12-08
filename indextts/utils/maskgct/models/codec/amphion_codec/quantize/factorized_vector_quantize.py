@@ -23,8 +23,7 @@ class FactorizedVectorQuantize(nn.Module):
         self.codebook = nn.Embedding(self.codebook_size, self.codebook_dim)
 
     def forward(self, z: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
-        """
-        Parameters
+        """Parameters
         ----------
         z: Tensor[B x D x T]
 

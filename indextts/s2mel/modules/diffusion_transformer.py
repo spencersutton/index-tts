@@ -21,9 +21,7 @@ def modulate(x: Tensor, shift: Tensor, scale: Tensor) -> Tensor:
 
 
 class TimestepEmbedder(nn.Module):
-    """
-    Embeds scalar timesteps into vector representations.
-    """
+    """Embeds scalar timesteps into vector representations."""
 
     freqs: Tensor
 
@@ -46,8 +44,7 @@ class TimestepEmbedder(nn.Module):
         self.register_buffer("freqs", freqs)
 
     def timestep_embedding(self, t: Tensor) -> Tensor:
-        """
-        Create sinusoidal timestep embeddings.
+        """Create sinusoidal timestep embeddings.
         :param t: a 1-D Tensor of N indices, one per batch element.
                           These may be fractional.
         :param dim: the dimension of the output.
@@ -65,9 +62,7 @@ class TimestepEmbedder(nn.Module):
 
 
 class FinalLayer(nn.Module):
-    """
-    The final layer of DiT.
-    """
+    """The final layer of DiT."""
 
     def __init__(self, hidden_size: int, patch_size: int, out_channels: int) -> None:
         super().__init__()
@@ -149,8 +144,7 @@ class DiT(torch.nn.Module):
         cond: Tensor,
         mask_content: bool = False,
     ):
-        """
-        x (Tensor): random noise
+        """x (Tensor): random noise
         prompt_x (Tensor): reference mel + zero mel
             shape: (batch_size, 80, 795+1068)
         x_lens (Tensor): mel frames output

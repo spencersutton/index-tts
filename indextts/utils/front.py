@@ -135,8 +135,7 @@ class TextNormalizer:
         return result
 
     def correct_pinyin(self, pinyin: str):
-        """
-        将 jqx 的韵母为 u/ü 的拼音转换为 v
+        """将 jqx 的韵母为 u/ü 的拼音转换为 v
         如：ju -> jv , que -> qve, xün -> xvn
         """
         if pinyin[0] not in "jqxJQX":
@@ -148,8 +147,7 @@ class TextNormalizer:
         return pinyin.upper()
 
     def save_names(self, original_text: str) -> tuple[str, list[str] | None]:
-        """
-        替换人名为占位符 <n_a>、 <n_b>, ...
+        """替换人名为占位符 <n_a>、 <n_b>, ...
         例如：克里斯托弗·诺兰 -> <n_a>
         """
         # 人名
@@ -167,8 +165,7 @@ class TextNormalizer:
         return transformed_text, original_name_list
 
     def restore_names(self, normalized_text: str, original_name_list: list[str] | None) -> str:
-        """
-        恢复人名为原来的文字
+        """恢复人名为原来的文字
         例如：<n_a> -> original_name_list[0]
         """
         if not original_name_list or len(original_name_list) == 0:
@@ -182,8 +179,7 @@ class TextNormalizer:
         return transformed_text
 
     def save_pinyin_tones(self, original_text: str) -> tuple[str, list[str] | None]:
-        """
-        替换拼音声调为占位符 <pinyin_a>, <pinyin_b>, ...
+        """替换拼音声调为占位符 <pinyin_a>, <pinyin_b>, ...
         例如：xuan4 -> <pinyin_a>
         """
         # 声母韵母+声调数字
@@ -201,8 +197,7 @@ class TextNormalizer:
         return transformed_text, original_pinyin_list
 
     def restore_pinyin_tones(self, normalized_text: str, original_pinyin_list: list[str] | None) -> str:
-        """
-        恢复拼音中的音调数字（1-5）为原来的拼音
+        """恢复拼音中的音调数字（1-5）为原来的拼音
         例如：<pinyin_a> -> original_pinyin_list[0]
         """
         if not original_pinyin_list or len(original_pinyin_list) == 0:
@@ -283,8 +278,7 @@ class TextTokenizer:
         max_text_tokens_per_segment: int,
         quick_streaming_tokens: int = 0,
     ) -> list[list[str]]:
-        """
-        将tokenize后的结果按特定token进一步分割
+        """将tokenize后的结果按特定token进一步分割
         The tokenized result is further divided according to a specific token.
         """
         # 处理特殊情况

@@ -20,8 +20,7 @@ from indextts.util import patch_call
 
 
 class ConvLayerNorm(nn.LayerNorm):
-    """
-    Convolution-friendly LayerNorm that moves channels to last dimensions
+    """Convolution-friendly LayerNorm that moves channels to last dimensions
     before running the normalization and moves them back to original position right after.
     """
 

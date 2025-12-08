@@ -541,7 +541,6 @@ class UnifiedVoice(nn.Module):
         If return_attentions is specified, only logits are returned.
         If return_latent is specified, loss & logits are not computed or returned. Only the predicted latents are returned.
         """
-
         if do_spk_cond:
             speech_conditioning_latent = self.get_conditioning(
                 speech_conditioning_latent.transpose(1, 2), cond_mel_lengths
@@ -695,7 +694,6 @@ class UnifiedVoice(nn.Module):
             max_generate_length: limit the number of generated tokens
             hf_generate_kwargs: kwargs for `GPT2InferenceModel.generate(**hf_generate_kwargs)`
         """
-
         if speech_condition.ndim == 2:
             speech_condition = speech_condition.unsqueeze(0)
         if emo_speech_condition is None:

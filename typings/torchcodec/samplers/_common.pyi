@@ -1,6 +1,0 @@
-from collections.abc import Callable
-
-type _LIST_OF_INT_OR_FLOAT = list[int] | list[float]
-type _POLICY_FUNCTION_TYPE = Callable[[_LIST_OF_INT_OR_FLOAT, int], _LIST_OF_INT_OR_FLOAT]
-_POLICY_FUNCTIONS: dict[str, _POLICY_FUNCTION_TYPE] = ...
-_FRAMEBATCH_RETURN_DOCS = ...

@@ -141,7 +141,7 @@ extend-select = [
   "W",
   "YTT",
 ]
-ignore = ["S101", "COM812"]
+ignore = ["S101", "COM812", "RET507", "D403", "TC006"]
 per-file-ignores = { "typings/**/*.pyi" = ["ANN401"] }
 
 [dependency-groups]

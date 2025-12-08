@@ -3,7 +3,7 @@ from typing import Any, Concatenate, ParamSpec, TypeVar
 from warnings import deprecated
 
 import torch
-import torch._C as _C
+from torch import _C
 
 __all__ = [
     "BackwardCFunction",

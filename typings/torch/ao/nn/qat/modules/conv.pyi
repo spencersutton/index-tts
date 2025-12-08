@@ -1,6 +1,6 @@
 from typing import ClassVar, Literal
 
-import torch.nn as nn
+from torch import nn
 from torch.nn.common_types import _size_1_t, _size_2_t, _size_3_t
 
 __all__ = ["Conv1d", "Conv2d", "Conv3d"]

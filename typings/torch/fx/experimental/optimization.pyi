@@ -2,8 +2,7 @@ from collections.abc import Iterable
 from typing import Any
 
 import torch
-import torch.fx as fx
-import torch.nn as nn
+from torch import fx, nn
 
 __all__ = [
     "MklSubgraph",

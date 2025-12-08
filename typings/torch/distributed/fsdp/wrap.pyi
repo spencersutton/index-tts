@@ -3,7 +3,7 @@ from abc import ABC
 from collections.abc import Callable, Generator, Iterable
 from typing import Any
 
-import torch.nn as nn
+from torch import nn
 
 __all__ = [
     "CustomPolicy",

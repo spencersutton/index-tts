@@ -1,8 +1,7 @@
 # pyright: reportAny=false, reportExplicitAny=false, reportUnknownParameterType=false, reportMissingParameterType=false
 
 import torch
-import torch.nn as nn
-from torch import Tensor
+from torch import Tensor, nn
 
 if "sinc" in dir(torch):
     sinc = ...

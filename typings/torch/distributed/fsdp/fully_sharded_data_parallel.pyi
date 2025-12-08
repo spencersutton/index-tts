@@ -6,7 +6,7 @@ from typing import Any
 
 import torch
 import torch.distributed as dist
-import torch.nn as nn
+from torch import nn
 from torch.distributed.fsdp._common_utils import _FSDPState
 from torch.distributed.fsdp._init_utils import ProcessGroupType
 from torch.distributed.fsdp.api import (

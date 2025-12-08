@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Any
 
 import torch
-import torch.nn as nn
+from torch import nn
 from torch.fx import Node
 
 """

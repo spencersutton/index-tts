@@ -1,5 +1,4 @@
-import torch.jit as jit
-import torch.nn as nn
+from torch import jit, nn
 
 __all__ = ["DistributedOptimizer"]
 logger = ...

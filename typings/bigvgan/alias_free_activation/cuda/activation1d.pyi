@@ -3,7 +3,7 @@
 from typing import Any
 
 import torch
-import torch.nn as nn
+from torch import nn
 
 anti_alias_activation_cuda = ...
 

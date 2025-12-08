@@ -1,8 +1,7 @@
 from typing import ClassVar, Literal
 
 import torch.ao.nn.quantized as nnq
-import torch.nn as nn
-from torch import Tensor
+from torch import Tensor, nn
 from torch.nn.common_types import _size_1_t
 
 r"""Dynamically quantized convolution modules."""

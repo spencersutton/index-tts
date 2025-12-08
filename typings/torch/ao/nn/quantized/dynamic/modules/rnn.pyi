@@ -1,8 +1,7 @@
 from warnings import deprecated
 
 import torch
-import torch.nn as nn
-from torch import Tensor
+from torch import Tensor, nn
 from torch._jit_internal import Optional
 from torch.nn.utils.rnn import PackedSequence
 

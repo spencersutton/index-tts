@@ -2,7 +2,7 @@ from typing import ClassVar, Literal
 
 import torch
 import torch.ao.nn.intrinsic as nni
-import torch.nn as nn
+from torch import nn
 from torch.nn.common_types import _size_1_t
 
 from .utils import WeightedQuantizedModule

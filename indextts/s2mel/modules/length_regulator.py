@@ -5,6 +5,7 @@ from torch import Tensor, nn
 from torch.nn import functional as F
 
 from indextts.s2mel.modules.commons import sequence_mask
+from indextts.util import patch_call
 
 
 class InterpolateRegulator(nn.Module):
@@ -39,11 +40,9 @@ class InterpolateRegulator(nn.Module):
         self,
         x: Tensor,
         ylens: Tensor,
-        n_quantizers: Tensor | None = None,
+        n_quantizers: int = 1,
         f0: Tensor | None = None,
-    ):
-        # apply token drop
-        n_quantizers = torch.ones((x.shape[0],), device=x.device) * (1 if n_quantizers is None else n_quantizers)
+    ) -> tuple[Tensor, Tensor, Tensor | None, Tensor | None, Tensor | None]:
 
         x = self.content_in_proj(x)
         # x in (B, T, D)
@@ -63,3 +62,6 @@ class InterpolateRegulator(nn.Module):
             return out_q * mask, ylens, codes, commitment_loss, codebook_loss
         olens = ylens
         return out * mask, olens, None, None, None
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...

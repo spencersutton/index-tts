@@ -1,4 +1,3 @@
-
 from collections.abc import MutableMapping
 from pathlib import Path
 from typing import cast
@@ -75,7 +74,7 @@ class MyModel(nn.Module):
         cond: Tensor,
         y: Tensor,
     ) -> Tensor:
-        
+
         return self.cfm(x, target_lengths, prompt_len, cond, y)
 
     def enable_torch_compile(self) -> None:

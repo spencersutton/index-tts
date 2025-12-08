@@ -25,7 +25,7 @@ class ConvLayerNorm(nn.LayerNorm):
     before running the normalization and moves them back to original position right after.
     """
 
-    def __init__(self, normalized_shape: int | list[int] | torch.Size, **kwargs) -> None:
+    def __init__(self, normalized_shape: int | list[int] | torch.Size, **kwargs: object) -> None:
         super().__init__(normalized_shape, **kwargs)
 
     def forward(self, input: Tensor) -> Tensor:
@@ -56,7 +56,7 @@ def apply_parametrization_norm(module: nn.Module, norm: str = "none") -> nn.Modu
     return module
 
 
-def get_norm_module(module: nn.Module, causal: bool = False, norm: str = "none", **norm_kwargs) -> nn.Module:
+def get_norm_module(module: nn.Module, causal: bool = False, norm: str = "none", **norm_kwargs: object) -> nn.Module:
     """Return the proper normalization module. If causal is True, this will ensure the returned
     module is causal, or return an error if the normalization doesn't support causal evaluation.
     """
@@ -80,7 +80,7 @@ def get_extra_padding_for_conv1d(x: Tensor, kernel_size: int, stride: int, paddi
     return ideal_length - length
 
 
-def pad1d(x: Tensor, paddings: tuple[int, int], mode: str = "zero", value: float = 0.0):
+def pad1d(x: Tensor, paddings: tuple[int, int], mode: str = "zero", value: float = 0.0) -> Tensor:
     """Tiny wrapper around F.pad, just to allow for reflect padding on small input.
     If this is the case, we insert extra 0 padding to the right before the reflection happen.
     """
@@ -143,7 +143,7 @@ class SConv1d(nn.Module):
         norm: str = "none",
         norm_kwargs: dict[str, tp.Any] = {},
         pad_mode: str = "reflect",
-        **kwargs,
+        **kwargs: object,
     ) -> None:
         super().__init__()
         # warn user on unusual setup between dilation and stride

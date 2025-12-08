@@ -239,12 +239,7 @@ class IndexTTS2:
 
         s2mel_path = self.model_dir / self.cfg.s2mel_checkpoint
         s2mel = MyModel(self.cfg.s2mel, use_gpt_latent=True)
-        s2mel = load_checkpoint2(
-            s2mel,
-            s2mel_path,
-            ignore_modules=[],
-            is_distributed=False,
-        )
+        s2mel = load_checkpoint2(s2mel, s2mel_path)
         self.s2mel = s2mel.to(self.device)
         cfm = self.s2mel.models["cfm"]
         assert isinstance(cfm, CFM)

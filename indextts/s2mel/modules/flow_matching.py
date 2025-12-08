@@ -71,6 +71,7 @@ class BASECFM(torch.nn.Module, ABC):
     ) -> Tensor:
         """
         Fixed euler solver for ODEs.
+
         Args:
             x (Tensor): random noise
             t_span (Tensor): n_timesteps interpolated

@@ -19,8 +19,8 @@ from .alias_free_activation.torch.act import Activation1d as TorchActivation1d
 from .utils import get_padding, init_weights
 
 
-def load_hparams_from_json(path) -> dict[str, Any]:
-    data = Path(path).read_text(encoding="utf-8")
+def load_hparams_from_json(path: Path) -> dict[str, Any]:
+    data = path.read_text(encoding="utf-8")
     return json.loads(data)
 
 
@@ -170,9 +170,7 @@ class AMPBlock2(torch.nn.Module):
 
         # Select which Activation1d, lazy-load cuda version to ensure backward compatibility
         if self.h.get("use_cuda_kernel", False):
-            from .alias_free_activation.cuda.activation1d import (
-                Activation1d as CudaActivation1d,
-            )
+            from .alias_free_activation.cuda.activation1d import Activation1d as CudaActivation1d  # noqa: PLC0415
 
             Activation1d = CudaActivation1d
         else:
@@ -414,7 +412,7 @@ class BigVGAN(
                 token=token,
                 local_files_only=local_files_only,
             )
-        h = load_hparams_from_json(config_file)
+        h = load_hparams_from_json(Path(config_file))
 
         # instantiate BigVGAN using h
         if use_cuda_kernel:

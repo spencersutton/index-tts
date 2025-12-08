@@ -30,10 +30,11 @@ class GPT2AccelAttention(nn.Module):
         self.split_size = self.embed_dim
 
         if self.head_dim * self.num_heads != self.embed_dim:
-            raise ValueError(
+            msg = (
                 f"`embed_dim` must be divisible by num_heads (got `embed_dim`: {self.embed_dim} and `num_heads`:"
                 f" {self.num_heads})."
             )
+            raise ValueError(msg)
 
         self.scale_attn_weights = config.scale_attn_weights
 
@@ -60,7 +61,8 @@ class GPT2AccelAttention(nn.Module):
         **kwargs,
     ):
         if encoder_hidden_states is not None:
-            raise NotImplementedError("Cross attention not supported in accel mode")
+            msg = "Cross attention not supported in accel mode"
+            raise NotImplementedError(msg)
 
         qkv = self.c_attn(hidden_states)
         query, key, value = qkv.split(self.split_size, dim=2)

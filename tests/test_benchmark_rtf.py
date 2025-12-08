@@ -8,7 +8,7 @@ sys.path.insert(0, (Path(__file__).parent / "..").resolve())
 from tools.benchmark import BenchmarkResult
 
 
-def test_rtf_stats_basic():
+def test_rtf_stats_basic() -> None:
     # 3 runs: times (s) / durations (s)
     times = [2.0, 3.0, 4.0]
     durations = [1.0, 2.0, 2.0]
@@ -30,7 +30,7 @@ def test_rtf_stats_basic():
     assert math.isclose(br.max_rtf, max(br.rtf_list), rel_tol=1e-9)
 
 
-def test_rtf_handles_zero_duration():
+def test_rtf_handles_zero_duration() -> None:
     # first run has zero duration -> should be ignored
     times = [1.0, 2.0]
     durations = [0.0, 2.0]
@@ -50,7 +50,7 @@ def test_rtf_handles_zero_duration():
     assert math.isclose(br.median_rtf, 1.0, rel_tol=1e-9)
 
 
-def test_duration_stats():
+def test_duration_stats() -> None:
     times = [1.0, 1.5]
     durations = [0.5, 0.5]
     br = BenchmarkResult(

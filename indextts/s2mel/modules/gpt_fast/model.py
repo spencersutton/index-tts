@@ -46,7 +46,7 @@ def _find_multiple(n: int, k: int) -> int:
 
 
 class AdaptiveLayerNorm(nn.Module):
-    r"""Adaptive Layer Normalization"""
+    r"""Adaptive Layer Normalization."""
 
     def __init__(self, d_model: int, norm: "RMSNorm") -> None:
         super().__init__()

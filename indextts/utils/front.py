@@ -84,8 +84,7 @@ class TextNormalizer:
         if has_chinese or not has_alpha or is_email:
             return True
 
-        has_pinyin = bool(re.search(TextNormalizer.PINYIN_TONE_PATTERN, s, re.IGNORECASE))
-        return has_pinyin
+        return bool(re.search(TextNormalizer.PINYIN_TONE_PATTERN, s, re.IGNORECASE))
 
     def load(self) -> None:
         if self.zh_normalizer is not None and self.en_normalizer is not None:

@@ -16,8 +16,7 @@ def fused_add_tanh_sigmoid_multiply(
     t_act_part, s_act_part = torch.chunk(in_act, 2, dim=1)
     t_act = torch.tanh(t_act_part)
     s_act = torch.sigmoid(s_act_part)
-    acts = t_act * s_act
-    return acts
+    return t_act * s_act
 
 
 def sequence_mask(length: Tensor, max_length: Tensor | None = None) -> Tensor:
@@ -71,8 +70,7 @@ class MyModel(nn.Module):
         cond: Tensor,
         y: Tensor,
     ) -> Tensor:
-        x = self.cfm(x, target_lengths, prompt_len, cond, y)
-        return x
+        return self.cfm(x, target_lengths, prompt_len, cond, y)
 
     def enable_torch_compile(self) -> None:
         """Enable torch.compile optimization.

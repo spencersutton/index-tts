@@ -189,8 +189,7 @@ class AccelInferenceEngine:
 
     def _prepare_sample(self, requests: list[Seq], temperature: float):
         temperatures = [temperature] * len(requests)
-        temperatures = torch.tensor(temperatures, dtype=torch.float32, pin_memory=True).cuda(non_blocking=True)
-        return temperatures
+        return torch.tensor(temperatures, dtype=torch.float32, pin_memory=True).cuda(non_blocking=True)
 
     def _capture_cuda_graphs(
         self,
@@ -494,8 +493,7 @@ class AccelInferenceEngine:
                 full_sequence = input_ids[i].tolist() + generated_tokens[i]
                 output_ids.append(full_sequence)
 
-            output = torch.tensor(output_ids, dtype=torch.long, device=device)
-            return output
+            return torch.tensor(output_ids, dtype=torch.long, device=device)
 
         remaining_tokens = max_new_tokens - 1
 

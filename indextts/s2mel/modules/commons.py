@@ -88,7 +88,10 @@ class MyModel(nn.Module):
 
 
 def load_checkpoint2(model: MyModel, path: Path) -> MyModel:
-    state = cast(dict[str, dict[str, dict[str, Tensor]]], torch.load(path, map_location="cpu"))
+    state = cast(
+        dict[str, dict[str, dict[str, Tensor]]],
+        torch.load(path, map_location="cpu"),
+    )
     params = state["net"]
 
     for key, module in model.models.items():

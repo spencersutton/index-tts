@@ -60,5 +60,8 @@ class InterpolateRegulator(nn.Module):
         out = model_output.transpose(1, 2).contiguous()
         return out * mask, ylens, None, None, None
 
-    @patch_call(forward, tuple[Tensor, Tensor, Tensor | None, Tensor | None, Tensor | None])
+    @patch_call(
+        forward,
+        tuple[Tensor, Tensor, Tensor | None, Tensor | None, Tensor | None],
+    )
     def __call__(self) -> None: ...

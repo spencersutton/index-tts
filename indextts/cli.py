@@ -1,3 +1,4 @@
+import argparse
 import sys
 import warnings
 from pathlib import Path
@@ -21,7 +22,7 @@ profiler = None
 
 
 def main() -> None:
-    import argparse
+    profiler = None
 
     parser = argparse.ArgumentParser(description="IndexTTS Command Line")
     parser.add_argument("text", type=str, help="Text to be synthesized")

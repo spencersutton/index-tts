@@ -116,7 +116,6 @@ extend-select = [
   "NPY",
   "PERF",
   "PIE",
-  "PL",
   "PLC",
   "PLE",
   "PLW",
@@ -139,17 +138,18 @@ extend-select = [
   "YTT",
 ]
 ignore = [
+  "B008",
   "B905",
   "COM812",
+  "FBT001",
+  "FBT002",
+  "FBT003",
+  "N806",
   "N812",
   "RET507",
   "S101",
   "T201",
   "TC006",
-  "FBT001",
-  "FBT002",
-  "FBT003",
-  "N806",
 ]
 per-file-ignores = { "typings/**/*.pyi" = ["ANN401"] }
 

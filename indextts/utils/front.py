@@ -1,9 +1,8 @@
 import re
 import traceback
 import warnings
-from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import ClassVar
 
 from sentencepiece import SentencePieceProcessor
 from wetext import Normalizer
@@ -256,10 +255,10 @@ class TextTokenizer:
             tokens = [tokens]
         return [self.sp_model.PieceToId(token) for token in tokens]
 
-    def tokenize(self, text: str) -> Sequence[str]:
+    def tokenize(self, text: str) -> list[str]:
         return self.encode(text, out_type=str)
 
-    def encode(self, text: str, **kwargs: Any) -> Sequence[str]:
+    def encode(self, text: str, **kwargs: object) -> list[str]:
         if len(text) == 0:
             return []
         if len(text.strip()) == 1:

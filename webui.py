@@ -3,7 +3,9 @@ import html
 import json
 import sys
 import time
+from collections.abc import Mapping
 from pathlib import Path
+from typing import Any
 
 import gradio as gr
 import pandas as pd
@@ -130,26 +132,26 @@ def get_example_cases(include_experimental=False):
 
 
 def gen_single(
-    emo_control_method,
-    prompt,
-    text,
-    emo_ref_path,
-    emo_weight,
-    vec1,
-    vec2,
-    vec3,
-    vec4,
-    vec5,
-    vec6,
-    vec7,
-    vec8,
-    emo_text,
-    emo_random,
-    max_text_tokens_per_segment=120,
+    emo_control_method: int | gr.Radio,
+    prompt: str | Path,
+    text: str,
+    emo_ref_path: str | Path | None,
+    emo_weight: float,
+    vec1: float,
+    vec2: float,
+    vec3: float,
+    vec4: float,
+    vec5: float,
+    vec6: float,
+    vec7: float,
+    vec8: float,
+    emo_text: str | None,
+    emo_random: bool,
+    max_text_tokens_per_segment: int = 120,
     *args: float,
-    progress=gr.Progress(),
-):
-    output_path = None
+    progress: gr.Progress = gr.Progress(),
+) -> gr.Audio:
+    output_path: Path | None = None
     if not output_path:
         output_path = Path("outputs") / f"spk_{int(time.time())}.wav"
     # set gradio progress
@@ -174,29 +176,30 @@ def gen_single(
         "repetition_penalty": float(repetition_penalty),
         "max_mel_tokens": int(max_mel_tokens),
     }
-    if type(emo_control_method) is not int:
-        emo_control_method = emo_control_method.value
-    if emo_control_method == 0:  # emotion from speaker
-        emo_ref_path = None  # remove external reference audio
-    if emo_control_method == 1:  # emotion from reference audio
-        pass
-    if emo_control_method == 2:  # emotion from custom vectors
-        vec = [vec1, vec2, vec3, vec4, vec5, vec6, vec7, vec8]
-        vec = tts.normalize_emo_vec(vec, apply_bias=True)
-    else:
-        # don't use the emotion vector inputs for the other modes
-        vec = None
+    if not isinstance(emo_control_method, int):
+        emo_control_method = int(emo_control_method.value)
+    match emo_control_method:
+        case 0:  # emotion from speaker
+            emo_ref_path = None  # remove external reference audio
+            vec = None
+        case 1:  # emotion from reference audio
+            vec = None
+        case 2:  # emotion from custom vectors
+            vec = [vec1, vec2, vec3, vec4, vec5, vec6, vec7, vec8]
+            vec = tts.normalize_emo_vec(vec, apply_bias=True)
+        case _:  # other modes
+            vec = None
 
-    if emo_text == "":
+    if not emo_text:
         # erase empty emotion descriptions; `infer()` will then automatically use the main prompt
         emo_text = None
 
     print(f"Emo control mode:{emo_control_method},weight:{emo_weight},vec:{vec}")
     output = tts.infer(
-        spk_audio_prompt=prompt,
+        spk_audio_prompt=Path(prompt),
         text=text,
         output_path=output_path,
-        emo_audio_prompt=emo_ref_path,
+        emo_audio_prompt=Path(emo_ref_path) if emo_ref_path else None,
         emo_alpha=emo_weight,
         emo_vector=vec,
         use_emo_text=(emo_control_method == 3),
@@ -209,17 +212,17 @@ def gen_single(
     return gr.update(value=output, visible=True)
 
 
-def update_prompt_audio():
+def update_prompt_audio() -> gr.Button:
     return gr.update(interactive=True)
 
 
-def create_warning_message(warning_text):
+def create_warning_message(warning_text: str) -> gr.HTML:
     return gr.HTML(
         f'<div style="padding: 0.5em 0.8em; border-radius: 0.5em; background: #ffa87d; color: #000; font-weight: bold">{html.escape(warning_text)}</div>'
     )
 
 
-def create_experimental_warning_message():
+def create_experimental_warning_message() -> gr.HTML:
     return create_warning_message(i18n("提示：此功能为实验版，结果尚不稳定，我们正在持续优化中。"))
 
 
@@ -497,7 +500,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
             ],
         )
 
-    def on_example_click(example):
+    def on_example_click(example: Mapping[int, object]) -> tuple[dict[str, object], ...]:
         print(f"Example clicked: ({len(example)} values) = {example!r}")
         return (
             gr.update(value=example[0]),
@@ -538,7 +541,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
         ],
     )
 
-    def on_input_text_change(text, max_text_tokens_per_segment):
+    def on_input_text_change(text: str, max_text_tokens_per_segment: int) -> dict[str | gr.Dataframe, Any]:
         if text and len(text) > 0:
             text_tokens_list = tts.tokenizer.tokenize(text)
 
@@ -559,7 +562,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
             segments_preview: gr.update(value=df),
         }
 
-    def on_method_change(emo_control_method):
+    def on_method_change(emo_control_method: int) -> tuple[dict[str, Any], ...]:
         match emo_control_method:
             case 1:  # emotion reference audio
                 return (
@@ -606,7 +609,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
         ],
     )
 
-    def on_experimental_change(is_experimental, current_mode_index):
+    def on_experimental_change(is_experimental: bool, current_mode_index: int) -> tuple[dict[str, Any], ...]:
         # 切换情感控制选项
         new_choices = EMO_CHOICES_ALL if is_experimental else EMO_CHOICES_OFFICIAL
         # if their current mode selection doesn't exist in new choices, reset to 0.

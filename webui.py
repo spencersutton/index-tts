@@ -123,7 +123,7 @@ with Path("examples/cases.jsonl").open(encoding="utf-8") as f:
         ])
 
 
-def get_example_cases(include_experimental=False):
+def get_example_cases(include_experimental: bool = False) -> list[list[Any]]:
     if include_experimental:
         return example_cases  # show every example
 

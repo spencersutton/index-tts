@@ -930,7 +930,7 @@ def save_to_file(output_path: Path, wav: Tensor, sampling_rate: int) -> None:
     print(">> wav file saved to:", output_path)
 
 
-def _find_most_similar_cosine(query_vector: Tensor, matrix: Tensor):
+def _find_most_similar_cosine(query_vector: Tensor, matrix: Tensor) -> int:
     query_vector = query_vector.float()
     matrix = matrix.float()
 

@@ -150,6 +150,7 @@ ignore = [
   "S101",
   "T201",
   "TC006",
+  "C901",
 ]
 per-file-ignores = { "typings/**/*.pyi" = ["ANN401"] }
 

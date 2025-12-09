@@ -1,21 +1,15 @@
+import argparse
 import html
 import json
 import sys
 import time
-import warnings
 from pathlib import Path
 
-warnings.filterwarnings("ignore", category=FutureWarning)
-warnings.filterwarnings("ignore", category=UserWarning)
-
-
+import gradio as gr
 import pandas as pd
 
-current_dir = Path(__file__).resolve().parent
-sys.path.append(str(current_dir))
-sys.path.append(str(current_dir / "indextts"))
-
-import argparse
+from indextts.infer_v2 import IndexTTS2
+from tools.i18n.i18n import I18nAuto
 
 parser = argparse.ArgumentParser(
     description="IndexTTS WebUI",
@@ -77,12 +71,6 @@ for file in [
     if not file_path.exists():
         print(f"Required file {file_path} does not exist. Please download it.")
         sys.exit(1)
-
-
-import gradio as gr
-
-from indextts.infer_v2 import IndexTTS2
-from tools.i18n.i18n import I18nAuto
 
 i18n = I18nAuto(language="Auto")
 tts = IndexTTS2(

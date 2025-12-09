@@ -56,8 +56,9 @@ parser.add_argument(
 )
 cmd_args = parser.parse_args()
 
-if not Path(cmd_args.model_dir).exists():
-    print(f"Model directory {cmd_args.model_dir} does not exist. Please download the model first.")
+model_dir = Path(cmd_args.model_dir)
+if not model_dir.exists():
+    print(f"Model directory {model_dir} does not exist. Please download the model first.")
     sys.exit(1)
 
 for file in [
@@ -67,15 +68,15 @@ for file in [
     "s2mel.pth",
     "wav2vec2bert_stats.pt",
 ]:
-    file_path = Path(cmd_args.model_dir) / file
+    file_path = model_dir / file
     if not file_path.exists():
         print(f"Required file {file_path} does not exist. Please download it.")
         sys.exit(1)
 
 i18n = I18nAuto(language="Auto")
 tts = IndexTTS2(
-    model_dir=cmd_args.model_dir,
-    cfg_path=Path(cmd_args.model_dir) / "config.yaml",
+    model_dir=model_dir,
+    cfg_path=model_dir / "config.yaml",
     use_fp16=cmd_args.fp16,
     use_deepspeed=cmd_args.deepspeed,
     use_cuda_kernel=cmd_args.cuda_kernel,

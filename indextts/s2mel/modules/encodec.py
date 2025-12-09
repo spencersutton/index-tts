@@ -43,7 +43,7 @@ CONV_NORMALIZATIONS = frozenset([
 ])
 
 
-def apply_parametrization_norm(module: nn.Module, norm: str = "none") -> nn.Module:
+def _apply_parametrization_norm(module: nn.Module, norm: str = "none") -> nn.Module:
     assert norm in CONV_NORMALIZATIONS
     match norm:
         case "weight_norm":
@@ -124,7 +124,7 @@ class NormConv1d(nn.Module):
         if norm_kwargs is None:
             norm_kwargs = {}
         super().__init__()
-        self.conv = apply_parametrization_norm(nn.Conv1d(*args, **kwargs), norm)
+        self.conv = _apply_parametrization_norm(nn.Conv1d(*args, **kwargs), norm)
         self.norm = get_norm_module(self.conv, causal, norm, **norm_kwargs)
         self.norm_type = norm
 

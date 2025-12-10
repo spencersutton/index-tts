@@ -204,7 +204,6 @@ class IndexTTS2:
     s2mel: MyModel
     campplus_model: CAMPPlus
     bigvgan: "bigvgan.BigVGAN"
-    normalizer: TextNormalizer
     tokenizer: TextTokenizer
     emo_matrix: tuple[Tensor, ...]
     emo_num: list[int]
@@ -216,7 +215,7 @@ class IndexTTS2:
     model_version: float
 
     @functools.lru_cache  # noqa: B019
-    def foo(self, prompt: Path, verbose: bool = False) -> Tensor:
+    def process_audio(self, prompt: Path, verbose: bool = False) -> Tensor:
         audio, _ = _load_and_cut_audio(prompt, 15, verbose, sr=16000)
         inputs = self.extract_features(audio, sampling_rate=16000, return_tensors="pt")  # ty:ignore[invalid-argument-type]
         input_features = inputs["input_features"].to(self.device)
@@ -399,12 +398,12 @@ class IndexTTS2:
 
         self.bigvgan = _load_bigvgan(self.cfg, self.device, self.use_cuda_kernel)
 
-        self.normalizer = TextNormalizer()
-        self.normalizer.load()
+        normalizer = TextNormalizer()
+        normalizer.load()
         print(">> TextNormalizer loaded")
 
         bpe_path = self.model_dir / self.cfg.dataset.bpe_model
-        self.tokenizer = TextTokenizer(bpe_path, self.normalizer)
+        self.tokenizer = TextTokenizer(bpe_path, normalizer)
         print(">> bpe model loaded from:", bpe_path)
 
         emo_matrix: Tensor = torch.load(self.model_dir / self.cfg.emo_matrix)
@@ -614,7 +613,7 @@ class IndexTTS2:
             emovec_mat = torch.sum(emovec_mat, 0)
             emovec_mat = emovec_mat.unsqueeze(0)
 
-        emo_cond_emb = self.foo(emo_audio_prompt, verbose)
+        emo_cond_emb = self.process_audio(emo_audio_prompt, verbose)
 
         self._set_gr_progress(0.1, "text processing...")
         text_tokens_list = self.tokenizer.tokenize(text)

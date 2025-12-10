@@ -43,6 +43,9 @@ if typing.TYPE_CHECKING:
     from gradio import Progress
 
 
+SAMPLING_RATE = 22050
+
+
 def _load_bigvgan(cfg: CheckpointsConfig, device: str, use_cuda_kernel: bool) -> "bigvgan.BigVGAN":
     name = cfg.vocoder.name
     model = bigvgan.BigVGAN.from_pretrained(name, use_cuda_kernel=use_cuda_kernel)
@@ -80,7 +83,6 @@ def _load_semantic_codec(device: str) -> RepCodec:
 
 def generate_silence_interval(
     wavs: list[Tensor],
-    sampling_rate: int = 22050,
     interval_silence: int = 200,
 ) -> Tensor:
     """Silences to be insert between generated segments."""
@@ -90,13 +92,12 @@ def generate_silence_interval(
     # get channel_size
     channel_size = wavs[0].size(0)
     # get silence tensor
-    sil_dur = int(sampling_rate * interval_silence / 1000.0)
+    sil_dur = int(SAMPLING_RATE * interval_silence / 1000.0)
     return torch.zeros(channel_size, sil_dur)
 
 
 def insert_interval_silence(
     wavs: list[Tensor],
-    sampling_rate: int = 22050,
     interval_silence: int = 200,
 ) -> list[Tensor]:
     """Insert silences between generated segments.
@@ -108,7 +109,7 @@ def insert_interval_silence(
     # get channel_size
     channel_size = wavs[0].size(0)
     # get silence tensor
-    sil_dur = int(sampling_rate * interval_silence / 1000.0)
+    sil_dur = int(SAMPLING_RATE * interval_silence / 1000.0)
     sil_tensor = torch.zeros(channel_size, sil_dur)
 
     wavs_list: list[Tensor] = []
@@ -210,16 +211,11 @@ class IndexTTS2:
     spk_matrix: tuple[Tensor, ...]
     mel_fn: Callable[[Tensor], Tensor]
 
-    # 缓存参考音频：
-    # Cache reference audio:
-    cache_emo_cond: Tensor | None = None
-    cache_emo_audio_prompt: Path | None = None
-
     if typing.TYPE_CHECKING:
         gr_progress: Progress | None
     model_version: float
 
-    @functools.lru_cache
+    @functools.lru_cache  # noqa: B019
     def foo(self, prompt: Path, verbose: bool = False) -> Tensor:
         audio, _ = _load_and_cut_audio(prompt, 15, verbose, sr=16000)
         inputs = self.extract_features(audio, sampling_rate=16000, return_tensors="pt")  # ty:ignore[invalid-argument-type]
@@ -227,7 +223,7 @@ class IndexTTS2:
         attention_mask = inputs["attention_mask"].to(self.device)
         return self.get_emb(input_features, attention_mask)
 
-    @functools.lru_cache
+    @functools.lru_cache  # noqa: B019
     def process_audio_prompt(self, prompt: Path, verbose: bool = False) -> tuple[Tensor, Tensor, Tensor, Tensor]:
         audio, sr = _load_and_cut_audio(prompt, 15, verbose)
         audio_22k = torchaudio.transforms.Resample(sr, 22050).forward(audio)
@@ -306,7 +302,7 @@ class IndexTTS2:
         # Configure torch.compile inductor optimizations
         if use_torch_compile:
             # Enable persistent cache to avoid recompilation between runs
-            import torch._dynamo.config as dynamo_config
+            import torch._dynamo.config as dynamo_config  # noqa: PLC0415, PLC2701
 
             cache_dir = model_dir / ".torch_compile_cache"
             cache_dir.mkdir(exist_ok=True, parents=True)
@@ -322,7 +318,7 @@ class IndexTTS2:
 
             if self.device.startswith("cuda"):
                 try:
-                    import torch._inductor.config as inductor_config
+                    import torch._inductor.config as inductor_config  # noqa: PLC0415, PLC2701
 
                     # Enable CUDA graphs for reduced kernel launch overhead
                     inductor_config.triton.cudagraphs = True
@@ -361,7 +357,7 @@ class IndexTTS2:
 
         if use_deepspeed:
             try:
-                import importlib.util
+                import importlib.util  # noqa: PLC0415
 
                 if importlib.util.find_spec("deepspeed") is None:
                     use_deepspeed = False
@@ -375,13 +371,13 @@ class IndexTTS2:
         if self.use_cuda_kernel:
             # preload the CUDA kernel for BigVGAN
             try:
-                from indextts.s2mel.modules.bigvgan.alias_free_activation.cuda import activation1d
+                from indextts.s2mel.modules.bigvgan.alias_free_activation.cuda import activation1d  # noqa: PLC0415
 
                 print(
                     ">> Preload custom CUDA kernel for BigVGAN",
                     activation1d.anti_alias_activation_cuda,
                 )
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 print(">> Failed to load custom CUDA kernel for BigVGAN. Falling back to torch.")
                 print(f"{e!r}")
                 self.use_cuda_kernel = False
@@ -509,7 +505,7 @@ class IndexTTS2:
         max_text_tokens_per_segment: int = 120,
         stream_return: bool = False,
         more_segment_before: int = 0,
-        **generation_kwargs: Any,
+        **generation_kwargs: Any,  # noqa: ANN401
     ) -> Tensor | Generator[Tensor | Path | tuple[int, np.ndarray] | None] | Path | tuple[int, np.ndarray] | None:
         gen = self.infer_generator(
             spk_audio_prompt,
@@ -553,7 +549,7 @@ class IndexTTS2:
         max_text_tokens_per_segment: int = 120,
         stream_return: bool = False,
         quick_streaming_tokens: int = 0,
-        **generation_kwargs: Any,
+        **generation_kwargs: Any,  # noqa: ANN401
     ) -> Generator[Tensor | Path | tuple[int, np.ndarray] | None]:
         # Mark CUDA graph step begin at the start of each inference
         # This tells PyTorch it's safe to reuse CUDA graph buffers
@@ -608,7 +604,7 @@ class IndexTTS2:
         if emo_vector is not None:
             weight_vector = torch.tensor(emo_vector, device=self.device)
             if use_random:
-                random_index = [random.randint(0, x - 1) for x in self.emo_num]
+                random_index = [random.randint(0, x - 1) for x in self.emo_num]  # noqa: S311
             else:
                 random_index = [_find_most_similar_cosine(style, tmp) for tmp in self.spk_matrix]
 
@@ -658,7 +654,6 @@ class IndexTTS2:
         num_beams = generation_kwargs.pop("num_beams", 3)
         repetition_penalty = generation_kwargs.pop("repetition_penalty", 10.0)
         max_mel_tokens = generation_kwargs.pop("max_mel_tokens", 1500)
-        sampling_rate = 22050
         emovec_mat = None
         weight_vector = None
 
@@ -773,7 +768,7 @@ class IndexTTS2:
                     len_ = (code == self.stop_mel_token).nonzero(as_tuple=False)[0]
                     code_len = len_[0].item() if len_.numel() > 0 else len(code)
 
-                code = code[:code_len].unsqueeze(0)  # (1, S)
+                code = code[:code_len].unsqueeze(0)  # (1, S)  # noqa: PLW2901
                 code_lens = torch.LongTensor([code_len]).to(self.device)
 
                 # Get corresponding text tokens for this segment (unpadded)
@@ -864,16 +859,15 @@ class IndexTTS2:
                     if silence is None:
                         silence = generate_silence_interval(
                             wavs,
-                            sampling_rate=sampling_rate,
                             interval_silence=interval_silence,
                         )
                     yield silence
         end_time = time.perf_counter()
 
         self._set_gr_progress(0.9, "saving audio...")
-        wavs = insert_interval_silence(wavs, sampling_rate=sampling_rate, interval_silence=interval_silence)
+        wavs = insert_interval_silence(wavs, interval_silence=interval_silence)
         wav = torch.cat(wavs, dim=1)
-        wav_length = wav.shape[-1] / sampling_rate
+        wav_length = wav.shape[-1] / SAMPLING_RATE
         print(f">> gpt_gen_time: {gpt_gen_time:.2f} seconds")
         print(f">> gpt_forward_time: {gpt_forward_time:.2f} seconds")
         print(f">> s2mel_time: {s2mel_time:.2f} seconds")
@@ -885,7 +879,7 @@ class IndexTTS2:
         # save audio
         wav = wav.cpu()  # to cpu
         if output_path:
-            save_to_file(output_path, wav, sampling_rate)
+            save_to_file(output_path, wav, SAMPLING_RATE)
 
             if stream_return:
                 return None
@@ -897,7 +891,7 @@ class IndexTTS2:
             # Scale to int16 range for Gradio compatibility
             wav_data = (wav * torch.iinfo(torch.int16).max).type(torch.int16)
             wav_data = wav_data.numpy().T
-            yield (sampling_rate, wav_data)
+            yield (SAMPLING_RATE, wav_data)
 
 
 def save_to_file(output_path: Path, wav: Tensor, sampling_rate: int) -> None:
@@ -917,7 +911,7 @@ def save_to_file(output_path: Path, wav: Tensor, sampling_rate: int) -> None:
     print(">> wav file saved to:", output_path)
 
 
-def _find_most_similar_cosine(query_vector: Tensor, matrix: Tensor) -> int:
+def _find_most_similar_cosine(query_vector: Tensor, matrix: Tensor) -> Tensor:
     query_vector = query_vector.float()
     matrix = matrix.float()
 

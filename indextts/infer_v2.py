@@ -220,21 +220,27 @@ class IndexTTS2:
     model_version: float
 
     @functools.lru_cache
+    def foo(self, prompt: Path, verbose: bool = False) -> Tensor:
+        audio, _ = _load_and_cut_audio(prompt, 15, verbose, sr=16000)
+        inputs = self.extract_features(audio, sampling_rate=16000, return_tensors="pt")  # ty:ignore[invalid-argument-type]
+        input_features = inputs["input_features"].to(self.device)
+        attention_mask = inputs["attention_mask"].to(self.device)
+        return self.get_emb(input_features, attention_mask)
+
+    @functools.lru_cache
     def process_audio_prompt(self, prompt: Path, verbose: bool = False) -> tuple[Tensor, Tensor, Tensor, Tensor]:
         audio, sr = _load_and_cut_audio(prompt, 15, verbose)
-        audio_22k = torchaudio.transforms.Resample(sr, 22050)(audio)
-        audio_16k = torchaudio.transforms.Resample(sr, 16000)(audio)
+        audio_22k = torchaudio.transforms.Resample(sr, 22050).forward(audio)
+        audio_16k = torchaudio.transforms.Resample(sr, 16000).forward(audio)
 
-        inputs = self.extract_features(audio_16k, sampling_rate=16000, return_tensors="pt")
-        input_features = inputs["input_features"]
-        attention_mask = inputs["attention_mask"]
-        input_features = input_features.to(self.device)
-        attention_mask = attention_mask.to(self.device)
+        inputs = self.extract_features(audio_16k, sampling_rate=16000, return_tensors="pt")  # ty:ignore[invalid-argument-type]
+        input_features = inputs["input_features"].to(self.device)
+        attention_mask = inputs["attention_mask"].to(self.device)
         spk_cond_emb = self.get_emb(input_features, attention_mask)
 
         _, S_ref = self.semantic_codec.quantize(spk_cond_emb)
         ref_mel = self.mel_fn(audio_22k.to(spk_cond_emb.device).float())
-        ref_target_lengths = torch.LongTensor([ref_mel.size(2)]).to(ref_mel.device)
+        ref_target_lengths = Tensor([ref_mel.size(2)]).to(ref_mel.device)
         feat = torchaudio.compliance.kaldi.fbank(
             audio_16k.to(ref_mel.device),
             num_mel_bins=80,
@@ -612,22 +618,7 @@ class IndexTTS2:
             emovec_mat = torch.sum(emovec_mat, 0)
             emovec_mat = emovec_mat.unsqueeze(0)
 
-        if self.cache_emo_cond is None or self.cache_emo_audio_prompt != emo_audio_prompt:
-            if self.cache_emo_cond is not None:
-                self.cache_emo_cond = None
-                torch.cuda.empty_cache()
-            emo_audio, _ = _load_and_cut_audio(emo_audio_prompt, 15, verbose, sr=16000)
-            emo_inputs = self.extract_features(emo_audio.numpy(), sampling_rate=16000, return_tensors="pt")
-            emo_input_features = emo_inputs["input_features"]
-            emo_attention_mask = emo_inputs["attention_mask"]
-            emo_input_features = emo_input_features.to(self.device)
-            emo_attention_mask = emo_attention_mask.to(self.device)
-            emo_cond_emb = self.get_emb(emo_input_features, emo_attention_mask)
-
-            self.cache_emo_cond = emo_cond_emb
-            self.cache_emo_audio_prompt = emo_audio_prompt
-        else:
-            emo_cond_emb = self.cache_emo_cond
+        emo_cond_emb = self.foo(emo_audio_prompt, verbose)
 
         self._set_gr_progress(0.1, "text processing...")
         text_tokens_list = self.tokenizer.tokenize(text)

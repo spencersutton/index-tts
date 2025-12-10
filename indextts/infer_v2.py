@@ -38,7 +38,7 @@ from indextts.s2mel.modules.length_regulator import InterpolateRegulator
 from indextts.utils.checkpoint import load_checkpoint
 from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.maskgct.models.codec.kmeans.repcodec_model import RepCodec
-from indextts.utils.maskgct_utils import build_semantic_codec, build_semantic_model
+from indextts.utils.maskgct_utils import build_semantic_model
 
 if typing.TYPE_CHECKING:
     from gradio import Progress
@@ -226,7 +226,7 @@ class IndexTTS2:
         self.semantic_mean = self.semantic_mean.to(self.device)
         self.semantic_std = self.semantic_std.to(self.device)
 
-        semantic_codec = build_semantic_codec()
+        semantic_codec = RepCodec().eval()
         semantic_code_ckpt = hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
         safetensors.torch.load_model(semantic_codec, semantic_code_ckpt, strict=False)
         self.semantic_codec = semantic_codec.to(self.device)

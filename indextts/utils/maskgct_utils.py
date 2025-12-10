@@ -4,8 +4,6 @@ import torch
 from torch import Tensor
 from transformers import Wav2Vec2BertModel
 
-from indextts.utils.maskgct.models.codec.kmeans.repcodec_model import RepCodec
-
 
 def build_semantic_model(
     path_: Path = Path("./models/tts/maskgct/ckpt/wav2vec2bert_stats.pt"),
@@ -16,7 +14,3 @@ def build_semantic_model(
     semantic_mean = stat_mean_var["mean"]
     semantic_std = torch.sqrt(stat_mean_var["var"])
     return semantic_model, semantic_mean, semantic_std
-
-
-def build_semantic_codec() -> RepCodec:
-    return RepCodec().eval()

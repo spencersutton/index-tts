@@ -190,7 +190,6 @@ class IndexTTS2:
     s2mel: MyModel
     campplus_model: CAMPPlus
     bigvgan: "bigvgan.BigVGAN"
-    bpe_path: Path
     normalizer: TextNormalizer
     tokenizer: TextTokenizer
     emo_matrix: tuple[Tensor, ...]
@@ -362,20 +361,21 @@ class IndexTTS2:
 
         self.bigvgan = _load_bigvgan(self.cfg, self.device, self.use_cuda_kernel)
 
-        self.bpe_path = self.model_dir / self.cfg.dataset.bpe_model
         self.normalizer = TextNormalizer()
         self.normalizer.load()
         print(">> TextNormalizer loaded")
-        self.tokenizer = TextTokenizer(self.bpe_path, self.normalizer)
-        print(">> bpe model loaded from:", self.bpe_path)
+
+        bpe_path = self.model_dir / self.cfg.dataset.bpe_model
+        self.tokenizer = TextTokenizer(bpe_path, self.normalizer)
+        print(">> bpe model loaded from:", bpe_path)
 
         emo_matrix: Tensor = torch.load(self.model_dir / self.cfg.emo_matrix)
         emo_matrix = emo_matrix.to(self.device)
-        self.emo_num = list(self.cfg.emo_num)
 
         spk_matrix: Tensor = torch.load(self.model_dir / self.cfg.spk_matrix)
         spk_matrix = spk_matrix.to(self.device)
 
+        self.emo_num = list(self.cfg.emo_num)
         self.emo_matrix = torch.split(emo_matrix, self.emo_num)
         self.spk_matrix = torch.split(spk_matrix, self.emo_num)
 

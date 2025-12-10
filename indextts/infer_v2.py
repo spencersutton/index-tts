@@ -113,6 +113,15 @@ def _load_and_cut_audio(
     return audio, sr
 
 
+def load_campplus_weights(device: str) -> CAMPPlus:
+    path = hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
+    model = CAMPPlus(feat_dim=80, embedding_size=192)
+    model.load_state_dict(torch.load(path, map_location="cpu"))
+    model = model.to(device).eval()
+    print(">> campplus_model weights restored from:", path)
+    return model
+
+
 def normalize_emo_vec(emo_vector: list[float], apply_bias: bool = True) -> list[float]:
     # apply biased emotion factors for better user experience,
     # by de-emphasizing emotions that can cause strange results
@@ -330,7 +339,7 @@ class IndexTTS2:
         print(">> s2mel weights restored from:", s2mel_path)
 
         # load campplus_model
-        self.campplus_model = self.load_campplus_weights()
+        self.campplus_model = load_campplus_weights(self.device)
 
         bigvgan_name = self.cfg.vocoder.name
         self.bigvgan = bigvgan.BigVGAN.from_pretrained(bigvgan_name, use_cuda_kernel=self.use_cuda_kernel)
@@ -411,14 +420,6 @@ class IndexTTS2:
         # Progress reference display (optional)
         self.gr_progress = None
         self.model_version = self.cfg.version
-
-    def load_campplus_weights(self) -> CAMPPlus:
-        path = hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
-        model = CAMPPlus(feat_dim=80, embedding_size=192)
-        model.load_state_dict(torch.load(path, map_location="cpu"))
-        model = model.to(self.device).eval()
-        print(">> campplus_model weights restored from:", path)
-        return model
 
     @torch.inference_mode()
     def get_emb(self, input_features: Tensor, attention_mask: Tensor):

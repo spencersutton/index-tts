@@ -244,7 +244,7 @@ class IndexTTS2:
         print(">> s2mel weights restored from:", s2mel_path)
 
         # load campplus_model
-        self.init_campplus()
+        self.campplus_model = self.load_campplus_weights()
 
         bigvgan_name = self.cfg.vocoder.name
         self.bigvgan = bigvgan.BigVGAN.from_pretrained(bigvgan_name, use_cuda_kernel=self.use_cuda_kernel)
@@ -326,13 +326,13 @@ class IndexTTS2:
         self.gr_progress = None
         self.model_version = self.cfg.version
 
-    def init_campplus(self) -> None:
-        campplus_ckpt_path = hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
-        campplus_model = CAMPPlus(feat_dim=80, embedding_size=192)
-        campplus_model.load_state_dict(torch.load(campplus_ckpt_path, map_location="cpu"))
-        self.campplus_model = campplus_model.to(self.device)
-        self.campplus_model.eval()
-        print(">> campplus_model weights restored from:", campplus_ckpt_path)
+    def load_campplus_weights(self) -> CAMPPlus:
+        path = hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
+        model = CAMPPlus(feat_dim=80, embedding_size=192)
+        model.load_state_dict(torch.load(path, map_location="cpu"))
+        model = model.to(self.device).eval()
+        print(">> campplus_model weights restored from:", path)
+        return model
 
     @torch.inference_mode()
     def get_emb(self, input_features: Tensor, attention_mask: Tensor):

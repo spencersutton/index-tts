@@ -43,7 +43,17 @@ if typing.TYPE_CHECKING:
     from gradio import Progress
 
 
-def _load_s2mel(cfg: CheckpointsConfig, model_dir: Path, device: str) -> MyModel:
+def _load_bigvgan(cfg: CheckpointsConfig, device: str, use_cuda_kernel: bool) -> "bigvgan.BigVGAN":
+    name = cfg.vocoder.name
+    model = bigvgan.BigVGAN.from_pretrained(name, use_cuda_kernel=use_cuda_kernel)
+    model = model.to(device)
+    model.remove_weight_norm()
+    model.eval()
+    print(">> bigvgan weights restored from:", name)
+    return model
+
+
+def _load_s2mel(cfg: CheckpointsConfig, device: str, model_dir: Path) -> MyModel:
     s2mel_path = model_dir / cfg.s2mel_checkpoint
     model = MyModel(cfg.s2mel, use_gpt_latent=True)
     model = load_checkpoint(model, s2mel_path).to(device)
@@ -345,17 +355,12 @@ class IndexTTS2:
 
         self.semantic_codec = _load_semantic_codec(self.device)
 
-        self.s2mel = _load_s2mel(self.cfg, self.model_dir, self.device)
+        self.s2mel = _load_s2mel(self.cfg, self.device, self.model_dir)
 
         # load campplus_model
         self.campplus_model = _load_campplus_weights(self.device)
 
-        bigvgan_name = self.cfg.vocoder.name
-        self.bigvgan = bigvgan.BigVGAN.from_pretrained(bigvgan_name, use_cuda_kernel=self.use_cuda_kernel)
-        self.bigvgan = self.bigvgan.to(self.device)
-        self.bigvgan.remove_weight_norm()
-        self.bigvgan.eval()
-        print(">> bigvgan weights restored from:", bigvgan_name)
+        self.bigvgan = _load_bigvgan(self.cfg, self.device, self.use_cuda_kernel)
 
         self.bpe_path = self.model_dir / self.cfg.dataset.bpe_model
         self.normalizer = TextNormalizer()

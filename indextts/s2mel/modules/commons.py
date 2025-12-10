@@ -81,7 +81,7 @@ class MyModel(nn.Module):
         self.cfm.enable_torch_compile()
 
 
-def load_checkpoint2(model: MyModel, path: Path) -> MyModel:
+def load_checkpoint(model: MyModel, path: Path) -> MyModel:
     state = cast(
         dict[str, dict[str, dict[str, Tensor]]],
         torch.load(path, map_location="cpu"),

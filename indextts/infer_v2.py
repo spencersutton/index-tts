@@ -32,16 +32,145 @@ from indextts.qwen_emotion import QwenEmotion
 from indextts.s2mel.modules.audio import mel_spectrogram
 from indextts.s2mel.modules.bigvgan import bigvgan
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
-from indextts.s2mel.modules.commons import MyModel, load_checkpoint2
+from indextts.s2mel.modules.commons import MyModel, load_checkpoint
 from indextts.s2mel.modules.flow_matching import CFM
 from indextts.s2mel.modules.length_regulator import InterpolateRegulator
 from indextts.utils.checkpoint import load_checkpoint
 from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.maskgct.models.codec.kmeans.repcodec_model import RepCodec
-from indextts.utils.maskgct_utils import build_semantic_codec, build_semantic_model
 
 if typing.TYPE_CHECKING:
     from gradio import Progress
+
+
+def _load_bigvgan(cfg: CheckpointsConfig, device: str, use_cuda_kernel: bool) -> "bigvgan.BigVGAN":
+    name = cfg.vocoder.name
+    model = bigvgan.BigVGAN.from_pretrained(name, use_cuda_kernel=use_cuda_kernel)
+    model = model.to(device)
+    model.remove_weight_norm()
+    model.eval()
+    print(">> bigvgan weights restored from:", name)
+    return model
+
+
+def _load_s2mel(cfg: CheckpointsConfig, device: str, model_dir: Path) -> MyModel:
+    s2mel_path = model_dir / cfg.s2mel_checkpoint
+    model = MyModel(cfg.s2mel, use_gpt_latent=True)
+    model = load_checkpoint(model, s2mel_path).to(device)
+    assert model.cfm.estimator is not None
+    model.cfm.estimator.setup_caches(max_batch_size=1, max_seq_length=8192)
+    print(">> s2mel weights restored from:", s2mel_path)
+    return model.eval()
+
+
+def _load_semantic_model(device: str) -> Wav2Vec2BertModel:
+    model = Wav2Vec2BertModel.from_pretrained("facebook/w2v-bert-2.0")
+    assert isinstance(model, Wav2Vec2BertModel)
+    return model.to(device).eval()
+
+
+def _load_semantic_codec(device: str) -> RepCodec:
+    model = RepCodec().eval()
+    path = hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
+    safetensors.torch.load_model(model, path, strict=False)
+    model = model.to(device).eval()
+    print(f">> semantic_codec weights restored from: {path}")
+    return model
+
+
+def generate_silence_interval(
+    wavs: list[Tensor],
+    sampling_rate: int = 22050,
+    interval_silence: int = 200,
+) -> Tensor:
+    """Silences to be insert between generated segments."""
+    assert interval_silence > 0, "interval_silence must be greater than 0"
+    assert len(wavs) > 0, "wavs list must not be empty"
+
+    # get channel_size
+    channel_size = wavs[0].size(0)
+    # get silence tensor
+    sil_dur = int(sampling_rate * interval_silence / 1000.0)
+    return torch.zeros(channel_size, sil_dur)
+
+
+def insert_interval_silence(
+    wavs: list[Tensor],
+    sampling_rate: int = 22050,
+    interval_silence: int = 200,
+) -> list[Tensor]:
+    """Insert silences between generated segments.
+    wavs: List[torch.tensor]
+    """
+    if not wavs or interval_silence <= 0:
+        return wavs
+
+    # get channel_size
+    channel_size = wavs[0].size(0)
+    # get silence tensor
+    sil_dur = int(sampling_rate * interval_silence / 1000.0)
+    sil_tensor = torch.zeros(channel_size, sil_dur)
+
+    wavs_list: list[Tensor] = []
+    for i, wav in enumerate(wavs):
+        wavs_list.append(wav)
+        if i < len(wavs) - 1:
+            wavs_list.append(sil_tensor)
+
+    return wavs_list
+
+
+def _load_and_cut_audio(
+    audio_path: Path,
+    max_audio_length_seconds: float,
+    verbose: bool = False,
+    sr: int | None = None,
+) -> tuple[Tensor, int]:
+    samples = AudioDecoder(audio_path).get_all_samples()
+    orig_sr = samples.sample_rate
+    audio = samples.data
+
+    # Convert to mono if stereo
+    if audio.shape[0] > 1:
+        audio = audio.mean(dim=0, keepdim=True)
+    # Resample if needed
+    if sr is not None and orig_sr != sr:
+        audio = torchaudio.functional.resample(audio, orig_sr, sr)
+    else:
+        sr = orig_sr
+    max_audio_samples = int(max_audio_length_seconds * sr)
+
+    if audio.shape[1] > max_audio_samples:
+        if verbose:
+            print(f"Audio too long ({audio.shape[1]} samples), truncating to {max_audio_samples} samples")
+        audio = audio[:, :max_audio_samples]
+    return audio, sr
+
+
+def _load_campplus_weights(device: str) -> CAMPPlus:
+    path = hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
+    model = CAMPPlus(feat_dim=80, embedding_size=192)
+    model.load_state_dict(torch.load(path, map_location="cpu"))
+    model = model.to(device).eval()
+    print(">> campplus_model weights restored from:", path)
+    return model
+
+
+def normalize_emo_vec(emo_vector: list[float], apply_bias: bool = True) -> list[float]:
+    # apply biased emotion factors for better user experience,
+    # by de-emphasizing emotions that can cause strange results
+    if apply_bias:
+        # [happy, angry, sad, afraid, disgusted, melancholic, surprised, calm]
+        emo_bias = [0.9375, 0.875, 1.0, 1.0, 0.9375, 0.9375, 0.6875, 0.5625]
+        emo_vector = [vec * bias for vec, bias in zip(emo_vector, emo_bias)]
+
+    # the total emotion sum must be 0.8 or less
+    emo_sum = sum(emo_vector)
+    if emo_sum > 0.8:
+        scale_factor = 0.8 / emo_sum
+        emo_vector = [vec * scale_factor for vec in emo_vector]
+
+    return emo_vector
 
 
 class IndexTTS2:
@@ -61,7 +190,6 @@ class IndexTTS2:
     s2mel: MyModel
     campplus_model: CAMPPlus
     bigvgan: "bigvgan.BigVGAN"
-    bpe_path: Path
     normalizer: TextNormalizer
     tokenizer: TextTokenizer
     emo_matrix: tuple[Tensor, ...]
@@ -217,56 +345,37 @@ class IndexTTS2:
                 self.use_cuda_kernel = False
 
         self.extract_features = SeamlessM4TFeatureExtractor.from_pretrained("facebook/w2v-bert-2.0")
-        self.semantic_model, self.semantic_mean, self.semantic_std = build_semantic_model(
-            self.model_dir / self.cfg.w2v_stat
-        )
-        self.semantic_model = self.semantic_model.to(self.device)  # ty:ignore[invalid-argument-type]
-        assert isinstance(self.semantic_model, Wav2Vec2BertModel)
-        self.semantic_model.eval()
-        self.semantic_mean = self.semantic_mean.to(self.device)
-        self.semantic_std = self.semantic_std.to(self.device)
 
-        semantic_codec = build_semantic_codec()
-        semantic_code_ckpt = hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
-        safetensors.torch.load_model(semantic_codec, semantic_code_ckpt, strict=False)
-        self.semantic_codec = semantic_codec.to(self.device)
-        self.semantic_codec.eval()
-        print(f">> semantic_codec weights restored from: {semantic_code_ckpt}")
+        self.semantic_model = _load_semantic_model(self.device)
 
-        s2mel_path = self.model_dir / self.cfg.s2mel_checkpoint
-        s2mel = MyModel(self.cfg.s2mel, use_gpt_latent=True)
-        s2mel = load_checkpoint2(s2mel, s2mel_path)
-        self.s2mel = s2mel.to(self.device)
-        assert self.s2mel.cfm.estimator is not None
-        self.s2mel.cfm.estimator.setup_caches(max_batch_size=1, max_seq_length=8192)
+        stat_mean_var = torch.load(self.model_dir / self.cfg.w2v_stat)
+        self.semantic_mean = stat_mean_var["mean"].to(self.device)
+        self.semantic_std = torch.sqrt(stat_mean_var["var"]).to(self.device)
 
-        self.s2mel.eval()
-        print(">> s2mel weights restored from:", s2mel_path)
+        self.semantic_codec = _load_semantic_codec(self.device)
+
+        self.s2mel = _load_s2mel(self.cfg, self.device, self.model_dir)
 
         # load campplus_model
-        self.init_campplus()
+        self.campplus_model = _load_campplus_weights(self.device)
 
-        bigvgan_name = self.cfg.vocoder.name
-        self.bigvgan = bigvgan.BigVGAN.from_pretrained(bigvgan_name, use_cuda_kernel=self.use_cuda_kernel)
-        self.bigvgan = self.bigvgan.to(self.device)
-        self.bigvgan.remove_weight_norm()
-        self.bigvgan.eval()
-        print(">> bigvgan weights restored from:", bigvgan_name)
+        self.bigvgan = _load_bigvgan(self.cfg, self.device, self.use_cuda_kernel)
 
-        self.bpe_path = self.model_dir / self.cfg.dataset.bpe_model
         self.normalizer = TextNormalizer()
         self.normalizer.load()
         print(">> TextNormalizer loaded")
-        self.tokenizer = TextTokenizer(self.bpe_path, self.normalizer)
-        print(">> bpe model loaded from:", self.bpe_path)
+
+        bpe_path = self.model_dir / self.cfg.dataset.bpe_model
+        self.tokenizer = TextTokenizer(bpe_path, self.normalizer)
+        print(">> bpe model loaded from:", bpe_path)
 
         emo_matrix: Tensor = torch.load(self.model_dir / self.cfg.emo_matrix)
         emo_matrix = emo_matrix.to(self.device)
-        self.emo_num = list(self.cfg.emo_num)
 
         spk_matrix: Tensor = torch.load(self.model_dir / self.cfg.spk_matrix)
         spk_matrix = spk_matrix.to(self.device)
 
+        self.emo_num = list(self.cfg.emo_num)
         self.emo_matrix = torch.split(emo_matrix, self.emo_num)
         self.spk_matrix = torch.split(spk_matrix, self.emo_num)
 
@@ -326,14 +435,6 @@ class IndexTTS2:
         self.gr_progress = None
         self.model_version = self.cfg.version
 
-    def init_campplus(self) -> None:
-        campplus_ckpt_path = hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
-        campplus_model = CAMPPlus(feat_dim=80, embedding_size=192)
-        campplus_model.load_state_dict(torch.load(campplus_ckpt_path, map_location="cpu"))
-        self.campplus_model = campplus_model.to(self.device)
-        self.campplus_model.eval()
-        print(">> campplus_model weights restored from:", campplus_ckpt_path)
-
     @torch.inference_mode()
     def get_emb(self, input_features: Tensor, attention_mask: Tensor):
         vq_emb = self.semantic_model(
@@ -344,94 +445,9 @@ class IndexTTS2:
         feat = vq_emb.hidden_states[17]  # (B, T, C)
         return (feat - self.semantic_mean) / self.semantic_std
 
-    def interval_silence(
-        self,
-        wavs: list[Tensor],
-        sampling_rate: int = 22050,
-        interval_silence: int = 200,
-    ) -> Tensor:
-        """Silences to be insert between generated segments."""
-        assert interval_silence > 0, "interval_silence must be greater than 0"
-        assert len(wavs) > 0, "wavs list must not be empty"
-
-        # get channel_size
-        channel_size = wavs[0].size(0)
-        # get silence tensor
-        sil_dur = int(sampling_rate * interval_silence / 1000.0)
-        return torch.zeros(channel_size, sil_dur)
-
-    def insert_interval_silence(
-        self,
-        wavs: list[Tensor],
-        sampling_rate: int = 22050,
-        interval_silence: int = 200,
-    ) -> list[Tensor]:
-        """Insert silences between generated segments.
-        wavs: List[torch.tensor]
-        """
-        if not wavs or interval_silence <= 0:
-            return wavs
-
-        # get channel_size
-        channel_size = wavs[0].size(0)
-        # get silence tensor
-        sil_dur = int(sampling_rate * interval_silence / 1000.0)
-        sil_tensor = torch.zeros(channel_size, sil_dur)
-
-        wavs_list: list[Tensor] = []
-        for i, wav in enumerate(wavs):
-            wavs_list.append(wav)
-            if i < len(wavs) - 1:
-                wavs_list.append(sil_tensor)
-
-        return wavs_list
-
     def _set_gr_progress(self, value: float, desc: str) -> None:
         if self.gr_progress is not None:
             self.gr_progress(value, desc=desc)
-
-    def _load_and_cut_audio(
-        self,
-        audio_path: Path,
-        max_audio_length_seconds: float,
-        verbose: bool = False,
-        sr: int | None = None,
-    ) -> tuple[Tensor, int]:
-        samples = AudioDecoder(audio_path).get_all_samples()
-        orig_sr = samples.sample_rate
-        audio = samples.data
-
-        # Convert to mono if stereo
-        if audio.shape[0] > 1:
-            audio = audio.mean(dim=0, keepdim=True)
-        # Resample if needed
-        if sr is not None and orig_sr != sr:
-            audio = torchaudio.functional.resample(audio, orig_sr, sr)
-        else:
-            sr = orig_sr
-        max_audio_samples = int(max_audio_length_seconds * sr)
-
-        if audio.shape[1] > max_audio_samples:
-            if verbose:
-                print(f"Audio too long ({audio.shape[1]} samples), truncating to {max_audio_samples} samples")
-            audio = audio[:, :max_audio_samples]
-        return audio, sr
-
-    def normalize_emo_vec(self, emo_vector: list[float], apply_bias: bool = True) -> list[float]:
-        # apply biased emotion factors for better user experience,
-        # by de-emphasizing emotions that can cause strange results
-        if apply_bias:
-            # [happy, angry, sad, afraid, disgusted, melancholic, surprised, calm]
-            emo_bias = [0.9375, 0.875, 1.0, 1.0, 0.9375, 0.9375, 0.6875, 0.5625]
-            emo_vector = [vec * bias for vec, bias in zip(emo_vector, emo_bias)]
-
-        # the total emotion sum must be 0.8 or less
-        emo_sum = sum(emo_vector)
-        if emo_sum > 0.8:
-            scale_factor = 0.8 / emo_sum
-            emo_vector = [vec * scale_factor for vec in emo_vector]
-
-        return emo_vector
 
     # 原始推理模式
     # Original inference mode
@@ -554,7 +570,7 @@ class IndexTTS2:
                 self.cache_s2mel_prompt = None
                 self.cache_mel = None
                 torch.cuda.empty_cache()
-            audio, sr = self._load_and_cut_audio(spk_audio_prompt, 15, verbose)
+            audio, sr = _load_and_cut_audio(spk_audio_prompt, 15, verbose)
             sr = int(sr)
             audio_22k = torchaudio.transforms.Resample(sr, 22050)(audio)
             audio_16k = torchaudio.transforms.Resample(sr, 16000)(audio)
@@ -614,7 +630,7 @@ class IndexTTS2:
             if self.cache_emo_cond is not None:
                 self.cache_emo_cond = None
                 torch.cuda.empty_cache()
-            emo_audio, _ = self._load_and_cut_audio(emo_audio_prompt, 15, verbose, sr=16000)
+            emo_audio, _ = _load_and_cut_audio(emo_audio_prompt, 15, verbose, sr=16000)
             emo_inputs = self.extract_features(emo_audio.numpy(), sampling_rate=16000, return_tensors="pt")
             emo_input_features = emo_inputs["input_features"]
             emo_attention_mask = emo_inputs["attention_mask"]
@@ -869,7 +885,7 @@ class IndexTTS2:
                 if stream_return:
                     yield wav.cpu()
                     if silence is None:
-                        silence = self.interval_silence(
+                        silence = generate_silence_interval(
                             wavs,
                             sampling_rate=sampling_rate,
                             interval_silence=interval_silence,
@@ -878,7 +894,7 @@ class IndexTTS2:
         end_time = time.perf_counter()
 
         self._set_gr_progress(0.9, "saving audio...")
-        wavs = self.insert_interval_silence(wavs, sampling_rate=sampling_rate, interval_silence=interval_silence)
+        wavs = insert_interval_silence(wavs, sampling_rate=sampling_rate, interval_silence=interval_silence)
         wav = torch.cat(wavs, dim=1)
         wav_length = wav.shape[-1] / sampling_rate
         print(f">> gpt_gen_time: {gpt_gen_time:.2f} seconds")

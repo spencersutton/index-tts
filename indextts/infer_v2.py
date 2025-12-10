@@ -41,6 +41,15 @@ if typing.TYPE_CHECKING:
     from gradio import Progress
 
 
+def init_campplus(device: str) -> CAMPPlus:
+    campplus_ckpt_path = hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
+    model = CAMPPlus(feat_dim=80, embedding_size=192)
+    model.load_state_dict(torch.load(campplus_ckpt_path, map_location="cpu"))
+    model = model.to(device).eval()
+    print(">> campplus_model weights restored from:", campplus_ckpt_path)
+    return model
+
+
 class IndexTTS2:
     device: str
     use_fp16: bool
@@ -241,7 +250,7 @@ class IndexTTS2:
         print(">> s2mel weights restored from:", s2mel_path)
 
         # load campplus_model
-        self.campplus_model = self.init_campplus()
+        self.campplus_model = init_campplus(self.device)
 
         bigvgan_name = self.cfg.vocoder.name
         self.bigvgan = bigvgan.BigVGAN.from_pretrained(bigvgan_name, use_cuda_kernel=self.use_cuda_kernel)
@@ -322,14 +331,6 @@ class IndexTTS2:
         # Progress reference display (optional)
         self.gr_progress = None
         self.model_version = self.cfg.version
-
-    def init_campplus(self) -> CAMPPlus:
-        campplus_ckpt_path = hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
-        model = CAMPPlus(feat_dim=80, embedding_size=192)
-        model.load_state_dict(torch.load(campplus_ckpt_path, map_location="cpu"))
-        model = model.to(self.device).eval()
-        print(">> campplus_model weights restored from:", campplus_ckpt_path)
-        return model
 
     @torch.inference_mode()
     def get_emb(self, input_features: Tensor, attention_mask: Tensor):

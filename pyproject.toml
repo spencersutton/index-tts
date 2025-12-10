@@ -45,6 +45,7 @@ dependencies = [
   "scipy>=1.15.3",
   "soundfile>=0.13.1",
   "x-transformers>=2.11.23",
+  "vocos>=0.1.0",
 ]
 
 [project.optional-dependencies]

@@ -21,10 +21,7 @@ from torch import Tensor
 from torch.nn.utils.rnn import pad_sequence
 from torchcodec.decoders import AudioDecoder
 from torchcodec.encoders import AudioEncoder
-from transformers import (
-    SeamlessM4TFeatureExtractor,
-    Wav2Vec2BertModel,
-)
+from transformers import SeamlessM4TFeatureExtractor, Wav2Vec2BertModel
 
 from indextts.config import CheckpointsConfig
 from indextts.gpt.model_v2 import GPT2InferenceModel, UnifiedVoice

@@ -88,6 +88,7 @@ line-length = 120
 "typings/**/*.pyi" = ["ANN401"]
 "override/**/*.pyi" = ["ANN", "TID"]
 
+[tool.ruff.lint]
 extend-select = [
   "A",
   "ANN",

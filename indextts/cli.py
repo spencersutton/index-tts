@@ -17,13 +17,8 @@ if __debug__:
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-# Profiling support (start/stop only around inference)
-profiler = None
-
 
 def main() -> None:
-    profiler = None
-
     parser = argparse.ArgumentParser(description="IndexTTS Command Line")
     parser.add_argument("text", type=str, help="Text to be synthesized")
     parser.add_argument(
@@ -97,11 +92,6 @@ def main() -> None:
         default=False,
         help="Use DeepSpeed for inference",
     )
-    parser.add_argument(
-        "--profile",
-        action="store_true",
-        help="Enable performance profiling (saves to indextts.json, requires viztracer)",
-    )
     args = parser.parse_args()
 
     assert isinstance(args.text, str)  # pyright: ignore[reportAny]
@@ -167,52 +157,14 @@ def main() -> None:
         use_cuda_kernel=args.use_cuda_kernel,
         use_deepspeed=args.use_deepspeed,
     )
-    # If profiling was requested, start profiler immediately before inference
-    if args.profile:
-        try:
-            from viztracer import VizTracer
-
-            # Increase buffer size to 10M entries to prevent wrapping on long runs
-            # ignore_c_function=True reduces noise from builtins, but you can remove it if you need to see C calls
-            profiler = VizTracer(tracer_entries=10000000, ignore_c_function=True)
-            profiler.start()
-        except ImportError:
-            print("PROFILING ERROR: 'viztracer' is not installed.")
-            print("Please install it to use --profile: pip install viztracer")
-            sys.exit(1)
 
     # Run inference and ensure profiling only captures this call
-    try:
-        tts.infer(
-            spk_audio_prompt=args.voice,
-            text=args.text.strip(),
-            output_path=output_path,
-        )
-    finally:
-        # Stop and save profiler immediately after inference so we only capture inference time
-        if args.profile and profiler:
-            try:
-                profiler.stop()
-                profiler.save("indextts.json")
-                print("\nProfiling data saved to indextts.json")
-                print("Visualization options:")
-                print("1. Perfetto (Recommended): Open https://ui.perfetto.dev/ and load indextts.json")
-                print("2. Chrome Tracing: Open chrome://tracing and load indextts.json")
-                print("3. VizTracer: vizviewer indextts.json")
-            finally:
-                # Clear profiler so module-level finally will not attempt to stop it again
-                profiler = None
+    tts.infer(
+        spk_audio_prompt=args.voice,
+        text=args.text.strip(),
+        output_path=output_path,
+    )
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    finally:
-        if profiler:
-            profiler.stop()
-            profiler.save("indextts.json")
-            print("\nProfiling data saved to indextts.json")
-            print("Visualization options:")
-            print("1. Perfetto (Recommended): Open https://ui.perfetto.dev/ and load indextts.json")
-            print("2. Chrome Tracing: Open chrome://tracing and load indextts.json")
-            print("3. VizTracer: vizviewer indextts.json")
+    main()

@@ -530,6 +530,18 @@ class IndexTTS2:
         except IndexError:
             return None
 
+    def combine_weighted_styles(self, vector: list[float], style: Tensor, use_random: bool = False) -> Tensor:
+        weight_vector = torch.tensor(vector, device=self.device)
+        if use_random:
+            random_index = [random.randint(0, x - 1) for x in self.emo_num]  # noqa: S311
+        else:
+            random_index = [_find_most_similar_cosine(style, tmp) for tmp in self.spk_matrix]
+
+        matrix = [tmp[index].unsqueeze(0) for index, tmp in zip(random_index, self.emo_matrix)]
+        matrix = torch.cat(matrix, 0)
+        vector_matrix = weight_vector.unsqueeze(1) * matrix
+        return torch.sum(vector_matrix, 0).unsqueeze(0)
+
     @torch.inference_mode()
     def infer_generator(
         self,
@@ -600,17 +612,7 @@ class IndexTTS2:
         spk_cond_emb, style, prompt_condition, ref_mel = self.process_audio_prompt(spk_audio_prompt, verbose)
 
         if emo_vector is not None:
-            weight_vector = torch.tensor(emo_vector, device=self.device)
-            if use_random:
-                random_index = [random.randint(0, x - 1) for x in self.emo_num]  # noqa: S311
-            else:
-                random_index = [_find_most_similar_cosine(style, tmp) for tmp in self.spk_matrix]
-
-            emo_matrix = [tmp[index].unsqueeze(0) for index, tmp in zip(random_index, self.emo_matrix)]
-            emo_matrix = torch.cat(emo_matrix, 0)
-            emovec_mat = weight_vector.unsqueeze(1) * emo_matrix
-            emovec_mat = torch.sum(emovec_mat, 0)
-            emovec_mat = emovec_mat.unsqueeze(0)
+            emovec_mat = self.combine_weighted_styles(emo_vector, style, use_random)
 
         emo_cond_emb = self.process_audio(emo_audio_prompt, verbose)
 

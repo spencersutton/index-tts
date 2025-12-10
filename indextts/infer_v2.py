@@ -38,10 +38,18 @@ from indextts.s2mel.modules.length_regulator import InterpolateRegulator
 from indextts.utils.checkpoint import load_checkpoint
 from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.maskgct.models.codec.kmeans.repcodec_model import RepCodec
-from indextts.utils.maskgct_utils import build_semantic_model
 
 if typing.TYPE_CHECKING:
     from gradio import Progress
+
+
+def _load_semantic_codec(device: str) -> RepCodec:
+    model = RepCodec().eval()
+    path = hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
+    safetensors.torch.load_model(model, path, strict=False)
+    model = model.to(device).eval()
+    print(f">> semantic_codec weights restored from: {path}")
+    return model
 
 
 def generate_silence_interval(
@@ -312,21 +320,16 @@ class IndexTTS2:
                 self.use_cuda_kernel = False
 
         self.extract_features = SeamlessM4TFeatureExtractor.from_pretrained("facebook/w2v-bert-2.0")
-        self.semantic_model, self.semantic_mean, self.semantic_std = build_semantic_model(
-            self.model_dir / self.cfg.w2v_stat
-        )
-        self.semantic_model = self.semantic_model.to(self.device)  # ty:ignore[invalid-argument-type]
-        assert isinstance(self.semantic_model, Wav2Vec2BertModel)
-        self.semantic_model.eval()
-        self.semantic_mean = self.semantic_mean.to(self.device)
-        self.semantic_std = self.semantic_std.to(self.device)
 
-        semantic_codec = RepCodec().eval()
-        semantic_code_ckpt = hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
-        safetensors.torch.load_model(semantic_codec, semantic_code_ckpt, strict=False)
-        self.semantic_codec = semantic_codec.to(self.device)
-        self.semantic_codec.eval()
-        print(f">> semantic_codec weights restored from: {semantic_code_ckpt}")
+        self.semantic_model = Wav2Vec2BertModel.from_pretrained("facebook/w2v-bert-2.0")
+        assert isinstance(self.semantic_model, Wav2Vec2BertModel)
+        self.semantic_model = self.semantic_model.to(self.device).eval()
+
+        stat_mean_var = torch.load(self.model_dir / self.cfg.w2v_stat)
+        self.semantic_mean = stat_mean_var["mean"].to(self.device)
+        self.semantic_std = torch.sqrt(stat_mean_var["var"]).to(self.device)
+
+        self.semantic_codec = _load_semantic_codec(self.device)
 
         s2mel_path = self.model_dir / self.cfg.s2mel_checkpoint
         s2mel = MyModel(self.cfg.s2mel, use_gpt_latent=True)

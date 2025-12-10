@@ -6,6 +6,7 @@ import time
 import typing
 import warnings
 from collections.abc import Callable, Generator, Mapping
+from functools import cache
 from pathlib import Path
 from subprocess import CalledProcessError
 from typing import Any, cast
@@ -41,6 +42,13 @@ from indextts.utils.maskgct.models.codec.kmeans.repcodec_model import RepCodec
 
 if typing.TYPE_CHECKING:
     from gradio import Progress
+
+
+@cache
+def _load_semantic_model(device: str) -> Wav2Vec2BertModel:
+    model = Wav2Vec2BertModel.from_pretrained("facebook/w2v-bert-2.0")
+    assert isinstance(model, Wav2Vec2BertModel)
+    return model.to(device).eval()
 
 
 def _load_semantic_codec(device: str) -> RepCodec:
@@ -321,9 +329,7 @@ class IndexTTS2:
 
         self.extract_features = SeamlessM4TFeatureExtractor.from_pretrained("facebook/w2v-bert-2.0")
 
-        self.semantic_model = Wav2Vec2BertModel.from_pretrained("facebook/w2v-bert-2.0")
-        assert isinstance(self.semantic_model, Wav2Vec2BertModel)
-        self.semantic_model = self.semantic_model.to(self.device).eval()
+        self.semantic_model = _load_semantic_model(self.device)
 
         stat_mean_var = torch.load(self.model_dir / self.cfg.w2v_stat)
         self.semantic_mean = stat_mean_var["mean"].to(self.device)

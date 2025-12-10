@@ -60,6 +60,32 @@ def generate_silence_interval(
     return torch.zeros(channel_size, sil_dur)
 
 
+def insert_interval_silence(
+    wavs: list[Tensor],
+    sampling_rate: int = 22050,
+    interval_silence: int = 200,
+) -> list[Tensor]:
+    """Insert silences between generated segments.
+    wavs: List[torch.tensor]
+    """
+    if not wavs or interval_silence <= 0:
+        return wavs
+
+    # get channel_size
+    channel_size = wavs[0].size(0)
+    # get silence tensor
+    sil_dur = int(sampling_rate * interval_silence / 1000.0)
+    sil_tensor = torch.zeros(channel_size, sil_dur)
+
+    wavs_list: list[Tensor] = []
+    for i, wav in enumerate(wavs):
+        wavs_list.append(wav)
+        if i < len(wavs) - 1:
+            wavs_list.append(sil_tensor)
+
+    return wavs_list
+
+
 class IndexTTS2:
     device: str
     use_fp16: bool
@@ -359,32 +385,6 @@ class IndexTTS2:
         )
         feat = vq_emb.hidden_states[17]  # (B, T, C)
         return (feat - self.semantic_mean) / self.semantic_std
-
-    def insert_interval_silence(
-        self,
-        wavs: list[Tensor],
-        sampling_rate: int = 22050,
-        interval_silence: int = 200,
-    ) -> list[Tensor]:
-        """Insert silences between generated segments.
-        wavs: List[torch.tensor]
-        """
-        if not wavs or interval_silence <= 0:
-            return wavs
-
-        # get channel_size
-        channel_size = wavs[0].size(0)
-        # get silence tensor
-        sil_dur = int(sampling_rate * interval_silence / 1000.0)
-        sil_tensor = torch.zeros(channel_size, sil_dur)
-
-        wavs_list: list[Tensor] = []
-        for i, wav in enumerate(wavs):
-            wavs_list.append(wav)
-            if i < len(wavs) - 1:
-                wavs_list.append(sil_tensor)
-
-        return wavs_list
 
     def _set_gr_progress(self, value: float, desc: str) -> None:
         if self.gr_progress is not None:
@@ -878,7 +878,7 @@ class IndexTTS2:
         end_time = time.perf_counter()
 
         self._set_gr_progress(0.9, "saving audio...")
-        wavs = self.insert_interval_silence(wavs, sampling_rate=sampling_rate, interval_silence=interval_silence)
+        wavs = insert_interval_silence(wavs, sampling_rate=sampling_rate, interval_silence=interval_silence)
         wav = torch.cat(wavs, dim=1)
         wav_length = wav.shape[-1] / sampling_rate
         print(f">> gpt_gen_time: {gpt_gen_time:.2f} seconds")

@@ -136,6 +136,20 @@ def normalize_emo_vec(emo_vector: list[float], apply_bias: bool = True) -> list[
     return emo_vector
 
 
+def _extract_generation_params(generation_kwargs: dict[str, Any]) -> dict[str, Any]:
+    """Extract and organize generation parameters."""
+    return {
+        "do_sample": generation_kwargs.pop("do_sample", True),
+        "top_p": generation_kwargs.pop("top_p", 0.8),
+        "top_k": generation_kwargs.pop("top_k", 30),
+        "temperature": generation_kwargs.pop("temperature", 0.8),
+        "length_penalty": generation_kwargs.pop("length_penalty", 0.0),
+        "num_beams": generation_kwargs.pop("num_beams", 3),
+        "repetition_penalty": generation_kwargs.pop("repetition_penalty", 10.0),
+        "max_mel_tokens": generation_kwargs.pop("max_mel_tokens", 1500),
+    }
+
+
 class IndexTTS2:
     device: str
     use_fp16: bool
@@ -612,19 +626,6 @@ class IndexTTS2:
 
         return segments, segments_count
 
-    def _extract_generation_params(self, generation_kwargs: dict[str, Any]) -> dict[str, Any]:
-        """Extract and organize generation parameters."""
-        return {
-            "do_sample": generation_kwargs.pop("do_sample", True),
-            "top_p": generation_kwargs.pop("top_p", 0.8),
-            "top_k": generation_kwargs.pop("top_k", 30),
-            "temperature": generation_kwargs.pop("temperature", 0.8),
-            "length_penalty": generation_kwargs.pop("length_penalty", 0.0),
-            "num_beams": generation_kwargs.pop("num_beams", 3),
-            "repetition_penalty": generation_kwargs.pop("repetition_penalty", 10.0),
-            "max_mel_tokens": generation_kwargs.pop("max_mel_tokens", 1500),
-        }
-
     def _compute_merged_emovec(
         self,
         spk_cond_emb: Tensor,
@@ -998,7 +999,7 @@ class IndexTTS2:
         )
 
         # Extract generation parameters
-        gen_params = self._extract_generation_params(generation_kwargs)
+        gen_params = _extract_generation_params(generation_kwargs)
         sampling_rate = 22050
 
         # Compute merged emotion vector

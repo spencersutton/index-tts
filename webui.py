@@ -19,7 +19,7 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument("--verbose", action="store_true", default=False, help="Enable verbose mode")
 parser.add_argument("--port", type=int, default=7860, help="Port to run the web UI on")
-parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to run the web UI on")
+parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to run the web UI on")  # noqa: S104
 parser.add_argument(
     "--model_dir",
     type=str,

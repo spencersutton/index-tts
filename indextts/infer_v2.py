@@ -1,5 +1,6 @@
 import contextlib
 import functools
+import logging
 import os
 import random
 import time
@@ -38,6 +39,9 @@ from indextts.utils.maskgct.models.codec.kmeans.repcodec_model import RepCodec
 
 if typing.TYPE_CHECKING:
     from gradio import Progress
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 SAMPLING_RATE = 22050

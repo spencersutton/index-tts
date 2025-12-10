@@ -156,10 +156,23 @@ def _load_campplus_weights(device: str) -> CAMPPlus:
 
 
 def normalize_emo_vec(emo_vector: list[float], apply_bias: bool = True) -> list[float]:
+    """
+    Normalizes an emotion vector by applying optional bias factors and scaling the sum.
+
+    Args:
+        emo_vector (list[float]): A list of emotion intensity values, typically in the order:
+            [happy, angry, sad, afraid, disgusted, melancholic, surprised, calm].
+        apply_bias (bool, optional): Whether to apply predefined bias factors to de-emphasize
+            certain emotions. Defaults to True.
+
+    Returns:
+        list[float]: The normalized emotion vector, possibly biased and scaled so that the sum
+            does not exceed 0.8.
+    """
     # apply biased emotion factors for better user experience,
     # by de-emphasizing emotions that can cause strange results
     if apply_bias:
-        # [happy, angry, sad, afraid, disgusted, melancholic, surprised, calm]
+        # [happy, angry, sad, afraid, disgusted, melancholic, surprised, calm]  # noqa: ERA001
         emo_bias = [0.9375, 0.875, 1.0, 1.0, 0.9375, 0.9375, 0.6875, 0.5625]
         emo_vector = [vec * bias for vec, bias in zip(emo_vector, emo_bias)]
 

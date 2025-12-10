@@ -92,6 +92,50 @@ def _insert_interval_silence(
     return wavs_list
 
 
+def _load_and_cut_audio(
+    audio_path: Path,
+    max_audio_length_seconds: float,
+    verbose: bool = False,
+    sr: int | None = None,
+) -> tuple[Tensor, int]:
+    samples = AudioDecoder(audio_path).get_all_samples()
+    orig_sr = samples.sample_rate
+    audio = samples.data
+
+    # Convert to mono if stereo
+    if audio.shape[0] > 1:
+        audio = audio.mean(dim=0, keepdim=True)
+    # Resample if needed
+    if sr is not None and orig_sr != sr:
+        audio = torchaudio.functional.resample(audio, orig_sr, sr)
+    else:
+        sr = orig_sr
+    max_audio_samples = int(max_audio_length_seconds * sr)
+
+    if audio.shape[1] > max_audio_samples:
+        if verbose:
+            print(f"Audio too long ({audio.shape[1]} samples), truncating to {max_audio_samples} samples")
+        audio = audio[:, :max_audio_samples]
+    return audio, sr
+
+
+def normalize_emo_vec(emo_vector: list[float], apply_bias: bool = True) -> list[float]:
+    # apply biased emotion factors for better user experience,
+    # by de-emphasizing emotions that can cause strange results
+    if apply_bias:
+        # [happy, angry, sad, afraid, disgusted, melancholic, surprised, calm]
+        emo_bias = [0.9375, 0.875, 1.0, 1.0, 0.9375, 0.9375, 0.6875, 0.5625]
+        emo_vector = [vec * bias for vec, bias in zip(emo_vector, emo_bias)]
+
+    # the total emotion sum must be 0.8 or less
+    emo_sum = sum(emo_vector)
+    if emo_sum > 0.8:
+        scale_factor = 0.8 / emo_sum
+        emo_vector = [vec * scale_factor for vec in emo_vector]
+
+    return emo_vector
+
+
 class IndexTTS2:
     device: str
     use_fp16: bool
@@ -388,49 +432,6 @@ class IndexTTS2:
         if self.gr_progress is not None:
             self.gr_progress(value, desc=desc)
 
-    def _load_and_cut_audio(
-        self,
-        audio_path: Path,
-        max_audio_length_seconds: float,
-        verbose: bool = False,
-        sr: int | None = None,
-    ) -> tuple[Tensor, int]:
-        samples = AudioDecoder(audio_path).get_all_samples()
-        orig_sr = samples.sample_rate
-        audio = samples.data
-
-        # Convert to mono if stereo
-        if audio.shape[0] > 1:
-            audio = audio.mean(dim=0, keepdim=True)
-        # Resample if needed
-        if sr is not None and orig_sr != sr:
-            audio = torchaudio.functional.resample(audio, orig_sr, sr)
-        else:
-            sr = orig_sr
-        max_audio_samples = int(max_audio_length_seconds * sr)
-
-        if audio.shape[1] > max_audio_samples:
-            if verbose:
-                print(f"Audio too long ({audio.shape[1]} samples), truncating to {max_audio_samples} samples")
-            audio = audio[:, :max_audio_samples]
-        return audio, sr
-
-    def normalize_emo_vec(self, emo_vector: list[float], apply_bias: bool = True) -> list[float]:
-        # apply biased emotion factors for better user experience,
-        # by de-emphasizing emotions that can cause strange results
-        if apply_bias:
-            # [happy, angry, sad, afraid, disgusted, melancholic, surprised, calm]
-            emo_bias = [0.9375, 0.875, 1.0, 1.0, 0.9375, 0.9375, 0.6875, 0.5625]
-            emo_vector = [vec * bias for vec, bias in zip(emo_vector, emo_bias)]
-
-        # the total emotion sum must be 0.8 or less
-        emo_sum = sum(emo_vector)
-        if emo_sum > 0.8:
-            scale_factor = 0.8 / emo_sum
-            emo_vector = [vec * scale_factor for vec in emo_vector]
-
-        return emo_vector
-
     def _prepare_emotion_settings(
         self,
         text: str,
@@ -491,7 +492,7 @@ class IndexTTS2:
             self.cache_mel = None
             torch.cuda.empty_cache()
 
-        audio, sr = self._load_and_cut_audio(spk_audio_prompt, 15, verbose)
+        audio, sr = _load_and_cut_audio(spk_audio_prompt, 15, verbose)
         sr = int(sr)
         audio_22k = torchaudio.transforms.Resample(sr, 22050)(audio)
         audio_16k = torchaudio.transforms.Resample(sr, 16000)(audio)
@@ -559,7 +560,7 @@ class IndexTTS2:
             self.cache_emo_cond = None
             torch.cuda.empty_cache()
 
-        emo_audio, _ = self._load_and_cut_audio(emo_audio_prompt, 15, verbose, sr=16000)
+        emo_audio, _ = _load_and_cut_audio(emo_audio_prompt, 15, verbose, sr=16000)
         emo_inputs = self.extract_features(emo_audio.numpy(), sampling_rate=16000, return_tensors="pt")
         emo_input_features = emo_inputs["input_features"]
         emo_attention_mask = emo_inputs["attention_mask"]

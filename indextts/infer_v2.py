@@ -35,7 +35,7 @@ from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
 from indextts.s2mel.modules.commons import MyModel, load_checkpoint
 from indextts.s2mel.modules.flow_matching import CFM
 from indextts.s2mel.modules.length_regulator import InterpolateRegulator
-from indextts.utils.checkpoint import load_checkpoint
+from indextts.utils.checkpoint import load_checkpoint2
 from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.maskgct.models.codec.kmeans.repcodec_model import RepCodec
 
@@ -307,7 +307,7 @@ class IndexTTS2:
 
         self.gpt = UnifiedVoice(use_accel=self.use_accel)
         self.gpt_path = self.model_dir / self.cfg.gpt_checkpoint
-        load_checkpoint(self.gpt, self.gpt_path)
+        load_checkpoint2(self.gpt, self.gpt_path)
         self.gpt = self.gpt.to(self.device)
         if self.use_fp16:
             self.gpt.eval().half()

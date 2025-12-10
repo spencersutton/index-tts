@@ -44,6 +44,22 @@ if typing.TYPE_CHECKING:
     from gradio import Progress
 
 
+def generate_silence_interval(
+    wavs: list[Tensor],
+    sampling_rate: int = 22050,
+    interval_silence: int = 200,
+) -> Tensor:
+    """Silences to be insert between generated segments."""
+    assert interval_silence > 0, "interval_silence must be greater than 0"
+    assert len(wavs) > 0, "wavs list must not be empty"
+
+    # get channel_size
+    channel_size = wavs[0].size(0)
+    # get silence tensor
+    sil_dur = int(sampling_rate * interval_silence / 1000.0)
+    return torch.zeros(channel_size, sil_dur)
+
+
 class IndexTTS2:
     device: str
     use_fp16: bool
@@ -343,22 +359,6 @@ class IndexTTS2:
         )
         feat = vq_emb.hidden_states[17]  # (B, T, C)
         return (feat - self.semantic_mean) / self.semantic_std
-
-    def interval_silence(
-        self,
-        wavs: list[Tensor],
-        sampling_rate: int = 22050,
-        interval_silence: int = 200,
-    ) -> Tensor:
-        """Silences to be insert between generated segments."""
-        assert interval_silence > 0, "interval_silence must be greater than 0"
-        assert len(wavs) > 0, "wavs list must not be empty"
-
-        # get channel_size
-        channel_size = wavs[0].size(0)
-        # get silence tensor
-        sil_dur = int(sampling_rate * interval_silence / 1000.0)
-        return torch.zeros(channel_size, sil_dur)
 
     def insert_interval_silence(
         self,
@@ -869,7 +869,7 @@ class IndexTTS2:
                 if stream_return:
                     yield wav.cpu()
                     if silence is None:
-                        silence = self.interval_silence(
+                        silence = generate_silence_interval(
                             wavs,
                             sampling_rate=sampling_rate,
                             interval_silence=interval_silence,

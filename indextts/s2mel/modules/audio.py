@@ -3,7 +3,7 @@ import torchaudio.functional as F
 from torch import Tensor
 
 
-def dynamic_range_compression_torch(x: Tensor, C: float = 1, clip_val: float = 1e-5) -> Tensor:
+def dynamic_range_compression_torch(x: Tensor, C: float = 1, clip_val: float = 1e-5) -> Tensor:  # noqa: N803
     return torch.log(torch.clamp(x, min=clip_val) * C)
 
 
@@ -26,7 +26,6 @@ def mel_spectrogram(
     fmax: float | None,
     center: bool = False,
 ) -> Tensor:
-    global mel_basis, hann_window  # pylint: disable=global-statement
     if f"{sampling_rate!s}_{fmax!s}_{y.device!s}" not in mel_basis:
         if fmax is None:
             fmax = sampling_rate / 2.0

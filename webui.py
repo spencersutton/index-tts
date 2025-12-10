@@ -10,7 +10,7 @@ from typing import Any
 import gradio as gr
 import pandas as pd
 
-from indextts.infer_v2 import IndexTTS2
+from indextts.infer_v2 import IndexTTS2, normalize_emo_vec
 from tools.i18n.i18n import I18nAuto
 
 parser = argparse.ArgumentParser(
@@ -186,7 +186,7 @@ def gen_single(
             vec = None
         case 2:  # emotion from custom vectors
             vec = [vec1, vec2, vec3, vec4, vec5, vec6, vec7, vec8]
-            vec = tts.normalize_emo_vec(vec, apply_bias=True)
+            vec = normalize_emo_vec(vec, apply_bias=True)
         case _:  # other modes
             vec = None
 

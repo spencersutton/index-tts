@@ -584,7 +584,6 @@ class IndexTTS2:
                 self.cache_mel = None
                 torch.cuda.empty_cache()
             audio, sr = _load_and_cut_audio(spk_audio_prompt, 15, verbose)
-            sr = int(sr)
             audio_22k = torchaudio.transforms.Resample(sr, 22050)(audio)
             audio_16k = torchaudio.transforms.Resample(sr, 16000)(audio)
 

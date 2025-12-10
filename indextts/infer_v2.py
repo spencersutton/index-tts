@@ -6,7 +6,6 @@ import time
 import typing
 import warnings
 from collections.abc import Callable, Generator, Mapping
-from functools import cache
 from pathlib import Path
 from subprocess import CalledProcessError
 from typing import Any, cast
@@ -33,7 +32,7 @@ from indextts.qwen_emotion import QwenEmotion
 from indextts.s2mel.modules.audio import mel_spectrogram
 from indextts.s2mel.modules.bigvgan import bigvgan
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
-from indextts.s2mel.modules.commons import MyModel, load_checkpoint2
+from indextts.s2mel.modules.commons import MyModel, load_checkpoint
 from indextts.s2mel.modules.flow_matching import CFM
 from indextts.s2mel.modules.length_regulator import InterpolateRegulator
 from indextts.utils.checkpoint import load_checkpoint
@@ -44,7 +43,16 @@ if typing.TYPE_CHECKING:
     from gradio import Progress
 
 
-@cache
+def _load_s2mel(cfg: CheckpointsConfig, model_dir: Path, device: str) -> MyModel:
+    s2mel_path = model_dir / cfg.s2mel_checkpoint
+    model = MyModel(cfg.s2mel, use_gpt_latent=True)
+    model = load_checkpoint(model, s2mel_path).to(device)
+    assert model.cfm.estimator is not None
+    model.cfm.estimator.setup_caches(max_batch_size=1, max_seq_length=8192)
+    print(">> s2mel weights restored from:", s2mel_path)
+    return model.eval()
+
+
 def _load_semantic_model(device: str) -> Wav2Vec2BertModel:
     model = Wav2Vec2BertModel.from_pretrained("facebook/w2v-bert-2.0")
     assert isinstance(model, Wav2Vec2BertModel)
@@ -129,7 +137,7 @@ def _load_and_cut_audio(
     return audio, sr
 
 
-def load_campplus_weights(device: str) -> CAMPPlus:
+def _load_campplus_weights(device: str) -> CAMPPlus:
     path = hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
     model = CAMPPlus(feat_dim=80, embedding_size=192)
     model.load_state_dict(torch.load(path, map_location="cpu"))
@@ -337,18 +345,10 @@ class IndexTTS2:
 
         self.semantic_codec = _load_semantic_codec(self.device)
 
-        s2mel_path = self.model_dir / self.cfg.s2mel_checkpoint
-        s2mel = MyModel(self.cfg.s2mel, use_gpt_latent=True)
-        s2mel = load_checkpoint2(s2mel, s2mel_path)
-        self.s2mel = s2mel.to(self.device)
-        assert self.s2mel.cfm.estimator is not None
-        self.s2mel.cfm.estimator.setup_caches(max_batch_size=1, max_seq_length=8192)
-
-        self.s2mel.eval()
-        print(">> s2mel weights restored from:", s2mel_path)
+        self.s2mel = _load_s2mel(self.cfg, self.model_dir, self.device)
 
         # load campplus_model
-        self.campplus_model = load_campplus_weights(self.device)
+        self.campplus_model = _load_campplus_weights(self.device)
 
         bigvgan_name = self.cfg.vocoder.name
         self.bigvgan = bigvgan.BigVGAN.from_pretrained(bigvgan_name, use_cuda_kernel=self.use_cuda_kernel)

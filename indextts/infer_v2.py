@@ -224,6 +224,48 @@ class IndexTTS2:
         gr_progress: Progress | None
     model_version: float
 
+    def process_audio_prompt(self, prompt: Path, verbose: bool = False) -> None:
+        if self.cache_spk_cond is not None:
+            self.cache_spk_cond = None
+            self.cache_s2mel_style = None
+            self.cache_s2mel_prompt = None
+            self.cache_mel = None
+            torch.cuda.empty_cache()
+        audio, sr = _load_and_cut_audio(prompt, 15, verbose)
+        audio_22k = torchaudio.transforms.Resample(sr, 22050)(audio)
+        audio_16k = torchaudio.transforms.Resample(sr, 16000)(audio)
+
+        inputs = self.extract_features(audio_16k, sampling_rate=16000, return_tensors="pt")
+        input_features = inputs["input_features"]
+        attention_mask = inputs["attention_mask"]
+        input_features = input_features.to(self.device)
+        attention_mask = attention_mask.to(self.device)
+        spk_cond_emb = self.get_emb(input_features, attention_mask)
+
+        _, S_ref = self.semantic_codec.quantize(spk_cond_emb)
+        ref_mel = self.mel_fn(audio_22k.to(spk_cond_emb.device).float())
+        ref_target_lengths = torch.LongTensor([ref_mel.size(2)]).to(ref_mel.device)
+        feat = torchaudio.compliance.kaldi.fbank(
+            audio_16k.to(ref_mel.device),
+            num_mel_bins=80,
+            dither=0,
+            sample_frequency=16000,
+        )
+        feat -= feat.mean(dim=0, keepdim=True)  # feat2另外一个滤波器能量组特征[922, 80]
+        style = self.campplus_model(feat.unsqueeze(0))  # 参考音频的全局style2[1,192]
+
+        length_regulator = cast(InterpolateRegulator, self.s2mel.models["length_regulator"])
+        prompt_condition = length_regulator(S_ref, ylens=ref_target_lengths, n_quantizers=3, f0=None)[0]
+
+        # Clone tensors before caching to avoid CUDA graph tensor overwrite issues
+        # When torch.compile uses CUDA graphs, output tensors get reused/overwritten
+        # We must clone them to safely cache independent copies
+        self.cache_spk_cond = spk_cond_emb.clone()
+        self.cache_s2mel_style = style.clone()
+        self.cache_s2mel_prompt = prompt_condition.clone()
+        self.cache_spk_audio_prompt = prompt
+        self.cache_mel = ref_mel.clone()
+
     def __init__(
         self,
         cfg_path: Path = Path("checkpoints/config.yaml"),
@@ -577,46 +619,7 @@ class IndexTTS2:
         # 如果参考音频改变了，才需要重新生成, 提升速度
         # Only regenerate if the reference audio has changed, to improve speed
         if self.cache_spk_cond is None or self.cache_spk_audio_prompt != spk_audio_prompt:
-            if self.cache_spk_cond is not None:
-                self.cache_spk_cond = None
-                self.cache_s2mel_style = None
-                self.cache_s2mel_prompt = None
-                self.cache_mel = None
-                torch.cuda.empty_cache()
-            audio, sr = _load_and_cut_audio(spk_audio_prompt, 15, verbose)
-            audio_22k = torchaudio.transforms.Resample(sr, 22050)(audio)
-            audio_16k = torchaudio.transforms.Resample(sr, 16000)(audio)
-
-            inputs = self.extract_features(audio_16k, sampling_rate=16000, return_tensors="pt")
-            input_features = inputs["input_features"]
-            attention_mask = inputs["attention_mask"]
-            input_features = input_features.to(self.device)
-            attention_mask = attention_mask.to(self.device)
-            spk_cond_emb = self.get_emb(input_features, attention_mask)
-
-            _, S_ref = self.semantic_codec.quantize(spk_cond_emb)
-            ref_mel = self.mel_fn(audio_22k.to(spk_cond_emb.device).float())
-            ref_target_lengths = torch.LongTensor([ref_mel.size(2)]).to(ref_mel.device)
-            feat = torchaudio.compliance.kaldi.fbank(
-                audio_16k.to(ref_mel.device),
-                num_mel_bins=80,
-                dither=0,
-                sample_frequency=16000,
-            )
-            feat -= feat.mean(dim=0, keepdim=True)  # feat2另外一个滤波器能量组特征[922, 80]
-            style = self.campplus_model(feat.unsqueeze(0))  # 参考音频的全局style2[1,192]
-
-            length_regulator = cast(InterpolateRegulator, self.s2mel.models["length_regulator"])
-            prompt_condition = length_regulator(S_ref, ylens=ref_target_lengths, n_quantizers=3, f0=None)[0]
-
-            # Clone tensors before caching to avoid CUDA graph tensor overwrite issues
-            # When torch.compile uses CUDA graphs, output tensors get reused/overwritten
-            # We must clone them to safely cache independent copies
-            self.cache_spk_cond = spk_cond_emb.clone()
-            self.cache_s2mel_style = style.clone()
-            self.cache_s2mel_prompt = prompt_condition.clone()
-            self.cache_spk_audio_prompt = spk_audio_prompt
-            self.cache_mel = ref_mel.clone()
+            self.process_audio_prompt(spk_audio_prompt, verbose)
         else:
             assert self.cache_s2mel_style is not None
             assert self.cache_s2mel_prompt is not None

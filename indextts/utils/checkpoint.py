@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
 
 
-def load_checkpoint(model: torch.nn.Module, model_pth: Path) -> dict[str, object]:
+def load_checkpoint2(model: torch.nn.Module, model_pth: Path) -> dict[str, object]:
     checkpoint: Mapping[str, Any] = torch.load(model_pth, map_location="cpu")
     checkpoint = checkpoint.get("model", checkpoint)
     model.load_state_dict(checkpoint, strict=True)

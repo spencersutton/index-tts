@@ -21,7 +21,14 @@ from torch import Tensor
 from torch.nn.utils.rnn import pad_sequence
 from torchcodec.decoders import AudioDecoder
 from torchcodec.encoders import AudioEncoder
-from transformers import SeamlessM4TFeatureExtractor, Wav2Vec2BertModel
+from transformers import (
+    SeamlessM4TFeatureExtractor,
+    Wav2Vec2BertModel,
+)
+from vocos import Vocos
+from vocos.feature_extractors import MelSpectrogramFeatures
+from vocos.heads import ISTFTHead
+from vocos.models import VocosBackbone
 
 from indextts.config import CheckpointsConfig
 from indextts.gpt.model_v2 import GPT2InferenceModel, UnifiedVoice
@@ -393,7 +400,31 @@ class IndexTTS2:
         # load campplus_model
         self.campplus_model = _load_campplus_weights(self.device)
 
-        self.bigvgan = _load_bigvgan(self.cfg, self.device, self.use_cuda_kernel)
+        if self.cfg.vocoder.type == "vocos":
+            vocos_name = self.cfg.vocoder.name
+            try:
+                self.vocos = Vocos.from_pretrained(vocos_name)
+            except TypeError as e:
+                if "f_min" in str(e) and "BSC-LT/vocos-mel-22khz" in vocos_name:
+                    print(f">> Warning: Failed to load {vocos_name} with default loader ({e}). Trying manual load...")
+                    # Manual load for BSC-LT/vocos-mel-22khz due to config mismatch
+                    ckpt_path = hf_hub_download(repo_id=vocos_name, filename="pytorch_model.bin")
+                    backbone = VocosBackbone(input_channels=80, dim=512, intermediate_dim=1536, num_layers=8)
+                    head = ISTFTHead(dim=512, n_fft=1024, hop_length=256, padding="same")
+                    feature_extractor = MelSpectrogramFeatures(
+                        sample_rate=22050, n_fft=1024, hop_length=256, n_mels=80, padding="same"
+                    )
+                    self.vocos = Vocos(feature_extractor, backbone, head)
+                    self.vocos.load_state_dict(torch.load(ckpt_path, map_location="cpu"), strict=False)
+                else:
+                    raise e
+
+            self.vocos = self.vocos.to(self.device)
+            self.vocos.eval()
+            print(">> vocos weights restored from:", vocos_name)
+        else:
+            self.bigvgan = _load_bigvgan(self.cfg, self.device, self.use_cuda_kernel)
+            self.vocos = None
 
         normalizer = TextNormalizer()
         normalizer.load()
@@ -442,7 +473,9 @@ class IndexTTS2:
 
             # Compile BigVGAN only when not using custom CUDA kernels
             # Custom CUDA kernels conflict with torch.compile tracing
-            if not self.use_cuda_kernel:
+            if self.vocos is not None:
+                self.vocos = torch.compile(self.vocos, dynamic=True)
+            elif not self.use_cuda_kernel:
                 self.bigvgan = cast(
                     bigvgan.BigVGAN,
                     torch.compile(self.bigvgan, dynamic=True),
@@ -478,6 +511,31 @@ class IndexTTS2:
         )
         feat = vq_emb.hidden_states[17]  # (B, T, C)
         return (feat - self.semantic_mean) / self.semantic_std
+
+    def adjust_mel_pitch(self, mel: Tensor) -> Tensor:
+        """
+        Adjust mel spectrogram from fmax=11025 (s2mel) to fmax=8000 (Vocos).
+        This fixes the low pitch issue caused by frequency axis mismatch.
+        """
+        # mel: [B, 80, T]
+        # Source: 22050Hz, fmax=None (11025)
+        # Target: 22050Hz, fmax=8000
+
+        # Calculate cutoff bin
+        # m(f) = 2595 * log10(1 + f/700)
+        m_max_src = 2595 * np.log10(1 + 11025 / 700)
+        m_max_tgt = 2595 * np.log10(1 + 8000 / 700)
+        cutoff_ratio = m_max_tgt / m_max_src
+        cutoff_bin = int(80 * cutoff_ratio)  # ~71
+
+        # Crop to the part that corresponds to 0-8000Hz
+        mel_cropped = mel[:, :cutoff_bin, :]  # [B, 71, T]
+
+        # Interpolate back to 80 bins to stretch 0-8000Hz to fill the Vocos input
+        # We treat frequency as the "length" dimension for interpolation
+        mel_cropped = mel_cropped.transpose(1, 2)  # [B, T, 71]
+        mel_resized = F.interpolate(mel_cropped, size=80, mode="linear", align_corners=False)
+        return mel_resized.transpose(1, 2)  # [B, 80, T]
 
     def _set_gr_progress(self, value: float, desc: str) -> None:
         if self.gr_progress is not None:
@@ -835,10 +893,19 @@ class IndexTTS2:
                     s2mel_time += time.perf_counter() - m_start_time
 
                     m_start_time = time.perf_counter()
-                    wav = self.bigvgan(vc_target.float()).squeeze().unsqueeze(0)
+                    if self.vocos is not None:
+                        # Adjust mel pitch if using BSC-LT/vocos-mel-22khz which expects fmax=8000
+                        if "BSC-LT/vocos-mel-22khz" in self.cfg.vocoder.name:
+                            vc_target = self.adjust_mel_pitch(vc_target)
+
+                        wav = self.vocos.decode(vc_target.float())
+                        if wav.ndim == 1:
+                            wav = wav.unsqueeze(0)
+                    else:
+                        wav = self.bigvgan(vc_target.float()).squeeze().unsqueeze(0)
+                        wav = wav.squeeze(1)
                     logger.debug(wav.shape)
                     bigvgan_time += time.perf_counter() - m_start_time
-                    wav = wav.squeeze(1)
 
                 logger.debug(
                     "wav shape: %s min: %s max: %s",

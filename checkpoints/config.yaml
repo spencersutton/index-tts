@@ -84,11 +84,11 @@ s2mel:
         block_size: 8192
         in_channels: 80
         style_condition: true
-        final_layer_type: 'wavenet'
-        target: 'mel'
+        final_layer_type: "wavenet"
+        target: "mel"
         content_dim: 512
         content_codebook_size: 1024
-        content_type: 'discrete'
+        content_type: "discrete"
         f0_condition: false
         n_f0_bins: 512
         content_codebooks: 1
@@ -110,11 +110,11 @@ s2mel:
 gpt_checkpoint: gpt.pth
 w2v_stat: wav2vec2bert_stats.pt
 s2mel_checkpoint: s2mel.pth
-emo_matrix: feat2.pt 
+emo_matrix: feat2.pt
 spk_matrix: feat1.pt
 emo_num: [3, 17, 2, 8, 4, 5, 10, 24]
-qwen_emo_path: qwen0.6bemo4-merge/ 
+qwen_emo_path: qwen0.6bemo4-merge/
 vocoder:
-    type: "bigvgan"
-    name: "nvidia/bigvgan_v2_22khz_80band_256x"
+    type: "vocos"
+    name: "BSC-LT/vocos-mel-22khz"
 version: 2.0

@@ -75,9 +75,6 @@ build-backend = "hatchling.build"
 # saves time, since it won't waste time downloading a generic PyTorch version.
 no-build-isolation-package = ["deepspeed"]
 
-[tool.uv.sources]
-flash-attn = { url = "https://github.com/mjun0812/flash-attention-prebuild-wheels/releases/download/v0.5.2/flash_attn-2.8.3%2Bcu130torch2.9-cp313-cp313-linux_x86_64.whl" }
-
 [tool.ruff]
 line-length = 120
 output-format = "concise"

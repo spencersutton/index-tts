@@ -675,7 +675,7 @@ requires-dist = [
     { name = "torchaudio", specifier = ">=2.8" },
     { name = "torchcodec", specifier = ">=0.7" },
     { name = "tqdm", specifier = ">=4.67.1" },
-    { name = "transformers", specifier = ">=4.52.1" },
+    { name = "transformers", specifier = ">=4.52.1,<4.56" },
     { name = "vocos", specifier = ">=0.1.0" },
     { name = "wetext", specifier = ">=0.0.9" },
     { name = "x-transformers", specifier = ">=2.11.23" },

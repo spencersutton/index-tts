@@ -1,5 +1,6 @@
 # Adapted from https://github.com/junjun3518/alias-free-torch under the Apache License 2.0
 #   LICENSE is in incl_licenses directory.
+
 import math
 
 import torch
@@ -16,24 +17,34 @@ def kaiser_sinc_filter1d(
     even = kernel_size % 2 == 0
     half_size = kernel_size // 2
 
-    # For kaiser window
+    # Calculate Kaiser window beta parameter
     delta_f = 4 * half_width
     A = 2.285 * (half_size - 1) * math.pi * delta_f + 7.95
+
     if A > 50.0:
         beta = 0.1102 * (A - 8.7)
     elif A >= 21.0:
         beta = 0.5842 * (A - 21) ** 0.4 + 0.07886 * (A - 21.0)
     else:
         beta = 0.0
+
     window = torch.kaiser_window(kernel_size, beta=beta, periodic=False)
 
-    time = torch.arange(-half_size, half_size) + 0.5 if even else torch.arange(kernel_size) - half_size
+    # Create time axis centered at 0
+    if even:
+        time = torch.arange(-half_size, half_size) + 0.5
+    else:
+        time = torch.arange(kernel_size) - half_size
+
+    # Apply sinc filter with Kaiser window
     if cutoff == 0:
-        return torch.zeros_like(time)
-    filter_ = 2 * cutoff * window * torch.sinc(2 * cutoff * time)
-    # Normalize filter to have sum = 1, otherwise we will have a small leakage of the constant component in the input signal.
-    filter_ = filter_ / filter_.sum()
-    return filter_.view(1, 1, kernel_size)
+        filter = torch.zeros_like(time)
+    else:
+        filter = 2 * cutoff * window * torch.sinc(2 * cutoff * time)
+        # Normalize filter to have sum = 1, otherwise we will have a small leakage of the constant component in the input signal.
+        filter /= filter.sum()
+
+    return filter.view(1, 1, kernel_size)
 
 
 class LowPassFilter1d(nn.Module):
@@ -51,11 +62,9 @@ class LowPassFilter1d(nn.Module):
         """kernel_size should be even number for stylegan3 setup, in this implementation, odd number is also possible."""
         super().__init__()
         if cutoff < -0.0:
-            msg = "Minimum cutoff must be larger than zero."
-            raise ValueError(msg)
+            raise ValueError("Minimum cutoff must be larger than zero.")
         if cutoff > 0.5:
-            msg = "A cutoff above 0.5 does not make sense."
-            raise ValueError(msg)
+            raise ValueError("A cutoff above 0.5 does not make sense.")
         self.kernel_size = kernel_size
         self.even = kernel_size % 2 == 0
         self.pad_left = kernel_size // 2 - int(self.even)

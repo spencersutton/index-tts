@@ -1,9 +1,9 @@
 # Copyright (c) 2024 NVIDIA CORPORATION.
 #   Licensed under the MIT license.
-
 import os
 import subprocess
 from pathlib import Path
+from typing import Any
 
 from torch.utils import cpp_extension
 
@@ -14,9 +14,12 @@ Set it to empty stringo avoid recompilation and assign arch flags explicity in e
 os.environ["TORCH_CUDA_ARCH_LIST"] = ""
 
 
-def load():
+def load() -> Any:  # noqa: ANN401
     # Check if cuda 11 is installed for compute capability 8.0
-    cc_flag = []
+    cc_flag: list[str] = []
+    assert cpp_extension.CUDA_HOME is not None, (
+        "CUDA_HOME is not found. Please ensure CUDA is installed and CUDA_HOME environment variable is set correctly."
+    )
     _, bare_metal_major, _ = _get_cuda_bare_metal_version(cpp_extension.CUDA_HOME)
     if int(bare_metal_major) >= 11:
         cc_flag.extend(("-gencode", "arch=compute_80,code=sm_80"))
@@ -27,7 +30,7 @@ def load():
     _create_build_dir(buildpath)
 
     # Helper function to build the kernels.
-    def _cpp_extention_load_helper(name, sources, extra_cuda_flags):
+    def _cpp_extention_load_helper(name: str, sources: list[str], extra_cuda_flags: list[str]) -> Any:  # noqa: ANN401
         return cpp_extension.load(
             name=name,
             sources=sources,
@@ -54,14 +57,14 @@ def load():
     ]
 
     sources = [
-        srcpath / "anti_alias_activation.cpp",
-        srcpath / "anti_alias_activation_cuda.cu",
+        str(srcpath / "anti_alias_activation.cpp"),
+        str(srcpath / "anti_alias_activation_cuda.cu"),
     ]
     return _cpp_extention_load_helper("anti_alias_activation_cuda", sources, extra_cuda_flags)
 
 
-def _get_cuda_bare_metal_version(cuda_dir):
-    raw_output = subprocess.check_output([cuda_dir + "/bin/nvcc", "-V"], universal_newlines=True)
+def _get_cuda_bare_metal_version(cuda_dir: str) -> tuple[str, str, str]:
+    raw_output = subprocess.check_output([cuda_dir + "/bin/nvcc", "-V"], universal_newlines=True)  # noqa: S603
     output = raw_output.split()
     release_idx = output.index("release") + 1
     release = output[release_idx].split(".")

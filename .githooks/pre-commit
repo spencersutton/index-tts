@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-set -euo pipefail
-
-if [[ "${1:-}" == "install" ]]; then
-	ln -sf ../../.githooks/pre-commit .git/hooks/pre-commit
-else
-	ruff format --preview
-fi

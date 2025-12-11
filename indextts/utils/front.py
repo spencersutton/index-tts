@@ -133,7 +133,7 @@ class TextNormalizer:
             result = pattern.sub(lambda x: self.char_rep_map[x.group()], result)
         return result
 
-    def correct_pinyin(self, pinyin: str):
+    def correct_pinyin(self, pinyin: str) -> str:
         """将 jqx 的韵母为 u/ü 的拼音转换为 v
         如：ju -> jv , que -> qve, xün -> xvn
         """

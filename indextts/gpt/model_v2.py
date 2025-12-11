@@ -118,7 +118,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         past_key_values: Cache | None = None,
         attention_mask: torch.Tensor | None = None,
         inputs_embeds: torch.Tensor | None = None,
-        cache_position: torch.Tensor | None = None,  # noqa: ARG002
+        cache_position: torch.Tensor | None = None,
         **kwargs: Tensor,
     ) -> dict:
         inputs_embeds = kwargs.get("inputs_embeds")  # usually None
@@ -686,7 +686,7 @@ class UnifiedVoice(nn.Module):
         typical_sampling: bool = False,
         typical_mass: float = 0.9,
         **hf_generate_kwargs: Any,  # noqa: ANN401
-    ) -> tuple[Tensor, Tensor] | tuple[object, Tensor]:
+    ) -> tuple[Tensor, Tensor]:
         t0 = time.perf_counter()
         """Args:
         speech_condition: (b, d, frames) or (d, frames)
@@ -793,6 +793,7 @@ class UnifiedVoice(nn.Module):
                 num_return_sequences=num_return_sequences,
                 **hf_generate_kwargs,
             )
+            assert isinstance(output, Tensor)
         logger.info("generation: %.4fs", time.perf_counter() - t4)
         logger.info("total inference_speech: %.4fs", time.perf_counter() - t0)
 

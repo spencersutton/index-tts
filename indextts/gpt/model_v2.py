@@ -2,6 +2,7 @@ import functools
 import importlib.util
 import logging
 import time
+from typing import Any
 
 import torch
 import torch.nn.functional as F
@@ -348,7 +349,7 @@ class UnifiedVoice(nn.Module):
         self.use_accel = use_accel
         self.accel_engine = None  # Will be initialized in post_init_gpt2_config
 
-    def post_init_gpt2_config(self, use_deepspeed=False, kv_cache=False, half=False) -> None:
+    def post_init_gpt2_config(self, use_deepspeed: bool = False, kv_cache: bool = False, half: bool = False) -> None:
         seq_length = self.max_mel_tokens + self.max_text_tokens + 2
         gpt_config = GPT2Config(
             vocab_size=self.number_mel_codes,
@@ -367,7 +368,7 @@ class UnifiedVoice(nn.Module):
                 msg = "flash_attn is required for acceleration but not installed. Please install from https://github.com/Dao-AILab/flash-attention/releases/"
                 raise ImportError(msg)
 
-            from indextts.accel import AccelInferenceEngine, GPT2AccelModel
+            from indextts.accel import AccelInferenceEngine, GPT2AccelModel  # noqa: PLC0415
 
             # Create accel model
             accel_gpt = GPT2AccelModel(gpt_config)
@@ -398,7 +399,7 @@ class UnifiedVoice(nn.Module):
             kv_cache=kv_cache,
         )
         if use_deepspeed and half and torch.cuda.is_available():
-            import deepspeed
+            import deepspeed  # noqa: PLC0415
 
             self.ds_engine = deepspeed.init_inference(
                 model=self.inference_model,
@@ -408,7 +409,7 @@ class UnifiedVoice(nn.Module):
             )
             self.inference_model = self.ds_engine.module.eval()
         elif use_deepspeed and torch.cuda.is_available():
-            import deepspeed
+            import deepspeed  # noqa: PLC0415
 
             self.ds_engine = deepspeed.init_inference(
                 model=self.inference_model,
@@ -422,12 +423,17 @@ class UnifiedVoice(nn.Module):
 
         self.gpt.wte = self.mel_embedding
 
-    def build_aligned_inputs_and_targets(self, input, start_token, stop_token):
+    def build_aligned_inputs_and_targets(
+        self,
+        input: Tensor,  # noqa: A002
+        start_token: int,
+        stop_token: int,
+    ) -> tuple[Tensor, Tensor]:
         inp = F.pad(input, (1, 0), value=start_token)
         tar = F.pad(input, (0, 1), value=stop_token)
         return inp, tar
 
-    def set_mel_padding(self, mel_input_tokens, mel_lengths):
+    def set_mel_padding(self, mel_input_tokens: Tensor, mel_lengths: Tensor) -> Tensor:
         """Given mel tokens that are derived from a padded audio clip and the actual lengths of each batch element in
         that audio clip, reformats the tokens with STOP_MEL_TOKEN in place of the zero padding. This is required
         preformatting to create a working TTS model.
@@ -440,7 +446,7 @@ class UnifiedVoice(nn.Module):
                 mel_input_tokens[b, actual_end:] = self.stop_mel_token
         return mel_input_tokens
 
-    def set_text_padding(self, text_input_tokens, text_lengths):
+    def set_text_padding(self, text_input_tokens: Tensor, text_lengths: Tensor) -> Tensor:
         """Given mel tokens that are derived from a padded audio clip and the actual lengths of each batch element in
         that audio clip, reformats the tokens with STOP_MEL_TOKEN in place of the zero padding. This is required
         preformatting to create a working TTS model.
@@ -506,7 +512,7 @@ class UnifiedVoice(nn.Module):
         conds_mask = self.cond_mask_pad(mask.squeeze(1))
         return self.perceiver_encoder(speech_conditioning_input, conds_mask)  # (b, 32, d)
 
-    def get_emo_conditioning(self, speech_conditioning_input, cond_mel_lengths=None):
+    def get_emo_conditioning(self, speech_conditioning_input: Tensor, cond_mel_lengths: Tensor | None = None) -> Tensor:
         speech_conditioning_input, mask = self.emo_conditioning_encoder(
             speech_conditioning_input.transpose(1, 2), cond_mel_lengths
         )  # (b, s, d), (b, 1, s)
@@ -543,8 +549,6 @@ class UnifiedVoice(nn.Module):
             speech_conditioning_latent = self.get_conditioning(
                 speech_conditioning_latent.transpose(1, 2), cond_mel_lengths
             )
-        else:
-            speech_conditioning_latent = speech_conditioning_latent
 
         if emo_vec is None:
             emo_vec_syn_ori = self.get_emo_conditioning(
@@ -681,8 +685,8 @@ class UnifiedVoice(nn.Module):
         max_generate_length: int | None = None,
         typical_sampling: bool = False,
         typical_mass: float = 0.9,
-        **hf_generate_kwargs,
-    ):
+        **hf_generate_kwargs: Any,  # noqa: ANN401
+    ) -> tuple[Tensor, Tensor] | tuple[object, Tensor]:
         t0 = time.perf_counter()
         """Args:
         speech_condition: (b, d, frames) or (d, frames)

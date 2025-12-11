@@ -162,7 +162,7 @@ class _Attend(nn.Module):
         return einsum(f"b h i j, {kv_einsum_eq} -> b h i d", attn, v)
 
 
-def _sequential(*mods: nn.Module) -> nn.Sequential:
+def _sequential(*mods: nn.Module | None) -> nn.Sequential:
     return nn.Sequential(*filter(_exists, mods))
 
 
@@ -284,15 +284,15 @@ class PerceiverResampler(nn.Module):
 class _Attention(nn.Module):
     def __init__(
         self,
-        dim,
+        dim: int,
         *,
-        dim_context=None,
-        causal=False,
-        dim_head=64,
-        heads=8,
-        dropout=0.0,
-        use_flash=False,
-        cross_attn_include_queries=False,
+        dim_context: int | None = None,
+        causal: bool = False,
+        dim_head: int = 64,
+        heads: int = 8,
+        dropout: float = 0.0,
+        use_flash: bool = False,
+        cross_attn_include_queries: bool = False,
     ) -> None:
         super().__init__()
         self.scale = dim_head**-0.5
@@ -307,7 +307,7 @@ class _Attention(nn.Module):
         self.to_kv = nn.Linear(dim_context, dim_inner * 2, bias=False)
         self.to_out = nn.Linear(dim_inner, dim, bias=False)
 
-    def forward(self, x, context=None, mask=None):
+    def forward(self, x: Tensor, context: Tensor | None = None, mask: Tensor | None = None) -> Tensor:
         h, has_context = self.heads, _exists(context)
 
         context = _default(context, x)

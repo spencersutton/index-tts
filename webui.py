@@ -99,7 +99,7 @@ Path("prompts").mkdir(exist_ok=True, parents=True)
 example_cases = []
 with Path("examples/cases.jsonl").open(encoding="utf-8") as f:
     for line in f:
-        line = line.strip()
+        line = line.strip()  # noqa: PLW2901
         if not line:
             continue
         example = json.loads(line)

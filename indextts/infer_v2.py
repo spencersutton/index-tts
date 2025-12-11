@@ -5,7 +5,6 @@ import os
 import random
 import time
 import typing
-import warnings
 from collections.abc import Callable, Generator, Mapping
 from pathlib import Path
 from subprocess import CalledProcessError
@@ -53,7 +52,7 @@ def _load_bigvgan(cfg: CheckpointsConfig, device: str, use_cuda_kernel: bool) ->
     model = model.to(device)
     model.remove_weight_norm()
     model.eval()
-    print(">> bigvgan weights restored from:", name)
+    logger.info(">> bigvgan weights restored from: %s", name)
     return model
 
 
@@ -63,7 +62,7 @@ def _load_s2mel(cfg: CheckpointsConfig, device: str, model_dir: Path) -> MyModel
     model = load_checkpoint(model, s2mel_path).to(device)
     assert model.cfm.estimator is not None
     model.cfm.estimator.setup_caches(max_batch_size=1, max_seq_length=8192)
-    print(">> s2mel weights restored from:", s2mel_path)
+    logger.info(">> s2mel weights restored from: %s", s2mel_path)
     return model.eval()
 
 
@@ -78,7 +77,7 @@ def _load_semantic_codec(device: str) -> RepCodec:
     path = hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
     safetensors.torch.load_model(model, path, strict=False)
     model = model.to(device).eval()
-    print(f">> semantic_codec weights restored from: {path}")
+    logger.info(">> semantic_codec weights restored from: %s", path)
     return model
 
 
@@ -143,8 +142,7 @@ def _load_and_cut_audio(
     max_audio_samples = int(max_audio_length_seconds * sr)
 
     if audio.shape[1] > max_audio_samples:
-        if verbose:
-            print(f"Audio too long ({audio.shape[1]} samples), truncating to {max_audio_samples} samples")
+        logger.debug("Audio too long (%d samples), truncating to %d samples", audio.shape[1], max_audio_samples)
         audio = audio[:, :max_audio_samples]
     return audio, sr
 
@@ -154,7 +152,7 @@ def _load_campplus_weights(device: str) -> CAMPPlus:
     model = CAMPPlus(feat_dim=80, embedding_size=192)
     model.load_state_dict(torch.load(path, map_location="cpu"))
     model = model.to(device).eval()
-    print(">> campplus_model weights restored from:", path)
+    logger.info(">> campplus_model weights restored from: %s", path)
     return model
 
 
@@ -293,7 +291,7 @@ class IndexTTS2:
             self.device = "cpu"
             self.use_fp16 = False
             self.use_cuda_kernel = False
-            print(">> Be patient, it may take a while to run in CPU mode.")
+            logger.info(">> Be patient, it may take a while to run in CPU mode.")
 
         if self.device.startswith("cuda"):
             with contextlib.suppress(AttributeError):
@@ -333,7 +331,7 @@ class IndexTTS2:
                 except (ImportError, AttributeError):
                     pass  # Older PyTorch versions may not have these options
 
-            print(f">> torch.compile cache directory: {cache_dir}")
+            logger.info(">> torch.compile cache directory: %s", cache_dir)
 
         cfg = cast(Mapping[str, Any], OmegaConf.load(cfg_path))
         self.cfg = cast(CheckpointsConfig, cfg)  # pyright: ignore[reportInvalidCast]
@@ -353,7 +351,7 @@ class IndexTTS2:
             self.gpt.eval().half()
         else:
             self.gpt.eval()
-        print(">> GPT weights restored from:", self.gpt_path)
+        logger.info(">> GPT weights restored from: %s", self.gpt_path)
 
         if use_deepspeed:
             try:
@@ -361,10 +359,10 @@ class IndexTTS2:
 
                 if importlib.util.find_spec("deepspeed") is None:
                     use_deepspeed = False
-                    print(">> DeepSpeed not found. Falling back to normal inference.")
+                    logger.info(">> DeepSpeed not found. Falling back to normal inference.")
             except (ImportError, OSError, CalledProcessError) as e:
                 use_deepspeed = False
-                print(f">> Failed to load DeepSpeed. Falling back to normal inference. Error: {e}")
+                logger.info(">> Failed to load DeepSpeed. Falling back to normal inference. Error: %s", e)
 
         self.gpt.post_init_gpt2_config(use_deepspeed=use_deepspeed, kv_cache=True, half=self.use_fp16)
 
@@ -373,13 +371,12 @@ class IndexTTS2:
             try:
                 from indextts.s2mel.modules.bigvgan.alias_free_activation.cuda import activation1d  # noqa: PLC0415
 
-                print(
-                    ">> Preload custom CUDA kernel for BigVGAN",
+                logger.info(
+                    ">> Preload custom CUDA kernel for BigVGAN: %s",
                     activation1d.anti_alias_activation_cuda,
                 )
             except Exception as e:  # noqa: BLE001
-                print(">> Failed to load custom CUDA kernel for BigVGAN. Falling back to torch.")
-                print(f"{e!r}")
+                logger.info(">> Failed to load custom CUDA kernel for BigVGAN. Falling back to torch. %r", e)
                 self.use_cuda_kernel = False
 
         self.extract_features = SeamlessM4TFeatureExtractor.from_pretrained("facebook/w2v-bert-2.0")
@@ -401,11 +398,11 @@ class IndexTTS2:
 
         normalizer = TextNormalizer()
         normalizer.load()
-        print(">> TextNormalizer loaded")
+        logger.info(">> TextNormalizer loaded")
 
         bpe_path = self.model_dir / self.cfg.dataset.bpe_model
         self.tokenizer = TextTokenizer(bpe_path, normalizer)
-        print(">> bpe model loaded from:", bpe_path)
+        logger.info(">> bpe model loaded from: %s", bpe_path)
 
         emo_matrix: Tensor = torch.load(self.model_dir / self.cfg.emo_matrix)
         emo_matrix = emo_matrix.to(self.device)
@@ -432,7 +429,7 @@ class IndexTTS2:
 
         # Enable torch.compile optimization if requested
         if use_torch_compile:
-            print(">> Enabling torch.compile optimization")
+            logger.info(">> Enabling torch.compile optimization")
             self.s2mel.enable_torch_compile()
 
             # Compile the inner inference model used for AR generation
@@ -466,7 +463,7 @@ class IndexTTS2:
                 torch.compile(self.campplus_model, dynamic=True, mode="reduce-overhead"),
             )
 
-            print(">> torch.compile optimization enabled successfully")
+            logger.info(">> torch.compile optimization enabled successfully")
 
         # 进度引用显示（可选）
         # Progress reference display (optional)
@@ -569,15 +566,18 @@ class IndexTTS2:
         if self.use_torch_compile and torch.cuda.is_available():
             torch.compiler.cudagraph_mark_step_begin()
 
-        print(">> starting inference...")
+        logger.info(">> starting inference...")
         self._set_gr_progress(0, "starting inference...")
-        if verbose:
-            print(
-                f"origin text:{text}, spk_audio_prompt:{spk_audio_prompt}, "
-                f"emo_audio_prompt:{emo_audio_prompt}, emo_alpha:{emo_alpha}, "
-                f"emo_vector:{emo_vector}, use_emo_text:{use_emo_text}, "
-                f"emo_text:{emo_text}"
-            )
+        logger.debug(
+            "origin text:%s, spk_audio_prompt:%s, emo_audio_prompt:%s, emo_alpha:%s, emo_vector:%s, use_emo_text:%s, emo_text:%s",
+            text,
+            spk_audio_prompt,
+            emo_audio_prompt,
+            emo_alpha,
+            emo_vector,
+            use_emo_text,
+            emo_text,
+        )
         start_time = time.perf_counter()
 
         if use_emo_text or emo_vector is not None:
@@ -590,7 +590,7 @@ class IndexTTS2:
             if emo_text is None:
                 emo_text = text  # use main text prompt
             emo_dict = self.qwen_emo.inference(emo_text)
-            print(f"detected emotion vectors from text: {emo_dict}")
+            logger.info("detected emotion vectors from text: %s", emo_dict)
             # convert ordered dict to list of vectors; the order is VERY important!
             emo_vector = list(emo_dict.values())
 
@@ -602,7 +602,7 @@ class IndexTTS2:
             if emo_vector_scale != 1.0:
                 # scale each vector and truncate to 4 decimals (for nicer printing)
                 emo_vector = [int(x * emo_vector_scale * 10000) / 10000 for x in emo_vector]
-                print(f"scaled emotion vectors to {emo_vector_scale}x: {emo_vector}")
+                logger.info("scaled emotion vectors to %sx: %s", emo_vector_scale, emo_vector)
 
         if emo_audio_prompt is None:
             # we are not using any external "emotion reference voice"; use
@@ -629,24 +629,24 @@ class IndexTTS2:
 
         text_token_ids = self.tokenizer.convert_tokens_to_ids(text_tokens_list)
         if self.tokenizer.unk_token_id in text_token_ids:
-            print(
-                f"  >> Warning: input text contains {text_token_ids.count(self.tokenizer.unk_token_id)} unknown tokens (id={self.tokenizer.unk_token_id}):"
-            )
-            print(
-                "     Tokens which can't be encoded: ",
+            logger.warning(
+                "input text contains %d unknown tokens (id=%d): %s\n"
+                "     Tokens which can't be encoded: %s\n"
+                "     Consider updating the BPE model or modifying the text to avoid unknown tokens.",
+                text_token_ids.count(self.tokenizer.unk_token_id),
+                self.tokenizer.unk_token_id,
+                text_tokens_list,
                 [
                     t
                     for t, id in zip(text_tokens_list, text_token_ids, strict=False)
                     if id == self.tokenizer.unk_token_id
                 ],
             )
-            print("     Consider updating the BPE model or modifying the text to avoid unknown tokens.")
 
-        if verbose:
-            print("text_tokens_list:", text_tokens_list)
-            print("segments count:", segments_count)
-            print("max_text_tokens_per_segment:", max_text_tokens_per_segment)
-            print(*segments, sep="\n")
+        logger.debug("text_tokens_list: %s", text_tokens_list)
+        logger.debug("segments count: %d", segments_count)
+        logger.debug("max_text_tokens_per_segment: %d", max_text_tokens_per_segment)
+        logger.debug(*segments)
         do_sample = generation_kwargs.pop("do_sample", True)
         top_p = generation_kwargs.pop("top_p", 0.8)
         top_k = generation_kwargs.pop("top_k", 30)
@@ -704,8 +704,7 @@ class IndexTTS2:
                 padding_value=self.gpt.stop_text_token,
             )
 
-            if verbose:
-                print(f"Batch text tokens shape: {text_tokens_batch.shape}")
+            logger.debug("Batch text tokens shape: %s", text_tokens_batch.shape)
 
             m_start_time = time.perf_counter()
             with (
@@ -748,11 +747,11 @@ class IndexTTS2:
             gpt_gen_time += time.perf_counter() - m_start_time
 
             if not has_warned and (codes_batch[:, -1] != self.stop_mel_token).any():
-                warnings.warn(
-                    f"WARN: generation stopped due to exceeding `max_mel_tokens` ({max_mel_tokens}). "
-                    f"Consider reducing `max_text_tokens_per_segment`({max_text_tokens_per_segment}) or increasing `max_mel_tokens`.",
-                    stacklevel=2,
-                    category=RuntimeWarning,
+                logger.warning(
+                    "WARN: generation stopped due to exceeding `max_mel_tokens` (%s). "
+                    "Consider reducing `max_text_tokens_per_segment`(%s) or increasing `max_mel_tokens`.",
+                    max_mel_tokens,
+                    max_text_tokens_per_segment,
                 )
                 has_warned = True
 
@@ -776,8 +775,7 @@ class IndexTTS2:
                 # Get corresponding text tokens for this segment (unpadded)
                 text_tokens = batch_text_tokens[seg_idx].unsqueeze(0)  # (1, L)
 
-                if verbose:
-                    print(f"Segment {seg_idx}: code len {code_len}")
+                logger.debug("Segment %s: code len %s", seg_idx, code_len)
 
                 m_start_time = time.perf_counter()
                 with (
@@ -842,19 +840,16 @@ class IndexTTS2:
 
                     m_start_time = time.perf_counter()
                     wav = self.bigvgan(vc_target.float()).squeeze().unsqueeze(0)
-                    if verbose:
-                        print(wav.shape)
+                    logger.debug(wav.shape)
                     bigvgan_time += time.perf_counter() - m_start_time
                     wav = wav.squeeze(1)
 
-                if verbose:
-                    print(
-                        f"wav shape: {wav.shape}",
-                        "min:",
-                        wav.min(),
-                        "max:",
-                        wav.max(),
-                    )
+                logger.debug(
+                    "wav shape: %s min: %s max: %s",
+                    wav.shape,
+                    wav.min(),
+                    wav.max(),
+                )
                 wavs.append(wav.cpu())  # to cpu before saving
                 if stream_return:
                     yield wav.cpu()
@@ -870,13 +865,13 @@ class IndexTTS2:
         wavs = insert_interval_silence(wavs, interval_silence=interval_silence)
         wav = torch.cat(wavs, dim=1)
         wav_length = wav.shape[-1] / SAMPLING_RATE
-        print(f">> gpt_gen_time: {gpt_gen_time:.2f} seconds")
-        print(f">> gpt_forward_time: {gpt_forward_time:.2f} seconds")
-        print(f">> s2mel_time: {s2mel_time:.2f} seconds")
-        print(f">> bigvgan_time: {bigvgan_time:.2f} seconds")
-        print(f">> Total inference time: {end_time - start_time:.2f} seconds")
-        print(f">> Generated audio length: {wav_length:.2f} seconds")
-        print(f">> RTF: {(end_time - start_time) / wav_length:.4f}")
+        logger.info(">> gpt_gen_time: %.2f seconds", gpt_gen_time)
+        logger.info(">> gpt_forward_time: %.2f seconds", gpt_forward_time)
+        logger.info(">> s2mel_time: %.2f seconds", s2mel_time)
+        logger.info(">> bigvgan_time: %.2f seconds", bigvgan_time)
+        logger.info(">> Total inference time: %.2f seconds", end_time - start_time)
+        logger.info(">> Generated audio length: %.2f seconds", wav_length)
+        logger.info(">> RTF: %.4f", (end_time - start_time) / wav_length)
 
         # save audio
         wav = wav.cpu()  # to cpu
@@ -901,7 +896,7 @@ def save_to_file(output_path: Path, wav: Tensor, sampling_rate: int) -> None:
     # Directly save audio to the specified path
     if output_path.is_file():
         output_path.unlink()
-        print(">> remove old wav file:", output_path)
+        logger.info(">> remove old wav file: %s", output_path)
     if not output_path.parent.exists():
         output_path.parent.mkdir(exist_ok=True, parents=True)
 
@@ -910,7 +905,7 @@ def save_to_file(output_path: Path, wav: Tensor, sampling_rate: int) -> None:
 
     encoder = AudioEncoder(wav, sample_rate=sampling_rate)
     encoder.to_file(output_path)
-    print(">> wav file saved to:", output_path)
+    logger.info(">> wav file saved to: %s", output_path)
 
 
 def _find_most_similar_cosine(query_vector: Tensor, matrix: Tensor) -> Tensor:

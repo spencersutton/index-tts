@@ -1,6 +1,6 @@
 import torch
 from torch import Tensor, nn
-from transformers import PretrainedConfig
+from transformers import Cache, PretrainedConfig
 from transformers.modeling_outputs import (
     BaseModelOutputWithPastAndCrossAttentions,
 )
@@ -10,7 +10,7 @@ from .attention import Attention
 
 
 class GPT2AccelAttention(nn.Module):
-    def __init__(self, config, layer_idx=None) -> None:
+    def __init__(self, config: PretrainedConfig, layer_idx: int | None = None) -> None:
         super().__init__()
         self.config = config
         self.layer_idx = layer_idx
@@ -51,16 +51,16 @@ class GPT2AccelAttention(nn.Module):
     def forward(
         self,
         hidden_states: Tensor,
-        layer_past=None,
-        attention_mask=None,
-        head_mask=None,
-        encoder_hidden_states=None,
-        encoder_attention_mask=None,
-        use_cache=False,
-        output_attentions=False,
-        past_key_value=None,
-        **kwargs,
-    ):
+        layer_past: tuple[Tensor, Tensor] | None = None,
+        attention_mask: Tensor | None = None,
+        head_mask: Tensor | None = None,
+        encoder_hidden_states: Tensor | None = None,
+        encoder_attention_mask: Tensor | None = None,
+        use_cache: bool = False,
+        output_attentions: bool = False,
+        past_key_value: tuple[Tensor, Tensor] | None = None,
+        **kwargs,  # noqa: ANN003
+    ) -> tuple[Tensor | None, ...]:
         if encoder_hidden_states is not None:
             msg = "Cross attention not supported in accel mode"
             raise NotImplementedError(msg)
@@ -107,19 +107,19 @@ class GPT2AccelAttention(nn.Module):
 
         return outputs
 
-    def _split_heads(self, tensor, num_heads, head_dim):
+    def _split_heads(self, tensor: Tensor, num_heads: int, head_dim: int) -> Tensor:
         new_shape = (*tensor.size()[:-1], num_heads, head_dim)
         tensor = tensor.view(new_shape)
         return tensor.permute(0, 2, 1, 3)  # (batch, head, seq_length, head_features)
 
-    def _merge_heads(self, tensor, num_heads, head_dim):
+    def _merge_heads(self, tensor: Tensor, num_heads: int, head_dim: int) -> Tensor:
         tensor = tensor.permute(0, 2, 1, 3).contiguous()
         new_shape = (*tensor.size()[:-2], num_heads * head_dim)
         return tensor.view(new_shape)
 
 
 class GPT2AccelBlock(GPT2Block):
-    def __init__(self, config, layer_idx=None) -> None:
+    def __init__(self, config: PretrainedConfig, layer_idx: int | None = None) -> None:
         super().__init__(config, layer_idx)
         self.attn = GPT2AccelAttention(config, layer_idx)
 
@@ -131,11 +131,12 @@ class GPT2AccelModel(GPT2Model):
 
     def forward(
         self,
-        input_ids: torch.LongTensor | None = None,
-        past_key_values: tuple | None = None,
+        input_ids: torch.Tensor | None = None,
+        past_key_values: tuple[tuple[torch.Tensor]] | Cache | None = None,
+        cache_position: torch.Tensor | None = None,
         attention_mask: torch.Tensor | None = None,
-        token_type_ids: torch.LongTensor | None = None,
-        position_ids: torch.LongTensor | None = None,
+        token_type_ids: torch.Tensor | None = None,
+        position_ids: torch.Tensor | None = None,
         head_mask: torch.Tensor | None = None,
         inputs_embeds: torch.Tensor | None = None,
         encoder_hidden_states: torch.Tensor | None = None,
@@ -144,7 +145,8 @@ class GPT2AccelModel(GPT2Model):
         output_attentions: bool | None = None,
         output_hidden_states: bool | None = None,
         return_dict: bool | None = None,
-    ) -> BaseModelOutputWithPastAndCrossAttentions | tuple:
+        **kwargs,  # noqa: ANN003
+    ) -> tuple | BaseModelOutputWithPastAndCrossAttentions:
         if inputs_embeds is not None:
             hidden_states = inputs_embeds
 

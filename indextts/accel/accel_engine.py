@@ -24,7 +24,7 @@ class Sampler(nn.Module):
         super().__init__()
 
     @torch.compile(dynamic=True, mode="reduce-overhead")
-    def forward(self, logits: Tensor, temperatures: Tensor):
+    def forward(self, logits: Tensor, temperatures: Tensor) -> Tensor:
         temperatures = temperatures.to(logits.device).clamp(min=1e-8)
         greedy_mask = temperatures < 1e-5
         temp_for_scaling = torch.where(greedy_mask, 1.0, temperatures)
@@ -40,8 +40,8 @@ class Sampler(nn.Module):
 class AccelInferenceEngine:
     def __init__(
         self,
-        model,
-        lm_head,
+        model: GPT2InferenceModel,
+        lm_head: nn.Module | None,
         num_layers: int,
         num_heads: int,
         head_dim: int,
@@ -82,7 +82,7 @@ class AccelInferenceEngine:
         self.graph_pool = None
         self.graph_captured = False
 
-    def _prepare_prefill(self, requests: list[Seq]):
+    def _prepare_prefill(self, requests: list[Seq]) -> tuple[Tensor, Tensor]:
         input_ids = []
         positions = []
         cu_seqlens_q = [0]
@@ -141,7 +141,7 @@ class AccelInferenceEngine:
 
         return input_ids, positions
 
-    def _prepare_decode(self, requests: list[Seq]):
+    def _prepare_decode(self, requests: list[Seq]) -> tuple[Tensor, Tensor]:
         if not requests:
             msg = "FATAL: No requests provided to _prepare_decode!"
             raise RuntimeError(msg)
@@ -188,7 +188,7 @@ class AccelInferenceEngine:
 
         return input_ids, positions
 
-    def _prepare_sample(self, requests: list[Seq], temperature: float):
+    def _prepare_sample(self, requests: list[Seq], temperature: float) -> Tensor:
         temperatures = [temperature] * len(requests)
         return torch.tensor(temperatures, dtype=torch.float32, pin_memory=True).cuda(non_blocking=True)
 
@@ -342,8 +342,8 @@ class AccelInferenceEngine:
         input_ids: Tensor,
         max_new_tokens: int = 100,
         temperature: float = 1.0,
-        top_k: int = 50,
-        top_p: float = 1.0,
+        _top_k: int = 50,
+        _top_p: float = 1.0,
         stop_tokens: list[int] | None = None,
         attention_mask: Tensor | None = None,
         tts_embeddings: Tensor | None = None,  # TTS: [pad][cond][text] embeddings (87 tokens, NO start_mel)

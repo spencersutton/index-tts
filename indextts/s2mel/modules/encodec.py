@@ -7,7 +7,6 @@
 """Convolutional layers wrappers and utilities."""
 
 import math
-import typing as tp
 import warnings
 
 import einops
@@ -60,21 +59,20 @@ def get_norm_module(
     module: nn.Module,
     causal: bool = False,
     norm: str = "none",
-    **norm_kwargs: object,
 ) -> nn.Module:
     """Return the proper normalization module. If causal is True, this will ensure the returned
     module is causal, or return an error if the normalization doesn't support causal evaluation.
     """
     assert norm in CONV_NORMALIZATIONS
     if norm == "layer_norm":
-        assert isinstance(module, nn.modules.conv._ConvNd)  # pyright: ignore[reportPrivateUsage]
-        return ConvLayerNorm(module.out_channels, **norm_kwargs)
+        assert isinstance(module, nn.modules.conv._ConvNd)  # pyright: ignore[reportPrivateUsage]  # noqa: SLF001
+        return ConvLayerNorm(module.out_channels)
     if norm == "time_group_norm":
         if causal:
             msg = "GroupNorm doesn't support causal evaluation."
             raise ValueError(msg)
-        assert isinstance(module, nn.modules.conv._ConvNd)  # pyright: ignore[reportPrivateUsage]
-        return nn.GroupNorm(1, module.out_channels, **norm_kwargs)
+        assert isinstance(module, nn.modules.conv._ConvNd)  # pyright: ignore[reportPrivateUsage]  # noqa: SLF001
+        return nn.GroupNorm(1, module.out_channels)
     return nn.Identity()
 
 
@@ -118,14 +116,11 @@ class NormConv1d(nn.Module):
         *args,
         causal: bool = False,
         norm: str = "none",
-        norm_kwargs: dict[str, tp.Any] | None = None,
         **kwargs: object,
     ) -> None:
-        if norm_kwargs is None:
-            norm_kwargs = {}
         super().__init__()
         self.conv = _apply_parametrization_norm(nn.Conv1d(*args, **kwargs), norm)
-        self.norm = get_norm_module(self.conv, causal, norm, **norm_kwargs)
+        self.norm = get_norm_module(self.conv, causal, norm)
         self.norm_type = norm
 
     def forward(self, x: Tensor) -> Tensor:
@@ -149,12 +144,9 @@ class SConv1d(nn.Module):
         bias: bool = True,
         causal: bool = False,
         norm: str = "none",
-        norm_kwargs: dict[str, tp.Any] | None = None,
         pad_mode: str = "reflect",
         **kwargs: object,
     ) -> None:
-        if norm_kwargs is None:
-            norm_kwargs = {}
         super().__init__()
         # warn user on unusual setup between dilation and stride
         if stride > 1 and dilation > 1:
@@ -173,7 +165,6 @@ class SConv1d(nn.Module):
             bias=bias,
             causal=causal,
             norm=norm,
-            norm_kwargs=norm_kwargs,
         )
         self.causal = causal
         self.pad_mode = pad_mode

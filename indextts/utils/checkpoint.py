@@ -29,5 +29,5 @@ def load_checkpoint2(model: torch.nn.Module, model_pth: Path) -> dict[str, objec
     configs = {}
     if info_path.exists():
         with info_path.open(encoding="utf-8") as fin:
-            configs = yaml.load(fin, Loader=yaml.FullLoader)
+            configs = yaml.safe_load(fin)
     return configs

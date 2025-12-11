@@ -2,7 +2,7 @@
 #   LICENSE is in incl_licenses directory.
 
 import torch
-from torch import Tensor, nn, pow, sin
+from torch import Tensor, nn, pow, sin  # noqa: A004
 from torch.nn import Parameter
 
 

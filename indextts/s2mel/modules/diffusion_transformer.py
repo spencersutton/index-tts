@@ -56,7 +56,7 @@ class TimestepEmbedder(nn.Module):
         args = self.scale * t[:, None].float() * self.freqs[None]
         return torch.cat([torch.cos(args), torch.sin(args)], dim=-1)
 
-    def forward(self, t):
+    def forward(self, t: Tensor) -> Tensor:
         t_freq = self.timestep_embedding(t)
         return self.mlp(t_freq)
 
@@ -143,7 +143,7 @@ class DiT(torch.nn.Module):
         style: Tensor,
         cond: Tensor,
         mask_content: bool = False,
-    ):
+    ) -> Tensor:
         """x (Tensor): random noise
         prompt_x (Tensor): reference mel + zero mel
             shape: (batch_size, 80, 795+1068)

@@ -1,0 +1,21 @@
+#!/bin/bash
+# Pre-commit hook to format code with ruff
+
+echo "Running ruff format..."
+
+# Run ruff format on the repository
+uvx ruff format
+
+# Get the exit code
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -ne 0 ]; then
+	echo "❌ Ruff format failed. Please fix the issues and try again."
+	exit 1
+fi
+
+# Stage the formatted files
+git add -u
+
+echo "✅ Ruff format complete."
+exit 0

@@ -150,7 +150,7 @@ def gen_single(
     max_text_tokens_per_segment: int = 120,
     *args: float,
     progress: gr.Progress = gr.Progress(),
-) -> gr.Audio:
+) -> dict[str, Any]:
     output_path: Path | None = None
     if not output_path:
         output_path = Path("outputs") / f"spk_{int(time.time())}.wav"
@@ -212,7 +212,7 @@ def gen_single(
     return gr.update(value=output, visible=True)
 
 
-def update_prompt_audio() -> gr.Button:
+def update_prompt_audio() -> dict[str, Any]:
     return gr.update(interactive=True)
 
 

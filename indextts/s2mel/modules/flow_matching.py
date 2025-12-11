@@ -184,7 +184,7 @@ class BASECFM(torch.nn.Module, ABC):
             )
         loss /= b
 
-        return loss, estimator_out + (1 - self.sigma_min) * z
+        return torch.tensor(loss), estimator_out + (1 - self.sigma_min) * z
 
 
 class CFM(BASECFM):

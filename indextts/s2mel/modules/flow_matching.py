@@ -201,8 +201,8 @@ class CFM(BASECFM):
         """
         assert hasattr(torch.distributed, "is_initialized")
         if torch.distributed.is_initialized():
-            assert hasattr(torch._inductor, "config")  # pyright: ignore[reportPrivateUsage]
-            torch._inductor.config.reorder_for_compute_comm_overlap = True  # pyright: ignore[reportPrivateUsage, reportAttributeAccessIssue]
+            assert hasattr(torch._inductor, "config")  # noqa: SLF001
+            torch._inductor.config.reorder_for_compute_comm_overlap = True  # noqa: SLF001
         self.estimator = cast(
             DiT,
             torch.compile(

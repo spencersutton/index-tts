@@ -3,7 +3,6 @@
 
 # Adapted from https://github.com/jik876/hifi-gan under the MIT license.
 #   LICENSE is in incl_licenses directory.
-
 import json
 from pathlib import Path
 from typing import Any, TypedDict
@@ -20,7 +19,7 @@ from .utils import get_padding, init_weights
 
 
 def load_hparams_from_json(path: Path) -> dict[str, Any]:
-    data = path.read_text(encoding="utf-8")
+    data = path.read_text()
     return json.loads(data)
 
 
@@ -34,7 +33,6 @@ class AMPBlock1(torch.nn.Module):
         kernel_size (int): Size of the convolution kernel. Default is 3.
         dilation (tuple): Dilation rates for the convolutions. Each dilation layer has two convolutions. Default is (1, 3, 5).
         activation (str): Activation function type. Should be either 'snake' or 'snakebeta'. Default is None.
-
     """
 
     def __init__(
@@ -42,7 +40,7 @@ class AMPBlock1(torch.nn.Module):
         h: dict[str, Any],
         channels: int,
         kernel_size: int = 3,
-        dilation: tuple = (1, 3, 5),
+        dilation: tuple[int, ...] = (1, 3, 5),
         activation: str | None = None,
     ) -> None:
         super().__init__()
@@ -83,9 +81,7 @@ class AMPBlock1(torch.nn.Module):
 
         # Select which Activation1d, lazy-load cuda version to ensure backward compatibility
         if self.h.get("use_cuda_kernel", False):
-            from .alias_free_activation.cuda.activation1d import (
-                Activation1d as CudaActivation1d,
-            )
+            from .alias_free_activation.cuda.activation1d import Activation1d as CudaActivation1d  # noqa: PLC0415
 
             Activation1d = CudaActivation1d
         else:
@@ -103,9 +99,8 @@ class AMPBlock1(torch.nn.Module):
                 for _ in range(self.num_layers)
             ])
         else:
-            msg = "activation incorrectly specified. check the config file and look for 'activation'."
             raise NotImplementedError(
-                msg,
+                "activation incorrectly specified. check the config file and look for 'activation'."
             )
 
     def forward(self, x: Tensor) -> Tensor:
@@ -136,7 +131,6 @@ class AMPBlock2(torch.nn.Module):
         kernel_size (int): Size of the convolution kernel. Default is 3.
         dilation (tuple): Dilation rates for the convolutions. Each dilation layer has two convolutions. Default is (1, 3, 5).
         activation (str): Activation function type. Should be either 'snake' or 'snakebeta'. Default is None.
-
     """
 
     def __init__(
@@ -188,16 +182,16 @@ class AMPBlock2(torch.nn.Module):
                 for _ in range(self.num_layers)
             ])
         else:
-            msg = "activation incorrectly specified. check the config file and look for 'activation'."
             raise NotImplementedError(
-                msg,
+                "activation incorrectly specified. check the config file and look for 'activation'."
             )
 
-    def forward(self, x) -> None:
-        for c, a in zip(self.convs, self.activations, strict=False):
+    def forward(self, x: Tensor) -> Tensor:
+        for c, a in zip(self.convs, self.activations):
             xt = a(x)
             xt = c(xt)
             x = xt + x
+        return x
 
     def remove_weight_norm(self) -> None:
         for l in self.convs:
@@ -238,7 +232,6 @@ class BigVGAN(
     Note:
         - The `use_cuda_kernel` parameter should be used for inference only, as training with CUDA kernels is not supported.
         - Ensure that the activation function is correctly specified in the hyperparameters (h.activation).
-
     """
 
     num_kernels: int
@@ -251,9 +244,7 @@ class BigVGAN(
 
         # Select which Activation1d, lazy-load cuda version to ensure backward compatibility
         if use_cuda_kernel:
-            from .alias_free_activation.cuda.activation1d import (
-                Activation1d as CudaActivation1d,
-            )
+            from .alias_free_activation.cuda.activation1d import Activation1d as CudaActivation1d  # noqa: PLC0415
 
             Activation1d = CudaActivation1d
         else:
@@ -271,8 +262,7 @@ class BigVGAN(
         elif h["resblock"] == "2":
             resblock_class = AMPBlock2
         else:
-            msg = f"Incorrect resblock class specified in hyperparameters. Got {h['resblock']}"
-            raise ValueError(msg)
+            raise ValueError(f"Incorrect resblock class specified in hyperparameters. Got {h['resblock']}")
 
         # Transposed conv-based upsamplers. does not apply anti-aliasing
         self.ups = nn.ModuleList()
@@ -310,9 +300,8 @@ class BigVGAN(
             )
         )
         if activation_post is None:
-            msg = "activation incorrectly specified. check the config file and look for 'activation'."
             raise NotImplementedError(
-                msg,
+                "activation incorrectly specified. check the config file and look for 'activation'."
             )
 
         self.activation_post = Activation1d(activation=activation_post)
@@ -329,7 +318,7 @@ class BigVGAN(
         # Final tanh activation. Defaults to True for backward compatibility
         self.use_tanh_at_final = h.get("use_tanh_at_final", True)
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         # Pre-conv
         x = self.conv_pre(x)
 
@@ -351,9 +340,12 @@ class BigVGAN(
         x = self.activation_post(x)
         x = self.conv_post(x)
         # Final tanh activation
-        return (
-            torch.tanh(x) if self.use_tanh_at_final else torch.clamp(x, min=-1.0, max=1.0)
-        )  # Bound the output to [-1, 1]
+        if self.use_tanh_at_final:
+            x = torch.tanh(x)
+        else:
+            x = torch.clamp(x, min=-1.0, max=1.0)  # Bound the output to [-1, 1]
+
+        return x
 
     def remove_weight_norm(self) -> None:
         try:
@@ -371,11 +363,12 @@ class BigVGAN(
     # Additional methods for huggingface_hub support
     def _save_pretrained(self, save_directory: Path) -> None:
         """Save weights and config.json from a Pytorch model to a local directory."""
+
         model_path = save_directory / "bigvgan_generator.pt"
         torch.save({"generator": self.state_dict()}, model_path)
 
         config_path = save_directory / "config.json"
-        with Path(config_path).open("w", encoding="utf-8") as config_file:
+        with config_path.open("w") as config_file:
             json.dump(self.h, config_file, indent=4)
 
     @classmethod
@@ -396,10 +389,12 @@ class BigVGAN(
         **_model_kwargs: object,
     ) -> "BigVGAN":
         """Load Pytorch pretrained weights and return the loaded model."""
+
+        model_path = Path(model_id)
         # Download and load hyperparameters (h) used by BigVGAN
-        if Path(model_id).is_dir():
+        if model_path.is_dir():
             print("Loading config.json from local directory")
-            config_file = Path(model_id) / "config.json"
+            config_file = model_path / "config.json"
         else:
             config_file = hf_hub_download(
                 repo_id=model_id,
@@ -417,20 +412,20 @@ class BigVGAN(
         # instantiate BigVGAN using h
         if use_cuda_kernel:
             print(
-                "[WARNING] You have specified use_cuda_kernel=True during BigVGAN.from_pretrained(). Only inference is supported (training is not implemented)!",
+                "[WARNING] You have specified use_cuda_kernel=True during BigVGAN.from_pretrained(). Only inference is supported (training is not implemented)!"
             )
             print(
-                "[WARNING] You need nvcc and ninja installed in your system that matches your PyTorch build is using to build the kernel. If not, the model will fail to initialize or generate incorrect waveform!",
+                "[WARNING] You need nvcc and ninja installed in your system that matches your PyTorch build is using to build the kernel. If not, the model will fail to initialize or generate incorrect waveform!"
             )
             print(
-                "[WARNING] For detail, see the official GitHub repository: https://github.com/NVIDIA/BigVGAN?tab=readme-ov-file#using-custom-cuda-kernel-for-synthesis",
+                "[WARNING] For detail, see the official GitHub repository: https://github.com/NVIDIA/BigVGAN?tab=readme-ov-file#using-custom-cuda-kernel-for-synthesis"
             )
         model = cls(h, use_cuda_kernel=use_cuda_kernel)
 
         # Download and load pretrained generator weight
-        if Path(model_id).is_dir():
+        if model_path.is_dir():
             print("Loading weights from local directory")
-            model_file = Path(model_id) / "bigvgan_generator.pt"
+            model_file = model_path / "bigvgan_generator.pt"
         else:
             print(f"Loading weights from {model_id}")
             model_file = hf_hub_download(
@@ -451,7 +446,7 @@ class BigVGAN(
             model.load_state_dict(checkpoint_dict["generator"])
         except RuntimeError:
             print(
-                "[INFO] the pretrained checkpoint does not contain weight norm. Loading the checkpoint after removing weight norm!",
+                "[INFO] the pretrained checkpoint does not contain weight norm. Loading the checkpoint after removing weight norm!"
             )
             model.remove_weight_norm()
             model.load_state_dict(checkpoint_dict["generator"])

@@ -1,7 +1,7 @@
 # Adapted from https://github.com/junjun3518/alias-free-torch under the Apache License 2.0
 #   LICENSE is in incl_licenses directory.
 
-from torch import nn
+from torch import Tensor, nn
 
 from .resample import DownSample1d, UpSample1d
 
@@ -9,7 +9,7 @@ from .resample import DownSample1d, UpSample1d
 class Activation1d(nn.Module):
     def __init__(
         self,
-        activation,
+        activation: nn.Module,
         up_ratio: int = 2,
         down_ratio: int = 2,
         up_kernel_size: int = 12,
@@ -23,7 +23,7 @@ class Activation1d(nn.Module):
         self.downsample = DownSample1d(down_ratio, down_kernel_size)
 
     # x: [B,C,T]
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         x = self.upsample(x)
         x = self.act(x)
         return self.downsample(x)

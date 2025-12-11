@@ -798,19 +798,19 @@ class UnifiedVoice(nn.Module):
         output.sequences = output.sequences[:, trunc_index:]
         return output, speech_conditioning_latent
 
-    def get_emovec(self, emo_speech_conditioning_latent, emo_cond_lengths):
+    def get_emovec(self, emo_speech_conditioning_latent: Tensor, emo_cond_lengths: Tensor) -> Tensor:
         emo_vec_syn_ori = self.get_emo_conditioning(emo_speech_conditioning_latent.transpose(1, 2), emo_cond_lengths)
         emo_vec_syn = self.emovec_layer(emo_vec_syn_ori)
         return self.emo_layer(emo_vec_syn)
 
     def merge_emovec(
         self,
-        speech_conditioning_latent,
-        emo_speech_conditioning_latent,
-        cond_lengths,
-        emo_cond_lengths,
-        alpha=1.0,
-    ):
+        speech_conditioning_latent: Tensor,
+        emo_speech_conditioning_latent: Tensor,
+        cond_lengths: Tensor,
+        emo_cond_lengths: Tensor,
+        alpha: float = 1.0,
+    ) -> Tensor:
         emo_vec = self.get_emovec(emo_speech_conditioning_latent, emo_cond_lengths)
         base_vec = self.get_emovec(speech_conditioning_latent, cond_lengths)
 

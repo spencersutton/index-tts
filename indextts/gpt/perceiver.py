@@ -1,7 +1,6 @@
 # Adapted from https://github.com/lucidrains/naturalspeech2-pytorch/blob/659bec7f7543e7747e809e950cc2f84242fbeec7/naturalspeech2_pytorch/naturalspeech2_pytorch.py#L532
-
-from functools import wraps
-from typing import NamedTuple
+from collections.abc import Callable
+from typing import Any, NamedTuple, TypeIs
 
 import torch
 import torch.nn.functional as F
@@ -11,29 +10,11 @@ from packaging import version
 from torch import Tensor, einsum, nn
 
 
-def _exists(val):
+def _exists[T](val: T | None) -> TypeIs[T]:
     return val is not None
 
 
-def exists(x):
-    return x is not None
-
-
-def _once(fn):
-    called = False
-
-    @wraps(fn)
-    def inner(x):
-        nonlocal called
-        if called:
-            return None
-        called = True
-        return fn(x)
-
-    return inner
-
-
-_print_once = _once(print)
+warning_printed = False
 
 
 class _EfficientAttentionConfig(NamedTuple):
@@ -75,10 +56,12 @@ class _Attend(nn.Module):
         device_properties = torch.cuda.get_device_properties(torch.device("cuda"))
 
         if device_properties.major == 8 and device_properties.minor == 0:
-            _print_once("A100 GPU detected, using flash attention if input tensor is on cuda")
+            if not warning_printed:
+                print("A100 GPU detected, using flash attention always")
             self.cuda_config = self.config(True, False, False)
         else:
-            _print_once("Non-A100 GPU detected, using math or mem efficient attention if input tensor is on cuda")
+            if not warning_printed:
+                print("Non-A100 GPU detected, using math or mem efficient attention if input tensor is on cuda")
             self.cuda_config = self.config(False, True, True)
 
     def get_mask(self, n: int, device: torch.device) -> Tensor:
@@ -179,11 +162,11 @@ class _Attend(nn.Module):
         return einsum(f"b h i j, {kv_einsum_eq} -> b h i d", attn, v)
 
 
-def _Sequential(*mods):
+def _sequential(*mods: nn.Module) -> nn.Sequential:
     return nn.Sequential(*filter(_exists, mods))
 
 
-def _default(val, d):
+def _default[T](val: T | None, d: T | Callable[[], T]) -> T:
     if _exists(val):
         return val
     return d() if callable(d) else d
@@ -198,7 +181,7 @@ class _RMSNorm(nn.Module):
         self.scale = dim**0.5
         self.gamma = nn.Parameter(torch.ones(dim)) if scale else None
 
-    def forward(self, x, cond=None):
+    def forward(self, x: Tensor, cond: Tensor | None = None) -> Tensor:
         gamma = _default(self.gamma, 1)
         out = F.normalize(x, dim=-1) * self.scale * gamma
 
@@ -213,7 +196,7 @@ class _RMSNorm(nn.Module):
 
 
 class _CausalConv1d(nn.Conv1d):
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:  # noqa: ANN401
         super().__init__(*args, **kwargs)
         (kernel_size,) = self.kernel_size
         (dilation,) = self.dilation
@@ -222,18 +205,18 @@ class _CausalConv1d(nn.Conv1d):
         assert stride == 1
         self.causal_padding = dilation * (kernel_size - 1)
 
-    def forward(self, input: Tensor) -> Tensor:
+    def forward(self, input: Tensor) -> Tensor:  # noqa: A002
         causal_padded_x = F.pad(input, (self.causal_padding, 0), value=0.0)
         return super().forward(causal_padded_x)
 
 
 class _GEGLU(nn.Module):
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         x, gate = x.chunk(2, dim=-1)
         return F.gelu(gate) * x
 
 
-def _FeedForward(dim, mult=4, causal_conv=False):
+def _feed_forward(dim: int, mult: int = 4, causal_conv: bool = False) -> nn.Sequential:
     dim_inner = int(dim * mult * 2 / 3)
 
     conv = None
@@ -244,20 +227,20 @@ def _FeedForward(dim, mult=4, causal_conv=False):
             Rearrange("b d n -> b n d"),
         )
 
-    return _Sequential(nn.Linear(dim, dim_inner * 2), _GEGLU(), conv, nn.Linear(dim_inner, dim))
+    return _sequential(nn.Linear(dim, dim_inner * 2), _GEGLU(), conv, nn.Linear(dim_inner, dim))
 
 
 class PerceiverResampler(nn.Module):
     def __init__(
         self,
-        dim,
-        depth=2,
-        dim_context=None,
-        num_latents=32,
-        dim_head=64,
-        heads=8,
-        ff_mult=4,
-        use_flash_attn=False,
+        dim: int,
+        depth: int = 2,
+        dim_context: int | None = None,
+        num_latents: int = 32,
+        dim_head: int = 64,
+        heads: int = 8,
+        ff_mult: int = 4,
+        use_flash_attn: bool = False,
     ) -> None:
         super().__init__()
         dim_context = _default(dim_context, dim)
@@ -278,13 +261,13 @@ class PerceiverResampler(nn.Module):
                         use_flash=use_flash_attn,
                         cross_attn_include_queries=True,
                     ),
-                    _FeedForward(dim=dim, mult=ff_mult),
+                    _feed_forward(dim=dim, mult=ff_mult),
                 ])
             )
 
         self.norm = _RMSNorm(dim)
 
-    def forward(self, x, mask=None):
+    def forward(self, x: Tensor, mask: Tensor | None = None) -> Tensor:
         batch = x.shape[0]
 
         x = self.proj_context(x)

@@ -51,7 +51,7 @@ def _load_bigvgan(cfg: CheckpointsConfig, device: str, use_cuda_kernel: bool) ->
     model = model.to(device)
     model.remove_weight_norm()
     model.eval()
-    logger.info(">> bigvgan weights restored from: %s", name)
+    logger.info("bigvgan weights restored from: %s", name)
     return model
 
 
@@ -61,7 +61,7 @@ def _load_s2mel(cfg: CheckpointsConfig, device: str, model_dir: Path) -> MyModel
     model = load_checkpoint(model, s2mel_path).to(device)
     assert model.cfm.estimator is not None
     model.cfm.estimator.setup_caches(max_batch_size=1, max_seq_length=8192)
-    logger.info(">> s2mel weights restored from: %s", s2mel_path)
+    logger.info("s2mel weights restored from: %s", s2mel_path)
     return model.eval()
 
 
@@ -76,7 +76,7 @@ def _load_semantic_codec(device: str) -> RepCodec:
     path = hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
     safetensors.torch.load_model(model, path, strict=False)
     model = model.to(device).eval()
-    logger.info(">> semantic_codec weights restored from: %s", path)
+    logger.info("semantic_codec weights restored from: %s", path)
     return model
 
 
@@ -150,7 +150,7 @@ def _load_campplus_weights(device: str) -> CAMPPlus:
     model = CAMPPlus(feat_dim=80, embedding_size=192)
     model.load_state_dict(torch.load(path, map_location="cpu"))
     model = model.to(device).eval()
-    logger.info(">> campplus_model weights restored from: %s", path)
+    logger.info("campplus_model weights restored from: %s", path)
     return model
 
 
@@ -289,7 +289,7 @@ class IndexTTS2:
             self.device = "cpu"
             self.use_fp16 = False
             self.use_cuda_kernel = False
-            logger.info(">> Be patient, it may take a while to run in CPU mode.")
+            logger.info("Be patient, it may take a while to run in CPU mode.")
 
         if self.device.startswith("cuda"):
             with contextlib.suppress(AttributeError):
@@ -329,7 +329,7 @@ class IndexTTS2:
                 except (ImportError, AttributeError):
                     pass  # Older PyTorch versions may not have these options
 
-            logger.info(">> torch.compile cache directory: %s", cache_dir)
+            logger.info("torch.compile cache directory: %s", cache_dir)
 
         cfg = cast(Mapping[str, Any], OmegaConf.load(cfg_path))
         self.cfg = cast(CheckpointsConfig, cfg)  # pyright: ignore[reportInvalidCast]
@@ -349,7 +349,7 @@ class IndexTTS2:
             self.gpt.eval().half()
         else:
             self.gpt.eval()
-        logger.info(">> GPT weights restored from: %s", self.gpt_path)
+        logger.info("GPT weights restored from: %s", self.gpt_path)
 
         if use_deepspeed:
             try:
@@ -357,10 +357,10 @@ class IndexTTS2:
 
                 if importlib.util.find_spec("deepspeed") is None:
                     use_deepspeed = False
-                    logger.info(">> DeepSpeed not found. Falling back to normal inference.")
+                    logger.info("DeepSpeed not found. Falling back to normal inference.")
             except (ImportError, OSError, CalledProcessError) as e:
                 use_deepspeed = False
-                logger.info(">> Failed to load DeepSpeed. Falling back to normal inference. Error: %s", e)
+                logger.info("Failed to load DeepSpeed. Falling back to normal inference. Error: %s", e)
 
         self.gpt.post_init_gpt2_config(use_deepspeed=use_deepspeed, kv_cache=True, half=self.use_fp16)
 
@@ -370,11 +370,11 @@ class IndexTTS2:
                 from indextts.s2mel.modules.bigvgan.alias_free_activation.cuda import activation1d  # noqa: PLC0415
 
                 logger.info(
-                    ">> Preload custom CUDA kernel for BigVGAN: %s",
+                    "Preload custom CUDA kernel for BigVGAN: %s",
                     activation1d.anti_alias_activation_cuda,
                 )
             except Exception as e:  # noqa: BLE001
-                logger.info(">> Failed to load custom CUDA kernel for BigVGAN. Falling back to torch. %r", e)
+                logger.info("Failed to load custom CUDA kernel for BigVGAN. Falling back to torch. %r", e)
                 self.use_cuda_kernel = False
 
         self.extract_features = SeamlessM4TFeatureExtractor.from_pretrained("facebook/w2v-bert-2.0")
@@ -396,11 +396,11 @@ class IndexTTS2:
 
         normalizer = TextNormalizer()
         normalizer.load()
-        logger.info(">> TextNormalizer loaded")
+        logger.info("TextNormalizer loaded")
 
         bpe_path = self.model_dir / self.cfg.dataset.bpe_model
         self.tokenizer = TextTokenizer(bpe_path, normalizer)
-        logger.info(">> bpe model loaded from: %s", bpe_path)
+        logger.info("bpe model loaded from: %s", bpe_path)
 
         emo_matrix: Tensor = torch.load(self.model_dir / self.cfg.emo_matrix)
         emo_matrix = emo_matrix.to(self.device)
@@ -427,7 +427,7 @@ class IndexTTS2:
 
         # Enable torch.compile optimization if requested
         if use_torch_compile:
-            logger.info(">> Enabling torch.compile optimization")
+            logger.info("Enabling torch.compile optimization")
             self.s2mel.enable_torch_compile()
 
             # Compile the inner inference model used for AR generation
@@ -461,7 +461,7 @@ class IndexTTS2:
                 torch.compile(self.campplus_model, dynamic=True, mode="reduce-overhead"),
             )
 
-            logger.info(">> torch.compile optimization enabled successfully")
+            logger.info("torch.compile optimization enabled successfully")
 
         # 进度引用显示（可选）
         # Progress reference display (optional)
@@ -561,7 +561,7 @@ class IndexTTS2:
         if self.use_torch_compile and torch.cuda.is_available():
             torch.compiler.cudagraph_mark_step_begin()
 
-        logger.info(">> starting inference...")
+        logger.info("starting inference...")
         self._set_gr_progress(0, "starting inference...")
         logger.debug(
             "origin text:%s, spk_audio_prompt:%s, emo_audio_prompt:%s, emo_alpha:%s, emo_vector:%s, use_emo_text:%s, emo_text:%s",
@@ -860,13 +860,13 @@ class IndexTTS2:
         wavs = insert_interval_silence(wavs, interval_silence=interval_silence)
         wav = torch.cat(wavs, dim=1)
         wav_length = wav.shape[-1] / SAMPLING_RATE
-        logger.info(">> gpt_gen_time: %.2f seconds", gpt_gen_time)
-        logger.info(">> gpt_forward_time: %.2f seconds", gpt_forward_time)
-        logger.info(">> s2mel_time: %.2f seconds", s2mel_time)
-        logger.info(">> bigvgan_time: %.2f seconds", bigvgan_time)
-        logger.info(">> Total inference time: %.2f seconds", end_time - start_time)
-        logger.info(">> Generated audio length: %.2f seconds", wav_length)
-        logger.info(">> RTF: %.4f", (end_time - start_time) / wav_length)
+        logger.info("gpt_gen_time: %.2f seconds", gpt_gen_time)
+        logger.info("gpt_forward_time: %.2f seconds", gpt_forward_time)
+        logger.info("s2mel_time: %.2f seconds", s2mel_time)
+        logger.info("bigvgan_time: %.2f seconds", bigvgan_time)
+        logger.info("Total inference time: %.2f seconds", end_time - start_time)
+        logger.info("Generated audio length: %.2f seconds", wav_length)
+        logger.info("RTF: %.4f", (end_time - start_time) / wav_length)
 
         # save audio
         wav = wav.cpu()  # to cpu
@@ -891,7 +891,7 @@ def save_to_file(output_path: Path, wav: Tensor, sampling_rate: int) -> None:
     # Directly save audio to the specified path
     if output_path.is_file():
         output_path.unlink()
-        logger.info(">> remove old wav file: %s", output_path)
+        logger.info("remove old wav file: %s", output_path)
     if not output_path.parent.exists():
         output_path.parent.mkdir(exist_ok=True, parents=True)
 
@@ -900,7 +900,7 @@ def save_to_file(output_path: Path, wav: Tensor, sampling_rate: int) -> None:
 
     encoder = AudioEncoder(wav, sample_rate=sampling_rate)
     encoder.to_file(output_path)
-    logger.info(">> wav file saved to: %s", output_path)
+    logger.info("wav file saved to: %s", output_path)
 
 
 def _find_most_similar_cosine(query_vector: Tensor, matrix: Tensor) -> Tensor:

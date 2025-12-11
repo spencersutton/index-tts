@@ -5,6 +5,9 @@ from copy import copy
 
 import torch
 
+from indextts.gpt.model_v2 import GPT2InferenceModel
+from indextts.s2mel.modules.gpt_fast.model import KVCache
+
 
 class KVCacheBlock:
     def __init__(self, block_id: int) -> None:
@@ -40,19 +43,19 @@ class Seq:
     def __len__(self) -> int:
         return self.num_tokens
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: int) -> int:
         return self.token_ids[key]
 
     @property
-    def num_blocks(self):
+    def num_blocks(self) -> int:
         return (self.num_tokens + self.block_size - 1) // self.block_size
 
     @property
-    def num_cached_blocks(self):
+    def num_cached_blocks(self) -> int:
         return self.num_cached_tokens // self.block_size
 
     @property
-    def last_block_num_tokens(self):
+    def last_block_num_tokens(self) -> int:
         return self.num_tokens - (self.num_blocks - 1) * self.block_size
 
     def get_block_tokens(self, block_idx: int) -> list[int]:
@@ -189,10 +192,10 @@ class KVCacheManager:
     def remove_seq(self, sequence: Seq) -> None:
         self.deallocate(sequence)
 
-    def wire_kv_cache_to_model(self, model) -> None:
+    def wire_kv_cache_to_model(self, model: GPT2InferenceModel) -> None:
         layer_id = 0
         for module in model.modules():
-            if hasattr(module, "k_cache") and hasattr(module, "v_cache"):
+            if isinstance(module, KVCache):
                 module.k_cache = self.kv_cache[0, layer_id]
                 module.v_cache = self.kv_cache[1, layer_id]
                 layer_id += 1

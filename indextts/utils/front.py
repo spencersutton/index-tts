@@ -108,7 +108,7 @@ class TextNormalizer:
             replaced_text, original_name_list = self.save_names(replaced_text)
             try:
                 result = self.zh_normalizer.normalize(replaced_text)
-            except Exception:
+            except Exception:  # noqa: BLE001
                 result = ""
                 print(traceback.format_exc())
             # 恢复人名
@@ -126,7 +126,7 @@ class TextNormalizer:
                     flags=re.IGNORECASE,
                 )
                 result = self.en_normalizer.normalize(text)
-            except Exception:
+            except Exception:  # noqa: BLE001
                 result = text
                 print(traceback.format_exc())
             pattern = re.compile("|".join(re.escape(p) for p in self.char_rep_map))
@@ -206,7 +206,7 @@ class TextNormalizer:
         # 替换占位符 <pinyin_a>, <pinyin_b>, ...
         for i, pinyin in enumerate(original_pinyin_list):
             number = chr(ord("a") + i)
-            pinyin = self.correct_pinyin(pinyin)
+            pinyin = self.correct_pinyin(pinyin)  # noqa: PLW2901
             transformed_text = transformed_text.replace(f"<pinyin_{number}>", pinyin)
         return transformed_text
 
@@ -321,7 +321,7 @@ class TextTokenizer:
                         # 后续token是'，则不切分
                         # If the next token is ', do not split
                         current_segment.append(tokenized_str[i + 1])
-                        i += 1
+                        i += 1  # noqa: PLW2901
                     segments.append(current_segment)
                     current_segment = []
                     current_segment_tokens_len = 0

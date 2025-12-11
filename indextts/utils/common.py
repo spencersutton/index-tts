@@ -4,7 +4,7 @@ import torch
 from torch import Tensor
 
 
-def tokenize_by_CJK_char(line: str, do_upper_case: bool = True) -> str:
+def tokenize_by_CJK_char(line: str, do_upper_case: bool = True) -> str:  # noqa: N802
     """Tokenize a line of text with CJK char.
 
     Note: All return charaters will be upper case.
@@ -29,7 +29,7 @@ def tokenize_by_CJK_char(line: str, do_upper_case: bool = True) -> str:
     return " ".join([w.strip().upper() if do_upper_case else w.strip() for w in chars if w.strip()])
 
 
-def de_tokenized_by_CJK_char(line: str, do_lower_case: bool = False) -> str:
+def de_tokenized_by_CJK_char(line: str, do_lower_case: bool = False) -> str:  # noqa: N802
     """Example:
       input = "你 好 世 界 是 HELLO WORLD 的 中 文"
       output = "你好世界是 hello world 的中文"

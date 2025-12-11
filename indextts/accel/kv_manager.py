@@ -1,5 +1,5 @@
 import hashlib
-import pickle
+import pickle  # noqa: S403
 from collections import deque
 from copy import copy
 

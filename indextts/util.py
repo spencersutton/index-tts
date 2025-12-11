@@ -4,7 +4,7 @@ from typing import Any
 from torch import nn
 
 
-def _returns_nn_module_call(*_args: Any):
+def _returns_nn_module_call(*_args: Any):  # noqa: ANN202, ANN401
     return nn.Module.__call__
 
 

@@ -27,8 +27,8 @@ def sequence_mask(length: Tensor, max_length: Tensor | None = None) -> Tensor:
 
 
 class MyModel(nn.Module):
-    from indextts.s2mel.modules.flow_matching import CFM
-    from indextts.s2mel.modules.length_regulator import InterpolateRegulator
+    from indextts.s2mel.modules.flow_matching import CFM  # noqa: PLC0415
+    from indextts.s2mel.modules.length_regulator import InterpolateRegulator  # noqa: PLC0415
 
     gpt_layer: nn.Sequential | None
     cfm: CFM
@@ -37,8 +37,8 @@ class MyModel(nn.Module):
 
     def __init__(self, args: S2MelConfig, use_gpt_latent: bool = False) -> None:
         super().__init__()
-        from indextts.s2mel.modules.flow_matching import CFM
-        from indextts.s2mel.modules.length_regulator import InterpolateRegulator
+        from indextts.s2mel.modules.flow_matching import CFM  # noqa: PLC0415
+        from indextts.s2mel.modules.length_regulator import InterpolateRegulator  # noqa: PLC0415
 
         length_regulator = InterpolateRegulator(
             channels=args.length_regulator.channels,

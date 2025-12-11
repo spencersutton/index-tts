@@ -123,7 +123,6 @@ def insert_interval_silence(
 def _load_and_cut_audio(
     audio_path: Path,
     max_audio_length_seconds: float,
-    verbose: bool = False,
     sr: int | None = None,
 ) -> tuple[Tensor, int]:
     samples = AudioDecoder(audio_path).get_all_samples()
@@ -213,16 +212,16 @@ class IndexTTS2:
     model_version: float
 
     @functools.lru_cache  # noqa: B019
-    def process_audio(self, prompt: Path, verbose: bool = False) -> Tensor:
-        audio, _ = _load_and_cut_audio(prompt, 15, verbose, sr=16000)
+    def process_audio(self, prompt: Path) -> Tensor:
+        audio, _ = _load_and_cut_audio(prompt, 15, sr=16000)
         inputs = self.extract_features(audio, sampling_rate=16000, return_tensors="pt")  # ty:ignore[invalid-argument-type]
         input_features = inputs["input_features"].to(self.device)
         attention_mask = inputs["attention_mask"].to(self.device)
         return self.get_emb(input_features, attention_mask)
 
     @functools.lru_cache  # noqa: B019
-    def process_audio_prompt(self, prompt: Path, verbose: bool = False) -> tuple[Tensor, Tensor, Tensor, Tensor]:
-        audio, sr = _load_and_cut_audio(prompt, 15, verbose)
+    def process_audio_prompt(self, prompt: Path) -> tuple[Tensor, Tensor, Tensor, Tensor]:
+        audio, sr = _load_and_cut_audio(prompt, 15)
         audio_22k = torchaudio.transforms.Resample(sr, 22050).forward(audio)
         audio_16k = torchaudio.transforms.Resample(sr, 16000).forward(audio)
 
@@ -497,7 +496,6 @@ class IndexTTS2:
         emo_text: str | None = None,
         use_random: bool = False,
         interval_silence: int = 200,
-        verbose: bool = False,
         max_text_tokens_per_segment: int = 120,
         stream_return: bool = False,
         more_segment_before: int = 0,
@@ -514,7 +512,6 @@ class IndexTTS2:
             emo_text,
             use_random,
             interval_silence,
-            verbose,
             max_text_tokens_per_segment,
             stream_return,
             more_segment_before,
@@ -553,7 +550,6 @@ class IndexTTS2:
         emo_text: str | None = None,
         use_random: bool = False,
         interval_silence: int = 200,
-        verbose: bool = False,
         max_text_tokens_per_segment: int = 120,
         stream_return: bool = False,
         quick_streaming_tokens: int = 0,
@@ -610,12 +606,12 @@ class IndexTTS2:
             # must always use alpha=1.0 when we don't have an external reference voice
             emo_alpha = 1.0
 
-        spk_cond_emb, style, prompt_condition, ref_mel = self.process_audio_prompt(spk_audio_prompt, verbose)
+        spk_cond_emb, style, prompt_condition, ref_mel = self.process_audio_prompt(spk_audio_prompt)
 
         if emo_vector is not None:
             emovec_mat = self.combine_weighted_styles(emo_vector, style, use_random)
 
-        emo_cond_emb = self.process_audio(emo_audio_prompt, verbose)
+        emo_cond_emb = self.process_audio(emo_audio_prompt)
 
         self._set_gr_progress(0.1, "text processing...")
         text_tokens_list = self.tokenizer.tokenize(text)

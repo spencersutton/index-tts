@@ -44,7 +44,6 @@ dependencies = [
   "wetext>=0.0.9",
   "scipy>=1.15.3",
   "soundfile>=0.13.1",
-  "x-transformers>=2.11.23",
 ]
 
 [project.optional-dependencies]

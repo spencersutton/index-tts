@@ -129,12 +129,6 @@ def main() -> None:
         else:
             output_path.unlink()
 
-    try:
-        import torch
-    except ImportError:
-        print("ERROR: PyTorch is not installed. Please install it first.")
-        sys.exit(1)
-
     if args.device is None:
         if torch.cuda.is_available():
             args.device = "cuda:0"

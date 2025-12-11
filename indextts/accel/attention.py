@@ -27,21 +27,21 @@ class ForwardContext:
 _FORWARD_CONTEXT = ForwardContext()
 
 
-def get_forward_context():
+def get_forward_context() -> ForwardContext:
     return _FORWARD_CONTEXT
 
 
 def set_forward_context(
-    is_prefill,
-    cu_seqlens_q=None,
-    cu_seqlens_k=None,
-    max_seqlen_q=0,
-    max_seqlen_k=0,
-    slot_mapping=None,
-    context_lens=None,
-    block_tables=None,
+    is_prefill: bool,
+    cu_seqlens_q: Tensor | None = None,
+    cu_seqlens_k: Tensor | None = None,
+    max_seqlen_q: int = 0,
+    max_seqlen_k: int = 0,
+    slot_mapping: Tensor | None = None,
+    context_lens: Tensor | None = None,
+    block_tables: Tensor | None = None,
 ) -> None:
-    global _FORWARD_CONTEXT
+    global _FORWARD_CONTEXT  # noqa: PLW0603
     _FORWARD_CONTEXT = ForwardContext(
         is_prefill,
         cu_seqlens_q,
@@ -55,29 +55,29 @@ def set_forward_context(
 
 
 def reset_forward_context() -> None:
-    global _FORWARD_CONTEXT
+    global _FORWARD_CONTEXT  # noqa: PLW0603
     _FORWARD_CONTEXT = ForwardContext()
 
 
 @triton.jit
 def store_kvcache_kernel(
-    key_ptr,
-    key_stride,
-    value_ptr,
-    value_stride,
-    k_cache_ptr,
-    v_cache_ptr,
-    slot_mapping_ptr,
-    D: tl.constexpr,
+    key_ptr: tl.pointer_type,
+    key_stride: int,
+    value_ptr: tl.pointer_type,
+    value_stride: int,
+    k_cache_ptr: tl.pointer_type,
+    v_cache_ptr: tl.pointer_type,
+    slot_mapping_ptr: tl.pointer_type,
+    D: tl.constexpr,  # noqa: N803
 ) -> None:
     BLOCK_SIZE: tl.constexpr = 2048
-    idx = tl.program_id(0)
-    slot = tl.load(slot_mapping_ptr + idx)
+    idx: int = tl.program_id(0)
+    slot: int = tl.load(slot_mapping_ptr + idx)
     if slot == -1:
         return
-    d_offset = 0
+    d_offset: int = 0
     while d_offset < D:
-        cur_block_size = min(BLOCK_SIZE, D - d_offset)
+        cur_block_size: int = min(BLOCK_SIZE, D - d_offset)
         key_offsets = idx * key_stride + d_offset + tl.arange(0, BLOCK_SIZE)
         value_offsets = idx * value_stride + d_offset + tl.arange(0, BLOCK_SIZE)
         cache_offsets = slot * D + d_offset + tl.arange(0, BLOCK_SIZE)
@@ -131,7 +131,7 @@ class Attention(nn.Module):
         self.num_kv_heads = num_kv_heads
         self.k_cache = self.v_cache = torch.tensor([])
 
-    def forward(self, q: Tensor, k: Tensor, v: Tensor):
+    def forward(self, q: Tensor, k: Tensor, v: Tensor) -> Tensor:
         context = get_forward_context()
         k_cache, v_cache = self.k_cache, self.v_cache
 

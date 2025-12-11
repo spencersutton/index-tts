@@ -105,7 +105,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
     def get_output_embeddings(self) -> nn.Module:
         return self.lm_head
 
-    def set_output_embeddings(self, new_embeddings: nn.Module) -> None:
+    def set_output_embeddings(self, new_embeddings: nn.Sequential) -> None:
         self.lm_head = new_embeddings
 
     def store_mel_emb(self, mel_emb: torch.Tensor) -> None:
@@ -113,11 +113,11 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
 
     def prepare_inputs_for_generation(
         self,
-        input_ids: torch.LongTensor,
+        input_ids: torch.Tensor,
         past_key_values: Cache | None = None,
-        attention_mask: torch.LongTensor | None = None,
-        inputs_embeds: torch.FloatTensor | None = None,
-        cache_position: torch.LongTensor | None = None,  # noqa: ARG002
+        attention_mask: torch.Tensor | None = None,
+        inputs_embeds: torch.Tensor | None = None,
+        cache_position: torch.Tensor | None = None,  # noqa: ARG002
         **kwargs: Tensor,
     ) -> dict:
         inputs_embeds = kwargs.get("inputs_embeds")  # usually None
@@ -164,7 +164,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         output_attentions: bool | None = None,
         output_hidden_states: bool | None = None,
         return_dict: bool | None = None,
-    ) -> CausalLMOutputWithCrossAttentions:
+    ) -> CausalLMOutputWithCrossAttentions | tuple[Tensor, ...]:
         assert self.cached_mel_emb is not None
         assert inputs_embeds is None  # Not supported by this inference model.
         assert labels is None  # Training not supported by this inference model.

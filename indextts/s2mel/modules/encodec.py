@@ -8,6 +8,7 @@
 
 import math
 import warnings
+from typing import Any
 
 import einops
 import torch
@@ -23,10 +24,10 @@ class ConvLayerNorm(nn.LayerNorm):
     before running the normalization and moves them back to original position right after.
     """
 
-    def __init__(self, normalized_shape: int | list[int] | torch.Size, **kwargs) -> None:
+    def __init__(self, normalized_shape: int | list[int] | torch.Size, **kwargs: Any) -> None:  # noqa: ANN401
         super().__init__(normalized_shape, **kwargs)
 
-    def forward(self, input: Tensor) -> Tensor:
+    def forward(self, input: Tensor) -> Tensor:  # noqa: A002
         input = einops.rearrange(input, "b ... t -> b t ...")
         input = super().forward(input)
         return einops.rearrange(input, "b t ... -> b ... t")
@@ -65,13 +66,13 @@ def get_norm_module(
     """
     assert norm in CONV_NORMALIZATIONS
     if norm == "layer_norm":
-        assert isinstance(module, nn.modules.conv._ConvNd)  # pyright: ignore[reportPrivateUsage]  # noqa: SLF001
+        assert isinstance(module, nn.modules.conv._ConvNd)  # noqa: SLF001
         return ConvLayerNorm(module.out_channels)
     if norm == "time_group_norm":
         if causal:
             msg = "GroupNorm doesn't support causal evaluation."
             raise ValueError(msg)
-        assert isinstance(module, nn.modules.conv._ConvNd)  # pyright: ignore[reportPrivateUsage]  # noqa: SLF001
+        assert isinstance(module, nn.modules.conv._ConvNd)  # noqa: SLF001
         return nn.GroupNorm(1, module.out_channels)
     return nn.Identity()
 
@@ -113,7 +114,7 @@ class NormConv1d(nn.Module):
 
     def __init__(
         self,
-        *args,
+        *args: Any,  # noqa: ANN401
         causal: bool = False,
         norm: str = "none",
         **kwargs: object,

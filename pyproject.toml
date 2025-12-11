@@ -76,9 +76,6 @@ build-backend = "hatchling.build"
 # saves time, since it won't waste time downloading a generic PyTorch version.
 no-build-isolation-package = ["deepspeed"]
 
-[tool.uv.sources]
-flash-attn = { url = "https://github.com/mjun0812/flash-attention-prebuild-wheels/releases/download/v0.5.2/flash_attn-2.8.3%2Bcu130torch2.9-cp313-cp313-linux_x86_64.whl" }
-
 [tool.ruff]
 preview = true
 line-length = 120
@@ -87,7 +84,6 @@ exclude = [
   "./tools",
   "./tests",
   "./override",
-  "./indextts/s2mel/modules/",
   "indextts/utils/maskgct/models/codec/",
 ]
 
@@ -156,6 +152,8 @@ ignore = [
   "C901",
   "COM812",
   "E501",
+  "E741",
+  "EM101",
   "FBT001",
   "FBT002",
   "FBT003",
@@ -167,8 +165,11 @@ ignore = [
   "RUF003",
   "S101",
   "S404",
+  "SIM108",
   "T201",
   "TC006",
+  "TID252",
+  "TRY003",
 ]
 [dependency-groups]
 dev = ["basedpyright>=1.34.0", "pandas-stubs>=2.3.3.251201", "rich>=14.2.0"]

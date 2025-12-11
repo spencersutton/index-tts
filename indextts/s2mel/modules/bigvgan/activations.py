@@ -2,7 +2,7 @@
 #   LICENSE is in incl_licenses directory.
 
 import torch
-from torch import nn, pow, sin
+from torch import Tensor, nn, pow, sin
 from torch.nn import Parameter
 
 
@@ -22,7 +22,13 @@ class Snake(nn.Module):
         >>> x = a1(x)
     """
 
-    def __init__(self, in_features, alpha=1.0, alpha_trainable=True, alpha_logscale=False) -> None:
+    def __init__(
+        self,
+        in_features: int,
+        alpha: float = 1.0,
+        alpha_trainable: bool = True,
+        alpha_logscale: bool = False,
+    ) -> None:
         """Initialization.
         INPUT:
             - in_features: shape of the input
@@ -33,23 +39,23 @@ class Snake(nn.Module):
         super().__init__()
         self.in_features = in_features
 
-        # initialize alpha
+        # Initialize alpha
         self.alpha_logscale = alpha_logscale
-        if self.alpha_logscale:  # log scale alphas initialized to zeros
+        if self.alpha_logscale:  # Log scale alphas initialized to zeros
             self.alpha = Parameter(torch.zeros(in_features) * alpha)
-        else:  # linear scale alphas initialized to ones
+        else:  # Linear scale alphas initialized to ones
             self.alpha = Parameter(torch.ones(in_features) * alpha)
 
         self.alpha.requires_grad = alpha_trainable
 
         self.no_div_by_zero = 0.000000001
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         """Forward pass of the function.
         Applies the function to the input elementwise.
         Snake ∶= x + 1/a * sin^2 (xa)
         """
-        alpha = self.alpha.unsqueeze(0).unsqueeze(-1)  # line up with x to [B, C, T]
+        alpha = self.alpha.unsqueeze(0).unsqueeze(-1)  # Line up with x to [B, C, T]
         if self.alpha_logscale:
             alpha = torch.exp(alpha)
         return x + (1.0 / (alpha + self.no_div_by_zero)) * pow(sin(x * alpha), 2)
@@ -72,7 +78,13 @@ class SnakeBeta(nn.Module):
         >>> x = a1(x)
     """
 
-    def __init__(self, in_features, alpha=1.0, alpha_trainable=True, alpha_logscale=False) -> None:
+    def __init__(
+        self,
+        in_features: int,
+        alpha: float = 1.0,
+        alpha_trainable: bool = True,
+        alpha_logscale: bool = False,
+    ) -> None:
         """Initialization.
         INPUT:
             - in_features: shape of the input
@@ -85,12 +97,12 @@ class SnakeBeta(nn.Module):
         super().__init__()
         self.in_features = in_features
 
-        # initialize alpha
+        # Initialize alpha
         self.alpha_logscale = alpha_logscale
-        if self.alpha_logscale:  # log scale alphas initialized to zeros
+        if self.alpha_logscale:  # Log scale alphas initialized to zeros
             self.alpha = Parameter(torch.zeros(in_features) * alpha)
             self.beta = Parameter(torch.zeros(in_features) * alpha)
-        else:  # linear scale alphas initialized to ones
+        else:  # Linear scale alphas initialized to ones
             self.alpha = Parameter(torch.ones(in_features) * alpha)
             self.beta = Parameter(torch.ones(in_features) * alpha)
 
@@ -99,12 +111,12 @@ class SnakeBeta(nn.Module):
 
         self.no_div_by_zero = 0.000000001
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         """Forward pass of the function.
         Applies the function to the input elementwise.
         SnakeBeta ∶= x + 1/b * sin^2 (xa)
         """
-        alpha = self.alpha.unsqueeze(0).unsqueeze(-1)  # line up with x to [B, C, T]
+        alpha = self.alpha.unsqueeze(0).unsqueeze(-1)  # Line up with x to [B, C, T]
         beta = self.beta.unsqueeze(0).unsqueeze(-1)
         if self.alpha_logscale:
             alpha = torch.exp(alpha)

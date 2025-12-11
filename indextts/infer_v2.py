@@ -333,7 +333,7 @@ class IndexTTS2:
             logger.info("torch.compile cache directory: %s", cache_dir)
 
         cfg = cast(Mapping[str, Any], OmegaConf.load(cfg_path))
-        self.cfg = cast(CheckpointsConfig, cfg)  # pyright: ignore[reportInvalidCast]
+        self.cfg = cast(CheckpointsConfig, cfg)
         self.model_dir = model_dir
         self.dtype = torch.float16 if self.use_fp16 else None
         self.stop_mel_token = self.cfg.gpt.stop_mel_token

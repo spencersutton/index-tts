@@ -55,7 +55,7 @@ class AdaptiveLayerNorm(nn.Module):
         self.d_model = d_model
         self.eps = self.norm.eps
 
-    def forward(self, input: Tensor, embedding: Tensor | None = None) -> Tensor:
+    def forward(self, input: Tensor, embedding: Tensor | None = None) -> Tensor:  # noqa: A002
         if embedding is None:
             return self.norm(input)
         weight, bias = torch.split(
@@ -94,7 +94,7 @@ class ModelArgs:
     @classmethod
     def from_name(cls, name: str) -> Self:
         if name in _transformer_configs:
-            return cls(**_transformer_configs[name])  # pyright: ignore[reportArgumentType]
+            return cls(**_transformer_configs[name])
         # fuzzy search
         config = [config for config in _transformer_configs if config.lower() in str(name).lower()]
 
@@ -104,7 +104,7 @@ class ModelArgs:
             config.sort(key=len, reverse=True)
             assert len(config[0]) != len(config[1]), name  # make sure only one 'best' match
 
-        return cls(**_transformer_configs[config[0]])  # pyright: ignore[reportArgumentType]
+        return cls(**_transformer_configs[config[0]])
 
 
 _transformer_configs = {

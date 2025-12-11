@@ -398,7 +398,7 @@ class UnifiedVoice(nn.Module):
             kv_cache=kv_cache,
         )
         if use_deepspeed and half and torch.cuda.is_available():
-            import deepspeed  # ty:ignore[unresolved-import]
+            import deepspeed
 
             self.ds_engine = deepspeed.init_inference(
                 model=self.inference_model,
@@ -408,7 +408,7 @@ class UnifiedVoice(nn.Module):
             )
             self.inference_model = self.ds_engine.module.eval()
         elif use_deepspeed and torch.cuda.is_available():
-            import deepspeed  # ty:ignore[unresolved-import]
+            import deepspeed
 
             self.ds_engine = deepspeed.init_inference(
                 model=self.inference_model,

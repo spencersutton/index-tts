@@ -63,7 +63,7 @@ class TDNNLayer(nn.Module):
         )
         self.nonlinear = get_nonlinear(config_str, out_channels)
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         x = self.linear(x)
         return self.nonlinear(x)
 

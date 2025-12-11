@@ -1,5 +1,6 @@
 import functools
 import importlib.util
+import logging
 import time
 
 import torch
@@ -22,6 +23,8 @@ from transformers.utils.model_parallel_utils import assert_device_map, get_devic
 
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.perceiver import PerceiverResampler
+
+logger = logging.getLogger(__name__)
 
 
 def _null_position_embeddings(input_range: Tensor, dim: int) -> Tensor:
@@ -384,7 +387,7 @@ class UnifiedVoice(nn.Module):
                 num_blocks=16,  # Reduce to save memory (16*256 = 4096 tokens capacity)
                 use_cuda_graph=True,
             )
-            print("acceleration engine initialized")
+            logger.info("acceleration engine initialized")
         self.inference_model = GPT2InferenceModel(
             gpt_config,
             self.gpt,
@@ -701,17 +704,17 @@ class UnifiedVoice(nn.Module):
 
         t1 = time.perf_counter()
         speech_conditioning_latent = self.get_conditioning(speech_condition.transpose(1, 2), cond_lengths)
-        print(f"get_conditioning: {time.perf_counter() - t1:.4f}s")
+        logger.info("get_conditioning: %.4fs", time.perf_counter() - t1)
 
         if emo_vec is None:
-            print("compute emo vec")
+            logger.info("compute emo vec")
             t2 = time.perf_counter()
             emo_vec = self.get_emo_conditioning(emo_speech_condition.transpose(1, 2), emo_cond_lengths)
             emo_vec = self.emovec_layer(emo_vec)
             emo_vec = self.emo_layer(emo_vec)
-            print(f"get_emo_conditioning: {time.perf_counter() - t2:.4f}s")
+            logger.info("get_emo_conditioning: %.4fs", time.perf_counter() - t2)
         else:
-            print("Use the specified emotion vector")
+            logger.info("Use the specified emotion vector")
 
         tmp = torch.zeros(text_inputs.size(0)).to(text_inputs.device)
         duration_emb = self.speed_emb(torch.zeros_like(tmp).long())
@@ -727,7 +730,7 @@ class UnifiedVoice(nn.Module):
         t3 = time.perf_counter()
         input_ids, inputs_embeds, attention_mask = self.prepare_gpt_inputs(conds_latent, text_inputs)
         self.inference_model.store_mel_emb(inputs_embeds)
-        print(f"prepare_gpt_inputs: {time.perf_counter() - t3:.4f}s")
+        logger.info("prepare_gpt_inputs: %.4fs", time.perf_counter() - t3)
         if input_tokens is None:
             inputs = input_ids
         else:
@@ -786,8 +789,8 @@ class UnifiedVoice(nn.Module):
                 num_return_sequences=num_return_sequences,
                 **hf_generate_kwargs,
             )
-        print(f"generation: {time.perf_counter() - t4:.4f}s")
-        print(f"total inference_speech: {time.perf_counter() - t0:.4f}s")
+        logger.info("generation: %.4fs", time.perf_counter() - t4)
+        logger.info("total inference_speech: %.4fs", time.perf_counter() - t0)
 
         if isinstance(output, Tensor):
             return output[:, trunc_index:], speech_conditioning_latent

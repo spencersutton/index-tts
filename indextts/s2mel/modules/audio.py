@@ -11,8 +11,8 @@ def spectral_normalize_torch(magnitudes: Tensor) -> Tensor:
     return dynamic_range_compression_torch(magnitudes)
 
 
-mel_basis = {}
-hann_window = {}
+mel_basis: dict[str, Tensor] = {}
+hann_window: dict[str, Tensor] = {}
 
 
 def mel_spectrogram(

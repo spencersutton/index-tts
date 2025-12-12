@@ -8,14 +8,9 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 class QwenEmotion:
     def __init__(self, model_dir: Path) -> None:
         self.model_dir = model_dir
-        pretrained_model_name_or_path = None
-        if model_dir.exists():
-            pretrained_model_name_or_path = model_dir
-        else:
-            pretrained_model_name_or_path = model_dir.name
-        self.tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_dir)
         self.model = AutoModelForCausalLM.from_pretrained(
-            pretrained_model_name_or_path,
+            model_dir,
             torch_dtype="float16",  # "auto"
             device_map="auto",
         )

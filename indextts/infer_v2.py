@@ -661,10 +661,7 @@ class IndexTTS2:
             tt = self.tokenizer.convert_tokens_to_ids(sent)
             batch_text_tokens.append(torch.tensor(tt, dtype=torch.int32, device=self.device))
 
-        if not batch_text_tokens:
-            # Handle empty segments if necessary
-            pass
-        else:
+        if batch_text_tokens:
             # Pad with stop_text_token (which is ignored by the model)
             text_tokens_batch = pad_sequence(
                 batch_text_tokens,

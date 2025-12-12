@@ -14,7 +14,7 @@ class KVCacheBlock:
         self.block_id = block_id
         self.ref_cnt = 0
         self._block_hash = None
-        self.token_ids = []
+        self.token_ids: list[int] = []
 
     @property
     def block_hash(self) -> bytes | None:
@@ -107,7 +107,7 @@ class KVCacheManager:
 
     @classmethod
     def compute_block_hash(cls, token_ids: list[int], parent_hash: bytes | None = None) -> bytes:
-        hash_input = []
+        hash_input: list[bytes | int] = []
         if parent_hash is not None:
             hash_input.append(parent_hash)
         hash_input.extend(token_ids)

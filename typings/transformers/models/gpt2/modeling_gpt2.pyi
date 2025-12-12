@@ -38,36 +38,36 @@ class GPT2Attention(nn.Module):
         ...
     def forward(
         self,
-        hidden_states: Optional[tuple[torch.FloatTensor]],
-        past_key_value: Optional[Cache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        encoder_hidden_states: Optional[torch.Tensor] = ...,
-        encoder_attention_mask: Optional[torch.FloatTensor] = ...,
-        output_attentions: Optional[bool] = ...,
+        hidden_states: tuple[torch.FloatTensor] | None,
+        past_key_value: Cache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        encoder_hidden_states: torch.Tensor | None = ...,
+        encoder_attention_mask: torch.FloatTensor | None = ...,
+        output_attentions: bool | None = ...,
         **kwargs,
     ) -> tuple[Union[torch.Tensor, tuple[torch.Tensor]], ...]: ...
 
 class GPT2MLP(nn.Module):
     def __init__(self, intermediate_size, config) -> None: ...
-    def forward(self, hidden_states: Optional[tuple[torch.FloatTensor]]) -> torch.FloatTensor: ...
+    def forward(self, hidden_states: tuple[torch.FloatTensor] | None) -> torch.FloatTensor: ...
 
 class GPT2Block(GradientCheckpointingLayer):
     def __init__(self, config, layer_idx=...) -> None: ...
     def forward(
         self,
-        hidden_states: Optional[tuple[torch.FloatTensor]],
-        past_key_value: Optional[Cache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        encoder_hidden_states: Optional[torch.Tensor] = ...,
-        encoder_attention_mask: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
+        hidden_states: tuple[torch.FloatTensor] | None,
+        past_key_value: Cache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        encoder_hidden_states: torch.Tensor | None = ...,
+        encoder_attention_mask: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
         **kwargs,
-    ) -> Union[tuple[torch.Tensor], Optional[tuple[torch.Tensor, tuple[torch.FloatTensor, ...]]]]: ...
+    ) -> Union[tuple[torch.Tensor], tuple[torch.Tensor, tuple[torch.FloatTensor, ...]] | None]: ...
 
 class GPT2SequenceSummary(nn.Module):
     r"""
@@ -95,9 +95,7 @@ class GPT2SequenceSummary(nn.Module):
             - **summary_last_dropout** (`float`)-- Optional dropout probability after the projection and activation.
     """
     def __init__(self, config: GPT2Config) -> None: ...
-    def forward(
-        self, hidden_states: torch.FloatTensor, cls_index: Optional[torch.LongTensor] = ...
-    ) -> torch.FloatTensor:
+    def forward(self, hidden_states: torch.FloatTensor, cls_index: torch.LongTensor | None = ...) -> torch.FloatTensor:
         """
         Compute a single vector summary of a sequence hidden states.
 
@@ -112,7 +110,6 @@ class GPT2SequenceSummary(nn.Module):
         """
         ...
 
-@auto_docstring
 class GPT2PreTrainedModel(PreTrainedModel):
     config: GPT2Config
     load_tf_weights = ...
@@ -127,12 +124,6 @@ class GPT2PreTrainedModel(PreTrainedModel):
     _can_compile_fullgraph = ...
     def __init__(self, *inputs, **kwargs) -> None: ...
 
-@dataclass
-@auto_docstring(
-    custom_intro="""
-    Base class for outputs of models predicting if two sentences are consecutive or not.
-    """
-)
 class GPT2DoubleHeadsModelOutput(ModelOutput):
     r"""
     loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `labels` is provided):
@@ -151,18 +142,17 @@ class GPT2DoubleHeadsModelOutput(ModelOutput):
         `past_key_values` input) to speed up sequential decoding.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    mc_loss: Optional[torch.FloatTensor] = ...
-    logits: Optional[torch.FloatTensor] = ...
-    mc_logits: Optional[torch.FloatTensor] = ...
-    past_key_values: Optional[tuple[tuple[torch.FloatTensor]]] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
+    loss: torch.FloatTensor | None = ...
+    mc_loss: torch.FloatTensor | None = ...
+    logits: torch.FloatTensor | None = ...
+    mc_logits: torch.FloatTensor | None = ...
+    past_key_values: tuple[tuple[torch.FloatTensor]] | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
 
 PARALLELIZE_DOCSTRING = ...
 DEPARALLELIZE_DOCSTRING = ...
 
-@auto_docstring
 class GPT2Model(GPT2PreTrainedModel):
     _supports_param_buffer_assignment = ...
     def __init__(self, config) -> None: ...
@@ -176,23 +166,22 @@ class GPT2Model(GPT2PreTrainedModel):
         ...
     def set_input_embeddings(self, new_embeddings):  # -> None:
         ...
-    @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Union[tuple[tuple[torch.Tensor]], Cache]] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        token_type_ids: Optional[torch.LongTensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        encoder_hidden_states: Optional[torch.Tensor] = ...,
-        encoder_attention_mask: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        past_key_values: Union[tuple[tuple[torch.Tensor]], Cache] | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        encoder_hidden_states: torch.Tensor | None = ...,
+        encoder_attention_mask: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         **kwargs,
     ) -> Union[tuple[torch.FloatTensor, ...], BaseModelOutputWithPastAndCrossAttentions]:
         r"""
@@ -211,12 +200,6 @@ class GPT2Model(GPT2PreTrainedModel):
         """
         ...
 
-@auto_docstring(
-    custom_intro="""
-    The GPT2 Model transformer with a language modeling head on top (linear layer with weights tied to the input
-    embeddings).
-    """
-)
 class GPT2LMHeadModel(GPT2PreTrainedModel, GenerationMixin):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
@@ -226,24 +209,23 @@ class GPT2LMHeadModel(GPT2PreTrainedModel, GenerationMixin):
     @add_start_docstrings(DEPARALLELIZE_DOCSTRING)
     def deparallelize(self):  # -> None:
         ...
-    @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[tuple[tuple[torch.Tensor]]] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        token_type_ids: Optional[torch.LongTensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        encoder_hidden_states: Optional[torch.Tensor] = ...,
-        encoder_attention_mask: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        past_key_values: tuple[tuple[torch.Tensor]] | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        encoder_hidden_states: torch.Tensor | None = ...,
+        encoder_attention_mask: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         logits_to_keep: Union[int, torch.Tensor] = ...,
         **kwargs,
     ) -> Union[tuple, CausalLMOutputWithCrossAttentions]:
@@ -267,14 +249,6 @@ class GPT2LMHeadModel(GPT2PreTrainedModel, GenerationMixin):
         """
         ...
 
-@auto_docstring(
-    custom_intro="""
-        The GPT2 Model transformer with a language modeling and a multiple-choice classification head on top e.g. for
-    RocStories/SWAG tasks. The two heads are two linear layers. The language modeling head has its weights tied to the
-    input embeddings, the classification head takes as input the input of a specified classification token index in the
-    input sequence).
-    """
-)
 class GPT2DoubleHeadsModel(GPT2PreTrainedModel, GenerationMixin):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
@@ -284,24 +258,23 @@ class GPT2DoubleHeadsModel(GPT2PreTrainedModel, GenerationMixin):
     @add_start_docstrings(DEPARALLELIZE_DOCSTRING)
     def deparallelize(self):  # -> None:
         ...
-    @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[tuple[tuple[torch.Tensor]]] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        token_type_ids: Optional[torch.LongTensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        mc_token_ids: Optional[torch.LongTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        mc_labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        past_key_values: tuple[tuple[torch.Tensor]] | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        mc_token_ids: torch.LongTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        mc_labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         **kwargs,
     ) -> Union[tuple, GPT2DoubleHeadsModelOutput]:
         r"""
@@ -355,37 +328,22 @@ class GPT2DoubleHeadsModel(GPT2PreTrainedModel, GenerationMixin):
         ```"""
         ...
 
-@auto_docstring(
-    custom_intro="""
-    The GPT2 Model transformer with a sequence classification head on top (linear layer).
-
-    [`GPT2ForSequenceClassification`] uses the last token in order to do the classification, as other causal models
-    (e.g. GPT-1) do.
-
-    Since it does classification on the last token, it requires to know the position of the last token. If a
-    `pad_token_id` is defined in the configuration, it finds the last token that is not a padding token in each row. If
-    no `pad_token_id` is defined, it simply takes the last value in each row of the batch. Since it cannot guess the
-    padding tokens when `inputs_embeds` are passed instead of `input_ids`, it does the same (take the last value in
-    each row of the batch).
-    """
-)
 class GPT2ForSequenceClassification(GPT2PreTrainedModel):
     def __init__(self, config) -> None: ...
-    @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[tuple[tuple[torch.Tensor]]] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        token_type_ids: Optional[torch.LongTensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        past_key_values: tuple[tuple[torch.Tensor]] | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
     ) -> Union[tuple, SequenceClassifierOutputWithPast]:
         r"""
         input_ids (`torch.LongTensor` of shape `(batch_size, input_ids_length)`):
@@ -407,24 +365,22 @@ class GPT2ForSequenceClassification(GPT2PreTrainedModel):
         """
         ...
 
-@auto_docstring
 class GPT2ForTokenClassification(GPT2PreTrainedModel):
     def __init__(self, config) -> None: ...
-    @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[tuple[tuple[torch.Tensor]]] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        token_type_ids: Optional[torch.LongTensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        past_key_values: tuple[tuple[torch.Tensor]] | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
     ) -> Union[tuple, TokenClassifierOutput]:
         r"""
         input_ids (`torch.LongTensor` of shape `(batch_size, input_ids_length)`):
@@ -446,23 +402,21 @@ class GPT2ForTokenClassification(GPT2PreTrainedModel):
         """
         ...
 
-@auto_docstring
 class GPT2ForQuestionAnswering(GPT2PreTrainedModel):
     def __init__(self, config) -> None: ...
-    @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        token_type_ids: Optional[torch.LongTensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        start_positions: Optional[torch.LongTensor] = ...,
-        end_positions: Optional[torch.LongTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        start_positions: torch.LongTensor | None = ...,
+        end_positions: torch.LongTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
     ) -> Union[tuple, QuestionAnsweringModelOutput]:
         r"""
         input_ids (`torch.LongTensor` of shape `(batch_size, input_ids_length)`):

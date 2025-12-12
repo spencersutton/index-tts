@@ -16,6 +16,10 @@ MODEL_TYPES = ...
 
 @dataclass
 class SquadDataTrainingArguments:
+    """
+    Arguments pertaining to what data we are going to input our model for training and eval.
+    """
+
     model_type: str = ...
     data_dir: str = ...
     max_seq_length: int = ...
@@ -34,6 +38,10 @@ class Split(Enum):
     dev = ...
 
 class SquadDataset(Dataset):
+    """
+    This will be superseded by a framework-agnostic approach soon.
+    """
+
     args: SquadDataTrainingArguments
     features: list[SquadFeatures]
     mode: Split
@@ -48,5 +56,6 @@ class SquadDataset(Dataset):
         cache_dir: Optional[str] = ...,
         dataset_format: Optional[str] = ...,
     ) -> None: ...
-    def __len__(self): ...
+    def __len__(self):  # -> int:
+        ...
     def __getitem__(self, i) -> dict[str, torch.Tensor]: ...

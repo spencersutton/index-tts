@@ -19,9 +19,39 @@ from .configuration_granite import GraniteConfig
 
 logger = ...
 
-def rotate_half(x): ...
-def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...): ...
-def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor: ...
+def rotate_half(x):  # -> Tensor:
+    """Rotates half the hidden dims of the input."""
+    ...
+
+def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...):  # -> tuple[Any, Any]:
+    """Applies Rotary Position Embedding to the query and key tensors.
+
+    Args:
+        q (`torch.Tensor`): The query tensor.
+        k (`torch.Tensor`): The key tensor.
+        cos (`torch.Tensor`): The cosine part of the rotary embedding.
+        sin (`torch.Tensor`): The sine part of the rotary embedding.
+        position_ids (`torch.Tensor`, *optional*):
+            Deprecated and unused.
+        unsqueeze_dim (`int`, *optional*, defaults to 1):
+            The 'unsqueeze_dim' argument specifies the dimension along which to unsqueeze cos[position_ids] and
+            sin[position_ids] so that they can be properly broadcasted to the dimensions of q and k. For example, note
+            that cos[position_ids] and sin[position_ids] have the shape [batch_size, seq_len, head_dim]. Then, if q and
+            k have the shape [batch_size, heads, seq_len, head_dim], then setting unsqueeze_dim=1 makes
+            cos[position_ids] and sin[position_ids] broadcastable to the shapes of q and k. Similarly, if q and k have
+            the shape [batch_size, seq_len, heads, head_dim], then set unsqueeze_dim=2.
+    Returns:
+        `tuple(torch.Tensor)` comprising of the query and key tensors rotated using the Rotary Position Embedding.
+    """
+    ...
+
+def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
+    """
+    This is the equivalent of torch.repeat_interleave(x, dim=1, repeats=n_rep). The hidden states go from (batch,
+    num_key_value_heads, seqlen, head_dim) to (batch, num_attention_heads, seqlen, head_dim)
+    """
+    ...
+
 def eager_attention_forward(
     module: nn.Module,
     query: torch.Tensor,
@@ -31,9 +61,11 @@ def eager_attention_forward(
     scaling: float,
     dropout: float = ...,
     **kwargs: Unpack[TransformersKwargs],
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class GraniteAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config: GraniteConfig, layer_idx: Optional[int] = ...) -> None: ...
     def forward(
         self,
@@ -47,13 +79,20 @@ class GraniteAttention(nn.Module):
 
 @use_kernel_forward_from_hub("RMSNorm")
 class GraniteRMSNorm(nn.Module):
-    def __init__(self, hidden_size, eps=...) -> None: ...
+    def __init__(self, hidden_size, eps=...) -> None:
+        """
+        GraniteRMSNorm is equivalent to T5LayerNorm
+        """
+        ...
+
     def forward(self, hidden_states): ...
-    def extra_repr(self): ...
+    def extra_repr(self):  # -> str:
+        ...
 
 class GraniteMLP(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, x): ...
+    def forward(self, x):  # -> Any:
+        ...
 
 class GraniteDecoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: GraniteConfig, layer_idx: int) -> None: ...
@@ -68,7 +107,30 @@ class GraniteDecoderLayer(GradientCheckpointingLayer):
         cache_position: Optional[torch.LongTensor] = ...,
         position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
         **kwargs,
-    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]: ...
+    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            attention_mask (`torch.FloatTensor`, *optional*):
+                attention mask of size `(batch_size, sequence_length)` if flash attention is used or `(batch_size, 1,
+                query_sequence_length, key_sequence_length)` if default attention is used.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            use_cache (`bool`, *optional*):
+                If set to `True`, `past_key_values` key value states are returned and can be used to speed up decoding
+                (see `past_key_values`).
+            past_key_value (`Tuple(torch.FloatTensor)`, *optional*): cached past key and value projection states
+            cache_position (`torch.LongTensor` of shape `(sequence_length)`, *optional*):
+                Indices depicting the position of the input sequence tokens in the sequence
+            position_embeddings (`tuple[torch.FloatTensor, torch.FloatTensor]`, *optional*):
+                Tuple containing the cosine and sine positional embeddings of shape `(batch_size, seq_len, head_dim)`,
+                with `head_dim` being the embedding dimension of each attention head.
+            kwargs (`dict`, *optional*):
+                Arbitrary kwargs to be ignored, used for FSDP and other methods that injects code
+                into the model
+        """
+        ...
 
 @auto_docstring
 class GranitePreTrainedModel(PreTrainedModel):
@@ -88,7 +150,8 @@ class GraniteRotaryEmbedding(nn.Module):
     def __init__(self, config: GraniteConfig, device=...) -> None: ...
     @torch.no_grad()
     @dynamic_rope_update
-    def forward(self, x, position_ids): ...
+    def forward(self, x, position_ids):  # -> tuple[Tensor, Tensor]:
+        ...
 
 @auto_docstring
 class GraniteModel(GranitePreTrainedModel):
@@ -115,8 +178,10 @@ class GraniteForCausalLM(GranitePreTrainedModel, GenerationMixin):
     _tp_plan = ...
     _pp_plan = ...
     def __init__(self, config) -> None: ...
-    def set_decoder(self, decoder): ...
-    def get_decoder(self): ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> GraniteModel:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -133,6 +198,24 @@ class GraniteForCausalLM(GranitePreTrainedModel, GenerationMixin):
         cache_position: Optional[torch.LongTensor] = ...,
         logits_to_keep: Union[int, torch.Tensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> CausalLMOutputWithPast: ...
+    ) -> CausalLMOutputWithPast:
+        r"""
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, GraniteForCausalLM
+
+        >>> model = GraniteForCausalLM.from_pretrained("meta-granite/Granite-2-7b-hf")
+        >>> tokenizer = AutoTokenizer.from_pretrained("meta-granite/Granite-2-7b-hf")
+
+        >>> prompt = "Hey, are you conscious? Can you talk to me?"
+        >>> inputs = tokenizer(prompt, return_tensors="pt")
+
+        >>> # Generate
+        >>> generate_ids = model.generate(inputs.input_ids, max_length=30)
+        >>> tokenizer.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+        "Hey, are you conscious? Can you talk to me?\nI'm not conscious, but I can talk to you."
+        ```"""
+        ...
 
 __all__ = ["GraniteForCausalLM", "GraniteModel", "GranitePreTrainedModel"]

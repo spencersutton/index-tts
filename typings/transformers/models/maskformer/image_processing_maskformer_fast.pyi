@@ -13,6 +13,7 @@ from transformers import MaskFormerForInstanceSegmentationOutput
 from torchvision.transforms.v2 import functional as F
 from torchvision.transforms import functional as F
 
+"""Fast Image processor class for MaskFormer."""
 logger = ...
 if TYPE_CHECKING: ...
 if is_torch_available(): ...
@@ -24,9 +25,34 @@ def convert_segmentation_map_to_binary_masks_fast(
     instance_id_to_semantic_id: Optional[dict[int, int]] = ...,
     ignore_index: Optional[int] = ...,
     do_reduce_labels: bool = ...,
-): ...
+):  # -> tuple[Tensor, Tensor | ...]:
+    ...
 
 class MaskFormerFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
+    r"""
+    size_divisor (`int`, *optional*, defaults to 32):
+        Some backbones need images divisible by a certain number. If not passed, it defaults to the value used in
+        Swin Transformer.
+    ignore_index (`int`, *optional*):
+        Label to be assigned to background pixels in segmentation maps. If provided, segmentation map pixels
+        denoted with 0 (background) will be replaced with `ignore_index`.
+    do_reduce_labels (`bool`, *optional*, defaults to `False`):
+        Whether or not to decrement all label values of segmentation maps by 1. Usually used for datasets where 0
+        is used for background, and background itself is not included in all classes of a dataset (e.g. ADE20k).
+        The background label will be replaced by `ignore_index`.
+    num_labels (`int`, *optional*):
+        The number of labels in the segmentation map.
+    do_pad (`bool`, *optional*, defaults to `True`):
+        Controls whether to pad the image. Can be overridden by the `do_pad` parameter in the `preprocess`
+        method. If `True`, padding will be applied to the bottom and right of the image with zeros.
+        If `pad_size` is provided, the image will be padded to the specified dimensions.
+        Otherwise, the image will be padded to the maximum height and width of the batch.
+    pad_size (`Dict[str, int]`, *optional*):
+        The size `{"height": int, "width" int}` to pad the images to. Must be larger than any image size
+        provided for preprocessing. If `pad_size` is not provided, images will be padded to the largest
+        height and width in the batch.
+    """
+
     size_divisor: Optional[int]
     ignore_index: Optional[int]
     do_reduce_labels: Optional[bool]
@@ -52,8 +78,15 @@ class MaskFormerImageProcessorFast(BaseImageProcessorFast):
     do_reduce_labels = ...
     valid_kwargs = MaskFormerFastImageProcessorKwargs
     def __init__(self, **kwargs: Unpack[MaskFormerFastImageProcessorKwargs]) -> None: ...
-    def to_dict(self) -> dict[str, Any]: ...
-    def reduce_label(self, labels: list[torch.Tensor]): ...
+    def to_dict(self) -> dict[str, Any]:
+        """
+        Serializes this instance to a Python dictionary. This method calls the superclass method and then removes the
+        `_max_size` attribute from the dictionary.
+        """
+        ...
+
+    def reduce_label(self, labels: list[torch.Tensor]):  # -> None:
+        ...
     def resize(
         self,
         image: torch.Tensor,
@@ -61,7 +94,31 @@ class MaskFormerImageProcessorFast(BaseImageProcessorFast):
         size_divisor: int = ...,
         interpolation: F.InterpolationMode = ...,
         **kwargs,
-    ) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """
+        Resize the image to the given size. Size can be `min_size` (scalar) or `(height, width)` tuple. If size is an
+        int, smaller edge of the image will be matched to this number.
+
+        Args:
+            image (`torch.Tensor`):
+                Image to resize.
+            size (`SizeDict`):
+                Size of the image's `(height, width)` dimensions after resizing. Available options are:
+                    - `{"height": int, "width": int}`: The image will be resized to the exact size `(height, width)`.
+                        Do NOT keep the aspect ratio.
+                    - `{"shortest_edge": int, "longest_edge": int}`: The image will be resized to a maximum size respecting
+                        the aspect ratio and keeping the shortest edge less or equal to `shortest_edge` and the longest edge
+                        less or equal to `longest_edge`.
+                    - `{"max_height": int, "max_width": int}`: The image will be resized to the maximum size respecting the
+                        aspect ratio and keeping the height less or equal to `max_height` and the width less or equal to
+                        `max_width`.
+            size_divisor (`int`, *optional*, defaults to 0):
+                If `size_divisor` is given, the output image size will be divisible by the number.
+            interpolation (`InterpolationMode`, *optional*, defaults to `InterpolationMode.BILINEAR`):
+                Resampling filter to use if resizing the image.
+        """
+        ...
+
     def pad(
         self,
         images: torch.Tensor,
@@ -77,13 +134,56 @@ class MaskFormerImageProcessorFast(BaseImageProcessorFast):
         segmentation_maps: Optional[ImageInput] = ...,
         instance_id_to_semantic_id: Optional[Union[list[dict[int, int]], dict[int, int]]] = ...,
         **kwargs: Unpack[MaskFormerFastImageProcessorKwargs],
-    ) -> BatchFeature: ...
+    ) -> BatchFeature:
+        r"""
+        segmentation_maps (`ImageInput`, *optional*):
+            The segmentation maps.
+        instance_id_to_semantic_id (`Union[list[dict[int, int]], dict[int, int]]`, *optional*):
+            A mapping from instance IDs to semantic IDs.
+        """
+        ...
+
     def post_process_segmentation(
         self, outputs: MaskFormerForInstanceSegmentationOutput, target_size: Optional[tuple[int, int]] = ...
-    ) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """
+        Converts the output of [`MaskFormerForInstanceSegmentationOutput`] into image segmentation predictions. Only
+        supports PyTorch.
+
+        Args:
+            outputs ([`MaskFormerForInstanceSegmentationOutput`]):
+                The outputs from [`MaskFormerForInstanceSegmentation`].
+
+            target_size (`tuple[int, int]`, *optional*):
+                If set, the `masks_queries_logits` will be resized to `target_size`.
+
+        Returns:
+            `torch.Tensor`:
+                A tensor of shape (`batch_size, num_class_labels, height, width`).
+        """
+        ...
+
     def post_process_semantic_segmentation(
         self, outputs, target_sizes: Optional[list[tuple[int, int]]] = ...
-    ) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """
+        Converts the output of [`MaskFormerForInstanceSegmentation`] into semantic segmentation maps. Only supports
+        PyTorch.
+
+        Args:
+            outputs ([`MaskFormerForInstanceSegmentation`]):
+                Raw outputs of the model.
+            target_sizes (`list[tuple[int, int]]`, *optional*):
+                List of length (batch_size), where each list item (`tuple[int, int]]`) corresponds to the requested
+                final size (height, width) of each prediction. If left to None, predictions will not be resized.
+        Returns:
+            `list[torch.Tensor]`:
+                A list of length `batch_size`, where each item is a semantic segmentation map of shape (height, width)
+                corresponding to the target_sizes entry (if `target_sizes` is specified). Each entry of each
+                `torch.Tensor` correspond to a semantic class id.
+        """
+        ...
+
     def post_process_instance_segmentation(
         self,
         outputs,
@@ -93,7 +193,43 @@ class MaskFormerImageProcessorFast(BaseImageProcessorFast):
         target_sizes: Optional[list[tuple[int, int]]] = ...,
         return_coco_annotation: Optional[bool] = ...,
         return_binary_maps: Optional[bool] = ...,
-    ) -> list[dict]: ...
+    ) -> list[dict]:
+        """
+        Converts the output of [`MaskFormerForInstanceSegmentationOutput`] into instance segmentation predictions. Only
+        supports PyTorch. If instances could overlap, set either return_coco_annotation or return_binary_maps
+        to `True` to get the correct segmentation result.
+
+        Args:
+            outputs ([`MaskFormerForInstanceSegmentation`]):
+                Raw outputs of the model.
+            threshold (`float`, *optional*, defaults to 0.5):
+                The probability score threshold to keep predicted instance masks.
+            mask_threshold (`float`, *optional*, defaults to 0.5):
+                Threshold to use when turning the predicted masks into binary values.
+            overlap_mask_area_threshold (`float`, *optional*, defaults to 0.8):
+                The overlap mask area threshold to merge or discard small disconnected parts within each binary
+                instance mask.
+            target_sizes (`list[Tuple]`, *optional*):
+                List of length (batch_size), where each list item (`tuple[int, int]]`) corresponds to the requested
+                final size (height, width) of each prediction. If left to None, predictions will not be resized.
+            return_coco_annotation (`bool`, *optional*, defaults to `False`):
+                If set to `True`, segmentation maps are returned in COCO run-length encoding (RLE) format.
+            return_binary_maps (`bool`, *optional*, defaults to `False`):
+                If set to `True`, segmentation maps are returned as a concatenated tensor of binary segmentation maps
+                (one per detected instance).
+        Returns:
+            `list[Dict]`: A list of dictionaries, one per image, each dictionary containing two keys:
+            - **segmentation** -- A tensor of shape `(height, width)` where each pixel represents a `segment_id`, or
+              `list[List]` run-length encoding (RLE) of the segmentation map if return_coco_annotation is set to
+              `True`, or a tensor of shape `(num_instances, height, width)` if return_binary_maps is set to `True`.
+              Set to `None` if no mask if found above `threshold`.
+            - **segments_info** -- A dictionary that contains additional information on each segment.
+                - **id** -- An integer representing the `segment_id`.
+                - **label_id** -- An integer representing the label / semantic class id corresponding to `segment_id`.
+                - **score** -- Prediction score of segment with `segment_id`.
+        """
+        ...
+
     def post_process_panoptic_segmentation(
         self,
         outputs,
@@ -102,6 +238,42 @@ class MaskFormerImageProcessorFast(BaseImageProcessorFast):
         overlap_mask_area_threshold: float = ...,
         label_ids_to_fuse: Optional[set[int]] = ...,
         target_sizes: Optional[list[tuple[int, int]]] = ...,
-    ) -> list[dict]: ...
+    ) -> list[dict]:
+        """
+        Converts the output of [`MaskFormerForInstanceSegmentationOutput`] into image panoptic segmentation
+        predictions. Only supports PyTorch.
+
+        Args:
+            outputs ([`MaskFormerForInstanceSegmentationOutput`]):
+                The outputs from [`MaskFormerForInstanceSegmentation`].
+            threshold (`float`, *optional*, defaults to 0.5):
+                The probability score threshold to keep predicted instance masks.
+            mask_threshold (`float`, *optional*, defaults to 0.5):
+                Threshold to use when turning the predicted masks into binary values.
+            overlap_mask_area_threshold (`float`, *optional*, defaults to 0.8):
+                The overlap mask area threshold to merge or discard small disconnected parts within each binary
+                instance mask.
+            label_ids_to_fuse (`Set[int]`, *optional*):
+                The labels in this state will have all their instances be fused together. For instance we could say
+                there can only be one sky in an image, but several persons, so the label ID for sky would be in that
+                set, but not the one for person.
+            target_sizes (`list[Tuple]`, *optional*):
+                List of length (batch_size), where each list item (`tuple[int, int]]`) corresponds to the requested
+                final size (height, width) of each prediction in batch. If left to None, predictions will not be
+                resized.
+
+        Returns:
+            `list[Dict]`: A list of dictionaries, one per image, each dictionary containing two keys:
+            - **segmentation** -- a tensor of shape `(height, width)` where each pixel represents a `segment_id`, set
+              to `None` if no mask if found above `threshold`. If `target_sizes` is specified, segmentation is resized
+              to the corresponding `target_sizes` entry.
+            - **segments_info** -- A dictionary that contains additional information on each segment.
+                - **id** -- an integer representing the `segment_id`.
+                - **label_id** -- An integer representing the label / semantic class id corresponding to `segment_id`.
+                - **was_fused** -- a boolean, `True` if `label_id` was in `label_ids_to_fuse`, `False` otherwise.
+                  Multiple instances of the same class / label were fused and assigned a single `segment_id`.
+                - **score** -- Prediction score of segment with `segment_id`.
+        """
+        ...
 
 __all__ = ["MaskFormerImageProcessorFast"]

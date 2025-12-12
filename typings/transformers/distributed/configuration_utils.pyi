@@ -8,12 +8,64 @@ from typing import Any, Union
 
 @dataclass
 class DistributedConfig:
+    """
+    Base class for distributed configs
+    """
+
     enable_expert_parallel: bool = ...
     @classmethod
-    def from_dict(cls, config_dict, **kwargs): ...
-    def to_json_file(self, json_file_path: Union[str, os.PathLike]): ...
-    def to_dict(self) -> dict[str, Any]: ...
-    def __iter__(self): ...
-    def __repr__(self): ...
-    def to_json_string(self): ...
-    def update(self, **kwargs): ...
+    def from_dict(cls, config_dict, **kwargs):  # -> Self:
+        """
+        Constructs a DistributedConfig instance from a dictionary of parameters.
+        Args:
+            config_dict (Dict[str, Any]): Dictionary containing configuration parameters.
+            **kwargs: Additional keyword arguments to override dictionary values.
+        Returns:
+            DistributedConfig: Instance of DistributedConfig constructed from the dictionary.
+        """
+        ...
+
+    def to_json_file(self, json_file_path: Union[str, os.PathLike]):  # -> None:
+        """
+        Save this instance to a JSON file.
+        Args:
+            json_file_path (`str` or `os.PathLike`):
+                Path to the JSON file in which this configuration instance's parameters will be saved.
+            use_diff (`bool`, *optional*, defaults to `True`):
+                If set to `True`, only the difference between the config instance and the default
+                `QuantizationConfig()` is serialized to JSON file.
+        """
+        ...
+
+    def to_dict(self) -> dict[str, Any]:
+        """
+        Serializes this instance to a Python dictionary. Returns:
+            `Dict[str, Any]`: Dictionary of all the attributes that make up this configuration instance.
+        """
+        ...
+
+    def __iter__(self):  # -> Generator[tuple[str, Any], Any, None]:
+        """allows `dict(obj)` for situations where obj may be a dict or QuantizationConfigMixin"""
+        ...
+
+    def __repr__(self):  # -> str:
+        ...
+    def to_json_string(self):  # -> str:
+        """
+        Serializes this instance to a JSON formatted string.
+        Returns:
+            str: JSON formatted string representing the configuration instance.
+        """
+        ...
+
+    def update(self, **kwargs):  # -> dict[str, Any]:
+        """
+        Updates attributes of this class instance with attributes from `kwargs` if they match existing attributes,
+        returning all the unused kwargs.
+        Args:
+            kwargs (`Dict[str, Any]`):
+                Dictionary of attributes to tentatively update this class.
+        Returns:
+            `Dict[str, Any]`: Dictionary containing all the key-value pairs that were not used to update the instance.
+        """
+        ...

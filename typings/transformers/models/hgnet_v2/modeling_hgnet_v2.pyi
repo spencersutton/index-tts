@@ -75,9 +75,34 @@ class HGNetV2Backbone(HGNetV2PreTrainedModel, BackboneMixin):
     @auto_docstring
     def forward(
         self, pixel_values: Tensor, output_hidden_states: Optional[bool] = ..., return_dict: Optional[bool] = ...
-    ) -> BackboneOutput: ...
+    ) -> BackboneOutput:
+        r"""
+        Examples:
 
-@auto_docstring(custom_intro=...)
+        ```python
+        >>> from transformers import RTDetrResNetConfig, RTDetrResNetBackbone
+        >>> import torch
+
+        >>> config = RTDetrResNetConfig()
+        >>> model = RTDetrResNetBackbone(config)
+
+        >>> pixel_values = torch.randn(1, 3, 224, 224)
+
+        >>> with torch.no_grad():
+        ...     outputs = model(pixel_values)
+
+        >>> feature_maps = outputs.feature_maps
+        >>> list(feature_maps[-1].shape)
+        [1, 2048, 7, 7]
+        ```"""
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    HGNetV2 Model with an image classification head on top (a linear layer on top of the pooled features), e.g. for
+    ImageNet.
+    """
+)
 class HGNetV2ForImageClassification(HGNetV2PreTrainedModel):
     def __init__(self, config: HGNetV2Config) -> None: ...
     @auto_docstring
@@ -87,6 +112,32 @@ class HGNetV2ForImageClassification(HGNetV2PreTrainedModel):
         labels: Optional[torch.LongTensor] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> ImageClassifierOutputWithNoAttention: ...
+    ) -> ImageClassifierOutputWithNoAttention:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+
+        Examples:
+        ```python
+        >>> import torch
+        >>> import requests
+        >>> from transformers import HGNetV2ForImageClassification, AutoImageProcessor
+        >>> from PIL import Image
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> model = HGNetV2ForImageClassification.from_pretrained("ustc-community/hgnet-v2")
+        >>> processor = AutoImageProcessor.from_pretrained("ustc-community/hgnet-v2")
+
+        >>> inputs = processor(images=image, return_tensors="pt")
+        >>> with torch.no_grad():
+        ...     outputs = model(**inputs)
+        >>> outputs.logits.shape
+        torch.Size([1, 2])
+        ```"""
+        ...
 
 __all__ = ["HGNetV2Backbone", "HGNetV2PreTrainedModel", "HGNetV2ForImageClassification"]

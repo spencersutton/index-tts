@@ -38,6 +38,18 @@ class DiaPreTrainedModel(PreTrainedModel):
     _no_split_modules = ...
 
 class DiaMultiChannelEmbedding(nn.Module):
+    """In order to efficiently compute the audio embedding from the 9 different channels,
+    we vectorize the embedding process by using a single embedding layer and an offset.
+    Example:
+    - num_embeds = 4
+    - vocab_size = 8
+    - num_channels = 3
+    We would have offsets = [0, 8, 16]
+    If audio_codes = [0, 1, 2, 3], [1, 3, 4, 7], [5, 6, 7, 8],
+    then tokens = audio_codes + offsets
+                = [0, 1, 2, 3, 9, 11, 12, 15, 21, 22, 23, 24]
+    This allows us to use a single embedding layer for all channels.
+    """
     def __init__(self, config: DiaDecoderConfig) -> None: ...
     def forward(self, audio_codes: torch.Tensor) -> torch.Tensor: ...
 
@@ -47,19 +59,56 @@ class DiaMLP(nn.Module):
 
 @use_kernel_forward_from_hub("RMSNorm")
 class DiaRMSNorm(nn.Module):
-    def __init__(self, hidden_size, eps=...) -> None: ...
+    def __init__(self, hidden_size, eps=...) -> None:
+        """
+        DiaRMSNorm is equivalent to T5LayerNorm
+        """
+        ...
+
     def forward(self, hidden_states): ...
-    def extra_repr(self): ...
+    def extra_repr(self):  # -> str:
+        ...
 
 class DiaRotaryEmbedding(nn.Module):
     def __init__(self, config: DiaConfig, device=...) -> None: ...
     @torch.no_grad()
     @dynamic_rope_update
-    def forward(self, x, position_ids): ...
+    def forward(self, x, position_ids):  # -> tuple[Tensor, Tensor]:
+        ...
 
-def rotate_half(x): ...
-def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...): ...
-def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor: ...
+def rotate_half(x):  # -> Tensor:
+    """Rotates half the hidden dims of the input."""
+    ...
+
+def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...):  # -> tuple[Any, Any]:
+    """Applies Rotary Position Embedding to the query and key tensors.
+
+    Args:
+        q (`torch.Tensor`): The query tensor.
+        k (`torch.Tensor`): The key tensor.
+        cos (`torch.Tensor`): The cosine part of the rotary embedding.
+        sin (`torch.Tensor`): The sine part of the rotary embedding.
+        position_ids (`torch.Tensor`, *optional*):
+            Deprecated and unused.
+        unsqueeze_dim (`int`, *optional*, defaults to 1):
+            The 'unsqueeze_dim' argument specifies the dimension along which to unsqueeze cos[position_ids] and
+            sin[position_ids] so that they can be properly broadcasted to the dimensions of q and k. For example, note
+            that cos[position_ids] and sin[position_ids] have the shape [batch_size, seq_len, head_dim]. Then, if q and
+            k have the shape [batch_size, heads, seq_len, head_dim], then setting unsqueeze_dim=1 makes
+            cos[position_ids] and sin[position_ids] broadcastable to the shapes of q and k. Similarly, if q and k have
+            the shape [batch_size, seq_len, heads, head_dim], then set unsqueeze_dim=2.
+    Returns:
+        `tuple(torch.Tensor)` comprising of the query and key tensors rotated using the Rotary Position Embedding.
+    """
+    ...
+
+def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
+    """
+    This is the equivalent of torch.repeat_interleave(x, dim=1, repeats=n_rep). The hidden states go from (batch,
+    num_key_value_heads, seqlen, head_dim) to (batch, num_attention_heads, seqlen, head_dim)
+    """
+    ...
+
 def eager_attention_forward(
     module: nn.Module,
     query: torch.Tensor,
@@ -69,9 +118,11 @@ def eager_attention_forward(
     scaling: float,
     dropout: float = ...,
     **kwargs: Unpack[TransformersKwargs],
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class DiaSelfAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(
         self, config: Union[DiaEncoderConfig, DiaDecoderConfig], layer_idx: int, is_causal: bool = ...
     ) -> None: ...
@@ -86,6 +137,7 @@ class DiaSelfAttention(nn.Module):
     ) -> tuple[torch.Tensor, torch.Tensor]: ...
 
 class DiaCrossAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config: DiaDecoderConfig, layer_idx: int) -> None: ...
     def forward(
         self,
@@ -134,6 +186,7 @@ class DiaDecoderLayer(GradientCheckpointingLayer):
     ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[torch.Tensor]]: ...
 
 class DiaDecoder(DiaPreTrainedModel):
+    """Transformer Decoder Stack using DenseGeneral."""
     def __init__(self, config: DiaDecoderConfig) -> None: ...
     @auto_docstring
     @can_return_tuple
@@ -149,13 +202,26 @@ class DiaDecoder(DiaPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         **kwargs,
-    ) -> Union[BaseModelOutputWithPastAndCrossAttentions, tuple]: ...
+    ) -> Union[BaseModelOutputWithPastAndCrossAttentions, tuple]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length, num_codebooks)`):
+            The original `decoder_input_ids` in 3D shape to facilitate more efficient computations.
 
-@auto_docstring(custom_intro=...)
+            [What are input IDs?](../glossary#input-ids)
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    The bare Dia model outputting raw hidden-states without any specific head on top.
+    """
+)
 class DiaModel(DiaPreTrainedModel):
     def __init__(self, config: DiaConfig) -> None: ...
-    def get_encoder(self): ...
-    def get_decoder(self): ...
+    def get_encoder(self):  # -> DiaEncoder:
+        ...
+    def get_decoder(self):  # -> DiaDecoder:
+        ...
     @auto_docstring
     @can_return_tuple
     def forward(
@@ -172,14 +238,42 @@ class DiaModel(DiaPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         **kwargs,
-    ) -> Union[tuple, Seq2SeqModelOutput]: ...
+    ) -> Union[tuple, Seq2SeqModelOutput]:
+        r"""
+        decoder_input_ids (`torch.LongTensor` of shape `(batch_size * num_codebooks, target_sequence_length)
+        or (batch_size, target_sequence_length, num_codebooks)`, *optional*):
+            1. (batch_size * num_codebooks, target_sequence_length): corresponds to the general use case where
+            the audio input codebooks are flattened into the batch dimension. This also aligns with the flat-
+            tened audio logits which are used to calculate the loss.
 
-@auto_docstring(custom_intro=...)
+            2. (batch_size, sequence_length, num_codebooks): corresponds to the internally used shape of
+            Dia to calculate embeddings and subsequent steps more efficiently.
+
+            If no `decoder_input_ids` are provided, it will create a tensor of `bos_token_id` with shape
+            `(batch_size, 1, num_codebooks)`. Indices can be obtained using the [`DiaProcessor`]. See
+            [`DiaProcessor.__call__`] for more details.
+
+            [What are decoder input IDs?](../glossary#decoder-input-ids)
+        decoder_position_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`):
+            Indices of positions of each input sequence tokens in the position embeddings.
+            Used to calculate the position embeddings up to `config.decoder_config.max_position_embeddings`.
+
+            [What are position IDs?](../glossary#position-ids)
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    The Dia model consisting of a (byte) text encoder and audio decoder with a prediction head on top.
+    """
+)
 class DiaForConditionalGeneration(DiaPreTrainedModel, DiaGenerationMixin):
     base_model_prefix = ...
     def __init__(self, config: DiaConfig) -> None: ...
-    def get_encoder(self): ...
-    def get_decoder(self): ...
+    def get_encoder(self):  # -> DiaEncoder:
+        ...
+    def get_decoder(self):  # -> DiaDecoder:
+        ...
     @auto_docstring
     @can_return_tuple
     def forward(
@@ -197,6 +291,32 @@ class DiaForConditionalGeneration(DiaPreTrainedModel, DiaGenerationMixin):
         labels: Optional[torch.LongTensor] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         **kwargs,
-    ) -> Union[tuple, Seq2SeqLMOutput]: ...
+    ) -> Union[tuple, Seq2SeqLMOutput]:
+        r"""
+        decoder_input_ids (`torch.LongTensor` of shape `(batch_size * num_codebooks, target_sequence_length)
+        or (batch_size, target_sequence_length, num_codebooks)`, *optional*):
+            1. (batch_size * num_codebooks, target_sequence_length): corresponds to the general use case where
+            the audio input codebooks are flattened into the batch dimension. This also aligns with the flat-
+            tened audio logits which are used to calculate the loss.
+
+            2. (batch_size, sequence_length, num_codebooks): corresponds to the internally used shape of
+            Dia to calculate embeddings and subsequent steps more efficiently.
+
+            If no `decoder_input_ids` are provided, it will create a tensor of `bos_token_id` with shape
+            `(batch_size, 1, num_codebooks)`. Indices can be obtained using the [`DiaProcessor`]. See
+            [`DiaProcessor.__call__`] for more details.
+
+            [What are decoder input IDs?](../glossary#decoder-input-ids)
+        decoder_position_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`):
+            Indices of positions of each input sequence tokens in the position embeddings.
+            Used to calculate the position embeddings up to `config.decoder_config.max_position_embeddings`.
+
+            [What are position IDs?](../glossary#position-ids)
+        labels (`torch.LongTensor` of shape `(batch_size * num_codebooks,)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in
+            `[0, ..., config.decoder_config.vocab_size - 1]` or -100. Tokens with indices set to `-100`
+            are ignored (masked).
+        """
+        ...
 
 __all__ = ["DiaModel", "DiaPreTrainedModel", "DiaForConditionalGeneration"]

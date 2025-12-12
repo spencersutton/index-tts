@@ -13,6 +13,7 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring
 from .configuration_bert_generation import BertGenerationConfig
 
+"""PyTorch BERT model specific for generation."""
 logger = ...
 
 class BertGenerationSelfOutput(nn.Module):
@@ -36,7 +37,8 @@ BERT_GENERATION_SELF_ATTENTION_CLASSES = ...
 
 class BertGenerationAttention(nn.Module):
     def __init__(self, config, position_embedding_type=..., layer_idx=...) -> None: ...
-    def prune_heads(self, heads): ...
+    def prune_heads(self, heads):  # -> None:
+        ...
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -69,7 +71,8 @@ class BertGenerationLayer(GradientCheckpointingLayer):
         output_attentions: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
     ) -> tuple[torch.Tensor]: ...
-    def feed_forward_chunk(self, attention_output): ...
+    def feed_forward_chunk(self, attention_output):  # -> Any:
+        ...
 
 class BertEncoder(nn.Module):
     def __init__(self, config, layer_idx=...) -> None: ...
@@ -93,8 +96,10 @@ def load_tf_weights_in_bert_generation(
 ): ...
 
 class BertGenerationEmbeddings(nn.Module):
+    """Construct the embeddings from word and position embeddings."""
     def __init__(self, config) -> None: ...
-    def forward(self, input_ids=..., position_ids=..., inputs_embeds=..., past_key_values_length=...): ...
+    def forward(self, input_ids=..., position_ids=..., inputs_embeds=..., past_key_values_length=...):  # -> Any:
+        ...
 
 @auto_docstring
 class BertGenerationPreTrainedModel(PreTrainedModel):
@@ -102,11 +107,32 @@ class BertGenerationPreTrainedModel(PreTrainedModel):
     base_model_prefix = ...
     supports_gradient_checkpointing = ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The bare BertGeneration model transformer outputting raw hidden-states without any specific head on top.
+    """
+)
 class BertGenerationEncoder(BertGenerationPreTrainedModel):
+    """
+
+    The model can behave as an encoder (with only self-attention) as well as a decoder, in which case a layer of
+    cross-attention is added between the self-attention layers, following the architecture described in [Attention is
+    all you need](https://huggingface.co/papers/1706.03762) by Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit,
+    Llion Jones, Aidan N. Gomez, Lukasz Kaiser and Illia Polosukhin.
+
+    This model should be used when leveraging Bert or Roberta checkpoints for the [`EncoderDecoderModel`] class as
+    described in [Leveraging Pre-trained Checkpoints for Sequence Generation Tasks](https://huggingface.co/papers/1907.12461)
+    by Sascha Rothe, Shashi Narayan, and Aliaksei Severyn.
+
+    To behave as an decoder the model needs to be initialized with the `is_decoder` argument of the configuration set
+    to `True`. To be used in a Seq2Seq model, the model needs to initialized with both `is_decoder` argument and
+    `add_cross_attention` set to `True`; an `encoder_hidden_states` is then expected as an input to the forward pass.
+    """
     def __init__(self, config) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -127,14 +153,21 @@ class BertGenerationEncoder(BertGenerationPreTrainedModel):
 
 class BertGenerationOnlyLMHead(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    BertGeneration Model with a `language modeling` head on top for CLM fine-tuning.
+    """
+)
 class BertGenerationDecoder(BertGenerationPreTrainedModel, GenerationMixin):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
-    def get_output_embeddings(self): ...
-    def set_output_embeddings(self, new_embeddings): ...
+    def get_output_embeddings(self):  # -> Linear:
+        ...
+    def set_output_embeddings(self, new_embeddings):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -152,7 +185,32 @@ class BertGenerationDecoder(BertGenerationPreTrainedModel, GenerationMixin):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         **kwargs,
-    ) -> Union[tuple, CausalLMOutputWithCrossAttentions]: ...
+    ) -> Union[tuple, CausalLMOutputWithCrossAttentions]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the left-to-right language modeling loss (next word prediction). Indices should be in
+            `[-100, 0, ..., config.vocab_size]` (see `input_ids` docstring) Tokens with indices set to `-100` are
+            ignored (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, BertGenerationDecoder, BertGenerationConfig
+        >>> import torch
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("google/bert_for_seq_generation_L-24_bbc_encoder")
+        >>> config = BertGenerationConfig.from_pretrained("google/bert_for_seq_generation_L-24_bbc_encoder")
+        >>> config.is_decoder = True
+        >>> model = BertGenerationDecoder.from_pretrained(
+        ...     "google/bert_for_seq_generation_L-24_bbc_encoder", config=config
+        ... )
+
+        >>> inputs = tokenizer("Hello, my dog is cute", return_token_type_ids=False, return_tensors="pt")
+        >>> outputs = model(**inputs)
+
+        >>> prediction_logits = outputs.logits
+        ```"""
+        ...
 
 __all__ = [
     "BertGenerationDecoder",

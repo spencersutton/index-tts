@@ -9,12 +9,24 @@ from ...image_utils import ImageInput
 from ...processing_utils import Unpack
 from ...utils import auto_docstring, is_torch_available, is_torchvision_available, is_vision_available
 
+"""Fast Image processor class for SigLIP."""
 if is_vision_available(): ...
 if is_torch_available(): ...
 if is_torchvision_available(): ...
 logger = ...
 
 class Gemma3FastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
+    """
+    do_pan_and_scan (`bool`, *optional*):
+        Whether to apply `pan_and_scan` to images.
+    pan_and_scan_min_crop_size (`int`, *optional*):
+        Minimum size of each crop in pan and scan.
+    pan_and_scan_max_num_crops (`int`, *optional*):
+        Maximum number of crops per image in pan and scan.
+    pan_and_scan_min_ratio_to_activate (`float`, *optional*):
+        Minimum aspect ratio to activate pan and scan.
+    """
+
     do_pan_and_scan: Optional[bool]
     pan_and_scan_min_crop_size: Optional[int]
     pan_and_scan_max_num_crops: Optional[int]
@@ -44,7 +56,23 @@ class Gemma3ImageProcessorFast(BaseImageProcessorFast):
         pan_and_scan_min_crop_size: int,
         pan_and_scan_max_num_crops: int,
         pan_and_scan_min_ratio_to_activate: float,
-    ): ...
+    ):  # -> list[Any] | list[Tensor]:
+        """
+        Pan and Scan an image, by cropping into smaller images when the aspect ratio exceeds
+        minimum allowed ratio.
+
+        Args:
+            image (`torch.Tensor`):
+                Image to resize.
+            pan_and_scan_min_crop_size (`int`, *optional*):
+                Minimum size of each crop in pan and scan.
+            pan_and_scan_max_num_crops (`int`, *optional*):
+                Maximum number of crops per image in pan and scan.
+            pan_and_scan_min_ratio_to_activate (`float`, *optional*):
+                Minimum aspect ratio to activate pan and scan.
+        """
+        ...
+
     @auto_docstring
     def preprocess(self, images: ImageInput, **kwargs: Unpack[Gemma3FastImageProcessorKwargs]) -> BatchFeature: ...
 

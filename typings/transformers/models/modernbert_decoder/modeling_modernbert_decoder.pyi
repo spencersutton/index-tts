@@ -27,9 +27,15 @@ def eager_attention_forward(
     scaling: Optional[float] = ...,
     sliding_window: Optional[int] = ...,
     **kwargs,
-) -> tuple[torch.Tensor, Optional[torch.Tensor]]: ...
+) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
+    """A simple eager attention implementation for ModernBERT decoder."""
+    ...
 
 class ModernBertDecoderAttention(nn.Module):
+    """Performs causal multi-headed self attention for ModernBERT decoder.
+
+    It supports both local attention (sliding window) and global attention patterns.
+    """
     def __init__(self, config: ModernBertDecoderConfig, layer_idx: Optional[int] = ...) -> None: ...
     def forward(
         self,
@@ -71,8 +77,10 @@ class ModernBertDecoderPreTrainedModel(ModernBertPreTrainedModel):
 @auto_docstring
 class ModernBertDecoderModel(ModernBertDecoderPreTrainedModel):
     def __init__(self, config: ModernBertDecoderConfig) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     @check_model_inputs
     @auto_docstring
     def forward(
@@ -87,12 +95,18 @@ class ModernBertDecoderModel(ModernBertDecoderPreTrainedModel):
         **kwargs,
     ) -> Union[tuple[torch.Tensor, ...], BaseModelOutputWithPast]: ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The ModernBert Decoder Model with a language modeling head on top for causal language modeling (CLM).
+    """
+)
 class ModernBertDecoderForCausalLM(ModernBertDecoderPreTrainedModel, GenerationMixin):
     _tied_weights_keys = ...
     def __init__(self, config: ModernBertDecoderConfig) -> None: ...
-    def get_output_embeddings(self): ...
-    def set_output_embeddings(self, new_embeddings): ...
+    def get_output_embeddings(self):  # -> Linear:
+        ...
+    def set_output_embeddings(self, new_embeddings):  # -> None:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -105,9 +119,50 @@ class ModernBertDecoderForCausalLM(ModernBertDecoderPreTrainedModel, GenerationM
         labels: Optional[torch.LongTensor] = ...,
         use_cache: Optional[bool] = ...,
         **kwargs,
-    ) -> Union[tuple, CausalLMOutputWithPast]: ...
+    ) -> Union[tuple, CausalLMOutputWithPast]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
 
-@auto_docstring(custom_intro=...)
+        Returns:
+            [`~modeling_outputs.CausalLMOutputWithPast`]
+            comprising various elements depending on the configuration and inputs.
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, ModernBertDecoderForCausalLM
+
+        >>> model = ModernBertDecoderForCausalLM.from_pretrained("blab-jhu/test-32m-dec")
+        >>> tokenizer = AutoTokenizer.from_pretrained("blab-jhu/test-32m-dec")
+
+        >>> prompt = "The capital of France is"
+        >>> inputs = tokenizer(prompt, return_tensors="pt")
+
+        >>> # Generate
+        >>> generate_ids = model.generate(inputs.input_ids, max_length=1)
+        >>> tokenizer.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+        "The capital of France is Paris"
+        ```
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    The ModernBert Decoder Model with a sequence classification head on top (linear layer).
+
+    [`ModernBertDecoderForSequenceClassification`] uses the last token in order to do the classification, as other causal models
+    (e.g. GPT-1, GPT-2) do.
+
+    Since it does classification on the last token, it requires to know the position of the last token. If a
+    `pad_token_id` is defined in the configuration, it finds the last token that is not a padding token in each row. If
+    no `pad_token_id` is defined, it simply takes the last value in each row of the batch. Since it cannot guess the
+    padding tokens when `inputs_embeds` are passed instead of `input_ids`, it does the same (take the last value in
+    each row of the batch).
+    """
+)
 class ModernBertDecoderForSequenceClassification(ModernBertDecoderPreTrainedModel):
     def __init__(self, config: ModernBertDecoderConfig) -> None: ...
     @can_return_tuple
@@ -122,7 +177,14 @@ class ModernBertDecoderForSequenceClassification(ModernBertDecoderPreTrainedMode
         labels: Optional[torch.LongTensor] = ...,
         use_cache: Optional[bool] = ...,
         **kwargs,
-    ) -> Union[tuple, SequenceClassifierOutputWithPast]: ...
+    ) -> Union[tuple, SequenceClassifierOutputWithPast]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 __all__ = [
     "ModernBertDecoderModel",

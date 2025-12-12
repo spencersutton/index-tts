@@ -7,6 +7,7 @@ from ...image_processing_utils_fast import BaseImageProcessorFast
 from ...image_utils import ImageInput, SizeDict
 from ...utils import auto_docstring, is_torch_available, is_torchvision_available, is_vision_available
 
+"""Fast Image processor class for Chameleon."""
 if is_vision_available(): ...
 if is_torch_available(): ...
 if is_torchvision_available(): ...
@@ -26,9 +27,34 @@ class ChameleonImageProcessorFast(BaseImageProcessorFast):
     rescale_factor = ...
     do_normalize = ...
     do_convert_rgb = ...
-    def convert_to_rgb(self, image: ImageInput) -> ImageInput: ...
+    def convert_to_rgb(self, image: ImageInput) -> ImageInput:
+        """
+        Convert image to RGB by blending the transparency layer if it's in RGBA format.
+        If image is not `PIL.Image`, it si simply returned without modifications.
+
+        Args:
+            image (`ImageInput`):
+                Image to convert.
+        """
+        ...
+
     def resize(
         self, image: torch.Tensor, size: SizeDict, interpolation: F.InterpolationMode = ..., **kwargs
-    ) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """
+        Resize an image to `(size["height"], size["width"])`.
+
+        Args:
+            image (`torch.Tensor`):
+                Image to resize.
+            size (`SizeDict`):
+                Dictionary in the format `{"height": int, "width": int}` specifying the size of the output image.
+            resample (`InterpolationMode`, *optional*, defaults to `InterpolationMode.BILINEAR`):
+                `InterpolationMode` filter to use when resizing the image e.g. `InterpolationMode.BICUBIC`.
+
+        Returns:
+            `torch.Tensor`: The resized image.
+        """
+        ...
 
 __all__ = ["ChameleonImageProcessorFast"]

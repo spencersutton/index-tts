@@ -13,23 +13,42 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring
 from .configuration_xglm import XGLMConfig
 
+"""PyTorch XGLM model."""
 logger = ...
 
 class XGLMScaledWordEmbedding(nn.Embedding):
+    """
+    This module overrides nn.Embeddings' forward by multiplying with embeddings scale.
+    """
     def __init__(
         self, num_embeddings: int, embedding_dim: int, padding_idx: int, embed_scale: Optional[float] = ...
     ) -> None: ...
-    def forward(self, input_ids: torch.Tensor): ...
+    def forward(self, input_ids: torch.Tensor):  # -> Tensor:
+        ...
 
 class XGLMSinusoidalPositionalEmbedding(nn.Module):
+    """This module produces sinusoidal positional embeddings of any length."""
     def __init__(self, num_positions: int, embedding_dim: int, padding_idx: Optional[int] = ...) -> None: ...
-    def make_weights(self, num_embeddings: int, embedding_dim: int, padding_idx: Optional[int] = ...): ...
+    def make_weights(self, num_embeddings: int, embedding_dim: int, padding_idx: Optional[int] = ...):  # -> None:
+        ...
     @staticmethod
-    def get_embedding(num_embeddings: int, embedding_dim: int, padding_idx: Optional[int] = ...): ...
+    def get_embedding(num_embeddings: int, embedding_dim: int, padding_idx: Optional[int] = ...):  # -> Tensor:
+        """
+        Build sinusoidal embeddings.
+
+        This matches the implementation in tensor2tensor, but differs slightly from the description in Section 3.5 of
+        "Attention Is All You Need".
+        """
+        ...
+
     @torch.no_grad()
-    def forward(self, position_ids: Optional[torch.Tensor] = ..., past_key_values_length: int = ...): ...
+    def forward(
+        self, position_ids: Optional[torch.Tensor] = ..., past_key_values_length: int = ...
+    ):  # -> Tensor | Any:
+        ...
 
 class XGLMAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(
         self,
         embed_dim: int,
@@ -48,7 +67,9 @@ class XGLMAttention(nn.Module):
         layer_head_mask: Optional[torch.Tensor] = ...,
         output_attentions: bool = ...,
         cache_position: Optional[torch.Tensor] = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+        """Input shape: Batch x Time x Channel"""
+        ...
 
 class XGLMDecoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: XGLMConfig, layer_idx=...) -> None: ...
@@ -64,7 +85,26 @@ class XGLMDecoderLayer(GradientCheckpointingLayer):
         output_attentions: Optional[bool] = ...,
         use_cache: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
-    ) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            attention_mask (`torch.FloatTensor`): attention mask of size
+                `(batch, 1, tgt_len, src_len)` where padding elements are indicated by very large negative values.
+            encoder_hidden_states (`torch.FloatTensor`):
+                cross attention input to the layer of shape `(batch, seq_len, embed_dim)`
+            encoder_attention_mask (`torch.FloatTensor`): encoder attention mask of size
+                `(batch, 1, tgt_len, src_len)` where padding elements are indicated by very large negative values.
+            layer_head_mask (`torch.FloatTensor`): mask for attention heads in a given layer of size
+                `(encoder_attention_heads,)`.
+            cross_attn_layer_head_mask (`torch.FloatTensor`): mask for cross-attention heads in a given layer of
+                size `(decoder_attention_heads,)`.
+            past_key_value (`Tuple(torch.FloatTensor)`): cached past key and value projection states
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+        """
+        ...
 
 @auto_docstring
 class XGLMPreTrainedModel(PreTrainedModel):
@@ -75,7 +115,13 @@ class XGLMPreTrainedModel(PreTrainedModel):
 
 @auto_docstring
 class XGLMModel(XGLMPreTrainedModel):
-    def __init__(self, config: XGLMConfig, embed_tokens: Optional[nn.Embedding] = ...) -> None: ...
+    def __init__(self, config: XGLMConfig, embed_tokens: Optional[nn.Embedding] = ...) -> None:
+        r"""
+        embed_tokens (`nn.Embedding`, *optional*):
+            output embeddings
+        """
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -93,9 +139,33 @@ class XGLMModel(XGLMPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple[torch.Tensor], BaseModelOutputWithPastAndCrossAttentions]: ...
+    ) -> Union[tuple[torch.Tensor], BaseModelOutputWithPastAndCrossAttentions]:
+        r"""
+        encoder_hidden_states (`torch.FloatTensor` of shape `(batch_size, encoder_sequence_length, hidden_size)`, *optional*):
+            Sequence of hidden-states at the output of the last layer of the encoder. Used in the cross-attention of
+            the decoder.
+        encoder_attention_mask (`torch.LongTensor` of shape `(batch_size, encoder_sequence_length)`, *optional*):
+            Mask to avoid performing cross-attention on padding tokens indices of encoder input_ids. Mask values
+            selected in `[0, 1]`:
 
-@auto_docstring(custom_intro=...)
+            - 1 for tokens that are **not masked**,
+            - 0 for tokens that are **masked**.
+
+            [What are attention masks?](../glossary#attention-mask)
+        cross_attn_head_mask (`torch.Tensor` of shape `(num_layers, attention_heads)`, *optional*):
+            Mask to nullify selected heads of the cross-attention modules. Mask values selected in `[0, 1]`:
+
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    The XGLM Model transformer with a language modeling head on top (linear layer with weights tied to the input
+    embeddings).
+    """
+)
 class XGLMForCausalLM(XGLMPreTrainedModel, GenerationMixin):
     base_model_prefix = ...
     _tied_weights_keys = ...
@@ -119,6 +189,29 @@ class XGLMForCausalLM(XGLMPreTrainedModel, GenerationMixin):
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
         **kwargs,
-    ) -> Union[tuple[torch.Tensor], CausalLMOutputWithCrossAttentions]: ...
+    ) -> Union[tuple[torch.Tensor], CausalLMOutputWithCrossAttentions]:
+        r"""
+        encoder_hidden_states (`torch.FloatTensor` of shape `(batch_size, encoder_sequence_length, hidden_size)`, *optional*):
+            Sequence of hidden-states at the output of the last layer of the encoder. Used in the cross-attention of
+            the decoder.
+        encoder_attention_mask (`torch.LongTensor` of shape `(batch_size, encoder_sequence_length)`, *optional*):
+            Mask to avoid performing cross-attention on padding tokens indices of encoder input_ids. Mask values
+            selected in `[0, 1]`:
+
+            - 1 for tokens that are **not masked**,
+            - 0 for tokens that are **masked**.
+
+            [What are attention masks?](../glossary#attention-mask)
+        cross_attn_head_mask (`torch.Tensor` of shape `(num_layers, attention_heads)`, *optional*):
+            Mask to nullify selected heads of the cross-attention modules. Mask values selected in `[0, 1]`:
+
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+        """
+        ...
 
 __all__ = ["XGLMForCausalLM", "XGLMModel", "XGLMPreTrainedModel"]

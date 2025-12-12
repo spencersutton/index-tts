@@ -18,16 +18,23 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring
 from .configuration_nystromformer import NystromformerConfig
 
+"""PyTorch Nystromformer model."""
 logger = ...
 
 class NystromformerEmbeddings(nn.Module):
+    """Construct the embeddings from word, position and token_type embeddings."""
     def __init__(self, config) -> None: ...
-    def forward(self, input_ids=..., token_type_ids=..., position_ids=..., inputs_embeds=...): ...
+    def forward(self, input_ids=..., token_type_ids=..., position_ids=..., inputs_embeds=...):  # -> Any:
+        ...
 
 class NystromformerSelfAttention(nn.Module):
     def __init__(self, config, position_embedding_type=...) -> None: ...
-    def iterative_inv(self, mat, n_iter=...): ...
-    def forward(self, hidden_states, attention_mask=..., output_attentions=...): ...
+    def iterative_inv(self, mat, n_iter=...):  # -> Tensor:
+        ...
+    def forward(
+        self, hidden_states, attention_mask=..., output_attentions=...
+    ):  # -> tuple[Tensor | Any, Tensor] | tuple[Tensor | Any]:
+        ...
 
 class NystromformerSelfOutput(nn.Module):
     def __init__(self, config) -> None: ...
@@ -35,8 +42,10 @@ class NystromformerSelfOutput(nn.Module):
 
 class NystromformerAttention(nn.Module):
     def __init__(self, config, position_embedding_type=...) -> None: ...
-    def prune_heads(self, heads): ...
-    def forward(self, hidden_states, attention_mask=..., output_attentions=...): ...
+    def prune_heads(self, heads):  # -> None:
+        ...
+    def forward(self, hidden_states, attention_mask=..., output_attentions=...):  # -> Any:
+        ...
 
 class NystromformerIntermediate(nn.Module):
     def __init__(self, config) -> None: ...
@@ -48,8 +57,10 @@ class NystromformerOutput(nn.Module):
 
 class NystromformerLayer(GradientCheckpointingLayer):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states, attention_mask=..., output_attentions=...): ...
-    def feed_forward_chunk(self, attention_output): ...
+    def forward(self, hidden_states, attention_mask=..., output_attentions=...):  # -> Any:
+        ...
+    def feed_forward_chunk(self, attention_output):  # -> Any:
+        ...
 
 class NystromformerEncoder(nn.Module):
     def __init__(self, config) -> None: ...
@@ -61,7 +72,8 @@ class NystromformerEncoder(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Tensor | tuple[Tensor, ...] | Any | tuple[()] | tuple[Any, ...], ...] | BaseModelOutputWithPastAndCrossAttentions:
+        ...
 
 class NystromformerPredictionHeadTransform(nn.Module):
     def __init__(self, config) -> None: ...
@@ -69,7 +81,8 @@ class NystromformerPredictionHeadTransform(nn.Module):
 
 class NystromformerLMPredictionHead(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class NystromformerOnlyMLMHead(nn.Module):
     def __init__(self, config) -> None: ...
@@ -84,8 +97,10 @@ class NystromformerPreTrainedModel(PreTrainedModel):
 @auto_docstring
 class NystromformerModel(NystromformerPreTrainedModel):
     def __init__(self, config) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -104,8 +119,10 @@ class NystromformerModel(NystromformerPreTrainedModel):
 class NystromformerForMaskedLM(NystromformerPreTrainedModel):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
-    def get_output_embeddings(self): ...
-    def set_output_embeddings(self, new_embeddings): ...
+    def get_output_embeddings(self):  # -> Linear:
+        ...
+    def set_output_embeddings(self, new_embeddings):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -119,13 +136,27 @@ class NystromformerForMaskedLM(NystromformerPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], MaskedLMOutput]: ...
+    ) -> Union[tuple[torch.Tensor], MaskedLMOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should be in `[-100, 0, ...,
+            config.vocab_size]` (see `input_ids` docstring) Tokens with indices set to `-100` are ignored (masked), the
+            loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+        """
+        ...
 
 class NystromformerClassificationHead(nn.Module):
+    """Head for sentence-level classification tasks."""
     def __init__(self, config) -> None: ...
-    def forward(self, features, **kwargs): ...
+    def forward(self, features, **kwargs):  # -> Any:
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Nyströmformer Model transformer with a sequence classification/regression head on top (a linear layer on top of the
+    pooled output) e.g. for GLUE tasks.
+    """
+)
 class NystromformerForSequenceClassification(NystromformerPreTrainedModel):
     def __init__(self, config) -> None: ...
     @auto_docstring
@@ -141,7 +172,14 @@ class NystromformerForSequenceClassification(NystromformerPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], SequenceClassifierOutput]: ...
+    ) -> Union[tuple[torch.Tensor], SequenceClassifierOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 @auto_docstring
 class NystromformerForMultipleChoice(NystromformerPreTrainedModel):
@@ -159,7 +197,38 @@ class NystromformerForMultipleChoice(NystromformerPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], MultipleChoiceModelOutput]: ...
+    ) -> Union[tuple[torch.Tensor], MultipleChoiceModelOutput]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`):
+            Indices of input sequence tokens in the vocabulary.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        token_type_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`, *optional*):
+            Segment token indices to indicate first and second portions of the inputs. Indices are selected in `[0,
+            1]`:
+
+            - 0 corresponds to a *sentence A* token,
+            - 1 corresponds to a *sentence B* token.
+
+            [What are token type IDs?](../glossary#token-type-ids)
+        position_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`, *optional*):
+            Indices of positions of each input sequence tokens in the position embeddings. Selected in the range `[0,
+            config.max_position_embeddings - 1]`.
+
+            [What are position IDs?](../glossary#position-ids)
+        inputs_embeds (`torch.FloatTensor` of shape `(batch_size, num_choices, sequence_length, hidden_size)`, *optional*):
+            Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation. This
+            is useful if you want more control over how to convert *input_ids* indices into associated vectors than the
+            model's internal embedding lookup matrix.
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the multiple choice classification loss. Indices should be in `[0, ...,
+            num_choices-1]` where `num_choices` is the size of the second dimension of the input tensors. (See
+            `input_ids` above)
+        """
+        ...
 
 @auto_docstring
 class NystromformerForTokenClassification(NystromformerPreTrainedModel):
@@ -177,7 +246,12 @@ class NystromformerForTokenClassification(NystromformerPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], TokenClassifierOutput]: ...
+    ) -> Union[tuple[torch.Tensor], TokenClassifierOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the token classification loss. Indices should be in `[0, ..., config.num_labels - 1]`.
+        """
+        ...
 
 @auto_docstring
 class NystromformerForQuestionAnswering(NystromformerPreTrainedModel):

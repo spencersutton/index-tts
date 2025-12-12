@@ -36,21 +36,42 @@ def simple_eager_attention_forward(
     scaling: float,
     dropout: float = ...,
     **kwargs: Unpack[TransformersKwargs],
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class Phi4MultimodalVisionAttention(nn.Module):
     def __init__(self, config: Phi4MultimodalVisionConfig) -> None: ...
     def forward(
         self, hidden_states: torch.Tensor, attention_mask: Optional[torch.Tensor] = ..., **kwargs
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]: ...
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
+        """Input shape: Batch x Time x Channel"""
+        ...
 
 class Phi4MultimodalVisionEncoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: Phi4MultimodalVisionConfig) -> None: ...
     def forward(
         self, hidden_states: torch.Tensor, attention_mask: torch.Tensor, output_attentions: Optional[bool] = ...
-    ) -> tuple[torch.FloatTensor]: ...
+    ) -> tuple[torch.FloatTensor]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`):
+                Input to the layer of shape `(batch, seq_len, embed_dim)`.
+            attention_mask (`torch.FloatTensor`):
+                Attention mask of shape `(batch, 1, q_len, k_v_seq_len)` where padding elements are indicated by very large negative values.
+            output_attentions (`bool`, *optional*, defaults to `False`):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+        """
+        ...
 
 class Phi4MultimodalVisionEncoder(nn.Module):
+    """
+    Transformer encoder consisting of `config.num_hidden_layers` self attention layers. Each layer is a
+    [`Phi4MultimodalVisionEncoderLayer`].
+
+    Args:
+        config: Phi4MultimodalVisionConfig
+    """
     def __init__(self, config: Phi4MultimodalVisionConfig) -> None: ...
     @can_return_tuple
     def forward(
@@ -59,14 +80,60 @@ class Phi4MultimodalVisionEncoder(nn.Module):
         attention_mask: Optional[torch.Tensor] = ...,
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
-    ) -> BaseModelOutput: ...
+    ) -> BaseModelOutput:
+        r"""
+        Args:
+            inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
+                Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation.
+                This is useful if you want more control over how to convert `input_ids` indices into associated vectors
+                than the model's internal embedding lookup matrix.
+            attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Mask to avoid performing attention on padding token indices. Mask values selected in `[0, 1]`:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers. See `hidden_states` under returned tensors
+                for more detail.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`~utils.ModelOutput`] instead of a plain tuple.
+        """
+        ...
 
 def trunc_normal_tf_(
     tensor: torch.Tensor, mean: float = ..., std: float = ..., a: float = ..., b: float = ...
-) -> torch.Tensor: ...
-def variance_scaling_(tensor, scale=..., mode=..., distribution=...): ...
-def lecun_normal_(tensor): ...
-def default_flax_embed_init(tensor): ...
+) -> torch.Tensor:
+    """Fills the input Tensor with values drawn from a truncated
+    normal distribution. The values are effectively drawn from the
+    normal distribution :math:`\\mathcal{N}(\text{mean}, \text{std}^2)`
+    with values outside :math:`[a, b]` redrawn until they are within
+    the bounds. The method used for generating the random values works
+    best when :math:`a \\leq \text{mean} \\leq b`.
+
+    NOTE: this 'tf' variant behaves closer to Tensorflow / JAX impl where the
+    bounds [a, b] are applied when sampling the normal distribution with mean=0, std=1.0
+    and the result is subsequently scaled and shifted by the mean and std args.
+
+    Args:
+        tensor: an n-dimensional `torch.Tensor`
+        mean: the mean of the normal distribution
+        std: the standard deviation of the normal distribution
+        a: the minimum cutoff value
+        b: the maximum cutoff value
+    """
+    ...
+
+def variance_scaling_(tensor, scale=..., mode=..., distribution=...):  # -> None:
+    ...
+def lecun_normal_(tensor):  # -> None:
+    ...
+def default_flax_embed_init(tensor):  # -> None:
+    ...
 
 @auto_docstring
 class Phi4MultimodalVisionPreTrainedModel(PreTrainedModel):
@@ -81,12 +148,24 @@ class Phi4MultimodalVisionPreTrainedModel(PreTrainedModel):
 
 class Phi4MultimodalVisionEmbeddings(nn.Module):
     def __init__(self, config: Phi4MultimodalVisionConfig) -> None: ...
-    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor: ...
+    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor:
+        """
+        This method allows to interpolate the pre-trained position encodings, to be able to use the model on higher resolution
+        images. This method is also adapted to support torch.jit tracing and no class embeddings.
+
+        Adapted from:
+        - https://github.com/facebookresearch/dino/blob/de9ee3df6cf39fac952ab558447af1fa1365362a/vision_transformer.py#L174-L194, and
+        - https://github.com/facebookresearch/dinov2/blob/e1277af2ba9496fbadf7aec6eba56e8d882d1e35/dinov2/models/vision_transformer.py#L179-L211
+        """
+        ...
+
     def forward(self, pixel_values: torch.FloatTensor, patch_attention_mask: torch.BoolTensor) -> torch.Tensor: ...
 
 class Phi4MultimodalVisionMultiheadAttentionPoolingHead(nn.Module):
+    """Multihead Attention Pooling."""
     def __init__(self, config: Phi4MultimodalVisionConfig) -> None: ...
-    def forward(self, hidden_state, attention_mask): ...
+    def forward(self, hidden_state, attention_mask):  # -> Any:
+        ...
 
 class Phi4MultimodalVisionModel(Phi4MultimodalVisionPreTrainedModel):
     config: Phi4MultimodalVisionConfig
@@ -102,6 +181,7 @@ class Phi4MultimodalVisionModel(Phi4MultimodalVisionPreTrainedModel):
     ) -> BaseModelOutputWithPooling: ...
 
 class Phi4MultimodalImageEmbedding(nn.Module):
+    """Image embedding."""
     def __init__(self, config: Phi4MultimodalConfig) -> None: ...
     def get_img_features(self, img_embeds: torch.FloatTensor, attention_mask=...) -> torch.FloatTensor: ...
     def forward(
@@ -115,15 +195,18 @@ class Phi4MultimodalImageEmbedding(nn.Module):
 
 class Phi4MultimodalAudioMLP(nn.Module):
     def __init__(self, config: Phi4MultimodalAudioConfig) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class Phi4MultimodalAudioAttention(nn.Module):
     def __init__(self, config: Phi4MultimodalAudioConfig) -> None: ...
-    def forward(self, hidden_states: torch.Tensor, attention_mask: torch.Tensor, **kwargs): ...
+    def forward(self, hidden_states: torch.Tensor, attention_mask: torch.Tensor, **kwargs):  # -> Any:
+        ...
 
 class Phi4MultimodalAudioDepthWiseSeperableConv1d(nn.Module):
     def __init__(self, config: Phi4MultimodalAudioConfig, padding: int = ...) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class Phi4MultimodalAudioGluPointWiseConv(nn.Module):
     def __init__(self, config: Phi4MultimodalAudioConfig) -> None: ...
@@ -131,19 +214,25 @@ class Phi4MultimodalAudioGluPointWiseConv(nn.Module):
 
 class Phi4MultimodalAudioConvModule(nn.Module):
     def __init__(self, config: Phi4MultimodalAudioConfig) -> None: ...
-    def forward(self, hidden_states: torch.Tensor): ...
+    def forward(self, hidden_states: torch.Tensor):  # -> Any:
+        ...
 
 class Phi4MultimodalAudioConformerEncoderLayer(nn.Module):
     def __init__(self, config: Phi4MultimodalAudioConfig) -> None: ...
-    def forward(self, hidden_states: torch.Tensor, attention_mask: torch.Tensor): ...
+    def forward(self, hidden_states: torch.Tensor, attention_mask: torch.Tensor):  # -> Any:
+        ...
 
 class Phi4MultimodalAudioNemoConvSubsampling(torch.nn.Module):
     def __init__(self, config: Phi4MultimodalAudioConfig) -> None: ...
-    def forward(self, hidden_states: torch.Tensor, mask: Optional[torch.Tensor]): ...
+    def forward(
+        self, hidden_states: torch.Tensor, mask: Optional[torch.Tensor]
+    ):  # -> tuple[Tensor, None] | tuple[Tensor, Tensor]:
+        ...
 
 class Phi4MultimodalAudioRelativeAttentionBias(nn.Module):
     def __init__(self, config: Phi4MultimodalAudioConfig) -> None: ...
-    def forward(self, x): ...
+    def forward(self, x):  # -> Any:
+        ...
 
 class Phi4MultimodalAudioMeanVarianceNormLayer(nn.Module):
     def __init__(self, config: Phi4MultimodalAudioConfig) -> None: ...
@@ -158,14 +247,37 @@ class Phi4MultimodalAudioPreTrainedModel(PreTrainedModel):
     _supports_sdpa = ...
     _supports_flex_attn = ...
 
-def unfold_tensor(tensor, max_seq_len): ...
-def adaptive_enc_mask(x_len, chunk_start_idx, left_window=..., right_window=...): ...
+def unfold_tensor(tensor, max_seq_len):  # -> Tensor:
+    """
+    For a given tensor with shape of (N, T, D), if sequence length T is longer than max_seq_len,
+    this function unfold it to a (NT', max_seq_len, D) where T' is T // max_seq_len.
+    Args:
+        tensor: N, T, D
+    """
+    ...
+
+def adaptive_enc_mask(x_len, chunk_start_idx, left_window=..., right_window=...):
+    """
+    The function is very important for Transformer Transducer Streaming mode
+    Args:
+        xs_len (int): sequence length
+        chunk_start_idx (list): first idx of each chunk, such as [0,18,36,48]. It also supports adaptive chunk size [0,10,15,45]
+        left_window (int): how many left chunks can be seen
+        right_window (int): how many right chunks can be seen. It is used for chunk overlap model.
+        Returns:
+            mask (torch.Tensor): a mask tensor for streaming model
+    """
+    ...
 
 class Phi4MultimodalAudioModel(Phi4MultimodalAudioPreTrainedModel):
     def __init__(self, config: Phi4MultimodalAudioConfig) -> None: ...
-    def forward_embeddings(self, hidden_states, masks): ...
+    def forward_embeddings(self, hidden_states, masks):  # -> tuple[Any, Any, Any]:
+        """Forwarding the inputs through the top embedding layers"""
+        ...
+
     def calculate_hs_mask(self, hidden_states, device, mask): ...
-    def forward(self, hidden_states: torch.Tensor, mask: Optional[torch.Tensor]): ...
+    def forward(self, hidden_states: torch.Tensor, mask: Optional[torch.Tensor]):  # -> Tensor:
+        ...
 
 class Phi4MultimodalAudioEmbedding(nn.Module):
     def __init__(self, config: Phi4MultimodalConfig) -> None: ...
@@ -181,16 +293,31 @@ class Phi4MultimodalAudioEmbedding(nn.Module):
 
 @use_kernel_forward_from_hub("RMSNorm")
 class Phi4MultimodalRMSNorm(nn.Module):
-    def __init__(self, hidden_size, eps=...) -> None: ...
+    def __init__(self, hidden_size, eps=...) -> None:
+        """
+        Phi4MultimodalRMSNorm is equivalent to T5LayerNorm
+        """
+        ...
+
     def forward(self, hidden_states): ...
-    def extra_repr(self): ...
+    def extra_repr(self):  # -> str:
+        ...
 
 class Phi4MultimodalMLP(nn.Module):
     def __init__(self, config) -> None: ...
     def forward(self, hidden_states: torch.FloatTensor) -> torch.FloatTensor: ...
 
-def rotate_half(x): ...
-def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor: ...
+def rotate_half(x):  # -> Tensor:
+    """Rotates half the hidden dims of the input."""
+    ...
+
+def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
+    """
+    This is the equivalent of torch.repeat_interleave(x, dim=1, repeats=n_rep). The hidden states go from (batch,
+    num_key_value_heads, seqlen, head_dim) to (batch, num_attention_heads, seqlen, head_dim)
+    """
+    ...
+
 def eager_attention_forward(
     module: nn.Module,
     query: torch.Tensor,
@@ -200,10 +327,32 @@ def eager_attention_forward(
     scaling: float,
     dropout: float = ...,
     **kwargs: Unpack[TransformersKwargs],
-): ...
-def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
+def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...):  # -> tuple[Tensor, Tensor]:
+    """Applies Rotary Position Embedding to the query and key tensors.
+
+    Args:
+        q (`torch.Tensor`): The query tensor.
+        k (`torch.Tensor`): The key tensor.
+        cos (`torch.Tensor`): The cosine part of the rotary embedding.
+        sin (`torch.Tensor`): The sine part of the rotary embedding.
+        position_ids (`torch.Tensor`, *optional*):
+            Deprecated and unused.
+        unsqueeze_dim (`int`, *optional*, defaults to 1):
+            The 'unsqueeze_dim' argument specifies the dimension along which to unsqueeze cos[position_ids] and
+            sin[position_ids] so that they can be properly broadcasted to the dimensions of q and k. For example, note
+            that cos[position_ids] and sin[position_ids] have the shape [batch_size, seq_len, head_dim]. Then, if q and
+            k have the shape [batch_size, heads, seq_len, head_dim], then setting unsqueeze_dim=1 makes
+            cos[position_ids] and sin[position_ids] broadcastable to the shapes of q and k. Similarly, if q and k have
+            the shape [batch_size, seq_len, heads, head_dim], then set unsqueeze_dim=2.
+    Returns:
+        `tuple(torch.Tensor)` comprising of the query and key tensors rotated using the Rotary Position Embedding.
+    """
+    ...
 
 class Phi4MultimodalAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config: Phi4MultimodalConfig, layer_idx: Optional[int] = ...) -> None: ...
     def forward(
         self,
@@ -230,6 +379,7 @@ class Phi4MultimodalDecoderLayer(GradientCheckpointingLayer):
     ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]: ...
 
 class Phi4MultimodalFeatureEmbedding(nn.Module):
+    """Image-audio embedding."""
     def __init__(self, config: Phi4MultimodalConfig) -> None: ...
     def forward(
         self,
@@ -247,7 +397,8 @@ class Phi4MultimodalRotaryEmbedding(nn.Module):
     def __init__(self, config: Phi4MultimodalConfig, device=...) -> None: ...
     @torch.no_grad()
     @dynamic_rope_update
-    def forward(self, x, position_ids): ...
+    def forward(self, x, position_ids):  # -> tuple[Tensor, Tensor]:
+        ...
 
 @auto_docstring
 class Phi4MultimodalPreTrainedModel(PreTrainedModel):
@@ -286,7 +437,24 @@ class Phi4MultimodalModel(Phi4MultimodalPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         **kwargs,
-    ) -> BaseModelOutputWithPast: ...
+    ) -> BaseModelOutputWithPast:
+        r"""
+        image_pixel_values (`torch.FloatTensor`, *optional*):
+            If the input contains images, these correspond to the pixel values after transformations (as returned by
+            the Processor)
+        image_sizes (`torch.LongTensor`, *optional*):
+            If the input contains images, these correspond to size of each image.
+        image_attention_mask (`torch.LongTensor`, *optional*):
+            Attention mask for the images.
+        audio_input_features (`torch.FloatTensor`, *optional*):
+            If the input contains audio samples, these correspond to the values after transformation (as returned by
+            the Processor).
+        audio_embed_sizes (`torch.Tensor`, *optional*):
+            Size of the audio inputs.
+        audio_attention_mask (`torch.Tensor, *optional*):
+            Attention mask for the audio inputs.
+        """
+        ...
 
 @auto_docstring
 class Phi4MultimodalForCausalLM(Phi4MultimodalPreTrainedModel, GenerationMixin):
@@ -294,8 +462,10 @@ class Phi4MultimodalForCausalLM(Phi4MultimodalPreTrainedModel, GenerationMixin):
     _tp_plan = ...
     _pp_plan = ...
     def __init__(self, config) -> None: ...
-    def set_decoder(self, decoder): ...
-    def get_decoder(self): ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> Phi4MultimodalModel:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -318,7 +488,41 @@ class Phi4MultimodalForCausalLM(Phi4MultimodalPreTrainedModel, GenerationMixin):
         cache_position: Optional[torch.LongTensor] = ...,
         logits_to_keep: Union[int, torch.Tensor] = ...,
         **kwargs,
-    ) -> CausalLMOutputWithPast: ...
+    ) -> CausalLMOutputWithPast:
+        r"""
+        image_pixel_values (`torch.FloatTensor`, *optional*):
+            If the input contains images, these correspond to the pixel values after transformations (as returned by
+            the Processor)
+        image_sizes (`torch.LongTensor`, *optional*):
+            If the input contains images, these correspond to size of each image.
+        image_attention_mask (`torch.LongTensor`, *optional*):
+            Attention mask for the images.
+        audio_input_features (`torch.FloatTensor`, *optional*):
+            If the input contains audio samples, these correspond to the values after transformation (as returned by
+            the Processor).
+        audio_embed_sizes (`torch.Tensor`, *optional*):
+            Size of the audio inputs.
+        audio_attention_mask (`torch.Tensor, *optional*):
+            Attention mask for the audio inputs.
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Example:
+        ```python
+        >>> from transformers import AutoTokenizer, Phi4MultimodalForCausalLM
+        >>> model = Phi4MultimodalForCausalLM.from_pretrained("TBA")
+        >>> tokenizer = AutoTokenizer.from_pretrained("TBA")
+        >>> prompt = "This is an example script ."
+        >>> inputs = tokenizer(prompt, return_tensors="pt")
+        >>> # Generate
+        >>> generate_ids = model.generate(inputs.input_ids, max_length=30)
+        >>> tokenizer.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+        'This is an example script .\n Certainly! Below is a sample script that demonstrates a simple task, such as calculating the sum'
+        ```"""
+        ...
+
     def prepare_inputs_for_generation(
         self,
         input_ids,
@@ -336,7 +540,8 @@ class Phi4MultimodalForCausalLM(Phi4MultimodalPreTrainedModel, GenerationMixin):
         use_cache=...,
         logits_to_keep=...,
         **kwargs,
-    ): ...
+    ):  # -> dict[Any, Any]:
+        ...
 
 __all__ = [
     "Phi4MultimodalAudioPreTrainedModel",

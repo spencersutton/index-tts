@@ -17,6 +17,12 @@ if TYPE_CHECKING: ...
 if is_torch_available(): ...
 
 class Owlv2FastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
+    r"""
+    do_pad (`bool`, *optional*, defaults to `True`):
+        Controls whether to pad the image. Can be overridden by the `do_pad` parameter in the `preprocess`
+        method. If `True`, padding will be applied to the bottom and right of the image with grey pixels.
+    """
+
     do_pad: Optional[bool]
     ...
 
@@ -37,22 +43,101 @@ class Owlv2ImageProcessorFast(BaseImageProcessorFast):
     rescale_factor = ...
     do_pad = ...
     valid_kwargs = Owlv2FastImageProcessorKwargs
-    def post_process(self, outputs, target_sizes): ...
+    def post_process(self, outputs, target_sizes):  # -> list[dict[str, Any | str]]:
+        """
+        Converts the raw output of [`Owlv2ForObjectDetection`] into final bounding boxes in (top_left_x, top_left_y,
+        bottom_right_x, bottom_right_y) format.
+
+        Args:
+            outputs ([`Owlv2ObjectDetectionOutput`]):
+                Raw outputs of the model.
+            target_sizes (`torch.Tensor` of shape `(batch_size, 2)`):
+                Tensor containing the size (h, w) of each image of the batch. For evaluation, this must be the original
+                image size (before any data augmentation). For visualization, this should be the image size after data
+                augment, but before padding.
+        Returns:
+            `list[Dict]`: A list of dictionaries, each dictionary containing the scores, labels and boxes for an image
+            in the batch as predicted by the model.
+        """
+        ...
+
     def post_process_object_detection(
         self,
         outputs: Owlv2ObjectDetectionOutput,
         threshold: float = ...,
         target_sizes: Optional[Union[TensorType, list[tuple]]] = ...,
-    ): ...
-    def post_process_image_guided_detection(self, outputs, threshold=..., nms_threshold=..., target_sizes=...): ...
+    ):  # -> list[Any]:
+        """
+        Converts the raw output of [`Owlv2ForObjectDetection`] into final bounding boxes in (top_left_x, top_left_y,
+        bottom_right_x, bottom_right_y) format.
+
+        Args:
+            outputs ([`Owlv2ObjectDetectionOutput`]):
+                Raw outputs of the model.
+            threshold (`float`, *optional*, defaults to 0.1):
+                Score threshold to keep object detection predictions.
+            target_sizes (`torch.Tensor` or `list[tuple[int, int]]`, *optional*):
+                Tensor of shape `(batch_size, 2)` or list of tuples (`tuple[int, int]`) containing the target size
+                `(height, width)` of each image in the batch. If unset, predictions will not be resized.
+
+        Returns:
+            `list[Dict]`: A list of dictionaries, each dictionary containing the following keys:
+            - "scores": The confidence scores for each predicted box on the image.
+            - "labels": Indexes of the classes predicted by the model on the image.
+            - "boxes": Image bounding boxes in (top_left_x, top_left_y, bottom_right_x, bottom_right_y) format.
+        """
+        ...
+
+    def post_process_image_guided_detection(
+        self, outputs, threshold=..., nms_threshold=..., target_sizes=...
+    ):  # -> list[Any]:
+        """
+        Converts the output of [`Owlv2ForObjectDetection.image_guided_detection`] into the format expected by the COCO
+        api.
+
+        Args:
+            outputs ([`Owlv2ImageGuidedObjectDetectionOutput`]):
+                Raw outputs of the model.
+            threshold (`float`, *optional*, defaults to 0.0):
+                Minimum confidence threshold to use to filter out predicted boxes.
+            nms_threshold (`float`, *optional*, defaults to 0.3):
+                IoU threshold for non-maximum suppression of overlapping boxes.
+            target_sizes (`torch.Tensor`, *optional*):
+                Tensor of shape (batch_size, 2) where each entry is the (height, width) of the corresponding image in
+                the batch. If set, predicted normalized bounding boxes are rescaled to the target sizes. If left to
+                None, predictions will not be unnormalized.
+
+        Returns:
+            `list[Dict]`: A list of dictionaries, each dictionary containing the scores, labels and boxes for an image
+            in the batch as predicted by the model. All labels are set to None as
+            `Owlv2ForObjectDetection.image_guided_detection` perform one-shot object detection.
+        """
+        ...
+
     def __init__(self, **kwargs: Unpack[Owlv2FastImageProcessorKwargs]) -> None: ...
     @auto_docstring
-    def preprocess(self, images: ImageInput, **kwargs: Unpack[Owlv2FastImageProcessorKwargs]): ...
+    def preprocess(self, images: ImageInput, **kwargs: Unpack[Owlv2FastImageProcessorKwargs]):  # -> BatchFeature:
+        ...
     def pad(
         self, images: list[torch.Tensor], disable_grouping: Optional[bool], constant_value: float = ...
     ) -> list[torch.Tensor]: ...
     def resize(
         self, image: torch.Tensor, size: SizeDict, anti_aliasing: bool = ..., anti_aliasing_sigma=..., **kwargs
-    ) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """
+        Resize an image as per the original implementation.
+
+        Args:
+            image (`Tensor`):
+                Image to resize.
+            size (`dict[str, int]`):
+                Dictionary containing the height and width to resize the image to.
+            anti_aliasing (`bool`, *optional*, defaults to `True`):
+                Whether to apply anti-aliasing when downsampling the image.
+            anti_aliasing_sigma (`float`, *optional*, defaults to `None`):
+                Standard deviation for Gaussian kernel when downsampling the image. If `None`, it will be calculated
+                automatically.
+        """
+        ...
 
 __all__ = ["Owlv2ImageProcessorFast"]

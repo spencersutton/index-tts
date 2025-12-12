@@ -10,16 +10,35 @@ from ...image_utils import ImageInput
 from ...processing_utils import Unpack
 from ...utils import auto_docstring, is_torch_available, is_torchvision_available
 
+"""Fast Image processor class for SigLIP2."""
 if is_torch_available(): ...
 if is_torchvision_available(): ...
 logger = ...
 
-def convert_image_to_patches(image: torch.Tensor, patch_size: int) -> torch.Tensor: ...
+def convert_image_to_patches(image: torch.Tensor, patch_size: int) -> torch.Tensor:
+    """
+    Convert 3D tensor image of shape (num_channels, image_height, image_width) into 2D tensor of patches of shape
+    (num_patches_height * num_patches_width, patch_size * patch_size * num_channels).
+    """
+    ...
+
 def pad_along_first_dim(
     tensor: torch.Tensor, target_length: int, pad_value: int = ...
-) -> tuple[torch.Tensor, torch.Tensor]: ...
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """
+    Pad the tensor along the first dimension.
+    """
+    ...
 
 class Siglip2FastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
+    """
+    patch_size (`int`, *optional*, defaults to 16):
+        The size (resolution) of each patch the image will be split to.
+    max_num_patches (`int`, *optional*, defaults to 256):
+        The image will be resized to have at most this number of patches,
+        and then padded in "patch" dimension to match this number exactly.
+    """
+
     patch_size: Optional[int]
     max_num_patches: Optional[int]
     ...

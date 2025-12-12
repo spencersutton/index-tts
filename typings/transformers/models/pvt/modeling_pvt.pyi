@@ -11,16 +11,33 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring
 from .configuration_pvt import PvtConfig
 
+"""PyTorch PVT model."""
 logger = ...
 
-def drop_path(input: torch.Tensor, drop_prob: float = ..., training: bool = ...) -> torch.Tensor: ...
+def drop_path(input: torch.Tensor, drop_prob: float = ..., training: bool = ...) -> torch.Tensor:
+    """
+    Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks).
+
+    Comment by Ross Wightman: This is the same as the DropConnect impl I created for EfficientNet, etc networks,
+    however, the original name is misleading as 'Drop Connect' is a different form of dropout in a separate paper...
+    See discussion: https://github.com/tensorflow/tpu/issues/494#issuecomment-532968956 ... I've opted for changing the
+    layer and argument names to 'drop path' rather than mix DropConnect as a layer name and use 'survival rate' as the
+    argument.
+    """
+    ...
 
 class PvtDropPath(nn.Module):
+    """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks)."""
     def __init__(self, drop_prob: Optional[float] = ...) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
     def extra_repr(self) -> str: ...
 
 class PvtPatchEmbeddings(nn.Module):
+    """
+    This class turns `pixel_values` of shape `(batch_size, num_channels, height, width)` into the initial
+    `hidden_states` (patch embeddings) of shape `(batch_size, seq_length, hidden_size)` to be consumed by a
+    Transformer.
+    """
     def __init__(
         self,
         config: PvtConfig,
@@ -39,6 +56,7 @@ class PvtSelfOutput(nn.Module):
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
 
 class PvtEfficientSelfAttention(nn.Module):
+    """Efficient self-attention mechanism with reduction of the sequence [PvT paper](https://huggingface.co/papers/2102.12122)."""
     def __init__(
         self, config: PvtConfig, hidden_size: int, num_attention_heads: int, sequences_reduction_ratio: float
     ) -> None: ...
@@ -51,7 +69,8 @@ class PvtAttention(nn.Module):
     def __init__(
         self, config: PvtConfig, hidden_size: int, num_attention_heads: int, sequences_reduction_ratio: float
     ) -> None: ...
-    def prune_heads(self, heads): ...
+    def prune_heads(self, heads):  # -> None:
+        ...
     def forward(
         self, hidden_states: torch.Tensor, height: int, width: int, output_attentions: bool = ...
     ) -> tuple[torch.Tensor]: ...
@@ -76,7 +95,8 @@ class PvtLayer(nn.Module):
         sequences_reduction_ratio: float,
         mlp_ratio: float,
     ) -> None: ...
-    def forward(self, hidden_states: torch.Tensor, height: int, width: int, output_attentions: bool = ...): ...
+    def forward(self, hidden_states: torch.Tensor, height: int, width: int, output_attentions: bool = ...):  # -> Any:
+        ...
 
 class PvtEncoder(nn.Module):
     def __init__(self, config: PvtConfig) -> None: ...
@@ -107,7 +127,12 @@ class PvtModel(PvtPreTrainedModel):
         return_dict: Optional[bool] = ...,
     ) -> Union[tuple, BaseModelOutput]: ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Pvt Model transformer with an image classification head on top (a linear layer on top of the final hidden state of
+    the [CLS] token) e.g. for ImageNet.
+    """
+)
 class PvtForImageClassification(PvtPreTrainedModel):
     def __init__(self, config: PvtConfig) -> None: ...
     @auto_docstring
@@ -118,6 +143,13 @@ class PvtForImageClassification(PvtPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ImageClassifierOutput]: ...
+    ) -> Union[tuple, ImageClassifierOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 __all__ = ["PvtForImageClassification", "PvtModel", "PvtPreTrainedModel"]

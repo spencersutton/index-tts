@@ -22,27 +22,44 @@ class DeepseekV2MoEGate(nn.Module):
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
 
 class DeepseekV2MoE(nn.Module):
+    """
+    A mixed expert module containing shared experts.
+    """
     def __init__(self, config: DeepseekV2Config) -> None: ...
     def moe(self, hidden_states: torch.Tensor, topk_ids: torch.Tensor, topk_weight: torch.Tensor) -> torch.Tensor: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
 
 class DeepseekV2MLP(nn.Module):
     def __init__(self, config: DeepseekV2Config, hidden_size=..., intermediate_size=...) -> None: ...
-    def forward(self, x): ...
+    def forward(self, x):  # -> Any:
+        ...
 
 @use_kernel_forward_from_hub("RMSNorm")
 class DeepseekV2RMSNorm(nn.Module):
-    def __init__(self, hidden_size, eps=...) -> None: ...
+    def __init__(self, hidden_size, eps=...) -> None:
+        """
+        DeepseekV2RMSNorm is equivalent to T5LayerNorm
+        """
+        ...
+
     def forward(self, hidden_states): ...
-    def extra_repr(self): ...
+    def extra_repr(self):  # -> str:
+        ...
 
 class DeepseekV2RotaryEmbedding(nn.Module):
     def __init__(self, config: DeepseekV2Config, device=...) -> None: ...
     @torch.no_grad()
     @dynamic_rope_update
-    def forward(self, x, position_ids): ...
+    def forward(self, x, position_ids):  # -> Tensor:
+        ...
 
-def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor: ...
+def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
+    """
+    This is the equivalent of torch.repeat_interleave(x, dim=1, repeats=n_rep). The hidden states go from (batch,
+    num_key_value_heads, seqlen, head_dim) to (batch, num_attention_heads, seqlen, head_dim)
+    """
+    ...
+
 def eager_attention_forward(
     module: nn.Module,
     query: torch.Tensor,
@@ -52,12 +69,14 @@ def eager_attention_forward(
     scaling: float,
     dropout: float = ...,
     **kwargs: Unpack[TransformersKwargs],
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 def apply_rotary_emb(
     xq: torch.Tensor, xk: torch.Tensor, freqs_cis: torch.Tensor
 ) -> tuple[torch.Tensor, torch.Tensor]: ...
 
 class DeepseekV2Attention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config: DeepseekV2Config, layer_idx: Optional[int] = ...) -> None: ...
     def forward(
         self,
@@ -121,8 +140,10 @@ class DeepseekV2ForCausalLM(DeepseekV2PreTrainedModel, GenerationMixin):
     _tp_plan = ...
     _pp_plan = ...
     def __init__(self, config) -> None: ...
-    def set_decoder(self, decoder): ...
-    def get_decoder(self): ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> DeepseekV2Model:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -137,7 +158,25 @@ class DeepseekV2ForCausalLM(DeepseekV2PreTrainedModel, GenerationMixin):
         cache_position: Optional[torch.LongTensor] = ...,
         logits_to_keep: Union[int, torch.Tensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> CausalLMOutputWithPast: ...
+    ) -> CausalLMOutputWithPast:
+        r"""
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, DeepseekV2ForCausalLM
+
+        >>> model = DeepseekV2ForCausalLM.from_pretrained("meta-deepseek_v2/DeepseekV2-2-7b-hf")
+        >>> tokenizer = AutoTokenizer.from_pretrained("meta-deepseek_v2/DeepseekV2-2-7b-hf")
+
+        >>> prompt = "Hey, are you conscious? Can you talk to me?"
+        >>> inputs = tokenizer(prompt, return_tensors="pt")
+
+        >>> # Generate
+        >>> generate_ids = model.generate(inputs.input_ids, max_length=30)
+        >>> tokenizer.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+        "Hey, are you conscious? Can you talk to me?\nI'm not conscious, but I can talk to you."
+        ```"""
+        ...
 
 class DeepseekV2ForSequenceClassification(GenericForSequenceClassification, DeepseekV2PreTrainedModel): ...
 

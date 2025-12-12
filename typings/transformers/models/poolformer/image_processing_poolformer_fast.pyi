@@ -9,10 +9,17 @@ from ...image_utils import ImageInput, SizeDict
 from ...processing_utils import Unpack
 from ...utils import auto_docstring, is_torch_available, is_torchvision_available
 
+"""Fast Image processor class for PoolFormer."""
 if is_torch_available(): ...
 if is_torchvision_available(): ...
 
 class PoolFormerFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
+    """
+    Args:
+        crop_pct (`float`, *optional*, defaults to `self.crop_pct`):
+            Percentage of the image to crop. Only has an effect if `do_resize` is set to `True`.
+    """
+
     crop_pct: Optional[float]
     ...
 
@@ -41,7 +48,52 @@ class PoolFormerImageProcessorFast(BaseImageProcessorFast):
         interpolation: F.InterpolationMode = ...,
         antialias: bool = ...,
         **kwargs,
-    ) -> torch.Tensor: ...
-    def center_crop(self, image: torch.Tensor, size: SizeDict, **kwargs) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """
+        Resize an image.
+
+        If crop_pct is unset:
+            - size is `{"height": h, "width": w}`: the image is resized to `(h, w)`.
+            - size is `{"shortest_edge": s}`: the shortest edge of the image is resized to s whilst maintaining the
+              aspect ratio.
+
+        if crop_pct is set:
+            - size is `{"height": h, "width": w}`: the image is resized to `(int(floor(h/crop_pct)),
+              int(floor(w/crop_pct)))`
+            - size is `{"height": c, "width": c}`: the shortest edge of the image is resized to `int(floor(c/crop_pct)`
+              whilst maintaining the aspect ratio.
+            - size is `{"shortest_edge": c}`: the shortest edge of the image is resized to `int(floor(c/crop_pct)`
+              whilst maintaining the aspect ratio.
+
+        Args:
+            image (`torch.Tensor`):
+                Image to resize.
+            size (`SizeDict`):
+                Dictionary in the format `{"height": int, "width": int}` specifying the size of the output image.
+            crop_pct (`float`, *optional*):
+                Percentage of the image that will be cropped from the center. If set, the image is resized
+            resample (`InterpolationMode`, *optional*, defaults to `InterpolationMode.BILINEAR`):
+                `InterpolationMode` filter to use when resizing the image e.g. `InterpolationMode.BICUBIC`.
+
+        Returns:
+            `torch.Tensor`: The resized image.
+        """
+        ...
+
+    def center_crop(self, image: torch.Tensor, size: SizeDict, **kwargs) -> torch.Tensor:
+        """
+        Center crop an image to `(size["height"], size["width"])`. If the input size is smaller than `crop_size` along
+        any edge, the image is padded with 0's and then center cropped.
+
+        Args:
+            image (`"torch.Tensor"`):
+                Image to center crop.
+            size (`dict[str, int]`):
+                Size of the output image.
+
+        Returns:
+            `torch.Tensor`: The center cropped image.
+        """
+        ...
 
 __all__ = ["PoolFormerImageProcessorFast"]

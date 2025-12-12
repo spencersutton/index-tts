@@ -24,9 +24,11 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import ModelOutput, auto_docstring
 from .configuration_ernie import ErnieConfig
 
+"""PyTorch ERNIE model."""
 logger = ...
 
 class ErnieEmbeddings(nn.Module):
+    """Construct the embeddings from word, position and token_type embeddings."""
     def __init__(self, config) -> None: ...
     def forward(
         self,
@@ -59,7 +61,8 @@ ERNIE_SELF_ATTENTION_CLASSES = ...
 
 class ErnieAttention(nn.Module):
     def __init__(self, config, position_embedding_type=..., layer_idx=...) -> None: ...
-    def prune_heads(self, heads): ...
+    def prune_heads(self, heads):  # -> None:
+        ...
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -92,7 +95,8 @@ class ErnieLayer(GradientCheckpointingLayer):
         output_attentions: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
     ) -> tuple[torch.Tensor]: ...
-    def feed_forward_chunk(self, attention_output): ...
+    def feed_forward_chunk(self, attention_output):  # -> Any:
+        ...
 
 class ErnieEncoder(nn.Module):
     def __init__(self, config, layer_idx=...) -> None: ...
@@ -121,7 +125,8 @@ class ErniePredictionHeadTransform(nn.Module):
 
 class ErnieLMPredictionHead(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class ErnieOnlyMLMHead(nn.Module):
     def __init__(self, config) -> None: ...
@@ -129,11 +134,13 @@ class ErnieOnlyMLMHead(nn.Module):
 
 class ErnieOnlyNSPHead(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, pooled_output): ...
+    def forward(self, pooled_output):  # -> Any:
+        ...
 
 class ErniePreTrainingHeads(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, sequence_output, pooled_output): ...
+    def forward(self, sequence_output, pooled_output):  # -> tuple[Any, Any]:
+        ...
 
 @auto_docstring
 class ErniePreTrainedModel(PreTrainedModel):
@@ -148,17 +155,46 @@ class ErniePreTrainedModel(PreTrainedModel):
     """
 )
 class ErnieForPreTrainingOutput(ModelOutput):
+    r"""
+    loss (*optional*, returned when `labels` is provided, `torch.FloatTensor` of shape `(1,)`):
+        Total loss as the sum of the masked language modeling loss and the next sequence prediction
+        (classification) loss.
+    prediction_logits (`torch.FloatTensor` of shape `(batch_size, sequence_length, config.vocab_size)`):
+        Prediction scores of the language modeling head (scores for each vocabulary token before SoftMax).
+    seq_relationship_logits (`torch.FloatTensor` of shape `(batch_size, 2)`):
+        Prediction scores of the next sequence prediction (classification) head (scores of True/False continuation
+        before SoftMax).
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     prediction_logits: Optional[torch.FloatTensor] = ...
     seq_relationship_logits: Optional[torch.FloatTensor] = ...
     hidden_states: Optional[tuple[torch.FloatTensor]] = ...
     attentions: Optional[tuple[torch.FloatTensor]] = ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The model can behave as an encoder (with only self-attention) as well as a decoder, in which case a layer of
+    cross-attention is added between the self-attention layers, following the architecture described in [Attention is
+    all you need](https://huggingface.co/papers/1706.03762) by Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit,
+    Llion Jones, Aidan N. Gomez, Lukasz Kaiser and Illia Polosukhin.
+
+    To behave as an decoder the model needs to be initialized with the `is_decoder` argument of the configuration set
+    to `True`. To be used in a Seq2Seq model, the model needs to initialized with both `is_decoder` argument and
+    """
+)
 class ErnieModel(ErniePreTrainedModel):
-    def __init__(self, config, add_pooling_layer=...) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def __init__(self, config, add_pooling_layer=...) -> None:
+        r"""
+        add_pooling_layer (bool, *optional*, defaults to `True`):
+            Whether to add a pooling layer
+        """
+        ...
+
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -176,14 +212,29 @@ class ErnieModel(ErniePreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], BaseModelOutputWithPoolingAndCrossAttentions]: ...
+    ) -> Union[tuple[torch.Tensor], BaseModelOutputWithPoolingAndCrossAttentions]:
+        r"""
+        task_type_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Task type embedding is a special embedding to represent the characteristic of different tasks, such as
+            word-aware pre-training task, structure-aware pre-training task and semantic-aware pre-training task. We
+            assign a `task_type_id` to each task and the `task_type_id` is in the range `[0,
+            config.task_type_vocab_size-1]
+        """
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Ernie Model with two heads on top as done during the pretraining: a `masked language modeling` head and a `next
+    sentence prediction (classification)` head.
+    """
+)
 class ErnieForPreTraining(ErniePreTrainedModel):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
-    def get_output_embeddings(self): ...
-    def set_output_embeddings(self, new_embeddings): ...
+    def get_output_embeddings(self):  # -> Linear:
+        ...
+    def set_output_embeddings(self, new_embeddings):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -199,14 +250,54 @@ class ErnieForPreTraining(ErniePreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], ErnieForPreTrainingOutput]: ...
+    ) -> Union[tuple[torch.Tensor], ErnieForPreTrainingOutput]:
+        r"""
+        task_type_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Task type embedding is a special embedding to represent the characteristic of different tasks, such as
+            word-aware pre-training task, structure-aware pre-training task and semantic-aware pre-training task. We
+            assign a `task_type_id` to each task and the `task_type_id` is in the range `[0,
+            config.task_type_vocab_size-1]
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should be in `[-100, 0, ...,
+            config.vocab_size]` (see `input_ids` docstring) Tokens with indices set to `-100` are ignored (masked),
+            the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`
+        next_sentence_label (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the next sequence prediction (classification) loss. Input should be a sequence
+            pair (see `input_ids` docstring) Indices should be in `[0, 1]`:
 
-@auto_docstring(custom_intro=...)
+            - 0 indicates sequence B is a continuation of sequence A,
+            - 1 indicates sequence B is a random sequence.
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, ErnieForPreTraining
+        >>> import torch
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("nghuyong/ernie-1.0-base-zh")
+        >>> model = ErnieForPreTraining.from_pretrained("nghuyong/ernie-1.0-base-zh")
+
+        >>> inputs = tokenizer("Hello, my dog is cute", return_tensors="pt")
+        >>> outputs = model(**inputs)
+
+        >>> prediction_logits = outputs.prediction_logits
+        >>> seq_relationship_logits = outputs.seq_relationship_logits
+        ```
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    Ernie Model with a `language modeling` head on top for CLM fine-tuning.
+    """
+)
 class ErnieForCausalLM(ErniePreTrainedModel, GenerationMixin):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
-    def get_output_embeddings(self): ...
-    def set_output_embeddings(self, new_embeddings): ...
+    def get_output_embeddings(self):  # -> Linear:
+        ...
+    def set_output_embeddings(self, new_embeddings):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -226,14 +317,28 @@ class ErnieForCausalLM(ErniePreTrainedModel, GenerationMixin):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         **kwargs,
-    ) -> Union[tuple[torch.Tensor], CausalLMOutputWithCrossAttentions]: ...
+    ) -> Union[tuple[torch.Tensor], CausalLMOutputWithCrossAttentions]:
+        r"""
+        task_type_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Task type embedding is a special embedding to represent the characteristic of different tasks, such as
+            word-aware pre-training task, structure-aware pre-training task and semantic-aware pre-training task. We
+            assign a `task_type_id` to each task and the `task_type_id` is in the range `[0,
+            config.task_type_vocab_size-1]
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the left-to-right language modeling loss (next word prediction). Indices should be in
+            `[-100, 0, ..., config.vocab_size]` (see `input_ids` docstring) Tokens with indices set to `-100` are
+            ignored (masked), the loss is only computed for the tokens with labels n `[0, ..., config.vocab_size]`
+        """
+        ...
 
 @auto_docstring
 class ErnieForMaskedLM(ErniePreTrainedModel):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
-    def get_output_embeddings(self): ...
-    def set_output_embeddings(self, new_embeddings): ...
+    def get_output_embeddings(self):  # -> Linear:
+        ...
+    def set_output_embeddings(self, new_embeddings):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -250,12 +355,37 @@ class ErnieForMaskedLM(ErniePreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], MaskedLMOutput]: ...
-    def prepare_inputs_for_generation(self, input_ids, attention_mask=..., **model_kwargs): ...
-    @classmethod
-    def can_generate(cls) -> bool: ...
+    ) -> Union[tuple[torch.Tensor], MaskedLMOutput]:
+        r"""
+        task_type_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Task type embedding is a special embedding to represent the characteristic of different tasks, such as
+            word-aware pre-training task, structure-aware pre-training task and semantic-aware pre-training task. We
+            assign a `task_type_id` to each task and the `task_type_id` is in the range `[0,
+            config.task_type_vocab_size-1]
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should be in `[-100, 0, ...,
+            config.vocab_size]` (see `input_ids` docstring) Tokens with indices set to `-100` are ignored (masked), the
+            loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`
+        """
+        ...
 
-@auto_docstring(custom_intro=...)
+    def prepare_inputs_for_generation(
+        self, input_ids, attention_mask=..., **model_kwargs
+    ):  # -> dict[str, Tensor | Any]:
+        ...
+    @classmethod
+    def can_generate(cls) -> bool:
+        """
+        Legacy correction: ErnieForMaskedLM can't call `generate()` from `GenerationMixin`, even though it has a
+        `prepare_inputs_for_generation` method.
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    Ernie Model with a `next sentence prediction (classification)` head on top.
+    """
+)
 class ErnieForNextSentencePrediction(ErniePreTrainedModel):
     def __init__(self, config) -> None: ...
     @auto_docstring
@@ -273,9 +403,46 @@ class ErnieForNextSentencePrediction(ErniePreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         **kwargs,
-    ) -> Union[tuple[torch.Tensor], NextSentencePredictorOutput]: ...
+    ) -> Union[tuple[torch.Tensor], NextSentencePredictorOutput]:
+        r"""
+        task_type_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Task type embedding is a special embedding to represent the characteristic of different tasks, such as
+            word-aware pre-training task, structure-aware pre-training task and semantic-aware pre-training task. We
+            assign a `task_type_id` to each task and the `task_type_id` is in the range `[0,
+            config.task_type_vocab_size-1]
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the next sequence prediction (classification) loss. Input should be a sequence pair
+            (see `input_ids` docstring). Indices should be in `[0, 1]`:
 
-@auto_docstring(custom_intro=...)
+            - 0 indicates sequence B is a continuation of sequence A,
+            - 1 indicates sequence B is a random sequence.
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, ErnieForNextSentencePrediction
+        >>> import torch
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("nghuyong/ernie-1.0-base-zh")
+        >>> model = ErnieForNextSentencePrediction.from_pretrained("nghuyong/ernie-1.0-base-zh")
+
+        >>> prompt = "In Italy, pizza served in formal settings, such as at a restaurant, is presented unsliced."
+        >>> next_sentence = "The sky is blue due to the shorter wavelength of blue light."
+        >>> encoding = tokenizer(prompt, next_sentence, return_tensors="pt")
+
+        >>> outputs = model(**encoding, labels=torch.LongTensor([1]))
+        >>> logits = outputs.logits
+        >>> assert logits[0, 0] < logits[0, 1]  # next sentence was random
+        ```
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    Ernie Model transformer with a sequence classification/regression head on top (a linear layer on top of the pooled
+    output) e.g. for GLUE tasks.
+    """
+)
 class ErnieForSequenceClassification(ErniePreTrainedModel):
     def __init__(self, config) -> None: ...
     @auto_docstring
@@ -292,7 +459,19 @@ class ErnieForSequenceClassification(ErniePreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], SequenceClassifierOutput]: ...
+    ) -> Union[tuple[torch.Tensor], SequenceClassifierOutput]:
+        r"""
+        task_type_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Task type embedding is a special embedding to represent the characteristic of different tasks, such as
+            word-aware pre-training task, structure-aware pre-training task and semantic-aware pre-training task. We
+            assign a `task_type_id` to each task and the `task_type_id` is in the range `[0,
+            config.task_type_vocab_size-1]
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 @auto_docstring
 class ErnieForMultipleChoice(ErniePreTrainedModel):
@@ -311,7 +490,43 @@ class ErnieForMultipleChoice(ErniePreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], MultipleChoiceModelOutput]: ...
+    ) -> Union[tuple[torch.Tensor], MultipleChoiceModelOutput]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`):
+            Indices of input sequence tokens in the vocabulary.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        token_type_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`, *optional*):
+            Segment token indices to indicate first and second portions of the inputs. Indices are selected in `[0,
+            1]`:
+
+            - 0 corresponds to a *sentence A* token,
+            - 1 corresponds to a *sentence B* token.
+
+            [What are token type IDs?](../glossary#token-type-ids)
+        task_type_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`, *optional*):
+            Task type embedding is a special embedding to represent the characteristic of different tasks, such as
+            word-aware pre-training task, structure-aware pre-training task and semantic-aware pre-training task. We
+            assign a `task_type_id` to each task and the `task_type_id` is in the range `[0,
+            config.task_type_vocab_size-1]
+        position_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`, *optional*):
+            Indices of positions of each input sequence tokens in the position embeddings. Selected in the range `[0,
+            config.max_position_embeddings - 1]`.
+
+            [What are position IDs?](../glossary#position-ids)
+        inputs_embeds (`torch.FloatTensor` of shape `(batch_size, num_choices, sequence_length, hidden_size)`, *optional*):
+            Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation. This
+            is useful if you want more control over how to convert `input_ids` indices into associated vectors than the
+            model's internal embedding lookup matrix.
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the multiple choice classification loss. Indices should be in `[0, ...,
+            num_choices-1]` where `num_choices` is the size of the second dimension of the input tensors. (See
+            `input_ids` above)
+        """
+        ...
 
 @auto_docstring
 class ErnieForTokenClassification(ErniePreTrainedModel):
@@ -330,7 +545,17 @@ class ErnieForTokenClassification(ErniePreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], TokenClassifierOutput]: ...
+    ) -> Union[tuple[torch.Tensor], TokenClassifierOutput]:
+        r"""
+        task_type_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Task type embedding is a special embedding to represent the characteristic of different tasks, such as
+            word-aware pre-training task, structure-aware pre-training task and semantic-aware pre-training task. We
+            assign a `task_type_id` to each task and the `task_type_id` is in the range `[0,
+            config.task_type_vocab_size-1]
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the token classification loss. Indices should be in `[0, ..., config.num_labels - 1]`.
+        """
+        ...
 
 @auto_docstring
 class ErnieForQuestionAnswering(ErniePreTrainedModel):
@@ -350,7 +575,15 @@ class ErnieForQuestionAnswering(ErniePreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], QuestionAnsweringModelOutput]: ...
+    ) -> Union[tuple[torch.Tensor], QuestionAnsweringModelOutput]:
+        r"""
+        task_type_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Task type embedding is a special embedding to represent the characteristic of different tasks, such as
+            word-aware pre-training task, structure-aware pre-training task and semantic-aware pre-training task. We
+            assign a `task_type_id` to each task and the `task_type_id` is in the range `[0,
+            config.task_type_vocab_size-1]
+        """
+        ...
 
 __all__ = [
     "ErnieForCausalLM",

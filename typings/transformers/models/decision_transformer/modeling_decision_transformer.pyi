@@ -13,14 +13,22 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import ModelOutput, auto_docstring
 from .configuration_decision_transformer import DecisionTransformerConfig
 
+"""PyTorch DecisionTransformer model."""
 logger = ...
 
-def load_tf_weights_in_gpt2(model, config, gpt2_checkpoint_path): ...
-def eager_attention_forward(module, query, key, value, attention_mask, head_mask=..., **kwargs): ...
+def load_tf_weights_in_gpt2(model, config, gpt2_checkpoint_path):
+    """Load tf checkpoints in a pytorch model"""
+    ...
+
+def eager_attention_forward(
+    module, query, key, value, attention_mask, head_mask=..., **kwargs
+):  # -> tuple[Tensor, Any]:
+    ...
 
 class DecisionTransformerGPT2Attention(nn.Module):
     def __init__(self, config, is_cross_attention=..., layer_idx=...) -> None: ...
-    def prune_heads(self, heads): ...
+    def prune_heads(self, heads):  # -> None:
+        ...
     def forward(
         self,
         hidden_states: Optional[tuple[torch.FloatTensor]],
@@ -66,8 +74,10 @@ class DecisionTransformerGPT2PreTrainedModel(PreTrainedModel):
 
 class DecisionTransformerGPT2Model(DecisionTransformerGPT2PreTrainedModel):
     def __init__(self, config) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, new_embeddings): ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, new_embeddings):  # -> None:
+        ...
     def forward(
         self,
         input_ids: Optional[torch.LongTensor] = ...,
@@ -87,8 +97,21 @@ class DecisionTransformerGPT2Model(DecisionTransformerGPT2PreTrainedModel):
     ) -> Union[tuple, BaseModelOutputWithPastAndCrossAttentions]: ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for model's outputs that also contains a pooling of the last hidden states.
+    """
+)
 class DecisionTransformerOutput(ModelOutput):
+    r"""
+    state_preds (`torch.FloatTensor` of shape `(batch_size, sequence_length, state_dim)`):
+        Environment state predictions
+    action_preds (`torch.FloatTensor` of shape `(batch_size, sequence_length, action_dim)`):
+        Model action predictions
+    return_preds (`torch.FloatTensor` of shape `(batch_size, sequence_length, 1)`):
+        Predicted returns for each state
+    """
+
     state_preds: Optional[torch.FloatTensor] = ...
     action_preds: Optional[torch.FloatTensor] = ...
     return_preds: Optional[torch.FloatTensor] = ...
@@ -97,6 +120,11 @@ class DecisionTransformerOutput(ModelOutput):
     last_hidden_state: Optional[torch.FloatTensor] = ...
 
 class DecisionTransformerPreTrainedModel(PreTrainedModel):
+    """
+    An abstract class to handle weights initialization and a simple interface for downloading and loading pretrained
+    models.
+    """
+
     config: DecisionTransformerConfig
     base_model_prefix = ...
     main_input_name = ...
@@ -108,6 +136,12 @@ class DecisionTransformerPreTrainedModel(PreTrainedModel):
     """
 )
 class DecisionTransformerModel(DecisionTransformerPreTrainedModel):
+    """
+
+    The model builds upon the GPT2 architecture to perform autoregressive prediction of actions in an offline RL
+    setting. Refer to the paper for more details: https://huggingface.co/papers/2106.01345
+
+    """
     def __init__(self, config) -> None: ...
     @auto_docstring
     def forward(
@@ -121,7 +155,56 @@ class DecisionTransformerModel(DecisionTransformerPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         output_attentions: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.FloatTensor], DecisionTransformerOutput]: ...
+    ) -> Union[tuple[torch.FloatTensor], DecisionTransformerOutput]:
+        r"""
+        states (`torch.FloatTensor` of shape `(batch_size, episode_length, state_dim)`):
+            The states for each step in the trajectory
+        actions (`torch.FloatTensor` of shape `(batch_size, episode_length, act_dim)`):
+            The actions taken by the "expert" policy for the current state, these are masked for auto regressive
+            prediction
+        rewards (`torch.FloatTensor` of shape `(batch_size, episode_length, 1)`):
+            The rewards for each state, action
+        returns_to_go (`torch.FloatTensor` of shape `(batch_size, episode_length, 1)`):
+            The returns for each state in the trajectory
+        timesteps (`torch.LongTensor` of shape `(batch_size, episode_length)`):
+            The timestep for each step in the trajectory
+
+        Examples:
+
+        ```python
+        >>> from transformers import DecisionTransformerModel
+        >>> import torch
+
+        >>> model = DecisionTransformerModel.from_pretrained("edbeeching/decision-transformer-gym-hopper-medium")
+        >>> # evaluation
+        >>> model = model.to(device)
+        >>> model.eval()
+
+        >>> env = gym.make("Hopper-v3")
+        >>> state_dim = env.observation_space.shape[0]
+        >>> act_dim = env.action_space.shape[0]
+
+        >>> state = env.reset()
+        >>> states = torch.from_numpy(state).reshape(1, 1, state_dim).to(device=device, dtype=torch.float32)
+        >>> actions = torch.zeros((1, 1, act_dim), device=device, dtype=torch.float32)
+        >>> rewards = torch.zeros(1, 1, device=device, dtype=torch.float32)
+        >>> target_return = torch.tensor(TARGET_RETURN, dtype=torch.float32).reshape(1, 1)
+        >>> timesteps = torch.tensor(0, device=device, dtype=torch.long).reshape(1, 1)
+        >>> attention_mask = torch.zeros(1, 1, device=device, dtype=torch.float32)
+
+        >>> # forward pass
+        >>> with torch.no_grad():
+        ...     state_preds, action_preds, return_preds = model(
+        ...         states=states,
+        ...         actions=actions,
+        ...         rewards=rewards,
+        ...         returns_to_go=target_return,
+        ...         timesteps=timesteps,
+        ...         attention_mask=attention_mask,
+        ...         return_dict=False,
+        ...     )
+        ```"""
+        ...
 
 __all__ = [
     "DecisionTransformerGPT2Model",

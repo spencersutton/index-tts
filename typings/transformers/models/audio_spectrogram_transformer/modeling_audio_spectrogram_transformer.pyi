@@ -11,14 +11,23 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring
 from .configuration_audio_spectrogram_transformer import ASTConfig
 
+"""PyTorch Audio Spectrogram Transformer (AST) model."""
 logger = ...
 
 class ASTEmbeddings(nn.Module):
+    """
+    Construct the CLS token, position and patch embeddings.
+    """
     def __init__(self, config: ASTConfig) -> None: ...
-    def get_shape(self, config): ...
+    def get_shape(self, config):  # -> tuple[Any, Any]:
+        ...
     def forward(self, input_values: torch.Tensor) -> torch.Tensor: ...
 
 class ASTPatchEmbeddings(nn.Module):
+    """
+    This class turns `input_values` into the initial `hidden_states` (patch embeddings) of shape `(batch_size,
+    seq_length, hidden_size)` to be consumed by a Transformer.
+    """
     def __init__(self, config) -> None: ...
     def forward(self, input_values: torch.Tensor) -> torch.Tensor: ...
 
@@ -31,7 +40,8 @@ def eager_attention_forward(
     scaling: float,
     dropout: float = ...,
     **kwargs,
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class ASTSelfAttention(nn.Module):
     def __init__(self, config: ASTConfig) -> None: ...
@@ -40,6 +50,10 @@ class ASTSelfAttention(nn.Module):
     ) -> Union[tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor]]: ...
 
 class ASTSelfOutput(nn.Module):
+    """
+    The residual connection is defined in ASTLayer instead of here (as is the case with other models), due to the
+    layernorm applied before each block.
+    """
     def __init__(self, config: ASTConfig) -> None: ...
     def forward(self, hidden_states: torch.Tensor, input_tensor: torch.Tensor) -> torch.Tensor: ...
 
@@ -59,6 +73,7 @@ class ASTOutput(nn.Module):
     def forward(self, hidden_states: torch.Tensor, input_tensor: torch.Tensor) -> torch.Tensor: ...
 
 class ASTLayer(GradientCheckpointingLayer):
+    """This corresponds to the Block class in the timm implementation."""
     def __init__(self, config: ASTConfig) -> None: ...
     def forward(
         self, hidden_states: torch.Tensor, head_mask: Optional[torch.Tensor] = ..., output_attentions: bool = ...
@@ -98,13 +113,30 @@ class ASTModel(ASTPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPooling]: ...
+    ) -> Union[tuple, BaseModelOutputWithPooling]:
+        r"""
+        input_values (`torch.FloatTensor` of shape `(batch_size, max_length, num_mel_bins)`):
+            Float values mel features extracted from the raw audio waveform. Raw audio waveform can be obtained by
+            loading a `.flac` or `.wav` audio file into an array of type `list[float]`, a `numpy.ndarray` or a
+            `torch.Tensor`, *e.g.* via the torchcodec library (`pip install torchcodec`) or the soundfile library
+            (`pip install soundfile`).
+            To prepare the array into `input_features`, the [`AutoFeatureExtractor`] should be used for extracting the
+            mel features, padding and conversion into a tensor of type `torch.FloatTensor`.
+            See [`~ASTFeatureExtractor.__call__`]
+        """
+        ...
 
 class ASTMLPHead(nn.Module):
     def __init__(self, config: ASTConfig) -> None: ...
-    def forward(self, hidden_state): ...
+    def forward(self, hidden_state):  # -> Any:
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Audio Spectrogram Transformer model with an audio classification head on top (a linear layer on top of the pooled
+    output) e.g. for datasets like AudioSet, Speech Commands v2.
+    """
+)
 class ASTForAudioClassification(ASTPreTrainedModel):
     def __init__(self, config: ASTConfig) -> None: ...
     @auto_docstring
@@ -116,6 +148,20 @@ class ASTForAudioClassification(ASTPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, SequenceClassifierOutput]: ...
+    ) -> Union[tuple, SequenceClassifierOutput]:
+        r"""
+        input_values (`torch.FloatTensor` of shape `(batch_size, max_length, num_mel_bins)`):
+            Float values mel features extracted from the raw audio waveform. Raw audio waveform can be obtained by
+            loading a `.flac` or `.wav` audio file into an array of type `list[float]`, a `numpy.ndarray` or a `torch.Tensor`, *e.g.* via
+            the torchcodec library (`pip install torchcodec`) or the soundfile library (`pip install soundfile`).
+            To prepare the array into `input_features`, the [`AutoFeatureExtractor`] should be used for extracting the
+            mel features, padding and conversion into a tensor of type `torch.FloatTensor`.
+            See [`~ASTFeatureExtractor.__call__`]
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the audio classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 __all__ = ["ASTForAudioClassification", "ASTModel", "ASTPreTrainedModel"]

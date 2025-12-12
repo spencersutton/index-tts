@@ -19,14 +19,43 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import ModelOutput, auto_docstring
 from .configuration_xlm import XLMConfig
 
+"""
+PyTorch XLM model.
+"""
 logger = ...
 
-def create_sinusoidal_embeddings(n_pos, dim, out): ...
-def get_masks(slen, lengths, causal, padding_mask=...): ...
+def create_sinusoidal_embeddings(n_pos, dim, out):  # -> None:
+    ...
+def get_masks(slen, lengths, causal, padding_mask=...):  # -> tuple[Any, Tensor | Any]:
+    """
+    Generate hidden states mask, and optionally an attention mask.
+    """
+    ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for outputs of question answering models using a [`~modeling_utils.XLMSQuADHead`].
+    """
+)
 class XLMSquadHeadOutput(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned if both `start_positions` and `end_positions` are provided):
+        Classification loss as the sum of start token, end token (and is_impossible if provided) classification
+        losses.
+    start_top_log_probs (`torch.FloatTensor` of shape `(batch_size, config.start_n_top)`, *optional*, returned if `start_positions` or `end_positions` is not provided):
+        Log probabilities for the top config.start_n_top start token possibilities (beam-search).
+    start_top_index (`torch.LongTensor` of shape `(batch_size, config.start_n_top)`, *optional*, returned if `start_positions` or `end_positions` is not provided):
+        Indices for the top config.start_n_top start token possibilities (beam-search).
+    end_top_log_probs (`torch.FloatTensor` of shape `(batch_size, config.start_n_top * config.end_n_top)`, *optional*, returned if `start_positions` or `end_positions` is not provided):
+        Log probabilities for the top `config.start_n_top * config.end_n_top` end token possibilities
+        (beam-search).
+    end_top_index (`torch.LongTensor` of shape `(batch_size, config.start_n_top * config.end_n_top)`, *optional*, returned if `start_positions` or `end_positions` is not provided):
+        Indices for the top `config.start_n_top * config.end_n_top` end token possibilities (beam-search).
+    cls_logits (`torch.FloatTensor` of shape `(batch_size,)`, *optional*, returned if `start_positions` or `end_positions` is not provided):
+        Log probabilities for the `is_impossible` label of the answers.
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     start_top_log_probs: Optional[torch.FloatTensor] = ...
     start_top_index: Optional[torch.LongTensor] = ...
@@ -35,12 +64,37 @@ class XLMSquadHeadOutput(ModelOutput):
     cls_logits: Optional[torch.FloatTensor] = ...
 
 class XLMPoolerStartLogits(nn.Module):
+    """
+    Compute SQuAD start logits from sequence hidden states.
+
+    Args:
+        config ([`XLMConfig`]):
+            The config used by the model, will be used to grab the `hidden_size` of the model.
+    """
     def __init__(self, config: XLMConfig) -> None: ...
-    def forward(
-        self, hidden_states: torch.FloatTensor, p_mask: Optional[torch.FloatTensor] = ...
-    ) -> torch.FloatTensor: ...
+    def forward(self, hidden_states: torch.FloatTensor, p_mask: Optional[torch.FloatTensor] = ...) -> torch.FloatTensor:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor` of shape `(batch_size, seq_len, hidden_size)`):
+                The final hidden states of the model.
+            p_mask (`torch.FloatTensor` of shape `(batch_size, seq_len)`, *optional*):
+                Mask for tokens at invalid position, such as query and special symbols (PAD, SEP, CLS). 1.0 means token
+                should be masked.
+
+        Returns:
+            `torch.FloatTensor`: The start logits for SQuAD.
+        """
+        ...
 
 class XLMPoolerEndLogits(nn.Module):
+    """
+    Compute SQuAD end logits from sequence hidden states.
+
+    Args:
+        config ([`XLMConfig`]):
+            The config used by the model, will be used to grab the `hidden_size` of the model and the `layer_norm_eps`
+            to use.
+    """
     def __init__(self, config: XLMConfig) -> None: ...
     def forward(
         self,
@@ -48,9 +102,39 @@ class XLMPoolerEndLogits(nn.Module):
         start_states: Optional[torch.FloatTensor] = ...,
         start_positions: Optional[torch.LongTensor] = ...,
         p_mask: Optional[torch.FloatTensor] = ...,
-    ) -> torch.FloatTensor: ...
+    ) -> torch.FloatTensor:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor` of shape `(batch_size, seq_len, hidden_size)`):
+                The final hidden states of the model.
+            start_states (`torch.FloatTensor` of shape `(batch_size, seq_len, hidden_size)`, *optional*):
+                The hidden states of the first tokens for the labeled span.
+            start_positions (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+                The position of the first token for the labeled span.
+            p_mask (`torch.FloatTensor` of shape `(batch_size, seq_len)`, *optional*):
+                Mask for tokens at invalid position, such as query and special symbols (PAD, SEP, CLS). 1.0 means token
+                should be masked.
+
+        <Tip>
+
+        One of `start_states` or `start_positions` should be not `None`. If both are set, `start_positions` overrides
+        `start_states`.
+
+        </Tip>
+
+        Returns:
+            `torch.FloatTensor`: The end logits for SQuAD.
+        """
+        ...
 
 class XLMPoolerAnswerClass(nn.Module):
+    """
+    Compute SQuAD 2.0 answer class from classification and start tokens hidden states.
+
+    Args:
+        config ([`XLMConfig`]):
+            The config used by the model, will be used to grab the `hidden_size` of the model.
+    """
     def __init__(self, config: XLMConfig) -> None: ...
     def forward(
         self,
@@ -58,9 +142,39 @@ class XLMPoolerAnswerClass(nn.Module):
         start_states: Optional[torch.FloatTensor] = ...,
         start_positions: Optional[torch.LongTensor] = ...,
         cls_index: Optional[torch.LongTensor] = ...,
-    ) -> torch.FloatTensor: ...
+    ) -> torch.FloatTensor:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor` of shape `(batch_size, seq_len, hidden_size)`):
+                The final hidden states of the model.
+            start_states (`torch.FloatTensor` of shape `(batch_size, seq_len, hidden_size)`, *optional*):
+                The hidden states of the first tokens for the labeled span.
+            start_positions (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+                The position of the first token for the labeled span.
+            cls_index (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+                Position of the CLS token for each sentence in the batch. If `None`, takes the last token.
+
+        <Tip>
+
+        One of `start_states` or `start_positions` should be not `None`. If both are set, `start_positions` overrides
+        `start_states`.
+
+        </Tip>
+
+        Returns:
+            `torch.FloatTensor`: The SQuAD 2.0 answer class.
+        """
+        ...
 
 class XLMSQuADHead(nn.Module):
+    r"""
+    A SQuAD head inspired by XLNet.
+
+    Args:
+        config ([`XLMConfig`]):
+            The config used by the model, will be used to grab the `hidden_size` of the model and the `layer_norm_eps`
+            to use.
+    """
     def __init__(self, config: XLMConfig) -> None: ...
     @auto_docstring
     def forward(
@@ -72,24 +186,86 @@ class XLMSQuADHead(nn.Module):
         is_impossible: Optional[torch.LongTensor] = ...,
         p_mask: Optional[torch.FloatTensor] = ...,
         return_dict: bool = ...,
-    ) -> Union[XLMSquadHeadOutput, tuple[torch.FloatTensor]]: ...
+    ) -> Union[XLMSquadHeadOutput, tuple[torch.FloatTensor]]:
+        r"""
+        hidden_states (`torch.FloatTensor` of shape `(batch_size, seq_len, hidden_size)`):
+            Final hidden states of the model on the sequence tokens.
+        start_positions (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Positions of the first token for the labeled span.
+        end_positions (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Positions of the last token for the labeled span.
+        cls_index (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Position of the CLS token for each sentence in the batch. If `None`, takes the last token.
+        is_impossible (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Whether the question has a possible answer in the paragraph or not.
+        p_mask (`torch.FloatTensor` of shape `(batch_size, seq_len)`, *optional*):
+            Mask for tokens at invalid position, such as query and special symbols (PAD, SEP, CLS). 1.0 means token
+            should be masked.
+        """
+        ...
 
 class XLMSequenceSummary(nn.Module):
+    r"""
+    Compute a single vector summary of a sequence hidden states.
+
+    Args:
+        config ([`XLMConfig`]):
+            The config used by the model. Relevant arguments in the config class of the model are (refer to the actual
+            config class of your model for the default values it uses):
+
+            - **summary_type** (`str`) -- The method to use to make this summary. Accepted values are:
+
+                - `"last"` -- Take the last token hidden state (like XLNet)
+                - `"first"` -- Take the first token hidden state (like Bert)
+                - `"mean"` -- Take the mean of all tokens hidden states
+                - `"cls_index"` -- Supply a Tensor of classification token position (GPT/GPT-2)
+                - `"attn"` -- Not implemented now, use multi-head attention
+
+            - **summary_use_proj** (`bool`) -- Add a projection after the vector extraction.
+            - **summary_proj_to_labels** (`bool`) -- If `True`, the projection outputs to `config.num_labels` classes
+              (otherwise to `config.hidden_size`).
+            - **summary_activation** (`Optional[str]`) -- Set to `"tanh"` to add a tanh activation to the output,
+              another string or `None` will add no activation.
+            - **summary_first_dropout** (`float`) -- Optional dropout probability before the projection and activation.
+            - **summary_last_dropout** (`float`)-- Optional dropout probability after the projection and activation.
+    """
     def __init__(self, config: XLMConfig) -> None: ...
     def forward(
         self, hidden_states: torch.FloatTensor, cls_index: Optional[torch.LongTensor] = ...
-    ) -> torch.FloatTensor: ...
+    ) -> torch.FloatTensor:
+        """
+        Compute a single vector summary of a sequence hidden states.
+
+        Args:
+            hidden_states (`torch.FloatTensor` of shape `[batch_size, seq_len, hidden_size]`):
+                The hidden states of the last layer.
+            cls_index (`torch.LongTensor` of shape `[batch_size]` or `[batch_size, ...]` where ... are optional leading dimensions of `hidden_states`, *optional*):
+                Used if `summary_type == "cls_index"` and takes the last token of the sequence as classification token.
+
+        Returns:
+            `torch.FloatTensor`: The summary of the sequence hidden states.
+        """
+        ...
 
 class MultiHeadAttention(nn.Module):
     NEW_ID = ...
     def __init__(self, n_heads, dim, config) -> None: ...
-    def prune_heads(self, heads): ...
-    def forward(self, input, mask, kv=..., cache=..., head_mask=..., output_attentions=..., cache_position=...): ...
+    def prune_heads(self, heads):  # -> None:
+        ...
+    def forward(
+        self, input, mask, kv=..., cache=..., head_mask=..., output_attentions=..., cache_position=...
+    ):  # -> tuple[Any, Any | Tensor] | tuple[Any]:
+        """
+        Self-attention (if kv is None) or attention over source sentence (provided by kv).
+        """
+        ...
 
 class TransformerFFN(nn.Module):
     def __init__(self, in_dim, dim_hidden, out_dim, config) -> None: ...
-    def forward(self, input): ...
-    def ff_chunk(self, input): ...
+    def forward(self, input):  # -> Tensor:
+        ...
+    def ff_chunk(self, input):  # -> Tensor:
+        ...
 
 @auto_docstring
 class XLMPreTrainedModel(PreTrainedModel):
@@ -98,11 +274,33 @@ class XLMPreTrainedModel(PreTrainedModel):
     base_model_prefix = ...
     def __init__(self, *inputs, **kwargs) -> None: ...
     @property
-    def dummy_inputs(self): ...
+    def dummy_inputs(self):  # -> dict[str, Tensor | None]:
+        ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for outputs of question answering models using a `XLMSQuADHead`.
+    """
+)
 class XLMForQuestionAnsweringOutput(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned if both `start_positions` and `end_positions` are provided):
+        Classification loss as the sum of start token, end token (and is_impossible if provided) classification
+        losses.
+    start_top_log_probs (`torch.FloatTensor` of shape `(batch_size, config.start_n_top)`, *optional*, returned if `start_positions` or `end_positions` is not provided):
+        Log probabilities for the top config.start_n_top start token possibilities (beam-search).
+    start_top_index (`torch.LongTensor` of shape `(batch_size, config.start_n_top)`, *optional*, returned if `start_positions` or `end_positions` is not provided):
+        Indices for the top config.start_n_top start token possibilities (beam-search).
+    end_top_log_probs (`torch.FloatTensor` of shape `(batch_size, config.start_n_top * config.end_n_top)`, *optional*, returned if `start_positions` or `end_positions` is not provided):
+        Log probabilities for the top `config.start_n_top * config.end_n_top` end token possibilities
+        (beam-search).
+    end_top_index (`torch.LongTensor` of shape `(batch_size, config.start_n_top * config.end_n_top)`, *optional*, returned if `start_positions` or `end_positions` is not provided):
+        Indices for the top `config.start_n_top * config.end_n_top` end token possibilities (beam-search).
+    cls_logits (`torch.FloatTensor` of shape `(batch_size,)`, *optional*, returned if `start_positions` or `end_positions` is not provided):
+        Log probabilities for the `is_impossible` label of the answers.
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     start_top_log_probs: Optional[torch.FloatTensor] = ...
     start_top_index: Optional[torch.LongTensor] = ...
@@ -115,8 +313,10 @@ class XLMForQuestionAnsweringOutput(ModelOutput):
 @auto_docstring
 class XLMModel(XLMPreTrainedModel):
     def __init__(self, config) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, new_embeddings): ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, new_embeddings):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -134,19 +334,54 @@ class XLMModel(XLMPreTrainedModel):
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
         **kwargs,
-    ) -> Union[tuple, BaseModelOutput]: ...
+    ) -> Union[tuple, BaseModelOutput]:
+        r"""
+        langs (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            A parallel sequence of tokens to be used to indicate the language of each token in the input. Indices are
+            languages ids which can be obtained from the language names by using two conversion mappings provided in
+            the configuration of the model (only provided for multilingual models). More precisely, the *language name
+            to language id* mapping is in `model.config.lang2id` (which is a dictionary string to int) and the
+            *language id to language name* mapping is in `model.config.id2lang` (dictionary int to string).
+
+            See usage examples detailed in the [multilingual documentation](../multilingual).
+        lengths (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Length of each sentence that can be used to avoid performing attention on padding token indices. You can
+            also use *attention_mask* for the same result (see above), kept here for compatibility. Indices selected in
+            `[0, ..., input_ids.size(-1)]`.
+        cache (`dict[str, torch.FloatTensor]`, *optional*):
+            Dictionary string to `torch.FloatTensor` that contains precomputed hidden states (key and values in the
+            attention blocks) as computed by the model (see `cache` output below). Can be used to speed up sequential
+            decoding.
+
+            The dictionary object will be modified in-place during the forward pass to add newly computed
+            hidden-states.
+        """
+        ...
 
 class XLMPredLayer(nn.Module):
+    """
+    Prediction layer (cross_entropy or adaptive_softmax).
+    """
     def __init__(self, config) -> None: ...
-    def forward(self, x, y=...): ...
+    def forward(self, x, y=...):  # -> tuple[Tensor, Any] | tuple[Any] | tuple[Any, Any | Tensor] | tuple[Any | Tensor]:
+        """Compute the loss, and optionally the scores."""
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The XLM Model transformer with a language modeling head on top (linear layer with weights tied to the input
+    embeddings).
+    """
+)
 class XLMWithLMHeadModel(XLMPreTrainedModel, GenerationMixin):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
-    def get_output_embeddings(self): ...
-    def set_output_embeddings(self, new_embeddings): ...
-    def prepare_inputs_for_generation(self, input_ids, **kwargs): ...
+    def get_output_embeddings(self):  # -> Linear | AdaptiveLogSoftmaxWithLoss:
+        ...
+    def set_output_embeddings(self, new_embeddings):  # -> None:
+        ...
+    def prepare_inputs_for_generation(self, input_ids, **kwargs):  # -> dict[str, Tensor | None]:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -165,9 +400,40 @@ class XLMWithLMHeadModel(XLMPreTrainedModel, GenerationMixin):
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
         **kwargs,
-    ) -> Union[tuple, MaskedLMOutput]: ...
+    ) -> Union[tuple, MaskedLMOutput]:
+        r"""
+        langs (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            A parallel sequence of tokens to be used to indicate the language of each token in the input. Indices are
+            languages ids which can be obtained from the language names by using two conversion mappings provided in
+            the configuration of the model (only provided for multilingual models). More precisely, the *language name
+            to language id* mapping is in `model.config.lang2id` (which is a dictionary string to int) and the
+            *language id to language name* mapping is in `model.config.id2lang` (dictionary int to string).
 
-@auto_docstring(custom_intro=...)
+            See usage examples detailed in the [multilingual documentation](../multilingual).
+        lengths (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Length of each sentence that can be used to avoid performing attention on padding token indices. You can
+            also use *attention_mask* for the same result (see above), kept here for compatibility. Indices selected in
+            `[0, ..., input_ids.size(-1)]`.
+        cache (`dict[str, torch.FloatTensor]`, *optional*):
+            Dictionary string to `torch.FloatTensor` that contains precomputed hidden states (key and values in the
+            attention blocks) as computed by the model (see `cache` output below). Can be used to speed up sequential
+            decoding.
+
+            The dictionary object will be modified in-place during the forward pass to add newly computed
+            hidden-states.
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for language modeling. Note that the labels **are shifted** inside the model, i.e. you can set
+            `labels = input_ids` Indices are selected in `[-100, 0, ..., config.vocab_size]` All labels set to `-100`
+            are ignored (masked), the loss is only computed for labels in `[0, ..., config.vocab_size]`
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    XLM Model with a sequence classification/regression head on top (a linear layer on top of the pooled output) e.g.
+    for GLUE tasks.
+    """
+)
 class XLMForSequenceClassification(XLMPreTrainedModel):
     def __init__(self, config) -> None: ...
     @auto_docstring
@@ -186,9 +452,40 @@ class XLMForSequenceClassification(XLMPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, SequenceClassifierOutput]: ...
+    ) -> Union[tuple, SequenceClassifierOutput]:
+        r"""
+        langs (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            A parallel sequence of tokens to be used to indicate the language of each token in the input. Indices are
+            languages ids which can be obtained from the language names by using two conversion mappings provided in
+            the configuration of the model (only provided for multilingual models). More precisely, the *language name
+            to language id* mapping is in `model.config.lang2id` (which is a dictionary string to int) and the
+            *language id to language name* mapping is in `model.config.id2lang` (dictionary int to string).
 
-@auto_docstring(custom_intro=...)
+            See usage examples detailed in the [multilingual documentation](../multilingual).
+        lengths (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Length of each sentence that can be used to avoid performing attention on padding token indices. You can
+            also use *attention_mask* for the same result (see above), kept here for compatibility. Indices selected in
+            `[0, ..., input_ids.size(-1)]`.
+        cache (`dict[str, torch.FloatTensor]`, *optional*):
+            Dictionary string to `torch.FloatTensor` that contains precomputed hidden states (key and values in the
+            attention blocks) as computed by the model (see `cache` output below). Can be used to speed up sequential
+            decoding.
+
+            The dictionary object will be modified in-place during the forward pass to add newly computed
+            hidden-states.
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    XLM Model with a span classification head on top for extractive question-answering tasks like SQuAD (a linear
+    layers on top of the hidden-states output to compute `span start logits` and `span end logits`).
+    """
+)
 class XLMForQuestionAnsweringSimple(XLMPreTrainedModel):
     def __init__(self, config) -> None: ...
     @auto_docstring
@@ -208,7 +505,29 @@ class XLMForQuestionAnsweringSimple(XLMPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, QuestionAnsweringModelOutput]: ...
+    ) -> Union[tuple, QuestionAnsweringModelOutput]:
+        r"""
+        langs (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            A parallel sequence of tokens to be used to indicate the language of each token in the input. Indices are
+            languages ids which can be obtained from the language names by using two conversion mappings provided in
+            the configuration of the model (only provided for multilingual models). More precisely, the *language name
+            to language id* mapping is in `model.config.lang2id` (which is a dictionary string to int) and the
+            *language id to language name* mapping is in `model.config.id2lang` (dictionary int to string).
+
+            See usage examples detailed in the [multilingual documentation](../multilingual).
+        lengths (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Length of each sentence that can be used to avoid performing attention on padding token indices. You can
+            also use *attention_mask* for the same result (see above), kept here for compatibility. Indices selected in
+            `[0, ..., input_ids.size(-1)]`.
+        cache (`dict[str, torch.FloatTensor]`, *optional*):
+            Dictionary string to `torch.FloatTensor` that contains precomputed hidden states (key and values in the
+            attention blocks) as computed by the model (see `cache` output below). Can be used to speed up sequential
+            decoding.
+
+            The dictionary object will be modified in-place during the forward pass to add newly computed
+            hidden-states.
+        """
+        ...
 
 @auto_docstring
 class XLMForQuestionAnswering(XLMPreTrainedModel):
@@ -233,7 +552,55 @@ class XLMForQuestionAnswering(XLMPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, XLMForQuestionAnsweringOutput]: ...
+    ) -> Union[tuple, XLMForQuestionAnsweringOutput]:
+        r"""
+        langs (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            A parallel sequence of tokens to be used to indicate the language of each token in the input. Indices are
+            languages ids which can be obtained from the language names by using two conversion mappings provided in
+            the configuration of the model (only provided for multilingual models). More precisely, the *language name
+            to language id* mapping is in `model.config.lang2id` (which is a dictionary string to int) and the
+            *language id to language name* mapping is in `model.config.id2lang` (dictionary int to string).
+
+            See usage examples detailed in the [multilingual documentation](../multilingual).
+        lengths (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Length of each sentence that can be used to avoid performing attention on padding token indices. You can
+            also use *attention_mask* for the same result (see above), kept here for compatibility. Indices selected in
+            `[0, ..., input_ids.size(-1)]`.
+        cache (`dict[str, torch.FloatTensor]`, *optional*):
+            Dictionary string to `torch.FloatTensor` that contains precomputed hidden states (key and values in the
+            attention blocks) as computed by the model (see `cache` output below). Can be used to speed up sequential
+            decoding.
+
+            The dictionary object will be modified in-place during the forward pass to add newly computed
+            hidden-states.
+        is_impossible (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels whether a question has an answer or no answer (SQuAD 2.0)
+        cls_index (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for position (index) of the classification token to use as input for computing plausibility of the
+            answer.
+        p_mask (`torch.FloatTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Optional mask of tokens which can't be in answers (e.g. [CLS], [PAD], ...). 1.0 means token should be
+            masked. 0.0 mean token is not masked.
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, XLMForQuestionAnswering
+        >>> import torch
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("FacebookAI/xlm-mlm-en-2048")
+        >>> model = XLMForQuestionAnswering.from_pretrained("FacebookAI/xlm-mlm-en-2048")
+
+        >>> input_ids = torch.tensor(tokenizer.encode("Hello, my dog is cute", add_special_tokens=True)).unsqueeze(
+        ...     0
+        ... )  # Batch size 1
+        >>> start_positions = torch.tensor([1])
+        >>> end_positions = torch.tensor([3])
+
+        >>> outputs = model(input_ids, start_positions=start_positions, end_positions=end_positions)
+        >>> loss = outputs.loss
+        ```"""
+        ...
 
 @auto_docstring
 class XLMForTokenClassification(XLMPreTrainedModel):
@@ -254,7 +621,31 @@ class XLMForTokenClassification(XLMPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, TokenClassifierOutput]: ...
+    ) -> Union[tuple, TokenClassifierOutput]:
+        r"""
+        langs (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            A parallel sequence of tokens to be used to indicate the language of each token in the input. Indices are
+            languages ids which can be obtained from the language names by using two conversion mappings provided in
+            the configuration of the model (only provided for multilingual models). More precisely, the *language name
+            to language id* mapping is in `model.config.lang2id` (which is a dictionary string to int) and the
+            *language id to language name* mapping is in `model.config.id2lang` (dictionary int to string).
+
+            See usage examples detailed in the [multilingual documentation](../multilingual).
+        lengths (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Length of each sentence that can be used to avoid performing attention on padding token indices. You can
+            also use *attention_mask* for the same result (see above), kept here for compatibility. Indices selected in
+            `[0, ..., input_ids.size(-1)]`.
+        cache (`dict[str, torch.FloatTensor]`, *optional*):
+            Dictionary string to `torch.FloatTensor` that contains precomputed hidden states (key and values in the
+            attention blocks) as computed by the model (see `cache` output below). Can be used to speed up sequential
+            decoding.
+
+            The dictionary object will be modified in-place during the forward pass to add newly computed
+            hidden-states.
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the token classification loss. Indices should be in `[0, ..., config.num_labels - 1]`.
+        """
+        ...
 
 @auto_docstring
 class XLMForMultipleChoice(XLMPreTrainedModel):
@@ -275,7 +666,57 @@ class XLMForMultipleChoice(XLMPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, MultipleChoiceModelOutput]: ...
+    ) -> Union[tuple, MultipleChoiceModelOutput]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`):
+            Indices of input sequence tokens in the vocabulary.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        langs (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`, *optional*):
+            A parallel sequence of tokens to be used to indicate the language of each token in the input. Indices are
+            languages ids which can be obtained from the language names by using two conversion mappings provided in
+            the configuration of the model (only provided for multilingual models). More precisely, the *language name
+            to language id* mapping is in `model.config.lang2id` (which is a dictionary string to int) and the
+            *language id to language name* mapping is in `model.config.id2lang` (dictionary int to string).
+
+            See usage examples detailed in the [multilingual documentation](../multilingual).
+        token_type_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`, *optional*):
+            Segment token indices to indicate first and second portions of the inputs. Indices are selected in `[0,
+            1]`:
+
+            - 0 corresponds to a *sentence A* token,
+            - 1 corresponds to a *sentence B* token.
+
+            [What are token type IDs?](../glossary#token-type-ids)
+        position_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`, *optional*):
+            Indices of positions of each input sequence tokens in the position embeddings. Selected in the range `[0,
+            config.max_position_embeddings - 1]`.
+
+            [What are position IDs?](../glossary#position-ids)
+        lengths (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Length of each sentence that can be used to avoid performing attention on padding token indices. You can
+            also use *attention_mask* for the same result (see above), kept here for compatibility. Indices selected in
+            `[0, ..., input_ids.size(-1)]`.
+        cache (`dict[str, torch.FloatTensor]`, *optional*):
+            Dictionary string to `torch.FloatTensor` that contains precomputed hidden states (key and values in the
+            attention blocks) as computed by the model (see `cache` output below). Can be used to speed up sequential
+            decoding.
+
+            The dictionary object will be modified in-place during the forward pass to add newly computed
+            hidden-states.
+        inputs_embeds (`torch.FloatTensor` of shape `(batch_size, num_choices, sequence_length, hidden_size)`, *optional*):
+            Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation. This
+            is useful if you want more control over how to convert `input_ids` indices into associated vectors than the
+            model's internal embedding lookup matrix.
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the multiple choice classification loss. Indices should be in `[0, ...,
+            num_choices-1]` where `num_choices` is the size of the second dimension of the input tensors. (See
+            `input_ids` above)
+        """
+        ...
 
 __all__ = [
     "XLMForMultipleChoice",

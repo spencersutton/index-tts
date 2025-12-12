@@ -21,6 +21,7 @@ from ...utils import (
 )
 from .configuration_blenderbot import BlenderbotConfig
 
+"""TF 2.0 Blenderbot model."""
 logger = ...
 _CHECKPOINT_FOR_DOC = ...
 _CONFIG_FOR_DOC = ...
@@ -29,12 +30,18 @@ LARGE_NEGATIVE = ...
 def shift_tokens_right(input_ids: tf.Tensor, pad_token_id: int, decoder_start_token_id: int): ...
 
 class TFBlenderbotLearnedPositionalEmbedding(keras.layers.Embedding):
+    """
+    This module learns positional embeddings up to a fixed maximum size.
+    """
     def __init__(self, num_embeddings: int, embedding_dim: int, **kwargs) -> None: ...
     def call(
         self, input_shape: tf.TensorShape, past_key_values_length: int = ..., position_ids: tf.Tensor | None = ...
-    ): ...
+    ):
+        """Input is expected to be of size [bsz x seqlen]."""
+        ...
 
 class TFBlenderbotAttention(keras.layers.Layer):
+    """Multi-headed attention from "Attention Is All You Need"""
     def __init__(
         self, embed_dim: int, num_heads: int, dropout: float = ..., is_decoder: bool = ..., bias: bool = ..., **kwargs
     ) -> None: ...
@@ -46,8 +53,12 @@ class TFBlenderbotAttention(keras.layers.Layer):
         attention_mask: tf.Tensor | None = ...,
         layer_head_mask: tf.Tensor | None = ...,
         training: bool | None = ...,
-    ) -> tuple[tf.Tensor, tf.Tensor | None]: ...
-    def build(self, input_shape=...): ...
+    ) -> tuple[tf.Tensor, tf.Tensor | None]:
+        """Input shape: Batch x Time x Channel"""
+        ...
+
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFBlenderbotEncoderLayer(keras.layers.Layer):
     def __init__(self, config: BlenderbotConfig, **kwargs) -> None: ...
@@ -57,8 +68,19 @@ class TFBlenderbotEncoderLayer(keras.layers.Layer):
         attention_mask: tf.Tensor,
         layer_head_mask: tf.Tensor,
         training: bool | None = ...,
-    ): ...
-    def build(self, input_shape=...): ...
+    ):  # -> tuple[Any, Any]:
+        """
+        Args:
+            hidden_states (`tf.Tensor`): input to the layer of shape *(batch, seq_len, embed_dim)*
+            attention_mask (`tf.Tensor`): attention mask of size
+                *(batch, 1, tgt_len, src_len)* where padding elements are indicated by very large negative values.
+            layer_head_mask (`tf.Tensor`): mask for attention heads in a given layer of size
+                *(encoder_attention_heads,)*
+        """
+        ...
+
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFBlenderbotDecoderLayer(keras.layers.Layer):
     def __init__(self, config: BlenderbotConfig, **kwargs) -> None: ...
@@ -72,8 +94,26 @@ class TFBlenderbotDecoderLayer(keras.layers.Layer):
         cross_attn_layer_head_mask: tf.Tensor | None = ...,
         past_key_value: tuple[tf.Tensor] | None = ...,
         training: bool | None = ...,
-    ) -> tuple[tf.Tensor, tf.Tensor, tuple[tuple[tf.Tensor]]]: ...
-    def build(self, input_shape=...): ...
+    ) -> tuple[tf.Tensor, tf.Tensor, tuple[tuple[tf.Tensor]]]:
+        """
+        Args:
+            hidden_states (`tf.Tensor`): input to the layer of shape *(batch, seq_len, embed_dim)*
+            attention_mask (`tf.Tensor`): attention mask of size
+                *(batch, 1, tgt_len, src_len)* where padding elements are indicated by very large negative values.
+            encoder_hidden_states (`tf.Tensor`):
+                cross attention input to the layer of shape *(batch, seq_len, embed_dim)*
+            encoder_attention_mask (`tf.Tensor`): encoder attention mask of size
+                *(batch, 1, tgt_len, src_len)* where padding elements are indicated by very large negative values.
+            layer_head_mask (`tf.Tensor`): mask for attention heads in a given layer of size
+                *(decoder_attention_heads,)*
+            cross_attn_layer_head_mask (`tf.Tensor`): mask for heads of the cross-attention module.
+                *(decoder_attention_heads,)*
+            past_key_value (`Tuple(tf.Tensor)`): cached past key and value projection states
+        """
+        ...
+
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFBlenderbotPreTrainedModel(TFPreTrainedModel):
     config_class = BlenderbotConfig
@@ -89,8 +129,10 @@ class TFBlenderbotEncoder(keras.layers.Layer):
     def __init__(
         self, config: BlenderbotConfig, embed_tokens: keras.layers.Embedding | None = ..., **kwargs
     ) -> None: ...
-    def get_embed_tokens(self): ...
-    def set_embed_tokens(self, embed_tokens): ...
+    def get_embed_tokens(self):  # -> None:
+        ...
+    def set_embed_tokens(self, embed_tokens):  # -> None:
+        ...
     @unpack_inputs
     def call(
         self,
@@ -102,8 +144,53 @@ class TFBlenderbotEncoder(keras.layers.Layer):
         output_hidden_states=...,
         return_dict=...,
         training=...,
-    ): ...
-    def build(self, input_shape=...): ...
+    ):  # -> tuple[Any | tuple[Any, ...] | tuple[()], ...] | TFBaseModelOutput:
+        """
+        Args:
+            input_ids (`tf.Tensor` of shape `(batch_size, sequence_length)`):
+                Indices of input sequence tokens in the vocabulary. Padding will be ignored by default should you
+                provide it.
+
+                Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+                [`PreTrainedTokenizer.__call__`] for details.
+
+                [What are input IDs?](../glossary#input-ids)
+            attention_mask (`tf.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Mask to avoid performing attention on padding token indices. Mask values selected in `[0, 1]`:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+            head_mask (`tf.Tensor` of shape `(encoder_layers, encoder_attention_heads)`, `optional):
+                Mask to nullify selected heads of the attention modules. Mask values selected in `[0, 1]`:
+
+                - 1 indicates the head is **not masked**,
+                - 0 indicates the head is **masked**.
+
+            inputs_embeds (`tf.Tensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*):
+                Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation.
+                This is useful if you want more control over how to convert `input_ids` indices into associated vectors
+                than the model's internal embedding lookup matrix.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail. This argument can be used only in eager mode, in graph mode the value
+                in the config will be used instead.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers. See `hidden_states` under returned tensors
+                for more detail. This argument can be used only in eager mode, in graph mode the value in the config
+                will be used instead.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`~utils.ModelOutput`] instead of a plain tuple. This argument can be used
+                in eager mode, in graph mode the value will always be set to True.
+            training (`bool`, *optional*, defaults to `False`):
+                Whether or not to use the model in training mode (some modules like dropout modules have different
+                behaviors between training and evaluation).
+        """
+        ...
+
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 @keras_serializable
 class TFBlenderbotDecoder(keras.layers.Layer):
@@ -111,8 +198,10 @@ class TFBlenderbotDecoder(keras.layers.Layer):
     def __init__(
         self, config: BlenderbotConfig, embed_tokens: keras.layers.Embedding | None = ..., **kwargs
     ) -> None: ...
-    def get_embed_tokens(self): ...
-    def set_embed_tokens(self, embed_tokens): ...
+    def get_embed_tokens(self):  # -> None:
+        ...
+    def set_embed_tokens(self, embed_tokens):  # -> None:
+        ...
     @unpack_inputs
     def call(
         self,
@@ -130,15 +219,88 @@ class TFBlenderbotDecoder(keras.layers.Layer):
         output_hidden_states=...,
         return_dict=...,
         training=...,
-    ): ...
-    def build(self, input_shape=...): ...
+    ):  # -> tuple[Any, tuple[()] | tuple[Any, ...] | None, tuple[Any, ...] | Any | tuple[()] | None, tuple[()] | tuple[Any, ...] | None, tuple[()] | tuple[Any, ...] | None] | TFBaseModelOutputWithPastAndCrossAttentions:
+        r"""
+        Args:
+            input_ids (`tf.Tensor` of shape `(batch_size, sequence_length)`):
+                Indices of input sequence tokens in the vocabulary. Padding will be ignored by default should you
+                provide it.
+
+                Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+                [`PreTrainedTokenizer.__call__`] for details.
+
+                [What are input IDs?](../glossary#input-ids)
+            attention_mask (`tf.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Mask to avoid performing attention on padding token indices. Mask values selected in `[0, 1]`:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+            position_ids (`tf.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Indices of positions of each decoder input sequence tokens in the position embeddings. Selected in the
+                range `[0, config.max_position_embeddings - 1]`.
+            encoder_hidden_states (`tf.Tensor` of shape `(batch_size, encoder_sequence_length, hidden_size)`, *optional*):
+                Sequence of hidden-states at the output of the last layer of the encoder. Used in the cross-attention
+                of the decoder.
+            encoder_attention_mask (`tf.Tensor` of shape `(batch_size, encoder_sequence_length)`, *optional*):
+                Mask to avoid performing cross-attention on padding tokens indices of encoder input_ids. Mask values
+                selected in `[0, 1]`:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+            head_mask (`tf.Tensor` of shape `(decoder_layers, decoder_attention_heads)`, *optional*):
+                Mask to nullify selected heads of the attention modules. Mask values selected in `[0, 1]`:
+
+                - 1 indicates the head is **not masked**,
+                - 0 indicates the head is **masked**.
+
+            cross_attn_head_mask (`tf.Tensor` of shape `(decoder_layers, decoder_attention_heads)`, *optional*):
+                Mask to nullify selected heads of the cross-attention modules. Mask values selected in `[0, 1]`:
+
+                - 1 indicates the head is **not masked**,
+                - 0 indicates the head is **masked**.
+
+            past_key_values (`tuple[tuple[tf.Tensor]]` of length `config.n_layers` with each tuple having 2 tuples each of which has 2 tensors of shape `(batch_size, num_heads, sequence_length - 1, embed_size_per_head)`):
+                Contains precomputed key and value hidden-states of the attention blocks. Can be used to speed up
+                decoding.
+
+                If `past_key_values` are used, the user can optionally input only the last `decoder_input_ids` (those
+                that don't have their past key value states given to this model) of shape `(batch_size, 1)` instead of
+                all `decoder_input_ids` of shape `(batch_size, sequence_length)`.
+            inputs_embeds (`tf.Tensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*):
+                Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation.
+                This is useful if you want more control over how to convert `input_ids` indices into associated vectors
+                than the model's internal embedding lookup matrix.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail. This argument can be used only in eager mode, in graph mode the value
+                in the config will be used instead.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers. See `hidden_states` under returned tensors
+                for more detail. This argument can be used only in eager mode, in graph mode the value in the config
+                will be used instead.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`~utils.ModelOutput`] instead of a plain tuple. This argument can be used
+                in eager mode, in graph mode the value will always be set to True.
+            training (`bool`, *optional*, defaults to `False`):
+                Whether or not to use the model in training mode (some modules like dropout modules have different
+                behaviors between training and evaluation).
+        """
+        ...
+
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 @keras_serializable
 class TFBlenderbotMainLayer(keras.layers.Layer):
     config_class = BlenderbotConfig
     def __init__(self, config: BlenderbotConfig, **kwargs) -> None: ...
     def get_input_embeddings(self): ...
-    def set_input_embeddings(self, new_embeddings): ...
+    def set_input_embeddings(self, new_embeddings):  # -> None:
+        ...
     @unpack_inputs
     def call(
         self,
@@ -160,16 +322,26 @@ class TFBlenderbotMainLayer(keras.layers.Layer):
         return_dict=...,
         training=...,
         **kwargs,
-    ): ...
-    def build(self, input_shape=...): ...
+    ):  # -> TFSeq2SeqModelOutput:
+        ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
-@add_start_docstrings(..., BLENDERBOT_START_DOCSTRING)
+@add_start_docstrings(
+    "The bare BLENDERBOT Model outputting raw hidden-states without any specific head on top.",
+    BLENDERBOT_START_DOCSTRING,
+)
 class TFBlenderbotModel(TFBlenderbotPreTrainedModel):
     def __init__(self, config: BlenderbotConfig, *inputs, **kwargs) -> None: ...
-    def get_encoder(self): ...
-    def get_decoder(self): ...
+    def get_encoder(self):  # -> TFBlenderbotEncoder:
+        ...
+    def get_decoder(self):  # -> TFBlenderbotDecoder:
+        ...
     @classmethod
-    def from_pretrained(cls, pretrained_model_name_or_path: str | os.PathLike | None, *model_args, **kwargs): ...
+    def from_pretrained(
+        cls, pretrained_model_name_or_path: str | os.PathLike | None, *model_args, **kwargs
+    ):  # -> tuple[Any, dict[str, list[Any]]] | tuple[Any, dict[str, list[Any] | Any]] | tuple[TFBlenderbotSmallModel, dict[str, set[Any] | list[str | Any] | list[Any]]] | TFBlenderbotSmallModel | tuple[Self, dict[str, set[Any] | list[str | Any] | list[Any]]] | Self:
+        ...
     @unpack_inputs
     @add_start_docstrings_to_model_forward(BLENDERBOT_INPUTS_DOCSTRING.format("batch_size, sequence_length"))
     @add_code_sample_docstrings(
@@ -196,25 +368,41 @@ class TFBlenderbotModel(TFBlenderbotPreTrainedModel):
         training: bool | None = ...,
         **kwargs,
     ) -> tuple[tf.Tensor] | TFSeq2SeqModelOutput: ...
-    def serving_output(self, output): ...
-    def build(self, input_shape=...): ...
+    def serving_output(self, output):  # -> TFSeq2SeqModelOutput:
+        ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class BiasLayer(keras.layers.Layer):
+    """
+    Bias as a layer. It is used for serialization purposes: `keras.Model.save_weights` stores on a per-layer basis,
+    so all weights have to be registered in a layer.
+    """
     def __init__(self, shape, initializer, trainable, name, **kwargs) -> None: ...
     def call(self, x): ...
 
-@add_start_docstrings(..., BLENDERBOT_START_DOCSTRING)
+@add_start_docstrings(
+    "The BLENDERBOT Model with a language modeling head. Can be used for summarization.", BLENDERBOT_START_DOCSTRING
+)
 class TFBlenderbotForConditionalGeneration(TFBlenderbotPreTrainedModel, TFCausalLanguageModelingLoss):
     _keys_to_ignore_on_load_unexpected = ...
     def __init__(self, config, *inputs, **kwargs) -> None: ...
-    def get_decoder(self): ...
-    def get_encoder(self): ...
+    def get_decoder(self):  # -> TFBlenderbotDecoder:
+        ...
+    def get_encoder(self):  # -> TFBlenderbotEncoder:
+        ...
     def get_output_embeddings(self): ...
-    def set_output_embeddings(self, value): ...
-    def get_bias(self): ...
-    def set_bias(self, value): ...
+    def set_output_embeddings(self, value):  # -> None:
+        ...
+    def get_bias(self):  # -> dict[str, Any]:
+        ...
+    def set_bias(self, value):  # -> None:
+        ...
     @classmethod
-    def from_pretrained(cls, pretrained_model_name_or_path: str | os.PathLike | None, *model_args, **kwargs): ...
+    def from_pretrained(
+        cls, pretrained_model_name_or_path: str | os.PathLike | None, *model_args, **kwargs
+    ):  # -> tuple[Any, dict[str, list[Any]]] | tuple[Any, dict[str, list[Any] | Any]] | tuple[TFBlenderbotSmallForConditionalGeneration, dict[str, set[Any] | list[str | Any] | list[Any]]] | TFBlenderbotSmallForConditionalGeneration | tuple[Self, dict[str, set[Any] | list[str | Any] | list[Any]]] | Self:
+        ...
     @unpack_inputs
     @add_start_docstrings_to_model_forward(BLENDERBOT_INPUTS_DOCSTRING)
     @replace_return_docstrings(output_type=TFSeq2SeqLMOutput, config_class=_CONFIG_FOR_DOC)
@@ -239,8 +427,20 @@ class TFBlenderbotForConditionalGeneration(TFBlenderbotPreTrainedModel, TFCausal
         return_dict: bool | None = ...,
         labels: tf.Tensor | None = ...,
         training: bool | None = ...,
-    ) -> tuple[tf.Tensor] | TFSeq2SeqLMOutput: ...
-    def serving_output(self, output): ...
+    ) -> tuple[tf.Tensor] | TFSeq2SeqLMOutput:
+        r"""
+        labels (`tf.tensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Returns:
+
+        """
+        ...
+
+    def serving_output(self, output):  # -> TFSeq2SeqLMOutput:
+        ...
     def prepare_inputs_for_generation(
         self,
         decoder_input_ids,
@@ -253,7 +453,9 @@ class TFBlenderbotForConditionalGeneration(TFBlenderbotPreTrainedModel, TFCausal
         use_cache=...,
         encoder_outputs=...,
         **kwargs,
-    ): ...
-    def build(self, input_shape=...): ...
+    ):  # -> dict[str, Any | None]:
+        ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 __all__ = ["TFBlenderbotForConditionalGeneration", "TFBlenderbotModel", "TFBlenderbotPreTrainedModel"]

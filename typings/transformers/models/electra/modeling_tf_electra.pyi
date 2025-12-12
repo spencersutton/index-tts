@@ -34,6 +34,7 @@ from ...utils import (
 )
 from .configuration_electra import ElectraConfig
 
+"""TF Electra model."""
 logger = ...
 _CHECKPOINT_FOR_DOC = ...
 _CONFIG_FOR_DOC = ...
@@ -52,12 +53,14 @@ class TFElectraSelfAttention(keras.layers.Layer):
         output_attentions: bool,
         training: bool = ...,
     ) -> tuple[tf.Tensor]: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFElectraSelfOutput(keras.layers.Layer):
     def __init__(self, config: ElectraConfig, **kwargs) -> None: ...
     def call(self, hidden_states: tf.Tensor, input_tensor: tf.Tensor, training: bool = ...) -> tf.Tensor: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFElectraAttention(keras.layers.Layer):
     def __init__(self, config: ElectraConfig, **kwargs) -> None: ...
@@ -73,17 +76,20 @@ class TFElectraAttention(keras.layers.Layer):
         output_attentions: bool,
         training: bool = ...,
     ) -> tuple[tf.Tensor]: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFElectraIntermediate(keras.layers.Layer):
     def __init__(self, config: ElectraConfig, **kwargs) -> None: ...
     def call(self, hidden_states: tf.Tensor) -> tf.Tensor: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFElectraOutput(keras.layers.Layer):
     def __init__(self, config: ElectraConfig, **kwargs) -> None: ...
     def call(self, hidden_states: tf.Tensor, input_tensor: tf.Tensor, training: bool = ...) -> tf.Tensor: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFElectraLayer(keras.layers.Layer):
     def __init__(self, config: ElectraConfig, **kwargs) -> None: ...
@@ -98,7 +104,8 @@ class TFElectraLayer(keras.layers.Layer):
         output_attentions: bool,
         training: bool = ...,
     ) -> tuple[tf.Tensor]: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFElectraEncoder(keras.layers.Layer):
     def __init__(self, config: ElectraConfig, **kwargs) -> None: ...
@@ -116,16 +123,20 @@ class TFElectraEncoder(keras.layers.Layer):
         return_dict: bool,
         training: bool = ...,
     ) -> TFBaseModelOutputWithPastAndCrossAttentions | tuple[tf.Tensor]: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFElectraPooler(keras.layers.Layer):
     def __init__(self, config: ElectraConfig, **kwargs) -> None: ...
     def call(self, hidden_states: tf.Tensor) -> tf.Tensor: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFElectraEmbeddings(keras.layers.Layer):
+    """Construct the embeddings from word, position and token_type embeddings."""
     def __init__(self, config: ElectraConfig, **kwargs) -> None: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
     def call(
         self,
         input_ids: tf.Tensor | None = ...,
@@ -134,19 +145,33 @@ class TFElectraEmbeddings(keras.layers.Layer):
         inputs_embeds: tf.Tensor | None = ...,
         past_key_values_length=...,
         training: bool = ...,
-    ) -> tf.Tensor: ...
+    ) -> tf.Tensor:
+        """
+        Applies embedding based on inputs tensor.
+
+        Returns:
+            final_embeddings (`tf.Tensor`): output embedding tensor.
+        """
+        ...
 
 class TFElectraDiscriminatorPredictions(keras.layers.Layer):
     def __init__(self, config, **kwargs) -> None: ...
     def call(self, discriminator_hidden_states, training=...): ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFElectraGeneratorPredictions(keras.layers.Layer):
     def __init__(self, config, **kwargs) -> None: ...
     def call(self, generator_hidden_states, training=...): ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFElectraPreTrainedModel(TFPreTrainedModel):
+    """
+    An abstract class to handle weights initialization and a simple interface for downloading and loading pretrained
+    models.
+    """
+
     config_class = ElectraConfig
     base_model_prefix = ...
     _keys_to_ignore_on_load_unexpected = ...
@@ -156,8 +181,10 @@ class TFElectraPreTrainedModel(TFPreTrainedModel):
 class TFElectraMainLayer(keras.layers.Layer):
     config_class = ElectraConfig
     def __init__(self, config, **kwargs) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def get_input_embeddings(self):  # -> TFElectraEmbeddings:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     def get_extended_attention_mask(self, attention_mask, input_shape, dtype, past_key_values_length=...): ...
     def get_head_mask(self, head_mask): ...
     @unpack_inputs
@@ -178,10 +205,32 @@ class TFElectraMainLayer(keras.layers.Layer):
         return_dict: bool | None = ...,
         training: bool | None = ...,
     ) -> TFBaseModelOutputWithPastAndCrossAttentions | tuple[tf.Tensor]: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 @dataclass
 class TFElectraForPreTrainingOutput(ModelOutput):
+    """
+    Output type of [`TFElectraForPreTraining`].
+
+    Args:
+        loss (*optional*, returned when `labels` is provided, `tf.Tensor` of shape `(1,)`):
+            Total loss of the ELECTRA objective.
+        logits (`tf.Tensor` of shape `(batch_size, sequence_length)`):
+            Prediction scores of the head (scores for each token before SoftMax).
+        hidden_states (`tuple(tf.Tensor)`, *optional*, returned when `output_hidden_states=True` is passed or when `config.output_hidden_states=True`):
+            Tuple of `tf.Tensor` (one for the output of the embeddings + one for the output of each layer) of shape
+            `(batch_size, sequence_length, hidden_size)`.
+
+            Hidden-states of the model at the output of each layer plus the initial embedding outputs.
+        attentions (`tuple(tf.Tensor)`, *optional*, returned when `output_attentions=True` is passed or when `config.output_attentions=True`):
+            Tuple of `tf.Tensor` (one for each layer) of shape `(batch_size, num_heads, sequence_length,
+            sequence_length)`.
+
+            Attentions weights after the attention softmax, used to compute the weighted average in the self-attention
+            heads.
+    """
+
     logits: tf.Tensor | None = ...
     hidden_states: tuple[tf.Tensor] | None = ...
     attentions: tuple[tf.Tensor] | None = ...
@@ -189,7 +238,14 @@ class TFElectraForPreTrainingOutput(ModelOutput):
 ELECTRA_START_DOCSTRING = ...
 ELECTRA_INPUTS_DOCSTRING = ...
 
-@add_start_docstrings(..., ELECTRA_START_DOCSTRING)
+@add_start_docstrings(
+    "The bare Electra Model transformer outputting raw hidden-states without any specific head on top. Identical to "
+    "the BERT model except that it uses an additional linear layer between the embedding layer and the encoder if the "
+    "hidden size and embedding size are different. "
+    ""
+    "Both the generator and discriminator checkpoints may be loaded into this model.",
+    ELECTRA_START_DOCSTRING,
+)
 class TFElectraModel(TFElectraPreTrainedModel):
     def __init__(self, config, *inputs, **kwargs) -> None: ...
     @unpack_inputs
@@ -215,10 +271,41 @@ class TFElectraModel(TFElectraPreTrainedModel):
         output_hidden_states: bool | None = ...,
         return_dict: bool | None = ...,
         training: bool | None = ...,
-    ) -> TFBaseModelOutputWithPastAndCrossAttentions | tuple[tf.Tensor]: ...
-    def build(self, input_shape=...): ...
+    ) -> TFBaseModelOutputWithPastAndCrossAttentions | tuple[tf.Tensor]:
+        r"""
+        encoder_hidden_states  (`tf.Tensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*):
+            Sequence of hidden-states at the output of the last layer of the encoder. Used in the cross-attention if
+            the model is configured as a decoder.
+        encoder_attention_mask (`tf.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Mask to avoid performing attention on the padding token indices of the encoder input. This mask is used in
+            the cross-attention if the model is configured as a decoder. Mask values selected in `[0, 1]`:
 
-@add_start_docstrings(..., ELECTRA_START_DOCSTRING)
+            - 1 for tokens that are **not masked**,
+            - 0 for tokens that are **masked**.
+
+        past_key_values (`tuple[tuple[tf.Tensor]]` of length `config.n_layers`)
+            contains precomputed key and value hidden states of the attention blocks. Can be used to speed up decoding.
+            If `past_key_values` are used, the user can optionally input only the last `decoder_input_ids` (those that
+            don't have their past key value states given to this model) of shape `(batch_size, 1)` instead of all
+            `decoder_input_ids` of shape `(batch_size, sequence_length)`.
+        use_cache (`bool`, *optional*, defaults to `True`):
+            If set to `True`, `past_key_values` key value states are returned and can be used to speed up decoding (see
+            `past_key_values`). Set to `False` during training, `True` during generation
+        """
+        ...
+
+    def build(self, input_shape=...):  # -> None:
+        ...
+
+@add_start_docstrings(
+    """
+    Electra model with a binary classification head on top as used during pretraining for identifying generated tokens.
+
+    Even though both the discriminator and generator may be loaded into this model, the discriminator is the only model
+    of the two to have the correct classification head to be used for this model.
+    """,
+    ELECTRA_START_DOCSTRING,
+)
 class TFElectraForPreTraining(TFElectraPreTrainedModel):
     def __init__(self, config, **kwargs) -> None: ...
     @unpack_inputs
@@ -236,22 +323,54 @@ class TFElectraForPreTraining(TFElectraPreTrainedModel):
         output_hidden_states: bool | None = ...,
         return_dict: bool | None = ...,
         training: bool | None = ...,
-    ) -> TFElectraForPreTrainingOutput | tuple[tf.Tensor]: ...
-    def build(self, input_shape=...): ...
+    ) -> TFElectraForPreTrainingOutput | tuple[tf.Tensor]:
+        r"""
+        Returns:
+
+        Examples:
+
+        ```python
+        >>> import tensorflow as tf
+        >>> from transformers import AutoTokenizer, TFElectraForPreTraining
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("google/electra-small-discriminator")
+        >>> model = TFElectraForPreTraining.from_pretrained("google/electra-small-discriminator")
+        >>> input_ids = tf.constant(tokenizer.encode("Hello, my dog is cute"))[None, :]  # Batch size 1
+        >>> outputs = model(input_ids)
+        >>> scores = outputs[0]
+        ```"""
+        ...
+
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFElectraMaskedLMHead(keras.layers.Layer):
     def __init__(self, config, input_embeddings, **kwargs) -> None: ...
-    def build(self, input_shape): ...
-    def get_output_embeddings(self): ...
-    def set_output_embeddings(self, value): ...
-    def get_bias(self): ...
-    def set_bias(self, value): ...
+    def build(self, input_shape):  # -> None:
+        ...
+    def get_output_embeddings(self):  # -> Any:
+        ...
+    def set_output_embeddings(self, value):  # -> None:
+        ...
+    def get_bias(self):  # -> dict[str, Any]:
+        ...
+    def set_bias(self, value):  # -> None:
+        ...
     def call(self, hidden_states): ...
 
-@add_start_docstrings(..., ELECTRA_START_DOCSTRING)
+@add_start_docstrings(
+    """
+    Electra model with a language modeling head on top.
+
+    Even though both the discriminator and generator may be loaded into this model, the generator is the only model of
+    the two to have been trained for the masked language modeling task.
+    """,
+    ELECTRA_START_DOCSTRING,
+)
 class TFElectraForMaskedLM(TFElectraPreTrainedModel, TFMaskedLanguageModelingLoss):
     def __init__(self, config, **kwargs) -> None: ...
-    def get_lm_head(self): ...
+    def get_lm_head(self):  # -> TFElectraMaskedLMHead:
+        ...
     def get_prefix_bias_name(self): ...
     @unpack_inputs
     @add_start_docstrings_to_model_forward(ELECTRA_INPUTS_DOCSTRING.format("batch_size, sequence_length"))
@@ -276,15 +395,32 @@ class TFElectraForMaskedLM(TFElectraPreTrainedModel, TFMaskedLanguageModelingLos
         return_dict: bool | None = ...,
         labels: np.ndarray | tf.Tensor | None = ...,
         training: bool | None = ...,
-    ) -> TFMaskedLMOutput | tuple[tf.Tensor]: ...
-    def build(self, input_shape=...): ...
+    ) -> TFMaskedLMOutput | tuple[tf.Tensor]:
+        r"""
+        labels (`tf.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should be in `[-100, 0, ...,
+            config.vocab_size]` (see `input_ids` docstring) Tokens with indices set to `-100` are ignored (masked), the
+            loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`
+        """
+        ...
+
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFElectraClassificationHead(keras.layers.Layer):
+    """Head for sentence-level classification tasks."""
     def __init__(self, config, **kwargs) -> None: ...
     def call(self, inputs, **kwargs): ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
-@add_start_docstrings(..., ELECTRA_START_DOCSTRING)
+@add_start_docstrings(
+    """
+    ELECTRA Model transformer with a sequence classification/regression head on top (a linear layer on top of the
+    pooled output) e.g. for GLUE tasks.
+    """,
+    ELECTRA_START_DOCSTRING,
+)
 class TFElectraForSequenceClassification(TFElectraPreTrainedModel, TFSequenceClassificationLoss):
     def __init__(self, config, *inputs, **kwargs) -> None: ...
     @unpack_inputs
@@ -309,10 +445,25 @@ class TFElectraForSequenceClassification(TFElectraPreTrainedModel, TFSequenceCla
         return_dict: bool | None = ...,
         labels: np.ndarray | tf.Tensor | None = ...,
         training: bool | None = ...,
-    ) -> TFSequenceClassifierOutput | tuple[tf.Tensor]: ...
-    def build(self, input_shape=...): ...
+    ) -> TFSequenceClassifierOutput | tuple[tf.Tensor]:
+        r"""
+        labels (`tf.Tensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
-@add_start_docstrings(..., ELECTRA_START_DOCSTRING)
+    def build(self, input_shape=...):  # -> None:
+        ...
+
+@add_start_docstrings(
+    """
+    ELECTRA Model with a multiple choice classification head on top (a linear layer on top of the pooled output and a
+    softmax) e.g. for RocStories/SWAG tasks.
+    """,
+    ELECTRA_START_DOCSTRING,
+)
 class TFElectraForMultipleChoice(TFElectraPreTrainedModel, TFMultipleChoiceLoss):
     def __init__(self, config, *inputs, **kwargs) -> None: ...
     @unpack_inputs
@@ -333,19 +484,34 @@ class TFElectraForMultipleChoice(TFElectraPreTrainedModel, TFMultipleChoiceLoss)
         return_dict: bool | None = ...,
         labels: np.ndarray | tf.Tensor | None = ...,
         training: bool | None = ...,
-    ) -> TFMultipleChoiceModelOutput | tuple[tf.Tensor]: ...
-    def build(self, input_shape=...): ...
+    ) -> TFMultipleChoiceModelOutput | tuple[tf.Tensor]:
+        r"""
+        labels (`tf.Tensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the multiple choice classification loss. Indices should be in `[0, ..., num_choices]`
+            where `num_choices` is the size of the second dimension of the input tensors. (See `input_ids` above)
+        """
+        ...
 
-@add_start_docstrings(..., ELECTRA_START_DOCSTRING)
+    def build(self, input_shape=...):  # -> None:
+        ...
+
+@add_start_docstrings(
+    """
+    Electra model with a token classification head on top.
+
+    Both the discriminator and generator may be loaded into this model.
+    """,
+    ELECTRA_START_DOCSTRING,
+)
 class TFElectraForTokenClassification(TFElectraPreTrainedModel, TFTokenClassificationLoss):
     def __init__(self, config, **kwargs) -> None: ...
     @unpack_inputs
     @add_start_docstrings_to_model_forward(ELECTRA_INPUTS_DOCSTRING.format("batch_size, sequence_length"))
     @add_code_sample_docstrings(
-        checkpoint=...,
+        checkpoint="bhadresh-savani/electra-base-discriminator-finetuned-conll03-english",
         output_type=TFTokenClassifierOutput,
         config_class=_CONFIG_FOR_DOC,
-        expected_output=...,
+        expected_output="['B-LOC', 'B-ORG', 'O', 'O', 'O', 'O', 'O', 'B-LOC', 'O', 'B-LOC', 'I-LOC']",
         expected_loss=0.11,
     )
     def call(
@@ -361,10 +527,23 @@ class TFElectraForTokenClassification(TFElectraPreTrainedModel, TFTokenClassific
         return_dict: bool | None = ...,
         labels: np.ndarray | tf.Tensor | None = ...,
         training: bool | None = ...,
-    ) -> TFTokenClassifierOutput | tuple[tf.Tensor]: ...
-    def build(self, input_shape=...): ...
+    ) -> TFTokenClassifierOutput | tuple[tf.Tensor]:
+        r"""
+        labels (`tf.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the token classification loss. Indices should be in `[0, ..., config.num_labels - 1]`.
+        """
+        ...
 
-@add_start_docstrings(..., ELECTRA_START_DOCSTRING)
+    def build(self, input_shape=...):  # -> None:
+        ...
+
+@add_start_docstrings(
+    """
+    Electra Model with a span classification head on top for extractive question-answering tasks like SQuAD (a linear
+    layers on top of the hidden-states output to compute `span start logits` and `span end logits`).
+    """,
+    ELECTRA_START_DOCSTRING,
+)
 class TFElectraForQuestionAnswering(TFElectraPreTrainedModel, TFQuestionAnsweringLoss):
     def __init__(self, config, *inputs, **kwargs) -> None: ...
     @unpack_inputs
@@ -392,8 +571,21 @@ class TFElectraForQuestionAnswering(TFElectraPreTrainedModel, TFQuestionAnswerin
         start_positions: np.ndarray | tf.Tensor | None = ...,
         end_positions: np.ndarray | tf.Tensor | None = ...,
         training: bool | None = ...,
-    ) -> TFQuestionAnsweringModelOutput | tuple[tf.Tensor]: ...
-    def build(self, input_shape=...): ...
+    ) -> TFQuestionAnsweringModelOutput | tuple[tf.Tensor]:
+        r"""
+        start_positions (`tf.Tensor` of shape `(batch_size,)`, *optional*):
+            Labels for position (index) of the start of the labelled span for computing the token classification loss.
+            Positions are clamped to the length of the sequence (`sequence_length`). Position outside of the sequence
+            are not taken into account for computing the loss.
+        end_positions (`tf.Tensor` of shape `(batch_size,)`, *optional*):
+            Labels for position (index) of the end of the labelled span for computing the token classification loss.
+            Positions are clamped to the length of the sequence (`sequence_length`). Position outside of the sequence
+            are not taken into account for computing the loss.
+        """
+        ...
+
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 __all__ = [
     "TFElectraForMaskedLM",

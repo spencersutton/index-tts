@@ -10,10 +10,21 @@ from ...image_utils import ChannelDimension, PILImageResampling
 from ...processing_utils import Unpack
 from ...utils import auto_docstring, is_torch_available, is_torchvision_available
 
+"""Fast Image processor class for PerceptionLM."""
 if is_torch_available(): ...
 if is_torchvision_available(): ...
 
 class PerceptionLMFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
+    r"""
+    vision_input_type (`str`, *optional*, defaults to `"thumb+tile"`):
+        Vision processing strategy. `"thumb+tile"` uses both thumbnails and multiple tiles for
+        multi-scale processing, otherwise uses single tile for lower memory usage.
+    tile_size (`int`, *optional*, defaults to `448`):
+        Height and width dimension (in pixels) of each tile used for image processing.
+    max_num_tiles (`int`, *optional*, defaults to `36`):
+        Maximum number of tiles an image can be split into based on its aspect ratio.
+    """
+
     vision_input_type: str = ...
     tile_size: int = ...
     max_num_tiles: int = ...
@@ -40,6 +51,7 @@ class PerceptionLMImageProcessorFast(BaseImageProcessorFast):
         max_num_tiles: int,
         resample: PILImageResampling = ...,
         input_data_format: Optional[Union[str, ChannelDimension]] = ...,
-    ): ...
+    ):  # -> tuple[Any | ndarray[_AnyShape, dtype[Any]], tuple[Any, ...] | tuple[Any, Any] | tuple[Literal[1], Literal[1]]]:
+        ...
 
 __all__ = ["PerceptionLMImageProcessorFast"]

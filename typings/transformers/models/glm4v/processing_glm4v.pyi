@@ -25,6 +25,20 @@ class Glm4vProcessorKwargs(ProcessingKwargs, total=False):
     _defaults = ...
 
 class Glm4vProcessor(ProcessorMixin):
+    r"""
+    Constructs a GLM-4V processor which wraps a GLM-4V image processor and a GLM-4 tokenizer into a single processor.
+    [`~Glm4vProcessor.__call__`] and [`~Glm4vProcessor.decode`] for more information.
+    Args:
+        image_processor ([`Glm4vProcessor`], *optional*):
+            The image processor is a required input.
+        tokenizer ([`PreTrainedTokenizerFast`], *optional*):
+            The tokenizer is a required input.
+        video_processor ([`Glm4vVideoProcessor`], *optional*):
+            The video processor is a required input.
+        chat_template (`str`, *optional*): A Jinja template which will be used to convert lists of messages
+            in a chat into a tokenizable string.
+    """
+
     attributes = ...
     image_processor_class = ...
     video_processor_class = ...
@@ -38,13 +52,82 @@ class Glm4vProcessor(ProcessorMixin):
         text: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]] = ...,
         videos: VideoInput = ...,
         **kwargs: Unpack[Glm4vProcessorKwargs],
-    ) -> BatchFeature: ...
-    def batch_decode(self, *args, **kwargs): ...
-    def decode(self, *args, **kwargs): ...
+    ) -> BatchFeature:
+        """
+        Main method to prepare for the model one or several sequences(s) and image(s). This method forwards the `text`
+        and `kwargs` arguments to PreTrainedTokenizerFast's [`~PreTrainedTokenizerFast.__call__`] if `text` is not `None` to encode
+        the text.
+
+        Args:
+            images (`PIL.Image.Image`, `np.ndarray`, `torch.Tensor`, `List[PIL.Image.Image]`, `List[np.ndarray]`, `List[torch.Tensor]`):
+                The image or batch of images to be prepared. Each image can be a PIL image, NumPy array or PyTorch
+                tensor. Both channels-first and channels-last formats are supported.
+            text (`str`, `List[str]`, `List[List[str]]`):
+                The sequence or batch of sequences to be encoded. Each sequence can be a string or a list of strings
+                (pretokenized string). If the sequences are provided as list of strings (pretokenized), you must set
+                `is_split_into_words=True` (to lift the ambiguity with a batch of sequences).
+            videos (`np.ndarray`, `torch.Tensor`, `List[np.ndarray]`, `List[torch.Tensor]`):
+                The image or batch of videos to be prepared. Each video can be a 4D NumPy array or PyTorch
+                tensor, or a nested list of 3D frames. Both channels-first and channels-last formats are supported.
+            return_tensors (`str` or [`~utils.TensorType`], *optional*):
+                If set, will return tensors of a particular framework. Acceptable values are:
+                - `'tf'`: Return TensorFlow `tf.constant` objects.
+                - `'pt'`: Return PyTorch `torch.Tensor` objects.
+                - `'np'`: Return NumPy `np.ndarray` objects.
+                - `'jax'`: Return JAX `jnp.ndarray` objects.
+
+        Returns:
+            [`BatchFeature`]: A [`BatchFeature`] with the following fields:
+
+            - **input_ids** -- List of token ids to be fed to a model. Returned when `text` is not `None`.
+            - **attention_mask** -- List of indices specifying which tokens should be attended to by the model (when
+              `return_attention_mask=True` or if *"attention_mask"* is in `self.model_input_names` and if `text` is not
+              `None`).
+            - **pixel_values** -- Pixel values to be fed to a model. Returned when `images` is not `None`.
+            - **pixel_values_videos** -- Pixel values of videos to be fed to a model. Returned when `videos` is not `None`.
+            - **image_grid_thw** -- List of image 3D grid in LLM. Returned when `images` is not `None`.
+            - **video_grid_thw** -- List of video 3D grid in LLM. Returned when `videos` is not `None`.
+        """
+        ...
+
+    def batch_decode(self, *args, **kwargs):
+        """
+        This method forwards all its arguments to Qwen2TokenizerFast's [`~PreTrainedTokenizer.batch_decode`]. Please
+        refer to the docstring of this method for more information.
+        """
+        ...
+
+    def decode(self, *args, **kwargs):
+        """
+        This method forwards all its arguments to Qwen2TokenizerFast's [`~PreTrainedTokenizer.decode`]. Please refer to
+        the docstring of this method for more information.
+        """
+        ...
+
     def post_process_image_text_to_text(
         self, generated_outputs, skip_special_tokens=..., clean_up_tokenization_spaces=..., **kwargs
-    ): ...
+    ):
+        """
+        Post-process the output of the model to decode the text.
+
+        Args:
+            generated_outputs (`torch.Tensor` or `np.ndarray`):
+                The output of the model `generate` function. The output is expected to be a tensor of shape `(batch_size, sequence_length)`
+                or `(sequence_length,)`.
+            skip_special_tokens (`bool`, *optional*, defaults to `True`):
+                Whether or not to remove special tokens in the output. Argument passed to the tokenizer's `batch_decode` method.
+            clean_up_tokenization_spaces (`bool`, *optional*, defaults to `False`):
+                Whether or not to clean up the tokenization spaces. Argument passed to the tokenizer's `batch_decode` method.
+            **kwargs:
+                Additional arguments to be passed to the tokenizer's `batch_decode method`.
+
+        Returns:
+            `list[str]`: The decoded text.
+        """
+        ...
+
     @property
-    def model_input_names(self): ...
+    def model_input_names(self):  # -> list[Any]:
+        ...
 
 __all__ = ["Glm4vProcessor"]

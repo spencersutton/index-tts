@@ -20,6 +20,7 @@ from ..bart.modeling_bart import (
 from ..bigbird_pegasus.modeling_bigbird_pegasus import BigBirdPegasusForSequenceClassification
 from .configuration_plbart import PLBartConfig
 
+"""PyTorch PLBART model."""
 if is_torch_flex_attn_available(): ...
 
 class PLBartScaledWordEmbedding(BartScaledWordEmbedding): ...
@@ -41,10 +42,14 @@ class PLBartDecoder(BartDecoder): ...
 class PLBartModel(PLBartPreTrainedModel):
     _tied_weights_keys = ...
     def __init__(self, config: PLBartConfig) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
-    def get_encoder(self): ...
-    def get_decoder(self): ...
+    def get_input_embeddings(self):  # -> PLBartScaledWordEmbedding | Module:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
+    def get_encoder(self):  # -> PLBartEncoder:
+        ...
+    def get_decoder(self):  # -> PLBartDecoder:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -64,16 +69,52 @@ class PLBartModel(PLBartPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple[torch.Tensor], Seq2SeqModelOutput]: ...
+    ) -> Union[tuple[torch.Tensor], Seq2SeqModelOutput]:
+        r"""
+        decoder_input_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Indices of decoder input sequence tokens in the vocabulary.
 
-@auto_docstring(custom_intro=...)
+            Indices can be obtained using [`AutoTokenizer`] or [`PLBartMultiTokenizer`] depending on the checkpoint.
+            See [`PreTrainedTokenizer.encode`] and [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are decoder input IDs?](../glossary#decoder-input-ids)
+
+            PLBart uses a specific language id token as the starting token for `decoder_input_ids` generation that
+            varies according to source and target language, *e.g.* 50003 for *en_XX*, and 50001 for *java*. If
+            `past_key_values` is used, optionally only the last `decoder_input_ids` have to be input (see
+            `past_key_values`).
+
+            For translation and summarization training, `decoder_input_ids` should be provided. If no
+            `decoder_input_ids` is provided, the model will create this tensor by shifting the `input_ids` to the right
+            for denoising pre-training following the paper.
+        decoder_attention_mask (:
+            obj:*torch.LongTensor* of shape `(batch_size, target_sequence_length)`, *optional*):
+            Default behavior:
+            generate a tensor that ignores pad tokens in `decoder_input_ids`. Causal mask will also be used by default.
+        cross_attn_head_mask (:
+            obj:*torch.Tensor* of shape `(decoder_layers, decoder_attention_heads)`, *optional*):
+            Mask to nullify
+            selected heads of the cross-attention modules in the decoder. Mask values selected in `[0, 1]`:
+
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    The PLBART Model with a language modeling head. Can be used for code-to-text, text-to-code and code-to-code.
+    """
+)
 class PLBartForConditionalGeneration(PLBartPreTrainedModel, GenerationMixin):
     base_model_prefix = ...
     _keys_to_ignore_on_load_missing = ...
     _tied_weights_keys = ...
     def __init__(self, config: PLBartConfig) -> None: ...
-    def get_encoder(self): ...
-    def get_decoder(self): ...
+    def get_encoder(self):  # -> PLBartEncoder:
+        ...
+    def get_decoder(self):  # -> PLBartDecoder:
+        ...
     def resize_token_embeddings(
         self, new_num_tokens: int, pad_to_multiple_of: Optional[int] = ..., mean_resizing: bool = ...
     ) -> nn.Embedding: ...
@@ -97,17 +138,135 @@ class PLBartForConditionalGeneration(PLBartPreTrainedModel, GenerationMixin):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple[torch.Tensor], Seq2SeqLMOutput]: ...
-    def prepare_decoder_input_ids_from_labels(self, labels: torch.Tensor): ...
+    ) -> Union[tuple[torch.Tensor], Seq2SeqLMOutput]:
+        r"""
+        decoder_input_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Indices of decoder input sequence tokens in the vocabulary.
+
+            Indices can be obtained using [`AutoTokenizer`] or [`PLBartMultiTokenizer`] depending on the checkpoint.
+            See [`PreTrainedTokenizer.encode`] and [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are decoder input IDs?](../glossary#decoder-input-ids)
+
+            PLBart uses a specific language id token as the starting token for `decoder_input_ids` generation that
+            varies according to source and target language, *e.g.* 50003 for *en_XX*, and 50001 for *java*. If
+            `past_key_values` is used, optionally only the last `decoder_input_ids` have to be input (see
+            `past_key_values`).
+
+            For translation and summarization training, `decoder_input_ids` should be provided. If no
+            `decoder_input_ids` is provided, the model will create this tensor by shifting the `input_ids` to the right
+            for denoising pre-training following the paper.
+        decoder_attention_mask (:
+            obj:*torch.LongTensor* of shape `(batch_size, target_sequence_length)`, *optional*):
+            Default behavior:
+            generate a tensor that ignores pad tokens in `decoder_input_ids`. Causal mask will also be used by default.
+        cross_attn_head_mask (:
+            obj:*torch.Tensor* of shape `(decoder_layers, decoder_attention_heads)`, *optional*):
+            Mask to nullify
+            selected heads of the cross-attention modules in the decoder. Mask values selected in `[0, 1]`:
+
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Example Mask-filling:
+
+        ```python
+        >>> from transformers import AutoTokenizer, PLBartForConditionalGeneration
+
+        >>> model = PLBartForConditionalGeneration.from_pretrained("uclanlp/plbart-base")
+        >>> tokenizer = AutoTokenizer.from_pretrained("uclanlp/plbart-base")
+
+        >>> # en_XX is the language symbol id <LID> for English
+        >>> TXT = "<s> Is 0 the <mask> Fibonacci number ? </s> en_XX"
+        >>> input_ids = tokenizer([TXT], add_special_tokens=False, return_tensors="pt").input_ids
+
+        >>> logits = model(input_ids).logits
+        >>> masked_index = (input_ids[0] == tokenizer.mask_token_id).nonzero().item()
+        >>> probs = logits[0, masked_index].softmax(dim=0)
+        >>> values, predictions = probs.topk(5)
+
+        >>> tokenizer.decode(predictions).split()
+        ['first', 'same', 'highest', 'result', 'number']
+        ```
+        """
+        ...
+
+    def prepare_decoder_input_ids_from_labels(self, labels: torch.Tensor):  # -> Tensor:
+        ...
 
 class PLBartClassificationHead(BartClassificationHead): ...
 
 class PLBartForSequenceClassification(BigBirdPegasusForSequenceClassification):
-    def forward(**super_kwargs): ...
+    def forward(**super_kwargs):  # -> None:
+        r"""
+        decoder_input_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Indices of decoder input sequence tokens in the vocabulary.
+
+            Indices can be obtained using [`AutoTokenizer`] or [`PLBartMultiTokenizer`] depending on the checkpoint.
+            See [`PreTrainedTokenizer.encode`] and [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are decoder input IDs?](../glossary#decoder-input-ids)
+
+            PLBart uses a specific language id token as the starting token for `decoder_input_ids` generation that
+            varies according to source and target language, *e.g.* 50003 for *en_XX*, and 50001 for *java*. If
+            `past_key_values` is used, optionally only the last `decoder_input_ids` have to be input (see
+            `past_key_values`).
+
+            For translation and summarization training, `decoder_input_ids` should be provided. If no
+            `decoder_input_ids` is provided, the model will create this tensor by shifting the `input_ids` to the right
+            for denoising pre-training following the paper.
+        decoder_attention_mask (:
+            obj:*torch.LongTensor* of shape `(batch_size, target_sequence_length)`, *optional*):
+            Default behavior:
+            generate a tensor that ignores pad tokens in `decoder_input_ids`. Causal mask will also be used by default.
+        cross_attn_head_mask (:
+            obj:*torch.Tensor* of shape `(decoder_layers, decoder_attention_heads)`, *optional*):
+            Mask to nullify
+            selected heads of the cross-attention modules in the decoder. Mask values selected in `[0, 1]`:
+
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 class PLBartForCausalLM(BartForCausalLM):
     @auto_docstring
-    def forward(**super_kwargs): ...
+    def forward(**super_kwargs):  # -> None:
+        r"""
+        cross_attn_head_mask (`torch.Tensor` of shape `(decoder_layers, decoder_attention_heads)`, *optional*):
+            Mask to nullify selected heads of the cross-attention modules. Mask values selected in `[0, 1]`:
+
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, PLBartForCausalLM
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("uclanlp/plbart-base")
+        >>> model = PLBartForCausalLM.from_pretrained("uclanlp/plbart-base", add_cross_attention=False)
+        >>> assert model.config.is_decoder, f"{model.__class__} has to be configured as a decoder."
+        >>> inputs = tokenizer("Hello, my dog is cute", return_tensors="pt")
+        >>> outputs = model(**inputs)
+
+        >>> logits = outputs.logits
+        >>> expected_shape = [1, inputs.input_ids.shape[-1], model.config.vocab_size]
+        >>> list(logits.shape) == expected_shape
+        True
+        ```"""
+        ...
 
 __all__ = [
     "PLBartForCausalLM",

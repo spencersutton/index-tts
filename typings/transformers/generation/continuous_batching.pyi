@@ -14,6 +14,8 @@ from ..generation.configuration_utils import GenerationConfig
 from ..utils.metrics import attach_tracer, traced
 
 class RequestStatus(Enum):
+    """Status of a generation request through its lifecycle."""
+
     PENDING = ...
     PREFILLING = ...
     PREFILLING_SPLIT = ...
@@ -26,6 +28,16 @@ logger = ...
 
 @dataclass
 class GenerationOutput:
+    """Tracks the output of a generation request.
+
+    Attributes:
+        request_id (str): The ID of the generation request.
+        prompt_ids (list[int]): The IDs of the prompt tokens.
+        generated_tokens (list[int]): The generated tokens.
+        logprobs (list[float]): The log probabilities of the generated tokens.
+        error (Optional[str]): Any error message associated with the request. When None, the request was successful.
+    """
+
     request_id: str
     prompt_ids: list[int] = ...
     generated_tokens: list[int] = ...
@@ -37,6 +49,13 @@ class GenerationOutput:
 
 @dataclass
 class RequestState:
+    """Tracks the state of a generation request through its lifecycle.
+
+    Attributes:
+        status (RequestStatus): can be one of PENDING, PREFILLING, PREFILLING_SPLIT,
+                                SPLIT_PENDING_REMAINDER, DECODING, FINISHED, FAILED
+    """
+
     request_id: str
     prompt_ids: Optional[list[int]] = ...
     full_prompt_ids: Optional[list[int]] = ...
@@ -50,12 +69,31 @@ class RequestState:
     created_time: float = ...
     error: Optional[str] = ...
     next_token: Optional[str] = ...
-    def current_len(self) -> int: ...
-    def generated_len(self) -> int: ...
+    def current_len(self) -> int:
+        """Get the current length of the sequence (prompt + generated tokens)."""
+        ...
+
+    def generated_len(self) -> int:
+        """Get the number of tokens generated so far."""
+        ...
+
     @traced
-    def update_with_token(self, token_id: int) -> bool: ...
-    def __repr__(self): ...
-    def to_generation_output(self): ...
+    def update_with_token(self, token_id: int) -> bool:
+        """Update the request with a newly generated token and check for completion.
+
+        Args:
+            token_id: The token ID to add to the output sequence
+
+        Returns:
+            bool: True if the request is now complete, False otherwise
+        """
+        ...
+
+    def __repr__(self):  # -> str:
+        ...
+    def to_generation_output(self):  # -> GenerationOutput:
+        """Convert the request state to a GenerationOutput object."""
+        ...
 
 @attach_tracer()
 class PagedAttentionCache:
@@ -68,54 +106,101 @@ class PagedAttentionCache:
         num_requests: int = ...,
         layer_device_map: Optional[dict[int, Union[str, torch.device, int]]] = ...,
         tp_size: Optional[int] = ...,
-    ) -> None: ...
+    ) -> None:
+        """Initialize a paged attention cache for efficient memory usage.
+
+        Args:
+            config: Model configuration
+            generation_config: Generation configuration containing cache parameters
+            device: Device for the cache tensors
+            dtype: Data type for the cache tensors
+            layer_device_map: Optional mapping of layer indices to devices
+            initial_prompt_shapes: Optional sample prompts to help calculate optimal cache size
+        """
+        ...
+
     @traced
-    def allocate_blocks(self, n_blocks: int, request_id: str) -> list[int]: ...
+    def allocate_blocks(self, n_blocks: int, request_id: str) -> list[int]:
+        """Allocates n_blocks for a given request_id."""
+        ...
+
     @traced
-    def free_blocks(self, request_id: str) -> None: ...
-    def get_num_free_blocks(self) -> int: ...
-    def get_block_table(self, request_id: str) -> list[int]: ...
+    def free_blocks(self, request_id: str) -> None:
+        """Frees all blocks associated with a request_id."""
+        ...
+
+    def get_num_free_blocks(self) -> int:
+        """Returns the number of free blocks available."""
+        ...
+
+    def get_block_table(self, request_id: str) -> list[int]:
+        """Returns the block table for a request."""
+        ...
+
     @traced
     def update(
         self, key_states: torch.Tensor, value_states: torch.Tensor, layer_idx: int, read_index, write_index, **kwargs
     ) -> tuple[torch.Tensor, torch.Tensor]: ...
 
 class Scheduler(ABC):
+    """
+    Abstract base class for scheduling requests in the continuous batch processor.
+    It is expected that cache allocation and scheduling logic will be implemented in subclasses.
+    """
     def __init__(self, cache: PagedAttentionCache, retain_cache_on_finish: bool = ...) -> None: ...
     @abstractmethod
-    def add_waiting_request(self, state: RequestState): ...
+    def add_waiting_request(self, state: RequestState):  # -> None:
+        """Add a request to the waiting list."""
+        ...
+
     @abstractmethod
     def schedule_batch(self, token_budget: int) -> list[RequestState]: ...
     @traced
-    def has_pending_requests(self) -> bool: ...
+    def has_pending_requests(self) -> bool:
+        """Check if there are requests ready to be processed."""
+        ...
+
     @abstractmethod
-    def finish_request(self, request_id: str, evict_from_cache: bool = ...): ...
+    def finish_request(self, request_id: str, evict_from_cache: bool = ...):  # -> None:
+        """Finish processing a request and free its allocated blocks."""
+        ...
+
     @traced
     def get_active_request_static_outputs(self, request_id: str) -> list[int]: ...
 
 @attach_tracer()
 class FIFOScheduler(Scheduler):
     @traced
-    def add_waiting_request(self, state: RequestState): ...
+    def add_waiting_request(self, state: RequestState):  # -> None:
+        """Add a request to the waiting list."""
+        ...
+
     @traced
     def schedule_batch(self, token_budget: int) -> list[RequestState]: ...
     @traced
-    def finish_request(self, request_id: str, evict_from_cache: bool = ...): ...
+    def finish_request(self, request_id: str, evict_from_cache: bool = ...):  # -> None:
+        ...
 
 @attach_tracer()
 class PrefillFirstScheduler(Scheduler):
     @traced
-    def add_waiting_request(self, state: RequestState): ...
+    def add_waiting_request(self, state: RequestState):  # -> None:
+        """Add a request to the waiting list."""
+        ...
+
     @traced
     def schedule_batch(self, token_budget: int) -> list[RequestState]: ...
     @traced
-    def finish_request(self, request_id: str, evict_from_cache: bool = ...): ...
+    def finish_request(self, request_id: str, evict_from_cache: bool = ...):  # -> None:
+        ...
 
-def get_device_and_memory(): ...
+def get_device_and_memory():  # -> tuple[device, Any | int | None, int, int]:
+    ...
 @traced(standalone=True)
 def compute_optimal_blocks(
     max_num_tokens, block_size, head_dim, num_heads, num_layers, max_memory_percent=..., num_blocks=..., dtype=...
-): ...
+):  # -> tuple[int, int]:
+    ...
 
 @dataclass
 class PagedAttentionArgs:
@@ -134,7 +219,8 @@ class PagedAttentionArgs:
     use_cache: bool = ...
 
 @traced
-def create_document_mask(cumulative_seqlens_q, cumulative_seqlens_k): ...
+def create_document_mask(cumulative_seqlens_q, cumulative_seqlens_k):  # -> Tensor:
+    ...
 
 @attach_tracer()
 class ContinuousBatchProcessor:
@@ -151,29 +237,74 @@ class ContinuousBatchProcessor:
         scheduler: Scheduler,
         streaming: bool = ...,
         manual_eviction: bool = ...,
-    ) -> None: ...
+    ) -> None:
+        """Initialize the continuous batch processor.
+
+        Args:
+            cache: The paged attention cache to use
+            generation_config: The generation configuration
+            input_queue: Queue for incoming requests
+            output_queue: Queue for outgoing results
+            stop_event: Event to signal processing should stop
+            model_device: Device for model inputs/outputs
+            model_dtype: Data type for model inputs/outputs
+            streaming: Whether to stream tokens as they're generated
+        """
+        ...
+
     @traced(standalone=True)
-    def setup_static_tensors(self): ...
+    def setup_static_tensors(self):  # -> None:
+        ...
     @traced
     @torch.no_grad()
-    def reset_static_tensors(self): ...
-    def get_model_kwargs(self) -> PagedAttentionArgs: ...
-    def __repr__(self): ...
+    def reset_static_tensors(self):  # -> None:
+        """Reset static tensors for the next batch."""
+        ...
+
+    def get_model_kwargs(self) -> PagedAttentionArgs:
+        """Get model keyword arguments for the current batch."""
+        ...
+
+    def __repr__(self):  # -> str:
+        ...
     @traced
-    def prepare_next_batch(self): ...
+    def prepare_next_batch(self):  # -> None:
+        """Prepare tensors and metadata for the next model forward pass."""
+        ...
+
     @traced
-    def update_batch(self): ...
+    def update_batch(self):  # -> None:
+        """Update request states based on generated tokens."""
+        ...
+
     @traced
-    def has_pending_requests(self) -> bool: ...
+    def has_pending_requests(self) -> bool:
+        """Check if there are any active or waiting requests."""
+        ...
+
     @traced
-    def handle_batch_error(self, error): ...
+    def handle_batch_error(self, error):  # -> None:
+        """Handle errors during batch processing."""
+        ...
+
     @traced
-    def fail_all_requests(self, error): ...
+    def fail_all_requests(self, error):  # -> None:
+        """Fail all active requests with the given error.
+
+        Args:
+            error: The error to report in the failure message
+        """
+        ...
 
 SCHEDULER_MAPPING = ...
 
 @attach_tracer()
 class ContinuousBatchingManager:
+    """Manager for handling continuous batching of generation requests.
+
+    This class provides the user interface for submitting generation requests,
+    retrieving results, and managing the background generation thread.
+    """
     def __init__(
         self,
         model,
@@ -181,31 +312,104 @@ class ContinuousBatchingManager:
         manual_eviction: bool = ...,
         max_queue_size=...,
         streaming: bool = ...,
-    ) -> None: ...
+    ) -> None:
+        """Initialize the continuous batching manager.
+
+        Args:
+            model: The language model for generation
+            generation_config: Configuration for generation parameters
+            max_queue_size: Maximum size of the request queue (0 = unlimited)
+            streaming: Whether to stream tokens as they are generated
+        """
+        ...
+
     @traced
-    def start(self): ...
-    def is_running(self): ...
-    def stop(self, block: bool = ..., timeout: Optional[float] = ...): ...
-    def join(self, timeout: Optional[float] = ...): ...
+    def start(self):  # -> None:
+        """Start the background generation thread."""
+        ...
+
+    def is_running(self):  # -> bool:
+        """Check if the background generation thread is running."""
+        ...
+
+    def stop(self, block: bool = ..., timeout: Optional[float] = ...):  # -> None:
+        """Signal the background thread to stop.
+
+        Args:
+            block: Whether to wait for the thread to stop
+            timeout: Maximum time to wait for the thread to stop
+        """
+        ...
+
+    def join(self, timeout: Optional[float] = ...):  # -> None:
+        """Wait for the background thread to finish.
+
+        Args:
+            timeout: Maximum time to wait for the thread to stop
+        """
+        ...
+
     def add_request(
         self, input_ids: list[int], request_id: Optional[str] = ..., max_new_tokens: Optional[int] = ...
-    ) -> str: ...
-    def add_requests(self, inputs: list[list[int]], **kwargs): ...
-    def get_result(self, timeout=...) -> Optional[GenerationOutput]: ...
-    def __iter__(self): ...
+    ) -> str:
+        """Add a new generation request to the queue.
+
+        Args:
+            input_ids: Input token IDs to use as prompt
+            request_id: Optional custom request ID (auto-generated if None)
+            **kwargs: Additional generation parameters
+
+        Returns:
+            str: The request ID
+        """
+        ...
+
+    def add_requests(self, inputs: list[list[int]], **kwargs):  # -> None:
+        ...
+    def get_result(self, timeout=...) -> Optional[GenerationOutput]:
+        """Retrieve one result from the output queue.
+
+        Args:
+            timeout: Maximum time to wait for a result
+
+        Returns:
+            Optional[Dict]: The result data or None if timeout
+        """
+        ...
+
+    def __iter__(self):  # -> Generator[GenerationOutput, Any, None]:
+        """Iterate over results as they become available."""
+        ...
+
     @traced
-    def warmup(self, batch_processor): ...
+    def warmup(self, batch_processor):  # -> None:
+        ...
     @traced
-    def evict_request_from_cache(self, request_id: str): ...
+    def evict_request_from_cache(self, request_id: str):  # -> None:
+        """Evict a request from the cache. It is assumed that the request is already finished."""
+        ...
 
 class ContinuousMixin:
+    """Mixin class for models to add continuous batching capabilities."""
     def init_continuous_batching(
         self,
         generation_config: Optional[GenerationConfig] = ...,
         manual_eviction: bool = ...,
         max_queue_size: int = ...,
         streaming: bool = ...,
-    ) -> ContinuousBatchingManager: ...
+    ) -> ContinuousBatchingManager:
+        """Initialize a manager for continuous batching inference.
+
+        Args:
+            generation_config: Custom generation configuration
+            max_queue_size: Maximum size of the input request queue
+            streaming: Whether to stream tokens as they are generated
+
+        Returns:
+            `ContinuousBatchingManager`: The manager instance to add requests and retrieve results.
+        """
+        ...
+
     @traced
     @torch.inference_mode()
     def generate_batch(
@@ -214,4 +418,17 @@ class ContinuousMixin:
         generation_config: Optional[GenerationConfig] = ...,
         progress_bar: bool = ...,
         **kwargs,
-    ) -> list[list[int]]: ...
+    ) -> list[list[int]]:
+        """Generate sequences for a batch of prompts using continuous batching.
+
+        Args:
+            inputs: List of input token sequences (prompts)
+            generation_config: Optional generation configuration
+            **kwargs: Additional generation parameters
+
+        Returns:
+            `list[list[int]]`: A list containing the generated sequences (including prompt tokens
+                                if not handled otherwise) for each input prompt, in the same order.
+                                Returns an empty list `[]` for requests that failed.
+        """
+        ...

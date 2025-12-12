@@ -22,6 +22,7 @@ from ..mistral.modeling_mistral import (
 )
 from .configuration_starcoder2 import Starcoder2Config
 
+"""PyTorch Starcoder2 model."""
 logger = ...
 
 class Starcoder2MLP(nn.Module):

@@ -24,12 +24,16 @@ logger = ...
 class Mistral3RMSNorm(MistralRMSNorm): ...
 
 class Mistral3PatchMerger(nn.Module):
+    """
+    Learned merging of spatial_merge_size ** 2 patches
+    """
     def __init__(self, config: Mistral3Config) -> None: ...
     def forward(self, image_features: torch.Tensor, image_sizes: torch.Tensor) -> torch.Tensor: ...
 
 class Mistral3MultiModalProjector(nn.Module):
     def __init__(self, config: Mistral3Config) -> None: ...
-    def forward(self, image_features: torch.Tensor, image_sizes: torch.Tensor): ...
+    def forward(self, image_features: torch.Tensor, image_sizes: torch.Tensor):  # -> Any:
+        ...
 
 class Mistral3CausalLMOutputWithPast(LlavaCausalLMOutputWithPast): ...
 class Mistral3ModelOutputWithPast(LlavaModelOutputWithPast): ...
@@ -42,7 +46,24 @@ class Mistral3Model(LlavaModel):
         image_sizes: torch.Tensor,
         vision_feature_layer: Optional[Union[int, list[int]]] = ...,
         **kwargs,
-    ): ...
+    ):  # -> tuple[Tensor, ...]:
+        """
+        Obtains image last hidden states from the vision tower and apply multimodal projection.
+
+        Args:
+            pixel_values (`torch.FloatTensor]` of shape `(batch_size, channels, height, width)`):
+               The tensors corresponding to the input images.
+            vision_feature_layer (`Union[int, list[int]]`, *optional*):
+                The index of the layer to select the vision feature. If multiple indices are provided,
+                the vision feature of the corresponding indices will be concatenated to form the
+                vision features.
+            image_sizes (`torch.Tensor`, *optional*):
+                Tensor containing the image sizes as returned by the processor.
+        Returns:
+            image_features (`torch.Tensor`): Image feature tensor of shape `(num_images, image_length, embed_dim)`).
+        """
+        ...
+
     def forward(
         self,
         input_ids: torch.LongTensor = ...,
@@ -68,7 +89,8 @@ class Mistral3ForConditionalGeneration(LlavaForConditionalGeneration):
         image_sizes: torch.Tensor,
         vision_feature_layer: Optional[Union[int, list[int]]] = ...,
         **kwargs,
-    ): ...
+    ):  # -> tuple[Tensor, ...] | list[Any]:
+        ...
     def forward(
         self,
         input_ids: torch.LongTensor = ...,
@@ -86,6 +108,34 @@ class Mistral3ForConditionalGeneration(LlavaForConditionalGeneration):
         logits_to_keep: Union[int, torch.Tensor] = ...,
         image_sizes: Optional[torch.Tensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> Union[tuple, Mistral3CausalLMOutputWithPast]: ...
+    ) -> Union[tuple, Mistral3CausalLMOutputWithPast]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Example:
+
+        ```python
+        >>> from PIL import Image
+        >>> import requests
+        >>> from transformers import AutoProcessor, Mistral3ForConditionalGeneration
+
+        >>> model = Mistral3ForConditionalGeneration.from_pretrained("mistralai/Mistral-Small-3.1-24B-Instruct-2503")
+        >>> processor = AutoProcessor.from_pretrained("mistralai/Mistral-Small-3.1-24B-Instruct-2503")
+
+        >>> prompt = "<s>[INST][IMG]What is the image?[/INST]"
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> inputs = processor(images=image, text=prompt, return_tensors="pt")
+
+        >>> # Generate
+        >>> generate_ids = model.generate(**inputs, max_new_tokens=15)
+        >>> processor.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+        "What is the image?The image depicts two cats lying on a pink blanket."
+        ```"""
+        ...
 
 __all__ = ["Mistral3Model", "Mistral3PreTrainedModel", "Mistral3ForConditionalGeneration"]

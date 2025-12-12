@@ -17,11 +17,25 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import ModelOutput, auto_docstring
 from .configuration_deit import DeiTConfig
 
+"""PyTorch DeiT model."""
 logger = ...
 
 class DeiTEmbeddings(nn.Module):
+    """
+    Construct the CLS token, distillation token, position and patch embeddings. Optionally, also the mask token.
+    """
     def __init__(self, config: DeiTConfig, use_mask_token: bool = ...) -> None: ...
-    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor: ...
+    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor:
+        """
+        This method allows to interpolate the pre-trained position encodings, to be able to use the model on higher resolution
+        images. This method is also adapted to support torch.jit tracing and 2 class embeddings.
+
+        Adapted from:
+        - https://github.com/facebookresearch/dino/blob/de9ee3df6cf39fac952ab558447af1fa1365362a/vision_transformer.py#L174-L194, and
+        - https://github.com/facebookresearch/dinov2/blob/e1277af2ba9496fbadf7aec6eba56e8d882d1e35/dinov2/models/vision_transformer.py#L179-L211
+        """
+        ...
+
     def forward(
         self,
         pixel_values: torch.Tensor,
@@ -30,6 +44,11 @@ class DeiTEmbeddings(nn.Module):
     ) -> torch.Tensor: ...
 
 class DeiTPatchEmbeddings(nn.Module):
+    """
+    This class turns `pixel_values` of shape `(batch_size, num_channels, height, width)` into the initial
+    `hidden_states` (patch embeddings) of shape `(batch_size, seq_length, hidden_size)` to be consumed by a
+    Transformer.
+    """
     def __init__(self, config) -> None: ...
     def forward(self, pixel_values: torch.Tensor) -> torch.Tensor: ...
 
@@ -42,7 +61,8 @@ def eager_attention_forward(
     scaling: float,
     dropout: float = ...,
     **kwargs,
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class DeiTSelfAttention(nn.Module):
     def __init__(self, config: DeiTConfig) -> None: ...
@@ -51,6 +71,10 @@ class DeiTSelfAttention(nn.Module):
     ) -> Union[tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor]]: ...
 
 class DeiTSelfOutput(nn.Module):
+    """
+    The residual connection is defined in DeiTLayer instead of here (as is the case with other models), due to the
+    layernorm applied before each block.
+    """
     def __init__(self, config: DeiTConfig) -> None: ...
     def forward(self, hidden_states: torch.Tensor, input_tensor: torch.Tensor) -> torch.Tensor: ...
 
@@ -70,6 +94,7 @@ class DeiTOutput(nn.Module):
     def forward(self, hidden_states: torch.Tensor, input_tensor: torch.Tensor) -> torch.Tensor: ...
 
 class DeiTLayer(GradientCheckpointingLayer):
+    """This corresponds to the Block class in the timm implementation."""
     def __init__(self, config: DeiTConfig) -> None: ...
     def forward(
         self, hidden_states: torch.Tensor, head_mask: Optional[torch.Tensor] = ..., output_attentions: bool = ...
@@ -100,7 +125,15 @@ class DeiTPreTrainedModel(PreTrainedModel):
 
 @auto_docstring
 class DeiTModel(DeiTPreTrainedModel):
-    def __init__(self, config: DeiTConfig, add_pooling_layer: bool = ..., use_mask_token: bool = ...) -> None: ...
+    def __init__(self, config: DeiTConfig, add_pooling_layer: bool = ..., use_mask_token: bool = ...) -> None:
+        r"""
+        add_pooling_layer (bool, *optional*, defaults to `True`):
+            Whether to add a pooling layer
+        use_mask_token (`bool`, *optional*, defaults to `False`):
+            Whether to use a mask token for masked image modeling.
+        """
+        ...
+
     def get_input_embeddings(self) -> DeiTPatchEmbeddings: ...
     @auto_docstring
     def forward(
@@ -112,13 +145,29 @@ class DeiTModel(DeiTPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         interpolate_pos_encoding: bool = ...,
-    ) -> Union[tuple, BaseModelOutputWithPooling]: ...
+    ) -> Union[tuple, BaseModelOutputWithPooling]:
+        r"""
+        bool_masked_pos (`torch.BoolTensor` of shape `(batch_size, num_patches)`, *optional*):
+            Boolean masked positions. Indicates which patches are masked (1) and which aren't (0).
+        """
+        ...
 
 class DeiTPooler(nn.Module):
     def __init__(self, config: DeiTConfig) -> None: ...
     def forward(self, hidden_states): ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    DeiT Model with a decoder on top for masked image modeling, as proposed in [SimMIM](https://huggingface.co/papers/2111.09886).
+
+    <Tip>
+
+    Note that we provide a script to pre-train this model on custom data in our [examples
+    directory](https://github.com/huggingface/transformers/tree/main/examples/pytorch/image-pretraining).
+
+    </Tip>
+    """
+)
 class DeiTForMaskedImageModeling(DeiTPreTrainedModel):
     def __init__(self, config: DeiTConfig) -> None: ...
     @auto_docstring
@@ -131,9 +180,42 @@ class DeiTForMaskedImageModeling(DeiTPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         interpolate_pos_encoding: bool = ...,
-    ) -> Union[tuple, MaskedImageModelingOutput]: ...
+    ) -> Union[tuple, MaskedImageModelingOutput]:
+        r"""
+        bool_masked_pos (`torch.BoolTensor` of shape `(batch_size, num_patches)`):
+            Boolean masked positions. Indicates which patches are masked (1) and which aren't (0).
 
-@auto_docstring(custom_intro=...)
+        Examples:
+        ```python
+        >>> from transformers import AutoImageProcessor, DeiTForMaskedImageModeling
+        >>> import torch
+        >>> from PIL import Image
+        >>> import requests
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> image_processor = AutoImageProcessor.from_pretrained("facebook/deit-base-distilled-patch16-224")
+        >>> model = DeiTForMaskedImageModeling.from_pretrained("facebook/deit-base-distilled-patch16-224")
+
+        >>> num_patches = (model.config.image_size // model.config.patch_size) ** 2
+        >>> pixel_values = image_processor(images=image, return_tensors="pt").pixel_values
+        >>> # create random boolean mask of shape (batch_size, num_patches)
+        >>> bool_masked_pos = torch.randint(low=0, high=2, size=(1, num_patches)).bool()
+
+        >>> outputs = model(pixel_values, bool_masked_pos=bool_masked_pos)
+        >>> loss, reconstructed_pixel_values = outputs.loss, outputs.reconstruction
+        >>> list(reconstructed_pixel_values.shape)
+        [1, 3, 224, 224]
+        ```"""
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    DeiT Model transformer with an image classification head on top (a linear layer on top of the final hidden state of
+    the [CLS] token) e.g. for ImageNet.
+    """
+)
 class DeiTForImageClassification(DeiTPreTrainedModel):
     def __init__(self, config: DeiTConfig) -> None: ...
     @auto_docstring
@@ -146,18 +228,75 @@ class DeiTForImageClassification(DeiTPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         interpolate_pos_encoding: bool = ...,
-    ) -> Union[tuple, ImageClassifierOutput]: ...
+    ) -> Union[tuple, ImageClassifierOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoImageProcessor, DeiTForImageClassification
+        >>> import torch
+        >>> from PIL import Image
+        >>> import requests
+
+        >>> torch.manual_seed(3)  # doctest: +IGNORE_RESULT
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> # note: we are loading a DeiTForImageClassificationWithTeacher from the hub here,
+        >>> # so the head will be randomly initialized, hence the predictions will be random
+        >>> image_processor = AutoImageProcessor.from_pretrained("facebook/deit-base-distilled-patch16-224")
+        >>> model = DeiTForImageClassification.from_pretrained("facebook/deit-base-distilled-patch16-224")
+
+        >>> inputs = image_processor(images=image, return_tensors="pt")
+        >>> outputs = model(**inputs)
+        >>> logits = outputs.logits
+        >>> # model predicts one of the 1000 ImageNet classes
+        >>> predicted_class_idx = logits.argmax(-1).item()
+        >>> print("Predicted class:", model.config.id2label[predicted_class_idx])
+        Predicted class: Polaroid camera, Polaroid Land camera
+        ```"""
+        ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Output type of [`DeiTForImageClassificationWithTeacher`].
+    """
+)
 class DeiTForImageClassificationWithTeacherOutput(ModelOutput):
+    r"""
+    logits (`torch.FloatTensor` of shape `(batch_size, config.num_labels)`):
+        Prediction scores as the average of the cls_logits and distillation logits.
+    cls_logits (`torch.FloatTensor` of shape `(batch_size, config.num_labels)`):
+        Prediction scores of the classification head (i.e. the linear layer on top of the final hidden state of the
+        class token).
+    distillation_logits (`torch.FloatTensor` of shape `(batch_size, config.num_labels)`):
+        Prediction scores of the distillation head (i.e. the linear layer on top of the final hidden state of the
+        distillation token).
+    """
+
     logits: Optional[torch.FloatTensor] = ...
     cls_logits: Optional[torch.FloatTensor] = ...
     distillation_logits: Optional[torch.FloatTensor] = ...
     hidden_states: Optional[tuple[torch.FloatTensor]] = ...
     attentions: Optional[tuple[torch.FloatTensor]] = ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    DeiT Model transformer with image classification heads on top (a linear layer on top of the final hidden state of
+    the [CLS] token and a linear layer on top of the final hidden state of the distillation token) e.g. for ImageNet.
+
+    .. warning::
+
+           This model supports inference-only. Fine-tuning with distillation (i.e. with a teacher) is not yet
+           supported.
+    """
+)
 class DeiTForImageClassificationWithTeacher(DeiTPreTrainedModel):
     def __init__(self, config: DeiTConfig) -> None: ...
     @auto_docstring

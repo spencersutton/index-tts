@@ -35,11 +35,44 @@ def validate_fast_preprocess_arguments(
     resample: Optional[PILImageResampling] = ...,
     return_tensors: Optional[Union[str, TensorType]] = ...,
     data_format: Optional[ChannelDimension] = ...,
-): ...
-def safe_squeeze(tensor: torch.Tensor, axis: Optional[int] = ...) -> torch.Tensor: ...
-def max_across_indices(values: Iterable[Any]) -> list[Any]: ...
-def get_max_height_width(images: list[torch.Tensor]) -> tuple[int]: ...
-def divide_to_patches(image: Union[np.array, torch.Tensor], patch_size: int) -> list[Union[np.array, torch.Tensor]]: ...
+):  # -> None:
+    """
+    Checks validity of typically used arguments in an `ImageProcessorFast` `preprocess` method.
+    Raises `ValueError` if arguments incompatibility is caught.
+    """
+    ...
+
+def safe_squeeze(tensor: torch.Tensor, axis: Optional[int] = ...) -> torch.Tensor:
+    """
+    Squeezes a tensor, but only if the axis specified has dim 1.
+    """
+    ...
+
+def max_across_indices(values: Iterable[Any]) -> list[Any]:
+    """
+    Return the maximum value across all indices of an iterable of values.
+    """
+    ...
+
+def get_max_height_width(images: list[torch.Tensor]) -> tuple[int]:
+    """
+    Get the maximum height and width across all images in a batch.
+    """
+    ...
+
+def divide_to_patches(image: Union[np.array, torch.Tensor], patch_size: int) -> list[Union[np.array, torch.Tensor]]:
+    """
+    Divides an image into patches of a specified size.
+
+    Args:
+        image (`Union[np.array, "torch.Tensor"]`):
+            The input image.
+        patch_size (`int`):
+            The size of each patch.
+    Returns:
+        list: A list of Union[np.array, "torch.Tensor"] representing the patches.
+    """
+    ...
 
 class DefaultFastImageProcessorKwargs(TypedDict, total=False):
     do_resize: Optional[bool]
@@ -90,18 +123,69 @@ class BaseImageProcessorFast(BaseImageProcessor):
         interpolation: F.InterpolationMode = ...,
         antialias: bool = ...,
         **kwargs,
-    ) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """
+        Resize an image to `(size["height"], size["width"])`.
+
+        Args:
+            image (`torch.Tensor`):
+                Image to resize.
+            size (`SizeDict`):
+                Dictionary in the format `{"height": int, "width": int}` specifying the size of the output image.
+            interpolation (`InterpolationMode`, *optional*, defaults to `InterpolationMode.BILINEAR`):
+                `InterpolationMode` filter to use when resizing the image e.g. `InterpolationMode.BICUBIC`.
+
+        Returns:
+            `torch.Tensor`: The resized image.
+        """
+        ...
+
     @staticmethod
     def compile_friendly_resize(
         image: torch.Tensor,
         new_size: tuple[int, int],
         interpolation: Optional[F.InterpolationMode] = ...,
         antialias: bool = ...,
-    ) -> torch.Tensor: ...
-    def rescale(self, image: torch.Tensor, scale: float, **kwargs) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """
+        A wrapper around `F.resize` so that it is compatible with torch.compile when the image is a uint8 tensor.
+        """
+        ...
+
+    def rescale(self, image: torch.Tensor, scale: float, **kwargs) -> torch.Tensor:
+        """
+        Rescale an image by a scale factor. image = image * scale.
+
+        Args:
+            image (`torch.Tensor`):
+                Image to rescale.
+            scale (`float`):
+                The scaling factor to rescale pixel values by.
+
+        Returns:
+            `torch.Tensor`: The rescaled image.
+        """
+        ...
+
     def normalize(
         self, image: torch.Tensor, mean: Union[float, Iterable[float]], std: Union[float, Iterable[float]], **kwargs
-    ) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """
+        Normalize an image. image = (image - image_mean) / image_std.
+
+        Args:
+            image (`torch.Tensor`):
+                Image to normalize.
+            mean (`torch.Tensor`, `float` or `Iterable[float]`):
+                Image mean to use for normalization.
+            std (`torch.Tensor`, `float` or `Iterable[float]`):
+                Image standard deviation to use for normalization.
+
+        Returns:
+            `torch.Tensor`: The normalized image.
+        """
+        ...
+
     def rescale_and_normalize(
         self,
         images: torch.Tensor,
@@ -110,10 +194,47 @@ class BaseImageProcessorFast(BaseImageProcessor):
         do_normalize: bool,
         image_mean: Union[float, list[float]],
         image_std: Union[float, list[float]],
-    ) -> torch.Tensor: ...
-    def center_crop(self, image: torch.Tensor, size: dict[str, int], **kwargs) -> torch.Tensor: ...
-    def convert_to_rgb(self, image: ImageInput) -> ImageInput: ...
-    def filter_out_unused_kwargs(self, kwargs: dict): ...
+    ) -> torch.Tensor:
+        """
+        Rescale and normalize images.
+        """
+        ...
+
+    def center_crop(self, image: torch.Tensor, size: dict[str, int], **kwargs) -> torch.Tensor:
+        """
+        Center crop an image to `(size["height"], size["width"])`. If the input size is smaller than `crop_size` along
+        any edge, the image is padded with 0's and then center cropped.
+
+        Args:
+            image (`"torch.Tensor"`):
+                Image to center crop.
+            size (`dict[str, int]`):
+                Size of the output image.
+
+        Returns:
+            `torch.Tensor`: The center cropped image.
+        """
+        ...
+
+    def convert_to_rgb(self, image: ImageInput) -> ImageInput:
+        """
+        Converts an image to RGB format. Only converts if the image is of type PIL.Image.Image, otherwise returns the image
+        as is.
+        Args:
+            image (ImageInput):
+                The image to convert.
+
+        Returns:
+            ImageInput: The converted image.
+        """
+        ...
+
+    def filter_out_unused_kwargs(self, kwargs: dict):  # -> dict[Any, Any]:
+        """
+        Filter out the unused kwargs from the kwargs dictionary.
+        """
+        ...
+
     def __call__(
         self, images: ImageInput, *args, **kwargs: Unpack[DefaultFastImageProcessorKwargs]
     ) -> BatchFeature: ...
@@ -121,4 +242,5 @@ class BaseImageProcessorFast(BaseImageProcessor):
     def preprocess(
         self, images: ImageInput, *args, **kwargs: Unpack[DefaultFastImageProcessorKwargs]
     ) -> BatchFeature: ...
-    def to_dict(self): ...
+    def to_dict(self):  # -> dict[str, Any]:
+        ...

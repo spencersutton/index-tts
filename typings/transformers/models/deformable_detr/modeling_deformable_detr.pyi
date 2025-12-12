@@ -12,6 +12,7 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import ModelOutput, auto_docstring, is_timm_available
 from .configuration_deformable_detr import DeformableDetrConfig
 
+"""PyTorch Deformable DETR model."""
 logger = ...
 if is_timm_available(): ...
 logger = ...
@@ -27,11 +28,30 @@ class MultiScaleDeformableAttention(nn.Module):
         sampling_locations: Tensor,
         attention_weights: Tensor,
         im2col_step: int,
-    ): ...
+    ):  # -> Tensor:
+        ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for outputs of the DeformableDetrDecoder. This class adds two attributes to
+    BaseModelOutputWithCrossAttentions, namely:
+    - a stacked tensor of intermediate decoder hidden states (i.e. the output of each decoder layer)
+    - a stacked tensor of intermediate reference points.
+    """
+)
 class DeformableDetrDecoderOutput(ModelOutput):
+    r"""
+    intermediate_hidden_states (`torch.FloatTensor` of shape `(batch_size, config.decoder_layers, num_queries, hidden_size)`):
+        Stacked intermediate hidden states (output of each layer of the decoder).
+    intermediate_reference_points (`torch.FloatTensor` of shape `(batch_size, config.decoder_layers, sequence_length, hidden_size)`):
+        Stacked intermediate reference points (reference points of each layer of the decoder).
+    cross_attentions (`tuple(torch.FloatTensor)`, *optional*, returned when `output_attentions=True` and `config.add_cross_attention=True` is passed or when `config.output_attentions=True`):
+        Tuple of `torch.FloatTensor` (one for each layer) of shape `(batch_size, num_heads, sequence_length,
+        sequence_length)`. Attentions weights of the decoder's cross-attention layer, after the attention softmax,
+        used to compute the weighted average in the cross-attention heads.
+    """
+
     last_hidden_state: Optional[torch.FloatTensor] = ...
     intermediate_hidden_states: Optional[torch.FloatTensor] = ...
     intermediate_reference_points: Optional[torch.FloatTensor] = ...
@@ -40,8 +60,29 @@ class DeformableDetrDecoderOutput(ModelOutput):
     cross_attentions: Optional[tuple[torch.FloatTensor]] = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for outputs of the Deformable DETR encoder-decoder model.
+    """
+)
 class DeformableDetrModelOutput(ModelOutput):
+    r"""
+    init_reference_points (`torch.FloatTensor` of shape  `(batch_size, num_queries, 4)`):
+        Initial reference points sent through the Transformer decoder.
+    last_hidden_state (`torch.FloatTensor` of shape `(batch_size, num_queries, hidden_size)`):
+        Sequence of hidden-states at the output of the last layer of the decoder of the model.
+    intermediate_hidden_states (`torch.FloatTensor` of shape `(batch_size, config.decoder_layers, num_queries, hidden_size)`):
+        Stacked intermediate hidden states (output of each layer of the decoder).
+    intermediate_reference_points (`torch.FloatTensor` of shape `(batch_size, config.decoder_layers, num_queries, 4)`):
+        Stacked intermediate reference points (reference points of each layer of the decoder).
+    enc_outputs_class (`torch.FloatTensor` of shape `(batch_size, sequence_length, config.num_labels)`, *optional*, returned when `config.with_box_refine=True` and `config.two_stage=True`):
+        Predicted bounding boxes scores where the top `config.two_stage_num_proposals` scoring bounding boxes are
+        picked as region proposals in the first stage. Output of bounding box binary classification (i.e.
+        foreground and background).
+    enc_outputs_coord_logits (`torch.FloatTensor` of shape `(batch_size, sequence_length, 4)`, *optional*, returned when `config.with_box_refine=True` and `config.two_stage=True`):
+        Logits of predicted bounding boxes coordinates in the first stage.
+    """
+
     init_reference_points: Optional[torch.FloatTensor] = ...
     last_hidden_state: Optional[torch.FloatTensor] = ...
     intermediate_hidden_states: Optional[torch.FloatTensor] = ...
@@ -56,8 +97,46 @@ class DeformableDetrModelOutput(ModelOutput):
     enc_outputs_coord_logits: Optional[torch.FloatTensor] = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Output type of [`DeformableDetrForObjectDetection`].
+    """
+)
 class DeformableDetrObjectDetectionOutput(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `labels` are provided)):
+        Total loss as a linear combination of a negative log-likehood (cross-entropy) for class prediction and a
+        bounding box loss. The latter is defined as a linear combination of the L1 loss and the generalized
+        scale-invariant IoU loss.
+    loss_dict (`Dict`, *optional*):
+        A dictionary containing the individual losses. Useful for logging.
+    logits (`torch.FloatTensor` of shape `(batch_size, num_queries, num_classes + 1)`):
+        Classification logits (including no-object) for all queries.
+    pred_boxes (`torch.FloatTensor` of shape `(batch_size, num_queries, 4)`):
+        Normalized boxes coordinates for all queries, represented as (center_x, center_y, width, height). These
+        values are normalized in [0, 1], relative to the size of each individual image in the batch (disregarding
+        possible padding). You can use [`~DeformableDetrProcessor.post_process_object_detection`] to retrieve the
+        unnormalized bounding boxes.
+    auxiliary_outputs (`list[Dict]`, *optional*):
+        Optional, only returned when auxiliary losses are activated (i.e. `config.auxiliary_loss` is set to `True`)
+        and labels are provided. It is a list of dictionaries containing the two above keys (`logits` and
+        `pred_boxes`) for each decoder layer.
+    init_reference_points (`torch.FloatTensor` of shape  `(batch_size, num_queries, 4)`):
+        Initial reference points sent through the Transformer decoder.
+    last_hidden_state (`torch.FloatTensor` of shape `(batch_size, num_queries, hidden_size)`, *optional*):
+        Sequence of hidden-states at the output of the last layer of the decoder of the model.
+    intermediate_hidden_states (`torch.FloatTensor` of shape `(batch_size, config.decoder_layers, num_queries, hidden_size)`):
+        Stacked intermediate hidden states (output of each layer of the decoder).
+    intermediate_reference_points (`torch.FloatTensor` of shape `(batch_size, config.decoder_layers, num_queries, 4)`):
+        Stacked intermediate reference points (reference points of each layer of the decoder).
+    enc_outputs_class (`torch.FloatTensor` of shape `(batch_size, sequence_length, config.num_labels)`, *optional*, returned when `config.with_box_refine=True` and `config.two_stage=True`):
+        Predicted bounding boxes scores where the top `config.two_stage_num_proposals` scoring bounding boxes are
+        picked as region proposals in the first stage. Output of bounding box binary classification (i.e.
+        foreground and background).
+    enc_outputs_coord_logits (`torch.FloatTensor` of shape `(batch_size, sequence_length, 4)`, *optional*, returned when `config.with_box_refine=True` and `config.two_stage=True`):
+        Logits of predicted bounding boxes coordinates in the first stage.
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     loss_dict: Optional[dict] = ...
     logits: Optional[torch.FloatTensor] = ...
@@ -76,35 +155,75 @@ class DeformableDetrObjectDetectionOutput(ModelOutput):
     enc_outputs_class: Optional = ...
     enc_outputs_coord_logits: Optional = ...
 
-def inverse_sigmoid(x, eps=...): ...
+def inverse_sigmoid(x, eps=...):  # -> Tensor:
+    ...
 
 class DeformableDetrFrozenBatchNorm2d(nn.Module):
+    """
+    BatchNorm2d where the batch statistics and the affine parameters are fixed.
+
+    Copy-paste from torchvision.misc.ops with added eps before rqsrt, without which any other models than
+    torchvision.models.resnet[18,34,50,101] produce nans.
+    """
     def __init__(self, n) -> None: ...
     def forward(self, x): ...
 
-def replace_batch_norm(model): ...
+def replace_batch_norm(model):  # -> None:
+    r"""
+    Recursively replace all `torch.nn.BatchNorm2d` with `DeformableDetrFrozenBatchNorm2d`.
+
+    Args:
+        model (torch.nn.Module):
+            input model
+    """
+    ...
 
 class DeformableDetrConvEncoder(nn.Module):
+    """
+    Convolutional backbone, using either the AutoBackbone API or one from the timm library.
+
+    nn.BatchNorm2d layers are replaced by DeformableDetrFrozenBatchNorm2d as defined above.
+
+    """
     def __init__(self, config) -> None: ...
-    def forward(self, pixel_values: torch.Tensor, pixel_mask: torch.Tensor): ...
+    def forward(self, pixel_values: torch.Tensor, pixel_mask: torch.Tensor):  # -> list[Any]:
+        ...
 
 class DeformableDetrConvModel(nn.Module):
+    """
+    This module adds 2D position embeddings to all intermediate feature maps of the convolutional encoder.
+    """
     def __init__(self, conv_encoder, position_embedding) -> None: ...
-    def forward(self, pixel_values, pixel_mask): ...
+    def forward(self, pixel_values, pixel_mask):  # -> tuple[Any, list[Any]]:
+        ...
 
 class DeformableDetrSinePositionEmbedding(nn.Module):
+    """
+    This is a more standard version of the position embedding, very similar to the one used by the Attention is all you
+    need paper, generalized to work on images.
+    """
     def __init__(self, embedding_dim=..., temperature=..., normalize=..., scale=...) -> None: ...
-    def forward(self, pixel_values, pixel_mask): ...
+    def forward(self, pixel_values, pixel_mask):  # -> Tensor:
+        ...
 
 class DeformableDetrLearnedPositionEmbedding(nn.Module):
+    """
+    This module learns positional embeddings up to a fixed maximum size.
+    """
     def __init__(self, embedding_dim=...) -> None: ...
-    def forward(self, pixel_values, pixel_mask=...): ...
+    def forward(self, pixel_values, pixel_mask=...):  # -> Tensor:
+        ...
 
-def build_position_encoding(config): ...
+def build_position_encoding(config):  # -> DeformableDetrSinePositionEmbedding | DeformableDetrLearnedPositionEmbedding:
+    ...
 
 class DeformableDetrMultiscaleDeformableAttention(nn.Module):
+    """
+    Multiscale deformable attention as proposed in Deformable DETR.
+    """
     def __init__(self, config: DeformableDetrConfig, num_heads: int, n_points: int) -> None: ...
-    def with_pos_embed(self, tensor: torch.Tensor, position_embeddings: Optional[Tensor]): ...
+    def with_pos_embed(self, tensor: torch.Tensor, position_embeddings: Optional[Tensor]):  # -> Tensor:
+        ...
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -117,18 +236,27 @@ class DeformableDetrMultiscaleDeformableAttention(nn.Module):
         spatial_shapes_list=...,
         level_start_index=...,
         output_attentions: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, Tensor]:
+        ...
 
 class DeformableDetrMultiheadAttention(nn.Module):
+    """
+    Multi-headed attention from 'Attention Is All You Need' paper.
+
+    Here, we add position embeddings to the queries and keys (as explained in the Deformable DETR paper).
+    """
     def __init__(self, embed_dim: int, num_heads: int, dropout: float = ..., bias: bool = ...) -> None: ...
-    def with_pos_embed(self, tensor: torch.Tensor, position_embeddings: Optional[Tensor]): ...
+    def with_pos_embed(self, tensor: torch.Tensor, position_embeddings: Optional[Tensor]):  # -> Tensor:
+        ...
     def forward(
         self,
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = ...,
         position_embeddings: Optional[torch.Tensor] = ...,
         output_attentions: bool = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+        """Input shape: Batch x Time x Channel"""
+        ...
 
 class DeformableDetrEncoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: DeformableDetrConfig) -> None: ...
@@ -142,7 +270,26 @@ class DeformableDetrEncoderLayer(GradientCheckpointingLayer):
         spatial_shapes_list=...,
         level_start_index=...,
         output_attentions: bool = ...,
-    ): ...
+    ):  # -> tuple[Tensor, Any] | tuple[Tensor]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
+                Input to the layer.
+            attention_mask (`torch.FloatTensor` of shape `(batch_size, sequence_length)`):
+                Attention mask.
+            position_embeddings (`torch.FloatTensor`, *optional*):
+                Position embeddings, to be added to `hidden_states`.
+            reference_points (`torch.FloatTensor`, *optional*):
+                Reference points.
+            spatial_shapes (`torch.LongTensor`, *optional*):
+                Spatial shapes of the backbone feature maps.
+            level_start_index (`torch.LongTensor`, *optional*):
+                Level start index.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+        """
+        ...
 
 class DeformableDetrDecoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: DeformableDetrConfig) -> None: ...
@@ -157,7 +304,29 @@ class DeformableDetrDecoderLayer(GradientCheckpointingLayer):
         encoder_hidden_states: Optional[torch.Tensor] = ...,
         encoder_attention_mask: Optional[torch.Tensor] = ...,
         output_attentions: Optional[bool] = ...,
-    ): ...
+    ):  # -> tuple[Tensor, Any, Any] | tuple[Tensor]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`):
+                Input to the layer of shape `(seq_len, batch, embed_dim)`.
+            position_embeddings (`torch.FloatTensor`, *optional*):
+                Position embeddings that are added to the queries and keys in the self-attention layer.
+            reference_points (`torch.FloatTensor`, *optional*):
+                Reference points.
+            spatial_shapes (`torch.LongTensor`, *optional*):
+                Spatial shapes.
+            level_start_index (`torch.LongTensor`, *optional*):
+                Level start index.
+            encoder_hidden_states (`torch.FloatTensor`):
+                cross attention input to the layer of shape `(seq_len, batch, embed_dim)`
+            encoder_attention_mask (`torch.FloatTensor`): encoder attention mask of size
+                `(batch, 1, target_len, source_len)` where padding elements are indicated by very large negative
+                values.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+        """
+        ...
 
 @auto_docstring
 class DeformableDetrPreTrainedModel(PreTrainedModel):
@@ -168,9 +337,33 @@ class DeformableDetrPreTrainedModel(PreTrainedModel):
     _no_split_modules = ...
 
 class DeformableDetrEncoder(DeformableDetrPreTrainedModel):
+    """
+    Transformer encoder consisting of *config.encoder_layers* deformable attention layers. Each layer is a
+    [`DeformableDetrEncoderLayer`].
+
+    The encoder updates the flattened multi-scale feature maps through multiple deformable attention layers.
+
+    Args:
+        config: DeformableDetrConfig
+    """
     def __init__(self, config: DeformableDetrConfig) -> None: ...
     @staticmethod
-    def get_reference_points(spatial_shapes, valid_ratios, device): ...
+    def get_reference_points(spatial_shapes, valid_ratios, device):
+        """
+        Get reference points for each feature map. Used in decoder.
+
+        Args:
+            spatial_shapes (`torch.LongTensor` of shape `(num_feature_levels, 2)`):
+                Spatial shapes of each feature map.
+            valid_ratios (`torch.FloatTensor` of shape `(batch_size, num_feature_levels, 2)`):
+                Valid ratios of each feature map.
+            device (`torch.device`):
+                Device on which to create the tensors.
+        Returns:
+            `torch.FloatTensor` of shape `(batch_size, num_queries, num_feature_levels, 2)`
+        """
+        ...
+
     def forward(
         self,
         inputs_embeds=...,
@@ -183,9 +376,49 @@ class DeformableDetrEncoder(DeformableDetrPreTrainedModel):
         output_attentions=...,
         output_hidden_states=...,
         return_dict=...,
-    ): ...
+    ):  # -> tuple[Tensor | Any | tuple[Tensor | Any, ...] | tuple[()] | tuple[Any, ...], ...] | BaseModelOutput:
+        r"""
+        Args:
+            inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
+                Flattened feature map (output of the backbone + projection layer) that is passed to the encoder.
+            attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Mask to avoid performing attention on padding pixel features. Mask values selected in `[0, 1]`:
+                - 1 for pixel features that are real (i.e. **not masked**),
+                - 0 for pixel features that are padding (i.e. **masked**).
+                [What are attention masks?](../glossary#attention-mask)
+            position_embeddings (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
+                Position embeddings that are added to the queries and keys in each self-attention layer.
+            spatial_shapes (`torch.LongTensor` of shape `(num_feature_levels, 2)`):
+                Spatial shapes of each feature map.
+            level_start_index (`torch.LongTensor` of shape `(num_feature_levels)`):
+                Starting index of each feature map.
+            valid_ratios (`torch.FloatTensor` of shape `(batch_size, num_feature_levels, 2)`):
+                Ratio of valid area in each feature level.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers. See `hidden_states` under returned tensors
+                for more detail.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`~file_utils.ModelOutput`] instead of a plain tuple.
+        """
+        ...
 
 class DeformableDetrDecoder(DeformableDetrPreTrainedModel):
+    """
+    Transformer decoder consisting of *config.decoder_layers* layers. Each layer is a [`DeformableDetrDecoderLayer`].
+
+    The decoder updates the query embeddings through multiple self-attention and cross-attention layers.
+
+    Some tweaks for Deformable DETR:
+
+    - `position_embeddings`, `reference_points`, `spatial_shapes` and `valid_ratios` are added to the forward pass.
+    - it also returns a stack of intermediate outputs and reference points from all decoding layers.
+
+    Args:
+        config: DeformableDetrConfig
+    """
     def __init__(self, config: DeformableDetrConfig) -> None: ...
     def forward(
         self,
@@ -201,18 +434,82 @@ class DeformableDetrDecoder(DeformableDetrPreTrainedModel):
         output_attentions=...,
         output_hidden_states=...,
         return_dict=...,
-    ): ...
+    ):  # -> tuple[Any | Tensor | tuple[Any, ...] | tuple[()], ...] | DeformableDetrDecoderOutput:
+        r"""
+        Args:
+            inputs_embeds (`torch.FloatTensor` of shape `(batch_size, num_queries, hidden_size)`):
+                The query embeddings that are passed into the decoder.
+            encoder_hidden_states (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*):
+                Sequence of hidden-states at the output of the last layer of the encoder. Used in the cross-attention
+                of the decoder.
+            encoder_attention_mask (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Mask to avoid performing cross-attention on padding pixel_values of the encoder. Mask values selected
+                in `[0, 1]`:
+                - 1 for pixels that are real (i.e. **not masked**),
+                - 0 for pixels that are padding (i.e. **masked**).
+            position_embeddings (`torch.FloatTensor` of shape `(batch_size, num_queries, hidden_size)`, *optional*):
+                Position embeddings that are added to the queries and keys in each self-attention layer.
+            reference_points (`torch.FloatTensor` of shape `(batch_size, num_queries, 4)` is `as_two_stage` else `(batch_size, num_queries, 2)` or , *optional*):
+                Reference point in range `[0, 1]`, top-left (0,0), bottom-right (1, 1), including padding area.
+            spatial_shapes (`torch.FloatTensor` of shape `(num_feature_levels, 2)`):
+                Spatial shapes of the feature maps.
+            level_start_index (`torch.LongTensor` of shape `(num_feature_levels)`, *optional*):
+                Indexes for the start of each feature level. In range `[0, sequence_length]`.
+            valid_ratios (`torch.FloatTensor` of shape `(batch_size, num_feature_levels, 2)`, *optional*):
+                Ratio of valid area in each feature level.
 
-@auto_docstring(custom_intro=...)
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers. See `hidden_states` under returned tensors
+                for more detail.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`~file_utils.ModelOutput`] instead of a plain tuple.
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    The bare Deformable DETR Model (consisting of a backbone and encoder-decoder Transformer) outputting raw
+    hidden-states without any specific head on top.
+    """
+)
 class DeformableDetrModel(DeformableDetrPreTrainedModel):
     def __init__(self, config: DeformableDetrConfig) -> None: ...
-    def get_encoder(self): ...
-    def get_decoder(self): ...
-    def freeze_backbone(self): ...
-    def unfreeze_backbone(self): ...
-    def get_valid_ratio(self, mask, dtype=...): ...
-    def get_proposal_pos_embed(self, proposals): ...
-    def gen_encoder_output_proposals(self, enc_output, padding_mask, spatial_shapes): ...
+    def get_encoder(self):  # -> DeformableDetrEncoder:
+        ...
+    def get_decoder(self):  # -> DeformableDetrDecoder:
+        ...
+    def freeze_backbone(self):  # -> None:
+        ...
+    def unfreeze_backbone(self):  # -> None:
+        ...
+    def get_valid_ratio(self, mask, dtype=...):  # -> Tensor:
+        """Get the valid ratio of all feature maps."""
+        ...
+
+    def get_proposal_pos_embed(self, proposals):  # -> Tensor:
+        """Get the position embedding of the proposals."""
+        ...
+
+    def gen_encoder_output_proposals(self, enc_output, padding_mask, spatial_shapes):  # -> tuple[Any, Tensor]:
+        """Generate the encoder output proposals from encoded enc_output.
+
+        Args:
+            enc_output (Tensor[batch_size, sequence_length, hidden_size]): Output of the encoder.
+            padding_mask (Tensor[batch_size, sequence_length]): Padding mask for `enc_output`.
+            spatial_shapes (list[tuple[int, int]]): Spatial shapes of the feature maps.
+
+        Returns:
+            `tuple(torch.FloatTensor)`: A tuple of feature map and bbox prediction.
+                - object_query (Tensor[batch_size, sequence_length, hidden_size]): Object query features. Later used to
+                  directly predict a bounding box. (without the need of a decoder)
+                - output_proposals (Tensor[batch_size, sequence_length, 4]): Normalized proposals, after an inverse
+                  sigmoid.
+        """
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -225,13 +522,58 @@ class DeformableDetrModel(DeformableDetrPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.FloatTensor], DeformableDetrModelOutput]: ...
+    ) -> Union[tuple[torch.FloatTensor], DeformableDetrModelOutput]:
+        r"""
+        decoder_attention_mask (`torch.FloatTensor` of shape `(batch_size, num_queries)`, *optional*):
+            Not used by default. Can be used to mask object queries.
+        inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*):
+            Optionally, instead of passing the flattened feature map (output of the backbone + projection layer), you
+            can choose to directly pass a flattened representation of an image.
+        decoder_inputs_embeds (`torch.FloatTensor` of shape `(batch_size, num_queries, hidden_size)`, *optional*):
+            Optionally, instead of initializing the queries with a tensor of zeros, you can choose to directly pass an
+            embedded representation.
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoImageProcessor, DeformableDetrModel
+        >>> from PIL import Image
+        >>> import requests
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> image_processor = AutoImageProcessor.from_pretrained("SenseTime/deformable-detr")
+        >>> model = DeformableDetrModel.from_pretrained("SenseTime/deformable-detr")
+
+        >>> inputs = image_processor(images=image, return_tensors="pt")
+
+        >>> outputs = model(**inputs)
+
+        >>> last_hidden_states = outputs.last_hidden_state
+        >>> list(last_hidden_states.shape)
+        [1, 300, 256]
+        ```"""
+        ...
 
 class DeformableDetrMLPPredictionHead(nn.Module):
-    def __init__(self, input_dim, hidden_dim, output_dim, num_layers) -> None: ...
-    def forward(self, x): ...
+    """
+    Very simple multi-layer perceptron (MLP, also called FFN), used to predict the normalized center coordinates,
+    height and width of a bounding box w.r.t. an image.
 
-@auto_docstring(custom_intro=...)
+    Copied from https://github.com/facebookresearch/detr/blob/master/models/detr.py
+
+    """
+    def __init__(self, input_dim, hidden_dim, output_dim, num_layers) -> None: ...
+    def forward(self, x):  # -> Tensor | Any:
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    Deformable DETR Model (consisting of a backbone and encoder-decoder Transformer) with object detection heads on
+    top, for tasks such as COCO detection.
+    """
+)
 class DeformableDetrForObjectDetection(DeformableDetrPreTrainedModel):
     _tied_weights_keys = ...
     _no_split_modules = ...
@@ -249,6 +591,53 @@ class DeformableDetrForObjectDetection(DeformableDetrPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.FloatTensor], DeformableDetrObjectDetectionOutput]: ...
+    ) -> Union[tuple[torch.FloatTensor], DeformableDetrObjectDetectionOutput]:
+        r"""
+        decoder_attention_mask (`torch.FloatTensor` of shape `(batch_size, num_queries)`, *optional*):
+            Not used by default. Can be used to mask object queries.
+        inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*):
+            Optionally, instead of passing the flattened feature map (output of the backbone + projection layer), you
+            can choose to directly pass a flattened representation of an image.
+        decoder_inputs_embeds (`torch.FloatTensor` of shape `(batch_size, num_queries, hidden_size)`, *optional*):
+            Optionally, instead of initializing the queries with a tensor of zeros, you can choose to directly pass an
+            embedded representation.
+        labels (`list[Dict]` of len `(batch_size,)`, *optional*):
+            Labels for computing the bipartite matching loss. List of dicts, each dictionary containing at least the
+            following 2 keys: 'class_labels' and 'boxes' (the class labels and bounding boxes of an image in the batch
+            respectively). The class labels themselves should be a `torch.LongTensor` of len `(number of bounding boxes
+            in the image,)` and the boxes a `torch.FloatTensor` of shape `(number of bounding boxes in the image, 4)`.
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoImageProcessor, DeformableDetrForObjectDetection
+        >>> from PIL import Image
+        >>> import requests
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> image_processor = AutoImageProcessor.from_pretrained("SenseTime/deformable-detr")
+        >>> model = DeformableDetrForObjectDetection.from_pretrained("SenseTime/deformable-detr")
+
+        >>> inputs = image_processor(images=image, return_tensors="pt")
+        >>> outputs = model(**inputs)
+
+        >>> # convert outputs (bounding boxes and class logits) to Pascal VOC format (xmin, ymin, xmax, ymax)
+        >>> target_sizes = torch.tensor([image.size[::-1]])
+        >>> results = image_processor.post_process_object_detection(outputs, threshold=0.5, target_sizes=target_sizes)[
+        ...     0
+        ... ]
+        >>> for score, label, box in zip(results["scores"], results["labels"], results["boxes"]):
+        ...     box = [round(i, 2) for i in box.tolist()]
+        ...     print(
+        ...         f"Detected {model.config.id2label[label.item()]} with confidence "
+        ...         f"{round(score.item(), 3)} at location {box}"
+        ...     )
+        Detected cat with confidence 0.8 at location [16.5, 52.84, 318.25, 470.78]
+        Detected cat with confidence 0.789 at location [342.19, 24.3, 640.02, 372.25]
+        Detected remote with confidence 0.633 at location [40.79, 72.78, 176.76, 117.25]
+        ```"""
+        ...
 
 __all__ = ["DeformableDetrForObjectDetection", "DeformableDetrModel", "DeformableDetrPreTrainedModel"]

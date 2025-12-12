@@ -21,6 +21,7 @@ from ...modeling_tf_utils import (
 from ...utils import add_code_sample_docstrings, add_start_docstrings, add_start_docstrings_to_model_forward
 from .configuration_convnextv2 import ConvNextV2Config
 
+"""TF 2.0 ConvNextV2 model."""
 logger = ...
 _CONFIG_FOR_DOC = ...
 _CHECKPOINT_FOR_DOC = ...
@@ -29,25 +30,65 @@ _IMAGE_CLASS_CHECKPOINT = ...
 _IMAGE_CLASS_EXPECTED_OUTPUT = ...
 
 class TFConvNextV2DropPath(keras.layers.Layer):
+    """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks).
+    References:
+        (1) github.com:rwightman/pytorch-image-models
+    """
     def __init__(self, drop_path: float, **kwargs) -> None: ...
     def call(self, x: tf.Tensor, training=...): ...
 
 class TFConvNextV2GRN(keras.layers.Layer):
+    """GRN (Global Response Normalization) layer"""
     def __init__(self, config: ConvNextV2Config, dim: int, **kwargs) -> None: ...
     def build(self, input_shape: tf.TensorShape = ...): ...
     def call(self, hidden_states: tf.Tensor): ...
 
 class TFConvNextV2Embeddings(keras.layers.Layer):
+    """This class is comparable to (and inspired by) the SwinEmbeddings class
+    found in src/transformers/models/swin/modeling_swin.py.
+    """
     def __init__(self, config: ConvNextV2Config, **kwargs) -> None: ...
     def call(self, pixel_values): ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFConvNextV2Layer(keras.layers.Layer):
+    """This corresponds to the `Block` class in the original implementation.
+
+    There are two equivalent implementations: [DwConv, LayerNorm (channels_first), Conv, GELU,1x1 Conv]; all in (N, C,
+    H, W) (2) [DwConv, Permute to (N, H, W, C), LayerNorm (channels_last), Linear, GELU, Linear]; Permute back
+
+    The authors used (2) as they find it slightly faster in PyTorch. Since we already permuted the inputs to follow
+    NHWC ordering, we can just apply the operations straight-away without the permutation.
+
+    Args:
+        config (`ConvNextV2Config`):
+            Model configuration class.
+        dim (`int`):
+            Number of input channels.
+        drop_path (`float`, *optional*, defaults to 0.0):
+            Stochastic depth rate.
+    """
     def __init__(self, config: ConvNextV2Config, dim: int, drop_path: float = ..., **kwargs) -> None: ...
     def call(self, hidden_states, training=...): ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFConvNextV2Stage(keras.layers.Layer):
+    """ConvNextV2 stage, consisting of an optional downsampling layer + multiple residual blocks.
+
+    Args:
+        config (`ConvNextV2V2Config`):
+            Model configuration class.
+        in_channels (`int`):
+            Number of input channels.
+        out_channels (`int`):
+            Number of output channels.
+        depth (`int`):
+            Number of residual blocks.
+        drop_path_rates(`list[float]`):
+            Stochastic depth rates for each layer.
+    """
     def __init__(
         self,
         config: ConvNextV2Config,
@@ -60,14 +101,16 @@ class TFConvNextV2Stage(keras.layers.Layer):
         **kwargs,
     ) -> None: ...
     def call(self, hidden_states): ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFConvNextV2Encoder(keras.layers.Layer):
     def __init__(self, config: ConvNextV2Config, **kwargs) -> None: ...
     def call(
         self, hidden_states: tf.Tensor, output_hidden_states: bool | None = ..., return_dict: bool | None = ...
     ) -> tuple | TFBaseModelOutputWithNoAttention: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 @keras_serializable
 class TFConvNextV2MainLayer(keras.layers.Layer):
@@ -81,9 +124,15 @@ class TFConvNextV2MainLayer(keras.layers.Layer):
         return_dict: bool | None = ...,
         training: bool = ...,
     ) -> TFBaseModelOutputWithPooling | tuple[tf.Tensor]: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFConvNextV2PreTrainedModel(TFPreTrainedModel):
+    """
+    An abstract class to handle weights initialization and a simple interface for downloading and loading pretrained
+    models.
+    """
+
     config_class = ConvNextV2Config
     base_model_prefix = ...
     main_input_name = ...
@@ -91,7 +140,9 @@ class TFConvNextV2PreTrainedModel(TFPreTrainedModel):
 CONVNEXTV2_START_DOCSTRING = ...
 CONVNEXTV2_INPUTS_DOCSTRING = ...
 
-@add_start_docstrings(..., CONVNEXTV2_START_DOCSTRING)
+@add_start_docstrings(
+    "The bare ConvNextV2 model outputting raw features without any specific head on top.", CONVNEXTV2_START_DOCSTRING
+)
 class TFConvNextV2Model(TFConvNextV2PreTrainedModel):
     def __init__(self, config: ConvNextV2Config, *inputs, **kwargs) -> None: ...
     @unpack_inputs
@@ -110,9 +161,16 @@ class TFConvNextV2Model(TFConvNextV2PreTrainedModel):
         return_dict: bool | None = ...,
         training: bool = ...,
     ) -> TFBaseModelOutputWithPoolingAndNoAttention | tuple[tf.Tensor]: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
-@add_start_docstrings(..., CONVNEXTV2_START_DOCSTRING)
+@add_start_docstrings(
+    """
+    ConvNextV2 Model with an image classification head on top (a linear layer on top of the pooled features), e.g. for
+    ImageNet.
+    """,
+    CONVNEXTV2_START_DOCSTRING,
+)
 class TFConvNextV2ForImageClassification(TFConvNextV2PreTrainedModel, TFSequenceClassificationLoss):
     def __init__(self, config: ConvNextV2Config, *inputs, **kwargs) -> None: ...
     @unpack_inputs
@@ -130,7 +188,16 @@ class TFConvNextV2ForImageClassification(TFConvNextV2PreTrainedModel, TFSequence
         return_dict: bool | None = ...,
         labels: np.ndarray | tf.Tensor | None = ...,
         training: bool | None = ...,
-    ) -> TFImageClassifierOutputWithNoAttention | tuple[tf.Tensor]: ...
-    def build(self, input_shape=...): ...
+    ) -> TFImageClassifierOutputWithNoAttention | tuple[tf.Tensor]:
+        r"""
+        labels (`tf.Tensor` or `np.ndarray` of shape `(batch_size,)`, *optional*):
+            Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
+
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 __all__ = ["TFConvNextV2ForImageClassification", "TFConvNextV2Model", "TFConvNextV2PreTrainedModel"]

@@ -12,10 +12,33 @@ from ...modeling_flax_utils import FlaxPreTrainedModel
 from ...utils import ModelOutput, add_start_docstrings, add_start_docstrings_to_model_forward
 from .configuration_wav2vec2 import Wav2Vec2Config
 
+"""Flax Wav2Vec2 model."""
 logger = ...
 
 @flax.struct.dataclass
 class FlaxWav2Vec2BaseModelOutput(ModelOutput):
+    """
+    Output type of [`FlaxWav2Vec2BaseModelOutput`], with potential hidden states and attentions.
+
+    Args:
+        last_hidden_state (`jnp.ndarray` of shape `(batch_size, sequence_length, hidden_size)`):
+            Sequence of hidden-states at the output of the last layer of the model.
+        extract_features (`jnp.ndarray` of shape `(batch_size, sequence_length, last_conv_dim)`):
+            Sequence of extracted feature vectors of the last convolutional layer of the model with `last_conv_dim`
+            being the dimension of the last convolutional layer.
+        hidden_states (`tuple(jnp.ndarray)`, *optional*, returned when `output_hidden_states=True` is passed or when `config.output_hidden_states=True`):
+            Tuple of `jnp.ndarray` (one for the output of the embeddings + one for the output of each layer) of shape
+            `(batch_size, sequence_length, hidden_size)`.
+
+            Hidden-states of the model at the output of each layer plus the initial embedding outputs.
+        attentions (`tuple(jnp.ndarray)`, *optional*, returned when `output_attentions=True` is passed or when `config.output_attentions=True`):
+            Tuple of `jnp.ndarray` (one for each layer) of shape `(batch_size, num_heads, sequence_length,
+            sequence_length)`.
+
+            Attentions weights after the attention softmax, used to compute the weighted average in the self-attention
+            heads.
+    """
+
     last_hidden_state: jnp.ndarray = ...
     extract_features: jnp.ndarray = ...
     hidden_states: Optional[tuple[jnp.ndarray]] = ...
@@ -23,6 +46,32 @@ class FlaxWav2Vec2BaseModelOutput(ModelOutput):
 
 @flax.struct.dataclass
 class FlaxWav2Vec2ForPreTrainingOutput(ModelOutput):
+    """
+    Output type of [`FlaxWav2Vec2ForPreTrainingOutput`], with potential hidden states and attentions.
+
+    Args:
+        loss (*optional*, returned when model is in train mode, `jnp.ndarray` of shape `(1,)`):
+            Total loss as the sum of the contrastive loss (L_m) and the diversity loss (L_d) as stated in the [official
+            paper](https://huggingface.co/papers/2006.11477) . (classification) loss.
+        projected_states (`jnp.ndarray` of shape `(batch_size, sequence_length, config.proj_codevector_dim)`):
+            Hidden-states of the model projected to *config.proj_codevector_dim* that can be used to predict the masked
+            projected quantized states.
+        projected_quantized_states (`jnp.ndarray` of shape `(batch_size, sequence_length, config.proj_codevector_dim)`):
+            Quantized extracted feature vectors projected to *config.proj_codevector_dim* representing the positive
+            target vectors for contrastive loss.
+        hidden_states (`tuple(jnp.ndarray)`, *optional*, returned when `output_hidden_states=True` is passed or when `config.output_hidden_states=True`):
+            Tuple of `jnp.ndarray` (one for the output of the embeddings + one for the output of each layer) of shape
+            `(batch_size, sequence_length, hidden_size)`.
+
+            Hidden-states of the model at the output of each layer plus the initial embedding outputs.
+        attentions (`tuple(jnp.ndarray)`, *optional*, returned when `output_attentions=True` is passed or when `config.output_attentions=True`):
+            Tuple of `jnp.ndarray` (one for each layer) of shape `(batch_size, num_heads, sequence_length,
+            sequence_length)`.
+
+            Attentions weights after the attention softmax, used to compute the weighted average in the self-attention
+            heads.
+    """
+
     projected_states: jnp.ndarray = ...
     projected_quantized_states: jnp.ndarray = ...
     codevector_perplexity: jnp.ndarray = ...
@@ -36,38 +85,47 @@ class FlaxWav2Vec2LayerNormConvLayer(nn.Module):
     config: Wav2Vec2Config
     layer_id: int = ...
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(self, hidden_states): ...
 
 class FlaxConvWithWeightNorm(nn.Module):
     config: Wav2Vec2Config
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(self, hidden_states): ...
 
 class FlaxWav2Vec2PositionalConvEmbedding(nn.Module):
     config: Wav2Vec2Config
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(self, hidden_states): ...
 
 class FlaxConvLayersCollection(nn.Module):
     config: Wav2Vec2Config
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(self, hidden_states): ...
 
 class FlaxWav2Vec2FeatureEncoder(nn.Module):
+    """Construct the features from raw audio waveform"""
+
     config: Wav2Vec2Config
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(self, input_values, freeze_feature_encoder=...): ...
 
 class FlaxWav2Vec2FeatureProjection(nn.Module):
     config: Wav2Vec2Config
     dtype: jnp.dtype = ...
-    def setup(self): ...
-    def __call__(self, hidden_states, deterministic=...): ...
+    def setup(self):  # -> None:
+        ...
+    def __call__(self, hidden_states, deterministic=...):  # -> tuple[Any, Any]:
+        ...
 
 class FlaxWav2Vec2Attention(nn.Module):
     config: Wav2Vec2Config
@@ -83,24 +141,32 @@ class FlaxWav2Vec2Attention(nn.Module):
         key_value_states: Optional[jnp.ndarray] = ...,
         attention_mask: Optional[jnp.ndarray] = ...,
         deterministic: bool = ...,
-    ) -> tuple[jnp.ndarray]: ...
+    ) -> tuple[jnp.ndarray]:
+        """Input shape: Batch x Time x Channel"""
+        ...
 
 class FlaxWav2Vec2FeedForward(nn.Module):
     config: Wav2Vec2Config
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(self, hidden_states, deterministic=...): ...
 
 class FlaxWav2Vec2EncoderLayerStableLayerNorm(nn.Module):
     config: Wav2Vec2Config
     dtype: jnp.dtype = ...
-    def setup(self): ...
-    def __call__(self, hidden_states, attention_mask=..., deterministic=..., output_attentions=...): ...
+    def setup(self):  # -> None:
+        ...
+    def __call__(
+        self, hidden_states, attention_mask=..., deterministic=..., output_attentions=...
+    ):  # -> tuple[Any, Any] | tuple[Any]:
+        ...
 
 class FlaxWav2Vec2EncoderLayerStableLayerNormCollection(nn.Module):
     config: Wav2Vec2Config
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         hidden_states,
@@ -109,12 +175,14 @@ class FlaxWav2Vec2EncoderLayerStableLayerNormCollection(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any | tuple[Any, ...] | tuple[()], ...] | FlaxBaseModelOutput:
+        ...
 
 class FlaxWav2Vec2StableLayerNormEncoder(nn.Module):
     config: Wav2Vec2Config
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         hidden_states,
@@ -123,33 +191,49 @@ class FlaxWav2Vec2StableLayerNormEncoder(nn.Module):
         output_attentions=...,
         output_hidden_states=...,
         return_dict=...,
-    ): ...
+    ):  # -> tuple[Any | tuple[Any, ...] | tuple[()], ...] | FlaxBaseModelOutput:
+        ...
 
 class FlaxWav2Vec2GumbelVectorQuantizer(nn.Module):
+    """
+    Vector quantization using gumbel softmax. See [CATEGORICAL REPARAMETERIZATION WITH
+    GUMBEL-SOFTMAX](https://huggingface.co/papers/1611.01144) for more information.
+    """
+
     config: Wav2Vec2Config
     dtype: jnp.dtype = ...
-    def setup(self): ...
-    def __call__(self, hidden_states, mask_time_indices=..., deterministic=..., temperature=...): ...
+    def setup(self):  # -> None:
+        ...
+    def __call__(self, hidden_states, mask_time_indices=..., deterministic=..., temperature=...):  # -> tuple[Any, Any]:
+        ...
 
 class FlaxWav2Vec2Adapter(nn.Module):
     config: Wav2Vec2Config
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(self, hidden_states, deterministic=...): ...
 
 class FlaxWav2Vec2AdapterLayer(nn.Module):
     config: Wav2Vec2Config
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(self, hidden_states): ...
 
 class FlaxWav2Vec2AdapterLayersCollection(nn.Module):
     config: Wav2Vec2Config
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(self, hidden_states): ...
 
 class FlaxWav2Vec2PreTrainedModel(FlaxPreTrainedModel):
+    """
+    An abstract class to handle weights initialization and a simple interface for downloading and loading pretrained
+    models.
+    """
+
     config_class = Wav2Vec2Config
     base_model_prefix: str = ...
     main_input_name = ...
@@ -182,7 +266,8 @@ class FlaxWav2Vec2PreTrainedModel(FlaxPreTrainedModel):
 class FlaxWav2Vec2Module(nn.Module):
     config: Wav2Vec2Config
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_values,
@@ -193,9 +278,13 @@ class FlaxWav2Vec2Module(nn.Module):
         output_hidden_states=...,
         freeze_feature_encoder=...,
         return_dict=...,
-    ): ...
+    ):  # -> tuple[Any | tuple[Any, ...] | tuple[()], Any, *tuple[Any | tuple[Any, ...] | tuple[()], ...]] | Any | FlaxWav2Vec2BaseModelOutput:
+        ...
 
-@add_start_docstrings(..., WAV2VEC2_START_DOCSTRING)
+@add_start_docstrings(
+    "The bare Wav2Vec2 Model transformer outputting raw hidden-states without any specific head on top.",
+    WAV2VEC2_START_DOCSTRING,
+)
 class FlaxWav2Vec2Model(FlaxWav2Vec2PreTrainedModel):
     module_class = ...
 
@@ -204,7 +293,8 @@ FLAX_WAV2VEC2_MODEL_DOCSTRING = ...
 class FlaxWav2Vec2ForCTCModule(nn.Module):
     config: Wav2Vec2Config
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_values,
@@ -215,9 +305,13 @@ class FlaxWav2Vec2ForCTCModule(nn.Module):
         output_hidden_states=...,
         freeze_feature_encoder=...,
         return_dict=...,
-    ): ...
+    ):  # -> tuple[Any, *tuple[Any | tuple[Any, ...] | tuple[()], ...]] | Any | FlaxCausalLMOutput:
+        ...
 
-@add_start_docstrings(..., WAV2VEC2_START_DOCSTRING)
+@add_start_docstrings(
+    "Wav2Vec2 Model with a `language modeling` head on top for Connectionist Temporal Classification (CTC).",
+    WAV2VEC2_START_DOCSTRING,
+)
 class FlaxWav2Vec2ForCTC(FlaxWav2Vec2PreTrainedModel):
     module_class = ...
 
@@ -226,7 +320,8 @@ FLAX_WAV2VEC2_FOR_CTC_DOCSTRING = ...
 class FlaxWav2Vec2ForPreTrainingModule(nn.Module):
     config: Wav2Vec2Config
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_values,
@@ -238,9 +333,18 @@ class FlaxWav2Vec2ForPreTrainingModule(nn.Module):
         output_hidden_states=...,
         freeze_feature_encoder=...,
         return_dict=...,
-    ): ...
+    ):  # -> tuple[Any, Any, Any, *tuple[Any | tuple[Any, ...] | tuple[()], ...]] | Any | FlaxWav2Vec2ForPreTrainingOutput:
+        r"""
+        Returns:
 
-@add_start_docstrings(..., WAV2VEC2_START_DOCSTRING)
+        Example:
+
+        ```python
+
+        ```"""
+        ...
+
+@add_start_docstrings("""Wav2Vec2 Model with a quantizer and `VQ` head on top.""", WAV2VEC2_START_DOCSTRING)
 class FlaxWav2Vec2ForPreTraining(FlaxWav2Vec2PreTrainedModel):
     module_class = ...
     @add_start_docstrings_to_model_forward(WAV2VEC2_INPUTS_DOCSTRING)

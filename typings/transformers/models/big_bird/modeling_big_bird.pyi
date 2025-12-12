@@ -21,16 +21,21 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import ModelOutput, auto_docstring
 from .configuration_big_bird import BigBirdConfig
 
+"""PyTorch BigBird model."""
 logger = ...
 _TRIVIA_QA_MAPPING = ...
 
-def load_tf_weights_in_big_bird(model, tf_checkpoint_path, is_trivia_qa=...): ...
+def load_tf_weights_in_big_bird(model, tf_checkpoint_path, is_trivia_qa=...):
+    """Load tf checkpoints in a pytorch model."""
+    ...
 
 class BigBirdEmbeddings(nn.Module):
+    """Construct the embeddings from word, position and token_type embeddings."""
     def __init__(self, config) -> None: ...
     def forward(
         self, input_ids=..., token_type_ids=..., position_ids=..., inputs_embeds=..., past_key_values_length=...
-    ): ...
+    ):  # -> Any:
+        ...
 
 class BigBirdSelfAttention(nn.Module):
     def __init__(self, config, layer_idx=...) -> None: ...
@@ -44,7 +49,8 @@ class BigBirdSelfAttention(nn.Module):
         past_key_value=...,
         output_attentions=...,
         cache_position=...,
-    ): ...
+    ):  # -> tuple[Tensor, Any]:
+        ...
 
 class BigBirdBlockSparseAttention(nn.Module):
     def __init__(self, config, seed=...) -> None: ...
@@ -57,11 +63,18 @@ class BigBirdBlockSparseAttention(nn.Module):
         from_blocked_mask=...,
         to_blocked_mask=...,
         output_attentions=...,
-    ): ...
+    ):  # -> tuple[Tensor, Tensor | None]:
+        ...
     @staticmethod
-    def torch_bmm_nd(inp_1, inp_2, ndim=...): ...
+    def torch_bmm_nd(inp_1, inp_2, ndim=...):  # -> Tensor:
+        """Fast nd matrix multiplication"""
+        ...
+
     @staticmethod
-    def torch_bmm_nd_transpose(inp_1, inp_2, ndim=...): ...
+    def torch_bmm_nd_transpose(inp_1, inp_2, ndim=...):  # -> Tensor:
+        """Fast nd matrix multiplication with transpose"""
+        ...
+
     def bigbird_block_sparse_attention(
         self,
         query_layer,
@@ -84,7 +97,8 @@ class BigBirdBlockSparseAttention(nn.Module):
         plan_from_length,
         plan_num_rand_blocks,
         output_attentions,
-    ): ...
+    ):  # -> tuple[Tensor, Tensor | None]:
+        ...
     @staticmethod
     def torch_gather_b2(params, indices): ...
 
@@ -94,7 +108,8 @@ class BigBirdSelfOutput(nn.Module):
 
 class BigBirdAttention(nn.Module):
     def __init__(self, config, seed=...) -> None: ...
-    def set_attention_type(self, value: str, layer_idx=...): ...
+    def set_attention_type(self, value: str, layer_idx=...):  # -> None:
+        ...
     def forward(
         self,
         hidden_states,
@@ -110,7 +125,8 @@ class BigBirdAttention(nn.Module):
         from_blocked_mask=...,
         to_blocked_mask=...,
         cache_position=...,
-    ): ...
+    ):  # -> Any:
+        ...
 
 class BigBirdIntermediate(nn.Module):
     def __init__(self, config) -> None: ...
@@ -122,7 +138,8 @@ class BigBirdOutput(nn.Module):
 
 class BigBirdLayer(GradientCheckpointingLayer):
     def __init__(self, config, seed=...) -> None: ...
-    def set_attention_type(self, value: str, layer_idx=...): ...
+    def set_attention_type(self, value: str, layer_idx=...):  # -> None:
+        ...
     def forward(
         self,
         hidden_states,
@@ -137,12 +154,15 @@ class BigBirdLayer(GradientCheckpointingLayer):
         past_key_value=...,
         output_attentions=...,
         cache_position=...,
-    ): ...
-    def feed_forward_chunk(self, attention_output): ...
+    ):  # -> Any:
+        ...
+    def feed_forward_chunk(self, attention_output):  # -> Any:
+        ...
 
 class BigBirdEncoder(nn.Module):
     def __init__(self, config) -> None: ...
-    def set_attention_type(self, value: str): ...
+    def set_attention_type(self, value: str):  # -> None:
+        ...
     def forward(
         self,
         hidden_states,
@@ -168,7 +188,8 @@ class BigBirdPredictionHeadTransform(nn.Module):
 
 class BigBirdLMPredictionHead(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class BigBirdOnlyMLMHead(nn.Module):
     def __init__(self, config) -> None: ...
@@ -176,11 +197,13 @@ class BigBirdOnlyMLMHead(nn.Module):
 
 class BigBirdOnlyNSPHead(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, pooled_output): ...
+    def forward(self, pooled_output):  # -> Any:
+        ...
 
 class BigBirdPreTrainingHeads(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, sequence_output, pooled_output): ...
+    def forward(self, sequence_output, pooled_output):  # -> tuple[Any, Any]:
+        ...
 
 @auto_docstring
 class BigBirdPreTrainedModel(PreTrainedModel):
@@ -190,8 +213,23 @@ class BigBirdPreTrainedModel(PreTrainedModel):
     supports_gradient_checkpointing = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Output type of [`BigBirdForPreTraining`].
+    """
+)
 class BigBirdForPreTrainingOutput(ModelOutput):
+    r"""
+    loss (*optional*, returned when `labels` is provided, `torch.FloatTensor` of shape `(1,)`):
+        Total loss as the sum of the masked language modeling loss and the next sequence prediction
+        (classification) loss.
+    prediction_logits (`torch.FloatTensor` of shape `(batch_size, sequence_length, config.vocab_size)`):
+        Prediction scores of the language modeling head (scores for each vocabulary token before SoftMax).
+    seq_relationship_logits (`torch.FloatTensor` of shape `(batch_size, 2)`):
+        Prediction scores of the next sequence prediction (classification) head (scores of True/False continuation
+        before SoftMax).
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     prediction_logits: Optional[torch.FloatTensor] = ...
     seq_relationship_logits: Optional[torch.FloatTensor] = ...
@@ -199,8 +237,19 @@ class BigBirdForPreTrainingOutput(ModelOutput):
     attentions: Optional[tuple[torch.FloatTensor]] = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for outputs of question answering models.
+    """
+)
 class BigBirdForQuestionAnsweringModelOutput(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `labels` is provided):
+        Total span extraction loss is the sum of a Cross-Entropy for the start and end positions.
+    pooler_output (`torch.FloatTensor` of shape `(batch_size, 1)`):
+        pooler output from BigBigModel
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     start_logits: Optional[torch.FloatTensor] = ...
     end_logits: Optional[torch.FloatTensor] = ...
@@ -210,10 +259,30 @@ class BigBirdForQuestionAnsweringModelOutput(ModelOutput):
 
 @auto_docstring
 class BigBirdModel(BigBirdPreTrainedModel):
-    def __init__(self, config, add_pooling_layer=...) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
-    def set_attention_type(self, value: str): ...
+    """
+
+    The model can behave as an encoder (with only self-attention) as well as a decoder, in which case a layer of
+    cross-attention is added between the self-attention layers, following the architecture described in [Attention is
+    all you need](https://huggingface.co/papers/1706.03762) by Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit,
+    Llion Jones, Aidan N. Gomez, Lukasz Kaiser and Illia Polosukhin.
+
+    To behave as an decoder the model needs to be initialized with the `is_decoder` argument of the configuration set
+    to `True`. To be used in a Seq2Seq model, the model needs to initialized with both `is_decoder` argument and
+    `add_cross_attention` set to `True`; an `encoder_hidden_states` is then expected as an input to the forward pass.
+    """
+    def __init__(self, config, add_pooling_layer=...) -> None:
+        r"""
+        add_pooling_layer (bool, *optional*, defaults to `True`):
+            Whether to add a pooling layer
+        """
+        ...
+
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
+    def set_attention_type(self, value: str):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -234,13 +303,18 @@ class BigBirdModel(BigBirdPreTrainedModel):
         **kwargs,
     ) -> Union[BaseModelOutputWithPoolingAndCrossAttentions, tuple[torch.FloatTensor]]: ...
     @staticmethod
-    def create_masks_for_block_sparse_attn(attention_mask: torch.Tensor, block_size: int): ...
+    def create_masks_for_block_sparse_attn(
+        attention_mask: torch.Tensor, block_size: int
+    ):  # -> tuple[Tensor, Tensor, Tensor, Tensor]:
+        ...
 
 class BigBirdForPreTraining(BigBirdPreTrainedModel):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
-    def get_output_embeddings(self): ...
-    def set_output_embeddings(self, new_embeddings): ...
+    def get_output_embeddings(self):  # -> Linear:
+        ...
+    def set_output_embeddings(self, new_embeddings):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -255,14 +329,45 @@ class BigBirdForPreTraining(BigBirdPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[BigBirdForPreTrainingOutput, tuple[torch.FloatTensor]]: ...
+    ) -> Union[BigBirdForPreTrainingOutput, tuple[torch.FloatTensor]]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should be in `[-100, 0, ...,
+            config.vocab_size]` (see `input_ids` docstring) Tokens with indices set to `-100` are ignored (masked), the
+            loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`
+        next_sentence_label (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the next sequence prediction (classification) loss. If specified, nsp loss will be
+            added to masked_lm loss. Input should be a sequence pair (see `input_ids` docstring) Indices should be in
+            `[0, 1]`:
+
+            - 0 indicates sequence B is a continuation of sequence A,
+            - 1 indicates sequence B is a random sequence.
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, BigBirdForPreTraining
+        >>> import torch
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("google/bigbird-roberta-base")
+        >>> model = BigBirdForPreTraining.from_pretrained("google/bigbird-roberta-base")
+
+        >>> inputs = tokenizer("Hello, my dog is cute", return_tensors="pt")
+        >>> outputs = model(**inputs)
+
+        >>> prediction_logits = outputs.prediction_logits
+        >>> seq_relationship_logits = outputs.seq_relationship_logits
+        ```"""
+        ...
 
 @auto_docstring
 class BigBirdForMaskedLM(BigBirdPreTrainedModel):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
-    def get_output_embeddings(self): ...
-    def set_output_embeddings(self, new_embeddings): ...
+    def get_output_embeddings(self):  # -> Linear:
+        ...
+    def set_output_embeddings(self, new_embeddings):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -278,15 +383,73 @@ class BigBirdForMaskedLM(BigBirdPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[MaskedLMOutput, tuple[torch.FloatTensor]]: ...
-    def prepare_inputs_for_generation(self, input_ids, attention_mask=..., **model_kwargs): ...
+    ) -> Union[MaskedLMOutput, tuple[torch.FloatTensor]]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should be in `[-100, 0, ...,
+            config.vocab_size]` (see `input_ids` docstring) Tokens with indices set to `-100` are ignored (masked), the
+            loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
 
-@auto_docstring(custom_intro=...)
+        Example:
+
+        ```python
+        >>> import torch
+        >>> from transformers import AutoTokenizer, BigBirdForMaskedLM
+        >>> from datasets import load_dataset
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("google/bigbird-roberta-base")
+        >>> model = BigBirdForMaskedLM.from_pretrained("google/bigbird-roberta-base")
+        >>> squad_ds = load_dataset("rajpurkar/squad_v2", split="train")  # doctest: +IGNORE_RESULT
+
+        >>> # select random long article
+        >>> LONG_ARTICLE_TARGET = squad_ds[81514]["context"]
+        >>> # select random sentence
+        >>> LONG_ARTICLE_TARGET[332:398]
+        'the highest values are very close to the theoretical maximum value'
+
+        >>> # add mask_token
+        >>> LONG_ARTICLE_TO_MASK = LONG_ARTICLE_TARGET.replace("maximum", "[MASK]")
+        >>> inputs = tokenizer(LONG_ARTICLE_TO_MASK, return_tensors="pt")
+        >>> # long article input
+        >>> list(inputs["input_ids"].shape)
+        [1, 919]
+
+        >>> with torch.no_grad():
+        ...     logits = model(**inputs).logits
+        >>> # retrieve index of [MASK]
+        >>> mask_token_index = (inputs.input_ids == tokenizer.mask_token_id)[0].nonzero(as_tuple=True)[0]
+        >>> predicted_token_id = logits[0, mask_token_index].argmax(axis=-1)
+        >>> tokenizer.decode(predicted_token_id)
+        'maximum'
+        ```
+
+        ```python
+        >>> labels = tokenizer(LONG_ARTICLE_TARGET, return_tensors="pt")["input_ids"]
+        >>> labels = torch.where(inputs.input_ids == tokenizer.mask_token_id, labels, -100)
+        >>> outputs = model(**inputs, labels=labels)
+        >>> round(outputs.loss.item(), 2)
+        1.99
+        ```
+        """
+        ...
+
+    def prepare_inputs_for_generation(
+        self, input_ids, attention_mask=..., **model_kwargs
+    ):  # -> dict[str, Tensor | Any]:
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    BigBird Model with a `language modeling` head on top for CLM fine-tuning.
+    """
+)
 class BigBirdForCausalLM(BigBirdPreTrainedModel, GenerationMixin):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
-    def get_output_embeddings(self): ...
-    def set_output_embeddings(self, new_embeddings): ...
+    def get_output_embeddings(self):  # -> Linear:
+        ...
+    def set_output_embeddings(self, new_embeddings):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -306,13 +469,27 @@ class BigBirdForCausalLM(BigBirdPreTrainedModel, GenerationMixin):
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
         **kwargs,
-    ) -> Union[CausalLMOutputWithCrossAttentions, tuple[torch.FloatTensor]]: ...
+    ) -> Union[CausalLMOutputWithCrossAttentions, tuple[torch.FloatTensor]]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the left-to-right language modeling loss (next word prediction). Indices should be in
+            `[-100, 0, ..., config.vocab_size]` (see `input_ids` docstring) Tokens with indices set to `-100` are
+            ignored (masked), the loss is only computed for the tokens with labels n `[0, ..., config.vocab_size]`.
+        """
+        ...
 
 class BigBirdClassificationHead(nn.Module):
+    """Head for sentence-level classification tasks."""
     def __init__(self, config) -> None: ...
-    def forward(self, features, **kwargs): ...
+    def forward(self, features, **kwargs):  # -> Any:
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    BigBird Model transformer with a sequence classification/regression head on top (a linear layer on top of the
+    pooled output) e.g. for GLUE tasks.
+    """
+)
 class BigBirdForSequenceClassification(BigBirdPreTrainedModel):
     def __init__(self, config) -> None: ...
     @auto_docstring
@@ -328,7 +505,49 @@ class BigBirdForSequenceClassification(BigBirdPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[SequenceClassifierOutput, tuple[torch.FloatTensor]]: ...
+    ) -> Union[SequenceClassifierOutput, tuple[torch.FloatTensor]]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+
+        Example:
+
+        ```python
+        >>> import torch
+        >>> from transformers import AutoTokenizer, BigBirdForSequenceClassification
+        >>> from datasets import load_dataset
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("l-yohai/bigbird-roberta-base-mnli")
+        >>> model = BigBirdForSequenceClassification.from_pretrained("l-yohai/bigbird-roberta-base-mnli")
+        >>> squad_ds = load_dataset("rajpurkar/squad_v2", split="train")  # doctest: +IGNORE_RESULT
+
+        >>> LONG_ARTICLE = squad_ds[81514]["context"]
+        >>> inputs = tokenizer(LONG_ARTICLE, return_tensors="pt")
+        >>> # long input article
+        >>> list(inputs["input_ids"].shape)
+        [1, 919]
+
+        >>> with torch.no_grad():
+        ...     logits = model(**inputs).logits
+        >>> predicted_class_id = logits.argmax().item()
+        >>> model.config.id2label[predicted_class_id]
+        'LABEL_0'
+        ```
+
+        ```python
+        >>> num_labels = len(model.config.id2label)
+        >>> model = BigBirdForSequenceClassification.from_pretrained(
+        ...     "l-yohai/bigbird-roberta-base-mnli", num_labels=num_labels
+        ... )
+        >>> labels = torch.tensor(1)
+        >>> loss = model(**inputs, labels=labels).loss
+        >>> round(loss.item(), 2)
+        1.13
+        ```
+        """
+        ...
 
 @auto_docstring
 class BigBirdForMultipleChoice(BigBirdPreTrainedModel):
@@ -346,7 +565,38 @@ class BigBirdForMultipleChoice(BigBirdPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[MultipleChoiceModelOutput, tuple[torch.FloatTensor]]: ...
+    ) -> Union[MultipleChoiceModelOutput, tuple[torch.FloatTensor]]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`):
+            Indices of input sequence tokens in the vocabulary.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        token_type_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`, *optional*):
+            Segment token indices to indicate first and second portions of the inputs. Indices are selected in `[0,
+            1]`:
+
+            - 0 corresponds to a *sentence A* token,
+            - 1 corresponds to a *sentence B* token.
+
+            [What are token type IDs?](../glossary#token-type-ids)
+        position_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`, *optional*):
+            Indices of positions of each input sequence tokens in the position embeddings. Selected in the range `[0,
+            config.max_position_embeddings - 1]`.
+
+            [What are position IDs?](../glossary#position-ids)
+        inputs_embeds (`torch.FloatTensor` of shape `(batch_size, num_choices, sequence_length, hidden_size)`, *optional*):
+            Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation. This
+            is useful if you want more control over how to convert *input_ids* indices into associated vectors than the
+            model's internal embedding lookup matrix.
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the multiple choice classification loss. Indices should be in `[0, ...,
+            num_choices-1]` where `num_choices` is the size of the second dimension of the input tensors. (See
+            `input_ids` above)
+        """
+        ...
 
 @auto_docstring
 class BigBirdForTokenClassification(BigBirdPreTrainedModel):
@@ -364,15 +614,28 @@ class BigBirdForTokenClassification(BigBirdPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[TokenClassifierOutput, tuple[torch.FloatTensor]]: ...
+    ) -> Union[TokenClassifierOutput, tuple[torch.FloatTensor]]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the token classification loss. Indices should be in `[0, ..., config.num_labels - 1]`.
+        """
+        ...
 
 class BigBirdForQuestionAnsweringHead(nn.Module):
+    """Head for question answering tasks."""
     def __init__(self, config) -> None: ...
-    def forward(self, encoder_output): ...
+    def forward(self, encoder_output):  # -> Any:
+        ...
 
 @auto_docstring
 class BigBirdForQuestionAnswering(BigBirdPreTrainedModel):
-    def __init__(self, config, add_pooling_layer=...) -> None: ...
+    def __init__(self, config, add_pooling_layer=...) -> None:
+        r"""
+        add_pooling_layer (bool, *optional*, defaults to `True`):
+            Whether to add a pooling layer
+        """
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -388,9 +651,53 @@ class BigBirdForQuestionAnswering(BigBirdPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[BigBirdForQuestionAnsweringModelOutput, tuple[torch.FloatTensor]]: ...
+    ) -> Union[BigBirdForQuestionAnsweringModelOutput, tuple[torch.FloatTensor]]:
+        r"""
+        question_lengths (`torch.LongTensor` of shape `(batch_size, 1)`, *optional*):
+            The lengths of the questions in the batch.
+
+        Example:
+
+        ```python
+        >>> import torch
+        >>> from transformers import AutoTokenizer, BigBirdForQuestionAnswering
+        >>> from datasets import load_dataset
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("google/bigbird-roberta-base")
+        >>> model = BigBirdForQuestionAnswering.from_pretrained("google/bigbird-roberta-base")
+        >>> squad_ds = load_dataset("rajpurkar/squad_v2", split="train")  # doctest: +IGNORE_RESULT
+
+        >>> # select random article and question
+        >>> LONG_ARTICLE = squad_ds[81514]["context"]
+        >>> QUESTION = squad_ds[81514]["question"]
+        >>> QUESTION
+        'During daytime how high can the temperatures reach?'
+
+        >>> inputs = tokenizer(QUESTION, LONG_ARTICLE, return_tensors="pt")
+        >>> # long article and question input
+        >>> list(inputs["input_ids"].shape)
+        [1, 929]
+
+        >>> with torch.no_grad():
+        ...     outputs = model(**inputs)
+
+        >>> answer_start_index = outputs.start_logits.argmax()
+        >>> answer_end_index = outputs.end_logits.argmax()
+        >>> predict_answer_token_ids = inputs.input_ids[0, answer_start_index : answer_end_index + 1]
+        >>> predict_answer_token = tokenizer.decode(predict_answer_token_ids)
+        ```
+
+        ```python
+        >>> target_start_index, target_end_index = torch.tensor([130]), torch.tensor([132])
+        >>> outputs = model(**inputs, start_positions=target_start_index, end_positions=target_end_index)
+        >>> loss = outputs.loss
+        ```
+        """
+        ...
+
     @staticmethod
-    def prepare_question_mask(q_lengths: torch.Tensor, maxlen: int): ...
+    def prepare_question_mask(q_lengths: torch.Tensor, maxlen: int):  # -> Tensor:
+        ...
 
 __all__ = [
     "BigBirdForCausalLM",

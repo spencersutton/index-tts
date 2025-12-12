@@ -12,7 +12,17 @@ from ..vit.modeling_vit import ViTEmbeddings, ViTForImageClassification, ViTMode
 
 class IJepaEmbeddings(ViTEmbeddings):
     def __init__(self, config: IJepaConfig, use_mask_token: bool = ...) -> None: ...
-    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor: ...
+    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor:
+        """
+        This method allows to interpolate the pre-trained position encodings, to be able to use the model on higher resolution
+        images. This method is also adapted to support torch.jit tracing.
+
+        Adapted from:
+        - https://github.com/facebookresearch/dino/blob/de9ee3df6cf39fac952ab558447af1fa1365362a/vision_transformer.py#L174-L194, and
+        - https://github.com/facebookresearch/dinov2/blob/e1277af2ba9496fbadf7aec6eba56e8d882d1e35/dinov2/models/vision_transformer.py#L179-L211
+        """
+        ...
+
     def forward(
         self,
         pixel_values: torch.Tensor,
@@ -33,9 +43,29 @@ class IJepaPreTrainedModel(PreTrainedModel):
     _supports_attention_backend = ...
 
 class IJepaModel(IJepaPreTrainedModel, ViTModel):
-    def __init__(self, config: IJepaConfig, add_pooling_layer: bool = ..., use_mask_token: bool = ...) -> None: ...
+    def __init__(self, config: IJepaConfig, add_pooling_layer: bool = ..., use_mask_token: bool = ...) -> None:
+        r"""
+        add_pooling_layer (bool, *optional*, defaults to `True`):
+            Whether to add a pooling layer
+        use_mask_token (`bool`, *optional*, defaults to `False`):
+            Whether to use a mask token for masked image modeling.
+        """
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    IJepa Model transformer with an image classification head on top (a linear layer on top of the final hidden states)
+    e.g. for ImageNet.
+
+    <Tip>
+
+        Note that it's possible to fine-tune IJepa on higher resolution images than the ones it has been trained on, by
+        setting `interpolate_pos_encoding` to `True` in the forward of the model. This will interpolate the pre-trained
+        position embeddings to the higher resolution.
+
+    </Tip>
+    """
+)
 class IJepaForImageClassification(IJepaPreTrainedModel, ViTForImageClassification):
     def __init__(self, config: IJepaConfig) -> None: ...
     def forward(
@@ -47,6 +77,13 @@ class IJepaForImageClassification(IJepaPreTrainedModel, ViTForImageClassificatio
         output_hidden_states: Optional[bool] = ...,
         interpolate_pos_encoding: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ImageClassifierOutput]: ...
+    ) -> Union[tuple, ImageClassifierOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 __all__ = ["IJepaPreTrainedModel", "IJepaModel", "IJepaForImageClassification"]

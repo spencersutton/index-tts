@@ -13,6 +13,38 @@ logger = ...
 
 @add_end_docstrings(build_pipeline_init_args(has_image_processor=True))
 class ZeroShotObjectDetectionPipeline(ChunkPipeline):
+    """
+    Zero shot object detection pipeline using `OwlViTForObjectDetection`. This pipeline predicts bounding boxes of
+    objects when you provide an image and a set of `candidate_labels`.
+
+    Example:
+
+    ```python
+    >>> from transformers import pipeline
+
+    >>> detector = pipeline(model="google/owlvit-base-patch32", task="zero-shot-object-detection")
+    >>> detector(
+    ...     "http://images.cocodataset.org/val2017/000000039769.jpg",
+    ...     candidate_labels=["cat", "couch"],
+    ... )
+    [{'score': 0.287, 'label': 'cat', 'box': {'xmin': 324, 'ymin': 20, 'xmax': 640, 'ymax': 373}}, {'score': 0.254, 'label': 'cat', 'box': {'xmin': 1, 'ymin': 55, 'xmax': 315, 'ymax': 472}}, {'score': 0.121, 'label': 'couch', 'box': {'xmin': 4, 'ymin': 0, 'xmax': 642, 'ymax': 476}}]
+
+    >>> detector(
+    ...     "https://huggingface.co/datasets/Narsil/image_dummy/raw/main/parrots.png",
+    ...     candidate_labels=["head", "bird"],
+    ... )
+    [{'score': 0.119, 'label': 'bird', 'box': {'xmin': 71, 'ymin': 170, 'xmax': 410, 'ymax': 508}}]
+    ```
+
+    Learn more about the basics of using a pipeline in the [pipeline tutorial](../pipeline_tutorial)
+
+    This object detection pipeline can currently be loaded from [`pipeline`] using the following task identifier:
+    `"zero-shot-object-detection"`.
+
+    See the list of available models on
+    [huggingface.co/models](https://huggingface.co/models?filter=zero-shot-object-detection).
+    """
+
     _load_processor = ...
     _load_image_processor = ...
     _load_feature_extractor = ...
@@ -29,6 +61,69 @@ class ZeroShotObjectDetectionPipeline(ChunkPipeline):
         image: Union[str, Image.Image, list[dict[str, Any]]],
         candidate_labels: Optional[Union[str, list[str]]] = ...,
         **kwargs: Any,
-    ) -> Union[list[dict[str, Any]], list[list[dict[str, Any]]]]: ...
-    def preprocess(self, inputs, timeout=...): ...
-    def postprocess(self, model_outputs, threshold=..., top_k=...): ...
+    ) -> Union[list[dict[str, Any]], list[list[dict[str, Any]]]]:
+        """
+        Detect objects (bounding boxes & classes) in the image(s) passed as inputs.
+
+        Args:
+            image (`str`, `PIL.Image` or `list[dict[str, Any]]`):
+                The pipeline handles three types of images:
+
+                - A string containing an http url pointing to an image
+                - A string containing a local path to an image
+                - An image loaded in PIL directly
+
+                You can use this parameter to send directly a list of images, or a dataset or a generator like so:
+
+                ```python
+                >>> from transformers import pipeline
+
+                >>> detector = pipeline(model="google/owlvit-base-patch32", task="zero-shot-object-detection")
+                >>> detector(
+                ...     [
+                ...         {
+                ...             "image": "http://images.cocodataset.org/val2017/000000039769.jpg",
+                ...             "candidate_labels": ["cat", "couch"],
+                ...         },
+                ...         {
+                ...             "image": "http://images.cocodataset.org/val2017/000000039769.jpg",
+                ...             "candidate_labels": ["cat", "couch"],
+                ...         },
+                ...     ]
+                ... )
+                [[{'score': 0.287, 'label': 'cat', 'box': {'xmin': 324, 'ymin': 20, 'xmax': 640, 'ymax': 373}}, {'score': 0.25, 'label': 'cat', 'box': {'xmin': 1, 'ymin': 55, 'xmax': 315, 'ymax': 472}}, {'score': 0.121, 'label': 'couch', 'box': {'xmin': 4, 'ymin': 0, 'xmax': 642, 'ymax': 476}}], [{'score': 0.287, 'label': 'cat', 'box': {'xmin': 324, 'ymin': 20, 'xmax': 640, 'ymax': 373}}, {'score': 0.254, 'label': 'cat', 'box': {'xmin': 1, 'ymin': 55, 'xmax': 315, 'ymax': 472}}, {'score': 0.121, 'label': 'couch', 'box': {'xmin': 4, 'ymin': 0, 'xmax': 642, 'ymax': 476}}]]
+                ```
+
+
+            candidate_labels (`str` or `list[str]` or `list[list[str]]`):
+                What the model should recognize in the image.
+
+            threshold (`float`, *optional*, defaults to 0.1):
+                The probability necessary to make a prediction.
+
+            top_k (`int`, *optional*, defaults to None):
+                The number of top predictions that will be returned by the pipeline. If the provided number is `None`
+                or higher than the number of predictions available, it will default to the number of predictions.
+
+            timeout (`float`, *optional*, defaults to None):
+                The maximum time in seconds to wait for fetching images from the web. If None, no timeout is set and
+                the call may block forever.
+
+
+        Return:
+            A list of lists containing prediction results, one list per input image. Each list contains dictionaries
+            with the following keys:
+
+            - **label** (`str`) -- Text query corresponding to the found object.
+            - **score** (`float`) -- Score corresponding to the object (between 0 and 1).
+            - **box** (`dict[str,int]`) -- Bounding box of the detected object in image's original size. It is a
+              dictionary with `x_min`, `x_max`, `y_min`, `y_max` keys.
+        """
+        ...
+
+    def preprocess(
+        self, inputs, timeout=...
+    ):  # -> Generator[dict[str | Any, bool | Tensor | str | Any | EncodingFast], Any, None]:
+        ...
+    def postprocess(self, model_outputs, threshold=..., top_k=...):  # -> list[Any]:
+        ...

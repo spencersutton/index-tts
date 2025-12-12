@@ -21,6 +21,28 @@ CLIP_INPUTS_DOCSTRING = ...
 
 @flax.struct.dataclass
 class FlaxCLIPTextModelOutput(ModelOutput):
+    """
+    Base class for text model's outputs that also contains a pooling of the last hidden states.
+
+    Args:
+        text_embeds (`jnp.ndarray` of shape `(batch_size, output_dim`):
+            The text embeddings obtained by applying the projection layer to the pooled output of
+            [`FlaxCLIPTextModel`].
+        last_hidden_state (`jnp.ndarray` of shape `(batch_size, sequence_length, hidden_size)`):
+            Sequence of hidden-states at the output of the last layer of the model.
+        hidden_states (`tuple(jnp.ndarray)`, *optional*, returned when `output_hidden_states=True` is passed or when `config.output_hidden_states=True`):
+            Tuple of `jnp.ndarray` (one for the output of the embeddings + one for the output of each layer) of shape
+            `(batch_size, sequence_length, hidden_size)`.
+
+            Hidden-states of the model at the output of each layer plus the initial embedding outputs.
+        attentions (`tuple(jnp.ndarray)`, *optional*, returned when `output_attentions=True` is passed or when `config.output_attentions=True`):
+            Tuple of `jnp.ndarray` (one for each layer) of shape `(batch_size, num_heads, sequence_length,
+            sequence_length)`.
+
+            Attentions weights after the attention softmax, used to compute the weighted average in the self-attention
+            heads.
+    """
+
     text_embeds: jnp.ndarray = ...
     last_hidden_state: jnp.ndarray = ...
     hidden_states: Optional[tuple[jnp.ndarray, ...]] = ...
@@ -28,6 +50,26 @@ class FlaxCLIPTextModelOutput(ModelOutput):
 
 @flax.struct.dataclass
 class FlaxCLIPOutput(ModelOutput):
+    """
+    Args:
+        logits_per_image:(`jnp.ndarray` of shape `(image_batch_size, text_batch_size)`):
+            The scaled dot product scores between `image_embeds` and `text_embeds`. This represents the image-text
+            similarity scores.
+        logits_per_text:(`jnp.ndarray` of shape `(text_batch_size, image_batch_size)`):
+            The scaled dot product scores between `text_embeds` and `image_embeds`. This represents the text-image
+            similarity scores.
+        text_embeds(`jnp.ndarray` of shape `(batch_size, output_dim`):
+            The text embeddings obtained by applying the projection layer to the pooled output of
+            [`FlaxCLIPTextModel`].
+        image_embeds(`jnp.ndarray` of shape `(batch_size, output_dim`):
+            The image embeddings obtained by applying the projection layer to the pooled output of
+            [`FlaxCLIPVisionModel`].
+        text_model_output(`FlaxBaseModelOutputWithPooling`):
+            The output of the [`FlaxCLIPTextModel`].
+        vision_model_output(`FlaxBaseModelOutputWithPooling`):
+            The output of the [`FlaxCLIPVisionModel`].
+    """
+
     logits_per_image: jnp.ndarray = ...
     logits_per_text: jnp.ndarray = ...
     text_embeds: jnp.ndarray = ...
@@ -39,37 +81,49 @@ class FlaxCLIPOutput(ModelOutput):
 class FlaxCLIPVisionEmbeddings(nn.Module):
     config: CLIPVisionConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(self, pixel_values): ...
 
 class FlaxCLIPTextEmbeddings(nn.Module):
     config: CLIPTextConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(self, input_ids, position_ids): ...
 
 class FlaxCLIPAttention(nn.Module):
     config: Union[CLIPTextConfig, CLIPVisionConfig]
     dtype: jnp.dtype = ...
-    def setup(self): ...
-    def __call__(self, hidden_states, attention_mask=..., deterministic: bool = ..., output_attentions: bool = ...): ...
+    def setup(self):  # -> None:
+        ...
+    def __call__(
+        self, hidden_states, attention_mask=..., deterministic: bool = ..., output_attentions: bool = ...
+    ):  # -> tuple[Any, Any] | tuple[Any]:
+        ...
 
 class FlaxCLIPMLP(nn.Module):
     config: Union[CLIPTextConfig, CLIPVisionConfig]
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(self, hidden_states): ...
 
 class FlaxCLIPEncoderLayer(nn.Module):
     config: Union[CLIPTextConfig, CLIPVisionConfig]
     dtype: jnp.dtype = ...
-    def setup(self): ...
-    def __call__(self, hidden_states, attention_mask, deterministic: bool = ..., output_attentions: bool = ...): ...
+    def setup(self):  # -> None:
+        ...
+    def __call__(
+        self, hidden_states, attention_mask, deterministic: bool = ..., output_attentions: bool = ...
+    ):  # -> tuple[Any, Any] | tuple[Any]:
+        ...
 
 class FlaxCLIPLayerCollection(nn.Module):
     config: Union[CLIPTextConfig, CLIPVisionConfig]
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         hidden_states,
@@ -78,12 +132,14 @@ class FlaxCLIPLayerCollection(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, ...] | FlaxBaseModelOutput:
+        ...
 
 class FlaxCLIPEncoder(nn.Module):
     config: Union[CLIPTextConfig, CLIPVisionConfig]
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         inputs_embeds,
@@ -92,12 +148,14 @@ class FlaxCLIPEncoder(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, ...] | FlaxBaseModelOutput:
+        ...
 
 class FlaxCLIPTextTransformer(nn.Module):
     config: CLIPTextConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids,
@@ -107,12 +165,14 @@ class FlaxCLIPTextTransformer(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, Any, *tuple[Any, ...]] | Any | FlaxBaseModelOutputWithPooling:
+        ...
 
 class FlaxCLIPVisionTransformer(nn.Module):
     config: CLIPVisionConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         pixel_values=...,
@@ -120,7 +180,8 @@ class FlaxCLIPVisionTransformer(nn.Module):
         output_attentions=...,
         output_hidden_states=...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, Any, *tuple[Any, ...]] | Any | FlaxBaseModelOutputWithPooling:
+        ...
 
 class FlaxCLIPTextPreTrainedModel(FlaxPreTrainedModel):
     config_class = CLIPTextConfig
@@ -207,15 +268,72 @@ class FlaxCLIPPreTrainedModel(FlaxPreTrainedModel):
         params: Optional[dict] = ...,
         dropout_rng: jax.random.PRNGKey = ...,
         train=...,
-    ): ...
+    ):
+        r"""
+        Args:
+            input_ids (`numpy.ndarray` of shape `(batch_size, sequence_length)`):
+                Indices of input sequence tokens in the vocabulary. Padding will be ignored by default should you
+                provide it.
+
+                Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+                [`PreTrainedTokenizer.__call__`] for details.
+
+                [What are input IDs?](../glossary#input-ids)
+
+        Returns:
+            text_features (`jnp.ndarray` of shape `(batch_size, output_dim`): The text embeddings obtained by applying
+            the projection layer to the pooled output of [`FlaxCLIPTextModel`].
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoTokenizer, FlaxCLIPModel
+
+        >>> model = FlaxCLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+        >>> tokenizer = AutoTokenizer.from_pretrained("openai/clip-vit-base-patch32")
+
+        >>> inputs = tokenizer(["a photo of a cat", "a photo of a dog"], padding=True, return_tensors="np")
+        >>> text_features = model.get_text_features(**inputs)
+        ```"""
+        ...
+
     def get_image_features(
         self, pixel_values, params: Optional[dict] = ..., dropout_rng: jax.random.PRNGKey = ..., train=...
-    ): ...
+    ):
+        r"""
+        Args:
+            pixel_values (`numpy.ndarray` of shape `(batch_size, num_channels, height, width)`):
+                Pixel values. Padding will be ignored by default should you provide it. Pixel values can be obtained
+                using [`AutoImageProcessor`]. See [`CLIPImageProcessor.__call__`] for details.
+
+        Returns:
+            image_features (`jnp.ndarray` of shape `(batch_size, output_dim`): The image embeddings obtained by
+            applying the projection layer to the pooled output of [`FlaxCLIPVisionModel`]
+
+        Examples:
+
+        ```python
+        >>> from PIL import Image
+        >>> import requests
+        >>> from transformers import AutoProcessor, FlaxCLIPModel
+
+        >>> model = FlaxCLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+        >>> processor = AutoProcessor.from_pretrained("openai/clip-vit-base-patch32")
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> inputs = processor(images=image, return_tensors="np")
+
+        >>> image_features = model.get_image_features(**inputs)
+        ```"""
+        ...
 
 class FlaxCLIPTextModule(nn.Module):
     config: CLIPTextConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids,
@@ -225,7 +343,8 @@ class FlaxCLIPTextModule(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, Any, *tuple[Any, ...]] | Any | FlaxBaseModelOutputWithPooling:
+        ...
 
 class FlaxCLIPTextModel(FlaxCLIPTextPreTrainedModel):
     module_class = ...
@@ -235,7 +354,8 @@ FLAX_CLIP_TEXT_MODEL_DOCSTRING = ...
 class FlaxCLIPTextModelWithProjectionModule(nn.Module):
     config: CLIPTextConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids,
@@ -245,7 +365,8 @@ class FlaxCLIPTextModelWithProjectionModule(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, Any, *tuple[Any, ...]] | Any | FlaxCLIPTextModelOutput:
+        ...
 
 class FlaxCLIPTextModelWithProjection(FlaxCLIPTextPreTrainedModel):
     module_class = ...
@@ -255,7 +376,8 @@ FLAX_CLIP_TEXT_MODEL_WITH_PROJECTION_DOCSTRING = ...
 class FlaxCLIPVisionModule(nn.Module):
     config: CLIPVisionConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         pixel_values,
@@ -263,7 +385,8 @@ class FlaxCLIPVisionModule(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, Any, *tuple[Any, ...]] | Any | FlaxBaseModelOutputWithPooling:
+        ...
 
 class FlaxCLIPVisionModel(FlaxCLIPVisionPreTrainedModel):
     module_class = ...
@@ -273,7 +396,8 @@ FLAX_CLIP_VISION_MODEL_DOCSTRING = ...
 class FlaxCLIPModule(nn.Module):
     config: CLIPConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids=...,
@@ -284,7 +408,8 @@ class FlaxCLIPModule(nn.Module):
         output_attentions=...,
         output_hidden_states=...,
         return_dict=...,
-    ): ...
+    ):  # -> tuple[Any, Any, Any, Any, tuple[Any, Any, *tuple[Any, ...]] | Any | FlaxBaseModelOutputWithPooling, tuple[Any, Any, *tuple[Any, ...]] | Any | FlaxBaseModelOutputWithPooling] | FlaxCLIPOutput:
+        ...
 
 @add_start_docstrings(CLIP_START_DOCSTRING)
 class FlaxCLIPModel(FlaxCLIPPreTrainedModel):

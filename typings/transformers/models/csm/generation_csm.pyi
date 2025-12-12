@@ -16,6 +16,33 @@ logger = ...
 
 @dataclass
 class CsmGenerateOutput(GenerateDecoderOnlyOutput):
+    """
+    Outputs of CsmForConditionalGeneration.generate.
+
+    Args:
+        sequences (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
+            The generated sequences. The second dimension (sequence_length) is either equal to `max_length` or shorter
+            if all batches finished early due to the `eos_token_id`.
+        scores (`tuple(torch.FloatTensor)` *optional*, returned when `output_scores=True`):
+            Processed prediction scores of the language modeling head (scores for each vocabulary token before SoftMax)
+            at each generation step. Tuple of `torch.FloatTensor` with up to `max_new_tokens` elements (one element for
+            each generated token), with each tensor of shape `(batch_size, config.vocab_size)`.
+        logits (`tuple(torch.FloatTensor)` *optional*, returned when `output_logits=True`):
+            Unprocessed prediction scores of the language modeling head (scores for each vocabulary token before SoftMax)
+            at each generation step. Tuple of `torch.FloatTensor` with up to `max_new_tokens` elements (one element for
+            each generated token), with each tensor of shape `(batch_size, config.vocab_size)`.
+        attentions (`tuple(tuple(torch.FloatTensor))`, *optional*, returned when `output_attentions=True`):
+            Tuple (one element for each generated token) of tuples (one element for each layer of the decoder) of
+            `torch.FloatTensor` of shape `(batch_size, num_heads, generated_length, sequence_length)`.
+        hidden_states (`tuple(tuple(torch.FloatTensor))`, *optional*, returned when `output_hidden_states=True`):
+            Tuple (one element for each generated token) of tuples (one element for each layer of the decoder) of
+            `torch.FloatTensor` of shape `(batch_size, generated_length, hidden_size)`.
+        past_key_values (`tuple(tuple(torch.FloatTensor)))`, *optional*, returned when `use_cache=True`):
+            Returns the model cache, used to speed up decoding. Different models have a different cache format, check
+        audio (`list(torch.FloatTensor)` of length `batch_size`):
+            The generated audio.
+    """
+
     audio: Optional[list[torch.Tensor]] = ...
 
 class CsmGenerationMixin(GenerationMixin):
@@ -31,4 +58,105 @@ class CsmGenerationMixin(GenerationMixin):
         streamer: Optional[BaseStreamer] = ...,
         output_audio: Optional[bool] = ...,
         **kwargs,
-    ) -> Union[GenerateNonBeamOutput, torch.LongTensor]: ...
+    ) -> Union[GenerateNonBeamOutput, torch.LongTensor]:
+        r"""
+        This method overrides [`~generation.utils.GenerationMixin.generate`] to match the specifics of the Csm model.
+        Indeed, Csm model requires a custom generation sampling step:
+        1. Infer the backbone model to sample the first codebook token
+        2. Call generate on the depth decoder with the first codebook token as `input_ids` to sample the next codebook tokens
+        3. Use these generated codebook tokens as `input_ids` to sample the next first codebook token using the backbone model
+        4. Repeat until stopping criteria is met
+
+        <Tip warning={true}>
+
+        Most generation-controlling parameters are set in `generation_config` which, if not passed, will be set to the
+        model's default generation configuration. You can override any `generation_config` by passing the corresponding
+        parameters to generate(), e.g. `.generate(inputs, do_sample=True)`.
+        </Tip>
+
+        Parameters:
+            inputs_ids (`torch.Tensor` of shape (batch_size, seq_length), *optional*):
+                The sequence used as a prompt for the backbone model.
+            input_values (`torch.Tensor` of shape (batch_size, channels, max_concatenated_audio_length), *optional*):
+                The batched audio input values, where each batch entry contains the concatenation of all audio segments for that entry.
+                These values will be encoded into codebook tokens using the codec model and merged with the text input ids provided in `input_ids`.
+            input_values_cutoffs (`torch.Tensor` of shape (batch_size, max_num_audio), *optional*):
+                Specify the end positions of audio segments within each batch entry, relative to the concatenated audio input.
+                If a batch entry has fewer segments than the maximum, it is padded with -1. For example, in a batch of 2 sequences
+                where the first contains 2 audio segments of length l1, and the second contains 1 audio segment of length l2,
+                the input_values_cutoffs would be: [[l1, 2 * l1], [l2, -1]].
+            generation_config ([`~generation.GenerationConfig`], *optional*):
+                The generation configuration to be used as base parametrization for the generation call. `**kwargs`
+                passed to generate matching the attributes of `generation_config` will override them. If
+                `generation_config` is not provided, the default will be used, which has the following loading
+                priority: 1) from the `generation_config.json` model file, if it exists; 2) from the model
+                configuration. Please note that unspecified parameters will inherit [`~generation.GenerationConfig`]'s
+                default values, whose documentation should be checked to parameterize generation.
+            logits_processor (`LogitsProcessorList`, *optional*):
+                Custom logits processors that complement the default logits processors built from arguments and
+                generation config. If a logit processor is passed that is already created with the arguments or a
+                generation config an error is thrown. This feature is intended for advanced users.
+            stopping_criteria (`StoppingCriteriaList`, *optional*):
+                Custom stopping criteria that complements the default stopping criteria built from arguments and a
+                generation config. If a stopping criteria is passed that is already created with the arguments or a
+                generation config an error is thrown. If your stopping criteria depends on the `scores` input, make
+                sure you pass `return_dict_in_generate=True, output_scores=True` to `generate`. This feature is
+                intended for advanced users.
+            synced_gpus (`bool`, *optional*):
+                Whether to continue running the while loop until max_length. Unless overridden, this flag will be set
+                to `True` if using `FullyShardedDataParallel` or DeepSpeed ZeRO Stage 3 with multiple GPUs to avoid
+                deadlocking if one GPU finishes generating before other GPUs. Otherwise, defaults to `False`.
+            streamer (`BaseStreamer`, *optional*):
+                Streamer object that will be used to stream the generated sequences. Generated tokens are passed
+                through `streamer.put(token_ids)` and the streamer is responsible for any further processing.
+            output_audio (`bool`, *optional*):
+                Whether to return the generated audio.
+            kwargs (`dict[str, Any]`, *optional*):
+                Ad hoc parametrization of `generation_config` and/or additional model-specific kwargs that will be
+                forwarded to the `forward` function of the model. Depth decoder specific kwargs should be prefixed with *depth_decoder_*.
+
+        Return:
+            [`CsmGenerateOutput`] or `torch.LongTensor` or `list[torch.FloatTensor]`: A [`CsmGenerateOutput`]
+            (if `return_dict_in_generate=True` or when `config.return_dict_in_generate=True`) or a `torch.LongTensor` when `output_audio=False`
+            or a `list[torch.FloatTensor]` otherwise.
+
+        Example:
+
+        ```python
+        >>> from transformers import CsmProcessor, CsmForConditionalGeneration
+        >>> from datasets import load_dataset, Audio
+
+        >>> model_id = "sesame/csm-1b"
+        >>> torch_device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        >>> processor = AutoProcessor.from_pretrained(model_id)
+
+        >>> ds = load_dataset("hf-internal-testing/dailytalk-dummy", split="train")
+        >>> # ensure the audio is 24kHz
+        >>> ds = ds.cast_column("audio", Audio(sampling_rate=24000))
+
+        >>> conversation = []
+        >>> # prepare a conversation with text and corresponding audio
+        >>> for text, audio, speaker_id in zip(ds[:4]["text"], ds[:4]["audio"], ds[:4]["speaker_id"]):
+        ...     conversation.append(
+        ...         {
+        ...             "role": f"{speaker_id}",
+        ...             "content": [{"type": "text", "text": text}, {"type": "audio", "path": audio["array"]}],
+        ...         }
+        ...     )
+
+        >>> # text prompt
+        >>> conversation.append({"role": f"{ds[4]['speaker_id']}", "content": [{"type": "text", "text": ds[4]["text"]}]})
+
+        >>> inputs = processor.apply_chat_template(
+        ...     conversation,
+        ...     tokenize=True,
+        ...     return_dict=True,
+        ... ).to(torch_device)
+
+        >>> model = CsmForConditionalGeneration.from_pretrained(model_id, device_map=torch_device)
+        >>> audio = model.generate(**inputs, output_audio=True)
+        >>> processor.save_audio(audio, "output.wav")
+        ```
+        """
+        ...

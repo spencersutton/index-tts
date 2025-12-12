@@ -8,11 +8,26 @@ from ...image_utils import ImageInput
 from ...processing_utils import Unpack
 from ...utils import auto_docstring, is_torch_available, is_torchvision_available
 
+"""Fast Image processor class for LayoutLMv3."""
 logger = ...
 if is_torch_available(): ...
 if is_torchvision_available(): ...
 
 class LayoutLMv3FastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
+    """
+    Args:
+        apply_ocr (`bool`, *optional*, defaults to `True`):
+            Whether to apply the Tesseract OCR engine to get words + normalized bounding boxes. Can be overridden by
+            the `apply_ocr` parameter in the `preprocess` method.
+        ocr_lang (`str`, *optional*):
+            The language, specified by its ISO code, to be used by the Tesseract OCR engine. By default, English is
+            used. Can be overridden by the `ocr_lang` parameter in the `preprocess` method.
+        tesseract_config (`str`, *optional*):
+            Any additional custom configuration flags that are forwarded to the `config` parameter when calling
+            Tesseract. For example: '--psm 6'. Can be overridden by the `tesseract_config` parameter in the
+            `preprocess` method.
+    """
+
     apply_ocr: Optional[bool]
     ocr_lang: Optional[str]
     tesseract_config: Optional[str]

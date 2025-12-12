@@ -23,11 +23,29 @@ logger = ...
 class KyutaiSpeechToTextRMSNorm(nn.Module):
     def __init__(self, dim: int, eps: float = ...) -> None: ...
     def forward(self, x): ...
-    def extra_repr(self): ...
+    def extra_repr(self):  # -> str:
+        ...
 
 class KyutaiSpeechToTextFlexibleLinear(nn.Module):
     def __init__(self, input_size, output_size, num_layers) -> None: ...
-    def forward(self, x, layer_idx=...): ...
+    def forward(self, x, layer_idx=...):  # -> Tensor:
+        """
+        `KyutaiSpeechToTextFlexibleLinear` creates one linear layer per codebook. There's multiple ways to use it.
+        In the default case, `sequence_length=num_layers`, so each element of the sequence will be matmul to the weights corresponding to its index on the sequence.
+
+        For more advanced cases, one can specify which codebook's layer(s) to use with `layer_idx`.
+        If `layer_idx` indicates a single integer, all of the element of the sequence will be matmul to this single codebook's layer.
+        But if `layer_idx` is a tensor of shape `(seq_length,)`, it will matmul each i-th element of the input sequence to the corresponding layer `weight[i]`.
+
+
+        Args:
+            x (`torch.FloatTensor): input to the layer of shape `(batch, num_layers, embed_dim)` or of shape `(batch, seq_length, embed_dim)`
+            layer_idx (`torch.Tensor`, *optional*):
+                Can be used to specify which codebook's layers(s) to use.
+                If it's a tensor of shape `(seq_length,)`, will matmul each element of the sequence to the corresponding weights.
+                But if `layer_idx` is a tensor of shape `(seq_length,)`, it will matmul each i-th element of the input sequence to the corresponding layer `weight[i]`.
+        """
+        ...
 
 @auto_docstring
 class KyutaiSpeechToTextPreTrainedModel(PreTrainedModel):
@@ -40,6 +58,13 @@ class KyutaiSpeechToTextPreTrainedModel(PreTrainedModel):
     main_input_name = ...
 
 class KyutaiSpeechToTextConv1dPaddingCache:
+    """
+    Padding cache for KyutaiSpeechToTextConv1d causal convolutions in order to support streaming via cache padding.
+    See: https://arxiv.org/pdf/2005.06720 & https://arxiv.org/pdf/2204.07064
+
+    A padding cache is a list of cached partial hidden states for each convolution layer.
+    Hidden states are cached from the previous call to the KyutaiSpeechToTextConv1d forward pass, given the padding size.
+    """
     def __init__(
         self,
         num_layers: int,
@@ -47,31 +72,76 @@ class KyutaiSpeechToTextConv1dPaddingCache:
         per_layer_padding_mode: list[str],
         per_layer_in_channels: list[int],
     ) -> None: ...
-    def update(self, hidden_states: torch.Tensor, layer_idx: int): ...
+    def update(self, hidden_states: torch.Tensor, layer_idx: int):  # -> Tensor | None:
+        """
+        Updates the padding cache with the new padding states for the layer `layer_idx` and returns the current cache.
+
+        Parameters:
+            hidden_states (`torch.Tensor`):
+                The hidden states to be partially cached.
+            layer_idx (`int`):
+                The index of the layer to cache the states for.
+        Returns:
+            `torch.Tensor` or `None`, the current padding cache.
+        """
+        ...
 
 class KyutaiSpeechToTextEmbeddings(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, input_ids): ...
+    def forward(self, input_ids):  # -> Any:
+        ...
 
 class KyutaiSpeechToTextLinear(nn.Module):
     def __init__(self, input_dim, output_dim, num_codebooks, use_flexible_linear=...) -> None: ...
-    def forward(self, x, layer_idx=...): ...
+    def forward(self, x, layer_idx=...):  # -> Any:
+        ...
 
 class KyutaiSpeechToTextRotaryEmbedding(nn.Module):
     def __init__(self, config: KyutaiSpeechToTextConfig, device=...) -> None: ...
     @torch.no_grad()
     @dynamic_rope_update
-    def forward(self, x, position_ids): ...
+    def forward(self, x, position_ids):  # -> tuple[Tensor, Tensor]:
+        ...
 
 class KyutaiSpeechToTextGatingMLP(nn.Module):
     def __init__(self, config, use_flexible_linear=...) -> None: ...
     def forward(self, hidden_states: torch.Tensor, layer_idx: Optional[int] = ...) -> torch.Tensor: ...
 
-def rotate_half(x): ...
-def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...): ...
-def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor: ...
+def rotate_half(x):  # -> Tensor:
+    """Rotates half the hidden dims of the input."""
+    ...
+
+def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...):  # -> tuple[Any, Any]:
+    """Applies Rotary Position Embedding to the query and key tensors.
+
+    Args:
+        q (`torch.Tensor`): The query tensor.
+        k (`torch.Tensor`): The key tensor.
+        cos (`torch.Tensor`): The cosine part of the rotary embedding.
+        sin (`torch.Tensor`): The sine part of the rotary embedding.
+        position_ids (`torch.Tensor`, *optional*):
+            Deprecated and unused.
+        unsqueeze_dim (`int`, *optional*, defaults to 1):
+            The 'unsqueeze_dim' argument specifies the dimension along which to unsqueeze cos[position_ids] and
+            sin[position_ids] so that they can be properly broadcasted to the dimensions of q and k. For example, note
+            that cos[position_ids] and sin[position_ids] have the shape [batch_size, seq_len, head_dim]. Then, if q and
+            k have the shape [batch_size, heads, seq_len, head_dim], then setting unsqueeze_dim=1 makes
+            cos[position_ids] and sin[position_ids] broadcastable to the shapes of q and k. Similarly, if q and k have
+            the shape [batch_size, seq_len, heads, head_dim], then set unsqueeze_dim=2.
+    Returns:
+        `tuple(torch.Tensor)` comprising of the query and key tensors rotated using the Rotary Position Embedding.
+    """
+    ...
+
+def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
+    """
+    This is the equivalent of torch.repeat_interleave(x, dim=1, repeats=n_rep). The hidden states go from (batch,
+    num_key_value_heads, seqlen, head_dim) to (batch, num_attention_heads, seqlen, head_dim)
+    """
+    ...
 
 class KyutaiSpeechToTextAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(
         self, config: KyutaiSpeechToTextConfig, layer_idx: Optional[int] = ..., use_flexible_linear=..., use_rope=...
     ) -> None: ...
@@ -87,6 +157,11 @@ class KyutaiSpeechToTextAttention(nn.Module):
     ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
 
 class KyutaiSpeechToTextFlashAttention2(KyutaiSpeechToTextAttention):
+    """
+    KyutaiSpeechToText flash attention module. This module inherits from `KyutaiSpeechToTextAttention` as the weights of the module stays
+    untouched. The only required change would be on the forward pass where it needs to correctly call the public API of
+    flash attention and deal with padding tokens in case the input contains any of them.
+    """
     def __init__(self, *args, **kwargs) -> None: ...
     def forward(
         self,
@@ -100,6 +175,11 @@ class KyutaiSpeechToTextFlashAttention2(KyutaiSpeechToTextAttention):
     ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
 
 class KyutaiSpeechToTextSdpaAttention(KyutaiSpeechToTextAttention):
+    """
+    KyutaiSpeechToText attention module using torch.nn.functional.scaled_dot_product_attention. This module inherits from
+    `KyutaiSpeechToTextAttention` as the weights of the module stays untouched. The only changes are on the forward pass to adapt to
+    SDPA API.
+    """
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -128,7 +208,27 @@ class KyutaiSpeechToTextDecoderLayer(GradientCheckpointingLayer):
         use_cache: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         **kwargs,
-    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]: ...
+    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            attention_mask (`torch.FloatTensor`, *optional*):
+                attention mask of size `(batch_size, sequence_length)` if flash attention is used or `(batch_size, 1,
+                query_sequence_length, key_sequence_length)` if default attention is used.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            use_cache (`bool`, *optional*):
+                If set to `True`, `past_key_values` key value states are returned and can be used to speed up decoding
+                (see `past_key_values`).
+            past_key_value (`Tuple(torch.FloatTensor)`, *optional*): cached past key and value projection states
+            cache_position (`torch.LongTensor` of shape `(sequence_length)`, *optional*):
+                Indices depicting the position of the input sequence tokens in the sequence
+            kwargs (`dict`, *optional*):
+                Arbitrary kwargs to be ignored, used for FSDP and other methods that injects code
+                into the model
+        """
+        ...
 
 @auto_docstring
 class KyutaiSpeechToTextModel(KyutaiSpeechToTextPreTrainedModel):
@@ -155,8 +255,10 @@ class KyutaiSpeechToTextForConditionalGeneration(KyutaiSpeechToTextPreTrainedMod
     _pp_plan = ...
     _keep_in_fp32_modules_strict = ...
     def __init__(self, config) -> None: ...
-    def set_decoder(self, decoder): ...
-    def get_decoder(self): ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> KyutaiSpeechToTextModel:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -171,7 +273,41 @@ class KyutaiSpeechToTextForConditionalGeneration(KyutaiSpeechToTextPreTrainedMod
         cache_position: Optional[torch.LongTensor] = ...,
         logits_to_keep: Union[int, torch.Tensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> CausalLMOutputWithPast: ...
+    ) -> CausalLMOutputWithPast:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Example:
+
+        ```python
+        >>> import torch
+        >>> from datasets import load_dataset, Audio
+        >>> from transformers import KyutaiSpeechToTextProcessor, KyutaiSpeechToTextForConditionalGeneration
+
+        >>> torch_device = "cuda" if torch.cuda.is_available() else "cpu"
+        >>> model_id = "kyutai/stt-2.6b-en-trfs"
+
+        >>> processor = KyutaiSpeechToTextProcessor.from_pretrained(model_id)
+        >>> model = KyutaiSpeechToTextForConditionalGeneration.from_pretrained(model_id, device_map=torch_device)
+
+        >>> ds = load_dataset(
+        ...     "hf-internal-testing/librispeech_asr_dummy", "clean", split="validation"
+        ... )
+
+        >>> ds = ds.cast_column("audio", Audio(sampling_rate=24000))
+        >>> inputs = processor(
+        ...     ds[0]["audio"]["array"],
+        ... )
+        >>> inputs.to(torch_device)
+
+        >>> output_tokens = model.generate(**inputs)
+        >>> print(processor.batch_decode(output_tokens, skip_special_tokens=True))
+        ```"""
+        ...
+
     def prepare_inputs_for_generation(
         self,
         *args,
@@ -183,10 +319,17 @@ class KyutaiSpeechToTextForConditionalGeneration(KyutaiSpeechToTextPreTrainedMod
         encoder_past_key_values: Optional[Cache] = ...,
         padding_cache: Optional[KyutaiSpeechToTextConv1dPaddingCache] = ...,
         **kwargs,
-    ): ...
+    ):  # -> dict[Any, Any]:
+        ...
     @classmethod
-    def from_pretrained(cls, *args, **kwargs): ...
-    def save_pretrained(self, *args, **kwargs): ...
-    def generate(self, *args, **kwargs): ...
+    def from_pretrained(cls, *args, **kwargs):  # -> tuple[Any | Self, Any] | Self:
+        ...
+    def save_pretrained(self, *args, **kwargs):  # -> None:
+        ...
+    def generate(self, *args, **kwargs):  # -> GenerateOutput | LongTensor:
+        r"""
+        This method forwards all its arguments to GenerationMixin's [`~GenerationMixin.generate`]. Please refer to the docstring of this method for more information.
+        """
+        ...
 
 __all__ = ["KyutaiSpeechToTextPreTrainedModel", "KyutaiSpeechToTextModel", "KyutaiSpeechToTextForConditionalGeneration"]

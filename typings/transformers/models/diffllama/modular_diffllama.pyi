@@ -24,9 +24,11 @@ _CONFIG_FOR_DOC = ...
 
 class DiffLlamaMLP(MistralMLP): ...
 
-def lambda_init_fn(layer_idx): ...
+def lambda_init_fn(layer_idx):  # -> float:
+    ...
 
 class DiffLlamaAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config: DiffLlamaConfig, layer_idx: Optional[int] = ...) -> None: ...
     def forward(
         self,
@@ -41,6 +43,11 @@ class DiffLlamaAttention(nn.Module):
     ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
 
 class DiffLlamaFlashAttention2(DiffLlamaAttention):
+    """
+    DiffLlama flash attention module. This module inherits from `DiffLlamaAttention` as the weights of the module stays
+    untouched. The only required change would be on the forward pass where it needs to correctly call the public API of
+    flash attention and deal with padding tokens in case the input contains any of them.
+    """
     def __init__(self, *args, **kwargs) -> None: ...
     def forward(
         self,
@@ -54,6 +61,11 @@ class DiffLlamaFlashAttention2(DiffLlamaAttention):
     ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
 
 class DiffLlamaSdpaAttention(DiffLlamaAttention):
+    """
+    DiffLlama attention module using torch.nn.functional.scaled_dot_product_attention. This module inherits from
+    `DiffLlamaAttention` as the weights of the module stays untouched. The only changes are on the forward pass to adapt to
+    SDPA API.
+    """
     def forward(
         self,
         hidden_states: torch.Tensor,

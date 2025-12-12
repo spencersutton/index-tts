@@ -12,13 +12,23 @@ from ...utils import auto_docstring
 from ...utils.backbone_utils import BackboneMixin
 from .configuration_vitpose_backbone import VitPoseBackboneConfig
 
+"""PyTorch VitPose backbone model.
+
+This code is the same as the original Vision Transformer (ViT) with 2 modifications:
+- use of padding=2 in the patch embedding layer
+- addition of a mixture-of-experts MLP layer
+"""
 logger = ...
 
 class VitPoseBackbonePatchEmbeddings(nn.Module):
+    """Image to Patch Embedding."""
     def __init__(self, config) -> None: ...
     def forward(self, pixel_values: torch.Tensor) -> torch.Tensor: ...
 
 class VitPoseBackboneEmbeddings(nn.Module):
+    """
+    Construct the position and patch embeddings.
+    """
     def __init__(self, config: VitPoseBackboneConfig) -> None: ...
     def forward(self, pixel_values: torch.Tensor) -> torch.Tensor: ...
 
@@ -31,7 +41,8 @@ def eager_attention_forward(
     scaling: float,
     dropout: float = ...,
     **kwargs,
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class VitPoseBackboneSelfAttention(nn.Module):
     def __init__(self, config: VitPoseBackboneConfig) -> None: ...
@@ -40,6 +51,10 @@ class VitPoseBackboneSelfAttention(nn.Module):
     ) -> Union[tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor]]: ...
 
 class VitPoseBackboneSelfOutput(nn.Module):
+    """
+    The residual connection is defined in VitPoseBackboneLayer instead of here (as is the case with other models), due to the
+    layernorm applied before each block.
+    """
     def __init__(self, config: VitPoseBackboneConfig) -> None: ...
     def forward(self, hidden_states: torch.Tensor, input_tensor: torch.Tensor) -> torch.Tensor: ...
 
@@ -90,7 +105,11 @@ class VitPoseBackbonePreTrainedModel(PreTrainedModel):
     _supports_sdpa = ...
     _supports_flash_attn = ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The VitPose backbone useful for downstream tasks.
+    """
+)
 class VitPoseBackbone(VitPoseBackbonePreTrainedModel, BackboneMixin):
     def __init__(self, config: VitPoseBackboneConfig) -> None: ...
     @auto_docstring
@@ -102,6 +121,26 @@ class VitPoseBackbone(VitPoseBackbonePreTrainedModel, BackboneMixin):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ): ...
+    ):  # -> Any | BackboneOutput:
+        r"""
+        dataset_index (`torch.Tensor` of shape `(batch_size,)`):
+            Index to use in the Mixture-of-Experts (MoE) blocks of the backbone.
+
+            This corresponds to the dataset index used during training, e.g. index 0 refers to COCO.
+
+        Examples:
+
+        ```python
+        >>> from transformers import VitPoseBackboneConfig, VitPoseBackbone
+        >>> import torch
+
+        >>> config = VitPoseBackboneConfig(out_indices=[-1])
+        >>> model = VitPoseBackbone(config)
+
+        >>> pixel_values = torch.randn(1, 3, 256, 192)
+        >>> dataset_index = torch.tensor([1])
+        >>> outputs = model(pixel_values, dataset_index)
+        ```"""
+        ...
 
 __all__ = ["VitPoseBackbonePreTrainedModel", "VitPoseBackbone"]

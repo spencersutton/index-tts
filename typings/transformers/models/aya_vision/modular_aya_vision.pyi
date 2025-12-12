@@ -20,11 +20,13 @@ from ...utils import auto_docstring
 from ...utils.generic import check_model_inputs
 from .configuration_aya_vision import AyaVisionConfig
 
+"""PyTorch AyaVision model."""
 logger = ...
 
 class AyaVisionMultiModalProjector(nn.Module):
     def __init__(self, config: AyaVisionConfig) -> None: ...
-    def forward(self, image_features): ...
+    def forward(self, image_features):  # -> Any:
+        ...
     def pixel_shuffle(self, image_features): ...
 
 class AyaVisionPreTrainedModel(LlavaPreTrainedModel):
@@ -41,7 +43,25 @@ class AyaVisionModel(LlavaModel):
         vision_feature_layer: Optional[Union[int, list[int]]] = ...,
         vision_feature_select_strategy: Optional[str] = ...,
         **kwargs,
-    ): ...
+    ):  # -> Any:
+        """
+        Obtains image last hidden states from the vision tower and apply multimodal projection.
+
+        Args:
+            pixel_values (`torch.FloatTensor]` of shape `(batch_size, channels, height, width)`):
+               The tensors corresponding to the input images.
+            vision_feature_layer (`Union[int, list[int]]`, *optional*):
+                The index of the layer to select the vision feature. If multiple indices are provided,
+                the vision feature of the corresponding indices will be concatenated to form the
+                vision features.
+            vision_feature_select_strategy (`str`, *optional*):
+                The feature selection strategy used to select the vision feature from the vision backbone.
+                Can be one of `"default"` or `"full"`
+        Returns:
+            image_features (`torch.Tensor`): Image feature tensor of shape `(num_images, image_length, embed_dim)`).
+        """
+        ...
+
     @check_model_inputs
     @auto_docstring
     def forward(
@@ -79,6 +99,43 @@ class AyaVisionForConditionalGeneration(LlavaForConditionalGeneration):
         logits_to_keep: Union[int, torch.Tensor] = ...,
         image_sizes: Optional[torch.Tensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> Union[tuple, AyaVisionCausalLMOutputWithPast]: ...
+    ) -> Union[tuple, AyaVisionCausalLMOutputWithPast]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoProcessor, AyaVisionForConditionalGeneration
+        >>> import torch
+
+        >>> torch_device = "cuda:0"
+        >>> processor = AutoProcessor.from_pretrained("CohereForAI/aya-vision-8b", use_fast=True)
+        >>> model = AyaVisionForConditionalGeneration.from_pretrained("CohereForAI/aya-vision-8b", device_map=torch_device)
+
+        >>> messages = [
+        ...     {
+        ...         "role": "user",
+        ...         "content": [
+        ...             {
+        ...                 "type": "image",
+        ...                 "url": "https://pbs.twimg.com/media/Fx7YvfQWYAIp6rZ?format=jpg&name=medium",
+        ...             },
+        ...             {"type": "text", "text": "चित्र में लिखा पाठ क्या कहता है?"},
+        ...         ],
+        ...     }
+        ... ]
+
+        >>> inputs = processor.apply_chat_template(
+        ...     messages, padding=True, add_generation_prompt=True, tokenize=True, return_dict=True, return_tensors="pt", device=torch_device
+        ... ).to(model.device)
+
+        >>> gen_tokens = model.generate(**inputs, max_new_tokens=300, do_sample=True, temperature=0.3)
+        >>> processor.tokenizer.decode(gen_tokens[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
+        ```"""
+        ...
 
 __all__ = ["AyaVisionForConditionalGeneration", "AyaVisionPreTrainedModel", "AyaVisionModel"]

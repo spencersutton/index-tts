@@ -9,6 +9,7 @@ from ...audio_utils import AudioInput
 from ...processing_utils import AudioKwargs, ProcessingKwargs, ProcessorMixin, Unpack
 from ...utils import is_soundfile_available, is_torch_available
 
+"""Processor class for Dia"""
 if is_torch_available(): ...
 if is_soundfile_available(): ...
 
@@ -25,47 +26,115 @@ class DiaProcessorKwargs(ProcessingKwargs, total=False):
     _defaults = ...
 
 class DiaProcessor(ProcessorMixin):
+    r"""
+    Constructs a Dia processor which wraps a [`DiaFeatureExtractor`], [`DiaTokenizer`], and a [`DacModel`] into
+    a single processor. It inherits, the audio feature extraction, tokenizer, and audio encode/decode functio-
+    nalities. See [`~DiaProcessor.__call__`], [`~DiaProcessor.encode`], and [`~DiaProcessor.decode`] for more
+    information.
+
+    Args:
+        feature_extractor (`DiaFeatureExtractor`):
+            An instance of [`DiaFeatureExtractor`]. The feature extractor is a required input.
+        tokenizer (`DiaTokenizer`):
+            An instance of [`DiaTokenizer`]. The tokenizer is a required input.
+        audio_tokenizer (`DacModel`):
+            An instance of [`DacModel`] used to encode/decode audio into/from codebooks. It is is a required input.
+    """
+
     feature_extractor_class = ...
     tokenizer_class = ...
     audio_tokenizer_class = ...
     def __init__(self, feature_extractor, tokenizer, audio_tokenizer) -> None: ...
     @property
-    def model_input_names(self): ...
+    def model_input_names(self):  # -> list[Any]:
+        """
+        We no longer pass the raw audio values but the codebooks encoded by the `audio_tokenizer`.
+        Conventions may differ between audio models due to architectural choices.
+        """
+        ...
+
     def __call__(
         self,
         text: Union[str, list[str]],
         audio: Optional[AudioInput] = ...,
         output_labels: Optional[bool] = ...,
         **kwargs: Unpack[DiaProcessorKwargs],
-    ): ...
+    ):  # -> BatchFeature:
+        """
+        Main method to prepare text(s) and audio to be fed as input to the model. The `audio` argument is
+        forwarded to the DiaFeatureExtractor's [`~DiaFeatureExtractor.__call__`] and subsequently to the
+        DacModel's [`~DacModel.encode`]. The `text` argument to [`~DiaTokenizer.__call__`]. Please refer
+        to the docstring of the above methods for more information.
+        """
+        ...
+
     def batch_decode(
         self,
         decoder_input_ids: torch.Tensor,
         audio_prompt_len: Optional[int] = ...,
         **kwargs: Unpack[DiaProcessorKwargs],
-    ) -> list[torch.Tensor]: ...
+    ) -> list[torch.Tensor]:
+        """
+        Decodes a batch of audio codebook sequences into their respective audio waveforms via the
+        `audio_tokenizer`. See [`~DacModel.decode`] for more information.
+
+        Args:
+            decoder_input_ids (`torch.Tensor`): The complete output sequence of the decoder.
+            audio_prompt_len (`int`): The audio prefix length (e.g. when using voice cloning).
+        """
+        ...
+
     def decode(
         self,
         decoder_input_ids: torch.Tensor,
         audio_prompt_len: Optional[int] = ...,
         **kwargs: Unpack[DiaProcessorKwargs],
-    ) -> torch.Tensor: ...
-    def get_audio_prompt_len(
-        self, decoder_attention_mask: torch.Tensor, **kwargs: Unpack[DiaProcessorKwargs]
-    ) -> int: ...
+    ) -> torch.Tensor:
+        """
+        Decodes a single sequence of audio codebooks into the respective audio waveform via the
+        `audio_tokenizer`. See [`~DacModel.decode`] and [`~DiaProcessor.batch_decode`] for more information.
+        """
+        ...
+
+    def get_audio_prompt_len(self, decoder_attention_mask: torch.Tensor, **kwargs: Unpack[DiaProcessorKwargs]) -> int:
+        """Utility function to get the audio prompt length."""
+        ...
+
     def save_audio(
         self,
         audio: AudioInput,
         saving_path: Union[str, Path, list[Union[str, Path]]],
         **kwargs: Unpack[DiaProcessorKwargs],
-    ): ...
+    ):  # -> None:
+        ...
     @staticmethod
     def build_indices(
         bsz: int, seq_len: int, num_channels: int, delay_pattern: list[int], revert: bool = ...
-    ) -> tuple[torch.Tensor, torch.Tensor]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """
+        Precompute (sequence_idx, all_idx) so that out[seq, channel] = in[seq - delay[channel], channel]
+        or in[seq, channel] = out[seq + delay[channel], channel] if `revert`.
+        Negative sequence_idx => BOS; sequence_idx >= seq_len => PAD.
+        """
+        ...
+
     @staticmethod
     def apply_audio_delay(
         audio: torch.Tensor, pad_token_id: int, bos_token_id: int, precomputed_idx: tuple[torch.Tensor, torch.Tensor]
-    ) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """
+        Applies or reverts the delay pattern to batched audio tokens using precomputed indices,
+        inserting BOS where sequence_idx < 0 and PAD where sequence_idx >= seq_len.
+
+        Args:
+            audio: audio tokens of shape [bsz, seq_len, num_channels]
+            pad_token_id: the PAD token
+            bos_token_id: the BOS token
+            precomputed_idx: from `build_indices`
+
+        Returns:
+            final_audio: delayed or reverted audio tokens of shape [bsz, seq_len, num_channels]
+        """
+        ...
 
 __all__ = ["DiaProcessor"]

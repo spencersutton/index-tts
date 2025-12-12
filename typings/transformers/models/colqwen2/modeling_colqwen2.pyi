@@ -23,15 +23,45 @@ class ColQwen2PreTrainedModel(PreTrainedModel):
     _supports_flex_attn = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for ColQwen2 embeddings output.
+    """
+)
 class ColQwen2ForRetrievalOutput(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `labels` is provided):
+        Language modeling loss (for next-token prediction).
+    embeddings (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
+        The embeddings of the model.
+    past_key_values (`Cache`, *optional*, returned when `use_cache=True` is passed or when `config.use_cache=True`):
+        Tuple of `tuple(torch.FloatTensor)` of length `config.n_layers`, with each tuple having 2 tensors of shape
+        `(batch_size, num_heads, sequence_length, embed_size_per_head)`)
+
+        Contains pre-computed hidden-states (key and values in the self-attention blocks) that can be used (see
+        `past_key_values` input) to speed up sequential decoding.
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     embeddings: Optional[torch.Tensor] = ...
     past_key_values: Optional[Union[list[torch.FloatTensor], Cache]] = ...
     hidden_states: Optional[tuple[torch.FloatTensor]] = ...
     attentions: Optional[tuple[torch.FloatTensor]] = ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Following the ColPali approach, ColQwen2 leverages VLMs to construct efficient multi-vector embeddings directly
+    from document images (“screenshots”) for document retrieval. The model is trained to maximize the similarity
+    between these document embeddings and the corresponding query embeddings, using the late interaction method
+    introduced in ColBERT.
+
+    Using ColQwen2 removes the need for potentially complex and brittle layout recognition and OCR pipelines with
+    a single model that can take into account both the textual and visual content (layout, charts, ...) of a document.
+
+    ColQwen2 is part of the ColVision model family, which was introduced with ColPali in the following paper:
+    [*ColPali: Efficient Document Retrieval with Vision Language Models*](https://huggingface.co/papers/2407.01449).
+    """
+)
 class ColQwen2ForRetrieval(ColQwen2PreTrainedModel):
     _checkpoint_conversion_mapping = ...
     def __init__(self, config: ColQwen2Config) -> None: ...
@@ -52,12 +82,23 @@ class ColQwen2ForRetrieval(ColQwen2PreTrainedModel):
         pixel_values: Optional[torch.Tensor] = ...,
         image_grid_thw: Optional[torch.LongTensor] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
-    ) -> ColQwen2ForRetrievalOutput: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
-    def get_output_embeddings(self): ...
-    def set_output_embeddings(self, new_embeddings): ...
-    def tie_weights(self): ...
+    ) -> ColQwen2ForRetrievalOutput:
+        r"""
+        image_grid_thw (`torch.LongTensor` of shape `(num_images, 3)`, *optional*):
+            The temporal, height and width of feature shape of each image in LLM.
+        """
+        ...
+
+    def get_input_embeddings(self):  # -> Any:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
+    def get_output_embeddings(self):  # -> Any:
+        ...
+    def set_output_embeddings(self, new_embeddings):  # -> None:
+        ...
+    def tie_weights(self):  # -> Any:
+        ...
     def resize_token_embeddings(
         self, new_num_tokens: Optional[int] = ..., pad_to_multiple_of: Optional[int] = ..., mean_resizing: bool = ...
     ) -> nn.Embedding: ...

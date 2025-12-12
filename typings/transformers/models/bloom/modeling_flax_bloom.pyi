@@ -11,18 +11,38 @@ from ...modeling_flax_utils import FlaxPreTrainedModel
 from ...utils import add_start_docstrings, add_start_docstrings_to_model_forward
 from .configuration_bloom import BloomConfig
 
+"""Flax BLOOM model."""
 logger = ...
 _CHECKPOINT_FOR_DOC = ...
 _CONFIG_FOR_DOC = ...
 BLOOM_START_DOCSTRING = ...
 BLOOM_INPUTS_DOCSTRING = ...
 
-def build_alibi_tensor(attention_mask: jnp.ndarray, num_heads: int, dtype: Optional[jnp.dtype] = ...): ...
+def build_alibi_tensor(attention_mask: jnp.ndarray, num_heads: int, dtype: Optional[jnp.dtype] = ...):
+    """
+    Flax implementation of the BLOOM Alibi tensor. BLOOM Alibi tensor is not causal as the original paper mentions, it
+    relies on a translation invariance of softmax for quick implementation: with l being a tensor, and a fixed value
+    `softmax(l+a) = softmax(l)`. Based on
+    https://github.com/ofirpress/attention_with_linear_biases/blob/a35aaca144e0eb6b789dfcb46784c4b8e31b7983/fairseq/models/transformer.py#L742
+    Link to paper: https://huggingface.co/papers/2108.12409
+
+    Args:
+        attention_mask (`jnp.ndarray`):
+            Token-wise attention mask, this should be of shape `(batch_size, max_seq_len)`.
+        num_heads (`int`):
+            Number of attention heads.
+        dtype (`jnp.dtype`, *optional*, defaults to `jnp.float32`):
+            The data type (dtype) of the output tensor.
+
+    Returns: Alibi tensor of shape `(batch_size * num_heads, 1, max_seq_len)`.
+    """
+    ...
 
 class FlaxBloomAttention(nn.Module):
     config: BloomConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         hidden_states,
@@ -32,22 +52,26 @@ class FlaxBloomAttention(nn.Module):
         deterministic: bool = ...,
         init_cache: bool = ...,
         output_attentions: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, Any] | tuple[Any]:
+        ...
 
 class BloomGELU(nn.Module):
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(self, x): ...
 
 class FlaxBloomMLP(nn.Module):
     config: BloomConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(self, hidden_states, residual, deterministic: bool = ...): ...
 
 class FlaxBloomBlock(nn.Module):
     config: BloomConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         hidden_states,
@@ -56,9 +80,15 @@ class FlaxBloomBlock(nn.Module):
         deterministic: bool = ...,
         init_cache: bool = ...,
         output_attentions: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, Any] | tuple[Any]:
+        ...
 
 class FlaxBloomPreTrainedModel(FlaxPreTrainedModel):
+    """
+    An abstract class to handle weights initialization and a simple interface for downloading and loading pretrained
+    models.
+    """
+
     config_class = BloomConfig
     base_model_prefix = ...
     module_class: nn.Module = ...
@@ -72,7 +102,17 @@ class FlaxBloomPreTrainedModel(FlaxPreTrainedModel):
         **kwargs,
     ) -> None: ...
     def init_weights(self, rng: jax.random.PRNGKey, input_shape: tuple, params: FrozenDict = ...) -> FrozenDict: ...
-    def init_cache(self, batch_size, max_length): ...
+    def init_cache(self, batch_size, max_length):
+        r"""
+        Args:
+            batch_size (`int`):
+                batch_size used for fast auto-regressive decoding. Defines the batch size of the initialized cache.
+            max_length (`int`):
+                maximum possible length for auto-regressive decoding. Defines the sequence length of the initialized
+                cache.
+        """
+        ...
+
     @add_start_docstrings_to_model_forward(BLOOM_INPUTS_DOCSTRING)
     def __call__(
         self,
@@ -90,7 +130,8 @@ class FlaxBloomPreTrainedModel(FlaxPreTrainedModel):
 class FlaxBloomBlockCollection(nn.Module):
     config: BloomConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         hidden_states,
@@ -100,12 +141,14 @@ class FlaxBloomBlockCollection(nn.Module):
         init_cache: bool = ...,
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, tuple[()] | tuple[Any, ...] | None, tuple[()] | tuple[Any, ...] | None]:
+        ...
 
 class FlaxBloomModule(nn.Module):
     config: BloomConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids=...,
@@ -115,16 +158,21 @@ class FlaxBloomModule(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any | tuple[()] | tuple[Any, ...], ...] | FlaxBaseModelOutputWithPastAndCrossAttentions:
+        ...
 
-@add_start_docstrings(..., BLOOM_START_DOCSTRING)
+@add_start_docstrings(
+    "The bare Bloom Model transformer outputting raw hidden-states without any specific head on top.",
+    BLOOM_START_DOCSTRING,
+)
 class FlaxBloomModel(FlaxBloomPreTrainedModel):
     module_class = ...
 
 class FlaxBloomForCausalLMModule(nn.Module):
     config: BloomConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids,
@@ -134,12 +182,22 @@ class FlaxBloomForCausalLMModule(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, *tuple[Any | tuple[()] | tuple[Any, ...], ...]] | Any | FlaxCausalLMOutput:
+        ...
 
-@add_start_docstrings(..., BLOOM_START_DOCSTRING)
+@add_start_docstrings(
+    """
+    The Bloom Model transformer with a language modeling head on top (linear layer with weights tied to the input
+    embeddings).
+    """,
+    BLOOM_START_DOCSTRING,
+)
 class FlaxBloomForCausalLM(FlaxBloomPreTrainedModel):
     module_class = ...
-    def prepare_inputs_for_generation(self, input_ids, max_length, attention_mask: Optional[jax.Array] = ...): ...
+    def prepare_inputs_for_generation(
+        self, input_ids, max_length, attention_mask: Optional[jax.Array] = ...
+    ):  # -> dict[str, Any]:
+        ...
     def update_inputs_for_generation(self, model_outputs, model_kwargs): ...
 
 __all__ = ["FlaxBloomForCausalLM", "FlaxBloomModel", "FlaxBloomPreTrainedModel"]

@@ -10,6 +10,7 @@ from ...utils.import_utils import requires
 from ...video_processing_utils import BaseVideoProcessor
 from ...video_utils import VideoMetadata
 
+"""Fast Video processor class for InternVL."""
 if is_torchvision_available(): ...
 if is_torch_available(): ...
 if is_vision_available(): ...
@@ -40,6 +41,28 @@ class InternVLVideoProcessor(BaseVideoProcessor):
         num_frames: Optional[int] = ...,
         fps: Optional[Union[int, float]] = ...,
         initial_shift: Optional[Union[bool, float, int]] = ...,
-    ): ...
+    ):  # -> Tensor:
+        """
+        Default sampling function which uniformly samples the desired number of frames between 0 and total number of frames.
+        If `fps` is passed along with metadata, `fps` frames per second are sampled uniformty. Arguments `num_frames`
+        and `fps` are mutually exclusive.
+
+        Args:
+            video (`torch.Tensor`):
+                Video that need to be sampled.
+            metadata (`VideoMetadata`, *optional*):
+                Metadata of the video containing information about total duration, fps and total number of frames.
+            num_frames (`int`, *optional*):
+                Maximum number of frames to sample. Defaults to `self.num_frames`.
+            fps (`int` or `float`, *optional*):
+                Target frames to sample per second. Defaults to `self.fps`.
+            initial_shift (`bool`, `float` or `int`, defaults to `self.initial_shift`):
+                The initial shift to apply when sampling frames. If `True`, the shift is set so that frames are sampled from the middle of the video.
+
+        Returns:
+            torch.Tensor:
+                Sampled video frames.
+        """
+        ...
 
 __all__ = ["InternVLVideoProcessor"]

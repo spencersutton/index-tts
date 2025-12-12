@@ -15,6 +15,13 @@ if is_torchvision_v2_available(): ...
 else: ...
 
 class SegformerFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
+    r"""
+    do_reduce_labels (`bool`, *optional*, defaults to `self.do_reduce_labels`):
+        Whether or not to reduce all label values of segmentation maps by 1. Usually used for datasets where 0
+        is used for background, and background itself is not included in all classes of a dataset (e.g.
+        ADE20k). The background label will be replaced by 255.
+    """
+
     do_reduce_labels: Optional[bool]
     ...
 
@@ -34,14 +41,37 @@ class SegformerImageProcessorFast(BaseImageProcessorFast):
     valid_kwargs = SegformerFastImageProcessorKwargs
     rescale_factor = ...
     def __init__(self, **kwargs: Unpack[SegformerFastImageProcessorKwargs]) -> None: ...
-    def reduce_label(self, labels: list[torch.Tensor]): ...
+    def reduce_label(self, labels: list[torch.Tensor]):  # -> Tensor:
+        ...
     @auto_docstring
     def preprocess(
         self,
         images: ImageInput,
         segmentation_maps: Optional[ImageInput] = ...,
         **kwargs: Unpack[SegformerFastImageProcessorKwargs],
-    ) -> BatchFeature: ...
-    def post_process_semantic_segmentation(self, outputs, target_sizes: Optional[list[tuple]] = ...): ...
+    ) -> BatchFeature:
+        r"""
+        segmentation_maps (`ImageInput`, *optional*):
+            The segmentation maps to preprocess.
+        """
+        ...
+
+    def post_process_semantic_segmentation(self, outputs, target_sizes: Optional[list[tuple]] = ...):  # -> list[Any]:
+        """
+        Converts the output of [`SegformerForSemanticSegmentation`] into semantic segmentation maps. Only supports PyTorch.
+
+        Args:
+            outputs ([`SegformerForSemanticSegmentation`]):
+                Raw outputs of the model.
+            target_sizes (`list[Tuple]` of length `batch_size`, *optional*):
+                List of tuples corresponding to the requested final size (height, width) of each prediction. If unset,
+                predictions will not be resized.
+
+        Returns:
+            semantic_segmentation: `list[torch.Tensor]` of length `batch_size`, where each item is a semantic
+            segmentation map of shape (height, width) corresponding to the target_sizes entry (if `target_sizes` is
+            specified). Each entry of each `torch.Tensor` correspond to a semantic class id.
+        """
+        ...
 
 __all__ = ["SegformerImageProcessorFast"]

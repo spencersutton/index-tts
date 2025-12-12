@@ -21,8 +21,25 @@ DEFAULT_MEDIA_OUTTRO = ...
 FRAME_TIMESTAMP_MESSAGE = ...
 MAX_IMAGE_SIZE = ...
 
-def get_max_height_width(videos: list[torch.Tensor]) -> list[int]: ...
-def get_resize_output_image_size(video, resolution_max_side: int) -> tuple[int, int]: ...
+def get_max_height_width(videos: list[torch.Tensor]) -> list[int]:
+    """
+    Get the maximum height and width across all videos in a batch.
+    """
+    ...
+
+def get_resize_output_image_size(video, resolution_max_side: int) -> tuple[int, int]:
+    """
+    Get the output size of the video after resizing given a dictionary specifying the max and min sizes.
+    Args:
+        video (`np.ndarray`):
+            Video to resize.
+        resolution_max_side (`int`):
+            The longest edge of the video will be resized to this value. The shortest edge will be resized to keep the
+            input aspect ratio.
+    Returns:
+        The output size of the video after resizing.
+    """
+    ...
 
 class SmolVLMVideoProcessorInitKwargs(VideosKwargs):
     max_image_size: dict[str, int] = ...
@@ -50,7 +67,21 @@ class SmolVLMVideoProcessor(BaseVideoProcessor):
         interpolation: F.InterpolationMode = ...,
         antialias: bool = ...,
         **kwargs,
-    ) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """
+        Resize an video to `(size["height"], size["width"])`.
+        Args:
+            video (`torch.Tensor`):
+                Video to resize.
+            size (`SizeDict`):
+                Dictionary in the format `{"height": int, "width": int}` specifying the size of the output video.
+            resample (`InterpolationMode`, *optional*, defaults to `InterpolationMode.BILINEAR`):
+                `InterpolationMode` filter to use when resizing the video e.g. `InterpolationMode.BICUBIC`.
+        Returns:
+            `torch.Tensor`: The resized video.
+        """
+        ...
+
     def pad(
         self,
         video: torch.Tensor,
@@ -58,7 +89,22 @@ class SmolVLMVideoProcessor(BaseVideoProcessor):
         max_num_frames: int,
         fill: int = ...,
         return_pixel_mask: bool = ...,
-    ): ...
+    ):  # -> tuple[Any | Tensor, Tensor | None]:
+        """Pads the sample with empty video to the padded_size
+        Args:
+            video (`torch.Tensor`):
+                Video to pad.
+            padded_size (`tuple[int, int]`):
+                Height and width to pad.
+            max_num_frames (`int`):
+                The maximum number of frames to which video will be padded.
+            fill (`int`, *optional*):
+                The value to use for the padding.
+            return_pixel_mask (`bool`, *optional*, defaults to `True`):
+                Whether to return a pixel mask.
+        """
+        ...
+
     def sample_frames(
         self,
         video: torch.Tensor,
@@ -66,6 +112,30 @@ class SmolVLMVideoProcessor(BaseVideoProcessor):
         num_frames: Optional[int] = ...,
         fps: Optional[Union[int, float]] = ...,
         skip_secs: Optional[int] = ...,
-    ): ...
+    ):  # -> tuple[Tensor, list[Any], int]:
+        """
+        Video sampling function which:
+            - Uses `num_frames` (if provided) or calculates it from `fps` and metadata.
+            - Applies a basic center-skip if fewer frames than available, otherwise
+                optionally skips `skip_secs` from both the start and end.
+            - Uniformly samples the desired number of frames between the start and end indices.
+
+        Args:
+            video (`torch.Tensor`):
+                Video that need to be sampled.
+            metadata (`VideoMetadata`):
+                Metadata of the video containing information about total duration, fps and total number of frames.
+            num_frames (`int`, *optional*):
+                Maximum number of frames to sample. Defaults to `self.num_frames`.
+            fps (`int` or `float`, *optional*):
+                Target frames to sample per second. Defaults to `self.fps`.
+            skip_secs (`float`, *optional*, defaults to `1`):
+                Number of seconds to skip from the start and end if the video is long enough.
+
+        Returns:
+            torch.Tensor:
+                Sampled video frames.
+        """
+        ...
 
 __all__ = ["SmolVLMVideoProcessor"]

@@ -11,6 +11,7 @@ from ....modeling_utils import PreTrainedModel
 from ....utils import add_code_sample_docstrings, add_start_docstrings, add_start_docstrings_to_model_forward
 from .configuration_vit_hybrid import ViTHybridConfig
 
+"""PyTorch ViT Hybrid model."""
 logger = ...
 _CONFIG_FOR_DOC = ...
 _CHECKPOINT_FOR_DOC = ...
@@ -19,8 +20,21 @@ _IMAGE_CLASS_CHECKPOINT = ...
 _IMAGE_CLASS_EXPECTED_OUTPUT = ...
 
 class ViTHybridEmbeddings(nn.Module):
+    """
+    Construct the CLS token, position and patch embeddings. Optionally, also the mask token.
+    """
     def __init__(self, config: ViTHybridConfig, use_mask_token: bool = ...) -> None: ...
-    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor: ...
+    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor:
+        """
+        This method allows to interpolate the pre-trained position encodings, to be able to use the model on higher resolution
+        images. This method is also adapted to support torch.jit tracing.
+
+        Adapted from:
+        - https://github.com/facebookresearch/dino/blob/de9ee3df6cf39fac952ab558447af1fa1365362a/vision_transformer.py#L174-L194, and
+        - https://github.com/facebookresearch/dinov2/blob/e1277af2ba9496fbadf7aec6eba56e8d882d1e35/dinov2/models/vision_transformer.py#L179-L211
+        """
+        ...
+
     def forward(
         self,
         pixel_values: torch.Tensor,
@@ -29,6 +43,11 @@ class ViTHybridEmbeddings(nn.Module):
     ) -> torch.Tensor: ...
 
 class ViTHybridPatchEmbeddings(nn.Module):
+    """
+    This class turns `pixel_values` of shape `(batch_size, num_channels, height, width)` into the initial
+    `hidden_states` (patch embeddings) of shape `(batch_size, seq_length, hidden_size)` to be consumed by a
+    Transformer.
+    """
     def __init__(self, config, feature_size=...) -> None: ...
     def forward(self, pixel_values: torch.Tensor, interpolate_pos_encoding: bool = ...) -> torch.Tensor: ...
 
@@ -46,6 +65,10 @@ class ViTHybridSdpaSelfAttention(ViTHybridSelfAttention):
     ) -> Union[tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor]]: ...
 
 class ViTHybridSelfOutput(nn.Module):
+    """
+    The residual connection is defined in ViTHybridLayer instead of here (as is the case with other models), due to the
+    layernorm applied before each block.
+    """
     def __init__(self, config: ViTHybridConfig) -> None: ...
     def forward(self, hidden_states: torch.Tensor, input_tensor: torch.Tensor) -> torch.Tensor: ...
 
@@ -70,6 +93,7 @@ class ViTHybridOutput(nn.Module):
 VIT_HYBRID_ATTENTION_CLASSES = ...
 
 class ViTHybridLayer(GradientCheckpointingLayer):
+    """This corresponds to the Block class in the timm implementation."""
     def __init__(self, config: ViTHybridConfig) -> None: ...
     def forward(
         self, hidden_states: torch.Tensor, head_mask: Optional[torch.Tensor] = ..., output_attentions: bool = ...
@@ -87,6 +111,11 @@ class ViTHybridEncoder(nn.Module):
     ) -> Union[tuple, BaseModelOutput]: ...
 
 class ViTHybridPreTrainedModel(PreTrainedModel):
+    """
+    An abstract class to handle weights initialization and a simple interface for downloading and loading pretrained
+    models.
+    """
+
     config: ViTHybridConfig
     base_model_prefix = ...
     main_input_name = ...
@@ -97,7 +126,10 @@ class ViTHybridPreTrainedModel(PreTrainedModel):
 VIT_START_DOCSTRING = ...
 VIT_INPUTS_DOCSTRING = ...
 
-@add_start_docstrings(..., VIT_START_DOCSTRING)
+@add_start_docstrings(
+    "The bare ViT Hybrid Model transformer outputting raw hidden-states without any specific head on top.",
+    VIT_START_DOCSTRING,
+)
 class ViTHybridModel(ViTHybridPreTrainedModel):
     def __init__(self, config: ViTHybridConfig, add_pooling_layer: bool = ..., use_mask_token: bool = ...) -> None: ...
     def get_input_embeddings(self) -> ViTHybridPatchEmbeddings: ...
@@ -118,13 +150,25 @@ class ViTHybridModel(ViTHybridPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         interpolate_pos_encoding: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPooling]: ...
+    ) -> Union[tuple, BaseModelOutputWithPooling]:
+        r"""
+        bool_masked_pos (`torch.BoolTensor` of shape `(batch_size, num_patches)`, *optional*):
+            Boolean masked positions. Indicates which patches are masked (1) and which aren't (0).
+        """
+        ...
 
 class ViTHybridPooler(nn.Module):
     def __init__(self, config: ViTHybridConfig) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
-@add_start_docstrings(..., VIT_START_DOCSTRING)
+@add_start_docstrings(
+    """
+    ViT Hybrid Model transformer with an image classification head on top (a linear layer on top of the final hidden
+    state of the [CLS] token) e.g. for ImageNet.
+    """,
+    VIT_START_DOCSTRING,
+)
 class ViTHybridForImageClassification(ViTHybridPreTrainedModel):
     def __init__(self, config: ViTHybridConfig) -> None: ...
     @add_start_docstrings_to_model_forward(VIT_INPUTS_DOCSTRING)
@@ -143,6 +187,13 @@ class ViTHybridForImageClassification(ViTHybridPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         interpolate_pos_encoding: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ImageClassifierOutput]: ...
+    ) -> Union[tuple, ImageClassifierOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 __all__ = ["ViTHybridForImageClassification", "ViTHybridModel", "ViTHybridPreTrainedModel"]

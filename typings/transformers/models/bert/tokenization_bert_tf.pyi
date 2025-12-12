@@ -9,6 +9,49 @@ from ...utils.import_utils import requires
 
 @requires(backends=("tf", "tensorflow_text"))
 class TFBertTokenizer(keras.layers.Layer):
+    """
+    This is an in-graph tokenizer for BERT. It should be initialized similarly to other tokenizers, using the
+    `from_pretrained()` method. It can also be initialized with the `from_tokenizer()` method, which imports settings
+    from an existing standard tokenizer object.
+
+    In-graph tokenizers, unlike other Hugging Face tokenizers, are actually Keras layers and are designed to be run
+    when the model is called, rather than during preprocessing. As a result, they have somewhat more limited options
+    than standard tokenizer classes. They are most useful when you want to create an end-to-end model that goes
+    straight from `tf.string` inputs to outputs.
+
+    Args:
+        vocab_list (`list`):
+            List containing the vocabulary.
+        do_lower_case (`bool`, *optional*, defaults to `True`):
+            Whether or not to lowercase the input when tokenizing.
+        cls_token_id (`str`, *optional*, defaults to `"[CLS]"`):
+            The classifier token which is used when doing sequence classification (classification of the whole sequence
+            instead of per-token classification). It is the first token of the sequence when built with special tokens.
+        sep_token_id (`str`, *optional*, defaults to `"[SEP]"`):
+            The separator token, which is used when building a sequence from multiple sequences, e.g. two sequences for
+            sequence classification or for a text and a question for question answering. It is also used as the last
+            token of a sequence built with special tokens.
+        pad_token_id (`str`, *optional*, defaults to `"[PAD]"`):
+            The token used for padding, for example when batching sequences of different lengths.
+        padding (`str`, defaults to `"longest"`):
+            The type of padding to use. Can be either `"longest"`, to pad only up to the longest sample in the batch,
+            or `"max_length", to pad all inputs to the maximum length supported by the tokenizer.
+        truncation (`bool`, *optional*, defaults to `True`):
+            Whether to truncate the sequence to the maximum length.
+        max_length (`int`, *optional*, defaults to `512`):
+            The maximum length of the sequence, used for padding (if `padding` is "max_length") and/or truncation (if
+            `truncation` is `True`).
+        pad_to_multiple_of (`int`, *optional*, defaults to `None`):
+            If set, the sequence will be padded to a multiple of this value.
+        return_token_type_ids (`bool`, *optional*, defaults to `True`):
+            Whether to return token_type_ids.
+        return_attention_mask (`bool`, *optional*, defaults to `True`):
+            Whether to return the attention_mask.
+        use_fast_bert_tokenizer (`bool`, *optional*, defaults to `True`):
+            If True, will use the FastBertTokenizer class from Tensorflow Text. If False, will use the BertTokenizer
+            class instead. BertTokenizer supports some additional options, but is slower and cannot be exported to
+            TFLite.
+    """
     def __init__(
         self,
         vocab_list: list,
@@ -26,9 +69,46 @@ class TFBertTokenizer(keras.layers.Layer):
         **tokenizer_kwargs,
     ) -> None: ...
     @classmethod
-    def from_tokenizer(cls, tokenizer: PreTrainedTokenizerBase, **kwargs): ...
+    def from_tokenizer(cls, tokenizer: PreTrainedTokenizerBase, **kwargs):  # -> Self:
+        """
+        Initialize a `TFBertTokenizer` from an existing `Tokenizer`.
+
+        Args:
+            tokenizer (`PreTrainedTokenizerBase`):
+                The tokenizer to use to initialize the `TFBertTokenizer`.
+
+        Examples:
+
+        ```python
+        from transformers import AutoTokenizer, TFBertTokenizer
+
+        tokenizer = AutoTokenizer.from_pretrained("google-bert/bert-base-uncased")
+        tf_tokenizer = TFBertTokenizer.from_tokenizer(tokenizer)
+        ```
+        """
+        ...
+
     @classmethod
-    def from_pretrained(cls, pretrained_model_name_or_path: Union[str, os.PathLike], *init_inputs, **kwargs): ...
+    def from_pretrained(
+        cls, pretrained_model_name_or_path: Union[str, os.PathLike], *init_inputs, **kwargs
+    ):  # -> Self:
+        """
+        Instantiate a `TFBertTokenizer` from a pre-trained tokenizer.
+
+        Args:
+            pretrained_model_name_or_path (`str` or `os.PathLike`):
+                The name or path to the pre-trained tokenizer.
+
+        Examples:
+
+        ```python
+        from transformers import TFBertTokenizer
+
+        tf_tokenizer = TFBertTokenizer.from_pretrained("google-bert/bert-base-uncased")
+        ```
+        """
+        ...
+
     def unpaired_tokenize(self, texts): ...
     def call(
         self,
@@ -40,7 +120,9 @@ class TFBertTokenizer(keras.layers.Layer):
         pad_to_multiple_of=...,
         return_token_type_ids=...,
         return_attention_mask=...,
-    ): ...
-    def get_config(self): ...
+    ):  # -> dict[str, Any]:
+        ...
+    def get_config(self):  # -> dict[str, list[Any] | bool | int]:
+        ...
 
 __all__ = ["TFBertTokenizer"]

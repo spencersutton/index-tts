@@ -15,25 +15,53 @@ from ...processing_utils import Unpack
 from ...utils import auto_docstring, is_torch_flex_attn_available
 from .configuration_speech_to_text import Speech2TextConfig
 
+"""PyTorch Speech2Text model."""
 if is_torch_flex_attn_available(): ...
 logger = ...
 
-def shift_tokens_right(input_ids: torch.Tensor, pad_token_id: int, decoder_start_token_id: int): ...
+def shift_tokens_right(input_ids: torch.Tensor, pad_token_id: int, decoder_start_token_id: int):  # -> Tensor:
+    """
+    Shift input ids one token to the right.
+    """
+    ...
 
 class Conv1dSubsampler(nn.Module):
+    """
+    Convolutional subsampler: a stack of 1D convolution (along temporal dimension) followed by non-linear activation
+    via gated linear units (https://huggingface.co/papers/1911.08460)
+    """
     def __init__(self, config) -> None: ...
-    def forward(self, input_features): ...
+    def forward(self, input_features):  # -> Tensor:
+        ...
 
 class Speech2TextSinusoidalPositionalEmbedding(nn.Module):
+    """This module produces sinusoidal positional embeddings of any length."""
     def __init__(self, num_positions: int, embedding_dim: int, padding_idx: Optional[int] = ...) -> None: ...
-    def make_weights(self, num_embeddings: int, embedding_dim: int, padding_idx: Optional[int] = ...): ...
+    def make_weights(self, num_embeddings: int, embedding_dim: int, padding_idx: Optional[int] = ...):  # -> None:
+        ...
     @staticmethod
-    def get_embedding(num_embeddings: int, embedding_dim: int, padding_idx: Optional[int] = ...): ...
+    def get_embedding(num_embeddings: int, embedding_dim: int, padding_idx: Optional[int] = ...):  # -> Tensor:
+        """
+        Build sinusoidal embeddings. This matches the implementation in tensor2tensor, but differs slightly from the
+        description in Section 3.5 of "Attention Is All You Need".
+        """
+        ...
+
     @torch.no_grad()
-    def forward(self, input_ids: torch.Tensor, past_key_values_length: int = ...): ...
+    def forward(self, input_ids: torch.Tensor, past_key_values_length: int = ...):  # -> Tensor | Any:
+        ...
     def create_position_ids_from_input_ids(
         self, input_ids: torch.Tensor, padding_idx: int, past_key_values_length: Optional[int] = ...
-    ): ...
+    ):  # -> Tensor:
+        """
+        Replace non-padding symbols with their position numbers. Position numbers begin at padding_idx+1. Padding
+        symbols are ignored. This is modified from fairseq's `utils.make_positions`.
+
+        Args:
+            x: torch.Tensor x:
+        Returns: torch.Tensor
+        """
+        ...
 
 def eager_attention_forward(
     module: nn.Module,
@@ -45,9 +73,11 @@ def eager_attention_forward(
     dropout: float = ...,
     head_mask: Optional[torch.Tensor] = ...,
     **kwargs,
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class Speech2TextAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(
         self,
         embed_dim: int,
@@ -69,7 +99,9 @@ class Speech2TextAttention(nn.Module):
         output_attentions: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+        """Input shape: Batch x Time x Channel"""
+        ...
 
 class Speech2TextEncoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: Speech2TextConfig) -> None: ...
@@ -79,7 +111,19 @@ class Speech2TextEncoderLayer(GradientCheckpointingLayer):
         attention_mask: torch.Tensor,
         layer_head_mask: torch.Tensor,
         output_attentions: bool = ...,
-    ) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            attention_mask (`torch.FloatTensor`): attention mask of size
+                `(batch, 1, tgt_len, src_len)` where padding elements are indicated by very large negative values.
+            layer_head_mask (`torch.FloatTensor`): mask for attention heads in a given layer of size
+                `(encoder_attention_heads,)`.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+        """
+        ...
 
 class Speech2TextDecoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: Speech2TextConfig, layer_idx=...) -> None: ...
@@ -95,7 +139,26 @@ class Speech2TextDecoderLayer(GradientCheckpointingLayer):
         output_attentions: Optional[bool] = ...,
         use_cache: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
-    ) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            attention_mask (`torch.FloatTensor`): attention mask of size
+                `(batch, 1, tgt_len, src_len)` where padding elements are indicated by very large negative values.
+            encoder_hidden_states (`torch.FloatTensor`):
+                cross attention input to the layer of shape `(batch, seq_len, embed_dim)`
+            encoder_attention_mask (`torch.FloatTensor`): encoder attention mask of size
+                `(batch, 1, tgt_len, src_len)` where padding elements are indicated by very large negative values.
+            layer_head_mask (`torch.FloatTensor`): mask for attention heads in a given layer of size
+                `(encoder_attention_heads,)`.
+            cross_attn_layer_head_mask (`torch.FloatTensor`): mask for cross-attention heads in a given layer of
+                size `(decoder_attention_heads,)`.
+            past_key_value (`Tuple(torch.FloatTensor)`): cached past key and value projection states
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+        """
+        ...
 
 @auto_docstring
 class Speech2TextPreTrainedModel(PreTrainedModel):
@@ -108,6 +171,14 @@ class Speech2TextPreTrainedModel(PreTrainedModel):
     _supports_flex_attn = ...
 
 class Speech2TextEncoder(Speech2TextPreTrainedModel):
+    """
+    Transformer encoder consisting of *config.encoder_layers* self attention layers. Each layer is a
+    [`Speech2TextEncoderLayer`].
+
+    Args:
+        config: Speech2TextConfig
+        embed_tokens (nn.Embedding): output embedding
+    """
     def __init__(self, config: Speech2TextConfig) -> None: ...
     def forward(
         self,
@@ -117,9 +188,50 @@ class Speech2TextEncoder(Speech2TextPreTrainedModel):
         output_attentions=...,
         output_hidden_states=...,
         return_dict=...,
-    ): ...
+    ):  # -> tuple[Any | tuple[Any, ...] | tuple[Tensor | Any, ...] | tuple[()] | tuple[Any | None, ...], ...] | BaseModelOutput:
+        r"""
+        Args:
+            input_features (`torch.LongTensor` of shape `(batch_size, sequence_length, feature_size)`):
+                Float values of fbank features extracted from the raw speech waveform. Raw speech waveform can be
+                obtained by loading a `.flac` or `.wav` audio file into an array of type `list[float]`, a
+                `numpy.ndarray` or a `torch.Tensor`, *e.g.* via the torchcodec libary (`pip install torchcodec`) or
+                the soundfile library (`pip install soundfile`). To prepare the array into
+                `input_features`, the [`AutoFeatureExtractor`] should be used for extracting the fbank features,
+                padding and conversion into a tensor of type `torch.FloatTensor`. See
+                [`~Speech2TextFeatureExtractor.__call__`]
+            attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Mask to avoid performing convolution and attention on padding token indices. Mask values selected in
+                `[0, 1]`:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+            head_mask (`torch.Tensor` of shape `(encoder_layers, encoder_attention_heads)`, *optional*):
+                Mask to nullify selected heads of the attention modules. Mask values selected in `[0, 1]`:
+
+                - 1 indicates the head is **not masked**,
+                - 0 indicates the head is **masked**.
+
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers. See `hidden_states` under returned tensors
+                for more detail.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`~utils.ModelOutput`] instead of a plain tuple.
+        """
+        ...
 
 class Speech2TextDecoder(Speech2TextPreTrainedModel):
+    """
+    Transformer decoder consisting of *config.decoder_layers* layers. Each layer is a [`Speech2TextDecoderLayer`]
+
+    Args:
+        config: Speech2TextConfig
+        embed_tokens (nn.Embedding): output embedding
+    """
     def __init__(self, config: Speech2TextConfig) -> None: ...
     def forward(
         self,
@@ -136,15 +248,85 @@ class Speech2TextDecoder(Speech2TextPreTrainedModel):
         output_hidden_states=...,
         return_dict=...,
         cache_position=...,
-    ): ...
+    ):
+        r"""
+        Args:
+            input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
+                Indices of input sequence tokens in the vocabulary. Padding will be ignored by default should you
+                provide it.
+
+                Indices can be obtained using [`Speech2TextTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+                [`PreTrainedTokenizer.__call__`] for details.
+
+                [What are input IDs?](../glossary#input-ids)
+            attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Mask to avoid performing attention on padding token indices. Mask values selected in `[0, 1]`:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+            encoder_hidden_states (`torch.FloatTensor` of shape `(batch_size, encoder_sequence_length, hidden_size)`, *optional*):
+                Sequence of hidden-states at the output of the last layer of the encoder. Used in the cross-attention
+                of the decoder.
+            encoder_attention_mask (`torch.LongTensor` of shape `(batch_size, encoder_sequence_length)`, *optional*):
+                Mask to avoid performing cross-attention on padding tokens indices of encoder input_ids. Mask values
+                selected in `[0, 1]`:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+            head_mask (`torch.Tensor` of shape `(decoder_layers, decoder_attention_heads)`, *optional*):
+                Mask to nullify selected heads of the attention modules. Mask values selected in `[0, 1]`:
+
+                - 1 indicates the head is **not masked**,
+                - 0 indicates the head is **masked**.
+
+            cross_attn_head_mask (`torch.Tensor` of shape `(decoder_layers, decoder_attention_heads)`, *optional*):
+                Mask to nullify selected heads of the attention modules in encoder to avoid performing cross-attention
+                on hidden heads. Mask values selected in `[0, 1]`:
+
+                - 1 indicates the head is **not masked**,
+                - 0 indicates the head is **masked**.
+
+            past_key_values (`tuple(tuple(torch.FloatTensor))`, *optional*, returned when `use_cache=True` is passed or when `config.use_cache=True`):
+                Tuple of `tuple(torch.FloatTensor)` of length `config.n_layers`, with each tuple having 2 tensors of
+                shape `(batch_size, num_heads, sequence_length, embed_size_per_head)`) and 2 additional tensors of
+                shape `(batch_size, num_heads, encoder_sequence_length, embed_size_per_head)`.
+
+                Contains pre-computed hidden-states (key and values in the self-attention blocks and in the
+                cross-attention blocks) that can be used (see `past_key_values` input) to speed up sequential decoding.
+
+                If `past_key_values` are used, the user can optionally input only the last `decoder_input_ids` (those
+                that don't have their past key value states given to this model) of shape `(batch_size, 1)` instead of
+                all `decoder_input_ids` of shape `(batch_size, sequence_length)`.
+            inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*):
+                Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation.
+                This is useful if you want more control over how to convert `input_ids` indices into associated vectors
+                than the model's internal embedding lookup matrix.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers. See `hidden_states` under returned tensors
+                for more detail.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`~utils.ModelOutput`] instead of a plain tuple.
+        """
+        ...
 
 @auto_docstring
 class Speech2TextModel(Speech2TextPreTrainedModel):
     def __init__(self, config: Speech2TextConfig) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
-    def get_encoder(self): ...
-    def get_decoder(self): ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
+    def get_encoder(self):  # -> Speech2TextEncoder:
+        ...
+    def get_decoder(self):  # -> Speech2TextDecoder:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -163,15 +345,66 @@ class Speech2TextModel(Speech2TextPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple[torch.FloatTensor], Seq2SeqLMOutput]: ...
+    ) -> Union[tuple[torch.FloatTensor], Seq2SeqLMOutput]:
+        r"""
+        decoder_input_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Indices of decoder input sequence tokens in the vocabulary.
 
-@auto_docstring(custom_intro=...)
+            Indices can be obtained using [`SpeechToTextTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are decoder input IDs?](../glossary#decoder-input-ids)
+
+            SpeechToText uses the `eos_token_id` as the starting token for `decoder_input_ids` generation. If
+            `past_key_values` is used, optionally only the last `decoder_input_ids` have to be input (see
+            `past_key_values`).
+        decoder_attention_mask (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Default behavior: generate a tensor that ignores pad tokens in `decoder_input_ids`. Causal mask will also
+            be used by default.
+
+            If you want to change padding behavior, you should read
+            [`modeling_speech_to_text._prepare_decoder_attention_mask`] and modify to your needs. See diagram 1 in [the
+            paper](https://huggingface.co/papers/1910.13461) for more information on the default strategy.
+        cross_attn_head_mask (`torch.Tensor` of shape `(decoder_layers, decoder_attention_heads)`, *optional*):
+            Mask to nullify selected heads of the cross-attention modules. Mask values selected in `[0, 1]`:
+
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+
+        Example:
+
+         ```python
+         >>> import torch
+         >>> from transformers import Speech2TextModel, AutoFeatureExtractor
+         >>> from datasets import load_dataset
+
+         >>> model = Speech2TextModel.from_pretrained("facebook/s2t-small-librispeech-asr")
+         >>> feature_extractor = AutoFeatureExtractor.from_pretrained("facebook/s2t-small-librispeech-asr")
+         >>> ds = load_dataset("hf-internal-testing/librispeech_asr_dummy", "clean", split="validation")
+         >>> inputs = feature_extractor(
+         ...     ds[0]["audio"]["array"], sampling_rate=ds[0]["audio"]["sampling_rate"], return_tensors="pt"
+         ... )
+         >>> input_features = inputs.input_features
+         >>> decoder_input_ids = torch.tensor([[1, 1]]) * model.config.decoder_start_token_id
+         >>> last_hidden_state = model(input_features, decoder_input_ids=decoder_input_ids).last_hidden_state
+         >>> list(last_hidden_state.shape)
+         [1, 2, 256]
+         ```"""
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    The Speech2Text Model with a language modeling head. Can be used for summarization.
+    """
+)
 class Speech2TextForConditionalGeneration(Speech2TextPreTrainedModel, GenerationMixin):
     base_model_prefix = ...
     _tied_weights_keys = ...
     def __init__(self, config: Speech2TextConfig) -> None: ...
-    def get_encoder(self): ...
-    def get_decoder(self): ...
+    def get_encoder(self):  # -> Speech2TextEncoder:
+        ...
+    def get_decoder(self):  # -> Speech2TextDecoder:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -191,6 +424,60 @@ class Speech2TextForConditionalGeneration(Speech2TextPreTrainedModel, Generation
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple[torch.FloatTensor], Seq2SeqLMOutput]: ...
+    ) -> Union[tuple[torch.FloatTensor], Seq2SeqLMOutput]:
+        r"""
+        decoder_input_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Indices of decoder input sequence tokens in the vocabulary.
+
+            Indices can be obtained using [`SpeechToTextTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are decoder input IDs?](../glossary#decoder-input-ids)
+
+            SpeechToText uses the `eos_token_id` as the starting token for `decoder_input_ids` generation. If
+            `past_key_values` is used, optionally only the last `decoder_input_ids` have to be input (see
+            `past_key_values`).
+        decoder_attention_mask (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Default behavior: generate a tensor that ignores pad tokens in `decoder_input_ids`. Causal mask will also
+            be used by default.
+
+            If you want to change padding behavior, you should read
+            [`modeling_speech_to_text._prepare_decoder_attention_mask`] and modify to your needs. See diagram 1 in [the
+            paper](https://huggingface.co/papers/1910.13461) for more information on the default strategy.
+        cross_attn_head_mask (`torch.Tensor` of shape `(decoder_layers, decoder_attention_heads)`, *optional*):
+            Mask to nullify selected heads of the cross-attention modules. Mask values selected in `[0, 1]`:
+
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the language modeling loss. Indices should either be in `[0, ..., config.vocab_size]`
+            or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored (masked), the loss is
+            only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Example:
+
+        ```python
+        >>> import torch
+        >>> from transformers import Speech2TextProcessor, Speech2TextForConditionalGeneration
+        >>> from datasets import load_dataset
+
+        >>> model = Speech2TextForConditionalGeneration.from_pretrained("facebook/s2t-small-librispeech-asr")
+        >>> processor = Speech2TextProcessor.from_pretrained("facebook/s2t-small-librispeech-asr")
+
+
+        >>> ds = load_dataset("hf-internal-testing/librispeech_asr_dummy", "clean", split="validation")
+
+        >>> inputs = processor(
+        ...     ds[0]["audio"]["array"], sampling_rate=ds[0]["audio"]["sampling_rate"], return_tensors="pt"
+        ... )
+        >>> input_features = inputs.input_features
+
+        >>> generated_ids = model.generate(inputs=input_features)
+
+        >>> transcription = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+        >>> transcription
+        'mister quilter is the apostle of the middle classes and we are glad to welcome his gospel'
+        ```"""
+        ...
 
 __all__ = ["Speech2TextForConditionalGeneration", "Speech2TextModel", "Speech2TextPreTrainedModel"]

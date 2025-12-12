@@ -14,12 +14,30 @@ from .configuration_ijepa import IJepaConfig
 logger = ...
 
 class IJepaPatchEmbeddings(nn.Module):
+    """
+    This class turns `pixel_values` of shape `(batch_size, num_channels, height, width)` into the initial
+    `hidden_states` (patch embeddings) of shape `(batch_size, seq_length, hidden_size)` to be consumed by a
+    Transformer.
+    """
     def __init__(self, config) -> None: ...
     def forward(self, pixel_values: torch.Tensor, interpolate_pos_encoding: bool = ...) -> torch.Tensor: ...
 
 class IJepaEmbeddings(nn.Module):
+    """
+    Construct the CLS token, position and patch embeddings. Optionally, also the mask token.
+    """
     def __init__(self, config: IJepaConfig, use_mask_token: bool = ...) -> None: ...
-    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor: ...
+    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor:
+        """
+        This method allows to interpolate the pre-trained position encodings, to be able to use the model on higher resolution
+        images. This method is also adapted to support torch.jit tracing.
+
+        Adapted from:
+        - https://github.com/facebookresearch/dino/blob/de9ee3df6cf39fac952ab558447af1fa1365362a/vision_transformer.py#L174-L194, and
+        - https://github.com/facebookresearch/dinov2/blob/e1277af2ba9496fbadf7aec6eba56e8d882d1e35/dinov2/models/vision_transformer.py#L179-L211
+        """
+        ...
+
     def forward(
         self,
         pixel_values: torch.Tensor,
@@ -48,7 +66,8 @@ def eager_attention_forward(
     scaling: float,
     dropout: float = ...,
     **kwargs,
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class IJepaSelfAttention(nn.Module):
     def __init__(self, config: IJepaConfig) -> None: ...
@@ -57,6 +76,10 @@ class IJepaSelfAttention(nn.Module):
     ) -> Union[tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor]]: ...
 
 class IJepaSelfOutput(nn.Module):
+    """
+    The residual connection is defined in IJepaLayer instead of here (as is the case with other models), due to the
+    layernorm applied before each block.
+    """
     def __init__(self, config: IJepaConfig) -> None: ...
     def forward(self, hidden_states: torch.Tensor, input_tensor: torch.Tensor) -> torch.Tensor: ...
 
@@ -76,6 +99,7 @@ class IJepaOutput(nn.Module):
     def forward(self, hidden_states: torch.Tensor, input_tensor: torch.Tensor) -> torch.Tensor: ...
 
 class IJepaLayer(GradientCheckpointingLayer):
+    """This corresponds to the Block class in the timm implementation."""
     def __init__(self, config: IJepaConfig) -> None: ...
     def forward(
         self, hidden_states: torch.Tensor, head_mask: Optional[torch.Tensor] = ..., output_attentions: bool = ...
@@ -98,7 +122,15 @@ class IJepaPooler(nn.Module):
 
 @auto_docstring
 class IJepaModel(IJepaPreTrainedModel):
-    def __init__(self, config: IJepaConfig, add_pooling_layer: bool = ..., use_mask_token: bool = ...) -> None: ...
+    def __init__(self, config: IJepaConfig, add_pooling_layer: bool = ..., use_mask_token: bool = ...) -> None:
+        r"""
+        add_pooling_layer (bool, *optional*, defaults to `True`):
+            Whether to add a pooling layer
+        use_mask_token (`bool`, *optional*, defaults to `False`):
+            Whether to use a mask token for masked image modeling.
+        """
+        ...
+
     def get_input_embeddings(self) -> IJepaPatchEmbeddings: ...
     @auto_docstring
     def forward(
@@ -110,9 +142,27 @@ class IJepaModel(IJepaPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         interpolate_pos_encoding: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPooling]: ...
+    ) -> Union[tuple, BaseModelOutputWithPooling]:
+        r"""
+        bool_masked_pos (`torch.BoolTensor` of shape `(batch_size, num_patches)`, *optional*):
+            Boolean masked positions. Indicates which patches are masked (1) and which aren't (0).
+        """
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    IJepa Model transformer with an image classification head on top (a linear layer on top of the final hidden states)
+    e.g. for ImageNet.
+
+    <Tip>
+
+        Note that it's possible to fine-tune IJepa on higher resolution images than the ones it has been trained on, by
+        setting `interpolate_pos_encoding` to `True` in the forward of the model. This will interpolate the pre-trained
+        position embeddings to the higher resolution.
+
+    </Tip>
+    """
+)
 class IJepaForImageClassification(IJepaPreTrainedModel):
     def __init__(self, config: IJepaConfig) -> None: ...
     @auto_docstring
@@ -125,6 +175,13 @@ class IJepaForImageClassification(IJepaPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         interpolate_pos_encoding: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ImageClassifierOutput]: ...
+    ) -> Union[tuple, ImageClassifierOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 __all__ = ["IJepaPreTrainedModel", "IJepaModel", "IJepaForImageClassification"]

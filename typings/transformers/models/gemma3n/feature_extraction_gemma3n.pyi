@@ -13,9 +13,74 @@ logger = ...
 
 def create_fb_matrix(
     n_freqs: int, f_min: float, f_max: float, n_mels: int, sample_rate: int, fft_length: int, norm: Optional[str] = ...
-) -> np.ndarray: ...
+) -> np.ndarray:
+    r"""Create a frequency bin conversion matrix (NumPy version).
+
+    Args:
+        n_freqs (int): Number of frequencies to highlight/apply
+        f_min (float): Minimum frequency (Hz)
+        f_max (float): Maximum frequency (Hz)
+        n_mels (int): Number of mel filterbanks
+        sample_rate (int): Sample rate of the audio waveform
+        fft_length (int): FFT length
+        norm (Optional[str]): If 'slaney', divide the triangular mel weights by
+          the width of the mel band (area normalization). (Default: ``None``)
+
+    Returns:
+        np.ndarray: Triangular filter banks (fb matrix) of size (``n_freqs``,
+        ``n_mels``)
+        meaning number of frequencies to highlight/apply to x the number of
+        filterbanks.
+        Each column is a filterbank so that assuming there is a matrix A of
+        size (..., ``n_freqs``), the applied result would be
+        ``A @ create_fb_matrix_numpy(A.shape[-1], ...)``.
+    """
+    ...
 
 class Gemma3nAudioFeatureExtractor(SequenceFeatureExtractor):
+    """An audio feature extractor Universal Speech Models https://arxiv.org/abs/2303.01037.
+
+    Args:
+        feature_size (`int`, *optional*, defaults to 128):
+            The feature dimension of the extracted features.
+        sampling_rate (`int`, *optional*, defaults to 16000):
+            The sampling rate at which the audio files should be digitalized expressed in hertz (Hz).
+        padding_value (`float`, *optional*, defaults to 0.0):
+            Padding value used to pad the audio. Should correspond to silences.
+        return_attention_mask (`bool`, *optional*, defaults to `True`):
+            Whether to return the attention mask for the generated MEL spectrograms.
+        frame_length_ms (`float`, *optional*, defaults to 32.0):
+            The length of a frame in milliseconds.
+        hop_length_ms (`float`, *optional*, defaults to 10.0):
+            Length of the overlapping windows for the STFT used to obtain the Mel Frequency coefficients.
+        min_frequency (`float`, *optional*, defaults to 125.0):
+            The minimum frequency (in Hz) for the Mel filterbank.
+        max_frequency (`float`, *optional*, defaults to 7600.0):
+            The maximum frequency (in Hz) for the Mel filterbank.
+        preemphasis (`float`, *optional*, defaults to 0.97):
+            The preemphasis coefficient.
+        preemphasis_htk_flavor (`bool`, *optional*, defaults to `True`):
+            Whether to use HTK-style preemphasis.
+        fft_overdrive (`bool`, *optional*, defaults to `True`):
+            Whether to use FFT overdrive.
+        dither (`float`, *optional*, defaults to 0.0):
+            Adds dithering. In other words, adds a small Gaussian noise to each frame.
+            E.g. use 0.0001 to add dithering with a normal distribution centered
+            around 0.0 with standard deviation 0.0001 (assuming [-1,+1] range of raw_speech).
+            The value 0.0 means no dithering.
+            Dithering has similar effect as `spectrogram(mel_floor=...)`. It reduces
+            the high log_mel_fbank values for signals with hard-zero sections,
+            when VAD cutoff is present in the signal.
+        input_scale_factor (`float`, *optional*, defaults to 1.0):
+            Scaling factor applied to the input waveform.
+        mel_floor (`float`, *optional*, defaults to 1e-05):
+            Minimum value for Mel spectrograms to avoid log(0).
+        per_bin_mean (`Optional[Sequence[float]]`, *optional*):
+            Mean values for per-bin normalization.
+        per_bin_stddev (`Optional[Sequence[float]]`, *optional*):
+            Standard deviation values for per-bin normalization.
+    """
+
     model_input_names = ...
     def __init__(
         self,
@@ -47,6 +112,30 @@ class Gemma3nAudioFeatureExtractor(SequenceFeatureExtractor):
         return_tensors: Optional[Union[str, TensorType]] = ...,
         return_attention_mask: Optional[bool] = ...,
         **kwargs,
-    ) -> BatchFeature: ...
+    ) -> BatchFeature:
+        """Creates a batch of MEL spectrograms from the provided raw speech.
+
+        This implementation uses a different algorithm for windowing and preemphasis compared to the built-in
+        `transformers.audio_utils.spectrogram()` function that _will_ result in different outputs. Consider this
+        carefully when selecting an audio feature extactor, especially with pre-trained models.
+
+        Args:
+            raw_speech:
+                The audio for which MEL spectrograms are created.
+            padding (`Union[bool, str, PaddingStrategy]`, *optional*, defaults to `"longest"`):
+                The padding strategy to use for batches of audio with different lengths.
+            max_length (`int`, *optional*, defaults to 480000):
+                If provided, defines the maximum length of the audio to allow. Audio longer than this will be
+                truncated if `truncation=True`.
+            truncation (`bool`, *optional*, defaults to `True`):
+                Whether or not to truncate audio above `max_length`.
+            pad_to_multiple_of (`int`, *optional*, defaults to 128):
+                When padding, pad to a multiple of this value. The default value is defined for optimal TPU support.
+            return_tensors (`Union[str, TensorType]`, *optional*, defaults to `None`):
+                The type of tensors to return (e.g., NumPy, Torch, JAX, TensorFlow).
+            return_attention_mask (`bool`, *optional*, defaults to `True`):
+                Whether to return the attention mask for the generated MEL spectrograms.
+        """
+        ...
 
 __all__ = ["Gemma3nAudioFeatureExtractor"]

@@ -11,18 +11,37 @@ from ...image_utils import ImageInput
 from ...processing_utils import Unpack
 from ...utils import auto_docstring, filter_out_non_signature_kwargs, is_torch_available, is_torchvision_available
 
+"""Fast Image processor class for EoMT."""
 if is_torch_available(): ...
 if is_torchvision_available(): ...
 
 class EomtImageProcessorFastKwargs(DefaultFastImageProcessorKwargs):
+    """
+    do_split_image (`bool`, *optional*, defaults to `False`):
+            Whether to split the input images into overlapping patches for semantic segmentation. If set to `True`, the
+            input images will be split into patches of size `size["shortest_edge"]` with an overlap between patches.
+            Otherwise, the input images will be padded to the target size.
+    do_pad (`bool`, *optional*, defaults to `False`):
+            Whether to pad the image. If `True`, will pad the patch dimension of the images in the batch to the largest
+            number of patches in the batch. Padding will be applied to the bottom and right with zeros.
+    ignore_index (`int`, *optional*):
+            Label to be assigned to background pixels in segmentation maps. If provided, segmentation map pixels
+            denoted with 0 (background) will be replaced with `ignore_index`.
+    """
+
     do_split_image: bool
     do_pad: bool
     ignore_index: Optional[int] = ...
 
-def get_target_size(size_dict: dict[str, int]) -> tuple[int, int]: ...
+def get_target_size(size_dict: dict[str, int]) -> tuple[int, int]:
+    """Returns the height and width from a size dict."""
+    ...
+
 def reorder_patches_and_offsets(
     patches: list[torch.Tensor], offsets: list[list[int]]
-) -> tuple[list[torch.Tensor], list[list[int]]]: ...
+) -> tuple[list[torch.Tensor], list[list[int]]]:
+    """Sorts patches and offsets according to the original image index."""
+    ...
 
 @auto_docstring
 class EomtImageProcessorFast(BaseImageProcessorFast):
@@ -46,20 +65,53 @@ class EomtImageProcessorFast(BaseImageProcessorFast):
         segmentation_maps: Optional[list[torch.Tensor]] = ...,
         instance_id_to_semantic_id: Optional[dict[int, int]] = ...,
         **kwargs: Unpack[EomtImageProcessorFastKwargs],
-    ) -> BatchFeature: ...
+    ) -> BatchFeature:
+        r"""
+        segmentation_maps (`ImageInput`, *optional*):
+            The segmentation maps to preprocess for corresponding images.
+        instance_id_to_semantic_id (`list[dict[int, int]]` or `dict[int, int]`, *optional*):
+            A mapping between object instance ids and class ids.
+        """
+        ...
+
     def merge_image_patches(
         self,
         segmentation_logits: torch.Tensor,
         patch_offsets: list[tuple[int, int, int]],
         target_sizes: list[tuple[int, int]],
         size: dict[str, int],
-    ) -> list[torch.Tensor]: ...
+    ) -> list[torch.Tensor]:
+        """
+        Reconstructs full-size semantic segmentation logits from patch predictions.
+
+        Args:
+            segmentation_logits (`torch.Tensor`):
+                A tensor of shape `(num_patches, num_classes, patch_height, patch_width)` representing predicted logits
+                for each image patch.
+            patch_offsets (`list[tuple[int, int, int]]`):
+                A list of tuples where each tuple contains:
+                - `image_index` (int): Index of the original image this patch belongs to.
+                - `start` (int): Start pixel index of the patch along the long dimension (height or width).
+                - `end` (int): End pixel index of the patch along the long dimension.
+            target_sizes (`list[tuple[int, int]]`):
+                list of original (height, width) dimensions for each image before preprocessing.
+            size (`dict[str, int]`):
+                A size dict which was used to resize.
+        """
+        ...
+
     def unpad_image(
         self, segmentation_logits: torch.Tensor, target_sizes: list[tuple[int, int]], size: dict[str, int]
-    ) -> list[torch.Tensor]: ...
+    ) -> list[torch.Tensor]:
+        """Restores panoptic segmentation logits to their original image resolutions."""
+        ...
+
     def post_process_semantic_segmentation(
         self, outputs, target_sizes: list[tuple[int, int]], size: Optional[dict[str, int]] = ...
-    ) -> np.ndarray: ...
+    ) -> np.ndarray:
+        """Post-processes model outputs into final semantic segmentation prediction."""
+        ...
+
     def post_process_panoptic_segmentation(
         self,
         outputs,
@@ -69,10 +121,15 @@ class EomtImageProcessorFast(BaseImageProcessorFast):
         overlap_mask_area_threshold: float = ...,
         stuff_classes: Optional[list[int]] = ...,
         size: Optional[dict[str, int]] = ...,
-    ): ...
+    ):  # -> list[Any]:
+        """Post-processes model outputs into final panoptic segmentation prediction."""
+        ...
+
     @filter_out_non_signature_kwargs()
     def post_process_instance_segmentation(
         self, outputs, target_sizes: list[tuple[int, int]], threshold: float = ..., size: Optional[dict[str, int]] = ...
-    ): ...
+    ):  # -> list[Any]:
+        """Post-processes model outputs into Instance Segmentation Predictions."""
+        ...
 
 __all__ = ["EomtImageProcessorFast"]

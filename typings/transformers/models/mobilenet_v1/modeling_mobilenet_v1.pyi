@@ -10,10 +10,19 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring
 from .configuration_mobilenet_v1 import MobileNetV1Config
 
+"""PyTorch MobileNetV1 model."""
 logger = ...
 
-def load_tf_weights_in_mobilenet_v1(model, config, tf_checkpoint_path): ...
-def apply_tf_padding(features: torch.Tensor, conv_layer: nn.Conv2d) -> torch.Tensor: ...
+def load_tf_weights_in_mobilenet_v1(model, config, tf_checkpoint_path):
+    """Load TensorFlow checkpoints in a PyTorch model."""
+    ...
+
+def apply_tf_padding(features: torch.Tensor, conv_layer: nn.Conv2d) -> torch.Tensor:
+    """
+    Apply TensorFlow-style "SAME" padding to a convolution layer. See the notes at:
+    https://www.tensorflow.org/api_docs/python/tf/nn#notes_on_padding_2
+    """
+    ...
 
 class MobileNetV1ConvLayer(nn.Module):
     def __init__(
@@ -41,7 +50,13 @@ class MobileNetV1PreTrainedModel(PreTrainedModel):
 
 @auto_docstring
 class MobileNetV1Model(MobileNetV1PreTrainedModel):
-    def __init__(self, config: MobileNetV1Config, add_pooling_layer: bool = ...) -> None: ...
+    def __init__(self, config: MobileNetV1Config, add_pooling_layer: bool = ...) -> None:
+        r"""
+        add_pooling_layer (bool, *optional*, defaults to `True`):
+            Whether to add a pooling layer
+        """
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -50,7 +65,12 @@ class MobileNetV1Model(MobileNetV1PreTrainedModel):
         return_dict: Optional[bool] = ...,
     ) -> Union[tuple, BaseModelOutputWithPoolingAndNoAttention]: ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    MobileNetV1 model with an image classification head on top (a linear layer on top of the pooled features), e.g. for
+    ImageNet.
+    """
+)
 class MobileNetV1ForImageClassification(MobileNetV1PreTrainedModel):
     def __init__(self, config: MobileNetV1Config) -> None: ...
     @auto_docstring
@@ -60,7 +80,14 @@ class MobileNetV1ForImageClassification(MobileNetV1PreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         labels: Optional[torch.Tensor] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ImageClassifierOutputWithNoAttention]: ...
+    ) -> Union[tuple, ImageClassifierOutputWithNoAttention]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss). If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 __all__ = [
     "MobileNetV1ForImageClassification",

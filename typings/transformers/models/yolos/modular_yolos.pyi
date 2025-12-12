@@ -11,13 +11,65 @@ logger = ...
 
 def get_size_with_aspect_ratio(
     image_size: tuple[int, int], size: int, max_size: Optional[int] = ..., mod_size: int = ...
-) -> tuple[int, int]: ...
+) -> tuple[int, int]:
+    """
+    Computes the output image size given the input image size and the desired output size with multiple of divisible_size.
+
+    Args:
+        image_size (`tuple[int, int]`):
+            The input image size.
+        size (`int`):
+            The desired output size.
+        max_size (`int`, *optional*):
+            The maximum allowed output size.
+        mod_size (`int`, *optional*):
+            The size to make multiple of mod_size.
+    """
+    ...
 
 class YolosImageProcessorFast(DetrImageProcessorFast):
-    def post_process(self, outputs, target_sizes): ...
+    def post_process(self, outputs, target_sizes):  # -> list[dict[str, Any]]:
+        """
+        Converts the raw output of [`YolosForObjectDetection`] into final bounding boxes in (top_left_x,
+        top_left_y, bottom_right_x, bottom_right_y) format. Only supports PyTorch.
+
+        Args:
+            outputs ([`YolosObjectDetectionOutput`]):
+                Raw outputs of the model.
+            target_sizes (`torch.Tensor` of shape `(batch_size, 2)`):
+                Tensor containing the size (height, width) of each image of the batch. For evaluation, this must be the
+                original image size (before any data augmentation). For visualization, this should be the image size
+                after data augment, but before padding.
+        Returns:
+            `list[Dict]`: A list of dictionaries, each dictionary containing the scores, labels and boxes for an image
+            in the batch as predicted by the model.
+        """
+        ...
+
     def post_process_object_detection(
         self, outputs, threshold: float = ..., target_sizes: Union[TensorType, list[tuple]] = ..., top_k: int = ...
-    ): ...
+    ):  # -> list[Any]:
+        """
+        Converts the raw output of [`YolosForObjectDetection`] into final bounding boxes in (top_left_x,
+        top_left_y, bottom_right_x, bottom_right_y) format. Only supports PyTorch.
+
+        Args:
+            outputs ([`YolosObjectDetectionOutput`]):
+                Raw outputs of the model.
+            threshold (`float`, *optional*):
+                Score threshold to keep object detection predictions.
+            target_sizes (`torch.Tensor` or `list[tuple[int, int]]`, *optional*):
+                Tensor of shape `(batch_size, 2)` or list of tuples (`tuple[int, int]`) containing the target size
+                (height, width) of each image in the batch. If left to None, predictions will not be resized.
+            top_k (`int`, *optional*, defaults to 100):
+                Keep only top k bounding boxes before filtering by thresholding.
+
+        Returns:
+            `list[Dict]`: A list of dictionaries, each dictionary containing the scores, labels and boxes for an image
+            in the batch as predicted by the model.
+        """
+        ...
+
     def post_process_segmentation(): ...
     def post_process_instance(): ...
     def post_process_panoptic(): ...

@@ -23,11 +23,15 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import ModelOutput, auto_docstring
 from .configuration_electra import ElectraConfig
 
+"""PyTorch ELECTRA model."""
 logger = ...
 
-def load_tf_weights_in_electra(model, config, tf_checkpoint_path, discriminator_or_generator=...): ...
+def load_tf_weights_in_electra(model, config, tf_checkpoint_path, discriminator_or_generator=...):
+    """Load tf checkpoints in a pytorch model."""
+    ...
 
 class ElectraEmbeddings(nn.Module):
+    """Construct the embeddings from word, position and token_type embeddings."""
     def __init__(self, config) -> None: ...
     def forward(
         self,
@@ -59,7 +63,8 @@ ELECTRA_SELF_ATTENTION_CLASSES = ...
 
 class ElectraAttention(nn.Module):
     def __init__(self, config, position_embedding_type=..., layer_idx=...) -> None: ...
-    def prune_heads(self, heads): ...
+    def prune_heads(self, heads):  # -> None:
+        ...
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -92,7 +97,8 @@ class ElectraLayer(GradientCheckpointingLayer):
         output_attentions: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
     ) -> tuple[torch.Tensor]: ...
-    def feed_forward_chunk(self, attention_output): ...
+    def feed_forward_chunk(self, attention_output):  # -> Any:
+        ...
 
 class ElectraEncoder(nn.Module):
     def __init__(self, config, layer_idx=...) -> None: ...
@@ -112,12 +118,16 @@ class ElectraEncoder(nn.Module):
     ) -> Union[tuple[torch.Tensor], BaseModelOutputWithPastAndCrossAttentions]: ...
 
 class ElectraDiscriminatorPredictions(nn.Module):
+    """Prediction module for the discriminator, made up of two dense layers."""
     def __init__(self, config) -> None: ...
-    def forward(self, discriminator_hidden_states): ...
+    def forward(self, discriminator_hidden_states):  # -> Any:
+        ...
 
 class ElectraGeneratorPredictions(nn.Module):
+    """Prediction module for the generator, made up of two dense layers."""
     def __init__(self, config) -> None: ...
-    def forward(self, generator_hidden_states): ...
+    def forward(self, generator_hidden_states):  # -> Any:
+        ...
 
 @auto_docstring
 class ElectraPreTrainedModel(PreTrainedModel):
@@ -127,8 +137,19 @@ class ElectraPreTrainedModel(PreTrainedModel):
     supports_gradient_checkpointing = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Output type of [`ElectraForPreTraining`].
+    """
+)
 class ElectraForPreTrainingOutput(ModelOutput):
+    r"""
+    loss (*optional*, returned when `labels` is provided, `torch.FloatTensor` of shape `(1,)`):
+        Total loss of the ELECTRA objective.
+    logits (`torch.FloatTensor` of shape `(batch_size, sequence_length)`):
+        Prediction scores of the head (scores for each token before SoftMax).
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     logits: Optional[torch.FloatTensor] = ...
     hidden_states: Optional[tuple[torch.FloatTensor]] = ...
@@ -137,8 +158,10 @@ class ElectraForPreTrainingOutput(ModelOutput):
 @auto_docstring
 class ElectraModel(ElectraPreTrainedModel):
     def __init__(self, config) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -158,16 +181,60 @@ class ElectraModel(ElectraPreTrainedModel):
     ) -> Union[tuple[torch.Tensor], BaseModelOutputWithCrossAttentions]: ...
 
 class ElectraClassificationHead(nn.Module):
+    """Head for sentence-level classification tasks."""
     def __init__(self, config) -> None: ...
-    def forward(self, features, **kwargs): ...
+    def forward(self, features, **kwargs):  # -> Any:
+        ...
 
 class ElectraSequenceSummary(nn.Module):
+    r"""
+    Compute a single vector summary of a sequence hidden states.
+
+    Args:
+        config ([`ElectraConfig`]):
+            The config used by the model. Relevant arguments in the config class of the model are (refer to the actual
+            config class of your model for the default values it uses):
+
+            - **summary_type** (`str`) -- The method to use to make this summary. Accepted values are:
+
+                - `"last"` -- Take the last token hidden state (like XLNet)
+                - `"first"` -- Take the first token hidden state (like Bert)
+                - `"mean"` -- Take the mean of all tokens hidden states
+                - `"cls_index"` -- Supply a Tensor of classification token position (GPT/GPT-2)
+                - `"attn"` -- Not implemented now, use multi-head attention
+
+            - **summary_use_proj** (`bool`) -- Add a projection after the vector extraction.
+            - **summary_proj_to_labels** (`bool`) -- If `True`, the projection outputs to `config.num_labels` classes
+              (otherwise to `config.hidden_size`).
+            - **summary_activation** (`Optional[str]`) -- Set to `"tanh"` to add a tanh activation to the output,
+              another string or `None` will add no activation.
+            - **summary_first_dropout** (`float`) -- Optional dropout probability before the projection and activation.
+            - **summary_last_dropout** (`float`)-- Optional dropout probability after the projection and activation.
+    """
     def __init__(self, config: ElectraConfig) -> None: ...
     def forward(
         self, hidden_states: torch.FloatTensor, cls_index: Optional[torch.LongTensor] = ...
-    ) -> torch.FloatTensor: ...
+    ) -> torch.FloatTensor:
+        """
+        Compute a single vector summary of a sequence hidden states.
 
-@auto_docstring(custom_intro=...)
+        Args:
+            hidden_states (`torch.FloatTensor` of shape `[batch_size, seq_len, hidden_size]`):
+                The hidden states of the last layer.
+            cls_index (`torch.LongTensor` of shape `[batch_size]` or `[batch_size, ...]` where ... are optional leading dimensions of `hidden_states`, *optional*):
+                Used if `summary_type == "cls_index"` and takes the last token of the sequence as classification token.
+
+        Returns:
+            `torch.FloatTensor`: The summary of the sequence hidden states.
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    ELECTRA Model transformer with a sequence classification/regression head on top (a linear layer on top of the
+    pooled output) e.g. for GLUE tasks.
+    """
+)
 class ElectraForSequenceClassification(ElectraPreTrainedModel):
     def __init__(self, config) -> None: ...
     @auto_docstring
@@ -183,9 +250,22 @@ class ElectraForSequenceClassification(ElectraPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], SequenceClassifierOutput]: ...
+    ) -> Union[tuple[torch.Tensor], SequenceClassifierOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Electra model with a binary classification head on top as used during pretraining for identifying generated tokens.
+
+    It is recommended to load the discriminator checkpoint into that model.
+    """
+)
 class ElectraForPreTraining(ElectraPreTrainedModel):
     def __init__(self, config) -> None: ...
     @auto_docstring
@@ -201,14 +281,55 @@ class ElectraForPreTraining(ElectraPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], ElectraForPreTrainingOutput]: ...
+    ) -> Union[tuple[torch.Tensor], ElectraForPreTrainingOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the ELECTRA loss. Input should be a sequence of tokens (see `input_ids` docstring)
+            Indices should be in `[0, 1]`:
 
-@auto_docstring(custom_intro=...)
+            - 0 indicates the token is an original token,
+            - 1 indicates the token was replaced.
+
+        Examples:
+
+        ```python
+        >>> from transformers import ElectraForPreTraining, AutoTokenizer
+        >>> import torch
+
+        >>> discriminator = ElectraForPreTraining.from_pretrained("google/electra-base-discriminator")
+        >>> tokenizer = AutoTokenizer.from_pretrained("google/electra-base-discriminator")
+
+        >>> sentence = "The quick brown fox jumps over the lazy dog"
+        >>> fake_sentence = "The quick brown fox fake over the lazy dog"
+
+        >>> fake_tokens = tokenizer.tokenize(fake_sentence, add_special_tokens=True)
+        >>> fake_inputs = tokenizer.encode(fake_sentence, return_tensors="pt")
+        >>> discriminator_outputs = discriminator(fake_inputs)
+        >>> predictions = torch.round((torch.sign(discriminator_outputs[0]) + 1) / 2)
+
+        >>> fake_tokens
+        ['[CLS]', 'the', 'quick', 'brown', 'fox', 'fake', 'over', 'the', 'lazy', 'dog', '[SEP]']
+
+        >>> predictions.squeeze().tolist()
+        [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        ```"""
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    Electra model with a language modeling head on top.
+
+    Even though both the discriminator and generator may be loaded into this model, the generator is the only model of
+    the two to have been trained for the masked language modeling task.
+    """
+)
 class ElectraForMaskedLM(ElectraPreTrainedModel):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
-    def get_output_embeddings(self): ...
-    def set_output_embeddings(self, word_embeddings): ...
+    def get_output_embeddings(self):  # -> Linear:
+        ...
+    def set_output_embeddings(self, word_embeddings):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -222,9 +343,22 @@ class ElectraForMaskedLM(ElectraPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], MaskedLMOutput]: ...
+    ) -> Union[tuple[torch.Tensor], MaskedLMOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should be in `[-100, 0, ...,
+            config.vocab_size]` (see `input_ids` docstring) Tokens with indices set to `-100` are ignored (masked), the
+            loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`
+        """
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Electra model with a token classification head on top.
+
+    Both the discriminator and generator may be loaded into this model.
+    """
+)
 class ElectraForTokenClassification(ElectraPreTrainedModel):
     def __init__(self, config) -> None: ...
     @auto_docstring
@@ -240,7 +374,12 @@ class ElectraForTokenClassification(ElectraPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], TokenClassifierOutput]: ...
+    ) -> Union[tuple[torch.Tensor], TokenClassifierOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the token classification loss. Indices should be in `[0, ..., config.num_labels - 1]`.
+        """
+        ...
 
 @auto_docstring
 class ElectraForQuestionAnswering(ElectraPreTrainedModel):
@@ -279,14 +418,51 @@ class ElectraForMultipleChoice(ElectraPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], MultipleChoiceModelOutput]: ...
+    ) -> Union[tuple[torch.Tensor], MultipleChoiceModelOutput]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`):
+            Indices of input sequence tokens in the vocabulary.
 
-@auto_docstring(custom_intro=...)
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        token_type_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`, *optional*):
+            Segment token indices to indicate first and second portions of the inputs. Indices are selected in `[0,
+            1]`:
+
+            - 0 corresponds to a *sentence A* token,
+            - 1 corresponds to a *sentence B* token.
+
+            [What are token type IDs?](../glossary#token-type-ids)
+        position_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`, *optional*):
+            Indices of positions of each input sequence tokens in the position embeddings. Selected in the range `[0,
+            config.max_position_embeddings - 1]`.
+
+            [What are position IDs?](../glossary#position-ids)
+        inputs_embeds (`torch.FloatTensor` of shape `(batch_size, num_choices, sequence_length, hidden_size)`, *optional*):
+            Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation. This
+            is useful if you want more control over how to convert `input_ids` indices into associated vectors than the
+            model's internal embedding lookup matrix.
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the multiple choice classification loss. Indices should be in `[0, ...,
+            num_choices-1]` where `num_choices` is the size of the second dimension of the input tensors. (See
+            `input_ids` above)
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    ELECTRA Model with a `language modeling` head on top for CLM fine-tuning.
+    """
+)
 class ElectraForCausalLM(ElectraPreTrainedModel, GenerationMixin):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
-    def get_output_embeddings(self): ...
-    def set_output_embeddings(self, new_embeddings): ...
+    def get_output_embeddings(self):  # -> Linear:
+        ...
+    def set_output_embeddings(self, new_embeddings):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -305,7 +481,30 @@ class ElectraForCausalLM(ElectraPreTrainedModel, GenerationMixin):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         **kwargs,
-    ) -> Union[tuple[torch.Tensor], CausalLMOutputWithCrossAttentions]: ...
+    ) -> Union[tuple[torch.Tensor], CausalLMOutputWithCrossAttentions]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the left-to-right language modeling loss (next word prediction). Indices should be in
+            `[-100, 0, ..., config.vocab_size]` (see `input_ids` docstring) Tokens with indices set to `-100` are
+            ignored (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, ElectraForCausalLM, ElectraConfig
+        >>> import torch
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("google/electra-base-generator")
+        >>> config = ElectraConfig.from_pretrained("google/electra-base-generator")
+        >>> config.is_decoder = True
+        >>> model = ElectraForCausalLM.from_pretrained("google/electra-base-generator", config=config)
+
+        >>> inputs = tokenizer("Hello, my dog is cute", return_tensors="pt")
+        >>> outputs = model(**inputs)
+
+        >>> prediction_logits = outputs.logits
+        ```"""
+        ...
 
 __all__ = [
     "ElectraForCausalLM",

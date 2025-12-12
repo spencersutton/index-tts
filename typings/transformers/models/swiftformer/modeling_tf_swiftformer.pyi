@@ -9,6 +9,7 @@ from ...modeling_tf_utils import TFPreTrainedModel, keras, keras_serializable, u
 from ...utils import add_start_docstrings, add_start_docstrings_to_model_forward
 from .configuration_swiftformer import SwiftFormerConfig
 
+"""TensorFlow SwiftFormer model."""
 logger = ...
 _CONFIG_FOR_DOC = ...
 _CHECKPOINT_FOR_DOC = ...
@@ -17,53 +18,128 @@ _IMAGE_CLASS_CHECKPOINT = ...
 _IMAGE_CLASS_EXPECTED_OUTPUT = ...
 
 class TFSwiftFormerPatchEmbeddingSequential(keras.layers.Layer):
+    """
+    The sequential component of the patch embedding layer.
+
+    Input: tensor of shape `[batch_size, in_channels, height, width]`
+
+    Output: tensor of shape `[batch_size, out_channels, height/4, width/4]`
+    """
     def __init__(self, config: SwiftFormerConfig, **kwargs) -> None: ...
     def call(self, x: tf.Tensor, training: bool = ...) -> tf.Tensor: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFSwiftFormerPatchEmbedding(keras.layers.Layer):
+    """
+    Patch Embedding Layer constructed of two 2D convolutional layers.
+
+    Input: tensor of shape `[batch_size, in_channels, height, width]`
+
+    Output: tensor of shape `[batch_size, out_channels, height/4, width/4]`
+    """
     def __init__(self, config: SwiftFormerConfig, **kwargs) -> None: ...
     def call(self, x: tf.Tensor, training: bool = ...) -> tf.Tensor: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFSwiftFormerDropPath(keras.layers.Layer):
+    """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks)."""
     def __init__(self, config: SwiftFormerConfig, **kwargs) -> None: ...
     def call(self, hidden_states: tf.Tensor, training: bool = ...) -> tf.Tensor: ...
 
 class TFSwiftFormerEmbeddings(keras.layers.Layer):
+    """
+    Embeddings layer consisting of a single 2D convolutional and batch normalization layer.
+
+    Input: tensor of shape `[batch_size, channels, height, width]`
+
+    Output: tensor of shape `[batch_size, channels, height/stride, width/stride]`
+    """
     def __init__(self, config: SwiftFormerConfig, index: int, **kwargs) -> None: ...
     def call(self, x: tf.Tensor, training: bool = ...) -> tf.Tensor: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFSwiftFormerConvEncoder(keras.layers.Layer):
+    """
+    `SwiftFormerConvEncoder` with 3*3 and 1*1 convolutions.
+
+    Input: tensor of shape `[batch_size, channels, height, width]`
+
+    Output: tensor of shape `[batch_size, channels, height, width]`
+    """
     def __init__(self, config: SwiftFormerConfig, dim: int, **kwargs) -> None: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
     def call(self, x: tf.Tensor, training: bool = ...) -> tf.Tensor: ...
 
 class TFSwiftFormerMlp(keras.layers.Layer):
+    """
+    MLP layer with 1*1 convolutions.
+
+    Input: tensor of shape `[batch_size, channels, height, width]`
+
+    Output: tensor of shape `[batch_size, channels, height, width]`
+    """
     def __init__(self, config: SwiftFormerConfig, in_features: int, **kwargs) -> None: ...
     def call(self, x: tf.Tensor, training: bool = ...) -> tf.Tensor: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFSwiftFormerEfficientAdditiveAttention(keras.layers.Layer):
+    """
+    Efficient Additive Attention module for SwiftFormer.
+
+    Input: tensor of shape `[batch_size, channels, height, width]`
+
+    Output: tensor of shape `[batch_size, channels, height, width]`
+    """
     def __init__(self, config: SwiftFormerConfig, dim: int = ..., **kwargs) -> None: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
     def call(self, x: tf.Tensor) -> tf.Tensor: ...
 
 class TFSwiftFormerLocalRepresentation(keras.layers.Layer):
+    """
+    Local Representation module for SwiftFormer that is implemented by 3*3 depth-wise and point-wise convolutions.
+
+    Input: tensor of shape `[batch_size, channels, height, width]`
+
+    Output: tensor of shape `[batch_size, channels, height, width]`
+    """
     def __init__(self, config: SwiftFormerConfig, dim: int, **kwargs) -> None: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
     def call(self, x: tf.Tensor, training: bool = ...) -> tf.Tensor: ...
 
 class TFSwiftFormerEncoderBlock(keras.layers.Layer):
+    """
+    SwiftFormer Encoder Block for SwiftFormer. It consists of (1) Local representation module, (2)
+    SwiftFormerEfficientAdditiveAttention, and (3) MLP block.
+
+    Input: tensor of shape `[batch_size, channels, height, width]`
+
+    Output: tensor of shape `[batch_size, channels,height, width]`
+    """
     def __init__(self, config: SwiftFormerConfig, dim: int, drop_path: float = ..., **kwargs) -> None: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
     def call(self, x: tf.Tensor, training: bool = ...): ...
 
 class TFSwiftFormerStage(keras.layers.Layer):
+    """
+    A Swiftformer stage consisting of a series of `SwiftFormerConvEncoder` blocks and a final
+    `SwiftFormerEncoderBlock`.
+
+    Input: tensor in shape `[batch_size, channels, height, width]`
+
+    Output: tensor in shape `[batch_size, channels, height, width]`
+    """
     def __init__(self, config: SwiftFormerConfig, index: int, **kwargs) -> None: ...
     def call(self, input: tf.Tensor, training: bool = ...) -> tf.Tensor: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFSwiftFormerEncoder(keras.layers.Layer):
     def __init__(self, config: SwiftFormerConfig, **kwargs) -> None: ...
@@ -74,9 +150,15 @@ class TFSwiftFormerEncoder(keras.layers.Layer):
         return_dict: Optional[bool] = ...,
         training: bool = ...,
     ) -> Union[tuple, TFBaseModelOutputWithNoAttention]: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFSwiftFormerPreTrainedModel(TFPreTrainedModel):
+    """
+    An abstract class to handle weights initialization and a simple interface for downloading and loading pretrained
+    models.
+    """
+
     config_class = SwiftFormerConfig
     base_model_prefix = ...
     main_input_name = ...
@@ -95,10 +177,17 @@ class TFSwiftFormerMainLayer(keras.layers.Layer):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         training: bool = ...,
-    ) -> Union[tuple, TFBaseModelOutputWithNoAttention]: ...
-    def build(self, input_shape=...): ...
+    ) -> Union[tuple, TFBaseModelOutputWithNoAttention]:
+        r""" """
+        ...
 
-@add_start_docstrings(..., TFSWIFTFORMER_START_DOCSTRING)
+    def build(self, input_shape=...):  # -> None:
+        ...
+
+@add_start_docstrings(
+    "The bare TFSwiftFormer Model transformer outputting raw hidden-states without any specific head on top.",
+    TFSWIFTFORMER_START_DOCSTRING,
+)
 class TFSwiftFormerModel(TFSwiftFormerPreTrainedModel):
     def __init__(self, config: SwiftFormerConfig, *inputs, **kwargs) -> None: ...
     @unpack_inputs
@@ -110,12 +199,19 @@ class TFSwiftFormerModel(TFSwiftFormerPreTrainedModel):
         return_dict: Optional[bool] = ...,
         training: bool = ...,
     ) -> Union[TFBaseModelOutputWithNoAttention, tuple[tf.Tensor]]: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
-@add_start_docstrings(..., TFSWIFTFORMER_START_DOCSTRING)
+@add_start_docstrings(
+    """
+    TFSwiftFormer Model transformer with an image classification head on top (e.g. for ImageNet).
+    """,
+    TFSWIFTFORMER_START_DOCSTRING,
+)
 class TFSwiftFormerForImageClassification(TFSwiftFormerPreTrainedModel):
     def __init__(self, config: SwiftFormerConfig, **kwargs) -> None: ...
-    def hf_compute_loss(self, labels, logits): ...
+    def hf_compute_loss(self, labels, logits):  # -> None:
+        ...
     @unpack_inputs
     @add_start_docstrings_to_model_forward(TFSWIFTFORMER_INPUTS_DOCSTRING)
     def call(
@@ -125,7 +221,16 @@ class TFSwiftFormerForImageClassification(TFSwiftFormerPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         training: bool = ...,
-    ) -> Union[tuple, TFImageClassifierOutputWithNoAttention]: ...
-    def build(self, input_shape=...): ...
+    ) -> Union[tuple, TFImageClassifierOutputWithNoAttention]:
+        r"""
+        labels (`tf.Tensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
+
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 __all__ = ["TFSwiftFormerForImageClassification", "TFSwiftFormerModel", "TFSwiftFormerPreTrainedModel"]

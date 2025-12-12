@@ -18,7 +18,8 @@ from .configuration_aya_vision import AyaVisionConfig
 
 class AyaVisionMultiModalProjector(nn.Module):
     def __init__(self, config: AyaVisionConfig) -> None: ...
-    def forward(self, image_features): ...
+    def forward(self, image_features):  # -> Any:
+        ...
     def pixel_shuffle(self, image_features): ...
 
 @auto_docstring
@@ -35,8 +36,28 @@ class AyaVisionPreTrainedModel(PreTrainedModel):
     _can_record_outputs = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for AyaVision causal language model (or autoregressive) outputs.
+    """
+)
 class AyaVisionCausalLMOutputWithPast(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `labels` is provided):
+        Language modeling loss (for next-token prediction).
+    logits (`torch.FloatTensor` of shape `(batch_size, sequence_length, config.vocab_size)`):
+        Prediction scores of the language modeling head (scores for each vocabulary token before SoftMax).
+    past_key_values (`Cache`, *optional*, returned when `use_cache=True` is passed or when `config.use_cache=True`):
+        Tuple of `tuple(torch.FloatTensor)` of length `config.n_layers`, with each tuple having 2 tensors of shape
+        `(batch_size, num_heads, sequence_length, embed_size_per_head)`)
+
+        Contains pre-computed hidden-states (key and values in the self-attention blocks) that can be used (see
+        `past_key_values` input) to speed up sequential decoding.
+    image_hidden_states (`torch.FloatTensor`, *optional*):
+        A `torch.FloatTensor` of size `(batch_size, num_images, sequence_length, hidden_size)`.
+        image_hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     logits: Optional[torch.FloatTensor] = ...
     past_key_values: Optional[list[torch.FloatTensor]] = ...
@@ -45,28 +66,76 @@ class AyaVisionCausalLMOutputWithPast(ModelOutput):
     image_hidden_states: Optional[torch.FloatTensor] = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for AyaVision outputs, with hidden states and attentions.
+    """
+)
 class AyaVisionModelOutputWithPast(BaseModelOutputWithPast):
+    r"""
+    past_key_values (`Cache`, *optional*, returned when `use_cache=True` is passed or when `config.use_cache=True`):
+        Tuple of `tuple(torch.FloatTensor)` of length `config.n_layers`, with each tuple having 2 tensors of shape
+        `(batch_size, num_heads, sequence_length, embed_size_per_head)`)
+
+        Contains pre-computed hidden-states (key and values in the self-attention blocks) that can be used (see
+        `past_key_values` input) to speed up sequential decoding.
+    image_hidden_states (`torch.FloatTensor`, *optional*):
+        A `torch.FloatTensor` of size `(batch_size, num_images, sequence_length, hidden_size)`.
+        image_hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
+    """
+
     image_hidden_states: Optional[torch.FloatTensor] = ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The AyaVision model which consists of a vision backbone and a language model, without a language modeling head.
+    """
+)
 class AyaVisionModel(AyaVisionPreTrainedModel):
     _checkpoint_conversion_mapping = ...
     def __init__(self, config: AyaVisionConfig) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
-    def set_decoder(self, decoder): ...
-    def get_decoder(self): ...
+    def get_input_embeddings(self):  # -> Any:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> Any:
+        ...
     def get_image_features(
         self,
         pixel_values: torch.FloatTensor,
         vision_feature_layer: Optional[Union[int, list[int]]] = ...,
         vision_feature_select_strategy: Optional[str] = ...,
         **kwargs,
-    ): ...
+    ):  # -> Any:
+        """
+        Obtains image last hidden states from the vision tower and apply multimodal projection.
+
+        Args:
+            pixel_values (`torch.FloatTensor]` of shape `(batch_size, channels, height, width)`):
+               The tensors corresponding to the input images.
+            vision_feature_layer (`Union[int, list[int]]`, *optional*):
+                The index of the layer to select the vision feature. If multiple indices are provided,
+                the vision feature of the corresponding indices will be concatenated to form the
+                vision features.
+            vision_feature_select_strategy (`str`, *optional*):
+                The feature selection strategy used to select the vision feature from the vision backbone.
+                Can be one of `"default"` or `"full"`
+        Returns:
+            image_features (`torch.Tensor`): Image feature tensor of shape `(num_images, image_length, embed_dim)`).
+        """
+        ...
+
     def get_placeholder_mask(
         self, input_ids: torch.LongTensor, inputs_embeds: torch.FloatTensor, image_features: torch.FloatTensor
-    ): ...
+    ):  # -> Any:
+        """
+        Obtains multimodal placeholdr mask from `input_ids` or `inputs_embeds`, and checks that the placeholder token count is
+        equal to the length of multimodal features. If the lengths are different, an error is raised.
+        """
+        ...
+
     @check_model_inputs
     @auto_docstring
     def forward(
@@ -84,29 +153,41 @@ class AyaVisionModel(AyaVisionPreTrainedModel):
         **kwargs: Unpack[FlashAttentionKwargs],
     ) -> Union[tuple, AyaVisionModelOutputWithPast]: ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The AYA_VISION model which consists of a vision backbone and a language model.
+    """
+)
 class AyaVisionForConditionalGeneration(AyaVisionPreTrainedModel, GenerationMixin):
     _checkpoint_conversion_mapping = ...
     _tied_weights_keys = ...
     def __init__(self, config: AyaVisionConfig) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def get_input_embeddings(self):  # -> Any:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     def get_output_embeddings(self) -> nn.Module: ...
-    def set_decoder(self, decoder): ...
-    def get_decoder(self): ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> Any:
+        ...
     def get_image_features(
         self,
         pixel_values: torch.FloatTensor,
         vision_feature_layer: Optional[Union[int, list[int]]] = ...,
         vision_feature_select_strategy: Optional[str] = ...,
         **kwargs,
-    ): ...
+    ):  # -> Any:
+        ...
     @property
-    def language_model(self): ...
+    def language_model(self):  # -> Any:
+        ...
     @property
-    def vision_tower(self): ...
+    def vision_tower(self):  # -> Any:
+        ...
     @property
-    def multi_modal_projector(self): ...
+    def multi_modal_projector(self):  # -> AyaVisionMultiModalProjector:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -128,7 +209,45 @@ class AyaVisionForConditionalGeneration(AyaVisionPreTrainedModel, GenerationMixi
         logits_to_keep: Union[int, torch.Tensor] = ...,
         image_sizes: Optional[torch.Tensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> Union[tuple, AyaVisionCausalLMOutputWithPast]: ...
+    ) -> Union[tuple, AyaVisionCausalLMOutputWithPast]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoProcessor, AyaVisionForConditionalGeneration
+        >>> import torch
+
+        >>> torch_device = "cuda:0"
+        >>> processor = AutoProcessor.from_pretrained("CohereForAI/aya-vision-8b", use_fast=True)
+        >>> model = AyaVisionForConditionalGeneration.from_pretrained("CohereForAI/aya-vision-8b", device_map=torch_device)
+
+        >>> messages = [
+        ...     {
+        ...         "role": "user",
+        ...         "content": [
+        ...             {
+        ...                 "type": "image",
+        ...                 "url": "https://pbs.twimg.com/media/Fx7YvfQWYAIp6rZ?format=jpg&name=medium",
+        ...             },
+        ...             {"type": "text", "text": "चित्र में लिखा पाठ क्या कहता है?"},
+        ...         ],
+        ...     }
+        ... ]
+
+        >>> inputs = processor.apply_chat_template(
+        ...     messages, padding=True, add_generation_prompt=True, tokenize=True, return_dict=True, return_tensors="pt", device=torch_device
+        ... ).to(model.device)
+
+        >>> gen_tokens = model.generate(**inputs, max_new_tokens=300, do_sample=True, temperature=0.3)
+        >>> processor.tokenizer.decode(gen_tokens[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
+        ```"""
+        ...
+
     def prepare_inputs_for_generation(
         self,
         input_ids,
@@ -139,6 +258,7 @@ class AyaVisionForConditionalGeneration(AyaVisionPreTrainedModel, GenerationMixi
         cache_position=...,
         logits_to_keep=...,
         **kwargs,
-    ): ...
+    ):  # -> dict[Any, Any]:
+        ...
 
 __all__ = ["AyaVisionForConditionalGeneration", "AyaVisionPreTrainedModel", "AyaVisionModel"]

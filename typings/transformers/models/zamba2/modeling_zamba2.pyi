@@ -27,18 +27,38 @@ class Zamba2RMSNormGated(torch.nn.Module):
     def forward(self, hidden_states, gate=...): ...
 
 class Zamba2RMSNorm(nn.Module):
-    def __init__(self, hidden_size, eps=...) -> None: ...
+    def __init__(self, hidden_size, eps=...) -> None:
+        """
+        Zamba2RMSNorm is equivalent to T5LayerNorm
+        """
+        ...
+
     def forward(self, hidden_states): ...
-    def extra_repr(self): ...
+    def extra_repr(self):  # -> str:
+        ...
 
 class Zamba2HybridDynamicCache:
+    """
+    A dynamic cache that can handle both the attention cache (which has a seq_len dimension) and the mamba cache
+    (which has a constant shape regardless of seq_len).
+
+    This cache has two sets of lists of tensors: `key_cache` and `value_cache` for attention cache and `conv_states`
+    and `ssm_states` for mamba cache. Each of these lists has `num_layers` tensors. The expected shape for each tensor
+    For attention layers, `key_cache` and `value_cache` have a shape of `(batch_size, num_heads, seq_len, head_dim)`,
+    while `conv_states` and `ssm_states` have a shape of `(batch_size, 0)` (empty tensors).
+    For mamba layers, `key_cache` and `value_cache` have a shape of `(batch_size, 0)` (empty tensors),
+    while `conv_states` represents the convolution state and has a shape of `(batch_size, d_inner, d_conv)`,
+    and `ssm_states` represents the ssm state and has a shape of `(batch_size, d_inner, d_state)`.
+    """
+
     key_cache = ...
     value_cache = ...
     is_compileable = ...
     def __init__(
         self, config: Zamba2Config, batch_size: int, dtype: torch.dtype = ..., device: Optional[str] = ...
     ) -> None: ...
-    def __len__(self): ...
+    def __len__(self):  # -> int:
+        ...
     def __getitem__(self, layer_idx: int) -> tuple[torch.Tensor, torch.Tensor]: ...
     def update(
         self,
@@ -47,23 +67,37 @@ class Zamba2HybridDynamicCache:
         layer_idx: int,
         cache_kwargs: Optional[dict[str, Any]] = ...,
     ) -> tuple[torch.Tensor, torch.Tensor]: ...
-    def reorder_cache(self, beam_idx: torch.LongTensor): ...
-    def get_seq_length(self, layer_idx: Optional[int] = ...) -> int: ...
+    def reorder_cache(self, beam_idx: torch.LongTensor):  # -> None:
+        """Reorders the cache for beam search, given the selected beam indices."""
+        ...
+
+    def get_seq_length(self, layer_idx: Optional[int] = ...) -> int:
+        """Returns the sequence length of the cached states. A layer index can be optionally passed."""
+        ...
+
     def to_legacy_cache(self) -> tuple[tuple[torch.Tensor], tuple[torch.Tensor]]: ...
     @classmethod
     def from_legacy_cache(cls, past_key_values: Optional[tuple[tuple[torch.FloatTensor]]] = ...) -> DynamicCache: ...
     def update_conv_state(
         self, layer_idx: int, new_conv_state: torch.Tensor, cache_position: torch.LongTensor
     ) -> torch.Tensor: ...
-    def reset(self): ...
+    def reset(self):  # -> None:
+        ...
 
 class Zamba2RotaryEmbedding(nn.Module):
     def __init__(self, config: Zamba2Config, device=...) -> None: ...
     @torch.no_grad()
     @dynamic_rope_update
-    def forward(self, x, position_ids): ...
+    def forward(self, x, position_ids):  # -> tuple[Tensor, Tensor]:
+        ...
 
-def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor: ...
+def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
+    """
+    This is the equivalent of torch.repeat_interleave(x, dim=1, repeats=n_rep). The hidden states go from (batch,
+    num_key_value_heads, seqlen, head_dim) to (batch, num_attention_heads, seqlen, head_dim)
+    """
+    ...
+
 def eager_attention_forward(
     module: nn.Module,
     query: torch.Tensor,
@@ -73,11 +107,49 @@ def eager_attention_forward(
     scaling: float,
     dropout: float = ...,
     **kwargs,
-): ...
-def rotate_half(x): ...
-def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
+def rotate_half(x):  # -> Tensor:
+    """Rotates half the hidden dims of the input."""
+    ...
+
+def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...):  # -> tuple[Any, Any]:
+    """Applies Rotary Position Embedding to the query and key tensors.
+
+    Args:
+        q (`torch.Tensor`): The query tensor.
+        k (`torch.Tensor`): The key tensor.
+        cos (`torch.Tensor`): The cosine part of the rotary embedding.
+        sin (`torch.Tensor`): The sine part of the rotary embedding.
+        position_ids (`torch.Tensor`, *optional*):
+            Deprecated and unused.
+        unsqueeze_dim (`int`, *optional*, defaults to 1):
+            The 'unsqueeze_dim' argument specifies the dimension along which to unsqueeze cos[position_ids] and
+            sin[position_ids] so that they can be properly broadcasted to the dimensions of q and k. For example, note
+            that cos[position_ids] and sin[position_ids] have the shape [batch_size, seq_len, head_dim]. Then, if q and
+            k have the shape [batch_size, heads, seq_len, head_dim], then setting unsqueeze_dim=1 makes
+            cos[position_ids] and sin[position_ids] broadcastable to the shapes of q and k. Similarly, if q and k have
+            the shape [batch_size, seq_len, heads, head_dim], then set unsqueeze_dim=2.
+    Returns:
+        `tuple(torch.Tensor)` comprising of the query and key tensors rotated using the Rotary Position Embedding.
+    """
+    ...
 
 class Zamba2Attention(nn.Module):
+    """
+    Multi-headed attention from 'Attention Is All You Need' paper.
+
+    Adapted from transformers.models.mistral.modeling_mistral.MistralAttention:
+    The input dimension here is attention_hidden_size = 2 * hidden_size, and head_dim = attention_hidden_size // num_heads.
+    The extra factor of 2 comes from the input being the concatenation of original_hidden_states with the output of the previous (mamba) layer
+    (see fig. 2 in https://huggingface.co/papers/2405.16712).
+    Additionally, replaced
+    attn_weights = torch.matmul(query_states, key_states.transpose(2, 3)) / math.sqrt(self.head_dim) with
+    attn_weights = torch.matmul(query_states, key_states.transpose(2, 3)) / math.sqrt(self.head_dim/2)
+    Finally, this attention layer contributes to tied transformer blocks aimed to increasing compute without increasing model size. Because this
+    layer is tied, un-tied adapters (formally the same as LoRA but used in the base model) modules are added to the q, k, v projectors to increase
+    expressivity with a small memory overhead (see Fig. 2 of https://huggingface.co/papers/2411.15242).
+    """
     def __init__(
         self,
         config: Zamba2Config,
@@ -95,36 +167,71 @@ class Zamba2Attention(nn.Module):
         **kwargs: Unpack[FlashAttentionKwargs],
     ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
 
-def pad_tensor_by_size(input_tensor: torch.Tensor, pad_size: int): ...
-def reshape_into_chunks(input_tensor, pad_size, chunk_size): ...
-def segment_sum(input_tensor): ...
+def pad_tensor_by_size(input_tensor: torch.Tensor, pad_size: int):
+    """
+    Padding x tensor with `pad_size` on the seq_len dim (dim=1)
+
+    Assumes that we only have tensors of either size 4 or 3
+    """
+    ...
+
+def reshape_into_chunks(input_tensor, pad_size, chunk_size):
+    """
+    Padding input_tensor with `pad_size` on the seq_len dim (dim=1) and
+    simultaneously splitting it into chunk sequences.
+
+    Assumes that we only have tensors of either size 4 or 3
+    """
+    ...
+
+def segment_sum(input_tensor):  # -> Tensor:
+    """
+    More stable segment sum calculation. Uses cumulative sums and masking instead of direct subtractions.
+    """
+    ...
 
 is_fast_path_available = ...
 
 class Zamba2MambaMixer(nn.Module):
+    """
+    Compute ∆, A, B, C, and D the state space parameters and compute the `contextualized_states`.
+    A, D are input independent (see Mamba paper [1] Section 3.5.2 "Interpretation of A" for why A isn't selective)
+    ∆, B, C are input-dependent (this is a key difference between Mamba and the linear time invariant S4,
+    and is why Mamba is called **selective** state spaces)
+    """
     def __init__(self, config: Zamba2Config, layer_idx: Optional[int] = ...) -> None: ...
     def cuda_kernels_forward(
         self,
         hidden_states: torch.Tensor,
         cache_params: Optional[Zamba2HybridDynamicCache] = ...,
         attention_mask: Optional[torch.Tensor] = ...,
-    ): ...
+    ):  # -> Any:
+        ...
     def torch_forward(
         self,
         input_states,
         cache_params: Optional[Zamba2HybridDynamicCache] = ...,
         attention_mask: Optional[torch.Tensor] = ...,
-    ): ...
+    ):  # -> Any:
+        ...
     def forward(
         self,
         hidden_states,
         cache_params: Optional[Zamba2HybridDynamicCache] = ...,
         attention_mask: Optional[torch.Tensor] = ...,
-    ): ...
+    ):  # -> Any:
+        ...
 
 class Zamba2MLP(nn.Module):
-    def __init__(self, config: Zamba2Config, num_fwd_mem_blocks=..., block_id: Optional[int] = ...) -> None: ...
-    def forward(self, hidden_state, layer_idx=...): ...
+    def __init__(self, config: Zamba2Config, num_fwd_mem_blocks=..., block_id: Optional[int] = ...) -> None:
+        """
+        This MLP layer contributes to tied transformer blocks aimed to increasing compute without increasing model size. Because this layer
+        is tied, un-tied adapter modules (formally same as LoRA, but used in the base model) are added to the up and gate projectors to increase expressivity with a small memory overhead.
+        """
+        ...
+
+    def forward(self, hidden_state, layer_idx=...):  # -> Any:
+        ...
 
 class Zamba2AttentionDecoderLayer(nn.Module):
     def __init__(self, config: Zamba2Config, block_id: Optional[int] = ..., layer_idx: Optional[int] = ...) -> None: ...
@@ -138,7 +245,28 @@ class Zamba2AttentionDecoderLayer(nn.Module):
         output_attentions: Optional[bool] = ...,
         position_embeddings: Optional[torch.LongTensor] = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]: ...
+    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): output of previous Mamba layer of shape `(batch, seq_len, embed_dim)`
+            original_hidden_states (`torch.FloatTensor`): word embedding output of shape `(batch, seq_len, embed_dim)`.
+                This is concatenated with `hidden_states` (which is the output of the previous (mamba) layer). The
+                concatenated tensor is then used as input of the pre-attention RMSNorm
+                (see fig. 2 in https://huggingface.co/papers/2405.16712).
+            attention_mask (`torch.FloatTensor`, *optional*): attention mask of size
+                `(batch, sequence_length)` where padding elements are indicated by 0.
+            past_key_value (`Zamba2HybridDynamicCache`, *optional*): cached past key and value projection states
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            use_cache (`bool`, *optional*):
+                If set to `True`, `past_key_values` key value states are returned and can be used to speed up decoding
+                (see `past_key_values`).
+            position_embeddings (`tuple[torch.FloatTensor, torch.FloatTensor]`, *optional*):
+                Tuple containing the cosine and sine positional embeddings of shape `(batch_size, seq_len, head_dim)`,
+                with `head_dim` being the embedding dimension of each attention head.
+        """
+        ...
 
 class Zamba2MambaDecoderLayer(nn.Module):
     def __init__(self, config: Zamba2Config, layer_idx: int) -> None: ...
@@ -155,7 +283,23 @@ class Zamba2MambaDecoderLayer(nn.Module):
         cache_position: Optional[torch.LongTensor] = ...,
         transformer_hidden_states: Optional[torch.Tensor] = ...,
         **kwargs,
-    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]: ...
+    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            attention_mask (`torch.FloatTensor`, *optional*): attention mask of size
+                `(batch, sequence_length)` where padding elements are indicated by 0.
+            past_key_value (`Zamba2HybridDynamicCache`, *optional*): cached past key and value projection states
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            use_cache (`bool`, *optional*):
+                If set to `True`, `past_key_values` key value states are returned and can be used to speed up decoding
+                (see `past_key_values`).
+            cache_position (`torch.LongTensor` of shape `(sequence_length)`, *optional*):
+                Indices depicting the position of the input sequence tokens in the sequence.
+        """
+        ...
 
 class Zamba2HybridLayer(nn.Module):
     def __init__(
@@ -172,7 +316,27 @@ class Zamba2HybridLayer(nn.Module):
         output_attentions: Optional[bool] = ...,
         use_cache: Optional[bool] = ...,
         position_embeddings: Optional[torch.LongTensor] = ...,
-    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]: ...
+    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            original_hidden_states (`torch.FloatTensor`): word embedding output that will be concatenated with
+            hidden activations to form the input of the shared transformer layer.
+            layer_idx (`int`): layer number.
+            attention_mask (`torch.FloatTensor`, *optional*): attention mask of size
+                `(batch, sequence_length)` where padding elements are indicated by 0.
+            past_key_value (`Zamba2HybridDynamicCache`, *optional*): cached past key and value projection states
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            use_cache (`bool`, *optional*):
+                If set to `True`, `past_key_values` key value states are returned and can be used to speed up decoding
+                (see `past_key_values`).
+            position_embeddings (`tuple[torch.FloatTensor, torch.FloatTensor]`, *optional*):
+                Tuple containing the cosine and sine positional embeddings of shape `(batch_size, seq_len, head_dim)`,
+                with `head_dim` being the embedding dimension of each attention head.
+        """
+        ...
 
 class Zamba2PreTrainedModel(PreTrainedModel):
     config: Zamba2Config
@@ -187,6 +351,12 @@ class Zamba2PreTrainedModel(PreTrainedModel):
 
 @auto_docstring
 class Zamba2Model(Zamba2PreTrainedModel):
+    """
+    Model consisting of *config.num_hidden_layers* layers.
+
+    Args:
+        config: Zamba2Config
+    """
     def __init__(self, config: Zamba2Config) -> None: ...
     @auto_docstring
     def forward(
@@ -202,12 +372,15 @@ class Zamba2Model(Zamba2PreTrainedModel):
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
     ) -> Union[tuple, BaseModelOutputWithPast]: ...
-    def get_layers(self, blocks, linear_layers, mamba_layers): ...
+    def get_layers(self, blocks, linear_layers, mamba_layers):  # -> list[Any]:
+        ...
 
 class Zamba2ForCausalLM(Zamba2PreTrainedModel, GenerationMixin):
     def __init__(self, config: Zamba2Config) -> None: ...
-    def set_decoder(self, decoder): ...
-    def get_decoder(self): ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> Zamba2Model:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -224,7 +397,31 @@ class Zamba2ForCausalLM(Zamba2PreTrainedModel, GenerationMixin):
         cache_position: Optional[torch.LongTensor] = ...,
         logits_to_keep: Union[int, torch.Tensor] = ...,
         **kwargs,
-    ) -> Union[tuple, CausalLMOutputWithPast]: ...
+    ) -> Union[tuple, CausalLMOutputWithPast]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, Zamba2ForCausalLM
+
+        >>> model = Zamba2ForCausalLM.from_pretrained("Zyphra/Zamba2-7B-v1")
+        >>> tokenizer = AutoTokenizer.from_pretrained("Zyphra/Zamba2-7B-v1")
+
+        >>> prompt = "Hey, are you conscious? Can you talk to me?"
+        >>> inputs = tokenizer(prompt, return_tensors="pt")
+
+        >>> # Generate
+        >>> generate_ids = model.generate(inputs.input_ids, max_length=30)
+        >>> tokenizer.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+        "Hey, are you conscious? Can you talk to me?\nI'm not conscious, but I can talk to you."
+        ```"""
+        ...
+
     def prepare_inputs_for_generation(
         self,
         input_ids,
@@ -235,9 +432,23 @@ class Zamba2ForCausalLM(Zamba2PreTrainedModel, GenerationMixin):
         position_ids=...,
         use_cache=...,
         **kwargs,
-    ): ...
+    ):  # -> dict[str, Any]:
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The Zamba2 Model with a sequence classification head on top (linear layer).
+
+    [`Zamba2ForSequenceClassification`] uses the last token in order to do the classification, as other causal models
+    (e.g. GPT-2) do.
+
+    Since it does classification on the last token, it requires to know the position of the last token. If a
+    `pad_token_id` is defined in the configuration, it finds the last token that is not a padding token in each row. If
+    no `pad_token_id` is defined, it simply takes the last value in each row of the batch. Since it cannot guess the
+    padding tokens when `inputs_embeds` are passed instead of `input_ids`, it does the same (take the last value in
+    each row of the batch).
+    """
+)
 class Zamba2ForSequenceClassification(Zamba2PreTrainedModel):
     def __init__(self, config) -> None: ...
     @auto_docstring
@@ -253,6 +464,13 @@ class Zamba2ForSequenceClassification(Zamba2PreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, SequenceClassifierOutputWithPast]: ...
+    ) -> Union[tuple, SequenceClassifierOutputWithPast]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 __all__ = ["Zamba2ForCausalLM", "Zamba2ForSequenceClassification", "Zamba2Model", "Zamba2PreTrainedModel"]

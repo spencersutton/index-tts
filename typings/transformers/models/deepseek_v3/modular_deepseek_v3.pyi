@@ -23,25 +23,65 @@ logger = ...
 class DeepseekV3RMSNorm(LlamaRMSNorm): ...
 class DeepseekV3RotaryEmbedding(LlamaRotaryEmbedding): ...
 
-def apply_rotary_pos_emb_interleave(q, k, cos, sin, position_ids=..., unsqueeze_dim=...): ...
-def yarn_get_mscale(scale=..., mscale=...): ...
+def apply_rotary_pos_emb_interleave(q, k, cos, sin, position_ids=..., unsqueeze_dim=...):  # -> tuple[Any, Any]:
+    r"""
+    TODO let's just use the original freqcis computation to not have the view
+    transpose + reshape! This is not optimized!
+    Applies Rotary Position Embedding to the query and key tensors.
+
+    Args:
+        q (`torch.Tensor`): The query tensor.
+        k (`torch.Tensor`): The key tensor.
+        cos (`torch.Tensor`): The cosine part of the rotary embedding.
+        sin (`torch.Tensor`): The sine part of the rotary embedding.
+        position_ids (`torch.Tensor`):
+            The position indices of the tokens corresponding to the query and key tensors. For example, this can be
+            used to pass offsetted position ids when working with a KV-cache.
+        unsqueeze_dim (`int`, *optional*, defaults to 1):
+            The 'unsqueeze_dim' argument specifies the dimension along which to unsqueeze cos[position_ids] and
+            sin[position_ids] so that they can be properly broadcasted to the dimensions of q and k. For example, note
+            that cos[position_ids] and sin[position_ids] have the shape [batch_size, seq_len, head_dim]. Then, if q and
+            k have the shape [batch_size, heads, seq_len, head_dim], then setting unsqueeze_dim=1 makes
+            cos[position_ids] and sin[position_ids] broadcastable to the shapes of q and k. Similarly, if q and k have
+            the shape [batch_size, seq_len, heads, head_dim], then set unsqueeze_dim=2.
+    Returns:
+        `tuple(torch.Tensor)` comprising of the query and key tensors rotated using the Rotary Position Embedding.
+    """
+    ...
+
+def yarn_get_mscale(scale=..., mscale=...):  # -> float:
+    ...
 
 class DeepseekV3MLP(nn.Module):
     def __init__(self, config, hidden_size=..., intermediate_size=...) -> None: ...
-    def forward(self, x): ...
+    def forward(self, x):  # -> Any:
+        ...
 
 class DeepseekV3TopkRouter(nn.Module):
     def __init__(self, config) -> None: ...
     @torch.no_grad()
-    def get_topk_indices(self, scores): ...
-    def forward(self, hidden_states): ...
+    def get_topk_indices(self, scores):  # -> Tensor:
+        ...
+    def forward(self, hidden_states):  # -> tuple[Tensor, Any]:
+        ...
 
 class DeepseekV3MoE(nn.Module):
+    """
+    A mixed expert module containing shared experts.
+    """
     def __init__(self, config) -> None: ...
-    def moe(self, hidden_states: torch.Tensor, topk_indices: torch.Tensor, topk_weights: torch.Tensor): ...
-    def forward(self, hidden_states): ...
+    def moe(self, hidden_states: torch.Tensor, topk_indices: torch.Tensor, topk_weights: torch.Tensor):  # -> Tensor:
+        r"""
+        CALL FOR CONTRIBUTION! I don't have time to optimise this right now, but expert weights need to be fused
+        to not have to do a loop here (deepseek has 256 experts soooo yeah).
+        """
+        ...
+
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class DeepseekV3Attention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config: DeepseekV3Config, layer_idx: int) -> None: ...
     def forward(
         self,

@@ -14,13 +14,19 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring, is_torch_flex_attn_available
 from .configuration_pop2piano import Pop2PianoConfig
 
+"""PyTorch Pop2Piano model."""
 if is_torch_flex_attn_available(): ...
 logger = ...
 _load_pop2piano_layer_norm = ...
 _load_pop2piano_layer_norm = ...
 
 class Pop2PianoLayerNorm(nn.Module):
-    def __init__(self, hidden_size, eps=...) -> None: ...
+    def __init__(self, hidden_size, eps=...) -> None:
+        """
+        Construct a layernorm module in the Pop2Piano style. No bias and no subtraction of mean.
+        """
+        ...
+
     def forward(self, hidden_states): ...
 
 if not _load_pop2piano_layer_norm:
@@ -28,11 +34,13 @@ if not _load_pop2piano_layer_norm:
 
 class Pop2PianoDenseActDense(nn.Module):
     def __init__(self, config: Pop2PianoConfig) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class Pop2PianoDenseGatedActDense(nn.Module):
     def __init__(self, config: Pop2PianoConfig) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class Pop2PianoLayerFF(nn.Module):
     def __init__(self, config: Pop2PianoConfig) -> None: ...
@@ -42,8 +50,12 @@ class Pop2PianoAttention(nn.Module):
     def __init__(
         self, config: Pop2PianoConfig, has_relative_attention_bias=..., layer_idx: Optional[int] = ...
     ) -> None: ...
-    def prune_heads(self, heads): ...
-    def compute_bias(self, query_length, key_length, device=..., cache_position=...): ...
+    def prune_heads(self, heads):  # -> None:
+        ...
+    def compute_bias(self, query_length, key_length, device=..., cache_position=...):  # -> Any:
+        """Compute binned relative position bias"""
+        ...
+
     def forward(
         self,
         hidden_states,
@@ -56,7 +68,11 @@ class Pop2PianoAttention(nn.Module):
         use_cache=...,
         output_attentions=...,
         cache_position=...,
-    ): ...
+    ):  # -> tuple[Any, Any | Tensor, Any | Tensor] | tuple[Any, Any | Tensor]:
+        """
+        Self-attention (if key_value_states is None) or attention over source sentence (provided by key_value_states).
+        """
+        ...
 
 class Pop2PianoLayerSelfAttention(nn.Module):
     def __init__(self, config, has_relative_attention_bias=..., layer_idx: Optional[int] = ...) -> None: ...
@@ -70,7 +86,8 @@ class Pop2PianoLayerSelfAttention(nn.Module):
         use_cache=...,
         output_attentions=...,
         cache_position=...,
-    ): ...
+    ):  # -> Any:
+        ...
 
 class Pop2PianoLayerCrossAttention(nn.Module):
     def __init__(self, config, layer_idx: Optional[int] = ...) -> None: ...
@@ -86,7 +103,8 @@ class Pop2PianoLayerCrossAttention(nn.Module):
         query_length=...,
         output_attentions=...,
         cache_position=...,
-    ): ...
+    ):  # -> Any:
+        ...
 
 class Pop2PianoBlock(GradientCheckpointingLayer):
     def __init__(self, config, has_relative_attention_bias=..., layer_idx: Optional[int] = ...) -> None: ...
@@ -105,7 +123,8 @@ class Pop2PianoBlock(GradientCheckpointingLayer):
         output_attentions=...,
         return_dict=...,
         cache_position=...,
-    ): ...
+    ):  # -> Any:
+        ...
 
 @auto_docstring
 class Pop2PianoPreTrainedModel(PreTrainedModel):
@@ -119,7 +138,8 @@ class Pop2PianoPreTrainedModel(PreTrainedModel):
 
 class Pop2PianoStack(Pop2PianoPreTrainedModel):
     def __init__(self, config, embed_tokens=...) -> None: ...
-    def set_input_embeddings(self, new_embeddings): ...
+    def set_input_embeddings(self, new_embeddings):  # -> None:
+        ...
     def forward(
         self,
         input_ids=...,
@@ -138,24 +158,53 @@ class Pop2PianoStack(Pop2PianoPreTrainedModel):
     ): ...
 
 class Pop2PianoConcatEmbeddingToMel(nn.Module):
+    """Embedding Matrix for `composer` tokens."""
     def __init__(self, config) -> None: ...
-    def forward(self, feature, index_value, embedding_offset): ...
+    def forward(self, feature, index_value, embedding_offset):  # -> Tensor:
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Pop2Piano Model with a `language modeling` head on top.
+    """
+)
 class Pop2PianoForConditionalGeneration(Pop2PianoPreTrainedModel, GenerationMixin):
     _tied_weights_keys = ...
     def __init__(self, config: Pop2PianoConfig) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, new_embeddings): ...
-    def get_encoder(self): ...
-    def get_decoder(self): ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, new_embeddings):  # -> None:
+        ...
+    def get_encoder(self):  # -> Pop2PianoStack:
+        ...
+    def get_decoder(self):  # -> Pop2PianoStack:
+        ...
     def get_mel_conditioner_outputs(
         self,
         input_features: torch.FloatTensor,
         composer: str,
         generation_config: GenerationConfig,
         attention_mask: Optional[torch.FloatTensor] = ...,
-    ): ...
+    ):  # -> tuple[FloatTensor, Any | FloatTensor | None] | tuple[FloatTensor, None]:
+        """
+        This method is used to concatenate mel conditioner tokens at the front of the input_features in order to
+        control the type of MIDI token generated by the model.
+
+        Args:
+            input_features (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
+                input features extracted from the feature extractor.
+            composer (`str`):
+                composer token which determines the type of MIDI tokens to be generated.
+            generation_config (`~generation.GenerationConfig`):
+                The generation is used to get the composer-feature_token pair.
+            attention_mask (``, *optional*):
+                For batched generation `input_features` are padded to have the same shape across all examples.
+                `attention_mask` helps to determine which areas were padded and which were not.
+                - 1 for tokens that are **not padded**,
+                - 0 for tokens that are **padded**.
+        """
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -177,9 +226,91 @@ class Pop2PianoForConditionalGeneration(Pop2PianoPreTrainedModel, GenerationMixi
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple[torch.FloatTensor], Seq2SeqLMOutput]: ...
+    ) -> Union[tuple[torch.FloatTensor], Seq2SeqLMOutput]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
+            Indices of input sequence tokens in the vocabulary. Pop2Piano is a model with relative position embeddings
+            so you should be able to pad the inputs on both the right and the left. Indices can be obtained using
+            [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and [`PreTrainedTokenizer.__call__`] for detail.
+            [What are input IDs?](../glossary#input-ids) To know more on how to prepare `input_ids` for pretraining
+            take a look a [Pop2Piano Training](./Pop2Piano#training).
+        decoder_input_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Indices of decoder input sequence tokens in the vocabulary. Indices can be obtained using
+            [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and [`PreTrainedTokenizer.__call__`] for details.
+            [What are decoder input IDs?](../glossary#decoder-input-ids) Pop2Piano uses the `pad_token_id` as the
+            starting token for `decoder_input_ids` generation. If `past_key_values` is used, optionally only the last
+            `decoder_input_ids` have to be input (see `past_key_values`). To know more on how to prepare
+        decoder_attention_mask (`torch.BoolTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Default behavior: generate a tensor that ignores pad tokens in `decoder_input_ids`. Causal mask will also
+            be used by default.
+        decoder_head_mask (`torch.FloatTensor` of shape `(num_heads,)` or `(num_layers, num_heads)`, *optional*):
+            Mask to nullify selected heads of the self-attention modules in the decoder. Mask values selected in `[0,
+            1]`:
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+        cross_attn_head_mask (`torch.Tensor` of shape `(num_heads,)` or `(num_layers, num_heads)`, *optional*):
+            Mask to nullify selected heads of the cross-attention modules in the decoder. Mask values selected in
+            `[0, 1]`:
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[-100, 0, ...,
+            config.vocab_size - 1]`. All labels set to `-100` are ignored (masked), the loss is only computed for
+            labels in `[0, ..., config.vocab_size]`
+        """
+        ...
+
     @torch.no_grad()
-    def generate(self, input_features, attention_mask=..., composer=..., generation_config=..., **kwargs): ...
-    def prepare_decoder_input_ids_from_labels(self, labels: torch.Tensor): ...
+    def generate(
+        self, input_features, attention_mask=..., composer=..., generation_config=..., **kwargs
+    ):  # -> GenerateOutput | LongTensor:
+        """
+        Generates token ids for midi outputs.
+
+        <Tip warning={true}>
+
+        Most generation-controlling parameters are set in `generation_config` which, if not passed, will be set to the
+        model's default generation configuration. You can override any `generation_config` by passing the corresponding
+        parameters to generate(), e.g. `.generate(inputs, num_beams=4, do_sample=True)`. For an overview of generation
+        strategies and code examples, check out the [following guide](./generation_strategies).
+
+        </Tip>
+
+        Parameters:
+            input_features (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*):
+                This is the featurized version of audio generated by `Pop2PianoFeatureExtractor`.
+            attention_mask:
+                For batched generation `input_features` are padded to have the same shape across all examples.
+                `attention_mask` helps to determine which areas were padded and which were not.
+                - 1 for tokens that are **not padded**,
+                - 0 for tokens that are **padded**.
+            composer (`str`, *optional*, defaults to `"composer1"`):
+                This value is passed to `Pop2PianoConcatEmbeddingToMel` to generate different embeddings for each
+                `"composer"`. Please make sure that the composet value is present in `composer_to_feature_token` in
+                `generation_config`. For an example please see
+                https://huggingface.co/sweetcocoa/pop2piano/blob/main/generation_config.json .
+            generation_config (`~generation.GenerationConfig`, *optional*):
+                The generation configuration to be used as base parametrization for the generation call. `**kwargs`
+                passed to generate matching the attributes of `generation_config` will override them. If
+                `generation_config` is not provided, the default will be used, which had the following loading
+                priority: 1) from the `generation_config.json` model file, if it exists; 2) from the model
+                configuration. Please note that unspecified parameters will inherit [`~generation.GenerationConfig`]'s
+                default values, whose documentation should be checked to parameterize generation.
+            kwargs:
+                Ad hoc parametrization of `generate_config` and/or additional model-specific kwargs that will be
+                forwarded to the `forward` function of the model. If the model is an encoder-decoder model, encoder
+                specific kwargs should not be prefixed and decoder specific kwargs should be prefixed with *decoder_*.
+        Return:
+            [`~utils.ModelOutput`] or `torch.LongTensor`: A [`~utils.ModelOutput`] (if `return_dict_in_generate=True`
+            or when `config.return_dict_in_generate=True`) or a `torch.FloatTensor`.
+                Since Pop2Piano is an encoder-decoder model (`model.config.is_encoder_decoder=True`), the possible
+                [`~utils.ModelOutput`] types are:
+                    - [`~generation.GenerateEncoderDecoderOutput`],
+                    - [`~generation.GenerateBeamEncoderDecoderOutput`]
+        """
+        ...
+
+    def prepare_decoder_input_ids_from_labels(self, labels: torch.Tensor):  # -> Tensor:
+        ...
 
 __all__ = ["Pop2PianoForConditionalGeneration", "Pop2PianoPreTrainedModel"]

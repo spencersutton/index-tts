@@ -26,9 +26,14 @@ from ..time_series_transformer.modeling_time_series_transformer import (
 )
 from .configuration_informer import InformerConfig
 
+"""PyTorch Informer model."""
 if is_torch_flex_attn_available(): ...
 
-def nll(input: torch.distributions.Distribution, target: torch.Tensor) -> torch.Tensor: ...
+def nll(input: torch.distributions.Distribution, target: torch.Tensor) -> torch.Tensor:
+    """
+    Computes the negative log likelihood loss from input distribution with respect to target.
+    """
+    ...
 
 class InformerFeatureEmbedder(TimeSeriesFeatureEmbedder): ...
 class InformerStdScaler(TimeSeriesStdScaler): ...
@@ -47,6 +52,9 @@ class InformerPreTrainedModel(PreTrainedModel):
 class InformerAttention(BartAttention): ...
 
 class InformerProbSparseAttention(nn.Module):
+    """Probabilistic Attention mechanism to select the "active"
+    queries rather than the "lazy" queries and provides a sparse Transformer thus mitigating the quadratic compute and
+    memory requirements of vanilla attention"""
     def __init__(
         self,
         embed_dim: int,
@@ -66,11 +74,14 @@ class InformerProbSparseAttention(nn.Module):
         layer_head_mask: Optional[torch.Tensor] = ...,
         output_attentions: bool = ...,
         cache_position: Optional[torch.Tensor] = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+        """Input shape: Batch x Time x Channel"""
+        ...
 
 class InformerConvLayer(GradientCheckpointingLayer):
     def __init__(self, c_in) -> None: ...
-    def forward(self, x): ...
+    def forward(self, x):  # -> Any:
+        ...
 
 class InformerEncoderLayer(TimeSeriesTransformerEncoderLayer):
     def __init__(self, config: InformerConfig) -> None: ...
@@ -88,18 +99,318 @@ class InformerEncoder(TimeSeriesTransformerEncoder):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutput]: ...
+    ) -> Union[tuple, BaseModelOutput]:
+        r"""
+        Args:
+            attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Mask to avoid performing attention on padding token indices. Mask values selected in `[0, 1]`:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+            head_mask (`torch.Tensor` of shape `(encoder_layers, encoder_attention_heads)`, *optional*):
+                Mask to nullify selected heads of the attention modules. Mask values selected in `[0, 1]`:
+
+                - 1 indicates the head is **not masked**,
+                - 0 indicates the head is **masked**.
+
+            inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*):
+                Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation.
+                This is useful if you want more control over how to convert `input_ids` indices into associated vectors
+                than the model's internal embedding lookup matrix.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers. See `hidden_states` under returned tensors
+                for more detail.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`~utils.ModelOutput`] instead of a plain tuple.
+        """
+        ...
 
 class InformerDecoder(TimeSeriesTransformerDecoder):
     def __init__(self, config: InformerConfig) -> None: ...
 
 class InformerModel(TimeSeriesTransformerModel, nn.Module):
     def __init__(self, config: InformerConfig) -> None: ...
-    def forward(self, **super_kwargs): ...
+    def forward(self, **super_kwargs):  # -> None:
+        r"""
+        past_values (`torch.FloatTensor` of shape `(batch_size, sequence_length)` or `(batch_size, sequence_length, input_size)`):
+            Past values of the time series, that serve as context in order to predict the future. The sequence size of
+            this tensor must be larger than the `context_length` of the model, since the model will use the larger size
+            to construct lag features, i.e. additional values from the past which are added in order to serve as "extra
+            context".
+
+            The `sequence_length` here is equal to `config.context_length` + `max(config.lags_sequence)`, which if no
+            `lags_sequence` is configured, is equal to `config.context_length` + 7 (as by default, the largest
+            look-back index in `config.lags_sequence` is 7). The property `_past_length` returns the actual length of
+            the past.
+
+            The `past_values` is what the Transformer encoder gets as input (with optional additional features, such as
+            `static_categorical_features`, `static_real_features`, `past_time_features` and lags).
+
+            Optionally, missing values need to be replaced with zeros and indicated via the `past_observed_mask`.
+
+            For multivariate time series, the `input_size` > 1 dimension is required and corresponds to the number of
+            variates in the time series per time step.
+        past_time_features (`torch.FloatTensor` of shape `(batch_size, sequence_length, num_features)`):
+            Required time features, which the model internally will add to `past_values`. These could be things like
+            "month of year", "day of the month", etc. encoded as vectors (for instance as Fourier features). These
+            could also be so-called "age" features, which basically help the model know "at which point in life" a
+            time-series is. Age features have small values for distant past time steps and increase monotonically the
+            more we approach the current time step. Holiday features are also a good example of time features.
+
+            These features serve as the "positional encodings" of the inputs. So contrary to a model like BERT, where
+            the position encodings are learned from scratch internally as parameters of the model, the Time Series
+            Transformer requires to provide additional time features. The Time Series Transformer only learns
+            additional embeddings for `static_categorical_features`.
+
+            Additional dynamic real covariates can be concatenated to this tensor, with the caveat that these features
+            must but known at prediction time.
+
+            The `num_features` here is equal to `config.`num_time_features` + `config.num_dynamic_real_features`.
+        past_observed_mask (`torch.BoolTensor` of shape `(batch_size, sequence_length)` or `(batch_size, sequence_length, input_size)`, *optional*):
+            Boolean mask to indicate which `past_values` were observed and which were missing. Mask values selected in
+            `[0, 1]`:
+
+            - 1 for values that are **observed**,
+            - 0 for values that are **missing** (i.e. NaNs that were replaced by zeros).
+        static_categorical_features (`torch.LongTensor` of shape `(batch_size, number of static categorical features)`, *optional*):
+            Optional static categorical features for which the model will learn an embedding, which it will add to the
+            values of the time series.
+
+            Static categorical features are features which have the same value for all time steps (static over time).
+
+            A typical example of a static categorical feature is a time series ID.
+        static_real_features (`torch.FloatTensor` of shape `(batch_size, number of static real features)`, *optional*):
+            Optional static real features which the model will add to the values of the time series.
+
+            Static real features are features which have the same value for all time steps (static over time).
+
+            A typical example of a static real feature is promotion information.
+        future_values (`torch.FloatTensor` of shape `(batch_size, prediction_length)` or `(batch_size, prediction_length, input_size)`, *optional*):
+            Future values of the time series, that serve as labels for the model. The `future_values` is what the
+            Transformer needs during training to learn to output, given the `past_values`.
+
+            The sequence length here is equal to `prediction_length`.
+
+            See the demo notebook and code snippets for details.
+
+            Optionally, during training any missing values need to be replaced with zeros and indicated via the
+            `future_observed_mask`.
+
+            For multivariate time series, the `input_size` > 1 dimension is required and corresponds to the number of
+            variates in the time series per time step.
+        future_time_features (`torch.FloatTensor` of shape `(batch_size, prediction_length, num_features)`):
+            Required time features for the prediction window, which the model internally will add to `future_values`.
+            These could be things like "month of year", "day of the month", etc. encoded as vectors (for instance as
+            Fourier features). These could also be so-called "age" features, which basically help the model know "at
+            which point in life" a time-series is. Age features have small values for distant past time steps and
+            increase monotonically the more we approach the current time step. Holiday features are also a good example
+            of time features.
+
+            These features serve as the "positional encodings" of the inputs. So contrary to a model like BERT, where
+            the position encodings are learned from scratch internally as parameters of the model, the Time Series
+            Transformer requires to provide additional time features. The Time Series Transformer only learns
+            additional embeddings for `static_categorical_features`.
+
+            Additional dynamic real covariates can be concatenated to this tensor, with the caveat that these features
+            must but known at prediction time.
+
+            The `num_features` here is equal to `config.`num_time_features` + `config.num_dynamic_real_features`.
+        cross_attn_head_mask (`torch.Tensor` of shape `(decoder_layers, decoder_attention_heads)`, *optional*):
+            Mask to nullify selected heads of the cross-attention modules. Mask values selected in `[0, 1]`:
+
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+        encoder_outputs (`tuple(tuple(torch.FloatTensor)`, *optional*):
+            Tuple consists of `last_hidden_state`, `hidden_states` (*optional*) and `attentions` (*optional*)
+            `last_hidden_state` of shape `(batch_size, sequence_length, hidden_size)` (*optional*) is a sequence of
+            hidden-states at the output of the last layer of the encoder. Used in the cross-attention of the decoder.
+
+        Examples:
+
+        ```python
+        >>> from huggingface_hub import hf_hub_download
+        >>> import torch
+        >>> from transformers import InformerModel
+
+        >>> file = hf_hub_download(
+        ...     repo_id="hf-internal-testing/tourism-monthly-batch", filename="train-batch.pt", repo_type="dataset"
+        ... )
+        >>> batch = torch.load(file)
+
+        >>> model = InformerModel.from_pretrained("huggingface/informer-tourism-monthly")
+
+        >>> # during training, one provides both past and future values
+        >>> # as well as possible additional features
+        >>> outputs = model(
+        ...     past_values=batch["past_values"],
+        ...     past_time_features=batch["past_time_features"],
+        ...     past_observed_mask=batch["past_observed_mask"],
+        ...     static_categorical_features=batch["static_categorical_features"],
+        ...     static_real_features=batch["static_real_features"],
+        ...     future_values=batch["future_values"],
+        ...     future_time_features=batch["future_time_features"],
+        ... )
+
+        >>> last_hidden_state = outputs.last_hidden_state
+        ```"""
+        ...
 
 class InformerForPrediction(TimeSeriesTransformerForPrediction, nn.Module):
     def __init__(self, config: InformerConfig) -> None: ...
     @auto_docstring
-    def forward(self, **super_kwargs): ...
+    def forward(self, **super_kwargs):  # -> None:
+        r"""
+        past_values (`torch.FloatTensor` of shape `(batch_size, sequence_length)` or `(batch_size, sequence_length, input_size)`):
+            Past values of the time series, that serve as context in order to predict the future. The sequence size of
+            this tensor must be larger than the `context_length` of the model, since the model will use the larger size
+            to construct lag features, i.e. additional values from the past which are added in order to serve as "extra
+            context".
+
+            The `sequence_length` here is equal to `config.context_length` + `max(config.lags_sequence)`, which if no
+            `lags_sequence` is configured, is equal to `config.context_length` + 7 (as by default, the largest
+            look-back index in `config.lags_sequence` is 7). The property `_past_length` returns the actual length of
+            the past.
+
+            The `past_values` is what the Transformer encoder gets as input (with optional additional features, such as
+            `static_categorical_features`, `static_real_features`, `past_time_features` and lags).
+
+            Optionally, missing values need to be replaced with zeros and indicated via the `past_observed_mask`.
+
+            For multivariate time series, the `input_size` > 1 dimension is required and corresponds to the number of
+            variates in the time series per time step.
+        past_time_features (`torch.FloatTensor` of shape `(batch_size, sequence_length, num_features)`):
+            Required time features, which the model internally will add to `past_values`. These could be things like
+            "month of year", "day of the month", etc. encoded as vectors (for instance as Fourier features). These
+            could also be so-called "age" features, which basically help the model know "at which point in life" a
+            time-series is. Age features have small values for distant past time steps and increase monotonically the
+            more we approach the current time step. Holiday features are also a good example of time features.
+
+            These features serve as the "positional encodings" of the inputs. So contrary to a model like BERT, where
+            the position encodings are learned from scratch internally as parameters of the model, the Time Series
+            Transformer requires to provide additional time features. The Time Series Transformer only learns
+            additional embeddings for `static_categorical_features`.
+
+            Additional dynamic real covariates can be concatenated to this tensor, with the caveat that these features
+            must but known at prediction time.
+
+            The `num_features` here is equal to `config.`num_time_features` + `config.num_dynamic_real_features`.
+        past_observed_mask (`torch.BoolTensor` of shape `(batch_size, sequence_length)` or `(batch_size, sequence_length, input_size)`, *optional*):
+            Boolean mask to indicate which `past_values` were observed and which were missing. Mask values selected in
+            `[0, 1]`:
+
+            - 1 for values that are **observed**,
+            - 0 for values that are **missing** (i.e. NaNs that were replaced by zeros).
+        static_categorical_features (`torch.LongTensor` of shape `(batch_size, number of static categorical features)`, *optional*):
+            Optional static categorical features for which the model will learn an embedding, which it will add to the
+            values of the time series.
+
+            Static categorical features are features which have the same value for all time steps (static over time).
+
+            A typical example of a static categorical feature is a time series ID.
+        static_real_features (`torch.FloatTensor` of shape `(batch_size, number of static real features)`, *optional*):
+            Optional static real features which the model will add to the values of the time series.
+
+            Static real features are features which have the same value for all time steps (static over time).
+
+            A typical example of a static real feature is promotion information.
+        future_values (`torch.FloatTensor` of shape `(batch_size, prediction_length)` or `(batch_size, prediction_length, input_size)`, *optional*):
+            Future values of the time series, that serve as labels for the model. The `future_values` is what the
+            Transformer needs during training to learn to output, given the `past_values`.
+
+            The sequence length here is equal to `prediction_length`.
+
+            See the demo notebook and code snippets for details.
+
+            Optionally, during training any missing values need to be replaced with zeros and indicated via the
+            `future_observed_mask`.
+
+            For multivariate time series, the `input_size` > 1 dimension is required and corresponds to the number of
+            variates in the time series per time step.
+        future_time_features (`torch.FloatTensor` of shape `(batch_size, prediction_length, num_features)`):
+            Required time features for the prediction window, which the model internally will add to `future_values`.
+            These could be things like "month of year", "day of the month", etc. encoded as vectors (for instance as
+            Fourier features). These could also be so-called "age" features, which basically help the model know "at
+            which point in life" a time-series is. Age features have small values for distant past time steps and
+            increase monotonically the more we approach the current time step. Holiday features are also a good example
+            of time features.
+
+            These features serve as the "positional encodings" of the inputs. So contrary to a model like BERT, where
+            the position encodings are learned from scratch internally as parameters of the model, the Time Series
+            Transformer requires to provide additional time features. The Time Series Transformer only learns
+            additional embeddings for `static_categorical_features`.
+
+            Additional dynamic real covariates can be concatenated to this tensor, with the caveat that these features
+            must but known at prediction time.
+
+            The `num_features` here is equal to `config.`num_time_features` + `config.num_dynamic_real_features`.
+        future_observed_mask (`torch.BoolTensor` of shape `(batch_size, sequence_length)` or `(batch_size, sequence_length, input_size)`, *optional*):
+            Boolean mask to indicate which `future_values` were observed and which were missing. Mask values selected
+            in `[0, 1]`:
+
+            - 1 for values that are **observed**,
+            - 0 for values that are **missing** (i.e. NaNs that were replaced by zeros).
+
+            This mask is used to filter out missing values for the final loss calculation.
+        cross_attn_head_mask (`torch.Tensor` of shape `(decoder_layers, decoder_attention_heads)`, *optional*):
+            Mask to nullify selected heads of the cross-attention modules. Mask values selected in `[0, 1]`:
+
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+        encoder_outputs (`tuple(tuple(torch.FloatTensor)`, *optional*):
+            Tuple consists of `last_hidden_state`, `hidden_states` (*optional*) and `attentions` (*optional*)
+            `last_hidden_state` of shape `(batch_size, sequence_length, hidden_size)` (*optional*) is a sequence of
+            hidden-states at the output of the last layer of the encoder. Used in the cross-attention of the decoder.
+
+        Examples:
+
+        ```python
+        >>> from huggingface_hub import hf_hub_download
+        >>> import torch
+        >>> from transformers import InformerForPrediction
+
+        >>> file = hf_hub_download(
+        ...     repo_id="hf-internal-testing/tourism-monthly-batch", filename="train-batch.pt", repo_type="dataset"
+        ... )
+        >>> batch = torch.load(file)
+
+        >>> model = InformerForPrediction.from_pretrained(
+        ...     "huggingface/informer-tourism-monthly"
+        ... )
+
+        >>> # during training, one provides both past and future values
+        >>> # as well as possible additional features
+        >>> outputs = model(
+        ...     past_values=batch["past_values"],
+        ...     past_time_features=batch["past_time_features"],
+        ...     past_observed_mask=batch["past_observed_mask"],
+        ...     static_categorical_features=batch["static_categorical_features"],
+        ...     static_real_features=batch["static_real_features"],
+        ...     future_values=batch["future_values"],
+        ...     future_time_features=batch["future_time_features"],
+        ... )
+
+        >>> loss = outputs.loss
+        >>> loss.backward()
+
+        >>> # during inference, one only provides past values
+        >>> # as well as possible additional features
+        >>> # the model autoregressively generates future values
+        >>> outputs = model.generate(
+        ...     past_values=batch["past_values"],
+        ...     past_time_features=batch["past_time_features"],
+        ...     past_observed_mask=batch["past_observed_mask"],
+        ...     static_categorical_features=batch["static_categorical_features"],
+        ...     static_real_features=batch["static_real_features"],
+        ...     future_time_features=batch["future_time_features"],
+        ... )
+
+        >>> mean_prediction = outputs.sequences.mean(dim=1)
+        ```"""
+        ...
 
 __all__ = ["InformerForPrediction", "InformerModel", "InformerPreTrainedModel"]

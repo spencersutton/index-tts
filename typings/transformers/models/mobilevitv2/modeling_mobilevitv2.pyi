@@ -16,9 +16,17 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring
 from .configuration_mobilevitv2 import MobileViTV2Config
 
+"""PyTorch MobileViTV2 model."""
 logger = ...
 
-def make_divisible(value: int, divisor: int = ..., min_value: Optional[int] = ...) -> int: ...
+def make_divisible(value: int, divisor: int = ..., min_value: Optional[int] = ...) -> int:
+    """
+    Ensure that all layers have a channel count that is divisible by `divisor`. This function is taken from the
+    original TensorFlow repo. It can be seen here:
+    https://github.com/tensorflow/models/blob/master/research/slim/nets/mobilenet/mobilenet.py
+    """
+    ...
+
 def clip(value: float, min_val: float = ..., max_val: float = ...) -> float: ...
 
 class MobileViTV2ConvLayer(nn.Module):
@@ -38,6 +46,9 @@ class MobileViTV2ConvLayer(nn.Module):
     def forward(self, features: torch.Tensor) -> torch.Tensor: ...
 
 class MobileViTV2InvertedResidual(nn.Module):
+    """
+    Inverted residual block (MobileNetv2): https://huggingface.co/papers/1801.04381
+    """
     def __init__(
         self, config: MobileViTV2Config, in_channels: int, out_channels: int, stride: int, dilation: int = ...
     ) -> None: ...
@@ -50,6 +61,16 @@ class MobileViTV2MobileNetLayer(nn.Module):
     def forward(self, features: torch.Tensor) -> torch.Tensor: ...
 
 class MobileViTV2LinearSelfAttention(nn.Module):
+    """
+    This layer applies a self-attention with linear complexity, as described in MobileViTV2 paper:
+    https://huggingface.co/papers/2206.02680
+
+    Args:
+        config (`MobileVitv2Config`):
+             Model configuration object
+        embed_dim (`int`):
+            `input_channels` from an expected input of size :math:`(batch_size, input_channels, height, width)`
+    """
     def __init__(self, config: MobileViTV2Config, embed_dim: int) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
 
@@ -70,6 +91,9 @@ class MobileViTV2Transformer(nn.Module):
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
 
 class MobileViTV2Layer(GradientCheckpointingLayer):
+    """
+    MobileViTV2 layer: https://huggingface.co/papers/2206.02680
+    """
     def __init__(
         self,
         config: MobileViTV2Config,
@@ -100,7 +124,14 @@ class MobileViTV2PreTrainedModel(PreTrainedModel):
 
 @auto_docstring
 class MobileViTV2Model(MobileViTV2PreTrainedModel):
-    def __init__(self, config: MobileViTV2Config, expand_output: bool = ...) -> None: ...
+    def __init__(self, config: MobileViTV2Config, expand_output: bool = ...) -> None:
+        r"""
+        expand_output (`bool`, *optional*, defaults to `True`):
+            Whether to expand the output of the model. If `True`, the model will output pooled features in addition to
+            hidden states. If `False`, only the hidden states will be returned.
+        """
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -109,7 +140,12 @@ class MobileViTV2Model(MobileViTV2PreTrainedModel):
         return_dict: Optional[bool] = ...,
     ) -> Union[tuple, BaseModelOutputWithPoolingAndNoAttention]: ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    MobileViTV2 model with an image classification head on top (a linear layer on top of the pooled features), e.g. for
+    ImageNet.
+    """
+)
 class MobileViTV2ForImageClassification(MobileViTV2PreTrainedModel):
     def __init__(self, config: MobileViTV2Config) -> None: ...
     @auto_docstring
@@ -119,21 +155,38 @@ class MobileViTV2ForImageClassification(MobileViTV2PreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         labels: Optional[torch.Tensor] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ImageClassifierOutputWithNoAttention]: ...
+    ) -> Union[tuple, ImageClassifierOutputWithNoAttention]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss). If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 class MobileViTV2ASPPPooling(nn.Module):
     def __init__(self, config: MobileViTV2Config, in_channels: int, out_channels: int) -> None: ...
     def forward(self, features: torch.Tensor) -> torch.Tensor: ...
 
 class MobileViTV2ASPP(nn.Module):
+    """
+    ASPP module defined in DeepLab papers: https://huggingface.co/papers/1606.00915, https://huggingface.co/papers/1706.05587
+    """
     def __init__(self, config: MobileViTV2Config) -> None: ...
     def forward(self, features: torch.Tensor) -> torch.Tensor: ...
 
 class MobileViTV2DeepLabV3(nn.Module):
+    """
+    DeepLabv3 architecture: https://huggingface.co/papers/1706.05587
+    """
     def __init__(self, config: MobileViTV2Config) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    MobileViTV2 model with a semantic segmentation head on top, e.g. for Pascal VOC.
+    """
+)
 class MobileViTV2ForSemanticSegmentation(MobileViTV2PreTrainedModel):
     def __init__(self, config: MobileViTV2Config) -> None: ...
     @auto_docstring
@@ -143,7 +196,35 @@ class MobileViTV2ForSemanticSegmentation(MobileViTV2PreTrainedModel):
         labels: Optional[torch.Tensor] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, SemanticSegmenterOutput]: ...
+    ) -> Union[tuple, SemanticSegmenterOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, height, width)`, *optional*):
+            Ground truth semantic segmentation maps for computing the loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels > 1`, a classification loss is computed (Cross-Entropy).
+
+        Examples:
+
+        ```python
+        >>> import requests
+        >>> import torch
+        >>> from PIL import Image
+        >>> from transformers import AutoImageProcessor, MobileViTV2ForSemanticSegmentation
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> image_processor = AutoImageProcessor.from_pretrained("apple/mobilevitv2-1.0-imagenet1k-256")
+        >>> model = MobileViTV2ForSemanticSegmentation.from_pretrained("apple/mobilevitv2-1.0-imagenet1k-256")
+
+        >>> inputs = image_processor(images=image, return_tensors="pt")
+
+        >>> with torch.no_grad():
+        ...     outputs = model(**inputs)
+
+        >>> # logits are of shape (batch_size, num_labels, height, width)
+        >>> logits = outputs.logits
+        ```"""
+        ...
 
 __all__ = [
     "MobileViTV2ForImageClassification",

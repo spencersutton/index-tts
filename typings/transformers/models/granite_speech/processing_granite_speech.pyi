@@ -9,6 +9,7 @@ from ...processing_utils import ProcessorMixin
 from ...tokenization_utils import PreTokenizedInput, TextInput
 from ...utils import is_torch_available
 
+"""Processor class for Granite Speech."""
 if is_torch_available(): ...
 logger = ...
 

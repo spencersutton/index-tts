@@ -15,8 +15,34 @@ from ...utils import TransformersKwargs, auto_docstring, can_return_tuple
 from .configuration_deepseek_vl_hybrid import DeepseekVLHybridConfig
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for DeepseekVLHybrid model's outputs that may also contain a past key/values (to speed up sequential decoding).
+    """
+)
 class DeepseekVLHybridBaseModelOutputWithPast(ModelOutput):
+    r"""
+    last_hidden_state (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
+        Sequence of hidden-states at the output of the last layer of the model.
+
+        If `past_key_values` is used only the last hidden-state of the sequences of shape `(batch_size, 1,
+        hidden_size)` is output.
+    past_key_values (`Cache`, *optional*, returned when `use_cache=True` is passed or when `config.use_cache=True`):
+        Tuple of `tuple(torch.FloatTensor)` of length `config.n_layers`, with each tuple having 2 tensors of shape
+        `(batch_size, num_heads, sequence_length, embed_size_per_head)`) and optionally if
+        `config.is_encoder_decoder=True` 2 additional tensors of shape `(batch_size, num_heads,
+        encoder_sequence_length, embed_size_per_head)`.
+
+        Contains pre-computed hidden-states (key and values in the self-attention blocks and optionally if
+        `config.is_encoder_decoder=True` in the cross-attention blocks) that can be used (see `past_key_values`
+        input) to speed up sequential decoding.
+    image_hidden_states (`tuple(torch.FloatTensor)`, *optional*):
+        Tuple of `torch.FloatTensor` (one for the output of the image embeddings, `(batch_size, num_images,
+        sequence_length, hidden_size)`.
+
+        image_hidden_states of the model produced by the vision encoder, and optionally by the perceiver
+    """
+
     last_hidden_state: Optional[torch.FloatTensor] = ...
     past_key_values: Optional[tuple[tuple[torch.FloatTensor]]] = ...
     hidden_states: Optional[tuple[torch.FloatTensor]] = ...
@@ -24,8 +50,30 @@ class DeepseekVLHybridBaseModelOutputWithPast(ModelOutput):
     image_hidden_states: Optional[tuple[torch.FloatTensor]] = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for DeepseekVLHybrid causal language model (or autoregressive) outputs.
+    """
+)
 class DeepseekVLHybridCausalLMOutputWithPast(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `labels` is provided):
+        Language modeling loss (for next-token prediction).
+    logits (`torch.FloatTensor` of shape `(batch_size, sequence_length, config.vocab_size)`):
+        Prediction scores of the language modeling head (scores for each vocabulary token before SoftMax).
+    past_key_values (`Cache`, *optional*, returned when `use_cache=True` is passed or when `config.use_cache=True`):
+        Tuple of `tuple(torch.FloatTensor)` of length `config.n_layers`, with each tuple having 2 tensors of shape
+        `(batch_size, num_heads, sequence_length, embed_size_per_head)`)
+
+        Contains pre-computed hidden-states (key and values in the self-attention blocks) that can be used (see
+        `past_key_values` input) to speed up sequential decoding.
+    image_hidden_states (`tuple(torch.FloatTensor)`, *optional*):
+        Tuple of `torch.FloatTensor` (one for the output of the image embeddings, `(batch_size, num_images,
+        sequence_length, hidden_size)`.
+
+        image_hidden_states of the model produced by the vision encoder, and optionally by the perceiver
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     logits: Optional[torch.FloatTensor] = ...
     past_key_values: Optional[list[torch.FloatTensor]] = ...
@@ -34,12 +82,17 @@ class DeepseekVLHybridCausalLMOutputWithPast(ModelOutput):
     image_hidden_states: Optional[tuple[torch.FloatTensor]] = ...
 
 class DeepseekVLHybridLayerNorm(nn.Module):
+    r"""LayerNorm that supports two data formats: channels_last (default) or channels_first.
+    The ordering of the dimensions in the inputs. channels_last corresponds to inputs with shape (batch_size, height,
+    width, channels) while channels_first corresponds to inputs with shape (batch_size, channels, height, width).
+    """
     def __init__(self, normalized_shape, eps=..., data_format=...) -> None: ...
     def forward(self, x: torch.Tensor) -> torch.Tensor: ...
 
 class DeepseekVLSamVisionNeck(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class DeepseekVLSamVisionProj(nn.Module):
     def __init__(self, config, output_size: int = ...) -> None: ...
@@ -66,12 +119,21 @@ DEEPSEEK_VL_COMMON_CUSTOM_ARGS = ...
 @auto_docstring
 class DeepseekVLHybridModel(DeepseekVLHybridPreTrainedModel):
     def __init__(self, config) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
-    def get_image_features(self, pixel_values, high_res_pixel_values): ...
+    def get_input_embeddings(self):  # -> Any:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
+    def get_image_features(self, pixel_values, high_res_pixel_values):  # -> Any:
+        ...
     def get_placeholder_mask(
         self, input_ids: torch.LongTensor, inputs_embeds: torch.FloatTensor, image_features: torch.FloatTensor
-    ): ...
+    ):  # -> Tensor | Any:
+        """
+        Obtains multimodal placeholdr mask from `input_ids` or `inputs_embeds`, and checks that the placeholder token count is
+        equal to the length of multimodal features. If the lengths are different, an error is raised.
+        """
+        ...
+
     @can_return_tuple
     @auto_docstring(custom_args=DEEPSEEK_VL_COMMON_CUSTOM_ARGS)
     def forward(
@@ -87,19 +149,26 @@ class DeepseekVLHybridModel(DeepseekVLHybridPreTrainedModel):
         use_cache: Optional[bool] = ...,
         logits_to_keep: Union[int, torch.Tensor] = ...,
         **kwargs,
-    ): ...
-    def get_low_res_image_features(self, pixel_values): ...
-    def get_high_res_image_features(self, pixel_values): ...
+    ):  # -> DeepseekVLHybridBaseModelOutputWithPast:
+        ...
+    def get_low_res_image_features(self, pixel_values):  # -> Any:
+        ...
+    def get_high_res_image_features(self, pixel_values):  # -> Any:
+        ...
 
 class DeepseekVLHybridForConditionalGeneration(DeepseekVLHybridPreTrainedModel, GenerationMixin):
     _tied_weights_keys = ...
     _can_compile_fullgraph = ...
     def __init__(self, config: DeepseekVLHybridConfig) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def get_input_embeddings(self):  # -> Any:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     def prepare_embeddings_for_image_generation(self) -> torch.Tensor: ...
-    def set_decoder(self, decoder): ...
-    def get_decoder(self): ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> DeepseekVLHybridModel:
+        ...
     @can_return_tuple
     @auto_docstring(custom_args=DEEPSEEK_VL_COMMON_CUSTOM_ARGS)
     def forward(
@@ -116,7 +185,15 @@ class DeepseekVLHybridForConditionalGeneration(DeepseekVLHybridPreTrainedModel, 
         use_cache: Optional[bool] = ...,
         logits_to_keep: Union[int, torch.Tensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ): ...
+    ):  # -> DeepseekVLHybridCausalLMOutputWithPast:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+        """
+        ...
+
     def prepare_inputs_for_generation(
         self,
         input_ids,
@@ -128,6 +205,7 @@ class DeepseekVLHybridForConditionalGeneration(DeepseekVLHybridPreTrainedModel, 
         cache_position=...,
         logits_to_keep=...,
         **kwargs,
-    ): ...
+    ):  # -> dict[Any, Any]:
+        ...
 
 __all__ = ["DeepseekVLHybridPreTrainedModel", "DeepseekVLHybridModel", "DeepseekVLHybridForConditionalGeneration"]

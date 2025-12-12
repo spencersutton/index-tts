@@ -17,18 +17,38 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring
 from .configuration_deberta import DebertaConfig
 
+"""PyTorch DeBERTa model."""
 logger = ...
 
 class DebertaLayerNorm(nn.Module):
+    """LayerNorm module in the TF style (epsilon inside the square root)."""
     def __init__(self, size, eps=...) -> None: ...
     def forward(self, hidden_states): ...
 
 class DebertaSelfOutput(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states, input_tensor): ...
+    def forward(self, hidden_states, input_tensor):  # -> Any:
+        ...
 
 @torch.jit.script
-def build_relative_position(query_layer, key_layer): ...
+def build_relative_position(query_layer, key_layer):  # -> Tensor:
+    """
+    Build relative position according to the query and key
+
+    We assume the absolute position of query \\(P_q\\) is range from (0, query_size) and the absolute position of key
+    \\(P_k\\) is range from (0, key_size), The relative positions from query to key is \\(R_{q \\rightarrow k} = P_q -
+    P_k\\)
+
+    Args:
+        query_size (int): the length of query
+        key_size (int): the length of key
+
+    Return:
+        `torch.LongTensor`: A tensor with shape [1, query_size, key_size]
+
+    """
+    ...
+
 @torch.jit.script
 def c2p_dynamic_expand(c2p_pos, query_layer, relative_pos): ...
 @torch.jit.script
@@ -36,15 +56,29 @@ def p2c_dynamic_expand(c2p_pos, query_layer, key_layer): ...
 @torch.jit.script
 def pos_dynamic_expand(pos_index, p2c_att, key_layer): ...
 @torch.jit.script
-def scaled_size_sqrt(query_layer: torch.Tensor, scale_factor: int): ...
+def scaled_size_sqrt(query_layer: torch.Tensor, scale_factor: int):  # -> Tensor:
+    ...
 @torch.jit.script
 def build_rpos(query_layer: torch.Tensor, key_layer: torch.Tensor, relative_pos): ...
 @torch.jit.script
-def compute_attention_span(query_layer: torch.Tensor, key_layer: torch.Tensor, max_relative_positions: int): ...
+def compute_attention_span(
+    query_layer: torch.Tensor, key_layer: torch.Tensor, max_relative_positions: int
+):  # -> Tensor:
+    ...
 @torch.jit.script
-def uneven_size_corrected(p2c_att, query_layer: torch.Tensor, key_layer: torch.Tensor, relative_pos): ...
+def uneven_size_corrected(p2c_att, query_layer: torch.Tensor, key_layer: torch.Tensor, relative_pos):  # -> Tensor:
+    ...
 
 class DisentangledSelfAttention(nn.Module):
+    """
+    Disentangled self-attention module
+
+    Parameters:
+        config (`str`):
+            A model config class instance with the configuration to build a new model. The schema is similar to
+            *BertConfig*, for more details, please refer [`DebertaConfig`]
+
+    """
     def __init__(self, config) -> None: ...
     def transpose_for_scores(self, x): ...
     def forward(
@@ -55,7 +89,38 @@ class DisentangledSelfAttention(nn.Module):
         query_states: Optional[torch.Tensor] = ...,
         relative_pos: Optional[torch.Tensor] = ...,
         rel_embeddings: Optional[torch.Tensor] = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]: ...
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
+        """
+        Call the module
+
+        Args:
+            hidden_states (`torch.FloatTensor`):
+                Input states to the module usually the output from previous layer, it will be the Q,K and V in
+                *Attention(Q,K,V)*
+
+            attention_mask (`torch.BoolTensor`):
+                An attention mask matrix of shape [*B*, *N*, *N*] where *B* is the batch size, *N* is the maximum
+                sequence length in which element [i,j] = *1* means the *i* th token in the input can attend to the *j*
+                th token.
+
+            output_attentions (`bool`, *optional*):
+                Whether return the attention matrix.
+
+            query_states (`torch.FloatTensor`, *optional*):
+                The *Q* state in *Attention(Q,K,V)*.
+
+            relative_pos (`torch.LongTensor`):
+                The relative position encoding between the tokens in the sequence. It's of shape [*B*, *N*, *N*] with
+                values ranging in [*-max_relative_positions*, *max_relative_positions*].
+
+            rel_embeddings (`torch.FloatTensor`):
+                The embedding of relative distances. It's a tensor of shape [\\(2 \\times
+                \\text{max_relative_positions}\\), *hidden_size*].
+
+
+        """
+        ...
+
     def disentangled_att_bias(
         self,
         query_layer: torch.Tensor,
@@ -63,11 +128,14 @@ class DisentangledSelfAttention(nn.Module):
         relative_pos: torch.Tensor,
         rel_embeddings: torch.Tensor,
         scale_factor: int,
-    ): ...
+    ):  # -> Tensor | Literal[0]:
+        ...
 
 class DebertaEmbeddings(nn.Module):
+    """Construct the embeddings from word, position and token_type embeddings."""
     def __init__(self, config) -> None: ...
-    def forward(self, input_ids=..., token_type_ids=..., position_ids=..., mask=..., inputs_embeds=...): ...
+    def forward(self, input_ids=..., token_type_ids=..., position_ids=..., mask=..., inputs_embeds=...):  # -> Any:
+        ...
 
 class DebertaAttention(nn.Module):
     def __init__(self, config) -> None: ...
@@ -87,7 +155,8 @@ class DebertaIntermediate(nn.Module):
 
 class DebertaOutput(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states, input_tensor): ...
+    def forward(self, hidden_states, input_tensor):  # -> Any:
+        ...
 
 class DebertaLayer(GradientCheckpointingLayer):
     def __init__(self, config) -> None: ...
@@ -102,10 +171,13 @@ class DebertaLayer(GradientCheckpointingLayer):
     ) -> tuple[torch.Tensor, Optional[torch.Tensor]]: ...
 
 class DebertaEncoder(nn.Module):
+    """Modified BertEncoder with relative position bias support"""
     def __init__(self, config) -> None: ...
-    def get_rel_embedding(self): ...
+    def get_rel_embedding(self):  # -> Tensor | None:
+        ...
     def get_attention_mask(self, attention_mask): ...
-    def get_rel_pos(self, hidden_states, query_states=..., relative_pos=...): ...
+    def get_rel_pos(self, hidden_states, query_states=..., relative_pos=...):  # -> None:
+        ...
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -115,7 +187,8 @@ class DebertaEncoder(nn.Module):
         query_states=...,
         relative_pos=...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Tensor | tuple[Tensor] | tuple[()] | tuple[Any, ...], ...] | BaseModelOutput:
+        ...
 
 @auto_docstring
 class DebertaPreTrainedModel(PreTrainedModel):
@@ -127,8 +200,10 @@ class DebertaPreTrainedModel(PreTrainedModel):
 @auto_docstring
 class DebertaModel(DebertaPreTrainedModel):
     def __init__(self, config) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, new_embeddings): ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, new_embeddings):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -144,30 +219,37 @@ class DebertaModel(DebertaPreTrainedModel):
 
 class LegacyDebertaPredictionHeadTransform(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class LegacyDebertaLMPredictionHead(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class LegacyDebertaOnlyMLMHead(nn.Module):
     def __init__(self, config) -> None: ...
     def forward(self, sequence_output: torch.Tensor) -> torch.Tensor: ...
 
 class DebertaLMPredictionHead(nn.Module):
+    """https://github.com/microsoft/DeBERTa/blob/master/DeBERTa/deberta/bert.py#L270"""
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states, word_embeddings): ...
+    def forward(self, hidden_states, word_embeddings):  # -> Tensor:
+        ...
 
 class DebertaOnlyMLMHead(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, sequence_output, word_embeddings): ...
+    def forward(self, sequence_output, word_embeddings):  # -> Any:
+        ...
 
 @auto_docstring
 class DebertaForMaskedLM(DebertaPreTrainedModel):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
-    def get_output_embeddings(self): ...
-    def set_output_embeddings(self, new_embeddings): ...
+    def get_output_embeddings(self):  # -> Linear:
+        ...
+    def set_output_embeddings(self, new_embeddings):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -180,7 +262,14 @@ class DebertaForMaskedLM(DebertaPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, MaskedLMOutput]: ...
+    ) -> Union[tuple, MaskedLMOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should be in `[-100, 0, ...,
+            config.vocab_size]` (see `input_ids` docstring) Tokens with indices set to `-100` are ignored (masked), the
+            loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`
+        """
+        ...
 
 class ContextPooler(nn.Module):
     def __init__(self, config) -> None: ...
@@ -188,11 +277,18 @@ class ContextPooler(nn.Module):
     @property
     def output_dim(self): ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    DeBERTa Model transformer with a sequence classification/regression head on top (a linear layer on top of the
+    pooled output) e.g. for GLUE tasks.
+    """
+)
 class DebertaForSequenceClassification(DebertaPreTrainedModel):
     def __init__(self, config) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, new_embeddings): ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, new_embeddings):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -205,7 +301,14 @@ class DebertaForSequenceClassification(DebertaPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, SequenceClassifierOutput]: ...
+    ) -> Union[tuple, SequenceClassifierOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 @auto_docstring
 class DebertaForTokenClassification(DebertaPreTrainedModel):
@@ -222,7 +325,12 @@ class DebertaForTokenClassification(DebertaPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, TokenClassifierOutput]: ...
+    ) -> Union[tuple, TokenClassifierOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the token classification loss. Indices should be in `[0, ..., config.num_labels - 1]`.
+        """
+        ...
 
 @auto_docstring
 class DebertaForQuestionAnswering(DebertaPreTrainedModel):

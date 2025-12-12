@@ -26,6 +26,23 @@ else: ...
 logger = ...
 
 class BambaFlashAttentionKwargs(TypedDict, total=False):
+    """
+    Keyword arguments for advanced Flash Attention, causal-conv1d, and mamba_ssm kernel usage.
+    Use cases include padding-free training and fewer `torch.compile` graph breaks.
+
+    Attributes:
+        cu_seq_lens_q (`torch.LongTensor`)
+            Gets cumulative sequence length for query state.
+        cu_seq_lens_k (`torch.LongTensor`)
+            Gets cumulative sequence length for key state.
+        max_length_q (`int`):
+            Maximum sequence length for query state.
+        max_length_k (`int`):
+            Maximum sequence length for key state.
+        seq_idx (`torch.IntTensor):
+            Index of each packed sequence.
+    """
+
     cu_seq_lens_q: torch.LongTensor
     cu_seq_lens_k: torch.LongTensor
     max_length_q: int
@@ -34,6 +51,19 @@ class BambaFlashAttentionKwargs(TypedDict, total=False):
     ...
 
 class HybridMambaAttentionDynamicCache:
+    """
+    A dynamic cache that can handle both the attention cache (which has a seq_len dimension) and the mamba cache
+    (which has a constant shape regardless of seq_len).
+
+    This cache has two sets of lists of tensors: `key_cache` and `value_cache` for attention cache and `conv_states`
+    and `ssm_states` for mamba cache. Each of these lists has `num_layers` tensors. The expected shape for each tensor
+    For attention layers, `key_cache` and `value_cache` have a shape of `(batch_size, num_heads, seq_len, head_dim)`,
+    while `conv_states` and `ssm_states` have a shape of `(batch_size, 0)` (empty tensors).
+    For mamba layers, `key_cache` and `value_cache` have a shape of `(batch_size, 0)` (empty tensors),
+    while `conv_states` represents the convolution state and has a shape of `(batch_size, d_inner, d_conv)`,
+    and `ssm_states` represents the ssm state and has a shape of `(batch_size, d_inner, d_state)`.
+    """
+
     key_cache = ...
     value_cache = ...
     is_compileable = ...
@@ -45,8 +75,14 @@ class HybridMambaAttentionDynamicCache:
         layer_idx: int,
         cache_kwargs: Optional[dict[str, Any]] = ...,
     ) -> tuple[torch.Tensor, torch.Tensor]: ...
-    def reorder_cache(self, beam_idx: torch.LongTensor): ...
-    def get_seq_length(self, layer_idx: Optional[int] = ...) -> int: ...
+    def reorder_cache(self, beam_idx: torch.LongTensor):  # -> None:
+        """Reorders the cache for beam search, given the selected beam indices."""
+        ...
+
+    def get_seq_length(self, layer_idx: Optional[int] = ...) -> int:
+        """Returns the sequence length of the cached states. A layer index can be optionally passed."""
+        ...
+
     def to_legacy_cache(self) -> tuple[tuple[torch.Tensor], tuple[torch.Tensor]]: ...
     @classmethod
     def from_legacy_cache(cls, past_key_values: Optional[tuple[tuple[torch.FloatTensor]]] = ...) -> DynamicCache: ...
@@ -55,10 +91,20 @@ class BambaRotaryEmbedding(nn.Module):
     def __init__(self, config: BambaConfig, device=...) -> None: ...
     @torch.no_grad()
     @dynamic_rope_update
-    def forward(self, x, position_ids): ...
+    def forward(self, x, position_ids):  # -> tuple[Tensor, Tensor]:
+        ...
 
-def rotate_half(x): ...
-def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor: ...
+def rotate_half(x):  # -> Tensor:
+    """Rotates half the hidden dims of the input."""
+    ...
+
+def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
+    """
+    This is the equivalent of torch.repeat_interleave(x, dim=1, repeats=n_rep). The hidden states go from (batch,
+    num_key_value_heads, seqlen, head_dim) to (batch, num_attention_heads, seqlen, head_dim)
+    """
+    ...
+
 def eager_attention_forward(
     module: nn.Module,
     query: torch.Tensor,
@@ -68,10 +114,34 @@ def eager_attention_forward(
     scaling: float,
     dropout: float = ...,
     **kwargs: Unpack[TransformersKwargs],
-): ...
-def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
+def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...):  # -> tuple[Tensor, Tensor]:
+    """Applies Rotary Position Embedding to the query and key tensors.
+
+    Removes the interleaving of cos and sin from GLM
+
+    Args:
+        q (`torch.Tensor`): The query tensor.
+        k (`torch.Tensor`): The key tensor.
+        cos (`torch.Tensor`): The cosine part of the rotary embedding.
+        sin (`torch.Tensor`): The sine part of the rotary embedding.
+        position_ids (`torch.Tensor`, *optional*):
+            Deprecated and unused.
+        unsqueeze_dim (`int`, *optional*, defaults to 1):
+            The 'unsqueeze_dim' argument specifies the dimension along which to unsqueeze cos[position_ids] and
+            sin[position_ids] so that they can be properly broadcasted to the dimensions of q and k. For example, note
+            that cos[position_ids] and sin[position_ids] have the shape [batch_size, seq_len, head_dim]. Then, if q and
+            k have the shape [batch_size, heads, seq_len, head_dim], then setting unsqueeze_dim=1 makes
+            cos[position_ids] and sin[position_ids] broadcastable to the shapes of q and k. Similarly, if q and k have
+            the shape [batch_size, seq_len, heads, head_dim], then set unsqueeze_dim=2.
+    Returns:
+        `tuple(torch.Tensor)` comprising of the query and key tensors rotated using the Rotary Position Embedding.
+    """
+    ...
 
 class BambaAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config: BambaConfig, layer_idx: int) -> None: ...
     def forward(
         self,
@@ -87,15 +157,50 @@ class BambaRMSNormGated(torch.nn.Module):
     def __init__(self, hidden_size, eps=...) -> None: ...
     def forward(self, hidden_states, gate=...): ...
 
-def pad_tensor_by_size(input_tensor: torch.Tensor, pad_size: int): ...
-def reshape_into_chunks(input_tensor, pad_size, chunk_size): ...
-def segment_sum(input_tensor): ...
+def pad_tensor_by_size(input_tensor: torch.Tensor, pad_size: int):
+    """
+    Padding x tensor with `pad_size` on the seq_len dim (dim=1)
+
+    Assumes that we only have tensors of either size 4 or 3
+    """
+    ...
+
+def reshape_into_chunks(input_tensor, pad_size, chunk_size):
+    """
+    Padding input_tensor with `pad_size` on the seq_len dim (dim=1) and
+    simultaneously splitting it into chunk sequences.
+
+    Assumes that we only have tensors of either size 4 or 3
+    """
+    ...
+
+def segment_sum(input_tensor):  # -> Tensor:
+    """
+    More stable segment sum calculation. Uses cumulative sums and masking instead of direct subtractions.
+    """
+    ...
 
 is_fast_path_available = ...
 
-def apply_mask_to_padding_states(hidden_states, attention_mask): ...
+def apply_mask_to_padding_states(hidden_states, attention_mask):
+    """
+    Tunes out the hidden states for padding tokens, see https://github.com/state-spaces/mamba/issues/66
+    """
+    ...
 
 class BambaMixer(nn.Module):
+    """
+    Compute ∆, A, B, C, and D the state space parameters and compute the `contextualized_states`.
+    A, D are input independent (see Mamba paper [1] Section 3.5.2 "Interpretation of A" for why A isn't selective)
+    ∆, B, C are input-dependent (this is a key difference between Mamba and the linear time invariant S4,
+    and is why Mamba is called **selective** state spaces)
+
+    The are a few differences between this and Mamba2Mixer:
+    - The variable use_precomputed_states is slightly different due to the HybridCache structure
+    - There's a few non-obvious bugs fixed with batching in the slow path that exist in main
+    - Some extra variables that our layer doesn't need have been removed
+    - We ported most of the refactors in https://github.com/huggingface/transformers/pull/35154, which is (as of Dec 18, 2024) unmerged
+    """
     def __init__(self, config: BambaConfig, layer_idx: int) -> None: ...
     def cuda_kernels_forward(
         self,
@@ -104,14 +209,16 @@ class BambaMixer(nn.Module):
         cache_position: Optional[torch.LongTensor] = ...,
         attention_mask: Optional[torch.Tensor] = ...,
         seq_idx: Optional[torch.IntTensor] = ...,
-    ): ...
+    ):  # -> Any:
+        ...
     def torch_forward(
         self,
         input_states,
         cache_params: Optional[HybridMambaAttentionDynamicCache] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         attention_mask: Optional[torch.Tensor] = ...,
-    ): ...
+    ):  # -> Any:
+        ...
     def forward(
         self,
         hidden_states,
@@ -120,17 +227,25 @@ class BambaMixer(nn.Module):
         attention_mask: Optional[torch.Tensor] = ...,
         seq_idx: Optional[torch.IntTensor] = ...,
         **kwargs,
-    ): ...
+    ):  # -> Any:
+        ...
 
 class BambaMLP(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, x): ...
+    def forward(self, x):  # -> Any:
+        ...
 
 @use_kernel_forward_from_hub("RMSNorm")
 class BambaRMSNorm(nn.Module):
-    def __init__(self, hidden_size, eps=...) -> None: ...
+    def __init__(self, hidden_size, eps=...) -> None:
+        """
+        BambaRMSNorm is equivalent to T5LayerNorm
+        """
+        ...
+
     def forward(self, hidden_states): ...
-    def extra_repr(self): ...
+    def extra_repr(self):  # -> str:
+        ...
 
 class BambaDecoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: BambaConfig, layer_idx: int, layer_type: str = ...) -> None: ...
@@ -145,7 +260,29 @@ class BambaDecoderLayer(GradientCheckpointingLayer):
         cache_position: Optional[torch.LongTensor] = ...,
         position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
         **kwargs: Unpack[BambaFlashAttentionKwargs],
-    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]: ...
+    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            attention_mask (`torch.FloatTensor`, *optional*): attention mask of size
+                `(batch, sequence_length)` where padding elements are indicated by 0.
+            past_key_value (`HybridMambaAttentionDynamicCache`, *optional*): cached past key and value projection states
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            use_cache (`bool`, *optional*):
+                If set to `True`, `past_key_values` key value states are returned and can be used to speed up decoding
+                (see `past_key_values`).
+            cache_position (`torch.LongTensor` of shape `(sequence_length)`, *optional*):
+                Indices depicting the position of the input sequence tokens in the sequence.
+            position_embeddings (`tuple[torch.FloatTensor, torch.FloatTensor]`, *optional*):
+                Tuple containing the cosine and sine positional embeddings of shape `(batch_size, seq_len, head_dim)`,
+                with `head_dim` being the embedding dimension of each attention head.
+            kwargs (`dict`, *optional*):
+                Arbitrary kwargs. Can be used to provide `BambaFlashAttentionKwargs` for
+                padding-free training and/or improve torch.compile performance.
+        """
+        ...
 
 @auto_docstring
 class BambaPreTrainedModel(PreTrainedModel):
@@ -183,8 +320,10 @@ class BambaForCausalLM(BambaPreTrainedModel, GenerationMixin):
     _tp_plan = ...
     _pp_plan = ...
     def __init__(self, config) -> None: ...
-    def set_decoder(self, decoder): ...
-    def get_decoder(self): ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> BambaModel:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -201,7 +340,31 @@ class BambaForCausalLM(BambaPreTrainedModel, GenerationMixin):
         cache_position: Optional[torch.LongTensor] = ...,
         logits_to_keep: Union[int, torch.Tensor] = ...,
         **kwargs,
-    ) -> CausalLMOutputWithPast: ...
+    ) -> CausalLMOutputWithPast:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, BambaForCausalLM
+
+        >>> model = BambaForCausalLM.from_pretrained("...")
+        >>> tokenizer = AutoTokenizer.from_pretrained("...")
+
+        >>> prompt = "Hey, are you conscious? Can you talk to me?"
+        >>> inputs = tokenizer(prompt, return_tensors="pt")
+
+        >>> # Generate
+        >>> generate_ids = model.generate(inputs.input_ids, max_length=30)
+        >>> tokenizer.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+        "Hey, are you conscious? Can you talk to me?\nI'm not conscious, but I can talk to you."
+        ```"""
+        ...
+
     def prepare_inputs_for_generation(
         self,
         input_ids,
@@ -212,6 +375,7 @@ class BambaForCausalLM(BambaPreTrainedModel, GenerationMixin):
         position_ids=...,
         use_cache=...,
         **kwargs,
-    ): ...
+    ):  # -> dict[str, Any]:
+        ...
 
 __all__ = ["BambaModel", "BambaForCausalLM", "BambaPreTrainedModel"]

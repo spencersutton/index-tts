@@ -410,6 +410,7 @@ class IndexTTS2:
 
             # Compile the inner inference model used for AR generation
             # This is critical because inference_speech() bypasses self.gpt()
+            assert self.gpt.inference_model is not None
             self.gpt.inference_model = cast(
                 GPT2InferenceModel,
                 torch.compile(self.gpt.inference_model, dynamic=True),

@@ -16,6 +16,7 @@ from ...utils import auto_docstring
 from ...utils.backbone_utils import BackboneMixin
 from .configuration_resnet import ResNetConfig
 
+"""PyTorch ResNet model."""
 logger = ...
 
 class ResNetConvLayer(nn.Module):
@@ -25,18 +26,35 @@ class ResNetConvLayer(nn.Module):
     def forward(self, input: Tensor) -> Tensor: ...
 
 class ResNetEmbeddings(nn.Module):
+    """
+    ResNet Embeddings (stem) composed of a single aggressive convolution.
+    """
     def __init__(self, config: ResNetConfig) -> None: ...
     def forward(self, pixel_values: Tensor) -> Tensor: ...
 
 class ResNetShortCut(nn.Module):
+    """
+    ResNet shortcut, used to project the residual features to the correct size. If needed, it is also used to
+    downsample the input using `stride=2`.
+    """
     def __init__(self, in_channels: int, out_channels: int, stride: int = ...) -> None: ...
     def forward(self, input: Tensor) -> Tensor: ...
 
 class ResNetBasicLayer(nn.Module):
+    """
+    A classic ResNet's residual layer composed by two `3x3` convolutions.
+    """
     def __init__(self, in_channels: int, out_channels: int, stride: int = ..., activation: str = ...) -> None: ...
     def forward(self, hidden_state): ...
 
 class ResNetBottleNeckLayer(nn.Module):
+    """
+    A classic ResNet's bottleneck layer composed by three `3x3` convolutions.
+
+    The first `1x1` convolution reduces the input by a factor of `reduction` in order to make the second `3x3`
+    convolution faster. The last `1x1` convolution remaps the reduced features to `out_channels`. If
+    `downsample_in_bottleneck` is true, downsample will be in the first layer instead of the second layer.
+    """
     def __init__(
         self,
         in_channels: int,
@@ -49,6 +67,9 @@ class ResNetBottleNeckLayer(nn.Module):
     def forward(self, hidden_state): ...
 
 class ResNetStage(nn.Module):
+    """
+    A ResNet stage composed by stacked layers.
+    """
     def __init__(
         self, config: ResNetConfig, in_channels: int, out_channels: int, stride: int = ..., depth: int = ...
     ) -> None: ...
@@ -75,7 +96,12 @@ class ResNetModel(ResNetPreTrainedModel):
         self, pixel_values: Tensor, output_hidden_states: Optional[bool] = ..., return_dict: Optional[bool] = ...
     ) -> BaseModelOutputWithPoolingAndNoAttention: ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    ResNet Model with an image classification head on top (a linear layer on top of the pooled features), e.g. for
+    ImageNet.
+    """
+)
 class ResNetForImageClassification(ResNetPreTrainedModel):
     def __init__(self, config) -> None: ...
     @auto_docstring
@@ -85,14 +111,49 @@ class ResNetForImageClassification(ResNetPreTrainedModel):
         labels: Optional[torch.LongTensor] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> ImageClassifierOutputWithNoAttention: ...
+    ) -> ImageClassifierOutputWithNoAttention:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    ResNet backbone, to be used with frameworks like DETR and MaskFormer.
+    """
+)
 class ResNetBackbone(ResNetPreTrainedModel, BackboneMixin):
     def __init__(self, config) -> None: ...
     @auto_docstring
     def forward(
         self, pixel_values: Tensor, output_hidden_states: Optional[bool] = ..., return_dict: Optional[bool] = ...
-    ) -> BackboneOutput: ...
+    ) -> BackboneOutput:
+        r"""
+        Examples:
+
+        ```python
+        >>> from transformers import AutoImageProcessor, AutoBackbone
+        >>> import torch
+        >>> from PIL import Image
+        >>> import requests
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> processor = AutoImageProcessor.from_pretrained("microsoft/resnet-50")
+        >>> model = AutoBackbone.from_pretrained(
+        ...     "microsoft/resnet-50", out_features=["stage1", "stage2", "stage3", "stage4"]
+        ... )
+
+        >>> inputs = processor(image, return_tensors="pt")
+
+        >>> outputs = model(**inputs)
+        >>> feature_maps = outputs.feature_maps
+        >>> list(feature_maps[-1].shape)
+        [1, 2048, 7, 7]
+        ```"""
+        ...
 
 __all__ = ["ResNetForImageClassification", "ResNetModel", "ResNetPreTrainedModel", "ResNetBackbone"]

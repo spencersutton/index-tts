@@ -12,6 +12,7 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import ModelOutput, auto_docstring, can_return_tuple
 from .configuration_clipseg import CLIPSegConfig, CLIPSegTextConfig, CLIPSegVisionConfig
 
+"""PyTorch CLIPSeg model."""
 logger = ...
 
 def contrastive_loss(logits: torch.Tensor) -> torch.Tensor: ...
@@ -20,6 +21,25 @@ def clipseg_loss(similarity: torch.Tensor) -> torch.Tensor: ...
 @dataclass
 @auto_docstring
 class CLIPSegOutput(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `return_loss` is `True`):
+        Contrastive loss for image-text similarity.
+    logits_per_image (`torch.FloatTensor` of shape `(image_batch_size, text_batch_size)`):
+        The scaled dot product scores between `image_embeds` and `text_embeds`. This represents the image-text
+        similarity scores.
+    logits_per_text (`torch.FloatTensor` of shape `(text_batch_size, image_batch_size)`):
+        The scaled dot product scores between `text_embeds` and `image_embeds`. This represents the text-image
+        similarity scores.
+    text_embeds (`torch.FloatTensor` of shape `(batch_size, output_dim`):
+        The text embeddings obtained by applying the projection layer to the pooled output of [`CLIPSegTextModel`].
+    image_embeds (`torch.FloatTensor` of shape `(batch_size, output_dim`):
+        The image embeddings obtained by applying the projection layer to the pooled output of [`CLIPSegVisionModel`].
+    text_model_output (`BaseModelOutputWithPooling`):
+        The output of the [`CLIPSegTextModel`].
+    vision_model_output (`BaseModelOutputWithPooling`):
+        The output of the [`CLIPSegVisionModel`].
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     logits_per_image: Optional[torch.FloatTensor] = ...
     logits_per_text: Optional[torch.FloatTensor] = ...
@@ -32,6 +52,11 @@ class CLIPSegOutput(ModelOutput):
 @dataclass
 @auto_docstring
 class CLIPSegDecoderOutput(ModelOutput):
+    r"""
+    logits (`torch.FloatTensor` of shape `(batch_size, height, width)`):
+        Classification scores for each pixel.
+    """
+
     logits: Optional[torch.FloatTensor] = ...
     hidden_states: Optional[tuple[torch.FloatTensor]] = ...
     attentions: Optional[tuple[torch.FloatTensor]] = ...
@@ -39,6 +64,21 @@ class CLIPSegDecoderOutput(ModelOutput):
 @dataclass
 @auto_docstring
 class CLIPSegImageSegmentationOutput(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `labels` is provided):
+        Binary cross entropy loss for segmentation.
+    logits (`torch.FloatTensor` of shape `(batch_size, height, width)`):
+        Classification scores for each pixel.
+    conditional_embeddings (`torch.FloatTensor` of shape `(batch_size, projection_dim)`):
+        Conditional embeddings used for segmentation.
+    pooled_output (`torch.FloatTensor` of shape `(batch_size, embed_dim)`):
+        Pooled output of the [`CLIPSegVisionModel`].
+    vision_model_output (`BaseModelOutputWithPooling`):
+        The output of the [`CLIPSegVisionModel`].
+    decoder_output (`CLIPSegDecoderOutput`):
+        The output of the [`CLIPSegDecoder`].
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     logits: Optional[torch.FloatTensor] = ...
     conditional_embeddings: Optional[torch.FloatTensor] = ...
@@ -49,7 +89,17 @@ class CLIPSegImageSegmentationOutput(ModelOutput):
 
 class CLIPSegVisionEmbeddings(nn.Module):
     def __init__(self, config: CLIPSegVisionConfig) -> None: ...
-    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor: ...
+    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor:
+        """
+        This method allows to interpolate the pre-trained position encodings, to be able to use the model on higher resolution
+        images. This method is also adapted to support torch.jit tracing.
+
+        Adapted from:
+        - https://github.com/facebookresearch/dino/blob/de9ee3df6cf39fac952ab558447af1fa1365362a/vision_transformer.py#L174-L194, and
+        - https://github.com/facebookresearch/dinov2/blob/e1277af2ba9496fbadf7aec6eba56e8d882d1e35/dinov2/models/vision_transformer.py#L179-L211
+        """
+        ...
+
     def forward(self, pixel_values: torch.FloatTensor, interpolate_pos_encoding=...) -> torch.Tensor: ...
 
 class CLIPSegTextEmbeddings(nn.Module):
@@ -70,9 +120,11 @@ def eager_attention_forward(
     scaling: float,
     dropout: float = ...,
     **kwargs,
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class CLIPSegAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config: Union[CLIPSegVisionConfig, CLIPSegTextConfig]) -> None: ...
     def forward(
         self,
@@ -80,7 +132,9 @@ class CLIPSegAttention(nn.Module):
         attention_mask: Optional[torch.Tensor] = ...,
         causal_attention_mask: Optional[torch.Tensor] = ...,
         output_attentions: Optional[bool] = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]: ...
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
+        """Input shape: Batch x Time x Channel"""
+        ...
 
 class CLIPSegMLP(nn.Module):
     def __init__(self, config) -> None: ...
@@ -94,7 +148,18 @@ class CLIPSegEncoderLayer(GradientCheckpointingLayer):
         attention_mask: torch.Tensor,
         causal_attention_mask: torch.Tensor,
         output_attentions: Optional[bool] = ...,
-    ) -> tuple[torch.FloatTensor]: ...
+    ) -> tuple[torch.FloatTensor]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            attention_mask (`torch.FloatTensor`): attention mask of size
+                `(batch, 1, tgt_len, src_len)` where padding elements are indicated by very large negative values.
+                `(config.encoder_attention_heads,)`.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+        """
+        ...
 
 @auto_docstring
 class CLIPSegPreTrainedModel(PreTrainedModel):
@@ -103,6 +168,13 @@ class CLIPSegPreTrainedModel(PreTrainedModel):
     supports_gradient_checkpointing = ...
 
 class CLIPSegEncoder(nn.Module):
+    """
+    Transformer encoder consisting of `config.num_hidden_layers` self attention layers. Each layer is a
+    [`CLIPSegEncoderLayer`].
+
+    Args:
+        config: CLIPSegConfig
+    """
     def __init__(self, config: CLIPSegConfig) -> None: ...
     @can_return_tuple
     def forward(
@@ -113,7 +185,37 @@ class CLIPSegEncoder(nn.Module):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutput]: ...
+    ) -> Union[tuple, BaseModelOutput]:
+        r"""
+        Args:
+            inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
+                Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation.
+                This is useful if you want more control over how to convert `input_ids` indices into associated vectors
+                than the model's internal embedding lookup matrix.
+            attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Mask to avoid performing attention on padding token indices. Mask values selected in `[0, 1]`:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+            causal_attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Causal mask for the text model. Mask values selected in `[0, 1]`:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers. See `hidden_states` under returned tensors
+                for more detail.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`~utils.ModelOutput`] instead of a plain tuple.
+        """
+        ...
 
 class CLIPSegTextTransformer(nn.Module):
     def __init__(self, config: CLIPSegTextConfig) -> None: ...
@@ -133,7 +235,8 @@ class CLIPSegTextModel(CLIPSegPreTrainedModel):
     _no_split_modules = ...
     def __init__(self, config: CLIPSegTextConfig) -> None: ...
     def get_input_embeddings(self) -> nn.Module: ...
-    def set_input_embeddings(self, value): ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -143,7 +246,23 @@ class CLIPSegTextModel(CLIPSegPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPooling]: ...
+    ) -> Union[tuple, BaseModelOutputWithPooling]:
+        r"""
+        Examples:
+
+        ```python
+        >>> from transformers import AutoTokenizer, CLIPSegTextModel
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("CIDAS/clipseg-rd64-refined")
+        >>> model = CLIPSegTextModel.from_pretrained("CIDAS/clipseg-rd64-refined")
+
+        >>> inputs = tokenizer(["a photo of a cat", "a photo of a dog"], padding=True, return_tensors="pt")
+
+        >>> outputs = model(**inputs)
+        >>> last_hidden_state = outputs.last_hidden_state
+        >>> pooled_output = outputs.pooler_output  # pooled (EOS token) states
+        ```"""
+        ...
 
 class CLIPSegVisionTransformer(nn.Module):
     def __init__(self, config: CLIPSegVisionConfig) -> None: ...
@@ -170,7 +289,28 @@ class CLIPSegVisionModel(CLIPSegPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         interpolate_pos_encoding: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPooling]: ...
+    ) -> Union[tuple, BaseModelOutputWithPooling]:
+        r"""
+        Examples:
+
+        ```python
+        >>> from PIL import Image
+        >>> import requests
+        >>> from transformers import AutoProcessor, CLIPSegVisionModel
+
+        >>> processor = AutoProcessor.from_pretrained("CIDAS/clipseg-rd64-refined")
+        >>> model = CLIPSegVisionModel.from_pretrained("CIDAS/clipseg-rd64-refined")
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> inputs = processor(images=image, return_tensors="pt")
+
+        >>> outputs = model(**inputs)
+        >>> last_hidden_state = outputs.last_hidden_state
+        >>> pooled_output = outputs.pooler_output  # pooled CLS states
+        ```"""
+        ...
 
 @auto_docstring
 class CLIPSegModel(CLIPSegPreTrainedModel):
@@ -185,7 +325,25 @@ class CLIPSegModel(CLIPSegPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> torch.FloatTensor: ...
+    ) -> torch.FloatTensor:
+        r"""
+        Returns:
+            text_features (`torch.FloatTensor` of shape `(batch_size, output_dim`): The text embeddings obtained by
+            applying the projection layer to the pooled output of [`CLIPSegTextModel`].
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoTokenizer, CLIPSegModel
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("CIDAS/clipseg-rd64-refined")
+        >>> model = CLIPSegModel.from_pretrained("CIDAS/clipseg-rd64-refined")
+
+        >>> inputs = tokenizer(["a photo of a cat", "a photo of a dog"], padding=True, return_tensors="pt")
+        >>> text_features = model.get_text_features(**inputs)
+        ```"""
+        ...
+
     @auto_docstring
     def get_image_features(
         self,
@@ -194,7 +352,31 @@ class CLIPSegModel(CLIPSegPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         interpolate_pos_encoding: bool = ...,
         return_dict: Optional[bool] = ...,
-    ) -> torch.FloatTensor: ...
+    ) -> torch.FloatTensor:
+        r"""
+        Returns:
+            image_features (`torch.FloatTensor` of shape `(batch_size, output_dim`): The image embeddings obtained by
+            applying the projection layer to the pooled output of [`CLIPSegVisionModel`].
+
+        Examples:
+
+        ```python
+        >>> from PIL import Image
+        >>> import requests
+        >>> from transformers import AutoProcessor, CLIPSegModel
+
+        >>> processor = AutoProcessor.from_pretrained("CIDAS/clipseg-rd64-refined")
+        >>> model = CLIPSegModel.from_pretrained("CIDAS/clipseg-rd64-refined")
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> inputs = processor(images=image, return_tensors="pt")
+
+        >>> image_features = model.get_image_features(**inputs)
+        ```"""
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -207,9 +389,39 @@ class CLIPSegModel(CLIPSegPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         interpolate_pos_encoding: bool = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, CLIPSegOutput]: ...
+    ) -> Union[tuple, CLIPSegOutput]:
+        r"""
+        return_loss (`bool`, *optional*):
+            Whether or not to return the contrastive loss.
+
+        Examples:
+
+        ```python
+        >>> from PIL import Image
+        >>> import requests
+        >>> from transformers import AutoProcessor, CLIPSegModel
+
+        >>> processor = AutoProcessor.from_pretrained("CIDAS/clipseg-rd64-refined")
+        >>> model = CLIPSegModel.from_pretrained("CIDAS/clipseg-rd64-refined")
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> inputs = processor(
+        ...     text=["a photo of a cat", "a photo of a dog"], images=image, return_tensors="pt", padding=True
+        ... )
+
+        >>> outputs = model(**inputs)
+        >>> logits_per_image = outputs.logits_per_image  # this is the image-text similarity score
+        >>> probs = logits_per_image.softmax(dim=1)  # we can take the softmax to get the label probabilities
+        ```"""
+        ...
 
 class CLIPSegDecoderLayer(nn.Module):
+    """
+    CLIPSeg decoder layer, which is identical to `CLIPSegEncoderLayer`, except that normalization is applied after
+    self-attention/MLP, rather than before.
+    """
     def __init__(self, config: CLIPSegConfig) -> None: ...
     def forward(
         self,
@@ -217,7 +429,18 @@ class CLIPSegDecoderLayer(nn.Module):
         attention_mask: torch.Tensor,
         causal_attention_mask: torch.Tensor,
         output_attentions: Optional[bool] = ...,
-    ) -> tuple[torch.FloatTensor]: ...
+    ) -> tuple[torch.FloatTensor]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            attention_mask (`torch.FloatTensor`): attention mask of size
+                `(batch, 1, tgt_len, src_len)` where padding elements are indicated by very large negative values.
+                `(config.encoder_attention_heads,)`.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+        """
+        ...
 
 class CLIPSegDecoder(CLIPSegPreTrainedModel):
     def __init__(self, config: CLIPSegConfig) -> None: ...
@@ -228,9 +451,14 @@ class CLIPSegDecoder(CLIPSegPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ): ...
+    ):  # -> tuple[Any | tuple[()] | tuple[Any, ...], ...] | CLIPSegDecoderOutput:
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    CLIPSeg model with a Transformer-based decoder on top for zero-shot and one-shot image segmentation.
+    """
+)
 class CLIPSegForImageSegmentation(CLIPSegPreTrainedModel):
     config: CLIPSegConfig
     def __init__(self, config: CLIPSegConfig) -> None: ...
@@ -241,7 +469,8 @@ class CLIPSegForImageSegmentation(CLIPSegPreTrainedModel):
         attention_mask: Optional[torch.Tensor] = ...,
         position_ids: Optional[torch.Tensor] = ...,
         conditional_pixel_values: Optional[torch.Tensor] = ...,
-    ): ...
+    ):  # -> FloatTensor:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -256,7 +485,40 @@ class CLIPSegForImageSegmentation(CLIPSegPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         interpolate_pos_encoding: bool = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, CLIPSegOutput]: ...
+    ) -> Union[tuple, CLIPSegOutput]:
+        r"""
+        conditional_pixel_values (`torch.FloatTensor`, *optional*):
+            The pixel values of the conditional images.
+        conditional_embeddings (`torch.FloatTensor` of shape `(batch_size, config.projection_dim)`, *optional*):
+            The conditional embeddings for the query images. If provided, the model will use this instead of computing
+            the embeddings from the conditional_pixel_values.
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoProcessor, CLIPSegForImageSegmentation
+        >>> from PIL import Image
+        >>> import requests
+
+        >>> processor = AutoProcessor.from_pretrained("CIDAS/clipseg-rd64-refined")
+        >>> model = CLIPSegForImageSegmentation.from_pretrained("CIDAS/clipseg-rd64-refined")
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+        >>> texts = ["a cat", "a remote", "a blanket"]
+        >>> inputs = processor(text=texts, images=[image] * len(texts), padding=True, return_tensors="pt")
+
+        >>> outputs = model(**inputs)
+
+        >>> logits = outputs.logits
+        >>> print(logits.shape)
+        torch.Size([3, 352, 352])
+        ```"""
+        ...
 
 __all__ = [
     "CLIPSegModel",

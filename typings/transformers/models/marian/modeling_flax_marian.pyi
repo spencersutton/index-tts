@@ -18,6 +18,7 @@ from ...modeling_flax_utils import FlaxPreTrainedModel
 from ...utils import add_start_docstrings, add_start_docstrings_to_model_forward, replace_return_docstrings
 from .configuration_marian import MarianConfig
 
+"""Flax Marian model."""
 logger = ...
 _CHECKPOINT_FOR_DOC = ...
 _CONFIG_FOR_DOC = ...
@@ -27,7 +28,11 @@ MARIAN_ENCODE_INPUTS_DOCSTRING = ...
 MARIAN_DECODE_INPUTS_DOCSTRING = ...
 
 def create_sinusoidal_positions(n_pos, dim): ...
-def shift_tokens_right(input_ids: jnp.ndarray, pad_token_id: int, decoder_start_token_id: int) -> jnp.ndarray: ...
+def shift_tokens_right(input_ids: jnp.ndarray, pad_token_id: int, decoder_start_token_id: int) -> jnp.ndarray:
+    """
+    Shift input ids one token to the right.
+    """
+    ...
 
 class FlaxMarianAttention(nn.Module):
     config: MarianConfig
@@ -45,7 +50,9 @@ class FlaxMarianAttention(nn.Module):
         attention_mask: Optional[jnp.ndarray] = ...,
         init_cache: bool = ...,
         deterministic: bool = ...,
-    ) -> tuple[jnp.ndarray]: ...
+    ) -> tuple[jnp.ndarray]:
+        """Input shape: Batch x Time x Channel"""
+        ...
 
 class FlaxMarianEncoderLayer(nn.Module):
     config: MarianConfig
@@ -62,7 +69,8 @@ class FlaxMarianEncoderLayer(nn.Module):
 class FlaxMarianEncoderLayerCollection(nn.Module):
     config: MarianConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         hidden_states,
@@ -71,7 +79,8 @@ class FlaxMarianEncoderLayerCollection(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any | tuple[Any | None, ...] | tuple[()], ...] | FlaxBaseModelOutput:
+        ...
 
 class FlaxMarianDecoderLayer(nn.Module):
     config: MarianConfig
@@ -91,7 +100,8 @@ class FlaxMarianDecoderLayer(nn.Module):
 class FlaxMarianDecoderLayerCollection(nn.Module):
     config: MarianConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         hidden_states,
@@ -103,13 +113,15 @@ class FlaxMarianDecoderLayerCollection(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any | tuple[Any | None, ...] | tuple[()], ...] | FlaxBaseModelOutputWithPastAndCrossAttentions:
+        ...
 
 class FlaxMarianEncoder(nn.Module):
     config: MarianConfig
     embed_tokens: nn.Embed
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids,
@@ -119,13 +131,15 @@ class FlaxMarianEncoder(nn.Module):
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
         deterministic: bool = ...,
-    ): ...
+    ):  # -> tuple[Any | tuple[Any | None, ...] | tuple[()], ...] | FlaxBaseModelOutput:
+        ...
 
 class FlaxMarianDecoder(nn.Module):
     config: MarianConfig
     embed_tokens: nn.Embed
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids,
@@ -138,12 +152,14 @@ class FlaxMarianDecoder(nn.Module):
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
         deterministic: bool = ...,
-    ): ...
+    ):  # -> tuple[Any | tuple[Any | None, ...] | tuple[()], ...] | FlaxBaseModelOutputWithPastAndCrossAttentions:
+        ...
 
 class FlaxMarianModule(nn.Module):
     config: MarianConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids,
@@ -156,7 +172,8 @@ class FlaxMarianModule(nn.Module):
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
         deterministic: bool = ...,
-    ): ...
+    ):  # -> tuple[Any | tuple[Any | None, ...] | tuple[()], ...] | FlaxSeq2SeqModelOutput:
+        ...
 
 class FlaxMarianPreTrainedModel(FlaxPreTrainedModel):
     config_class = MarianConfig
@@ -172,7 +189,22 @@ class FlaxMarianPreTrainedModel(FlaxPreTrainedModel):
         **kwargs,
     ) -> None: ...
     def init_weights(self, rng: jax.random.PRNGKey, input_shape: tuple, params: FrozenDict = ...) -> FrozenDict: ...
-    def init_cache(self, batch_size, max_length, encoder_outputs): ...
+    def init_cache(self, batch_size, max_length, encoder_outputs):
+        r"""
+        Args:
+            batch_size (`int`):
+                batch_size used for fast auto-regressive decoding. Defines the batch size of the initialized cache.
+            max_length (`int`):
+                maximum possible length for auto-regressive decoding. Defines the sequence length of the initialized
+                cache.
+            encoder_outputs (`Union[FlaxBaseModelOutput, tuple(tuple(jnp.ndarray)]`):
+                `encoder_outputs` consists of (`last_hidden_state`, *optional*: `hidden_states`, *optional*:
+                `attentions`). `last_hidden_state` of shape `(batch_size, sequence_length, hidden_size)`, *optional*)
+                is a sequence of hidden-states at the output of the last layer of the encoder. Used in the
+                cross-attention of the decoder.
+        """
+        ...
+
     @add_start_docstrings(MARIAN_ENCODE_INPUTS_DOCSTRING)
     @replace_return_docstrings(output_type=FlaxBaseModelOutput, config_class=MarianConfig)
     def encode(
@@ -186,7 +218,24 @@ class FlaxMarianPreTrainedModel(FlaxPreTrainedModel):
         train: bool = ...,
         params: Optional[dict] = ...,
         dropout_rng: PRNGKey = ...,
-    ): ...
+    ):
+        r"""
+        Returns:
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, FlaxMarianMTModel
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("Helsinki-NLP/opus-mt-en-de")
+        >>> model = FlaxMarianMTModel.from_pretrained("Helsinki-NLP/opus-mt-en-de")
+
+        >>> text = "My friends are cool but they eat too many carbs."
+        >>> inputs = tokenizer(text, max_length=64, return_tensors="jax")
+        >>> encoder_outputs = model.encode(**inputs)
+        ```"""
+        ...
+
     @add_start_docstrings(MARIAN_DECODE_INPUTS_DOCSTRING)
     @replace_return_docstrings(output_type=FlaxBaseModelOutputWithPastAndCrossAttentions, config_class=MarianConfig)
     def decode(
@@ -203,7 +252,31 @@ class FlaxMarianPreTrainedModel(FlaxPreTrainedModel):
         train: bool = ...,
         params: Optional[dict] = ...,
         dropout_rng: PRNGKey = ...,
-    ): ...
+    ):
+        r"""
+        Returns:
+
+        Example:
+
+        ```python
+        >>> import jax.numpy as jnp
+        >>> from transformers import AutoTokenizer, FlaxMarianMTModel
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("Helsinki-NLP/opus-mt-en-de")
+        >>> model = FlaxMarianMTModel.from_pretrained("Helsinki-NLP/opus-mt-en-de")
+
+        >>> text = "My friends are cool but they eat too many carbs."
+        >>> inputs = tokenizer(text, max_length=64, return_tensors="jax")
+        >>> encoder_outputs = model.encode(**inputs)
+
+        >>> decoder_start_token_id = model.config.decoder_start_token_id
+        >>> decoder_input_ids = jnp.ones((inputs.input_ids.shape[0], 1), dtype="i4") * decoder_start_token_id
+
+        >>> outputs = model.decode(decoder_input_ids, encoder_outputs)
+        >>> last_decoder_hidden_states = outputs.last_hidden_state
+        ```"""
+        ...
+
     @add_start_docstrings_to_model_forward(MARIAN_INPUTS_DOCSTRING)
     def __call__(
         self,
@@ -221,7 +294,10 @@ class FlaxMarianPreTrainedModel(FlaxPreTrainedModel):
         dropout_rng: PRNGKey = ...,
     ): ...
 
-@add_start_docstrings(..., MARIAN_START_DOCSTRING)
+@add_start_docstrings(
+    "The bare Marian Model transformer outputting raw hidden-states without any specific head on top.",
+    MARIAN_START_DOCSTRING,
+)
 class FlaxMarianModel(FlaxMarianPreTrainedModel):
     config: MarianConfig
     dtype: jnp.dtype = ...
@@ -231,7 +307,8 @@ class FlaxMarianMTModule(nn.Module):
     config: MarianConfig
     dtype: jnp.dtype = ...
     bias_init: Callable[..., jnp.ndarray] = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids,
@@ -244,9 +321,12 @@ class FlaxMarianMTModule(nn.Module):
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
         deterministic: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, *tuple[Any | tuple[Any | None, ...] | tuple[()], ...]] | Any | FlaxSeq2SeqLMOutput:
+        ...
 
-@add_start_docstrings(..., MARIAN_START_DOCSTRING)
+@add_start_docstrings(
+    "The MARIAN Model with a language modeling head. Can be used for translation.", MARIAN_START_DOCSTRING
+)
 class FlaxMarianMTModel(FlaxMarianPreTrainedModel):
     module_class = ...
     dtype: jnp.dtype = ...
@@ -266,7 +346,31 @@ class FlaxMarianMTModel(FlaxMarianPreTrainedModel):
         train: bool = ...,
         params: Optional[dict] = ...,
         dropout_rng: PRNGKey = ...,
-    ): ...
+    ):  # -> FlaxCausalLMOutputWithCrossAttentions | Any:
+        r"""
+        Returns:
+
+        Example:
+
+        ```python
+        >>> import jax.numpy as jnp
+        >>> from transformers import AutoTokenizer, FlaxMarianMTModel
+
+        >>> model = FlaxMarianMTModel.from_pretrained("Helsinki-NLP/opus-mt-en-de")
+        >>> tokenizer = AutoTokenizer.from_pretrained("Helsinki-NLP/opus-mt-en-de")
+
+        >>> text = "My friends are cool but they eat too many carbs."
+        >>> inputs = tokenizer(text, max_length=64, return_tensors="jax")
+        >>> encoder_outputs = model.encode(**inputs)
+
+        >>> decoder_start_token_id = model.config.decoder_start_token_id
+        >>> decoder_input_ids = jnp.ones((inputs.input_ids.shape[0], 1), dtype="i4") * decoder_start_token_id
+
+        >>> outputs = model.decode(decoder_input_ids, encoder_outputs)
+        >>> logits = outputs.logits
+        ```"""
+        ...
+
     def prepare_inputs_for_generation(
         self,
         decoder_input_ids,
@@ -275,7 +379,8 @@ class FlaxMarianMTModel(FlaxMarianPreTrainedModel):
         decoder_attention_mask: Optional[jax.Array] = ...,
         encoder_outputs=...,
         **kwargs,
-    ): ...
+    ):  # -> dict[str, Any | None]:
+        ...
     def update_inputs_for_generation(self, model_outputs, model_kwargs): ...
 
 FLAX_MARIAN_MT_DOCSTRING = ...

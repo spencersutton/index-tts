@@ -20,6 +20,25 @@ if is_torchvision_v2_available(): ...
 else: ...
 
 class DPTFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
+    """
+    ensure_multiple_of (`int`, *optional*, defaults to 1):
+        If `do_resize` is `True`, the image is resized to a size that is a multiple of this value. Can be overidden
+        by `ensure_multiple_of` in `preprocess`.
+    do_pad (`bool`, *optional*, defaults to `False`):
+        Whether to apply center padding. This was introduced in the DINOv2 paper, which uses the model in
+        combination with DPT.
+    size_divisor (`int`, *optional*):
+        If `do_pad` is `True`, pads the image dimensions to be divisible by this value. This was introduced in the
+        DINOv2 paper, which uses the model in combination with DPT.
+    keep_aspect_ratio (`bool`, *optional*, defaults to `False`):
+        If `True`, the image is resized to the largest possible size such that the aspect ratio is preserved. Can
+        be overidden by `keep_aspect_ratio` in `preprocess`.
+    do_reduce_labels (`bool`, *optional*, defaults to `self.do_reduce_labels`):
+        Whether or not to reduce all label values of segmentation maps by 1. Usually used for datasets where 0
+        is used for background, and background itself is not included in all classes of a dataset (e.g.
+        ADE20k). The background label will be replaced by 255.
+    """
+
     ensure_multiple_of: Optional[int]
     size_divisor: Optional[int]
     do_pad: Optional[bool]
@@ -50,15 +69,39 @@ class DPTImageProcessorFast(BaseImageProcessorFast):
     ensure_multiple_of = ...
     keep_aspect_ratio = ...
     def __init__(self, **kwargs: Unpack[DPTFastImageProcessorKwargs]) -> None: ...
-    def reduce_label(self, labels: list[torch.Tensor]): ...
+    def reduce_label(self, labels: list[torch.Tensor]):  # -> Tensor:
+        ...
     @auto_docstring
     def preprocess(
         self,
         images: ImageInput,
         segmentation_maps: Optional[ImageInput] = ...,
         **kwargs: Unpack[DPTFastImageProcessorKwargs],
-    ) -> BatchFeature: ...
-    def post_process_semantic_segmentation(self, outputs, target_sizes: Optional[list[tuple]] = ...): ...
+    ) -> BatchFeature:
+        r"""
+        segmentation_maps (`ImageInput`, *optional*):
+            The segmentation maps to preprocess.
+        """
+        ...
+
+    def post_process_semantic_segmentation(self, outputs, target_sizes: Optional[list[tuple]] = ...):  # -> list[Any]:
+        """
+        Converts the output of [`DPTForSemanticSegmentation`] into semantic segmentation maps. Only supports PyTorch.
+
+        Args:
+            outputs ([`DPTForSemanticSegmentation`]):
+                Raw outputs of the model.
+            target_sizes (`list[Tuple]` of length `batch_size`, *optional*):
+                List of tuples corresponding to the requested final size (height, width) of each prediction. If unset,
+                predictions will not be resized.
+
+        Returns:
+            semantic_segmentation: `list[torch.Tensor]` of length `batch_size`, where each item is a semantic
+            segmentation map of shape (height, width) corresponding to the target_sizes entry (if `target_sizes` is
+            specified). Each entry of each `torch.Tensor` correspond to a semantic class id.
+        """
+        ...
+
     def resize(
         self,
         image: torch.Tensor,
@@ -67,10 +110,61 @@ class DPTImageProcessorFast(BaseImageProcessorFast):
         antialias: bool = ...,
         ensure_multiple_of: Optional[int] = ...,
         keep_aspect_ratio: bool = ...,
-    ) -> torch.Tensor: ...
-    def pad_image(self, image: torch.Tensor, size_divisor: int = ...) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """
+        Resize an image to `(size["height"], size["width"])`.
+
+        Args:
+            image (`torch.Tensor`):
+                Image to resize.
+            size (`SizeDict`):
+                Dictionary in the format `{"height": int, "width": int}` specifying the size of the output image.
+            interpolation (`InterpolationMode`, *optional*, defaults to `InterpolationMode.BILINEAR`):
+                `InterpolationMode` filter to use when resizing the image e.g. `InterpolationMode.BICUBIC`.
+            antialias (`bool`, *optional*, defaults to `True`):
+                Whether to use antialiasing when resizing the image
+            ensure_multiple_of (`int`, *optional*):
+                If `do_resize` is `True`, the image is resized to a size that is a multiple of this value
+            keep_aspect_ratio (`bool`, *optional*, defaults to `False`):
+                If `True`, and `do_resize` is `True`, the image is resized to the largest possible size such that the aspect ratio is preserved.
+
+        Returns:
+            `torch.Tensor`: The resized image.
+        """
+        ...
+
+    def pad_image(self, image: torch.Tensor, size_divisor: int = ...) -> torch.Tensor:
+        r"""
+        Center pad a batch of images to be a multiple of `size_divisor`.
+
+        Args:
+            image (`torch.Tensor`):
+                Image to pad.  Can be a batch of images of dimensions (N, C, H, W) or a single image of dimensions (C, H, W).
+            size_divisor (`int`):
+                The width and height of the image will be padded to a multiple of this number.
+        """
+        ...
+
     def post_process_depth_estimation(
-        self, outputs: DepthEstimatorOutput, target_sizes: Union[None, TensorType, list[tuple[int, int]]] = ...
-    ) -> list[dict[str, TensorType]]: ...
+        self,
+        outputs: DepthEstimatorOutput,
+        target_sizes: Optional[Union[TensorType, list[tuple[int, int]], None]] = ...,
+    ) -> list[dict[str, TensorType]]:
+        """
+        Converts the raw output of [`DepthEstimatorOutput`] into final depth predictions and depth PIL images.
+        Only supports PyTorch.
+
+        Args:
+            outputs ([`DepthEstimatorOutput`]):
+                Raw outputs of the model.
+            target_sizes (`TensorType` or `List[Tuple[int, int]]`, *optional*):
+                Tensor of shape `(batch_size, 2)` or list of tuples (`Tuple[int, int]`) containing the target size
+                (height, width) of each image in the batch. If left to None, predictions will not be resized.
+
+        Returns:
+            `List[Dict[str, TensorType]]`: A list of dictionaries of tensors representing the processed depth
+            predictions.
+        """
+        ...
 
 __all__ = ["DPTImageProcessorFast"]

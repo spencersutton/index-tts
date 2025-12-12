@@ -12,24 +12,87 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import ModelOutput, auto_docstring, is_timm_available
 from .configuration_conditional_detr import ConditionalDetrConfig
 
+"""PyTorch Conditional DETR model."""
 if is_timm_available(): ...
 logger = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for outputs of the Conditional DETR decoder. This class adds one attribute to
+    BaseModelOutputWithCrossAttentions, namely an optional stack of intermediate decoder activations, i.e. the output
+    of each decoder layer, each of them gone through a layernorm. This is useful when training the model with auxiliary
+    decoding losses.
+    """
+)
 class ConditionalDetrDecoderOutput(BaseModelOutputWithCrossAttentions):
+    r"""
+    cross_attentions (`tuple(torch.FloatTensor)`, *optional*, returned when `output_attentions=True` and `config.add_cross_attention=True` is passed or when `config.output_attentions=True`):
+        Tuple of `torch.FloatTensor` (one for each layer) of shape `(batch_size, num_heads, sequence_length,
+        sequence_length)`. Attentions weights of the decoder's cross-attention layer, after the attention softmax,
+        used to compute the weighted average in the cross-attention heads.
+    intermediate_hidden_states (`torch.FloatTensor` of shape `(config.decoder_layers, batch_size, num_queries, hidden_size)`, *optional*, returned when `config.auxiliary_loss=True`):
+        Intermediate decoder activations, i.e. the output of each decoder layer, each of them gone through a
+        layernorm.
+    reference_points (`torch.FloatTensor` of shape `(config.decoder_layers, batch_size, num_queries, 2 (anchor points))`):
+        Reference points (reference points of each layer of the decoder).
+    """
+
     intermediate_hidden_states: Optional[torch.FloatTensor] = ...
     reference_points: Optional[tuple[torch.FloatTensor]] = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for outputs of the Conditional DETR encoder-decoder model. This class adds one attribute to
+    Seq2SeqModelOutput, namely an optional stack of intermediate decoder activations, i.e. the output of each decoder
+    layer, each of them gone through a layernorm. This is useful when training the model with auxiliary decoding
+    losses.
+    """
+)
 class ConditionalDetrModelOutput(Seq2SeqModelOutput):
+    r"""
+    last_hidden_state (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
+        Sequence of hidden-states at the output of the last layer of the decoder of the model.
+    intermediate_hidden_states (`torch.FloatTensor` of shape `(config.decoder_layers, batch_size, sequence_length, hidden_size)`, *optional*, returned when `config.auxiliary_loss=True`):
+        Intermediate decoder activations, i.e. the output of each decoder layer, each of them gone through a
+        layernorm.
+    reference_points (`torch.FloatTensor` of shape `(config.decoder_layers, batch_size, num_queries, 2 (anchor points))`):
+        Reference points (reference points of each layer of the decoder).
+    """
+
     intermediate_hidden_states: Optional[torch.FloatTensor] = ...
     reference_points: Optional[tuple[torch.FloatTensor]] = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Output type of [`ConditionalDetrForObjectDetection`].
+    """
+)
 class ConditionalDetrObjectDetectionOutput(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `labels` are provided)):
+        Total loss as a linear combination of a negative log-likehood (cross-entropy) for class prediction and a
+        bounding box loss. The latter is defined as a linear combination of the L1 loss and the generalized
+        scale-invariant IoU loss.
+    loss_dict (`Dict`, *optional*):
+        A dictionary containing the individual losses. Useful for logging.
+    logits (`torch.FloatTensor` of shape `(batch_size, num_queries, num_classes + 1)`):
+        Classification logits (including no-object) for all queries.
+    pred_boxes (`torch.FloatTensor` of shape `(batch_size, num_queries, 4)`):
+        Normalized boxes coordinates for all queries, represented as (center_x, center_y, width, height). These
+        values are normalized in [0, 1], relative to the size of each individual image in the batch (disregarding
+        possible padding). You can use [`~ConditionalDetrImageProcessor.post_process_object_detection`] to retrieve the
+        unnormalized bounding boxes.
+    auxiliary_outputs (`list[Dict]`, *optional*):
+        Optional, only returned when auxiliary losses are activated (i.e. `config.auxiliary_loss` is set to `True`)
+        and labels are provided. It is a list of dictionaries containing the two above keys (`logits` and
+        `pred_boxes`) for each decoder layer.
+    last_hidden_state (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*):
+        Sequence of hidden-states at the output of the last layer of the decoder of the model.
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     loss_dict: Optional[dict] = ...
     logits: Optional[torch.FloatTensor] = ...
@@ -44,8 +107,40 @@ class ConditionalDetrObjectDetectionOutput(ModelOutput):
     encoder_attentions: Optional[tuple[torch.FloatTensor]] = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Output type of [`ConditionalDetrForSegmentation`].
+    """
+)
 class ConditionalDetrSegmentationOutput(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `labels` are provided)):
+        Total loss as a linear combination of a negative log-likehood (cross-entropy) for class prediction and a
+        bounding box loss. The latter is defined as a linear combination of the L1 loss and the generalized
+        scale-invariant IoU loss.
+    loss_dict (`Dict`, *optional*):
+        A dictionary containing the individual losses. Useful for logging.
+    logits (`torch.FloatTensor` of shape `(batch_size, num_queries, num_classes + 1)`):
+        Classification logits (including no-object) for all queries.
+    pred_boxes (`torch.FloatTensor` of shape `(batch_size, num_queries, 4)`):
+        Normalized boxes coordinates for all queries, represented as (center_x, center_y, width, height). These
+        values are normalized in [0, 1], relative to the size of each individual image in the batch (disregarding
+        possible padding). You can use [`~ConditionalDetrImageProcessor.post_process_object_detection`] to retrieve the
+        unnormalized bounding boxes.
+    pred_masks (`torch.FloatTensor` of shape `(batch_size, num_queries, height/4, width/4)`):
+        Segmentation masks logits for all queries. See also
+        [`~ConditionalDetrImageProcessor.post_process_semantic_segmentation`] or
+        [`~ConditionalDetrImageProcessor.post_process_instance_segmentation`]
+        [`~ConditionalDetrImageProcessor.post_process_panoptic_segmentation`] to evaluate semantic, instance and panoptic
+        segmentation masks respectively.
+    auxiliary_outputs (`list[Dict]`, *optional*):
+        Optional, only returned when auxiliary losses are activated (i.e. `config.auxiliary_loss` is set to `True`)
+        and labels are provided. It is a list of dictionaries containing the two above keys (`logits` and
+        `pred_boxes`) for each decoder layer.
+    last_hidden_state (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*):
+        Sequence of hidden-states at the output of the last layer of the decoder of the model.
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     loss_dict: Optional[dict] = ...
     logits: Optional[torch.FloatTensor] = ...
@@ -61,34 +156,79 @@ class ConditionalDetrSegmentationOutput(ModelOutput):
     encoder_attentions: Optional[tuple[torch.FloatTensor]] = ...
 
 class ConditionalDetrFrozenBatchNorm2d(nn.Module):
+    """
+    BatchNorm2d where the batch statistics and the affine parameters are fixed.
+
+    Copy-paste from torchvision.misc.ops with added eps before rqsrt, without which any other models than
+    torchvision.models.resnet[18,34,50,101] produce nans.
+    """
     def __init__(self, n) -> None: ...
     def forward(self, x): ...
 
-def replace_batch_norm(model): ...
+def replace_batch_norm(model):  # -> None:
+    r"""
+    Recursively replace all `torch.nn.BatchNorm2d` with `ConditionalDetrFrozenBatchNorm2d`.
+
+    Args:
+        model (torch.nn.Module):
+            input model
+    """
+    ...
 
 class ConditionalDetrConvEncoder(nn.Module):
+    """
+    Convolutional backbone, using either the AutoBackbone API or one from the timm library.
+
+    nn.BatchNorm2d layers are replaced by ConditionalDetrFrozenBatchNorm2d as defined above.
+
+    """
     def __init__(self, config) -> None: ...
-    def forward(self, pixel_values: torch.Tensor, pixel_mask: torch.Tensor): ...
+    def forward(self, pixel_values: torch.Tensor, pixel_mask: torch.Tensor):  # -> list[Any]:
+        ...
 
 class ConditionalDetrConvModel(nn.Module):
+    """
+    This module adds 2D position embeddings to all intermediate feature maps of the convolutional encoder.
+    """
     def __init__(self, conv_encoder, position_embedding) -> None: ...
-    def forward(self, pixel_values, pixel_mask): ...
+    def forward(self, pixel_values, pixel_mask):  # -> tuple[Any, list[Any]]:
+        ...
 
 class ConditionalDetrSinePositionEmbedding(nn.Module):
+    """
+    This is a more standard version of the position embedding, very similar to the one used by the Attention is all you
+    need paper, generalized to work on images.
+    """
     def __init__(self, embedding_dim=..., temperature=..., normalize=..., scale=...) -> None: ...
-    def forward(self, pixel_values, pixel_mask): ...
+    def forward(self, pixel_values, pixel_mask):  # -> Tensor:
+        ...
 
 class ConditionalDetrLearnedPositionEmbedding(nn.Module):
+    """
+    This module learns positional embeddings up to a fixed maximum size.
+    """
     def __init__(self, embedding_dim=...) -> None: ...
-    def forward(self, pixel_values, pixel_mask=...): ...
+    def forward(self, pixel_values, pixel_mask=...):  # -> Tensor:
+        ...
 
-def build_position_encoding(config): ...
-def gen_sine_position_embeddings(pos_tensor, d_model): ...
-def inverse_sigmoid(x, eps=...): ...
+def build_position_encoding(
+    config,
+):  # -> ConditionalDetrSinePositionEmbedding | ConditionalDetrLearnedPositionEmbedding:
+    ...
+def gen_sine_position_embeddings(pos_tensor, d_model):  # -> Tensor:
+    ...
+def inverse_sigmoid(x, eps=...):  # -> Tensor:
+    ...
 
 class DetrAttention(nn.Module):
+    """
+    Multi-headed attention from 'Attention Is All You Need' paper.
+
+    Here, we add position embeddings to the queries and keys (as explained in the DETR paper).
+    """
     def __init__(self, embed_dim: int, num_heads: int, dropout: float = ..., bias: bool = ...) -> None: ...
-    def with_pos_embed(self, tensor: torch.Tensor, object_queries: Optional[Tensor]): ...
+    def with_pos_embed(self, tensor: torch.Tensor, object_queries: Optional[Tensor]):  # -> Tensor:
+        ...
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -97,9 +237,17 @@ class DetrAttention(nn.Module):
         key_value_states: Optional[torch.Tensor] = ...,
         spatial_position_embeddings: Optional[torch.Tensor] = ...,
         output_attentions: bool = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+        """Input shape: Batch x Time x Channel"""
+        ...
 
 class ConditionalDetrAttention(nn.Module):
+    """
+    Cross-Attention used in Conditional DETR 'Conditional DETR for Fast Training Convergence' paper.
+
+    The key q_proj, k_proj, v_proj are defined outside the attention. This attention allows the dim of q, k to be
+    different to v.
+    """
     def __init__(
         self, embed_dim: int, out_dim: int, num_heads: int, dropout: float = ..., bias: bool = ...
     ) -> None: ...
@@ -110,7 +258,9 @@ class ConditionalDetrAttention(nn.Module):
         key_states: Optional[torch.Tensor] = ...,
         value_states: Optional[torch.Tensor] = ...,
         output_attentions: bool = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+        """Input shape: Batch x Time x Channel"""
+        ...
 
 class ConditionalDetrEncoderLayer(nn.Module):
     def __init__(self, config: ConditionalDetrConfig) -> None: ...
@@ -120,7 +270,20 @@ class ConditionalDetrEncoderLayer(nn.Module):
         attention_mask: torch.Tensor,
         object_queries: Optional[torch.Tensor] = ...,
         output_attentions: bool = ...,
-    ): ...
+    ):  # -> tuple[Tensor, Any] | tuple[Tensor]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            attention_mask (`torch.FloatTensor`): attention mask of size
+                `(batch, 1, target_len, source_len)` where padding elements are indicated by very large negative
+                values.
+            object_queries (`torch.FloatTensor`, *optional*):
+                Object queries (also called content embeddings), to be added to the hidden states.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+        """
+        ...
 
 class ConditionalDetrDecoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: ConditionalDetrConfig) -> None: ...
@@ -135,11 +298,41 @@ class ConditionalDetrDecoderLayer(GradientCheckpointingLayer):
         encoder_attention_mask: Optional[torch.Tensor] = ...,
         output_attentions: Optional[bool] = ...,
         is_first: Optional[bool] = ...,
-    ): ...
+    ):  # -> tuple[Tensor, Any, Any | None] | tuple[Tensor]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(seq_len, batch, embed_dim)`
+            attention_mask (`torch.FloatTensor`): attention mask of size
+                `(batch, 1, target_len, source_len)` where padding elements are indicated by very large negative
+                values.
+            object_queries (`torch.FloatTensor`, *optional*):
+                object_queries that are added to the queries and keys
+            in the cross-attention layer.
+            query_position_embeddings (`torch.FloatTensor`, *optional*):
+                object_queries that are added to the queries and keys
+            in the self-attention layer.
+            encoder_hidden_states (`torch.FloatTensor`):
+                cross attention input to the layer of shape `(seq_len, batch, embed_dim)`
+            encoder_attention_mask (`torch.FloatTensor`): encoder attention mask of size
+                `(batch, 1, target_len, source_len)` where padding elements are indicated by very large negative
+                values.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+        """
+        ...
 
 class MLP(nn.Module):
+    """
+    Very simple multi-layer perceptron (MLP, also called FFN), used to predict the normalized center coordinates,
+    height and width of a bounding box w.r.t. an image.
+
+    Copied from https://github.com/facebookresearch/detr/blob/master/models/detr.py
+
+    """
     def __init__(self, input_dim, hidden_dim, output_dim, num_layers) -> None: ...
-    def forward(self, x): ...
+    def forward(self, x):  # -> Tensor | Any:
+        ...
 
 @auto_docstring
 class ConditionalDetrPreTrainedModel(PreTrainedModel):
@@ -149,6 +342,19 @@ class ConditionalDetrPreTrainedModel(PreTrainedModel):
     _no_split_modules = ...
 
 class ConditionalDetrEncoder(ConditionalDetrPreTrainedModel):
+    """
+    Transformer encoder consisting of *config.encoder_layers* self attention layers. Each layer is a
+    [`ConditionalDetrEncoderLayer`].
+
+    The encoder updates the flattened feature map through multiple self-attention layers.
+
+    Small tweak for ConditionalDETR:
+
+    - object_queries are added to the forward pass.
+
+    Args:
+        config: ConditionalDetrConfig
+    """
     def __init__(self, config: ConditionalDetrConfig) -> None: ...
     def forward(
         self,
@@ -158,9 +364,48 @@ class ConditionalDetrEncoder(ConditionalDetrPreTrainedModel):
         output_attentions=...,
         output_hidden_states=...,
         return_dict=...,
-    ): ...
+    ):  # -> tuple[Tensor | Any | tuple[Tensor | Any, ...] | tuple[()] | tuple[Any | None, ...], ...] | BaseModelOutput:
+        r"""
+        Args:
+            inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
+                Flattened feature map (output of the backbone + projection layer) that is passed to the encoder.
+
+            attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Mask to avoid performing attention on padding pixel features. Mask values selected in `[0, 1]`:
+
+                - 1 for pixel features that are real (i.e. **not masked**),
+                - 0 for pixel features that are padding (i.e. **masked**).
+
+                [What are attention masks?](../glossary#attention-mask)
+
+            object_queries (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
+                Object queries that are added to the queries in each self-attention layer.
+
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers. See `hidden_states` under returned tensors
+                for more detail.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`~utils.ModelOutput`] instead of a plain tuple.
+        """
+        ...
 
 class ConditionalDetrDecoder(ConditionalDetrPreTrainedModel):
+    """
+    Transformer decoder consisting of *config.decoder_layers* layers. Each layer is a [`ConditionalDetrDecoderLayer`].
+
+    The decoder updates the query embeddings through multiple self-attention and cross-attention layers.
+
+    Some small tweaks for Conditional DETR:
+
+    - object_queries and query_position_embeddings are added to the forward pass.
+    - if self.config.auxiliary_loss is set to True, also returns a stack of activations from all decoding layers.
+
+    Args:
+        config: ConditionalDetrConfig
+    """
     def __init__(self, config: ConditionalDetrConfig) -> None: ...
     def forward(
         self,
@@ -173,15 +418,60 @@ class ConditionalDetrDecoder(ConditionalDetrPreTrainedModel):
         output_attentions=...,
         output_hidden_states=...,
         return_dict=...,
-    ): ...
+    ):  # -> tuple[Any | tuple[Any, ...] | tuple[()] | Tensor, ...] | ConditionalDetrDecoderOutput:
+        r"""
+        Args:
+            inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
+                The query embeddings that are passed into the decoder.
 
-@auto_docstring(custom_intro=...)
+            attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Mask to avoid performing attention on certain queries. Mask values selected in `[0, 1]`:
+
+                - 1 for queries that are **not masked**,
+                - 0 for queries that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+            encoder_hidden_states (`torch.FloatTensor` of shape `(batch_size, encoder_sequence_length, hidden_size)`, *optional*):
+                Sequence of hidden-states at the output of the last layer of the encoder. Used in the cross-attention
+                of the decoder.
+            encoder_attention_mask (`torch.LongTensor` of shape `(batch_size, encoder_sequence_length)`, *optional*):
+                Mask to avoid performing cross-attention on padding pixel_values of the encoder. Mask values selected
+                in `[0, 1]`:
+
+                - 1 for pixels that are real (i.e. **not masked**),
+                - 0 for pixels that are padding (i.e. **masked**).
+
+            object_queries (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*):
+                Position embeddings that are added to the queries and keys in each cross-attention layer.
+            query_position_embeddings (`torch.FloatTensor` of shape `(batch_size, num_queries, hidden_size)`):
+                , *optional*): Position embeddings that are added to the queries and keys in each self-attention layer.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers. See `hidden_states` under returned tensors
+                for more detail.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`~utils.ModelOutput`] instead of a plain tuple.
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    The bare Conditional DETR Model (consisting of a backbone and encoder-decoder Transformer) outputting raw
+    hidden-states without any specific head on top.
+    """
+)
 class ConditionalDetrModel(ConditionalDetrPreTrainedModel):
     def __init__(self, config: ConditionalDetrConfig) -> None: ...
-    def get_encoder(self): ...
-    def get_decoder(self): ...
-    def freeze_backbone(self): ...
-    def unfreeze_backbone(self): ...
+    def get_encoder(self):  # -> ConditionalDetrEncoder:
+        ...
+    def get_decoder(self):  # -> ConditionalDetrDecoder:
+        ...
+    def freeze_backbone(self):  # -> None:
+        ...
+    def unfreeze_backbone(self):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -194,13 +484,62 @@ class ConditionalDetrModel(ConditionalDetrPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.FloatTensor], ConditionalDetrModelOutput]: ...
+    ) -> Union[tuple[torch.FloatTensor], ConditionalDetrModelOutput]:
+        r"""
+        decoder_attention_mask (`torch.FloatTensor` of shape `(batch_size, num_queries)`, *optional*):
+            Not used by default. Can be used to mask object queries.
+        inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*):
+            Optionally, instead of passing the flattened feature map (output of the backbone + projection layer), you
+            can choose to directly pass a flattened representation of an image.
+        decoder_inputs_embeds (`torch.FloatTensor` of shape `(batch_size, num_queries, hidden_size)`, *optional*):
+            Optionally, instead of initializing the queries with a tensor of zeros, you can choose to directly pass an
+            embedded representation.
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoImageProcessor, AutoModel
+        >>> from PIL import Image
+        >>> import requests
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> image_processor = AutoImageProcessor.from_pretrained("microsoft/conditional-detr-resnet-50")
+        >>> model = AutoModel.from_pretrained("microsoft/conditional-detr-resnet-50")
+
+        >>> # prepare image for the model
+        >>> inputs = image_processor(images=image, return_tensors="pt")
+
+        >>> # forward pass
+        >>> outputs = model(**inputs)
+
+        >>> # the last hidden states are the final query embeddings of the Transformer decoder
+        >>> # these are of shape (batch_size, num_queries, hidden_size)
+        >>> last_hidden_states = outputs.last_hidden_state
+        >>> list(last_hidden_states.shape)
+        [1, 300, 256]
+        ```"""
+        ...
 
 class ConditionalDetrMLPPredictionHead(nn.Module):
-    def __init__(self, input_dim, hidden_dim, output_dim, num_layers) -> None: ...
-    def forward(self, x): ...
+    """
+    Very simple multi-layer perceptron (MLP, also called FFN), used to predict the normalized center coordinates,
+    height and width of a bounding box w.r.t. an image.
 
-@auto_docstring(custom_intro=...)
+    Copied from https://github.com/facebookresearch/detr/blob/master/models/detr.py
+
+    """
+    def __init__(self, input_dim, hidden_dim, output_dim, num_layers) -> None: ...
+    def forward(self, x):  # -> Tensor | Any:
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    Conditional DETR Model (consisting of a backbone and encoder-decoder Transformer) with object detection heads on
+    top, for tasks such as COCO detection.
+    """
+)
 class ConditionalDetrForObjectDetection(ConditionalDetrPreTrainedModel):
     def __init__(self, config: ConditionalDetrConfig) -> None: ...
     @auto_docstring
@@ -216,9 +555,64 @@ class ConditionalDetrForObjectDetection(ConditionalDetrPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.FloatTensor], ConditionalDetrObjectDetectionOutput]: ...
+    ) -> Union[tuple[torch.FloatTensor], ConditionalDetrObjectDetectionOutput]:
+        r"""
+        decoder_attention_mask (`torch.FloatTensor` of shape `(batch_size, num_queries)`, *optional*):
+            Not used by default. Can be used to mask object queries.
+        inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*):
+            Optionally, instead of passing the flattened feature map (output of the backbone + projection layer), you
+            can choose to directly pass a flattened representation of an image.
+        decoder_inputs_embeds (`torch.FloatTensor` of shape `(batch_size, num_queries, hidden_size)`, *optional*):
+            Optionally, instead of initializing the queries with a tensor of zeros, you can choose to directly pass an
+            embedded representation.
+        labels (`list[Dict]` of len `(batch_size,)`, *optional*):
+            Labels for computing the bipartite matching loss. List of dicts, each dictionary containing at least the
+            following 2 keys: 'class_labels' and 'boxes' (the class labels and bounding boxes of an image in the batch
+            respectively). The class labels themselves should be a `torch.LongTensor` of len `(number of bounding boxes
+            in the image,)` and the boxes a `torch.FloatTensor` of shape `(number of bounding boxes in the image, 4)`.
 
-@auto_docstring(custom_intro=...)
+        Examples:
+
+        ```python
+        >>> from transformers import AutoImageProcessor, AutoModelForObjectDetection
+        >>> from PIL import Image
+        >>> import requests
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> image_processor = AutoImageProcessor.from_pretrained("microsoft/conditional-detr-resnet-50")
+        >>> model = AutoModelForObjectDetection.from_pretrained("microsoft/conditional-detr-resnet-50")
+
+        >>> inputs = image_processor(images=image, return_tensors="pt")
+
+        >>> outputs = model(**inputs)
+
+        >>> # convert outputs (bounding boxes and class logits) to Pascal VOC format (xmin, ymin, xmax, ymax)
+        >>> target_sizes = torch.tensor([image.size[::-1]])
+        >>> results = image_processor.post_process_object_detection(outputs, threshold=0.5, target_sizes=target_sizes)[
+        ...     0
+        ... ]
+        >>> for score, label, box in zip(results["scores"], results["labels"], results["boxes"]):
+        ...     box = [round(i, 2) for i in box.tolist()]
+        ...     print(
+        ...         f"Detected {model.config.id2label[label.item()]} with confidence "
+        ...         f"{round(score.item(), 3)} at location {box}"
+        ...     )
+        Detected remote with confidence 0.833 at location [38.31, 72.1, 177.63, 118.45]
+        Detected cat with confidence 0.831 at location [9.2, 51.38, 321.13, 469.0]
+        Detected cat with confidence 0.804 at location [340.3, 16.85, 642.93, 370.95]
+        Detected remote with confidence 0.683 at location [334.48, 73.49, 366.37, 190.01]
+        Detected couch with confidence 0.535 at location [0.52, 1.19, 640.35, 475.1]
+        ```"""
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    Conditional DETR Model (consisting of a backbone and encoder-decoder Transformer) with a segmentation head on top,
+    for tasks such as COCO panoptic.
+    """
+)
 class ConditionalDetrForSegmentation(ConditionalDetrPreTrainedModel):
     def __init__(self, config: ConditionalDetrConfig) -> None: ...
     @auto_docstring
@@ -234,15 +628,78 @@ class ConditionalDetrForSegmentation(ConditionalDetrPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.FloatTensor], ConditionalDetrSegmentationOutput]: ...
+    ) -> Union[tuple[torch.FloatTensor], ConditionalDetrSegmentationOutput]:
+        r"""
+        decoder_attention_mask (`torch.FloatTensor` of shape `(batch_size, num_queries)`, *optional*):
+            Not used by default. Can be used to mask object queries.
+        inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*):
+            Optionally, instead of passing the flattened feature map (output of the backbone + projection layer), you
+            can choose to directly pass a flattened representation of an image.
+        decoder_inputs_embeds (`torch.FloatTensor` of shape `(batch_size, num_queries, hidden_size)`, *optional*):
+            Optionally, instead of initializing the queries with a tensor of zeros, you can choose to directly pass an
+            embedded representation.
+        labels (`list[Dict]` of len `(batch_size,)`, *optional*):
+            Labels for computing the bipartite matching loss, DICE/F-1 loss and Focal loss. List of dicts, each
+            dictionary containing at least the following 3 keys: 'class_labels', 'boxes' and 'masks' (the class labels,
+            bounding boxes and segmentation masks of an image in the batch respectively). The class labels themselves
+            should be a `torch.LongTensor` of len `(number of bounding boxes in the image,)`, the boxes a
+            `torch.FloatTensor` of shape `(number of bounding boxes in the image, 4)` and the masks a
+            `torch.FloatTensor` of shape `(number of bounding boxes in the image, height, width)`.
+
+        Examples:
+
+        ```python
+        >>> import io
+        >>> import requests
+        >>> from PIL import Image
+        >>> import torch
+        >>> import numpy
+
+        >>> from transformers import (
+        ...     AutoImageProcessor,
+        ...     ConditionalDetrConfig,
+        ...     ConditionalDetrForSegmentation,
+        ... )
+        >>> from transformers.image_transforms import rgb_to_id
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> image_processor = AutoImageProcessor.from_pretrained("microsoft/conditional-detr-resnet-50")
+
+        >>> # randomly initialize all weights of the model
+        >>> config = ConditionalDetrConfig()
+        >>> model = ConditionalDetrForSegmentation(config)
+
+        >>> # prepare image for the model
+        >>> inputs = image_processor(images=image, return_tensors="pt")
+
+        >>> # forward pass
+        >>> outputs = model(**inputs)
+
+        >>> # Use the `post_process_panoptic_segmentation` method of the `image_processor` to retrieve post-processed panoptic segmentation maps
+        >>> # Segmentation results are returned as a list of dictionaries
+        >>> result = image_processor.post_process_panoptic_segmentation(outputs, target_sizes=[(300, 500)])
+        >>> # A tensor of shape (height, width) where each value denotes a segment id, filled with -1 if no segment is found
+        >>> panoptic_seg = result[0]["segmentation"]
+        >>> # Get prediction score and segment_id to class_id mapping of each segment
+        >>> panoptic_segments_info = result[0]["segments_info"]
+        ```"""
+        ...
 
 class ConditionalDetrMaskHeadSmallConv(nn.Module):
+    """
+    Simple convolutional head, using group norm. Upsampling is done using a FPN approach
+    """
     def __init__(self, dim, fpn_dims, context_dim) -> None: ...
-    def forward(self, x: Tensor, bbox_mask: Tensor, fpns: list[Tensor]): ...
+    def forward(self, x: Tensor, bbox_mask: Tensor, fpns: list[Tensor]):  # -> Tensor:
+        ...
 
 class ConditionalDetrMHAttentionMap(nn.Module):
+    """This is a 2D attention module, which only returns the attention softmax (no multiplication by value)"""
     def __init__(self, query_dim, hidden_dim, num_heads, dropout=..., bias=..., std=...) -> None: ...
-    def forward(self, q, k, mask: Optional[Tensor] = ...): ...
+    def forward(self, q, k, mask: Optional[Tensor] = ...):  # -> Any:
+        ...
 
 __all__ = [
     "ConditionalDetrForObjectDetection",

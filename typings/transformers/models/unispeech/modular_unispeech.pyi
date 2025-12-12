@@ -21,11 +21,30 @@ from ..wav2vec2.modeling_wav2vec2 import (
 )
 from .configuration_unispeech import UniSpeechConfig
 
+"""PyTorch UniSpeech model."""
 logger = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Output type of [`UniSpeechForPreTrainingOutput`], with potential hidden states and attentions.
+    """
+)
 class UniSpeechForPreTrainingOutput(ModelOutput):
+    r"""
+    loss (*optional*, returned when model is in train mode, `torch.FloatTensor` of shape `(1,)`):
+        Total loss as the sum of the contrastive loss (L_m) and the diversity loss (L_d) as stated in the [official
+        paper](https://arxiv.org/pdf/2006.11477.pdf) . (classification) loss.
+    projected_states (`torch.FloatTensor` of shape `(batch_size, sequence_length, config.proj_codevector_dim)`):
+        Hidden-states of the model projected to *config.proj_codevector_dim* that can be used to predict the masked
+        projected quantized states.
+    projected_quantized_states (`torch.FloatTensor` of shape `(batch_size, sequence_length, config.proj_codevector_dim)`):
+        Quantized extracted feature vectors projected to *config.proj_codevector_dim* representing the positive
+        target vectors for contrastive loss.
+    codevector_perplexity (`torch.FloatTensor` of shape `(1,)`):
+        The perplexity of the codevector distribution, used to measure the diversity of the codebook.
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     projected_states: Optional[torch.FloatTensor] = ...
     projected_quantized_states: Optional[torch.FloatTensor] = ...
@@ -40,7 +59,8 @@ class UniSpeechEncoder(Wav2Vec2Encoder): ...
 class UniSpeechEncoderStableLayerNorm(Wav2Vec2EncoderStableLayerNorm): ...
 
 class UniSpeechGumbelVectorQuantizer(Wav2Vec2GumbelVectorQuantizer):
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> tuple[Tensor | Any, Tensor]:
+        ...
 
 @auto_docstring
 class UniSpeechPreTrainedModel(PreTrainedModel):
@@ -66,21 +86,54 @@ class UniSpeechModel(UniSpeechPreTrainedModel, Wav2Vec2Model):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, UniSpeechBaseModelOutput]: ...
+    ) -> Union[tuple, UniSpeechBaseModelOutput]:
+        r"""
+        mask_time_indices (`torch.BoolTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Indices to mask extracted features for contrastive loss. When in training mode, model learns to predict
+            masked extracted features in *config.proj_codevector_dim* space.
+        """
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    UniSpeech Model with a vector-quantization module and ctc loss for pre-training.
+    """
+)
 class UniSpeechForPreTraining(UniSpeechPreTrainedModel):
     def __init__(self, config: UniSpeechConfig) -> None: ...
-    def set_gumbel_temperature(self, temperature: int): ...
-    def freeze_feature_extractor(self): ...
-    def freeze_feature_encoder(self): ...
+    def set_gumbel_temperature(self, temperature: int):  # -> None:
+        """
+        Set the Gumbel softmax temperature to a given value. Only necessary for training
+        """
+        ...
+
+    def freeze_feature_extractor(self):  # -> None:
+        """
+        Calling this function will disable the gradient computation for the feature encoder so that its parameters will
+        not be updated during training.
+        """
+        ...
+
+    def freeze_feature_encoder(self):  # -> None:
+        """
+        Calling this function will disable the gradient computation for the feature encoder so that its parameter will
+        not be updated during training.
+        """
+        ...
+
     @staticmethod
     def compute_contrastive_logits(
         target_features: torch.FloatTensor,
         negative_features: torch.FloatTensor,
         predicted_features: torch.FloatTensor,
         temperature: int = ...,
-    ): ...
+    ):  # -> Tensor:
+        """
+        Compute logits for contrastive loss based using cosine similarity as the distance measure between
+        `[positive_feature, negative_features]` and `[predicted_features]`. Additionally, temperature can be applied.
+        """
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -89,7 +142,19 @@ class UniSpeechForPreTraining(UniSpeechPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, UniSpeechForPreTrainingOutput]: ...
+    ) -> Union[tuple, UniSpeechForPreTrainingOutput]:
+        r"""
+        Example:
+
+        ```python
+        >>> import torch
+        >>> from transformers import AutoFeatureExtractor, UniSpeechForPreTraining
+
+        >>> feature_extractor = AutoFeatureExtractor.from_pretrained("microsoft/unispeech-large-1500h-cv")
+        >>> model = UniSpeechForPreTraining.from_pretrained("microsoft/unispeech-large-1500h-cv")
+        >>> # TODO: Add full pretraining example
+        ```"""
+        ...
 
 class UniSpeechForCTC(Wav2Vec2ForCTC): ...
 class UniSpeechForSequenceClassification(Wav2Vec2ForSequenceClassification): ...

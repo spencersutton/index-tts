@@ -30,7 +30,8 @@ class FlaxGPT2Attention(nn.Module):
     dtype: jnp.dtype = ...
     causal: bool = ...
     is_cross_attention: bool = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         hidden_states,
@@ -39,19 +40,22 @@ class FlaxGPT2Attention(nn.Module):
         deterministic: bool = ...,
         init_cache: bool = ...,
         output_attentions: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, Any] | tuple[Any]:
+        ...
 
 class FlaxGPT2MLP(nn.Module):
     config: GPT2Config
     intermediate_size: int
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(self, hidden_states, deterministic: bool = ...): ...
 
 class FlaxGPT2Block(nn.Module):
     config: GPT2Config
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         hidden_states,
@@ -61,9 +65,15 @@ class FlaxGPT2Block(nn.Module):
         deterministic: bool = ...,
         init_cache: bool = ...,
         output_attentions: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, *tuple[Any, ...]] | tuple[Any] | tuple[Any, Any]:
+        ...
 
 class FlaxGPT2PreTrainedModel(FlaxPreTrainedModel):
+    """
+    An abstract class to handle weights initialization and a simple interface for downloading and loading pretrained
+    models.
+    """
+
     config_class = GPT2Config
     base_model_prefix = ...
     module_class: nn.Module = ...
@@ -77,7 +87,17 @@ class FlaxGPT2PreTrainedModel(FlaxPreTrainedModel):
         **kwargs,
     ) -> None: ...
     def init_weights(self, rng: jax.random.PRNGKey, input_shape: tuple, params: FrozenDict = ...) -> FrozenDict: ...
-    def init_cache(self, batch_size, max_length): ...
+    def init_cache(self, batch_size, max_length):
+        r"""
+        Args:
+            batch_size (`int`):
+                batch_size used for fast auto-regressive decoding. Defines the batch size of the initialized cache.
+            max_length (`int`):
+                maximum possible length for auto-regressive decoding. Defines the sequence length of the initialized
+                cache.
+        """
+        ...
+
     @add_start_docstrings_to_model_forward(GPT2_INPUTS_DOCSTRING)
     def __call__(
         self,
@@ -98,7 +118,8 @@ class FlaxGPT2PreTrainedModel(FlaxPreTrainedModel):
 class FlaxGPT2BlockCollection(nn.Module):
     config: GPT2Config
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         hidden_states,
@@ -110,12 +131,14 @@ class FlaxGPT2BlockCollection(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, tuple[()] | tuple[Any, ...] | None, tuple[()] | tuple[Any, ...] | None, tuple[()] | tuple[Any, ...] | None]:
+        ...
 
 class FlaxGPT2Module(nn.Module):
     config: GPT2Config
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids,
@@ -128,16 +151,21 @@ class FlaxGPT2Module(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any | tuple[Any, ...] | tuple[()], ...] | FlaxBaseModelOutputWithPastAndCrossAttentions:
+        ...
 
-@add_start_docstrings(..., GPT2_START_DOCSTRING)
+@add_start_docstrings(
+    "The bare GPT2 Model transformer outputting raw hidden-states without any specific head on top.",
+    GPT2_START_DOCSTRING,
+)
 class FlaxGPT2Model(FlaxGPT2PreTrainedModel):
     module_class = ...
 
 class FlaxGPT2LMHeadModule(nn.Module):
     config: GPT2Config
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids,
@@ -150,12 +178,22 @@ class FlaxGPT2LMHeadModule(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, *tuple[Any | tuple[Any, ...] | tuple[()], ...]] | Any | FlaxCausalLMOutputWithCrossAttentions:
+        ...
 
-@add_start_docstrings(..., GPT2_START_DOCSTRING)
+@add_start_docstrings(
+    """
+    The GPT2 Model transformer with a language modeling head on top (linear layer with weights tied to the input
+    embeddings).
+    """,
+    GPT2_START_DOCSTRING,
+)
 class FlaxGPT2LMHeadModel(FlaxGPT2PreTrainedModel):
     module_class = ...
-    def prepare_inputs_for_generation(self, input_ids, max_length, attention_mask: Optional[jax.Array] = ...): ...
+    def prepare_inputs_for_generation(
+        self, input_ids, max_length, attention_mask: Optional[jax.Array] = ...
+    ):  # -> dict[str, Any]:
+        ...
     def update_inputs_for_generation(self, model_outputs, model_kwargs): ...
 
 __all__ = ["FlaxGPT2LMHeadModel", "FlaxGPT2Model", "FlaxGPT2PreTrainedModel"]

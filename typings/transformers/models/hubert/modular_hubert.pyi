@@ -19,6 +19,7 @@ from ..wav2vec2.modeling_wav2vec2 import (
 )
 from .configuration_hubert import HubertConfig
 
+"""PyTorch Hubert model."""
 _HIDDEN_STATES_START_POSITION = ...
 
 class HubertPositionalConvEmbedding(nn.Module):
@@ -30,7 +31,8 @@ class HubertFeatureEncoder(Wav2Vec2FeatureEncoder): ...
 
 class HubertFeatureProjection(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class HubertEncoder(Wav2Vec2Encoder): ...
 class HubertEncoderStableLayerNorm(Wav2Vec2EncoderStableLayerNorm): ...
@@ -57,7 +59,34 @@ class HubertModel(Wav2Vec2Model, HubertPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutput]: ...
+    ) -> Union[tuple, BaseModelOutput]:
+        r"""
+        mask_time_indices (`torch.BoolTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Indices to mask extracted features for contrastive loss. When in training mode, model learns to predict
+            masked extracted features in *config.proj_codevector_dim* space.
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoProcessor, HubertModel
+        >>> from datasets import load_dataset
+
+        >>> processor = AutoProcessor.from_pretrained("facebook/hubert-large-ls960-ft")
+        >>> model = HubertModel.from_pretrained("facebook/hubert-large-ls960-ft")
+
+
+        >>> def map_to_array(example):
+        ...     example["speech"] = example["audio"]["array"]
+        ...     return example
+
+
+        >>> ds = load_dataset("hf-internal-testing/librispeech_asr_dummy", "clean", split="validation")
+        >>> ds = ds.map(map_to_array)
+
+        >>> input_values = processor(ds["speech"][0], return_tensors="pt").input_values  # Batch size 1
+        >>> hidden_states = model(input_values).last_hidden_state
+        ```"""
+        ...
 
 class HubertForCTC(Wav2Vec2ForCTC): ...
 class HubertForSequenceClassification(Wav2Vec2ForSequenceClassification): ...

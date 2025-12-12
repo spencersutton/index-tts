@@ -12,11 +12,38 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import ModelOutput, auto_docstring
 from .configuration_yolos import YolosConfig
 
+"""PyTorch YOLOS model."""
 logger = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Output type of [`YolosForObjectDetection`].
+    """
+)
 class YolosObjectDetectionOutput(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `labels` are provided)):
+        Total loss as a linear combination of a negative log-likehood (cross-entropy) for class prediction and a
+        bounding box loss. The latter is defined as a linear combination of the L1 loss and the generalized
+        scale-invariant IoU loss.
+    loss_dict (`Dict`, *optional*):
+        A dictionary containing the individual losses. Useful for logging.
+    logits (`torch.FloatTensor` of shape `(batch_size, num_queries, num_classes + 1)`):
+        Classification logits (including no-object) for all queries.
+    pred_boxes (`torch.FloatTensor` of shape `(batch_size, num_queries, 4)`):
+        Normalized boxes coordinates for all queries, represented as (center_x, center_y, width, height). These
+        values are normalized in [0, 1], relative to the size of each individual image in the batch (disregarding
+        possible padding). You can use [`~YolosImageProcessor.post_process`] to retrieve the unnormalized bounding
+        boxes.
+    auxiliary_outputs (`list[Dict]`, *optional*):
+        Optional, only returned when auxiliary losses are activated (i.e. `config.auxiliary_loss` is set to `True`)
+        and labels are provided. It is a list of dictionaries containing the two above keys (`logits` and
+        `pred_boxes`) for each decoder layer.
+    last_hidden_state (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*):
+        Sequence of hidden-states at the output of the last layer of the decoder of the model.
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     loss_dict: Optional[dict] = ...
     logits: Optional[torch.FloatTensor] = ...
@@ -27,6 +54,10 @@ class YolosObjectDetectionOutput(ModelOutput):
     attentions: Optional[tuple[torch.FloatTensor]] = ...
 
 class YolosEmbeddings(nn.Module):
+    """
+    Construct the CLS token, detection tokens, position and patch embeddings.
+
+    """
     def __init__(self, config: YolosConfig) -> None: ...
     def forward(self, pixel_values: torch.Tensor) -> torch.Tensor: ...
 
@@ -39,6 +70,11 @@ class InterpolateMidPositionEmbeddings(nn.Module):
     def forward(self, pos_embed, img_size=...) -> torch.Tensor: ...
 
 class YolosPatchEmbeddings(nn.Module):
+    """
+    This class turns `pixel_values` of shape `(batch_size, num_channels, height, width)` into the initial
+    `hidden_states` (patch embeddings) of shape `(batch_size, seq_length, hidden_size)` to be consumed by a
+    Transformer.
+    """
     def __init__(self, config) -> None: ...
     def forward(self, pixel_values: torch.Tensor) -> torch.Tensor: ...
 
@@ -51,7 +87,8 @@ def eager_attention_forward(
     scaling: float,
     dropout: float = ...,
     **kwargs,
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class YolosSelfAttention(nn.Module):
     def __init__(self, config: YolosConfig) -> None: ...
@@ -60,6 +97,10 @@ class YolosSelfAttention(nn.Module):
     ) -> Union[tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor]]: ...
 
 class YolosSelfOutput(nn.Module):
+    """
+    The residual connection is defined in YolosLayer instead of here (as is the case with other models), due to the
+    layernorm applied before each block.
+    """
     def __init__(self, config: YolosConfig) -> None: ...
     def forward(self, hidden_states: torch.Tensor, input_tensor: torch.Tensor) -> torch.Tensor: ...
 
@@ -79,6 +120,7 @@ class YolosOutput(nn.Module):
     def forward(self, hidden_states: torch.Tensor, input_tensor: torch.Tensor) -> torch.Tensor: ...
 
 class YolosLayer(GradientCheckpointingLayer):
+    """This corresponds to the Block class in the timm implementation."""
     def __init__(self, config: YolosConfig) -> None: ...
     def forward(
         self, hidden_states: torch.Tensor, head_mask: Optional[torch.Tensor] = ..., output_attentions: bool = ...
@@ -111,7 +153,13 @@ class YolosPreTrainedModel(PreTrainedModel):
 
 @auto_docstring
 class YolosModel(YolosPreTrainedModel):
-    def __init__(self, config: YolosConfig, add_pooling_layer: bool = ...) -> None: ...
+    def __init__(self, config: YolosConfig, add_pooling_layer: bool = ...) -> None:
+        r"""
+        add_pooling_layer (bool, *optional*, defaults to `True`):
+            Whether to add a pooling layer
+        """
+        ...
+
     def get_input_embeddings(self) -> YolosPatchEmbeddings: ...
     @auto_docstring
     def forward(
@@ -125,13 +173,26 @@ class YolosModel(YolosPreTrainedModel):
 
 class YolosPooler(nn.Module):
     def __init__(self, config: YolosConfig) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class YolosMLPPredictionHead(nn.Module):
-    def __init__(self, input_dim, hidden_dim, output_dim, num_layers) -> None: ...
-    def forward(self, x): ...
+    """
+    Very simple multi-layer perceptron (MLP, also called FFN), used to predict the normalized center coordinates,
+    height and width of a bounding box w.r.t. an image.
 
-@auto_docstring(custom_intro=...)
+    Copied from https://github.com/facebookresearch/detr/blob/master/models/detr.py
+
+    """
+    def __init__(self, input_dim, hidden_dim, output_dim, num_layers) -> None: ...
+    def forward(self, x):  # -> Tensor | Any:
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    YOLOS Model (consisting of a ViT encoder) with object detection heads on top, for tasks such as COCO detection.
+    """
+)
 class YolosForObjectDetection(YolosPreTrainedModel):
     def __init__(self, config: YolosConfig) -> None: ...
     @auto_docstring
@@ -142,6 +203,50 @@ class YolosForObjectDetection(YolosPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, YolosObjectDetectionOutput]: ...
+    ) -> Union[tuple, YolosObjectDetectionOutput]:
+        r"""
+        labels (`list[Dict]` of len `(batch_size,)`, *optional*):
+            Labels for computing the bipartite matching loss. List of dicts, each dictionary containing at least the
+            following 2 keys: `'class_labels'` and `'boxes'` (the class labels and bounding boxes of an image in the
+            batch respectively). The class labels themselves should be a `torch.LongTensor` of len `(number of bounding
+            boxes in the image,)` and the boxes a `torch.FloatTensor` of shape `(number of bounding boxes in the image,
+            4)`.
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoImageProcessor, AutoModelForObjectDetection
+        >>> import torch
+        >>> from PIL import Image
+        >>> import requests
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> image_processor = AutoImageProcessor.from_pretrained("hustvl/yolos-tiny")
+        >>> model = AutoModelForObjectDetection.from_pretrained("hustvl/yolos-tiny")
+
+        >>> inputs = image_processor(images=image, return_tensors="pt")
+        >>> outputs = model(**inputs)
+
+        >>> # convert outputs (bounding boxes and class logits) to Pascal VOC format (xmin, ymin, xmax, ymax)
+        >>> target_sizes = torch.tensor([image.size[::-1]])
+        >>> results = image_processor.post_process_object_detection(outputs, threshold=0.9, target_sizes=target_sizes)[
+        ...     0
+        ... ]
+
+        >>> for score, label, box in zip(results["scores"], results["labels"], results["boxes"]):
+        ...     box = [round(i, 2) for i in box.tolist()]
+        ...     print(
+        ...         f"Detected {model.config.id2label[label.item()]} with confidence "
+        ...         f"{round(score.item(), 3)} at location {box}"
+        ...     )
+        Detected remote with confidence 0.991 at location [46.48, 72.78, 178.98, 119.3]
+        Detected remote with confidence 0.908 at location [336.48, 79.27, 368.23, 192.36]
+        Detected cat with confidence 0.934 at location [337.18, 18.06, 638.14, 373.09]
+        Detected cat with confidence 0.979 at location [10.93, 53.74, 313.41, 470.67]
+        Detected remote with confidence 0.974 at location [41.63, 72.23, 178.09, 119.99]
+        ```"""
+        ...
 
 __all__ = ["YolosForObjectDetection", "YolosModel", "YolosPreTrainedModel"]

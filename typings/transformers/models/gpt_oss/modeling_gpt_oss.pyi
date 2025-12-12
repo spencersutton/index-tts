@@ -19,31 +19,61 @@ from .configuration_gpt_oss import GptOssConfig
 
 @use_kernel_forward_from_hub("RMSNorm")
 class GptOssRMSNorm(nn.Module):
-    def __init__(self, hidden_size, eps=...) -> None: ...
+    def __init__(self, hidden_size, eps=...) -> None:
+        """
+        GptOssRMSNorm is equivalent to T5LayerNorm
+        """
+        ...
+
     def forward(self, hidden_states): ...
-    def extra_repr(self): ...
+    def extra_repr(self):  # -> str:
+        ...
 
 class GptOssExperts(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states: torch.Tensor, router_indices=..., routing_weights=...) -> torch.Tensor: ...
+    def forward(self, hidden_states: torch.Tensor, router_indices=..., routing_weights=...) -> torch.Tensor:
+        """
+        When training is is more efficient to just loop over the experts and compute the output for each expert
+        as otherwise the memory would explode.
+
+        For inference we can sacrifice some memory and compute the output for all experts at once. By repeating the inputs.
+
+        Args:
+            hidden_states (torch.Tensor): (batch_size, seq_len, hidden_size)
+            selected_experts (torch.Tensor): (batch_size * token_num, top_k)
+            routing_weights (torch.Tensor): (batch_size * token_num, num_experts)
+        Returns:
+            torch.Tensor
+        """
+        ...
 
 class GptOssTopKRouter(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> tuple[Tensor, Tensor]:
+        ...
 
 @use_kernel_forward_from_hub("MegaBlocksMoeMLP")
 class GptOssMLP(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> tuple[Any, Any]:
+        ...
 
 class GptOssRotaryEmbedding(nn.Module):
     def __init__(self, config: GptOssConfig, device=...) -> None: ...
     @torch.no_grad()
     @dynamic_rope_update
-    def forward(self, x, position_ids): ...
+    def forward(self, x, position_ids):  # -> tuple[Any, Any]:
+        ...
 
-def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor: ...
-def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...): ...
+def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
+    """
+    This is the equivalent of torch.repeat_interleave(x, dim=1, repeats=n_rep). The hidden states go from (batch,
+    num_key_value_heads, seqlen, head_dim) to (batch, num_attention_heads, seqlen, head_dim)
+    """
+    ...
+
+def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...):  # -> tuple[Tensor, Tensor]:
+    ...
 def eager_attention_forward(
     module: nn.Module,
     query: torch.Tensor,
@@ -53,9 +83,11 @@ def eager_attention_forward(
     scaling: float,
     dropout: float = ...,
     **kwargs,
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class GptOssAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config: GptOssConfig, layer_idx: int) -> None: ...
     def forward(
         self,
@@ -121,7 +153,31 @@ def load_balancing_loss_func(
     num_experts: Optional[int] = ...,
     top_k=...,
     attention_mask: Optional[torch.Tensor] = ...,
-) -> Union[torch.Tensor, int]: ...
+) -> Union[torch.Tensor, int]:
+    r"""
+    Computes auxiliary load balancing loss as in Switch Transformer - implemented in Pytorch.
+
+    See Switch Transformer (https://huggingface.co/papers/2101.03961) for more details. This function implements the loss
+    function presented in equations (4) - (6) of the paper. It aims at penalizing cases where the routing between
+    experts is too unbalanced.
+
+    Args:
+        gate_logits:
+            Logits from the `gate`, should be a tuple of model.config.num_hidden_layers tensors of
+            shape [batch_size X sequence_length, num_experts].
+        num_experts:
+            Number of experts
+        top_k:
+            The number of experts to route per-token, can be also interpreted as the `top-k` routing
+            parameter.
+        attention_mask (`torch.Tensor`, *optional*):
+            The attention_mask used in forward function
+            shape [batch_size X sequence_length] if not None.
+
+    Returns:
+        The auxiliary loss.
+    """
+    ...
 
 @auto_docstring
 class GptOssForCausalLM(GptOssPreTrainedModel, GenerationMixin):
@@ -129,8 +185,10 @@ class GptOssForCausalLM(GptOssPreTrainedModel, GenerationMixin):
     _tp_plan = ...
     _pp_plan = ...
     def __init__(self, config) -> None: ...
-    def set_decoder(self, decoder): ...
-    def get_decoder(self): ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> GptOssModel:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -146,6 +204,29 @@ class GptOssForCausalLM(GptOssPreTrainedModel, GenerationMixin):
         cache_position: Optional[torch.LongTensor] = ...,
         logits_to_keep: Union[int, torch.Tensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> MoeCausalLMOutputWithPast: ...
+    ) -> MoeCausalLMOutputWithPast:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, GptOssForCausalLM
+
+        >>> model = GptOssForCausalLM.from_pretrained("mistralai/GptOss-8x7B-v0.1")
+        >>> tokenizer = AutoTokenizer.from_pretrained("mistralai/GptOss-8x7B-v0.1")
+
+        >>> prompt = "Hey, are you conscious? Can you talk to me?"
+        >>> inputs = tokenizer(prompt, return_tensors="pt")
+
+        >>> # Generate
+        >>> generate_ids = model.generate(inputs.input_ids, max_length=30)
+        >>> tokenizer.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+        "Hey, are you conscious? Can you talk to me?\nI'm not conscious, but I can talk to you."
+        ```"""
+        ...
 
 __all__ = ["GptOssForCausalLM", "GptOssModel", "GptOssPreTrainedModel"]

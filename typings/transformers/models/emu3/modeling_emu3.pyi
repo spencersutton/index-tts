@@ -18,9 +18,39 @@ from ...utils import TransformersKwargs, auto_docstring, can_return_tuple
 from ...utils.generic import check_model_inputs
 from .configuration_emu3 import Emu3Config, Emu3TextConfig, Emu3VQVAEConfig
 
-def rotate_half(x): ...
-def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...): ...
-def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor: ...
+def rotate_half(x):  # -> Tensor:
+    """Rotates half the hidden dims of the input."""
+    ...
+
+def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...):  # -> tuple[Any, Any]:
+    """Applies Rotary Position Embedding to the query and key tensors.
+
+    Args:
+        q (`torch.Tensor`): The query tensor.
+        k (`torch.Tensor`): The key tensor.
+        cos (`torch.Tensor`): The cosine part of the rotary embedding.
+        sin (`torch.Tensor`): The sine part of the rotary embedding.
+        position_ids (`torch.Tensor`, *optional*):
+            Deprecated and unused.
+        unsqueeze_dim (`int`, *optional*, defaults to 1):
+            The 'unsqueeze_dim' argument specifies the dimension along which to unsqueeze cos[position_ids] and
+            sin[position_ids] so that they can be properly broadcasted to the dimensions of q and k. For example, note
+            that cos[position_ids] and sin[position_ids] have the shape [batch_size, seq_len, head_dim]. Then, if q and
+            k have the shape [batch_size, heads, seq_len, head_dim], then setting unsqueeze_dim=1 makes
+            cos[position_ids] and sin[position_ids] broadcastable to the shapes of q and k. Similarly, if q and k have
+            the shape [batch_size, seq_len, heads, head_dim], then set unsqueeze_dim=2.
+    Returns:
+        `tuple(torch.Tensor)` comprising of the query and key tensors rotated using the Rotary Position Embedding.
+    """
+    ...
+
+def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
+    """
+    This is the equivalent of torch.repeat_interleave(x, dim=1, repeats=n_rep). The hidden states go from (batch,
+    num_key_value_heads, seqlen, head_dim) to (batch, num_attention_heads, seqlen, head_dim)
+    """
+    ...
+
 def eager_attention_forward(
     module: nn.Module,
     query: torch.Tensor,
@@ -30,9 +60,11 @@ def eager_attention_forward(
     scaling: float,
     dropout: float = ...,
     **kwargs: Unpack[TransformersKwargs],
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class Emu3Attention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config: Emu3Config, layer_idx: int) -> None: ...
     def forward(
         self,
@@ -46,13 +78,20 @@ class Emu3Attention(nn.Module):
 
 @use_kernel_forward_from_hub("RMSNorm")
 class Emu3RMSNorm(nn.Module):
-    def __init__(self, hidden_size, eps=...) -> None: ...
+    def __init__(self, hidden_size, eps=...) -> None:
+        """
+        Emu3RMSNorm is equivalent to T5LayerNorm
+        """
+        ...
+
     def forward(self, hidden_states): ...
-    def extra_repr(self): ...
+    def extra_repr(self):  # -> str:
+        ...
 
 class Emu3MLP(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, x): ...
+    def forward(self, x):  # -> Any:
+        ...
 
 class Emu3DecoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: Emu3Config, layer_idx: int) -> None: ...
@@ -69,74 +108,115 @@ class Emu3DecoderLayer(GradientCheckpointingLayer):
     ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]: ...
 
 class Emu3VQVAEVectorQuantizer(nn.Module):
+    """
+    A module for vector quantization using learned embedding vectors.
+
+    This module implements the quantization process similar to te one described in
+    the VQ-VAE (Vector Quantized Variational AutoEncoder) paper. It quantizes continuous
+    input vectors into discrete codebook vectors, which are learned during training.
+    Current implementation improves over previous ones by avoiding costly matrix multiplications
+    and allowing for post-hoc remapping of indices.
+    """
     def __init__(self, config: Emu3VQVAEConfig) -> None: ...
-    def forward(self, hidden_state: torch.Tensor): ...
+    def forward(self, hidden_state: torch.Tensor):  # -> Tensor:
+        ...
 
 class Emu3VQVAEEncoderConvDownsample(nn.Module):
     def __init__(self, in_channels) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class Emu3VQVAEEncoderConvUpsample(nn.Module):
     def __init__(self, in_channels) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class Emu3VQVAEConv3d(nn.Module):
     def __init__(self, in_channel: int, out_channel: int, kernel_size: tuple[int], stride: tuple[int]) -> None: ...
-    def forward(self, hidden_states: torch.Tensor): ...
+    def forward(self, hidden_states: torch.Tensor):  # -> Tensor:
+        ...
 
 class Emu3VQVAESpatialNorm(nn.Module):
     def __init__(self, in_channels: int, out_channels: int) -> None: ...
-    def forward(self, hidden_states: torch.Tensor, quant_states: torch.Tensor): ...
+    def forward(self, hidden_states: torch.Tensor, quant_states: torch.Tensor):  # -> Tensor:
+        ...
 
 class Emu3VQVAETemporalUpsample(nn.Module):
     def __init__(self, in_channel: int, out_channel: int) -> None: ...
-    def forward(self, hidden_states: torch.Tensor): ...
+    def forward(self, hidden_states: torch.Tensor):  # -> Tensor:
+        ...
 
 class Emu3VQVAETemporalDownsample(nn.Module):
     def __init__(self, in_channel: int, out_channel: int) -> None: ...
-    def forward(self, hidden_states: torch.Tensor): ...
+    def forward(self, hidden_states: torch.Tensor):  # -> Tensor:
+        ...
 
 class Emu3VQVAETemporalResnetBlock(nn.Module):
     def __init__(self, in_channels, out_channels=...) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class Emu3VQVAEResnetBlock(nn.Module):
     def __init__(
         self, in_channels: int, out_channels: Optional[int] = ..., quant_channels: Optional[int] = ...
     ) -> None: ...
-    def forward(self, hidden_states: torch.Tensor, quant_channels: Optional[torch.Tensor] = ...): ...
+    def forward(self, hidden_states: torch.Tensor, quant_channels: Optional[torch.Tensor] = ...):  # -> Any | Tensor:
+        ...
 
 class Emu3VQVAEAttentionBlock(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config: Emu3VQVAEConfig) -> None: ...
     def forward(
         self, hidden_states: torch.Tensor, attention_mask: Optional[torch.Tensor] = ..., **kwargs
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]: ...
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
+        """Input shape: Batch x Time x Channel"""
+        ...
 
 class Emu3VQVAEGroupNorm(nn.GroupNorm):
+    """
+    Same as the torch GroupNorm with the only difference that this ones accepts
+    an optional kwarg `quant_states` which is not used. This class makes it easier to
+    use SpatialNorm or GroupNorm without conditionals
+    """
     def __init__(self, **kwargs) -> None: ...
-    def forward(self, input, quant_states=...): ...
+    def forward(self, input, quant_states=...):  # -> Tensor:
+        ...
 
 class Emu3VQVAEMiddleBlock(nn.Module):
     def __init__(self, config, in_channels, quant_channels=...) -> None: ...
-    def forward(self, hidden_states: torch.FloatTensor, quant_states: Optional[torch.FloatTensor] = ...): ...
+    def forward(
+        self, hidden_states: torch.FloatTensor, quant_states: Optional[torch.FloatTensor] = ...
+    ):  # -> FloatTensor:
+        ...
 
 class Emu3VQVAEDownBlock(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states: torch.FloatTensor): ...
+    def forward(self, hidden_states: torch.FloatTensor):  # -> FloatTensor:
+        ...
 
 class Emu3VQVAEUpBlock(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states: torch.FloatTensor, quant_states: torch.FloatTensor): ...
+    def forward(self, hidden_states: torch.FloatTensor, quant_states: torch.FloatTensor):  # -> FloatTensor:
+        ...
 
 class Emu3VQVAEEncoder(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, pixel_values: torch.LongTensor): ...
+    def forward(self, pixel_values: torch.LongTensor):  # -> Any:
+        ...
 
 class Emu3VQVAEDecoder(nn.Module):
     def __init__(self, config: Emu3VQVAEConfig) -> None: ...
-    def forward(self, hidden_states: torch.Tensor, quant_states: torch.Tensor): ...
+    def forward(self, hidden_states: torch.Tensor, quant_states: torch.Tensor):  # -> Tensor:
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The VQ-VAE model used in Emu3 for encoding/decoding images into discrete tokens.
+    This model follows the "Make-a-scene: Scene-based text-to-image generation with human priors" paper from
+    [ Oran Gafni, Adam Polyak, Oron Ashual, Shelly Sheynin, Devi Parikh, and Yaniv
+    Taigman](https://huggingface.co/papers/2203.13131).
+    """
+)
 class Emu3VQVAE(PreTrainedModel):
     config: Emu3VQVAEConfig
     base_model_prefix = ...
@@ -147,23 +227,34 @@ class Emu3VQVAE(PreTrainedModel):
     _supports_attention_backend = ...
     _no_split_modules = ...
     def __init__(self, config: Emu3VQVAEConfig) -> None: ...
-    def encode(self, pixel_values: torch.Tensor, image_sizes: torch.Tensor): ...
-    def decode(self, hidden_states: torch.Tensor): ...
+    def encode(self, pixel_values: torch.Tensor, image_sizes: torch.Tensor):  # -> list[Any]:
+        ...
+    def decode(self, hidden_states: torch.Tensor):  # -> Any:
+        ...
 
 class Emu3ImageVocabularyMapping:
+    """
+    A class for mapping discrete image tokens from VQGAN to BPE tokens.
+    """
     def __init__(self, vocab_map) -> None: ...
     @cached_property
-    def image_tokens(self): ...
+    def image_tokens(self):  # -> list[Any]:
+        ...
     @cached_property
-    def image_tokens_str(self): ...
+    def image_tokens_str(self):  # -> list[Any]:
+        ...
     @cached_property
-    def img2bpe(self): ...
+    def img2bpe(self):  # -> dict[int, Any]:
+        ...
     @cached_property
-    def bpe2img(self): ...
+    def bpe2img(self):  # -> dict[Any, int]:
+        ...
     @cached_property
-    def bpe2img_mapping_tensor(self): ...
+    def bpe2img_mapping_tensor(self):  # -> Tensor:
+        ...
     @cached_property
-    def img2bpe_mapping_tensor(self): ...
+    def img2bpe_mapping_tensor(self):  # -> Tensor:
+        ...
     def convert_img2bpe(self, img_batch: list[torch.Tensor]) -> torch.Tensor: ...
     def convert_bpe2img(self, img_batch: torch.Tensor) -> torch.Tensor: ...
 
@@ -185,7 +276,8 @@ class Emu3RotaryEmbedding(nn.Module):
     def __init__(self, config: Emu3Config, device=...) -> None: ...
     @torch.no_grad()
     @dynamic_rope_update
-    def forward(self, x, position_ids): ...
+    def forward(self, x, position_ids):  # -> tuple[Tensor, Tensor]:
+        ...
 
 @auto_docstring
 class Emu3TextModel(Emu3PreTrainedModel):
@@ -212,8 +304,10 @@ class Emu3ForCausalLM(Emu3PreTrainedModel, GenerationMixin):
     _pp_plan = ...
     config: Emu3TextConfig
     def __init__(self, config) -> None: ...
-    def set_decoder(self, decoder): ...
-    def get_decoder(self): ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> Emu3TextModel:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -228,22 +322,89 @@ class Emu3ForCausalLM(Emu3PreTrainedModel, GenerationMixin):
         cache_position: Optional[torch.LongTensor] = ...,
         logits_to_keep: Union[int, torch.Tensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> CausalLMOutputWithPast: ...
+    ) -> CausalLMOutputWithPast:
+        r"""
+        Example:
+
+        ```python
+        >>> from transformers import Emu3Processor, Emu3ForConditionalGeneration
+        >>> import torch
+        >>> import requests
+        >>> from PIL import Image
+
+        >>> model = Emu3ForCausalLM.from_pretrained("BAAI/Emu3-Chat-hf", torch_dtype=torch.bfloat16)
+        >>> processor = Emu3Processor.from_pretrained("BAAI/Emu3-Chat-hf")
+
+        >>> inputs = processor(text=["Can you write me a poem about winter."], return_tensors="pt").to(model.device)
+
+        >>> generated_ids = model.generate(**inputs, max_new_tokens=100, do_sample=False)
+        >>> processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+        ```"""
+        ...
 
 class Emu3Model(Emu3PreTrainedModel):
     _checkpoint_conversion_mapping = ...
     def __init__(self, config) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
-    def set_decoder(self, decoder): ...
-    def get_decoder(self): ...
-    def get_image_tokens(self, pixel_values: torch.FloatTensor, image_sizes: torch.LongTensor): ...
-    def get_image_features(self, pixel_values: torch.FloatTensor, image_sizes: torch.LongTensor): ...
+    def get_input_embeddings(self):  # -> Module:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> Emu3TextModel:
+        ...
+    def get_image_tokens(self, pixel_values: torch.FloatTensor, image_sizes: torch.LongTensor):  # -> Tensor:
+        """
+        Tokenizes images into discrete tokens with VQGAN module. Converts
+        obtained image tokens into BPE tokens and wraps with "boi" and "eoi"
+        special tokens.
+
+        Args:
+            pixel_values (`torch.FloatTensor` of shape `(batch_size, num_channels, image_size, image_size)`):
+                The tensors corresponding to the input images.
+            image_sizes (`torch.LongTensor` of shape `(batch_size, 2)`):
+                The sizes of the images in the batch, being (height, width) for each image.
+        """
+        ...
+
+    def get_image_features(
+        self, pixel_values: torch.FloatTensor, image_sizes: torch.LongTensor
+    ):  # -> tuple[Tensor, ...]:
+        """
+        Tokenizes images into discrete tokens with VQGAN module and embeds
+        them with text embeddings layer
+
+        Args:
+            pixel_values (`torch.FloatTensor` of shape `(batch_size, num_channels, image_size, image_size)):
+                The tensors corresponding to the input images.
+        """
+        ...
+
     @torch.no_grad
-    def decode_image_tokens(self, image_tokens: torch.LongTensor, height: int, width: int): ...
+    def decode_image_tokens(self, image_tokens: torch.LongTensor, height: int, width: int):  # -> Any:
+        """
+        Decodes generated image tokens from language model to continuous pixel values
+        with VQGAN module via upsampling.
+
+        Args:
+            image_tokens (`torch.LongTensor` of shape `(batch_size, num_of_tokens)`):
+                The tensors corresponding to the input images.
+            height (`int`):
+                Height of the generated image before upsampling.
+            width (`int`):
+                Width of the generated image before upsampling.
+        """
+        ...
+
     def get_placeholder_mask(
         self, input_ids: torch.LongTensor, inputs_embeds: torch.FloatTensor, image_features: torch.FloatTensor
-    ): ...
+    ):  # -> Any:
+        """
+        Obtains multimodal placeholdr mask from `input_ids` or `inputs_embeds`, and checks that the placeholder token count is
+        equal to the length of multimodal features. If the lengths are different, an error is raised.
+        """
+        ...
+
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -258,24 +419,38 @@ class Emu3Model(Emu3PreTrainedModel):
         use_cache: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> Union[tuple, CausalLMOutputWithPast]: ...
+    ) -> Union[tuple, CausalLMOutputWithPast]:
+        r"""
+        image_sizes (`torch.LongTensor` of shape `(batch_size, 2)`):
+            The sizes of the images in the batch, being (height, width) for each image. Image sizes can be obtained using
+            [`AutoImageProcessor`]. See [`Emu3ImageProcessor.__call__`] for details ([]`Emu3Processor`] uses
+            [`Emu3ImageProcessor`] for processing images).
+        """
+        ...
 
 class Emu3ForConditionalGeneration(Emu3PreTrainedModel, GenerationMixin):
     base_model_prefix = ...
     _tied_weights_keys = ...
     _checkpoint_conversion_mapping = ...
     def __init__(self, config) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def get_input_embeddings(self):  # -> Module:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     def get_output_embeddings(self) -> nn.Module: ...
-    def set_decoder(self, decoder): ...
-    def get_decoder(self): ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> Emu3TextModel:
+        ...
     @property
-    def text_model(self): ...
+    def text_model(self):  # -> Emu3TextModel:
+        ...
     @property
-    def vqmodel(self): ...
+    def vqmodel(self):  # -> Emu3VQVAE:
+        ...
     @property
-    def vocabulary_mapping(self): ...
+    def vocabulary_mapping(self):  # -> Emu3ImageVocabularyMapping:
+        ...
     def decode_image_tokens(self, **kwargs): ...
     @can_return_tuple
     @auto_docstring
@@ -293,7 +468,54 @@ class Emu3ForConditionalGeneration(Emu3PreTrainedModel, GenerationMixin):
         labels: Optional[torch.LongTensor] = ...,
         logits_to_keep: Union[int, torch.Tensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> Union[tuple, CausalLMOutputWithPast]: ...
+    ) -> Union[tuple, CausalLMOutputWithPast]:
+        r"""
+        image_sizes (`torch.LongTensor` of shape `(batch_size, 2)`):
+            The sizes of the images in the batch, being (height, width) for each image. Image sizes can be obtained using
+            [`AutoImageProcessor`]. See [`Emu3ImageProcessor.__call__`] for details ([]`Emu3Processor`] uses
+            [`Emu3ImageProcessor`] for processing images).
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Example:
+
+        ```python
+        >>> from transformers import Emu3Processor, Emu3ForConditionalGeneration
+        >>> import torch
+        >>> import requests
+        >>> from PIL import Image
+
+        >>> model = Emu3ForConditionalGeneration.from_pretrained("BAAI/Emu3-Chat-hf", torch_dtype=torch.bfloat16)
+        >>> processor = Emu3Processor.from_pretrained("BAAI/Emu3-Chat-hf")
+
+        >>> conversation = [
+        ...     {
+        ...     "role": "system",
+        ...     "content": [
+        ...         {"type": "text", "text": "You are a helpful assistant."},
+        ...         ],
+        ...     },
+        ...     {
+        ...     "role": "user",
+        ...     "content": [
+        ...         {"type": "image"},
+        ...         {"type": "text", "text": "Please describe the image."},
+        ...         ],
+        ...     },
+        ... ]
+
+        >>> prompt = processor.apply_chat_template(conversation, add_generation_prompt=True)
+        >>> image = Image.open(requests.get("https://www.ilankelman.org/stopsigns/australia.jpg", stream=True).raw)
+
+        >>> inputs = processor(images=[image], text=[prompt], return_tensors="pt").to(model.device, torch.bfloat16)
+
+        >>> generated_ids = model.generate(**inputs, max_new_tokens=100, do_sample=False)
+        >>> processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+        ```"""
+        ...
+
     def prepare_inputs_for_generation(
         self,
         input_ids,
@@ -305,7 +527,8 @@ class Emu3ForConditionalGeneration(Emu3PreTrainedModel, GenerationMixin):
         use_cache=...,
         pixel_values=...,
         **kwargs,
-    ): ...
+    ):  # -> dict[Any, Any]:
+        ...
 
 __all__ = [
     "Emu3ForConditionalGeneration",

@@ -23,6 +23,7 @@ from ...modeling_tf_utils import (
 )
 from .configuration_gptj import GPTJConfig
 
+"""TF 2.0 GPT-J model."""
 logger = ...
 _CHECKPOINT_FOR_DOC = ...
 _CONFIG_FOR_DOC = ...
@@ -45,13 +46,16 @@ class TFGPTJAttention(keras.layers.Layer):
         head_mask: tf.Tensor | None = ...,
         use_cache: bool = ...,
         output_attentions: bool = ...,
-    ): ...
-    def build(self, input_shape=...): ...
+    ):  # -> tuple[Any, tuple[Any, Any] | None, Any] | tuple[Any, tuple[Any, Any] | None]:
+        ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFGPTJMLP(keras.layers.Layer):
     def __init__(self, intermediate_size: int, config: GPTJConfig, **kwargs) -> None: ...
     def call(self, hidden_states: tf.Tensor) -> tf.Tensor: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFGPTJBlock(keras.layers.Layer):
     def __init__(self, config: GPTJConfig, **kwargs) -> None: ...
@@ -65,14 +69,17 @@ class TFGPTJBlock(keras.layers.Layer):
         use_cache: bool = ...,
         output_attentions: bool = ...,
     ): ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 @keras_serializable
 class TFGPTJMainLayer(keras.layers.Layer):
     config_class = GPTJConfig
     def __init__(self, config: GPTJConfig, *inputs, **kwargs) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value: tf.Tensor): ...
+    def get_input_embeddings(self):  # -> TFSharedEmbeddings:
+        ...
+    def set_input_embeddings(self, value: tf.Tensor):  # -> None:
+        ...
     @unpack_inputs
     def call(
         self,
@@ -89,9 +96,15 @@ class TFGPTJMainLayer(keras.layers.Layer):
         return_dict=...,
         training=...,
     ) -> TFBaseModelOutputWithPast | tuple[tf.Tensor]: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFGPTJPreTrainedModel(TFPreTrainedModel):
+    """
+    An abstract class to handle weights initialization and a simple interface for downloading and loading pretrained
+    models.
+    """
+
     config_class = GPTJConfig
     base_model_prefix = ...
     _keys_to_ignore_on_load_unexpected = ...
@@ -99,7 +112,10 @@ class TFGPTJPreTrainedModel(TFPreTrainedModel):
 GPTJ_START_DOCSTRING = ...
 GPTJ_INPUTS_DOCSTRING = ...
 
-@add_start_docstrings(..., GPTJ_START_DOCSTRING)
+@add_start_docstrings(
+    "The bare GPT-J Model transformer outputting raw hidden-states without any specific head on top.",
+    GPTJ_START_DOCSTRING,
+)
 class TFGPTJModel(TFGPTJPreTrainedModel):
     def __init__(self, config, *inputs, **kwargs) -> None: ...
     @unpack_inputs
@@ -121,13 +137,29 @@ class TFGPTJModel(TFGPTJPreTrainedModel):
         output_hidden_states: bool | None = ...,
         return_dict: bool | None = ...,
         training: bool | None = ...,
-    ) -> TFBaseModelOutputWithPast | tuple[tf.Tensor]: ...
-    def build(self, input_shape=...): ...
+    ) -> TFBaseModelOutputWithPast | tuple[tf.Tensor]:
+        r"""
+        use_cache (`bool`, *optional*, defaults to `True`):
+            If set to `True`, `past_key_values` key value states are returned and can be used to speed up decoding (see
+            `past`). Set to `False` during training, `True` during generation
+        """
+        ...
 
-@add_start_docstrings(..., GPTJ_START_DOCSTRING)
+    def build(self, input_shape=...):  # -> None:
+        ...
+
+@add_start_docstrings(
+    """
+    The GPT-J Model transformer with a language modeling head on top.
+    """,
+    GPTJ_START_DOCSTRING,
+)
 class TFGPTJForCausalLM(TFGPTJPreTrainedModel, TFCausalLanguageModelingLoss):
     def __init__(self, config, *inputs, **kwargs) -> None: ...
-    def prepare_inputs_for_generation(self, inputs, past_key_values=..., use_cache=..., **kwargs): ...
+    def prepare_inputs_for_generation(
+        self, inputs, past_key_values=..., use_cache=..., **kwargs
+    ):  # -> dict[str, Any | None]:
+        ...
     @unpack_inputs
     @add_start_docstrings_to_model_forward(GPTJ_INPUTS_DOCSTRING.format("batch_size, sequence_length"))
     @add_code_sample_docstrings(
@@ -148,10 +180,33 @@ class TFGPTJForCausalLM(TFGPTJPreTrainedModel, TFCausalLanguageModelingLoss):
         output_hidden_states: bool | None = ...,
         return_dict: bool | None = ...,
         training: bool | None = ...,
-    ) -> TFCausalLMOutputWithPast | tuple[tf.Tensor]: ...
-    def build(self, input_shape=...): ...
+    ) -> TFCausalLMOutputWithPast | tuple[tf.Tensor]:
+        r"""
+        labels (`np.ndarray` or `tf.Tensor` of shape `(batch_size, input_ids_length)`, *optional*):
+            Labels for language modeling. Note that the labels **are shifted** inside the model, i.e. you can set
+            `labels = input_ids` Indices are selected in `[-100, 0, ..., config.vocab_size]` All labels set to `-100`
+            are ignored (masked), the loss is only computed for labels in `[0, ..., config.vocab_size]`
+        """
+        ...
 
-@add_start_docstrings(..., GPTJ_START_DOCSTRING)
+    def build(self, input_shape=...):  # -> None:
+        ...
+
+@add_start_docstrings(
+    """
+    The GPT-J Model transformer with a sequence classification head on top (linear layer).
+
+    [`GPTJForSequenceClassification`] uses the last token in order to do the classification, as other causal models
+    (e.g. GPT, GPT-2, GPT-Neo) do.
+
+    Since it does classification on the last token, it requires to know the position of the last token. If a
+    `pad_token_id` is defined in the configuration, it finds the last token that is not a padding token in each row. If
+    no `pad_token_id` is defined, it simply takes the last value in each row of the batch. Since it cannot guess the
+    padding tokens when `inputs_embeds` are passed instead of `input_ids`, it does the same (take the last value in
+    each row of the batch).
+    """,
+    GPTJ_START_DOCSTRING,
+)
 class TFGPTJForSequenceClassification(TFGPTJPreTrainedModel, TFSequenceClassificationLoss):
     _keys_to_ignore_on_load_missing = ...
     def __init__(self, config, *inputs, **kwargs) -> None: ...
@@ -175,10 +230,25 @@ class TFGPTJForSequenceClassification(TFGPTJPreTrainedModel, TFSequenceClassific
         output_hidden_states: bool | None = ...,
         return_dict: bool | None = ...,
         training: bool | None = ...,
-    ) -> TFSequenceClassifierOutputWithPast | tuple[tf.Tensor]: ...
-    def build(self, input_shape=...): ...
+    ) -> TFSequenceClassifierOutputWithPast | tuple[tf.Tensor]:
+        r"""
+        labels (`np.ndarray` or `tf.Tensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
-@add_start_docstrings(..., GPTJ_START_DOCSTRING)
+    def build(self, input_shape=...):  # -> None:
+        ...
+
+@add_start_docstrings(
+    """
+    The GPT-J Model transformer with a span classification head on top for extractive question-answering tasks like
+    SQuAD (a linear layers on top of the hidden-states output to compute `span start logits` and `span end logits`).
+    """,
+    GPTJ_START_DOCSTRING,
+)
 class TFGPTJForQuestionAnswering(TFGPTJPreTrainedModel, TFQuestionAnsweringLoss):
     _keys_to_ignore_on_load_missing = ...
     def __init__(self, config, *inputs, **kwargs) -> None: ...
@@ -202,8 +272,21 @@ class TFGPTJForQuestionAnswering(TFGPTJPreTrainedModel, TFQuestionAnsweringLoss)
         output_hidden_states: bool | None = ...,
         return_dict: bool | None = ...,
         training: bool | None = ...,
-    ) -> TFQuestionAnsweringModelOutput | tuple[tf.Tensor]: ...
-    def build(self, input_shape=...): ...
+    ) -> TFQuestionAnsweringModelOutput | tuple[tf.Tensor]:
+        r"""
+        start_positions (`np.ndarray` or `tf.Tensor` of shape `(batch_size,)`, *optional*):
+            Labels for position (index) of the start of the labelled span for computing the token classification loss.
+            Positions are clamped to the length of the sequence (`sequence_length`). Position outside of the sequence
+            are not taken into account for computing the loss.
+        end_positions (`np.ndarray` or `tf.Tensor` of shape `(batch_size,)`, *optional*):
+            Labels for position (index) of the end of the labelled span for computing the token classification loss.
+            Positions are clamped to the length of the sequence (`sequence_length`). Position outside of the sequence
+            are not taken into account for computing the loss.
+        """
+        ...
+
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 __all__ = [
     "TFGPTJForCausalLM",

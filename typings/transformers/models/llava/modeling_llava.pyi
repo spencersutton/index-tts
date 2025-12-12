@@ -15,16 +15,53 @@ from ...processing_utils import Unpack
 from ...utils import TransformersKwargs, auto_docstring, can_return_tuple
 from .configuration_llava import LlavaConfig
 
+"""PyTorch Llava model."""
 logger = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for Llava outputs, with hidden states and attentions.
+    """
+)
 class LlavaModelOutputWithPast(BaseModelOutputWithPast):
+    r"""
+    past_key_values (`Cache`, *optional*, returned when `use_cache=True` is passed or when `config.use_cache=True`):
+        Tuple of `tuple(torch.FloatTensor)` of length `config.n_layers`, with each tuple having 2 tensors of shape
+        `(batch_size, num_heads, sequence_length, embed_size_per_head)`)
+
+        Contains pre-computed hidden-states (key and values in the self-attention blocks) that can be used (see
+        `past_key_values` input) to speed up sequential decoding.
+    image_hidden_states (`torch.FloatTensor`, *optional*):
+        A `torch.FloatTensor` of size `(batch_size, num_images, sequence_length, hidden_size)`.
+        image_hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
+    """
+
     image_hidden_states: Optional[torch.FloatTensor] = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for Llava causal language model (or autoregressive) outputs.
+    """
+)
 class LlavaCausalLMOutputWithPast(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `labels` is provided):
+        Language modeling loss (for next-token prediction).
+    logits (`torch.FloatTensor` of shape `(batch_size, sequence_length, config.vocab_size)`):
+        Prediction scores of the language modeling head (scores for each vocabulary token before SoftMax).
+    past_key_values (`Cache`, *optional*, returned when `use_cache=True` is passed or when `config.use_cache=True`):
+        Tuple of `tuple(torch.FloatTensor)` of length `config.n_layers`, with each tuple having 2 tensors of shape
+        `(batch_size, num_heads, sequence_length, embed_size_per_head)`)
+
+        Contains pre-computed hidden-states (key and values in the self-attention blocks) that can be used (see
+        `past_key_values` input) to speed up sequential decoding.
+    image_hidden_states (`torch.FloatTensor`, *optional*):
+        A `torch.FloatTensor` of size `(batch_size, num_images, sequence_length, hidden_size)`.
+        image_hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     logits: Optional[torch.FloatTensor] = ...
     past_key_values: Optional[list[torch.FloatTensor]] = ...
@@ -34,7 +71,8 @@ class LlavaCausalLMOutputWithPast(ModelOutput):
 
 class LlavaMultiModalProjector(nn.Module):
     def __init__(self, config: LlavaConfig) -> None: ...
-    def forward(self, image_features): ...
+    def forward(self, image_features):  # -> Any:
+        ...
 
 @auto_docstring
 class LlavaPreTrainedModel(PreTrainedModel):
@@ -48,24 +86,56 @@ class LlavaPreTrainedModel(PreTrainedModel):
     _supports_flex_attn = ...
     _supports_attention_backend = ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The Llava model which consists of a vision backbone and a language model, without a language modeling head.
+    """
+)
 class LlavaModel(LlavaPreTrainedModel):
     _checkpoint_conversion_mapping = ...
     def __init__(self, config: LlavaConfig) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
-    def set_decoder(self, decoder): ...
-    def get_decoder(self): ...
+    def get_input_embeddings(self):  # -> Any:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> Any:
+        ...
     def get_image_features(
         self,
         pixel_values: torch.FloatTensor,
         vision_feature_layer: Optional[Union[int, list[int]]] = ...,
         vision_feature_select_strategy: Optional[str] = ...,
         **kwargs,
-    ): ...
+    ):  # -> tuple[Tensor, ...] | list[Any]:
+        """
+        Obtains image last hidden states from the vision tower and apply multimodal projection.
+
+        Args:
+            pixel_values (`torch.FloatTensor]` of shape `(batch_size, channels, height, width)`):
+               The tensors corresponding to the input images.
+            vision_feature_layer (`Union[int, list[int]]`, *optional*):
+                The index of the layer to select the vision feature. If multiple indices are provided,
+                the vision feature of the corresponding indices will be concatenated to form the
+                vision features.
+            vision_feature_select_strategy (`str`, *optional*):
+                The feature selection strategy used to select the vision feature from the vision backbone.
+                Can be one of `"default"` or `"full"`
+        Returns:
+            image_features (`torch.Tensor`): Image feature tensor of shape `(num_images, image_length, embed_dim)`).
+        """
+        ...
+
     def get_placeholder_mask(
         self, input_ids: torch.LongTensor, inputs_embeds: torch.FloatTensor, image_features: torch.FloatTensor
-    ): ...
+    ):  # -> Any:
+        """
+        Obtains multimodal placeholdr mask from `input_ids` or `inputs_embeds`, and checks that the placeholder token count is
+        equal to the length of multimodal features. If the lengths are different, an error is raised.
+        """
+        ...
+
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -87,29 +157,41 @@ class LlavaModel(LlavaPreTrainedModel):
         **kwargs: Unpack[FlashAttentionKwargs],
     ) -> Union[tuple, LlavaModelOutputWithPast]: ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The LLAVA model which consists of a vision backbone and a language model.
+    """
+)
 class LlavaForConditionalGeneration(LlavaPreTrainedModel, GenerationMixin):
     _checkpoint_conversion_mapping = ...
     _tied_weights_keys = ...
     def __init__(self, config: LlavaConfig) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def get_input_embeddings(self):  # -> Any:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     def get_output_embeddings(self) -> nn.Module: ...
-    def set_decoder(self, decoder): ...
-    def get_decoder(self): ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> Any:
+        ...
     def get_image_features(
         self,
         pixel_values: torch.FloatTensor,
         vision_feature_layer: Optional[Union[int, list[int]]] = ...,
         vision_feature_select_strategy: Optional[str] = ...,
         **kwargs,
-    ): ...
+    ):  # -> tuple[Tensor, ...] | list[Any]:
+        ...
     @property
-    def language_model(self): ...
+    def language_model(self):  # -> Any:
+        ...
     @property
-    def vision_tower(self): ...
+    def vision_tower(self):  # -> Any:
+        ...
     @property
-    def multi_modal_projector(self): ...
+    def multi_modal_projector(self):  # -> LlavaMultiModalProjector:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -131,7 +213,36 @@ class LlavaForConditionalGeneration(LlavaPreTrainedModel, GenerationMixin):
         logits_to_keep: Union[int, torch.Tensor] = ...,
         image_sizes: Optional[torch.Tensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> Union[tuple, LlavaCausalLMOutputWithPast]: ...
+    ) -> Union[tuple, LlavaCausalLMOutputWithPast]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Example:
+
+        ```python
+        >>> from PIL import Image
+        >>> import requests
+        >>> from transformers import AutoProcessor, LlavaForConditionalGeneration
+
+        >>> model = LlavaForConditionalGeneration.from_pretrained("llava-hf/llava-1.5-7b-hf")
+        >>> processor = AutoProcessor.from_pretrained("llava-hf/llava-1.5-7b-hf")
+
+        >>> prompt = "USER: <image>\nWhat's the content of the image? ASSISTANT:"
+        >>> url = "https://www.ilankelman.org/stopsigns/australia.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> inputs = processor(images=image, text=prompt, return_tensors="pt")
+
+        >>> # Generate
+        >>> generate_ids = model.generate(**inputs, max_new_tokens=15)
+        >>> processor.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+        "USER:  \nWhat's the content of the image? ASSISTANT: The image features a busy city street with a stop sign prominently displayed"
+        ```"""
+        ...
+
     def prepare_inputs_for_generation(
         self,
         input_ids,
@@ -142,6 +253,7 @@ class LlavaForConditionalGeneration(LlavaPreTrainedModel, GenerationMixin):
         cache_position=...,
         logits_to_keep=...,
         **kwargs,
-    ): ...
+    ):  # -> dict[Any, Any]:
+        ...
 
 __all__ = ["LlavaForConditionalGeneration", "LlavaPreTrainedModel", "LlavaModel"]

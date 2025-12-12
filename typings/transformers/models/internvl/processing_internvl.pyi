@@ -20,6 +20,24 @@ class InternVLProcessorKwargs(ProcessingKwargs, total=False):
     _defaults = ...
 
 class InternVLProcessor(ProcessorMixin):
+    r"""
+    Constructs a InternVL processor which wraps a [`AutoImageProcessor`] and
+    [`PretrainedTokenizerFast`] tokenizer into a single processor that inherits both the image processor and
+    tokenizer functionalities. See the [`~InternVLProcessor.__call__`] and [`~InternVLProcessor.decode`] for more information.
+    Args:
+        image_processor ([`AutoImageProcessor`], *optional*):
+            The image processor is a required input.
+        tokenizer ([`PreTrainedTokenizer`, `PreTrainedTokenizerFast`], *optional*):
+            The tokenizer is a required input.
+        video_processor ([`AutoVideoProcessor`], *optional*):
+            The video processor is a required input.
+        image_seq_length (`int`, *optional*, defaults to 256):
+            The number of image token to use per image patch. it should be set so that:
+            image_seq_length = (config.image_size // config.patch_size) ** 2 * (config.scale_factor**2)
+        chat_template (`str`, *optional*): A Jinja template which will be used to convert lists of messages
+            in a chat into a tokenizable string.
+    """
+
     attributes = ...
     image_processor_class = ...
     video_processor_class = ...
@@ -40,10 +58,58 @@ class InternVLProcessor(ProcessorMixin):
         audio=...,
         videos: Optional[VideoInput] = ...,
         **kwargs: Unpack[InternVLProcessorKwargs],
-    ) -> BatchFeature: ...
-    def batch_decode(self, *args, **kwargs): ...
-    def decode(self, *args, **kwargs): ...
+    ) -> BatchFeature:
+        """
+        Main method to prepare for the model one or several sequences(s) and image(s). This method forwards the `text`
+        and `kwargs` arguments to PreTrainedTokenizerFast's [`~PreTrainedTokenizerFast.__call__`] to encode the text if `text`
+        is not `None`, otherwise encode default OCR queries which depends on the `format`, `box`, `color`, `multi_page` and
+        `crop_to_patches` arguments. To prepare the vision inputs, this method forwards the `images` and `kwrags` arguments to
+        GotOcr2ImageProcessor's [`~GotOcr2ImageProcessor.__call__`] if `images` is not `None`.
+
+        Args:
+            images (`PIL.Image.Image`, `np.ndarray`, `torch.Tensor`, `list[PIL.Image.Image]`, `list[np.ndarray]`, `list[torch.Tensor]`):
+                The image or batch of images to be prepared. Each image can be a PIL image, NumPy array or PyTorch
+                tensor. Both channels-first and channels-last formats are supported.
+            text (`str`, `list[str]`, `list[list[str]]`):
+                The sequence or batch of sequences to be encoded. Each sequence can be a string or a list of strings
+                (pretokenized string). If the sequences are provided as list of strings (pretokenized), you must set
+                `is_split_into_words=True` (to lift the ambiguity with a batch of sequences).
+            videos (`np.ndarray`, `torch.Tensor`, `list[np.ndarray]`, `list[torch.Tensor]`):
+                The image or batch of videos to be prepared. Each video can be a 4D NumPy array or PyTorch
+            return_tensors (`str` or [`~utils.TensorType`], *optional*):
+                If set, will return tensors of a particular framework. Acceptable values are:
+                - `'tf'`: Return TensorFlow `tf.constant` objects.
+                - `'pt'`: Return PyTorch `torch.Tensor` objects.
+                - `'np'`: Return NumPy `np.ndarray` objects.
+                - `'jax'`: Return JAX `jnp.ndarray` objects.
+
+        Returns:
+            [`BatchFeature`]: A [`BatchFeature`] with the following fields:
+
+            - **input_ids** -- List of token ids to be fed to a model. Returned when `text` is not `None`.
+            - **attention_mask** -- List of indices specifying which tokens should be attended to by the model (when
+              `return_attention_mask=True` or if *"attention_mask"* is in `self.model_input_names` and if `text` is not
+              `None`).
+            - **pixel_values** -- Pixel values to be fed to a model. Returned when `images` is not `None`.
+        """
+        ...
+
+    def batch_decode(self, *args, **kwargs):
+        """
+        This method forwards all its arguments to PreTrainedTokenizerFast's [`~PreTrainedTokenizer.batch_decode`]. Please
+        refer to the docstring of this method for more information.
+        """
+        ...
+
+    def decode(self, *args, **kwargs):
+        """
+        This method forwards all its arguments to PreTrainedTokenizerFast's [`~PreTrainedTokenizer.decode`]. Please refer to
+        the docstring of this method for more information.
+        """
+        ...
+
     @property
-    def model_input_names(self): ...
+    def model_input_names(self):  # -> list[Any]:
+        ...
 
 __all__ = ["InternVLProcessor"]

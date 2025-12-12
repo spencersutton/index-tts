@@ -14,6 +14,16 @@ if is_torchvision_v2_available(): ...
 else: ...
 
 class LlavaOnevisionFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
+    """
+    image_grid_pinpoints (`list[list[int]]`, *optional*):
+        A list of possible resolutions to use for processing high resolution images. The best resolution is selected
+        based on the original size of the image. Can be overridden by `image_grid_pinpoints` in the `preprocess`
+        method.
+    do_pad (`bool`, *optional*):
+        Whether to pad the image. If `True`, will pad the patch dimension of the images in the batch to the largest
+        number of patches in the batch. Padding will be applied to the bottom and right with zeros.
+    """
+
     image_grid_pinpoints: Optional[list[list[int]]]
     do_pad: Optional[bool]
     ...
@@ -42,6 +52,20 @@ class LlavaOnevisionImageProcessorFast(BaseImageProcessorFast):
     ) -> BatchFeature: ...
     def pad_to_square(
         self, images: torch.Tensor, background_color: Union[int, tuple[int, int, int]] = ...
-    ) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """
+        Pads an image to a square based on the longest edge.
+
+        Args:
+            images (`np.ndarray`):
+                The images to pad.
+            background_color (`int` or `tuple[int, int, int]`, *optional*, defaults to 0):
+                The color to use for the padding. Can be an integer for single channel or a
+                tuple of integers representing for multi-channel images. If passed as integer
+                in mutli-channel mode, it will default to `0` in subsequent channels.
+        Returns:
+            `torch.Tensor`: The padded images.
+        """
+        ...
 
 __all__ = ["LlavaOnevisionImageProcessorFast"]

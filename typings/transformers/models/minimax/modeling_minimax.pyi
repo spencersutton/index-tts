@@ -25,25 +25,40 @@ from .configuration_minimax import MiniMaxConfig
 
 @use_kernel_forward_from_hub("RMSNorm")
 class MiniMaxRMSNorm(nn.Module):
-    def __init__(self, hidden_size, eps=...) -> None: ...
+    def __init__(self, hidden_size, eps=...) -> None:
+        """
+        MiniMaxRMSNorm is equivalent to T5LayerNorm
+        """
+        ...
+
     def forward(self, hidden_states): ...
-    def extra_repr(self): ...
+    def extra_repr(self):  # -> str:
+        ...
 
 class MiniMaxCache(DynamicCache):
     def __init__(self) -> None: ...
-    def set_linear_cache(self, layer_idx, linear_cache): ...
-    def get_linear_cache(self, layer_idx: int): ...
-    def __len__(self): ...
-    def __getitem__(self, layer_idx: int): ...
-    def __iter__(self): ...
-    def batch_repeat_interleave(self, repeats: int): ...
-    def batch_select_indices(self, indices: torch.Tensor): ...
+    def set_linear_cache(self, layer_idx, linear_cache):  # -> None:
+        ...
+    def get_linear_cache(self, layer_idx: int):  # -> Tensor | None:
+        ...
+    def __len__(self):  # -> int:
+        ...
+    def __getitem__(self, layer_idx: int):  # -> tuple[Tensor] | tuple[Tensor, Tensor]:
+        ...
+    def __iter__(self):  # -> Generator[tuple[Tensor] | tuple[Tensor, Tensor], Any, None]:
+        ...
+    def batch_repeat_interleave(self, repeats: int):  # -> None:
+        ...
+    def batch_select_indices(self, indices: torch.Tensor):  # -> None:
+        ...
     def crop(self, max_length: int): ...
 
 class MiniMaxLightningAttention(nn.Module):
     def __init__(self, config: MiniMaxConfig, layer_idx: int) -> None: ...
-    def get_slope_rate(self): ...
-    def decay_factors(self, slope_rate): ...
+    def get_slope_rate(self):  # -> Tensor:
+        ...
+    def decay_factors(self, slope_rate):  # -> tuple[Tensor, Tensor, Tensor]:
+        ...
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -54,9 +69,39 @@ class MiniMaxLightningAttention(nn.Module):
         **kwargs: Unpack[FlashAttentionKwargs],
     ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
 
-def rotate_half(x): ...
-def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...): ...
-def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor: ...
+def rotate_half(x):  # -> Tensor:
+    """Rotates half the hidden dims of the input."""
+    ...
+
+def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...):  # -> tuple[Any, Any]:
+    """Applies Rotary Position Embedding to the query and key tensors.
+
+    Args:
+        q (`torch.Tensor`): The query tensor.
+        k (`torch.Tensor`): The key tensor.
+        cos (`torch.Tensor`): The cosine part of the rotary embedding.
+        sin (`torch.Tensor`): The sine part of the rotary embedding.
+        position_ids (`torch.Tensor`, *optional*):
+            Deprecated and unused.
+        unsqueeze_dim (`int`, *optional*, defaults to 1):
+            The 'unsqueeze_dim' argument specifies the dimension along which to unsqueeze cos[position_ids] and
+            sin[position_ids] so that they can be properly broadcasted to the dimensions of q and k. For example, note
+            that cos[position_ids] and sin[position_ids] have the shape [batch_size, seq_len, head_dim]. Then, if q and
+            k have the shape [batch_size, heads, seq_len, head_dim], then setting unsqueeze_dim=1 makes
+            cos[position_ids] and sin[position_ids] broadcastable to the shapes of q and k. Similarly, if q and k have
+            the shape [batch_size, seq_len, heads, head_dim], then set unsqueeze_dim=2.
+    Returns:
+        `tuple(torch.Tensor)` comprising of the query and key tensors rotated using the Rotary Position Embedding.
+    """
+    ...
+
+def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
+    """
+    This is the equivalent of torch.repeat_interleave(x, dim=1, repeats=n_rep). The hidden states go from (batch,
+    num_key_value_heads, seqlen, head_dim) to (batch, num_attention_heads, seqlen, head_dim)
+    """
+    ...
+
 def eager_attention_forward(
     module: nn.Module,
     query: torch.Tensor,
@@ -66,9 +111,11 @@ def eager_attention_forward(
     scaling: float,
     dropout: float = ...,
     **kwargs: Unpack[TransformersKwargs],
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class MiniMaxAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config: MiniMaxConfig, layer_idx: int) -> None: ...
     def forward(
         self,
@@ -82,11 +129,24 @@ class MiniMaxAttention(nn.Module):
 
 class MiniMaxBlockSparseTop2MLP(nn.Module):
     def __init__(self, config: MiniMaxConfig) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class MiniMaxSparseMoeBlock(nn.Module):
+    """
+    This implementation is
+    strictly equivalent to standard MoE with full capacity (no
+    dropped tokens). It's faster since it formulates MoE operations
+    in terms of block-sparse operations to accommodate imbalanced
+    assignments of tokens to experts, whereas standard MoE either
+    (1) drop tokens at the cost of reduced performance or (2) set
+    capacity factor to number of experts and thus waste computation
+    and memory on padding.
+    """
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
+    def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
+        """ """
+        ...
 
 class MiniMaxDecoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: MiniMaxConfig, layer_idx: int) -> None: ...
@@ -102,7 +162,32 @@ class MiniMaxDecoderLayer(GradientCheckpointingLayer):
         use_cache: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]: ...
+    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            position_embeddings (`tuple[torch.FloatTensor, torch.FloatTensor]`):
+                Tuple containing the cosine and sine positional embeddings of shape `(batch_size, seq_len, head_dim)`,
+                with `head_dim` being the embedding dimension of each attention head.
+            attention_mask (`torch.Tensor`, *optional*): attention mask of size
+                `(batch, sequence_length)` where padding elements are indicated by 0.
+            past_key_value (`Tuple(torch.FloatTensor)`, *optional*): cached past key and value projection states
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            output_router_logits (`bool`, *optional*):
+                Whether or not to return the logits of all the routers. They are useful for computing the router loss, and
+                should not be returned during inference.
+            use_cache (`bool`, *optional*):
+                If set to `True`, `past_key_values` key value states are returned and can be used to speed up decoding
+                (see `past_key_values`).
+            cache_position (`torch.LongTensor` of shape `(sequence_length)`, *optional*):
+                Indices depicting the position of the input sequence tokens in the sequence.
+            kwargs (`dict`, *optional*):
+                Arbitrary kwargs to be ignored, used for FSDP and other methods that injects code
+                into the model
+        """
+        ...
 
 @auto_docstring
 class MiniMaxPreTrainedModel(PreTrainedModel):
@@ -122,7 +207,8 @@ class MiniMaxRotaryEmbedding(nn.Module):
     def __init__(self, config: MiniMaxConfig, device=...) -> None: ...
     @torch.no_grad()
     @dynamic_rope_update
-    def forward(self, x, position_ids): ...
+    def forward(self, x, position_ids):  # -> tuple[Tensor, Tensor]:
+        ...
 
 @auto_docstring
 class MiniMaxModel(MiniMaxPreTrainedModel):
@@ -147,7 +233,31 @@ def load_balancing_loss_func(
     num_experts: Optional[int] = ...,
     top_k=...,
     attention_mask: Optional[torch.Tensor] = ...,
-) -> Union[torch.Tensor, int]: ...
+) -> Union[torch.Tensor, int]:
+    r"""
+    Computes auxiliary load balancing loss as in Switch Transformer - implemented in Pytorch.
+
+    See Switch Transformer (https://huggingface.co/papers/2101.03961) for more details. This function implements the loss
+    function presented in equations (4) - (6) of the paper. It aims at penalizing cases where the routing between
+    experts is too unbalanced.
+
+    Args:
+        gate_logits:
+            Logits from the `gate`, should be a tuple of model.config.num_hidden_layers tensors of
+            shape [batch_size X sequence_length, num_experts].
+        num_experts:
+            Number of experts
+        top_k:
+            The number of experts to route per-token, can be also interpreted as the `top-k` routing
+            parameter.
+        attention_mask (`torch.Tensor`, *optional*):
+            The attention_mask used in forward function
+            shape [batch_size X sequence_length] if not None.
+
+    Returns:
+        The auxiliary loss.
+    """
+    ...
 
 @auto_docstring
 class MiniMaxForCausalLM(MiniMaxPreTrainedModel, GenerationMixin):
@@ -155,8 +265,10 @@ class MiniMaxForCausalLM(MiniMaxPreTrainedModel, GenerationMixin):
     _tp_plan = ...
     _pp_plan = ...
     def __init__(self, config) -> None: ...
-    def set_decoder(self, decoder): ...
-    def get_decoder(self): ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> MiniMaxModel:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -172,7 +284,30 @@ class MiniMaxForCausalLM(MiniMaxPreTrainedModel, GenerationMixin):
         cache_position: Optional[torch.LongTensor] = ...,
         logits_to_keep: Union[int, torch.Tensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> MoeCausalLMOutputWithPast: ...
+    ) -> MoeCausalLMOutputWithPast:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, MiniMaxForCausalLM
+
+        >>> model = MiniMaxForCausalLM.from_pretrained("MiniMaxAI/MiniMax-Text-01-hf")
+        >>> tokenizer = AutoTokenizer.from_pretrained("MiniMaxAI/MiniMax-Text-01-hf")
+
+        >>> prompt = "Hey, are you conscious? Can you talk to me?"
+        >>> inputs = tokenizer(prompt, return_tensors="pt")
+
+        >>> # Generate
+        >>> generate_ids = model.generate(inputs.input_ids, max_length=30)
+        >>> tokenizer.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+        "Hey, are you conscious? Can you talk to me?\nI'm not conscious, but I can talk to you."
+        ```"""
+        ...
 
 class MiniMaxForSequenceClassification(GenericForSequenceClassification, MiniMaxPreTrainedModel): ...
 class MiniMaxForTokenClassification(GenericForTokenClassification, MiniMaxPreTrainedModel): ...

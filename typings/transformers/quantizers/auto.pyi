@@ -10,24 +10,55 @@ AUTO_QUANTIZATION_CONFIG_MAPPING = ...
 logger = ...
 
 class AutoQuantizationConfig:
+    """
+    The Auto-HF quantization config class that takes care of automatically dispatching to the correct
+    quantization config given a quantization config stored in a dictionary.
+    """
     @classmethod
-    def from_dict(cls, quantization_config_dict: dict): ...
+    def from_dict(
+        cls, quantization_config_dict: dict
+    ):  # -> tuple[AwqConfig, dict[str, Any]] | AwqConfig | tuple[BitsAndBytesConfig, dict[str, Any]] | BitsAndBytesConfig | tuple[EetqConfig, dict[str, Any]] | EetqConfig | tuple[GPTQConfig, dict[str, Any]] | GPTQConfig | tuple[AqlmConfig, dict[str, Any]] | AqlmConfig | tuple[QuantoConfig, dict[str, Any]] | QuantoConfig | tuple[QuarkConfig, dict[str, Any]] | QuarkConfig | tuple[FPQuantConfig, dict[str, Any]] | FPQuantConfig | tuple[CompressedTensorsConfig, dict[str, Any]] | CompressedTensorsConfig | tuple[FbgemmFp8Config, dict[str, Any]] | FbgemmFp8Config | tuple[HiggsConfig, dict[str, Any]] | HiggsConfig | tuple[BitNetQuantConfig, dict[str, Any]] | BitNetQuantConfig | tuple[VptqConfig, dict[str, Any]] | VptqConfig | tuple[SpQRConfig, dict[str, Any]] | SpQRConfig | tuple[FineGrainedFP8Config, dict[str, Any]] | FineGrainedFP8Config | tuple[AutoRoundConfig, dict[str, Any]] | AutoRoundConfig | tuple[Mxfp4Config, dict[str, Any]] | Mxfp4Config | TorchAoConfig | HqqConfig:
+        ...
     @classmethod
-    def from_pretrained(cls, pretrained_model_name_or_path, **kwargs): ...
+    def from_pretrained(
+        cls, pretrained_model_name_or_path, **kwargs
+    ):  # -> tuple[AwqConfig, dict[str, Any]] | AwqConfig | tuple[BitsAndBytesConfig, dict[str, Any]] | BitsAndBytesConfig | tuple[EetqConfig, dict[str, Any]] | EetqConfig | tuple[GPTQConfig, dict[str, Any]] | GPTQConfig | tuple[AqlmConfig, dict[str, Any]] | AqlmConfig | tuple[QuantoConfig, dict[str, Any]] | QuantoConfig | tuple[QuarkConfig, dict[str, Any]] | QuarkConfig | tuple[FPQuantConfig, dict[str, Any]] | FPQuantConfig | tuple[CompressedTensorsConfig, dict[str, Any]] | CompressedTensorsConfig | tuple[FbgemmFp8Config, dict[str, Any]] | FbgemmFp8Config | tuple[HiggsConfig, dict[str, Any]] | HiggsConfig | tuple[BitNetQuantConfig, dict[str, Any]] | BitNetQuantConfig | tuple[VptqConfig, dict[str, Any]] | VptqConfig | tuple[SpQRConfig, dict[str, Any]] | SpQRConfig | tuple[FineGrainedFP8Config, dict[str, Any]] | FineGrainedFP8Config | tuple[AutoRoundConfig, dict[str, Any]] | AutoRoundConfig | tuple[Mxfp4Config, dict[str, Any]] | Mxfp4Config | TorchAoConfig | HqqConfig:
+        ...
 
 class AutoHfQuantizer:
+    """
+     The Auto-HF quantizer class that takes care of automatically instantiating to the correct
+    `HfQuantizer` given the `QuantizationConfig`.
+    """
     @classmethod
-    def from_config(cls, quantization_config: Union[QuantizationConfigMixin, dict], **kwargs): ...
+    def from_config(
+        cls, quantization_config: Union[QuantizationConfigMixin, dict], **kwargs
+    ):  # -> AqlmHfQuantizer | AutoRoundQuantizer | CompressedTensorsHfQuantizer | FPQuantHfQuantizer | GptqHfQuantizer | HiggsHfQuantizer | QuantoHfQuantizer | SpQRHfQuantizer | VptqHfQuantizer | AwqQuantizer | BitNetHfQuantizer | Bnb4BitHfQuantizer | Bnb8BitHfQuantizer | EetqHfQuantizer | FbgemmFp8HfQuantizer | FineGrainedFP8HfQuantizer | HqqHfQuantizer | Mxfp4HfQuantizer | QuarkHfQuantizer | TorchAoHfQuantizer:
+        ...
     @classmethod
-    def from_pretrained(cls, pretrained_model_name_or_path, **kwargs): ...
+    def from_pretrained(
+        cls, pretrained_model_name_or_path, **kwargs
+    ):  # -> AqlmHfQuantizer | AutoRoundQuantizer | CompressedTensorsHfQuantizer | FPQuantHfQuantizer | GptqHfQuantizer | HiggsHfQuantizer | QuantoHfQuantizer | SpQRHfQuantizer | VptqHfQuantizer | AwqQuantizer | BitNetHfQuantizer | Bnb4BitHfQuantizer | Bnb8BitHfQuantizer | EetqHfQuantizer | FbgemmFp8HfQuantizer | FineGrainedFP8HfQuantizer | HqqHfQuantizer | Mxfp4HfQuantizer | QuarkHfQuantizer | TorchAoHfQuantizer:
+        ...
     @classmethod
     def merge_quantization_configs(
         cls,
         quantization_config: Union[dict, QuantizationConfigMixin],
         quantization_config_from_args: Optional[QuantizationConfigMixin],
-    ): ...
-    @staticmethod
-    def supports_quant_method(quantization_config_dict): ...
+    ):  # -> GPTQConfig | AwqConfig | AutoRoundConfig | FbgemmFp8Config | CompressedTensorsConfig | dict[Any, Any] | QuantizationConfigMixin | Mxfp4Config:
+        """
+        handles situations where both quantization_config from args and quantization_config from model config are present.
+        """
+        ...
 
-def register_quantization_config(method: str): ...
-def register_quantizer(name: str): ...
+    @staticmethod
+    def supports_quant_method(quantization_config_dict):  # -> bool:
+        ...
+
+def register_quantization_config(method: str):  # -> Callable[..., type[QuantizationConfigMixin]]:
+    """Register a custom quantization configuration."""
+    ...
+
+def register_quantizer(name: str):  # -> Callable[..., type[HfQuantizer]]:
+    """Register a custom quantizer."""
+    ...

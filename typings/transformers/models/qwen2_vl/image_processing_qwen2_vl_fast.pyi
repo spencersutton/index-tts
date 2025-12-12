@@ -10,11 +10,25 @@ from ...processing_utils import Unpack
 from ...utils import auto_docstring, is_torch_available, is_torchvision_available
 from ...video_utils import VideoInput
 
+"""Fast Image processor class for Qwen2-VL."""
 if is_torch_available(): ...
 if is_torchvision_available(): ...
 logger = ...
 
 class Qwen2VLFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
+    """
+    min_pixels (`int`, *optional*, defaults to `56 * 56`):
+        The min pixels of the image to resize the image.
+    max_pixels (`int`, *optional*, defaults to `28 * 28 * 1280`):
+        The max pixels of the image to resize the image.
+    patch_size (`int`, *optional*, defaults to 14):
+        The spatial patch size of the vision encoder.
+    temporal_patch_size (`int`, *optional*, defaults to 2):
+        The temporal patch size of the vision encoder.
+    merge_size (`int`, *optional*, defaults to 2):
+        The merge size of the vision encoder to llm encoder.
+    """
+
     min_pixels: Optional[int]
     max_pixels: Optional[int]
     patch_size: Optional[int]
@@ -44,6 +58,23 @@ class Qwen2VLImageProcessorFast(BaseImageProcessorFast):
     def preprocess(
         self, images: ImageInput, videos: Optional[VideoInput] = ..., **kwargs: Unpack[Qwen2VLFastImageProcessorKwargs]
     ) -> BatchFeature: ...
-    def get_number_of_image_patches(self, height: int, width: int, images_kwargs=...): ...
+    def get_number_of_image_patches(self, height: int, width: int, images_kwargs=...):
+        """
+        A utility that returns number of image patches for a given image size.
+
+        Note: Do not remove this method! It is used by vLLM to infer the number of patches and placeholders
+        without an image input.
+
+        Args:
+            height (`int`):
+                Height of the input image.
+            width (`int`):
+                Width of the input image.
+            images_kwargs (`dict`, *optional*)
+                Any kwargs to override defaults of the image processor.
+        Returns:
+            `int`: Number of image patches per image.
+        """
+        ...
 
 __all__ = ["Qwen2VLImageProcessorFast"]

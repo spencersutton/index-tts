@@ -20,22 +20,30 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import add_start_docstrings, auto_docstring, is_torch_flex_attn_available
 from .configuration_mt5 import MT5Config
 
+"""PyTorch mT5 model."""
 if is_torch_flex_attn_available(): ...
 logger = ...
 PARALLELIZE_DOCSTRING = ...
 DEPARALLELIZE_DOCSTRING = ...
 
 class MT5LayerNorm(nn.Module):
-    def __init__(self, hidden_size, eps=...) -> None: ...
+    def __init__(self, hidden_size, eps=...) -> None:
+        """
+        Construct a layernorm module in the MT5 style. No bias and no subtraction of mean.
+        """
+        ...
+
     def forward(self, hidden_states): ...
 
 class MT5DenseActDense(nn.Module):
     def __init__(self, config: MT5Config) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class MT5DenseGatedActDense(nn.Module):
     def __init__(self, config: MT5Config) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class MT5LayerFF(nn.Module):
     def __init__(self, config: MT5Config) -> None: ...
@@ -43,8 +51,12 @@ class MT5LayerFF(nn.Module):
 
 class MT5Attention(nn.Module):
     def __init__(self, config: MT5Config, has_relative_attention_bias=..., layer_idx: Optional[int] = ...) -> None: ...
-    def prune_heads(self, heads): ...
-    def compute_bias(self, query_length, key_length, device=..., cache_position=...): ...
+    def prune_heads(self, heads):  # -> None:
+        ...
+    def compute_bias(self, query_length, key_length, device=..., cache_position=...):  # -> Any:
+        """Compute binned relative position bias"""
+        ...
+
     def forward(
         self,
         hidden_states,
@@ -57,7 +69,11 @@ class MT5Attention(nn.Module):
         use_cache=...,
         output_attentions=...,
         cache_position=...,
-    ): ...
+    ):  # -> tuple[Any, Any | Tensor, Any | Tensor] | tuple[Any, Any | Tensor]:
+        """
+        Self-attention (if key_value_states is None) or attention over source sentence (provided by key_value_states).
+        """
+        ...
 
 class MT5LayerSelfAttention(nn.Module):
     def __init__(self, config, has_relative_attention_bias=..., layer_idx: Optional[int] = ...) -> None: ...
@@ -71,7 +87,8 @@ class MT5LayerSelfAttention(nn.Module):
         use_cache=...,
         output_attentions=...,
         cache_position=...,
-    ): ...
+    ):  # -> Any:
+        ...
 
 class MT5LayerCrossAttention(nn.Module):
     def __init__(self, config, layer_idx: Optional[int] = ...) -> None: ...
@@ -87,7 +104,8 @@ class MT5LayerCrossAttention(nn.Module):
         query_length=...,
         output_attentions=...,
         cache_position=...,
-    ): ...
+    ):  # -> Any:
+        ...
 
 class MT5Block(GradientCheckpointingLayer):
     def __init__(self, config, has_relative_attention_bias=..., layer_idx: Optional[int] = ...) -> None: ...
@@ -106,11 +124,15 @@ class MT5Block(GradientCheckpointingLayer):
         output_attentions=...,
         return_dict=...,
         cache_position=...,
-    ): ...
+    ):  # -> Any:
+        ...
 
-def load_tf_weights_in_mt5(model, config, tf_checkpoint_path): ...
+def load_tf_weights_in_mt5(model, config, tf_checkpoint_path):
+    """Load tf checkpoints in a pytorch model."""
+    ...
 
 class MT5ClassificationHead(nn.Module):
+    """Head for sentence-level classification tasks."""
     def __init__(self, config: MT5Config) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
 
@@ -125,15 +147,19 @@ class MT5PreTrainedModel(PreTrainedModel):
     _no_split_modules = ...
     _keep_in_fp32_modules = ...
     @property
-    def dummy_inputs(self): ...
+    def dummy_inputs(self):  # -> dict[str, Tensor]:
+        ...
 
 class MT5Stack(MT5PreTrainedModel):
     def __init__(self, config, embed_tokens=...) -> None: ...
     @add_start_docstrings(PARALLELIZE_DOCSTRING)
-    def parallelize(self, device_map=...): ...
+    def parallelize(self, device_map=...):  # -> None:
+        ...
     @add_start_docstrings(DEPARALLELIZE_DOCSTRING)
-    def deparallelize(self): ...
-    def set_input_embeddings(self, new_embeddings): ...
+    def deparallelize(self):  # -> None:
+        ...
+    def set_input_embeddings(self, new_embeddings):  # -> None:
+        ...
     def forward(
         self,
         input_ids=...,
@@ -155,19 +181,42 @@ __HEAD_MASK_WARNING_MSG = ...
 
 @auto_docstring
 class MT5Model(MT5PreTrainedModel):
+    r"""
+    Examples:
+
+    ```python
+    >>> from transformers import MT5Model, AutoTokenizer
+
+    >>> model = MT5Model.from_pretrained("google/mt5-small")
+    >>> tokenizer = AutoTokenizer.from_pretrained("google/mt5-small")
+    >>> article = "UN Offizier sagt, dass weiter verhandelt werden muss in Syrien."
+    >>> summary = "Weiter Verhandlung in Syrien."
+    >>> inputs = tokenizer(article, return_tensors="pt")
+    >>> labels = tokenizer(text_target=summary, return_tensors="pt")
+
+    >>> outputs = model(input_ids=inputs["input_ids"], decoder_input_ids=labels["input_ids"])
+    >>> hidden_states = outputs.last_hidden_state
+    ```"""
+
     model_type = ...
     config: MT5Config
     _keys_to_ignore_on_load_unexpected = ...
     _tied_weights_keys = ...
     def __init__(self, config: MT5Config) -> None: ...
     @add_start_docstrings(PARALLELIZE_DOCSTRING)
-    def parallelize(self, device_map=...): ...
+    def parallelize(self, device_map=...):  # -> None:
+        ...
     @add_start_docstrings(DEPARALLELIZE_DOCSTRING)
-    def deparallelize(self): ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, new_embeddings): ...
-    def get_encoder(self): ...
-    def get_decoder(self): ...
+    def deparallelize(self):  # -> None:
+        ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, new_embeddings):  # -> None:
+        ...
+    def get_encoder(self):  # -> MT5Stack:
+        ...
+    def get_decoder(self):  # -> MT5Stack:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -187,23 +236,111 @@ class MT5Model(MT5PreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple[torch.FloatTensor], Seq2SeqModelOutput]: ...
+    ) -> Union[tuple[torch.FloatTensor], Seq2SeqModelOutput]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
+            Indices of input sequence tokens in the vocabulary. MT5 is a model with relative position embeddings so you
+            should be able to pad the inputs on both the right and the left.
 
-@auto_docstring(custom_intro=...)
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for detail.
+
+            [What are input IDs?](../glossary#input-ids)
+
+            To know more on how to prepare `input_ids` for pretraining take a look a [MT5 Training](./mt5#training).
+        decoder_input_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Indices of decoder input sequence tokens in the vocabulary.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are decoder input IDs?](../glossary#decoder-input-ids)
+
+            MT5 uses the `pad_token_id` as the starting token for `decoder_input_ids` generation. If `past_key_values`
+            is used, optionally only the last `decoder_input_ids` have to be input (see `past_key_values`).
+
+            To know more on how to prepare `decoder_input_ids` for pretraining take a look at [MT5
+            Training](./mt5#training).
+        decoder_attention_mask (`torch.BoolTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Default behavior: generate a tensor that ignores pad tokens in `decoder_input_ids`. Causal mask will also
+            be used by default.
+        decoder_head_mask (`torch.FloatTensor` of shape `(num_heads,)` or `(num_layers, num_heads)`, *optional*):
+            Mask to nullify selected heads of the self-attention modules in the decoder. Mask values selected in `[0,
+            1]`:
+
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+        cross_attn_head_mask (`torch.Tensor` of shape `(num_heads,)` or `(num_layers, num_heads)`, *optional*):
+            Mask to nullify selected heads of the cross-attention modules in the decoder. Mask values selected in
+            `[0, 1]`:
+
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, MT5Model
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("google/mt5-small")
+        >>> model = MT5Model.from_pretrained("google/mt5-small")
+
+        >>> input_ids = tokenizer(
+        ...     "Studies have been shown that owning a dog is good for you", return_tensors="pt"
+        ... ).input_ids  # Batch size 1
+        >>> decoder_input_ids = tokenizer("Studies show that", return_tensors="pt").input_ids  # Batch size 1
+
+        >>> # preprocess: Prepend decoder_input_ids with start token which is pad token for MT5Model.
+        >>> # This is not needed for torch's MT5ForConditionalGeneration as it does this internally using labels arg.
+        >>> decoder_input_ids = model._shift_right(decoder_input_ids)
+
+        >>> # forward pass
+        >>> outputs = model(input_ids=input_ids, decoder_input_ids=decoder_input_ids)
+        >>> last_hidden_states = outputs.last_hidden_state
+        ```"""
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    MT5 Model with a `language modeling` head on top.
+    """
+)
 class MT5ForConditionalGeneration(MT5PreTrainedModel, GenerationMixin):
+    r"""
+    Examples:
+
+    ```python
+    >>> from transformers import MT5ForConditionalGeneration, AutoTokenizer
+
+    >>> model = MT5ForConditionalGeneration.from_pretrained("google/mt5-small")
+    >>> tokenizer = AutoTokenizer.from_pretrained("google/mt5-small")
+    >>> article = "UN Offizier sagt, dass weiter verhandelt werden muss in Syrien."
+    >>> summary = "Weiter Verhandlung in Syrien."
+    >>> inputs = tokenizer(article, text_target=summary, return_tensors="pt")
+
+    >>> outputs = model(**inputs)
+    >>> loss = outputs.loss
+    ```"""
+
     model_type = ...
     config: MT5Config
     _keys_to_ignore_on_load_unexpected = ...
     _tied_weights_keys = ...
     def __init__(self, config: MT5Config) -> None: ...
     @add_start_docstrings(PARALLELIZE_DOCSTRING)
-    def parallelize(self, device_map=...): ...
+    def parallelize(self, device_map=...):  # -> None:
+        ...
     @add_start_docstrings(DEPARALLELIZE_DOCSTRING)
-    def deparallelize(self): ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, new_embeddings): ...
-    def get_encoder(self): ...
-    def get_decoder(self): ...
+    def deparallelize(self):  # -> None:
+        ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, new_embeddings):  # -> None:
+        ...
+    def get_encoder(self):  # -> MT5Stack:
+        ...
+    def get_decoder(self):  # -> MT5Stack:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -224,22 +361,111 @@ class MT5ForConditionalGeneration(MT5PreTrainedModel, GenerationMixin):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple[torch.FloatTensor], Seq2SeqLMOutput]: ...
-    def prepare_decoder_input_ids_from_labels(self, labels: torch.Tensor): ...
+    ) -> Union[tuple[torch.FloatTensor], Seq2SeqLMOutput]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
+            Indices of input sequence tokens in the vocabulary. MT5 is a model with relative position embeddings so you
+            should be able to pad the inputs on both the right and the left.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for detail.
+
+            [What are input IDs?](../glossary#input-ids)
+
+            To know more on how to prepare `input_ids` for pretraining take a look a [MT5 Training](./mt5#training).
+        decoder_input_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Indices of decoder input sequence tokens in the vocabulary.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are decoder input IDs?](../glossary#decoder-input-ids)
+
+            MT5 uses the `pad_token_id` as the starting token for `decoder_input_ids` generation. If `past_key_values`
+            is used, optionally only the last `decoder_input_ids` have to be input (see `past_key_values`).
+
+            To know more on how to prepare `decoder_input_ids` for pretraining take a look at [MT5
+            Training](./mt5#training).
+        decoder_attention_mask (`torch.BoolTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Default behavior: generate a tensor that ignores pad tokens in `decoder_input_ids`. Causal mask will also
+            be used by default.
+        decoder_head_mask (`torch.FloatTensor` of shape `(num_heads,)` or `(num_layers, num_heads)`, *optional*):
+            Mask to nullify selected heads of the self-attention modules in the decoder. Mask values selected in `[0,
+            1]`:
+
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+        cross_attn_head_mask (`torch.Tensor` of shape `(num_heads,)` or `(num_layers, num_heads)`, *optional*):
+            Mask to nullify selected heads of the cross-attention modules in the decoder. Mask values selected in
+            `[0, 1]`:
+
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[-100, 0, ...,
+            config.vocab_size - 1]`. All labels set to `-100` are ignored (masked), the loss is only computed for
+            labels in `[0, ..., config.vocab_size]`
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoTokenizer, MT5ForConditionalGeneration
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("google/mt5-small")
+        >>> model = MT5ForConditionalGeneration.from_pretrained("google/mt5-small")
+
+        >>> # training
+        >>> input_ids = tokenizer("The <extra_id_0> walks in <extra_id_1> park", return_tensors="pt").input_ids
+        >>> labels = tokenizer("<extra_id_0> cute dog <extra_id_1> the <extra_id_2>", return_tensors="pt").input_ids
+        >>> outputs = model(input_ids=input_ids, labels=labels)
+        >>> loss = outputs.loss
+        >>> logits = outputs.logits
+
+        >>> # inference
+        >>> input_ids = tokenizer(
+        ...     "summarize: studies have shown that owning a dog is good for you", return_tensors="pt"
+        ... ).input_ids  # Batch size 1
+        >>> outputs = model.generate(input_ids)
+        >>> print(tokenizer.decode(outputs[0], skip_special_tokens=True))
+        >>> # studies have shown that owning a dog is good for you.
+        ```"""
+        ...
+
+    def prepare_decoder_input_ids_from_labels(self, labels: torch.Tensor):  # -> Tensor:
+        ...
 
 @auto_docstring
 class MT5EncoderModel(MT5PreTrainedModel):
+    r"""
+    Examples:
+
+    ```python
+    >>> from transformers import MT5EncoderModel, AutoTokenizer
+
+    >>> model = MT5EncoderModel.from_pretrained("google/mt5-small")
+    >>> tokenizer = AutoTokenizer.from_pretrained("google/mt5-small")
+    >>> article = "UN Offizier sagt, dass weiter verhandelt werden muss in Syrien."
+    >>> input_ids = tokenizer(article, return_tensors="pt").input_ids
+    >>> outputs = model(input_ids)
+    >>> hidden_state = outputs.last_hidden_state
+    ```"""
+
     model_type = ...
     config: MT5Config
     _tied_weights_keys = ...
     def __init__(self, config: MT5Config) -> None: ...
     @add_start_docstrings(PARALLELIZE_DOCSTRING)
-    def parallelize(self, device_map=...): ...
+    def parallelize(self, device_map=...):  # -> None:
+        ...
     @add_start_docstrings(DEPARALLELIZE_DOCSTRING)
-    def deparallelize(self): ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, new_embeddings): ...
-    def get_encoder(self): ...
+    def deparallelize(self):  # -> None:
+        ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, new_embeddings):  # -> None:
+        ...
+    def get_encoder(self):  # -> MT5Stack:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -250,9 +476,38 @@ class MT5EncoderModel(MT5PreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.FloatTensor], BaseModelOutput]: ...
+    ) -> Union[tuple[torch.FloatTensor], BaseModelOutput]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
+            Indices of input sequence tokens in the vocabulary. MT5 is a model with relative position embeddings so you
+            should be able to pad the inputs on both the right and the left.
 
-@auto_docstring(custom_intro=...)
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for detail.
+
+            To know more on how to prepare `input_ids` for pretraining take a look a [MT5 Training](./mt5#training).
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, MT5EncoderModel
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("google/mt5-small")
+        >>> model = MT5EncoderModel.from_pretrained("google/mt5-small")
+        >>> input_ids = tokenizer(
+        ...     "Studies have been shown that owning a dog is good for you", return_tensors="pt"
+        ... ).input_ids  # Batch size 1
+        >>> outputs = model(input_ids=input_ids)
+        >>> last_hidden_states = outputs.last_hidden_state
+        ```"""
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    MT5 model with a sequence classification/head on top (a linear layer on top of the pooled output) e.g. for GLUE
+    tasks.
+    """
+)
 class MT5ForSequenceClassification(MT5PreTrainedModel):
     _keys_to_ignore_on_load_unexpected = ...
     _tied_weights_keys = ...
@@ -275,7 +530,51 @@ class MT5ForSequenceClassification(MT5PreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, Seq2SeqSequenceClassifierOutput]: ...
+    ) -> Union[tuple, Seq2SeqSequenceClassifierOutput]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
+            Indices of input sequence tokens in the vocabulary. MT5 is a model with relative position embeddings so you
+            should be able to pad the inputs on both the right and the left.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for detail.
+
+            [What are input IDs?](../glossary#input-ids)
+
+            To know more on how to prepare `input_ids` for pretraining take a look a [MT5 Training](./mt5#training).
+        decoder_input_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Indices of decoder input sequence tokens in the vocabulary.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are decoder input IDs?](../glossary#decoder-input-ids)
+
+            MT5 uses the `pad_token_id` as the starting token for `decoder_input_ids` generation. If `past_key_values`
+            is used, optionally only the last `decoder_input_ids` have to be input (see `past_key_values`).
+
+            To know more on how to prepare `decoder_input_ids` for pretraining take a look at [MT5
+            Training](./mt5#training).
+        decoder_attention_mask (`torch.BoolTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Default behavior: generate a tensor that ignores pad tokens in `decoder_input_ids`. Causal mask will also
+            be used by default.
+        decoder_head_mask (`torch.FloatTensor` of shape `(num_heads,)` or `(num_layers, num_heads)`, *optional*):
+            Mask to nullify selected heads of the self-attention modules in the decoder. Mask values selected in `[0,
+            1]`:
+
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+        cross_attn_head_mask (`torch.Tensor` of shape `(num_heads,)` or `(num_layers, num_heads)`, *optional*):
+            Mask to nullify selected heads of the cross-attention modules in the decoder. Mask values selected in
+            `[0, 1]`:
+
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 @auto_docstring
 class MT5ForTokenClassification(MT5PreTrainedModel):
@@ -292,17 +591,36 @@ class MT5ForTokenClassification(MT5PreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], TokenClassifierOutput]: ...
+    ) -> Union[tuple[torch.Tensor], TokenClassifierOutput]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
+            Indices of input sequence tokens in the vocabulary. MT5 is a model with relative position embeddings so you
+            should be able to pad the inputs on both the right and the left.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for detail.
+
+            [What are input IDs?](../glossary#input-ids)
+
+            To know more on how to prepare `input_ids` for pretraining take a look a [MT5 Training](./t5#training).
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the token classification loss. Indices should be in `[0, ..., config.num_labels - 1]`.
+        """
+        ...
 
 @auto_docstring
 class MT5ForQuestionAnswering(MT5PreTrainedModel):
     _keys_to_ignore_on_load_unexpected = ...
     _tied_weights_keys = ...
     def __init__(self, config: MT5Config) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, new_embeddings): ...
-    def get_encoder(self): ...
-    def get_decoder(self): ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, new_embeddings):  # -> None:
+        ...
+    def get_encoder(self):  # -> MT5Stack:
+        ...
+    def get_decoder(self):  # -> MT5Stack:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -322,7 +640,48 @@ class MT5ForQuestionAnswering(MT5PreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.FloatTensor], Seq2SeqQuestionAnsweringModelOutput]: ...
+    ) -> Union[tuple[torch.FloatTensor], Seq2SeqQuestionAnsweringModelOutput]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
+            Indices of input sequence tokens in the vocabulary. T5 is a model with relative position embeddings so you
+            should be able to pad the inputs on both the right and the left.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for detail.
+
+            [What are input IDs?](../glossary#input-ids)
+
+            To know more on how to prepare `input_ids` for pretraining take a look a [T5 Training](./t5#training).
+        decoder_input_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Indices of decoder input sequence tokens in the vocabulary.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are decoder input IDs?](../glossary#decoder-input-ids)
+
+            T5 uses the `pad_token_id` as the starting token for `decoder_input_ids` generation. If `past_key_values`
+            is used, optionally only the last `decoder_input_ids` have to be input (see `past_key_values`).
+
+            To know more on how to prepare `decoder_input_ids` for pretraining take a look at [T5
+            Training](./t5#training).
+        decoder_attention_mask (`torch.BoolTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Default behavior: generate a tensor that ignores pad tokens in `decoder_input_ids`. Causal mask will also
+            be used by default.
+        decoder_head_mask (`torch.FloatTensor` of shape `(num_heads,)` or `(num_layers, num_heads)`, *optional*):
+            Mask to nullify selected heads of the self-attention modules in the decoder. Mask values selected in `[0,
+            1]`:
+
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+        cross_attn_head_mask (`torch.Tensor` of shape `(num_heads,)` or `(num_layers, num_heads)`, *optional*):
+            Mask to nullify selected heads of the cross-attention modules in the decoder. Mask values selected in
+            `[0, 1]`:
+
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+        """
+        ...
 
 __all__ = [
     "MT5EncoderModel",

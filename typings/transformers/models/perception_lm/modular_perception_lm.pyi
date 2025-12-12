@@ -15,37 +15,91 @@ from ..llava.modeling_llava import (
 )
 from .configuration_perception_lm import PerceptionLMConfig
 
+"""PyTorch PerceptionLM model."""
 logger = ...
 
 class PerceptionLMAdaptiveAvgPooling(nn.Module):
     def __init__(self, pooling_ratio=...) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Tensor:
+        ...
 
 class PerceptionLMMultiModalProjector(nn.Module):
     def __init__(self, config: PerceptionLMConfig) -> None: ...
-    def forward(self, features): ...
+    def forward(self, features):  # -> Any:
+        ...
 
 class PerceptionLMPreTrainedModel(LlavaPreTrainedModel):
     base_model_prefix = ...
 
 class PerceptionLMModelOutputWithPast(LlavaModelOutputWithPast):
+    r"""
+    past_key_values (`Cache`, *optional*, returned when `use_cache=True` is passed or when `config.use_cache=True`):
+        Tuple of `tuple(torch.FloatTensor)` of length `config.n_layers`, with each tuple having 2 tensors of shape
+        `(batch_size, num_heads, sequence_length, embed_size_per_head)`)
+
+        Contains pre-computed hidden-states (key and values in the self-attention blocks) that can be used (see
+        `past_key_values` input) to speed up sequential decoding.
+    image_hidden_states (`torch.FloatTensor`, *optional*):
+        A `torch.FloatTensor` of size `(batch_size, num_images, sequence_length, hidden_size)`.
+        Image hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
+    video_hidden_states (`torch.FloatTensor`, *optional*):
+        A `torch.FloatTensor` of size `(batch_size, num_videos, sequence_length, hidden_size)`.
+        Video hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
+    """
+
     video_hidden_states: Optional[torch.FloatTensor] = ...
 
 class PerceptionLMCausalLMOutputWithPast(LlavaCausalLMOutputWithPast):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `labels` is provided):
+        Language modeling loss (for next-token prediction).
+    logits (`torch.FloatTensor` of shape `(batch_size, sequence_length, config.vocab_size)`):
+        Prediction scores of the language modeling head (scores for each vocabulary token before SoftMax).
+    past_key_values (`Cache`, *optional*, returned when `use_cache=True` is passed or when `config.use_cache=True`):
+        Tuple of `tuple(torch.FloatTensor)` of length `config.n_layers`, with each tuple having 2 tensors of shape
+        `(batch_size, num_heads, sequence_length, embed_size_per_head)`)
+
+        Contains pre-computed hidden-states (key and values in the self-attention blocks) that can be used (see
+        `past_key_values` input) to speed up sequential decoding.
+    image_hidden_states (`torch.FloatTensor`, *optional*):
+        A `torch.FloatTensor` of size `(batch_size, num_images, sequence_length, hidden_size)`.
+        Image hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
+    video_hidden_states (`torch.FloatTensor`, *optional*):
+        A `torch.FloatTensor` of size `(batch_size, num_videos, sequence_length, hidden_size)`.
+        Video hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
+    """
+
     video_hidden_states: Optional[torch.FloatTensor] = ...
 
 @auto_docstring
 class PerceptionLMModel(LlavaModel):
     _checkpoint_conversion_mapping = ...
     def __init__(self, config: PerceptionLMConfig) -> None: ...
-    def get_image_features(self, pixel_values: torch.FloatTensor, **kwargs): ...
+    def get_image_features(self, pixel_values: torch.FloatTensor, **kwargs):  # -> Any:
+        """
+        Obtains image last hidden states from the vision tower and apply multimodal projection.
+
+        Args:
+            pixel_values (`torch.FloatTensor]` of shape `(batch_size, num_tiles, channels, height, width)`)
+               The tensors corresponding to the input images.
+        Returns:
+            image_features (`torch.Tensor`): Image feature tensor of shape `(num_tiles, num_patches, embed_dim)`).
+        """
+        ...
+
     def get_placeholder_mask(
         self,
         input_ids: torch.LongTensor,
         inputs_embeds: torch.FloatTensor,
         image_features: torch.FloatTensor = ...,
         video_features: torch.FloatTensor = ...,
-    ): ...
+    ):  # -> tuple[Any, Any]:
+        """
+        Obtains multimodal placeholdr mask from `input_ids` or `inputs_embeds`, and checks that the placeholder token count is
+        equal to the length of multimodal features. If the lengths are different, an error is raised.
+        """
+        ...
+
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -79,7 +133,8 @@ class PerceptionLMForConditionalGeneration(LlavaForConditionalGeneration):
         cache_position=...,
         logits_to_keep=...,
         **kwargs,
-    ): ...
+    ):  # -> dict[Any, Any]:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(

@@ -18,14 +18,56 @@ from .configuration_llava_next_video import LlavaNextVideoConfig
 logger = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for Llava outputs, with hidden states and attentions.
+    """
+)
 class LlavaNextVideoModelOutputWithPast(BaseModelOutputWithPast):
+    r"""
+    past_key_values (`Cache`, *optional*, returned when `use_cache=True` is passed or when `config.use_cache=True`):
+        Tuple of `tuple(torch.FloatTensor)` of length `config.n_layers`, with each tuple having 2 tensors of shape
+        `(batch_size, num_heads, sequence_length, embed_size_per_head)`)
+
+        Contains pre-computed hidden-states (key and values in the self-attention blocks) that can be used (see
+        `past_key_values` input) to speed up sequential decoding.
+    image_hidden_states (`torch.FloatTensor`, *optional*):
+        A `torch.FloatTensor` of size `(batch_size, num_images, sequence_length, hidden_size)`.
+        image_hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
+    video_hidden_states (`torch.FloatTensor`, *optional*):
+        A `torch.FloatTensor`  of size `(batch_size * num_frames, num_videos, sequence_length, hidden_size)`.
+        video_hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
+    """
+
     image_hidden_states: Optional[torch.FloatTensor] = ...
     video_hidden_states: Optional[torch.FloatTensor] = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for LlavaNextVideo causal language model (or autoregressive) outputs.
+    """
+)
 class LlavaNextVideoCausalLMOutputWithPast(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `labels` is provided):
+        Language modeling loss (for next-token prediction).
+    logits (`torch.FloatTensor` of shape `(batch_size, sequence_length, config.vocab_size)`):
+        Prediction scores of the language modeling head (scores for each vocabulary token before SoftMax).
+    past_key_values (`Cache`, *optional*, returned when `use_cache=True` is passed or when `config.use_cache=True`):
+        Tuple of `tuple(torch.FloatTensor)` of length `config.n_layers`, with each tuple having 2 tensors of shape
+        `(batch_size, num_heads, sequence_length, embed_size_per_head)`)
+
+        Contains pre-computed hidden-states (key and values in the self-attention blocks) that can be used (see
+        `past_key_values` input) to speed up sequential decoding.
+    image_hidden_states (`torch.FloatTensor`, *optional*):
+        A `torch.FloatTensor` of size (batch_size * num_patches, num_images, sequence_length, hidden_size)`.
+        image_hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
+    video_hidden_states (`torch.FloatTensor`, *optional*):
+        A `torch.FloatTensor`  of size `(batch_size * num_frames, num_videos, sequence_length, hidden_size)`.
+        video_hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     logits: Optional[torch.FloatTensor] = ...
     past_key_values: Optional[list[torch.FloatTensor]] = ...
@@ -36,11 +78,13 @@ class LlavaNextVideoCausalLMOutputWithPast(ModelOutput):
 
 class LlavaNextVideoPooler(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, image_features): ...
+    def forward(self, image_features):  # -> Any:
+        ...
 
 class LlavaNextVideoMultiModalProjector(nn.Module):
     def __init__(self, config: LlavaNextVideoConfig) -> None: ...
-    def forward(self, image_features): ...
+    def forward(self, image_features):  # -> Any:
+        ...
 
 @auto_docstring
 class LlavaNextVideoPreTrainedModel(PreTrainedModel):
@@ -55,33 +99,136 @@ class LlavaNextVideoPreTrainedModel(PreTrainedModel):
     _supports_flex_attn = ...
     _supports_attention_backend = ...
 
-def get_anyres_image_grid_shape(image_size, grid_pinpoints, patch_size): ...
-def image_size_to_num_patches(image_size, grid_pinpoints, patch_size: int): ...
-def unpad_image(tensor, original_size): ...
+def get_anyres_image_grid_shape(image_size, grid_pinpoints, patch_size):  # -> tuple[Any, Any]:
+    """
+    Calculate the shape of the image patch grid after the preprocessing for images of any resolution.
 
-@auto_docstring(custom_intro=...)
+    Args:
+        image_size (`tuple`):
+            The size of the input image in the format (width, height).
+        grid_pinpoints (`List`):
+            A list containing possible resolutions. Each item in the list should be a tuple or list
+            of the form `(height, width)`.
+        patch_size (`int`):
+            The size of each image patch.
+
+    Returns:
+        tuple: The shape of the image patch grid in the format (width, height).
+    """
+    ...
+
+def image_size_to_num_patches(image_size, grid_pinpoints, patch_size: int):  # -> int:
+    """
+    Calculate the number of patches after the preprocessing for images of any resolution.
+
+    Args:
+        image_size (`torch.LongTensor` or `np.ndarray` or `tuple[int, int]`):
+            The size of the input image in the format (height, width). ?
+        grid_pinpoints (`List`):
+            A list containing possible resolutions. Each item in the list should be a tuple or list
+            of the form `(height, width)`.
+        patch_size (`int`):
+            The size of each image patch.
+
+    Returns:
+        int: the number of patches
+    """
+    ...
+
+def unpad_image(tensor, original_size):
+    """
+    Unpads a PyTorch tensor of a padded and resized image.
+
+    Args:
+        tensor (`torch.Tensor`):
+            The image tensor, assumed to be of shape (num_channels, height, width).
+        original_size (`tuple`):
+            The original size of the image (height, width).
+
+    Returns:
+        `torch.Tensor`: The unpadded image tensor.
+    """
+    ...
+
+@auto_docstring(
+    custom_intro="""
+    The Llava-Next model which consists of a vision backbone and a language model without language modeling head.
+    """
+)
 class LlavaNextVideoModel(LlavaNextVideoPreTrainedModel):
     _checkpoint_conversion_mapping = ...
     def __init__(self, config: LlavaNextVideoConfig) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
-    def set_decoder(self, decoder): ...
-    def get_decoder(self): ...
-    def pack_image_features(self, image_features, image_sizes, vision_feature_select_strategy, image_newline=...): ...
+    def get_input_embeddings(self):  # -> Any:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> Any:
+        ...
+    def pack_image_features(
+        self, image_features, image_sizes, vision_feature_select_strategy, image_newline=...
+    ):  # -> tuple[list[Any], Tensor]:
+        """
+        Reshape, unpad and then pack each image_feature into a single image_features tensor containing all visual vectors.
+
+        Args:
+            image_features (`list[torch.Tensor]` of length num_images, each of shape `(num_patches, image_length, embed_dim)`)
+                List of image feature tensor, each contains all the visual feature of all patches.
+            image_sizes (`torch.Tensor` of shape `(num_images, 2)`)
+                Actual image size of each images (H, W).
+            vision_feature_select_strategy (`str`)
+                The feature selection strategy used to select the vision feature from the vision backbone.
+            image_newline (`torch.Tensor` of shape `(embed_dim)`)
+                New line embedding vector.
+        Returns:
+            image_features (`torch.Tensor` of shape `(all_feat_len, embed_dim)`)
+            feature_lens (`list[int]`)
+                token length of each image in image_features
+        """
+        ...
+
     def get_image_features(
         self,
         pixel_values: torch.FloatTensor,
         image_sizes: torch.Tensor,
         vision_feature_layer: Optional[Union[int, list[int]]] = ...,
         vision_feature_select_strategy: Optional[str] = ...,
-    ): ...
+    ):  # -> list[Any]:
+        """
+        Obtains image last hidden states from the vision tower and apply multimodal projection.
+
+        Args:
+            pixel_values (`torch.FloatTensor]` of shape `(batch_size, num_patches, channels, height, width)`)
+               The tensors corresponding to the input images.
+            image_sizes (`torch.Tensor` of shape `(num_images, 2)`)
+                Actual image size of each images (H, W).
+            vision_feature_layer (`Union[int, list[int]]`, *optional*):
+                The index of the layer to select the vision feature. If multiple indices are provided,
+                the vision feature of the corresponding indices will be concatenated to form the
+                vision features.
+            vision_feature_select_strategy (`str`, *optional*):
+                The feature selection strategy used to select the vision feature from the vision backbone.
+                Can be one of `"default"` or `"full"`
+        Returns:
+            image_features (list[`torch.Tensor`]): List of image feature tensor, each contains all the visual feature of all patches
+            and are of shape `(num_patches, image_length, embed_dim)`).
+        """
+        ...
+
     def get_placeholder_mask(
         self,
         input_ids: torch.LongTensor,
         inputs_embeds: torch.FloatTensor,
         image_features: torch.FloatTensor = ...,
         video_features: torch.FloatTensor = ...,
-    ): ...
+    ):  # -> tuple[Any, Any]:
+        """
+        Obtains multimodal placeholdr mask from `input_ids` or `inputs_embeds`, and checks that the placeholder token count is
+        equal to the length of multimodal features. If the lengths are different, an error is raised.
+        """
+        ...
+
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -102,38 +249,79 @@ class LlavaNextVideoModel(LlavaNextVideoPreTrainedModel):
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> Union[tuple, LlavaNextVideoModelOutputWithPast]: ...
+    ) -> Union[tuple, LlavaNextVideoModelOutputWithPast]:
+        r"""
+        vision_feature_select_strategy (`str`, *optional*, defaults to `"default"`):
+            The feature selection strategy used to select the vision feature from the vision backbone.
+            Can be one of `"default"` or `"full"`. If `"default"`, the CLS token is removed from the vision features.
+            If `"full"`, the full vision features are used.
+        """
+        ...
+
     def get_video_features(
         self,
         pixel_values: torch.FloatTensor,
         vision_feature_layer: Optional[Union[int, list[int]]] = ...,
         vision_feature_select_strategy: Optional[str] = ...,
-    ): ...
+    ):  # -> tuple[Tensor, ...]:
+        """
+        Obtains video last hidden states from the vision tower and apply multimodal projection.
 
-@auto_docstring(custom_intro=...)
+        Args:
+            pixel_values (`torch.FloatTensor]` of shape `(batch_size, num_frames, channels, height, width)`)
+               The tensors corresponding to the input video.
+            vision_feature_layer (`Union[int, list[int]]`, *optiona;*):
+                The index of the layer to select the vision feature. If multiple indices are provided,
+                the vision feature of the corresponding indices will be concatenated to form the
+                vision features.
+            vision_feature_select_strategy (`str`, *optional*):
+                The feature selection strategy used to select the vision feature from the vision backbone.
+                Can be one of `"default"` or `"full"`
+        Returns:
+            video_features (list[`torch.Tensor`]): List of video feature tensor, each contains all the visual feature of all patches
+            and are of shape `(num_videos, video_length, embed_dim)`).
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    The LLAVA-NeXT model which consists of a vision backbone and a language model.
+    """
+)
 class LlavaNextVideoForConditionalGeneration(LlavaNextVideoPreTrainedModel, GenerationMixin):
     _checkpoint_conversion_mapping = ...
     _tied_weights_keys = ...
     def __init__(self, config: LlavaNextVideoConfig) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def get_input_embeddings(self):  # -> Any:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     def get_output_embeddings(self) -> nn.Module: ...
-    def set_decoder(self, decoder): ...
-    def get_decoder(self): ...
-    def pack_image_features(self, image_features, image_sizes, vision_feature_select_strategy, image_newline=...): ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> Any:
+        ...
+    def pack_image_features(
+        self, image_features, image_sizes, vision_feature_select_strategy, image_newline=...
+    ):  # -> tuple[list[Any], Tensor]:
+        ...
     def get_image_features(
         self,
         pixel_values: torch.FloatTensor,
         image_sizes: torch.Tensor,
         vision_feature_layer: Optional[Union[int, list[int]]] = ...,
         vision_feature_select_strategy: Optional[str] = ...,
-    ): ...
+    ):  # -> list[Any]:
+        ...
     @property
-    def language_model(self): ...
+    def language_model(self):  # -> Any:
+        ...
     @property
-    def vision_tower(self): ...
+    def vision_tower(self):  # -> Any:
+        ...
     @property
-    def multi_modal_projector(self): ...
+    def multi_modal_projector(self):  # -> LlavaNextVideoMultiModalProjector:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -156,7 +344,72 @@ class LlavaNextVideoForConditionalGeneration(LlavaNextVideoPreTrainedModel, Gene
         cache_position: Optional[torch.LongTensor] = ...,
         logits_to_keep: Union[int, torch.Tensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> Union[tuple, LlavaNextVideoCausalLMOutputWithPast]: ...
+    ) -> Union[tuple, LlavaNextVideoCausalLMOutputWithPast]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Example:
+
+        ```python
+        >>> from PIL import Image
+        >>> import requests
+        >>> import av
+        >>> from transformers import AutoProcessor, LlavaNextVideoForConditionalGeneration
+
+        >>> def read_video_pyav(container, indices):
+        ...     '''
+        ...     Decode the video with PyAV decoder.
+        ...     Args:
+        ...         container (`av.container.input.InputContainer`): PyAV container.
+        ...         indices (`list[int]`): List of frame indices to decode.
+        ...     Returns:
+        ...         result (np.ndarray): np array of decoded frames of shape (num_frames, height, width, 3).
+        ...     '''
+        ...     frames = []
+        ...     container.seek(0)
+        ...     start_index = indices[0]
+        ...     end_index = indices[-1]
+        ...     for i, frame in enumerate(container.decode(video=0)):
+        ...         if i > end_index:
+        ...             break
+        ...         if i >= start_index and i in indices:
+        ...             frames.append(frame)
+        ...     return np.stack([x.to_ndarray(format="rgb24") for x in frames])
+
+        >>> model = LlavaNextVideoForConditionalGeneration.from_pretrained("llava-hf/LLaVA-NeXT-Video-7B-hf", device_map="auto")
+        >>> processor = AutoProcessor.from_pretrained("llava-hf/LLaVA-NeXT-Video-7B-hf")
+
+        >>> prompt = "USER: <video>\nWhy is this video funny? ASSISTANT:"
+        >>> video_path = hf_hub_download(repo_id="raushan-testing-hf/videos-test", filename="sample_demo_1.mp4", repo_type="dataset")
+        >>> container = av.open(video_path)
+
+        >>> # sample uniformly 8 frames from the video (model was trained with 32 frames per video, but this video is short)
+        >>> total_frames = container.streams.video[0].frames
+        >>> indices = np.arange(0, total_frames, total_frames / 8).astype(int)
+        >>> clip = read_video_pyav(container, indices)
+        >>> inputs_video = processor(text=prompt, videos=clip, return_tensors="pt").to(model.device)
+
+        >>> # load an image to generate from an image
+        >>> prompt = "USER:<image>\nWhat is shown in this image? ASSISTANT:"
+        >>> url = "https://www.ilankelman.org/stopsigns/australia.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+        >>> inputs_image = processor(text=prompt, images=image, return_tensors="pt").to(model.device)
+
+        >>> # Generate from video
+        >>> generate_ids = model.generate(**inputs_video, max_length=50)
+        >>> processor.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+        "USER:\nWhy is this video funny? ASSISTANT: The humor in this video comes from the unexpected and endearing sight of a baby wearing glasses and (...)"
+
+        >>> # Generate from image
+        >>> generate_ids = model.generate(**inputs_image, max_length=30)
+        >>> processor.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+        "USER: \nWhat's the content of the image? ASSISTANT: The image shows a red stop sign on a pole, with a traditional Chinese archway (...)"
+        ```"""
+        ...
+
     def prepare_inputs_for_generation(
         self,
         input_ids,
@@ -169,12 +422,14 @@ class LlavaNextVideoForConditionalGeneration(LlavaNextVideoPreTrainedModel, Gene
         cache_position=...,
         logits_to_keep=...,
         **kwargs,
-    ): ...
+    ):  # -> dict[Any, Any]:
+        ...
     def get_video_features(
         self,
         pixel_values: torch.FloatTensor,
         vision_feature_layer: Optional[Union[int, list[int]]] = ...,
         vision_feature_select_strategy: Optional[str] = ...,
-    ): ...
+    ):  # -> tuple[Tensor, ...]:
+        ...
 
 __all__ = ["LlavaNextVideoForConditionalGeneration", "LlavaNextVideoModel", "LlavaNextVideoPreTrainedModel"]

@@ -7,6 +7,10 @@ from ...feature_extraction_utils import BatchFeature
 from ...processing_utils import ImagesKwargs, ProcessingKwargs, ProcessorMixin, Unpack
 from ...tokenization_utils_base import BatchEncoding, PreTokenizedInput, TextInput
 
+"""
+Processor class for Pix2Struct.
+"""
+
 class Pix2StructImagesKwargs(ImagesKwargs, total=False):
     max_patches: Optional[int]
     header_text: Optional[Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]]]
@@ -19,6 +23,20 @@ class Pix2StructProcessorKwargs(ProcessingKwargs, total=False):
 logger = ...
 
 class Pix2StructProcessor(ProcessorMixin):
+    r"""
+    Constructs a PIX2STRUCT processor which wraps a BERT tokenizer and PIX2STRUCT image processor into a single
+    processor.
+
+    [`Pix2StructProcessor`] offers all the functionalities of [`Pix2StructImageProcessor`] and [`T5TokenizerFast`]. See
+    the docstring of [`~Pix2StructProcessor.__call__`] and [`~Pix2StructProcessor.decode`] for more information.
+
+    Args:
+        image_processor (`Pix2StructImageProcessor`):
+            An instance of [`Pix2StructImageProcessor`]. The image processor is a required input.
+        tokenizer (Union[`T5TokenizerFast`, `T5Tokenizer`]):
+            An instance of ['T5TokenizerFast`] or ['T5Tokenizer`]. The tokenizer is a required input.
+    """
+
     attributes = ...
     image_processor_class = ...
     tokenizer_class = ...
@@ -30,10 +48,31 @@ class Pix2StructProcessor(ProcessorMixin):
         audio=...,
         videos=...,
         **kwargs: Unpack[Pix2StructProcessorKwargs],
-    ) -> Union[BatchEncoding, BatchFeature]: ...
-    def batch_decode(self, *args, **kwargs): ...
-    def decode(self, *args, **kwargs): ...
+    ) -> Union[BatchEncoding, BatchFeature]:
+        """
+        This method uses [`Pix2StructImageProcessor.preprocess`] method to prepare image(s) for the model, and
+        [`T5TokenizerFast.__call__`] to prepare text for the model.
+
+        Please refer to the docstring of the above two methods for more information.
+        """
+        ...
+
+    def batch_decode(self, *args, **kwargs):
+        """
+        This method forwards all its arguments to Pix2StructTokenizerFast's [`~PreTrainedTokenizer.batch_decode`].
+        Please refer to the docstring of this method for more information.
+        """
+        ...
+
+    def decode(self, *args, **kwargs):
+        """
+        This method forwards all its arguments to Pix2StructTokenizerFast's [`~PreTrainedTokenizer.decode`]. Please
+        refer to the docstring of this method for more information.
+        """
+        ...
+
     @property
-    def model_input_names(self): ...
+    def model_input_names(self):  # -> list[Any]:
+        ...
 
 __all__ = ["Pix2StructProcessor"]

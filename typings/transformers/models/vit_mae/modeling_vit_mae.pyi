@@ -12,11 +12,23 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import ModelOutput, auto_docstring
 from .configuration_vit_mae import ViTMAEConfig
 
+"""PyTorch ViT MAE (masked autoencoder) model."""
 logger = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Class for ViTMAEModel's outputs, with potential hidden states and attentions.
+    """
+)
 class ViTMAEModelOutput(ModelOutput):
+    r"""
+    mask (`torch.FloatTensor` of shape `(batch_size, sequence_length)`):
+        Tensor indicating which patches are masked (1) and which are not (0).
+    ids_restore (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
+        Tensor containing the original index of the (shuffled) masked patches.
+    """
+
     last_hidden_state: Optional[torch.FloatTensor] = ...
     mask: Optional[torch.LongTensor] = ...
     ids_restore: Optional[torch.LongTensor] = ...
@@ -24,15 +36,39 @@ class ViTMAEModelOutput(ModelOutput):
     attentions: Optional[tuple[torch.FloatTensor]] = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Class for ViTMAEDecoder's outputs, with potential hidden states and attentions.
+    """
+)
 class ViTMAEDecoderOutput(ModelOutput):
+    r"""
+    logits (`torch.FloatTensor` of shape `(batch_size, sequence_length, patch_size ** 2 * num_channels)`):
+        Pixel reconstruction logits.
+    """
+
     logits: Optional[torch.FloatTensor] = ...
     hidden_states: Optional[tuple[torch.FloatTensor]] = ...
     attentions: Optional[tuple[torch.FloatTensor]] = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Class for ViTMAEForPreTraining's outputs, with potential hidden states and attentions.
+    """
+)
 class ViTMAEForPreTrainingOutput(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`):
+        Pixel reconstruction loss.
+    logits (`torch.FloatTensor` of shape `(batch_size, sequence_length, patch_size ** 2 * num_channels)`):
+        Pixel reconstruction logits.
+    mask (`torch.FloatTensor` of shape `(batch_size, sequence_length)`):
+        Tensor indicating which patches are masked (1) and which are not (0).
+    ids_restore (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
+        Tensor containing the original index of the (shuffled) masked patches.
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     logits: Optional[torch.FloatTensor] = ...
     mask: Optional[torch.LongTensor] = ...
@@ -40,20 +76,77 @@ class ViTMAEForPreTrainingOutput(ModelOutput):
     hidden_states: Optional[tuple[torch.FloatTensor]] = ...
     attentions: Optional[tuple[torch.FloatTensor]] = ...
 
-def get_2d_sincos_pos_embed(embed_dim, grid_size, add_cls_token=...): ...
-def get_2d_sincos_pos_embed_from_grid(embed_dim, grid): ...
-def get_1d_sincos_pos_embed_from_grid(embed_dim, pos): ...
+def get_2d_sincos_pos_embed(embed_dim, grid_size, add_cls_token=...):  # -> NDArray[float64] | NDArray[Any]:
+    """
+    Create 2D sin/cos positional embeddings.
+
+    Args:
+        embed_dim (`int`):
+            Embedding dimension.
+        grid_size (`int`):
+            The grid height and width.
+        add_cls_token (`bool`, *optional*, defaults to `False`):
+            Whether or not to add a classification (CLS) token.
+
+    Returns:
+        (`torch.FloatTensor` of shape (grid_size*grid_size, embed_dim) or (1+grid_size*grid_size, embed_dim): the
+        position embeddings (with or without classification token)
+    """
+    ...
+
+def get_2d_sincos_pos_embed_from_grid(embed_dim, grid):  # -> NDArray[Any]:
+    ...
+def get_1d_sincos_pos_embed_from_grid(embed_dim, pos):  # -> NDArray[Any]:
+    """
+    embed_dim: output dimension for each position pos: a list of positions to be encoded: size (M,) out: (M, D)
+    """
+    ...
 
 class ViTMAEEmbeddings(nn.Module):
+    """
+    Construct the CLS token, position and patch embeddings.
+
+    """
     def __init__(self, config) -> None: ...
-    def initialize_weights(self): ...
-    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor: ...
-    def random_masking(self, sequence, noise=...): ...
-    def forward(self, pixel_values, noise=..., interpolate_pos_encoding: bool = ...): ...
+    def initialize_weights(self):  # -> None:
+        ...
+    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor:
+        """
+        This method allows to interpolate the pre-trained position encodings, to be able to use the model on higher resolution
+        images. This method is also adapted to support torch.jit tracing.
+
+        Adapted from:
+        - https://github.com/facebookresearch/dino/blob/de9ee3df6cf39fac952ab558447af1fa1365362a/vision_transformer.py#L174-L194, and
+        - https://github.com/facebookresearch/dinov2/blob/e1277af2ba9496fbadf7aec6eba56e8d882d1e35/dinov2/models/vision_transformer.py#L179-L211
+        """
+        ...
+
+    def random_masking(self, sequence, noise=...):  # -> tuple[Tensor, Tensor, Tensor]:
+        """
+        Perform per-sample random masking by per-sample shuffling. Per-sample shuffling is done by argsort random
+        noise.
+
+        Args:
+            sequence (`torch.LongTensor` of shape `(batch_size, sequence_length, dim)`)
+            noise (`torch.FloatTensor` of shape `(batch_size, sequence_length)`, *optional*) which is
+                mainly used for testing purposes to control randomness and maintain the reproducibility
+        """
+        ...
+
+    def forward(
+        self, pixel_values, noise=..., interpolate_pos_encoding: bool = ...
+    ):  # -> tuple[Tensor, Tensor, Tensor]:
+        ...
 
 class ViTMAEPatchEmbeddings(nn.Module):
+    """
+    This class turns `pixel_values` of shape `(batch_size, num_channels, height, width)` into the initial
+    `hidden_states` (patch embeddings) of shape `(batch_size, seq_length, hidden_size)` to be consumed by a
+    Transformer.
+    """
     def __init__(self, config) -> None: ...
-    def forward(self, pixel_values, interpolate_pos_encoding: bool = ...): ...
+    def forward(self, pixel_values, interpolate_pos_encoding: bool = ...):  # -> Any:
+        ...
 
 def eager_attention_forward(
     module: nn.Module,
@@ -64,7 +157,8 @@ def eager_attention_forward(
     scaling: float,
     dropout: float = ...,
     **kwargs,
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class ViTMAESelfAttention(nn.Module):
     def __init__(self, config: ViTMAEConfig) -> None: ...
@@ -73,6 +167,10 @@ class ViTMAESelfAttention(nn.Module):
     ) -> Union[tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor]]: ...
 
 class ViTMAESelfOutput(nn.Module):
+    """
+    The residual connection is defined in ViTMAELayer instead of here (as is the case with other models), due to the
+    layernorm applied before each block.
+    """
     def __init__(self, config: ViTMAEConfig) -> None: ...
     def forward(self, hidden_states: torch.Tensor, input_tensor: torch.Tensor) -> torch.Tensor: ...
 
@@ -92,6 +190,7 @@ class ViTMAEOutput(nn.Module):
     def forward(self, hidden_states: torch.Tensor, input_tensor: torch.Tensor) -> torch.Tensor: ...
 
 class ViTMAELayer(GradientCheckpointingLayer):
+    """This corresponds to the Block class in the timm implementation."""
     def __init__(self, config: ViTMAEConfig) -> None: ...
     def forward(
         self, hidden_states: torch.Tensor, head_mask: Optional[torch.Tensor] = ..., output_attentions: bool = ...
@@ -122,7 +221,8 @@ class ViTMAEPreTrainedModel(PreTrainedModel):
 @auto_docstring
 class ViTMAEModel(ViTMAEPreTrainedModel):
     def __init__(self, config) -> None: ...
-    def get_input_embeddings(self): ...
+    def get_input_embeddings(self):  # -> ViTMAEPatchEmbeddings:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -133,12 +233,48 @@ class ViTMAEModel(ViTMAEPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         interpolate_pos_encoding: bool = ...,
-    ) -> Union[tuple, ViTMAEModelOutput]: ...
+    ) -> Union[tuple, ViTMAEModelOutput]:
+        r"""
+        noise (`torch.FloatTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Mainly used for testing purposes to control randomness and maintain the reproducibility
+        interpolate_pos_encoding (`bool`, *optional*, default `False`):
+            Whether to interpolate the pre-trained position encodings. This is mainly used to use the model on higher
+            resolution images.
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoImageProcessor, ViTMAEModel
+        >>> from PIL import Image
+        >>> import requests
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> image_processor = AutoImageProcessor.from_pretrained("facebook/vit-mae-base")
+        >>> model = ViTMAEModel.from_pretrained("facebook/vit-mae-base")
+
+        >>> inputs = image_processor(images=image, return_tensors="pt")
+        >>> outputs = model(**inputs)
+        >>> last_hidden_states = outputs.last_hidden_state
+        ```"""
+        ...
 
 class ViTMAEDecoder(nn.Module):
     def __init__(self, config, num_patches) -> None: ...
-    def interpolate_pos_encoding(self, embeddings: torch.Tensor) -> torch.Tensor: ...
-    def initialize_weights(self, num_patches): ...
+    def interpolate_pos_encoding(self, embeddings: torch.Tensor) -> torch.Tensor:
+        """
+        This method is a modified version of the interpolation function for ViT-mae model at the decoder, that
+        allows to interpolate the pre-trained decoder position encodings, to be able to use the model on higher
+        resolution images.
+
+        Adapted from:
+        https://github.com/facebookresearch/dino/blob/de9ee3df6cf39fac952ab558447af1fa1365362a/vision_transformer.py#L174
+        """
+        ...
+
+    def initialize_weights(self, num_patches):  # -> None:
+        ...
     def forward(
         self,
         hidden_states,
@@ -147,15 +283,70 @@ class ViTMAEDecoder(nn.Module):
         output_hidden_states=...,
         return_dict=...,
         interpolate_pos_encoding: bool = ...,
-    ): ...
+    ):  # -> tuple[Any | tuple[Tensor | Any, ...] | tuple[()] | tuple[Any, ...], ...] | ViTMAEDecoderOutput:
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The ViTMAE Model transformer with the decoder on top for self-supervised pre-training.
+
+    <Tip>
+
+    Note that we provide a script to pre-train this model on custom data in our [examples
+    directory](https://github.com/huggingface/transformers/tree/main/examples/pytorch/image-pretraining).
+
+    </Tip>
+    """
+)
 class ViTMAEForPreTraining(ViTMAEPreTrainedModel):
     def __init__(self, config) -> None: ...
-    def get_input_embeddings(self): ...
-    def patchify(self, pixel_values, interpolate_pos_encoding: bool = ...): ...
-    def unpatchify(self, patchified_pixel_values, original_image_size: Optional[tuple[int, int]] = ...): ...
-    def forward_loss(self, pixel_values, pred, mask, interpolate_pos_encoding: bool = ...): ...
+    def get_input_embeddings(self):  # -> ViTMAEPatchEmbeddings:
+        ...
+    def patchify(self, pixel_values, interpolate_pos_encoding: bool = ...):  # -> Tensor:
+        """
+        Args:
+            pixel_values (`torch.FloatTensor` of shape `(batch_size, num_channels, height, width)`):
+                Pixel values.
+            interpolate_pos_encoding (`bool`, *optional*, default `False`):
+                interpolation flag passed during the forward pass.
+
+        Returns:
+            `torch.FloatTensor` of shape `(batch_size, num_patches, patch_size**2 * num_channels)`:
+                Patchified pixel values.
+        """
+        ...
+
+    def unpatchify(self, patchified_pixel_values, original_image_size: Optional[tuple[int, int]] = ...):  # -> Tensor:
+        """
+        Args:
+            patchified_pixel_values (`torch.FloatTensor` of shape `(batch_size, num_patches, patch_size**2 * num_channels)`:
+                Patchified pixel values.
+            original_image_size (`tuple[int, int]`, *optional*):
+                Original image size.
+
+        Returns:
+            `torch.FloatTensor` of shape `(batch_size, num_channels, height, width)`:
+                Pixel values.
+        """
+        ...
+
+    def forward_loss(self, pixel_values, pred, mask, interpolate_pos_encoding: bool = ...):
+        """
+        Args:
+            pixel_values (`torch.FloatTensor` of shape `(batch_size, num_channels, height, width)`):
+                Pixel values.
+            pred (`torch.FloatTensor` of shape `(batch_size, num_patches, patch_size**2 * num_channels)`:
+                Predicted pixel values.
+            mask (`torch.FloatTensor` of shape `(batch_size, sequence_length)`):
+                Tensor indicating which patches are masked (1) and which are not (0).
+            interpolate_pos_encoding (`bool`, *optional*, default `False`):
+                interpolation flag passed during the forward pass.
+
+        Returns:
+            `torch.FloatTensor`: Pixel reconstruction loss.
+        """
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -166,6 +357,33 @@ class ViTMAEForPreTraining(ViTMAEPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         interpolate_pos_encoding: bool = ...,
-    ) -> Union[tuple, ViTMAEForPreTrainingOutput]: ...
+    ) -> Union[tuple, ViTMAEForPreTrainingOutput]:
+        r"""
+        noise (`torch.FloatTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Mainly used for testing purposes to control randomness and maintain the reproducibility
+        interpolate_pos_encoding (`bool`, *optional*, default `False`):
+            Whether to interpolate the pre-trained position encodings. This is mainly used to use the model on higher
+            resolution images.
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoImageProcessor, ViTMAEForPreTraining
+        >>> from PIL import Image
+        >>> import requests
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> image_processor = AutoImageProcessor.from_pretrained("facebook/vit-mae-base")
+        >>> model = ViTMAEForPreTraining.from_pretrained("facebook/vit-mae-base")
+
+        >>> inputs = image_processor(images=image, return_tensors="pt")
+        >>> outputs = model(**inputs)
+        >>> loss = outputs.loss
+        >>> mask = outputs.mask
+        >>> ids_restore = outputs.ids_restore
+        ```"""
+        ...
 
 __all__ = ["ViTMAEForPreTraining", "ViTMAELayer", "ViTMAEModel", "ViTMAEPreTrainedModel"]

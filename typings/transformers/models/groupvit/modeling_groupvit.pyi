@@ -12,32 +12,103 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import ModelOutput, auto_docstring
 from .configuration_groupvit import GroupViTConfig, GroupViTTextConfig, GroupViTVisionConfig
 
+"""PyTorch GroupViT model."""
 logger = ...
 
 def contrastive_loss(logits: torch.Tensor) -> torch.Tensor: ...
 def groupvit_loss(similarity: torch.Tensor) -> torch.Tensor: ...
-def hard_softmax(logits: torch.Tensor, dim: int): ...
+def hard_softmax(logits: torch.Tensor, dim: int):  # -> Tensor:
+    ...
 def gumbel_softmax(logits: torch.Tensor, tau: float = ..., hard: bool = ..., dim: int = ...) -> torch.Tensor: ...
-def resize_attention_map(attentions, height, width, align_corners=...): ...
-def get_grouping_from_attentions(attentions, hw_shape): ...
+def resize_attention_map(attentions, height, width, align_corners=...):  # -> Tensor:
+    """
+    Args:
+        attentions (`torch.Tensor`): attention map of shape [batch_size, groups, feat_height*feat_width]
+        height (`int`): height of the output attention map
+        width (`int`): width of the output attention map
+        align_corners (`bool`, *optional*): the `align_corner` argument for `nn.functional.interpolate`.
+
+    Returns:
+        `torch.Tensor`: resized attention map of shape [batch_size, groups, height, width]
+    """
+    ...
+
+def get_grouping_from_attentions(attentions, hw_shape):
+    """
+    Args:
+        attentions (`tuple(torch.FloatTensor)`: tuple of attention maps returned by `GroupViTVisionTransformer`
+        hw_shape (`tuple(int)`): height and width of the output attention map
+    Returns:
+        `torch.Tensor`: the attention map of shape [batch_size, groups, height, width]
+    """
+    ...
 
 class GroupViTCrossAttentionLayer(nn.Module):
     def __init__(self, config: GroupViTVisionConfig) -> None: ...
-    def forward(self, query, key): ...
+    def forward(self, query, key):  # -> Any:
+        ...
 
 class GroupViTAssignAttention(nn.Module):
     def __init__(self, config: GroupViTVisionConfig) -> None: ...
-    def get_attn(self, attn, gumbel=..., hard=...): ...
-    def forward(self, query, key): ...
+    def get_attn(self, attn, gumbel=..., hard=...):  # -> Tensor:
+        ...
+    def forward(self, query, key):  # -> tuple[Any, Tensor]:
+        ...
 
 class GroupViTTokenAssign(nn.Module):
     def __init__(self, config: GroupViTVisionConfig, num_group_token, num_output_group) -> None: ...
-    def project_group_token(self, group_tokens): ...
-    def forward(self, image_tokens, group_tokens): ...
+    def project_group_token(self, group_tokens):  # -> Any:
+        """
+        Args:
+            group_tokens (torch.Tensor): group tokens, [batch_size, num_group_tokens, channels]
+
+        Returns:
+            projected_group_tokens (torch.Tensor): [batch_size, num_output_groups, channels]
+        """
+        ...
+
+    def forward(self, image_tokens, group_tokens):  # -> tuple[Any, Any]:
+        """
+        Args:
+            image_tokens (`torch.Tensor`): image tokens, of shape [batch_size, input_length, channels]
+            group_tokens (`torch.Tensor`): group tokens, [batch_size, num_group_tokens, channels]
+        """
+        ...
 
 @dataclass
 @auto_docstring
 class GroupViTModelOutput(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `return_loss` is `True`):
+        Contrastive loss for image-text similarity.
+    logits_per_image (`torch.FloatTensor` of shape `(image_batch_size, text_batch_size)`):
+        The scaled dot product scores between `image_embeds` and `text_embeds`. This represents the image-text
+        similarity scores.
+    logits_per_text (`torch.FloatTensor` of shape `(text_batch_size, image_batch_size)`):
+        The scaled dot product scores between `text_embeds` and `image_embeds`. This represents the text-image
+        similarity scores.
+    segmentation_logits (`torch.FloatTensor` of shape `(batch_size, config.num_labels, logits_height, logits_width)`):
+        Classification scores for each pixel.
+
+        <Tip warning={true}>
+
+        The logits returned do not necessarily have the same size as the `pixel_values` passed as inputs. This is
+        to avoid doing two interpolations and lose some quality when a user needs to resize the logits to the
+        original image size as post-processing. You should always check your logits shape and resize as needed.
+
+        </Tip>
+    text_embeds (`torch.FloatTensor` of shape `(batch_size, output_dim`):
+        The text embeddings obtained by applying the projection layer to the pooled output of
+        [`GroupViTTextModel`].
+    image_embeds (`torch.FloatTensor` of shape `(batch_size, output_dim`):
+        The image embeddings obtained by applying the projection layer to the pooled output of
+        [`GroupViTVisionModel`].
+    text_model_output (`BaseModelOutputWithPooling`):
+        The output of the [`GroupViTTextModel`].
+    vision_model_output (`BaseModelOutputWithPooling`):
+        The output of the [`GroupViTVisionModel`].
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     logits_per_image: Optional[torch.FloatTensor] = ...
     logits_per_text: Optional[torch.FloatTensor] = ...
@@ -49,6 +120,9 @@ class GroupViTModelOutput(ModelOutput):
     def to_tuple(self) -> tuple[Any]: ...
 
 class GroupViTPatchEmbeddings(nn.Module):
+    """
+    Image to Patch Embedding.
+    """
     def __init__(
         self,
         image_size: int = ...,
@@ -60,7 +134,17 @@ class GroupViTPatchEmbeddings(nn.Module):
 
 class GroupViTVisionEmbeddings(nn.Module):
     def __init__(self, config: GroupViTVisionConfig) -> None: ...
-    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor: ...
+    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor:
+        """
+        This method allows to interpolate the pre-trained position encodings, to be able to use the model on higher resolution
+        images. This method is also adapted to support torch.jit tracing and no class embeddings.
+
+        Adapted from:
+        - https://github.com/facebookresearch/dino/blob/de9ee3df6cf39fac952ab558447af1fa1365362a/vision_transformer.py#L174-L194, and
+        - https://github.com/facebookresearch/dinov2/blob/e1277af2ba9496fbadf7aec6eba56e8d882d1e35/dinov2/models/vision_transformer.py#L179-L211
+        """
+        ...
+
     def forward(self, pixel_values: torch.Tensor, interpolate_pos_encoding: bool = ...) -> torch.Tensor: ...
 
 class GroupViTTextEmbeddings(nn.Module):
@@ -73,6 +157,7 @@ class GroupViTTextEmbeddings(nn.Module):
     ) -> torch.Tensor: ...
 
 class GroupViTStage(nn.Module):
+    """This corresponds to the `GroupingLayer` class in the GroupViT implementation."""
     def __init__(
         self,
         config: GroupViTVisionConfig,
@@ -82,15 +167,27 @@ class GroupViTStage(nn.Module):
         num_output_group: int,
     ) -> None: ...
     @property
-    def with_group_token(self): ...
-    def split_x(self, x): ...
+    def with_group_token(self):  # -> bool:
+        ...
+    def split_x(self, x):  # -> tuple[Any, Any] | tuple[Any, None]:
+        ...
     def concat_x(self, x: torch.Tensor, group_token: Optional[torch.Tensor] = ...) -> torch.Tensor: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
         prev_group_token: Optional[torch.Tensor] = ...,
         output_attentions: Optional[bool] = ...,
-    ) -> tuple[torch.FloatTensor]: ...
+    ) -> tuple[torch.FloatTensor]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            attention_mask (`torch.FloatTensor`): attention mask of size
+                `(batch, 1, tgt_len, src_len)` where padding elements are indicated by very large negative values.
+                `(config.encoder_attention_heads,)`.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the grouping tensors of Grouping block.
+        """
+        ...
 
 class GroupViTMLP(nn.Module):
     def __init__(
@@ -103,9 +200,11 @@ class GroupViTMLP(nn.Module):
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
 
 class GroupViTMixerMLP(GroupViTMLP):
-    def forward(self, x): ...
+    def forward(self, x):  # -> Tensor:
+        ...
 
 class GroupViTAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config) -> None: ...
     def forward(
         self,
@@ -114,7 +213,9 @@ class GroupViTAttention(nn.Module):
         causal_attention_mask: Optional[torch.Tensor] = ...,
         encoder_hidden_states: Optional[torch.FloatTensor] = ...,
         output_attentions: Optional[bool] = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+        """Input shape: Batch x Time x Channel"""
+        ...
 
 class GroupViTEncoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: GroupViTConfig) -> None: ...
@@ -124,7 +225,18 @@ class GroupViTEncoderLayer(GradientCheckpointingLayer):
         attention_mask: torch.Tensor,
         causal_attention_mask: torch.Tensor,
         output_attentions: Optional[bool] = ...,
-    ) -> tuple[torch.FloatTensor]: ...
+    ) -> tuple[torch.FloatTensor]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            attention_mask (`torch.FloatTensor`): attention mask of size
+                `(batch, 1, tgt_len, src_len)` where padding elements are indicated by very large negative values.
+                `(config.encoder_attention_heads,)`.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+        """
+        ...
 
 @auto_docstring
 class GroupViTPreTrainedModel(PreTrainedModel):
@@ -143,6 +255,13 @@ class GroupViTVisionEncoder(nn.Module):
     ) -> Union[tuple, BaseModelOutput]: ...
 
 class GroupViTTextEncoder(nn.Module):
+    """
+    Transformer encoder consisting of `config.num_hidden_layers` self-attention layers. Each layer is a
+    [`GroupViTEncoderLayer`].
+
+    Args:
+        config: GroupViTTextConfig
+    """
     def __init__(self, config: GroupViTTextConfig) -> None: ...
     def forward(
         self,
@@ -152,7 +271,37 @@ class GroupViTTextEncoder(nn.Module):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutput]: ...
+    ) -> Union[tuple, BaseModelOutput]:
+        r"""
+        Args:
+            inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
+                Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation.
+                This is useful if you want more control over how to convert `input_ids` indices into associated vectors
+                than the model's internal embedding lookup matrix.
+            attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Mask to avoid performing attention on padding token indices. Mask values selected in `[0, 1]`:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+            causal_attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Causal mask for the text model. Mask values selected in `[0, 1]`:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers. See `hidden_states` under returned tensors
+                for more detail.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`~utils.ModelOutput`] instead of a plain tuple.
+        """
+        ...
 
 class GroupViTTextTransformer(nn.Module):
     def __init__(self, config: GroupViTTextConfig) -> None: ...
@@ -171,7 +320,8 @@ class GroupViTTextModel(GroupViTPreTrainedModel):
     config: GroupViTTextConfig
     def __init__(self, config: GroupViTTextConfig) -> None: ...
     def get_input_embeddings(self) -> nn.Module: ...
-    def set_input_embeddings(self, value): ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -181,7 +331,23 @@ class GroupViTTextModel(GroupViTPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPooling]: ...
+    ) -> Union[tuple, BaseModelOutputWithPooling]:
+        r"""
+        Examples:
+
+        ```python
+        >>> from transformers import CLIPTokenizer, GroupViTTextModel
+
+        >>> tokenizer = CLIPTokenizer.from_pretrained("nvidia/groupvit-gcc-yfcc")
+        >>> model = GroupViTTextModel.from_pretrained("nvidia/groupvit-gcc-yfcc")
+
+        >>> inputs = tokenizer(["a photo of a cat", "a photo of a dog"], padding=True, return_tensors="pt")
+
+        >>> outputs = model(**inputs)
+        >>> last_hidden_state = outputs.last_hidden_state
+        >>> pooled_output = outputs.pooler_output  # pooled (EOS token) states
+        ```"""
+        ...
 
 class GroupViTVisionTransformer(nn.Module):
     def __init__(self, config: GroupViTVisionConfig) -> None: ...
@@ -206,7 +372,28 @@ class GroupViTVisionModel(GroupViTPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPooling]: ...
+    ) -> Union[tuple, BaseModelOutputWithPooling]:
+        r"""
+        Examples:
+
+        ```python
+        >>> from PIL import Image
+        >>> import requests
+        >>> from transformers import AutoProcessor, GroupViTVisionModel
+
+        >>> processor = AutoProcessor.from_pretrained("nvidia/groupvit-gcc-yfcc")
+        >>> model = GroupViTVisionModel.from_pretrained("nvidia/groupvit-gcc-yfcc")
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> inputs = processor(images=image, return_tensors="pt")
+
+        >>> outputs = model(**inputs)
+        >>> last_hidden_state = outputs.last_hidden_state
+        >>> pooled_output = outputs.pooler_output  # pooled CLS states
+        ```"""
+        ...
 
 @auto_docstring
 class GroupViTModel(GroupViTPreTrainedModel):
@@ -221,7 +408,25 @@ class GroupViTModel(GroupViTPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> torch.FloatTensor: ...
+    ) -> torch.FloatTensor:
+        r"""
+        Returns:
+            text_features (`torch.FloatTensor` of shape `(batch_size, output_dim`): The text embeddings obtained by
+            applying the projection layer to the pooled output of [`GroupViTTextModel`].
+
+        Examples:
+
+        ```python
+        >>> from transformers import CLIPTokenizer, GroupViTModel
+
+        >>> model = GroupViTModel.from_pretrained("nvidia/groupvit-gcc-yfcc")
+        >>> tokenizer = CLIPTokenizer.from_pretrained("nvidia/groupvit-gcc-yfcc")
+
+        >>> inputs = tokenizer(["a photo of a cat", "a photo of a dog"], padding=True, return_tensors="pt")
+        >>> text_features = model.get_text_features(**inputs)
+        ```"""
+        ...
+
     @auto_docstring
     def get_image_features(
         self,
@@ -229,7 +434,31 @@ class GroupViTModel(GroupViTPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> torch.FloatTensor: ...
+    ) -> torch.FloatTensor:
+        r"""
+        Returns:
+            image_features (`torch.FloatTensor` of shape `(batch_size, output_dim`): The image embeddings obtained by
+            applying the projection layer to the pooled output of [`GroupViTVisionModel`].
+
+        Examples:
+
+        ```python
+        >>> from PIL import Image
+        >>> import requests
+        >>> from transformers import AutoProcessor, GroupViTModel
+
+        >>> model = GroupViTModel.from_pretrained("nvidia/groupvit-gcc-yfcc")
+        >>> processor = AutoProcessor.from_pretrained("nvidia/groupvit-gcc-yfcc")
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> inputs = processor(images=image, return_tensors="pt")
+
+        >>> image_features = model.get_image_features(**inputs)
+        ```"""
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -242,6 +471,34 @@ class GroupViTModel(GroupViTPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         output_segmentation: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, GroupViTModelOutput]: ...
+    ) -> Union[tuple, GroupViTModelOutput]:
+        r"""
+        return_loss (`bool`, *optional*):
+            Whether or not to return the contrastive loss.
+        output_segmentation (`bool`, *optional*):
+            Whether or not to return the segmentation logits.
+
+        Examples:
+
+        ```python
+        >>> from PIL import Image
+        >>> import requests
+        >>> from transformers import AutoProcessor, GroupViTModel
+
+        >>> model = GroupViTModel.from_pretrained("nvidia/groupvit-gcc-yfcc")
+        >>> processor = AutoProcessor.from_pretrained("nvidia/groupvit-gcc-yfcc")
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> inputs = processor(
+        ...     text=["a photo of a cat", "a photo of a dog"], images=image, return_tensors="pt", padding=True
+        ... )
+
+        >>> outputs = model(**inputs)
+        >>> logits_per_image = outputs.logits_per_image  # this is the image-text similarity score
+        >>> probs = logits_per_image.softmax(dim=1)  # we can take the softmax to get the label probabilities
+        ```"""
+        ...
 
 __all__ = ["GroupViTModel", "GroupViTPreTrainedModel", "GroupViTTextModel", "GroupViTVisionModel"]

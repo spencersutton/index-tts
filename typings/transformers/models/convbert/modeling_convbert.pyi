@@ -18,11 +18,15 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring
 from .configuration_convbert import ConvBertConfig
 
+"""PyTorch ConvBERT model."""
 logger = ...
 
-def load_tf_weights_in_convbert(model, config, tf_checkpoint_path): ...
+def load_tf_weights_in_convbert(model, config, tf_checkpoint_path):
+    """Load tf checkpoints in a pytorch model."""
+    ...
 
 class ConvBertEmbeddings(nn.Module):
+    """Construct the embeddings from word, position and token_type embeddings."""
     def __init__(self, config) -> None: ...
     def forward(
         self,
@@ -40,6 +44,7 @@ class ConvBertPreTrainedModel(PreTrainedModel):
     supports_gradient_checkpointing = ...
 
 class SeparableConv1D(nn.Module):
+    """This class implements separable convolution, i.e. a depthwise and a pointwise layer"""
     def __init__(self, config, input_filters, output_filters, kernel_size, **kwargs) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
 
@@ -60,7 +65,8 @@ class ConvBertSelfOutput(nn.Module):
 
 class ConvBertAttention(nn.Module):
     def __init__(self, config) -> None: ...
-    def prune_heads(self, heads): ...
+    def prune_heads(self, heads):  # -> None:
+        ...
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -93,7 +99,8 @@ class ConvBertLayer(GradientCheckpointingLayer):
         encoder_attention_mask: Optional[torch.Tensor] = ...,
         output_attentions: Optional[bool] = ...,
     ) -> tuple[torch.Tensor, Optional[torch.FloatTensor]]: ...
-    def feed_forward_chunk(self, attention_output): ...
+    def feed_forward_chunk(self, attention_output):  # -> Any:
+        ...
 
 class ConvBertEncoder(nn.Module):
     def __init__(self, config) -> None: ...
@@ -114,16 +121,55 @@ class ConvBertPredictionHeadTransform(nn.Module):
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
 
 class ConvBertSequenceSummary(nn.Module):
+    r"""
+    Compute a single vector summary of a sequence hidden states.
+
+    Args:
+        config ([`ConvBertConfig`]):
+            The config used by the model. Relevant arguments in the config class of the model are (refer to the actual
+            config class of your model for the default values it uses):
+
+            - **summary_type** (`str`) -- The method to use to make this summary. Accepted values are:
+
+                - `"last"` -- Take the last token hidden state (like XLNet)
+                - `"first"` -- Take the first token hidden state (like Bert)
+                - `"mean"` -- Take the mean of all tokens hidden states
+                - `"cls_index"` -- Supply a Tensor of classification token position (GPT/GPT-2)
+                - `"attn"` -- Not implemented now, use multi-head attention
+
+            - **summary_use_proj** (`bool`) -- Add a projection after the vector extraction.
+            - **summary_proj_to_labels** (`bool`) -- If `True`, the projection outputs to `config.num_labels` classes
+              (otherwise to `config.hidden_size`).
+            - **summary_activation** (`Optional[str]`) -- Set to `"tanh"` to add a tanh activation to the output,
+              another string or `None` will add no activation.
+            - **summary_first_dropout** (`float`) -- Optional dropout probability before the projection and activation.
+            - **summary_last_dropout** (`float`)-- Optional dropout probability after the projection and activation.
+    """
     def __init__(self, config: ConvBertConfig) -> None: ...
     def forward(
         self, hidden_states: torch.FloatTensor, cls_index: Optional[torch.LongTensor] = ...
-    ) -> torch.FloatTensor: ...
+    ) -> torch.FloatTensor:
+        """
+        Compute a single vector summary of a sequence hidden states.
+
+        Args:
+            hidden_states (`torch.FloatTensor` of shape `[batch_size, seq_len, hidden_size]`):
+                The hidden states of the last layer.
+            cls_index (`torch.LongTensor` of shape `[batch_size]` or `[batch_size, ...]` where ... are optional leading dimensions of `hidden_states`, *optional*):
+                Used if `summary_type == "cls_index"` and takes the last token of the sequence as classification token.
+
+        Returns:
+            `torch.FloatTensor`: The summary of the sequence hidden states.
+        """
+        ...
 
 @auto_docstring
 class ConvBertModel(ConvBertPreTrainedModel):
     def __init__(self, config) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -139,6 +185,7 @@ class ConvBertModel(ConvBertPreTrainedModel):
     ) -> Union[tuple, BaseModelOutputWithCrossAttentions]: ...
 
 class ConvBertGeneratorPredictions(nn.Module):
+    """Prediction module for the generator, made up of two dense layers."""
     def __init__(self, config) -> None: ...
     def forward(self, generator_hidden_states: torch.FloatTensor) -> torch.FloatTensor: ...
 
@@ -146,8 +193,10 @@ class ConvBertGeneratorPredictions(nn.Module):
 class ConvBertForMaskedLM(ConvBertPreTrainedModel):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
-    def get_output_embeddings(self): ...
-    def set_output_embeddings(self, word_embeddings): ...
+    def get_output_embeddings(self):  # -> Linear:
+        ...
+    def set_output_embeddings(self, word_embeddings):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -161,13 +210,26 @@ class ConvBertForMaskedLM(ConvBertPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, MaskedLMOutput]: ...
+    ) -> Union[tuple, MaskedLMOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should be in `[-100, 0, ...,
+            config.vocab_size]` (see `input_ids` docstring) Tokens with indices set to `-100` are ignored (masked), the
+            loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`
+        """
+        ...
 
 class ConvBertClassificationHead(nn.Module):
+    """Head for sentence-level classification tasks."""
     def __init__(self, config) -> None: ...
     def forward(self, hidden_states: torch.Tensor, **kwargs) -> torch.Tensor: ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    ConvBERT Model transformer with a sequence classification/regression head on top (a linear layer on top of the
+    pooled output) e.g. for GLUE tasks.
+    """
+)
 class ConvBertForSequenceClassification(ConvBertPreTrainedModel):
     def __init__(self, config) -> None: ...
     @auto_docstring
@@ -183,7 +245,14 @@ class ConvBertForSequenceClassification(ConvBertPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, SequenceClassifierOutput]: ...
+    ) -> Union[tuple, SequenceClassifierOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 @auto_docstring
 class ConvBertForMultipleChoice(ConvBertPreTrainedModel):
@@ -201,7 +270,39 @@ class ConvBertForMultipleChoice(ConvBertPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, MultipleChoiceModelOutput]: ...
+    ) -> Union[tuple, MultipleChoiceModelOutput]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`):
+            Indices of input sequence tokens in the vocabulary.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        token_type_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`, *optional*):
+            Segment token indices to indicate first and second portions of the inputs. Indices are selected in `[0,
+            1]`:
+
+
+            - 0 corresponds to a *sentence A* token,
+            - 1 corresponds to a *sentence B* token.
+
+            [What are token type IDs?](../glossary#token-type-ids)
+        position_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`, *optional*):
+            Indices of positions of each input sequence tokens in the position embeddings. Selected in the range `[0,
+            config.max_position_embeddings - 1]`.
+
+            [What are position IDs?](../glossary#position-ids)
+        inputs_embeds (`torch.FloatTensor` of shape `(batch_size, num_choices, sequence_length, hidden_size)`, *optional*):
+            Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation. This
+            is useful if you want more control over how to convert *input_ids* indices into associated vectors than the
+            model's internal embedding lookup matrix.
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the multiple choice classification loss. Indices should be in `[0, ...,
+            num_choices-1]` where `num_choices` is the size of the second dimension of the input tensors. (See
+            `input_ids` above)
+        """
+        ...
 
 @auto_docstring
 class ConvBertForTokenClassification(ConvBertPreTrainedModel):
@@ -219,7 +320,12 @@ class ConvBertForTokenClassification(ConvBertPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, TokenClassifierOutput]: ...
+    ) -> Union[tuple, TokenClassifierOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the token classification loss. Indices should be in `[0, ..., config.num_labels - 1]`.
+        """
+        ...
 
 @auto_docstring
 class ConvBertForQuestionAnswering(ConvBertPreTrainedModel):

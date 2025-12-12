@@ -24,6 +24,60 @@ from ..qwen2_vl.modeling_qwen2_vl import VisionRotaryEmbedding
 logger = ...
 
 class MLCDVisionConfig(PretrainedConfig):
+    r"""
+    This is the configuration class to store the configuration of a [`MLCDVisionModel`]. It is used to instantiate a MLCD
+    vision encoder according to the specified arguments, defining the model architecture. Instantiating a configuration
+    with the defaults will yield a similar configuration to that of the vision encoder of the MLCD
+    [DeepGlint-AI/mlcd-vit-bigG-patch14-336](https://huggingface.co/DeepGlint-AI/mlcd-vit-bigG-patch14-336) architecture.
+
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
+
+    Args:
+        hidden_size (`int`, *optional*, defaults to 1664):
+            Dimensionality of the encoder layers and the pooler layer.
+        intermediate_size (`int`, *optional*, defaults to 8192):
+            Dimensionality of the "intermediate" (i.e., feed-forward) layer in the Transformer encoder.
+        projection_dim (`int`, *optional*, defaults to 1024):
+            Dimensionality of text and vision projection layers.
+        num_hidden_layers (`int`, *optional*, defaults to 48):
+            Number of hidden layers in the Transformer encoder.
+        num_attention_heads (`int`, *optional*, defaults to 16):
+            Number of attention heads for each attention layer in the Transformer encoder.
+        num_channels (`int`, *optional*, defaults to 3):
+            The number of input channels.
+        image_size (`int`, *optional*, defaults to 336):
+            The size (resolution) of each image.
+        patch_size (`int`, *optional*, defaults to 14):
+            The size (resolution) of each patch.
+        hidden_act (`str` or `function`, *optional*, defaults to `"gelu"`):
+            The non-linear activation function (function or string) in the encoder and pooler. If string, `"gelu"`,
+            `"relu"`, `"selu"` and `"gelu_new"` `"quick_gelu"` are supported.
+        layer_norm_eps (`float`, *optional*, defaults to 1e-05):
+            The epsilon used by the layer normalization layers.
+        attention_dropout (`float`, *optional*, defaults to 0.0):
+            The dropout ratio for the attention probabilities.
+        initializer_range (`float`, *optional*, defaults to 0.02):
+            The standard deviation of the truncated_normal_initializer for initializing all weight matrices.
+        initializer_factor (`float`, *optional*, defaults to 1.0):
+            A factor for initializing all weight matrices (should be kept to 1, used internally for initialization
+            testing).
+
+    Example:
+
+    ```python
+    >>> from transformers import MLCDVisionConfig, MLCDVisionModel
+
+    >>> # Initializing a MLCDVisionConfig with DeepGlint-AI/mlcd-vit-bigG-patch14-336 style configuration
+    >>> configuration = MLCDVisionConfig()
+
+    >>> # Initializing a MLCDVisionModel (with random weights) from the DeepGlint-AI/mlcd-vit-bigG-patch14-336 style configuration
+    >>> model = MLCDVisionModel(configuration)
+
+    >>> # Accessing the model configuration
+    >>> configuration = model.config
+    ```"""
+
     model_type = ...
     base_config_key = ...
     def __init__(
@@ -47,13 +101,30 @@ class MLCDVisionConfig(PretrainedConfig):
 class MLCDMLP(CLIPMLP): ...
 
 class MLCDRotaryEmbedding(VisionRotaryEmbedding):
-    def forward(self, num_patches_height: int, num_patches_width: int) -> torch.Tensor: ...
+    def forward(self, num_patches_height: int, num_patches_width: int) -> torch.Tensor:
+        """
+        Calculate the Rotary Position Embedding (RoPE) for MLCDVisionModel based on the grid size.
+
+        Args:
+            num_patches_height (int): Number of patches in the height dimension.
+            num_patches_width (int): Number of patches in the width dimension.
+
+        Returns:
+            torch.Tensor: Rotary positional embeddings for the given grid size.
+        """
+        ...
 
 class MLCDVisionEmbeddings(CLIPVisionEmbeddings):
     def __init__(self, config: MLCDVisionConfig) -> None: ...
     def forward(self, pixel_values: torch.FloatTensor) -> torch.Tensor: ...
 
 class MLCDAttention(CLIPAttention):
+    """Multi-headed attention with RoPE. Refer to papers:
+    - Attention is all you need:
+        https://huggingface.co/papers/1706.03762
+    - RoFormer: Enhanced Transformer with Rotary Position Embedding:
+        https://huggingface.co/papers/2104.09864
+    """
     def __init__(self, config: MLCDVisionConfig) -> None: ...
     def forward(
         self,
@@ -71,10 +142,35 @@ class MLCDEncoderLayer(CLIPEncoderLayer):
         position_embeddings: tuple[torch.Tensor, torch.Tensor],
         attention_mask: Optional[torch.Tensor] = ...,
         output_attentions: Optional[bool] = ...,
-    ) -> tuple[torch.FloatTensor]: ...
+    ) -> tuple[torch.FloatTensor]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`):
+                Input to the layer of shape `(batch, seq_len, embed_dim)`.
+                Represents the hidden states from the previous layer or the input embeddings.
+            position_embeddings (`tuple[torch.Tensor, torch.Tensor]`):
+                A tuple of two tensors, each of shape `(batch, seq_len, embed_dim)`.
+                Represents absolute positional embeddings for the query and key in the attention mechanism.
+            attention_mask (`torch.FloatTensor`):
+                Attention mask of shape `(batch, 1, q_len, k_v_seq_len)` where padding elements are indicated by very large negative values.
+            output_attentions (`bool`, *optional*, defaults to `False`):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+        """
+        ...
 
 class MLCDEncoder(CLIPEncoder):
-    def __init__(self, config: MLCDVisionConfig) -> None: ...
+    """
+    Transformer encoder consisting of `config.num_hidden_layers` self attention layers. Each layer is a
+    [`MLCDEncoderLayer`].
+
+    Args:
+        config: MLCDVisionConfig
+    """
+    def __init__(self, config: MLCDVisionConfig) -> None:
+        """Overwrite dummy `MLCDConfig` to `MLCDVisionConfig`."""
+        ...
+
     def forward(
         self,
         inputs_embeds: torch.FloatTensor,
@@ -83,7 +179,31 @@ class MLCDEncoder(CLIPEncoder):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutput]: ...
+    ) -> Union[tuple, BaseModelOutput]:
+        r"""
+        Args:
+            inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
+                Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation.
+                This is useful if you want more control over how to convert `input_ids` indices into associated vectors
+                than the model's internal embedding lookup matrix.
+            position_embeddings (`tuple[torch.Tensor, torch.Tensor]`):
+                A tuple of two tensors, each of shape `(batch, seq_len, embed_dim)`.
+                Represents absolute positional embeddings for the query and key in the attention mechanism.
+            attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Mask to avoid performing attention on padding token indices. Mask values selected in `[0, 1]`:
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+                [What are attention masks?](../glossary#attention-mask)
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers. See `hidden_states` under returned tensors
+                for more detail.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`~utils.ModelOutput`] instead of a plain tuple.
+        """
+        ...
 
 class MLCDVisionTransformer(CLIPVisionTransformer):
     def __init__(self, config: MLCDVisionConfig) -> None: ...
@@ -112,6 +232,29 @@ class MLCDVisionModel(CLIPVisionModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPooling]: ...
+    ) -> Union[tuple, BaseModelOutputWithPooling]:
+        r"""
+        Example:
+
+        ```python
+        >>> import requests
+        >>> from PIL import Image
+        >>> from transformers import AutoProcessor, MLCDVisionModel
+        >>> model = MLCDVisionModel.from_pretrained("DeepGlint-AI/mlcd-vit-bigG-patch14-448")
+        >>> processor = AutoProcessor.from_pretrained("DeepGlint-AI/mlcd-vit-bigG-patch14-448")
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+        >>> inputs = processor(images=image, return_tensors="pt")
+
+        >>> with torch.no_grad():
+        ...     outputs = model(**inputs, output_attentions=True)
+
+        >>> features = outputs.last_hidden_state
+        >>> print(f"Extracted features shape: {features.shape}")
+        >>> print(f"Number of attention layers: {len(outputs.attentions)}")
+        >>> print(f"Attention shape: {outputs.attentions[0].shape}")
+        ```"""
+        ...
 
 __all__ = ["MLCDVisionConfig", "MLCDPreTrainedModel", "MLCDVisionModel"]

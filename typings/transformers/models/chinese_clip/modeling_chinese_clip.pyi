@@ -16,6 +16,7 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import ModelOutput, auto_docstring, can_return_tuple
 from .configuration_chinese_clip import ChineseCLIPConfig, ChineseCLIPTextConfig, ChineseCLIPVisionConfig
 
+"""PyTorch Chinese-CLIP model."""
 logger = ...
 
 def contrastive_loss(logits: torch.Tensor) -> torch.Tensor: ...
@@ -24,6 +25,27 @@ def chinese_clip_loss(similarity: torch.Tensor) -> torch.Tensor: ...
 @dataclass
 @auto_docstring
 class ChineseCLIPOutput(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `return_loss` is `True`):
+        Contrastive loss for image-text similarity.
+    logits_per_image (`torch.FloatTensor` of shape `(image_batch_size, text_batch_size)`):
+        The scaled dot product scores between `image_embeds` and `text_embeds`. This represents the image-text
+        similarity scores.
+    logits_per_text (`torch.FloatTensor` of shape `(text_batch_size, image_batch_size)`):
+        The scaled dot product scores between `text_embeds` and `image_embeds`. This represents the text-image
+        similarity scores.
+    text_embeds (`torch.FloatTensor` of shape `(batch_size, output_dim`):
+        The text embeddings obtained by applying the projection layer to the pooled output of
+        [`ChineseCLIPTextModel`].
+    image_embeds (`torch.FloatTensor` of shape `(batch_size, output_dim`):
+        The image embeddings obtained by applying the projection layer to the pooled output of
+        [`ChineseCLIPVisionModel`].
+    text_model_output (`BaseModelOutputWithPoolingAndCrossAttentions`):
+        The output of the [`ChineseCLIPTextModel`].
+    vision_model_output (`BaseModelOutputWithPoolingAndCrossAttentions`):
+        The output of the [`ChineseCLIPVisionModel`].
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     logits_per_image: Optional[torch.FloatTensor] = ...
     logits_per_text: Optional[torch.FloatTensor] = ...
@@ -34,6 +56,7 @@ class ChineseCLIPOutput(ModelOutput):
     def to_tuple(self) -> tuple[Any]: ...
 
 class ChineseCLIPTextEmbeddings(nn.Module):
+    """Construct the embeddings from word, position and token_type embeddings."""
     def __init__(self, config) -> None: ...
     def forward(
         self,
@@ -45,7 +68,17 @@ class ChineseCLIPTextEmbeddings(nn.Module):
 
 class ChineseCLIPVisionEmbeddings(nn.Module):
     def __init__(self, config: ChineseCLIPVisionConfig) -> None: ...
-    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor: ...
+    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor:
+        """
+        This method allows to interpolate the pre-trained position encodings, to be able to use the model on higher resolution
+        images. This method is also adapted to support torch.jit tracing.
+
+        Adapted from:
+        - https://github.com/facebookresearch/dino/blob/de9ee3df6cf39fac952ab558447af1fa1365362a/vision_transformer.py#L174-L194, and
+        - https://github.com/facebookresearch/dinov2/blob/e1277af2ba9496fbadf7aec6eba56e8d882d1e35/dinov2/models/vision_transformer.py#L179-L211
+        """
+        ...
+
     def forward(self, pixel_values: torch.FloatTensor, interpolate_pos_encoding=...) -> torch.Tensor: ...
 
 def eager_attention_forward(
@@ -58,7 +91,8 @@ def eager_attention_forward(
     dropout: float = ...,
     head_mask: Optional[torch.Tensor] = ...,
     **kwargs,
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class ChineseCLIPTextSelfAttention(nn.Module):
     def __init__(self, config) -> None: ...
@@ -77,7 +111,8 @@ class ChineseCLIPTextSelfOutput(nn.Module):
 
 class ChineseCLIPTextAttention(nn.Module):
     def __init__(self, config) -> None: ...
-    def prune_heads(self, heads): ...
+    def prune_heads(self, heads):  # -> None:
+        ...
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -88,10 +123,13 @@ class ChineseCLIPTextAttention(nn.Module):
     ) -> tuple[torch.Tensor]: ...
 
 class ChineseCLIPVisionAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config) -> None: ...
     def forward(
         self, hidden_states: torch.Tensor, output_attentions: Optional[bool] = ..., **kwargs
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+        """Input shape: Batch x Time x Channel"""
+        ...
 
 class ChineseCLIPTextIntermediate(nn.Module):
     def __init__(self, config) -> None: ...
@@ -115,13 +153,20 @@ class ChineseCLIPTextLayer(GradientCheckpointingLayer):
         output_attentions: Optional[bool] = ...,
         **kwargs,
     ) -> tuple[torch.Tensor]: ...
-    def feed_forward_chunk(self, attention_output): ...
+    def feed_forward_chunk(self, attention_output):  # -> Any:
+        ...
 
 class ChineseCLIPVisionLayer(GradientCheckpointingLayer):
     def __init__(self, config: ChineseCLIPConfig) -> None: ...
-    def forward(
-        self, hidden_states: torch.Tensor, output_attentions: Optional[bool] = ...
-    ) -> tuple[torch.FloatTensor]: ...
+    def forward(self, hidden_states: torch.Tensor, output_attentions: Optional[bool] = ...) -> tuple[torch.FloatTensor]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+        """
+        ...
 
 class ChineseCLIPTextPooler(nn.Module):
     def __init__(self, config) -> None: ...
@@ -148,6 +193,13 @@ class ChineseCLIPTextEncoder(nn.Module):
     ) -> Union[tuple[torch.Tensor], BaseModelOutput]: ...
 
 class ChineseCLIPVisionEncoder(nn.Module):
+    """
+    Transformer encoder consisting of `config.num_hidden_layers` self attention layers. Each layer is a
+    [`ChineseCLIPVisionEncoderLayer`].
+
+    Args:
+        config: ChineseCLIPConfig
+    """
     def __init__(self, config: ChineseCLIPConfig) -> None: ...
     @can_return_tuple
     def forward(
@@ -156,7 +208,23 @@ class ChineseCLIPVisionEncoder(nn.Module):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutput]: ...
+    ) -> Union[tuple, BaseModelOutput]:
+        r"""
+        Args:
+            inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
+                Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation.
+                This is useful if you want more control over how to convert `input_ids` indices into associated vectors
+                than the model's internal embedding lookup matrix.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers. See `hidden_states` under returned tensors
+                for more detail.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`~utils.ModelOutput`] instead of a plain tuple.
+        """
+        ...
 
 class ChineseCLIPVisionTransformer(nn.Module):
     def __init__(self, config: ChineseCLIPVisionConfig) -> None: ...
@@ -171,13 +239,37 @@ class ChineseCLIPVisionTransformer(nn.Module):
         return_dict: Optional[bool] = ...,
     ) -> Union[tuple, BaseModelOutputWithPooling]: ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The text model from CHINESE_CLIP without any head or projection on top.
+    """
+)
 class ChineseCLIPTextModel(ChineseCLIPPreTrainedModel):
+    """
+
+    The model can behave as an encoder (with only self-attention) as well as a decoder, in which case a layer of
+    cross-attention is added between the self-attention layers, following the architecture described in [Attention is
+    all you need](https://huggingface.co/papers/1706.03762) by Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit,
+    Llion Jones, Aidan N. Gomez, Lukasz Kaiser and Illia Polosukhin.
+
+    To behave as an decoder the model needs to be initialized with the `is_decoder` argument of the configuration set
+    to `True`. To be used in a Seq2Seq model, the model needs to initialized with both `is_decoder` argument and
+    `add_cross_attention` set to `True`; an `encoder_hidden_states` is then expected as an input to the forward pass.
+    """
+
     config: ChineseCLIPTextConfig
     _no_split_modules = ...
-    def __init__(self, config, add_pooling_layer=...) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def __init__(self, config, add_pooling_layer=...) -> None:
+        r"""
+        add_pooling_layer (bool, *optional*, defaults to `True`):
+            Whether to add a pooling layer
+        """
+        ...
+
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -197,7 +289,11 @@ class ChineseCLIPTextModel(ChineseCLIPPreTrainedModel):
         return_dict: Optional[bool] = ...,
     ) -> Union[tuple[torch.Tensor], BaseModelOutputWithPooling]: ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The vision model from CHINESE_CLIP without any head or projection on top.
+    """
+)
 class ChineseCLIPVisionModel(ChineseCLIPPreTrainedModel):
     config: ChineseCLIPVisionConfig
     main_input_name = ...
@@ -212,7 +308,28 @@ class ChineseCLIPVisionModel(ChineseCLIPPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         interpolate_pos_encoding: bool = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPooling]: ...
+    ) -> Union[tuple, BaseModelOutputWithPooling]:
+        r"""
+        Examples:
+
+        ```python
+        >>> from PIL import Image
+        >>> import requests
+        >>> from transformers import CLIPProcessor, ChineseCLIPVisionModel
+
+        >>> model = ChineseCLIPVisionModel.from_pretrained("OFA-Sys/chinese-clip-vit-base-patch16")
+        >>> processor = CLIPProcessor.from_pretrained("OFA-Sys/chinese-clip-vit-base-patch16")
+
+        >>> url = "https://clip-cn-beijing.oss-cn-beijing.aliyuncs.com/pokemon.jpeg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> inputs = processor(images=image, return_tensors="pt")
+
+        >>> outputs = model(**inputs)
+        >>> last_hidden_state = outputs.last_hidden_state
+        >>> pooled_output = outputs.pooler_output  # pooled CLS states
+        ```"""
+        ...
 
 @auto_docstring
 class ChineseCLIPModel(ChineseCLIPPreTrainedModel):
@@ -228,7 +345,26 @@ class ChineseCLIPModel(ChineseCLIPPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> torch.FloatTensor: ...
+    ) -> torch.FloatTensor:
+        r"""
+        Returns:
+            text_features (`torch.FloatTensor` of shape `(batch_size, output_dim`): The text embeddings obtained by
+            applying the projection layer to the final [CLS] hidden state of Text-Transformer.
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoTokenizer, ChineseCLIPModel
+
+        >>> model = ChineseCLIPModel.from_pretrained("OFA-Sys/chinese-clip-vit-base-patch16")
+        >>> tokenizer = AutoTokenizer.from_pretrained("OFA-Sys/chinese-clip-vit-base-patch16")
+
+        >>> inputs = tokenizer(["杰尼龟", "妙蛙种子", "小火龙", "皮卡丘"], padding=True, return_tensors="pt")
+        >>> text_features = model.get_text_features(**inputs)
+        >>> text_features = text_features / text_features.norm(p=2, dim=-1, keepdim=True)
+        ```"""
+        ...
+
     @auto_docstring
     def get_image_features(
         self,
@@ -237,7 +373,32 @@ class ChineseCLIPModel(ChineseCLIPPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         interpolate_pos_encoding: bool = ...,
         return_dict: Optional[bool] = ...,
-    ) -> torch.FloatTensor: ...
+    ) -> torch.FloatTensor:
+        r"""
+        Returns:
+            image_features (`torch.FloatTensor` of shape `(batch_size, output_dim`): The image embeddings obtained by
+            applying the projection layer to the final [CLS] hidden state of Vision-Transformer.
+
+        Examples:
+
+        ```python
+        >>> from PIL import Image
+        >>> import requests
+        >>> from transformers import AutoProcessor, ChineseCLIPModel
+
+        >>> model = ChineseCLIPModel.from_pretrained("OFA-Sys/chinese-clip-vit-base-patch16")
+        >>> processor = AutoProcessor.from_pretrained("OFA-Sys/chinese-clip-vit-base-patch16")
+
+        >>> url = "https://clip-cn-beijing.oss-cn-beijing.aliyuncs.com/pokemon.jpeg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> inputs = processor(images=image, return_tensors="pt")
+
+        >>> image_features = model.get_image_features(**inputs)
+        >>> image_features = image_features / image_features.norm(p=2, dim=-1, keepdim=True)
+        ```"""
+        ...
+
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -252,6 +413,30 @@ class ChineseCLIPModel(ChineseCLIPPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         interpolate_pos_encoding: bool = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ChineseCLIPOutput]: ...
+    ) -> Union[tuple, ChineseCLIPOutput]:
+        r"""
+        return_loss (`bool`, *optional*):
+            Whether or not to return the contrastive loss.
+
+        Examples:
+
+        ```python
+        >>> from PIL import Image
+        >>> import requests
+        >>> from transformers import AutoProcessor, ChineseCLIPModel
+
+        >>> model = ChineseCLIPModel.from_pretrained("OFA-Sys/chinese-clip-vit-base-patch16")
+        >>> processor = AutoProcessor.from_pretrained("OFA-Sys/chinese-clip-vit-base-patch16")
+
+        >>> url = "https://clip-cn-beijing.oss-cn-beijing.aliyuncs.com/pokemon.jpeg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> inputs = processor(text=["杰尼龟", "妙蛙种子", "小火龙", "皮卡丘"], images=image, return_tensors="pt", padding=True)
+
+        >>> outputs = model(**inputs)
+        >>> logits_per_image = outputs.logits_per_image  # this is the image-text similarity score
+        >>> probs = logits_per_image.softmax(dim=1)  # we can take the softmax to get the label probabilities
+        ```"""
+        ...
 
 __all__ = ["ChineseCLIPModel", "ChineseCLIPPreTrainedModel", "ChineseCLIPTextModel", "ChineseCLIPVisionModel"]

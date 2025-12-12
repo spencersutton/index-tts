@@ -14,6 +14,38 @@ logger = ...
 
 @add_end_docstrings(build_pipeline_init_args(has_image_processor=True))
 class ZeroShotImageClassificationPipeline(Pipeline):
+    """
+    Zero shot image classification pipeline using `CLIPModel`. This pipeline predicts the class of an image when you
+    provide an image and a set of `candidate_labels`.
+
+    Example:
+
+    ```python
+    >>> from transformers import pipeline
+
+    >>> classifier = pipeline(model="google/siglip-so400m-patch14-384")
+    >>> classifier(
+    ...     "https://huggingface.co/datasets/Narsil/image_dummy/raw/main/parrots.png",
+    ...     candidate_labels=["animals", "humans", "landscape"],
+    ... )
+    [{'score': 0.965, 'label': 'animals'}, {'score': 0.03, 'label': 'humans'}, {'score': 0.005, 'label': 'landscape'}]
+
+    >>> classifier(
+    ...     "https://huggingface.co/datasets/Narsil/image_dummy/raw/main/parrots.png",
+    ...     candidate_labels=["black and white", "photorealist", "painting"],
+    ... )
+    [{'score': 0.996, 'label': 'black and white'}, {'score': 0.003, 'label': 'photorealist'}, {'score': 0.0, 'label': 'painting'}]
+    ```
+
+    Learn more about the basics of using a pipeline in the [pipeline tutorial](../pipeline_tutorial)
+
+    This image classification pipeline can currently be loaded from [`pipeline`] using the following task identifier:
+    `"zero-shot-image-classification"`.
+
+    See the list of available models on
+    [huggingface.co/models](https://huggingface.co/models?filter=zero-shot-image-classification).
+    """
+
     _load_processor = ...
     _load_image_processor = ...
     _load_feature_extractor = ...
@@ -29,6 +61,42 @@ class ZeroShotImageClassificationPipeline(Pipeline):
     ) -> list[list[dict[str, Any]]]: ...
     def __call__(
         self, image: Union[str, list[str], Image.Image, list[Image.Image]], candidate_labels: list[str], **kwargs: Any
-    ) -> Union[list[dict[str, Any]], list[list[dict[str, Any]]]]: ...
-    def preprocess(self, image, candidate_labels=..., hypothesis_template=..., timeout=..., tokenizer_kwargs=...): ...
-    def postprocess(self, model_outputs): ...
+    ) -> Union[list[dict[str, Any]], list[list[dict[str, Any]]]]:
+        """
+        Assign labels to the image(s) passed as inputs.
+
+        Args:
+            image (`str`, `list[str]`, `PIL.Image` or `list[PIL.Image]`):
+                The pipeline handles three types of images:
+
+                - A string containing a http link pointing to an image
+                - A string containing a local path to an image
+                - An image loaded in PIL directly
+
+            candidate_labels (`list[str]`):
+                The candidate labels for this image. They will be formatted using *hypothesis_template*.
+
+            hypothesis_template (`str`, *optional*, defaults to `"This is a photo of {}"`):
+                The format used in conjunction with *candidate_labels* to attempt the image classification by
+                replacing the placeholder with the candidate_labels. Pass "{}" if *candidate_labels* are
+                already formatted.
+
+            timeout (`float`, *optional*, defaults to None):
+                The maximum time in seconds to wait for fetching images from the web. If None, no timeout is set and
+                the call may block forever.
+
+        Return:
+            A list of dictionaries containing one entry per proposed label. Each dictionary contains the
+            following keys:
+            - **label** (`str`) -- One of the suggested *candidate_labels*.
+            - **score** (`float`) -- The score attributed by the model to that label. It is a value between
+                0 and 1, computed as the `softmax` of `logits_per_image`.
+        """
+        ...
+
+    def preprocess(
+        self, image, candidate_labels=..., hypothesis_template=..., timeout=..., tokenizer_kwargs=...
+    ):  # -> transformers.feature_extraction_utils.BatchFeature | Any | transformers.image_processing_base.BatchFeature:
+        ...
+    def postprocess(self, model_outputs):  # -> list[dict[str, Any]]:
+        ...

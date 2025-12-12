@@ -23,7 +23,11 @@ def prepare_coco_detection_annotation(
     target,
     return_segmentation_masks: bool = ...,
     input_data_format: Optional[Union[ChannelDimension, str]] = ...,
-): ...
+):  # -> dict[str, Tensor]:
+    """
+    Convert the target in COCO format into the format expected by RT-DETR.
+    """
+    ...
 
 class RTDetrFastImageProcessorKwargs(DetrFastImageProcessorKwargs): ...
 
@@ -64,7 +68,29 @@ class RTDetrImageProcessorFast(DetrImageProcessorFast, BaseImageProcessorFast):
         threshold: float = ...,
         target_sizes: Union[TensorType, list[tuple]] = ...,
         use_focal_loss: bool = ...,
-    ): ...
+    ):  # -> list[Any]:
+        """
+        Converts the raw output of [`DetrForObjectDetection`] into final bounding boxes in (top_left_x, top_left_y,
+        bottom_right_x, bottom_right_y) format. Only supports PyTorch.
+
+        Args:
+            outputs ([`DetrObjectDetectionOutput`]):
+                Raw outputs of the model.
+            threshold (`float`, *optional*, defaults to 0.5):
+                Score threshold to keep object detection predictions.
+            target_sizes (`torch.Tensor` or `list[tuple[int, int]]`, *optional*):
+                Tensor of shape `(batch_size, 2)` or list of tuples (`tuple[int, int]`) containing the target size
+                `(height, width)` of each image in the batch. If unset, predictions will not be resized.
+            use_focal_loss (`bool` defaults to `True`):
+                Variable informing if the focal loss was used to predict the outputs. If `True`, a sigmoid is applied
+                to compute the scores of each detection, otherwise, a softmax function is used.
+
+        Returns:
+            `list[Dict]`: A list of dictionaries, each dictionary containing the scores, labels and boxes for an image
+            in the batch as predicted by the model.
+        """
+        ...
+
     def from_dict(): ...
     def post_process(): ...
     def post_process_segmentation(): ...

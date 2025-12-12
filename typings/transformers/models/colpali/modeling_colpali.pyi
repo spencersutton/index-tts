@@ -11,6 +11,8 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import ModelOutput, auto_docstring, can_return_tuple
 from .configuration_colpali import ColPaliConfig
 
+"""PyTorch ColPali model"""
+
 @auto_docstring
 class ColPaliPreTrainedModel(PreTrainedModel):
     config: ColPaliConfig
@@ -21,8 +23,28 @@ class ColPaliPreTrainedModel(PreTrainedModel):
     _supports_flex_attn = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for ColPali embeddings output.
+    """
+)
 class ColPaliForRetrievalOutput(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `labels` is provided):
+        Language modeling loss (for next-token prediction).
+    embeddings (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
+        The embeddings of the model.
+    past_key_values (`Cache`, *optional*, returned when `use_cache=True` is passed or when `config.use_cache=True`):
+        Tuple of `tuple(torch.FloatTensor)` of length `config.n_layers`, with each tuple having 2 tensors of shape
+        `(batch_size, num_heads, sequence_length, embed_size_per_head)`)
+
+        Contains pre-computed hidden-states (key and values in the self-attention blocks) that can be used (see
+        `past_key_values` input) to speed up sequential decoding.
+    image_hidden_states (`torch.FloatTensor`, *optional*):
+        A `torch.FloatTensor` of size `(batch_size, num_images, sequence_length, hidden_size)`.
+        image_hidden_states of the model produced by the vision encoder after projecting last hidden state.
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     embeddings: Optional[torch.Tensor] = ...
     past_key_values: Optional[Union[list[torch.FloatTensor], Cache]] = ...
@@ -30,7 +52,20 @@ class ColPaliForRetrievalOutput(ModelOutput):
     attentions: Optional[tuple[torch.FloatTensor]] = ...
     image_hidden_states: Optional[torch.FloatTensor] = ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The ColPali architecture leverages VLMs to construct efficient multi-vector embeddings directly
+    from document images (“screenshots”) for document retrieval. The model is trained to maximize the similarity
+    between these document embeddings and the corresponding query embeddings, using the late interaction method
+    introduced in ColBERT.
+
+    Using ColPali removes the need for potentially complex and brittle layout recognition and OCR pipelines with a
+    single model that can take into account both the textual and visual content (layout, charts, etc.) of a document.
+
+    ColPali is part of the ColVision model family, which was first introduced in the following paper:
+    [*ColPali: Efficient Document Retrieval with Vision Language Models*](https://huggingface.co/papers/2407.01449).
+    """
+)
 class ColPaliForRetrieval(ColPaliPreTrainedModel):
     _checkpoint_conversion_mapping = ...
     def __init__(self, config: ColPaliConfig) -> None: ...
@@ -46,11 +81,16 @@ class ColPaliForRetrieval(ColPaliPreTrainedModel):
         return_dict: Optional[bool] = ...,
         **kwargs,
     ) -> ColPaliForRetrievalOutput: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
-    def get_output_embeddings(self): ...
-    def set_output_embeddings(self, new_embeddings): ...
-    def tie_weights(self): ...
+    def get_input_embeddings(self):  # -> Any:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
+    def get_output_embeddings(self):  # -> Any:
+        ...
+    def set_output_embeddings(self, new_embeddings):  # -> None:
+        ...
+    def tie_weights(self):  # -> Any:
+        ...
     def resize_token_embeddings(
         self, new_num_tokens: Optional[int] = ..., pad_to_multiple_of: Optional[int] = ..., mean_resizing: bool = ...
     ) -> nn.Embedding: ...

@@ -17,27 +17,59 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring, can_return_tuple
 from .configuration_esm import EsmConfig
 
+"""PyTorch ESM model."""
 if is_flash_attn_available(): ...
 logger = ...
 
-def rotate_half(x): ...
+def rotate_half(x):  # -> Tensor:
+    ...
 def apply_rotary_pos_emb(x, cos, sin): ...
-def gelu(x): ...
-def symmetrize(x): ...
-def average_product_correct(x): ...
+def gelu(x):
+    """
+    This is the gelu implementation from the original ESM repo. Using F.gelu yields subtly wrong results.
+    """
+    ...
+
+def symmetrize(x):
+    "Make layer symmetric in final two dimensions, used for contact prediction."
+    ...
+
+def average_product_correct(x):
+    "Perform average product correct, used for contact prediction."
+    ...
 
 class RotaryEmbedding(torch.nn.Module):
+    """
+    Rotary position embeddings based on those in
+    [RoFormer](https://huggingface.co/docs/transformers/model_doc/roformer). Query and keys are transformed by rotation
+    matrices which depend on their relative positions.
+    """
     def __init__(self, dim: int) -> None: ...
     def forward(self, q: torch.Tensor, k: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]: ...
 
 class EsmContactPredictionHead(nn.Module):
+    """Performs symmetrization, apc, and computes a logistic regression on the output features"""
     def __init__(self, in_features: int, bias=..., eos_idx: int = ...) -> None: ...
-    def forward(self, tokens, attentions): ...
+    def forward(self, tokens, attentions):  # -> Any:
+        ...
 
 class EsmEmbeddings(nn.Module):
+    """
+    Same as BertEmbeddings with a tiny tweak for positional embeddings indexing.
+    """
     def __init__(self, config) -> None: ...
-    def forward(self, input_ids=..., attention_mask=..., position_ids=..., inputs_embeds=...): ...
-    def create_position_ids_from_inputs_embeds(self, inputs_embeds): ...
+    def forward(self, input_ids=..., attention_mask=..., position_ids=..., inputs_embeds=...):  # -> Any:
+        ...
+    def create_position_ids_from_inputs_embeds(self, inputs_embeds):  # -> Tensor:
+        """
+        We are provided embeddings directly. We cannot infer which are padded so just generate sequential position ids.
+
+        Args:
+            inputs_embeds: torch.Tensor
+
+        Returns: torch.Tensor
+        """
+        ...
 
 class EsmSelfAttention(nn.Module):
     def __init__(self, config, position_embedding_type=..., layer_idx=...) -> None: ...
@@ -56,6 +88,11 @@ class EsmSelfOutput(nn.Module):
     def forward(self, hidden_states, input_tensor): ...
 
 class EsmFlashAttention2(EsmSelfAttention):
+    """
+    ESM flash attention module. This module inherits from `EsmSelfAttention` as the weights of the module stays
+    untouched. The only required change would be on the forward pass where it needs to correctly call the public API of
+    flash attention and deal with padding tokens in case the input contains any of them.
+    """
     def __init__(self, config, position_embedding_type=..., layer_idx=...) -> None: ...
     def forward(
         self,
@@ -71,7 +108,8 @@ ESM_ATTENTION_CLASSES = ...
 
 class EsmAttention(nn.Module):
     def __init__(self, config, layer_idx=...) -> None: ...
-    def prune_heads(self, heads): ...
+    def prune_heads(self, heads):  # -> None:
+        ...
     def forward(
         self,
         hidden_states,
@@ -81,7 +119,8 @@ class EsmAttention(nn.Module):
         encoder_attention_mask=...,
         output_attentions=...,
         cache_position=...,
-    ): ...
+    ):  # -> Any:
+        ...
 
 class EsmIntermediate(nn.Module):
     def __init__(self, config) -> None: ...
@@ -102,8 +141,10 @@ class EsmLayer(GradientCheckpointingLayer):
         encoder_attention_mask=...,
         output_attentions=...,
         cache_position=...,
-    ): ...
-    def feed_forward_chunk(self, attention_output): ...
+    ):  # -> Any:
+        ...
+    def feed_forward_chunk(self, attention_output):  # -> Any:
+        ...
 
 class EsmEncoder(nn.Module):
     def __init__(self, config) -> None: ...
@@ -119,7 +160,8 @@ class EsmEncoder(nn.Module):
         output_hidden_states=...,
         return_dict=...,
         cache_position=...,
-    ): ...
+    ):  # -> BaseModelOutputWithCrossAttentions:
+        ...
 
 class EsmPooler(nn.Module):
     def __init__(self, config) -> None: ...
@@ -133,13 +175,33 @@ class EsmPreTrainedModel(PreTrainedModel):
     _no_split_modules = ...
     _keys_to_ignore_on_load_unexpected = ...
     _supports_flash_attn = ...
-    def get_output_embeddings(self): ...
+    def get_output_embeddings(self):  # -> None:
+        ...
 
 @auto_docstring
 class EsmModel(EsmPreTrainedModel):
-    def __init__(self, config, add_pooling_layer=...) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    """
+
+    The model can behave as an encoder (with only self-attention) as well as a decoder, in which case a layer of
+    cross-attention is added between the self-attention layers, following the architecture described in [Attention is
+    all you need](https://huggingface.co/papers/1706.03762) by Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit,
+    Llion Jones, Aidan N. Gomez, Lukasz Kaiser and Illia Polosukhin.
+
+    To behave as an decoder the model needs to be initialized with the `is_decoder` argument of the configuration set
+    to `True`. To be used in a Seq2Seq model, the model needs to initialized with both `is_decoder` argument and
+    `add_cross_attention` set to `True`; an `encoder_hidden_states` is then expected as an input to the forward pass.
+    """
+    def __init__(self, config, add_pooling_layer=...) -> None:
+        r"""
+        add_pooling_layer (bool, *optional*, defaults to `True`):
+            Whether to add a pooling layer
+        """
+        ...
+
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -154,15 +216,38 @@ class EsmModel(EsmPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], BaseModelOutputWithPoolingAndCrossAttentions]: ...
-    def predict_contacts(self, tokens, attention_mask): ...
+    ) -> Union[tuple[torch.Tensor], BaseModelOutputWithPoolingAndCrossAttentions]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `((batch_size, sequence_length))`):
+            Indices of input sequence tokens in the vocabulary.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        position_ids (`torch.LongTensor` of shape `((batch_size, sequence_length))`, *optional*):
+            Indices of positions of each input sequence tokens in the position embeddings. Selected in the range `[0,
+            config.max_position_embeddings - 1]`.
+
+            [What are position IDs?](../glossary#position-ids)
+        inputs_embeds (`torch.FloatTensor` of shape `((batch_size, sequence_length), hidden_size)`, *optional*):
+            Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation. This
+            is useful if you want more control over how to convert `input_ids` indices into associated vectors than the
+            model's internal embedding lookup matrix.
+        """
+        ...
+
+    def predict_contacts(self, tokens, attention_mask):  # -> Any:
+        ...
 
 @auto_docstring
 class EsmForMaskedLM(EsmPreTrainedModel):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
-    def get_output_embeddings(self): ...
-    def set_output_embeddings(self, new_embeddings): ...
+    def get_output_embeddings(self):  # -> Linear:
+        ...
+    def set_output_embeddings(self, new_embeddings):  # -> None:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -178,14 +263,30 @@ class EsmForMaskedLM(EsmPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, MaskedLMOutput]: ...
-    def predict_contacts(self, tokens, attention_mask): ...
+    ) -> Union[tuple, MaskedLMOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should be in `[-100, 0, ...,
+            config.vocab_size]` (see `input_ids` docstring) Tokens with indices set to `-100` are ignored (masked), the
+            loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`
+        """
+        ...
+
+    def predict_contacts(self, tokens, attention_mask):  # -> Any:
+        ...
 
 class EsmLMHead(nn.Module):
+    """ESM Head for masked language modeling."""
     def __init__(self, config) -> None: ...
-    def forward(self, features, **kwargs): ...
+    def forward(self, features, **kwargs):  # -> Any:
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    ESM Model transformer with a sequence classification/regression head on top (a linear layer on top of the pooled
+    output) e.g. for GLUE tasks.
+    """
+)
 class EsmForSequenceClassification(EsmPreTrainedModel):
     def __init__(self, config) -> None: ...
     @can_return_tuple
@@ -201,7 +302,14 @@ class EsmForSequenceClassification(EsmPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, SequenceClassifierOutput]: ...
+    ) -> Union[tuple, SequenceClassifierOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 @auto_docstring
 class EsmForTokenClassification(EsmPreTrainedModel):
@@ -219,13 +327,30 @@ class EsmForTokenClassification(EsmPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, TokenClassifierOutput]: ...
+    ) -> Union[tuple, TokenClassifierOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the token classification loss. Indices should be in `[0, ..., config.num_labels - 1]`.
+        """
+        ...
 
 class EsmClassificationHead(nn.Module):
+    """Head for sentence-level classification tasks."""
     def __init__(self, config) -> None: ...
-    def forward(self, features, **kwargs): ...
+    def forward(self, features, **kwargs):  # -> Any:
+        ...
 
-def create_position_ids_from_input_ids(input_ids, padding_idx): ...
+def create_position_ids_from_input_ids(input_ids, padding_idx):
+    """
+    Replace non-padding symbols with their position numbers. Position numbers begin at padding_idx+1. Padding symbols
+    are ignored. This is modified from fairseq's `utils.make_positions`.
+
+    Args:
+        x: torch.Tensor x:
+
+    Returns: torch.Tensor
+    """
+    ...
 
 __all__ = [
     "EsmForMaskedLM",

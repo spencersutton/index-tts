@@ -143,22 +143,232 @@ class ClassAttrs:
 
 ARGS_TO_IGNORE = ...
 
-def get_indent_level(func): ...
-def equalize_indent(docstring, indent_level): ...
-def set_min_indent(docstring, indent_level): ...
-def parse_shape(docstring): ...
-def parse_default(docstring): ...
-def parse_docstring(docstring, max_indent_level=..., return_intro=...): ...
-def contains_type(type_hint, target_type) -> tuple[bool, Optional[object]]: ...
-def get_model_name(obj): ...
-def get_placeholders_dict(placeholders: list, model_name: str) -> dict: ...
-def format_args_docstring(docstring, model_name): ...
+def get_indent_level(func):  # -> int:
+    ...
+def equalize_indent(docstring, indent_level):  # -> str:
+    """
+    Adjust the indentation of a docstring to match the specified indent level.
+    """
+    ...
+
+def set_min_indent(docstring, indent_level):  # -> str:
+    """
+    Adjust the indentation of a docstring to match the specified indent level.
+    """
+    ...
+
+def parse_shape(docstring):  # -> str | Any | None:
+    ...
+def parse_default(docstring):  # -> str | Any | None:
+    ...
+def parse_docstring(
+    docstring, max_indent_level=..., return_intro=...
+):  # -> tuple[dict[Any, Any], str, str | Any | None] | tuple[dict[Any, Any], str]:
+    """
+    Parse the docstring to extract the Args section and return it as a dictionary.
+    The docstring is expected to be in the format:
+    Args:
+        arg1 (type):
+            Description of arg1.
+        arg2 (type):
+            Description of arg2.
+
+    # This function will also return the remaining part of the docstring after the Args section.
+    Returns:/Example:
+    ...
+    """
+    ...
+
+def contains_type(type_hint, target_type) -> tuple[bool, Optional[object]]:
+    """
+    Check if a "nested" type hint contains a specific target type,
+    return the first-level type containing the target_type if found.
+    """
+    ...
+
+def get_model_name(obj):  # -> str | None:
+    """
+    Get the model name from the file path of the object.
+    """
+    ...
+
+def get_placeholders_dict(placeholders: list, model_name: str) -> dict:
+    """
+    Get the dictionary of placeholders for the given model name.
+    """
+    ...
+
+def format_args_docstring(docstring, model_name):
+    """
+    Replaces placeholders such as {image_processor_class} in the docstring with the actual values,
+    deducted from the model name and the auto modules.
+    """
+    ...
+
 def get_args_doc_from_source(args_classes: Union[object, list[object]]) -> dict: ...
-def get_checkpoint_from_config_class(config_class): ...
-def add_intro_docstring(func, class_name, parent_class=..., indent_level=...): ...
+def get_checkpoint_from_config_class(config_class):  # -> Any | None:
+    ...
+def add_intro_docstring(func, class_name, parent_class=..., indent_level=...):  # -> str:
+    ...
 def find_sig_line(lines, line_end): ...
 def auto_method_docstring(
     func, parent_class=..., custom_intro=..., custom_args=..., checkpoint=..., source_args_dict=...
-): ...
-def auto_class_docstring(cls, custom_intro=..., custom_args=..., checkpoint=...): ...
-def auto_docstring(obj=..., *, custom_intro=..., custom_args=..., checkpoint=...): ...
+):
+    """
+    Wrapper that automatically generates docstring.
+    """
+    ...
+
+def auto_class_docstring(cls, custom_intro=..., custom_args=..., checkpoint=...):
+    """
+    Wrapper that automatically generates a docstring for classes based on their attributes and methods.
+    """
+    ...
+
+def auto_docstring(obj=..., *, custom_intro=..., custom_args=..., checkpoint=...):  # -> Callable[..., Any]:
+    r"""
+    Automatically generates comprehensive docstrings for model classes and methods in the Transformers library.
+
+    This decorator reduces boilerplate by automatically including standard argument descriptions while allowing
+    overrides to add new or custom arguments. It inspects function signatures, retrieves predefined docstrings
+    for common arguments (like `input_ids`, `attention_mask`, etc.), and generates complete documentation
+    including examples and return value descriptions.
+
+    For complete documentation and examples, read this [guide](https://huggingface.co/docs/transformers/auto_docstring).
+
+    Examples of usage:
+
+        Basic usage (no parameters):
+        ```python
+        @auto_docstring
+        class MyAwesomeModel(PreTrainedModel):
+            def __init__(self, config, custom_parameter: int = 10):
+                r'''
+                custom_parameter (`int`, *optional*, defaults to 10):
+                    Description of the custom parameter for MyAwesomeModel.
+                '''
+                super().__init__(config)
+                self.custom_parameter = custom_parameter
+        ```
+
+        Using `custom_intro` with a class:
+        ```python
+        @auto_docstring(
+            custom_intro="This model implements a novel attention mechanism for improved performance."
+        )
+        class MySpecialModel(PreTrainedModel):
+            def __init__(self, config, attention_type: str = "standard"):
+                r'''
+                attention_type (`str`, *optional*, defaults to "standard"):
+                    Type of attention mechanism to use.
+                '''
+                super().__init__(config)
+        ```
+
+        Using `custom_intro` with a method, and specify custom arguments and example directly in the docstring:
+        ```python
+        @auto_docstring(
+            custom_intro="Performs forward pass with enhanced attention computation."
+        )
+        def forward(
+            self,
+            input_ids: Optional[torch.Tensor] = None,
+            attention_mask: Optional[torch.Tensor] = None,
+        ):
+            r'''
+            custom_parameter (`int`, *optional*, defaults to 10):
+                Description of the custom parameter for MyAwesomeModel.
+
+            Example:
+
+            ```python
+            >>> model = MyAwesomeModel(config)
+            >>> model.forward(input_ids=torch.tensor([1, 2, 3]), attention_mask=torch.tensor([1, 1, 1]))
+            ```
+            '''
+        ```
+
+        Using `custom_args` to define reusable arguments:
+        ```python
+        VISION_ARGS = r'''
+        pixel_values (`torch.FloatTensor`, *optional*):
+            Pixel values of the input images.
+        image_features (`torch.FloatTensor`, *optional*):
+            Pre-computed image features for efficient processing.
+        '''
+
+        @auto_docstring(custom_args=VISION_ARGS)
+        def encode_images(self, pixel_values=None, image_features=None):
+            # ... method implementation
+        ```
+
+        Combining `custom_intro` and `custom_args`:
+        ```python
+        MULTIMODAL_ARGS = r'''
+        vision_features (`torch.FloatTensor`, *optional*):
+            Pre-extracted vision features from the vision encoder.
+        fusion_strategy (`str`, *optional*, defaults to "concat"):
+            Strategy for fusing text and vision modalities.
+        '''
+
+        @auto_docstring(
+            custom_intro="Processes multimodal inputs combining text and vision.",
+            custom_args=MULTIMODAL_ARGS
+        )
+        def forward(
+            self,
+            input_ids,
+            attention_mask=None,
+            vision_features=None,
+            fusion_strategy="concat"
+        ):
+            # ... multimodal processing
+        ```
+
+        Using with ModelOutput classes:
+        ```python
+        @dataclass
+        @auto_docstring(
+            custom_intro="Custom model outputs with additional fields."
+        )
+        class MyModelOutput(ImageClassifierOutput):
+            r'''
+            loss (`torch.FloatTensor`, *optional*):
+                The loss of the model.
+            custom_field (`torch.FloatTensor` of shape `(batch_size, hidden_size)`, *optional*):
+                A custom output field specific to this model.
+            '''
+
+            # Standard fields like hidden_states, logits, attentions etc. can be automatically documented
+            # However, given that the loss docstring is often different per model, you should document it above
+            loss: Optional[torch.FloatTensor] = None
+            logits: Optional[torch.FloatTensor] = None
+            hidden_states: Optional[tuple[torch.FloatTensor, ...]] = None
+            attentions: Optional[tuple[torch.FloatTensor, ...]] = None
+            custom_field: Optional[torch.FloatTensor] = None
+        ```
+
+    Args:
+        custom_intro (`str`, *optional*):
+            Custom introduction text to add to the docstring. This replaces the default
+            introduction text generated by the decorator before the Args section. Use this to describe what
+            makes your model or method special.
+        custom_args (`str`, *optional*):
+            Custom argument documentation in docstring format. This allows you to define
+            argument descriptions once and reuse them across multiple methods. The format should follow the
+            standard docstring convention: `arg_name (`type`, *optional*, defaults to `value`): Description.`
+        checkpoint (`str`, *optional*):
+            Checkpoint name to use in examples within the docstring. This is typically
+            automatically inferred from the model configuration class, but can be overridden if needed for
+            custom examples.
+
+    Note:
+        - Standard arguments (`input_ids`, `attention_mask`, `pixel_values`, etc.) are automatically documented
+          from predefined descriptions and should not be redefined unless their behavior differs in your model.
+        - New or custom arguments should be documented in the method's docstring using the `r''' '''` block
+          or passed via the `custom_args` parameter.
+        - For model classes, the decorator derives parameter descriptions from the `__init__` method's signature
+          and docstring.
+        - Return value documentation is automatically generated for methods that return ModelOutput subclasses.
+    """
+    ...

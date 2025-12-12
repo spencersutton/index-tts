@@ -18,18 +18,28 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring, can_return_tuple
 from .configuration_gpt_bigcode import GPTBigCodeConfig
 
+"""PyTorch GPTBigCode model."""
 if is_flash_attn_available(): ...
 logger = ...
 
 @torch.jit.script
 def upcast_masked_softmax(
     x: torch.Tensor, mask: torch.Tensor, mask_value: torch.Tensor, scale: float, softmax_dtype: torch.dtype
-): ...
+):  # -> Tensor:
+    ...
 @torch.jit.script
-def upcast_softmax(x: torch.Tensor, scale: float, softmax_dtype: torch.dtype): ...
+def upcast_softmax(x: torch.Tensor, scale: float, softmax_dtype: torch.dtype):  # -> Tensor:
+    ...
 @torch.jit.script
-def masked_softmax(x: torch.Tensor, mask: torch.Tensor, mask_value: torch.Tensor): ...
-def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor: ...
+def masked_softmax(x: torch.Tensor, mask: torch.Tensor, mask_value: torch.Tensor):  # -> Tensor:
+    ...
+def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
+    """
+    This is the equivalent of torch.repeat_interleave(x, dim=1, repeats=n_rep). The hidden states go from (batch,
+    num_key_value_heads, seqlen, head_dim) to (batch, num_attention_heads, seqlen, head_dim)
+    """
+    ...
+
 def eager_attention_forward(
     module: nn.Module,
     query: torch.Tensor,
@@ -40,7 +50,8 @@ def eager_attention_forward(
     dropout: float = ...,
     head_mask: Optional[torch.Tensor] = ...,
     **kwargs,
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class GPTBigCodeAttention(nn.Module):
     def __init__(self, config, is_cross_attention=..., layer_idx=...) -> None: ...
@@ -97,8 +108,10 @@ class GPTBigCodePreTrainedModel(PreTrainedModel):
 @auto_docstring
 class GPTBigCodeModel(GPTBigCodePreTrainedModel):
     def __init__(self, config) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, new_embeddings): ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, new_embeddings):  # -> None:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -118,9 +131,29 @@ class GPTBigCodeModel(GPTBigCodePreTrainedModel):
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
         **kwargs,
-    ) -> Union[tuple, BaseModelOutputWithPastAndCrossAttentions]: ...
+    ) -> Union[tuple, BaseModelOutputWithPastAndCrossAttentions]:
+        r"""
+        input_ids (`torch.Tensor` of shape `(batch_size, input_ids_length)`):
+            `input_ids_length` = `sequence_length` if `past_key_values` is `None` else
+            `past_key_values.get_seq_length()` (`sequence_length` of input past key value states). Indices of input
+            sequence tokens in the vocabulary.
 
-@auto_docstring(custom_intro=...)
+            If `past_key_values` is used, only `input_ids` that do not have their past calculated should be passed as
+            `input_ids`.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    The GPT_BIGCODE Model transformer with a language modeling head on top (linear layer with weights tied to the input
+    embeddings).
+    """
+)
 class GPTBigCodeForCausalLM(GPTBigCodePreTrainedModel, GenerationMixin):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
@@ -143,9 +176,41 @@ class GPTBigCodeForCausalLM(GPTBigCodePreTrainedModel, GenerationMixin):
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
         **kwargs,
-    ) -> Union[tuple, CausalLMOutputWithCrossAttentions]: ...
+    ) -> Union[tuple, CausalLMOutputWithCrossAttentions]:
+        r"""
+        input_ids (`torch.Tensor` of shape `(batch_size, input_ids_length)`):
+            `input_ids_length` = `sequence_length` if `past_key_values` is `None` else
+            `past_key_values.get_seq_length()` (`sequence_length` of input past key value states). Indices of input
+            sequence tokens in the vocabulary.
 
-@auto_docstring(custom_intro=...)
+            If `past_key_values` is used, only `input_ids` that do not have their past calculated should be passed as
+            `input_ids`.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        labels (`torch.Tensor` of shape `(batch_size, input_ids_length)`, *optional*):
+            Labels for language modeling. Note that the labels **are shifted** inside the model, i.e. you can set
+            `labels = input_ids` Indices are selected in `[-100, 0, ..., config.vocab_size]` All labels set to `-100`
+            are ignored (masked), the loss is only computed for labels in `[0, ..., config.vocab_size]`
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    The GPTBigCode Model transformer with a sequence classification head on top (linear layer).
+
+    [`GPTBigCodeForSequenceClassification`] uses the last token in order to do the classification, as other causal
+    models (e.g. GPT-1) do.
+
+    Since it does classification on the last token, it requires to know the position of the last token. If a
+    `pad_token_id` is defined in the configuration, it finds the last token that is not a padding token in each row. If
+    no `pad_token_id` is defined, it simply takes the last value in each row of the batch. Since it cannot guess the
+    padding tokens when `inputs_embeds` are passed instead of `input_ids`, it does the same (take the last value in
+    each row of the batch).
+    """
+)
 class GPTBigCodeForSequenceClassification(GPTBigCodePreTrainedModel):
     def __init__(self, config) -> None: ...
     @auto_docstring
@@ -164,7 +229,26 @@ class GPTBigCodeForSequenceClassification(GPTBigCodePreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         **kwargs,
-    ) -> Union[tuple, SequenceClassifierOutputWithPast]: ...
+    ) -> Union[tuple, SequenceClassifierOutputWithPast]:
+        r"""
+        input_ids (`torch.Tensor` of shape `(batch_size, input_ids_length)`):
+            `input_ids_length` = `sequence_length` if `past_key_values` is `None` else
+            `past_key_values.get_seq_length()` (`sequence_length` of input past key value states). Indices of input
+            sequence tokens in the vocabulary.
+
+            If `past_key_values` is used, only `input_ids` that do not have their past calculated should be passed as
+            `input_ids`.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        labels (`torch.Tensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 @auto_docstring
 class GPTBigCodeForTokenClassification(GPTBigCodePreTrainedModel):
@@ -184,7 +268,26 @@ class GPTBigCodeForTokenClassification(GPTBigCodePreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, TokenClassifierOutput]: ...
+    ) -> Union[tuple, TokenClassifierOutput]:
+        r"""
+        input_ids (`torch.Tensor` of shape `(batch_size, input_ids_length)`):
+            `input_ids_length` = `sequence_length` if `past_key_values` is `None` else
+            `past_key_values.get_seq_length()` (`sequence_length` of input past key value states). Indices of input
+            sequence tokens in the vocabulary.
+
+            If `past_key_values` is used, only `input_ids` that do not have their past calculated should be passed as
+            `input_ids`.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        labels (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 __all__ = [
     "GPTBigCodeForSequenceClassification",

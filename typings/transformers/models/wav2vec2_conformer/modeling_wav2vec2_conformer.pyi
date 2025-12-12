@@ -19,8 +19,30 @@ from ...utils import ModelOutput, auto_docstring
 from .configuration_wav2vec2_conformer import Wav2Vec2ConformerConfig
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Output type of [`Wav2Vec2ConformerForPreTraining`], with potential hidden states and attentions.
+    """
+)
 class Wav2Vec2ConformerForPreTrainingOutput(ModelOutput):
+    r"""
+    loss (*optional*, returned when `sample_negative_indices` are passed, `torch.FloatTensor` of shape `(1,)`):
+        Total loss as the sum of the contrastive loss (L_m) and the diversity loss (L_d) as stated in the [official
+        paper](https://arxiv.org/pdf/2006.11477.pdf) . (classification) loss.
+    projected_states (`torch.FloatTensor` of shape `(batch_size, sequence_length, config.proj_codevector_dim)`):
+        Hidden-states of the model projected to *config.proj_codevector_dim* that can be used to predict the masked
+        projected quantized states.
+    projected_quantized_states (`torch.FloatTensor` of shape `(batch_size, sequence_length, config.proj_codevector_dim)`):
+        Quantized extracted feature vectors projected to *config.proj_codevector_dim* representing the positive
+        target vectors for contrastive loss.
+    codevector_perplexity (`torch.FloatTensor` of shape `(1,)`):
+        The perplexity of the codevector distribution, used to measure the diversity of the codebook.
+    contrastive_loss (*optional*, returned when `sample_negative_indices` are passed, `torch.FloatTensor` of shape `(1,)`):
+        The contrastive loss (L_m) as stated in the [official paper](https://arxiv.org/pdf/2006.11477.pdf) .
+    diversity_loss (*optional*, returned when `sample_negative_indices` are passed, `torch.FloatTensor` of shape `(1,)`):
+        The diversity loss (L_d) as stated in the [official paper](https://arxiv.org/pdf/2006.11477.pdf) .
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     projected_states: Optional[torch.FloatTensor] = ...
     projected_quantized_states: Optional[torch.FloatTensor] = ...
@@ -39,13 +61,20 @@ class Wav2Vec2ConformerPositionalConvEmbedding(nn.Module):
     def forward(self, hidden_states): ...
 
 class Wav2Vec2ConformerRotaryPositionalEmbedding(nn.Module):
+    """Rotary positional embedding
+    Reference : https://blog.eleuther.ai/rotary-embeddings/ Paper: https://huggingface.co/papers/2104.09864
+    """
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Tensor:
+        ...
 
 class Wav2Vec2ConformerRelPositionalEmbedding(nn.Module):
+    """Relative positional encoding module."""
     def __init__(self, config) -> None: ...
-    def extend_pe(self, x): ...
-    def forward(self, hidden_states: torch.Tensor): ...
+    def extend_pe(self, x):  # -> None:
+        ...
+    def forward(self, hidden_states: torch.Tensor):  # -> Tensor:
+        ...
 
 class Wav2Vec2ConformerNoLayerNormConvLayer(GradientCheckpointingLayer):
     def __init__(self, config, layer_id=...) -> None: ...
@@ -60,22 +89,31 @@ class Wav2Vec2ConformerGroupNormConvLayer(GradientCheckpointingLayer):
     def forward(self, hidden_states): ...
 
 class Wav2Vec2ConformerFeatureEncoder(nn.Module):
+    """Construct the features from raw audio waveform"""
     def __init__(self, config) -> None: ...
-    def forward(self, input_values): ...
+    def forward(self, input_values):  # -> Any:
+        ...
 
 class Wav2Vec2ConformerFeatureProjection(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> tuple[Any, Any]:
+        ...
 
 class Wav2Vec2ConformerFeedForward(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class Wav2Vec2ConformerConvolutionModule(nn.Module):
+    """Convolution block used in the conformer block"""
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class Wav2Vec2ConformerSelfAttention(nn.Module):
+    """Construct an Wav2Vec2ConformerSelfAttention object.
+    Can be enhanced with rotary or relative position embeddings.
+    """
     def __init__(self, config) -> None: ...
     def forward(
         self,
@@ -86,6 +124,7 @@ class Wav2Vec2ConformerSelfAttention(nn.Module):
     ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
 
 class Wav2Vec2ConformerEncoderLayer(GradientCheckpointingLayer):
+    """Conformer block based on https://huggingface.co/papers/2005.08100."""
     def __init__(self, config) -> None: ...
     def forward(
         self,
@@ -93,25 +132,34 @@ class Wav2Vec2ConformerEncoderLayer(GradientCheckpointingLayer):
         attention_mask: Optional[torch.Tensor] = ...,
         relative_position_embeddings: Optional[torch.Tensor] = ...,
         output_attentions: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, Any]:
+        ...
 
 class Wav2Vec2ConformerEncoder(nn.Module):
     def __init__(self, config) -> None: ...
     def forward(
         self, hidden_states, attention_mask=..., output_attentions=..., output_hidden_states=..., return_dict=...
-    ): ...
+    ):  # -> tuple[Any | tuple[Any, ...] | tuple[()] | tuple[Any | None, ...], ...] | BaseModelOutput:
+        ...
 
 class Wav2Vec2ConformerGumbelVectorQuantizer(nn.Module):
+    """
+    Vector quantization using gumbel softmax. See `[CATEGORICAL REPARAMETERIZATION WITH
+    GUMBEL-SOFTMAX](https://huggingface.co/papers/1611.01144) for more information.
+    """
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states, mask_time_indices=...): ...
+    def forward(self, hidden_states, mask_time_indices=...):  # -> tuple[Tensor | Any, Tensor]:
+        ...
 
 class Wav2Vec2ConformerAdapter(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class Wav2Vec2ConformerAdapterLayer(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Tensor:
+        ...
 
 @auto_docstring
 class Wav2Vec2ConformerPreTrainedModel(PreTrainedModel):
@@ -125,7 +173,13 @@ Wav2Vec2ConformerBaseModelOutput = Wav2Vec2BaseModelOutput
 @auto_docstring
 class Wav2Vec2ConformerModel(Wav2Vec2ConformerPreTrainedModel):
     def __init__(self, config: Wav2Vec2ConformerConfig) -> None: ...
-    def freeze_feature_encoder(self): ...
+    def freeze_feature_encoder(self):  # -> None:
+        """
+        Calling this function will disable the gradient computation for the feature encoder so that its parameter will
+        not be updated during training.
+        """
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -135,20 +189,47 @@ class Wav2Vec2ConformerModel(Wav2Vec2ConformerPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, Wav2Vec2ConformerBaseModelOutput]: ...
+    ) -> Union[tuple, Wav2Vec2ConformerBaseModelOutput]:
+        r"""
+        mask_time_indices (`torch.BoolTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Indices to mask extracted features for contrastive loss. When in training mode, model learns to predict
+            masked extracted features in *config.proj_codevector_dim* space.
+        """
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Wav2Vec2Conformer Model with a quantizer and `VQ` head on top.
+    """
+)
 class Wav2Vec2ConformerForPreTraining(Wav2Vec2ConformerPreTrainedModel):
     def __init__(self, config: Wav2Vec2ConformerConfig) -> None: ...
-    def set_gumbel_temperature(self, temperature: int): ...
-    def freeze_feature_encoder(self): ...
+    def set_gumbel_temperature(self, temperature: int):  # -> None:
+        """
+        Set the Gumbel softmax temperature to a given value. Only necessary for training
+        """
+        ...
+
+    def freeze_feature_encoder(self):  # -> None:
+        """
+        Calling this function will disable the gradient computation for the feature encoder so that its parameter will
+        not be updated during training.
+        """
+        ...
+
     @staticmethod
     def compute_contrastive_logits(
         target_features: torch.FloatTensor,
         negative_features: torch.FloatTensor,
         predicted_features: torch.FloatTensor,
         temperature: int = ...,
-    ): ...
+    ):  # -> Tensor:
+        """
+        Compute logits for contrastive loss based using cosine similarity as the distance measure between
+        `[positive_feature, negative_features]` and `[predicted_features]`. Additionally, temperature can be applied.
+        """
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -159,14 +240,87 @@ class Wav2Vec2ConformerForPreTraining(Wav2Vec2ConformerPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, Wav2Vec2ConformerForPreTrainingOutput]: ...
+    ) -> Union[tuple, Wav2Vec2ConformerForPreTrainingOutput]:
+        r"""
+        mask_time_indices (`torch.BoolTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Indices to mask extracted features for contrastive loss. When in training mode, model learns to predict
+            masked extracted features in *config.proj_codevector_dim* space.
+        sampled_negative_indices (`torch.BoolTensor` of shape `(batch_size, sequence_length, num_negatives)`, *optional*):
+            Indices indicating which quantized target vectors are used as negative sampled vectors in contrastive loss.
+            Required input for pre-training.
+
+        Example:
+
+        ```python
+        >>> import torch
+        >>> from transformers import AutoFeatureExtractor, Wav2Vec2ConformerForPreTraining
+        >>> from transformers.models.wav2vec2_conformer.modeling_wav2vec2_conformer import _compute_mask_indices, _sample_negative_indices
+        >>> from datasets import load_dataset
+
+        >>> feature_extractor = AutoFeatureExtractor.from_pretrained("facebook/wav2vec2_conformer-base")
+        >>> model = Wav2Vec2ConformerForPreTraining.from_pretrained("facebook/wav2vec2_conformer-base")
+
+        >>> ds = load_dataset("hf-internal-testing/librispeech_asr_dummy", "clean", split="validation")
+        >>> input_values = feature_extractor(ds[0]["audio"]["array"], return_tensors="pt").input_values  # Batch size 1
+
+        >>> # compute masked indices
+        >>> batch_size, raw_sequence_length = input_values.shape
+        >>> sequence_length = model._get_feat_extract_output_lengths(raw_sequence_length).item()
+        >>> mask_time_indices = _compute_mask_indices(
+        ...     shape=(batch_size, sequence_length), mask_prob=0.2, mask_length=2
+        ... )
+        >>> sampled_negative_indices = _sample_negative_indices(
+        ...     features_shape=(batch_size, sequence_length),
+        ...     num_negatives=model.config.num_negatives,
+        ...     mask_time_indices=mask_time_indices,
+        ... )
+        >>> mask_time_indices = torch.tensor(data=mask_time_indices, device=input_values.device, dtype=torch.long)
+        >>> sampled_negative_indices = torch.tensor(
+        ...     data=sampled_negative_indices, device=input_values.device, dtype=torch.long
+        ... )
+
+        >>> with torch.no_grad():
+        ...     outputs = model(input_values, mask_time_indices=mask_time_indices)
+
+        >>> # compute cosine similarity between predicted (=projected_states) and target (=projected_quantized_states)
+        >>> cosine_sim = torch.cosine_similarity(outputs.projected_states, outputs.projected_quantized_states, dim=-1)
+
+        >>> # show that cosine similarity is much higher than random
+        >>> cosine_sim[mask_time_indices.to(torch.bool)].mean() > 0.5
+        tensor(True)
+
+        >>> # for contrastive loss training model should be put into train mode
+        >>> model = model.train()
+        >>> loss = model(
+        ...     input_values, mask_time_indices=mask_time_indices, sampled_negative_indices=sampled_negative_indices
+        ... ).loss
+        ```"""
+        ...
 
 _HIDDEN_STATES_START_POSITION = ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Wav2Vec2Conformer Model with a `language modeling` head on top for Connectionist Temporal Classification (CTC).
+    """
+)
 class Wav2Vec2ConformerForCTC(Wav2Vec2ConformerPreTrainedModel):
-    def __init__(self, config, target_lang: Optional[str] = ...) -> None: ...
-    def freeze_feature_encoder(self): ...
+    def __init__(self, config, target_lang: Optional[str] = ...) -> None:
+        r"""
+        target_lang (`str`, *optional*):
+            Language id of adapter weights. Adapter weights are stored in the format adapter.<lang>.safetensors or
+            adapter.<lang>.bin. Only relevant when using an instance of [`UniSpeechSatForCTC`] with adapters. Uses 'eng' by
+            default.
+        """
+        ...
+
+    def freeze_feature_encoder(self):  # -> None:
+        """
+        Calling this function will disable the gradient computation for the feature encoder so that its parameter will
+        not be updated during training.
+        """
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -176,13 +330,38 @@ class Wav2Vec2ConformerForCTC(Wav2Vec2ConformerPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         labels: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple, CausalLMOutput]: ...
+    ) -> Union[tuple, CausalLMOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, target_length)`, *optional*):
+            Labels for connectionist temporal classification. Note that `target_length` has to be smaller or equal to
+            the sequence length of the output logits. Indices are selected in `[-100, 0, ..., config.vocab_size - 1]`.
+            All labels set to `-100` are ignored (masked), the loss is only computed for labels in `[0, ...,
+            config.vocab_size - 1]`.
+        """
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Wav2Vec2Conformer Model with a sequence classification head on top (a linear layer over the pooled output) for tasks like
+    SUPERB Keyword Spotting.
+    """
+)
 class Wav2Vec2ConformerForSequenceClassification(Wav2Vec2ConformerPreTrainedModel):
     def __init__(self, config) -> None: ...
-    def freeze_feature_encoder(self): ...
-    def freeze_base_model(self): ...
+    def freeze_feature_encoder(self):  # -> None:
+        """
+        Calling this function will disable the gradient computation for the feature encoder so that its parameter will
+        not be updated during training.
+        """
+        ...
+
+    def freeze_base_model(self):  # -> None:
+        """
+        Calling this function will disable the gradient computation for the base model so that its parameters will not
+        be updated during training. Only the classification head will be updated.
+        """
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -192,13 +371,38 @@ class Wav2Vec2ConformerForSequenceClassification(Wav2Vec2ConformerPreTrainedMode
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         labels: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple, SequenceClassifierOutput]: ...
+    ) -> Union[tuple, SequenceClassifierOutput]:
+        r"""
+        input_values (`torch.FloatTensor` of shape `(batch_size, sequence_length)`):
+            Float values of input raw speech waveform. Values can be obtained by loading a `.flac` or `.wav` audio file
+            into an array of type `list[float]`, a `numpy.ndarray` or a `torch.Tensor`, *e.g.* via the torchcodec library
+            (`pip install torchcodec`) or the soundfile library (`pip install soundfile`).
+            To prepare the array into `input_values`, the [`AutoProcessor`] should be used for padding and conversion
+            into a tensor of type `torch.FloatTensor`. See [`Wav2Vec2ConformerProcessor.__call__`] for details.
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 @auto_docstring
 class Wav2Vec2ConformerForAudioFrameClassification(Wav2Vec2ConformerPreTrainedModel):
     def __init__(self, config) -> None: ...
-    def freeze_feature_encoder(self): ...
-    def freeze_base_model(self): ...
+    def freeze_feature_encoder(self):  # -> None:
+        """
+        Calling this function will disable the gradient computation for the feature encoder so that its parameter will
+        not be updated during training.
+        """
+        ...
+
+    def freeze_base_model(self):  # -> None:
+        """
+        Calling this function will disable the gradient computation for the base model so that its parameters will not
+        be updated during training. Only the classification head will be updated.
+        """
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -208,21 +412,51 @@ class Wav2Vec2ConformerForAudioFrameClassification(Wav2Vec2ConformerPreTrainedMo
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, TokenClassifierOutput]: ...
+    ) -> Union[tuple, TokenClassifierOutput]:
+        r"""
+        input_values (`torch.FloatTensor` of shape `(batch_size, sequence_length)`):
+            Float values of input raw speech waveform. Values can be obtained by loading a `.flac` or `.wav` audio file
+            into an array of type `list[float]`, a `numpy.ndarray` or a `torch.Tensor`, *e.g.* via the torchcodec library
+            (`pip install torchcodec`) or the soundfile library (`pip install soundfile`).
+            To prepare the array into `input_values`, the [`AutoProcessor`] should be used for padding and conversion
+            into a tensor of type `torch.FloatTensor`. See [`Wav2Vec2ConformerProcessor.__call__`] for details.
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 class AMSoftmaxLoss(nn.Module):
     def __init__(self, input_dim, num_labels, scale=..., margin=...) -> None: ...
-    def forward(self, hidden_states, labels): ...
+    def forward(self, hidden_states, labels):  # -> Any:
+        ...
 
 class TDNNLayer(nn.Module):
     def __init__(self, config, layer_id=...) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Wav2Vec2Conformer Model with an XVector feature extraction head on top for tasks like Speaker Verification.
+    """
+)
 class Wav2Vec2ConformerForXVector(Wav2Vec2ConformerPreTrainedModel):
     def __init__(self, config) -> None: ...
-    def freeze_feature_encoder(self): ...
-    def freeze_base_model(self): ...
+    def freeze_feature_encoder(self):  # -> None:
+        """
+        Calling this function will disable the gradient computation for the feature encoder so that its parameter will
+        not be updated during training.
+        """
+        ...
+
+    def freeze_base_model(self):  # -> None:
+        """
+        Calling this function will disable the gradient computation for the base model so that its parameters will not
+        be updated during training. Only the classification head will be updated.
+        """
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -232,7 +466,20 @@ class Wav2Vec2ConformerForXVector(Wav2Vec2ConformerPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         labels: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple, XVectorOutput]: ...
+    ) -> Union[tuple, XVectorOutput]:
+        r"""
+        input_values (`torch.FloatTensor` of shape `(batch_size, sequence_length)`):
+            Float values of input raw speech waveform. Values can be obtained by loading a `.flac` or `.wav` audio file
+            into an array of type `list[float]`, a `numpy.ndarray` or a `torch.Tensor`, *e.g.* via the torchcodec library
+            (`pip install torchcodec`) or the soundfile library (`pip install soundfile`).
+            To prepare the array into `input_values`, the [`AutoProcessor`] should be used for padding and conversion
+            into a tensor of type `torch.FloatTensor`. See [`Wav2Vec2ConformerProcessor.__call__`] for details.
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 __all__ = [
     "Wav2Vec2ConformerForAudioFrameClassification",

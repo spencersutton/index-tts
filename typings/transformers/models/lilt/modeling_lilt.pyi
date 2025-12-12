@@ -17,22 +17,46 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring
 from .configuration_lilt import LiltConfig
 
+"""PyTorch LiLT model."""
 logger = ...
 
 class LiltTextEmbeddings(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, input_ids=..., token_type_ids=..., position_ids=..., inputs_embeds=...): ...
-    def create_position_ids_from_input_ids(self, input_ids, padding_idx): ...
-    def create_position_ids_from_inputs_embeds(self, inputs_embeds): ...
+    def forward(
+        self, input_ids=..., token_type_ids=..., position_ids=..., inputs_embeds=...
+    ):  # -> tuple[Any, Any | Tensor]:
+        ...
+    def create_position_ids_from_input_ids(self, input_ids, padding_idx):
+        """
+        Args:
+        Replace non-padding symbols with their position numbers. Position numbers begin at padding_idx+1. Padding
+        symbols are ignored. This is modified from fairseq's `utils.make_positions`.
+            x: torch.Tensor x:
+        Returns: torch.Tensor
+        """
+        ...
+
+    def create_position_ids_from_inputs_embeds(self, inputs_embeds):  # -> Tensor:
+        """
+        Args:
+        We are provided embeddings directly. We cannot infer which are padded so just generate sequential position ids.:
+            inputs_embeds: torch.Tensor
+        Returns: torch.Tensor
+        """
+        ...
 
 class LiltLayoutEmbeddings(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, bbox=..., position_ids=...): ...
+    def forward(self, bbox=..., position_ids=...):  # -> Any:
+        ...
 
 class LiltSelfAttention(nn.Module):
     def __init__(self, config, position_embedding_type=..., layer_idx=...) -> None: ...
     def transpose_for_scores(self, x, r=...): ...
-    def forward(self, hidden_states, layout_inputs, attention_mask=..., head_mask=..., output_attentions=...): ...
+    def forward(
+        self, hidden_states, layout_inputs, attention_mask=..., head_mask=..., output_attentions=...
+    ):  # -> tuple[tuple[Tensor, Tensor], Any] | tuple[tuple[Tensor, Tensor]]:
+        ...
 
 class LiltSelfOutput(nn.Module):
     def __init__(self, config) -> None: ...
@@ -40,7 +64,8 @@ class LiltSelfOutput(nn.Module):
 
 class LiltAttention(nn.Module):
     def __init__(self, config, position_embedding_type=..., layer_idx=...) -> None: ...
-    def prune_heads(self, heads): ...
+    def prune_heads(self, heads):  # -> None:
+        ...
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -68,8 +93,10 @@ class LiltLayer(GradientCheckpointingLayer):
         head_mask: Optional[torch.FloatTensor] = ...,
         output_attentions: Optional[bool] = ...,
     ) -> tuple[torch.Tensor]: ...
-    def feed_forward_chunk(self, attention_output): ...
-    def layout_feed_forward_chunk(self, attention_output): ...
+    def feed_forward_chunk(self, attention_output):  # -> Any:
+        ...
+    def layout_feed_forward_chunk(self, attention_output):  # -> Any:
+        ...
 
 class LiltEncoder(nn.Module):
     def __init__(self, config, layer_idx=...) -> None: ...
@@ -97,9 +124,17 @@ class LiltPreTrainedModel(PreTrainedModel):
 
 @auto_docstring
 class LiltModel(LiltPreTrainedModel):
-    def __init__(self, config, add_pooling_layer=...) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def __init__(self, config, add_pooling_layer=...) -> None:
+        r"""
+        add_pooling_layer (bool, *optional*, defaults to `True`):
+            Whether to add a pooling layer
+        """
+        ...
+
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -113,9 +148,41 @@ class LiltModel(LiltPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], BaseModelOutputWithPooling]: ...
+    ) -> Union[tuple[torch.Tensor], BaseModelOutputWithPooling]:
+        r"""
+        bbox (`torch.LongTensor` of shape `(batch_size, sequence_length, 4)`, *optional*):
+            Bounding boxes of each input sequence tokens. Selected in the range `[0,
+            config.max_2d_position_embeddings-1]`. Each bounding box should be a normalized version in (x0, y0, x1, y1)
+            format, where (x0, y0) corresponds to the position of the upper left corner in the bounding box, and (x1,
+            y1) represents the position of the lower right corner. See [Overview](#Overview) for normalization.
 
-@auto_docstring(custom_intro=...)
+        Examples:
+
+        ```python
+        >>> from transformers import AutoTokenizer, AutoModel
+        >>> from datasets import load_dataset
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("SCUT-DLVCLab/lilt-roberta-en-base")
+        >>> model = AutoModel.from_pretrained("SCUT-DLVCLab/lilt-roberta-en-base")
+
+        >>> dataset = load_dataset("nielsr/funsd-layoutlmv3", split="train")
+        >>> example = dataset[0]
+        >>> words = example["tokens"]
+        >>> boxes = example["bboxes"]
+
+        >>> encoding = tokenizer(words, boxes=boxes, return_tensors="pt")
+
+        >>> outputs = model(**encoding)
+        >>> last_hidden_states = outputs.last_hidden_state
+        ```"""
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    LiLT Model transformer with a sequence classification/regression head on top (a linear layer on top of the pooled
+    output) e.g. for GLUE tasks.
+    """
+)
 class LiltForSequenceClassification(LiltPreTrainedModel):
     def __init__(self, config) -> None: ...
     @auto_docstring
@@ -132,7 +199,39 @@ class LiltForSequenceClassification(LiltPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], SequenceClassifierOutput]: ...
+    ) -> Union[tuple[torch.Tensor], SequenceClassifierOutput]:
+        r"""
+        bbox (`torch.LongTensor` of shape `(batch_size, sequence_length, 4)`, *optional*):
+            Bounding boxes of each input sequence tokens. Selected in the range `[0,
+            config.max_2d_position_embeddings-1]`. Each bounding box should be a normalized version in (x0, y0, x1, y1)
+            format, where (x0, y0) corresponds to the position of the upper left corner in the bounding box, and (x1,
+            y1) represents the position of the lower right corner. See [Overview](#Overview) for normalization.
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoTokenizer, AutoModelForSequenceClassification
+        >>> from datasets import load_dataset
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("SCUT-DLVCLab/lilt-roberta-en-base")
+        >>> model = AutoModelForSequenceClassification.from_pretrained("SCUT-DLVCLab/lilt-roberta-en-base")
+
+        >>> dataset = load_dataset("nielsr/funsd-layoutlmv3", split="train")
+        >>> example = dataset[0]
+        >>> words = example["tokens"]
+        >>> boxes = example["bboxes"]
+
+        >>> encoding = tokenizer(words, boxes=boxes, return_tensors="pt")
+
+        >>> outputs = model(**encoding)
+        >>> predicted_class_idx = outputs.logits.argmax(-1).item()
+        >>> predicted_class = model.config.id2label[predicted_class_idx]
+        ```"""
+        ...
 
 @auto_docstring
 class LiltForTokenClassification(LiltPreTrainedModel):
@@ -151,11 +250,42 @@ class LiltForTokenClassification(LiltPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], TokenClassifierOutput]: ...
+    ) -> Union[tuple[torch.Tensor], TokenClassifierOutput]:
+        r"""
+        bbox (`torch.LongTensor` of shape `(batch_size, sequence_length, 4)`, *optional*):
+            Bounding boxes of each input sequence tokens. Selected in the range `[0,
+            config.max_2d_position_embeddings-1]`. Each bounding box should be a normalized version in (x0, y0, x1, y1)
+            format, where (x0, y0) corresponds to the position of the upper left corner in the bounding box, and (x1,
+            y1) represents the position of the lower right corner. See [Overview](#Overview) for normalization.
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the token classification loss. Indices should be in `[0, ..., config.num_labels - 1]`.
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoTokenizer, AutoModelForTokenClassification
+        >>> from datasets import load_dataset
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("SCUT-DLVCLab/lilt-roberta-en-base")
+        >>> model = AutoModelForTokenClassification.from_pretrained("SCUT-DLVCLab/lilt-roberta-en-base")
+
+        >>> dataset = load_dataset("nielsr/funsd-layoutlmv3", split="train")
+        >>> example = dataset[0]
+        >>> words = example["tokens"]
+        >>> boxes = example["bboxes"]
+
+        >>> encoding = tokenizer(words, boxes=boxes, return_tensors="pt")
+
+        >>> outputs = model(**encoding)
+        >>> predicted_class_indices = outputs.logits.argmax(-1)
+        ```"""
+        ...
 
 class LiltClassificationHead(nn.Module):
+    """Head for sentence-level classification tasks."""
     def __init__(self, config) -> None: ...
-    def forward(self, features, **kwargs): ...
+    def forward(self, features, **kwargs):  # -> Any:
+        ...
 
 @auto_docstring
 class LiltForQuestionAnswering(LiltPreTrainedModel):
@@ -175,7 +305,39 @@ class LiltForQuestionAnswering(LiltPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], QuestionAnsweringModelOutput]: ...
+    ) -> Union[tuple[torch.Tensor], QuestionAnsweringModelOutput]:
+        r"""
+        bbox (`torch.LongTensor` of shape `(batch_size, sequence_length, 4)`, *optional*):
+            Bounding boxes of each input sequence tokens. Selected in the range `[0,
+            config.max_2d_position_embeddings-1]`. Each bounding box should be a normalized version in (x0, y0, x1, y1)
+            format, where (x0, y0) corresponds to the position of the upper left corner in the bounding box, and (x1,
+            y1) represents the position of the lower right corner. See [Overview](#Overview) for normalization.
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoTokenizer, AutoModelForQuestionAnswering
+        >>> from datasets import load_dataset
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("SCUT-DLVCLab/lilt-roberta-en-base")
+        >>> model = AutoModelForQuestionAnswering.from_pretrained("SCUT-DLVCLab/lilt-roberta-en-base")
+
+        >>> dataset = load_dataset("nielsr/funsd-layoutlmv3", split="train")
+        >>> example = dataset[0]
+        >>> words = example["tokens"]
+        >>> boxes = example["bboxes"]
+
+        >>> encoding = tokenizer(words, boxes=boxes, return_tensors="pt")
+
+        >>> outputs = model(**encoding)
+
+        >>> answer_start_index = outputs.start_logits.argmax()
+        >>> answer_end_index = outputs.end_logits.argmax()
+
+        >>> predict_answer_tokens = encoding.input_ids[0, answer_start_index : answer_end_index + 1]
+        >>> predicted_answer = tokenizer.decode(predict_answer_tokens)
+        ```"""
+        ...
 
 __all__ = [
     "LiltForQuestionAnswering",

@@ -16,8 +16,25 @@ from .configuration_granite_speech import GraniteSpeechConfig, GraniteSpeechEnco
 logger = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for LlavaNext causal language model (or autoregressive) outputs.
+    """
+)
 class GraniteSpeechCausalLMOutputWithPast(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `labels` is provided):
+        Language modeling loss (for next-token prediction).
+    logits (`torch.FloatTensor` of shape `(batch_size, sequence_length, config.vocab_size)`):
+        Prediction scores of the language modeling head (scores for each vocabulary token before SoftMax).
+    past_key_values (`Cache`, *optional*, returned when `use_cache=True` is passed or when `config.use_cache=True`):
+        Tuple of `tuple(torch.FloatTensor)` of length `config.n_layers`, with each tuple having 2 tensors of shape
+        `(batch_size, num_heads, sequence_length, embed_size_per_head)`)
+
+        Contains pre-computed hidden-states (key and values in the self-attention blocks) that can be used (see
+        `past_key_values` input) to speed up sequential decoding.
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     logits: torch.FloatTensor = ...
     past_key_values: Optional[list[torch.FloatTensor]] = ...
@@ -29,28 +46,36 @@ class GraniteSpeechEncoderProjector(nn.Module):
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
 
 class GraniteSpeechConformerFeedForward(nn.Module):
+    """Feedforward module for conformer encoder blocks."""
     def __init__(self, config: GraniteSpeechEncoderConfig) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
 
 class GraniteSpeechConformerAttention(nn.Module):
+    """Attention for conformer blocks using Shaw's relative positional embeddings.
+    See the following [paper](https://huggingface.co/papers/1803.02155) for more details.
+    """
     def __init__(self, config: GraniteSpeechEncoderConfig) -> None: ...
     def forward(self, hidden_states: torch.Tensor, attention_dists: torch.Tensor) -> torch.Tensor: ...
 
 class GraniteSpeechConformerDepthWiseConv1d(nn.Module):
+    """Wrapper for padded 1D pointwise convolution."""
     def __init__(self, chan_in: int, chan_out: int, kernel_size: int) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
 
 class GraniteSpeechConformerConvModule(nn.Module):
+    """Conformer conv module consisting of several 1D/depthwise 1D convolutional layers."""
     def __init__(self, config: GraniteSpeechEncoderConfig) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
 
 class GraniteSpeechConformerBlock(nn.Module):
+    """Conformer block, consisting largely of linear layers, attention, and convolutional layers."""
     def __init__(self, config: GraniteSpeechEncoderConfig) -> None: ...
     def forward(self, hidden_states: torch.Tensor, attention_dists: torch.Tensor) -> torch.Tensor: ...
 
 class GraniteSpeechCTCEncoder(nn.Module):
     def __init__(self, config: GraniteSpeechEncoderConfig) -> None: ...
-    def forward(self, hidden_states: torch.Tensor): ...
+    def forward(self, hidden_states: torch.Tensor):  # -> Tensor:
+        ...
 
 @auto_docstring
 class GraniteSpeechPreTrainedModel(PreTrainedModel):
@@ -58,14 +83,25 @@ class GraniteSpeechPreTrainedModel(PreTrainedModel):
     _supports_flash_attn = ...
     _supports_sdpa = ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The Granite Speech model, which consists of an audio encoder, projector, and language model.
+    """
+)
 class GraniteSpeechForConditionalGeneration(GraniteSpeechPreTrainedModel, GenerationMixin):
     def __init__(self, config: GraniteSpeechConfig) -> None: ...
-    def set_input_embeddings(self, value): ...
-    def set_output_embeddings(self, new_embeddings): ...
-    def get_input_embeddings(self): ...
-    def get_output_embeddings(self): ...
-    def get_audio_features(self, input_features: torch.Tensor) -> torch.Tensor: ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
+    def set_output_embeddings(self, new_embeddings):  # -> None:
+        ...
+    def get_input_embeddings(self):  # -> Any:
+        ...
+    def get_output_embeddings(self):  # -> Any:
+        ...
+    def get_audio_features(self, input_features: torch.Tensor) -> torch.Tensor:
+        """Get the audio features to merged into the multimodal embeddings."""
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -84,7 +120,17 @@ class GraniteSpeechForConditionalGeneration(GraniteSpeechPreTrainedModel, Genera
         cache_position: Optional[torch.LongTensor] = ...,
         logits_to_keep: Union[int, torch.Tensor] = ...,
         **lm_kwargs,
-    ) -> Union[tuple[torch.Tensor], GraniteSpeechCausalLMOutputWithPast]: ...
+    ) -> Union[tuple[torch.Tensor], GraniteSpeechCausalLMOutputWithPast]:
+        r"""
+        input_features_mask (`torch.Tensor`, *optional*):
+            Mask to be applied to audio features prior to scattering into the language embeddings.
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+        """
+        ...
+
     def prepare_inputs_for_generation(
         self,
         input_ids,
@@ -95,11 +141,28 @@ class GraniteSpeechForConditionalGeneration(GraniteSpeechPreTrainedModel, Genera
         cache_position=...,
         logits_to_keep=...,
         **kwargs,
-    ): ...
+    ):  # -> Any:
+        ...
     def get_merged_audio_embeddings(
         self, input_ids: torch.Tensor, audio_features: torch.Tensor, input_features_mask: Optional[torch.Tensor] = ...
-    ) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """
+        Adds the audio token to the model's LLM vocabulary so that we can pass it
+        through the tokenizer; it's assumed that the embeddings corresponding to the
+        <|audio|> token will be clobbered with speech features.
+
+        Args:
+            input_ids (`torch.Tensor`):
+                Input IDs containing one or more audio tokens.
+            audio_features (`torch.Tensor`):
+                Audio features to be masked into the language embeddings to form multimodal embeddings.
+            input_features_mask (`torch.Tensor`, *optional*, defaults to `None`)
+                Mask to be applied to audio features prior to scattering into the language embeddings.
+        """
+        ...
+
     def generate(self, *args, **kwargs) -> torch.LongTensor: ...
-    def save_pretrained(self, save_directory, *args, **kwargs): ...
+    def save_pretrained(self, save_directory, *args, **kwargs):  # -> None:
+        ...
 
 __all__ = ["GraniteSpeechCTCEncoder", "GraniteSpeechForConditionalGeneration", "GraniteSpeechPreTrainedModel"]

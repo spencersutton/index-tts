@@ -22,6 +22,7 @@ from ..phi3.modeling_phi3 import Phi3MLP
 from .configuration_dia import DiaConfig, DiaDecoderConfig, DiaEncoderConfig
 from .generation_dia import DiaGenerationMixin
 
+"""PyTorch Dia model."""
 if is_torch_flex_attn_available(): ...
 logger = ...
 
@@ -38,6 +39,18 @@ class DiaPreTrainedModel(PreTrainedModel):
     _no_split_modules = ...
 
 class DiaMultiChannelEmbedding(nn.Module):
+    """In order to efficiently compute the audio embedding from the 9 different channels,
+    we vectorize the embedding process by using a single embedding layer and an offset.
+    Example:
+    - num_embeds = 4
+    - vocab_size = 8
+    - num_channels = 3
+    We would have offsets = [0, 8, 16]
+    If audio_codes = [0, 1, 2, 3], [1, 3, 4, 7], [5, 6, 7, 8],
+    then tokens = audio_codes + offsets
+                = [0, 1, 2, 3, 9, 11, 12, 15, 21, 22, 23, 24]
+    This allows us to use a single embedding layer for all channels.
+    """
     def __init__(self, config: DiaDecoderConfig) -> None: ...
     def forward(self, audio_codes: torch.Tensor) -> torch.Tensor: ...
 
@@ -46,11 +59,13 @@ class DiaRMSNorm(LlamaRMSNorm): ...
 class DiaRotaryEmbedding(LlamaRotaryEmbedding): ...
 
 class DiaSelfAttention(LlamaAttention, nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(
         self, config: Union[DiaEncoderConfig, DiaDecoderConfig], layer_idx: int, is_causal: bool = ...
     ) -> None: ...
 
 class DiaCrossAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config: DiaDecoderConfig, layer_idx: int) -> None: ...
     def forward(
         self,
@@ -99,6 +114,7 @@ class DiaDecoderLayer(GradientCheckpointingLayer):
     ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[torch.Tensor]]: ...
 
 class DiaDecoder(DiaPreTrainedModel):
+    """Transformer Decoder Stack using DenseGeneral."""
     def __init__(self, config: DiaDecoderConfig) -> None: ...
     @auto_docstring
     @can_return_tuple
@@ -114,13 +130,26 @@ class DiaDecoder(DiaPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         **kwargs,
-    ) -> Union[BaseModelOutputWithPastAndCrossAttentions, tuple]: ...
+    ) -> Union[BaseModelOutputWithPastAndCrossAttentions, tuple]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length, num_codebooks)`):
+            The original `decoder_input_ids` in 3D shape to facilitate more efficient computations.
 
-@auto_docstring(custom_intro=...)
+            [What are input IDs?](../glossary#input-ids)
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    The bare Dia model outputting raw hidden-states without any specific head on top.
+    """
+)
 class DiaModel(DiaPreTrainedModel):
     def __init__(self, config: DiaConfig) -> None: ...
-    def get_encoder(self): ...
-    def get_decoder(self): ...
+    def get_encoder(self):  # -> DiaEncoder:
+        ...
+    def get_decoder(self):  # -> DiaDecoder:
+        ...
     @auto_docstring
     @can_return_tuple
     def forward(
@@ -137,14 +166,42 @@ class DiaModel(DiaPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         **kwargs,
-    ) -> Union[tuple, Seq2SeqModelOutput]: ...
+    ) -> Union[tuple, Seq2SeqModelOutput]:
+        r"""
+        decoder_input_ids (`torch.LongTensor` of shape `(batch_size * num_codebooks, target_sequence_length)
+        or (batch_size, target_sequence_length, num_codebooks)`, *optional*):
+            1. (batch_size * num_codebooks, target_sequence_length): corresponds to the general use case where
+            the audio input codebooks are flattened into the batch dimension. This also aligns with the flat-
+            tened audio logits which are used to calculate the loss.
 
-@auto_docstring(custom_intro=...)
+            2. (batch_size, sequence_length, num_codebooks): corresponds to the internally used shape of
+            Dia to calculate embeddings and subsequent steps more efficiently.
+
+            If no `decoder_input_ids` are provided, it will create a tensor of `bos_token_id` with shape
+            `(batch_size, 1, num_codebooks)`. Indices can be obtained using the [`DiaProcessor`]. See
+            [`DiaProcessor.__call__`] for more details.
+
+            [What are decoder input IDs?](../glossary#decoder-input-ids)
+        decoder_position_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`):
+            Indices of positions of each input sequence tokens in the position embeddings.
+            Used to calculate the position embeddings up to `config.decoder_config.max_position_embeddings`.
+
+            [What are position IDs?](../glossary#position-ids)
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    The Dia model consisting of a (byte) text encoder and audio decoder with a prediction head on top.
+    """
+)
 class DiaForConditionalGeneration(DiaPreTrainedModel, DiaGenerationMixin):
     base_model_prefix = ...
     def __init__(self, config: DiaConfig) -> None: ...
-    def get_encoder(self): ...
-    def get_decoder(self): ...
+    def get_encoder(self):  # -> DiaEncoder:
+        ...
+    def get_decoder(self):  # -> DiaDecoder:
+        ...
     @auto_docstring
     @can_return_tuple
     def forward(
@@ -162,6 +219,32 @@ class DiaForConditionalGeneration(DiaPreTrainedModel, DiaGenerationMixin):
         labels: Optional[torch.LongTensor] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         **kwargs,
-    ) -> Union[tuple, Seq2SeqLMOutput]: ...
+    ) -> Union[tuple, Seq2SeqLMOutput]:
+        r"""
+        decoder_input_ids (`torch.LongTensor` of shape `(batch_size * num_codebooks, target_sequence_length)
+        or (batch_size, target_sequence_length, num_codebooks)`, *optional*):
+            1. (batch_size * num_codebooks, target_sequence_length): corresponds to the general use case where
+            the audio input codebooks are flattened into the batch dimension. This also aligns with the flat-
+            tened audio logits which are used to calculate the loss.
+
+            2. (batch_size, sequence_length, num_codebooks): corresponds to the internally used shape of
+            Dia to calculate embeddings and subsequent steps more efficiently.
+
+            If no `decoder_input_ids` are provided, it will create a tensor of `bos_token_id` with shape
+            `(batch_size, 1, num_codebooks)`. Indices can be obtained using the [`DiaProcessor`]. See
+            [`DiaProcessor.__call__`] for more details.
+
+            [What are decoder input IDs?](../glossary#decoder-input-ids)
+        decoder_position_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`):
+            Indices of positions of each input sequence tokens in the position embeddings.
+            Used to calculate the position embeddings up to `config.decoder_config.max_position_embeddings`.
+
+            [What are position IDs?](../glossary#position-ids)
+        labels (`torch.LongTensor` of shape `(batch_size * num_codebooks,)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in
+            `[0, ..., config.decoder_config.vocab_size - 1]` or -100. Tokens with indices set to `-100`
+            are ignored (masked).
+        """
+        ...
 
 __all__ = ["DiaModel", "DiaPreTrainedModel", "DiaForConditionalGeneration"]

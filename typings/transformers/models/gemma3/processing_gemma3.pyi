@@ -35,9 +35,22 @@ class Gemma3Processor(ProcessorMixin):
         audio=...,
         **kwargs: Unpack[Gemma3ProcessorKwargs],
     ) -> BatchFeature: ...
-    def batch_decode(self, *args, **kwargs): ...
-    def decode(self, *args, **kwargs): ...
+    def batch_decode(self, *args, **kwargs):
+        """
+        This method forwards all its arguments to GemmaTokenizerFast's [`~PreTrainedTokenizer.batch_decode`]. Please
+        refer to the docstring of this method for more information.
+        """
+        ...
+
+    def decode(self, *args, **kwargs):
+        """
+        This method forwards all its arguments to GemmaTokenizerFast's [`~PreTrainedTokenizer.decode`]. Please refer to
+        the docstring of this method for more information.
+        """
+        ...
+
     @property
-    def model_input_names(self): ...
+    def model_input_names(self):  # -> list[Any]:
+        ...
 
 __all__ = ["Gemma3Processor"]

@@ -19,13 +19,68 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring, is_torch_flex_attn_available
 from .configuration_bloom import BloomConfig
 
+"""PyTorch BLOOM model."""
 if is_torch_flex_attn_available(): ...
 logger = ...
 
-def build_alibi_tensor(attention_mask: torch.Tensor, num_heads: int, dtype: torch.dtype) -> torch.Tensor: ...
-def dropout_add(x: torch.Tensor, residual: torch.Tensor, prob: float, training: bool) -> torch.Tensor: ...
-def bloom_gelu_forward(x: torch.Tensor) -> torch.Tensor: ...
-def bloom_gelu_back(g: torch.Tensor, x: torch.Tensor) -> torch.Tensor: ...
+def build_alibi_tensor(attention_mask: torch.Tensor, num_heads: int, dtype: torch.dtype) -> torch.Tensor:
+    """
+    Link to paper: https://huggingface.co/papers/2108.12409 Alibi tensor is not causal as the original paper mentions, it
+    relies on a translation invariance of softmax for quick implementation: with l being a tensor, and a fixed value
+    `softmax(l+a) = softmax(l)`. Based on
+    https://github.com/ofirpress/attention_with_linear_biases/blob/a35aaca144e0eb6b789dfcb46784c4b8e31b7983/fairseq/models/transformer.py#L742
+    TODO @thomasw21 this doesn't work as nicely due to the masking strategy, and so masking varies slightly.
+
+    Args:
+    Returns tensor shaped (batch_size * num_heads, 1, max_seq_len)
+        attention_mask (`torch.Tensor`):
+            Token-wise attention mask, this should be of shape (batch_size, max_seq_len).
+        num_heads (`int`):
+            number of heads
+        dtype (`torch.dtype`, *optional*, default=`torch.bfloat16`):
+            dtype of the output tensor
+    """
+    ...
+
+def dropout_add(x: torch.Tensor, residual: torch.Tensor, prob: float, training: bool) -> torch.Tensor:
+    """
+    Dropout add function
+
+    Args:
+        x (`torch.tensor`):
+            input tensor
+        residual (`torch.tensor`):
+            residual tensor
+        prob (`float`):
+            dropout probability
+        training (`bool`):
+            training mode
+    """
+    ...
+
+def bloom_gelu_forward(x: torch.Tensor) -> torch.Tensor:
+    """
+    Custom bias GELU function. Adapted from Megatron-DeepSpeed code. Here we use a simple implementation (inference) to
+    make the model jitable.
+
+    Args:
+        x (`torch.tensor`):
+            input hidden states
+    """
+    ...
+
+def bloom_gelu_back(g: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
+    """
+    gradient of tanh approximation of gelu gradient of actual gelu is: 0.5 * (1. + torch.erf(x * 0.70710678)) +
+    0.3989423 * x * torch.exp(-0.5 * x * x)
+
+    Args:
+        g (`torch.tensor`):
+            gradient output tensor
+        x (`torch.tensor`):
+            input tensor
+    """
+    ...
 
 class GeLUFunction(torch.autograd.Function):
     @staticmethod
@@ -34,6 +89,13 @@ class GeLUFunction(torch.autograd.Function):
     def backward(ctx, grad_output: torch.Tensor) -> torch.Tensor: ...
 
 class BloomGelu(nn.Module):
+    """
+    BloomBiasGelu wrapper function that make use of the simple function on inference mode to make the model
+    torchscriptable and use the autograd function in training mode to get the accurate results of the gradients Partly
+    copied from Megatron-DeepSpeed code and adapted for our needs
+
+    See here why autograd functions are not torchscriptable: https://github.com/pytorch/pytorch/issues/22329
+    """
     def __init__(self) -> None: ...
     def forward(self, x: torch.Tensor) -> torch.Tensor: ...
 
@@ -50,7 +112,8 @@ class BloomAttention(nn.Module):
         use_cache: bool = ...,
         output_attentions: bool = ...,
         cache_position: Optional[torch.LongTensor] = ...,
-    ): ...
+    ):  # -> tuple[Tensor, Any]:
+        ...
 
 class BloomMLP(nn.Module):
     def __init__(self, config: BloomConfig) -> None: ...
@@ -68,7 +131,8 @@ class BloomBlock(GradientCheckpointingLayer):
         use_cache: bool = ...,
         output_attentions: bool = ...,
         cache_position: Optional[torch.LongTensor] = ...,
-    ): ...
+    ):  # -> tuple[Any, Any]:
+        ...
 
 @auto_docstring
 class BloomPreTrainedModel(PreTrainedModel):
@@ -84,8 +148,10 @@ class BloomPreTrainedModel(PreTrainedModel):
 class BloomModel(BloomPreTrainedModel):
     def __init__(self, config: BloomConfig) -> None: ...
     def build_alibi_tensor(self, attention_mask: torch.Tensor, num_heads: int, dtype: torch.dtype) -> torch.Tensor: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, new_embeddings: torch.Tensor): ...
+    def get_input_embeddings(self):  # -> Embedding | Tensor:
+        ...
+    def set_input_embeddings(self, new_embeddings: torch.Tensor):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -100,13 +166,33 @@ class BloomModel(BloomPreTrainedModel):
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         **deprecated_arguments,
-    ) -> Union[tuple[torch.Tensor, ...], BaseModelOutputWithPastAndCrossAttentions]: ...
+    ) -> Union[tuple[torch.Tensor, ...], BaseModelOutputWithPastAndCrossAttentions]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, input_ids_length)`):
+            `input_ids_length` = `sequence_length` if `past_key_values` is `None` else `past_key_values.get_seq_length()`
+            (`sequence_length` of input past key value states). Indices of input sequence tokens in the vocabulary.
 
-@auto_docstring(custom_intro=...)
+            If `past_key_values` is used, only `input_ids` that do not have their past calculated should be passed as
+            `input_ids`.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    The Bloom Model transformer with a language modeling head on top (linear layer with weights tied to the input
+    embeddings).
+    """
+)
 class BloomForCausalLM(BloomPreTrainedModel, GenerationMixin):
     _tied_weights_keys = ...
     def __init__(self, config: BloomConfig) -> None: ...
-    def set_output_embeddings(self, new_embeddings: torch.Tensor): ...
+    def set_output_embeddings(self, new_embeddings: torch.Tensor):  # -> None:
+        ...
     def prepare_inputs_for_generation(
         self,
         input_ids,
@@ -116,7 +202,8 @@ class BloomForCausalLM(BloomPreTrainedModel, GenerationMixin):
         cache_position=...,
         use_cache=...,
         **kwargs,
-    ): ...
+    ):  # -> dict[str, Any | None]:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -132,9 +219,40 @@ class BloomForCausalLM(BloomPreTrainedModel, GenerationMixin):
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         **deprecated_arguments,
-    ) -> Union[tuple[torch.Tensor], CausalLMOutputWithCrossAttentions]: ...
+    ) -> Union[tuple[torch.Tensor], CausalLMOutputWithCrossAttentions]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, input_ids_length)`):
+            `input_ids_length` = `sequence_length` if `past_key_values` is `None` else `past_key_values.get_seq_length()`
+            (`sequence_length` of input past key value states). Indices of input sequence tokens in the vocabulary.
 
-@auto_docstring(custom_intro=...)
+            If `past_key_values` is used, only `input_ids` that do not have their past calculated should be passed as
+            `input_ids`.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for language modeling. Note that the labels **are shifted** inside the model, i.e. you can set
+            `labels = input_ids` Indices are selected in `[-100, 0, ..., config.vocab_size]` All labels set to `-100`
+            are ignored (masked), the loss is only computed for labels in `[0, ..., config.vocab_size]`
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    The Bloom Model transformer with a sequence classification head on top (linear layer).
+
+    [`BloomForSequenceClassification`] uses the last token in order to do the classification, as other causal models
+    (e.g. GPT-1) do.
+
+    Since it does classification on the last token, it requires to know the position of the last token. If a
+    `pad_token_id` is defined in the configuration, it finds the last token that is not a padding token in each row. If
+    no `pad_token_id` is defined, it simply takes the last value in each row of the batch. Since it cannot guess the
+    padding tokens when `inputs_embeds` are passed instead of `input_ids`, it does the same (take the last value in
+    each row of the batch).
+    """
+)
 class BloomForSequenceClassification(BloomPreTrainedModel):
     def __init__(self, config: BloomConfig) -> None: ...
     @auto_docstring
@@ -151,7 +269,25 @@ class BloomForSequenceClassification(BloomPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         **deprecated_arguments,
-    ) -> Union[tuple[torch.Tensor], SequenceClassifierOutputWithPast]: ...
+    ) -> Union[tuple[torch.Tensor], SequenceClassifierOutputWithPast]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, input_ids_length)`):
+            `input_ids_length` = `sequence_length` if `past_key_values` is `None` else `past_key_values.get_seq_length()`
+            (`sequence_length` of input past key value states). Indices of input sequence tokens in the vocabulary.
+
+            If `past_key_values` is used, only `input_ids` that do not have their past calculated should be passed as
+            `input_ids`.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 @auto_docstring
 class BloomForTokenClassification(BloomPreTrainedModel):
@@ -170,7 +306,25 @@ class BloomForTokenClassification(BloomPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         **deprecated_arguments,
-    ) -> Union[tuple[torch.Tensor], TokenClassifierOutput]: ...
+    ) -> Union[tuple[torch.Tensor], TokenClassifierOutput]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, input_ids_length)`):
+            `input_ids_length` = `sequence_length` if `past_key_values` is `None` else `past_key_values.get_seq_length()`
+            (`sequence_length` of input past key value states). Indices of input sequence tokens in the vocabulary.
+
+            If `past_key_values` is used, only `input_ids` that do not have their past calculated should be passed as
+            `input_ids`.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 @auto_docstring
 class BloomForQuestionAnswering(BloomPreTrainedModel):
@@ -188,7 +342,21 @@ class BloomForQuestionAnswering(BloomPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, QuestionAnsweringModelOutput]: ...
+    ) -> Union[tuple, QuestionAnsweringModelOutput]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, input_ids_length)`):
+            `input_ids_length` = `sequence_length` if `past_key_values` is `None` else `past_key_values.get_seq_length()`
+            (`sequence_length` of input past key value states). Indices of input sequence tokens in the vocabulary.
+
+            If `past_key_values` is used, only `input_ids` that do not have their past calculated should be passed as
+            `input_ids`.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        """
+        ...
 
 __all__ = [
     "BloomForCausalLM",

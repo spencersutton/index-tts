@@ -7,12 +7,38 @@ from ...image_processing_utils import BaseImageProcessor
 from ...image_utils import ImageInput
 from ...utils import TensorType
 
+"""Image processor class for Idefics."""
 IDEFICS_STANDARD_MEAN = ...
 IDEFICS_STANDARD_STD = ...
 
-def convert_to_rgb(image): ...
+def convert_to_rgb(image):  # -> Image:
+    ...
 
 class IdeficsImageProcessor(BaseImageProcessor):
+    r"""
+    Constructs a Idefics image processor.
+
+    Args:
+        image_size (`int`, *optional*, defaults to 224):
+            Resize to image size
+        image_mean (`float` or `list[float]`, *optional*, defaults to `IDEFICS_STANDARD_MEAN`):
+            Mean to use if normalizing the image. This is a float or list of floats the length of the number of
+            channels in the image. Can be overridden by the `image_mean` parameter in the `preprocess` method. Can be
+            overridden by the `image_mean` parameter in the `preprocess` method.
+        image_std (`float` or `list[float]`, *optional*, defaults to `IDEFICS_STANDARD_STD`):
+            Standard deviation to use if normalizing the image. This is a float or list of floats the length of the
+            number of channels in the image. Can be overridden by the `image_std` parameter in the `preprocess` method.
+            Can be overridden by the `image_std` parameter in the `preprocess` method.
+        image_num_channels (`int`, *optional*, defaults to 3):
+            Number of image channels.
+        do_rescale (`bool`, *optional*, defaults to `True`):
+            Whether to rescale the image by the specified scale `rescale_factor`. Can be overridden by `do_rescale` in
+            the `preprocess` method.
+        rescale_factor (`int` or `float`, *optional*, defaults to `1/255`):
+            Scale factor to use if rescaling the image. Can be overridden by `rescale_factor` in the `preprocess`
+            method.
+    """
+
     model_input_names = ...
     def __init__(
         self,
@@ -21,7 +47,7 @@ class IdeficsImageProcessor(BaseImageProcessor):
         image_std: Optional[Union[float, list[float]]] = ...,
         image_num_channels: Optional[int] = ...,
         do_rescale: bool = ...,
-        rescale_factor: float = ...,
+        rescale_factor: Union[int, float] = ...,
         **kwargs,
     ) -> None: ...
     def preprocess(
@@ -36,6 +62,40 @@ class IdeficsImageProcessor(BaseImageProcessor):
         rescale_factor: Optional[float] = ...,
         return_tensors: Optional[Union[str, TensorType]] = ...,
         **kwargs,
-    ) -> TensorType: ...
+    ) -> TensorType:
+        """
+        Preprocess a batch of images.
+
+        Args:
+            images (`ImageInput`):
+                A list of images to preprocess.
+            image_size (`int`, *optional*, defaults to `self.image_size`):
+                Resize to image size
+            image_num_channels (`int`, *optional*, defaults to `self.image_num_channels`):
+                Number of image channels.
+            image_mean (`float` or `list[float]`, *optional*, defaults to `IDEFICS_STANDARD_MEAN`):
+                Mean to use if normalizing the image. This is a float or list of floats the length of the number of
+                channels in the image. Can be overridden by the `image_mean` parameter in the `preprocess` method. Can
+                be overridden by the `image_mean` parameter in the `preprocess` method.
+            image_std (`float` or `list[float]`, *optional*, defaults to `IDEFICS_STANDARD_STD`):
+                Standard deviation to use if normalizing the image. This is a float or list of floats the length of the
+                number of channels in the image. Can be overridden by the `image_std` parameter in the `preprocess`
+                method. Can be overridden by the `image_std` parameter in the `preprocess` method.
+            transform (`Callable`, *optional*, defaults to `None`):
+                A custom transform function that accepts a single image can be passed for training. For example,
+                `torchvision.Compose` can be used to compose multiple transforms. If `None` - an inference mode is
+                assumed - and then a preset of inference-specific transforms will be applied to the images
+            do_rescale (`bool`, *optional*, defaults to `True`):
+                Whether to rescale the image by the specified scale `rescale_factor`. Can be overridden by `do_rescale` in
+                the `preprocess` method.
+            rescale_factor (`int` or `float`, *optional*, defaults to `1/255`):
+                Scale factor to use if rescaling the image. Can be overridden by `rescale_factor` in the `preprocess`
+                method.
+
+        Returns:
+            a PyTorch tensor of the processed images
+
+        """
+        ...
 
 __all__ = ["IdeficsImageProcessor"]

@@ -10,10 +10,18 @@ from ...image_utils import ImageInput
 from ...processing_utils import Unpack
 from ...utils import auto_docstring, is_torch_available, is_torchvision_available
 
+"""Fast Image processor class for Swin2SR."""
 if is_torch_available(): ...
 if is_torchvision_available(): ...
 
 class Swin2SRFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
+    """
+    do_pad (`bool`, *optional*, defaults to `True`):
+        Whether to pad the image to make the height and width divisible by `window_size`.
+    pad_size (`int`, *optional*, defaults to `8`):
+        The size of the sliding window for the local attention.
+    """
+
     do_pad: Optional[bool]
     pad_size: Optional[int]
     ...
@@ -27,6 +35,19 @@ class Swin2SRImageProcessorFast(BaseImageProcessorFast):
     valid_kwargs = Swin2SRFastImageProcessorKwargs
     def __init__(self, **kwargs: Unpack[Swin2SRFastImageProcessorKwargs]) -> None: ...
     def preprocess(self, images: ImageInput, **kwargs: Unpack[Swin2SRFastImageProcessorKwargs]) -> BatchFeature: ...
-    def pad(self, images: torch.Tensor, size: int) -> torch.Tensor: ...
+    def pad(self, images: torch.Tensor, size: int) -> torch.Tensor:
+        """
+        Pad an image to make the height and width divisible by `size`.
+
+        Args:
+            images (`torch.Tensor`):
+                Images to pad.
+            size (`int`):
+                The size to make the height and width divisible by.
+
+        Returns:
+            `torch.Tensor`: The padded images.
+        """
+        ...
 
 __all__ = ["Swin2SRImageProcessorFast"]

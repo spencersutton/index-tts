@@ -26,7 +26,8 @@ class FlaxGPTJAttention(nn.Module):
     dtype: jnp.dtype = ...
     causal: bool = ...
     is_cross_attention: bool = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         hidden_states,
@@ -35,19 +36,22 @@ class FlaxGPTJAttention(nn.Module):
         deterministic: bool = ...,
         init_cache: bool = ...,
         output_attentions: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, Any] | tuple[Any]:
+        ...
 
 class FlaxGPTJMLP(nn.Module):
     config: GPTJConfig
     intermediate_size: int
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(self, hidden_states, deterministic: bool = ...): ...
 
 class FlaxGPTJBlock(nn.Module):
     config: GPTJConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         hidden_states,
@@ -56,9 +60,15 @@ class FlaxGPTJBlock(nn.Module):
         deterministic: bool = ...,
         init_cache: bool = ...,
         output_attentions: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, Any] | tuple[Any]:
+        ...
 
 class FlaxGPTJPreTrainedModel(FlaxPreTrainedModel):
+    """
+    An abstract class to handle weights initialization and a simple interface for downloading and loading pretrained
+    models.
+    """
+
     config_class = GPTJConfig
     base_model_prefix = ...
     module_class: nn.Module = ...
@@ -72,7 +82,17 @@ class FlaxGPTJPreTrainedModel(FlaxPreTrainedModel):
         **kwargs,
     ) -> None: ...
     def init_weights(self, rng: jax.random.PRNGKey, input_shape: tuple, params: FrozenDict = ...) -> FrozenDict: ...
-    def init_cache(self, batch_size, max_length): ...
+    def init_cache(self, batch_size, max_length):
+        r"""
+        Args:
+            batch_size (`int`):
+                batch_size used for fast auto-regressive decoding. Defines the batch size of the initialized cache.
+            max_length (`int`):
+                maximum possible length for auto-regressive decoding. Defines the sequence length of the initialized
+                cache.
+        """
+        ...
+
     @add_start_docstrings_to_model_forward(GPTJ_INPUTS_DOCSTRING)
     def __call__(
         self,
@@ -91,7 +111,8 @@ class FlaxGPTJPreTrainedModel(FlaxPreTrainedModel):
 class FlaxGPTJBlockCollection(nn.Module):
     config: GPTJConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         hidden_states,
@@ -102,12 +123,14 @@ class FlaxGPTJBlockCollection(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, tuple[()] | tuple[Any, ...] | None, tuple[()] | tuple[Any, ...] | None]:
+        ...
 
 class FlaxGPTJModule(nn.Module):
     config: GPTJConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids,
@@ -118,16 +141,21 @@ class FlaxGPTJModule(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any | tuple[Any, ...] | tuple[()], ...] | FlaxBaseModelOutput:
+        ...
 
-@add_start_docstrings(..., GPTJ_START_DOCSTRING)
+@add_start_docstrings(
+    "The bare GPTJ Model transformer outputting raw hidden-states without any specific head on top.",
+    GPTJ_START_DOCSTRING,
+)
 class FlaxGPTJModel(FlaxGPTJPreTrainedModel):
     module_class = ...
 
 class FlaxGPTJForCausalLMModule(nn.Module):
     config: GPTJConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids,
@@ -138,12 +166,21 @@ class FlaxGPTJForCausalLMModule(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, *tuple[Any | tuple[Any, ...] | tuple[()], ...]] | Any | FlaxCausalLMOutput:
+        ...
 
-@add_start_docstrings(..., GPTJ_START_DOCSTRING)
+@add_start_docstrings(
+    """
+    The GPTJ Model transformer with a language modeling head on top.
+    """,
+    GPTJ_START_DOCSTRING,
+)
 class FlaxGPTJForCausalLM(FlaxGPTJPreTrainedModel):
     module_class = ...
-    def prepare_inputs_for_generation(self, input_ids, max_length, attention_mask: Optional[jax.Array] = ...): ...
+    def prepare_inputs_for_generation(
+        self, input_ids, max_length, attention_mask: Optional[jax.Array] = ...
+    ):  # -> dict[str, Any]:
+        ...
     def update_inputs_for_generation(self, model_outputs, model_kwargs): ...
 
 __all__ = ["FlaxGPTJForCausalLM", "FlaxGPTJModel", "FlaxGPTJPreTrainedModel"]

@@ -30,30 +30,74 @@ class VoxtralPreTrainedModel(Qwen2AudioPreTrainedModel):
     _supports_attention_backend = ...
     _no_split_modules = ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The Voxtral encoder, which is a Whisper encoder.
+    """
+)
 class VoxtralEncoder(Qwen2AudioEncoder):
     _can_record_outputs = ...
     @check_model_inputs
-    def forward(self, input_features, attention_mask=..., **kwargs: Unpack[TransformersKwargs]): ...
+    def forward(self, input_features, attention_mask=..., **kwargs: Unpack[TransformersKwargs]):  # -> BaseModelOutput:
+        r"""
+        Args:
+            input_features (`torch.LongTensor` of shape `(batch_size, feature_size, sequence_length)`):
+                Float values of mel features extracted from the raw speech waveform. Raw speech waveform can be
+                obtained by loading a `.flac` or `.wav` audio file into an array of type `list[float]` or a
+                `numpy.ndarray`, *e.g.* via the soundfile library (`pip install soundfile`). To prepare the array into
+                `input_features`, the [`AutoFeatureExtractor`] should be used for extracting the mel features, padding
+                and conversion into a tensor of type `torch.FloatTensor`. See [`~WhisperFeatureExtractor.__call__`]
+            attention_mask (`torch.Tensor`)`, *optional*):
+                Voxtral does not support masking of the `input_features`, this argument is preserved for compatibility,
+                but it is not used. By default the silence in the input log mel spectrogram are ignored.
+        """
+        ...
 
 class VoxtralMultiModalProjector(nn.Module):
     def __init__(self, config: VoxtralConfig) -> None: ...
-    def forward(self, audio_features): ...
+    def forward(self, audio_features):  # -> Any:
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The Voxtral model, which consists of Whisper encoder, a multi-modal projector and a LLama language model.
+    """
+)
 class VoxtralForConditionalGeneration(VoxtralPreTrainedModel, GenerationMixin):
     _tied_weights_keys = ...
     _tp_plan = ...
     _pp_plan = ...
     _keep_in_fp32_modules_strict = ...
     def __init__(self, config) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
-    def get_output_embeddings(self): ...
-    def set_output_embeddings(self, new_embeddings): ...
-    def set_decoder(self, decoder): ...
-    def get_decoder(self): ...
-    def get_audio_embeds(self, input_features: torch.FloatTensor): ...
+    def get_input_embeddings(self):  # -> Any:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
+    def get_output_embeddings(self):  # -> Any:
+        ...
+    def set_output_embeddings(self, new_embeddings):  # -> None:
+        ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> Any:
+        ...
+    def get_audio_embeds(self, input_features: torch.FloatTensor):  # -> Any:
+        """
+        This method is used to get the audio embeddings from input features (a log mel spectrogram), meaning inferring the audio encoder and the multi-modal projector.
+        Args:
+            input_features (`torch.FloatTensor`):
+                Float values of mel features extracted from the raw speech waveform. Raw speech waveform can be
+                obtained by loading a `.flac` or `.wav` audio file into an array of type `list[float]` or a
+                `numpy.ndarray`, *e.g.* via the soundfile library (`pip install soundfile`). To prepare the array into
+                `input_features`, the [`AutoFeatureExtractor`] should be used for extracting the mel features, padding
+                and conversion into a tensor of type `torch.FloatTensor`. See [`~WhisperFeatureExtractor.__call__`]
+
+        Returns:
+            `torch.FloatTensor`:
+                The audio embeddings.
+        """
+        ...
+
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -69,7 +113,43 @@ class VoxtralForConditionalGeneration(VoxtralPreTrainedModel, GenerationMixin):
         cache_position: Optional[torch.LongTensor] = ...,
         logits_to_keep: Union[int, torch.Tensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> CausalLMOutputWithPast: ...
-    def prepare_inputs_for_generation(self, *args, **kwargs): ...
+    ) -> CausalLMOutputWithPast:
+        r"""
+        Example:
+
+        ```python
+        >>> from transformers import VoxtralForConditionalGeneration, AutoProcessor
+        >>> import torch
+
+        >>> device = "cuda" if torch.cuda.is_available() else "cpu"
+        >>> repo_id = "mistralai/Voxtral-Mini-3B-2507"
+
+        >>> processor = AutoProcessor.from_pretrained(repo_id)
+        >>> model = VoxtralForConditionalGeneration.from_pretrained(repo_id, torch_dtype=torch.bfloat16, device_map=device)
+
+        >>> conversation = [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "audio",
+                        "url": "https://huggingface.co/datasets/hf-internal-testing/dummy-audio-samples/resolve/main/dude_where_is_my_car.wav",
+                    },
+                    {"type": "text", "text": "What can you tell me about this audio?"},
+                ],
+            }
+        ]
+
+        >>> inputs = processor.apply_chat_template(conversation)
+        >>> inputs = inputs.to(device, dtype=torch.bfloat16)
+
+        >>> outputs = model.generate(**inputs, max_new_tokens=30)
+        >>> processor.batch_decode(outputs[:, inputs.input_ids.shape[1]:], skip_special_tokens=True)
+        ["This audio is a humorous conversation between two friends, likely in English, where one of them is trying to figure out what the other's tattoo says."]
+        ```"""
+        ...
+
+    def prepare_inputs_for_generation(self, *args, **kwargs):  # -> dict[Any, Any]:
+        ...
 
 __all__ = ["VoxtralPreTrainedModel", "VoxtralEncoder", "VoxtralForConditionalGeneration"]

@@ -14,12 +14,28 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring
 from .configuration_mobilenet_v2 import MobileNetV2Config
 
+"""PyTorch MobileNetV2 model."""
 logger = ...
 
-def load_tf_weights_in_mobilenet_v2(model, config, tf_checkpoint_path): ...
-def make_divisible(value: int, divisor: int = ..., min_value: Optional[int] = ...) -> int: ...
+def load_tf_weights_in_mobilenet_v2(model, config, tf_checkpoint_path):
+    """Load TensorFlow checkpoints in a PyTorch model."""
+    ...
+
+def make_divisible(value: int, divisor: int = ..., min_value: Optional[int] = ...) -> int:
+    """
+    Ensure that all layers have a channel count that is divisible by `divisor`. This function is taken from the
+    original TensorFlow repo. It can be seen here:
+    https://github.com/tensorflow/models/blob/master/research/slim/nets/mobilenet/mobilenet.py
+    """
+    ...
+
 def apply_depth_multiplier(config: MobileNetV2Config, channels: int) -> int: ...
-def apply_tf_padding(features: torch.Tensor, conv_layer: nn.Conv2d) -> torch.Tensor: ...
+def apply_tf_padding(features: torch.Tensor, conv_layer: nn.Conv2d) -> torch.Tensor:
+    """
+    Apply TensorFlow-style "SAME" padding to a convolution layer. See the notes at:
+    https://www.tensorflow.org/api_docs/python/tf/nn#notes_on_padding_2
+    """
+    ...
 
 class MobileNetV2ConvLayer(nn.Module):
     def __init__(
@@ -61,7 +77,13 @@ class MobileNetV2PreTrainedModel(PreTrainedModel):
 
 @auto_docstring
 class MobileNetV2Model(MobileNetV2PreTrainedModel):
-    def __init__(self, config: MobileNetV2Config, add_pooling_layer: bool = ...) -> None: ...
+    def __init__(self, config: MobileNetV2Config, add_pooling_layer: bool = ...) -> None:
+        r"""
+        add_pooling_layer (bool, *optional*, defaults to `True`):
+            Whether to add a pooling layer
+        """
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -70,7 +92,12 @@ class MobileNetV2Model(MobileNetV2PreTrainedModel):
         return_dict: Optional[bool] = ...,
     ) -> Union[tuple, BaseModelOutputWithPoolingAndNoAttention]: ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    MobileNetV2 model with an image classification head on top (a linear layer on top of the pooled features), e.g. for
+    ImageNet.
+    """
+)
 class MobileNetV2ForImageClassification(MobileNetV2PreTrainedModel):
     def __init__(self, config: MobileNetV2Config) -> None: ...
     @auto_docstring
@@ -80,13 +107,28 @@ class MobileNetV2ForImageClassification(MobileNetV2PreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         labels: Optional[torch.Tensor] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ImageClassifierOutputWithNoAttention]: ...
+    ) -> Union[tuple, ImageClassifierOutputWithNoAttention]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss). If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 class MobileNetV2DeepLabV3Plus(nn.Module):
+    """
+    The neural network from the paper "Encoder-Decoder with Atrous Separable Convolution for Semantic Image
+    Segmentation" https://huggingface.co/papers/1802.02611
+    """
     def __init__(self, config: MobileNetV2Config) -> None: ...
     def forward(self, features: torch.Tensor) -> torch.Tensor: ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    MobileNetV2 model with a semantic segmentation head on top, e.g. for Pascal VOC.
+    """
+)
 class MobileNetV2ForSemanticSegmentation(MobileNetV2PreTrainedModel):
     def __init__(self, config: MobileNetV2Config) -> None: ...
     @auto_docstring
@@ -96,7 +138,34 @@ class MobileNetV2ForSemanticSegmentation(MobileNetV2PreTrainedModel):
         labels: Optional[torch.Tensor] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, SemanticSegmenterOutput]: ...
+    ) -> Union[tuple, SemanticSegmenterOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, height, width)`, *optional*):
+            Ground truth semantic segmentation maps for computing the loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels > 1`, a classification loss is computed (Cross-Entropy).
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoImageProcessor, MobileNetV2ForSemanticSegmentation
+        >>> from PIL import Image
+        >>> import requests
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> image_processor = AutoImageProcessor.from_pretrained("google/deeplabv3_mobilenet_v2_1.0_513")
+        >>> model = MobileNetV2ForSemanticSegmentation.from_pretrained("google/deeplabv3_mobilenet_v2_1.0_513")
+
+        >>> inputs = image_processor(images=image, return_tensors="pt")
+
+        >>> with torch.no_grad():
+        ...     outputs = model(**inputs)
+
+        >>> # logits are of shape (batch_size, num_labels, height, width)
+        >>> logits = outputs.logits
+        ```"""
+        ...
 
 __all__ = [
     "MobileNetV2ForImageClassification",

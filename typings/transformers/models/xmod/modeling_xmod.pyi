@@ -22,14 +22,28 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring
 from .configuration_xmod import XmodConfig
 
+"""PyTorch X-MOD model."""
 logger = ...
 
 class XmodEmbeddings(nn.Module):
+    """
+    Same as BertEmbeddings with a tiny tweak for positional embeddings indexing.
+    """
     def __init__(self, config) -> None: ...
     def forward(
         self, input_ids=..., token_type_ids=..., position_ids=..., inputs_embeds=..., past_key_values_length=...
-    ): ...
-    def create_position_ids_from_inputs_embeds(self, inputs_embeds): ...
+    ):  # -> Any:
+        ...
+    def create_position_ids_from_inputs_embeds(self, inputs_embeds):  # -> Tensor:
+        """
+        We are provided embeddings directly. We cannot infer which are padded so just generate sequential position ids.
+
+        Args:
+            inputs_embeds: torch.Tensor
+
+        Returns: torch.Tensor
+        """
+        ...
 
 class XmodSelfAttention(nn.Module):
     def __init__(self, config, position_embedding_type=..., layer_idx=...) -> None: ...
@@ -50,7 +64,8 @@ class XmodSelfOutput(nn.Module):
 
 class XmodAttention(nn.Module):
     def __init__(self, config, position_embedding_type=..., layer_idx=...) -> None: ...
-    def prune_heads(self, heads): ...
+    def prune_heads(self, heads):  # -> None:
+        ...
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -75,7 +90,8 @@ class XmodOutput(nn.Module):
     def forward(
         self, hidden_states: torch.Tensor, input_tensor: torch.Tensor, lang_ids: torch.Tensor
     ) -> torch.Tensor: ...
-    def lang_adapter(self, lang_ids: torch.Tensor, hidden_states: torch.Tensor): ...
+    def lang_adapter(self, lang_ids: torch.Tensor, hidden_states: torch.Tensor):  # -> Tensor:
+        ...
 
 class XmodLayer(GradientCheckpointingLayer):
     def __init__(self, config, layer_idx=...) -> None: ...
@@ -91,7 +107,8 @@ class XmodLayer(GradientCheckpointingLayer):
         output_attentions: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
     ) -> tuple[torch.Tensor]: ...
-    def feed_forward_chunk(self, attention_output): ...
+    def feed_forward_chunk(self, attention_output):  # -> Any:
+        ...
 
 class XmodEncoder(nn.Module):
     def __init__(self, config) -> None: ...
@@ -120,14 +137,48 @@ class XmodPreTrainedModel(PreTrainedModel):
     config: XmodConfig
     base_model_prefix = ...
     supports_gradient_checkpointing = ...
-    def set_default_language(self, language: str): ...
-    def freeze_embeddings_and_language_adapters(self): ...
+    def set_default_language(self, language: str):  # -> None:
+        """
+        Set the default language code for the model. This is used when the language is not specified in the input.
 
-@auto_docstring(custom_intro=...)
+        Args:
+            language (`str`): The language code, such as `"en_XX"` or `"de_DE"`.
+        """
+        ...
+
+    def freeze_embeddings_and_language_adapters(self):  # -> None:
+        """
+        Freeze the embeddings and language adapters of the model. Usually, this is applied before the model is
+        fine-tuned on a downstream task.
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    The model can behave as an encoder (with only self-attention) as well as a decoder, in which case a layer of
+    cross-attention is added between the self-attention layers, following the architecture described in *Attention is
+    all you need*_ by Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Lukasz
+    Kaiser and Illia Polosukhin.
+
+    To behave as an decoder the model needs to be initialized with the `is_decoder` argument of the configuration set
+    to `True`. To be used in a Seq2Seq model, the model needs to initialized with both `is_decoder` argument and
+    `add_cross_attention` set to `True`; an `encoder_hidden_states` is then expected as an input to the forward pass.
+
+    .. _*Attention is all you need*: https://huggingface.co/papers/1706.03762
+    """
+)
 class XmodModel(XmodPreTrainedModel):
-    def __init__(self, config, add_pooling_layer=...) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def __init__(self, config, add_pooling_layer=...) -> None:
+        r"""
+        add_pooling_layer (bool, *optional*, defaults to `True`):
+            Whether to add a pooling layer
+        """
+        ...
+
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -146,14 +197,26 @@ class XmodModel(XmodPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple[torch.Tensor], BaseModelOutputWithPoolingAndCrossAttentions]: ...
+    ) -> Union[tuple[torch.Tensor], BaseModelOutputWithPoolingAndCrossAttentions]:
+        r"""
+        lang_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Indices of the language adapters that should be activated for each sample, respectively. Default: the index
+            that corresponds to `self.config.default_language`.
+        """
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    X-MOD Model with a `language modeling` head on top for CLM fine-tuning.
+    """
+)
 class XmodForCausalLM(XmodPreTrainedModel, GenerationMixin):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
-    def get_output_embeddings(self): ...
-    def set_output_embeddings(self, new_embeddings): ...
+    def get_output_embeddings(self):  # -> Linear:
+        ...
+    def set_output_embeddings(self, new_embeddings):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -174,14 +237,43 @@ class XmodForCausalLM(XmodPreTrainedModel, GenerationMixin):
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
         **kwargs,
-    ) -> Union[tuple[torch.Tensor], CausalLMOutputWithCrossAttentions]: ...
+    ) -> Union[tuple[torch.Tensor], CausalLMOutputWithCrossAttentions]:
+        r"""
+        lang_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Indices of the language adapters that should be activated for each sample, respectively. Default: the index
+            that corresponds to `self.config.default_language`.
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the left-to-right language modeling loss (next word prediction). Indices should be in
+            `[-100, 0, ..., config.vocab_size]` (see `input_ids` docstring) Tokens with indices set to `-100` are
+            ignored (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, XmodForCausalLM, AutoConfig
+        >>> import torch
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("FacebookAI/xlm-roberta-base")
+        >>> config = AutoConfig.from_pretrained("facebook/xmod-base")
+        >>> config.is_decoder = True
+        >>> model = XmodForCausalLM.from_pretrained("facebook/xmod-base", config=config)
+        >>> model.set_default_language("en_XX")
+
+        >>> inputs = tokenizer("Hello, my dog is cute", return_tensors="pt")
+        >>> outputs = model(**inputs)
+
+        >>> prediction_logits = outputs.logits
+        ```"""
+        ...
 
 @auto_docstring
 class XmodForMaskedLM(XmodPreTrainedModel):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
-    def get_output_embeddings(self): ...
-    def set_output_embeddings(self, new_embeddings): ...
+    def get_output_embeddings(self):  # -> Linear:
+        ...
+    def set_output_embeddings(self, new_embeddings):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -198,13 +290,30 @@ class XmodForMaskedLM(XmodPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], MaskedLMOutput]: ...
+    ) -> Union[tuple[torch.Tensor], MaskedLMOutput]:
+        r"""
+        lang_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Indices of the language adapters that should be activated for each sample, respectively. Default: the index
+            that corresponds to `self.config.default_language`.
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should be in `[-100, 0, ...,
+            config.vocab_size]` (see `input_ids` docstring) Tokens with indices set to `-100` are ignored (masked), the
+            loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`
+        """
+        ...
 
 class XmodLMHead(nn.Module):
+    """Roberta Head for masked language modeling."""
     def __init__(self, config) -> None: ...
-    def forward(self, features, **kwargs): ...
+    def forward(self, features, **kwargs):  # -> Any:
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    X-MOD Model transformer with a sequence classification/regression head on top (a linear layer on top of the pooled
+    output) e.g. for GLUE tasks.
+    """
+)
 class XmodForSequenceClassification(XmodPreTrainedModel):
     def __init__(self, config) -> None: ...
     @auto_docstring
@@ -221,7 +330,17 @@ class XmodForSequenceClassification(XmodPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], SequenceClassifierOutput]: ...
+    ) -> Union[tuple[torch.Tensor], SequenceClassifierOutput]:
+        r"""
+        lang_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Indices of the language adapters that should be activated for each sample, respectively. Default: the index
+            that corresponds to `self.config.default_language`.
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 @auto_docstring
 class XmodForMultipleChoice(XmodPreTrainedModel):
@@ -240,7 +359,41 @@ class XmodForMultipleChoice(XmodPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], MultipleChoiceModelOutput]: ...
+    ) -> Union[tuple[torch.Tensor], MultipleChoiceModelOutput]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`):
+            Indices of input sequence tokens in the vocabulary.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        lang_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`, *optional*):
+            Indices of the language adapters that should be activated for each sample, respectively. Default: the index
+            that corresponds to `self.config.default_language`.
+        token_type_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`, *optional*):
+            Segment token indices to indicate first and second portions of the inputs. Indices are selected in `[0,
+            1]`:
+
+            - 0 corresponds to a *sentence A* token,
+            - 1 corresponds to a *sentence B* token.
+
+            [What are token type IDs?](../glossary#token-type-ids)
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the multiple choice classification loss. Indices should be in `[0, ...,
+            num_choices-1]` where `num_choices` is the size of the second dimension of the input tensors. (See
+            `input_ids` above)
+        position_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`, *optional*):
+            Indices of positions of each input sequence tokens in the position embeddings. Selected in the range `[0,
+            config.max_position_embeddings - 1]`.
+
+            [What are position IDs?](../glossary#position-ids)
+        inputs_embeds (`torch.FloatTensor` of shape `(batch_size, num_choices, sequence_length, hidden_size)`, *optional*):
+            Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation. This
+            is useful if you want more control over how to convert `input_ids` indices into associated vectors than the
+            model's internal embedding lookup matrix.
+        """
+        ...
 
 @auto_docstring
 class XmodForTokenClassification(XmodPreTrainedModel):
@@ -259,11 +412,21 @@ class XmodForTokenClassification(XmodPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], TokenClassifierOutput]: ...
+    ) -> Union[tuple[torch.Tensor], TokenClassifierOutput]:
+        r"""
+        lang_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Indices of the language adapters that should be activated for each sample, respectively. Default: the index
+            that corresponds to `self.config.default_language`.
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the token classification loss. Indices should be in `[0, ..., config.num_labels - 1]`.
+        """
+        ...
 
 class XmodClassificationHead(nn.Module):
+    """Head for sentence-level classification tasks."""
     def __init__(self, config) -> None: ...
-    def forward(self, features, **kwargs): ...
+    def forward(self, features, **kwargs):  # -> Any:
+        ...
 
 @auto_docstring
 class XmodForQuestionAnswering(XmodPreTrainedModel):
@@ -283,9 +446,25 @@ class XmodForQuestionAnswering(XmodPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], QuestionAnsweringModelOutput]: ...
+    ) -> Union[tuple[torch.Tensor], QuestionAnsweringModelOutput]:
+        r"""
+        lang_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Indices of the language adapters that should be activated for each sample, respectively. Default: the index
+            that corresponds to `self.config.default_language`.
+        """
+        ...
 
-def create_position_ids_from_input_ids(input_ids, padding_idx, past_key_values_length=...): ...
+def create_position_ids_from_input_ids(input_ids, padding_idx, past_key_values_length=...):
+    """
+    Replace non-padding symbols with their position numbers. Position numbers begin at padding_idx+1. Padding symbols
+    are ignored. This is modified from fairseq's `utils.make_positions`.
+
+    Args:
+        x: torch.Tensor x:
+
+    Returns: torch.Tensor
+    """
+    ...
 
 __all__ = [
     "XmodForCausalLM",

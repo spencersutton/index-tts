@@ -13,6 +13,12 @@ from ...utils import auto_docstring, is_torch_available
 if is_torch_available(): ...
 
 class DeepseekVLFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
+    r"""
+    min_size (`int`, *optional*, defaults to 14):
+        The minimum allowed size for the resized image. Ensures that neither the height nor width
+        falls below this value after resizing.
+    """
+
     min_size: int
     ...
 
@@ -39,6 +45,21 @@ class DeepseekVLImageProcessorFast(BaseImageProcessorFast):
     ) -> torch.Tensor: ...
     def pad_to_square(
         self, images: torch.Tensor, background_color: Union[int, tuple[int, int, int]] = ...
-    ) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """
+        Pads an image to a square based on the longest edge.
+
+        Args:
+            images (`torch.Tensor`):
+                The images to pad.
+            background_color (`int` or `tuple[int, int, int]`, *optional*, defaults to 0):
+                The color to use for the padding. Can be an integer for single channel or a
+                tuple of integers representing for multi-channel images. If passed as integer
+                in mutli-channel mode, it will default to `0` in subsequent channels.
+
+        Returns:
+            `torch.Tensor`: The padded images.
+        """
+        ...
 
 __all__ = ["DeepseekVLImageProcessorFast"]

@@ -23,14 +23,29 @@ class VipLlavaCausalLMOutputWithPast(LlavaCausalLMOutputWithPast): ...
 
 class VipLlavaMultiModalProjector(nn.Module):
     def __init__(self, config: VipLlavaConfig) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class VipLlavaPreTrainedModel(LlavaPreTrainedModel): ...
 
 class VipLlavaModel(LlavaModel):
     def get_image_features(
         self, pixel_values: torch.FloatTensor, vision_feature_layers: Optional[Union[int, list[int]]] = ...
-    ): ...
+    ):  # -> Any:
+        """
+        Obtains image last hidden states from the vision tower and apply multimodal projection.
+
+        Args:
+            pixel_values (`torch.FloatTensor]` of shape `(batch_size, channels, height, width)`)
+               The tensors corresponding to the input images.
+            vision_feature_layers (`Union[int, list[int]]`):
+                The vision feature layer, or the list of indexes of the layers to select
+                the vision feature.
+        Returns:
+            image_features (`torch.Tensor`): Image feature tensor of shape `(num_images, image_length, embed_dim)`).
+        """
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -47,12 +62,19 @@ class VipLlavaModel(LlavaModel):
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         **lm_kwargs,
-    ) -> Union[tuple, VipLlavaModelOutputWithPast]: ...
+    ) -> Union[tuple, VipLlavaModelOutputWithPast]:
+        r"""
+        vision_feature_layers (`Union[int, list[int]]`, *optional*):
+            The vision feature layer, or the list of indexes of the layers to select
+            the vision feature.
+        """
+        ...
 
 class VipLlavaForConditionalGeneration(LlavaForConditionalGeneration):
     def get_image_features(
         self, pixel_values: torch.FloatTensor, vision_feature_layers: Optional[Union[int, list[int]]] = ...
-    ): ...
+    ):  # -> tuple[Tensor, ...] | list[Any]:
+        ...
     def forward(
         self,
         input_ids: torch.LongTensor = ...,
@@ -70,6 +92,40 @@ class VipLlavaForConditionalGeneration(LlavaForConditionalGeneration):
         cache_position: Optional[torch.LongTensor] = ...,
         logits_to_keep: Union[int, torch.Tensor] = ...,
         **lm_kwargs,
-    ) -> Union[tuple, VipLlavaCausalLMOutputWithPast]: ...
+    ) -> Union[tuple, VipLlavaCausalLMOutputWithPast]:
+        r"""
+        vision_feature_layers (`Union[int, list[int]]`, *optional*):
+            The vision feature layer, or the list of indexes of the layers to select
+            the vision feature.
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Example:
+
+        ```python
+        >>> import torch
+        >>> from PIL import Image
+        >>> import requests
+        >>> from transformers import AutoProcessor, VipLlavaForConditionalGeneration
+
+        >>> model = VipLlavaForConditionalGeneration.from_pretrained("llava-hf/vip-llava-7b-hf", device_map="auto", torch_dtype=torch.float16)
+        >>> processor = AutoProcessor.from_pretrained("llava-hf/vip-llava-7b-hf")
+
+        >>> prompt = "A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.###Human: <image>\n{}###Assistant:"
+        >>> question = "Can you please describe this image?"
+        >>> prompt = prompt.format(question)
+        >>> url = "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/compel-neg.png"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> inputs = processor(text=text, images=image, return_tensors="pt").to(0, torch.float16)
+
+        >>> # Generate
+        >>> generate_ids = model.generate(**inputs, max_new_tokens=20)
+        >>> processor.decode(generate_ids[0][len(inputs["input_ids"][0]):], skip_special_tokens=True)
+        The image features a brown and white cat sitting on a green surface, with a red ball in its
+        ```"""
+        ...
 
 __all__ = ["VipLlavaModel", "VipLlavaForConditionalGeneration", "VipLlavaPreTrainedModel"]

@@ -14,6 +14,7 @@ from xlstm.xlstm_large.model import (
     WeightModeType,
 )
 
+"""xLSTM configuration."""
 if is_xlstm_available():
     external_xlstm = ...
 else:
@@ -23,12 +24,105 @@ else:
     SequenceKernelType = ...
     StepKernelType = ...
     WeightModeType = ...
-    def round_up_to_next_multiple_of(x: int, multiple_of: int) -> int: ...
+    def round_up_to_next_multiple_of(x: int, multiple_of: int) -> int:
+        """Rounds up x to the next multiple of multiple_of."""
+        ...
 
     external_xlstm = ...
 logger = ...
 
 class xLSTMConfig(PretrainedConfig):
+    """
+    This is the configuration class to store the configuration of a [`xLSTM`]. It is used to instantiate a xLSTM
+    model according to the specified arguments, defining the model architecture. Instantiating a configuration with the
+    defaults will yield a similar configuration to that of the xLSTM-7b [NX-AI/xLSTM-7b](https://huggingface.co/NX-AI/xLSTM-7b) model.
+
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
+
+
+    Args:
+        vocab_size (int, optional, *optional*, defaults to 50304):
+            Vocabulary size of the xLSTM model. Defines the number of different tokens that can be represented by the
+            `inputs_ids` passed when calling [`xLSTMModel`]. Defaults to the GPT2-NeoX tokenizer size.
+        hidden_size (int, optional, *optional*, defaults to 4096):
+            Dimensionality of the embeddings or hidden states.
+        embedding_dim (int, optional, *optional*, defaults to 4096):
+            Dimensionality of the embeddings or hidden states, use hidde_size if None.
+        num_hidden_layers (int, optional, *optional*, defaults to 32):
+            Number of blocks of the xLSTM model.
+        num_blocks (int, optional, *optional*, defaults to 32):
+            Number of blocks of the xLSTM model, use num_hidden_layers if None.
+        num_heads (int, optional, *optional*, defaults to 8):
+            Number of heads for the xLSTM Layer/Cell.
+        use_bias (bool, optional, *optional*, defaults to `False`):
+            Whether to use biases in the xLSTM model.
+        norm_reduction_force_float32 (bool, optional, *optional*, defaults to `True`):
+            Whether to force the float32 norm reduction op to be done in fp32 precision.
+        tie_word_embeddings (bool, optional, *optional*, defaults to `False`):
+            Whether to tie word embeddings to the lm head weights.
+        add_out_norm (bool, optional, *optional*, defaults to `True`):
+            Whether to add an output norm after the blocks before the LMHead.
+        norm_eps (float, optional, *optional*, defaults to 1e-06):
+            Norm eps for RMSNorm and Layer Norm.
+        qk_dim_factor (float, optional, *optional*, defaults to 0.5):
+            Scale factor for the query and key dimension.
+        v_dim_factor (float, optional, *optional*, defaults to 1.0):
+            Scale factor for the value dimension.
+        chunkwise_kernel (ChunkwiseKernelType, optional, *optional*, defaults to `"chunkwise--native_autograd"`):
+            Kernel type for chunkwise processing mode.
+        sequence_kernel (SequenceKernelType, optional, *optional*, defaults to `"native_sequence__native"`):
+            Kernel type for sequence processing mode.
+        step_kernel (StepKernelType, optional, *optional*, defaults to `"native"`):
+            Kernel type for step processing mode.
+        mode (BackendModeType, optional, *optional*, defaults to `"inference"`):
+            Operation mode (inference is needed for generation).
+        chunk_size (int, optional, *optional*, defaults to 64):
+            Internal chunk size.
+        return_last_states (bool, optional, *optional*, defaults to `True`):
+            If to return the last states / cache internally. Needed as True for generation.
+        autocast_kernel_dtype (DtypeType, optional, *optional*, defaults to `"bfloat16"`):
+            Kernel dtype for the states.
+        eps (float, optional, *optional*, defaults to 1e-06):
+            Epsilon for the mLSTM cell post norm.
+        inference_state_dtype (DtypeType, optional, *optional*, defaults to `"float32"`):
+            Kernel dtype for states in inference.
+        ffn_proj_factor (float, optional, *optional*, defaults to 2.667):
+            Size factor of the post-up projection gated Feed Forward network.
+        ffn_round_up_to_multiple_of (int, optional, *optional*, defaults to 64):
+            Size factor round value of the post-up projection gated Feed Forward network.
+        gate_soft_cap (float, optional, *optional*, defaults to 15.0):
+            Gate soft cap scale.
+        output_logit_soft_cap (float, optional, *optional*, defaults to 30.0):
+            Output logit soft cap scale.
+        weight_mode (`Literal`, *optional*, defaults to `"single"`):
+            Whether parallel linear layers are separated or fused (single).
+        use_cache (bool, optional, *optional*, defaults to `True`):
+            Whether to use the cache (xLSTMCache).
+        pad_token_id (int, optional, *optional*, defaults to 1):
+            Pad token id needed for generation.
+        bos_token_id (int, optional, *optional*, defaults to 0):
+            BOS token id needed for generation.
+        eos_token_id (int, optional, *optional*, defaults to 2):
+            EOS token id needed for generation.
+        max_inference_chunksize (int, optional, *optional*, defaults to 16384):
+            Limit the chunk size for inference to save memory.
+
+    Example:
+
+    ```python
+    >>> from transformers import xLSTMConfig, xLSTMModel
+
+    >>> # Initializing a xLSTM configuration
+    >>> configuration = xLSTMConfig()
+
+    >>> # Initializing a model (with random weights) from the configuration
+    >>> model = xLSTMModel(configuration)
+
+    >>> # Accessing the model configuration
+    >>> configuration = model.config
+    ```"""
+
     model_type = ...
     def __init__(
         self,
@@ -67,13 +161,18 @@ class xLSTMConfig(PretrainedConfig):
         **kwargs,
     ) -> None: ...
     @property
-    def qk_dim(self): ...
+    def qk_dim(self):  # -> int:
+        ...
     @property
-    def v_dim(self): ...
+    def v_dim(self):  # -> int:
+        ...
     @property
-    def qk_head_dim(self): ...
+    def qk_head_dim(self):  # -> int:
+        ...
     @property
-    def v_head_dim(self): ...
-    def to_xlstm_block_config(self): ...
+    def v_head_dim(self):  # -> int:
+        ...
+    def to_xlstm_block_config(self):  # -> Self:
+        ...
 
 __all__ = ["xLSTMConfig"]

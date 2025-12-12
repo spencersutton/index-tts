@@ -595,6 +595,7 @@ class IndexTTS2:
         style = self.campplus_model(feat.unsqueeze(0))
 
         length_regulator = self.s2mel.models["length_regulator"]
+        assert isinstance(length_regulator, InterpolateRegulator)
         prompt_condition = length_regulator(S_ref, ylens=ref_target_lengths, n_quantizers=3, f0=None)[0]
         emovec_mat: Tensor | None = None
         weight_vector: Tensor | None = None
@@ -614,9 +615,10 @@ class IndexTTS2:
 
         emo_audio, _ = _load_and_cut_audio(emo_audio_prompt, 15, sr=16000)
         emo_inputs = self.extract_features(emo_audio, sampling_rate=16000, return_tensors="pt")  # pyright: ignore[reportArgumentType]
-        emo_input_features = emo_inputs["input_features"].to(self.device)
-        emo_attention_mask = emo_inputs["attention_mask"].to(self.device)
-        emo_cond_emb = self.get_emb(emo_input_features, emo_attention_mask)
+        emo_cond_emb = self.get_emb(
+            emo_inputs["input_features"].to(self.device),
+            emo_inputs["attention_mask"].to(self.device),
+        )
 
         self._set_gr_progress(0.1, "text processing...")
         text_tokens_list = self.tokenizer.tokenize(text)
@@ -625,7 +627,6 @@ class IndexTTS2:
             max_text_tokens_per_segment,
             quick_streaming_tokens=quick_streaming_tokens,
         )
-        segments_count = len(segments)
 
         text_token_ids = self.tokenizer.convert_tokens_to_ids(text_tokens_list)
         if self.tokenizer.unk_token_id in text_token_ids:
@@ -644,17 +645,9 @@ class IndexTTS2:
             )
 
         logger.debug("text_tokens_list: %s", text_tokens_list)
-        logger.debug("segments count: %d", segments_count)
+        logger.debug("segments count: %d", len(segments))
         logger.debug("max_text_tokens_per_segment: %d", max_text_tokens_per_segment)
         logger.debug(*segments)
-        do_sample = generation_kwargs.pop("do_sample", True)
-        top_p = generation_kwargs.pop("top_p", 0.8)
-        top_k = generation_kwargs.pop("top_k", 30)
-        temperature = generation_kwargs.pop("temperature", 0.8)
-        autoregressive_batch_size = 1
-        length_penalty = generation_kwargs.pop("length_penalty", 0.0)
-        num_beams = generation_kwargs.pop("num_beams", 3)
-        repetition_penalty = generation_kwargs.pop("repetition_penalty", 10.0)
         max_mel_tokens = generation_kwargs.pop("max_mel_tokens", 1500)
 
         # [OPTIMIZATION] Pre-calculate emovec once before the loop
@@ -729,14 +722,14 @@ class IndexTTS2:
                         device=self.device,
                     ),
                     emo_vec=emovec,
-                    do_sample=do_sample,
-                    top_p=top_p,
-                    top_k=top_k,
-                    temperature=temperature,
-                    num_return_sequences=autoregressive_batch_size,
-                    length_penalty=length_penalty,
-                    num_beams=num_beams,
-                    repetition_penalty=repetition_penalty,
+                    do_sample=generation_kwargs.pop("do_sample", True),
+                    top_p=generation_kwargs.pop("top_p", 0.8),
+                    top_k=generation_kwargs.pop("top_k", 30),
+                    temperature=generation_kwargs.pop("temperature", 0.8),
+                    num_return_sequences=1,
+                    length_penalty=generation_kwargs.pop("length_penalty", 0.0),
+                    num_beams=generation_kwargs.pop("num_beams", 3),
+                    repetition_penalty=generation_kwargs.pop("repetition_penalty", 10.0),
                     max_generate_length=max_mel_tokens,
                     **generation_kwargs,
                 )
@@ -754,8 +747,8 @@ class IndexTTS2:
             # Process each segment result
             for seg_idx, code in enumerate(codes_batch):
                 self._set_gr_progress(
-                    0.2 + 0.7 * seg_idx / segments_count,
-                    f"speech synthesis {seg_idx + 1}/{segments_count}...",
+                    0.2 + 0.7 * seg_idx / len(segments),
+                    f"speech synthesis {seg_idx + 1}/{len(segments)}...",
                 )
 
                 # Trim code
@@ -811,8 +804,6 @@ class IndexTTS2:
                     S_infer += latent
                     target_lengths = (code_lens * 1.72).long()
 
-                    length_regulator = self.s2mel.models["length_regulator"]
-                    assert isinstance(length_regulator, InterpolateRegulator)
                     cond = length_regulator(S_infer, ylens=target_lengths, n_quantizers=3, f0=None)[0]
                     cat_condition = torch.cat([prompt_condition, cond], dim=1)
                     cfm = cast(CFM, self.s2mel.models["cfm"])

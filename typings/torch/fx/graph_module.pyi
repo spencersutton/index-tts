@@ -1,9 +1,7 @@
 import os
-from typing import Any
-
 import torch
+from typing import Any
 from torch.package import PackageExporter, PackageImporter
-
 from ._compatibility import compatibility
 from .graph import Graph, PythonCode
 
@@ -35,12 +33,7 @@ class _WrappedCall:
 class GraphModule(torch.nn.Module):
     def __new__(cls: type[GraphModule], *args, **kwargs) -> Self: ...
     @compatibility(is_backward_compatible=True)
-    def __init__(
-        self,
-        root: torch.nn.Module | dict[str, Any],
-        graph: Graph,
-        class_name: str = ...,
-    ) -> None: ...
+    def __init__(self, root: torch.nn.Module | dict[str, Any], graph: Graph, class_name: str = ...) -> None: ...
 
     __jit_unused_properties__ = ...
     @property
@@ -62,9 +55,7 @@ class GraphModule(torch.nn.Module):
     def __reduce_package__(
         self, exporter: PackageExporter
     ) -> tuple[Callable[..., Module], tuple[dict[str, Any], str]]: ...
-    def __reduce__(
-        self,
-    ) -> tuple[Callable[..., Module], tuple[dict[str, Any], str]]: ...
+    def __reduce__(self) -> tuple[Callable[..., Module], tuple[dict[str, Any], str]]: ...
     def __deepcopy__(self, memo) -> Self: ...
     def __copy__(self) -> GraphModule | _LazyGraphModule: ...
     @compatibility(is_backward_compatible=False)

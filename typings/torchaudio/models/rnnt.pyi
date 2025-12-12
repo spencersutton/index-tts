@@ -13,7 +13,11 @@ class _TimeReduction(torch.nn.Module):
 
 class _CustomLSTM(torch.nn.Module):
     def __init__(
-        self, input_dim: int, hidden_dim: int, layer_norm: bool = ..., layer_norm_epsilon: float = ...
+        self,
+        input_dim: int,
+        hidden_dim: int,
+        layer_norm: bool = ...,
+        layer_norm_epsilon: float = ...,
     ) -> None: ...
     def forward(
         self, input: torch.Tensor, state: list[torch.Tensor] | None
@@ -24,7 +28,10 @@ class _Transcriber(ABC):
     def forward(self, input: torch.Tensor, lengths: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]: ...
     @abstractmethod
     def infer(
-        self, input: torch.Tensor, lengths: torch.Tensor, states: list[list[torch.Tensor]] | None
+        self,
+        input: torch.Tensor,
+        lengths: torch.Tensor,
+        states: list[list[torch.Tensor]] | None,
     ) -> tuple[torch.Tensor, torch.Tensor, list[list[torch.Tensor]]]: ...
 
 class _EmformerEncoder(torch.nn.Module, _Transcriber):
@@ -50,7 +57,10 @@ class _EmformerEncoder(torch.nn.Module, _Transcriber):
     def forward(self, input: torch.Tensor, lengths: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]: ...
     @torch.jit.export
     def infer(
-        self, input: torch.Tensor, lengths: torch.Tensor, states: list[list[torch.Tensor]] | None
+        self,
+        input: torch.Tensor,
+        lengths: torch.Tensor,
+        states: list[list[torch.Tensor]] | None,
     ) -> tuple[torch.Tensor, torch.Tensor, list[list[torch.Tensor]]]: ...
 
 class _Predictor(torch.nn.Module):
@@ -66,7 +76,10 @@ class _Predictor(torch.nn.Module):
         lstm_dropout: float = ...,
     ) -> None: ...
     def forward(
-        self, input: torch.Tensor, lengths: torch.Tensor, state: list[list[torch.Tensor]] | None = ...
+        self,
+        input: torch.Tensor,
+        lengths: torch.Tensor,
+        state: list[list[torch.Tensor]] | None = ...,
     ) -> tuple[torch.Tensor, torch.Tensor, list[list[torch.Tensor]]]: ...
 
 class _Joiner(torch.nn.Module):
@@ -91,13 +104,19 @@ class RNNT(torch.nn.Module):
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, list[list[torch.Tensor]]]: ...
     @torch.jit.export
     def transcribe_streaming(
-        self, sources: torch.Tensor, source_lengths: torch.Tensor, state: list[list[torch.Tensor]] | None
+        self,
+        sources: torch.Tensor,
+        source_lengths: torch.Tensor,
+        state: list[list[torch.Tensor]] | None,
     ) -> tuple[torch.Tensor, torch.Tensor, list[list[torch.Tensor]]]: ...
     @torch.jit.export
     def transcribe(self, sources: torch.Tensor, source_lengths: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]: ...
     @torch.jit.export
     def predict(
-        self, targets: torch.Tensor, target_lengths: torch.Tensor, state: list[list[torch.Tensor]] | None
+        self,
+        targets: torch.Tensor,
+        target_lengths: torch.Tensor,
+        state: list[list[torch.Tensor]] | None,
     ) -> tuple[torch.Tensor, torch.Tensor, list[list[torch.Tensor]]]: ...
     @torch.jit.export
     def join(

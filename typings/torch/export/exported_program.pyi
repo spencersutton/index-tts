@@ -1,27 +1,20 @@
 import dataclasses
-from collections.abc import Callable, Iterator
-from typing import TYPE_CHECKING, Any
-
 import sympy
 import torch
 import torch.utils._pytree as pytree
+from collections.abc import Callable, Iterator
+from typing import Any, TYPE_CHECKING, TypeAlias
 from torch._export.verifier import Verifier
 from torch.export.decomp_utils import CustomDecompTable
 from torch.fx._compatibility import compatibility
 from torch.fx._symbolic_trace import _ConstantAttributeType
 from torch.fx.passes.infra.pass_base import PassResult
 from torch.utils._sympy.value_ranges import ValueRanges
-
 from .graph_signature import ArgumentSpec, ExportGraphSignature
 
 if TYPE_CHECKING: ...
-__all__ = [
-    "ExportedProgram",
-    "ModuleCallEntry",
-    "ModuleCallSignature",
-    "default_decompositions",
-]
-type PassType = Callable[[torch.fx.GraphModule], PassResult | None]
+__all__ = ["ExportedProgram", "ModuleCallEntry", "ModuleCallSignature", "default_decompositions"]
+PassType: TypeAlias = Callable[[torch.fx.GraphModule], PassResult | None]
 
 @dataclasses.dataclass
 class ModuleCallSignature:
@@ -111,9 +104,7 @@ class ExportedProgram:
     def module_call_graph(self, value): ...
     @property
     @compatibility(is_backward_compatible=False)
-    def example_inputs(
-        self,
-    ) -> tuple[tuple[Any, ...], dict[str, Any]] | None: ...
+    def example_inputs(self) -> tuple[tuple[Any, ...], dict[str, Any]] | None: ...
     @example_inputs.setter
     @compatibility(is_backward_compatible=False)
     def example_inputs(self, value) -> None: ...

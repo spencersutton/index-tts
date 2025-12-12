@@ -1,33 +1,34 @@
 import os
 from collections.abc import Sequence
-from typing import IO, TYPE_CHECKING, Any, Self
-
-from torch import DispatchKey as DispatchKey
-from torch import Size as Size
-from torch import SymBool as SymBool
-from torch import SymFloat as SymFloat
-from torch import SymInt as SymInt
-from torch import Tensor as Tensor
-from torch import device as _device
-from torch import dtype as _dtype
+from typing import Any, IO, Self, TYPE_CHECKING, TypeAlias
+from torch import (
+    DispatchKey as DispatchKey,
+    Size as Size,
+    SymBool as SymBool,
+    SymFloat as SymFloat,
+    SymInt as SymInt,
+    Tensor as Tensor,
+    device as _device,
+    dtype as _dtype,
+)
 from torch.autograd.graph import GradientEdge
 
 if TYPE_CHECKING: ...
 __all__ = ["Device", "FileLike", "Number", "Storage"]
-type _TensorOrTensors = Tensor | Sequence[Tensor]
-type _TensorOrTensorsOrGradEdge = Tensor | Sequence[Tensor] | GradientEdge | Sequence[GradientEdge]
-type _size = Size | list[int] | tuple[int, ...]
-type _symsize = Size | Sequence[int | SymInt]
-type _dispatchkey = str | DispatchKey
-type IntLikeType = int | SymInt
-type FloatLikeType = float | SymFloat
-type BoolLikeType = bool | SymBool
+_TensorOrTensors: TypeAlias = Tensor | Sequence[Tensor]
+_TensorOrTensorsOrGradEdge: TypeAlias = Tensor | Sequence[Tensor] | GradientEdge | Sequence[GradientEdge]
+_size: TypeAlias = Size | list[int] | tuple[int, ...]
+_symsize: TypeAlias = Size | Sequence[int | SymInt]
+_dispatchkey: TypeAlias = str | DispatchKey
+IntLikeType: TypeAlias = int | SymInt
+FloatLikeType: TypeAlias = float | SymFloat
+BoolLikeType: TypeAlias = bool | SymBool
 py_sym_types = ...
-type PySymType = SymInt | SymFloat | SymBool
-type Number = int | float | bool
+PySymType: TypeAlias = SymInt | SymFloat | SymBool
+Number: TypeAlias = int | float | bool
 _Number = ...
-type FileLike = str | os.PathLike[str] | IO[bytes]
-type Device = _device | str | int | None
+FileLike: TypeAlias = str | os.PathLike[str] | IO[bytes]
+Device: TypeAlias = _device | str | int | None
 
 class Storage:
     _cdata: int

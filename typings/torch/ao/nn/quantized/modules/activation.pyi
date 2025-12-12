@@ -1,15 +1,6 @@
 import torch
 
-__all__ = [
-    "ELU",
-    "Hardswish",
-    "LeakyReLU",
-    "MultiheadAttention",
-    "PReLU",
-    "ReLU6",
-    "Sigmoid",
-    "Softmax",
-]
+__all__ = ["ELU", "Hardswish", "LeakyReLU", "MultiheadAttention", "PReLU", "ReLU6", "Sigmoid", "Softmax"]
 
 class ReLU6(torch.nn.ReLU):
     def __init__(self, inplace=...) -> None: ...
@@ -35,13 +26,7 @@ class ELU(torch.nn.ELU):
 
 class LeakyReLU(torch.nn.LeakyReLU):
     def __init__(
-        self,
-        scale: float,
-        zero_point: int,
-        negative_slope: float = ...,
-        inplace: bool = ...,
-        device=...,
-        dtype=...,
+        self, scale: float, zero_point: int, negative_slope: float = ..., inplace: bool = ..., device=..., dtype=...
     ) -> None: ...
     def forward(self, input) -> Any: ...
     @classmethod
@@ -71,12 +56,7 @@ class MultiheadAttention(torch.ao.nn.quantizable.MultiheadAttention):
     def from_observed(cls, other): ...
 
 class PReLU(torch.nn.Module):
-    def __init__(
-        self,
-        output_scale: float,
-        output_zero_point: int,
-        num_parameters: int = ...,
-    ) -> None: ...
+    def __init__(self, output_scale: float, output_zero_point: int, num_parameters: int = ...) -> None: ...
     def set_weight(self, w: torch.Tensor) -> None: ...
     def forward(self, input: torch.Tensor) -> torch.Tensor: ...
     @classmethod

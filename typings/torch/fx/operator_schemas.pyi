@@ -1,9 +1,7 @@
 import inspect
-from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, NamedTuple
-
 import torch
-
+from collections.abc import Callable
+from typing import Any, NamedTuple, TYPE_CHECKING
 from ._compatibility import compatibility
 from .node import Argument
 
@@ -44,9 +42,7 @@ def get_signature_for_torch_op(
     | None
 ): ...
 @compatibility(is_backward_compatible=False)
-def create_type_hint(
-    x,
-) -> type[list[Any]] | list[Any] | tuple[Any, ...] | tuple[()] | tuple[Any, *tuple[Any, ...]]: ...
+def create_type_hint(x) -> type[list[Any]] | list[Any] | tuple[Any, ...] | tuple[()] | tuple[Any, *tuple[Any, ...]]: ...
 @compatibility(is_backward_compatible=False)
 def type_matches(signature_type: Any, argument_type: Any) -> bool: ...
 @compatibility(is_backward_compatible=False)

@@ -1,11 +1,6 @@
 from typing import Any, Self
 
-__all__ = [
-    "BackwardHook",
-    "RemovableHandle",
-    "unserializable_hook",
-    "warn_if_has_hooks",
-]
+__all__ = ["BackwardHook", "RemovableHandle", "unserializable_hook", "warn_if_has_hooks"]
 
 class RemovableHandle:
     id: int

@@ -1,7 +1,6 @@
 import tensorboard
 from tensorboard.summary.writer.record_writer import RecordWriter
 from torch._vendor.packaging.version import Version
-
 from .writer import FileWriter, SummaryWriter
 
 if not hasattr(tensorboard, "__version__") or Version(tensorboard.__version__) < Version("1.15"): ...

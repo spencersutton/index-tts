@@ -1,5 +1,4 @@
 from torch import Tensor
-
 from .module import Module
 
 __all__ = ["Embedding", "EmbeddingBag"]
@@ -34,14 +33,7 @@ class Embedding(Module):
     def extra_repr(self) -> str: ...
     @classmethod
     def from_pretrained(
-        cls,
-        embeddings,
-        freeze=...,
-        padding_idx=...,
-        max_norm=...,
-        norm_type=...,
-        scale_grad_by_freq=...,
-        sparse=...,
+        cls, embeddings, freeze=..., padding_idx=..., max_norm=..., norm_type=..., scale_grad_by_freq=..., sparse=...
     ) -> Self: ...
 
 class EmbeddingBag(Module):
@@ -73,10 +65,7 @@ class EmbeddingBag(Module):
     ) -> None: ...
     def reset_parameters(self) -> None: ...
     def forward(
-        self,
-        input: Tensor,
-        offsets: Tensor | None = ...,
-        per_sample_weights: Tensor | None = ...,
+        self, input: Tensor, offsets: Tensor | None = ..., per_sample_weights: Tensor | None = ...
     ) -> Tensor: ...
     def extra_repr(self) -> str: ...
     @classmethod

@@ -1,6 +1,5 @@
 from collections.abc import Iterator
 from typing import TypeVar
-
 from torch.utils.data.dataset import Dataset
 from torch.utils.data.sampler import Sampler
 

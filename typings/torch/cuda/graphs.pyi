@@ -1,18 +1,11 @@
-from collections.abc import Callable
-from typing import TYPE_CHECKING, Self, overload
-
 import torch
+from collections.abc import Callable
+from typing import Self, TYPE_CHECKING, overload, TypeAlias
 from torch import Tensor
 from torch.cuda import _POOL_HANDLE
 
 if TYPE_CHECKING: ...
-__all__ = [
-    "CUDAGraph",
-    "graph",
-    "graph_pool_handle",
-    "is_current_stream_capturing",
-    "make_graphed_callables",
-]
+__all__ = ["CUDAGraph", "graph", "graph_pool_handle", "is_current_stream_capturing", "make_graphed_callables"]
 if not hasattr(torch._C, "_CudaStreamBase"): ...
 
 def is_current_stream_capturing() -> bool: ...
@@ -43,7 +36,7 @@ class graph:
     def __enter__(self) -> None: ...
     def __exit__(self, *args: object) -> None: ...
 
-type _ModuleOrCallable = torch.nn.Module | Callable[..., object]
+_ModuleOrCallable: TypeAlias = torch.nn.Module | Callable[..., object]
 
 @overload
 def make_graphed_callables(

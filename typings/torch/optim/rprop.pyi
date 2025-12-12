@@ -1,13 +1,6 @@
 from torch import Tensor
+from .optimizer import Optimizer, ParamsT, _disable_dynamo_if_unsupported, _use_grad_for_differentiable
 
-from .optimizer import (
-    Optimizer,
-    ParamsT,
-    _disable_dynamo_if_unsupported,
-    _use_grad_for_differentiable,
-)
-
-r"""Implementation for the Resilient backpropagation."""
 __all__ = ["Rprop", "rprop"]
 
 class Rprop(Optimizer):

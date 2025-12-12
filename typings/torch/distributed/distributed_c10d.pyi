@@ -1,16 +1,13 @@
 import pickle
+import torch
 from collections import UserString
 from collections.abc import Callable
 from datetime import timedelta
 from typing import Any
 from warnings import deprecated
-
-import torch
 from torch._C._distributed_c10d import ProcessGroup, ReduceOp, Store, Work
-
 from .c10d_logger import _exception_logger, _time_logger
 
-"""Distributed Collective Communication (c10d)."""
 __all__ = [
     "AllToAllOptions",
     "AllreduceCoalescedOptions",
@@ -304,9 +301,7 @@ def broadcast(
 def all_reduce(tensor, op=..., group=..., async_op=...) -> Any | _IllegalWork | Work | None: ...
 @_exception_logger
 @deprecated(
-    "`torch.distributed.all_reduce_coalesced` will be deprecated. If you must "
-    "use it, please revisit our documentation later at "
-    "https://pytorch.org/docs/main/distributed.html#collective-functions",
+    "`torch.distributed.all_reduce_coalesced` will be deprecated. If you must use it, please revisit our documentation later at https://pytorch.org/docs/main/distributed.html#collective-functions",
     category=FutureWarning,
 )
 def all_reduce_coalesced(tensors, op=..., group=..., async_op=...) -> Future[Any] | None: ...
@@ -371,9 +366,7 @@ def all_gather_into_tensor(
 ) -> Any | _IllegalWork | Work | None: ...
 @_exception_logger
 @deprecated(
-    "`torch.distributed.all_gather_coalesced` will be deprecated. If you must use it, "
-    "please revisit our documentation later at "
-    "https://pytorch.org/docs/main/distributed.html#collective-functions",
+    "`torch.distributed.all_gather_coalesced` will be deprecated. If you must use it, please revisit our documentation later at https://pytorch.org/docs/main/distributed.html#collective-functions",
     category=FutureWarning,
 )
 def all_gather_coalesced(output_tensor_lists, input_tensor_list, group=..., async_op=...) -> Future[Any] | None: ...
@@ -401,12 +394,7 @@ def reduce_scatter(output, input_list, op=..., group=..., async_op=...) -> Work 
 def reduce_scatter_tensor(output, input, op=..., group=..., async_op=...) -> Any | _IllegalWork | Work | None: ...
 @_exception_logger
 def all_to_all_single(
-    output,
-    input,
-    output_split_sizes=...,
-    input_split_sizes=...,
-    group=...,
-    async_op=...,
+    output, input, output_split_sizes=..., input_split_sizes=..., group=..., async_op=...
 ) -> Any | Work | None: ...
 @_exception_logger
 def all_to_all(output_tensor_list, input_tensor_list, group=..., async_op=...) -> Work | None: ...
@@ -432,17 +420,8 @@ def new_group(
     device_id: torch.device | None = ...,
 ) -> None: ...
 def new_subgroups(
-    group_size=...,
-    group=...,
-    timeout=...,
-    backend=...,
-    pg_options=...,
-    group_desc=...,
+    group_size=..., group=..., timeout=..., backend=..., pg_options=..., group_desc=...
 ) -> tuple[Any | None, list[Any]]: ...
 def new_subgroups_by_enumeration(
-    ranks_per_subgroup_list,
-    timeout=...,
-    backend=...,
-    pg_options=...,
-    group_desc=...,
+    ranks_per_subgroup_list, timeout=..., backend=..., pg_options=..., group_desc=...
 ) -> tuple[Any | None, list[Any]]: ...

@@ -1,8 +1,7 @@
+import torch
 from collections.abc import Callable
 from typing import Any, Concatenate, ParamSpec, TypeVar
 from warnings import deprecated
-
-import torch
 from torch import _C
 
 __all__ = [
@@ -24,9 +23,7 @@ class FunctionCtx:
     def save_for_forward(self, *tensors: torch.Tensor) -> None: ...
     def mark_dirty(self, *args: torch.Tensor) -> None: ...
     @deprecated(
-        "`mark_shared_storage` is deprecated. "
-        "Tensors with shared storages are automatically tracked. "
-        "Note that calls to `set_()` are not tracked",
+        "`mark_shared_storage` is deprecated. Tensors with shared storages are automatically tracked. Note that calls to `set_()` are not tracked",
         category=FutureWarning,
     )
     def mark_shared_storage(self, *pairs) -> None: ...
@@ -66,9 +63,7 @@ class Function(_SingleLevelFunction):
     @classmethod
     def apply(cls, *args, **kwargs) -> Any | None: ...
 
-def once_differentiable[T, **P, R](
-    fn: Callable[Concatenate[_T, _P], _R],
-) -> Callable[Concatenate[_T, _P], _R]: ...
+def once_differentiable[T, **P, R](fn: Callable[Concatenate[_T, _P], _R]) -> Callable[Concatenate[_T, _P], _R]: ...
 
 class InplaceFunction(Function):
     def __init__(self, inplace=...) -> None: ...

@@ -1,8 +1,7 @@
+import torch
 from abc import ABC, abstractmethod
 from types import TracebackType
 from typing import Any, NamedTuple
-
-import torch
 
 __all__ = ["Join", "JoinHook", "Joinable"]
 
@@ -31,20 +30,11 @@ class _JoinConfig(NamedTuple):
 
 class Join:
     def __init__(
-        self,
-        joinables: list[Joinable],
-        enable: bool = ...,
-        throw_on_early_termination: bool = ...,
-        **kwargs,
+        self, joinables: list[Joinable], enable: bool = ..., throw_on_early_termination: bool = ..., **kwargs
     ) -> None: ...
     def __enter__(self) -> None: ...
     def __exit__(
-        self,
-        type: type[BaseException] | None,
-        value: BaseException | None,
-        traceback: TracebackType | None,
+        self, type: type[BaseException] | None, value: BaseException | None, traceback: TracebackType | None
     ) -> None: ...
     @staticmethod
-    def notify_join_context(
-        joinable: Joinable,
-    ) -> Any | _IllegalWork | Work | None: ...
+    def notify_join_context(joinable: Joinable) -> Any | _IllegalWork | Work | None: ...

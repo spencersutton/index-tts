@@ -1,21 +1,11 @@
-from typing import ClassVar, Literal
-
 import torch
 import torch.ao.nn.intrinsic as nni
+from typing import ClassVar, Literal
 from torch import nn
 from torch.nn.common_types import _size_1_t
-
 from .utils import WeightedQuantizedModule
 
-r"""Quantized convolution modules."""
-__all__ = [
-    "Conv1d",
-    "Conv2d",
-    "Conv3d",
-    "ConvTranspose1d",
-    "ConvTranspose2d",
-    "ConvTranspose3d",
-]
+__all__ = ["Conv1d", "Conv2d", "Conv3d", "ConvTranspose1d", "ConvTranspose2d", "ConvTranspose3d"]
 _SUPPORTED_PADDING = ...
 
 class _ConvNd(WeightedQuantizedModule):

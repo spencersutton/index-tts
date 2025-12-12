@@ -1,15 +1,11 @@
-from collections.abc import Callable
-from typing import Any
-
 import torch
+from collections.abc import Callable
+from typing import Any, TypeAlias
 from torch.fx import Node
 
-"""
-Utils shared by different modes of quantization (eager/graph)
-"""
-type NodePattern = tuple[Node, Node] | tuple[Node, tuple[Node, Node]] | Any
-type QuantizerCls = Any
-type Pattern = Callable | tuple[Callable, Callable] | tuple[Callable, tuple[Callable, Callable]] | Any
+NodePattern: TypeAlias = tuple[Node, Node] | tuple[Node, tuple[Node, Node]] | Any
+QuantizerCls: TypeAlias = Any
+Pattern: TypeAlias = Callable | tuple[Callable, Callable] | tuple[Callable, tuple[Callable, Callable]] | Any
 
 class MatchAllNode: ...
 
@@ -35,16 +31,10 @@ def weight_is_quantized(qconfig) -> bool: ...
 def weight_is_statically_quantized(qconfig) -> bool: ...
 def op_is_int8_dynamically_quantized(qconfig) -> bool: ...
 def get_qconfig_dtypes(qconfig) -> tuple[Any, Any, Any | bool]: ...
-def get_quant_type(
-    qconfig,
-) -> Literal[QuantType.DYNAMIC, QuantType.STATIC, QuantType.WEIGHT_ONLY]: ...
+def get_quant_type(qconfig) -> Literal[QuantType.DYNAMIC, QuantType.STATIC, QuantType.WEIGHT_ONLY]: ...
 def check_min_max_valid(min_val: torch.Tensor, max_val: torch.Tensor) -> bool: ...
 def calculate_qmin_qmax(
-    quant_min: int,
-    quant_max: int,
-    has_customized_qrange: bool,
-    dtype: torch.dtype,
-    reduce_range: bool,
+    quant_min: int, quant_max: int, has_customized_qrange: bool, dtype: torch.dtype, reduce_range: bool
 ) -> tuple[int, int]: ...
 def has_no_children_ignoring_parametrizations(module) -> bool: ...
 def validate_qmin_qmax(quant_min: int, quant_max: int) -> None: ...

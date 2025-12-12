@@ -1,10 +1,8 @@
-from collections.abc import Callable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar
-
 import torch
+from collections.abc import Callable, Mapping, Sequence
+from typing import Any, ParamSpec, TYPE_CHECKING, TypeVar, TypeAlias
 from torch._C import _NodeBase
 from torch.fx.operator_schemas import ArgsKwargsPair
-
 from .._ops import ops as _ops
 from ._compatibility import compatibility
 from .graph import Graph
@@ -12,7 +10,7 @@ from .graph import Graph
 if TYPE_CHECKING: ...
 __all__ = ["Node", "has_side_effect", "map_aggregate", "map_arg"]
 log = ...
-type BaseArgumentTypes = (
+BaseArgumentTypes: TypeAlias = (
     str
     | int
     | float
@@ -29,8 +27,8 @@ type BaseArgumentTypes = (
     | torch.SymFloat
 )
 base_types = ...
-type Target = Callable[..., Any] | str
-type Argument = (
+Target: TypeAlias = Callable[..., Any] | str
+Argument: TypeAlias = (
     tuple[Argument, ...] | Sequence[Argument] | Mapping[str, Argument] | slice | range | Node | BaseArgumentTypes | None
 )
 ArgumentT = TypeVar("ArgumentT", bound=Argument)
@@ -113,11 +111,7 @@ class Node(_NodeBase):
     ) -> str | None: ...
     @compatibility(is_backward_compatible=True)
     def replace_all_uses_with(
-        self,
-        replace_with: Node,
-        delete_user_cb: Callable[[Node], bool] = ...,
-        *,
-        propagate_meta: bool = ...,
+        self, replace_with: Node, delete_user_cb: Callable[[Node], bool] = ..., *, propagate_meta: bool = ...
     ) -> list[Node]: ...
     @compatibility(is_backward_compatible=False)
     def is_impure(self, impure_random: bool = ...) -> bool: ...

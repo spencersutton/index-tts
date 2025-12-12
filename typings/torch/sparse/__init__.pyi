@@ -1,8 +1,6 @@
-from typing import TYPE_CHECKING
-
+from typing import TYPE_CHECKING, TypeAlias
 from torch import Tensor
 from torch.types import _dtype as DType
-
 from .semi_structured import (
     SparseSemiStructuredTensor,
     SparseSemiStructuredTensorCUSPARSELT,
@@ -11,7 +9,8 @@ from .semi_structured import (
 )
 
 if TYPE_CHECKING:
-    type DimOrDims = int | tuple[int, ...] | list[int] | None
+    DimOrDims: TypeAlias = int | tuple[int, ...] | list[int] | None
+    ...
 __all__ = [
     "SparseSemiStructuredTensor",
     "SparseSemiStructuredTensorCUSPARSELT",

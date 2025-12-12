@@ -1,17 +1,7 @@
 from collections.abc import Callable, Iterable, Sequence
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    Self,
-    SupportsFloat,
-    TypedDict,
-    override,
-)
-
+from typing import Any, Literal, Self, SupportsFloat, TYPE_CHECKING, TypedDict, override
 from .optimizer import Optimizer
 
-r"""Learning Rate Scheduler."""
 if TYPE_CHECKING: ...
 __all__ = [
     "ChainedScheduler",
@@ -84,34 +74,20 @@ class MultiplicativeLR(LRScheduler):
     def get_lr(self) -> list[float]: ...
 
 class StepLR(LRScheduler):
-    def __init__(
-        self,
-        optimizer: Optimizer,
-        step_size: int,
-        gamma: float = ...,
-        last_epoch: int = ...,
-    ) -> None: ...
+    def __init__(self, optimizer: Optimizer, step_size: int, gamma: float = ..., last_epoch: int = ...) -> None: ...
     @override
     def get_lr(self) -> list[float]: ...
 
 class MultiStepLR(LRScheduler):
     def __init__(
-        self,
-        optimizer: Optimizer,
-        milestones: Iterable[int],
-        gamma: float = ...,
-        last_epoch: int = ...,
+        self, optimizer: Optimizer, milestones: Iterable[int], gamma: float = ..., last_epoch: int = ...
     ) -> None: ...
     @override
     def get_lr(self) -> list[float]: ...
 
 class ConstantLR(LRScheduler):
     def __init__(
-        self,
-        optimizer: Optimizer,
-        factor: float = ...,
-        total_iters: int = ...,
-        last_epoch: int = ...,
+        self, optimizer: Optimizer, factor: float = ..., total_iters: int = ..., last_epoch: int = ...
     ) -> None: ...
     @override
     def get_lr(self) -> list[float]: ...
@@ -135,11 +111,7 @@ class ExponentialLR(LRScheduler):
 
 class SequentialLR(LRScheduler):
     def __init__(
-        self,
-        optimizer: Optimizer,
-        schedulers: list[LRScheduler],
-        milestones: list[int],
-        last_epoch: int = ...,
+        self, optimizer: Optimizer, schedulers: list[LRScheduler], milestones: list[int], last_epoch: int = ...
     ) -> None: ...
     def recursive_undo(self, sched=...) -> None: ...
     def step(self) -> None: ...
@@ -150,32 +122,18 @@ class SequentialLR(LRScheduler):
 
 class PolynomialLR(LRScheduler):
     def __init__(
-        self,
-        optimizer: Optimizer,
-        total_iters: int = ...,
-        power: float = ...,
-        last_epoch: int = ...,
+        self, optimizer: Optimizer, total_iters: int = ..., power: float = ..., last_epoch: int = ...
     ) -> None: ...
     @override
     def get_lr(self) -> list[float]: ...
 
 class CosineAnnealingLR(LRScheduler):
-    def __init__(
-        self,
-        optimizer: Optimizer,
-        T_max: int,
-        eta_min: float = ...,
-        last_epoch: int = ...,
-    ) -> None: ...
+    def __init__(self, optimizer: Optimizer, T_max: int, eta_min: float = ..., last_epoch: int = ...) -> None: ...
     @override
     def get_lr(self) -> list[float]: ...
 
 class ChainedScheduler(LRScheduler):
-    def __init__(
-        self,
-        schedulers: Sequence[LRScheduler],
-        optimizer: Optimizer | None = ...,
-    ) -> None: ...
+    def __init__(self, schedulers: Sequence[LRScheduler], optimizer: Optimizer | None = ...) -> None: ...
     def step(self) -> None: ...
     @override
     def state_dict(self) -> dict[str, Any]: ...
@@ -228,12 +186,7 @@ class CyclicLR(LRScheduler):
 
 class CosineAnnealingWarmRestarts(LRScheduler):
     def __init__(
-        self,
-        optimizer: Optimizer,
-        T_0: int,
-        T_mult: int = ...,
-        eta_min: float = ...,
-        last_epoch: int = ...,
+        self, optimizer: Optimizer, T_0: int, T_mult: int = ..., eta_min: float = ..., last_epoch: int = ...
     ) -> None: ...
     @override
     def get_lr(self) -> list[float]: ...

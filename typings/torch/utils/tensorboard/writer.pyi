@@ -1,8 +1,6 @@
 from typing import TYPE_CHECKING
-
 from matplotlib.figure import Figure
 
-"""Provide an API for writing protocol buffers to event files to be consumed by TensorBoard for visualization."""
 if TYPE_CHECKING: ...
 __all__ = ["FileWriter", "SummaryWriter"]
 
@@ -19,60 +17,25 @@ class FileWriter:
 
 class SummaryWriter:
     def __init__(
-        self,
-        log_dir=...,
-        comment=...,
-        purge_step=...,
-        max_queue=...,
-        flush_secs=...,
-        filename_suffix=...,
+        self, log_dir=..., comment=..., purge_step=..., max_queue=..., flush_secs=..., filename_suffix=...
     ) -> None: ...
     def get_logdir(self) -> str: ...
     def add_hparams(
-        self,
-        hparam_dict,
-        metric_dict,
-        hparam_domain_discrete=...,
-        run_name=...,
-        global_step=...,
+        self, hparam_dict, metric_dict, hparam_domain_discrete=..., run_name=..., global_step=...
     ) -> None: ...
     def add_scalar(
-        self,
-        tag,
-        scalar_value,
-        global_step=...,
-        walltime=...,
-        new_style=...,
-        double_precision=...,
+        self, tag, scalar_value, global_step=..., walltime=..., new_style=..., double_precision=...
     ) -> None: ...
     def add_scalars(self, main_tag, tag_scalar_dict, global_step=..., walltime=...) -> None: ...
     def add_tensor(self, tag, tensor, global_step=..., walltime=...) -> None: ...
     def add_histogram(self, tag, values, global_step=..., bins=..., walltime=..., max_bins=...) -> None: ...
     def add_histogram_raw(
-        self,
-        tag,
-        min,
-        max,
-        num,
-        sum,
-        sum_squares,
-        bucket_limits,
-        bucket_counts,
-        global_step=...,
-        walltime=...,
+        self, tag, min, max, num, sum, sum_squares, bucket_limits, bucket_counts, global_step=..., walltime=...
     ) -> None: ...
     def add_image(self, tag, img_tensor, global_step=..., walltime=..., dataformats=...) -> None: ...
     def add_images(self, tag, img_tensor, global_step=..., walltime=..., dataformats=...) -> None: ...
     def add_image_with_boxes(
-        self,
-        tag,
-        img_tensor,
-        box_tensor,
-        global_step=...,
-        walltime=...,
-        rescale=...,
-        dataformats=...,
-        labels=...,
+        self, tag, img_tensor, box_tensor, global_step=..., walltime=..., rescale=..., dataformats=..., labels=...
     ) -> None: ...
     def add_figure(
         self,
@@ -88,23 +51,10 @@ class SummaryWriter:
     def add_onnx_graph(self, prototxt) -> None: ...
     def add_graph(self, model, input_to_model=..., verbose=..., use_strict_trace=...) -> None: ...
     def add_embedding(
-        self,
-        mat,
-        metadata=...,
-        label_img=...,
-        global_step=...,
-        tag=...,
-        metadata_header=...,
+        self, mat, metadata=..., label_img=..., global_step=..., tag=..., metadata_header=...
     ) -> None: ...
     def add_pr_curve(
-        self,
-        tag,
-        labels,
-        predictions,
-        global_step=...,
-        num_thresholds=...,
-        weights=...,
-        walltime=...,
+        self, tag, labels, predictions, global_step=..., num_thresholds=..., weights=..., walltime=...
     ) -> None: ...
     def add_pr_curve_raw(
         self,
@@ -124,14 +74,7 @@ class SummaryWriter:
     def add_custom_scalars_marginchart(self, tags, category=..., title=...) -> None: ...
     def add_custom_scalars(self, layout) -> None: ...
     def add_mesh(
-        self,
-        tag,
-        vertices,
-        colors=...,
-        faces=...,
-        config_dict=...,
-        global_step=...,
-        walltime=...,
+        self, tag, vertices, colors=..., faces=..., config_dict=..., global_step=..., walltime=...
     ) -> None: ...
     def flush(self) -> None: ...
     def close(self) -> None: ...

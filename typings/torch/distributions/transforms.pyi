@@ -1,6 +1,5 @@
-from collections.abc import Sequence
-
 import torch
+from collections.abc import Sequence
 from torch import Tensor
 from torch.distributions import constraints
 from torch.distributions.distribution import Distribution
@@ -90,12 +89,7 @@ class ComposeTransform(Transform):
 identity_transform = ...
 
 class IndependentTransform(Transform):
-    def __init__(
-        self,
-        base_transform: Transform,
-        reinterpreted_batch_ndims: int,
-        cache_size: int = ...,
-    ) -> None: ...
+    def __init__(self, base_transform: Transform, reinterpreted_batch_ndims: int, cache_size: int = ...) -> None: ...
     def with_cache(self, cache_size=...) -> Self | IndependentTransform: ...
     @constraints.dependent_property(is_discrete=False)
     def domain(self) -> independent: ...
@@ -174,11 +168,7 @@ class AbsTransform(Transform):
 class AffineTransform(Transform):
     bijective = ...
     def __init__(
-        self,
-        loc: Tensor | float,
-        scale: Tensor | float,
-        event_dim: int = ...,
-        cache_size: int = ...,
+        self, loc: Tensor | float, scale: Tensor | float, event_dim: int = ..., cache_size: int = ...
     ) -> None: ...
     @property
     def event_dim(self) -> int: ...
@@ -231,11 +221,7 @@ class PositiveDefiniteTransform(Transform):
 class CatTransform(Transform):
     transforms: list[Transform]
     def __init__(
-        self,
-        tseq: Sequence[Transform],
-        dim: int = ...,
-        lengths: Sequence[int] | None = ...,
-        cache_size: int = ...,
+        self, tseq: Sequence[Transform], dim: int = ..., lengths: Sequence[int] | None = ..., cache_size: int = ...
     ) -> None: ...
     @lazy_property
     def event_dim(self) -> int: ...

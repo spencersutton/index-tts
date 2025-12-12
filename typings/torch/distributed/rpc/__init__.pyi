@@ -1,8 +1,6 @@
-from collections.abc import Generator
-
 import torch
+from collections.abc import Generator
 from torch._C._distributed_c10d import Store
-
 from .api import *
 
 __all__ = ["is_available"]

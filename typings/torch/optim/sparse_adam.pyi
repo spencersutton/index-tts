@@ -1,6 +1,5 @@
 import torch
 from torch import Tensor
-
 from .optimizer import Optimizer, ParamsT
 
 __all__ = ["SparseAdam"]

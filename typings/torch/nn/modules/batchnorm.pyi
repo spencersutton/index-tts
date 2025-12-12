@@ -1,8 +1,6 @@
 from typing import Any
-
 from torch import Tensor
 from torch.nn.parameter import UninitializedParameter
-
 from .lazy import LazyModuleMixin
 from .module import Module
 
@@ -54,15 +52,7 @@ class _BatchNorm(_NormBase):
 class _LazyNormBase(LazyModuleMixin, _NormBase):
     weight: UninitializedParameter
     bias: UninitializedParameter
-    def __init__(
-        self,
-        eps=...,
-        momentum=...,
-        affine=...,
-        track_running_stats=...,
-        device=...,
-        dtype=...,
-    ) -> None: ...
+    def __init__(self, eps=..., momentum=..., affine=..., track_running_stats=..., device=..., dtype=...) -> None: ...
     def reset_parameters(self) -> None: ...
     def initialize_parameters(self, input) -> None: ...
 

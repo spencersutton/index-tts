@@ -1,7 +1,6 @@
 from contextlib import contextmanager
 from enum import Enum
 from typing import Any
-
 from ._compatibility import compatibility
 from .graph import Graph
 from .node import Node
@@ -40,10 +39,7 @@ class NodeSource:
     _dict: dict[str, Any] | None
     _action_string: str | None
     def __init__(
-        self,
-        node: Node | None,
-        pass_name: str = ...,
-        action: NodeSourceAction | list[NodeSourceAction] | None = ...,
+        self, node: Node | None, pass_name: str = ..., action: NodeSourceAction | list[NodeSourceAction] | None = ...
     ) -> None: ...
     @property
     def name(self) -> str: ...

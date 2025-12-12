@@ -1,15 +1,8 @@
 import torch
 from torch import Tensor
-
 from . import profiler
 from .event import Event
 
-r"""
-This package enables an interface for accessing MPS (Metal Performance Shaders) backend in Python.
-Metal is Apple's API for programming metal GPU (graphics processor unit). Using MPS means that increased
-performance can be achieved, by running work on the metal GPU(s).
-See https://developer.apple.com/documentation/metalperformanceshaders for more details.
-"""
 _is_in_bad_fork = ...
 _default_mps_generator: torch._C.Generator = ...
 

@@ -1,18 +1,10 @@
-from typing import Any
-
 import torch._C
+from typing import Any
 from torch._jit_internal import Future, export, ignore, unused
 from torch.jit._async import fork, wait
 from torch.jit._freeze import freeze, optimize_for_inference
 from torch.jit._fuser import set_fusion_strategy
-from torch.jit._script import (
-    Attribute,
-    CompilationUnit,
-    ScriptFunction,
-    ScriptModule,
-    interface,
-    script,
-)
+from torch.jit._script import Attribute, CompilationUnit, ScriptFunction, ScriptModule, interface, script
 from torch.jit._serialization import load, save
 from torch.jit._trace import trace, trace_module
 

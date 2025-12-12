@@ -1,8 +1,10 @@
-from torch.utils import backcompat as backcompat
-from torch.utils import collect_env as collect_env
-from torch.utils import data as data
-from torch.utils import deterministic as deterministic
-from torch.utils import hooks as hooks
+from torch.utils import (
+    backcompat as backcompat,
+    collect_env as collect_env,
+    data as data,
+    deterministic as deterministic,
+    hooks as hooks,
+)
 
 def set_module(obj, mod) -> None: ...
 

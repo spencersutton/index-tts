@@ -1,21 +1,14 @@
 import abc
+import torch
+import torch.utils._pytree as pytree
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
-
-import torch
-import torch.utils._pytree as pytree
 from torch.export import ExportedProgram
 from torch.export.exported_program import ModuleCallSignature
 
 log = ...
-__all__ = [
-    "FlatArgsAdapter",
-    "InterpreterModule",
-    "InterpreterModuleDispatcher",
-    "UnflattenedModule",
-    "unflatten",
-]
+__all__ = ["FlatArgsAdapter", "InterpreterModule", "InterpreterModuleDispatcher", "UnflattenedModule", "unflatten"]
 
 class _AttrKind(Enum):
     PARAMETER = ...
@@ -41,24 +34,14 @@ class InterpreterModule(_SubmoduleBase, torch.nn.Module):
     def __init__(self, graph: torch.fx.Graph, ty: str | None = ...) -> None: ...
     def forward(self, *args, **kwargs) -> Any: ...
     def finalize(self) -> None: ...
-    def print_readable(
-        self,
-        print_output=...,
-        include_stride=...,
-        include_device=...,
-        colored=...,
-    ): ...
+    def print_readable(self, print_output=..., include_stride=..., include_device=..., colored=...): ...
 
 class InterpreterModuleDispatcher(_SubmoduleBase, torch.nn.Module):
     def __init__(self, attrs: set[str], call_modules: list[InterpreterModule]) -> None: ...
     def forward(self, *args, **kwargs) -> Any: ...
     def call_modules(self) -> list[InterpreterModule]: ...
     def print_readable(
-        self,
-        print_output=...,
-        include_stride=...,
-        include_device=...,
-        colored=...,
+        self, print_output=..., include_stride=..., include_device=..., colored=...
     ) -> LiteralString: ...
 
 class FlatArgsAdapter(abc.ABC):
@@ -74,21 +57,11 @@ class FlatArgsAdapter(abc.ABC):
     def get_flat_arg_paths(self) -> list[str]: ...
 
 class UnflattenedModule(torch.nn.Module):
-    def __init__(
-        self,
-        export_module: ExportedProgram,
-        flat_args_adapter: FlatArgsAdapter | None = ...,
-    ) -> None: ...
+    def __init__(self, export_module: ExportedProgram, flat_args_adapter: FlatArgsAdapter | None = ...) -> None: ...
     def process_forward_inputs(self, *args, **kwargs) -> list[Any]: ...
     def forward(self, *args, **kwargs) -> Any | tuple[Any, ...]: ...
     def finalize(self) -> None: ...
-    def print_readable(
-        self,
-        print_output=...,
-        include_stride=...,
-        include_device=...,
-        colored=...,
-    ): ...
+    def print_readable(self, print_output=..., include_stride=..., include_device=..., colored=...): ...
 
 def unflatten(module: ExportedProgram, flat_args_adapter: FlatArgsAdapter | None = ...) -> UnflattenedModule: ...
 

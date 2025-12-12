@@ -1,7 +1,6 @@
+import torch
 from collections.abc import Callable
 from typing import Any, NamedTuple, Self, TypeVar, overload
-
-import torch
 from torch import Tensor
 
 __all__ = [
@@ -63,22 +62,13 @@ class PackedSequence(PackedSequence_):
 
 def invert_permutation(permutation: Tensor | None) -> Tensor | None: ...
 def pack_padded_sequence(
-    input: Tensor,
-    lengths: Tensor | list[int],
-    batch_first: bool = ...,
-    enforce_sorted: bool = ...,
+    input: Tensor, lengths: Tensor | list[int], batch_first: bool = ..., enforce_sorted: bool = ...
 ) -> PackedSequence: ...
 def pad_packed_sequence(
-    sequence: PackedSequence,
-    batch_first: bool = ...,
-    padding_value: float = ...,
-    total_length: int | None = ...,
+    sequence: PackedSequence, batch_first: bool = ..., padding_value: float = ..., total_length: int | None = ...
 ) -> tuple[Tensor, Tensor]: ...
 def pad_sequence(
-    sequences: Tensor | list[Tensor],
-    batch_first: bool = ...,
-    padding_value: float = ...,
-    padding_side: str = ...,
+    sequences: Tensor | list[Tensor], batch_first: bool = ..., padding_value: float = ..., padding_side: str = ...
 ) -> Tensor: ...
 def unpad_sequence(padded_sequences: Tensor, lengths: Tensor, batch_first: bool = ...) -> list[Tensor]: ...
 def pack_sequence(sequences: list[Tensor], enforce_sorted: bool = ...) -> PackedSequence: ...

@@ -1,5 +1,4 @@
 from contextlib import contextmanager
-
 from torch.backends import PropModule
 
 def set_flags(_immediate=...) -> tuple[bool]: ...

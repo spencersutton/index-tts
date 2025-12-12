@@ -1,13 +1,6 @@
 from torch import Tensor
+from .optimizer import Optimizer, ParamsT, _disable_dynamo_if_unsupported, _use_grad_for_differentiable
 
-from .optimizer import (
-    Optimizer,
-    ParamsT,
-    _disable_dynamo_if_unsupported,
-    _use_grad_for_differentiable,
-)
-
-r"""Implementation for the RAdam algorithm."""
 __all__ = ["RAdam", "radam"]
 
 class RAdam(Optimizer):

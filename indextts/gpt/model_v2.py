@@ -96,7 +96,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
 
     def deparallelize(self) -> None:
         self.transformer.deparallelize()
-        self.transformer = self.transformer.to("cpu")  # ty:ignore[invalid-argument-type]
+        self.transformer = self.transformer.to("cpu")  # ty:ignore[invalid-argument-type]  # pyright: ignore[reportArgumentType]
         self.lm_head = self.lm_head.to("cpu")
         self.model_parallel = False
         torch.cuda.empty_cache()
@@ -152,7 +152,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
     def forward(
         self,
         input_ids: Tensor,
-        past_key_values: tuple | None = None,
+        past_key_values: Cache | None = None,
         attention_mask: Tensor | None = None,
         token_type_ids: Tensor | None = None,
         position_ids: Tensor | None = None,
@@ -204,7 +204,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         # Set device for model parallelism
         if self.model_parallel:
             if torch.backends.mps.is_available():
-                self.to(self.transformer.first_device)  # ty:ignore[invalid-argument-type]
+                self.to(self.transformer.first_device)  # ty:ignore[invalid-argument-type]  # pyright: ignore[reportArgumentType]
             else:
                 torch.cuda.set_device(self.transformer.first_device)
             hidden_states = hidden_states.to(self.lm_head[1].weight.device)

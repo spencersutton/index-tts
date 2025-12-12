@@ -1,9 +1,7 @@
-from typing import Literal
-
 import torch
+from typing import Literal, TypeAlias
 from torch import Tensor
 
-"""This file contains utilities for initializing neural network parameters."""
 __all__ = [
     "calculate_gain",
     "constant",
@@ -32,7 +30,7 @@ __all__ = [
     "xavier_uniform_",
     "zeros_",
 ]
-type _NonlinearityType = Literal[
+_NonlinearityType: TypeAlias = Literal[
     "linear",
     "conv1d",
     "conv2d",
@@ -46,21 +44,11 @@ type _NonlinearityType = Literal[
     "leaky_relu",
     "selu",
 ]
-type _FanMode = Literal["fan_in", "fan_out"]
+_FanMode: TypeAlias = Literal["fan_in", "fan_out"]
 
 def calculate_gain(nonlinearity: _NonlinearityType, param: float | None = ...) -> float: ...
-def uniform_(
-    tensor: Tensor,
-    a: float = ...,
-    b: float = ...,
-    generator: torch.Generator | None = ...,
-) -> Tensor: ...
-def normal_(
-    tensor: Tensor,
-    mean: float = ...,
-    std: float = ...,
-    generator: torch.Generator | None = ...,
-) -> Tensor: ...
+def uniform_(tensor: Tensor, a: float = ..., b: float = ..., generator: torch.Generator | None = ...) -> Tensor: ...
+def normal_(tensor: Tensor, mean: float = ..., std: float = ..., generator: torch.Generator | None = ...) -> Tensor: ...
 def trunc_normal_(
     tensor: Tensor,
     mean: float = ...,
@@ -91,12 +79,7 @@ def kaiming_normal_(
     generator: torch.Generator | None = ...,
 ) -> Tensor: ...
 def orthogonal_(tensor: Tensor, gain: float = ..., generator: torch.Generator | None = ...) -> Tensor: ...
-def sparse_(
-    tensor: Tensor,
-    sparsity: float,
-    std: float = ...,
-    generator: torch.Generator | None = ...,
-) -> Tensor: ...
+def sparse_(tensor: Tensor, sparsity: float, std: float = ..., generator: torch.Generator | None = ...) -> Tensor: ...
 
 uniform = ...
 normal = ...

@@ -1,0 +1,14 @@
+import functools
+from typing import Optional
+from torch._inductor.utils import clear_on_fresh_cache
+
+log = ...
+
+@clear_on_fresh_cache
+@functools.lru_cache(1)
+def get_cuda_arch() -> Optional[str]: ...
+@clear_on_fresh_cache
+@functools.lru_cache(1)
+def get_cuda_version() -> Optional[str]: ...
+@functools.cache
+def nvcc_exist(nvcc_path: Optional[str] = ...) -> bool: ...

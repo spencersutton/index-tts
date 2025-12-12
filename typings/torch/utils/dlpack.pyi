@@ -1,7 +1,6 @@
 import enum
-from typing import Any
-
 import torch
+from typing import Any
 from torch.types import Device as _Device
 
 __all__ = ["DLDeviceType", "from_dlpack"]

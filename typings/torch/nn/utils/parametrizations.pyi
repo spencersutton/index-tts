@@ -1,6 +1,5 @@
-from enum import Enum
-
 import torch
+from enum import Enum
 from torch import Tensor
 from torch.nn.modules import Module
 
@@ -19,11 +18,7 @@ class _Orthogonal(Module):
     def right_inverse(self, Q: torch.Tensor) -> torch.Tensor: ...
 
 def orthogonal(
-    module: Module,
-    name: str = ...,
-    orthogonal_map: str | None = ...,
-    *,
-    use_trivialization: bool = ...,
+    module: Module, name: str = ..., orthogonal_map: str | None = ..., *, use_trivialization: bool = ...
 ) -> Module: ...
 
 class _WeightNorm(Module):
@@ -35,19 +30,11 @@ def weight_norm(module: Module, name: str = ..., dim: int = ...) -> Module: ...
 
 class _SpectralNorm(Module):
     def __init__(
-        self,
-        weight: torch.Tensor,
-        n_power_iterations: int = ...,
-        dim: int = ...,
-        eps: float = ...,
+        self, weight: torch.Tensor, n_power_iterations: int = ..., dim: int = ..., eps: float = ...
     ) -> None: ...
     def forward(self, weight: torch.Tensor) -> torch.Tensor: ...
     def right_inverse(self, value: torch.Tensor) -> torch.Tensor: ...
 
 def spectral_norm(
-    module: Module,
-    name: str = ...,
-    n_power_iterations: int = ...,
-    eps: float = ...,
-    dim: int | None = ...,
+    module: Module, name: str = ..., n_power_iterations: int = ..., eps: float = ..., dim: int | None = ...
 ) -> Module: ...

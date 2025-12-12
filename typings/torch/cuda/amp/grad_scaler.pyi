@@ -1,13 +1,11 @@
-from warnings import deprecated
-
 import torch
+from warnings import deprecated
 
 __all__ = ["GradScaler"]
 
 class GradScaler(torch.amp.GradScaler):
     @deprecated(
-        "`torch.cuda.amp.GradScaler(args...)` is deprecated. "
-        "Please use `torch.amp.GradScaler('cuda', args...)` instead.",
+        "`torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.",
         category=FutureWarning,
     )
     def __init__(

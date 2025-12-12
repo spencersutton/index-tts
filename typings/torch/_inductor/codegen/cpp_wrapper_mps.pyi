@@ -1,0 +1,18 @@
+from typing import Optional
+from ..ir import GraphPartitionSignature
+from .cpp_wrapper_gpu import CppWrapperGpu
+from .wrapper import PythonWrapperCodegen
+
+class CppWrapperMps(CppWrapperGpu):
+    def __init__(self) -> None: ...
+    @staticmethod
+    def create(
+        is_subgraph: bool,
+        subgraph_name: Optional[str],
+        parent_wrapper: Optional[PythonWrapperCodegen],
+        partition_signatures: Optional[GraphPartitionSignature] = ...,
+    ) -> CppWrapperMps: ...
+    def write_mps_kernel_call(self, name: str, call_args: list[str]) -> None: ...
+    @staticmethod
+    def get_device_include_path(device: str) -> str: ...
+    def codegen_additional_funcs(self) -> None: ...

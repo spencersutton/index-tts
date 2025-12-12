@@ -1,9 +1,7 @@
+import torch
 from collections.abc import Callable
 from typing import Any
-
-import torch
 from torch import Tensor
-
 from .module import Module
 
 __all__ = [
@@ -49,9 +47,7 @@ class Transformer(Module):
     ) -> Tensor: ...
     @staticmethod
     def generate_square_subsequent_mask(
-        sz: int,
-        device: torch.device | None = ...,
-        dtype: torch.dtype | None = ...,
+        sz: int, device: torch.device | None = ..., dtype: torch.dtype | None = ...
     ) -> Tensor: ...
 
 class TransformerEncoder(Module):
@@ -74,12 +70,7 @@ class TransformerEncoder(Module):
 
 class TransformerDecoder(Module):
     __constants__ = ...
-    def __init__(
-        self,
-        decoder_layer: TransformerDecoderLayer,
-        num_layers: int,
-        norm: Module | None = ...,
-    ) -> None: ...
+    def __init__(self, decoder_layer: TransformerDecoderLayer, num_layers: int, norm: Module | None = ...) -> None: ...
     def forward(
         self,
         tgt: Tensor,

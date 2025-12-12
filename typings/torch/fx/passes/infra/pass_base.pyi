@@ -1,6 +1,5 @@
 import abc
 from collections import namedtuple
-
 from torch.fx._compatibility import compatibility
 from torch.fx.graph_module import GraphModule
 

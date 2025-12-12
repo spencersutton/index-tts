@@ -1,14 +1,11 @@
-from collections.abc import Callable, Iterable
-from typing import Any, Literal
-
 import torch
+from collections.abc import Callable, Iterable
+from typing import Any, Literal, TypeAlias
 from torch import Tensor
 from torch.nn import Module
 from torch.optim.lr_scheduler import LRScheduler
-
 from .optimizer import Optimizer
 
-r"""Implementation for Stochastic Weight Averaging implementation."""
 __all__ = [
     "SWALR",
     "AveragedModel",
@@ -18,7 +15,7 @@ __all__ = [
     "get_swa_multi_avg_fn",
     "update_bn",
 ]
-type PARAM_LIST = tuple[Tensor, ...] | list[Tensor]
+PARAM_LIST: TypeAlias = tuple[Tensor, ...] | list[Tensor]
 
 def get_ema_multi_avg_fn(decay=...) -> Callable[..., None]: ...
 def get_swa_multi_avg_fn() -> Callable[..., None]: ...
@@ -39,11 +36,7 @@ class AveragedModel(Module):
     def update_parameters(self, model: Module) -> None: ...
 
 @torch.no_grad()
-def update_bn(
-    loader: Iterable[Any],
-    model: Module,
-    device: int | torch.device | None = ...,
-) -> None: ...
+def update_bn(loader: Iterable[Any], model: Module, device: int | torch.device | None = ...) -> None: ...
 
 class SWALR(LRScheduler):
     def __init__(

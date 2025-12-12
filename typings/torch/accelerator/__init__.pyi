@@ -1,5 +1,4 @@
 import torch
-
 from ._utils import _device_t
 from .memory import (
     empty_cache,
@@ -12,9 +11,6 @@ from .memory import (
     reset_peak_memory_stats,
 )
 
-r"""
-This package introduces support for the current :ref:`accelerator<accelerators>` in python.
-"""
 __all__ = [
     "current_accelerator",
     "current_device_idx",

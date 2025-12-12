@@ -1,5 +1,4 @@
 from contextlib import contextmanager
-
 from torch._C import _cudnn
 from torch.backends import PropModule
 
@@ -13,21 +12,11 @@ CUDNN_TENSOR_DTYPES = ...
 def is_available() -> bool: ...
 def is_acceptable(tensor) -> bool: ...
 def set_flags(
-    _enabled=...,
-    _benchmark=...,
-    _benchmark_limit=...,
-    _deterministic=...,
-    _allow_tf32=...,
-    _fp32_precision=...,
+    _enabled=..., _benchmark=..., _benchmark_limit=..., _deterministic=..., _allow_tf32=..., _fp32_precision=...
 ) -> tuple[bool, bool, int | None, bool, bool, str]: ...
 @contextmanager
 def flags(
-    enabled=...,
-    benchmark=...,
-    benchmark_limit=...,
-    deterministic=...,
-    allow_tf32=...,
-    fp32_precision=...,
+    enabled=..., benchmark=..., benchmark_limit=..., deterministic=..., allow_tf32=..., fp32_precision=...
 ) -> Generator[None, Any, None]: ...
 
 class CudnnModule(PropModule):

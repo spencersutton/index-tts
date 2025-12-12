@@ -1,15 +1,7 @@
 from torch import Tensor
-
 from .module import Module
 
-__all__ = [
-    "AlphaDropout",
-    "Dropout",
-    "Dropout1d",
-    "Dropout2d",
-    "Dropout3d",
-    "FeatureAlphaDropout",
-]
+__all__ = ["AlphaDropout", "Dropout", "Dropout1d", "Dropout2d", "Dropout3d", "FeatureAlphaDropout"]
 
 class _DropoutNd(Module):
     __constants__ = ...

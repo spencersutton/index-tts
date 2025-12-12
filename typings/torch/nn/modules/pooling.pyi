@@ -10,7 +10,6 @@ from torch.nn.common_types import (
     _size_any_opt_t,
     _size_any_t,
 )
-
 from .module import Module
 
 __all__ = [
@@ -79,52 +78,22 @@ class MaxUnpool1d(_MaxUnpoolNd):
     kernel_size: _size_1_t
     stride: _size_1_t
     padding: _size_1_t
-    def __init__(
-        self,
-        kernel_size: _size_1_t,
-        stride: _size_1_t | None = ...,
-        padding: _size_1_t = ...,
-    ) -> None: ...
-    def forward(
-        self,
-        input: Tensor,
-        indices: Tensor,
-        output_size: list[int] | None = ...,
-    ) -> Tensor: ...
+    def __init__(self, kernel_size: _size_1_t, stride: _size_1_t | None = ..., padding: _size_1_t = ...) -> None: ...
+    def forward(self, input: Tensor, indices: Tensor, output_size: list[int] | None = ...) -> Tensor: ...
 
 class MaxUnpool2d(_MaxUnpoolNd):
     kernel_size: _size_2_t
     stride: _size_2_t
     padding: _size_2_t
-    def __init__(
-        self,
-        kernel_size: _size_2_t,
-        stride: _size_2_t | None = ...,
-        padding: _size_2_t = ...,
-    ) -> None: ...
-    def forward(
-        self,
-        input: Tensor,
-        indices: Tensor,
-        output_size: list[int] | None = ...,
-    ) -> Tensor: ...
+    def __init__(self, kernel_size: _size_2_t, stride: _size_2_t | None = ..., padding: _size_2_t = ...) -> None: ...
+    def forward(self, input: Tensor, indices: Tensor, output_size: list[int] | None = ...) -> Tensor: ...
 
 class MaxUnpool3d(_MaxUnpoolNd):
     kernel_size: _size_3_t
     stride: _size_3_t
     padding: _size_3_t
-    def __init__(
-        self,
-        kernel_size: _size_3_t,
-        stride: _size_3_t | None = ...,
-        padding: _size_3_t = ...,
-    ) -> None: ...
-    def forward(
-        self,
-        input: Tensor,
-        indices: Tensor,
-        output_size: list[int] | None = ...,
-    ) -> Tensor: ...
+    def __init__(self, kernel_size: _size_3_t, stride: _size_3_t | None = ..., padding: _size_3_t = ...) -> None: ...
+    def forward(self, input: Tensor, indices: Tensor, output_size: list[int] | None = ...) -> Tensor: ...
 
 class _AvgPoolNd(Module):
     __constants__ = ...
@@ -220,11 +189,7 @@ class _LPPoolNd(Module):
     norm_type: float
     ceil_mode: bool
     def __init__(
-        self,
-        norm_type: float,
-        kernel_size: _size_any_t,
-        stride: _size_any_t | None = ...,
-        ceil_mode: bool = ...,
+        self, norm_type: float, kernel_size: _size_any_t, stride: _size_any_t | None = ..., ceil_mode: bool = ...
     ) -> None: ...
     def extra_repr(self) -> str: ...
 

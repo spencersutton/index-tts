@@ -1,26 +1,13 @@
 import logging
-from collections.abc import Callable, Mapping
-from typing import Any
-from warnings import deprecated
-
 import torch
+from collections.abc import Callable, Mapping
+from typing import Any, TypeAlias
+from warnings import deprecated
 from torch.fx.passes.infra.pass_base import PassResult
 from torch.types import FileLike
-
 from .decomp_utils import CustomDecompTable
-from .dynamic_shapes import (
-    AdditionalInputs,
-    Constraint,
-    Dim,
-    ShapesCollection,
-    dims,
-)
-from .exported_program import (
-    ExportedProgram,
-    ModuleCallEntry,
-    ModuleCallSignature,
-    default_decompositions,
-)
+from .dynamic_shapes import AdditionalInputs, Constraint, Dim, ShapesCollection, dims
+from .exported_program import ExportedProgram, ModuleCallEntry, ModuleCallSignature, default_decompositions
 from .graph_signature import ExportBackwardSignature, ExportGraphSignature
 from .unflatten import FlatArgsAdapter, UnflattenedModule, unflatten
 
@@ -47,12 +34,11 @@ __all__ = [
     "save",
     "unflatten",
 ]
-type PassType = Callable[[torch.fx.GraphModule], PassResult | None]
+PassType: TypeAlias = Callable[[torch.fx.GraphModule], PassResult | None]
 log: logging.Logger = ...
 
 @deprecated(
-    "`torch.export.export_for_training` is deprecated and will be removed in PyTorch 2.10. "
-    "Please use `torch.export.export` instead, which is functionally equivalent.",
+    "`torch.export.export_for_training` is deprecated and will be removed in PyTorch 2.10. Please use `torch.export.export` instead, which is functionally equivalent.",
     category=FutureWarning,
 )
 def export_for_training(
@@ -87,10 +73,7 @@ def save(
     pickle_protocol: int = ...,
 ) -> None: ...
 def load(
-    f: FileLike,
-    *,
-    extra_files: dict[str, Any] | None = ...,
-    expected_opset_version: dict[str, int] | None = ...,
+    f: FileLike, *, extra_files: dict[str, Any] | None = ..., expected_opset_version: dict[str, int] | None = ...
 ) -> ExportedProgram: ...
 def draft_export(
     mod: torch.nn.Module,

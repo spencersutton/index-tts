@@ -1,13 +1,6 @@
 import contextlib
 
-__all__ = [
-    "is_capturing_metal",
-    "is_metal_capture_enabled",
-    "metal_capture",
-    "profile",
-    "start",
-    "stop",
-]
+__all__ = ["is_capturing_metal", "is_metal_capture_enabled", "metal_capture", "profile", "start", "stop"]
 
 def start(mode: str = ..., wait_until_completed: bool = ...) -> None: ...
 def stop() -> None: ...

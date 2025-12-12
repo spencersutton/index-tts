@@ -1,14 +1,9 @@
 from collections.abc import Callable
 from typing import Any
-
 from .observer import _PartialWrapper
 from .qconfig import QConfigAny
 
-__all__ = [
-    "QConfigMapping",
-    "get_default_qat_qconfig_mapping",
-    "get_default_qconfig_mapping",
-]
+__all__ = ["QConfigMapping", "get_default_qat_qconfig_mapping", "get_default_qconfig_mapping"]
 _GLOBAL_DICT_KEY = ...
 _OBJECT_TYPE_DICT_KEY = ...
 _MODULE_NAME_REGEX_DICT_KEY = ...
@@ -28,11 +23,7 @@ class QConfigMapping:
     def set_module_name_regex(self, module_name_regex: str, qconfig: QConfigAny) -> QConfigMapping: ...
     def set_module_name(self, module_name: str, qconfig: QConfigAny) -> QConfigMapping: ...
     def set_module_name_object_type_order(
-        self,
-        module_name: str,
-        object_type: Callable,
-        index: int,
-        qconfig: QConfigAny,
+        self, module_name: str, object_type: Callable, index: int, qconfig: QConfigAny
     ) -> QConfigMapping: ...
     def to_dict(self) -> dict[str, Any]: ...
     @classmethod

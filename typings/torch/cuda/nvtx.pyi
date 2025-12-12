@@ -1,14 +1,6 @@
 from contextlib import contextmanager
 
-r"""This package adds support for NVIDIA Tools Extension (NVTX) used in profiling."""
-__all__ = [
-    "mark",
-    "range",
-    "range_end",
-    "range_pop",
-    "range_push",
-    "range_start",
-]
+__all__ = ["mark", "range", "range_end", "range_pop", "range_push", "range_start"]
 
 def range_push(msg) -> int: ...
 def range_pop() -> int: ...

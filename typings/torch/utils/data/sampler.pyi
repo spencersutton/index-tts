@@ -1,7 +1,6 @@
+import torch
 from collections.abc import Iterable, Iterator, Sequence, Sized
 from typing import TypeVar
-
-import torch
 
 __all__ = [
     "BatchSampler",
@@ -27,11 +26,7 @@ class RandomSampler(Sampler[int]):
     data_source: Sized
     replacement: bool
     def __init__(
-        self,
-        data_source: Sized,
-        replacement: bool = ...,
-        num_samples: int | None = ...,
-        generator=...,
+        self, data_source: Sized, replacement: bool = ..., num_samples: int | None = ..., generator=...
     ) -> None: ...
     @property
     def num_samples(self) -> int: ...
@@ -48,22 +43,11 @@ class WeightedRandomSampler(Sampler[int]):
     weights: torch.Tensor
     num_samples: int
     replacement: bool
-    def __init__(
-        self,
-        weights: Sequence[float],
-        num_samples: int,
-        replacement: bool = ...,
-        generator=...,
-    ) -> None: ...
+    def __init__(self, weights: Sequence[float], num_samples: int, replacement: bool = ..., generator=...) -> None: ...
     def __iter__(self) -> Iterator[int]: ...
     def __len__(self) -> int: ...
 
 class BatchSampler(Sampler[list[int]]):
-    def __init__(
-        self,
-        sampler: Sampler[int] | Iterable[int],
-        batch_size: int,
-        drop_last: bool,
-    ) -> None: ...
+    def __init__(self, sampler: Sampler[int] | Iterable[int], batch_size: int, drop_last: bool) -> None: ...
     def __iter__(self) -> Iterator[list[int]]: ...
     def __len__(self) -> int: ...

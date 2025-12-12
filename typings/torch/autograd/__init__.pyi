@@ -1,28 +1,13 @@
-from collections.abc import Sequence
-
 import torch
-from torch.types import _size, _TensorOrTensors, _TensorOrTensorsOrGradEdge
-
+from collections.abc import Sequence
+from torch.types import _TensorOrTensors, _TensorOrTensorsOrGradEdge, _size
 from .anomaly_mode import detect_anomaly, set_detect_anomaly
 from .function import Function, NestedIOFunction
-from .grad_mode import (
-    enable_grad,
-    inference_mode,
-    no_grad,
-    set_grad_enabled,
-    set_multithreading_enabled,
-)
+from .grad_mode import enable_grad, inference_mode, no_grad, set_grad_enabled, set_multithreading_enabled
 from .gradcheck import gradcheck, gradgradcheck
 from .variable import Variable
+from typing import TypeAlias
 
-"""
-``torch.autograd`` provides classes and functions implementing automatic differentiation of arbitrary scalar valued functions.
-
-It requires minimal changes to the existing code - you only need to declare :class:`Tensor` s
-for which gradients should be computed with the ``requires_grad=True`` keyword.
-As of now, we only support autograd for floating point :class:`Tensor` types (
-half, float, double and bfloat16) and complex :class:`Tensor` types (cfloat, cdouble).
-"""
 __all__ = [
     "Function",
     "NestedIOFunction",
@@ -41,8 +26,8 @@ __all__ = [
     "set_multithreading_enabled",
     "variable",
 ]
-type _OptionalTensor = torch.Tensor | None
-type _ShapeorNestedShape = _size | Sequence[_size] | torch.Tensor
+_OptionalTensor: TypeAlias = torch.Tensor | None
+_ShapeorNestedShape: TypeAlias = _size | Sequence[_size] | torch.Tensor
 
 def backward(
     tensors: _TensorOrTensorsOrGradEdge,

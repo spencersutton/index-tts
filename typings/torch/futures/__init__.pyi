@@ -1,7 +1,6 @@
+import torch
 from collections.abc import Callable
 from typing import TypeVar
-
-import torch
 
 __all__ = ["Future", "collect_all", "wait_all"]
 T = TypeVar("T")

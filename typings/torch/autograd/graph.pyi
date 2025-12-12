@@ -1,9 +1,8 @@
 import abc
 import contextlib
-from collections.abc import Callable, Generator, Iterable, Sequence
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple
-
 import torch
+from collections.abc import Callable, Generator, Iterable, Sequence
+from typing import Any, Literal, NamedTuple, TYPE_CHECKING, TypeAlias
 from torch._ops import OpOverload
 from torch.utils._python_dispatch import TorchDispatchMode
 from torch.utils.hooks import RemovableHandle
@@ -43,15 +42,11 @@ class GradientEdge(NamedTuple):
     ownership_token: Node | None = ...
 
 def get_gradient_edge(tensor: torch.Tensor) -> GradientEdge: ...
-def increment_version(
-    tensor: torch.Tensor | Iterable[torch.Tensor],
-) -> None: ...
+def increment_version(tensor: torch.Tensor | Iterable[torch.Tensor]) -> None: ...
 
 class saved_tensors_hooks:
     def __init__(
-        self,
-        pack_hook: Callable[[torch.Tensor], Any],
-        unpack_hook: Callable[[Any], torch.Tensor],
+        self, pack_hook: Callable[[torch.Tensor], Any], unpack_hook: Callable[[Any], torch.Tensor]
     ) -> None: ...
     def __enter__(self) -> None: ...
     def __exit__(self, *args: object) -> None: ...
@@ -77,8 +72,8 @@ def register_multi_grad_hook(
 ) -> RemovableHandle: ...
 
 _allow_mutation_on_saved_tensors_enabled: bool = ...
-type _TID = tuple[int, int, int]
-type _SID = tuple[int, int]
+_TID: TypeAlias = tuple[int, int, int]
+_SID: TypeAlias = tuple[int, int]
 
 class _Handle: ...
 
@@ -88,11 +83,7 @@ class _swap_with_cloned(saved_tensors_hooks):
 class _CloneArgBeforeMutateMode(TorchDispatchMode):
     def __init__(self, ctx: _AllowMutationOnSavedContext) -> None: ...
     def __torch_dispatch__(
-        self,
-        func: OpOverload,
-        types: Iterable[type],
-        args: tuple[Any, ...] = ...,
-        kwargs: dict[Any, Any] | None = ...,
+        self, func: OpOverload, types: Iterable[type], args: tuple[Any, ...] = ..., kwargs: dict[Any, Any] | None = ...
     ) -> Any: ...
 
 class _AllowMutationOnSavedContext:

@@ -1,7 +1,6 @@
+import torch
 from collections.abc import Callable
 from warnings import deprecated
-
-import torch
 from torch.types import _TensorOrTensors
 
 __all__ = [
@@ -16,11 +15,7 @@ __all__ = [
 class GradcheckError(RuntimeError): ...
 
 @deprecated(
-    "`get_numerical_jacobian` was part of PyTorch's private API and not "
-    "meant to be exposed. We are deprecating it and it will be removed "
-    "in a future version of PyTorch. If you have a specific use for "
-    "this or feature request for this to be a stable API, please file "
-    "us an issue at https://github.com/pytorch/pytorch/issues/new",
+    "`get_numerical_jacobian` was part of PyTorch's private API and not meant to be exposed. We are deprecating it and it will be removed in a future version of PyTorch. If you have a specific use for this or feature request for this to be a stable API, please file us an issue at https://github.com/pytorch/pytorch/issues/new",
     category=FutureWarning,
 )
 def get_numerical_jacobian(fn, inputs, target=..., eps=..., grad_out=...) -> tuple[Tensor, ...]: ...
@@ -31,11 +26,7 @@ def get_numerical_jacobian_wrt_specific_input(
 FAILED_NONDET_MSG = ...
 
 @deprecated(
-    "`get_analytical_jacobian` was part of PyTorch's private API and not "
-    "meant to be exposed. We are deprecating it and it will be removed "
-    "in a future version of PyTorch. If you have a specific use for "
-    "this or feature request for this to be a stable API, please file "
-    "us an issue at https://github.com/pytorch/pytorch/issues/new",
+    "`get_analytical_jacobian` was part of PyTorch's private API and not meant to be exposed. We are deprecating it and it will be removed in a future version of PyTorch. If you have a specific use for this or feature request for this to be a stable API, please file us an issue at https://github.com/pytorch/pytorch/issues/new",
     category=FutureWarning,
 )
 def get_analytical_jacobian(

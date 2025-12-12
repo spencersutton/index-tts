@@ -1,8 +1,6 @@
-from collections.abc import Callable
-
 import torch
+from collections.abc import Callable
 from torch import Tensor
-
 from .fake_quantize import *
 from .fuse_modules import fuse_modules, fuse_modules_qat
 from .fuser_method_mappings import *
@@ -17,11 +15,7 @@ from .pt2e._numeric_debugger import (
 )
 from .pt2e.export_utils import (
     _allow_exported_model_train_eval as allow_exported_model_train_eval,
-)
-from .pt2e.export_utils import (
     _move_exported_model_to_eval as move_exported_model_to_eval,
-)
-from .pt2e.export_utils import (
     _move_exported_model_to_train as move_exported_model_to_train,
 )
 from .qconfig import *
@@ -31,8 +25,9 @@ from .quantization_mappings import *
 from .quantize import *
 from .quantize_jit import *
 from .stubs import *
+from typing import TypeAlias
 
-type ObserverOrFakeQuantize = ObserverBase | FakeQuantizeBase
+ObserverOrFakeQuantize: TypeAlias = ObserverBase | FakeQuantizeBase
 __all__ = [
     "CUSTOM_KEY",
     "NUMERIC_DEBUG_HANDLE_KEY",

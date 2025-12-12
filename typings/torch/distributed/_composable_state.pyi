@@ -1,0 +1,6 @@
+import weakref
+import torch.nn as nn
+
+class _State: ...
+
+_module_state_mapping: weakref.WeakKeyDictionary[nn.Module, weakref.ReferenceType[_State]] = ...

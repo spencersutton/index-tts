@@ -3,7 +3,6 @@ from .activation import (
     ELU,
     GELU,
     GLU,
-    SELU,
     Hardshrink,
     Hardsigmoid,
     Hardswish,
@@ -14,11 +13,12 @@ from .activation import (
     Mish,
     MultiheadAttention,
     PReLU,
+    RReLU,
     ReLU,
     ReLU6,
-    RReLU,
-    Sigmoid,
+    SELU,
     SiLU,
+    Sigmoid,
     Softmax,
     Softmax2d,
     Softmin,
@@ -40,14 +40,7 @@ from .batchnorm import (
     SyncBatchNorm,
 )
 from .channelshuffle import ChannelShuffle
-from .container import (
-    Container,
-    ModuleDict,
-    ModuleList,
-    ParameterDict,
-    ParameterList,
-    Sequential,
-)
+from .container import Container, ModuleDict, ModuleList, ParameterDict, ParameterList, Sequential
 from .conv import (
     Conv1d,
     Conv2d,
@@ -63,14 +56,7 @@ from .conv import (
     LazyConvTranspose3d,
 )
 from .distance import CosineSimilarity, PairwiseDistance
-from .dropout import (
-    AlphaDropout,
-    Dropout,
-    Dropout1d,
-    Dropout2d,
-    Dropout3d,
-    FeatureAlphaDropout,
-)
+from .dropout import AlphaDropout, Dropout, Dropout1d, Dropout2d, Dropout3d, FeatureAlphaDropout
 from .flatten import Flatten, Unflatten
 from .fold import Fold, Unfold
 from .instancenorm import (
@@ -85,16 +71,16 @@ from .linear import Bilinear, Identity, LazyLinear, Linear
 from .loss import (
     BCELoss,
     BCEWithLogitsLoss,
+    CTCLoss,
     CosineEmbeddingLoss,
     CrossEntropyLoss,
-    CTCLoss,
     GaussianNLLLoss,
     HingeEmbeddingLoss,
     HuberLoss,
     KLDivLoss,
     L1Loss,
-    MarginRankingLoss,
     MSELoss,
+    MarginRankingLoss,
     MultiLabelMarginLoss,
     MultiLabelSoftMarginLoss,
     MultiMarginLoss,
@@ -107,13 +93,7 @@ from .loss import (
     TripletMarginWithDistanceLoss,
 )
 from .module import Module
-from .normalization import (
-    CrossMapLRN2d,
-    GroupNorm,
-    LayerNorm,
-    LocalResponseNorm,
-    RMSNorm,
-)
+from .normalization import CrossMapLRN2d, GroupNorm, LayerNorm, LocalResponseNorm, RMSNorm
 from .padding import (
     CircularPad1d,
     CircularPad2d,
@@ -154,16 +134,7 @@ from .pooling import (
     MaxUnpool2d,
     MaxUnpool3d,
 )
-from .rnn import (
-    GRU,
-    LSTM,
-    RNN,
-    GRUCell,
-    LSTMCell,
-    RNNBase,
-    RNNCell,
-    RNNCellBase,
-)
+from .rnn import GRU, GRUCell, LSTM, LSTMCell, RNN, RNNBase, RNNCell, RNNCellBase
 from .sparse import Embedding, EmbeddingBag
 from .transformer import (
     Transformer,

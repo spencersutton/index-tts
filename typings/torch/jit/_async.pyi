@@ -1,0 +1,6 @@
+def fork(func, *args, **kwargs):  # -> Future[Any]:
+
+    ...
+def wait(future):  # -> Any:
+
+    ...

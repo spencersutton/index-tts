@@ -1,9 +1,8 @@
 from collections import namedtuple
 from warnings import deprecated
-
 from torch.ao.quantization.fake_quantize import FakeQuantizeBase
-
 from .observer import ObserverBase, _PartialWrapper
+from typing import TypeAlias
 
 __all__ = [
     "QConfig",
@@ -43,8 +42,7 @@ class QConfig(namedtuple("QConfig", ["activation", "weight"])):
     def __new__(cls, activation, weight) -> Self: ...
 
 @deprecated(
-    "`QConfigDynamic` is going to be deprecated in PyTorch 1.12, please use `QConfig` instead",
-    category=FutureWarning,
+    "`QConfigDynamic` is going to be deprecated in PyTorch 1.12, please use `QConfig` instead", category=FutureWarning
 )
 class QConfigDynamic(namedtuple("QConfigDynamic", ["activation", "weight"])):
     __slots__ = ...
@@ -82,19 +80,17 @@ _default_fp32_placeholder_qconfig = ...
 _default_quint8_placeholder_qconfig = ...
 
 @deprecated(
-    "`torch.ao.quantization.get_default_qconfig_dict` is deprecated and will be removed in "
-    "a future version. Please use `torch.ao.quantization.get_default_qconfig_mapping` instead.",
+    "`torch.ao.quantization.get_default_qconfig_dict` is deprecated and will be removed in a future version. Please use `torch.ao.quantization.get_default_qconfig_mapping` instead.",
     category=FutureWarning,
 )
 def get_default_qconfig_dict(backend=..., version=...) -> dict[str, Any]: ...
 @deprecated(
-    "`torch.ao.quantization.get_default_qat_qconfig_dict` is deprecated and will be removed in "
-    "a future version. Please use `torch.ao.quantization.get_default_qat_qconfig_mapping` instead.",
+    "`torch.ao.quantization.get_default_qat_qconfig_dict` is deprecated and will be removed in a future version. Please use `torch.ao.quantization.get_default_qat_qconfig_mapping` instead.",
     category=FutureWarning,
 )
 def get_default_qat_qconfig_dict(backend=..., version=...) -> dict[str, Any]: ...
 
-type QConfigAny = QConfig | None
-type _ObserverOrFakeQuantizeConstructor = type[ObserverBase | FakeQuantizeBase] | _PartialWrapper
+QConfigAny: TypeAlias = QConfig | None
+_ObserverOrFakeQuantizeConstructor: TypeAlias = type[ObserverBase | FakeQuantizeBase] | _PartialWrapper
 
 def qconfig_equals(q1: QConfigAny, q2: QConfigAny) -> bool: ...

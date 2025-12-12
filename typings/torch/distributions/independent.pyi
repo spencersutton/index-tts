@@ -1,5 +1,4 @@
 from typing import TypeVar
-
 from torch import Tensor
 from torch.distributions import constraints
 from torch.distributions.distribution import Distribution
@@ -12,10 +11,7 @@ class Independent[D: Distribution](Distribution):
     arg_constraints: dict[str, constraints.Constraint] = ...
     base_dist: D
     def __init__(
-        self,
-        base_distribution: D,
-        reinterpreted_batch_ndims: int,
-        validate_args: bool | None = ...,
+        self, base_distribution: D, reinterpreted_batch_ndims: int, validate_args: bool | None = ...
     ) -> None: ...
     def expand(self, batch_shape, _instance=...) -> Self: ...
     @property

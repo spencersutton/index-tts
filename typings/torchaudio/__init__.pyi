@@ -3,7 +3,15 @@ from typing import BinaryIO
 
 import torch
 
-from . import compliance, datasets, functional, models, pipelines, transforms, utils
+from . import (
+    compliance,
+    datasets,
+    functional,
+    models,
+    pipelines,
+    transforms,
+    utils,
+)
 from ._torchcodec import load_with_torchcodec, save_with_torchcodec
 
 """

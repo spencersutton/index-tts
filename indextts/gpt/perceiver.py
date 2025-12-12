@@ -8,6 +8,7 @@ from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 from packaging import version
 from torch import Tensor, einsum, nn
+from torch.nn.attention import SDPBackend, sdpa_kernel
 
 
 def _exists[T](val: T | None) -> TypeIs[T]:
@@ -104,7 +105,15 @@ class _Attend(nn.Module):
 
         # pytorch 2.0 flash attn: q, k, v, mask, dropout, causal, softmax_scale
         assert config is not None
-        with torch.backends.cuda.sdp_kernel(**config._asdict()):
+        backends: list[SDPBackend] = []
+        if config.enable_flash:
+            backends.append(SDPBackend.FLASH_ATTENTION)
+        if config.enable_math:
+            backends.append(SDPBackend.MATH)
+        if config.enable_mem_efficient:
+            backends.append(SDPBackend.EFFICIENT_ATTENTION)
+
+        with sdpa_kernel(backends):
             return F.scaled_dot_product_attention(
                 q,
                 k,

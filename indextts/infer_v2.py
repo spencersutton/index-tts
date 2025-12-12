@@ -29,7 +29,6 @@ from indextts.s2mel.modules.audio import mel_spectrogram
 from indextts.s2mel.modules.bigvgan import bigvgan
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
 from indextts.s2mel.modules.commons import MyModel, load_checkpoint
-from indextts.s2mel.modules.flow_matching import CFM
 from indextts.s2mel.modules.length_regulator import InterpolateRegulator
 from indextts.utils.checkpoint import load_checkpoint2
 from indextts.utils.front import TextNormalizer, TextTokenizer
@@ -45,39 +44,10 @@ logger = logging.getLogger(__name__)
 SAMPLING_RATE = 22050
 
 
-def _load_bigvgan(cfg: CheckpointsConfig, device: str, use_cuda_kernel: bool) -> "bigvgan.BigVGAN":
-    name = cfg.vocoder.name
-    model = bigvgan.BigVGAN.from_pretrained(name, use_cuda_kernel=use_cuda_kernel)
-    model = model.to(device)
-    model.remove_weight_norm()
-    model.eval()
-    logger.info("bigvgan weights restored from: %s", name)
-    return model
-
-
-def _load_s2mel(cfg: CheckpointsConfig, device: str, model_dir: Path) -> MyModel:
-    s2mel_path = model_dir / cfg.s2mel_checkpoint
-    model = MyModel(cfg.s2mel, use_gpt_latent=True)
-    model = load_checkpoint(model, s2mel_path).to(device)
-    assert model.cfm.estimator is not None
-    model.cfm.estimator.setup_caches(max_batch_size=1, max_seq_length=8192)
-    logger.info("s2mel weights restored from: %s", s2mel_path)
-    return model.eval()
-
-
 def _load_semantic_model(device: str) -> Wav2Vec2BertModel:
     model = Wav2Vec2BertModel.from_pretrained("facebook/w2v-bert-2.0")
     assert isinstance(model, Wav2Vec2BertModel)
     return model.to(device).eval()
-
-
-def _load_semantic_codec(device: str) -> RepCodec:
-    model = RepCodec().eval()
-    path = hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
-    safetensors.torch.load_model(model, path, strict=False)
-    model = model.to(device).eval()
-    logger.info("semantic_codec weights restored from: %s", path)
-    return model
 
 
 def generate_silence_interval(
@@ -143,15 +113,6 @@ def _load_and_cut_audio(
         logger.debug("Audio too long (%d samples), truncating to %d samples", audio.shape[1], max_audio_samples)
         audio = audio[:, :max_audio_samples]
     return audio, sr
-
-
-def _load_campplus_weights(device: str) -> CAMPPlus:
-    path = hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
-    model = CAMPPlus(feat_dim=80, embedding_size=192)
-    model.load_state_dict(torch.load(path, map_location="cpu"))
-    model = model.to(device).eval()
-    logger.info("campplus_model weights restored from: %s", path)
-    return model
 
 
 def normalize_emo_vec(emo_vector: list[float], apply_bias: bool = True) -> list[float]:
@@ -385,14 +346,37 @@ class IndexTTS2:
         self.semantic_mean = stat_mean_var["mean"].to(self.device)
         self.semantic_std = torch.sqrt(stat_mean_var["var"]).to(self.device)
 
-        self.semantic_codec = _load_semantic_codec(self.device)
+        semantic_codec = RepCodec().eval()
+        semantic_code_ckpt = hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
+        safetensors.torch.load_model(semantic_codec, semantic_code_ckpt, strict=False)
+        self.semantic_codec = semantic_codec.to(self.device)
+        self.semantic_codec.eval()
+        logger.info("semantic_codec weights restored from: %s", semantic_code_ckpt)
 
-        self.s2mel = _load_s2mel(self.cfg, self.device, self.model_dir)
+        s2mel_path = self.model_dir / self.cfg.s2mel_checkpoint
+        s2mel = MyModel(self.cfg.s2mel, use_gpt_latent=True)
+        s2mel = load_checkpoint(s2mel, s2mel_path)
+        self.s2mel = s2mel.to(self.device)
+        assert self.s2mel.cfm.estimator is not None
+        self.s2mel.cfm.estimator.setup_caches(max_batch_size=1, max_seq_length=8192)
+
+        self.s2mel.eval()
+        logger.info("s2mel weights restored from: %s", s2mel_path)
 
         # load campplus_model
-        self.campplus_model = _load_campplus_weights(self.device)
+        campplus_ckpt_path = hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
+        campplus_model = CAMPPlus(feat_dim=80, embedding_size=192)
+        campplus_model.load_state_dict(torch.load(campplus_ckpt_path, map_location="cpu"))
+        self.campplus_model = campplus_model.to(self.device)
+        self.campplus_model.eval()
+        logger.info("campplus_model weights restored from: %s", campplus_ckpt_path)
 
-        self.bigvgan = _load_bigvgan(self.cfg, self.device, self.use_cuda_kernel)
+        bigvgan_name = self.cfg.vocoder.name
+        self.bigvgan = bigvgan.BigVGAN.from_pretrained(bigvgan_name, use_cuda_kernel=self.use_cuda_kernel)
+        self.bigvgan = self.bigvgan.to(self.device)
+        self.bigvgan.remove_weight_norm()
+        self.bigvgan.eval()
+        logger.info("bigvgan weights restored from: %s", bigvgan_name)
 
         normalizer = TextNormalizer()
         normalizer.load()
@@ -525,18 +509,6 @@ class IndexTTS2:
         except IndexError:
             return None
 
-    def combine_weighted_styles(self, vector: list[float], style: Tensor, use_random: bool = False) -> Tensor:
-        weight_vector = torch.tensor(vector, device=self.device)
-        if use_random:
-            random_index = [random.randint(0, x - 1) for x in self.emo_num]  # noqa: S311
-        else:
-            random_index = [_find_most_similar_cosine(style, tmp) for tmp in self.spk_matrix]
-
-        matrix = [tmp[index].unsqueeze(0) for index, tmp in zip(random_index, self.emo_matrix)]
-        matrix = torch.cat(matrix, 0)
-        vector_matrix = weight_vector.unsqueeze(1) * matrix
-        return torch.sum(vector_matrix, 0).unsqueeze(0)
-
     @torch.inference_mode()
     def infer_generator(
         self,
@@ -606,12 +578,48 @@ class IndexTTS2:
             # must always use alpha=1.0 when we don't have an external reference voice
             emo_alpha = 1.0
 
-        spk_cond_emb, style, prompt_condition, ref_mel = self.process_audio_prompt(spk_audio_prompt)
+        audio, sr = _load_and_cut_audio(spk_audio_prompt, 15)
+        audio_22k = torchaudio.transforms.Resample(sr, 22050).forward(audio)
+        audio_16k = torchaudio.transforms.Resample(sr, 16000).forward(audio)
+
+        inputs = self.extract_features(audio_16k, sampling_rate=16000, return_tensors="pt")  # ty:ignore[invalid-argument-type]
+        input_features = inputs["input_features"].to(self.device)
+        attention_mask = inputs["attention_mask"].to(self.device)
+        spk_cond_emb = self.get_emb(input_features, attention_mask)
+
+        _, S_ref = self.semantic_codec.quantize(spk_cond_emb)
+        ref_mel = self.mel_fn(audio_22k.to(spk_cond_emb.device).float())
+        ref_target_lengths = Tensor([ref_mel.size(2)]).to(ref_mel.device)
+        feat = torchaudio.compliance.kaldi.fbank(
+            audio_16k.to(ref_mel.device),
+            num_mel_bins=80,
+            dither=0,
+            sample_frequency=16000,
+        )
+        feat -= feat.mean(dim=0, keepdim=True)
+        style = self.campplus_model(feat.unsqueeze(0))
+
+        length_regulator = self.s2mel.models["length_regulator"]
+        prompt_condition = length_regulator(S_ref, ylens=ref_target_lengths, n_quantizers=3, f0=None)[0]
 
         if emo_vector is not None:
-            emovec_mat = self.combine_weighted_styles(emo_vector, style, use_random)
+            weight_vector = torch.tensor(emo_vector, device=self.device)
+            if use_random:
+                random_index = [random.randint(0, x - 1) for x in self.emo_num]  # noqa: S311
+            else:
+                random_index = [_find_most_similar_cosine(style, tmp) for tmp in self.spk_matrix]
 
-        emo_cond_emb = self.process_audio(emo_audio_prompt)
+            emo_matrix = [tmp[index].unsqueeze(0) for index, tmp in zip(random_index, self.emo_matrix)]
+            emo_matrix = torch.cat(emo_matrix, 0)
+            emovec_mat = weight_vector.unsqueeze(1) * emo_matrix
+            emovec_mat = torch.sum(emovec_mat, 0)
+            emovec_mat = emovec_mat.unsqueeze(0)
+
+        emo_audio, _ = _load_and_cut_audio(emo_audio_prompt, 15, sr=16000)
+        emo_inputs = self.extract_features(emo_audio, sampling_rate=16000, return_tensors="pt")  # ty:ignore[invalid-argument-type]
+        emo_input_features = emo_inputs["input_features"].to(self.device)
+        emo_attention_mask = emo_inputs["attention_mask"].to(self.device)
+        emo_cond_emb = self.get_emb(emo_input_features, emo_attention_mask)
 
         self._set_gr_progress(0.1, "text processing...")
         text_tokens_list = self.tokenizer.tokenize(text)
@@ -651,8 +659,6 @@ class IndexTTS2:
         num_beams = generation_kwargs.pop("num_beams", 3)
         repetition_penalty = generation_kwargs.pop("repetition_penalty", 10.0)
         max_mel_tokens = generation_kwargs.pop("max_mel_tokens", 1500)
-        emovec_mat = None
-        weight_vector = None
 
         # [OPTIMIZATION] Pre-calculate emovec once before the loop
         with (
@@ -765,7 +771,7 @@ class IndexTTS2:
                     code_len = len_[0].item() if len_.numel() > 0 else len(code)
 
                 code = code[:code_len].unsqueeze(0)  # (1, S)  # noqa: PLW2901
-                code_lens = torch.LongTensor([code_len]).to(self.device)
+                code_lens = torch.tensor([code_len]).to(self.device)
 
                 # Get corresponding text tokens for this segment (unpadded)
                 text_tokens = batch_text_tokens[seg_idx].unsqueeze(0)  # (1, L)
@@ -785,12 +791,12 @@ class IndexTTS2:
                     latent = self.gpt(
                         speech_conditioning_latent[seg_idx : seg_idx + 1],
                         text_tokens,
-                        torch.tensor([text_tokens.shape[-1]], device=text_tokens.device),
+                        torch.tensor([text_tokens.shape[-1]], device=self.device),
                         code,
-                        torch.tensor([code.shape[-1]], device=text_tokens.device),
+                        torch.tensor([code.shape[-1]], device=self.device),
                         emo_cond_emb,
-                        cond_mel_lengths=torch.tensor([spk_cond_emb.shape[-1]], device=text_tokens.device),
-                        emo_cond_mel_lengths=torch.tensor([emo_cond_emb.shape[-1]], device=text_tokens.device),
+                        cond_mel_lengths=torch.tensor([spk_cond_emb.shape[-1]], device=self.device),
+                        emo_cond_mel_lengths=torch.tensor([emo_cond_emb.shape[-1]], device=self.device),
                         emo_vec=emovec,
                         use_speed=use_speed,
                     )
@@ -811,18 +817,17 @@ class IndexTTS2:
                     S_infer += latent
                     target_lengths = (code_lens * 1.72).long()
 
-                    length_regulator = cast(
-                        InterpolateRegulator,
-                        self.s2mel.models["length_regulator"],
-                    )
+                    length_regulator = self.s2mel.models["length_regulator"]
+                    assert isinstance(length_regulator, InterpolateRegulator)
                     cond = length_regulator(S_infer, ylens=target_lengths, n_quantizers=3, f0=None)[0]
                     cat_condition = torch.cat([prompt_condition, cond], dim=1)
-                    cfm = cast(CFM, self.s2mel.models["cfm"])
+                    cfm = self.s2mel.models["cfm"]
+
                     assert ref_mel is not None
                     assert style is not None
                     vc_target = cfm.inference(
                         cat_condition,
-                        torch.LongTensor([cat_condition.size(1)]).to(cond.device),
+                        torch.tensor([cat_condition.size(1)], device=self.device),
                         ref_mel,
                         style,
                         None,

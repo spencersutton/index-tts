@@ -7,6 +7,7 @@ from typing import Optional, Union
 from ...utils import PaddingStrategy, TensorType, is_torch_available
 from ...feature_extraction_sequence_utils import SequenceFeatureExtractor
 from ...feature_extraction_utils import BatchFeature
+import torch
 
 if is_torch_available(): ...
 logger = ...
@@ -22,7 +23,9 @@ class SeamlessM4TFeatureExtractor(SequenceFeatureExtractor):
     ) -> list[np.ndarray]: ...
     def __call__(
         self,
-        raw_speech: Union[np.ndarray, list[float], list[np.ndarray], list[list[float]]],
+        raw_speech: Union[
+            np.ndarray, list[float], list[np.ndarray], list[list[float]] | torch.Tensor | list[torch.Tensor]
+        ],
         padding: Union[bool, str, PaddingStrategy] = ...,
         pad_to_multiple_of: Optional[int] = ...,
         max_length: Optional[int] = ...,

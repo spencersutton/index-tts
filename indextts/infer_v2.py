@@ -45,12 +45,6 @@ logger = logging.getLogger(__name__)
 SAMPLING_RATE = 22050
 
 
-def _load_semantic_model(device: str) -> Wav2Vec2BertModel:
-    model = Wav2Vec2BertModel.from_pretrained("facebook/w2v-bert-2.0")
-    assert isinstance(model, Wav2Vec2BertModel)
-    return model.to(device).eval()
-
-
 def generate_silence_interval(
     wavs: list[Tensor],
     interval_silence: int = 200,
@@ -176,7 +170,7 @@ class IndexTTS2:
     @functools.lru_cache  # noqa: B019
     def process_audio(self, prompt: Path) -> Tensor:
         audio, _ = _load_and_cut_audio(prompt, 15, sr=16000)
-        inputs = self.extract_features(audio, sampling_rate=16000, return_tensors="pt")  # ty:ignore[invalid-argument-type]
+        inputs = self.extract_features(audio, sampling_rate=16000, return_tensors="pt")  # pyright: ignore[reportArgumentType]
         input_features = inputs["input_features"].to(self.device)
         attention_mask = inputs["attention_mask"].to(self.device)
         return self.get_emb(input_features, attention_mask)
@@ -294,7 +288,7 @@ class IndexTTS2:
             logger.info("torch.compile cache directory: %s", cache_dir)
 
         cfg = cast(Mapping[str, Any], OmegaConf.load(cfg_path))
-        self.cfg = cast(CheckpointsConfig, cfg)
+        self.cfg = CheckpointsConfig(**cfg)
         self.model_dir = model_dir
         self.dtype = torch.float16 if self.use_fp16 else None
         self.stop_mel_token = self.cfg.gpt.stop_mel_token
@@ -341,7 +335,7 @@ class IndexTTS2:
 
         self.extract_features = SeamlessM4TFeatureExtractor.from_pretrained("facebook/w2v-bert-2.0")
 
-        self.semantic_model = _load_semantic_model(self.device)
+        self.semantic_model = Wav2Vec2BertModel.from_pretrained("facebook/w2v-bert-2.0", device_map=device).eval()
 
         stat_mean_var = torch.load(self.model_dir / self.cfg.w2v_stat)
         self.semantic_mean = stat_mean_var["mean"].to(self.device)
@@ -619,7 +613,7 @@ class IndexTTS2:
             emovec_mat = emovec_mat.unsqueeze(0)
 
         emo_audio, _ = _load_and_cut_audio(emo_audio_prompt, 15, sr=16000)
-        emo_inputs = self.extract_features(emo_audio, sampling_rate=16000, return_tensors="pt")  # ty:ignore[invalid-argument-type]
+        emo_inputs = self.extract_features(emo_audio, sampling_rate=16000, return_tensors="pt")  # pyright: ignore[reportArgumentType]
         emo_input_features = emo_inputs["input_features"].to(self.device)
         emo_attention_mask = emo_inputs["attention_mask"].to(self.device)
         emo_cond_emb = self.get_emb(emo_input_features, emo_attention_mask)

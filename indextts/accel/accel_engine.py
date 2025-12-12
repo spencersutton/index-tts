@@ -3,8 +3,9 @@ from typing import Final
 
 import torch
 from torch import Tensor, nn
+from transformers import GPT2Model
 
-from indextts.gpt.model_v2 import GPT2InferenceModel, LearnedPositionEmbeddings
+from indextts.gpt.model_v2 import LearnedPositionEmbeddings
 
 if sys.platform == "darwin":
     msg = "accel_engine is not supported on MacOS."
@@ -44,9 +45,12 @@ GRAPH_BS: Final = [1, 2, 4, 8]
 
 
 class AccelInferenceEngine:
+    _tts_mode: bool = False
+    _tts_prompt_len: int = 0
+
     def __init__(
         self,
-        model: GPT2InferenceModel,
+        model: GPT2Model,
         lm_head: nn.Sequential,
         num_layers: int,
         num_heads: int,
@@ -86,7 +90,7 @@ class AccelInferenceEngine:
         self.kv_manager.wire_kv_cache_to_model(model)
         self.sampler = Sampler()
         self.current_sequences = []
-        self.graphs = {}
+        self.graphs: dict[int, torch.cuda.CUDAGraph] = {}
         self.graph_vars = None
         self.graph_pool = None
         self.graph_captured = False
@@ -203,7 +207,7 @@ class AccelInferenceEngine:
 
     def _capture_cuda_graphs(
         self,
-        tts_mel_embedding: GPT2InferenceModel | None = None,
+        tts_mel_embedding: nn.Embedding | None = None,
         tts_text_pos_embedding: LearnedPositionEmbeddings | None = None,
     ) -> None:
         print("Capturing CUDA graphs for decode optimization...")
@@ -289,7 +293,7 @@ class AccelInferenceEngine:
         input_ids: Tensor,
         positions: Tensor,
         context: ForwardContext,
-        tts_mel_embedding: GPT2InferenceModel | None = None,
+        tts_mel_embedding: nn.Embedding | None = None,
         tts_text_pos_embedding: LearnedPositionEmbeddings | None = None,
     ) -> Tensor:
         bs = input_ids.size(0)
@@ -477,11 +481,14 @@ class AccelInferenceEngine:
         logits = self.lm_head(last_hidden)  # [batch_size, vocab_size]
 
         temperatures = self._prepare_sample(sequences, temperature)
-        first_token = self.sampler(logits, temperatures) if temperature > 0 else torch.argmax(logits, dim=-1)
+        if temperature > 0:
+            first_token = self.sampler.forward(logits, temperatures)
+        else:
+            first_token = torch.argmax(logits, dim=-1)
 
-        first_token_list = first_token.tolist()
+        first_token_list = cast(list[int], first_token.tolist())
 
-        generated_tokens = [[] for _ in range(batch_size)]
+        generated_tokens: list[list[int]] = [[] for _ in range(batch_size)]
         is_finished = [False] * batch_size
 
         for i, token_id in enumerate(first_token_list):
@@ -499,7 +506,7 @@ class AccelInferenceEngine:
 
             output_ids: list[list[int]] = []
             for i in range(batch_size):
-                full_sequence = input_ids[i].tolist() + generated_tokens[i]
+                full_sequence = cast(list[int], input_ids[i].tolist()) + generated_tokens[i]
                 output_ids.append(full_sequence)
 
             return torch.tensor(output_ids, dtype=torch.long, device=device)
@@ -525,7 +532,7 @@ class AccelInferenceEngine:
 
             temperatures = self._prepare_sample(sequences, temperature)
             next_token = self.sampler(logits, temperatures) if temperature > 0 else torch.argmax(logits, dim=-1)
-            next_token_list = next_token.tolist()
+            next_token_list = cast(list[int], next_token.tolist())
 
             for i, token_id in enumerate(next_token_list):
                 if is_finished[i]:

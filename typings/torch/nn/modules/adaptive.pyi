@@ -1,7 +1,5 @@
 from collections.abc import Sequence
-
 from torch import Tensor
-
 from .container import ModuleList
 from .linear import Linear
 from .module import Module

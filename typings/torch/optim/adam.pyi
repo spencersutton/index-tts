@@ -1,11 +1,5 @@
 from torch import Tensor
-
-from .optimizer import (
-    Optimizer,
-    ParamsT,
-    _disable_dynamo_if_unsupported,
-    _use_grad_for_differentiable,
-)
+from .optimizer import Optimizer, ParamsT, _disable_dynamo_if_unsupported, _use_grad_for_differentiable
 
 __all__ = ["Adam", "adam"]
 

@@ -1,11 +1,9 @@
-from collections.abc import Callable
-from functools import lru_cache
-from typing import Any
-
 import torch
 import torch._C
+from collections.abc import Callable
+from functools import lru_cache
+from typing import Any, TypeAlias
 from torch import device as _device
-
 from .memory import (
     empty_cache,
     max_memory_allocated,
@@ -31,19 +29,12 @@ from .random import (
 )
 from .streams import Event, Stream
 
-r"""
-This package introduces support for the XPU backend, specifically tailored for
-Intel GPU optimization.
-
-This package is lazily initialized, so you can always import it, and use
-:func:`is_available()` to determine if your system supports XPU.
-"""
 _initialized = ...
 _tls = ...
 _initialization_lock = ...
 _queued_calls: list[tuple[Callable[[], None], list[str]]] = ...
 _is_in_bad_fork = ...
-type _device_t = _device | str | int | None
+_device_t: TypeAlias = _device | str | int | None
 _lazy_seed_tracker = ...
 default_generators: tuple[torch._C.Generator] = ...
 if _is_compiled():
@@ -77,9 +68,7 @@ def set_device(device: _device_t) -> None: ...
 def get_device_name(device: _device_t | None = ...) -> str: ...
 @lru_cache(None)
 def get_device_capability(device: _device_t | None = ...) -> dict[str, Any]: ...
-def get_device_properties(
-    device: _device_t | None = ...,
-) -> _XpuDeviceProperties: ...
+def get_device_properties(device: _device_t | None = ...) -> _XpuDeviceProperties: ...
 def current_device() -> int: ...
 
 class StreamContext:

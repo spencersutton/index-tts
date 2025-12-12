@@ -1,13 +1,12 @@
+import torch
+import torch.distributed as dist
 from collections.abc import Callable
 from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Any
-
-import torch
-import torch.distributed as dist
+from typing import Any, TYPE_CHECKING
 from torch.autograd import Function
-from torch.distributed.algorithms.join import Joinable, JoinHook
+from torch.distributed.algorithms.join import JoinHook, Joinable
 from torch.nn.modules import Module
 
 RPC_AVAILABLE = ...
@@ -77,10 +76,7 @@ class DistributedDataParallel(Module, Joinable):
     def gather(self, outputs, output_device) -> Any: ...
     def train(self, mode=...) -> Self: ...
     def join(
-        self,
-        divide_by_initial_world_size: bool = ...,
-        enable: bool = ...,
-        throw_on_early_termination: bool = ...,
+        self, divide_by_initial_world_size: bool = ..., enable: bool = ..., throw_on_early_termination: bool = ...
     ) -> Join: ...
     def join_hook(self, **kwargs) -> _DDPJoinHook: ...
     @property

@@ -1,20 +1,21 @@
 import types
 from contextlib import contextmanager
-
-from torch.backends import cpu as cpu
-from torch.backends import cuda as cuda
-from torch.backends import cudnn as cudnn
-from torch.backends import cusparselt as cusparselt
-from torch.backends import kleidiai as kleidiai
-from torch.backends import mha as mha
-from torch.backends import miopen as miopen
-from torch.backends import mkl as mkl
-from torch.backends import mkldnn as mkldnn
-from torch.backends import mps as mps
-from torch.backends import nnpack as nnpack
-from torch.backends import openmp as openmp
-from torch.backends import opt_einsum as opt_einsum
-from torch.backends import quantized as quantized
+from torch.backends import (
+    cpu as cpu,
+    cuda as cuda,
+    cudnn as cudnn,
+    cusparselt as cusparselt,
+    kleidiai as kleidiai,
+    mha as mha,
+    miopen as miopen,
+    mkl as mkl,
+    mkldnn as mkldnn,
+    mps as mps,
+    nnpack as nnpack,
+    openmp as openmp,
+    opt_einsum as opt_einsum,
+    quantized as quantized,
+)
 
 __allow_nonbracketed_mutation_flag = ...
 
@@ -24,8 +25,7 @@ def flags_frozen() -> bool: ...
 class ContextProp:
     def __init__(self, getter, setter) -> None: ...
     def __get__(self, obj, objtype): ...
-    def __set__(self, obj, val) -> None:  # -> None:
-        ...
+    def __set__(self, obj, val) -> None: ...
 
 class PropModule(types.ModuleType):
     def __init__(self, m, name) -> None: ...
@@ -33,8 +33,7 @@ class PropModule(types.ModuleType):
 
 class _FP32Precision:
     def __init__(self, backend, op) -> None: ...
-    def __setattr__(self, name, value) -> None:  # -> None:
-        ...
+    def __setattr__(self, name, value) -> None: ...
     def __getattr__(self, name) -> str: ...
 
 def set_flags(_fp32_precision=...) -> tuple[str]: ...

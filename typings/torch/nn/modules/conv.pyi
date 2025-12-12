@@ -1,10 +1,8 @@
 from typing import Literal
 from warnings import deprecated
-
 from torch import Tensor
 from torch.nn.common_types import _size_1_t, _size_2_t, _size_3_t
 from torch.nn.parameter import UninitializedParameter
-
 from .lazy import LazyModuleMixin
 from .module import Module
 

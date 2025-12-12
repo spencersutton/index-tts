@@ -1,7 +1,6 @@
+import torch
 from collections.abc import Callable
 from typing import Any
-
-import torch
 
 __all__ = [
     "SparseSemiStructuredTensor",
@@ -40,16 +39,10 @@ class SparseSemiStructuredTensor(torch.Tensor):
         alg_id_cusparselt: int = ...,
         requires_grad: bool = ...,
     ): ...
-    def __tensor_flatten__(
-        self,
-    ) -> tuple[list[str], tuple[torch.Size, bool, int, bool]]: ...
+    def __tensor_flatten__(self) -> tuple[list[str], tuple[torch.Size, bool, int, bool]]: ...
     @classmethod
     def __tensor_unflatten__(
-        cls,
-        inner_tensors,
-        tensor_meta: tuple[torch.Size, bool, int, bool],
-        outer_size,
-        outer_stride,
+        cls, inner_tensors, tensor_meta: tuple[torch.Size, bool, int, bool], outer_size, outer_stride
     ) -> torch.Tensor: ...
 
     __torch_function__ = ...

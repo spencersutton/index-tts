@@ -1,6 +1,5 @@
 from torch import Tensor
 from torch.nn.common_types import _size_any_t
-
 from .module import Module
 
 __all__ = ["Fold", "Unfold"]

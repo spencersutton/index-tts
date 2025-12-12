@@ -1,15 +1,9 @@
 import torch
 from torch import Size, Tensor
-
 from .module import Module
+from typing import TypeAlias
 
-__all__ = [
-    "CrossMapLRN2d",
-    "GroupNorm",
-    "LayerNorm",
-    "LocalResponseNorm",
-    "RMSNorm",
-]
+__all__ = ["CrossMapLRN2d", "GroupNorm", "LayerNorm", "LocalResponseNorm", "RMSNorm"]
 
 class LocalResponseNorm(Module):
     __constants__ = ...
@@ -30,7 +24,7 @@ class CrossMapLRN2d(Module):
     def forward(self, input: Tensor) -> Tensor: ...
     def extra_repr(self) -> str: ...
 
-type _shape_t = int | list[int] | Size
+_shape_t: TypeAlias = int | list[int] | Size
 
 class LayerNorm(Module):
     __constants__ = ...
@@ -57,13 +51,7 @@ class GroupNorm(Module):
     eps: float
     affine: bool
     def __init__(
-        self,
-        num_groups: int,
-        num_channels: int,
-        eps: float = ...,
-        affine: bool = ...,
-        device=...,
-        dtype=...,
+        self, num_groups: int, num_channels: int, eps: float = ..., affine: bool = ..., device=..., dtype=...
     ) -> None: ...
     def reset_parameters(self) -> None: ...
     def forward(self, input: Tensor) -> Tensor: ...
@@ -75,12 +63,7 @@ class RMSNorm(Module):
     eps: float | None
     elementwise_affine: bool
     def __init__(
-        self,
-        normalized_shape: _shape_t,
-        eps: float | None = ...,
-        elementwise_affine: bool = ...,
-        device=...,
-        dtype=...,
+        self, normalized_shape: _shape_t, eps: float | None = ..., elementwise_affine: bool = ..., device=..., dtype=...
     ) -> None: ...
     def reset_parameters(self) -> None: ...
     def forward(self, x: torch.Tensor) -> torch.Tensor: ...

@@ -1,8 +1,7 @@
 import dataclasses
 from collections.abc import Collection, Mapping
 from enum import Enum
-from typing import TYPE_CHECKING
-
+from typing import TYPE_CHECKING, TypeAlias
 from torch._library.fake_class_registry import FakeScriptObject
 
 if TYPE_CHECKING: ...
@@ -52,7 +51,7 @@ class ConstantArgument:
     name: str
     value: int | float | bool | str | None
 
-type ArgumentSpec = (
+ArgumentSpec: TypeAlias = (
     TensorArgument
     | SymIntArgument
     | SymFloatArgument

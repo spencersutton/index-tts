@@ -1,28 +1,19 @@
 import abc
 import functools
 import inspect
-from collections.abc import Callable, Iterator, Mapping, Sequence
-from contextlib import _GeneratorContextManager, contextmanager
-from dataclasses import dataclass
-from enum import Enum
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    NamedTuple,
-    NoReturn,
-    ParamSpec,
-    TypeGuard,
-    TypeVar,
-)
-from warnings import deprecated
-
 import sympy
 import torch
 import torch.fx
 import torch.utils._pytree as pytree
+from collections.abc import Callable, Iterator, Mapping, Sequence
+from contextlib import _GeneratorContextManager, contextmanager
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any, NamedTuple, NoReturn, ParamSpec, TYPE_CHECKING, TypeGuard, TypeVar, TypeAlias
+from warnings import deprecated
 from torch import SymBool, SymFloat, SymInt, Tensor
 from torch._dynamo.source import TensorPropertySource
-from torch._guards import ShapeGuard, SLoc, Source
+from torch._guards import SLoc, ShapeGuard, Source
 from torch._subclasses.fake_tensor import FakeTensor
 from torch.fx.experimental.recording import record_shapeenv_event
 from torch.fx.experimental.sym_node import SymNode
@@ -92,11 +83,9 @@ __all__ = [
 SHAPEENV_EVENT_KEY = ...
 CURRENT_NODE_KEY = ...
 
-def log_lru_cache_stats(
-    wrapped_f: functools._lru_cache_wrapper[object],
-) -> None: ...
+def log_lru_cache_stats(wrapped_f: functools._lru_cache_wrapper[object]) -> None: ...
 
-type SympyBoolean = sympy.logic.boolalg.Boolean
+SympyBoolean = sympy.logic.boolalg.Boolean
 _T = TypeVar("_T")
 _SympyT = TypeVar("_SympyT", sympy.Expr, SympyBoolean, sympy.Basic)
 
@@ -105,9 +94,7 @@ class SymIntEqByExpr:
     def __eq__(self, other: object) -> bool: ...
     def __hash__(self) -> int: ...
 
-def lru_cache(
-    maxsize: int | None,
-) -> Callable[[Callable[..., _T]], functools._lru_cache_wrapper[_T]]: ...
+def lru_cache(maxsize: int | None) -> Callable[[Callable[..., _T]], functools._lru_cache_wrapper[_T]]: ...
 @lru_cache(None)
 def uninteresting_files() -> set[str]: ...
 
@@ -115,12 +102,12 @@ class ConstraintViolationError(RuntimeError): ...
 
 def has_symbolic_sizes_strides(elem: torch.Tensor) -> bool: ...
 
-type Int = torch.SymInt | int
+Int: TypeAlias = torch.SymInt | int
 
 def create_contiguous(shape: Sequence[Int]) -> list[Int]: ...
 def hint_int(a: torch.SymInt | int, fallback: int | None = ...) -> int: ...
 
-type Scalar = torch.SymInt | torch.SymFloat | torch.SymBool | int | float | bool
+Scalar: TypeAlias = torch.SymInt | torch.SymFloat | torch.SymBool | int | float | bool
 
 def has_hint(a: Scalar) -> bool: ...
 def is_concrete_int(a: IntLikeType) -> bool: ...
@@ -130,28 +117,25 @@ def has_static_value(a: SymBool | SymFloat | SymInt | bool | float) -> bool: ...
 def guard_size_oblivious(expr: torch.SymBool | bool) -> bool: ...
 def check_consistent(new: _T, old: _T) -> None: ...
 def resolve_unbacked_bindings(
-    shape_env: ShapeEnv | None,
-    bindings: dict[sympy.Symbol, pytree.KeyPath] | None,
+    shape_env: ShapeEnv | None, bindings: dict[sympy.Symbol, pytree.KeyPath] | None
 ) -> dict[sympy.Symbol, pytree.KeyPath] | None: ...
 
-type Result = torch.Tensor | tuple[torch.Tensor, ...]
+Result: TypeAlias = torch.Tensor | tuple[torch.Tensor, ...]
 
 def rebind_unbacked(shape_env: ShapeEnv | None, n: torch.fx.Node, result: Result) -> None: ...
 def is_accessor_node(node: torch.fx.Node) -> bool: ...
 def canonicalize_bool_expr[T](expr: _T) -> _T: ...
 def is_nested_int(s: IntLikeType) -> TypeGuard[SymInt]: ...
 
-type IterateExprsAtom = SymInt | SymFloat | SymBool | int | float | bool | sympy.Basic | torch.Tensor
-type IterateExprs = IterateExprsAtom | Sequence[IterateExprsAtom]
+IterateExprsAtom: TypeAlias = SymInt | SymFloat | SymBool | int | float | bool | sympy.Basic | torch.Tensor
+IterateExprs: TypeAlias = IterateExprsAtom | Sequence[IterateExprsAtom]
 
 def free_symbols(val: IterateExprs) -> OrderedSet[sympy.Symbol]: ...
 def has_free_symbols(val: IterateExprs) -> bool: ...
 def has_free_unbacked_symbols(x: IterateExprs) -> bool: ...
 def free_unbacked_symbols(x: IterateExprs) -> OrderedSet[sympy.Symbol]: ...
 def is_symbol_binding_fx_node(node: torch.fx.Node) -> sympy.Symbol | None: ...
-def find_symbol_binding_fx_nodes(
-    graph: torch.fx.Graph,
-) -> dict[sympy.Symbol, torch.fx.Node]: ...
+def find_symbol_binding_fx_nodes(graph: torch.fx.Graph) -> dict[sympy.Symbol, torch.fx.Node]: ...
 
 @dataclass(frozen=True)
 class Specialization:
@@ -165,26 +149,20 @@ class ConvertIntKey:
 @dataclass(frozen=True)
 class CallMethodKey:
     name: str
-
     def get(self, o: Any) -> Any: ...
 
 @dataclass(frozen=True)
 class InnerTensorKey:
     inner_name: str
-
     def get(self, o: Any) -> Any: ...
 
 @dataclass(frozen=True)
 class DivideByKey:
     divisor: IntLikeType
-
     def get(self, o: int) -> int: ...
 
 def compute_unbacked_bindings(
-    shape_env: ShapeEnv | None,
-    example_value: object,
-    old_example_value: object | None = ...,
-    peek: bool = ...,
+    shape_env: ShapeEnv | None, example_value: object, old_example_value: object | None = ..., peek: bool = ...
 ) -> dict[sympy.Symbol, pytree.KeyPath] | None: ...
 def guard_or_false(a: BoolLikeType) -> bool: ...
 def guard_or_true(a: BoolLikeType) -> bool: ...
@@ -193,9 +171,7 @@ def statically_known_true(x: BoolLikeType) -> bool: ...
 def sym_and(x: BoolLikeType, *others: BoolLikeType) -> BoolLikeType: ...
 def sym_eq(x: _T, y: _T) -> BoolLikeType: ...
 def sym_or(x: BoolLikeType, *others: BoolLikeType) -> BoolLikeType: ...
-def guard_scalar(
-    a: SymBool | SymInt | SymFloat | bool | float,
-) -> bool | int | float: ...
+def guard_scalar(a: SymBool | SymInt | SymFloat | bool | float) -> bool | int | float: ...
 def constrain_range(a: SymInt, *, min: int | None, max: int | None = ...) -> None: ...
 def constrain_unify(a: torch.SymInt, b: torch.SymInt) -> None: ...
 def expect_true(a: BoolLikeType, skip: int = ...) -> bool: ...
@@ -228,7 +204,7 @@ class StrictMinMaxConstraint(Constraint):
 class RelaxedUnspecConstraint(Constraint):
     def render(self, source: Source) -> str: ...
 
-type DimConstraint = StrictMinMaxConstraint | RelaxedUnspecConstraint | None
+DimConstraint: TypeAlias = StrictMinMaxConstraint | RelaxedUnspecConstraint | None
 
 @dataclass(frozen=True)
 class EqualityConstraint(Constraint):
@@ -240,12 +216,7 @@ class EqualityConstraint(Constraint):
     _defs: dict[Source, sympy.Expr] = ...
     def __post_init__(self) -> None: ...
     def is_equal(self, source1: Source, source2: Source) -> bool: ...
-    def is_derived(
-        self,
-        src: Source,
-        symbol_src: Source,
-        fn: Callable[[sympy.Expr], sympy.Expr],
-    ) -> bool: ...
+    def is_derived(self, src: Source, symbol_src: Source, fn: Callable[[sympy.Expr], sympy.Expr]) -> bool: ...
 
 @dataclass(frozen=True)
 class SymbolicContext: ...
@@ -286,16 +257,12 @@ class TrackedFake:
     def __hash__(self) -> int: ...
     def __eq__(self, other: object) -> bool: ...
 
-def is_symbolic(
-    val: SymInt | float | SymFloat | bool | SymBool,
-) -> TypeGuard[SymInt | SymFloat | SymBool]: ...
+def is_symbolic(val: SymInt | float | SymFloat | bool | SymBool) -> TypeGuard[SymInt | SymFloat | SymBool]: ...
 
 IndicatorTypes = ...
 
 @lru_cache(256)
-def safe_expand[SympyT: (sympy.Expr, SympyBoolean, sympy.Basic)](
-    r: _SympyT,
-) -> _SympyT: ...
+def safe_expand[SympyT: (sympy.Expr, SympyBoolean, sympy.Basic)](r: _SympyT) -> _SympyT: ...
 
 class _SymbolInfo(NamedTuple):
     k: sympy.Symbol
@@ -305,9 +272,7 @@ class _SymbolInfo(NamedTuple):
 
 def error() -> NoReturn: ...
 def eval_is_non_overlapping_and_dense(sizes: Sequence[int], strides: Sequence[int]) -> int: ...
-def cast_symbool_to_symint_guardless(
-    symbool: bool | torch.SymBool,
-) -> int | torch.SymInt: ...
+def cast_symbool_to_symint_guardless(symbool: bool | torch.SymBool) -> int | torch.SymInt: ...
 
 SYMPY_INTERP = ...
 
@@ -337,8 +302,7 @@ class ShapeGuardPythonPrinter(_ShapeGuardPrinter, PythonPrinter):
     def doprint(self, expr: sympy.Expr) -> str: ...
 
 @deprecated(
-    "`torch.fx.experimental.symbolic_shapes.ShapeGuardPrinter` is deprecated, "
-    "please use `torch.fx.experimental.symbolic_shapes.ShapeGuardPythonPrinter` instead.",
+    "`torch.fx.experimental.symbolic_shapes.ShapeGuardPrinter` is deprecated, please use `torch.fx.experimental.symbolic_shapes.ShapeGuardPythonPrinter` instead.",
     category=FutureWarning,
 )
 class ShapeGuardPrinter(ShapeGuardPythonPrinter): ...
@@ -361,9 +325,7 @@ class LoggingShapeGuardPrinter(ShapeGuardPythonPrinter):
 
 class DynamicDimConstraintPrinter(PythonPrinter):
     def __init__(
-        self,
-        symbol_to_source: dict[sympy.Symbol, list[Source]],
-        source_name_to_debug_name: Mapping[str, str],
+        self, symbol_to_source: dict[sympy.Symbol, list[Source]], source_name_to_debug_name: Mapping[str, str]
     ) -> None: ...
 
 class DimConstraints:
@@ -412,11 +374,7 @@ class _FrameLocalResult:
 
 class ShapeEnv:
     def __init__(
-        self,
-        *,
-        should_record_events: bool | None = ...,
-        tracked_fakes: list[Any] | None = ...,
-        **kwargs: Any,
+        self, *, should_record_events: bool | None = ..., tracked_fakes: list[Any] | None = ..., **kwargs: Any
     ) -> None: ...
     @property
     def allow_scalar_outputs(self) -> bool: ...
@@ -445,25 +403,13 @@ class ShapeEnv:
     def freeze_runtime_asserts(self) -> None: ...
     def suppress_guards(self) -> _GeneratorContextManager[None]: ...
     def create_symbolic_sizes_strides_storage_offset(
-        self,
-        ex: torch.Tensor,
-        source: Source,
-        *,
-        symbolic_context: SymbolicContext | None = ...,
-    ) -> tuple[
-        tuple[IntLikeType, ...],
-        tuple[IntLikeType, ...],
-        IntLikeType,
-    ]: ...
+        self, ex: torch.Tensor, source: Source, *, symbolic_context: SymbolicContext | None = ...
+    ) -> tuple[tuple[IntLikeType, ...], tuple[IntLikeType, ...], IntLikeType]: ...
     @record_shapeenv_event()
     def create_symintnode(self, sym: sympy.Expr, *, hint: int | None, source: Source | None = ...) -> IntLikeType: ...
     @record_shapeenv_event()
     def create_symfloatnode(
-        self,
-        sym: sympy.Expr,
-        *,
-        hint: float | bool | None,
-        source: Source | None = ...,
+        self, sym: sympy.Expr, *, hint: float | bool | None, source: Source | None = ...
     ) -> FloatLikeType: ...
     @record_shapeenv_event()
     def create_unspecified_symint_and_symbol(
@@ -523,11 +469,7 @@ class ShapeEnv:
     def deserialize_symexpr(self, code: str) -> SymInt | SymFloat | SymBool: ...
     def evaluate_guards_expression(self, code: str, args: Sequence[object]) -> bool: ...
     def evaluate_guards_for_args(
-        self,
-        placeholders: Sequence[FakeTensor],
-        args: Sequence[Tensor],
-        *,
-        ignore_static: bool = ...,
+        self, placeholders: Sequence[FakeTensor], args: Sequence[Tensor], *, ignore_static: bool = ...
     ) -> bool: ...
     def get_pruned_guards(self, symints: Sequence[torch.SymInt]) -> list[ShapeGuard]: ...
     def bind_symbols(self, placeholders: Sequence[FakeTensor], args: Sequence[Tensor]) -> dict[sympy.Symbol, int]: ...
@@ -536,9 +478,7 @@ class ShapeEnv:
     def bound_sympy(self, expr: sympy.Expr, size_oblivious: bool = ...) -> ValueRanges: ...
     @_lru_cache
     def get_axioms(
-        self,
-        symbols: tuple[sympy.Symbol] | None = ...,
-        compute_hint: bool = ...,
+        self, symbols: tuple[sympy.Symbol] | None = ..., compute_hint: bool = ...
     ) -> tuple[SympyBoolean, ...]: ...
     @lru_cache(None)
     def get_implications(self, e: SympyBoolean) -> tuple[tuple[SympyBoolean, sympy.logic.boolalg.BooleanAtom], ...]: ...
@@ -553,10 +493,7 @@ class ShapeEnv:
 
     _expr_sym_node_id: int | None = ...
     def evaluate_sym_node(
-        self,
-        sym_node: SymNode,
-        size_oblivious: bool = ...,
-        fallback_value: bool | None = ...,
+        self, sym_node: SymNode, size_oblivious: bool = ..., fallback_value: bool | None = ...
     ) -> sympy.Basic: ...
     def evaluate_expr(
         self,
@@ -572,10 +509,7 @@ class ShapeEnv:
     @lru_cache(256)
     @record_shapeenv_event(save_tracked_fakes=True)
     def guard_or_defer_runtime_assert(
-        self,
-        orig_expr: SympyBoolean,
-        msg: str,
-        fx_node: torch.fx.Node | None = ...,
+        self, orig_expr: SympyBoolean, msg: str, fx_node: torch.fx.Node | None = ...
     ) -> bool: ...
     @lru_cache(maxsize=None)
     @record_shapeenv_event()

@@ -1,11 +1,5 @@
 from torch import Tensor
-from torch.nn.common_types import (
-    _ratio_2_t,
-    _ratio_any_t,
-    _size_2_t,
-    _size_any_t,
-)
-
+from torch.nn.common_types import _ratio_2_t, _ratio_any_t, _size_2_t, _size_any_t
 from .module import Module
 
 __all__ = ["Upsample", "UpsamplingBilinear2d", "UpsamplingNearest2d"]
@@ -31,15 +25,7 @@ class Upsample(Module):
     def extra_repr(self) -> str: ...
 
 class UpsamplingNearest2d(Upsample):
-    def __init__(
-        self,
-        size: _size_2_t | None = ...,
-        scale_factor: _ratio_2_t | None = ...,
-    ) -> None: ...
+    def __init__(self, size: _size_2_t | None = ..., scale_factor: _ratio_2_t | None = ...) -> None: ...
 
 class UpsamplingBilinear2d(Upsample):
-    def __init__(
-        self,
-        size: _size_2_t | None = ...,
-        scale_factor: _ratio_2_t | None = ...,
-    ) -> None: ...
+    def __init__(self, size: _size_2_t | None = ..., scale_factor: _ratio_2_t | None = ...) -> None: ...

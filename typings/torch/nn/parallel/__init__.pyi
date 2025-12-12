@@ -1,5 +1,4 @@
 from warnings import deprecated
-
 from torch.nn.parallel.data_parallel import DataParallel, data_parallel
 from torch.nn.parallel.distributed import DistributedDataParallel
 from torch.nn.parallel.parallel_apply import parallel_apply
@@ -17,8 +16,7 @@ __all__ = [
 ]
 
 @deprecated(
-    "`torch.nn.parallel.DistributedDataParallelCPU` is deprecated, "
-    "please use `torch.nn.parallel.DistributedDataParallel` instead.",
+    "`torch.nn.parallel.DistributedDataParallelCPU` is deprecated, please use `torch.nn.parallel.DistributedDataParallel` instead.",
     category=FutureWarning,
 )
 class DistributedDataParallelCPU(DistributedDataParallel): ...

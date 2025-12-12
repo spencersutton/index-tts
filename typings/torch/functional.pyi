@@ -1,7 +1,6 @@
-from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any
-
 import torch
+from collections.abc import Sequence
+from typing import Any, TYPE_CHECKING, TypeAlias
 from torch import Tensor
 
 __all__ = [
@@ -54,7 +53,8 @@ def stft(
 
 istft = ...
 if TYPE_CHECKING:
-    type _unique_impl_out = Any
+    _unique_impl_out: TypeAlias = Any
+    ...
 _return_inverse_false = ...
 _return_inverse_true = ...
 unique = ...
@@ -78,7 +78,8 @@ def unravel_index(indices: Tensor, shape: int | Sequence[int] | torch.Size) -> t
 def chain_matmul(*matrices, out=...) -> Any: ...
 
 if TYPE_CHECKING:
-    type _ListOrSeq = Sequence[Tensor]
+    _ListOrSeq: TypeAlias = Sequence[Tensor]
+    ...
 lu = ...
 
 def align_tensors(*tensors): ...

@@ -1,9 +1,7 @@
 from typing import Any, TypeVar
 from warnings import deprecated
-
 from torch.nn.modules import Module
 
-r"""Weight Normalization from https://arxiv.org/abs/1602.07868."""
 __all__ = ["WeightNorm", "remove_weight_norm", "weight_norm"]
 
 class WeightNorm:

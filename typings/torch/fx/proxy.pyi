@@ -1,7 +1,6 @@
 from collections import OrderedDict
 from collections.abc import Callable, Iterator
 from typing import Any
-
 from ._compatibility import compatibility
 from .graph import Graph
 from .node import Argument, Node, Target

@@ -1,18 +1,11 @@
 import dataclasses
 from collections.abc import Callable
 from enum import Enum
-from typing import TYPE_CHECKING, Any
-
+from typing import Any, TYPE_CHECKING, TypeAlias
 from torch.fx.experimental.symbolic_shapes import StrictMinMaxConstraint
 
 if TYPE_CHECKING: ...
-__all__ = [
-    "AdditionalInputs",
-    "Constraint",
-    "Dim",
-    "dims",
-    "refine_dynamic_shapes_from_suggested_fixes",
-]
+__all__ = ["AdditionalInputs", "Constraint", "Dim", "dims", "refine_dynamic_shapes_from_suggested_fixes"]
 log = ...
 
 class _DimHintType(Enum):
@@ -101,7 +94,7 @@ class _RelaxedConstraint(_ConstraintTarget):
     @property
     def serializable_spec(self) -> dict[str, int]: ...
 
-type Constraint = _Constraint | _DerivedConstraint | _RelaxedConstraint
+Constraint: TypeAlias = _Constraint | _DerivedConstraint | _RelaxedConstraint
 
 @dataclasses.dataclass
 class _IntWrapper:
@@ -110,11 +103,9 @@ class _IntWrapper:
 
 class ShapesCollection:
     def __init__(self) -> None: ...
-    def __setitem__(self, t, shape) -> None:  # -> None:
-        ...
+    def __setitem__(self, t, shape) -> None: ...
     def __getitem__(self, t): ...
-    def __len__(self) -> int:  # -> int:
-        ...
+    def __len__(self) -> int: ...
     def dynamic_shapes(self, m, args, kwargs=...) -> Any: ...
 
 class AdditionalInputs:

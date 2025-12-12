@@ -1,7 +1,6 @@
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, NamedTuple
-
+from typing import NamedTuple, TYPE_CHECKING
 from ._compatibility import compatibility
 from .graph import Graph
 from .graph_module import GraphModule
@@ -9,12 +8,7 @@ from .node import Node
 from .passes.utils.matcher_with_name_node_map_utils import InternalMatch
 
 if TYPE_CHECKING: ...
-__all__ = [
-    "Match",
-    "ReplacedPatterns",
-    "replace_pattern",
-    "replace_pattern_with_filters",
-]
+__all__ = ["Match", "ReplacedPatterns", "replace_pattern", "replace_pattern_with_filters"]
 
 @compatibility(is_backward_compatible=True)
 class Match(NamedTuple):
@@ -30,9 +24,7 @@ class ReplacedPatterns:
 
 @compatibility(is_backward_compatible=True)
 def replace_pattern(
-    gm: GraphModule,
-    pattern: Callable | GraphModule,
-    replacement: Callable | GraphModule,
+    gm: GraphModule, pattern: Callable | GraphModule, replacement: Callable | GraphModule
 ) -> list[Match]: ...
 @compatibility(is_backward_compatible=False)
 def replace_pattern_with_filters(

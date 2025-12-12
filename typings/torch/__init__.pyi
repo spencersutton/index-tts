@@ -3,110 +3,97 @@ import functools
 import os
 import platform
 import sys
-from collections.abc import Callable as _Callable
-from typing import TYPE_CHECKING
-from typing import Any as _Any
-from typing import ParamSpec as _ParamSpec
-from typing import TypeIs as _TypeIs
-from typing import TypeVar as _TypeVar
-from typing import overload as _overload
-
 import torch
-from torch import _C as _C
-from torch import _VF as _VF
-from torch import __config__ as __config__
-from torch import __future__ as __future__
-from torch import _awaits as _awaits
-from torch import _dynamo as _dynamo
-from torch import _inductor as _inductor
-from torch import _library as _library
-from torch import _ops as _ops
-from torch import _subclasses as _subclasses
-from torch import accelerator as accelerator
-from torch import amp as amp
-from torch import ao as ao
-from torch import autograd as autograd
-from torch import backends as backends
-from torch import compiler as compiler
-from torch import cpu as cpu
-from torch import cuda as cuda
-from torch import distributed as distributed
-from torch import distributions as distributions
-from torch import export as export
-from torch import fft as fft
-from torch import func as func
-from torch import functional as functional
-from torch import futures as futures
-from torch import fx as fx
-from torch import hub as hub
-from torch import jit as jit
-from torch import library as library
-from torch import linalg as linalg
-from torch import masked as masked
-from torch import mps as mps
-from torch import mtia as mtia
-from torch import multiprocessing as multiprocessing
-from torch import nested as nested
-from torch import nn as nn
-from torch import onnx as onnx
-from torch import optim as optim
-from torch import overrides as overrides
-from torch import profiler as profiler
-from torch import quantization as quantization
-from torch import quasirandom as quasirandom
-from torch import random as random
-from torch import return_types as return_types
-from torch import serialization as serialization
-from torch import sparse as sparse
-from torch import special as special
-from torch import storage as storage
-from torch import testing as testing
-from torch import types as types
-from torch import utils as utils
-from torch import version as version
-from torch import xpu as xpu
+from collections.abc import Callable as _Callable
+from typing import (
+    Any as _Any,
+    ParamSpec as _ParamSpec,
+    TYPE_CHECKING,
+    TypeIs as _TypeIs,
+    TypeVar as _TypeVar,
+    overload as _overload,
+)
+from torch import (
+    _C as _C,
+    _VF as _VF,
+    __config__ as __config__,
+    __future__ as __future__,
+    _awaits as _awaits,
+    _dynamo as _dynamo,
+    _inductor as _inductor,
+    _library as _library,
+    _ops as _ops,
+    _subclasses as _subclasses,
+    accelerator as accelerator,
+    amp as amp,
+    ao as ao,
+    autograd as autograd,
+    backends as backends,
+    compiler as compiler,
+    cpu as cpu,
+    cuda as cuda,
+    distributed as distributed,
+    distributions as distributions,
+    export as export,
+    fft as fft,
+    func as func,
+    functional as functional,
+    futures as futures,
+    fx as fx,
+    hub as hub,
+    jit as jit,
+    library as library,
+    linalg as linalg,
+    masked as masked,
+    mps as mps,
+    mtia as mtia,
+    multiprocessing as multiprocessing,
+    nested as nested,
+    nn as nn,
+    onnx as onnx,
+    optim as optim,
+    overrides as overrides,
+    profiler as profiler,
+    quantization as quantization,
+    quasirandom as quasirandom,
+    random as random,
+    return_types as return_types,
+    serialization as serialization,
+    sparse as sparse,
+    special as special,
+    storage as storage,
+    testing as testing,
+    types as types,
+    utils as utils,
+    version as version,
+    xpu as xpu,
+)
 from torch._C import *
 from torch._C._VariableFunctions import *
 from torch._classes import classes as classes
-from torch._higher_order_ops import cond as cond
-from torch._higher_order_ops import while_loop as while_loop
+from torch._higher_order_ops import cond as cond, while_loop as while_loop
 from torch._lobpcg import lobpcg as lobpcg
 from torch._ops import ops as ops
 from torch._tensor import Tensor
 from torch._tensor_str import set_printoptions
 from torch._utils import classproperty
-from torch._utils_internal import (
-    USE_RTLD_GLOBAL_WITH_LIBTORCH,
-)
+from torch._utils_internal import USE_RTLD_GLOBAL_WITH_LIBTORCH
 from torch.amp import GradScaler, autocast
-from torch.autograd import enable_grad as enable_grad
-from torch.autograd import inference_mode as inference_mode
-from torch.autograd import no_grad as no_grad
-from torch.autograd import set_grad_enabled as set_grad_enabled
+from torch.autograd import (
+    enable_grad as enable_grad,
+    inference_mode as inference_mode,
+    no_grad as no_grad,
+    set_grad_enabled as set_grad_enabled,
+)
 from torch.func import vmap as vmap
 from torch.functional import *
-from torch.random import (
-    get_rng_state,
-    initial_seed,
-    manual_seed,
-    seed,
-    set_rng_state,
-)
+from torch.random import get_rng_state, initial_seed, manual_seed, seed, set_rng_state
 from torch.serialization import load, save
 from torch.signal import windows as windows
 from torch.storage import TypedStorage, UntypedStorage, _LegacyStorage
 from torch.torch_version import __version__ as __version__
 from torch.types import Device, IntLikeType
 
-"""
-The torch package contains data structures for multi-dimensional
-tensors and defines mathematical operations over these tensors.
-Additionally, it provides many utilities for efficient serialization of
-Tensors and arbitrary types, and other useful utilities.
-
-It has a CUDA counterpart, that enables you to run your tensor computations
-on an NVIDIA GPU with compute capability >= 3.0.
-"""
 if TYPE_CHECKING: ...
 __all__ = [
     "BoolStorage",
@@ -187,8 +174,7 @@ if (USE_RTLD_GLOBAL_WITH_LIBTORCH or os.getenv("TORCH_USE_RTLD_GLOBAL")) and (pl
 
 class SymInt:
     def __init__(self, node) -> None: ...
-    def __bool__(self) -> bool:  # -> bool:
-        ...
+    def __bool__(self) -> bool: ...
     def __int__(self) -> int: ...
     def __index__(self) -> int: ...
     def __round__(self, ndigits=...) -> Self: ...

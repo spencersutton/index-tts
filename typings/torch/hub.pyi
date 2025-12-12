@@ -1,6 +1,5 @@
 import os
 from typing import Any
-
 from torch.serialization import MAP_LOCATION
 
 class _Faketqdm:
@@ -12,15 +11,7 @@ class _Faketqdm:
     def __enter__(self) -> Self: ...
     def __exit__(self, exc_type, exc_val, exc_tb) -> None: ...
 
-__all__ = [
-    "download_url_to_file",
-    "get_dir",
-    "help",
-    "list",
-    "load",
-    "load_state_dict_from_url",
-    "set_dir",
-]
+__all__ = ["download_url_to_file", "get_dir", "help", "list", "load", "load_state_dict_from_url", "set_dir"]
 HASH_REGEX = ...
 _TRUSTED_REPO_OWNERS = ...
 ENV_GITHUB_TOKEN = ...
@@ -37,15 +28,7 @@ def set_dir(d: str | os.PathLike) -> None: ...
 def list(github, force_reload=..., skip_validation=..., trust_repo=..., verbose=...) -> list[str]: ...
 def help(github, model, force_reload=..., skip_validation=..., trust_repo=...) -> str | None: ...
 def load(
-    repo_or_dir,
-    model,
-    *args,
-    source=...,
-    trust_repo=...,
-    force_reload=...,
-    verbose=...,
-    skip_validation=...,
-    **kwargs,
+    repo_or_dir, model, *args, source=..., trust_repo=..., force_reload=..., verbose=..., skip_validation=..., **kwargs
 ) -> object: ...
 def download_url_to_file(url: str, dst: str, hash_prefix: str | None = ..., progress: bool = ...) -> None: ...
 def load_state_dict_from_url(

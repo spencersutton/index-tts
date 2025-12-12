@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-
 from torch.fx import Graph, Node
 from torch.fx._compatibility import compatibility
 

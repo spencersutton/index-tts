@@ -1,23 +1,12 @@
+import torch
 from typing import overload
 from warnings import deprecated
-
-import torch
 from torch import Tensor
 from torch.nn.parameter import Parameter
 from torch.nn.utils.rnn import PackedSequence
-
 from .module import Module
 
-__all__ = [
-    "GRU",
-    "LSTM",
-    "RNN",
-    "GRUCell",
-    "LSTMCell",
-    "RNNBase",
-    "RNNCell",
-    "RNNCellBase",
-]
+__all__ = ["GRU", "LSTM", "RNN", "GRUCell", "LSTMCell", "RNNBase", "RNNCell", "RNNCellBase"]
 _rnn_impls = ...
 
 @deprecated(
@@ -57,12 +46,7 @@ class RNNBase(Module):
     def reset_parameters(self) -> None: ...
     def check_input(self, input: Tensor, batch_sizes: Tensor | None) -> None: ...
     def get_expected_hidden_size(self, input: Tensor, batch_sizes: Tensor | None) -> tuple[int, int, int]: ...
-    def check_hidden_size(
-        self,
-        hx: Tensor,
-        expected_hidden_size: tuple[int, int, int],
-        msg: str = ...,
-    ) -> None: ...
+    def check_hidden_size(self, hx: Tensor, expected_hidden_size: tuple[int, int, int], msg: str = ...) -> None: ...
     def check_forward_args(self, input: Tensor, hidden: Tensor, batch_sizes: Tensor | None) -> None: ...
     def permute_hidden(self, hx: Tensor, permutation: Tensor | None) -> Tensor: ...
     def extra_repr(self) -> str: ...
@@ -116,12 +100,7 @@ class LSTM(RNNBase):
     def __init__(self, *args, **kwargs) -> None: ...
     def __init__(self, *args, **kwargs) -> None: ...
     def get_expected_cell_size(self, input: Tensor, batch_sizes: Tensor | None) -> tuple[int, int, int]: ...
-    def check_forward_args(
-        self,
-        input: Tensor,
-        hidden: tuple[Tensor, Tensor],
-        batch_sizes: Tensor | None,
-    ) -> None: ...
+    def check_forward_args(self, input: Tensor, hidden: tuple[Tensor, Tensor], batch_sizes: Tensor | None) -> None: ...
     def permute_hidden(self, hx: tuple[Tensor, Tensor], permutation: Tensor | None) -> tuple[Tensor, Tensor]: ...
     @overload
     @torch._jit_internal._overload_method
@@ -170,13 +149,7 @@ class RNNCellBase(Module):
     weight_ih: Tensor
     weight_hh: Tensor
     def __init__(
-        self,
-        input_size: int,
-        hidden_size: int,
-        bias: bool,
-        num_chunks: int,
-        device=...,
-        dtype=...,
+        self, input_size: int, hidden_size: int, bias: bool, num_chunks: int, device=..., dtype=...
     ) -> None: ...
     def extra_repr(self) -> str: ...
     def reset_parameters(self) -> None: ...
@@ -185,34 +158,14 @@ class RNNCell(RNNCellBase):
     __constants__ = ...
     nonlinearity: str
     def __init__(
-        self,
-        input_size: int,
-        hidden_size: int,
-        bias: bool = ...,
-        nonlinearity: str = ...,
-        device=...,
-        dtype=...,
+        self, input_size: int, hidden_size: int, bias: bool = ..., nonlinearity: str = ..., device=..., dtype=...
     ) -> None: ...
     def forward(self, input: Tensor, hx: Tensor | None = ...) -> Tensor: ...
 
 class LSTMCell(RNNCellBase):
-    def __init__(
-        self,
-        input_size: int,
-        hidden_size: int,
-        bias: bool = ...,
-        device=...,
-        dtype=...,
-    ) -> None: ...
+    def __init__(self, input_size: int, hidden_size: int, bias: bool = ..., device=..., dtype=...) -> None: ...
     def forward(self, input: Tensor, hx: tuple[Tensor, Tensor] | None = ...) -> tuple[Tensor, Tensor]: ...
 
 class GRUCell(RNNCellBase):
-    def __init__(
-        self,
-        input_size: int,
-        hidden_size: int,
-        bias: bool = ...,
-        device=...,
-        dtype=...,
-    ) -> None: ...
+    def __init__(self, input_size: int, hidden_size: int, bias: bool = ..., device=..., dtype=...) -> None: ...
     def forward(self, input: Tensor, hx: Tensor | None = ...) -> Tensor: ...

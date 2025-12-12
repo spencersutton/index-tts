@@ -1,5 +1,4 @@
 from collections.abc import Callable
-
 from torch import nn
 from torch.ao.quantization.utils import Pattern
 
@@ -23,6 +22,5 @@ _DEFAULT_OP_LIST_TO_FUSER_METHOD: dict[tuple, nn.Sequential | Callable] = ...
 
 def get_fuser_method(op_list, additional_fuser_method_mapping=...): ...
 def get_fuser_method_new(
-    op_pattern: Pattern,
-    fuser_method_mapping: dict[Pattern, nn.Sequential | Callable],
+    op_pattern: Pattern, fuser_method_mapping: dict[Pattern, nn.Sequential | Callable]
 ) -> Sequential | Callable[..., Any]: ...

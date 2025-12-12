@@ -1,5 +1,4 @@
 import torch
-
 from .utils import WeightedQuantizedModule
 
 __all__ = ["Linear", "LinearPackedParams"]

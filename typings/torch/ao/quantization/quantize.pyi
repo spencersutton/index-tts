@@ -1,5 +1,4 @@
 import typing_extensions
-
 from .utils import DEPRECATION_WARNING
 
 __all__ = [
@@ -21,13 +20,7 @@ def get_default_custom_config_dict() -> dict[str, dict[type[LSTM | MultiheadAtte
 def propagate_qconfig_(module, qconfig_dict=..., prepare_custom_config_dict=...) -> None: ...
 def add_quant_dequant(module) -> QuantWrapper: ...
 @typing_extensions.deprecated(DEPRECATION_WARNING)
-def prepare(
-    model,
-    inplace=...,
-    allow_list=...,
-    observer_non_leaf_module_list=...,
-    prepare_custom_config_dict=...,
-): ...
+def prepare(model, inplace=..., allow_list=..., observer_non_leaf_module_list=..., prepare_custom_config_dict=...): ...
 @typing_extensions.deprecated(DEPRECATION_WARNING)
 def quantize(model, run_fn, run_args, mapping=..., inplace=...): ...
 @typing_extensions.deprecated(DEPRECATION_WARNING)

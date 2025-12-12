@@ -1,5 +1,4 @@
 from torch import Tensor
-
 from .batchnorm import _LazyNormBase, _NormBase
 
 __all__ = [

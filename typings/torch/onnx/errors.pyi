@@ -1,13 +1,7 @@
 from typing import TYPE_CHECKING
-
 from torch import _C
 
-"""ONNX exporter exceptions."""
-__all__ = [
-    "OnnxExporterWarning",
-    "SymbolicValueError",
-    "UnsupportedOperatorError",
-]
+__all__ = ["OnnxExporterWarning", "SymbolicValueError", "UnsupportedOperatorError"]
 if TYPE_CHECKING: ...
 
 class OnnxExporterWarning(UserWarning): ...

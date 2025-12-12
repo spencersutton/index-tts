@@ -1,6 +1,5 @@
-from typing import Any
-
 import torch
+from typing import Any
 
 __all__ = ["LSTM"]
 

@@ -1,7 +1,6 @@
 import contextlib
-from collections.abc import Generator
-
 import torch
+from collections.abc import Generator
 
 def set_rng_state(new_state: torch.Tensor) -> None: ...
 def get_rng_state() -> torch.Tensor: ...

@@ -186,7 +186,7 @@ class IndexTTS2:
 
         _, S_ref = self.semantic_codec.quantize(spk_cond_emb)
         ref_mel = self.mel_fn(audio_22k.to(spk_cond_emb.device).float())
-        ref_target_lengths = Tensor([ref_mel.size(2)]).to(ref_mel.device)
+        ref_target_lengths = torch.tensor([ref_mel.size(2)]).to(ref_mel.device)
         feat = torchaudio.compliance.kaldi.fbank(
             audio_16k.to(ref_mel.device),
             num_mel_bins=80,

@@ -120,7 +120,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         inputs_embeds: torch.Tensor | None = None,
         cache_position: torch.Tensor | None = None,
         **kwargs: Tensor,
-    ) -> dict:
+    ) -> dict[str, Any]:
         inputs_embeds = kwargs.get("inputs_embeds")  # usually None
         if not self.kv_cache:
             past_key_values = None
@@ -402,7 +402,7 @@ class UnifiedVoice(nn.Module):
         )
         assert self.inference_model is not None
         if use_deepspeed and half and torch.cuda.is_available():
-            import deepspeed  # noqa: PLC0415  # ty:ignore[unresolved-import]
+            import deepspeed  # noqa: PLC0415  # ty:ignore[unresolved-import]  # pyright: ignore[reportMissingImports]
 
             self.ds_engine = deepspeed.init_inference(
                 model=self.inference_model,

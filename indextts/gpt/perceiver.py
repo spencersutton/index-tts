@@ -1,5 +1,5 @@
 # Adapted from https://github.com/lucidrains/naturalspeech2-pytorch/blob/659bec7f7543e7747e809e950cc2f84242fbeec7/naturalspeech2_pytorch/naturalspeech2_pytorch.py#L532
-from typing import Any, NamedTuple, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, cast
 
 import torch
 import torch.nn.functional as F
@@ -20,7 +20,8 @@ class _EfficientAttentionConfig(NamedTuple):
 
 # main class
 class _Attend(nn.Module):
-    mask: Tensor | None = None
+    if TYPE_CHECKING:
+        mask: Tensor | None = None
 
     def __init__(
         self,

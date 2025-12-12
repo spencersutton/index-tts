@@ -11,6 +11,8 @@ if sys.platform == "darwin":
     raise ImportError(msg)
 
 
+from typing import cast
+
 from .attention import (
     ForwardContext,
     get_forward_context,
@@ -69,7 +71,10 @@ class AccelInferenceEngine:
         self.block_size = block_size
         self.num_blocks = num_blocks
         self.use_cuda_graph = use_cuda_graph and torch.cuda.is_available()
-        self.hidden_size = model.config.hidden_size if hasattr(model, "config") else head_dim * num_heads
+        if hasattr(model, "config"):
+            self.hidden_size = cast(int, model.config.hidden_size)
+        else:
+            self.hidden_size = head_dim * num_heads
         self.kv_manager = KVCacheManager(
             num_layers=num_layers,
             num_heads=num_heads,

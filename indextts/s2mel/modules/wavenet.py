@@ -1,7 +1,7 @@
 import torch
 from torch import Tensor, nn
 
-from indextts.s2mel.modules import commons
+from indextts.s2mel.modules.commons import fused_add_tanh_sigmoid_multiply
 from indextts.s2mel.modules.encodec import SConv1d
 
 
@@ -77,7 +77,7 @@ class WN(torch.nn.Module):
             else:
                 g_l = torch.zeros_like(x_in)
 
-            acts = commons.fused_add_tanh_sigmoid_multiply(x_in, g_l)
+            acts = fused_add_tanh_sigmoid_multiply(x_in, g_l)
             acts = self.drop(acts)
 
             res_skip_acts = self.res_skip_layers[i](acts)

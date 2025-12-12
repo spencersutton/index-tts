@@ -9,7 +9,7 @@
 import math
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from typing import Self, cast
+from typing import cast
 
 import torch
 from torch import Tensor, nn
@@ -90,81 +90,6 @@ class ModelArgs:
             hidden_dim = 4 * self.dim
             n_hidden = int(2 * hidden_dim / 3)
             self.intermediate_size = _find_multiple(n_hidden, 256)
-
-    @classmethod
-    def from_name(cls, name: str) -> Self:
-        if name in _transformer_configs:
-            return cls(**_transformer_configs[name])
-        # fuzzy search
-        config = [config for config in _transformer_configs if config.lower() in str(name).lower()]
-
-        # We may have two or more configs matched (e.g. "7B" and "Mistral-7B"). Find the best config match,
-        # take longer name (as it have more symbols matched)
-        if len(config) > 1:
-            config.sort(key=len, reverse=True)
-            assert len(config[0]) != len(config[1]), name  # make sure only one 'best' match
-
-        return cls(**_transformer_configs[config[0]])
-
-
-_transformer_configs = {
-    "CodeLlama-7b-Python-hf": {
-        "block_size": 16384,
-        "vocab_size": 32000,
-        "n_layer": 32,
-        "dim": 4096,
-        "rope_base": 1000000,
-    },
-    "7B": {"n_layer": 32, "n_head": 32, "dim": 4096},
-    "13B": {"n_layer": 40, "n_head": 40, "dim": 5120},
-    "30B": {"n_layer": 60, "n_head": 52, "dim": 6656},
-    "34B": {
-        "n_layer": 48,
-        "n_head": 64,
-        "dim": 8192,
-        "vocab_size": 32000,
-        "n_local_heads": 8,
-        "intermediate_size": 22016,
-        "rope_base": 1000000,
-    },  # CodeLlama-34B-Python-hf
-    "70B": {
-        "n_layer": 80,
-        "n_head": 64,
-        "dim": 8192,
-        "n_local_heads": 8,
-        "intermediate_size": 28672,
-    },
-    "Mistral-7B": {
-        "n_layer": 32,
-        "n_head": 32,
-        "n_local_heads": 8,
-        "dim": 4096,
-        "intermediate_size": 14336,
-        "vocab_size": 32000,
-    },
-    "stories15M": {"n_layer": 6, "n_head": 6, "dim": 288},
-    "stories110M": {"n_layer": 12, "n_head": 12, "dim": 768},
-    "llama-3-8b": {
-        "block_size": 8192,
-        "n_layer": 32,
-        "n_head": 32,
-        "n_local_heads": 8,
-        "dim": 4096,
-        "intermediate_size": 14336,
-        "vocab_size": 128256,
-        "rope_base": 500000,
-    },
-    "llama-3-70b": {
-        "block_size": 8192,
-        "n_layer": 80,
-        "n_head": 64,
-        "n_local_heads": 8,
-        "dim": 8192,
-        "intermediate_size": 28672,
-        "vocab_size": 128256,
-        "rope_base": 500000,
-    },
-}
 
 
 class KVCache(nn.Module):
@@ -297,10 +222,6 @@ class Transformer(nn.Module):
             if self.uvit_skip_connection and i in self.layers_emit_skip:
                 skip_in_x_list.append(x)
         return self.norm(x, c)
-
-    @classmethod
-    def from_name(cls, name: str) -> "Transformer":
-        return cls(ModelArgs.from_name(name))
 
 
 class TransformerBlock(nn.Module):

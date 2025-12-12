@@ -466,9 +466,9 @@ class UnifiedVoice(nn.Module):
         self,
         speech_conditioning_inputs: Tensor,
         first_inputs: Tensor,
-        first_head: nn.Module,
+        first_head: nn.Linear,
         second_inputs: Tensor | None = None,
-        second_head: nn.Module | None = None,
+        second_head: nn.Linear | None = None,
         get_attns: bool = False,
         return_latent: bool = False,
     ) -> Tensor | tuple[Tensor, ...]:
@@ -477,9 +477,8 @@ class UnifiedVoice(nn.Module):
         else:
             emb = torch.cat([speech_conditioning_inputs, first_inputs], dim=1)
 
-        gpt_out: BaseModelOutputWithPastAndCrossAttentions = self.gpt(
-            inputs_embeds=emb, return_dict=True, output_attentions=get_attns
-        )
+        gpt_out = self.gpt.forward(inputs_embeds=torch.FloatTensor(emb), return_dict=True, output_attentions=get_attns)
+        assert isinstance(gpt_out, BaseModelOutputWithPastAndCrossAttentions)
         if get_attns:
             assert gpt_out.attentions is not None
             return gpt_out.attentions
@@ -487,19 +486,19 @@ class UnifiedVoice(nn.Module):
         offset = speech_conditioning_inputs.shape[1]
         assert gpt_out.last_hidden_state is not None
         enc = gpt_out.last_hidden_state[:, offset:]
-        enc: Tensor = self.final_norm(enc)
+        enc = self.final_norm.forward(enc)
 
         if return_latent:
             assert second_inputs is not None
             return enc[:, : first_inputs.shape[1]], enc[:, -second_inputs.shape[1] :]
 
         first_logits = enc[:, : first_inputs.shape[1]]
-        first_logits: Tensor = first_head(first_logits)
+        first_logits = first_head.forward(first_logits)
         first_logits = first_logits.permute(0, 2, 1)
         if second_inputs is not None:
             assert second_head is not None
             second_logits = enc[:, -second_inputs.shape[1] :]
-            second_logits: Tensor = second_head(second_logits)
+            second_logits = second_head.forward(second_logits)
             second_logits = second_logits.permute(0, 2, 1)
             return first_logits, second_logits
         return first_logits

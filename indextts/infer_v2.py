@@ -602,6 +602,8 @@ class IndexTTS2:
 
         length_regulator = self.s2mel.models["length_regulator"]
         prompt_condition = length_regulator(S_ref, ylens=ref_target_lengths, n_quantizers=3, f0=None)[0]
+        emovec_mat: Tensor | None = None
+        weight_vector: Tensor | None = None
 
         if emo_vector is not None:
             weight_vector = torch.tensor(emo_vector, device=self.device)
@@ -678,7 +680,7 @@ class IndexTTS2:
                 alpha=emo_alpha,
             )
 
-            if emo_vector is not None and weight_vector is not None:
+            if emovec_mat is not None and weight_vector is not None:
                 emovec = emovec_mat + (1 - torch.sum(weight_vector)) * emovec
 
         wavs = []

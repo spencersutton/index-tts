@@ -1,4 +1,5 @@
 import sys
+from typing import Final
 
 import torch
 from torch import Tensor, nn
@@ -35,6 +36,9 @@ class Sampler(nn.Module):
         sampled_tokens = probs.div_(q).argmax(dim=-1)
         greedy_tokens = logits.argmax(dim=-1)
         return torch.where(greedy_mask, greedy_tokens, sampled_tokens)
+
+
+GRAPH_BS: Final = [1, 2, 4, 8]
 
 
 class AccelInferenceEngine:
@@ -209,11 +213,9 @@ class AccelInferenceEngine:
         outputs = torch.zeros(max_bs, self.hidden_size, dtype=model_dtype, device="cuda")
         inputs_embeds_buffer = torch.zeros(max_bs, self.hidden_size, dtype=model_dtype, device="cuda")
 
-        self.graph_bs = [1, 2, 4, 8]
-
         use_tts = tts_mel_embedding is not None and tts_text_pos_embedding is not None
 
-        for bs in reversed(self.graph_bs):
+        for bs in reversed(GRAPH_BS):
             graph = torch.cuda.CUDAGraph()
 
             slot_mapping[:bs] = torch.arange(bs, dtype=torch.int32, device="cuda")
@@ -275,7 +277,7 @@ class AccelInferenceEngine:
             "outputs": outputs,
             "inputs_embeds": inputs_embeds_buffer,
         }
-        print(f"CUDA graphs captured for batch sizes: {self.graph_bs}")
+        print(f"CUDA graphs captured for batch sizes: {GRAPH_BS}")
 
     def _run_decode_with_graph(
         self,
@@ -301,7 +303,7 @@ class AccelInferenceEngine:
                 out = self.model(input_ids=input_ids.unsqueeze(1), return_dict=True).last_hidden_state
             return out.squeeze(1) if out.dim() == 3 else out
 
-        graph_bs = next((x for x in self.graph_bs if x >= bs), None)
+        graph_bs = next((x for x in GRAPH_BS if x >= bs), None)
         if graph_bs is None:
             if use_tts_embedding:
                 assert tts_mel_embedding is not None

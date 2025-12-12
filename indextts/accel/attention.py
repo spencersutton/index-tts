@@ -6,9 +6,9 @@ if sys.platform == "darwin":
     raise ImportError(msg)
 
 import torch
-import triton
-import triton.language as tl
-from flash_attn import flash_attn_varlen_func, flash_attn_with_kvcache
+import triton  # pyright: ignore[reportMissingImports]
+import triton.language as tl  # pyright: ignore[reportMissingImports]
+from flash_attn import flash_attn_varlen_func, flash_attn_with_kvcache  # pyright: ignore[reportMissingImports]
 from torch import Tensor, nn
 
 

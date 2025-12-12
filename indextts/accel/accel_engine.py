@@ -92,18 +92,18 @@ class AccelInferenceEngine:
         self.graph_captured = False
 
     def _prepare_prefill(self, requests: list[Seq]) -> tuple[Tensor, Tensor]:
-        input_ids: list[int] = []
-        positions: list[int] = []
+        input_ids_int: list[int] = []
+        positions_int: list[int] = []
         cu_seqlens_q = [0]
         cu_seqlens_k = [0]
         max_seqlen_q = 0
         max_seqlen_k = 0
-        slot_mapping: list[int] = []
+        slot_mapping_int: list[int] = []
 
         for req in requests:
             seqlen = len(req)
-            input_ids.extend(req[req.num_cached_tokens :])
-            positions.extend(list(range(req.num_cached_tokens, seqlen)))
+            input_ids_int.extend(req[req.num_cached_tokens :])
+            positions_int.extend(list(range(req.num_cached_tokens, seqlen)))
             seqlen_q = seqlen - req.num_cached_tokens
             seqlen_k = seqlen
             cu_seqlens_q.append(cu_seqlens_q[-1] + seqlen_q)
@@ -120,13 +120,13 @@ class AccelInferenceEngine:
                     block_offset = token_idx % self.block_size
                     block_id = req.block_table[block_idx]
                     slot_idx = block_id * self.block_size + block_offset
-                    slot_mapping.append(slot_idx)
+                    slot_mapping_int.append(slot_idx)
 
-        input_ids = torch.tensor(input_ids, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
-        positions = torch.tensor(positions, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
+        input_ids = torch.tensor(input_ids_int, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
+        positions = torch.tensor(positions_int, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
         cu_seqlens_q = torch.tensor(cu_seqlens_q, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
         cu_seqlens_k = torch.tensor(cu_seqlens_k, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
-        slot_mapping = torch.tensor(slot_mapping, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
+        slot_mapping = torch.tensor(slot_mapping_int, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
 
         block_tables = None
         if cu_seqlens_k[-1] > cu_seqlens_q[-1]:
@@ -419,7 +419,7 @@ class AccelInferenceEngine:
                 else:
                     token_ids[-1] = 1
             else:
-                token_ids = input_ids[i].tolist()
+                token_ids = cast(list[int], input_ids[i].tolist())
             req = Seq(token_ids)
             self.kv_manager.allocate(req)
             sequences.append(req)

@@ -1,6 +1,5 @@
 # Adapted from https://github.com/lucidrains/naturalspeech2-pytorch/blob/659bec7f7543e7747e809e950cc2f84242fbeec7/naturalspeech2_pytorch/naturalspeech2_pytorch.py#L532
-from collections.abc import Callable
-from typing import Any, NamedTuple, TypeIs
+from typing import Any, NamedTuple, cast
 
 import torch
 import torch.nn.functional as F
@@ -8,11 +7,7 @@ from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 from packaging import version
 from torch import Tensor, einsum, nn
-
-
-def _exists[T](val: T | None) -> TypeIs[T]:
-    return val is not None
-
+from torch.nn.attention import SDPBackend, sdpa_kernel
 
 warning_printed = False
 
@@ -25,7 +20,7 @@ class _EfficientAttentionConfig(NamedTuple):
 
 # main class
 class _Attend(nn.Module):
-    mask: Tensor
+    mask: Tensor | None = None
 
     def __init__(
         self,
@@ -65,7 +60,7 @@ class _Attend(nn.Module):
             self.cuda_config = self.config(False, True, True)
 
     def get_mask(self, n: int, device: torch.device) -> Tensor:
-        if _exists(self.mask) and self.mask.shape[-1] >= n:
+        if self.mask is not None and self.mask.shape[-1] >= n:
             return self.mask[:n, :n]
 
         mask = torch.ones((n, n), device=device, dtype=torch.bool).triu(1)
@@ -94,7 +89,7 @@ class _Attend(nn.Module):
         # Check if mask exists and expand to compatible shape
         # The mask is B L, so it would have to be expanded to B H N L
 
-        if _exists(mask):
+        if mask is not None:
             mask = rearrange(mask, "b j -> b 1 1 j")
             mask = mask.expand(-1, heads, q_len, -1)
 
@@ -104,7 +99,15 @@ class _Attend(nn.Module):
 
         # pytorch 2.0 flash attn: q, k, v, mask, dropout, causal, softmax_scale
         assert config is not None
-        with torch.backends.cuda.sdp_kernel(**config._asdict()):
+        backends: list[SDPBackend] = []
+        if config.enable_flash:
+            backends.append(SDPBackend.FLASH_ATTENTION)
+        if config.enable_math:
+            backends.append(SDPBackend.MATH)
+        if config.enable_mem_efficient:
+            backends.append(SDPBackend.EFFICIENT_ATTENTION)
+
+        with sdpa_kernel(backends):
             return F.scaled_dot_product_attention(
                 q,
                 k,
@@ -142,7 +145,7 @@ class _Attend(nn.Module):
 
         # key padding mask
 
-        if _exists(mask):
+        if mask is not None:
             mask = rearrange(mask, "b j -> b 1 1 j")
             sim = sim.masked_fill(~mask, -torch.finfo(sim.dtype).max)
 
@@ -163,32 +166,26 @@ class _Attend(nn.Module):
 
 
 def _sequential(*mods: nn.Module | None) -> nn.Sequential:
-    return nn.Sequential(*filter(_exists, mods))
-
-
-def _default[T](val: T | None, d: T | Callable[[], T]) -> T:
-    if _exists(val):
-        return val
-    return d() if callable(d) else d
+    return nn.Sequential(*(m for m in mods if m is not None))
 
 
 class _RMSNorm(nn.Module):
     def __init__(self, dim: int, scale: bool = True, dim_cond: int | None = None) -> None:
         super().__init__()
-        self.cond = _exists(dim_cond)
+        self.cond = dim_cond is not None
         self.to_gamma_beta = nn.Linear(dim_cond, dim * 2) if dim_cond is not None else None
 
         self.scale = dim**0.5
         self.gamma = nn.Parameter(torch.ones(dim)) if scale else None
 
     def forward(self, x: Tensor, cond: Tensor | None = None) -> Tensor:
-        gamma = _default(self.gamma, 1)
+        gamma = self.gamma if self.gamma is not None else 1
         out = F.normalize(x, dim=-1) * self.scale * gamma
 
         if not self.cond:
             return out
 
-        assert _exists(cond)
+        assert cond is not None
         assert self.to_gamma_beta is not None
         gamma, beta = self.to_gamma_beta(cond).chunk(2, dim=-1)
         gamma, beta = (rearrange(t, "b d -> b 1 d") for t in (gamma, beta))
@@ -206,7 +203,7 @@ class _CausalConv1d(nn.Conv1d):
         self.causal_padding = dilation * (kernel_size - 1)
 
     def forward(self, input: Tensor) -> Tensor:  # noqa: A002
-        causal_padded_x = F.pad(input, (self.causal_padding, 0), value=0.0)
+        causal_padded_x = F.pad(input, [self.causal_padding, 0], value=0.0)
         return super().forward(causal_padded_x)
 
 
@@ -243,7 +240,7 @@ class PerceiverResampler(nn.Module):
         use_flash_attn: bool = False,
     ) -> None:
         super().__init__()
-        dim_context = _default(dim_context, dim)
+        dim_context = dim_context if dim_context is not None else dim
 
         self.proj_context = nn.Linear(dim_context, dim) if dim_context != dim else nn.Identity()
 
@@ -274,7 +271,8 @@ class PerceiverResampler(nn.Module):
 
         latents = repeat(self.latents, "n d -> b n d", b=batch)
 
-        for attn, ff in self.layers:
+        for item in self.layers:
+            attn, ff = cast(nn.ModuleList, item)
             latents = attn(latents, x, mask=mask) + latents
             latents = ff(latents) + latents
 
@@ -300,7 +298,7 @@ class _Attention(nn.Module):
         self.cross_attn_include_queries = cross_attn_include_queries
 
         dim_inner = dim_head * heads
-        dim_context = _default(dim_context, dim)
+        dim_context = dim_context if dim_context is not None else dim
 
         self.attend = _Attend(causal=causal, dropout=dropout, use_flash=use_flash)
         self.to_q = nn.Linear(dim, dim_inner, bias=False)
@@ -308,9 +306,9 @@ class _Attention(nn.Module):
         self.to_out = nn.Linear(dim_inner, dim, bias=False)
 
     def forward(self, x: Tensor, context: Tensor | None = None, mask: Tensor | None = None) -> Tensor:
-        h, has_context = self.heads, _exists(context)
+        h, has_context = self.heads, context is not None
 
-        context = _default(context, x)
+        context = context if context is not None else x
 
         if has_context and self.cross_attn_include_queries:
             context = torch.cat((x, context), dim=-2)

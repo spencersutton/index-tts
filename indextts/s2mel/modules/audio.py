@@ -45,7 +45,7 @@ def mel_spectrogram(
 
     y = torch.nn.functional.pad(
         y.unsqueeze(1),
-        (int((n_fft - hop_size) / 2), int((n_fft - hop_size) / 2)),
+        [int((n_fft - hop_size) / 2), int((n_fft - hop_size) / 2)],
         mode="reflect",
     )
     y = y.squeeze(1)

@@ -61,7 +61,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         config: GPT2Config,
         gpt: GPT2Model,
         text_pos_emb: LearnedPositionEmbeddings,
-        embeddings: nn.Module,
+        embeddings: nn.Embedding,
         norm: nn.Module,
         linear: nn.Module,
         kv_cache: bool = False,
@@ -735,6 +735,7 @@ class UnifiedVoice(nn.Module):
         )
         t3 = time.perf_counter()
         input_ids, inputs_embeds, attention_mask = self.prepare_gpt_inputs(conds_latent, text_inputs)
+        assert self.inference_model is not None
         self.inference_model.store_mel_emb(inputs_embeds)
         logger.info("prepare_gpt_inputs: %.4fs", time.perf_counter() - t3)
         if input_tokens is None:

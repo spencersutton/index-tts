@@ -184,7 +184,6 @@ reportExplicitAny = false
 reportImplicitOverride = false
 reportImplicitStringConcatenation = false
 reportUnannotatedClassAttribute = false
-reportUnknownArgumentType = false
 reportUnknownMemberType = false
 reportUnknownVariableType = false
 reportUnusedCallResult = false

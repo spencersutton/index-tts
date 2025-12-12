@@ -868,21 +868,18 @@ class IndexTTS2:
         logger.info("RTF: %.4f", (end_time - start_time) / wav_length)
 
         # save audio
-        wav = wav.cpu()  # to cpu
+        wav = wav.cpu()
+        if stream_return:
+            return None
+
         if output_path:
             output_path.unlink(missing_ok=True)
             output_path.parent.mkdir(exist_ok=True, parents=True)
 
             AudioEncoder(wav, sample_rate=SAMPLING_RATE).to_file(output_path)
             logger.info("wav file saved to: %s", output_path)
-
-            if stream_return:
-                return None
             yield output_path
         else:
-            if stream_return:
-                return None
-            # 返回以符合Gradio的格式要求
             # Scale to int16 range for Gradio compatibility
             wav_data = (wav * torch.iinfo(torch.int16).max).type(torch.int16)
             wav_data = wav_data.numpy().T

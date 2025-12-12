@@ -839,6 +839,16 @@ def max_pool3d(
     *,
     return_indices: Literal[True],
 ) -> tuple[Tensor, Tensor]: ...
+def scaled_dot_product_attention(
+    query: Tensor,
+    key: Tensor,
+    value: Tensor,
+    attn_mask: Tensor | None = None,
+    dropout_p: float = 0.0,
+    is_causal: bool = False,
+    scale: float | None = None,
+    enable_gqa: bool = False,
+) -> Tensor: ...
 
 __all__ += [
     "adaptive_avg_pool1d",

@@ -286,7 +286,7 @@ class TextTokenizer:
         if len(tokenized_str) == 0:
             return []
         segments: list[list[str]] = []
-        current_segment = []
+        current_segment: list[str] = []
         current_segment_tokens_len = 0
         for i in range(len(tokenized_str)):
             token = tokenized_str[i]
@@ -352,7 +352,7 @@ class TextTokenizer:
         # 如果相邻的句子加起来长度小于最大限制，且此前token总数超过quick_streaming_tokens，则合并
         # If the combined length of adjacent sentences is less than the maximum limit,
         # and the total previous token count exceeds quick_streaming_tokens, then merge them
-        merged_segments = []
+        merged_segments: list[list[str]] = []
         total_token = 0
         for segment in segments:
             total_token += len(segment)

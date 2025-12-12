@@ -851,7 +851,7 @@ def scaled_dot_product_attention(
 ) -> Tensor: ...
 def pad(
     input: Tensor,
-    pad: list[int],
+    pad: Sequence[int],
     mode: str = "constant",
     value: float | None = None,
 ) -> Tensor: ...

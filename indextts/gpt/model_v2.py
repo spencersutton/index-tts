@@ -1,4 +1,3 @@
-import functools
 import importlib.util
 import logging
 import time
@@ -28,8 +27,12 @@ from indextts.gpt.perceiver import PerceiverResampler
 logger = logging.getLogger(__name__)
 
 
-def _null_position_embeddings(input_range: Tensor, dim: int) -> Tensor:
-    return torch.zeros((input_range.shape[0], input_range.shape[1], dim), device=input_range.device)
+class NullPositionEmbedding(nn.Embedding):
+    def __init__(self, dim: int) -> None:
+        super().__init__(1, dim)
+
+    def forward(self, input: Tensor) -> Tensor:  # noqa: A002
+        return torch.zeros((input.shape[0], input.shape[1], self.embedding_dim), device=input.device)
 
 
 class LearnedPositionEmbeddings(nn.Module):
@@ -246,7 +249,7 @@ def _build_hf_gpt_transformer(
     gpt = GPT2Model(gpt_config)
     # Override the built in positional embeddings
     del gpt.wpe
-    gpt.wpe = functools.partial(_null_position_embeddings, dim=model_dim)
+    gpt.wpe = NullPositionEmbedding(model_dim)
     # Built-in token embeddings are unused.
     del gpt.wte
     return (
@@ -277,6 +280,7 @@ class UnifiedVoice(nn.Module):
     cond_num = 32
     mel_solo_embedding = 0
     text_solo_embedding = 0
+    ds_engine: Any = None
 
     def __init__(self, use_accel: bool = False) -> None:
         super().__init__()
@@ -376,7 +380,7 @@ class UnifiedVoice(nn.Module):
             accel_gpt = GPT2AccelModel(gpt_config)
             accel_gpt.load_state_dict(self.gpt.state_dict(), strict=False)
 
-            accel_gpt = accel_gpt.half().cuda() if half else accel_gpt.cuda()  # ty:ignore[missing-argument]
+            accel_gpt = accel_gpt.half().cuda() if half else accel_gpt.cuda()  # ty:ignore[missing-argument]  # pyright: ignore[reportCallIssue]
             accel_gpt.eval()
 
             lm_head_with_norm = nn.Sequential(self.final_norm, self.mel_head)
@@ -412,7 +416,7 @@ class UnifiedVoice(nn.Module):
             )
             self.inference_model = self.ds_engine.module.eval()
         elif use_deepspeed and torch.cuda.is_available():
-            import deepspeed  # noqa: PLC0415  # ty:ignore[unresolved-import]
+            import deepspeed  # noqa: PLC0415  # ty:ignore[unresolved-import]  # pyright: ignore[reportMissingImports]
 
             self.ds_engine = deepspeed.init_inference(
                 model=self.inference_model,

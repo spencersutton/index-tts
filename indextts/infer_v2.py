@@ -591,7 +591,7 @@ class IndexTTS2:
             emovec_mat = emovec_mat.unsqueeze(0)
 
         emo_audio, _ = _load_and_cut_audio(emo_audio_prompt, 15, sr=16000)
-        emo_inputs = self.extract_features(emo_audio, sampling_rate=16000, return_tensors="pt")  # pyright: ignore[reportArgumentType]
+        emo_inputs = self.extract_features(emo_audio, sampling_rate=16000, return_tensors="pt")
         emo_cond_emb = self.get_emb(
             emo_inputs["input_features"].to(self.device),
             emo_inputs["attention_mask"].to(self.device),
@@ -656,7 +656,7 @@ class IndexTTS2:
         silence = None  # for stream_return
 
         # [OPTIMIZATION] Batch processing for inference_speech
-        batch_text_tokens = []
+        batch_text_tokens: list[Tensor] = []
         for sent in segments:
             tt = self.tokenizer.convert_tokens_to_ids(sent)
             batch_text_tokens.append(torch.tensor(tt, dtype=torch.int32, device=self.device))

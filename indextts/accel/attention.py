@@ -1,3 +1,4 @@
+# pyright: reportMissingImports=false, reportUnknownParameterType=false
 import sys
 from dataclasses import dataclass
 
@@ -6,9 +7,9 @@ if sys.platform == "darwin":
     raise ImportError(msg)
 
 import torch
-import triton  # pyright: ignore[reportMissingImports]
-import triton.language as tl  # pyright: ignore[reportMissingImports]
-from flash_attn import flash_attn_varlen_func, flash_attn_with_kvcache  # pyright: ignore[reportMissingImports]
+import triton
+import triton.language as tl
+from flash_attn import flash_attn_varlen_func, flash_attn_with_kvcache
 from torch import Tensor, nn
 
 
@@ -24,11 +25,11 @@ class ForwardContext:
     block_tables: Tensor | None = None
 
 
-_FORWARD_CONTEXT = ForwardContext()
+_forward_context = ForwardContext()
 
 
 def get_forward_context() -> ForwardContext:
-    return _FORWARD_CONTEXT
+    return _forward_context
 
 
 def set_forward_context(
@@ -41,8 +42,8 @@ def set_forward_context(
     context_lens: Tensor | None = None,
     block_tables: Tensor | None = None,
 ) -> None:
-    global _FORWARD_CONTEXT  # noqa: PLW0603
-    _FORWARD_CONTEXT = ForwardContext(
+    global _forward_context  # noqa: PLW0603
+    _forward_context = ForwardContext(
         is_prefill,
         cu_seqlens_q,
         cu_seqlens_k,
@@ -55,8 +56,8 @@ def set_forward_context(
 
 
 def reset_forward_context() -> None:
-    global _FORWARD_CONTEXT  # noqa: PLW0603
-    _FORWARD_CONTEXT = ForwardContext()
+    global _forward_context  # noqa: PLW0603
+    _forward_context = ForwardContext()
 
 
 @triton.jit
@@ -104,7 +105,7 @@ def store_kvcache(
     assert key.stride(1) == head_dim and value.stride(1) == head_dim
     assert k_cache.stride(1) == D and v_cache.stride(1) == D
     assert slot_mapping.numel() == N
-    store_kvcache_kernel[N,](
+    store_kvcache_kernel[N,](  # pyright: ignore[reportIndexIssue]
         key,
         key.stride(0),
         value,

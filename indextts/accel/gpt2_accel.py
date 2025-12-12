@@ -1,10 +1,12 @@
+from typing import cast
+
 import torch
 from torch import Tensor, nn
-from transformers import Cache, PretrainedConfig
+from transformers import Cache, Conv1D, PretrainedConfig
 from transformers.modeling_outputs import (
     BaseModelOutputWithPastAndCrossAttentions,
 )
-from transformers.models.gpt2.modeling_gpt2 import Conv1D, GPT2Block, GPT2Model
+from transformers.models.gpt2.modeling_gpt2 import GPT2Block, GPT2Model
 
 from .attention import Attention
 
@@ -15,7 +17,7 @@ class GPT2AccelAttention(nn.Module):
         self.config = config
         self.layer_idx = layer_idx
 
-        max_positions = config.max_position_embeddings
+        max_positions = cast(int, config.max_position_embeddings)
         self.register_buffer(
             "bias",
             torch.tril(torch.ones((max_positions, max_positions), dtype=torch.bool)).view(
@@ -25,8 +27,8 @@ class GPT2AccelAttention(nn.Module):
         )
         self.register_buffer("masked_bias", torch.tensor(-1e4), persistent=False)
 
-        self.embed_dim = config.hidden_size
-        self.num_heads = config.num_attention_heads
+        self.embed_dim = cast(int, config.hidden_size)
+        self.num_heads = cast(int, config.num_attention_heads)
         self.head_dim = self.embed_dim // self.num_heads
         self.split_size = self.embed_dim
 
@@ -42,8 +44,8 @@ class GPT2AccelAttention(nn.Module):
         self.c_attn = Conv1D(3 * self.embed_dim, self.embed_dim)
         self.c_proj = Conv1D(self.embed_dim, self.embed_dim)
 
-        self.attn_dropout = nn.Dropout(config.attn_pdrop)
-        self.resid_dropout = nn.Dropout(config.resid_pdrop)
+        self.attn_dropout = nn.Dropout(cast(float, config.attn_pdrop))
+        self.resid_dropout = nn.Dropout(cast(float, config.resid_pdrop))
 
         scale = (self.head_dim**-0.5) if self.scale_attn_weights else 1.0
         self.accel_attn = Attention(self.num_heads, self.head_dim, scale, self.num_heads)

@@ -204,7 +204,7 @@ class _CausalConv1d(nn.Conv1d):
         self.causal_padding = dilation * (kernel_size - 1)
 
     def forward(self, input: Tensor) -> Tensor:  # noqa: A002
-        causal_padded_x = F.pad(input, [self.causal_padding, 0], value=0.0)
+        causal_padded_x = F.pad(input, (self.causal_padding, 0), value=0.0)
         return super().forward(causal_padded_x)
 
 

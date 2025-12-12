@@ -84,6 +84,7 @@ class QwenEmotion:
             add_generation_prompt=True,
             enable_thinking=False,
         )
+        assert isinstance(text, str)
         model_inputs = self.tokenizer([text], return_tensors="pt").to(self.model.device)
 
         # conduct text completion

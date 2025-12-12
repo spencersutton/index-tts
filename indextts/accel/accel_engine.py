@@ -354,7 +354,7 @@ class AccelInferenceEngine:
         stop_tokens: list[int] | None = None,
         attention_mask: Tensor | None = None,
         tts_embeddings: Tensor | None = None,  # TTS: [pad][cond][text] embeddings (87 tokens, NO start_mel)
-        tts_mel_embedding: GPT2InferenceModel | None = None,  # TTS: mel_embedding layer
+        tts_mel_embedding: nn.Embedding | None = None,  # TTS: mel_embedding layer
         tts_text_pos_embedding: LearnedPositionEmbeddings | None = None,  # TTS: text_pos_embedding layer
     ) -> Tensor:
         """Generate tokens.

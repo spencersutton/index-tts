@@ -633,8 +633,8 @@ class UnifiedVoice(nn.Module):
         single_cond = conditional_latents.ndim == 3 and conditional_latents.shape[0] == 1
         if not single_cond:
             assert conditional_latents.shape[0] == b, f"batch size mismatch: {conditional_latents.shape[0]} vs {b}"
-        batched_mel_emb = []
-        attention_masks = []
+        batched_mel_emb_list: list[Tensor] = []
+        attention_masks: list[Tensor] = []
         target_len = conditional_latents.shape[1] + L + 2
         for i in range(b):
             valid_mask = (text_inputs[i] != self.stop_text_token) & (text_inputs[i] != self.start_text_token)
@@ -663,10 +663,10 @@ class UnifiedVoice(nn.Module):
                 attention_mask[:padding] = 0
             mel_emb = torch.cat(conds_text_emb)  # [s, dim]
             assert mel_emb.shape[0] == target_len, f"mel_emb.shape: {mel_emb.shape}, target_len: {target_len}"
-            batched_mel_emb.append(mel_emb)
+            batched_mel_emb_list.append(mel_emb)
             attention_masks.append(attention_mask)
         # [b, s, dim]
-        batched_mel_emb = torch.stack(batched_mel_emb, dim=0)
+        batched_mel_emb = torch.stack(batched_mel_emb_list, dim=0)
         # [b, s+1]
         attention_mask = torch.stack(attention_masks, dim=0)
         # [b, s+1]
@@ -804,15 +804,10 @@ class UnifiedVoice(nn.Module):
                 num_return_sequences=num_return_sequences,
                 **hf_generate_kwargs,
             )
-            assert isinstance(output, Tensor)
         logger.info("generation: %.4fs", time.perf_counter() - t4)
         logger.info("total inference_speech: %.4fs", time.perf_counter() - t0)
 
-        if isinstance(output, Tensor):
-            return output[:, trunc_index:], speech_conditioning_latent
-        # GenerateOutput
-        output.sequences = output.sequences[:, trunc_index:]
-        return output, speech_conditioning_latent
+        return output[:, trunc_index:], speech_conditioning_latent
 
     def get_emovec(self, emo_speech_conditioning_latent: Tensor, emo_cond_lengths: Tensor) -> Tensor:
         emo_vec_syn_ori = self.get_emo_conditioning(emo_speech_conditioning_latent.transpose(1, 2), emo_cond_lengths)

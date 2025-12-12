@@ -13,7 +13,6 @@ from typing import Any, cast
 import numpy as np
 import safetensors.torch
 import torch
-import torch.nn.functional as F
 import torchaudio
 from huggingface_hub import hf_hub_download
 from omegaconf import OmegaConf
@@ -29,6 +28,7 @@ from indextts.s2mel.modules.audio import mel_spectrogram
 from indextts.s2mel.modules.bigvgan import bigvgan
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
 from indextts.s2mel.modules.commons import MyModel, load_checkpoint
+from indextts.s2mel.modules.flow_matching import CFM
 from indextts.s2mel.modules.length_regulator import InterpolateRegulator
 from indextts.utils.checkpoint import load_checkpoint2
 from indextts.utils.front import TextNormalizer, TextTokenizer
@@ -814,7 +814,7 @@ class IndexTTS2:
                     assert isinstance(length_regulator, InterpolateRegulator)
                     cond = length_regulator(S_infer, ylens=target_lengths, n_quantizers=3, f0=None)[0]
                     cat_condition = torch.cat([prompt_condition, cond], dim=1)
-                    cfm = self.s2mel.models["cfm"]
+                    cfm = cast(CFM, self.s2mel.models["cfm"])
 
                     assert ref_mel is not None
                     assert style is not None
@@ -869,7 +869,7 @@ class IndexTTS2:
         # save audio
         wav = wav.cpu()
         if stream_return:
-            return None
+            return None  # noqa: B901
 
         if output_path:
             output_path.unlink(missing_ok=True)
@@ -889,5 +889,5 @@ def _find_most_similar_cosine(query_vector: Tensor, matrix: Tensor) -> Tensor:
     query_vector = query_vector.float()
     matrix = matrix.float()
 
-    similarities = F.cosine_similarity(query_vector, matrix, dim=1)
+    similarities = torch.cosine_similarity(query_vector, matrix, dim=1)
     return torch.argmax(similarities)

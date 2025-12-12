@@ -40,8 +40,8 @@ def mel_spectrogram(
             mel_scale="slaney",
         )
         # Transpose to match librosa's output shape (n_mels, n_fft//2+1)
-        mel_basis[str(sampling_rate) + "_" + str(fmax) + "_" + str(y.device)] = mel.T.to(y.device)
-        hann_window[str(sampling_rate) + "_" + str(y.device)] = torch.hann_window(win_size).to(y.device)
+        mel_basis[f"{sampling_rate}_{fmax}_{y.device}"] = mel.T.to(y.device)
+        hann_window[f"{sampling_rate}_{y.device}"] = torch.hann_window(win_size).to(y.device)
 
     y = torch.nn.functional.pad(
         y.unsqueeze(1),

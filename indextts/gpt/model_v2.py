@@ -259,8 +259,8 @@ def _build_hf_gpt_transformer(
 
 
 class UnifiedVoice(nn.Module):
-    gst_encoder: nn.Module | None = None
-    inference_model: GPT2InferenceModel | None = None
+    gst_encoder: nn.Module | None
+    inference_model: GPT2InferenceModel | None
     number_text_tokens = 12000
     start_text_token = 0
     stop_text_token = 1
@@ -348,6 +348,8 @@ class UnifiedVoice(nn.Module):
 
         self.use_accel = use_accel
         self.accel_engine = None  # Will be initialized in post_init_gpt2_config
+        self.inference_model = None
+        self.gst_encoder = None
 
     def post_init_gpt2_config(self, use_deepspeed: bool = False, kv_cache: bool = False, half: bool = False) -> None:
         seq_length = self.max_mel_tokens + self.max_text_tokens + 2
@@ -398,6 +400,7 @@ class UnifiedVoice(nn.Module):
             self.mel_head,
             kv_cache=kv_cache,
         )
+        assert self.inference_model is not None
         if use_deepspeed and half and torch.cuda.is_available():
             import deepspeed  # noqa: PLC0415  # ty:ignore[unresolved-import]
 

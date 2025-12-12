@@ -1,0 +1,133 @@
+import torch
+import torch.nn as nn
+from typing import Optional, TYPE_CHECKING
+from ..utils import is_sklearn_available
+from .logits_process import LogitsProcessorList
+from ..modeling_utils import PreTrainedModel
+from ..tokenization_utils_base import PreTrainedTokenizerBase
+from .configuration_utils import GenerationConfig
+
+if is_sklearn_available(): ...
+if TYPE_CHECKING: ...
+
+class CandidateGenerator:
+    def get_candidates(self, input_ids: torch.LongTensor) -> tuple[torch.LongTensor, Optional[torch.FloatTensor]]: ...
+    def update_candidate_strategy(self, input_ids: torch.LongTensor, scores: torch.FloatTensor, num_matches: int): ...
+
+class AssistedCandidateGenerator(CandidateGenerator):
+    def __init__(
+        self,
+        input_ids: torch.LongTensor,
+        assistant_model: PreTrainedModel,
+        generation_config: GenerationConfig,
+        model_kwargs: dict,
+        inputs_tensor: Optional[torch.Tensor] = ...,
+        logits_processor: LogitsProcessorList = ...,
+    ) -> None: ...
+    def get_candidates(self, input_ids: torch.LongTensor) -> tuple[torch.LongTensor, Optional[torch.FloatTensor]]: ...
+    def update_candidate_strategy(
+        self, input_ids: torch.LongTensor, scores: torch.FloatTensor, num_matches: int
+    ):  # -> None:
+
+        ...
+
+class AssistedCandidateGeneratorDifferentTokenizers(AssistedCandidateGenerator):
+    def __init__(
+        self,
+        input_ids: torch.LongTensor,
+        assistant_model: PreTrainedModel,
+        target_tokenizer: PreTrainedTokenizerBase,
+        assistant_tokenizer: PreTrainedTokenizerBase,
+        generation_config: GenerationConfig,
+        model_kwargs: dict,
+        inputs_tensor: Optional[torch.Tensor] = ...,
+        logits_processor: LogitsProcessorList = ...,
+    ) -> None: ...
+    def convert_source_tokens_to_target_tokens(self, input_ids, source_tokenizer, destination_tokenizer): ...
+    def get_candidates(self, input_ids: torch.LongTensor) -> tuple[torch.LongTensor, Optional[torch.FloatTensor]]: ...
+
+class _PruneReindexingLMHead(nn.Module):
+    def __init__(self, original_lm_head, assistant_overlap_token_ids) -> None: ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
+
+class _MapInputEmbedding(nn.Module):
+    def __init__(self, original_embedding: nn.Embedding, assistant_overlap_token_ids) -> None: ...
+    def forward(self, input_ids: torch.LongTensor) -> torch.FloatTensor: ...
+
+class AssistantToTargetTranslator:
+    FILTER_VALUE: float = ...
+    SUPPRESS_TOKEN_ID: int = ...
+    def __init__(
+        self,
+        target_tokenizer: PreTrainedTokenizerBase,
+        assistant_tokenizer: PreTrainedTokenizerBase,
+        target_vocab_size: int,
+        assistant_model: Optional[PreTrainedModel] = ...,
+        assistant_prune_lm_head: bool = ...,
+    ) -> None: ...
+    def unmap_input_ids(self):  # -> None:
+
+        ...
+    def get_target_ids(
+        self, assistant_input_ids, target_input_ids, assistant_candidate_ids: torch.LongTensor
+    ) -> torch.LongTensor: ...
+    def get_target_logits(self, assistant_logits: torch.FloatTensor) -> torch.FloatTensor: ...
+
+class AssistantVocabTranslatorCache:
+    _cache = ...
+    @classmethod
+    def get_translator(
+        cls,
+        target_tokenizer: PreTrainedTokenizerBase,
+        assistant_tokenizer: PreTrainedTokenizerBase,
+        target_vocab_size: int,
+        assistant_model: Optional[PreTrainedModel] = ...,
+        assistant_prune_lm_head: bool = ...,
+    ) -> AssistantToTargetTranslator: ...
+    @classmethod
+    def cleanup(cls):  # -> None:
+
+        ...
+
+class UniversalSpeculativeDecodingGenerator(AssistedCandidateGeneratorDifferentTokenizers):
+    def __init__(
+        self,
+        input_ids: torch.LongTensor,
+        assistant_model: PreTrainedModel,
+        target_tokenizer: PreTrainedTokenizerBase,
+        assistant_tokenizer: PreTrainedTokenizerBase,
+        generation_config: GenerationConfig,
+        model_kwargs: dict,
+        atm_translator: AssistantToTargetTranslator,
+        inputs_tensor: Optional[torch.Tensor] = ...,
+        logits_processor: LogitsProcessorList = ...,
+    ) -> None: ...
+    def get_candidates(self, input_ids: torch.LongTensor) -> tuple[torch.LongTensor, Optional[torch.FloatTensor]]: ...
+
+class PromptLookupCandidateGenerator(CandidateGenerator):
+    def __init__(
+        self,
+        eos_token_id: Optional[torch.Tensor] = ...,
+        num_output_tokens: int = ...,
+        max_matching_ngram_size: Optional[int] = ...,
+        max_length: int = ...,
+    ) -> None: ...
+    def get_candidates(self, input_ids: torch.LongTensor) -> tuple[torch.LongTensor, Optional[torch.FloatTensor]]: ...
+    def update_candidate_strategy(
+        self, input_ids: torch.LongTensor, scores: torch.FloatTensor, num_matches: int
+    ):  # -> None:
+
+        ...
+
+class EarlyExitCandidateGenerator(AssistedCandidateGenerator):
+    def __init__(
+        self,
+        input_ids: torch.LongTensor,
+        assistant_model: PreTrainedModel,
+        generation_config: GenerationConfig,
+        model_kwargs: dict,
+        inputs_tensor: Optional[torch.Tensor] = ...,
+        logits_processor: LogitsProcessorList = ...,
+    ) -> None: ...
+    def get_candidates(self, input_ids: torch.LongTensor) -> tuple[torch.LongTensor, Optional[torch.FloatTensor]]: ...

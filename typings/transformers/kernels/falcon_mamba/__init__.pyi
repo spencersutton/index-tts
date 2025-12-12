@@ -1,0 +1,1 @@
+from .selective_scan_with_ln_interface import mamba_inner_fn

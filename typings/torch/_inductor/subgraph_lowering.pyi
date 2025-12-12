@@ -1,0 +1,48 @@
+import torch
+from dataclasses import dataclass
+from typing import Any, Callable, Optional, TypeVar, Union, TypeAlias
+from typing_extensions import ParamSpec
+from torch.utils._ordered_set import OrderedSet
+from . import ir
+from .graph import GraphLowering
+from .virtualized import WrapperHandler
+
+"""Utilities for lowering subgraphs used by higher order operators"""
+T = TypeVar("T")
+_P = ParamSpec("_P")
+OpOverload = ...
+LoweringDict: TypeAlias = dict[Union[OpOverload, str], Callable[..., Any]]
+TargetType: TypeAlias = Union[Callable[..., Any], str]
+
+class PointwiseSubgraphLowering(torch.fx.Interpreter):
+    graph_outputs: Optional[list[ir.IRNode]]
+    root_graph: GraphLowering
+    _current_op: Optional[TargetType]
+    allowed_mutations: Optional[OrderedSet[OpOverload]]
+    additional_lowerings: Optional[LoweringDict]
+    buffers: list[ir.Buffer]
+    mutated_buffers: OrderedSet[str]
+    def __init__(
+        self,
+        gm: torch.fx.GraphModule,
+        root_graph_lowering: GraphLowering,
+        allowed_mutations: Optional[OrderedSet[OpOverload]] = ...,
+        additional_lowerings: Optional[LoweringDict] = ...,
+    ) -> None: ...
+    def mark_buffer_mutated(self, name: str) -> None: ...
+    def register_buffer(self, buffer: ir.Buffer, *, set_name: bool = ...) -> str: ...
+    def __getattr__(self, name: str) -> Any: ...
+    def call_function(self, target: TargetType, args: Any, kwargs: dict[str, Any]) -> Any: ...
+    def output(self, target: str, args: tuple[Any], kwargs: dict[str, Any]) -> None: ...
+
+@dataclass
+class InputDescriptor:
+    dtype: torch.dtype
+    device: torch.device
+
+class TracingOpsHandler(WrapperHandler):
+    def __init__(self, tracer: torch.fx.Tracer, num_inputs: int) -> None: ...
+    def placeholder(self, idx: int) -> torch.fx.Proxy: ...
+    def output(self, *args: tuple[object]) -> None: ...
+
+def lower_pointwise_subgraph(subgraph: ir.Subgraph, inputs: list[InputDescriptor]) -> Callable[_P, Any]: ...

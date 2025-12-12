@@ -1,3 +1,12 @@
+from builtins import (  # noqa: F401
+    bool as _bool,
+    bytes as _bytes,
+    complex as _complex,
+    float as _float,
+    int as _int,
+    str as _str,
+)
+
 import os
 from collections.abc import Sequence
 from typing import Any, IO, Self, TYPE_CHECKING, TypeAlias

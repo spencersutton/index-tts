@@ -1,12 +1,11 @@
 import threading
-from typing import Self
-
 import torch
-from torch._C._distributed_c10d import Backend as C10dBackend
+from typing import Optional, Union, Self
 from torch.distributed import is_available
+from torch._C._distributed_c10d import Backend as C10dBackend
 from torch.distributed.distributed_c10d import ProcessGroup
 
-__all__ = ["DeviceMesh", "init_device_mesh"]
+__all__ = ["init_device_mesh", "DeviceMesh"]
 if not is_available():
     class _DeviceMeshStub: ...
 
@@ -16,19 +15,16 @@ else:
         def __init__(self) -> None: ...
         def get_current_mesh(self) -> DeviceMesh: ...
         def create_sub_mesh(
-            self,
-            device_mesh: DeviceMesh,
-            submesh_dim_names: tuple[str, ...],
-            submesh_dims: list[tuple[int, ...]],
+            self, device_mesh: DeviceMesh, submesh_dim_names: tuple[str, ...], submesh_dims: list[tuple[int, ...]]
         ) -> DeviceMesh: ...
         def create_flatten_mesh(
             self,
             device_mesh: DeviceMesh,
-            mesh_dim_name: str | None = ...,
-            backend_override: tuple[str | None, C10dBackend.Options | None] = ...,
+            mesh_dim_name: Optional[str] = ...,
+            backend_override: tuple[Optional[str], Optional[C10dBackend.Options]] = ...,
         ) -> DeviceMesh: ...
         def get_root_mesh(self, device_mesh: DeviceMesh) -> DeviceMesh: ...
-        def get_root_mesh_dim(self, device_mesh: DeviceMesh) -> int | None: ...
+        def get_root_mesh_dim(self, device_mesh: DeviceMesh) -> Optional[int]: ...
         @staticmethod
         def num_devices_per_host(device_type: str) -> int: ...
         @staticmethod
@@ -39,48 +35,49 @@ else:
     class DeviceMesh:
         device_type: str
         mesh: torch.Tensor
-        mesh_dim_names: tuple[str, ...] | None
+        mesh_dim_names: Optional[tuple[str, ...]]
         def __init__(
             self,
             device_type: str,
-            mesh: torch.Tensor | ArrayLike,
+            mesh: Union[torch.Tensor, ArrayLike],
             *,
-            mesh_dim_names: tuple[str, ...] | None = ...,
-            backend_override: tuple[tuple[str | None, C10dBackend.Options | None], ...] | None = ...,
+            mesh_dim_names: Optional[tuple[str, ...]] = ...,
+            backend_override: Optional[tuple[tuple[Optional[str], Optional[C10dBackend.Options]], ...]] = ...,
             _init_backend: bool = ...,
         ) -> None: ...
         def __enter__(self) -> Self: ...
         def __exit__(self, exc_type, exc_value, exc_traceback) -> None: ...
         def __hash__(self) -> int: ...
         def __eq__(self, other: object) -> bool: ...
-        def __getitem__(self, mesh_dim_names: str | tuple[str, ...]) -> DeviceMesh: ...
-        def get_group(self, mesh_dim: int | str | None = ...) -> ProcessGroup: ...
+        def __getitem__(self, mesh_dim_names: Union[str, tuple[str, ...]]) -> DeviceMesh: ...
+        def get_group(self, mesh_dim: Optional[Union[int, str]] = ...) -> ProcessGroup: ...
         def get_all_groups(self) -> list[ProcessGroup]: ...
         @staticmethod
         def from_group(
-            group: ProcessGroup | list[ProcessGroup],
+            group: Union[ProcessGroup, list[ProcessGroup]],
             device_type: str,
-            mesh: torch.Tensor | ArrayLike | None = ...,
+            mesh: Optional[Union[torch.Tensor, ArrayLike]] = ...,
             *,
-            mesh_dim_names: tuple[str, ...] | None = ...,
+            mesh_dim_names: Optional[tuple[str, ...]] = ...,
         ) -> DeviceMesh: ...
-        def size(self, mesh_dim: int | None = ...) -> int: ...
+        def size(self, mesh_dim: Optional[int] = ...) -> int: ...
         @property
         def ndim(self) -> int: ...
         @property
         def shape(self) -> tuple[int, ...]: ...
         def get_rank(self) -> int: ...
-        def get_local_rank(self, mesh_dim: int | str | None = ...) -> int: ...
-        def get_coordinate(self) -> list[int] | None: ...
+        def get_local_rank(self, mesh_dim: Optional[Union[int, str]] = ...) -> int: ...
+        def get_coordinate(self) -> Optional[list[int]]: ...
 
     def init_device_mesh(
         device_type: str,
         mesh_shape: tuple[int, ...],
         *,
-        mesh_dim_names: tuple[str, ...] | None = ...,
-        backend_override: dict[
-            int | str,
-            str | C10dBackend.Options | tuple[str, C10dBackend.Options],
-        ]
-        | None = ...,
+        mesh_dim_names: Optional[tuple[str, ...]] = ...,
+        backend_override: Optional[
+            dict[
+                Union[int, str],
+                Union[str, C10dBackend.Options, tuple[str, C10dBackend.Options]],
+            ]
+        ] = ...,
     ) -> DeviceMesh: ...

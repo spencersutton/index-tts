@@ -1,5 +1,5 @@
 # Adapted from https://github.com/lucidrains/naturalspeech2-pytorch/blob/659bec7f7543e7747e809e950cc2f84242fbeec7/naturalspeech2_pytorch/naturalspeech2_pytorch.py#L532
-from typing import Any, NamedTuple
+from typing import Any, NamedTuple, cast
 
 import torch
 import torch.nn.functional as F
@@ -271,7 +271,8 @@ class PerceiverResampler(nn.Module):
 
         latents = repeat(self.latents, "n d -> b n d", b=batch)
 
-        for attn, ff in self.layers:
+        for item in self.layers:
+            attn, ff = cast(nn.ModuleList, item)
             latents = attn(latents, x, mask=mask) + latents
             latents = ff(latents) + latents
 

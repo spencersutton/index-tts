@@ -47,7 +47,7 @@ class AccelInferenceEngine:
     def __init__(
         self,
         model: GPT2InferenceModel,
-        lm_head: nn.Module | None,
+        lm_head: nn.Sequential,
         num_layers: int,
         num_heads: int,
         head_dim: int,
@@ -92,13 +92,13 @@ class AccelInferenceEngine:
         self.graph_captured = False
 
     def _prepare_prefill(self, requests: list[Seq]) -> tuple[Tensor, Tensor]:
-        input_ids = []
-        positions = []
+        input_ids: list[int] = []
+        positions: list[int] = []
         cu_seqlens_q = [0]
         cu_seqlens_k = [0]
         max_seqlen_q = 0
         max_seqlen_k = 0
-        slot_mapping = []
+        slot_mapping: list[int] = []
 
         for req in requests:
             seqlen = len(req)
@@ -409,7 +409,7 @@ class AccelInferenceEngine:
         else:
             seq_lens = [actual_seq_len] * batch_size
 
-        sequences = []
+        sequences: list[Seq] = []
         for i in range(batch_size):
             seq_len = seq_lens[i]
             token_ids = [1] * seq_len
@@ -436,7 +436,7 @@ class AccelInferenceEngine:
             start_emb = start_emb.repeat(batch_size, 1, 1)
 
             if is_varlen_batch:
-                valid_embeddings = []
+                valid_embeddings: list[torch.Tensor] = []
                 for i in range(batch_size):
                     emb_len = seq_lens[i] - 1
                     padding_len = tts_embeddings.size(1) - emb_len
@@ -469,12 +469,9 @@ class AccelInferenceEngine:
 
         reset_forward_context()
 
-        if self.lm_head is not None:
-            if last_hidden.dtype != next(self.lm_head.parameters()).dtype:
-                last_hidden = last_hidden.to(next(self.lm_head.parameters()).dtype)
-            logits = self.lm_head(last_hidden)  # [batch_size, vocab_size]
-        else:
-            logits = self.model.compute_logits(last_hidden)  # [batch_size, vocab_size]
+        if last_hidden.dtype != next(self.lm_head.parameters()).dtype:
+            last_hidden = last_hidden.to(next(self.lm_head.parameters()).dtype)
+        logits = self.lm_head(last_hidden)  # [batch_size, vocab_size]
 
         temperatures = self._prepare_sample(sequences, temperature)
         first_token = self.sampler(logits, temperatures) if temperature > 0 else torch.argmax(logits, dim=-1)
@@ -495,9 +492,9 @@ class AccelInferenceEngine:
         if all(is_finished):
             for req in sequences:
                 self.kv_manager.remove_seq(req)
-            self.current_sequences = []
+            self.current_sequences: list[Seq] = []
 
-            output_ids = []
+            output_ids: list[list[int]] = []
             for i in range(batch_size):
                 full_sequence = input_ids[i].tolist() + generated_tokens[i]
                 output_ids.append(full_sequence)
@@ -519,10 +516,7 @@ class AccelInferenceEngine:
             )
 
             # Get logits
-            if self.lm_head is not None:
-                logits = self.lm_head(hidden_states)  # [batch_size, vocab_size]
-            else:
-                logits = self.model.compute_logits(hidden_states)  # [batch_size, vocab_size]
+            logits = self.lm_head(hidden_states)  # [batch_size, vocab_size]
 
             reset_forward_context()
 

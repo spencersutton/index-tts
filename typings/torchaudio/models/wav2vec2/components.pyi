@@ -25,12 +25,15 @@ class FeatureExtractor(Module):
 
 class FeatureProjection(Module):
     def __init__(self, in_features: int, out_features: int, dropout: float) -> None: ...
-    def forward(self, x) -> Any: ...
+    def forward(self, x):  # -> Any:
+
+        ...
 
 class ConvolutionalPositionalEmbedding(Module):
     def __init__(self, embed_dim: int, kernel_size: int, groups: int) -> None: ...
-    def __prepare_scriptable__(self) -> Self: ...
-    def forward(self, x) -> Tensor: ...
+    def __prepare_scriptable__(self):  # -> Self:
+        ...
+    def forward(self, x): ...
 
 class SelfAttention(Module):
     def __init__(self, embed_dim: int, num_heads: int, dropout: float = ...) -> None: ...
@@ -44,22 +47,14 @@ class SelfAttention(Module):
 
 class FeedForward(Module):
     def __init__(
-        self,
-        io_features: int,
-        intermediate_features: int,
-        intermediate_dropout: float,
-        output_dropout: float,
+        self, io_features: int, intermediate_features: int, intermediate_dropout: float, output_dropout: float
     ) -> None: ...
-    def forward(self, x) -> Any: ...
+    def forward(self, x):  # -> Any:
+
+        ...
 
 class EncoderLayer(Module):
-    def __init__(
-        self,
-        attention: Module,
-        dropout: float,
-        layer_norm_first: bool,
-        feed_forward: Module,
-    ) -> None: ...
+    def __init__(self, attention: Module, dropout: float, layer_norm_first: bool, feed_forward: Module) -> None: ...
     def forward(
         self,
         x: Tensor,
@@ -70,34 +65,18 @@ class EncoderLayer(Module):
 
 class Transformer(Module):
     def __init__(
-        self,
-        pos_conv_embed: Module,
-        dropout: float,
-        layers: Module,
-        layer_norm_first: bool,
-        layer_drop: float,
+        self, pos_conv_embed: Module, dropout: float, layers: Module, layer_norm_first: bool, layer_drop: float
     ) -> None: ...
-    def forward(
-        self,
-        x: Tensor,
-        attention_mask: Tensor | None = ...,
-        position_bias: Tensor | None = ...,
-    ) -> Tensor: ...
+    def forward(self, x: Tensor, attention_mask: Tensor | None = ..., position_bias: Tensor | None = ...) -> Tensor: ...
     def get_intermediate_outputs(
-        self,
-        x: Tensor,
-        attention_mask: Tensor | None = ...,
-        num_layers: int | None = ...,
+        self, x: Tensor, attention_mask: Tensor | None = ..., num_layers: int | None = ...
     ) -> list[Tensor]: ...
 
 class Encoder(Module):
     def __init__(self, feature_projection: Module, transformer: Module) -> None: ...
     def forward(self, features: Tensor, lengths: Tensor | None = ...) -> Tensor: ...
     def extract_features(
-        self,
-        features: Tensor,
-        lengths: Tensor | None = ...,
-        num_layers: int | None = ...,
+        self, features: Tensor, lengths: Tensor | None = ..., num_layers: int | None = ...
     ) -> list[Tensor]: ...
 
 class MaskGenerator(Module):
@@ -121,12 +100,7 @@ class MaskGenerator(Module):
 
 class LogitGenerator(Module):
     def __init__(
-        self,
-        encoder_embed_dim: int,
-        num_classes: int,
-        final_dim: int,
-        skip_masked: bool,
-        skip_nomask: bool,
+        self, encoder_embed_dim: int, num_classes: int, final_dim: int, skip_masked: bool, skip_nomask: bool
     ) -> None: ...
     def forward(self, x: Tensor, label: Tensor, mask_m: Tensor, mask_u: Tensor) -> tuple[Tensor, Tensor]: ...
 
@@ -134,4 +108,5 @@ class GradMultiply(torch.autograd.Function):
     @staticmethod
     def forward(ctx, x, scale): ...
     @staticmethod
-    def backward(ctx, grad) -> tuple[Any, None]: ...
+    def backward(ctx, grad):  # -> tuple[Any, None]:
+        ...

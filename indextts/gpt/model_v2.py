@@ -722,6 +722,7 @@ class UnifiedVoice(nn.Module):
             emo_vec = self.get_emo_conditioning(emo_speech_condition.transpose(1, 2), emo_cond_lengths)
             emo_vec = self.emovec_layer(emo_vec)
             emo_vec = self.emo_layer(emo_vec)
+            assert emo_vec is not None
             logger.info("get_emo_conditioning: %.4fs", time.perf_counter() - t2)
         else:
             logger.info("Use the specified emotion vector")

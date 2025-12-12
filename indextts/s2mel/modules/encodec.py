@@ -85,7 +85,7 @@ def get_extra_padding_for_conv1d(x: Tensor, kernel_size: int, stride: int, paddi
     return ideal_length - length
 
 
-def pad1d(x: Tensor, paddings: tuple[int, int], mode: str = "zero", value: float = 0.0) -> Tensor:
+def pad1d(x: Tensor, paddings: list[int], mode: str = "zero", value: float = 0.0) -> Tensor:
     """Tiny wrapper around F.pad, just to allow for reflect padding on small input.
     If this is the case, we insert extra 0 padding to the right before the reflection happen.
     """

@@ -93,9 +93,6 @@ EMO_CHOICES_ALL = [
 ]
 EMO_CHOICES_OFFICIAL = EMO_CHOICES_ALL[:-1]  # skip experimental features
 
-Path("outputs/tasks").mkdir(exist_ok=True, parents=True)
-Path("prompts").mkdir(exist_ok=True, parents=True)
-
 example_cases = []
 with Path("examples/cases.jsonl").open(encoding="utf-8") as f:
     for line in f:
@@ -166,16 +163,6 @@ def gen_single(
         repetition_penalty,
         max_mel_tokens,
     ) = args
-    kwargs: dict[str, float | int | bool | None] = {
-        "do_sample": bool(do_sample),
-        "top_p": float(top_p),
-        "top_k": int(top_k) if int(top_k) > 0 else None,
-        "temperature": float(temperature),
-        "length_penalty": float(length_penalty),
-        "num_beams": num_beams,
-        "repetition_penalty": float(repetition_penalty),
-        "max_mel_tokens": int(max_mel_tokens),
-    }
     if not isinstance(emo_control_method, int):
         emo_control_method = int(emo_control_method.value)
     match emo_control_method:
@@ -207,7 +194,14 @@ def gen_single(
         use_random=emo_random,
         verbose=cmd_args.verbose,
         max_text_tokens_per_segment=int(max_text_tokens_per_segment),
-        **kwargs,  # ty:ignore[invalid-argument-type]
+        do_sample=bool(do_sample),
+        top_p=float(top_p),
+        top_k=int(top_k) if int(top_k) > 0 else None,
+        temperature=float(temperature),
+        length_penalty=float(length_penalty),
+        num_beams=num_beams,
+        repetition_penalty=float(repetition_penalty),
+        max_mel_tokens=int(max_mel_tokens),
     )
     return gr.update(value=output, visible=True)
 
@@ -236,14 +230,12 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
 
     with gr.Tab(i18n("音频生成")):
         with gr.Row():
-            Path("prompts").mkdir(exist_ok=True, parents=True)
             prompt_audio = gr.Audio(
                 label=i18n("音色参考音频"),
                 key="prompt_audio",
                 sources=["upload", "microphone"],
                 type="filepath",
             )
-            prompt_list = list(Path("prompts").iterdir())
             with gr.Column():
                 input_text_single = gr.TextArea(
                     label=i18n("文本"),

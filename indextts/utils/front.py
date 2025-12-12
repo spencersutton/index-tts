@@ -1,6 +1,7 @@
 import re
 import traceback
 import warnings
+from collections.abc import Collection, Iterable, Sequence
 from pathlib import Path
 from typing import ClassVar
 
@@ -163,7 +164,7 @@ class TextNormalizer:
 
         return transformed_text, original_name_list
 
-    def restore_names(self, normalized_text: str, original_name_list: list[str] | None) -> str:
+    def restore_names(self, normalized_text: str, original_name_list: Collection[str] | None) -> str:
         """恢复人名为原来的文字
         例如：<n_a> -> original_name_list[0]
         """
@@ -177,7 +178,7 @@ class TextNormalizer:
             transformed_text = transformed_text.replace(f"<n_{number}>", name)
         return transformed_text
 
-    def save_pinyin_tones(self, original_text: str) -> tuple[str, list[str] | None]:
+    def save_pinyin_tones(self, original_text: str) -> tuple[str, set[str] | None]:
         """替换拼音声调为占位符 <pinyin_a>, <pinyin_b>, ...
         例如：xuan4 -> <pinyin_a>
         """
@@ -186,7 +187,7 @@ class TextNormalizer:
         original_pinyin_list = re.findall(origin_pinyin_pattern, original_text)
         if len(original_pinyin_list) == 0:
             return (original_text, None)
-        original_pinyin_list = list({"".join(p) for p in original_pinyin_list})
+        original_pinyin_list = {"".join(p) for p in original_pinyin_list}
         transformed_text = original_text
         # 替换为占位符 <pinyin_a>, <pinyin_b>, ...
         for i, pinyin in enumerate(original_pinyin_list):
@@ -195,7 +196,7 @@ class TextNormalizer:
 
         return transformed_text, original_pinyin_list
 
-    def restore_pinyin_tones(self, normalized_text: str, original_pinyin_list: list[str] | None) -> str:
+    def restore_pinyin_tones(self, normalized_text: str, original_pinyin_list: Collection[str] | None) -> str:
         """恢复拼音中的音调数字（1-5）为原来的拼音
         例如：<pinyin_a> -> original_pinyin_list[0]
         """
@@ -250,7 +251,7 @@ class TextTokenizer:
     def unk_token_id(self) -> int:
         return self.sp_model.unk_id()
 
-    def convert_tokens_to_ids(self, tokens: list[str] | str) -> list[int]:
+    def convert_tokens_to_ids(self, tokens: Iterable[str] | str) -> list[int]:
         if isinstance(tokens, str):
             tokens = [tokens]
         return [self.sp_model.PieceToId(token) for token in tokens]
@@ -273,8 +274,8 @@ class TextTokenizer:
 
     @staticmethod
     def split_segments_by_token(
-        tokenized_str: list[str],
-        split_tokens: list[str],
+        tokenized_str: Sequence[str],
+        split_tokens: Sequence[str],
         max_text_tokens_per_segment: int,
         quick_streaming_tokens: int = 0,
     ) -> list[list[str]]:
@@ -380,7 +381,7 @@ class TextTokenizer:
 
     def split_segments(
         self,
-        tokenized: list[str],
+        tokenized: Sequence[str],
         max_text_tokens_per_segment: int = 120,
         quick_streaming_tokens: int = 0,
     ) -> list[list[str]]:

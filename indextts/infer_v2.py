@@ -5,7 +5,7 @@ import os
 import random
 import time
 import typing
-from collections.abc import Callable, Generator, Mapping
+from collections.abc import Callable, Collection, Generator, Mapping, Sequence
 from pathlib import Path
 from subprocess import CalledProcessError
 from typing import Any, cast
@@ -45,7 +45,7 @@ SAMPLING_RATE = 22050
 
 
 def generate_silence_interval(
-    wavs: list[Tensor],
+    wavs: Sequence[Tensor],
     interval_silence: int = 200,
 ) -> Tensor:
     """Silences to be insert between generated segments."""
@@ -60,14 +60,12 @@ def generate_silence_interval(
 
 
 def insert_interval_silence(
-    wavs: list[Tensor],
+    wavs: Sequence[Tensor],
     interval_silence: int = 200,
 ) -> list[Tensor]:
-    """Insert silences between generated segments.
-    wavs: List[torch.tensor]
-    """
+    """Insert silences between generated segments."""
     if not wavs or interval_silence <= 0:
-        return wavs
+        return list(wavs)
 
     # get channel_size
     channel_size = wavs[0].size(0)
@@ -109,12 +107,12 @@ def _load_and_cut_audio(
     return audio, sr
 
 
-def normalize_emo_vec(emo_vector: list[float], apply_bias: bool = True) -> list[float]:
+def normalize_emo_vec(emo_vector: Sequence[float], apply_bias: bool = True) -> list[float]:
     """
     Normalizes an emotion vector by applying optional bias factors and scaling the sum.
 
     Args:
-        emo_vector (list[float]): A list of emotion intensity values, typically in the order:
+        emo_vector (Sequence[float]): A sequence of emotion intensity values, typically in the order:
             [happy, angry, sad, afraid, disgusted, melancholic, surprised, calm].
         apply_bias (bool, optional): Whether to apply predefined bias factors to de-emphasize
             certain emotions. Defaults to True.
@@ -136,7 +134,7 @@ def normalize_emo_vec(emo_vector: list[float], apply_bias: bool = True) -> list[
         scale_factor = 0.8 / emo_sum
         emo_vector = [vec * scale_factor for vec in emo_vector]
 
-    return emo_vector
+    return list(emo_vector)
 
 
 class IndexTTS2:
@@ -386,7 +384,7 @@ class IndexTTS2:
         spk_matrix: Tensor = torch.load(self.model_dir / self.cfg.spk_matrix)
         spk_matrix = spk_matrix.to(self.device)
 
-        self.emo_num = list(self.cfg.emo_num)
+        self.emo_num = self.cfg.emo_num
         self.emo_matrix = torch.split(emo_matrix, self.emo_num)
         self.spk_matrix = torch.split(spk_matrix, self.emo_num)
 
@@ -470,7 +468,7 @@ class IndexTTS2:
         output_path: Path | None,
         emo_audio_prompt: Path | None = None,
         emo_alpha: float = 1.0,
-        emo_vector: list[float] | None = None,
+        emo_vector: Collection[float] | None = None,
         use_emo_text: bool = False,
         emo_text: str | None = None,
         use_random: bool = False,
@@ -512,7 +510,7 @@ class IndexTTS2:
         output_path: Path | None,
         emo_audio_prompt: Path | None = None,
         emo_alpha: float = 1.0,
-        emo_vector: list[float] | None = None,
+        emo_vector: Collection[float] | None = None,
         use_emo_text: bool = False,
         emo_text: str | None = None,
         use_random: bool = False,
@@ -554,7 +552,7 @@ class IndexTTS2:
             emo_dict = self.qwen_emo.inference(emo_text)
             logger.info("detected emotion vectors from text: %s", emo_dict)
             # convert ordered dict to list of vectors; the order is VERY important!
-            emo_vector = list(emo_dict.values())
+            emo_vector = emo_dict.values()
 
         if emo_vector is not None:
             # we have emotion vectors; they can't be blended via alpha mixing

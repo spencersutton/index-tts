@@ -1,7 +1,5 @@
-from typing import TYPE_CHECKING, Any
-
 import torch
-
+from typing import Any, TYPE_CHECKING
 from ._compatibility import compatibility
 from .graph import Graph
 from .graph_module import GraphModule
@@ -15,18 +13,10 @@ __all__ = ["Interpreter", "Transformer"]
 class Interpreter:
     @compatibility(is_backward_compatible=True)
     def __init__(
-        self,
-        module: torch.nn.Module,
-        garbage_collect_values: bool = ...,
-        graph: Graph | None = ...,
+        self, module: torch.nn.Module, garbage_collect_values: bool = ..., graph: Graph | None = ...
     ) -> None: ...
     @compatibility(is_backward_compatible=True)
-    def run(
-        self,
-        *args,
-        initial_env: dict[Node, Any] | None = ...,
-        enable_io_processing: bool = ...,
-    ) -> Any: ...
+    def run(self, *args, initial_env: dict[Node, Any] | None = ..., enable_io_processing: bool = ...) -> Any: ...
     @compatibility(is_backward_compatible=True)
     def boxed_run(self, args_list) -> Any: ...
     @compatibility(is_backward_compatible=True)

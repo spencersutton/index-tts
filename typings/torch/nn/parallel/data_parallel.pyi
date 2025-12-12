@@ -1,7 +1,6 @@
+import torch
 from collections.abc import Sequence
 from typing import Any, TypeVar
-
-import torch
 from torch.nn.modules import Module
 
 __all__ = ["DataParallel", "data_parallel"]
@@ -18,10 +17,7 @@ class DataParallel[T: Module](Module):
     def forward(self, *inputs: Any, **kwargs: Any) -> Any: ...
     def replicate(self, module: T, device_ids: Sequence[int | torch.device]) -> list[T]: ...
     def scatter(
-        self,
-        inputs: tuple[Any, ...],
-        kwargs: dict[str, Any] | None,
-        device_ids: Sequence[int | torch.device],
+        self, inputs: tuple[Any, ...], kwargs: dict[str, Any] | None, device_ids: Sequence[int | torch.device]
     ) -> Any: ...
     def parallel_apply(self, replicas: Sequence[T], inputs: Sequence[Any], kwargs: Any) -> list[Any]: ...
     def gather(self, outputs: Any, output_device: int | torch.device) -> Any: ...

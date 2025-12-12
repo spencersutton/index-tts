@@ -1,5 +1,6 @@
-from torch.fx._symbolic_trace import Tracer, symbolic_trace, wrap
-from torch.fx.graph import Graph
+from torch.fx import immutable_collections
+from torch.fx._symbolic_trace import PH, ProxyableClassMeta, Tracer, symbolic_trace, wrap
+from torch.fx.graph import CodeGen, Graph
 from torch.fx.graph_module import GraphModule
 from torch.fx.interpreter import Interpreter, Transformer
 from torch.fx.node import Node, has_side_effect, map_arg
@@ -92,16 +93,16 @@ Several example transformations can be found at the
 repository.
 '''
 __all__ = [
+    "symbolic_trace",
+    "Tracer",
+    "wrap",
     "Graph",
     "GraphModule",
     "Interpreter",
+    "Transformer",
     "Node",
     "Proxy",
-    "Tracer",
-    "Transformer",
+    "replace_pattern",
     "has_side_effect",
     "map_arg",
-    "replace_pattern",
-    "symbolic_trace",
-    "wrap",
 ]

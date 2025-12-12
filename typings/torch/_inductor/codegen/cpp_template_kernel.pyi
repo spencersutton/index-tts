@@ -1,0 +1,106 @@
+import sympy
+from typing import Any, Callable, Optional, Union
+from .. import ir
+from ..autotune_process import CppBenchmarkRequest
+from .cpp import CppKernel
+
+def parse_expr_with_index_symbols(expr):  # -> list[Any | list[Any]]:
+    ...
+def wrap_with_tensorbox(node) -> Union[ir.TensorBox, ir.ShapeAsConstantBuffer]: ...
+
+class CppTemplateKernel(CppKernel):
+    def __init__(self, kernel_name, num_threads) -> None: ...
+    def render(self, template, **kwargs):  # -> str:
+        ...
+    def def_kernel(
+        self,
+        inputs: dict[str, ir.Buffer],
+        outputs: dict[str, ir.Buffer],
+        aliases: Optional[dict[str, str]] = ...,
+        function_name: str = ...,
+        extra_sizevars: Optional[list[sympy.Expr]] = ...,
+        placeholder: str = ...,
+    ) -> str: ...
+    def call_kernel(self, name: str, node: ir.CppTemplateBuffer):  # -> None:
+        ...
+    def dtype(self, node: ir.Buffer) -> str: ...
+    def acc_dtype(self, node: ir.Buffer) -> str: ...
+    def size(self, node: ir.Buffer, dim: int) -> str: ...
+    def stride(self, node: ir.Buffer, dim: int) -> str: ...
+    def index(self, node: ir.Buffer, indices: list[Any]) -> str: ...
+    def slice_nd(self, node, ranges: list[tuple[Any, Any]]) -> ir.ReinterpretView: ...
+    def select(self, node, dim: int, idx: int) -> ir.ReinterpretView: ...
+    def view(self, node, sizes: list[Any]) -> ir.IRNode: ...
+    def permute(self, node, dims):  # -> ReinterpretView:
+        ...
+    def maybe_codegen_profile(self) -> str: ...
+    def unroll_pragma(self, unroll):  # -> str:
+        ...
+    def define_buffer(self, name, sizes: list[Any], dtype=...) -> str: ...
+    def define_stack_allocated_buffer(self, name, sizes: list[Any], dtype=...) -> str: ...
+    def reinit_buffer_if_null(self, name):  # -> str:
+
+        ...
+    def release_buffer(self, name):  # -> str:
+
+        ...
+    def store_pointwise_nodes(
+        self,
+        dst: ir.Buffer,
+        nodes: list[ir.IRNode],
+        offsets: Optional[list[sympy.Expr]] = ...,
+        reindexers: Optional[list[Optional[Callable[[list[Any]], list[Any]]]]] = ...,
+    ) -> str: ...
+    def store_grouped_gemm_pointwise_nodes(
+        self,
+        dst: tuple[ir.Buffer],
+        nodes: list[ir.IRNode],
+        offsets: list[sympy.Expr],
+        reindexers: list[Optional[Callable[[list[Any]], list[Any]]]],
+        output_names: list[str],
+    ) -> str: ...
+    def store_output(
+        self,
+        dst: ir.Buffer,
+        src: ir.Buffer,
+        orig_src: Optional[ir.Buffer] = ...,
+        epilogue_nodes: Optional[list[ir.IRNode]] = ...,
+        offsets: Optional[list[Any]] = ...,
+        reindexers: Optional[list[Optional[Callable[[list[Any]], list[Any]]]]] = ...,
+    ):  # -> str:
+
+        ...
+    def store_outputs(
+        self,
+        dst: tuple[ir.Buffer],
+        src: tuple[ir.IRNode],
+        orig_src: Optional[tuple[ir.IRNode]] = ...,
+        epilogue_nodes: Optional[list[ir.IRNode]] = ...,
+        offsets: Optional[list[Any]] = ...,
+        reindexers: Optional[list[Optional[Callable[[list[Any]], list[Any]]]]] = ...,
+        multi_output_buffers: Optional[tuple[ir.MultiOutput]] = ...,
+    ):  # -> str:
+        ...
+    def check_bounds(self, expr, size, lower, upper):  # -> None:
+        ...
+
+class CppTemplateCaller(ir.ChoiceCaller):
+    def __init__(
+        self,
+        name: str,
+        category: str,
+        input_nodes: list[ir.Buffer],
+        layout: ir.Layout,
+        make_kernel_render: Callable[
+            [ir.CppTemplateBuffer, bool, Optional[list[ir.IRNode]]],
+            str,
+        ],
+        bmreq: CppBenchmarkRequest,
+        template: CppTemplate,
+        info_kwargs: Optional[dict[str, Union[ir.PrimitiveInfoType, list[ir.PrimitiveInfoType]]]] = ...,
+    ) -> None: ...
+    def precompile(self) -> None: ...
+    def benchmark(self, *args, out) -> float: ...
+    def hash_key(self) -> str: ...
+    def info_dict(self) -> dict[str, Union[ir.PrimitiveInfoType, list[ir.PrimitiveInfoType]]]: ...
+    def output_node(self) -> Union[ir.TensorBox, ir.ShapeAsConstantBuffer]: ...

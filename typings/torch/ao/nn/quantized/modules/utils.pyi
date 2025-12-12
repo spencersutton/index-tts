@@ -1,5 +1,4 @@
 import abc
-
 import torch
 
 __all__ = ["WeightedQuantizedModule"]

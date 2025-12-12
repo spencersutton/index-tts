@@ -1,8 +1,7 @@
 import dataclasses
 from collections.abc import Collection, Mapping
 from enum import Enum
-from typing import TYPE_CHECKING
-
+from typing import Optional, TYPE_CHECKING, Union, TypeAlias
 from torch._library.fake_class_registry import FakeScriptObject
 
 if TYPE_CHECKING: ...
@@ -15,9 +14,9 @@ __all__ = [
     "InputSpec",
     "OutputKind",
     "OutputSpec",
-    "SymBoolArgument",
-    "SymFloatArgument",
     "SymIntArgument",
+    "SymFloatArgument",
+    "SymBoolArgument",
     "TensorArgument",
 ]
 
@@ -45,22 +44,22 @@ class SymBoolArgument:
 class CustomObjArgument:
     name: str
     class_fqn: str
-    fake_val: FakeScriptObject | None = ...
+    fake_val: Optional[FakeScriptObject] = ...
 
 @dataclasses.dataclass
 class ConstantArgument:
     name: str
-    value: int | float | bool | str | None
+    value: Union[int, float, bool, str, None]
 
-type ArgumentSpec = (
-    TensorArgument
-    | SymIntArgument
-    | SymFloatArgument
-    | SymBoolArgument
-    | ConstantArgument
-    | CustomObjArgument
-    | TokenArgument
-)
+ArgumentSpec: TypeAlias = Union[
+    TensorArgument,
+    SymIntArgument,
+    SymFloatArgument,
+    SymBoolArgument,
+    ConstantArgument,
+    CustomObjArgument,
+    TokenArgument,
+]
 
 class InputKind(Enum):
     USER_INPUT = ...
@@ -74,9 +73,10 @@ class InputKind(Enum):
 class InputSpec:
     kind: InputKind
     arg: ArgumentSpec
-    target: str | None
-    persistent: bool | None = ...
-    def __post_init__(self) -> None: ...
+    target: Optional[str]
+    persistent: Optional[bool] = ...
+    def __post_init__(self):  # -> None:
+        ...
 
 class OutputKind(Enum):
     USER_OUTPUT = ...
@@ -92,8 +92,9 @@ class OutputKind(Enum):
 class OutputSpec:
     kind: OutputKind
     arg: ArgumentSpec
-    target: str | None
-    def __post_init__(self) -> None: ...
+    target: Optional[str]
+    def __post_init__(self):  # -> None:
+        ...
 
 @dataclasses.dataclass
 class ExportBackwardSignature:
@@ -116,9 +117,9 @@ class ExportGraphSignature:
     @property
     def lifted_custom_objs(self) -> Collection[str]: ...
     @property
-    def user_inputs(self) -> Collection[int | float | bool | None | str]: ...
+    def user_inputs(self) -> Collection[Union[int, float, bool, None, str]]: ...
     @property
-    def user_outputs(self) -> Collection[int | float | bool | None | str]: ...
+    def user_outputs(self) -> Collection[Union[int, float, bool, None, str]]: ...
     @property
     def inputs_to_parameters(self) -> Mapping[str, str]: ...
     @property
@@ -134,13 +135,16 @@ class ExportGraphSignature:
     @property
     def inputs_to_lifted_custom_objs(self) -> Mapping[str, str]: ...
     @property
-    def backward_signature(self) -> ExportBackwardSignature | None: ...
+    def backward_signature(self) -> Optional[ExportBackwardSignature]: ...
     @property
-    def assertion_dep_token(self) -> Mapping[int, str] | None: ...
+    def assertion_dep_token(self) -> Optional[Mapping[int, str]]: ...
     @property
     def input_tokens(self) -> Collection[str]: ...
     @property
     def output_tokens(self) -> Collection[str]: ...
     def __post_init__(self) -> None: ...
-    def replace_all_uses(self, old: str, new: str) -> None: ...
-    def get_replace_hook(self, replace_inputs=...) -> Callable[..., None]: ...
+    def replace_all_uses(self, old: str, new: str):  # -> None:
+
+        ...
+    def get_replace_hook(self, replace_inputs=...):  # -> Callable[..., None]:
+        ...

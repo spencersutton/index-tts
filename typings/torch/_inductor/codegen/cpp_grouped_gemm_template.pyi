@@ -1,0 +1,48 @@
+from typing import Callable, Optional
+from .. import ir
+from ..select_algorithm import ChoiceCaller, DataProcessorTemplateWrapper
+from .cpp_gemm_template import CppGemmTemplate
+from .cpp_template_kernel import CppTemplateKernel
+from .cpp_utils import GemmBlocking
+
+log = ...
+GEMM_TEMPLATE = ...
+
+def get_deduplicated_act(act_mapping: dict[int, ir.IRNode]) -> list[ir.IRNode]: ...
+
+class CppGroupedGemmTemplate(CppGemmTemplate):
+    def __init__(
+        self,
+        input_nodes: list[ir.IRNode],
+        layout: ir.Layout,
+        num_threads: int,
+        register_blocking: GemmBlocking,
+        beta: int = ...,
+        alpha: int = ...,
+        has_bias: bool = ...,
+        epilogue_creator: Optional[Callable[[ir.Buffer], ir.Pointwise]] = ...,
+        act_mapping: Optional[dict[int, ir.IRNode]] = ...,
+        gemm_grouped_num: int = ...,
+    ) -> None: ...
+    @classmethod
+    def add_choices(
+        cls,
+        choices: list[ChoiceCaller],
+        layout: ir.Layout,
+        input_nodes: list[ir.IRNode],
+        beta: int = ...,
+        alpha: int = ...,
+        has_bias: tuple[bool, ...] = ...,
+        trans_w: bool = ...,
+        input_indices: Optional[list[int]] = ...,
+        epilogue_creator: Optional[Callable[[ir.Buffer], ir.Pointwise]] = ...,
+        act_mapping: Optional[dict[int, ir.IRNode]] = ...,
+    ) -> DataProcessorTemplateWrapper: ...
+    def render(
+        self,
+        kernel: CppTemplateKernel,
+        template_buffer_node: Optional[ir.CppTemplateBuffer] = ...,
+        flag_template_buffer_has_other_users: Optional[bool] = ...,
+        epilogue_nodes: Optional[list[ir.IRNode]] = ...,
+        **kwargs,
+    ) -> str: ...

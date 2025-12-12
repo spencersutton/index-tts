@@ -1,6 +1,5 @@
-from typing import Any, TypeIs
-
 import torch
+from typing import Any, TypeIs
 
 __all__ = ["MaskedTensor", "is_masked_tensor"]
 

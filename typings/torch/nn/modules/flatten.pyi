@@ -1,7 +1,7 @@
 from torch import Tensor
 from torch.types import _size
-
 from .module import Module
+from typing import TypeAlias
 
 __all__ = ["Flatten", "Unflatten"]
 
@@ -14,7 +14,7 @@ class Flatten(Module):
     def extra_repr(self) -> str: ...
 
 class Unflatten(Module):
-    type NamedShape = tuple[tuple[str, int]]
+    NamedShape: TypeAlias = tuple[tuple[str, int]]
     __constants__ = ...
     dim: int | str
     unflattened_size: _size | NamedShape

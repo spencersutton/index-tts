@@ -1,16 +1,11 @@
+import torch
 from abc import abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
-
-import torch
 from torch import nn
 from torch.fx import Node
 
-"""
-This module implements observers which are used to collect statistics about
-the values observed during calibration (PTQ) or training (QAT).
-"""
 __all__ = [
     "AffineQuantizedObserverBase",
     "FixedQParamsObserver",
@@ -198,15 +193,7 @@ class FixedQParamsObserver(ObserverBase):
     scale: torch.Tensor
     zero_point: torch.Tensor
     def __init__(
-        self,
-        scale,
-        zero_point,
-        dtype=...,
-        qscheme=...,
-        quant_min=...,
-        quant_max=...,
-        is_dynamic=...,
-        **kwargs,
+        self, scale, zero_point, dtype=..., qscheme=..., quant_min=..., quant_max=..., is_dynamic=..., **kwargs
     ) -> None: ...
     def forward(self, X): ...
     @torch.jit.export

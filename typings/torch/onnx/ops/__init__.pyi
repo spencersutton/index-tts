@@ -1,20 +1,8 @@
+import torch
 from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING
 
-import torch
-
-"""ONNX operators as native torch.fx operators.
-
-This module provides a set of functions to create ONNX operators in the FX graph
-which are exportable to ONNX.
-"""
-__all__ = [
-    "aten_decompositions",
-    "attention",
-    "rotary_embedding",
-    "symbolic",
-    "symbolic_multi_out",
-]
+__all__ = ["aten_decompositions", "attention", "rotary_embedding", "symbolic", "symbolic_multi_out"]
 if TYPE_CHECKING: ...
 _TORCH_DTYPE_TO_ONNX_DTYPE = ...
 

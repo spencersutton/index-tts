@@ -1,10 +1,8 @@
+import torch
 from abc import ABC, abstractmethod
 from typing import Any
-
-import torch
 from torch.nn import Module
 
-"""Implements modules  used to perform fake quantization."""
 __all__ = [
     "FakeQuantize",
     "FakeQuantizeBase",
@@ -54,14 +52,7 @@ class FakeQuantizeBase(ABC, Module):
 class FakeQuantize(FakeQuantizeBase):
     scale: torch.Tensor
     zero_point: torch.Tensor
-    def __init__(
-        self,
-        observer=...,
-        quant_min=...,
-        quant_max=...,
-        is_dynamic=...,
-        **observer_kwargs,
-    ) -> None: ...
+    def __init__(self, observer=..., quant_min=..., quant_max=..., is_dynamic=..., **observer_kwargs) -> None: ...
     @torch.jit.export
     def calculate_qparams(self) -> tuple[Tensor, Tensor]: ...
     def forward(self, X) -> Tensor: ...
@@ -77,11 +68,7 @@ class FixedQParamsFakeQuantize(FakeQuantize):
 
 class FusedMovingAvgObsFakeQuantize(FakeQuantize):
     def __init__(
-        self,
-        observer: Any = ...,
-        quant_min: int = ...,
-        quant_max: int = ...,
-        **observer_kwargs: Any,
+        self, observer: Any = ..., quant_min: int = ..., quant_max: int = ..., **observer_kwargs: Any
     ) -> None: ...
     @torch.jit.export
     def calculate_qparams(self) -> tuple[torch.Tensor, torch.Tensor]: ...

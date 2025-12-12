@@ -1,6 +1,5 @@
 import torch
 from torch import Tensor
-
 from .module import Module
 
 __all__ = [
@@ -213,22 +212,13 @@ class MultiheadAttention(Module):
         is_causal: bool = ...,
     ) -> tuple[Tensor, Tensor | None]: ...
     def merge_masks(
-        self,
-        attn_mask: Tensor | None,
-        key_padding_mask: Tensor | None,
-        query: Tensor,
+        self, attn_mask: Tensor | None, key_padding_mask: Tensor | None, query: Tensor
     ) -> tuple[Tensor | None, int | None]: ...
 
 class PReLU(Module):
     __constants__ = ...
     num_parameters: int
-    def __init__(
-        self,
-        num_parameters: int = ...,
-        init: float = ...,
-        device=...,
-        dtype=...,
-    ) -> None: ...
+    def __init__(self, num_parameters: int = ..., init: float = ..., device=..., dtype=...) -> None: ...
     def reset_parameters(self) -> None: ...
     def forward(self, input: Tensor) -> Tensor: ...
     def extra_repr(self) -> str: ...

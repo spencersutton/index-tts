@@ -1,28 +1,28 @@
+import torch
 from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum
-
-import torch
+from typing import Optional
 
 """
 This file includes public APIs for FSDP such as the classes used for the
 constructor arguments.
 """
 __all__ = [
-    "BackwardPrefetch",
-    "CPUOffload",
-    "FullOptimStateDictConfig",
-    "FullStateDictConfig",
-    "LocalOptimStateDictConfig",
-    "LocalStateDictConfig",
-    "MixedPrecision",
-    "OptimStateDictConfig",
-    "ShardedOptimStateDictConfig",
-    "ShardedStateDictConfig",
     "ShardingStrategy",
-    "StateDictConfig",
-    "StateDictSettings",
+    "BackwardPrefetch",
+    "MixedPrecision",
+    "CPUOffload",
     "StateDictType",
+    "StateDictConfig",
+    "FullStateDictConfig",
+    "LocalStateDictConfig",
+    "ShardedStateDictConfig",
+    "OptimStateDictConfig",
+    "FullOptimStateDictConfig",
+    "LocalOptimStateDictConfig",
+    "ShardedOptimStateDictConfig",
+    "StateDictSettings",
 ]
 
 class ShardingStrategy(Enum):
@@ -38,9 +38,9 @@ class BackwardPrefetch(Enum):
 
 @dataclass
 class MixedPrecision:
-    param_dtype: torch.dtype | None = ...
-    reduce_dtype: torch.dtype | None = ...
-    buffer_dtype: torch.dtype | None = ...
+    param_dtype: Optional[torch.dtype] = ...
+    reduce_dtype: Optional[torch.dtype] = ...
+    buffer_dtype: Optional[torch.dtype] = ...
     keep_low_precision_grads: bool = ...
     cast_forward_inputs: bool = ...
     cast_root_forward_inputs: bool = ...

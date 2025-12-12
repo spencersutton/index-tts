@@ -1,24 +1,13 @@
 import torch
 from torch import Tensor
 
-"""
-We will recreate all the RNN modules as we require the modules to be decomposed
-into its building blocks to be able to observe.
-"""
 __all__ = ["LSTM", "LSTMCell"]
 
 class LSTMCell(torch.nn.Module):
     _FLOAT_MODULE = torch.nn.LSTMCell
     __constants__ = ...
     def __init__(
-        self,
-        input_dim: int,
-        hidden_dim: int,
-        bias: bool = ...,
-        device=...,
-        dtype=...,
-        *,
-        split_gates=...,
+        self, input_dim: int, hidden_dim: int, bias: bool = ..., device=..., dtype=..., *, split_gates=...
     ) -> None: ...
     def forward(self, x: Tensor, hidden: tuple[Tensor, Tensor] | None = ...) -> tuple[Tensor, Tensor]: ...
     def initialize_hidden(self, batch_size: int, is_quantized: bool = ...) -> tuple[Tensor, Tensor]: ...
@@ -29,14 +18,7 @@ class LSTMCell(torch.nn.Module):
 
 class _LSTMSingleLayer(torch.nn.Module):
     def __init__(
-        self,
-        input_dim: int,
-        hidden_dim: int,
-        bias: bool = ...,
-        device=...,
-        dtype=...,
-        *,
-        split_gates=...,
+        self, input_dim: int, hidden_dim: int, bias: bool = ..., device=..., dtype=..., *, split_gates=...
     ) -> None: ...
     def forward(
         self, x: Tensor, hidden: tuple[Tensor, Tensor] | None = ...

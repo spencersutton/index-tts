@@ -1,19 +1,8 @@
-from typing import Any
-
 import torch
-from torch.utils._contextlib import (
-    F,
-    _DecoratorContextManager,
-    _NoParamDecoratorContextManager,
-)
+from typing import Any
+from torch.utils._contextlib import F, _DecoratorContextManager, _NoParamDecoratorContextManager
 
-__all__ = [
-    "enable_grad",
-    "inference_mode",
-    "no_grad",
-    "set_grad_enabled",
-    "set_multithreading_enabled",
-]
+__all__ = ["enable_grad", "inference_mode", "no_grad", "set_grad_enabled", "set_multithreading_enabled"]
 
 class no_grad(_NoParamDecoratorContextManager):
     def __init__(self) -> None: ...

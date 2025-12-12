@@ -1,38 +1,19 @@
 import ctypes
-from collections.abc import Callable
-from pathlib import Path
-from typing import TYPE_CHECKING, Any, NewType
-
 import torch
 import torch._C
+from collections.abc import Callable
+from pathlib import Path
+from typing import Any, NewType, TYPE_CHECKING
 from torch import version as _version
 from torch._utils import classproperty
 from torch.storage import _LegacyStorage
 from torch.types import Device
-
 from . import amp, jiterator, nvtx, profiler, sparse, tunable
-from .graphs import (
-    CUDAGraph,
-    graph,
-    graph_pool_handle,
-    is_current_stream_capturing,
-    make_graphed_callables,
-)
+from .graphs import CUDAGraph, graph, graph_pool_handle, is_current_stream_capturing, make_graphed_callables
 from .memory import *
 from .random import *
 from .streams import Event, ExternalStream, Stream
 
-r"""
-This package adds support for CUDA tensor types.
-
-It implements the same function as CPU tensors, but they utilize
-GPUs for computation.
-
-It is lazily initialized, so you can always import it, and use
-:func:`is_available()` to determine if your system supports CUDA.
-
-:ref:`cuda-semantics` has more details about working with CUDA.
-"""
 if TYPE_CHECKING: ...
 _initialized = ...
 _tls = ...

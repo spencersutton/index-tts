@@ -1,12 +1,7 @@
+import torch
 from contextlib import AbstractContextManager
 from typing import Any
 
-import torch
-
-r"""
-This package implements abstractions found in ``torch.cuda``
-to facilitate writing device-agnostic code.
-"""
 __all__ = [
     "Event",
     "Stream",

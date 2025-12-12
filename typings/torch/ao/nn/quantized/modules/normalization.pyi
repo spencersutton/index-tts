@@ -1,25 +1,10 @@
 import torch
 
-__all__ = [
-    "GroupNorm",
-    "InstanceNorm1d",
-    "InstanceNorm2d",
-    "InstanceNorm3d",
-    "LayerNorm",
-]
+__all__ = ["GroupNorm", "InstanceNorm1d", "InstanceNorm2d", "InstanceNorm3d", "LayerNorm"]
 
 class LayerNorm(torch.nn.LayerNorm):
     def __init__(
-        self,
-        normalized_shape,
-        weight,
-        bias,
-        scale,
-        zero_point,
-        eps=...,
-        elementwise_affine=...,
-        device=...,
-        dtype=...,
+        self, normalized_shape, weight, bias, scale, zero_point, eps=..., elementwise_affine=..., device=..., dtype=...
     ) -> None: ...
     def forward(self, input) -> Any: ...
     @classmethod
@@ -30,17 +15,7 @@ class LayerNorm(torch.nn.LayerNorm):
 class GroupNorm(torch.nn.GroupNorm):
     __constants__ = ...
     def __init__(
-        self,
-        num_groups,
-        num_channels,
-        weight,
-        bias,
-        scale,
-        zero_point,
-        eps=...,
-        affine=...,
-        device=...,
-        dtype=...,
+        self, num_groups, num_channels, weight, bias, scale, zero_point, eps=..., affine=..., device=..., dtype=...
     ) -> None: ...
     def forward(self, input) -> Any: ...
     @classmethod

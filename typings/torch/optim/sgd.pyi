@@ -1,8 +1,6 @@
 from torch import Tensor
-
 from .optimizer import Optimizer, ParamsT, _use_grad_for_differentiable
 
-r"""Implementation for Stochastic Gradient Descent optimizer."""
 __all__ = ["SGD", "sgd"]
 
 class SGD(Optimizer):

@@ -1,10 +1,4 @@
-from torch.utils.data.dataloader import (
-    DataLoader,
-    _DatasetKind,
-    default_collate,
-    default_convert,
-    get_worker_info,
-)
+from torch.utils.data.dataloader import DataLoader, _DatasetKind, default_collate, default_convert, get_worker_info
 from torch.utils.data.datapipes._decorator import (
     argument_validation,
     functional_datapipe,
@@ -13,12 +7,7 @@ from torch.utils.data.datapipes._decorator import (
     runtime_validation,
     runtime_validation_disabled,
 )
-from torch.utils.data.datapipes.datapipe import (
-    DataChunk,
-    DFIterDataPipe,
-    IterDataPipe,
-    MapDataPipe,
-)
+from torch.utils.data.datapipes.datapipe import DFIterDataPipe, DataChunk, IterDataPipe, MapDataPipe
 from torch.utils.data.dataset import (
     ChainDataset,
     ConcatDataset,

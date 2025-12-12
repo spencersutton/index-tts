@@ -1,12 +1,10 @@
 import contextlib
-from typing import TYPE_CHECKING, Any
-from warnings import deprecated
-
 import torch
-from torch._C import _cuda_CUDAAllocator, _MemPool
+from typing import Any, TYPE_CHECKING
+from warnings import deprecated
+from torch._C import _MemPool, _cuda_CUDAAllocator
 from torch.types import Device
 
-r"""This package adds support for device memory management implemented in CUDA."""
 if TYPE_CHECKING: ...
 __all__ = [
     "CUDAPluggableAllocator",
@@ -64,14 +62,10 @@ def memory_allocated(device: Device = ...) -> int: ...
 def max_memory_allocated(device: Device = ...) -> int: ...
 def memory_reserved(device: Device = ...) -> int: ...
 def max_memory_reserved(device: Device = ...) -> int: ...
-@deprecated(
-    "`torch.cuda.memory_cached` has been renamed to `torch.cuda.memory_reserved`",
-    category=FutureWarning,
-)
+@deprecated("`torch.cuda.memory_cached` has been renamed to `torch.cuda.memory_reserved`", category=FutureWarning)
 def memory_cached(device: Device = ...) -> int: ...
 @deprecated(
-    "`torch.cuda.max_memory_cached` has been renamed to `torch.cuda.max_memory_reserved`",
-    category=FutureWarning,
+    "`torch.cuda.max_memory_cached` has been renamed to `torch.cuda.max_memory_reserved`", category=FutureWarning
 )
 def max_memory_cached(device: Device = ...) -> int: ...
 def memory_snapshot(mempool_id=...) -> Any: ...
@@ -90,11 +84,7 @@ class CUDAPluggableAllocator(_CUDAAllocator):
 def change_current_allocator(allocator: _CUDAAllocator) -> None: ...
 
 class MemPool(_MemPool):
-    def __init__(
-        self,
-        allocator: _cuda_CUDAAllocator | None = ...,
-        use_on_oom: bool = ...,
-    ) -> None: ...
+    def __init__(self, allocator: _cuda_CUDAAllocator | None = ..., use_on_oom: bool = ...) -> None: ...
     @property
     def id(self) -> tuple[int, int]: ...
     @property

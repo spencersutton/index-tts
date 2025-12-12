@@ -1,8 +1,6 @@
 from collections.abc import Sequence
-
 from torch import Tensor
 from torch.nn.common_types import _size_2_t, _size_4_t, _size_6_t
-
 from .module import Module
 
 __all__ = [

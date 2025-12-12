@@ -169,7 +169,7 @@ class IndexTTS2:
     @functools.lru_cache  # noqa: B019
     def process_audio(self, prompt: Path) -> Tensor:
         audio, _ = _load_and_cut_audio(prompt, 15, sr=16000)
-        inputs = self.extract_features(audio, sampling_rate=16000, return_tensors="pt")  # pyright: ignore[reportArgumentType]
+        inputs = self.extract_features(audio, sampling_rate=16000, return_tensors="pt")
         input_features = inputs["input_features"].to(self.device)
         attention_mask = inputs["attention_mask"].to(self.device)
         return self.get_emb(input_features, attention_mask)
@@ -180,7 +180,7 @@ class IndexTTS2:
         audio_22k = torchaudio.transforms.Resample(sr, 22050).forward(audio)
         audio_16k = torchaudio.transforms.Resample(sr, 16000).forward(audio)
 
-        inputs = self.extract_features(audio_16k, sampling_rate=16000, return_tensors="pt")  # ty:ignore[invalid-argument-type]
+        inputs = self.extract_features(audio_16k, sampling_rate=16000, return_tensors="pt")
         input_features = inputs["input_features"].to(self.device)
         attention_mask = inputs["attention_mask"].to(self.device)
         spk_cond_emb = self.get_emb(input_features, attention_mask)
@@ -410,6 +410,7 @@ class IndexTTS2:
 
             # Compile the inner inference model used for AR generation
             # This is critical because inference_speech() bypasses self.gpt()
+            assert self.gpt.inference_model is not None
             self.gpt.inference_model = cast(
                 GPT2InferenceModel,
                 torch.compile(self.gpt.inference_model, dynamic=True),

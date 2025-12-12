@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable
 from enum import Enum
 from typing import Any, Self
-
 from torch._C._profiler import _ExperimentalConfig
 from torch.autograd import ProfilerActivity
 
@@ -54,10 +53,7 @@ class _KinetoProfile:
     def export_stacks(self, path: str, metric: str = ...) -> None: ...
     def toggle_collection_dynamic(self, enable: bool, activities: Iterable[ProfilerActivity]) -> None: ...
     def key_averages(
-        self,
-        group_by_input_shape: bool = ...,
-        group_by_stack_n: int = ...,
-        group_by_overload_name: bool = ...,
+        self, group_by_input_shape: bool = ..., group_by_stack_n: int = ..., group_by_overload_name: bool = ...
     ) -> EventList: ...
     def events(self) -> EventList | None: ...
     def add_metadata(self, key: str, value: str) -> None: ...
@@ -72,13 +68,7 @@ class ProfilerAction(Enum):
     RECORD_AND_SAVE = ...
 
 def schedule(
-    *,
-    wait: int,
-    warmup: int,
-    active: int,
-    repeat: int = ...,
-    skip_first: int = ...,
-    skip_first_wait: int = ...,
+    *, wait: int, warmup: int, active: int, repeat: int = ..., skip_first: int = ..., skip_first_wait: int = ...
 ) -> Callable: ...
 def tensorboard_trace_handler(
     dir_name: str, worker_name: str | None = ..., use_gzip: bool = ...

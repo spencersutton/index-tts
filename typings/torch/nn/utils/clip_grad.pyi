@@ -1,10 +1,9 @@
 import typing
+import torch
 from warnings import deprecated
 
-import torch
-
 __all__: list[str] = ...
-type _tensor_or_tensors = torch.Tensor | typing.Iterable[torch.Tensor]
+_tensor_or_tensors: typing.TypeAlias = torch.Tensor | typing.Iterable[torch.Tensor]
 
 @_no_grad
 def clip_grad_norm_(
@@ -26,8 +25,4 @@ def clip_grad_norm(
     foreach: bool | None = ...,
 ) -> torch.Tensor: ...
 @_no_grad
-def clip_grad_value_(
-    parameters: _tensor_or_tensors,
-    clip_value: float,
-    foreach: bool | None = ...,
-) -> None: ...
+def clip_grad_value_(parameters: _tensor_or_tensors, clip_value: float, foreach: bool | None = ...) -> None: ...

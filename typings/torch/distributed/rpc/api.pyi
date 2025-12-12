@@ -1,6 +1,5 @@
 import collections
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
-
+from typing import Any, TYPE_CHECKING, TypeVar
 from torch._C._distributed_rpc import PyRRef
 
 __all__ = [
@@ -33,7 +32,6 @@ def shutdown(graceful=..., timeout=...) -> None: ...
 def get_worker_info(worker_name=...) -> WorkerInfo: ...
 
 T = TypeVar("T")
-type GenericWithOneTypeVar[T] = Generic[T]
 if TYPE_CHECKING:
     class RRef[T](PyRRef[T]): ...
 

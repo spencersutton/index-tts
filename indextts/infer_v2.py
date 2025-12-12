@@ -29,7 +29,6 @@ from indextts.s2mel.modules.audio import mel_spectrogram
 from indextts.s2mel.modules.bigvgan import bigvgan
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
 from indextts.s2mel.modules.commons import MyModel, load_checkpoint
-from indextts.s2mel.modules.flow_matching import CFM
 from indextts.s2mel.modules.length_regulator import InterpolateRegulator
 from indextts.utils.checkpoint import load_checkpoint2
 from indextts.utils.front import TextNormalizer, TextTokenizer
@@ -573,30 +572,8 @@ class IndexTTS2:
             # must always use alpha=1.0 when we don't have an external reference voice
             emo_alpha = 1.0
 
-        audio, sr = _load_and_cut_audio(spk_audio_prompt, 15)
-        audio_22k = torchaudio.transforms.Resample(sr, 22050).forward(audio)
-        audio_16k = torchaudio.transforms.Resample(sr, 16000).forward(audio)
+        (spk_cond_emb, style, prompt_condition, ref_mel) = self.process_audio_prompt(spk_audio_prompt)
 
-        inputs = self.extract_features(audio_16k, sampling_rate=16000, return_tensors="pt")  # ty:ignore[invalid-argument-type]
-        input_features = inputs["input_features"].to(self.device)
-        attention_mask = inputs["attention_mask"].to(self.device)
-        spk_cond_emb = self.get_emb(input_features, attention_mask)
-
-        _, S_ref = self.semantic_codec.quantize(spk_cond_emb)
-        ref_mel = self.mel_fn(audio_22k.to(spk_cond_emb.device).float())
-        ref_target_lengths = Tensor([ref_mel.size(2)]).to(ref_mel.device)
-        feat = torchaudio.compliance.kaldi.fbank(
-            audio_16k.to(ref_mel.device),
-            num_mel_bins=80,
-            dither=0,
-            sample_frequency=16000,
-        )
-        feat -= feat.mean(dim=0, keepdim=True)
-        style = self.campplus_model(feat.unsqueeze(0))
-
-        length_regulator = self.s2mel.models["length_regulator"]
-        assert isinstance(length_regulator, InterpolateRegulator)
-        prompt_condition = length_regulator(S_ref, ylens=ref_target_lengths, n_quantizers=3, f0=None)[0]
         emovec_mat: Tensor | None = None
         weight_vector: Tensor | None = None
 
@@ -670,7 +647,7 @@ class IndexTTS2:
             if emovec_mat is not None and weight_vector is not None:
                 emovec = emovec_mat + (1 - torch.sum(weight_vector)) * emovec
 
-        wavs = []
+        wavs: list[Tensor] = []
         gpt_gen_time = 0
         gpt_forward_time = 0
         s2mel_time = 0
@@ -804,13 +781,12 @@ class IndexTTS2:
                     S_infer += latent
                     target_lengths = (code_lens * 1.72).long()
 
-                    cond = length_regulator(S_infer, ylens=target_lengths, n_quantizers=3, f0=None)[0]
+                    cond = self.s2mel.length_regulator(S_infer, ylens=target_lengths, n_quantizers=3, f0=None)[0]
                     cat_condition = torch.cat([prompt_condition, cond], dim=1)
-                    cfm = cast(CFM, self.s2mel.models["cfm"])
 
                     assert ref_mel is not None
                     assert style is not None
-                    vc_target = cfm.inference(
+                    vc_target = self.s2mel.cfm.inference(
                         cat_condition,
                         torch.tensor([cat_condition.size(1)], device=self.device),
                         ref_mel,
@@ -819,12 +795,11 @@ class IndexTTS2:
                         diffusion_steps,
                         inference_cfg_rate=inference_cfg_rate,
                     )
-                    assert ref_mel is not None
                     vc_target = vc_target[:, :, ref_mel.size(-1) :]
                     s2mel_time += time.perf_counter() - m_start_time
 
                     m_start_time = time.perf_counter()
-                    wav = self.bigvgan(vc_target.float()).squeeze().unsqueeze(0)
+                    wav = self.bigvgan.forward(vc_target.float()).squeeze().unsqueeze(0)
                     logger.debug(wav.shape)
                     bigvgan_time += time.perf_counter() - m_start_time
                     wav = wav.squeeze(1)

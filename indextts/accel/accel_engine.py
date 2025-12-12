@@ -414,7 +414,10 @@ class AccelInferenceEngine:
             seq_len = seq_lens[i]
             token_ids = [1] * seq_len
             if tts_embeddings is not None and seq_len > 0:
-                token_ids[-1] = input_ids[i, -1].item() if input_ids.size(1) > 0 else 1
+                if input_ids.size(1) > 0:
+                    token_ids[-1] = int(input_ids[i, -1].item())
+                else:
+                    token_ids[-1] = 1
             else:
                 token_ids = input_ids[i].tolist()
             req = Seq(token_ids)

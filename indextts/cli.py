@@ -155,7 +155,7 @@ def main() -> None:
 
     # Run inference and ensure profiling only captures this call
     tts.infer(
-        spk_audio_prompt=args.voice,
+        spk_audio_prompt=Path(args.voice),
         text=args.text.strip(),
         output_path=output_path,
     )

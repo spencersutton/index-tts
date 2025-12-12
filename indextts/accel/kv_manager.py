@@ -1,6 +1,7 @@
 import hashlib
 import pickle  # noqa: S403
 from collections import deque
+from collections.abc import Iterable, Sequence
 from copy import copy
 
 import torch
@@ -14,13 +15,13 @@ class KVCacheBlock:
         self.block_id = block_id
         self.ref_cnt = 0
         self._block_hash = None
-        self.token_ids: list[int] = []
+        self.token_ids: Sequence[int] = []
 
     @property
     def block_hash(self) -> bytes | None:
         return self._block_hash
 
-    def update(self, block_hash: bytes, token_ids: list[int]) -> None:
+    def update(self, block_hash: bytes, token_ids: Sequence[int]) -> None:
         self._block_hash = block_hash
         self.token_ids = token_ids
 
@@ -106,7 +107,7 @@ class KVCacheManager:
         )
 
     @classmethod
-    def compute_block_hash(cls, token_ids: list[int], parent_hash: bytes | None = None) -> bytes:
+    def compute_block_hash(cls, token_ids: Iterable[int], parent_hash: bytes | None = None) -> bytes:
         hash_input: list[bytes | int] = []
         if parent_hash is not None:
             hash_input.append(parent_hash)

@@ -4,12 +4,12 @@ import warnings
 from pathlib import Path
 
 import rich.traceback
+import torch
 
 from indextts.infer_v2 import IndexTTS2
 
 if __debug__:
     import omegaconf
-    import torch
     import transformers
 
     rich.traceback.install(suppress=[omegaconf, torch, transformers])

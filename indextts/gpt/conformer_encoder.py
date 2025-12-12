@@ -1,3 +1,5 @@
+from abc import ABC
+
 import torch
 from torch import Tensor, nn
 
@@ -267,7 +269,7 @@ class _ConformerEncoderLayer(nn.Module):
         return x, mask, new_att_cache, new_cnn_cache
 
 
-class _BaseEncoder(torch.nn.Module):
+class _BaseEncoder(torch.nn.Module, ABC):
     encoders: torch.nn.ModuleList
 
     def __init__(

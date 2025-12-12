@@ -3,11 +3,13 @@
 #
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
+# pyright: reportPrivateUsage=false
 
 """Convolutional layers wrappers and utilities."""
 
 import math
 import warnings
+from collections.abc import Sequence
 from typing import Any
 
 import einops
@@ -85,7 +87,7 @@ def get_extra_padding_for_conv1d(x: Tensor, kernel_size: int, stride: int, paddi
     return ideal_length - length
 
 
-def pad1d(x: Tensor, paddings: list[int], mode: str = "zero", value: float = 0.0) -> Tensor:
+def pad1d(x: Tensor, paddings: Sequence[int], mode: str = "zero", value: float = 0.0) -> Tensor:
     """Tiny wrapper around F.pad, just to allow for reflect padding on small input.
     If this is the case, we insert extra 0 padding to the right before the reflection happen.
     """

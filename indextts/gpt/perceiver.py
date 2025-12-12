@@ -25,7 +25,7 @@ class _EfficientAttentionConfig(NamedTuple):
 
 # main class
 class _Attend(nn.Module):
-    mask: Tensor
+    mask: Tensor | None = None
 
     def __init__(
         self,

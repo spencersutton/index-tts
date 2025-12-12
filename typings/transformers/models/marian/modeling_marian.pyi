@@ -21,17 +21,25 @@ from ...processing_utils import Unpack
 from ...utils import auto_docstring, is_torch_flex_attn_available
 from .configuration_marian import MarianConfig
 
+"""PyTorch MarianMTModel model, ported from the Marian C++ repo."""
 if is_torch_flex_attn_available(): ...
 logger = ...
 
-def shift_tokens_right(input_ids: torch.Tensor, pad_token_id: int, decoder_start_token_id: int): ...
+def shift_tokens_right(input_ids: torch.Tensor, pad_token_id: int, decoder_start_token_id: int):  # -> Tensor:
+    """
+    Shift input ids one token to the right.
+    """
+    ...
 
 class MarianSinusoidalPositionalEmbedding(nn.Embedding):
+    """This module produces sinusoidal positional embeddings of any length."""
     def __init__(self, num_positions: int, embedding_dim: int, padding_idx: Optional[int] = ...) -> None: ...
     @torch.no_grad()
     def forward(
         self, input_ids_shape: torch.Size, past_key_values_length: int = ..., position_ids: Optional[torch.Tensor] = ...
-    ) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """`input_ids_shape` is expected to be [bsz x seqlen]."""
+        ...
 
 def eager_attention_forward(
     module: nn.Module,
@@ -43,9 +51,11 @@ def eager_attention_forward(
     dropout: float = ...,
     head_mask: Optional[torch.Tensor] = ...,
     **kwargs,
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class MarianAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(
         self,
         embed_dim: int,
@@ -67,7 +77,9 @@ class MarianAttention(nn.Module):
         output_attentions: bool = ...,
         cache_position: Optional[torch.Tensor] = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+        """Input shape: Batch x Time x Channel"""
+        ...
 
 class MarianEncoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: MarianConfig, layer_idx: Optional[int] = ...) -> None: ...
@@ -77,7 +89,19 @@ class MarianEncoderLayer(GradientCheckpointingLayer):
         attention_mask: torch.FloatTensor,
         layer_head_mask: torch.FloatTensor,
         output_attentions: Optional[bool] = ...,
-    ) -> tuple[torch.FloatTensor, Optional[torch.FloatTensor]]: ...
+    ) -> tuple[torch.FloatTensor, Optional[torch.FloatTensor]]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            attention_mask (`torch.FloatTensor`): attention mask of size
+                `(batch, 1, tgt_len, src_len)` where padding elements are indicated by very large negative values.
+            layer_head_mask (`torch.FloatTensor`): mask for attention heads in a given layer of size
+                `(encoder_attention_heads,)`.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+        """
+        ...
 
 class MarianDecoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: MarianConfig, layer_idx: Optional[int] = ...) -> None: ...
@@ -93,7 +117,29 @@ class MarianDecoderLayer(GradientCheckpointingLayer):
         output_attentions: Optional[bool] = ...,
         use_cache: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
-    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]: ...
+    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            attention_mask (`torch.FloatTensor`): attention mask of size
+                `(batch, 1, tgt_len, src_len)` where padding elements are indicated by very large negative values.
+            encoder_hidden_states (`torch.FloatTensor`):
+                cross attention input to the layer of shape `(batch, seq_len, embed_dim)`
+            encoder_attention_mask (`torch.FloatTensor`): encoder attention mask of size
+                `(batch, 1, tgt_len, src_len)` where padding elements are indicated by very large negative values.
+            layer_head_mask (`torch.FloatTensor`): mask for attention heads in a given layer of size
+                `(encoder_attention_heads,)`.
+            cross_attn_layer_head_mask (`torch.FloatTensor`): mask for cross-attention heads in a given layer of
+                size `(decoder_attention_heads,)`.
+            past_key_value (`Tuple(torch.FloatTensor)`): cached past key and value projection states
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            cache_position (`torch.LongTensor` of shape `(sequence_length)`, *optional*):
+                Indices depicting the position of the input sequence tokens in the sequence. It is used to update the
+                cache in the correct position and to infer the complete sequence length.
+        """
+        ...
 
 @auto_docstring
 class MarianPreTrainedModel(PreTrainedModel):
@@ -105,9 +151,18 @@ class MarianPreTrainedModel(PreTrainedModel):
     _supports_flex_attn = ...
     _can_compile_fullgraph = ...
     @property
-    def dummy_inputs(self): ...
+    def dummy_inputs(self):  # -> dict[str, Any | Tensor]:
+        ...
 
 class MarianEncoder(MarianPreTrainedModel):
+    """
+    Transformer encoder consisting of *config.encoder_layers* self attention layers. Each layer is a
+    [`MarianEncoderLayer`].
+
+    Args:
+        config: MarianConfig
+        embed_tokens (nn.Embedding): output embedding
+    """
     def __init__(self, config: MarianConfig, embed_tokens: Optional[nn.Embedding] = ...) -> None: ...
     def forward(
         self,
@@ -118,9 +173,53 @@ class MarianEncoder(MarianPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], BaseModelOutput]: ...
+    ) -> Union[tuple[torch.Tensor], BaseModelOutput]:
+        r"""
+        Args:
+            input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
+                Indices of input sequence tokens in the vocabulary. Padding will be ignored by default should you
+                provide it.
+
+                Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+                [`PreTrainedTokenizer.__call__`] for details.
+
+                [What are input IDs?](../glossary#input-ids)
+            attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Mask to avoid performing attention on padding token indices. Mask values selected in `[0, 1]`:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+            head_mask (`torch.Tensor` of shape `(encoder_layers, encoder_attention_heads)`, *optional*):
+                Mask to nullify selected heads of the attention modules. Mask values selected in `[0, 1]`:
+
+                - 1 indicates the head is **not masked**,
+                - 0 indicates the head is **masked**.
+
+            inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*):
+                Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation.
+                This is useful if you want more control over how to convert `input_ids` indices into associated vectors
+                than the model's internal embedding lookup matrix.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers. See `hidden_states` under returned tensors
+                for more detail.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`~utils.ModelOutput`] instead of a plain tuple.
+        """
+        ...
 
 class MarianDecoder(MarianPreTrainedModel):
+    """
+    Transformer decoder consisting of *config.decoder_layers* layers. Each layer is a [`MarianDecoderLayer`]
+
+    Args:
+        config: MarianConfig
+        embed_tokens (nn.Embedding): output embedding
+    """
     def __init__(self, config: MarianConfig, embed_tokens: Optional[nn.Embedding] = ...) -> None: ...
     def forward(
         self,
@@ -137,18 +236,93 @@ class MarianDecoder(MarianPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple[torch.Tensor], BaseModelOutputWithPastAndCrossAttentions]: ...
+    ) -> Union[tuple[torch.Tensor], BaseModelOutputWithPastAndCrossAttentions]:
+        r"""
+        Args:
+            input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
+                Indices of input sequence tokens in the vocabulary. Padding will be ignored by default should you
+                provide it.
+
+                Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+                [`PreTrainedTokenizer.__call__`] for details.
+
+                [What are input IDs?](../glossary#input-ids)
+            attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Mask to avoid performing attention on padding token indices. Mask values selected in `[0, 1]`:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+            encoder_hidden_states (`torch.FloatTensor` of shape `(batch_size, encoder_sequence_length, hidden_size)`, *optional*):
+                Sequence of hidden-states at the output of the last layer of the encoder. Used in the cross-attention
+                of the decoder.
+            encoder_attention_mask (`torch.LongTensor` of shape `(batch_size, encoder_sequence_length)`, *optional*):
+                Mask to avoid performing cross-attention on padding tokens indices of encoder input_ids. Mask values
+                selected in `[0, 1]`:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+            head_mask (`torch.Tensor` of shape `(decoder_layers, decoder_attention_heads)`, *optional*):
+                Mask to nullify selected heads of the attention modules. Mask values selected in `[0, 1]`:
+
+                - 1 indicates the head is **not masked**,
+                - 0 indicates the head is **masked**.
+
+            cross_attn_head_mask (`torch.Tensor` of shape `(decoder_layers, decoder_attention_heads)`, *optional*):
+                Mask to nullify selected heads of the cross-attention modules in the decoder to avoid performing
+                cross-attention on hidden heads. Mask values selected in `[0, 1]`:
+
+                - 1 indicates the head is **not masked**,
+                - 0 indicates the head is **masked**.
+
+            past_key_values (`Cache`, *optional*, returned when `use_cache=True` is passed or when `config.use_cache=True`):
+                Tuple of `tuple(torch.FloatTensor)` of length `config.n_layers`, with each tuple having 2 tensors of
+                shape `(batch_size, num_heads, sequence_length, embed_size_per_head)`) and 2 additional tensors of
+                shape `(batch_size, num_heads, encoder_sequence_length, embed_size_per_head)`.
+
+                Contains pre-computed hidden-states (key and values in the self-attention blocks and in the
+                cross-attention blocks) that can be used (see `past_key_values` input) to speed up sequential decoding.
+
+                If `past_key_values` are used, the user can optionally input only the last `decoder_input_ids` (those
+                that don't have their past key value states given to this model) of shape `(batch_size, 1)` instead of
+                all `decoder_input_ids` of shape `(batch_size, sequence_length)`.
+            inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*):
+                Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation.
+                This is useful if you want more control over how to convert `input_ids` indices into associated vectors
+                than the model's internal embedding lookup matrix.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers. See `hidden_states` under returned tensors
+                for more detail.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`~utils.ModelOutput`] instead of a plain tuple.
+            cache_position (`torch.LongTensor` of shape `(sequence_length)`, *optional*):
+                Indices depicting the position of the input sequence tokens in the sequence. It is used to update the
+                cache in the correct position and to infer the complete sequence length.
+        """
+        ...
 
 @auto_docstring
 class MarianModel(MarianPreTrainedModel):
     _tied_weights_keys = ...
     def __init__(self, config: MarianConfig) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
-    def get_decoder_input_embeddings(self): ...
-    def set_decoder_input_embeddings(self, value): ...
-    def get_encoder(self): ...
-    def get_decoder(self): ...
+    def get_input_embeddings(self):  # -> Module:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
+    def get_decoder_input_embeddings(self):  # -> Module:
+        ...
+    def set_decoder_input_embeddings(self, value):  # -> None:
+        ...
+    def get_encoder(self):  # -> MarianEncoder:
+        ...
+    def get_decoder(self):  # -> MarianDecoder:
+        ...
     def resize_decoder_token_embeddings(self, new_num_tokens: int) -> nn.Embedding: ...
     @auto_docstring
     def forward(
@@ -169,23 +343,82 @@ class MarianModel(MarianPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
-    ) -> Seq2SeqModelOutput: ...
+    ) -> Seq2SeqModelOutput:
+        r"""
+        decoder_input_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Indices of decoder input sequence tokens in the vocabulary.
 
-@auto_docstring(custom_intro=...)
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are decoder input IDs?](../glossary#decoder-input-ids)
+
+            Marian uses the `pad_token_id` as the starting token for `decoder_input_ids` generation. If
+            `past_key_values` is used, optionally only the last `decoder_input_ids` have to be input (see
+            `past_key_values`).
+        decoder_attention_mask (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Default behavior: generate a tensor that ignores pad tokens in `decoder_input_ids`. Causal mask will also
+            be used by default.
+        cross_attn_head_mask (`torch.Tensor` of shape `(decoder_layers, decoder_attention_heads)`, *optional*):
+            Mask to nullify selected heads of the cross-attention modules in the decoder. Mask values selected in `[0,
+            1]`:
+
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, MarianModel
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("Helsinki-NLP/opus-mt-en-de")
+        >>> model = MarianModel.from_pretrained("Helsinki-NLP/opus-mt-en-de")
+
+        >>> inputs = tokenizer("Studies have been shown that owning a dog is good for you", return_tensors="pt")
+        >>> decoder_inputs = tokenizer(
+        ...     "<pad> Studien haben gezeigt dass es hilfreich ist einen Hund zu besitzen",
+        ...     return_tensors="pt",
+        ...     add_special_tokens=False,
+        ... )
+        >>> outputs = model(input_ids=inputs.input_ids, decoder_input_ids=decoder_inputs.input_ids)
+
+        >>> last_hidden_states = outputs.last_hidden_state
+        >>> list(last_hidden_states.shape)
+        [1, 26, 512]
+        ```"""
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    The Marian Model with a language modeling head. Can be used for summarization.
+    """
+)
 class MarianMTModel(MarianPreTrainedModel, GenerationMixin):
     base_model_prefix = ...
     _keys_to_ignore_on_load_missing = ...
     _keys_to_ignore_on_save = ...
     _tied_weights_keys = ...
     def __init__(self, config: MarianConfig) -> None: ...
-    def get_encoder(self): ...
-    def get_decoder(self): ...
+    def get_encoder(self):  # -> MarianEncoder:
+        ...
+    def get_decoder(self):  # -> MarianDecoder:
+        ...
     def resize_token_embeddings(
         self, new_num_tokens: int, pad_to_multiple_of: Optional[int] = ..., mean_resizing: bool = ...
     ) -> nn.Embedding: ...
-    def resize_decoder_token_embeddings(self, new_num_tokens): ...
-    def set_output_embeddings(self, new_embeddings: nn.Embedding): ...
-    def tie_weights(self): ...
+    def resize_decoder_token_embeddings(self, new_num_tokens):  # -> Module:
+        ...
+    def set_output_embeddings(self, new_embeddings: nn.Embedding):  # -> None:
+        ...
+    def tie_weights(self):  # -> None:
+        """
+        Tie the weights between the input embeddings and the output embeddings.
+
+        If the `torchscript` flag is set in the configuration, can't handle parameter sharing so we are cloning the
+        weights instead.
+        """
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -206,20 +439,78 @@ class MarianMTModel(MarianPreTrainedModel, GenerationMixin):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
-    ) -> Seq2SeqLMOutput: ...
-    def prepare_decoder_input_ids_from_labels(self, labels: torch.Tensor): ...
+    ) -> Seq2SeqLMOutput:
+        r"""
+        decoder_input_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Indices of decoder input sequence tokens in the vocabulary.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are decoder input IDs?](../glossary#decoder-input-ids)
+
+            Marian uses the `pad_token_id` as the starting token for `decoder_input_ids` generation. If
+            `past_key_values` is used, optionally only the last `decoder_input_ids` have to be input (see
+            `past_key_values`).
+        decoder_attention_mask (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Default behavior: generate a tensor that ignores pad tokens in `decoder_input_ids`. Causal mask will also
+            be used by default.
+        cross_attn_head_mask (`torch.Tensor` of shape `(decoder_layers, decoder_attention_heads)`, *optional*):
+            Mask to nullify selected heads of the cross-attention modules in the decoder. Mask values selected in `[0,
+            1]`:
+
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, MarianMTModel
+
+        >>> src = "fr"  # source language
+        >>> trg = "en"  # target language
+
+        >>> model_name = f"Helsinki-NLP/opus-mt-{src}-{trg}"
+        >>> model = MarianMTModel.from_pretrained(model_name)
+        >>> tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+        >>> sample_text = "où est l'arrêt de bus ?"
+        >>> batch = tokenizer([sample_text], return_tensors="pt")
+
+        >>> generated_ids = model.generate(**batch)
+        >>> tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
+        "Where's the bus stop?"
+        ```
+        """
+        ...
+
+    def prepare_decoder_input_ids_from_labels(self, labels: torch.Tensor):  # -> Tensor:
+        ...
 
 class MarianDecoderWrapper(MarianPreTrainedModel):
+    """
+    This wrapper class is a helper class to correctly load pretrained checkpoints when the causal language model is
+    used in combination with the [`EncoderDecoderModel`] framework.
+    """
     def __init__(self, config) -> None: ...
-    def forward(self, *args, **kwargs): ...
+    def forward(self, *args, **kwargs):  # -> Any:
+        ...
 
 class MarianForCausalLM(MarianPreTrainedModel, GenerationMixin):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
-    def set_decoder(self, decoder): ...
-    def get_decoder(self): ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> MarianDecoder:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -237,6 +528,34 @@ class MarianForCausalLM(MarianPreTrainedModel, GenerationMixin):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple, CausalLMOutputWithCrossAttentions]: ...
+    ) -> Union[tuple, CausalLMOutputWithCrossAttentions]:
+        r"""
+        cross_attn_head_mask (`torch.Tensor` of shape `(decoder_layers, decoder_attention_heads)`, *optional*):
+            Mask to nullify selected heads of the cross-attention modules. Mask values selected in `[0, 1]`:
+
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, MarianForCausalLM
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("Helsinki-NLP/opus-mt-fr-en")
+        >>> model = MarianForCausalLM.from_pretrained("Helsinki-NLP/opus-mt-fr-en", add_cross_attention=False)
+        >>> assert model.config.is_decoder, f"{model.__class__} has to be configured as a decoder."
+        >>> inputs = tokenizer("Hello, my dog is cute", return_tensors="pt")
+        >>> outputs = model(**inputs)
+
+        >>> logits = outputs.logits
+        >>> expected_shape = [1, inputs.input_ids.shape[-1], model.config.vocab_size]
+        >>> list(logits.shape) == expected_shape
+        True
+        ```"""
+        ...
 
 __all__ = ["MarianForCausalLM", "MarianModel", "MarianMTModel", "MarianPreTrainedModel"]

@@ -18,12 +18,15 @@ from ...modeling_flax_utils import FlaxPreTrainedModel
 from ...utils import add_start_docstrings, add_start_docstrings_to_model_forward, replace_return_docstrings
 from .configuration_whisper import WhisperConfig
 
+"""Flax whisper model."""
 logger = ...
 _CHECKPOINT_FOR_DOC = ...
 _CONFIG_FOR_DOC = ...
 remat = ...
 
-def sinusoidal_embedding_init(key, shape, dtype=...) -> jax.Array: ...
+def sinusoidal_embedding_init(key, shape, dtype=...) -> jax.Array:
+    """Returns sinusoids for positional embedding"""
+    ...
 
 WHISPER_START_DOCSTRING = ...
 WHISPER_INPUTS_DOCSTRING = ...
@@ -64,7 +67,8 @@ class FlaxWhisperEncoderLayerCollection(nn.Module):
     config: WhisperConfig
     dtype: jnp.dtype = ...
     gradient_checkpointing: bool = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         hidden_states,
@@ -73,7 +77,8 @@ class FlaxWhisperEncoderLayerCollection(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any | tuple[Any | None, ...] | tuple[()], ...] | FlaxBaseModelOutput:
+        ...
 
 class FlaxWhisperDecoderLayer(nn.Module):
     config: WhisperConfig
@@ -94,7 +99,8 @@ class FlaxWhisperDecoderLayerCollection(nn.Module):
     config: WhisperConfig
     dtype: jnp.dtype = ...
     gradient_checkpointing: bool = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         hidden_states,
@@ -106,7 +112,8 @@ class FlaxWhisperDecoderLayerCollection(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any | tuple[Any | None, ...] | tuple[()], ...] | FlaxBaseModelOutputWithPastAndCrossAttentions:
+        ...
 
 class FlaxWhisperEncoder(nn.Module):
     config: WhisperConfig
@@ -155,7 +162,8 @@ class FlaxWhisperModule(nn.Module):
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
         deterministic: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, Any] | FlaxSeq2SeqModelOutput:
+        ...
 
 class FlaxWhisperPreTrainedModel(FlaxPreTrainedModel):
     config_class = WhisperConfig
@@ -172,9 +180,25 @@ class FlaxWhisperPreTrainedModel(FlaxPreTrainedModel):
         gradient_checkpointing: bool = ...,
         **kwargs,
     ) -> None: ...
-    def enable_gradient_checkpointing(self): ...
+    def enable_gradient_checkpointing(self):  # -> None:
+        ...
     def init_weights(self, rng: jax.random.PRNGKey, input_shape: tuple, params: FrozenDict = ...) -> FrozenDict: ...
-    def init_cache(self, batch_size, max_length, encoder_outputs): ...
+    def init_cache(self, batch_size, max_length, encoder_outputs):
+        r"""
+        Args:
+            batch_size (`int`):
+                batch_size used for fast auto-regressive decoding. Defines the batch size of the initialized cache.
+            max_length (`int`):
+                maximum possible length for auto-regressive decoding. Defines the sequence length of the initialized
+                cache.
+            encoder_outputs (`Union[FlaxBaseModelOutput, tuple(tuple(jnp.ndarray)]`):
+                `encoder_outputs` consists of (`last_hidden_state`, *optional*: `hidden_states`, *optional*:
+                `attentions`). `last_hidden_state` of shape `(batch_size, sequence_length, hidden_size)`, *optional*)
+                is a sequence of hidden-states at the output of the last layer of the encoder. Used in the
+                cross-attention of the decoder.
+        """
+        ...
+
     @add_start_docstrings(WHISPER_ENCODE_INPUTS_DOCSTRING)
     @replace_return_docstrings(output_type=FlaxBaseModelOutput, config_class=WhisperConfig)
     def encode(
@@ -188,7 +212,25 @@ class FlaxWhisperPreTrainedModel(FlaxPreTrainedModel):
         params: Optional[dict] = ...,
         dropout_rng: PRNGKey = ...,
         **kwargs,
-    ): ...
+    ):
+        r"""
+        Returns:
+
+        Example:
+
+        ```python
+        >>> from transformers import WhisperProcessor, FlaxWhisperForConditionalGeneration
+        >>> from datasets import load_dataset
+
+        >>> processor = WhisperProcessor.from_pretrained("openai/whisper-tiny.en")
+        >>> model = FlaxWhisperForConditionalGeneration.from_pretrained("openai/whisper-tiny.en", from_pt=True)
+        >>> ds = load_dataset("hf-internal-testing/librispeech_asr_dummy", "clean", split="validation")
+        >>> inputs = processor(ds[0]["audio"]["array"], return_tensors="np")
+        >>> input_features = inputs.input_features
+        >>> encoder_outputs = model.encode(input_features=input_features)
+        ```"""
+        ...
+
     @add_start_docstrings(WHISPER_DECODE_INPUTS_DOCSTRING)
     @replace_return_docstrings(output_type=FlaxBaseModelOutputWithPastAndCrossAttentions, config_class=WhisperConfig)
     def decode(
@@ -205,7 +247,32 @@ class FlaxWhisperPreTrainedModel(FlaxPreTrainedModel):
         train: bool = ...,
         params: Optional[dict] = ...,
         dropout_rng: PRNGKey = ...,
-    ): ...
+    ):
+        r"""
+        Returns:
+
+        Example:
+
+        ```python
+        >>> from transformers import WhisperProcessor, FlaxWhisperForConditionalGeneration
+        >>> from datasets import load_dataset
+        >>> import jax.numpy as jnp
+
+        >>> processor = WhisperProcessor.from_pretrained("openai/whisper-tiny.en")
+        >>> model = FlaxWhisperForConditionalGeneration.from_pretrained("openai/whisper-tiny.en", from_pt=True)
+        >>> ds = load_dataset("hf-internal-testing/librispeech_asr_dummy", "clean", split="validation")
+        >>> input_features = processor(ds[0]["audio"]["array"], return_tensors="np").input_features
+
+        >>> encoder_outputs = model.encode(input_features=input_features)
+        >>> decoder_start_token_id = model.config.decoder_start_token_id
+
+        >>> decoder_input_ids = jnp.ones((input_features.shape[0], 1), dtype="i4") * decoder_start_token_id
+
+        >>> outputs = model.decode(decoder_input_ids, encoder_outputs)
+        >>> last_decoder_hidden_states = outputs.last_hidden_state
+        ```"""
+        ...
+
     @add_start_docstrings_to_model_forward(WHISPER_INPUTS_DOCSTRING)
     def __call__(
         self,
@@ -223,7 +290,10 @@ class FlaxWhisperPreTrainedModel(FlaxPreTrainedModel):
         dropout_rng: PRNGKey = ...,
     ): ...
 
-@add_start_docstrings(..., WHISPER_START_DOCSTRING)
+@add_start_docstrings(
+    "The bare Whisper Model transformer outputting raw hidden-states without any specific head on top.",
+    WHISPER_START_DOCSTRING,
+)
 class FlaxWhisperModel(FlaxWhisperPreTrainedModel):
     config: WhisperConfig
     dtype: jnp.dtype = ...
@@ -246,7 +316,8 @@ class FlaxWhisperForConditionalGenerationModule(nn.Module):
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
         deterministic: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, Any] | Any | FlaxSeq2SeqLMOutput:
+        ...
 
 @add_start_docstrings("The Whisper Model with a language modeling head.", WHISPER_START_DOCSTRING)
 class FlaxWhisperForConditionalGeneration(FlaxWhisperPreTrainedModel):
@@ -268,7 +339,31 @@ class FlaxWhisperForConditionalGeneration(FlaxWhisperPreTrainedModel):
         train: bool = ...,
         params: Optional[dict] = ...,
         dropout_rng: PRNGKey = ...,
-    ): ...
+    ):  # -> FlaxCausalLMOutputWithCrossAttentions | Any:
+        r"""
+        Returns:
+
+        Example:
+
+        ```python
+        >>> from transformers import WhisperProcessor, FlaxWhisperForConditionalGeneration
+        >>> from datasets import load_dataset
+
+        >>> processor = WhisperProcessor.from_pretrained("openai/whisper-tiny.en")
+        >>> model = FlaxWhisperForConditionalGeneration.from_pretrained("openai/whisper-tiny.en", from_pt=True)
+        >>> ds = load_dataset("hf-internal-testing/librispeech_asr_dummy", "clean", split="validation")
+        >>> inputs = processor(ds[0]["audio"]["array"], return_tensors="np")
+        >>> input_features = inputs.input_features
+        >>> encoder_outputs = model.encode(input_features=input_features)
+        >>> decoder_start_token_id = model.config.decoder_start_token_id
+
+        >>> decoder_input_ids = jnp.ones((inputs.input_ids.shape[0], 1), dtype="i4") * decoder_start_token_id
+
+        >>> outputs = model.decode(decoder_input_ids, encoder_outputs)
+        >>> last_decoder_hidden_states = outputs.last_hidden_state
+        ```"""
+        ...
+
     def generate(
         self,
         input_features,
@@ -279,7 +374,8 @@ class FlaxWhisperForConditionalGeneration(FlaxWhisperPreTrainedModel):
         language=...,
         is_multilingual=...,
         **kwargs,
-    ): ...
+    ):  # -> FlaxGreedySearchOutput | FlaxSampleOutput | FlaxBeamSearchOutput:
+        ...
     def prepare_inputs_for_generation(
         self,
         decoder_input_ids,
@@ -288,7 +384,8 @@ class FlaxWhisperForConditionalGeneration(FlaxWhisperPreTrainedModel):
         decoder_attention_mask: Optional[jax.Array] = ...,
         encoder_outputs=...,
         **kwargs,
-    ): ...
+    ):  # -> dict[str, Any | None]:
+        ...
     def update_inputs_for_generation(self, model_outputs, model_kwargs): ...
 
 FLAX_WHISPER_CONDITIONAL_GENERATION_DOCSTRING = ...
@@ -305,9 +402,10 @@ class FlaxWhisperForAudioClassificationModule(nn.Module):
         output_attentions=...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any] | FlaxSequenceClassifierOutput:
+        ...
 
-@add_start_docstrings(..., WHISPER_START_DOCSTRING)
+@add_start_docstrings("The Whisper Model with an audio classification head on top.", WHISPER_START_DOCSTRING)
 class FlaxWhisperForAudioClassification(FlaxWhisperPreTrainedModel):
     module_class = ...
     dtype: jnp.dtype = ...

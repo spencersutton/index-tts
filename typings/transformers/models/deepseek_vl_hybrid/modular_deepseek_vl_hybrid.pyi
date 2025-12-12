@@ -37,6 +37,40 @@ logger = ...
 DEEPSEEK_VL_COMMON_CUSTOM_ARGS = ...
 
 class DeepseekVLHybridConfig(DeepseekVLConfig):
+    r"""
+    This is the configuration class to store the configuration of a [`DeepseekVLHybridModel`]. It is used to instantiate a
+    DeepseekVLHybrid model according to the specified arguments, defining the model architecture. Instantiating a configuration
+    with the defaults will yield a similar configuration to that of the DeepseekVLHybrid
+    [deepseek-community/deepseek-vl-7b-chat](https://huggingface.co/deepseek-community/deepseek-vl-7b-chat) architecture.
+
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
+
+    Args:
+        text_config (`Union[AutoConfig, dict]`, *optional*, defaults to `LlamaConfig`):
+            The config object or dictionary of the text backbone.
+        vision_config (`Union[AutoConfig, dict]`,  *optional*, defaults to `SiglipVisionConfig`):
+            The config object or dictionary of the vision backbone.
+        high_res_vision_config (`Union[AutoConfig, dict]`,  *optional*, defaults to `SamVisionConfig`):
+            The config object or dictionary of the high resolution vision backbone.
+        image_token_id (`int`, *optional*, defaults to 100015):
+            The index representing image tokens in the model's token vocabulary.
+
+    Example:
+
+    ```python
+    >>> from transformers import DeepseekVLHybridConfig, DeepseekVLHybridModel
+
+    >>> # Initializing a DeepseekVLHybrid deepseek-community/deepseek-vl-7b-chat style configuration
+    >>> configuration = DeepseekVLHybridConfig()
+
+    >>> # Initializing a model (with random weights) from the deepseek-community/deepseek-vl-7b-chat style configuration
+    >>> model = DeepseekVLHybridModel(configuration)
+
+    >>> # Accessing the model configuration
+    >>> configuration = model.config
+    ```"""
+
     model_type = ...
     sub_configs = ...
     def __init__(
@@ -67,9 +101,12 @@ class DeepseekVLHybridPreTrainedModel(DeepseekVLPreTrainedModel): ...
 
 class DeepseekVLHybridModel(DeepseekVLModel):
     def __init__(self, config) -> None: ...
-    def get_low_res_image_features(self, pixel_values): ...
-    def get_high_res_image_features(self, pixel_values): ...
-    def get_image_features(self, pixel_values, high_res_pixel_values): ...
+    def get_low_res_image_features(self, pixel_values):  # -> Any:
+        ...
+    def get_high_res_image_features(self, pixel_values):  # -> Any:
+        ...
+    def get_image_features(self, pixel_values, high_res_pixel_values):  # -> Any:
+        ...
     @can_return_tuple
     @auto_docstring(custom_args=DEEPSEEK_VL_COMMON_CUSTOM_ARGS)
     def forward(
@@ -85,7 +122,8 @@ class DeepseekVLHybridModel(DeepseekVLModel):
         use_cache: Optional[bool] = ...,
         logits_to_keep: Union[int, torch.Tensor] = ...,
         **kwargs,
-    ): ...
+    ):  # -> DeepseekVLHybridBaseModelOutputWithPast:
+        ...
 
 class DeepseekVLHybridForConditionalGeneration(DeepseekVLForConditionalGeneration):
     @can_return_tuple
@@ -104,7 +142,15 @@ class DeepseekVLHybridForConditionalGeneration(DeepseekVLForConditionalGeneratio
         use_cache: Optional[bool] = ...,
         logits_to_keep: Union[int, torch.Tensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ): ...
+    ):  # -> DeepseekVLHybridCausalLMOutputWithPast:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+        """
+        ...
+
     def prepare_inputs_for_generation(
         self,
         input_ids,
@@ -116,9 +162,58 @@ class DeepseekVLHybridForConditionalGeneration(DeepseekVLForConditionalGeneratio
         cache_position=...,
         logits_to_keep=...,
         **kwargs,
-    ): ...
+    ):  # -> dict[Any, Any]:
+        ...
 
 class DeepseekVLHybridImageProcessor(DeepseekVLImageProcessor):
+    r"""
+    Constructs a DEEPSEEK_VL_HYBRID image processor.
+
+    Args:
+        do_resize (`bool`, *optional*, defaults to `True`):
+            Whether to resize the image's (height, width) dimensions to the specified `size`. Can be overridden by the
+            `do_resize` parameter in the `preprocess` method.
+        size (`dict`, *optional*, defaults to `{"height": 384, "width": 384}`):
+            Size of the output image after resizing. Can be overridden by the `size` parameter in the `preprocess`
+            method.
+        high_res_size (`dict`, *optional*, defaults to `{"height": 1024, "width": 1024}`):
+            Size of the high resolution output image after resizing. Can be overridden by the `high_res_size` parameter in the `preprocess`
+            method.
+        min_size (`int`, *optional*, defaults to 14):
+            The minimum allowed size for the resized image. Ensures that neither the height nor width
+            falls below this value after resizing.
+        resample (`PILImageResampling`, *optional*, defaults to `Resampling.BICUBIC`):
+            Resampling filter to use if resizing the image. Only has an effect if `do_resize` is set to `True`. Can be
+            overridden by the `resample` parameter in the `preprocess` method.
+        high_res_resample (`PILImageResampling`, *optional*, defaults to `Resampling.BICUBIC`):
+            Resampling filter to use if resizing the image. Only has an effect if `do_resize` is set to `True`. Can be
+            overridden by the `high_res_resample` parameter in the `preprocess` method.
+        do_rescale (`bool`, *optional*, defaults to `True`):
+            Whether to rescale the image by the specified scale `rescale_factor`. Can be overridden by the
+            `do_rescale` parameter in the `preprocess` method.
+        rescale_factor (`int` or `float`, *optional*, defaults to `1/255`):
+            Scale factor to use if rescaling the image. Only has an effect if `do_rescale` is set to `True`. Can be
+            overridden by the `rescale_factor` parameter in the `preprocess` method.
+        do_normalize (`bool`, *optional*, defaults to `True`):
+            Whether to normalize the image. Can be overridden by the `do_normalize` parameter in the `preprocess`
+            method. Can be overridden by the `do_normalize` parameter in the `preprocess` method.
+        image_mean (`float` or `list[float]`, *optional*, defaults to `IMAGENET_STANDARD_MEAN`):
+            Mean to use if normalizing the image. This is a float or list of floats the length of the number of
+            channels in the image. Can be overridden by the `image_mean` parameter in the `preprocess` method. Can be
+            overridden by the `image_mean` parameter in the `preprocess` method.
+        image_std (`float` or `list[float]`, *optional*, defaults to `IMAGENET_STANDARD_STD`):
+            Standard deviation to use if normalizing the image. This is a float or list of floats the length of the
+            number of channels in the image. Can be overridden by the `image_std` parameter in the `preprocess` method.
+            Can be overridden by the `image_std` parameter in the `preprocess` method.
+        high_res_image_mean (`float` or `list[float]`, *optional*, defaults to `OPENAI_CLIP_MEAN`):
+            Mean to use if normalizing the high resolution image. This is a float or list of floats the length of the number of
+            channels in the image. Can be overridden by the `high_res_image_mean` parameter in the `preprocess` method.
+        high_res_image_std (`float` or `list[float]`, *optional*, defaults to `OPENAI_CLIP_STD`):
+            Standard deviation to use if normalizing the high resolution image. This is a float or list of floats the length of the
+            number of channels in the image. Can be overridden by the `high_res_image_std` parameter in the `preprocess` method.
+        do_convert_rgb (`bool`, *optional*, defaults to `True`):
+            Whether to convert the image to RGB.
+    """
     def __init__(
         self,
         do_resize: bool = ...,
@@ -128,7 +223,7 @@ class DeepseekVLHybridImageProcessor(DeepseekVLImageProcessor):
         resample: PILImageResampling = ...,
         high_res_resample: PILImageResampling = ...,
         do_rescale: bool = ...,
-        rescale_factor: float = ...,
+        rescale_factor: Union[int, float] = ...,
         do_normalize: bool = ...,
         image_mean: Optional[Union[float, list[float]]] = ...,
         image_std: Optional[Union[float, list[float]]] = ...,
@@ -157,9 +252,84 @@ class DeepseekVLHybridImageProcessor(DeepseekVLImageProcessor):
         data_format: Union[str, ChannelDimension] = ...,
         input_data_format: Optional[Union[str, ChannelDimension]] = ...,
         do_convert_rgb: Optional[bool] = ...,
-    ): ...
+    ):  # -> BatchFeature:
+        """
+        Preprocess an image or batch of images.
+
+        Args:
+            images (`ImageInput`):
+                Image to preprocess. Expects a single or batch of images with pixel values ranging from 0 to 255. If
+                passing in images with pixel values between 0 and 1, set `do_rescale=False`.
+            do_resize (`bool`, *optional*, defaults to `self.do_resize`):
+                Whether to resize the image.
+            size (`Dict[str, int]`, *optional*, defaults to `self.size`):
+                Dictionary in the format `{"height": h, "width": w}` specifying the size of the output image after
+                resizing.
+            high_res_size (`Dict[str, int]`, *optional*, defaults to `self.high_res_size`):
+                Dictionary in the format `{"height": h, "width": w}` specifying the size of the high resolution output image after
+                resizing.
+            resample (`PILImageResampling` filter, *optional*, defaults to `self.resample`):
+                `PILImageResampling` filter to use if resizing the image e.g. `PILImageResampling.BILINEAR`. Only has
+                an effect if `do_resize` is set to `True`.
+            high_res_resample (`PILImageResampling` filter, *optional*, defaults to `self.resample`):
+                `PILImageResampling` filter to use if resizing the image e.g. `PILImageResampling.BICUBIC`. Only has
+                an effect if `do_resize` is set to `True`.
+            do_rescale (`bool`, *optional*, defaults to `self.do_rescale`):
+                Whether to rescale the image values between [0 - 1].
+            rescale_factor (`float`, *optional*, defaults to `self.rescale_factor`):
+                Rescale factor to rescale the image by if `do_rescale` is set to `True`.
+            do_normalize (`bool`, *optional*, defaults to `self.do_normalize`):
+                Whether to normalize the image.
+            image_mean (`float` or `List[float]`, *optional*, defaults to `self.image_mean`):
+                Image mean to use if `do_normalize` is set to `True`.
+            image_std (`float` or `List[float]`, *optional*, defaults to `self.image_std`):
+                Image standard deviation to use if `do_normalize` is set to `True`.
+            high_res_image_mean (`float` or `List[float]`, *optional*, defaults to `self.high_res_image_mean`):
+                Image mean to use if `do_normalize` is set to `True`.
+            high_res_image_std (`float` or `List[float]`, *optional*, defaults to `self.high_res_image_std`):
+                Image standard deviation to use if `do_normalize` is set to `True`.
+            return_tensors (`str` or `TensorType`, *optional*):
+                The type of tensors to return. Can be one of:
+                - Unset: Return a list of `np.ndarray`.
+                - `TensorType.TENSORFLOW` or `'tf'`: Return a batch of type `tf.Tensor`.
+                - `TensorType.PYTORCH` or `'pt'`: Return a batch of type `torch.Tensor`.
+                - `TensorType.NUMPY` or `'np'`: Return a batch of type `np.ndarray`.
+                - `TensorType.JAX` or `'jax'`: Return a batch of type `jax.numpy.ndarray`.
+            data_format (`ChannelDimension` or `str`, *optional*, defaults to `ChannelDimension.FIRST`):
+                The channel dimension format for the output image. Can be one of:
+                - `"channels_first"` or `ChannelDimension.FIRST`: image in (num_channels, height, width) format.
+                - `"channels_last"` or `ChannelDimension.LAST`: image in (height, width, num_channels) format.
+                - Unset: Use the channel dimension format of the input image.
+            input_data_format (`ChannelDimension` or `str`, *optional*):
+                The channel dimension format for the input image. If unset, the channel dimension format is inferred
+                from the input image. Can be one of:
+                - `"channels_first"` or `ChannelDimension.FIRST`: image in (num_channels, height, width) format.
+                - `"channels_last"` or `ChannelDimension.LAST`: image in (height, width, num_channels) format.
+                - `"none"` or `ChannelDimension.NONE`: image in (height, width) format.
+            do_convert_rgb (`bool`, *optional*, defaults to `self.do_convert_rgb`):
+                Whether to convert the image to RGB.
+        """
+        ...
 
 class DeepseekVLHybridFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
+    r"""
+    min_size (`int`, *optional*, defaults to 14):
+        The minimum allowed size for the resized image. Ensures that neither the height nor width
+        falls below this value after resizing.
+     high_res_size (`dict`, *optional*, defaults to `{"height": 1024, "width": 1024}`):
+        Size of the high resolution output image after resizing. Can be overridden by the `high_res_size` parameter in the `preprocess`
+        method.
+    high_res_resample (`PILImageResampling`, *optional*, defaults to `Resampling.BICUBIC`):
+        Resampling filter to use if resizing the image. Only has an effect if `do_resize` is set to `True`. Can be
+        overridden by the `high_res_resample` parameter in the `preprocess` method.
+    high_res_image_mean (`float` or `list[float]`, *optional*, defaults to `OPENAI_CLIP_MEAN`):
+        Mean to use if normalizing the high resolution image. This is a float or list of floats the length of the number of
+        channels in the image. Can be overridden by the `high_res_image_mean` parameter in the `preprocess` method.
+    high_res_image_std (`float` or `list[float]`, *optional*, defaults to `OPENAI_CLIP_STD`):
+        Standard deviation to use if normalizing the high resolution image. This is a float or list of floats the length of the
+        number of channels in the image. Can be overridden by the `high_res_image_std` parameter in the `preprocess` method.
+    """
+
     min_size: int
     high_res_size: dict
     high_res_resample: PILImageResampling
@@ -182,7 +352,39 @@ class DeepseekVLHybridProcessor(DeepseekVLProcessor):
         text: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]] = ...,
         images: ImageInput = ...,
         **kwargs: Unpack[DeepseekVLHybridProcessorKwargs],
-    ) -> BatchFeature: ...
+    ) -> BatchFeature:
+        """
+        Main method to prepare for the model one or several sequences(s) and image(s). This method forwards the `text`
+        and `kwargs` arguments to LlamaTokenizerFast's [`~LlamaTokenizerFast.__call__`] if `text` is not `None` to encode
+        the text. To prepare the image(s), this method forwards the `images` and `kwrags` arguments to
+        DeepseekVLHybridImageProcessor's [`~DeepseekVLHybridImageProcessor.__call__`] if `images` is not `None`. Please refer to the doctsring
+        of the above two methods for more information.
+
+        Args:
+            text (`str`, `List[str]`, `List[List[str]]`):
+                The sequence or batch of sequences to be encoded. Each sequence can be a string or a list of strings
+                (pretokenized string). If the sequences are provided as list of strings (pretokenized), you must set
+                `is_split_into_words=True` (to lift the ambiguity with a batch of sequences).
+            images (`PIL.Image.Image`, `np.ndarray`, `torch.Tensor`, `List[PIL.Image.Image]`, `List[np.ndarray]`, `List[torch.Tensor]`):
+                The image or batch of images to be prepared. Each image can be a PIL image, NumPy array or PyTorch
+                tensor. Both channels-first and channels-last formats are supported.
+            return_tensors (`str` or [`~utils.TensorType`], *optional*):
+                If set, will return tensors of a particular framework. Acceptable values are:
+                - `'tf'`: Return TensorFlow `tf.constant` objects.
+                - `'pt'`: Return PyTorch `torch.Tensor` objects.
+                - `'np'`: Return NumPy `np.ndarray` objects.
+                - `'jax'`: Return JAX `jnp.ndarray` objects.
+
+        Returns:
+            [`BatchFeature`]: A [`BatchFeature`] with the following fields:
+
+            - **input_ids** -- List of token ids to be fed to a model. Returned when `text` is not `None`.
+            - **attention_mask** -- List of indices specifying which tokens should be attended to by the model (when
+            `return_attention_mask=True` or if *"attention_mask"* is in `self.model_input_names` and if `text` is not
+            `None`).
+            - **pixel_values** -- Pixel values to be fed to a model. Returned when `images` is not `None`.
+        """
+        ...
 
 __all__ = [
     "DeepseekVLHybridConfig",

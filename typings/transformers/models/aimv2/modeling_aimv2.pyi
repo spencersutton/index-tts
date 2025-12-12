@@ -16,6 +16,25 @@ from .configuration_aimv2 import Aimv2Config, Aimv2TextConfig, Aimv2VisionConfig
 @dataclass
 @auto_docstring
 class Aimv2Output(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `return_loss` is `True`):
+        Contrastive loss for image-text similarity.
+    logits_per_image (`torch.FloatTensor` of shape `(image_batch_size, text_batch_size)`):
+        The scaled dot product scores between `image_embeds` and `text_embeds`. This represents the image-text
+        similarity scores.
+    logits_per_text (`torch.FloatTensor` of shape `(text_batch_size, image_batch_size)`):
+        The scaled dot product scores between `text_embeds` and `image_embeds`. This represents the text-image
+        similarity scores.
+    text_embeds (`torch.FloatTensor` of shape `(batch_size, output_dim`):
+        The text embeddings obtained by applying the projection layer to the pooled output of [`Aimv2TextModel`].
+    image_embeds (`torch.FloatTensor` of shape `(batch_size, output_dim`):
+        The image embeddings obtained by applying the projection layer to the pooled output of [`Aimv2VisionModel`].
+    text_model_output (`BaseModelOutputWithPooling`):
+        The output of the [`Aimv2TextModel`].
+    vision_model_output (`BaseModelOutputWithPooling`):
+        The output of the [`Aimv2VisionModel`].
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     logits_per_image: Optional[torch.FloatTensor] = ...
     logits_per_text: Optional[torch.FloatTensor] = ...
@@ -27,13 +46,20 @@ class Aimv2Output(ModelOutput):
 
 @use_kernel_forward_from_hub("RMSNorm")
 class Aimv2RMSNorm(nn.Module):
-    def __init__(self, hidden_size, eps=...) -> None: ...
+    def __init__(self, hidden_size, eps=...) -> None:
+        """
+        Aimv2RMSNorm is equivalent to T5LayerNorm
+        """
+        ...
+
     def forward(self, hidden_states): ...
-    def extra_repr(self): ...
+    def extra_repr(self):  # -> str:
+        ...
 
 class Aimv2MLP(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, x): ...
+    def forward(self, x):  # -> Any:
+        ...
 
 class Aimv2VisionEmbeddings(nn.Module):
     def __init__(self, config: Aimv2VisionConfig) -> None: ...
@@ -61,13 +87,17 @@ def eager_attention_forward(
     scaling: float,
     dropout: float = ...,
     **kwargs,
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class Aimv2Attention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config) -> None: ...
     def forward(
         self, hidden_states: torch.Tensor, attention_mask: Optional[torch.Tensor] = ..., **kwargs
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]: ...
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
+        """Input shape: Batch x Time x Channel"""
+        ...
 
 class Aimv2EncoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: Aimv2VisionConfig) -> None: ...
@@ -79,6 +109,13 @@ class Aimv2EncoderLayer(GradientCheckpointingLayer):
     ) -> tuple[torch.Tensor, torch.Tensor]: ...
 
 class Aimv2Encoder(nn.Module):
+    """
+    Transformer encoder consisting of `config.num_hidden_layers` self attention layers. Each layer is a
+    [`Aimv2EncoderLayer`].
+
+    Args:
+        config: Aimv2Config
+    """
     def __init__(self, config: Aimv2Config) -> None: ...
     @can_return_tuple
     def forward(
@@ -87,7 +124,30 @@ class Aimv2Encoder(nn.Module):
         attention_mask: Optional[torch.Tensor] = ...,
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
-    ) -> BaseModelOutput: ...
+    ) -> BaseModelOutput:
+        r"""
+        Args:
+            inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
+                Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation.
+                This is useful if you want more control over how to convert `input_ids` indices into associated vectors
+                than the model's internal embedding lookup matrix.
+            attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Mask to avoid performing attention on padding token indices. Mask values selected in `[0, 1]`:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers. See `hidden_states` under returned tensors
+                for more detail.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`~utils.ModelOutput`] instead of a plain tuple.
+        """
+        ...
 
 class Aimv2AttentionPoolingHead(nn.Module):
     def __init__(self, config: Aimv2VisionConfig) -> None: ...
@@ -95,6 +155,11 @@ class Aimv2AttentionPoolingHead(nn.Module):
 
 @auto_docstring
 class Aimv2PreTrainedModel(PreTrainedModel):
+    """
+    An abstract class to handle weights initialization and a simple interface for downloading and loading pretrained
+    models. The model is only intended for inference and doesn't support finetuning.
+    """
+
     config: Aimv2Config
     base_model_prefix = ...
     supports_gradient_checkpointing = ...
@@ -103,7 +168,11 @@ class Aimv2PreTrainedModel(PreTrainedModel):
     _supports_flash_attn = ...
     _supports_flex_attn = ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The Vision model from AIMv2 without any head or projection on top.
+    """
+)
 class Aimv2VisionModel(Aimv2PreTrainedModel):
     config: Aimv2VisionConfig
     main_input_name = ...
@@ -117,14 +186,40 @@ class Aimv2VisionModel(Aimv2PreTrainedModel):
         attention_mask: Optional[torch.Tensor] = ...,
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
-    ) -> BaseModelOutputWithPooling: ...
+    ) -> BaseModelOutputWithPooling:
+        r"""
+        Examples:
 
-@auto_docstring(custom_intro=...)
+        ```python
+        >>> from PIL import Image
+        >>> import requests
+        >>> from transformers import AutoProcessor, Siglip2VisionModel
+
+        >>> model = Aimv2VisionModel.from_pretrained("apple/aimv2-large-patch14-native")
+        >>> processor = AutoProcessor.from_pretrained("apple/aimv2-large-patch14-native")
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> inputs = processor(images=image, return_tensors="pt")
+
+        >>> outputs = model(**inputs)
+        >>> last_hidden_state = outputs.last_hidden_state
+        >>> pooled_output = outputs.pooler_output  # pooled features
+        ```"""
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    The text model from AIMv2 without any head or projection on top.
+    """
+)
 class Aimv2TextModel(Aimv2PreTrainedModel):
     main_input_name = ...
     def __init__(self, config: Aimv2TextConfig) -> None: ...
     def get_input_embeddings(self) -> nn.Module: ...
-    def set_input_embeddings(self, value): ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -148,7 +243,25 @@ class Aimv2Model(Aimv2PreTrainedModel):
         position_ids: Optional[torch.Tensor] = ...,
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
-    ) -> torch.FloatTensor: ...
+    ) -> torch.FloatTensor:
+        r"""
+        Returns:
+            text_features (`torch.FloatTensor` of shape `(batch_size, output_dim`): The text embeddings obtained by
+            applying the projection layer to the pooled output of [`Aimv2TextModel`].
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoTokenizer, Aimv2Model
+
+        >>> model = Aimv2Model.from_pretrained("openai/aimv2-vit-base-patch32")
+        >>> tokenizer = AutoTokenizer.from_pretrained("openai/aimv2-vit-base-patch32")
+
+        >>> inputs = tokenizer(["a photo of a cat", "a photo of a dog"], padding=True, return_tensors="pt")
+        >>> text_features = model.get_text_features(**inputs)
+        ```"""
+        ...
+
     @auto_docstring
     def get_image_features(
         self,
@@ -156,7 +269,31 @@ class Aimv2Model(Aimv2PreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         interpolate_pos_encoding: bool = ...,
-    ) -> torch.FloatTensor: ...
+    ) -> torch.FloatTensor:
+        r"""
+        Returns:
+            image_features (`torch.FloatTensor` of shape `(batch_size, output_dim`): The image embeddings obtained by
+            applying the projection layer to the pooled output of [`Aimv2VisionModel`].
+
+        Examples:
+
+        ```python
+        >>> from PIL import Image
+        >>> import requests
+        >>> from transformers import AutoProcessor, Aimv2Model
+
+        >>> model = Aimv2Model.from_pretrained("openai/aimv2-vit-base-patch32")
+        >>> processor = AutoProcessor.from_pretrained("openai/aimv2-vit-base-patch32")
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> inputs = processor(images=image, return_tensors="pt")
+
+        >>> image_features = model.get_image_features(**inputs)
+        ```"""
+        ...
+
     @auto_docstring
     @can_return_tuple
     def forward(
@@ -166,6 +303,29 @@ class Aimv2Model(Aimv2PreTrainedModel):
         attention_mask: Optional[torch.Tensor] = ...,
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
-    ) -> Aimv2Output: ...
+    ) -> Aimv2Output:
+        r"""
+        Examples:
+
+        ```python
+        >>> from PIL import Image
+        >>> import requests
+        >>> from transformers import AutoProcessor, Aimv2Model
+
+        >>> model = Aimv2Model.from_pretrained("apple/aimv2-large-patch14-224-lit")
+        >>> processor = AutoProcessor.from_pretrained("apple/aimv2-large-patch14-224-lit")
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> inputs = processor(
+        ...     text=["a photo of a cat", "a photo of a dog"], images=image, return_tensors="pt", padding=True
+        ... )
+
+        >>> outputs = model(**inputs)
+        >>> logits_per_image = outputs.logits_per_image  # this is the image-text similarity score
+        >>> probs = logits_per_image.softmax(dim=1)  # we can take the softmax to get the label probabilities
+        ```"""
+        ...
 
 __all__ = ["Aimv2VisionModel", "Aimv2Model", "Aimv2PreTrainedModel", "Aimv2TextModel"]

@@ -10,46 +10,122 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring
 from .configuration_swiftformer import SwiftFormerConfig
 
+"""PyTorch SwiftFormer model."""
 logger = ...
 
 class SwiftFormerPatchEmbedding(nn.Module):
-    def __init__(self, config: SwiftFormerConfig) -> None: ...
-    def forward(self, x): ...
+    """
+    Patch Embedding Layer constructed of two 2D convolutional layers.
 
-def drop_path(input: torch.Tensor, drop_prob: float = ..., training: bool = ...) -> torch.Tensor: ...
+    Input: tensor of shape `[batch_size, in_channels, height, width]`
+
+    Output: tensor of shape `[batch_size, out_channels, height/4, width/4]`
+    """
+    def __init__(self, config: SwiftFormerConfig) -> None: ...
+    def forward(self, x):  # -> Any:
+        ...
+
+def drop_path(input: torch.Tensor, drop_prob: float = ..., training: bool = ...) -> torch.Tensor:
+    """
+    Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks).
+
+    Comment by Ross Wightman: This is the same as the DropConnect impl I created for EfficientNet, etc networks,
+    however, the original name is misleading as 'Drop Connect' is a different form of dropout in a separate paper...
+    See discussion: https://github.com/tensorflow/tpu/issues/494#issuecomment-532968956 ... I've opted for changing the
+    layer and argument names to 'drop path' rather than mix DropConnect as a layer name and use 'survival rate' as the
+    argument.
+    """
+    ...
 
 class SwiftFormerDropPath(nn.Module):
+    """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks)."""
     def __init__(self, config: SwiftFormerConfig) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
     def extra_repr(self) -> str: ...
 
 class SwiftFormerEmbeddings(nn.Module):
+    """
+    Embeddings layer consisting of a single 2D convolutional and batch normalization layer.
+
+    Input: tensor of shape `[batch_size, channels, height, width]`
+
+    Output: tensor of shape `[batch_size, channels, height/stride, width/stride]`
+    """
     def __init__(self, config: SwiftFormerConfig, index: int) -> None: ...
-    def forward(self, x): ...
+    def forward(self, x):  # -> Any:
+        ...
 
 class SwiftFormerConvEncoder(nn.Module):
+    """
+    `SwiftFormerConvEncoder` with 3*3 and 1*1 convolutions.
+
+    Input: tensor of shape `[batch_size, channels, height, width]`
+
+    Output: tensor of shape `[batch_size, channels, height, width]`
+    """
     def __init__(self, config: SwiftFormerConfig, dim: int) -> None: ...
     def forward(self, x): ...
 
 class SwiftFormerMlp(nn.Module):
+    """
+    MLP layer with 1*1 convolutions.
+
+    Input: tensor of shape `[batch_size, channels, height, width]`
+
+    Output: tensor of shape `[batch_size, channels, height, width]`
+    """
     def __init__(self, config: SwiftFormerConfig, in_features: int) -> None: ...
-    def forward(self, x): ...
+    def forward(self, x):  # -> Any:
+        ...
 
 class SwiftFormerEfficientAdditiveAttention(nn.Module):
+    """
+    Efficient Additive Attention module for SwiftFormer.
+
+    Input: tensor of shape `[batch_size, channels, height, width]`
+
+    Output: tensor of shape `[batch_size, channels, height, width]`
+    """
     def __init__(self, config: SwiftFormerConfig, dim: int = ...) -> None: ...
-    def forward(self, x): ...
+    def forward(self, x):  # -> Any:
+        ...
 
 class SwiftFormerLocalRepresentation(nn.Module):
+    """
+    Local Representation module for SwiftFormer that is implemented by 3*3 depth-wise and point-wise convolutions.
+
+    Input: tensor of shape `[batch_size, channels, height, width]`
+
+    Output: tensor of shape `[batch_size, channels, height, width]`
+    """
     def __init__(self, config: SwiftFormerConfig, dim: int) -> None: ...
     def forward(self, x): ...
 
 class SwiftFormerEncoderBlock(nn.Module):
+    """
+    SwiftFormer Encoder Block for SwiftFormer. It consists of (1) Local representation module, (2)
+    SwiftFormerEfficientAdditiveAttention, and (3) MLP block.
+
+    Input: tensor of shape `[batch_size, channels, height, width]`
+
+    Output: tensor of shape `[batch_size, channels,height, width]`
+    """
     def __init__(self, config: SwiftFormerConfig, dim: int, drop_path: float = ...) -> None: ...
-    def forward(self, x): ...
+    def forward(self, x):  # -> Any:
+        ...
 
 class SwiftFormerStage(nn.Module):
+    """
+    A Swiftformer stage consisting of a series of `SwiftFormerConvEncoder` blocks and a final
+    `SwiftFormerEncoderBlock`.
+
+    Input: tensor in shape `[batch_size, channels, height, width]`
+
+    Output: tensor in shape `[batch_size, channels, height, width]`
+    """
     def __init__(self, config: SwiftFormerConfig, index: int) -> None: ...
-    def forward(self, input): ...
+    def forward(self, input):  # -> Any:
+        ...
 
 class SwiftFormerEncoder(nn.Module):
     def __init__(self, config: SwiftFormerConfig) -> None: ...
@@ -86,6 +162,13 @@ class SwiftFormerForImageClassification(SwiftFormerPreTrainedModel):
         labels: Optional[torch.Tensor] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ImageClassifierOutputWithNoAttention]: ...
+    ) -> Union[tuple, ImageClassifierOutputWithNoAttention]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 __all__ = ["SwiftFormerForImageClassification", "SwiftFormerModel", "SwiftFormerPreTrainedModel"]

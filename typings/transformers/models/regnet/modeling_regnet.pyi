@@ -14,6 +14,7 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring
 from .configuration_regnet import RegNetConfig
 
+"""PyTorch RegNet model."""
 logger = ...
 
 class RegNetConvLayer(nn.Module):
@@ -26,33 +27,55 @@ class RegNetConvLayer(nn.Module):
         groups: int = ...,
         activation: Optional[str] = ...,
     ) -> None: ...
-    def forward(self, hidden_state): ...
+    def forward(self, hidden_state):  # -> Any:
+        ...
 
 class RegNetEmbeddings(nn.Module):
+    """
+    RegNet Embeddings (stem) composed of a single aggressive convolution.
+    """
     def __init__(self, config: RegNetConfig) -> None: ...
-    def forward(self, pixel_values): ...
+    def forward(self, pixel_values):  # -> Any:
+        ...
 
 class RegNetShortCut(nn.Module):
+    """
+    RegNet shortcut, used to project the residual features to the correct size. If needed, it is also used to
+    downsample the input using `stride=2`.
+    """
     def __init__(self, in_channels: int, out_channels: int, stride: int = ...) -> None: ...
     def forward(self, input: Tensor) -> Tensor: ...
 
 class RegNetSELayer(nn.Module):
+    """
+    Squeeze and Excitation layer (SE) proposed in [Squeeze-and-Excitation Networks](https://huggingface.co/papers/1709.01507).
+    """
     def __init__(self, in_channels: int, reduced_channels: int) -> None: ...
     def forward(self, hidden_state): ...
 
 class RegNetXLayer(nn.Module):
+    """
+    RegNet's layer composed by three `3x3` convolutions, same as a ResNet bottleneck layer with reduction = 1.
+    """
     def __init__(self, config: RegNetConfig, in_channels: int, out_channels: int, stride: int = ...) -> None: ...
     def forward(self, hidden_state): ...
 
 class RegNetYLayer(nn.Module):
+    """
+    RegNet's Y layer: an X layer with Squeeze and Excitation.
+    """
     def __init__(self, config: RegNetConfig, in_channels: int, out_channels: int, stride: int = ...) -> None: ...
     def forward(self, hidden_state): ...
 
 class RegNetStage(nn.Module):
+    """
+    A RegNet stage composed by stacked layers.
+    """
     def __init__(
         self, config: RegNetConfig, in_channels: int, out_channels: int, stride: int = ..., depth: int = ...
     ) -> None: ...
-    def forward(self, hidden_state): ...
+    def forward(self, hidden_state):  # -> Any:
+        ...
 
 class RegNetEncoder(nn.Module):
     def __init__(self, config: RegNetConfig) -> None: ...
@@ -75,7 +98,12 @@ class RegNetModel(RegNetPreTrainedModel):
         self, pixel_values: Tensor, output_hidden_states: Optional[bool] = ..., return_dict: Optional[bool] = ...
     ) -> BaseModelOutputWithPoolingAndNoAttention: ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    RegNet Model with an image classification head on top (a linear layer on top of the pooled features), e.g. for
+    ImageNet.
+    """
+)
 class RegNetForImageClassification(RegNetPreTrainedModel):
     def __init__(self, config) -> None: ...
     @auto_docstring
@@ -85,6 +113,12 @@ class RegNetForImageClassification(RegNetPreTrainedModel):
         labels: Optional[torch.LongTensor] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> ImageClassifierOutputWithNoAttention: ...
+    ) -> ImageClassifierOutputWithNoAttention:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 __all__ = ["RegNetForImageClassification", "RegNetModel", "RegNetPreTrainedModel"]

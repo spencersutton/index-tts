@@ -36,7 +36,30 @@ class Glm4DecoderLayer(GradientCheckpointingLayer):
 class Glm4Attention(GlmAttention): ...
 
 class Glm4ForCausalLM(GlmForCausalLM):
-    def forward(self, **super_kwargs: Unpack[TransformersKwargs]) -> Union[tuple, CausalLMOutputWithPast]: ...
+    def forward(self, **super_kwargs: Unpack[TransformersKwargs]) -> Union[tuple, CausalLMOutputWithPast]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, Glm4ForCausalLM
+
+        >>> model = Glm4ForCausalLM.from_pretrained("THUDM/GLM-4-9B-0414")
+        >>> tokenizer = AutoTokenizer.from_pretrained("THUDM/GLM-4-9B-0414")
+
+        >>> prompt = "Hey, are you conscious? Can you talk to me?"
+        >>> inputs = tokenizer(prompt, return_tensors="pt")
+
+        >>> # Generate
+        >>> generate_ids = model.generate(inputs.input_ids, max_length=30)
+        >>> tokenizer.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+        "Hey, are you conscious? Can you talk to me?\nI'm not conscious, but I can talk to you."
+        ```"""
+        ...
 
 class Glm4ForSequenceClassification(GlmForSequenceClassification): ...
 class Glm4ForTokenClassification(GlmForTokenClassification): ...

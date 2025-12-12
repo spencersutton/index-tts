@@ -23,6 +23,27 @@ class Gemma3nProcessorKwargs(ProcessingKwargs, total=False):
     _defaults = ...
 
 class Gemma3nProcessor(ProcessorMixin):
+    """
+    A processor for Gemma 3n, wrapping the full capabilities of a feature extractor, image processor, and tokenizer
+    into a single processor.
+
+    Args:
+        feature_extractor (`Gemma3nAudioFeatureExtractor`):
+            Feature extractor that converts raw audio waveforms into MEL spectrograms for the audio encoder. This
+            should return a `BatchFeature` with `input_features` and `input_features_mask` features.
+        image_processor (`SiglipImageProcessorFast`):
+            Image processor that prepares batches of images for the vision encoder. This should return a `BatchFeature`
+            with a `pixel_values` feature.
+        tokenizer (`GemmaTokenizerFast`):
+            The text tokenizer for the model.
+        chat_template (`string`, *optional*):
+            A Jinja template for generating text prompts from a set of messages.
+        audio_seq_length (int, *optional*, defaults to 188):
+            The number of audio soft tokens that will be added to the text prompt
+        image_seq_length (int, *optional*, defaults to 256):
+            The number of image soft tokens that should be added to
+    """
+
     attributes = ...
     feature_extractor_class = ...
     image_processor_class = ...
@@ -45,9 +66,22 @@ class Gemma3nProcessor(ProcessorMixin):
         videos=...,
         **kwargs: Unpack[Gemma3nProcessorKwargs],
     ) -> BatchFeature: ...
-    def batch_decode(self, *args, **kwargs): ...
-    def decode(self, *args, **kwargs): ...
+    def batch_decode(self, *args, **kwargs):
+        """
+        This method forwards all its arguments to GemmaTokenizerFast's [`~PreTrainedTokenizer.batch_decode`]. Please
+        refer to the docstring of this method for more information.
+        """
+        ...
+
+    def decode(self, *args, **kwargs):
+        """
+        This method forwards all its arguments to GemmaTokenizerFast's [`~PreTrainedTokenizer.decode`]. Please refer to
+        the docstring of this method for more information.
+        """
+        ...
+
     @property
-    def model_input_names(self): ...
+    def model_input_names(self):  # -> list[Any]:
+        ...
 
 __all__ = ["Gemma3nProcessor"]

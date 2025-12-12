@@ -15,8 +15,32 @@ from ...utils.generic import check_model_inputs
 from .configuration_efficientloftr import EfficientLoFTRConfig
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for outputs of keypoint matching models. Due to the nature of keypoint detection and matching, the number
+    of keypoints is not fixed and can vary from image to image, which makes batching non-trivial. In the batch of
+    images, the maximum number of matches is set as the dimension of the matches and matching scores. The mask tensor is
+    used to indicate which values in the keypoints, matches and matching_scores tensors are keypoint matching
+    information.
+    """
+)
 class KeypointMatchingOutput(ModelOutput):
+    r"""
+    matches (`torch.FloatTensor` of shape `(batch_size, 2, num_matches)`):
+        Index of keypoint matched in the other image.
+    matching_scores (`torch.FloatTensor` of shape `(batch_size, 2, num_matches)`):
+        Scores of predicted matches.
+    keypoints (`torch.FloatTensor` of shape `(batch_size, num_keypoints, 2)`):
+        Absolute (x, y) coordinates of predicted keypoints in a given image.
+    hidden_states (`tuple[torch.FloatTensor, ...]`, *optional*):
+        Tuple of `torch.FloatTensor` (one for the output of each stage) of shape `(batch_size, 2, num_channels,
+        num_keypoints)`, returned when `output_hidden_states=True` is passed or when
+        `config.output_hidden_states=True`)
+    attentions (`tuple[torch.FloatTensor, ...]`, *optional*):
+        Tuple of `torch.FloatTensor` (one for each layer) of shape `(batch_size, 2, num_heads, num_keypoints,
+        num_keypoints)`, returned when `output_attentions=True` is passed or when `config.output_attentions=True`)
+    """
+
     matches: Optional[torch.FloatTensor] = ...
     matching_scores: Optional[torch.FloatTensor] = ...
     keypoints: Optional[torch.FloatTensor] = ...
@@ -32,9 +56,13 @@ class EfficientLoFTRRotaryEmbedding(nn.Module):
 
 class EfficientLoFTRConvNormLayer(nn.Module):
     def __init__(self, config, in_channels, out_channels, kernel_size, stride, padding=..., activation=...) -> None: ...
-    def forward(self, hidden_state): ...
+    def forward(self, hidden_state):  # -> Any:
+        ...
 
 class EfficientLoFTRRepVGGBlock(GradientCheckpointingLayer):
+    """
+    RepVGG architecture block introduced by the work "RepVGG: Making VGG-style ConvNets Great Again".
+    """
     def __init__(self, config: EfficientLoFTRConfig, stage_idx: int, block_idx: int) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
 
@@ -52,9 +80,37 @@ class EfficientLoFTRAggregationLayer(nn.Module):
         self, hidden_states: torch.Tensor, encoder_hidden_states: Optional[torch.Tensor] = ...
     ) -> tuple[torch.Tensor, torch.Tensor]: ...
 
-def rotate_half(x): ...
-def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...): ...
-def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor: ...
+def rotate_half(x):  # -> Tensor:
+    ...
+def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...):  # -> tuple[Any, Any]:
+    """Applies Rotary Position Embedding to the query and key tensors.
+
+    Args:
+        q (`torch.Tensor`): The query tensor.
+        k (`torch.Tensor`): The key tensor.
+        cos (`torch.Tensor`): The cosine part of the rotary embedding.
+        sin (`torch.Tensor`): The sine part of the rotary embedding.
+        position_ids (`torch.Tensor`, *optional*):
+            Deprecated and unused.
+        unsqueeze_dim (`int`, *optional*, defaults to 1):
+            The 'unsqueeze_dim' argument specifies the dimension along which to unsqueeze cos[position_ids] and
+            sin[position_ids] so that they can be properly broadcasted to the dimensions of q and k. For example, note
+            that cos[position_ids] and sin[position_ids] have the shape [batch_size, seq_len, head_dim]. Then, if q and
+            k have the shape [batch_size, heads, seq_len, head_dim], then setting unsqueeze_dim=1 makes
+            cos[position_ids] and sin[position_ids] broadcastable to the shapes of q and k. Similarly, if q and k have
+            the shape [batch_size, seq_len, heads, head_dim], then set unsqueeze_dim=2.
+    Returns:
+        `tuple(torch.Tensor)` comprising of the query and key tensors rotated using the Rotary Position Embedding.
+    """
+    ...
+
+def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
+    """
+    This is the equivalent of torch.repeat_interleave(x, dim=1, repeats=n_rep). The hidden states go from (batch,
+    num_key_value_heads, seqlen, head_dim) to (batch, num_attention_heads, seqlen, head_dim)
+    """
+    ...
+
 def eager_attention_forward(
     module: nn.Module,
     query: torch.Tensor,
@@ -64,9 +120,11 @@ def eager_attention_forward(
     scaling: float,
     dropout: float = ...,
     **kwargs: Unpack[TransformersKwargs],
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class EfficientLoFTRAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config: EfficientLoFTRConfig, layer_idx: int) -> None: ...
     def forward(
         self,
@@ -117,10 +175,22 @@ class EfficientLoFTRFineFusionLayer(nn.Module):
     def forward_pyramid(self, hidden_states: torch.Tensor, residual_states: list[torch.Tensor]) -> torch.Tensor: ...
     def forward(
         self, coarse_features: torch.Tensor, residual_features: list[torch.Tensor]
-    ) -> tuple[torch.Tensor, torch.Tensor]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """
+        For each image pair, compute the fine features of pixels.
+        In both images, compute a patch of fine features center cropped around each coarse pixel.
+        In the first image, the feature patch is kernel_size large and long.
+        In the second image, it is (kernel_size + 2) large and long.
+        """
+        ...
 
 @auto_docstring
 class EfficientLoFTRPreTrainedModel(PreTrainedModel):
+    """
+    An abstract class to handle weights initialization and a simple interface for downloading and loading pretrained
+    models.
+    """
+
     config_class = EfficientLoFTRConfig
     base_model_prefix = ...
     main_input_name = ...
@@ -128,9 +198,27 @@ class EfficientLoFTRPreTrainedModel(PreTrainedModel):
     _supports_flash_attn = ...
     _supports_sdpa = ...
     _can_record_outputs = ...
-    def extract_one_channel_pixel_values(self, pixel_values: torch.FloatTensor) -> torch.FloatTensor: ...
+    def extract_one_channel_pixel_values(self, pixel_values: torch.FloatTensor) -> torch.FloatTensor:
+        """
+        Assuming pixel_values has shape (batch_size, 3, height, width), and that all channels values are the same,
+        extract the first channel value to get a tensor of shape (batch_size, 1, height, width) for EfficientLoFTR. This is
+        a workaround for the issue discussed in :
+        https://github.com/huggingface/transformers/pull/25786#issuecomment-1730176446
 
-@auto_docstring(custom_intro=...)
+        Args:
+            pixel_values: torch.FloatTensor of shape (batch_size, 3, height, width)
+
+        Returns:
+            pixel_values: torch.FloatTensor of shape (batch_size, 1, height, width)
+
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    EfficientLoFTR model taking images as inputs and outputting the features of the images.
+    """
+)
 class EfficientLoFTRModel(EfficientLoFTRPreTrainedModel):
     def __init__(self, config: EfficientLoFTRConfig) -> None: ...
     @check_model_inputs
@@ -140,20 +228,149 @@ class EfficientLoFTRModel(EfficientLoFTRPreTrainedModel):
         pixel_values: torch.FloatTensor,
         labels: Optional[torch.LongTensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> BackboneOutput: ...
+    ) -> BackboneOutput:
+        r"""
+        Examples:
 
-def mask_border(tensor: torch.Tensor, border_margin: int, value: Union[bool, float]) -> torch.Tensor: ...
+        ```python
+        >>> from transformers import AutoImageProcessor, AutoModel
+        >>> import torch
+        >>> from PIL import Image
+        >>> import requests
+
+        >>> url = "https://github.com/magicleap/SuperGluePretrainedNetwork/blob/master/assets/phototourism_sample_images/london_bridge_78916675_4568141288.jpg?raw=true"
+        >>> image1 = Image.open(requests.get(url, stream=True).raw)
+        >>> url = "https://github.com/magicleap/SuperGluePretrainedNetwork/blob/master/assets/phototourism_sample_images/london_bridge_19481797_2295892421.jpg?raw=true"
+        >>> image2 = Image.open(requests.get(url, stream=True).raw)
+        >>> images = [image1, image2]
+
+        >>> processor = AutoImageProcessor.from_pretrained("zju-community/efficient_loftr")
+        >>> model = AutoModel.from_pretrained("zju-community/efficient_loftr")
+
+        >>> with torch.no_grad():
+        >>>     inputs = processor(images, return_tensors="pt")
+        >>>     outputs = model(**inputs)
+        ```"""
+        ...
+
+def mask_border(tensor: torch.Tensor, border_margin: int, value: Union[bool, float, int]) -> torch.Tensor:
+    """
+    Mask a tensor border with a given value
+
+    Args:
+        tensor (`torch.Tensor` of shape `(batch_size, height_0, width_0, height_1, width_1)`):
+            The tensor to mask
+        border_margin (`int`) :
+            The size of the border
+        value (`Union[bool, int, float]`):
+            The value to place in the tensor's borders
+
+    Returns:
+        tensor (`torch.Tensor` of shape `(batch_size, height_0, width_0, height_1, width_1)`):
+            The masked tensor
+    """
+    ...
+
 def create_meshgrid(
     height: Union[int, torch.Tensor],
     width: Union[int, torch.Tensor],
     normalized_coordinates: bool = ...,
     device: Optional[torch.device] = ...,
     dtype: Optional[torch.dtype] = ...,
-) -> torch.Tensor: ...
-def spatial_expectation2d(input: torch.Tensor, normalized_coordinates: bool = ...) -> torch.Tensor: ...
+) -> torch.Tensor:
+    """
+    Copied from kornia library : kornia/kornia/utils/grid.py:26
 
-@auto_docstring(custom_intro=...)
+    Generate a coordinate grid for an image.
+
+    When the flag ``normalized_coordinates`` is set to True, the grid is
+    normalized to be in the range :math:`[-1,1]` to be consistent with the pytorch
+    function :py:func:`torch.nn.functional.grid_sample`.
+
+    Args:
+        height (`int`):
+            The image height (rows).
+        width (`int`):
+            The image width (cols).
+        normalized_coordinates (`bool`):
+            Whether to normalize coordinates in the range :math:`[-1,1]` in order to be consistent with the
+            PyTorch function :py:func:`torch.nn.functional.grid_sample`.
+        device (`torch.device`):
+            The device on which the grid will be generated.
+        dtype (`torch.dtype`):
+            The data type of the generated grid.
+
+    Return:
+        grid (`torch.Tensor` of shape `(1, height, width, 2)`):
+            The grid tensor.
+
+    Example:
+        >>> create_meshgrid(2, 2)
+        tensor([[[[-1., -1.],
+                  [ 1., -1.]],
+        <BLANKLINE>
+                 [[-1.,  1.],
+                  [ 1.,  1.]]]])
+
+        >>> create_meshgrid(2, 2, normalized_coordinates=False)
+        tensor([[[[0., 0.],
+                  [1., 0.]],
+        <BLANKLINE>
+                 [[0., 1.],
+                  [1., 1.]]]])
+
+    """
+    ...
+
+def spatial_expectation2d(input: torch.Tensor, normalized_coordinates: bool = ...) -> torch.Tensor:
+    r"""
+    Copied from kornia library : kornia/geometry/subpix/dsnt.py:76
+    Compute the expectation of coordinate values using spatial probabilities.
+
+    The input heatmap is assumed to represent a valid spatial probability distribution,
+    which can be achieved using :func:`~kornia.geometry.subpixel.spatial_softmax2d`.
+
+    Args:
+        input (`torch.Tensor` of shape `(batch_size, embed_dim, height, width)`):
+            The input tensor representing dense spatial probabilities.
+        normalized_coordinates (`bool`):
+            Whether to return the coordinates normalized in the range of :math:`[-1, 1]`. Otherwise, it will return
+            the coordinates in the range of the input shape.
+
+    Returns:
+        output (`torch.Tensor` of shape `(batch_size, embed_dim, 2)`)
+            Expected value of the 2D coordinates. Output order of the coordinates is (x, y).
+
+    Examples:
+        >>> heatmaps = torch.tensor([[[
+        ... [0., 0., 0.],
+        ... [0., 0., 0.],
+        ... [0., 1., 0.]]]])
+        >>> spatial_expectation2d(heatmaps, False)
+        tensor([[[1., 2.]]])
+
+    """
+    ...
+
+@auto_docstring(
+    custom_intro="""
+    EfficientLoFTR model taking images as inputs and outputting the matching of them.
+    """
+)
 class EfficientLoFTRForKeypointMatching(EfficientLoFTRPreTrainedModel):
+    """EfficientLoFTR dense image matcher
+
+    Given two images, we determine the correspondences by:
+      1. Extracting coarse and fine features through a backbone
+      2. Transforming coarse features through self and cross attention
+      3. Matching coarse features to obtain coarse coordinates of matches
+      4. Obtaining full resolution fine features by fusing transformed and backbone coarse features
+      5. Refining the coarse matches using fine feature patches centered at each coarse match in a two-stage refinement
+
+    Yifan Wang, Xingyi He, Sida Peng, Dongli Tan and Xiaowei Zhou.
+    Efficient LoFTR: Semi-Dense Local Feature Matching with Sparse-Like Speed
+    In CVPR, 2024. https://arxiv.org/abs/2403.04765
+    """
     def __init__(self, config: EfficientLoFTRConfig) -> None: ...
     @auto_docstring
     @can_return_tuple
@@ -162,6 +379,29 @@ class EfficientLoFTRForKeypointMatching(EfficientLoFTRPreTrainedModel):
         pixel_values: torch.FloatTensor,
         labels: Optional[torch.LongTensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> KeypointMatchingOutput: ...
+    ) -> KeypointMatchingOutput:
+        r"""
+        Examples:
+
+        ```python
+        >>> from transformers import AutoImageProcessor, AutoModel
+        >>> import torch
+        >>> from PIL import Image
+        >>> import requests
+
+        >>> url = "https://github.com/magicleap/SuperGluePretrainedNetwork/blob/master/assets/phototourism_sample_images/london_bridge_78916675_4568141288.jpg?raw=true"
+        >>> image1 = Image.open(requests.get(url, stream=True).raw)
+        >>> url = "https://github.com/magicleap/SuperGluePretrainedNetwork/blob/master/assets/phototourism_sample_images/london_bridge_19481797_2295892421.jpg?raw=true"
+        >>> image2 = Image.open(requests.get(url, stream=True).raw)
+        >>> images = [image1, image2]
+
+        >>> processor = AutoImageProcessor.from_pretrained("zju-community/efficient_loftr")
+        >>> model = AutoModel.from_pretrained("zju-community/efficient_loftr")
+
+        >>> with torch.no_grad():
+        >>>     inputs = processor(images, return_tensors="pt")
+        >>>     outputs = model(**inputs)
+        ```"""
+        ...
 
 __all__ = ["EfficientLoFTRPreTrainedModel", "EfficientLoFTRModel", "EfficientLoFTRForKeypointMatching"]

@@ -29,21 +29,54 @@ logger = ...
 class T5GemmaRMSNorm(nn.Module):
     def __init__(self, dim: int, eps: float = ...) -> None: ...
     def forward(self, x): ...
-    def extra_repr(self): ...
+    def extra_repr(self):  # -> str:
+        ...
 
 class T5GemmaMLP(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, x): ...
+    def forward(self, x):  # -> Any:
+        ...
 
 class T5GemmaRotaryEmbedding(nn.Module):
     def __init__(self, config, device=...) -> None: ...
     @torch.no_grad()
     @dynamic_rope_update
-    def forward(self, x, position_ids): ...
+    def forward(self, x, position_ids):  # -> tuple[Tensor, Tensor]:
+        ...
 
-def rotate_half(x): ...
-def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...): ...
-def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor: ...
+def rotate_half(x):  # -> Tensor:
+    """Rotates half the hidden dims of the input."""
+    ...
+
+def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...):  # -> tuple[Any, Any]:
+    """Applies Rotary Position Embedding to the query and key tensors.
+
+    Args:
+        q (`torch.Tensor`): The query tensor.
+        k (`torch.Tensor`): The key tensor.
+        cos (`torch.Tensor`): The cosine part of the rotary embedding.
+        sin (`torch.Tensor`): The sine part of the rotary embedding.
+        position_ids (`torch.Tensor`, *optional*):
+            Deprecated and unused.
+        unsqueeze_dim (`int`, *optional*, defaults to 1):
+            The 'unsqueeze_dim' argument specifies the dimension along which to unsqueeze cos[position_ids] and
+            sin[position_ids] so that they can be properly broadcasted to the dimensions of q and k. For example, note
+            that cos[position_ids] and sin[position_ids] have the shape [batch_size, seq_len, head_dim]. Then, if q and
+            k have the shape [batch_size, heads, seq_len, head_dim], then setting unsqueeze_dim=1 makes
+            cos[position_ids] and sin[position_ids] broadcastable to the shapes of q and k. Similarly, if q and k have
+            the shape [batch_size, seq_len, heads, head_dim], then set unsqueeze_dim=2.
+    Returns:
+        `tuple(torch.Tensor)` comprising of the query and key tensors rotated using the Rotary Position Embedding.
+    """
+    ...
+
+def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
+    """
+    This is the equivalent of torch.repeat_interleave(x, dim=1, repeats=n_rep). The hidden states go from (batch,
+    num_key_value_heads, seqlen, head_dim) to (batch, num_attention_heads, seqlen, head_dim)
+    """
+    ...
+
 def eager_attention_forward(
     module: nn.Module,
     query: torch.Tensor,
@@ -57,6 +90,7 @@ def eager_attention_forward(
 ) -> tuple[torch.Tensor, torch.Tensor]: ...
 
 class T5GemmaSelfAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config: T5GemmaModuleConfig, layer_idx: int) -> None: ...
     def forward(
         self,
@@ -69,6 +103,7 @@ class T5GemmaSelfAttention(nn.Module):
     ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
 
 class T5GemmaCrossAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config: T5GemmaModuleConfig, layer_idx: int) -> None: ...
     def forward(
         self,
@@ -80,6 +115,7 @@ class T5GemmaCrossAttention(nn.Module):
     ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
 
 class T5GemmaEncoderLayer(GradientCheckpointingLayer):
+    """Encoder sub-layer."""
     def __init__(self, config, layer_idx: int) -> None: ...
     def forward(
         self,
@@ -91,6 +127,7 @@ class T5GemmaEncoderLayer(GradientCheckpointingLayer):
     ) -> tuple[torch.FloatTensor,]: ...
 
 class T5GemmaDecoderLayer(T5GemmaEncoderLayer):
+    """Decoder sub-layer: an extra cross-attention layer."""
     def __init__(self, config, layer_idx: int) -> None: ...
     def forward(
         self,
@@ -107,14 +144,17 @@ class T5GemmaDecoderLayer(T5GemmaEncoderLayer):
     ) -> torch.FloatTensor: ...
 
 class T5GemmaClassificationHead(nn.Module):
+    """Head for sentence-level classification tasks."""
     def __init__(self, hidden_size: int, num_labels: int, classifier_dropout_rate: float = ...) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
 
 class T5GemmaLMHead(nn.Module):
+    """Head for language modeling (generation) tasks."""
     def __init__(self, hidden_size: int, vocab_size: int, bias: bool = ...) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
 
 class T5GemmaAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config: T5GemmaConfig, layer_idx: int) -> None: ...
     def forward(
         self,
@@ -140,11 +180,23 @@ class T5GemmaPreTrainedModel(PreTrainedModel):
     _supports_attention_backend = ...
     _can_record_outputs = ...
 
-def bidirectional_mask_function(attention_mask: Optional[torch.Tensor]) -> Callable: ...
-def sliding_window_bidirectional_mask_function(sliding_window: int) -> Callable: ...
+def bidirectional_mask_function(attention_mask: Optional[torch.Tensor]) -> Callable:
+    """
+    This creates bidirectional attention mask.
+    """
+    ...
+
+def sliding_window_bidirectional_mask_function(sliding_window: int) -> Callable:
+    """
+    This creates bidirectional attention mask with sliding window.
+    """
+    ...
+
 def make_default_2d_attention_mask(
     token_ids: Optional[torch.LongTensor], hidden_states: torch.Tensor, pad_token_id: Optional[int]
-) -> torch.Tensor: ...
+) -> torch.Tensor:
+    """Construct the default attention mask."""
+    ...
 
 class T5GemmaEncoder(T5GemmaPreTrainedModel):
     _can_record_outputs = ...
@@ -180,10 +232,14 @@ class T5GemmaDecoder(T5GemmaEncoder):
 @auto_docstring
 class T5GemmaModel(T5GemmaPreTrainedModel):
     def __init__(self, config: T5GemmaConfig) -> None: ...
-    def get_encoder(self): ...
-    def get_decoder(self): ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, new_embeddings): ...
+    def get_encoder(self):  # -> T5GemmaEncoder:
+        ...
+    def get_decoder(self):  # -> T5GemmaDecoder:
+        ...
+    def get_input_embeddings(self):  # -> Module:
+        ...
+    def set_input_embeddings(self, new_embeddings):  # -> None:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -201,13 +257,21 @@ class T5GemmaModel(T5GemmaPreTrainedModel):
         use_cache: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> Seq2SeqModelOutput: ...
+    ) -> Seq2SeqModelOutput:
+        r"""
+        decoder_position_ids (`torch.LongTensor` of shape `(batch_size, decoder_sequence_length)`, *optional*):
+            Indices of positions of each decoder input sequence tokens in the position embeddings. Selected in the range `[0,
+            config.decoder.n_positions - 1]`. [What are position IDs?](../glossary#position-ids)
+        """
+        ...
 
 @auto_docstring
 class T5GemmaEncoderModel(T5GemmaPreTrainedModel):
     def __init__(self, config: T5GemmaConfig) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, new_embeddings): ...
+    def get_input_embeddings(self):  # -> Module:
+        ...
+    def set_input_embeddings(self, new_embeddings):  # -> None:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -224,10 +288,14 @@ class T5GemmaForConditionalGeneration(T5GemmaPreTrainedModel, GenerationMixin):
     _tp_plan = ...
     _pp_plan = ...
     def __init__(self, config: T5GemmaConfig) -> None: ...
-    def set_output_embeddings(self, new_embeddings): ...
-    def get_output_embeddings(self): ...
-    def get_encoder(self): ...
-    def get_decoder(self): ...
+    def set_output_embeddings(self, new_embeddings):  # -> None:
+        ...
+    def get_output_embeddings(self):  # -> Linear:
+        ...
+    def get_encoder(self):  # -> T5GemmaEncoder:
+        ...
+    def get_decoder(self):  # -> T5GemmaDecoder:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -247,14 +315,34 @@ class T5GemmaForConditionalGeneration(T5GemmaPreTrainedModel, GenerationMixin):
         cache_position: Optional[torch.LongTensor] = ...,
         logits_to_keep: Union[int, torch.Tensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> Union[tuple[torch.FloatTensor], Seq2SeqLMOutput]: ...
-    def prepare_decoder_input_ids_from_labels(self, labels: torch.Tensor): ...
+    ) -> Union[tuple[torch.FloatTensor], Seq2SeqLMOutput]:
+        r"""
+        decoder_position_ids (`torch.LongTensor` of shape `(batch_size, decoder_sequence_length)`, *optional*):
+            Indices of positions of each decoder input sequence tokens in the position embeddings. Selected in the range `[0,
+            config.decoder.n_positions - 1]`. [What are position IDs?](../glossary#position-ids)
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+        """
+        ...
+
+    def prepare_decoder_input_ids_from_labels(self, labels: torch.Tensor):  # -> Tensor:
+        ...
 
 @auto_docstring
 class T5GemmaForSequenceClassification(T5GemmaPreTrainedModel):
-    def __init__(self, config: T5GemmaConfig, is_encoder_decoder: Optional[bool] = ...) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def __init__(self, config: T5GemmaConfig, is_encoder_decoder: Optional[bool] = ...) -> None:
+        r"""
+        is_encoder_decoder (`Optional`, *optional*):
+            Whether use encoder_decoder for sequence classification. When set to False, only encoder is used.
+        """
+        ...
+
+    def get_input_embeddings(self):  # -> Module:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -270,13 +358,31 @@ class T5GemmaForSequenceClassification(T5GemmaPreTrainedModel):
         decoder_inputs_embeds: Optional[torch.FloatTensor] = ...,
         labels: Optional[torch.LongTensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> SequenceClassifierOutput: ...
+    ) -> SequenceClassifierOutput:
+        r"""
+        decoder_position_ids (`torch.LongTensor` of shape `(batch_size, decoder_sequence_length)`, *optional*):
+            Indices of positions of each decoder input sequence tokens in the position embeddings. Selected in the range `[0,
+            config.decoder.n_positions - 1]`. [What are position IDs?](../glossary#position-ids)
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 @auto_docstring
 class T5GemmaForTokenClassification(T5GemmaPreTrainedModel):
-    def __init__(self, config: T5GemmaConfig, is_encoder_decoder: Optional[bool] = ...) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def __init__(self, config: T5GemmaConfig, is_encoder_decoder: Optional[bool] = ...) -> None:
+        r"""
+        is_encoder_decoder (`Optional`, *optional*):
+            Whether use encoder_decoder for token classification. When set to False, only encoder is used.
+        """
+        ...
+
+    def get_input_embeddings(self):  # -> Module:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -292,7 +398,17 @@ class T5GemmaForTokenClassification(T5GemmaPreTrainedModel):
         decoder_inputs_embeds: Optional[torch.FloatTensor] = ...,
         labels: Optional[torch.LongTensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> TokenClassifierOutput: ...
+    ) -> TokenClassifierOutput:
+        r"""
+        decoder_position_ids (`torch.LongTensor` of shape `(batch_size, decoder_sequence_length)`, *optional*):
+            Indices of positions of each decoder input sequence tokens in the position embeddings. Selected in the range `[0,
+            config.decoder.n_positions - 1]`. [What are position IDs?](../glossary#position-ids)
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 __all__ = [
     "T5GemmaForConditionalGeneration",

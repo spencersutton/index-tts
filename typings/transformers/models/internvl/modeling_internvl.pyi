@@ -19,9 +19,15 @@ from .configuration_internvl import InternVLConfig, InternVLVisionConfig
 
 @use_kernel_forward_from_hub("RMSNorm")
 class InternVLVisionRMSNorm(nn.Module):
-    def __init__(self, hidden_size, eps=...) -> None: ...
+    def __init__(self, hidden_size, eps=...) -> None:
+        """
+        InternVLVisionRMSNorm is equivalent to T5LayerNorm
+        """
+        ...
+
     def forward(self, hidden_states): ...
-    def extra_repr(self): ...
+    def extra_repr(self):  # -> str:
+        ...
 
 def eager_attention_forward(
     module: nn.Module,
@@ -32,9 +38,11 @@ def eager_attention_forward(
     scaling: float,
     dropout: float = ...,
     **kwargs,
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class InternVLVisionAttention(nn.Module):
+    """Attention Class for InternVL Vision Encoder"""
     def __init__(self, config: InternVLVisionConfig) -> None: ...
     def forward(
         self,
@@ -42,7 +50,8 @@ class InternVLVisionAttention(nn.Module):
         attention_mask: Optional[torch.Tensor] = ...,
         output_attentions: Optional[torch.Tensor] = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ): ...
+    ):  # -> tuple[Any, Any] | tuple[Any, None]:
+        ...
 
 @auto_docstring
 class InternVLVisionPreTrainedModel(PreTrainedModel):
@@ -57,16 +66,47 @@ class InternVLVisionPreTrainedModel(PreTrainedModel):
     _supports_attention_backend = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
-class InternVLVisionModelOutputWithPooling(BaseModelOutputWithPooling): ...
+@auto_docstring(
+    custom_intro="""
+    Class for outputs of [`InternVLVisionModel`].
+    """
+)
+class InternVLVisionModelOutputWithPooling(BaseModelOutputWithPooling):
+    r"""
+    pooler_output (`torch.FloatTensor` of shape `(batch_size, hidden_size)`):
+        Average of the last layer hidden states of the patch tokens (excluding the *[CLS]* token) if
+        *config.use_mean_pooling* is set to True. If set to False, then the final hidden state of the *[CLS]* token
+        will be returned.
+    """
+
+    ...
 
 class InternVLVisionPatchEmbeddings(nn.Module):
+    """
+    This class turns `pixel_values` of shape `(batch_size, num_channels, height, width)` into the initial
+    `hidden_states` (patch embeddings) of shape `(batch_size, seq_length, hidden_size)` to be consumed by a
+    Transformer.
+    """
     def __init__(self, config) -> None: ...
     def forward(self, pixel_values: torch.Tensor) -> torch.Tensor: ...
 
 class InternVLVisionEmbeddings(nn.Module):
+    """
+    Construct the CLS token, position and patch embeddings. Optionally, also the mask token.
+
+    """
     def __init__(self, config: InternVLVisionConfig) -> None: ...
-    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor: ...
+    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor:
+        """
+        This method allows to interpolate the pre-trained position encodings, to be able to use the model on higher resolution
+        images. This method is also adapted to support torch.jit tracing.
+
+        Adapted from:
+        - https://github.com/facebookresearch/dino/blob/de9ee3df6cf39fac952ab558447af1fa1365362a/vision_transformer.py#L174-L194, and
+        - https://github.com/facebookresearch/dinov2/blob/e1277af2ba9496fbadf7aec6eba56e8d882d1e35/dinov2/models/vision_transformer.py#L179-L211
+        """
+        ...
+
     def forward(
         self, pixel_values: torch.Tensor, bool_masked_pos: Optional[torch.BoolTensor] = ...
     ) -> torch.Tensor: ...
@@ -78,6 +118,7 @@ class InternVLVisionMLP(nn.Module):
 NORM2FN = ...
 
 class InternVLVisionLayer(GradientCheckpointingLayer):
+    """This corresponds to the Block class in the timm implementation."""
     def __init__(self, config: InternVLVisionConfig) -> None: ...
     def forward(
         self, hidden_states: torch.Tensor, output_attentions: bool = ...
@@ -93,7 +134,8 @@ class InternVLVisionEncoder(nn.Module):
 @auto_docstring
 class InternVLVisionModel(InternVLVisionPreTrainedModel):
     def __init__(self, config: InternVLVisionConfig) -> None: ...
-    def get_input_embeddings(self): ...
+    def get_input_embeddings(self):  # -> InternVLVisionPatchEmbeddings:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -102,7 +144,12 @@ class InternVLVisionModel(InternVLVisionPreTrainedModel):
         bool_masked_pos: Optional[torch.BoolTensor] = ...,
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
-    ) -> Union[tuple, InternVLVisionModelOutputWithPooling]: ...
+    ) -> Union[tuple, InternVLVisionModelOutputWithPooling]:
+        r"""
+        bool_masked_pos (`torch.BoolTensor` of shape `(batch_size, num_patches)`, *optional*):
+            Boolean masked positions. Indicates which patches are masked (1) and which aren't (0).
+        """
+        ...
 
 @auto_docstring
 class InternVLPreTrainedModel(PreTrainedModel):
@@ -118,31 +165,75 @@ class InternVLPreTrainedModel(PreTrainedModel):
 
 class InternVLMultiModalProjector(nn.Module):
     def __init__(self, config: InternVLConfig) -> None: ...
-    def forward(self, image_features): ...
+    def forward(self, image_features):  # -> Any:
+        ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for InternVL outputs, with hidden states and attentions.
+    """
+)
 class InternVLModelOutputWithPast(BaseModelOutputWithPast):
+    r"""
+    past_key_values (`Cache`, *optional*, returned when `use_cache=True` is passed or when `config.use_cache=True`):
+        Tuple of `tuple(torch.FloatTensor)` of length `config.n_layers`, with each tuple having 2 tensors of shape
+        `(batch_size, num_heads, sequence_length, embed_size_per_head)`)
+
+        Contains pre-computed hidden-states (key and values in the self-attention blocks) that can be used (see
+        `past_key_values` input) to speed up sequential decoding.
+    image_hidden_states (`torch.FloatTensor`, *optional*):
+        A `torch.FloatTensor` of size `(batch_size, num_images, sequence_length, hidden_size)`.
+        image_hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
+    """
+
     image_hidden_states: Optional[torch.FloatTensor] = ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The InternVL model which consists of a vision backbone and a language model, without a language modeling head.
+    """
+)
 class InternVLModel(InternVLPreTrainedModel):
     _checkpoint_conversion_mapping = ...
     def __init__(self, config: InternVLConfig) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
-    def set_decoder(self, decoder): ...
-    def get_decoder(self): ...
+    def get_input_embeddings(self):  # -> Any:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> Any:
+        ...
     def get_image_features(
         self,
         pixel_values: torch.FloatTensor,
         vision_feature_layer: Optional[Union[int, list[int]]] = ...,
         vision_feature_select_strategy: Optional[str] = ...,
         **kwargs,
-    ): ...
+    ):  # -> Any:
+        """
+        Obtains image last hidden states from the vision tower and apply multimodal projection.
+
+        Args:
+            pixel_values (`torch.FloatTensor]` of shape `(batch_size, channels, height, width)`)
+               The tensors corresponding to the input images.
+            vision_feature_layer (`int` or `list[int]`):
+                Layer index or list of layer indices to extract features from.
+        Returns:
+            vision_features (`torch.Tensor`): Image feature tensor of shape `(num_images, image_length, embed_dim)`.
+        """
+        ...
+
     def get_placeholder_mask(
         self, input_ids: torch.LongTensor, inputs_embeds: torch.FloatTensor, image_features: torch.FloatTensor
-    ): ...
+    ):  # -> Tensor | Any:
+        """
+        Obtains multimodal placeholdr mask from `input_ids` or `inputs_embeds`, and checks that the placeholder token count is
+        equal to the length of multimodal features. If the lengths are different, an error is raised.
+        """
+        ...
+
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -162,11 +253,44 @@ class InternVLModel(InternVLPreTrainedModel):
         cache_position: Optional[torch.LongTensor] = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
     ) -> Union[tuple, InternVLModelOutputWithPast]: ...
-    def pixel_shuffle(self, vision_features: torch.Tensor, scale_factor: float = ...): ...
+    def pixel_shuffle(self, vision_features: torch.Tensor, scale_factor: float = ...):  # -> Tensor:
+        """Perform pixel shuffle downsampling on vision features.
+
+        Args:
+            vision_features (`torch.Tensor`):
+                Input tensor of shape (batch_size, width, height, channels).
+            scale_factor (`float`, *optional*, defaults to `0.5`):
+                Factor by which to downsample. Default is 0.5, which halves the dimensions.
+
+        Returns:
+            vision_features (`torch.Tensor`):
+                Downsampled tensor of shape (batch_size, height*scale_factor, width*scale_factor, channels/(scale_factor^2)).
+        """
+        ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for InternVL causal language model (or autoregressive) outputs.
+    """
+)
 class InternVLCausalLMOutputWithPast(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `labels` is provided):
+        Language modeling loss (for next-token prediction).
+    logits (`torch.FloatTensor` of shape `(batch_size, sequence_length, config.vocab_size)`):
+        Prediction scores of the language modeling head (scores for each vocabulary token before SoftMax).
+    past_key_values (`Cache`, *optional*, returned when `use_cache=True` is passed or when `config.use_cache=True`):
+        Tuple of `tuple(torch.FloatTensor)` of length `config.n_layers`, with each tuple having 2 tensors of shape
+        `(batch_size, num_heads, sequence_length, embed_size_per_head)`)
+
+        Contains pre-computed hidden-states (key and values in the self-attention blocks) that can be used (see
+        `past_key_values` input) to speed up sequential decoding.
+    image_hidden_states (`torch.FloatTensor`, *optional*):
+        A `torch.FloatTensor` of size `(batch_size, num_images, sequence_length, hidden_size)`.
+        image_hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     logits: Optional[torch.FloatTensor] = ...
     past_key_values: Optional[list[torch.FloatTensor]] = ...
@@ -174,29 +298,41 @@ class InternVLCausalLMOutputWithPast(ModelOutput):
     attentions: Optional[tuple[torch.FloatTensor]] = ...
     image_hidden_states: Optional[torch.FloatTensor] = ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The INTERNVL model which consists of a vision backbone and a language model.
+    """
+)
 class InternVLForConditionalGeneration(InternVLPreTrainedModel, GenerationMixin):
     _checkpoint_conversion_mapping = ...
     _tied_weights_keys = ...
     def __init__(self, config: InternVLConfig) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def get_input_embeddings(self):  # -> Any:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     def get_output_embeddings(self) -> nn.Module: ...
-    def set_decoder(self, decoder): ...
-    def get_decoder(self): ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> Any:
+        ...
     def get_image_features(
         self,
         pixel_values: torch.FloatTensor,
         vision_feature_layer: Optional[Union[int, list[int]]] = ...,
         vision_feature_select_strategy: Optional[str] = ...,
         **kwargs,
-    ): ...
+    ):  # -> Any:
+        ...
     @property
-    def language_model(self): ...
+    def language_model(self):  # -> Any:
+        ...
     @property
-    def vision_tower(self): ...
+    def vision_tower(self):  # -> Any:
+        ...
     @property
-    def multi_modal_projector(self): ...
+    def multi_modal_projector(self):  # -> InternVLMultiModalProjector:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -218,7 +354,44 @@ class InternVLForConditionalGeneration(InternVLPreTrainedModel, GenerationMixin)
         logits_to_keep: Union[int, torch.Tensor] = ...,
         image_sizes: Optional[torch.Tensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> Union[tuple, InternVLCausalLMOutputWithPast]: ...
+    ) -> Union[tuple, InternVLCausalLMOutputWithPast]:
+        r"""
+        Example:
+
+        ```python
+        >>> import torch
+        >>> from transformers import AutoProcessor, AutoModelForImageTextToText
+
+        >>> torch_device = "cuda"
+        >>> processor = AutoProcessor.from_pretrained("OpenGVLab/InternVL3-1B-hf")
+        >>> model = AutoModelForImageTextToText.from_pretrained(
+        ...     "OpenGVLab/InternVL3-1B-hf", torch_dtype=torch.bfloat16, device_map=torch_device
+        ... )
+
+        >>> messages = [
+        ...     {
+        ...         "role": "user",
+        ...         "content": [
+        ...             {
+        ...                 "type": "image",
+        ...                 "url": "https://cdn.britannica.com/61/93061-050-99147DCE/Statue-of-Liberty-Island-New-York-Bay.jpg",
+        ...             },
+        ...             {
+        ...                 "type": "image",
+        ...                 "url": "https://thumbs.dreamstime.com/b/golden-gate-bridge-san-francisco-purple-flowers-california-echium-candicans-36805947.jpg",
+        ...             },
+        ...             {"type": "text", "text": "These images depict two different landmarks. Can you identify them?"},
+        ...         ],
+        ...     },
+        ... ]
+
+        >>> inputs = processor.apply_chat_template(messages, add_generation_prompt=True, tokenize=True, return_dict=True, return_tensors="pt").to(torch_device)
+        >>> generate_ids = model.generate(**inputs, max_new_tokens=200)
+        >>> print(processor.decode(generate_ids[0, inputs["input_ids"].shape[1] :], skip_special_tokens=True))
+        The images depict the Statue of Liberty and the Golden Gate Bridge.
+        ```"""
+        ...
+
     def prepare_inputs_for_generation(
         self,
         input_ids,
@@ -229,7 +402,8 @@ class InternVLForConditionalGeneration(InternVLPreTrainedModel, GenerationMixin)
         cache_position=...,
         logits_to_keep=...,
         **kwargs,
-    ): ...
+    ):  # -> dict[Any, Any]:
+        ...
 
 __all__ = [
     "InternVLVisionPreTrainedModel",

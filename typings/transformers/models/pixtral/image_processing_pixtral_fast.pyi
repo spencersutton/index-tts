@@ -10,11 +10,17 @@ from ...image_utils import ImageInput, SizeDict
 from ...processing_utils import Unpack
 from ...utils import auto_docstring, is_torch_available, is_torchvision_available
 
+"""Image processor class for Pixtral."""
 logger = ...
 if is_torch_available(): ...
 if is_torchvision_available(): ...
 
 class PixtralFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
+    """
+    patch_size (`dict[str, int]` *optional*, defaults to `{"height": 16, "width": 16}`):
+        Size of the patches in the model, used to calculate the output image size. Can be overridden by `patch_size` in the `preprocess` method.
+    """
+
     patch_size: Optional[dict[str, int]]
     ...
 
@@ -41,6 +47,21 @@ class PixtralImageProcessorFast(BaseImageProcessorFast):
         patch_size: SizeDict,
         interpolation: F.InterpolationMode = ...,
         **kwargs,
-    ) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """
+        Resize an image. The shortest edge of the image is resized to size["shortest_edge"], with the longest edge
+        resized to keep the input aspect ratio.
+
+        Args:
+            image (`torch.Tensor`):
+                Image to resize.
+            size (`SizeDict`):
+                Dict containing the longest possible edge of the image.
+            patch_size (`SizeDict`):
+                Patch size used to calculate the size of the output image.
+            interpolation (`InterpolationMode`, *optional*, defaults to `InterpolationMode.BILINEAR`):
+                Resampling filter to use when resiizing the image.
+        """
+        ...
 
 __all__ = ["PixtralImageProcessorFast"]

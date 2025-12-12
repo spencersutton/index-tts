@@ -20,18 +20,36 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring
 from .configuration_distilbert import DistilBertConfig
 
+"""
+PyTorch DistilBERT model adapted in part from Facebook, Inc XLM model (https://github.com/facebookresearch/XLM) and in
+part from HuggingFace PyTorch version of Google AI Bert model (https://github.com/google-research/bert)
+"""
 if is_flash_attn_available(): ...
 logger = ...
 
-def create_sinusoidal_embeddings(n_pos: int, dim: int, out: torch.Tensor): ...
+def create_sinusoidal_embeddings(n_pos: int, dim: int, out: torch.Tensor):  # -> None:
+    ...
 
 class Embeddings(nn.Module):
     def __init__(self, config: PretrainedConfig) -> None: ...
-    def forward(self, input_ids: torch.Tensor, input_embeds: Optional[torch.Tensor] = ...) -> torch.Tensor: ...
+    def forward(self, input_ids: torch.Tensor, input_embeds: Optional[torch.Tensor] = ...) -> torch.Tensor:
+        """
+        Parameters:
+            input_ids (torch.Tensor):
+                torch.tensor(bs, max_seq_length) The token ids to embed.
+            input_embeds (*optional*, torch.Tensor):
+                The pre-computed word embeddings. Can only be passed if the input ids are `None`.
+
+
+        Returns: torch.tensor(bs, max_seq_length, dim) The embedded tokens (plus position embeddings, no token_type
+        embeddings)
+        """
+        ...
 
 class MultiHeadSelfAttention(nn.Module):
     def __init__(self, config: PretrainedConfig) -> None: ...
-    def prune_heads(self, heads: list[int]): ...
+    def prune_heads(self, heads: list[int]):  # -> None:
+        ...
     def forward(
         self,
         query: torch.Tensor,
@@ -40,9 +58,26 @@ class MultiHeadSelfAttention(nn.Module):
         mask: torch.Tensor,
         head_mask: Optional[torch.Tensor] = ...,
         output_attentions: bool = ...,
-    ) -> tuple[torch.Tensor, ...]: ...
+    ) -> tuple[torch.Tensor, ...]:
+        """
+        Parameters:
+            query: torch.tensor(bs, seq_length, dim)
+            key: torch.tensor(bs, seq_length, dim)
+            value: torch.tensor(bs, seq_length, dim)
+            mask: torch.tensor(bs, seq_length)
+
+        Returns:
+            weights: torch.tensor(bs, n_heads, seq_length, seq_length) Attention weights context: torch.tensor(bs,
+            seq_length, dim) Contextualized layer. Optional: only if `output_attentions=True`
+        """
+        ...
 
 class DistilBertFlashAttention2(MultiHeadSelfAttention):
+    """
+    DistilBert flash attention module. This module inherits from `MultiHeadSelfAttention` as the weights of the module
+    stays untouched. The only required change would be on the forward pass where it needs to correctly call the public
+    API of flash attention and deal with padding tokens in case the input contains any of them.
+    """
     def __init__(self, *args, **kwargs) -> None: ...
     def forward(
         self,
@@ -52,7 +87,19 @@ class DistilBertFlashAttention2(MultiHeadSelfAttention):
         mask: torch.Tensor,
         head_mask: Optional[torch.Tensor] = ...,
         output_attentions: bool = ...,
-    ) -> tuple[torch.Tensor, ...]: ...
+    ) -> tuple[torch.Tensor, ...]:
+        """
+        Parameters:
+            query: torch.tensor(bs, seq_length, dim)
+            key: torch.tensor(bs, seq_length, dim)
+            value: torch.tensor(bs, seq_length, dim)
+            mask: torch.tensor(bs, seq_length)
+
+        Returns:
+            weights: torch.tensor(bs, n_heads, seq_length, seq_length) Attention weights context: torch.tensor(bs,
+            seq_length, dim) Contextualized layer. Optional: only if `output_attentions=True`
+        """
+        ...
 
 class DistilBertSdpaAttention(MultiHeadSelfAttention):
     def __init__(self, config: PretrainedConfig) -> None: ...
@@ -64,7 +111,19 @@ class DistilBertSdpaAttention(MultiHeadSelfAttention):
         mask: torch.Tensor,
         head_mask: Optional[torch.Tensor] = ...,
         output_attentions: bool = ...,
-    ) -> tuple[torch.Tensor, ...]: ...
+    ) -> tuple[torch.Tensor, ...]:
+        """
+        Parameters:
+            query: torch.tensor(bs, seq_length, dim)
+            key: torch.tensor(bs, seq_length, dim)
+            value: torch.tensor(bs, seq_length, dim)
+            mask: torch.tensor(bs, seq_length)
+
+        Returns:
+            weights: torch.tensor(bs, n_heads, seq_length, seq_length) Attention weights context: torch.tensor(bs,
+            seq_length, dim) Contextualized layer. Optional: only if `output_attentions=True`
+        """
+        ...
 
 class FFN(nn.Module):
     def __init__(self, config: PretrainedConfig) -> None: ...
@@ -81,7 +140,17 @@ class TransformerBlock(GradientCheckpointingLayer):
         attn_mask: Optional[torch.Tensor] = ...,
         head_mask: Optional[torch.Tensor] = ...,
         output_attentions: bool = ...,
-    ) -> tuple[torch.Tensor, ...]: ...
+    ) -> tuple[torch.Tensor, ...]:
+        """
+        Parameters:
+            x: torch.tensor(bs, seq_length, dim)
+            attn_mask: torch.tensor(bs, seq_length)
+
+        Returns:
+            sa_weights: torch.tensor(bs, n_heads, seq_length, seq_length) The attention weights ffn_output:
+            torch.tensor(bs, seq_length, dim) The output of the transformer block contextualization.
+        """
+        ...
 
 class Transformer(nn.Module):
     def __init__(self, config: PretrainedConfig) -> None: ...
@@ -93,7 +162,22 @@ class Transformer(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[BaseModelOutput, tuple[torch.Tensor, ...]]: ...
+    ) -> Union[BaseModelOutput, tuple[torch.Tensor, ...]]:
+        """
+        Parameters:
+            x: torch.tensor(bs, seq_length, dim) Input sequence embedded.
+            attn_mask: torch.tensor(bs, seq_length) Attention mask on the sequence.
+
+        Returns:
+            hidden_state: torch.tensor(bs, seq_length, dim) Sequence of hidden states in the last (top)
+            layer all_hidden_states: tuple[torch.tensor(bs, seq_length, dim)]
+                Tuple of length n_layers with the hidden states from each layer.
+                Optional: only if output_hidden_states=True
+            all_attentions: tuple[torch.tensor(bs, n_heads, seq_length, seq_length)]
+                Tuple of length n_layers with the attention weights from each layer
+                Optional: only if output_attentions=True
+        """
+        ...
 
 @auto_docstring
 class DistilBertPreTrainedModel(PreTrainedModel):
@@ -107,10 +191,29 @@ class DistilBertPreTrainedModel(PreTrainedModel):
 @auto_docstring
 class DistilBertModel(DistilBertPreTrainedModel):
     def __init__(self, config: PretrainedConfig) -> None: ...
-    def get_position_embeddings(self) -> nn.Embedding: ...
-    def resize_position_embeddings(self, new_num_position_embeddings: int): ...
+    def get_position_embeddings(self) -> nn.Embedding:
+        """
+        Returns the position embeddings
+        """
+        ...
+
+    def resize_position_embeddings(self, new_num_position_embeddings: int):  # -> None:
+        """
+        Resizes position embeddings of the model if `new_num_position_embeddings != config.max_position_embeddings`.
+
+        Arguments:
+            new_num_position_embeddings (`int`):
+                The number of new position embedding matrix. If position embeddings are learned, increasing the size
+                will add newly initialized vectors at the end, whereas reducing the size will remove vectors from the
+                end. If position embeddings are not learned (*e.g.* sinusoidal position embeddings), increasing the
+                size will add correct vectors at the end following the position encoding algorithm, whereas reducing
+                the size will remove vectors from the end.
+        """
+        ...
+
     def get_input_embeddings(self) -> nn.Embedding: ...
-    def set_input_embeddings(self, new_embeddings: nn.Embedding): ...
+    def set_input_embeddings(self, new_embeddings: nn.Embedding):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -121,16 +224,53 @@ class DistilBertModel(DistilBertPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[BaseModelOutput, tuple[torch.Tensor, ...]]: ...
+    ) -> Union[BaseModelOutput, tuple[torch.Tensor, ...]]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, num_choices)`):
+            Indices of input sequence tokens in the vocabulary.
 
-@auto_docstring(custom_intro=...)
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        inputs_embeds (`torch.FloatTensor` of shape `(batch_size, num_choices, hidden_size)`, *optional*):
+            Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation. This
+            is useful if you want more control over how to convert `input_ids` indices into associated vectors than the
+            model's internal embedding lookup matrix.
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    DistilBert Model with a `masked language modeling` head on top.
+    """
+)
 class DistilBertForMaskedLM(DistilBertPreTrainedModel):
     _tied_weights_keys = ...
     def __init__(self, config: PretrainedConfig) -> None: ...
-    def get_position_embeddings(self) -> nn.Embedding: ...
-    def resize_position_embeddings(self, new_num_position_embeddings: int): ...
+    def get_position_embeddings(self) -> nn.Embedding:
+        """
+        Returns the position embeddings
+        """
+        ...
+
+    def resize_position_embeddings(self, new_num_position_embeddings: int):  # -> None:
+        """
+        Resizes position embeddings of the model if `new_num_position_embeddings != config.max_position_embeddings`.
+
+        Arguments:
+            new_num_position_embeddings (`int`):
+                The number of new position embedding matrix. If position embeddings are learned, increasing the size
+                will add newly initialized vectors at the end, whereas reducing the size will remove vectors from the
+                end. If position embeddings are not learned (*e.g.* sinusoidal position embeddings), increasing the
+                size will add correct vectors at the end following the position encoding algorithm, whereas reducing
+                the size will remove vectors from the end.
+        """
+        ...
+
     def get_output_embeddings(self) -> nn.Module: ...
-    def set_output_embeddings(self, new_embeddings: nn.Module): ...
+    def set_output_embeddings(self, new_embeddings: nn.Module):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -142,13 +282,54 @@ class DistilBertForMaskedLM(DistilBertPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[MaskedLMOutput, tuple[torch.Tensor, ...]]: ...
+    ) -> Union[MaskedLMOutput, tuple[torch.Tensor, ...]]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, num_choices)`):
+            Indices of input sequence tokens in the vocabulary.
 
-@auto_docstring(custom_intro=...)
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        inputs_embeds (`torch.FloatTensor` of shape `(batch_size, num_choices, hidden_size)`, *optional*):
+            Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation. This
+            is useful if you want more control over how to convert `input_ids` indices into associated vectors than the
+            model's internal embedding lookup matrix.
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should be in `[-100, 0, ...,
+            config.vocab_size]` (see `input_ids` docstring) Tokens with indices set to `-100` are ignored (masked), the
+            loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    DistilBert Model transformer with a sequence classification/regression head on top (a linear layer on top of the
+    pooled output) e.g. for GLUE tasks.
+    """
+)
 class DistilBertForSequenceClassification(DistilBertPreTrainedModel):
     def __init__(self, config: PretrainedConfig) -> None: ...
-    def get_position_embeddings(self) -> nn.Embedding: ...
-    def resize_position_embeddings(self, new_num_position_embeddings: int): ...
+    def get_position_embeddings(self) -> nn.Embedding:
+        """
+        Returns the position embeddings
+        """
+        ...
+
+    def resize_position_embeddings(self, new_num_position_embeddings: int):  # -> None:
+        """
+        Resizes position embeddings of the model if `new_num_position_embeddings != config.max_position_embeddings`.
+
+        Arguments:
+            new_num_position_embeddings (`int`):
+                The number of new position embedding matrix. If position embeddings are learned, increasing the size
+                will add newly initialized vectors at the end, whereas reducing the size will remove vectors from the
+                end. If position embeddings are not learned (*e.g.* sinusoidal position embeddings), increasing the
+                size will add correct vectors at the end following the position encoding algorithm, whereas reducing
+                the size will remove vectors from the end.
+        """
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -160,13 +341,38 @@ class DistilBertForSequenceClassification(DistilBertPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[SequenceClassifierOutput, tuple[torch.Tensor, ...]]: ...
+    ) -> Union[SequenceClassifierOutput, tuple[torch.Tensor, ...]]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 @auto_docstring
 class DistilBertForQuestionAnswering(DistilBertPreTrainedModel):
     def __init__(self, config: PretrainedConfig) -> None: ...
-    def get_position_embeddings(self) -> nn.Embedding: ...
-    def resize_position_embeddings(self, new_num_position_embeddings: int): ...
+    def get_position_embeddings(self) -> nn.Embedding:
+        """
+        Returns the position embeddings
+        """
+        ...
+
+    def resize_position_embeddings(self, new_num_position_embeddings: int):  # -> None:
+        """
+        Resizes position embeddings of the model if `new_num_position_embeddings != config.max_position_embeddings`.
+
+        Arguments:
+            new_num_position_embeddings (`int`):
+                The number of new position embedding matrix. If position embeddings are learned, increasing the size
+                will add newly initialized vectors at the end, whereas reducing the size will remove vectors from the
+                end. If position embeddings are not learned (*e.g.* sinusoidal position embeddings), increasing the
+                size will add correct vectors at the end following the position encoding algorithm, whereas reducing
+                the size will remove vectors from the end.
+        """
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -179,13 +385,45 @@ class DistilBertForQuestionAnswering(DistilBertPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[QuestionAnsweringModelOutput, tuple[torch.Tensor, ...]]: ...
+    ) -> Union[QuestionAnsweringModelOutput, tuple[torch.Tensor, ...]]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, num_choices)`):
+            Indices of input sequence tokens in the vocabulary.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        inputs_embeds (`torch.FloatTensor` of shape `(batch_size, num_choices, hidden_size)`, *optional*):
+            Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation. This
+            is useful if you want more control over how to convert `input_ids` indices into associated vectors than the
+            model's internal embedding lookup matrix.
+        """
+        ...
 
 @auto_docstring
 class DistilBertForTokenClassification(DistilBertPreTrainedModel):
     def __init__(self, config: PretrainedConfig) -> None: ...
-    def get_position_embeddings(self) -> nn.Embedding: ...
-    def resize_position_embeddings(self, new_num_position_embeddings: int): ...
+    def get_position_embeddings(self) -> nn.Embedding:
+        """
+        Returns the position embeddings
+        """
+        ...
+
+    def resize_position_embeddings(self, new_num_position_embeddings: int):  # -> None:
+        """
+        Resizes position embeddings of the model if `new_num_position_embeddings != config.max_position_embeddings`.
+
+        Arguments:
+            new_num_position_embeddings (`int`):
+                The number of new position embedding matrix. If position embeddings are learned, increasing the size
+                will add newly initialized vectors at the end, whereas reducing the size will remove vectors from the
+                end. If position embeddings are not learned (*e.g.* sinusoidal position embeddings), increasing the
+                size will add correct vectors at the end following the position encoding algorithm, whereas reducing
+                the size will remove vectors from the end.
+        """
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -197,13 +435,36 @@ class DistilBertForTokenClassification(DistilBertPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[TokenClassifierOutput, tuple[torch.Tensor, ...]]: ...
+    ) -> Union[TokenClassifierOutput, tuple[torch.Tensor, ...]]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the token classification loss. Indices should be in `[0, ..., config.num_labels - 1]`.
+        """
+        ...
 
 @auto_docstring
 class DistilBertForMultipleChoice(DistilBertPreTrainedModel):
     def __init__(self, config: PretrainedConfig) -> None: ...
-    def get_position_embeddings(self) -> nn.Embedding: ...
-    def resize_position_embeddings(self, new_num_position_embeddings: int): ...
+    def get_position_embeddings(self) -> nn.Embedding:
+        """
+        Returns the position embeddings
+        """
+        ...
+
+    def resize_position_embeddings(self, new_num_position_embeddings: int):  # -> None:
+        """
+        Resizes position embeddings of the model if `new_num_position_embeddings != config.max_position_embeddings`.
+
+        Arguments:
+            new_num_position_embeddings (`int`)
+                The number of new position embeddings. If position embeddings are learned, increasing the size will add
+                newly initialized vectors at the end, whereas reducing the size will remove vectors from the end. If
+                position embeddings are not learned (*e.g.* sinusoidal position embeddings), increasing the size will
+                add correct vectors at the end following the position encoding algorithm, whereas reducing the size
+                will remove vectors from the end.
+        """
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -215,7 +476,46 @@ class DistilBertForMultipleChoice(DistilBertPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[MultipleChoiceModelOutput, tuple[torch.Tensor, ...]]: ...
+    ) -> Union[MultipleChoiceModelOutput, tuple[torch.Tensor, ...]]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`):
+            Indices of input sequence tokens in the vocabulary.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        inputs_embeds (`torch.FloatTensor` of shape `(batch_size, num_choices, sequence_length, hidden_size)`, *optional*):
+            Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation. This
+            is useful if you want more control over how to convert `input_ids` indices into associated vectors than the
+            model's internal embedding lookup matrix.
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the multiple choice classification loss. Indices should be in `[0, ...,
+            num_choices-1]` where `num_choices` is the size of the second dimension of the input tensors. (See
+            `input_ids` above)
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoTokenizer, DistilBertForMultipleChoice
+        >>> import torch
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("distilbert-base-cased")
+        >>> model = DistilBertForMultipleChoice.from_pretrained("distilbert-base-cased")
+
+        >>> prompt = "In Italy, pizza served in formal settings, such as at a restaurant, is presented unsliced."
+        >>> choice0 = "It is eaten with a fork and a knife."
+        >>> choice1 = "It is eaten while held in the hand."
+        >>> labels = torch.tensor(0).unsqueeze(0)  # choice0 is correct (according to Wikipedia ;)), batch size 1
+
+        >>> encoding = tokenizer([[prompt, choice0], [prompt, choice1]], return_tensors="pt", padding=True)
+        >>> outputs = model(**{k: v.unsqueeze(0) for k, v in encoding.items()}, labels=labels)  # batch size is 1
+
+        >>> # the linear classifier still needs to be trained
+        >>> loss = outputs.loss
+        >>> logits = outputs.logits
+        ```"""
+        ...
 
 __all__ = [
     "DistilBertForMaskedLM",

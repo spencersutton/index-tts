@@ -23,6 +23,7 @@ from ...modeling_tf_utils import (
 )
 from .configuration_xglm import XGLMConfig
 
+"""TF 2.0 XGLM model."""
 logger = ...
 _CHECKPOINT_FOR_DOC = ...
 _CONFIG_FOR_DOC = ...
@@ -31,6 +32,7 @@ LARGE_NEGATIVE = ...
 def create_sinusoidal_positions(num_positions: int, embedding_dim: int, padding_idx: int | None) -> tf.Tensor: ...
 
 class TFXGLMAttention(keras.layers.Layer):
+    """Multi-headed attention from "Attention Is All You Need"""
     def __init__(
         self, embed_dim: int, num_heads: int, dropout: float = ..., is_decoder: bool = ..., bias: bool = ..., **kwargs
     ) -> None: ...
@@ -42,8 +44,12 @@ class TFXGLMAttention(keras.layers.Layer):
         attention_mask: tf.Tensor | None = ...,
         layer_head_mask: tf.Tensor | None = ...,
         training: bool | None = ...,
-    ) -> tuple[tf.Tensor, tf.Tensor | None]: ...
-    def build(self, input_shape=...): ...
+    ) -> tuple[tf.Tensor, tf.Tensor | None]:
+        """Input shape: Batch x Time x Channel"""
+        ...
+
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFXGLMDecoderLayer(keras.layers.Layer):
     def __init__(self, config: XGLMConfig, **kwargs: Any) -> None: ...
@@ -57,8 +63,26 @@ class TFXGLMDecoderLayer(keras.layers.Layer):
         cross_attn_layer_head_mask: tf.Tensor | None = ...,
         past_key_value: tuple[tf.Tensor] | None = ...,
         training: bool | None = ...,
-    ) -> tuple[tf.Tensor, tf.Tensor, tuple[tuple[tf.Tensor]]]: ...
-    def build(self, input_shape=...): ...
+    ) -> tuple[tf.Tensor, tf.Tensor, tuple[tuple[tf.Tensor]]]:
+        """
+        Args:
+            hidden_states (`tf.Tensor`): input to the layer of shape *(batch, seq_len, embed_dim)*
+            attention_mask (`tf.Tensor`): attention mask of size
+                *(batch, 1, tgt_len, src_len)* where padding elements are indicated by very large negative values.
+            encoder_hidden_states (`tf.Tensor`):
+                cross attention input to the layer of shape *(batch, seq_len, embed_dim)*
+            encoder_attention_mask (`tf.Tensor`): encoder attention mask of size
+                *(batch, 1, tgt_len, src_len)* where padding elements are indicated by very large negative values.
+            layer_head_mask (`tf.Tensor`): mask for attention heads in a given layer of size
+                *(decoder_attention_heads,)*
+            cross_attn_layer_head_mask (`tf.Tensor`): mask for heads of the cross-attention module.
+                *(decoder_attention_heads,)*
+            past_key_value (`Tuple(tf.Tensor)`): cached past key and value projection states
+        """
+        ...
+
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 @keras_serializable
 class TFXGLMMainLayer(keras.layers.Layer):
@@ -88,7 +112,8 @@ class TFXGLMMainLayer(keras.layers.Layer):
         training: bool | None = ...,
         **kwargs: Any,
     ) -> TFBaseModelOutputWithPastAndCrossAttentions | tuple[tf.Tensor]: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFXGLMPreTrainedModel(TFPreTrainedModel):
     config_class = XGLMConfig
@@ -97,8 +122,18 @@ class TFXGLMPreTrainedModel(TFPreTrainedModel):
 XGLM_START_DOCSTRING = ...
 XGLM_INPUTS_DOCSTRING = ...
 
-@add_start_docstrings(..., XGLM_START_DOCSTRING)
+@add_start_docstrings(
+    "The bare XGLM Model transformer outputting raw hidden-states without any specific head on top.",
+    XGLM_START_DOCSTRING,
+)
 class TFXGLMModel(TFXGLMPreTrainedModel):
+    """
+    Transformer decoder consisting of *config.num_layers* layers. Each layer is a [`TFXGLMDecoderLayer`]
+
+    Args:
+        config: XGLMConfig
+        embed_tokens: [TFSharedEmbeddings]: output embedding
+    """
     def __init__(
         self, config: XGLMConfig, embed_tokens: TFSharedEmbeddings | None = ..., *inputs: Any, **kwargs: Any
     ) -> None: ...
@@ -127,9 +162,16 @@ class TFXGLMModel(TFXGLMPreTrainedModel):
         training: bool | None = ...,
         **kwargs: Any,
     ) -> TFBaseModelOutputWithPastAndCrossAttentions | tuple[tf.Tensor]: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
-@add_start_docstrings(..., XGLM_START_DOCSTRING)
+@add_start_docstrings(
+    """
+    The XGLM Model transformer with a language modeling head on top (linear layer with weights tied to the input
+    embeddings).
+    """,
+    XGLM_START_DOCSTRING,
+)
 class TFXGLMForCausalLM(TFXGLMPreTrainedModel, TFCausalLanguageModelingLoss):
     base_model_prefix = ...
     _keys_to_ignore_on_load_missing = ...
@@ -137,7 +179,10 @@ class TFXGLMForCausalLM(TFXGLMPreTrainedModel, TFCausalLanguageModelingLoss):
     def __init__(
         self, config: XGLMConfig, embed_tokens: TFSharedEmbeddings | None = ..., *inputs: Any, **kwargs: Any
     ) -> None: ...
-    def prepare_inputs_for_generation(self, inputs, past_key_values=..., use_cache=..., **kwargs): ...
+    def prepare_inputs_for_generation(
+        self, inputs, past_key_values=..., use_cache=..., **kwargs
+    ):  # -> dict[str, Any | None]:
+        ...
     @unpack_inputs
     @add_start_docstrings_to_model_forward(XGLM_INPUTS_DOCSTRING)
     @replace_return_docstrings(output_type=TFCausalLMOutputWithCrossAttentions, config_class=_CONFIG_FOR_DOC)
@@ -162,8 +207,20 @@ class TFXGLMForCausalLM(TFXGLMPreTrainedModel, TFCausalLanguageModelingLoss):
         return_dict: bool | None = ...,
         training: bool | None = ...,
         **kwargs: Any,
-    ) -> TFCausalLMOutputWithCrossAttentions | tuple[tf.Tensor]: ...
-    def build(self, input_shape=...): ...
-    def tf_to_pt_weight_rename(self, tf_weight): ...
+    ) -> TFCausalLMOutputWithCrossAttentions | tuple[tf.Tensor]:
+        r"""
+        labels (`np.ndarray` or `tf.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for language modeling. Note that the labels **are shifted** inside the model, i.e. you can set
+            `labels = input_ids` Indices are selected in `[-100, 0, ..., config.vocab_size]` All labels set to `-100`
+            are ignored (masked), the loss is only computed for labels in `[0, ..., config.vocab_size]`
+        """
+        ...
+
+    def build(self, input_shape=...):  # -> None:
+        ...
+    def tf_to_pt_weight_rename(
+        self, tf_weight
+    ):  # -> tuple[Literal['lm_head.weight'], Literal['model.embed_tokens.weight']] | tuple[Any]:
+        ...
 
 __all__ = ["TFXGLMForCausalLM", "TFXGLMModel", "TFXGLMPreTrainedModel"]

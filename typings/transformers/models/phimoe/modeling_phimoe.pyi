@@ -15,6 +15,7 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring, can_return_tuple, is_torch_flex_attn_available
 from .configuration_phimoe import PhimoeConfig
 
+"""PyTorch Phimoe model."""
 if is_flash_attn_available(): ...
 if is_torch_flex_attn_available(): ...
 _prepare_4d_causal_attention_mask = ...
@@ -25,17 +26,76 @@ def load_balancing_loss_func(
     num_experts: Optional[int] = ...,
     top_k=...,
     attention_mask: Optional[torch.Tensor] = ...,
-) -> Union[torch.Tensor, int]: ...
+) -> Union[torch.Tensor, int]:
+    r"""
+    Computes auxiliary load balancing loss as in Switch Transformer - implemented in Pytorch.
+
+    See Switch Transformer (https://huggingface.co/papers/2101.03961) for more details. This function implements the loss
+    function presented in equations (4) - (6) of the paper. It aims at penalizing cases where the routing between
+    experts is too unbalanced.
+
+    Args:
+        gate_logits:
+            Logits from the `gate`, should be a tuple of model.config.num_hidden_layers tensors of
+            shape [batch_size X sequence_length, num_experts].
+        num_experts:
+            Number of experts
+        top_k:
+            The number of experts to route per-token, can be also interpreted as the `top-k` routing
+            parameter.
+        attention_mask (`torch.Tensor`, *optional*):
+            The attention_mask used in forward function
+            shape [batch_size X sequence_length] if not None.
+
+    Returns:
+        The auxiliary loss.
+    """
+    ...
 
 class PhimoeRotaryEmbedding(nn.Module):
     def __init__(self, config: Optional[PhimoeConfig] = ...) -> None: ...
-    def forward(self, x, seq_len=...): ...
+    def forward(self, x, seq_len=...):  # -> tuple[Tensor | Any, Tensor | Any]:
+        ...
 
-def rotate_half(x): ...
-def apply_rotary_pos_emb(q, k, cos, sin, position_ids, unsqueeze_dim=...): ...
-def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor: ...
+def rotate_half(x):  # -> Tensor:
+    """Rotates half the hidden dims of the input."""
+    ...
+
+def apply_rotary_pos_emb(q, k, cos, sin, position_ids, unsqueeze_dim=...):  # -> tuple[Any, Any]:
+    """Applies Rotary Position Embedding to the query and key tensors.
+
+    Args:
+        q (`torch.Tensor`): The query tensor.
+        k (`torch.Tensor`): The key tensor.
+        cos (`torch.Tensor`): The cosine part of the rotary embedding.
+        sin (`torch.Tensor`): The sine part of the rotary embedding.
+        position_ids (`torch.Tensor`):
+            The position indices of the tokens corresponding to the query and key tensors. For example, this can be
+            used to pass offsetted position ids when working with a KV-cache.
+        unsqueeze_dim (`int`, *optional*, defaults to 1):
+            The 'unsqueeze_dim' argument specifies the dimension along which to unsqueeze cos[position_ids] and
+            sin[position_ids] so that they can be properly broadcasted to the dimensions of q and k. For example, note
+            that cos[position_ids] and sin[position_ids] have the shape [batch_size, seq_len, head_dim]. Then, if q and
+            k have the shape [batch_size, heads, seq_len, head_dim], then setting unsqueeze_dim=1 makes
+            cos[position_ids] and sin[position_ids] broadcastable to the shapes of q and k. Similarly, if q and k have
+            the shape [batch_size, seq_len, heads, head_dim], then set unsqueeze_dim=2.
+    Returns:
+        `tuple(torch.Tensor)` comprising of the query and key tensors rotated using the Rotary Position Embedding.
+    """
+    ...
+
+def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
+    """
+    This is the equivalent of torch.repeat_interleave(x, dim=1, repeats=n_rep). The hidden states go from (batch,
+    num_key_value_heads, seqlen, head_dim) to (batch, num_attention_heads, seqlen, head_dim)
+    """
+    ...
 
 class PhimoeAttention(nn.Module):
+    """
+    Multi-headed attention from 'Attention Is All You Need' paper. Modified to use sliding window attention: Longformer
+    and "Generating Long Sequences with Sparse Transformers".
+    """
     def __init__(self, config: PhimoeConfig, layer_idx: Optional[int] = ...) -> None: ...
     def forward(
         self,
@@ -50,6 +110,11 @@ class PhimoeAttention(nn.Module):
     ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
 
 class PhimoeFlashAttention2(PhimoeAttention):
+    """
+    Phimoe flash attention module. This module inherits from `PhimoeAttention` as the weights of the module stays
+    untouched. The only required change would be on the forward pass where it needs to correctly call the public API of
+    flash attention and deal with padding tokens in case the input contains any of them.
+    """
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -60,9 +125,15 @@ class PhimoeFlashAttention2(PhimoeAttention):
         use_cache: bool = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
-    ): ...
+    ):  # -> tuple[Any, Any | None]:
+        ...
 
 class PhimoeSdpaAttention(PhimoeAttention):
+    """
+    Phimoe attention module using torch.nn.functional.scaled_dot_product_attention. This module inherits from
+    `PhimoeAttention` as the weights of the module stays untouched. The only changes are on the forward pass to adapt to
+    SDPA API.
+    """
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -79,7 +150,8 @@ PHIMOE_ATTENTION_CLASSES = ...
 
 class PhimoeBlockSparseTop2MLP(nn.Module):
     def __init__(self, config: PhimoeConfig) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class MultiplierProcessor(torch.autograd.Function):
     @staticmethod
@@ -90,15 +162,72 @@ class MultiplierProcessor(torch.autograd.Function):
         selected_experts: torch.Tensor,
         masked_gates: torch.Tensor,
         mask_for_one: torch.Tensor,
-    ): ...
-    @staticmethod
-    def backward(ctx, grad_at_output: torch.Tensor): ...
+    ):  # -> Tensor:
+        """
+        Forward pass for the custom autograd function.
 
-def sparsemixer(scores, jitter_eps, training, top_k=...): ...
+        Args:
+            ctx: Context object to save information for backward computation.
+            scores (torch.Tensor): Input scores tensor.
+            multiplier (torch.Tensor): Multiplier tensor.
+            selected_experts (torch.Tensor): Tensor of selected experts.
+            masked_gates (torch.Tensor): Masked gates tensor.
+            mask_for_one (torch.Tensor): Mask for one tensor.
+
+        Returns:
+            torch.Tensor: Result of the forward pass.
+        """
+        ...
+
+    @staticmethod
+    def backward(ctx, grad_at_output: torch.Tensor):  # -> tuple[Any, None, None, None, None]:
+        """
+        Backward pass for the custom autograd function.
+
+        Args:
+            ctx: Context object with saved tensors from the forward pass.
+            grad_at_output (torch.Tensor): Gradient at the output.
+
+        Returns:
+            tuple[torch.Tensor, None, None, None, None]: Gradients for the inputs.
+        """
+        ...
+
+def sparsemixer(scores, jitter_eps, training, top_k=...):  # -> tuple[Any, Tensor]:
+    """
+    Sparse mixer function to select top-k experts and compute multipliers.
+    Based on the paper: https://huggingface.co/papers/2409.12136
+    We first replace the TopK(·) function as random sampling of discrete variables
+    in model training. Then, following Liu et al. (2023a) and Liu et al. (2023b), we apply Heun's
+    third order method to approximate the expert routing gradient and construct a modified
+    back-propagation to give a mathematically sound gradient estimation for expert routing.
+
+    Args:
+        scores (torch.Tensor): Input scores tensor.
+        jitter_eps (float): Jitter epsilon for numerical stability.
+        training (bool): Flag indicating if the model is in training mode.
+        top_k (int): Number of top experts to select.
+
+    Returns:
+        tuple[torch.Tensor, torch.Tensor]: Multiplier and selected experts tensors.
+    """
+    ...
 
 class PhimoeSparseMoeBlock(nn.Module):
+    """
+    This implementation is
+    strictly equivalent to standard MoE with full capacity (no
+    dropped tokens). It's faster since it formulates MoE operations
+    in terms of block-sparse operations to accommodate imbalanced
+    assignments of tokens to experts, whereas standard MoE either
+    (1) drop tokens at the cost of reduced performance or (2) set
+    capacity factor to number of experts and thus waste computation
+    and memory on padding.
+    """
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
+    def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
+        """ """
+        ...
 
 class PhimoeDecoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: PhimoeConfig, layer_idx: int) -> None: ...
@@ -114,7 +243,29 @@ class PhimoeDecoderLayer(GradientCheckpointingLayer):
         cache_position: Optional[torch.LongTensor] = ...,
         position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
         **kwargs,
-    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]: ...
+    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            attention_mask (`torch.FloatTensor`, *optional*): attention mask of size
+                `(batch, sequence_length)` where padding elements are indicated by 0.
+            past_key_value (`Tuple(torch.FloatTensor)`, *optional*): cached past key and value projection states
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            output_router_logits (`bool`, *optional*):
+                Whether or not to return the logits of all the routers. They are useful for computing the router loss, and
+                should not be returned during inference.
+            use_cache (`bool`, *optional*):
+                If set to `True`, `past_key_values` key value states are returned and can be used to speed up decoding
+                (see `past_key_values`).
+            cache_position (`torch.LongTensor` of shape `(sequence_length)`, *optional*):
+                Indices depicting the position of the input sequence tokens in the sequence.
+            kwargs (`dict`, *optional*):
+                Arbitrary kwargs to be ignored, used for FSDP and other methods that injects code
+                into the model
+        """
+        ...
 
 @auto_docstring
 class PhimoePreTrainedModel(PreTrainedModel):
@@ -129,6 +280,11 @@ class PhimoePreTrainedModel(PreTrainedModel):
 
 @auto_docstring
 class PhimoeModel(PhimoePreTrainedModel):
+    """
+    Transformer decoder consisting of *config.num_hidden_layers* layers. Each layer is a [`PhimoeDecoderLayer`]
+    Args:
+        config: PhimoeConfig
+    """
     def __init__(self, config: PhimoeConfig) -> None: ...
     @can_return_tuple
     @auto_docstring
@@ -149,8 +305,10 @@ class PhimoeModel(PhimoePreTrainedModel):
 class PhimoeForCausalLM(PhimoePreTrainedModel, GenerationMixin):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
-    def set_decoder(self, decoder): ...
-    def get_decoder(self): ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> PhimoeModel:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -168,7 +326,27 @@ class PhimoeForCausalLM(PhimoePreTrainedModel, GenerationMixin):
         cache_position: Optional[torch.LongTensor] = ...,
         logits_to_keep: Union[int, torch.Tensor] = ...,
         **kwargs,
-    ) -> MoeCausalLMOutputWithPast: ...
+    ) -> MoeCausalLMOutputWithPast:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Example:
+        ```python
+        >>> from transformers import AutoTokenizer, PhimoeForCausalLM
+        >>> model = PhimoeForCausalLM.from_pretrained("microsoft/Phi-3.5-MoE-instruct")
+        >>> tokenizer = AutoTokenizer.from_pretrained("microsoft/Phi-3.5-MoE-instruct")
+        >>> prompt = "Hey, are you conscious? Can you talk to me?"
+        >>> inputs = tokenizer(prompt, return_tensors="pt")
+        >>> # Generate
+        >>> generate_ids = model.generate(inputs.input_ids, max_length=30)
+        >>> tokenizer.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+        "Hey, are you conscious? Can you talk to me?\nI'm not conscious, but I can talk to you."
+        ```"""
+        ...
+
     def prepare_inputs_for_generation(
         self,
         input_ids,
@@ -180,7 +358,8 @@ class PhimoeForCausalLM(PhimoePreTrainedModel, GenerationMixin):
         use_cache=...,
         logits_to_keep=...,
         **kwargs,
-    ): ...
+    ):  # -> dict[Any, Any]:
+        ...
 
 class PhimoeForSequenceClassification(GenericForSequenceClassification, PhimoePreTrainedModel): ...
 

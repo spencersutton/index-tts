@@ -12,18 +12,37 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import ModelOutput, auto_docstring, can_return_tuple
 from .configuration_align import AlignConfig, AlignTextConfig, AlignVisionConfig
 
+"""PyTorch ALIGN model."""
 logger = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for vision model's outputs that also contains image embeddings of the pooling of the last hidden states.
+    """
+)
 class AlignVisionModelOutput(ModelOutput):
+    r"""
+    image_embeds (`torch.FloatTensor` of shape `(batch_size, output_dim)` *optional* returned when model is initialized with `with_projection=True`):
+        The image embeddings obtained by applying the projection layer to the pooler_output.
+    """
+
     image_embeds: Optional[torch.FloatTensor] = ...
     last_hidden_state: Optional[torch.FloatTensor] = ...
     hidden_states: Optional[tuple[torch.FloatTensor]] = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for text model's outputs that also contains a pooling of the last hidden states.
+    """
+)
 class AlignTextModelOutput(ModelOutput):
+    r"""
+    text_embeds (`torch.FloatTensor` of shape `(batch_size, output_dim)` *optional* returned when model is initialized with `with_projection=True`):
+        The text embeddings obtained by applying the projection layer to the pooler_output.
+    """
+
     text_embeds: Optional[torch.FloatTensor] = ...
     last_hidden_state: Optional[torch.FloatTensor] = ...
     hidden_states: Optional[tuple[torch.FloatTensor]] = ...
@@ -32,6 +51,25 @@ class AlignTextModelOutput(ModelOutput):
 @dataclass
 @auto_docstring
 class AlignOutput(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `return_loss` is `True`):
+        Contrastive loss for image-text similarity.
+    logits_per_image (`torch.FloatTensor` of shape `(image_batch_size, text_batch_size)`):
+        The scaled dot product scores between `image_embeds` and `text_embeds`. This represents the image-text
+        similarity scores.
+    logits_per_text (`torch.FloatTensor` of shape `(text_batch_size, image_batch_size)`):
+        The scaled dot product scores between `text_embeds` and `image_embeds`. This represents the text-image
+        similarity scores.
+    text_embeds (`torch.FloatTensor` of shape `(batch_size, output_dim`):
+        The text embeddings obtained by applying the projection layer to the pooled output of [`AlignTextModel`].
+    image_embeds (`torch.FloatTensor` of shape `(batch_size, output_dim`):
+        The output of [`AlignVisionModel`].
+    text_model_output (`BaseModelOutputWithPooling`):
+        The output of the [`AlignTextModel`].
+    vision_model_output (`BaseModelOutputWithPoolingAndNoAttention`):
+        The output of the [`AlignVisionModel`].
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     logits_per_image: Optional[torch.FloatTensor] = ...
     logits_per_text: Optional[torch.FloatTensor] = ...
@@ -43,10 +81,28 @@ class AlignOutput(ModelOutput):
 
 def contrastive_loss(logits: torch.Tensor) -> torch.Tensor: ...
 def align_loss(similarity: torch.Tensor) -> torch.Tensor: ...
-def round_filters(config: AlignVisionConfig, num_channels: int): ...
-def correct_pad(kernel_size: Union[int, tuple], adjust: bool = ...): ...
+def round_filters(config: AlignVisionConfig, num_channels: int):  # -> int:
+    r"""
+    Round number of filters based on depth multiplier.
+    """
+    ...
+
+def correct_pad(kernel_size: Union[int, tuple], adjust: bool = ...):  # -> tuple[Any, Any, Any, Any]:
+    r"""
+    Utility function to get the tuple padding value for the depthwise convolution.
+
+    Args:
+        kernel_size (`int` or `tuple`):
+            Kernel size of the convolution layers.
+        adjust (`bool`, *optional*, defaults to `True`):
+            Adjusts padding value to apply to right and bottom sides of the input.
+    """
+    ...
 
 class AlignVisionEmbeddings(nn.Module):
+    r"""
+    A module that corresponds to the stem module of the original work.
+    """
     def __init__(self, config: AlignVisionConfig) -> None: ...
     def forward(self, pixel_values: torch.Tensor) -> torch.Tensor: ...
 
@@ -64,26 +120,63 @@ class AlignVisionDepthwiseConv2d(nn.Conv2d):
     ) -> None: ...
 
 class AlignVisionExpansionLayer(nn.Module):
+    r"""
+    This corresponds to the expansion phase of each block in the original implementation.
+    """
     def __init__(self, config: AlignVisionConfig, in_dim: int, out_dim: int, stride: int) -> None: ...
     def forward(self, hidden_states: torch.FloatTensor) -> torch.Tensor: ...
 
 class AlignVisionDepthwiseLayer(nn.Module):
+    r"""
+    This corresponds to the depthwise convolution phase of each block in the original implementation.
+    """
     def __init__(
         self, config: AlignVisionConfig, in_dim: int, stride: int, kernel_size: int, adjust_padding: bool
     ) -> None: ...
     def forward(self, hidden_states: torch.FloatTensor) -> torch.Tensor: ...
 
 class AlignVisionSqueezeExciteLayer(nn.Module):
+    r"""
+    This corresponds to the Squeeze and Excitement phase of each block in the original implementation.
+    """
     def __init__(self, config: AlignVisionConfig, in_dim: int, expand_dim: int, expand: bool = ...) -> None: ...
     def forward(self, hidden_states: torch.FloatTensor) -> torch.Tensor: ...
 
 class AlignVisionFinalBlockLayer(nn.Module):
+    r"""
+    This corresponds to the final phase of each block in the original implementation.
+    """
     def __init__(
         self, config: AlignVisionConfig, in_dim: int, out_dim: int, stride: int, drop_rate: float, id_skip: bool
     ) -> None: ...
     def forward(self, embeddings: torch.FloatTensor, hidden_states: torch.FloatTensor) -> torch.Tensor: ...
 
 class AlignVisionBlock(nn.Module):
+    r"""
+    This corresponds to the block module of original the EfficientNet vision encoder implementation.
+
+    Args:
+        config ([`AlignVisionConfig`]):
+            Model configuration class.
+        in_dim (`int`):
+            Number of input channels.
+        out_dim (`int`):
+            Number of output channels.
+        stride (`int`):
+            Stride size to be used in convolution layers.
+        expand_ratio (`int`):
+            Expand ratio to set the output dimensions for the expansion and squeeze-excite layers.
+        kernel_size (`int`):
+            Kernel size for the depthwise convolution layer.
+        drop_rate (`float`):
+            Dropout rate to be used in the final phase of each block.
+        id_skip (`bool`):
+            Whether to apply dropout and sum the final hidden states with the input embeddings during the final phase
+            of each block. Set to `True` for the first block of each stage.
+        adjust_padding (`bool`):
+            Whether to apply padding to only right and bottom side of the input kernel before the depthwise convolution
+            operation, set to `True` for inputs with odd input sizes.
+    """
     def __init__(
         self,
         config: AlignVisionConfig,
@@ -99,6 +192,13 @@ class AlignVisionBlock(nn.Module):
     def forward(self, hidden_states: torch.FloatTensor) -> torch.Tensor: ...
 
 class AlignVisionEncoder(nn.Module):
+    r"""
+    Forward propagates the embeddings through each vision encoder (EfficientNet) block.
+
+    Args:
+        config ([`AlignVisionConfig`]):
+            Model configuration class.
+    """
     def __init__(self, config: AlignVisionConfig) -> None: ...
     def forward(
         self,
@@ -108,6 +208,7 @@ class AlignVisionEncoder(nn.Module):
     ) -> BaseModelOutputWithPoolingAndNoAttention: ...
 
 class AlignTextEmbeddings(nn.Module):
+    """Construct the embeddings from word, position and token_type embeddings."""
     def __init__(self, config) -> None: ...
     def forward(
         self,
@@ -127,7 +228,8 @@ def eager_attention_forward(
     dropout: float = ...,
     head_mask: Optional[torch.Tensor] = ...,
     **kwargs,
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class AlignTextSelfAttention(nn.Module):
     def __init__(self, config) -> None: ...
@@ -146,7 +248,8 @@ class AlignTextSelfOutput(nn.Module):
 
 class AlignTextAttention(nn.Module):
     def __init__(self, config) -> None: ...
-    def prune_heads(self, heads): ...
+    def prune_heads(self, heads):  # -> None:
+        ...
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -174,7 +277,8 @@ class AlignTextLayer(GradientCheckpointingLayer):
         output_attentions: Optional[bool] = ...,
         **kwargs,
     ) -> tuple[torch.Tensor]: ...
-    def feed_forward_chunk(self, attention_output): ...
+    def feed_forward_chunk(self, attention_output):  # -> Any:
+        ...
 
 class AlignTextEncoder(nn.Module):
     def __init__(self, config) -> None: ...
@@ -200,13 +304,25 @@ class AlignPreTrainedModel(PreTrainedModel):
     base_model_prefix = ...
     supports_gradient_checkpointing = ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The text model from ALIGN without any head or projection on top.
+    """
+)
 class AlignTextModel(AlignPreTrainedModel):
     config: AlignTextConfig
     _no_split_modules = ...
-    def __init__(self, config: AlignTextConfig, add_pooling_layer: bool = ...) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def __init__(self, config: AlignTextConfig, add_pooling_layer: bool = ...) -> None:
+        r"""
+        add_pooling_layer (bool, *optional*, defaults to `True`):
+            Whether to add a pooling layer
+        """
+        ...
+
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -221,9 +337,29 @@ class AlignTextModel(AlignPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         **kwargs,
-    ) -> Union[tuple, BaseModelOutputWithPooling]: ...
+    ) -> Union[tuple, BaseModelOutputWithPooling]:
+        r"""
+        Examples:
 
-@auto_docstring(custom_intro=...)
+        ```python
+        >>> from transformers import AutoTokenizer, AlignTextModel
+
+        >>> model = AlignTextModel.from_pretrained("kakaobrain/align-base")
+        >>> tokenizer = AutoTokenizer.from_pretrained("kakaobrain/align-base")
+
+        >>> inputs = tokenizer(["a photo of a cat", "a photo of a dog"], padding=True, return_tensors="pt")
+
+        >>> outputs = model(**inputs)
+        >>> last_hidden_state = outputs.last_hidden_state
+        >>> pooled_output = outputs.pooler_output  # pooled (EOS token) states
+        ```"""
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    The vision model from ALIGN without any head or projection on top.
+    """
+)
 class AlignVisionModel(AlignPreTrainedModel):
     config: AlignVisionConfig
     main_input_name = ...
@@ -237,7 +373,28 @@ class AlignVisionModel(AlignPreTrainedModel):
         pixel_values: Optional[torch.FloatTensor] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPoolingAndNoAttention]: ...
+    ) -> Union[tuple, BaseModelOutputWithPoolingAndNoAttention]:
+        r"""
+        Examples:
+
+        ```python
+        >>> from PIL import Image
+        >>> import requests
+        >>> from transformers import AutoProcessor, AlignVisionModel
+
+        >>> model = AlignVisionModel.from_pretrained("kakaobrain/align-base")
+        >>> processor = AutoProcessor.from_pretrained("kakaobrain/align-base")
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> inputs = processor(images=image, return_tensors="pt")
+
+        >>> outputs = model(**inputs)
+        >>> last_hidden_state = outputs.last_hidden_state
+        >>> pooled_output = outputs.pooler_output  # pooled CLS states
+        ```"""
+        ...
 
 @auto_docstring
 class AlignModel(AlignPreTrainedModel):
@@ -255,14 +412,56 @@ class AlignModel(AlignPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> torch.FloatTensor: ...
+    ) -> torch.FloatTensor:
+        r"""
+        Returns:
+            text_features (`torch.FloatTensor` of shape `(batch_size, output_dim`): The text embeddings obtained by
+            applying the projection layer to the pooled output of [`AlignTextModel`].
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoTokenizer, AlignModel
+
+        >>> model = AlignModel.from_pretrained("kakaobrain/align-base")
+        >>> tokenizer = AutoTokenizer.from_pretrained("kakaobrain/align-base")
+
+        >>> inputs = tokenizer(["a photo of a cat", "a photo of a dog"], padding=True, return_tensors="pt")
+        >>> text_features = model.get_text_features(**inputs)
+        ```"""
+        ...
+
     @auto_docstring
     def get_image_features(
         self,
         pixel_values: Optional[torch.FloatTensor] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> torch.FloatTensor: ...
+    ) -> torch.FloatTensor:
+        r"""
+        Returns:
+            image_features (`torch.FloatTensor` of shape `(batch_size, output_dim`): The image embeddings obtained by
+            applying the projection layer to the pooled output of [`AlignVisionModel`].
+
+        Examples:
+
+        ```python
+        >>> from PIL import Image
+        >>> import requests
+        >>> from transformers import AutoProcessor, AlignModel
+
+        >>> model = AlignModel.from_pretrained("kakaobrain/align-base")
+        >>> processor = AutoProcessor.from_pretrained("kakaobrain/align-base")
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> inputs = processor(images=image, return_tensors="pt")
+
+        >>> image_features = model.get_image_features(**inputs)
+        ```"""
+        ...
+
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -278,6 +477,32 @@ class AlignModel(AlignPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, AlignOutput]: ...
+    ) -> Union[tuple, AlignOutput]:
+        r"""
+        return_loss (`bool`, *optional*):
+            Whether or not to return the contrastive loss.
+
+        Examples:
+
+        ```python
+        >>> from PIL import Image
+        >>> import requests
+        >>> from transformers import AutoProcessor, AlignModel
+
+        >>> model = AlignModel.from_pretrained("kakaobrain/align-base")
+        >>> processor = AutoProcessor.from_pretrained("kakaobrain/align-base")
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> inputs = processor(
+        ...     images=image, text=["a photo of a cat", "a photo of a dog"], return_tensors="pt", padding=True
+        ... )
+
+        >>> outputs = model(**inputs)
+        >>> logits_per_image = outputs.logits_per_image  # this is the image-text similarity score
+        >>> probs = logits_per_image.softmax(dim=1)  # we can take the softmax to get the label probabilities
+        ```"""
+        ...
 
 __all__ = ["AlignPreTrainedModel", "AlignTextModel", "AlignVisionModel", "AlignModel"]

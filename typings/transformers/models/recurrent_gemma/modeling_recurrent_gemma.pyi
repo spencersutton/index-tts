@@ -12,24 +12,57 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring
 from .configuration_recurrent_gemma import RecurrentGemmaConfig
 
+"""PyTorch RecurrentGemma model."""
 logger = ...
 _MAX_SQRT_GRADIENT = ...
 
 class RecurrentGemmaRMSNorm(nn.Module):
     def __init__(self, dim: int, eps: float = ...) -> None: ...
     def forward(self, x): ...
-    def extra_repr(self): ...
+    def extra_repr(self):  # -> str:
+        ...
 
 class RecurrentGemmaRotaryEmbedding(nn.Module):
     def __init__(self, dim, base=..., device=...) -> None: ...
     @torch.no_grad()
-    def forward(self, x, position_ids, seq_len=...): ...
+    def forward(self, x, position_ids, seq_len=...):  # -> tuple[Tensor, Tensor]:
+        ...
 
-def rotate_half(x): ...
-def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...): ...
-def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor: ...
+def rotate_half(x):  # -> Tensor:
+    """Rotates half the hidden dims of the input."""
+    ...
+
+def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...):  # -> tuple[Any, Any]:
+    """Applies Rotary Position Embedding to the query and key tensors.
+
+    Args:
+        q (`torch.Tensor`): The query tensor.
+        k (`torch.Tensor`): The key tensor.
+        cos (`torch.Tensor`): The cosine part of the rotary embedding.
+        sin (`torch.Tensor`): The sine part of the rotary embedding.
+        position_ids (`torch.Tensor`, *optional*):
+            Deprecated and unused.
+        unsqueeze_dim (`int`, *optional*, defaults to 1):
+            The 'unsqueeze_dim' argument specifies the dimension along which to unsqueeze cos[position_ids] and
+            sin[position_ids] so that they can be properly broadcasted to the dimensions of q and k. For example, note
+            that cos[position_ids] and sin[position_ids] have the shape [batch_size, seq_len, head_dim]. Then, if q and
+            k have the shape [batch_size, heads, seq_len, head_dim], then setting unsqueeze_dim=1 makes
+            cos[position_ids] and sin[position_ids] broadcastable to the shapes of q and k. Similarly, if q and k have
+            the shape [batch_size, seq_len, heads, head_dim], then set unsqueeze_dim=2.
+    Returns:
+        `tuple(torch.Tensor)` comprising of the query and key tensors rotated using the Rotary Position Embedding.
+    """
+    ...
+
+def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
+    """
+    This is the equivalent of torch.repeat_interleave(x, dim=1, repeats=n_rep). The hidden states go from (batch,
+    num_key_value_heads, seqlen, head_dim) to (batch, num_attention_heads, seqlen, head_dim)
+    """
+    ...
 
 class RecurrentGemmaSdpaAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config: RecurrentGemmaConfig) -> None: ...
     def forward(
         self,
@@ -41,16 +74,24 @@ class RecurrentGemmaSdpaAttention(nn.Module):
     ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
 
 class SqrtBoundDerivative(torch.autograd.Function):
+    """Computes a square root with a gradient clipped at `_MAX_SQRT_GRADIENT`."""
     @staticmethod
-    def forward(ctx, x: torch.Tensor) -> torch.Tensor: ...
+    def forward(ctx, x: torch.Tensor) -> torch.Tensor:
+        """The forward pass, which is a normal `sqrt`."""
+        ...
+
     @staticmethod
-    def backward(ctx, grad_output: torch.Tensor) -> torch.Tensor: ...
+    def backward(ctx, grad_output: torch.Tensor) -> torch.Tensor:
+        """The backward pass, which clips the `sqrt` gradient."""
+        ...
 
 class RecurrentGemmaRglru(nn.Module):
+    """A Real-Gated Linear Recurrent Unit (RG-LRU) layer."""
     def __init__(self, config) -> None: ...
     def forward(self, activations: torch.Tensor, position_ids: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]: ...
 
 class RecurrentGemmaRecurrentBlock(nn.Module):
+    """Griffin and Hawk's recurrent block."""
     def __init__(self, config) -> None: ...
     def forward(
         self,
@@ -65,9 +106,11 @@ TEMPORAL_BLOCK_CLASSES = ...
 
 class RecurrentGemmaMlp(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class RecurrentGemmaDecoderLayer(GradientCheckpointingLayer):
+    """Griffin and Hawk's residual block."""
     def __init__(self, config, layer_idx) -> None: ...
     def forward(
         self,
@@ -87,7 +130,8 @@ class RecurrentGemmaPreTrainedModel(PreTrainedModel):
     _skip_keys_device_placement = ...
     _supports_flash_attn = ...
     _supports_sdpa = ...
-    def reset_cache(self, batch, device, dtype): ...
+    def reset_cache(self, batch, device, dtype):  # -> None:
+        ...
 
 @auto_docstring
 class RecurrentGemmaModel(RecurrentGemmaPreTrainedModel):
@@ -109,8 +153,10 @@ class RecurrentGemmaModel(RecurrentGemmaPreTrainedModel):
 class RecurrentGemmaForCausalLM(RecurrentGemmaPreTrainedModel, GenerationMixin):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
-    def set_decoder(self, decoder): ...
-    def get_decoder(self): ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> RecurrentGemmaModel:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -124,6 +170,29 @@ class RecurrentGemmaForCausalLM(RecurrentGemmaPreTrainedModel, GenerationMixin):
         return_dict: Optional[bool] = ...,
         use_cache: Optional[bool] = ...,
         **kwargs,
-    ) -> Union[tuple, CausalLMOutput]: ...
+    ) -> Union[tuple, CausalLMOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, RecurrentGemmaForCausalLM
+
+        >>> model = RecurrentGemmaForCausalLM.from_pretrained("google/recurrentgemma-2b")
+        >>> tokenizer = AutoTokenizer.from_pretrained("google/recurrentgemma-2b")
+
+        >>> prompt = "What is your favorite condiment?"
+        >>> inputs = tokenizer(prompt, return_tensors="pt")
+
+        >>> # Generate
+        >>> generate_ids = model.generate(inputs.input_ids, max_length=30)
+        >>> tokenizer.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+        "What is your favorite condiment?"
+        ```"""
+        ...
 
 __all__ = ["RecurrentGemmaForCausalLM", "RecurrentGemmaModel", "RecurrentGemmaPreTrainedModel"]

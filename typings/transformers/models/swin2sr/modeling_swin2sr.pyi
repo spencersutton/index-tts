@@ -12,25 +12,54 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import ModelOutput, auto_docstring
 from .configuration_swin2sr import Swin2SRConfig
 
+"""PyTorch Swin2SR Transformer model."""
 logger = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Swin2SR encoder's outputs, with potential hidden states and attentions.
+    """
+)
 class Swin2SREncoderOutput(ModelOutput):
     last_hidden_state: Optional[torch.FloatTensor] = ...
     hidden_states: Optional[tuple[torch.FloatTensor]] = ...
     attentions: Optional[tuple[torch.FloatTensor]] = ...
 
-def window_partition(input_feature, window_size): ...
-def window_reverse(windows, window_size, height, width): ...
-def drop_path(input: torch.Tensor, drop_prob: float = ..., training: bool = ...) -> torch.Tensor: ...
+def window_partition(input_feature, window_size):
+    """
+    Partitions the given input into windows.
+    """
+    ...
+
+def window_reverse(windows, window_size, height, width):
+    """
+    Merges windows to produce higher resolution features.
+    """
+    ...
+
+def drop_path(input: torch.Tensor, drop_prob: float = ..., training: bool = ...) -> torch.Tensor:
+    """
+    Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks).
+
+    Comment by Ross Wightman: This is the same as the DropConnect impl I created for EfficientNet, etc networks,
+    however, the original name is misleading as 'Drop Connect' is a different form of dropout in a separate paper...
+    See discussion: https://github.com/tensorflow/tpu/issues/494#issuecomment-532968956 ... I've opted for changing the
+    layer and argument names to 'drop path' rather than mix DropConnect as a layer name and use 'survival rate' as the
+    argument.
+    """
+    ...
 
 class Swin2SRDropPath(nn.Module):
+    """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks)."""
     def __init__(self, drop_prob: Optional[float] = ...) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
     def extra_repr(self) -> str: ...
 
 class Swin2SREmbeddings(nn.Module):
+    """
+    Construct the patch and optional position embeddings.
+    """
     def __init__(self, config) -> None: ...
     def forward(self, pixel_values: Optional[torch.FloatTensor]) -> tuple[torch.Tensor]: ...
 
@@ -39,10 +68,22 @@ class Swin2SRPatchEmbeddings(nn.Module):
     def forward(self, embeddings: Optional[torch.FloatTensor]) -> tuple[torch.Tensor, tuple[int]]: ...
 
 class Swin2SRPatchUnEmbeddings(nn.Module):
+    r"""Image to Patch Unembedding"""
     def __init__(self, config) -> None: ...
     def forward(self, embeddings, x_size): ...
 
 class Swin2SRPatchMerging(nn.Module):
+    """
+    Patch Merging Layer.
+
+    Args:
+        input_resolution (`tuple[int]`):
+            Resolution of input feature.
+        dim (`int`):
+            Number of input channels.
+        norm_layer (`nn.Module`, *optional*, defaults to `nn.LayerNorm`):
+            Normalization layer class.
+    """
     def __init__(self, input_resolution: tuple[int], dim: int, norm_layer: nn.Module = ...) -> None: ...
     def maybe_pad(self, input_feature, height, width): ...
     def forward(self, input_feature: torch.Tensor, input_dimensions: tuple[int, int]) -> torch.Tensor: ...
@@ -63,7 +104,8 @@ class Swin2SRSelfOutput(nn.Module):
 
 class Swin2SRAttention(nn.Module):
     def __init__(self, config, dim, num_heads, window_size, pretrained_window_size=...) -> None: ...
-    def prune_heads(self, heads): ...
+    def prune_heads(self, heads):  # -> None:
+        ...
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -84,8 +126,12 @@ class Swin2SRLayer(nn.Module):
     def __init__(
         self, config, dim, input_resolution, num_heads, drop_path_rate=..., shift_size=..., pretrained_window_size=...
     ) -> None: ...
-    def get_attn_mask(self, height, width, dtype): ...
-    def maybe_pad(self, hidden_states, height, width): ...
+    def get_attn_mask(self, height, width, dtype):  # -> Tensor | None:
+        ...
+    def maybe_pad(
+        self, hidden_states, height, width
+    ):  # -> tuple[Any, tuple[Literal[0], Literal[0], Literal[0], Any, Literal[0], Any]]:
+        ...
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -95,6 +141,9 @@ class Swin2SRLayer(nn.Module):
     ) -> tuple[torch.Tensor, torch.Tensor]: ...
 
 class Swin2SRStage(GradientCheckpointingLayer):
+    """
+    This corresponds to the Residual Swin Transformer Block (RSTB) in the original implementation.
+    """
     def __init__(
         self, config, dim, input_resolution, depth, num_heads, drop_path, pretrained_window_size=...
     ) -> None: ...
@@ -128,7 +177,8 @@ class Swin2SRPreTrainedModel(PreTrainedModel):
 @auto_docstring
 class Swin2SRModel(Swin2SRPreTrainedModel):
     def __init__(self, config) -> None: ...
-    def get_input_embeddings(self): ...
+    def get_input_embeddings(self):  # -> Swin2SRPatchEmbeddings:
+        ...
     def pad_and_normalize(self, pixel_values): ...
     @auto_docstring
     def forward(
@@ -141,26 +191,55 @@ class Swin2SRModel(Swin2SRPreTrainedModel):
     ) -> Union[tuple, BaseModelOutput]: ...
 
 class Upsample(nn.Module):
+    """Upsample module.
+
+    Args:
+        scale (`int`):
+            Scale factor. Supported scales: 2^n and 3.
+        num_features (`int`):
+            Channel number of intermediate features.
+    """
     def __init__(self, scale, num_features) -> None: ...
-    def forward(self, hidden_state): ...
+    def forward(self, hidden_state):  # -> Any:
+        ...
 
 class UpsampleOneStep(nn.Module):
+    """UpsampleOneStep module (the difference with Upsample is that it always only has 1conv + 1pixelshuffle)
+
+    Used in lightweight SR to save parameters.
+
+    Args:
+        scale (int):
+            Scale factor. Supported scales: 2^n and 3.
+        in_channels (int):
+            Channel number of intermediate features.
+        out_channels (int):
+            Channel number of output features.
+    """
     def __init__(self, scale, in_channels, out_channels) -> None: ...
-    def forward(self, x): ...
+    def forward(self, x):  # -> Any:
+        ...
 
 class PixelShuffleUpsampler(nn.Module):
     def __init__(self, config, num_features) -> None: ...
-    def forward(self, sequence_output): ...
+    def forward(self, sequence_output):  # -> Any:
+        ...
 
 class NearestConvUpsampler(nn.Module):
     def __init__(self, config, num_features) -> None: ...
-    def forward(self, sequence_output): ...
+    def forward(self, sequence_output):  # -> Any:
+        ...
 
 class PixelShuffleAuxUpsampler(nn.Module):
     def __init__(self, config, num_features) -> None: ...
-    def forward(self, sequence_output, bicubic, height, width): ...
+    def forward(self, sequence_output, bicubic, height, width):  # -> tuple[Any, Any]:
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Swin2SR Model transformer with an upsampler head on top for image super resolution and restoration.
+    """
+)
 class Swin2SRForImageSuperResolution(Swin2SRPreTrainedModel):
     def __init__(self, config) -> None: ...
     @auto_docstring
@@ -172,6 +251,34 @@ class Swin2SRForImageSuperResolution(Swin2SRPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ImageSuperResolutionOutput]: ...
+    ) -> Union[tuple, ImageSuperResolutionOutput]:
+        r"""
+        Example:
+         ```python
+         >>> import torch
+         >>> import numpy as np
+         >>> from PIL import Image
+         >>> import requests
+
+         >>> from transformers import AutoImageProcessor, Swin2SRForImageSuperResolution
+
+         >>> processor = AutoImageProcessor.from_pretrained("caidas/swin2SR-classical-sr-x2-64")
+         >>> model = Swin2SRForImageSuperResolution.from_pretrained("caidas/swin2SR-classical-sr-x2-64")
+
+         >>> url = "https://huggingface.co/spaces/jjourney1125/swin2sr/resolve/main/samples/butterfly.jpg"
+         >>> image = Image.open(requests.get(url, stream=True).raw)
+         >>> # prepare image for the model
+         >>> inputs = processor(image, return_tensors="pt")
+
+         >>> # forward pass
+         >>> with torch.no_grad():
+         ...     outputs = model(**inputs)
+
+         >>> output = outputs.reconstruction.data.squeeze().float().cpu().clamp_(0, 1).numpy()
+         >>> output = np.moveaxis(output, source=0, destination=-1)
+         >>> output = (output * 255.0).round().astype(np.uint8)  # float32 to uint8
+         >>> # you can visualize `output` with `Image.fromarray`
+         ```"""
+        ...
 
 __all__ = ["Swin2SRForImageSuperResolution", "Swin2SRModel", "Swin2SRPreTrainedModel"]

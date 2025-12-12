@@ -25,6 +25,16 @@ if is_torchvision_available(): ...
 logger = ...
 
 class LlavaOnevisionFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
+    """
+    image_grid_pinpoints (`list[list[int]]`, *optional*):
+        A list of possible resolutions to use for processing high resolution images. The best resolution is selected
+        based on the original size of the image. Can be overridden by `image_grid_pinpoints` in the `preprocess`
+        method.
+    do_pad (`bool`, *optional*):
+        Whether to pad the image. If `True`, will pad the patch dimension of the images in the batch to the largest
+        number of patches in the batch. Padding will be applied to the bottom and right with zeros.
+    """
+
     image_grid_pinpoints: Optional[list[list[int]]]
     do_pad: Optional[bool]
     ...
@@ -46,7 +56,22 @@ class LlavaOnevisionImageProcessorFast(LlavaNextImageProcessorFast):
     model_input_names = ...
     def pad_to_square(
         self, images: torch.Tensor, background_color: Union[int, tuple[int, int, int]] = ...
-    ) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """
+        Pads an image to a square based on the longest edge.
+
+        Args:
+            images (`np.ndarray`):
+                The images to pad.
+            background_color (`int` or `tuple[int, int, int]`, *optional*, defaults to 0):
+                The color to use for the padding. Can be an integer for single channel or a
+                tuple of integers representing for multi-channel images. If passed as integer
+                in mutli-channel mode, it will default to `0` in subsequent channels.
+        Returns:
+            `torch.Tensor`: The padded images.
+        """
+        ...
+
     @auto_docstring
     def preprocess(
         self, images: ImageInput, **kwargs: Unpack[LlavaOnevisionFastImageProcessorKwargs]
@@ -58,8 +83,30 @@ class LlavaOnevisionPreTrainedModel(LlavaNextVideoPreTrainedModel): ...
 
 class LlavaOnevisionModel(LlavaNextVideoModel):
     def __init__(self, config) -> None: ...
-    def pack_image_features(self, image_features, image_sizes, image_newline=..., vision_aspect_ratio=...): ...
-    def apply_pooling(self, image_features): ...
+    def pack_image_features(
+        self, image_features, image_sizes, image_newline=..., vision_aspect_ratio=...
+    ):  # -> tuple[list[Any], Tensor]:
+        """
+        Reshape, unpad and then pack each image_feature into a single image_features tensor containing all visual vectors.
+
+        Args:
+            image_features (`list[torch.Tensor]` of length num_images, each of shape `(num_patches, image_length, embed_dim)`)
+                List of image feature tensor, each contains all the visual feature of all patches.
+            image_sizes (`torch.Tensor` of shape `(num_images, 2)`)
+                Actual image size of each images (H, W).
+            image_newline (`torch.Tensor` of shape `(embed_dim)`)
+                New line embedding vector.
+            vision_aspect_ratio (`str`, *optional*, "anyres_max_9"):
+                Aspect ratio used when processong image features. The default value is "anyres_max_9".
+        Returns:
+            image_features (`torch.Tensor` of shape `(all_feat_len, embed_dim)`)
+            feature_lens (`list[int]`)
+                token length of each image in image_features
+        """
+        ...
+
+    def apply_pooling(self, image_features):  # -> Tensor:
+        ...
     def get_image_features(
         self,
         pixel_values: torch.FloatTensor,
@@ -68,13 +115,55 @@ class LlavaOnevisionModel(LlavaNextVideoModel):
         vision_feature_select_strategy: Optional[str] = ...,
         vision_aspect_ratio: Optional[str] = ...,
         batch_num_images: Optional[torch.LongTensor] = ...,
-    ): ...
+    ):  # -> list[Any]:
+        """
+        Obtains image last hidden states from the vision tower and apply multimodal projection.
+
+        Args:
+            pixel_values (`torch.FloatTensor]` of shape `(batch_size, num_patches, channels, height, width)`)
+               The tensors corresponding to the input images.
+            image_sizes (`torch.Tensor` of shape `(num_images, 2)`)
+                Actual image size of each images (H, W).
+            vision_feature_layer (`Union[int, list[int]]`):
+                The index of the layer to select the vision feature. If multiple indices are provided,
+                the vision feature of the corresponding indices will be concatenated to form the
+                vision features.
+            vision_feature_select_strategy (`str`):
+                The feature selection strategy used to select the vision feature from the vision backbone.
+                Can be one of `"default"` or `"full"`
+            batch_num_images (`torch.LongTensor`, *optional*):
+                Number of images in each sample.
+        Returns:
+            image_features (list[`torch.Tensor`]): List of image feature tensor, each contains all the visual feature of all patches
+            and are of shape `(num_patches, image_length, embed_dim)`).
+        """
+        ...
+
     def get_video_features(
         self,
         pixel_values: torch.FloatTensor,
         vision_feature_layer: Union[int, list[int]],
         vision_feature_select_strategy: str,
-    ): ...
+    ):  # -> Tensor:
+        """
+        Obtains video last hidden states from the vision tower, apply multimodal projection and pooling.
+
+        Args:
+            pixel_values (`torch.FloatTensor]` of shape `(batch_size, num_frames, channels, height, width)`)
+               The tensors corresponding to the input video.
+            vision_feature_layer (`Union[int, list[int]], *optional*, defaults to -2`):
+                The index of the layer to select the vision feature. If multiple indices are provided,
+                the vision feature of the corresponding indices will be concatenated to form the
+                vision features.
+            vision_feature_select_strategy (`str`):
+                The feature selection strategy used to select the vision feature from the vision backbone.
+                Can be one of `"default"` or `"full"`
+        Returns:
+            video_features (list[`torch.Tensor`]): List of video feature tensor, each contains all the visual feature of all patches
+            and are of shape `(num_videos, video_length, embed_dim)`).
+        """
+        ...
+
     def forward(
         self,
         input_ids: torch.LongTensor = ...,
@@ -96,7 +185,16 @@ class LlavaOnevisionModel(LlavaNextVideoModel):
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> Union[tuple, LlavaOnevisionModelOutputWithPast]: ...
+    ) -> Union[tuple, LlavaOnevisionModelOutputWithPast]:
+        r"""
+        image_sizes_videos (`torch.LongTensor` of shape `(batch_size, frames, 2)`, *optional*):
+            The sizes of the videos in the batch, being (height, width) for each frame in the video.
+        vision_aspect_ratio (`str`, *optional*, defaults to `"anyres_max_9"`):
+            Aspect ratio used when processong image features. The default value is "anyres_max_9".
+        batch_num_images (`torch.LongTensor`, *optional*):
+            Number of images in each sample.
+        """
+        ...
 
 class LlavaOnevisionForConditionalGeneration(LlavaNextVideoForConditionalGeneration):
     @can_return_tuple
@@ -124,7 +222,51 @@ class LlavaOnevisionForConditionalGeneration(LlavaNextVideoForConditionalGenerat
         cache_position: Optional[torch.LongTensor] = ...,
         logits_to_keep: Union[int, torch.Tensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> Union[tuple, LlavaOnevisionCausalLMOutputWithPast]: ...
+    ) -> Union[tuple, LlavaOnevisionCausalLMOutputWithPast]:
+        r"""
+        image_sizes_videos (`torch.LongTensor` of shape `(batch_size, frames, 2)`, *optional*):
+            The sizes of the videos in the batch, being (height, width) for each frame in the video.
+        vision_aspect_ratio (`str`, *optional*, defaults to `"anyres_max_9"`):
+            Aspect ratio used when processong image features. The default value is "anyres_max_9".
+        batch_num_images (`torch.LongTensor`, *optional*):
+            Number of images in each sample.
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Example:
+
+        ```python
+        >>> from PIL import Image
+        >>> import requests
+        >>> import torch
+        >>> from transformers import LlavaOnevisionProcessor, LlavaOnevisionForConditionalGeneration
+
+        >>> model = LlavaOnevisionForConditionalGeneration.from_pretrained("llava-hf/llava-onevision-qwen2-7b-ov-hf", torch_dtype="float16", device_map="cuda:0")
+        >>> processor = LlavaOnevisionProcessor.from_pretrained("llava-hf/llava-onevision-qwen2-7b-ov-hf")
+
+        >>> conversation = [
+        ...     {
+        ...       "role": "user",
+        ...       "content": [
+        ...           {"type": "text", "text": "What is shown in this image?"},
+        ...           {"type": "image"},
+        ...         ],
+        ...     },
+        ... ]
+        >>> prompt = processor.apply_chat_template(conversation, add_generation_prompt=True)
+
+        >>> image_file = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> raw_image = Image.open(requests.get(image_file, stream=True).raw)
+        >>> inputs = processor(text=prompt, images=raw_image, return_tensors='pt').to(0, torch.float16)
+
+        >>> output = model.generate(**inputs, max_new_tokens=20, do_sample=False)
+        >>> processor.batch_decode(output, skip_special_tokens=True)[0]
+        "user\n\nWhat is shown in this image?\nassistant\ncat"
+        ```"""
+        ...
+
     def prepare_inputs_for_generation(
         self,
         input_ids,
@@ -138,7 +280,8 @@ class LlavaOnevisionForConditionalGeneration(LlavaNextVideoForConditionalGenerat
         cache_position=...,
         logits_to_keep=...,
         **kwargs,
-    ): ...
+    ):  # -> dict[Any, Any]:
+        ...
 
 __all__ = [
     "LlavaOnevisionImageProcessorFast",

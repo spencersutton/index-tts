@@ -8,6 +8,9 @@ from ...feature_extraction_sequence_utils import SequenceFeatureExtractor
 from ...image_processing_utils import BatchFeature
 from ...utils import TensorType, is_torch_available
 
+"""
+Processor class for Phi4Multimodal
+"""
 if is_torch_available(): ...
 logger = ...
 
@@ -41,6 +44,44 @@ class Phi4MultimodalFeatureExtractor(SequenceFeatureExtractor):
         return_attention_mask: Optional[bool] = ...,
         device: Optional[str] = ...,
         **kwargs,
-    ) -> BatchFeature: ...
+    ) -> BatchFeature:
+        """
+        Main method to featurize and prepare for the model one or several audio sequence(s). Implementation uses PyTorch for
+        the STFT computation if available, otherwise a slower NumPy based one.
+
+        Args:
+            raw_speech (`np.ndarray`, `torch.Tensor`, `list[np.ndarray]`, `list[torch.Tensor]`):
+                The sequence or batch of sequences to be processed. Each sequence can be a numpy array or PyTorch tensor.
+                For batched inputs, sequences can be a list of numpy arrays or PyTorch tensors, or a single numpy array or
+                PyTorch tensor with first dimension being the batch size.
+            sampling_rate (`int`, *optional*):
+                The sampling rate at which the `raw_speech` input was sampled. It is strongly recommended to pass
+                `sampling_rate` at the forward call to prevent silent errors.
+            pad_to_multiple_of (`int`, *optional*, defaults to None):
+                If set will pad the sequence to a multiple of the provided value.
+            padding (`str`, *optional*, defaults to "longest"):
+                Padding strategy. Can be "longest" to pad to the longest sequence in the batch, or a specific length.
+            max_length (`int`, *optional*):
+                Maximum length of the returned list and optionally padding length.
+            truncation (`bool`, *optional*, defaults to False):
+                Activates truncation to cut input sequences longer than *max_length* to *max_length*.
+            return_tensors (`str` or [`~utils.TensorType`], *optional*):
+                If set, will return tensors instead of numpy arrays. Acceptable values are:
+                - `'pt'`: Return PyTorch `torch.Tensor` objects.
+                - `'np'`: Return Numpy `np.ndarray` objects.
+                - `'tf'`: Return TensorFlow `tf.constant` objects.
+            return_attention_mask (`bool`, *optional*, defaults to `True`):
+                Whether to return the extracted audio input features' attention mask.
+            device (`str`, *optional*, defaults to "cpu"):
+                Specifies the device for computation of the audio features. (e.g., "cpu", "cuda")
+
+        Returns:
+            [`BatchFeature`]: A [`BatchFeature`] with the following fields:
+                - **audio_input_features** -- Audio features extracted from the raw audio input, shape (batch_size, max_feature_length, feature_size).
+                - **audio_lengths** -- Length of each audio sample in the batch, shape (batch_size,).
+                - **audio_attention_mask** -- Attention mask for the audio input, shape (batch_size, max_feature_length).
+                If `return_tensors` is not specified, the fields will be PyTorch tensors if PyTorch is available, otherwise NumPy arrays.
+        """
+        ...
 
 __all__ = ["Phi4MultimodalFeatureExtractor"]

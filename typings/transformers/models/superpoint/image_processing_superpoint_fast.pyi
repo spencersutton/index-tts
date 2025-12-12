@@ -9,17 +9,37 @@ from ...processing_utils import Unpack
 from ...utils import TensorType, auto_docstring, is_torch_available, is_torchvision_v2_available
 from .modeling_superpoint import SuperPointKeypointDescriptionOutput
 
+"""Fast Image processor class for Superpoint."""
 if is_torch_available(): ...
 if TYPE_CHECKING: ...
 if is_torchvision_v2_available(): ...
 else: ...
 
-def is_grayscale(image: torch.Tensor): ...
+def is_grayscale(image: torch.Tensor):  # -> Tensor | Literal[True]:
+    """Checks if an image is grayscale (all RGB channels are identical)."""
+    ...
 
 class SuperPointFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
+    r"""
+    do_grayscale (`bool`, *optional*, defaults to `True`):
+        Whether to convert the image to grayscale. Can be overridden by `do_grayscale` in the `preprocess` method.
+    """
+
     do_grayscale: Optional[bool] = ...
 
-def convert_to_grayscale(image: torch.Tensor) -> torch.Tensor: ...
+def convert_to_grayscale(image: torch.Tensor) -> torch.Tensor:
+    """
+    Converts an image to grayscale format using the NTSC formula. Only support torch.Tensor.
+
+    This function is supposed to return a 1-channel image, but it returns a 3-channel image with the same value in each
+    channel, because of an issue that is discussed in :
+    https://github.com/huggingface/transformers/pull/25786#issuecomment-1730176446
+
+    Args:
+        image (torch.Tensor):
+            The image to convert.
+    """
+    ...
 
 @auto_docstring
 class SuperPointImageProcessorFast(BaseImageProcessorFast):
@@ -34,6 +54,22 @@ class SuperPointImageProcessorFast(BaseImageProcessorFast):
     def __init__(self, **kwargs: Unpack[SuperPointFastImageProcessorKwargs]) -> None: ...
     def post_process_keypoint_detection(
         self, outputs: SuperPointKeypointDescriptionOutput, target_sizes: Union[TensorType, list[tuple]]
-    ) -> list[dict[str, torch.Tensor]]: ...
+    ) -> list[dict[str, torch.Tensor]]:
+        """
+        Converts the raw output of [`SuperPointForKeypointDetection`] into lists of keypoints, scores and descriptors
+        with coordinates absolute to the original image sizes.
+
+        Args:
+            outputs ([`SuperPointKeypointDescriptionOutput`]):
+                Raw outputs of the model containing keypoints in a relative (x, y) format, with scores and descriptors.
+            target_sizes (`torch.Tensor` or `List[Tuple[int, int]]`):
+                Tensor of shape `(batch_size, 2)` or list of tuples (`Tuple[int, int]`) containing the target size
+                `(height, width)` of each image in the batch. This must be the original
+                image size (before any processing).
+        Returns:
+            `List[Dict]`: A list of dictionaries, each dictionary containing the keypoints in absolute format according
+            to target_sizes, scores and descriptors for an image in the batch as predicted by the model.
+        """
+        ...
 
 __all__ = ["SuperPointImageProcessorFast"]

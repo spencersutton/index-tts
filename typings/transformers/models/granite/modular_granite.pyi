@@ -14,6 +14,7 @@ from .configuration_granite import GraniteConfig
 logger = ...
 
 class GraniteAttention(LlamaAttention):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config: GraniteConfig, layer_idx: Optional[int] = ...) -> None: ...
 
 class GraniteDecoderLayer(LlamaDecoderLayer):
@@ -29,7 +30,30 @@ class GraniteDecoderLayer(LlamaDecoderLayer):
         cache_position: Optional[torch.LongTensor] = ...,
         position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
         **kwargs,
-    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]: ...
+    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            attention_mask (`torch.FloatTensor`, *optional*):
+                attention mask of size `(batch_size, sequence_length)` if flash attention is used or `(batch_size, 1,
+                query_sequence_length, key_sequence_length)` if default attention is used.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            use_cache (`bool`, *optional*):
+                If set to `True`, `past_key_values` key value states are returned and can be used to speed up decoding
+                (see `past_key_values`).
+            past_key_value (`Tuple(torch.FloatTensor)`, *optional*): cached past key and value projection states
+            cache_position (`torch.LongTensor` of shape `(sequence_length)`, *optional*):
+                Indices depicting the position of the input sequence tokens in the sequence
+            position_embeddings (`tuple[torch.FloatTensor, torch.FloatTensor]`, *optional*):
+                Tuple containing the cosine and sine positional embeddings of shape `(batch_size, seq_len, head_dim)`,
+                with `head_dim` being the embedding dimension of each attention head.
+            kwargs (`dict`, *optional*):
+                Arbitrary kwargs to be ignored, used for FSDP and other methods that injects code
+                into the model
+        """
+        ...
 
 class GranitePreTrainedModel(LlamaPreTrainedModel): ...
 

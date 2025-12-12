@@ -11,22 +11,43 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import ModelOutput, auto_docstring
 from .configuration_xlnet import XLNetConfig
 
+"""
+PyTorch XLNet model.
+"""
 logger = ...
 
-def build_tf_xlnet_to_pytorch_map(model, config, tf_weights=...): ...
-def load_tf_weights_in_xlnet(model, config, tf_path): ...
+def build_tf_xlnet_to_pytorch_map(model, config, tf_weights=...):  # -> dict[Any, Any]:
+    """
+    A map of modules from TF to PyTorch. I use a map to keep the PyTorch model as identical to the original PyTorch
+    model as possible.
+    """
+    ...
+
+def load_tf_weights_in_xlnet(model, config, tf_path):
+    """Load tf checkpoints in a pytorch model"""
+    ...
 
 class XLNetRelativeAttention(nn.Module):
     def __init__(self, config) -> None: ...
     def prune_heads(self, heads): ...
     @staticmethod
-    def rel_shift(x, klen=...): ...
+    def rel_shift(x, klen=...):  # -> Tensor:
+        """perform relative shift to form the relative attention score."""
+        ...
+
     @staticmethod
-    def rel_shift_bnij(x, klen=...): ...
+    def rel_shift_bnij(x, klen=...):  # -> Tensor:
+        ...
     def rel_attn_core(
         self, q_head, k_head_h, v_head_h, k_head_r, seg_mat=..., attn_mask=..., head_mask=..., output_attentions=...
-    ): ...
-    def post_attention(self, h, attn_vec, residual=...): ...
+    ):  # -> tuple[Tensor, Tensor] | Tensor:
+        """Core relative positional attention operations."""
+        ...
+
+    def post_attention(self, h, attn_vec, residual=...):  # -> Any:
+        """Post-attention processing."""
+        ...
+
     def forward(
         self,
         h,
@@ -39,11 +60,13 @@ class XLNetRelativeAttention(nn.Module):
         target_mapping=...,
         head_mask=...,
         output_attentions=...,
-    ): ...
+    ):  # -> tuple[Any, Any | None, tuple[Tensor | Any, Tensor | Any] | Any | Tensor] | tuple[Any, Any | None]:
+        ...
 
 class XLNetFeedForward(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, inp): ...
+    def forward(self, inp):  # -> Any:
+        ...
 
 class XLNetLayer(nn.Module):
     def __init__(self, config) -> None: ...
@@ -59,16 +82,43 @@ class XLNetLayer(nn.Module):
         target_mapping=...,
         head_mask=...,
         output_attentions=...,
-    ): ...
-    def ff_chunk(self, output_x): ...
+    ):  # -> Any:
+        ...
+    def ff_chunk(self, output_x):  # -> Any:
+        ...
 
 class XLNetPoolerStartLogits(nn.Module):
+    """
+    Compute SQuAD start logits from sequence hidden states.
+
+    Args:
+        config ([`XLNetConfig`]):
+            The config used by the model, will be used to grab the `hidden_size` of the model.
+    """
     def __init__(self, config: XLNetConfig) -> None: ...
-    def forward(
-        self, hidden_states: torch.FloatTensor, p_mask: Optional[torch.FloatTensor] = ...
-    ) -> torch.FloatTensor: ...
+    def forward(self, hidden_states: torch.FloatTensor, p_mask: Optional[torch.FloatTensor] = ...) -> torch.FloatTensor:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor` of shape `(batch_size, seq_len, hidden_size)`):
+                The final hidden states of the model.
+            p_mask (`torch.FloatTensor` of shape `(batch_size, seq_len)`, *optional*):
+                Mask for tokens at invalid position, such as query and special symbols (PAD, SEP, CLS). 1.0 means token
+                should be masked.
+
+        Returns:
+            `torch.FloatTensor`: The start logits for SQuAD.
+        """
+        ...
 
 class XLNetPoolerEndLogits(nn.Module):
+    """
+    Compute SQuAD end logits from sequence hidden states.
+
+    Args:
+        config ([`XLNetConfig`]):
+            The config used by the model, will be used to grab the `hidden_size` of the model and the `layer_norm_eps`
+            to use.
+    """
     def __init__(self, config: XLNetConfig) -> None: ...
     def forward(
         self,
@@ -76,9 +126,39 @@ class XLNetPoolerEndLogits(nn.Module):
         start_states: Optional[torch.FloatTensor] = ...,
         start_positions: Optional[torch.LongTensor] = ...,
         p_mask: Optional[torch.FloatTensor] = ...,
-    ) -> torch.FloatTensor: ...
+    ) -> torch.FloatTensor:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor` of shape `(batch_size, seq_len, hidden_size)`):
+                The final hidden states of the model.
+            start_states (`torch.FloatTensor` of shape `(batch_size, seq_len, hidden_size)`, *optional*):
+                The hidden states of the first tokens for the labeled span.
+            start_positions (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+                The position of the first token for the labeled span.
+            p_mask (`torch.FloatTensor` of shape `(batch_size, seq_len)`, *optional*):
+                Mask for tokens at invalid position, such as query and special symbols (PAD, SEP, CLS). 1.0 means token
+                should be masked.
+
+        <Tip>
+
+        One of `start_states` or `start_positions` should be not `None`. If both are set, `start_positions` overrides
+        `start_states`.
+
+        </Tip>
+
+        Returns:
+            `torch.FloatTensor`: The end logits for SQuAD.
+        """
+        ...
 
 class XLNetPoolerAnswerClass(nn.Module):
+    """
+    Compute SQuAD 2.0 answer class from classification and start tokens hidden states.
+
+    Args:
+        config ([`XLNetConfig`]):
+            The config used by the model, will be used to grab the `hidden_size` of the model.
+    """
     def __init__(self, config: XLNetConfig) -> None: ...
     def forward(
         self,
@@ -86,13 +166,72 @@ class XLNetPoolerAnswerClass(nn.Module):
         start_states: Optional[torch.FloatTensor] = ...,
         start_positions: Optional[torch.LongTensor] = ...,
         cls_index: Optional[torch.LongTensor] = ...,
-    ) -> torch.FloatTensor: ...
+    ) -> torch.FloatTensor:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor` of shape `(batch_size, seq_len, hidden_size)`):
+                The final hidden states of the model.
+            start_states (`torch.FloatTensor` of shape `(batch_size, seq_len, hidden_size)`, *optional*):
+                The hidden states of the first tokens for the labeled span.
+            start_positions (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+                The position of the first token for the labeled span.
+            cls_index (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+                Position of the CLS token for each sentence in the batch. If `None`, takes the last token.
+
+        <Tip>
+
+        One of `start_states` or `start_positions` should be not `None`. If both are set, `start_positions` overrides
+        `start_states`.
+
+        </Tip>
+
+        Returns:
+            `torch.FloatTensor`: The SQuAD 2.0 answer class.
+        """
+        ...
 
 class XLNetSequenceSummary(nn.Module):
+    r"""
+    Compute a single vector summary of a sequence hidden states.
+
+    Args:
+        config ([`XLNetConfig`]):
+            The config used by the model. Relevant arguments in the config class of the model are (refer to the actual
+            config class of your model for the default values it uses):
+
+            - **summary_type** (`str`) -- The method to use to make this summary. Accepted values are:
+
+                - `"last"` -- Take the last token hidden state (like XLNet)
+                - `"first"` -- Take the first token hidden state (like Bert)
+                - `"mean"` -- Take the mean of all tokens hidden states
+                - `"cls_index"` -- Supply a Tensor of classification token position (GPT/GPT-2)
+                - `"attn"` -- Not implemented now, use multi-head attention
+
+            - **summary_use_proj** (`bool`) -- Add a projection after the vector extraction.
+            - **summary_proj_to_labels** (`bool`) -- If `True`, the projection outputs to `config.num_labels` classes
+              (otherwise to `config.hidden_size`).
+            - **summary_activation** (`Optional[str]`) -- Set to `"tanh"` to add a tanh activation to the output,
+              another string or `None` will add no activation.
+            - **summary_first_dropout** (`float`) -- Optional dropout probability before the projection and activation.
+            - **summary_last_dropout** (`float`)-- Optional dropout probability after the projection and activation.
+    """
     def __init__(self, config: XLNetConfig) -> None: ...
     def forward(
         self, hidden_states: torch.FloatTensor, cls_index: Optional[torch.LongTensor] = ...
-    ) -> torch.FloatTensor: ...
+    ) -> torch.FloatTensor:
+        """
+        Compute a single vector summary of a sequence hidden states.
+
+        Args:
+            hidden_states (`torch.FloatTensor` of shape `[batch_size, seq_len, hidden_size]`):
+                The hidden states of the last layer.
+            cls_index (`torch.LongTensor` of shape `[batch_size]` or `[batch_size, ...]` where ... are optional leading dimensions of `hidden_states`, *optional*):
+                Used if `summary_type == "cls_index"` and takes the last token of the sequence as classification token.
+
+        Returns:
+            `torch.FloatTensor`: The summary of the sequence hidden states.
+        """
+        ...
 
 @auto_docstring
 class XLNetPreTrainedModel(PreTrainedModel):
@@ -107,6 +246,18 @@ class XLNetPreTrainedModel(PreTrainedModel):
     """
 )
 class XLNetModelOutput(ModelOutput):
+    r"""
+    last_hidden_state (`torch.FloatTensor` of shape `(batch_size, num_predict, hidden_size)`):
+        Sequence of hidden-states at the last layer of the model.
+
+        `num_predict` corresponds to `target_mapping.shape[1]`. If `target_mapping` is `None`, then `num_predict`
+        corresponds to `sequence_length`.
+    mems (`list[torch.FloatTensor]` of length `config.n_layers`):
+        Contains pre-computed hidden-states. Can be used (see `mems` input) to speed up sequential decoding. The
+        token ids which have their past given to this model should not be passed as `input_ids` as they have
+        already been computed.
+    """
+
     last_hidden_state: torch.FloatTensor
     mems: Optional[list[torch.FloatTensor]] = ...
     hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
@@ -119,6 +270,20 @@ class XLNetModelOutput(ModelOutput):
     """
 )
 class XLNetLMHeadModelOutput(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape *(1,)*, *optional*, returned when `labels` is provided):
+        Language modeling loss (for next-token prediction).
+    logits (`torch.FloatTensor` of shape `(batch_size, num_predict, config.vocab_size)`):
+        Prediction scores of the language modeling head (scores for each vocabulary token before SoftMax).
+
+        `num_predict` corresponds to `target_mapping.shape[1]`. If `target_mapping` is `None`, then `num_predict`
+        corresponds to `sequence_length`.
+    mems (`list[torch.FloatTensor]` of length `config.n_layers`):
+        Contains pre-computed hidden-states. Can be used (see `mems` input) to speed up sequential decoding. The
+        token ids which have their past given to this model should not be passed as `input_ids` as they have
+        already been computed.
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     logits: Optional[torch.FloatTensor] = ...
     mems: Optional[list[torch.FloatTensor]] = ...
@@ -126,8 +291,23 @@ class XLNetLMHeadModelOutput(ModelOutput):
     attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Output type of [`XLNetForSequenceClassification`].
+    """
+)
 class XLNetForSequenceClassificationOutput(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `label` is provided):
+        Classification (or regression if config.num_labels==1) loss.
+    logits (`torch.FloatTensor` of shape `(batch_size, config.num_labels)`):
+        Classification (or regression if config.num_labels==1) scores (before SoftMax).
+    mems (`list[torch.FloatTensor]` of length `config.n_layers`):
+        Contains pre-computed hidden-states. Can be used (see `mems` input) to speed up sequential decoding. The
+        token ids which have their past given to this model should not be passed as `input_ids` as they have
+        already been computed.
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     logits: Optional[torch.FloatTensor] = ...
     mems: Optional[list[torch.FloatTensor]] = ...
@@ -135,8 +315,23 @@ class XLNetForSequenceClassificationOutput(ModelOutput):
     attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Output type of [`XLNetForTokenClassificationOutput`].
+    """
+)
 class XLNetForTokenClassificationOutput(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `labels` is provided):
+        Classification loss.
+    logits (`torch.FloatTensor` of shape `(batch_size, sequence_length, config.num_labels)`):
+        Classification scores (before SoftMax).
+    mems (`list[torch.FloatTensor]` of length `config.n_layers`):
+        Contains pre-computed hidden-states. Can be used (see `mems` input) to speed up sequential decoding. The
+        token ids which have their past given to this model should not be passed as `input_ids` as they have
+        already been computed.
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     logits: Optional[torch.FloatTensor] = ...
     mems: Optional[list[torch.FloatTensor]] = ...
@@ -144,8 +339,25 @@ class XLNetForTokenClassificationOutput(ModelOutput):
     attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Output type of [`XLNetForMultipleChoice`].
+    """
+)
 class XLNetForMultipleChoiceOutput(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape *(1,)*, *optional*, returned when `labels` is provided):
+        Classification loss.
+    logits (`torch.FloatTensor` of shape `(batch_size, num_choices)`):
+        *num_choices* is the second dimension of the input tensors. (see *input_ids* above).
+
+        Classification scores (before SoftMax).
+    mems (`list[torch.FloatTensor]` of length `config.n_layers`):
+        Contains pre-computed hidden-states. Can be used (see `mems` input) to speed up sequential decoding. The
+        token ids which have their past given to this model should not be passed as `input_ids` as they have
+        already been computed.
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     logits: Optional[torch.FloatTensor] = ...
     mems: Optional[list[torch.FloatTensor]] = ...
@@ -153,8 +365,25 @@ class XLNetForMultipleChoiceOutput(ModelOutput):
     attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Output type of [`XLNetForQuestionAnsweringSimple`].
+    """
+)
 class XLNetForQuestionAnsweringSimpleOutput(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `labels` is provided):
+        Total span extraction loss is the sum of a Cross-Entropy for the start and end positions.
+    start_logits (`torch.FloatTensor` of shape `(batch_size, sequence_length,)`):
+        Span-start scores (before SoftMax).
+    end_logits (`torch.FloatTensor` of shape `(batch_size, sequence_length,)`):
+        Span-end scores (before SoftMax).
+    mems (`list[torch.FloatTensor]` of length `config.n_layers`):
+        Contains pre-computed hidden-states. Can be used (see `mems` input) to speed up sequential decoding. The
+        token ids which have their past given to this model should not be passed as `input_ids` as they have
+        already been computed.
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     start_logits: Optional[torch.FloatTensor] = ...
     end_logits: Optional[torch.FloatTensor] = ...
@@ -163,8 +392,33 @@ class XLNetForQuestionAnsweringSimpleOutput(ModelOutput):
     attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Output type of [`XLNetForQuestionAnswering`].
+    """
+)
 class XLNetForQuestionAnsweringOutput(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned if both `start_positions` and `end_positions` are provided):
+        Classification loss as the sum of start token, end token (and is_impossible if provided) classification
+        losses.
+    start_top_log_probs (`torch.FloatTensor` of shape `(batch_size, config.start_n_top)`, *optional*, returned if `start_positions` or `end_positions` is not provided):
+        Log probabilities for the top config.start_n_top start token possibilities (beam-search).
+    start_top_index (`torch.LongTensor` of shape `(batch_size, config.start_n_top)`, *optional*, returned if `start_positions` or `end_positions` is not provided):
+        Indices for the top config.start_n_top start token possibilities (beam-search).
+    end_top_log_probs (`torch.FloatTensor` of shape `(batch_size, config.start_n_top * config.end_n_top)`, *optional*, returned if `start_positions` or `end_positions` is not provided):
+        Log probabilities for the top `config.start_n_top * config.end_n_top` end token possibilities
+        (beam-search).
+    end_top_index (`torch.LongTensor` of shape `(batch_size, config.start_n_top * config.end_n_top)`, *optional*, returned if `start_positions` or `end_positions` is not provided):
+        Indices for the top `config.start_n_top * config.end_n_top` end token possibilities (beam-search).
+    cls_logits (`torch.FloatTensor` of shape `(batch_size,)`, *optional*, returned if `start_positions` or `end_positions` is not provided):
+        Log probabilities for the `is_impossible` label of the answers.
+    mems (`list[torch.FloatTensor]` of length `config.n_layers`):
+        Contains pre-computed hidden-states. Can be used (see `mems` input) to speed up sequential decoding. The
+        token ids which have their past given to this model should not be passed as `input_ids` as they have
+        already been computed.
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     start_top_log_probs: Optional[torch.FloatTensor] = ...
     start_top_index: Optional[torch.LongTensor] = ...
@@ -178,13 +432,37 @@ class XLNetForQuestionAnsweringOutput(ModelOutput):
 @auto_docstring
 class XLNetModel(XLNetPreTrainedModel):
     def __init__(self, config) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, new_embeddings): ...
-    def create_mask(self, qlen, mlen): ...
-    def cache_mem(self, curr_out, prev_mem): ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, new_embeddings):  # -> None:
+        ...
+    def create_mask(self, qlen, mlen):  # -> Tensor:
+        """
+        Creates causal attention mask. Float mask where 1.0 indicates masked, 0.0 indicates not-masked.
+
+        Args:
+            qlen: Sequence length
+            mlen: Mask length
+
+        ::
+
+                  same_length=False: same_length=True: <mlen > < qlen > <mlen > < qlen >
+               ^ [0 0 0 0 0 1 1 1 1] [0 0 0 0 0 1 1 1 1]
+                 [0 0 0 0 0 0 1 1 1] [1 0 0 0 0 0 1 1 1]
+            qlen [0 0 0 0 0 0 0 1 1] [1 1 0 0 0 0 0 1 1]
+                 [0 0 0 0 0 0 0 0 1] [1 1 1 0 0 0 0 0 1]
+               v [0 0 0 0 0 0 0 0 0] [1 1 1 1 0 0 0 0 0]
+
+        """
+        ...
+
+    def cache_mem(self, curr_out, prev_mem):  # -> Tensor:
+        ...
     @staticmethod
-    def positional_embedding(pos_seq, inv_freq, bsz=...): ...
-    def relative_positional_encoding(self, qlen, klen, bsz=...): ...
+    def positional_embedding(pos_seq, inv_freq, bsz=...):  # -> Tensor:
+        ...
+    def relative_positional_encoding(self, qlen, klen, bsz=...):  # -> Tensor:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -202,15 +480,59 @@ class XLNetModel(XLNetPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         **kwargs,
-    ) -> Union[tuple, XLNetModelOutput]: ...
+    ) -> Union[tuple, XLNetModelOutput]:
+        r"""
+        mems (`list[torch.FloatTensor]` of length `config.n_layers`):
+            Contains pre-computed hidden-states (see `mems` output below) . Can be used to speed up sequential
+            decoding. The token ids which have their past given to this model should not be passed as `input_ids` as
+            they have already been computed.
 
-@auto_docstring(custom_intro=...)
+            `use_mems` has to be set to `True` to make use of `mems`.
+        perm_mask (`torch.FloatTensor` of shape `(batch_size, sequence_length, sequence_length)`, *optional*):
+            Mask to indicate the attention pattern for each input token with values selected in `[0, 1]`:
+
+            - if `perm_mask[k, i, j] = 0`, i attend to j in batch k;
+            - if `perm_mask[k, i, j] = 1`, i does not attend to j in batch k.
+
+            If not set, each token attends to all the others (full bidirectional attention). Only used during
+            pretraining (to define factorization order) or for sequential decoding (generation).
+        target_mapping (`torch.FloatTensor` of shape `(batch_size, num_predict, sequence_length)`, *optional*):
+            Mask to indicate the output tokens to use. If `target_mapping[k, i, j] = 1`, the i-th predict in batch k is
+            on the j-th token. Only used during pretraining for partial prediction or for sequential decoding
+            (generation).
+        input_mask (`torch.FloatTensor` of shape `batch_size, sequence_length`, *optional*):
+            Mask to avoid performing attention on padding token indices. Negative of `attention_mask`, i.e. with 0 for
+            real tokens and 1 for padding which is kept for compatibility with the original code base.
+
+            Mask values selected in `[0, 1]`:
+
+            - 1 for tokens that are **masked**,
+            - 0 for tokens that are **not masked**.
+
+            You can only uses one of `input_mask` and `attention_mask`.
+        use_mems (`bool`, *optional*):
+            Whether to use memory states to speed up sequential decoding. If set to `True`, the model will use the hidden
+            states from previous forward passes to compute attention, which can significantly improve performance for
+            sequential decoding tasks.
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    XLNet Model with a language modeling head on top (linear layer with weights tied to the input embeddings).
+    """
+)
 class XLNetLMHeadModel(XLNetPreTrainedModel, GenerationMixin):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
-    def get_output_embeddings(self): ...
-    def set_output_embeddings(self, new_embeddings): ...
-    def prepare_inputs_for_generation(self, input_ids, past_key_values=..., use_mems=..., **kwargs): ...
+    def get_output_embeddings(self):  # -> Linear:
+        ...
+    def set_output_embeddings(self, new_embeddings):  # -> None:
+        ...
+    def prepare_inputs_for_generation(
+        self, input_ids, past_key_values=..., use_mems=..., **kwargs
+    ):  # -> dict[str, Tensor | Any | None]:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -229,9 +551,113 @@ class XLNetLMHeadModel(XLNetPreTrainedModel, GenerationMixin):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         **kwargs,
-    ) -> Union[tuple, XLNetLMHeadModelOutput]: ...
+    ) -> Union[tuple, XLNetLMHeadModelOutput]:
+        r"""
+        mems (`list[torch.FloatTensor]` of length `config.n_layers`):
+            Contains pre-computed hidden-states (see `mems` output below) . Can be used to speed up sequential
+            decoding. The token ids which have their past given to this model should not be passed as `input_ids` as
+            they have already been computed.
 
-@auto_docstring(custom_intro=...)
+            `use_mems` has to be set to `True` to make use of `mems`.
+        perm_mask (`torch.FloatTensor` of shape `(batch_size, sequence_length, sequence_length)`, *optional*):
+            Mask to indicate the attention pattern for each input token with values selected in `[0, 1]`:
+
+            - if `perm_mask[k, i, j] = 0`, i attend to j in batch k;
+            - if `perm_mask[k, i, j] = 1`, i does not attend to j in batch k.
+
+            If not set, each token attends to all the others (full bidirectional attention). Only used during
+            pretraining (to define factorization order) or for sequential decoding (generation).
+        target_mapping (`torch.FloatTensor` of shape `(batch_size, num_predict, sequence_length)`, *optional*):
+            Mask to indicate the output tokens to use. If `target_mapping[k, i, j] = 1`, the i-th predict in batch k is
+            on the j-th token. Only used during pretraining for partial prediction or for sequential decoding
+            (generation).
+        input_mask (`torch.FloatTensor` of shape `batch_size, sequence_length`, *optional*):
+            Mask to avoid performing attention on padding token indices. Negative of `attention_mask`, i.e. with 0 for
+            real tokens and 1 for padding which is kept for compatibility with the original code base.
+
+            Mask values selected in `[0, 1]`:
+
+            - 1 for tokens that are **masked**,
+            - 0 for tokens that are **not masked**.
+
+            You can only uses one of `input_mask` and `attention_mask`.
+        labels (`torch.LongTensor` of shape `(batch_size, num_predict)`, *optional*):
+            Labels for masked language modeling. `num_predict` corresponds to `target_mapping.shape[1]`. If
+            `target_mapping` is `None`, then `num_predict` corresponds to `sequence_length`.
+
+            The labels should correspond to the masked input words that should be predicted and depends on
+            `target_mapping`. Note in order to perform standard auto-regressive language modeling a *<mask>* token has
+            to be added to the `input_ids` (see the `prepare_inputs_for_generation` function and examples below)
+
+            Indices are selected in `[-100, 0, ..., config.vocab_size]` All labels set to `-100` are ignored, the loss
+            is only computed for labels in `[0, ..., config.vocab_size]`
+        use_mems (`bool`, *optional*):
+            Whether to use memory states to speed up sequential decoding. If set to `True`, the model will use the hidden
+            states from previous forward passes to compute attention, which can significantly improve performance for
+            sequential decoding tasks.
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoTokenizer, XLNetLMHeadModel
+        >>> import torch
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("xlnet/xlnet-large-cased")
+        >>> model = XLNetLMHeadModel.from_pretrained("xlnet/xlnet-large-cased")
+
+        >>> # We show how to setup inputs to predict a next token using a bi-directional context.
+        >>> input_ids = torch.tensor(
+        ...     tokenizer.encode("Hello, my dog is very <mask>", add_special_tokens=False)
+        ... ).unsqueeze(
+        ...     0
+        ... )  # We will predict the masked token
+        >>> perm_mask = torch.zeros((1, input_ids.shape[1], input_ids.shape[1]), dtype=torch.float)
+        >>> perm_mask[:, :, -1] = 1.0  # Previous tokens don't see last token
+        >>> target_mapping = torch.zeros(
+        ...     (1, 1, input_ids.shape[1]), dtype=torch.float
+        ... )  # Shape [1, 1, seq_length] => let's predict one token
+        >>> target_mapping[
+        ...     0, 0, -1
+        ... ] = 1.0  # Our first (and only) prediction will be the last token of the sequence (the masked token)
+
+        >>> outputs = model(input_ids, perm_mask=perm_mask, target_mapping=target_mapping)
+        >>> next_token_logits = outputs[
+        ...     0
+        ... ]  # Output has shape [target_mapping.size(0), target_mapping.size(1), config.vocab_size]
+
+        >>> # The same way can the XLNetLMHeadModel be used to be trained by standard auto-regressive language modeling.
+        >>> input_ids = torch.tensor(
+        ...     tokenizer.encode("Hello, my dog is very <mask>", add_special_tokens=False)
+        ... ).unsqueeze(
+        ...     0
+        ... )  # We will predict the masked token
+        >>> labels = torch.tensor(tokenizer.encode("cute", add_special_tokens=False)).unsqueeze(0)
+        >>> assert labels.shape[0] == 1, "only one word will be predicted"
+        >>> perm_mask = torch.zeros((1, input_ids.shape[1], input_ids.shape[1]), dtype=torch.float)
+        >>> perm_mask[
+        ...     :, :, -1
+        ... ] = 1.0  # Previous tokens don't see last token as is done in standard auto-regressive lm training
+        >>> target_mapping = torch.zeros(
+        ...     (1, 1, input_ids.shape[1]), dtype=torch.float
+        ... )  # Shape [1, 1, seq_length] => let's predict one token
+        >>> target_mapping[
+        ...     0, 0, -1
+        ... ] = 1.0  # Our first (and only) prediction will be the last token of the sequence (the masked token)
+
+        >>> outputs = model(input_ids, perm_mask=perm_mask, target_mapping=target_mapping, labels=labels)
+        >>> loss = outputs.loss
+        >>> next_token_logits = (
+        ...     outputs.logits
+        ... )  # Logits have shape [target_mapping.size(0), target_mapping.size(1), config.vocab_size]
+        ```"""
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    XLNet Model with a sequence classification/regression head on top (a linear layer on top of the pooled output) e.g.
+    for GLUE tasks.
+    """
+)
 class XLNetForSequenceClassification(XLNetPreTrainedModel):
     def __init__(self, config) -> None: ...
     @auto_docstring
@@ -252,7 +678,46 @@ class XLNetForSequenceClassification(XLNetPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         **kwargs,
-    ) -> Union[tuple, XLNetForSequenceClassificationOutput]: ...
+    ) -> Union[tuple, XLNetForSequenceClassificationOutput]:
+        r"""
+        mems (`list[torch.FloatTensor]` of length `config.n_layers`):
+            Contains pre-computed hidden-states (see `mems` output below) . Can be used to speed up sequential
+            decoding. The token ids which have their past given to this model should not be passed as `input_ids` as
+            they have already been computed.
+
+            `use_mems` has to be set to `True` to make use of `mems`.
+        perm_mask (`torch.FloatTensor` of shape `(batch_size, sequence_length, sequence_length)`, *optional*):
+            Mask to indicate the attention pattern for each input token with values selected in `[0, 1]`:
+
+            - if `perm_mask[k, i, j] = 0`, i attend to j in batch k;
+            - if `perm_mask[k, i, j] = 1`, i does not attend to j in batch k.
+
+            If not set, each token attends to all the others (full bidirectional attention). Only used during
+            pretraining (to define factorization order) or for sequential decoding (generation).
+        target_mapping (`torch.FloatTensor` of shape `(batch_size, num_predict, sequence_length)`, *optional*):
+            Mask to indicate the output tokens to use. If `target_mapping[k, i, j] = 1`, the i-th predict in batch k is
+            on the j-th token. Only used during pretraining for partial prediction or for sequential decoding
+            (generation).
+        input_mask (`torch.FloatTensor` of shape `batch_size, sequence_length`, *optional*):
+            Mask to avoid performing attention on padding token indices. Negative of `attention_mask`, i.e. with 0 for
+            real tokens and 1 for padding which is kept for compatibility with the original code base.
+
+            Mask values selected in `[0, 1]`:
+
+            - 1 for tokens that are **masked**,
+            - 0 for tokens that are **not masked**.
+
+            You can only uses one of `input_mask` and `attention_mask`.
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        use_mems (`bool`, *optional*):
+            Whether to use memory states to speed up sequential decoding. If set to `True`, the model will use the hidden
+            states from previous forward passes to compute attention, which can significantly improve performance for
+            sequential decoding tasks.
+        """
+        ...
 
 @auto_docstring
 class XLNetForTokenClassification(XLNetPreTrainedModel):
@@ -275,7 +740,47 @@ class XLNetForTokenClassification(XLNetPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         **kwargs,
-    ) -> Union[tuple, XLNetForTokenClassificationOutput]: ...
+    ) -> Union[tuple, XLNetForTokenClassificationOutput]:
+        r"""
+        mems (`list[torch.FloatTensor]` of length `config.n_layers`):
+            Contains pre-computed hidden-states (see `mems` output below) . Can be used to speed up sequential
+            decoding. The token ids which have their past given to this model should not be passed as `input_ids` as
+            they have already been computed.
+
+            `use_mems` has to be set to `True` to make use of `mems`.
+        perm_mask (`torch.FloatTensor` of shape `(batch_size, sequence_length, sequence_length)`, *optional*):
+            Mask to indicate the attention pattern for each input token with values selected in `[0, 1]`:
+
+            - if `perm_mask[k, i, j] = 0`, i attend to j in batch k;
+            - if `perm_mask[k, i, j] = 1`, i does not attend to j in batch k.
+
+            If not set, each token attends to all the others (full bidirectional attention). Only used during
+            pretraining (to define factorization order) or for sequential decoding (generation).
+        target_mapping (`torch.FloatTensor` of shape `(batch_size, num_predict, sequence_length)`, *optional*):
+            Mask to indicate the output tokens to use. If `target_mapping[k, i, j] = 1`, the i-th predict in batch k is
+            on the j-th token. Only used during pretraining for partial prediction or for sequential decoding
+            (generation).
+        input_mask (`torch.FloatTensor` of shape `batch_size, sequence_length`, *optional*):
+            Mask to avoid performing attention on padding token indices. Negative of `attention_mask`, i.e. with 0 for
+            real tokens and 1 for padding which is kept for compatibility with the original code base.
+
+            Mask values selected in `[0, 1]`:
+
+            - 1 for tokens that are **masked**,
+            - 0 for tokens that are **not masked**.
+
+            You can only uses one of `input_mask` and `attention_mask`.
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the multiple choice classification loss. Indices should be in `[0, ..., num_choices]`
+            where *num_choices* is the size of the second dimension of the input tensors. (see *input_ids* above)
+        use_mems (`bool`, *optional*):
+            Whether to use memory states to speed up sequential decoding. If set to `True`, the model will use the hidden
+            states from previous forward passes to compute attention, which can significantly improve performance for
+            sequential decoding tasks.emory states to speed up sequential decoding. If set to `True`, the model will use the hidden
+            states from previous forward passes to compute attention, which can significantly improve performance for
+            sequential decoding tasks.
+        """
+        ...
 
 @auto_docstring
 class XLNetForMultipleChoice(XLNetPreTrainedModel):
@@ -298,9 +803,70 @@ class XLNetForMultipleChoice(XLNetPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         **kwargs,
-    ) -> Union[tuple, XLNetForMultipleChoiceOutput]: ...
+    ) -> Union[tuple, XLNetForMultipleChoiceOutput]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`):
+            Indices of input sequence tokens in the vocabulary.
 
-@auto_docstring(custom_intro=...)
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        token_type_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`, *optional*):
+            Segment token indices to indicate first and second portions of the inputs. Indices are selected in `[0,
+            1]`:
+
+            - 0 corresponds to a *sentence A* token,
+            - 1 corresponds to a *sentence B* token.
+
+            [What are token type IDs?](../glossary#token-type-ids)
+        input_mask (`torch.FloatTensor` of shape `batch_size, num_choices, sequence_length`, *optional*):
+            Mask to avoid performing attention on padding token indices. Negative of `attention_mask`, i.e. with 0 for
+            real tokens and 1 for padding which is kept for compatibility with the original code base.
+
+            Mask values selected in `[0, 1]`:
+
+            - 1 for tokens that are **masked**,
+            - 0 for tokens that are **not masked**.
+
+            You can only uses one of `input_mask` and `attention_mask`.
+        mems (`list[torch.FloatTensor]` of length `config.n_layers`):
+            Contains pre-computed hidden-states (see `mems` output below) . Can be used to speed up sequential
+            decoding. The token ids which have their past given to this model should not be passed as `input_ids` as
+            they have already been computed.
+
+            `use_mems` has to be set to `True` to make use of `mems`.
+        perm_mask (`torch.FloatTensor` of shape `(batch_size, sequence_length, sequence_length)`, *optional*):
+            Mask to indicate the attention pattern for each input token with values selected in `[0, 1]`:
+
+            - if `perm_mask[k, i, j] = 0`, i attend to j in batch k;
+            - if `perm_mask[k, i, j] = 1`, i does not attend to j in batch k.
+
+            If not set, each token attends to all the others (full bidirectional attention). Only used during
+            pretraining (to define factorization order) or for sequential decoding (generation).
+        target_mapping (`torch.FloatTensor` of shape `(batch_size, num_predict, sequence_length)`, *optional*):
+            Mask to indicate the output tokens to use. If `target_mapping[k, i, j] = 1`, the i-th predict in batch k is
+            on the j-th token. Only used during pretraining for partial prediction or for sequential decoding
+            (generation).
+        inputs_embeds (`torch.FloatTensor` of shape `(batch_size, num_choices, sequence_length, hidden_size)`, *optional*):
+            Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation. This
+            is useful if you want more control over how to convert `input_ids` indices into associated vectors than the
+            model's internal embedding lookup matrix.
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the multiple choice classification loss. Indices should be in `[0, ...,
+        use_mems (`bool`, *optional*):
+            Whether to use memory states to speed up sequential decoding. If set to `True`, the model will use the hidden
+            states from previous forward passes to compute attention, which can significantly improve performance for
+            sequential decoding tasks.
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    XLNet Model with a span classification head on top for extractive question-answering tasks like SQuAD (a linear
+    layers on top of the hidden-states output to compute `span start logits` and `span end logits`).
+    """
+)
 class XLNetForQuestionAnsweringSimple(XLNetPreTrainedModel):
     def __init__(self, config) -> None: ...
     @auto_docstring
@@ -322,7 +888,42 @@ class XLNetForQuestionAnsweringSimple(XLNetPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         **kwargs,
-    ) -> Union[tuple, XLNetForQuestionAnsweringSimpleOutput]: ...
+    ) -> Union[tuple, XLNetForQuestionAnsweringSimpleOutput]:
+        r"""
+        mems (`list[torch.FloatTensor]` of length `config.n_layers`):
+            Contains pre-computed hidden-states (see `mems` output below) . Can be used to speed up sequential
+            decoding. The token ids which have their past given to this model should not be passed as `input_ids` as
+            they have already been computed.
+
+            `use_mems` has to be set to `True` to make use of `mems`.
+        perm_mask (`torch.FloatTensor` of shape `(batch_size, sequence_length, sequence_length)`, *optional*):
+            Mask to indicate the attention pattern for each input token with values selected in `[0, 1]`:
+
+            - if `perm_mask[k, i, j] = 0`, i attend to j in batch k;
+            - if `perm_mask[k, i, j] = 1`, i does not attend to j in batch k.
+
+            If not set, each token attends to all the others (full bidirectional attention). Only used during
+            pretraining (to define factorization order) or for sequential decoding (generation).
+        target_mapping (`torch.FloatTensor` of shape `(batch_size, num_predict, sequence_length)`, *optional*):
+            Mask to indicate the output tokens to use. If `target_mapping[k, i, j] = 1`, the i-th predict in batch k is
+            on the j-th token. Only used during pretraining for partial prediction or for sequential decoding
+            (generation).
+        input_mask (`torch.FloatTensor` of shape `batch_size, sequence_length`, *optional*):
+            Mask to avoid performing attention on padding token indices. Negative of `attention_mask`, i.e. with 0 for
+            real tokens and 1 for padding which is kept for compatibility with the original code base.
+
+            Mask values selected in `[0, 1]`:
+
+            - 1 for tokens that are **masked**,
+            - 0 for tokens that are **not masked**.
+
+            You can only uses one of `input_mask` and `attention_mask`.
+        use_mems (`bool`, *optional*):
+            Whether to use memory states to speed up sequential decoding. If set to `True`, the model will use the hidden
+            states from previous forward passes to compute attention, which can significantly improve performance for
+            sequential decoding tasks.
+        """
+        ...
 
 @auto_docstring
 class XLNetForQuestionAnswering(XLNetPreTrainedModel):
@@ -349,7 +950,68 @@ class XLNetForQuestionAnswering(XLNetPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         **kwargs,
-    ) -> Union[tuple, XLNetForQuestionAnsweringOutput]: ...
+    ) -> Union[tuple, XLNetForQuestionAnsweringOutput]:
+        r"""
+        mems (`list[torch.FloatTensor]` of length `config.n_layers`):
+            Contains pre-computed hidden-states (see `mems` output below) . Can be used to speed up sequential
+            decoding. The token ids which have their past given to this model should not be passed as `input_ids` as
+            they have already been computed.
+
+            `use_mems` has to be set to `True` to make use of `mems`.
+        perm_mask (`torch.FloatTensor` of shape `(batch_size, sequence_length, sequence_length)`, *optional*):
+            Mask to indicate the attention pattern for each input token with values selected in `[0, 1]`:
+
+            - if `perm_mask[k, i, j] = 0`, i attend to j in batch k;
+            - if `perm_mask[k, i, j] = 1`, i does not attend to j in batch k.
+
+            If not set, each token attends to all the others (full bidirectional attention). Only used during
+            pretraining (to define factorization order) or for sequential decoding (generation).
+        target_mapping (`torch.FloatTensor` of shape `(batch_size, num_predict, sequence_length)`, *optional*):
+            Mask to indicate the output tokens to use. If `target_mapping[k, i, j] = 1`, the i-th predict in batch k is
+            on the j-th token. Only used during pretraining for partial prediction or for sequential decoding
+            (generation).
+        input_mask (`torch.FloatTensor` of shape `batch_size, sequence_length`, *optional*):
+            Mask to avoid performing attention on padding token indices. Negative of `attention_mask`, i.e. with 0 for
+            real tokens and 1 for padding which is kept for compatibility with the original code base.
+
+            Mask values selected in `[0, 1]`:
+
+            - 1 for tokens that are **masked**,
+            - 0 for tokens that are **not masked**.
+
+            You can only uses one of `input_mask` and `attention_mask`.
+        is_impossible (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels whether a question has an answer or no answer (SQuAD 2.0)
+        cls_index (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for position (index) of the classification token to use as input for computing plausibility of the
+            answer.
+        p_mask (`torch.FloatTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Optional mask of tokens which can't be in answers (e.g. [CLS], [PAD], ...). 1.0 means token should be
+            masked. 0.0 mean token is not masked.
+        use_mems (`bool`, *optional*):
+            Whether to use memory states to speed up sequential decoding. If set to `True`, the model will use the hidden
+            states from previous forward passes to compute attention, which can significantly improve performance for
+            sequential decoding tasks.
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, XLNetForQuestionAnswering
+        >>> import torch
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("xlnet/xlnet-base-cased")
+        >>> model = XLNetForQuestionAnswering.from_pretrained("xlnet/xlnet-base-cased")
+
+        >>> input_ids = torch.tensor(tokenizer.encode("Hello, my dog is cute", add_special_tokens=True)).unsqueeze(
+        ...     0
+        ... )  # Batch size 1
+        >>> start_positions = torch.tensor([1])
+        >>> end_positions = torch.tensor([3])
+        >>> outputs = model(input_ids, start_positions=start_positions, end_positions=end_positions)
+
+        >>> loss = outputs.loss
+        ```"""
+        ...
 
 __all__ = [
     "XLNetForMultipleChoice",

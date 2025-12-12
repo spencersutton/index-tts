@@ -10,11 +10,18 @@ from ...image_utils import ImageInput, SizeDict
 from ...processing_utils import Unpack
 from ...utils import auto_docstring, is_torch_available, is_torchvision_v2_available
 
+"""Fast Image processor class for OWLv2."""
 if is_torch_available(): ...
 if is_torchvision_v2_available(): ...
 else: ...
 
 class Owlv2FastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
+    r"""
+    do_pad (`bool`, *optional*, defaults to `True`):
+        Controls whether to pad the image. Can be overridden by the `do_pad` parameter in the `preprocess`
+        method. If `True`, padding will be applied to the bottom and right of the image with grey pixels.
+    """
+
     do_pad: Optional[bool]
     ...
 
@@ -34,12 +41,28 @@ class Owlv2ImageProcessorFast(OwlViTImageProcessorFast):
     do_center_crop = ...
     def __init__(self, **kwargs: Unpack[Owlv2FastImageProcessorKwargs]) -> None: ...
     @auto_docstring
-    def preprocess(self, images: ImageInput, **kwargs: Unpack[Owlv2FastImageProcessorKwargs]): ...
+    def preprocess(self, images: ImageInput, **kwargs: Unpack[Owlv2FastImageProcessorKwargs]):  # -> BatchFeature:
+        ...
     def pad(
         self, images: list[torch.Tensor], disable_grouping: Optional[bool], constant_value: float = ...
     ) -> list[torch.Tensor]: ...
     def resize(
         self, image: torch.Tensor, size: SizeDict, anti_aliasing: bool = ..., anti_aliasing_sigma=..., **kwargs
-    ) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """
+        Resize an image as per the original implementation.
+
+        Args:
+            image (`Tensor`):
+                Image to resize.
+            size (`dict[str, int]`):
+                Dictionary containing the height and width to resize the image to.
+            anti_aliasing (`bool`, *optional*, defaults to `True`):
+                Whether to apply anti-aliasing when downsampling the image.
+            anti_aliasing_sigma (`float`, *optional*, defaults to `None`):
+                Standard deviation for Gaussian kernel when downsampling the image. If `None`, it will be calculated
+                automatically.
+        """
+        ...
 
 __all__ = ["Owlv2ImageProcessorFast"]

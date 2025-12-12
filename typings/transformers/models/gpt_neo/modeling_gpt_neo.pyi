@@ -21,12 +21,15 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring, is_torch_flex_attn_available
 from .configuration_gpt_neo import GPTNeoConfig
 
+"""PyTorch GPT Neo model."""
 if is_torch_flex_attn_available(): ...
 if is_flash_attn_available(): ...
 _prepare_4d_causal_attention_mask = ...
 logger = ...
 
-def load_tf_weights_in_gpt_neo(model, config, gpt_neo_checkpoint_path): ...
+def load_tf_weights_in_gpt_neo(model, config, gpt_neo_checkpoint_path):
+    """Load tf checkpoints in a pytorch model"""
+    ...
 
 class GPTNeoSelfAttention(nn.Module):
     def __init__(self, config, attention_type, layer_id=...) -> None: ...
@@ -39,9 +42,15 @@ class GPTNeoSelfAttention(nn.Module):
         use_cache=...,
         output_attentions=...,
         cache_position=...,
-    ): ...
+    ):  # -> tuple[Any, Any]:
+        ...
 
 class GPTNeoFlashAttention2(GPTNeoSelfAttention):
+    """
+    GPTNeo flash attention module. This module inherits from `GPTNeoSelfAttention` as the weights of the module stays
+    untouched. The only required change would be on the forward pass where it needs to correctly call the public API of
+    flash attention and deal with padding tokens in case the input contains any of them.
+    """
     def __init__(self, *args, **kwargs) -> None: ...
     def forward(
         self,
@@ -52,7 +61,8 @@ class GPTNeoFlashAttention2(GPTNeoSelfAttention):
         use_cache=...,
         output_attentions=...,
         cache_position=...,
-    ): ...
+    ):  # -> tuple[Any, Tensor | Any]:
+        ...
 
 GPT_NEO_ATTENTION_CLASSES = ...
 
@@ -67,11 +77,13 @@ class GPTNeoAttention(nn.Module):
         use_cache=...,
         output_attentions=...,
         cache_position=...,
-    ): ...
+    ):  # -> Any:
+        ...
 
 class GPTNeoMLP(nn.Module):
     def __init__(self, intermediate_size, config) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class GPTNeoBlock(GradientCheckpointingLayer):
     def __init__(self, config, layer_id=...) -> None: ...
@@ -84,7 +96,8 @@ class GPTNeoBlock(GradientCheckpointingLayer):
         use_cache=...,
         output_attentions=...,
         cache_position=...,
-    ): ...
+    ):  # -> tuple[Any, Any]:
+        ...
 
 @auto_docstring
 class GPTNeoPreTrainedModel(PreTrainedModel):
@@ -101,8 +114,10 @@ class GPTNeoPreTrainedModel(PreTrainedModel):
 @auto_docstring
 class GPTNeoModel(GPTNeoPreTrainedModel):
     def __init__(self, config) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, new_embeddings): ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, new_embeddings):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -118,9 +133,29 @@ class GPTNeoModel(GPTNeoPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple[torch.Tensor], BaseModelOutputWithPastAndCrossAttentions]: ...
+    ) -> Union[tuple[torch.Tensor], BaseModelOutputWithPastAndCrossAttentions]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, input_ids_length)`):
+            `input_ids_length` = `sequence_length` if `past_key_values` is `None` else
+            `past_key_values.get_seq_length()` (`sequence_length` of input past key value states). Indices of input
+            sequence tokens in the vocabulary.
 
-@auto_docstring(custom_intro=...)
+            If `past_key_values` is used, only `input_ids` that do not have their past calculated should be passed as
+            `input_ids`.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    The GPT Neo Model transformer with a language modeling head on top (linear layer with weights tied to the input
+    embeddings).
+    """
+)
 class GPTNeoForCausalLM(GPTNeoPreTrainedModel, GenerationMixin):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
@@ -141,9 +176,41 @@ class GPTNeoForCausalLM(GPTNeoPreTrainedModel, GenerationMixin):
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         **kwargs,
-    ) -> Union[tuple[torch.Tensor], CausalLMOutputWithCrossAttentions]: ...
+    ) -> Union[tuple[torch.Tensor], CausalLMOutputWithCrossAttentions]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, input_ids_length)`):
+            `input_ids_length` = `sequence_length` if `past_key_values` is `None` else
+            `past_key_values.get_seq_length()` (`sequence_length` of input past key value states). Indices of input
+            sequence tokens in the vocabulary.
 
-@auto_docstring(custom_intro=...)
+            If `past_key_values` is used, only `input_ids` that do not have their past calculated should be passed as
+            `input_ids`.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        labels (`torch.LongTensor` of shape `(batch_size, input_ids_length)`, *optional*):
+            Labels for language modeling. Note that the labels **are shifted** inside the model, i.e. you can set
+            `labels = input_ids` Indices are selected in `[-100, 0, ..., config.vocab_size]` All labels set to `-100`
+            are ignored (masked), the loss is only computed for labels in `[0, ..., config.vocab_size]`
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    The GPTNeo Model transformer with a sequence classification head on top (linear layer).
+
+    [`GPTNeoForSequenceClassification`] uses the last token in order to do the classification, as other causal models
+    (e.g. GPT-1) do.
+
+    Since it does classification on the last token, it requires to know the position of the last token. If a
+    `pad_token_id` is defined in the configuration, it finds the last token that is not a padding token in each row. If
+    no `pad_token_id` is defined, it simply takes the last value in each row of the batch. Since it cannot guess the
+    padding tokens when `inputs_embeds` are passed instead of `input_ids`, it does the same (take the last value in
+    each row of the batch).
+    """
+)
 class GPTNeoForSequenceClassification(GPTNeoPreTrainedModel):
     def __init__(self, config) -> None: ...
     @auto_docstring
@@ -161,7 +228,26 @@ class GPTNeoForSequenceClassification(GPTNeoPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], SequenceClassifierOutputWithPast]: ...
+    ) -> Union[tuple[torch.Tensor], SequenceClassifierOutputWithPast]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, input_ids_length)`):
+            `input_ids_length` = `sequence_length` if `past_key_values` is `None` else
+            `past_key_values.get_seq_length()` (`sequence_length` of input past key value states). Indices of input
+            sequence tokens in the vocabulary.
+
+            If `past_key_values` is used, only `input_ids` that do not have their past calculated should be passed as
+            `input_ids`.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 @auto_docstring
 class GPTNeoForTokenClassification(GPTNeoPreTrainedModel):
@@ -181,7 +267,26 @@ class GPTNeoForTokenClassification(GPTNeoPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, TokenClassifierOutput]: ...
+    ) -> Union[tuple, TokenClassifierOutput]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, input_ids_length)`):
+            `input_ids_length` = `sequence_length` if `past_key_values` is `None` else
+            `past_key_values.get_seq_length()` (`sequence_length` of input past key value states). Indices of input
+            sequence tokens in the vocabulary.
+
+            If `past_key_values` is used, only `input_ids` that do not have their past calculated should be passed as
+            `input_ids`.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 @auto_docstring
 class GPTNeoForQuestionAnswering(GPTNeoPreTrainedModel):
@@ -200,7 +305,22 @@ class GPTNeoForQuestionAnswering(GPTNeoPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, QuestionAnsweringModelOutput]: ...
+    ) -> Union[tuple, QuestionAnsweringModelOutput]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, input_ids_length)`):
+            `input_ids_length` = `sequence_length` if `past_key_values` is `None` else
+            `past_key_values.get_seq_length()` (`sequence_length` of input past key value states). Indices of input
+            sequence tokens in the vocabulary.
+
+            If `past_key_values` is used, only `input_ids` that do not have their past calculated should be passed as
+            `input_ids`.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        """
+        ...
 
 __all__ = [
     "GPTNeoForCausalLM",

@@ -22,17 +22,46 @@ from .configuration_evolla import EvollaConfig, SaProtConfig
 if is_flash_attn_available(): ...
 logger = ...
 
-def create_position_ids_from_input_ids(input_ids, padding_idx): ...
+def create_position_ids_from_input_ids(input_ids, padding_idx):
+    """
+    Replace non-padding symbols with their position numbers. Position numbers begin at padding_idx+1. Padding symbols
+    are ignored. This is modified from fairseq's `utils.make_positions`.
+
+    Args:
+        x: torch.Tensor x:
+
+    Returns: torch.Tensor
+    """
+    ...
 
 class EvollaSaProtEmbeddings(nn.Module):
+    """
+    Same as BertEmbeddings with a tiny tweak for positional embeddings indexing.
+    """
     def __init__(self, config) -> None: ...
-    def forward(self, input_ids=..., attention_mask=..., position_ids=..., inputs_embeds=...): ...
-    def create_position_ids_from_inputs_embeds(self, inputs_embeds): ...
+    def forward(self, input_ids=..., attention_mask=..., position_ids=..., inputs_embeds=...):  # -> Any:
+        ...
+    def create_position_ids_from_inputs_embeds(self, inputs_embeds):  # -> Tensor:
+        """
+        We are provided embeddings directly. We cannot infer which are padded so just generate sequential position ids.
 
-def rotate_half_esm(x): ...
+        Args:
+            inputs_embeds: torch.Tensor
+
+        Returns: torch.Tensor
+        """
+        ...
+
+def rotate_half_esm(x):  # -> Tensor:
+    ...
 def apply_rotary_pos_emb_esm(x, cos, sin): ...
 
 class EvollaSaProtRotaryEmbedding(nn.Module):
+    """
+    Rotary position embeddings based on those in
+    [RoFormer](https://huggingface.co/docs/transformers/model_doc/roformer). Query and keys are transformed by rotation
+    matrices which depend on their relative positions.
+    """
     def __init__(self, dim: int) -> None: ...
     def forward(self, q: torch.Tensor, k: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]: ...
 
@@ -53,6 +82,11 @@ class EvollaSaProtSelfOutput(nn.Module):
     def forward(self, hidden_states, input_tensor): ...
 
 class EvollaSaProtFlashAttention2(EvollaSaProtSelfAttention):
+    """
+    EVOLLA_SA_PROT flash attention module. This module inherits from `EvollaSaProtSelfAttention` as the weights of the module stays
+    untouched. The only required change would be on the forward pass where it needs to correctly call the public API of
+    flash attention and deal with padding tokens in case the input contains any of them.
+    """
     def __init__(self, config, position_embedding_type=..., layer_idx=...) -> None: ...
     def forward(
         self,
@@ -68,7 +102,8 @@ EVOLLA_SA_PROT_ATTENTION_CLASSES = ...
 
 class EvollaSaProtAttention(nn.Module):
     def __init__(self, config, layer_idx=...) -> None: ...
-    def prune_heads(self, heads): ...
+    def prune_heads(self, heads):  # -> None:
+        ...
     def forward(
         self,
         hidden_states,
@@ -78,9 +113,14 @@ class EvollaSaProtAttention(nn.Module):
         encoder_attention_mask=...,
         output_attentions=...,
         cache_position=...,
-    ): ...
+    ):  # -> Any:
+        ...
 
-def gelu(x): ...
+def gelu(x):
+    """
+    This is the gelu implementation from the original EVOLLA_SA_PROT repo. Using F.gelu yields subtly wrong results.
+    """
+    ...
 
 class EvollaSaProtIntermediate(nn.Module):
     def __init__(self, config) -> None: ...
@@ -101,8 +141,10 @@ class EvollaSaProtLayer(GradientCheckpointingLayer):
         encoder_attention_mask=...,
         output_attentions=...,
         cache_position=...,
-    ): ...
-    def feed_forward_chunk(self, attention_output): ...
+    ):  # -> Any:
+        ...
+    def feed_forward_chunk(self, attention_output):  # -> Any:
+        ...
 
 class EvollaSaProtEncoder(nn.Module):
     def __init__(self, config) -> None: ...
@@ -118,7 +160,8 @@ class EvollaSaProtEncoder(nn.Module):
         output_hidden_states=...,
         return_dict=...,
         cache_position=...,
-    ): ...
+    ):  # -> BaseModelOutputWithCrossAttentions:
+        ...
 
 class EvollaSaProtPooler(nn.Module):
     def __init__(self, config) -> None: ...
@@ -132,27 +175,52 @@ class EvollaSaProtPreTrainedModel(PreTrainedModel):
 
 class EvollaSaProtProteinEncoder(EvollaSaProtPreTrainedModel):
     def __init__(self, config: SaProtConfig) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     @can_return_tuple
     def forward(
         self, input_ids: Optional[torch.Tensor], attention_mask: Optional[torch.Tensor] = ...
     ) -> Union[tuple[torch.Tensor], BaseModelOutputWithPoolingAndCrossAttentions]: ...
     def get_extended_attention_mask(
         self, attention_mask: Tensor, input_shape: tuple[int], device: torch.device = ..., dtype: torch.float = ...
-    ) -> Tensor: ...
+    ) -> Tensor:
+        """
+        Makes broadcastable attention and causal masks so that future and masked tokens are ignored.
+
+        Arguments:
+            attention_mask (`torch.Tensor`):
+                Mask with ones indicating tokens to attend to, zeros for tokens to ignore.
+            input_shape (`Tuple[int]`):
+                The shape of the input to the model.
+
+        Returns:
+            `torch.Tensor` The extended attention mask, with a the same dtype as `attention_mask.dtype`.
+        """
+        ...
 
 class EvollaSequenceCompressorAttention(nn.Module):
     def __init__(self, dim, dim_head=..., heads=...) -> None: ...
-    def forward(self, x, latents, mask): ...
+    def forward(self, x, latents, mask):  # -> Any:
+        """
+        Args:
+            x (torch.Tensor): image features
+                shape (b, n1, D)
+            latent (torch.Tensor): latent features
+                shape (b, n2, D);  n2: num of latent tokens
+        """
+        ...
 
 class EvollaFeedForward(nn.Module):
     def __init__(self, dim, mult=...) -> None: ...
-    def forward(self, x): ...
+    def forward(self, x):  # -> Any:
+        ...
 
 class EvollaSequenceCompressorResampler(nn.Module):
     def __init__(self, config: EvollaConfig) -> None: ...
-    def forward(self, embeds, mask): ...
+    def forward(self, embeds, mask):  # -> Any:
+        ...
 
 @dataclass
 @auto_docstring
@@ -165,7 +233,10 @@ class EvollaProteinEncoderModelOutput(ModelOutput):
 class EvollaProteinEncoder(nn.Module):
     def __init__(self, config: EvollaConfig) -> None: ...
     @can_return_tuple
-    def forward(self, input_ids: torch.LongTensor, attention_mask: torch.FloatTensor, **kwargs): ...
+    def forward(
+        self, input_ids: torch.LongTensor, attention_mask: torch.FloatTensor, **kwargs
+    ):  # -> EvollaProteinEncoderModelOutput:
+        ...
 
 class EvollaSequenceAlignerCrossAttention(nn.Module):
     def __init__(
@@ -185,7 +256,17 @@ class EvollaSequenceAlignerCrossAttention(nn.Module):
         protein_kv_attn_mask,
         structure_kv_attn_mask,
         msa_kv_attn_mask,
-    ): ...
+    ):  # -> Any:
+        """
+        query_states: text
+        key_value_states: protein
+        query_states: [bs, query_seq_len, dim]
+        key_value_states: [bs, kv_seq_len, dim]
+        query_attn_mask: [bs, query_seq_len]
+        kv_attn_mask: [bs, kv_seq_len]
+        """
+        ...
+
     def forward(
         self,
         query_states,
@@ -204,23 +285,61 @@ class EvollaSequenceAlignerCrossAttention(nn.Module):
 
 @use_kernel_forward_from_hub("RMSNorm")
 class EvollaRMSNorm(nn.Module):
-    def __init__(self, hidden_size, eps=...) -> None: ...
+    def __init__(self, hidden_size, eps=...) -> None:
+        """
+        EvollaRMSNorm is equivalent to T5LayerNorm
+        """
+        ...
+
     def forward(self, hidden_states): ...
-    def extra_repr(self): ...
+    def extra_repr(self):  # -> str:
+        ...
 
 class EvollaRotaryEmbedding(nn.Module):
     def __init__(self, config: EvollaConfig, device=...) -> None: ...
     @torch.no_grad()
     @dynamic_rope_update
-    def forward(self, x, position_ids): ...
+    def forward(self, x, position_ids):  # -> tuple[Tensor, Tensor]:
+        ...
 
 class EvollaMLP(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, x): ...
+    def forward(self, x):  # -> Any:
+        ...
 
-def rotate_half(x): ...
-def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...): ...
-def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor: ...
+def rotate_half(x):  # -> Tensor:
+    """Rotates half the hidden dims of the input."""
+    ...
+
+def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...):  # -> tuple[Any, Any]:
+    """Applies Rotary Position Embedding to the query and key tensors.
+
+    Args:
+        q (`torch.Tensor`): The query tensor.
+        k (`torch.Tensor`): The key tensor.
+        cos (`torch.Tensor`): The cosine part of the rotary embedding.
+        sin (`torch.Tensor`): The sine part of the rotary embedding.
+        position_ids (`torch.Tensor`, *optional*):
+            Deprecated and unused.
+        unsqueeze_dim (`int`, *optional*, defaults to 1):
+            The 'unsqueeze_dim' argument specifies the dimension along which to unsqueeze cos[position_ids] and
+            sin[position_ids] so that they can be properly broadcasted to the dimensions of q and k. For example, note
+            that cos[position_ids] and sin[position_ids] have the shape [batch_size, seq_len, head_dim]. Then, if q and
+            k have the shape [batch_size, heads, seq_len, head_dim], then setting unsqueeze_dim=1 makes
+            cos[position_ids] and sin[position_ids] broadcastable to the shapes of q and k. Similarly, if q and k have
+            the shape [batch_size, seq_len, heads, head_dim], then set unsqueeze_dim=2.
+    Returns:
+        `tuple(torch.Tensor)` comprising of the query and key tensors rotated using the Rotary Position Embedding.
+    """
+    ...
+
+def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
+    """
+    This is the equivalent of torch.repeat_interleave(x, dim=1, repeats=n_rep). The hidden states go from (batch,
+    num_key_value_heads, seqlen, head_dim) to (batch, num_attention_heads, seqlen, head_dim)
+    """
+    ...
+
 def eager_attention_forward(
     module: nn.Module,
     query: torch.Tensor,
@@ -230,9 +349,11 @@ def eager_attention_forward(
     scaling: float,
     dropout: float = ...,
     **kwargs: Unpack[TransformersKwargs],
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class EvollaAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config: EvollaConfig, layer_idx: int) -> None: ...
     def forward(
         self,
@@ -281,8 +402,10 @@ class EvollaPreTrainedModel(PreTrainedModel):
 
 class EvollaModel(EvollaPreTrainedModel):
     def __init__(self, config: EvollaConfig) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def get_input_embeddings(self):  # -> Embedding | Module:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     @auto_docstring
     @check_model_inputs
     def forward(
@@ -301,12 +424,29 @@ class EvollaModel(EvollaPreTrainedModel):
         structure_batch_mask: Optional[torch.Tensor] = ...,
         msa_batch_mask: Optional[torch.Tensor] = ...,
         **kwargs,
-    ) -> Union[tuple, BaseModelOutputWithPast]: ...
+    ) -> Union[tuple, BaseModelOutputWithPast]:
+        r"""
+        protein_input_ids (torch.LongTensor):
+            The input IDs for the protein sequence in structure-aware tokens. Should be of shape `(batch_size, protein_seq_length)` and type `torch.LongTensor`.
+        protein_attention_mask (torch.Tensor):
+            The attention mask for the protein sequence. Should be of shape `(batch_size, protein_seq_length)` and type `torch.Tensor`.
+        structure_feats (torch.FloatTensor):
+            The input IDs for purely structure-based features. Should be of shape `(batch_size, structure_seq_length, structure_feat_dim)` and type `torch.FloatTensor`. Dummy input for now.
+        msa_feats (torch.FloatTensor):
+            The input IDs for purely MSA-based features. Should be of shape `(batch_size, msa_seq_length, msa_feat_dim)` and type `torch.FloatTensor`. Dummy input for now.
+        structure_batch_mask (torch.Tensor):
+            The batch mask to decide which protein sequences are purely structure-based. Should be of shape `(batch_size)` and type `torch.Tensor`. Should be paired with `structure_feats`. Dummpy input for now.
+        msa_batch_mask (torch.Tensor):
+            The batch mask to decide which protein sequences are purely MSA-based. Should be of shape `(batch_size)` and type `torch.Tensor`. Should be paired with `msa_feats`. Dummpy input for now.
+        """
+        ...
 
 class EvollaForProteinText2Text(EvollaPreTrainedModel, GenerationMixin):
     def __init__(self, config) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def get_input_embeddings(self):  # -> Embedding | Module:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -319,6 +459,35 @@ class EvollaForProteinText2Text(EvollaPreTrainedModel, GenerationMixin):
         protein_attention_mask: Optional[torch.Tensor] = ...,
         use_cache: Optional[bool] = ...,
         **kwargs,
-    ): ...
+    ):  # -> CausalLMOutputWithPast:
+        r"""
+        protein_input_ids (torch.LongTensor):
+            The input IDs for the protein sequence. Should be of shape `(batch_size, protein_seq_length)` and type `torch.LongTensor`.
+        protein_attention_mask (torch.Tensor):
+            The attention mask for the protein sequence. Should be of shape `(batch_size, protein_seq_length)` and type `torch.Tensor`.
+
+        Example:
+
+        ```python
+        >>> from transformers import EvollaProcessor, EvollaForProteinText2Text
+        >>> model = EvollaForProteinText2Text.from_pretrained("westlake/Evolla-10B-hf")
+        >>> processor = EvollaProcessor.from_pretrained("westlake/Evolla-10B-hf")
+
+        >>> protein_information = {
+            "aa_seq": "your amino acid sequence",
+            "foldseek": "your foldseek sequence",
+        }
+        >>> question = "What is the function of this protein?"
+        >>> message = [
+            {"role": "system", "content": "You are an AI expert that can answer any questions about protein."},
+            {"role": "user", "content": question},
+        ]
+
+        >>> inputs = processor(proteins=[protein_information], messages_list=[message], return_tensors="pt", padding="longest")
+        >>> outputs = model.generate(**inputs)
+
+        >>> print(processor.batch_decode(outputs, skip_special_tokens=True))
+        ```"""
+        ...
 
 __all__ = ["EvollaForProteinText2Text", "EvollaModel", "EvollaPreTrainedModel"]

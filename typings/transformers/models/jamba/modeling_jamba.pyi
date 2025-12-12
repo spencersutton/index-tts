@@ -16,6 +16,7 @@ from ...utils import TransformersKwargs, auto_docstring, can_return_tuple
 from ...utils.import_utils import is_causal_conv1d_available, is_mamba_ssm_available
 from .configuration_jamba import JambaConfig
 
+"""PyTorch Jamba model."""
 if is_flash_attn_available(): ...
 if is_mamba_ssm_available(): ...
 else: ...
@@ -29,16 +30,64 @@ def load_balancing_loss_func(
     num_experts: Optional[int] = ...,
     top_k=...,
     attention_mask: Optional[torch.Tensor] = ...,
-) -> Union[torch.Tensor, int]: ...
+) -> Union[torch.Tensor, int]:
+    r"""
+    Computes auxiliary load balancing loss as in Switch Transformer - implemented in Pytorch.
+
+    See Switch Transformer (https://huggingface.co/papers/2101.03961) for more details. This function implements the loss
+    function presented in equations (4) - (6) of the paper. It aims at penalizing cases where the routing between
+    experts is too unbalanced.
+
+    Args:
+        router_logits:
+            Logits from the `router`, should be a tuple of model.config.num_hidden_layers tensors of
+            shape [batch_size X sequence_length, num_experts].
+        num_experts:
+            Number of experts
+        top_k:
+            The number of experts to route per-token, can be also interpreted as the `top-k` routing
+            parameter.
+        attention_mask (`torch.Tensor`, *optional*):
+            The attention_mask used in forward function
+            shape [batch_size X sequence_length] if not None.
+
+    Returns:
+        The auxiliary loss.
+    """
+    ...
 
 class JambaRMSNorm(nn.Module):
-    def __init__(self, hidden_size, eps=...) -> None: ...
-    def forward(self, hidden_states): ...
-    def extra_repr(self): ...
+    def __init__(self, hidden_size, eps=...) -> None:
+        """
+        JambaRMSNorm is equivalent to T5LayerNorm
+        """
+        ...
 
-def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor: ...
+    def forward(self, hidden_states): ...
+    def extra_repr(self):  # -> str:
+        ...
+
+def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
+    """
+    This is the equivalent of torch.repeat_interleave(x, dim=1, repeats=n_rep). The hidden states go from (batch,
+    num_key_value_heads, seqlen, head_dim) to (batch, num_attention_heads, seqlen, head_dim)
+    """
+    ...
 
 class HybridMambaAttentionDynamicCache:
+    """
+    A dynamic cache that can handle both the attention cache (which has a seq_len dimension) and the mamba cache
+    (which has a constant shape regardless of seq_len).
+
+    This cache has two sets of lists of tensors: `key_cache` and `value_cache` for attention cache and `conv_states`
+    and `ssm_states` for mamba cache. Each of these lists has `num_layers` tensors. The expected shape for each tensor
+    For attention layers, `key_cache` and `value_cache` have a shape of `(batch_size, num_heads, seq_len, head_dim)`,
+    while `conv_states` and `ssm_states` have a shape of `(batch_size, 0)` (empty tensors).
+    For mamba layers, `key_cache` and `value_cache` have a shape of `(batch_size, 0)` (empty tensors),
+    while `conv_states` represents the convolution state and has a shape of `(batch_size, d_inner, d_conv)`,
+    and `ssm_states` represents the ssm state and has a shape of `(batch_size, d_inner, d_state)`.
+    """
+
     key_cache = ...
     value_cache = ...
     is_compileable = ...
@@ -50,13 +99,23 @@ class HybridMambaAttentionDynamicCache:
         layer_idx: int,
         cache_kwargs: Optional[dict[str, Any]] = ...,
     ) -> tuple[torch.Tensor, torch.Tensor]: ...
-    def reorder_cache(self, beam_idx: torch.LongTensor): ...
-    def get_seq_length(self, layer_idx: Optional[int] = ...) -> int: ...
+    def reorder_cache(self, beam_idx: torch.LongTensor):  # -> None:
+        """Reorders the cache for beam search, given the selected beam indices."""
+        ...
+
+    def get_seq_length(self, layer_idx: Optional[int] = ...) -> int:
+        """Returns the sequence length of the cached states. A layer index can be optionally passed."""
+        ...
+
     def to_legacy_cache(self) -> tuple[tuple[torch.Tensor], tuple[torch.Tensor]]: ...
     @classmethod
     def from_legacy_cache(cls, past_key_values: Optional[tuple[tuple[torch.FloatTensor]]] = ...) -> DynamicCache: ...
 
 class JambaAttention(nn.Module):
+    """
+    Multi-headed attention from 'Attention Is All You Need' paper. Modified to use sliding window attention: Longformer
+    and "Generating Long Sequences with Sparse Transformers".
+    """
     def __init__(self, config: JambaConfig, layer_idx: Optional[int] = ...) -> None: ...
     def forward(
         self,
@@ -70,6 +129,11 @@ class JambaAttention(nn.Module):
     ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
 
 class JambaFlashAttention2(JambaAttention):
+    """
+    Jamba flash attention module. This module inherits from `JambaAttention` as the weights of the module stays
+    untouched. The only required change would be on the forward pass where it needs to correctly call the public API of
+    flash attention and deal with padding tokens in case the input contains any of them.
+    """
     def __init__(self, *args, **kwargs) -> None: ...
     def forward(
         self,
@@ -81,9 +145,15 @@ class JambaFlashAttention2(JambaAttention):
         use_cache: bool = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         **kwargs,
-    ): ...
+    ):  # -> tuple[Any, Any | None, HybridMambaAttentionDynamicCache | None]:
+        ...
 
 class JambaSdpaAttention(JambaAttention):
+    """
+    Jamba attention module using torch.nn.functional.scaled_dot_product_attention. This module inherits from
+    `JambaAttention` as the weights of the module stays untouched. The only changes are on the forward pass to adapt to
+    SDPA API.
+    """
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -98,33 +168,55 @@ class JambaSdpaAttention(JambaAttention):
 JAMBA_ATTENTION_CLASSES = ...
 
 class JambaMambaMixer(nn.Module):
+    """
+    Compute ∆, A, B, C, and D the state space parameters and compute the `contextualized_states`.
+    A, D are input independent (see Mamba paper [1] Section 3.5.2 "Interpretation of A" for why A isn't selective)
+    ∆, B, C are input-dependent (this is a key difference between Mamba and the linear time invariant S4,
+    and is why Mamba is called **selective** state spaces)
+    """
     def __init__(self, config: JambaConfig, layer_idx) -> None: ...
     def cuda_kernels_forward(
         self,
         hidden_states: torch.Tensor,
         cache_params: HybridMambaAttentionDynamicCache = ...,
         attention_mask: Optional[torch.LongTensor] = ...,
-    ): ...
+    ):  # -> Any:
+        ...
     def slow_forward(
         self,
         input_states,
         cache_params: HybridMambaAttentionDynamicCache = ...,
         attention_mask: Optional[torch.LongTensor] = ...,
-    ): ...
+    ):  # -> Any:
+        ...
     def forward(
         self,
         hidden_states,
         cache_params: HybridMambaAttentionDynamicCache = ...,
         attention_mask: Optional[torch.LongTensor] = ...,
-    ): ...
+    ):  # -> Any:
+        ...
 
 class JambaMLP(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, x): ...
+    def forward(self, x):  # -> Any:
+        ...
 
 class JambaSparseMoeBlock(nn.Module):
+    """
+    This implementation is
+    strictly equivalent to standard MoE with full capacity (no
+    dropped tokens). It's faster since it formulates MoE operations
+    in terms of block-sparse operations to accommodate imbalanced
+    assignments of tokens to experts, whereas standard MoE either
+    (1) drop tokens at the cost of reduced performance or (2) set
+    capacity factor to number of experts and thus waste computation
+    and memory on padding.
+    """
     def __init__(self, config: JambaConfig) -> None: ...
-    def forward(self, hidden_states: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]: ...
+    def forward(self, hidden_states: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        """ """
+        ...
 
 class JambaAttentionDecoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: JambaConfig, layer_idx: int) -> None: ...
@@ -138,7 +230,26 @@ class JambaAttentionDecoderLayer(GradientCheckpointingLayer):
         output_router_logits: Optional[bool] = ...,
         use_cache: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
-    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]: ...
+    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            attention_mask (`torch.FloatTensor`, *optional*): attention mask of size
+                `(batch, sequence_length)` where padding elements are indicated by 0.
+            past_key_value (`HybridMambaAttentionDynamicCache`, *optional*): cached past key and value projection states
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            output_router_logits (`bool`, *optional*):
+                Whether or not to return the logits of all the routers. They are useful for computing the router loss, and
+                should not be returned during inference.
+            use_cache (`bool`, *optional*):
+                If set to `True`, `past_key_values` key value states are returned and can be used to speed up decoding
+                (see `past_key_values`).
+            cache_position (`torch.LongTensor` of shape `(sequence_length)`, *optional*):
+                Indices depicting the position of the input sequence tokens in the sequence.
+        """
+        ...
 
 class JambaMambaDecoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: JambaConfig, layer_idx: int) -> None: ...
@@ -152,7 +263,26 @@ class JambaMambaDecoderLayer(GradientCheckpointingLayer):
         output_router_logits: Optional[bool] = ...,
         use_cache: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
-    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]: ...
+    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            attention_mask (`torch.FloatTensor`, *optional*): attention mask of size
+                `(batch, sequence_length)` where padding elements are indicated by 0.
+            past_key_value (`HybridMambaAttentionDynamicCache`, *optional*): cached past key and value projection states
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            output_router_logits (`bool`, *optional*):
+                Whether or not to return the logits of all the routers. They are useful for computing the router loss, and
+                should not be returned during inference.
+            use_cache (`bool`, *optional*):
+                If set to `True`, `past_key_values` key value states are returned and can be used to speed up decoding
+                (see `past_key_values`).
+            cache_position (`torch.LongTensor` of shape `(sequence_length)`, *optional*):
+                Indices depicting the position of the input sequence tokens in the sequence.
+        """
+        ...
 
 @auto_docstring
 class JambaPreTrainedModel(PreTrainedModel):
@@ -169,6 +299,12 @@ ALL_DECODER_LAYER_TYPES = ...
 
 @auto_docstring
 class JambaModel(JambaPreTrainedModel):
+    """
+    Transformer decoder consisting of *config.num_hidden_layers* layers. Each layer is a [`JambaDecoderLayer`]
+
+    Args:
+        config: JambaConfig
+    """
     def __init__(self, config: JambaConfig) -> None: ...
     @can_return_tuple
     @auto_docstring
@@ -190,8 +326,10 @@ class JambaModel(JambaPreTrainedModel):
 class JambaForCausalLM(JambaPreTrainedModel, GenerationMixin):
     _tied_weights_keys = ...
     def __init__(self, config: JambaConfig) -> None: ...
-    def set_decoder(self, decoder): ...
-    def get_decoder(self): ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> JambaModel:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -209,7 +347,31 @@ class JambaForCausalLM(JambaPreTrainedModel, GenerationMixin):
         cache_position: Optional[torch.LongTensor] = ...,
         logits_to_keep: Union[int, torch.Tensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> MoeCausalLMOutputWithPast: ...
+    ) -> MoeCausalLMOutputWithPast:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, JambaForCausalLM
+
+        >>> model = JambaForCausalLM.from_pretrained("ai21labs/Jamba-v0.1")
+        >>> tokenizer = AutoTokenizer.from_pretrained("ai21labs/Jamba-v0.1")
+
+        >>> prompt = "Hey, are you conscious? Can you talk to me?"
+        >>> inputs = tokenizer(prompt, return_tensors="pt")
+
+        >>> # Generate
+        >>> generate_ids = model.generate(inputs.input_ids, max_length=30)
+        >>> tokenizer.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+        "Hey, are you conscious? Can you talk to me?\nI'm not conscious, but I can talk to you."
+        ```"""
+        ...
+
     def prepare_inputs_for_generation(
         self,
         input_ids,
@@ -221,7 +383,8 @@ class JambaForCausalLM(JambaPreTrainedModel, GenerationMixin):
         position_ids=...,
         use_cache=...,
         **kwargs,
-    ): ...
+    ):  # -> dict[str, Any]:
+        ...
 
 class JambaForSequenceClassification(GenericForSequenceClassification, JambaPreTrainedModel): ...
 

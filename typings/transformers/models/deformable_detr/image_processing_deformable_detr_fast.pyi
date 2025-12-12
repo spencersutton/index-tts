@@ -20,6 +20,26 @@ else: ...
 logger = ...
 
 class DeformableDetrFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
+    r"""
+    format (`str`, *optional*, defaults to `AnnotationFormat.COCO_DETECTION`):
+        Data format of the annotations. One of "coco_detection" or "coco_panoptic".
+    do_convert_annotations (`bool`, *optional*, defaults to `True`):
+        Controls whether to convert the annotations to the format expected by the DEFORMABLE_DETR model. Converts the
+        bounding boxes to the format `(center_x, center_y, width, height)` and in the range `[0, 1]`.
+        Can be overridden by the `do_convert_annotations` parameter in the `preprocess` method.
+    do_pad (`bool`, *optional*, defaults to `True`):
+        Controls whether to pad the image. Can be overridden by the `do_pad` parameter in the `preprocess`
+        method. If `True`, padding will be applied to the bottom and right of the image with zeros.
+        If `pad_size` is provided, the image will be padded to the specified dimensions.
+        Otherwise, the image will be padded to the maximum height and width of the batch.
+    pad_size (`dict[str, int]`, *optional*):
+        The size `{"height": int, "width" int}` to pad the images to. Must be larger than any image size
+        provided for preprocessing. If `pad_size` is not provided, images will be padded to the largest
+        height and width in the batch.
+    return_segmentation_masks (`bool`, *optional*, defaults to `False`):
+        Whether to return segmentation masks.
+    """
+
     format: Optional[Union[str, AnnotationFormat]]
     do_convert_annotations: Optional[bool]
     do_pad: Optional[bool]
@@ -29,22 +49,60 @@ class DeformableDetrFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
 
 SUPPORTED_ANNOTATION_FORMATS = ...
 
-def convert_coco_poly_to_mask(segmentations, height: int, width: int, device: torch.device) -> torch.Tensor: ...
+def convert_coco_poly_to_mask(segmentations, height: int, width: int, device: torch.device) -> torch.Tensor:
+    """
+    Convert a COCO polygon annotation to a mask.
+
+    Args:
+        segmentations (`list[list[float]]`):
+            List of polygons, each polygon represented by a list of x-y coordinates.
+        height (`int`):
+            Height of the mask.
+        width (`int`):
+            Width of the mask.
+    """
+    ...
+
 def prepare_coco_detection_annotation(
     image,
     target,
     return_segmentation_masks: bool = ...,
     input_data_format: Optional[Union[ChannelDimension, str]] = ...,
-): ...
-def masks_to_boxes(masks: torch.Tensor) -> torch.Tensor: ...
-def rgb_to_id(color): ...
+):  # -> dict[str, Tensor]:
+    """
+    Convert the target in COCO format into the format expected by DEFORMABLE_DETR.
+    """
+    ...
+
+def masks_to_boxes(masks: torch.Tensor) -> torch.Tensor:
+    """
+    Compute the bounding boxes around the provided panoptic segmentation masks.
+
+    Args:
+        masks: masks in format `[number_masks, height, width]` where N is the number of masks
+
+    Returns:
+        boxes: bounding boxes in format `[number_masks, 4]` in xyxy format
+    """
+    ...
+
+def rgb_to_id(color):  # -> Tensor | int:
+    """
+    Converts RGB color to unique ID.
+    """
+    ...
+
 def prepare_coco_panoptic_annotation(
     image: torch.Tensor,
     target: dict,
     masks_path: Union[str, pathlib.Path],
     return_masks: bool = ...,
     input_data_format: Union[ChannelDimension, str] = ...,
-) -> dict: ...
+) -> dict:
+    """
+    Prepare a coco panoptic annotation for DEFORMABLE_DETR.
+    """
+    ...
 
 @auto_docstring
 @requires(backends=("torchvision", "torch"))
@@ -63,7 +121,14 @@ class DeformableDetrImageProcessorFast(BaseImageProcessorFast):
     valid_kwargs = DeformableDetrFastImageProcessorKwargs
     def __init__(self, **kwargs: Unpack[DeformableDetrFastImageProcessorKwargs]) -> None: ...
     @classmethod
-    def from_dict(cls, image_processor_dict: dict[str, Any], **kwargs): ...
+    def from_dict(cls, image_processor_dict: dict[str, Any], **kwargs):  # -> tuple[Self, dict[str, Any]] | Self:
+        """
+        Overrides the `from_dict` method from the base class to make sure parameters are updated if image processor is
+        created using from_dict and kwargs e.g. `DeformableDetrImageProcessorFast.from_pretrained(checkpoint, size=600,
+        max_size=800)`
+        """
+        ...
+
     def prepare_annotation(
         self,
         image: torch.Tensor,
@@ -72,10 +137,37 @@ class DeformableDetrImageProcessorFast(BaseImageProcessorFast):
         return_segmentation_masks: Optional[bool] = ...,
         masks_path: Optional[Union[str, pathlib.Path]] = ...,
         input_data_format: Optional[Union[str, ChannelDimension]] = ...,
-    ) -> dict: ...
+    ) -> dict:
+        """
+        Prepare an annotation for feeding into DEFORMABLE_DETR model.
+        """
+        ...
+
     def resize(
         self, image: torch.Tensor, size: SizeDict, interpolation: F.InterpolationMode = ..., **kwargs
-    ) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """
+        Resize the image to the given size. Size can be `min_size` (scalar) or `(height, width)` tuple. If size is an
+        int, smaller edge of the image will be matched to this number.
+
+        Args:
+            image (`torch.Tensor`):
+                Image to resize.
+            size (`SizeDict`):
+                Size of the image's `(height, width)` dimensions after resizing. Available options are:
+                    - `{"height": int, "width": int}`: The image will be resized to the exact size `(height, width)`.
+                        Do NOT keep the aspect ratio.
+                    - `{"shortest_edge": int, "longest_edge": int}`: The image will be resized to a maximum size respecting
+                        the aspect ratio and keeping the shortest edge less or equal to `shortest_edge` and the longest edge
+                        less or equal to `longest_edge`.
+                    - `{"max_height": int, "max_width": int}`: The image will be resized to the maximum size respecting the
+                        aspect ratio and keeping the height less or equal to `max_height` and the width less or equal to
+                        `max_width`.
+            interpolation (`InterpolationMode`, *optional*, defaults to `InterpolationMode.BILINEAR`):
+                Resampling filter to use if resizing the image.
+        """
+        ...
+
     def resize_annotation(
         self,
         annotation: dict[str, Any],
@@ -83,7 +175,24 @@ class DeformableDetrImageProcessorFast(BaseImageProcessorFast):
         target_size: tuple[int, int],
         threshold: float = ...,
         interpolation: F.InterpolationMode = ...,
-    ): ...
+    ):  # -> dict[Any, Any]:
+        """
+        Resizes an annotation to a target size.
+
+        Args:
+            annotation (`dict[str, Any]`):
+                The annotation dictionary.
+            orig_size (`tuple[int, int]`):
+                The original size of the input image.
+            target_size (`tuple[int, int]`):
+                The target size of the image, as returned by the preprocessing `resize` step.
+            threshold (`float`, *optional*, defaults to 0.5):
+                The threshold used to binarize the segmentation masks.
+            resample (`InterpolationMode`, defaults to `InterpolationMode.NEAREST_EXACT`):
+                The resampling filter to use when resizing the masks.
+        """
+        ...
+
     def normalize_annotation(self, annotation: dict, image_size: tuple[int, int]) -> dict: ...
     def pad(
         self,
@@ -92,7 +201,8 @@ class DeformableDetrImageProcessorFast(BaseImageProcessorFast):
         annotation: Optional[dict[str, Any]] = ...,
         update_bboxes: bool = ...,
         fill: int = ...,
-    ): ...
+    ):  # -> tuple[Any | Tensor, Tensor, dict[str, Any] | None]:
+        ...
     @auto_docstring
     def preprocess(
         self,
@@ -100,10 +210,64 @@ class DeformableDetrImageProcessorFast(BaseImageProcessorFast):
         annotations: Optional[Union[AnnotationType, list[AnnotationType]]] = ...,
         masks_path: Optional[Union[str, pathlib.Path]] = ...,
         **kwargs: Unpack[DeformableDetrFastImageProcessorKwargs],
-    ) -> BatchFeature: ...
-    def post_process(self, outputs, target_sizes): ...
+    ) -> BatchFeature:
+        r"""
+        annotations (`AnnotationType` or `list[AnnotationType]`, *optional*):
+            List of annotations associated with the image or batch of images. If annotation is for object
+            detection, the annotations should be a dictionary with the following keys:
+            - "image_id" (`int`): The image id.
+            - "annotations" (`list[Dict]`): List of annotations for an image. Each annotation should be a
+                dictionary. An image can have no annotations, in which case the list should be empty.
+            If annotation is for segmentation, the annotations should be a dictionary with the following keys:
+            - "image_id" (`int`): The image id.
+            - "segments_info" (`list[Dict]`): List of segments for an image. Each segment should be a dictionary.
+                An image can have no segments, in which case the list should be empty.
+            - "file_name" (`str`): The file name of the image.
+        masks_path (`str` or `pathlib.Path`, *optional*):
+            Path to the directory containing the segmentation masks.
+        """
+        ...
+
+    def post_process(self, outputs, target_sizes):  # -> list[dict[str, Any]]:
+        """
+        Converts the raw output of [`DeformableDetrForObjectDetection`] into final bounding boxes in (top_left_x,
+        top_left_y, bottom_right_x, bottom_right_y) format. Only supports PyTorch.
+
+        Args:
+            outputs ([`DeformableDetrObjectDetectionOutput`]):
+                Raw outputs of the model.
+            target_sizes (`torch.Tensor` of shape `(batch_size, 2)`):
+                Tensor containing the size (height, width) of each image of the batch. For evaluation, this must be the
+                original image size (before any data augmentation). For visualization, this should be the image size
+                after data augment, but before padding.
+        Returns:
+            `list[Dict]`: A list of dictionaries, each dictionary containing the scores, labels and boxes for an image
+            in the batch as predicted by the model.
+        """
+        ...
+
     def post_process_object_detection(
         self, outputs, threshold: float = ..., target_sizes: Union[TensorType, list[tuple]] = ..., top_k: int = ...
-    ): ...
+    ):  # -> list[Any]:
+        """
+        Converts the raw output of [`DeformableDetrForObjectDetection`] into final bounding boxes in (top_left_x,
+        top_left_y, bottom_right_x, bottom_right_y) format. Only supports PyTorch.
+
+        Args:
+            outputs ([`DetrObjectDetectionOutput`]):
+                Raw outputs of the model.
+            threshold (`float`, *optional*):
+                Score threshold to keep object detection predictions.
+            target_sizes (`torch.Tensor` or `list[tuple[int, int]]`, *optional*):
+                Tensor of shape `(batch_size, 2)` or list of tuples (`tuple[int, int]`) containing the target size
+                (height, width) of each image in the batch. If left to None, predictions will not be resized.
+            top_k (`int`, *optional*, defaults to 100):
+                Keep only top k bounding boxes before filtering by thresholding.
+
+        Returns:
+            `list[Dict]`: A list of dictionaries, each dictionary containing the scores, labels and boxes for an image
+            in the batch as predicted by the model.
+        """
+        ...
 
 __all__ = ["DeformableDetrImageProcessorFast"]

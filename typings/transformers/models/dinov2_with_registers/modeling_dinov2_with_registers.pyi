@@ -15,12 +15,31 @@ from .configuration_dinov2_with_registers import Dinov2WithRegistersConfig
 logger = ...
 
 class Dinov2WithRegistersPatchEmbeddings(nn.Module):
+    """
+    This class turns `pixel_values` of shape `(batch_size, num_channels, height, width)` into the initial
+    `hidden_states` (patch embeddings) of shape `(batch_size, seq_length, hidden_size)` to be consumed by a
+    Transformer.
+    """
     def __init__(self, config) -> None: ...
     def forward(self, pixel_values: torch.Tensor) -> torch.Tensor: ...
 
 class Dinov2WithRegistersEmbeddings(nn.Module):
+    """
+    Construct the CLS token, mask token, register tokens, position and patch embeddings.
+    """
     def __init__(self, config: Dinov2WithRegistersConfig) -> None: ...
-    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor: ...
+    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor:
+        """
+        This method allows to interpolate the pre-trained position encodings, to be able to use the model on higher
+        resolution images. This implementation supports torch.jit tracing while maintaining backwards compatibility
+        with the original implementation.
+
+        Adapted from:
+        - https://github.com/facebookresearch/dino/blob/main/vision_transformer.py
+        - https://github.com/facebookresearch/dinov2/blob/main/dinov2/models/vision_transformer.py
+        """
+        ...
+
     def forward(self, pixel_values: torch.Tensor, bool_masked_pos: Optional[torch.Tensor] = ...) -> torch.Tensor: ...
 
 def eager_attention_forward(
@@ -32,7 +51,8 @@ def eager_attention_forward(
     scaling: float,
     dropout: float = ...,
     **kwargs,
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class Dinov2WithRegistersSelfAttention(nn.Module):
     def __init__(self, config: Dinov2WithRegistersConfig) -> None: ...
@@ -41,6 +61,10 @@ class Dinov2WithRegistersSelfAttention(nn.Module):
     ) -> Union[tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor]]: ...
 
 class Dinov2WithRegistersSelfOutput(nn.Module):
+    """
+    The residual connection is defined in Dinov2WithRegistersLayer instead of here (as is the case with other models), due to the
+    layernorm applied before each block.
+    """
     def __init__(self, config: Dinov2WithRegistersConfig) -> None: ...
     def forward(self, hidden_states: torch.Tensor, input_tensor: torch.Tensor) -> torch.Tensor: ...
 
@@ -55,9 +79,20 @@ class Dinov2WithRegistersLayerScale(nn.Module):
     def __init__(self, config) -> None: ...
     def forward(self, hidden_state: torch.Tensor) -> torch.Tensor: ...
 
-def drop_path(input: torch.Tensor, drop_prob: float = ..., training: bool = ...) -> torch.Tensor: ...
+def drop_path(input: torch.Tensor, drop_prob: float = ..., training: bool = ...) -> torch.Tensor:
+    """
+    Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks).
+
+    Comment by Ross Wightman: This is the same as the DropConnect impl I created for EfficientNet, etc networks,
+    however, the original name is misleading as 'Drop Connect' is a different form of dropout in a separate paper...
+    See discussion: https://github.com/tensorflow/tpu/issues/494#issuecomment-532968956 ... I've opted for changing the
+    layer and argument names to 'drop path' rather than mix DropConnect as a layer name and use 'survival rate' as the
+    argument.
+    """
+    ...
 
 class Dinov2WithRegistersDropPath(nn.Module):
+    """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks)."""
     def __init__(self, drop_prob: Optional[float] = ...) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
     def extra_repr(self) -> str: ...
@@ -71,6 +106,7 @@ class Dinov2WithRegistersSwiGLUFFN(nn.Module):
     def forward(self, hidden_state: torch.Tensor) -> torch.Tensor: ...
 
 class Dinov2WithRegistersLayer(GradientCheckpointingLayer):
+    """This corresponds to the Block class in the original implementation."""
     def __init__(self, config: Dinov2WithRegistersConfig) -> None: ...
     def forward(
         self, hidden_states: torch.Tensor, head_mask: Optional[torch.Tensor] = ..., output_attentions: bool = ...
@@ -112,9 +148,20 @@ class Dinov2WithRegistersModel(Dinov2WithRegistersPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPooling]: ...
+    ) -> Union[tuple, BaseModelOutputWithPooling]:
+        r"""
+        bool_masked_pos (`torch.BoolTensor` of shape `(batch_size, sequence_length)`):
+            Boolean masked positions. Indicates which patches are masked (1) and which aren't (0). Only relevant for
+            pre-training.
+        """
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Dinov2WithRegisters Model transformer with an image classification head on top (a linear layer on top of the final hidden state
+    of the [CLS] token) e.g. for ImageNet.
+    """
+)
 class Dinov2WithRegistersForImageClassification(Dinov2WithRegistersPreTrainedModel):
     def __init__(self, config: Dinov2WithRegistersConfig) -> None: ...
     @auto_docstring
@@ -126,9 +173,20 @@ class Dinov2WithRegistersForImageClassification(Dinov2WithRegistersPreTrainedMod
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ImageClassifierOutput]: ...
+    ) -> Union[tuple, ImageClassifierOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Dinov2WithRegisters backbone, to be used with frameworks like DETR and MaskFormer.
+    """
+)
 class Dinov2WithRegistersBackbone(Dinov2WithRegistersPreTrainedModel, BackboneMixin):
     def __init__(self, config) -> None: ...
     def get_input_embeddings(self) -> Dinov2WithRegistersPatchEmbeddings: ...
@@ -139,7 +197,32 @@ class Dinov2WithRegistersBackbone(Dinov2WithRegistersPreTrainedModel, BackboneMi
         output_hidden_states: Optional[bool] = ...,
         output_attentions: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> BackboneOutput: ...
+    ) -> BackboneOutput:
+        r"""
+        Examples:
+
+        ```python
+        >>> from transformers import AutoImageProcessor, AutoBackbone
+        >>> import torch
+        >>> from PIL import Image
+        >>> import requests
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> processor = AutoImageProcessor.from_pretrained("facebook/dinov2-with-registers-base")
+        >>> model = AutoBackbone.from_pretrained(
+        ...     "facebook/dinov2-with-registers-base", out_features=["stage2", "stage5", "stage8", "stage11"]
+        ... )
+
+        >>> inputs = processor(image, return_tensors="pt")
+
+        >>> outputs = model(**inputs)
+        >>> feature_maps = outputs.feature_maps
+        >>> list(feature_maps[-1].shape)
+        [1, 768, 16, 16]
+        ```"""
+        ...
 
 __all__ = [
     "Dinov2WithRegistersPreTrainedModel",

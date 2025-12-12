@@ -10,6 +10,9 @@ from ...tokenization_utils_base import PreTokenizedInput, TextInput
 from ...utils import is_tf_available, is_torch_available
 from ...utils.deprecation import deprecate_kwarg
 
+"""
+Processor class for IDEFICS.
+"""
 if is_torch_available(): ...
 if is_tf_available(): ...
 IMAGE_TOKEN = ...
@@ -32,12 +35,37 @@ class IdeficsProcessorKwargs(ProcessingKwargs, total=False):
     _defaults = ...
 
 def incremental_to_binary_attention_mask(incremental_mask, return_tensors, num_classes=...): ...
-def image_attention_mask_for_packed_input_ids(input_ids, tokenizer, return_tensors): ...
-def image_attention_mask_for_packed_input_ids_pt(input_ids, tokenizer): ...
-def image_attention_mask_for_packed_input_ids_tf(input_ids, tokenizer): ...
-def is_url(string): ...
+def image_attention_mask_for_packed_input_ids(
+    input_ids, tokenizer, return_tensors
+):  # -> tuple[Tensor, Tensor] | tuple[Any, Any] | None:
+    ...
+def image_attention_mask_for_packed_input_ids_pt(input_ids, tokenizer):  # -> tuple[Tensor, Tensor]:
+    ...
+def image_attention_mask_for_packed_input_ids_tf(input_ids, tokenizer):  # -> tuple[Any, Any]:
+    ...
+def is_url(string):  # -> bool:
+    """Checks if the passed string contains a valid url and nothing else. e.g. if space is included it's immediately
+    invalidated the url"""
+    ...
 
 class IdeficsProcessor(ProcessorMixin):
+    r"""
+    Constructs a IDEFICS processor which wraps a LLama tokenizer and IDEFICS image processor into a single processor.
+
+    [`IdeficsProcessor`] offers all the functionalities of [`IdeficsImageProcessor`] and [`LlamaTokenizerFast`]. See
+    the docstring of [`~IdeficsProcessor.__call__`] and [`~IdeficsProcessor.decode`] for more information.
+
+    Args:
+        image_processor (`IdeficsImageProcessor`):
+            An instance of [`IdeficsImageProcessor`]. The image processor is a required input.
+        tokenizer (`LlamaTokenizerFast`):
+            An instance of [`LlamaTokenizerFast`]. The tokenizer is a required input.
+        image_size (`int`, *optional*, defaults to 224):
+            Image size (assuming a square image)
+        add_end_of_utterance_token (`str`, *optional*):
+            The string representation of token representing end of utterance
+    """
+
     attributes = ...
     image_processor_class = ...
     tokenizer_class = ...
@@ -59,10 +87,107 @@ class IdeficsProcessor(ProcessorMixin):
         audio=...,
         videos=...,
         **kwargs: Unpack[IdeficsProcessorKwargs],
-    ) -> BatchFeature: ...
-    def batch_decode(self, *args, **kwargs): ...
-    def decode(self, *args, **kwargs): ...
+    ) -> BatchFeature:
+        """This method takes batched or non-batched prompts made of text and images and converts them into prompts that
+        the model was trained on and prepares the image pixel values for the model to process.
+
+        Args:
+            images (`Union[ImageInput, list[ImageInput], str, list[str], list[list[str]]]`):
+                either a single image or a batched list of images - can be passed in when text contains only text prompts,
+                in order to use the image-text-to-text behavior.
+            text (`Union[list[TextInput], [list[list[TextInput]]]]`):
+                either a single prompt or a batched list of prompts - see the detailed description immediately after
+                the end of the arguments doc section.
+            return_tensors (`str` or `TensorType`, *optional*, defaults to `TensorType.PYTORCH`):
+                The type of tensors to return. Can be one of:
+                    - `TensorType.PYTORCH` or `'pt'`: Return a batch of type `torch.Tensor`.
+
+        Returns:
+            a dict with entries: `input_ids`, `attention_mask`, `pixel_values`, `image_attention_mask` which can be
+            directly passed to `model.generate`
+
+        Detailed explanation:
+
+        Each entry in `text` is either a text to be passed as is or an image that will be processed.
+
+        An image can be either an image object (`PIL.Image`) or a url from which the image can be retrieved.
+
+        When the processor encounters an image it'll inject `<fake_token_around_image><image><fake_token_around_image>`
+        entry into the prompt.
+
+        Example:
+
+        ```python
+        checkpoint = "HuggingFaceM4/idefics-9b"
+        processor = AutoProcessor.from_pretrained(checkpoint)
+        url = "https://hips.hearstapps.com/hmg-prod/images/cute-photos-of-cats-in-grass-1593184777.jpg"
+        img = processor.image_processor.fetch_images([url])[0]
+
+        prompts = [
+            "User:",
+            img,
+            "Describe this image.\nAssistant: An image of two kittens in grass.\n",
+            "User:",
+            "https://hips.hearstapps.com/hmg-prod/images/dog-puns-1581708208.jpg",
+            "Describe this image.\nAssistant:",
+        ]
+
+        inputs = processor(text=prompts, return_tensors="pt")
+        generated_ids = model.generate(**inputs, max_length=100)
+        generated_text = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+        ```
+
+        In this example the `prompts` will be converted into:
+
+        ```
+        <s>User:<fake_token_around_image><image><fake_token_around_image>Describe this image.
+        Assistant: An image of two kittens in grass.
+        User:<fake_token_around_image><image><fake_token_around_image>Describe this image.
+        Assistant:'
+        ```
+
+        and the two images will be massaged using [`IdeficsImageProcessor.__call__`] method and placed inside the
+        `pixel_values` dict entry of the return value.
+
+        This example also exemplifies that images can be passed as objects or as text urls. It can be seen that the
+        first image is passed as object and the second one as a url.
+
+        To do training do:
+
+        ```python
+        image_transform = transforms.Compose(
+            [
+                transforms.RandomResizedCrop(
+                    (w, h), scale=(0.9, 1.0), interpolation=transforms.InterpolationMode.BICUBIC
+                ),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=self.image_mean, std=self.image_std),
+            ]
+        )
+        inputs = processor(text=prompts, transform=image_transform, return_tensors="pt")
+        ```
+
+        In order to help debug prompt generation enable `debug=True` which will show you what's happening.
+
+        """
+        ...
+
+    def batch_decode(self, *args, **kwargs):
+        """
+        This method forwards all its arguments to LlamaTokenizerFast's [`~PreTrainedTokenizer.batch_decode`]. Please
+        refer to the docstring of this method for more information.
+        """
+        ...
+
+    def decode(self, *args, **kwargs):
+        """
+        This method forwards all its arguments to LlamaTokenizerFast's [`~PreTrainedTokenizer.decode`]. Please refer to
+        the docstring of this method for more information.
+        """
+        ...
+
     @property
-    def model_input_names(self): ...
+    def model_input_names(self):  # -> list[Any]:
+        ...
 
 __all__ = ["IdeficsProcessor"]

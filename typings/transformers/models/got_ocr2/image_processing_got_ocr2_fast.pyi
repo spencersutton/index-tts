@@ -10,10 +10,23 @@ from ...image_utils import ImageInput
 from ...processing_utils import Unpack
 from ...utils import auto_docstring, is_torch_available, is_torchvision_available
 
+"""Fast Image processor class for Got-OCR-2."""
 if is_torch_available(): ...
 if is_torchvision_available(): ...
 
 class GotOcr2FastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
+    """
+    crop_to_patches (`bool`, *optional*, defaults to `False`):
+        Whether to crop the image to patches. Can be overridden by the `crop_to_patches` parameter in the
+        `preprocess` method.
+    min_patches (`int`, *optional*, defaults to 1):
+        The minimum number of patches to be extracted from the image. Only has an effect if `crop_to_patches` is
+        set to `True`. Can be overridden by the `min_patches` parameter in the `preprocess` method.
+    max_patches (`int`, *optional*, defaults to 12):
+        The maximum number of patches to be extracted from the image. Only has an effect if `crop_to_patches` is
+        set to `True`. Can be overridden by the `max_patches` parameter in the `preprocess` method.
+    """
+
     crop_to_patches: Optional[bool]
     min_patches: Optional[int]
     max_patches: Optional[int]
@@ -44,7 +57,45 @@ class GotOcr2ImageProcessorFast(BaseImageProcessorFast):
         use_thumbnail: bool = ...,
         patch_size: Optional[Union[tuple, int, dict]] = ...,
         interpolation: Optional[F.InterpolationMode] = ...,
-    ): ...
-    def get_number_of_image_patches(self, height: int, width: int, images_kwargs=...): ...
+    ):  # -> Tensor:
+        """
+        Crop the images to patches and return a list of cropped images.
+        The number of patches and their grid arrangement are determined by the original image size,
+        the target patch size and the minimum and maximum number of patches.
+        The aspect ratio of the patches grid is chosen to be the closest to the original image aspect ratio.
+
+        Args:
+            images (`torch.Tensor`):
+                The images to be cropped.
+            min_patches (`int`):
+                The minimum number of patches to be extracted from the image.
+            max_patches (`int`):
+                The maximum number of patches to be extracted from the image.
+            use_thumbnail (`bool`, *optional*, defaults to `True`):
+                Whether to add a thumbnail image to the list of cropped patches.
+            patch_size (`int`, `tuple[int, int]`, `dict`, *optional*):
+                The size of the output patches.
+                The format of the image data. If `None`, the format is inferred from the input image.
+
+        Returns:
+            list[`PIL.Image.Image`] or list[np.ndarray]: The list of cropped images.
+        """
+        ...
+
+    def get_number_of_image_patches(self, height: int, width: int, images_kwargs=...):  # -> int:
+        """
+        A utility that returns number patches for a given image size.
+
+        Args:
+            height (`int`):
+                Height of the input image.
+            width (`int`):
+                Width of the input image.
+            images_kwargs (`dict`, *optional*)
+                Any kwargs to override defaults of the image processor.
+        Returns:
+            `int`: Number of patches per image.
+        """
+        ...
 
 __all__ = ["GotOcr2ImageProcessorFast"]

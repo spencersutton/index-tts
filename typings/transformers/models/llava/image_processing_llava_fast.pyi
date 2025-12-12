@@ -10,11 +10,18 @@ from ...image_utils import ImageInput
 from ...processing_utils import Unpack
 from ...utils import auto_docstring, is_torch_available, is_torchvision_available, is_vision_available
 
+"""Fast Image processor class for LLaVa."""
 if is_vision_available(): ...
 if is_torch_available(): ...
 if is_torchvision_available(): ...
 
 class LlavaFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
+    """
+    Args:
+        do_pad (`bool`, *optional*):
+            Whether to pad the image to a square based on the longest edge.
+    """
+
     do_pad: Optional[bool]
     ...
 
@@ -38,6 +45,20 @@ class LlavaImageProcessorFast(BaseImageProcessorFast):
     def preprocess(self, images: ImageInput, **kwargs: Unpack[LlavaFastImageProcessorKwargs]) -> BatchFeature: ...
     def pad_to_square(
         self, images: torch.Tensor, background_color: Union[int, tuple[int, int, int]] = ...
-    ) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """
+        Pads an image to a square based on the longest edge.
+
+        Args:
+            images (`np.ndarray`):
+                The images to pad.
+            background_color (`int` or `tuple[int, int, int]`, *optional*, defaults to 0):
+                The color to use for the padding. Can be an integer for single channel or a
+                tuple of integers representing for multi-channel images. If passed as integer
+                in mutli-channel mode, it will default to `0` in subsequent channels.
+        Returns:
+            `torch.Tensor`: The padded images.
+        """
+        ...
 
 __all__ = ["LlavaImageProcessorFast"]

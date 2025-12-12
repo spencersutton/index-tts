@@ -13,6 +13,7 @@ from ...modeling_flax_utils import FlaxPreTrainedModel
 from ...utils import add_start_docstrings, add_start_docstrings_to_model_forward
 from .configuration_xglm import XGLMConfig
 
+"""Flax XGLM model."""
 logger = ...
 _CHECKPOINT_FOR_DOC = ...
 _CONFIG_FOR_DOC = ...
@@ -37,7 +38,9 @@ class FlaxXGLMAttention(nn.Module):
         attention_mask: Optional[jnp.ndarray] = ...,
         init_cache: bool = ...,
         deterministic: bool = ...,
-    ) -> tuple[jnp.ndarray]: ...
+    ) -> tuple[jnp.ndarray]:
+        """Input shape: Batch x Time x Channel"""
+        ...
 
 class FlaxXGLMDecoderLayer(nn.Module):
     config: XGLMConfig
@@ -57,7 +60,8 @@ class FlaxXGLMDecoderLayer(nn.Module):
 class FlaxXGLMDecoderLayerCollection(nn.Module):
     config: XGLMConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         hidden_states,
@@ -69,12 +73,14 @@ class FlaxXGLMDecoderLayerCollection(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any | tuple[Any | None, ...] | tuple[()], ...] | FlaxBaseModelOutputWithPastAndCrossAttentions:
+        ...
 
 class FlaxXGLMModule(nn.Module):
     config: XGLMConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids,
@@ -87,7 +93,8 @@ class FlaxXGLMModule(nn.Module):
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
         deterministic: bool = ...,
-    ): ...
+    ):  # -> tuple[Any | tuple[Any | None, ...] | tuple[Any, ...] | tuple[()], ...] | FlaxBaseModelOutputWithPastAndCrossAttentions:
+        ...
 
 class FlaxXGLMPreTrainedModel(FlaxPreTrainedModel):
     config_class = XGLMConfig
@@ -103,7 +110,17 @@ class FlaxXGLMPreTrainedModel(FlaxPreTrainedModel):
         **kwargs,
     ) -> None: ...
     def init_weights(self, rng: jax.random.PRNGKey, input_shape: tuple, params: FrozenDict = ...) -> FrozenDict: ...
-    def init_cache(self, batch_size, max_length): ...
+    def init_cache(self, batch_size, max_length):
+        r"""
+        Args:
+            batch_size (`int`):
+                batch_size used for fast auto-regressive decoding. Defines the batch size of the initialized cache.
+            max_length (`int`):
+                maximum possible length for auto-regressive decoding. Defines the sequence length of the initialized
+                cache.
+        """
+        ...
+
     @add_start_docstrings_to_model_forward(XGLM_INPUTS_DOCSTRING)
     def __call__(
         self,
@@ -121,14 +138,18 @@ class FlaxXGLMPreTrainedModel(FlaxPreTrainedModel):
         dropout_rng: PRNGKey = ...,
     ): ...
 
-@add_start_docstrings(..., XGLM_START_DOCSTRING)
+@add_start_docstrings(
+    "The bare XGLM Model transformer outputting raw hidden-states without any specific head on top.",
+    XGLM_START_DOCSTRING,
+)
 class FlaxXGLMModel(FlaxXGLMPreTrainedModel):
     module_class = ...
 
 class FlaxXGLMForCausalLMModule(nn.Module):
     config: XGLMConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids,
@@ -141,12 +162,22 @@ class FlaxXGLMForCausalLMModule(nn.Module):
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
         deterministic: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, *tuple[Any | tuple[Any | None, ...] | tuple[Any, ...] | tuple[()], ...]] | Any | FlaxCausalLMOutputWithCrossAttentions:
+        ...
 
-@add_start_docstrings(..., XGLM_START_DOCSTRING)
+@add_start_docstrings(
+    """
+    The XGLM Model transformer with a language modeling head on top (linear layer with weights tied to the input
+    embeddings).
+    """,
+    XGLM_START_DOCSTRING,
+)
 class FlaxXGLMForCausalLM(FlaxXGLMPreTrainedModel):
     module_class = ...
-    def prepare_inputs_for_generation(self, input_ids, max_length, attention_mask: Optional[jax.Array] = ...): ...
+    def prepare_inputs_for_generation(
+        self, input_ids, max_length, attention_mask: Optional[jax.Array] = ...
+    ):  # -> dict[str, Any]:
+        ...
     def update_inputs_for_generation(self, model_outputs, model_kwargs): ...
 
 __all__ = ["FlaxXGLMForCausalLM", "FlaxXGLMModel", "FlaxXGLMPreTrainedModel"]

@@ -9,11 +9,20 @@ from ...image_processing_utils_fast import BaseImageProcessorFast, DefaultFastIm
 from ...processing_utils import Unpack
 from ...utils import auto_docstring, is_torch_available, is_torchvision_available
 
+"""Fast Image processor class for ViTMatte."""
 if is_torch_available(): ...
 if is_torchvision_available(): ...
 logger = ...
 
 class VitMatteFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
+    """
+    do_pad (`bool`, *optional*, defaults to `True`):
+        Whether to pad the image to make the width and height divisible by `size_divisibility`. Can be overridden
+        by the `do_pad` parameter in the `preprocess` method.
+    size_divisibility (`int`, *optional*, defaults to 32):
+        The width and height of the image will be padded to be divisible by this number.
+    """
+
     do_pad: Optional[bool]
     size_divisibility: int
     ...
@@ -35,6 +44,11 @@ class VitMatteImageProcessorFast(BaseImageProcessorFast):
         images: list[torch.Tensor],
         trimaps: list[torch.Tensor],
         **kwargs: Unpack[VitMatteFastImageProcessorKwargs],
-    ) -> BatchFeature: ...
+    ) -> BatchFeature:
+        r"""
+        trimaps (`list[torch.Tensor]`):
+            The trimaps to preprocess.
+        """
+        ...
 
 __all__ = ["VitMatteImageProcessorFast"]

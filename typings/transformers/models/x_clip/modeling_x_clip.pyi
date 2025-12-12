@@ -12,6 +12,7 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import ModelOutput, auto_docstring, can_return_tuple
 from .configuration_x_clip import XCLIPConfig, XCLIPTextConfig, XCLIPVisionConfig
 
+"""PyTorch X-CLIP model."""
 logger = ...
 
 def contrastive_loss(logits: torch.Tensor) -> torch.Tensor: ...
@@ -20,6 +21,28 @@ def x_clip_loss(similarity: torch.Tensor) -> torch.Tensor: ...
 @dataclass
 @auto_docstring
 class XCLIPOutput(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `return_loss` is `True`):
+        Contrastive loss for video-text similarity.
+    logits_per_video (`torch.FloatTensor` of shape `(video_batch_size, text_batch_size)`):
+        The scaled dot product scores between `video_embeds` and `text_embeds`. This represents the video-text
+        similarity scores.
+    logits_per_text (`torch.FloatTensor` of shape `(text_batch_size, video_batch_size)`):
+        The scaled dot product scores between `text_embeds` and `video_embeds`. This represents the text-video
+        similarity scores.
+    text_embeds (`torch.FloatTensor` of shape `(batch_size, output_dim`):
+        The text embeddings obtained by applying the projection layer to the pooled output of [`XCLIPTextModel`].
+    video_embeds (`torch.FloatTensor` of shape `(batch_size, output_dim`):
+        The video embeddings obtained by applying the projection layer to the pooled output of
+        [`XCLIPVisionModel`].
+    text_model_output (`BaseModelOutputWithPooling`):
+        The output of the [`XCLIPTextModel`].
+    vision_model_output (`BaseModelOutputWithPooling`):
+        The output of the [`XCLIPVisionModel`].
+    mit_output (`BaseModelOutputWithPooling`):
+        The output of `XCLIPMultiframeIntegrationTransformer` (MIT for short).
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     logits_per_video: Optional[torch.FloatTensor] = ...
     logits_per_text: Optional[torch.FloatTensor] = ...
@@ -32,7 +55,17 @@ class XCLIPOutput(ModelOutput):
 
 class XCLIPVisionEmbeddings(nn.Module):
     def __init__(self, config: XCLIPVisionConfig) -> None: ...
-    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor: ...
+    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor:
+        """
+        This method allows to interpolate the pre-trained position encodings, to be able to use the model on higher resolution
+        images. This method is also adapted to support torch.jit tracing.
+
+        Adapted from:
+        - https://github.com/facebookresearch/dino/blob/de9ee3df6cf39fac952ab558447af1fa1365362a/vision_transformer.py#L174-L194, and
+        - https://github.com/facebookresearch/dinov2/blob/e1277af2ba9496fbadf7aec6eba56e8d882d1e35/dinov2/models/vision_transformer.py#L179-L211
+        """
+        ...
+
     def forward(self, pixel_values: torch.FloatTensor, interpolate_pos_encoding=...) -> torch.Tensor: ...
 
 class XCLIPTextEmbeddings(nn.Module):
@@ -53,9 +86,11 @@ def eager_attention_forward(
     scaling: float,
     dropout: float = ...,
     **kwargs,
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class XCLIPAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config) -> None: ...
     def forward(
         self,
@@ -63,7 +98,9 @@ class XCLIPAttention(nn.Module):
         attention_mask: Optional[torch.Tensor] = ...,
         causal_attention_mask: Optional[torch.Tensor] = ...,
         output_attentions: Optional[bool] = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]: ...
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
+        """Input shape: Batch x Time x Channel"""
+        ...
 
 class XCLIPMLP(nn.Module):
     def __init__(self, config) -> None: ...
@@ -77,16 +114,41 @@ class XCLIPEncoderLayer(GradientCheckpointingLayer):
         attention_mask: torch.Tensor,
         causal_attention_mask: torch.Tensor,
         output_attentions: Optional[bool] = ...,
-    ) -> tuple[torch.FloatTensor]: ...
+    ) -> tuple[torch.FloatTensor]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            attention_mask (`torch.FloatTensor`): attention mask of size
+                `(batch, 1, tgt_len, src_len)` where padding elements are indicated by very large negative values.
+                `(config.encoder_attention_heads,)`.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+        """
+        ...
 
-def drop_path(input: torch.Tensor, drop_prob: float = ..., training: bool = ...) -> torch.Tensor: ...
+def drop_path(input: torch.Tensor, drop_prob: float = ..., training: bool = ...) -> torch.Tensor:
+    """
+    Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks).
+
+    Comment by Ross Wightman: This is the same as the DropConnect impl I created for EfficientNet, etc networks,
+    however, the original name is misleading as 'Drop Connect' is a different form of dropout in a separate paper...
+    See discussion: https://github.com/tensorflow/tpu/issues/494#issuecomment-532968956 ... I've opted for changing the
+    layer and argument names to 'drop path' rather than mix DropConnect as a layer name and use 'survival rate' as the
+    argument.
+    """
+    ...
 
 class XCLIPDropPath(nn.Module):
+    """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks)."""
     def __init__(self, drop_prob: Optional[float] = ...) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
     def extra_repr(self) -> str: ...
 
 class XCLIPVisionEncoderLayer(GradientCheckpointingLayer):
+    """
+    This corresponds to the `CrossFramelAttentionBlock` class in the original implementation.
+    """
     def __init__(self, config: XCLIPConfig) -> None: ...
     def forward(
         self,
@@ -94,7 +156,23 @@ class XCLIPVisionEncoderLayer(GradientCheckpointingLayer):
         attention_mask: torch.Tensor,
         causal_attention_mask: torch.Tensor,
         output_attentions: Optional[bool] = ...,
-    ) -> tuple[torch.FloatTensor]: ...
+    ) -> tuple[torch.FloatTensor]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            attention_mask (`torch.FloatTensor`): attention mask of size
+                `(batch, 1, tgt_len, src_len)` where padding elements are indicated by very large negative values.
+                `(config.encoder_attention_heads,)`.
+            causal_attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Causal mask for the text model. Mask values selected in `[0, 1]`:
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+                [What are attention masks?](../glossary#attention-mask)
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+        """
+        ...
 
 @auto_docstring
 class XCLIPPreTrainedModel(PreTrainedModel):
@@ -103,6 +181,13 @@ class XCLIPPreTrainedModel(PreTrainedModel):
     supports_gradient_checkpointing = ...
 
 class XCLIPEncoder(nn.Module):
+    """
+    Transformer encoder consisting of `config.num_hidden_layers` self attention layers. Each layer is a
+    [`XCLIPEncoderLayer`].
+
+    Args:
+        config: XCLIPConfig
+    """
     def __init__(self, config: XCLIPConfig) -> None: ...
     @can_return_tuple
     def forward(
@@ -113,7 +198,37 @@ class XCLIPEncoder(nn.Module):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutput]: ...
+    ) -> Union[tuple, BaseModelOutput]:
+        r"""
+        Args:
+            inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
+                Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation.
+                This is useful if you want more control over how to convert `input_ids` indices into associated vectors
+                than the model's internal embedding lookup matrix.
+            attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Mask to avoid performing attention on padding token indices. Mask values selected in `[0, 1]`:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+            causal_attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Causal mask for the text model. Mask values selected in `[0, 1]`:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers. See `hidden_states` under returned tensors
+                for more detail.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`~utils.ModelOutput`] instead of a plain tuple.
+        """
+        ...
 
 class XCLIPTextTransformer(nn.Module):
     def __init__(self, config: XCLIPTextConfig) -> None: ...
@@ -132,7 +247,8 @@ class XCLIPTextModel(XCLIPPreTrainedModel):
     config: XCLIPTextConfig
     def __init__(self, config: XCLIPTextConfig) -> None: ...
     def get_input_embeddings(self) -> nn.Module: ...
-    def set_input_embeddings(self, value): ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -142,9 +258,32 @@ class XCLIPTextModel(XCLIPPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPooling]: ...
+    ) -> Union[tuple, BaseModelOutputWithPooling]:
+        r"""
+        Examples:
+
+        ```python
+        >>> from transformers import AutoTokenizer, XCLIPTextModel
+
+        >>> model = XCLIPTextModel.from_pretrained("microsoft/xclip-base-patch32")
+        >>> tokenizer = AutoTokenizer.from_pretrained("microsoft/xclip-base-patch32")
+
+        >>> inputs = tokenizer(["a photo of a cat", "a photo of a dog"], padding=True, return_tensors="pt")
+
+        >>> outputs = model(**inputs)
+        >>> last_hidden_state = outputs.last_hidden_state
+        >>> pooled_output = outputs.pooler_output  # pooled (EOS token) states
+        ```"""
+        ...
 
 class XCLIPVisionEncoder(nn.Module):
+    """
+    Transformer encoder consisting of `config.num_hidden_layers` self attention layers. Each layer is a
+    [`XCLIPVisionEncoderLayer`].
+
+    Args:
+        config: XCLIPConfig
+    """
     def __init__(self, config: XCLIPConfig) -> None: ...
     def forward(
         self,
@@ -154,9 +293,42 @@ class XCLIPVisionEncoder(nn.Module):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutput]: ...
+    ) -> Union[tuple, BaseModelOutput]:
+        r"""
+        Args:
+            inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
+                Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation.
+                This is useful if you want more control over how to convert `input_ids` indices into associated vectors
+                than the model's internal embedding lookup matrix.
+            attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Mask to avoid performing attention on padding token indices. Mask values selected in `[0, 1]`:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+            causal_attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Causal mask for the text model. Mask values selected in `[0, 1]`:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers. See `hidden_states` under returned tensors
+                for more detail.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`~utils.ModelOutput`] instead of a plain tuple.
+        """
+        ...
 
 class XCLIPVisionTransformer(nn.Module):
+    """
+    This corresponds to the `CrossFrameCommunicationTransformer` class in the original implementation.
+    """
     def __init__(self, config: XCLIPVisionConfig) -> None: ...
     @auto_docstring
     def forward(
@@ -180,9 +352,87 @@ class XCLIPVisionModel(XCLIPPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPooling]: ...
+    ) -> Union[tuple, BaseModelOutputWithPooling]:
+        r"""
+        Examples:
+
+        ```python
+        >>> import av
+        >>> import torch
+        >>> import numpy as np
+
+        >>> from transformers import AutoProcessor, XCLIPVisionModel
+        >>> from huggingface_hub import hf_hub_download
+
+        >>> np.random.seed(0)
+
+
+        >>> def read_video_pyav(container, indices):
+        ...     '''
+        ...     Decode the video with PyAV decoder.
+        ...     Args:
+        ...         container (`av.container.input.InputContainer`): PyAV container.
+        ...         indices (`list[int]`): List of frame indices to decode.
+        ...     Returns:
+        ...         result (np.ndarray): np array of decoded frames of shape (num_frames, height, width, 3).
+        ...     '''
+        ...     frames = []
+        ...     container.seek(0)
+        ...     start_index = indices[0]
+        ...     end_index = indices[-1]
+        ...     for i, frame in enumerate(container.decode(video=0)):
+        ...         if i > end_index:
+        ...             break
+        ...         if i >= start_index and i in indices:
+        ...             frames.append(frame)
+        ...     return np.stack([x.to_ndarray(format="rgb24") for x in frames])
+
+
+        >>> def sample_frame_indices(clip_len, frame_sample_rate, seg_len):
+        ...     '''
+        ...     Sample a given number of frame indices from the video.
+        ...     Args:
+        ...         clip_len (`int`): Total number of frames to sample.
+        ...         frame_sample_rate (`int`): Sample every n-th frame.
+        ...         seg_len (`int`): Maximum allowed index of sample's last frame.
+        ...     Returns:
+        ...         indices (`list[int]`): List of sampled frame indices
+        ...     '''
+        ...     converted_len = int(clip_len * frame_sample_rate)
+        ...     end_idx = np.random.randint(converted_len, seg_len)
+        ...     start_idx = end_idx - converted_len
+        ...     indices = np.linspace(start_idx, end_idx, num=clip_len)
+        ...     indices = np.clip(indices, start_idx, end_idx - 1).astype(np.int64)
+        ...     return indices
+
+
+        >>> # video clip consists of 300 frames (10 seconds at 30 FPS)
+        >>> file_path = hf_hub_download(
+        ...     repo_id="nielsr/video-demo", filename="eating_spaghetti.mp4", repo_type="dataset"
+        ... )
+        >>> container = av.open(file_path)
+
+        >>> # sample 16 frames
+        >>> indices = sample_frame_indices(clip_len=8, frame_sample_rate=1, seg_len=container.streams.video[0].frames)
+        >>> video = read_video_pyav(container, indices)
+
+        >>> processor = AutoProcessor.from_pretrained("microsoft/xclip-base-patch32")
+        >>> model = XCLIPVisionModel.from_pretrained("microsoft/xclip-base-patch32")
+
+        >>> pixel_values = processor(videos=list(video), return_tensors="pt").pixel_values
+
+        >>> batch_size, num_frames, num_channels, height, width = pixel_values.shape
+        >>> pixel_values = pixel_values.reshape(-1, num_channels, height, width)
+
+        >>> outputs = model(pixel_values)
+        >>> last_hidden_state = outputs.last_hidden_state
+        ```"""
+        ...
 
 class XCLIPMultiframeIntegrationTransformer(nn.Module):
+    """
+    This corresponds to the `MultiframeIntegrationTransformer` class in the original implementation.
+    """
     def __init__(self, config: XCLIPVisionConfig) -> None: ...
     def forward(
         self,
@@ -193,16 +443,21 @@ class XCLIPMultiframeIntegrationTransformer(nn.Module):
     ) -> Union[tuple, BaseModelOutput]: ...
 
 class XCLIPCrossAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config) -> None: ...
-    def forward(self, queries, keys, values): ...
+    def forward(self, queries, keys, values):  # -> Any:
+        """Input shape: Batch x Time x Channel"""
+        ...
 
 class PromptGeneratorLayer(nn.Module):
     def __init__(self, config) -> None: ...
     def forward(self, x, visual): ...
 
 class XCLIPPromptGenerator(nn.Module):
+    """This corresponds to the `VideoSpecificPrompt` class in the original implementation."""
     def __init__(self, config) -> None: ...
-    def forward(self, text, visual): ...
+    def forward(self, text, visual):  # -> Any:
+        ...
 
 @auto_docstring
 class XCLIPModel(XCLIPPreTrainedModel):
@@ -217,7 +472,25 @@ class XCLIPModel(XCLIPPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> torch.FloatTensor: ...
+    ) -> torch.FloatTensor:
+        r"""
+        Returns:
+            text_features (`torch.FloatTensor` of shape `(batch_size, output_dim`): The text embeddings obtained by
+            applying the projection layer to the pooled output of [`XCLIPTextModel`].
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoTokenizer, AutoModel
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("microsoft/xclip-base-patch32")
+        >>> model = AutoModel.from_pretrained("microsoft/xclip-base-patch32")
+
+        >>> inputs = tokenizer(["a photo of a cat", "a photo of a dog"], padding=True, return_tensors="pt")
+        >>> text_features = model.get_text_features(**inputs)
+        ```"""
+        ...
+
     @auto_docstring
     def get_video_features(
         self,
@@ -225,7 +498,84 @@ class XCLIPModel(XCLIPPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> torch.FloatTensor: ...
+    ) -> torch.FloatTensor:
+        r"""
+        Returns:
+            video_features (`torch.FloatTensor` of shape `(batch_size, output_dim`): The video embeddings obtained by
+            applying the projection layer to the pooled output of [`XCLIPVisionModel`] and
+            [`XCLIPMultiframeIntegrationTransformer`].
+
+        Examples:
+
+        ```python
+        >>> import av
+        >>> import torch
+        >>> import numpy as np
+
+        >>> from transformers import AutoProcessor, AutoModel
+        >>> from huggingface_hub import hf_hub_download
+
+        >>> np.random.seed(0)
+
+
+        >>> def read_video_pyav(container, indices):
+        ...     '''
+        ...     Decode the video with PyAV decoder.
+        ...     Args:
+        ...         container (`av.container.input.InputContainer`): PyAV container.
+        ...         indices (`list[int]`): List of frame indices to decode.
+        ...     Returns:
+        ...         result (np.ndarray): np array of decoded frames of shape (num_frames, height, width, 3).
+        ...     '''
+        ...     frames = []
+        ...     container.seek(0)
+        ...     start_index = indices[0]
+        ...     end_index = indices[-1]
+        ...     for i, frame in enumerate(container.decode(video=0)):
+        ...         if i > end_index:
+        ...             break
+        ...         if i >= start_index and i in indices:
+        ...             frames.append(frame)
+        ...     return np.stack([x.to_ndarray(format="rgb24") for x in frames])
+
+
+        >>> def sample_frame_indices(clip_len, frame_sample_rate, seg_len):
+        ...     '''
+        ...     Sample a given number of frame indices from the video.
+        ...     Args:
+        ...         clip_len (`int`): Total number of frames to sample.
+        ...         frame_sample_rate (`int`): Sample every n-th frame.
+        ...         seg_len (`int`): Maximum allowed index of sample's last frame.
+        ...     Returns:
+        ...         indices (`list[int]`): List of sampled frame indices
+        ...     '''
+        ...     converted_len = int(clip_len * frame_sample_rate)
+        ...     end_idx = np.random.randint(converted_len, seg_len)
+        ...     start_idx = end_idx - converted_len
+        ...     indices = np.linspace(start_idx, end_idx, num=clip_len)
+        ...     indices = np.clip(indices, start_idx, end_idx - 1).astype(np.int64)
+        ...     return indices
+
+
+        >>> # video clip consists of 300 frames (10 seconds at 30 FPS)
+        >>> file_path = hf_hub_download(
+        ...     repo_id="nielsr/video-demo", filename="eating_spaghetti.mp4", repo_type="dataset"
+        ... )
+        >>> container = av.open(file_path)
+
+        >>> # sample 8 frames
+        >>> indices = sample_frame_indices(clip_len=8, frame_sample_rate=1, seg_len=container.streams.video[0].frames)
+        >>> video = read_video_pyav(container, indices)
+
+        >>> processor = AutoProcessor.from_pretrained("microsoft/xclip-base-patch32")
+        >>> model = AutoModel.from_pretrained("microsoft/xclip-base-patch32")
+
+        >>> inputs = processor(videos=list(video), return_tensors="pt")
+
+        >>> video_features = model.get_video_features(**inputs)
+        ```"""
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -238,6 +588,92 @@ class XCLIPModel(XCLIPPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         interpolate_pos_encoding: bool = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, XCLIPOutput]: ...
+    ) -> Union[tuple, XCLIPOutput]:
+        r"""
+        return_loss (`bool`, *optional*):
+            Whether or not to return the contrastive loss.
+
+        Examples:
+
+        ```python
+        >>> import av
+        >>> import torch
+        >>> import numpy as np
+
+        >>> from transformers import AutoProcessor, AutoModel
+        >>> from huggingface_hub import hf_hub_download
+
+        >>> np.random.seed(0)
+
+
+        >>> def read_video_pyav(container, indices):
+        ...     '''
+        ...     Decode the video with PyAV decoder.
+        ...     Args:
+        ...         container (`av.container.input.InputContainer`): PyAV container.
+        ...         indices (`list[int]`): List of frame indices to decode.
+        ...     Returns:
+        ...         result (np.ndarray): np array of decoded frames of shape (num_frames, height, width, 3).
+        ...     '''
+        ...     frames = []
+        ...     container.seek(0)
+        ...     start_index = indices[0]
+        ...     end_index = indices[-1]
+        ...     for i, frame in enumerate(container.decode(video=0)):
+        ...         if i > end_index:
+        ...             break
+        ...         if i >= start_index and i in indices:
+        ...             frames.append(frame)
+        ...     return np.stack([x.to_ndarray(format="rgb24") for x in frames])
+
+
+        >>> def sample_frame_indices(clip_len, frame_sample_rate, seg_len):
+        ...     '''
+        ...     Sample a given number of frame indices from the video.
+        ...     Args:
+        ...         clip_len (`int`): Total number of frames to sample.
+        ...         frame_sample_rate (`int`): Sample every n-th frame.
+        ...         seg_len (`int`): Maximum allowed index of sample's last frame.
+        ...     Returns:
+        ...         indices (`list[int]`): List of sampled frame indices
+        ...     '''
+        ...     converted_len = int(clip_len * frame_sample_rate)
+        ...     end_idx = np.random.randint(converted_len, seg_len)
+        ...     start_idx = end_idx - converted_len
+        ...     indices = np.linspace(start_idx, end_idx, num=clip_len)
+        ...     indices = np.clip(indices, start_idx, end_idx - 1).astype(np.int64)
+        ...     return indices
+
+
+        >>> # video clip consists of 300 frames (10 seconds at 30 FPS)
+        >>> file_path = hf_hub_download(
+        ...     repo_id="nielsr/video-demo", filename="eating_spaghetti.mp4", repo_type="dataset"
+        ... )
+        >>> container = av.open(file_path)
+
+        >>> # sample 8 frames
+        >>> indices = sample_frame_indices(clip_len=8, frame_sample_rate=1, seg_len=container.streams.video[0].frames)
+        >>> video = read_video_pyav(container, indices)
+
+        >>> processor = AutoProcessor.from_pretrained("microsoft/xclip-base-patch32")
+        >>> model = AutoModel.from_pretrained("microsoft/xclip-base-patch32")
+
+        >>> inputs = processor(
+        ...     text=["playing sports", "eating spaghetti", "go shopping"],
+        ...     videos=list(video),
+        ...     return_tensors="pt",
+        ...     padding=True,
+        ... )
+
+        >>> # forward pass
+        >>> with torch.no_grad():
+        ...     outputs = model(**inputs)
+
+        >>> logits_per_video = outputs.logits_per_video  # this is the video-text similarity score
+        >>> probs = logits_per_video.softmax(dim=1)  # we can take the softmax to get the label probabilities
+        >>> print(probs)
+        tensor([[1.9496e-04, 9.9960e-01, 2.0825e-04]])
+        ```"""
+        ...
 
 __all__ = ["XCLIPModel", "XCLIPPreTrainedModel", "XCLIPTextModel", "XCLIPVisionModel"]

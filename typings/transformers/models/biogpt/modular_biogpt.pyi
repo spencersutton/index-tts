@@ -19,6 +19,7 @@ from ..bart.modeling_bart import BartAttention, BartDecoderLayer, BartScaledWord
 from ..opt.modeling_opt import OPTLearnedPositionalEmbedding
 from .configuration_biogpt import BioGptConfig
 
+"""PyTorch BioGPT model."""
 if is_torch_flex_attn_available(): ...
 
 class BioGptLearnedPositionalEmbedding(OPTLearnedPositionalEmbedding):
@@ -27,7 +28,9 @@ class BioGptLearnedPositionalEmbedding(OPTLearnedPositionalEmbedding):
         attention_mask: torch.LongTensor,
         past_key_values_length: int = ...,
         position_ids: Optional[torch.LongTensor] = ...,
-    ): ...
+    ):  # -> None:
+        """`input_ids_shape` is expected to be [bsz x seqlen]."""
+        ...
 
 class BioGptScaledWordEmbedding(BartScaledWordEmbedding): ...
 class BioGptAttention(BartAttention): ...
@@ -45,7 +48,26 @@ class BioGptDecoderLayer(BartDecoderLayer):
         position_ids: Optional[torch.LongTensor] = ...,
         cache_position: Optional[torch.Tensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]: ...
+    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            attention_mask (`torch.FloatTensor`): attention mask of size
+                `(batch, 1, tgt_len, src_len)` where padding elements are indicated by very large negative values.
+            layer_head_mask (`torch.FloatTensor`): mask for attention heads in a given layer of size
+                `(encoder_attention_heads,)`.
+            past_key_value (`Tuple(torch.FloatTensor)`): cached past key and value projection states
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            use_cache (`bool`, *optional*):
+                If set to `True`, `past_key_values` key value states are returned and can be used to speed up decoding
+                (see `past_key_values`).
+            cache_position (`torch.LongTensor` of shape `(sequence_length)`, *optional*):
+                Indices depicting the position of the input sequence tokens in the sequence. It is used to update the
+                cache in the correct position and to infer the complete sequence length.
+        """
+        ...
 
 @auto_docstring
 class BioGptPreTrainedModel(PreTrainedModel):
@@ -77,12 +99,18 @@ class BioGptModel(BioGptPreTrainedModel):
         **kwargs: Unpack[TransformersKwargs],
     ) -> Union[tuple, BaseModelOutputWithPastAndCrossAttentions]: ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    BioGPT Model with a `language modeling` head on top for CLM fine-tuning.
+    """
+)
 class BioGptForCausalLM(BioGptPreTrainedModel, GenerationMixin):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
-    def get_output_embeddings(self): ...
-    def set_output_embeddings(self, new_embeddings): ...
+    def get_output_embeddings(self):  # -> Linear:
+        ...
+    def set_output_embeddings(self, new_embeddings):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -99,7 +127,14 @@ class BioGptForCausalLM(BioGptPreTrainedModel, GenerationMixin):
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> Union[tuple, CausalLMOutputWithCrossAttentions]: ...
+    ) -> Union[tuple, CausalLMOutputWithCrossAttentions]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for language modeling. Note that the labels **are shifted** inside the model, i.e. you can set
+            `labels = input_ids` Indices are selected in `[-100, 0, ..., config.vocab_size]` All labels set to `-100`
+            are ignored (masked), the loss is only computed for labels in `[0, ..., config.vocab_size]`
+        """
+        ...
 
 @auto_docstring
 class BioGptForTokenClassification(BioGptPreTrainedModel):
@@ -120,9 +155,29 @@ class BioGptForTokenClassification(BioGptPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple, TokenClassifierOutput]: ...
+    ) -> Union[tuple, TokenClassifierOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The BioGpt Model transformer with a sequence classification head on top (linear layer).
+
+    [`BioGptForSequenceClassification`] uses the last token in order to do the classification, as other causal models
+    (e.g. GPT-2) do.
+
+    Since it does classification on the last token, it is required to know the position of the last token. If a
+    `pad_token_id` is defined in the configuration, it finds the last token that is not a padding token in each row. If
+    no `pad_token_id` is defined, it simply takes the last value in each row of the batch. Since it cannot guess the
+    padding tokens when `inputs_embeds` are passed instead of `input_ids`, it does the same (take the last value in
+    each row of the batch).
+    """
+)
 class BioGptForSequenceClassification(BioGptPreTrainedModel):
     def __init__(self, config: BioGptConfig) -> None: ...
     @auto_docstring
@@ -140,9 +195,19 @@ class BioGptForSequenceClassification(BioGptPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple, SequenceClassifierOutputWithPast]: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    ) -> Union[tuple, SequenceClassifierOutputWithPast]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
+
+    def get_input_embeddings(self):  # -> BioGptScaledWordEmbedding:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
 
 __all__ = [
     "BioGptForCausalLM",

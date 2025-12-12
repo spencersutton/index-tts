@@ -25,6 +25,7 @@ from ...utils.import_utils import is_causal_conv1d_available, is_mamba_2_ssm_ava
 from .configuration_falcon_h1 import FalconH1Config
 from mamba_ssm.ops.triton.selective_state_update import selective_state_update
 
+"""PyTorch FalconH1 model."""
 if is_mamba_2_ssm_available(): ...
 else:
     selective_state_update = ...
@@ -34,6 +35,18 @@ is_fast_path_available = ...
 logger = ...
 
 class FalconHybridMambaAttentionDynamicCache(HybridMambaAttentionDynamicCache):
+    """
+    A dynamic cache that can handle both the attention cache (which has a seq_len dimension) and the mamba cache
+    (which has a constant shape regardless of seq_len).
+
+    This cache has two sets of lists of tensors: `key_cache` and `value_cache` for attention cache and `conv_states`
+    and `ssm_states` for mamba cache. Each of these lists has `num_layers` tensors. The expected shape for each tensor
+    For attention layers, `key_cache` and `value_cache` have a shape of `(batch_size, num_heads, seq_len, head_dim)`,
+    while `conv_states` and `ssm_states` have a shape of `(batch_size, 0)` (empty tensors).
+    For mamba layers, `key_cache` and `value_cache` have a shape of `(batch_size, 0)` (empty tensors),
+    while `conv_states` represents the convolution state and has a shape of `(batch_size, d_inner, d_conv)`,
+    and `ssm_states` represents the ssm state and has a shape of `(batch_size, d_inner, d_state)`.
+    """
     def __init__(
         self, config: FalconH1Config, batch_size: int, dtype: torch.dtype = ..., devices: Optional[list[str]] = ...
     ) -> None: ...
@@ -43,11 +56,30 @@ class FalconHybridMambaAttentionDynamicCache(HybridMambaAttentionDynamicCache):
         value_states: torch.Tensor,
         layer_idx: int,
         cache_kwargs: Optional[dict[str, Any]] = ...,
-    ) -> tuple[torch.Tensor, torch.Tensor]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """
+        Updates the cache with the new `key_states` and `value_states` for the layer `layer_idx`.
+
+        Parameters:
+            key_states (`torch.Tensor`):
+                The new key states to cache.
+            value_states (`torch.Tensor`):
+                The new value states to cache.
+            layer_idx (`int`):
+                The index of the layer to cache the states for.
+            cache_kwargs (`dict[str, Any]`, `optional`):
+                Additional arguments for the cache subclass. No additional arguments are used in `DynamicCache`.
+
+        Return:
+            A tuple containing the updated key and value states.
+        """
+        ...
+
     def update_conv_state(
         self, layer_idx: int, new_conv_state: torch.Tensor, cache_position: torch.LongTensor
     ) -> torch.Tensor: ...
-    def reset(self): ...
+    def reset(self):  # -> None:
+        ...
 
 class FalconH1RotaryEmbedding(LlamaRotaryEmbedding): ...
 
@@ -67,9 +99,18 @@ class FalconH1RMSNormGated(MambaRMSNormGated):
     def __init__(self, hidden_size, eps=..., n_groups=..., norm_before_gate=...) -> None: ...
     def forward(self, hidden_states, gate=...): ...
 
-def apply_mask_to_padding_states(hidden_states, attention_mask): ...
+def apply_mask_to_padding_states(hidden_states, attention_mask):
+    """
+    Tunes out the hidden states for padding tokens, see https://github.com/state-spaces/mamba/issues/66
+    """
+    ...
 
 class FalconH1Mixer(nn.Module):
+    """
+    FalconH1Mixer is identical to classic Mamba2 mixer classes but differs on two different things
+    - Users can pass custom intermediate_size through `config.mamba_d_ssm`
+    - The use of gated RMS normalization layer is optional
+    """
     def __init__(self, config: FalconH1Config, layer_idx: int) -> None: ...
     def cuda_kernels_forward(
         self,
@@ -77,25 +118,29 @@ class FalconH1Mixer(nn.Module):
         cache_params: Optional[FalconHybridMambaAttentionDynamicCache] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         attention_mask: Optional[torch.Tensor] = ...,
-    ): ...
+    ):  # -> Any:
+        ...
     def torch_forward(
         self,
         input_states,
         cache_params: Optional[FalconHybridMambaAttentionDynamicCache] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         attention_mask: Optional[torch.Tensor] = ...,
-    ): ...
+    ):  # -> Any:
+        ...
     def forward(
         self,
         hidden_states,
         cache_params: Optional[FalconHybridMambaAttentionDynamicCache] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         attention_mask: Optional[torch.Tensor] = ...,
-    ): ...
+    ):  # -> Any:
+        ...
 
 class FalconH1MLP(LlamaMLP):
     def __init__(self, config: FalconH1Config = ...) -> None: ...
-    def forward(self, x): ...
+    def forward(self, x):  # -> Any:
+        ...
 
 class FalconH1RMSNorm(LlamaRMSNorm): ...
 
@@ -113,7 +158,29 @@ class FalconH1DecoderLayer(GradientCheckpointingLayer):
         cache_position: Optional[torch.LongTensor] = ...,
         position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
         **kwargs,
-    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]: ...
+    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            attention_mask (`torch.FloatTensor`, *optional*): attention mask of size
+                `(batch, sequence_length)` where padding elements are indicated by 0.
+            past_key_value (`FalconHybridMambaAttentionDynamicCache`, *optional*): cached past key and value projection states
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            use_cache (`bool`, *optional*):
+                If set to `True`, `past_key_values` key value states are returned and can be used to speed up decoding
+                (see `past_key_values`).
+            cache_position (`torch.LongTensor` of shape `(sequence_length)`, *optional*):
+                Indices depicting the position of the input sequence tokens in the sequence.
+            position_embeddings (`tuple[torch.FloatTensor, torch.FloatTensor]`, *optional*):
+                Tuple containing the cosine and sine positional embeddings of shape `(batch_size, seq_len, head_dim)`,
+                with `head_dim` being the embedding dimension of each attention head.
+            kwargs (`dict`, *optional*):
+                Arbitrary kwargs to be ignored, used for FSDP and other methods that injects code
+                into the model
+        """
+        ...
 
 @auto_docstring
 class FalconH1PreTrainedModel(PreTrainedModel):
@@ -126,7 +193,21 @@ class FalconH1PreTrainedModel(PreTrainedModel):
     _supports_sdpa = ...
     _is_stateful = ...
 
-def compute_mup_vector(config): ...
+def compute_mup_vector(config):  # -> Tensor:
+    """
+    Computes the MuP vector based on model configuration.
+
+    FalconH1 applies different MuP multiplier for each dimension of the hidden states.
+    The MuP vector is partitioned into chunks, and each chunk is multiplied with its
+    corresponding projected dimension.
+
+    Args:
+        config: FalconH1Config object
+
+    Returns:
+        torch.Tensor: The computed MuP vector
+    """
+    ...
 
 @auto_docstring
 class FalconH1Model(FalconH1PreTrainedModel):
@@ -162,7 +243,26 @@ class FalconH1ForCausalLM(LlamaForCausalLM):
         cache_position: Optional[torch.LongTensor] = ...,
         logits_to_keep: Union[int, torch.Tensor] = ...,
         **kwargs,
-    ) -> Union[tuple, CausalLMOutputWithPast]: ...
+    ) -> Union[tuple, CausalLMOutputWithPast]:
+        r"""
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, FalconH1ForCausalLM
+
+        >>> model = FalconH1ForCausalLM.from_pretrained("...")
+        >>> tokenizer = AutoTokenizer.from_pretrained("...")
+
+        >>> prompt = "Hey, are you conscious? Can you talk to me?"
+        >>> inputs = tokenizer(prompt, return_tensors="pt")
+
+        >>> # Generate
+        >>> generate_ids = model.generate(inputs.input_ids, max_length=30)
+        >>> tokenizer.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+        "Hey, are you conscious? Can you talk to me?\nI'm not conscious, but I can talk to you."
+        ```"""
+        ...
+
     def prepare_inputs_for_generation(
         self,
         input_ids,
@@ -173,6 +273,7 @@ class FalconH1ForCausalLM(LlamaForCausalLM):
         position_ids=...,
         use_cache=...,
         **kwargs,
-    ): ...
+    ):  # -> dict[str, Any]:
+        ...
 
 __all__ = ["FalconH1Model", "FalconH1ForCausalLM", "FalconH1PreTrainedModel"]

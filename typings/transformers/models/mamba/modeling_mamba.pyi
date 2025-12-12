@@ -15,6 +15,7 @@ from ...utils.import_utils import is_causal_conv1d_available, is_mamba_ssm_avail
 from .configuration_mamba import MambaConfig
 from mambapy.pscan import pscan
 
+"""PyTorch MAMBA model."""
 logger = ...
 if is_mambapy_available(): ...
 else:
@@ -25,6 +26,37 @@ if is_causal_conv1d_available(): ...
 else: ...
 
 class MambaCache:
+    """
+    Cache for mamba model which does not have attention mechanism and key value states.
+
+    Arguments:
+        config (`PretrainedConfig):
+            The configuration file defining the shape-related attributes required to initialize the static cache.
+        max_batch_size (`int`):
+            The maximum batch size with which the model will be used. Note that a new instance must be instantiated if a smaller batch size is used.
+        dtype (`torch.dtype`, *optional*, defaults to `torch.float16`):
+            The default `dtype` to use when initializing the layer.
+        device (`torch.device` or `str`, *optional*):
+            The device on which the cache should be initialized. Should be the same as the layer.
+
+    Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, MambaForCausalLM, MambaCache
+
+        >>> model = MambaForCausalLM.from_pretrained("state-spaces/mamba-130m-hf")
+        >>> tokenizer = AutoTokenizer.from_pretrained("state-spaces/mamba-130m-hf")
+
+        >>> inputs = tokenizer(text="My name is Mamba", return_tensors="pt")
+
+        >>> # Prepare a cache class and pass it to model's forward
+        >>> past_key_values = MambaCache(config=model.config, max_batch_size=1, device=model.device, dtype=model.dtype)
+        >>> outputs = model(**inputs, past_key_values=past_key_values, use_cache=True)
+        >>> outputs.past_key_values
+        MambaCache()
+        ```
+    """
+
     is_compileable = ...
     def __init__(
         self,
@@ -36,38 +68,56 @@ class MambaCache:
     def update_conv_state(
         self, layer_idx: int, new_conv_state: torch.Tensor, cache_position: torch.LongTensor
     ) -> torch.Tensor: ...
-    def update_ssm_state(self, layer_idx: int, new_ssm_state: torch.Tensor): ...
-    def reset(self): ...
+    def update_ssm_state(self, layer_idx: int, new_ssm_state: torch.Tensor):  # -> Tensor:
+        ...
+    def reset(self):  # -> None:
+        ...
 
 class MambaMixer(nn.Module):
+    """
+    Compute ∆, A, B, C, and D the state space parameters and compute the `contextualized_states`.
+    A, D are input independent (see Mamba paper [1] Section 3.5.2 "Interpretation of A" for why A isn't selective)
+    ∆, B, C are input-dependent (this is a key difference between Mamba and the linear time invariant S4,
+    and is why Mamba is called **selective** state spaces)
+    """
     def __init__(self, config: MambaConfig, layer_idx: int) -> None: ...
-    def warn_slow_implementation(self): ...
+    def warn_slow_implementation(self):  # -> None:
+        ...
     def cuda_kernels_forward(
         self,
         hidden_states: torch.Tensor,
         cache_params: Optional[MambaCache] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         attention_mask: Optional[torch.LongTensor] = ...,
-    ): ...
+    ):  # -> Any:
+        ...
     def slow_forward(
         self,
         input_states,
         cache_params: Optional[MambaCache] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         attention_mask: Optional[torch.LongTensor] = ...,
-    ): ...
+    ):  # -> Any:
+        ...
     def forward(
         self,
         hidden_states,
         cache_params: Optional[MambaCache] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         attention_mask: Optional[torch.LongTensor] = ...,
-    ): ...
+    ):  # -> Any:
+        ...
 
 class MambaRMSNorm(nn.Module):
-    def __init__(self, hidden_size, eps=...) -> None: ...
+    def __init__(self, hidden_size, eps=...) -> None:
+        """
+        MambaRMSNorm is equivalent to T5LayerNorm and LlamaRMSNorm
+        """
+        ...
+
     def forward(self, hidden_states): ...
-    def extra_repr(self): ...
+    def extra_repr(self):  # -> str:
+        ...
 
 class MambaBlock(GradientCheckpointingLayer):
     def __init__(self, config, layer_idx) -> None: ...
@@ -94,13 +144,37 @@ class MambaPreTrainedModel(PreTrainedModel):
     """
 )
 class MambaOutput(ModelOutput):
+    r"""
+    cache_params (`MambaCache`):
+        The state of the model at the last time step. Can be used in a forward method with the next `input_ids` to
+        avoid providing the old `input_ids`.
+
+        Includes both the State space model state matrices after the selective scan, and the Convolutional states
+    """
+
     last_hidden_state: Optional[torch.FloatTensor] = ...
     cache_params: Optional[MambaCache] = ...
     hidden_states: Optional[tuple[torch.FloatTensor]] = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for causal language model (or autoregressive) outputs.
+    """
+)
 class MambaCausalLMOutput(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `labels` is provided):
+        Language modeling loss (for next-token prediction).
+    logits (`torch.FloatTensor` of shape `(batch_size, sequence_length, config.vocab_size)`):
+        Prediction scores of the language modeling head (scores for each vocabulary token before SoftMax).
+    cache_params (`MambaCache`):
+        The state of the model at the last time step. Can be used in a forward method with the next `input_ids` to
+        avoid providing the old `input_ids`.
+
+        Includes both the State space model state matrices after the selective scan, and the Convolutional states
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     logits: Optional[torch.FloatTensor] = ...
     cache_params: Optional[MambaCache] = ...
@@ -109,9 +183,12 @@ class MambaCausalLMOutput(ModelOutput):
 @auto_docstring
 class MambaModel(MambaPreTrainedModel):
     def __init__(self, config) -> None: ...
-    def load_hook(self, state_dict, prefix, *args): ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, new_embeddings): ...
+    def load_hook(self, state_dict, prefix, *args):  # -> None:
+        ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, new_embeddings):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -123,14 +200,29 @@ class MambaModel(MambaPreTrainedModel):
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         attention_mask: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple, MambaOutput]: ...
+    ) -> Union[tuple, MambaOutput]:
+        r"""
+        cache_params (`MambaCache`, *optional*):
+            If passed along, the model uses the previous state in all the blocks (which will give the output for the
+            `input_ids` provided as if the model add `state_input_ids + input_ids` as context).
+        use_cache (`bool`, *optional*):
+            If set to `True`, the `cache_params` is returned and can be used to quickly generate the next logits.
+        """
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The MAMBA Model transformer with a language modeling head on top (linear layer with weights tied to the input
+    embeddings).
+    """
+)
 class MambaForCausalLM(MambaPreTrainedModel, GenerationMixin):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, new_embeddings): ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, new_embeddings):  # -> None:
+        ...
     def prepare_inputs_for_generation(
         self,
         input_ids,
@@ -140,7 +232,8 @@ class MambaForCausalLM(MambaPreTrainedModel, GenerationMixin):
         cache_position: Optional[torch.LongTensor] = ...,
         attention_mask: Optional[torch.LongTensor] = ...,
         **kwargs,
-    ): ...
+    ):  # -> dict[str, Any]:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -154,6 +247,18 @@ class MambaForCausalLM(MambaPreTrainedModel, GenerationMixin):
         use_cache: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
         **kwargs,
-    ) -> Union[tuple, MambaCausalLMOutput]: ...
+    ) -> Union[tuple, MambaCausalLMOutput]:
+        r"""
+        cache_params (`MambaCache`, *optional*):
+            If passed along, the model uses the previous state in all the blocks (which will give the output for the
+            `input_ids` provided as if the model add `state_input_ids + input_ids` as context).
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for language modeling. Note that the labels **are shifted** inside the model, i.e. you can set
+            `labels = input_ids` Indices are selected in `[-100, 0, ..., config.vocab_size]` All labels set to `-100`
+            are ignored (masked), the loss is only computed for labels in `[0, ..., config.vocab_size]`
+        use_cache (`bool`, *optional*):
+            If set to `True`, the `cache_params` is returned and can be used to quickly generate the next logits.
+        """
+        ...
 
 __all__ = ["MambaForCausalLM", "MambaModel", "MambaPreTrainedModel", "MambaCache"]

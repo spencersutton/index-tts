@@ -17,6 +17,7 @@ from transformers.models.textnet.configuration_textnet import TextNetConfig
 from transformers.utils.backbone_utils import BackboneMixin
 from ...utils import auto_docstring
 
+"""PyTorch TextNet model."""
 logger = ...
 
 class TextNetConvLayer(nn.Module):
@@ -24,6 +25,14 @@ class TextNetConvLayer(nn.Module):
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
 
 class TextNetRepConvLayer(nn.Module):
+    r"""
+    This layer supports re-parameterization by combining multiple convolutional branches
+    (e.g., main convolution, vertical, horizontal, and identity branches) during training.
+    At inference time, these branches can be collapsed into a single convolution for
+    efficiency, as per the re-parameterization paradigm.
+
+    The "Rep" in the name stands for "re-parameterization" (introduced by RepVGG).
+    """
     def __init__(
         self, config: TextNetConfig, in_channels: int, out_channels: int, kernel_size: int, stride: int
     ) -> None: ...
@@ -31,7 +40,8 @@ class TextNetRepConvLayer(nn.Module):
 
 class TextNetStage(nn.Module):
     def __init__(self, config: TextNetConfig, depth: int) -> None: ...
-    def forward(self, hidden_state): ...
+    def forward(self, hidden_state):  # -> Any:
+        ...
 
 class TextNetEncoder(nn.Module):
     def __init__(self, config: TextNetConfig) -> None: ...
@@ -53,7 +63,12 @@ class TextNetModel(TextNetPreTrainedModel):
         self, pixel_values: Tensor, output_hidden_states: Optional[bool] = ..., return_dict: Optional[bool] = ...
     ) -> Union[tuple[Any, list[Any]], tuple[Any], BaseModelOutputWithPoolingAndNoAttention]: ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    TextNet Model with an image classification head on top (a linear layer on top of the pooled features), e.g. for
+    ImageNet.
+    """
+)
 class TextNetForImageClassification(TextNetPreTrainedModel):
     def __init__(self, config) -> None: ...
     @auto_docstring
@@ -63,14 +78,64 @@ class TextNetForImageClassification(TextNetPreTrainedModel):
         labels: Optional[torch.LongTensor] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> ImageClassifierOutputWithNoAttention: ...
+    ) -> ImageClassifierOutputWithNoAttention:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
 
-@auto_docstring(custom_intro=...)
+        Examples:
+        ```python
+        >>> import torch
+        >>> import requests
+        >>> from transformers import TextNetForImageClassification, TextNetImageProcessor
+        >>> from PIL import Image
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> processor = TextNetImageProcessor.from_pretrained("czczup/textnet-base")
+        >>> model = TextNetForImageClassification.from_pretrained("czczup/textnet-base")
+
+        >>> inputs = processor(images=image, return_tensors="pt")
+        >>> with torch.no_grad():
+        ...     outputs = model(**inputs)
+        >>> outputs.logits.shape
+        torch.Size([1, 2])
+        ```"""
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    TextNet backbone, to be used with frameworks like DETR and MaskFormer.
+    """
+)
 class TextNetBackbone(TextNetPreTrainedModel, BackboneMixin):
     def __init__(self, config) -> None: ...
     @auto_docstring
     def forward(
         self, pixel_values: Tensor, output_hidden_states: Optional[bool] = ..., return_dict: Optional[bool] = ...
-    ) -> Union[tuple[tuple], BackboneOutput]: ...
+    ) -> Union[tuple[tuple], BackboneOutput]:
+        r"""
+        Examples:
+
+        ```python
+        >>> import torch
+        >>> import requests
+        >>> from PIL import Image
+        >>> from transformers import AutoImageProcessor, AutoBackbone
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> processor = AutoImageProcessor.from_pretrained("czczup/textnet-base")
+        >>> model = AutoBackbone.from_pretrained("czczup/textnet-base")
+
+        >>> inputs = processor(image, return_tensors="pt")
+        >>> with torch.no_grad():
+        >>>     outputs = model(**inputs)
+        ```"""
+        ...
 
 __all__ = ["TextNetBackbone", "TextNetModel", "TextNetPreTrainedModel", "TextNetForImageClassification"]

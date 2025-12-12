@@ -18,8 +18,26 @@ if is_torch_flex_attn_available(): ...
 logger = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Output type of [`UniSpeechForPreTrainingOutput`], with potential hidden states and attentions.
+    """
+)
 class UniSpeechForPreTrainingOutput(ModelOutput):
+    r"""
+    loss (*optional*, returned when model is in train mode, `torch.FloatTensor` of shape `(1,)`):
+        Total loss as the sum of the contrastive loss (L_m) and the diversity loss (L_d) as stated in the [official
+        paper](https://arxiv.org/pdf/2006.11477.pdf) . (classification) loss.
+    projected_states (`torch.FloatTensor` of shape `(batch_size, sequence_length, config.proj_codevector_dim)`):
+        Hidden-states of the model projected to *config.proj_codevector_dim* that can be used to predict the masked
+        projected quantized states.
+    projected_quantized_states (`torch.FloatTensor` of shape `(batch_size, sequence_length, config.proj_codevector_dim)`):
+        Quantized extracted feature vectors projected to *config.proj_codevector_dim* representing the positive
+        target vectors for contrastive loss.
+    codevector_perplexity (`torch.FloatTensor` of shape `(1,)`):
+        The perplexity of the codevector distribution, used to measure the diversity of the codebook.
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     projected_states: Optional[torch.FloatTensor] = ...
     projected_quantized_states: Optional[torch.FloatTensor] = ...
@@ -48,12 +66,15 @@ class UniSpeechGroupNormConvLayer(GradientCheckpointingLayer):
     def forward(self, hidden_states): ...
 
 class UniSpeechFeatureEncoder(nn.Module):
+    """Construct the features from raw audio waveform"""
     def __init__(self, config) -> None: ...
-    def forward(self, input_values): ...
+    def forward(self, input_values):  # -> Any:
+        ...
 
 class UniSpeechFeatureProjection(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> tuple[Any, Any]:
+        ...
 
 def eager_attention_forward(
     module: nn.Module,
@@ -65,9 +86,11 @@ def eager_attention_forward(
     dropout: float = ...,
     head_mask: Optional[torch.Tensor] = ...,
     **kwargs,
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class UniSpeechAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(
         self,
         embed_dim: int,
@@ -86,15 +109,19 @@ class UniSpeechAttention(nn.Module):
         layer_head_mask: Optional[torch.Tensor] = ...,
         output_attentions: Optional[bool] = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+        """Input shape: Batch x Time x Channel"""
+        ...
 
 class UniSpeechFeedForward(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class UniSpeechEncoderLayer(GradientCheckpointingLayer):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states, attention_mask=..., output_attentions=...): ...
+    def forward(self, hidden_states, attention_mask=..., output_attentions=...):  # -> tuple[Any, Any] | tuple[Any]:
+        ...
 
 class UniSpeechEncoder(nn.Module):
     def __init__(self, config) -> None: ...
@@ -105,27 +132,42 @@ class UniSpeechEncoder(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any | tuple[Any, ...] | tuple[()] | tuple[Any | None, ...], ...] | BaseModelOutput:
+        ...
 
 class UniSpeechAttnAdapterLayer(nn.Module):
-    def __init__(self, config) -> None: ...
-    def forward(self, hidden_states: torch.FloatTensor): ...
+    def __init__(self, config) -> None:
+        """
+        Implements adapter modules directly with 3D tensor weight as parameters and without using ModuleList to speed
+        up training throughput.
+        """
+        ...
+
+    def forward(self, hidden_states: torch.FloatTensor):  # -> FloatTensor:
+        ...
 
 class UniSpeechEncoderLayerStableLayerNorm(GradientCheckpointingLayer):
     def __init__(self, config) -> None: ...
     def forward(
         self, hidden_states: torch.Tensor, attention_mask: Optional[torch.Tensor] = ..., output_attentions: bool = ...
-    ): ...
+    ):  # -> tuple[Tensor, Any] | tuple[Tensor]:
+        ...
 
 class UniSpeechEncoderStableLayerNorm(nn.Module):
     def __init__(self, config) -> None: ...
     def forward(
         self, hidden_states, attention_mask=..., output_attentions=..., output_hidden_states=..., return_dict=...
-    ): ...
+    ):  # -> tuple[Any | tuple[Any, ...] | tuple[()] | tuple[Any | None, ...], ...] | BaseModelOutput:
+        ...
 
 class UniSpeechGumbelVectorQuantizer(nn.Module):
+    """
+    Vector quantization using gumbel softmax. See `[CATEGORICAL REPARAMETERIZATION WITH
+    GUMBEL-SOFTMAX](https://huggingface.co/papers/1611.01144) for more information.
+    """
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> tuple[Tensor | Any, Tensor]:
+        ...
 
 @auto_docstring
 class UniSpeechPreTrainedModel(PreTrainedModel):
@@ -151,21 +193,54 @@ class UniSpeechModel(UniSpeechPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, UniSpeechBaseModelOutput]: ...
+    ) -> Union[tuple, UniSpeechBaseModelOutput]:
+        r"""
+        mask_time_indices (`torch.BoolTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Indices to mask extracted features for contrastive loss. When in training mode, model learns to predict
+            masked extracted features in *config.proj_codevector_dim* space.
+        """
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    UniSpeech Model with a vector-quantization module and ctc loss for pre-training.
+    """
+)
 class UniSpeechForPreTraining(UniSpeechPreTrainedModel):
     def __init__(self, config: UniSpeechConfig) -> None: ...
-    def set_gumbel_temperature(self, temperature: int): ...
-    def freeze_feature_extractor(self): ...
-    def freeze_feature_encoder(self): ...
+    def set_gumbel_temperature(self, temperature: int):  # -> None:
+        """
+        Set the Gumbel softmax temperature to a given value. Only necessary for training
+        """
+        ...
+
+    def freeze_feature_extractor(self):  # -> None:
+        """
+        Calling this function will disable the gradient computation for the feature encoder so that its parameters will
+        not be updated during training.
+        """
+        ...
+
+    def freeze_feature_encoder(self):  # -> None:
+        """
+        Calling this function will disable the gradient computation for the feature encoder so that its parameter will
+        not be updated during training.
+        """
+        ...
+
     @staticmethod
     def compute_contrastive_logits(
         target_features: torch.FloatTensor,
         negative_features: torch.FloatTensor,
         predicted_features: torch.FloatTensor,
         temperature: int = ...,
-    ): ...
+    ):  # -> Tensor:
+        """
+        Compute logits for contrastive loss based using cosine similarity as the distance measure between
+        `[positive_feature, negative_features]` and `[predicted_features]`. Additionally, temperature can be applied.
+        """
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -174,17 +249,67 @@ class UniSpeechForPreTraining(UniSpeechPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, UniSpeechForPreTrainingOutput]: ...
+    ) -> Union[tuple, UniSpeechForPreTrainingOutput]:
+        r"""
+        Example:
+
+        ```python
+        >>> import torch
+        >>> from transformers import AutoFeatureExtractor, UniSpeechForPreTraining
+
+        >>> feature_extractor = AutoFeatureExtractor.from_pretrained("microsoft/unispeech-large-1500h-cv")
+        >>> model = UniSpeechForPreTraining.from_pretrained("microsoft/unispeech-large-1500h-cv")
+        >>> # TODO: Add full pretraining example
+        ```"""
+        ...
 
 _HIDDEN_STATES_START_POSITION = ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    UniSpeech Model with a `language modeling` head on top for Connectionist Temporal Classification (CTC).
+    """
+)
 class UniSpeechForCTC(UniSpeechPreTrainedModel):
-    def __init__(self, config, target_lang: Optional[str] = ...) -> None: ...
-    def tie_weights(self): ...
-    def freeze_feature_extractor(self): ...
-    def freeze_feature_encoder(self): ...
-    def freeze_base_model(self): ...
+    def __init__(self, config, target_lang: Optional[str] = ...) -> None:
+        r"""
+        target_lang (`str`, *optional*):
+            Language id of adapter weights. Adapter weights are stored in the format adapter.<lang>.safetensors or
+            adapter.<lang>.bin. Only relevant when using an instance of [`UniSpeechForCTC`] with adapters. Uses 'eng' by
+            default.
+        """
+        ...
+
+    def tie_weights(self):  # -> None:
+        """
+        This method overwrites [`~PreTrainedModel.tie_weights`] so that adapter weights can be correctly loaded when
+        passing `target_lang=...` to `from_pretrained(...)`.
+
+        This method is **not** supposed to be called by the user and is prone to be changed in the future.
+        """
+        ...
+
+    def freeze_feature_extractor(self):  # -> None:
+        """
+        Calling this function will disable the gradient computation for the feature encoder so that its parameter will
+        not be updated during training.
+        """
+        ...
+
+    def freeze_feature_encoder(self):  # -> None:
+        """
+        Calling this function will disable the gradient computation for the feature encoder so that its parameter will
+        not be updated during training.
+        """
+        ...
+
+    def freeze_base_model(self):  # -> None:
+        """
+        Calling this function will disable the gradient computation for the base model so that its parameters will not
+        be updated during training. Only the classification head will be updated.
+        """
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -194,14 +319,45 @@ class UniSpeechForCTC(UniSpeechPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         labels: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple, CausalLMOutput]: ...
+    ) -> Union[tuple, CausalLMOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, target_length)`, *optional*):
+            Labels for connectionist temporal classification. Note that `target_length` has to be smaller or equal to
+            the sequence length of the output logits. Indices are selected in `[-100, 0, ..., config.vocab_size - 1]`.
+            All labels set to `-100` are ignored (masked), the loss is only computed for labels in `[0, ...,
+            config.vocab_size - 1]`.
+        """
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    UniSpeech Model with a sequence classification head on top (a linear layer over the pooled output) for tasks like
+    SUPERB Keyword Spotting.
+    """
+)
 class UniSpeechForSequenceClassification(UniSpeechPreTrainedModel):
     def __init__(self, config) -> None: ...
-    def freeze_feature_extractor(self): ...
-    def freeze_feature_encoder(self): ...
-    def freeze_base_model(self): ...
+    def freeze_feature_extractor(self):  # -> None:
+        """
+        Calling this function will disable the gradient computation for the feature encoder so that its parameters will
+        not be updated during training.
+        """
+        ...
+
+    def freeze_feature_encoder(self):  # -> None:
+        """
+        Calling this function will disable the gradient computation for the feature encoder so that its parameter will
+        not be updated during training.
+        """
+        ...
+
+    def freeze_base_model(self):  # -> None:
+        """
+        Calling this function will disable the gradient computation for the base model so that its parameters will not
+        be updated during training. Only the classification head will be updated.
+        """
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -211,7 +367,20 @@ class UniSpeechForSequenceClassification(UniSpeechPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         labels: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple, SequenceClassifierOutput]: ...
+    ) -> Union[tuple, SequenceClassifierOutput]:
+        r"""
+        input_values (`torch.FloatTensor` of shape `(batch_size, sequence_length)`):
+            Float values of input raw speech waveform. Values can be obtained by loading a `.flac` or `.wav` audio file
+            into an array of type `list[float]`, a `numpy.ndarray` or a `torch.Tensor`, *e.g.* via the torchcodec library
+            (`pip install torchcodec`) or the soundfile library (`pip install soundfile`).
+            To prepare the array into `input_values`, the [`AutoProcessor`] should be used for padding and conversion
+            into a tensor of type `torch.FloatTensor`. See [`UniSpeechProcessor.__call__`] for details.
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 __all__ = [
     "UniSpeechForCTC",

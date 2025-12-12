@@ -7,6 +7,9 @@ from ...utils import is_torch_available, is_torchvision_available, is_vision_ava
 from ...utils.import_utils import requires
 from ...video_processing_utils import BaseVideoProcessor
 
+"""
+Video processor class for InstructBLIPVideo
+"""
 if is_vision_available(): ...
 if is_torchvision_available(): ...
 if is_torch_available(): ...

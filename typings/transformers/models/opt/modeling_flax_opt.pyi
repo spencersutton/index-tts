@@ -12,6 +12,7 @@ from ...modeling_flax_utils import FlaxPreTrainedModel
 from ...utils import add_start_docstrings
 from .configuration_opt import OPTConfig
 
+"""Flax OPT model."""
 logger = ...
 _CHECKPOINT_FOR_DOC = ...
 _CONFIG_FOR_DOC = ...
@@ -34,7 +35,9 @@ class FlaxOPTAttention(nn.Module):
         attention_mask: Optional[jnp.ndarray] = ...,
         init_cache: bool = ...,
         deterministic: bool = ...,
-    ) -> tuple[jnp.ndarray]: ...
+    ) -> tuple[jnp.ndarray]:
+        """Input shape: Batch x Time x Channel"""
+        ...
 
 class FlaxOPTDecoderLayer(nn.Module):
     config: OPTConfig
@@ -52,7 +55,8 @@ class FlaxOPTDecoderLayer(nn.Module):
 class FlaxOPTDecoderLayerCollection(nn.Module):
     config: OPTConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         hidden_states,
@@ -61,17 +65,25 @@ class FlaxOPTDecoderLayerCollection(nn.Module):
         init_cache: bool = ...,
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
-    ): ...
+    ):  # -> list[Any | tuple[()] | tuple[Any, ...] | None]:
+        ...
 
 class FlaxOPTLearnedPositionalEmbedding(nn.Embed):
-    def setup(self): ...
-    def __call__(self, positions): ...
+    """
+    This module learns positional embeddings up to a fixed maximum size.
+    """
+    def setup(self):  # -> None:
+        ...
+    def __call__(self, positions):
+        """`input_ids_shape` is expected to be [bsz x seqlen]."""
+        ...
 
 class FlaxOPTDecoder(nn.Module):
     config: OPTConfig
     dtype: jnp.dtype = ...
     offset: int = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids,
@@ -82,7 +94,8 @@ class FlaxOPTDecoder(nn.Module):
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
         deterministic: bool = ...,
-    ): ...
+    ):  # -> tuple[Any | tuple[()] | tuple[Any, ...] | tuple[Any | tuple[()] | tuple[Any, ...] | None, ...], ...] | FlaxBaseModelOutput:
+        ...
 
 class FlaxOPTPreTrainedModel(FlaxPreTrainedModel):
     config_class = OPTConfig
@@ -98,7 +111,17 @@ class FlaxOPTPreTrainedModel(FlaxPreTrainedModel):
         **kwargs,
     ) -> None: ...
     def init_weights(self, rng: jax.random.PRNGKey, input_shape: tuple, params: FrozenDict = ...) -> FrozenDict: ...
-    def init_cache(self, batch_size, max_length): ...
+    def init_cache(self, batch_size, max_length):
+        r"""
+        Args:
+            batch_size (`int`):
+                batch_size used for fast auto-regressive decoding. Defines the batch size of the initialized cache.
+            max_length (`int`):
+                maximum possible length for auto-regressive decoding. Defines the sequence length of the initialized
+                cache.
+        """
+        ...
+
     def __call__(
         self,
         input_ids: jnp.ndarray,
@@ -116,7 +139,8 @@ class FlaxOPTPreTrainedModel(FlaxPreTrainedModel):
 class FlaxOPTModule(nn.Module):
     config: OPTConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids,
@@ -127,18 +151,22 @@ class FlaxOPTModule(nn.Module):
         return_dict: bool = ...,
         deterministic: bool = ...,
         init_cache=...,
-    ): ...
+    ):  # -> tuple[Any | tuple[()] | tuple[Any, ...] | tuple[Any | tuple[()] | tuple[Any, ...] | None, ...], ...] | FlaxBaseModelOutput:
+        ...
 
 class FlaxOPTModel(FlaxOPTPreTrainedModel):
     config: OPTConfig
     dtype: jnp.dtype = ...
     module_class = ...
 
-@add_start_docstrings(..., OPT_START_DOCSTRING)
+@add_start_docstrings(
+    "The bare OPT Model transformer outputting raw hidden-states without any specific head on top.", OPT_START_DOCSTRING
+)
 class FlaxOPTForCausalLMModule(nn.Module):
     config: OPTConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids,
@@ -149,12 +177,22 @@ class FlaxOPTForCausalLMModule(nn.Module):
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
         deterministic: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, *tuple[Any | tuple[()] | tuple[Any, ...] | tuple[Any | tuple[()] | tuple[Any, ...] | None, ...], ...]] | Any | FlaxMaskedLMOutput:
+        ...
 
-@add_start_docstrings(..., OPT_START_DOCSTRING)
+@add_start_docstrings(
+    """
+    OPT Model with a language modeling head on top (linear layer with weights tied to the input embeddings) e.g for
+    autoregressive tasks.
+    """,
+    OPT_START_DOCSTRING,
+)
 class FlaxOPTForCausalLM(FlaxOPTPreTrainedModel):
     module_class = ...
-    def prepare_inputs_for_generation(self, input_ids, max_length, attention_mask: Optional[jax.Array] = ...): ...
+    def prepare_inputs_for_generation(
+        self, input_ids, max_length, attention_mask: Optional[jax.Array] = ...
+    ):  # -> dict[str, Any]:
+        ...
     def update_inputs_for_generation(self, model_outputs, model_kwargs): ...
 
 __all__ = ["FlaxOPTForCausalLM", "FlaxOPTModel", "FlaxOPTPreTrainedModel"]

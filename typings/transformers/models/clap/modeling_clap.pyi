@@ -16,25 +16,92 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import ModelOutput, auto_docstring, can_return_tuple
 from .configuration_clap import ClapAudioConfig, ClapConfig, ClapTextConfig
 
+"""PyTorch CLAP model."""
 logger = ...
 
-def interpolate(hidden_states, ratio): ...
-def window_partition(hidden_states, window_size): ...
-def window_reverse(windows, window_size, height, width): ...
-def create_position_ids_from_input_ids(input_ids, padding_idx, past_key_values_length=...): ...
+def interpolate(hidden_states, ratio):
+    """
+    Interpolate data in time domain. This is used to compensate the resolution reduction in downsampling of a CNN.
+
+    Args:
+        hidden_states (`torch.FloatTensor` of shape (batch_size, time_length, classes_num)):
+            Input hidden states
+        ratio (`int`):
+            The ratio of the length of the output to the length of the input.
+    """
+    ...
+
+def window_partition(hidden_states, window_size):
+    """
+    Returns the resized hidden states. The output shape should be `(batch_size * num_windows, window_size, window_size,
+    num_channels)`
+
+    Args:
+        hidden_states (`torch.FloatTensor` of shape `(batch_size, height, width, num_channels)`):
+            Input hidden states
+        window_size (`int`):
+            Window size
+    """
+    ...
+
+def window_reverse(windows, window_size, height, width):
+    """
+    Merges windows to produce higher resolution features.
+    Args:
+        windows (`torch.FloatTensor` of shape `(num_windows * batch_size, window_size, window_size, num_channels)`):
+            Input windows
+        window_size (`int`):
+            Window size
+        height (`int`):
+            Height of the resized audio
+        width (`int`):
+            Width of the resized audio
+    """
+    ...
+
+def create_position_ids_from_input_ids(input_ids, padding_idx, past_key_values_length=...):
+    """
+    Replace non-padding symbols with their position numbers. Position numbers begin at padding_idx+1. Padding symbols
+    are ignored. This is modified from fairseq's `utils.make_positions`.
+
+    Args:
+        x: torch.Tensor x:
+
+    Returns: torch.Tensor
+    """
+    ...
+
 def contrastive_loss(logits: torch.Tensor) -> torch.Tensor: ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for text model's outputs that also contains a pooling of the last hidden states.
+    """
+)
 class ClapTextModelOutput(ModelOutput):
+    r"""
+    text_embeds (`torch.FloatTensor` of shape `(batch_size, output_dim)` *optional* returned when model is initialized with `with_projection=True`):
+        The text embeddings obtained by applying the projection layer to the pooler_output.
+    """
+
     text_embeds: Optional[torch.FloatTensor] = ...
     last_hidden_state: Optional[torch.FloatTensor] = ...
     hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
     attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    ClapAudio model output to mimic the output of the original implementation.
+    """
+)
 class ClapAudioModelOutput(ModelOutput):
+    r"""
+    audio_embeds (`torch.FloatTensor` of shape `(batch_size, hidden_size)`):
+        The Audio embeddings obtained by applying the projection layer to the pooler_output.
+    """
+
     audio_embeds: Optional[torch.FloatTensor] = ...
     last_hidden_state: Optional[torch.FloatTensor] = ...
     hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
@@ -43,6 +110,25 @@ class ClapAudioModelOutput(ModelOutput):
 @dataclass
 @auto_docstring
 class ClapOutput(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `return_loss` is `True`):
+        Contrastive loss for audio-text similarity.
+    logits_per_audio (`torch.FloatTensor` of shape `(audio_batch_size, text_batch_size)`):
+        The scaled dot product scores between `audio_embeds` and `text_embeds`. This represents the audio-text
+        similarity scores.
+    logits_per_text (`torch.FloatTensor` of shape `(text_batch_size, audio_batch_size)`):
+        The scaled dot product scores between `text_embeds` and `audio_embeds`. This represents the text-audio
+        similarity scores.
+    text_embeds (`torch.FloatTensor` of shape `(batch_size, output_dim`):
+        The text embeddings obtained by applying the projection layer to the pooled output of [`ClapTextModel`].
+    audio_embeds (`torch.FloatTensor` of shape `(batch_size, output_dim`):
+        The audio embeddings obtained by applying the projection layer to the pooled output of [`ClapAudioModel`].
+    text_model_output (`BaseModelOutputWithPooling`):
+        The output of the [`ClapTextModel`].
+    audio_model_output (`BaseModelOutputWithPooling`):
+        The output of the [`ClapAudioModel`].
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     logits_per_audio: Optional[torch.FloatTensor] = ...
     logits_per_text: Optional[torch.FloatTensor] = ...
@@ -53,16 +139,29 @@ class ClapOutput(ModelOutput):
     def to_tuple(self) -> tuple[Any]: ...
 
 class ClapDropPath(nn.Module):
+    """
+    Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks). This is a slightly
+    refactored version of the `SwinDropPath` implementation.
+    """
     def __init__(self, drop_prob=...) -> None: ...
     def forward(self, hidden_states): ...
 
 class ClapAudioAFFBlock(nn.Module):
+    r"""
+    ATTENTIONAL FEATURE FUSION Block from CLAP, since in CLAP we are always in 2D mode, it is not needed to implement
+    the 1D version.
+    """
     def __init__(self, config: ClapAudioConfig) -> None: ...
     def forward(self, hidden_states, residual): ...
 
 class ClapAudioPatchEmbed(nn.Module):
+    """
+    This module converts the hidden states reshaped as an image to patch embeddings ready to be passed to the
+    Transformer block.
+    """
     def __init__(self, config: ClapAudioConfig) -> None: ...
-    def forward(self, hidden_states, is_longer_idx=...): ...
+    def forward(self, hidden_states, is_longer_idx=...):  # -> Any:
+        ...
 
 class ClapAudioSelfAttention(nn.Module):
     def __init__(self, config, dim, num_heads, window_size) -> None: ...
@@ -80,7 +179,8 @@ class ClapAudioSelfOutput(nn.Module):
 
 class ClapAudioAttention(nn.Module):
     def __init__(self, config, dim, num_heads, window_size) -> None: ...
-    def prune_heads(self, heads): ...
+    def prune_heads(self, heads):  # -> None:
+        ...
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -99,9 +199,14 @@ class ClapAudioOutput(nn.Module):
 
 class ClapAudioLayer(nn.Module):
     def __init__(self, config, dim, input_resolution, num_heads, drop_path_rate=..., shift_size=...) -> None: ...
-    def set_shift_and_window_size(self, input_resolution): ...
-    def get_attn_mask(self, height, width, dtype, device): ...
-    def maybe_pad(self, hidden_states, height, width): ...
+    def set_shift_and_window_size(self, input_resolution):  # -> None:
+        ...
+    def get_attn_mask(self, height, width, dtype, device):  # -> Tensor | None:
+        ...
+    def maybe_pad(
+        self, hidden_states, height, width
+    ):  # -> tuple[Any, tuple[Literal[0], Literal[0], Literal[0], Any, Literal[0], Any]]:
+        ...
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -123,13 +228,30 @@ class ClapAudioStage(GradientCheckpointingLayer):
     ) -> tuple[torch.Tensor]: ...
 
 class ClapAudioPatchMerging(nn.Module):
+    """
+    Patch Merging Layer.
+
+    Args:
+        input_resolution (`tuple[int]`):
+            Resolution of input feature.
+        dim (`int`):
+            Number of input channels.
+        norm_layer (`nn.Module`, *optional*, defaults to `nn.LayerNorm`):
+            Normalization layer class.
+    """
     def __init__(self, input_resolution: tuple[int], dim: int, norm_layer: nn.Module = ...) -> None: ...
     def maybe_pad(self, input_feature, height, width): ...
     def forward(self, input_feature: torch.Tensor, input_dimensions: tuple[int, int]) -> torch.Tensor: ...
 
 class ClapAudioEncoder(nn.Module):
     def __init__(self, config) -> None: ...
-    def reshape_mel2img(self, normalized_input_features): ...
+    def reshape_mel2img(self, normalized_input_features):  # -> Tensor:
+        """
+        The input is 4 normalized log mel spectrograms. It is reshape to the common shape of images. Each channel
+        should represent 1 of the 4 crops of the spectrogram. For more details, refer to the [`ClapFeatureExtractor`].
+        """
+        ...
+
     def forward(
         self,
         input_features,
@@ -144,14 +266,28 @@ class ClapAudioEncoder(nn.Module):
 
 class ClapProjectionLayer(nn.Module):
     def __init__(self, config: Union[ClapAudioConfig, ClapTextConfig]) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class ClapTextEmbeddings(nn.Module):
+    """
+    Same as BertEmbeddings with a tiny tweak for positional embeddings indexing.
+    """
     def __init__(self, config) -> None: ...
     def forward(
         self, input_ids=..., token_type_ids=..., position_ids=..., inputs_embeds=..., past_key_values_length=...
-    ): ...
-    def create_position_ids_from_inputs_embeds(self, inputs_embeds): ...
+    ):  # -> Any:
+        ...
+    def create_position_ids_from_inputs_embeds(self, inputs_embeds):  # -> Tensor:
+        """
+        We are provided embeddings directly. We cannot infer which are padded so just generate sequential position ids.
+
+        Args:
+            inputs_embeds: torch.Tensor
+
+        Returns: torch.Tensor
+        """
+        ...
 
 def eager_attention_forward(
     module: nn.Module,
@@ -163,7 +299,8 @@ def eager_attention_forward(
     dropout: float = ...,
     head_mask: Optional[torch.Tensor] = ...,
     **kwargs,
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class ClapTextSelfAttention(nn.Module):
     def __init__(self, config) -> None: ...
@@ -182,7 +319,8 @@ class ClapTextSelfOutput(nn.Module):
 
 class ClapTextAttention(nn.Module):
     def __init__(self, config) -> None: ...
-    def prune_heads(self, heads): ...
+    def prune_heads(self, heads):  # -> None:
+        ...
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -210,7 +348,8 @@ class ClapTextLayer(GradientCheckpointingLayer):
         output_attentions: Optional[bool] = ...,
         **kwargs,
     ) -> tuple[torch.Tensor]: ...
-    def feed_forward_chunk(self, attention_output): ...
+    def feed_forward_chunk(self, attention_output):  # -> Any:
+        ...
 
 class ClapTextEncoder(nn.Module):
     def __init__(self, config) -> None: ...
@@ -249,14 +388,58 @@ class ClapAudioModel(ClapPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPooling]: ...
+    ) -> Union[tuple, BaseModelOutputWithPooling]:
+        r"""
+        is_longer (`torch.FloatTensor`, of shape `(batch_size, 1)`, *optional*):
+            Whether the audio clip is longer than `max_length`. If `True`, a feature fusion will be enabled to enhance
+            the features.
 
-@auto_docstring(custom_intro=...)
+        Examples:
+
+        ```python
+        >>> from datasets import load_dataset
+        >>> from transformers import AutoProcessor, ClapAudioModel
+
+        >>> dataset = load_dataset("hf-internal-testing/ashraq-esc50-1-dog-example")
+        >>> audio_sample = dataset["train"]["audio"][0]["array"]
+
+        >>> model = ClapAudioModel.from_pretrained("laion/clap-htsat-fused")
+        >>> processor = AutoProcessor.from_pretrained("laion/clap-htsat-fused")
+
+        >>> inputs = processor(audios=audio_sample, return_tensors="pt")
+
+        >>> outputs = model(**inputs)
+        >>> last_hidden_state = outputs.last_hidden_state
+        ```"""
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    The model can behave as an encoder (with only self-attention) as well as a decoder, in which case a layer of
+    cross-attention is added between the self-attention layers, following the architecture described in *Attention is
+    all you need*_ by Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Lukasz
+    Kaiser and Illia Polosukhin.
+
+    To behave as an decoder the model needs to be initialized with the `is_decoder` argument of the configuration set
+    to `True`. To be used in a Seq2Seq model, the model needs to initialized with both `is_decoder` argument and
+    `add_cross_attention` set to `True`; an `encoder_hidden_states` is then expected as an input to the forward pass.
+
+    .. _*Attention is all you need*: https://huggingface.co/papers/1706.03762
+    """
+)
 class ClapTextModel(ClapPreTrainedModel):
     config: ClapTextConfig
-    def __init__(self, config, add_pooling_layer=...) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def __init__(self, config, add_pooling_layer=...) -> None:
+        r"""
+        add_pooling_layer (bool, *optional*, defaults to `True`):
+            Whether to add a pooling layer
+        """
+        ...
+
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -285,7 +468,25 @@ class ClapModel(ClapPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> torch.FloatTensor: ...
+    ) -> torch.FloatTensor:
+        r"""
+        Returns:
+            text_features (`torch.FloatTensor` of shape `(batch_size, output_dim`): The text embeddings obtained by
+            applying the projection layer to the pooled output of [`ClapTextModel`].
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoTokenizer, ClapModel
+
+        >>> model = ClapModel.from_pretrained("laion/clap-htsat-unfused")
+        >>> tokenizer = AutoTokenizer.from_pretrained("laion/clap-htsat-unfused")
+
+        >>> inputs = tokenizer(["the sound of a cat", "the sound of a dog"], padding=True, return_tensors="pt")
+        >>> text_features = model.get_text_features(**inputs)
+        ```"""
+        ...
+
     @auto_docstring
     def get_audio_features(
         self,
@@ -295,7 +496,30 @@ class ClapModel(ClapPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> torch.FloatTensor: ...
+    ) -> torch.FloatTensor:
+        r"""
+        is_longer (`torch.FloatTensor`, of shape `(batch_size, 1)`, *optional*):
+            Whether the audio clip is longer than `max_length`. If `True`, a feature fusion will be enabled to enhance
+            the features.
+
+        Returns:
+            audio_features (`torch.FloatTensor` of shape `(batch_size, output_dim`): The audio embeddings obtained by
+            applying the projection layer to the pooled output of [`ClapAudioModel`].
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoFeatureExtractor, ClapModel
+        >>> import torch
+
+        >>> model = ClapModel.from_pretrained("laion/clap-htsat-unfused")
+        >>> feature_extractor = AutoFeatureExtractor.from_pretrained("laion/clap-htsat-unfused")
+        >>> random_audio = torch.rand((16_000))
+        >>> inputs = feature_extractor(random_audio, return_tensors="pt")
+        >>> audio_features = model.get_audio_features(**inputs)
+        ```"""
+        ...
+
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -309,14 +533,43 @@ class ClapModel(ClapPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ClapOutput]: ...
+    ) -> Union[tuple, ClapOutput]:
+        r"""
+        is_longer (`torch.FloatTensor`, of shape `(batch_size, 1)`, *optional*):
+            Whether the audio clip is longer than `max_length`. If `True`, a feature fusion will be enabled to enhance
+            the features.
+        return_loss (`bool`, *optional*):
+            Whether or not to return the contrastive loss.
+
+        Examples:
+
+        ```python
+        >>> from datasets import load_dataset
+        >>> from transformers import AutoProcessor, ClapModel
+
+        >>> dataset = load_dataset("hf-internal-testing/ashraq-esc50-1-dog-example")
+        >>> audio_sample = dataset["train"]["audio"][0]["array"]
+
+        >>> model = ClapModel.from_pretrained("laion/clap-htsat-unfused")
+        >>> processor = AutoProcessor.from_pretrained("laion/clap-htsat-unfused")
+
+        >>> input_text = ["Sound of a dog", "Sound of vaccum cleaner"]
+
+        >>> inputs = processor(text=input_text, audios=audio_sample, return_tensors="pt", padding=True)
+
+        >>> outputs = model(**inputs)
+        >>> logits_per_audio = outputs.logits_per_audio  # this is the audio-text similarity score
+        >>> probs = logits_per_audio.softmax(dim=-1)  # we can take the softmax to get the label probabilities
+        ```"""
+        ...
 
 @auto_docstring
 class ClapTextModelWithProjection(ClapPreTrainedModel):
     config: ClapTextConfig
     def __init__(self, config: ClapTextConfig) -> None: ...
     def get_input_embeddings(self) -> nn.Module: ...
-    def set_input_embeddings(self, value): ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -327,7 +580,22 @@ class ClapTextModelWithProjection(ClapPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ClapTextModelOutput]: ...
+    ) -> Union[tuple, ClapTextModelOutput]:
+        r"""
+        Examples:
+
+        ```python
+        >>> from transformers import AutoTokenizer, ClapTextModelWithProjection
+
+        >>> model = ClapTextModelWithProjection.from_pretrained("laion/clap-htsat-unfused")
+        >>> tokenizer = AutoTokenizer.from_pretrained("laion/clap-htsat-unfused")
+
+        >>> inputs = tokenizer(["a sound of a cat", "a sound of a dog"], padding=True, return_tensors="pt")
+
+        >>> outputs = model(**inputs)
+        >>> text_embeds = outputs.text_embeds
+        ```"""
+        ...
 
 @auto_docstring
 class ClapAudioModelWithProjection(ClapPreTrainedModel):
@@ -344,7 +612,29 @@ class ClapAudioModelWithProjection(ClapPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ClapAudioModelOutput]: ...
+    ) -> Union[tuple, ClapAudioModelOutput]:
+        r"""
+        is_longer (`torch.FloatTensor`, of shape `(batch_size, 1)`, *optional*):
+            Whether the audio clip is longer than `max_length`. If `True`, a feature fusion will be enabled to enhance
+            the features.
+
+        Examples:
+
+        ```python
+        >>> from datasets import load_dataset
+        >>> from transformers import ClapAudioModelWithProjection, ClapProcessor
+
+        >>> model = ClapAudioModelWithProjection.from_pretrained("laion/clap-htsat-fused")
+        >>> processor = ClapProcessor.from_pretrained("laion/clap-htsat-fused")
+
+        >>> dataset = load_dataset("hf-internal-testing/ashraq-esc50-1-dog-example")
+        >>> audio_sample = dataset["train"]["audio"][0]["array"]
+
+        >>> inputs = processor(audios=audio_sample, return_tensors="pt")
+        >>> outputs = model(**inputs)
+        >>> audio_embeds = outputs.audio_embeds
+        ```"""
+        ...
 
 __all__ = [
     "ClapModel",

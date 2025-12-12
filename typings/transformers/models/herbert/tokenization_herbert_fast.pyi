@@ -9,6 +9,24 @@ logger = ...
 VOCAB_FILES_NAMES = ...
 
 class HerbertTokenizerFast(PreTrainedTokenizerFast):
+    """
+    Construct a "Fast" BPE tokenizer for HerBERT (backed by HuggingFace's *tokenizers* library).
+
+    Peculiarities:
+
+    - uses BERT's pre-tokenizer: BertPreTokenizer splits tokens on spaces, and also on punctuation. Each occurrence of
+      a punctuation character will be treated separately.
+
+    This tokenizer inherits from [`PreTrainedTokenizer`] which contains most of the methods. Users should refer to the
+    superclass for more information regarding methods.
+
+    Args:
+        vocab_file (`str`):
+            Path to the vocabulary file.
+        merges_file (`str`):
+            Path to the merges file.
+    """
+
     vocab_files_names = ...
     slow_tokenizer_class = ...
     def __init__(
@@ -25,10 +43,45 @@ class HerbertTokenizerFast(PreTrainedTokenizerFast):
     ) -> None: ...
     def build_inputs_with_special_tokens(
         self, token_ids_0: list[int], token_ids_1: Optional[list[int]] = ...
-    ) -> list[int]: ...
+    ) -> list[int]:
+        """
+        Build model inputs from a sequence or a pair of sequence for sequence classification tasks by concatenating and
+        adding special tokens. An HerBERT, like BERT sequence has the following format:
+
+        - single sequence: `<s> X </s>`
+        - pair of sequences: `<s> A </s> B </s>`
+
+        Args:
+            token_ids_0 (`List[int]`):
+                List of IDs to which the special tokens will be added.
+            token_ids_1 (`List[int]`, *optional*):
+                Optional second list of IDs for sequence pairs.
+
+        Returns:
+            `List[int]`: List of [input IDs](../glossary#input-ids) with the appropriate special tokens.
+        """
+        ...
+
     def get_special_tokens_mask(
         self, token_ids_0: list[int], token_ids_1: Optional[list[int]] = ..., already_has_special_tokens: bool = ...
-    ) -> list[int]: ...
+    ) -> list[int]:
+        """
+        Retrieve sequence ids from a token list that has no special tokens added. This method is called when adding
+        special tokens using the tokenizer `prepare_for_model` method.
+
+        Args:
+            token_ids_0 (`List[int]`):
+                List of IDs.
+            token_ids_1 (`List[int]`, *optional*):
+                Optional second list of IDs for sequence pairs.
+            already_has_special_tokens (`bool`, *optional*, defaults to `False`):
+                Whether or not the token list is already formatted with special tokens for the model.
+
+        Returns:
+            `List[int]`: A list of integers in the range [0, 1]: 1 for a special token, 0 for a sequence token.
+        """
+        ...
+
     def save_vocabulary(self, save_directory: str, filename_prefix: Optional[str] = ...) -> tuple[str]: ...
 
 __all__ = ["HerbertTokenizerFast"]

@@ -12,24 +12,45 @@ from ...utils import auto_docstring
 from ...utils.backbone_utils import BackboneMixin
 from .configuration_pvt_v2 import PvtV2Config
 
+"""PyTorch PVTv2 model."""
 logger = ...
 
-def drop_path(input: torch.Tensor, drop_prob: float = ..., training: bool = ...) -> torch.Tensor: ...
+def drop_path(input: torch.Tensor, drop_prob: float = ..., training: bool = ...) -> torch.Tensor:
+    """
+    Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks).
+
+    Comment by Ross Wightman: This is the same as the DropConnect impl I created for EfficientNet, etc networks,
+    however, the original name is misleading as 'Drop Connect' is a different form of dropout in a separate paper...
+    See discussion: https://github.com/tensorflow/tpu/issues/494#issuecomment-532968956 ... I've opted for changing the
+    layer and argument names to 'drop path' rather than mix DropConnect as a layer name and use 'survival rate' as the
+    argument.
+    """
+    ...
 
 class PvtV2DropPath(nn.Module):
+    """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks)."""
     def __init__(self, drop_prob: Optional[float] = ...) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
     def extra_repr(self) -> str: ...
 
 class PvtV2OverlapPatchEmbeddings(nn.Module):
+    """Image to Patch Embedding"""
     def __init__(self, config: PvtV2Config, layer_idx: int) -> None: ...
-    def forward(self, pixel_values): ...
+    def forward(self, pixel_values):  # -> tuple[Any, Any, Any]:
+        ...
 
 class PvtV2DepthWiseConv(nn.Module):
+    """
+    Depth-wise (DW) convolution to infuse positional information using zero-padding. Depth-wise convolutions
+    have an equal number of groups to the number of input channels, meaning one filter per input channel. This
+    reduces the overall parameters and compute costs since the key purpose of this layer is position encoding.
+    """
     def __init__(self, config: PvtV2Config, dim: int = ...) -> None: ...
-    def forward(self, hidden_states, height, width): ...
+    def forward(self, hidden_states, height, width):  # -> Any:
+        ...
 
 class PvtV2SelfAttention(nn.Module):
+    """Efficient self-attention mechanism."""
     def __init__(
         self, config: PvtV2Config, hidden_size: int, num_attention_heads: int, spatial_reduction_ratio: int
     ) -> None: ...
@@ -37,7 +58,8 @@ class PvtV2SelfAttention(nn.Module):
     def forward(
         self, hidden_states: torch.Tensor, height: int, width: int, output_attentions: bool = ...
     ) -> tuple[torch.Tensor]: ...
-    def prune_heads(self, heads): ...
+    def prune_heads(self, heads):  # -> None:
+        ...
 
 class PvtV2ConvFeedForwardNetwork(nn.Module):
     def __init__(
@@ -51,11 +73,15 @@ class PvtV2ConvFeedForwardNetwork(nn.Module):
 
 class PvtV2BlockLayer(nn.Module):
     def __init__(self, config: PvtV2Config, layer_idx: int, drop_path: float = ...) -> None: ...
-    def forward(self, hidden_states: torch.Tensor, height: int, width: int, output_attentions: bool = ...): ...
+    def forward(self, hidden_states: torch.Tensor, height: int, width: int, output_attentions: bool = ...):  # -> Any:
+        ...
 
 class PvtV2EncoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: PvtV2Config, layer_idx: int) -> None: ...
-    def forward(self, hidden_states, output_attentions): ...
+    def forward(
+        self, hidden_states, output_attentions
+    ):  # -> tuple[tuple[Any, tuple[()] | tuple[Any, ...] | None] | tuple[Any], Any, Any]:
+        ...
 
 class PvtV2Encoder(nn.Module):
     def __init__(self, config: PvtV2Config) -> None: ...
@@ -86,7 +112,12 @@ class PvtV2Model(PvtV2PreTrainedModel):
         return_dict: Optional[bool] = ...,
     ) -> Union[tuple, BaseModelOutput]: ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Pvt-v2 Model transformer with an image classification head on top (a linear layer on top of the final hidden state
+    of the [CLS] token) e.g. for ImageNet.
+    """
+)
 class PvtV2ForImageClassification(PvtV2PreTrainedModel):
     def __init__(self, config: PvtV2Config) -> None: ...
     @auto_docstring
@@ -97,9 +128,20 @@ class PvtV2ForImageClassification(PvtV2PreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ImageClassifierOutput]: ...
+    ) -> Union[tuple, ImageClassifierOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    PVTv2 backbone, to be used with frameworks like DETR and MaskFormer.
+    """
+)
 class PvtV2Backbone(PvtV2Model, BackboneMixin):
     def __init__(self, config: PvtV2Config) -> None: ...
     @auto_docstring
@@ -109,6 +151,31 @@ class PvtV2Backbone(PvtV2Model, BackboneMixin):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> BackboneOutput: ...
+    ) -> BackboneOutput:
+        r"""
+        Examples:
+
+        ```python
+        >>> from transformers import AutoImageProcessor, AutoBackbone
+        >>> import torch
+        >>> from PIL import Image
+        >>> import requests
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> processor = AutoImageProcessor.from_pretrained("OpenGVLab/pvt_v2_b0")
+        >>> model = AutoBackbone.from_pretrained(
+        ...     "OpenGVLab/pvt_v2_b0", out_features=["stage1", "stage2", "stage3", "stage4"]
+        ... )
+
+        >>> inputs = processor(image, return_tensors="pt")
+
+        >>> outputs = model(**inputs)
+        >>> feature_maps = outputs.feature_maps
+        >>> list(feature_maps[-1].shape)
+        [1, 256, 7, 7]
+        ```"""
+        ...
 
 __all__ = ["PvtV2ForImageClassification", "PvtV2Model", "PvtV2PreTrainedModel", "PvtV2Backbone"]

@@ -10,20 +10,39 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring
 from .configuration_poolformer import PoolFormerConfig
 
+"""PyTorch PoolFormer model."""
 logger = ...
 
-def drop_path(input: torch.Tensor, drop_prob: float = ..., training: bool = ...) -> torch.Tensor: ...
+def drop_path(input: torch.Tensor, drop_prob: float = ..., training: bool = ...) -> torch.Tensor:
+    """
+    Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks).
+
+    Comment by Ross Wightman: This is the same as the DropConnect impl I created for EfficientNet, etc networks,
+    however, the original name is misleading as 'Drop Connect' is a different form of dropout in a separate paper...
+    See discussion: https://github.com/tensorflow/tpu/issues/494#issuecomment-532968956 ... I've opted for changing the
+    layer and argument names to 'drop path' rather than mix DropConnect as a layer name and use 'survival rate' as the
+    argument.
+    """
+    ...
 
 class PoolFormerDropPath(nn.Module):
+    """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks)."""
     def __init__(self, drop_prob: Optional[float] = ...) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
     def extra_repr(self) -> str: ...
 
 class PoolFormerEmbeddings(nn.Module):
+    """
+    Construct Patch Embeddings.
+    """
     def __init__(self, hidden_size, num_channels, patch_size, stride, padding, norm_layer=...) -> None: ...
-    def forward(self, pixel_values): ...
+    def forward(self, pixel_values):  # -> Any:
+        ...
 
 class PoolFormerGroupNorm(nn.GroupNorm):
+    """
+    Group Normalization with 1 group. Input: tensor in shape [B, C, H, W]
+    """
     def __init__(self, num_channels, **kwargs) -> None: ...
 
 class PoolFormerPooling(nn.Module):
@@ -32,15 +51,21 @@ class PoolFormerPooling(nn.Module):
 
 class PoolFormerOutput(nn.Module):
     def __init__(self, config, dropout_prob, hidden_size, intermediate_size) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class PoolFormerLayer(nn.Module):
+    """This corresponds to the 'PoolFormerBlock' class in the original implementation."""
     def __init__(self, config, num_channels, pool_size, hidden_size, intermediate_size, drop_path) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> tuple[Any]:
+        ...
 
 class PoolFormerEncoder(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, pixel_values, output_hidden_states=..., return_dict=...): ...
+    def forward(
+        self, pixel_values, output_hidden_states=..., return_dict=...
+    ):  # -> tuple[Any | tuple[()] | tuple[Any, ...], ...] | BaseModelOutputWithNoAttention:
+        ...
 
 @auto_docstring
 class PoolFormerPreTrainedModel(PreTrainedModel):
@@ -52,7 +77,8 @@ class PoolFormerPreTrainedModel(PreTrainedModel):
 @auto_docstring
 class PoolFormerModel(PoolFormerPreTrainedModel):
     def __init__(self, config) -> None: ...
-    def get_input_embeddings(self): ...
+    def get_input_embeddings(self):  # -> Tensor | Module:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -63,9 +89,14 @@ class PoolFormerModel(PoolFormerPreTrainedModel):
 
 class PoolFormerFinalPooler(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    PoolFormer Model transformer with an image classification head on top
+    """
+)
 class PoolFormerForImageClassification(PoolFormerPreTrainedModel):
     def __init__(self, config) -> None: ...
     @auto_docstring
@@ -75,6 +106,13 @@ class PoolFormerForImageClassification(PoolFormerPreTrainedModel):
         labels: Optional[torch.LongTensor] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ImageClassifierOutputWithNoAttention]: ...
+    ) -> Union[tuple, ImageClassifierOutputWithNoAttention]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 __all__ = ["PoolFormerForImageClassification", "PoolFormerModel", "PoolFormerPreTrainedModel"]

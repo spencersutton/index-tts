@@ -10,10 +10,23 @@ from ...image_utils import ImageInput, SizeDict
 from ...processing_utils import Unpack
 from ...utils import auto_docstring, is_torch_available, is_torchvision_available
 
+"""Fast Image processor class for Nougat."""
 if is_torch_available(): ...
 if is_torchvision_available(): ...
 
 class NougatFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
+    """
+    Args:
+    do_crop_margin (`bool`, *optional*, defaults to `True`):
+            Whether to crop the image margins.
+    do_thumbnail (`bool`, *optional*, defaults to `True`):
+            Whether to resize the image using thumbnail method.
+    do_align_long_axis (`bool`, *optional*, defaults to `False`):
+            Whether to align the long axis of the image with the long axis of `size` by rotating by 90 degrees.
+    do_pad (`bool`, *optional*, defaults to `True`):
+            Whether to pad the images to the largest image size in the batch.
+    """
+
     do_crop_margin: Optional[bool]
     do_thumbnail: Optional[bool]
     do_align_long_axis: Optional[bool]
@@ -37,12 +50,66 @@ class NougatImageProcessorFast(BaseImageProcessorFast):
     def __init__(self, **kwargs: Unpack[NougatFastImageProcessorKwargs]) -> None: ...
     @auto_docstring
     def preprocess(self, images: ImageInput, **kwargs: Unpack[NougatFastImageProcessorKwargs]) -> BatchFeature: ...
-    def python_find_non_zero(self, image: torch.Tensor): ...
-    def python_bounding_rect(self, coordinates): ...
-    def crop_margin(self, image: torch.Tensor, gray_threshold: int = ...) -> torch.Tensor: ...
-    def align_long_axis(self, image: torch.Tensor, size: SizeDict) -> torch.Tensor: ...
-    def thumbnail(self, image: torch.Tensor, size: SizeDict) -> torch.Tensor: ...
-    def pad_images(self, image: torch.Tensor, size: SizeDict) -> torch.Tensor: ...
+    def python_find_non_zero(self, image: torch.Tensor):  # -> Tensor:
+        """This is a reimplementation of a findNonZero function equivalent to cv2."""
+        ...
+
+    def python_bounding_rect(self, coordinates):  # -> tuple[Any, Any, Any, Any]:
+        """This is a reimplementation of a BoundingRect function equivalent to cv2."""
+        ...
+
+    def crop_margin(self, image: torch.Tensor, gray_threshold: int = ...) -> torch.Tensor:
+        """
+        Crops the margin of the image. Gray pixels are considered margin (i.e., pixels with a value below the
+        threshold).
+
+        Args:
+            image (`torch.Tensor`):
+                The image to be cropped.
+            gray_threshold (`int`, *optional*, defaults to `200`)
+                Value below which pixels are considered to be gray.
+        """
+        ...
+
+    def align_long_axis(self, image: torch.Tensor, size: SizeDict) -> torch.Tensor:
+        """
+        Align the long axis of the image to the longest axis of the specified size.
+
+        Args:
+            image (`torch.Tensor`):
+                The image to be aligned.
+            size (`Dict[str, int]`):
+                The size `{"height": h, "width": w}` to align the long axis to.
+        Returns:
+            `torch.Tensor`: The aligned image.
+        """
+        ...
+
+    def thumbnail(self, image: torch.Tensor, size: SizeDict) -> torch.Tensor:
+        """
+        Resize the image to make a thumbnail. The image is resized so that no dimension is larger than any
+        corresponding dimension of the specified size.
+
+        Args:
+            image (`torch.tensor`):
+                The image to be resized.
+            size (`Dict[str, int]`):
+                The size `{"height": h, "width": w}` to resize the image to.
+        """
+        ...
+
+    def pad_images(self, image: torch.Tensor, size: SizeDict) -> torch.Tensor:
+        """
+        Pads a batch of images to the specified size at the top, bottom, left and right.
+
+        Args:
+            image (`torch.tensor`):
+                The image to be padded.
+            size (`Dict[str, int]`):
+                The size `{"height": h, "width": w}` to pad the image to.
+        """
+        ...
+
     def resize(
         self,
         image: torch.Tensor,
@@ -50,6 +117,21 @@ class NougatImageProcessorFast(BaseImageProcessorFast):
         interpolation: F.InterpolationMode = ...,
         antialias: bool = ...,
         **kwargs,
-    ) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """
+        Resize an image to `(size["height"], size["width"])`.
+
+        Args:
+            image (`torch.Tensor`):
+                Image to resize.
+            size (`SizeDict`):
+                Dictionary in the format `{"height": int, "width": int}` specifying the size of the output image.
+            interpolation (`InterpolationMode`, *optional*, defaults to `InterpolationMode.BICUBIC`):
+                `InterpolationMode` filter to use when resizing the image e.g. `InterpolationMode.BICUBIC`.
+
+        Returns:
+            `torch.Tensor`: The resized image.
+        """
+        ...
 
 __all__ = ["NougatImageProcessorFast"]

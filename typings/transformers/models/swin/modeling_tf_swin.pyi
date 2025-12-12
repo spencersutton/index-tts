@@ -22,6 +22,7 @@ from ...utils import (
 )
 from .configuration_swin import SwinConfig
 
+"""TF 2.0 Swin Transformer model."""
 logger = ...
 _CONFIG_FOR_DOC = ...
 _CHECKPOINT_FOR_DOC = ...
@@ -31,6 +32,31 @@ _IMAGE_CLASS_EXPECTED_OUTPUT = ...
 
 @dataclass
 class TFSwinEncoderOutput(ModelOutput):
+    """
+    Swin encoder's outputs, with potential hidden states and attentions.
+
+    Args:
+        last_hidden_state (`tf.Tensor` of shape `(batch_size, sequence_length, hidden_size)`):
+            Sequence of hidden-states at the output of the last layer of the model.
+        hidden_states (`tuple(tf.Tensor)`, *optional*, returned when `output_hidden_states=True` is passed or when `config.output_hidden_states=True`):
+            Tuple of `tf.Tensor` (one for the output of the embeddings + one for the output of each stage) of shape
+            `(batch_size, sequence_length, hidden_size)`.
+
+            Hidden-states of the model at the output of each layer plus the initial embedding outputs.
+        attentions (`tuple(tf.Tensor)`, *optional*, returned when `output_attentions=True` is passed or when `config.output_attentions=True`):
+            Tuple of `tf.Tensor` (one for each stage) of shape `(batch_size, num_heads, sequence_length,
+            sequence_length)`.
+
+            Attentions weights after the attention softmax, used to compute the weighted average in the self-attention
+            heads.
+        reshaped_hidden_states (`tuple(tf.Tensor)`, *optional*, returned when `output_hidden_states=True` is passed or when `config.output_hidden_states=True`):
+            Tuple of `tf.Tensor` (one for the output of the embeddings + one for the output of each stage) of shape
+            `(batch_size, hidden_size, height, width)`.
+
+            Hidden-states of the model at the output of each layer plus the initial embedding outputs reshaped to
+            include the spatial dimensions.
+    """
+
     last_hidden_state: tf.Tensor | None = ...
     hidden_states: tuple[tf.Tensor, ...] | None = ...
     attentions: tuple[tf.Tensor, ...] | None = ...
@@ -38,6 +64,33 @@ class TFSwinEncoderOutput(ModelOutput):
 
 @dataclass
 class TFSwinModelOutput(ModelOutput):
+    """
+    Swin model's outputs that also contains a pooling of the last hidden states.
+
+    Args:
+        last_hidden_state (`tf.Tensor` of shape `(batch_size, sequence_length, hidden_size)`):
+            Sequence of hidden-states at the output of the last layer of the model.
+        pooler_output (`tf.Tensor` of shape `(batch_size, hidden_size)`, *optional*, returned when `add_pooling_layer=True` is passed):
+            Average pooling of the last layer hidden-state.
+        hidden_states (`tuple(tf.Tensor)`, *optional*, returned when `output_hidden_states=True` is passed or when `config.output_hidden_states=True`):
+            Tuple of `tf.Tensor` (one for the output of the embeddings + one for the output of each stage) of shape
+            `(batch_size, sequence_length, hidden_size)`.
+
+            Hidden-states of the model at the output of each layer plus the initial embedding outputs.
+        attentions (`tuple(tf.Tensor)`, *optional*, returned when `output_attentions=True` is passed or when `config.output_attentions=True`):
+            Tuple of `tf.Tensor` (one for each stage) of shape `(batch_size, num_heads, sequence_length,
+            sequence_length)`.
+
+            Attentions weights after the attention softmax, used to compute the weighted average in the self-attention
+            heads.
+        reshaped_hidden_states (`tuple(tf.Tensor)`, *optional*, returned when `output_hidden_states=True` is passed or when `config.output_hidden_states=True`):
+            Tuple of `tf.Tensor` (one for the output of the embeddings + one for the output of each stage) of shape
+            `(batch_size, hidden_size, height, width)`.
+
+            Hidden-states of the model at the output of each layer plus the initial embedding outputs reshaped to
+            include the spatial dimensions.
+    """
+
     last_hidden_state: tf.Tensor | None = ...
     pooler_output: tf.Tensor | None = ...
     hidden_states: tuple[tf.Tensor, ...] | None = ...
@@ -46,29 +99,99 @@ class TFSwinModelOutput(ModelOutput):
 
 @dataclass
 class TFSwinMaskedImageModelingOutput(ModelOutput):
+    """
+    Swin masked image model outputs.
+
+    Args:
+        loss (`tf.Tensor` of shape `(1,)`, *optional*, returned when `bool_masked_pos` is provided):
+            Masked image modeling (MLM) loss.
+        reconstruction (`tf.Tensor` of shape `(batch_size, num_channels, height, width)`):
+            Reconstructed pixel values.
+        hidden_states (`tuple(tf.Tensor)`, *optional*, returned when `output_hidden_states=True` is passed or when `config.output_hidden_states=True`):
+            Tuple of `tf.Tensor` (one for the output of the embeddings + one for the output of each stage) of shape
+            `(batch_size, sequence_length, hidden_size)`.
+
+            Hidden-states of the model at the output of each layer plus the initial embedding outputs.
+        attentions (`tuple(tf.Tensor)`, *optional*, returned when `output_attentions=True` is passed or when `config.output_attentions=True`):
+            Tuple of `tf.Tensor` (one for each stage) of shape `(batch_size, num_heads, sequence_length,
+            sequence_length)`.
+
+            Attentions weights after the attention softmax, used to compute the weighted average in the self-attention
+            heads.
+        reshaped_hidden_states (`tuple(tf.Tensor)`, *optional*, returned when `output_hidden_states=True` is passed or when `config.output_hidden_states=True`):
+            Tuple of `tf.Tensor` (one for the output of the embeddings + one for the output of each stage) of shape
+            `(batch_size, hidden_size, height, width)`.
+
+            Hidden-states of the model at the output of each layer plus the initial embedding outputs reshaped to
+            include the spatial dimensions.
+    """
+
     loss: tf.Tensor | None = ...
     reconstruction: tf.Tensor | None = ...
     hidden_states: tuple[tf.Tensor, ...] | None = ...
     attentions: tuple[tf.Tensor, ...] | None = ...
     reshaped_hidden_states: tuple[tf.Tensor, ...] | None = ...
     @property
-    def logits(self): ...
+    def logits(self):  # -> None:
+        ...
 
 @dataclass
 class TFSwinImageClassifierOutput(ModelOutput):
+    """
+    Swin outputs for image classification.
+
+    Args:
+        loss (`tf.Tensor` of shape `(1,)`, *optional*, returned when `labels` is provided):
+            Classification (or regression if config.num_labels==1) loss.
+        logits (`tf.Tensor` of shape `(batch_size, config.num_labels)`):
+            Classification (or regression if config.num_labels==1) scores (before SoftMax).
+        hidden_states (`tuple(tf.Tensor)`, *optional*, returned when `output_hidden_states=True` is passed or when `config.output_hidden_states=True`):
+            Tuple of `tf.Tensor` (one for the output of the embeddings + one for the output of each stage) of shape
+            `(batch_size, sequence_length, hidden_size)`.
+
+            Hidden-states of the model at the output of each layer plus the initial embedding outputs.
+        attentions (`tuple(tf.Tensor)`, *optional*, returned when `output_attentions=True` is passed or when `config.output_attentions=True`):
+            Tuple of `tf.Tensor` (one for each stage) of shape `(batch_size, num_heads, sequence_length,
+            sequence_length)`.
+
+            Attentions weights after the attention softmax, used to compute the weighted average in the self-attention
+            heads.
+        reshaped_hidden_states (`tuple(tf.Tensor)`, *optional*, returned when `output_hidden_states=True` is passed or when `config.output_hidden_states=True`):
+            Tuple of `tf.Tensor` (one for the output of the embeddings + one for the output of each stage) of shape
+            `(batch_size, hidden_size, height, width)`.
+
+            Hidden-states of the model at the output of each layer plus the initial embedding outputs reshaped to
+            include the spatial dimensions.
+    """
+
     loss: tf.Tensor | None = ...
     logits: tf.Tensor | None = ...
     hidden_states: tuple[tf.Tensor, ...] | None = ...
     attentions: tuple[tf.Tensor, ...] | None = ...
     reshaped_hidden_states: tuple[tf.Tensor, ...] | None = ...
 
-def window_partition(input_feature: tf.Tensor, window_size: int) -> tf.Tensor: ...
-def window_reverse(windows: tf.Tensor, window_size: int, height: int, width: int) -> tf.Tensor: ...
-def drop_path(
-    input: tf.Tensor, drop_prob: float = ..., training: bool = ..., scale_by_keep: bool = ...
-) -> tf.Tensor: ...
+def window_partition(input_feature: tf.Tensor, window_size: int) -> tf.Tensor:
+    """
+    Partitions the given input into windows.
+    """
+    ...
+
+def window_reverse(windows: tf.Tensor, window_size: int, height: int, width: int) -> tf.Tensor:
+    """
+    Merges windows to produce higher resolution features.
+    """
+    ...
+
+def drop_path(input: tf.Tensor, drop_prob: float = ..., training: bool = ..., scale_by_keep: bool = ...) -> tf.Tensor:
+    """
+    Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks).
+    """
+    ...
 
 class TFSwinEmbeddings(keras.layers.Layer):
+    """
+    Construct the patch and position embeddings. Optionally, also the mask token.
+    """
     def __init__(self, config: SwinConfig, use_mask_token: bool = ..., **kwargs) -> None: ...
     def build(self, input_shape: tf.TensorShape) -> None: ...
     def call(
@@ -76,20 +199,37 @@ class TFSwinEmbeddings(keras.layers.Layer):
     ) -> tuple[tf.Tensor, tuple[int, int]]: ...
 
 class TFSwinPatchEmbeddings(keras.layers.Layer):
+    """
+    Image to Patch Embedding.
+    """
     def __init__(self, config, **kwargs) -> None: ...
     def maybe_pad(self, pixel_values: tf.Tensor, height: int, width: int) -> tf.Tensor: ...
     def call(self, pixel_values: tf.Tensor, training: bool = ...) -> tuple[tf.Tensor, tuple[int, int]]: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFSwinPatchMerging(keras.layers.Layer):
+    """
+    Patch Merging Layer.
+
+    Args:
+        input_resolution (`tuple[int]`):
+            Resolution of input feature.
+        dim (`int`):
+            Number of input channels.
+        norm_layer (`keras.layer.Layer`, *optional*, defaults to `keras.layers.LayerNormalization`):
+            Normalization layer class.
+    """
     def __init__(
         self, input_resolution: tuple[int, int], dim: int, norm_layer: Callable | None = ..., **kwargs
     ) -> None: ...
     def maybe_pad(self, input_feature: tf.Tensor, height: int, width: int) -> tf.Tensor: ...
     def call(self, input_feature: tf.Tensor, input_dimensions: tuple[int, int], training: bool = ...) -> tf.Tensor: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFSwinDropPath(keras.layers.Layer):
+    """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks)."""
     def __init__(self, drop_prob: float | None = ..., scale_by_keep: bool = ..., **kwargs) -> None: ...
     def call(self, input: tf.Tensor, training: bool = ...) -> tf.Tensor: ...
 
@@ -109,11 +249,18 @@ class TFSwinSelfAttention(keras.layers.Layer):
 class TFSwinSelfOutput(keras.layers.Layer):
     def __init__(self, config: SwinConfig, dim: int, **kwargs) -> None: ...
     def call(self, hidden_states: tf.Tensor, input_tensor: tf.Tensor, training: bool = ...) -> tf.Tensor: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFSwinAttention(keras.layers.Layer):
     def __init__(self, config: SwinConfig, dim: int, num_heads: int, **kwargs) -> None: ...
-    def prune_heads(self, heads): ...
+    def prune_heads(self, heads):
+        """
+        Prunes heads of the model. See base class PreTrainedModel heads: dict of {layer_num: list of heads to prune in
+        this layer}
+        """
+        ...
+
     def call(
         self,
         hidden_states: tf.Tensor,
@@ -122,17 +269,20 @@ class TFSwinAttention(keras.layers.Layer):
         output_attentions: bool = ...,
         training: bool = ...,
     ) -> tf.Tensor: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFSwinIntermediate(keras.layers.Layer):
     def __init__(self, config: SwinConfig, dim: int, **kwargs) -> None: ...
     def call(self, hidden_states: tf.Tensor) -> tf.Tensor: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFSwinOutput(keras.layers.Layer):
     def __init__(self, config: SwinConfig, dim: int, **kwargs) -> None: ...
     def call(self, hidden_states: tf.Tensor, training: bool = ...) -> tf.Tensor: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFSwinLayer(keras.layers.Layer):
     def __init__(
@@ -157,7 +307,8 @@ class TFSwinLayer(keras.layers.Layer):
         output_attentions: bool = ...,
         training: bool = ...,
     ) -> tf.Tensor: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFSwinStage(keras.layers.Layer):
     def __init__(
@@ -179,7 +330,8 @@ class TFSwinStage(keras.layers.Layer):
         output_attentions: bool | None = ...,
         training: bool = ...,
     ) -> tuple[tf.Tensor, ...]: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFSwinEncoder(keras.layers.Layer):
     def __init__(self, config: SwinConfig, grid_size: tuple[int, int], **kwargs) -> None: ...
@@ -193,9 +345,15 @@ class TFSwinEncoder(keras.layers.Layer):
         return_dict: bool = ...,
         training: bool = ...,
     ) -> tuple[tf.Tensor, ...] | TFSwinEncoderOutput: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFSwinPreTrainedModel(TFPreTrainedModel):
+    """
+    An abstract class to handle weights initialization and a simple interface for downloading and loading pretrained
+    models.
+    """
+
     config_class = SwinConfig
     base_model_prefix = ...
     main_input_name = ...
@@ -203,9 +361,34 @@ class TFSwinPreTrainedModel(TFPreTrainedModel):
 SWIN_START_DOCSTRING = ...
 SWIN_INPUTS_DOCSTRING = ...
 
-def normalize_data_format(value: str) -> str: ...
+def normalize_data_format(value: str) -> str:
+    """
+    From tensorflow addons
+    https://github.com/tensorflow/addons/blob/8cec33fcaaf1cf90aec7bdd55a0fcdbb251ce5c2/tensorflow_addons/utils/keras_utils.py#L71
+    """
+    ...
 
 class AdaptiveAveragePooling1D(keras.layers.Layer):
+    """
+    Args:
+    Average 1D Pooling with adaptive kernel size.
+      output_size: An integer or tuple/list of a single integer, specifying pooled_features.
+        The new size of output channels.
+      data_format: A string,
+        one of `channels_last` (default) or `channels_first`. The ordering of the dimensions in the inputs.
+        `channels_last` corresponds to inputs with shape `(batch, steps, channels)` while `channels_first` corresponds
+        to inputs with shape `(batch, channels, steps)`.
+    Input shape:
+      - If `data_format='channels_last'`: 3D tensor with shape `(batch, steps, channels)`.
+      - If `data_format='channels_first'`: 3D tensor with shape `(batch, channels, steps)`.
+    Output shape:
+      - If `data_format='channels_last'`: 3D tensor with shape `(batch_size, pooled_steps, channels)`.
+      - If `data_format='channels_first'`: 3D tensor with shape `(batch_size, channels, pooled_steps)`.
+
+    Adapted from [tensorflow-addon's adaptive pooling.py](
+        https://github.com/tensorflow/addons/blob/8cec33fcaaf1cf90aec7bdd55a0fcdbb251ce5c2/tensorflow_addons/layers/adaptive_pooling.py#L90-L120
+    )
+    """
     def __init__(
         self, output_size: int | Iterable[int], reduce_function: Callable = ..., data_format: str | None = ..., **kwargs
     ) -> None: ...
@@ -232,9 +415,13 @@ class TFSwinMainLayer(keras.layers.Layer):
         return_dict: bool | None = ...,
         training: bool = ...,
     ) -> TFSwinModelOutput | tuple[tf.Tensor, ...]: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
-@add_start_docstrings(..., SWIN_START_DOCSTRING)
+@add_start_docstrings(
+    "The bare Swin Model transformer outputting raw hidden-states without any specific head on top.",
+    SWIN_START_DOCSTRING,
+)
 class TFSwinModel(TFSwinPreTrainedModel):
     def __init__(
         self, config: SwinConfig, add_pooling_layer: bool = ..., use_mask_token: bool = ..., **kwargs
@@ -257,19 +444,32 @@ class TFSwinModel(TFSwinPreTrainedModel):
         output_hidden_states: bool | None = ...,
         return_dict: bool | None = ...,
         training: bool = ...,
-    ) -> TFSwinModelOutput | tuple[tf.Tensor, ...]: ...
-    def build(self, input_shape=...): ...
+    ) -> TFSwinModelOutput | tuple[tf.Tensor, ...]:
+        r"""
+        bool_masked_pos (`tf.Tensor` of shape `(batch_size, num_patches)`, *optional*):
+            Boolean masked positions. Indicates which patches are masked (1) and which aren't (0).
+        """
+        ...
+
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFSwinPixelShuffle(keras.layers.Layer):
+    """TF layer implementation of torch.nn.PixelShuffle"""
     def __init__(self, upscale_factor: int, **kwargs) -> None: ...
     def call(self, x: tf.Tensor) -> tf.Tensor: ...
 
 class TFSwinDecoder(keras.layers.Layer):
     def __init__(self, config: SwinConfig, **kwargs) -> None: ...
     def call(self, x: tf.Tensor) -> tf.Tensor: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
-@add_start_docstrings(..., SWIN_START_DOCSTRING)
+@add_start_docstrings(
+    "Swin Model with a decoder on top for masked image modeling, as proposed in"
+    " [SimMIM](https://huggingface.co/papers/2111.09886).",
+    SWIN_START_DOCSTRING,
+)
 class TFSwinForMaskedImageModeling(TFSwinPreTrainedModel):
     def __init__(self, config: SwinConfig) -> None: ...
     @add_start_docstrings_to_model_forward(SWIN_INPUTS_DOCSTRING)
@@ -284,10 +484,48 @@ class TFSwinForMaskedImageModeling(TFSwinPreTrainedModel):
         output_hidden_states: bool | None = ...,
         return_dict: bool | None = ...,
         training: bool = ...,
-    ) -> tuple | TFSwinMaskedImageModelingOutput: ...
-    def build(self, input_shape=...): ...
+    ) -> tuple | TFSwinMaskedImageModelingOutput:
+        r"""
+        bool_masked_pos (`tf.Tensor` of shape `(batch_size, num_patches)`):
+            Boolean masked positions. Indicates which patches are masked (1) and which aren't (0).
 
-@add_start_docstrings(..., SWIN_START_DOCSTRING)
+        Returns:
+
+        Examples:
+        ```python
+        >>> from transformers import AutoImageProcessor, TFSwinForMaskedImageModeling
+        >>> import tensorflow as tf
+        >>> from PIL import Image
+        >>> import requests
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> image_processor = AutoImageProcessor.from_pretrained("microsoft/swin-tiny-patch4-window7-224")
+        >>> model = TFSwinForMaskedImageModeling.from_pretrained("microsoft/swin-tiny-patch4-window7-224")
+
+        >>> num_patches = (model.config.image_size // model.config.patch_size) ** 2
+        >>> pixel_values = image_processor(images=image, return_tensors="tf").pixel_values
+        >>> # create random boolean mask of shape (batch_size, num_patches)
+        >>> bool_masked_pos = tf.random.uniform((1, num_patches)) >= 0.5
+
+        >>> outputs = model(pixel_values, bool_masked_pos=bool_masked_pos)
+        >>> loss, reconstructed_pixel_values = outputs.loss, outputs.reconstruction
+        >>> list(reconstructed_pixel_values.shape)
+        [1, 3, 224, 224]
+        ```"""
+        ...
+
+    def build(self, input_shape=...):  # -> None:
+        ...
+
+@add_start_docstrings(
+    """
+    Swin Model transformer with an image classification head on top (a linear layer on top of the final hidden state of
+    the [CLS] token) e.g. for ImageNet.
+    """,
+    SWIN_START_DOCSTRING,
+)
 class TFSwinForImageClassification(TFSwinPreTrainedModel, TFSequenceClassificationLoss):
     def __init__(self, config: SwinConfig) -> None: ...
     @add_start_docstrings_to_model_forward(SWIN_INPUTS_DOCSTRING)
@@ -307,7 +545,16 @@ class TFSwinForImageClassification(TFSwinPreTrainedModel, TFSequenceClassificati
         output_hidden_states: bool | None = ...,
         return_dict: bool | None = ...,
         training: bool = ...,
-    ) -> tuple[tf.Tensor, ...] | TFSwinImageClassifierOutput: ...
-    def build(self, input_shape=...): ...
+    ) -> tuple[tf.Tensor, ...] | TFSwinImageClassifierOutput:
+        r"""
+        labels (`tf.Tensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
+
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 __all__ = ["TFSwinForImageClassification", "TFSwinForMaskedImageModeling", "TFSwinModel", "TFSwinPreTrainedModel"]

@@ -16,9 +16,16 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring
 from .configuration_mobilevit import MobileViTConfig
 
+"""PyTorch MobileViT model."""
 logger = ...
 
-def make_divisible(value: int, divisor: int = ..., min_value: Optional[int] = ...) -> int: ...
+def make_divisible(value: int, divisor: int = ..., min_value: Optional[int] = ...) -> int:
+    """
+    Ensure that all layers have a channel count that is divisible by `divisor`. This function is taken from the
+    original TensorFlow repo. It can be seen here:
+    https://github.com/tensorflow/models/blob/master/research/slim/nets/mobilenet/mobilenet.py
+    """
+    ...
 
 class MobileViTConvLayer(nn.Module):
     def __init__(
@@ -37,6 +44,9 @@ class MobileViTConvLayer(nn.Module):
     def forward(self, features: torch.Tensor) -> torch.Tensor: ...
 
 class MobileViTInvertedResidual(nn.Module):
+    """
+    Inverted residual block (MobileNetv2): https://huggingface.co/papers/1801.04381
+    """
     def __init__(
         self, config: MobileViTConfig, in_channels: int, out_channels: int, stride: int, dilation: int = ...
     ) -> None: ...
@@ -78,6 +88,9 @@ class MobileViTTransformer(nn.Module):
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
 
 class MobileViTLayer(GradientCheckpointingLayer):
+    """
+    MobileViT block: https://huggingface.co/papers/2110.02178
+    """
     def __init__(
         self,
         config: MobileViTConfig,
@@ -108,7 +121,14 @@ class MobileViTPreTrainedModel(PreTrainedModel):
 
 @auto_docstring
 class MobileViTModel(MobileViTPreTrainedModel):
-    def __init__(self, config: MobileViTConfig, expand_output: bool = ...) -> None: ...
+    def __init__(self, config: MobileViTConfig, expand_output: bool = ...) -> None:
+        r"""
+        expand_output (`bool`, *optional*, defaults to `True`):
+            Whether to expand the output of the model using a 1x1 convolution. If `True`, the model will apply an additional
+            1x1 convolution to expand the output channels from `config.neck_hidden_sizes[5]` to `config.neck_hidden_sizes[6]`.
+        """
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -117,7 +137,12 @@ class MobileViTModel(MobileViTPreTrainedModel):
         return_dict: Optional[bool] = ...,
     ) -> Union[tuple, BaseModelOutputWithPoolingAndNoAttention]: ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    MobileViT model with an image classification head on top (a linear layer on top of the pooled features), e.g. for
+    ImageNet.
+    """
+)
 class MobileViTForImageClassification(MobileViTPreTrainedModel):
     def __init__(self, config: MobileViTConfig) -> None: ...
     @auto_docstring
@@ -127,21 +152,38 @@ class MobileViTForImageClassification(MobileViTPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         labels: Optional[torch.Tensor] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ImageClassifierOutputWithNoAttention]: ...
+    ) -> Union[tuple, ImageClassifierOutputWithNoAttention]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss). If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 class MobileViTASPPPooling(nn.Module):
     def __init__(self, config: MobileViTConfig, in_channels: int, out_channels: int) -> None: ...
     def forward(self, features: torch.Tensor) -> torch.Tensor: ...
 
 class MobileViTASPP(nn.Module):
+    """
+    ASPP module defined in DeepLab papers: https://huggingface.co/papers/1606.00915, https://huggingface.co/papers/1706.05587
+    """
     def __init__(self, config: MobileViTConfig) -> None: ...
     def forward(self, features: torch.Tensor) -> torch.Tensor: ...
 
 class MobileViTDeepLabV3(nn.Module):
+    """
+    DeepLabv3 architecture: https://huggingface.co/papers/1706.05587
+    """
     def __init__(self, config: MobileViTConfig) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    MobileViT model with a semantic segmentation head on top, e.g. for Pascal VOC.
+    """
+)
 class MobileViTForSemanticSegmentation(MobileViTPreTrainedModel):
     def __init__(self, config: MobileViTConfig) -> None: ...
     @auto_docstring
@@ -151,7 +193,35 @@ class MobileViTForSemanticSegmentation(MobileViTPreTrainedModel):
         labels: Optional[torch.Tensor] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, SemanticSegmenterOutput]: ...
+    ) -> Union[tuple, SemanticSegmenterOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, height, width)`, *optional*):
+            Ground truth semantic segmentation maps for computing the loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels > 1`, a classification loss is computed (Cross-Entropy).
+
+        Examples:
+
+        ```python
+        >>> import requests
+        >>> import torch
+        >>> from PIL import Image
+        >>> from transformers import AutoImageProcessor, MobileViTForSemanticSegmentation
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> image_processor = AutoImageProcessor.from_pretrained("apple/deeplabv3-mobilevit-small")
+        >>> model = MobileViTForSemanticSegmentation.from_pretrained("apple/deeplabv3-mobilevit-small")
+
+        >>> inputs = image_processor(images=image, return_tensors="pt")
+
+        >>> with torch.no_grad():
+        ...     outputs = model(**inputs)
+
+        >>> # logits are of shape (batch_size, num_labels, height, width)
+        >>> logits = outputs.logits
+        ```"""
+        ...
 
 __all__ = [
     "MobileViTForImageClassification",

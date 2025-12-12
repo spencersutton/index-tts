@@ -19,17 +19,28 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import ModelOutput, auto_docstring, can_return_tuple
 from .configuration_git import GitConfig, GitVisionConfig
 
+"""PyTorch GIT model."""
 logger = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for vision model's outputs that also contains image embeddings of the pooling of the last hidden states.
+    """
+)
 class GitVisionModelOutput(ModelOutput):
+    r"""
+    image_embeds (`torch.FloatTensor` of shape `(batch_size, output_dim)` *optional* returned when model is initialized with `with_projection=True`):
+        The image embeddings obtained by applying the projection layer to the pooler_output.
+    """
+
     image_embeds: Optional[torch.FloatTensor] = ...
     last_hidden_state: Optional[torch.FloatTensor] = ...
     hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
     attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
 
 class GitEmbeddings(nn.Module):
+    """Construct the embeddings from word and position embeddings."""
     def __init__(self, config) -> None: ...
     def forward(
         self,
@@ -59,7 +70,8 @@ GIT_SELF_ATTENTION_CLASSES = ...
 
 class GitAttention(nn.Module):
     def __init__(self, config, position_embedding_type=..., layer_idx=...) -> None: ...
-    def prune_heads(self, heads): ...
+    def prune_heads(self, heads):  # -> None:
+        ...
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -89,7 +101,8 @@ class GitLayer(GradientCheckpointingLayer):
         output_attentions: Optional[bool] = ...,
         pixel_values_present: Optional[bool] = ...,
     ) -> tuple[torch.Tensor]: ...
-    def feed_forward_chunk(self, attention_output): ...
+    def feed_forward_chunk(self, attention_output):  # -> Any:
+        ...
 
 class GitEncoder(nn.Module):
     def __init__(self, config) -> None: ...
@@ -114,7 +127,17 @@ class GitPreTrainedModel(PreTrainedModel):
 
 class GitVisionEmbeddings(nn.Module):
     def __init__(self, config: GitVisionConfig) -> None: ...
-    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor: ...
+    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor:
+        """
+        This method allows to interpolate the pre-trained position encodings, to be able to use the model on higher resolution
+        images. This method is also adapted to support torch.jit tracing.
+
+        Adapted from:
+        - https://github.com/facebookresearch/dino/blob/de9ee3df6cf39fac952ab558447af1fa1365362a/vision_transformer.py#L174-L194, and
+        - https://github.com/facebookresearch/dinov2/blob/e1277af2ba9496fbadf7aec6eba56e8d882d1e35/dinov2/models/vision_transformer.py#L179-L211
+        """
+        ...
+
     def forward(self, pixel_values: torch.FloatTensor, interpolate_pos_encoding=...) -> torch.Tensor: ...
 
 class GitVisionMLP(nn.Module):
@@ -130,9 +153,11 @@ def eager_attention_forward(
     scaling: float,
     dropout: float = ...,
     **kwargs,
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class GitVisionAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config) -> None: ...
     def forward(
         self,
@@ -140,7 +165,9 @@ class GitVisionAttention(nn.Module):
         attention_mask: Optional[torch.Tensor] = ...,
         causal_attention_mask: Optional[torch.Tensor] = ...,
         output_attentions: Optional[bool] = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]: ...
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
+        """Input shape: Batch x Time x Channel"""
+        ...
 
 class GitVisionEncoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: GitVisionConfig) -> None: ...
@@ -150,9 +177,27 @@ class GitVisionEncoderLayer(GradientCheckpointingLayer):
         attention_mask: torch.Tensor,
         causal_attention_mask: torch.Tensor,
         output_attentions: Optional[bool] = ...,
-    ) -> tuple[torch.FloatTensor]: ...
+    ) -> tuple[torch.FloatTensor]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            attention_mask (`torch.FloatTensor`): attention mask of size
+                `(batch, 1, tgt_len, src_len)` where padding elements are indicated by very large negative values.
+                `(config.encoder_attention_heads,)`.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+        """
+        ...
 
 class GitVisionEncoder(nn.Module):
+    """
+    Transformer encoder consisting of `config.num_hidden_layers` self attention layers. Each layer is a
+    [`GitVisionEncoderLayer`].
+
+    Args:
+        config: GitVisionConfig
+    """
     def __init__(self, config: GitVisionConfig) -> None: ...
     @can_return_tuple
     def forward(
@@ -163,7 +208,37 @@ class GitVisionEncoder(nn.Module):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutput]: ...
+    ) -> Union[tuple, BaseModelOutput]:
+        r"""
+        Args:
+            inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
+                Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation.
+                This is useful if you want more control over how to convert `input_ids` indices into associated vectors
+                than the model's internal embedding lookup matrix.
+            attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Mask to avoid performing attention on padding token indices. Mask values selected in `[0, 1]`:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+            causal_attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Causal mask for the text model. Mask values selected in `[0, 1]`:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers. See `hidden_states` under returned tensors
+                for more detail.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`~utils.ModelOutput`] instead of a plain tuple.
+        """
+        ...
 
 class GitVisionTransformer(nn.Module):
     def __init__(self, config: GitVisionConfig) -> None: ...
@@ -177,7 +252,11 @@ class GitVisionTransformer(nn.Module):
         return_dict: Optional[bool] = ...,
     ) -> Union[tuple, BaseModelOutput]: ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The vision model from CLIP, used in GIT, without any head or projection on top.
+    """
+)
 class GitVisionModel(GitPreTrainedModel):
     config: GitVisionConfig
     main_input_name = ...
@@ -191,18 +270,47 @@ class GitVisionModel(GitPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         interpolate_pos_encoding: bool = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutput]: ...
+    ) -> Union[tuple, BaseModelOutput]:
+        r"""
+        Examples:
+
+        ```python
+        >>> from PIL import Image
+        >>> import requests
+        >>> from transformers import AutoProcessor, GitVisionModel
+
+        >>> processor = AutoProcessor.from_pretrained("microsoft/git-base")
+        >>> model = GitVisionModel.from_pretrained("microsoft/git-base")
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> inputs = processor(images=image, return_tensors="pt")
+
+        >>> outputs = model(**inputs)
+        >>> last_hidden_state = outputs.last_hidden_state
+        ```"""
+        ...
 
 class GitProjection(nn.Module):
     def __init__(self, config: GitConfig) -> None: ...
     def forward(self, embeddings: torch.Tensor) -> torch.Tensor: ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The bare GIT Model transformer consisting of a CLIP image encoder and text decoder outputting raw hidden-states
+    """
+)
 class GitModel(GitPreTrainedModel):
     def __init__(self, config) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
-    def create_attention_mask(self, tgt, memory, tgt_mask, past_key_values_length, memory_key_padding_mask=...): ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
+    def create_attention_mask(
+        self, tgt, memory, tgt_mask, past_key_values_length, memory_key_padding_mask=...
+    ):  # -> Tensor:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -218,14 +326,42 @@ class GitModel(GitPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         interpolate_pos_encoding: bool = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], BaseModelOutputWithPooling]: ...
+    ) -> Union[tuple[torch.Tensor], BaseModelOutputWithPooling]:
+        r"""
+        Examples:
 
-@auto_docstring(custom_intro=...)
+        ```python
+        >>> from transformers import AutoProcessor, AutoModel
+        >>> import requests
+        >>> from PIL import Image
+
+        >>> processor = AutoProcessor.from_pretrained("microsoft/git-base")
+        >>> model = AutoModel.from_pretrained("microsoft/git-base")
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> text = "this is an image of two cats"
+
+        >>> inputs = processor(images=image, text=text, return_tensors="pt")
+
+        >>> outputs = model(**inputs)
+        >>> last_hidden_state = outputs.last_hidden_state
+        ```"""
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    GIT Model with a `language modeling` head on top for autoregressive language modeling.
+    """
+)
 class GitForCausalLM(GitPreTrainedModel, GenerationMixin):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
-    def get_output_embeddings(self): ...
-    def set_output_embeddings(self, new_embeddings): ...
+    def get_output_embeddings(self):  # -> Linear:
+        ...
+    def set_output_embeddings(self, new_embeddings):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -243,9 +379,143 @@ class GitForCausalLM(GitPreTrainedModel, GenerationMixin):
         interpolate_pos_encoding: bool = ...,
         return_dict: Optional[bool] = ...,
         **kwargs,
-    ) -> Union[tuple[torch.Tensor], CausalLMOutputWithPast]: ...
+    ) -> Union[tuple[torch.Tensor], CausalLMOutputWithPast]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the left-to-right language modeling loss (next word prediction). Indices should be in
+            `[-100, 0, ..., config.vocab_size]` (see `input_ids` docstring) Tokens with indices set to `-100` are
+            ignored (masked), the loss is only computed for the tokens with labels n `[0, ..., config.vocab_size]`
+
+        Examples:
+
+        Image captioning example:
+
+        ```python
+        >>> from transformers import AutoProcessor, AutoModelForCausalLM
+        >>> import requests
+        >>> from PIL import Image
+
+        >>> processor = AutoProcessor.from_pretrained("microsoft/git-base-coco")
+        >>> model = AutoModelForCausalLM.from_pretrained("microsoft/git-base-coco")
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> pixel_values = processor(images=image, return_tensors="pt").pixel_values
+
+        >>> generated_ids = model.generate(pixel_values=pixel_values, max_length=50)
+        >>> generated_caption = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+        >>> print(generated_caption)
+        two cats sleeping on a pink blanket next to remotes.
+        ```
+
+        Visual question answering (VQA) example:
+
+        ```python
+        >>> from transformers import AutoProcessor, AutoModelForCausalLM
+        >>> from huggingface_hub import hf_hub_download
+        >>> from PIL import Image
+
+        >>> processor = AutoProcessor.from_pretrained("microsoft/git-base-textvqa")
+        >>> model = AutoModelForCausalLM.from_pretrained("microsoft/git-base-textvqa")
+
+        >>> file_path = hf_hub_download(repo_id="nielsr/textvqa-sample", filename="bus.png", repo_type="dataset")
+        >>> image = Image.open(file_path).convert("RGB")
+
+        >>> pixel_values = processor(images=image, return_tensors="pt").pixel_values
+
+        >>> question = "what does the front of the bus say at the top?"
+
+        >>> input_ids = processor(text=question, add_special_tokens=False).input_ids
+        >>> input_ids = [processor.tokenizer.cls_token_id] + input_ids
+        >>> input_ids = torch.tensor(input_ids).unsqueeze(0)
+
+        >>> generated_ids = model.generate(pixel_values=pixel_values, input_ids=input_ids, max_length=50)
+        >>> print(processor.batch_decode(generated_ids, skip_special_tokens=True))
+        ['what does the front of the bus say at the top? special']
+        ```
+
+        Video captioning example:
+
+        ```python
+        >>> import av
+        >>> import numpy as np
+        >>> from PIL import Image
+        >>> from huggingface_hub import hf_hub_download
+        >>> from transformers import AutoProcessor, AutoModelForCausalLM
+
+        >>> processor = AutoProcessor.from_pretrained("microsoft/git-base-vatex")
+        >>> model = AutoModelForCausalLM.from_pretrained("microsoft/git-base-vatex")
+
+        >>> # set seed for reproducibility
+        >>> np.random.seed(45)
+
+
+        >>> def read_video_pyav(container, indices):
+        ...     '''
+        ...     Decode the video with PyAV decoder.
+        ...     Args:
+        ...         container (`av.container.input.InputContainer`): PyAV container.
+        ...         indices (`list[int]`): List of frame indices to decode.
+        ...     Returns:
+        ...         result (np.ndarray): np array of decoded frames of shape (num_frames, height, width, 3).
+        ...     '''
+        ...     frames = []
+        ...     container.seek(0)
+        ...     start_index = indices[0]
+        ...     end_index = indices[-1]
+        ...     for i, frame in enumerate(container.decode(video=0)):
+        ...         if i > end_index:
+        ...             break
+        ...         if i >= start_index and i in indices:
+        ...             frames.append(frame)
+        ...     return np.stack([x.to_ndarray(format="rgb24") for x in frames])
+
+
+        >>> def sample_frame_indices(clip_len, frame_sample_rate, seg_len):
+        ...     '''
+        ...     Sample a given number of frame indices from the video.
+        ...     Args:
+        ...         clip_len (`int`): Total number of frames to sample.
+        ...         frame_sample_rate (`int`): Sample every n-th frame.
+        ...         seg_len (`int`): Maximum allowed index of sample's last frame.
+        ...     Returns:
+        ...         indices (`list[int]`): List of sampled frame indices
+        ...     '''
+        ...     converted_len = int(clip_len * frame_sample_rate)
+        ...     end_idx = np.random.randint(converted_len, seg_len)
+        ...     start_idx = end_idx - converted_len
+        ...     indices = np.linspace(start_idx, end_idx, num=clip_len)
+        ...     indices = np.clip(indices, start_idx, end_idx - 1).astype(np.int64)
+        ...     return indices
+
+
+        >>> # load video
+        >>> file_path = hf_hub_download(
+        ...     repo_id="nielsr/video-demo", filename="eating_spaghetti.mp4", repo_type="dataset"
+        ... )
+        >>> container = av.open(file_path)
+
+        >>> # sample frames
+        >>> num_frames = model.config.num_image_with_embedding
+        >>> indices = sample_frame_indices(
+        ...     clip_len=num_frames, frame_sample_rate=4, seg_len=container.streams.video[0].frames
+        ... )
+        >>> frames = read_video_pyav(container, indices)
+
+        >>> pixel_values = processor(images=list(frames), return_tensors="pt").pixel_values
+
+        >>> generated_ids = model.generate(pixel_values=pixel_values, max_length=50)
+
+        >>> print("Generated caption:", processor.batch_decode(generated_ids, skip_special_tokens=True))
+        Generated caption: ['a woman is sitting at a table and she is talking about the food she is holding.']
+        ```
+        """
+        ...
+
     def prepare_inputs_for_generation(
         self, input_ids, past_key_values=..., attention_mask=..., use_cache=..., **kwargs
-    ): ...
+    ):  # -> dict[str, Any | None]:
+        ...
 
 __all__ = ["GitForCausalLM", "GitModel", "GitPreTrainedModel", "GitVisionModel"]

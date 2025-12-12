@@ -44,14 +44,47 @@ class BaseVideoProcessor(BaseImageProcessorFast):
     model_input_names = ...
     def __init__(self, **kwargs: Unpack[VideosKwargs]) -> None: ...
     def __call__(self, videos, **kwargs) -> BatchFeature: ...
-    def convert_to_rgb(self, video: torch.Tensor) -> VideoInput: ...
+    def convert_to_rgb(self, video: torch.Tensor) -> VideoInput:
+        """
+        Converts a video to RGB format.
+
+        Args:
+            video (`"torch.Tensor"`):
+                The video to convert.
+
+        Returns:
+            `torch.Tensor`: The converted video.
+        """
+        ...
+
     def sample_frames(
         self,
         video: torch.Tensor,
         metadata: Optional[Union[VideoMetadata, dict]] = ...,
         num_frames: Optional[int] = ...,
         fps: Optional[Union[int, float]] = ...,
-    ): ...
+    ):  # -> Tensor:
+        """
+        Default sampling function which uniformly samples the desired number of frames between 0 and total number of frames.
+        If `fps` is passed along with metadata, `fps` frames per second are sampled uniformty. Arguments `num_frames`
+        and `fps` are mutually exclusive.
+
+        Args:
+            video (`torch.Tensor`):
+                Video that need to be sampled.
+            metadata (`VideoMetadata`, *optional*):
+                Metadata of the video containing information about total duration, fps and total number of frames.
+            num_frames (`int`, *optional*):
+                Maximum number of frames to sample. Defaults to `self.num_frames`.
+            fps (`int` or `float`, *optional*):
+                Target frames to sample per second. Defaults to `self.fps`.
+
+        Returns:
+            torch.Tensor:
+                Sampled video frames.
+        """
+        ...
+
     @add_start_docstrings(BASE_VIDEO_PROCESSOR_DOCSTRING)
     def preprocess(self, videos: VideoInput, **kwargs: Unpack[VideosKwargs]) -> BatchFeature: ...
     @classmethod
@@ -64,22 +97,217 @@ class BaseVideoProcessor(BaseImageProcessorFast):
         token: Optional[Union[str, bool]] = ...,
         revision: str = ...,
         **kwargs,
-    ): ...
-    def save_pretrained(self, save_directory: Union[str, os.PathLike], push_to_hub: bool = ..., **kwargs): ...
+    ):  # -> tuple[Self, dict[str, Any]] | Self:
+        r"""
+        Instantiate a type of [`~video_processing_utils.VideoProcessorBase`] from an video processor.
+
+        Args:
+            pretrained_model_name_or_path (`str` or `os.PathLike`):
+                This can be either:
+
+                - a string, the *model id* of a pretrained video hosted inside a model repo on
+                  huggingface.co.
+                - a path to a *directory* containing a video processor file saved using the
+                  [`~video_processing_utils.VideoProcessorBase.save_pretrained`] method, e.g.,
+                  `./my_model_directory/`.
+                - a path or url to a saved video processor JSON *file*, e.g.,
+                  `./my_model_directory/preprocessor_config.json`.
+            cache_dir (`str` or `os.PathLike`, *optional*):
+                Path to a directory in which a downloaded pretrained model video processor should be cached if the
+                standard cache should not be used.
+            force_download (`bool`, *optional*, defaults to `False`):
+                Whether or not to force to (re-)download the video processor files and override the cached versions if
+                they exist.
+            resume_download:
+                Deprecated and ignored. All downloads are now resumed by default when possible.
+                Will be removed in v5 of Transformers.
+            proxies (`dict[str, str]`, *optional*):
+                A dictionary of proxy servers to use by protocol or endpoint, e.g., `{'http': 'foo.bar:3128',
+                'http://hostname': 'foo.bar:4012'}.` The proxies are used on each request.
+            token (`str` or `bool`, *optional*):
+                The token to use as HTTP bearer authorization for remote files. If `True`, or not specified, will use
+                the token generated when running `hf auth login` (stored in `~/.huggingface`).
+            revision (`str`, *optional*, defaults to `"main"`):
+                The specific model version to use. It can be a branch name, a tag name, or a commit id, since we use a
+                git-based system for storing models and other artifacts on huggingface.co, so `revision` can be any
+                identifier allowed by git.
+
+
+                <Tip>
+
+                To test a pull request you made on the Hub, you can pass `revision="refs/pr/<pr_number>"`.
+
+                </Tip>
+
+            return_unused_kwargs (`bool`, *optional*, defaults to `False`):
+                If `False`, then this function returns just the final video processor object. If `True`, then this
+                functions returns a `Tuple(video_processor, unused_kwargs)` where *unused_kwargs* is a dictionary
+                consisting of the key/value pairs whose keys are not video processor attributes: i.e., the part of
+                `kwargs` which has not been used to update `video_processor` and is otherwise ignored.
+            subfolder (`str`, *optional*, defaults to `""`):
+                In case the relevant files are located inside a subfolder of the model repo on huggingface.co, you can
+                specify the folder name here.
+            kwargs (`dict[str, Any]`, *optional*):
+                The values in kwargs of any keys which are video processor attributes will be used to override the
+                loaded values. Behavior concerning key/value pairs whose keys are *not* video processor attributes is
+                controlled by the `return_unused_kwargs` keyword parameter.
+
+        Returns:
+            A video processor of type [`~video_processing_utils.ImagVideoProcessorBase`].
+
+        Examples:
+
+        ```python
+        # We can't instantiate directly the base class *VideoProcessorBase* so let's show the examples on a
+        # derived class: *LlavaOnevisionVideoProcessor*
+        video_processor = LlavaOnevisionVideoProcessor.from_pretrained(
+            "llava-hf/llava-onevision-qwen2-0.5b-ov-hf"
+        )  # Download video_processing_config from huggingface.co and cache.
+        video_processor = LlavaOnevisionVideoProcessor.from_pretrained(
+            "./test/saved_model/"
+        )  # E.g. video processor (or model) was saved using *save_pretrained('./test/saved_model/')*
+        video_processor = LlavaOnevisionVideoProcessor.from_pretrained("./test/saved_model/preprocessor_config.json")
+        video_processor = LlavaOnevisionVideoProcessor.from_pretrained(
+            "llava-hf/llava-onevision-qwen2-0.5b-ov-hf", do_normalize=False, foo=False
+        )
+        assert video_processor.do_normalize is False
+        video_processor, unused_kwargs = LlavaOnevisionVideoProcessor.from_pretrained(
+            "llava-hf/llava-onevision-qwen2-0.5b-ov-hf", do_normalize=False, foo=False, return_unused_kwargs=True
+        )
+        assert video_processor.do_normalize is False
+        assert unused_kwargs == {"foo": False}
+        ```"""
+        ...
+
+    def save_pretrained(
+        self, save_directory: Union[str, os.PathLike], push_to_hub: bool = ..., **kwargs
+    ):  # -> list[str]:
+        """
+        Save an video processor object to the directory `save_directory`, so that it can be re-loaded using the
+        [`~video_processing_utils.VideoProcessorBase.from_pretrained`] class method.
+
+        Args:
+            save_directory (`str` or `os.PathLike`):
+                Directory where the video processor JSON file will be saved (will be created if it does not exist).
+            push_to_hub (`bool`, *optional*, defaults to `False`):
+                Whether or not to push your model to the Hugging Face model hub after saving it. You can specify the
+                repository you want to push to with `repo_id` (will default to the name of `save_directory` in your
+                namespace).
+            kwargs (`dict[str, Any]`, *optional*):
+                Additional key word arguments passed along to the [`~utils.PushToHubMixin.push_to_hub`] method.
+        """
+        ...
+
     @classmethod
     def get_video_processor_dict(
         cls, pretrained_model_name_or_path: Union[str, os.PathLike], **kwargs
-    ) -> tuple[dict[str, Any], dict[str, Any]]: ...
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        """
+        From a `pretrained_model_name_or_path`, resolve to a dictionary of parameters, to be used for instantiating a
+        video processor of type [`~video_processing_utils.VideoProcessorBase`] using `from_dict`.
+
+        Parameters:
+            pretrained_model_name_or_path (`str` or `os.PathLike`):
+                The identifier of the pre-trained checkpoint from which we want the dictionary of parameters.
+            subfolder (`str`, *optional*, defaults to `""`):
+                In case the relevant files are located inside a subfolder of the model repo on huggingface.co, you can
+                specify the folder name here.
+
+        Returns:
+            `tuple[Dict, Dict]`: The dictionary(ies) that will be used to instantiate the video processor object.
+        """
+        ...
+
     @classmethod
-    def from_dict(cls, video_processor_dict: dict[str, Any], **kwargs): ...
-    def to_dict(self) -> dict[str, Any]: ...
-    def to_json_string(self) -> str: ...
-    def to_json_file(self, json_file_path: Union[str, os.PathLike]): ...
-    def __repr__(self): ...
+    def from_dict(cls, video_processor_dict: dict[str, Any], **kwargs):  # -> tuple[Self, dict[str, Any]] | Self:
+        """
+        Instantiates a type of [`~video_processing_utils.VideoProcessorBase`] from a Python dictionary of parameters.
+
+        Args:
+            video_processor_dict (`dict[str, Any]`):
+                Dictionary that will be used to instantiate the video processor object. Such a dictionary can be
+                retrieved from a pretrained checkpoint by leveraging the
+                [`~video_processing_utils.VideoProcessorBase.to_dict`] method.
+            kwargs (`dict[str, Any]`):
+                Additional parameters from which to initialize the video processor object.
+
+        Returns:
+            [`~video_processing_utils.VideoProcessorBase`]: The video processor object instantiated from those
+            parameters.
+        """
+        ...
+
+    def to_dict(self) -> dict[str, Any]:
+        """
+        Serializes this instance to a Python dictionary.
+
+        Returns:
+            `dict[str, Any]`: Dictionary of all the attributes that make up this video processor instance.
+        """
+        ...
+
+    def to_json_string(self) -> str:
+        """
+        Serializes this instance to a JSON string.
+
+        Returns:
+            `str`: String containing all the attributes that make up this feature_extractor instance in JSON format.
+        """
+        ...
+
+    def to_json_file(self, json_file_path: Union[str, os.PathLike]):  # -> None:
+        """
+        Save this instance to a JSON file.
+
+        Args:
+            json_file_path (`str` or `os.PathLike`):
+                Path to the JSON file in which this image_processor instance's parameters will be saved.
+        """
+        ...
+
+    def __repr__(self):  # -> str:
+        ...
     @classmethod
-    def from_json_file(cls, json_file: Union[str, os.PathLike]): ...
+    def from_json_file(cls, json_file: Union[str, os.PathLike]):  # -> Self:
+        """
+        Instantiates a video processor of type [`~video_processing_utils.VideoProcessorBase`] from the path to a JSON
+        file of parameters.
+
+        Args:
+            json_file (`str` or `os.PathLike`):
+                Path to the JSON file containing the parameters.
+
+        Returns:
+            A video processor of type [`~video_processing_utils.VideoProcessorBase`]: The video_processor object
+            instantiated from that JSON file.
+        """
+        ...
+
     @classmethod
-    def register_for_auto_class(cls, auto_class=...): ...
-    def fetch_videos(self, video_url_or_urls: Union[str, list[str]]): ...
+    def register_for_auto_class(cls, auto_class=...):  # -> None:
+        """
+        Register this class with a given auto class. This should only be used for custom video processors as the ones
+        in the library are already mapped with `AutoVideoProcessor `.
+
+        <Tip warning={true}>
+
+        This API is experimental and may have some slight breaking changes in the next releases.
+
+        </Tip>
+
+        Args:
+            auto_class (`str` or `type`, *optional*, defaults to `"AutoVideoProcessor "`):
+                The auto class to register this new video processor with.
+        """
+        ...
+
+    def fetch_videos(self, video_url_or_urls: Union[str, list[str]]):  # -> list[list[list[Any] | Any] | Any]:
+        """
+        Convert a single or a list of urls into the corresponding `np.array` objects.
+
+        If a single url is passed, the return value will be a single object. If a list is passed a list of objects is
+        returned.
+        """
+        ...
 
 if BaseVideoProcessor.push_to_hub.__doc__ is not None: ...

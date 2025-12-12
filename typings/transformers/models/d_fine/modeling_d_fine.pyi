@@ -21,7 +21,12 @@ def multi_scale_deformable_attention_v2(
 ) -> Tensor: ...
 
 class DFineMultiscaleDeformableAttention(nn.Module):
-    def __init__(self, config: DFineConfig) -> None: ...
+    def __init__(self, config: DFineConfig) -> None:
+        """
+        D-Fine version of multiscale deformable attention
+        """
+        ...
+
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -37,15 +42,23 @@ class DFineGate(nn.Module):
     def forward(self, second_residual: torch.Tensor, hidden_states: torch.Tensor) -> torch.Tensor: ...
 
 class DFineMultiheadAttention(nn.Module):
+    """
+    Multi-headed attention from 'Attention Is All You Need' paper.
+
+    Here, we add position embeddings to the queries and keys (as explained in the Deformable DETR paper).
+    """
     def __init__(self, embed_dim: int, num_heads: int, dropout: float = ..., bias: bool = ...) -> None: ...
-    def with_pos_embed(self, tensor: torch.Tensor, position_embeddings: Optional[Tensor]): ...
+    def with_pos_embed(self, tensor: torch.Tensor, position_embeddings: Optional[Tensor]):  # -> Tensor:
+        ...
     def forward(
         self,
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = ...,
         position_embeddings: Optional[torch.Tensor] = ...,
         output_attentions: bool = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+        """Input shape: Batch x Time x Channel"""
+        ...
 
 class DFineDecoderLayer(nn.Module):
     def __init__(self, config: DFineConfig) -> None: ...
@@ -59,11 +72,68 @@ class DFineDecoderLayer(nn.Module):
         encoder_hidden_states: Optional[torch.Tensor] = ...,
         encoder_attention_mask: Optional[torch.Tensor] = ...,
         output_attentions: Optional[bool] = ...,
-    ) -> tuple[torch.Tensor, Any, Any]: ...
+    ) -> tuple[torch.Tensor, Any, Any]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`):
+                Input to the layer of shape `(seq_len, batch, embed_dim)`.
+            position_embeddings (`torch.FloatTensor`, *optional*):
+                Position embeddings that are added to the queries and keys in the self-attention layer.
+            reference_points (`torch.FloatTensor`, *optional*):
+                Reference points.
+            spatial_shapes (`torch.LongTensor`, *optional*):
+                Spatial shapes.
+            level_start_index (`torch.LongTensor`, *optional*):
+                Level start index.
+            encoder_hidden_states (`torch.FloatTensor`):
+                cross attention input to the layer of shape `(seq_len, batch, embed_dim)`
+            encoder_attention_mask (`torch.FloatTensor`): encoder attention mask of size
+                `(batch, 1, target_len, source_len)` where padding elements are indicated by very large negative
+                values.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+        """
+        ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for outputs of the RT-DETR encoder-decoder model.
+    """
+)
 class DFineModelOutput(ModelOutput):
+    r"""
+    last_hidden_state (`torch.FloatTensor` of shape `(batch_size, num_queries, hidden_size)`):
+        Sequence of hidden-states at the output of the last layer of the decoder of the model.
+    intermediate_hidden_states (`torch.FloatTensor` of shape `(batch_size, config.decoder_layers, num_queries, hidden_size)`):
+        Stacked intermediate hidden states (output of each layer of the decoder).
+    intermediate_logits (`torch.FloatTensor` of shape `(batch_size, config.decoder_layers, sequence_length, config.num_labels)`):
+        Stacked intermediate logits (logits of each layer of the decoder).
+    intermediate_reference_points (`torch.FloatTensor` of shape `(batch_size, config.decoder_layers, num_queries, 4)`):
+        Stacked intermediate reference points (reference points of each layer of the decoder).
+    intermediate_predicted_corners (`torch.FloatTensor` of shape `(batch_size, config.decoder_layers, num_queries, 4)`):
+        Stacked intermediate predicted corners (predicted corners of each layer of the decoder).
+    initial_reference_points (`torch.FloatTensor` of shape `(batch_size, num_queries, 4)`):
+        Initial reference points used for the first decoder layer.
+    init_reference_points (`torch.FloatTensor` of shape `(batch_size, num_queries, 4)`):
+        Initial reference points sent through the Transformer decoder.
+    enc_topk_logits (`torch.FloatTensor` of shape `(batch_size, sequence_length, config.num_labels)`):
+        Predicted bounding boxes scores where the top `config.two_stage_num_proposals` scoring bounding boxes are
+        picked as region proposals in the encoder stage. Output of bounding box binary classification (i.e.
+        foreground and background).
+    enc_topk_bboxes (`torch.FloatTensor` of shape `(batch_size, sequence_length, 4)`):
+        Logits of predicted bounding boxes coordinates in the encoder stage.
+    enc_outputs_class (`torch.FloatTensor` of shape `(batch_size, sequence_length, config.num_labels)`, *optional*, returned when `config.with_box_refine=True` and `config.two_stage=True`):
+        Predicted bounding boxes scores where the top `config.two_stage_num_proposals` scoring bounding boxes are
+        picked as region proposals in the first stage. Output of bounding box binary classification (i.e.
+        foreground and background).
+    enc_outputs_coord_logits (`torch.FloatTensor` of shape `(batch_size, sequence_length, 4)`, *optional*, returned when `config.with_box_refine=True` and `config.two_stage=True`):
+        Logits of predicted bounding boxes coordinates in the first stage.
+    denoising_meta_values (`dict`):
+        Extra dictionary for the denoising related values.
+    """
+
     last_hidden_state: Optional[torch.FloatTensor] = ...
     intermediate_hidden_states: Optional[torch.FloatTensor] = ...
     intermediate_logits: Optional[torch.FloatTensor] = ...
@@ -84,8 +154,58 @@ class DFineModelOutput(ModelOutput):
     denoising_meta_values: Optional[dict] = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Output type of [`DFineForObjectDetection`].
+    """
+)
 class DFineObjectDetectionOutput(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `labels` are provided)):
+        Total loss as a linear combination of a negative log-likehood (cross-entropy) for class prediction and a
+        bounding box loss. The latter is defined as a linear combination of the L1 loss and the generalized
+        scale-invariant IoU loss.
+    loss_dict (`Dict`, *optional*):
+        A dictionary containing the individual losses. Useful for logging.
+    logits (`torch.FloatTensor` of shape `(batch_size, num_queries, num_classes + 1)`):
+        Classification logits (including no-object) for all queries.
+    pred_boxes (`torch.FloatTensor` of shape `(batch_size, num_queries, 4)`):
+        Normalized boxes coordinates for all queries, represented as (center_x, center_y, width, height). These
+        values are normalized in [0, 1], relative to the size of each individual image in the batch (disregarding
+        possible padding). You can use [`~DFineImageProcessor.post_process_object_detection`] to retrieve the
+        unnormalized (absolute) bounding boxes.
+    auxiliary_outputs (`list[Dict]`, *optional*):
+        Optional, only returned when auxiliary losses are activated (i.e. `config.auxiliary_loss` is set to `True`)
+        and labels are provided. It is a list of dictionaries containing the two above keys (`logits` and
+        `pred_boxes`) for each decoder layer.
+    last_hidden_state (`torch.FloatTensor` of shape `(batch_size, num_queries, hidden_size)`):
+        Sequence of hidden-states at the output of the last layer of the decoder of the model.
+    intermediate_hidden_states (`torch.FloatTensor` of shape `(batch_size, config.decoder_layers, num_queries, hidden_size)`):
+        Stacked intermediate hidden states (output of each layer of the decoder).
+    intermediate_logits (`torch.FloatTensor` of shape `(batch_size, config.decoder_layers, num_queries, config.num_labels)`):
+        Stacked intermediate logits (logits of each layer of the decoder).
+    intermediate_reference_points (`torch.FloatTensor` of shape `(batch_size, config.decoder_layers, num_queries, 4)`):
+        Stacked intermediate reference points (reference points of each layer of the decoder).
+    intermediate_predicted_corners (`torch.FloatTensor` of shape `(batch_size, config.decoder_layers, num_queries, 4)`):
+        Stacked intermediate predicted corners (predicted corners of each layer of the decoder).
+    initial_reference_points (`torch.FloatTensor` of shape `(batch_size, config.decoder_layers, num_queries, 4)`):
+        Stacked initial reference points (initial reference points of each layer of the decoder).
+    init_reference_points (`torch.FloatTensor` of shape  `(batch_size, num_queries, 4)`):
+        Initial reference points sent through the Transformer decoder.
+    enc_topk_logits (`torch.FloatTensor` of shape `(batch_size, sequence_length, config.num_labels)`, *optional*, returned when `config.with_box_refine=True` and `config.two_stage=True`):
+        Logits of predicted bounding boxes coordinates in the encoder.
+    enc_topk_bboxes (`torch.FloatTensor` of shape `(batch_size, sequence_length, 4)`, *optional*, returned when `config.with_box_refine=True` and `config.two_stage=True`):
+        Logits of predicted bounding boxes coordinates in the encoder.
+    enc_outputs_class (`torch.FloatTensor` of shape `(batch_size, sequence_length, config.num_labels)`, *optional*, returned when `config.with_box_refine=True` and `config.two_stage=True`):
+        Predicted bounding boxes scores where the top `config.two_stage_num_proposals` scoring bounding boxes are
+        picked as region proposals in the first stage. Output of bounding box binary classification (i.e.
+        foreground and background).
+    enc_outputs_coord_logits (`torch.FloatTensor` of shape `(batch_size, sequence_length, 4)`, *optional*, returned when `config.with_box_refine=True` and `config.two_stage=True`):
+        Logits of predicted bounding boxes coordinates in the first stage.
+    denoising_meta_values (`dict`):
+        Extra dictionary for the denoising related values
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     loss_dict: Optional[dict] = ...
     logits: Optional[torch.FloatTensor] = ...
@@ -111,14 +231,35 @@ class DFineObjectDetectionOutput(ModelOutput):
     denoising_meta_values: Optional[dict] = ...
 
 class DFineFrozenBatchNorm2d(nn.Module):
+    """
+    BatchNorm2d where the batch statistics and the affine parameters are fixed.
+
+    Copy-paste from torchvision.misc.ops with added eps before rqsrt, without which any other models than
+    torchvision.models.resnet[18,34,50,101] produce nans.
+    """
     def __init__(self, n) -> None: ...
     def forward(self, x): ...
 
-def replace_batch_norm(model): ...
+def replace_batch_norm(model):  # -> None:
+    r"""
+    Recursively replace all `torch.nn.BatchNorm2d` with `DFineFrozenBatchNorm2d`.
+
+    Args:
+        model (torch.nn.Module):
+            input model
+    """
+    ...
 
 class DFineConvEncoder(nn.Module):
+    """
+    Convolutional backbone using the modeling_d_fine_resnet.py.
+
+    nn.BatchNorm2d layers are replaced by DFineFrozenBatchNorm2d as defined above.
+    https://github.com/lyuwenyu/RT-DETR/blob/main/DFine_pytorch/src/nn/backbone/presnet.py#L142
+    """
     def __init__(self, config) -> None: ...
-    def forward(self, pixel_values: torch.Tensor, pixel_mask: torch.Tensor): ...
+    def forward(self, pixel_values: torch.Tensor, pixel_mask: torch.Tensor):  # -> list[Any]:
+        ...
 
 class DFineEncoderLayer(nn.Module):
     def __init__(self, config: DFineConfig) -> None: ...
@@ -129,9 +270,23 @@ class DFineEncoderLayer(nn.Module):
         position_embeddings: Optional[torch.Tensor] = ...,
         output_attentions: bool = ...,
         **kwargs,
-    ): ...
+    ):  # -> tuple[Tensor, Any] | tuple[Tensor]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            attention_mask (`torch.FloatTensor`): attention mask of size
+                `(batch, 1, target_len, source_len)` where padding elements are indicated by very large negative
+                values.
+            position_embeddings (`torch.FloatTensor`, *optional*):
+                Object queries (also called content embeddings), to be added to the hidden states.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+        """
+        ...
 
-def inverse_sigmoid(x, eps=...): ...
+def inverse_sigmoid(x, eps=...):  # -> Tensor:
+    ...
 def get_contrastive_denoising_training_group(
     targets,
     num_classes,
@@ -140,7 +295,37 @@ def get_contrastive_denoising_training_group(
     num_denoising_queries=...,
     label_noise_ratio=...,
     box_noise_scale=...,
-): ...
+):  # -> tuple[None, None, None, None] | tuple[Any, Tensor, Tensor, dict[str, tuple[Tensor, ...] | int | list[int | Tensor | Any]]]:
+    """
+    Creates a contrastive denoising training group using ground-truth samples. It adds noise to labels and boxes.
+
+    Args:
+        targets (`list[dict]`):
+            The target objects, each containing 'class_labels' and 'boxes' for objects in an image.
+        num_classes (`int`):
+            Total number of classes in the dataset.
+        num_queries (`int`):
+            Number of query slots in the transformer.
+        class_embed (`callable`):
+            A function or a model layer to embed class labels.
+        num_denoising_queries (`int`, *optional*, defaults to 100):
+            Number of denoising queries.
+        label_noise_ratio (`float`, *optional*, defaults to 0.5):
+            Ratio of noise applied to labels.
+        box_noise_scale (`float`, *optional*, defaults to 1.0):
+            Scale of noise applied to bounding boxes.
+    Returns:
+        `tuple` comprising various elements:
+        - **input_query_class** (`torch.FloatTensor`) --
+          Class queries with applied label noise.
+        - **input_query_bbox** (`torch.FloatTensor`) --
+          Bounding box queries with applied box noise.
+        - **attn_mask** (`torch.FloatTensor`) --
+           Attention mask for separating denoising and reconstruction queries.
+        - **denoising_meta_values** (`dict`) --
+          Metadata including denoising positive indices, number of groups, and split sizes.
+    """
+    ...
 
 @auto_docstring
 class DFinePreTrainedModel(PreTrainedModel):
@@ -150,12 +335,47 @@ class DFinePreTrainedModel(PreTrainedModel):
     _no_split_modules = ...
 
 class DFineIntegral(nn.Module):
+    """
+    A static layer that calculates integral results from a distribution.
+
+    This layer computes the target location using the formula: `sum{Pr(n) * W(n)}`,
+    where Pr(n) is the softmax probability vector representing the discrete
+    distribution, and W(n) is the non-uniform Weighting Function.
+
+    Args:
+        max_num_bins (int): Max number of the discrete bins. Default is 32.
+                       It can be adjusted based on the dataset or task requirements.
+    """
     def __init__(self, config: DFineConfig) -> None: ...
     def forward(self, pred_corners: torch.Tensor, project: torch.Tensor) -> torch.Tensor: ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for outputs of the DFineDecoder. This class adds two attributes to
+    BaseModelOutputWithCrossAttentions, namely:
+    - a stacked tensor of intermediate decoder hidden states (i.e. the output of each decoder layer)
+    - a stacked tensor of intermediate reference points.
+    """
+)
 class DFineDecoderOutput(ModelOutput):
+    r"""
+    intermediate_hidden_states (`torch.FloatTensor` of shape `(batch_size, config.decoder_layers, num_queries, hidden_size)`):
+        Stacked intermediate hidden states (output of each layer of the decoder).
+    intermediate_logits (`torch.FloatTensor` of shape `(batch_size, config.decoder_layers, sequence_length, config.num_labels)`):
+        Stacked intermediate logits (logits of each layer of the decoder).
+    intermediate_reference_points (`torch.FloatTensor` of shape `(batch_size, config.decoder_layers, sequence_length, hidden_size)`):
+        Stacked intermediate reference points (reference points of each layer of the decoder).
+    intermediate_predicted_corners (`torch.FloatTensor` of shape `(batch_size, config.decoder_layers, num_queries, 4)`):
+        Stacked intermediate predicted corners (predicted corners of each layer of the decoder).
+    initial_reference_points (`torch.FloatTensor` of shape `(batch_size, config.decoder_layers, num_queries, 4)`):
+        Stacked initial reference points (initial reference points of each layer of the decoder).
+    cross_attentions (`tuple(torch.FloatTensor)`, *optional*, returned when `output_attentions=True` and `config.add_cross_attention=True` is passed or when `config.output_attentions=True`):
+        Tuple of `torch.FloatTensor` (one for each layer) of shape `(batch_size, num_heads, sequence_length,
+        sequence_length)`. Attentions weights of the decoder's cross-attention layer, after the attention softmax,
+        used to compute the weighted average in the cross-attention heads.
+    """
+
     last_hidden_state: Optional[torch.FloatTensor] = ...
     intermediate_hidden_states: Optional[torch.FloatTensor] = ...
     intermediate_logits: Optional[torch.FloatTensor] = ...
@@ -166,10 +386,46 @@ class DFineDecoderOutput(ModelOutput):
     attentions: Optional[tuple[torch.FloatTensor]] = ...
     cross_attentions: Optional[tuple[torch.FloatTensor]] = ...
 
-def weighting_function(max_num_bins: int, up: torch.Tensor, reg_scale: int) -> torch.Tensor: ...
-def distance2bbox(points, distance: torch.Tensor, reg_scale: float) -> torch.Tensor: ...
+def weighting_function(max_num_bins: int, up: torch.Tensor, reg_scale: int) -> torch.Tensor:
+    """
+    Generates the non-uniform Weighting Function W(n) for bounding box regression.
+
+    Args:
+        max_num_bins (int): Max number of the discrete bins.
+        up (Tensor): Controls upper bounds of the sequence,
+                     where maximum offset is ±up * H / W.
+        reg_scale (float): Controls the curvature of the Weighting Function.
+                           Larger values result in flatter weights near the central axis W(max_num_bins/2)=0
+                           and steeper weights at both ends.
+    Returns:
+        Tensor: Sequence of Weighting Function.
+    """
+    ...
+
+def distance2bbox(points, distance: torch.Tensor, reg_scale: float) -> torch.Tensor:
+    """
+    Decodes edge-distances into bounding box coordinates.
+
+    Args:
+        points (`torch.Tensor`):
+            (batch_size, num_boxes, 4) or (num_boxes, 4) format, representing [x_center, y_center, width, height]
+        distance (`torch.Tensor`):
+            (batch_size, num_boxes, 4) or (num_boxes, 4), representing distances from the point to the left, top, right, and bottom boundaries.
+        reg_scale (`float`):
+            Controls the curvature of the Weighting Function.
+    Returns:
+        `torch.Tensor`: Bounding boxes in (batch_size, num_boxes, 4) or (num_boxes, 4) format, representing [x_center, y_center, width, height]
+    """
+    ...
 
 class DFineDecoder(DFinePreTrainedModel):
+    """
+    D-FINE Decoder implementing Fine-grained Distribution Refinement (FDR).
+
+    This decoder refines object detection predictions through iterative updates across multiple layers,
+    utilizing attention mechanisms, location quality estimators, and distribution refinement techniques
+    to improve bounding box accuracy and robustness.
+    """
     def __init__(self, config: DFineConfig) -> None: ...
     def forward(
         self,
@@ -184,17 +440,59 @@ class DFineDecoder(DFinePreTrainedModel):
         memory_mask=...,
         output_attentions=...,
         return_dict=...,
-    ) -> DFineDecoderOutput: ...
+    ) -> DFineDecoderOutput:
+        r"""
+        Args:
+            inputs_embeds (`torch.FloatTensor` of shape `(batch_size, num_queries, hidden_size)`):
+                The query embeddings that are passed into the decoder.
+            encoder_hidden_states (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*):
+                Sequence of hidden-states at the output of the last layer of the encoder. Used in the cross-attention
+                of the decoder.
+            encoder_attention_mask (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Mask to avoid performing cross-attention on padding pixel_values of the encoder. Mask values selected
+                in `[0, 1]`:
+                - 1 for pixels that are real (i.e. **not masked**),
+                - 0 for pixels that are padding (i.e. **masked**).
+            position_embeddings (`torch.FloatTensor` of shape `(batch_size, num_queries, hidden_size)`, *optional*):
+                Position embeddings that are added to the queries and keys in each self-attention layer.
+            reference_points (`torch.FloatTensor` of shape `(batch_size, num_queries, 4)` is `as_two_stage` else `(batch_size, num_queries, 2)` or , *optional*):
+                Reference point in range `[0, 1]`, top-left (0,0), bottom-right (1, 1), including padding area.
+            spatial_shapes (`torch.FloatTensor` of shape `(num_feature_levels, 2)`):
+                Spatial shapes of the feature maps.
+            level_start_index (`torch.LongTensor` of shape `(num_feature_levels)`, *optional*):
+                Indexes for the start of each feature level. In range `[0, sequence_length]`.
+            valid_ratios (`torch.FloatTensor` of shape `(batch_size, num_feature_levels, 2)`, *optional*):
+                Ratio of valid area in each feature level.
 
-@auto_docstring(custom_intro=...)
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers. See `hidden_states` under returned tensors
+                for more detail.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`~file_utils.ModelOutput`] instead of a plain tuple.
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    RT-DETR Model (consisting of a backbone and encoder-decoder) outputting raw hidden states without any head on top.
+    """
+)
 class DFineModel(DFinePreTrainedModel):
     def __init__(self, config: DFineConfig) -> None: ...
-    def get_encoder(self): ...
-    def get_decoder(self): ...
-    def freeze_backbone(self): ...
-    def unfreeze_backbone(self): ...
+    def get_encoder(self):  # -> DFineHybridEncoder:
+        ...
+    def get_decoder(self):  # -> DFineDecoder:
+        ...
+    def freeze_backbone(self):  # -> None:
+        ...
+    def unfreeze_backbone(self):  # -> None:
+        ...
     @compile_compatible_method_lru_cache(maxsize=32)
-    def generate_anchors(self, spatial_shapes=..., grid_size=..., device=..., dtype=...): ...
+    def generate_anchors(self, spatial_shapes=..., grid_size=..., device=..., dtype=...):  # -> tuple[Tensor, Tensor]:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -207,9 +505,49 @@ class DFineModel(DFinePreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.FloatTensor], DFineModelOutput]: ...
+    ) -> Union[tuple[torch.FloatTensor], DFineModelOutput]:
+        r"""
+        inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*):
+            Optionally, instead of passing the flattened feature map (output of the backbone + projection layer), you
+            can choose to directly pass a flattened representation of an image.
+        decoder_inputs_embeds (`torch.FloatTensor` of shape `(batch_size, num_queries, hidden_size)`, *optional*):
+            Optionally, instead of initializing the queries with a tensor of zeros, you can choose to directly pass an
+            embedded representation.
+        labels (`list[Dict]` of len `(batch_size,)`, *optional*):
+            Labels for computing the bipartite matching loss. List of dicts, each dictionary containing at least the
+            following 2 keys: 'class_labels' and 'boxes' (the class labels and bounding boxes of an image in the batch
+            respectively). The class labels themselves should be a `torch.LongTensor` of len `(number of bounding boxes
+            in the image,)` and the boxes a `torch.FloatTensor` of shape `(number of bounding boxes in the image, 4)`.
 
-@auto_docstring(custom_intro=...)
+        Examples:
+
+        ```python
+        >>> from transformers import AutoImageProcessor, DFineModel
+        >>> from PIL import Image
+        >>> import requests
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> image_processor = AutoImageProcessor.from_pretrained("PekingU/DFine_r50vd")
+        >>> model = DFineModel.from_pretrained("PekingU/DFine_r50vd")
+
+        >>> inputs = image_processor(images=image, return_tensors="pt")
+
+        >>> outputs = model(**inputs)
+
+        >>> last_hidden_states = outputs.last_hidden_state
+        >>> list(last_hidden_states.shape)
+        [1, 300, 256]
+        ```"""
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    RT-DETR Model (consisting of a backbone and encoder-decoder) outputting bounding boxes and logits to be further
+    decoded into scores and classes.
+    """
+)
 class DFineForObjectDetection(DFinePreTrainedModel):
     _tied_weights_keys = ...
     _no_split_modules = ...
@@ -227,11 +565,66 @@ class DFineForObjectDetection(DFinePreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         **kwargs,
-    ) -> Union[tuple[torch.FloatTensor], DFineObjectDetectionOutput]: ...
+    ) -> Union[tuple[torch.FloatTensor], DFineObjectDetectionOutput]:
+        r"""
+        Example:
+
+        ```python
+        >>> import torch
+        >>> from transformers.image_utils import load_image
+        >>> from transformers import AutoImageProcessor, DFineForObjectDetection
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = load_image(url)
+
+        >>> image_processor = AutoImageProcessor.from_pretrained("ustc-community/dfine-xlarge-coco")
+        >>> model = DFineForObjectDetection.from_pretrained("ustc-community/dfine-xlarge-coco")
+
+        >>> # prepare image for the model
+        >>> inputs = image_processor(images=image, return_tensors="pt")
+
+        >>> # forward pass
+        >>> outputs = model(**inputs)
+
+        >>> logits = outputs.logits
+        >>> list(logits.shape)
+        [1, 300, 80]
+
+        >>> boxes = outputs.pred_boxes
+        >>> list(boxes.shape)
+        [1, 300, 4]
+
+        >>> # convert outputs (bounding boxes and class logits) to Pascal VOC format (xmin, ymin, xmax, ymax)
+        >>> target_sizes = torch.tensor([image.size[::-1]])
+        >>> results = image_processor.post_process_object_detection(outputs, threshold=0.9, target_sizes=target_sizes)
+        >>> result = results[0]  # first image in batch
+
+        >>> for score, label, box in zip(result["scores"], result["labels"], result["boxes"]):
+        ...     box = [round(i, 2) for i in box.tolist()]
+        ...     print(
+        ...         f"Detected {model.config.id2label[label.item()]} with confidence "
+        ...         f"{round(score.item(), 3)} at location {box}"
+        ...     )
+        Detected cat with confidence 0.958 at location [344.49, 23.4, 639.84, 374.27]
+        Detected cat with confidence 0.956 at location [11.71, 53.52, 316.64, 472.33]
+        Detected remote with confidence 0.947 at location [40.46, 73.7, 175.62, 117.57]
+        Detected sofa with confidence 0.918 at location [0.59, 1.88, 640.25, 474.74]
+        ```
+        """
+        ...
 
 class DFineMLPPredictionHead(nn.Module):
+    """
+    Very simple multi-layer perceptron (MLP, also called FFN), used to predict the normalized center coordinates,
+    height and width of a bounding box w.r.t. an image.
+
+    Copied from https://github.com/facebookresearch/detr/blob/master/models/detr.py
+    Origin from https://github.com/lyuwenyu/RT-DETR/blob/94f5e16708329d2f2716426868ec89aa774af016/DFine_paddle/ppdet/modeling/transformers/utils.py#L453
+
+    """
     def __init__(self, config, input_dim, d_model, output_dim, num_layers) -> None: ...
-    def forward(self, x): ...
+    def forward(self, x):  # -> Tensor | Any:
+        ...
 
 class DFineMLP(nn.Module):
     def __init__(self, input_dim: int, hidden_dim: int, output_dim: int, num_layers: int, act: str = ...) -> None: ...
@@ -253,13 +646,21 @@ class DFineConvNormLayer(nn.Module):
         padding: Optional[int] = ...,
         activation: Optional[str] = ...,
     ) -> None: ...
-    def forward(self, hidden_state): ...
+    def forward(self, hidden_state):  # -> Any:
+        ...
 
 class DFineRepVggBlock(nn.Module):
+    """
+    RepVGG architecture block introduced by the work "RepVGG: Making VGG-style ConvNets Great Again".
+    """
     def __init__(self, config: DFineConfig, in_channels: int, out_channels: int) -> None: ...
-    def forward(self, x): ...
+    def forward(self, x):  # -> Any:
+        ...
 
 class DFineCSPRepLayer(nn.Module):
+    """
+    Cross Stage Partial (CSP) network layer with RepVGG blocks.
+    """
     def __init__(
         self, config: DFineConfig, in_channels: int, out_channels: int, num_blocks: int, expansion: float = ...
     ) -> None: ...
@@ -278,9 +679,19 @@ class DFineEncoder(nn.Module):
     def forward(self, src, src_mask=..., pos_embed=..., output_attentions: bool = ...) -> torch.Tensor: ...
 
 class DFineHybridEncoder(nn.Module):
+    """
+    Decoder consisting of a projection layer, a set of `DFineEncoder`, a top-down Feature Pyramid Network
+    (FPN) and a bottom-up Path Aggregation Network (PAN). More details on the paper: https://huggingface.co/papers/2304.08069
+
+    Args:
+        config: DFineConfig
+    """
     def __init__(self, config: DFineConfig) -> None: ...
     @staticmethod
-    def build_2d_sincos_position_embedding(width, height, embed_dim=..., temperature=..., device=..., dtype=...): ...
+    def build_2d_sincos_position_embedding(
+        width, height, embed_dim=..., temperature=..., device=..., dtype=...
+    ):  # -> Tensor:
+        ...
     def forward(
         self,
         inputs_embeds=...,
@@ -292,6 +703,33 @@ class DFineHybridEncoder(nn.Module):
         output_attentions=...,
         output_hidden_states=...,
         return_dict=...,
-    ): ...
+    ):  # -> tuple[list[Any] | tuple[Any, ...] | Any | tuple[()], ...] | BaseModelOutput:
+        r"""
+        Args:
+            inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
+                Flattened feature map (output of the backbone + projection layer) that is passed to the encoder.
+            attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Mask to avoid performing attention on padding pixel features. Mask values selected in `[0, 1]`:
+                - 1 for pixel features that are real (i.e. **not masked**),
+                - 0 for pixel features that are padding (i.e. **masked**).
+                [What are attention masks?](../glossary#attention-mask)
+            position_embeddings (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
+                Position embeddings that are added to the queries and keys in each self-attention layer.
+            spatial_shapes (`torch.LongTensor` of shape `(num_feature_levels, 2)`):
+                Spatial shapes of each feature map.
+            level_start_index (`torch.LongTensor` of shape `(num_feature_levels)`):
+                Starting index of each feature map.
+            valid_ratios (`torch.FloatTensor` of shape `(batch_size, num_feature_levels, 2)`):
+                Ratio of valid area in each feature level.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers. See `hidden_states` under returned tensors
+                for more detail.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`~file_utils.ModelOutput`] instead of a plain tuple.
+        """
+        ...
 
 __all__ = ["DFineModel", "DFinePreTrainedModel", "DFineForObjectDetection"]

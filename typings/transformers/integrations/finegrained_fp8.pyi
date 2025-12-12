@@ -14,7 +14,8 @@ if is_accelerate_available(): ...
 logger = ...
 
 @triton.jit
-def act_quant_kernel(x_ptr, y_ptr, s_ptr, BLOCK_SIZE: tl.constexpr): ...
+def act_quant_kernel(x_ptr, y_ptr, s_ptr, BLOCK_SIZE: tl.constexpr):  # -> None:
+    ...
 def act_quant(x: torch.Tensor, block_size: int = ...) -> tuple[torch.Tensor, torch.Tensor]: ...
 def w8a8_block_fp8_matmul_triton(
     A: torch.Tensor,
@@ -23,7 +24,24 @@ def w8a8_block_fp8_matmul_triton(
     Bs: torch.Tensor,
     block_size: list[int],
     output_dtype: torch.dtype = ...,
-) -> torch.Tensor: ...
+) -> torch.Tensor:
+    """This function performs matrix multiplication with block-wise
+    quantization.
+    It takes two input tensors `A` and `B` with scales `As` and `Bs`.
+    The output is returned in the specified `output_dtype`.
+    Args:
+        A: The input tensor, e.g., activation.
+        B: The input tensor, e.g., weight.
+        As: The per-token-group quantization scale for `A`.
+        Bs: The per-block quantization scale for `B`.
+        block_size: The block size for per-block quantization. It should
+        be 2-dim, e.g., [128, 128].
+        output_dytpe: The dtype of the returned tensor.
+    Returns:
+        torch.Tensor: The result of matmul.
+    """
+    ...
+
 @torch.compile
 def w8a8_block_fp8_matmul_compile(
     input_q: torch.Tensor,
@@ -32,7 +50,19 @@ def w8a8_block_fp8_matmul_compile(
     weight_scale: torch.Tensor,
     block_size: Optional[tuple[int, int]] = ...,
     output_dtype: torch.dtype = ...,
-) -> torch.Tensor: ...
+) -> torch.Tensor:
+    """
+    Performs blocked matrix multiplication with FP8 quantized matrices.
+
+    Args:
+        input_q: Quantized input tensor with 1x128 block quantization
+        weight_q: Quantized weight tensor with 128x128 block quantization
+        input_scale: Scaling factors for input blocks
+        weight_scale: Scaling factors for weight blocks
+        block_size: Tuple of (M, N) for weight block dimensions
+        output_dtype: Desired output dtype
+    """
+    ...
 
 class FP8Linear(nn.Linear):
     dtype = ...
@@ -48,4 +78,6 @@ class FP8Linear(nn.Linear):
     ) -> None: ...
     def forward(self, input: torch.Tensor) -> torch.Tensor: ...
 
-def replace_with_fp8_linear(model, modules_to_not_convert=..., quantization_config=...): ...
+def replace_with_fp8_linear(model, modules_to_not_convert=..., quantization_config=...):
+    """Helper function to replace model layers with FP8 versions."""
+    ...

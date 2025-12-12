@@ -11,11 +11,25 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring
 from .configuration_vit_msn import ViTMSNConfig
 
+"""PyTorch ViT MSN (masked siamese network) model."""
 logger = ...
 
 class ViTMSNEmbeddings(nn.Module):
+    """
+    Construct the CLS token, position and patch embeddings. Optionally, also the mask token.
+    """
     def __init__(self, config: ViTMSNConfig, use_mask_token: bool = ...) -> None: ...
-    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor: ...
+    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor:
+        """
+        This method allows to interpolate the pre-trained position encodings, to be able to use the model on higher resolution
+        images. This method is also adapted to support torch.jit tracing.
+
+        Adapted from:
+        - https://github.com/facebookresearch/dino/blob/de9ee3df6cf39fac952ab558447af1fa1365362a/vision_transformer.py#L174-L194, and
+        - https://github.com/facebookresearch/dinov2/blob/e1277af2ba9496fbadf7aec6eba56e8d882d1e35/dinov2/models/vision_transformer.py#L179-L211
+        """
+        ...
+
     def forward(
         self,
         pixel_values: torch.Tensor,
@@ -24,6 +38,11 @@ class ViTMSNEmbeddings(nn.Module):
     ) -> torch.Tensor: ...
 
 class ViTMSNPatchEmbeddings(nn.Module):
+    """
+    This class turns `pixel_values` of shape `(batch_size, num_channels, height, width)` into the initial
+    `hidden_states` (patch embeddings) of shape `(batch_size, seq_length, hidden_size)` to be consumed by a
+    Transformer.
+    """
     def __init__(self, config) -> None: ...
     def forward(self, pixel_values: torch.Tensor, interpolate_pos_encoding: bool = ...) -> torch.Tensor: ...
 
@@ -36,7 +55,8 @@ def eager_attention_forward(
     scaling: float,
     dropout: float = ...,
     **kwargs,
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class ViTMSNSelfAttention(nn.Module):
     def __init__(self, config: ViTMSNConfig) -> None: ...
@@ -45,6 +65,10 @@ class ViTMSNSelfAttention(nn.Module):
     ) -> Union[tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor]]: ...
 
 class ViTMSNSelfOutput(nn.Module):
+    """
+    The residual connection is defined in ViTMSNLayer instead of here (as is the case with other models), due to the
+    layernorm applied before each block.
+    """
     def __init__(self, config: ViTMSNConfig) -> None: ...
     def forward(self, hidden_states: torch.Tensor, input_tensor: torch.Tensor) -> torch.Tensor: ...
 
@@ -64,6 +88,7 @@ class ViTMSNOutput(nn.Module):
     def forward(self, hidden_states: torch.Tensor, input_tensor: torch.Tensor) -> torch.Tensor: ...
 
 class ViTMSNLayer(GradientCheckpointingLayer):
+    """This corresponds to the Block class in the timm implementation."""
     def __init__(self, config: ViTMSNConfig) -> None: ...
     def forward(
         self, hidden_states: torch.Tensor, head_mask: Optional[torch.Tensor] = ..., output_attentions: bool = ...
@@ -94,7 +119,13 @@ class ViTMSNPreTrainedModel(PreTrainedModel):
 
 @auto_docstring
 class ViTMSNModel(ViTMSNPreTrainedModel):
-    def __init__(self, config: ViTMSNConfig, use_mask_token: bool = ...) -> None: ...
+    def __init__(self, config: ViTMSNConfig, use_mask_token: bool = ...) -> None:
+        r"""
+        use_mask_token (`bool`, *optional*, defaults to `False`):
+            Whether to use a mask token for masked image modeling.
+        """
+        ...
+
     def get_input_embeddings(self) -> ViTMSNPatchEmbeddings: ...
     @auto_docstring
     def forward(
@@ -106,7 +137,30 @@ class ViTMSNModel(ViTMSNPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         interpolate_pos_encoding: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutput]: ...
+    ) -> Union[tuple, BaseModelOutput]:
+        r"""
+        bool_masked_pos (`torch.BoolTensor` of shape `(batch_size, num_patches)`, *optional*):
+            Boolean masked positions. Indicates which patches are masked (1) and which aren't (0).
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoImageProcessor, ViTMSNModel
+        >>> import torch
+        >>> from PIL import Image
+        >>> import requests
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> image_processor = AutoImageProcessor.from_pretrained("facebook/vit-msn-small")
+        >>> model = ViTMSNModel.from_pretrained("facebook/vit-msn-small")
+        >>> inputs = image_processor(images=image, return_tensors="pt")
+        >>> with torch.no_grad():
+        ...     outputs = model(**inputs)
+        >>> last_hidden_states = outputs.last_hidden_state
+        ```"""
+        ...
 
 @auto_docstring
 class ViTMSNForImageClassification(ViTMSNPreTrainedModel):
@@ -121,6 +175,32 @@ class ViTMSNForImageClassification(ViTMSNPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         interpolate_pos_encoding: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ImageClassifierOutput]: ...
+    ) -> Union[tuple, ImageClassifierOutput]:
+        r"""
+        Examples:
+
+        ```python
+        >>> from transformers import AutoImageProcessor, ViTMSNForImageClassification
+        >>> import torch
+        >>> from PIL import Image
+        >>> import requests
+
+        >>> torch.manual_seed(2)  # doctest: +IGNORE_RESULT
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> image_processor = AutoImageProcessor.from_pretrained("facebook/vit-msn-small")
+        >>> model = ViTMSNForImageClassification.from_pretrained("facebook/vit-msn-small")
+
+        >>> inputs = image_processor(images=image, return_tensors="pt")
+        >>> with torch.no_grad():
+        ...     logits = model(**inputs).logits
+        >>> # model predicts one of the 1000 ImageNet classes
+        >>> predicted_label = logits.argmax(-1).item()
+        >>> print(model.config.id2label[predicted_label])
+        tusker
+        ```"""
+        ...
 
 __all__ = ["ViTMSNModel", "ViTMSNForImageClassification", "ViTMSNPreTrainedModel"]

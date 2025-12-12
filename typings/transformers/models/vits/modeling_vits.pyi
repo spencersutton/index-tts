@@ -12,11 +12,26 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring
 from .configuration_vits import VitsConfig
 
+"""PyTorch VITS model."""
 logger = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Describes the outputs for the VITS model, with potential hidden states and attentions.
+    """
+)
 class VitsModelOutput(ModelOutput):
+    r"""
+    waveform (`torch.FloatTensor` of shape `(batch_size, sequence_length)`):
+        The final audio waveform predicted by the model.
+    sequence_lengths (`torch.FloatTensor` of shape `(batch_size,)`):
+        The length in samples of each element in the `waveform` batch.
+    spectrogram (`torch.FloatTensor` of shape `(batch_size, sequence_length, num_bins)`):
+        The log-mel spectrogram predicted at the output of the flow model. This spectrogram is passed to the Hi-Fi
+        GAN decoder model to obtain the final audio waveform.
+    """
+
     waveform: Optional[torch.FloatTensor] = ...
     sequence_lengths: Optional[torch.FloatTensor] = ...
     spectrogram: Optional[tuple[torch.FloatTensor]] = ...
@@ -24,8 +39,19 @@ class VitsModelOutput(ModelOutput):
     attentions: Optional[tuple[torch.FloatTensor]] = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Describes the outputs for the VITS text encoder model, with potential hidden states and attentions.
+    """
+)
 class VitsTextEncoderOutput(ModelOutput):
+    r"""
+    prior_means (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
+        The predicted mean values of the prior distribution for the latent text variables.
+    prior_log_variances (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
+        The predicted log-variance values of the prior distribution for the latent text variables.
+    """
+
     last_hidden_state: Optional[torch.FloatTensor] = ...
     prior_means: Optional[torch.FloatTensor] = ...
     prior_log_variances: Optional[torch.FloatTensor] = ...
@@ -33,39 +59,63 @@ class VitsTextEncoderOutput(ModelOutput):
     attentions: Optional[tuple[torch.FloatTensor]] = ...
 
 @torch.jit.script
-def fused_add_tanh_sigmoid_multiply(input_a, input_b, num_channels): ...
+def fused_add_tanh_sigmoid_multiply(input_a, input_b, num_channels):  # -> Tensor:
+    ...
 
 class VitsWaveNet(torch.nn.Module):
     def __init__(self, config: VitsConfig, num_layers: int) -> None: ...
     def forward(self, inputs, padding_mask, global_conditioning=...): ...
-    def remove_weight_norm(self): ...
+    def remove_weight_norm(self):  # -> None:
+        ...
 
 class VitsPosteriorEncoder(nn.Module):
     def __init__(self, config: VitsConfig) -> None: ...
-    def forward(self, inputs, padding_mask, global_conditioning=...): ...
+    def forward(self, inputs, padding_mask, global_conditioning=...):  # -> tuple[Any, Tensor, Tensor]:
+        ...
 
 class HifiGanResidualBlock(nn.Module):
     def __init__(self, channels, kernel_size=..., dilation=..., leaky_relu_slope=...) -> None: ...
     def get_padding(self, kernel_size, dilation=...): ...
-    def apply_weight_norm(self): ...
-    def remove_weight_norm(self): ...
+    def apply_weight_norm(self):  # -> None:
+        ...
+    def remove_weight_norm(self):  # -> None:
+        ...
     def forward(self, hidden_states): ...
 
 class VitsHifiGan(nn.Module):
     def __init__(self, config: VitsConfig) -> None: ...
-    def apply_weight_norm(self): ...
-    def remove_weight_norm(self): ...
+    def apply_weight_norm(self):  # -> None:
+        ...
+    def remove_weight_norm(self):  # -> None:
+        ...
     def forward(
         self, spectrogram: torch.FloatTensor, global_conditioning: Optional[torch.FloatTensor] = ...
-    ) -> torch.FloatTensor: ...
+    ) -> torch.FloatTensor:
+        r"""
+        Converts a spectrogram into a speech waveform.
+
+        Args:
+            spectrogram (`torch.FloatTensor` of shape `(batch_size, config.spectrogram_bins, sequence_length)`):
+                Tensor containing the spectrograms.
+            global_conditioning (`torch.FloatTensor` of shape `(batch_size, config.speaker_embedding_size, 1)`, *optional*):
+                Tensor containing speaker embeddings, for multispeaker models.
+
+        Returns:
+            `torch.FloatTensor`: Tensor of shape shape `(batch_size, 1, num_frames)` containing the speech waveform.
+        """
+        ...
 
 class VitsResidualCouplingLayer(nn.Module):
     def __init__(self, config: VitsConfig) -> None: ...
-    def forward(self, inputs, padding_mask, global_conditioning=..., reverse=...): ...
+    def forward(
+        self, inputs, padding_mask, global_conditioning=..., reverse=...
+    ):  # -> tuple[Tensor, Tensor] | tuple[Tensor, None]:
+        ...
 
 class VitsResidualCouplingBlock(nn.Module):
     def __init__(self, config: VitsConfig) -> None: ...
-    def forward(self, inputs, padding_mask, global_conditioning=..., reverse=...): ...
+    def forward(self, inputs, padding_mask, global_conditioning=..., reverse=...):  # -> Tensor | Any:
+        ...
 
 class VitsDilatedDepthSeparableConv(nn.Module):
     def __init__(self, config: VitsConfig, dropout_rate=...) -> None: ...
@@ -73,21 +123,31 @@ class VitsDilatedDepthSeparableConv(nn.Module):
 
 class VitsConvFlow(nn.Module):
     def __init__(self, config: VitsConfig) -> None: ...
-    def forward(self, inputs, padding_mask, global_conditioning=..., reverse=...): ...
+    def forward(
+        self, inputs, padding_mask, global_conditioning=..., reverse=...
+    ):  # -> tuple[Any, Tensor] | tuple[Any, None]:
+        ...
 
 class VitsElementwiseAffine(nn.Module):
     def __init__(self, config: VitsConfig) -> None: ...
-    def forward(self, inputs, padding_mask, global_conditioning=..., reverse=...): ...
+    def forward(
+        self, inputs, padding_mask, global_conditioning=..., reverse=...
+    ):  # -> tuple[Any, Tensor] | tuple[Any, None]:
+        ...
 
 class VitsStochasticDurationPredictor(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, inputs, padding_mask, global_conditioning=..., durations=..., reverse=..., noise_scale=...): ...
+    def forward(
+        self, inputs, padding_mask, global_conditioning=..., durations=..., reverse=..., noise_scale=...
+    ):  # -> Any | Tensor:
+        ...
 
 class VitsDurationPredictor(nn.Module):
     def __init__(self, config) -> None: ...
     def forward(self, inputs, padding_mask, global_conditioning=...): ...
 
 class VitsAttention(nn.Module):
+    """Multi-headed attention with relative positional representation."""
     def __init__(self, config: VitsConfig) -> None: ...
     def forward(
         self,
@@ -96,7 +156,9 @@ class VitsAttention(nn.Module):
         attention_mask: Optional[torch.Tensor] = ...,
         layer_head_mask: Optional[torch.Tensor] = ...,
         output_attentions: bool = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]: ...
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
+        """Input shape: Batch x Time x Channel"""
+        ...
 
 class VitsFeedForward(nn.Module):
     def __init__(self, config) -> None: ...
@@ -110,7 +172,8 @@ class VitsEncoderLayer(GradientCheckpointingLayer):
         padding_mask: torch.FloatTensor,
         attention_mask: Optional[torch.Tensor] = ...,
         output_attentions: bool = ...,
-    ): ...
+    ):  # -> tuple[Tensor, Any] | tuple[Tensor]:
+        ...
 
 class VitsEncoder(nn.Module):
     def __init__(self, config: VitsConfig) -> None: ...
@@ -125,6 +188,9 @@ class VitsEncoder(nn.Module):
     ) -> Union[tuple, BaseModelOutput]: ...
 
 class VitsTextEncoder(nn.Module):
+    """
+    Transformer encoder that uses relative positional representation instead of absolute positional encoding.
+    """
     def __init__(self, config: VitsConfig) -> None: ...
     def forward(
         self,
@@ -143,10 +209,15 @@ class VitsPreTrainedModel(PreTrainedModel):
     main_input_name = ...
     supports_gradient_checkpointing = ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The complete VITS model, for text-to-speech synthesis.
+    """
+)
 class VitsModel(VitsPreTrainedModel):
     def __init__(self, config: VitsConfig) -> None: ...
-    def get_encoder(self): ...
+    def get_encoder(self):  # -> VitsTextEncoder:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -157,6 +228,33 @@ class VitsModel(VitsPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         labels: Optional[torch.FloatTensor] = ...,
-    ) -> Union[tuple[Any], VitsModelOutput]: ...
+    ) -> Union[tuple[Any], VitsModelOutput]:
+        r"""
+        speaker_id (`int`, *optional*):
+            Which speaker embedding to use. Only used for multispeaker models.
+        labels (`torch.FloatTensor` of shape `(batch_size, config.spectrogram_bins, sequence_length)`, *optional*):
+            Float values of target spectrogram. Timesteps set to `-100.0` are ignored (masked) for the loss
+            computation.
+
+        Example:
+
+        ```python
+        >>> from transformers import VitsTokenizer, VitsModel, set_seed
+        >>> import torch
+
+        >>> tokenizer = VitsTokenizer.from_pretrained("facebook/mms-tts-eng")
+        >>> model = VitsModel.from_pretrained("facebook/mms-tts-eng")
+
+        >>> inputs = tokenizer(text="Hello - my dog is cute", return_tensors="pt")
+
+        >>> set_seed(555)  # make deterministic
+
+        >>> with torch.no_grad():
+        ...     outputs = model(inputs["input_ids"])
+        >>> outputs.waveform.shape
+        torch.Size([1, 45824])
+        ```
+        """
+        ...
 
 __all__ = ["VitsModel", "VitsPreTrainedModel"]

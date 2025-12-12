@@ -15,8 +15,19 @@ from .configuration_vjepa2 import VJEPA2Config
 logger = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    VJEPA Predictor outputs that also contains the masked encoder outputs
+    """
+)
 class VJEPA2WithMaskedInputPredictorOutput(ModelOutput):
+    r"""
+    masked_hidden_state (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*, returned when `context_mask` is provided which is applied on VJEPA2Encoder outputs):
+        The masked hidden state of the model.
+    target_hidden_state (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*, returned when `target_mask` is provided which is applied on VJEPA2Encoder outputs):
+        The target hidden state of the model.
+    """
+
     last_hidden_state: torch.FloatTensor
     masked_hidden_state: Optional[torch.FloatTensor] = ...
     hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
@@ -24,22 +35,41 @@ class VJEPA2WithMaskedInputPredictorOutput(ModelOutput):
     target_hidden_state: Optional[torch.FloatTensor] = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    VJEPA outputs that also contains the masked encoder outputs
+    Optionally contains the predictor outputs
+    """
+)
 class VJEPA2WithMaskedInputModelOutput(ModelOutput):
+    r"""
+    masked_hidden_state (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*, returned when `context_mask` is provided which is applied on VJEPA2Encoder outputs):
+        The masked hidden state of the model.
+    predictor_output (`VJEPA2WithMaskedInputPredictorOutput`, *optional*):
+        The output from the Predictor module.
+    """
+
     last_hidden_state: torch.FloatTensor
     masked_hidden_state: Optional[torch.FloatTensor] = ...
     hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
     attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
     predictor_output: Optional[VJEPA2WithMaskedInputPredictorOutput] = ...
-    def to_tuple(self): ...
+    def to_tuple(self):  # -> tuple[Any, ...]:
+        ...
 
 class VJEPA2PatchEmbeddings3D(nn.Module):
+    """
+    Image to Patch Embedding
+    """
     def __init__(self, config: VJEPA2Config, hidden_size: int = ...) -> None: ...
     @staticmethod
     def num_patches(config): ...
     def forward(self, pixel_values_videos: torch.Tensor) -> torch.Tensor: ...
 
 class VJEPA2Embeddings(nn.Module):
+    """
+    Construct mask token, position and patch embeddings.
+    """
     def __init__(self, config: VJEPA2Config, hidden_size: int = ...) -> None: ...
     def forward(self, pixel_values_videos: torch.Tensor) -> torch.Tensor: ...
 
@@ -52,13 +82,16 @@ def eager_attention_forward(
     scaling: float,
     dropout: float = ...,
     **kwargs,
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 def rotate_queries_or_keys(x, pos): ...
 
 class VJEPA2RopeAttention(nn.Module):
     def __init__(self, config: VJEPA2Config, hidden_size: int = ..., num_attention_heads: int = ...) -> None: ...
-    def get_position_ids(self, x, masks=...): ...
-    def apply_rotary_embeddings(self, qk, pos_ids): ...
+    def get_position_ids(self, x, masks=...):  # -> tuple[Any | Tensor, Any, Any]:
+        ...
+    def apply_rotary_embeddings(self, qk, pos_ids):  # -> Tensor:
+        ...
     def forward(
         self,
         hidden_states,
@@ -67,9 +100,20 @@ class VJEPA2RopeAttention(nn.Module):
         head_mask: Optional[torch.Tensor] = ...,
     ) -> Union[tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor]]: ...
 
-def drop_path(input: torch.Tensor, drop_prob: float = ..., training: bool = ...) -> torch.Tensor: ...
+def drop_path(input: torch.Tensor, drop_prob: float = ..., training: bool = ...) -> torch.Tensor:
+    """
+    Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks).
+
+    Comment by Ross Wightman: This is the same as the DropConnect impl I created for EfficientNet, etc networks,
+    however, the original name is misleading as 'Drop Connect' is a different form of dropout in a separate paper...
+    See discussion: https://github.com/tensorflow/tpu/issues/494#issuecomment-532968956 ... I've opted for changing the
+    layer and argument names to 'drop path' rather than mix DropConnect as a layer name and use 'survival rate' as the
+    argument.
+    """
+    ...
 
 class VJEPA2DropPath(nn.Module):
+    """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks)."""
     def __init__(self, drop_prob: Optional[float] = ...) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
     def extra_repr(self) -> str: ...
@@ -79,6 +123,7 @@ class VJEPA2MLP(nn.Module):
     def forward(self, hidden_state: torch.Tensor) -> torch.Tensor: ...
 
 class VJEPA2Layer(GradientCheckpointingLayer):
+    """This corresponds to the Block class in the original implementation."""
     def __init__(
         self,
         config: VJEPA2Config,
@@ -107,9 +152,20 @@ class VJEPA2Encoder(nn.Module):
         **kwargs,
     ) -> BaseModelOutput: ...
 
-def apply_masks(tensor: torch.Tensor, masks: list[torch.Tensor]) -> torch.Tensor: ...
+def apply_masks(tensor: torch.Tensor, masks: list[torch.Tensor]) -> torch.Tensor:
+    """
+    Args:
+        tensor (`torch.Tensor`):
+            Tensor of shape [batch_size, num_patches, feature_dim]
+        masks (`List[torch.Tensor]`):
+            List of tensors of shape [batch_size, num_patches] containing indices of patches to keep
+    """
+    ...
 
 class VJEPA2PredictorEmbeddings(nn.Module):
+    """
+    Construct mask token, position and patch embeddings.
+    """
     def __init__(self, config: VJEPA2Config) -> None: ...
     @staticmethod
     def num_patches(config): ...
@@ -119,12 +175,23 @@ class VJEPA2PredictorEmbeddings(nn.Module):
         context_mask: list[torch.Tensor],
         target_mask: list[torch.Tensor],
         mask_index: int = ...,
-    ) -> tuple[torch.Tensor, torch.Tensor]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """
+        hidden_states : encoder outputs (context)
+        context_mask: tokens of the context (outputs from the encoder)
+        target_mask: tokens to predict
+        mask_index: index of the target mask to choose (useful for multiclip?)
+        """
+        ...
 
 class VJEPA2Predictor(nn.Module):
     def __init__(self, config: VJEPA2Config) -> None: ...
-    def sort_tokens(self, hidden_states, position_masks, argsort, head_mask=...): ...
-    def unsort_tokens(self, hidden_states, argsort): ...
+    def sort_tokens(
+        self, hidden_states, position_masks, argsort, head_mask=...
+    ):  # -> tuple[Tensor, Tensor, Tensor | Any | None]:
+        ...
+    def unsort_tokens(self, hidden_states, argsort):  # -> Tensor:
+        ...
     @can_return_tuple
     def forward(
         self,
@@ -138,15 +205,19 @@ class VJEPA2Predictor(nn.Module):
     ) -> BaseModelOutput: ...
 
 class VJEPA2PoolerSelfAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config: VJEPA2Config) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = ...,
         output_attentions: Optional[bool] = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]: ...
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
+        """Input shape: Batch x Time x Channel"""
+        ...
 
 class VJEPA2PoolerCrossAttention(nn.Module):
+    """It's different from other cross-attention layers, doesn't have output projection layer (o_proj)"""
     def __init__(self, config: VJEPA2Config) -> None: ...
     def forward(
         self,
@@ -155,13 +226,26 @@ class VJEPA2PoolerCrossAttention(nn.Module):
         values: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = ...,
         output_attentions: Optional[bool] = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]: ...
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
+        """Input shape: Batch x Time x Channel"""
+        ...
 
 class VJEPA2PoolerSelfAttentionLayer(GradientCheckpointingLayer):
     def __init__(self, config: VJEPA2Config) -> None: ...
     def forward(
         self, hidden_states: torch.Tensor, attention_mask: torch.Tensor, output_attentions: Optional[bool] = ...
-    ) -> tuple[torch.Tensor, ...]: ...
+    ) -> tuple[torch.Tensor, ...]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`):
+                Input to the layer of shape `(batch, seq_len, embed_dim)`.
+            attention_mask (`torch.FloatTensor`):
+                Attention mask of shape `(batch, 1, q_len, k_v_seq_len)` where padding elements are indicated by very large negative values.
+            output_attentions (`bool`, *optional*, defaults to `False`):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+        """
+        ...
 
 class VJEPA2PoolerCrossAttentionLayer(GradientCheckpointingLayer):
     def __init__(self, config: VJEPA2Config) -> None: ...
@@ -174,6 +258,7 @@ class VJEPA2PoolerCrossAttentionLayer(GradientCheckpointingLayer):
     ) -> tuple[torch.Tensor, ...]: ...
 
 class VJEPA2AttentivePooler(nn.Module):
+    """Attentive Pooler"""
     def __init__(self, config: VJEPA2Config) -> None: ...
     def forward(self, hidden_state: torch.Tensor) -> torch.Tensor: ...
 
@@ -204,10 +289,32 @@ class VJEPA2Model(VJEPA2PreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         **kwargs,
-    ) -> VJEPA2WithMaskedInputModelOutput: ...
+    ) -> VJEPA2WithMaskedInputModelOutput:
+        r"""
+        context_head_mask (`torch.Tensor` with shape `[num_heads]` or `[num_hidden_layers x num_heads]`, *optional*):
+            The mask indicating if we should keep the heads or not (1.0 for keep, 0.0 for discard) for the context.
+        context_mask (`torch.Tensor` with shape `[batch_size, patch_size, 1]`, *optional*):
+            The mask position ids indicating which encoder output patches are going to be exposed to the predictor.
+            By default, this mask is created as torch.arange(N).unsqueeze(0).repeat(B,1), indicating full context
+            available to the predictor.
+        target_head_mask (`torch.Tensor` with shape `[num_heads]` or `[num_hidden_layers x num_heads]`, *optional*):
+            The mask indicating if we should keep the heads or not (1.0 for keep, 0.0 for discard) for the target.
+        target_mask (`torch.Tensor` with shape `[batch_size, patch_size, 1]`, *optional*):
+            The mask position ids indicating which encoder output patches are going to be used as a prediction target
+            for the predictor. By default, this mask is created as torch.arange(N).unsqueeze(0).repeat(B,1), indicating
+            that the predictor should predict all encoder patches.
+        skip_predictor (bool):
+            flag to skip the predictor forward, useful if you just need the encoder outputs
+        """
+        ...
+
     def get_vision_features(self, pixel_values_videos) -> torch.Tensor: ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    V-JEPA 2 Model transformer with a video classification head on top (a linear layer on top of the attentive pooler).
+    """
+)
 class VJEPA2ForVideoClassification(VJEPA2PreTrainedModel):
     def __init__(self, config: VJEPA2Config) -> None: ...
     @can_return_tuple
@@ -218,6 +325,41 @@ class VJEPA2ForVideoClassification(VJEPA2PreTrainedModel):
         labels: Optional[torch.Tensor] = ...,
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
-    ) -> Union[tuple, ImageClassifierOutput]: ...
+    ) -> Union[tuple, ImageClassifierOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+
+        Examples:
+
+        ```python
+        >>> import torch
+        >>> import numpy as np
+        >>> from transformers import AutoVideoProcessor, VJEPA2ForVideoClassification
+
+        >>> device = "cuda"
+
+        >>> video_processor = AutoVideoProcessor.from_pretrained("facebook/vjepa2-vitl-fpc16-256-ssv2")
+        >>> model = VJEPA2ForVideoClassification.from_pretrained("facebook/vjepa2-vitl-fpc16-256-ssv2").to(device)
+
+        >>> video = np.ones((64, 256, 256, 3))  # 64 frames, 256x256 RGB
+        >>> inputs = video_processor(video, return_tensors="pt").to(device)
+
+        >>> # For inference
+        >>> with torch.no_grad():
+        ...     outputs = model(**inputs)
+        >>> logits = outputs.logits
+
+        >>> predicted_label = logits.argmax(-1).item()
+        >>> print(model.config.id2label[predicted_label])
+
+        >>> # For training
+        >>> labels = torch.ones(1, dtype=torch.long, device=device)
+        >>> loss = model(**inputs, labels=labels).loss
+
+        ```"""
+        ...
 
 __all__ = ["VJEPA2Model", "VJEPA2PreTrainedModel", "VJEPA2ForVideoClassification"]

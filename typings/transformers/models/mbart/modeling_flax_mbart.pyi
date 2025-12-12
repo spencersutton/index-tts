@@ -18,6 +18,7 @@ from ...modeling_flax_utils import FlaxPreTrainedModel
 from ...utils import add_start_docstrings, add_start_docstrings_to_model_forward, replace_return_docstrings
 from .configuration_mbart import MBartConfig
 
+"""Flax MBart model."""
 logger = ...
 _CHECKPOINT_FOR_DOC = ...
 _CONFIG_FOR_DOC = ...
@@ -26,7 +27,12 @@ MBART_INPUTS_DOCSTRING = ...
 MBART_ENCODE_INPUTS_DOCSTRING = ...
 MBART_DECODE_INPUTS_DOCSTRING = ...
 
-def shift_tokens_right(input_ids: jnp.ndarray, pad_token_id: int) -> jnp.ndarray: ...
+def shift_tokens_right(input_ids: jnp.ndarray, pad_token_id: int) -> jnp.ndarray:
+    """
+    Shift input ids one token to the right, and wrap the last non pad token (the <LID> token) Note that MBart does not
+    have a single `decoder_start_token_id` in contrast to other Bart-like models.
+    """
+    ...
 
 class FlaxMBartAttention(nn.Module):
     config: MBartConfig
@@ -44,7 +50,9 @@ class FlaxMBartAttention(nn.Module):
         attention_mask: Optional[jnp.ndarray] = ...,
         init_cache: bool = ...,
         deterministic: bool = ...,
-    ) -> tuple[jnp.ndarray]: ...
+    ) -> tuple[jnp.ndarray]:
+        """Input shape: Batch x Time x Channel"""
+        ...
 
 class FlaxMBartEncoderLayer(nn.Module):
     config: MBartConfig
@@ -61,7 +69,8 @@ class FlaxMBartEncoderLayer(nn.Module):
 class FlaxMBartEncoderLayerCollection(nn.Module):
     config: MBartConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         hidden_states,
@@ -70,7 +79,8 @@ class FlaxMBartEncoderLayerCollection(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any | tuple[Any | None, ...] | tuple[()], ...] | FlaxBaseModelOutput:
+        ...
 
 class FlaxMBartDecoderLayer(nn.Module):
     config: MBartConfig
@@ -90,7 +100,8 @@ class FlaxMBartDecoderLayer(nn.Module):
 class FlaxMBartDecoderLayerCollection(nn.Module):
     config: MBartConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         hidden_states,
@@ -102,22 +113,27 @@ class FlaxMBartDecoderLayerCollection(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any | tuple[Any | None, ...] | tuple[()], ...] | FlaxBaseModelOutputWithPastAndCrossAttentions:
+        ...
 
 class FlaxMBartClassificationHead(nn.Module):
+    """Head for sentence-level classification tasks."""
+
     config: MBartConfig
     inner_dim: int
     num_classes: int
     pooler_dropout: float
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(self, hidden_states: jnp.ndarray, deterministic: bool): ...
 
 class FlaxMBartEncoder(nn.Module):
     config: MBartConfig
     embed_tokens: nn.Embed
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids,
@@ -127,13 +143,15 @@ class FlaxMBartEncoder(nn.Module):
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
         deterministic: bool = ...,
-    ): ...
+    ):  # -> tuple[Any | tuple[Any | None, ...] | tuple[Any, ...] | tuple[()], ...] | FlaxBaseModelOutput:
+        ...
 
 class FlaxMBartDecoder(nn.Module):
     config: MBartConfig
     embed_tokens: nn.Embed
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids,
@@ -146,12 +164,14 @@ class FlaxMBartDecoder(nn.Module):
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
         deterministic: bool = ...,
-    ): ...
+    ):  # -> tuple[Any | tuple[Any | None, ...] | tuple[Any, ...] | tuple[()], ...] | FlaxBaseModelOutputWithPastAndCrossAttentions:
+        ...
 
 class FlaxMBartModule(nn.Module):
     config: MBartConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids,
@@ -164,7 +184,8 @@ class FlaxMBartModule(nn.Module):
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
         deterministic: bool = ...,
-    ): ...
+    ):  # -> tuple[Any | tuple[Any | None, ...] | tuple[Any, ...] | tuple[()], ...] | FlaxSeq2SeqModelOutput:
+        ...
 
 class FlaxMBartPreTrainedModel(FlaxPreTrainedModel):
     config_class = MBartConfig
@@ -180,7 +201,22 @@ class FlaxMBartPreTrainedModel(FlaxPreTrainedModel):
         **kwargs,
     ) -> None: ...
     def init_weights(self, rng: jax.random.PRNGKey, input_shape: tuple, params: FrozenDict = ...) -> FrozenDict: ...
-    def init_cache(self, batch_size, max_length, encoder_outputs): ...
+    def init_cache(self, batch_size, max_length, encoder_outputs):
+        r"""
+        Args:
+            batch_size (`int`):
+                batch_size used for fast auto-regressive decoding. Defines the batch size of the initialized cache.
+            max_length (`int`):
+                maximum possible length for auto-regressive decoding. Defines the sequence length of the initialized
+                cache.
+            encoder_outputs (`Union[FlaxBaseModelOutput, tuple(tuple(jnp.ndarray)]`):
+                `encoder_outputs` consists of (`last_hidden_state`, *optional*: `hidden_states`, *optional*:
+                `attentions`). `last_hidden_state` of shape `(batch_size, sequence_length, hidden_size)`, *optional*)
+                is a sequence of hidden-states at the output of the last layer of the encoder. Used in the
+                cross-attention of the decoder.
+        """
+        ...
+
     @add_start_docstrings(MBART_ENCODE_INPUTS_DOCSTRING)
     @replace_return_docstrings(output_type=FlaxBaseModelOutput, config_class=MBartConfig)
     def encode(
@@ -194,7 +230,24 @@ class FlaxMBartPreTrainedModel(FlaxPreTrainedModel):
         train: bool = ...,
         params: Optional[dict] = ...,
         dropout_rng: PRNGKey = ...,
-    ): ...
+    ):
+        r"""
+        Returns:
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, FlaxMBartForConditionalGeneration
+
+        >>> model = FlaxMBartForConditionalGeneration.from_pretrained("facebook/mbart-large-cc25")
+        >>> tokenizer = AutoTokenizer.from_pretrained("facebook/mbart-large-cc25")
+
+        >>> text = "My friends are cool but they eat too many carbs."
+        >>> inputs = tokenizer(text, max_length=1024, return_tensors="jax")
+        >>> encoder_outputs = model.encode(**inputs)
+        ```"""
+        ...
+
     @add_start_docstrings(MBART_DECODE_INPUTS_DOCSTRING)
     @replace_return_docstrings(output_type=FlaxBaseModelOutputWithPastAndCrossAttentions, config_class=MBartConfig)
     def decode(
@@ -211,7 +264,30 @@ class FlaxMBartPreTrainedModel(FlaxPreTrainedModel):
         train: bool = ...,
         params: Optional[dict] = ...,
         dropout_rng: PRNGKey = ...,
-    ): ...
+    ):
+        r"""
+        Returns:
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, FlaxMBartForConditionalGeneration
+
+        >>> model = FlaxMBartForConditionalGeneration.from_pretrained("facebook/mbart-large-cc25")
+        >>> tokenizer = AutoTokenizer.from_pretrained("facebook/mbart-large-cc25")
+
+        >>> text = "My friends are cool but they eat too many carbs."
+        >>> inputs = tokenizer(text, max_length=1024, return_tensors="jax")
+        >>> encoder_outputs = model.encode(**inputs)
+
+        >>> decoder_start_token_id = model.config.decoder_start_token_id
+        >>> decoder_input_ids = jnp.ones((inputs.input_ids.shape[0], 1), dtype="i4") * decoder_start_token_id
+
+        >>> outputs = model.decode(decoder_input_ids, encoder_outputs)
+        >>> last_decoder_hidden_states = outputs.last_hidden_state
+        ```"""
+        ...
+
     @add_start_docstrings_to_model_forward(MBART_INPUTS_DOCSTRING)
     def __call__(
         self,
@@ -229,7 +305,10 @@ class FlaxMBartPreTrainedModel(FlaxPreTrainedModel):
         dropout_rng: PRNGKey = ...,
     ): ...
 
-@add_start_docstrings(..., MBART_START_DOCSTRING)
+@add_start_docstrings(
+    "The bare MBart Model transformer outputting raw hidden-states without any specific head on top.",
+    MBART_START_DOCSTRING,
+)
 class FlaxMBartModel(FlaxMBartPreTrainedModel):
     config: MBartConfig
     dtype: jnp.dtype = ...
@@ -239,7 +318,8 @@ class FlaxMBartForConditionalGenerationModule(nn.Module):
     config: MBartConfig
     dtype: jnp.dtype = ...
     bias_init: Callable[..., jnp.ndarray] = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids,
@@ -252,9 +332,12 @@ class FlaxMBartForConditionalGenerationModule(nn.Module):
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
         deterministic: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, *tuple[Any | tuple[Any | None, ...] | tuple[Any, ...] | tuple[()], ...]] | Any | FlaxSeq2SeqLMOutput:
+        ...
 
-@add_start_docstrings(..., MBART_START_DOCSTRING)
+@add_start_docstrings(
+    "The MMBart Model with a language modeling head. Can be used for summarization.", MBART_START_DOCSTRING
+)
 class FlaxMBartForConditionalGeneration(FlaxMBartPreTrainedModel):
     module_class = ...
     dtype: jnp.dtype = ...
@@ -274,7 +357,30 @@ class FlaxMBartForConditionalGeneration(FlaxMBartPreTrainedModel):
         train: bool = ...,
         params: Optional[dict] = ...,
         dropout_rng: PRNGKey = ...,
-    ): ...
+    ):  # -> FlaxCausalLMOutputWithCrossAttentions | Any:
+        r"""
+        Returns:
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, FlaxMBartForConditionalGeneration
+
+        >>> model = FlaxMBartForConditionalGeneration.from_pretrained("facebook/mbart-large-cc25")
+        >>> tokenizer = AutoTokenizer.from_pretrained("facebook/mbart-large-cc25")
+
+        >>> text = "My friends are cool but they eat too many carbs."
+        >>> inputs = tokenizer(text, max_length=1024, return_tensors="jax")
+        >>> encoder_outputs = model.encode(**inputs)
+
+        >>> decoder_start_token_id = model.config.decoder_start_token_id
+        >>> decoder_input_ids = jnp.ones((inputs.input_ids.shape[0], 1), dtype="i4") * decoder_start_token_id
+
+        >>> outputs = model.decode(decoder_input_ids, encoder_outputs)
+        >>> logits = outputs.logits
+        ```"""
+        ...
+
     def prepare_inputs_for_generation(
         self,
         decoder_input_ids,
@@ -283,7 +389,8 @@ class FlaxMBartForConditionalGeneration(FlaxMBartPreTrainedModel):
         decoder_attention_mask: Optional[jax.Array] = ...,
         encoder_outputs=...,
         **kwargs,
-    ): ...
+    ):  # -> dict[str, Any | None]:
+        ...
     def update_inputs_for_generation(self, model_outputs, model_kwargs): ...
 
 FLAX_MBART_CONDITIONAL_GENERATION_DOCSTRING = ...
@@ -292,7 +399,8 @@ class FlaxMBartForSequenceClassificationModule(nn.Module):
     config: MBartConfig
     dtype: jnp.dtype = ...
     num_labels: Optional[int] = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids,
@@ -305,9 +413,16 @@ class FlaxMBartForSequenceClassificationModule(nn.Module):
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
         deterministic: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, *tuple[Any | tuple[Any | None, ...] | tuple[Any, ...] | tuple[()], ...]] | Any | FlaxSeq2SeqSequenceClassifierOutput:
+        ...
 
-@add_start_docstrings(..., MBART_START_DOCSTRING)
+@add_start_docstrings(
+    """
+    MBart model with a sequence classification/head on top (a linear layer on top of the pooled output) e.g. for GLUE
+    tasks.
+    """,
+    MBART_START_DOCSTRING,
+)
 class FlaxMBartForSequenceClassification(FlaxMBartPreTrainedModel):
     module_class = ...
     dtype = ...
@@ -316,7 +431,8 @@ class FlaxMBartForQuestionAnsweringModule(nn.Module):
     config: MBartConfig
     dtype: jnp.dtype = ...
     num_labels = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids,
@@ -329,9 +445,16 @@ class FlaxMBartForQuestionAnsweringModule(nn.Module):
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
         deterministic: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, Any, *tuple[Any | tuple[Any | None, ...] | tuple[Any, ...] | tuple[()], ...]] | Any | FlaxSeq2SeqQuestionAnsweringModelOutput:
+        ...
 
-@add_start_docstrings(..., MBART_START_DOCSTRING)
+@add_start_docstrings(
+    """
+    MBart Model with a span classification head on top for extractive question-answering tasks like SQuAD (a linear
+    layer on top of the hidden-states output to compute `span start logits` and `span end logits`).
+    """,
+    MBART_START_DOCSTRING,
+)
 class FlaxMBartForQuestionAnswering(FlaxMBartPreTrainedModel):
     module_class = ...
     dtype = ...

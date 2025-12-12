@@ -9,9 +9,25 @@ from .utils import is_torch_available
 logger = ...
 if is_torch_available(): ...
 
-def dynamic_rope_update(rope_forward): ...
+def dynamic_rope_update(rope_forward):  # -> _Wrapped[..., Any, ..., Any]:
+    """
+    Decorator function to update the RoPE parameters in the forward pass, if the model is using a dynamic RoPE
+    (i.e. a RoPE implementation that may recompute its frequencies in the forward pass).
+
+    Args:
+        rope_forward (Callable):
+            The forward pass of the RoPE implementation.
+
+    Returns:
+        The decorated forward pass.
+    """
+    ...
 
 ROPE_INIT_FUNCTIONS = ...
 ROPE_VALIDATION_FUNCTIONS = ...
 
-def rope_config_validation(config: PretrainedConfig, ignore_keys: Optional[set] = ...): ...
+def rope_config_validation(config: PretrainedConfig, ignore_keys: Optional[set] = ...):  # -> None:
+    """
+    Validate the RoPE config arguments, given a `PretrainedConfig` object
+    """
+    ...

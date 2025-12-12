@@ -40,8 +40,10 @@ class SEWUpsampling(nn.Module):
     def forward(self, hidden_states): ...
 
 class SEWFeatureEncoder(nn.Module):
+    """Construct the features from raw audio waveform"""
     def __init__(self, config) -> None: ...
-    def forward(self, input_values): ...
+    def forward(self, input_values):  # -> Any:
+        ...
 
 def eager_attention_forward(
     module: nn.Module,
@@ -53,9 +55,11 @@ def eager_attention_forward(
     dropout: float = ...,
     head_mask: Optional[torch.Tensor] = ...,
     **kwargs,
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class SEWAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(
         self,
         embed_dim: int,
@@ -74,21 +78,26 @@ class SEWAttention(nn.Module):
         layer_head_mask: Optional[torch.Tensor] = ...,
         output_attentions: Optional[bool] = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+        """Input shape: Batch x Time x Channel"""
+        ...
 
 class SEWFeedForward(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class SEWEncoderLayer(GradientCheckpointingLayer):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states, attention_mask=..., output_attentions=...): ...
+    def forward(self, hidden_states, attention_mask=..., output_attentions=...):  # -> tuple[Any, Any] | tuple[Any]:
+        ...
 
 class SEWEncoder(nn.Module):
     def __init__(self, config) -> None: ...
     def forward(
         self, hidden_states, attention_mask=..., output_attentions=..., output_hidden_states=..., return_dict=...
-    ): ...
+    ):  # -> tuple[Any | tuple[Any, ...] | tuple[()] | tuple[Any | None, ...], ...] | BaseModelOutput:
+        ...
 
 @auto_docstring
 class SEWPreTrainedModel(PreTrainedModel):
@@ -112,17 +121,61 @@ class SEWModel(SEWPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutput]: ...
+    ) -> Union[tuple, BaseModelOutput]:
+        r"""
+        mask_time_indices (`torch.BoolTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Indices to mask extracted features for contrastive loss. When in training mode, model learns to predict
+            masked extracted features in *config.proj_codevector_dim* space.
+        """
+        ...
 
 _HIDDEN_STATES_START_POSITION = ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    SEW Model with a `language modeling` head on top for Connectionist Temporal Classification (CTC).
+    """
+)
 class SEWForCTC(SEWPreTrainedModel):
-    def __init__(self, config, target_lang: Optional[str] = ...) -> None: ...
-    def tie_weights(self): ...
-    def freeze_feature_extractor(self): ...
-    def freeze_feature_encoder(self): ...
-    def freeze_base_model(self): ...
+    def __init__(self, config, target_lang: Optional[str] = ...) -> None:
+        r"""
+        target_lang (`str`, *optional*):
+            Language id of adapter weights. Adapter weights are stored in the format adapter.<lang>.safetensors or
+            adapter.<lang>.bin. Only relevant when using an instance of [`SEWForCTC`] with adapters. Uses 'eng' by
+            default.
+        """
+        ...
+
+    def tie_weights(self):  # -> None:
+        """
+        This method overwrites [`~PreTrainedModel.tie_weights`] so that adapter weights can be correctly loaded when
+        passing `target_lang=...` to `from_pretrained(...)`.
+
+        This method is **not** supposed to be called by the user and is prone to be changed in the future.
+        """
+        ...
+
+    def freeze_feature_extractor(self):  # -> None:
+        """
+        Calling this function will disable the gradient computation for the feature encoder so that its parameter will
+        not be updated during training.
+        """
+        ...
+
+    def freeze_feature_encoder(self):  # -> None:
+        """
+        Calling this function will disable the gradient computation for the feature encoder so that its parameter will
+        not be updated during training.
+        """
+        ...
+
+    def freeze_base_model(self):  # -> None:
+        """
+        Calling this function will disable the gradient computation for the base model so that its parameters will not
+        be updated during training. Only the classification head will be updated.
+        """
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -132,14 +185,45 @@ class SEWForCTC(SEWPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         labels: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple, CausalLMOutput]: ...
+    ) -> Union[tuple, CausalLMOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, target_length)`, *optional*):
+            Labels for connectionist temporal classification. Note that `target_length` has to be smaller or equal to
+            the sequence length of the output logits. Indices are selected in `[-100, 0, ..., config.vocab_size - 1]`.
+            All labels set to `-100` are ignored (masked), the loss is only computed for labels in `[0, ...,
+            config.vocab_size - 1]`.
+        """
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    SEW Model with a sequence classification head on top (a linear layer over the pooled output) for tasks like
+    SUPERB Keyword Spotting.
+    """
+)
 class SEWForSequenceClassification(SEWPreTrainedModel):
     def __init__(self, config) -> None: ...
-    def freeze_feature_extractor(self): ...
-    def freeze_feature_encoder(self): ...
-    def freeze_base_model(self): ...
+    def freeze_feature_extractor(self):  # -> None:
+        """
+        Calling this function will disable the gradient computation for the feature encoder so that its parameters will
+        not be updated during training.
+        """
+        ...
+
+    def freeze_feature_encoder(self):  # -> None:
+        """
+        Calling this function will disable the gradient computation for the feature encoder so that its parameter will
+        not be updated during training.
+        """
+        ...
+
+    def freeze_base_model(self):  # -> None:
+        """
+        Calling this function will disable the gradient computation for the base model so that its parameters will not
+        be updated during training. Only the classification head will be updated.
+        """
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -149,6 +233,19 @@ class SEWForSequenceClassification(SEWPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         labels: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple, SequenceClassifierOutput]: ...
+    ) -> Union[tuple, SequenceClassifierOutput]:
+        r"""
+        input_values (`torch.FloatTensor` of shape `(batch_size, sequence_length)`):
+            Float values of input raw speech waveform. Values can be obtained by loading a `.flac` or `.wav` audio file
+            into an array of type `list[float]`, a `numpy.ndarray` or a `torch.Tensor`, *e.g.* via the torchcodec library
+            (`pip install torchcodec`) or the soundfile library (`pip install soundfile`).
+            To prepare the array into `input_values`, the [`AutoProcessor`] should be used for padding and conversion
+            into a tensor of type `torch.FloatTensor`. See [`SEWProcessor.__call__`] for details.
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 __all__ = ["SEWForCTC", "SEWForSequenceClassification", "SEWModel", "SEWPreTrainedModel"]

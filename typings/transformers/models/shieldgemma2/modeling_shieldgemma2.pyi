@@ -15,6 +15,10 @@ logger = ...
 
 @dataclass
 class ShieldGemma2ImageClassifierOutputWithNoAttention(ImageClassifierOutputWithNoAttention):
+    """ShieldGemma2 classifies imags as violative or not relative to a specific policy
+    Args:
+    """
+
     probabilities: Optional[torch.Tensor] = ...
 
 @auto_docstring
@@ -22,13 +26,20 @@ class ShieldGemma2ForImageClassification(PreTrainedModel):
     config: ShieldGemma2Config
     _checkpoint_conversion_mapping = ...
     def __init__(self, config: ShieldGemma2Config) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
-    def get_output_embeddings(self): ...
-    def set_output_embeddings(self, new_embeddings): ...
-    def set_decoder(self, decoder): ...
-    def get_decoder(self): ...
-    def tie_weights(self): ...
+    def get_input_embeddings(self):  # -> Any:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
+    def get_output_embeddings(self):  # -> Any:
+        ...
+    def set_output_embeddings(self, new_embeddings):  # -> None:
+        ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> Any:
+        ...
+    def tie_weights(self):  # -> Any:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -47,6 +58,27 @@ class ShieldGemma2ForImageClassification(PreTrainedModel):
         return_dict: Optional[bool] = ...,
         logits_to_keep: Union[int, torch.Tensor] = ...,
         **lm_kwargs,
-    ) -> ShieldGemma2ImageClassifierOutputWithNoAttention: ...
+    ) -> ShieldGemma2ImageClassifierOutputWithNoAttention:
+        r"""
+        Returns:
+            A `ShieldGemma2ImageClassifierOutputWithNoAttention` instance containing the logits and probabilities
+            associated with the model predicting the `Yes` or `No` token as the response to that prompt, captured in the
+            following properties.
+
+                *   `logits` (`torch.Tensor` of shape `(batch_size, 2)`):
+                    The first position along dim=1 is the logits for the `Yes` token and the second position along dim=1 is
+                    the logits for the `No` token.
+                *   `probabilities` (`torch.Tensor` of shape `(batch_size, 2)`):
+                    The first position along dim=1 is the probability of predicting the `Yes` token and the second position
+                    along dim=1 is the probability of predicting the `No` token.
+
+            ShieldGemma prompts are constructed such that predicting the `Yes` token means the content *does violate* the
+            policy as described. If you are only interested in the violative condition, use
+            `violated = outputs.probabilities[:, 1]` to extract that slice from the output tensors.
+
+            When used with the `ShieldGemma2Processor`, the `batch_size` will be equal to `len(images) * len(policies)`,
+            and the order within the batch will be img1_policy1, ... img1_policyN, ... imgM_policyN.
+        """
+        ...
 
 __all__ = ["ShieldGemma2ForImageClassification"]

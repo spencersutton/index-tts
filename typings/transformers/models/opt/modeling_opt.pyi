@@ -20,17 +20,23 @@ from ...processing_utils import Unpack
 from ...utils import TransformersKwargs, auto_docstring, can_return_tuple, is_torch_flex_attn_available
 from .configuration_opt import OPTConfig
 
+"""PyTorch OPT model."""
 if is_torch_flex_attn_available(): ...
 logger = ...
 
 class OPTLearnedPositionalEmbedding(nn.Embedding):
+    """
+    This module learns positional embeddings up to a fixed maximum size.
+    """
     def __init__(self, num_embeddings: int, embedding_dim: int) -> None: ...
     def forward(
         self,
         attention_mask: torch.LongTensor,
         past_key_values_length: int = ...,
         position_ids: Optional[torch.LongTensor] = ...,
-    ): ...
+    ):  # -> Tensor:
+        """`input_ids_shape` is expected to be [bsz x seqlen]."""
+        ...
 
 def eager_attention_forward(
     module: nn.Module,
@@ -41,9 +47,11 @@ def eager_attention_forward(
     scaling: float,
     dropout: float = ...,
     **kwargs,
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class OPTAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config: OPTConfig, layer_idx: Optional[int] = ..., **kwargs) -> None: ...
     def forward(
         self,
@@ -54,7 +62,9 @@ class OPTAttention(nn.Module):
         output_attentions: bool = ...,
         cache_position: Optional[torch.Tensor] = ...,
         **kwargs,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[Cache]]: ...
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[Cache]]:
+        """Input shape: Batch x Time x Channel"""
+        ...
 
 class OPTDecoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: OPTConfig, layer_idx: Optional[int] = ...) -> None: ...
@@ -69,7 +79,25 @@ class OPTDecoderLayer(GradientCheckpointingLayer):
         position_ids: Optional[torch.LongTensor] = ...,
         cache_position: Optional[torch.Tensor] = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]: ...
+    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            attention_mask (`torch.FloatTensor`, *optional*): attention mask of size
+                `(batch, 1, tgt_len, src_len)` where padding elements are indicated by very large negative values.
+            layer_head_mask (`torch.FloatTensor`, *optional*): mask for attention heads in a given layer of size
+                `(encoder_attention_heads,)`.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            use_cache (`bool`, *optional*):
+                If set to `True`, `past_key_values` key value states are returned and can be used to speed up decoding
+                (see `past_key_values`).
+            past_key_value (`Tuple(torch.FloatTensor)`, *optional*): cached past key and value projection states
+            cache_position (`torch.LongTensor` of shape `(sequence_length)`, *optional*):
+                Indices depicting the position of the input sequence tokens in the sequence..
+        """
+        ...
 
 @auto_docstring
 class OPTPreTrainedModel(PreTrainedModel):
@@ -84,6 +112,12 @@ class OPTPreTrainedModel(PreTrainedModel):
     _can_compile_fullgraph = ...
 
 class OPTDecoder(OPTPreTrainedModel):
+    """
+    Transformer decoder consisting of *config.num_hidden_layers* layers. Each layer is a [`OPTDecoderLayer`]
+
+    Args:
+        config: OPTConfig
+    """
     def __init__(self, config: OPTConfig) -> None: ...
     @can_return_tuple
     def forward(
@@ -100,14 +134,74 @@ class OPTDecoder(OPTPreTrainedModel):
         position_ids: Optional[torch.LongTensor] = ...,
         cache_position: Optional[torch.Tensor] = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> Union[tuple, BaseModelOutputWithPast]: ...
+    ) -> Union[tuple, BaseModelOutputWithPast]:
+        r"""
+        Args:
+            input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
+                Indices of input sequence tokens in the vocabulary. Padding will be ignored by default should you
+                provide it.
+
+                Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+                [`PreTrainedTokenizer.__call__`] for details.
+
+                [What are input IDs?](../glossary#input-ids)
+            attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Mask to avoid performing attention on padding token indices. Mask values selected in `[0, 1]`:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+            head_mask (`torch.Tensor` of shape `(num_hidden_layers, num_attention_heads)`, *optional*):
+                Mask to nullify selected heads of the attention modules. Mask values selected in `[0, 1]`:
+
+                - 1 indicates the head is **not masked**,
+                - 0 indicates the head is **masked**.
+
+            past_key_values (`Cache`, *optional*, returned when `use_cache=True` is passed or when `config.use_cache=True`):
+                Tuple of `tuple(torch.FloatTensor)` of length `config.n_layers`, with each tuple having 2 tensors of
+                shape `(batch_size, num_heads, sequence_length, embed_size_per_head)`) and 2 additional tensors of
+
+                Contains pre-computed hidden-states (key and values in the self-attention blocks and in the
+                cross-attention blocks) that can be used (see `past_key_values` input) to speed up sequential decoding.
+
+                If `past_key_values` are used, the user can optionally input only the last `decoder_input_ids` (those
+                that don't have their past key value states given to this model) of shape `(batch_size, 1)` instead of
+                all `decoder_input_ids` of shape `(batch_size, sequence_length)`.
+
+            inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*):
+                Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation.
+                This is useful if you want more control over how to convert `input_ids` indices into associated vectors
+                than the model's internal embedding lookup matrix.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers. See `hidden_states` under returned tensors
+                for more detail.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`~utils.ModelOutput`] instead of a plain tuple.
+            position_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Indices of positions of each input sequence tokens in the position embeddings. Selected in the range `[0,
+                config.n_positions - 1]`. for padding use -1.
+
+                [What are position IDs?](../glossary#position-ids)
+            cache_position (`torch.LongTensor` of shape `(sequence_length)`, *optional*):
+                Indices depicting the position of the input sequence tokens in the sequence. Contrarily to `position_ids`,
+                this tensor is not affected by padding. It is used to update the cache in the correct position and to infer
+                the complete sequence length.
+        """
+        ...
 
 @auto_docstring
 class OPTModel(OPTPreTrainedModel):
     def __init__(self, config: OPTConfig) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
-    def get_decoder(self): ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
+    def get_decoder(self):  # -> OPTDecoder:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -129,10 +223,14 @@ class OPTModel(OPTPreTrainedModel):
 class OPTForCausalLM(OPTPreTrainedModel, GenerationMixin):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
-    def set_decoder(self, decoder): ...
-    def get_decoder(self): ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> OPTDecoder:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -150,9 +248,45 @@ class OPTForCausalLM(OPTPreTrainedModel, GenerationMixin):
         position_ids: Optional[torch.LongTensor] = ...,
         cache_position: Optional[torch.Tensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> Union[tuple, CausalLMOutputWithPast]: ...
+    ) -> Union[tuple, CausalLMOutputWithPast]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
 
-@auto_docstring(custom_intro=...)
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, OPTForCausalLM
+
+        >>> model = OPTForCausalLM.from_pretrained("facebook/opt-350m")
+        >>> tokenizer = AutoTokenizer.from_pretrained("facebook/opt-350m")
+
+        >>> prompt = "Hey, are you conscious? Can you talk to me?"
+        >>> inputs = tokenizer(prompt, return_tensors="pt")
+
+        >>> # Generate
+        >>> generate_ids = model.generate(inputs.input_ids, max_length=30)
+        >>> tokenizer.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+        "Hey, are you conscious? Can you talk to me?\nI'm not conscious. I'm just a little bit of a weirdo."
+        ```"""
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    The OPT Model transformer with a sequence classification head on top (linear layer).
+
+    [`OPTForSequenceClassification`] uses the last token in order to do the classification, as other causal models
+    (e.g. GPT-2) do.
+
+    Since it does classification on the last token, it requires to know the position of the last token. If a
+    `pad_token_id` is defined in the configuration, it finds the last token that is not a padding token in each row. If
+    no `pad_token_id` is defined, it simply takes the last value in each row of the batch. Since it cannot guess the
+    padding tokens when `inputs_embeds` are passed instead of `input_ids`, it does the same (take the last value in
+    each row of the batch).
+    """
+)
 class OPTForSequenceClassification(OPTPreTrainedModel):
     def __init__(self, config: OPTConfig) -> None: ...
     @auto_docstring
@@ -169,9 +303,19 @@ class OPTForSequenceClassification(OPTPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         position_ids: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple, SequenceClassifierOutputWithPast]: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    ) -> Union[tuple, SequenceClassifierOutputWithPast]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
+
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
 
 @auto_docstring
 class OPTForQuestionAnswering(OPTPreTrainedModel):
@@ -191,9 +335,45 @@ class OPTForQuestionAnswering(OPTPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         position_ids: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple, QuestionAnsweringModelOutput]: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    ) -> Union[tuple, QuestionAnsweringModelOutput]:
+        r"""
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, OPTForQuestionAnswering
+        >>> import torch
+
+        >>> torch.manual_seed(4)  # doctest: +IGNORE_RESULT
+        >>> tokenizer = AutoTokenizer.from_pretrained("facebook/opt-350m")
+
+        >>> # note: we are loading a OPTForQuestionAnswering from the hub here,
+        >>> # so the head will be randomly initialized, hence the predictions will be random
+        >>> model = OPTForQuestionAnswering.from_pretrained("facebook/opt-350m")
+
+        >>> question, text = "Who was Jim Henson?", "Jim Henson was a nice puppet"
+
+        >>> inputs = tokenizer(question, text, return_tensors="pt")
+        >>> with torch.no_grad():
+        ...     outputs = model(**inputs)
+
+        >>> answer_start_index = outputs.start_logits.argmax()
+        >>> answer_end_index = outputs.end_logits.argmax()
+
+        >>> answer_offset = len(tokenizer(question)[0])
+
+        >>> predict_answer_tokens = inputs.input_ids[
+        ...     0, answer_offset + answer_start_index : answer_offset + answer_end_index + 1
+        ... ]
+        >>> predicted = tokenizer.decode(predict_answer_tokens)
+        >>> predicted
+        ' a nice puppet'
+        ```"""
+        ...
+
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
 
 __all__ = [
     "OPTForCausalLM",

@@ -15,6 +15,24 @@ if is_torchvision_v2_available(): ...
 else: ...
 
 class DeepseekVLHybridFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
+    r"""
+    min_size (`int`, *optional*, defaults to 14):
+        The minimum allowed size for the resized image. Ensures that neither the height nor width
+        falls below this value after resizing.
+     high_res_size (`dict`, *optional*, defaults to `{"height": 1024, "width": 1024}`):
+        Size of the high resolution output image after resizing. Can be overridden by the `high_res_size` parameter in the `preprocess`
+        method.
+    high_res_resample (`PILImageResampling`, *optional*, defaults to `Resampling.BICUBIC`):
+        Resampling filter to use if resizing the image. Only has an effect if `do_resize` is set to `True`. Can be
+        overridden by the `high_res_resample` parameter in the `preprocess` method.
+    high_res_image_mean (`float` or `list[float]`, *optional*, defaults to `OPENAI_CLIP_MEAN`):
+        Mean to use if normalizing the high resolution image. This is a float or list of floats the length of the number of
+        channels in the image. Can be overridden by the `high_res_image_mean` parameter in the `preprocess` method.
+    high_res_image_std (`float` or `list[float]`, *optional*, defaults to `OPENAI_CLIP_STD`):
+        Standard deviation to use if normalizing the high resolution image. This is a float or list of floats the length of the
+        number of channels in the image. Can be overridden by the `high_res_image_std` parameter in the `preprocess` method.
+    """
+
     min_size: int
     high_res_size: dict
     high_res_resample: PILImageResampling
@@ -49,6 +67,21 @@ class DeepseekVLHybridImageProcessorFast(BaseImageProcessorFast):
     ) -> torch.Tensor: ...
     def pad_to_square(
         self, images: torch.Tensor, background_color: Union[int, tuple[int, int, int]] = ...
-    ) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """
+        Pads an image to a square based on the longest edge.
+
+        Args:
+            images (`torch.Tensor`):
+                The images to pad.
+            background_color (`int` or `tuple[int, int, int]`, *optional*, defaults to 0):
+                The color to use for the padding. Can be an integer for single channel or a
+                tuple of integers representing for multi-channel images. If passed as integer
+                in mutli-channel mode, it will default to `0` in subsequent channels.
+
+        Returns:
+            `torch.Tensor`: The padded images.
+        """
+        ...
 
 __all__ = ["DeepseekVLHybridImageProcessorFast"]

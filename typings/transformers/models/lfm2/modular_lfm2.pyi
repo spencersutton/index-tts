@@ -32,9 +32,18 @@ class Lfm2RotaryEmbedding(LlamaRotaryEmbedding): ...
 
 class Lfm2MLP(nn.Module):
     def __init__(self, config: Lfm2Config) -> None: ...
-    def forward(self, x): ...
+    def forward(self, x):  # -> Any:
+        ...
 
 class Lfm2HybridConvCache:
+    """
+    Attention and conv cache for Lfm2.
+
+    It stores the Key and Value states as a list of tensors, one for each layer.
+    Attention layer cache shape: `[batch_size, num_heads, seq_len, head_dim]`.
+    Conv layer cache shape: `[batch_size, hidden_size, L_cache-1]`.
+    """
+
     max_batch_size = ...
     is_compileable = ...
     key_cache = ...
@@ -52,17 +61,53 @@ class Lfm2HybridConvCache:
         value_states: torch.Tensor,
         layer_idx: int,
         cache_kwargs: Optional[dict[str, Any]] = ...,
-    ) -> tuple[torch.Tensor, torch.Tensor]: ...
-    def reorder_cache(self, beam_idx: torch.LongTensor): ...
-    def get_seq_length(self, layer_idx: Optional[int] = ...) -> int: ...
-    def get_mask_sizes(self, cache_position: torch.Tensor, layer_idx: int) -> tuple[int, int]: ...
-    def crop(self, max_length: int): ...
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """
+        Updates the cache with the new `key_states` and `value_states` for the layer `layer_idx`.
+
+        Parameters:
+            key_states (`torch.Tensor`):
+                The new key states to cache.
+            value_states (`torch.Tensor`):
+                The new value states to cache.
+            layer_idx (`int`):
+                The index of the layer to cache the states for.
+            cache_kwargs (`Dict[str, Any]`, `optional`):
+                Additional arguments for the cache subclass. No additional arguments are used in `DynamicCache`.
+
+        Return:
+            A tuple containing the updated key and value states.
+        """
+        ...
+
+    def reorder_cache(self, beam_idx: torch.LongTensor):  # -> None:
+        """Reorders the cache for beam search, given the selected beam indices."""
+        ...
+
+    def get_seq_length(self, layer_idx: Optional[int] = ...) -> int:
+        """Returns the sequence length of the cached states. A layer index can be optionally passed."""
+        ...
+
+    def get_mask_sizes(self, cache_position: torch.Tensor, layer_idx: int) -> tuple[int, int]:
+        """
+        Return a tuple (kv_length, kv_offset) corresponding to the length and offset that will be returned for
+        the given layer at `layer_idx`.
+        The masks are then prepared according to the given lengths (kv_length, kv_offset) and patterns (i.e. sliding_window, chunk_size),
+        for each layer.
+        """
+        ...
+
+    def crop(self, max_length: int):  # -> None:
+        """Crop the cache to the given length"""
+        ...
+
     def __len__(self) -> int: ...
     def __getitem__(self, layer_idx: int) -> tuple[torch.Tensor, torch.Tensor]: ...
     def to_legacy_cache(self) -> tuple[tuple[torch.Tensor], tuple[torch.Tensor]]: ...
     @classmethod
     def from_legacy_cache(cls, past_key_values: Optional[tuple[tuple[torch.FloatTensor]]] = ...) -> DynamicCache: ...
-    def reset(self): ...
+    def reset(self):  # -> None:
+        ...
 
 class Lfm2Attention(LlamaAttention):
     def __init__(self, config: Lfm2Config, layer_idx: int) -> None: ...
@@ -84,21 +129,24 @@ class Lfm2ShortConv(nn.Module):
         past_key_value: Optional[Lfm2HybridConvCache] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         attention_mask: Optional[torch.Tensor] = ...,
-    ): ...
+    ):  # -> Any:
+        ...
     def slow_forward(
         self,
         x: torch.Tensor,
         past_key_value: Optional[Lfm2HybridConvCache] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         attention_mask: Optional[torch.Tensor] = ...,
-    ): ...
+    ):  # -> Any:
+        ...
     def forward(
         self,
         hidden_states: torch.Tensor,
         past_key_value: Optional[Lfm2HybridConvCache] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         attention_mask: Optional[torch.Tensor] = ...,
-    ): ...
+    ):  # -> Any:
+        ...
 
 class Lfm2DecoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: Lfm2Config, layer_idx: int) -> None: ...

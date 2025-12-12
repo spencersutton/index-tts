@@ -18,17 +18,44 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring, can_return_tuple
 from .configuration_markuplm import MarkupLMConfig
 
+"""PyTorch MarkupLM model."""
 logger = ...
 
 class XPathEmbeddings(nn.Module):
-    def __init__(self, config) -> None: ...
-    def forward(self, xpath_tags_seq=..., xpath_subs_seq=...): ...
+    """Construct the embeddings from xpath tags and subscripts.
 
-def create_position_ids_from_input_ids(input_ids, padding_idx, past_key_values_length=...): ...
+    We drop tree-id in this version, as its info can be covered by xpath.
+    """
+    def __init__(self, config) -> None: ...
+    def forward(self, xpath_tags_seq=..., xpath_subs_seq=...):  # -> Any:
+        ...
+
+def create_position_ids_from_input_ids(input_ids, padding_idx, past_key_values_length=...):
+    """
+    Replace non-padding symbols with their position numbers. Position numbers begin at padding_idx+1. Padding symbols
+    are ignored. This is modified from fairseq's `utils.make_positions`.
+
+    Args:
+        x: torch.Tensor x:
+
+    Returns: torch.Tensor
+    """
+    ...
 
 class MarkupLMEmbeddings(nn.Module):
+    """Construct the embeddings from word, position and token_type embeddings."""
     def __init__(self, config) -> None: ...
-    def create_position_ids_from_inputs_embeds(self, inputs_embeds): ...
+    def create_position_ids_from_inputs_embeds(self, inputs_embeds):  # -> Tensor:
+        """
+        We are provided embeddings directly. We cannot infer which are padded so just generate sequential position ids.
+
+        Args:
+            inputs_embeds: torch.Tensor
+
+        Returns: torch.Tensor
+        """
+        ...
+
     def forward(
         self,
         input_ids=...,
@@ -38,7 +65,8 @@ class MarkupLMEmbeddings(nn.Module):
         position_ids=...,
         inputs_embeds=...,
         past_key_values_length=...,
-    ): ...
+    ):  # -> Any:
+        ...
 
 class MarkupLMSelfOutput(nn.Module):
     def __init__(self, config) -> None: ...
@@ -62,7 +90,8 @@ class MarkupLMPredictionHeadTransform(nn.Module):
 
 class MarkupLMLMPredictionHead(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class MarkupLMOnlyMLMHead(nn.Module):
     def __init__(self, config) -> None: ...
@@ -78,7 +107,8 @@ def eager_attention_forward(
     dropout: float = ...,
     head_mask: Optional[torch.Tensor] = ...,
     **kwargs,
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class MarkupLMSelfAttention(nn.Module):
     def __init__(self, config) -> None: ...
@@ -93,7 +123,8 @@ class MarkupLMSelfAttention(nn.Module):
 
 class MarkupLMAttention(nn.Module):
     def __init__(self, config) -> None: ...
-    def prune_heads(self, heads): ...
+    def prune_heads(self, heads):  # -> None:
+        ...
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -113,7 +144,8 @@ class MarkupLMLayer(GradientCheckpointingLayer):
         output_attentions: Optional[bool] = ...,
         **kwargs,
     ) -> tuple[torch.Tensor]: ...
-    def feed_forward_chunk(self, attention_output): ...
+    def feed_forward_chunk(self, attention_output):  # -> Any:
+        ...
 
 class MarkupLMEncoder(nn.Module):
     def __init__(self, config) -> None: ...
@@ -136,13 +168,22 @@ class MarkupLMPreTrainedModel(PreTrainedModel):
     @classmethod
     def from_pretrained(
         cls, pretrained_model_name_or_path: Optional[Union[str, os.PathLike]], *model_args, **kwargs
-    ): ...
+    ):  # -> Self:
+        ...
 
 @auto_docstring
 class MarkupLMModel(MarkupLMPreTrainedModel):
-    def __init__(self, config, add_pooling_layer=...) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def __init__(self, config, add_pooling_layer=...) -> None:
+        r"""
+        add_pooling_layer (bool, *optional*, defaults to `True`):
+            Whether to add a pooling layer
+        """
+        ...
+
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -158,7 +199,31 @@ class MarkupLMModel(MarkupLMPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPooling]: ...
+    ) -> Union[tuple, BaseModelOutputWithPooling]:
+        r"""
+        xpath_tags_seq (`torch.LongTensor` of shape `(batch_size, sequence_length, config.max_depth)`, *optional*):
+            Tag IDs for each token in the input sequence, padded up to config.max_depth.
+        xpath_subs_seq (`torch.LongTensor` of shape `(batch_size, sequence_length, config.max_depth)`, *optional*):
+            Subscript IDs for each token in the input sequence, padded up to config.max_depth.
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoProcessor, MarkupLMModel
+
+        >>> processor = AutoProcessor.from_pretrained("microsoft/markuplm-base")
+        >>> model = MarkupLMModel.from_pretrained("microsoft/markuplm-base")
+
+        >>> html_string = "<html> <head> <title>Page Title</title> </head> </html>"
+
+        >>> encoding = processor(html_string, return_tensors="pt")
+
+        >>> outputs = model(**encoding)
+        >>> last_hidden_states = outputs.last_hidden_state
+        >>> list(last_hidden_states.shape)
+        [1, 4, 768]
+        ```"""
+        ...
 
 @auto_docstring
 class MarkupLMForQuestionAnswering(MarkupLMPreTrainedModel):
@@ -180,9 +245,44 @@ class MarkupLMForQuestionAnswering(MarkupLMPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], QuestionAnsweringModelOutput]: ...
+    ) -> Union[tuple[torch.Tensor], QuestionAnsweringModelOutput]:
+        r"""
+        xpath_tags_seq (`torch.LongTensor` of shape `(batch_size, sequence_length, config.max_depth)`, *optional*):
+            Tag IDs for each token in the input sequence, padded up to config.max_depth.
+        xpath_subs_seq (`torch.LongTensor` of shape `(batch_size, sequence_length, config.max_depth)`, *optional*):
+            Subscript IDs for each token in the input sequence, padded up to config.max_depth.
 
-@auto_docstring(custom_intro=...)
+        Examples:
+
+        ```python
+        >>> from transformers import AutoProcessor, MarkupLMForQuestionAnswering
+        >>> import torch
+
+        >>> processor = AutoProcessor.from_pretrained("microsoft/markuplm-base-finetuned-websrc")
+        >>> model = MarkupLMForQuestionAnswering.from_pretrained("microsoft/markuplm-base-finetuned-websrc")
+
+        >>> html_string = "<html> <head> <title>My name is Niels</title> </head> </html>"
+        >>> question = "What's his name?"
+
+        >>> encoding = processor(html_string, questions=question, return_tensors="pt")
+
+        >>> with torch.no_grad():
+        ...     outputs = model(**encoding)
+
+        >>> answer_start_index = outputs.start_logits.argmax()
+        >>> answer_end_index = outputs.end_logits.argmax()
+
+        >>> predict_answer_tokens = encoding.input_ids[0, answer_start_index : answer_end_index + 1]
+        >>> processor.decode(predict_answer_tokens).strip()
+        'Niels'
+        ```"""
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    MarkupLM Model with a `token_classification` head on top.
+    """
+)
 class MarkupLMForTokenClassification(MarkupLMPreTrainedModel):
     def __init__(self, config) -> None: ...
     @can_return_tuple
@@ -201,9 +301,44 @@ class MarkupLMForTokenClassification(MarkupLMPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], MaskedLMOutput]: ...
+    ) -> Union[tuple[torch.Tensor], MaskedLMOutput]:
+        r"""
+        xpath_tags_seq (`torch.LongTensor` of shape `(batch_size, sequence_length, config.max_depth)`, *optional*):
+            Tag IDs for each token in the input sequence, padded up to config.max_depth.
+        xpath_subs_seq (`torch.LongTensor` of shape `(batch_size, sequence_length, config.max_depth)`, *optional*):
+            Subscript IDs for each token in the input sequence, padded up to config.max_depth.
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the token classification loss. Indices should be in `[0, ..., config.num_labels - 1]`.
 
-@auto_docstring(custom_intro=...)
+        Examples:
+
+        ```python
+        >>> from transformers import AutoProcessor, AutoModelForTokenClassification
+        >>> import torch
+
+        >>> processor = AutoProcessor.from_pretrained("microsoft/markuplm-base")
+        >>> processor.parse_html = False
+        >>> model = AutoModelForTokenClassification.from_pretrained("microsoft/markuplm-base", num_labels=7)
+
+        >>> nodes = ["hello", "world"]
+        >>> xpaths = ["/html/body/div/li[1]/div/span", "/html/body/div/li[1]/div/span"]
+        >>> node_labels = [1, 2]
+        >>> encoding = processor(nodes=nodes, xpaths=xpaths, node_labels=node_labels, return_tensors="pt")
+
+        >>> with torch.no_grad():
+        ...     outputs = model(**encoding)
+
+        >>> loss = outputs.loss
+        >>> logits = outputs.logits
+        ```"""
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    MarkupLM Model transformer with a sequence classification/regression head on top (a linear layer on top of the
+    pooled output) e.g. for GLUE tasks.
+    """
+)
 class MarkupLMForSequenceClassification(MarkupLMPreTrainedModel):
     def __init__(self, config) -> None: ...
     @can_return_tuple
@@ -222,7 +357,36 @@ class MarkupLMForSequenceClassification(MarkupLMPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], SequenceClassifierOutput]: ...
+    ) -> Union[tuple[torch.Tensor], SequenceClassifierOutput]:
+        r"""
+        xpath_tags_seq (`torch.LongTensor` of shape `(batch_size, sequence_length, config.max_depth)`, *optional*):
+            Tag IDs for each token in the input sequence, padded up to config.max_depth.
+        xpath_subs_seq (`torch.LongTensor` of shape `(batch_size, sequence_length, config.max_depth)`, *optional*):
+            Subscript IDs for each token in the input sequence, padded up to config.max_depth.
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoProcessor, AutoModelForSequenceClassification
+        >>> import torch
+
+        >>> processor = AutoProcessor.from_pretrained("microsoft/markuplm-base")
+        >>> model = AutoModelForSequenceClassification.from_pretrained("microsoft/markuplm-base", num_labels=7)
+
+        >>> html_string = "<html> <head> <title>Page Title</title> </head> </html>"
+        >>> encoding = processor(html_string, return_tensors="pt")
+
+        >>> with torch.no_grad():
+        ...     outputs = model(**encoding)
+
+        >>> loss = outputs.loss
+        >>> logits = outputs.logits
+        ```"""
+        ...
 
 __all__ = [
     "MarkupLMForQuestionAnswering",

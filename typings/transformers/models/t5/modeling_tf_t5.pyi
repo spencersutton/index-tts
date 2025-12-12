@@ -16,35 +16,51 @@ from ...modeling_tf_utils import (
 from ...utils import add_start_docstrings, add_start_docstrings_to_model_forward, replace_return_docstrings
 from .configuration_t5 import T5Config
 
+"""TF 2.0 T5 model."""
 logger = ...
 _CONFIG_FOR_DOC = ...
 
 class TFT5LayerNorm(keras.layers.Layer):
-    def __init__(self, hidden_size, epsilon=..., **kwargs) -> None: ...
-    def build(self, input_shape): ...
+    def __init__(self, hidden_size, epsilon=..., **kwargs) -> None:
+        """
+        Construct a layernorm module in the T5 style No bias and no subtraction of mean.
+        """
+        ...
+
+    def build(self, input_shape):  # -> None:
+        """Build shared word embedding layer"""
+        ...
+
     def call(self, hidden_states): ...
 
 class TFT5DenseActDense(keras.layers.Layer):
     def __init__(self, config, **kwargs) -> None: ...
     def call(self, hidden_states, training=...): ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFT5DenseGatedActDense(keras.layers.Layer):
     def __init__(self, config, **kwargs) -> None: ...
     def call(self, hidden_states, training=...): ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFT5LayerFF(keras.layers.Layer):
     def __init__(self, config, **kwargs) -> None: ...
     def call(self, hidden_states, training=...): ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFT5Attention(keras.layers.Layer):
     NEW_ID = ...
     def __init__(self, config, has_relative_attention_bias=..., **kwargs) -> None: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
     def prune_heads(self, heads): ...
-    def compute_bias(self, query_length, key_length): ...
+    def compute_bias(self, query_length, key_length):
+        """Compute binned relative position bias"""
+        ...
+
     def call(
         self,
         hidden_states,
@@ -57,7 +73,11 @@ class TFT5Attention(keras.layers.Layer):
         use_cache=...,
         training=...,
         output_attentions=...,
-    ): ...
+    ):  # -> tuple[Any, tuple[Any, Any] | None, Any, Any] | tuple[Any, tuple[Any, Any] | None, Any]:
+        """
+        Self-attention (if key_value_states is None) or attention over source sentence (provided by key_value_states).
+        """
+        ...
 
 class TFT5LayerSelfAttention(keras.layers.Layer):
     def __init__(self, config, has_relative_attention_bias=..., **kwargs) -> None: ...
@@ -72,7 +92,8 @@ class TFT5LayerSelfAttention(keras.layers.Layer):
         output_attentions=...,
         training=...,
     ): ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFT5LayerCrossAttention(keras.layers.Layer):
     def __init__(self, config, **kwargs) -> None: ...
@@ -89,7 +110,8 @@ class TFT5LayerCrossAttention(keras.layers.Layer):
         output_attentions=...,
         training=...,
     ): ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFT5Block(keras.layers.Layer):
     def __init__(self, config, has_relative_attention_bias=..., **kwargs) -> None: ...
@@ -108,7 +130,8 @@ class TFT5Block(keras.layers.Layer):
         output_attentions=...,
         training=...,
     ): ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 @keras_serializable
 class TFT5MainLayer(keras.layers.Layer):
@@ -131,25 +154,36 @@ class TFT5MainLayer(keras.layers.Layer):
         return_dict=...,
         training=...,
     ) -> tuple: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFT5PreTrainedModel(TFPreTrainedModel):
+    """
+    An abstract class to handle weights initialization and a simple interface for downloading and loading pretrained
+    models.
+    """
+
     config_class = T5Config
     base_model_prefix = ...
     _keys_to_ignore_on_load_unexpected = ...
     def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
 
 T5_START_DOCSTRING = ...
 T5_INPUTS_DOCSTRING = ...
 T5_ENCODER_INPUTS_DOCSTRING = ...
 _HEAD_MASK_WARNING_MSG = ...
 
-@add_start_docstrings(..., T5_START_DOCSTRING)
+@add_start_docstrings(
+    "The bare T5 Model transformer outputting raw hidden-stateswithout any specific head on top.", T5_START_DOCSTRING
+)
 class TFT5Model(TFT5PreTrainedModel):
     def __init__(self, config, *inputs, **kwargs) -> None: ...
-    def get_encoder(self): ...
-    def get_decoder(self): ...
+    def get_encoder(self):  # -> TFT5MainLayer:
+        ...
+    def get_decoder(self):  # -> TFT5MainLayer:
+        ...
     @unpack_inputs
     @add_start_docstrings_to_model_forward(T5_INPUTS_DOCSTRING)
     @replace_return_docstrings(output_type=TFSeq2SeqModelOutput, config_class=_CONFIG_FOR_DOC)
@@ -170,16 +204,46 @@ class TFT5Model(TFT5PreTrainedModel):
         output_hidden_states: bool | None = ...,
         return_dict: bool | None = ...,
         training: bool | None = ...,
-    ) -> tuple | TFSeq2SeqModelOutput: ...
-    def build(self, input_shape=...): ...
+    ) -> tuple | TFSeq2SeqModelOutput:
+        r"""
+        Returns:
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoTokenizer, TFT5Model
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("google-t5/t5-small")
+        >>> model = TFT5Model.from_pretrained("google-t5/t5-small")
+
+        >>> input_ids = tokenizer(
+        ...     "Studies have been shown that owning a dog is good for you", return_tensors="tf"
+        ... ).input_ids  # Batch size 1
+        >>> decoder_input_ids = tokenizer("Studies show that", return_tensors="tf").input_ids  # Batch size 1
+
+        >>> # preprocess: Prepend decoder_input_ids with start token which is pad token for T5Model.
+        >>> # This is not needed for torch's T5ForConditionalGeneration as it does this internally using labels arg.
+        >>> decoder_input_ids = model._shift_right(decoder_input_ids)
+
+        >>> # forward pass
+        >>> outputs = model(input_ids, decoder_input_ids=decoder_input_ids)
+        >>> last_hidden_states = outputs.last_hidden_state
+        ```"""
+        ...
+
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 @add_start_docstrings("""T5 Model with a `language modeling` head on top.""", T5_START_DOCSTRING)
 class TFT5ForConditionalGeneration(TFT5PreTrainedModel, TFCausalLanguageModelingLoss):
     def __init__(self, config, *inputs, **kwargs) -> None: ...
     def get_output_embeddings(self): ...
-    def set_output_embeddings(self, value): ...
-    def get_encoder(self): ...
-    def get_decoder(self): ...
+    def set_output_embeddings(self, value):  # -> None:
+        ...
+    def get_encoder(self):  # -> TFT5MainLayer:
+        ...
+    def get_decoder(self):  # -> TFT5MainLayer:
+        ...
     @unpack_inputs
     @add_start_docstrings_to_model_forward(T5_INPUTS_DOCSTRING)
     @replace_return_docstrings(output_type=TFSeq2SeqLMOutput, config_class=_CONFIG_FOR_DOC)
@@ -201,8 +265,41 @@ class TFT5ForConditionalGeneration(TFT5PreTrainedModel, TFCausalLanguageModeling
         output_hidden_states: bool | None = ...,
         return_dict: bool | None = ...,
         training: bool | None = ...,
-    ) -> tuple | TFSeq2SeqLMOutput: ...
-    def serving_output(self, output): ...
+    ) -> tuple | TFSeq2SeqLMOutput:
+        r"""
+        labels (`tf.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the cross entropy classification loss. Indices should be in `[0, ...,
+            config.vocab_size - 1]`.
+
+        Returns:
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoTokenizer, TFT5ForConditionalGeneration
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("google-t5/t5-small")
+        >>> model = TFT5ForConditionalGeneration.from_pretrained("google-t5/t5-small")
+
+        >>> # training
+        >>> inputs = tokenizer("The <extra_id_0> walks in <extra_id_1> park", return_tensors="tf").input_ids
+        >>> labels = tokenizer("<extra_id_0> cute dog <extra_id_1> the <extra_id_2>", return_tensors="tf").input_ids
+        >>> outputs = model(inputs, labels=labels)
+        >>> loss = outputs.loss
+        >>> logits = outputs.logits
+
+        >>> # inference
+        >>> inputs = tokenizer(
+        ...     "summarize: studies have shown that owning a dog is good for you", return_tensors="tf"
+        ... ).input_ids  # Batch size 1
+        >>> outputs = model.generate(inputs)
+        >>> print(tokenizer.decode(outputs[0], skip_special_tokens=True))
+        >>> # studies have shown that owning a dog is good for you
+        ```"""
+        ...
+
+    def serving_output(self, output):  # -> TFSeq2SeqLMOutput:
+        ...
     def prepare_inputs_for_generation(
         self,
         input_ids,
@@ -214,14 +311,20 @@ class TFT5ForConditionalGeneration(TFT5PreTrainedModel, TFCausalLanguageModeling
         use_cache=...,
         encoder_outputs=...,
         **kwargs,
-    ): ...
+    ):  # -> dict[str, Any | None]:
+        ...
     def prepare_decoder_input_ids_from_labels(self, labels: tf.Tensor): ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
-@add_start_docstrings(..., T5_START_DOCSTRING)
+@add_start_docstrings(
+    "The bare T5 Model transformer outputting encoder's raw hidden-stateswithout any specific head on top.",
+    T5_START_DOCSTRING,
+)
 class TFT5EncoderModel(TFT5PreTrainedModel):
     def __init__(self, config, *inputs, **kwargs) -> None: ...
-    def get_encoder(self): ...
+    def get_encoder(self):  # -> TFT5MainLayer:
+        ...
     @unpack_inputs
     @add_start_docstrings_to_model_forward(T5_ENCODER_INPUTS_DOCSTRING)
     @replace_return_docstrings(output_type=TFBaseModelOutput, config_class=_CONFIG_FOR_DOC)
@@ -235,7 +338,26 @@ class TFT5EncoderModel(TFT5PreTrainedModel):
         output_hidden_states: bool | None = ...,
         return_dict: bool | None = ...,
         training: bool | None = ...,
-    ) -> tuple | TFBaseModelOutput: ...
-    def build(self, input_shape=...): ...
+    ) -> tuple | TFBaseModelOutput:
+        r"""
+        Returns:
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoTokenizer, TFT5EncoderModel
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("google-t5/t5-small")
+        >>> model = TFT5EncoderModel.from_pretrained("google-t5/t5-small")
+
+        >>> input_ids = tokenizer(
+        ...     "Studies have been shown that owning a dog is good for you", return_tensors="tf"
+        ... ).input_ids  # Batch size 1
+        >>> outputs = model(input_ids)
+        ```"""
+        ...
+
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 __all__ = ["TFT5EncoderModel", "TFT5ForConditionalGeneration", "TFT5Model", "TFT5PreTrainedModel"]

@@ -20,19 +20,35 @@ from ...utils import TransformersKwargs, auto_docstring
 from ...utils.generic import check_model_inputs
 from .configuration_cohere2_vision import Cohere2VisionConfig
 
+"""PyTorch AyaVision model."""
 logger = ...
 
 class Cohere2VisionMultiModalProjector(nn.Module):
     def __init__(self, config: Cohere2VisionConfig) -> None: ...
     def pixel_shuffle(self, image_features): ...
-    def forward(self, image_features): ...
+    def forward(self, image_features):  # -> Any:
+        ...
 
 class Cohere2VisionModelOutputWithPast(AyaVisionModelOutputWithPast): ...
 class Cohere2VisionCausalLMOutputWithPast(AyaVisionCausalLMOutputWithPast): ...
 
 class Cohere2VisionModel(AyaVisionModel):
     _checkpoint_conversion_mapping = ...
-    def get_image_features(self, pixel_values: torch.FloatTensor, image_num_patches: torch.Tensor): ...
+    def get_image_features(self, pixel_values: torch.FloatTensor, image_num_patches: torch.Tensor):  # -> Any:
+        """
+        Obtains image last hidden states from the vision tower and apply multimodal projection.
+
+        Args:
+            pixel_values (`torch.FloatTensor]` of shape `(batch_size, num_patches, channels, height, width)`)
+               The tensors corresponding to the input images.
+            image_num_patches (`torch.Tensor` of shape `(num_images)`)
+                Number of patches for each image.
+        Returns:
+            image_features (List[`torch.Tensor`]): List of image feature tensor, each contains all the visual feature of all patches
+            and are of shape `(num_patches, image_length, embed_dim)`).
+        """
+        ...
+
     @check_model_inputs
     @auto_docstring
     def forward(
@@ -47,11 +63,17 @@ class Cohere2VisionModel(AyaVisionModel):
         use_cache: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> Union[tuple, Cohere2VisionModelOutputWithPast]: ...
+    ) -> Union[tuple, Cohere2VisionModelOutputWithPast]:
+        r"""
+        image_num_patches (`torch.Tensor` of shape `(num_images,)`):
+            Number of patches per input image.
+        """
+        ...
 
 class Cohere2VisionForConditionalGeneration(AyaVisionForConditionalGeneration):
     _checkpoint_conversion_mapping = ...
-    def get_image_features(self, pixel_values: torch.FloatTensor, image_num_patches: torch.Tensor): ...
+    def get_image_features(self, pixel_values: torch.FloatTensor, image_num_patches: torch.Tensor):  # -> Any:
+        ...
     @check_model_inputs
     @auto_docstring
     def forward(
@@ -69,10 +91,70 @@ class Cohere2VisionForConditionalGeneration(AyaVisionForConditionalGeneration):
         logits_to_keep: Union[int, torch.Tensor] = ...,
         image_sizes: Optional[torch.Tensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> Union[tuple, Cohere2VisionCausalLMOutputWithPast]: ...
+    ) -> Union[tuple, Cohere2VisionCausalLMOutputWithPast]:
+        r"""
+        image_num_patches (`torch.Tensor` of shape `(num_images,)`):
+            Number of patches per input image.
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoProcessor, Cohere2VisionForConditionalGeneration
+        >>> import torch
+
+        >>> processor = AutoProcessor.from_pretrained("CohereLabs/command-a-vision-07-2025", use_fast=True)
+        >>> model = Cohere2VisionForConditionalGeneration.from_pretrained("CohereLabs/command-a-vision-07-2025", device_map="auto")
+
+        >>> messages = [
+        ...     {
+        ...         "role": "user",
+        ...         "content": [
+        ...             {
+        ...                 "type": "image",
+        ...                 "url": "https://images.pexels.com/photos/1108099/pexels-photo-1108099.jpeg",
+        ...             },
+        ...             {"type": "text", "text": "what is in this image?"},
+        ...         ],
+        ...     },
+        ... ]
+
+        >>> inputs = processor.apply_chat_template(
+        ...     messages, padding=True, add_generation_prompt=True, tokenize=True, return_dict=True, return_tensors="pt",
+        ... ).to(model.device)
+
+        >>> gen_tokens = model.generate(**inputs, max_new_tokens=300, do_sample=True, temperature=0.3)
+        >>> processor.tokenizer.decode(gen_tokens[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
+        ```"""
+        ...
 
 @lru_cache(maxsize=10)
-def get_all_supported_aspect_ratios(max_image_tiles: int) -> list[tuple[int, int]]: ...
+def get_all_supported_aspect_ratios(max_image_tiles: int) -> list[tuple[int, int]]:
+    """
+    Computes all allowed aspect ratios for a given maximum number of input tiles.
+
+    This function calculates all possible arrangements of tiles that can be formed
+    within the constraint of the maximum number of tiles. Each arrangement is
+    represented by its aspect ratio (width/height) and the corresponding tile configuration.
+
+    Args:
+        max_image_tiles (`int`):
+            The maximum number of tiles allowed.
+
+    Returns:
+        `list[tuple[int, int]]`: A list of tuples, each tuple representing a valid (width, height)
+        configuration in terms of number of tiles.
+
+    Example:
+        >>> get_all_supported_aspect_ratios(4)
+        [(1, 1), (1, 2), (1, 3), (1, 4), (2, 1), (2, 2), (3, 1), (4, 1)]
+
+    """
+    ...
+
 def get_optimal_tiled_canvas(
     original_image_size: tuple[int, int], target_tile_size: tuple[int, int], min_image_tiles: int, max_image_tiles: int
 ) -> tuple[int, int]: ...

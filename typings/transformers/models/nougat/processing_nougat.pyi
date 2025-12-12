@@ -7,7 +7,24 @@ from transformers.tokenization_utils_base import PreTokenizedInput, TextInput, T
 from ...processing_utils import ProcessorMixin
 from ...utils import PaddingStrategy, TensorType
 
+"""
+Processor class for Nougat.
+"""
+
 class NougatProcessor(ProcessorMixin):
+    r"""
+    Constructs a Nougat processor which wraps a Nougat image processor and a Nougat tokenizer into a single processor.
+
+    [`NougatProcessor`] offers all the functionalities of [`NougatImageProcessor`] and [`NougatTokenizerFast`]. See the
+    [`~NougatProcessor.__call__`] and [`~NougatProcessor.decode`] for more information.
+
+    Args:
+        image_processor ([`NougatImageProcessor`]):
+            An instance of [`NougatImageProcessor`]. The image processor is a required input.
+        tokenizer ([`NougatTokenizerFast`]):
+            An instance of [`NougatTokenizerFast`]. The tokenizer is a required input.
+    """
+
     attributes = ...
     image_processor_class = ...
     tokenizer_class = ...
@@ -49,8 +66,25 @@ class NougatProcessor(ProcessorMixin):
         return_length: bool = ...,
         verbose: bool = ...,
     ): ...
-    def batch_decode(self, *args, **kwargs): ...
-    def decode(self, *args, **kwargs): ...
-    def post_process_generation(self, *args, **kwargs): ...
+    def batch_decode(self, *args, **kwargs):
+        """
+        This method forwards all its arguments to NougatTokenizer's [`~PreTrainedTokenizer.batch_decode`]. Please refer
+        to the docstring of this method for more information.
+        """
+        ...
+
+    def decode(self, *args, **kwargs):
+        """
+        This method forwards all its arguments to NougatTokenizer's [`~PreTrainedTokenizer.decode`]. Please refer to
+        the docstring of this method for more information.
+        """
+        ...
+
+    def post_process_generation(self, *args, **kwargs):
+        """
+        This method forwards all its arguments to NougatTokenizer's [`~PreTrainedTokenizer.post_process_generation`].
+        Please refer to the docstring of this method for more information.
+        """
+        ...
 
 __all__ = ["NougatProcessor"]

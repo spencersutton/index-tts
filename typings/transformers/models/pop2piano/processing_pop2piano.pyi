@@ -10,8 +10,24 @@ from ...tokenization_utils import BatchEncoding, PaddingStrategy, TruncationStra
 from ...utils import TensorType
 from ...utils.import_utils import requires
 
+"""Processor class for Pop2Piano."""
+
 @requires(backends=("essentia", "librosa", "pretty_midi", "scipy", "torch"))
 class Pop2PianoProcessor(ProcessorMixin):
+    r"""
+    Constructs an Pop2Piano processor which wraps a Pop2Piano Feature Extractor and Pop2Piano Tokenizer into a single
+    processor.
+
+    [`Pop2PianoProcessor`] offers all the functionalities of [`Pop2PianoFeatureExtractor`] and [`Pop2PianoTokenizer`].
+    See the docstring of [`~Pop2PianoProcessor.__call__`] and [`~Pop2PianoProcessor.decode`] for more information.
+
+    Args:
+        feature_extractor (`Pop2PianoFeatureExtractor`):
+            An instance of [`Pop2PianoFeatureExtractor`]. The feature extractor is a required input.
+        tokenizer (`Pop2PianoTokenizer`):
+            An instance of ['Pop2PianoTokenizer`]. The tokenizer is a required input.
+    """
+
     attributes = ...
     feature_extractor_class = ...
     tokenizer_class = ...
@@ -29,14 +45,30 @@ class Pop2PianoProcessor(ProcessorMixin):
         pad_to_multiple_of: Optional[int] = ...,
         verbose: bool = ...,
         **kwargs,
-    ) -> Union[BatchFeature, BatchEncoding]: ...
-    def batch_decode(
-        self, token_ids, feature_extractor_output: BatchFeature, return_midi: bool = ...
-    ) -> BatchEncoding: ...
+    ) -> Union[BatchFeature, BatchEncoding]:
+        """
+        This method uses [`Pop2PianoFeatureExtractor.__call__`] method to prepare log-mel-spectrograms for the model,
+        and [`Pop2PianoTokenizer.__call__`] to prepare token_ids from notes.
+
+        Please refer to the docstring of the above two methods for more information.
+        """
+        ...
+
+    def batch_decode(self, token_ids, feature_extractor_output: BatchFeature, return_midi: bool = ...) -> BatchEncoding:
+        """
+        This method uses [`Pop2PianoTokenizer.batch_decode`] method to convert model generated token_ids to midi_notes.
+
+        Please refer to the docstring of the above two methods for more information.
+        """
+        ...
+
     @property
-    def model_input_names(self): ...
-    def save_pretrained(self, save_directory, **kwargs): ...
+    def model_input_names(self):  # -> list[Any]:
+        ...
+    def save_pretrained(self, save_directory, **kwargs):  # -> list[Any] | list[str]:
+        ...
     @classmethod
-    def from_pretrained(cls, pretrained_model_name_or_path, **kwargs): ...
+    def from_pretrained(cls, pretrained_model_name_or_path, **kwargs):  # -> Self:
+        ...
 
 __all__ = ["Pop2PianoProcessor"]

@@ -7,6 +7,7 @@ from ...utils import is_vision_available
 from ...utils.import_utils import requires
 from ...video_processing_utils import BaseVideoProcessor
 
+"""Video processor class for Video-LLaVA."""
 if is_vision_available(): ...
 
 class VideoLlavaFastVideoProcessorInitKwargs(VideosKwargs): ...

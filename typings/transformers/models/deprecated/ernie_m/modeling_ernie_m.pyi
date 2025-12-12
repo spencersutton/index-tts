@@ -17,12 +17,14 @@ from ....modeling_utils import PreTrainedModel
 from ....utils import add_code_sample_docstrings, add_start_docstrings, add_start_docstrings_to_model_forward
 from .configuration_ernie_m import ErnieMConfig
 
+"""PyTorch ErnieM model."""
 logger = ...
 _CHECKPOINT_FOR_DOC = ...
 _CONFIG_FOR_DOC = ...
 _TOKENIZER_FOR_DOC = ...
 
 class ErnieMEmbeddings(nn.Module):
+    """Construct the embeddings from word and position embeddings."""
     def __init__(self, config) -> None: ...
     def forward(
         self,
@@ -48,7 +50,8 @@ class ErnieMSelfAttention(nn.Module):
 
 class ErnieMAttention(nn.Module):
     def __init__(self, config, position_embedding_type=...) -> None: ...
-    def prune_heads(self, heads): ...
+    def prune_heads(self, heads):  # -> None:
+        ...
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -69,7 +72,8 @@ class ErnieMEncoderLayer(nn.Module):
         head_mask: Optional[torch.FloatTensor] = ...,
         past_key_value: Optional[tuple[tuple[torch.FloatTensor]]] = ...,
         output_attentions: Optional[bool] = ...,
-    ): ...
+    ):  # -> tuple[Tensor, Any] | Tensor:
+        ...
 
 class ErnieMEncoder(nn.Module):
     def __init__(self, config) -> None: ...
@@ -89,17 +93,27 @@ class ErnieMPooler(nn.Module):
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
 
 class ErnieMPreTrainedModel(PreTrainedModel):
+    """
+    An abstract class to handle weights initialization and a simple interface for downloading and loading pretrained
+    models.
+    """
+
     config: ErnieMConfig
     base_model_prefix = ...
 
 ERNIE_M_START_DOCSTRING = ...
 ERNIE_M_INPUTS_DOCSTRING = ...
 
-@add_start_docstrings(..., ERNIE_M_START_DOCSTRING)
+@add_start_docstrings(
+    "The bare ErnieM Model transformer outputting raw hidden-states without any specific head on top.",
+    ERNIE_M_START_DOCSTRING,
+)
 class ErnieMModel(ErnieMPreTrainedModel):
     def __init__(self, config, add_pooling_layer=...) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     @add_start_docstrings_to_model_forward(ERNIE_M_INPUTS_DOCSTRING.format("batch_size, sequence_length"))
     @add_code_sample_docstrings(
         processor_class=_TOKENIZER_FOR_DOC,
@@ -121,7 +135,11 @@ class ErnieMModel(ErnieMPreTrainedModel):
         return_dict: Optional[bool] = ...,
     ) -> Union[tuple[torch.FloatTensor], BaseModelOutputWithPoolingAndCrossAttentions]: ...
 
-@add_start_docstrings(..., ERNIE_M_START_DOCSTRING)
+@add_start_docstrings(
+    """ErnieM Model transformer with a sequence classification/regression head on top (a linear layer on top of
+    the pooled output) e.g. for GLUE tasks.""",
+    ERNIE_M_START_DOCSTRING,
+)
 class ErnieMForSequenceClassification(ErnieMPreTrainedModel):
     def __init__(self, config) -> None: ...
     @add_start_docstrings_to_model_forward(ERNIE_M_INPUTS_DOCSTRING.format("batch_size, sequence_length"))
@@ -144,9 +162,20 @@ class ErnieMForSequenceClassification(ErnieMPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         labels: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple[torch.FloatTensor], SequenceClassifierOutput]: ...
+    ) -> Union[tuple[torch.FloatTensor], SequenceClassifierOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
-@add_start_docstrings(..., ERNIE_M_START_DOCSTRING)
+@add_start_docstrings(
+    """ErnieM Model with a multiple choice classification head on top (a linear layer on top of
+    the pooled output and a softmax) e.g. for RocStories/SWAG tasks.""",
+    ERNIE_M_START_DOCSTRING,
+)
 class ErnieMForMultipleChoice(ErnieMPreTrainedModel):
     def __init__(self, config) -> None: ...
     @add_start_docstrings_to_model_forward(ERNIE_M_INPUTS_DOCSTRING.format("batch_size, num_choices, sequence_length"))
@@ -164,9 +193,20 @@ class ErnieMForMultipleChoice(ErnieMPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.FloatTensor], MultipleChoiceModelOutput]: ...
+    ) -> Union[tuple[torch.FloatTensor], MultipleChoiceModelOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the multiple choice classification loss. Indices should be in `[0, ...,
+            num_choices-1]` where `num_choices` is the size of the second dimension of the input tensors. (See
+            `input_ids` above)
+        """
+        ...
 
-@add_start_docstrings(..., ERNIE_M_START_DOCSTRING)
+@add_start_docstrings(
+    """ErnieM Model with a token classification head on top (a linear layer on top of
+    the hidden-states output) e.g. for Named-Entity-Recognition (NER) tasks.""",
+    ERNIE_M_START_DOCSTRING,
+)
 class ErnieMForTokenClassification(ErnieMPreTrainedModel):
     def __init__(self, config) -> None: ...
     @add_start_docstrings_to_model_forward(ERNIE_M_INPUTS_DOCSTRING.format("batch_size, sequence_length"))
@@ -188,9 +228,18 @@ class ErnieMForTokenClassification(ErnieMPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         labels: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple[torch.FloatTensor], TokenClassifierOutput]: ...
+    ) -> Union[tuple[torch.FloatTensor], TokenClassifierOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the token classification loss. Indices should be in `[0, ..., config.num_labels - 1]`.
+        """
+        ...
 
-@add_start_docstrings(..., ERNIE_M_START_DOCSTRING)
+@add_start_docstrings(
+    """ErnieM Model with a span classification head on top for extractive question-answering tasks like SQuAD (a linear
+    layers on top of the hidden-states output to compute `span start logits` and `span end logits`).""",
+    ERNIE_M_START_DOCSTRING,
+)
 class ErnieMForQuestionAnswering(ErnieMPreTrainedModel):
     def __init__(self, config) -> None: ...
     @add_start_docstrings_to_model_forward(ERNIE_M_INPUTS_DOCSTRING.format("batch_size, sequence_length"))
@@ -212,9 +261,24 @@ class ErnieMForQuestionAnswering(ErnieMPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.FloatTensor], QuestionAnsweringModelOutput]: ...
+    ) -> Union[tuple[torch.FloatTensor], QuestionAnsweringModelOutput]:
+        r"""
+        start_positions (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for position (index) of the start of the labelled span for computing the token classification loss.
+            Positions are clamped to the length of the sequence (`sequence_length`). Position outside of the sequence
+            are not taken into account for computing the loss.
+        end_positions (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for position (index) of the end of the labelled span for computing the token classification loss.
+            Positions are clamped to the length of the sequence (`sequence_length`). Position outside of the sequence
+            are not taken into account for computing the loss.
+        """
+        ...
 
-@add_start_docstrings(..., ERNIE_M_START_DOCSTRING)
+@add_start_docstrings(
+    """ErnieMForInformationExtraction is a Ernie-M Model with two linear layer on top of the hidden-states output to
+    compute `start_prob` and `end_prob`, designed for Universal Information Extraction.""",
+    ERNIE_M_START_DOCSTRING,
+)
 class ErnieMForInformationExtraction(ErnieMPreTrainedModel):
     def __init__(self, config) -> None: ...
     @add_start_docstrings_to_model_forward(ERNIE_M_INPUTS_DOCSTRING.format("batch_size, num_choices, sequence_length"))
@@ -230,7 +294,16 @@ class ErnieMForInformationExtraction(ErnieMPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.FloatTensor], QuestionAnsweringModelOutput]: ...
+    ) -> Union[tuple[torch.FloatTensor], QuestionAnsweringModelOutput]:
+        r"""
+        start_positions (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for position (index) for computing the start_positions loss. Position outside of the sequence are
+            not taken into account for computing the loss.
+        end_positions (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for position (index) for computing the end_positions loss. Position outside of the sequence are not
+            taken into account for computing the loss.
+        """
+        ...
 
 __all__ = [
     "ErnieMForMultipleChoice",

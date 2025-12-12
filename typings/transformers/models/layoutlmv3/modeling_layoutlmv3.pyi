@@ -16,18 +16,38 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring
 from .configuration_layoutlmv3 import LayoutLMv3Config
 
+"""PyTorch LayoutLMv3 model."""
 logger = ...
 
 class LayoutLMv3PatchEmbeddings(nn.Module):
+    """LayoutLMv3 image (patch) embeddings. This class also automatically interpolates the position embeddings for varying
+    image sizes."""
     def __init__(self, config) -> None: ...
-    def forward(self, pixel_values, position_embedding=...): ...
+    def forward(self, pixel_values, position_embedding=...):  # -> Any:
+        ...
 
 class LayoutLMv3TextEmbeddings(nn.Module):
+    """
+    LayoutLMv3 text embeddings. Same as `RobertaEmbeddings` but with added spatial (layout) embeddings.
+    """
     def __init__(self, config) -> None: ...
-    def calculate_spatial_position_embeddings(self, bbox): ...
-    def create_position_ids_from_input_ids(self, input_ids, padding_idx): ...
-    def create_position_ids_from_inputs_embeds(self, inputs_embeds): ...
-    def forward(self, input_ids=..., bbox=..., token_type_ids=..., position_ids=..., inputs_embeds=...): ...
+    def calculate_spatial_position_embeddings(self, bbox):  # -> Tensor:
+        ...
+    def create_position_ids_from_input_ids(self, input_ids, padding_idx):
+        """
+        Replace non-padding symbols with their position numbers. Position numbers begin at padding_idx+1. Padding
+        symbols are ignored. This is modified from fairseq's `utils.make_positions`.
+        """
+        ...
+
+    def create_position_ids_from_inputs_embeds(self, inputs_embeds):  # -> Tensor:
+        """
+        We are provided embeddings directly. We cannot infer which are padded so just generate sequential position ids.
+        """
+        ...
+
+    def forward(self, input_ids=..., bbox=..., token_type_ids=..., position_ids=..., inputs_embeds=...):  # -> Any:
+        ...
 
 @auto_docstring
 class LayoutLMv3PreTrainedModel(PreTrainedModel):
@@ -36,10 +56,19 @@ class LayoutLMv3PreTrainedModel(PreTrainedModel):
 
 class LayoutLMv3SelfAttention(nn.Module):
     def __init__(self, config) -> None: ...
-    def cogview_attention(self, attention_scores, alpha=...): ...
+    def cogview_attention(self, attention_scores, alpha=...):  # -> Any:
+        """
+        https://huggingface.co/papers/2105.13290 Section 2.4 Stabilization of training: Precision Bottleneck Relaxation
+        (PB-Relax). A replacement of the original nn.Softmax(dim=-1)(attention_scores). Seems the new attention_probs
+        will result in a slower speed and a little bias. Can use torch.allclose(standard_attention_probs,
+        cogview_attention_probs, atol=1e-08) for comparison. The smaller atol (e.g., 1e-08), the better.
+        """
+        ...
+
     def forward(
         self, hidden_states, attention_mask=..., head_mask=..., output_attentions=..., rel_pos=..., rel_2d_pos=...
-    ): ...
+    ):  # -> tuple[Tensor, Any] | tuple[Tensor]:
+        ...
 
 class LayoutLMv3SelfOutput(nn.Module):
     def __init__(self, config) -> None: ...
@@ -49,18 +78,24 @@ class LayoutLMv3Attention(nn.Module):
     def __init__(self, config) -> None: ...
     def forward(
         self, hidden_states, attention_mask=..., head_mask=..., output_attentions=..., rel_pos=..., rel_2d_pos=...
-    ): ...
+    ):  # -> Any:
+        ...
 
 class LayoutLMv3Layer(GradientCheckpointingLayer):
     def __init__(self, config) -> None: ...
     def forward(
         self, hidden_states, attention_mask=..., head_mask=..., output_attentions=..., rel_pos=..., rel_2d_pos=...
-    ): ...
-    def feed_forward_chunk(self, attention_output): ...
+    ):  # -> Any:
+        ...
+    def feed_forward_chunk(self, attention_output):  # -> Any:
+        ...
 
 class LayoutLMv3Encoder(nn.Module):
     def __init__(self, config) -> None: ...
-    def relative_position_bucket(self, relative_position, bidirectional=..., num_buckets=..., max_distance=...): ...
+    def relative_position_bucket(
+        self, relative_position, bidirectional=..., num_buckets=..., max_distance=...
+    ):  # -> Tensor:
+        ...
     def forward(
         self,
         hidden_states,
@@ -73,7 +108,8 @@ class LayoutLMv3Encoder(nn.Module):
         position_ids=...,
         patch_height=...,
         patch_width=...,
-    ): ...
+    ):  # -> tuple[Any | tuple[Any, ...] | tuple[()], ...] | BaseModelOutput:
+        ...
 
 class LayoutLMv3Intermediate(nn.Module):
     def __init__(self, config) -> None: ...
@@ -86,11 +122,19 @@ class LayoutLMv3Output(nn.Module):
 @auto_docstring
 class LayoutLMv3Model(LayoutLMv3PreTrainedModel):
     def __init__(self, config) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
-    def init_visual_bbox(self, image_size=..., max_len=...): ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
+    def init_visual_bbox(self, image_size=..., max_len=...):  # -> None:
+        """
+        Create the bounding boxes for the visual (patch) tokens.
+        """
+        ...
+
     def calculate_visual_bbox(self, device, dtype, batch_size): ...
-    def forward_image(self, pixel_values): ...
+    def forward_image(self, pixel_values):  # -> Any:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -105,13 +149,88 @@ class LayoutLMv3Model(LayoutLMv3PreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutput]: ...
+    ) -> Union[tuple, BaseModelOutput]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, token_sequence_length)`):
+            Indices of input sequence tokens in the vocabulary.
+
+            Note that `sequence_length = token_sequence_length + patch_sequence_length + 1` where `1` is for [CLS]
+            token. See `pixel_values` for `patch_sequence_length`.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        bbox (`torch.LongTensor` of shape `(batch_size, token_sequence_length, 4)`, *optional*):
+            Bounding boxes of each input sequence tokens. Selected in the range `[0,
+            config.max_2d_position_embeddings-1]`. Each bounding box should be a normalized version in (x0, y0, x1, y1)
+            format, where (x0, y0) corresponds to the position of the upper left corner in the bounding box, and (x1,
+            y1) represents the position of the lower right corner.
+
+            Note that `sequence_length = token_sequence_length + patch_sequence_length + 1` where `1` is for [CLS]
+            token. See `pixel_values` for `patch_sequence_length`.
+        token_type_ids (`torch.LongTensor` of shape `(batch_size, token_sequence_length)`, *optional*):
+            Segment token indices to indicate first and second portions of the inputs. Indices are selected in `[0,
+            1]`:
+
+            - 0 corresponds to a *sentence A* token,
+            - 1 corresponds to a *sentence B* token.
+
+            Note that `sequence_length = token_sequence_length + patch_sequence_length + 1` where `1` is for [CLS]
+            token. See `pixel_values` for `patch_sequence_length`.
+
+            [What are token type IDs?](../glossary#token-type-ids)
+        position_ids (`torch.LongTensor` of shape `(batch_size, token_sequence_length)`, *optional*):
+            Indices of positions of each input sequence tokens in the position embeddings. Selected in the range `[0,
+            config.max_position_embeddings - 1]`.
+
+            Note that `sequence_length = token_sequence_length + patch_sequence_length + 1` where `1` is for [CLS]
+            token. See `pixel_values` for `patch_sequence_length`.
+
+            [What are position IDs?](../glossary#position-ids)
+        inputs_embeds (`torch.FloatTensor` of shape `(batch_size, token_sequence_length, hidden_size)`, *optional*):
+            Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation. This
+            is useful if you want more control over how to convert *input_ids* indices into associated vectors than the
+            model's internal embedding lookup matrix.
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoProcessor, AutoModel
+        >>> from datasets import load_dataset
+
+        >>> processor = AutoProcessor.from_pretrained("microsoft/layoutlmv3-base", apply_ocr=False)
+        >>> model = AutoModel.from_pretrained("microsoft/layoutlmv3-base")
+
+        >>> dataset = load_dataset("nielsr/funsd-layoutlmv3", split="train")
+        >>> example = dataset[0]
+        >>> image = example["image"]
+        >>> words = example["tokens"]
+        >>> boxes = example["bboxes"]
+
+        >>> encoding = processor(image, words, boxes=boxes, return_tensors="pt")
+
+        >>> outputs = model(**encoding)
+        >>> last_hidden_states = outputs.last_hidden_state
+        ```"""
+        ...
 
 class LayoutLMv3ClassificationHead(nn.Module):
+    """
+    Head for sentence-level classification tasks. Reference: RobertaClassificationHead
+    """
     def __init__(self, config, pool_feature=...) -> None: ...
-    def forward(self, x): ...
+    def forward(self, x):  # -> Any:
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    LayoutLMv3 Model with a token classification head on top (a linear layer on top of the final hidden states) e.g.
+    for sequence labeling (information extraction) tasks such as [FUNSD](https://guillaumejaume.github.io/FUNSD/),
+    [SROIE](https://rrc.cvc.uab.es/?ch=13), [CORD](https://github.com/clovaai/cord) and
+    [Kleister-NDA](https://github.com/applicaai/kleister-nda).
+    """
+)
 class LayoutLMv3ForTokenClassification(LayoutLMv3PreTrainedModel):
     def __init__(self, config) -> None: ...
     @auto_docstring
@@ -129,7 +248,39 @@ class LayoutLMv3ForTokenClassification(LayoutLMv3PreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         pixel_values: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple, TokenClassifierOutput]: ...
+    ) -> Union[tuple, TokenClassifierOutput]:
+        r"""
+        bbox (`torch.LongTensor` of shape `(batch_size, sequence_length, 4)`, *optional*):
+            Bounding boxes of each input sequence tokens. Selected in the range `[0,
+            config.max_2d_position_embeddings-1]`. Each bounding box should be a normalized version in (x0, y0, x1, y1)
+            format, where (x0, y0) corresponds to the position of the upper left corner in the bounding box, and (x1,
+            y1) represents the position of the lower right corner.
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the token classification loss. Indices should be in `[0, ..., config.num_labels - 1]`.
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoProcessor, AutoModelForTokenClassification
+        >>> from datasets import load_dataset
+
+        >>> processor = AutoProcessor.from_pretrained("microsoft/layoutlmv3-base", apply_ocr=False)
+        >>> model = AutoModelForTokenClassification.from_pretrained("microsoft/layoutlmv3-base", num_labels=7)
+
+        >>> dataset = load_dataset("nielsr/funsd-layoutlmv3", split="train")
+        >>> example = dataset[0]
+        >>> image = example["image"]
+        >>> words = example["tokens"]
+        >>> boxes = example["bboxes"]
+        >>> word_labels = example["ner_tags"]
+
+        >>> encoding = processor(image, words, boxes=boxes, word_labels=word_labels, return_tensors="pt")
+
+        >>> outputs = model(**encoding)
+        >>> loss = outputs.loss
+        >>> logits = outputs.logits
+        ```"""
+        ...
 
 @auto_docstring
 class LayoutLMv3ForQuestionAnswering(LayoutLMv3PreTrainedModel):
@@ -150,9 +301,49 @@ class LayoutLMv3ForQuestionAnswering(LayoutLMv3PreTrainedModel):
         return_dict: Optional[bool] = ...,
         bbox: Optional[torch.LongTensor] = ...,
         pixel_values: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple, QuestionAnsweringModelOutput]: ...
+    ) -> Union[tuple, QuestionAnsweringModelOutput]:
+        r"""
+        bbox (`torch.LongTensor` of shape `(batch_size, sequence_length, 4)`, *optional*):
+            Bounding boxes of each input sequence tokens. Selected in the range `[0,
+            config.max_2d_position_embeddings-1]`. Each bounding box should be a normalized version in (x0, y0, x1, y1)
+            format, where (x0, y0) corresponds to the position of the upper left corner in the bounding box, and (x1,
+            y1) represents the position of the lower right corner.
 
-@auto_docstring(custom_intro=...)
+        Examples:
+
+        ```python
+        >>> from transformers import AutoProcessor, AutoModelForQuestionAnswering
+        >>> from datasets import load_dataset
+        >>> import torch
+
+        >>> processor = AutoProcessor.from_pretrained("microsoft/layoutlmv3-base", apply_ocr=False)
+        >>> model = AutoModelForQuestionAnswering.from_pretrained("microsoft/layoutlmv3-base")
+
+        >>> dataset = load_dataset("nielsr/funsd-layoutlmv3", split="train")
+        >>> example = dataset[0]
+        >>> image = example["image"]
+        >>> question = "what's his name?"
+        >>> words = example["tokens"]
+        >>> boxes = example["bboxes"]
+
+        >>> encoding = processor(image, question, words, boxes=boxes, return_tensors="pt")
+        >>> start_positions = torch.tensor([1])
+        >>> end_positions = torch.tensor([3])
+
+        >>> outputs = model(**encoding, start_positions=start_positions, end_positions=end_positions)
+        >>> loss = outputs.loss
+        >>> start_scores = outputs.start_logits
+        >>> end_scores = outputs.end_logits
+        ```"""
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    LayoutLMv3 Model with a sequence classification head on top (a linear layer on top of the final hidden state of the
+    [CLS] token) e.g. for document image classification tasks such as the
+    [RVL-CDIP](https://www.cs.cmu.edu/~aharley/rvl-cdip/) dataset.
+    """
+)
 class LayoutLMv3ForSequenceClassification(LayoutLMv3PreTrainedModel):
     def __init__(self, config) -> None: ...
     @auto_docstring
@@ -170,7 +361,38 @@ class LayoutLMv3ForSequenceClassification(LayoutLMv3PreTrainedModel):
         return_dict: Optional[bool] = ...,
         bbox: Optional[torch.LongTensor] = ...,
         pixel_values: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple, SequenceClassifierOutput]: ...
+    ) -> Union[tuple, SequenceClassifierOutput]:
+        r"""
+        bbox (`torch.LongTensor` of shape `(batch_size, sequence_length, 4)`, *optional*):
+            Bounding boxes of each input sequence tokens. Selected in the range `[0,
+            config.max_2d_position_embeddings-1]`. Each bounding box should be a normalized version in (x0, y0, x1, y1)
+            format, where (x0, y0) corresponds to the position of the upper left corner in the bounding box, and (x1,
+            y1) represents the position of the lower right corner.
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoProcessor, AutoModelForSequenceClassification
+        >>> from datasets import load_dataset
+        >>> import torch
+
+        >>> processor = AutoProcessor.from_pretrained("microsoft/layoutlmv3-base", apply_ocr=False)
+        >>> model = AutoModelForSequenceClassification.from_pretrained("microsoft/layoutlmv3-base")
+
+        >>> dataset = load_dataset("nielsr/funsd-layoutlmv3", split="train")
+        >>> example = dataset[0]
+        >>> image = example["image"]
+        >>> words = example["tokens"]
+        >>> boxes = example["bboxes"]
+
+        >>> encoding = processor(image, words, boxes=boxes, return_tensors="pt")
+        >>> sequence_label = torch.tensor([1])
+
+        >>> outputs = model(**encoding, labels=sequence_label)
+        >>> loss = outputs.loss
+        >>> logits = outputs.logits
+        ```"""
+        ...
 
 __all__ = [
     "LayoutLMv3ForQuestionAnswering",

@@ -22,6 +22,24 @@ class ColQwen2ProcessorKwargs(ProcessingKwargs, total=False):
     _defaults = ...
 
 class ColQwen2Processor(ColPaliProcessor):
+    r"""
+    Constructs a ColQwen2 processor which wraps a Qwen2VLProcessor and special methods to process images and queries, as
+    well as to compute the late-interaction retrieval score.
+
+    [`ColQwen2Processor`] offers all the functionalities of [`Qwen2VLProcessor`]. See the [`~Qwen2VLProcessor.__call__`]
+    for more information.
+
+    Args:
+        image_processor ([`Qwen2VLImageProcessor`], *optional*):
+            The image processor is a required input.
+        tokenizer ([`Qwen2TokenizerFast`], *optional*):
+            The tokenizer is a required input.
+        chat_template (`str`, *optional*): A Jinja template which will be used to convert lists of messages
+            in a chat into a tokenizable string.
+        visual_prompt_prefix (`str`, *optional*): A string that gets tokenized and prepended to the image tokens.
+        query_prefix (`str`, *optional*): A prefix to be used for the query.
+    """
+
     image_processor_class = ...
     tokenizer_class = ...
     def __init__(
@@ -40,20 +58,88 @@ class ColQwen2Processor(ColPaliProcessor):
         audio=...,
         videos=...,
         **kwargs: Unpack[ColQwen2ProcessorKwargs],
-    ) -> BatchFeature: ...
+    ) -> BatchFeature:
+        """
+        Main method to prepare for the model either (1) one or several texts, either (2) one or several image(s). This method is a custom
+        wrapper around the Qwen2VLProcessor's [`~Qwen2VLProcessor.__call__`] method adapted for the ColQwen2 model. It cannot process
+        both text and images at the same time.
+
+        When preparing the the text(s), this method forwards the `text` and `kwargs` arguments to Qwen2TokenizerFast's
+        [`~Qwen2TokenizerFast.__call__`].
+        When preparing the the image(s), this method forwards the `images` and `kwargs` arguments to Qwen2VLImageProcessor's
+        [`~Qwen2VLImageProcessor.__call__`].
+        Please refer to the doctsring of the above two methods for more information.
+
+        Args:
+            images (`PIL.Image.Image`, `np.ndarray`, `torch.Tensor`, `list[PIL.Image.Image]`, `list[np.ndarray]`, `list[torch.Tensor]`):
+                The image or batch of images to be prepared. Each image can be a PIL image, NumPy array or PyTorch
+                tensor. In case of a NumPy array/PyTorch tensor, each image should be of shape (C, H, W), where C is a
+                number of channels, H and W are image height and width.
+            text (`str`, `list[str]`, `list[list[str]]`):
+                The sequence or batch of sequences to be encoded. Each sequence can be a string or a list of strings
+                (pretokenized string). If the sequences are provided as list of strings (pretokenized), you must set
+                `is_split_into_words=True` (to lift the ambiguity with a batch of sequences).
+            return_tensors (`str` or [`~utils.TensorType`], *optional*):
+                If set, will return tensors of a particular framework. Acceptable values are:
+
+                - `'tf'`: Return TensorFlow `tf.constant` objects.
+                - `'pt'`: Return PyTorch `torch.Tensor` objects.
+                - `'np'`: Return NumPy `np.ndarray` objects.
+                - `'jax'`: Return JAX `jnp.ndarray` objects.
+
+        Returns:
+            [`BatchFeature`]: A [`BatchFeature`] with the following fields:
+
+            - **input_ids** -- List of token ids to be fed to a model.
+            - **attention_mask** -- List of indices specifying which tokens should be attended to by the model (when
+              `return_attention_mask=True` or if *"attention_mask"* is in `self.model_input_names` and if `text` is not
+              `None`).
+            - **pixel_values** -- Pixel values to be fed to a model. Returned when `images` is not `None`.
+        """
+        ...
 
 class ColQwen2PreTrainedModel(ColPaliPreTrainedModel): ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for ColQwen2 embeddings output.
+    """
+)
 class ColQwen2ForRetrievalOutput(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `labels` is provided):
+        Language modeling loss (for next-token prediction).
+    embeddings (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
+        The embeddings of the model.
+    past_key_values (`Cache`, *optional*, returned when `use_cache=True` is passed or when `config.use_cache=True`):
+        Tuple of `tuple(torch.FloatTensor)` of length `config.n_layers`, with each tuple having 2 tensors of shape
+        `(batch_size, num_heads, sequence_length, embed_size_per_head)`)
+
+        Contains pre-computed hidden-states (key and values in the self-attention blocks) that can be used (see
+        `past_key_values` input) to speed up sequential decoding.
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     embeddings: Optional[torch.Tensor] = ...
     past_key_values: Optional[Union[list[torch.FloatTensor], Cache]] = ...
     hidden_states: Optional[tuple[torch.FloatTensor]] = ...
     attentions: Optional[tuple[torch.FloatTensor]] = ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Following the ColPali approach, ColQwen2 leverages VLMs to construct efficient multi-vector embeddings directly
+    from document images (“screenshots”) for document retrieval. The model is trained to maximize the similarity
+    between these document embeddings and the corresponding query embeddings, using the late interaction method
+    introduced in ColBERT.
+
+    Using ColQwen2 removes the need for potentially complex and brittle layout recognition and OCR pipelines with
+    a single model that can take into account both the textual and visual content (layout, charts, ...) of a document.
+
+    ColQwen2 is part of the ColVision model family, which was introduced with ColPali in the following paper:
+    [*ColPali: Efficient Document Retrieval with Vision Language Models*](https://huggingface.co/papers/2407.01449).
+    """
+)
 class ColQwen2ForRetrieval(ColPaliForRetrieval):
     _checkpoint_conversion_mapping = ...
     def __init__(self, config: ColQwen2Config) -> None: ...
@@ -74,6 +160,11 @@ class ColQwen2ForRetrieval(ColPaliForRetrieval):
         pixel_values: Optional[torch.Tensor] = ...,
         image_grid_thw: Optional[torch.LongTensor] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
-    ) -> ColQwen2ForRetrievalOutput: ...
+    ) -> ColQwen2ForRetrievalOutput:
+        r"""
+        image_grid_thw (`torch.LongTensor` of shape `(num_images, 3)`, *optional*):
+            The temporal, height and width of feature shape of each image in LLM.
+        """
+        ...
 
 __all__ = ["ColQwen2ForRetrieval", "ColQwen2PreTrainedModel", "ColQwen2Processor"]

@@ -18,11 +18,47 @@ from torchvision.transforms import functional as F
 if is_torchvision_available(): ...
 logger = ...
 
-def get_resize_output_image_size(image: torch.Tensor, size: SizeDict) -> tuple[int, int]: ...
-def get_max_height_width(images_list: list[list[torch.Tensor]]) -> tuple[int, int]: ...
-def make_pixel_mask(image: torch.Tensor, output_size: tuple[int, int]) -> torch.Tensor: ...
+def get_resize_output_image_size(image: torch.Tensor, size: SizeDict) -> tuple[int, int]:
+    """
+    Get the output size of the image after resizing given a dictionary specifying the max and min sizes.
+
+    Args:
+        image (`torch.Tensor`):
+            Image to resize.
+        size (`SizeDict`):
+            Size of the output image containing the keys "shortest_edge" and "longest_edge".
+
+    Returns:
+        The output size of the image after resizing.
+    """
+    ...
+
+def get_max_height_width(images_list: list[list[torch.Tensor]]) -> tuple[int, int]:
+    """
+    Get the maximum height and width across all images in a batch.
+    """
+    ...
+
+def make_pixel_mask(image: torch.Tensor, output_size: tuple[int, int]) -> torch.Tensor:
+    """
+    Make a pixel mask for the image, where 1 indicates a valid pixel and 0 indicates padding.
+
+    Args:
+        image (`torch.Tensor`):
+            Image to make the pixel mask for.
+        output_size (`Tuple[int, int]`):
+            Output size of the mask.
+    """
+    ...
 
 class Idefics2FastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
+    """
+    do_image_splitting (`bool`, *optional*, defaults to `False`):
+        Whether to split the image into a sequence 4 equal sub-images concatenated with the original image.
+    do_pad (`bool`, *optional*, defaults to `True`):
+        Whether to pad images to the largest height and width in the batch.
+    """
+
     do_image_splitting: Optional[bool]
     do_pad: Optional[bool]
     ...
@@ -41,14 +77,35 @@ class Idefics2ImageProcessorFast(BaseImageProcessorFast):
     size = ...
     model_input_names = ...
     valid_kwargs = Idefics2FastImageProcessorKwargs
-    def convert_to_rgb(self, image: ImageInput) -> ImageInput: ...
+    def convert_to_rgb(self, image: ImageInput) -> ImageInput:
+        """
+        Converts an image to RGB format. Only converts if the image is of type PIL.Image.Image, otherwise returns the image
+        as is.
+        """
+        ...
+
     def resize(
         self, image: torch.Tensor, size: SizeDict, interpolation: Optional[F.InterpolationMode] = ..., **kwargs
-    ) -> torch.Tensor: ...
-    def split_images(self, images: torch.Tensor) -> list[torch.Tensor]: ...
+    ) -> torch.Tensor:
+        """
+        Resize an image using torchvision's functional resize.
+        """
+        ...
+
+    def split_images(self, images: torch.Tensor) -> list[torch.Tensor]:
+        """
+        Split a batch of images into 4 equal sub-images, and concatenate that sequence with the original image.
+        """
+        ...
+
     def pad(
         self, image: torch.Tensor, padded_size: tuple[int, int], fill: int = ...
-    ) -> tuple[torch.Tensor, torch.Tensor]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """
+        Pad an image to the specified size and create the corresponding pixel mask.
+        """
+        ...
+
     @auto_docstring
     def preprocess(self, images: ImageInput, **kwargs: Unpack[Idefics2FastImageProcessorKwargs]) -> BatchFeature: ...
 

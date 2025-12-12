@@ -20,7 +20,15 @@ if TYPE_CHECKING: ...
 logger = ...
 ORT_QUANTIZE_MINIMUM_VERSION = ...
 
-def check_onnxruntime_requirements(minimum_version: Version): ...
+def check_onnxruntime_requirements(minimum_version: Version):  # -> None:
+    """
+    Check onnxruntime is installed and if the installed version match is recent enough
+
+    Raises:
+        ImportError: If onnxruntime is not installed or too old version is found
+    """
+    ...
+
 def export_pytorch(
     preprocessor: Union[PreTrainedTokenizer, FeatureExtractionMixin, ProcessorMixin],
     model: PreTrainedModel,
@@ -29,7 +37,30 @@ def export_pytorch(
     output: Path,
     tokenizer: Optional[PreTrainedTokenizer] = ...,
     device: str = ...,
-) -> tuple[list[str], list[str]]: ...
+) -> tuple[list[str], list[str]]:
+    """
+    Export a PyTorch model to an ONNX Intermediate Representation (IR)
+
+    Args:
+        preprocessor: ([`PreTrainedTokenizer`], [`FeatureExtractionMixin`] or [`ProcessorMixin`]):
+            The preprocessor used for encoding the data.
+        model ([`PreTrainedModel`]):
+            The model to export.
+        config ([`~onnx.config.OnnxConfig`]):
+            The ONNX configuration associated with the exported model.
+        opset (`int`):
+            The version of the ONNX operator set to use.
+        output (`Path`):
+            Directory to store the exported ONNX model.
+        device (`str`, *optional*, defaults to `cpu`):
+            The device on which the ONNX model will be exported. Either `cpu` or `cuda`.
+
+    Returns:
+        `tuple[list[str], list[str]]`: A tuple with an ordered list of the model's inputs, and the named inputs from
+        the ONNX configuration.
+    """
+    ...
+
 def export_tensorflow(
     preprocessor: Union[PreTrainedTokenizer, FeatureExtractionMixin],
     model: TFPreTrainedModel,
@@ -37,7 +68,28 @@ def export_tensorflow(
     opset: int,
     output: Path,
     tokenizer: Optional[PreTrainedTokenizer] = ...,
-) -> tuple[list[str], list[str]]: ...
+) -> tuple[list[str], list[str]]:
+    """
+    Export a TensorFlow model to an ONNX Intermediate Representation (IR)
+
+    Args:
+        preprocessor: ([`PreTrainedTokenizer`] or [`FeatureExtractionMixin`]):
+            The preprocessor used for encoding the data.
+        model ([`TFPreTrainedModel`]):
+            The model to export.
+        config ([`~onnx.config.OnnxConfig`]):
+            The ONNX configuration associated with the exported model.
+        opset (`int`):
+            The version of the ONNX operator set to use.
+        output (`Path`):
+            Directory to store the exported ONNX model.
+
+    Returns:
+        `tuple[list[str], list[str]]`: A tuple with an ordered list of the model's inputs, and the named inputs from
+        the ONNX configuration.
+    """
+    ...
+
 def export(
     preprocessor: Union[PreTrainedTokenizer, FeatureExtractionMixin, ProcessorMixin],
     model: Union[PreTrainedModel, TFPreTrainedModel],
@@ -46,7 +98,31 @@ def export(
     output: Path,
     tokenizer: Optional[PreTrainedTokenizer] = ...,
     device: str = ...,
-) -> tuple[list[str], list[str]]: ...
+) -> tuple[list[str], list[str]]:
+    """
+    Export a Pytorch or TensorFlow model to an ONNX Intermediate Representation (IR)
+
+    Args:
+        preprocessor: ([`PreTrainedTokenizer`], [`FeatureExtractionMixin`] or [`ProcessorMixin`]):
+            The preprocessor used for encoding the data.
+        model ([`PreTrainedModel`] or [`TFPreTrainedModel`]):
+            The model to export.
+        config ([`~onnx.config.OnnxConfig`]):
+            The ONNX configuration associated with the exported model.
+        opset (`int`):
+            The version of the ONNX operator set to use.
+        output (`Path`):
+            Directory to store the exported ONNX model.
+        device (`str`, *optional*, defaults to `cpu`):
+            The device on which the ONNX model will be exported. Either `cpu` or `cuda`. Only PyTorch is supported for
+            export on CUDA devices.
+
+    Returns:
+        `tuple[list[str], list[str]]`: A tuple with an ordered list of the model's inputs, and the named inputs from
+        the ONNX configuration.
+    """
+    ...
+
 def validate_model_outputs(
     config: OnnxConfig,
     preprocessor: Union[PreTrainedTokenizer, FeatureExtractionMixin, ProcessorMixin],
@@ -55,7 +131,13 @@ def validate_model_outputs(
     onnx_named_outputs: list[str],
     atol: float,
     tokenizer: Optional[PreTrainedTokenizer] = ...,
-): ...
+):  # -> None:
+    ...
 def ensure_model_and_config_inputs_match(
     model: Union[PreTrainedModel, TFPreTrainedModel], model_inputs: Iterable[str]
-) -> tuple[bool, list[str]]: ...
+) -> tuple[bool, list[str]]:
+    """
+
+    :param model_inputs: :param config_inputs: :return:
+    """
+    ...

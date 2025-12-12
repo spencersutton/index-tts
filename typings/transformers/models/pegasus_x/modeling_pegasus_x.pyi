@@ -16,11 +16,14 @@ from ...processing_utils import Unpack
 from ...utils import auto_docstring, is_torch_flex_attn_available
 from .configuration_pegasus_x import PegasusXConfig
 
+"""PyTorch PEGASUS-X model."""
 if is_torch_flex_attn_available(): ...
 logger = ...
 
 @dataclass
 class DimensionInfo:
+    """Wrapper for dimension info."""
+
     batch_size: int
     seq_len: int
     block_size: int
@@ -32,20 +35,31 @@ class DimensionInfo:
     padded_seq_len: int
     ...
 
-def shift_tokens_right(input_ids: torch.Tensor, pad_token_id: int, decoder_start_token_id: int): ...
+def shift_tokens_right(input_ids: torch.Tensor, pad_token_id: int, decoder_start_token_id: int):  # -> Tensor:
+    """
+    Shift input ids one token to the right.
+    """
+    ...
 
 class PegasusXScaledWordEmbedding(nn.Embedding):
+    """
+    This module overrides nn.Embeddings' forward by multiplying with embeddings scale.
+    """
     def __init__(
         self, num_embeddings: int, embedding_dim: int, padding_idx: int, embed_scale: Optional[float] = ...
     ) -> None: ...
-    def forward(self, input_ids: torch.Tensor): ...
+    def forward(self, input_ids: torch.Tensor):  # -> Tensor:
+        ...
 
 class PegasusXSinusoidalPositionalEmbedding(nn.Module):
+    """This module produces sinusoidal positional embeddings of any length."""
     def __init__(self, embed_dim, max_scale: int = ...) -> None: ...
     @torch.no_grad()
     def forward(
         self, input_embeds: torch.Tensor, past_key_values_length: int = ..., position_ids: Optional[torch.Tensor] = ...
-    ) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """`input_ids_shape` is expected to be [bsz x seqlen]."""
+        ...
 
 def eager_attention_forward(
     module: nn.Module,
@@ -57,9 +71,11 @@ def eager_attention_forward(
     dropout: float = ...,
     head_mask: Optional[torch.Tensor] = ...,
     **kwargs,
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class PegasusXAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(
         self,
         embed_dim: int,
@@ -81,9 +97,12 @@ class PegasusXAttention(nn.Module):
         output_attentions: bool = ...,
         cache_position: Optional[torch.Tensor] = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+        """Input shape: Batch x Time x Channel"""
+        ...
 
 class PegasusXGlobalLocalAttention(nn.Module):
+    """Global + Local attention. For use with Encoder only."""
     def __init__(
         self, embed_dim: int, num_heads: int, block_size: int, dropout: float = ..., is_decoder: bool = ...
     ) -> None: ...
@@ -93,13 +112,63 @@ class PegasusXGlobalLocalAttention(nn.Module):
         global_hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = ...,
         output_attentions: bool = ...,
-    ) -> tuple[torch.Tensor, torch.Tensor, Optional[torch.Tensor]]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor, Optional[torch.Tensor]]:
+        """Input shape: Batch x Time x Channel"""
+        ...
+
     def compute_global_attention_representations(
         self, global_q, global_k, global_v, local_k, local_v, mask, dim: DimensionInfo
-    ): ...
+    ):  # -> tuple[Tensor, Tensor]:
+        """Compute attention representations for global tokens.
+
+        Global tokens will attend to both global tokens as well as all input sequence tokens. Because the input
+        sequence tokens are arranged in blocks for local attention, we unblock them and compute attention.
+
+        Args:
+            global_q (`torch.FloatTensor`) of shape [batch_size, num_heads, global_len, dim_per_head]:
+                query vectors from global tokens
+            global_k (`torch.FloatTensor`) of shape [batch_size, num_heads, global_len, dim_per_head]:
+                key vectors from global tokens
+            global_v (`torch.FloatTensor`) of shape [batch_size, num_heads, global_len, dim_per_head]:
+                value vectors from global tokens
+            local_k (`torch.FloatTensor`) of shape [batch_size, num_heads, padded_seq_len, dim_per_head]:
+                key vectors from local tokens
+            local_v (`torch.FloatTensor`) of shape [batch_size, num_heads, padded_seq_len, dim_per_head]:
+                value vectors from local tokens
+            mask (`torch.FloatTensor`) of shape [batch_size, padded_seq_len]: attention mask
+            dim (DimensionInfo): DimensionInfo wrapper for dimensions
+
+        Returns:
+            output of shape `[batch_sizes, length, features]`. where length will be padded to a multiple of block_size
+        """
+        ...
+
     def compute_local_attention_representations(
         self, global_k, global_v, local_q, local_k, local_v, mask, dim: DimensionInfo
-    ): ...
+    ):  # -> tuple[Tensor, Tensor]:
+        """Compute attention representations for local tokens.
+
+        Local tokens will attend to both global tokens as well as all other tokens within the same local block. Hence,
+        we need to tile and concatenate the global tokens to every local block
+
+        Args:
+            global_k (`torch.FloatTensor`) of shape [batch_size, num_heads, global_len, dim_per_head]:
+                key vectors from global tokens
+            global_v (`torch.FloatTensor`) of shape [batch_size, num_heads, global_len, dim_per_head]:
+                value vectors from global tokens
+            local_q (`torch.FloatTensor`) of shape [batch_size, num_heads, padded_seq_len, dim_per_head]:
+                query vectors from local tokens
+            local_k (`torch.FloatTensor`) of shape [batch_size, num_heads, padded_seq_len, dim_per_head]:
+                key vectors from local tokens
+            local_v (`torch.FloatTensor`) of shape [batch_size, num_heads, padded_seq_len, dim_per_head]:
+                value vectors from local tokens
+            mask (`torch.FloatTensor`) of shape [batch_size, padded_seq_len]: attention mask
+            dim (DimensionInfo): DimensionInfo wrapper for dimensions
+
+        Returns:
+            output of shape `[batch_sizes, length, features]`. where length will be padded to a multiple of block_size
+        """
+        ...
 
 class PegasusXEncoderLayer(GradientCheckpointingLayer):
     def __init__(self, stagger_blocks_this_layer: bool, config: PegasusXConfig) -> None: ...
@@ -109,9 +178,23 @@ class PegasusXEncoderLayer(GradientCheckpointingLayer):
         global_hidden_states: torch.Tensor,
         attention_mask: torch.Tensor,
         output_attentions: bool = ...,
-    ) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape *(seq_len, batch, embed_dim)*
+            global_hidden_states (`torch.FloatTensor`): global token hidden states
+                *(seq_len, num_global_tokens, embed_dim)*
+            attention_mask (`torch.FloatTensor`): attention mask of size
+                *(batch, 1, tgt_len, src_len)* where padding elements are indicated by very large negative values.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+        """
+        ...
+
     @classmethod
-    def pad_local_tokens(cls, hidden_states, attention_mask, block_size): ...
+    def pad_local_tokens(cls, hidden_states, attention_mask, block_size):  # -> tuple[Any, Any]:
+        ...
     @classmethod
     def unpad_local_tokens(cls, padded_hidden_states, block_size): ...
 
@@ -127,7 +210,26 @@ class PegasusXDecoderLayer(GradientCheckpointingLayer):
         output_attentions: Optional[bool] = ...,
         use_cache: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
-    ) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape *(seq_len, batch, embed_dim)*
+            attention_mask (`torch.FloatTensor`): attention mask of size
+                *(batch, 1, tgt_len, src_len)* where padding elements are indicated by very large negative values.
+            encoder_hidden_states (`torch.FloatTensor`):
+                cross attention input to the layer of shape *(seq_len, batch, embed_dim)*
+            encoder_attention_mask (`torch.FloatTensor`): encoder attention mask of size
+                *(batch, 1, tgt_len, src_len)* where padding elements are indicated by very large negative values.
+            past_key_value (`Tuple(torch.FloatTensor)`): cached past key and value projection states
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            use_cache: Whether to us KV cache for decoding
+            cache_position (`torch.LongTensor` of shape `(sequence_length)`, *optional*):
+                Indices depicting the position of the input sequence tokens in the sequence. It is used to update the
+                cache in the correct position and to infer the complete sequence length.
+        """
+        ...
 
 @auto_docstring
 class PegasusXPreTrainedModel(PreTrainedModel):
@@ -141,9 +243,36 @@ class PegasusXPreTrainedModel(PreTrainedModel):
     _can_compile_fullgraph = ...
 
 class PegasusXEncoder(PegasusXPreTrainedModel):
+    """
+    Transformer encoder consisting of *config.encoder_layers* self attention layers. Each layer is a
+    [`PegasusXEncoderLayer`].
+
+    Args:
+        config: PegasusXConfig
+        embed_tokens (nn.Embedding): output embedding
+    """
     def __init__(self, config: PegasusXConfig, embed_tokens: Optional[nn.Embedding] = ...) -> None: ...
-    def resize_position_embeddings(self, new_num_position_embeddings: int): ...
-    def get_position_embeddings(self) -> nn.Embedding: ...
+    def resize_position_embeddings(self, new_num_position_embeddings: int):  # -> None:
+        """
+        Resizes position embeddings matrix of the model if `new_num_position_embeddings !=
+        config.max_position_embeddings`.
+
+        Arguments:
+            new_num_position_embeddings (`int`):
+                The number of new position embeddings. If position embeddings are learned, increasing the size will add
+                newly initialized vectors at the end, whereas reducing the size will remove vectors from the end. If
+                position embeddings are not learned (*e.g.* sinusoidal position embeddings), increasing the size will
+                add correct vectors at the end following the position encoding algorithm, whereas reducing the size
+                will remove vectors from the end.
+        """
+        ...
+
+    def get_position_embeddings(self) -> nn.Embedding:
+        """
+        Returns the position embeddings matrix
+        """
+        ...
+
     def forward(
         self,
         input_ids=...,
@@ -152,9 +281,48 @@ class PegasusXEncoder(PegasusXPreTrainedModel):
         output_attentions=...,
         output_hidden_states=...,
         return_dict=...,
-    ): ...
+    ):  # -> tuple[Any | tuple[tuple[Any, Any], ...] | tuple[Any | Tensor, ...] | tuple[()] | tuple[Any | None, ...], ...] | BaseModelOutput:
+        r"""
+        Args:
+            input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
+                Indices of input sequence tokens in the vocabulary. Padding will be ignored by default should you
+                provide it.
+
+                Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+                [`PreTrainedTokenizer.__call__`] for details.
+
+                [What are input IDs?](../glossary#input-ids)
+            attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Mask to avoid performing attention on padding token indices. Mask values selected in `[0, 1]`:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+
+            inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*):
+                Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation.
+                This is useful if you want more control over how to convert `input_ids` indices into associated vectors
+                than the model's internal embedding lookup matrix.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers. See `hidden_states` under returned tensors
+                for more detail.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`~utils.ModelOutput`] instead of a plain tuple.
+        """
+        ...
 
 class PegasusXDecoder(PegasusXPreTrainedModel):
+    """
+    Transformer decoder consisting of *config.decoder_layers* layers. Each layer is a [`PegasusDecoderLayer`]
+
+    Args:
+        config: PegasusXConfig
+        embed_tokens (nn.Embedding): output embedding
+    """
     def __init__(self, config: PegasusXConfig, embed_tokens: Optional[nn.Embedding] = ...) -> None: ...
     def forward(
         self,
@@ -169,18 +337,99 @@ class PegasusXDecoder(PegasusXPreTrainedModel):
         output_hidden_states=...,
         return_dict=...,
         cache_position=...,
-    ): ...
+    ):
+        r"""
+        Args:
+            input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
+                Indices of input sequence tokens in the vocabulary. Padding will be ignored by default should you
+                provide it.
+
+                Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+                [`PreTrainedTokenizer.__call__`] for details.
+
+                [What are input IDs?](../glossary#input-ids)
+            attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Mask to avoid performing attention on padding token indices. Mask values selected in `[0, 1]`:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+            encoder_hidden_states (`torch.FloatTensor` of shape `(batch_size, encoder_sequence_length, hidden_size)`, *optional*):
+                Sequence of hidden-states at the output of the last layer of the encoder. Used in the cross-attention
+                of the decoder.
+            encoder_attention_mask (`torch.LongTensor` of shape `(batch_size, encoder_sequence_length)`, *optional*):
+                Mask to avoid performing cross-attention on padding tokens indices of encoder input_ids. Mask values
+                selected in `[0, 1]`:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+
+            past_key_values (`Cache`, *optional*, returned when `use_cache=True` is passed or when `config.use_cache=True`):
+                Tuple of `tuple(torch.FloatTensor)` of length `config.n_layers`, with each tuple having 2 tensors of
+                shape `(batch_size, num_heads, sequence_length, embed_size_per_head)`) and 2 additional tensors of
+                shape `(batch_size, num_heads, encoder_sequence_length, embed_size_per_head)`.
+
+                Contains pre-computed hidden-states (key and values in the self-attention blocks and in the
+                cross-attention blocks) that can be used (see `past_key_values` input) to speed up sequential decoding.
+
+                If `past_key_values` are used, the user can optionally input only the last `decoder_input_ids` (those
+                that don't have their past key value states given to this model) of shape `(batch_size, 1)` instead of
+                all `decoder_input_ids` of shape `(batch_size, sequence_length)`.
+            inputs_embeds (`torch.FloatTensor` of
+                shape `(batch_size, sequence_length, hidden_size)`, *optional*): Optionally, instead of passing
+                `input_ids` you can choose to directly pass an embedded representation. This is useful if you want more
+                control over how to convert `input_ids` indices into associated vectors than the model's internal
+                embedding lookup matrix.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers. See `hidden_states` under returned tensors
+                for more detail.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`~utils.ModelOutput`] instead of a plain tuple.
+            cache_position (`torch.LongTensor` of shape `(sequence_length)`, *optional*):
+                Indices depicting the position of the input sequence tokens in the sequence. It is used to update the
+                cache in the correct position and to infer the complete sequence length.
+        """
+        ...
 
 @auto_docstring
 class PegasusXModel(PegasusXPreTrainedModel):
     _tied_weights_keys = ...
     def __init__(self, config: PegasusXConfig) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
-    def get_encoder(self): ...
-    def get_decoder(self): ...
-    def resize_position_embeddings(self, new_num_position_embeddings: int): ...
-    def get_position_embeddings(self) -> tuple[nn.Embedding]: ...
+    def get_input_embeddings(self):  # -> PegasusXScaledWordEmbedding | Module:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
+    def get_encoder(self):  # -> PegasusXEncoder:
+        ...
+    def get_decoder(self):  # -> PegasusXDecoder:
+        ...
+    def resize_position_embeddings(self, new_num_position_embeddings: int):  # -> None:
+        """
+        Resizes position embeddings matrix of the model if `new_num_position_embeddings !=
+        config.max_position_embeddings`.
+
+        Arguments:
+            new_num_position_embeddings (`int`):
+                The number of new position embeddings. If position embeddings are learned, increasing the size will add
+                newly initialized vectors at the end, whereas reducing the size will remove vectors from the end. If
+                position embeddings are not learned (*e.g.* sinusoidal position embeddings), increasing the size will
+                add correct vectors at the end following the position encoding algorithm, whereas reducing the size
+                will remove vectors from the end.
+        """
+        ...
+
+    def get_position_embeddings(self) -> tuple[nn.Embedding]:
+        """
+        Returns the position embeddings matrix
+        """
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -197,17 +446,75 @@ class PegasusXModel(PegasusXPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple, Seq2SeqModelOutput]: ...
+    ) -> Union[tuple, Seq2SeqModelOutput]:
+        r"""
+        decoder_input_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Indices of decoder input sequence tokens in the vocabulary.
 
-@auto_docstring(custom_intro=...)
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are decoder input IDs?](../glossary#decoder-input-ids)
+
+            PEGASUS-X uses the `pad_token_id` as the starting token for `decoder_input_ids` generation. If
+            `past_key_values` is used, optionally only the last `decoder_input_ids` have to be input (see
+            `past_key_values`).
+        decoder_attention_mask (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Default behavior: generate a tensor that ignores pad tokens in `decoder_input_ids`. Causal mask will also
+            be used by default.
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, PegasusModel
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("google/pegasus-x-large")
+        >>> model = PegasusModel.from_pretrained("google/pegasus-x-large")
+
+        >>> inputs = tokenizer("Studies have been shown that owning a dog is good for you", return_tensors="pt")
+        >>> decoder_inputs = tokenizer("Studies show that", return_tensors="pt")
+        >>> outputs = model(input_ids=inputs.input_ids, decoder_input_ids=decoder_inputs.input_ids)
+
+        >>> last_hidden_states = outputs.last_hidden_state
+        >>> list(last_hidden_states.shape)
+        [1, 4, 1024]
+        ```"""
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    The PEGASUS-X for conditional generation (e.g. summarization).
+    """
+)
 class PegasusXForConditionalGeneration(PegasusXPreTrainedModel, GenerationMixin):
     base_model_prefix = ...
     _tied_weights_keys = ...
     def __init__(self, config: PegasusXConfig) -> None: ...
-    def get_encoder(self): ...
-    def get_decoder(self): ...
-    def resize_position_embeddings(self, new_num_position_embeddings: int): ...
-    def get_position_embeddings(self) -> tuple[nn.Embedding]: ...
+    def get_encoder(self):  # -> PegasusXEncoder:
+        ...
+    def get_decoder(self):  # -> PegasusXDecoder:
+        ...
+    def resize_position_embeddings(self, new_num_position_embeddings: int):  # -> None:
+        """
+        Resizes position embeddings matrix of the model if `new_num_position_embeddings !=
+        config.max_position_embeddings`.
+
+        Arguments:
+            new_num_position_embeddings (`int`):
+                The number of new position embeddings. If position embeddings are learned, increasing the size will add
+                newly initialized vectors at the end, whereas reducing the size will remove vectors from the end. If
+                position embeddings are not learned (*e.g.* sinusoidal position embeddings), increasing the size will
+                add correct vectors at the end following the position encoding algorithm, whereas reducing the size
+                will remove vectors from the end.
+        """
+        ...
+
+    def get_position_embeddings(self) -> tuple[nn.Embedding]:
+        """
+        Returns the position embeddings matrix
+        """
+        ...
+
     @auto_docstring
     def forward(
         self,
@@ -225,11 +532,39 @@ class PegasusXForConditionalGeneration(PegasusXPreTrainedModel, GenerationMixin)
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple, Seq2SeqLMOutput]: ...
-    def prepare_decoder_input_ids_from_labels(self, labels: torch.Tensor): ...
+    ) -> Union[tuple, Seq2SeqLMOutput]:
+        r"""
+        decoder_input_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Indices of decoder input sequence tokens in the vocabulary.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are decoder input IDs?](../glossary#decoder-input-ids)
+
+            PEGASUS-X uses the `pad_token_id` as the starting token for `decoder_input_ids` generation. If
+            `past_key_values` is used, optionally only the last `decoder_input_ids` have to be input (see
+            `past_key_values`).
+        decoder_attention_mask (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Default behavior: generate a tensor that ignores pad tokens in `decoder_input_ids`. Causal mask will also
+            be used by default.
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+        """
+        ...
+
+    def prepare_decoder_input_ids_from_labels(self, labels: torch.Tensor):  # -> Tensor:
+        ...
 
 class PegasusXDecoderWrapper(PegasusXPreTrainedModel):
+    """
+    This wrapper class is a helper class to correctly load pretrained checkpoints when the causal language model is
+    used in combination with the [`EncoderDecoderModel`] framework.
+    """
     def __init__(self, config) -> None: ...
-    def forward(self, *args, **kwargs): ...
+    def forward(self, *args, **kwargs):  # -> Any:
+        ...
 
 __all__ = ["PegasusXForConditionalGeneration", "PegasusXModel", "PegasusXPreTrainedModel"]

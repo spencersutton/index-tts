@@ -8,12 +8,24 @@ from ...image_processing_utils_fast import BaseImageProcessorFast, DefaultFastIm
 from ...image_utils import SizeDict
 from ...utils import auto_docstring, is_torch_available, is_torchvision_available
 
+"""Fast Image processor class for Vilt."""
 if is_torch_available(): ...
 if is_torchvision_available(): ...
 MAX_LONGER_EDGE = ...
 MAX_SHORTER_EDGE = ...
 
 class ViltFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
+    """
+    Args:
+        do_pad (`bool`, *optional*, defaults to `True`):
+            Whether to pad the image. If `True`, will pad the images in the batch to the largest height and width
+            in the batch. Padding will be applied to the bottom and right with zeros.
+        size_divisor (`int`, *optional*, defaults to 32):
+            The size to make the height and width divisible by.
+        rescale_factor (`float`, *optional*, defaults to 1/255):
+            The factor to rescale the image by.
+    """
+
     do_pad: Optional[bool]
     size_divisor: Optional[int]
     rescale_factor: Optional[float]
@@ -39,6 +51,19 @@ class ViltImageProcessorFast(BaseImageProcessorFast):
         size: SizeDict,
         interpolation: Optional[F.InterpolationMode] = ...,
         size_divisor: Optional[int] = ...,
-    ) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """
+        Resize an image or batch of images to specified size.
+
+        Args:
+            images (`torch.Tensor`): Image or batch of images to resize.
+            size (`dict[str, int]`): Size dictionary with shortest_edge key.
+            interpolation (`F.InterpolationMode`, *optional*): Interpolation method to use.
+            size_divisor (`int`, *optional*): Value to ensure height/width are divisible by.
+
+        Returns:
+            `torch.Tensor`: Resized image or batch of images.
+        """
+        ...
 
 __all__ = ["ViltImageProcessorFast"]

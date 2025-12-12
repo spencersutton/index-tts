@@ -17,11 +17,17 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import ModelOutput, auto_docstring
 from .configuration_albert import AlbertConfig
 
+"""PyTorch ALBERT model."""
 logger = ...
 
-def load_tf_weights_in_albert(model, config, tf_checkpoint_path): ...
+def load_tf_weights_in_albert(model, config, tf_checkpoint_path):
+    """Load tf checkpoints in a pytorch model."""
+    ...
 
 class AlbertEmbeddings(nn.Module):
+    """
+    Construct the embeddings from word, position and token_type embeddings.
+    """
     def __init__(self, config: AlbertConfig) -> None: ...
     def forward(
         self,
@@ -104,6 +110,17 @@ class AlbertPreTrainedModel(PreTrainedModel):
     """
 )
 class AlbertForPreTrainingOutput(ModelOutput):
+    r"""
+    loss (*optional*, returned when `labels` is provided, `torch.FloatTensor` of shape `(1,)`):
+        Total loss as the sum of the masked language modeling loss and the next sequence prediction
+        (classification) loss.
+    prediction_logits (`torch.FloatTensor` of shape `(batch_size, sequence_length, config.vocab_size)`):
+        Prediction scores of the language modeling head (scores for each vocabulary token before SoftMax).
+    sop_logits (`torch.FloatTensor` of shape `(batch_size, 2)`):
+        Prediction scores of the next sequence prediction (classification) head (scores of True/False continuation
+        before SoftMax).
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     prediction_logits: Optional[torch.FloatTensor] = ...
     sop_logits: Optional[torch.FloatTensor] = ...
@@ -114,7 +131,13 @@ class AlbertForPreTrainingOutput(ModelOutput):
 class AlbertModel(AlbertPreTrainedModel):
     config: AlbertConfig
     base_model_prefix = ...
-    def __init__(self, config: AlbertConfig, add_pooling_layer: bool = ...) -> None: ...
+    def __init__(self, config: AlbertConfig, add_pooling_layer: bool = ...) -> None:
+        r"""
+        add_pooling_layer (bool, *optional*, defaults to `True`):
+            Whether to add a pooling layer
+        """
+        ...
+
     def get_input_embeddings(self) -> nn.Embedding: ...
     def set_input_embeddings(self, value: nn.Embedding) -> None: ...
     @auto_docstring
@@ -131,7 +154,12 @@ class AlbertModel(AlbertPreTrainedModel):
         return_dict: Optional[bool] = ...,
     ) -> Union[BaseModelOutputWithPooling, tuple]: ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Albert Model with two heads on top as done during the pretraining: a `masked language modeling` head and a
+    `sentence order prediction (classification)` head.
+    """
+)
 class AlbertForPreTraining(AlbertPreTrainedModel):
     _tied_weights_keys = ...
     def __init__(self, config: AlbertConfig) -> None: ...
@@ -152,7 +180,34 @@ class AlbertForPreTraining(AlbertPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[AlbertForPreTrainingOutput, tuple]: ...
+    ) -> Union[AlbertForPreTrainingOutput, tuple]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should be in `[-100, 0, ...,
+            config.vocab_size]` (see `input_ids` docstring) Tokens with indices set to `-100` are ignored (masked), the
+            loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`
+        sentence_order_label (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the next sequence prediction (classification) loss. Input should be a sequence pair
+            (see `input_ids` docstring) Indices should be in `[0, 1]`. `0` indicates original order (sequence A, then
+            sequence B), `1` indicates switched order (sequence B, then sequence A).
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, AlbertForPreTraining
+        >>> import torch
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("albert/albert-base-v2")
+        >>> model = AlbertForPreTraining.from_pretrained("albert/albert-base-v2")
+
+        >>> input_ids = torch.tensor(tokenizer.encode("Hello, my dog is cute", add_special_tokens=True)).unsqueeze(0)
+        >>> # Batch size 1
+        >>> outputs = model(input_ids)
+
+        >>> prediction_logits = outputs.prediction_logits
+        >>> sop_logits = outputs.sop_logits
+        ```"""
+        ...
 
 class AlbertMLMHead(nn.Module):
     def __init__(self, config: AlbertConfig) -> None: ...
@@ -182,9 +237,50 @@ class AlbertForMaskedLM(AlbertPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[MaskedLMOutput, tuple]: ...
+    ) -> Union[MaskedLMOutput, tuple]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should be in `[-100, 0, ...,
+            config.vocab_size]` (see `input_ids` docstring) Tokens with indices set to `-100` are ignored (masked), the
+            loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`
 
-@auto_docstring(custom_intro=...)
+        Example:
+
+        ```python
+        >>> import torch
+        >>> from transformers import AutoTokenizer, AlbertForMaskedLM
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("albert/albert-base-v2")
+        >>> model = AlbertForMaskedLM.from_pretrained("albert/albert-base-v2")
+
+        >>> # add mask_token
+        >>> inputs = tokenizer("The capital of [MASK] is Paris.", return_tensors="pt")
+        >>> with torch.no_grad():
+        ...     logits = model(**inputs).logits
+
+        >>> # retrieve index of [MASK]
+        >>> mask_token_index = (inputs.input_ids == tokenizer.mask_token_id)[0].nonzero(as_tuple=True)[0]
+        >>> predicted_token_id = logits[0, mask_token_index].argmax(axis=-1)
+        >>> tokenizer.decode(predicted_token_id)
+        'france'
+        ```
+
+        ```python
+        >>> labels = tokenizer("The capital of France is Paris.", return_tensors="pt")["input_ids"]
+        >>> labels = torch.where(inputs.input_ids == tokenizer.mask_token_id, labels, -100)
+        >>> outputs = model(**inputs, labels=labels)
+        >>> round(outputs.loss.item(), 2)
+        0.81
+        ```
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    Albert Model transformer with a sequence classification/regression head on top (a linear layer on top of the pooled
+    output) e.g. for GLUE tasks.
+    """
+)
 class AlbertForSequenceClassification(AlbertPreTrainedModel):
     def __init__(self, config: AlbertConfig) -> None: ...
     @auto_docstring
@@ -200,7 +296,14 @@ class AlbertForSequenceClassification(AlbertPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[SequenceClassifierOutput, tuple]: ...
+    ) -> Union[SequenceClassifierOutput, tuple]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 @auto_docstring
 class AlbertForTokenClassification(AlbertPreTrainedModel):
@@ -218,7 +321,12 @@ class AlbertForTokenClassification(AlbertPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[TokenClassifierOutput, tuple]: ...
+    ) -> Union[TokenClassifierOutput, tuple]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the token classification loss. Indices should be in `[0, ..., config.num_labels - 1]`.
+        """
+        ...
 
 @auto_docstring
 class AlbertForQuestionAnswering(AlbertPreTrainedModel):
@@ -255,7 +363,38 @@ class AlbertForMultipleChoice(AlbertPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[AlbertForPreTrainingOutput, tuple]: ...
+    ) -> Union[AlbertForPreTrainingOutput, tuple]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`):
+            Indices of input sequence tokens in the vocabulary.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.__call__`] and
+            [`PreTrainedTokenizer.encode`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        token_type_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`, *optional*):
+            Segment token indices to indicate first and second portions of the inputs. Indices are selected in `[0,
+            1]`:
+
+            - 0 corresponds to a *sentence A* token,
+            - 1 corresponds to a *sentence B* token.
+
+            [What are token type IDs?](../glossary#token-type-ids)
+        position_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`, *optional*):
+            Indices of positions of each input sequence tokens in the position embeddings. Selected in the range `[0,
+            config.max_position_embeddings - 1]`.
+
+            [What are position IDs?](../glossary#position-ids)
+        inputs_embeds (`torch.FloatTensor` of shape `(batch_size, num_choices, sequence_length, hidden_size)`, *optional*):
+            Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation. This
+            is useful if you want more control over how to convert `input_ids` indices into associated vectors than the
+            model's internal embedding lookup matrix.
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the multiple choice classification loss. Indices should be in `[0, ...,
+            num_choices-1]` where *num_choices* is the size of the second dimension of the input tensors. (see
+            *input_ids* above)
+        """
+        ...
 
 __all__ = [
     "load_tf_weights_in_albert",

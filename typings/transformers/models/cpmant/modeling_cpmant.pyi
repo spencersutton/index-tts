@@ -12,11 +12,20 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring
 from .configuration_cpmant import CpmAntConfig
 
+"""PyTorch CPMAnt"""
 logger = ...
 
 class CpmAntLayerNorm(nn.Module):
+    """
+    We use Root Mean Square (RMS) Layer Normalization, please see https://huggingface.co/papers/1910.07467 for details."
+    """
     def __init__(self, config: CpmAntConfig) -> None: ...
-    def forward(self, hidden_states: torch.Tensor): ...
+    def forward(self, hidden_states: torch.Tensor):  # -> Tensor:
+        """
+        Args:
+            hidden_states (`torch.Tensor` of shape `(batch, seq_len, dim_in)`)
+        """
+        ...
 
 class CpmAntAttention(nn.Module):
     def __init__(self, config: CpmAntConfig, layer_idx=...) -> None: ...
@@ -30,7 +39,26 @@ class CpmAntAttention(nn.Module):
         past_key_values: Optional[Cache] = ...,
         use_cache: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
-    ): ...
+    ):  # -> tuple[Any, Tensor | None]:
+        """
+        Args:
+            hidden_q (`torch.Tensor`):
+                Input of transformer block(self-attention block). It can be the raw embedding of a batch of sequences.
+            hidden_kv (`torch.Tensor` of shape `(batch, len_k, dim_model)`)):
+                Tensor *key_value* and *query* of shape `(batch, len_k, dim_model)`
+            attention_mask (`torch.Tensor` of shape `(batch, len_seq, len_seq)`):
+                Avoid invalid areas to participate in the calculation of self-attention.
+            position_bias (`torch.Tensor` of shape `(batch, len_seq, len_seq)`):
+                Provide positional information to self-attention block.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers.
+            past_key_values (`tuple[torch.Tensor, torch.Tensor]`, *optional*):
+                Cached past key and value projection states.
+            use_cache (`bool`, *optional*):
+                If set to `True`, `past_key_values` key value states are returned and can be used to speed up decoding
+                (see `past_key_values`).
+        """
+        ...
 
 class CpmAntSelfAttentionBlock(nn.Module):
     def __init__(self, config: CpmAntConfig, layer_idx=...) -> None: ...
@@ -43,19 +71,53 @@ class CpmAntSelfAttentionBlock(nn.Module):
         past_key_values: Optional[Cache] = ...,
         use_cache: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
-    ): ...
+    ):  # -> tuple[Tensor, Any]:
+        """
+        Args:
+            hidden_states (`torch.Tensor` of shape `(batch, len_seq, dim_model)`):
+                Input of transformer block(self-attention block). It can be the raw embedding of a batch of sequences.
+            attention_mask (`torch.Tensor` of shape `(batch, len_seq, len_seq)`):
+                Avoid invalid areas to participate in the calculation of self-attention.
+            position_bias (`torch.Tensor` of shape `(batch, len_seq, len_seq)`):
+                Provide positional information to self-attention block.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers.
+            past_key_values (`Tuple(torch.FloatTensor)`, *optional*):
+                Cached past key and value projection states.
+            use_cache (`bool`, *optional*):
+                If set to `True`, `past_key_values` key value states are returned and can be used to speed up decoding
+                (see `past_key_values`).
+        """
+        ...
 
 class CpmAntDenseGatedACT(nn.Module):
     def __init__(self, config: CpmAntConfig) -> None: ...
-    def forward(self, hidden_states: torch.Tensor): ...
+    def forward(self, hidden_states: torch.Tensor):  # -> Tensor:
+        """Transform an input tensor from one feature space to another via a nonlinear operation
+
+        Args:
+            hidden_states (`torch.Tensor` of shape `(batch, seq_len, dim_in)`)
+        """
+        ...
 
 class CpmAntFeedForward(nn.Module):
     def __init__(self, config: CpmAntConfig) -> None: ...
-    def forward(self, hidden_states: torch.Tensor): ...
+    def forward(self, hidden_states: torch.Tensor):  # -> Tensor:
+        """
+        Args:
+            hidden_states (`torch.Tensor` of shape `(batch, seq_len, dim_in)`)
+        """
+        ...
 
 class CpmAntFFNBlock(nn.Module):
     def __init__(self, config: CpmAntConfig) -> None: ...
-    def forward(self, hidden_states: torch.Tensor): ...
+    def forward(self, hidden_states: torch.Tensor):  # -> Tensor:
+        """
+        Args:
+            hidden_states (`torch.Tensor` of shape `(batch, len_seq, dim_model)`):
+                Hidden states before feed forward layer.
+        """
+        ...
 
 class CpmAntTransformerBlock(nn.Module):
     def __init__(self, config: CpmAntConfig, layer_idx=...) -> None: ...
@@ -68,7 +130,24 @@ class CpmAntTransformerBlock(nn.Module):
         past_key_values: Optional[Cache] = ...,
         use_cache: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
-    ): ...
+    ):  # -> tuple[Tensor, Any]:
+        """
+        Args:
+            hidden_states (`torch.Tensor`):
+                Input to the layer of shape `(batch, seq_len, dim_model)`
+            attention_mask (`torch.Tensor`):
+                Avoid invalid areas to participate in the calculation of shape `(batch, seq_len, seq_len)`
+            position_bias (`torch.Tensor`):
+                Provides position information to attention mechanism of shape `(num_heads, seq_len, seq_len)`
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers.
+            past_key_values (`tuple[torch.Tensor, torch.Tensor])`, *optional*):
+                Cached past key and value projection states
+            use_cache (`bool`, *optional*):
+                If set to `True`, `past_key_values` key value states are returned and can be used to speed up decoding
+                (see `past_key_values`).
+        """
+        ...
 
 class CpmAntEncoder(nn.Module):
     def __init__(self, config: CpmAntConfig) -> None: ...
@@ -82,7 +161,26 @@ class CpmAntEncoder(nn.Module):
         past_key_values: Optional[Cache] = ...,
         use_cache: Optional[bool] = ...,
         cache_postion: Optional[torch.Tensor] = ...,
-    ): ...
+    ):  # -> tuple[Tensor, tuple[Tensor, ...] | Any | tuple[()] | None, tuple[()] | tuple[Any, ...] | None]:
+        """
+        Args:
+            hidden_states (`torch.Tensor`):
+                Input to the layer of shape `(batch, seq_len, dim_model)`
+            attention_mask (`torch.Tensor`):
+                Avoid invalid areas to participate in the calculation of shape `(batch, seq_len, seq_len)`
+            position_bias (`torch.Tensor`):
+                Provides position information to attention mechanism of shape `(num_heads, seq_len, seq_len)`
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers.
+            past_key_values (`tuple[torch.Tensor, torch.Tensor])`, *optional*):
+                Cached past key and value projection states
+            use_cache (`bool`, *optional*):
+                If set to `True`, `past_key_values` key value states are returned and can be used to speed up decoding
+                (see `past_key_values`).
+        """
+        ...
 
 class CpmAntIntermediate(nn.Module):
     def __init__(self, config) -> None: ...
@@ -92,7 +190,8 @@ class CpmAntSegmentPositionEmbedding(nn.Module):
     def __init__(self, config: CpmAntConfig) -> None: ...
     def forward(
         self, key_pos: torch.Tensor, query_pos: torch.Tensor, key_segment: torch.Tensor, query_segment: torch.Tensor
-    ): ...
+    ):  # -> Tensor:
+        ...
 
 class CpmAntOutput(nn.Module):
     def __init__(self, config) -> None: ...
@@ -106,8 +205,10 @@ class CpmAntPreTrainedModel(PreTrainedModel):
 @auto_docstring
 class CpmAntModel(CpmAntPreTrainedModel):
     def __init__(self, config: CpmAntConfig) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, embeddings, **kwargs): ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, embeddings, **kwargs):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -119,9 +220,23 @@ class CpmAntModel(CpmAntPreTrainedModel):
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
         **kwargs,
-    ) -> Union[tuple[torch.Tensor], BaseModelOutputWithPast]: ...
+    ) -> Union[tuple[torch.Tensor], BaseModelOutputWithPast]:
+        r"""
+        input_ids (`torch.Tensor` of shape `(batch_size, seq_len)`):
+            Indices of input sequence tokens in the vocabulary.
 
-@auto_docstring(custom_intro=...)
+            Indices can be obtained using [`CPMAntTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    The CPMAnt Model with a language modeling head on top (linear layer with weights tied to the input embeddings).
+    """
+)
 class CpmAntForCausalLM(CpmAntPreTrainedModel, GenerationMixin):
     _tied_weights_keys = ...
     def __init__(self, config: CpmAntConfig) -> None: ...
@@ -138,8 +253,39 @@ class CpmAntForCausalLM(CpmAntPreTrainedModel, GenerationMixin):
         attention_mask: Optional[torch.Tensor] = ...,
         cache_position: Optional[torch.Tensor] = ...,
         **kwargs,
-    ) -> Union[tuple, CausalLMOutputWithPast]: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, embeddings): ...
+    ) -> Union[tuple, CausalLMOutputWithPast]:
+        r"""
+        input_ids (`torch.Tensor` of shape `(batch_size, seq_len)`):
+            Indices of input sequence tokens in the vocabulary.
+
+            Indices can be obtained using [`CPMAntTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        labels (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss.
+
+        Example:
+
+        Text Generation with CpmAntForCausalLM.
+        ```python
+        >>> from transformers import CPMAntTokenizer, CpmAntForCausalLM
+
+        >>> texts = "今天天气不错，"
+        >>> model = CpmAntForCausalLM.from_pretrained("openbmb/cpm-ant-10b")
+        >>> tokenizer = CPMAntTokenizer.from_pretrained("openbmb/cpm-ant-10b")
+        >>> input_ids = tokenizer(texts, return_tensors="pt")
+        >>> outputs = model.generate(**input_ids)
+        >>> output_texts = tokenizer.batch_decode(outputs)
+        >>> print(output_texts)
+        ['今天天气不错，阳光明媚，我和妈妈一起去超市买东西。\n在超市里，我看到了一个很好玩的玩具，它的名字叫“机器人”。它有一个圆圆的脑袋，两只圆圆的眼睛，还有一个圆圆的']
+        ```
+        """
+        ...
+
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, embeddings):  # -> None:
+        ...
 
 __all__ = ["CpmAntForCausalLM", "CpmAntModel", "CpmAntPreTrainedModel"]

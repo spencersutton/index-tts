@@ -18,37 +18,50 @@ from ...modeling_flax_utils import FlaxPreTrainedModel
 from ...utils import add_start_docstrings, add_start_docstrings_to_model_forward, replace_return_docstrings
 from .configuration_longt5 import LongT5Config
 
+"""Flax LongT5 model."""
 logger = ...
 _CHECKPOINT_FOR_DOC = ...
 _CONFIG_FOR_DOC = ...
 remat = ...
 
-def shift_tokens_right(input_ids: jnp.ndarray, pad_token_id: int, decoder_start_token_id: int) -> jnp.ndarray: ...
+def shift_tokens_right(input_ids: jnp.ndarray, pad_token_id: int, decoder_start_token_id: int) -> jnp.ndarray:
+    """
+    Shift input ids one token to the right.
+    """
+    ...
 
 class FlaxLongT5LayerNorm(nn.Module):
     hidden_size: int
     dtype: jnp.dtype = ...
     eps: float = ...
     weight_init: Callable[..., np.ndarray] = ...
-    def setup(self): ...
-    def __call__(self, hidden_states): ...
+    def setup(self):  # -> None:
+        ...
+    def __call__(self, hidden_states):
+        """
+        Construct a layernorm module in the LongT5 style; No bias and no subtraction of mean.
+        """
+        ...
 
 class FlaxLongT5DenseActDense(nn.Module):
     config: LongT5Config
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(self, hidden_states, deterministic=...): ...
 
 class FlaxLongT5DenseGatedActDense(nn.Module):
     config: LongT5Config
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(self, hidden_states, deterministic): ...
 
 class FlaxLongT5LayerFF(nn.Module):
     config: LongT5Config
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(self, hidden_states, deterministic=...): ...
 
 class FlaxLongT5Attention(nn.Module):
@@ -56,8 +69,12 @@ class FlaxLongT5Attention(nn.Module):
     has_relative_attention_bias: bool = ...
     causal: bool = ...
     dtype: jnp.dtype = ...
-    def setup(self): ...
-    def compute_bias(self, query_length, key_length): ...
+    def setup(self):  # -> None:
+        ...
+    def compute_bias(self, query_length, key_length):
+        """Compute binned relative position bias"""
+        ...
+
     def __call__(
         self,
         hidden_states,
@@ -68,14 +85,22 @@ class FlaxLongT5Attention(nn.Module):
         output_attentions=...,
         deterministic=...,
         init_cache=...,
-    ): ...
+    ):  # -> tuple[Any, Any, Any] | tuple[Any, Any]:
+        """
+        Self-attention (if key_value_states is None) or attention over source sentence (provided by key_value_states).
+        """
+        ...
 
 class FlaxLongT5LocalAttention(nn.Module):
     config: LongT5Config
     has_relative_attention_bias: bool = ...
     dtype: jnp.dtype = ...
-    def setup(self): ...
-    def compute_bias(self, block_length: int): ...
+    def setup(self):  # -> None:
+        ...
+    def compute_bias(self, block_length: int):
+        """Compute binned relative position bias"""
+        ...
+
     def __call__(
         self,
         hidden_states,
@@ -84,14 +109,22 @@ class FlaxLongT5LocalAttention(nn.Module):
         position_bias=...,
         output_attentions=...,
         deterministic=...,
-    ): ...
+    ):  # -> tuple[Any, Any | ndarray[_AnyShape, dtype[Any]], Any] | tuple[Any, Any | ndarray[_AnyShape, dtype[Any]]]:
+        """
+        Self-attention (if key_value_states is None) or attention over source sentence (provided by key_value_states).
+        """
+        ...
 
 class FlaxLongT5TransientGlobalAttention(nn.Module):
     config: LongT5Config
     has_relative_attention_bias: bool = ...
     dtype: jnp.dtype = ...
-    def setup(self): ...
-    def compute_bias(self, block_length: int): ...
+    def setup(self):  # -> None:
+        ...
+    def compute_bias(self, block_length: int):
+        """Compute binned relative position bias"""
+        ...
+
     def compute_side_bias(self, attention_mask: np.ndarray, global_segment_ids: np.ndarray) -> np.ndarray: ...
     def __call__(
         self,
@@ -101,13 +134,20 @@ class FlaxLongT5TransientGlobalAttention(nn.Module):
         position_bias=...,
         output_attentions=...,
         deterministic=...,
-    ): ...
+    ):  # -> tuple[Any, Any, Any] | tuple[Any, Any]:
+        """
+        Self-attention (if key_value_states is None) or attention over source sentence (provided by key_value_states).
+        """
+        ...
 
 class FlaxLongT5LayerLocalSelfAttention(nn.Module):
+    """Local self attention used in encoder"""
+
     config: LongT5Config
     has_relative_attention_bias: bool = ...
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         hidden_states,
@@ -116,13 +156,17 @@ class FlaxLongT5LayerLocalSelfAttention(nn.Module):
         output_attentions=...,
         deterministic=...,
         **kwargs: Any,
-    ): ...
+    ):  # -> tuple[Any, Any | ndarray[_AnyShape, dtype[Any]], Any] | tuple[Any, Any | ndarray[_AnyShape, dtype[Any]]]:
+        ...
 
 class FlaxLongT5LayerTransientGlobalSelfAttention(nn.Module):
+    """Transient-Global self attention used in encoder"""
+
     config: LongT5Config
     has_relative_attention_bias: bool = ...
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         hidden_states,
@@ -131,13 +175,15 @@ class FlaxLongT5LayerTransientGlobalSelfAttention(nn.Module):
         output_attentions=...,
         deterministic=...,
         **kwargs: Any,
-    ): ...
+    ):  # -> tuple[Any, Any, Any] | tuple[Any, Any]:
+        ...
 
 class FlaxLongT5LayerSelfAttention(nn.Module):
     config: LongT5Config
     has_relative_attention_bias: bool = ...
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         hidden_states,
@@ -146,12 +192,14 @@ class FlaxLongT5LayerSelfAttention(nn.Module):
         output_attentions=...,
         deterministic=...,
         init_cache=...,
-    ): ...
+    ):  # -> tuple[Any, Any, Any] | tuple[Any, Any]:
+        ...
 
 class FlaxLongT5LayerCrossAttention(nn.Module):
     config: LongT5Config
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         hidden_states,
@@ -160,13 +208,15 @@ class FlaxLongT5LayerCrossAttention(nn.Module):
         position_bias=...,
         output_attentions=...,
         deterministic=...,
-    ): ...
+    ):  # -> tuple[Any, Any, Any] | tuple[Any, Any]:
+        ...
 
 class FlaxLongT5Block(nn.Module):
     config: LongT5Config
     has_relative_attention_bias: bool = ...
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         hidden_states,
@@ -179,13 +229,15 @@ class FlaxLongT5Block(nn.Module):
         return_dict=...,
         deterministic=...,
         init_cache=...,
-    ): ...
+    ):  # -> tuple[Any | tuple[Any, Any | ndarray[_AnyShape, dtype[Any]], Any] | tuple[Any, Any | ndarray[_AnyShape, dtype[Any]]] | tuple[Any, Any, Any] | tuple[Any, Any], *tuple[Any | ndarray[_AnyShape, dtype[Any]], ...]] | tuple[Any | tuple[Any, Any | ndarray[_AnyShape, dtype[Any]], Any] | tuple[Any, Any | ndarray[_AnyShape, dtype[Any]]] | tuple[Any, Any, Any] | tuple[Any, Any], *tuple[Any, ...]] | tuple[Any | tuple[Any, Any | ndarray[_AnyShape, dtype[Any]], Any] | tuple[Any, Any | ndarray[_AnyShape, dtype[Any]]] | tuple[Any, Any, Any] | tuple[Any, Any], Any | ndarray[_AnyShape, dtype[Any]], Any] | tuple[Any | tuple[Any, Any | ndarray[_AnyShape, dtype[Any]], Any] | tuple[Any, Any | ndarray[_AnyShape, dtype[Any]]] | tuple[Any, Any, Any] | tuple[Any, Any], Any | ndarray[_AnyShape, dtype[Any]]] | tuple[Any | tuple[Any, Any | ndarray[_AnyShape, dtype[Any]], Any] | tuple[Any, Any | ndarray[_AnyShape, dtype[Any]]] | tuple[Any, Any, Any] | tuple[Any, Any], Any, Any] | tuple[Any | tuple[Any, Any | ndarray[_AnyShape, dtype[Any]], Any] | tuple[Any, Any | ndarray[_AnyShape, dtype[Any]]] | tuple[Any, Any, Any] | tuple[Any, Any], Any]:
+        ...
 
 class FlaxLongT5LayerCollection(nn.Module):
     config: LongT5Config
     has_relative_attention_bias: bool
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         hidden_states,
@@ -197,13 +249,15 @@ class FlaxLongT5LayerCollection(nn.Module):
         output_attentions=...,
         deterministic=...,
         init_cache=...,
-    ): ...
+    ):  # -> tuple[Any | tuple[Any, Any | ndarray[_AnyShape, dtype[Any]], Any] | tuple[Any, Any | ndarray[_AnyShape, dtype[Any]]] | tuple[Any, Any, Any] | tuple[Any, Any], *tuple[Any | ndarray[_AnyShape, dtype[Any]], ...]] | tuple[Any | tuple[Any, Any | ndarray[_AnyShape, dtype[Any]], Any] | tuple[Any, Any | ndarray[_AnyShape, dtype[Any]]] | tuple[Any, Any, Any] | tuple[Any, Any], *tuple[Any, ...]] | tuple[Any | tuple[Any, Any | ndarray[_AnyShape, dtype[Any]], Any] | tuple[Any, Any | ndarray[_AnyShape, dtype[Any]]] | tuple[Any, Any, Any] | tuple[Any, Any], Any | ndarray[_AnyShape, dtype[Any]], Any] | tuple[Any | tuple[Any, Any | ndarray[_AnyShape, dtype[Any]], Any] | tuple[Any, Any | ndarray[_AnyShape, dtype[Any]]] | tuple[Any, Any, Any] | tuple[Any, Any], Any | ndarray[_AnyShape, dtype[Any]]] | tuple[Any | tuple[Any, Any | ndarray[_AnyShape, dtype[Any]], Any] | tuple[Any, Any | ndarray[_AnyShape, dtype[Any]]] | tuple[Any, Any, Any] | tuple[Any, Any], Any, Any] | tuple[Any | tuple[Any, Any | ndarray[_AnyShape, dtype[Any]], Any] | tuple[Any, Any | ndarray[_AnyShape, dtype[Any]]] | tuple[Any, Any, Any] | tuple[Any, Any], Any]:
+        ...
 
 class FlaxLongT5BlockCollection(nn.Module):
     config: LongT5Config
     dtype: jnp.dtype = ...
     gradient_checkpointing: bool = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         hidden_states=...,
@@ -214,14 +268,16 @@ class FlaxLongT5BlockCollection(nn.Module):
         output_hidden_states: bool = ...,
         deterministic: bool = ...,
         init_cache: bool = ...,
-    ): ...
+    ):  # -> FlaxBaseModelOutputWithPastAndCrossAttentions:
+        ...
 
 class FlaxLongT5Stack(nn.Module):
     config: LongT5Config
     embed_tokens: nn.Embed
     dtype: jnp.dtype = ...
     gradient_checkpointing: bool = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids=...,
@@ -233,13 +289,19 @@ class FlaxLongT5Stack(nn.Module):
         return_dict: bool = ...,
         deterministic: bool = ...,
         init_cache: bool = ...,
-    ): ...
+    ):  # -> Any | FlaxBaseModelOutputWithPastAndCrossAttentions:
+        ...
 
 LONGT5_ENCODE_INPUTS_DOCSTRING = ...
 LONGT5_DECODE_INPUTS_DOCSTRING = ...
 LONGT5_INPUTS_DOCSTRING = ...
 
 class FlaxLongT5PreTrainedModel(FlaxPreTrainedModel):
+    """
+    An abstract class to handle weights initialization and a simple interface for downloading and loading pretrained
+    models.
+    """
+
     config_class = LongT5Config
     base_model_prefix = ...
     module_class: nn.Module = ...
@@ -252,7 +314,8 @@ class FlaxLongT5PreTrainedModel(FlaxPreTrainedModel):
         _do_init: bool = ...,
         **kwargs,
     ) -> None: ...
-    def enable_gradient_checkpointing(self): ...
+    def enable_gradient_checkpointing(self):  # -> None:
+        ...
     def init_weights(self, rng: jax.random.PRNGKey, input_shape: tuple, params: FrozenDict = ...) -> FrozenDict: ...
     @add_start_docstrings_to_model_forward(LONGT5_INPUTS_DOCSTRING)
     def __call__(
@@ -268,7 +331,22 @@ class FlaxLongT5PreTrainedModel(FlaxPreTrainedModel):
         params: Optional[dict] = ...,
         dropout_rng: PRNGKey = ...,
     ): ...
-    def init_cache(self, batch_size, max_length, encoder_outputs): ...
+    def init_cache(self, batch_size, max_length, encoder_outputs):
+        r"""
+        Args:
+            batch_size (`int`):
+                batch_size used for fast auto-regressive decoding. Defines the batch size of the initialized cache.
+            max_length (`int`):
+                maximum possible length for auto-regressive decoding. Defines the sequence length of the initialized
+                cache.
+            encoder_outputs (`Union[FlaxBaseModelOutput, tuple(tuple(jnp.ndarray)]`):
+                `encoder_outputs` consists of (`last_hidden_state`, *optional*: `hidden_states`, *optional*:
+                `attentions`). `last_hidden_state` of shape `(batch_size, sequence_length, hidden_size)`, *optional*)
+                is a sequence of hidden-states at the output of the last layer of the encoder. Used in the
+                cross-attention of the decoder.
+        """
+        ...
+
     @add_start_docstrings(LONGT5_ENCODE_INPUTS_DOCSTRING)
     @replace_return_docstrings(output_type=FlaxBaseModelOutput, config_class=LongT5Config)
     def encode(
@@ -281,7 +359,24 @@ class FlaxLongT5PreTrainedModel(FlaxPreTrainedModel):
         train: bool = ...,
         params: Optional[dict] = ...,
         dropout_rng: PRNGKey = ...,
-    ): ...
+    ):
+        r"""
+        Returns:
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, FlaxLongT5ForConditionalGeneration
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("google-t5/t5-base")
+        >>> model = FlaxLongT5ForConditionalGeneration.from_pretrained("google/long-t5-local-base")
+
+        >>> text = "My friends are cool but they eat too many carbs."
+        >>> inputs = tokenizer(text, return_tensors="np")
+        >>> encoder_outputs = model.encode(**inputs)
+        ```"""
+        ...
+
     @add_start_docstrings(LONGT5_DECODE_INPUTS_DOCSTRING)
     @replace_return_docstrings(output_type=FlaxBaseModelOutputWithPastAndCrossAttentions, config_class=LongT5Config)
     def decode(
@@ -297,16 +392,43 @@ class FlaxLongT5PreTrainedModel(FlaxPreTrainedModel):
         train: bool = ...,
         params: Optional[dict] = ...,
         dropout_rng: PRNGKey = ...,
-    ): ...
+    ):
+        r"""
+        Returns:
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, FlaxLongT5ForConditionalGeneration
+        >>> import jax.numpy as jnp
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("google-t5/t5-base")
+        >>> model = FlaxLongT5ForConditionalGeneration.from_pretrained("google/long-t5-local-base")
+
+        >>> text = "My friends are cool but they eat too many carbs."
+        >>> inputs = tokenizer(text, return_tensors="np")
+        >>> encoder_outputs = model.encode(**inputs)
+
+        >>> decoder_start_token_id = model.config.decoder_start_token_id
+        >>> decoder_input_ids = jnp.ones((inputs.input_ids.shape[0], 1), dtype="i4") * decoder_start_token_id
+
+        >>> outputs = model.decode(decoder_input_ids, encoder_outputs)
+        >>> logits = outputs.logits
+        ```"""
+        ...
 
 LONGT5_START_DOCSTRING = ...
 
-@add_start_docstrings(..., LONGT5_START_DOCSTRING)
+@add_start_docstrings(
+    "The bare LONGT5 Model transformer outputting raw hidden-stateswithout any specific head on top.",
+    LONGT5_START_DOCSTRING,
+)
 class FlaxLongT5Module(nn.Module):
     config: LongT5Config
     dtype: jnp.dtype = ...
     gradient_checkpointing: bool = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids=...,
@@ -318,19 +440,21 @@ class FlaxLongT5Module(nn.Module):
         output_hidden_states=...,
         return_dict=...,
         deterministic: bool = ...,
-    ): ...
+    ):  # -> Any | FlaxSeq2SeqModelOutput:
+        ...
 
 class FlaxLongT5Model(FlaxLongT5PreTrainedModel):
     module_class = ...
 
 FLAX_LONGT5_MODEL_DOCSTRING = ...
 
-@add_start_docstrings(..., LONGT5_START_DOCSTRING)
+@add_start_docstrings("""LONGT5 Model with a `language modeling` head on top.""", LONGT5_START_DOCSTRING)
 class FlaxLongT5ForConditionalGenerationModule(nn.Module):
     config: LongT5Config
     dtype: jnp.dtype = ...
     gradient_checkpointing: bool = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids=...,
@@ -342,7 +466,8 @@ class FlaxLongT5ForConditionalGenerationModule(nn.Module):
         output_hidden_states=...,
         return_dict=...,
         deterministic: bool = ...,
-    ): ...
+    ):  # -> Any | FlaxSeq2SeqLMOutput:
+        ...
 
 class FlaxLongT5ForConditionalGeneration(FlaxLongT5PreTrainedModel):
     module_class = ...
@@ -361,7 +486,31 @@ class FlaxLongT5ForConditionalGeneration(FlaxLongT5PreTrainedModel):
         train: bool = ...,
         params: Optional[dict] = ...,
         dropout_rng: PRNGKey = ...,
-    ): ...
+    ):  # -> FlaxCausalLMOutputWithCrossAttentions | Any:
+        r"""
+        Returns:
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, FlaxLongT5ForConditionalGeneration
+        >>> import jax.numpy as jnp
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("google-t5/t5-base")
+        >>> model = FlaxLongT5ForConditionalGeneration.from_pretrained("google/long-t5-local-base")
+
+        >>> text = "summarize: My friends are cool but they eat too many carbs."
+        >>> inputs = tokenizer(text, return_tensors="np")
+        >>> encoder_outputs = model.encode(**inputs)
+
+        >>> decoder_start_token_id = model.config.decoder_start_token_id
+        >>> decoder_input_ids = jnp.ones((inputs.input_ids.shape[0], 1), dtype="i4") * decoder_start_token_id
+
+        >>> outputs = model.decode(decoder_input_ids, encoder_outputs)
+        >>> logits = outputs.logits
+        ```"""
+        ...
+
     def prepare_inputs_for_generation(
         self,
         decoder_input_ids,
@@ -370,7 +519,8 @@ class FlaxLongT5ForConditionalGeneration(FlaxLongT5PreTrainedModel):
         decoder_attention_mask: Optional[jax.Array] = ...,
         encoder_outputs=...,
         **kwargs,
-    ): ...
+    ):  # -> dict[str, Any | None]:
+        ...
     def update_inputs_for_generation(self, model_outputs, model_kwargs): ...
 
 FLAX_LONGT5_CONDITIONAL_GENERATION_DOCSTRING = ...

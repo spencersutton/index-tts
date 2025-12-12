@@ -22,33 +22,46 @@ def get_angles(pos, i, d_model): ...
 def positional_encoding(position, d_model): ...
 
 class FlaxEmbeddings(nn.Module):
+    """Construct the embeddings from word, position and token_type embeddings."""
+
     config: DistilBertConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(self, input_ids, deterministic: bool = ...): ...
 
 class FlaxMultiHeadSelfAttention(nn.Module):
     config: DistilBertConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
-    def __call__(self, query, key, value, mask, deterministic: bool = ..., output_attentions: bool = ...): ...
+    def setup(self):  # -> None:
+        ...
+    def __call__(
+        self, query, key, value, mask, deterministic: bool = ..., output_attentions: bool = ...
+    ):  # -> tuple[Any, Any] | tuple[Any]:
+        ...
 
 class FlaxFFN(nn.Module):
     config: DistilBertConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(self, hidden_states, deterministic: bool = ...): ...
 
 class FlaxTransformerBlock(nn.Module):
     config: DistilBertConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
-    def __call__(self, hidden_states, attn_mask, output_attentions: bool = ..., deterministic: bool = ...): ...
+    def setup(self):  # -> None:
+        ...
+    def __call__(
+        self, hidden_states, attn_mask, output_attentions: bool = ..., deterministic: bool = ...
+    ):  # -> tuple[Any, Any] | tuple[Any]:
+        ...
 
 class FlaxTransformer(nn.Module):
     config: DistilBertConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         hidden_states,
@@ -57,12 +70,14 @@ class FlaxTransformer(nn.Module):
         output_hidden_states: bool = ...,
         deterministic: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any | tuple[()] | tuple[Any, ...], ...] | FlaxBaseModelOutput:
+        ...
 
 class FlaxTransformerEncoder(nn.Module):
     config: DistilBertConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         hidden_states,
@@ -71,16 +86,23 @@ class FlaxTransformerEncoder(nn.Module):
         output_hidden_states: bool = ...,
         deterministic: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any | tuple[()] | tuple[Any, ...], ...] | FlaxBaseModelOutput:
+        ...
 
 class FlaxDistilBertLMDecoder(nn.Module):
     config: DistilBertConfig
     dtype: jnp.dtype = ...
     bias_init: Callable[..., np.ndarray] = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(self, inputs, kernel): ...
 
 class FlaxDistilBertPreTrainedModel(FlaxPreTrainedModel):
+    """
+    An abstract class to handle weights initialization and a simple interface for downloading and loading pretrained
+    models.
+    """
+
     config_class = DistilBertConfig
     base_model_prefix = ...
     module_class: nn.Module = ...
@@ -111,7 +133,8 @@ class FlaxDistilBertPreTrainedModel(FlaxPreTrainedModel):
 class FlaxDistilBertModule(nn.Module):
     config: DistilBertConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids,
@@ -120,16 +143,21 @@ class FlaxDistilBertModule(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any | tuple[()] | tuple[Any, ...], ...] | FlaxBaseModelOutput:
+        ...
 
-@add_start_docstrings(..., FLAX_DISTILBERT_START_DOCSTRING)
+@add_start_docstrings(
+    "The bare DistilBert Model transformer outputting raw hidden-states without any specific head on top.",
+    FLAX_DISTILBERT_START_DOCSTRING,
+)
 class FlaxDistilBertModel(FlaxDistilBertPreTrainedModel):
     module_class = ...
 
 class FlaxDistilBertForMaskedLMModule(nn.Module):
     config: DistilBertConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids,
@@ -138,16 +166,18 @@ class FlaxDistilBertForMaskedLMModule(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, *tuple[Any | tuple[()] | tuple[Any, ...], ...]] | Any | FlaxMaskedLMOutput:
+        ...
 
-@add_start_docstrings(..., FLAX_DISTILBERT_START_DOCSTRING)
+@add_start_docstrings("""DistilBert Model with a `language modeling` head on top.""", FLAX_DISTILBERT_START_DOCSTRING)
 class FlaxDistilBertForMaskedLM(FlaxDistilBertPreTrainedModel):
     module_class = ...
 
 class FlaxDistilBertForSequenceClassificationModule(nn.Module):
     config: DistilBertConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids,
@@ -156,16 +186,24 @@ class FlaxDistilBertForSequenceClassificationModule(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, *tuple[Any | tuple[()] | tuple[Any, ...], ...]] | Any | FlaxSequenceClassifierOutput:
+        ...
 
-@add_start_docstrings(..., FLAX_DISTILBERT_START_DOCSTRING)
+@add_start_docstrings(
+    """
+    DistilBert Model transformer with a sequence classification/regression head on top (a linear layer on top of the
+    pooled output) e.g. for GLUE tasks.
+    """,
+    FLAX_DISTILBERT_START_DOCSTRING,
+)
 class FlaxDistilBertForSequenceClassification(FlaxDistilBertPreTrainedModel):
     module_class = ...
 
 class FlaxDistilBertForMultipleChoiceModule(nn.Module):
     config: DistilBertConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids,
@@ -174,16 +212,24 @@ class FlaxDistilBertForMultipleChoiceModule(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, *tuple[Any | tuple[()] | tuple[Any, ...], ...]] | Any | FlaxMultipleChoiceModelOutput:
+        ...
 
-@add_start_docstrings(..., FLAX_DISTILBERT_START_DOCSTRING)
+@add_start_docstrings(
+    """
+    DistilBert Model with a multiple choice classification head on top (a linear layer on top of the pooled output and
+    a softmax) e.g. for RocStories/SWAG tasks.
+    """,
+    FLAX_DISTILBERT_START_DOCSTRING,
+)
 class FlaxDistilBertForMultipleChoice(FlaxDistilBertPreTrainedModel):
     module_class = ...
 
 class FlaxDistilBertForTokenClassificationModule(nn.Module):
     config: DistilBertConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids,
@@ -192,16 +238,24 @@ class FlaxDistilBertForTokenClassificationModule(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, *tuple[Any | tuple[()] | tuple[Any, ...], ...]] | Any | FlaxTokenClassifierOutput:
+        ...
 
-@add_start_docstrings(..., FLAX_DISTILBERT_START_DOCSTRING)
+@add_start_docstrings(
+    """
+    DistilBert Model with a token classification head on top (a linear layer on top of the hidden-states output) e.g.
+    for Named-Entity-Recognition (NER) tasks.
+    """,
+    FLAX_DISTILBERT_START_DOCSTRING,
+)
 class FlaxDistilBertForTokenClassification(FlaxDistilBertPreTrainedModel):
     module_class = ...
 
 class FlaxDistilBertForQuestionAnsweringModule(nn.Module):
     config: DistilBertConfig
     dtype: jnp.dtype = ...
-    def setup(self): ...
+    def setup(self):  # -> None:
+        ...
     def __call__(
         self,
         input_ids,
@@ -210,9 +264,16 @@ class FlaxDistilBertForQuestionAnsweringModule(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ): ...
+    ):  # -> tuple[Any, Any, *tuple[Any | tuple[()] | tuple[Any, ...], ...]] | Any | FlaxQuestionAnsweringModelOutput:
+        ...
 
-@add_start_docstrings(..., FLAX_DISTILBERT_START_DOCSTRING)
+@add_start_docstrings(
+    """
+    DistilBert Model with a span classification head on top for extractive question-answering tasks like SQuAD (a
+    linear layers on top of the hidden-states output to compute `span start logits` and `span end logits`).
+    """,
+    FLAX_DISTILBERT_START_DOCSTRING,
+)
 class FlaxDistilBertForQuestionAnswering(FlaxDistilBertPreTrainedModel):
     module_class = ...
 

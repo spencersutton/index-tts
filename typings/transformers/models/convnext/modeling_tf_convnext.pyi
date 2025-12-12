@@ -16,25 +16,62 @@ from ...modeling_tf_utils import (
 from ...utils import add_start_docstrings, add_start_docstrings_to_model_forward, replace_return_docstrings
 from .configuration_convnext import ConvNextConfig
 
+"""TF 2.0 ConvNext model."""
 logger = ...
 _CONFIG_FOR_DOC = ...
 _CHECKPOINT_FOR_DOC = ...
 
 class TFConvNextDropPath(keras.layers.Layer):
+    """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks).
+    References:
+        (1) github.com:rwightman/pytorch-image-models
+    """
     def __init__(self, drop_path: float, **kwargs) -> None: ...
     def call(self, x: tf.Tensor, training=...): ...
 
 class TFConvNextEmbeddings(keras.layers.Layer):
+    """This class is comparable to (and inspired by) the SwinEmbeddings class
+    found in src/transformers/models/swin/modeling_swin.py.
+    """
     def __init__(self, config: ConvNextConfig, **kwargs) -> None: ...
     def call(self, pixel_values): ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFConvNextLayer(keras.layers.Layer):
+    """This corresponds to the `Block` class in the original implementation.
+
+    There are two equivalent implementations: [DwConv, LayerNorm (channels_first), Conv, GELU,1x1 Conv]; all in (N, C,
+    H, W) (2) [DwConv, Permute to (N, H, W, C), LayerNorm (channels_last), Linear, GELU, Linear]; Permute back
+
+    The authors used (2) as they find it slightly faster in PyTorch. Since we already permuted the inputs to follow
+    NHWC ordering, we can just apply the operations straight-away without the permutation.
+
+    Args:
+        config ([`ConvNextConfig`]): Model configuration class.
+        dim (`int`): Number of input channels.
+        drop_path (`float`): Stochastic depth rate. Default: 0.0.
+    """
     def __init__(self, config, dim, drop_path=..., **kwargs) -> None: ...
-    def build(self, input_shape: tf.TensorShape = ...): ...
+    def build(self, input_shape: tf.TensorShape = ...):  # -> None:
+        ...
     def call(self, hidden_states, training=...): ...
 
 class TFConvNextStage(keras.layers.Layer):
+    """ConvNext stage, consisting of an optional downsampling layer + multiple residual blocks.
+
+    Args:
+        config (`ConvNextV2Config`):
+            Model configuration class.
+        in_channels (`int`):
+            Number of input channels.
+        out_channels (`int`):
+            Number of output channels.
+        depth (`int`):
+            Number of residual blocks.
+        drop_path_rates(`list[float]`):
+            Stochastic depth rates for each layer.
+    """
     def __init__(
         self,
         config: ConvNextConfig,
@@ -47,12 +84,17 @@ class TFConvNextStage(keras.layers.Layer):
         **kwargs,
     ) -> None: ...
     def call(self, hidden_states): ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFConvNextEncoder(keras.layers.Layer):
     def __init__(self, config, **kwargs) -> None: ...
-    def call(self, hidden_states, output_hidden_states=..., return_dict=...): ...
-    def build(self, input_shape=...): ...
+    def call(
+        self, hidden_states, output_hidden_states=..., return_dict=...
+    ):  # -> tuple[Any | tuple[Any, ...] | tuple[()], ...] | TFBaseModelOutput:
+        ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 @keras_serializable
 class TFConvNextMainLayer(keras.layers.Layer):
@@ -66,9 +108,15 @@ class TFConvNextMainLayer(keras.layers.Layer):
         return_dict: bool | None = ...,
         training: bool = ...,
     ) -> TFBaseModelOutputWithPooling | tuple[tf.Tensor]: ...
-    def build(self, input_shape=...): ...
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 class TFConvNextPreTrainedModel(TFPreTrainedModel):
+    """
+    An abstract class to handle weights initialization and a simple interface for downloading and loading pretrained
+    models.
+    """
+
     config_class = ConvNextConfig
     base_model_prefix = ...
     main_input_name = ...
@@ -76,7 +124,9 @@ class TFConvNextPreTrainedModel(TFPreTrainedModel):
 CONVNEXT_START_DOCSTRING = ...
 CONVNEXT_INPUTS_DOCSTRING = ...
 
-@add_start_docstrings(..., CONVNEXT_START_DOCSTRING)
+@add_start_docstrings(
+    "The bare ConvNext model outputting raw features without any specific head on top.", CONVNEXT_START_DOCSTRING
+)
 class TFConvNextModel(TFConvNextPreTrainedModel):
     def __init__(self, config, *inputs, add_pooling_layer=..., **kwargs) -> None: ...
     @unpack_inputs
@@ -88,10 +138,39 @@ class TFConvNextModel(TFConvNextPreTrainedModel):
         output_hidden_states: bool | None = ...,
         return_dict: bool | None = ...,
         training: bool = ...,
-    ) -> TFBaseModelOutputWithPooling | tuple[tf.Tensor]: ...
-    def build(self, input_shape=...): ...
+    ) -> TFBaseModelOutputWithPooling | tuple[tf.Tensor]:
+        r"""
+        Returns:
 
-@add_start_docstrings(..., CONVNEXT_START_DOCSTRING)
+        Examples:
+
+        ```python
+        >>> from transformers import AutoImageProcessor, TFConvNextModel
+        >>> from PIL import Image
+        >>> import requests
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> image_processor = AutoImageProcessor.from_pretrained("facebook/convnext-tiny-224")
+        >>> model = TFConvNextModel.from_pretrained("facebook/convnext-tiny-224")
+
+        >>> inputs = image_processor(images=image, return_tensors="tf")
+        >>> outputs = model(**inputs)
+        >>> last_hidden_states = outputs.last_hidden_state
+        ```"""
+        ...
+
+    def build(self, input_shape=...):  # -> None:
+        ...
+
+@add_start_docstrings(
+    """
+    ConvNext Model with an image classification head on top (a linear layer on top of the pooled features), e.g. for
+    ImageNet.
+    """,
+    CONVNEXT_START_DOCSTRING,
+)
 class TFConvNextForImageClassification(TFConvNextPreTrainedModel, TFSequenceClassificationLoss):
     def __init__(self, config: ConvNextConfig, *inputs, **kwargs) -> None: ...
     @unpack_inputs
@@ -104,7 +183,39 @@ class TFConvNextForImageClassification(TFConvNextPreTrainedModel, TFSequenceClas
         return_dict: bool | None = ...,
         labels: np.ndarray | tf.Tensor | None = ...,
         training: bool | None = ...,
-    ) -> TFSequenceClassifierOutput | tuple[tf.Tensor]: ...
-    def build(self, input_shape=...): ...
+    ) -> TFSequenceClassifierOutput | tuple[tf.Tensor]:
+        r"""
+        labels (`tf.Tensor` or `np.ndarray` of shape `(batch_size,)`, *optional*):
+            Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+
+        Returns:
+
+        Examples:
+
+        ```python
+        >>> from transformers import AutoImageProcessor, TFConvNextForImageClassification
+        >>> import tensorflow as tf
+        >>> from PIL import Image
+        >>> import requests
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> image_processor = AutoImageProcessor.from_pretrained("facebook/convnext-tiny-224")
+        >>> model = TFConvNextForImageClassification.from_pretrained("facebook/convnext-tiny-224")
+
+        >>> inputs = image_processor(images=image, return_tensors="tf")
+        >>> outputs = model(**inputs)
+        >>> logits = outputs.logits
+        >>> # model predicts one of the 1000 ImageNet classes
+        >>> predicted_class_idx = tf.math.argmax(logits, axis=-1)[0]
+        >>> print("Predicted class:", model.config.id2label[int(predicted_class_idx)])
+        ```"""
+        ...
+
+    def build(self, input_shape=...):  # -> None:
+        ...
 
 __all__ = ["TFConvNextForImageClassification", "TFConvNextModel", "TFConvNextPreTrainedModel"]

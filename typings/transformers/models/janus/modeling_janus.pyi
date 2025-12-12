@@ -31,14 +31,51 @@ class JanusPreTrainedModel(PreTrainedModel):
     _supports_param_buffer_assignment = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for Janus VQ-VAE mode model outputs.
+    """
+)
 class JanusVQVAEOutput(ModelOutput):
+    r"""
+    decoded_pixel_values (`torch.FloatTensor` of shape `(batch_size, num_channels, image_size, image_size)`):
+        Reconstructed pixel values after encoding and decoding the input.
+    embedding_loss (`torch.FloatTensor`):
+        Embedding loss.
+    """
+
     decoded_pixel_values: Optional[torch.FloatTensor] = ...
     embedding_loss: torch.FloatTensor = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for Janus model's outputs that may also contain a past key/values (to speed up sequential decoding).
+    """
+)
 class JanusBaseModelOutputWithPast(ModelOutput):
+    r"""
+    last_hidden_state (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
+        Sequence of hidden-states at the output of the last layer of the model.
+
+        If `past_key_values` is used only the last hidden-state of the sequences of shape `(batch_size, 1,
+        hidden_size)` is output.
+    past_key_values (`Cache`, *optional*, returned when `use_cache=True` is passed or when `config.use_cache=True`):
+        Tuple of `tuple(torch.FloatTensor)` of length `config.n_layers`, with each tuple having 2 tensors of shape
+        `(batch_size, num_heads, sequence_length, embed_size_per_head)`) and optionally if
+        `config.is_encoder_decoder=True` 2 additional tensors of shape `(batch_size, num_heads,
+        encoder_sequence_length, embed_size_per_head)`.
+
+        Contains pre-computed hidden-states (key and values in the self-attention blocks and optionally if
+        `config.is_encoder_decoder=True` in the cross-attention blocks) that can be used (see `past_key_values`
+        input) to speed up sequential decoding.
+    image_hidden_states (`tuple(torch.FloatTensor)`, *optional*):
+        Tuple of `torch.FloatTensor` (one for the output of the image embeddings, `(batch_size, num_images,
+        sequence_length, hidden_size)`.
+
+        image_hidden_states of the model produced by the vision encoder, and optionally by the perceiver
+    """
+
     last_hidden_state: Optional[torch.FloatTensor] = ...
     past_key_values: Optional[tuple[tuple[torch.FloatTensor]]] = ...
     hidden_states: Optional[tuple[torch.FloatTensor]] = ...
@@ -46,8 +83,30 @@ class JanusBaseModelOutputWithPast(ModelOutput):
     image_hidden_states: Optional[tuple[torch.FloatTensor]] = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for Janus causal language model (or autoregressive) outputs.
+    """
+)
 class JanusCausalLMOutputWithPast(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `labels` is provided):
+        Language modeling loss (for next-token prediction).
+    logits (`torch.FloatTensor` of shape `(batch_size, sequence_length, config.vocab_size)`):
+        Prediction scores of the language modeling head (scores for each vocabulary token before SoftMax).
+    past_key_values (`Cache`, *optional*, returned when `use_cache=True` is passed or when `config.use_cache=True`):
+        Tuple of `tuple(torch.FloatTensor)` of length `config.n_layers`, with each tuple having 2 tensors of shape
+        `(batch_size, num_heads, sequence_length, embed_size_per_head)`)
+
+        Contains pre-computed hidden-states (key and values in the self-attention blocks) that can be used (see
+        `past_key_values` input) to speed up sequential decoding.
+    image_hidden_states (`tuple(torch.FloatTensor)`, *optional*):
+        Tuple of `torch.FloatTensor` (one for the output of the image embeddings, `(batch_size, num_images,
+        sequence_length, hidden_size)`.
+
+        image_hidden_states of the model produced by the vision encoder, and optionally by the perceiver
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     logits: Optional[torch.FloatTensor] = ...
     past_key_values: Optional[list[torch.FloatTensor]] = ...
@@ -57,10 +116,26 @@ class JanusCausalLMOutputWithPast(ModelOutput):
 
 class JanusVisionEmbeddings(nn.Module):
     def __init__(self, config: JanusVisionConfig) -> None: ...
-    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor: ...
+    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor:
+        """
+        This method allows to interpolate the pre-trained position encodings, to be able to use the model on higher resolution
+        images. This method is also adapted to support torch.jit tracing and no class embeddings.
+
+        Adapted from:
+        - https://github.com/facebookresearch/dino/blob/de9ee3df6cf39fac952ab558447af1fa1365362a/vision_transformer.py#L174-L194, and
+        - https://github.com/facebookresearch/dinov2/blob/e1277af2ba9496fbadf7aec6eba56e8d882d1e35/dinov2/models/vision_transformer.py#L179-L211
+        """
+        ...
+
     def forward(self, pixel_values: torch.Tensor, interpolate_pos_encoding: bool = ...) -> torch.Tensor: ...
 
-def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor: ...
+def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
+    """
+    This is the equivalent of torch.repeat_interleave(x, dim=1, repeats=n_rep). The hidden states go from (batch,
+    num_key_value_heads, seqlen, head_dim) to (batch, num_attention_heads, seqlen, head_dim)
+    """
+    ...
+
 def eager_attention_forward(
     module: nn.Module,
     query: torch.Tensor,
@@ -70,16 +145,19 @@ def eager_attention_forward(
     scaling: float,
     dropout: float = ...,
     **kwargs: Unpack[TransformersKwargs],
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class JanusVisionAttention(nn.Module):
+    """Attention Class for Janus Vision Encoder"""
     def __init__(self, config: JanusVisionConfig) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ): ...
+    ):  # -> tuple[Any, Any]:
+        ...
 
 class JanusVisionMLP(nn.Module):
     def __init__(self, config: JanusVisionConfig) -> None: ...
@@ -89,9 +167,27 @@ class JanusVisionEncoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: JanusVisionConfig) -> None: ...
     def forward(
         self, hidden_states: torch.Tensor, attention_mask: torch.Tensor, output_attentions: Optional[bool] = ...
-    ) -> tuple[torch.FloatTensor]: ...
+    ) -> tuple[torch.FloatTensor]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`):
+                Input to the layer of shape `(batch, seq_len, embed_dim)`.
+            attention_mask (`torch.FloatTensor`):
+                Attention mask of shape `(batch, 1, q_len, k_v_seq_len)` where padding elements are indicated by very large negative values.
+            output_attentions (`bool`, *optional*, defaults to `False`):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+        """
+        ...
 
 class JanusVisionEncoder(nn.Module):
+    """
+    Transformer encoder consisting of `config.num_hidden_layers` self attention layers. Each layer is a
+    [`JanusVisionEncoderLayer`].
+
+    Args:
+        config: JanusVisionConfig
+    """
     def __init__(self, config: JanusVisionConfig) -> None: ...
     @can_return_tuple
     def forward(
@@ -100,7 +196,30 @@ class JanusVisionEncoder(nn.Module):
         attention_mask: Optional[torch.Tensor] = ...,
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
-    ) -> BaseModelOutput: ...
+    ) -> BaseModelOutput:
+        r"""
+        Args:
+            inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
+                Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation.
+                This is useful if you want more control over how to convert `input_ids` indices into associated vectors
+                than the model's internal embedding lookup matrix.
+            attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Mask to avoid performing attention on padding token indices. Mask values selected in `[0, 1]`:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers. See `hidden_states` under returned tensors
+                for more detail.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`~utils.ModelOutput`] instead of a plain tuple.
+        """
+        ...
 
 @auto_docstring
 class JanusVisionModel(JanusPreTrainedModel):
@@ -116,20 +235,33 @@ class JanusVisionModel(JanusPreTrainedModel):
         return_dict: Optional[bool] = ...,
         interpolate_pos_encoding: bool = ...,
     ) -> Union[tuple, BaseModelOutputWithPooling]: ...
-    def get_input_embeddings(self): ...
+    def get_input_embeddings(self):  # -> JanusVisionEmbeddings:
+        ...
 
 class JanusVisionAlignerMLP(nn.Module):
     def __init__(self, config: JanusVisionConfig) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class JanusVQVAEVectorQuantizer(nn.Module):
+    """
+    A module for vector quantization using learned embedding vectors.
+
+    This module implements the quantization process similar to te one described in
+    the VQ-VAE (Vector Quantized Variational AutoEncoder) paper. It quantizes continuous
+    input vectors into discrete codebook vectors, which are learned during training.
+    Current implementation improves over previous ones by avoiding costly matrix multiplications
+    and allowing for post-hoc remapping of indices.
+    """
     def __init__(self, config: JanusVQVAEConfig) -> None: ...
-    def forward(self, hidden_state: torch.Tensor): ...
+    def forward(self, hidden_state: torch.Tensor):  # -> tuple[Any, Any | Tensor, Tensor]:
+        ...
     def get_codebook_entry(self, image_tokens: torch.LongTensor) -> torch.FloatTensor: ...
 
 class JanusVQVAEResnetBlock(nn.Module):
     def __init__(self, config, in_channels, out_channels=..., conv_shortcut=...) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class JanusVQVAEAttnBlock(nn.Module):
     def __init__(self, in_channels) -> None: ...
@@ -137,11 +269,13 @@ class JanusVQVAEAttnBlock(nn.Module):
 
 class JanusVQVAEConvDownsample(nn.Module):
     def __init__(self, in_channels) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class JanusVQVAEConvUpsample(nn.Module):
     def __init__(self, in_channels) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class JanusVQVAEMidBlock(nn.Module):
     def __init__(self, config: JanusVQVAEConfig, channels: int) -> None: ...
@@ -149,41 +283,75 @@ class JanusVQVAEMidBlock(nn.Module):
 
 class JanusVQVAEEncoder(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, pixel_values: torch.LongTensor): ...
+    def forward(self, pixel_values: torch.LongTensor):  # -> Any:
+        ...
 
 class JanusVQVAEDecoder(nn.Module):
     def __init__(self, config) -> None: ...
     def forward(self, hidden_state: torch.FloatTensor) -> torch.FloatTensor: ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The VQ-VAE model used in Janus for encoding/decoding images into discrete tokens.
+    This model follows the "Make-a-scene: Scene-based text-to-image generation with human priors" paper from
+    [ Oran Gafni, Adam Polyak, Oron Ashual, Shelly Sheynin, Devi Parikh, and Yaniv
+    Taigman](https://huggingface.co/papers/2203.13131).
+    """
+)
 class JanusVQVAE(JanusPreTrainedModel):
     config: JanusVQVAEConfig
     _no_split_modules = ...
     main_input_name = ...
     def __init__(self, config: JanusVQVAEConfig) -> None: ...
-    def encode(self, pixel_values: torch.LongTensor): ...
-    def decode(self, image_tokens: torch.LongTensor) -> torch.FloatTensor: ...
+    def encode(self, pixel_values: torch.LongTensor):  # -> tuple[Any, Any, Any]:
+        ...
+    def decode(self, image_tokens: torch.LongTensor) -> torch.FloatTensor:
+        """
+        Decodes quantized token IDs into pixel values.
+        Args:
+            image_tokens (torch.LongTensor): Batch of token IDs.
+        Returns:
+            pixel_values (`torch.FloatTensor` of shape `(batch_size, num_channels, image_size, image_size)`):
+                Pixel values decoded from the token IDs.
+        """
+        ...
+
     @can_return_tuple
     @auto_docstring
     def forward(self, pixel_values: torch.FloatTensor) -> tuple[torch.FloatTensor, torch.FloatTensor]: ...
 
 class JanusVQVAEAlignerMLP(nn.Module):
     def __init__(self, config: JanusVQVAEConfig) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class JanusVQVAEHead(nn.Module):
+    """Head used for sampling tokens in image generation, replacing the usual lm head."""
     def __init__(self, config: JanusVQVAEConfig) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.tensor: ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The Janus model which consists of a siglip vision backbone, a Llama language model and a VQ model.
+    """
+)
 class JanusModel(JanusPreTrainedModel):
     def __init__(self, config: JanusConfig) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
-    def get_image_features(self, pixel_values): ...
+    def get_input_embeddings(self):  # -> Any:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
+    def get_image_features(self, pixel_values):  # -> Any:
+        ...
     def get_placeholder_mask(
         self, input_ids: torch.LongTensor, inputs_embeds: torch.FloatTensor, image_features: torch.FloatTensor
-    ): ...
+    ):  # -> Tensor | Any:
+        """
+        Obtains multimodal placeholdr mask from `input_ids` or `inputs_embeds`, and checks that the placeholder token count is
+        equal to the length of multimodal features. If the lengths are different, an error is raised.
+        """
+        ...
+
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -198,17 +366,22 @@ class JanusModel(JanusPreTrainedModel):
         use_cache: Optional[bool] = ...,
         logits_to_keep: Union[int, torch.Tensor] = ...,
         **kwargs,
-    ): ...
+    ):  # -> JanusBaseModelOutputWithPast:
+        ...
 
 class JanusForConditionalGeneration(JanusPreTrainedModel, GenerationMixin):
     _tied_weights_keys = ...
     _can_compile_fullgraph = ...
     def __init__(self, config: JanusConfig) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def get_input_embeddings(self):  # -> Any:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     def prepare_embeddings_for_image_generation(self, inputs: torch.Tensor) -> torch.Tensor: ...
-    def set_decoder(self, decoder): ...
-    def get_decoder(self): ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> JanusModel:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -224,7 +397,15 @@ class JanusForConditionalGeneration(JanusPreTrainedModel, GenerationMixin):
         use_cache: Optional[bool] = ...,
         logits_to_keep: Union[int, torch.Tensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ): ...
+    ):  # -> JanusCausalLMOutputWithPast:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+        """
+        ...
+
     def prepare_inputs_for_generation(
         self,
         input_ids,
@@ -235,8 +416,18 @@ class JanusForConditionalGeneration(JanusPreTrainedModel, GenerationMixin):
         cache_position=...,
         logits_to_keep=...,
         **kwargs,
-    ): ...
-    def decode_image_tokens(self, image_tokens: torch.Tensor): ...
+    ):  # -> dict[Any, Any]:
+        ...
+    def decode_image_tokens(self, image_tokens: torch.Tensor):  # -> Tensor:
+        """
+        Decodes generated image tokens from language model to continuous pixel values
+        with VQGAN module via upsampling.
+        Args:
+            image_tokens (`torch.LongTensor` of shape `(batch_size, num_of_tokens)`):
+                The tensors corresponding to the input images.
+        """
+        ...
+
     @torch.no_grad
     def generate(
         self,
@@ -244,6 +435,7 @@ class JanusForConditionalGeneration(JanusPreTrainedModel, GenerationMixin):
         attention_mask: Optional[torch.LongTensor] = ...,
         logits_processor: Optional[LogitsProcessorList] = ...,
         **kwargs,
-    ): ...
+    ):  # -> GenerateOutput | LongTensor | Tensor:
+        ...
 
 __all__ = ["JanusPreTrainedModel", "JanusForConditionalGeneration", "JanusModel", "JanusVQVAE", "JanusVisionModel"]

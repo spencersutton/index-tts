@@ -15,36 +15,70 @@ from ...utils import auto_docstring, can_return_tuple
 from ..llama.modeling_llama import LlamaRMSNorm
 from .configuration_timesfm import TimesFmConfig
 
+"""PyTorch TimesFM model."""
 logger = ...
 
 @dataclass
 @auto_docstring
 class TimesFmOutput(BaseModelOutput):
+    r"""
+    loc (`torch.Tensor` of shape `(batch_size, )`):
+        The mean of the time series inputs.
+    scale (`torch.Tensor` of shape `(batch_size,)`):
+        The scale of the time series inputs.
+    """
+
     loc: Optional[torch.Tensor] = ...
     scale: Optional[torch.Tensor] = ...
 
 @dataclass
 @auto_docstring
 class TimesFmOutputForPrediction(BaseModelOutput):
+    r"""
+    mean_predictions (`torch.Tensor` of shape `(batch_size, sequence_length)`):
+        The mean predictions of the time series.
+    full_predictions (`torch.Tensor` of shape `(batch_size, sequence_length)`):
+        The full predictions of the time series including the mean and the quantiles.
+    loss (`torch.Tensor` of shape `(1,)`, *optional*, returned when `future_values` is provided):
+        The loss of the TimesFM model.
+    """
+
     mean_predictions: Optional[torch.Tensor] = ...
     full_predictions: Optional[torch.Tensor] = ...
     loss: Optional[Union[torch.Tensor, float]] = ...
 
 class TimesFmMLP(nn.Module):
+    """Pax MLP in pytorch."""
     def __init__(self, config: TimesFmConfig) -> None: ...
     def forward(self, x, paddings=...): ...
 
 class TimesFmResidualBlock(nn.Module):
+    """TimesFM residual block."""
     def __init__(self, input_dims, hidden_dims, output_dims) -> None: ...
-    def forward(self, x): ...
+    def forward(self, x):  # -> Any:
+        ...
 
 class TimesFmRMSNorm(LlamaRMSNorm): ...
 
 class TimesFmPositionalEmbedding(nn.Module):
+    """Generates position embedding for a given 1-d sequence."""
     def __init__(self, config: TimesFmConfig) -> None: ...
-    def forward(self, seq_length=..., position=...): ...
+    def forward(self, seq_length=..., position=...):
+        """Generates a Tensor of sinusoids with different frequencies.
+
+        Args:
+            seq_length: an optional Python int defining the output sequence length.
+              if the `position` argument is specified.
+            position: [B, seq_length], optional position for each token in the
+              sequence, only required when the sequence is packed.
+
+        Returns:
+            [B, seqlen, D] if `position` is specified, else [1, seqlen, D]
+        """
+        ...
 
 class TimesFmAttention(nn.Module):
+    """Implements the attention used in TimesFM. One key difference is that there is _per_dim_scaling of the query."""
     def __init__(self, config: TimesFmConfig, layer_idx: int) -> None: ...
     def forward(
         self,
@@ -54,6 +88,7 @@ class TimesFmAttention(nn.Module):
     ) -> tuple[torch.Tensor, Optional[torch.Tensor]]: ...
 
 class TimesFmDecoderLayer(nn.Module):
+    """Transformer layer."""
     def __init__(self, config: TimesFmConfig, layer_idx: int) -> None: ...
     def forward(
         self,
@@ -83,9 +118,19 @@ class TimesFmModel(TimesFmPreTrainedModel):
         freq: torch.Tensor,
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
-    ) -> TimesFmOutput: ...
+    ) -> TimesFmOutput:
+        r"""
+        past_values (`torch.FloatTensor` of shape `(batch_size, sequence_length)`):
+            Past values of the time series that serves as input to the model.
+        past_values_padding (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
+            The padding indicator of the time series.
+        freq (`torch.LongTensor` of shape `(batch_size,)`):
+            Frequency indices for the time series data.
+        """
+        ...
 
 class TimesFmModelForPrediction(TimesFmPreTrainedModel):
+    """TimesFM model for quantile and mean prediction."""
     def __init__(self, config: TimesFmConfig) -> None: ...
     @can_return_tuple
     @auto_docstring
@@ -100,6 +145,45 @@ class TimesFmModelForPrediction(TimesFmPreTrainedModel):
         truncate_negative: bool = ...,
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
-    ) -> TimesFmOutputForPrediction: ...
+    ) -> TimesFmOutputForPrediction:
+        r"""
+        past_values (`torch.FloatTensor` of shape `(batch_size, sequence_length)`):
+            Past values of the time series that serves as input to the model.
+        freq (`torch.LongTensor` of shape `(batch_size,)`):
+            Frequency indices for the time series data.
+        window_size (`int`, *optional*):
+            Window size of trend + residual decomposition. If None then we do not do decomposition.
+        future_values (`torch.Tensor`, *optional*):
+            Optional future time series values to be used for loss computation.
+        forecast_context_len (`int`, *optional*):
+            Optional max context length.
+        return_forecast_on_context (`bool`, *optional*):
+            True to return the forecast on the context when available, i.e. after the first input patch.
+        truncate_negative (`bool`, *optional*):
+            Truncate to only non-negative values if any of the contexts have non-negative values,
+            otherwise do nothing.
+        output_attentions (`bool`, *optional*):
+            Whether to output the attentions.
+        output_hidden_states (`bool`, *optional*):
+            Whether to output the hidden states.
+
+        Example:
+
+        ```python
+        >>> from transformers import TimesFmModelForPrediction
+
+        >>> model = TimesFmModelForPrediction.from_pretrained("google/timesfm-2.0-500m-pytorch")
+
+        >>> forecast_input = [torch.linspace(0, 20, 100).sin(), torch.linspace(0, 20, 200).sin(), torch.linspace(0, 20, 400).sin()]
+        >>> frequency_input = torch.tensor([0, 1, 2], dtype=torch.long)
+
+        >>> # Generate
+        >>> with torch.no_grad():
+        >>>     outputs = model(past_values=forecast_input, freq=frequency_input, return_dict=True)
+        >>>     point_forecast_conv = outputs.mean_predictions
+        >>>     quantile_forecast_conv = outputs.full_predictions
+        ```
+        """
+        ...
 
 __all__ = ["TimesFmModelForPrediction", "TimesFmPreTrainedModel", "TimesFmModel"]

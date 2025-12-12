@@ -17,6 +17,7 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring
 from .configuration_mpnet import MPNetConfig
 
+"""PyTorch MPNet model."""
 logger = ...
 
 @auto_docstring
@@ -26,21 +27,34 @@ class MPNetPreTrainedModel(PreTrainedModel):
 
 class MPNetEmbeddings(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, input_ids=..., position_ids=..., inputs_embeds=..., **kwargs): ...
-    def create_position_ids_from_inputs_embeds(self, inputs_embeds): ...
+    def forward(self, input_ids=..., position_ids=..., inputs_embeds=..., **kwargs):  # -> Any:
+        ...
+    def create_position_ids_from_inputs_embeds(self, inputs_embeds):  # -> Tensor:
+        """
+        We are provided embeddings directly. We cannot infer which are padded so just generate sequential position ids.
+
+        Args:
+            inputs_embeds: torch.Tensor
+
+        Returns: torch.Tensor
+        """
+        ...
 
 class MPNetSelfAttention(nn.Module):
     def __init__(self, config) -> None: ...
     def forward(
         self, hidden_states, attention_mask=..., head_mask=..., position_bias=..., output_attentions=..., **kwargs
-    ): ...
+    ):  # -> tuple[Any, Any] | tuple[Any]:
+        ...
 
 class MPNetAttention(nn.Module):
     def __init__(self, config) -> None: ...
-    def prune_heads(self, heads): ...
+    def prune_heads(self, heads):  # -> None:
+        ...
     def forward(
         self, hidden_states, attention_mask=..., head_mask=..., position_bias=..., output_attentions=..., **kwargs
-    ): ...
+    ):  # -> Any:
+        ...
 
 class MPNetIntermediate(nn.Module):
     def __init__(self, config) -> None: ...
@@ -54,7 +68,8 @@ class MPNetLayer(nn.Module):
     def __init__(self, config) -> None: ...
     def forward(
         self, hidden_states, attention_mask=..., head_mask=..., position_bias=..., output_attentions=..., **kwargs
-    ): ...
+    ):  # -> Any:
+        ...
 
 class MPNetEncoder(nn.Module):
     def __init__(self, config) -> None: ...
@@ -67,8 +82,10 @@ class MPNetEncoder(nn.Module):
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
         **kwargs,
-    ): ...
-    def compute_position_bias(self, x, position_ids=..., num_buckets=...): ...
+    ):  # -> tuple[Tensor | tuple[Tensor, ...] | Any | tuple[()] | tuple[Any, ...], ...] | BaseModelOutput:
+        ...
+    def compute_position_bias(self, x, position_ids=..., num_buckets=...):  # -> Any:
+        ...
     @staticmethod
     def relative_position_bucket(relative_position, num_buckets=..., max_distance=...): ...
 
@@ -78,9 +95,17 @@ class MPNetPooler(nn.Module):
 
 @auto_docstring
 class MPNetModel(MPNetPreTrainedModel):
-    def __init__(self, config, add_pooling_layer=...) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def __init__(self, config, add_pooling_layer=...) -> None:
+        r"""
+        add_pooling_layer (bool, *optional*, defaults to `True`):
+            Whether to add a pooling layer
+        """
+        ...
+
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -98,8 +123,10 @@ class MPNetModel(MPNetPreTrainedModel):
 class MPNetForMaskedLM(MPNetPreTrainedModel):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
-    def get_output_embeddings(self): ...
-    def set_output_embeddings(self, new_embeddings): ...
+    def get_output_embeddings(self):  # -> Linear:
+        ...
+    def set_output_embeddings(self, new_embeddings):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -112,13 +139,27 @@ class MPNetForMaskedLM(MPNetPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], MaskedLMOutput]: ...
+    ) -> Union[tuple[torch.Tensor], MaskedLMOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should be in `[-100, 0, ...,
+            config.vocab_size]` (see `input_ids` docstring) Tokens with indices set to `-100` are ignored (masked), the
+            loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`
+        """
+        ...
 
 class MPNetLMHead(nn.Module):
+    """MPNet Head for masked and permuted language modeling."""
     def __init__(self, config) -> None: ...
-    def forward(self, features, **kwargs): ...
+    def forward(self, features, **kwargs):  # -> Any:
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    MPNet Model transformer with a sequence classification/regression head on top (a linear layer on top of the pooled
+    output) e.g. for GLUE tasks.
+    """
+)
 class MPNetForSequenceClassification(MPNetPreTrainedModel):
     def __init__(self, config) -> None: ...
     @auto_docstring
@@ -133,7 +174,14 @@ class MPNetForSequenceClassification(MPNetPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], SequenceClassifierOutput]: ...
+    ) -> Union[tuple[torch.Tensor], SequenceClassifierOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 @auto_docstring
 class MPNetForMultipleChoice(MPNetPreTrainedModel):
@@ -150,7 +198,30 @@ class MPNetForMultipleChoice(MPNetPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], MultipleChoiceModelOutput]: ...
+    ) -> Union[tuple[torch.Tensor], MultipleChoiceModelOutput]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`):
+            Indices of input sequence tokens in the vocabulary.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        position_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`, *optional*):
+            Indices of positions of each input sequence tokens in the position embeddings. Selected in the range `[0,
+            config.max_position_embeddings - 1]`.
+
+            [What are position IDs?](../glossary#position-ids)
+        inputs_embeds (`torch.FloatTensor` of shape `(batch_size, num_choices, sequence_length, hidden_size)`, *optional*):
+            Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation. This
+            is useful if you want more control over how to convert *input_ids* indices into associated vectors than the
+            model's internal embedding lookup matrix.
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the multiple choice classification loss. Indices should be in `[0, ...,
+            num_choices-1]` where `num_choices` is the size of the second dimension of the input tensors. (See
+            `input_ids` above)
+        """
+        ...
 
 @auto_docstring
 class MPNetForTokenClassification(MPNetPreTrainedModel):
@@ -167,11 +238,18 @@ class MPNetForTokenClassification(MPNetPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], TokenClassifierOutput]: ...
+    ) -> Union[tuple[torch.Tensor], TokenClassifierOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the token classification loss. Indices should be in `[0, ..., config.num_labels - 1]`.
+        """
+        ...
 
 class MPNetClassificationHead(nn.Module):
+    """Head for sentence-level classification tasks."""
     def __init__(self, config) -> None: ...
-    def forward(self, features, **kwargs): ...
+    def forward(self, features, **kwargs):  # -> Any:
+        ...
 
 @auto_docstring
 class MPNetForQuestionAnswering(MPNetPreTrainedModel):
@@ -191,7 +269,12 @@ class MPNetForQuestionAnswering(MPNetPreTrainedModel):
         return_dict: Optional[bool] = ...,
     ) -> Union[tuple[torch.Tensor], QuestionAnsweringModelOutput]: ...
 
-def create_position_ids_from_input_ids(input_ids, padding_idx): ...
+def create_position_ids_from_input_ids(input_ids, padding_idx):
+    """
+    Replace non-padding symbols with their position numbers. Position numbers begin at padding_idx+1. Padding symbols
+    are ignored. This is modified from fairseq's `utils.make_positions`. :param torch.Tensor x: :return torch.Tensor:
+    """
+    ...
 
 __all__ = [
     "MPNetForMaskedLM",

@@ -7,7 +7,7 @@ import PIL.Image
 import torch
 from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Callable, Optional, TypeAlias, Union
+from typing import Callable, Optional, Union
 from .image_transforms import PaddingMode
 from .image_utils import ChannelDimension
 from .utils import is_torch_available, is_vision_available
@@ -15,15 +15,15 @@ from .utils import is_torch_available, is_vision_available
 if is_vision_available(): ...
 if is_torch_available(): ...
 logger = ...
-VideoInput: TypeAlias = Union[
-    list[PIL.Image.Image],
-    np.ndarray,
-    torch.Tensor,
-    list[np.ndarray],
-    list[torch.Tensor],
-    list[list[PIL.Image.Image]],
-    list[list[np.ndarrray]],
-    list[list[torch.Tensor]],
+VideoInput = Union[
+    list["PIL.Image.Image"],
+    "np.ndarray",
+    "torch.Tensor",
+    list["np.ndarray"],
+    list["torch.Tensor"],
+    list[list["PIL.Image.Image"]],
+    list[list["np.ndarrray"]],
+    list[list["torch.Tensor"]],
 ]
 
 @dataclass
@@ -32,23 +32,210 @@ class VideoMetadata:
     fps: float
     duration: float
     video_backend: str
-    def __getitem__(self, item): ...
+    def __getitem__(self, item):  # -> Any:
+        ...
 
-def is_valid_video_frame(frame): ...
-def is_valid_video(video): ...
-def valid_videos(videos): ...
-def is_batched_video(videos): ...
-def is_scaled_video(video: np.ndarray) -> bool: ...
-def convert_pil_frames_to_video(videos: list[VideoInput]) -> list[Union[np.ndarray, torch.Tensor]]: ...
-def make_batched_videos(videos) -> list[Union[np.ndarray, torch.Tensor]]: ...
-def get_video_size(video: np.ndarray, channel_dim: ChannelDimension = ...) -> tuple[int, int]: ...
-def get_uniform_frame_indices(total_num_frames: int, num_frames: Optional[int] = ...): ...
-def default_sample_indices_fn(metadata: VideoMetadata, num_frames=..., fps=..., **kwargs): ...
-def read_video_opencv(video_path: str, sample_indices_fn: Callable, **kwargs): ...
-def read_video_decord(video_path: str, sample_indices_fn: Optional[Callable] = ..., **kwargs): ...
-def read_video_pyav(video_path: str, sample_indices_fn: Callable, **kwargs): ...
-def read_video_torchvision(video_path: str, sample_indices_fn: Callable, **kwargs): ...
-def read_video_torchcodec(video_path: str, sample_indices_fn: Callable, **kwargs): ...
+def is_valid_video_frame(frame):  # -> bool:
+    ...
+def is_valid_video(video):  # -> bool:
+    ...
+def valid_videos(videos):  # -> bool:
+    ...
+def is_batched_video(videos):  # -> bool:
+    ...
+def is_scaled_video(video: np.ndarray) -> bool:
+    """
+    Checks to see whether the pixel values have already been rescaled to [0, 1].
+    """
+    ...
+
+def convert_pil_frames_to_video(videos: list[VideoInput]) -> list[Union[np.ndarray, torch.Tensor]]:
+    """
+    Given a batch of videos, converts each video to a 4D array. If video is already in array type,
+    it is simply returned. We assume that all inputs in the list are in the same format, based on the type of the first element.
+
+    Args:
+        videos (`VideoInput`):
+            Video inputs to turn into a list of videos.
+    """
+    ...
+
+def make_batched_videos(videos) -> list[Union[np.ndarray, torch.Tensor]]:
+    """
+    Ensure that the input is a list of videos. If the input is a single video, it is converted to a list of length 1.
+    If the input is a batch of videos, it is converted to a list of 4D video arrays. Videos passed as list `PIL.Image`
+    frames are converted to 4D arrays.
+
+    We assume that all inputs in the list are in the same format, based on the type of the first element.
+
+    Args:
+        videos (`VideoInput`):
+            Video inputs to turn into a list of videos.
+    """
+    ...
+
+def get_video_size(video: np.ndarray, channel_dim: ChannelDimension = ...) -> tuple[int, int]:
+    """
+    Returns the (height, width) dimensions of the video.
+
+    Args:
+        video (`np.ndarray`):
+            The video to get the dimensions of.
+        channel_dim (`ChannelDimension`, *optional*):
+            Which dimension the channel dimension is in. If `None`, will infer the channel dimension from the video.
+
+    Returns:
+        A tuple of the video's height and width.
+    """
+    ...
+
+def get_uniform_frame_indices(
+    total_num_frames: int, num_frames: Optional[int] = ...
+):  # -> ndarray[tuple[int], dtype[Any]]:
+    """
+    Creates a numpy array for uniform sampling of `num_frame` frames from `total_num_frames`
+    when loading a video.
+
+    Args:
+        total_num_frames (`int`):
+            Total number of frames that a video has.
+        num_frames (`int`, *optional*):
+            Number of frames to sample uniformly. If not specified, all frames are sampled.
+
+    Returns:
+        np.ndarray: np array of frame indices that will be sampled.
+    """
+    ...
+
+def default_sample_indices_fn(metadata: VideoMetadata, num_frames=..., fps=..., **kwargs):  # -> _Array1D[Any]:
+    """
+    A default sampling function that replicates the logic used in get_uniform_frame_indices,
+    while optionally handling `fps` if `num_frames` is not provided.
+
+    Args:
+        metadata (`VideoMetadata`):
+            `VideoMetadata` object containing metadata about the video, such as "total_num_frames" or "fps".
+        num_frames (`int`, *optional*):
+            Number of frames to sample uniformly.
+        fps (`int` or `float`, *optional*):
+            Desired frames per second. Takes priority over num_frames if both are provided.
+
+    Returns:
+        `np.ndarray`: Array of frame indices to sample.
+    """
+    ...
+
+def read_video_opencv(video_path: str, sample_indices_fn: Callable, **kwargs):  # -> tuple[NDArray[Any], VideoMetadata]:
+    """
+    Decode a video using the OpenCV backend.
+
+    Args:
+        video_path (`str`):
+            Path to the video file.
+        sample_indices_fn (`Callable`):
+            A callable function that will return indices at which the video should be sampled. If the video has to be loaded using
+            by a different sampling technique than provided by `num_frames` or `fps` arguments, one should provide their own `sample_indices_fn`.
+            If not provided, simple uniform sampling with fps is performed.
+            Example:
+            def sample_indices_fn(metadata, **kwargs):
+                return np.linspace(0, metadata.total_num_frames - 1, num_frames, dtype=int)
+
+    Returns:
+        tuple[`np.array`, `VideoMetadata`]: A tuple containing:
+            - Numpy array of frames in RGB (shape: [num_frames, height, width, 3]).
+            - `VideoMetadata` object.
+    """
+    ...
+
+def read_video_decord(
+    video_path: str, sample_indices_fn: Optional[Callable] = ..., **kwargs
+):  # -> tuple[Any, VideoMetadata]:
+    """
+    Decode a video using the Decord backend.
+
+    Args:
+        video_path (`str`):
+            Path to the video file.
+        sample_indices_fn (`Callable`, *optional*):
+            A callable function that will return indices at which the video should be sampled. If the video has to be loaded using
+            by a different sampling technique than provided by `num_frames` or `fps` arguments, one should provide their own `sample_indices_fn`.
+            If not provided, simple uniform sampling with fps is performed.
+            Example:
+            def sample_indices_fn(metadata, **kwargs):
+                return np.linspace(0, metadata.total_num_frames - 1, num_frames, dtype=int)
+
+    Returns:
+        tuple[`np.array`, `VideoMetadata`]: A tuple containing:
+            - Numpy array of frames in RGB (shape: [num_frames, height, width, 3]).
+            - `VideoMetadata` object.
+    """
+    ...
+
+def read_video_pyav(video_path: str, sample_indices_fn: Callable, **kwargs):  # -> tuple[NDArray[Any], VideoMetadata]:
+    """
+    Decode the video with PyAV decoder.
+
+    Args:
+        video_path (`str`):
+            Path to the video file.
+        sample_indices_fn (`Callable`, *optional*):
+            A callable function that will return indices at which the video should be sampled. If the video has to be loaded using
+            by a different sampling technique than provided by `num_frames` or `fps` arguments, one should provide their own `sample_indices_fn`.
+            If not provided, simple uniform sampling with fps is performed.
+            Example:
+            def sample_indices_fn(metadata, **kwargs):
+                return np.linspace(0, metadata.total_num_frames - 1, num_frames, dtype=int)
+
+    Returns:
+        tuple[`np.array`, `VideoMetadata`]: A tuple containing:
+            - Numpy array of frames in RGB (shape: [num_frames, height, width, 3]).
+            - `VideoMetadata` object.
+    """
+    ...
+
+def read_video_torchvision(video_path: str, sample_indices_fn: Callable, **kwargs):  # -> tuple[Any, VideoMetadata]:
+    """
+    Decode the video with torchvision decoder.
+
+    Args:
+        video_path (`str`):
+            Path to the video file.
+        sample_indices_fn (`Callable`, *optional*):
+            A callable function that will return indices at which the video should be sampled. If the video has to be loaded using
+            by a different sampling technique than provided by `num_frames` or `fps` arguments, one should provide their own `sample_indices_fn`.
+            If not provided, simple uniform sampling with fps is performed.
+            Example:
+            def sample_indices_fn(metadata, **kwargs):
+                return np.linspace(0, metadata.total_num_frames - 1, num_frames, dtype=int)
+
+    Returns:
+        tuple[`np.array`, `VideoMetadata`]: A tuple containing:
+            - Numpy array of frames in RGB (shape: [num_frames, height, width, 3]).
+            - `VideoMetadata` object.
+    """
+    ...
+
+def read_video_torchcodec(video_path: str, sample_indices_fn: Callable, **kwargs):  # -> tuple[Any, VideoMetadata]:
+    """
+    Decode the video with torchcodec decoder.
+
+    Args:
+        video_path (`str`):
+            Path to the video file.
+        sample_indices_fn (`Callable`, *optional*):
+            A callable function that will return indices at which the video should be sampled. If the video has to be loaded using
+            by a different sampling technique than provided by `num_frames` or `fps` arguments, one should provide their own `sample_indices_fn`.
+            If not provided, simple uniform sampling with fps is performed.
+            Example:
+            def sample_indices_fn(metadata, **kwargs):
+                return np.linspace(0, metadata.total_num_frames - 1, num_frames, dtype=int)
+
+    Returns:
+        Tuple[`torch.Tensor`, `VideoMetadata`]: A tuple containing:
+            - Numpy array of frames in RGB (shape: [num_frames, height, width, 3]).
+            - `VideoMetadata` object.
+    """
+    ...
 
 VIDEO_DECODERS = ...
 
@@ -59,12 +246,56 @@ def load_video(
     backend: str = ...,
     sample_indices_fn: Optional[Callable] = ...,
     **kwargs,
-) -> np.array: ...
+) -> np.array:
+    """
+    Loads `video` to a numpy array.
+
+    Args:
+        video (`str` or `VideoInput`):
+            The video to convert to the numpy array format. Can be a link to video or local path.
+        num_frames (`int`, *optional*):
+            Number of frames to sample uniformly. If not passed, the whole video is loaded.
+        fps (`int` or `float`, *optional*):
+            Number of frames to sample per second. Should be passed only when `num_frames=None`.
+            If not specified and `num_frames==None`, all frames are sampled.
+        backend (`str`, *optional*, defaults to `"pyav"`):
+            The backend to use when loading the video. Can be any of ["decord", "pyav", "opencv", "torchvision", "torchcodec"]. Defaults to "pyav".
+        sample_indices_fn (`Callable`, *optional*):
+            A callable function that will return indices at which the video should be sampled. If the video has to be loaded using
+            by a different sampling technique than provided by `num_frames` or `fps` arguments, one should provide their own `sample_indices_fn`.
+            If not provided, simple uniformt sampling with fps is performed, otherwise `sample_indices_fn` has priority over other args.
+            The function expects at input the all args along with all kwargs passed to `load_video` and should output valid
+            indices at which the video should be sampled. For example:
+
+            Example:
+            def sample_indices_fn(metadata, **kwargs):
+                return np.linspace(0, metadata.total_num_frames - 1, num_frames, dtype=int)
+
+    Returns:
+        tuple[`np.array`, Dict]: A tuple containing:
+            - Numpy array of frames in RGB (shape: [num_frames, height, width, 3]).
+            - Metadata dictionary.
+    """
+    ...
+
 def convert_to_rgb(
     video: np.array,
     data_format: Optional[ChannelDimension] = ...,
     input_data_format: Optional[Union[str, ChannelDimension]] = ...,
-) -> np.array: ...
+) -> np.array:
+    """
+    Convert video to RGB by blending the transparency layer if it's in RGBA format, otherwise simply returns it.
+
+    Args:
+        video (`np.array`):
+            The video to convert.
+        data_format (`ChannelDimension`, *optional*):
+            The channel dimension format of the output video. If unset, will use the inferred format from the input.
+        input_data_format (`ChannelDimension`, *optional*):
+            The channel dimension format of the input video. If unset, will use the inferred format from the input.
+    """
+    ...
+
 def pad(
     video: np.ndarray,
     padding: Union[int, tuple[int, int], Iterable[tuple[int, int]]],
@@ -72,10 +303,58 @@ def pad(
     constant_values: Union[float, Iterable[float]] = ...,
     data_format: Optional[Union[str, ChannelDimension]] = ...,
     input_data_format: Optional[Union[str, ChannelDimension]] = ...,
-) -> np.ndarray: ...
+) -> np.ndarray:
+    """
+    Pads the `video` with the specified (height, width) `padding` and `mode`.
+
+    Args:
+        video (`np.ndarray`):
+            The video to pad.
+        padding (`int` or `tuple[int, int]` or `Iterable[tuple[int, int]]`):
+            Padding to apply to the edges of the height, width axes. Can be one of three formats:
+            - `((before_height, after_height), (before_width, after_width))` unique pad widths for each axis.
+            - `((before, after),)` yields same before and after pad for height and width.
+            - `(pad,)` or int is a shortcut for before = after = pad width for all axes.
+        mode (`PaddingMode`):
+            The padding mode to use. Can be one of:
+                - `"constant"`: pads with a constant value.
+                - `"reflect"`: pads with the reflection of the vector mirrored on the first and last values of the
+                  vector along each axis.
+                - `"replicate"`: pads with the replication of the last value on the edge of the array along each axis.
+                - `"symmetric"`: pads with the reflection of the vector mirrored along the edge of the array.
+        constant_values (`float` or `Iterable[float]`, *optional*):
+            The value to use for the padding if `mode` is `"constant"`.
+        data_format (`str` or `ChannelDimension`, *optional*):
+            The channel dimension format for the output video. Can be one of:
+                - `"channels_first"` or `ChannelDimension.FIRST`: video in (num_frames, num_channels, height, width) format.
+                - `"channels_last"` or `ChannelDimension.LAST`: video in (num_frames, height, width, num_channels) format.
+            If unset, will use same as the input video.
+        input_data_format (`str` or `ChannelDimension`, *optional*):
+            The channel dimension format for the input video. Can be one of:
+                - `"channels_first"` or `ChannelDimension.FIRST`: video in (num_frames, num_channels, height, width) format.
+                - `"channels_last"` or `ChannelDimension.LAST`: video in (num_frames, height, width, num_channels) format.
+            If unset, will use the inferred format of the input video.
+
+    Returns:
+        `np.ndarray`: The padded video.
+
+    """
+    ...
+
 def group_videos_by_shape(
     videos: list[torch.Tensor],
-) -> tuple[dict[tuple[int, int], list[torch.Tensor]], dict[int, tuple[tuple[int, int], int]]]: ...
+) -> tuple[dict[tuple[int, int], list[torch.Tensor]], dict[int, tuple[tuple[int, int], int]]]:
+    """
+    Groups videos by shape.
+    Returns a dictionary with the shape as key and a list of videos with that shape as value,
+    and a dictionary with the index of the video in the original list as key and the shape and index in the grouped list as value.
+    """
+    ...
+
 def reorder_videos(
     processed_videos: dict[tuple[int, int], torch.Tensor], grouped_videos_index: dict[int, tuple[int, int]]
-) -> list[torch.Tensor]: ...
+) -> list[torch.Tensor]:
+    """
+    Reconstructs a list of videos in the original order.
+    """
+    ...

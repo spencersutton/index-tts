@@ -9,6 +9,9 @@ from ...tokenization_utils_base import AudioInput, BatchEncoding, PreTokenizedIn
 from ...utils import is_torch_available
 from ...video_utils import VideoInput
 
+"""
+Processor class for SAMHQ.
+"""
 if is_torch_available(): ...
 
 class SamHQImagesKwargs(ImagesKwargs):
@@ -24,6 +27,18 @@ class SamHQProcessorKwargs(ProcessingKwargs, total=False):
     _defaults = ...
 
 class SamHQProcessor(ProcessorMixin):
+    r"""
+    Constructs a SAM HQ processor which wraps a SAM  image processor and an 2D points & Bounding boxes processor into a
+    single processor.
+
+    [`SamHQProcessor`] offers all the functionalities of [`SamImageProcessor`]. See the docstring of
+    [`~SamImageProcessor.__call__`] for more information.
+
+    Args:
+        image_processor (`SamImageProcessor`):
+            An instance of [`SamImageProcessor`]. The image processor is a required input.
+    """
+
     attributes = ...
     image_processor_class = ...
     def __init__(self, image_processor) -> None: ...
@@ -34,9 +49,16 @@ class SamHQProcessor(ProcessorMixin):
         audio: Optional[AudioInput] = ...,
         video: Optional[VideoInput] = ...,
         **kwargs: Unpack[SamHQProcessorKwargs],
-    ) -> BatchEncoding: ...
+    ) -> BatchEncoding:
+        """
+        This method uses [`SamImageProcessor.__call__`] method to prepare image(s) for the model. It also prepares 2D
+        points and bounding boxes for the model if they are provided.
+        """
+        ...
+
     @property
-    def model_input_names(self): ...
+    def model_input_names(self):  # -> list[Any]:
+        ...
     def post_process_masks(self, *args, **kwargs): ...
 
 __all__ = ["SamHQProcessor"]

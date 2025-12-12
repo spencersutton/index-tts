@@ -36,6 +36,52 @@ if is_vision_available(): ...
 logger = ...
 
 class JanusVisionConfig(SiglipVisionConfig):
+    r"""
+    This is the configuration class to store the configuration of a [`JanusVisionModel`]. It is used to instantiate a
+    `JanusVisionModel` according to the specified arguments, defining the model architecture.
+
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
+    Args:
+        hidden_size (`int`, *optional*, defaults to 1024):
+            Dimensionality of the encoder layers and the pooler layer.
+        num_hidden_layers (`int`, *optional*, defaults to 24):
+            Number of hidden layers in the Transformer encoder.
+        num_attention_heads (`int`, *optional*, defaults to 16):
+            Number of attention heads for each attention layer in the Transformer encoder.
+        num_channels (`int`, *optional*, defaults to 3):
+            The number of input channels.
+        patch_size (`int`, *optional*, defaults to 16):
+            The size (resolution) of each patch.
+        image_size (`int`, *optional*, defaults to 384):
+            The size (resolution) of each image.
+        attention_dropout (`float`, *optional*, defaults to 0.0):
+            Dropout probability for attention weights.
+        layer_norm_eps (`float`, *optional*, defaults to 1e-06):
+            The epsilon used by the layer normalization layers.
+        hidden_act (`str` or `function`, *optional*, defaults to `"gelu"`):
+            The non-linear activation function (function or string) in the encoder and pooler. If string, `"gelu"`,
+            `"relu"`, `"selu"`, and `"gelu_new"` are supported.
+        mlp_ratio (`float`, *optional*, defaults to 4.0):
+            Ratio of MLP hidden dimensionality to embedding dimensionality.
+        attention_bias (`bool`, *optional*, defaults to `True`):
+            Whether to add a bias to the queries, keys, and values in the attention layers.
+        hidden_dropout_rate (`float`, *optional*, defaults to 0.0):
+            The dropout probability for fully connected layers in the encoder.
+        projection_dim (`int`, *optional*, defaults to 2048):
+            Dimensionality of the MLP projection head.
+        projection_dropout (`float`, *optional*, defaults to 0.0):
+            Dropout probability for the projection layer.
+        use_qk_norm (`bool`, *optional*, defaults to `False`):
+            Whether to normalize the query and key matrices.
+        initializer_range (`float`, *optional*, defaults to 0.02):
+            The standard deviation of the truncated normal initializer for initializing all weight matrices.
+        depth (`int`, *optional*, defaults to 2):
+            Number of hidden layers in the aligner module.
+        num_image_tokens (`int`, *optional*, defaults to 576):
+            Number of image tokens.
+    """
+
     model_type = ...
     base_config_key = ...
     def __init__(
@@ -62,6 +108,49 @@ class JanusVisionConfig(SiglipVisionConfig):
     ) -> None: ...
 
 class JanusVQVAEConfig(ChameleonVQVAEConfig):
+    r"""
+    This is the configuration class to store the configuration of a [`JanusVQVAEModel`]. It is used to instantiate a
+    `JanusVQVAEModel` according to the specified arguments, defining the model architecture.
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information. Instantiating a
+    configuration with the defaults will yield a similar configuration to the VQModel of the
+    [deepseek-community/Janus-Pro-1B](https://huggingface.co/deepseek-community/Janus-Pro-1B).
+
+    Args:
+        embed_dim (`int`, *optional*, defaults to 8):
+            Dimensionality of each embedding vector.
+        num_embeddings (`int`, *optional*, defaults to 16384):
+            Number of codebook embeddings.
+        double_latent (`bool`, *optional*, defaults to `False`):
+            Whether to use double z channels.
+        latent_channels (`int`, *optional*, defaults to 256):
+            Number of channels for the latent space.
+        num_patches (`int`, *optional*, defaults to 32):
+            Num of patches the input images can be divided into.
+        in_channels (`int`, *optional*, defaults to 3):
+            Number of input channels.
+        out_channels (`int`, *optional*, defaults to 3):
+            Number of out channels.
+        base_channels (`int`, *optional*, defaults to 128):
+            Base channel count.
+        channel_multiplier (`list[int]`, *optional*, defaults to `[1, 1, 2, 2, 4]`):
+            Channel multipliers for each resolution.
+        num_res_blocks (`int`, *optional*, defaults to 2):
+            Number of residual blocks.
+        dropout (`float`, *optional*, defaults to 0.0):
+            Dropout rate.
+        initializer_range (`float`, *optional*, defaults to 0.02):
+            The standard deviation of the truncated_normal_initializer for initializing all weight matrices.
+        projection_dim (`int`, *optional*, defaults to 2048):
+            Dimensionality of the MLP projection head.
+        num_hidden_layers (`int`, *optional*, defaults to 2):
+            Number of hidden layers in VAVAE MLP Connecter module.
+        hidden_act (`str` or `Callable`, *optional*, defaults to `"gelu"`):
+            The non-linear activation function (function or string) in the encoder and pooler. If string, `"gelu"`,
+            `"relu"`, `"silu"` and `"gelu_new"` are supported.
+        image_token_embed_dim (`int`, *optional*, defaults to 2048):
+            Dimension of image embeddings. It should be same as the dimensionality of text embeddings.
+    """
     def __init__(
         self,
         embed_dim: int = ...,
@@ -84,6 +173,51 @@ class JanusVQVAEConfig(ChameleonVQVAEConfig):
     ) -> None: ...
 
 class JanusConfig(PretrainedConfig):
+    r"""
+    This is the configuration class to store the configuration of a [`JanusModel`]. It is used to instantiate an
+    Janus model according to the specified arguments, defining the model architecture. Instantiating a configuration
+    with the defaults will yield a similar configuration to that of the Janus-1B or Janus-7B models.
+
+    e.g. [deepseek-community/Janus-Pro-1B](https://huggingface.co/deepseek-community/Janus-Pro-1B) or
+    [deepseek-community/Janus-Pro-7B](https://huggingface.co/deepseek-community/Janus-Pro-7B)
+
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
+
+    Args:
+        text_config (`Union[AutoConfig, dict]`, *optional*, defaults to `LlamaConfig`):
+            The config object or dictionary of the text backbone.
+        vision_config (`Union[AutoConfig, dict]`,  *optional*, defaults to `JanusVisionConfig`):
+            The config object or dictionary of the vision backbone.
+        vq_config (`Union[AutoConfig, dict]`,  *optional*, defaults to `JanusVQVAEConfig`):
+            The config object or dictionary of the VQVAE backbone.
+        image_token_id (`int`, *optional*, defaults to 100581):
+            Token index of a placeholder image token.
+
+    Example:
+
+    ```python
+    >>> from transformers import JanusForConditionalGeneration, JanusConfig, JanusVisionConfig, JanusVQVAEConfig, LlamaConfig
+
+    >>> # Initializing a Janus vision config
+    >>> vision_config = JanusVisionConfig()
+
+    >>> # Initializing a Llama config
+    >>> text_config = LlamaConfig()
+
+    >>> # Initializing a VQ config
+    >>> vq_config = JanusVQVAEConfig()
+
+    >>> # Initializing a Janus Pro 1B style configuration
+    >>> configuration = JanusConfig(vision_config=vision_config, text_config=text_config, vq_config=vq_config)
+
+    >>> # Initializing a model from the Janus Pro 1B style configuration
+    >>> model = JanusForConditionalGeneration(configuration)
+
+    >>> # Accessing the model configuration
+    >>> configuration = model.config
+    ```"""
+
     model_type = ...
     sub_configs = ...
     def __init__(self, text_config=..., vision_config=..., vq_config=..., image_token_id=..., **kwargs) -> None: ...
@@ -101,8 +235,19 @@ class JanusPreTrainedModel(PreTrainedModel):
     _supports_param_buffer_assignment = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Base class for Janus VQ-VAE mode model outputs.
+    """
+)
 class JanusVQVAEOutput(ModelOutput):
+    r"""
+    decoded_pixel_values (`torch.FloatTensor` of shape `(batch_size, num_channels, image_size, image_size)`):
+        Reconstructed pixel values after encoding and decoding the input.
+    embedding_loss (`torch.FloatTensor`):
+        Embedding loss.
+    """
+
     decoded_pixel_values: Optional[torch.FloatTensor] = ...
     embedding_loss: torch.FloatTensor = ...
 
@@ -113,13 +258,15 @@ class JanusVisionEmbeddings(SiglipVisionEmbeddings):
     def forward(self, pixel_values: torch.Tensor, interpolate_pos_encoding: bool = ...) -> torch.Tensor: ...
 
 class JanusVisionAttention(nn.Module):
+    """Attention Class for Janus Vision Encoder"""
     def __init__(self, config: JanusVisionConfig) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ): ...
+    ):  # -> tuple[Any, Any]:
+        ...
 
 class JanusVisionMLP(nn.Module):
     def __init__(self, config: JanusVisionConfig) -> None: ...
@@ -136,7 +283,8 @@ class JanusVisionModel(Blip2VisionModel):
 
 class JanusVisionAlignerMLP(nn.Module):
     def __init__(self, config: JanusVisionConfig) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class JanusVQVAEVectorQuantizer(ChameleonVQVAEVectorQuantizer):
     def __init__(self, config: JanusVQVAEConfig) -> None: ...
@@ -148,7 +296,8 @@ class JanusVQVAEConvDownsample(ChameleonVQVAEEncoderConvDownsample): ...
 
 class JanusVQVAEConvUpsample(nn.Module):
     def __init__(self, in_channels) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class JanusVQVAEMidBlock(nn.Module):
     def __init__(self, config: JanusVQVAEConfig, channels: int) -> None: ...
@@ -156,7 +305,8 @@ class JanusVQVAEMidBlock(nn.Module):
 
 class JanusVQVAEEncoder(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, pixel_values: torch.LongTensor): ...
+    def forward(self, pixel_values: torch.LongTensor):  # -> Any:
+        ...
 
 class JanusVQVAEDecoder(nn.Module):
     def __init__(self, config) -> None: ...
@@ -166,28 +316,53 @@ class JanusVQVAE(ChameleonVQVAE):
     _no_split_modules = ...
     main_input_name = ...
     def __init__(self, config: JanusVQVAEConfig) -> None: ...
-    def decode(self, image_tokens: torch.LongTensor) -> torch.FloatTensor: ...
+    def decode(self, image_tokens: torch.LongTensor) -> torch.FloatTensor:
+        """
+        Decodes quantized token IDs into pixel values.
+        Args:
+            image_tokens (torch.LongTensor): Batch of token IDs.
+        Returns:
+            pixel_values (`torch.FloatTensor` of shape `(batch_size, num_channels, image_size, image_size)`):
+                Pixel values decoded from the token IDs.
+        """
+        ...
+
     @can_return_tuple
     @auto_docstring
     def forward(self, pixel_values: torch.FloatTensor) -> tuple[torch.FloatTensor, torch.FloatTensor]: ...
 
 class JanusVQVAEAlignerMLP(nn.Module):
     def __init__(self, config: JanusVQVAEConfig) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class JanusVQVAEHead(nn.Module):
+    """Head used for sampling tokens in image generation, replacing the usual lm head."""
     def __init__(self, config: JanusVQVAEConfig) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.tensor: ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The Janus model which consists of a siglip vision backbone, a Llama language model and a VQ model.
+    """
+)
 class JanusModel(JanusPreTrainedModel):
     def __init__(self, config: JanusConfig) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
-    def get_image_features(self, pixel_values): ...
+    def get_input_embeddings(self):  # -> Any:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
+    def get_image_features(self, pixel_values):  # -> Any:
+        ...
     def get_placeholder_mask(
         self, input_ids: torch.LongTensor, inputs_embeds: torch.FloatTensor, image_features: torch.FloatTensor
-    ): ...
+    ):  # -> Tensor | Any:
+        """
+        Obtains multimodal placeholdr mask from `input_ids` or `inputs_embeds`, and checks that the placeholder token count is
+        equal to the length of multimodal features. If the lengths are different, an error is raised.
+        """
+        ...
+
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -202,17 +377,22 @@ class JanusModel(JanusPreTrainedModel):
         use_cache: Optional[bool] = ...,
         logits_to_keep: Union[int, torch.Tensor] = ...,
         **kwargs,
-    ): ...
+    ):  # -> JanusBaseModelOutputWithPast:
+        ...
 
 class JanusForConditionalGeneration(JanusPreTrainedModel, GenerationMixin):
     _tied_weights_keys = ...
     _can_compile_fullgraph = ...
     def __init__(self, config: JanusConfig) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def get_input_embeddings(self):  # -> Any:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     def prepare_embeddings_for_image_generation(self, inputs: torch.Tensor) -> torch.Tensor: ...
-    def set_decoder(self, decoder): ...
-    def get_decoder(self): ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> JanusModel:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -228,7 +408,15 @@ class JanusForConditionalGeneration(JanusPreTrainedModel, GenerationMixin):
         use_cache: Optional[bool] = ...,
         logits_to_keep: Union[int, torch.Tensor] = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ): ...
+    ):  # -> JanusCausalLMOutputWithPast:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+        """
+        ...
+
     def prepare_inputs_for_generation(
         self,
         input_ids,
@@ -239,8 +427,18 @@ class JanusForConditionalGeneration(JanusPreTrainedModel, GenerationMixin):
         cache_position=...,
         logits_to_keep=...,
         **kwargs,
-    ): ...
-    def decode_image_tokens(self, image_tokens: torch.Tensor): ...
+    ):  # -> dict[Any, Any]:
+        ...
+    def decode_image_tokens(self, image_tokens: torch.Tensor):  # -> Tensor:
+        """
+        Decodes generated image tokens from language model to continuous pixel values
+        with VQGAN module via upsampling.
+        Args:
+            image_tokens (`torch.LongTensor` of shape `(batch_size, num_of_tokens)`):
+                The tensors corresponding to the input images.
+        """
+        ...
+
     @torch.no_grad
     def generate(
         self,
@@ -248,9 +446,46 @@ class JanusForConditionalGeneration(JanusPreTrainedModel, GenerationMixin):
         attention_mask: Optional[torch.LongTensor] = ...,
         logits_processor: Optional[LogitsProcessorList] = ...,
         **kwargs,
-    ): ...
+    ):  # -> GenerateOutput | LongTensor | Tensor:
+        ...
 
 class JanusImageProcessor(BlipImageProcessor):
+    r"""
+    Constructs a JANUS image processor.
+
+    Args:
+        do_resize (`bool`, *optional*, defaults to `True`):
+            Whether to resize the image's (height, width) dimensions to the specified `size`. Can be overridden by the
+            `do_resize` parameter in the `preprocess` method.
+        size (`dict`, *optional*, defaults to `{"height": 384, "width": 384}`):
+            Size of the output image after resizing. Can be overridden by the `size` parameter in the `preprocess`
+            method.
+        min_size (`int`, *optional*, defaults to 14):
+            The minimum allowed size for the resized image. Ensures that neither the height nor width
+            falls below this value after resizing.
+        resample (`PILImageResampling`, *optional*, defaults to `Resampling.BICUBIC`):
+            Resampling filter to use if resizing the image. Only has an effect if `do_resize` is set to `True`. Can be
+            overridden by the `resample` parameter in the `preprocess` method.
+        do_rescale (`bool`, *optional*, defaults to `True`):
+            Whether to rescale the image by the specified scale `rescale_factor`. Can be overridden by the
+            `do_rescale` parameter in the `preprocess` method.
+        rescale_factor (`int` or `float`, *optional*, defaults to `1/255`):
+            Scale factor to use if rescaling the image. Only has an effect if `do_rescale` is set to `True`. Can be
+            overridden by the `rescale_factor` parameter in the `preprocess` method.
+        do_normalize (`bool`, *optional*, defaults to `True`):
+            Whether to normalize the image. Can be overridden by the `do_normalize` parameter in the `preprocess`
+            method. Can be overridden by the `do_normalize` parameter in the `preprocess` method.
+        image_mean (`float` or `list[float]`, *optional*, defaults to `IMAGENET_STANDARD_MEAN`):
+            Mean to use if normalizing the image. This is a float or list of floats the length of the number of
+            channels in the image. Can be overridden by the `image_mean` parameter in the `preprocess` method. Can be
+            overridden by the `image_mean` parameter in the `preprocess` method.
+        image_std (`float` or `list[float]`, *optional*, defaults to `IMAGENET_STANDARD_STD`):
+            Standard deviation to use if normalizing the image. This is a float or list of floats the length of the
+            number of channels in the image. Can be overridden by the `image_std` parameter in the `preprocess` method.
+            Can be overridden by the `image_std` parameter in the `preprocess` method.
+        do_convert_rgb (`bool`, *optional*, defaults to `True`):
+            Whether to convert the image to RGB.
+    """
     def __init__(
         self,
         do_resize: bool = ...,
@@ -258,7 +493,7 @@ class JanusImageProcessor(BlipImageProcessor):
         min_size: int = ...,
         resample: PILImageResampling = ...,
         do_rescale: bool = ...,
-        rescale_factor: float = ...,
+        rescale_factor: Union[int, float] = ...,
         do_normalize: bool = ...,
         image_mean: Optional[Union[float, list[float]]] = ...,
         image_std: Optional[Union[float, list[float]]] = ...,
@@ -271,7 +506,32 @@ class JanusImageProcessor(BlipImageProcessor):
         background_color: Union[int, tuple[int, int, int]] = ...,
         data_format: Optional[Union[str, ChannelDimension]] = ...,
         input_data_format: Optional[Union[str, ChannelDimension]] = ...,
-    ) -> np.array: ...
+    ) -> np.array:
+        """
+        Pads an image to a square based on the longest edge.
+
+        Args:
+            image (`np.ndarray`):
+                The image to pad.
+            background_color (`int` or `tuple[int, int, int]`, *optional*, defaults to 0):
+                The color to use for the padding. Can be an integer for single channel or a
+                tuple of integers representing for multi-channel images. If passed as integer
+                in mutli-channel mode, it will default to `0` in subsequent channels.
+            data_format (`str` or `ChannelDimension`, *optional*):
+                The channel dimension format for the output image. Can be one of:
+                    - `"channels_first"` or `ChannelDimension.FIRST`: image in (num_channels, height, width) format.
+                    - `"channels_last"` or `ChannelDimension.LAST`: image in (height, width, num_channels) format.
+                If unset, will use same as the input image.
+            input_data_format (`str` or `ChannelDimension`, *optional*):
+                The channel dimension format for the input image. Can be one of:
+                    - `"channels_first"` or `ChannelDimension.FIRST`: image in (num_channels, height, width) format.
+                    - `"channels_last"` or `ChannelDimension.LAST`: image in (height, width, num_channels) format.
+
+        Returns:
+            `np.ndarray`: The padded image.
+        """
+        ...
+
     def resize(
         self,
         image: np.ndarray,
@@ -281,7 +541,37 @@ class JanusImageProcessor(BlipImageProcessor):
         data_format: Optional[Union[str, ChannelDimension]] = ...,
         input_data_format: Optional[Union[str, ChannelDimension]] = ...,
         **kwargs,
-    ) -> np.ndarray: ...
+    ) -> np.ndarray:
+        """
+        Resize an image to dynamically calculated size.
+
+        Args:
+            image (`np.ndarray`):
+                Image to resize.
+            size (`dict[str, int]` or `int`):
+                The size to resize the image to. If a dictionary, it should have the keys `"height"` and `"width"`.
+            background_color (`tuple[int, int, int]`):
+                The background color to use for the padding.
+            resample (`PILImageResampling`, *optional*, defaults to `PILImageResampling.BICUBIC`):
+                `PILImageResampling` filter to use when resizing the image e.g. `PILImageResampling.BICUBIC`.
+            data_format (`ChannelDimension` or `str`, *optional*):
+                The channel dimension format for the output image. If unset, the channel dimension format of the input
+                image is used. Can be one of:
+                - `"channels_first"` or `ChannelDimension.FIRST`: image in (num_channels, height, width) format.
+                - `"channels_last"` or `ChannelDimension.LAST`: image in (height, width, num_channels) format.
+                - `None`: will be inferred from input
+            input_data_format (`ChannelDimension` or `str`, *optional*):
+                The channel dimension format for the input image. If unset, the channel dimension format is inferred
+                from the input image. Can be one of:
+                - `"channels_first"` or `ChannelDimension.FIRST`: image in (num_channels, height, width) format.
+                - `"channels_last"` or `ChannelDimension.LAST`: image in (height, width, num_channels) format.
+                - `"none"` or `ChannelDimension.NONE`: image in (height, width) format.
+
+        Returns:
+            `np.ndarray`: The resized image.
+        """
+        ...
+
     def postprocess(
         self,
         images: ImageInput,
@@ -292,14 +582,35 @@ class JanusImageProcessor(BlipImageProcessor):
         image_std: Optional[list[float]] = ...,
         input_data_format: Optional[str] = ...,
         return_tensors: Optional[str] = ...,
-    ): ...
+    ):  # -> ImageInput | Any | BatchFeature:
+        """Applies post-processing to the decoded image tokens by reversing transformations applied during preprocessing."""
+        ...
+
     def unnormalize(
         self,
         image: np.array,
         image_mean: Union[float, Iterable[float]],
         image_std: Union[float, Iterable[float]],
         input_data_format: Optional[Union[str, ChannelDimension]] = ...,
-    ) -> np.array: ...
+    ) -> np.array:
+        """
+        Unnormalizes `image` using the mean and standard deviation specified by `mean` and `std`.
+        image = (image * image_std) + image_mean
+        Args:
+            image (`torch.Tensor` of shape `(batch_size, num_channels, image_size, image_size)` or `(num_channels, image_size, image_size)`):
+                Batch of pixel values to postprocess.
+            image_mean (`float` or `Iterable[float]`):
+                The mean to use for unnormalization.
+            image_std (`float` or `Iterable[float]`):
+                The standard deviation to use for unnormalization.
+            input_data_format (`ChannelDimension` or `str`, *optional*):
+                The channel dimension format for the input image. If unset, the channel dimension format is inferred
+                from the input image. Can be one of:
+                - `"channels_first"` or `ChannelDimension.FIRST`: image in (num_channels, height, width) format.
+                - `"channels_last"` or `ChannelDimension.LAST`: image in (height, width, num_channels) format.
+                - `"none"` or `ChannelDimension.NONE`: image in (height, width) format.
+        """
+        ...
 
 __all__ = [
     "JanusImageProcessor",

@@ -13,8 +13,31 @@ from .utils import TransformersKwargs, auto_docstring, can_return_tuple
 logger = ...
 
 class GradientCheckpointingLayer(nn.Module):
+    """Base class for layers with gradient checkpointing.
+
+    This class enables gradient checkpointing functionality for a layer. By default, gradient checkpointing is disabled
+    (`gradient_checkpointing = False`). When `model.set_gradient_checkpointing()` is called, gradient checkpointing is
+    enabled by setting `gradient_checkpointing = True` and assigning a checkpointing function to `_gradient_checkpointing_func`.
+
+    Important:
+
+        When using gradient checkpointing with `use_reentrant=True`, inputs that require gradients (e.g. hidden states)
+        must be passed as positional arguments (`*args`) rather than keyword arguments to properly propagate gradients.
+
+        Example:
+
+            ```python
+            >>> # Correct - hidden_states passed as positional arg
+            >>> out = self.layer(hidden_states, attention_mask=attention_mask)
+
+            >>> # Incorrect - hidden_states passed as keyword arg
+            >>> out = self.layer(hidden_states=hidden_states, attention_mask=attention_mask)
+            ```
+    """
+
     gradient_checkpointing = ...
-    def __call__(self, *args, **kwargs): ...
+    def __call__(self, *args, **kwargs):  # -> Any:
+        ...
 
 @auto_docstring
 class GenericForSequenceClassification:
@@ -38,8 +61,10 @@ class GenericForSequenceClassification:
 class GenericForQuestionAnswering:
     base_model_prefix = ...
     def __init__(self, config) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def get_input_embeddings(self):  # -> Any:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(

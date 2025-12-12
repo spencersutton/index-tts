@@ -24,23 +24,41 @@ class GptOssRMSNorm(LlamaRMSNorm):
 
 class GptOssExperts(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states: torch.Tensor, router_indices=..., routing_weights=...) -> torch.Tensor: ...
+    def forward(self, hidden_states: torch.Tensor, router_indices=..., routing_weights=...) -> torch.Tensor:
+        """
+        When training is is more efficient to just loop over the experts and compute the output for each expert
+        as otherwise the memory would explode.
+
+        For inference we can sacrifice some memory and compute the output for all experts at once. By repeating the inputs.
+
+        Args:
+            hidden_states (torch.Tensor): (batch_size, seq_len, hidden_size)
+            selected_experts (torch.Tensor): (batch_size * token_num, top_k)
+            routing_weights (torch.Tensor): (batch_size * token_num, num_experts)
+        Returns:
+            torch.Tensor
+        """
+        ...
 
 class GptOssTopKRouter(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> tuple[Tensor, Tensor]:
+        ...
 
 @use_kernel_forward_from_hub("MegaBlocksMoeMLP")
 class GptOssMLP(nn.Module):
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> tuple[Any, Any]:
+        ...
 
 class GptOssRotaryEmbedding(LlamaRotaryEmbedding):
     @torch.no_grad()
     @dynamic_rope_update
-    def forward(self, x, position_ids): ...
+    def forward(self, x, position_ids):  # -> tuple[Any, Any]:
+        ...
 
-def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...): ...
+def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...):  # -> tuple[Tensor, Tensor]:
+    ...
 def eager_attention_forward(
     module: nn.Module,
     query: torch.Tensor,
@@ -50,7 +68,8 @@ def eager_attention_forward(
     scaling: float,
     dropout: float = ...,
     **kwargs,
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class GptOssAttention(Qwen2Attention):
     def __init__(self, config: GptOssConfig, layer_idx: int) -> None: ...

@@ -20,6 +20,7 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import add_start_docstrings, auto_docstring, is_torch_flex_attn_available
 from .configuration_gptj import GPTJConfig
 
+"""PyTorch GPT-J model."""
 if is_torch_flex_attn_available(): ...
 if is_flash_attn_available(): ...
 logger = ...
@@ -48,6 +49,11 @@ class GPTJAttention(nn.Module):
     ]: ...
 
 class GPTJFlashAttention2(GPTJAttention):
+    """
+    GPTJ flash attention module. This module inherits from `GPTJAttention` as the weights of the module stays
+    untouched. The only required change would be on the forward pass where it needs to correctly call the public API of
+    flash attention and deal with padding tokens in case the input contains any of them.
+    """
     def __init__(self, *args, **kwargs) -> None: ...
     def forward(
         self,
@@ -104,11 +110,15 @@ DEPARALLELIZE_DOCSTRING = ...
 class GPTJModel(GPTJPreTrainedModel):
     def __init__(self, config) -> None: ...
     @add_start_docstrings(PARALLELIZE_DOCSTRING)
-    def parallelize(self, device_map=...): ...
+    def parallelize(self, device_map=...):  # -> None:
+        ...
     @add_start_docstrings(DEPARALLELIZE_DOCSTRING)
-    def deparallelize(self): ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, new_embeddings): ...
+    def deparallelize(self):  # -> None:
+        ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, new_embeddings):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -124,16 +134,29 @@ class GPTJModel(GPTJPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPast]: ...
+    ) -> Union[tuple, BaseModelOutputWithPast]:
+        r"""
+        inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_dim)`, *optional*):
+            Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation. This
+            is useful if you want more control over how to convert *input_ids* indices into associated vectors than the
+            model's internal embedding lookup matrix.
+        """
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The GPT-J Model transformer with a language modeling head on top.
+    """
+)
 class GPTJForCausalLM(GPTJPreTrainedModel, GenerationMixin):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
     @add_start_docstrings(PARALLELIZE_DOCSTRING)
-    def parallelize(self, device_map=...): ...
+    def parallelize(self, device_map=...):  # -> None:
+        ...
     @add_start_docstrings(DEPARALLELIZE_DOCSTRING)
-    def deparallelize(self): ...
+    def deparallelize(self):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -151,9 +174,33 @@ class GPTJForCausalLM(GPTJPreTrainedModel, GenerationMixin):
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         **kwargs,
-    ) -> Union[tuple, CausalLMOutputWithPast]: ...
+    ) -> Union[tuple, CausalLMOutputWithPast]:
+        r"""
+        inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_dim)`, *optional*):
+            Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation. This
+            is useful if you want more control over how to convert *input_ids* indices into associated vectors than the
+            model's internal embedding lookup matrix.
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for language modeling. Note that the labels **are shifted** inside the model, i.e. you can set
+            `labels = input_ids` Indices are selected in `[-100, 0, ..., config.vocab_size]` All labels set to `-100`
+            are ignored (masked), the loss is only computed for labels in `[0, ..., config.vocab_size]`
+        """
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The GPT-J Model transformer with a sequence classification head on top (linear layer).
+
+    [`GPTJForSequenceClassification`] uses the last token in order to do the classification, as other causal models
+    (e.g. GPT, GPT-2, GPT-Neo) do.
+
+    Since it does classification on the last token, it requires to know the position of the last token. If a
+    `pad_token_id` is defined in the configuration, it finds the last token that is not a padding token in each row. If
+    no `pad_token_id` is defined, it simply takes the last value in each row of the batch. Since it cannot guess the
+    padding tokens when `inputs_embeds` are passed instead of `input_ids`, it does the same (take the last value in
+    each row of the batch).
+    """
+)
 class GPTJForSequenceClassification(GPTJPreTrainedModel):
     def __init__(self, config) -> None: ...
     @auto_docstring
@@ -171,7 +218,18 @@ class GPTJForSequenceClassification(GPTJPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, SequenceClassifierOutputWithPast]: ...
+    ) -> Union[tuple, SequenceClassifierOutputWithPast]:
+        r"""
+        inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_dim)`, *optional*):
+            Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation. This
+            is useful if you want more control over how to convert *input_ids* indices into associated vectors than the
+            model's internal embedding lookup matrix.
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 @auto_docstring
 class GPTJForQuestionAnswering(GPTJPreTrainedModel):
@@ -190,7 +248,14 @@ class GPTJForQuestionAnswering(GPTJPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, QuestionAnsweringModelOutput]: ...
+    ) -> Union[tuple, QuestionAnsweringModelOutput]:
+        r"""
+        inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_dim)`, *optional*):
+            Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation. This
+            is useful if you want more control over how to convert *input_ids* indices into associated vectors than the
+            model's internal embedding lookup matrix.
+        """
+        ...
 
 __all__ = [
     "GPTJForCausalLM",

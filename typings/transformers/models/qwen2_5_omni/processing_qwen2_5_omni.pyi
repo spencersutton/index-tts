@@ -10,6 +10,10 @@ from ...processing_utils import ImagesKwargs, ProcessingKwargs, ProcessorMixin, 
 from ...tokenization_utils_base import AudioInput, PreTokenizedInput, TextInput
 from ...video_utils import VideoInput
 
+"""
+Processor class for Qwen2.5Omni.
+"""
+
 class Qwen2_5_OmniVideosKwargs(VideosKwargs):
     fps: Optional[list[Union[int, float]]] = ...
     use_audio_in_video: Optional[bool] = ...
@@ -35,6 +39,24 @@ class Qwen2_5OmniProcessorKwargs(ProcessingKwargs, total=False):
     _defaults = ...
 
 class Qwen2_5OmniProcessor(ProcessorMixin):
+    r"""
+    Constructs a Qwen2.5Omni processor.
+    [`Qwen2_5OmniProcessor`] offers all the functionalities of [`Qwen2VLImageProcessor`], [`WhisperFeatureExtractor`], and [`Qwen2TokenizerFast`]. See the
+    [`~Qwen2_5OmniProcessor.__call__`] and [`~Qwen2_5OmniProcessor.decode`] for more information.
+
+    Args:
+        image_processor ([`Qwen2VLImageProcessor`], *optional*):
+            The image processor.
+        video_processor ([`Qwen2VLVideoProcessor`], *optional*):
+            The video processor.
+        feature_extractor ([`WhisperFeatureExtractor`], *optional*):
+            The audio feature extractor.
+        tokenizer ([`Qwen2TokenizerFast`], *optional*):
+            The text tokenizer.
+        chat_template (`Optional[str]`, *optional*):
+            The Jinja template to use for formatting the conversation. If not provided, the default chat template is used.
+    """
+
     attributes = ...
     image_processor_class = ...
     video_processor_class = ...
@@ -50,7 +72,32 @@ class Qwen2_5OmniProcessor(ProcessorMixin):
         videos: VideoInput = ...,
         audio: AudioInput = ...,
         **kwargs: Unpack[Qwen2_5OmniProcessorKwargs],
-    ) -> BatchFeature: ...
+    ) -> BatchFeature:
+        """
+        Main method to prepare for the model one or several sequences(s) and audio(s). This method forwards the `text`
+        and `kwargs` arguments to Qwen2TokenizerFast's [`~Qwen2TokenizerFast.__call__`] if `text` is not `None` to encode
+        the text. To prepare the audio(s), this method forwards the `audio` and `kwargs` arguments to
+        WhisperFeatureExtractor's [`~WhisperFeatureExtractor.__call__`] if `audio` is not `None`. To prepare the vision inputs,
+        this method forwards the `vision_infos` and `kwargs` arguments to Qwen2VLImageProcessor's [`~Qwen2VLImageProcessor.__call__`]
+        if `vision_infos` is not `None`. Please refer to the doctsring
+        of the above two methods for more information.
+
+        Args:
+            text (`str`, `list[str]`, `list[list[str]]`):
+                The sequence or batch of sequences to be encoded. Each sequence can be a string or a list of strings
+                (pretokenized string). If the sequences are provided as list of strings (pretokenized), you must set
+                `is_split_into_words=True` (to lift the ambiguity with a batch of sequences).
+            images (`PIL.Image.Image`, `np.ndarray`, `torch.Tensor`, `list[PIL.Image.Image]`, `list[np.ndarray]`, `list[torch.Tensor]`):
+                The image or batch of images to be prepared. Each image can be a PIL image, NumPy array or PyTorch
+                tensor. Both channels-first and channels-last formats are supported.
+            videos (`np.ndarray`, `torch.Tensor`, `list[np.ndarray]`, `list[torch.Tensor]`):
+                The image or batch of videos to be prepared. Each video can be a 4D NumPy array or PyTorch
+                tensor, or a nested list of 3D frames. Both channels-first and channels-last formats are supported.
+            audio (`np.ndarray`, `list[np.ndarray]`):
+                The audio or batch of audio to be prepared. Each audio can be a NumPy array.
+        """
+        ...
+
     def replace_multimodal_special_tokens(
         self,
         text,
@@ -61,12 +108,47 @@ class Qwen2_5OmniProcessor(ProcessorMixin):
         use_audio_in_video,
         position_id_per_seconds,
         seconds_per_chunk,
-    ): ...
-    def get_chunked_index(self, token_indices: np.ndarray, tokens_per_chunk: int) -> list[tuple[int, int]]: ...
-    def batch_decode(self, *args, **kwargs): ...
-    def decode(self, *args, **kwargs): ...
-    def apply_chat_template(self, conversations, chat_template=..., **kwargs): ...
+    ):  # -> list[Any]:
+        ...
+    def get_chunked_index(self, token_indices: np.ndarray, tokens_per_chunk: int) -> list[tuple[int, int]]:
+        """
+        Splits token index list into chunks based on token value ranges.
+
+        Given a list of token indices, returns a list of (start, end) index tuples representing
+        slices of the list where the token values fall within successive ranges of `t_ntoken_per_chunk`.
+
+        For example, if `t_ntoken_per_chunk` is 1000, the function will create chunks such that:
+        - the first chunk contains token values < 1000,
+        - the second chunk contains values >= 1000 and < 2000, and so on.
+
+        Parameters:
+            token_indices (`np.ndarray`): A monotonically increasing list of token index values.
+            t_ntoken_per_chunk (`int`): Number of tokens per chunk (used as the chunk size threshold).
+
+        Returns:
+            `list[tuple[int, int]]`: A list of tuples, each representing the start (inclusive)
+                                and end (exclusive) indices of a chunk in `token_indices`.
+        """
+        ...
+
+    def batch_decode(self, *args, **kwargs):
+        """
+        This method forwards all its arguments to Qwen2TokenizerFast's [`~PreTrainedTokenizer.batch_decode`]. Please
+        refer to the docstring of this method for more information.
+        """
+        ...
+
+    def decode(self, *args, **kwargs):
+        """
+        This method forwards all its arguments to Qwen2TokenizerFast's [`~PreTrainedTokenizer.decode`]. Please refer to
+        the docstring of this method for more information.
+        """
+        ...
+
+    def apply_chat_template(self, conversations, chat_template=..., **kwargs):  # -> str:
+        ...
     @property
-    def model_input_names(self): ...
+    def model_input_names(self):  # -> list[Any]:
+        ...
 
 __all__ = ["Qwen2_5OmniProcessor"]

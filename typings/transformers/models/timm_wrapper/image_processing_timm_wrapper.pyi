@@ -15,16 +15,47 @@ logger = ...
 
 @requires(backends=("torch", "timm", "torchvision"))
 class TimmWrapperImageProcessor(BaseImageProcessor):
+    """
+    Wrapper class for timm models to be used within transformers.
+
+    Args:
+        pretrained_cfg (`dict[str, Any]`):
+            The configuration of the pretrained model used to resolve evaluation and
+            training transforms.
+        architecture (`Optional[str]`, *optional*):
+            Name of the architecture of the model.
+    """
+
     main_input_name = ...
     def __init__(self, pretrained_cfg: dict[str, Any], architecture: Optional[str] = ..., **kwargs) -> None: ...
-    def to_dict(self) -> dict[str, Any]: ...
+    def to_dict(self) -> dict[str, Any]:
+        """
+        Serializes this instance to a Python dictionary.
+        """
+        ...
+
     @classmethod
     def get_image_processor_dict(
         cls, pretrained_model_name_or_path: Union[str, os.PathLike], **kwargs
-    ) -> tuple[dict[str, Any], dict[str, Any]]: ...
-    def preprocess(
-        self, images: ImageInput, return_tensors: Optional[Union[str, TensorType]] = ...
-    ) -> BatchFeature: ...
-    def save_pretrained(self, *args, **kwargs): ...
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        """
+        Get the image processor dict for the model.
+        """
+        ...
+
+    def preprocess(self, images: ImageInput, return_tensors: Optional[Union[str, TensorType]] = ...) -> BatchFeature:
+        """
+        Preprocess an image or batch of images.
+
+        Args:
+            images (`ImageInput`):
+                Image to preprocess. Expects a single or batch of images
+            return_tensors (`str` or `TensorType`, *optional*):
+                The type of tensors to return.
+        """
+        ...
+
+    def save_pretrained(self, *args, **kwargs):  # -> None:
+        ...
 
 __all__ = ["TimmWrapperImageProcessor"]

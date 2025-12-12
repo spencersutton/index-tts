@@ -9,12 +9,36 @@ from ...processing_utils import ProcessingKwargs, ProcessorMixin, Unpack
 from ...tokenization_utils_base import PreTokenizedInput, TextInput
 from ...video_utils import VideoInput
 
+"""
+Processor class for PerceptionLM.
+"""
 logger = ...
 
 class PerceptionLMProcessorKwargs(ProcessingKwargs, total=False):
     _defaults = ...
 
 class PerceptionLMProcessor(ProcessorMixin):
+    r"""
+    Constructs a PerceptionLM processor which wraps a PerceptionLM image processor, a PerceptionLM video processor, and a tokenizer into a single processor.
+
+    [`PerceptionLMProcessor`] offers all the functionalities of [`PerceptionLMImageProcessorFast`], [`PerceptionLMVideoProcessor`], and the tokenizer (e.g. [`LlamaTokenizerFast`]). See the
+    [`~PerceptionLMProcessor.__call__`] and [`~PerceptionLMProcessor.decode`] for more information.
+
+    Args:
+        video_processor ([`PerceptionLMVideoProcessor`], *optional*):
+            The video processor to process video inputs.
+        image_processor ([`PerceptionLMImageProcessorFast`], *optional*):
+            The image processor to process image inputs.
+        tokenizer ([`LlamaTokenizerFast`] or similar, *optional*):
+            The tokenizer to process text inputs.
+        patch_size (`int`, *optional*):
+            Patch size from the vision tower.
+        chat_template (`str`, *optional*):
+            A Jinja template which will be used to convert lists of messages in a chat into a tokenizable string.
+        pooling_ratio (`int`, *optional*, defaults to 2):
+            Pooling ratio for vision tokens. If not 1, 2D adaptive pooling is applied over projected vision tokens.
+    """
+
     attributes = ...
     image_processor_class = ...
     video_processor_class = ...
@@ -36,10 +60,56 @@ class PerceptionLMProcessor(ProcessorMixin):
         audio=...,
         videos: VideoInput = ...,
         **kwargs: Unpack[PerceptionLMProcessorKwargs],
-    ) -> BatchFeature: ...
-    def batch_decode(self, *args, **kwargs): ...
-    def decode(self, *args, **kwargs): ...
+    ) -> BatchFeature:
+        """
+        Prepares a batch containing one or more sequences of text and/or images and/or videos.
+
+        If `text` is provided, it is tokenized using the tokenizer.
+        If `images` is provided, they are processed using the image processor.
+        If `videos` is provided, they are processed using the video processor.
+
+        Args:
+            images (`PIL.Image.Image`, `np.ndarray`, `torch.Tensor`, `List[PIL.Image.Image]`, `List[np.ndarray]`, `List[torch.Tensor]`, *optional*):
+                The image or batch of images to be processed. Each image can be a PIL image, NumPy array, or PyTorch tensor.
+                Both channels-first and channels-last formats are supported.
+            text (`str`, `List[str]`, *optional*):
+                The sequence or batch of sequences to be tokenized. Each sequence can be a string.
+            videos (`Any`, *optional*):
+                The video or batch of videos to be processed.
+            return_tensors (`str` or [`~utils.TensorType`], *optional*):
+                If set, will return tensors of a particular framework. Acceptable values are:
+                - `'tf'`: Return TensorFlow `tf.constant` objects.
+                - `'pt'`: Return PyTorch `torch.Tensor` objects.
+                - `'np'`: Return NumPy `np.ndarray` objects.
+                - `'jax'`: Return JAX `jnp.ndarray` objects.
+
+        Returns:
+            [`BatchFeature`]: A [`BatchFeature`] with the following fields:
+
+            - **input_ids** -- List of token ids to be fed to a model. Returned when `text` is provided.
+            - **attention_mask** -- List of indices specifying which tokens should be attended to by the model (when
+              `return_attention_mask=True` or if *"attention_mask"* is in `self.model_input_names` and if `text` is provided).
+            - **pixel_values** -- Pixel values to be fed to a model. Returned when `images` is provided.
+            - **pixel_values_videos** -- Video pixel values to be fed to a model. Returned when `videos` is provided.
+        """
+        ...
+
+    def batch_decode(self, *args, **kwargs):
+        """
+        This method forwards all its arguments to PerceptionLMTokenizerFast's [`~PreTrainedTokenizer.batch_decode`]. Please
+        refer to the docstring of this method for more information.
+        """
+        ...
+
+    def decode(self, *args, **kwargs):
+        """
+        This method forwards all its arguments to PerceptionLMTokenizerFast's [`~PreTrainedTokenizer.decode`]. Please refer to
+        the docstring of this method for more information.
+        """
+        ...
+
     @property
-    def model_input_names(self): ...
+    def model_input_names(self):  # -> list[Any]:
+        ...
 
 __all__ = ["PerceptionLMProcessor"]

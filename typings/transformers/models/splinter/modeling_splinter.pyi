@@ -12,9 +12,11 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring, can_return_tuple
 from .configuration_splinter import SplinterConfig
 
+"""PyTorch Splinter model."""
 logger = ...
 
 class SplinterEmbeddings(nn.Module):
+    """Construct the embeddings from word, position and token_type embeddings."""
     def __init__(self, config) -> None: ...
     def forward(
         self,
@@ -34,7 +36,8 @@ def eager_attention_forward(
     dropout: float = ...,
     head_mask: Optional[torch.Tensor] = ...,
     **kwargs,
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class SplinterSelfAttention(nn.Module):
     def __init__(self, config) -> None: ...
@@ -53,7 +56,8 @@ class SplinterSelfOutput(nn.Module):
 
 class SplinterAttention(nn.Module):
     def __init__(self, config) -> None: ...
-    def prune_heads(self, heads): ...
+    def prune_heads(self, heads):  # -> None:
+        ...
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -81,7 +85,8 @@ class SplinterLayer(GradientCheckpointingLayer):
         output_attentions: Optional[bool] = ...,
         **kwargs,
     ) -> tuple[torch.Tensor]: ...
-    def feed_forward_chunk(self, attention_output): ...
+    def feed_forward_chunk(self, attention_output):  # -> Any:
+        ...
 
 class SplinterEncoder(nn.Module):
     def __init__(self, config) -> None: ...
@@ -105,9 +110,16 @@ class SplinterPreTrainedModel(PreTrainedModel):
 
 @auto_docstring
 class SplinterModel(SplinterPreTrainedModel):
+    """
+    The model is an encoder (with only self-attention) following the architecture described in [Attention is all you
+    need](https://huggingface.co/papers/1706.03762) by Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones,
+    Aidan N. Gomez, Lukasz Kaiser and Illia Polosukhin.
+    """
     def __init__(self, config) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -121,15 +133,36 @@ class SplinterModel(SplinterPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutput]: ...
+    ) -> Union[tuple, BaseModelOutput]:
+        r"""
+        token_type_ids (`torch.LongTensor` of shape `batch_size, sequence_length`, *optional*):
+            Segment token indices to indicate first and second portions of the inputs. Indices are selected in `[0,
+            1]`:
+
+            - 0 corresponds to a *sentence A* token,
+            - 1 corresponds to a *sentence B* token.
+
+            [What are token type IDs?](../glossary#token-type-ids)
+        position_ids (`torch.LongTensor` of shape `batch_size, sequence_length`, *optional*):
+            Indices of positions of each input sequence tokens in the position embeddings. Selected in the range `[0,
+            config.max_position_embeddings - 1]`.
+
+            [What are position IDs?](../glossary#position-ids)
+        """
+        ...
 
 class SplinterFullyConnectedLayer(nn.Module):
     def __init__(self, input_dim, output_dim, hidden_act=...) -> None: ...
     def forward(self, inputs: torch.Tensor) -> torch.Tensor: ...
 
 class QuestionAwareSpanSelectionHead(nn.Module):
+    """
+    Implementation of Question-Aware Span Selection (QASS) head, described in Splinter's paper:
+
+    """
     def __init__(self, config) -> None: ...
-    def forward(self, inputs, positions): ...
+    def forward(self, inputs, positions):  # -> tuple[Tensor, Tensor]:
+        ...
 
 @auto_docstring
 class SplinterForQuestionAnswering(SplinterPreTrainedModel):
@@ -149,18 +182,58 @@ class SplinterForQuestionAnswering(SplinterPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         question_positions: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple, QuestionAnsweringModelOutput]: ...
+    ) -> Union[tuple, QuestionAnsweringModelOutput]:
+        r"""
+        token_type_ids (`torch.LongTensor` of shape `batch_size, sequence_length`, *optional*):
+            Segment token indices to indicate first and second portions of the inputs. Indices are selected in `[0,
+            1]`:
+
+            - 0 corresponds to a *sentence A* token,
+            - 1 corresponds to a *sentence B* token.
+
+            [What are token type IDs?](../glossary#token-type-ids)
+        position_ids (`torch.LongTensor` of shape `batch_size, sequence_length`, *optional*):
+            Indices of positions of each input sequence tokens in the position embeddings. Selected in the range `[0,
+            config.max_position_embeddings - 1]`.
+
+            [What are position IDs?](../glossary#position-ids)
+        question_positions (`torch.LongTensor` of shape `(batch_size, num_questions)`, *optional*):
+            The positions of all question tokens. If given, start_logits and end_logits will be of shape `(batch_size,
+            num_questions, sequence_length)`. If None, the first question token in each sequence in the batch will be
+            the only one for which start_logits and end_logits are calculated and they will be of shape `(batch_size,
+            sequence_length)`.
+        """
+        ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Class for outputs of Splinter as a span selection model.
+    """
+)
 class SplinterForPreTrainingOutput(ModelOutput):
+    r"""
+    loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when start and end positions are provided):
+        Total span extraction loss is the sum of a Cross-Entropy for the start and end positions.
+    start_logits (`torch.FloatTensor` of shape `(batch_size, num_questions, sequence_length)`):
+        Span-start scores (before SoftMax).
+    end_logits (`torch.FloatTensor` of shape `(batch_size, num_questions, sequence_length)`):
+        Span-end scores (before SoftMax).
+    """
+
     loss: Optional[torch.FloatTensor] = ...
     start_logits: Optional[torch.FloatTensor] = ...
     end_logits: Optional[torch.FloatTensor] = ...
     hidden_states: Optional[tuple[torch.FloatTensor]] = ...
     attentions: Optional[tuple[torch.FloatTensor]] = ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    Splinter Model for the recurring span selection task as done during the pretraining. The difference to the QA task
+    is that we do not have a question, but multiple question tokens that replace the occurrences of recurring spans
+    instead.
+    """
+)
 class SplinterForPreTraining(SplinterPreTrainedModel):
     def __init__(self, config) -> None: ...
     @auto_docstring
@@ -178,7 +251,47 @@ class SplinterForPreTraining(SplinterPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         question_positions: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple, SplinterForPreTrainingOutput]: ...
+    ) -> Union[tuple, SplinterForPreTrainingOutput]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, num_questions, sequence_length)`):
+            Indices of input sequence tokens in the vocabulary.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are input IDs?](../glossary#input-ids)
+        token_type_ids (`torch.LongTensor` of shape `batch_size, num_questions, sequence_length`, *optional*):
+            Segment token indices to indicate first and second portions of the inputs. Indices are selected in `[0,
+            1]`:
+
+            - 0 corresponds to a *sentence A* token,
+            - 1 corresponds to a *sentence B* token.
+
+            [What are token type IDs?](../glossary#token-type-ids)
+        position_ids (`torch.LongTensor` of shape `batch_size, num_questions, sequence_length`, *optional*):
+            Indices of positions of each input sequence tokens in the position embeddings. Selected in the range `[0,
+            config.max_position_embeddings - 1]`.
+
+            [What are position IDs?](../glossary#position-ids)
+        inputs_embeds (`torch.FloatTensor` of shape `(batch_size, num_questions, sequence_length, hidden_size)`, *optional*):
+            Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation. This
+            is useful if you want more control over how to convert *input_ids* indices into associated vectors than the
+            model's internal embedding lookup matrix.
+        start_positions (`torch.LongTensor` of shape `(batch_size, num_questions)`, *optional*):
+            Labels for position (index) of the start of the labelled span for computing the token classification loss.
+            Positions are clamped to the length of the sequence (`sequence_length`). Position outside of the sequence
+            are not taken into account for computing the loss.
+        end_positions (`torch.LongTensor` of shape `(batch_size, num_questions)`, *optional*):
+            Labels for position (index) of the end of the labelled span for computing the token classification loss.
+            Positions are clamped to the length of the sequence (`sequence_length`). Position outside of the sequence
+            are not taken into account for computing the loss.
+        question_positions (`torch.LongTensor` of shape `(batch_size, num_questions)`, *optional*):
+            The positions of all question tokens. If given, start_logits and end_logits will be of shape `(batch_size,
+            num_questions, sequence_length)`. If None, the first question token in each sequence in the batch will be
+            the only one for which start_logits and end_logits are calculated and they will be of shape `(batch_size,
+            sequence_length)`.
+        """
+        ...
 
 __all__ = [
     "SplinterForQuestionAnswering",

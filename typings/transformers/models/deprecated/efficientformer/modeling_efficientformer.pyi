@@ -16,6 +16,7 @@ from ....utils import (
 )
 from .configuration_efficientformer import EfficientFormerConfig
 
+"""PyTorch EfficientFormer model."""
 logger = ...
 _CONFIG_FOR_DOC = ...
 _CHECKPOINT_FOR_DOC = ...
@@ -24,6 +25,10 @@ _IMAGE_CLASS_CHECKPOINT = ...
 _IMAGE_CLASS_EXPECTED_OUTPUT = ...
 
 class EfficientFormerPatchEmbeddings(nn.Module):
+    """
+    This class performs downsampling between two stages. For the input tensor with the shape [batch_size, num_channels,
+    height, width] it produces output tensor with the shape [batch_size, num_channels, height/stride, width/stride]
+    """
     def __init__(
         self, config: EfficientFormerConfig, num_channels: int, embed_dim: int, apply_norm: bool = ...
     ) -> None: ...
@@ -32,7 +37,8 @@ class EfficientFormerPatchEmbeddings(nn.Module):
 class EfficientFormerSelfAttention(nn.Module):
     def __init__(self, dim: int, key_dim: int, num_heads: int, attention_ratio: int, resolution: int) -> None: ...
     @torch.no_grad()
-    def train(self, mode=...): ...
+    def train(self, mode=...):  # -> None:
+        ...
     def forward(self, hidden_states: torch.Tensor, output_attentions: bool = ...) -> tuple[torch.Tensor]: ...
 
 class EfficientFormerConvStem(nn.Module):
@@ -64,9 +70,20 @@ class EfficientFormerConvMlp(nn.Module):
     ) -> None: ...
     def forward(self, hidden_state: torch.Tensor) -> torch.Tensor: ...
 
-def drop_path(input: torch.Tensor, drop_prob: float = ..., training: bool = ...) -> torch.Tensor: ...
+def drop_path(input: torch.Tensor, drop_prob: float = ..., training: bool = ...) -> torch.Tensor:
+    """
+    Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks).
+
+    Comment by Ross Wightman: This is the same as the DropConnect impl I created for EfficientNet, etc networks,
+    however, the original name is misleading as 'Drop Connect' is a different form of dropout in a separate paper...
+    See discussion: https://github.com/tensorflow/tpu/issues/494#issuecomment-532968956 ... I've opted for changing the
+    layer and argument names to 'drop path' rather than mix DropConnect as a layer name and use 'survival rate' as the
+    argument.
+    """
+    ...
 
 class EfficientFormerDropPath(nn.Module):
+    """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks)."""
     def __init__(self, drop_prob: Optional[float] = ...) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
     def extra_repr(self) -> str: ...
@@ -110,6 +127,11 @@ class EfficientFormerEncoder(nn.Module):
     ) -> BaseModelOutput: ...
 
 class EfficientFormerPreTrainedModel(PreTrainedModel):
+    """
+    An abstract class to handle weights initialization and a simple interface for downloading and loading pretrained
+    models.
+    """
+
     config: EfficientFormerConfig
     base_model_prefix = ...
     main_input_name = ...
@@ -118,7 +140,10 @@ class EfficientFormerPreTrainedModel(PreTrainedModel):
 EFFICIENTFORMER_START_DOCSTRING = ...
 EFFICIENTFORMER_INPUTS_DOCSTRING = ...
 
-@add_start_docstrings(..., EFFICIENTFORMER_START_DOCSTRING)
+@add_start_docstrings(
+    "The bare EfficientFormer Model transformer outputting raw hidden-states without any specific head on top.",
+    EFFICIENTFORMER_START_DOCSTRING,
+)
 class EfficientFormerModel(EfficientFormerPreTrainedModel):
     def __init__(self, config: EfficientFormerConfig) -> None: ...
     @add_start_docstrings_to_model_forward(EFFICIENTFORMER_INPUTS_DOCSTRING)
@@ -137,7 +162,13 @@ class EfficientFormerModel(EfficientFormerPreTrainedModel):
         return_dict: Optional[bool] = ...,
     ) -> Union[tuple, BaseModelOutput]: ...
 
-@add_start_docstrings(..., EFFICIENTFORMER_START_DOCSTRING)
+@add_start_docstrings(
+    """
+    EfficientFormer Model transformer with an image classification head on top (a linear layer on top of the final
+    hidden state of the [CLS] token) e.g. for ImageNet.
+    """,
+    EFFICIENTFORMER_START_DOCSTRING,
+)
 class EfficientFormerForImageClassification(EfficientFormerPreTrainedModel):
     def __init__(self, config: EfficientFormerConfig) -> None: ...
     @add_start_docstrings_to_model_forward(EFFICIENTFORMER_INPUTS_DOCSTRING)
@@ -154,17 +185,60 @@ class EfficientFormerForImageClassification(EfficientFormerPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ImageClassifierOutput]: ...
+    ) -> Union[tuple, ImageClassifierOutput]:
+        r"""
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
+            `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 @dataclass
 class EfficientFormerForImageClassificationWithTeacherOutput(ModelOutput):
+    """
+    Output type of [`EfficientFormerForImageClassificationWithTeacher`].
+
+    Args:
+        logits (`torch.FloatTensor` of shape `(batch_size, config.num_labels)`):
+            Prediction scores as the average of the cls_logits and distillation logits.
+        cls_logits (`torch.FloatTensor` of shape `(batch_size, config.num_labels)`):
+            Prediction scores of the classification head (i.e. the linear layer on top of the final hidden state of the
+            class token).
+        distillation_logits (`torch.FloatTensor` of shape `(batch_size, config.num_labels)`):
+            Prediction scores of the distillation head (i.e. the linear layer on top of the final hidden state of the
+            distillation token).
+        hidden_states (`tuple(torch.FloatTensor)`, *optional*, returned when `output_hidden_states=True` is passed or when `config.output_hidden_states=True`):
+            Tuple of `torch.FloatTensor` (one for the output of the embeddings + one for the output of each layer) of
+            shape `(batch_size, sequence_length, hidden_size)`. Hidden-states of the model at the output of each layer
+            plus the initial embedding outputs.
+        attentions (`tuple(torch.FloatTensor)`, *optional*, returned when `output_attentions=True` is passed or when `config.output_attentions=True`):
+            Tuple of `torch.FloatTensor` (one for each layer) of shape `(batch_size, num_heads, sequence_length,
+            sequence_length)`. Attentions weights after the attention softmax, used to compute the weighted average in
+            the self-attention heads.
+    """
+
     logits: Optional[torch.FloatTensor] = ...
     cls_logits: Optional[torch.FloatTensor] = ...
     distillation_logits: Optional[torch.FloatTensor] = ...
     hidden_states: Optional[tuple[torch.FloatTensor]] = ...
     attentions: Optional[tuple[torch.FloatTensor]] = ...
 
-@add_start_docstrings(..., EFFICIENTFORMER_START_DOCSTRING)
+@add_start_docstrings(
+    """
+    EfficientFormer Model transformer with image classification heads on top (a linear layer on top of the final hidden
+    state of the [CLS] token and a linear layer on top of the final hidden state of the distillation token) e.g. for
+    ImageNet.
+
+    <Tip warning={true}>
+
+           This model supports inference-only. Fine-tuning with distillation (i.e. with a teacher) is not yet
+           supported.
+
+    </Tip>
+    """,
+    EFFICIENTFORMER_START_DOCSTRING,
+)
 class EfficientFormerForImageClassificationWithTeacher(EfficientFormerPreTrainedModel):
     def __init__(self, config: EfficientFormerConfig) -> None: ...
     @add_start_docstrings_to_model_forward(EFFICIENTFORMER_INPUTS_DOCSTRING)

@@ -7,6 +7,7 @@ from ...utils import is_vision_available
 from ...utils.import_utils import requires
 from ...video_processing_utils import BaseVideoProcessor
 
+"""Fast Video processor class for VJEPA2."""
 if is_vision_available(): ...
 
 class VJEPA2VideoProcessorInitKwargs(VideosKwargs): ...

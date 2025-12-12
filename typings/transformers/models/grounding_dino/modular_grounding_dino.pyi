@@ -17,7 +17,28 @@ class GroundingDinoImageProcessorFast(DetrImageProcessorFast):
         outputs: GroundingDinoObjectDetectionOutput,
         threshold: float = ...,
         target_sizes: Optional[Union[TensorType, list[tuple]]] = ...,
-    ): ...
+    ):  # -> list[Any]:
+        """
+        Converts the raw output of [`GroundingDinoForObjectDetection`] into final bounding boxes in (top_left_x, top_left_y,
+        bottom_right_x, bottom_right_y) format.
+
+        Args:
+            outputs ([`GroundingDinoObjectDetectionOutput`]):
+                Raw outputs of the model.
+            threshold (`float`, *optional*, defaults to 0.1):
+                Score threshold to keep object detection predictions.
+            target_sizes (`torch.Tensor` or `list[tuple[int, int]]`, *optional*):
+                Tensor of shape `(batch_size, 2)` or list of tuples (`tuple[int, int]`) containing the target size
+                `(height, width)` of each image in the batch. If unset, predictions will not be resized.
+
+        Returns:
+            `list[Dict]`: A list of dictionaries, each dictionary containing the following keys:
+            - "scores": The confidence scores for each predicted box on the image.
+            - "labels": Indexes of the classes predicted by the model on the image.
+            - "boxes": Image bounding boxes in (top_left_x, top_left_y, bottom_right_x, bottom_right_y) format.
+        """
+        ...
+
     def post_process(): ...
     def post_process_segmentation(): ...
     def post_process_instance(): ...

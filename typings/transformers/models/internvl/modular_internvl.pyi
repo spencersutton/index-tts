@@ -36,7 +36,8 @@ def eager_attention_forward(
     scaling: float,
     dropout: float = ...,
     **kwargs,
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class InternVLVisionRMSNorm(LlamaRMSNorm): ...
 
@@ -48,7 +49,8 @@ class InternVLVisionAttention(JanusVisionAttention):
         attention_mask: Optional[torch.Tensor] = ...,
         output_attentions: Optional[torch.Tensor] = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ): ...
+    ):  # -> tuple[Any, Any] | tuple[Any, None]:
+        ...
 
 @auto_docstring
 class InternVLVisionPreTrainedModel(PreTrainedModel):
@@ -63,16 +65,47 @@ class InternVLVisionPreTrainedModel(PreTrainedModel):
     _supports_attention_backend = ...
 
 @dataclass
-@auto_docstring(custom_intro=...)
-class InternVLVisionModelOutputWithPooling(BaseModelOutputWithPooling): ...
+@auto_docstring(
+    custom_intro="""
+    Class for outputs of [`InternVLVisionModel`].
+    """
+)
+class InternVLVisionModelOutputWithPooling(BaseModelOutputWithPooling):
+    r"""
+    pooler_output (`torch.FloatTensor` of shape `(batch_size, hidden_size)`):
+        Average of the last layer hidden states of the patch tokens (excluding the *[CLS]* token) if
+        *config.use_mean_pooling* is set to True. If set to False, then the final hidden state of the *[CLS]* token
+        will be returned.
+    """
+
+    ...
 
 class InternVLVisionPatchEmbeddings(nn.Module):
+    """
+    This class turns `pixel_values` of shape `(batch_size, num_channels, height, width)` into the initial
+    `hidden_states` (patch embeddings) of shape `(batch_size, seq_length, hidden_size)` to be consumed by a
+    Transformer.
+    """
     def __init__(self, config) -> None: ...
     def forward(self, pixel_values: torch.Tensor) -> torch.Tensor: ...
 
 class InternVLVisionEmbeddings(nn.Module):
+    """
+    Construct the CLS token, position and patch embeddings. Optionally, also the mask token.
+
+    """
     def __init__(self, config: InternVLVisionConfig) -> None: ...
-    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor: ...
+    def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor:
+        """
+        This method allows to interpolate the pre-trained position encodings, to be able to use the model on higher resolution
+        images. This method is also adapted to support torch.jit tracing.
+
+        Adapted from:
+        - https://github.com/facebookresearch/dino/blob/de9ee3df6cf39fac952ab558447af1fa1365362a/vision_transformer.py#L174-L194, and
+        - https://github.com/facebookresearch/dinov2/blob/e1277af2ba9496fbadf7aec6eba56e8d882d1e35/dinov2/models/vision_transformer.py#L179-L211
+        """
+        ...
+
     def forward(
         self, pixel_values: torch.Tensor, bool_masked_pos: Optional[torch.BoolTensor] = ...
     ) -> torch.Tensor: ...
@@ -82,6 +115,7 @@ class InternVLVisionMLP(CLIPMLP): ...
 NORM2FN = ...
 
 class InternVLVisionLayer(GradientCheckpointingLayer):
+    """This corresponds to the Block class in the timm implementation."""
     def __init__(self, config: InternVLVisionConfig) -> None: ...
     def forward(
         self, hidden_states: torch.Tensor, output_attentions: bool = ...
@@ -97,7 +131,8 @@ class InternVLVisionEncoder(nn.Module):
 @auto_docstring
 class InternVLVisionModel(InternVLVisionPreTrainedModel):
     def __init__(self, config: InternVLVisionConfig) -> None: ...
-    def get_input_embeddings(self): ...
+    def get_input_embeddings(self):  # -> InternVLVisionPatchEmbeddings:
+        ...
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -106,7 +141,12 @@ class InternVLVisionModel(InternVLVisionPreTrainedModel):
         bool_masked_pos: Optional[torch.BoolTensor] = ...,
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
-    ) -> Union[tuple, InternVLVisionModelOutputWithPooling]: ...
+    ) -> Union[tuple, InternVLVisionModelOutputWithPooling]:
+        r"""
+        bool_masked_pos (`torch.BoolTensor` of shape `(batch_size, num_patches)`, *optional*):
+            Boolean masked positions. Indicates which patches are masked (1) and which aren't (0).
+        """
+        ...
 
 class InternVLPreTrainedModel(LlavaPreTrainedModel): ...
 
@@ -114,19 +154,47 @@ INTERNVL_INPUTS_DOCSTRING = ...
 
 class InternVLMultiModalProjector(nn.Module):
     def __init__(self, config: InternVLConfig) -> None: ...
-    def forward(self, image_features): ...
+    def forward(self, image_features):  # -> Any:
+        ...
 
 class InternVLModelOutputWithPast(LlavaModelOutputWithPast): ...
 
 class InternVLModel(LlavaModel):
-    def pixel_shuffle(self, vision_features: torch.Tensor, scale_factor: float = ...): ...
+    def pixel_shuffle(self, vision_features: torch.Tensor, scale_factor: float = ...):  # -> Tensor:
+        """Perform pixel shuffle downsampling on vision features.
+
+        Args:
+            vision_features (`torch.Tensor`):
+                Input tensor of shape (batch_size, width, height, channels).
+            scale_factor (`float`, *optional*, defaults to `0.5`):
+                Factor by which to downsample. Default is 0.5, which halves the dimensions.
+
+        Returns:
+            vision_features (`torch.Tensor`):
+                Downsampled tensor of shape (batch_size, height*scale_factor, width*scale_factor, channels/(scale_factor^2)).
+        """
+        ...
+
     def get_image_features(
         self,
         pixel_values: torch.FloatTensor,
         vision_feature_layer: Optional[Union[int, list[int]]] = ...,
         vision_feature_select_strategy: Optional[str] = ...,
         **kwargs,
-    ): ...
+    ):  # -> Any:
+        """
+        Obtains image last hidden states from the vision tower and apply multimodal projection.
+
+        Args:
+            pixel_values (`torch.FloatTensor]` of shape `(batch_size, channels, height, width)`)
+               The tensors corresponding to the input images.
+            vision_feature_layer (`int` or `list[int]`):
+                Layer index or list of layer indices to extract features from.
+        Returns:
+            vision_features (`torch.Tensor`): Image feature tensor of shape `(num_images, image_length, embed_dim)`.
+        """
+        ...
+
     @can_return_tuple
     @auto_docstring
     def forward(
@@ -150,7 +218,43 @@ class InternVLModel(LlavaModel):
 class InternVLCausalLMOutputWithPast(LlavaCausalLMOutputWithPast): ...
 
 class InternVLForConditionalGeneration(LlavaForConditionalGeneration):
-    def forward(**super_kwargs): ...
+    def forward(**super_kwargs):  # -> None:
+        r"""
+        Example:
+
+        ```python
+        >>> import torch
+        >>> from transformers import AutoProcessor, AutoModelForImageTextToText
+
+        >>> torch_device = "cuda"
+        >>> processor = AutoProcessor.from_pretrained("OpenGVLab/InternVL3-1B-hf")
+        >>> model = AutoModelForImageTextToText.from_pretrained(
+        ...     "OpenGVLab/InternVL3-1B-hf", torch_dtype=torch.bfloat16, device_map=torch_device
+        ... )
+
+        >>> messages = [
+        ...     {
+        ...         "role": "user",
+        ...         "content": [
+        ...             {
+        ...                 "type": "image",
+        ...                 "url": "https://cdn.britannica.com/61/93061-050-99147DCE/Statue-of-Liberty-Island-New-York-Bay.jpg",
+        ...             },
+        ...             {
+        ...                 "type": "image",
+        ...                 "url": "https://thumbs.dreamstime.com/b/golden-gate-bridge-san-francisco-purple-flowers-california-echium-candicans-36805947.jpg",
+        ...             },
+        ...             {"type": "text", "text": "These images depict two different landmarks. Can you identify them?"},
+        ...         ],
+        ...     },
+        ... ]
+
+        >>> inputs = processor.apply_chat_template(messages, add_generation_prompt=True, tokenize=True, return_dict=True, return_tensors="pt").to(torch_device)
+        >>> generate_ids = model.generate(**inputs, max_new_tokens=200)
+        >>> print(processor.decode(generate_ids[0, inputs["input_ids"].shape[1] :], skip_special_tokens=True))
+        The images depict the Statue of Liberty and the Golden Gate Bridge.
+        ```"""
+        ...
 
 __all__ = [
     "InternVLVisionPreTrainedModel",

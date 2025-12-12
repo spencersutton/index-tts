@@ -21,23 +21,37 @@ from ...processing_utils import Unpack
 from ...utils import auto_docstring, is_torch_flex_attn_available
 from .configuration_bigbird_pegasus import BigBirdPegasusConfig
 
+"""PyTorch BigBirdPegasus model."""
 if is_torch_flex_attn_available(): ...
 logger = ...
 _EXPECTED_OUTPUT_SHAPE = ...
 
-def shift_tokens_right(input_ids: torch.Tensor, pad_token_id: int, decoder_start_token_id: int): ...
+def shift_tokens_right(input_ids: torch.Tensor, pad_token_id: int, decoder_start_token_id: int):  # -> Tensor:
+    """
+    Shift input ids one token to the right.
+    """
+    ...
 
 class BigBirdPegasusLearnedPositionalEmbedding(nn.Embedding):
+    """
+    This module learns positional embeddings up to a fixed maximum size.
+    """
     def __init__(self, num_embeddings: int, embedding_dim: int) -> None: ...
     def forward(
         self, input_ids_shape: torch.Size, past_key_values_length: int = ..., position_ids: torch.Tensor = ...
-    ): ...
+    ):  # -> Tensor:
+        """`input_ids' shape is expected to be [bsz x seqlen]."""
+        ...
 
 class BigBirdPegasusScaledWordEmbedding(nn.Embedding):
+    """
+    This module overrides nn.Embeddings' forward by multiplying with embeddings scale.
+    """
     def __init__(
         self, num_embeddings: int, embedding_dim: int, padding_idx: int, embed_scale: Optional[float] = ...
     ) -> None: ...
-    def forward(self, input_ids: torch.Tensor): ...
+    def forward(self, input_ids: torch.Tensor):  # -> Tensor:
+        ...
 
 class BigBirdPegasusSelfAttention(nn.Module):
     def __init__(self, config, layer_idx=...) -> None: ...
@@ -51,7 +65,8 @@ class BigBirdPegasusSelfAttention(nn.Module):
         past_key_value=...,
         output_attentions=...,
         cache_position=...,
-    ): ...
+    ):  # -> tuple[Tensor, Any]:
+        ...
 
 class BigBirdPegasusBlockSparseAttention(nn.Module):
     def __init__(self, config, seed=...) -> None: ...
@@ -64,11 +79,18 @@ class BigBirdPegasusBlockSparseAttention(nn.Module):
         from_blocked_mask=...,
         to_blocked_mask=...,
         output_attentions=...,
-    ): ...
+    ):  # -> tuple[Tensor, Tensor | None]:
+        ...
     @staticmethod
-    def torch_bmm_nd(inp_1, inp_2, ndim=...): ...
+    def torch_bmm_nd(inp_1, inp_2, ndim=...):  # -> Tensor:
+        """Fast nd matrix multiplication"""
+        ...
+
     @staticmethod
-    def torch_bmm_nd_transpose(inp_1, inp_2, ndim=...): ...
+    def torch_bmm_nd_transpose(inp_1, inp_2, ndim=...):  # -> Tensor:
+        """Fast nd matrix multiplication with transpose"""
+        ...
+
     def bigbird_block_sparse_attention(
         self,
         query_layer,
@@ -91,13 +113,15 @@ class BigBirdPegasusBlockSparseAttention(nn.Module):
         plan_from_length,
         plan_num_rand_blocks,
         output_attentions,
-    ): ...
+    ):  # -> tuple[Tensor, Tensor | None]:
+        ...
     @staticmethod
     def torch_gather_b2(params, indices): ...
 
 class BigBirdPegasusEncoderAttention(nn.Module):
     def __init__(self, config, seed=...) -> None: ...
-    def set_attention_type(self, value: str): ...
+    def set_attention_type(self, value: str):  # -> None:
+        ...
     def forward(
         self,
         hidden_states,
@@ -109,7 +133,8 @@ class BigBirdPegasusEncoderAttention(nn.Module):
         to_mask=...,
         from_blocked_mask=...,
         to_blocked_mask=...,
-    ): ...
+    ):  # -> Any:
+        ...
 
 def eager_attention_forward(
     module: nn.Module,
@@ -121,9 +146,11 @@ def eager_attention_forward(
     dropout: float = ...,
     head_mask: Optional[torch.Tensor] = ...,
     **kwargs,
-): ...
+):  # -> tuple[Tensor, Tensor]:
+    ...
 
 class BigBirdPegasusDecoderAttention(nn.Module):
+    """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(
         self,
         embed_dim: int,
@@ -145,7 +172,9 @@ class BigBirdPegasusDecoderAttention(nn.Module):
         output_attentions: bool = ...,
         cache_position: Optional[torch.Tensor] = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+        """Input shape: Batch x Time x Channel"""
+        ...
 
 class BigBirdPegasusEncoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: BigBirdPegasusConfig, seed=...) -> None: ...
@@ -160,8 +189,20 @@ class BigBirdPegasusEncoderLayer(GradientCheckpointingLayer):
         from_blocked_mask=...,
         to_blocked_mask=...,
         output_attentions: bool = ...,
-    ): ...
-    def set_attention_type(self, value: str): ...
+    ):  # -> tuple[Tensor, Any] | tuple[Tensor]:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            attention_mask (`torch.FloatTensor`): attention mask of size
+                `(batch, 1, tgt_len, src_len)` where padding elements are indicated by very large negative values.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+        """
+        ...
+
+    def set_attention_type(self, value: str):  # -> None:
+        ...
 
 class BigBirdPegasusDecoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: BigBirdPegasusConfig, layer_idx: Optional[int] = ...) -> None: ...
@@ -177,9 +218,32 @@ class BigBirdPegasusDecoderLayer(GradientCheckpointingLayer):
         output_attentions: Optional[bool] = ...,
         use_cache: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
-    ) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """
+        Args:
+            hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
+            attention_mask (`torch.FloatTensor`): attention mask of size
+                `(batch, 1, tgt_len, src_len)` where padding elements are indicated by very large negative values.
+            encoder_hidden_states (`torch.FloatTensor`):
+                cross attention input to the layer of shape `(batch, seq_len, embed_dim)`
+            encoder_attention_mask (`torch.FloatTensor`): encoder attention mask of size
+                `(batch, 1, tgt_len, src_len)` where padding elements are indicated by very large negative values.
+            layer_head_mask (`torch.FloatTensor`): mask for attention heads in a given layer of size
+                `(encoder_attention_heads,)`.
+            cross_attn_layer_head_mask (`torch.FloatTensor`): mask for cross-attention heads in a given layer of
+                size `(decoder_attention_heads,)`.
+            past_key_value (`Tuple(torch.FloatTensor)`): cached past key and value projection states
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            cache_position (`torch.LongTensor` of shape `(sequence_length)`, *optional*):
+                Indices depicting the position of the input sequence tokens in the sequence. It is used to update the
+                cache in the correct position and to infer the complete sequence length.
+        """
+        ...
 
 class BigBirdPegasusClassificationHead(nn.Module):
+    """Head for sentence-level classification tasks."""
     def __init__(self, input_dim: int, inner_dim: int, num_classes: int, pooler_dropout: float) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
 
@@ -193,9 +257,18 @@ class BigBirdPegasusPreTrainedModel(PreTrainedModel):
     _supports_param_buffer_assignment = ...
     _can_compile_fullgraph = ...
     @property
-    def dummy_inputs(self): ...
+    def dummy_inputs(self):  # -> dict[str, Any | Tensor]:
+        ...
 
 class BigBirdPegasusEncoder(BigBirdPegasusPreTrainedModel):
+    """
+    Transformer encoder consisting of *config.encoder_layers* self attention layers. Each layer is a
+    [`BigBirdPegasusEncoderLayer`].
+
+    Args:
+        config: BigBirdPegasusConfig
+        embed_tokens (nn.Embedding): output embedding
+    """
     def __init__(self, config: BigBirdPegasusConfig, embed_tokens: Optional[nn.Embedding] = ...) -> None: ...
     def forward(
         self,
@@ -206,12 +279,56 @@ class BigBirdPegasusEncoder(BigBirdPegasusPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ): ...
-    def set_attention_type(self, value: str): ...
+    ):  # -> tuple[Any | tuple[Any, ...] | tuple[Tensor | Any, ...] | tuple[()] | tuple[Any | None, ...], ...] | BaseModelOutput:
+        r"""
+        Args:
+            input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
+                Indices of input sequence tokens in the vocabulary. Padding will be ignored by default should you
+                provide it.
+
+                Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+                [`PreTrainedTokenizer.__call__`] for details.
+
+                [What are input IDs?](../glossary#input-ids)
+            attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Mask to avoid performing attention on padding token indices. Mask values selected in `[0, 1]`:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+
+            inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*):
+                Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation.
+                This is useful if you want more control over how to convert `input_ids` indices into associated vectors
+                than the model's internal embedding lookup matrix.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers. See `hidden_states` under returned tensors
+                for more detail.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`~utils.ModelOutput`] instead of a plain tuple.
+        """
+        ...
+
+    def set_attention_type(self, value: str):  # -> None:
+        ...
     @staticmethod
-    def create_masks_for_block_sparse_attn(attention_mask: torch.Tensor, block_size: int): ...
+    def create_masks_for_block_sparse_attn(
+        attention_mask: torch.Tensor, block_size: int
+    ):  # -> tuple[Tensor, Tensor, Tensor, Tensor]:
+        ...
 
 class BigBirdPegasusDecoder(BigBirdPegasusPreTrainedModel):
+    """
+    Transformer decoder consisting of *config.decoder_layers* layers. Each layer is a [`BigBirdPegasusDecoderLayer`]
+
+    Args:
+        config: BigBirdPegasusConfig
+        embed_tokens (nn.Embedding): output embedding
+    """
     def __init__(self, config: BigBirdPegasusConfig, embed_tokens: Optional[nn.Embedding] = ...) -> None: ...
     def forward(
         self,
@@ -228,16 +345,89 @@ class BigBirdPegasusDecoder(BigBirdPegasusPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.Tensor] = ...,
-    ): ...
+    ):  # -> tuple[Any | Cache | EncoderDecoderCache | tuple[Any, ...] | tuple[Tensor | Any, ...] | tuple[()], ...] | BaseModelOutputWithPastAndCrossAttentions:
+        r"""
+        Args:
+            input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
+                Indices of input sequence tokens in the vocabulary. Padding will be ignored by default should you
+                provide it.
+
+                Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+                [`PreTrainedTokenizer.__call__`] for details.
+
+                [What are input IDs?](../glossary#input-ids)
+            attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Mask to avoid performing attention on padding token indices. Mask values selected in `[0, 1]`:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+            encoder_hidden_states (`torch.FloatTensor` of shape `(batch_size, encoder_sequence_length, hidden_size)`, *optional*):
+                Sequence of hidden-states at the output of the last layer of the encoder. Used in the cross-attention
+                of the decoder.
+            encoder_attention_mask (`torch.LongTensor` of shape `(batch_size, encoder_sequence_length)`, *optional*):
+                Mask to avoid performing cross-attention on padding tokens indices of encoder input_ids. Mask values
+                selected in `[0, 1]`:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                [What are attention masks?](../glossary#attention-mask)
+            head_mask (`torch.Tensor` of shape `(decoder_layers, decoder_attention_heads)`, *optional*):
+                Mask to nullify selected heads of the attention modules. Mask values selected in `[0, 1]`:
+
+                - 1 indicates the head is **not masked**,
+                - 0 indicates the head is **masked**.
+
+            cross_attn_head_mask (`torch.Tensor` of shape `(decoder_layers, decoder_attention_heads)`, *optional*):
+                Mask to nullify selected heads of the cross-attention modules in decoder to avoid performing
+                cross-attention on hidden heads. Mask values selected in `[0, 1]`:
+
+                - 1 indicates the head is **not masked**,
+                - 0 indicates the head is **masked**.
+
+            past_key_values (`Cache`, *optional*, returned when `use_cache=True` is passed or when `config.use_cache=True`):
+                Tuple of `tuple(torch.FloatTensor)` of length `config.n_layers`, with each tuple having 2 tensors of
+                shape `(batch_size, num_heads, sequence_length, embed_size_per_head)`) and 2 additional tensors of
+                shape `(batch_size, num_heads, encoder_sequence_length, embed_size_per_head)`.
+
+                Contains pre-computed hidden-states (key and values in the self-attention blocks and in the
+                cross-attention blocks) that can be used (see `past_key_values` input) to speed up sequential decoding.
+
+                If `past_key_values` are used, the user can optionally input only the last `decoder_input_ids` (those
+                that don't have their past key value states given to this model) of shape `(batch_size, 1)` instead of
+                all `decoder_input_ids` of shape `(batch_size, sequence_length)`.
+            inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*):
+                Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation.
+                This is useful if you want more control over how to convert `input_ids` indices into associated vectors
+                than the model's internal embedding lookup matrix.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. See `attentions` under
+                returned tensors for more detail.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers. See `hidden_states` under returned tensors
+                for more detail.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`~utils.ModelOutput`] instead of a plain tuple.
+            cache_position (`torch.LongTensor` of shape `(sequence_length)`, *optional*):
+                Indices depicting the position of the input sequence tokens in the sequence. It is used to update the
+                cache in the correct position and to infer the complete sequence length.
+        """
+        ...
 
 @auto_docstring
 class BigBirdPegasusModel(BigBirdPegasusPreTrainedModel):
     _tied_weights_keys = ...
     def __init__(self, config: BigBirdPegasusConfig) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
-    def get_encoder(self): ...
-    def get_decoder(self): ...
+    def get_input_embeddings(self):  # -> BigBirdPegasusScaledWordEmbedding | Module:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
+    def get_encoder(self):  # -> BigBirdPegasusEncoder:
+        ...
+    def get_decoder(self):  # -> BigBirdPegasusDecoder:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -257,16 +447,40 @@ class BigBirdPegasusModel(BigBirdPegasusPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple, Seq2SeqModelOutput]: ...
+    ) -> Union[tuple, Seq2SeqModelOutput]:
+        r"""
+        decoder_input_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Provide for translation and summarization training. By default, the model will create this tensor by
+            shifting the `input_ids` to the right, following the paper.
+        decoder_attention_mask (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Default behavior: generate a tensor that ignores pad tokens in `decoder_input_ids`. Causal mask will also
+            be used by default.
 
-@auto_docstring(custom_intro=...)
+            If you want to change padding behavior, you should read
+            [`modeling_bigbird_pegasus._prepare_decoder_attention_mask`] and modify to your needs. See diagram 1 in
+            [the paper](https://huggingface.co/papers/1910.13461) for more information on the default strategy.
+        decoder_head_mask (`torch.Tensor` of shape `(num_layers, num_heads)`, *optional*):
+            Mask to nullify selected heads of the attention modules in the decoder. Mask values selected in `[0, 1]`:
+
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    The BigBirdPegasus Model with a language modeling head. Can be used for summarization.
+    """
+)
 class BigBirdPegasusForConditionalGeneration(BigBirdPegasusPreTrainedModel, GenerationMixin):
     base_model_prefix = ...
     _tied_weights_keys = ...
     _keys_to_ignore_on_load_missing = ...
     def __init__(self, config: BigBirdPegasusConfig) -> None: ...
-    def get_encoder(self): ...
-    def get_decoder(self): ...
+    def get_encoder(self):  # -> BigBirdPegasusEncoder:
+        ...
+    def get_decoder(self):  # -> BigBirdPegasusDecoder:
+        ...
     def resize_token_embeddings(
         self, new_num_tokens: int, pad_to_multiple_of: Optional[int] = ..., mean_resizing: bool = ...
     ) -> nn.Embedding: ...
@@ -290,10 +504,63 @@ class BigBirdPegasusForConditionalGeneration(BigBirdPegasusPreTrainedModel, Gene
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple, Seq2SeqLMOutput]: ...
-    def prepare_decoder_input_ids_from_labels(self, labels: torch.Tensor): ...
+    ) -> Union[tuple, Seq2SeqLMOutput]:
+        r"""
+        decoder_input_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Provide for translation and summarization training. By default, the model will create this tensor by
+            shifting the `input_ids` to the right, following the paper.
+        decoder_attention_mask (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Default behavior: generate a tensor that ignores pad tokens in `decoder_input_ids`. Causal mask will also
+            be used by default.
 
-@auto_docstring(custom_intro=...)
+            If you want to change padding behavior, you should read
+            [`modeling_bigbird_pegasus._prepare_decoder_attention_mask`] and modify to your needs. See diagram 1 in
+            [the paper](https://huggingface.co/papers/1910.13461) for more information on the default strategy.
+        decoder_head_mask (`torch.Tensor` of shape `(num_layers, num_heads)`, *optional*):
+            Mask to nullify selected heads of the attention modules in the decoder. Mask values selected in `[0, 1]`:
+
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Example summarization:
+
+        ```python
+        >>> from transformers import AutoTokenizer, BigBirdPegasusForConditionalGeneration
+
+        >>> model = BigBirdPegasusForConditionalGeneration.from_pretrained("google/bigbird-pegasus-large-arxiv")
+        >>> tokenizer = AutoTokenizer.from_pretrained("google/bigbird-pegasus-large-arxiv")
+
+        >>> ARTICLE_TO_SUMMARIZE = (
+        ...     "The dominant sequence transduction models are based on complex recurrent or convolutional neural "
+        ...     "networks in an encoder-decoder configuration. The best performing models also connect the encoder "
+        ...     "and decoder through an attention mechanism. We propose a new simple network architecture, the Transformer, "
+        ...     "based solely on attention mechanisms, dispensing with recurrence and convolutions entirely. "
+        ...     "Experiments on two machine translation tasks show these models to be superior in quality "
+        ...     "while being more parallelizable and requiring significantly less time to train."
+        ... )
+        >>> inputs = tokenizer([ARTICLE_TO_SUMMARIZE], max_length=4096, return_tensors="pt", truncation=True)
+
+        >>> # Generate Summary
+        >>> summary_ids = model.generate(inputs["input_ids"], num_beams=4, max_length=15)
+        >>> tokenizer.batch_decode(summary_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+        'dominant sequence models are based on recurrent or convolutional neural networks .'
+        ```
+        """
+        ...
+
+    def prepare_decoder_input_ids_from_labels(self, labels: torch.Tensor):  # -> Tensor:
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    BigBirdPegasus model with a sequence classification/head on top (a linear layer on top of the pooled output) e.g.
+    for GLUE tasks.
+    """
+)
 class BigBirdPegasusForSequenceClassification(BigBirdPegasusPreTrainedModel):
     _tied_weights_keys = ...
     def __init__(self, config: BigBirdPegasusConfig, **kwargs) -> None: ...
@@ -316,7 +583,28 @@ class BigBirdPegasusForSequenceClassification(BigBirdPegasusPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple, Seq2SeqSequenceClassifierOutput]: ...
+    ) -> Union[tuple, Seq2SeqSequenceClassifierOutput]:
+        r"""
+        decoder_input_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Provide for translation and summarization training. By default, the model will create this tensor by
+            shifting the `input_ids` to the right, following the paper.
+        decoder_attention_mask (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Default behavior: generate a tensor that ignores pad tokens in `decoder_input_ids`. Causal mask will also
+            be used by default.
+
+            If you want to change padding behavior, you should read
+            [`modeling_bigbird_pegasus._prepare_decoder_attention_mask`] and modify to your needs. See diagram 1 in
+            [the paper](https://huggingface.co/papers/1910.13461) for more information on the default strategy.
+        decoder_head_mask (`torch.Tensor` of shape `(num_layers, num_heads)`, *optional*):
+            Mask to nullify selected heads of the attention modules in the decoder. Mask values selected in `[0, 1]`:
+
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+        labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
+            config.num_labels - 1]`. If `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
+        ...
 
 @auto_docstring
 class BigBirdPegasusForQuestionAnswering(BigBirdPegasusPreTrainedModel):
@@ -342,19 +630,46 @@ class BigBirdPegasusForQuestionAnswering(BigBirdPegasusPreTrainedModel):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple, Seq2SeqQuestionAnsweringModelOutput]: ...
+    ) -> Union[tuple, Seq2SeqQuestionAnsweringModelOutput]:
+        r"""
+        decoder_input_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Provide for translation and summarization training. By default, the model will create this tensor by
+            shifting the `input_ids` to the right, following the paper.
+        decoder_attention_mask (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Default behavior: generate a tensor that ignores pad tokens in `decoder_input_ids`. Causal mask will also
+            be used by default.
+
+            If you want to change padding behavior, you should read
+            [`modeling_bigbird_pegasus._prepare_decoder_attention_mask`] and modify to your needs. See diagram 1 in
+            [the paper](https://huggingface.co/papers/1910.13461) for more information on the default strategy.
+        decoder_head_mask (`torch.Tensor` of shape `(num_layers, num_heads)`, *optional*):
+            Mask to nullify selected heads of the attention modules in the decoder. Mask values selected in `[0, 1]`:
+
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+        """
+        ...
 
 class BigBirdPegasusDecoderWrapper(BigBirdPegasusPreTrainedModel):
+    """
+    This wrapper class is a helper class to correctly load pretrained checkpoints when the causal language model is
+    used in combination with the [`EncoderDecoderModel`] framework.
+    """
     def __init__(self, config) -> None: ...
-    def forward(self, *args, **kwargs): ...
+    def forward(self, *args, **kwargs):  # -> Any:
+        ...
 
 class BigBirdPegasusForCausalLM(BigBirdPegasusPreTrainedModel, GenerationMixin):
     _tied_weights_keys = ...
     def __init__(self, config) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, value): ...
-    def set_decoder(self, decoder): ...
-    def get_decoder(self): ...
+    def get_input_embeddings(self):  # -> BigBirdPegasusScaledWordEmbedding:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> BigBirdPegasusDecoder:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -372,7 +687,34 @@ class BigBirdPegasusForCausalLM(BigBirdPegasusPreTrainedModel, GenerationMixin):
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple, CausalLMOutputWithCrossAttentions]: ...
+    ) -> Union[tuple, CausalLMOutputWithCrossAttentions]:
+        r"""
+        cross_attn_head_mask (`torch.Tensor` of shape `(decoder_layers, decoder_attention_heads)`, *optional*):
+            Mask to nullify selected heads of the cross-attention modules. Mask values selected in `[0, 1]`:
+
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, BigBirdPegasusForCausalLM
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("google/bigbird-pegasus-large-arxiv")
+        >>> model = BigBirdPegasusForCausalLM.from_pretrained(
+        ...     "google/bigbird-pegasus-large-arxiv", add_cross_attention=False
+        ... )
+        >>> assert model.config.is_decoder, f"{model.__class__} has to be configured as a decoder."
+        >>> inputs = tokenizer("Hello, my dog is cute", return_tensors="pt")
+        >>> outputs = model(**inputs)
+
+        >>> logits = outputs.logits
+        ```"""
+        ...
 
 __all__ = [
     "BigBirdPegasusForCausalLM",

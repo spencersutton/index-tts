@@ -18,16 +18,27 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import auto_docstring, is_torch_flex_attn_available
 from .configuration_pix2struct import Pix2StructConfig, Pix2StructTextConfig, Pix2StructVisionConfig
 
+"""Pix2Struct modeling file"""
 if is_torch_flex_attn_available(): ...
 logger = ...
 
 class Pix2StructLayerNorm(nn.Module):
-    def __init__(self, hidden_size, eps=...) -> None: ...
+    def __init__(self, hidden_size, eps=...) -> None:
+        """
+        Construct a layernorm module in the T5 style. No bias and no subtraction of mean.
+        """
+        ...
+
     def forward(self, hidden_states): ...
 
 Pix2StructLayerNorm = ...
 
 class Pix2StructVisionEmbeddings(nn.Module):
+    r"""
+    Construct the embeddings from patch. In `Pix2Struct` the input is different from classic Vision-transformer models.
+    Here the input is a sequence of `seq_len` flattened patches that also combines padding patches (tokens). Each patch
+    is represented by a vector of `hidden_size` values.
+    """
     def __init__(self, config: Pix2StructConfig) -> None: ...
     def forward(self, flattened_patches: torch.Tensor) -> torch.Tensor: ...
 
@@ -35,11 +46,16 @@ class Pix2StructVisionAttention(nn.Module):
     def __init__(self, config) -> None: ...
     def forward(
         self, hidden_states, attention_mask=..., position_bias=..., layer_head_mask=..., output_attentions=...
-    ): ...
+    ):  # -> tuple[Any, Any | Tensor, Any | Tensor] | tuple[Any, Any | Tensor]:
+        """
+        Self-attention block
+        """
+        ...
 
 class Pix2StructVisionMlp(nn.Module):
     def __init__(self, config: Pix2StructVisionConfig) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class Pix2StructVisionLayer(GradientCheckpointingLayer):
     def __init__(self, config: Pix2StructConfig) -> None: ...
@@ -68,7 +84,8 @@ class Pix2StructPreTrainedModel(PreTrainedModel):
     config: Pix2StructConfig
     _can_compile_fullgraph = ...
     @property
-    def dummy_inputs(self): ...
+    def dummy_inputs(self):  # -> dict[str, Tensor]:
+        ...
 
 @auto_docstring
 class Pix2StructVisionModel(Pix2StructPreTrainedModel):
@@ -77,7 +94,8 @@ class Pix2StructVisionModel(Pix2StructPreTrainedModel):
     supports_gradient_checkpointing = ...
     _no_split_modules = ...
     def __init__(self, config: Pix2StructConfig) -> None: ...
-    def get_input_embeddings(self): ...
+    def get_input_embeddings(self):  # -> Linear:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -87,11 +105,41 @@ class Pix2StructVisionModel(Pix2StructPreTrainedModel):
         output_attentions: Optional[bool] = ...,
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPooling]: ...
+    ) -> Union[tuple, BaseModelOutputWithPooling]:
+        r"""
+        flattened_patches (`torch.FloatTensor` of shape `(batch_size, sequence_length, num_channels x patch_height x patch_width)`):
+            Flattened and padded pixel values. These values can be obtained using [`AutoImageProcessor`]. See
+            [`Pix2StructVisionImageProcessor.__call__`] for details. Check the [original
+            paper](https://huggingface.co/papers/2210.03347) (figure 5) for more details.
+
+        Example:
+
+        ```python
+        >>> import requests
+        >>> from PIL import Image
+        >>> from transformers import AutoProcessor, Pix2StructVisionModel
+
+        >>> image_processor = AutoProcessor.from_pretrained("google/pix2struct-textcaps-base")
+        >>> model = Pix2StructVisionModel.from_pretrained("google/pix2struct-textcaps-base")
+
+        >>> url = "https://www.ilankelman.org/stopsigns/australia.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> inputs = image_processor(images=image, return_tensors="pt")
+        >>> with torch.no_grad():
+        ...     outputs = model(**inputs)
+
+        >>> last_hidden_states = outputs.last_hidden_state
+        >>> list(last_hidden_states.shape)
+        [1, 2048, 768]
+        ```
+        """
+        ...
 
 class Pix2StructTextDenseGatedActDense(nn.Module):
     def __init__(self, config: Pix2StructTextConfig) -> None: ...
-    def forward(self, hidden_states): ...
+    def forward(self, hidden_states):  # -> Any:
+        ...
 
 class Pix2StructTextLayerFF(nn.Module):
     def __init__(self, config: Pix2StructTextConfig) -> None: ...
@@ -101,7 +149,10 @@ class Pix2StructTextAttention(nn.Module):
     def __init__(
         self, config: Pix2StructTextConfig, has_relative_attention_bias=..., layer_idx: Optional[int] = ...
     ) -> None: ...
-    def compute_bias(self, query_length, key_length, device=..., cache_position=...): ...
+    def compute_bias(self, query_length, key_length, device=..., cache_position=...):  # -> Any:
+        """Compute binned relative position bias"""
+        ...
+
     def forward(
         self,
         hidden_states,
@@ -114,7 +165,11 @@ class Pix2StructTextAttention(nn.Module):
         use_cache=...,
         output_attentions=...,
         cache_position=...,
-    ): ...
+    ):  # -> tuple[Any, Any | Tensor, Any | Tensor] | tuple[Any, Any | Tensor]:
+        """
+        Self-attention (if key_value_states is None) or attention over source sentence (provided by key_value_states).
+        """
+        ...
 
 class Pix2StructTextLayerSelfAttention(nn.Module):
     def __init__(self, config, has_relative_attention_bias=..., layer_idx: Optional[int] = ...) -> None: ...
@@ -128,7 +183,8 @@ class Pix2StructTextLayerSelfAttention(nn.Module):
         use_cache=...,
         output_attentions=...,
         cache_position=...,
-    ): ...
+    ):  # -> Any:
+        ...
 
 class Pix2StructTextLayerCrossAttention(nn.Module):
     def __init__(self, config, layer_idx: Optional[int] = ...) -> None: ...
@@ -144,7 +200,8 @@ class Pix2StructTextLayerCrossAttention(nn.Module):
         query_length=...,
         output_attentions=...,
         cache_position=...,
-    ): ...
+    ):  # -> Any:
+        ...
 
 class Pix2StructTextBlock(GradientCheckpointingLayer):
     def __init__(self, config, has_relative_attention_bias=..., layer_idx: Optional[int] = ...) -> None: ...
@@ -163,16 +220,22 @@ class Pix2StructTextBlock(GradientCheckpointingLayer):
         output_attentions=...,
         return_dict=...,
         cache_position=...,
-    ): ...
+    ):  # -> Any:
+        ...
 
-@auto_docstring(custom_intro=...)
+@auto_docstring(
+    custom_intro="""
+    The standalone text decoder of Pix2Struct
+    """
+)
 class Pix2StructTextModel(Pix2StructPreTrainedModel):
     config: Pix2StructTextConfig
     _no_split_modules = ...
     _tied_weights_keys = ...
     supports_gradient_checkpointing = ...
     def __init__(self, config) -> None: ...
-    def set_input_embeddings(self, new_embeddings): ...
+    def set_input_embeddings(self, new_embeddings):  # -> None:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -191,20 +254,62 @@ class Pix2StructTextModel(Pix2StructPreTrainedModel):
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
         **kwargs,
-    ) -> Union[tuple[torch.FloatTensor, ...], CausalLMOutputWithCrossAttentions]: ...
+    ) -> Union[tuple[torch.FloatTensor, ...], CausalLMOutputWithCrossAttentions]:
+        r"""
+        input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
+            Indices of input sequence tokens in the vocabulary. Pix2StructText is a model with relative position
+            embeddings so you should be able to pad the inputs on both the right and the left.
 
-@auto_docstring(custom_intro=...)
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for detail.
+
+            [What are input IDs?](../glossary#input-ids)
+
+            To know more on how to prepare `input_ids` for pretraining take a look a [Pix2StructText
+            Training](./t5#training).
+        cross_attn_head_mask (`torch.Tensor` of shape `(num_heads,)` or `(num_layers, num_heads)`, *optional*):
+            Mask to nullify selected heads of the cross-attention modules in the decoder. Mask values selected in
+            `[0, 1]`:
+
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoProcessor, Pix2StructTextModel
+
+        >>> processor = AutoProcessor.from_pretrained("google/pix2struct-textcaps-base")
+        >>> model = Pix2StructTextModel.from_pretrained("google/pix2struct-textcaps-base")
+
+        >>> inputs = processor(text="Hello, my dog is cute", return_tensors="pt")
+        >>> outputs = model(**inputs)
+        >>> loss = outputs.loss
+        ```
+        """
+        ...
+
+@auto_docstring(
+    custom_intro="""
+    A conditional generation model with a language modeling head. Can be used for sequence generation tasks.
+    """
+)
 class Pix2StructForConditionalGeneration(Pix2StructPreTrainedModel, GenerationMixin):
     config: Pix2StructConfig
     main_input_name = ...
     _tied_weights_keys = ...
     def __init__(self, config: Pix2StructConfig) -> None: ...
-    def get_input_embeddings(self): ...
-    def set_input_embeddings(self, new_embeddings): ...
+    def get_input_embeddings(self):  # -> Module:
+        ...
+    def set_input_embeddings(self, new_embeddings):  # -> None:
+        ...
     def get_output_embeddings(self) -> nn.Module: ...
-    def set_output_embeddings(self, new_embeddings): ...
-    def get_decoder(self): ...
-    def get_encoder(self): ...
+    def set_output_embeddings(self, new_embeddings):  # -> None:
+        ...
+    def get_decoder(self):  # -> Pix2StructTextModel:
+        ...
+    def get_encoder(self):  # -> Pix2StructVisionModel:
+        ...
     @auto_docstring
     def forward(
         self,
@@ -224,7 +329,102 @@ class Pix2StructForConditionalGeneration(Pix2StructPreTrainedModel, GenerationMi
         output_hidden_states: Optional[bool] = ...,
         return_dict: Optional[bool] = ...,
         cache_position: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple[torch.FloatTensor], Seq2SeqModelOutput]: ...
+    ) -> Union[tuple[torch.FloatTensor], Seq2SeqModelOutput]:
+        r"""
+        flattened_patches (`torch.FloatTensor` of shape `(batch_size, seq_length, hidden_size)`):
+            Flattened pixel patches. the `hidden_size` is obtained by the following formula: `hidden_size` =
+            `num_channels` * `patch_size` * `patch_size`
+
+            The process of flattening the pixel patches is done by `Pix2StructProcessor`.
+        decoder_input_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Indices of decoder input sequence tokens in the vocabulary.
+
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            [`PreTrainedTokenizer.__call__`] for details.
+
+            [What are decoder input IDs?](../glossary#decoder-input-ids)
+
+            Pix2StructText uses the `pad_token_id` as the starting token for `decoder_input_ids` generation. If
+            `past_key_values` is used, optionally only the last `decoder_input_ids` have to be input (see
+            `past_key_values`).
+
+            To know more on how to prepare `decoder_input_ids` for pretraining take a look at [Pix2StructText
+            Training](./t5#training).
+        decoder_attention_mask (`torch.BoolTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
+            Default behavior: generate a tensor that ignores pad tokens in `decoder_input_ids`. Causal mask will also
+            be used by default.
+        decoder_head_mask (`torch.FloatTensor` of shape `(num_heads,)` or `(num_layers, num_heads)`, *optional*):
+            Mask to nullify selected heads of the self-attention modules in the decoder. Mask values selected in `[0,
+            1]`:
+
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+        cross_attn_head_mask (`torch.Tensor` of shape `(num_heads,)` or `(num_layers, num_heads)`, *optional*):
+            Mask to nullify selected heads of the cross-attention modules in the decoder. Mask values selected in
+            `[0, 1]`:
+
+            - 1 indicates the head is **not masked**,
+            - 0 indicates the head is **masked**.
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss for the decoder.
+
+        Example:
+
+        Inference:
+
+        ```python
+        >>> from PIL import Image
+        >>> import requests
+        >>> from transformers import AutoProcessor, Pix2StructForConditionalGeneration
+
+        >>> processor = AutoProcessor.from_pretrained("google/pix2struct-textcaps-base")
+        >>> model = Pix2StructForConditionalGeneration.from_pretrained("google/pix2struct-textcaps-base")
+
+        >>> url = "https://www.ilankelman.org/stopsigns/australia.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> inputs = processor(images=image, return_tensors="pt")
+
+        >>> # autoregressive generation
+        >>> generated_ids = model.generate(**inputs, max_new_tokens=50)
+        >>> generated_text = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+        >>> print(generated_text)
+        A stop sign is on a street corner.
+
+        >>> # conditional generation
+        >>> text = "A picture of"
+        >>> inputs = processor(text=text, images=image, return_tensors="pt", add_special_tokens=False)
+
+        >>> generated_ids = model.generate(**inputs, max_new_tokens=50)
+        >>> generated_text = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+        >>> print(generated_text)
+        A picture of a stop sign with a red stop sign
+        ```
+
+        Training:
+
+        ```python
+        >>> from PIL import Image
+        >>> import requests
+        >>> from transformers import AutoProcessor, Pix2StructForConditionalGeneration
+
+        >>> processor = AutoProcessor.from_pretrained("google/pix2struct-base")
+        >>> model = Pix2StructForConditionalGeneration.from_pretrained("google/pix2struct-base")
+
+        >>> url = "https://www.ilankelman.org/stopsigns/australia.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+        >>> text = "A stop sign is on the street corner."
+
+        >>> inputs = processor(images=image, return_tensors="pt")
+        >>> labels = processor(text=text, return_tensors="pt").input_ids
+
+        >>> # forward pass
+        >>> outputs = model(**inputs, labels=labels)
+        >>> loss = outputs.loss
+        >>> print(f"{loss.item():.5f}")
+        5.94282
+        ```"""
+        ...
 
 __all__ = [
     "Pix2StructPreTrainedModel",

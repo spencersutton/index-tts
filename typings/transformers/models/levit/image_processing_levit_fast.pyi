@@ -6,6 +6,7 @@ import torch
 from ...image_processing_utils_fast import BaseImageProcessorFast, SizeDict
 from ...utils import auto_docstring, is_torch_available, is_torchvision_available
 
+"""Fast Image processor class for LeViT."""
 if is_torch_available(): ...
 if is_torchvision_available(): ...
 
@@ -24,6 +25,28 @@ class LevitImageProcessorFast(BaseImageProcessorFast):
     do_convert_rgb = ...
     def resize(
         self, image: torch.Tensor, size: SizeDict, interpolation: F.InterpolationMode = ..., **kwargs
-    ) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """
+        Resize an image.
+
+        If size is a dict with keys "width" and "height", the image will be resized to `(size["height"],
+        size["width"])`.
+
+        If size is a dict with key "shortest_edge", the shortest edge value `c` is rescaled to `int(c * (256/224))`.
+        The smaller edge of the image will be matched to this value i.e, if height > width, then image will be rescaled
+        to `(size["shortest_egde"] * height / width, size["shortest_egde"])`.
+
+        Args:
+            image (`torch.Tensor`):
+                Image to resize.
+            size (`SizeDict`):
+                Size of the output image after resizing. If size is a dict with keys "width" and "height", the image
+                will be resized to (height, width). If size is a dict with key "shortest_edge", the shortest edge value
+                `c` is rescaled to int(`c` * (256/224)). The smaller edge of the image will be matched to this value
+                i.e, if height > width, then image will be rescaled to (size * height / width, size).
+            interpolation (`InterpolationMode`, *optional*, defaults to `InterpolationMode.BICUBIC`):
+                Resampling filter to use when resiizing the image.
+        """
+        ...
 
 __all__ = ["LevitImageProcessorFast"]

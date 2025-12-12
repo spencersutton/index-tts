@@ -2,19 +2,19 @@ import dataclasses
 import sympy
 import torch
 import torch.utils._pytree as pytree
-from collections.abc import Callable, Iterator
-from typing import Any, TYPE_CHECKING, TypeAlias
+from collections.abc import Iterator
+from typing import Any, Callable, NamedTuple, Optional, TYPE_CHECKING, Union, TypeAlias
+from torch.fx._symbolic_trace import _ConstantAttributeType
+from torch.utils._sympy.value_ranges import ValueRanges
 from torch._export.verifier import Verifier
 from torch.export.decomp_utils import CustomDecompTable
 from torch.fx._compatibility import compatibility
-from torch.fx._symbolic_trace import _ConstantAttributeType
 from torch.fx.passes.infra.pass_base import PassResult
-from torch.utils._sympy.value_ranges import ValueRanges
 from .graph_signature import ArgumentSpec, ExportGraphSignature
 
 if TYPE_CHECKING: ...
 __all__ = ["ExportedProgram", "ModuleCallEntry", "ModuleCallSignature", "default_decompositions"]
-PassType: TypeAlias = Callable[[torch.fx.GraphModule], PassResult | None]
+PassType: TypeAlias = Callable[[torch.fx.GraphModule], Optional[PassResult]]
 
 @dataclasses.dataclass
 class ModuleCallSignature:
@@ -22,13 +22,14 @@ class ModuleCallSignature:
     outputs: list[ArgumentSpec]
     in_spec: pytree.TreeSpec
     out_spec: pytree.TreeSpec
-    forward_arg_names: list[str] | None = ...
-    def replace_all_uses_with(self, original_node, new_node) -> None: ...
+    forward_arg_names: Optional[list[str]] = ...
+    def replace_all_uses_with(self, original_node, new_node):  # -> None:
+        ...
 
 @dataclasses.dataclass
 class ModuleCallEntry:
     fqn: str
-    signature: ModuleCallSignature | None = ...
+    signature: Optional[ModuleCallSignature] = ...
 
 _AUTOGRAD_ALIAS_BACKEND_KEYS_TO_OVERRIDE = ...
 _BACKEND_KEYS_TO_OVERRIDE = ...
@@ -41,44 +42,48 @@ class ExportedProgram:
     _state_dict: dict[str, Any]
     _range_constraints: dict[sympy.Symbol, ValueRanges]
     _module_call_graph: list[ModuleCallEntry]
-    _example_inputs: tuple[tuple[Any, ...], dict[str, Any]] | None
+    _example_inputs: Optional[tuple[tuple[Any, ...], dict[str, Any]]]
     _constants: dict[str, _ConstantAttributeType]
     _verifiers: list[type[Verifier]]
     _guards_code: list[str]
     def __init__(
         self,
-        root: torch.nn.Module | dict[str, Any],
+        root: Union[torch.nn.Module, dict[str, Any]],
         graph: torch.fx.Graph,
         graph_signature: ExportGraphSignature,
-        state_dict: dict[str, torch.Tensor | torch.nn.Parameter],
+        state_dict: dict[str, Union[torch.Tensor, torch.nn.Parameter]],
         range_constraints: dict[sympy.Symbol, Any],
         module_call_graph: list[ModuleCallEntry],
-        example_inputs: tuple[tuple[Any, ...], dict[str, Any]] | None = ...,
-        constants: dict[str, _ConstantAttributeType] | None = ...,
+        example_inputs: Optional[tuple[tuple[Any, ...], dict[str, Any]]] = ...,
+        constants: Optional[dict[str, _ConstantAttributeType]] = ...,
         *,
-        verifiers: list[type[Verifier]] | None = ...,
+        verifiers: Optional[list[type[Verifier]]] = ...,
     ) -> None: ...
     @property
     @compatibility(is_backward_compatible=False)
-    def graph_module(self) -> GraphModule: ...
+    def graph_module(self):  # -> GraphModule:
+        ...
     @graph_module.setter
     @compatibility(is_backward_compatible=False)
     def graph_module(self, value): ...
     @property
     @compatibility(is_backward_compatible=False)
-    def graph(self) -> Graph: ...
+    def graph(self):  # -> Graph:
+        ...
     @graph.setter
     @compatibility(is_backward_compatible=False)
     def graph(self, value): ...
     @property
     @compatibility(is_backward_compatible=False)
-    def graph_signature(self) -> ExportGraphSignature: ...
+    def graph_signature(self):  # -> ExportGraphSignature:
+        ...
     @graph_signature.setter
     @compatibility(is_backward_compatible=False)
     def graph_signature(self, value): ...
     @property
     @compatibility(is_backward_compatible=False)
-    def state_dict(self) -> dict[str, Any]: ...
+    def state_dict(self):  # -> dict[str, Any]:
+        ...
     @state_dict.setter
     @compatibility(is_backward_compatible=False)
     def state_dict(self, value): ...
@@ -92,25 +97,30 @@ class ExportedProgram:
     def named_buffers(self) -> Iterator[tuple[str, torch.Tensor]]: ...
     @property
     @compatibility(is_backward_compatible=False)
-    def range_constraints(self) -> dict[Symbol, ValueRanges[Any]]: ...
+    def range_constraints(self):  # -> dict[Any, ValueRanges[Any]]:
+        ...
     @range_constraints.setter
     @compatibility(is_backward_compatible=False)
     def range_constraints(self, value): ...
     @property
     @compatibility(is_backward_compatible=False)
-    def module_call_graph(self) -> list[ModuleCallEntry]: ...
+    def module_call_graph(self):  # -> list[ModuleCallEntry]:
+        ...
     @module_call_graph.setter
     @compatibility(is_backward_compatible=False)
     def module_call_graph(self, value): ...
     @property
     @compatibility(is_backward_compatible=False)
-    def example_inputs(self) -> tuple[tuple[Any, ...], dict[str, Any]] | None: ...
+    def example_inputs(self):  # -> tuple[tuple[Any, ...], dict[str, Any]] | None:
+        ...
     @example_inputs.setter
     @compatibility(is_backward_compatible=False)
-    def example_inputs(self, value) -> None: ...
+    def example_inputs(self, value):  # -> None:
+        ...
     @property
     @compatibility(is_backward_compatible=False)
-    def call_spec(self) -> CallSpec: ...
+    def call_spec(self):  # -> CallSpec:
+        ...
     @call_spec.setter
     @compatibility(is_backward_compatible=False)
     def call_spec(self, value): ...
@@ -128,19 +138,22 @@ class ExportedProgram:
     def dialect(self, value): ...
     @property
     @compatibility(is_backward_compatible=False)
-    def verifiers(self) -> list[type[Verifier]]: ...
+    def verifiers(self):  # -> list[type[Verifier]]:
+        ...
     @verifiers.setter
     @compatibility(is_backward_compatible=False)
     def verifiers(self, value): ...
     @property
     @compatibility(is_backward_compatible=False)
-    def tensor_constants(self) -> dict[str, _ConstantAttributeType]: ...
+    def tensor_constants(self):  # -> dict[str, _ConstantAttributeType]:
+        ...
     @tensor_constants.setter
     @compatibility(is_backward_compatible=False)
     def tensor_constants(self, value): ...
     @property
     @compatibility(is_backward_compatible=False)
-    def constants(self) -> dict[str, _ConstantAttributeType]: ...
+    def constants(self):  # -> dict[str, _ConstantAttributeType]:
+        ...
     @constants.setter
     @compatibility(is_backward_compatible=False)
     def constants(self, value): ...
@@ -149,8 +162,9 @@ class ExportedProgram:
     @_disable_prexisiting_fake_mode
     def run_decompositions(
         self,
-        decomp_table: dict[torch._ops.OperatorBase, Callable] | None = ...,
+        decomp_table: Optional[dict[torch._ops.OperatorBase, Callable]] = ...,
         decompose_custom_triton_ops: bool = ...,
     ) -> ExportedProgram: ...
     @compatibility(is_backward_compatible=False)
-    def validate(self) -> None: ...
+    def validate(self):  # -> None:
+        ...

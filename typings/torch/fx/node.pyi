@@ -1,6 +1,7 @@
 import torch
-from collections.abc import Callable, Mapping, Sequence
-from typing import Any, ParamSpec, TYPE_CHECKING, TypeVar, TypeAlias
+from collections.abc import Mapping, Sequence
+from typing import Any, Callable, Optional, TYPE_CHECKING, Union
+from typing_extensions import ParamSpec, TypeAlias, TypeVar
 from torch._C import _NodeBase
 from torch.fx.operator_schemas import ArgsKwargsPair
 from .._ops import ops as _ops
@@ -8,29 +9,37 @@ from ._compatibility import compatibility
 from .graph import Graph
 
 if TYPE_CHECKING: ...
-__all__ = ["Node", "has_side_effect", "map_aggregate", "map_arg"]
+__all__ = ["Node", "map_arg", "map_aggregate", "has_side_effect"]
 log = ...
-BaseArgumentTypes: TypeAlias = (
-    str
-    | int
-    | float
-    | bool
-    | complex
-    | torch.dtype
-    | torch.Tensor
-    | torch.device
-    | torch.memory_format
-    | torch.layout
-    | torch._ops.OpOverload
-    | torch.SymInt
-    | torch.SymBool
-    | torch.SymFloat
-)
+BaseArgumentTypes = Union[
+    str,
+    int,
+    float,
+    bool,
+    complex,
+    torch.dtype,
+    torch.Tensor,
+    torch.device,
+    torch.memory_format,
+    torch.layout,
+    torch._ops.OpOverload,
+    torch.SymInt,
+    torch.SymBool,
+    torch.SymFloat,
+]
 base_types = ...
-Target: TypeAlias = Callable[..., Any] | str
-Argument: TypeAlias = (
-    tuple[Argument, ...] | Sequence[Argument] | Mapping[str, Argument] | slice | range | Node | BaseArgumentTypes | None
-)
+Target: TypeAlias = Union[Callable[..., Any], str]
+Argument = Optional[
+    Union[
+        tuple[Argument, ...],
+        Sequence[Argument],
+        Mapping[str, Argument],
+        slice,
+        range,
+        Node,
+        BaseArgumentTypes,
+    ]
+]
 ArgumentT = TypeVar("ArgumentT", bound=Argument)
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
@@ -40,7 +49,7 @@ _side_effectful_functions: set[Callable[..., Any]] = ...
 if hasattr(_ops.inductor, "resize_storage_bytes_"): ...
 
 @compatibility(is_backward_compatible=False)
-def has_side_effect[**P, R](fn: Callable[_P, _R]) -> Callable[_P, _R]: ...
+def has_side_effect(fn: Callable[_P, _R]) -> Callable[_P, _R]: ...
 
 @compatibility(is_backward_compatible=True)
 class Node(_NodeBase):
@@ -52,9 +61,9 @@ class Node(_NodeBase):
     target: Target
     _input_nodes: dict[Node, None]
     users: dict[Node, None]
-    type: Any | None
+    type: Optional[Any]
     _sort_key: Any
-    _repr_fn: Callable[[Node], str] | None
+    _repr_fn: Optional[Callable[[Node], str]]
     meta: dict[str, Any]
     @compatibility(is_backward_compatible=True)
     def __init__(
@@ -65,7 +74,7 @@ class Node(_NodeBase):
         target: Target,
         args: tuple[Argument, ...],
         kwargs: dict[str, Argument],
-        return_type: Any | None = ...,
+        return_type: Optional[Any] = ...,
     ) -> None: ...
     def __getstate__(self) -> dict[str, Any]: ...
     def __setstate__(self, state: dict[str, Any]) -> None: ...
@@ -98,17 +107,17 @@ class Node(_NodeBase):
     @compatibility(is_backward_compatible=True)
     def update_kwarg(self, key: str, arg: Argument) -> None: ...
     @property
-    def stack_trace(self) -> str | None: ...
+    def stack_trace(self) -> Optional[str]: ...
     @stack_trace.setter
-    def stack_trace(self, trace: str | None) -> None: ...
+    def stack_trace(self, trace: Optional[str]) -> None: ...
     @compatibility(is_backward_compatible=True)
     def format_node(
         self,
-        placeholder_names: list[str] | None = ...,
-        maybe_return_typename: list[str] | None = ...,
+        placeholder_names: Optional[list[str]] = ...,
+        maybe_return_typename: Optional[list[str]] = ...,
         *,
         include_tensor_metadata: bool = ...,
-    ) -> str | None: ...
+    ) -> Optional[str]: ...
     @compatibility(is_backward_compatible=True)
     def replace_all_uses_with(
         self, replace_with: Node, delete_user_cb: Callable[[Node], bool] = ..., *, propagate_meta: bool = ...
@@ -119,15 +128,15 @@ class Node(_NodeBase):
     def normalized_arguments(
         self,
         root: torch.nn.Module,
-        arg_types: tuple[Any] | None = ...,
-        kwarg_types: dict[str, Any] | None = ...,
+        arg_types: Optional[tuple[Any]] = ...,
+        kwarg_types: Optional[dict[str, Any]] = ...,
         normalize_to_only_use_kwargs: bool = ...,
-    ) -> ArgsKwargsPair | None: ...
+    ) -> Optional[ArgsKwargsPair]: ...
     @compatibility(is_backward_compatible=True)
     def replace_input_with(self, old_input: Node, new_input: Node) -> None: ...
     def __setattr__(self, name: str, value: Any) -> None: ...
 
 @compatibility(is_backward_compatible=True)
-def map_arg[ArgumentT: Argument](a: ArgumentT, fn: Callable[[Node], Argument]) -> ArgumentT: ...
+def map_arg(a: ArgumentT, fn: Callable[[Node], Argument]) -> ArgumentT: ...
 @compatibility(is_backward_compatible=True)
-def map_aggregate[ArgumentT: Argument](a: ArgumentT, fn: Callable[[Argument], Argument]) -> ArgumentT: ...
+def map_aggregate(a: ArgumentT, fn: Callable[[Argument], Argument]) -> ArgumentT: ...

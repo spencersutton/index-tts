@@ -1,0 +1,14 @@
+import ast
+import torch
+
+class AttributeTypeIsSupportedChecker(ast.NodeVisitor):
+    def check(self, nn_module: torch.nn.Module) -> None: ...
+    def visit_Assign(self, node):  # -> None:
+
+        ...
+    def visit_AnnAssign(self, node):  # -> None:
+
+        ...
+    def visit_Call(self, node):  # -> None:
+
+        ...

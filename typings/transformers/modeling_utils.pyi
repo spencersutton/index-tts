@@ -8,7 +8,7 @@ from abc import abstractmethod
 from contextlib import contextmanager
 from enum import Enum
 from functools import wraps
-from typing import Any, Callable, Optional, TypeVar, Union
+from typing import Any, Callable, Optional, Self, TypeVar, Union
 from torch import Tensor, nn
 from transformers.utils import is_torchao_available
 from .configuration_utils import PretrainedConfig
@@ -732,15 +732,13 @@ class PreTrainedModel(nn.Module, EmbeddingAccessMixin, ModuleUtilsMixin, PushToH
         """
         ...
 
-    @wraps(torch.nn.Module.cuda)
-    def cuda(self, *args, **kwargs):  # -> Self:
-        ...
+    def cuda(self, device: int | torch.device | None = ...) -> Self: ...
     @wraps(torch.nn.Module.to)
-    def to(self, *args, **kwargs):  # -> Self:
+    def to(self, *args, **kwargs) -> Self:
         ...
-    def half(self, *args):  # -> Self:
+    def half(self, *args) -> Self:
         ...
-    def float(self, *args):  # -> Self:
+    def float(self, *args) -> Self:
         ...
     @classmethod
     def get_init_context(

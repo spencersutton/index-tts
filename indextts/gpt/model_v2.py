@@ -380,7 +380,10 @@ class UnifiedVoice(nn.Module):
             accel_gpt = GPT2AccelModel(gpt_config)
             accel_gpt.load_state_dict(self.gpt.state_dict(), strict=False)
 
-            accel_gpt = accel_gpt.half().cuda() if half else accel_gpt.cuda()  # ty:ignore[missing-argument]  # pyright: ignore[reportCallIssue]
+            if half:
+                accel_gpt = accel_gpt.half().cuda()
+            else:
+                accel_gpt = accel_gpt.cuda()
             accel_gpt.eval()
 
             lm_head_with_norm = nn.Sequential(self.final_norm, self.mel_head)

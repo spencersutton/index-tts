@@ -4,8 +4,8 @@ from collections import deque
 from copy import copy
 
 import torch
+from transformers import GPT2Model
 
-from indextts.gpt.model_v2 import GPT2InferenceModel
 from indextts.s2mel.modules.gpt_fast.model import KVCache
 
 
@@ -87,9 +87,9 @@ class KVCacheManager:
         self.num_blocks = num_blocks
         self.dtype = dtype
 
-        self.blocks: list[KVCacheBlock] = [KVCacheBlock(i) for i in range(num_blocks)]
+        self.blocks = [KVCacheBlock(i) for i in range(num_blocks)]
         self.block_hash_to_id: dict[bytes, int] = {}
-        self.free_block_ids: deque = deque(range(num_blocks))
+        self.free_block_ids = deque(range(num_blocks))
         self.used_block_ids: set[int] = set()
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -192,7 +192,7 @@ class KVCacheManager:
     def remove_seq(self, sequence: Seq) -> None:
         self.deallocate(sequence)
 
-    def wire_kv_cache_to_model(self, model: GPT2InferenceModel) -> None:
+    def wire_kv_cache_to_model(self, model: GPT2Model) -> None:
         layer_id = 0
         for module in model.modules():
             if isinstance(module, KVCache):

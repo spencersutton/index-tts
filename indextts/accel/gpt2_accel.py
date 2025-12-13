@@ -39,7 +39,7 @@ class GPT2AccelAttention(nn.Module):
             )
             raise ValueError(msg)
 
-        self.scale_attn_weights = config.scale_attn_weights
+        self.scale_attn_weights = cast(bool, config.scale_attn_weights)
 
         self.c_attn = Conv1D(3 * self.embed_dim, self.embed_dim)
         self.c_proj = Conv1D(self.embed_dim, self.embed_dim)

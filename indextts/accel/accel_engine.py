@@ -129,7 +129,7 @@ class AccelInferenceEngine:
         block_tables = None
         if cu_seqlens_k[-1] > cu_seqlens_q[-1]:
             max_len = max(len(req.block_table) for req in requests)
-            block_tables_list = []
+            block_tables_list: list[list[int]] = []
             for req in requests:
                 table = req.block_table + [-1] * (max_len - len(req.block_table))
                 block_tables_list.append(table)
@@ -153,29 +153,29 @@ class AccelInferenceEngine:
             msg = "FATAL: No requests provided to _prepare_decode!"
             raise RuntimeError(msg)
 
-        input_ids = []
-        positions = []
-        slot_mapping = []
-        context_lens = []
+        input_ids_int: list[int] = []
+        positions_int: list[int] = []
+        slot_mapping_int: list[int] = []
+        context_lens_int: list[int] = []
 
         for req in requests:
-            input_ids.append(req.last_token)
+            input_ids_int.append(req.last_token)
 
             pos = len(req) - 1
             if hasattr(self, "_tts_mode") and self._tts_mode:
                 pos -= self._tts_prompt_len - 1
-            positions.append(pos)
+            positions_int.append(pos)
 
-            context_lens.append(len(req))
-            slot_mapping.append(req.block_table[-1] * self.block_size + req.last_block_num_tokens - 1)
+            context_lens_int.append(len(req))
+            slot_mapping_int.append(req.block_table[-1] * self.block_size + req.last_block_num_tokens - 1)
 
-        input_ids = torch.tensor(input_ids, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
-        positions = torch.tensor(positions, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
-        slot_mapping = torch.tensor(slot_mapping, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
-        context_lens = torch.tensor(context_lens, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
+        input_ids = torch.tensor(input_ids_int, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
+        positions = torch.tensor(positions_int, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
+        slot_mapping = torch.tensor(slot_mapping_int, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
+        context_lens = torch.tensor(context_lens_int, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
 
         max_len = max(len(req.block_table) for req in requests)
-        block_tables_list = []
+        block_tables_list: list[list[int]] = []
         for req in requests:
             table = req.block_table + [-1] * (max_len - len(req.block_table))
             block_tables_list.append(table)

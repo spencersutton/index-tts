@@ -50,10 +50,10 @@ class Seq(Sequence[int]):
     def __getitem__(self, index: int) -> int: ...
 
     @overload
-    def __getitem__(self, index: slice[int, int | None, int | None]) -> Sequence[int]: ...
+    def __getitem__(self, index: slice) -> Sequence[int]: ...
 
     @override
-    def __getitem__(self, index: int | slice[int, int | None, int | None]) -> int | Sequence[int]:
+    def __getitem__(self, index: int | slice) -> int | Sequence[int]:
         return self.token_ids[index]
 
     @property

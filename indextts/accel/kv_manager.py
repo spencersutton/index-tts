@@ -8,6 +8,8 @@ from typing import overload, override
 import torch
 from transformers import GPT2Model
 
+from indextts.accel.attention import Attention
+
 
 class KVCacheBlock:
     def __init__(self, block_id: int) -> None:
@@ -203,7 +205,7 @@ class KVCacheManager:
     def wire_kv_cache_to_model(self, model: GPT2Model) -> None:
         layer_id = 0
         for module in model.modules():
-            if hasattr(module, "k_cache") and hasattr(module, "v_cache"):
+            if isinstance(module, Attention):
                 module.k_cache = self.kv_cache[0, layer_id]
                 module.v_cache = self.kv_cache[1, layer_id]
                 layer_id += 1

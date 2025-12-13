@@ -1,7 +1,7 @@
 import contextlib
 import torch
-from typing import Callable
-from typing_extensions import deprecated
+from collections.abc import Callable
+from warnings import deprecated
 from torch._library.utils import RegistrationHandle
 
 class FakeImplHolder:

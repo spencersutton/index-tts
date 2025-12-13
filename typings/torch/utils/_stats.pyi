@@ -1,6 +1,7 @@
 from collections import OrderedDict
-from typing import Callable, TypeVar
-from typing_extensions import ParamSpec
+from typing import TypeVar
+from collections.abc import Callable
+from typing import ParamSpec
 
 simple_call_counter: OrderedDict[str, int] = ...
 _P = ParamSpec("_P")

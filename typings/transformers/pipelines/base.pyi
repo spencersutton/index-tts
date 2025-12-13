@@ -35,9 +35,9 @@ def pad_collate_fn(tokenizer, feature_extractor):  # -> Callable[..., dict[Any, 
 def infer_framework_load_model(
     model,
     config: AutoConfig,
-    model_classes: Optional[dict[str, tuple[type]]] = ...,
-    task: Optional[str] = ...,
-    framework: Optional[str] = ...,
+    model_classes: dict[str, tuple[type]] | None = ...,
+    task: str | None = ...,
+    framework: str | None = ...,
     **model_kwargs,
 ):
     """
@@ -69,9 +69,9 @@ def infer_framework_load_model(
 
 def infer_framework_from_model(
     model,
-    model_classes: Optional[dict[str, tuple[type]]] = ...,
-    task: Optional[str] = ...,
-    framework: Optional[str] = ...,
+    model_classes: dict[str, tuple[type]] | None = ...,
+    task: str | None = ...,
+    framework: str | None = ...,
     **model_kwargs,
 ):
     """
@@ -99,7 +99,7 @@ def infer_framework_from_model(
     """
     ...
 
-def get_framework(model, revision: Optional[str] = ...):  # -> Literal['tf', 'pt', 'flax']:
+def get_framework(model, revision: str | None = ...):  # -> Literal['tf', 'pt', 'flax']:
     """
     Select framework (TensorFlow or PyTorch) to use.
 
@@ -111,7 +111,7 @@ def get_framework(model, revision: Optional[str] = ...):  # -> Literal['tf', 'pt
     ...
 
 def get_default_model_and_revision(
-    targeted_task: dict, framework: Optional[str], task_options: Optional[Any]
+    targeted_task: dict, framework: str | None, task_options: Any | None
 ) -> tuple[str, str]:
     """
     Select a default model to use for a given task. Defaults to pytorch if ambiguous.
@@ -137,9 +137,9 @@ def get_default_model_and_revision(
 
 def load_assistant_model(
     model: PreTrainedModel,
-    assistant_model: Optional[Union[str, PreTrainedModel]],
-    assistant_tokenizer: Optional[PreTrainedTokenizer],
-) -> tuple[Optional[PreTrainedModel], Optional[PreTrainedTokenizer]]:
+    assistant_model: str | PreTrainedModel | None,
+    assistant_tokenizer: PreTrainedTokenizer | None,
+) -> tuple[PreTrainedModel | None, PreTrainedTokenizer | None]:
     """
     Prepares the assistant model and the assistant tokenizer for a pipeline whose model that can call `generate`.
 
@@ -196,12 +196,12 @@ class PipelineDataFormat:
 
     SUPPORTED_FORMATS = ...
     def __init__(
-        self, output_path: Optional[str], input_path: Optional[str], column: Optional[str], overwrite: bool = ...
+        self, output_path: str | None, input_path: str | None, column: str | None, overwrite: bool = ...
     ) -> None: ...
     @abstractmethod
     def __iter__(self): ...
     @abstractmethod
-    def save(self, data: Union[dict, list[dict]]):
+    def save(self, data: dict | list[dict]):
         """
         Save the provided data object with the representation for the current [`~pipelines.PipelineDataFormat`].
 
@@ -210,7 +210,7 @@ class PipelineDataFormat:
         """
         ...
 
-    def save_binary(self, data: Union[dict, list[dict]]) -> str:
+    def save_binary(self, data: dict | list[dict]) -> str:
         """
         Save the provided data object as a pickle-formatted binary data on the disk.
 
@@ -224,7 +224,7 @@ class PipelineDataFormat:
 
     @staticmethod
     def from_str(
-        format: str, output_path: Optional[str], input_path: Optional[str], column: Optional[str], overwrite=...
+        format: str, output_path: str | None, input_path: str | None, column: str | None, overwrite=...
     ) -> PipelineDataFormat:
         """
         Creates an instance of the right subclass of [`~pipelines.PipelineDataFormat`] depending on `format`.
@@ -257,9 +257,7 @@ class CsvPipelineDataFormat(PipelineDataFormat):
         overwrite (`bool`, *optional*, defaults to `False`):
             Whether or not to overwrite the `output_path`.
     """
-    def __init__(
-        self, output_path: Optional[str], input_path: Optional[str], column: Optional[str], overwrite=...
-    ) -> None: ...
+    def __init__(self, output_path: str | None, input_path: str | None, column: str | None, overwrite=...) -> None: ...
     def __iter__(self):  # -> Generator[dict[str, str | Any] | str | Any, Any, None]:
         ...
     def save(self, data: list[dict]):  # -> None:
@@ -282,9 +280,7 @@ class JsonPipelineDataFormat(PipelineDataFormat):
         overwrite (`bool`, *optional*, defaults to `False`):
             Whether or not to overwrite the `output_path`.
     """
-    def __init__(
-        self, output_path: Optional[str], input_path: Optional[str], column: Optional[str], overwrite=...
-    ) -> None: ...
+    def __init__(self, output_path: str | None, input_path: str | None, column: str | None, overwrite=...) -> None: ...
     def __iter__(self):  # -> Generator[dict[str, Any] | Any, Any, None]:
         ...
     def save(self, data: dict):  # -> None:
@@ -320,7 +316,7 @@ class PipedPipelineDataFormat(PipelineDataFormat):
         """
         ...
 
-    def save_binary(self, data: Union[dict, list[dict]]) -> str: ...
+    def save_binary(self, data: dict | list[dict]) -> str: ...
 
 class _ScikitCompat(ABC):
     """
@@ -373,23 +369,21 @@ class Pipeline(_ScikitCompat, PushToHubMixin):
     default_input_names = ...
     def __init__(
         self,
-        model: Union[PreTrainedModel, TFPreTrainedModel],
-        tokenizer: Optional[PreTrainedTokenizer] = ...,
-        feature_extractor: Optional[PreTrainedFeatureExtractor] = ...,
-        image_processor: Optional[BaseImageProcessor] = ...,
-        processor: Optional[ProcessorMixin] = ...,
-        modelcard: Optional[ModelCard] = ...,
-        framework: Optional[str] = ...,
+        model: PreTrainedModel | TFPreTrainedModel,
+        tokenizer: PreTrainedTokenizer | None = ...,
+        feature_extractor: PreTrainedFeatureExtractor | None = ...,
+        image_processor: BaseImageProcessor | None = ...,
+        processor: ProcessorMixin | None = ...,
+        modelcard: ModelCard | None = ...,
+        framework: str | None = ...,
         task: str = ...,
         args_parser: ArgumentHandler = ...,
-        device: Union[int, torch.device] = ...,
-        torch_dtype: Optional[Union[str, torch.dtype]] = ...,
+        device: int | torch.device = ...,
+        torch_dtype: str | torch.dtype | None = ...,
         binary_output: bool = ...,
         **kwargs,
     ) -> None: ...
-    def save_pretrained(
-        self, save_directory: Union[str, os.PathLike], safe_serialization: bool = ..., **kwargs
-    ):  # -> None:
+    def save_pretrained(self, save_directory: str | os.PathLike, safe_serialization: bool = ..., **kwargs):  # -> None:
         """
         Save the pipeline's model and tokenizer.
 
@@ -416,7 +410,7 @@ class Pipeline(_ScikitCompat, PushToHubMixin):
         ...
 
     @property
-    def torch_dtype(self) -> Optional[torch.dtype]:
+    def torch_dtype(self) -> torch.dtype | None:
         """
         Torch dtype of the model (if it's Pytorch model), `None` otherwise.
         """
@@ -457,7 +451,7 @@ class Pipeline(_ScikitCompat, PushToHubMixin):
         """
         ...
 
-    def check_model_type(self, supported_models: Union[list[str], dict]):  # -> None:
+    def check_model_type(self, supported_models: list[str] | dict):  # -> None:
         """
         Check if the model class is in supported by the pipeline.
 
@@ -523,10 +517,10 @@ class PipelineRegistry:
         self,
         task: str,
         pipeline_class: type,
-        pt_model: Optional[Union[type, tuple[type]]] = ...,
-        tf_model: Optional[Union[type, tuple[type]]] = ...,
-        default: Optional[dict] = ...,
-        type: Optional[str] = ...,
+        pt_model: type | tuple[type] | None = ...,
+        tf_model: type | tuple[type] | None = ...,
+        default: dict | None = ...,
+        type: str | None = ...,
     ) -> None: ...
     def to_dict(self):  # -> dict[str, Any]:
         ...

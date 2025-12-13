@@ -15,7 +15,7 @@ class BackboneType(enum.Enum):
     TRANSFORMERS = ...
 
 def verify_out_features_out_indices(
-    out_features: Optional[Iterable[str]], out_indices: Optional[Iterable[int]], stage_names: Optional[Iterable[str]]
+    out_features: Iterable[str] | None, out_indices: Iterable[int] | None, stage_names: Iterable[str] | None
 ):  # -> None:
     """
     Verify that out_indices and out_features are valid for the given stage_names.
@@ -23,7 +23,7 @@ def verify_out_features_out_indices(
     ...
 
 def get_aligned_output_features_output_indices(
-    out_features: Optional[list[str]], out_indices: Optional[Union[list[int], tuple[int]]], stage_names: list[str]
+    out_features: list[str] | None, out_indices: list[int] | tuple[int] | None, stage_names: list[str]
 ) -> tuple[list[str], list[int]]:
     """
     Get the `out_features` and `out_indices` so that they are aligned.
@@ -44,7 +44,7 @@ def get_aligned_output_features_output_indices(
     ...
 
 class BackboneMixin:
-    backbone_type: Optional[BackboneType] = ...
+    backbone_type: BackboneType | None = ...
     @property
     def out_features(self):  # -> list[str]:
         ...
@@ -59,7 +59,7 @@ class BackboneMixin:
     def out_indices(self):  # -> list[Any] | list[int]:
         ...
     @out_indices.setter
-    def out_indices(self, out_indices: Union[tuple[int], list[int]]):  # -> None:
+    def out_indices(self, out_indices: tuple[int] | list[int]):  # -> None:
         """
         Set the out_indices attribute. This will also update the out_features attribute to match the new out_indices.
         """
@@ -75,9 +75,9 @@ class BackboneMixin:
     def forward(
         self,
         pixel_values,
-        output_hidden_states: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        output_hidden_states: bool | None = ...,
+        output_attentions: bool | None = ...,
+        return_dict: bool | None = ...,
     ): ...
     def to_dict(self):
         """
@@ -104,7 +104,7 @@ class BackboneConfigMixin:
     def out_indices(self):  # -> list[int]:
         ...
     @out_indices.setter
-    def out_indices(self, out_indices: Union[tuple[int], list[int]]):  # -> None:
+    def out_indices(self, out_indices: tuple[int] | list[int]):  # -> None:
         """
         Set the out_indices attribute. This will also update the out_features attribute to match the new out_indices.
         """
@@ -132,9 +132,9 @@ def load_backbone(config):  # -> Any:
 def verify_backbone_config_arguments(
     use_timm_backbone: bool,
     use_pretrained_backbone: bool,
-    backbone: Optional[str],
-    backbone_config: Optional[Union[dict, PretrainedConfig]],
-    backbone_kwargs: Optional[dict],
+    backbone: str | None,
+    backbone_config: dict | PretrainedConfig | None,
+    backbone_kwargs: dict | None,
 ):  # -> None:
     """
     Verify that the config arguments to be passed to load_backbone are valid

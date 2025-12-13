@@ -60,13 +60,13 @@ class LEDEncoderAttention(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        layer_head_mask: Optional[torch.Tensor] = ...,
-        is_index_masked: Optional[torch.Tensor] = ...,
-        is_index_global_attn: Optional[torch.Tensor] = ...,
-        is_global_attn: Optional[bool] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        layer_head_mask: torch.Tensor | None = ...,
+        is_index_masked: torch.Tensor | None = ...,
+        is_index_global_attn: torch.Tensor | None = ...,
+        is_global_attn: bool | None = ...,
         output_attentions: bool = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]:
         """Input shape: Batch x Time x Channel"""
         ...
 
@@ -76,21 +76,21 @@ class LEDDecoderAttention(nn.Module):
         self,
         embed_dim: int,
         num_heads: int,
-        dropout: Optional[float] = ...,
-        is_decoder: Optional[bool] = ...,
-        bias: Optional[bool] = ...,
-        layer_idx: Optional[bool] = ...,
+        dropout: float | None = ...,
+        is_decoder: bool | None = ...,
+        bias: bool | None = ...,
+        layer_idx: bool | None = ...,
     ) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        key_value_states: Optional[torch.Tensor] = ...,
-        past_key_value: Optional[Cache] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        layer_head_mask: Optional[torch.Tensor] = ...,
+        key_value_states: torch.Tensor | None = ...,
+        past_key_value: Cache | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        layer_head_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
-        cache_position: Optional[torch.Tensor] = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[Cache]]:
+        cache_position: torch.Tensor | None = ...,
+    ) -> tuple[torch.Tensor, torch.Tensor | None, Cache | None]:
         """Input shape: Batch x Time x Channel"""
         ...
 
@@ -121,15 +121,15 @@ class LEDDecoderLayer(GradientCheckpointingLayer):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        encoder_hidden_states: Optional[torch.Tensor] = ...,
-        encoder_attention_mask: Optional[torch.Tensor] = ...,
-        layer_head_mask: Optional[torch.Tensor] = ...,
-        cross_attn_layer_head_mask: Optional[torch.Tensor] = ...,
-        past_key_value: Optional[Cache] = ...,
-        output_attentions: Optional[bool] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        encoder_hidden_states: torch.Tensor | None = ...,
+        encoder_attention_mask: torch.Tensor | None = ...,
+        layer_head_mask: torch.Tensor | None = ...,
+        cross_attn_layer_head_mask: torch.Tensor | None = ...,
+        past_key_value: Cache | None = ...,
+        output_attentions: bool | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.Tensor | None = ...,
     ):  # -> tuple[Tensor | Any | None, ...] | tuple[Tensor | Cache | None, ...] | tuple[Tensor, Any, Any | None] | tuple[Tensor]:
         """
         Args:
@@ -198,9 +198,9 @@ class LEDEncoderBaseModelOutput(ModelOutput):
     """
 
     last_hidden_state: torch.FloatTensor
-    hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
-    attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
-    global_attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
+    hidden_states: tuple[torch.FloatTensor, ...] | None = ...
+    attentions: tuple[torch.FloatTensor, ...] | None = ...
+    global_attentions: tuple[torch.FloatTensor, ...] | None = ...
 
 @dataclass
 @auto_docstring(
@@ -231,15 +231,15 @@ class LEDSeq2SeqModelOutput(ModelOutput):
         in the sequence.
     """
 
-    last_hidden_state: Optional[torch.FloatTensor] = ...
-    past_key_values: Optional[list[torch.FloatTensor]] = ...
-    decoder_hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
-    decoder_attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
-    cross_attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
-    encoder_last_hidden_state: Optional[torch.FloatTensor] = ...
-    encoder_hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
-    encoder_attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
-    encoder_global_attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
+    last_hidden_state: torch.FloatTensor | None = ...
+    past_key_values: list[torch.FloatTensor] | None = ...
+    decoder_hidden_states: tuple[torch.FloatTensor, ...] | None = ...
+    decoder_attentions: tuple[torch.FloatTensor, ...] | None = ...
+    cross_attentions: tuple[torch.FloatTensor, ...] | None = ...
+    encoder_last_hidden_state: torch.FloatTensor | None = ...
+    encoder_hidden_states: tuple[torch.FloatTensor, ...] | None = ...
+    encoder_attentions: tuple[torch.FloatTensor, ...] | None = ...
+    encoder_global_attentions: tuple[torch.FloatTensor, ...] | None = ...
 
 @dataclass
 @auto_docstring(
@@ -268,16 +268,16 @@ class LEDSeq2SeqLMOutput(ModelOutput):
         in the sequence.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    logits: Optional[torch.FloatTensor] = ...
-    past_key_values: Optional[list[torch.FloatTensor]] = ...
-    decoder_hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
-    decoder_attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
-    cross_attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
-    encoder_last_hidden_state: Optional[torch.FloatTensor] = ...
-    encoder_hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
-    encoder_attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
-    encoder_global_attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
+    loss: torch.FloatTensor | None = ...
+    logits: torch.FloatTensor | None = ...
+    past_key_values: list[torch.FloatTensor] | None = ...
+    decoder_hidden_states: tuple[torch.FloatTensor, ...] | None = ...
+    decoder_attentions: tuple[torch.FloatTensor, ...] | None = ...
+    cross_attentions: tuple[torch.FloatTensor, ...] | None = ...
+    encoder_last_hidden_state: torch.FloatTensor | None = ...
+    encoder_hidden_states: tuple[torch.FloatTensor, ...] | None = ...
+    encoder_attentions: tuple[torch.FloatTensor, ...] | None = ...
+    encoder_global_attentions: tuple[torch.FloatTensor, ...] | None = ...
 
 @dataclass
 @auto_docstring(
@@ -306,16 +306,16 @@ class LEDSeq2SeqSequenceClassifierOutput(ModelOutput):
         in the sequence.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    logits: Optional[torch.FloatTensor] = ...
-    past_key_values: Optional[list[torch.FloatTensor]] = ...
-    decoder_hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
-    decoder_attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
-    cross_attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
-    encoder_last_hidden_state: Optional[torch.FloatTensor] = ...
-    encoder_hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
-    encoder_attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
-    encoder_global_attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
+    loss: torch.FloatTensor | None = ...
+    logits: torch.FloatTensor | None = ...
+    past_key_values: list[torch.FloatTensor] | None = ...
+    decoder_hidden_states: tuple[torch.FloatTensor, ...] | None = ...
+    decoder_attentions: tuple[torch.FloatTensor, ...] | None = ...
+    cross_attentions: tuple[torch.FloatTensor, ...] | None = ...
+    encoder_last_hidden_state: torch.FloatTensor | None = ...
+    encoder_hidden_states: tuple[torch.FloatTensor, ...] | None = ...
+    encoder_attentions: tuple[torch.FloatTensor, ...] | None = ...
+    encoder_global_attentions: tuple[torch.FloatTensor, ...] | None = ...
 
 @dataclass
 @auto_docstring(
@@ -342,17 +342,17 @@ class LEDSeq2SeqQuestionAnsweringModelOutput(ModelOutput):
         in the sequence.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    start_logits: Optional[torch.FloatTensor] = ...
-    end_logits: Optional[torch.FloatTensor] = ...
-    past_key_values: Optional[list[torch.FloatTensor]] = ...
-    decoder_hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
-    decoder_attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
-    cross_attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
-    encoder_last_hidden_state: Optional[torch.FloatTensor] = ...
-    encoder_hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
-    encoder_attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
-    encoder_global_attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
+    loss: torch.FloatTensor | None = ...
+    start_logits: torch.FloatTensor | None = ...
+    end_logits: torch.FloatTensor | None = ...
+    past_key_values: list[torch.FloatTensor] | None = ...
+    decoder_hidden_states: tuple[torch.FloatTensor, ...] | None = ...
+    decoder_attentions: tuple[torch.FloatTensor, ...] | None = ...
+    cross_attentions: tuple[torch.FloatTensor, ...] | None = ...
+    encoder_last_hidden_state: torch.FloatTensor | None = ...
+    encoder_hidden_states: tuple[torch.FloatTensor, ...] | None = ...
+    encoder_attentions: tuple[torch.FloatTensor, ...] | None = ...
+    encoder_global_attentions: tuple[torch.FloatTensor, ...] | None = ...
 
 class LEDEncoder(LEDPreTrainedModel):
     """
@@ -363,7 +363,7 @@ class LEDEncoder(LEDPreTrainedModel):
         config: LEDConfig
         embed_tokens (nn.Embedding): output embedding
     """
-    def __init__(self, config: LEDConfig, embed_tokens: Optional[nn.Embedding] = ...) -> None: ...
+    def __init__(self, config: LEDConfig, embed_tokens: nn.Embedding | None = ...) -> None: ...
     def forward(
         self,
         input_ids=...,
@@ -430,7 +430,7 @@ class LEDDecoder(LEDPreTrainedModel):
         config: LEDConfig
         embed_tokens (nn.Embedding): output embedding
     """
-    def __init__(self, config: LEDConfig, embed_tokens: Optional[nn.Embedding] = ...) -> None: ...
+    def __init__(self, config: LEDConfig, embed_tokens: nn.Embedding | None = ...) -> None: ...
     def forward(
         self,
         input_ids=...,
@@ -539,24 +539,24 @@ class LEDModel(LEDPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        decoder_input_ids: Optional[torch.LongTensor] = ...,
-        decoder_attention_mask: Optional[torch.LongTensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        decoder_head_mask: Optional[torch.Tensor] = ...,
-        cross_attn_head_mask: Optional[torch.Tensor] = ...,
-        encoder_outputs: Optional[tuple[tuple[torch.FloatTensor]]] = ...,
-        global_attention_mask: Optional[torch.FloatTensor] = ...,
-        past_key_values: Optional[tuple[tuple[torch.FloatTensor]]] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        decoder_inputs_embeds: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple[torch.Tensor], LEDSeq2SeqModelOutput]:
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        decoder_input_ids: torch.LongTensor | None = ...,
+        decoder_attention_mask: torch.LongTensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        decoder_head_mask: torch.Tensor | None = ...,
+        cross_attn_head_mask: torch.Tensor | None = ...,
+        encoder_outputs: tuple[tuple[torch.FloatTensor]] | None = ...,
+        global_attention_mask: torch.FloatTensor | None = ...,
+        past_key_values: tuple[tuple[torch.FloatTensor]] | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        decoder_inputs_embeds: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.Tensor | None = ...,
+    ) -> tuple[torch.Tensor] | LEDSeq2SeqModelOutput:
         r"""
         decoder_input_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
             Indices of decoder input sequence tokens in the vocabulary.
@@ -609,30 +609,30 @@ class LEDForConditionalGeneration(LEDPreTrainedModel, GenerationMixin):
     def get_decoder(self):  # -> LEDDecoder:
         ...
     def resize_token_embeddings(
-        self, new_num_tokens: int, pad_to_multiple_of: Optional[int] = ..., mean_resizing: bool = ...
+        self, new_num_tokens: int, pad_to_multiple_of: int | None = ..., mean_resizing: bool = ...
     ) -> nn.Embedding: ...
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        decoder_input_ids: Optional[torch.LongTensor] = ...,
-        decoder_attention_mask: Optional[torch.LongTensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        decoder_head_mask: Optional[torch.Tensor] = ...,
-        cross_attn_head_mask: Optional[torch.Tensor] = ...,
-        encoder_outputs: Optional[tuple[tuple[torch.FloatTensor]]] = ...,
-        global_attention_mask: Optional[torch.FloatTensor] = ...,
-        past_key_values: Optional[tuple[tuple[torch.FloatTensor]]] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        decoder_inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple[torch.Tensor], LEDSeq2SeqLMOutput]:
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        decoder_input_ids: torch.LongTensor | None = ...,
+        decoder_attention_mask: torch.LongTensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        decoder_head_mask: torch.Tensor | None = ...,
+        cross_attn_head_mask: torch.Tensor | None = ...,
+        encoder_outputs: tuple[tuple[torch.FloatTensor]] | None = ...,
+        global_attention_mask: torch.FloatTensor | None = ...,
+        past_key_values: tuple[tuple[torch.FloatTensor]] | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        decoder_inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.Tensor | None = ...,
+    ) -> tuple[torch.Tensor] | LEDSeq2SeqLMOutput:
         r"""
         decoder_input_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
             Indices of decoder input sequence tokens in the vocabulary.
@@ -740,23 +740,23 @@ class LEDForSequenceClassification(LEDPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        decoder_input_ids: Optional[torch.LongTensor] = ...,
-        decoder_attention_mask: Optional[torch.LongTensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        decoder_head_mask: Optional[torch.Tensor] = ...,
-        cross_attn_head_mask: Optional[torch.Tensor] = ...,
-        encoder_outputs: Optional[tuple[tuple[torch.FloatTensor]]] = ...,
-        global_attention_mask: Optional[torch.FloatTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        decoder_inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], LEDSeq2SeqSequenceClassifierOutput]:
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        decoder_input_ids: torch.LongTensor | None = ...,
+        decoder_attention_mask: torch.LongTensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        decoder_head_mask: torch.Tensor | None = ...,
+        cross_attn_head_mask: torch.Tensor | None = ...,
+        encoder_outputs: tuple[tuple[torch.FloatTensor]] | None = ...,
+        global_attention_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        decoder_inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.Tensor] | LEDSeq2SeqSequenceClassifierOutput:
         r"""
         decoder_input_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
             Indices of decoder input sequence tokens in the vocabulary.
@@ -804,24 +804,24 @@ class LEDForQuestionAnswering(LEDPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        decoder_input_ids: Optional[torch.LongTensor] = ...,
-        decoder_attention_mask: Optional[torch.LongTensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        decoder_head_mask: Optional[torch.Tensor] = ...,
-        cross_attn_head_mask: Optional[torch.Tensor] = ...,
-        encoder_outputs: Optional[tuple[tuple[torch.FloatTensor]]] = ...,
-        global_attention_mask: Optional[torch.FloatTensor] = ...,
-        start_positions: Optional[torch.LongTensor] = ...,
-        end_positions: Optional[torch.LongTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        decoder_inputs_embeds: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], LEDSeq2SeqQuestionAnsweringModelOutput]:
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        decoder_input_ids: torch.LongTensor | None = ...,
+        decoder_attention_mask: torch.LongTensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        decoder_head_mask: torch.Tensor | None = ...,
+        cross_attn_head_mask: torch.Tensor | None = ...,
+        encoder_outputs: tuple[tuple[torch.FloatTensor]] | None = ...,
+        global_attention_mask: torch.FloatTensor | None = ...,
+        start_positions: torch.LongTensor | None = ...,
+        end_positions: torch.LongTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        decoder_inputs_embeds: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.Tensor] | LEDSeq2SeqQuestionAnsweringModelOutput:
         r"""
         decoder_input_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
             Indices of decoder input sequence tokens in the vocabulary.

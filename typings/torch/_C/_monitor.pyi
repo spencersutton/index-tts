@@ -1,7 +1,7 @@
 import datetime
 from enum import Enum
 from types import TracebackType
-from typing import Callable
+from collections.abc import Callable
 
 class Aggregation(Enum):
     VALUE = ...

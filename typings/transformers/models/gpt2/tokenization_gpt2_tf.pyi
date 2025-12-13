@@ -30,8 +30,8 @@ class TFGPT2Tokenizer(keras.layers.Layer):
         self,
         vocab: dict[str, int],
         merges: list[str],
-        max_length: Optional[int] = ...,
-        pad_token_id: Optional[int] = ...,
+        max_length: int | None = ...,
+        pad_token_id: int | None = ...,
     ) -> None: ...
     @classmethod
     def from_tokenizer(cls, tokenizer: GPT2Tokenizer, *args, **kwargs):  # -> Self:
@@ -52,9 +52,7 @@ class TFGPT2Tokenizer(keras.layers.Layer):
         ...
 
     @classmethod
-    def from_pretrained(
-        cls, pretrained_model_name_or_path: Union[str, os.PathLike], *init_inputs, **kwargs
-    ):  # -> Self:
+    def from_pretrained(cls, pretrained_model_name_or_path: str | os.PathLike, *init_inputs, **kwargs):  # -> Self:
         """Creates TFGPT2Tokenizer from pretrained GPT2Tokenizer
 
         Args:
@@ -81,7 +79,7 @@ class TFGPT2Tokenizer(keras.layers.Layer):
 
     def get_config(self):  # -> dict[str, dict[str, int] | list[str] | int | None]:
         ...
-    def call(self, x, max_length: Optional[int] = ...):  # -> dict[str, Any]:
+    def call(self, x, max_length: int | None = ...):  # -> dict[str, Any]:
         ...
 
 __all__ = ["TFGPT2Tokenizer"]

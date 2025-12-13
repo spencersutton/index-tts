@@ -27,9 +27,9 @@ class DonutFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
             padded to the largest image size in the batch.
     """
 
-    do_thumbnail: Optional[bool]
-    do_align_long_axis: Optional[bool]
-    do_pad: Optional[bool]
+    do_thumbnail: bool | None
+    do_align_long_axis: bool | None
+    do_pad: bool | None
     ...
 
 @auto_docstring

@@ -101,9 +101,9 @@ class PromptDepthAnythingNeck(nn.Module):
     def forward(
         self,
         hidden_states: list[torch.Tensor],
-        patch_height: Optional[int] = ...,
-        patch_width: Optional[int] = ...,
-        prompt_depth: Optional[torch.Tensor] = ...,
+        patch_height: int | None = ...,
+        patch_width: int | None = ...,
+        prompt_depth: torch.Tensor | None = ...,
     ) -> list[torch.Tensor]:
         """
         Args:
@@ -124,12 +124,12 @@ class PromptDepthAnythingForDepthEstimation(PromptDepthAnythingPreTrainedModel):
     def forward(
         self,
         pixel_values: torch.FloatTensor,
-        prompt_depth: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], DepthEstimatorOutput]:
+        prompt_depth: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.Tensor] | DepthEstimatorOutput:
         r"""
         prompt_depth (`torch.FloatTensor` of shape `(batch_size, 1, height, width)`, *optional*):
             Prompt depth is the sparse or low-resolution depth obtained from multi-view geometry or a

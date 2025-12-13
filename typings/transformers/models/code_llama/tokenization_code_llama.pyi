@@ -93,7 +93,7 @@ class CodeLlamaTokenizer(PreTrainedTokenizer):
         eot_token=...,
         fill_token=...,
         suffix_first=...,
-        sp_model_kwargs: Optional[dict[str, Any]] = ...,
+        sp_model_kwargs: dict[str, Any] | None = ...,
         add_bos_token=...,
         add_eos_token=...,
         clean_up_tokenization_spaces=...,
@@ -144,7 +144,7 @@ class CodeLlamaTokenizer(PreTrainedTokenizer):
         """Converts a sequence of tokens (string) in a single string."""
         ...
 
-    def save_vocabulary(self, save_directory, filename_prefix: Optional[str] = ...) -> tuple[str]:
+    def save_vocabulary(self, save_directory, filename_prefix: str | None = ...) -> tuple[str]:
         """
         Save the vocabulary and special tokens file to a directory.
 
@@ -160,7 +160,7 @@ class CodeLlamaTokenizer(PreTrainedTokenizer):
     def build_inputs_with_special_tokens(self, token_ids_0, token_ids_1=...):  # -> list[str | list[str] | Any | None]:
         ...
     def get_special_tokens_mask(
-        self, token_ids_0: list[int], token_ids_1: Optional[list[int]] = ..., already_has_special_tokens: bool = ...
+        self, token_ids_0: list[int], token_ids_1: list[int] | None = ..., already_has_special_tokens: bool = ...
     ) -> list[int]:
         """
         Retrieve sequence ids from a token list that has no special tokens added. This method is called when adding
@@ -180,7 +180,7 @@ class CodeLlamaTokenizer(PreTrainedTokenizer):
         ...
 
     def create_token_type_ids_from_sequences(
-        self, token_ids_0: list[int], token_ids_1: Optional[list[int]] = ...
+        self, token_ids_0: list[int], token_ids_1: list[int] | None = ...
     ) -> list[int]:
         """
         Creates a mask from the two sequences passed to be used in a sequence-pair classification task. An ALBERT

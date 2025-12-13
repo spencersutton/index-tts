@@ -42,7 +42,7 @@ def drop_path(input: torch.Tensor, drop_prob: float = ..., training: bool = ...)
 
 class TimeSformerDropPath(nn.Module):
     """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks)."""
-    def __init__(self, drop_prob: Optional[float] = ...) -> None: ...
+    def __init__(self, drop_prob: float | None = ...) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
     def extra_repr(self) -> str: ...
 
@@ -63,7 +63,7 @@ class TimeSformerAttention(nn.Module):
     def __init__(self, config: TimesformerConfig) -> None: ...
     def forward(
         self, hidden_states: torch.Tensor, output_attentions: bool = ...
-    ) -> Union[tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor]]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor] | tuple[torch.Tensor]: ...
 
 class TimesformerIntermediate(nn.Module):
     def __init__(self, config: TimesformerConfig) -> None: ...
@@ -86,7 +86,7 @@ class TimesformerEncoder(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ) -> Union[tuple, BaseModelOutput]: ...
+    ) -> tuple | BaseModelOutput: ...
 
 @auto_docstring
 class TimesformerPreTrainedModel(PreTrainedModel):
@@ -105,10 +105,10 @@ class TimesformerModel(TimesformerPreTrainedModel):
     def forward(
         self,
         pixel_values: torch.FloatTensor,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.FloatTensor], BaseModelOutput]:
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.FloatTensor] | BaseModelOutput:
         r"""
         Examples:
 
@@ -196,12 +196,12 @@ class TimesformerForVideoClassification(TimesformerPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ImageClassifierOutput]:
+        pixel_values: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | ImageClassifierOutput:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the image classification/regression loss. Indices should be in `[0, ...,

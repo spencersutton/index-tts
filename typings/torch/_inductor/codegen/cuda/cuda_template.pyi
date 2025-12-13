@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Any, Optional, TYPE_CHECKING, Union, TypeAlias
-from typing_extensions import override
+from typing import override
 from torch._inductor.utils import clear_on_fresh_cache
 from ...autotune_process import TensorMeta
 from ...ir import Buffer, IRNode, Layout
@@ -10,7 +10,7 @@ from .cuda_kernel import CUDATemplateCaller
 
 if TYPE_CHECKING: ...
 else: ...
-GemmOperation: TypeAlias = Any
+type GemmOperation = Any
 autotuning_log = ...
 
 @dataclass(frozen=True)
@@ -24,7 +24,7 @@ class CUDATemplate(KernelTemplate):
     code_cache: dict[str, tuple[str, tuple[int, ...], tuple[int, ...]]] = ...
     cache_clear = ...
     def __init__(
-        self, name: str, input_nodes: list[Buffer], layout: Layout, input_reorder: Optional[list[int]] = ...
+        self, name: str, input_nodes: list[Buffer], layout: Layout, input_reorder: list[int] | None = ...
     ) -> None: ...
     @staticmethod
     def supports_epilogue_fusion(op: GemmOperation) -> bool: ...
@@ -38,8 +38,8 @@ class CUDATemplate(KernelTemplate):
         description: str,
         input_key: str,
         layout_repr: str,
-        input_tensor_meta: Union[TensorMeta, list[TensorMeta]],
-        output_tensor_meta: Union[TensorMeta, list[TensorMeta]],
+        input_tensor_meta: TensorMeta | list[TensorMeta],
+        output_tensor_meta: TensorMeta | list[TensorMeta],
         **kwargs,
     ) -> CUDATemplateCaller: ...
     def header(self) -> IndentedBuffer: ...

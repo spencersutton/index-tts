@@ -32,7 +32,7 @@ class VipLlavaModelOutputWithPast(BaseModelOutputWithPast):
         image_hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
     """
 
-    image_hidden_states: Optional[torch.FloatTensor] = ...
+    image_hidden_states: torch.FloatTensor | None = ...
 
 @dataclass
 @auto_docstring(
@@ -57,12 +57,12 @@ class VipLlavaCausalLMOutputWithPast(ModelOutput):
         image_hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    logits: Optional[torch.FloatTensor] = ...
-    past_key_values: Optional[list[torch.FloatTensor]] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
-    image_hidden_states: Optional[torch.FloatTensor] = ...
+    loss: torch.FloatTensor | None = ...
+    logits: torch.FloatTensor | None = ...
+    past_key_values: list[torch.FloatTensor] | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
+    image_hidden_states: torch.FloatTensor | None = ...
 
 class VipLlavaMultiModalProjector(nn.Module):
     def __init__(self, config: VipLlavaConfig) -> None: ...
@@ -98,7 +98,7 @@ class VipLlavaModel(VipLlavaPreTrainedModel):
     def get_decoder(self):  # -> Any:
         ...
     def get_image_features(
-        self, pixel_values: torch.FloatTensor, vision_feature_layers: Optional[Union[int, list[int]]] = ...
+        self, pixel_values: torch.FloatTensor, vision_feature_layers: int | list[int] | None = ...
     ):  # -> Any:
         """
         Obtains image last hidden states from the vision tower and apply multimodal projection.
@@ -128,18 +128,18 @@ class VipLlavaModel(VipLlavaPreTrainedModel):
         self,
         input_ids: torch.LongTensor = ...,
         pixel_values: torch.FloatTensor = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        vision_feature_layers: Optional[Union[int, list[int]]] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        vision_feature_layers: int | list[int] | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **lm_kwargs,
-    ) -> Union[tuple, VipLlavaModelOutputWithPast]:
+    ) -> tuple | VipLlavaModelOutputWithPast:
         r"""
         vision_feature_layers (`Union[int, list[int]]`, *optional*):
             The vision feature layer, or the list of indexes of the layers to select
@@ -166,7 +166,7 @@ class VipLlavaForConditionalGeneration(VipLlavaPreTrainedModel, GenerationMixin)
     def get_decoder(self):  # -> Any:
         ...
     def get_image_features(
-        self, pixel_values: torch.FloatTensor, vision_feature_layers: Optional[Union[int, list[int]]] = ...
+        self, pixel_values: torch.FloatTensor, vision_feature_layers: int | list[int] | None = ...
     ):  # -> Any:
         ...
     @property
@@ -184,20 +184,20 @@ class VipLlavaForConditionalGeneration(VipLlavaPreTrainedModel, GenerationMixin)
         self,
         input_ids: torch.LongTensor = ...,
         pixel_values: torch.FloatTensor = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        vision_feature_layers: Optional[Union[int, list[int]]] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        logits_to_keep: Union[int, torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        vision_feature_layers: int | list[int] | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        logits_to_keep: int | torch.Tensor = ...,
         **lm_kwargs,
-    ) -> Union[tuple, VipLlavaCausalLMOutputWithPast]:
+    ) -> tuple | VipLlavaCausalLMOutputWithPast:
         r"""
         vision_feature_layers (`Union[int, list[int]]`, *optional*):
             The vision feature layer, or the list of indexes of the layers to select

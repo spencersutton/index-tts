@@ -8,7 +8,8 @@ from abc import abstractmethod
 from contextlib import contextmanager
 from enum import Enum
 from functools import wraps
-from typing import Any, Callable, Optional, Self, TypeVar, Union
+from typing import Any, Optional, Self, TypeVar, Union
+from collections.abc import Callable
 from torch import Tensor, nn
 from transformers.utils import is_torchao_available
 from .configuration_utils import PretrainedConfig
@@ -84,9 +85,9 @@ def get_torch_context_manager_or_global_device():  # -> device | None:
     """
     ...
 
-def get_parameter_device(parameter: Union[nn.Module, ModuleUtilsMixin]):  # -> device | Any:
+def get_parameter_device(parameter: nn.Module | ModuleUtilsMixin):  # -> device | Any:
     ...
-def get_parameter_dtype(parameter: Union[nn.Module, ModuleUtilsMixin]):  # -> dtype | Any | None:
+def get_parameter_dtype(parameter: nn.Module | ModuleUtilsMixin):  # -> dtype | Any | None:
     """
     Returns the first found floating dtype in parameters if there is one, otherwise returns the last dtype it found.
     """
@@ -127,9 +128,9 @@ str_to_torch_dtype = ...
 if is_torch_greater_or_equal("2.3.0"): ...
 
 def load_state_dict(
-    checkpoint_file: Union[str, os.PathLike],
+    checkpoint_file: str | os.PathLike,
     is_quantized: bool = ...,
-    map_location: Optional[Union[str, torch.device]] = ...,
+    map_location: str | torch.device | None = ...,
     weights_only: bool = ...,
 ):  # -> dict[Any, Any] | Any:
     """
@@ -224,7 +225,7 @@ class ModuleUtilsMixin:
         ...
 
     def get_head_mask(
-        self, head_mask: Optional[Tensor], num_hidden_layers: int, is_attention_chunked: bool = ...
+        self, head_mask: Tensor | None, num_hidden_layers: int, is_attention_chunked: bool = ...
     ) -> Tensor:
         """
         Prepare the head mask if needed.
@@ -259,7 +260,7 @@ class ModuleUtilsMixin:
         """
         ...
 
-    def estimate_tokens(self, input_dict: dict[str, Union[torch.Tensor, Any]]) -> int:
+    def estimate_tokens(self, input_dict: dict[str, torch.Tensor | Any]) -> int:
         """
         Helper function to estimate the total number of tokens from the model inputs.
 
@@ -271,9 +272,7 @@ class ModuleUtilsMixin:
         """
         ...
 
-    def floating_point_ops(
-        self, input_dict: dict[str, Union[torch.Tensor, Any]], exclude_embeddings: bool = ...
-    ) -> int:
+    def floating_point_ops(self, input_dict: dict[str, torch.Tensor | Any], exclude_embeddings: bool = ...) -> int:
         """
         Get number of (optionally, non-embeddings) floating-point operations for the forward and backward passes of a
         batch with this transformer model. Default approximation neglects the quadratic dependency on the number of
@@ -465,7 +464,7 @@ class PreTrainedModel(nn.Module, EmbeddingAccessMixin, ModuleUtilsMixin, PushToH
         """
         ...
 
-    def add_model_tags(self, tags: Union[list[str], str]) -> None:
+    def add_model_tags(self, tags: list[str] | str) -> None:
         r"""
         Add custom tags into the model that gets pushed to the Hugging Face Hub. Will
         not overwrite existing tags in the model.
@@ -510,7 +509,7 @@ class PreTrainedModel(nn.Module, EmbeddingAccessMixin, ModuleUtilsMixin, PushToH
         ...
 
     def get_correct_attn_implementation(self, _requested_attention: str, is_init_check: bool = ...) -> str: ...
-    def set_attn_implementation(self, attn_implementation: Union[str, dict]):  # -> None:
+    def set_attn_implementation(self, attn_implementation: str | dict):  # -> None:
         """
         Set the requested `attn_implementation` for this model.
 
@@ -560,7 +559,7 @@ class PreTrainedModel(nn.Module, EmbeddingAccessMixin, ModuleUtilsMixin, PushToH
         ...
 
     def resize_token_embeddings(
-        self, new_num_tokens: Optional[int] = ..., pad_to_multiple_of: Optional[int] = ..., mean_resizing: bool = ...
+        self, new_num_tokens: int | None = ..., pad_to_multiple_of: int | None = ..., mean_resizing: bool = ...
     ) -> nn.Embedding:
         """
         Resizes input token embeddings matrix of the model if `new_num_tokens != config.vocab_size`.
@@ -595,7 +594,7 @@ class PreTrainedModel(nn.Module, EmbeddingAccessMixin, ModuleUtilsMixin, PushToH
         ...
 
     def resize_position_embeddings(self, new_num_position_embeddings: int): ...
-    def get_position_embeddings(self) -> Union[nn.Embedding, tuple[nn.Embedding]]: ...
+    def get_position_embeddings(self) -> nn.Embedding | tuple[nn.Embedding]: ...
     def init_weights(self):  # -> None:
         """
         If needed prunes and maybe initializes weights. If using a custom `PreTrainedModel`, you need to implement any
@@ -652,15 +651,15 @@ class PreTrainedModel(nn.Module, EmbeddingAccessMixin, ModuleUtilsMixin, PushToH
 
     def save_pretrained(
         self,
-        save_directory: Union[str, os.PathLike],
+        save_directory: str | os.PathLike,
         is_main_process: bool = ...,
-        state_dict: Optional[dict] = ...,
+        state_dict: dict | None = ...,
         save_function: Callable = ...,
         push_to_hub: bool = ...,
-        max_shard_size: Union[int, str] = ...,
+        max_shard_size: int | str = ...,
         safe_serialization: bool = ...,
-        variant: Optional[str] = ...,
-        token: Optional[Union[str, bool]] = ...,
+        variant: str | None = ...,
+        token: str | bool | None = ...,
         save_peft_format: bool = ...,
         **kwargs,
     ):  # -> None:
@@ -745,16 +744,16 @@ class PreTrainedModel(nn.Module, EmbeddingAccessMixin, ModuleUtilsMixin, PushToH
     @classmethod
     def from_pretrained(
         cls: type[SpecificPreTrainedModelType],
-        pretrained_model_name_or_path: Optional[Union[str, os.PathLike[str]]],
+        pretrained_model_name_or_path: str | os.PathLike[str] | None,
         *model_args: Any,
-        config: Optional[Union[PretrainedConfig, str, os.PathLike[str]]] = ...,
-        cache_dir: Optional[Union[str, os.PathLike[str]]] = ...,
+        config: PretrainedConfig | str | os.PathLike[str] | None = ...,
+        cache_dir: str | os.PathLike[str] | None = ...,
         ignore_mismatched_sizes: bool = ...,
         force_download: bool = ...,
         local_files_only: bool = ...,
-        token: Optional[Union[str, bool]] = ...,
+        token: str | bool | None = ...,
         revision: str = ...,
-        use_safetensors: Optional[bool] = ...,
+        use_safetensors: bool | None = ...,
         weights_only: bool = ...,
         **kwargs: Any,
     ) -> SpecificPreTrainedModelType:
@@ -1045,7 +1044,7 @@ class PreTrainedModel(nn.Module, EmbeddingAccessMixin, ModuleUtilsMixin, PushToH
     @loss_function.setter
     def loss_function(self, value):  # -> None:
         ...
-    def get_compiled_call(self, compile_config: Optional[CompileConfig]) -> Callable:
+    def get_compiled_call(self, compile_config: CompileConfig | None) -> Callable:
         """Return a `torch.compile`'d version of `self.__call__`. This is useful to dynamically choose between
         non-compiled/compiled `forward` during inference, especially to switch between prefill (where we don't
         want to use compiled version to avoid recomputing the graph with new shapes) and iterative decoding
@@ -1083,14 +1082,14 @@ def expand_device_map(device_map, param_names):  # -> dict[Any, Any]:
     """
     ...
 
-def is_accelerator_device(device: Union[str, int, torch.device]) -> bool:
+def is_accelerator_device(device: str | int | torch.device) -> bool:
     """Check if the device is an accelerator. We need to function, as device_map can be "disk" as well, which is not
     a proper `torch.device`.
     """
     ...
 
 def caching_allocator_warmup(
-    model: PreTrainedModel, expanded_device_map: dict, hf_quantizer: Optional[HfQuantizer]
+    model: PreTrainedModel, expanded_device_map: dict, hf_quantizer: HfQuantizer | None
 ):  # -> None:
     """This function warm-ups the caching allocator based on the size of the model tensors that will reside on each
     device. It allows to have one large call to Malloc, instead of recursively calling it later when loading

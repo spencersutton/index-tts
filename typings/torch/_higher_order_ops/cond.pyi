@@ -1,5 +1,6 @@
 import torch
-from typing import Any, Callable, Union
+from typing import Any, Union
+from collections.abc import Callable
 from torch._C import DispatchKey
 from torch._functorch.utils import exposed_in
 from torch._ops import HigherOrderOperator
@@ -19,7 +20,7 @@ cond_op = ...
 
 @exposed_in("torch")
 def cond(
-    pred: Union[bool, float, torch.Tensor], true_fn: Callable, false_fn: Callable, operands: Union[tuple, list] = ...
+    pred: bool | float | torch.Tensor, true_fn: Callable, false_fn: Callable, operands: tuple | list = ...
 ) -> Any: ...
 def trace_cond(proxy_mode, func_overload, pred, true_fn, false_fn, operands): ...
 @cond_op.py_impl(DispatchKey.CompositeExplicitAutograd)

@@ -149,8 +149,8 @@ class Aimv2TextConfig(SiglipTextConfig):
         qkv_bias: bool = ...,
         mlp_bias: bool = ...,
         hidden_act: str = ...,
-        pad_token_id: Optional[int] = ...,
-        bos_token_id: Optional[int] = ...,
+        pad_token_id: int | None = ...,
+        bos_token_id: int | None = ...,
         eos_token_id: int = ...,
         max_position_embeddings: int = ...,
         initializer_range: bool = ...,
@@ -228,8 +228,8 @@ class Aimv2EncoderLayer(GradientCheckpointingLayer):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
     ) -> tuple[torch.Tensor, torch.Tensor]: ...
 
 class Aimv2Encoder(SiglipEncoder): ...
@@ -268,9 +268,9 @@ class Aimv2VisionModel(Aimv2PreTrainedModel):
     def forward(
         self,
         pixel_values,
-        attention_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
     ) -> BaseModelOutputWithPooling:
         r"""
         Examples:
@@ -310,9 +310,9 @@ class Aimv2TextModel(Aimv2PreTrainedModel):
     def forward(
         self,
         input_ids,
-        attention_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
     ) -> BaseModelOutputWithPooling: ...
 
 @auto_docstring
@@ -322,11 +322,11 @@ class Aimv2Model(CLIPModel, nn.Module):
     @can_return_tuple
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        pixel_values: torch.FloatTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
     ) -> Aimv2Output:
         r"""
         Examples:

@@ -25,7 +25,7 @@ class SuperPointFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
         Whether to convert the image to grayscale. Can be overridden by `do_grayscale` in the `preprocess` method.
     """
 
-    do_grayscale: Optional[bool] = ...
+    do_grayscale: bool | None = ...
 
 def convert_to_grayscale(image: torch.Tensor) -> torch.Tensor:
     """
@@ -53,7 +53,7 @@ class SuperPointImageProcessorFast(BaseImageProcessorFast):
     valid_kwargs = SuperPointFastImageProcessorKwargs
     def __init__(self, **kwargs: Unpack[SuperPointFastImageProcessorKwargs]) -> None: ...
     def post_process_keypoint_detection(
-        self, outputs: SuperPointKeypointDescriptionOutput, target_sizes: Union[TensorType, list[tuple]]
+        self, outputs: SuperPointKeypointDescriptionOutput, target_sizes: TensorType | list[tuple]
     ) -> list[dict[str, torch.Tensor]]:
         """
         Converts the raw output of [`SuperPointForKeypointDetection`] into lists of keypoints, scores and descriptors

@@ -1,6 +1,7 @@
 import inspect
 import torch
-from typing import Any, Callable, NamedTuple, Optional, TYPE_CHECKING
+from typing import Any, NamedTuple, Optional, TYPE_CHECKING
+from collections.abc import Callable
 from ._compatibility import compatibility
 from .node import Argument
 
@@ -49,16 +50,16 @@ def type_matches(signature_type: Any, argument_type: Any):  # -> bool:
 def normalize_function(
     target: Callable,
     args: tuple[Any, ...],
-    kwargs: Optional[dict[str, Any]] = ...,
-    arg_types: Optional[tuple[Any]] = ...,
-    kwarg_types: Optional[dict[str, Any]] = ...,
+    kwargs: dict[str, Any] | None = ...,
+    arg_types: tuple[Any] | None = ...,
+    kwarg_types: dict[str, Any] | None = ...,
     normalize_to_only_use_kwargs: bool = ...,
-) -> Optional[ArgsKwargsPair]: ...
+) -> ArgsKwargsPair | None: ...
 @compatibility(is_backward_compatible=False)
 def normalize_module(
     root: torch.nn.Module,
     target: str,
     args: tuple[Any],
-    kwargs: Optional[dict[str, Any]] = ...,
+    kwargs: dict[str, Any] | None = ...,
     normalize_to_only_use_kwargs: bool = ...,
-) -> Optional[ArgsKwargsPair]: ...
+) -> ArgsKwargsPair | None: ...

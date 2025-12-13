@@ -28,8 +28,8 @@ class TimesFmOutput(BaseModelOutput):
         The scale of the time series inputs.
     """
 
-    loc: Optional[torch.Tensor] = ...
-    scale: Optional[torch.Tensor] = ...
+    loc: torch.Tensor | None = ...
+    scale: torch.Tensor | None = ...
 
 @dataclass
 @auto_docstring
@@ -43,9 +43,9 @@ class TimesFmOutputForPrediction(BaseModelOutput):
         The loss of the TimesFM model.
     """
 
-    mean_predictions: Optional[torch.Tensor] = ...
-    full_predictions: Optional[torch.Tensor] = ...
-    loss: Optional[Union[torch.Tensor, float]] = ...
+    mean_predictions: torch.Tensor | None = ...
+    full_predictions: torch.Tensor | None = ...
+    loss: torch.Tensor | float | None = ...
 
 class TimesFmMLP(nn.Module):
     """Pax MLP in pytorch."""
@@ -83,9 +83,9 @@ class TimesFmAttention(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor | None]: ...
 
 class TimesFmDecoderLayer(nn.Module):
     """Transformer layer."""
@@ -96,7 +96,7 @@ class TimesFmDecoderLayer(nn.Module):
         attention_mask: torch.Tensor,
         paddings: torch.Tensor,
         output_attentions: bool = ...,
-    ) -> tuple[Optional[torch.Tensor], torch.Tensor]: ...
+    ) -> tuple[torch.Tensor | None, torch.Tensor]: ...
 
 @auto_docstring
 class TimesFmPreTrainedModel(PreTrainedModel):
@@ -137,14 +137,14 @@ class TimesFmModelForPrediction(TimesFmPreTrainedModel):
     def forward(
         self,
         past_values: Sequence[torch.Tensor],
-        freq: Optional[Sequence[Union[torch.Tensor, int]]] = ...,
-        window_size: Optional[int] = ...,
-        future_values: Optional[torch.Tensor] = ...,
-        forecast_context_len: Optional[int] = ...,
+        freq: Sequence[torch.Tensor | int] | None = ...,
+        window_size: int | None = ...,
+        future_values: torch.Tensor | None = ...,
+        forecast_context_len: int | None = ...,
         return_forecast_on_context: bool = ...,
         truncate_negative: bool = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
     ) -> TimesFmOutputForPrediction:
         r"""
         past_values (`torch.FloatTensor` of shape `(batch_size, sequence_length)`):

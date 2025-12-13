@@ -20,7 +20,7 @@ def model_type_to_module_name(key) -> str:
     """Converts a config key to the corresponding module."""
     ...
 
-def config_class_to_model_type(config) -> Union[str, None]:
+def config_class_to_model_type(config) -> str | None:
     """Converts a config class name to the corresponding model type"""
     ...
 
@@ -75,9 +75,7 @@ class AutoConfig:
     def for_model(cls, model_type: str, *args, **kwargs) -> PretrainedConfig: ...
     @classmethod
     @replace_list_option_in_docstrings()
-    def from_pretrained(
-        cls, pretrained_model_name_or_path: Union[str, os.PathLike[str]], **kwargs
-    ):  # -> PretrainedConfig:
+    def from_pretrained(cls, pretrained_model_name_or_path: str | os.PathLike[str], **kwargs):  # -> PretrainedConfig:
         r"""
         Instantiate one of the configuration classes of the library from a pretrained model configuration.
 

@@ -1,6 +1,7 @@
 import torch.fx as fx
 import torch.nn as nn
-from typing import Callable, Union
+from typing import Union
+from collections.abc import Callable
 from .aot_autograd import make_boxed_compiler
 
 log = ...
@@ -32,7 +33,7 @@ default_decompositions = ...
 
 @make_boxed_compiler
 def print_compile(fx_g, _): ...
-def memory_efficient_fusion(fn: Union[Callable, nn.Module], **kwargs):  # -> Module | Callable[..., Any]:
+def memory_efficient_fusion(fn: Callable | nn.Module, **kwargs):  # -> Module | Callable[..., Any]:
 
     ...
 def debug_compile(fx_g, inps):  # -> Callable[..., Any]:

@@ -520,9 +520,9 @@ class JukeboxPrior(PreTrainedModel):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        metadata: Optional[list[torch.LongTensor]],
-        decode: Optional[bool] = ...,
-        get_preds: Optional[bool] = ...,
+        metadata: list[torch.LongTensor] | None,
+        decode: bool | None = ...,
+        get_preds: bool | None = ...,
     ) -> list[torch.Tensor]:
         """
         Encode the hidden states using the `vqvae` encoder, and then predicts the next token in the `forward_tokens`

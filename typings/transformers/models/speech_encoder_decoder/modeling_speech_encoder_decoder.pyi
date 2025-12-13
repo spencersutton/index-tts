@@ -38,9 +38,9 @@ class SpeechEncoderDecoderModel(PreTrainedModel, GenerationMixin):
     _supports_sdpa = ...
     def __init__(
         self,
-        config: Optional[PretrainedConfig] = ...,
-        encoder: Optional[PreTrainedModel] = ...,
-        decoder: Optional[PreTrainedModel] = ...,
+        config: PretrainedConfig | None = ...,
+        encoder: PreTrainedModel | None = ...,
+        decoder: PreTrainedModel | None = ...,
     ) -> None:
         r"""
         encoder (`PreTrainedModel`, *optional*):
@@ -70,8 +70,8 @@ class SpeechEncoderDecoderModel(PreTrainedModel, GenerationMixin):
     @classmethod
     def from_encoder_decoder_pretrained(
         cls,
-        encoder_pretrained_model_name_or_path: Optional[str] = ...,
-        decoder_pretrained_model_name_or_path: Optional[str] = ...,
+        encoder_pretrained_model_name_or_path: str | None = ...,
+        decoder_pretrained_model_name_or_path: str | None = ...,
         *model_args,
         **kwargs,
     ) -> PreTrainedModel:
@@ -138,22 +138,22 @@ class SpeechEncoderDecoderModel(PreTrainedModel, GenerationMixin):
     @auto_docstring
     def forward(
         self,
-        inputs: Optional[torch.FloatTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        decoder_input_ids: Optional[torch.LongTensor] = ...,
-        decoder_attention_mask: Optional[torch.BoolTensor] = ...,
-        encoder_outputs: Optional[tuple[torch.FloatTensor]] = ...,
-        past_key_values: Optional[tuple[tuple[torch.FloatTensor]]] = ...,
-        decoder_inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        input_values: Optional[torch.FloatTensor] = ...,
-        input_features: Optional[torch.FloatTensor] = ...,
-        return_dict: Optional[bool] = ...,
+        inputs: torch.FloatTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        decoder_input_ids: torch.LongTensor | None = ...,
+        decoder_attention_mask: torch.BoolTensor | None = ...,
+        encoder_outputs: tuple[torch.FloatTensor] | None = ...,
+        past_key_values: tuple[tuple[torch.FloatTensor]] | None = ...,
+        decoder_inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        input_values: torch.FloatTensor | None = ...,
+        input_features: torch.FloatTensor | None = ...,
+        return_dict: bool | None = ...,
         **kwargs,
-    ) -> Union[tuple[torch.FloatTensor], Seq2SeqLMOutput]:
+    ) -> tuple[torch.FloatTensor] | Seq2SeqLMOutput:
         r"""
         inputs (`torch.FloatTensor` of shape `(batch_size, sequence_length)` or `(batch_size, sequence_length, feature_dim)`, *optional*):
             Float values of input raw speech waveform or speech features. Values can be obtained by loading a `.flac`

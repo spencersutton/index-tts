@@ -15,22 +15,22 @@ logger = ...
 
 class GraniteAttention(LlamaAttention):
     """Multi-headed attention from 'Attention Is All You Need' paper"""
-    def __init__(self, config: GraniteConfig, layer_idx: Optional[int] = ...) -> None: ...
+    def __init__(self, config: GraniteConfig, layer_idx: int | None = ...) -> None: ...
 
 class GraniteDecoderLayer(LlamaDecoderLayer):
     def __init__(self, config: GraniteConfig, layer_idx: int) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[Cache] = ...,
-        output_attentions: Optional[bool] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: Cache | None = ...,
+        output_attentions: bool | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = ...,
         **kwargs,
-    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]:
+    ) -> tuple[torch.FloatTensor, tuple[torch.FloatTensor, torch.FloatTensor] | None]:
         """
         Args:
             hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
@@ -61,32 +61,32 @@ class GraniteModel(LlamaModel):
     def __init__(self, config: GraniteConfig) -> None: ...
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Unpack[TransformersKwargs],
     ) -> BaseModelOutputWithPast: ...
 
 class GraniteForCausalLM(LlamaForCausalLM):
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Union[Cache, list[torch.FloatTensor]]] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        logits_to_keep: Union[int, torch.Tensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | list[torch.FloatTensor] | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        logits_to_keep: int | torch.Tensor = ...,
         **kwargs: Unpack[TransformersKwargs],
     ) -> CausalLMOutputWithPast: ...
 

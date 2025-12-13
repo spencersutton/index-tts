@@ -44,8 +44,8 @@ class GLPNImageProcessor(BaseImageProcessor):
         image: np.ndarray,
         size_divisor: int,
         resample: PILImageResampling = ...,
-        data_format: Optional[ChannelDimension] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        data_format: ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
         **kwargs,
     ) -> np.ndarray:
         """
@@ -80,14 +80,14 @@ class GLPNImageProcessor(BaseImageProcessor):
     @filter_out_non_signature_kwargs()
     def preprocess(
         self,
-        images: Union[PIL.Image.Image, TensorType, list[PIL.Image.Image], list[TensorType]],
-        do_resize: Optional[bool] = ...,
-        size_divisor: Optional[int] = ...,
+        images: PIL.Image.Image | TensorType | list[PIL.Image.Image] | list[TensorType],
+        do_resize: bool | None = ...,
+        size_divisor: int | None = ...,
         resample=...,
-        do_rescale: Optional[bool] = ...,
-        return_tensors: Optional[Union[TensorType, str]] = ...,
+        do_rescale: bool | None = ...,
+        return_tensors: TensorType | str | None = ...,
         data_format: ChannelDimension = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ) -> BatchFeature:
         """
         Preprocess the given images.
@@ -129,7 +129,7 @@ class GLPNImageProcessor(BaseImageProcessor):
     def post_process_depth_estimation(
         self,
         outputs: DepthEstimatorOutput,
-        target_sizes: Optional[Union[TensorType, list[tuple[int, int]], None]] = ...,
+        target_sizes: TensorType | list[tuple[int, int]] | None | None = ...,
     ) -> list[dict[str, TensorType]]:
         """
         Converts the raw output of [`DepthEstimatorOutput`] into final depth predictions and depth PIL images.

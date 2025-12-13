@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Union
 
 def cached_assets_path(
-    library_name: str, namespace: str = ..., subfolder: str = ..., *, assets_dir: Union[str, Path, None] = ...
+    library_name: str, namespace: str = ..., subfolder: str = ..., *, assets_dir: str | Path | None = ...
 ):  # -> Path:
     """Return a folder path to cache arbitrary files.
 

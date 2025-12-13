@@ -59,11 +59,11 @@ class VitPoseConfig(PretrainedConfig):
     model_type = ...
     def __init__(
         self,
-        backbone_config: Optional[PretrainedConfig] = ...,
-        backbone: Optional[str] = ...,
+        backbone_config: PretrainedConfig | None = ...,
+        backbone: str | None = ...,
         use_pretrained_backbone: bool = ...,
         use_timm_backbone: bool = ...,
-        backbone_kwargs: Optional[dict] = ...,
+        backbone_kwargs: dict | None = ...,
         initializer_range: float = ...,
         scale_factor: int = ...,
         use_simple_decoder: bool = ...,

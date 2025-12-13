@@ -15,11 +15,11 @@ Processor class for Qwen2-VL.
 logger = ...
 
 class Qwen2VLImagesKwargs(ImagesKwargs):
-    min_pixels: Optional[int]
-    max_pixels: Optional[int]
-    patch_size: Optional[int]
-    temporal_patch_size: Optional[int]
-    merge_size: Optional[int]
+    min_pixels: int | None
+    max_pixels: int | None
+    patch_size: int | None
+    temporal_patch_size: int | None
+    merge_size: int | None
     ...
 
 class Qwen2VLProcessorKwargs(ProcessingKwargs, total=False):
@@ -52,7 +52,7 @@ class Qwen2VLProcessor(ProcessorMixin):
     def __call__(
         self,
         images: ImageInput = ...,
-        text: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]] = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] = ...,
         videos: VideoInput = ...,
         **kwargs: Unpack[Qwen2VLProcessorKwargs],
     ) -> BatchFeature:

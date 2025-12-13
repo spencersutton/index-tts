@@ -1,4 +1,5 @@
-from typing import Any, Callable, Literal, Optional, TYPE_CHECKING
+from typing import Any, Literal, Optional, TYPE_CHECKING
+from collections.abc import Callable
 from torch._inductor.utils import InputType
 from collections.abc import Sequence
 from torch.compiler._cache import CacheInfo
@@ -9,8 +10,8 @@ log = ...
 
 class CompiledArtifact:
     _compiled_fn: Callable[..., Any]
-    _artifacts: Optional[tuple[bytes, CacheInfo]]
-    def __init__(self, compiled_fn: Callable[..., Any], artifacts: Optional[tuple[bytes, CacheInfo]]) -> None: ...
+    _artifacts: tuple[bytes, CacheInfo] | None
+    def __init__(self, compiled_fn: Callable[..., Any], artifacts: tuple[bytes, CacheInfo] | None) -> None: ...
     def __call__(self, *args: Any) -> Any: ...
     def save(self, *, path: str, format: Literal["binary", "unpacked"] = ...) -> None: ...
     @staticmethod

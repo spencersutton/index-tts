@@ -22,11 +22,11 @@ _prepare_4d_causal_attention_mask = ...
 logger = ...
 
 def load_balancing_loss_func(
-    gate_logits: Union[torch.Tensor, tuple[torch.Tensor], None],
-    num_experts: Optional[int] = ...,
+    gate_logits: torch.Tensor | tuple[torch.Tensor] | None,
+    num_experts: int | None = ...,
     top_k=...,
-    attention_mask: Optional[torch.Tensor] = ...,
-) -> Union[torch.Tensor, int]:
+    attention_mask: torch.Tensor | None = ...,
+) -> torch.Tensor | int:
     r"""
     Computes auxiliary load balancing loss as in Switch Transformer - implemented in Pytorch.
 
@@ -53,7 +53,7 @@ def load_balancing_loss_func(
     ...
 
 class PhimoeRotaryEmbedding(nn.Module):
-    def __init__(self, config: Optional[PhimoeConfig] = ...) -> None: ...
+    def __init__(self, config: PhimoeConfig | None = ...) -> None: ...
     def forward(self, x, seq_len=...):  # -> tuple[Tensor | Any, Tensor | Any]:
         ...
 
@@ -96,18 +96,18 @@ class PhimoeAttention(nn.Module):
     Multi-headed attention from 'Attention Is All You Need' paper. Modified to use sliding window attention: Longformer
     and "Generating Long Sequences with Sparse Transformers".
     """
-    def __init__(self, config: PhimoeConfig, layer_idx: Optional[int] = ...) -> None: ...
+    def __init__(self, config: PhimoeConfig, layer_idx: int | None = ...) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[Cache] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: Cache | None = ...,
         output_attentions: bool = ...,
         use_cache: bool = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+        cache_position: torch.LongTensor | None = ...,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = ...,
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]: ...
 
 class PhimoeFlashAttention2(PhimoeAttention):
     """
@@ -118,13 +118,13 @@ class PhimoeFlashAttention2(PhimoeAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[Cache] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: Cache | None = ...,
         output_attentions: bool = ...,
         use_cache: bool = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
+        cache_position: torch.LongTensor | None = ...,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = ...,
     ):  # -> tuple[Any, Any | None]:
         ...
 
@@ -137,14 +137,14 @@ class PhimoeSdpaAttention(PhimoeAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[Cache] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: Cache | None = ...,
         output_attentions: bool = ...,
         use_cache: bool = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+        cache_position: torch.LongTensor | None = ...,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = ...,
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]: ...
 
 PHIMOE_ATTENTION_CLASSES = ...
 
@@ -234,16 +234,16 @@ class PhimoeDecoderLayer(GradientCheckpointingLayer):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[tuple[torch.Tensor]] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_router_logits: Optional[bool] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: tuple[torch.Tensor] | None = ...,
+        output_attentions: bool | None = ...,
+        output_router_logits: bool | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = ...,
         **kwargs,
-    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]:
+    ) -> tuple[torch.FloatTensor, tuple[torch.FloatTensor, torch.FloatTensor] | None]:
         """
         Args:
             hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
@@ -290,16 +290,16 @@ class PhimoeModel(PhimoePreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        output_router_logits: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        output_router_logits: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
     ) -> MoeModelOutputWithPast: ...
 
 class PhimoeForCausalLM(PhimoePreTrainedModel, GenerationMixin):
@@ -313,18 +313,18 @@ class PhimoeForCausalLM(PhimoePreTrainedModel, GenerationMixin):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        output_router_logits: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        logits_to_keep: Union[int, torch.Tensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        output_router_logits: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        logits_to_keep: int | torch.Tensor = ...,
         **kwargs,
     ) -> MoeCausalLMOutputWithPast:
         r"""

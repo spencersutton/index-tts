@@ -29,7 +29,7 @@ class AnnotionFormat(ExplicitEnum):
     COCO_DETECTION = ...
     COCO_PANOPTIC = ...
 
-AnnotationType = dict[str, Union[int, str, list[dict]]]
+AnnotationType = dict[str, int | str | list[dict]]
 
 def is_pil_image(img):  # -> bool:
     ...
@@ -75,7 +75,7 @@ def make_list_of_images(images, expected_ndims: int = ...) -> list[ImageInput]:
     """
     ...
 
-def make_flat_list_of_images(images: Union[list[ImageInput], ImageInput], expected_ndims: int = ...) -> ImageInput:
+def make_flat_list_of_images(images: list[ImageInput] | ImageInput, expected_ndims: int = ...) -> ImageInput:
     """
     Ensure that the output is a flat list of images. If the input is a single image, it is converted to a list of length 1.
     If the input is a nested list of images, it is converted to a flat list of images.
@@ -89,7 +89,7 @@ def make_flat_list_of_images(images: Union[list[ImageInput], ImageInput], expect
     """
     ...
 
-def make_nested_list_of_images(images: Union[list[ImageInput], ImageInput], expected_ndims: int = ...) -> ImageInput:
+def make_nested_list_of_images(images: list[ImageInput] | ImageInput, expected_ndims: int = ...) -> ImageInput:
     """
     Ensure that the output is a nested list of images.
     Args:
@@ -104,7 +104,7 @@ def make_nested_list_of_images(images: Union[list[ImageInput], ImageInput], expe
 
 def to_numpy_array(img) -> np.ndarray: ...
 def infer_channel_dimension_format(
-    image: np.ndarray, num_channels: Optional[Union[int, tuple[int, ...]]] = ...
+    image: np.ndarray, num_channels: int | tuple[int, ...] | None = ...
 ) -> ChannelDimension:
     """
     Infers the channel dimension format of `image`.
@@ -120,9 +120,7 @@ def infer_channel_dimension_format(
     """
     ...
 
-def get_channel_dimension_axis(
-    image: np.ndarray, input_data_format: Optional[Union[ChannelDimension, str]] = ...
-) -> int:
+def get_channel_dimension_axis(image: np.ndarray, input_data_format: ChannelDimension | str | None = ...) -> int:
     """
     Returns the channel dimension axis of the image.
 
@@ -174,11 +172,11 @@ def get_image_size_for_max_height_width(
     """
     ...
 
-def is_valid_annotation_coco_detection(annotation: dict[str, Union[list, tuple]]) -> bool: ...
-def is_valid_annotation_coco_panoptic(annotation: dict[str, Union[list, tuple]]) -> bool: ...
-def valid_coco_detection_annotations(annotations: Iterable[dict[str, Union[list, tuple]]]) -> bool: ...
-def valid_coco_panoptic_annotations(annotations: Iterable[dict[str, Union[list, tuple]]]) -> bool: ...
-def load_image(image: Union[str, PIL.Image.Image], timeout: Optional[float] = ...) -> PIL.Image.Image:
+def is_valid_annotation_coco_detection(annotation: dict[str, list | tuple]) -> bool: ...
+def is_valid_annotation_coco_panoptic(annotation: dict[str, list | tuple]) -> bool: ...
+def valid_coco_detection_annotations(annotations: Iterable[dict[str, list | tuple]]) -> bool: ...
+def valid_coco_panoptic_annotations(annotations: Iterable[dict[str, list | tuple]]) -> bool: ...
+def load_image(image: str | PIL.Image.Image, timeout: float | None = ...) -> PIL.Image.Image:
     """
     Loads `image` to a PIL Image.
 
@@ -194,8 +192,8 @@ def load_image(image: Union[str, PIL.Image.Image], timeout: Optional[float] = ..
     ...
 
 def load_images(
-    images: Union[list, tuple, str, PIL.Image.Image], timeout: Optional[float] = ...
-) -> Union[PIL.Image.Image, list[PIL.Image.Image], list[list[PIL.Image.Image]]]:
+    images: list | tuple | str | PIL.Image.Image, timeout: float | None = ...
+) -> PIL.Image.Image | list[PIL.Image.Image] | list[list[PIL.Image.Image]]:
     """Loads images, handling different levels of nesting.
 
     Args:
@@ -208,18 +206,18 @@ def load_images(
     ...
 
 def validate_preprocess_arguments(
-    do_rescale: Optional[bool] = ...,
-    rescale_factor: Optional[float] = ...,
-    do_normalize: Optional[bool] = ...,
-    image_mean: Optional[Union[float, list[float]]] = ...,
-    image_std: Optional[Union[float, list[float]]] = ...,
-    do_pad: Optional[bool] = ...,
-    size_divisibility: Optional[int] = ...,
-    do_center_crop: Optional[bool] = ...,
-    crop_size: Optional[dict[str, int]] = ...,
-    do_resize: Optional[bool] = ...,
-    size: Optional[dict[str, int]] = ...,
-    resample: Optional[PILImageResampling] = ...,
+    do_rescale: bool | None = ...,
+    rescale_factor: float | None = ...,
+    do_normalize: bool | None = ...,
+    image_mean: float | list[float] | None = ...,
+    image_std: float | list[float] | None = ...,
+    do_pad: bool | None = ...,
+    size_divisibility: int | None = ...,
+    do_center_crop: bool | None = ...,
+    crop_size: dict[str, int] | None = ...,
+    do_resize: bool | None = ...,
+    size: dict[str, int] | None = ...,
+    resample: PILImageResampling | None = ...,
 ):  # -> None:
     """
     Checks validity of typically used arguments in an `ImageProcessor` `preprocess` method.
@@ -259,7 +257,7 @@ class ImageFeatureExtractionMixin:
         """
         ...
 
-    def rescale(self, image: np.ndarray, scale: Union[float, int]) -> np.ndarray:
+    def rescale(self, image: np.ndarray, scale: float | int) -> np.ndarray:
         """
         Rescale a numpy image by scale amount
         """
@@ -399,11 +397,11 @@ class SizeDict:
     Hashable dictionary to store image size information.
     """
 
-    height: Optional[int] = ...
-    width: Optional[int] = ...
-    longest_edge: Optional[int] = ...
-    shortest_edge: Optional[int] = ...
-    max_height: Optional[int] = ...
-    max_width: Optional[int] = ...
+    height: int | None = ...
+    width: int | None = ...
+    longest_edge: int | None = ...
+    shortest_edge: int | None = ...
+    max_height: int | None = ...
+    max_width: int | None = ...
     def __getitem__(self, key):  # -> Any:
         ...

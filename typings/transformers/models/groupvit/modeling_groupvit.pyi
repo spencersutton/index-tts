@@ -109,12 +109,12 @@ class GroupViTModelOutput(ModelOutput):
         The output of the [`GroupViTVisionModel`].
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    logits_per_image: Optional[torch.FloatTensor] = ...
-    logits_per_text: Optional[torch.FloatTensor] = ...
-    segmentation_logits: Optional[torch.FloatTensor] = ...
-    text_embeds: Optional[torch.FloatTensor] = ...
-    image_embeds: Optional[torch.FloatTensor] = ...
+    loss: torch.FloatTensor | None = ...
+    logits_per_image: torch.FloatTensor | None = ...
+    logits_per_text: torch.FloatTensor | None = ...
+    segmentation_logits: torch.FloatTensor | None = ...
+    text_embeds: torch.FloatTensor | None = ...
+    image_embeds: torch.FloatTensor | None = ...
     text_model_output: BaseModelOutputWithPooling = ...
     vision_model_output: BaseModelOutputWithPooling = ...
     def to_tuple(self) -> tuple[Any]: ...
@@ -126,7 +126,7 @@ class GroupViTPatchEmbeddings(nn.Module):
     def __init__(
         self,
         image_size: int = ...,
-        patch_size: Union[int, tuple[int, int]] = ...,
+        patch_size: int | tuple[int, int] = ...,
         num_channels: int = ...,
         embed_dim: int = ...,
     ) -> None: ...
@@ -151,9 +151,9 @@ class GroupViTTextEmbeddings(nn.Module):
     def __init__(self, config: GroupViTTextConfig) -> None: ...
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
     ) -> torch.Tensor: ...
 
 class GroupViTStage(nn.Module):
@@ -171,12 +171,12 @@ class GroupViTStage(nn.Module):
         ...
     def split_x(self, x):  # -> tuple[Any, Any] | tuple[Any, None]:
         ...
-    def concat_x(self, x: torch.Tensor, group_token: Optional[torch.Tensor] = ...) -> torch.Tensor: ...
+    def concat_x(self, x: torch.Tensor, group_token: torch.Tensor | None = ...) -> torch.Tensor: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        prev_group_token: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
+        prev_group_token: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
     ) -> tuple[torch.FloatTensor]:
         """
         Args:
@@ -193,9 +193,9 @@ class GroupViTMLP(nn.Module):
     def __init__(
         self,
         config: GroupViTVisionConfig,
-        hidden_size: Optional[int] = ...,
-        intermediate_size: Optional[int] = ...,
-        output_size: Optional[int] = ...,
+        hidden_size: int | None = ...,
+        intermediate_size: int | None = ...,
+        output_size: int | None = ...,
     ) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
 
@@ -209,11 +209,11 @@ class GroupViTAttention(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        causal_attention_mask: Optional[torch.Tensor] = ...,
-        encoder_hidden_states: Optional[torch.FloatTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+        attention_mask: torch.Tensor | None = ...,
+        causal_attention_mask: torch.Tensor | None = ...,
+        encoder_hidden_states: torch.FloatTensor | None = ...,
+        output_attentions: bool | None = ...,
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]:
         """Input shape: Batch x Time x Channel"""
         ...
 
@@ -224,7 +224,7 @@ class GroupViTEncoderLayer(GradientCheckpointingLayer):
         hidden_states: torch.Tensor,
         attention_mask: torch.Tensor,
         causal_attention_mask: torch.Tensor,
-        output_attentions: Optional[bool] = ...,
+        output_attentions: bool | None = ...,
     ) -> tuple[torch.FloatTensor]:
         """
         Args:
@@ -249,10 +249,10 @@ class GroupViTVisionEncoder(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        output_hidden_states: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutput]: ...
+        output_hidden_states: bool | None = ...,
+        output_attentions: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutput: ...
 
 class GroupViTTextEncoder(nn.Module):
     """
@@ -266,12 +266,12 @@ class GroupViTTextEncoder(nn.Module):
     def forward(
         self,
         inputs_embeds,
-        attention_mask: Optional[torch.Tensor] = ...,
-        causal_attention_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutput]:
+        attention_mask: torch.Tensor | None = ...,
+        causal_attention_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutput:
         r"""
         Args:
             inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
@@ -308,13 +308,13 @@ class GroupViTTextTransformer(nn.Module):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPooling]: ...
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutputWithPooling: ...
 
 class GroupViTTextModel(GroupViTPreTrainedModel):
     config: GroupViTTextConfig
@@ -325,13 +325,13 @@ class GroupViTTextModel(GroupViTPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPooling]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutputWithPooling:
         r"""
         Examples:
 
@@ -354,11 +354,11 @@ class GroupViTVisionTransformer(nn.Module):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPooling]: ...
+        pixel_values: torch.FloatTensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        output_attentions: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutputWithPooling: ...
 
 class GroupViTVisionModel(GroupViTPreTrainedModel):
     config: GroupViTVisionConfig
@@ -368,11 +368,11 @@ class GroupViTVisionModel(GroupViTPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPooling]:
+        pixel_values: torch.FloatTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutputWithPooling:
         r"""
         Examples:
 
@@ -402,12 +402,12 @@ class GroupViTModel(GroupViTPreTrainedModel):
     @auto_docstring
     def get_text_features(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
     ) -> torch.FloatTensor:
         r"""
         Returns:
@@ -430,10 +430,10 @@ class GroupViTModel(GroupViTPreTrainedModel):
     @auto_docstring
     def get_image_features(
         self,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        pixel_values: torch.FloatTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
     ) -> torch.FloatTensor:
         r"""
         Returns:
@@ -462,16 +462,16 @@ class GroupViTModel(GroupViTPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        return_loss: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        output_segmentation: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, GroupViTModelOutput]:
+        input_ids: torch.LongTensor | None = ...,
+        pixel_values: torch.FloatTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        return_loss: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        output_segmentation: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | GroupViTModelOutput:
         r"""
         return_loss (`bool`, *optional*):
             Whether or not to return the contrastive loss.

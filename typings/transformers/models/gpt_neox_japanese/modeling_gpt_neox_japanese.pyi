@@ -32,12 +32,12 @@ class GPTNeoXJapaneseAttention(nn.Module):
         hidden_states: torch.FloatTensor,
         attention_mask: torch.FloatTensor,
         position_ids: torch.LongTensor,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        layer_past: Optional[Cache] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        layer_past: Cache | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = ...,
     ):  # -> tuple[Any, Any, Parameter | None]:
         ...
 
@@ -74,7 +74,7 @@ def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...):  
     """
     ...
 
-def bias_dropout_add(x: Tensor, bias: Tensor, residual: Optional[Tensor], prob: float, training: bool) -> Tensor:
+def bias_dropout_add(x: Tensor, bias: Tensor, residual: Tensor | None, prob: float, training: bool) -> Tensor:
     """add bias to x, apply dropout and residual connection
 
     Args:
@@ -98,15 +98,15 @@ class GPTNeoXJapaneseLayer(nn.Module):
     def __init__(self, config, layer_number) -> None: ...
     def forward(
         self,
-        hidden_states: Optional[torch.FloatTensor],
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        layer_past: Optional[Cache] = ...,
-        output_attentions: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
+        hidden_states: torch.FloatTensor | None,
+        attention_mask: torch.FloatTensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        layer_past: Cache | None = ...,
+        output_attentions: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = ...,
     ):  # -> tuple[Tensor, Any]:
         ...
 
@@ -120,18 +120,18 @@ class GPTNeoXJapaneseModel(GPTNeoXJapanesePreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        past_key_values: Optional[Union[Cache, tuple[tuple[torch.FloatTensor]]]] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPast]:
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        past_key_values: Cache | tuple[tuple[torch.FloatTensor]] | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+    ) -> tuple | BaseModelOutputWithPast:
         r"""
         Example:
 
@@ -165,20 +165,20 @@ class GPTNeoXJapaneseForCausalLM(GPTNeoXJapanesePreTrainedModel, GenerationMixin
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        past_key_values: Optional[Union[Cache, tuple[tuple[torch.FloatTensor]]]] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        past_key_values: Cache | tuple[tuple[torch.FloatTensor]] | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs,
-    ) -> Union[tuple, CausalLMOutputWithPast]:
+    ) -> tuple | CausalLMOutputWithPast:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
             Labels for computing the left-to-right language modeling loss (next word prediction). Indices should be in

@@ -73,7 +73,7 @@ class FlaxDinov2DropPath(nn.Module):
 
     rate: float
     @nn.module.compact
-    def __call__(self, inputs, deterministic: Optional[bool] = ...): ...
+    def __call__(self, inputs, deterministic: bool | None = ...): ...
 
 class FlaxDinov2MLP(nn.Module):
     config: Dinov2Config
@@ -153,12 +153,12 @@ class FlaxDinov2PreTrainedModel(FlaxPreTrainedModel):
     def __call__(
         self,
         pixel_values,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: jax.random.PRNGKey = ...,
         train: bool = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
     ): ...
 
 class FlaxDinov2Module(nn.Module):

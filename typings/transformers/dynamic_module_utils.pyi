@@ -15,7 +15,7 @@ def init_hf_modules():  # -> None:
     """
     ...
 
-def create_dynamic_module(name: Union[str, os.PathLike]) -> None:
+def create_dynamic_module(name: str | os.PathLike) -> None:
     """
     Creates a dynamic module in the cache directory for modules.
 
@@ -25,7 +25,7 @@ def create_dynamic_module(name: Union[str, os.PathLike]) -> None:
     """
     ...
 
-def get_relative_imports(module_file: Union[str, os.PathLike]) -> list[str]:
+def get_relative_imports(module_file: str | os.PathLike) -> list[str]:
     """
     Get the list of modules that are relatively imported in a module file.
 
@@ -37,7 +37,7 @@ def get_relative_imports(module_file: Union[str, os.PathLike]) -> list[str]:
     """
     ...
 
-def get_relative_import_files(module_file: Union[str, os.PathLike]) -> list[str]:
+def get_relative_import_files(module_file: str | os.PathLike) -> list[str]:
     """
     Get the list of all files that are needed for a given module. Note that this function recurses through the relative
     imports (if a imports b and b imports c, it will return module files for b and c).
@@ -51,7 +51,7 @@ def get_relative_import_files(module_file: Union[str, os.PathLike]) -> list[str]
     """
     ...
 
-def get_imports(filename: Union[str, os.PathLike]) -> list[str]:
+def get_imports(filename: str | os.PathLike) -> list[str]:
     """
     Extracts all the libraries (not relative imports this time) that are imported in a file.
 
@@ -63,7 +63,7 @@ def get_imports(filename: Union[str, os.PathLike]) -> list[str]:
     """
     ...
 
-def check_imports(filename: Union[str, os.PathLike]) -> list[str]:
+def check_imports(filename: str | os.PathLike) -> list[str]:
     """
     Check if the current Python environment contains all the libraries that are imported in a file. Will raise if a
     library is missing.
@@ -76,7 +76,7 @@ def check_imports(filename: Union[str, os.PathLike]) -> list[str]:
     """
     ...
 
-def get_class_in_module(class_name: str, module_path: Union[str, os.PathLike], *, force_reload: bool = ...) -> type:
+def get_class_in_module(class_name: str, module_path: str | os.PathLike, *, force_reload: bool = ...) -> type:
     """
     Import a module on the cache directory for modules and extract a class from it.
 
@@ -93,17 +93,17 @@ def get_class_in_module(class_name: str, module_path: Union[str, os.PathLike], *
     ...
 
 def get_cached_module_file(
-    pretrained_model_name_or_path: Union[str, os.PathLike],
+    pretrained_model_name_or_path: str | os.PathLike,
     module_file: str,
-    cache_dir: Optional[Union[str, os.PathLike]] = ...,
+    cache_dir: str | os.PathLike | None = ...,
     force_download: bool = ...,
-    resume_download: Optional[bool] = ...,
-    proxies: Optional[dict[str, str]] = ...,
-    token: Optional[Union[bool, str]] = ...,
-    revision: Optional[str] = ...,
+    resume_download: bool | None = ...,
+    proxies: dict[str, str] | None = ...,
+    token: bool | str | None = ...,
+    revision: str | None = ...,
     local_files_only: bool = ...,
-    repo_type: Optional[str] = ...,
-    _commit_hash: Optional[str] = ...,
+    repo_type: str | None = ...,
+    _commit_hash: str | None = ...,
     **deprecated_kwargs,
 ) -> str:
     """
@@ -158,16 +158,16 @@ def get_cached_module_file(
 
 def get_class_from_dynamic_module(
     class_reference: str,
-    pretrained_model_name_or_path: Union[str, os.PathLike],
-    cache_dir: Optional[Union[str, os.PathLike]] = ...,
+    pretrained_model_name_or_path: str | os.PathLike,
+    cache_dir: str | os.PathLike | None = ...,
     force_download: bool = ...,
-    resume_download: Optional[bool] = ...,
-    proxies: Optional[dict[str, str]] = ...,
-    token: Optional[Union[bool, str]] = ...,
-    revision: Optional[str] = ...,
+    resume_download: bool | None = ...,
+    proxies: dict[str, str] | None = ...,
+    token: bool | str | None = ...,
+    revision: str | None = ...,
     local_files_only: bool = ...,
-    repo_type: Optional[str] = ...,
-    code_revision: Optional[str] = ...,
+    repo_type: str | None = ...,
+    code_revision: str | None = ...,
     **kwargs,
 ) -> type:
     """
@@ -248,7 +248,7 @@ def get_class_from_dynamic_module(
     ```"""
     ...
 
-def custom_object_save(obj: Any, folder: Union[str, os.PathLike], config: Optional[dict] = ...) -> list[str]:
+def custom_object_save(obj: Any, folder: str | os.PathLike, config: dict | None = ...) -> list[str]:
     """
     Save the modeling files corresponding to a custom model/configuration/tokenizer etc. in a given folder. Optionally
     adds the proper fields in a config.

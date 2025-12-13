@@ -1,7 +1,8 @@
 import torch
 from collections.abc import Sequence
-from typing import Callable, Optional, TypeVar, Union
-from typing_extensions import ParamSpec
+from typing import Optional, TypeVar, Union
+from collections.abc import Callable
+from typing import ParamSpec
 from torch._prims_common import ELEMENTWISE_TYPE_PROMOTION_KIND, NumberType, TensorLikeType
 
 _T = TypeVar("_T")
@@ -12,7 +13,7 @@ class elementwise_type_promotion_wrapper:
         self,
         *,
         type_promotion_kind: ELEMENTWISE_TYPE_PROMOTION_KIND,
-        type_promoting_args: Optional[Sequence[str]] = ...,
+        type_promoting_args: Sequence[str] | None = ...,
     ) -> None: ...
     def __call__(self, fn: Callable) -> Callable: ...
 
@@ -23,4 +24,4 @@ def out_wrapper(
 ) -> Callable[[Callable[_P, _T]], Callable[_P, _T]]: ...
 def backwards_not_supported(prim):  # -> _Wrapped[..., Any, ..., Any | None]:
     ...
-def elementwise_unary_scalar_wrapper(fn: Callable[_P, _T]) -> Callable[_P, Union[_T, NumberType]]: ...
+def elementwise_unary_scalar_wrapper(fn: Callable[_P, _T]) -> Callable[_P, _T | NumberType]: ...

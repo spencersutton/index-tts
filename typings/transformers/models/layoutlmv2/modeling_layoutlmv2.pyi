@@ -129,18 +129,18 @@ class LayoutLMv2Model(LayoutLMv2PreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        bbox: Optional[torch.LongTensor] = ...,
-        image: Optional[torch.FloatTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        token_type_ids: Optional[torch.LongTensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPooling]:
+        input_ids: torch.LongTensor | None = ...,
+        bbox: torch.LongTensor | None = ...,
+        image: torch.FloatTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutputWithPooling:
         r"""
         bbox (`torch.LongTensor` of shape `((batch_size, sequence_length), 4)`, *optional*):
             Bounding boxes of each input sequence tokens. Selected in the range `[0,
@@ -193,19 +193,19 @@ class LayoutLMv2ForSequenceClassification(LayoutLMv2PreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        bbox: Optional[torch.LongTensor] = ...,
-        image: Optional[torch.FloatTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        token_type_ids: Optional[torch.LongTensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, SequenceClassifierOutput]:
+        input_ids: torch.LongTensor | None = ...,
+        bbox: torch.LongTensor | None = ...,
+        image: torch.FloatTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | SequenceClassifierOutput:
         r"""
         input_ids (`torch.LongTensor` of shape `batch_size, sequence_length`):
             Indices of input sequence tokens in the vocabulary.
@@ -287,19 +287,19 @@ class LayoutLMv2ForTokenClassification(LayoutLMv2PreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        bbox: Optional[torch.LongTensor] = ...,
-        image: Optional[torch.FloatTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        token_type_ids: Optional[torch.LongTensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, TokenClassifierOutput]:
+        input_ids: torch.LongTensor | None = ...,
+        bbox: torch.LongTensor | None = ...,
+        image: torch.FloatTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | TokenClassifierOutput:
         r"""
         input_ids (`torch.LongTensor` of shape `batch_size, sequence_length`):
             Indices of input sequence tokens in the vocabulary.
@@ -389,20 +389,20 @@ class LayoutLMv2ForQuestionAnswering(LayoutLMv2PreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        bbox: Optional[torch.LongTensor] = ...,
-        image: Optional[torch.FloatTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        token_type_ids: Optional[torch.LongTensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        start_positions: Optional[torch.LongTensor] = ...,
-        end_positions: Optional[torch.LongTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, QuestionAnsweringModelOutput]:
+        input_ids: torch.LongTensor | None = ...,
+        bbox: torch.LongTensor | None = ...,
+        image: torch.FloatTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        start_positions: torch.LongTensor | None = ...,
+        end_positions: torch.LongTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | QuestionAnsweringModelOutput:
         r"""
         input_ids (`torch.LongTensor` of shape `batch_size, sequence_length`):
             Indices of input sequence tokens in the vocabulary.

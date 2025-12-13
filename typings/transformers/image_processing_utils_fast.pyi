@@ -21,20 +21,20 @@ logger = ...
 
 @lru_cache(maxsize=10)
 def validate_fast_preprocess_arguments(
-    do_rescale: Optional[bool] = ...,
-    rescale_factor: Optional[float] = ...,
-    do_normalize: Optional[bool] = ...,
-    image_mean: Optional[Union[float, list[float]]] = ...,
-    image_std: Optional[Union[float, list[float]]] = ...,
-    do_pad: Optional[bool] = ...,
-    size_divisibility: Optional[int] = ...,
-    do_center_crop: Optional[bool] = ...,
-    crop_size: Optional[SizeDict] = ...,
-    do_resize: Optional[bool] = ...,
-    size: Optional[SizeDict] = ...,
-    resample: Optional[PILImageResampling] = ...,
-    return_tensors: Optional[Union[str, TensorType]] = ...,
-    data_format: Optional[ChannelDimension] = ...,
+    do_rescale: bool | None = ...,
+    rescale_factor: float | None = ...,
+    do_normalize: bool | None = ...,
+    image_mean: float | list[float] | None = ...,
+    image_std: float | list[float] | None = ...,
+    do_pad: bool | None = ...,
+    size_divisibility: int | None = ...,
+    do_center_crop: bool | None = ...,
+    crop_size: SizeDict | None = ...,
+    do_resize: bool | None = ...,
+    size: SizeDict | None = ...,
+    resample: PILImageResampling | None = ...,
+    return_tensors: str | TensorType | None = ...,
+    data_format: ChannelDimension | None = ...,
 ):  # -> None:
     """
     Checks validity of typically used arguments in an `ImageProcessorFast` `preprocess` method.
@@ -42,7 +42,7 @@ def validate_fast_preprocess_arguments(
     """
     ...
 
-def safe_squeeze(tensor: torch.Tensor, axis: Optional[int] = ...) -> torch.Tensor:
+def safe_squeeze(tensor: torch.Tensor, axis: int | None = ...) -> torch.Tensor:
     """
     Squeezes a tensor, but only if the axis specified has dim 1.
     """
@@ -60,7 +60,7 @@ def get_max_height_width(images: list[torch.Tensor]) -> tuple[int]:
     """
     ...
 
-def divide_to_patches(image: Union[np.array, torch.Tensor], patch_size: int) -> list[Union[np.array, torch.Tensor]]:
+def divide_to_patches(image: np.array | torch.Tensor, patch_size: int) -> list[np.array | torch.Tensor]:
     """
     Divides an image into patches of a specified size.
 
@@ -75,23 +75,23 @@ def divide_to_patches(image: Union[np.array, torch.Tensor], patch_size: int) -> 
     ...
 
 class DefaultFastImageProcessorKwargs(TypedDict, total=False):
-    do_resize: Optional[bool]
-    size: Optional[dict[str, int]]
-    default_to_square: Optional[bool]
-    resample: Optional[Union[PILImageResampling, F.InterpolationMode]]
-    do_center_crop: Optional[bool]
-    crop_size: Optional[dict[str, int]]
-    do_rescale: Optional[bool]
-    rescale_factor: Optional[Union[int, float]]
-    do_normalize: Optional[bool]
-    image_mean: Optional[Union[float, list[float]]]
-    image_std: Optional[Union[float, list[float]]]
-    do_convert_rgb: Optional[bool]
-    return_tensors: Optional[Union[str, TensorType]]
-    data_format: Optional[ChannelDimension]
-    input_data_format: Optional[Union[str, ChannelDimension]]
-    device: Optional[torch.device]
-    disable_grouping: Optional[bool]
+    do_resize: bool | None
+    size: dict[str, int] | None
+    default_to_square: bool | None
+    resample: PILImageResampling | F.InterpolationMode | None
+    do_center_crop: bool | None
+    crop_size: dict[str, int] | None
+    do_rescale: bool | None
+    rescale_factor: int | float | None
+    do_normalize: bool | None
+    image_mean: float | list[float] | None
+    image_std: float | list[float] | None
+    do_convert_rgb: bool | None
+    return_tensors: str | TensorType | None
+    data_format: ChannelDimension | None
+    input_data_format: str | ChannelDimension | None
+    device: torch.device | None
+    disable_grouping: bool | None
     ...
 
 @auto_docstring
@@ -144,7 +144,7 @@ class BaseImageProcessorFast(BaseImageProcessor):
     def compile_friendly_resize(
         image: torch.Tensor,
         new_size: tuple[int, int],
-        interpolation: Optional[F.InterpolationMode] = ...,
+        interpolation: F.InterpolationMode | None = ...,
         antialias: bool = ...,
     ) -> torch.Tensor:
         """
@@ -168,7 +168,7 @@ class BaseImageProcessorFast(BaseImageProcessor):
         ...
 
     def normalize(
-        self, image: torch.Tensor, mean: Union[float, Iterable[float]], std: Union[float, Iterable[float]], **kwargs
+        self, image: torch.Tensor, mean: float | Iterable[float], std: float | Iterable[float], **kwargs
     ) -> torch.Tensor:
         """
         Normalize an image. image = (image - image_mean) / image_std.
@@ -192,8 +192,8 @@ class BaseImageProcessorFast(BaseImageProcessor):
         do_rescale: bool,
         rescale_factor: float,
         do_normalize: bool,
-        image_mean: Union[float, list[float]],
-        image_std: Union[float, list[float]],
+        image_mean: float | list[float],
+        image_std: float | list[float],
     ) -> torch.Tensor:
         """
         Rescale and normalize images.

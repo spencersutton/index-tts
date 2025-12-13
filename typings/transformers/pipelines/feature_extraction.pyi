@@ -46,7 +46,7 @@ class FeatureExtractionPipeline(Pipeline):
     def preprocess(self, inputs, **tokenize_kwargs) -> dict[str, GenericTensor]: ...
     def postprocess(self, model_outputs, return_tensors=...):  # -> None:
         ...
-    def __call__(self, *args: Union[str, list[str]], **kwargs: Any) -> Union[Any, list[Any]]:
+    def __call__(self, *args: str | list[str], **kwargs: Any) -> Any | list[Any]:
         """
         Extract the features of the input(s) text.
 

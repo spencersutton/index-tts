@@ -16,11 +16,11 @@ if is_torch_available(): ...
 if is_tf_available(): ...
 
 class SamImagesKwargs(ImagesKwargs):
-    segmentation_maps: Optional[ImageInput]
-    input_points: Optional[list[list[float]]]
-    input_labels: Optional[list[list[int]]]
-    input_boxes: Optional[list[list[list[float]]]]
-    point_pad_value: Optional[int]
+    segmentation_maps: ImageInput | None
+    input_points: list[list[float]] | None
+    input_labels: list[list[int]] | None
+    input_boxes: list[list[list[float]]] | None
+    point_pad_value: int | None
     ...
 
 class SamProcessorKwargs(ProcessingKwargs, total=False):
@@ -45,10 +45,10 @@ class SamProcessor(ProcessorMixin):
     def __init__(self, image_processor) -> None: ...
     def __call__(
         self,
-        images: Optional[ImageInput] = ...,
-        text: Optional[Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]]] = ...,
-        audio: Optional[AudioInput] = ...,
-        video: Optional[VideoInput] = ...,
+        images: ImageInput | None = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] | None = ...,
+        audio: AudioInput | None = ...,
+        video: VideoInput | None = ...,
         **kwargs,
     ) -> BatchEncoding:
         """

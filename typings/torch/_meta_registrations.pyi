@@ -1,8 +1,9 @@
 import torch
 from collections.abc import Sequence
 from enum import Enum
-from typing import Callable, Optional, TypeVar, Union
-from typing_extensions import ParamSpec
+from typing import Optional, TypeVar, Union
+from collections.abc import Callable
+from typing import ParamSpec
 from torch import Tensor
 from torch._prims_common import ELEMENTWISE_TYPE_PROMOTION_KIND
 from torch._prims_common.wrappers import out_wrapper
@@ -86,14 +87,14 @@ def meta_sparse_structured_linear(
     input: Tensor,
     weight: Tensor,
     _meta: Tensor,
-    bias: Optional[Tensor] = ...,
-    _activation_opt: Optional[str] = ...,
-    out_dtype: Optional[torch.dtype] = ...,
+    bias: Tensor | None = ...,
+    _activation_opt: str | None = ...,
+    out_dtype: torch.dtype | None = ...,
 ):  # -> Tensor:
     ...
 @register_meta(aten._sparse_semi_structured_mm)
 def meta_sparse_structured_mm(
-    mat1: Tensor, mat1_meta: Tensor, mat2: Tensor, out_dtype: Optional[torch.dtype] = ...
+    mat1: Tensor, mat1_meta: Tensor, mat2: Tensor, out_dtype: torch.dtype | None = ...
 ):  # -> Tensor:
     ...
 @register_meta(aten._sparse_semi_structured_addmm)
@@ -105,16 +106,16 @@ def meta_sparse_structured_addmm(
     *,
     alpha=...,
     beta=...,
-    out_dtype: Optional[torch.dtype] = ...,
+    out_dtype: torch.dtype | None = ...,
 ):  # -> Tensor:
     ...
 @register_meta(aten._cslt_sparse_mm)
 def meta__cslt_sparse_mm(
     compressed_A: torch.Tensor,
     dense_B: torch.Tensor,
-    bias: Optional[Tensor] = ...,
-    alpha: Optional[Tensor] = ...,
-    out_dtype: Optional[torch.dtype] = ...,
+    bias: Tensor | None = ...,
+    alpha: Tensor | None = ...,
+    out_dtype: torch.dtype | None = ...,
     transpose_result: bool = ...,
     alg_id: int = ...,
     split_k: int = ...,
@@ -137,9 +138,9 @@ def meta_segment_reduce(
     data: Tensor,
     reduce: str,
     *,
-    lengths: Optional[Tensor] = ...,
-    indices: Optional[Tensor] = ...,
-    offsets: Optional[Tensor] = ...,
+    lengths: Tensor | None = ...,
+    indices: Tensor | None = ...,
+    offsets: Tensor | None = ...,
     axis: int = ...,
     unsafe: bool = ...,
     initial=...,
@@ -260,7 +261,7 @@ def linalg_qr_meta(A: Tensor, mode: str = ...) -> tuple[Tensor, Tensor]: ...
 def linalg_solve_is_vector_rhs(input: Tensor, other: Tensor) -> bool: ...
 @register_meta([aten.linalg_solve_triangular.default, aten.linalg_solve_triangular.out])
 def linalg_solve_triangular_meta(
-    A: Tensor, B: Tensor, *, upper: bool, left: bool = ..., unitriangular: bool = ..., out: Optional[Tensor] = ...
+    A: Tensor, B: Tensor, *, upper: bool, left: bool = ..., unitriangular: bool = ..., out: Tensor | None = ...
 ) -> Tensor: ...
 @register_meta(aten.triangular_solve)
 @out_wrapper("X", "M", exact_dtype=True)
@@ -356,12 +357,12 @@ def device_hint(tensor) -> str: ...
 def calc_conv_nd_return_shape(
     input_tensor: torch.Tensor,
     weight: torch.Tensor,
-    stride: Union[list[int], int],
-    padding: Union[list[int], int],
-    dilation: Union[list[int], int],
+    stride: list[int] | int,
+    padding: list[int] | int,
+    dilation: list[int] | int,
     is_transposed: bool,
     groups: int,
-    output_padding: Optional[Union[list[int], int]] = ...,
+    output_padding: list[int] | int | None = ...,
 ):  # -> list[Any]:
     ...
 def is_channels_last(ten): ...
@@ -369,9 +370,9 @@ def is_channels_last(ten): ...
 def meta_miopen_batch_norm(
     input_tensor: torch.Tensor,
     weight: torch.Tensor,
-    bias: Optional[torch.Tensor],
-    running_mean: Optional[torch.Tensor],
-    running_var: Optional[torch.Tensor],
+    bias: torch.Tensor | None,
+    running_mean: torch.Tensor | None,
+    running_var: torch.Tensor | None,
     training: bool,
     exponential_average_factor: float,
     epsilon: float,
@@ -655,7 +656,7 @@ def get_kai_packed_weight_size(n_bits, N, K, groupsize):  # -> None:
     ...
 @register_meta([aten._dyn_quant_pack_4bit_weight])
 def meta__dyn_quant_pack_4bit_weight(
-    weights, scales_zeros, bias: Optional[Tensor], block_size, in_features, out_features
+    weights, scales_zeros, bias: Tensor | None, block_size, in_features, out_features
 ): ...
 @register_meta([aten._dyn_quant_matmul_4bit])
 def meta__dyn_quant_matmul_4bit(inp, packed_weights, block_size, in_features, out_features): ...
@@ -978,7 +979,7 @@ def meta__scaled_dot_product_flash_attention(
     dropout_p: float = ...,
     is_causal: bool = ...,
     return_debug_mask: bool = ...,
-    scale: Optional[float] = ...,
+    scale: float | None = ...,
 ):  # -> tuple[Tensor, Tensor, None, None, Any, Any, Tensor, Tensor, Tensor]:
     ...
 def alloc_with_matching_layout(query: Tensor, res_shape: tuple[int, ...]):  # -> Tensor:
@@ -988,12 +989,12 @@ def meta__scaled_dot_product_cudnn_attention(
     query: Tensor,
     key: Tensor,
     value: Tensor,
-    attn_bias: Optional[Tensor],
+    attn_bias: Tensor | None,
     compute_log_sumexp: bool,
     dropout_p: float = ...,
     is_causal: bool = ...,
     return_debug_mask: bool = ...,
-    scale: Optional[float] = ...,
+    scale: float | None = ...,
 ):  # -> tuple[Tensor, Tensor, None, None, Any, Any, Tensor, Tensor, None]:
     ...
 @register_meta([aten._scaled_dot_product_fused_attention_overrideable])
@@ -1001,11 +1002,11 @@ def meta__scaled_dot_product_fused_attention_overrideable(
     query: Tensor,
     key: Tensor,
     value: Tensor,
-    attn_bias: Optional[Tensor] = ...,
+    attn_bias: Tensor | None = ...,
     dropout_p: float = ...,
     is_causal: bool = ...,
     return_debug_mask: bool = ...,
-    scale: Optional[float] = ...,
+    scale: float | None = ...,
 ):  # -> tuple[Tensor, Tensor, None, None, Any, Any, Tensor, Tensor, None]:
     ...
 @register_meta([aten._scaled_dot_product_flash_attention_backward])
@@ -1024,7 +1025,7 @@ def meta__scaled_dot_product_flash_backward(
     is_causal: bool,
     philox_seed: Tensor,
     philox_offset: Tensor,
-    scale: Optional[float] = ...,
+    scale: float | None = ...,
 ):  # -> tuple[Tensor, Tensor, Tensor]:
     ...
 @register_meta([aten._scaled_dot_product_flash_attention_for_cpu])
@@ -1034,8 +1035,8 @@ def meta__scaled_dot_product_flash_attention_for_cpu(
     value: Tensor,
     dropout_p: float = ...,
     is_causal: bool = ...,
-    attn_mask: Optional[Tensor] = ...,
-    scale: Optional[float] = ...,
+    attn_mask: Tensor | None = ...,
+    scale: float | None = ...,
 ):  # -> tuple[Tensor, Tensor]:
     ...
 @register_meta([aten._scaled_dot_product_flash_attention_for_cpu_backward])
@@ -1048,8 +1049,8 @@ def meta__scaled_dot_product_flash_attention_for_cpu_backward(
     logsumexp: Tensor,
     dropout_p: float,
     is_causal: bool,
-    attn_mask: Optional[Tensor] = ...,
-    scale: Optional[float] = ...,
+    attn_mask: Tensor | None = ...,
+    scale: float | None = ...,
 ):  # -> tuple[Tensor, Tensor, Tensor]:
     ...
 @register_meta([aten._scaled_dot_product_attention_math_for_mps])
@@ -1057,22 +1058,22 @@ def meta__scaled_dot_product_attention_math_for_mps(
     query: Tensor,
     key: Tensor,
     value: Tensor,
-    attn_mask: Optional[Tensor] = ...,
+    attn_mask: Tensor | None = ...,
     dropout_p: float = ...,
     is_causal: bool = ...,
-    dropout_mask: Optional[Tensor] = ...,
-    scale: Optional[float] = ...,
+    dropout_mask: Tensor | None = ...,
+    scale: float | None = ...,
 ) -> tuple[Tensor, Tensor]: ...
 @register_meta([aten._scaled_dot_product_efficient_attention])
 def meta__scaled_dot_product_efficient_attention(
     query: Tensor,
     key: Tensor,
     value: Tensor,
-    attn_bias: Optional[Tensor],
+    attn_bias: Tensor | None,
     compute_log_sumexp: bool,
     dropout_p=...,
     is_causal: bool = ...,
-    scale: Optional[float] = ...,
+    scale: float | None = ...,
 ):  # -> tuple[Tensor, Tensor, Tensor, Tensor]:
     ...
 @register_meta([aten._scaled_dot_product_efficient_attention_backward])
@@ -1081,7 +1082,7 @@ def meta__scaled_dot_product_efficient_backward(
     query: Tensor,
     key: Tensor,
     value: Tensor,
-    attn_bias: Optional[Tensor],
+    attn_bias: Tensor | None,
     out: Tensor,
     logsumexp: Tensor,
     philox_seed: Tensor,
@@ -1089,7 +1090,7 @@ def meta__scaled_dot_product_efficient_backward(
     dropout_p: float,
     grad_input_mask: list[bool],
     is_causal: bool = ...,
-    scale: Optional[float] = ...,
+    scale: float | None = ...,
 ):  # -> tuple[Tensor, Tensor, Tensor, Tensor | None]:
     ...
 @register_meta([aten._scaled_dot_product_cudnn_attention_backward])
@@ -1109,7 +1110,7 @@ def meta__scaled_dot_product_cudnn_backward(
     max_k: int,
     dropout_p: float,
     is_causal: bool,
-    scale: Optional[float] = ...,
+    scale: float | None = ...,
 ):  # -> tuple[Tensor, Tensor, Tensor]:
     ...
 @register_meta([aten._flash_attention_forward])
@@ -1117,18 +1118,18 @@ def meta__flash_attention_forward(
     query: Tensor,
     key: Tensor,
     value: Tensor,
-    cum_seq_q: Optional[Tensor],
-    cum_seq_k: Optional[Tensor],
+    cum_seq_q: Tensor | None,
+    cum_seq_k: Tensor | None,
     max_q: int,
     max_k: int,
     dropout_p: float,
     is_causal: bool,
     return_debug_mask: bool,
-    scale: Optional[float] = ...,
-    window_size_left: Optional[int] = ...,
-    window_size_right: Optional[int] = ...,
-    seqused_k: Optional[Tensor] = ...,
-    alibi_slopes: Optional[Tensor] = ...,
+    scale: float | None = ...,
+    window_size_left: int | None = ...,
+    window_size_right: int | None = ...,
+    seqused_k: Tensor | None = ...,
+    alibi_slopes: Tensor | None = ...,
 ):  # -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
     ...
 @register_meta([aten._flash_attention_backward])
@@ -1147,9 +1148,9 @@ def meta__flash_attention_backward(
     is_causal: bool,
     philox_seed: Tensor,
     philox_offset: Tensor,
-    scale: Optional[float] = ...,
-    window_size_left: Optional[int] = ...,
-    window_size_right: Optional[int] = ...,
+    scale: float | None = ...,
+    window_size_left: int | None = ...,
+    window_size_right: int | None = ...,
 ):  # -> tuple[Tensor, Tensor, Tensor]:
     ...
 @register_meta([aten._efficient_attention_forward])
@@ -1157,18 +1158,18 @@ def meta__efficient_attention_forward(
     query: Tensor,
     key: Tensor,
     value: Tensor,
-    bias: Optional[Tensor],
-    cu_seqlens_q: Optional[Tensor],
-    cu_seqlens_k: Optional[Tensor],
-    max_seqlen_q: Optional[int],
-    max_seqlen_k: Optional[int],
+    bias: Tensor | None,
+    cu_seqlens_q: Tensor | None,
+    cu_seqlens_k: Tensor | None,
+    max_seqlen_q: int | None,
+    max_seqlen_k: int | None,
     dropout_p: float,
     custom_mask_type: int,
     compute_log_sumexp: bool = ...,
-    scale: Optional[float] = ...,
-    causal_diagonal: Optional[Tensor] = ...,
-    seqlen_k: Optional[Tensor] = ...,
-    window_size: Optional[int] = ...,
+    scale: float | None = ...,
+    causal_diagonal: Tensor | None = ...,
+    seqlen_k: Tensor | None = ...,
+    window_size: int | None = ...,
 ):  # -> tuple[Tensor, Tensor, Tensor, Tensor, int | Any, int | Any]:
     ...
 @register_meta([aten._efficient_attention_backward])
@@ -1177,9 +1178,9 @@ def meta__efficient_attention_backward(
     query: Tensor,
     key: Tensor,
     value: Tensor,
-    bias: Optional[Tensor],
-    cu_seqlens_q: Optional[Tensor],
-    cu_seqlens_k: Optional[Tensor],
+    bias: Tensor | None,
+    cu_seqlens_q: Tensor | None,
+    cu_seqlens_k: Tensor | None,
     max_seqlen_q: torch.SymInt,
     max_seqlen_k: torch.SymInt,
     logsumexp: Tensor,
@@ -1188,8 +1189,8 @@ def meta__efficient_attention_backward(
     philox_offset: Tensor,
     custom_mask_type: int,
     bias_requires_grad: bool,
-    scale: Optional[float] = ...,
-    num_splits_key: Optional[int] = ...,
+    scale: float | None = ...,
+    num_splits_key: int | None = ...,
     shared_storage_dqdkdv: bool = ...,
 ):  # -> tuple[Tensor, Tensor, Tensor, Tensor]:
     ...
@@ -1199,9 +1200,9 @@ def meta_scaled_mm(
     mat2: torch.Tensor,
     scale_a: torch.Tensor,
     scale_b: torch.Tensor,
-    bias: Optional[torch.Tensor] = ...,
-    scale_result: Optional[torch.Tensor] = ...,
-    out_dtype: Optional[torch.dtype] = ...,
+    bias: torch.Tensor | None = ...,
+    scale_result: torch.Tensor | None = ...,
+    out_dtype: torch.dtype | None = ...,
     use_fast_accum: bool = ...,
 ):  # -> Tensor:
     ...
@@ -1225,10 +1226,10 @@ def upsample_nearest2d(input, output_size, scales_h=..., scales_w=...): ...
 @register_meta([aten.upsample_nearest2d_backward.default, aten._upsample_nearest_exact2d_backward.default])
 def upsample_nearest2d_backward(
     grad_output: Tensor,
-    output_size: Sequence[Union[int, torch.SymInt]],
-    input_size: Sequence[Union[int, torch.SymInt]],
-    scales_h: Optional[float] = ...,
-    scales_w: Optional[float] = ...,
+    output_size: Sequence[int | torch.SymInt],
+    input_size: Sequence[int | torch.SymInt],
+    scales_h: float | None = ...,
+    scales_w: float | None = ...,
 ):  # -> Tensor:
     ...
 @register_meta([aten.upsample_nearest3d.default, aten._upsample_nearest_exact3d.default])
@@ -1398,9 +1399,9 @@ def sigmoid(self: Tensor) -> Tensor: ...
 def meta_grouped_mm(
     mat_a: Tensor,
     mat_b: Tensor,
-    offs: Optional[Tensor] = ...,
-    bias: Optional[Tensor] = ...,
-    out_dtype: Optional[torch.dtype] = ...,
+    offs: Tensor | None = ...,
+    bias: Tensor | None = ...,
+    out_dtype: torch.dtype | None = ...,
 ) -> Tensor: ...
 @register_meta([aten._scaled_grouped_mm])
 def meta_scaled_grouped_mm(
@@ -1408,10 +1409,10 @@ def meta_scaled_grouped_mm(
     mat_b: torch.Tensor,
     scale_a: torch.Tensor,
     scale_b: torch.Tensor,
-    offs: Optional[torch.Tensor] = ...,
-    bias: Optional[torch.Tensor] = ...,
-    scale_result: Optional[torch.Tensor] = ...,
-    out_dtype: Optional[torch.dtype] = ...,
+    offs: torch.Tensor | None = ...,
+    bias: torch.Tensor | None = ...,
+    scale_result: torch.Tensor | None = ...,
+    out_dtype: torch.dtype | None = ...,
     use_fast_accum: bool = ...,
 ):  # -> Tensor:
     ...

@@ -197,11 +197,11 @@ class WhisperOnnxConfig(OnnxSeq2SeqConfigWithPast):
     def inputs(self) -> Mapping[str, Mapping[int, str]]: ...
     def generate_dummy_inputs(
         self,
-        preprocessor: Union[PreTrainedTokenizerBase, FeatureExtractionMixin],
+        preprocessor: PreTrainedTokenizerBase | FeatureExtractionMixin,
         batch_size: int = ...,
         seq_length: int = ...,
         is_pair: bool = ...,
-        framework: Optional[TensorType] = ...,
+        framework: TensorType | None = ...,
         sampling_rate: int = ...,
         time_duration: float = ...,
         frequency: int = ...,

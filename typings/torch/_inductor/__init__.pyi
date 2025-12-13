@@ -15,7 +15,7 @@ __all__ = ["compile", "list_mode_options", "list_options", "cudagraph_mark_step_
 log = ...
 
 def compile(
-    gm: torch.fx.GraphModule, example_inputs: list[InputType], options: Optional[dict[str, Any]] = ...
+    gm: torch.fx.GraphModule, example_inputs: list[InputType], options: dict[str, Any] | None = ...
 ):  # -> Callable[[list[object]], Sequence[Tensor]] | str | list[str] | Weights:
 
     ...
@@ -24,8 +24,8 @@ def aoti_compile_and_package(
     _deprecated_unused_args=...,
     _deprecated_unused_kwargs=...,
     *,
-    package_path: Optional[FileLike] = ...,
-    inductor_configs: Optional[dict[str, Any]] = ...,
+    package_path: FileLike | None = ...,
+    inductor_configs: dict[str, Any] | None = ...,
 ) -> str: ...
 def aoti_load_package(
     path: FileLike, run_single_threaded: bool = ..., device_index: int = ...
@@ -33,11 +33,11 @@ def aoti_load_package(
 def aot_compile(
     gm: torch.fx.GraphModule,
     args: tuple[Any],
-    kwargs: Optional[dict[str, Any]] = ...,
+    kwargs: dict[str, Any] | None = ...,
     *,
-    options: Optional[dict[str, Any]] = ...,
-) -> Union[str, list[Union[str, Weights]], torch.fx.GraphModule]: ...
-def list_mode_options(mode: Optional[str] = ..., dynamic: Optional[bool] = ...) -> dict[str, Any]: ...
+    options: dict[str, Any] | None = ...,
+) -> str | list[str | Weights] | torch.fx.GraphModule: ...
+def list_mode_options(mode: str | None = ..., dynamic: bool | None = ...) -> dict[str, Any]: ...
 def list_options() -> list[str]: ...
 def cudagraph_mark_step_begin():  # -> None:
 
@@ -47,5 +47,5 @@ def standalone_compile(
     example_inputs: list[InputType],
     *,
     dynamic_shapes: Literal["from_example_inputs", "from_tracing_context", "from_graph"] = ...,
-    options: Optional[dict[str, Any]] = ...,
+    options: dict[str, Any] | None = ...,
 ) -> CompiledArtifact: ...

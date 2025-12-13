@@ -138,12 +138,12 @@ class PerceiverOnnxConfig(OnnxConfig):
     def atol_for_validation(self) -> float: ...
     def generate_dummy_inputs(
         self,
-        preprocessor: Union[PreTrainedTokenizerBase, FeatureExtractionMixin],
+        preprocessor: PreTrainedTokenizerBase | FeatureExtractionMixin,
         batch_size: int = ...,
         seq_length: int = ...,
         num_choices: int = ...,
         is_pair: bool = ...,
-        framework: Optional[TensorType] = ...,
+        framework: TensorType | None = ...,
         num_channels: int = ...,
         image_width: int = ...,
         image_height: int = ...,

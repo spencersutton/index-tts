@@ -186,11 +186,11 @@ class Exaone4Attention(nn.Module):
         self,
         hidden_states: torch.Tensor,
         position_embeddings: tuple[torch.Tensor, torch.Tensor],
-        attention_mask: Optional[torch.Tensor] = ...,
-        past_key_value: Optional[Cache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        past_key_value: Cache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]: ...
 
 class Exaone4MLP(Olmo2MLP): ...
 class Exaone4DecoderLayer(Olmo2DecoderLayer): ...
@@ -205,27 +205,27 @@ class Exaone4Model(Exaone4PreTrainedModel, LlamaModel):
     def forward(
         self,
         input_ids: torch.LongTensor = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> Union[tuple, BaseModelOutputWithPast]: ...
+    ) -> tuple | BaseModelOutputWithPast: ...
 
 class Exaone4ForCausalLM(LlamaForCausalLM):
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        logits_to_keep: Union[int, torch.Tensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        logits_to_keep: int | torch.Tensor = ...,
         **kwargs: Unpack[TransformersKwargs],
     ) -> CausalLMOutputWithPast:
         r"""

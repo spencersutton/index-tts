@@ -42,10 +42,10 @@ class VitMatteImageProcessor(BaseImageProcessor):
     def __init__(
         self,
         do_rescale: bool = ...,
-        rescale_factor: Union[int, float] = ...,
+        rescale_factor: int | float = ...,
         do_normalize: bool = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
         do_pad: bool = ...,
         size_divisibility: int = ...,
         **kwargs,
@@ -54,8 +54,8 @@ class VitMatteImageProcessor(BaseImageProcessor):
         self,
         image: np.ndarray,
         size_divisibility: int = ...,
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ) -> np.ndarray:
         """
         Args:
@@ -82,16 +82,16 @@ class VitMatteImageProcessor(BaseImageProcessor):
         self,
         images: ImageInput,
         trimaps: ImageInput,
-        do_rescale: Optional[bool] = ...,
-        rescale_factor: Optional[float] = ...,
-        do_normalize: Optional[bool] = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
-        do_pad: Optional[bool] = ...,
-        size_divisibility: Optional[int] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        data_format: Union[str, ChannelDimension] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        do_rescale: bool | None = ...,
+        rescale_factor: float | None = ...,
+        do_normalize: bool | None = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
+        do_pad: bool | None = ...,
+        size_divisibility: int | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        data_format: str | ChannelDimension = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ):  # -> BatchFeature:
         """
         Preprocess an image or batch of images.

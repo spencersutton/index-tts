@@ -35,11 +35,11 @@ class Aimv2Output(ModelOutput):
         The output of the [`Aimv2VisionModel`].
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    logits_per_image: Optional[torch.FloatTensor] = ...
-    logits_per_text: Optional[torch.FloatTensor] = ...
-    text_embeds: Optional[torch.FloatTensor] = ...
-    image_embeds: Optional[torch.FloatTensor] = ...
+    loss: torch.FloatTensor | None = ...
+    logits_per_image: torch.FloatTensor | None = ...
+    logits_per_text: torch.FloatTensor | None = ...
+    text_embeds: torch.FloatTensor | None = ...
+    image_embeds: torch.FloatTensor | None = ...
     text_model_output: BaseModelOutputWithPooling = ...
     vision_model_output: BaseModelOutputWithPooling = ...
     def to_tuple(self) -> tuple[Any]: ...
@@ -73,9 +73,9 @@ class Aimv2TextEmbeddings(nn.Module):
     def __init__(self, config: Aimv2TextConfig) -> None: ...
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
     ) -> torch.Tensor: ...
 
 def eager_attention_forward(
@@ -83,7 +83,7 @@ def eager_attention_forward(
     query: torch.Tensor,
     key: torch.Tensor,
     value: torch.Tensor,
-    attention_mask: Optional[torch.Tensor],
+    attention_mask: torch.Tensor | None,
     scaling: float,
     dropout: float = ...,
     **kwargs,
@@ -94,8 +94,8 @@ class Aimv2Attention(nn.Module):
     """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config) -> None: ...
     def forward(
-        self, hidden_states: torch.Tensor, attention_mask: Optional[torch.Tensor] = ..., **kwargs
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
+        self, hidden_states: torch.Tensor, attention_mask: torch.Tensor | None = ..., **kwargs
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         """Input shape: Batch x Time x Channel"""
         ...
 
@@ -104,8 +104,8 @@ class Aimv2EncoderLayer(GradientCheckpointingLayer):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
     ) -> tuple[torch.Tensor, torch.Tensor]: ...
 
 class Aimv2Encoder(nn.Module):
@@ -121,9 +121,9 @@ class Aimv2Encoder(nn.Module):
     def forward(
         self,
         inputs_embeds,
-        attention_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
     ) -> BaseModelOutput:
         r"""
         Args:
@@ -183,9 +183,9 @@ class Aimv2VisionModel(Aimv2PreTrainedModel):
     def forward(
         self,
         pixel_values,
-        attention_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
     ) -> BaseModelOutputWithPooling:
         r"""
         Examples:
@@ -225,9 +225,9 @@ class Aimv2TextModel(Aimv2PreTrainedModel):
     def forward(
         self,
         input_ids,
-        attention_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
     ) -> BaseModelOutputWithPooling: ...
 
 @auto_docstring
@@ -238,11 +238,11 @@ class Aimv2Model(Aimv2PreTrainedModel):
     @auto_docstring
     def get_text_features(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
     ) -> torch.FloatTensor:
         r"""
         Returns:
@@ -265,9 +265,9 @@ class Aimv2Model(Aimv2PreTrainedModel):
     @auto_docstring
     def get_image_features(
         self,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
+        pixel_values: torch.FloatTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
         interpolate_pos_encoding: bool = ...,
     ) -> torch.FloatTensor:
         r"""
@@ -298,11 +298,11 @@ class Aimv2Model(Aimv2PreTrainedModel):
     @can_return_tuple
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        pixel_values: torch.FloatTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
     ) -> Aimv2Output:
         r"""
         Examples:

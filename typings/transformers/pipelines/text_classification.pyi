@@ -74,7 +74,7 @@ class TextClassificationPipeline(Pipeline):
     function_to_apply = ...
     def __init__(self, **kwargs) -> None: ...
     def __call__(
-        self, inputs: Union[str, list[str], dict[str, str], list[dict[str, str]]], **kwargs: Any
+        self, inputs: str | list[str] | dict[str, str] | list[dict[str, str]], **kwargs: Any
     ) -> list[dict[str, Any]]:
         """
         Classify the text(s) given as inputs.

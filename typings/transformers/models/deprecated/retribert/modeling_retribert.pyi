@@ -41,9 +41,9 @@ class RetriBertModel(RetriBertPreTrainedModel):
     def forward(
         self,
         input_ids_query: torch.LongTensor,
-        attention_mask_query: Optional[torch.FloatTensor],
+        attention_mask_query: torch.FloatTensor | None,
         input_ids_doc: torch.LongTensor,
-        attention_mask_doc: Optional[torch.FloatTensor],
+        attention_mask_doc: torch.FloatTensor | None,
         checkpoint_batch_size: int = ...,
     ) -> torch.FloatTensor:
         r"""

@@ -1,6 +1,7 @@
 import sympy
 import torch
-from typing import Any, Callable, Optional
+from typing import Any, Optional
+from collections.abc import Callable
 from torch.utils._sympy.printers import CppPrinter as _CppPrinter
 from torch.utils._sympy.value_ranges import ValueRanges
 from .. import ir
@@ -26,7 +27,7 @@ def promote_args(new_args):  # -> list[Any | CppCSEVariable]:
 
 class CppCSEVariable(CSEVariable):
     def __init__(
-        self, name, bounds: ValueRanges[Any], dtype: Optional[torch.dtype] = ..., shape: BlockShapeType = ...
+        self, name, bounds: ValueRanges[Any], dtype: torch.dtype | None = ..., shape: BlockShapeType = ...
     ) -> None: ...
     def update_on_args(self, name, args, kwargs):  # -> None:
         ...
@@ -72,7 +73,7 @@ class LocalBufferContext:
         ...
     def __exit__(self, exc_type, exc_val, exc_tb):  # -> None:
         ...
-    def add_local_buffer(self, local_buffer: ir.Buffer, global_buffers: Optional[list[ir.Buffer]] = ...):  # -> None:
+    def add_local_buffer(self, local_buffer: ir.Buffer, global_buffers: list[ir.Buffer] | None = ...):  # -> None:
         ...
     def localize_function(
         self,

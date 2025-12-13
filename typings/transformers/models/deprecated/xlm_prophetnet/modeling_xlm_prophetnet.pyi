@@ -108,18 +108,18 @@ class XLMProphetNetSeq2SeqLMOutput(ModelOutput):
             softmax, used to compute the weighted average in the self-attention heads.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    logits: Optional[torch.FloatTensor] = ...
-    logits_ngram: Optional[torch.FloatTensor] = ...
-    past_key_values: Optional[tuple[torch.FloatTensor]] = ...
-    decoder_hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    decoder_ngram_hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    decoder_attentions: Optional[tuple[torch.FloatTensor]] = ...
-    decoder_ngram_attentions: Optional[tuple[torch.FloatTensor]] = ...
-    cross_attentions: Optional[tuple[torch.FloatTensor]] = ...
-    encoder_last_hidden_state: Optional[torch.FloatTensor] = ...
-    encoder_hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    encoder_attentions: Optional[tuple[torch.FloatTensor]] = ...
+    loss: torch.FloatTensor | None = ...
+    logits: torch.FloatTensor | None = ...
+    logits_ngram: torch.FloatTensor | None = ...
+    past_key_values: tuple[torch.FloatTensor] | None = ...
+    decoder_hidden_states: tuple[torch.FloatTensor] | None = ...
+    decoder_ngram_hidden_states: tuple[torch.FloatTensor] | None = ...
+    decoder_attentions: tuple[torch.FloatTensor] | None = ...
+    decoder_ngram_attentions: tuple[torch.FloatTensor] | None = ...
+    cross_attentions: tuple[torch.FloatTensor] | None = ...
+    encoder_last_hidden_state: torch.FloatTensor | None = ...
+    encoder_hidden_states: tuple[torch.FloatTensor] | None = ...
+    encoder_attentions: tuple[torch.FloatTensor] | None = ...
     @property
     def decoder_cross_attentions(self):  # -> tuple[FloatTensor] | None:
         ...
@@ -189,16 +189,16 @@ class XLMProphetNetSeq2SeqModelOutput(ModelOutput):
     """
 
     last_hidden_state: torch.FloatTensor
-    last_hidden_state_ngram: Optional[torch.FloatTensor] = ...
-    past_key_values: Optional[tuple[torch.FloatTensor]] = ...
-    decoder_hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    decoder_ngram_hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    decoder_attentions: Optional[tuple[torch.FloatTensor]] = ...
-    decoder_ngram_attentions: Optional[tuple[torch.FloatTensor]] = ...
-    cross_attentions: Optional[tuple[torch.FloatTensor]] = ...
-    encoder_last_hidden_state: Optional[torch.FloatTensor] = ...
-    encoder_hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    encoder_attentions: Optional[tuple[torch.FloatTensor]] = ...
+    last_hidden_state_ngram: torch.FloatTensor | None = ...
+    past_key_values: tuple[torch.FloatTensor] | None = ...
+    decoder_hidden_states: tuple[torch.FloatTensor] | None = ...
+    decoder_ngram_hidden_states: tuple[torch.FloatTensor] | None = ...
+    decoder_attentions: tuple[torch.FloatTensor] | None = ...
+    decoder_ngram_attentions: tuple[torch.FloatTensor] | None = ...
+    cross_attentions: tuple[torch.FloatTensor] | None = ...
+    encoder_last_hidden_state: torch.FloatTensor | None = ...
+    encoder_hidden_states: tuple[torch.FloatTensor] | None = ...
+    encoder_attentions: tuple[torch.FloatTensor] | None = ...
     @property
     def decoder_cross_attentions(self):  # -> tuple[FloatTensor] | None:
         ...
@@ -254,13 +254,13 @@ class XLMProphetNetDecoderModelOutput(ModelOutput):
     """
 
     last_hidden_state: torch.FloatTensor
-    last_hidden_state_ngram: Optional[torch.FloatTensor] = ...
-    past_key_values: Optional[tuple[torch.FloatTensor]] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    hidden_states_ngram: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
-    ngram_attentions: Optional[tuple[torch.FloatTensor]] = ...
-    cross_attentions: Optional[tuple[torch.FloatTensor]] = ...
+    last_hidden_state_ngram: torch.FloatTensor | None = ...
+    past_key_values: tuple[torch.FloatTensor] | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    hidden_states_ngram: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
+    ngram_attentions: tuple[torch.FloatTensor] | None = ...
+    cross_attentions: tuple[torch.FloatTensor] | None = ...
 
 @dataclass
 class XLMProphetNetDecoderLMOutput(ModelOutput):
@@ -313,15 +313,15 @@ class XLMProphetNetDecoderLMOutput(ModelOutput):
             compute the weighted average in the
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    logits: Optional[torch.FloatTensor] = ...
-    logits_ngram: Optional[torch.FloatTensor] = ...
-    past_key_values: Optional[tuple[torch.FloatTensor]] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    hidden_states_ngram: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
-    ngram_attentions: Optional[tuple[torch.FloatTensor]] = ...
-    cross_attentions: Optional[tuple[torch.FloatTensor]] = ...
+    loss: torch.FloatTensor | None = ...
+    logits: torch.FloatTensor | None = ...
+    logits_ngram: torch.FloatTensor | None = ...
+    past_key_values: tuple[torch.FloatTensor] | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    hidden_states_ngram: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
+    ngram_attentions: tuple[torch.FloatTensor] | None = ...
+    cross_attentions: tuple[torch.FloatTensor] | None = ...
 
 class XLMProphetNetPreTrainedModel(PreTrainedModel):
     config: XLMProphetNetConfig
@@ -346,12 +346,12 @@ class XLMProphetNetAttention(nn.Module):
     def forward(
         self,
         hidden_states,
-        key_value_states: Optional[Tensor] = ...,
-        attention_mask: Optional[Tensor] = ...,
-        layer_head_mask: Optional[Tensor] = ...,
-        past_key_value: Optional[tuple[Tensor]] = ...,
+        key_value_states: Tensor | None = ...,
+        attention_mask: Tensor | None = ...,
+        layer_head_mask: Tensor | None = ...,
+        past_key_value: tuple[Tensor] | None = ...,
         output_attentions: bool = ...,
-    ) -> tuple[Tensor, Optional[Tensor]]: ...
+    ) -> tuple[Tensor, Tensor | None]: ...
 
 class XLMProphetNetFeedForward(nn.Module):
     """
@@ -368,7 +368,7 @@ class XLMProphetNetNgramSelfAttention(nn.Module):
     def forward(
         self,
         hidden_states,
-        past_key_value: Optional[tuple[Tensor]] = ...,
+        past_key_value: tuple[Tensor] | None = ...,
         attention_mask=...,
         layer_head_mask=...,
         extended_predict_attention_mask=...,
@@ -435,14 +435,14 @@ class XLMProphetNetEncoder(XLMProphetNetPreTrainedModel):
     @replace_return_docstrings(output_type=BaseModelOutput, config_class=_CONFIG_FOR_DOC)
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutput]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutput:
         r"""
         Returns:
 
@@ -468,7 +468,7 @@ class XLMProphetNetDecoder(XLMProphetNetPreTrainedModel):
         The word embedding parameters. This can be used to initialize [`XLMProphetNetEncoder`] with pre-defined word
         embeddings instead of randomly initialized word embeddings.
     """
-    def __init__(self, config: XLMProphetNetConfig, word_embeddings: Optional[nn.Embedding] = ...) -> None: ...
+    def __init__(self, config: XLMProphetNetConfig, word_embeddings: nn.Embedding | None = ...) -> None: ...
     def get_input_embeddings(self):  # -> Embedding | Module:
         ...
     def set_input_embeddings(self, value):  # -> None:
@@ -477,19 +477,19 @@ class XLMProphetNetDecoder(XLMProphetNetPreTrainedModel):
     @replace_return_docstrings(output_type=XLMProphetNetDecoderModelOutput, config_class=_CONFIG_FOR_DOC)
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        encoder_hidden_states: Optional[torch.Tensor] = ...,
-        encoder_attention_mask: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        cross_attn_head_mask: Optional[torch.Tensor] = ...,
-        past_key_values: Optional[tuple[tuple[torch.Tensor]]] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, XLMProphetNetDecoderModelOutput]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        encoder_hidden_states: torch.Tensor | None = ...,
+        encoder_attention_mask: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        cross_attn_head_mask: torch.Tensor | None = ...,
+        past_key_values: tuple[tuple[torch.Tensor]] | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | XLMProphetNetDecoderModelOutput:
         r"""
         encoder_hidden_states  (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*):
             Sequence of hidden-states at the output of the last layer of the encoder. Used in the cross-attention if
@@ -557,22 +557,22 @@ class XLMProphetNetModel(XLMProphetNetPreTrainedModel):
     @replace_return_docstrings(output_type=XLMProphetNetSeq2SeqModelOutput, config_class=_CONFIG_FOR_DOC)
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        decoder_input_ids: Optional[torch.Tensor] = ...,
-        decoder_attention_mask: Optional[torch.BoolTensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        decoder_head_mask: Optional[torch.Tensor] = ...,
-        cross_attn_head_mask: Optional[torch.Tensor] = ...,
-        encoder_outputs: Optional[tuple] = ...,
-        past_key_values: Optional[tuple[tuple[torch.Tensor]]] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        decoder_inputs_embeds: Optional[torch.Tensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, XLMProphetNetSeq2SeqModelOutput]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        decoder_input_ids: torch.Tensor | None = ...,
+        decoder_attention_mask: torch.BoolTensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        decoder_head_mask: torch.Tensor | None = ...,
+        cross_attn_head_mask: torch.Tensor | None = ...,
+        encoder_outputs: tuple | None = ...,
+        past_key_values: tuple[tuple[torch.Tensor]] | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        decoder_inputs_embeds: torch.Tensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | XLMProphetNetSeq2SeqModelOutput:
         r"""
         Returns:
 
@@ -608,23 +608,23 @@ class XLMProphetNetForConditionalGeneration(XLMProphetNetPreTrainedModel):
     @replace_return_docstrings(output_type=XLMProphetNetSeq2SeqLMOutput, config_class=_CONFIG_FOR_DOC)
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        decoder_input_ids: Optional[torch.Tensor] = ...,
-        decoder_attention_mask: Optional[torch.BoolTensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        decoder_head_mask: Optional[torch.Tensor] = ...,
-        cross_attn_head_mask: Optional[torch.Tensor] = ...,
-        encoder_outputs: Optional[torch.Tensor] = ...,
-        past_key_values: Optional[tuple[tuple[torch.Tensor]]] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        decoder_inputs_embeds: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, XLMProphetNetSeq2SeqLMOutput]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        decoder_input_ids: torch.Tensor | None = ...,
+        decoder_attention_mask: torch.BoolTensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        decoder_head_mask: torch.Tensor | None = ...,
+        cross_attn_head_mask: torch.Tensor | None = ...,
+        encoder_outputs: torch.Tensor | None = ...,
+        past_key_values: tuple[tuple[torch.Tensor]] | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        decoder_inputs_embeds: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | XLMProphetNetSeq2SeqLMOutput:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the sequence classification/regression loss. Indices should be in `[-100, 0, ...,
@@ -692,20 +692,20 @@ class XLMProphetNetForCausalLM(XLMProphetNetPreTrainedModel):
     @replace_return_docstrings(output_type=XLMProphetNetDecoderLMOutput, config_class=_CONFIG_FOR_DOC)
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        encoder_hidden_states: Optional[torch.Tensor] = ...,
-        encoder_attention_mask: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        cross_attn_head_mask: Optional[torch.Tensor] = ...,
-        past_key_values: Optional[tuple[tuple[torch.Tensor]]] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, XLMProphetNetDecoderLMOutput]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        encoder_hidden_states: torch.Tensor | None = ...,
+        encoder_attention_mask: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        cross_attn_head_mask: torch.Tensor | None = ...,
+        past_key_values: tuple[tuple[torch.Tensor]] | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | XLMProphetNetDecoderLMOutput:
         r"""
         encoder_hidden_states (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*):
             Sequence of hidden-states at the output of the last layer of the encoder. Used in the cross-attention if

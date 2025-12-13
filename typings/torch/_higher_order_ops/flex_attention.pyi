@@ -1,5 +1,6 @@
 import torch
-from typing import Any, Callable, Optional, Union
+from typing import Any, Optional, Union
+from collections.abc import Callable
 from torch import Tensor
 from torch._C import DispatchKey
 from torch._higher_order_ops.utils import register_fake
@@ -35,14 +36,14 @@ class FlexAttentionBackwardHOP(HigherOrderOperator):
         logsumexp: torch.Tensor,
         grad_out: torch.Tensor,
         grad_logsumexp: torch.Tensor,
-        fw_graph: Union[Callable, GraphModule],
+        fw_graph: Callable | GraphModule,
         joint_graph: GraphModule,
         block_mask: tuple,
         scale: float,
         kernel_options: dict[str, Any],
         score_mod_other_buffers: tuple = ...,
         mask_mod_other_buffers: tuple = ...,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, tuple[Optional[torch.Tensor], ...]]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, tuple[torch.Tensor | None, ...]]: ...
 
 flex_attention_backward = ...
 
@@ -141,7 +142,7 @@ class FlexAttentionAutogradOp(torch.autograd.Function):
     @staticmethod
     def backward(
         ctx: Any, grad_out: Tensor, grad_logsumexp: Tensor, grad_max_scores: Tensor
-    ) -> tuple[Optional[Tensor], ...]: ...
+    ) -> tuple[Tensor | None, ...]: ...
 
 @flex_attention.py_impl(DispatchKey.Autograd)
 def flex_attention_autograd(
@@ -171,7 +172,7 @@ def sdpa_dense_backward(
     kernel_options: dict[str, Any],
     score_mod_other_buffers: tuple,
     mask_mod_other_buffers: tuple,
-) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, tuple[Optional[torch.Tensor], ...]]: ...
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, tuple[torch.Tensor | None, ...]]: ...
 def trace_flex_attention_backward(
     proxy_mode: ProxyTorchDispatchMode,
     query: torch.Tensor,
@@ -181,14 +182,14 @@ def trace_flex_attention_backward(
     logsumexp: torch.Tensor,
     grad_out: torch.Tensor,
     grad_logsumexp: torch.Tensor,
-    fw_graph: Union[Callable, GraphModule],
+    fw_graph: Callable | GraphModule,
     joint_graph: GraphModule,
     block_mask: tuple,
     scale: float,
     kernel_options: dict[str, Any],
     score_mod_other_buffers: tuple = ...,
     mask_mod_other_buffers: tuple = ...,
-) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, tuple[Optional[torch.Tensor], ...]]: ...
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, tuple[torch.Tensor | None, ...]]: ...
 @flex_attention_backward.py_impl(ProxyTorchDispatchMode)
 def flex_attention_backward_proxy_torch_dispatch_mode(
     mode: ProxyTorchDispatchMode,
@@ -199,14 +200,14 @@ def flex_attention_backward_proxy_torch_dispatch_mode(
     logsumexp: torch.Tensor,
     grad_out: torch.Tensor,
     grad_logsumexp: torch.Tensor,
-    fw_graph: Union[Callable, GraphModule],
+    fw_graph: Callable | GraphModule,
     joint_graph: GraphModule,
     block_mask: tuple,
     scale: float,
     kernel_options: dict[str, Any],
     score_mod_other_buffers: tuple = ...,
     mask_mod_other_buffers: tuple = ...,
-) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, tuple[Optional[torch.Tensor], ...]]: ...
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, tuple[torch.Tensor | None, ...]]: ...
 @flex_attention_backward.py_functionalize_impl
 def flex_attention_backward_functionalize(
     ctx: torch._subclasses.functional_tensor.BaseFunctionalizeAPI,
@@ -217,14 +218,14 @@ def flex_attention_backward_functionalize(
     logsumexp: torch.Tensor,
     grad_out: torch.Tensor,
     grad_logsumexp: torch.Tensor,
-    fw_graph: Union[Callable, GraphModule],
+    fw_graph: Callable | GraphModule,
     joint_graph: GraphModule,
     block_mask: tuple,
     scale: float,
     kernel_options: dict[str, Any],
     score_mod_other_buffers: tuple = ...,
     mask_mod_other_buffers: tuple = ...,
-) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, tuple[Optional[torch.Tensor], ...]]: ...
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, tuple[torch.Tensor | None, ...]]: ...
 @register_fake(flex_attention_backward)
 def flex_attention_backward_fake_tensor_mode(
     query: torch.Tensor,
@@ -234,11 +235,11 @@ def flex_attention_backward_fake_tensor_mode(
     logsumexp: torch.Tensor,
     grad_out: torch.Tensor,
     grad_logsumexp: torch.Tensor,
-    fw_graph: Union[Callable, GraphModule],
+    fw_graph: Callable | GraphModule,
     joint_graph: GraphModule,
     block_mask: tuple,
     scale: float,
     kernel_options: dict[str, Any],
     score_mod_other_buffers: tuple = ...,
     mask_mod_other_buffers: tuple = ...,
-) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, tuple[Optional[torch.Tensor], ...]]: ...
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, tuple[torch.Tensor | None, ...]]: ...

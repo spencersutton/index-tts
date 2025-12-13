@@ -51,7 +51,7 @@ class HfQuantizer(ABC):
         """
         ...
 
-    def update_device_map(self, device_map: Optional[dict[str, Any]]) -> Optional[dict[str, Any]]:
+    def update_device_map(self, device_map: dict[str, Any] | None) -> dict[str, Any] | None:
         """
         Override this method if you want to pass a override the existing device map with a new
         one. E.g. for bitsandbytes, since `accelerate` is a hard requirement, if no device_map is
@@ -132,7 +132,7 @@ class HfQuantizer(ABC):
         """
         ...
 
-    def adjust_max_memory(self, max_memory: dict[str, Union[int, str]]) -> dict[str, Union[int, str]]:
+    def adjust_max_memory(self, max_memory: dict[str, int | str]) -> dict[str, int | str]:
         """adjust max_memory argument for infer_auto_device_map() if extra memory is needed for quantization"""
         ...
 
@@ -222,8 +222,8 @@ class HfQuantizer(ABC):
     @staticmethod
     def get_modules_to_not_convert(
         model: PreTrainedModel,
-        skip_modules: Optional[list[str]] = ...,
-        keep_in_fp32_modules: Optional[list[str]] = ...,
+        skip_modules: list[str] | None = ...,
+        keep_in_fp32_modules: list[str] | None = ...,
         add_default_skips: bool = ...,
     ):  # -> list[Any]:
         ...

@@ -25,7 +25,7 @@ class ANSI:
     @classmethod
     def yellow(cls, s: str) -> str: ...
 
-def tabulate(rows: List[List[Union[str, int]]], headers: List[str]) -> str:
+def tabulate(rows: list[list[str | int]], headers: list[str]) -> str:
     """
     Inspired by:
 

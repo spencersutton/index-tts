@@ -21,8 +21,8 @@ def get_image_prompt_string(
 ): ...
 
 class Idefics3ImagesKwargs(ImagesKwargs, total=False):
-    return_row_col_info: Optional[bool]
-    max_image_size: Optional[dict[str, int]]
+    return_row_col_info: bool | None
+    max_image_size: dict[str, int] | None
     ...
 
 class Idefics3ProcessorKwargs(ProcessingKwargs, total=False):
@@ -53,15 +53,15 @@ class Idefics3Processor(ProcessorMixin):
     image_processor_class = ...
     tokenizer_class = ...
     def __init__(
-        self, image_processor, tokenizer=..., image_seq_len: int = ..., chat_template: Optional[str] = ..., **kwargs
+        self, image_processor, tokenizer=..., image_seq_len: int = ..., chat_template: str | None = ..., **kwargs
     ) -> None: ...
     def __call__(
         self,
-        images: Union[ImageInput, list[ImageInput], list[list[ImageInput]]] = ...,
-        text: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]] = ...,
+        images: ImageInput | list[ImageInput] | list[list[ImageInput]] = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] = ...,
         audio=...,
         videos=...,
-        image_seq_len: Optional[int] = ...,
+        image_seq_len: int | None = ...,
         **kwargs: Unpack[Idefics3ProcessorKwargs],
     ) -> BatchEncoding:
         """

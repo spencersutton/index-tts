@@ -22,10 +22,10 @@ def eager_attention_forward(
     query: torch.Tensor,
     key: torch.Tensor,
     value: torch.Tensor,
-    attention_mask: Optional[torch.Tensor],
-    scaling: Optional[float] = ...,
+    attention_mask: torch.Tensor | None,
+    scaling: float | None = ...,
     dropout: float = ...,
-    head_mask: Optional[torch.Tensor] = ...,
+    head_mask: torch.Tensor | None = ...,
     **kwargs,
 ):  # -> tuple[Tensor, Tensor]:
     ...
@@ -40,17 +40,17 @@ class VoxtralAttention(nn.Module):
         is_decoder: bool = ...,
         bias: bool = ...,
         is_causal: bool = ...,
-        layer_idx: Optional[int] = ...,
-        config: Optional[VoxtralConfig] = ...,
+        layer_idx: int | None = ...,
+        config: VoxtralConfig | None = ...,
     ) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        layer_head_mask: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        layer_head_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
         **kwargs,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]:
         """Input shape: Batch x Time x Channel"""
         ...
 
@@ -177,16 +177,16 @@ class VoxtralForConditionalGeneration(VoxtralPreTrainedModel, GenerationMixin):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        input_features: Optional[torch.FloatTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        logits_to_keep: Union[int, torch.Tensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        input_features: torch.FloatTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        logits_to_keep: int | torch.Tensor = ...,
         **kwargs: Unpack[TransformersKwargs],
     ) -> CausalLMOutputWithPast:
         r"""

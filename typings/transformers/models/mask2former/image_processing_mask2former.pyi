@@ -34,16 +34,14 @@ def max_across_indices(values: Iterable[Any]) -> list[Any]:
     """
     ...
 
-def get_max_height_width(
-    images: list[np.ndarray], input_data_format: Optional[Union[str, ChannelDimension]] = ...
-) -> list[int]:
+def get_max_height_width(images: list[np.ndarray], input_data_format: str | ChannelDimension | None = ...) -> list[int]:
     """
     Get the maximum height and width across all images in a batch.
     """
     ...
 
 def make_pixel_mask(
-    image: np.ndarray, output_size: tuple[int, int], input_data_format: Optional[Union[str, ChannelDimension]] = ...
+    image: np.ndarray, output_size: tuple[int, int], input_data_format: str | ChannelDimension | None = ...
 ) -> np.ndarray:
     """
     Make a pixel mask for the image, where 1 indicates a valid pixel and 0 indicates padding.
@@ -114,24 +112,24 @@ def compute_segments(
     pred_labels,
     mask_threshold: float = ...,
     overlap_mask_area_threshold: float = ...,
-    label_ids_to_fuse: Optional[set[int]] = ...,
-    target_size: Optional[tuple[int, int]] = ...,
+    label_ids_to_fuse: set[int] | None = ...,
+    target_size: tuple[int, int] | None = ...,
 ):  # -> tuple[Tensor, list[dict[Any, Any]]]:
     ...
 def convert_segmentation_map_to_binary_masks(
     segmentation_map: np.ndarray,
-    instance_id_to_semantic_id: Optional[dict[int, int]] = ...,
-    ignore_index: Optional[int] = ...,
+    instance_id_to_semantic_id: dict[int, int] | None = ...,
+    ignore_index: int | None = ...,
     do_reduce_labels: bool = ...,
 ):  # -> tuple[ndarray[tuple[int], dtype[floating[_32Bit]]] | ndarray[_AnyShape, dtype[floating[_32Bit]]], ndarray[tuple[int], dtype[signedinteger[_64Bit]]] | ndarray[_AnyShape, dtype[signedinteger[_64Bit]]]]:
     ...
 def get_mask2former_resize_output_image_size(
     image: np.ndarray,
-    size: Union[int, tuple[int, int], list[int], tuple[int]],
-    max_size: Optional[int] = ...,
+    size: int | tuple[int, int] | list[int] | tuple[int],
+    max_size: int | None = ...,
     size_divisor: int = ...,
     default_to_square: bool = ...,
-    input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+    input_data_format: str | ChannelDimension | None = ...,
 ) -> tuple[int, int]:
     """
     Computes the output size given the desired size.
@@ -210,18 +208,18 @@ class Mask2FormerImageProcessor(BaseImageProcessor):
     def __init__(
         self,
         do_resize: bool = ...,
-        size: Optional[dict[str, int]] = ...,
+        size: dict[str, int] | None = ...,
         size_divisor: int = ...,
         resample: PILImageResampling = ...,
         do_rescale: bool = ...,
         rescale_factor: float = ...,
         do_normalize: bool = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
-        ignore_index: Optional[int] = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
+        ignore_index: int | None = ...,
         do_reduce_labels: bool = ...,
-        num_labels: Optional[int] = ...,
-        pad_size: Optional[dict[str, int]] = ...,
+        num_labels: int | None = ...,
+        pad_size: dict[str, int] | None = ...,
         **kwargs,
     ) -> None: ...
     def to_dict(self) -> dict[str, Any]:
@@ -238,7 +236,7 @@ class Mask2FormerImageProcessor(BaseImageProcessor):
         size_divisor: int = ...,
         resample: PILImageResampling = ...,
         data_format=...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        input_data_format: str | ChannelDimension | None = ...,
         **kwargs,
     ) -> np.ndarray:
         """
@@ -266,8 +264,8 @@ class Mask2FormerImageProcessor(BaseImageProcessor):
         self,
         image: np.ndarray,
         rescale_factor: float,
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ) -> np.ndarray:
         """
         Rescale the image by the given factor. image = image * rescale_factor.
@@ -293,8 +291,8 @@ class Mask2FormerImageProcessor(BaseImageProcessor):
     def convert_segmentation_map_to_binary_masks(
         self,
         segmentation_map: np.ndarray,
-        instance_id_to_semantic_id: Optional[dict[int, int]] = ...,
-        ignore_index: Optional[int] = ...,
+        instance_id_to_semantic_id: dict[int, int] | None = ...,
+        ignore_index: int | None = ...,
         do_reduce_labels: bool = ...,
     ):  # -> tuple[ndarray[tuple[int], dtype[floating[_32Bit]]] | ndarray[_AnyShape, dtype[floating[_32Bit]]], ndarray[tuple[int], dtype[signedinteger[_64Bit]]] | ndarray[_AnyShape, dtype[signedinteger[_64Bit]]]]:
         ...
@@ -303,33 +301,33 @@ class Mask2FormerImageProcessor(BaseImageProcessor):
     def preprocess(
         self,
         images: ImageInput,
-        segmentation_maps: Optional[ImageInput] = ...,
-        instance_id_to_semantic_id: Optional[dict[int, int]] = ...,
-        do_resize: Optional[bool] = ...,
-        size: Optional[dict[str, int]] = ...,
-        size_divisor: Optional[int] = ...,
+        segmentation_maps: ImageInput | None = ...,
+        instance_id_to_semantic_id: dict[int, int] | None = ...,
+        do_resize: bool | None = ...,
+        size: dict[str, int] | None = ...,
+        size_divisor: int | None = ...,
         resample: PILImageResampling = ...,
-        do_rescale: Optional[bool] = ...,
-        rescale_factor: Optional[float] = ...,
-        do_normalize: Optional[bool] = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
-        ignore_index: Optional[int] = ...,
-        do_reduce_labels: Optional[bool] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        data_format: Union[str, ChannelDimension] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
-        pad_size: Optional[dict[str, int]] = ...,
+        do_rescale: bool | None = ...,
+        rescale_factor: float | None = ...,
+        do_normalize: bool | None = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
+        ignore_index: int | None = ...,
+        do_reduce_labels: bool | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        data_format: str | ChannelDimension = ...,
+        input_data_format: str | ChannelDimension | None = ...,
+        pad_size: dict[str, int] | None = ...,
     ) -> BatchFeature: ...
     def pad(
         self,
         images: list[np.ndarray],
-        constant_values: Union[float, Iterable[float]] = ...,
+        constant_values: float | Iterable[float] = ...,
         return_pixel_mask: bool = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        data_format: Optional[ChannelDimension] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
-        pad_size: Optional[dict[str, int]] = ...,
+        return_tensors: str | TensorType | None = ...,
+        data_format: ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
+        pad_size: dict[str, int] | None = ...,
     ) -> BatchFeature:
         """
         Pads a batch of images to the bottom and right of the image with zeros to the size of largest height and width
@@ -364,12 +362,12 @@ class Mask2FormerImageProcessor(BaseImageProcessor):
         self,
         pixel_values_list: list[ImageInput],
         segmentation_maps: ImageInput = ...,
-        instance_id_to_semantic_id: Optional[Union[list[dict[int, int]], dict[int, int]]] = ...,
-        ignore_index: Optional[int] = ...,
+        instance_id_to_semantic_id: list[dict[int, int]] | dict[int, int] | None = ...,
+        ignore_index: int | None = ...,
         do_reduce_labels: bool = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
-        pad_size: Optional[dict[str, int]] = ...,
+        return_tensors: str | TensorType | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
+        pad_size: dict[str, int] | None = ...,
     ):  # -> BatchFeature:
         """
         Pad images up to the largest image in a batch and create a corresponding `pixel_mask`.
@@ -429,7 +427,7 @@ class Mask2FormerImageProcessor(BaseImageProcessor):
         ...
 
     def post_process_semantic_segmentation(
-        self, outputs, target_sizes: Optional[list[tuple[int, int]]] = ...
+        self, outputs, target_sizes: list[tuple[int, int]] | None = ...
     ) -> torch.Tensor:
         """
         Converts the output of [`Mask2FormerForUniversalSegmentation`] into semantic segmentation maps. Only supports
@@ -455,9 +453,9 @@ class Mask2FormerImageProcessor(BaseImageProcessor):
         threshold: float = ...,
         mask_threshold: float = ...,
         overlap_mask_area_threshold: float = ...,
-        target_sizes: Optional[list[tuple[int, int]]] = ...,
-        return_coco_annotation: Optional[bool] = ...,
-        return_binary_maps: Optional[bool] = ...,
+        target_sizes: list[tuple[int, int]] | None = ...,
+        return_coco_annotation: bool | None = ...,
+        return_binary_maps: bool | None = ...,
     ) -> list[dict]:
         """
         Converts the output of [`Mask2FormerForUniversalSegmentationOutput`] into instance segmentation predictions.
@@ -501,8 +499,8 @@ class Mask2FormerImageProcessor(BaseImageProcessor):
         threshold: float = ...,
         mask_threshold: float = ...,
         overlap_mask_area_threshold: float = ...,
-        label_ids_to_fuse: Optional[set[int]] = ...,
-        target_sizes: Optional[list[tuple[int, int]]] = ...,
+        label_ids_to_fuse: set[int] | None = ...,
+        target_sizes: list[tuple[int, int]] | None = ...,
     ) -> list[dict]:
         """
         Converts the output of [`Mask2FormerForUniversalSegmentationOutput`] into image panoptic segmentation

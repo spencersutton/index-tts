@@ -42,14 +42,14 @@ class ColQwen2Processor(ProcessorMixin):
         image_processor=...,
         tokenizer=...,
         chat_template=...,
-        visual_prompt_prefix: Optional[str] = ...,
-        query_prefix: Optional[str] = ...,
+        visual_prompt_prefix: str | None = ...,
+        query_prefix: str | None = ...,
         **kwargs,
     ) -> None: ...
     def __call__(
         self,
         images: ImageInput = ...,
-        text: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]] = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] = ...,
         audio=...,
         videos=...,
         **kwargs: Unpack[ColQwen2ProcessorKwargs],
@@ -151,7 +151,7 @@ class ColQwen2Processor(ProcessorMixin):
         ...
 
     def process_queries(
-        self, text: Union[TextInput, list[TextInput]], **kwargs: Unpack[ColQwen2ProcessorKwargs]
+        self, text: TextInput | list[TextInput], **kwargs: Unpack[ColQwen2ProcessorKwargs]
     ) -> BatchFeature:
         """
         Prepare for the model one or several texts. This method is a wrapper around the `__call__` method of the ColQwen2Processor's
@@ -184,11 +184,11 @@ class ColQwen2Processor(ProcessorMixin):
 
     def score_retrieval(
         self,
-        query_embeddings: Union[torch.Tensor, list[torch.Tensor]],
-        passage_embeddings: Union[torch.Tensor, list[torch.Tensor]],
+        query_embeddings: torch.Tensor | list[torch.Tensor],
+        passage_embeddings: torch.Tensor | list[torch.Tensor],
         batch_size: int = ...,
-        output_dtype: Optional[torch.dtype] = ...,
-        output_device: Union[torch.device, str] = ...,
+        output_dtype: torch.dtype | None = ...,
+        output_device: torch.device | str = ...,
     ) -> torch.Tensor:
         """
         Compute the late-interaction/MaxSim score (ColBERT-like) for the given multi-vector

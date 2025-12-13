@@ -79,13 +79,13 @@ class Qwen2_5OmniPreTrainedModelForConditionalGeneration(Qwen2_5OmniPreTrainedMo
 
     def get_rope_index(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        image_grid_thw: Optional[torch.LongTensor] = ...,
-        video_grid_thw: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        image_grid_thw: torch.LongTensor | None = ...,
+        video_grid_thw: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
         use_audio_in_video: bool = ...,
-        audio_seqlens: Optional[torch.LongTensor] = ...,
-        second_per_grids: Optional[torch.Tensor] = ...,
+        audio_seqlens: torch.LongTensor | None = ...,
+        second_per_grids: torch.Tensor | None = ...,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Calculate the 3D rope index based on image and video's temporal, height and width in LLM.
@@ -168,12 +168,12 @@ class Qwen2_5OmniThinkerCausalLMOutputWithPast(ModelOutput):
         The rope index difference between sequence length and multimodal rope.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    logits: Optional[torch.FloatTensor] = ...
-    past_key_values: Optional[list[torch.FloatTensor]] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
-    rope_deltas: Optional[torch.LongTensor] = ...
+    loss: torch.FloatTensor | None = ...
+    logits: torch.FloatTensor | None = ...
+    past_key_values: list[torch.FloatTensor] | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
+    rope_deltas: torch.LongTensor | None = ...
 
 def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
     """
@@ -187,7 +187,7 @@ def eager_attention_forward(
     query: torch.Tensor,
     key: torch.Tensor,
     value: torch.Tensor,
-    attention_mask: Optional[torch.Tensor],
+    attention_mask: torch.Tensor | None,
     scaling: float,
     dropout: float = ...,
     **kwargs,
@@ -200,10 +200,10 @@ class Qwen2_5OmniAudioAttention(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        cu_seqlens: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
+        cu_seqlens: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
         **kwargs,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]:
         """Input shape: Batch x Time x Channel"""
         ...
 
@@ -213,7 +213,7 @@ class Qwen2_5OmniAudioEncoderLayer(GradientCheckpointingLayer):
         self,
         hidden_states: torch.Tensor,
         cu_seqlens: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
         **kwargs,
     ) -> torch.Tensor:
         """
@@ -280,7 +280,7 @@ class Qwen2_5OmniVisionAttention(nn.Module):
         self,
         hidden_states: torch.Tensor,
         cu_seqlens: torch.Tensor,
-        rotary_pos_emb: Optional[torch.Tensor] = ...,
+        rotary_pos_emb: torch.Tensor | None = ...,
         **kwargs,
     ) -> torch.Tensor: ...
 
@@ -306,7 +306,7 @@ class Qwen2_5OmniVisionBlock(GradientCheckpointingLayer):
         self,
         hidden_states: torch.Tensor,
         cu_seqlens: torch.Tensor,
-        rotary_pos_emb: Optional[torch.Tensor] = ...,
+        rotary_pos_emb: torch.Tensor | None = ...,
         **kwargs,
     ) -> torch.Tensor: ...
 
@@ -391,19 +391,19 @@ class Qwen2_5OmniAttention(nn.Module):
     Multi-headed attention from 'Attention Is All You Need' paper. Modified to use sliding window attention: Longformer
     and "Generating Long Sequences with Sparse Transformers".
     """
-    def __init__(self, config: Qwen2_5OmniConfig, layer_idx: Optional[int] = ...) -> None: ...
+    def __init__(self, config: Qwen2_5OmniConfig, layer_idx: int | None = ...) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[Cache] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: Cache | None = ...,
         output_attentions: bool = ...,
         use_cache: bool = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
+        cache_position: torch.LongTensor | None = ...,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]: ...
 
 class Qwen2MLP(nn.Module):
     def __init__(self, config, bias: bool = ...) -> None: ...
@@ -415,15 +415,15 @@ class Qwen2_5OmniDecoderLayer(GradientCheckpointingLayer):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[tuple[torch.Tensor]] = ...,
-        output_attentions: Optional[bool] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: tuple[torch.Tensor] | None = ...,
+        output_attentions: bool | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]:
+    ) -> tuple[torch.FloatTensor, tuple[torch.FloatTensor, torch.FloatTensor] | None]:
         """
         Args:
             hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
@@ -455,18 +455,18 @@ class Qwen2_5OmniThinkerTextModel(Qwen2_5OmniPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> Union[tuple, BaseModelOutputWithPast]: ...
+    ) -> tuple | BaseModelOutputWithPast: ...
 
 @auto_docstring(
     custom_intro="""
@@ -488,7 +488,7 @@ class Qwen2_5OmniThinkerForConditionalGeneration(Qwen2_5OmniPreTrainedModelForCo
     def get_decoder(self):  # -> Qwen2_5OmniThinkerTextModel:
         ...
     def get_video_features(
-        self, pixel_values_videos: torch.FloatTensor, video_grid_thw: Optional[torch.LongTensor] = ...
+        self, pixel_values_videos: torch.FloatTensor, video_grid_thw: torch.LongTensor | None = ...
     ):  # -> Any:
         """
         Encodes videos into continuous embeddings that can be forwarded to the language model.
@@ -502,7 +502,7 @@ class Qwen2_5OmniThinkerForConditionalGeneration(Qwen2_5OmniPreTrainedModelForCo
         ...
 
     def get_image_features(
-        self, pixel_values: torch.FloatTensor, image_grid_thw: Optional[torch.LongTensor] = ...
+        self, pixel_values: torch.FloatTensor, image_grid_thw: torch.LongTensor | None = ...
     ):  # -> Any:
         """
         Encodes images into continuous embeddings that can be forwarded to the language model.
@@ -518,8 +518,8 @@ class Qwen2_5OmniThinkerForConditionalGeneration(Qwen2_5OmniPreTrainedModelForCo
     def get_audio_features(
         self,
         input_features: torch.FloatTensor,
-        feature_attention_mask: Optional[torch.LongTensor] = ...,
-        audio_feature_lengths: Optional[torch.LongTensor] = ...,
+        feature_attention_mask: torch.LongTensor | None = ...,
+        audio_feature_lengths: torch.LongTensor | None = ...,
     ):  # -> Any:
         """
         Encodes audios into continuous embeddings that can be forwarded to the language model.
@@ -550,29 +550,29 @@ class Qwen2_5OmniThinkerForConditionalGeneration(Qwen2_5OmniPreTrainedModelForCo
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        input_features: Optional[torch.FloatTensor] = ...,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        pixel_values_videos: Optional[torch.FloatTensor] = ...,
-        image_grid_thw: Optional[torch.LongTensor] = ...,
-        video_grid_thw: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        feature_attention_mask: Optional[torch.Tensor] = ...,
-        audio_feature_lengths: Optional[torch.LongTensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        rope_deltas: Optional[torch.LongTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        use_audio_in_video: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        video_second_per_grid: Optional[torch.LongTensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        input_features: torch.FloatTensor | None = ...,
+        pixel_values: torch.FloatTensor | None = ...,
+        pixel_values_videos: torch.FloatTensor | None = ...,
+        image_grid_thw: torch.LongTensor | None = ...,
+        video_grid_thw: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        feature_attention_mask: torch.Tensor | None = ...,
+        audio_feature_lengths: torch.LongTensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        rope_deltas: torch.LongTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        use_audio_in_video: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        video_second_per_grid: torch.LongTensor | None = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> Union[tuple, Qwen2_5OmniThinkerCausalLMOutputWithPast]:
+    ) -> tuple | Qwen2_5OmniThinkerCausalLMOutputWithPast:
         r"""
         image_grid_thw (`torch.LongTensor` of shape `(num_images, 3)`, *optional*):
             The temporal, height and width of feature shape of each image in LLM.
@@ -676,12 +676,12 @@ class Qwen2_5OmniTalkerCausalLMOutputWithPast(ModelOutput):
         response that the talker model will use to generate speech tokens.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
+    loss: torch.FloatTensor | None = ...
     logits: torch.FloatTensor = ...
-    past_key_values: Optional[list[torch.FloatTensor]] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
-    rope_deltas: Optional[torch.LongTensor] = ...
+    past_key_values: list[torch.FloatTensor] | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
+    rope_deltas: torch.LongTensor | None = ...
     thinker_reply_part: torch.FloatTensor = ...
 
 @auto_docstring
@@ -692,18 +692,18 @@ class Qwen2_5OmniTalkerModel(Qwen2_5OmniPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> Union[tuple, BaseModelOutputWithPast]: ...
+    ) -> tuple | BaseModelOutputWithPast: ...
 
 class Qwen2_5OmniTalkerForConditionalGeneration(Qwen2_5OmniPreTrainedModelForConditionalGeneration, GenerationMixin):
     config: Qwen2_5OmniTalkerConfig
@@ -717,24 +717,24 @@ class Qwen2_5OmniTalkerForConditionalGeneration(Qwen2_5OmniPreTrainedModelForCon
     def forward(
         self,
         input_ids: torch.LongTensor = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        thinker_reply_part: Optional[torch.FloatTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        rope_deltas: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        input_text_ids: Optional[torch.LongTensor] = ...,
-        image_grid_thw: Optional[torch.LongTensor] = ...,
-        video_grid_thw: Optional[torch.LongTensor] = ...,
-        use_audio_in_video: Optional[bool] = ...,
-        audio_feature_lengths: Optional[torch.LongTensor] = ...,
-        video_second_per_grid: Optional[torch.LongTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, Qwen2_5OmniTalkerCausalLMOutputWithPast]:
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        thinker_reply_part: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        rope_deltas: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        input_text_ids: torch.LongTensor | None = ...,
+        image_grid_thw: torch.LongTensor | None = ...,
+        video_grid_thw: torch.LongTensor | None = ...,
+        use_audio_in_video: bool | None = ...,
+        audio_feature_lengths: torch.LongTensor | None = ...,
+        video_second_per_grid: torch.LongTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | Qwen2_5OmniTalkerCausalLMOutputWithPast:
         r"""
         thinker_reply_part (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*):
             Hidden states from the thinker model's output that represent the text reply part to be processed.
@@ -854,9 +854,9 @@ class DiTInputEmbedding(nn.Module):
         speaker_embedding: torch.Tensor,
         condition_vector: torch.Tensor,
         code_embed: torch.Tensor,
-        drop_audio_cond: Optional[bool] = ...,
-        code_embed_uncond: Optional[bool] = ...,
-        apply_cfg: Optional[bool] = ...,
+        drop_audio_cond: bool | None = ...,
+        code_embed_uncond: bool | None = ...,
+        apply_cfg: bool | None = ...,
     ):  # -> Tensor:
         ...
 
@@ -1091,10 +1091,10 @@ class Qwen2_5OmniForConditionalGeneration(Qwen2_5OmniPreTrainedModel, Generation
     @torch.no_grad()
     def generate(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
+        input_ids: torch.Tensor | None = ...,
         speaker: str = ...,
         use_audio_in_video: bool = ...,
-        return_audio: Optional[bool] = ...,
+        return_audio: bool | None = ...,
         thinker_max_new_tokens: int = ...,
         talker_max_new_tokens: int = ...,
         talker_do_sample: bool = ...,

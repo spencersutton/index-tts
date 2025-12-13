@@ -33,28 +33,28 @@ def diagonal(input: TensorLikeType, *, offset: int = ..., dim1: int = ..., dim2:
 def vector_norm(
     x: TensorLikeType,
     ord: float = ...,
-    dim: Optional[DimsType] = ...,
+    dim: DimsType | None = ...,
     keepdim: bool = ...,
     *,
-    dtype: Optional[torch.dtype] = ...,
+    dtype: torch.dtype | None = ...,
 ) -> Tensor: ...
 @out_wrapper(exact_dtype=True)
 def matrix_norm(
     A: TensorLikeType,
-    ord: Union[float, str] = ...,
+    ord: float | str = ...,
     dim: DimsType = ...,
     keepdim: bool = ...,
     *,
-    dtype: Optional[torch.dtype] = ...,
+    dtype: torch.dtype | None = ...,
 ) -> TensorLikeType: ...
 @out_wrapper(exact_dtype=True)
 def norm(
     A: TensorLikeType,
-    ord: Optional[Union[float, str]] = ...,
-    dim: Optional[DimsType] = ...,
+    ord: float | str | None = ...,
+    dim: DimsType | None = ...,
     keepdim: bool = ...,
     *,
-    dtype: Optional[torch.dtype] = ...,
+    dtype: torch.dtype | None = ...,
 ) -> TensorLikeType: ...
 @out_wrapper("U", "S", "Vh", exact_dtype=True)
 def svd(A: TensorLikeType, full_matrices: bool = ...) -> tuple[Tensor, Tensor, Tensor]: ...

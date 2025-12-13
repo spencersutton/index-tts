@@ -6,7 +6,8 @@ import flax.linen as nn
 import jax
 import jax.numpy as jnp
 import numpy as np
-from typing import Callable, Optional
+from typing import Optional
+from collections.abc import Callable
 from flax.core.frozen_dict import FrozenDict
 from jax.random import PRNGKey
 from ...modeling_flax_outputs import (
@@ -235,14 +236,14 @@ class FlaxT5PreTrainedModel(FlaxPreTrainedModel):
     def __call__(
         self,
         input_ids: jnp.ndarray,
-        attention_mask: Optional[jnp.ndarray] = ...,
+        attention_mask: jnp.ndarray | None = ...,
         decoder_input_ids: jnp.ndarray = ...,
-        decoder_attention_mask: Optional[jnp.ndarray] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        decoder_attention_mask: jnp.ndarray | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         train: bool = ...,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: PRNGKey = ...,
     ): ...
     def init_cache(self, batch_size, max_length, encoder_outputs):
@@ -266,12 +267,12 @@ class FlaxT5PreTrainedModel(FlaxPreTrainedModel):
     def encode(
         self,
         input_ids: jnp.ndarray,
-        attention_mask: Optional[jnp.ndarray] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        attention_mask: jnp.ndarray | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         train: bool = ...,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: PRNGKey = ...,
     ):
         r"""
@@ -297,14 +298,14 @@ class FlaxT5PreTrainedModel(FlaxPreTrainedModel):
         self,
         decoder_input_ids,
         encoder_outputs,
-        encoder_attention_mask: Optional[jnp.ndarray] = ...,
-        decoder_attention_mask: Optional[jnp.ndarray] = ...,
-        past_key_values: Optional[dict] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        encoder_attention_mask: jnp.ndarray | None = ...,
+        decoder_attention_mask: jnp.ndarray | None = ...,
+        past_key_values: dict | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         train: bool = ...,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: PRNGKey = ...,
     ):
         r"""
@@ -388,12 +389,12 @@ class FlaxT5EncoderModel(FlaxT5PreTrainedModel):
     def __call__(
         self,
         input_ids: jnp.ndarray,
-        attention_mask: Optional[jnp.ndarray] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        attention_mask: jnp.ndarray | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         train: bool = ...,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: PRNGKey = ...,
     ): ...
 
@@ -426,14 +427,14 @@ class FlaxT5ForConditionalGeneration(FlaxT5PreTrainedModel):
         self,
         decoder_input_ids,
         encoder_outputs,
-        encoder_attention_mask: Optional[jnp.ndarray] = ...,
-        decoder_attention_mask: Optional[jnp.ndarray] = ...,
-        past_key_values: Optional[dict] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        encoder_attention_mask: jnp.ndarray | None = ...,
+        decoder_attention_mask: jnp.ndarray | None = ...,
+        past_key_values: dict | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         train: bool = ...,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: PRNGKey = ...,
     ):  # -> FlaxCausalLMOutputWithCrossAttentions | Any:
         r"""
@@ -464,8 +465,8 @@ class FlaxT5ForConditionalGeneration(FlaxT5PreTrainedModel):
         self,
         decoder_input_ids,
         max_length,
-        attention_mask: Optional[jax.Array] = ...,
-        decoder_attention_mask: Optional[jax.Array] = ...,
+        attention_mask: jax.Array | None = ...,
+        decoder_attention_mask: jax.Array | None = ...,
         encoder_outputs=...,
         **kwargs,
     ):  # -> dict[str, Any | None]:

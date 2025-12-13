@@ -1,5 +1,6 @@
 import torch
-from typing import Any, Callable, Union
+from typing import Any, Union
+from collections.abc import Callable
 from torch._ops import OpOverload
 from torch._subclasses.fake_tensor import FakeTensor
 from torch.utils._python_dispatch import TorchDispatchMode
@@ -14,12 +15,12 @@ def output_alias_each_other(outputs):  # -> bool:
     ...
 def is_sdpa_error(func, idx, e):  # -> bool:
     ...
-def try_convert_fake_to_real(ten_list: list[Union[FakeTensor, Any]]) -> list[Union[FakeTensor, torch.Tensor, Any]]: ...
+def try_convert_fake_to_real(ten_list: list[FakeTensor | Any]) -> list[FakeTensor | torch.Tensor | Any]: ...
 
 class CrossRefFakeMode(TorchDispatchMode):
     def __init__(
         self,
-        ignore_op_fn: Union[Callable[[OpOverload], bool], None] = ...,
+        ignore_op_fn: Callable[[OpOverload], bool] | None = ...,
         *,
         check_strides=...,
         check_aliasing=...,

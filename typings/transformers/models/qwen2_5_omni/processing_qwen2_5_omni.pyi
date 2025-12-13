@@ -15,22 +15,22 @@ Processor class for Qwen2.5Omni.
 """
 
 class Qwen2_5_OmniVideosKwargs(VideosKwargs):
-    fps: Optional[list[Union[int, float]]] = ...
-    use_audio_in_video: Optional[bool] = ...
-    seconds_per_chunk: Optional[float] = ...
-    position_id_per_seconds: Optional[int] = ...
-    min_pixels: Optional[int]
-    max_pixels: Optional[int]
-    patch_size: Optional[int]
-    temporal_patch_size: Optional[int]
-    merge_size: Optional[int]
+    fps: list[int | float] | None = ...
+    use_audio_in_video: bool | None = ...
+    seconds_per_chunk: float | None = ...
+    position_id_per_seconds: int | None = ...
+    min_pixels: int | None
+    max_pixels: int | None
+    patch_size: int | None
+    temporal_patch_size: int | None
+    merge_size: int | None
 
 class Qwen2_5_OmniImagesKwargs(ImagesKwargs):
-    min_pixels: Optional[int]
-    max_pixels: Optional[int]
-    patch_size: Optional[int]
-    temporal_patch_size: Optional[int]
-    merge_size: Optional[int]
+    min_pixels: int | None
+    max_pixels: int | None
+    patch_size: int | None
+    temporal_patch_size: int | None
+    merge_size: int | None
     ...
 
 class Qwen2_5OmniProcessorKwargs(ProcessingKwargs, total=False):
@@ -67,7 +67,7 @@ class Qwen2_5OmniProcessor(ProcessorMixin):
     ) -> None: ...
     def __call__(
         self,
-        text: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]] = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] = ...,
         images: ImageInput = ...,
         videos: VideoInput = ...,
         audio: AudioInput = ...,

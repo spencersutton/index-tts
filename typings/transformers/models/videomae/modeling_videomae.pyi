@@ -27,9 +27,9 @@ class VideoMAEDecoderOutput(ModelOutput):
         Pixel reconstruction logits.
     """
 
-    logits: Optional[torch.FloatTensor] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
+    logits: torch.FloatTensor | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
 
 @dataclass
 @auto_docstring(
@@ -45,10 +45,10 @@ class VideoMAEForPreTrainingOutput(ModelOutput):
         Pixel reconstruction logits.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    logits: Optional[torch.FloatTensor] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
+    loss: torch.FloatTensor | None = ...
+    logits: torch.FloatTensor | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
 
 def get_sinusoid_encoding_table(n_position, d_hid):  # -> Tensor:
     """Sinusoid position encoding table"""
@@ -81,7 +81,7 @@ def eager_attention_forward(
     query: torch.Tensor,
     key: torch.Tensor,
     value: torch.Tensor,
-    attention_mask: Optional[torch.Tensor],
+    attention_mask: torch.Tensor | None,
     scaling: float,
     dropout: float = ...,
     **kwargs,
@@ -91,8 +91,8 @@ def eager_attention_forward(
 class VideoMAESelfAttention(nn.Module):
     def __init__(self, config: VideoMAEConfig) -> None: ...
     def forward(
-        self, hidden_states, head_mask: Optional[torch.Tensor] = ..., output_attentions: bool = ...
-    ) -> Union[tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor]]: ...
+        self, hidden_states, head_mask: torch.Tensor | None = ..., output_attentions: bool = ...
+    ) -> tuple[torch.Tensor, torch.Tensor] | tuple[torch.Tensor]: ...
 
 class VideoMAESelfOutput(nn.Module):
     """
@@ -106,8 +106,8 @@ class VideoMAEAttention(nn.Module):
     def __init__(self, config: VideoMAEConfig) -> None: ...
     def prune_heads(self, heads: set[int]) -> None: ...
     def forward(
-        self, hidden_states: torch.Tensor, head_mask: Optional[torch.Tensor] = ..., output_attentions: bool = ...
-    ) -> Union[tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor]]: ...
+        self, hidden_states: torch.Tensor, head_mask: torch.Tensor | None = ..., output_attentions: bool = ...
+    ) -> tuple[torch.Tensor, torch.Tensor] | tuple[torch.Tensor]: ...
 
 class VideoMAEIntermediate(nn.Module):
     def __init__(self, config: VideoMAEConfig) -> None: ...
@@ -121,19 +121,19 @@ class VideoMAELayer(GradientCheckpointingLayer):
     """This corresponds to the Block class in the timm implementation."""
     def __init__(self, config: VideoMAEConfig) -> None: ...
     def forward(
-        self, hidden_states: torch.Tensor, head_mask: Optional[torch.Tensor] = ..., output_attentions: bool = ...
-    ) -> Union[tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor]]: ...
+        self, hidden_states: torch.Tensor, head_mask: torch.Tensor | None = ..., output_attentions: bool = ...
+    ) -> tuple[torch.Tensor, torch.Tensor] | tuple[torch.Tensor]: ...
 
 class VideoMAEEncoder(nn.Module):
     def __init__(self, config: VideoMAEConfig) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        head_mask: Optional[torch.Tensor] = ...,
+        head_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ) -> Union[tuple, BaseModelOutput]: ...
+    ) -> tuple | BaseModelOutput: ...
 
 @auto_docstring
 class VideoMAEPreTrainedModel(PreTrainedModel):
@@ -155,12 +155,12 @@ class VideoMAEModel(VideoMAEPreTrainedModel):
     def forward(
         self,
         pixel_values: torch.FloatTensor,
-        bool_masked_pos: Optional[torch.BoolTensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutput]:
+        bool_masked_pos: torch.BoolTensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutput:
         r"""
         bool_masked_pos (`torch.BoolTensor` of shape `(batch_size, sequence_length)`, *optional*):
             Boolean masked positions. Indicates which patches are masked (1) and which aren't (0). Each video in the
@@ -261,11 +261,11 @@ class VideoMAEForPreTraining(VideoMAEPreTrainedModel):
         self,
         pixel_values: torch.FloatTensor,
         bool_masked_pos: torch.BoolTensor,
-        head_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, VideoMAEForPreTrainingOutput]:
+        head_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | VideoMAEForPreTrainingOutput:
         r"""
         bool_masked_pos (`torch.BoolTensor` of shape `(batch_size, sequence_length)`):
             Boolean masked positions. Indicates which patches are masked (1) and which aren't (0). Each video in the
@@ -306,13 +306,13 @@ class VideoMAEForVideoClassification(VideoMAEPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ImageClassifierOutput]:
+        pixel_values: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | ImageClassifierOutput:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the image classification/regression loss. Indices should be in `[0, ...,

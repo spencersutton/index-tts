@@ -9,7 +9,7 @@ from .semi_structured import (
 )
 
 if TYPE_CHECKING:
-    DimOrDims: TypeAlias = int | tuple[int, ...] | list[int] | None
+    type DimOrDims = int | tuple[int, ...] | list[int] | None
     ...
 __all__ = [
     "SparseSemiStructuredTensor",

@@ -364,13 +364,13 @@ class NeptuneCallback(TrainerCallback):
     def __init__(
         self,
         *,
-        api_token: Optional[str] = ...,
-        project: Optional[str] = ...,
-        name: Optional[str] = ...,
+        api_token: str | None = ...,
+        project: str | None = ...,
+        name: str | None = ...,
         base_namespace: str = ...,
         run=...,
         log_parameters: bool = ...,
-        log_checkpoints: Optional[str] = ...,
+        log_checkpoints: str | None = ...,
         **neptune_run_kwargs,
     ) -> None: ...
     @property
@@ -391,7 +391,7 @@ class NeptuneCallback(TrainerCallback):
     @classmethod
     def get_run(cls, trainer):  # -> None:
         ...
-    def on_log(self, args, state, control, logs: Optional[dict[str, float]] = ..., **kwargs):  # -> None:
+    def on_log(self, args, state, control, logs: dict[str, float] | None = ..., **kwargs):  # -> None:
         ...
 
 class CodeCarbonCallback(TrainerCallback):
@@ -489,9 +489,7 @@ class DVCLiveCallback(TrainerCallback):
             the final checkpoint is logged at the end of training. If set to `"all"`, the entire
             [`TrainingArguments`]'s `output_dir` is logged at each checkpoint.
     """
-    def __init__(
-        self, live: Optional[Any] = ..., log_model: Optional[Union[Literal["all"], bool]] = ..., **kwargs
-    ) -> None: ...
+    def __init__(self, live: Any | None = ..., log_model: Literal["all"] | bool | None = ..., **kwargs) -> None: ...
     def setup(self, args, state, model):  # -> None:
         """
         Setup the optional DVCLive integration. To customize this callback beyond the environment variables below, see

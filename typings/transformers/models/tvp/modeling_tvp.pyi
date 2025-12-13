@@ -29,10 +29,10 @@ class TvpVideoGroundingOutput(ModelOutput):
         sequence_length)`.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    logits: Optional[torch.FloatTensor] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
-    attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
+    loss: torch.FloatTensor | None = ...
+    logits: torch.FloatTensor | None = ...
+    hidden_states: tuple[torch.FloatTensor, ...] | None = ...
+    attentions: tuple[torch.FloatTensor, ...] | None = ...
 
 class TvpLoss(nn.Module):
     """
@@ -130,7 +130,7 @@ class TvpAttention(nn.Module):
     def prune_heads(self, heads):  # -> None:
         ...
     def forward(
-        self, hidden_states, attention_mask=..., head_mask=..., output_attentions: Optional[bool] = ...
+        self, hidden_states, attention_mask=..., head_mask=..., output_attentions: bool | None = ...
     ):  # -> tuple[Any, Any] | tuple[Any]:
         ...
 
@@ -145,7 +145,7 @@ class TvpOutputLayer(nn.Module):
 class TvpEncodeLayer(GradientCheckpointingLayer):
     def __init__(self, config) -> None: ...
     def forward(
-        self, hidden_states, attention_mask=..., head_mask=..., output_attentions: Optional[bool] = ...
+        self, hidden_states, attention_mask=..., head_mask=..., output_attentions: bool | None = ...
     ):  # -> Any:
         ...
 
@@ -155,10 +155,10 @@ class TvpEncoder(nn.Module):
         self,
         hidden_states,
         attention_mask=...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
     ):  # -> tuple[Any | tuple[Any, ...] | tuple[()] | tuple[Any], ...] | tuple[Any, ...] | tuple[Any, tuple[Any, ...] | tuple[()] | tuple[Any]] | tuple[Any] | BaseModelOutput:
         ...
 
@@ -210,13 +210,13 @@ class TvpModel(TvpPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        attention_mask: Optional[torch.LongTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        pixel_values: torch.FloatTensor | None = ...,
+        attention_mask: torch.LongTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         interpolate_pos_encoding: bool = ...,
     ):  # -> Any | BaseModelOutputWithPooling:
         r"""
@@ -250,14 +250,14 @@ class TvpForVideoGrounding(TvpPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        attention_mask: Optional[torch.LongTensor] = ...,
-        labels: Optional[tuple[torch.Tensor]] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        pixel_values: torch.FloatTensor | None = ...,
+        attention_mask: torch.LongTensor | None = ...,
+        labels: tuple[torch.Tensor] | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         interpolate_pos_encoding: bool = ...,
     ):  # -> Any | TvpVideoGroundingOutput:
         r"""

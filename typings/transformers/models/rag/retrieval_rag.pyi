@@ -115,8 +115,8 @@ class CanonicalHFIndex(HFIndexBase):
         vector_size: int,
         dataset_name: str = ...,
         dataset_split: str = ...,
-        index_name: Optional[str] = ...,
-        index_path: Optional[str] = ...,
+        index_name: str | None = ...,
+        index_path: str | None = ...,
         use_dummy_dataset=...,
         dataset_revision=...,
     ) -> None: ...

@@ -23,9 +23,9 @@ class BlipTextEmbeddings(nn.Module):
     def __init__(self, config) -> None: ...
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
         past_key_values_length: int = ...,
     ) -> torch.Tensor: ...
 
@@ -40,13 +40,13 @@ class BlipTextSelfAttention(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        encoder_hidden_states: Optional[torch.FloatTensor] = ...,
-        encoder_attention_mask: Optional[torch.FloatTensor] = ...,
-        past_key_value: Optional[Cache] = ...,
-        output_attentions: Optional[bool] = ...,
-        cache_position: Optional[torch.Tensor] = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        encoder_hidden_states: torch.FloatTensor | None = ...,
+        encoder_attention_mask: torch.FloatTensor | None = ...,
+        past_key_value: Cache | None = ...,
+        output_attentions: bool | None = ...,
+        cache_position: torch.Tensor | None = ...,
     ) -> tuple[torch.Tensor]: ...
 
 class BlipTextSelfOutput(nn.Module):
@@ -60,12 +60,12 @@ class BlipTextAttention(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        encoder_hidden_states: Optional[torch.FloatTensor] = ...,
-        past_key_value: Optional[Cache] = ...,
-        output_attentions: Optional[bool] = ...,
-        cache_position: Optional[torch.Tensor] = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        encoder_hidden_states: torch.FloatTensor | None = ...,
+        past_key_value: Cache | None = ...,
+        output_attentions: bool | None = ...,
+        cache_position: torch.Tensor | None = ...,
     ) -> tuple[torch.Tensor]: ...
 
 class BlipTextIntermediate(nn.Module):
@@ -81,13 +81,13 @@ class BlipTextLayer(GradientCheckpointingLayer):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        encoder_hidden_states: Optional[torch.FloatTensor] = ...,
-        encoder_attention_mask: Optional[torch.FloatTensor] = ...,
-        past_key_value: Optional[Cache] = ...,
-        output_attentions: Optional[bool] = ...,
-        cache_position: Optional[torch.Tensor] = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        encoder_hidden_states: torch.FloatTensor | None = ...,
+        encoder_attention_mask: torch.FloatTensor | None = ...,
+        past_key_value: Cache | None = ...,
+        output_attentions: bool | None = ...,
+        cache_position: torch.Tensor | None = ...,
     ) -> tuple[torch.Tensor]: ...
     def feed_forward_chunk(self, attention_output):  # -> Any:
         ...
@@ -97,17 +97,17 @@ class BlipTextEncoder(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        encoder_hidden_states: Optional[torch.FloatTensor] = ...,
-        encoder_attention_mask: Optional[torch.FloatTensor] = ...,
-        past_key_values: Optional[tuple[tuple[torch.FloatTensor]]] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple[torch.Tensor], BaseModelOutputWithPastAndCrossAttentions]: ...
+        attention_mask: torch.FloatTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        encoder_hidden_states: torch.FloatTensor | None = ...,
+        encoder_attention_mask: torch.FloatTensor | None = ...,
+        past_key_values: tuple[tuple[torch.FloatTensor]] | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.Tensor | None = ...,
+    ) -> tuple[torch.Tensor] | BaseModelOutputWithPastAndCrossAttentions: ...
 
 class BlipTextPooler(nn.Module):
     def __init__(self, config) -> None: ...
@@ -170,22 +170,22 @@ class BlipTextModel(BlipTextPreTrainedModel):
 
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        encoder_embeds: Optional[torch.Tensor] = ...,
-        encoder_hidden_states: Optional[torch.Tensor] = ...,
-        encoder_attention_mask: Optional[torch.Tensor] = ...,
-        past_key_values: Optional[list[torch.FloatTensor]] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        is_decoder: Optional[bool] = ...,
-        cache_position: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple[torch.Tensor], BaseModelOutputWithPoolingAndCrossAttentions]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        encoder_embeds: torch.Tensor | None = ...,
+        encoder_hidden_states: torch.Tensor | None = ...,
+        encoder_attention_mask: torch.Tensor | None = ...,
+        past_key_values: list[torch.FloatTensor] | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        is_decoder: bool | None = ...,
+        cache_position: torch.Tensor | None = ...,
+    ) -> tuple[torch.Tensor] | BaseModelOutputWithPoolingAndCrossAttentions:
         r"""
         encoder_hidden_states  (`torch.FloatTensor`, *optional*):
             Sequence of hidden-states at the output of the last layer of the encoder. Used in the cross-attention if
@@ -218,24 +218,24 @@ class BlipTextLMHeadModel(BlipTextPreTrainedModel, GenerationMixin):
         ...
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        encoder_hidden_states: Optional[torch.Tensor] = ...,
-        encoder_attention_mask: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        past_key_values: Optional[list[torch.Tensor]] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        return_logits: Optional[bool] = ...,
-        is_decoder: Optional[bool] = ...,
-        reduction: Optional[str] = ...,
-        cache_position: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple[torch.Tensor], CausalLMOutputWithCrossAttentions]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        encoder_hidden_states: torch.Tensor | None = ...,
+        encoder_attention_mask: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        past_key_values: list[torch.Tensor] | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        return_logits: bool | None = ...,
+        is_decoder: bool | None = ...,
+        reduction: str | None = ...,
+        cache_position: torch.Tensor | None = ...,
+    ) -> tuple[torch.Tensor] | CausalLMOutputWithCrossAttentions:
         r"""
         encoder_hidden_states (`torch.FloatTensor`, *optional*): Sequence of
             hidden-states at the output of the last layer of the encoder. Used in the cross-attention if the model is

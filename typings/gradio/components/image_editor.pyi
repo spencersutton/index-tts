@@ -28,7 +28,7 @@ class EditorValue(TypedDict):
 
 class EditorExampleValue(TypedDict):
     background: str | None
-    layers: list[Union[str, None]] | None
+    layers: list[str | None] | None
     composite: str | None
     ...
 
@@ -40,7 +40,7 @@ class EditorData(GradioModel):
 
 class EditorDataBlobs(GradioModel):
     background: bytes | None
-    layers: list[Union[bytes, None]]
+    layers: list[bytes | None]
     composite: bytes | None
     ...
 
@@ -123,16 +123,8 @@ class WatermarkOptions:
         position: (x,y) coordinates as tuple[int, int] or string position ('top-left', 'top-right', 'bottom-left', 'bottom-right'). Default is 'bottom-right'.
     """
 
-    watermark: Union[str, Path, PIL.Image.Image, np.ndarray, None] = ...
-    position: Union[
-        tuple[int, int],
-        Literal[
-            "top-left",
-            "top-right",
-            "bottom-left",
-            "bottom-right",
-        ],
-    ] = ...
+    watermark: str | Path | PIL.Image.Image | np.ndarray | None = ...
+    position: tuple[int, int] | Literal["top-left", "top-right", "bottom-left", "bottom-right"] = ...
     def __post_init__(self): ...
 
 @document()

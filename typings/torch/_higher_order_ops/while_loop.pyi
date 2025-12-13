@@ -1,5 +1,6 @@
 import torch
-from typing import Callable, Union
+from typing import Union
+from collections.abc import Callable
 from torch._C import DispatchKey
 from torch._ops import HigherOrderOperator
 from torch._subclasses.fake_tensor import FakeTensorMode
@@ -11,8 +12,8 @@ class WhileLoopOp(HigherOrderOperator):
         self,
         cond_fn: Callable,
         body_fn: Callable,
-        carried_inputs: tuple[Union[torch.Tensor, int, float, bool]],
-        additional_inputs: tuple[Union[torch.Tensor, torch.SymInt, int], ...],
+        carried_inputs: tuple[torch.Tensor | int | float | bool],
+        additional_inputs: tuple[torch.Tensor | torch.SymInt | int, ...],
         /,
     ):  # -> Any | None:
         ...
@@ -48,8 +49,8 @@ class WhileLoopStackOutputOp(HigherOrderOperator):
         self,
         cond_fn: Callable,
         body_fn: Callable,
-        carried_inputs: tuple[Union[torch.Tensor, int, float, bool]],
-        additional_inputs: tuple[Union[torch.Tensor, torch.SymInt, int], ...],
+        carried_inputs: tuple[torch.Tensor | int | float | bool],
+        additional_inputs: tuple[torch.Tensor | torch.SymInt | int, ...],
         /,
     ):  # -> Any | None:
         ...

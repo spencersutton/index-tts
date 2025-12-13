@@ -25,10 +25,10 @@ logger = ...
 
 class RoFormerSinusoidalPositionalEmbedding(nn.Embedding):
     """This module produces sinusoidal positional embeddings of any length."""
-    def __init__(self, num_positions: int, embedding_dim: int, padding_idx: Optional[int] = ...) -> None: ...
+    def __init__(self, num_positions: int, embedding_dim: int, padding_idx: int | None = ...) -> None: ...
     @torch.no_grad()
     def forward(
-        self, input_ids_shape: torch.Size, past_key_values_length: int = ..., position_ids: Optional[torch.Tensor] = ...
+        self, input_ids_shape: torch.Size, past_key_values_length: int = ..., position_ids: torch.Tensor | None = ...
     ) -> torch.Tensor:
         """`input_ids_shape` is expected to be [bsz x seqlen]."""
         ...
@@ -154,9 +154,7 @@ class RoFormerSequenceSummary(nn.Module):
             - **summary_last_dropout** (`float`)-- Optional dropout probability after the projection and activation.
     """
     def __init__(self, config: RoFormerConfig) -> None: ...
-    def forward(
-        self, hidden_states: torch.FloatTensor, cls_index: Optional[torch.LongTensor] = ...
-    ) -> torch.FloatTensor:
+    def forward(self, hidden_states: torch.FloatTensor, cls_index: torch.LongTensor | None = ...) -> torch.FloatTensor:
         """
         Compute a single vector summary of a sequence hidden states.
 
@@ -214,20 +212,20 @@ class RoFormerModel(RoFormerPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        token_type_ids: Optional[torch.LongTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        encoder_hidden_states: Optional[torch.FloatTensor] = ...,
-        encoder_attention_mask: Optional[torch.FloatTensor] = ...,
-        past_key_values: Optional[tuple[tuple[torch.FloatTensor]]] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.Tensor] = ...,
-    ) -> Union[BaseModelOutputWithPastAndCrossAttentions, tuple[torch.Tensor]]: ...
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        encoder_hidden_states: torch.FloatTensor | None = ...,
+        encoder_attention_mask: torch.FloatTensor | None = ...,
+        past_key_values: tuple[tuple[torch.FloatTensor]] | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.Tensor | None = ...,
+    ) -> BaseModelOutputWithPastAndCrossAttentions | tuple[torch.Tensor]: ...
 
 @auto_docstring
 class RoFormerForMaskedLM(RoFormerPreTrainedModel):
@@ -240,18 +238,18 @@ class RoFormerForMaskedLM(RoFormerPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        token_type_ids: Optional[torch.LongTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        encoder_hidden_states: Optional[torch.FloatTensor] = ...,
-        encoder_attention_mask: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[MaskedLMOutput, tuple[torch.Tensor]]:
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        encoder_hidden_states: torch.FloatTensor | None = ...,
+        encoder_attention_mask: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> MaskedLMOutput | tuple[torch.Tensor]:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
             Labels for computing the masked language modeling loss. Indices should be in `[-100, 0, ...,
@@ -280,23 +278,23 @@ class RoFormerForCausalLM(RoFormerPreTrainedModel, GenerationMixin):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        token_type_ids: Optional[torch.LongTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        encoder_hidden_states: Optional[torch.FloatTensor] = ...,
-        encoder_attention_mask: Optional[torch.FloatTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        cross_attn_head_mask: Optional[torch.Tensor] = ...,
-        past_key_values: Optional[tuple[tuple[torch.FloatTensor]]] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.Tensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        encoder_hidden_states: torch.FloatTensor | None = ...,
+        encoder_attention_mask: torch.FloatTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        cross_attn_head_mask: torch.Tensor | None = ...,
+        past_key_values: tuple[tuple[torch.FloatTensor]] | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.Tensor | None = ...,
         **kwargs,
-    ) -> Union[CausalLMOutputWithCrossAttentions, tuple[torch.Tensor]]:
+    ) -> CausalLMOutputWithCrossAttentions | tuple[torch.Tensor]:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
             Labels for computing the left-to-right language modeling loss (next word prediction). Indices should be in
@@ -338,16 +336,16 @@ class RoFormerForSequenceClassification(RoFormerPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        token_type_ids: Optional[torch.LongTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[SequenceClassifierOutput, tuple[torch.Tensor]]:
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> SequenceClassifierOutput | tuple[torch.Tensor]:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
@@ -362,16 +360,16 @@ class RoFormerForMultipleChoice(RoFormerPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        token_type_ids: Optional[torch.LongTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[MultipleChoiceModelOutput, tuple[torch.Tensor]]:
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> MultipleChoiceModelOutput | tuple[torch.Tensor]:
         r"""
         input_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`):
             Indices of input sequence tokens in the vocabulary.
@@ -405,16 +403,16 @@ class RoFormerForTokenClassification(RoFormerPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        token_type_ids: Optional[torch.LongTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[TokenClassifierOutput, tuple[torch.Tensor]]:
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> TokenClassifierOutput | tuple[torch.Tensor]:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
             Labels for computing the token classification loss. Indices should be in `[0, ..., config.num_labels - 1]`.
@@ -427,17 +425,17 @@ class RoFormerForQuestionAnswering(RoFormerPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        token_type_ids: Optional[torch.LongTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        start_positions: Optional[torch.LongTensor] = ...,
-        end_positions: Optional[torch.LongTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[QuestionAnsweringModelOutput, tuple[torch.Tensor]]: ...
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        start_positions: torch.LongTensor | None = ...,
+        end_positions: torch.LongTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> QuestionAnsweringModelOutput | tuple[torch.Tensor]: ...
 
 __all__ = [
     "RoFormerForCausalLM",

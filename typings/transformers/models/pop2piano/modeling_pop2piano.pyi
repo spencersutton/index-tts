@@ -48,7 +48,7 @@ class Pop2PianoLayerFF(nn.Module):
 
 class Pop2PianoAttention(nn.Module):
     def __init__(
-        self, config: Pop2PianoConfig, has_relative_attention_bias=..., layer_idx: Optional[int] = ...
+        self, config: Pop2PianoConfig, has_relative_attention_bias=..., layer_idx: int | None = ...
     ) -> None: ...
     def prune_heads(self, heads):  # -> None:
         ...
@@ -75,7 +75,7 @@ class Pop2PianoAttention(nn.Module):
         ...
 
 class Pop2PianoLayerSelfAttention(nn.Module):
-    def __init__(self, config, has_relative_attention_bias=..., layer_idx: Optional[int] = ...) -> None: ...
+    def __init__(self, config, has_relative_attention_bias=..., layer_idx: int | None = ...) -> None: ...
     def forward(
         self,
         hidden_states,
@@ -90,7 +90,7 @@ class Pop2PianoLayerSelfAttention(nn.Module):
         ...
 
 class Pop2PianoLayerCrossAttention(nn.Module):
-    def __init__(self, config, layer_idx: Optional[int] = ...) -> None: ...
+    def __init__(self, config, layer_idx: int | None = ...) -> None: ...
     def forward(
         self,
         hidden_states,
@@ -107,7 +107,7 @@ class Pop2PianoLayerCrossAttention(nn.Module):
         ...
 
 class Pop2PianoBlock(GradientCheckpointingLayer):
-    def __init__(self, config, has_relative_attention_bias=..., layer_idx: Optional[int] = ...) -> None: ...
+    def __init__(self, config, has_relative_attention_bias=..., layer_idx: int | None = ...) -> None: ...
     def forward(
         self,
         hidden_states,
@@ -184,7 +184,7 @@ class Pop2PianoForConditionalGeneration(Pop2PianoPreTrainedModel, GenerationMixi
         input_features: torch.FloatTensor,
         composer: str,
         generation_config: GenerationConfig,
-        attention_mask: Optional[torch.FloatTensor] = ...,
+        attention_mask: torch.FloatTensor | None = ...,
     ):  # -> tuple[FloatTensor, Any | FloatTensor | None] | tuple[FloatTensor, None]:
         """
         This method is used to concatenate mel conditioner tokens at the front of the input_features in order to
@@ -208,25 +208,25 @@ class Pop2PianoForConditionalGeneration(Pop2PianoPreTrainedModel, GenerationMixi
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        decoder_input_ids: Optional[torch.LongTensor] = ...,
-        decoder_attention_mask: Optional[torch.BoolTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        decoder_head_mask: Optional[torch.FloatTensor] = ...,
-        cross_attn_head_mask: Optional[torch.Tensor] = ...,
-        encoder_outputs: Optional[tuple[tuple[torch.Tensor]]] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        input_features: Optional[torch.FloatTensor] = ...,
-        decoder_inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple[torch.FloatTensor], Seq2SeqLMOutput]:
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        decoder_input_ids: torch.LongTensor | None = ...,
+        decoder_attention_mask: torch.BoolTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        decoder_head_mask: torch.FloatTensor | None = ...,
+        cross_attn_head_mask: torch.Tensor | None = ...,
+        encoder_outputs: tuple[tuple[torch.Tensor]] | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        input_features: torch.FloatTensor | None = ...,
+        decoder_inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+    ) -> tuple[torch.FloatTensor] | Seq2SeqLMOutput:
         r"""
         input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
             Indices of input sequence tokens in the vocabulary. Pop2Piano is a model with relative position embeddings

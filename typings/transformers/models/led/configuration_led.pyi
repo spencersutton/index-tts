@@ -106,7 +106,7 @@ class LEDConfig(PretrainedConfig):
         pad_token_id=...,
         bos_token_id=...,
         eos_token_id=...,
-        attention_window: Union[list[int], int] = ...,
+        attention_window: list[int] | int = ...,
         **kwargs,
     ) -> None: ...
 

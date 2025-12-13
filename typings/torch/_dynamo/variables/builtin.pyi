@@ -1,7 +1,8 @@
 import contextlib
 import typing
 from collections.abc import Sequence
-from typing import Any, Callable, TYPE_CHECKING, Union
+from typing import Any, TYPE_CHECKING, Union
+from collections.abc import Callable
 from torch.overrides import BaseTorchFunctionMode
 from .base import VariableTracker
 from torch._dynamo.codegen import PyCodegen
@@ -30,8 +31,8 @@ or by creating appropriate graph nodes when needed.
 if TYPE_CHECKING: ...
 log = ...
 IN_PLACE_DESUGARING_MAP = ...
-_HandlerCallback: typing.TypeAlias = Callable[[InstructionTranslator, typing.Any, typing.Any], VariableTracker]
-_TrackersType: typing.TypeAlias = Union[type[VariableTracker], tuple[type[VariableTracker], ...]]
+type _HandlerCallback = Callable[[InstructionTranslator, typing.Any, typing.Any], VariableTracker]
+type _TrackersType = type[VariableTracker] | tuple[type[VariableTracker], ...]
 polyfill_fn_mapping = ...
 bin_ops = ...
 bin_int_ops = ...

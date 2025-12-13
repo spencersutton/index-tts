@@ -179,7 +179,7 @@ def parse_docstring(
     """
     ...
 
-def contains_type(type_hint, target_type) -> tuple[bool, Optional[object]]:
+def contains_type(type_hint, target_type) -> tuple[bool, object | None]:
     """
     Check if a "nested" type hint contains a specific target type,
     return the first-level type containing the target_type if found.
@@ -205,7 +205,7 @@ def format_args_docstring(docstring, model_name):
     """
     ...
 
-def get_args_doc_from_source(args_classes: Union[object, list[object]]) -> dict: ...
+def get_args_doc_from_source(args_classes: object | list[object]) -> dict: ...
 def get_checkpoint_from_config_class(config_class):  # -> Any | None:
     ...
 def add_intro_docstring(func, class_name, parent_class=..., indent_level=...):  # -> str:

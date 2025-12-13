@@ -34,8 +34,8 @@ class FlaxXGLMAttention(nn.Module):
     def __call__(
         self,
         hidden_states: jnp.ndarray,
-        key_value_states: Optional[jnp.ndarray] = ...,
-        attention_mask: Optional[jnp.ndarray] = ...,
+        key_value_states: jnp.ndarray | None = ...,
+        attention_mask: jnp.ndarray | None = ...,
         init_cache: bool = ...,
         deterministic: bool = ...,
     ) -> tuple[jnp.ndarray]:
@@ -50,8 +50,8 @@ class FlaxXGLMDecoderLayer(nn.Module):
         self,
         hidden_states: jnp.ndarray,
         attention_mask: jnp.ndarray,
-        encoder_hidden_states: Optional[jnp.ndarray] = ...,
-        encoder_attention_mask: Optional[jnp.ndarray] = ...,
+        encoder_hidden_states: jnp.ndarray | None = ...,
+        encoder_attention_mask: jnp.ndarray | None = ...,
         init_cache: bool = ...,
         output_attentions: bool = ...,
         deterministic: bool = ...,
@@ -66,8 +66,8 @@ class FlaxXGLMDecoderLayerCollection(nn.Module):
         self,
         hidden_states,
         attention_mask,
-        encoder_hidden_states: Optional[jnp.ndarray] = ...,
-        encoder_attention_mask: Optional[jnp.ndarray] = ...,
+        encoder_hidden_states: jnp.ndarray | None = ...,
+        encoder_attention_mask: jnp.ndarray | None = ...,
         deterministic: bool = ...,
         init_cache: bool = ...,
         output_attentions: bool = ...,
@@ -86,8 +86,8 @@ class FlaxXGLMModule(nn.Module):
         input_ids,
         attention_mask,
         position_ids,
-        encoder_hidden_states: Optional[jnp.ndarray] = ...,
-        encoder_attention_mask: Optional[jnp.ndarray] = ...,
+        encoder_hidden_states: jnp.ndarray | None = ...,
+        encoder_attention_mask: jnp.ndarray | None = ...,
         init_cache: bool = ...,
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
@@ -125,16 +125,16 @@ class FlaxXGLMPreTrainedModel(FlaxPreTrainedModel):
     def __call__(
         self,
         input_ids: jnp.ndarray,
-        attention_mask: Optional[jnp.ndarray] = ...,
-        position_ids: Optional[jnp.ndarray] = ...,
-        encoder_hidden_states: Optional[jnp.ndarray] = ...,
-        encoder_attention_mask: Optional[jnp.ndarray] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        attention_mask: jnp.ndarray | None = ...,
+        position_ids: jnp.ndarray | None = ...,
+        encoder_hidden_states: jnp.ndarray | None = ...,
+        encoder_attention_mask: jnp.ndarray | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         train: bool = ...,
-        params: Optional[dict] = ...,
-        past_key_values: Optional[dict] = ...,
+        params: dict | None = ...,
+        past_key_values: dict | None = ...,
         dropout_rng: PRNGKey = ...,
     ): ...
 
@@ -155,8 +155,8 @@ class FlaxXGLMForCausalLMModule(nn.Module):
         input_ids,
         attention_mask,
         position_ids,
-        encoder_hidden_states: Optional[jnp.ndarray] = ...,
-        encoder_attention_mask: Optional[jnp.ndarray] = ...,
+        encoder_hidden_states: jnp.ndarray | None = ...,
+        encoder_attention_mask: jnp.ndarray | None = ...,
         init_cache: bool = ...,
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
@@ -175,7 +175,7 @@ class FlaxXGLMForCausalLMModule(nn.Module):
 class FlaxXGLMForCausalLM(FlaxXGLMPreTrainedModel):
     module_class = ...
     def prepare_inputs_for_generation(
-        self, input_ids, max_length, attention_mask: Optional[jax.Array] = ...
+        self, input_ids, max_length, attention_mask: jax.Array | None = ...
     ):  # -> dict[str, Any]:
         ...
     def update_inputs_for_generation(self, model_outputs, model_kwargs): ...

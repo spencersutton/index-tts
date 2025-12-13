@@ -47,9 +47,9 @@ class NezhaEmbeddings(nn.Module):
     def __init__(self, config) -> None: ...
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        token_type_ids: Optional[torch.LongTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
     ) -> torch.Tensor: ...
 
 class NezhaSelfAttention(nn.Module):
@@ -58,12 +58,12 @@ class NezhaSelfAttention(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        encoder_hidden_states: Optional[torch.FloatTensor] = ...,
-        encoder_attention_mask: Optional[torch.FloatTensor] = ...,
-        past_key_value: Optional[tuple[tuple[torch.FloatTensor]]] = ...,
-        output_attentions: Optional[bool] = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        encoder_hidden_states: torch.FloatTensor | None = ...,
+        encoder_attention_mask: torch.FloatTensor | None = ...,
+        past_key_value: tuple[tuple[torch.FloatTensor]] | None = ...,
+        output_attentions: bool | None = ...,
     ) -> tuple[torch.Tensor]: ...
 
 class NezhaSelfOutput(nn.Module):
@@ -77,12 +77,12 @@ class NezhaAttention(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        encoder_hidden_states: Optional[torch.FloatTensor] = ...,
-        encoder_attention_mask: Optional[torch.FloatTensor] = ...,
-        past_key_value: Optional[tuple[tuple[torch.FloatTensor]]] = ...,
-        output_attentions: Optional[bool] = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        encoder_hidden_states: torch.FloatTensor | None = ...,
+        encoder_attention_mask: torch.FloatTensor | None = ...,
+        past_key_value: tuple[tuple[torch.FloatTensor]] | None = ...,
+        output_attentions: bool | None = ...,
     ) -> tuple[torch.Tensor]: ...
 
 class NezhaIntermediate(nn.Module):
@@ -98,12 +98,12 @@ class NezhaLayer(GradientCheckpointingLayer):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        encoder_hidden_states: Optional[torch.FloatTensor] = ...,
-        encoder_attention_mask: Optional[torch.FloatTensor] = ...,
-        past_key_value: Optional[tuple[tuple[torch.FloatTensor]]] = ...,
-        output_attentions: Optional[bool] = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        encoder_hidden_states: torch.FloatTensor | None = ...,
+        encoder_attention_mask: torch.FloatTensor | None = ...,
+        past_key_value: tuple[tuple[torch.FloatTensor]] | None = ...,
+        output_attentions: bool | None = ...,
     ) -> tuple[torch.Tensor]: ...
     def feed_forward_chunk(self, attention_output):  # -> Any:
         ...
@@ -113,16 +113,16 @@ class NezhaEncoder(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        encoder_hidden_states: Optional[torch.FloatTensor] = ...,
-        encoder_attention_mask: Optional[torch.FloatTensor] = ...,
-        past_key_values: Optional[tuple[tuple[torch.FloatTensor]]] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], BaseModelOutputWithPastAndCrossAttentions]: ...
+        attention_mask: torch.FloatTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        encoder_hidden_states: torch.FloatTensor | None = ...,
+        encoder_attention_mask: torch.FloatTensor | None = ...,
+        past_key_values: tuple[tuple[torch.FloatTensor]] | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.Tensor] | BaseModelOutputWithPastAndCrossAttentions: ...
 
 class NezhaPooler(nn.Module):
     def __init__(self, config) -> None: ...
@@ -189,11 +189,11 @@ class NezhaForPreTrainingOutput(ModelOutput):
             heads.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    prediction_logits: Optional[torch.FloatTensor] = ...
-    seq_relationship_logits: Optional[torch.FloatTensor] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
+    loss: torch.FloatTensor | None = ...
+    prediction_logits: torch.FloatTensor | None = ...
+    seq_relationship_logits: torch.FloatTensor | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
 
 NEZHA_START_DOCSTRING = ...
 NEZHA_INPUTS_DOCSTRING = ...
@@ -227,19 +227,19 @@ class NezhaModel(NezhaPreTrainedModel):
     )
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        encoder_hidden_states: Optional[torch.Tensor] = ...,
-        encoder_attention_mask: Optional[torch.Tensor] = ...,
-        past_key_values: Optional[list[torch.FloatTensor]] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], BaseModelOutputWithPoolingAndCrossAttentions]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        encoder_hidden_states: torch.Tensor | None = ...,
+        encoder_attention_mask: torch.Tensor | None = ...,
+        past_key_values: list[torch.FloatTensor] | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.Tensor] | BaseModelOutputWithPoolingAndCrossAttentions:
         r"""
         encoder_hidden_states  (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*):
             Sequence of hidden-states at the output of the last layer of the encoder. Used in the cross-attention if
@@ -280,17 +280,17 @@ class NezhaForPreTraining(NezhaPreTrainedModel):
     @replace_return_docstrings(output_type=NezhaForPreTrainingOutput, config_class=_CONFIG_FOR_DOC)
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        next_sentence_label: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], NezhaForPreTrainingOutput]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        next_sentence_label: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.Tensor] | NezhaForPreTrainingOutput:
         r"""
             labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
                 Labels for computing the masked language modeling loss. Indices should be in `[-100, 0, ...,
@@ -339,18 +339,18 @@ class NezhaForMaskedLM(NezhaPreTrainedModel):
     )
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        encoder_hidden_states: Optional[torch.Tensor] = ...,
-        encoder_attention_mask: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], MaskedLMOutput]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        encoder_hidden_states: torch.Tensor | None = ...,
+        encoder_attention_mask: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.Tensor] | MaskedLMOutput:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
             Labels for computing the masked language modeling loss. Indices should be in `[-100, 0, ...,
@@ -373,17 +373,17 @@ class NezhaForNextSentencePrediction(NezhaPreTrainedModel):
     @replace_return_docstrings(output_type=NextSentencePredictorOutput, config_class=_CONFIG_FOR_DOC)
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         **kwargs,
-    ) -> Union[tuple[torch.Tensor], NextSentencePredictorOutput]:
+    ) -> tuple[torch.Tensor] | NextSentencePredictorOutput:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the next sequence prediction (classification) loss. Input should be a sequence pair
@@ -429,16 +429,16 @@ class NezhaForSequenceClassification(NezhaPreTrainedModel):
     )
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], SequenceClassifierOutput]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.Tensor] | SequenceClassifierOutput:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
@@ -462,16 +462,16 @@ class NezhaForMultipleChoice(NezhaPreTrainedModel):
     )
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], MultipleChoiceModelOutput]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.Tensor] | MultipleChoiceModelOutput:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the multiple choice classification loss. Indices should be in `[0, ...,
@@ -495,16 +495,16 @@ class NezhaForTokenClassification(NezhaPreTrainedModel):
     )
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], TokenClassifierOutput]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.Tensor] | TokenClassifierOutput:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
             Labels for computing the token classification loss. Indices should be in `[0, ..., config.num_labels - 1]`.
@@ -526,17 +526,17 @@ class NezhaForQuestionAnswering(NezhaPreTrainedModel):
     )
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        start_positions: Optional[torch.Tensor] = ...,
-        end_positions: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], QuestionAnsweringModelOutput]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        start_positions: torch.Tensor | None = ...,
+        end_positions: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.Tensor] | QuestionAnsweringModelOutput:
         r"""
         start_positions (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
             Labels for position (index) of the start of the labelled span for computing the token classification loss.

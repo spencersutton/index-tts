@@ -49,13 +49,13 @@ class EomtForUniversalSegmentationOutput(ModelOutput):
         list of tuples indicating the image index and start and end positions of patches for semantic segementation.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    class_queries_logits: Optional[torch.FloatTensor] = ...
-    masks_queries_logits: Optional[torch.FloatTensor] = ...
-    last_hidden_state: Optional[torch.FloatTensor] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
-    patch_offsets: Optional[list[torch.Tensor]] = ...
+    loss: torch.FloatTensor | None = ...
+    class_queries_logits: torch.FloatTensor | None = ...
+    masks_queries_logits: torch.FloatTensor | None = ...
+    last_hidden_state: torch.FloatTensor | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
+    patch_offsets: list[torch.Tensor] | None = ...
 
 def sample_point(input_features: torch.Tensor, point_coordinates: torch.Tensor, add_dim=..., **kwargs) -> torch.Tensor:
     """
@@ -318,7 +318,7 @@ class EomtLoss(nn.Module):
         class_queries_logits: torch.Tensor,
         mask_labels: list[torch.Tensor],
         class_labels: list[torch.Tensor],
-        auxiliary_predictions: Optional[dict[str, torch.Tensor]] = ...,
+        auxiliary_predictions: dict[str, torch.Tensor] | None = ...,
     ) -> dict[str, torch.Tensor]:
         """
         This performs the loss computation.
@@ -375,7 +375,7 @@ def eager_attention_forward(
     query: torch.Tensor,
     key: torch.Tensor,
     value: torch.Tensor,
-    attention_mask: Optional[torch.Tensor],
+    attention_mask: torch.Tensor | None,
     scaling: float,
     dropout: float = ...,
     **kwargs,
@@ -386,8 +386,8 @@ class EomtAttention(nn.Module):
     """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config) -> None: ...
     def forward(
-        self, hidden_states: torch.Tensor, attention_mask: Optional[torch.Tensor] = ..., **kwargs
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
+        self, hidden_states: torch.Tensor, attention_mask: torch.Tensor | None = ..., **kwargs
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         """Input shape: Batch x Time x Channel"""
         ...
 
@@ -409,7 +409,7 @@ def drop_path(input: torch.Tensor, drop_prob: float = ..., training: bool = ...)
 
 class EomtDropPath(nn.Module):
     """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks)."""
-    def __init__(self, drop_prob: Optional[float] = ...) -> None: ...
+    def __init__(self, drop_prob: float | None = ...) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
     def extra_repr(self) -> str: ...
 
@@ -425,8 +425,8 @@ class EomtLayer(GradientCheckpointingLayer):
     """This corresponds to the Block class in the original implementation."""
     def __init__(self, config: EomtConfig) -> None: ...
     def forward(
-        self, hidden_states: torch.Tensor, head_mask: Optional[torch.Tensor] = ..., output_attentions: bool = ...
-    ) -> Union[tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor]]: ...
+        self, hidden_states: torch.Tensor, head_mask: torch.Tensor | None = ..., output_attentions: bool = ...
+    ) -> tuple[torch.Tensor, torch.Tensor] | tuple[torch.Tensor]: ...
 
 class EomtLayerNorm2d(nn.LayerNorm):
     def __init__(self, num_channels, eps=..., affine=...) -> None: ...
@@ -481,11 +481,11 @@ class EomtForUniversalSegmentation(EomtPreTrainedModel):
     def forward(
         self,
         pixel_values: Tensor,
-        mask_labels: Optional[list[Tensor]] = ...,
-        class_labels: Optional[list[Tensor]] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        patch_offsets: Optional[list[Tensor]] = ...,
+        mask_labels: list[Tensor] | None = ...,
+        class_labels: list[Tensor] | None = ...,
+        output_hidden_states: bool | None = ...,
+        output_attentions: bool | None = ...,
+        patch_offsets: list[Tensor] | None = ...,
     ) -> EomtForUniversalSegmentationOutput:
         r"""
         mask_labels (`list[torch.Tensor]`, *optional*):

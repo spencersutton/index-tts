@@ -73,19 +73,19 @@ class HybridMambaAttentionDynamicCache:
         key_states: torch.Tensor,
         value_states: torch.Tensor,
         layer_idx: int,
-        cache_kwargs: Optional[dict[str, Any]] = ...,
+        cache_kwargs: dict[str, Any] | None = ...,
     ) -> tuple[torch.Tensor, torch.Tensor]: ...
     def reorder_cache(self, beam_idx: torch.LongTensor):  # -> None:
         """Reorders the cache for beam search, given the selected beam indices."""
         ...
 
-    def get_seq_length(self, layer_idx: Optional[int] = ...) -> int:
+    def get_seq_length(self, layer_idx: int | None = ...) -> int:
         """Returns the sequence length of the cached states. A layer index can be optionally passed."""
         ...
 
     def to_legacy_cache(self) -> tuple[tuple[torch.Tensor], tuple[torch.Tensor]]: ...
     @classmethod
-    def from_legacy_cache(cls, past_key_values: Optional[tuple[tuple[torch.FloatTensor]]] = ...) -> DynamicCache: ...
+    def from_legacy_cache(cls, past_key_values: tuple[tuple[torch.FloatTensor]] | None = ...) -> DynamicCache: ...
 
 class BambaRotaryEmbedding(nn.Module):
     def __init__(self, config: BambaConfig, device=...) -> None: ...
@@ -110,7 +110,7 @@ def eager_attention_forward(
     query: torch.Tensor,
     key: torch.Tensor,
     value: torch.Tensor,
-    attention_mask: Optional[torch.Tensor],
+    attention_mask: torch.Tensor | None,
     scaling: float,
     dropout: float = ...,
     **kwargs: Unpack[TransformersKwargs],
@@ -147,9 +147,9 @@ class BambaAttention(nn.Module):
         self,
         hidden_states: torch.Tensor,
         position_embeddings: tuple[torch.Tensor, torch.Tensor],
-        attention_mask: Optional[torch.Tensor],
-        past_key_value: Optional[Cache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        attention_mask: torch.Tensor | None,
+        past_key_value: Cache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Unpack[TransformersKwargs],
     ) -> tuple[torch.Tensor, torch.Tensor]: ...
 
@@ -205,27 +205,27 @@ class BambaMixer(nn.Module):
     def cuda_kernels_forward(
         self,
         hidden_states: torch.Tensor,
-        cache_params: Optional[HybridMambaAttentionDynamicCache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        seq_idx: Optional[torch.IntTensor] = ...,
+        cache_params: HybridMambaAttentionDynamicCache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        seq_idx: torch.IntTensor | None = ...,
     ):  # -> Any:
         ...
     def torch_forward(
         self,
         input_states,
-        cache_params: Optional[HybridMambaAttentionDynamicCache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
+        cache_params: HybridMambaAttentionDynamicCache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
     ):  # -> Any:
         ...
     def forward(
         self,
         hidden_states,
-        cache_params: Optional[HybridMambaAttentionDynamicCache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        seq_idx: Optional[torch.IntTensor] = ...,
+        cache_params: HybridMambaAttentionDynamicCache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        seq_idx: torch.IntTensor | None = ...,
         **kwargs,
     ):  # -> Any:
         ...
@@ -252,15 +252,15 @@ class BambaDecoderLayer(GradientCheckpointingLayer):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[HybridMambaAttentionDynamicCache] = ...,
-        output_attentions: Optional[bool] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: HybridMambaAttentionDynamicCache | None = ...,
+        output_attentions: bool | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = ...,
         **kwargs: Unpack[BambaFlashAttentionKwargs],
-    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]:
+    ) -> tuple[torch.FloatTensor, tuple[torch.FloatTensor, torch.FloatTensor] | None]:
         """
         Args:
             hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
@@ -302,15 +302,15 @@ class BambaModel(BambaPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[HybridMambaAttentionDynamicCache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: HybridMambaAttentionDynamicCache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Unpack[BambaFlashAttentionKwargs],
     ) -> BaseModelOutputWithPast: ...
 
@@ -328,17 +328,17 @@ class BambaForCausalLM(BambaPreTrainedModel, GenerationMixin):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[HybridMambaAttentionDynamicCache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        logits_to_keep: Union[int, torch.Tensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: HybridMambaAttentionDynamicCache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        logits_to_keep: int | torch.Tensor = ...,
         **kwargs,
     ) -> CausalLMOutputWithPast:
         r"""

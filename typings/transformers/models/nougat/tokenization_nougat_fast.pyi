@@ -220,8 +220,8 @@ class NougatTokenizerFast(PreTrainedTokenizerFast):
         ...
 
     def post_process_generation(
-        self, generation: Union[str, list[str]], fix_markdown: bool = ..., num_workers: Optional[int] = ...
-    ) -> Union[str, list[str]]:
+        self, generation: str | list[str], fix_markdown: bool = ..., num_workers: int | None = ...
+    ) -> str | list[str]:
         """
         Postprocess a generated text or a list of generated texts.
 

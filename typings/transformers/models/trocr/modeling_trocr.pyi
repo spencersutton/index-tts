@@ -32,16 +32,16 @@ class TrOCRScaledWordEmbedding(nn.Embedding):
     This module overrides nn.Embeddings' forward by multiplying with embeddings scale.
     """
     def __init__(
-        self, num_embeddings: int, embedding_dim: int, padding_idx: int, embed_scale: Optional[float] = ...
+        self, num_embeddings: int, embedding_dim: int, padding_idx: int, embed_scale: float | None = ...
     ) -> None: ...
     def forward(self, input_ids: torch.Tensor):  # -> Tensor:
         ...
 
 class TrOCRSinusoidalPositionalEmbedding(nn.Module):
     """This module produces sinusoidal positional embeddings of any length."""
-    def __init__(self, num_positions: int, embedding_dim: int, padding_idx: Optional[int] = ...) -> None: ...
+    def __init__(self, num_positions: int, embedding_dim: int, padding_idx: int | None = ...) -> None: ...
     @staticmethod
-    def get_embedding(num_embeddings: int, embedding_dim: int, padding_idx: Optional[int] = ...):  # -> Tensor:
+    def get_embedding(num_embeddings: int, embedding_dim: int, padding_idx: int | None = ...):  # -> Tensor:
         """
         Build sinusoidal embeddings. This matches the implementation in tensor2tensor, but differs slightly from the
         description in Section 3.5 of "Attention Is All You Need".
@@ -51,7 +51,7 @@ class TrOCRSinusoidalPositionalEmbedding(nn.Module):
     @torch.no_grad()
     def forward(self, input_ids: torch.Tensor, past_key_values_length: int = ...): ...
     def create_position_ids_from_input_ids(
-        self, input_ids: torch.Tensor, padding_idx: int, past_key_values_length: Optional[int] = ...
+        self, input_ids: torch.Tensor, padding_idx: int, past_key_values_length: int | None = ...
     ):  # -> Tensor:
         """
         Replace non-padding symbols with their position numbers. Position numbers begin at padding_idx+1. Padding
@@ -66,24 +66,24 @@ class TrOCRAttention(nn.Module):
         config,
         embed_dim: int,
         num_heads: int,
-        kdim: Optional[int] = ...,
-        vdim: Optional[int] = ...,
-        dropout: Optional[float] = ...,
-        is_decoder: Optional[bool] = ...,
-        bias: Optional[bool] = ...,
-        is_cross_attention: Optional[bool] = ...,
-        layer_idx: Optional[bool] = ...,
+        kdim: int | None = ...,
+        vdim: int | None = ...,
+        dropout: float | None = ...,
+        is_decoder: bool | None = ...,
+        bias: bool | None = ...,
+        is_cross_attention: bool | None = ...,
+        layer_idx: bool | None = ...,
     ) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        key_value_states: Optional[torch.Tensor] = ...,
-        past_key_value: Optional[Cache] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        layer_head_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        cache_position: Optional[torch.Tensor] = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+        key_value_states: torch.Tensor | None = ...,
+        past_key_value: Cache | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        layer_head_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        cache_position: torch.Tensor | None = ...,
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]:
         """Input shape: Batch x Time x Channel"""
         ...
 
@@ -92,15 +92,15 @@ class TrOCRDecoderLayer(GradientCheckpointingLayer):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        encoder_hidden_states: Optional[torch.Tensor] = ...,
-        encoder_attention_mask: Optional[torch.Tensor] = ...,
-        layer_head_mask: Optional[torch.Tensor] = ...,
-        cross_attn_layer_head_mask: Optional[torch.Tensor] = ...,
-        past_key_value: Optional[Cache] = ...,
-        output_attentions: Optional[bool] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        encoder_hidden_states: torch.Tensor | None = ...,
+        encoder_attention_mask: torch.Tensor | None = ...,
+        layer_head_mask: torch.Tensor | None = ...,
+        cross_attn_layer_head_mask: torch.Tensor | None = ...,
+        past_key_value: Cache | None = ...,
+        output_attentions: bool | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.Tensor | None = ...,
     ):  # -> tuple[Tensor, Any, Any | None] | tuple[Tensor]:
         """
         Args:
@@ -255,21 +255,21 @@ class TrOCRForCausalLM(TrOCRPreTrainedModel, GenerationMixin):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        encoder_hidden_states: Optional[torch.FloatTensor] = ...,
-        encoder_attention_mask: Optional[torch.LongTensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        cross_attn_head_mask: Optional[torch.Tensor] = ...,
-        past_key_values: Optional[tuple[tuple[torch.FloatTensor]]] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple, CausalLMOutputWithCrossAttentions]:
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        encoder_hidden_states: torch.FloatTensor | None = ...,
+        encoder_attention_mask: torch.LongTensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        cross_attn_head_mask: torch.Tensor | None = ...,
+        past_key_values: tuple[tuple[torch.FloatTensor]] | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.Tensor | None = ...,
+    ) -> tuple | CausalLMOutputWithCrossAttentions:
         r"""
         cross_attn_head_mask (`torch.Tensor` of shape `(decoder_layers, decoder_attention_heads)`, *optional*):
             Mask to nullify selected heads of the cross-attention modules. Mask values selected in `[0, 1]`:

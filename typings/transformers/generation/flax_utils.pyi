@@ -22,7 +22,7 @@ class FlaxGreedySearchOutput(ModelOutput):
             The generated sequences.
     """
 
-    sequences: Optional[jnp.ndarray] = ...
+    sequences: jnp.ndarray | None = ...
 
 @flax.struct.dataclass
 class FlaxSampleOutput(ModelOutput):
@@ -35,7 +35,7 @@ class FlaxSampleOutput(ModelOutput):
             The generated sequences.
     """
 
-    sequences: Optional[jnp.ndarray] = ...
+    sequences: jnp.ndarray | None = ...
 
 @flax.struct.dataclass
 class FlaxBeamSearchOutput(ModelOutput):
@@ -50,8 +50,8 @@ class FlaxBeamSearchOutput(ModelOutput):
             The scores (log probabilities) of the generated sequences.
     """
 
-    sequences: Optional[jnp.ndarray] = ...
-    scores: Optional[jnp.ndarray] = ...
+    sequences: jnp.ndarray | None = ...
+    scores: jnp.ndarray | None = ...
 
 @flax.struct.dataclass
 class GreedyState:
@@ -103,11 +103,11 @@ class FlaxGenerationMixin:
     def generate(
         self,
         input_ids: jnp.ndarray,
-        generation_config: Optional[GenerationConfig] = ...,
-        prng_key: Optional[jnp.ndarray] = ...,
+        generation_config: GenerationConfig | None = ...,
+        prng_key: jnp.ndarray | None = ...,
         trace: bool = ...,
-        params: Optional[dict[str, jnp.ndarray]] = ...,
-        logits_processor: Optional[FlaxLogitsProcessorList] = ...,
+        params: dict[str, jnp.ndarray] | None = ...,
+        logits_processor: FlaxLogitsProcessorList | None = ...,
         **kwargs,
     ):  # -> FlaxGreedySearchOutput | FlaxSampleOutput | FlaxBeamSearchOutput:
         r"""

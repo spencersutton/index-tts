@@ -16,7 +16,7 @@ if is_torch_available(): ...
 if is_vision_available(): ...
 
 class InternVLVideoProcessorInitKwargs(VideosKwargs):
-    initial_shift: Union[bool, float, int]
+    initial_shift: bool | float | int
     ...
 
 @requires(backends=("torchvision",))
@@ -37,10 +37,10 @@ class InternVLVideoProcessor(BaseVideoProcessor):
     def sample_frames(
         self,
         video: torch.Tensor,
-        metadata: Optional[Union[VideoMetadata, dict]] = ...,
-        num_frames: Optional[int] = ...,
-        fps: Optional[Union[int, float]] = ...,
-        initial_shift: Optional[Union[bool, float, int]] = ...,
+        metadata: VideoMetadata | dict | None = ...,
+        num_frames: int | None = ...,
+        fps: int | float | None = ...,
+        initial_shift: bool | float | int | None = ...,
     ):  # -> Tensor:
         """
         Default sampling function which uniformly samples the desired number of frames between 0 and total number of frames.

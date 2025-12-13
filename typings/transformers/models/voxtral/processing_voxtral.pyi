@@ -14,7 +14,7 @@ if is_mistral_common_available(): ...
 logger = ...
 
 class VoxtralAudioKwargs(AudioKwargs, total=False):
-    max_source_positions: Optional[int]
+    max_source_positions: int | None
     ...
 
 class VoxtralProcessorKwargs(ProcessingKwargs, total=False):
@@ -39,7 +39,7 @@ class VoxtralProcessor(ProcessorMixin):
     def __init__(self, feature_extractor, tokenizer) -> None: ...
     def apply_chat_template(
         self,
-        conversation: Union[list[dict[str, str]], list[list[dict[str, str]]]],
+        conversation: list[dict[str, str]] | list[list[dict[str, str]]],
         **kwargs: Unpack[AllKwargsForChatTemplate],
     ) -> str:
         """
@@ -86,7 +86,7 @@ class VoxtralProcessor(ProcessorMixin):
 
     def __call__(
         self,
-        text: Optional[Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]]],
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] | None,
         **kwargs: Unpack[VoxtralProcessorKwargs],
     ):  # -> BatchFeature:
         r"""
@@ -121,11 +121,11 @@ class VoxtralProcessor(ProcessorMixin):
 
     def apply_transcription_request(
         self,
-        language: Union[str, list[str]],
-        audio: Union[str, list[str], AudioInput],
+        language: str | list[str],
+        audio: str | list[str] | AudioInput,
         model_id: str,
-        sampling_rate: Optional[int] = ...,
-        format: Optional[Union[str, list[str]]] = ...,
+        sampling_rate: int | None = ...,
+        format: str | list[str] | None = ...,
         **kwargs: Unpack[VoxtralProcessorKwargs],
     ):  # -> BatchFeature | list[Any]:
         """

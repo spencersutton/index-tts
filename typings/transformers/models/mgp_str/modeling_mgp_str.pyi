@@ -28,7 +28,7 @@ def drop_path(input: torch.Tensor, drop_prob: float = ..., training: bool = ...)
 
 class MgpstrDropPath(nn.Module):
     """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks)."""
-    def __init__(self, drop_prob: Optional[float] = ...) -> None: ...
+    def __init__(self, drop_prob: float | None = ...) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
     def extra_repr(self) -> str: ...
 
@@ -56,9 +56,9 @@ class MgpstrModelOutput(ModelOutput):
     """
 
     logits: tuple[torch.FloatTensor] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
-    a3_attentions: Optional[tuple[torch.FloatTensor]] = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
+    a3_attentions: tuple[torch.FloatTensor] | None = ...
 
 class MgpstrEmbeddings(nn.Module):
     """2D Image to Patch Embedding"""
@@ -108,10 +108,10 @@ class MgpstrModel(MgpstrPreTrainedModel):
     def forward(
         self,
         pixel_values: torch.FloatTensor,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.FloatTensor], BaseModelOutput]: ...
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.FloatTensor] | BaseModelOutput: ...
 
 @auto_docstring(
     custom_intro="""
@@ -127,11 +127,11 @@ class MgpstrForSceneTextRecognition(MgpstrPreTrainedModel):
     def forward(
         self,
         pixel_values: torch.FloatTensor,
-        output_attentions: Optional[bool] = ...,
-        output_a3_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.FloatTensor], MgpstrModelOutput]:
+        output_attentions: bool | None = ...,
+        output_a3_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.FloatTensor] | MgpstrModelOutput:
         r"""
         output_a3_attentions (`bool`, *optional*):
             Whether or not to return the attentions tensors of a3 modules. See `a3_attentions` under returned tensors

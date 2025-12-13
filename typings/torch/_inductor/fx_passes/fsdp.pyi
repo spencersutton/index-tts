@@ -1,6 +1,7 @@
 import logging
 import torch
-from typing import Callable, Optional
+from typing import Optional
+from collections.abc import Callable
 
 logger: logging.Logger = ...
 
@@ -10,11 +11,11 @@ def is_graph_output(node: torch.fx.Node) -> bool: ...
 def is_fsdp_reduce_scatter_wait(wait: torch.fx.Node) -> bool: ...
 def bucket_fsdp_all_gather(
     gm: torch.fx.GraphModule,
-    bucket_cap_mb_by_bucket_idx: Optional[Callable[[int], float]] = ...,
-    mode: Optional[str] = ...,
+    bucket_cap_mb_by_bucket_idx: Callable[[int], float] | None = ...,
+    mode: str | None = ...,
 ) -> None: ...
 def bucket_fsdp_reduce_scatter(
     gm: torch.fx.GraphModule,
-    bucket_cap_mb_by_bucket_idx: Optional[Callable[[int], float]] = ...,
-    mode: Optional[str] = ...,
+    bucket_cap_mb_by_bucket_idx: Callable[[int], float] | None = ...,
+    mode: str | None = ...,
 ) -> None: ...

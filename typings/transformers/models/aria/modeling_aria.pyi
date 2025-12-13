@@ -88,7 +88,7 @@ class AriaProjector(nn.Module):
             Configuration object for the model.
     """
     def __init__(self, config: AriaConfig) -> None: ...
-    def forward(self, key_value_states: torch.Tensor, attn_mask: Optional[torch.Tensor] = ...):  # -> Any:
+    def forward(self, key_value_states: torch.Tensor, attn_mask: torch.Tensor | None = ...):  # -> Any:
         """
         Forward pass of the Projector module.
 
@@ -254,7 +254,7 @@ def eager_attention_forward(
     query: torch.Tensor,
     key: torch.Tensor,
     value: torch.Tensor,
-    attention_mask: Optional[torch.Tensor],
+    attention_mask: torch.Tensor | None,
     scaling: float,
     dropout: float = ...,
     **kwargs: Unpack[TransformersKwargs],
@@ -268,9 +268,9 @@ class AriaTextAttention(nn.Module):
         self,
         hidden_states: torch.Tensor,
         position_embeddings: tuple[torch.Tensor, torch.Tensor],
-        attention_mask: Optional[torch.Tensor],
-        past_key_value: Optional[Cache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        attention_mask: torch.Tensor | None,
+        past_key_value: Cache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Unpack[TransformersKwargs],
     ) -> tuple[torch.Tensor, torch.Tensor]: ...
 
@@ -290,12 +290,12 @@ class AriaTextDecoderLayer(GradientCheckpointingLayer):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[Cache] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: Cache | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = ...,
         **kwargs: Unpack[TransformersKwargs],
     ) -> tuple[torch.Tensor]: ...
 
@@ -339,13 +339,13 @@ class AriaTextModel(AriaTextPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
         **kwargs: Unpack[TransformersKwargs],
     ) -> BaseModelOutputWithPast: ...
 
@@ -362,15 +362,15 @@ class AriaTextForCausalLM(AriaTextPreTrainedModel, GenerationMixin):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        logits_to_keep: Union[int, torch.Tensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        logits_to_keep: int | torch.Tensor = ...,
         **kwargs: Unpack[TransformersKwargs],
     ) -> CausalLMOutputWithPast:
         r"""
@@ -415,12 +415,12 @@ class AriaCausalLMOutputWithPast(ModelOutput):
         image_hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    logits: Optional[torch.FloatTensor] = ...
-    past_key_values: Optional[list[torch.FloatTensor]] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
-    image_hidden_states: Optional[torch.FloatTensor] = ...
+    loss: torch.FloatTensor | None = ...
+    logits: torch.FloatTensor | None = ...
+    past_key_values: list[torch.FloatTensor] | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
+    image_hidden_states: torch.FloatTensor | None = ...
 
 @dataclass
 @auto_docstring(
@@ -441,7 +441,7 @@ class AriaModelOutputWithPast(BaseModelOutputWithPast):
         image_hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
     """
 
-    image_hidden_states: Optional[torch.FloatTensor] = ...
+    image_hidden_states: torch.FloatTensor | None = ...
 
 @auto_docstring(
     custom_intro="""
@@ -462,7 +462,7 @@ class AriaModel(AriaPreTrainedModel):
     def get_image_features(
         self,
         pixel_values: torch.FloatTensor,
-        pixel_mask: Optional[torch.FloatTensor] = ...,
+        pixel_mask: torch.FloatTensor | None = ...,
         vision_feature_layer: int = ...,
     ):  # -> Any:
         """
@@ -498,14 +498,14 @@ class AriaModel(AriaPreTrainedModel):
         input_ids: torch.LongTensor = ...,
         pixel_values: torch.FloatTensor = ...,
         pixel_mask: torch.LongTensor = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> Union[tuple, AriaModelOutputWithPast]: ...
+    ) -> tuple | AriaModelOutputWithPast: ...
 
 @auto_docstring(
     custom_intro="""
@@ -531,7 +531,7 @@ class AriaForConditionalGeneration(AriaPreTrainedModel, GenerationMixin):
     def get_image_features(
         self,
         pixel_values: torch.FloatTensor,
-        pixel_mask: Optional[torch.FloatTensor] = ...,
+        pixel_mask: torch.FloatTensor | None = ...,
         vision_feature_layer: int = ...,
     ):  # -> Any:
         ...
@@ -551,16 +551,16 @@ class AriaForConditionalGeneration(AriaPreTrainedModel, GenerationMixin):
         input_ids: torch.LongTensor = ...,
         pixel_values: torch.FloatTensor = ...,
         pixel_mask: torch.LongTensor = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        logits_to_keep: Union[int, torch.Tensor] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        logits_to_keep: int | torch.Tensor = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> Union[tuple, AriaCausalLMOutputWithPast]:
+    ) -> tuple | AriaCausalLMOutputWithPast:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
             Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,

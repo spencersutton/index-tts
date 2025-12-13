@@ -3,7 +3,7 @@ import enum
 import torch
 import torch._C as _C
 from typing import Any, Optional, TypeVar, Union
-from typing_extensions import ParamSpec
+from typing import ParamSpec
 
 class Tensor(torch._C.TensorBase):
     _is_param: bool
@@ -43,7 +43,7 @@ class Tensor(torch._C.TensorBase):
     def __reversed__(self):  # -> Any | Self | Tensor:
 
         ...
-    def norm(self, p: Optional[Union[float, str]] = ..., dim=..., keepdim=..., dtype=...):  # -> Any | Tensor:
+    def norm(self, p: float | str | None = ..., dim=..., keepdim=..., dtype=...):  # -> Any | Tensor:
 
         ...
     def solve(self, other):  # -> tuple[Tensor, Tensor]:
@@ -60,28 +60,28 @@ class Tensor(torch._C.TensorBase):
     def stft(
         self,
         n_fft: int,
-        hop_length: Optional[int] = ...,
-        win_length: Optional[int] = ...,
-        window: Optional[Tensor] = ...,
+        hop_length: int | None = ...,
+        win_length: int | None = ...,
+        window: Tensor | None = ...,
         center: bool = ...,
         pad_mode: str = ...,
         normalized: bool = ...,
-        onesided: Optional[bool] = ...,
-        return_complex: Optional[bool] = ...,
-        align_to_window: Optional[bool] = ...,
+        onesided: bool | None = ...,
+        return_complex: bool | None = ...,
+        align_to_window: bool | None = ...,
     ):  # -> Any | Tensor:
 
         ...
     def istft(
         self,
         n_fft: int,
-        hop_length: Optional[int] = ...,
-        win_length: Optional[int] = ...,
-        window: Optional[Tensor] = ...,
+        hop_length: int | None = ...,
+        win_length: int | None = ...,
+        window: Tensor | None = ...,
         center: bool = ...,
         normalized: bool = ...,
-        onesided: Optional[bool] = ...,
-        length: Optional[int] = ...,
+        onesided: bool | None = ...,
+        length: int | None = ...,
         return_complex: bool = ...,
     ):  # -> Any:
 
@@ -100,28 +100,28 @@ class Tensor(torch._C.TensorBase):
 
         ...
     @_handle_torch_function_and_wrap_type_error_to_not_implemented
-    def __rsub__(self, other: Union[Tensor, bool, complex]) -> Tensor: ...
+    def __rsub__(self, other: Tensor | bool | complex) -> Tensor: ...
     @_handle_torch_function_and_wrap_type_error_to_not_implemented
-    def __rdiv__(self, other: Union[Tensor, bool, complex]) -> Tensor: ...
+    def __rdiv__(self, other: Tensor | bool | complex) -> Tensor: ...
 
     __rtruediv__ = ...
     __itruediv__ = ...
     __pow__ = ...
     __ipow__ = ...
     @_handle_torch_function_and_wrap_type_error_to_not_implemented
-    def __rmod__(self, other: Union[Tensor, bool, complex]) -> Tensor: ...
+    def __rmod__(self, other: Tensor | bool | complex) -> Tensor: ...
     def __format__(self, format_spec):  # -> Any | str:
         ...
     @_handle_torch_function_and_wrap_type_error_to_not_implemented
-    def __rpow__(self, other: Union[Tensor, bool, complex]) -> Tensor: ...
+    def __rpow__(self, other: Tensor | bool | complex) -> Tensor: ...
     @_handle_torch_function_and_wrap_type_error_to_not_implemented
-    def __floordiv__(self, other: Union[Tensor, float, bool]) -> Tensor: ...
+    def __floordiv__(self, other: Tensor | float | bool) -> Tensor: ...
     @_handle_torch_function_and_wrap_type_error_to_not_implemented
-    def __rfloordiv__(self, other: Union[Tensor, float, bool]) -> Tensor: ...
+    def __rfloordiv__(self, other: Tensor | float | bool) -> Tensor: ...
     @_handle_torch_function_and_wrap_type_error_to_not_implemented
-    def __rlshift__(self, other: Union[Tensor, bool, complex]) -> Tensor: ...
+    def __rlshift__(self, other: Tensor | bool | complex) -> Tensor: ...
     @_handle_torch_function_and_wrap_type_error_to_not_implemented
-    def __rrshift__(self, other: Union[Tensor, bool, complex]) -> Tensor: ...
+    def __rrshift__(self, other: Tensor | bool | complex) -> Tensor: ...
     @_handle_torch_function_and_wrap_type_error_to_not_implemented
     def __rmatmul__(self, other: Tensor) -> Tensor: ...
 
@@ -166,7 +166,7 @@ class Tensor(torch._C.TensorBase):
     def to_sparse_coo(self):  # -> Tensor:
 
         ...
-    def dim_order(self, *, ambiguity_check: Union[bool, list[torch.memory_format]] = ...):  # -> Any | tuple[int, ...]:
+    def dim_order(self, *, ambiguity_check: bool | list[torch.memory_format] = ...):  # -> Any | tuple[int, ...]:
 
         ...
     @classmethod
@@ -180,10 +180,10 @@ class Tensor(torch._C.TensorBase):
     def __dlpack__(
         self,
         *,
-        stream: Optional[Any] = ...,
-        max_version: Optional[tuple[int, int]] = ...,
-        dl_device: Optional[tuple[enum.IntEnum, int]] = ...,
-        copy: Optional[bool] = ...,
+        stream: Any | None = ...,
+        max_version: tuple[int, int] | None = ...,
+        dl_device: tuple[enum.IntEnum, int] | None = ...,
+        copy: bool | None = ...,
     ):  # -> Any:
 
         ...

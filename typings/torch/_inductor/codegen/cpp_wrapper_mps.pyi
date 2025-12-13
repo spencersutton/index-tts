@@ -8,9 +8,9 @@ class CppWrapperMps(CppWrapperGpu):
     @staticmethod
     def create(
         is_subgraph: bool,
-        subgraph_name: Optional[str],
-        parent_wrapper: Optional[PythonWrapperCodegen],
-        partition_signatures: Optional[GraphPartitionSignature] = ...,
+        subgraph_name: str | None,
+        parent_wrapper: PythonWrapperCodegen | None,
+        partition_signatures: GraphPartitionSignature | None = ...,
     ) -> CppWrapperMps: ...
     def write_mps_kernel_call(self, name: str, call_args: list[str]) -> None: ...
     @staticmethod

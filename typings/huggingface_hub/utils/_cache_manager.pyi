@@ -112,8 +112,8 @@ class CachedRevisionInfo:
     commit_hash: str
     snapshot_path: Path
     size_on_disk: int
-    files: FrozenSet[CachedFileInfo]
-    refs: FrozenSet[str]
+    files: frozenset[CachedFileInfo]
+    refs: frozenset[str]
     last_modified: float
     @property
     def last_modified_str(self) -> str:
@@ -179,7 +179,7 @@ class CachedRepoInfo:
     repo_path: Path
     size_on_disk: int
     nb_files: int
-    revisions: FrozenSet[CachedRevisionInfo]
+    revisions: frozenset[CachedRevisionInfo]
     last_accessed: float
     last_modified: float
     @property
@@ -212,7 +212,7 @@ class CachedRepoInfo:
         ...
 
     @property
-    def refs(self) -> Dict[str, CachedRevisionInfo]:
+    def refs(self) -> dict[str, CachedRevisionInfo]:
         """
         (property) Mapping between `refs` and revision data structures.
         """
@@ -239,10 +239,10 @@ class DeleteCacheStrategy:
     """
 
     expected_freed_size: int
-    blobs: FrozenSet[Path]
-    refs: FrozenSet[Path]
-    repos: FrozenSet[Path]
-    snapshots: FrozenSet[Path]
+    blobs: frozenset[Path]
+    refs: frozenset[Path]
+    repos: frozenset[Path]
+    snapshots: frozenset[Path]
     @property
     def expected_freed_size_str(self) -> str:
         """
@@ -289,8 +289,8 @@ class HFCacheInfo:
     """
 
     size_on_disk: int
-    repos: FrozenSet[CachedRepoInfo]
-    warnings: List[CorruptedCacheException]
+    repos: frozenset[CachedRepoInfo]
+    warnings: list[CorruptedCacheException]
     @property
     def size_on_disk_str(self) -> str:
         """
@@ -380,7 +380,7 @@ class HFCacheInfo:
         """
         ...
 
-def scan_cache_dir(cache_dir: Optional[Union[str, Path]] = ...) -> HFCacheInfo:
+def scan_cache_dir(cache_dir: str | Path | None = ...) -> HFCacheInfo:
     """Scan the entire HF cache-system and return a [`~HFCacheInfo`] structure.
 
     Use `scan_cache_dir` in order to programmatically scan your cache-system. The cache

@@ -50,10 +50,10 @@ class SharedParamInfo(NamedTuple):
 
 class _ShardParamInfo(NamedTuple):
     in_shard: bool
-    offset_in_shard: Optional[int]
-    numel_in_shard: Optional[int]
-    intra_param_start_idx: Optional[int]
-    intra_param_end_idx: Optional[int]
+    offset_in_shard: int | None
+    numel_in_shard: int | None
+    intra_param_start_idx: int | None
+    intra_param_end_idx: int | None
 
 class FlatParamShardMetadata(NamedTuple):
     param_names: tuple[str, ...]
@@ -77,7 +77,7 @@ class FlatParameter(nn.Parameter, metaclass=_FlatParameterMeta):
     _strides: tuple[tuple[int, ...], ...]
     _contiguities: tuple[bool, ...]
     _fqns: tuple[str, ...]
-    _param_extensions: tuple[Optional[Any], ...]
+    _param_extensions: tuple[Any | None, ...]
     _numels_with_padding: tuple[int, ...]
     _numels: tuple[int, ...]
     _shard_param_infos: tuple[_ShardParamInfo, ...]
@@ -92,10 +92,10 @@ class FlatParameter(nn.Parameter, metaclass=_FlatParameterMeta):
     _mp_shard: Tensor
     _cpu_grad: Tensor
     _saved_grad_shard: Tensor
-    _params: Optional[list[nn.Parameter]]
-    _shared_params: Optional[list[nn.Parameter]]
-    _tensors: Optional[list[Optional[Tensor]]]
-    _is_grad_none_mask: Optional[list[bool]]
+    _params: list[nn.Parameter] | None
+    _shared_params: list[nn.Parameter] | None
+    _tensors: list[Tensor | None] | None
+    _is_grad_none_mask: list[bool] | None
     _is_padding_mask: list[bool]
     def __new__(cls, data=..., requires_grad=...):  # -> Parameter:
         ...
@@ -103,18 +103,18 @@ class FlatParameter(nn.Parameter, metaclass=_FlatParameterMeta):
 class FlatParamHandle:
     def __init__(
         self,
-        params: Sequence[Union[nn.Parameter, Tensor]],
+        params: Sequence[nn.Parameter | Tensor],
         fully_sharded_module: nn.Module,
         device: torch.device,
         sharding_strategy: HandleShardingStrategy,
         offload_params: bool,
-        mp_param_dtype: Optional[torch.dtype],
-        mp_reduce_dtype: Optional[torch.dtype],
+        mp_param_dtype: torch.dtype | None,
+        mp_reduce_dtype: torch.dtype | None,
         keep_low_precision_grads: bool,
         process_group: dist.ProcessGroup,
         use_orig_params: bool,
         *,
-        fsdp_extension: Optional[FSDPExtensions] = ...,
+        fsdp_extension: FSDPExtensions | None = ...,
     ) -> None: ...
     def __repr__(self):  # -> str:
         ...
@@ -170,6 +170,6 @@ class FlatParamHandle:
     def param_module_names(self) -> Iterator[tuple[str, str]]: ...
     def shared_param_module_names(self) -> Iterator[tuple[str, str]]: ...
     @property
-    def sharded_grad(self) -> Optional[Tensor]: ...
+    def sharded_grad(self) -> Tensor | None: ...
     @property
     def uses_sharded_strategy(self) -> bool: ...

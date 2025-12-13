@@ -1,5 +1,5 @@
 from typing import TypeVar
-from typing_extensions import ParamSpec
+from typing import ParamSpec
 
 __all__: list[str] = ...
 _DEFAULT_DESTINATION = ...

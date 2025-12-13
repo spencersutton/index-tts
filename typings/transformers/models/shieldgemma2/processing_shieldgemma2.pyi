@@ -13,8 +13,8 @@ logger = ...
 DEFAULT_SHIELDGEMMA2_POLICIES: Mapping[str, str] = ...
 
 class ShieldGemma2ProcessorKwargs(Gemma3ProcessorKwargs, total=False):
-    policies: Optional[Sequence[str]]
-    custom_policies: Optional[Mapping[str, str]]
+    policies: Sequence[str] | None
+    custom_policies: Mapping[str, str] | None
     _defaults = ...
 
 class ShieldGemma2Processor(Gemma3Processor):

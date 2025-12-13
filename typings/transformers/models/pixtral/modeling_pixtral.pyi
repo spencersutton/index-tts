@@ -68,7 +68,7 @@ def eager_attention_forward(
     query: torch.Tensor,
     key: torch.Tensor,
     value: torch.Tensor,
-    attention_mask: Optional[torch.Tensor],
+    attention_mask: torch.Tensor | None,
     scaling: float,
     dropout: float = ...,
     **kwargs,
@@ -83,11 +83,11 @@ class PixtralAttention(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
-        output_attentions: Optional[bool] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = ...,
+        output_attentions: bool | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         """Input shape: Batch x Time x Channel"""
         ...
 
@@ -113,8 +113,8 @@ class PixtralAttentionLayer(GradientCheckpointingLayer):
         self,
         hidden_states: torch.Tensor,
         attention_mask: torch.Tensor,
-        position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
-        output_attentions: Optional[bool] = ...,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = ...,
+        output_attentions: bool | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
     ) -> tuple[torch.FloatTensor]:
         """
@@ -134,13 +134,13 @@ class PixtralTransformer(nn.Module):
     def forward(
         self,
         inputs_embeds,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> Union[tuple, BaseModelOutput]:
+    ) -> tuple | BaseModelOutput:
         r"""
         Args:
             inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
@@ -193,12 +193,12 @@ class PixtralVisionModel(PixtralPreTrainedModel):
     def forward(
         self,
         pixel_values: torch.Tensor,
-        image_sizes: Optional[torch.Tensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        image_sizes: torch.Tensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        output_attentions: bool | None = ...,
+        return_dict: bool | None = ...,
         *args,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> Union[tuple, BaseModelOutput]: ...
+    ) -> tuple | BaseModelOutput: ...
 
 __all__ = ["PixtralVisionModel", "PixtralPreTrainedModel"]

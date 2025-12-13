@@ -35,7 +35,7 @@ class TableTransformerDecoderOutput(BaseModelOutputWithCrossAttentions):
         layernorm.
     """
 
-    intermediate_hidden_states: Optional[torch.FloatTensor] = ...
+    intermediate_hidden_states: torch.FloatTensor | None = ...
 
 @dataclass
 @auto_docstring(
@@ -54,7 +54,7 @@ class TableTransformerModelOutput(Seq2SeqModelOutput):
         layernorm.
     """
 
-    intermediate_hidden_states: Optional[torch.FloatTensor] = ...
+    intermediate_hidden_states: torch.FloatTensor | None = ...
 
 @dataclass
 @auto_docstring(
@@ -85,18 +85,18 @@ class TableTransformerObjectDetectionOutput(ModelOutput):
         Sequence of hidden-states at the output of the last layer of the decoder of the model.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    loss_dict: Optional[dict] = ...
-    logits: Optional[torch.FloatTensor] = ...
-    pred_boxes: Optional[torch.FloatTensor] = ...
-    auxiliary_outputs: Optional[list[dict]] = ...
-    last_hidden_state: Optional[torch.FloatTensor] = ...
-    decoder_hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    decoder_attentions: Optional[tuple[torch.FloatTensor]] = ...
-    cross_attentions: Optional[tuple[torch.FloatTensor]] = ...
-    encoder_last_hidden_state: Optional[torch.FloatTensor] = ...
-    encoder_hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    encoder_attentions: Optional[tuple[torch.FloatTensor]] = ...
+    loss: torch.FloatTensor | None = ...
+    loss_dict: dict | None = ...
+    logits: torch.FloatTensor | None = ...
+    pred_boxes: torch.FloatTensor | None = ...
+    auxiliary_outputs: list[dict] | None = ...
+    last_hidden_state: torch.FloatTensor | None = ...
+    decoder_hidden_states: tuple[torch.FloatTensor] | None = ...
+    decoder_attentions: tuple[torch.FloatTensor] | None = ...
+    cross_attentions: tuple[torch.FloatTensor] | None = ...
+    encoder_last_hidden_state: torch.FloatTensor | None = ...
+    encoder_hidden_states: tuple[torch.FloatTensor] | None = ...
+    encoder_attentions: tuple[torch.FloatTensor] | None = ...
 
 class TableTransformerFrozenBatchNorm2d(nn.Module):
     """
@@ -166,17 +166,17 @@ class TableTransformerAttention(nn.Module):
     Here, we add position embeddings to the queries and keys (as explained in the TABLE_TRANSFORMER paper).
     """
     def __init__(self, embed_dim: int, num_heads: int, dropout: float = ..., bias: bool = ...) -> None: ...
-    def with_pos_embed(self, tensor: torch.Tensor, object_queries: Optional[Tensor]):  # -> Tensor:
+    def with_pos_embed(self, tensor: torch.Tensor, object_queries: Tensor | None):  # -> Tensor:
         ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        object_queries: Optional[torch.Tensor] = ...,
-        key_value_states: Optional[torch.Tensor] = ...,
-        spatial_position_embeddings: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        object_queries: torch.Tensor | None = ...,
+        key_value_states: torch.Tensor | None = ...,
+        spatial_position_embeddings: torch.Tensor | None = ...,
         output_attentions: bool = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]:
         """Input shape: Batch x Time x Channel"""
         ...
 
@@ -186,7 +186,7 @@ class TableTransformerEncoderLayer(nn.Module):
         self,
         hidden_states: torch.Tensor,
         attention_mask: torch.Tensor,
-        object_queries: Optional[torch.Tensor] = ...,
+        object_queries: torch.Tensor | None = ...,
         output_attentions: bool = ...,
     ):  # -> tuple[Tensor, Any] | tuple[Tensor]:
         """
@@ -207,12 +207,12 @@ class TableTransformerDecoderLayer(GradientCheckpointingLayer):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        object_queries: Optional[torch.Tensor] = ...,
-        query_position_embeddings: Optional[torch.Tensor] = ...,
-        encoder_hidden_states: Optional[torch.Tensor] = ...,
-        encoder_attention_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        object_queries: torch.Tensor | None = ...,
+        query_position_embeddings: torch.Tensor | None = ...,
+        encoder_hidden_states: torch.Tensor | None = ...,
+        encoder_attention_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
     ):  # -> tuple[Tensor, Any, Any | None] | tuple[Tensor]:
         """
         Args:
@@ -380,15 +380,15 @@ class TableTransformerModel(TableTransformerPreTrainedModel):
     def forward(
         self,
         pixel_values: torch.FloatTensor,
-        pixel_mask: Optional[torch.FloatTensor] = ...,
-        decoder_attention_mask: Optional[torch.FloatTensor] = ...,
-        encoder_outputs: Optional[torch.FloatTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        decoder_inputs_embeds: Optional[torch.FloatTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.FloatTensor], TableTransformerModelOutput]:
+        pixel_mask: torch.FloatTensor | None = ...,
+        decoder_attention_mask: torch.FloatTensor | None = ...,
+        encoder_outputs: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        decoder_inputs_embeds: torch.FloatTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.FloatTensor] | TableTransformerModelOutput:
         r"""
         decoder_attention_mask (`torch.FloatTensor` of shape `(batch_size, num_queries)`, *optional*):
             Not used by default. Can be used to mask object queries.
@@ -438,16 +438,16 @@ class TableTransformerForObjectDetection(TableTransformerPreTrainedModel):
     def forward(
         self,
         pixel_values: torch.FloatTensor,
-        pixel_mask: Optional[torch.FloatTensor] = ...,
-        decoder_attention_mask: Optional[torch.FloatTensor] = ...,
-        encoder_outputs: Optional[torch.FloatTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        decoder_inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[list[dict]] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.FloatTensor], TableTransformerObjectDetectionOutput]:
+        pixel_mask: torch.FloatTensor | None = ...,
+        decoder_attention_mask: torch.FloatTensor | None = ...,
+        encoder_outputs: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        decoder_inputs_embeds: torch.FloatTensor | None = ...,
+        labels: list[dict] | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.FloatTensor] | TableTransformerObjectDetectionOutput:
         r"""
         decoder_attention_mask (`torch.FloatTensor` of shape `(batch_size, num_queries)`, *optional*):
             Not used by default. Can be used to mask object queries.

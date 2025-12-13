@@ -4,7 +4,8 @@ import types
 import torch
 import torch.fx
 from dataclasses import dataclass
-from typing import Any, Callable, Optional
+from typing import Any, Optional
+from collections.abc import Callable
 from .hooks import Hooks
 
 log = ...
@@ -23,13 +24,13 @@ def bind_locals(signature: inspect.Signature, *args: Any, **kwargs: Any) -> dict
 class CompileArtifacts:
     signature: inspect.Signature
     bytecode: types.CodeType
-    guard_manager: Optional[torch._dynamo.guards.GuardManagerWrapper]
+    guard_manager: torch._dynamo.guards.GuardManagerWrapper | None
     guards_state: bytes
     import_sources: dict[str, str]
     backend_id: str
     compiled_fn: SerializableCallable
     original_code: types.CodeType
-    closure: Optional[tuple[Any, ...]]
+    closure: tuple[Any, ...] | None
 
 @dataclass
 class AOTCompiledFunction:

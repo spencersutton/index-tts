@@ -26,8 +26,8 @@ __all__ = [
     "set_multithreading_enabled",
     "variable",
 ]
-_OptionalTensor: TypeAlias = torch.Tensor | None
-_ShapeorNestedShape: TypeAlias = _size | Sequence[_size] | torch.Tensor
+type _OptionalTensor = torch.Tensor | None
+type _ShapeorNestedShape = _size | Sequence[_size] | torch.Tensor
 
 def backward(
     tensors: _TensorOrTensorsOrGradEdge,

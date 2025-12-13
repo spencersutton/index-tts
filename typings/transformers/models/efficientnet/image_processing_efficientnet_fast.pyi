@@ -42,7 +42,7 @@ class EfficientNetImageProcessorFast(BaseImageProcessorFast):
     include_top = ...
     valid_kwargs = EfficientNetFastImageProcessorKwargs
     def __init__(self, **kwargs: Unpack[EfficientNetFastImageProcessorKwargs]) -> None: ...
-    def rescale(self, image: torch.Tensor, scale: float, offset: Optional[bool] = ..., **kwargs) -> torch.Tensor:
+    def rescale(self, image: torch.Tensor, scale: float, offset: bool | None = ..., **kwargs) -> torch.Tensor:
         """
         Rescale an image by a scale factor.
 
@@ -72,8 +72,8 @@ class EfficientNetImageProcessorFast(BaseImageProcessorFast):
         do_rescale: bool,
         rescale_factor: float,
         do_normalize: bool,
-        image_mean: Union[float, list[float]],
-        image_std: Union[float, list[float]],
+        image_mean: float | list[float],
+        image_std: float | list[float],
         rescale_offset: bool = ...,
     ) -> torch.Tensor:
         """

@@ -114,7 +114,7 @@ def eager_attention_forward(
     query: torch.Tensor,
     key: torch.Tensor,
     value: torch.Tensor,
-    attention_mask: Optional[torch.Tensor],
+    attention_mask: torch.Tensor | None,
     scaling: float,
     dropout: float = ...,
     **kwargs: Unpack[TransformersKwargs],
@@ -123,16 +123,14 @@ def eager_attention_forward(
 
 class DiaSelfAttention(nn.Module):
     """Multi-headed attention from 'Attention Is All You Need' paper"""
-    def __init__(
-        self, config: Union[DiaEncoderConfig, DiaDecoderConfig], layer_idx: int, is_causal: bool = ...
-    ) -> None: ...
+    def __init__(self, config: DiaEncoderConfig | DiaDecoderConfig, layer_idx: int, is_causal: bool = ...) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
         position_embeddings: tuple[torch.Tensor, torch.Tensor],
-        attention_mask: Optional[torch.Tensor],
-        past_key_value: Optional[Cache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        attention_mask: torch.Tensor | None,
+        past_key_value: Cache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Unpack[TransformersKwargs],
     ) -> tuple[torch.Tensor, torch.Tensor]: ...
 
@@ -143,20 +141,20 @@ class DiaCrossAttention(nn.Module):
         self,
         hidden_states: torch.Tensor,
         cross_attention_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        past_key_values: Optional[EncoderDecoderCache] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        past_key_values: EncoderDecoderCache | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor | None]: ...
 
 class DiaEncoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: DiaEncoderConfig, layer_idx: int) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = ...,
+        attention_mask: torch.Tensor | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor | None]: ...
 
 class DiaEncoder(DiaPreTrainedModel):
     def __init__(self, config: DiaEncoderConfig) -> None: ...
@@ -165,25 +163,25 @@ class DiaEncoder(DiaPreTrainedModel):
     def forward(
         self,
         input_ids: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> Union[BaseModelOutput, tuple]: ...
+    ) -> BaseModelOutput | tuple: ...
 
 class DiaDecoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: DiaDecoderConfig, layer_idx: int) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        encoder_hidden_states: Optional[torch.Tensor] = ...,
-        encoder_attention_mask: Optional[torch.Tensor] = ...,
-        past_key_values: Optional[EncoderDecoderCache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        encoder_hidden_states: torch.Tensor | None = ...,
+        encoder_attention_mask: torch.Tensor | None = ...,
+        past_key_values: EncoderDecoderCache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[torch.Tensor]]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor | None, torch.Tensor | None]: ...
 
 class DiaDecoder(DiaPreTrainedModel):
     """Transformer Decoder Stack using DenseGeneral."""
@@ -193,16 +191,16 @@ class DiaDecoder(DiaPreTrainedModel):
     def forward(
         self,
         input_ids: torch.Tensor,
-        position_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        encoder_hidden_states: Optional[torch.FloatTensor] = ...,
-        encoder_attention_mask: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[EncoderDecoderCache] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        position_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        encoder_hidden_states: torch.FloatTensor | None = ...,
+        encoder_attention_mask: torch.LongTensor | None = ...,
+        past_key_values: EncoderDecoderCache | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs,
-    ) -> Union[BaseModelOutputWithPastAndCrossAttentions, tuple]:
+    ) -> BaseModelOutputWithPastAndCrossAttentions | tuple:
         r"""
         input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length, num_codebooks)`):
             The original `decoder_input_ids` in 3D shape to facilitate more efficient computations.
@@ -226,19 +224,19 @@ class DiaModel(DiaPreTrainedModel):
     @can_return_tuple
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.LongTensor] = ...,
-        decoder_input_ids: Optional[torch.LongTensor] = ...,
-        decoder_position_ids: Optional[torch.LongTensor] = ...,
-        decoder_attention_mask: Optional[torch.LongTensor] = ...,
-        encoder_outputs: Optional[Union[BaseModelOutput, tuple]] = ...,
-        past_key_values: Optional[EncoderDecoderCache] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.LongTensor | None = ...,
+        decoder_input_ids: torch.LongTensor | None = ...,
+        decoder_position_ids: torch.LongTensor | None = ...,
+        decoder_attention_mask: torch.LongTensor | None = ...,
+        encoder_outputs: BaseModelOutput | tuple | None = ...,
+        past_key_values: EncoderDecoderCache | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs,
-    ) -> Union[tuple, Seq2SeqModelOutput]:
+    ) -> tuple | Seq2SeqModelOutput:
         r"""
         decoder_input_ids (`torch.LongTensor` of shape `(batch_size * num_codebooks, target_sequence_length)
         or (batch_size, target_sequence_length, num_codebooks)`, *optional*):
@@ -278,20 +276,20 @@ class DiaForConditionalGeneration(DiaPreTrainedModel, DiaGenerationMixin):
     @can_return_tuple
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.LongTensor] = ...,
-        decoder_input_ids: Optional[torch.LongTensor] = ...,
-        decoder_position_ids: Optional[torch.LongTensor] = ...,
-        decoder_attention_mask: Optional[torch.LongTensor] = ...,
-        encoder_outputs: Optional[Union[BaseModelOutput, tuple]] = ...,
-        past_key_values: Optional[EncoderDecoderCache] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.LongTensor | None = ...,
+        decoder_input_ids: torch.LongTensor | None = ...,
+        decoder_position_ids: torch.LongTensor | None = ...,
+        decoder_attention_mask: torch.LongTensor | None = ...,
+        encoder_outputs: BaseModelOutput | tuple | None = ...,
+        past_key_values: EncoderDecoderCache | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        labels: torch.LongTensor | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs,
-    ) -> Union[tuple, Seq2SeqLMOutput]:
+    ) -> tuple | Seq2SeqLMOutput:
         r"""
         decoder_input_ids (`torch.LongTensor` of shape `(batch_size * num_codebooks, target_sequence_length)
         or (batch_size, target_sequence_length, num_codebooks)`, *optional*):

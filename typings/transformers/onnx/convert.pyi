@@ -30,12 +30,12 @@ def check_onnxruntime_requirements(minimum_version: Version):  # -> None:
     ...
 
 def export_pytorch(
-    preprocessor: Union[PreTrainedTokenizer, FeatureExtractionMixin, ProcessorMixin],
+    preprocessor: PreTrainedTokenizer | FeatureExtractionMixin | ProcessorMixin,
     model: PreTrainedModel,
     config: OnnxConfig,
     opset: int,
     output: Path,
-    tokenizer: Optional[PreTrainedTokenizer] = ...,
+    tokenizer: PreTrainedTokenizer | None = ...,
     device: str = ...,
 ) -> tuple[list[str], list[str]]:
     """
@@ -62,12 +62,12 @@ def export_pytorch(
     ...
 
 def export_tensorflow(
-    preprocessor: Union[PreTrainedTokenizer, FeatureExtractionMixin],
+    preprocessor: PreTrainedTokenizer | FeatureExtractionMixin,
     model: TFPreTrainedModel,
     config: OnnxConfig,
     opset: int,
     output: Path,
-    tokenizer: Optional[PreTrainedTokenizer] = ...,
+    tokenizer: PreTrainedTokenizer | None = ...,
 ) -> tuple[list[str], list[str]]:
     """
     Export a TensorFlow model to an ONNX Intermediate Representation (IR)
@@ -91,12 +91,12 @@ def export_tensorflow(
     ...
 
 def export(
-    preprocessor: Union[PreTrainedTokenizer, FeatureExtractionMixin, ProcessorMixin],
-    model: Union[PreTrainedModel, TFPreTrainedModel],
+    preprocessor: PreTrainedTokenizer | FeatureExtractionMixin | ProcessorMixin,
+    model: PreTrainedModel | TFPreTrainedModel,
     config: OnnxConfig,
     opset: int,
     output: Path,
-    tokenizer: Optional[PreTrainedTokenizer] = ...,
+    tokenizer: PreTrainedTokenizer | None = ...,
     device: str = ...,
 ) -> tuple[list[str], list[str]]:
     """
@@ -125,16 +125,16 @@ def export(
 
 def validate_model_outputs(
     config: OnnxConfig,
-    preprocessor: Union[PreTrainedTokenizer, FeatureExtractionMixin, ProcessorMixin],
-    reference_model: Union[PreTrainedModel, TFPreTrainedModel],
+    preprocessor: PreTrainedTokenizer | FeatureExtractionMixin | ProcessorMixin,
+    reference_model: PreTrainedModel | TFPreTrainedModel,
     onnx_model: Path,
     onnx_named_outputs: list[str],
     atol: float,
-    tokenizer: Optional[PreTrainedTokenizer] = ...,
+    tokenizer: PreTrainedTokenizer | None = ...,
 ):  # -> None:
     ...
 def ensure_model_and_config_inputs_match(
-    model: Union[PreTrainedModel, TFPreTrainedModel], model_inputs: Iterable[str]
+    model: PreTrainedModel | TFPreTrainedModel, model_inputs: Iterable[str]
 ) -> tuple[bool, list[str]]:
     """
 

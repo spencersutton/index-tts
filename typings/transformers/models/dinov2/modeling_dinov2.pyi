@@ -31,7 +31,7 @@ class Dinov2Embeddings(nn.Module):
         """
         ...
 
-    def forward(self, pixel_values: torch.Tensor, bool_masked_pos: Optional[torch.Tensor] = ...) -> torch.Tensor: ...
+    def forward(self, pixel_values: torch.Tensor, bool_masked_pos: torch.Tensor | None = ...) -> torch.Tensor: ...
 
 class Dinov2PatchEmbeddings(nn.Module):
     """
@@ -47,7 +47,7 @@ def eager_attention_forward(
     query: torch.Tensor,
     key: torch.Tensor,
     value: torch.Tensor,
-    attention_mask: Optional[torch.Tensor],
+    attention_mask: torch.Tensor | None,
     scaling: float,
     dropout: float = ...,
     **kwargs,
@@ -57,8 +57,8 @@ def eager_attention_forward(
 class Dinov2SelfAttention(nn.Module):
     def __init__(self, config: Dinov2Config) -> None: ...
     def forward(
-        self, hidden_states, head_mask: Optional[torch.Tensor] = ..., output_attentions: bool = ...
-    ) -> Union[tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor]]: ...
+        self, hidden_states, head_mask: torch.Tensor | None = ..., output_attentions: bool = ...
+    ) -> tuple[torch.Tensor, torch.Tensor] | tuple[torch.Tensor]: ...
 
 class Dinov2SelfOutput(nn.Module):
     """
@@ -72,8 +72,8 @@ class Dinov2Attention(nn.Module):
     def __init__(self, config: Dinov2Config) -> None: ...
     def prune_heads(self, heads: set[int]) -> None: ...
     def forward(
-        self, hidden_states: torch.Tensor, head_mask: Optional[torch.Tensor] = ..., output_attentions: bool = ...
-    ) -> Union[tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor]]: ...
+        self, hidden_states: torch.Tensor, head_mask: torch.Tensor | None = ..., output_attentions: bool = ...
+    ) -> tuple[torch.Tensor, torch.Tensor] | tuple[torch.Tensor]: ...
 
 class Dinov2LayerScale(nn.Module):
     def __init__(self, config) -> None: ...
@@ -93,7 +93,7 @@ def drop_path(input: torch.Tensor, drop_prob: float = ..., training: bool = ...)
 
 class Dinov2DropPath(nn.Module):
     """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks)."""
-    def __init__(self, drop_prob: Optional[float] = ...) -> None: ...
+    def __init__(self, drop_prob: float | None = ...) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
     def extra_repr(self) -> str: ...
 
@@ -109,19 +109,19 @@ class Dinov2Layer(GradientCheckpointingLayer):
     """This corresponds to the Block class in the original implementation."""
     def __init__(self, config: Dinov2Config) -> None: ...
     def forward(
-        self, hidden_states: torch.Tensor, head_mask: Optional[torch.Tensor] = ..., output_attentions: bool = ...
-    ) -> Union[tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor]]: ...
+        self, hidden_states: torch.Tensor, head_mask: torch.Tensor | None = ..., output_attentions: bool = ...
+    ) -> tuple[torch.Tensor, torch.Tensor] | tuple[torch.Tensor]: ...
 
 class Dinov2Encoder(nn.Module):
     def __init__(self, config: Dinov2Config) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        head_mask: Optional[torch.Tensor] = ...,
+        head_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ) -> Union[tuple, BaseModelOutput]: ...
+    ) -> tuple | BaseModelOutput: ...
 
 @auto_docstring
 class Dinov2PreTrainedModel(PreTrainedModel):
@@ -142,13 +142,13 @@ class Dinov2Model(Dinov2PreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.Tensor] = ...,
-        bool_masked_pos: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPooling]:
+        pixel_values: torch.Tensor | None = ...,
+        bool_masked_pos: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutputWithPooling:
         r"""
         bool_masked_pos (`torch.BoolTensor` of shape `(batch_size, sequence_length)`):
             Boolean masked positions. Indicates which patches are masked (1) and which aren't (0). Only relevant for
@@ -167,13 +167,13 @@ class Dinov2ForImageClassification(Dinov2PreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ImageClassifierOutput]:
+        pixel_values: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | ImageClassifierOutput:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
@@ -194,9 +194,9 @@ class Dinov2Backbone(Dinov2PreTrainedModel, BackboneMixin):
     def forward(
         self,
         pixel_values: torch.Tensor,
-        output_hidden_states: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        output_hidden_states: bool | None = ...,
+        output_attentions: bool | None = ...,
+        return_dict: bool | None = ...,
     ) -> BackboneOutput:
         r"""
         Examples:

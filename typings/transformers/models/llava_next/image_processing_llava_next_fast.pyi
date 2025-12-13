@@ -24,8 +24,8 @@ class LlavaNextFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
         number of patches in the batch. Padding will be applied to the bottom and right with zeros.
     """
 
-    image_grid_pinpoints: Optional[list[list[int]]]
-    do_pad: Optional[bool]
+    image_grid_pinpoints: list[list[int]] | None
+    do_pad: bool | None
     ...
 
 @auto_docstring

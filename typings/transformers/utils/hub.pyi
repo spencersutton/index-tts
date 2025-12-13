@@ -39,7 +39,7 @@ HUGGINGFACE_CO_PREFIX = ...
 HUGGINGFACE_CO_EXAMPLES_TELEMETRY = ...
 
 def list_repo_templates(
-    repo_id: str, *, local_files_only: bool, revision: Optional[str] = ..., cache_dir: Optional[str] = ...
+    repo_id: str, *, local_files_only: bool, revision: str | None = ..., cache_dir: str | None = ...
 ) -> list[str]:
     """List template files from a repo.
 
@@ -52,19 +52,19 @@ def is_remote_url(url_or_filename):  # -> bool:
     ...
 def define_sagemaker_information():  # -> dict[str, str | int | bool | Any | None]:
     ...
-def http_user_agent(user_agent: Union[dict, str, None] = ...) -> str:
+def http_user_agent(user_agent: dict | str | None = ...) -> str:
     """
     Formats a user-agent string with basic info about a request.
     """
     ...
 
-def extract_commit_hash(resolved_file: Optional[str], commit_hash: Optional[str]) -> Optional[str]:
+def extract_commit_hash(resolved_file: str | None, commit_hash: str | None) -> str | None:
     """
     Extracts the commit hash from a resolved filename toward a cache file.
     """
     ...
 
-def cached_file(path_or_repo_id: Union[str, os.PathLike], filename: str, **kwargs) -> Optional[str]:
+def cached_file(path_or_repo_id: str | os.PathLike, filename: str, **kwargs) -> str | None:
     """
     Tries to locate a file in a local folder and repo, downloads and cache it if necessary.
 
@@ -121,24 +121,24 @@ def cached_file(path_or_repo_id: Union[str, os.PathLike], filename: str, **kwarg
     ...
 
 def cached_files(
-    path_or_repo_id: Union[str, os.PathLike],
+    path_or_repo_id: str | os.PathLike,
     filenames: list[str],
-    cache_dir: Optional[Union[str, os.PathLike]] = ...,
+    cache_dir: str | os.PathLike | None = ...,
     force_download: bool = ...,
-    resume_download: Optional[bool] = ...,
-    proxies: Optional[dict[str, str]] = ...,
-    token: Optional[Union[bool, str]] = ...,
-    revision: Optional[str] = ...,
+    resume_download: bool | None = ...,
+    proxies: dict[str, str] | None = ...,
+    token: bool | str | None = ...,
+    revision: str | None = ...,
     local_files_only: bool = ...,
     subfolder: str = ...,
-    repo_type: Optional[str] = ...,
-    user_agent: Optional[Union[str, dict[str, str]]] = ...,
+    repo_type: str | None = ...,
+    user_agent: str | dict[str, str] | None = ...,
     _raise_exceptions_for_gated_repo: bool = ...,
     _raise_exceptions_for_missing_entries: bool = ...,
     _raise_exceptions_for_connection_errors: bool = ...,
-    _commit_hash: Optional[str] = ...,
+    _commit_hash: str | None = ...,
     **deprecated_kwargs,
-) -> Optional[str]:
+) -> str | None:
     """
     Tries to locate several files in a local folder and repo, downloads and cache them if necessary.
 
@@ -222,15 +222,15 @@ def download_url(url, proxies=...):  # -> str:
     ...
 
 def has_file(
-    path_or_repo: Union[str, os.PathLike],
+    path_or_repo: str | os.PathLike,
     filename: str,
-    revision: Optional[str] = ...,
-    proxies: Optional[dict[str, str]] = ...,
-    token: Optional[Union[bool, str]] = ...,
+    revision: str | None = ...,
+    proxies: dict[str, str] | None = ...,
+    token: bool | str | None = ...,
     *,
     local_files_only: bool = ...,
-    cache_dir: Union[str, Path, None] = ...,
-    repo_type: Optional[str] = ...,
+    cache_dir: str | Path | None = ...,
+    repo_type: str | None = ...,
     **deprecated_kwargs,
 ):  # -> bool:
     """
@@ -254,16 +254,16 @@ class PushToHubMixin:
     def push_to_hub(
         self,
         repo_id: str,
-        use_temp_dir: Optional[bool] = ...,
-        commit_message: Optional[str] = ...,
-        private: Optional[bool] = ...,
-        token: Optional[Union[bool, str]] = ...,
-        max_shard_size: Optional[Union[int, str]] = ...,
+        use_temp_dir: bool | None = ...,
+        commit_message: str | None = ...,
+        private: bool | None = ...,
+        token: bool | str | None = ...,
+        max_shard_size: int | str | None = ...,
         create_pr: bool = ...,
         safe_serialization: bool = ...,
-        revision: Optional[str] = ...,
-        commit_description: Optional[str] = ...,
-        tags: Optional[list[str]] = ...,
+        revision: str | None = ...,
+        commit_description: str | None = ...,
+        tags: list[str] | None = ...,
         **deprecated_kwargs,
     ) -> str:
         """
@@ -328,7 +328,7 @@ def send_example_telemetry(example_name, *example_args, framework=...):  # -> No
     """
     ...
 
-def convert_file_size_to_int(size: Union[int, str]):  # -> int:
+def convert_file_size_to_int(size: int | str):  # -> int:
     """
     Converts a size expressed as a string with digits an unit (like `"5MB"`) to an integer (in bytes).
 
@@ -371,7 +371,7 @@ def get_checkpoint_shard_files(
     ...
 
 def create_and_tag_model_card(
-    repo_id: str, tags: Optional[list[str]] = ..., token: Optional[str] = ..., ignore_metadata_errors: bool = ...
+    repo_id: str, tags: list[str] | None = ..., token: str | None = ..., ignore_metadata_errors: bool = ...
 ):  # -> ModelCard:
     """
     Creates or loads an existing model card and tags it.
@@ -393,7 +393,7 @@ class PushInProgress:
     """
     Internal class to keep track of a push in progress (which might contain multiple `Future` jobs).
     """
-    def __init__(self, jobs: Optional[futures.Future] = ...) -> None: ...
+    def __init__(self, jobs: futures.Future | None = ...) -> None: ...
     def is_done(self):  # -> bool:
         ...
     def wait_until_done(self):  # -> None:

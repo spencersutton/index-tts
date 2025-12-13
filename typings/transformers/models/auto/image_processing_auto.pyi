@@ -12,20 +12,20 @@ from .configuration_auto import replace_list_option_in_docstrings
 logger = ...
 FORCE_FAST_IMAGE_PROCESSOR = ...
 if TYPE_CHECKING:
-    IMAGE_PROCESSOR_MAPPING_NAMES: OrderedDict[str, tuple[Optional[str], Optional[str]]] = ...
+    IMAGE_PROCESSOR_MAPPING_NAMES: OrderedDict[str, tuple[str | None, str | None]] = ...
 else: ...
 IMAGE_PROCESSOR_MAPPING = ...
 
 def get_image_processor_class_from_name(class_name: str):  # -> type[BaseImageProcessorFast] | Any | None:
     ...
 def get_image_processor_config(
-    pretrained_model_name_or_path: Union[str, os.PathLike],
-    cache_dir: Optional[Union[str, os.PathLike]] = ...,
+    pretrained_model_name_or_path: str | os.PathLike,
+    cache_dir: str | os.PathLike | None = ...,
     force_download: bool = ...,
-    resume_download: Optional[bool] = ...,
-    proxies: Optional[dict[str, str]] = ...,
-    token: Optional[Union[bool, str]] = ...,
-    revision: Optional[str] = ...,
+    resume_download: bool | None = ...,
+    proxies: dict[str, str] | None = ...,
+    token: bool | str | None = ...,
+    revision: str | None = ...,
     local_files_only: bool = ...,
     **kwargs,
 ):  # -> dict[Any, Any] | Any:

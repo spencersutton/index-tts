@@ -25,9 +25,7 @@ class XetConnectionInfo:
     endpoint: str
     ...
 
-def parse_xet_file_data_from_response(
-    response: requests.Response, endpoint: Optional[str] = ...
-) -> Optional[XetFileData]:
+def parse_xet_file_data_from_response(response: requests.Response, endpoint: str | None = ...) -> XetFileData | None:
     """
     Parse XET file metadata from an HTTP response.
 
@@ -44,7 +42,7 @@ def parse_xet_file_data_from_response(
     """
     ...
 
-def parse_xet_connection_info_from_headers(headers: Dict[str, str]) -> Optional[XetConnectionInfo]:
+def parse_xet_connection_info_from_headers(headers: dict[str, str]) -> XetConnectionInfo | None:
     """
     Parse XET connection info from the HTTP headers or return None if not found.
     Args:
@@ -58,7 +56,7 @@ def parse_xet_connection_info_from_headers(headers: Dict[str, str]) -> Optional[
     ...
 
 @validate_hf_hub_args
-def refresh_xet_connection_info(*, file_data: XetFileData, headers: Dict[str, str]) -> XetConnectionInfo:
+def refresh_xet_connection_info(*, file_data: XetFileData, headers: dict[str, str]) -> XetConnectionInfo:
     """
     Utilizes the information in the parsed metadata to request the Hub xet connection information.
     This includes the access token, expiration, and XET service URL.
@@ -84,10 +82,10 @@ def fetch_xet_connection_info_from_repo_info(
     token_type: XetTokenType,
     repo_id: str,
     repo_type: str,
-    revision: Optional[str] = ...,
-    headers: Dict[str, str],
-    endpoint: Optional[str] = ...,
-    params: Optional[Dict[str, str]] = ...,
+    revision: str | None = ...,
+    headers: dict[str, str],
+    endpoint: str | None = ...,
+    params: dict[str, str] | None = ...,
 ) -> XetConnectionInfo:
     """
     Uses the repo info to request a xet access token from Hub.

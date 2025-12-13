@@ -54,7 +54,7 @@ def eager_attention_forward(
     query: torch.Tensor,
     key: torch.Tensor,
     value: torch.Tensor,
-    attention_mask: Optional[torch.Tensor],
+    attention_mask: torch.Tensor | None,
     scaling: float,
     dropout: float = ...,
     **kwargs,
@@ -64,8 +64,8 @@ def eager_attention_forward(
 class VivitSelfAttention(nn.Module):
     def __init__(self, config: VivitConfig) -> None: ...
     def forward(
-        self, hidden_states, head_mask: Optional[torch.Tensor] = ..., output_attentions: bool = ...
-    ) -> Union[tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor]]: ...
+        self, hidden_states, head_mask: torch.Tensor | None = ..., output_attentions: bool = ...
+    ) -> tuple[torch.Tensor, torch.Tensor] | tuple[torch.Tensor]: ...
 
 class VivitSelfOutput(nn.Module):
     """
@@ -79,8 +79,8 @@ class VivitAttention(nn.Module):
     def __init__(self, config: VivitConfig) -> None: ...
     def prune_heads(self, heads: set[int]) -> None: ...
     def forward(
-        self, hidden_states: torch.Tensor, head_mask: Optional[torch.Tensor] = ..., output_attentions: bool = ...
-    ) -> Union[tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor]]: ...
+        self, hidden_states: torch.Tensor, head_mask: torch.Tensor | None = ..., output_attentions: bool = ...
+    ) -> tuple[torch.Tensor, torch.Tensor] | tuple[torch.Tensor]: ...
 
 class VivitIntermediate(nn.Module):
     def __init__(self, config) -> None: ...
@@ -135,13 +135,13 @@ class VivitModel(VivitPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
+        pixel_values: torch.FloatTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
         interpolate_pos_encoding: bool = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.FloatTensor], BaseModelOutputWithPooling]:
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.FloatTensor] | BaseModelOutputWithPooling:
         r"""
         Examples:
 
@@ -237,14 +237,14 @@ class VivitForVideoClassification(VivitPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
+        pixel_values: torch.FloatTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
         interpolate_pos_encoding: bool = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.FloatTensor], ImageClassifierOutput]:
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.FloatTensor] | ImageClassifierOutput:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the image classification/regression loss. Indices should be in `[0, ...,

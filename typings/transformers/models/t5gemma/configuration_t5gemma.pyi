@@ -155,8 +155,8 @@ class T5GemmaConfig(PretrainedConfig):
     base_model_pp_plan = ...
     def __init__(
         self,
-        encoder: Optional[Union[T5GemmaModuleConfig, dict[Any, Any]]] = ...,
-        decoder: Optional[Union[T5GemmaModuleConfig, dict[Any, Any]]] = ...,
+        encoder: T5GemmaModuleConfig | dict[Any, Any] | None = ...,
+        decoder: T5GemmaModuleConfig | dict[Any, Any] | None = ...,
         is_encoder_decoder: bool = ...,
         dropout_rate: float = ...,
         classifier_dropout_rate: float = ...,

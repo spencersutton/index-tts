@@ -41,8 +41,8 @@ class Mask2FormerPixelDecoderOutput(ModelOutput):
     """
 
     multi_scale_features: tuple[torch.FloatTensor] = ...
-    mask_features: Optional[torch.FloatTensor] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
+    mask_features: torch.FloatTensor | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
 
 @dataclass
 @auto_docstring(
@@ -69,9 +69,9 @@ class Mask2FormerMaskedAttentionDecoderOutput(BaseModelOutputWithCrossAttentions
         layernorm.
     """
 
-    last_hidden_state: Optional[torch.FloatTensor] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[torch.FloatTensor] = ...
+    last_hidden_state: torch.FloatTensor | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: torch.FloatTensor | None = ...
     masks_queries_logits: tuple[torch.FloatTensor] = ...
     intermediate_hidden_states: tuple[torch.FloatTensor] = ...
 
@@ -102,9 +102,9 @@ class Mask2FormerPixelLevelModuleOutput(ModelOutput):
         called feature maps) of the model at the output of each stage.
     """
 
-    encoder_last_hidden_state: Optional[torch.FloatTensor] = ...
-    encoder_hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    decoder_last_hidden_state: Optional[torch.FloatTensor] = ...
+    encoder_last_hidden_state: torch.FloatTensor | None = ...
+    encoder_hidden_states: tuple[torch.FloatTensor] | None = ...
+    decoder_last_hidden_state: torch.FloatTensor | None = ...
     decoder_hidden_states: tuple[torch.FloatTensor] = ...
 
 @dataclass
@@ -144,15 +144,15 @@ class Mask2FormerModelOutput(ModelOutput):
         sequence_length)`. Self attentions weights from transformer decoder.
     """
 
-    encoder_last_hidden_state: Optional[torch.FloatTensor] = ...
-    pixel_decoder_last_hidden_state: Optional[torch.FloatTensor] = ...
-    transformer_decoder_last_hidden_state: Optional[torch.FloatTensor] = ...
-    encoder_hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    pixel_decoder_hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    transformer_decoder_hidden_states: Optional[tuple[torch.FloatTensor]] = ...
+    encoder_last_hidden_state: torch.FloatTensor | None = ...
+    pixel_decoder_last_hidden_state: torch.FloatTensor | None = ...
+    transformer_decoder_last_hidden_state: torch.FloatTensor | None = ...
+    encoder_hidden_states: tuple[torch.FloatTensor] | None = ...
+    pixel_decoder_hidden_states: tuple[torch.FloatTensor] | None = ...
+    transformer_decoder_hidden_states: tuple[torch.FloatTensor] | None = ...
     transformer_decoder_intermediate_states: tuple[torch.FloatTensor] = ...
     masks_queries_logits: tuple[torch.FloatTensor] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
 
 @dataclass
 @auto_docstring(
@@ -200,17 +200,17 @@ class Mask2FormerForUniversalSegmentationOutput(ModelOutput):
         sequence_length)`. Self and Cross Attentions weights from transformer decoder.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    class_queries_logits: Optional[torch.FloatTensor] = ...
-    masks_queries_logits: Optional[torch.FloatTensor] = ...
-    auxiliary_logits: Optional[list[dict[str, torch.FloatTensor]]] = ...
-    encoder_last_hidden_state: Optional[torch.FloatTensor] = ...
-    pixel_decoder_last_hidden_state: Optional[torch.FloatTensor] = ...
-    transformer_decoder_last_hidden_state: Optional[torch.FloatTensor] = ...
-    encoder_hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    pixel_decoder_hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    transformer_decoder_hidden_states: Optional[torch.FloatTensor] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
+    loss: torch.FloatTensor | None = ...
+    class_queries_logits: torch.FloatTensor | None = ...
+    masks_queries_logits: torch.FloatTensor | None = ...
+    auxiliary_logits: list[dict[str, torch.FloatTensor]] | None = ...
+    encoder_last_hidden_state: torch.FloatTensor | None = ...
+    pixel_decoder_last_hidden_state: torch.FloatTensor | None = ...
+    transformer_decoder_last_hidden_state: torch.FloatTensor | None = ...
+    encoder_hidden_states: tuple[torch.FloatTensor] | None = ...
+    pixel_decoder_hidden_states: tuple[torch.FloatTensor] | None = ...
+    transformer_decoder_hidden_states: torch.FloatTensor | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
 
 def sample_point(input_features: torch.Tensor, point_coordinates: torch.Tensor, add_dim=..., **kwargs) -> torch.Tensor:
     """
@@ -473,7 +473,7 @@ class Mask2FormerLoss(nn.Module):
         class_queries_logits: torch.Tensor,
         mask_labels: list[torch.Tensor],
         class_labels: list[torch.Tensor],
-        auxiliary_predictions: Optional[dict[str, torch.Tensor]] = ...,
+        auxiliary_predictions: dict[str, torch.Tensor] | None = ...,
     ) -> dict[str, torch.Tensor]:
         """
         This performs the loss computation.
@@ -511,7 +511,7 @@ class Mask2FormerLoss(nn.Module):
 
 def multi_scale_deformable_attention(
     value: Tensor,
-    value_spatial_shapes: Union[Tensor, list[tuple]],
+    value_spatial_shapes: Tensor | list[tuple],
     sampling_locations: Tensor,
     attention_weights: Tensor,
 ) -> Tensor: ...
@@ -522,24 +522,24 @@ class Mask2FormerSinePositionEmbedding(nn.Module):
     need paper, generalized to work on images.
     """
     def __init__(
-        self, num_pos_feats: int = ..., temperature: int = ..., normalize: bool = ..., scale: Optional[float] = ...
+        self, num_pos_feats: int = ..., temperature: int = ..., normalize: bool = ..., scale: float | None = ...
     ) -> None: ...
-    def forward(self, x: Tensor, mask: Optional[Tensor] = ...) -> Tensor: ...
+    def forward(self, x: Tensor, mask: Tensor | None = ...) -> Tensor: ...
 
 class Mask2FormerPixelDecoderEncoderMultiscaleDeformableAttention(nn.Module):
     """
     Multiscale deformable attention as proposed in Deformable DETR.
     """
     def __init__(self, embed_dim: int, num_heads: int, n_levels: int, n_points: int) -> None: ...
-    def with_pos_embed(self, tensor: torch.Tensor, position_embeddings: Optional[Tensor]):  # -> Tensor:
+    def with_pos_embed(self, tensor: torch.Tensor, position_embeddings: Tensor | None):  # -> Tensor:
         ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
         encoder_hidden_states=...,
         encoder_attention_mask=...,
-        position_embeddings: Optional[torch.Tensor] = ...,
+        position_embeddings: torch.Tensor | None = ...,
         reference_points=...,
         spatial_shapes_list=...,
         level_start_index=...,
@@ -553,7 +553,7 @@ class Mask2FormerPixelDecoderEncoderLayer(nn.Module):
         self,
         hidden_states: torch.Tensor,
         attention_mask: torch.Tensor,
-        position_embeddings: Optional[torch.Tensor] = ...,
+        position_embeddings: torch.Tensor | None = ...,
         reference_points=...,
         spatial_shapes_list=...,
         level_start_index=...,
@@ -680,17 +680,17 @@ class Mask2FormerAttention(nn.Module):
     def __init__(
         self, embed_dim: int, num_heads: int, dropout: float = ..., is_decoder: bool = ..., bias: bool = ...
     ) -> None: ...
-    def with_pos_embed(self, tensor: torch.Tensor, position_embeddings: Optional[Tensor]):  # -> Tensor:
+    def with_pos_embed(self, tensor: torch.Tensor, position_embeddings: Tensor | None):  # -> Tensor:
         ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_embeddings: Optional[torch.Tensor] = ...,
-        key_value_states: Optional[torch.Tensor] = ...,
-        key_value_position_embeddings: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_embeddings: torch.Tensor | None = ...,
+        key_value_states: torch.Tensor | None = ...,
+        key_value_position_embeddings: torch.Tensor | None = ...,
         output_attentions: bool = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]:
         """Input shape: Batch x Time x Channel"""
         ...
 
@@ -708,41 +708,41 @@ class Mask2FormerMaskedAttentionDecoderLayer(GradientCheckpointingLayer):
             The configuration used to initialize the Mask2FormerMaskedAttentionDecoder.
     """
     def __init__(self, config: Mask2FormerConfig) -> None: ...
-    def with_pos_embed(self, tensor, pos: Optional[Tensor]): ...
+    def with_pos_embed(self, tensor, pos: Tensor | None): ...
     def forward_post(
         self,
         hidden_states: torch.Tensor,
-        level_index: Optional[int] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_embeddings: Optional[torch.Tensor] = ...,
-        query_position_embeddings: Optional[torch.Tensor] = ...,
-        encoder_hidden_states: Optional[torch.Tensor] = ...,
-        encoder_attention_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
+        level_index: int | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_embeddings: torch.Tensor | None = ...,
+        query_position_embeddings: torch.Tensor | None = ...,
+        encoder_hidden_states: torch.Tensor | None = ...,
+        encoder_attention_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
     ):  # -> tuple[Tensor, Any, Any] | tuple[Tensor]:
         ...
     def forward_pre(
         self,
         hidden_states: torch.Tensor,
-        level_index: Optional[int] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_embeddings: Optional[torch.Tensor] = ...,
-        query_position_embeddings: Optional[torch.Tensor] = ...,
-        encoder_hidden_states: Optional[torch.Tensor] = ...,
-        encoder_attention_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
+        level_index: int | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_embeddings: torch.Tensor | None = ...,
+        query_position_embeddings: torch.Tensor | None = ...,
+        encoder_hidden_states: torch.Tensor | None = ...,
+        encoder_attention_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
     ):  # -> tuple[Tensor, Any, Any] | tuple[Tensor]:
         ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        level_index: Optional[int] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_embeddings: Optional[torch.Tensor] = ...,
-        query_position_embeddings: Optional[torch.Tensor] = ...,
-        encoder_hidden_states: Optional[torch.Tensor] = ...,
-        encoder_attention_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
+        level_index: int | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_embeddings: torch.Tensor | None = ...,
+        query_position_embeddings: torch.Tensor | None = ...,
+        encoder_hidden_states: torch.Tensor | None = ...,
+        encoder_attention_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
     ):  # -> tuple[Tensor, Any, Any] | tuple[Tensor]:
         """
         Args:
@@ -779,15 +779,15 @@ class Mask2FormerMaskedAttentionDecoder(nn.Module):
     def __init__(self, config: Mask2FormerConfig) -> None: ...
     def forward(
         self,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        multi_stage_positional_embeddings: Optional[torch.Tensor] = ...,
-        pixel_embeddings: Optional[torch.Tensor] = ...,
-        encoder_hidden_states: Optional[torch.Tensor] = ...,
-        query_position_embeddings: Optional[torch.Tensor] = ...,
-        feature_size_list: Optional[list] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        multi_stage_positional_embeddings: torch.Tensor | None = ...,
+        pixel_embeddings: torch.Tensor | None = ...,
+        encoder_hidden_states: torch.Tensor | None = ...,
+        query_position_embeddings: torch.Tensor | None = ...,
+        feature_size_list: list | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
     ):  # -> tuple[Tensor | Any | tuple[Tensor | Any, ...] | tuple[()] | tuple[Any, ...] | tuple[Any] | tuple[Any, Any], ...] | Mask2FormerMaskedAttentionDecoderOutput:
         r"""
         Args:
@@ -858,7 +858,7 @@ class Mask2FormerMaskPredictor(nn.Module):
         ...
 
     def forward(
-        self, outputs: torch.Tensor, pixel_embeddings: torch.Tensor, attention_mask_target_size: Optional[int] = ...
+        self, outputs: torch.Tensor, pixel_embeddings: torch.Tensor, attention_mask_target_size: int | None = ...
     ):  # -> tuple[Tensor, Tensor]:
         ...
 
@@ -889,10 +889,10 @@ class Mask2FormerModel(Mask2FormerPreTrainedModel):
     def forward(
         self,
         pixel_values: Tensor,
-        pixel_mask: Optional[Tensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        pixel_mask: Tensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        output_attentions: bool | None = ...,
+        return_dict: bool | None = ...,
     ) -> Mask2FormerModelOutput: ...
 
 @auto_docstring(
@@ -918,13 +918,13 @@ class Mask2FormerForUniversalSegmentation(Mask2FormerPreTrainedModel):
     def forward(
         self,
         pixel_values: Tensor,
-        mask_labels: Optional[list[Tensor]] = ...,
-        class_labels: Optional[list[Tensor]] = ...,
-        pixel_mask: Optional[Tensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        output_auxiliary_logits: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        mask_labels: list[Tensor] | None = ...,
+        class_labels: list[Tensor] | None = ...,
+        pixel_mask: Tensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        output_auxiliary_logits: bool | None = ...,
+        output_attentions: bool | None = ...,
+        return_dict: bool | None = ...,
     ) -> Mask2FormerForUniversalSegmentationOutput:
         r"""
         mask_labels (`list[torch.Tensor]`, *optional*):

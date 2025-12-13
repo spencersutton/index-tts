@@ -110,7 +110,7 @@ class ImageGPTOnnxConfig(OnnxConfig):
         batch_size: int = ...,
         seq_length: int = ...,
         is_pair: bool = ...,
-        framework: Optional[TensorType] = ...,
+        framework: TensorType | None = ...,
         num_channels: int = ...,
         image_width: int = ...,
         image_height: int = ...,

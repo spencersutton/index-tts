@@ -21,11 +21,11 @@ class RagTokenizer:
     def prepare_seq2seq_batch(
         self,
         src_texts: list[str],
-        tgt_texts: Optional[list[str]] = ...,
-        max_length: Optional[int] = ...,
-        max_target_length: Optional[int] = ...,
+        tgt_texts: list[str] | None = ...,
+        max_length: int | None = ...,
+        max_target_length: int | None = ...,
         padding: str = ...,
-        return_tensors: Optional[str] = ...,
+        return_tensors: str | None = ...,
         truncation: bool = ...,
         **kwargs,
     ) -> BatchEncoding: ...

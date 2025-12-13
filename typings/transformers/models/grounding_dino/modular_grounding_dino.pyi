@@ -16,7 +16,7 @@ class GroundingDinoImageProcessorFast(DetrImageProcessorFast):
         self,
         outputs: GroundingDinoObjectDetectionOutput,
         threshold: float = ...,
-        target_sizes: Optional[Union[TensorType, list[tuple]]] = ...,
+        target_sizes: TensorType | list[tuple] | None = ...,
     ):  # -> list[Any]:
         """
         Converts the raw output of [`GroundingDinoForObjectDetection`] into final bounding boxes in (top_left_x, top_left_y,

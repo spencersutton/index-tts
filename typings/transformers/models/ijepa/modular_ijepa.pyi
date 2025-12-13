@@ -26,7 +26,7 @@ class IJepaEmbeddings(ViTEmbeddings):
     def forward(
         self,
         pixel_values: torch.Tensor,
-        bool_masked_pos: Optional[torch.BoolTensor] = ...,
+        bool_masked_pos: torch.BoolTensor | None = ...,
         interpolate_pos_encoding: bool = ...,
     ) -> torch.Tensor: ...
 
@@ -70,14 +70,14 @@ class IJepaForImageClassification(IJepaPreTrainedModel, ViTForImageClassificatio
     def __init__(self, config: IJepaConfig) -> None: ...
     def forward(
         self,
-        pixel_values: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        interpolate_pos_encoding: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ImageClassifierOutput]:
+        pixel_values: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        interpolate_pos_encoding: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | ImageClassifierOutput:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the image classification/regression loss. Indices should be in `[0, ...,

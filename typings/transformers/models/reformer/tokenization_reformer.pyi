@@ -63,7 +63,7 @@ class ReformerTokenizer(PreTrainedTokenizer):
         eos_token=...,
         unk_token=...,
         additional_special_tokens=...,
-        sp_model_kwargs: Optional[dict[str, Any]] = ...,
+        sp_model_kwargs: dict[str, Any] | None = ...,
         **kwargs,
     ) -> None: ...
     @property
@@ -77,6 +77,6 @@ class ReformerTokenizer(PreTrainedTokenizer):
         """Converts a sequence of tokens (string) in a single string."""
         ...
 
-    def save_vocabulary(self, save_directory: str, filename_prefix: Optional[str] = ...) -> tuple[str]: ...
+    def save_vocabulary(self, save_directory: str, filename_prefix: str | None = ...) -> tuple[str]: ...
 
 __all__ = ["ReformerTokenizer"]

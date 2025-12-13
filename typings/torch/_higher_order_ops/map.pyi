@@ -1,7 +1,8 @@
 import torch
 import torch.utils._pytree as pytree
-from typing import Callable, Union
-from typing_extensions import TypeVarTuple
+from typing import Union
+from collections.abc import Callable
+from typing import TypeVarTuple
 from torch._C import DispatchKey
 from torch._ops import HigherOrderOperator
 from torch._subclasses.fake_tensor import FakeTensorMode
@@ -16,7 +17,7 @@ map_impl = ...
 
 def map(
     f: Callable[[pytree.PyTree, tuple[pytree.PyTree, ...]], pytree.PyTree],
-    xs: Union[pytree.PyTree, torch.Tensor],
+    xs: pytree.PyTree | torch.Tensor,
     *args: TypeVarTuple,
 ): ...
 

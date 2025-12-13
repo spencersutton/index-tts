@@ -74,7 +74,7 @@ class HGNetV2Backbone(HGNetV2PreTrainedModel, BackboneMixin):
     def __init__(self, config: HGNetV2Config) -> None: ...
     @auto_docstring
     def forward(
-        self, pixel_values: Tensor, output_hidden_states: Optional[bool] = ..., return_dict: Optional[bool] = ...
+        self, pixel_values: Tensor, output_hidden_states: bool | None = ..., return_dict: bool | None = ...
     ) -> BackboneOutput:
         r"""
         Examples:
@@ -108,10 +108,10 @@ class HGNetV2ForImageClassification(HGNetV2PreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        pixel_values: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
     ) -> ImageClassifierOutputWithNoAttention:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):

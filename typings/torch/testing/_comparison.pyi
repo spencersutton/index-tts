@@ -1,30 +1,31 @@
 import abc
 import torch
 from collections.abc import Sequence
-from typing import Any, Callable, Optional, Union
-from typing_extensions import deprecated
+from typing import Any, Optional, Union
+from collections.abc import Callable
+from warnings import deprecated
 
 HAS_NUMPY = ...
 
 class ErrorMeta(Exception):
     def __init__(self, type: type[Exception], msg: str, *, id: tuple[Any, ...] = ...) -> None: ...
-    def to_error(self, msg: Optional[Union[str, Callable[[str], str]]] = ...) -> Exception: ...
+    def to_error(self, msg: str | Callable[[str], str] | None = ...) -> Exception: ...
 
 _DTYPE_PRECISIONS = ...
 
 def default_tolerances(
-    *inputs: Union[torch.Tensor, torch.dtype], dtype_precisions: Optional[dict[torch.dtype, tuple[float, float]]] = ...
+    *inputs: torch.Tensor | torch.dtype, dtype_precisions: dict[torch.dtype, tuple[float, float]] | None = ...
 ) -> tuple[float, float]: ...
 def get_tolerances(
-    *inputs: Union[torch.Tensor, torch.dtype], rtol: Optional[float], atol: Optional[float], id: tuple[Any, ...] = ...
+    *inputs: torch.Tensor | torch.dtype, rtol: float | None, atol: float | None, id: tuple[Any, ...] = ...
 ) -> tuple[float, float]: ...
 def make_scalar_mismatch_msg(
-    actual: Union[bool, complex],
-    expected: Union[bool, complex],
+    actual: bool | complex,
+    expected: bool | complex,
     *,
     rtol: float,
     atol: float,
-    identifier: Optional[Union[str, Callable[[str], str]]] = ...,
+    identifier: str | Callable[[str], str] | None = ...,
 ) -> str: ...
 def make_tensor_mismatch_msg(
     actual: torch.Tensor,
@@ -33,7 +34,7 @@ def make_tensor_mismatch_msg(
     *,
     rtol: float,
     atol: float,
-    identifier: Optional[Union[str, Callable[[str], str]]] = ...,
+    identifier: str | Callable[[str], str] | None = ...,
 ):  # -> str:
 
     ...
@@ -44,7 +45,7 @@ class Pair(abc.ABC):
     def __init__(self, actual: Any, expected: Any, *, id: tuple[Any, ...] = ..., **unknown_parameters: Any) -> None: ...
     @abc.abstractmethod
     def compare(self) -> None: ...
-    def extra_repr(self) -> Sequence[Union[str, tuple[str, Any]]]: ...
+    def extra_repr(self) -> Sequence[str | tuple[str, Any]]: ...
 
 class ObjectPair(Pair):
     def compare(self) -> None: ...
@@ -66,8 +67,8 @@ class NumberPair(Pair):
         expected: Any,
         *,
         id: tuple[Any, ...] = ...,
-        rtol: Optional[float] = ...,
-        atol: Optional[float] = ...,
+        rtol: float | None = ...,
+        atol: float | None = ...,
         equal_nan: bool = ...,
         check_dtype: bool = ...,
         **other_parameters: Any,
@@ -83,8 +84,8 @@ class TensorLikePair(Pair):
         *,
         id: tuple[Any, ...] = ...,
         allow_subclasses: bool = ...,
-        rtol: Optional[float] = ...,
-        atol: Optional[float] = ...,
+        rtol: float | None = ...,
+        atol: float | None = ...,
         equal_nan: bool = ...,
         check_device: bool = ...,
         check_dtype: bool = ...,
@@ -119,14 +120,14 @@ def assert_close(
     expected: Any,
     *,
     allow_subclasses: bool = ...,
-    rtol: Optional[float] = ...,
-    atol: Optional[float] = ...,
+    rtol: float | None = ...,
+    atol: float | None = ...,
     equal_nan: bool = ...,
     check_device: bool = ...,
     check_dtype: bool = ...,
     check_layout: bool = ...,
     check_stride: bool = ...,
-    msg: Optional[Union[str, Callable[[str], str]]] = ...,
+    msg: str | Callable[[str], str] | None = ...,
 ):  # -> None:
 
     ...
@@ -139,8 +140,8 @@ def assert_close(
 def assert_allclose(
     actual: Any,
     expected: Any,
-    rtol: Optional[float] = ...,
-    atol: Optional[float] = ...,
+    rtol: float | None = ...,
+    atol: float | None = ...,
     equal_nan: bool = ...,
     msg: str = ...,
 ) -> None: ...

@@ -49,11 +49,11 @@ class TrajectoryTransformerOutput(ModelOutput):
             in the self-attention heads.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    logits: Optional[torch.FloatTensor] = ...
-    past_key_values: Optional[tuple[tuple[torch.FloatTensor]]] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
+    loss: torch.FloatTensor | None = ...
+    logits: torch.FloatTensor | None = ...
+    past_key_values: tuple[tuple[torch.FloatTensor]] | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
 
 class TrajectoryTransformerPreTrainedModel(PreTrainedModel):
     """
@@ -86,10 +86,10 @@ class CausalSelfAttention(nn.Module):
     def __init__(self, config) -> None: ...
     def forward(
         self,
-        hidden_states: Optional[tuple[torch.FloatTensor]],
-        layer_past: Optional[tuple[torch.Tensor]] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
+        hidden_states: tuple[torch.FloatTensor] | None,
+        layer_past: tuple[torch.Tensor] | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
     ):  # -> tuple[Any, tuple[Tensor | Any, Tensor | Any] | None, Any] | tuple[Any, tuple[Tensor | Any, Tensor | Any] | None]:
         ...
 
@@ -97,10 +97,10 @@ class Block(GradientCheckpointingLayer):
     def __init__(self, config) -> None: ...
     def forward(
         self,
-        hidden_states: Optional[tuple[torch.FloatTensor]],
-        layer_past: Optional[tuple[torch.Tensor]] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
+        hidden_states: tuple[torch.FloatTensor] | None,
+        layer_past: tuple[torch.Tensor] | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
     ):  # -> Any:
         ...
 
@@ -121,15 +121,15 @@ class TrajectoryTransformerModel(TrajectoryTransformerPreTrainedModel):
     @replace_return_docstrings(output_type=TrajectoryTransformerOutput, config_class=_CONFIG_FOR_DOC)
     def forward(
         self,
-        trajectories: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[tuple[tuple[torch.Tensor]]] = ...,
-        targets: Optional[torch.FloatTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], TrajectoryTransformerOutput]:
+        trajectories: torch.LongTensor | None = ...,
+        past_key_values: tuple[tuple[torch.Tensor]] | None = ...,
+        targets: torch.FloatTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.Tensor] | TrajectoryTransformerOutput:
         r"""
         Returns:
 

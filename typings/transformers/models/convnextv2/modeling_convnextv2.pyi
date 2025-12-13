@@ -33,7 +33,7 @@ def drop_path(input: torch.Tensor, drop_prob: float = ..., training: bool = ...)
 
 class ConvNextV2DropPath(nn.Module):
     """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks)."""
-    def __init__(self, drop_prob: Optional[float] = ...) -> None: ...
+    def __init__(self, drop_prob: float | None = ...) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
     def extra_repr(self) -> str: ...
 
@@ -93,9 +93,9 @@ class ConvNextV2Encoder(nn.Module):
     def forward(
         self,
         hidden_states: torch.FloatTensor,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithNoAttention]: ...
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutputWithNoAttention: ...
 
 @auto_docstring
 class ConvNextV2PreTrainedModel(PreTrainedModel):
@@ -110,10 +110,10 @@ class ConvNextV2Model(ConvNextV2PreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPoolingAndNoAttention]: ...
+        pixel_values: torch.FloatTensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutputWithPoolingAndNoAttention: ...
 
 @auto_docstring(
     custom_intro="""
@@ -126,11 +126,11 @@ class ConvNextV2ForImageClassification(ConvNextV2PreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ImageClassifierOutputWithNoAttention]:
+        pixel_values: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | ImageClassifierOutputWithNoAttention:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
@@ -148,7 +148,7 @@ class ConvNextV2Backbone(ConvNextV2PreTrainedModel, BackboneMixin):
     def __init__(self, config) -> None: ...
     @auto_docstring
     def forward(
-        self, pixel_values: torch.Tensor, output_hidden_states: Optional[bool] = ..., return_dict: Optional[bool] = ...
+        self, pixel_values: torch.Tensor, output_hidden_states: bool | None = ..., return_dict: bool | None = ...
     ) -> BackboneOutput:
         r"""
         Examples:

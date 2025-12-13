@@ -29,7 +29,7 @@ def load_tf_weights_in_funnel(model, config, tf_checkpoint_path):
 class FunnelEmbeddings(nn.Module):
     def __init__(self, config: FunnelConfig) -> None: ...
     def forward(
-        self, input_ids: Optional[torch.Tensor] = ..., inputs_embeds: Optional[torch.Tensor] = ...
+        self, input_ids: torch.Tensor | None = ..., inputs_embeds: torch.Tensor | None = ...
     ) -> torch.Tensor: ...
 
 class FunnelAttentionStructure(nn.Module):
@@ -42,8 +42,8 @@ class FunnelAttentionStructure(nn.Module):
     def init_attention_inputs(
         self,
         inputs_embeds: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
     ) -> tuple[torch.Tensor]:
         """Returns the attention inputs associated to the inputs of the model."""
         ...
@@ -54,7 +54,7 @@ class FunnelAttentionStructure(nn.Module):
 
     def get_position_embeds(
         self, seq_len: int, dtype: torch.dtype, device: torch.device
-    ) -> Union[tuple[torch.Tensor], list[list[torch.Tensor]]]:
+    ) -> tuple[torch.Tensor] | list[list[torch.Tensor]]:
         """
         Create and cache inputs related to relative position encoding. Those are very different depending on whether we
         are using the factorized or the relative shift attention:
@@ -83,8 +83,8 @@ class FunnelAttentionStructure(nn.Module):
 
     def stride_pool(
         self,
-        tensor: Union[torch.Tensor, tuple[torch.Tensor], list[torch.Tensor]],
-        axis: Union[int, tuple[int], list[int]],
+        tensor: torch.Tensor | tuple[torch.Tensor] | list[torch.Tensor],
+        axis: int | tuple[int] | list[int],
     ) -> torch.Tensor:
         """
         Perform pooling by stride slicing the tensor along the given axis.
@@ -92,7 +92,7 @@ class FunnelAttentionStructure(nn.Module):
         ...
 
     def pool_tensor(
-        self, tensor: Union[torch.Tensor, tuple[torch.Tensor], list[torch.Tensor]], mode: str = ..., stride: int = ...
+        self, tensor: torch.Tensor | tuple[torch.Tensor] | list[torch.Tensor], mode: str = ..., stride: int = ...
     ) -> torch.Tensor:
         """Apply 1D pooling to a tensor of size [B x T (x H)]."""
         ...
@@ -146,12 +146,12 @@ class FunnelEncoder(nn.Module):
     def forward(
         self,
         inputs_embeds: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ) -> Union[tuple, BaseModelOutput]: ...
+    ) -> tuple | BaseModelOutput: ...
 
 def upsample(
     x: torch.Tensor, stride: int, target_len: int, separate_cls: bool = ..., truncate_seq: bool = ...
@@ -167,12 +167,12 @@ class FunnelDecoder(nn.Module):
         self,
         final_hidden: torch.Tensor,
         first_block_hidden: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ) -> Union[tuple, BaseModelOutput]: ...
+    ) -> tuple | BaseModelOutput: ...
 
 class FunnelDiscriminatorPredictions(nn.Module):
     """Prediction module for the discriminator, made up of two dense layers."""
@@ -203,10 +203,10 @@ class FunnelForPreTrainingOutput(ModelOutput):
         Prediction scores of the head (scores for each token before SoftMax).
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    logits: Optional[torch.FloatTensor] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
+    loss: torch.FloatTensor | None = ...
+    logits: torch.FloatTensor | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
 
 @auto_docstring(
     custom_intro="""
@@ -221,16 +221,16 @@ class FunnelBaseModel(FunnelPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutput]: ...
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        position_ids: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutput: ...
 
 @auto_docstring
 class FunnelModel(FunnelPreTrainedModel):
@@ -240,14 +240,14 @@ class FunnelModel(FunnelPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutput]: ...
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutput: ...
 
 @auto_docstring(
     custom_intro="""
@@ -260,15 +260,15 @@ class FunnelForPreTraining(FunnelPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, FunnelForPreTrainingOutput]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | FunnelForPreTrainingOutput:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
             Labels for computing the ELECTRA-style loss. Input should be a sequence of tokens (see `input_ids`
@@ -300,15 +300,15 @@ class FunnelForMaskedLM(FunnelPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, MaskedLMOutput]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | MaskedLMOutput:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
             Labels for computing the masked language modeling loss. Indices should be in `[-100, 0, ...,
@@ -328,15 +328,15 @@ class FunnelForSequenceClassification(FunnelPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, SequenceClassifierOutput]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | SequenceClassifierOutput:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
@@ -351,15 +351,15 @@ class FunnelForMultipleChoice(FunnelPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, MultipleChoiceModelOutput]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | MultipleChoiceModelOutput:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the multiple choice classification loss. Indices should be in `[0, ...,
@@ -374,15 +374,15 @@ class FunnelForTokenClassification(FunnelPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, TokenClassifierOutput]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | TokenClassifierOutput:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
             Labels for computing the token classification loss. Indices should be in `[0, ..., config.num_labels - 1]`.
@@ -395,16 +395,16 @@ class FunnelForQuestionAnswering(FunnelPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        start_positions: Optional[torch.Tensor] = ...,
-        end_positions: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, QuestionAnsweringModelOutput]: ...
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        start_positions: torch.Tensor | None = ...,
+        end_positions: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | QuestionAnsweringModelOutput: ...
 
 __all__ = [
     "FunnelBaseModel",

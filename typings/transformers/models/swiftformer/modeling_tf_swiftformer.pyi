@@ -146,10 +146,10 @@ class TFSwiftFormerEncoder(keras.layers.Layer):
     def call(
         self,
         hidden_states: tf.Tensor,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         training: bool = ...,
-    ) -> Union[tuple, TFBaseModelOutputWithNoAttention]: ...
+    ) -> tuple | TFBaseModelOutputWithNoAttention: ...
     def build(self, input_shape=...):  # -> None:
         ...
 
@@ -173,11 +173,11 @@ class TFSwiftFormerMainLayer(keras.layers.Layer):
     @unpack_inputs
     def call(
         self,
-        pixel_values: Optional[tf.Tensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        pixel_values: tf.Tensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         training: bool = ...,
-    ) -> Union[tuple, TFBaseModelOutputWithNoAttention]:
+    ) -> tuple | TFBaseModelOutputWithNoAttention:
         r""" """
         ...
 
@@ -194,11 +194,11 @@ class TFSwiftFormerModel(TFSwiftFormerPreTrainedModel):
     @add_start_docstrings_to_model_forward(TFSWIFTFORMER_INPUTS_DOCSTRING)
     def call(
         self,
-        pixel_values: Optional[tf.Tensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        pixel_values: tf.Tensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         training: bool = ...,
-    ) -> Union[TFBaseModelOutputWithNoAttention, tuple[tf.Tensor]]: ...
+    ) -> TFBaseModelOutputWithNoAttention | tuple[tf.Tensor]: ...
     def build(self, input_shape=...):  # -> None:
         ...
 
@@ -216,12 +216,12 @@ class TFSwiftFormerForImageClassification(TFSwiftFormerPreTrainedModel):
     @add_start_docstrings_to_model_forward(TFSWIFTFORMER_INPUTS_DOCSTRING)
     def call(
         self,
-        pixel_values: Optional[tf.Tensor] = ...,
-        labels: Optional[tf.Tensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        pixel_values: tf.Tensor | None = ...,
+        labels: tf.Tensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         training: bool = ...,
-    ) -> Union[tuple, TFImageClassifierOutputWithNoAttention]:
+    ) -> tuple | TFImageClassifierOutputWithNoAttention:
         r"""
         labels (`tf.Tensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the image classification/regression loss. Indices should be in `[0, ...,

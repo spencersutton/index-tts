@@ -27,8 +27,8 @@ def get_image_prompt_string(
 ): ...
 
 class SmolVLMImagesKwargs(ImagesKwargs, total=False):
-    return_row_col_info: Optional[bool]
-    max_image_size: Optional[dict[str, int]]
+    return_row_col_info: bool | None
+    max_image_size: dict[str, int] | None
     ...
 
 class SmolVLMProcessorKwargs(ProcessingKwargs, total=False):
@@ -67,7 +67,7 @@ class SmolVLMProcessor(ProcessorMixin):
         tokenizer,
         video_processor,
         image_seq_len: int = ...,
-        chat_template: Optional[str] = ...,
+        chat_template: str | None = ...,
         **kwargs,
     ) -> None: ...
     def process_vision(self, text, images, output_kwargs):  # -> tuple[None, Any] | tuple[list[Any], Any]:
@@ -76,8 +76,8 @@ class SmolVLMProcessor(ProcessorMixin):
         ...
     def __call__(
         self,
-        images: Union[ImageInput, list[ImageInput], list[list[ImageInput]]] = ...,
-        text: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]] = ...,
+        images: ImageInput | list[ImageInput] | list[list[ImageInput]] = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] = ...,
         audio=...,
         videos: VideoInput = ...,
         **kwargs: Unpack[SmolVLMProcessorKwargs],
@@ -150,8 +150,8 @@ class SmolVLMProcessor(ProcessorMixin):
         ...
     def apply_chat_template(
         self,
-        conversation: Union[list[dict[str, str]], list[list[dict[str, str]]]],
-        chat_template: Optional[str] = ...,
+        conversation: list[dict[str, str]] | list[list[dict[str, str]]],
+        chat_template: str | None = ...,
         **kwargs: Unpack[AllKwargsForChatTemplate],
     ) -> str:
         """

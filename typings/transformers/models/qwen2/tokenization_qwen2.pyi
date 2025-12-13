@@ -113,11 +113,11 @@ class Qwen2Tokenizer(PreTrainedTokenizer):
         self,
         token_ids,
         skip_special_tokens: bool = ...,
-        clean_up_tokenization_spaces: Optional[bool] = ...,
+        clean_up_tokenization_spaces: bool | None = ...,
         spaces_between_special_tokens: bool = ...,
         **kwargs,
     ) -> str: ...
-    def save_vocabulary(self, save_directory: str, filename_prefix: Optional[str] = ...) -> tuple[str]: ...
+    def save_vocabulary(self, save_directory: str, filename_prefix: str | None = ...) -> tuple[str]: ...
     def prepare_for_tokenization(self, text, **kwargs):  # -> tuple[str, dict[str, Any]]:
         ...
 

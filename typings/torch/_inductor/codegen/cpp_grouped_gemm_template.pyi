@@ -1,4 +1,5 @@
-from typing import Callable, Optional
+from typing import Optional
+from collections.abc import Callable
 from .. import ir
 from ..select_algorithm import ChoiceCaller, DataProcessorTemplateWrapper
 from .cpp_gemm_template import CppGemmTemplate
@@ -20,8 +21,8 @@ class CppGroupedGemmTemplate(CppGemmTemplate):
         beta: int = ...,
         alpha: int = ...,
         has_bias: bool = ...,
-        epilogue_creator: Optional[Callable[[ir.Buffer], ir.Pointwise]] = ...,
-        act_mapping: Optional[dict[int, ir.IRNode]] = ...,
+        epilogue_creator: Callable[[ir.Buffer], ir.Pointwise] | None = ...,
+        act_mapping: dict[int, ir.IRNode] | None = ...,
         gemm_grouped_num: int = ...,
     ) -> None: ...
     @classmethod
@@ -34,15 +35,15 @@ class CppGroupedGemmTemplate(CppGemmTemplate):
         alpha: int = ...,
         has_bias: tuple[bool, ...] = ...,
         trans_w: bool = ...,
-        input_indices: Optional[list[int]] = ...,
-        epilogue_creator: Optional[Callable[[ir.Buffer], ir.Pointwise]] = ...,
-        act_mapping: Optional[dict[int, ir.IRNode]] = ...,
+        input_indices: list[int] | None = ...,
+        epilogue_creator: Callable[[ir.Buffer], ir.Pointwise] | None = ...,
+        act_mapping: dict[int, ir.IRNode] | None = ...,
     ) -> DataProcessorTemplateWrapper: ...
     def render(
         self,
         kernel: CppTemplateKernel,
-        template_buffer_node: Optional[ir.CppTemplateBuffer] = ...,
-        flag_template_buffer_has_other_users: Optional[bool] = ...,
-        epilogue_nodes: Optional[list[ir.IRNode]] = ...,
+        template_buffer_node: ir.CppTemplateBuffer | None = ...,
+        flag_template_buffer_has_other_users: bool | None = ...,
+        epilogue_nodes: list[ir.IRNode] | None = ...,
         **kwargs,
     ) -> str: ...

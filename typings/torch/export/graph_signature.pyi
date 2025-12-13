@@ -44,22 +44,22 @@ class SymBoolArgument:
 class CustomObjArgument:
     name: str
     class_fqn: str
-    fake_val: Optional[FakeScriptObject] = ...
+    fake_val: FakeScriptObject | None = ...
 
 @dataclasses.dataclass
 class ConstantArgument:
     name: str
-    value: Union[int, float, bool, str, None]
+    value: int | float | bool | str | None
 
-ArgumentSpec: TypeAlias = Union[
-    TensorArgument,
-    SymIntArgument,
-    SymFloatArgument,
-    SymBoolArgument,
-    ConstantArgument,
-    CustomObjArgument,
-    TokenArgument,
-]
+type ArgumentSpec = (
+    TensorArgument
+    | SymIntArgument
+    | SymFloatArgument
+    | SymBoolArgument
+    | ConstantArgument
+    | CustomObjArgument
+    | TokenArgument
+)
 
 class InputKind(Enum):
     USER_INPUT = ...
@@ -73,8 +73,8 @@ class InputKind(Enum):
 class InputSpec:
     kind: InputKind
     arg: ArgumentSpec
-    target: Optional[str]
-    persistent: Optional[bool] = ...
+    target: str | None
+    persistent: bool | None = ...
     def __post_init__(self):  # -> None:
         ...
 
@@ -92,7 +92,7 @@ class OutputKind(Enum):
 class OutputSpec:
     kind: OutputKind
     arg: ArgumentSpec
-    target: Optional[str]
+    target: str | None
     def __post_init__(self):  # -> None:
         ...
 
@@ -117,9 +117,9 @@ class ExportGraphSignature:
     @property
     def lifted_custom_objs(self) -> Collection[str]: ...
     @property
-    def user_inputs(self) -> Collection[Union[int, float, bool, None, str]]: ...
+    def user_inputs(self) -> Collection[int | float | bool | None | str]: ...
     @property
-    def user_outputs(self) -> Collection[Union[int, float, bool, None, str]]: ...
+    def user_outputs(self) -> Collection[int | float | bool | None | str]: ...
     @property
     def inputs_to_parameters(self) -> Mapping[str, str]: ...
     @property
@@ -135,9 +135,9 @@ class ExportGraphSignature:
     @property
     def inputs_to_lifted_custom_objs(self) -> Mapping[str, str]: ...
     @property
-    def backward_signature(self) -> Optional[ExportBackwardSignature]: ...
+    def backward_signature(self) -> ExportBackwardSignature | None: ...
     @property
-    def assertion_dep_token(self) -> Optional[Mapping[int, str]]: ...
+    def assertion_dep_token(self) -> Mapping[int, str] | None: ...
     @property
     def input_tokens(self) -> Collection[str]: ...
     @property

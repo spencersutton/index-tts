@@ -37,8 +37,8 @@ class GitProcessor(ProcessorMixin):
     def __init__(self, image_processor, tokenizer) -> None: ...
     def __call__(
         self,
-        images: Optional[ImageInput] = ...,
-        text: Optional[Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]]] = ...,
+        images: ImageInput | None = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] | None = ...,
         audio=...,
         videos=...,
         **kwargs: Unpack[GitProcessorKwargs],

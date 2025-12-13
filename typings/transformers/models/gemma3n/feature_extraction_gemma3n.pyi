@@ -12,7 +12,7 @@ from ...utils import PaddingStrategy, TensorType
 logger = ...
 
 def create_fb_matrix(
-    n_freqs: int, f_min: float, f_max: float, n_mels: int, sample_rate: int, fft_length: int, norm: Optional[str] = ...
+    n_freqs: int, f_min: float, f_max: float, n_mels: int, sample_rate: int, fft_length: int, norm: str | None = ...
 ) -> np.ndarray:
     r"""Create a frequency bin conversion matrix (NumPy version).
 
@@ -98,19 +98,19 @@ class Gemma3nAudioFeatureExtractor(SequenceFeatureExtractor):
         dither: float = ...,
         input_scale_factor: float = ...,
         mel_floor: float = ...,
-        per_bin_mean: Optional[Sequence[float]] = ...,
-        per_bin_stddev: Optional[Sequence[float]] = ...,
+        per_bin_mean: Sequence[float] | None = ...,
+        per_bin_stddev: Sequence[float] | None = ...,
         **kwargs,
     ) -> None: ...
     def __call__(
         self,
-        raw_speech: Union[np.ndarray, list[float], list[np.ndarray], list[list[float]]],
-        padding: Union[bool, str, PaddingStrategy] = ...,
-        max_length: Optional[int] = ...,
+        raw_speech: np.ndarray | list[float] | list[np.ndarray] | list[list[float]],
+        padding: bool | str | PaddingStrategy = ...,
+        max_length: int | None = ...,
         truncation: bool = ...,
-        pad_to_multiple_of: Optional[int] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        return_attention_mask: Optional[bool] = ...,
+        pad_to_multiple_of: int | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        return_attention_mask: bool | None = ...,
         **kwargs,
     ) -> BatchFeature:
         """Creates a batch of MEL spectrograms from the provided raw speech.

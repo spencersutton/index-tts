@@ -95,17 +95,17 @@ class CommitScheduler:
         self,
         *,
         repo_id: str,
-        folder_path: Union[str, Path],
-        every: Union[int, float] = ...,
-        path_in_repo: Optional[str] = ...,
-        repo_type: Optional[str] = ...,
-        revision: Optional[str] = ...,
-        private: Optional[bool] = ...,
-        token: Optional[str] = ...,
-        allow_patterns: Optional[Union[List[str], str]] = ...,
-        ignore_patterns: Optional[Union[List[str], str]] = ...,
+        folder_path: str | Path,
+        every: int | float = ...,
+        path_in_repo: str | None = ...,
+        repo_type: str | None = ...,
+        revision: str | None = ...,
+        private: bool | None = ...,
+        token: str | None = ...,
+        allow_patterns: list[str] | str | None = ...,
+        ignore_patterns: list[str] | str | None = ...,
         squash_history: bool = ...,
-        hf_api: Optional[HfApi] = ...,
+        hf_api: HfApi | None = ...,
     ) -> None: ...
     def stop(self) -> None:
         """Stop the scheduler.
@@ -124,7 +124,7 @@ class CommitScheduler:
         """
         ...
 
-    def push_to_hub(self) -> Optional[CommitInfo]:
+    def push_to_hub(self) -> CommitInfo | None:
         """
         Push folder to the Hub and return the commit info.
 
@@ -159,7 +159,7 @@ class PartialFileIO(BytesIO):
             The maximum number of bytes to read from the file. If the file is larger than this, only the first part
             will be read (and uploaded).
     """
-    def __init__(self, file_path: Union[str, Path], size_limit: int) -> None: ...
+    def __init__(self, file_path: str | Path, size_limit: int) -> None: ...
     def __del__(self) -> None: ...
     def __repr__(self) -> str: ...
     def __len__(self) -> int: ...
@@ -176,7 +176,7 @@ class PartialFileIO(BytesIO):
         """
         ...
 
-    def read(self, __size: Optional[int] = ...) -> bytes:
+    def read(self, __size: int | None = ...) -> bytes:
         """Read at most `__size` bytes from the file.
 
         Behavior is the same as a regular file, except that it is capped to the size limit.

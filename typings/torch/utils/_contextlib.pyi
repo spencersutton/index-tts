@@ -1,6 +1,7 @@
-from typing import Any, Callable, TypeVar, TypeAlias
+from typing import Any, TypeVar, TypeAlias
+from collections.abc import Callable
 
-FuncType: TypeAlias = Callable[..., Any]
+type FuncType = Callable[..., Any]
 F = TypeVar("F", bound=FuncType)
 
 def context_decorator(

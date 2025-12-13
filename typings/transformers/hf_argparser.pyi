@@ -6,7 +6,8 @@ import dataclasses
 import os
 from argparse import ArgumentParser
 from collections.abc import Iterable
-from typing import Any, Callable, NewType, Optional, Union
+from typing import Any, NewType, Optional, Union
+from collections.abc import Callable
 
 DataClass = NewType("DataClass", Any)
 DataClassType = NewType("DataClassType", Any)
@@ -28,11 +29,11 @@ def make_choice_type_function(choices: list) -> Callable[[str], Any]:
 
 def HfArg(
     *,
-    aliases: Optional[Union[str, list[str]]] = ...,
-    help: Optional[str] = ...,
+    aliases: str | list[str] | None = ...,
+    help: str | None = ...,
     default: Any = ...,
     default_factory: Callable[[], Any] = ...,
-    metadata: Optional[dict] = ...,
+    metadata: dict | None = ...,
     **kwargs,
 ) -> dataclasses.Field:
     """Argument helper enabling a concise syntax to create dataclass fields for parsing with `HfArgumentParser`.
@@ -80,9 +81,7 @@ class HfArgumentParser(ArgumentParser):
     """
 
     dataclass_types: Iterable[DataClassType]
-    def __init__(
-        self, dataclass_types: Optional[Union[DataClassType, Iterable[DataClassType]]] = ..., **kwargs
-    ) -> None: ...
+    def __init__(self, dataclass_types: DataClassType | Iterable[DataClassType] | None = ..., **kwargs) -> None: ...
     def parse_args_into_dataclasses(
         self, args=..., return_remaining_strings=..., look_for_args_file=..., args_filename=..., args_file_flag=...
     ) -> tuple[DataClass, ...]:
@@ -134,9 +133,7 @@ class HfArgumentParser(ArgumentParser):
         """
         ...
 
-    def parse_json_file(
-        self, json_file: Union[str, os.PathLike], allow_extra_keys: bool = ...
-    ) -> tuple[DataClass, ...]:
+    def parse_json_file(self, json_file: str | os.PathLike, allow_extra_keys: bool = ...) -> tuple[DataClass, ...]:
         """
         Alternative helper method that does not use `argparse` at all, instead loading a json file and populating the
         dataclass types.
@@ -155,9 +152,7 @@ class HfArgumentParser(ArgumentParser):
         """
         ...
 
-    def parse_yaml_file(
-        self, yaml_file: Union[str, os.PathLike], allow_extra_keys: bool = ...
-    ) -> tuple[DataClass, ...]:
+    def parse_yaml_file(self, yaml_file: str | os.PathLike, allow_extra_keys: bool = ...) -> tuple[DataClass, ...]:
         """
         Alternative helper method that does not use `argparse` at all, instead loading a yaml file and populating the
         dataclass types.

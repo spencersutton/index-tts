@@ -88,7 +88,7 @@ class GPTSw3Tokenizer(PreTrainedTokenizer):
         unk_token=...,
         eos_token=...,
         bos_token=...,
-        sp_model_kwargs: Optional[dict[str, Any]] = ...,
+        sp_model_kwargs: dict[str, Any] | None = ...,
         **kwargs,
     ) -> None: ...
     def __getstate__(self):  # -> dict[str, Any]:
@@ -113,10 +113,10 @@ class GPTSw3Tokenizer(PreTrainedTokenizer):
         ...
 
     def get_vocab(self) -> dict[str, int]: ...
-    def save_vocabulary(self, save_directory: str, filename_prefix: Optional[str] = ...) -> tuple[str]: ...
+    def save_vocabulary(self, save_directory: str, filename_prefix: str | None = ...) -> tuple[str]: ...
     def encode_fast(
-        self, text: Union[str, list[str]], return_tensors: Union[str, bool] = ...
-    ) -> Union[list[int], list[list[int]], torch.Tensor]:
+        self, text: str | list[str], return_tensors: str | bool = ...
+    ) -> list[int] | list[list[int]] | torch.Tensor:
         """
         Encodes a text or batch of texts to token ids using preprocessing and the raw SP tokenizer. This has reduced
         functionality but is often much faster.
@@ -136,7 +136,7 @@ class GPTSw3Tokenizer(PreTrainedTokenizer):
         """
         ...
 
-    def decode_fast(self, token_ids: Union[int, list[int]]) -> str:
+    def decode_fast(self, token_ids: int | list[int]) -> str:
         """
         Encodes a text or batch of texts to token ids using preprocessing and the raw SP tokenizer. This has reduced
         functionality but is often much faster.

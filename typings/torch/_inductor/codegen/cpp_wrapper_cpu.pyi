@@ -2,7 +2,8 @@ import functools
 import sympy
 import torch
 import torch._ops
-from typing import Any, Callable, Optional, Protocol, TYPE_CHECKING, Union, TypeAlias
+from typing import Any, Optional, Protocol, TYPE_CHECKING, Union, TypeAlias
+from collections.abc import Callable
 from torch.utils._ordered_set import OrderedSet
 from .. import ir
 from ..utils import DeferredLineBase, LineContext
@@ -11,19 +12,19 @@ from .wrapper import PythonWrapperCodegen
 from collections.abc import Sequence
 
 if TYPE_CHECKING:
-    _OUTPUT_ARGS_TYPE: TypeAlias = list[Union[Optional[str], list[Optional[str]]]]
+    type _OUTPUT_ARGS_TYPE = list[str | None | list[str | None]]
 
 class HasWriteLine(Protocol):
-    def writeline(self, line: Union[LineContext, DeferredLineBase, str]) -> None: ...
+    def writeline(self, line: LineContext | DeferredLineBase | str) -> None: ...
 
 class CppWrapperCpu(PythonWrapperCodegen):
     def __init__(self) -> None: ...
     @staticmethod
     def create(
         is_subgraph: bool,
-        subgraph_name: Optional[str],
-        parent_wrapper: Optional[PythonWrapperCodegen],
-        partition_signatures: Optional[ir.GraphPartitionSignature] = ...,
+        subgraph_name: str | None,
+        parent_wrapper: PythonWrapperCodegen | None,
+        partition_signatures: ir.GraphPartitionSignature | None = ...,
     ):  # -> CppWrapperCpu:
         ...
     def write_constant(self, name, hashed):  # -> None:
@@ -95,8 +96,8 @@ class CppWrapperCpu(PythonWrapperCodegen):
         args: list[str],
         device: str,
         *,
-        debug_args: Optional[list[str]] = ...,
-        debug_handle: Optional[int] = ...,
+        debug_args: list[str] | None = ...,
+        debug_handle: int | None = ...,
     ) -> None: ...
     def generate_c_shim_extern_kernel_alloc(self, extern_kernel: ir.ExternKernelAlloc, args: list[str]) -> None: ...
     def generate_c_shim_fallback_kernel(self, fallback_kernel: ir.FallbackKernel, args: list[str]) -> None: ...
@@ -153,7 +154,7 @@ class CppWrapperCpu(PythonWrapperCodegen):
     def codegen_reinterpret_view(
         self, data, size, stride, offset, writeline: Callable[..., None], dtype=...
     ) -> str: ...
-    def codegen_device_copy(self, src, dst, non_blocking: Union[bool, str]):  # -> None:
+    def codegen_device_copy(self, src, dst, non_blocking: bool | str):  # -> None:
 
         ...
     def codegen_multi_output(self, node: ir.MultiOutput):  # -> None:
@@ -171,7 +172,7 @@ class CppWrapperCpu(PythonWrapperCodegen):
         ...
     def generate_extern_kernel_args_decl_if_needed(
         self,
-        op_overload: Union[torch._ops.OpOverload, torch._ops.HigherOrderOperator],
+        op_overload: torch._ops.OpOverload | torch._ops.HigherOrderOperator,
         raw_args: Sequence[Any],
         output_args: _OUTPUT_ARGS_TYPE,
         raw_outputs: Sequence[ir.Buffer],
@@ -183,7 +184,7 @@ class CppWrapperCpu(PythonWrapperCodegen):
         buf_name: str,
         python_kernel_name: str,
         get_args: Callable[[], Sequence[str]],
-        op_overload: Union[torch._ops.OpOverload, torch._ops.HigherOrderOperator],
+        op_overload: torch._ops.OpOverload | torch._ops.HigherOrderOperator,
         raw_args: Sequence[Any],
         outputs: Sequence[ir.Buffer],
     ) -> None: ...
@@ -201,7 +202,7 @@ class CppWrapperCpu(PythonWrapperCodegen):
         self,
         get_args: Callable[[], Sequence[str]],
         op_overload: torch._ops.OpOverload,
-        output_args: Sequence[Optional[str]],
+        output_args: Sequence[str | None],
         raw_outputs: Sequence[ir.Buffer],
     ) -> None: ...
     def generate_fallback_kernel_with_runtime_lookup_python(
@@ -210,12 +211,12 @@ class CppWrapperCpu(PythonWrapperCodegen):
         python_kernel_name: str,
         op_overload: torch._ops.OpOverload,
         raw_args: Sequence[Any],
-        output_args: Sequence[Optional[str]],
+        output_args: Sequence[str | None],
         raw_outputs: Sequence[ir.Buffer],
     ) -> None: ...
     def generate_fallback_kernel_with_runtime_lookup_aot(
         self,
-        op_overload: Union[torch._ops.OpOverload, torch._ops.HigherOrderOperator],
+        op_overload: torch._ops.OpOverload | torch._ops.HigherOrderOperator,
         raw_args: Sequence[Any],
         output_args: _OUTPUT_ARGS_TYPE,
         raw_outputs: Sequence[ir.Buffer],
@@ -228,5 +229,5 @@ class CppWrapperCpu(PythonWrapperCodegen):
     def val_to_arg_str_for_prim_type(self, val, type_) -> str: ...
     def val_to_arg_str(self, val, type_=...) -> str: ...
     def create_tmp_raii_handle_var_if_needed(
-        self, handle: str, writer: Optional[Union[HasWriteLine, list[str]]] = ...
+        self, handle: str, writer: HasWriteLine | list[str] | None = ...
     ) -> str: ...

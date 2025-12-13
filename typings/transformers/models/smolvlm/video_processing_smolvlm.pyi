@@ -108,10 +108,10 @@ class SmolVLMVideoProcessor(BaseVideoProcessor):
     def sample_frames(
         self,
         video: torch.Tensor,
-        metadata: Union[VideoMetadata, dict],
-        num_frames: Optional[int] = ...,
-        fps: Optional[Union[int, float]] = ...,
-        skip_secs: Optional[int] = ...,
+        metadata: VideoMetadata | dict,
+        num_frames: int | None = ...,
+        fps: int | float | None = ...,
+        skip_secs: int | None = ...,
     ):  # -> tuple[Tensor, list[Any], int]:
         """
         Video sampling function which:

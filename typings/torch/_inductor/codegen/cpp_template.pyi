@@ -1,4 +1,5 @@
-from typing import Callable, Optional
+from typing import Optional
+from collections.abc import Callable
 from .. import ir
 from ..utils import IndentedBuffer
 from .common import KernelTemplate
@@ -13,7 +14,7 @@ class CppTemplate(KernelTemplate):
         input_nodes,
         layout: ir.Layout,
         num_threads: int,
-        epilogue_creator: Optional[Callable[[ir.Buffer], ir.Pointwise]] = ...,
+        epilogue_creator: Callable[[ir.Buffer], ir.Pointwise] | None = ...,
     ) -> None: ...
     def generate(self, **kwargs):  # -> CppTemplateCaller:
         ...

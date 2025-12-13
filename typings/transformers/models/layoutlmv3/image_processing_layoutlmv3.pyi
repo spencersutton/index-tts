@@ -20,9 +20,9 @@ def normalize_box(box, width, height):  # -> list[int]:
     ...
 def apply_tesseract(
     image: np.ndarray,
-    lang: Optional[str],
-    tesseract_config: Optional[str],
-    input_data_format: Optional[Union[ChannelDimension, str]] = ...,
+    lang: str | None,
+    tesseract_config: str | None,
+    input_data_format: ChannelDimension | str | None = ...,
 ):  # -> tuple[list[Any], list[Any]]:
     """Applies Tesseract OCR on a document image, and returns recognized words + normalized bounding boxes."""
     ...
@@ -71,16 +71,16 @@ class LayoutLMv3ImageProcessor(BaseImageProcessor):
     def __init__(
         self,
         do_resize: bool = ...,
-        size: Optional[dict[str, int]] = ...,
+        size: dict[str, int] | None = ...,
         resample: PILImageResampling = ...,
         do_rescale: bool = ...,
         rescale_value: float = ...,
         do_normalize: bool = ...,
-        image_mean: Optional[Union[float, Iterable[float]]] = ...,
-        image_std: Optional[Union[float, Iterable[float]]] = ...,
+        image_mean: float | Iterable[float] | None = ...,
+        image_std: float | Iterable[float] | None = ...,
         apply_ocr: bool = ...,
-        ocr_lang: Optional[str] = ...,
-        tesseract_config: Optional[str] = ...,
+        ocr_lang: str | None = ...,
+        tesseract_config: str | None = ...,
         **kwargs,
     ) -> None: ...
     def resize(
@@ -88,8 +88,8 @@ class LayoutLMv3ImageProcessor(BaseImageProcessor):
         image: np.ndarray,
         size: dict[str, int],
         resample: PILImageResampling = ...,
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
         **kwargs,
     ) -> np.ndarray:
         """
@@ -124,20 +124,20 @@ class LayoutLMv3ImageProcessor(BaseImageProcessor):
     def preprocess(
         self,
         images: ImageInput,
-        do_resize: Optional[bool] = ...,
-        size: Optional[dict[str, int]] = ...,
+        do_resize: bool | None = ...,
+        size: dict[str, int] | None = ...,
         resample=...,
-        do_rescale: Optional[bool] = ...,
-        rescale_factor: Optional[float] = ...,
-        do_normalize: Optional[bool] = ...,
-        image_mean: Optional[Union[float, Iterable[float]]] = ...,
-        image_std: Optional[Union[float, Iterable[float]]] = ...,
-        apply_ocr: Optional[bool] = ...,
-        ocr_lang: Optional[str] = ...,
-        tesseract_config: Optional[str] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
+        do_rescale: bool | None = ...,
+        rescale_factor: float | None = ...,
+        do_normalize: bool | None = ...,
+        image_mean: float | Iterable[float] | None = ...,
+        image_std: float | Iterable[float] | None = ...,
+        apply_ocr: bool | None = ...,
+        ocr_lang: str | None = ...,
+        tesseract_config: str | None = ...,
+        return_tensors: str | TensorType | None = ...,
         data_format: ChannelDimension = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ) -> PIL.Image.Image:
         """
         Preprocess an image or batch of images.

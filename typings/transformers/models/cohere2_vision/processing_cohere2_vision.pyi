@@ -9,7 +9,7 @@ from ...processing_utils import ImagesKwargs, ProcessingKwargs, ProcessorMixin, 
 from ...tokenization_utils_base import PreTokenizedInput, TextInput
 
 class Cohere2VisionImagesKwargs(ImagesKwargs, total=False):
-    max_patches: Optional[int]
+    max_patches: int | None
     ...
 
 class Cohere2VisionProcessorKwargs(ProcessingKwargs, total=False):
@@ -36,8 +36,8 @@ class Cohere2VisionProcessor(ProcessorMixin):
     def __init__(self, image_processor=..., tokenizer=..., chat_template=..., **kwargs) -> None: ...
     def __call__(
         self,
-        images: Optional[ImageInput] = ...,
-        text: Optional[Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]]] = ...,
+        images: ImageInput | None = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] | None = ...,
         **kwargs: Unpack[Cohere2VisionProcessorKwargs],
     ) -> BatchFeature:
         """

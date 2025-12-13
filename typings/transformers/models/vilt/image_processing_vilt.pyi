@@ -22,7 +22,7 @@ def max_across_indices(values: Iterable[Any]) -> list[Any]:
     ...
 
 def make_pixel_mask(
-    image: np.ndarray, output_size: tuple[int, int], input_data_format: Optional[Union[str, ChannelDimension]] = ...
+    image: np.ndarray, output_size: tuple[int, int], input_data_format: str | ChannelDimension | None = ...
 ) -> np.ndarray:
     """
     Make a pixel mask for the image, where 1 indicates a valid pixel and 0 indicates padding.
@@ -35,9 +35,7 @@ def make_pixel_mask(
     """
     ...
 
-def get_max_height_width(
-    images: list[np.ndarray], input_data_format: Optional[Union[str, ChannelDimension]] = ...
-) -> list[int]:
+def get_max_height_width(images: list[np.ndarray], input_data_format: str | ChannelDimension | None = ...) -> list[int]:
     """
     Get the maximum height and width across all images in a batch.
     """
@@ -48,7 +46,7 @@ def get_resize_output_image_size(
     shorter: int = ...,
     longer: int = ...,
     size_divisor: int = ...,
-    input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+    input_data_format: str | ChannelDimension | None = ...,
 ) -> tuple[int, int]: ...
 
 @requires(backends=("vision",))
@@ -96,14 +94,14 @@ class ViltImageProcessor(BaseImageProcessor):
     def __init__(
         self,
         do_resize: bool = ...,
-        size: Optional[dict[str, int]] = ...,
+        size: dict[str, int] | None = ...,
         size_divisor: int = ...,
         resample: PILImageResampling = ...,
         do_rescale: bool = ...,
-        rescale_factor: Union[int, float] = ...,
+        rescale_factor: int | float = ...,
         do_normalize: bool = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
         do_pad: bool = ...,
         **kwargs,
     ) -> None: ...
@@ -122,8 +120,8 @@ class ViltImageProcessor(BaseImageProcessor):
         size: dict[str, int],
         size_divisor: int = ...,
         resample: PILImageResampling = ...,
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
         **kwargs,
     ) -> np.ndarray:
         """
@@ -152,11 +150,11 @@ class ViltImageProcessor(BaseImageProcessor):
     def pad(
         self,
         images: list[np.ndarray],
-        constant_values: Union[float, Iterable[float]] = ...,
+        constant_values: float | Iterable[float] = ...,
         return_pixel_mask: bool = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        data_format: Optional[ChannelDimension] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        return_tensors: str | TensorType | None = ...,
+        data_format: ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ) -> BatchFeature:
         """
         Pads a batch of images to the bottom and right of the image with zeros to the size of largest height and width
@@ -187,19 +185,19 @@ class ViltImageProcessor(BaseImageProcessor):
     def preprocess(
         self,
         images: ImageInput,
-        do_resize: Optional[bool] = ...,
-        size: Optional[dict[str, int]] = ...,
-        size_divisor: Optional[int] = ...,
+        do_resize: bool | None = ...,
+        size: dict[str, int] | None = ...,
+        size_divisor: int | None = ...,
         resample: PILImageResampling = ...,
-        do_rescale: Optional[bool] = ...,
-        rescale_factor: Optional[float] = ...,
-        do_normalize: Optional[bool] = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
-        do_pad: Optional[bool] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
+        do_rescale: bool | None = ...,
+        rescale_factor: float | None = ...,
+        do_normalize: bool | None = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
+        do_pad: bool | None = ...,
+        return_tensors: str | TensorType | None = ...,
         data_format: ChannelDimension = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ) -> PIL.Image.Image:
         """
         Preprocess an image or batch of images.

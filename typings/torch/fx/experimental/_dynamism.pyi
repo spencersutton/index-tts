@@ -1,8 +1,9 @@
 import torch
-from typing import Any, Callable, Union, TypeAlias
+from typing import Any, Union, TypeAlias
+from collections.abc import Callable
 
-KeyPath: TypeAlias = tuple[Any, ...]
-NonTensorShapeFn: TypeAlias = Callable[[Union[int, float]], tuple[Any, ...]]
+type KeyPath = tuple[Any, ...]
+type NonTensorShapeFn = Callable[[int | float], tuple[Any, ...]]
 __all__ = [
     "normalize_source_name",
     "module_to_nested_dict",

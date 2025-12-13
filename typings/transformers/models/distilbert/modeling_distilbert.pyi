@@ -32,7 +32,7 @@ def create_sinusoidal_embeddings(n_pos: int, dim: int, out: torch.Tensor):  # ->
 
 class Embeddings(nn.Module):
     def __init__(self, config: PretrainedConfig) -> None: ...
-    def forward(self, input_ids: torch.Tensor, input_embeds: Optional[torch.Tensor] = ...) -> torch.Tensor:
+    def forward(self, input_ids: torch.Tensor, input_embeds: torch.Tensor | None = ...) -> torch.Tensor:
         """
         Parameters:
             input_ids (torch.Tensor):
@@ -56,7 +56,7 @@ class MultiHeadSelfAttention(nn.Module):
         key: torch.Tensor,
         value: torch.Tensor,
         mask: torch.Tensor,
-        head_mask: Optional[torch.Tensor] = ...,
+        head_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
     ) -> tuple[torch.Tensor, ...]:
         """
@@ -85,7 +85,7 @@ class DistilBertFlashAttention2(MultiHeadSelfAttention):
         key: torch.Tensor,
         value: torch.Tensor,
         mask: torch.Tensor,
-        head_mask: Optional[torch.Tensor] = ...,
+        head_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
     ) -> tuple[torch.Tensor, ...]:
         """
@@ -109,7 +109,7 @@ class DistilBertSdpaAttention(MultiHeadSelfAttention):
         key: torch.Tensor,
         value: torch.Tensor,
         mask: torch.Tensor,
-        head_mask: Optional[torch.Tensor] = ...,
+        head_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
     ) -> tuple[torch.Tensor, ...]:
         """
@@ -137,8 +137,8 @@ class TransformerBlock(GradientCheckpointingLayer):
     def forward(
         self,
         x: torch.Tensor,
-        attn_mask: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
+        attn_mask: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
     ) -> tuple[torch.Tensor, ...]:
         """
@@ -157,12 +157,12 @@ class Transformer(nn.Module):
     def forward(
         self,
         x: torch.Tensor,
-        attn_mask: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
+        attn_mask: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[BaseModelOutput, tuple[torch.Tensor, ...]]:
+        return_dict: bool | None = ...,
+    ) -> BaseModelOutput | tuple[torch.Tensor, ...]:
         """
         Parameters:
             x: torch.tensor(bs, seq_length, dim) Input sequence embedded.
@@ -217,14 +217,14 @@ class DistilBertModel(DistilBertPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[BaseModelOutput, tuple[torch.Tensor, ...]]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> BaseModelOutput | tuple[torch.Tensor, ...]:
         r"""
         input_ids (`torch.LongTensor` of shape `(batch_size, num_choices)`):
             Indices of input sequence tokens in the vocabulary.
@@ -274,15 +274,15 @@ class DistilBertForMaskedLM(DistilBertPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[MaskedLMOutput, tuple[torch.Tensor, ...]]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> MaskedLMOutput | tuple[torch.Tensor, ...]:
         r"""
         input_ids (`torch.LongTensor` of shape `(batch_size, num_choices)`):
             Indices of input sequence tokens in the vocabulary.
@@ -333,15 +333,15 @@ class DistilBertForSequenceClassification(DistilBertPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[SequenceClassifierOutput, tuple[torch.Tensor, ...]]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> SequenceClassifierOutput | tuple[torch.Tensor, ...]:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
@@ -376,16 +376,16 @@ class DistilBertForQuestionAnswering(DistilBertPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        start_positions: Optional[torch.Tensor] = ...,
-        end_positions: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[QuestionAnsweringModelOutput, tuple[torch.Tensor, ...]]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        start_positions: torch.Tensor | None = ...,
+        end_positions: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> QuestionAnsweringModelOutput | tuple[torch.Tensor, ...]:
         r"""
         input_ids (`torch.LongTensor` of shape `(batch_size, num_choices)`):
             Indices of input sequence tokens in the vocabulary.
@@ -427,15 +427,15 @@ class DistilBertForTokenClassification(DistilBertPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[TokenClassifierOutput, tuple[torch.Tensor, ...]]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> TokenClassifierOutput | tuple[torch.Tensor, ...]:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
             Labels for computing the token classification loss. Indices should be in `[0, ..., config.num_labels - 1]`.
@@ -468,15 +468,15 @@ class DistilBertForMultipleChoice(DistilBertPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[MultipleChoiceModelOutput, tuple[torch.Tensor, ...]]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> MultipleChoiceModelOutput | tuple[torch.Tensor, ...]:
         r"""
         input_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`):
             Indices of input sequence tokens in the vocabulary.

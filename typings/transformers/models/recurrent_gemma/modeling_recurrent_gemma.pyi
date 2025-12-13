@@ -67,11 +67,11 @@ class RecurrentGemmaSdpaAttention(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        position_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        position_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         use_cache: bool = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]: ...
 
 class SqrtBoundDerivative(torch.autograd.Function):
     """Computes a square root with a gradient clipped at `_MAX_SQRT_GRADIENT`."""
@@ -117,8 +117,8 @@ class RecurrentGemmaDecoderLayer(GradientCheckpointingLayer):
         activations: torch.Tensor,
         position_ids: torch.Tensor,
         attention_mask: torch.Tensor,
-        cache_position: Optional[torch.Tensor] = ...,
-        use_cache: Optional[bool] = ...,
+        cache_position: torch.Tensor | None = ...,
+        use_cache: bool | None = ...,
     ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]: ...
 
 @auto_docstring
@@ -139,15 +139,15 @@ class RecurrentGemmaModel(RecurrentGemmaPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithNoAttention]: ...
+        input_ids: torch.LongTensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutputWithNoAttention: ...
 
 @auto_docstring
 class RecurrentGemmaForCausalLM(RecurrentGemmaPreTrainedModel, GenerationMixin):
@@ -160,17 +160,17 @@ class RecurrentGemmaForCausalLM(RecurrentGemmaPreTrainedModel, GenerationMixin):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        use_cache: Optional[bool] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        use_cache: bool | None = ...,
         **kwargs,
-    ) -> Union[tuple, CausalLMOutput]:
+    ) -> tuple | CausalLMOutput:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
             Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,

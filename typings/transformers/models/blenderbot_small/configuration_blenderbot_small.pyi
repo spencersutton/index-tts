@@ -127,7 +127,7 @@ class BlenderbotSmallOnnxConfig(OnnxSeq2SeqConfigWithPast):
         batch_size: int = ...,
         seq_length: int = ...,
         is_pair: bool = ...,
-        framework: Optional[TensorType] = ...,
+        framework: TensorType | None = ...,
     ) -> Mapping[str, Any]: ...
 
 __all__ = ["BlenderbotSmallConfig", "BlenderbotSmallOnnxConfig"]

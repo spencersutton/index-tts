@@ -37,7 +37,7 @@ class Wav2Vec2BertProcessor(ProcessorMixin):
     def __call__(
         self,
         audio: AudioInput = ...,
-        text: Optional[Union[str, list[str], TextInput, PreTokenizedInput]] = ...,
+        text: str | list[str] | TextInput | PreTokenizedInput | None = ...,
         images=...,
         videos=...,
         **kwargs: Unpack[Wav2Vec2BertProcessorKwargs],

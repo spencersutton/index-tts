@@ -1,11 +1,12 @@
 import sympy
 import torch
-from typing import Any, Callable, Generic, Literal, NamedTuple, Optional, TypeVar, Union, TypeAlias
+from typing import Any, Generic, Literal, NamedTuple, Optional, TypeVar, Union, TypeAlias
+from collections.abc import Callable
 from ..utils._ordered_set import OrderedSet
 
 T = TypeVar("T")
-StoreMode: TypeAlias = Optional[Literal["atomic_add"]]
-ReductionType: TypeAlias = Literal[
+type StoreMode = Literal["atomic_add"] | None
+type ReductionType = Literal[
     "argmax",
     "argmin",
     "welford_reduce",
@@ -20,7 +21,7 @@ ReductionType: TypeAlias = Literal[
 ]
 
 class OpsHandler(Generic[T]):
-    def constant(self, value: Union[bool, float], dtype: torch.dtype) -> T: ...
+    def constant(self, value: bool | float, dtype: torch.dtype) -> T: ...
     def load_seed(self, name: str, offset: T) -> T: ...
     def rand(self, seed: T, offset: T) -> T: ...
     def randn(self, seed: T, offset: T) -> T: ...
@@ -29,7 +30,7 @@ class OpsHandler(Generic[T]):
     def where(self, condition: T, input: T, other: T) -> T: ...
     def index_expr(self, expr: sympy.Expr, dtype: torch.dtype) -> T: ...
     def to_dtype(
-        self, x: T, dtype: torch.dtype, src_dtype: Optional[torch.dtype] = ..., use_compute_types: bool = ...
+        self, x: T, dtype: torch.dtype, src_dtype: torch.dtype | None = ..., use_compute_types: bool = ...
     ) -> T: ...
     def trunc_to_int(self, x: T, dtype: torch.dtype) -> T: ...
     def ceil_to_int(self, x: T, dtype: torch.dtype) -> T: ...
@@ -42,7 +43,7 @@ class OpsHandler(Generic[T]):
     def store(self, name: str, index: sympy.Expr, value: T, mode: StoreMode = ...) -> None: ...
     def reduction(
         self, dtype: torch.dtype, src_dtype: torch.dtype, reduction_type: ReductionType, value: T
-    ) -> Union[T, tuple[T, ...]]: ...
+    ) -> T | tuple[T, ...]: ...
     def store_reduction(self, name: str, index: sympy.Expr, value: T) -> None: ...
     def scan(
         self,
@@ -60,8 +61,8 @@ class OpsHandler(Generic[T]):
         boundary_indices: T,
         indexing_dtype: torch.dtype,
         right: bool,
-        sorter: Optional[tuple[str, sympy.Expr]] = ...,
-        sorter_indices: Optional[T] = ...,
+        sorter: tuple[str, sympy.Expr] | None = ...,
+        sorter_indices: T | None = ...,
     ) -> T: ...
     def abs(self, x0: T) -> T: ...
     def exp(self, x0: T) -> T: ...
@@ -187,7 +188,7 @@ class OpsHandler(Generic[T]):
         self,
         *inputs: T,
         asm: str,
-        constraints: Optional[str] = ...,
+        constraints: str | None = ...,
         dtype: torch.dtype = ...,
         is_pure: bool = ...,
         pack: int = ...,
@@ -308,8 +309,8 @@ class KernelFormatterHandler(DefaultHandler):
         dtype: torch.dtype,
         src_dtype: torch.dtype,
         reduction_type: ReductionType,
-        value: Union[str, tuple[str, ...]],
-    ) -> Union[str, tuple[str, ...]]: ...
+        value: str | tuple[str, ...],
+    ) -> str | tuple[str, ...]: ...
     def getvalue(self, result):  # -> str:
         ...
     def device_assert_async(self, cond, msg: str):  # -> str:
@@ -339,14 +340,14 @@ class OpCounterCSE(DefaultHandler):
         boundary_indices: T,
         indexing_dtype: torch.dtype,
         right: bool,
-        sorter: Optional[tuple[str, sympy.Expr]] = ...,
-        sorter_indices: Optional[T] = ...,
+        sorter: tuple[str, sympy.Expr] | None = ...,
+        sorter_indices: T | None = ...,
     ) -> T: ...
     def getvalue(self):  # -> OpCountResult:
         ...
 
 class ExtractConstantsHandler(NoopHandler):
-    def __init__(self, device: Optional[torch.device]) -> None: ...
+    def __init__(self, device: torch.device | None) -> None: ...
     def constant(self, value: Any, dtype: torch.dtype) -> torch._inductor.ir.Constant: ...
 
 class SimpleCSEHandler(WrapperHandler):

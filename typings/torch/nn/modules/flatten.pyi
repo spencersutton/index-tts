@@ -14,7 +14,7 @@ class Flatten(Module):
     def extra_repr(self) -> str: ...
 
 class Unflatten(Module):
-    NamedShape: TypeAlias = tuple[tuple[str, int]]
+    type NamedShape = tuple[tuple[str, int]]
     __constants__ = ...
     dim: int | str
     unflattened_size: _size | NamedShape

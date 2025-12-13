@@ -62,15 +62,15 @@ class MobileNetV2ImageProcessor(BaseImageProcessor):
     def __init__(
         self,
         do_resize: bool = ...,
-        size: Optional[dict[str, int]] = ...,
+        size: dict[str, int] | None = ...,
         resample: PILImageResampling = ...,
         do_center_crop: bool = ...,
-        crop_size: Optional[dict[str, int]] = ...,
+        crop_size: dict[str, int] | None = ...,
         do_rescale: bool = ...,
-        rescale_factor: Union[int, float] = ...,
+        rescale_factor: int | float = ...,
         do_normalize: bool = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
         do_reduce_labels: bool = ...,
         **kwargs,
     ) -> None: ...
@@ -79,8 +79,8 @@ class MobileNetV2ImageProcessor(BaseImageProcessor):
         image: np.ndarray,
         size: dict[str, int],
         resample: PILImageResampling = ...,
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
         **kwargs,
     ) -> np.ndarray:
         """
@@ -115,21 +115,21 @@ class MobileNetV2ImageProcessor(BaseImageProcessor):
     def preprocess(
         self,
         images: ImageInput,
-        segmentation_maps: Optional[ImageInput] = ...,
-        do_resize: Optional[bool] = ...,
-        size: Optional[dict[str, int]] = ...,
+        segmentation_maps: ImageInput | None = ...,
+        do_resize: bool | None = ...,
+        size: dict[str, int] | None = ...,
         resample: PILImageResampling = ...,
-        do_center_crop: Optional[bool] = ...,
-        crop_size: Optional[dict[str, int]] = ...,
-        do_rescale: Optional[bool] = ...,
-        rescale_factor: Optional[float] = ...,
-        do_normalize: Optional[bool] = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
-        do_reduce_labels: Optional[bool] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        data_format: Union[str, ChannelDimension] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        do_center_crop: bool | None = ...,
+        crop_size: dict[str, int] | None = ...,
+        do_rescale: bool | None = ...,
+        rescale_factor: float | None = ...,
+        do_normalize: bool | None = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
+        do_reduce_labels: bool | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        data_format: str | ChannelDimension = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ):  # -> BatchFeature:
         """
         Preprocess an image or batch of images.
@@ -187,7 +187,7 @@ class MobileNetV2ImageProcessor(BaseImageProcessor):
         """
         ...
 
-    def post_process_semantic_segmentation(self, outputs, target_sizes: Optional[list[tuple]] = ...):  # -> list[Any]:
+    def post_process_semantic_segmentation(self, outputs, target_sizes: list[tuple] | None = ...):  # -> list[Any]:
         """
         Converts the output of [`MobileNetV2ForSemanticSegmentation`] into semantic segmentation maps. Only supports PyTorch.
 

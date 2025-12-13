@@ -35,7 +35,7 @@ class BlipProcessor(ProcessorMixin):
     def __call__(
         self,
         images: ImageInput = ...,
-        text: Optional[Union[str, list[str], TextInput, PreTokenizedInput]] = ...,
+        text: str | list[str] | TextInput | PreTokenizedInput | None = ...,
         audio=...,
         videos=...,
         **kwargs: Unpack[BlipProcessorKwargs],

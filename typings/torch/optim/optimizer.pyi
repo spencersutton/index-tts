@@ -1,19 +1,20 @@
 import torch
 from collections import OrderedDict
 from collections.abc import Iterable
-from typing import Any, Callable, Optional, TypeVar, Union, overload
-from typing_extensions import ParamSpec, Self, TypeAlias
+from typing import Any, Optional, TypeVar, Union, overload
+from collections.abc import Callable
+from typing import ParamSpec, Self, TypeAlias
 from torch.utils.hooks import RemovableHandle
 
 """Base optimizer."""
 _P = ParamSpec("_P")
-Args: TypeAlias = tuple[Any, ...]
-Kwargs: TypeAlias = dict[str, Any]
-StateDict: TypeAlias = dict[str, Any]
-DeviceDict: TypeAlias = dict[Optional[torch.device], torch.Tensor]
-DeviceDtypeDict: TypeAlias = dict[Optional[tuple[torch.device, torch.dtype]], torch.Tensor]
-GlobalOptimizerPreHook: TypeAlias = Callable[[Optimizer, Args, Kwargs], Optional[tuple[Args, Kwargs]]]
-GlobalOptimizerPostHook: TypeAlias = Callable[[Optimizer, Args, Kwargs], None]
+type Args = tuple[Any, ...]
+type Kwargs = dict[str, Any]
+type StateDict = dict[str, Any]
+type DeviceDict = dict[torch.device | None, torch.Tensor]
+type DeviceDtypeDict = dict[tuple[torch.device, torch.dtype] | None, torch.Tensor]
+type GlobalOptimizerPreHook = Callable[[Optimizer, Args, Kwargs], tuple[Args, Kwargs] | None]
+type GlobalOptimizerPostHook = Callable[[Optimizer, Args, Kwargs], None]
 __all__ = ["Optimizer", "register_optimizer_step_pre_hook", "register_optimizer_step_post_hook"]
 _global_optimizer_pre_hooks: dict[int, GlobalOptimizerPreHook] = ...
 _global_optimizer_post_hooks: dict[int, GlobalOptimizerPostHook] = ...
@@ -32,21 +33,21 @@ _maximize_doc = ...
 def register_optimizer_step_pre_hook(hook: GlobalOptimizerPreHook) -> RemovableHandle: ...
 def register_optimizer_step_post_hook(hook: GlobalOptimizerPostHook) -> RemovableHandle: ...
 
-ParamsT: TypeAlias = Union[Iterable[torch.Tensor], Iterable[dict[str, Any]], Iterable[tuple[str, torch.Tensor]]]
+type ParamsT = Iterable[torch.Tensor] | Iterable[dict[str, Any]] | Iterable[tuple[str, torch.Tensor]]
 R = TypeVar("R")
 T = TypeVar("T")
 
 class Optimizer:
-    OptimizerPreHook: TypeAlias = Callable[
+    type OptimizerPreHook = Callable[
         [Self, Args, Kwargs],
-        Optional[tuple[Args, Kwargs]],
+        tuple[Args, Kwargs] | None,
     ]
-    OptimizerPostHook: TypeAlias = Callable[[Self, Args, Kwargs], None]
+    type OptimizerPostHook = Callable[[Self, Args, Kwargs], None]
     _optimizer_step_pre_hooks: dict[int, OptimizerPreHook]
     _optimizer_step_post_hooks: dict[int, OptimizerPostHook]
     _optimizer_state_dict_pre_hooks: OrderedDict[int, Callable[[Optimizer], None]]
-    _optimizer_state_dict_post_hooks: OrderedDict[int, Callable[[Optimizer, StateDict], Optional[StateDict]]]
-    _optimizer_load_state_dict_pre_hooks: OrderedDict[int, Callable[[Optimizer, StateDict], Optional[StateDict]]]
+    _optimizer_state_dict_post_hooks: OrderedDict[int, Callable[[Optimizer, StateDict], StateDict | None]]
+    _optimizer_load_state_dict_pre_hooks: OrderedDict[int, Callable[[Optimizer, StateDict], StateDict | None]]
     _optimizer_load_state_dict_post_hooks: OrderedDict[int, Callable[[Optimizer], None]]
     def __init__(self, params: ParamsT, defaults: dict[str, Any]) -> None: ...
     def __getstate__(self) -> dict[str, Any]: ...
@@ -59,12 +60,12 @@ class Optimizer:
         self, hook: Callable[[Optimizer], None], prepend: bool = ...
     ) -> RemovableHandle: ...
     def register_state_dict_post_hook(
-        self, hook: Callable[[Optimizer, StateDict], Optional[StateDict]], prepend: bool = ...
+        self, hook: Callable[[Optimizer, StateDict], StateDict | None], prepend: bool = ...
     ) -> RemovableHandle: ...
     @torch._disable_dynamo
     def state_dict(self) -> StateDict: ...
     def register_load_state_dict_pre_hook(
-        self, hook: Callable[[Optimizer, StateDict], Optional[StateDict]], prepend: bool = ...
+        self, hook: Callable[[Optimizer, StateDict], StateDict | None], prepend: bool = ...
     ) -> RemovableHandle: ...
     def register_load_state_dict_post_hook(
         self, hook: Callable[[Optimizer], None], prepend: bool = ...
@@ -77,6 +78,6 @@ class Optimizer:
     def step(self, closure: None = ...) -> None: ...
     @overload
     def step(self, closure: Callable[[], float]) -> float: ...
-    def step(self, closure: Optional[Callable[[], float]] = ...) -> Optional[float]: ...
+    def step(self, closure: Callable[[], float] | None = ...) -> float | None: ...
     @torch._disable_dynamo
     def add_param_group(self, param_group: dict[str, Any]) -> None: ...

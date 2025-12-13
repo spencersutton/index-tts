@@ -1,7 +1,8 @@
 import torch
 from collections.abc import Mapping, Sequence
-from typing import Any, Callable, Optional, TYPE_CHECKING, Union
-from typing_extensions import ParamSpec, TypeAlias, TypeVar
+from typing import Any, Optional, TYPE_CHECKING, Union
+from collections.abc import Callable
+from typing import ParamSpec, TypeAlias, TypeVar
 from torch._C import _NodeBase
 from torch.fx.operator_schemas import ArgsKwargsPair
 from .._ops import ops as _ops
@@ -28,17 +29,9 @@ BaseArgumentTypes = Union[
     torch.SymFloat,
 ]
 base_types = ...
-Target: TypeAlias = Union[Callable[..., Any], str]
+type Target = Callable[..., Any] | str
 Argument = Optional[
-    Union[
-        tuple[Argument, ...],
-        Sequence[Argument],
-        Mapping[str, Argument],
-        slice,
-        range,
-        Node,
-        BaseArgumentTypes,
-    ]
+    tuple[Argument, ...] | Sequence[Argument] | Mapping[str, Argument] | slice | range | Node | BaseArgumentTypes
 ]
 ArgumentT = TypeVar("ArgumentT", bound=Argument)
 _P = ParamSpec("_P")
@@ -61,9 +54,9 @@ class Node(_NodeBase):
     target: Target
     _input_nodes: dict[Node, None]
     users: dict[Node, None]
-    type: Optional[Any]
+    type: Any | None
     _sort_key: Any
-    _repr_fn: Optional[Callable[[Node], str]]
+    _repr_fn: Callable[[Node], str] | None
     meta: dict[str, Any]
     @compatibility(is_backward_compatible=True)
     def __init__(
@@ -74,7 +67,7 @@ class Node(_NodeBase):
         target: Target,
         args: tuple[Argument, ...],
         kwargs: dict[str, Argument],
-        return_type: Optional[Any] = ...,
+        return_type: Any | None = ...,
     ) -> None: ...
     def __getstate__(self) -> dict[str, Any]: ...
     def __setstate__(self, state: dict[str, Any]) -> None: ...
@@ -107,17 +100,17 @@ class Node(_NodeBase):
     @compatibility(is_backward_compatible=True)
     def update_kwarg(self, key: str, arg: Argument) -> None: ...
     @property
-    def stack_trace(self) -> Optional[str]: ...
+    def stack_trace(self) -> str | None: ...
     @stack_trace.setter
-    def stack_trace(self, trace: Optional[str]) -> None: ...
+    def stack_trace(self, trace: str | None) -> None: ...
     @compatibility(is_backward_compatible=True)
     def format_node(
         self,
-        placeholder_names: Optional[list[str]] = ...,
-        maybe_return_typename: Optional[list[str]] = ...,
+        placeholder_names: list[str] | None = ...,
+        maybe_return_typename: list[str] | None = ...,
         *,
         include_tensor_metadata: bool = ...,
-    ) -> Optional[str]: ...
+    ) -> str | None: ...
     @compatibility(is_backward_compatible=True)
     def replace_all_uses_with(
         self, replace_with: Node, delete_user_cb: Callable[[Node], bool] = ..., *, propagate_meta: bool = ...
@@ -128,10 +121,10 @@ class Node(_NodeBase):
     def normalized_arguments(
         self,
         root: torch.nn.Module,
-        arg_types: Optional[tuple[Any]] = ...,
-        kwarg_types: Optional[dict[str, Any]] = ...,
+        arg_types: tuple[Any] | None = ...,
+        kwarg_types: dict[str, Any] | None = ...,
         normalize_to_only_use_kwargs: bool = ...,
-    ) -> Optional[ArgsKwargsPair]: ...
+    ) -> ArgsKwargsPair | None: ...
     @compatibility(is_backward_compatible=True)
     def replace_input_with(self, old_input: Node, new_input: Node) -> None: ...
     def __setattr__(self, name: str, value: Any) -> None: ...

@@ -7,7 +7,8 @@ import os
 import numpy as np
 import tensorflow as tf
 import tf_keras as keras
-from typing import Any, Callable, TYPE_CHECKING, Union
+from typing import Any, TYPE_CHECKING, Union
+from collections.abc import Callable
 from . import PreTrainedTokenizerBase
 from .configuration_utils import PretrainedConfig
 from .generation import TFGenerationMixin

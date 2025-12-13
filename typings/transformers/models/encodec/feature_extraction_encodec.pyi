@@ -41,22 +41,22 @@ class EncodecFeatureExtractor(SequenceFeatureExtractor):
         feature_size: int = ...,
         sampling_rate: int = ...,
         padding_value: float = ...,
-        chunk_length_s: Optional[float] = ...,
-        overlap: Optional[float] = ...,
+        chunk_length_s: float | None = ...,
+        overlap: float | None = ...,
         **kwargs,
     ) -> None: ...
     @property
-    def chunk_length(self) -> Optional[int]: ...
+    def chunk_length(self) -> int | None: ...
     @property
-    def chunk_stride(self) -> Optional[int]: ...
+    def chunk_stride(self) -> int | None: ...
     def __call__(
         self,
-        raw_audio: Union[np.ndarray, list[float], list[np.ndarray], list[list[float]]],
-        padding: Optional[Union[bool, str, PaddingStrategy]] = ...,
-        truncation: Optional[bool] = ...,
-        max_length: Optional[int] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        sampling_rate: Optional[int] = ...,
+        raw_audio: np.ndarray | list[float] | list[np.ndarray] | list[list[float]],
+        padding: bool | str | PaddingStrategy | None = ...,
+        truncation: bool | None = ...,
+        max_length: int | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        sampling_rate: int | None = ...,
     ) -> BatchFeature:
         """
         Main method to featurize and prepare for the model one or several sequence(s).

@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
-from typing import Callable, Optional, TYPE_CHECKING, Union, overload
-from typing_extensions import deprecated
+from typing import Optional, TYPE_CHECKING, Union, overload
+from collections.abc import Callable
+from warnings import deprecated
 from torch.distributed._composable import contract
 from ._fsdp_api import AllGather, MixedPrecisionPolicy, OffloadPolicy, ReduceScatter
 from ._fsdp_param_group import FSDPParamGroup
@@ -16,40 +17,40 @@ cls_to_fsdp_cls: dict[type, type] = ...
 def fully_shard(
     module: nn.Module,
     *,
-    mesh: Optional[DeviceMesh] = ...,
-    reshard_after_forward: Union[bool, int] = ...,
-    shard_placement_fn: Optional[Callable[[nn.Parameter], Optional[Shard]]] = ...,
+    mesh: DeviceMesh | None = ...,
+    reshard_after_forward: bool | int = ...,
+    shard_placement_fn: Callable[[nn.Parameter], Shard | None] | None = ...,
     mp_policy: MixedPrecisionPolicy = ...,
     offload_policy: OffloadPolicy = ...,
-    ignored_params: Optional[set[nn.Parameter]] = ...,
+    ignored_params: set[nn.Parameter] | None = ...,
 ) -> FSDPModule: ...
 @overload
 def fully_shard(
     module: list[nn.Module],
     *,
-    mesh: Optional[DeviceMesh] = ...,
-    reshard_after_forward: Union[bool, int] = ...,
-    shard_placement_fn: Optional[Callable[[nn.Parameter], Optional[Shard]]] = ...,
+    mesh: DeviceMesh | None = ...,
+    reshard_after_forward: bool | int = ...,
+    shard_placement_fn: Callable[[nn.Parameter], Shard | None] | None = ...,
     mp_policy: MixedPrecisionPolicy = ...,
     offload_policy: OffloadPolicy = ...,
-    ignored_params: Optional[set[nn.Parameter]] = ...,
+    ignored_params: set[nn.Parameter] | None = ...,
 ) -> list[FSDPModule]: ...
 @contract(state_cls=FSDPState)
 def fully_shard(
     module,
     *,
-    mesh: Optional[DeviceMesh] = ...,
-    reshard_after_forward: Optional[Union[bool, int]] = ...,
-    shard_placement_fn: Optional[Callable[[nn.Parameter], Optional[Shard]]] = ...,
+    mesh: DeviceMesh | None = ...,
+    reshard_after_forward: bool | int | None = ...,
+    shard_placement_fn: Callable[[nn.Parameter], Shard | None] | None = ...,
     mp_policy: MixedPrecisionPolicy = ...,
     offload_policy: OffloadPolicy = ...,
-    ignored_params: Optional[set[nn.Parameter]] = ...,
+    ignored_params: set[nn.Parameter] | None = ...,
 ): ...
 
 class FSDPModule:
     def __new__(cls, *args, **kwargs): ...
     def reshard(self) -> None: ...
-    def unshard(self, async_op: bool = ...) -> Optional[UnshardHandle]: ...
+    def unshard(self, async_op: bool = ...) -> UnshardHandle | None: ...
     def set_is_last_backward(self, is_last_backward: bool) -> None: ...
     def set_requires_gradient_sync(self, requires_gradient_sync: bool, *, recurse: bool = ...) -> None: ...
     def set_requires_all_reduce(self, requires_all_reduce: bool, *, recurse: bool = ...) -> None: ...
@@ -60,7 +61,7 @@ class FSDPModule:
     def set_custom_all_gather(self, comm: AllGather) -> None: ...
     def set_custom_reduce_scatter(self, comm: ReduceScatter) -> None: ...
     def set_all_reduce_hook(
-        self, hook: Callable[[torch.Tensor], None], *, stream: Optional[torch.cuda.Stream] = ...
+        self, hook: Callable[[torch.Tensor], None], *, stream: torch.cuda.Stream | None = ...
     ):  # -> None:
 
         ...
@@ -76,7 +77,7 @@ class UnshardHandle:
     def wait(self) -> None: ...
 
 class _UnshardHandleImpl(UnshardHandle):
-    def __init__(self, fsdp_param_group: Optional[FSDPParamGroup]) -> None: ...
+    def __init__(self, fsdp_param_group: FSDPParamGroup | None) -> None: ...
     def wait(self):  # -> None:
         ...
 

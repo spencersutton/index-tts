@@ -119,13 +119,13 @@ class KeypointMatchingOutput(ModelOutput):
         num_keypoints)`, returned when `output_attentions=True` is passed or when `config.output_attentions=True`)
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    matches: Optional[torch.FloatTensor] = ...
-    matching_scores: Optional[torch.FloatTensor] = ...
-    keypoints: Optional[torch.FloatTensor] = ...
-    mask: Optional[torch.IntTensor] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
+    loss: torch.FloatTensor | None = ...
+    matches: torch.FloatTensor | None = ...
+    matching_scores: torch.FloatTensor | None = ...
+    keypoints: torch.FloatTensor | None = ...
+    mask: torch.IntTensor | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
 
 class SuperGlueMultiLayerPerceptron(nn.Module):
     def __init__(self, config: SuperGlueConfig, in_channels: int, out_channels: int) -> None: ...
@@ -134,19 +134,19 @@ class SuperGlueMultiLayerPerceptron(nn.Module):
 class SuperGlueKeypointEncoder(nn.Module):
     def __init__(self, config: SuperGlueConfig) -> None: ...
     def forward(
-        self, keypoints: torch.Tensor, scores: torch.Tensor, output_hidden_states: Optional[bool] = ...
-    ) -> tuple[torch.Tensor, Optional[tuple[torch.Tensor]]]: ...
+        self, keypoints: torch.Tensor, scores: torch.Tensor, output_hidden_states: bool | None = ...
+    ) -> tuple[torch.Tensor, tuple[torch.Tensor] | None]: ...
 
 class SuperGlueSelfAttention(nn.Module):
     def __init__(self, config, position_embedding_type=...) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        encoder_hidden_states: Optional[torch.FloatTensor] = ...,
-        encoder_attention_mask: Optional[torch.FloatTensor] = ...,
-        output_attentions: Optional[bool] = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        encoder_hidden_states: torch.FloatTensor | None = ...,
+        encoder_attention_mask: torch.FloatTensor | None = ...,
+        output_attentions: bool | None = ...,
     ) -> tuple[torch.Tensor]: ...
 
 class SuperGlueSelfOutput(nn.Module):
@@ -162,11 +162,11 @@ class SuperGlueAttention(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        encoder_hidden_states: Optional[torch.FloatTensor] = ...,
-        encoder_attention_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        encoder_hidden_states: torch.FloatTensor | None = ...,
+        encoder_attention_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
     ) -> tuple[torch.Tensor]: ...
 
 class SuperGlueAttentionalPropagation(nn.Module):
@@ -174,22 +174,22 @@ class SuperGlueAttentionalPropagation(nn.Module):
     def forward(
         self,
         descriptors: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        encoder_hidden_states: Optional[torch.Tensor] = ...,
-        encoder_attention_mask: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        encoder_hidden_states: torch.Tensor | None = ...,
+        encoder_attention_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
-    ) -> tuple[torch.Tensor, Optional[tuple[torch.Tensor]], Optional[tuple[torch.Tensor]]]: ...
+    ) -> tuple[torch.Tensor, tuple[torch.Tensor] | None, tuple[torch.Tensor] | None]: ...
 
 class SuperGlueAttentionalGNN(nn.Module):
     def __init__(self, config: SuperGlueConfig) -> None: ...
     def forward(
         self,
         descriptors: torch.Tensor,
-        mask: Optional[torch.Tensor] = ...,
+        mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
-        output_hidden_states: Optional[bool] = ...,
-    ) -> tuple[torch.Tensor, Optional[tuple], Optional[tuple]]: ...
+        output_hidden_states: bool | None = ...,
+    ) -> tuple[torch.Tensor, tuple | None, tuple | None]: ...
 
 class SuperGlueFinalProjection(nn.Module):
     def __init__(self, config: SuperGlueConfig) -> None: ...
@@ -228,11 +228,11 @@ class SuperGlueForKeypointMatching(SuperGluePreTrainedModel):
     def forward(
         self,
         pixel_values: torch.FloatTensor,
-        labels: Optional[torch.LongTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, KeypointMatchingOutput]:
+        labels: torch.LongTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | KeypointMatchingOutput:
         r"""
         Examples:
 

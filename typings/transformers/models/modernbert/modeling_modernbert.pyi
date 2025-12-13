@@ -27,13 +27,13 @@ logger = ...
 
 class ApplyRotaryEmbUnpad(torch.autograd.Function):
     @staticmethod
-    def forward(ctx, qkv, cos, sin, cu_seqlens: Optional[torch.Tensor] = ..., max_seqlen: Optional[int] = ...): ...
+    def forward(ctx, qkv, cos, sin, cu_seqlens: torch.Tensor | None = ..., max_seqlen: int | None = ...): ...
     @staticmethod
     def backward(ctx, do):  # -> tuple[Any, None, None, None, None, None, None]:
         ...
 
 def apply_rotary_unpadded(
-    qkv, cos, sin, cu_seqlens: Optional[torch.Tensor] = ..., max_seqlen: Optional[int] = ...
+    qkv, cos, sin, cu_seqlens: torch.Tensor | None = ..., max_seqlen: int | None = ...
 ):  # -> Any | None:
     """
     Arguments:
@@ -61,9 +61,9 @@ class ModernBertUnpaddedRotaryEmbedding(RotaryEmbedding):
         self,
         dim: int,
         base: float = ...,
-        max_seqlen: Optional[int] = ...,
-        device: Optional[torch.device] = ...,
-        dtype: Optional[torch.dtype] = ...,
+        max_seqlen: int | None = ...,
+        device: torch.device | None = ...,
+        dtype: torch.dtype | None = ...,
     ) -> None:
         """
         max_seqlen: if max_seqlen, device, and dtype are provided, we precompute the cos_sin_cache
@@ -73,8 +73,8 @@ class ModernBertUnpaddedRotaryEmbedding(RotaryEmbedding):
         ...
 
     def forward(
-        self, qkv: torch.Tensor, cu_seqlens: torch.Tensor, max_seqlen: Optional[int] = ...
-    ) -> Union[torch.Tensor, tuple[torch.Tensor, torch.Tensor]]:
+        self, qkv: torch.Tensor, cu_seqlens: torch.Tensor, max_seqlen: int | None = ...
+    ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
         """
         Apply rotary embedding *inplace* to qkv.
         qkv: (total_nnz, 3, nheads, headdim)
@@ -93,7 +93,7 @@ class ModernBertEmbeddings(nn.Module):
     @torch.compile(dynamic=True)
     def compiled_embeddings(self, input_ids: torch.LongTensor) -> torch.Tensor: ...
     def forward(
-        self, input_ids: Optional[torch.LongTensor] = ..., inputs_embeds: Optional[torch.Tensor] = ...
+        self, input_ids: torch.LongTensor | None = ..., inputs_embeds: torch.Tensor | None = ...
     ) -> torch.Tensor: ...
 
 class ModernBertMLP(nn.Module):
@@ -143,13 +143,13 @@ def eager_attention_forward(
     qkv: torch.Tensor,
     attention_mask: torch.Tensor,
     sliding_window_mask: torch.Tensor,
-    position_ids: Optional[torch.LongTensor],
+    position_ids: torch.LongTensor | None,
     local_attention: tuple[int, int],
     bs: int,
     dim: int,
-    output_attentions: Optional[bool] = ...,
+    output_attentions: bool | None = ...,
     **_kwargs,
-) -> Union[tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor]]: ...
+) -> tuple[torch.Tensor, torch.Tensor] | tuple[torch.Tensor]: ...
 def flash_attention_forward(
     module: ModernBertAttention,
     qkv: torch.Tensor,
@@ -167,7 +167,7 @@ def sdpa_attention_forward(
     qkv: torch.Tensor,
     attention_mask: torch.Tensor,
     sliding_window_mask: torch.Tensor,
-    position_ids: Optional[torch.LongTensor],
+    position_ids: torch.LongTensor | None,
     local_attention: tuple[int, int],
     bs: int,
     dim: int,
@@ -185,24 +185,22 @@ class ModernBertAttention(nn.Module):
 
     See `forward` method for additional details.
     """
-    def __init__(self, config: ModernBertConfig, layer_id: Optional[int] = ...) -> None: ...
-    def forward(
-        self, hidden_states: torch.Tensor, output_attentions: Optional[bool] = ..., **kwargs
-    ) -> torch.Tensor: ...
+    def __init__(self, config: ModernBertConfig, layer_id: int | None = ...) -> None: ...
+    def forward(self, hidden_states: torch.Tensor, output_attentions: bool | None = ..., **kwargs) -> torch.Tensor: ...
 
 class ModernBertEncoderLayer(GradientCheckpointingLayer):
-    def __init__(self, config: ModernBertConfig, layer_id: Optional[int] = ...) -> None: ...
+    def __init__(self, config: ModernBertConfig, layer_id: int | None = ...) -> None: ...
     @torch.compile(dynamic=True)
     def compiled_mlp(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        sliding_window_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        cu_seqlens: Optional[torch.Tensor] = ...,
-        max_seqlen: Optional[int] = ...,
-        output_attentions: Optional[bool] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        sliding_window_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        cu_seqlens: torch.Tensor | None = ...,
+        max_seqlen: int | None = ...,
+        output_attentions: bool | None = ...,
     ) -> torch.Tensor: ...
 
 @auto_docstring
@@ -227,20 +225,20 @@ class ModernBertModel(ModernBertPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        sliding_window_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        indices: Optional[torch.Tensor] = ...,
-        cu_seqlens: Optional[torch.Tensor] = ...,
-        max_seqlen: Optional[int] = ...,
-        batch_size: Optional[int] = ...,
-        seq_len: Optional[int] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor, ...], BaseModelOutput]:
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        sliding_window_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        indices: torch.Tensor | None = ...,
+        cu_seqlens: torch.Tensor | None = ...,
+        max_seqlen: int | None = ...,
+        batch_size: int | None = ...,
+        seq_len: int | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.Tensor, ...] | BaseModelOutput:
         r"""
         sliding_window_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
             Mask to avoid performing attention on padding or far-away tokens. In ModernBert, only every few layers
@@ -280,22 +278,22 @@ class ModernBertForMaskedLM(ModernBertPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        sliding_window_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        indices: Optional[torch.Tensor] = ...,
-        cu_seqlens: Optional[torch.Tensor] = ...,
-        max_seqlen: Optional[int] = ...,
-        batch_size: Optional[int] = ...,
-        seq_len: Optional[int] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        sliding_window_mask: torch.Tensor | None = ...,
+        position_ids: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        indices: torch.Tensor | None = ...,
+        cu_seqlens: torch.Tensor | None = ...,
+        max_seqlen: int | None = ...,
+        batch_size: int | None = ...,
+        seq_len: int | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         **kwargs,
-    ) -> Union[tuple[torch.Tensor], MaskedLMOutput]:
+    ) -> tuple[torch.Tensor] | MaskedLMOutput:
         r"""
         sliding_window_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
             Mask to avoid performing attention on padding or far-away tokens. In ModernBert, only every few layers
@@ -324,22 +322,22 @@ class ModernBertForSequenceClassification(ModernBertPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        sliding_window_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        indices: Optional[torch.Tensor] = ...,
-        cu_seqlens: Optional[torch.Tensor] = ...,
-        max_seqlen: Optional[int] = ...,
-        batch_size: Optional[int] = ...,
-        seq_len: Optional[int] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        sliding_window_mask: torch.Tensor | None = ...,
+        position_ids: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        indices: torch.Tensor | None = ...,
+        cu_seqlens: torch.Tensor | None = ...,
+        max_seqlen: int | None = ...,
+        batch_size: int | None = ...,
+        seq_len: int | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         **kwargs,
-    ) -> Union[tuple[torch.Tensor], SequenceClassifierOutput]:
+    ) -> tuple[torch.Tensor] | SequenceClassifierOutput:
         r"""
         sliding_window_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
             Mask to avoid performing attention on padding or far-away tokens. In ModernBert, only every few layers
@@ -372,21 +370,21 @@ class ModernBertForTokenClassification(ModernBertPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        sliding_window_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        indices: Optional[torch.Tensor] = ...,
-        cu_seqlens: Optional[torch.Tensor] = ...,
-        max_seqlen: Optional[int] = ...,
-        batch_size: Optional[int] = ...,
-        seq_len: Optional[int] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], TokenClassifierOutput]:
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        sliding_window_mask: torch.Tensor | None = ...,
+        position_ids: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        indices: torch.Tensor | None = ...,
+        cu_seqlens: torch.Tensor | None = ...,
+        max_seqlen: int | None = ...,
+        batch_size: int | None = ...,
+        seq_len: int | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.Tensor] | TokenClassifierOutput:
         r"""
         sliding_window_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
             Mask to avoid performing attention on padding or far-away tokens. In ModernBert, only every few layers
@@ -413,22 +411,22 @@ class ModernBertForQuestionAnswering(ModernBertPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.Tensor],
-        attention_mask: Optional[torch.Tensor] = ...,
-        sliding_window_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.Tensor] = ...,
-        start_positions: Optional[torch.Tensor] = ...,
-        end_positions: Optional[torch.Tensor] = ...,
-        indices: Optional[torch.Tensor] = ...,
-        cu_seqlens: Optional[torch.Tensor] = ...,
-        max_seqlen: Optional[int] = ...,
-        batch_size: Optional[int] = ...,
-        seq_len: Optional[int] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        input_ids: torch.Tensor | None,
+        attention_mask: torch.Tensor | None = ...,
+        sliding_window_mask: torch.Tensor | None = ...,
+        position_ids: torch.Tensor | None = ...,
+        start_positions: torch.Tensor | None = ...,
+        end_positions: torch.Tensor | None = ...,
+        indices: torch.Tensor | None = ...,
+        cu_seqlens: torch.Tensor | None = ...,
+        max_seqlen: int | None = ...,
+        batch_size: int | None = ...,
+        seq_len: int | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         **kwargs,
-    ) -> Union[tuple[torch.Tensor], QuestionAnsweringModelOutput]:
+    ) -> tuple[torch.Tensor] | QuestionAnsweringModelOutput:
         r"""
         sliding_window_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
             Mask to avoid performing attention on padding or far-away tokens. In ModernBert, only every few layers
@@ -457,22 +455,22 @@ class ModernBertForMultipleChoice(ModernBertPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        sliding_window_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        indices: Optional[torch.Tensor] = ...,
-        cu_seqlens: Optional[torch.Tensor] = ...,
-        max_seqlen: Optional[int] = ...,
-        batch_size: Optional[int] = ...,
-        seq_len: Optional[int] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        sliding_window_mask: torch.Tensor | None = ...,
+        position_ids: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        indices: torch.Tensor | None = ...,
+        cu_seqlens: torch.Tensor | None = ...,
+        max_seqlen: int | None = ...,
+        batch_size: int | None = ...,
+        seq_len: int | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         **kwargs,
-    ) -> Union[tuple[torch.Tensor], MultipleChoiceModelOutput]:
+    ) -> tuple[torch.Tensor] | MultipleChoiceModelOutput:
         r"""
         sliding_window_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
             Mask to avoid performing attention on padding or far-away tokens. In ModernBert, only every few layers

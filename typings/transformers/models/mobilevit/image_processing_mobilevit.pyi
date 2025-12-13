@@ -57,12 +57,12 @@ class MobileViTImageProcessor(BaseImageProcessor):
     def __init__(
         self,
         do_resize: bool = ...,
-        size: Optional[dict[str, int]] = ...,
+        size: dict[str, int] | None = ...,
         resample: PILImageResampling = ...,
         do_rescale: bool = ...,
-        rescale_factor: Union[int, float] = ...,
+        rescale_factor: int | float = ...,
         do_center_crop: bool = ...,
-        crop_size: Optional[dict[str, int]] = ...,
+        crop_size: dict[str, int] | None = ...,
         do_flip_channel_order: bool = ...,
         do_reduce_labels: bool = ...,
         **kwargs,
@@ -72,8 +72,8 @@ class MobileViTImageProcessor(BaseImageProcessor):
         image: np.ndarray,
         size: dict[str, int],
         resample: PILImageResampling = ...,
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
         **kwargs,
     ) -> np.ndarray:
         """
@@ -97,8 +97,8 @@ class MobileViTImageProcessor(BaseImageProcessor):
     def flip_channel_order(
         self,
         image: np.ndarray,
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ) -> np.ndarray:
         """
         Flip the color channels from RGB to BGR or vice versa.
@@ -127,19 +127,19 @@ class MobileViTImageProcessor(BaseImageProcessor):
     def preprocess(
         self,
         images: ImageInput,
-        segmentation_maps: Optional[ImageInput] = ...,
-        do_resize: Optional[bool] = ...,
-        size: Optional[dict[str, int]] = ...,
+        segmentation_maps: ImageInput | None = ...,
+        do_resize: bool | None = ...,
+        size: dict[str, int] | None = ...,
         resample: PILImageResampling = ...,
-        do_rescale: Optional[bool] = ...,
-        rescale_factor: Optional[float] = ...,
-        do_center_crop: Optional[bool] = ...,
-        crop_size: Optional[dict[str, int]] = ...,
-        do_flip_channel_order: Optional[bool] = ...,
-        do_reduce_labels: Optional[bool] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
+        do_rescale: bool | None = ...,
+        rescale_factor: float | None = ...,
+        do_center_crop: bool | None = ...,
+        crop_size: dict[str, int] | None = ...,
+        do_flip_channel_order: bool | None = ...,
+        do_reduce_labels: bool | None = ...,
+        return_tensors: str | TensorType | None = ...,
         data_format: ChannelDimension = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ) -> PIL.Image.Image:
         """
         Preprocess an image or batch of images.
@@ -191,7 +191,7 @@ class MobileViTImageProcessor(BaseImageProcessor):
         """
         ...
 
-    def post_process_semantic_segmentation(self, outputs, target_sizes: Optional[list[tuple]] = ...):  # -> list[Any]:
+    def post_process_semantic_segmentation(self, outputs, target_sizes: list[tuple] | None = ...):  # -> list[Any]:
         """
         Converts the output of [`MobileViTForSemanticSegmentation`] into semantic segmentation maps. Only supports PyTorch.
 

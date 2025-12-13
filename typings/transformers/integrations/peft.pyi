@@ -39,19 +39,19 @@ class PeftAdapterMixin:
     _hf_peft_config_loaded = ...
     def load_adapter(
         self,
-        peft_model_id: Optional[str] = ...,
-        adapter_name: Optional[str] = ...,
-        revision: Optional[str] = ...,
-        token: Optional[str] = ...,
-        device_map: Optional[str] = ...,
-        max_memory: Optional[str] = ...,
-        offload_folder: Optional[str] = ...,
-        offload_index: Optional[int] = ...,
-        peft_config: Optional[dict[str, Any]] = ...,
-        adapter_state_dict: Optional[dict[str, torch.Tensor]] = ...,
+        peft_model_id: str | None = ...,
+        adapter_name: str | None = ...,
+        revision: str | None = ...,
+        token: str | None = ...,
+        device_map: str | None = ...,
+        max_memory: str | None = ...,
+        offload_folder: str | None = ...,
+        offload_index: int | None = ...,
+        peft_config: dict[str, Any] | None = ...,
+        adapter_state_dict: dict[str, torch.Tensor] | None = ...,
         low_cpu_mem_usage: bool = ...,
         is_trainable: bool = ...,
-        adapter_kwargs: Optional[dict[str, Any]] = ...,
+        adapter_kwargs: dict[str, Any] | None = ...,
     ) -> None:
         """
         Load adapter weights from file or remote Hub folder. If you are not familiar with adapters and PEFT methods, we
@@ -115,7 +115,7 @@ class PeftAdapterMixin:
         """
         ...
 
-    def add_adapter(self, adapter_config, adapter_name: Optional[str] = ...) -> None:
+    def add_adapter(self, adapter_config, adapter_name: str | None = ...) -> None:
         r"""
         If you are not familiar with adapters and PEFT methods, we invite you to read more about them on the PEFT
         official documentation: https://huggingface.co/docs/peft
@@ -133,7 +133,7 @@ class PeftAdapterMixin:
         """
         ...
 
-    def set_adapter(self, adapter_name: Union[list[str], str]) -> None:
+    def set_adapter(self, adapter_name: list[str] | str) -> None:
         """
         If you are not familiar with adapters and PEFT methods, we invite you to read more about them on the PEFT
         official documentation: https://huggingface.co/docs/peft
@@ -178,7 +178,7 @@ class PeftAdapterMixin:
         ...
 
     def active_adapter(self) -> str: ...
-    def get_adapter_state_dict(self, adapter_name: Optional[str] = ..., state_dict: Optional[dict] = ...) -> dict:
+    def get_adapter_state_dict(self, adapter_name: str | None = ..., state_dict: dict | None = ...) -> dict:
         """
         If you are not familiar with adapters and PEFT methods, we invite you to read more about them on the PEFT
         official documentation: https://huggingface.co/docs/peft
@@ -196,7 +196,7 @@ class PeftAdapterMixin:
         """
         ...
 
-    def delete_adapter(self, adapter_names: Union[list[str], str]) -> None:
+    def delete_adapter(self, adapter_names: list[str] | str) -> None:
         """
         Delete an adapter's LoRA layers from the underlying model.
 

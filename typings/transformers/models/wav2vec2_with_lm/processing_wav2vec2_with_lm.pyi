@@ -19,7 +19,7 @@ Speech processor class for Wav2Vec2
 """
 logger = ...
 if TYPE_CHECKING: ...
-ListOfDict = list[dict[str, Union[int, str]]]
+ListOfDict = list[dict[str, int | str]]
 
 @dataclass
 class Wav2Vec2DecoderWithLMOutput(ModelOutput):
@@ -38,10 +38,10 @@ class Wav2Vec2DecoderWithLMOutput(ModelOutput):
             can be used to compute time stamps for each word.
     """
 
-    text: Union[list[list[str]], list[str], str]
-    logit_score: Union[list[list[float]], list[float], float] = ...
-    lm_score: Union[list[list[float]], list[float], float] = ...
-    word_offsets: Union[list[list[ListOfDict]], list[ListOfDict], ListOfDict] = ...
+    text: list[list[str]] | list[str] | str
+    logit_score: list[list[float]] | list[float] | float = ...
+    lm_score: list[list[float]] | list[float] | float = ...
+    word_offsets: list[list[ListOfDict]] | list[ListOfDict] | ListOfDict = ...
 
 class Wav2Vec2ProcessorWithLM(ProcessorMixin):
     r"""
@@ -127,17 +127,17 @@ class Wav2Vec2ProcessorWithLM(ProcessorMixin):
     def batch_decode(
         self,
         logits: np.ndarray,
-        pool: Optional[Pool] = ...,
-        num_processes: Optional[int] = ...,
-        beam_width: Optional[int] = ...,
-        beam_prune_logp: Optional[float] = ...,
-        token_min_logp: Optional[float] = ...,
-        hotwords: Optional[Iterable[str]] = ...,
-        hotword_weight: Optional[float] = ...,
-        alpha: Optional[float] = ...,
-        beta: Optional[float] = ...,
-        unk_score_offset: Optional[float] = ...,
-        lm_score_boundary: Optional[bool] = ...,
+        pool: Pool | None = ...,
+        num_processes: int | None = ...,
+        beam_width: int | None = ...,
+        beam_prune_logp: float | None = ...,
+        token_min_logp: float | None = ...,
+        hotwords: Iterable[str] | None = ...,
+        hotword_weight: float | None = ...,
+        alpha: float | None = ...,
+        beta: float | None = ...,
+        unk_score_offset: float | None = ...,
+        lm_score_boundary: bool | None = ...,
         output_word_offsets: bool = ...,
         n_best: int = ...,
     ):  # -> Wav2Vec2DecoderWithLMOutput:
@@ -219,15 +219,15 @@ class Wav2Vec2ProcessorWithLM(ProcessorMixin):
     def decode(
         self,
         logits: np.ndarray,
-        beam_width: Optional[int] = ...,
-        beam_prune_logp: Optional[float] = ...,
-        token_min_logp: Optional[float] = ...,
-        hotwords: Optional[Iterable[str]] = ...,
-        hotword_weight: Optional[float] = ...,
-        alpha: Optional[float] = ...,
-        beta: Optional[float] = ...,
-        unk_score_offset: Optional[float] = ...,
-        lm_score_boundary: Optional[bool] = ...,
+        beam_width: int | None = ...,
+        beam_prune_logp: float | None = ...,
+        token_min_logp: float | None = ...,
+        hotwords: Iterable[str] | None = ...,
+        hotword_weight: float | None = ...,
+        alpha: float | None = ...,
+        beta: float | None = ...,
+        unk_score_offset: float | None = ...,
+        lm_score_boundary: bool | None = ...,
         output_word_offsets: bool = ...,
         n_best: int = ...,
     ):  # -> Wav2Vec2DecoderWithLMOutput:

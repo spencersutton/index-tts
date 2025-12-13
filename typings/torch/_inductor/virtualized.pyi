@@ -1,6 +1,7 @@
 import torch
 from contextlib import AbstractContextManager
-from typing import Any, Callable, Generic, TYPE_CHECKING, TypeVar, Union
+from typing import Any, Generic, TYPE_CHECKING, TypeVar, Union
+from collections.abc import Callable
 from .ops_handler import DefaultHandler, KernelFormatterHandler, MockHandler, OpsHandler, WrapperHandler
 from torch._inductor.choices import InductorChoices
 from torch._inductor.codegen.cpp_utils import LocalBufferContext
@@ -74,7 +75,7 @@ class NullHandler: ...
 _PoisonedVirtual = ...
 
 class Virtualized(Generic[T]):
-    def __init__(self, vname: str, default: Union[Callable[[], T], type[NullHandler]]) -> None: ...
+    def __init__(self, vname: str, default: Callable[[], T] | type[NullHandler]) -> None: ...
     def __getattr__(self, name: str) -> Any: ...
 
 class NullKernelHandler(NullHandler):

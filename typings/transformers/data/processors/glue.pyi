@@ -15,9 +15,9 @@ logger = ...
 DEPRECATION_WARNING = ...
 
 def glue_convert_examples_to_features(
-    examples: Union[list[InputExample], tf.data.Dataset],
+    examples: list[InputExample] | tf.data.Dataset,
     tokenizer: PreTrainedTokenizer,
-    max_length: Optional[int] = ...,
+    max_length: int | None = ...,
     task=...,
     label_list=...,
     output_mode=...,

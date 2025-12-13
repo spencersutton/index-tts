@@ -22,7 +22,7 @@ class MobileNetV2FastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
         ADE20k). The background label will be replaced by 255.
     """
 
-    do_reduce_labels: Optional[bool]
+    do_reduce_labels: bool | None
     ...
 
 @auto_docstring
@@ -46,7 +46,7 @@ class MobileNetV2ImageProcessorFast(BaseImageProcessorFast):
     def preprocess(
         self,
         images: ImageInput,
-        segmentation_maps: Optional[ImageInput] = ...,
+        segmentation_maps: ImageInput | None = ...,
         **kwargs: Unpack[MobileNetV2FastImageProcessorKwargs],
     ) -> BatchFeature:
         r"""
@@ -55,7 +55,7 @@ class MobileNetV2ImageProcessorFast(BaseImageProcessorFast):
         """
         ...
 
-    def post_process_semantic_segmentation(self, outputs, target_sizes: Optional[list[tuple]] = ...):  # -> list[Any]:
+    def post_process_semantic_segmentation(self, outputs, target_sizes: list[tuple] | None = ...):  # -> list[Any]:
         """
         Converts the output of [`MobileNetV2ForSemanticSegmentation`] into semantic segmentation maps. Only supports PyTorch.
 

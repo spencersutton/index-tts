@@ -292,7 +292,7 @@ class DFineMultiscaleDeformableAttention(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
         reference_points=...,
         encoder_hidden_states=...,
         spatial_shapes=...,
@@ -308,13 +308,13 @@ class DFineDecoderLayer(RTDetrDecoderLayer):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        position_embeddings: Optional[torch.Tensor] = ...,
+        position_embeddings: torch.Tensor | None = ...,
         reference_points=...,
         spatial_shapes=...,
         spatial_shapes_list=...,
-        encoder_hidden_states: Optional[torch.Tensor] = ...,
-        encoder_attention_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
+        encoder_hidden_states: torch.Tensor | None = ...,
+        encoder_attention_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
     ) -> tuple[torch.Tensor, Any, Any]: ...
 
 class DFinePreTrainedModel(RTDetrPreTrainedModel): ...
@@ -464,8 +464,8 @@ class DFineConvNormLayer(RTDetrConvNormLayer):
         kernel_size: int,
         stride: int,
         groups: int = ...,
-        padding: Optional[int] = ...,
-        activation: Optional[str] = ...,
+        padding: int | None = ...,
+        activation: str | None = ...,
     ) -> None: ...
 
 class DFineRepVggBlock(RTDetrRepVggBlock):

@@ -20,7 +20,7 @@ if is_scipy_available(): ...
 
 def multi_scale_deformable_attention(
     value: Tensor,
-    value_spatial_shapes: Union[Tensor, list[tuple]],
+    value_spatial_shapes: Tensor | list[tuple],
     sampling_locations: Tensor,
     attention_weights: Tensor,
 ) -> Tensor: ...
@@ -174,7 +174,7 @@ class OneFormerLoss(nn.Module):
         num_points: int,
         oversample_ratio: float,
         importance_sample_ratio: float,
-        contrastive_temperature: Optional[float] = ...,
+        contrastive_temperature: float | None = ...,
     ) -> None:
         """
         This class computes the losses using the class predictions, mask predictions and the contrastive queries.
@@ -315,7 +315,7 @@ class OneFormerLoss(nn.Module):
         mask_labels: list[Tensor],
         class_labels: list[Tensor],
         text_queries: Tensor,
-        auxiliary_predictions: Optional[dict[str, Tensor]] = ...,
+        auxiliary_predictions: dict[str, Tensor] | None = ...,
         calculate_contrastive_loss: bool = ...,
     ) -> dict[str, Tensor]:
         """
@@ -379,11 +379,11 @@ class OneFormerTransformerDecoderOutput(BaseModelOutput):
         Tuple of class and mask predictions from each layer of the transformer decoder.
     """
 
-    object_queries: Optional[torch.FloatTensor] = ...
-    contrastive_logits: Optional[torch.FloatTensor] = ...
-    prediction_masks: Optional[torch.FloatTensor] = ...
-    prediction_class: Optional[torch.FloatTensor] = ...
-    auxiliary_predictions: Optional[tuple[dict[str, torch.FloatTensor]]] = ...
+    object_queries: torch.FloatTensor | None = ...
+    contrastive_logits: torch.FloatTensor | None = ...
+    prediction_masks: torch.FloatTensor | None = ...
+    prediction_class: torch.FloatTensor | None = ...
+    auxiliary_predictions: tuple[dict[str, torch.FloatTensor]] | None = ...
 
 @dataclass
 @auto_docstring(
@@ -407,8 +407,8 @@ class OneFormerPixelDecoderOutput(ModelOutput):
     """
 
     multi_scale_features: tuple[torch.FloatTensor] = ...
-    mask_features: Optional[torch.FloatTensor] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
+    mask_features: torch.FloatTensor | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
 
 @dataclass
 @auto_docstring(
@@ -432,7 +432,7 @@ class OneFormerPixelLevelModuleOutput(ModelOutput):
 
     encoder_features: list[torch.FloatTensor] = ...
     decoder_features: list[torch.FloatTensor] = ...
-    decoder_last_feature: Optional[torch.FloatTensor] = ...
+    decoder_last_feature: torch.FloatTensor | None = ...
 
 @dataclass
 @auto_docstring(
@@ -473,17 +473,17 @@ class OneFormerModelOutput(ModelOutput):
         sequence_length)`. Self and Cross Attentions weights from transformer decoder.
     """
 
-    encoder_hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    pixel_decoder_hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    transformer_decoder_hidden_states: Optional[torch.FloatTensor] = ...
-    transformer_decoder_object_queries: Optional[torch.FloatTensor] = ...
-    transformer_decoder_contrastive_queries: Optional[torch.FloatTensor] = ...
-    transformer_decoder_mask_predictions: Optional[torch.FloatTensor] = ...
-    transformer_decoder_class_predictions: Optional[torch.FloatTensor] = ...
-    transformer_decoder_auxiliary_predictions: Optional[tuple[dict[str, torch.FloatTensor]]] = ...
-    text_queries: Optional[torch.FloatTensor] = ...
-    task_token: Optional[torch.FloatTensor] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
+    encoder_hidden_states: tuple[torch.FloatTensor] | None = ...
+    pixel_decoder_hidden_states: tuple[torch.FloatTensor] | None = ...
+    transformer_decoder_hidden_states: torch.FloatTensor | None = ...
+    transformer_decoder_object_queries: torch.FloatTensor | None = ...
+    transformer_decoder_contrastive_queries: torch.FloatTensor | None = ...
+    transformer_decoder_mask_predictions: torch.FloatTensor | None = ...
+    transformer_decoder_class_predictions: torch.FloatTensor | None = ...
+    transformer_decoder_auxiliary_predictions: tuple[dict[str, torch.FloatTensor]] | None = ...
+    text_queries: torch.FloatTensor | None = ...
+    task_token: torch.FloatTensor | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
 
 @dataclass
 @auto_docstring(
@@ -539,21 +539,21 @@ class OneFormerForUniversalSegmentationOutput(ModelOutput):
         sequence_length)`. Self and Cross Attentions weights from transformer decoder.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    class_queries_logits: Optional[torch.FloatTensor] = ...
-    masks_queries_logits: Optional[torch.FloatTensor] = ...
+    loss: torch.FloatTensor | None = ...
+    class_queries_logits: torch.FloatTensor | None = ...
+    masks_queries_logits: torch.FloatTensor | None = ...
     auxiliary_predictions: list[dict[str, torch.FloatTensor]] = ...
-    encoder_hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    pixel_decoder_hidden_states: Optional[list[torch.FloatTensor]] = ...
-    transformer_decoder_hidden_states: Optional[torch.FloatTensor] = ...
-    transformer_decoder_object_queries: Optional[torch.FloatTensor] = ...
-    transformer_decoder_contrastive_queries: Optional[torch.FloatTensor] = ...
-    transformer_decoder_mask_predictions: Optional[torch.FloatTensor] = ...
-    transformer_decoder_class_predictions: Optional[torch.FloatTensor] = ...
-    transformer_decoder_auxiliary_predictions: Optional[list[dict[str, torch.FloatTensor]]] = ...
-    text_queries: Optional[torch.FloatTensor] = ...
-    task_token: Optional[torch.FloatTensor] = ...
-    attentions: Optional[tuple[tuple[torch.FloatTensor]]] = ...
+    encoder_hidden_states: tuple[torch.FloatTensor] | None = ...
+    pixel_decoder_hidden_states: list[torch.FloatTensor] | None = ...
+    transformer_decoder_hidden_states: torch.FloatTensor | None = ...
+    transformer_decoder_object_queries: torch.FloatTensor | None = ...
+    transformer_decoder_contrastive_queries: torch.FloatTensor | None = ...
+    transformer_decoder_mask_predictions: torch.FloatTensor | None = ...
+    transformer_decoder_class_predictions: torch.FloatTensor | None = ...
+    transformer_decoder_auxiliary_predictions: list[dict[str, torch.FloatTensor]] | None = ...
+    text_queries: torch.FloatTensor | None = ...
+    task_token: torch.FloatTensor | None = ...
+    attentions: tuple[tuple[torch.FloatTensor]] | None = ...
 
 class OneFormerPixelDecoderFrozenBatchNorm2d(nn.Module):
     """
@@ -570,15 +570,15 @@ class OneFormerPixelDecoderEncoderMultiscaleDeformableAttention(nn.Module):
     Multiscale deformable attention as proposed in Deformable DETR.
     """
     def __init__(self, embed_dim: int, num_heads: int, n_levels: int, n_points: int) -> None: ...
-    def with_pos_embed(self, tensor: torch.Tensor, position_embeddings: Optional[Tensor]):  # -> Tensor:
+    def with_pos_embed(self, tensor: torch.Tensor, position_embeddings: Tensor | None):  # -> Tensor:
         ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
         encoder_hidden_states=...,
         encoder_attention_mask=...,
-        position_embeddings: Optional[torch.Tensor] = ...,
+        position_embeddings: torch.Tensor | None = ...,
         reference_points=...,
         spatial_shapes=...,
         level_start_index=...,
@@ -592,7 +592,7 @@ class OneFormerPixelDecoderEncoderLayer(nn.Module):
         self,
         hidden_states: torch.Tensor,
         attention_mask: torch.Tensor,
-        position_embeddings: Optional[torch.Tensor] = ...,
+        position_embeddings: torch.Tensor | None = ...,
         reference_points=...,
         spatial_shapes=...,
         level_start_index=...,
@@ -720,17 +720,17 @@ class OneFormerAttention(nn.Module):
     def __init__(
         self, embed_dim: int, num_heads: int, dropout: float = ..., is_decoder: bool = ..., bias: bool = ...
     ) -> None: ...
-    def with_pos_embed(self, tensor: torch.Tensor, position_embeddings: Optional[Tensor]):  # -> Tensor:
+    def with_pos_embed(self, tensor: torch.Tensor, position_embeddings: Tensor | None):  # -> Tensor:
         ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_embeddings: Optional[torch.Tensor] = ...,
-        key_value_states: Optional[torch.Tensor] = ...,
-        key_value_position_embeddings: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_embeddings: torch.Tensor | None = ...,
+        key_value_states: torch.Tensor | None = ...,
+        key_value_position_embeddings: torch.Tensor | None = ...,
         output_attentions: bool = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]:
         """Input shape: Batch x Time x Channel"""
         ...
 
@@ -738,29 +738,29 @@ class OneFormerTransformerDecoderSelfAttentionLayer(nn.Module):
     def __init__(
         self, embed_dim, num_heads, dropout=..., activation=..., normalize_before=..., layer_norm_eps=...
     ) -> None: ...
-    def with_pos_embed(self, tensor, pos: Optional[Tensor]): ...
+    def with_pos_embed(self, tensor, pos: Tensor | None): ...
     def forward_post(
         self,
         output,
-        output_mask: Optional[Tensor] = ...,
-        output_key_padding_mask: Optional[Tensor] = ...,
-        query_pos: Optional[Tensor] = ...,
+        output_mask: Tensor | None = ...,
+        output_key_padding_mask: Tensor | None = ...,
+        query_pos: Tensor | None = ...,
     ):  # -> tuple[Any, Any]:
         ...
     def forward_pre(
         self,
         output,
-        output_mask: Optional[Tensor] = ...,
-        output_key_padding_mask: Optional[Tensor] = ...,
-        query_pos: Optional[Tensor] = ...,
+        output_mask: Tensor | None = ...,
+        output_key_padding_mask: Tensor | None = ...,
+        query_pos: Tensor | None = ...,
     ):  # -> tuple[Any, Any]:
         ...
     def forward(
         self,
         output,
-        output_mask: Optional[Tensor] = ...,
-        output_key_padding_mask: Optional[Tensor] = ...,
-        query_pos: Optional[Tensor] = ...,
+        output_mask: Tensor | None = ...,
+        output_key_padding_mask: Tensor | None = ...,
+        query_pos: Tensor | None = ...,
     ):  # -> tuple[Any, Any]:
         ...
 
@@ -768,35 +768,35 @@ class OneFormerTransformerDecoderCrossAttentionLayer(nn.Module):
     def __init__(
         self, embed_dim, num_heads, dropout=..., activation=..., normalize_before=..., layer_norm_eps=...
     ) -> None: ...
-    def with_pos_embed(self, tensor, pos: Optional[Tensor]): ...
+    def with_pos_embed(self, tensor, pos: Tensor | None): ...
     def forward_post(
         self,
         output,
         memory,
-        memory_mask: Optional[Tensor] = ...,
-        memory_key_padding_mask: Optional[Tensor] = ...,
-        pos: Optional[Tensor] = ...,
-        query_pos: Optional[Tensor] = ...,
+        memory_mask: Tensor | None = ...,
+        memory_key_padding_mask: Tensor | None = ...,
+        pos: Tensor | None = ...,
+        query_pos: Tensor | None = ...,
     ):  # -> tuple[Any, Any]:
         ...
     def forward_pre(
         self,
         output,
         memory,
-        memory_mask: Optional[Tensor] = ...,
-        memory_key_padding_mask: Optional[Tensor] = ...,
-        pos: Optional[Tensor] = ...,
-        query_pos: Optional[Tensor] = ...,
+        memory_mask: Tensor | None = ...,
+        memory_key_padding_mask: Tensor | None = ...,
+        pos: Tensor | None = ...,
+        query_pos: Tensor | None = ...,
     ):  # -> tuple[Any, Any]:
         ...
     def forward(
         self,
         output,
         memory,
-        memory_mask: Optional[Tensor] = ...,
-        memory_key_padding_mask: Optional[Tensor] = ...,
-        pos: Optional[Tensor] = ...,
-        query_pos: Optional[Tensor] = ...,
+        memory_mask: Tensor | None = ...,
+        memory_key_padding_mask: Tensor | None = ...,
+        pos: Tensor | None = ...,
+        query_pos: Tensor | None = ...,
     ):  # -> tuple[Any, Any]:
         ...
 
@@ -804,7 +804,7 @@ class OneFormerTransformerDecoderFFNLayer(nn.Module):
     def __init__(
         self, d_model, dim_feedforward=..., dropout=..., activation=..., normalize_before=..., layer_norm_eps=...
     ) -> None: ...
-    def with_pos_embed(self, tensor, pos: Optional[Tensor]): ...
+    def with_pos_embed(self, tensor, pos: Tensor | None): ...
     def forward_post(self, output):  # -> Any:
         ...
     def forward_pre(self, output): ...
@@ -838,9 +838,9 @@ class OneFormerTransformerDecoderLayer(nn.Module):
         output: torch.Tensor,
         multi_stage_features: list[torch.Tensor],
         multi_stage_positional_embeddings: list[torch.Tensor],
-        attention_mask: Optional[torch.Tensor] = ...,
-        query_embeddings: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        query_embeddings: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
     ):  # -> tuple[Tensor, Any, Any] | tuple[Tensor]:
         """
         Args:
@@ -864,12 +864,12 @@ class OneFormerTransformerDecoderQueryTransformerDecoder(nn.Module):
         self,
         output,
         memory,
-        output_mask: Optional[Tensor] = ...,
-        memory_mask: Optional[Tensor] = ...,
-        output_key_padding_mask: Optional[Tensor] = ...,
-        memory_key_padding_mask: Optional[Tensor] = ...,
-        pos: Optional[Tensor] = ...,
-        query_pos: Optional[Tensor] = ...,
+        output_mask: Tensor | None = ...,
+        memory_mask: Tensor | None = ...,
+        output_key_padding_mask: Tensor | None = ...,
+        memory_key_padding_mask: Tensor | None = ...,
+        pos: Tensor | None = ...,
+        query_pos: Tensor | None = ...,
     ):  # -> Tensor | Any:
         ...
 
@@ -877,40 +877,40 @@ class OneFormerTransformerDecoderQueryTransformerDecoderLayer(nn.Module):
     def __init__(
         self, d_model, nhead, dim_feedforward=..., dropout=..., activation=..., normalize_before=..., layer_norm_eps=...
     ) -> None: ...
-    def with_pos_embed(self, tensor, pos: Optional[Tensor]): ...
+    def with_pos_embed(self, tensor, pos: Tensor | None): ...
     def forward_post(
         self,
         output,
         memory,
-        output_mask: Optional[Tensor] = ...,
-        memory_mask: Optional[Tensor] = ...,
-        output_key_padding_mask: Optional[Tensor] = ...,
-        memory_key_padding_mask: Optional[Tensor] = ...,
-        pos: Optional[Tensor] = ...,
-        query_pos: Optional[Tensor] = ...,
+        output_mask: Tensor | None = ...,
+        memory_mask: Tensor | None = ...,
+        output_key_padding_mask: Tensor | None = ...,
+        memory_key_padding_mask: Tensor | None = ...,
+        pos: Tensor | None = ...,
+        query_pos: Tensor | None = ...,
     ):  # -> Any:
         ...
     def forward_pre(
         self,
         output,
         memory,
-        output_mask: Optional[Tensor] = ...,
-        memory_mask: Optional[Tensor] = ...,
-        output_key_padding_mask: Optional[Tensor] = ...,
-        memory_key_padding_mask: Optional[Tensor] = ...,
-        pos: Optional[Tensor] = ...,
-        query_pos: Optional[Tensor] = ...,
+        output_mask: Tensor | None = ...,
+        memory_mask: Tensor | None = ...,
+        output_key_padding_mask: Tensor | None = ...,
+        memory_key_padding_mask: Tensor | None = ...,
+        pos: Tensor | None = ...,
+        query_pos: Tensor | None = ...,
     ): ...
     def forward(
         self,
         output,
         memory,
-        output_mask: Optional[Tensor] = ...,
-        memory_mask: Optional[Tensor] = ...,
-        output_key_padding_mask: Optional[Tensor] = ...,
-        memory_key_padding_mask: Optional[Tensor] = ...,
-        pos: Optional[Tensor] = ...,
-        query_pos: Optional[Tensor] = ...,
+        output_mask: Tensor | None = ...,
+        memory_mask: Tensor | None = ...,
+        output_key_padding_mask: Tensor | None = ...,
+        memory_key_padding_mask: Tensor | None = ...,
+        pos: Tensor | None = ...,
+        query_pos: Tensor | None = ...,
     ):  # -> Any:
         ...
 
@@ -972,9 +972,9 @@ class OneFormerSinePositionEmbedding(nn.Module):
     need paper, generalized to work on images.
     """
     def __init__(
-        self, num_pos_feats: int = ..., temperature: int = ..., normalize: bool = ..., scale: Optional[float] = ...
+        self, num_pos_feats: int = ..., temperature: int = ..., normalize: bool = ..., scale: float | None = ...
     ) -> None: ...
-    def forward(self, x: Tensor, mask: Optional[Tensor] = ...) -> Tensor: ...
+    def forward(self, x: Tensor, mask: Tensor | None = ...) -> Tensor: ...
 
 class PredictionBlock(nn.Module):
     def __init__(self, in_dim: int, out_dim: int, activation: nn.Module) -> None: ...
@@ -1005,14 +1005,14 @@ class OneFormerTextContextDecoder(nn.Module):
 
 class OneFormerTextMLP(nn.Module):
     def __init__(
-        self, hidden_size: Optional[int] = ..., intermediate_size: Optional[int] = ..., output_size: Optional[int] = ...
+        self, hidden_size: int | None = ..., intermediate_size: int | None = ..., output_size: int | None = ...
     ) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
 
 class OneFormerTextTransformerLayer(GradientCheckpointingLayer):
     def __init__(self, width: int, heads: int, attn_mask: torch.Tensor, layer_norm_eps=...) -> None: ...
     def forward(
-        self, hidden_states: torch.Tensor, key_padding_mask: Optional[torch.Tensor] = ...
+        self, hidden_states: torch.Tensor, key_padding_mask: torch.Tensor | None = ...
     ) -> torch.FloatTensor: ...
 
 class OneFormerTextTransformer(nn.Module):
@@ -1021,7 +1021,7 @@ class OneFormerTextTransformer(nn.Module):
         width: int,
         layers: int,
         heads: int,
-        attn_mask: Optional[torch.Tensor] = ...,
+        attn_mask: torch.Tensor | None = ...,
         use_checkpoint=...,
         layer_norm_eps=...,
     ) -> None: ...
@@ -1062,11 +1062,11 @@ class OneFormerModel(OneFormerPreTrainedModel):
         self,
         pixel_values: Tensor,
         task_inputs: Tensor,
-        text_inputs: Optional[Tensor] = ...,
-        pixel_mask: Optional[Tensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        text_inputs: Tensor | None = ...,
+        pixel_mask: Tensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        output_attentions: bool | None = ...,
+        return_dict: bool | None = ...,
     ) -> OneFormerModelOutput:
         r"""
         task_inputs (`torch.FloatTensor` of shape `(batch_size, sequence_length)`):
@@ -1128,14 +1128,14 @@ class OneFormerForUniversalSegmentation(OneFormerPreTrainedModel):
         self,
         pixel_values: Tensor,
         task_inputs: Tensor,
-        text_inputs: Optional[Tensor] = ...,
-        mask_labels: Optional[list[Tensor]] = ...,
-        class_labels: Optional[list[Tensor]] = ...,
-        pixel_mask: Optional[Tensor] = ...,
-        output_auxiliary_logits: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        text_inputs: Tensor | None = ...,
+        mask_labels: list[Tensor] | None = ...,
+        class_labels: list[Tensor] | None = ...,
+        pixel_mask: Tensor | None = ...,
+        output_auxiliary_logits: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        output_attentions: bool | None = ...,
+        return_dict: bool | None = ...,
     ) -> OneFormerForUniversalSegmentationOutput:
         r"""
         task_inputs (`torch.FloatTensor` of shape `(batch_size, sequence_length)`):

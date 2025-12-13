@@ -65,23 +65,23 @@ class Speech2TextFeatureExtractor(SequenceFeatureExtractor):
     def utterance_cmvn(
         x: np.ndarray,
         input_length: int,
-        normalize_means: Optional[bool] = ...,
-        normalize_vars: Optional[bool] = ...,
+        normalize_means: bool | None = ...,
+        normalize_vars: bool | None = ...,
         padding_value: float = ...,
     ) -> np.ndarray: ...
     def normalize(
-        self, input_features: list[np.ndarray], attention_mask: Optional[np.ndarray] = ...
+        self, input_features: list[np.ndarray], attention_mask: np.ndarray | None = ...
     ) -> list[np.ndarray]: ...
     def __call__(
         self,
-        raw_speech: Union[np.ndarray, list[float], list[np.ndarray], list[list[float]]],
-        padding: Union[bool, str, PaddingStrategy] = ...,
-        max_length: Optional[int] = ...,
+        raw_speech: np.ndarray | list[float] | list[np.ndarray] | list[list[float]],
+        padding: bool | str | PaddingStrategy = ...,
+        max_length: int | None = ...,
         truncation: bool = ...,
-        pad_to_multiple_of: Optional[int] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        sampling_rate: Optional[int] = ...,
-        return_attention_mask: Optional[bool] = ...,
+        pad_to_multiple_of: int | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        sampling_rate: int | None = ...,
+        return_attention_mask: bool | None = ...,
         **kwargs,
     ) -> BatchFeature:
         """

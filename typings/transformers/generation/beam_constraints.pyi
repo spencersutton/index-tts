@@ -194,7 +194,7 @@ class ConstraintListState:
         """
         ...
 
-    def reset(self, token_ids: Optional[list[int]]):  # -> None:
+    def reset(self, token_ids: list[int] | None):  # -> None:
         """
         token_ids: the tokens generated thus far to reset the state of the progress through constraints.
         """

@@ -1,6 +1,7 @@
 import threading
 from collections.abc import Sequence
-from typing import Callable, Optional, Union
+from typing import Optional, Union
+from collections.abc import Callable
 from torch._ops import OpOverload
 from torch.distributed.tensor._dtensor_spec import TensorMeta
 from torch.distributed.tensor._op_schema import OpInfo, OpSchema, OutputSharding, RuntimeSchemaInfo, StrategyType
@@ -19,7 +20,7 @@ class ShardingPropagator:
         self,
         op_overload: OpOverload,
         rule_func: Callable[[OpSchema], OutputSharding],
-        schema_info: Optional[RuntimeSchemaInfo] = ...,
+        schema_info: RuntimeSchemaInfo | None = ...,
     ):  # -> None:
 
         ...
@@ -27,10 +28,10 @@ class ShardingPropagator:
         self,
         op_overload: OpOverload,
         strategy_func: Callable[[OpSchema], StrategyType],
-        schema_info: Optional[RuntimeSchemaInfo] = ...,
+        schema_info: RuntimeSchemaInfo | None = ...,
     ):  # -> None:
 
         ...
-    def propagate_tensor_meta(self, op_schema: OpSchema) -> Union[None, TensorMeta, Sequence[Optional[TensorMeta]]]: ...
+    def propagate_tensor_meta(self, op_schema: OpSchema) -> None | TensorMeta | Sequence[TensorMeta | None]: ...
     def propagate(self, op_info: OpInfo) -> None: ...
     def propagate_op_sharding_non_cached(self, op_schema: OpSchema) -> OutputSharding: ...

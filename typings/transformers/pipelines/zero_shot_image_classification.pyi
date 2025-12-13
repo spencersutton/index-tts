@@ -53,15 +53,15 @@ class ZeroShotImageClassificationPipeline(Pipeline):
     def __init__(self, **kwargs) -> None: ...
     @overload
     def __call__(
-        self, image: Union[str, Image.Image], candidate_labels: list[str], **kwargs: Any
+        self, image: str | Image.Image, candidate_labels: list[str], **kwargs: Any
     ) -> list[dict[str, Any]]: ...
     @overload
     def __call__(
-        self, image: Union[list[str], list[Image.Image]], candidate_labels: list[str], **kwargs: Any
+        self, image: list[str] | list[Image.Image], candidate_labels: list[str], **kwargs: Any
     ) -> list[list[dict[str, Any]]]: ...
     def __call__(
-        self, image: Union[str, list[str], Image.Image, list[Image.Image]], candidate_labels: list[str], **kwargs: Any
-    ) -> Union[list[dict[str, Any]], list[list[dict[str, Any]]]]:
+        self, image: str | list[str] | Image.Image | list[Image.Image], candidate_labels: list[str], **kwargs: Any
+    ) -> list[dict[str, Any]] | list[list[dict[str, Any]]]:
         """
         Assign labels to the image(s) passed as inputs.
 

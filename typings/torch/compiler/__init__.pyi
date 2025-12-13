@@ -32,7 +32,7 @@ __all__ = [
 ]
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
-FuncType: TypeAlias = Callable[..., Any]
+type FuncType = Callable[..., Any]
 F = TypeVar("F", bound=FuncType)
 
 def compile(*args, **kwargs) -> Callable[..., Any]: ...

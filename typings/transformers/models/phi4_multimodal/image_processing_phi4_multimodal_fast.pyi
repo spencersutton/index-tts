@@ -19,8 +19,8 @@ class Phi4MultimodalFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
         The maximum number of crops per image.
     """
 
-    patch_size: Optional[int]
-    dynamic_hd: Optional[int]
+    patch_size: int | None
+    dynamic_hd: int | None
     ...
 
 @auto_docstring

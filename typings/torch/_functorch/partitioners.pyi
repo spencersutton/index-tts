@@ -3,7 +3,8 @@ import logging
 import torch
 import torch.fx as fx
 from dataclasses import dataclass
-from typing import Callable, Optional, TYPE_CHECKING, Union
+from typing import Optional, TYPE_CHECKING, Union
+from collections.abc import Callable
 from torch.utils._ordered_set import OrderedSet
 
 if TYPE_CHECKING: ...
@@ -64,7 +65,7 @@ class InvalidNodeBase:
 
 InvalidNode = ...
 
-def find_first_sym_node(fwd_module_outputs: Union[list[fx.Node], tuple[fx.Node]]) -> int: ...
+def find_first_sym_node(fwd_module_outputs: list[fx.Node] | tuple[fx.Node]) -> int: ...
 def calculate_quantization_scaling(
     graph: torch.fx.Graph, node: torch.fx.Node, max: float = ..., min: float = ...
 ):  # -> Node:
@@ -91,15 +92,15 @@ def enable_activation_quantization(
     saved_values: list[fx.Node],
     fwd_module: fx.GraphModule,
     bwd_module: fx.GraphModule,
-    static_lifetime_input_nodes: Optional[OrderedSet[fx.Node]] = ...,
+    static_lifetime_input_nodes: OrderedSet[fx.Node] | None = ...,
 ) -> None: ...
 def default_partition(
     joint_module: fx.GraphModule,
     _joint_inputs,
     *,
     num_fwd_outputs,
-    static_lifetime_input_indices: Optional[list[int]] = ...,
-    static_lifetime_input_nodes: Optional[OrderedSet[fx.Node]] = ...,
+    static_lifetime_input_indices: list[int] | None = ...,
+    static_lifetime_input_nodes: OrderedSet[fx.Node] | None = ...,
 ) -> tuple[fx.GraphModule, fx.GraphModule]: ...
 
 INT_INF = ...
@@ -131,7 +132,7 @@ def solve_min_cut(
     joint_graph: fx.Graph,
     node_info: NodeInfo,
     min_cut_options: MinCutOptions,
-    dont_ban: Optional[OrderedSet[fx.Node]] = ...,
+    dont_ban: OrderedSet[fx.Node] | None = ...,
 ):  # -> tuple[list[Any], OrderedSet[Node]]:
     ...
 def visualize_min_cut_graph(nx_graph):  # -> None:
@@ -149,14 +150,14 @@ def min_cut_rematerialization_partition(
     compiler=...,
     *,
     num_fwd_outputs,
-    static_lifetime_input_indices: Optional[list[int]] = ...,
+    static_lifetime_input_indices: list[int] | None = ...,
 ) -> tuple[fx.GraphModule, fx.GraphModule]: ...
 def draw_graph(
     traced: torch.fx.GraphModule,
     fname: str,
     figname: str = ...,
     clear_meta: bool = ...,
-    prog: Optional[Union[str, list[str]]] = ...,
+    prog: str | list[str] | None = ...,
     parse_stack_trace: bool = ...,
-    dot_graph_shape: Optional[str] = ...,
+    dot_graph_shape: str | None = ...,
 ) -> None: ...

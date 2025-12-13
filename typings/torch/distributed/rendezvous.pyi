@@ -1,5 +1,5 @@
 from collections.abc import Iterator
-from typing import Callable
+from collections.abc import Callable
 from torch.distributed import Store
 
 _rendezvous_handlers: dict[str, Callable[..., Iterator[tuple[Store, int, int]]]] = ...

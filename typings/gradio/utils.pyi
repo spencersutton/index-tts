@@ -12,7 +12,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any, Generic, Literal, TYPE_CHECKING, TypeVar
 from gradio_client.documentation import document
-from typing_extensions import ParamSpec
+from typing import ParamSpec
 from gradio.data_classes import BlocksConfigDict, DeveloperPath, UserProvidedPath
 from gradio.themes import ThemeClass as Theme
 from gradio.blocks import BlockContext, Blocks

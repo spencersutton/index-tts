@@ -6,13 +6,14 @@ import subprocess
 from contextlib import contextmanager
 from io import StringIO
 from pathlib import Path
-from typing import Generator, IO, List, Optional, Tuple, Union
+from typing import IO, List, Optional, Tuple, Union
+from collections.abc import Generator
 
 """Contains utilities to easily handle subprocesses in `huggingface_hub`."""
 logger = ...
 
 @contextmanager
-def capture_output() -> Generator[StringIO, None, None]:
+def capture_output() -> Generator[StringIO]:
     """Capture output that is printed to terminal.
 
     Taken from https://stackoverflow.com/a/34738440
@@ -27,7 +28,7 @@ def capture_output() -> Generator[StringIO, None, None]:
     ...
 
 def run_subprocess(
-    command: Union[str, List[str]], folder: Optional[Union[str, Path]] = ..., check=..., **kwargs
+    command: str | list[str], folder: str | Path | None = ..., check=..., **kwargs
 ) -> subprocess.CompletedProcess:
     """
     Method to run subprocesses. Calling this will capture the `stderr` and `stdout`,
@@ -53,8 +54,8 @@ def run_subprocess(
 
 @contextmanager
 def run_interactive_subprocess(
-    command: Union[str, List[str]], folder: Optional[Union[str, Path]] = ..., **kwargs
-) -> Generator[Tuple[IO[str], IO[str]], None, None]:
+    command: str | list[str], folder: str | Path | None = ..., **kwargs
+) -> Generator[tuple[IO[str], IO[str]]]:
     """Run a subprocess in an interactive mode in a context manager.
 
     Args:

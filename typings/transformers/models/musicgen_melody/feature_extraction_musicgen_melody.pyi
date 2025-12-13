@@ -74,14 +74,14 @@ class MusicgenMelodyFeatureExtractor(SequenceFeatureExtractor):
     ) -> None: ...
     def __call__(
         self,
-        audio: Union[np.ndarray, list[float], list[np.ndarray], list[list[float]]],
+        audio: np.ndarray | list[float] | list[np.ndarray] | list[list[float]],
         truncation: bool = ...,
-        pad_to_multiple_of: Optional[int] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        return_attention_mask: Optional[bool] = ...,
-        padding: Optional[str] = ...,
-        max_length: Optional[int] = ...,
-        sampling_rate: Optional[int] = ...,
+        pad_to_multiple_of: int | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        return_attention_mask: bool | None = ...,
+        padding: str | None = ...,
+        max_length: int | None = ...,
+        sampling_rate: int | None = ...,
         **kwargs,
     ) -> BatchFeature:
         """

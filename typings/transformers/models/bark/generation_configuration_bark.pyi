@@ -174,9 +174,9 @@ class BarkGenerationConfig(GenerationConfig):
     model_type = ...
     def __init__(
         self,
-        semantic_config: Optional[dict] = ...,
-        coarse_acoustics_config: Optional[dict] = ...,
-        fine_acoustics_config: Optional[dict] = ...,
+        semantic_config: dict | None = ...,
+        coarse_acoustics_config: dict | None = ...,
+        fine_acoustics_config: dict | None = ...,
         sample_rate=...,
         codebook_size=...,
         **kwargs,

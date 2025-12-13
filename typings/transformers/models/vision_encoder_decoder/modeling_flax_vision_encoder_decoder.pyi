@@ -56,7 +56,7 @@ class FlaxVisionEncoderDecoderModel(FlaxPreTrainedModel):
     def __init__(
         self,
         config: VisionEncoderDecoderConfig,
-        input_shape: Optional[tuple] = ...,
+        input_shape: tuple | None = ...,
         seed: int = ...,
         dtype: jnp.dtype = ...,
         _do_init: bool = ...,
@@ -84,11 +84,11 @@ class FlaxVisionEncoderDecoderModel(FlaxPreTrainedModel):
     def encode(
         self,
         pixel_values: jnp.ndarray,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         train: bool = ...,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: PRNGKey = ...,
     ):  # -> FlaxBaseModelOutput:
         r"""
@@ -122,14 +122,14 @@ class FlaxVisionEncoderDecoderModel(FlaxPreTrainedModel):
         self,
         decoder_input_ids,
         encoder_outputs,
-        decoder_attention_mask: Optional[jnp.ndarray] = ...,
-        decoder_position_ids: Optional[jnp.ndarray] = ...,
-        past_key_values: Optional[dict] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        decoder_attention_mask: jnp.ndarray | None = ...,
+        decoder_position_ids: jnp.ndarray | None = ...,
+        past_key_values: dict | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         train: bool = ...,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: PRNGKey = ...,
     ):
         r"""
@@ -169,14 +169,14 @@ class FlaxVisionEncoderDecoderModel(FlaxPreTrainedModel):
     def __call__(
         self,
         pixel_values: jnp.ndarray,
-        decoder_input_ids: Optional[jnp.ndarray] = ...,
-        decoder_attention_mask: Optional[jnp.ndarray] = ...,
-        decoder_position_ids: Optional[jnp.ndarray] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        decoder_input_ids: jnp.ndarray | None = ...,
+        decoder_attention_mask: jnp.ndarray | None = ...,
+        decoder_position_ids: jnp.ndarray | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         train: bool = ...,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: PRNGKey = ...,
     ):
         r"""
@@ -219,7 +219,7 @@ class FlaxVisionEncoderDecoderModel(FlaxPreTrainedModel):
         self,
         decoder_input_ids,
         max_length,
-        decoder_attention_mask: Optional[jax.Array] = ...,
+        decoder_attention_mask: jax.Array | None = ...,
         encoder_outputs=...,
         **kwargs,
     ):  # -> dict[str, Any | None]:
@@ -228,8 +228,8 @@ class FlaxVisionEncoderDecoderModel(FlaxPreTrainedModel):
     @classmethod
     def from_encoder_decoder_pretrained(
         cls,
-        encoder_pretrained_model_name_or_path: Optional[Union[str, os.PathLike]] = ...,
-        decoder_pretrained_model_name_or_path: Optional[Union[str, os.PathLike]] = ...,
+        encoder_pretrained_model_name_or_path: str | os.PathLike | None = ...,
+        decoder_pretrained_model_name_or_path: str | os.PathLike | None = ...,
         *model_args,
         **kwargs,
     ) -> FlaxPreTrainedModel:

@@ -36,10 +36,10 @@ class LevitForImageClassificationWithTeacherOutput(ModelOutput):
         distillation token).
     """
 
-    logits: Optional[torch.FloatTensor] = ...
-    cls_logits: Optional[torch.FloatTensor] = ...
-    distillation_logits: Optional[torch.FloatTensor] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
+    logits: torch.FloatTensor | None = ...
+    cls_logits: torch.FloatTensor | None = ...
+    distillation_logits: torch.FloatTensor | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
 
 class LevitConvEmbeddings(nn.Module):
     """
@@ -167,10 +167,10 @@ class LevitModel(LevitPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPoolingAndNoAttention]: ...
+        pixel_values: torch.FloatTensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutputWithPoolingAndNoAttention: ...
 
 @auto_docstring(
     custom_intro="""
@@ -183,11 +183,11 @@ class LevitForImageClassification(LevitPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ImageClassifierOutputWithNoAttention]:
+        pixel_values: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | ImageClassifierOutputWithNoAttention:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
@@ -209,10 +209,10 @@ class LevitForImageClassificationWithTeacher(LevitPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, LevitForImageClassificationWithTeacherOutput]: ...
+        pixel_values: torch.FloatTensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | LevitForImageClassificationWithTeacherOutput: ...
 
 __all__ = [
     "LevitForImageClassification",

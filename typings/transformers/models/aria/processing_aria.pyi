@@ -33,14 +33,14 @@ class AriaProcessor(ProcessorMixin):
     def __init__(
         self,
         image_processor=...,
-        tokenizer: Union[AutoTokenizer, str] = ...,
-        chat_template: Optional[str] = ...,
-        size_conversion: Optional[dict[Union[float, int], int]] = ...,
+        tokenizer: AutoTokenizer | str = ...,
+        chat_template: str | None = ...,
+        size_conversion: dict[float | int, int] | None = ...,
     ) -> None: ...
     def __call__(
         self,
-        text: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]],
-        images: Optional[ImageInput] = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput],
+        images: ImageInput | None = ...,
         audio=...,
         videos=...,
         **kwargs: Unpack[AriaProcessorKwargs],

@@ -1,7 +1,8 @@
 import operator
 import torch
-from typing import Any, Callable, Optional, Union
-from typing_extensions import TypeAlias
+from typing import Any, Optional, Union
+from collections.abc import Callable
+from typing import TypeAlias
 from torch.utils._ordered_set import OrderedSet
 from ..pattern_matcher import (
     CallFunction,
@@ -19,14 +20,14 @@ from ..pattern_matcher import (
 )
 
 log = ...
-_Arguments: TypeAlias = tuple[torch.fx.node.Argument, ...]
-_TransformParam: TypeAlias = tuple[
-    Optional[_Arguments],
-    Optional[_Arguments],
-    Optional[_Arguments],
-    Optional[_Arguments],
+type _Arguments = tuple[torch.fx.node.Argument, ...]
+type _TransformParam = tuple[
+    _Arguments | None,
+    _Arguments | None,
+    _Arguments | None,
+    _Arguments | None,
 ]
-_Range: TypeAlias = tuple[int, int]
+type _Range = tuple[int, int]
 PRE_GRAD_PATTERNS: dict[str, PatternMatcherPass] = ...
 POST_GRAD_PATTERNS: dict[str, PatternMatcherPass] = ...
 pre_grad_pass_names = ...
@@ -38,7 +39,7 @@ def construct_pattern_matcher_pass(pass_name: str):  # -> PatternMatcherPass:
     ...
 def normalize_split_base(
     match: Match,
-    _get_split_args: Callable[[torch.fx.Node], tuple[Optional[torch.fx.Node], Optional[Any], Optional[int]]],
+    _get_split_args: Callable[[torch.fx.Node], tuple[torch.fx.Node | None, Any | None, int | None]],
 ):  # -> None:
 
     ...
@@ -130,31 +131,29 @@ class SplitCatSimplifier:
         ...
     def get_user_input_list(
         self, split_node: torch.fx.Node, next_users: list[torch.fx.Node]
-    ) -> list[list[Union[torch.fx.Node, _Range]]]: ...
+    ) -> list[list[torch.fx.Node | _Range]]: ...
     def get_merged_user_inputs(
         self, split_node: torch.fx.Node, cat_node: torch.fx.Node
-    ) -> list[Union[torch.fx.Node, _Range]]: ...
+    ) -> list[torch.fx.Node | _Range]: ...
     def get_non_cat_node_input(self, split_node: torch.fx.Node, node: torch.fx.Node) -> list[_Range]: ...
-    def merge_consecutive_inputs(
-        self, inputs: list[Union[torch.fx.Node, int]]
-    ) -> list[Union[torch.fx.Node, _Range]]: ...
+    def merge_consecutive_inputs(self, inputs: list[torch.fx.Node | int]) -> list[torch.fx.Node | _Range]: ...
     def get_simplified_split_ranges(
-        self, split_sections, next_users, user_inputs_list: list[list[Union[torch.fx.Node, _Range]]]
-    ) -> Optional[list[_Range]]: ...
+        self, split_sections, next_users, user_inputs_list: list[list[torch.fx.Node | _Range]]
+    ) -> list[_Range] | None: ...
     def has_non_overlapping_ranges(self, ranges: list[_Range]) -> bool: ...
     def fill_gaps(self, ranges: list[_Range], min_: int, max_: int) -> list[_Range]: ...
     def get_transform_params(
         self,
         split_node: torch.fx.Node,
         next_users: list[torch.fx.Node],
-        user_inputs_list: list[list[Union[torch.fx.Node, _Range]]],
-    ) -> Optional[list[list[_TransformParam]]]: ...
+        user_inputs_list: list[list[torch.fx.Node | _Range]],
+    ) -> list[list[_TransformParam]] | None: ...
     def replace_split(
         self,
         graph: torch.fx.Graph,
         split_node: torch.fx.Node,
         split_sections: list[int],
-        user_inputs_list: list[list[Union[torch.fx.Node, _Range]]],
+        user_inputs_list: list[list[torch.fx.Node | _Range]],
         split_ranges: list[_Range],
     ) -> list[list[torch.fx.Node]]: ...
     def replace_cat(
@@ -178,14 +177,14 @@ class UnbindCatRemover(SplitCatSimplifier):
         self,
         split_sections: list[int],
         next_users: list[torch.fx.Node],
-        user_inputs_list: list[list[Union[torch.fx.Node, _Range]]],
-    ) -> Optional[list[_Range]]: ...
+        user_inputs_list: list[list[torch.fx.Node | _Range]],
+    ) -> list[_Range] | None: ...
     def get_transform_params(
         self,
         split_node: torch.fx.Node,
         next_users: list[torch.fx.Node],
-        user_inputs_list: list[list[Union[torch.fx.Node, _Range]]],
-    ) -> Optional[list[list[_TransformParam]]]: ...
+        user_inputs_list: list[list[torch.fx.Node | _Range]],
+    ) -> list[list[_TransformParam]] | None: ...
 
 class GetItem(CallFunction):
     def __init__(self, arg, index, _users=...) -> None: ...

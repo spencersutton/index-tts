@@ -44,9 +44,9 @@ class GlueDataset(Dataset):
         self,
         args: GlueDataTrainingArguments,
         tokenizer: PreTrainedTokenizerBase,
-        limit_length: Optional[int] = ...,
-        mode: Union[str, Split] = ...,
-        cache_dir: Optional[str] = ...,
+        limit_length: int | None = ...,
+        mode: str | Split = ...,
+        cache_dir: str | None = ...,
     ) -> None: ...
     def __len__(self):  # -> int:
         ...

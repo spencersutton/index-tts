@@ -15,7 +15,7 @@ and remove unnecessary dependencies.
 if is_soundfile_available(): ...
 if is_librosa_available(): ...
 
-def load_audio(audio: Union[str, np.ndarray], sampling_rate=..., timeout=...) -> np.ndarray:
+def load_audio(audio: str | np.ndarray, sampling_rate=..., timeout=...) -> np.ndarray:
     """
     Loads `audio` to an np.ndarray object.
 
@@ -36,10 +36,10 @@ def load_audio(audio: Union[str, np.ndarray], sampling_rate=..., timeout=...) ->
 def load_audio_as(
     audio: str,
     return_format: str,
-    timeout: Optional[int] = ...,
+    timeout: int | None = ...,
     force_mono: bool = ...,
-    sampling_rate: Optional[int] = ...,
-) -> Union[str, dict[str, Any], io.BytesIO, None]:
+    sampling_rate: int | None = ...,
+) -> str | dict[str, Any] | io.BytesIO | None:
     """
     Load audio from either a local file path or URL and return in specified format.
 
@@ -69,7 +69,7 @@ def is_valid_audio(audio):  # -> bool:
     ...
 def is_valid_list_of_audio(audio):  # -> bool:
     ...
-def make_list_of_audio(audio: Union[list[AudioInput], AudioInput]) -> AudioInput:
+def make_list_of_audio(audio: list[AudioInput] | AudioInput) -> AudioInput:
     """
     Ensure that the output is a list of audio.
     Args:
@@ -80,7 +80,7 @@ def make_list_of_audio(audio: Union[list[AudioInput], AudioInput]) -> AudioInput
     """
     ...
 
-def hertz_to_mel(freq: Union[float, np.ndarray], mel_scale: str = ...) -> Union[float, np.ndarray]:
+def hertz_to_mel(freq: float | np.ndarray, mel_scale: str = ...) -> float | np.ndarray:
     """
     Convert frequency from hertz to mels.
 
@@ -95,7 +95,7 @@ def hertz_to_mel(freq: Union[float, np.ndarray], mel_scale: str = ...) -> Union[
     """
     ...
 
-def mel_to_hertz(mels: Union[float, np.ndarray], mel_scale: str = ...) -> Union[float, np.ndarray]:
+def mel_to_hertz(mels: float | np.ndarray, mel_scale: str = ...) -> float | np.ndarray:
     """
     Convert frequency from mels to hertz.
 
@@ -111,7 +111,7 @@ def mel_to_hertz(mels: Union[float, np.ndarray], mel_scale: str = ...) -> Union[
     ...
 
 def hertz_to_octave(
-    freq: Union[float, np.ndarray], tuning: Optional[float] = ..., bins_per_octave: Optional[int] = ...
+    freq: float | np.ndarray, tuning: float | None = ..., bins_per_octave: int | None = ...
 ):  # -> NDArray[Any]:
     """
     Convert frequency from hertz to fractional octave numbers.
@@ -135,9 +135,9 @@ def chroma_filter_bank(
     num_chroma: int,
     sampling_rate: int,
     tuning: float = ...,
-    power: Optional[float] = ...,
-    weighting_parameters: Optional[tuple[float, float]] = ...,
-    start_at_c_chroma: Optional[bool] = ...,
+    power: float | None = ...,
+    weighting_parameters: tuple[float, float] | None = ...,
+    start_at_c_chroma: bool | None = ...,
 ):  # -> NDArray[Any]:
     """
     Creates a chroma filter bank, i.e a linear transformation to project spectrogram bins onto chroma bins.
@@ -171,7 +171,7 @@ def mel_filter_bank(
     min_frequency: float,
     max_frequency: float,
     sampling_rate: int,
-    norm: Optional[str] = ...,
+    norm: str | None = ...,
     mel_scale: str = ...,
     triangularize_in_mel_space: bool = ...,
 ) -> np.ndarray:
@@ -233,7 +233,7 @@ def optimal_fft_length(window_length: int) -> int:
     ...
 
 def window_function(
-    window_length: int, name: str = ..., periodic: bool = ..., frame_length: Optional[int] = ..., center: bool = ...
+    window_length: int, name: str = ..., periodic: bool = ..., frame_length: int | None = ..., center: bool = ...
 ) -> np.ndarray:
     """
     Returns an array containing the specified window. This window is intended to be used with `stft`.
@@ -268,20 +268,20 @@ def spectrogram(
     window: np.ndarray,
     frame_length: int,
     hop_length: int,
-    fft_length: Optional[int] = ...,
-    power: Optional[float] = ...,
+    fft_length: int | None = ...,
+    power: float | None = ...,
     center: bool = ...,
     pad_mode: str = ...,
     onesided: bool = ...,
     dither: float = ...,
-    preemphasis: Optional[float] = ...,
-    mel_filters: Optional[np.ndarray] = ...,
+    preemphasis: float | None = ...,
+    mel_filters: np.ndarray | None = ...,
     mel_floor: float = ...,
-    log_mel: Optional[str] = ...,
+    log_mel: str | None = ...,
     reference: float = ...,
     min_value: float = ...,
-    db_range: Optional[float] = ...,
-    remove_dc_offset: Optional[bool] = ...,
+    db_range: float | None = ...,
+    remove_dc_offset: bool | None = ...,
     dtype: np.dtype = ...,
 ) -> np.ndarray:
     """
@@ -388,20 +388,20 @@ def spectrogram_batch(
     window: np.ndarray,
     frame_length: int,
     hop_length: int,
-    fft_length: Optional[int] = ...,
-    power: Optional[float] = ...,
+    fft_length: int | None = ...,
+    power: float | None = ...,
     center: bool = ...,
     pad_mode: str = ...,
     onesided: bool = ...,
     dither: float = ...,
-    preemphasis: Optional[float] = ...,
-    mel_filters: Optional[np.ndarray] = ...,
+    preemphasis: float | None = ...,
+    mel_filters: np.ndarray | None = ...,
     mel_floor: float = ...,
-    log_mel: Optional[str] = ...,
+    log_mel: str | None = ...,
     reference: float = ...,
     min_value: float = ...,
-    db_range: Optional[float] = ...,
-    remove_dc_offset: Optional[bool] = ...,
+    db_range: float | None = ...,
+    remove_dc_offset: bool | None = ...,
     dtype: np.dtype = ...,
 ) -> list[np.ndarray]:
     """
@@ -485,7 +485,7 @@ def spectrogram_batch(
     ...
 
 def power_to_db(
-    spectrogram: np.ndarray, reference: float = ..., min_value: float = ..., db_range: Optional[float] = ...
+    spectrogram: np.ndarray, reference: float = ..., min_value: float = ..., db_range: float | None = ...
 ) -> np.ndarray:
     """
     Converts a power spectrogram to the decibel scale. This computes `10 * log10(spectrogram / reference)`, using basic
@@ -517,7 +517,7 @@ def power_to_db(
     ...
 
 def power_to_db_batch(
-    spectrogram: np.ndarray, reference: float = ..., min_value: float = ..., db_range: Optional[float] = ...
+    spectrogram: np.ndarray, reference: float = ..., min_value: float = ..., db_range: float | None = ...
 ) -> np.ndarray:
     """
     Converts a batch of power spectrograms to the decibel scale. This computes `10 * log10(spectrogram / reference)`,
@@ -545,7 +545,7 @@ def power_to_db_batch(
     ...
 
 def amplitude_to_db(
-    spectrogram: np.ndarray, reference: float = ..., min_value: float = ..., db_range: Optional[float] = ...
+    spectrogram: np.ndarray, reference: float = ..., min_value: float = ..., db_range: float | None = ...
 ) -> np.ndarray:
     """
     Converts an amplitude spectrogram to the decibel scale. This computes `20 * log10(spectrogram / reference)`, using
@@ -575,7 +575,7 @@ def amplitude_to_db(
     ...
 
 def amplitude_to_db_batch(
-    spectrogram: np.ndarray, reference: float = ..., min_value: float = ..., db_range: Optional[float] = ...
+    spectrogram: np.ndarray, reference: float = ..., min_value: float = ..., db_range: float | None = ...
 ) -> np.ndarray:
     """
     Converts a batch of amplitude spectrograms to the decibel scale. This computes `20 * log10(spectrogram / reference)`,

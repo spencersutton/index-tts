@@ -54,14 +54,14 @@ class Wav2Vec2ForPreTrainingOutput(ModelOutput):
         The diversity loss (L_d) as stated in the [official paper](https://arxiv.org/pdf/2006.11477.pdf) .
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    projected_states: Optional[torch.FloatTensor] = ...
-    projected_quantized_states: Optional[torch.FloatTensor] = ...
-    codevector_perplexity: Optional[torch.FloatTensor] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
-    contrastive_loss: Optional[torch.FloatTensor] = ...
-    diversity_loss: Optional[torch.FloatTensor] = ...
+    loss: torch.FloatTensor | None = ...
+    projected_states: torch.FloatTensor | None = ...
+    projected_quantized_states: torch.FloatTensor | None = ...
+    codevector_perplexity: torch.FloatTensor | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
+    contrastive_loss: torch.FloatTensor | None = ...
+    diversity_loss: torch.FloatTensor | None = ...
 
 class Wav2Vec2NoLayerNormConvLayer(GradientCheckpointingLayer):
     def __init__(self, config, layer_id=...) -> None: ...
@@ -102,10 +102,10 @@ def eager_attention_forward(
     query: torch.Tensor,
     key: torch.Tensor,
     value: torch.Tensor,
-    attention_mask: Optional[torch.Tensor],
-    scaling: Optional[float] = ...,
+    attention_mask: torch.Tensor | None,
+    scaling: float | None = ...,
     dropout: float = ...,
-    head_mask: Optional[torch.Tensor] = ...,
+    head_mask: torch.Tensor | None = ...,
     **kwargs,
 ):  # -> tuple[Tensor, Tensor]:
     ...
@@ -120,17 +120,17 @@ class Wav2Vec2Attention(nn.Module):
         is_decoder: bool = ...,
         bias: bool = ...,
         is_causal: bool = ...,
-        config: Optional[Wav2Vec2Config] = ...,
+        config: Wav2Vec2Config | None = ...,
     ) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        key_value_states: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        layer_head_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
+        key_value_states: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        layer_head_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]:
         """Input shape: Batch x Time x Channel"""
         ...
 
@@ -147,7 +147,7 @@ class Wav2Vec2EncoderLayer(GradientCheckpointingLayer):
 class Wav2Vec2EncoderLayerStableLayerNorm(GradientCheckpointingLayer):
     def __init__(self, config) -> None: ...
     def forward(
-        self, hidden_states: torch.Tensor, attention_mask: Optional[torch.Tensor] = ..., output_attentions: bool = ...
+        self, hidden_states: torch.Tensor, attention_mask: torch.Tensor | None = ..., output_attentions: bool = ...
     ):  # -> tuple[Tensor, Any] | tuple[Tensor]:
         ...
 
@@ -156,7 +156,7 @@ class Wav2Vec2Encoder(nn.Module):
     def forward(
         self,
         hidden_states: torch.tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
@@ -300,13 +300,13 @@ class Wav2Vec2Model(Wav2Vec2PreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_values: Optional[torch.Tensor],
-        attention_mask: Optional[torch.Tensor] = ...,
-        mask_time_indices: Optional[torch.FloatTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, Wav2Vec2BaseModelOutput]:
+        input_values: torch.Tensor | None,
+        attention_mask: torch.Tensor | None = ...,
+        mask_time_indices: torch.FloatTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | Wav2Vec2BaseModelOutput:
         r"""
         mask_time_indices (`torch.BoolTensor` of shape `(batch_size, sequence_length)`, *optional*):
             Indices to mask extracted features for contrastive loss. When in training mode, model learns to predict
@@ -357,14 +357,14 @@ class Wav2Vec2ForPreTraining(Wav2Vec2PreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_values: Optional[torch.Tensor],
-        attention_mask: Optional[torch.Tensor] = ...,
-        mask_time_indices: Optional[torch.BoolTensor] = ...,
-        sampled_negative_indices: Optional[torch.BoolTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, Wav2Vec2ForPreTrainingOutput]:
+        input_values: torch.Tensor | None,
+        attention_mask: torch.Tensor | None = ...,
+        mask_time_indices: torch.BoolTensor | None = ...,
+        sampled_negative_indices: torch.BoolTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | Wav2Vec2ForPreTrainingOutput:
         r"""
         mask_time_indices (`torch.BoolTensor` of shape `(batch_size, sequence_length)`, *optional*):
             Indices to mask extracted features for contrastive loss. When in training mode, model learns to predict
@@ -428,12 +428,12 @@ class Wav2Vec2ForMaskedLM(Wav2Vec2PreTrainedModel):
     def forward(
         self,
         input_values: torch.FloatTensor,
-        attention_mask: Optional[torch.LongTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        labels: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple, MaskedLMOutput]: ...
+        attention_mask: torch.LongTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        labels: torch.Tensor | None = ...,
+    ) -> tuple | MaskedLMOutput: ...
 
 @auto_docstring(
     custom_intro="""
@@ -441,7 +441,7 @@ class Wav2Vec2ForMaskedLM(Wav2Vec2PreTrainedModel):
     """
 )
 class Wav2Vec2ForCTC(Wav2Vec2PreTrainedModel):
-    def __init__(self, config, target_lang: Optional[str] = ...) -> None:
+    def __init__(self, config, target_lang: str | None = ...) -> None:
         r"""
         target_lang (`str`, *optional*):
             Language id of adapter weights. Adapter weights are stored in the format adapter.<lang>.safetensors or
@@ -483,13 +483,13 @@ class Wav2Vec2ForCTC(Wav2Vec2PreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_values: Optional[torch.Tensor],
-        attention_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        labels: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple, CausalLMOutput]:
+        input_values: torch.Tensor | None,
+        attention_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        labels: torch.Tensor | None = ...,
+    ) -> tuple | CausalLMOutput:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size, target_length)`, *optional*):
             Labels for connectionist temporal classification. Note that `target_length` has to be smaller or equal to
@@ -531,13 +531,13 @@ class Wav2Vec2ForSequenceClassification(Wav2Vec2PreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_values: Optional[torch.Tensor],
-        attention_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        labels: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple, SequenceClassifierOutput]:
+        input_values: torch.Tensor | None,
+        attention_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        labels: torch.Tensor | None = ...,
+    ) -> tuple | SequenceClassifierOutput:
         r"""
         input_values (`torch.FloatTensor` of shape `(batch_size, sequence_length)`):
             Float values of input raw speech waveform. Values can be obtained by loading a `.flac` or `.wav` audio file
@@ -579,13 +579,13 @@ class Wav2Vec2ForAudioFrameClassification(Wav2Vec2PreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_values: Optional[torch.Tensor],
-        attention_mask: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, TokenClassifierOutput]:
+        input_values: torch.Tensor | None,
+        attention_mask: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | TokenClassifierOutput:
         r"""
         input_values (`torch.FloatTensor` of shape `(batch_size, sequence_length)`):
             Float values of input raw speech waveform. Values can be obtained by loading a `.flac` or `.wav` audio file
@@ -640,13 +640,13 @@ class Wav2Vec2ForXVector(Wav2Vec2PreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_values: Optional[torch.Tensor],
-        attention_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        labels: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple, XVectorOutput]:
+        input_values: torch.Tensor | None,
+        attention_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        labels: torch.Tensor | None = ...,
+    ) -> tuple | XVectorOutput:
         r"""
         input_values (`torch.FloatTensor` of shape `(batch_size, sequence_length)`):
             Float values of input raw speech waveform. Values can be obtained by loading a `.flac` or `.wav` audio file

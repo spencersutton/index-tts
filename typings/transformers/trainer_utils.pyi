@@ -70,26 +70,26 @@ class EvalPrediction:
     """
     def __init__(
         self,
-        predictions: Union[np.ndarray, tuple[np.ndarray]],
-        label_ids: Union[np.ndarray, tuple[np.ndarray]],
-        inputs: Optional[Union[np.ndarray, tuple[np.ndarray]]] = ...,
-        losses: Optional[Union[np.ndarray, tuple[np.ndarray]]] = ...,
+        predictions: np.ndarray | tuple[np.ndarray],
+        label_ids: np.ndarray | tuple[np.ndarray],
+        inputs: np.ndarray | tuple[np.ndarray] | None = ...,
+        losses: np.ndarray | tuple[np.ndarray] | None = ...,
     ) -> None: ...
     def __iter__(self):  # -> Iterator[ndarray[_AnyShape, dtype[Any]] | tuple[ndarray[_AnyShape, dtype[Any]]]]:
         ...
     def __getitem__(self, idx): ...
 
 class EvalLoopOutput(NamedTuple):
-    predictions: Union[np.ndarray, tuple[np.ndarray]]
-    label_ids: Optional[Union[np.ndarray, tuple[np.ndarray]]]
-    metrics: Optional[dict[str, float]]
-    num_samples: Optional[int]
+    predictions: np.ndarray | tuple[np.ndarray]
+    label_ids: np.ndarray | tuple[np.ndarray] | None
+    metrics: dict[str, float] | None
+    num_samples: int | None
     ...
 
 class PredictionOutput(NamedTuple):
-    predictions: Union[np.ndarray, tuple[np.ndarray]]
-    label_ids: Optional[Union[np.ndarray, tuple[np.ndarray]]]
-    metrics: Optional[dict[str, float]]
+    predictions: np.ndarray | tuple[np.ndarray]
+    label_ids: np.ndarray | tuple[np.ndarray] | None
+    metrics: dict[str, float] | None
     ...
 
 class TrainOutput(NamedTuple):
@@ -143,9 +143,9 @@ class BestRun(NamedTuple):
     """
 
     run_id: str
-    objective: Union[float, list[float]]
+    objective: float | list[float]
     hyperparameters: dict[str, Any]
-    run_summary: Optional[Any] = ...
+    run_summary: Any | None = ...
 
 def default_compute_objective(metrics: dict[str, float]) -> float:
     """
@@ -302,7 +302,7 @@ def number_of_arguments(func):  # -> int:
     ...
 
 def find_executable_batch_size(
-    function: Optional[callable] = ..., starting_batch_size: int = ..., auto_find_batch_size: bool = ...
+    function: callable | None = ..., starting_batch_size: int = ..., auto_find_batch_size: bool = ...
 ):  # -> partial[Any]:
     """
     Args:
@@ -334,8 +334,8 @@ class RemoveColumnsCollator:
         data_collator,
         signature_columns,
         logger=...,
-        model_name: Optional[str] = ...,
-        description: Optional[str] = ...,
+        model_name: str | None = ...,
+        description: str | None = ...,
     ) -> None: ...
     def __call__(self, features: list[dict]): ...
 

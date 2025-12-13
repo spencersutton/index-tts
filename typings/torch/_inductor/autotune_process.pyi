@@ -2,7 +2,8 @@ import dataclasses
 import functools
 import torch
 from collections.abc import Iterable, Sequence
-from typing import Any, Callable, IO, Optional, TYPE_CHECKING, Union, TypeAlias
+from typing import Any, IO, Optional, TYPE_CHECKING, Union, TypeAlias
+from collections.abc import Callable
 from torch._inductor import ir
 from torch._inductor.select_algorithm import PartialRender, TritonTemplateCaller
 
@@ -19,7 +20,7 @@ class TuningProcess:
     def send(obj: Any, write_pipe: IO[bytes]) -> None: ...
     @staticmethod
     def recv(read_pipe: IO[bytes]) -> Any: ...
-    def __init__(self, device: Optional[int]) -> None: ...
+    def __init__(self, device: int | None) -> None: ...
     def start(self):  # -> None:
 
         ...
@@ -34,12 +35,12 @@ class TuningProcess:
 class TuningProcessPool:
     def __init__(self) -> None: ...
     @staticmethod
-    def get_device_list() -> Sequence[Optional[int]]: ...
+    def get_device_list() -> Sequence[int | None]: ...
     def shutdown(self) -> None: ...
     def target(self, choice: TritonTemplateCaller) -> float: ...
     def benchmark(self, choices: list[TritonTemplateCaller]) -> dict[TritonTemplateCaller, float]: ...
 
-LayoutOrBuffer: TypeAlias = Union[ir.Layout, ir.Buffer]
+type LayoutOrBuffer = ir.Layout | ir.Buffer
 
 @dataclasses.dataclass
 class TensorMeta:
@@ -48,11 +49,9 @@ class TensorMeta:
     sizes: torch._prims_common.ShapeType
     strides: torch._prims_common.StrideType
     offset: int
-    name: Optional[str] = ...
+    name: str | None = ...
     @classmethod
-    def from_irnodes(
-        cls, irnodes: Union[LayoutOrBuffer, Sequence[LayoutOrBuffer]]
-    ) -> Union[TensorMeta, list[TensorMeta]]: ...
+    def from_irnodes(cls, irnodes: LayoutOrBuffer | Sequence[LayoutOrBuffer]) -> TensorMeta | list[TensorMeta]: ...
     def to_tensor(self) -> torch.Tensor: ...
 
 @dataclasses.dataclass
@@ -60,38 +59,38 @@ class BenchmarkRequest:
     def __init__(
         self,
         kernel_name: str,
-        input_tensor_meta: Union[TensorMeta, list[TensorMeta]],
-        output_tensor_meta: Union[TensorMeta, list[TensorMeta]],
+        input_tensor_meta: TensorMeta | list[TensorMeta],
+        output_tensor_meta: TensorMeta | list[TensorMeta],
         extra_args: Iterable[Any],
     ) -> None: ...
     def make_run_fn(self, *input_tensors: torch.Tensor, out: torch.Tensor) -> Callable[[], None]: ...
     def cleanup_run_fn(self) -> None: ...
-    def do_bench(self, fn, *input_tensors: torch.Tensor, out: Optional[torch.Tensor] = ...) -> float: ...
-    def benchmark(self, *input_tensors: torch.Tensor, out: Optional[torch.Tensor] = ...) -> float: ...
+    def do_bench(self, fn, *input_tensors: torch.Tensor, out: torch.Tensor | None = ...) -> float: ...
+    def benchmark(self, *input_tensors: torch.Tensor, out: torch.Tensor | None = ...) -> float: ...
 
 class _TestBenchmarkRequest(BenchmarkRequest):
     def __init__(
         self,
         result: float = ...,
-        device: Optional[int] = ...,
-        sleep: Optional[float] = ...,
-        exc: Optional[Exception] = ...,
+        device: int | None = ...,
+        sleep: float | None = ...,
+        exc: Exception | None = ...,
         crash: bool = ...,
     ) -> None: ...
-    def benchmark(self, *input_tensors: torch.Tensor, out: Optional[torch.Tensor] = ...) -> float: ...
+    def benchmark(self, *input_tensors: torch.Tensor, out: torch.Tensor | None = ...) -> float: ...
 
 class GPUDeviceBenchmarkMixin:
-    def do_bench(self, fn, *input_tensors: torch.Tensor, out: Optional[torch.Tensor] = ...) -> float: ...
+    def do_bench(self, fn, *input_tensors: torch.Tensor, out: torch.Tensor | None = ...) -> float: ...
 
 class CPUDeviceBenchmarkMixin:
-    def do_bench(self, fn, *input_tensors: torch.Tensor, out: Optional[torch.Tensor] = ...) -> float: ...
+    def do_bench(self, fn, *input_tensors: torch.Tensor, out: torch.Tensor | None = ...) -> float: ...
 
 class TritonBenchmarkRequest(BenchmarkRequest):
     def __init__(
         self,
         kernel_name: str,
-        input_tensor_meta: Union[TensorMeta, list[TensorMeta]],
-        output_tensor_meta: Union[TensorMeta, list[TensorMeta]],
+        input_tensor_meta: TensorMeta | list[TensorMeta],
+        output_tensor_meta: TensorMeta | list[TensorMeta],
         extra_args: Iterable[Any],
         module_path: str,
         module_cache_key: str,
@@ -114,8 +113,8 @@ class CUDABenchmarkRequest(GPUDeviceBenchmarkMixin, BenchmarkRequest):
     def __init__(
         self,
         kernel_name: str,
-        input_tensor_meta: Union[TensorMeta, list[TensorMeta]],
-        output_tensor_meta: Union[TensorMeta, list[TensorMeta]],
+        input_tensor_meta: TensorMeta | list[TensorMeta],
+        output_tensor_meta: TensorMeta | list[TensorMeta],
         extra_args: Iterable[Any],
         source_code: str,
     ) -> None: ...
@@ -132,8 +131,8 @@ class CppBenchmarkRequest(CPUDeviceBenchmarkMixin, BenchmarkRequest):
     def __init__(
         self,
         kernel_name: str,
-        input_tensor_meta: Union[TensorMeta, list[TensorMeta]],
-        output_tensor_meta: Union[TensorMeta, list[TensorMeta]],
+        input_tensor_meta: TensorMeta | list[TensorMeta],
+        output_tensor_meta: TensorMeta | list[TensorMeta],
         extra_args: Iterable[Any],
         source_code: str,
     ) -> None: ...
@@ -146,8 +145,8 @@ class CuteDSLBenchmarkRequest(GPUDeviceBenchmarkMixin, BenchmarkRequest):
     def __init__(
         self,
         kernel_name: str,
-        input_tensor_meta: Union[TensorMeta, list[TensorMeta]],
-        output_tensor_meta: Union[TensorMeta, list[TensorMeta]],
+        input_tensor_meta: TensorMeta | list[TensorMeta],
+        output_tensor_meta: TensorMeta | list[TensorMeta],
         extra_args: tuple[Any, ...],
         source_code: PartialRender,
     ) -> None: ...

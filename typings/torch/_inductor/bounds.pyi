@@ -1,6 +1,7 @@
 import sympy
 import torch
-from typing import Any, Callable, Optional
+from typing import Any, Optional
+from collections.abc import Callable
 from sympy import Expr
 from torch.utils._sympy.value_ranges import SymPyValueRangeAnalysis, ValueRanges
 from .loop_body import LoopBody, LoopBodyBlock
@@ -40,7 +41,7 @@ class ValueRangeAnalysis(SymPyValueRangeAnalysis, DefaultHandler):
     def index_expr(cls, index: Any, dtype: torch.dtype) -> ValueRanges[Any]: ...
     @staticmethod
     def to_dtype(
-        x: Any, dtype: torch.dtype, src_dtype: Optional[torch.dtype] = ..., use_compute_types: bool = ...
+        x: Any, dtype: torch.dtype, src_dtype: torch.dtype | None = ..., use_compute_types: bool = ...
     ) -> ValueRanges[Any]: ...
     @staticmethod
     def square(x: Any) -> ValueRanges[Any]: ...

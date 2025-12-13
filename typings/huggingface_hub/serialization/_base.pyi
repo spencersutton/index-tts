@@ -23,7 +23,7 @@ class StateDictSplit:
     def __post_init__(self):  # -> None:
         ...
 
-def split_state_dict_into_shards_factory(
+def split_state_dict_into_shards_factory[TensorT](
     state_dict: dict[str, TensorT],
     *,
     get_storage_size: TensorSizeFn_T,

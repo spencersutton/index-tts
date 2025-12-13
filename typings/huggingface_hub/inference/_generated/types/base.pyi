@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Type, TypeVar, Union
 """Contains a base class for all inference types."""
 T = TypeVar("T", bound="BaseInferenceType")
 
-def dataclass_with_extra(cls: type[T]) -> type[T]:
+def dataclass_with_extra[T: "BaseInferenceType"](cls: type[T]) -> type[T]:
     """Decorator to add a custom __repr__ method to a dataclass, showing all fields, including extra ones.
 
     This decorator only works with dataclasses that inherit from `BaseInferenceType`.

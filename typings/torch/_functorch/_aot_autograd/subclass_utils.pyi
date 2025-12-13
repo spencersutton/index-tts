@@ -32,7 +32,7 @@ def compute_symint_placeholders(lst: Iterable[None | int | SymInt]) -> list[bool
 
 AOTDescriptor = TypeVar("AOTDescriptor", AOTInput, AOTOutput)
 
-def unwrap_tensor_subclasses(
+def unwrap_tensor_subclasses[AOTDescriptor: (AOTInput, AOTOutput)](
     wrapped_args: list[FxValue], wrapped_args_descs: list[AOTDescriptor], *, append_symints: bool
 ) -> tuple[list[FxValue], list[AOTDescriptor]]: ...
 def runtime_unwrap_tensor_subclasses(

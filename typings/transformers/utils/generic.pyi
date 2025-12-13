@@ -7,7 +7,7 @@ from collections import OrderedDict
 from collections.abc import MutableMapping
 from contextlib import contextmanager
 from dataclasses import dataclass
-from enum import Enum
+from enum import Enum, StrEnum
 from typing import Any, ContextManager, Optional, TypedDict
 from collections.abc import Callable
 from .import_utils import is_torch_available, requires
@@ -164,7 +164,7 @@ class ModelOutput(OrderedDict):
 
 if is_torch_available(): ...
 
-class ExplicitEnum(str, Enum):
+class ExplicitEnum(StrEnum):
     """
     Enum with more explicit error message for missing values.
     """

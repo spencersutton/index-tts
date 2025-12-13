@@ -10,7 +10,7 @@ T = TypeVar("T", bound=int | float | bool | None | str | list | set | tuple | di
 _UNSET_SENTINEL = ...
 
 @dataclass
-class _Config(Generic[T]):
+class _Config[T: int | float | bool | None | str | list | set | tuple | dict]:
     default: T | object
     justknob: str | None = ...
     env_name_default: list[str] | None = ...
@@ -29,7 +29,7 @@ class _Config(Generic[T]):
     def string_or_list_of_string_to_list(val: str | list[str] | None) -> list[str] | None: ...
 
 if TYPE_CHECKING:
-    def Config(
+    def Config[T: int | float | bool | None | str | list | set | tuple | dict](
         default: T | object = ...,
         justknob: str | None = ...,
         env_name_default: str | list[str] | None = ...,

@@ -1,14 +1,14 @@
 # pyright: reportMissingImports=false, reportUnknownParameterType=false, reportUnknownArgumentType=false
 # pyright: reportUnknownMemberType=false, reportUntypedFunctionDecorator=false
-from dataclasses import dataclass
 import typing
+from dataclasses import dataclass
+from typing import ClassVar, Self, override
 
 import torch
 import triton
 import triton.language as tl
 from flash_attn import flash_attn_varlen_func, flash_attn_with_kvcache
 from torch import Tensor, nn
-from typing import ClassVar, Self, override
 
 
 @dataclass

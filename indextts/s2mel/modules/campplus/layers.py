@@ -3,6 +3,7 @@
 
 # Copied from: https://github.com/modelscope/3D-Speaker/blob/main/speakerlab/models/campplus/layers.py
 from typing import override
+
 import torch
 import torch.nn.functional as F
 import torch.utils.checkpoint as cp

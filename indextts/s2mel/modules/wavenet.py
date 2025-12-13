@@ -1,4 +1,5 @@
 from typing import override
+
 import torch
 from torch import Tensor, nn
 

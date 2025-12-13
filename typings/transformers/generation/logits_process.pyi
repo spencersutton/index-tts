@@ -17,7 +17,7 @@ class LogitsProcessor:
     @add_start_docstrings(LOGITS_PROCESSOR_INPUTS_DOCSTRING)
     def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor) -> torch.FloatTensor: ...
 
-class LogitsProcessorList(list):
+class LogitsProcessorList(list[LogitsProcessor]):
     """
     This class can be used to create a list of [`LogitsProcessor`] to subsequently process a `scores` input tensor.
     This class inherits from list and adds a specific *__call__* method to apply each [`LogitsProcessor`] to the

@@ -321,7 +321,6 @@ def run_benchmark(
                 spk_audio_prompt=voice_path,
                 text=text,
                 output_path=output_path,
-                verbose=verbose,
             )
             elapsed = time.perf_counter() - start
             warmup_times.append(elapsed)
@@ -340,7 +339,6 @@ def run_benchmark(
             spk_audio_prompt=voice_path,
             text=text,
             output_path=output_path,
-            verbose=verbose,
         )
         elapsed = time.perf_counter() - start
         inference_times.append(elapsed)

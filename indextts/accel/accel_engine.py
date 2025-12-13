@@ -1,4 +1,5 @@
 import sys
+import time
 from collections.abc import Collection, Iterable, Sequence
 from typing import Final, cast
 
@@ -8,12 +9,7 @@ from transformers import GPT2Model
 
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
 
-from .attention import (
-    ForwardContext,
-    get_forward_context,
-    reset_forward_context,
-    set_forward_context,
-)
+from .attention import ForwardContext
 from .kv_manager import KVCacheManager, Seq
 
 
@@ -135,7 +131,7 @@ class AccelInferenceEngine:
                 block_tables_list.append(table)
             block_tables = torch.tensor(block_tables_list, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
 
-        set_forward_context(
+        ForwardContext.set(
             True,
             cu_seqlens_q,
             cu_seqlens_k,
@@ -186,7 +182,7 @@ class AccelInferenceEngine:
             f"block_tables batch size mismatch: {block_tables.size(0)} vs {len(requests)}"
         )
 
-        set_forward_context(
+        ForwardContext.set(
             False,
             slot_mapping=slot_mapping,
             context_lens=context_lens,
@@ -225,7 +221,7 @@ class AccelInferenceEngine:
             context_lens[:bs] = bs + 1
             block_tables[:bs, :] = 0
 
-            set_forward_context(
+            ForwardContext.set(
                 False,
                 slot_mapping=slot_mapping[:bs],
                 context_lens=context_lens[:bs],
@@ -269,7 +265,7 @@ class AccelInferenceEngine:
 
             self.graphs[bs] = graph
             torch.cuda.synchronize()
-            reset_forward_context()
+            ForwardContext.reset()
 
         self.graph_vars = {
             "input_ids": input_ids,
@@ -369,6 +365,7 @@ class AccelInferenceEngine:
             Generated token IDs [batch_size, total_len]
 
         """
+        t_start = time.perf_counter()
         batch_size = input_ids.size(0)
         device = input_ids.device
 
@@ -424,6 +421,7 @@ class AccelInferenceEngine:
 
         self.current_sequences = sequences
 
+        t_prefill_start = time.perf_counter()
         _prefill_ids, _prefill_pos = self._prepare_prefill(sequences)
 
         if tts_embeddings is not None and tts_mel_embedding is not None and tts_text_pos_embedding is not None:
@@ -460,16 +458,20 @@ class AccelInferenceEngine:
                 return_dict=True,
             ).last_hidden_state
 
+        t_prefill_end = time.perf_counter()
+        print(f"[Profile] Prefill time: {(t_prefill_end - t_prefill_start) * 1000:.2f}ms", file=sys.stderr, flush=True)
+
         if is_varlen_batch:
-            context = get_forward_context()
+            context = ForwardContext.get()
             assert context.cu_seqlens_q is not None
             cu_seqlens = cast(list[int], context.cu_seqlens_q.cpu().tolist())
             last_hidden = torch.stack([hidden_states[0, cu_seqlens[i + 1] - 1] for i in range(batch_size)])
         else:
             last_hidden = hidden_states[:, -1, :]  # [batch_size, hidden_size]
 
-        reset_forward_context()
+        ForwardContext.reset()
 
+        t_first_token_start = time.perf_counter()
         if last_hidden.dtype != next(self.lm_head.parameters()).dtype:
             last_hidden = last_hidden.to(next(self.lm_head.parameters()).dtype)
         logits = self.lm_head(last_hidden)  # [batch_size, vocab_size]
@@ -493,6 +495,13 @@ class AccelInferenceEngine:
                 sequences[i].append_token(token_id)
                 self.kv_manager.append_to_seq(sequences[i])
 
+        t_first_token_end = time.perf_counter()
+        print(
+            f"[Profile] First token time: {(t_first_token_end - t_first_token_start) * 1000:.2f}ms",
+            file=sys.stderr,
+            flush=True,
+        )
+
         if all(is_finished):
             for req in sequences:
                 self.kv_manager.remove_seq(req)
@@ -507,10 +516,11 @@ class AccelInferenceEngine:
 
         remaining_tokens = max_new_tokens - 1
 
+        t_decode_start = time.perf_counter()
         for _ in range(remaining_tokens):
             decode_ids, decode_pos = self._prepare_decode(sequences)
 
-            context = get_forward_context()
+            context = ForwardContext.get()
             hidden_states = self._run_decode_with_graph(
                 decode_ids,
                 decode_pos,
@@ -522,7 +532,7 @@ class AccelInferenceEngine:
             # Get logits
             logits = self.lm_head(hidden_states)  # [batch_size, vocab_size]
 
-            reset_forward_context()
+            ForwardContext.reset()
 
             temperatures = self._prepare_sample(sequences, temperature)
             next_token = self.sampler(logits, temperatures) if temperature > 0 else torch.argmax(logits, dim=-1)
@@ -540,6 +550,14 @@ class AccelInferenceEngine:
 
             if all(is_finished):
                 break
+
+        t_decode_end = time.perf_counter()
+        if remaining_tokens > 0:
+            print(
+                f"[Profile] Decode loop time: {(t_decode_end - t_decode_start) * 1000:.2f}ms",
+                file=sys.stderr,
+                flush=True,
+            )
 
         for req in sequences:
             self.kv_manager.remove_seq(req)
@@ -570,5 +588,8 @@ class AccelInferenceEngine:
         output = torch.tensor(padded_output_ids, dtype=torch.long, device=device)
 
         assert output.size(0) == batch_size, f"Output batch size mismatch: {output.size(0)} != {batch_size}"
+
+        t_end = time.perf_counter()
+        print(f"[Profile] Total generation time: {(t_end - t_start) * 1000:.2f}ms", file=sys.stderr, flush=True)
 
         return output

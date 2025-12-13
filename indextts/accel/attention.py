@@ -1,18 +1,20 @@
 # pyright: reportMissingImports=false, reportUnknownParameterType=false, reportUnknownArgumentType=false
 # pyright: reportUnknownMemberType=false, reportUntypedFunctionDecorator=false
-import typing
 from dataclasses import dataclass
+import typing
 
 import torch
 import triton
 import triton.language as tl
-from flash_attn import flash_attn_varlen_func, flash_attn_with_kvcache  # pyright: ignore[reportMissingModuleSource]
+from flash_attn import flash_attn_varlen_func, flash_attn_with_kvcache
 from torch import Tensor, nn
-from typing import override
+from typing import ClassVar, Self, override
 
 
 @dataclass
 class ForwardContext:
+    _instance: ClassVar[Self]
+
     is_prefill: bool = False
     cu_seqlens_q: Tensor | None = None
     cu_seqlens_k: Tensor | None = None
@@ -22,40 +24,39 @@ class ForwardContext:
     context_lens: Tensor | None = None
     block_tables: Tensor | None = None
 
+    @classmethod
+    def set(
+        cls,
+        is_prefill: bool,
+        cu_seqlens_q: Tensor | None = None,
+        cu_seqlens_k: Tensor | None = None,
+        max_seqlen_q: int = 0,
+        max_seqlen_k: int = 0,
+        slot_mapping: Tensor | None = None,
+        context_lens: Tensor | None = None,
+        block_tables: Tensor | None = None,
+    ) -> None:
+        cls._instance = cls(
+            is_prefill,
+            cu_seqlens_q,
+            cu_seqlens_k,
+            max_seqlen_q,
+            max_seqlen_k,
+            slot_mapping,
+            context_lens,
+            block_tables,
+        )
 
-_forward_context = ForwardContext()
+    @classmethod
+    def get(cls) -> Self:
+        return cls._instance
+
+    @classmethod
+    def reset(cls) -> None:
+        cls._instance = cls()
 
 
-def get_forward_context() -> ForwardContext:
-    return _forward_context
-
-
-def set_forward_context(
-    is_prefill: bool,
-    cu_seqlens_q: Tensor | None = None,
-    cu_seqlens_k: Tensor | None = None,
-    max_seqlen_q: int = 0,
-    max_seqlen_k: int = 0,
-    slot_mapping: Tensor | None = None,
-    context_lens: Tensor | None = None,
-    block_tables: Tensor | None = None,
-) -> None:
-    global _forward_context  # noqa: PLW0603
-    _forward_context = ForwardContext(
-        is_prefill,
-        cu_seqlens_q,
-        cu_seqlens_k,
-        max_seqlen_q,
-        max_seqlen_k,
-        slot_mapping,
-        context_lens,
-        block_tables,
-    )
-
-
-def reset_forward_context() -> None:
-    global _forward_context  # noqa: PLW0603
-    _forward_context = ForwardContext()
+ForwardContext.reset()
 
 
 @typing.no_type_check
@@ -133,7 +134,7 @@ class Attention(nn.Module):
 
     @override
     def forward(self, q: Tensor, k: Tensor, v: Tensor) -> Tensor:
-        context = get_forward_context()
+        context = ForwardContext.get()
         k_cache, v_cache = self.k_cache, self.v_cache
 
         if k_cache.numel() and v_cache.numel() and context.slot_mapping is not None:

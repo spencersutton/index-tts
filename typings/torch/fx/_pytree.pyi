@@ -1,14 +1,15 @@
-from typing import Any, Callable, Optional, TypeVar, TypeAlias
+from typing import Any, Optional, TypeVar, TypeAlias
+from collections.abc import Callable
 from torch.utils._pytree import PyTree, TreeSpec
 
-FlattenFuncSpec: TypeAlias = Callable[[PyTree, TreeSpec], list]
-FlattenFuncExactMatchSpec: TypeAlias = Callable[[PyTree, TreeSpec], bool]
+type FlattenFuncSpec = Callable[[PyTree, TreeSpec], list]
+type FlattenFuncExactMatchSpec = Callable[[PyTree, TreeSpec], bool]
 SUPPORTED_NODES: dict[type[Any], FlattenFuncSpec] = ...
-SUPPORTED_NODES_EXACT_MATCH: dict[type[Any], Optional[FlattenFuncExactMatchSpec]] = ...
+SUPPORTED_NODES_EXACT_MATCH: dict[type[Any], FlattenFuncExactMatchSpec | None] = ...
 
 def register_pytree_flatten_spec(
     cls: type[Any],
     flatten_fn_spec: FlattenFuncSpec,
-    flatten_fn_exact_match_spec: Optional[FlattenFuncExactMatchSpec] = ...,
+    flatten_fn_exact_match_spec: FlattenFuncExactMatchSpec | None = ...,
 ) -> None: ...
 def tree_flatten_spec(pytree: PyTree, spec: TreeSpec) -> list[Any]: ...

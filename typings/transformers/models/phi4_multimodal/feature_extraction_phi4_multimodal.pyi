@@ -35,14 +35,14 @@ class Phi4MultimodalFeatureExtractor(SequenceFeatureExtractor):
     def __call__(
         self,
         raw_speech: AudioInput,
-        sampling_rate: Optional[int] = ...,
-        pad_to_multiple_of: Optional[int] = ...,
-        padding: Optional[str] = ...,
-        max_length: Optional[int] = ...,
+        sampling_rate: int | None = ...,
+        pad_to_multiple_of: int | None = ...,
+        padding: str | None = ...,
+        max_length: int | None = ...,
         truncation: bool = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        return_attention_mask: Optional[bool] = ...,
-        device: Optional[str] = ...,
+        return_tensors: str | TensorType | None = ...,
+        return_attention_mask: bool | None = ...,
+        device: str | None = ...,
         **kwargs,
     ) -> BatchFeature:
         """

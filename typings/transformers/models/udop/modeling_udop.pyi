@@ -57,12 +57,12 @@ class BaseModelOutputWithAttentionMask(ModelOutput):
         used to compute the weighted average in the cross-attention heads.
     """
 
-    last_hidden_state: Optional[torch.FloatTensor] = ...
-    attention_mask: Optional[torch.FloatTensor] = ...
-    past_key_values: Optional[Cache] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
-    cross_attentions: Optional[tuple[torch.FloatTensor]] = ...
+    last_hidden_state: torch.FloatTensor | None = ...
+    attention_mask: torch.FloatTensor | None = ...
+    past_key_values: Cache | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
+    cross_attentions: tuple[torch.FloatTensor] | None = ...
 
 def get_visual_bbox(image_size=..., patch_size=...):  # -> Tensor:
     ...
@@ -126,7 +126,7 @@ class UdopLayerFF(nn.Module):
     def forward(self, hidden_states): ...
 
 class UdopAttention(nn.Module):
-    def __init__(self, config: UdopConfig, has_relative_attention_bias=..., layer_idx: Optional[int] = ...) -> None: ...
+    def __init__(self, config: UdopConfig, has_relative_attention_bias=..., layer_idx: int | None = ...) -> None: ...
     def prune_heads(self, heads):  # -> None:
         ...
     def compute_bias(self, query_length, key_length, device=..., cache_position=...):  # -> Any:
@@ -152,7 +152,7 @@ class UdopAttention(nn.Module):
         ...
 
 class UdopLayerSelfAttention(nn.Module):
-    def __init__(self, config, has_relative_attention_bias=..., layer_idx: Optional[int] = ...) -> None: ...
+    def __init__(self, config, has_relative_attention_bias=..., layer_idx: int | None = ...) -> None: ...
     def forward(
         self,
         hidden_states,
@@ -167,7 +167,7 @@ class UdopLayerSelfAttention(nn.Module):
         ...
 
 class UdopLayerCrossAttention(nn.Module):
-    def __init__(self, config, layer_idx: Optional[int] = ...) -> None: ...
+    def __init__(self, config, layer_idx: int | None = ...) -> None: ...
     def forward(
         self,
         hidden_states,
@@ -184,7 +184,7 @@ class UdopLayerCrossAttention(nn.Module):
         ...
 
 class UdopBlock(GradientCheckpointingLayer):
-    def __init__(self, config, has_relative_attention_bias=..., layer_idx: Optional[int] = ...) -> None: ...
+    def __init__(self, config, has_relative_attention_bias=..., layer_idx: int | None = ...) -> None: ...
     def forward(
         self,
         hidden_states,
@@ -245,10 +245,10 @@ class RelativePositionBiasBase(nn.Module, ABC):
         expand=...,
     ) -> None: ...
     @abstractmethod
-    def prepare_input(self, attention_mask: Optional[Tensor] = ..., bbox: Optional[dict[str, Any]] = ...) -> Tensor: ...
-    def get_bucket(self, attention_mask: Optional[Tensor] = ..., bbox: Optional[dict[str, Any]] = ...) -> Tensor: ...
+    def prepare_input(self, attention_mask: Tensor | None = ..., bbox: dict[str, Any] | None = ...) -> Tensor: ...
+    def get_bucket(self, attention_mask: Tensor | None = ..., bbox: dict[str, Any] | None = ...) -> Tensor: ...
     def get_relative_position(self, positions): ...
-    def forward(self, attention_mask: Optional[Tensor] = ..., bbox: Optional[dict[str, Any]] = ...) -> Tensor: ...
+    def forward(self, attention_mask: Tensor | None = ..., bbox: dict[str, Any] | None = ...) -> Tensor: ...
 
 class RelativePositionBias1D(RelativePositionBiasBase):
     def __init__(self, scaling_factor=..., max_distance=..., **kwargs) -> None:
@@ -258,7 +258,7 @@ class RelativePositionBias1D(RelativePositionBiasBase):
         """
         ...
 
-    def prepare_input(self, attention_mask: Optional[Tensor] = ..., bbox: Optional[dict[str, Any]] = ...) -> Tensor: ...
+    def prepare_input(self, attention_mask: Tensor | None = ..., bbox: dict[str, Any] | None = ...) -> Tensor: ...
 
 class RelativePositionBiasHorizontal(RelativePositionBiasBase):
     def __init__(self, scaling_factor=..., max_distance=..., **kwargs) -> None:
@@ -268,7 +268,7 @@ class RelativePositionBiasHorizontal(RelativePositionBiasBase):
         """
         ...
 
-    def prepare_input(self, attention_mask: Optional[Tensor] = ..., bbox: Optional[dict[str, Any]] = ...) -> Tensor: ...
+    def prepare_input(self, attention_mask: Tensor | None = ..., bbox: dict[str, Any] | None = ...) -> Tensor: ...
 
 class RelativePositionBiasVertical(RelativePositionBiasBase):
     def __init__(self, scaling_factor=..., max_distance=..., **kwargs) -> None:
@@ -278,7 +278,7 @@ class RelativePositionBiasVertical(RelativePositionBiasBase):
         """
         ...
 
-    def prepare_input(self, attention_mask: Optional[Tensor] = ..., bbox: Optional[dict[str, Any]] = ...) -> Tensor: ...
+    def prepare_input(self, attention_mask: Tensor | None = ..., bbox: dict[str, Any] | None = ...) -> Tensor: ...
 
 class RelativePositionBiasAggregated(nn.Module):
     def __init__(self, modules: Sequence[RelativePositionBiasBase]) -> None:
@@ -291,9 +291,7 @@ class RelativePositionBiasAggregated(nn.Module):
         """
         ...
 
-    def forward(
-        self, attention_mask: Optional[Tensor] = ..., bbox: Optional[dict[str, Any]] = ...
-    ) -> Union[float, Tensor]: ...
+    def forward(self, attention_mask: Tensor | None = ..., bbox: dict[str, Any] | None = ...) -> float | Tensor: ...
 
 BIAS_CLASSES = ...
 
@@ -352,25 +350,25 @@ class UdopModel(UdopPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[Tensor] = ...,
-        attention_mask: Optional[Tensor] = ...,
-        bbox: Optional[dict[str, Any]] = ...,
-        pixel_values: Optional[Tensor] = ...,
-        visual_bbox: Optional[dict[str, Any]] = ...,
-        decoder_input_ids: Optional[Tensor] = ...,
-        decoder_attention_mask: Optional[Tensor] = ...,
-        inputs_embeds: Optional[Tensor] = ...,
-        encoder_outputs: Optional[Tensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        head_mask: Optional[Tensor] = ...,
-        decoder_inputs_embeds: Optional[Tensor] = ...,
-        decoder_head_mask: Optional[Tensor] = ...,
-        cross_attn_head_mask: Optional[Tensor] = ...,
+        input_ids: Tensor | None = ...,
+        attention_mask: Tensor | None = ...,
+        bbox: dict[str, Any] | None = ...,
+        pixel_values: Tensor | None = ...,
+        visual_bbox: dict[str, Any] | None = ...,
+        decoder_input_ids: Tensor | None = ...,
+        decoder_attention_mask: Tensor | None = ...,
+        inputs_embeds: Tensor | None = ...,
+        encoder_outputs: Tensor | None = ...,
+        past_key_values: Cache | None = ...,
+        head_mask: Tensor | None = ...,
+        decoder_inputs_embeds: Tensor | None = ...,
+        decoder_head_mask: Tensor | None = ...,
+        cross_attn_head_mask: Tensor | None = ...,
         use_cache=...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
     ) -> tuple[Tensor, ...]:
         r"""
         bbox (`torch.LongTensor` of shape `({0}, 4)`, *optional*):
@@ -458,26 +456,26 @@ class UdopForConditionalGeneration(UdopPreTrainedModel, GenerationMixin):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[Tensor] = ...,
-        attention_mask: Optional[Tensor] = ...,
-        bbox: Optional[dict[str, Any]] = ...,
-        pixel_values: Optional[Tensor] = ...,
-        visual_bbox: Optional[dict[str, Any]] = ...,
-        decoder_input_ids: Optional[Tensor] = ...,
-        decoder_attention_mask: Optional[Tensor] = ...,
-        inputs_embeds: Optional[Tensor] = ...,
-        encoder_outputs: Optional[Tensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        head_mask: Optional[Tensor] = ...,
-        decoder_inputs_embeds: Optional[Tensor] = ...,
-        decoder_head_mask: Optional[Tensor] = ...,
-        cross_attn_head_mask: Optional[Tensor] = ...,
+        input_ids: Tensor | None = ...,
+        attention_mask: Tensor | None = ...,
+        bbox: dict[str, Any] | None = ...,
+        pixel_values: Tensor | None = ...,
+        visual_bbox: dict[str, Any] | None = ...,
+        decoder_input_ids: Tensor | None = ...,
+        decoder_attention_mask: Tensor | None = ...,
+        inputs_embeds: Tensor | None = ...,
+        encoder_outputs: Tensor | None = ...,
+        past_key_values: Cache | None = ...,
+        head_mask: Tensor | None = ...,
+        decoder_inputs_embeds: Tensor | None = ...,
+        decoder_head_mask: Tensor | None = ...,
+        cross_attn_head_mask: Tensor | None = ...,
         use_cache=...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        labels: Optional[Tensor] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        labels: Tensor | None = ...,
+        cache_position: torch.LongTensor | None = ...,
     ) -> tuple[Tensor, ...]:
         r"""
         bbox (`torch.LongTensor` of shape `({0}, 4)`, *optional*):
@@ -560,17 +558,17 @@ class UdopEncoderModel(UdopPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[Tensor] = ...,
-        bbox: Optional[dict[str, Any]] = ...,
-        attention_mask: Optional[Tensor] = ...,
-        pixel_values: Optional[Tensor] = ...,
-        visual_bbox: Optional[dict[str, Any]] = ...,
-        head_mask: Optional[Tensor] = ...,
-        inputs_embeds: Optional[Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.FloatTensor], BaseModelOutputWithAttentionMask]:
+        input_ids: Tensor | None = ...,
+        bbox: dict[str, Any] | None = ...,
+        attention_mask: Tensor | None = ...,
+        pixel_values: Tensor | None = ...,
+        visual_bbox: dict[str, Any] | None = ...,
+        head_mask: Tensor | None = ...,
+        inputs_embeds: Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.FloatTensor] | BaseModelOutputWithAttentionMask:
         r"""
         input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
             Indices of input sequence tokens in the vocabulary. T5 is a model with relative position embeddings so you

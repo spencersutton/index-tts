@@ -28,7 +28,7 @@ class Swin2SRImageProcessor(BaseImageProcessor):
     def __init__(
         self,
         do_rescale: bool = ...,
-        rescale_factor: Union[int, float] = ...,
+        rescale_factor: int | float = ...,
         do_pad: bool = ...,
         pad_size: int = ...,
         **kwargs,
@@ -37,8 +37,8 @@ class Swin2SRImageProcessor(BaseImageProcessor):
         self,
         image: np.ndarray,
         size: int,
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ):  # -> ndarray[_AnyShape, dtype[Any]]:
         """
         Pad an image to make the height and width divisible by `size`.
@@ -68,13 +68,13 @@ class Swin2SRImageProcessor(BaseImageProcessor):
     def preprocess(
         self,
         images: ImageInput,
-        do_rescale: Optional[bool] = ...,
-        rescale_factor: Optional[float] = ...,
-        do_pad: Optional[bool] = ...,
-        pad_size: Optional[int] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        data_format: Union[str, ChannelDimension] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        do_rescale: bool | None = ...,
+        rescale_factor: float | None = ...,
+        do_pad: bool | None = ...,
+        pad_size: int | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        data_format: str | ChannelDimension = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ):  # -> BatchFeature:
         """
         Preprocess an image or batch of images.

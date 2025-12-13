@@ -3,9 +3,9 @@ from collections.abc import Callable
 from typing import Any, TypeAlias
 from torch.fx import Node
 
-NodePattern: TypeAlias = tuple[Node, Node] | tuple[Node, tuple[Node, Node]] | Any
-QuantizerCls: TypeAlias = Any
-Pattern: TypeAlias = Callable | tuple[Callable, Callable] | tuple[Callable, tuple[Callable, Callable]] | Any
+type NodePattern = tuple[Node, Node] | tuple[Node, tuple[Node, Node]] | Any
+type QuantizerCls = Any
+type Pattern = Callable | tuple[Callable, Callable] | tuple[Callable, tuple[Callable, Callable]] | Any
 
 class MatchAllNode: ...
 

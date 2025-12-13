@@ -48,7 +48,7 @@ class JanusProcessor(ProcessorMixin):
     ) -> None: ...
     def __call__(
         self,
-        text: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]] = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] = ...,
         images: ImageInput = ...,
         videos=...,
         audio=...,

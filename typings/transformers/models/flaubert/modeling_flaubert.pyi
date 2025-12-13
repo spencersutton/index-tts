@@ -88,12 +88,12 @@ class FlaubertSquadHeadOutput(ModelOutput):
         Log probabilities for the `is_impossible` label of the answers.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    start_top_log_probs: Optional[torch.FloatTensor] = ...
-    start_top_index: Optional[torch.LongTensor] = ...
-    end_top_log_probs: Optional[torch.FloatTensor] = ...
-    end_top_index: Optional[torch.LongTensor] = ...
-    cls_logits: Optional[torch.FloatTensor] = ...
+    loss: torch.FloatTensor | None = ...
+    start_top_log_probs: torch.FloatTensor | None = ...
+    start_top_index: torch.LongTensor | None = ...
+    end_top_log_probs: torch.FloatTensor | None = ...
+    end_top_index: torch.LongTensor | None = ...
+    cls_logits: torch.FloatTensor | None = ...
 
 class FlaubertPoolerStartLogits(nn.Module):
     """
@@ -104,7 +104,7 @@ class FlaubertPoolerStartLogits(nn.Module):
             The config used by the model, will be used to grab the `hidden_size` of the model.
     """
     def __init__(self, config: FlaubertConfig) -> None: ...
-    def forward(self, hidden_states: torch.FloatTensor, p_mask: Optional[torch.FloatTensor] = ...) -> torch.FloatTensor:
+    def forward(self, hidden_states: torch.FloatTensor, p_mask: torch.FloatTensor | None = ...) -> torch.FloatTensor:
         """
         Args:
             hidden_states (`torch.FloatTensor` of shape `(batch_size, seq_len, hidden_size)`):
@@ -131,9 +131,9 @@ class FlaubertPoolerEndLogits(nn.Module):
     def forward(
         self,
         hidden_states: torch.FloatTensor,
-        start_states: Optional[torch.FloatTensor] = ...,
-        start_positions: Optional[torch.LongTensor] = ...,
-        p_mask: Optional[torch.FloatTensor] = ...,
+        start_states: torch.FloatTensor | None = ...,
+        start_positions: torch.LongTensor | None = ...,
+        p_mask: torch.FloatTensor | None = ...,
     ) -> torch.FloatTensor:
         """
         Args:
@@ -171,9 +171,9 @@ class FlaubertPoolerAnswerClass(nn.Module):
     def forward(
         self,
         hidden_states: torch.FloatTensor,
-        start_states: Optional[torch.FloatTensor] = ...,
-        start_positions: Optional[torch.LongTensor] = ...,
-        cls_index: Optional[torch.LongTensor] = ...,
+        start_states: torch.FloatTensor | None = ...,
+        start_positions: torch.LongTensor | None = ...,
+        cls_index: torch.LongTensor | None = ...,
     ) -> torch.FloatTensor:
         """
         Args:
@@ -212,13 +212,13 @@ class FlaubertSQuADHead(nn.Module):
     def forward(
         self,
         hidden_states: torch.FloatTensor,
-        start_positions: Optional[torch.LongTensor] = ...,
-        end_positions: Optional[torch.LongTensor] = ...,
-        cls_index: Optional[torch.LongTensor] = ...,
-        is_impossible: Optional[torch.LongTensor] = ...,
-        p_mask: Optional[torch.FloatTensor] = ...,
+        start_positions: torch.LongTensor | None = ...,
+        end_positions: torch.LongTensor | None = ...,
+        cls_index: torch.LongTensor | None = ...,
+        is_impossible: torch.LongTensor | None = ...,
+        p_mask: torch.FloatTensor | None = ...,
         return_dict: bool = ...,
-    ) -> Union[FlaubertSquadHeadOutput, tuple[torch.FloatTensor]]:
+    ) -> FlaubertSquadHeadOutput | tuple[torch.FloatTensor]:
         r"""
         hidden_states (`torch.FloatTensor` of shape `(batch_size, seq_len, hidden_size)`):
             Final hidden states of the model on the sequence tokens.
@@ -262,9 +262,7 @@ class FlaubertSequenceSummary(nn.Module):
             - **summary_last_dropout** (`float`)-- Optional dropout probability after the projection and activation.
     """
     def __init__(self, config: FlaubertConfig) -> None: ...
-    def forward(
-        self, hidden_states: torch.FloatTensor, cls_index: Optional[torch.LongTensor] = ...
-    ) -> torch.FloatTensor:
+    def forward(self, hidden_states: torch.FloatTensor, cls_index: torch.LongTensor | None = ...) -> torch.FloatTensor:
         """
         Compute a single vector summary of a sequence hidden states.
 
@@ -299,20 +297,20 @@ class FlaubertModel(FlaubertPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        langs: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.LongTensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        lengths: Optional[torch.LongTensor] = ...,
-        cache: Optional[dict[str, torch.FloatTensor]] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple, BaseModelOutput]:
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        langs: torch.Tensor | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        lengths: torch.LongTensor | None = ...,
+        cache: dict[str, torch.FloatTensor] | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.Tensor | None = ...,
+    ) -> tuple | BaseModelOutput:
         r"""
         langs (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
             A parallel sequence of tokens to be used to indicate the language of each token in the input. Indices are
@@ -352,20 +350,20 @@ class FlaubertWithLMHeadModel(FlaubertPreTrainedModel, GenerationMixin):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        langs: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.Tensor] = ...,
-        lengths: Optional[torch.Tensor] = ...,
-        cache: Optional[dict[str, torch.Tensor]] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, MaskedLMOutput]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        langs: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        position_ids: torch.Tensor | None = ...,
+        lengths: torch.Tensor | None = ...,
+        cache: dict[str, torch.Tensor] | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | MaskedLMOutput:
         r"""
         langs (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
             A parallel sequence of tokens to be used to indicate the language of each token in the input. Indices are
@@ -402,20 +400,20 @@ class FlaubertForSequenceClassification(FlaubertPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        langs: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.Tensor] = ...,
-        lengths: Optional[torch.Tensor] = ...,
-        cache: Optional[dict[str, torch.Tensor]] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, SequenceClassifierOutput]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        langs: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        position_ids: torch.Tensor | None = ...,
+        lengths: torch.Tensor | None = ...,
+        cache: dict[str, torch.Tensor] | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | SequenceClassifierOutput:
         r"""
         langs (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
             A parallel sequence of tokens to be used to indicate the language of each token in the input. Indices are
@@ -449,20 +447,20 @@ class FlaubertForTokenClassification(FlaubertPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        langs: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.Tensor] = ...,
-        lengths: Optional[torch.Tensor] = ...,
-        cache: Optional[dict[str, torch.Tensor]] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, TokenClassifierOutput]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        langs: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        position_ids: torch.Tensor | None = ...,
+        lengths: torch.Tensor | None = ...,
+        cache: dict[str, torch.Tensor] | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | TokenClassifierOutput:
         r"""
         langs (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
             A parallel sequence of tokens to be used to indicate the language of each token in the input. Indices are
@@ -499,21 +497,21 @@ class FlaubertForQuestionAnsweringSimple(FlaubertPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        langs: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.Tensor] = ...,
-        lengths: Optional[torch.Tensor] = ...,
-        cache: Optional[dict[str, torch.Tensor]] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        start_positions: Optional[torch.Tensor] = ...,
-        end_positions: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, QuestionAnsweringModelOutput]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        langs: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        position_ids: torch.Tensor | None = ...,
+        lengths: torch.Tensor | None = ...,
+        cache: dict[str, torch.Tensor] | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        start_positions: torch.Tensor | None = ...,
+        end_positions: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | QuestionAnsweringModelOutput:
         r"""
         langs (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
             A parallel sequence of tokens to be used to indicate the language of each token in the input. Indices are
@@ -561,14 +559,14 @@ class FlaubertForQuestionAnsweringOutput(ModelOutput):
         Log probabilities for the `is_impossible` label of the answers.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    start_top_log_probs: Optional[torch.FloatTensor] = ...
-    start_top_index: Optional[torch.LongTensor] = ...
-    end_top_log_probs: Optional[torch.FloatTensor] = ...
-    end_top_index: Optional[torch.LongTensor] = ...
-    cls_logits: Optional[torch.FloatTensor] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
+    loss: torch.FloatTensor | None = ...
+    start_top_log_probs: torch.FloatTensor | None = ...
+    start_top_index: torch.LongTensor | None = ...
+    end_top_log_probs: torch.FloatTensor | None = ...
+    end_top_index: torch.LongTensor | None = ...
+    cls_logits: torch.FloatTensor | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
 
 @auto_docstring
 class FlaubertForQuestionAnswering(FlaubertPreTrainedModel):
@@ -576,24 +574,24 @@ class FlaubertForQuestionAnswering(FlaubertPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        langs: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.Tensor] = ...,
-        lengths: Optional[torch.Tensor] = ...,
-        cache: Optional[dict[str, torch.Tensor]] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        start_positions: Optional[torch.Tensor] = ...,
-        end_positions: Optional[torch.Tensor] = ...,
-        is_impossible: Optional[torch.Tensor] = ...,
-        cls_index: Optional[torch.Tensor] = ...,
-        p_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, FlaubertForQuestionAnsweringOutput]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        langs: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        position_ids: torch.Tensor | None = ...,
+        lengths: torch.Tensor | None = ...,
+        cache: dict[str, torch.Tensor] | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        start_positions: torch.Tensor | None = ...,
+        end_positions: torch.Tensor | None = ...,
+        is_impossible: torch.Tensor | None = ...,
+        cls_index: torch.Tensor | None = ...,
+        p_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | FlaubertForQuestionAnsweringOutput:
         r"""
         langs (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
             A parallel sequence of tokens to be used to indicate the language of each token in the input. Indices are
@@ -649,20 +647,20 @@ class FlaubertForMultipleChoice(FlaubertPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        langs: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.Tensor] = ...,
-        lengths: Optional[torch.Tensor] = ...,
-        cache: Optional[dict[str, torch.Tensor]] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, MultipleChoiceModelOutput]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        langs: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        position_ids: torch.Tensor | None = ...,
+        lengths: torch.Tensor | None = ...,
+        cache: dict[str, torch.Tensor] | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | MultipleChoiceModelOutput:
         r"""
         input_ids (`torch.LongTensor` of shape `(batch_size, num_choices, sequence_length)`):
             Indices of input sequence tokens in the vocabulary.

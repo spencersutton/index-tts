@@ -276,8 +276,8 @@ def convert_aspect_ratios_to_ids(aspect_ratios: list[list[tuple[int, int]]], max
 
 def to_channel_dimension_format(
     image: np.ndarray,
-    channel_dim: Union[ChannelDimension, str],
-    input_channel_dim: Optional[Union[ChannelDimension, str]] = ...,
+    channel_dim: ChannelDimension | str,
+    input_channel_dim: ChannelDimension | str | None = ...,
 ) -> np.ndarray:
     """
     Converts `image` to the channel dimension format specified by `channel_dim`.
@@ -344,13 +344,13 @@ class MllamaImageProcessor(BaseImageProcessor):
         self,
         do_convert_rgb: bool = ...,
         do_resize: bool = ...,
-        size: Optional[dict[str, int]] = ...,
+        size: dict[str, int] | None = ...,
         resample: PILImageResampling = ...,
         do_rescale: bool = ...,
         rescale_factor: float = ...,
         do_normalize: bool = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
         do_pad: bool = ...,
         max_image_tiles: int = ...,
         **kwargs,
@@ -358,19 +358,19 @@ class MllamaImageProcessor(BaseImageProcessor):
     def preprocess(
         self,
         images: ImageInput,
-        do_convert_rgb: Optional[bool] = ...,
-        do_resize: Optional[bool] = ...,
-        size: Optional[dict[str, int]] = ...,
-        resample: Optional[PILImageResampling] = ...,
-        do_rescale: Optional[bool] = ...,
-        rescale_factor: Optional[float] = ...,
-        do_normalize: Optional[bool] = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
-        do_pad: Optional[bool] = ...,
-        max_image_tiles: Optional[int] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
+        do_convert_rgb: bool | None = ...,
+        do_resize: bool | None = ...,
+        size: dict[str, int] | None = ...,
+        resample: PILImageResampling | None = ...,
+        do_rescale: bool | None = ...,
+        rescale_factor: float | None = ...,
+        do_normalize: bool | None = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
+        do_pad: bool | None = ...,
+        max_image_tiles: int | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
+        return_tensors: str | TensorType | None = ...,
     ):  # -> BatchFeature:
         """
         Preprocess a batch of images.
@@ -430,8 +430,8 @@ class MllamaImageProcessor(BaseImageProcessor):
         image: np.ndarray,
         size: dict[str, int],
         aspect_ratio: tuple[int, int],
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ) -> np.ndarray:
         """
         Pad an image to the `size` x `aspect_ratio`. For example, if size is {height: 224, width: 224} and aspect ratio is
@@ -460,9 +460,9 @@ class MllamaImageProcessor(BaseImageProcessor):
         size: dict[str, int],
         max_image_tiles: int,
         resample: PILImageResampling = ...,
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
-    ) -> Union[np.ndarray, tuple[int, int]]:
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
+    ) -> np.ndarray | tuple[int, int]:
         """
         Resizes an image to fit within a tiled canvas while maintaining its aspect ratio.
         The optimal canvas size is calculated based on the maximum number of tiles and the tile size.

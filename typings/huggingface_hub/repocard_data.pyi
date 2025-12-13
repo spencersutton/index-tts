@@ -61,18 +61,18 @@ class EvalResult:
     dataset_name: str
     metric_type: str
     metric_value: Any
-    task_name: Optional[str] = ...
-    dataset_config: Optional[str] = ...
-    dataset_split: Optional[str] = ...
-    dataset_revision: Optional[str] = ...
-    dataset_args: Optional[Dict[str, Any]] = ...
-    metric_name: Optional[str] = ...
-    metric_config: Optional[str] = ...
-    metric_args: Optional[Dict[str, Any]] = ...
-    verified: Optional[bool] = ...
-    verify_token: Optional[str] = ...
-    source_name: Optional[str] = ...
-    source_url: Optional[str] = ...
+    task_name: str | None = ...
+    dataset_config: str | None = ...
+    dataset_split: str | None = ...
+    dataset_revision: str | None = ...
+    dataset_args: dict[str, Any] | None = ...
+    metric_name: str | None = ...
+    metric_config: str | None = ...
+    metric_args: dict[str, Any] | None = ...
+    verified: bool | None = ...
+    verify_token: str | None = ...
+    source_name: str | None = ...
+    source_url: str | None = ...
     @property
     def unique_identifier(self) -> tuple:
         """Returns a tuple that uniquely identifies this evaluation."""
@@ -107,7 +107,7 @@ class CardData:
         """
         ...
 
-    def to_yaml(self, line_break=..., original_order: Optional[List[str]] = ...) -> str:
+    def to_yaml(self, line_break=..., original_order: list[str] | None = ...) -> str:
         """Dumps CardData to a YAML block for inclusion in a README.md file.
 
         Args:
@@ -212,18 +212,18 @@ class ModelCardData(CardData):
     def __init__(
         self,
         *,
-        base_model: Optional[Union[str, List[str]]] = ...,
-        datasets: Optional[Union[str, List[str]]] = ...,
-        eval_results: Optional[List[EvalResult]] = ...,
-        language: Optional[Union[str, List[str]]] = ...,
-        library_name: Optional[str] = ...,
-        license: Optional[str] = ...,
-        license_name: Optional[str] = ...,
-        license_link: Optional[str] = ...,
-        metrics: Optional[List[str]] = ...,
-        model_name: Optional[str] = ...,
-        pipeline_tag: Optional[str] = ...,
-        tags: Optional[List[str]] = ...,
+        base_model: str | list[str] | None = ...,
+        datasets: str | list[str] | None = ...,
+        eval_results: list[EvalResult] | None = ...,
+        language: str | list[str] | None = ...,
+        library_name: str | None = ...,
+        license: str | None = ...,
+        license_name: str | None = ...,
+        license_link: str | None = ...,
+        metrics: list[str] | None = ...,
+        model_name: str | None = ...,
+        pipeline_tag: str | None = ...,
+        tags: list[str] | None = ...,
         ignore_metadata_errors: bool = ...,
         **kwargs,
     ) -> None: ...
@@ -270,19 +270,19 @@ class DatasetCardData(CardData):
     def __init__(
         self,
         *,
-        language: Optional[Union[str, List[str]]] = ...,
-        license: Optional[Union[str, List[str]]] = ...,
-        annotations_creators: Optional[Union[str, List[str]]] = ...,
-        language_creators: Optional[Union[str, List[str]]] = ...,
-        multilinguality: Optional[Union[str, List[str]]] = ...,
-        size_categories: Optional[Union[str, List[str]]] = ...,
-        source_datasets: Optional[List[str]] = ...,
-        task_categories: Optional[Union[str, List[str]]] = ...,
-        task_ids: Optional[Union[str, List[str]]] = ...,
-        paperswithcode_id: Optional[str] = ...,
-        pretty_name: Optional[str] = ...,
-        train_eval_index: Optional[Dict] = ...,
-        config_names: Optional[Union[str, List[str]]] = ...,
+        language: str | list[str] | None = ...,
+        license: str | list[str] | None = ...,
+        annotations_creators: str | list[str] | None = ...,
+        language_creators: str | list[str] | None = ...,
+        multilinguality: str | list[str] | None = ...,
+        size_categories: str | list[str] | None = ...,
+        source_datasets: list[str] | None = ...,
+        task_categories: str | list[str] | None = ...,
+        task_ids: str | list[str] | None = ...,
+        paperswithcode_id: str | None = ...,
+        pretty_name: str | None = ...,
+        train_eval_index: dict | None = ...,
+        config_names: str | list[str] | None = ...,
         ignore_metadata_errors: bool = ...,
         **kwargs,
     ) -> None: ...
@@ -339,22 +339,22 @@ class SpaceCardData(CardData):
     def __init__(
         self,
         *,
-        title: Optional[str] = ...,
-        sdk: Optional[str] = ...,
-        sdk_version: Optional[str] = ...,
-        python_version: Optional[str] = ...,
-        app_file: Optional[str] = ...,
-        app_port: Optional[int] = ...,
-        license: Optional[str] = ...,
-        duplicated_from: Optional[str] = ...,
-        models: Optional[List[str]] = ...,
-        datasets: Optional[List[str]] = ...,
-        tags: Optional[List[str]] = ...,
+        title: str | None = ...,
+        sdk: str | None = ...,
+        sdk_version: str | None = ...,
+        python_version: str | None = ...,
+        app_file: str | None = ...,
+        app_port: int | None = ...,
+        license: str | None = ...,
+        duplicated_from: str | None = ...,
+        models: list[str] | None = ...,
+        datasets: list[str] | None = ...,
+        tags: list[str] | None = ...,
         ignore_metadata_errors: bool = ...,
         **kwargs,
     ) -> None: ...
 
-def model_index_to_eval_results(model_index: List[Dict[str, Any]]) -> Tuple[str, List[EvalResult]]:
+def model_index_to_eval_results(model_index: list[dict[str, Any]]) -> tuple[str, list[EvalResult]]:
     """Takes in a model index and returns the model name and a list of `huggingface_hub.EvalResult` objects.
 
     A detailed spec of the model index can be found here:
@@ -411,7 +411,7 @@ def model_index_to_eval_results(model_index: List[Dict[str, Any]]) -> Tuple[str,
     """
     ...
 
-def eval_results_to_model_index(model_name: str, eval_results: List[EvalResult]) -> List[Dict[str, Any]]:
+def eval_results_to_model_index(model_name: str, eval_results: list[EvalResult]) -> list[dict[str, Any]]:
     """Takes in given model name and list of `huggingface_hub.EvalResult` and returns a
     valid model-index that will be compatible with the format expected by the
     Hugging Face Hub.

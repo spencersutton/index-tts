@@ -115,7 +115,7 @@ class Mask2FormerConfig(PretrainedConfig):
     attribute_map = ...
     def __init__(
         self,
-        backbone_config: Optional[dict] = ...,
+        backbone_config: dict | None = ...,
         feature_size: int = ...,
         mask_feature_size: int = ...,
         hidden_dim: int = ...,
@@ -142,11 +142,11 @@ class Mask2FormerConfig(PretrainedConfig):
         init_xavier_std: float = ...,
         use_auxiliary_loss: bool = ...,
         feature_strides: list[int] = ...,
-        output_auxiliary_logits: Optional[bool] = ...,
-        backbone: Optional[str] = ...,
+        output_auxiliary_logits: bool | None = ...,
+        backbone: str | None = ...,
         use_pretrained_backbone: bool = ...,
         use_timm_backbone: bool = ...,
-        backbone_kwargs: Optional[dict] = ...,
+        backbone_kwargs: dict | None = ...,
         **kwargs,
     ) -> None: ...
     @property

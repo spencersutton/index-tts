@@ -23,7 +23,7 @@ class Owlv2FastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
         method. If `True`, padding will be applied to the bottom and right of the image with grey pixels.
     """
 
-    do_pad: Optional[bool]
+    do_pad: bool | None
     ...
 
 @auto_docstring
@@ -65,7 +65,7 @@ class Owlv2ImageProcessorFast(BaseImageProcessorFast):
         self,
         outputs: Owlv2ObjectDetectionOutput,
         threshold: float = ...,
-        target_sizes: Optional[Union[TensorType, list[tuple]]] = ...,
+        target_sizes: TensorType | list[tuple] | None = ...,
     ):  # -> list[Any]:
         """
         Converts the raw output of [`Owlv2ForObjectDetection`] into final bounding boxes in (top_left_x, top_left_y,
@@ -119,7 +119,7 @@ class Owlv2ImageProcessorFast(BaseImageProcessorFast):
     def preprocess(self, images: ImageInput, **kwargs: Unpack[Owlv2FastImageProcessorKwargs]):  # -> BatchFeature:
         ...
     def pad(
-        self, images: list[torch.Tensor], disable_grouping: Optional[bool], constant_value: float = ...
+        self, images: list[torch.Tensor], disable_grouping: bool | None, constant_value: float = ...
     ) -> list[torch.Tensor]: ...
     def resize(
         self, image: torch.Tensor, size: SizeDict, anti_aliasing: bool = ..., anti_aliasing_sigma=..., **kwargs

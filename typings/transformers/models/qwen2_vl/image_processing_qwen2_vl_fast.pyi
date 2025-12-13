@@ -29,11 +29,11 @@ class Qwen2VLFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
         The merge size of the vision encoder to llm encoder.
     """
 
-    min_pixels: Optional[int]
-    max_pixels: Optional[int]
-    patch_size: Optional[int]
-    temporal_patch_size: Optional[int]
-    merge_size: Optional[int]
+    min_pixels: int | None
+    max_pixels: int | None
+    patch_size: int | None
+    temporal_patch_size: int | None
+    merge_size: int | None
     ...
 
 @auto_docstring
@@ -56,7 +56,7 @@ class Qwen2VLImageProcessorFast(BaseImageProcessorFast):
     def __init__(self, **kwargs: Unpack[Qwen2VLFastImageProcessorKwargs]) -> None: ...
     @auto_docstring
     def preprocess(
-        self, images: ImageInput, videos: Optional[VideoInput] = ..., **kwargs: Unpack[Qwen2VLFastImageProcessorKwargs]
+        self, images: ImageInput, videos: VideoInput | None = ..., **kwargs: Unpack[Qwen2VLFastImageProcessorKwargs]
     ) -> BatchFeature: ...
     def get_number_of_image_patches(self, height: int, width: int, images_kwargs=...):
         """

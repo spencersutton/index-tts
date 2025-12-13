@@ -45,11 +45,11 @@ class Idefics3BaseModelOutputWithPast(ModelOutput):
         image_hidden_states of the model produced by the vision encoder
     """
 
-    last_hidden_state: Optional[torch.FloatTensor] = ...
-    past_key_values: Optional[tuple[tuple[torch.FloatTensor]]] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
-    image_hidden_states: Optional[tuple[torch.FloatTensor]] = ...
+    last_hidden_state: torch.FloatTensor | None = ...
+    past_key_values: tuple[tuple[torch.FloatTensor]] | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
+    image_hidden_states: tuple[torch.FloatTensor] | None = ...
 
 @dataclass
 @auto_docstring(
@@ -74,12 +74,12 @@ class Idefics3CausalLMOutputWithPast(ModelOutput):
         image_hidden_states of the model produced by the vision encoder
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    logits: Optional[torch.FloatTensor] = ...
-    past_key_values: Optional[list[torch.FloatTensor]] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
-    image_hidden_states: Optional[tuple[torch.FloatTensor]] = ...
+    loss: torch.FloatTensor | None = ...
+    logits: torch.FloatTensor | None = ...
+    past_key_values: list[torch.FloatTensor] | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
+    image_hidden_states: tuple[torch.FloatTensor] | None = ...
 
 class Idefics3VisionEmbeddings(nn.Module):
     """
@@ -99,7 +99,7 @@ def eager_attention_forward(
     query: torch.Tensor,
     key: torch.Tensor,
     value: torch.Tensor,
-    attention_mask: Optional[torch.Tensor],
+    attention_mask: torch.Tensor | None,
     scaling: float,
     dropout: float = ...,
     **kwargs,
@@ -110,8 +110,8 @@ class Idefics3VisionAttention(nn.Module):
     """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(self, config) -> None: ...
     def forward(
-        self, hidden_states: torch.Tensor, attention_mask: Optional[torch.Tensor] = ..., **kwargs
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
+        self, hidden_states: torch.Tensor, attention_mask: torch.Tensor | None = ..., **kwargs
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         """Input shape: Batch x Time x Channel"""
         ...
 
@@ -127,7 +127,7 @@ class Idefics3SimpleMLP(nn.Module):
 class Idefics3EncoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: Idefics3VisionConfig) -> None: ...
     def forward(
-        self, hidden_states: torch.Tensor, attention_mask: torch.Tensor, output_attentions: Optional[bool] = ...
+        self, hidden_states: torch.Tensor, attention_mask: torch.Tensor, output_attentions: bool | None = ...
     ) -> tuple[torch.FloatTensor]:
         """
         Args:
@@ -153,11 +153,11 @@ class Idefics3Encoder(nn.Module):
     def forward(
         self,
         inputs_embeds,
-        attention_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutput]:
+        attention_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutput:
         r"""
         Args:
             inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
@@ -236,11 +236,11 @@ class Idefics3VisionTransformer(Idefics3PreTrainedModel):
     def forward(
         self,
         pixel_values,
-        patch_attention_mask: Optional[torch.BoolTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutput]: ...
+        patch_attention_mask: torch.BoolTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutput: ...
 
 @auto_docstring(
     custom_intro="""
@@ -269,8 +269,8 @@ class Idefics3Model(Idefics3PreTrainedModel):
     def inputs_merger(
         self,
         input_ids: torch.LongTensor,
-        inputs_embeds: Optional[torch.Tensor],
-        image_hidden_states: Optional[torch.Tensor],
+        inputs_embeds: torch.Tensor | None,
+        image_hidden_states: torch.Tensor | None,
     ):  # -> Tensor:
         """
         This method aims at merging the token embeddings with the image hidden states into one single sequence of vectors that are fed to the transformer LM.
@@ -311,21 +311,21 @@ class Idefics3Model(Idefics3PreTrainedModel):
     )
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        pixel_attention_mask: Optional[torch.BoolTensor] = ...,
-        image_hidden_states: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        return_dict: Optional[bool] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        pixel_values: torch.FloatTensor | None = ...,
+        pixel_attention_mask: torch.BoolTensor | None = ...,
+        image_hidden_states: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        return_dict: bool | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> Union[tuple, Idefics3BaseModelOutputWithPast]:
+    ) -> tuple | Idefics3BaseModelOutputWithPast:
         r"""
         pixel_attention_mask (`torch.Tensor` of shape `(batch_size, image_size, image_size)`, *optional*):
             Mask to avoid performing attention on padding pixel indices.
@@ -363,23 +363,23 @@ class Idefics3ForConditionalGeneration(Idefics3PreTrainedModel, GenerationMixin)
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        pixel_attention_mask: Optional[torch.BoolTensor] = ...,
-        image_hidden_states: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        return_dict: Optional[bool] = ...,
-        logits_to_keep: Union[int, torch.Tensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        pixel_values: torch.FloatTensor | None = ...,
+        pixel_attention_mask: torch.BoolTensor | None = ...,
+        image_hidden_states: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        return_dict: bool | None = ...,
+        logits_to_keep: int | torch.Tensor = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> Union[tuple, Idefics3CausalLMOutputWithPast]:
+    ) -> tuple | Idefics3CausalLMOutputWithPast:
         r"""
         pixel_attention_mask (`torch.Tensor` of shape `(batch_size, image_size, image_size)`, *optional*):
             Mask to avoid performing attention on padding pixel indices.

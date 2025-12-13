@@ -180,7 +180,7 @@ class JukeboxPriorConfig(PretrainedConfig):
         **kwargs,
     ) -> None: ...
     @classmethod
-    def from_pretrained(cls, pretrained_model_name_or_path: Union[str, os.PathLike], level=..., **kwargs):  # -> Self:
+    def from_pretrained(cls, pretrained_model_name_or_path: str | os.PathLike, level=..., **kwargs):  # -> Self:
         ...
 
 class JukeboxVQVAEConfig(PretrainedConfig):
@@ -264,7 +264,7 @@ class JukeboxVQVAEConfig(PretrainedConfig):
         **kwargs,
     ) -> None: ...
     @classmethod
-    def from_pretrained(cls, pretrained_model_name_or_path: Union[str, os.PathLike], **kwargs):  # -> Self:
+    def from_pretrained(cls, pretrained_model_name_or_path: str | os.PathLike, **kwargs):  # -> Self:
         ...
 
 class JukeboxConfig(PretrainedConfig):

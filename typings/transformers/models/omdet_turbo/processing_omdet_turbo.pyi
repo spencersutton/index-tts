@@ -17,7 +17,7 @@ Processor class for OmDet-Turbo.
 if TYPE_CHECKING: ...
 
 class OmDetTurboTextKwargs(TextKwargs, total=False):
-    task: Optional[Union[str, list[str], TextInput, PreTokenizedInput]]
+    task: str | list[str] | TextInput | PreTokenizedInput | None
     ...
 
 if is_torch_available(): ...
@@ -76,7 +76,7 @@ class OmDetTurboProcessor(ProcessorMixin):
     def __call__(
         self,
         images: ImageInput = ...,
-        text: Optional[Union[list[str], list[list[str]]]] = ...,
+        text: list[str] | list[list[str]] | None = ...,
         audio=...,
         videos=...,
         **kwargs: Unpack[OmDetTurboProcessorKwargs],
@@ -120,11 +120,11 @@ class OmDetTurboProcessor(ProcessorMixin):
     def post_process_grounded_object_detection(
         self,
         outputs: OmDetTurboObjectDetectionOutput,
-        text_labels: Optional[Union[list[str], list[list[str]]]] = ...,
+        text_labels: list[str] | list[list[str]] | None = ...,
         threshold: float = ...,
         nms_threshold: float = ...,
-        target_sizes: Optional[Union[TensorType, list[tuple]]] = ...,
-        max_num_det: Optional[int] = ...,
+        target_sizes: TensorType | list[tuple] | None = ...,
+        max_num_det: int | None = ...,
     ):  # -> list[Any]:
         """
         Converts the raw output of [`OmDetTurboForObjectDetection`] into final bounding boxes in (top_left_x, top_left_y,

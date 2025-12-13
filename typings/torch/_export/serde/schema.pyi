@@ -47,7 +47,7 @@ class MemoryFormat(IntEnum):
 @dataclass
 class Device:
     type: Annotated[str, 10]
-    index: Annotated[Optional[int], 20] = ...
+    index: Annotated[int | None, 20] = ...
 
 @_union_dataclass
 class SymExprHint(_Union):
@@ -58,7 +58,7 @@ class SymExprHint(_Union):
 @dataclass
 class SymExpr:
     expr_str: Annotated[str, 10]
-    hint: Annotated[Optional[SymExprHint], 20] = ...
+    hint: Annotated[SymExprHint | None, 20] = ...
 
 @_union_dataclass
 class SymInt(_Union):
@@ -167,7 +167,7 @@ class ArgumentKind(IntEnum):
 class NamedArgument:
     name: Annotated[str, 10]
     arg: Annotated[Argument, 20]
-    kind: Annotated[Optional[ArgumentKind], 30] = ...
+    kind: Annotated[ArgumentKind | None, 30] = ...
 
 @dataclass
 class Node:
@@ -175,7 +175,7 @@ class Node:
     inputs: Annotated[list[NamedArgument], 20]
     outputs: Annotated[list[Argument], 30]
     metadata: Annotated[dict[str, str], 40]
-    is_hop_single_tensor_return: Annotated[Optional[bool], 50] = ...
+    is_hop_single_tensor_return: Annotated[bool | None, 50] = ...
 
 @dataclass
 class Graph:
@@ -296,8 +296,8 @@ class GraphSignature:
 
 @dataclass
 class RangeConstraint:
-    min_val: Annotated[Optional[int], 10]
-    max_val: Annotated[Optional[int], 20]
+    min_val: Annotated[int | None, 10]
+    max_val: Annotated[int | None, 20]
 
 @dataclass
 class ModuleCallSignature:
@@ -305,12 +305,12 @@ class ModuleCallSignature:
     outputs: Annotated[list[Argument], 20]
     in_spec: Annotated[str, 30]
     out_spec: Annotated[str, 40]
-    forward_arg_names: Annotated[Optional[list[str]], 50] = ...
+    forward_arg_names: Annotated[list[str] | None, 50] = ...
 
 @dataclass
 class ModuleCallEntry:
     fqn: Annotated[str, 10]
-    signature: Annotated[Optional[ModuleCallSignature], 30] = ...
+    signature: Annotated[ModuleCallSignature | None, 30] = ...
 
 @dataclass
 class NamedTupleDef:
@@ -344,7 +344,7 @@ class PayloadMeta:
     path_name: Annotated[str, 10]
     is_param: Annotated[bool, 20]
     use_pickle: Annotated[bool, 30]
-    tensor_meta: Annotated[Optional[TensorMeta], 40]
+    tensor_meta: Annotated[TensorMeta | None, 40]
 
 @dataclass
 class PayloadConfig:
@@ -355,9 +355,9 @@ class AOTInductorModelPickleData:
     library_basename: Annotated[str, 1]
     input_names: Annotated[list[str], 2]
     output_names: Annotated[list[str], 3]
-    floating_point_input_dtype: Annotated[Optional[int], 4] = ...
-    floating_point_output_dtype: Annotated[Optional[int], 5] = ...
-    aot_inductor_model_is_cpu: Annotated[Optional[bool], 6] = ...
+    floating_point_input_dtype: Annotated[int | None, 4] = ...
+    floating_point_output_dtype: Annotated[int | None, 5] = ...
+    aot_inductor_model_is_cpu: Annotated[bool | None, 6] = ...
 
 @dataclass
 class ExternKernelNode:

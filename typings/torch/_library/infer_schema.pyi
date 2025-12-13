@@ -8,9 +8,9 @@ from torch.utils._exposed_in import exposed_in
 _TestTensor = torch.Tensor
 
 @exposed_in("torch.library")
-def infer_schema(prototype_function: typing.Callable, /, *, mutates_args, op_name: Optional[str] = ...) -> str: ...
+def infer_schema(prototype_function: typing.Callable, /, *, mutates_args, op_name: str | None = ...) -> str: ...
 def derived_types(
-    base_type: Union[type, typing._SpecialForm],
+    base_type: type | typing._SpecialForm,
     cpp_type: str,
     list_base: bool,
     optional_base_list: bool,

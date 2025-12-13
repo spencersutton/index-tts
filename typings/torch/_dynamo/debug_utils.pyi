@@ -1,5 +1,6 @@
 import torch
-from typing import Any, Callable, Optional, TYPE_CHECKING, TypeVar
+from typing import Any, Optional, TYPE_CHECKING, TypeVar
+from collections.abc import Callable
 from torch import Tensor
 from collections.abc import Sequence
 from torch.hub import tqdm
@@ -98,48 +99,48 @@ class NopInputReader:
     def __init__(self) -> None: ...
     def storage(
         self,
-        storage_hash: Optional[str],
+        storage_hash: str | None,
         nbytes: int,
         *,
-        device: Optional[torch._prims_common.DeviceLikeType] = ...,
-        dtype_hint: Optional[torch.dtype] = ...,
+        device: torch._prims_common.DeviceLikeType | None = ...,
+        dtype_hint: torch.dtype | None = ...,
     ) -> None: ...
-    def tensor(self, *args: Any, **kwargs: Any) -> Optional[torch.Tensor]: ...
-    def symint(self, *args: Any, **kwargs: Any) -> Optional[int]: ...
+    def tensor(self, *args: Any, **kwargs: Any) -> torch.Tensor | None: ...
+    def symint(self, *args: Any, **kwargs: Any) -> int | None: ...
 
 class InputReader:
-    def __init__(self, save_dir: Optional[str] = ..., *, pbar: Optional[tqdm] = ...) -> None: ...
+    def __init__(self, save_dir: str | None = ..., *, pbar: tqdm | None = ...) -> None: ...
     def storage(
         self,
-        storage_hash: Optional[str],
+        storage_hash: str | None,
         nbytes: int,
         *,
-        device: Optional[torch._prims_common.DeviceLikeType] = ...,
-        dtype_hint: Optional[torch.dtype] = ...,
+        device: torch._prims_common.DeviceLikeType | None = ...,
+        dtype_hint: torch.dtype | None = ...,
     ) -> UntypedStorage: ...
     def tensor(
         self,
         storage: UntypedStorage,
         shape: torch._prims_common.ShapeType,
-        stride: Optional[torch._prims_common.StrideType] = ...,
+        stride: torch._prims_common.StrideType | None = ...,
         *,
-        storage_offset: Optional[int] = ...,
-        dtype: Optional[torch.dtype] = ...,
-        requires_grad: Optional[bool] = ...,
-        is_leaf: Optional[bool] = ...,
+        storage_offset: int | None = ...,
+        dtype: torch.dtype | None = ...,
+        requires_grad: bool | None = ...,
+        is_leaf: bool | None = ...,
         **metadata: Any,
     ) -> torch.Tensor: ...
     def symint(self, val: Any) -> Any: ...
 
 class InputWriter:
-    def __init__(self, save_dir: Optional[str], *, stable_hash: bool = ...) -> None: ...
+    def __init__(self, save_dir: str | None, *, stable_hash: bool = ...) -> None: ...
     def lines(self) -> list[str]: ...
     def storage(
         self,
         untyped_storage: UntypedStorage,
         *,
-        device_hint: Optional[torch._prims_common.DeviceLikeType] = ...,
-        dtype_hint: Optional[torch.dtype] = ...,
+        device_hint: torch._prims_common.DeviceLikeType | None = ...,
+        dtype_hint: torch.dtype | None = ...,
     ) -> str: ...
     def tensor(self, name: str, t: torch.Tensor) -> None: ...
     def unsupported(self, name: str, arg: Any) -> None: ...
@@ -149,7 +150,7 @@ class InputWriter:
 def aot_graph_input_parser(
     func: Callable[[list[Tensor]], list[Tensor]],
     device: str = ...,
-    sym_shapes: Optional[dict[str, int]] = ...,
-    default_sym_shape: Optional[int] = ...,
+    sym_shapes: dict[str, int] | None = ...,
+    default_sym_shape: int | None = ...,
 ) -> dict[str, Any]: ...
 def profile_to_file(filename: str) -> Callable[[T], T]: ...

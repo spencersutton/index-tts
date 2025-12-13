@@ -28,9 +28,9 @@ class LayoutLMv2FastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
             `preprocess` method.
     """
 
-    apply_ocr: Optional[bool]
-    ocr_lang: Optional[str]
-    tesseract_config: Optional[str]
+    apply_ocr: bool | None
+    ocr_lang: str | None
+    tesseract_config: str | None
     ...
 
 @auto_docstring

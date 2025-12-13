@@ -4,7 +4,7 @@ from typing import Any, TypeAlias
 from torch import Tensor, device as _device
 from .memory import *
 
-_device_t: TypeAlias = _device | str | int
+type _device_t = _device | str | int
 Event = torch.Event
 Stream = torch.Stream
 _initialized = ...

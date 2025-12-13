@@ -23,7 +23,7 @@ def round_filters(config: EfficientNetConfig, num_channels: int):  # -> int:
     """
     ...
 
-def correct_pad(kernel_size: Union[int, tuple], adjust: bool = ...):  # -> tuple[Any, Any, Any, Any]:
+def correct_pad(kernel_size: int | tuple, adjust: bool = ...):  # -> tuple[Any, Any, Any, Any]:
     r"""
     Utility function to get the tuple padding value for the depthwise convolution.
 
@@ -139,8 +139,8 @@ class EfficientNetEncoder(nn.Module):
     def forward(
         self,
         hidden_states: torch.FloatTensor,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
     ) -> BaseModelOutputWithNoAttention: ...
 
 @auto_docstring
@@ -156,10 +156,10 @@ class EfficientNetModel(EfficientNetPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPoolingAndNoAttention]: ...
+        pixel_values: torch.FloatTensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutputWithPoolingAndNoAttention: ...
 
 @auto_docstring(
     custom_intro="""
@@ -172,11 +172,11 @@ class EfficientNetForImageClassification(EfficientNetPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ImageClassifierOutputWithNoAttention]:
+        pixel_values: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | ImageClassifierOutputWithNoAttention:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the image classification/regression loss. Indices should be in `[0, ...,

@@ -47,9 +47,9 @@ class ImageGPTImageProcessor(BaseImageProcessor):
     model_input_names = ...
     def __init__(
         self,
-        clusters: Optional[Union[list[list[int]], np.ndarray]] = ...,
+        clusters: list[list[int]] | np.ndarray | None = ...,
         do_resize: bool = ...,
-        size: Optional[dict[str, int]] = ...,
+        size: dict[str, int] | None = ...,
         resample: PILImageResampling = ...,
         do_normalize: bool = ...,
         do_color_quantize: bool = ...,
@@ -60,8 +60,8 @@ class ImageGPTImageProcessor(BaseImageProcessor):
         image: np.ndarray,
         size: dict[str, int],
         resample: PILImageResampling = ...,
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
         **kwargs,
     ) -> np.ndarray:
         """
@@ -95,8 +95,8 @@ class ImageGPTImageProcessor(BaseImageProcessor):
     def normalize(
         self,
         image: np.ndarray,
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ) -> np.ndarray:
         """
         Normalizes an images' pixel values to between [-1, 1].
@@ -115,15 +115,15 @@ class ImageGPTImageProcessor(BaseImageProcessor):
     def preprocess(
         self,
         images: ImageInput,
-        do_resize: Optional[bool] = ...,
-        size: Optional[dict[str, int]] = ...,
+        do_resize: bool | None = ...,
+        size: dict[str, int] | None = ...,
         resample: PILImageResampling = ...,
-        do_normalize: Optional[bool] = ...,
-        do_color_quantize: Optional[bool] = ...,
-        clusters: Optional[Union[list[list[int]], np.ndarray]] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        do_normalize: bool | None = ...,
+        do_color_quantize: bool | None = ...,
+        clusters: list[list[int]] | np.ndarray | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ) -> PIL.Image.Image:
         """
         Preprocess an image or batch of images.

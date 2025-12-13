@@ -59,7 +59,7 @@ class LlavaNextProcessor(ProcessorMixin):
     def __call__(
         self,
         images: ImageInput = ...,
-        text: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]] = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] = ...,
         audio=...,
         videos=...,
         **kwargs: Unpack[LlavaNextProcessorKwargs],

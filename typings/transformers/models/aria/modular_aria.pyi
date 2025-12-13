@@ -217,7 +217,7 @@ class AriaConfig(PretrainedConfig):
         vision_config=...,
         vision_feature_layer: int = ...,
         text_config: AriaTextConfig = ...,
-        projector_patch_to_query_dict: Optional[dict] = ...,
+        projector_patch_to_query_dict: dict | None = ...,
         image_token_index: int = ...,
         initializer_range: float = ...,
         **kwargs,
@@ -279,7 +279,7 @@ class AriaProjector(nn.Module):
             Configuration object for the model.
     """
     def __init__(self, config: AriaConfig) -> None: ...
-    def forward(self, key_value_states: torch.Tensor, attn_mask: Optional[torch.Tensor] = ...):  # -> Any:
+    def forward(self, key_value_states: torch.Tensor, attn_mask: torch.Tensor | None = ...):  # -> Any:
         """
         Forward pass of the Projector module.
 
@@ -329,35 +329,35 @@ class AriaImageProcessor(BaseImageProcessor):
     model_input_names = ...
     def __init__(
         self,
-        image_mean: Optional[list[float]] = ...,
-        image_std: Optional[list[float]] = ...,
+        image_mean: list[float] | None = ...,
+        image_std: list[float] | None = ...,
         max_image_size: int = ...,
         min_image_size: int = ...,
-        split_resolutions: Optional[list[tuple[int, int]]] = ...,
-        split_image: Optional[bool] = ...,
-        do_convert_rgb: Optional[bool] = ...,
+        split_resolutions: list[tuple[int, int]] | None = ...,
+        split_image: bool | None = ...,
+        do_convert_rgb: bool | None = ...,
         do_rescale: bool = ...,
-        rescale_factor: Union[int, float] = ...,
-        do_normalize: Optional[bool] = ...,
+        rescale_factor: int | float = ...,
+        do_normalize: bool | None = ...,
         resample: PILImageResampling = ...,
         **kwargs,
     ) -> None: ...
     def preprocess(
         self,
-        images: Union[ImageInput, list[ImageInput]],
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
-        max_image_size: Optional[int] = ...,
-        min_image_size: Optional[int] = ...,
-        split_image: Optional[bool] = ...,
-        do_convert_rgb: Optional[bool] = ...,
-        do_rescale: Optional[bool] = ...,
-        rescale_factor: Optional[float] = ...,
-        do_normalize: Optional[bool] = ...,
+        images: ImageInput | list[ImageInput],
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
+        max_image_size: int | None = ...,
+        min_image_size: int | None = ...,
+        split_image: bool | None = ...,
+        do_convert_rgb: bool | None = ...,
+        do_rescale: bool | None = ...,
+        rescale_factor: float | None = ...,
+        do_normalize: bool | None = ...,
         resample: PILImageResampling = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        data_format: Optional[ChannelDimension] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        return_tensors: str | TensorType | None = ...,
+        data_format: ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ):  # -> BatchFeature:
         """
         Process a list of images.
@@ -420,11 +420,11 @@ class AriaImageProcessor(BaseImageProcessor):
     def pad(
         self,
         image: np.ndarray,
-        padding: Union[int, tuple[int, int], Iterable[tuple[int, int]]],
+        padding: int | tuple[int, int] | Iterable[tuple[int, int]],
         mode: PaddingMode = ...,
-        constant_values: Union[float, Iterable[float]] = ...,
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        constant_values: float | Iterable[float] = ...,
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ) -> np.ndarray:
         """
         Pads the `image` with the specified `padding` and `mode`. Padding can be in the (`height`, `width`)
@@ -536,14 +536,14 @@ class AriaProcessor(ProcessorMixin):
     def __init__(
         self,
         image_processor=...,
-        tokenizer: Union[AutoTokenizer, str] = ...,
-        chat_template: Optional[str] = ...,
-        size_conversion: Optional[dict[Union[float, int], int]] = ...,
+        tokenizer: AutoTokenizer | str = ...,
+        chat_template: str | None = ...,
+        size_conversion: dict[float | int, int] | None = ...,
     ) -> None: ...
     def __call__(
         self,
-        text: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]],
-        images: Optional[ImageInput] = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput],
+        images: ImageInput | None = ...,
         audio=...,
         videos=...,
         **kwargs: Unpack[AriaProcessorKwargs],
@@ -741,7 +741,7 @@ class AriaModel(LlavaModel):
     def get_image_features(
         self,
         pixel_values: torch.FloatTensor,
-        pixel_mask: Optional[torch.FloatTensor] = ...,
+        pixel_mask: torch.FloatTensor | None = ...,
         vision_feature_layer: int = ...,
     ):  # -> Any:
         """
@@ -766,14 +766,14 @@ class AriaModel(LlavaModel):
         input_ids: torch.LongTensor = ...,
         pixel_values: torch.FloatTensor = ...,
         pixel_mask: torch.LongTensor = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> Union[tuple, AriaModelOutputWithPast]: ...
+    ) -> tuple | AriaModelOutputWithPast: ...
 
 @auto_docstring(
     custom_intro="""
@@ -787,7 +787,7 @@ class AriaForConditionalGeneration(LlavaForConditionalGeneration):
     def get_image_features(
         self,
         pixel_values: torch.FloatTensor,
-        pixel_mask: Optional[torch.FloatTensor] = ...,
+        pixel_mask: torch.FloatTensor | None = ...,
         vision_feature_layer: int = ...,
     ):  # -> tuple[Tensor, ...] | list[Any]:
         ...
@@ -798,16 +798,16 @@ class AriaForConditionalGeneration(LlavaForConditionalGeneration):
         input_ids: torch.LongTensor = ...,
         pixel_values: torch.FloatTensor = ...,
         pixel_mask: torch.LongTensor = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        logits_to_keep: Union[int, torch.Tensor] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        logits_to_keep: int | torch.Tensor = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> Union[tuple, AriaCausalLMOutputWithPast]:
+    ) -> tuple | AriaCausalLMOutputWithPast:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
             Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,

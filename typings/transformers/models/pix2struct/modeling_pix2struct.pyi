@@ -62,22 +62,22 @@ class Pix2StructVisionLayer(GradientCheckpointingLayer):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
-    ) -> Union[tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor]]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor] | tuple[torch.Tensor]: ...
 
 class Pix2StructVisionEncoder(nn.Module):
     def __init__(self, config: Pix2StructConfig) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ) -> Union[tuple, BaseModelOutput]: ...
+    ) -> tuple | BaseModelOutput: ...
 
 @auto_docstring
 class Pix2StructPreTrainedModel(PreTrainedModel):
@@ -99,13 +99,13 @@ class Pix2StructVisionModel(Pix2StructPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        flattened_patches: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPooling]:
+        flattened_patches: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutputWithPooling:
         r"""
         flattened_patches (`torch.FloatTensor` of shape `(batch_size, sequence_length, num_channels x patch_height x patch_width)`):
             Flattened and padded pixel values. These values can be obtained using [`AutoImageProcessor`]. See
@@ -147,7 +147,7 @@ class Pix2StructTextLayerFF(nn.Module):
 
 class Pix2StructTextAttention(nn.Module):
     def __init__(
-        self, config: Pix2StructTextConfig, has_relative_attention_bias=..., layer_idx: Optional[int] = ...
+        self, config: Pix2StructTextConfig, has_relative_attention_bias=..., layer_idx: int | None = ...
     ) -> None: ...
     def compute_bias(self, query_length, key_length, device=..., cache_position=...):  # -> Any:
         """Compute binned relative position bias"""
@@ -172,7 +172,7 @@ class Pix2StructTextAttention(nn.Module):
         ...
 
 class Pix2StructTextLayerSelfAttention(nn.Module):
-    def __init__(self, config, has_relative_attention_bias=..., layer_idx: Optional[int] = ...) -> None: ...
+    def __init__(self, config, has_relative_attention_bias=..., layer_idx: int | None = ...) -> None: ...
     def forward(
         self,
         hidden_states,
@@ -187,7 +187,7 @@ class Pix2StructTextLayerSelfAttention(nn.Module):
         ...
 
 class Pix2StructTextLayerCrossAttention(nn.Module):
-    def __init__(self, config, layer_idx: Optional[int] = ...) -> None: ...
+    def __init__(self, config, layer_idx: int | None = ...) -> None: ...
     def forward(
         self,
         hidden_states,
@@ -204,7 +204,7 @@ class Pix2StructTextLayerCrossAttention(nn.Module):
         ...
 
 class Pix2StructTextBlock(GradientCheckpointingLayer):
-    def __init__(self, config, has_relative_attention_bias=..., layer_idx: Optional[int] = ...) -> None: ...
+    def __init__(self, config, has_relative_attention_bias=..., layer_idx: int | None = ...) -> None: ...
     def forward(
         self,
         hidden_states,
@@ -239,22 +239,22 @@ class Pix2StructTextModel(Pix2StructPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        encoder_hidden_states: Optional[torch.FloatTensor] = ...,
-        encoder_attention_mask: Optional[torch.FloatTensor] = ...,
-        inputs_embeds: Optional[torch.LongTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        cross_attn_head_mask: Optional[torch.Tensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        encoder_hidden_states: torch.FloatTensor | None = ...,
+        encoder_attention_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.LongTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        cross_attn_head_mask: torch.Tensor | None = ...,
+        past_key_values: Cache | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        labels: torch.LongTensor | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs,
-    ) -> Union[tuple[torch.FloatTensor, ...], CausalLMOutputWithCrossAttentions]:
+    ) -> tuple[torch.FloatTensor, ...] | CausalLMOutputWithCrossAttentions:
         r"""
         input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
             Indices of input sequence tokens in the vocabulary. Pix2StructText is a model with relative position
@@ -313,23 +313,23 @@ class Pix2StructForConditionalGeneration(Pix2StructPreTrainedModel, GenerationMi
     @auto_docstring
     def forward(
         self,
-        flattened_patches: Optional[torch.FloatTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        decoder_input_ids: Optional[torch.LongTensor] = ...,
-        decoder_attention_mask: Optional[torch.BoolTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        decoder_head_mask: Optional[torch.FloatTensor] = ...,
-        cross_attn_head_mask: Optional[torch.Tensor] = ...,
-        encoder_outputs: Optional[tuple[tuple[torch.FloatTensor]]] = ...,
-        past_key_values: Optional[Cache] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        decoder_inputs_embeds: Optional[torch.Tensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple[torch.FloatTensor], Seq2SeqModelOutput]:
+        flattened_patches: torch.FloatTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        decoder_input_ids: torch.LongTensor | None = ...,
+        decoder_attention_mask: torch.BoolTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        decoder_head_mask: torch.FloatTensor | None = ...,
+        cross_attn_head_mask: torch.Tensor | None = ...,
+        encoder_outputs: tuple[tuple[torch.FloatTensor]] | None = ...,
+        past_key_values: Cache | None = ...,
+        labels: torch.LongTensor | None = ...,
+        decoder_inputs_embeds: torch.Tensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+    ) -> tuple[torch.FloatTensor] | Seq2SeqModelOutput:
         r"""
         flattened_patches (`torch.FloatTensor` of shape `(batch_size, seq_length, hidden_size)`):
             Flattened pixel patches. the `hidden_size` is obtained by the following formula: `hidden_size` =

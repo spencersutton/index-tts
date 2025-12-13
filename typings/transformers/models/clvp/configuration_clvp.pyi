@@ -95,7 +95,7 @@ class ClvpEncoderConfig(PretrainedConfig):
     ) -> None: ...
     @classmethod
     def from_pretrained(
-        cls, pretrained_model_name_or_path: Union[str, os.PathLike], config_type: str = ..., **kwargs
+        cls, pretrained_model_name_or_path: str | os.PathLike, config_type: str = ..., **kwargs
     ):  # -> Self:
         ...
 

@@ -5,8 +5,8 @@ from torch.types import _dtype, _int, _size
 from .common_types import _ratio_any_t, _size_1_t, _size_2_opt_t, _size_2_t, _size_3_opt_t, _size_3_t, _size_any_t
 
 __all__ = ["GRID_SAMPLE_INTERPOLATION_MODES", "GRID_SAMPLE_PADDING_MODES"]
-GRID_SAMPLE_INTERPOLATION_MODES: TypeAlias = dict[str, int]
-GRID_SAMPLE_PADDING_MODES: TypeAlias = dict[str, int]
+type GRID_SAMPLE_INTERPOLATION_MODES = dict[str, int]
+type GRID_SAMPLE_PADDING_MODES = dict[str, int]
 __all__ += ["_canonical_mask"]
 __all__ += ["_none_or_dtype"]
 

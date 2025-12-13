@@ -139,7 +139,7 @@ class PreTrainedTokenizer(PreTrainedTokenizerBase):
         ...
 
     @added_tokens_decoder.setter
-    def added_tokens_decoder(self, value: dict[int, Union[AddedToken, str]]) -> dict[int, AddedToken]: ...
+    def added_tokens_decoder(self, value: dict[int, AddedToken | str]) -> dict[int, AddedToken]: ...
     def get_added_vocab(self) -> dict[str, int]:
         """
         Returns the added tokens in the vocabulary as a dictionary of token to index. Results might be different from
@@ -196,7 +196,7 @@ class PreTrainedTokenizer(PreTrainedTokenizerBase):
         """
         ...
 
-    def convert_tokens_to_ids(self, tokens: Union[str, list[str]]) -> Union[int, list[int]]:
+    def convert_tokens_to_ids(self, tokens: str | list[str]) -> int | list[int]:
         """
         Converts a token string (or a sequence of tokens) in a single integer id (or a sequence of ids), using the
         vocabulary.
@@ -234,7 +234,7 @@ class PreTrainedTokenizer(PreTrainedTokenizerBase):
         ...
 
     def get_special_tokens_mask(
-        self, token_ids_0: list, token_ids_1: Optional[list] = ..., already_has_special_tokens: bool = ...
+        self, token_ids_0: list, token_ids_1: list | None = ..., already_has_special_tokens: bool = ...
     ) -> list[int]:
         """
         Retrieves sequence ids from a token list that has no special tokens added. This method is called when adding
@@ -257,9 +257,7 @@ class PreTrainedTokenizer(PreTrainedTokenizerBase):
     def convert_ids_to_tokens(self, ids: int, skip_special_tokens: bool = ...) -> str: ...
     @overload
     def convert_ids_to_tokens(self, ids: list[int], skip_special_tokens: bool = ...) -> list[str]: ...
-    def convert_ids_to_tokens(
-        self, ids: Union[int, list[int]], skip_special_tokens: bool = ...
-    ) -> Union[str, list[str]]:
+    def convert_ids_to_tokens(self, ids: int | list[int], skip_special_tokens: bool = ...) -> str | list[str]:
         """
         Converts a single index or a sequence of indices in a token or a sequence of tokens, using the vocabulary and
         added tokens.

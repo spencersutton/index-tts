@@ -7,7 +7,8 @@ import flax.linen as nn
 import jax
 import jax.numpy as jnp
 import numpy as np
-from typing import Callable, Optional
+from typing import Optional
+from collections.abc import Callable
 from flax.core.frozen_dict import FrozenDict
 from ...modeling_flax_utils import FlaxPreTrainedModel
 from ...utils import ModelOutput, add_start_docstrings, add_start_docstrings_to_model_forward
@@ -44,8 +45,8 @@ class FlaxBertForPreTrainingOutput(ModelOutput):
 
     prediction_logits: jnp.ndarray = ...
     seq_relationship_logits: jnp.ndarray = ...
-    hidden_states: Optional[tuple[jnp.ndarray]] = ...
-    attentions: Optional[tuple[jnp.ndarray]] = ...
+    hidden_states: tuple[jnp.ndarray] | None = ...
+    attentions: tuple[jnp.ndarray] | None = ...
 
 BERT_START_DOCSTRING = ...
 BERT_INPUTS_DOCSTRING = ...
@@ -70,7 +71,7 @@ class FlaxBertSelfAttention(nn.Module):
         hidden_states,
         attention_mask,
         layer_head_mask,
-        key_value_states: Optional[jnp.ndarray] = ...,
+        key_value_states: jnp.ndarray | None = ...,
         init_cache: bool = ...,
         deterministic=...,
         output_attentions: bool = ...,
@@ -126,8 +127,8 @@ class FlaxBertLayer(nn.Module):
         hidden_states,
         attention_mask,
         layer_head_mask,
-        encoder_hidden_states: Optional[jnp.ndarray] = ...,
-        encoder_attention_mask: Optional[jnp.ndarray] = ...,
+        encoder_hidden_states: jnp.ndarray | None = ...,
+        encoder_attention_mask: jnp.ndarray | None = ...,
         init_cache: bool = ...,
         deterministic: bool = ...,
         output_attentions: bool = ...,
@@ -145,8 +146,8 @@ class FlaxBertLayerCollection(nn.Module):
         hidden_states,
         attention_mask,
         head_mask,
-        encoder_hidden_states: Optional[jnp.ndarray] = ...,
-        encoder_attention_mask: Optional[jnp.ndarray] = ...,
+        encoder_hidden_states: jnp.ndarray | None = ...,
+        encoder_attention_mask: jnp.ndarray | None = ...,
         init_cache: bool = ...,
         deterministic: bool = ...,
         output_attentions: bool = ...,
@@ -166,8 +167,8 @@ class FlaxBertEncoder(nn.Module):
         hidden_states,
         attention_mask,
         head_mask,
-        encoder_hidden_states: Optional[jnp.ndarray] = ...,
-        encoder_attention_mask: Optional[jnp.ndarray] = ...,
+        encoder_hidden_states: jnp.ndarray | None = ...,
+        encoder_attention_mask: jnp.ndarray | None = ...,
         init_cache: bool = ...,
         deterministic: bool = ...,
         output_attentions: bool = ...,
@@ -262,13 +263,13 @@ class FlaxBertPreTrainedModel(FlaxPreTrainedModel):
         head_mask=...,
         encoder_hidden_states=...,
         encoder_attention_mask=...,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: jax.random.PRNGKey = ...,
         train: bool = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        past_key_values: Optional[dict] = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        past_key_values: dict | None = ...,
     ): ...
 
 class FlaxBertModule(nn.Module):
@@ -282,11 +283,11 @@ class FlaxBertModule(nn.Module):
         self,
         input_ids,
         attention_mask,
-        token_type_ids: Optional[jnp.ndarray] = ...,
-        position_ids: Optional[jnp.ndarray] = ...,
-        head_mask: Optional[jnp.ndarray] = ...,
-        encoder_hidden_states: Optional[jnp.ndarray] = ...,
-        encoder_attention_mask: Optional[jnp.ndarray] = ...,
+        token_type_ids: jnp.ndarray | None = ...,
+        position_ids: jnp.ndarray | None = ...,
+        head_mask: jnp.ndarray | None = ...,
+        encoder_hidden_states: jnp.ndarray | None = ...,
+        encoder_attention_mask: jnp.ndarray | None = ...,
         init_cache: bool = ...,
         deterministic: bool = ...,
         output_attentions: bool = ...,
@@ -517,10 +518,10 @@ class FlaxBertForCausalLMModule(nn.Module):
         input_ids,
         attention_mask,
         position_ids,
-        token_type_ids: Optional[jnp.ndarray] = ...,
-        head_mask: Optional[jnp.ndarray] = ...,
-        encoder_hidden_states: Optional[jnp.ndarray] = ...,
-        encoder_attention_mask: Optional[jnp.ndarray] = ...,
+        token_type_ids: jnp.ndarray | None = ...,
+        head_mask: jnp.ndarray | None = ...,
+        encoder_hidden_states: jnp.ndarray | None = ...,
+        encoder_attention_mask: jnp.ndarray | None = ...,
         init_cache: bool = ...,
         deterministic: bool = ...,
         output_attentions: bool = ...,
@@ -539,7 +540,7 @@ class FlaxBertForCausalLMModule(nn.Module):
 class FlaxBertForCausalLM(FlaxBertPreTrainedModel):
     module_class = ...
     def prepare_inputs_for_generation(
-        self, input_ids, max_length, attention_mask: Optional[jax.Array] = ...
+        self, input_ids, max_length, attention_mask: jax.Array | None = ...
     ):  # -> dict[str, Any]:
         ...
     def update_inputs_for_generation(self, model_outputs, model_kwargs): ...

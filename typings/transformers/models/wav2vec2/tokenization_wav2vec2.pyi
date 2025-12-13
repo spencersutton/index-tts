@@ -14,7 +14,7 @@ logger = ...
 if TYPE_CHECKING: ...
 VOCAB_FILES_NAMES = ...
 WAV2VEC2_KWARGS_DOCSTRING = ...
-ListOfDict = list[dict[str, Union[int, str]]]
+ListOfDict = list[dict[str, int | str]]
 
 @dataclass
 class Wav2Vec2CTCTokenizerOutput(ModelOutput):
@@ -33,9 +33,9 @@ class Wav2Vec2CTCTokenizerOutput(ModelOutput):
             can be used to compute time stamps for each word.
     """
 
-    text: Union[list[str], str]
-    char_offsets: Union[list[ListOfDict], ListOfDict] = ...
-    word_offsets: Union[list[ListOfDict], ListOfDict] = ...
+    text: list[str] | str
+    char_offsets: list[ListOfDict] | ListOfDict = ...
+    word_offsets: list[ListOfDict] | ListOfDict = ...
 
 class Wav2Vec2CTCTokenizer(PreTrainedTokenizer):
     """
@@ -97,7 +97,7 @@ class Wav2Vec2CTCTokenizer(PreTrainedTokenizer):
         ...
 
     @property
-    def word_delimiter_token_id(self) -> Optional[int]:
+    def word_delimiter_token_id(self) -> int | None:
         """
         `Optional[int]`: Id of the word_delimiter_token in the vocabulary. Returns `None` if the token has not been
         set.
@@ -120,7 +120,7 @@ class Wav2Vec2CTCTokenizer(PreTrainedTokenizer):
         spaces_between_special_tokens: bool = ...,
         output_char_offsets: bool = ...,
         output_word_offsets: bool = ...,
-    ) -> dict[str, Union[str, float]]:
+    ) -> dict[str, str | float]:
         """
         Converts a connectionist-temporal-classification (CTC) output tokens into a single string.
         """
@@ -130,9 +130,9 @@ class Wav2Vec2CTCTokenizer(PreTrainedTokenizer):
         ...
     def batch_decode(
         self,
-        sequences: Union[list[int], list[list[int]], np.ndarray, torch.Tensor, tf.Tensor],
+        sequences: list[int] | list[list[int]] | np.ndarray | torch.Tensor | tf.Tensor,
         skip_special_tokens: bool = ...,
-        clean_up_tokenization_spaces: Optional[bool] = ...,
+        clean_up_tokenization_spaces: bool | None = ...,
         output_char_offsets: bool = ...,
         output_word_offsets: bool = ...,
         **kwargs,
@@ -183,9 +183,9 @@ class Wav2Vec2CTCTokenizer(PreTrainedTokenizer):
 
     def decode(
         self,
-        token_ids: Union[int, list[int], np.ndarray, torch.Tensor, tf.Tensor],
+        token_ids: int | list[int] | np.ndarray | torch.Tensor | tf.Tensor,
         skip_special_tokens: bool = ...,
-        clean_up_tokenization_spaces: Optional[bool] = ...,
+        clean_up_tokenization_spaces: bool | None = ...,
         output_char_offsets: bool = ...,
         output_word_offsets: bool = ...,
         **kwargs,
@@ -276,7 +276,7 @@ class Wav2Vec2CTCTokenizer(PreTrainedTokenizer):
         ```"""
         ...
 
-    def save_vocabulary(self, save_directory: str, filename_prefix: Optional[str] = ...) -> tuple[str]: ...
+    def save_vocabulary(self, save_directory: str, filename_prefix: str | None = ...) -> tuple[str]: ...
 
 class Wav2Vec2Tokenizer(PreTrainedTokenizer):
     """
@@ -349,7 +349,7 @@ class Wav2Vec2Tokenizer(PreTrainedTokenizer):
         ...
 
     @property
-    def word_delimiter_token_id(self) -> Optional[int]:
+    def word_delimiter_token_id(self) -> int | None:
         """
         `Optional[int]`: Id of the word_delimiter_token in the vocabulary. Returns `None` if the token has not been
         set.
@@ -365,12 +365,12 @@ class Wav2Vec2Tokenizer(PreTrainedTokenizer):
     @add_end_docstrings(WAV2VEC2_KWARGS_DOCSTRING)
     def __call__(
         self,
-        raw_speech: Union[np.ndarray, list[float], list[np.ndarray], list[list[float]]],
-        padding: Union[bool, str, PaddingStrategy] = ...,
-        max_length: Optional[int] = ...,
-        pad_to_multiple_of: Optional[int] = ...,
-        padding_side: Optional[str] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
+        raw_speech: np.ndarray | list[float] | list[np.ndarray] | list[list[float]],
+        padding: bool | str | PaddingStrategy = ...,
+        max_length: int | None = ...,
+        pad_to_multiple_of: int | None = ...,
+        padding_side: str | None = ...,
+        return_tensors: str | TensorType | None = ...,
         verbose: bool = ...,
         **kwargs,
     ) -> BatchEncoding:
@@ -399,6 +399,6 @@ class Wav2Vec2Tokenizer(PreTrainedTokenizer):
         """
         ...
 
-    def save_vocabulary(self, save_directory: str, filename_prefix: Optional[str] = ...) -> tuple[str]: ...
+    def save_vocabulary(self, save_directory: str, filename_prefix: str | None = ...) -> tuple[str]: ...
 
 __all__ = ["Wav2Vec2CTCTokenizer", "Wav2Vec2Tokenizer"]

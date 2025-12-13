@@ -55,25 +55,25 @@ class JanusImageProcessor(BaseImageProcessor):
     def __init__(
         self,
         do_resize: bool = ...,
-        size: Optional[dict[str, int]] = ...,
+        size: dict[str, int] | None = ...,
         min_size: int = ...,
         resample: PILImageResampling = ...,
         do_rescale: bool = ...,
-        rescale_factor: Union[int, float] = ...,
+        rescale_factor: int | float = ...,
         do_normalize: bool = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
-        do_convert_rgb: Optional[bool] = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
+        do_convert_rgb: bool | None = ...,
         **kwargs,
     ) -> None: ...
     def resize(
         self,
         image: np.ndarray,
-        size: Union[dict[str, int], int],
-        background_color: Optional[tuple[int, int, int]] = ...,
+        size: dict[str, int] | int,
+        background_color: tuple[int, int, int] | None = ...,
         resample: PILImageResampling = ...,
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
         **kwargs,
     ) -> np.ndarray:
         """
@@ -110,18 +110,18 @@ class JanusImageProcessor(BaseImageProcessor):
     def preprocess(
         self,
         images: ImageInput,
-        do_resize: Optional[bool] = ...,
-        size: Optional[dict[str, int]] = ...,
+        do_resize: bool | None = ...,
+        size: dict[str, int] | None = ...,
         resample: PILImageResampling = ...,
-        do_rescale: Optional[bool] = ...,
-        rescale_factor: Optional[float] = ...,
-        do_normalize: Optional[bool] = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        do_convert_rgb: Optional[bool] = ...,
+        do_rescale: bool | None = ...,
+        rescale_factor: float | None = ...,
+        do_normalize: bool | None = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        do_convert_rgb: bool | None = ...,
         data_format: ChannelDimension = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ) -> PIL.Image.Image:
         """
         Preprocess an image or batch of images.
@@ -175,9 +175,9 @@ class JanusImageProcessor(BaseImageProcessor):
     def pad_to_square(
         self,
         image: np.ndarray,
-        background_color: Union[int, tuple[int, int, int]] = ...,
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        background_color: int | tuple[int, int, int] = ...,
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ) -> np.array:
         """
         Pads an image to a square based on the longest edge.
@@ -207,13 +207,13 @@ class JanusImageProcessor(BaseImageProcessor):
     def postprocess(
         self,
         images: ImageInput,
-        do_rescale: Optional[bool] = ...,
-        rescale_factor: Optional[float] = ...,
-        do_normalize: Optional[bool] = ...,
-        image_mean: Optional[list[float]] = ...,
-        image_std: Optional[list[float]] = ...,
-        input_data_format: Optional[str] = ...,
-        return_tensors: Optional[str] = ...,
+        do_rescale: bool | None = ...,
+        rescale_factor: float | None = ...,
+        do_normalize: bool | None = ...,
+        image_mean: list[float] | None = ...,
+        image_std: list[float] | None = ...,
+        input_data_format: str | None = ...,
+        return_tensors: str | None = ...,
     ):  # -> ImageInput | Any | BatchFeature:
         """Applies post-processing to the decoded image tokens by reversing transformations applied during preprocessing."""
         ...
@@ -221,9 +221,9 @@ class JanusImageProcessor(BaseImageProcessor):
     def unnormalize(
         self,
         image: np.array,
-        image_mean: Union[float, Iterable[float]],
-        image_std: Union[float, Iterable[float]],
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        image_mean: float | Iterable[float],
+        image_std: float | Iterable[float],
+        input_data_format: str | ChannelDimension | None = ...,
     ) -> np.array:
         """
         Unnormalizes `image` using the mean and standard deviation specified by `mean` and `std`.

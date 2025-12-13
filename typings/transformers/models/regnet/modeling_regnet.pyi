@@ -25,7 +25,7 @@ class RegNetConvLayer(nn.Module):
         kernel_size: int = ...,
         stride: int = ...,
         groups: int = ...,
-        activation: Optional[str] = ...,
+        activation: str | None = ...,
     ) -> None: ...
     def forward(self, hidden_state):  # -> Any:
         ...
@@ -95,7 +95,7 @@ class RegNetModel(RegNetPreTrainedModel):
     def __init__(self, config) -> None: ...
     @auto_docstring
     def forward(
-        self, pixel_values: Tensor, output_hidden_states: Optional[bool] = ..., return_dict: Optional[bool] = ...
+        self, pixel_values: Tensor, output_hidden_states: bool | None = ..., return_dict: bool | None = ...
     ) -> BaseModelOutputWithPoolingAndNoAttention: ...
 
 @auto_docstring(
@@ -109,10 +109,10 @@ class RegNetForImageClassification(RegNetPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        pixel_values: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
     ) -> ImageClassifierOutputWithNoAttention:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):

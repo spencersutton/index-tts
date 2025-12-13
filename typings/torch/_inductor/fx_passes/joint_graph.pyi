@@ -66,7 +66,7 @@ def pointless_convert(match: Match, arg, dtype1: torch.dtype, dtype2: torch.dtyp
 
     ...
 def definitely_equal(
-    old_sizes: Sequence[Union[torch.SymInt, int]], new_sizes: Sequence[Union[torch.SymInt, torch.fx.Node, int]]
+    old_sizes: Sequence[torch.SymInt | int], new_sizes: Sequence[torch.SymInt | torch.fx.Node | int]
 ) -> bool: ...
 @register_graph_pattern(
     CallFunction(torch.ops.aten.view.default, KeywordArg("arg"), KeywordArg("size")), pass_dict=patterns

@@ -29,9 +29,9 @@ class Cohere2VisionFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
         set to `True`. Can be overridden by the `max_patches` parameter in the `preprocess` method.
     """
 
-    crop_to_patches: Optional[bool]
-    min_patches: Optional[int]
-    max_patches: Optional[int]
+    crop_to_patches: bool | None
+    min_patches: int | None
+    max_patches: int | None
     ...
 
 @lru_cache(maxsize=10)
@@ -88,8 +88,8 @@ class Cohere2VisionImageProcessorFast(BaseImageProcessorFast):
         min_patches: int,
         max_patches: int,
         use_thumbnail: bool = ...,
-        patch_size: Optional[Union[tuple, int, dict]] = ...,
-        interpolation: Optional[F.InterpolationMode] = ...,
+        patch_size: tuple | int | dict | None = ...,
+        interpolation: F.InterpolationMode | None = ...,
     ):  # -> Tensor:
         """
         Crop the images to patches and return a list of cropped images.

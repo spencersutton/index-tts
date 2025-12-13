@@ -28,7 +28,7 @@ class GalleryVideo(GradioModel):
     caption: str | None = ...
 
 class GalleryData(GradioRootModel):
-    root: list[Union[GalleryImage, GalleryVideo]]
+    root: list[GalleryImage | GalleryVideo]
     ...
 
 @document()

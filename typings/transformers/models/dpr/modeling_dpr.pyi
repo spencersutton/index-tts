@@ -29,8 +29,8 @@ class DPRContextEncoderOutput(ModelOutput):
     """
 
     pooler_output: torch.FloatTensor
-    hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
-    attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
+    hidden_states: tuple[torch.FloatTensor, ...] | None = ...
+    attentions: tuple[torch.FloatTensor, ...] | None = ...
 
 @dataclass
 @auto_docstring(
@@ -47,8 +47,8 @@ class DPRQuestionEncoderOutput(ModelOutput):
     """
 
     pooler_output: torch.FloatTensor
-    hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
-    attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
+    hidden_states: tuple[torch.FloatTensor, ...] | None = ...
+    attentions: tuple[torch.FloatTensor, ...] | None = ...
 
 @dataclass
 @auto_docstring(
@@ -68,10 +68,10 @@ class DPRReaderOutput(ModelOutput):
     """
 
     start_logits: torch.FloatTensor
-    end_logits: Optional[torch.FloatTensor] = ...
-    relevance_logits: Optional[torch.FloatTensor] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
-    attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
+    end_logits: torch.FloatTensor | None = ...
+    relevance_logits: torch.FloatTensor | None = ...
+    hidden_states: tuple[torch.FloatTensor, ...] | None = ...
+    attentions: tuple[torch.FloatTensor, ...] | None = ...
 
 @auto_docstring
 class DPRPreTrainedModel(PreTrainedModel):
@@ -83,13 +83,13 @@ class DPREncoder(DPRPreTrainedModel):
     def forward(
         self,
         input_ids: Tensor,
-        attention_mask: Optional[Tensor] = ...,
-        token_type_ids: Optional[Tensor] = ...,
-        inputs_embeds: Optional[Tensor] = ...,
+        attention_mask: Tensor | None = ...,
+        token_type_ids: Tensor | None = ...,
+        inputs_embeds: Tensor | None = ...,
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ) -> Union[BaseModelOutputWithPooling, tuple[Tensor, ...]]: ...
+    ) -> BaseModelOutputWithPooling | tuple[Tensor, ...]: ...
     @property
     def embeddings_size(self) -> int: ...
 
@@ -100,11 +100,11 @@ class DPRSpanPredictor(DPRPreTrainedModel):
         self,
         input_ids: Tensor,
         attention_mask: Tensor,
-        inputs_embeds: Optional[Tensor] = ...,
+        inputs_embeds: Tensor | None = ...,
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ) -> Union[DPRReaderOutput, tuple[Tensor, ...]]: ...
+    ) -> DPRReaderOutput | tuple[Tensor, ...]: ...
 
 class DPRPretrainedContextEncoder(DPRPreTrainedModel):
     """
@@ -146,14 +146,14 @@ class DPRContextEncoder(DPRPretrainedContextEncoder):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[Tensor] = ...,
-        attention_mask: Optional[Tensor] = ...,
-        token_type_ids: Optional[Tensor] = ...,
-        inputs_embeds: Optional[Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[DPRContextEncoderOutput, tuple[Tensor, ...]]:
+        input_ids: Tensor | None = ...,
+        attention_mask: Tensor | None = ...,
+        token_type_ids: Tensor | None = ...,
+        inputs_embeds: Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> DPRContextEncoderOutput | tuple[Tensor, ...]:
         r"""
         input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
             Indices of input sequence tokens in the vocabulary. To match pretraining, DPR input sequence should be
@@ -203,14 +203,14 @@ class DPRQuestionEncoder(DPRPretrainedQuestionEncoder):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[Tensor] = ...,
-        attention_mask: Optional[Tensor] = ...,
-        token_type_ids: Optional[Tensor] = ...,
-        inputs_embeds: Optional[Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[DPRQuestionEncoderOutput, tuple[Tensor, ...]]:
+        input_ids: Tensor | None = ...,
+        attention_mask: Tensor | None = ...,
+        token_type_ids: Tensor | None = ...,
+        inputs_embeds: Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> DPRQuestionEncoderOutput | tuple[Tensor, ...]:
         r"""
         input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
             Indices of input sequence tokens in the vocabulary. To match pretraining, DPR input sequence should be
@@ -261,13 +261,13 @@ class DPRReader(DPRPretrainedReader):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[Tensor] = ...,
-        attention_mask: Optional[Tensor] = ...,
-        inputs_embeds: Optional[Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[DPRReaderOutput, tuple[Tensor, ...]]:
+        input_ids: Tensor | None = ...,
+        attention_mask: Tensor | None = ...,
+        inputs_embeds: Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> DPRReaderOutput | tuple[Tensor, ...]:
         r"""
         input_ids (`tuple[torch.LongTensor]` of shapes `(n_passages, sequence_length)`):
             Indices of input sequence tokens in the vocabulary. It has to be a sequence triplet with 1) the question

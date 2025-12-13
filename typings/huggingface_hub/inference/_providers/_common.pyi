@@ -7,13 +7,13 @@ from huggingface_hub.hf_api import InferenceProviderMapping
 from huggingface_hub.inference._common import RequestParameters
 
 logger = ...
-HARDCODED_MODEL_INFERENCE_MAPPING: Dict[str, Dict[str, InferenceProviderMapping]] = ...
+HARDCODED_MODEL_INFERENCE_MAPPING: dict[str, dict[str, InferenceProviderMapping]] = ...
 
 @overload
-def filter_none(obj: Dict[str, Any]) -> Dict[str, Any]: ...
+def filter_none(obj: dict[str, Any]) -> dict[str, Any]: ...
 @overload
-def filter_none(obj: List[Any]) -> List[Any]: ...
-def filter_none(obj: Union[Dict[str, Any], List[Any]]) -> Union[Dict[str, Any], List[Any]]: ...
+def filter_none(obj: list[Any]) -> list[Any]: ...
+def filter_none(obj: dict[str, Any] | list[Any]) -> dict[str, Any] | list[Any]: ...
 
 class TaskProviderHelper:
     """Base class for task-specific provider helpers."""
@@ -22,11 +22,11 @@ class TaskProviderHelper:
         self,
         *,
         inputs: Any,
-        parameters: Dict[str, Any],
-        headers: Dict,
-        model: Optional[str],
-        api_key: Optional[str],
-        extra_payload: Optional[Dict[str, Any]] = ...,
+        parameters: dict[str, Any],
+        headers: dict,
+        model: str | None,
+        api_key: str | None,
+        extra_payload: dict[str, Any] | None = ...,
     ) -> RequestParameters:
         """
         Prepare the request to be sent to the provider.
@@ -35,7 +35,7 @@ class TaskProviderHelper:
         """
         ...
 
-    def get_response(self, response: Union[bytes, Dict], request_params: Optional[RequestParameters] = ...) -> Any:
+    def get_response(self, response: bytes | dict, request_params: RequestParameters | None = ...) -> Any:
         """
         Return the response in the expected format.
 
@@ -56,4 +56,4 @@ class BaseTextGenerationTask(TaskProviderHelper):
     """
     def __init__(self, provider: str, base_url: str) -> None: ...
 
-def recursive_merge(dict1: Dict, dict2: Dict) -> Dict: ...
+def recursive_merge(dict1: dict, dict2: dict) -> dict: ...

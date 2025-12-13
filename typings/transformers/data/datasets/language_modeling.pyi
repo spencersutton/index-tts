@@ -20,7 +20,7 @@ class TextDataset(Dataset):
         file_path: str,
         block_size: int,
         overwrite_cache=...,
-        cache_dir: Optional[str] = ...,
+        cache_dir: str | None = ...,
     ) -> None: ...
     def __len__(self):  # -> int:
         ...

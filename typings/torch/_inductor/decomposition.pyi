@@ -1,13 +1,14 @@
 import functools
 import typing
 import torch
-from typing import Any, Callable, Optional, TypeVar, Union
-from typing_extensions import ParamSpec, TypeAlias
+from typing import Any, Optional, TypeVar, Union
+from collections.abc import Callable
+from typing import ParamSpec, TypeAlias
 from torch._decomp.decompositions import pw_cast_for_opmath, pw_cast_for_opmath_non_tensor_args
 
 _T = TypeVar("_T")
 _P = ParamSpec("_P")
-_GenericOperator: TypeAlias = Union[torch._ops.OperatorBase, torch._ops.OpOverloadPacket]
+type _GenericOperator = torch._ops.OperatorBase | torch._ops.OpOverloadPacket
 log = ...
 aten = ...
 prims = ...
@@ -16,37 +17,37 @@ _quantized = ...
 quantized_decomposed = ...
 inductor_decompositions = ...
 decompositions = ...
-decomps_to_exclude: list[Union[torch._ops.OpOverload, torch._ops.OpOverloadPacket]] = ...
+decomps_to_exclude: list[torch._ops.OpOverload | torch._ops.OpOverloadPacket] = ...
 
 def register_decomposition(
-    ops: Union[_GenericOperator, list[_GenericOperator]],
+    ops: _GenericOperator | list[_GenericOperator],
 ) -> Callable[[Callable[_P, _T]], Callable[_P, _T]]: ...
 @register_decomposition([aten.sym_constrain_range_for_size.default])
 def sym_constrain_range_for_size(
-    symbol: torch.SymInt, *, min: Optional[torch.types.Number] = ..., max: Optional[torch.types.Number] = ...
+    symbol: torch.SymInt, *, min: torch.types.Number | None = ..., max: torch.types.Number | None = ...
 ) -> None: ...
 @register_decomposition([aten.clamp])
 @pw_cast_for_opmath_non_tensor_args
 def clamp(
-    x: torch.Tensor, min: Optional[torch.types.Number] = ..., max: Optional[torch.types.Number] = ...
+    x: torch.Tensor, min: torch.types.Number | None = ..., max: torch.types.Number | None = ...
 ) -> torch.Tensor: ...
 @register_decomposition([aten.full])
-def full(size: list[Union[int, torch.SymInt]], fill_value: torch.types.Number, **kwargs: Any) -> torch.Tensor: ...
+def full(size: list[int | torch.SymInt], fill_value: torch.types.Number, **kwargs: Any) -> torch.Tensor: ...
 @register_decomposition([aten.index_add])
 def index_add(
     x: torch.Tensor, dim: int, index: torch.Tensor, tensor: torch.Tensor, *, alpha: torch.types.Number = ...
 ) -> torch.Tensor: ...
 @register_decomposition([aten.empty_permuted.default])
-def empty_permuted(size: list[Union[int, torch.SymInt]], physical_layout: list[int], **kwargs: Any) -> torch.Tensor: ...
+def empty_permuted(size: list[int | torch.SymInt], physical_layout: list[int], **kwargs: Any) -> torch.Tensor: ...
 @register_decomposition([aten.convolution_backward])
 def convolution_backward(
     grad_output: torch.Tensor,
     input: torch.Tensor,
     weight: torch.Tensor,
     bias_sizes: list[int],
-    stride: Union[int, list[int]],
-    padding: Union[int, list[int]],
-    dilation: Union[int, list[int]],
+    stride: int | list[int],
+    padding: int | list[int],
+    dilation: int | list[int],
     transposed: bool,
     output_padding: list[int],
     groups: int,
@@ -56,26 +57,26 @@ def convolution_backward(
 def round_dec(x: torch.Tensor, decimals: int = ...) -> torch.Tensor: ...
 @register_decomposition([aten.bmm])
 @pw_cast_for_opmath
-def bmm(self: torch.Tensor, batch2: torch.Tensor, out_dtype: Optional[torch.dtype] = ...) -> torch.Tensor: ...
+def bmm(self: torch.Tensor, batch2: torch.Tensor, out_dtype: torch.dtype | None = ...) -> torch.Tensor: ...
 @register_decomposition([aten.addmm])
 @pw_cast_for_opmath
 def addmm(
     self: torch.Tensor,
     mat1: torch.Tensor,
     mat2: torch.Tensor,
-    out_dtype: Optional[torch.dtype] = ...,
+    out_dtype: torch.dtype | None = ...,
     beta: torch.types.Number = ...,
     alpha: torch.types.Number = ...,
 ) -> torch.Tensor: ...
 @register_decomposition([aten.mm])
 @pw_cast_for_opmath
-def mm(self: torch.Tensor, input2: torch.Tensor, out_dtype: Optional[torch.dtype] = ...) -> torch.Tensor: ...
+def mm(self: torch.Tensor, input2: torch.Tensor, out_dtype: torch.dtype | None = ...) -> torch.Tensor: ...
 @register_decomposition([aten.cat.default])
 def cat(tensors: list[torch.Tensor], dim: int = ...) -> torch.Tensor: ...
 @register_decomposition([aten.angle])
 def angle(x: torch.Tensor) -> torch.Tensor: ...
 @register_decomposition([aten.add])
-def add(x: torch.Tensor, y: torch.Tensor, *, alpha: Optional[torch.types.Number] = ...) -> torch.Tensor: ...
+def add(x: torch.Tensor, y: torch.Tensor, *, alpha: torch.types.Number | None = ...) -> torch.Tensor: ...
 @register_decomposition([aten.conj_physical])
 def conj_physical(self: torch.Tensor) -> torch.Tensor: ...
 @register_decomposition([aten.lift, aten.detach_])
@@ -85,13 +86,13 @@ def fmin(self: torch.Tensor, other: torch.Tensor) -> torch.Tensor: ...
 @register_decomposition([aten.fmax, prims.fmax])
 def fmax(self: torch.Tensor, other: torch.Tensor) -> torch.Tensor: ...
 @register_decomposition(aten.amax)
-def amax(self: torch.Tensor, dim: Optional[int] = ..., keepdim: bool = ...) -> torch.Tensor: ...
+def amax(self: torch.Tensor, dim: int | None = ..., keepdim: bool = ...) -> torch.Tensor: ...
 @register_decomposition(aten.amin)
-def amin(self: torch.Tensor, dim: Optional[int] = ..., keepdim: bool = ...) -> torch.Tensor: ...
+def amin(self: torch.Tensor, dim: int | None = ..., keepdim: bool = ...) -> torch.Tensor: ...
 @register_decomposition([aten.narrow_copy])
 def narrow_copy(self: torch.Tensor, dim: int, start: int, length: int) -> torch.Tensor: ...
 @register_decomposition([aten.view_copy.default])
-def view_copy_default(self: torch.Tensor, size: list[Union[int, torch.SymInt]]) -> torch.Tensor: ...
+def view_copy_default(self: torch.Tensor, size: list[int | torch.SymInt]) -> torch.Tensor: ...
 @register_decomposition([aten.view_copy.dtype])
 def view_copy_dtype(self: torch.Tensor, dtype: torch.dtype) -> torch.Tensor: ...
 @register_decomposition(aten.full_like)
@@ -99,9 +100,9 @@ def full_like(
     self: torch.Tensor,
     fill_value: float,
     *,
-    dtype: Optional[torch.dtype] = ...,
-    layout: Optional[torch.layout] = ...,
-    device: Optional[torch.device] = ...,
+    dtype: torch.dtype | None = ...,
+    layout: torch.layout | None = ...,
+    device: torch.device | None = ...,
     pin_memory: bool = ...,
     requires_grad: bool = ...,
     memory_format: torch.memory_format = ...,
@@ -115,10 +116,10 @@ def randint_like(self: torch.Tensor, high: int, **kwargs: Any) -> torch.Tensor: 
 @register_decomposition(aten.randint_like.low_dtype)
 def randint_like_low(self: torch.Tensor, low: int, high: int, **kwargs: Any) -> torch.Tensor: ...
 @register_decomposition(aten.randint.default)
-def randint(high: int, size: list[Union[int, torch.SymInt]], **kwargs: Any) -> torch.Tensor: ...
+def randint(high: int, size: list[int | torch.SymInt], **kwargs: Any) -> torch.Tensor: ...
 @register_decomposition(quantized.linear_dynamic_fp16_unpacked_weight.default)
 def linear_dynamic_fp16_unpacked_weight(
-    input: torch.Tensor, weight: torch.Tensor, bias: Optional[torch.Tensor] = ...
+    input: torch.Tensor, weight: torch.Tensor, bias: torch.Tensor | None = ...
 ) -> torch.Tensor: ...
 @register_decomposition(_quantized.wrapped_quantized_linear.default)
 def wrapped_quantized_linear(
@@ -149,9 +150,9 @@ def grid_sampler_2d(
 def miopen_batch_norm(
     input: torch.Tensor,
     weight: torch.Tensor,
-    bias: typing.Optional[torch.Tensor],
-    running_mean: typing.Optional[torch.Tensor],
-    running_var: typing.Optional[torch.Tensor],
+    bias: torch.Tensor | None,
+    running_mean: torch.Tensor | None,
+    running_var: torch.Tensor | None,
     training: bool,
     exponential_average_factor: float,
     epsilon: float,
@@ -183,18 +184,18 @@ def index_reduce(
 def max_pool2d_with_indices(
     x: torch.Tensor,
     kernel_size: list[int],
-    stride: Optional[Union[int, list[int]]] = ...,
-    padding: Union[int, list[int]] = ...,
-    dilation: Union[int, list[int]] = ...,
+    stride: int | list[int] | None = ...,
+    padding: int | list[int] = ...,
+    dilation: int | list[int] = ...,
     ceil_mode: bool = ...,
 ) -> tuple[torch.Tensor, torch.Tensor]: ...
 @register_decomposition(aten.max_pool3d_with_indices)
 def max_pool3d_with_indices(
     x: torch.Tensor,
     kernel_size: list[int],
-    stride: Optional[Union[int, list[int]]] = ...,
-    padding: Union[int, list[int]] = ...,
-    dilation: Union[int, list[int]] = ...,
+    stride: int | list[int] | None = ...,
+    padding: int | list[int] = ...,
+    dilation: int | list[int] = ...,
     ceil_mode: bool = ...,
 ) -> tuple[torch.Tensor, torch.Tensor]: ...
 @register_decomposition(aten.adaptive_max_pool2d)
@@ -206,8 +207,8 @@ def searchsorted_scalar(
     *,
     out_int32: bool = ...,
     right: bool = ...,
-    side: Optional[str] = ...,
-    sorter: Optional[torch.Tensor] = ...,
+    side: str | None = ...,
+    sorter: torch.Tensor | None = ...,
 ) -> torch.Tensor: ...
 @register_decomposition(aten.rrelu_with_noise_functional)
 def rrelu_with_noise_functional(
@@ -216,7 +217,7 @@ def rrelu_with_noise_functional(
     lower: float = ...,
     upper: float = ...,
     training: bool = ...,
-    generator: Optional[torch.Generator] = ...,
+    generator: torch.Generator | None = ...,
 ) -> tuple[torch.Tensor, torch.Tensor]: ...
 @register_decomposition(aten.repeat_interleave.Tensor)
-def repeat_interleave_Tensor(repeat: torch.Tensor, output_size: Optional[int] = ...) -> torch.Tensor: ...
+def repeat_interleave_Tensor(repeat: torch.Tensor, output_size: int | None = ...) -> torch.Tensor: ...

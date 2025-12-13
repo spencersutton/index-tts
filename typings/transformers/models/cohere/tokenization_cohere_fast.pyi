@@ -109,8 +109,8 @@ class CohereTokenizerFast(PreTrainedTokenizerFast):
     def add_bos_token(self, value):  # -> None:
         ...
     def apply_tool_use_template(
-        self, conversation: Union[list[dict[str, str]]], tools: list[dict], **kwargs
-    ) -> Union[str, list[int]]:
+        self, conversation: list[dict[str, str]], tools: list[dict], **kwargs
+    ) -> str | list[int]:
         """Create a Command-R tool-use prompt.
 
         Once rendered, the prompt instructs the model to generate a list of actions to perform on a set of user supplied tools
@@ -257,11 +257,11 @@ class CohereTokenizerFast(PreTrainedTokenizerFast):
 
     def apply_grounded_generation_template(
         self,
-        conversation: Union[list[dict[str, str]]],
+        conversation: list[dict[str, str]],
         documents: list[dict],
         citation_mode: Literal["fast", "accurate"] = ...,
         **kwargs,
-    ) -> Union[str, list[int]]:
+    ) -> str | list[int]:
         """Create a Command-R grounded generation (aka RAG) prompt.
 
         Once rendered, the prompt instructs the model to generate a response with citations in, based on supplied documents.

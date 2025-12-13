@@ -4,8 +4,9 @@ import torch._prims as prims
 import torch._prims_common as utils
 import torch._refs as refs
 from functools import wraps
-from typing import Callable, Optional, TypeVar, Union
-from typing_extensions import Concatenate, ParamSpec
+from typing import Optional, TypeVar, Union
+from collections.abc import Callable
+from typing import Concatenate, ParamSpec
 from torch._decomp import register_decomposition
 from torch._prims_common import ELEMENTWISE_TYPE_PROMOTION_KIND, NumberType, ShapeType, TensorLike, TensorLikeType
 from torch._prims_common.wrappers import (
@@ -71,7 +72,7 @@ def alpha_dropout(
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("a",), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT
 )
-def celu(a: TensorLikeType, alpha: Optional[NumberType] = ..., inplace: bool = ...) -> TensorLikeType: ...
+def celu(a: TensorLikeType, alpha: NumberType | None = ..., inplace: bool = ...) -> TensorLikeType: ...
 @_inplace_wrapper
 @out_wrapper()
 def dropout(a: TensorLikeType, p: float = ..., training: bool = ..., inplace: bool = ...) -> TensorLikeType: ...
@@ -99,13 +100,13 @@ def relu(a: TensorLikeType, inplace: bool = ...) -> TensorLikeType: ...
 @out_wrapper()
 def channel_shuffle(input: TensorLikeType, groups: int) -> TensorLikeType: ...
 def group_norm(
-    input: Tensor, num_groups: int, weight: Optional[Tensor] = ..., bias: Optional[Tensor] = ..., eps: float = ...
+    input: Tensor, num_groups: int, weight: Tensor | None = ..., bias: Tensor | None = ..., eps: float = ...
 ) -> Tensor: ...
 def layer_norm(
     input: Tensor,
     normalized_shape: ShapeType,
-    weight: Optional[Tensor] = ...,
-    bias: Optional[Tensor] = ...,
+    weight: Tensor | None = ...,
+    bias: Tensor | None = ...,
     eps: float = ...,
 ) -> Tensor: ...
 @register_decomposition(aten.leaky_relu)
@@ -130,10 +131,10 @@ def mish(a: TensorLikeType, inplace: bool = ...) -> TensorLikeType: ...
 )
 def selu(a: TensorLikeType, inplace: bool = ...) -> TensorLikeType: ...
 def softmax(
-    a: TensorLikeType, dim: Optional[int] = ..., _stacklevel: int = ..., dtype: Optional[torch.dtype] = ...
+    a: TensorLikeType, dim: int | None = ..., _stacklevel: int = ..., dtype: torch.dtype | None = ...
 ) -> TensorLikeType: ...
 def softmin(
-    a: TensorLikeType, dim: Optional[int] = ..., _stacklevel: int = ..., dtype: Optional[torch.dtype] = ...
+    a: TensorLikeType, dim: int | None = ..., _stacklevel: int = ..., dtype: torch.dtype | None = ...
 ) -> TensorLikeType: ...
 @register_decomposition(aten.softplus)
 @_inplace_wrapper
@@ -142,7 +143,7 @@ def softmin(
     type_promoting_args=("a",), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT
 )
 def softplus(
-    a: TensorLikeType, beta: Optional[NumberType] = ..., threshold: NumberType = ..., inplace: bool = ...
+    a: TensorLikeType, beta: NumberType | None = ..., threshold: NumberType = ..., inplace: bool = ...
 ) -> TensorLikeType: ...
 @aten.hardshrink.default.py_impl(DispatchKey.Autograd)
 @register_decomposition(aten.hardshrink)
@@ -160,8 +161,8 @@ def softshrink(a: TensorLikeType, lambd: float = ...):  # -> Tensor:
 def l1_loss(
     input: TensorLikeType,
     target: TensorLikeType,
-    size_average: Optional[bool] = ...,
-    reduce: Optional[bool] = ...,
+    size_average: bool | None = ...,
+    reduce: bool | None = ...,
     reduction: str = ...,
 ) -> TensorLikeType: ...
 @elementwise_type_promotion_wrapper(
@@ -170,13 +171,13 @@ def l1_loss(
 def smooth_l1_loss(
     input: TensorLikeType,
     target: TensorLikeType,
-    size_average: Optional[bool] = ...,
-    reduce: Optional[bool] = ...,
+    size_average: bool | None = ...,
+    reduce: bool | None = ...,
     reduction: str = ...,
     beta: float = ...,
 ) -> TensorLikeType: ...
 def log_softmax(
-    a: TensorLikeType, dim: Optional[int] = ..., _stacklevel: int = ..., dtype: Optional[torch.dtype] = ...
+    a: TensorLikeType, dim: int | None = ..., _stacklevel: int = ..., dtype: torch.dtype | None = ...
 ) -> TensorLikeType: ...
 @register_decomposition(aten.margin_ranking_loss)
 def margin_ranking_loss(
@@ -188,8 +189,8 @@ def margin_ranking_loss(
 def mse_loss(
     input: TensorLikeType,
     target: TensorLikeType,
-    size_average: Optional[bool] = ...,
-    reduce: Optional[bool] = ...,
+    size_average: bool | None = ...,
+    reduce: bool | None = ...,
     reduction: str = ...,
 ) -> TensorLikeType: ...
 @register_decomposition(aten.hinge_embedding_loss)
@@ -204,10 +205,10 @@ def hinge_embedding_loss(
 def nll_loss(
     input: TensorLikeType,
     target: TensorLikeType,
-    weight: Optional[TensorLikeType] = ...,
-    size_average: Optional[bool] = ...,
+    weight: TensorLikeType | None = ...,
+    size_average: bool | None = ...,
     ignore_index: int = ...,
-    reduce: Optional[bool] = ...,
+    reduce: bool | None = ...,
     reduction: str = ...,
 ) -> TensorLikeType: ...
 @register_decomposition(aten.huber_loss)
@@ -216,7 +217,7 @@ def nll_loss(
     type_promoting_args=("input", "target"), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT
 )
 def huber_loss(
-    input: TensorLikeType, target: TensorLikeType, reduction: Union[str, int] = ..., delta: float = ...
+    input: TensorLikeType, target: TensorLikeType, reduction: str | int = ..., delta: float = ...
 ) -> TensorLikeType: ...
 @elementwise_unary_scalar_wrapper
 @elementwise_type_promotion_wrapper(
@@ -229,9 +230,7 @@ def tanhshrink(a: TensorLikeType) -> TensorLikeType: ...
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("a",), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT
 )
-def threshold(
-    a: TensorLikeType, threshold: NumberType, value: Union[bool, float], inplace: bool = ...
-) -> TensorLikeType: ...
+def threshold(a: TensorLikeType, threshold: NumberType, value: bool | float, inplace: bool = ...) -> TensorLikeType: ...
 def triplet_margin_loss(
     anchor: TensorLikeType,
     positive: TensorLikeType,
@@ -240,8 +239,8 @@ def triplet_margin_loss(
     p: float = ...,
     eps: float = ...,
     swap: bool = ...,
-    size_average: Optional[bool] = ...,
-    reduce: Optional[bool] = ...,
+    size_average: bool | None = ...,
+    reduce: bool | None = ...,
     reduction: str = ...,
 ) -> TensorLikeType: ...
 @register_decomposition(aten.hardtanh)
@@ -269,9 +268,9 @@ def poisson_nll_loss(
     target: TensorLikeType,
     log_input: bool = ...,
     full: bool = ...,
-    size_average: Optional[bool] = ...,
+    size_average: bool | None = ...,
     eps: float = ...,
-    reduce: Optional[bool] = ...,
+    reduce: bool | None = ...,
     reduction: str = ...,
 ) -> TensorLikeType: ...
 @register_decomposition(aten.prelu)

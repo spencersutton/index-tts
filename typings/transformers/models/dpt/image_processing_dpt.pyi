@@ -20,10 +20,10 @@ logger = ...
 
 def get_resize_output_image_size(
     input_image: np.ndarray,
-    output_size: Union[int, Iterable[int]],
+    output_size: int | Iterable[int],
     keep_aspect_ratio: bool,
     multiple: int,
-    input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+    input_data_format: str | ChannelDimension | None = ...,
 ) -> tuple[int, int]: ...
 
 @requires(backends=("vision",))
@@ -75,17 +75,17 @@ class DPTImageProcessor(BaseImageProcessor):
     def __init__(
         self,
         do_resize: bool = ...,
-        size: Optional[dict[str, int]] = ...,
+        size: dict[str, int] | None = ...,
         resample: PILImageResampling = ...,
         keep_aspect_ratio: bool = ...,
         ensure_multiple_of: int = ...,
         do_rescale: bool = ...,
-        rescale_factor: Union[int, float] = ...,
+        rescale_factor: int | float = ...,
         do_normalize: bool = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
         do_pad: bool = ...,
-        size_divisor: Optional[int] = ...,
+        size_divisor: int | None = ...,
         do_reduce_labels: bool = ...,
         **kwargs,
     ) -> None: ...
@@ -96,8 +96,8 @@ class DPTImageProcessor(BaseImageProcessor):
         keep_aspect_ratio: bool = ...,
         ensure_multiple_of: int = ...,
         resample: PILImageResampling = ...,
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
         **kwargs,
     ) -> np.ndarray:
         """
@@ -128,8 +128,8 @@ class DPTImageProcessor(BaseImageProcessor):
         self,
         image: np.array,
         size_divisor: int,
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ):  # -> ndarray[_AnyShape, dtype[Any]]:
         """
         Center pad an image to be a multiple of `multiple`.
@@ -160,23 +160,23 @@ class DPTImageProcessor(BaseImageProcessor):
     def preprocess(
         self,
         images: ImageInput,
-        segmentation_maps: Optional[ImageInput] = ...,
-        do_resize: Optional[bool] = ...,
-        size: Optional[int] = ...,
-        keep_aspect_ratio: Optional[bool] = ...,
-        ensure_multiple_of: Optional[int] = ...,
+        segmentation_maps: ImageInput | None = ...,
+        do_resize: bool | None = ...,
+        size: int | None = ...,
+        keep_aspect_ratio: bool | None = ...,
+        ensure_multiple_of: int | None = ...,
         resample: PILImageResampling = ...,
-        do_rescale: Optional[bool] = ...,
-        rescale_factor: Optional[float] = ...,
-        do_normalize: Optional[bool] = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
-        do_pad: Optional[bool] = ...,
-        size_divisor: Optional[int] = ...,
-        do_reduce_labels: Optional[bool] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
+        do_rescale: bool | None = ...,
+        rescale_factor: float | None = ...,
+        do_normalize: bool | None = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
+        do_pad: bool | None = ...,
+        size_divisor: int | None = ...,
+        do_reduce_labels: bool | None = ...,
+        return_tensors: str | TensorType | None = ...,
         data_format: ChannelDimension = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ) -> PIL.Image.Image:
         """
         Preprocess an image or batch of images.
@@ -235,7 +235,7 @@ class DPTImageProcessor(BaseImageProcessor):
         """
         ...
 
-    def post_process_semantic_segmentation(self, outputs, target_sizes: Optional[list[tuple]] = ...):  # -> list[Any]:
+    def post_process_semantic_segmentation(self, outputs, target_sizes: list[tuple] | None = ...):  # -> list[Any]:
         """
         Converts the output of [`DPTForSemanticSegmentation`] into semantic segmentation maps. Only supports PyTorch.
 
@@ -256,7 +256,7 @@ class DPTImageProcessor(BaseImageProcessor):
     def post_process_depth_estimation(
         self,
         outputs: DepthEstimatorOutput,
-        target_sizes: Optional[Union[TensorType, list[tuple[int, int]], None]] = ...,
+        target_sizes: TensorType | list[tuple[int, int]] | None | None = ...,
     ) -> list[dict[str, TensorType]]:
         """
         Converts the raw output of [`DepthEstimatorOutput`] into final depth predictions and depth PIL images.

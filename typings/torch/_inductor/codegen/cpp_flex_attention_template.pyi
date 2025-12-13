@@ -55,8 +55,8 @@ class CppFlexAttentionTemplate(CppTemplate):
     def render(
         self,
         kernel,
-        template_buffer_node: Optional[ir.CppTemplateBuffer] = ...,
-        epilogue_nodes: Optional[list[ir.IRNode]] = ...,
+        template_buffer_node: ir.CppTemplateBuffer | None = ...,
+        epilogue_nodes: list[ir.IRNode] | None = ...,
         **kwargs,
     ) -> str: ...
     def codegen_softmax_fusion(self, kernel_name: str):  # -> Any:

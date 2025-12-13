@@ -152,7 +152,7 @@ class MptConfig(PretrainedConfig):
         learned_pos_emb: bool = ...,
         attn_config: MptAttentionConfig = ...,
         init_device: str = ...,
-        logit_scale: Optional[Union[float, str]] = ...,
+        logit_scale: float | str | None = ...,
         no_bias: bool = ...,
         verbose: int = ...,
         embedding_fraction: float = ...,

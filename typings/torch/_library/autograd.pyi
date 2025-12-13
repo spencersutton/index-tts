@@ -1,16 +1,17 @@
 import dataclasses
 from dataclasses import dataclass
-from typing import Any, Callable, Optional, Protocol
+from typing import Any, Optional, Protocol
+from collections.abc import Callable
 from torch import _ops
 
 class InfoProtocol(Protocol):
-    _backward_fn: Optional[Callable]
-    _setup_context_fn: Optional[Callable]
+    _backward_fn: Callable | None
+    _setup_context_fn: Callable | None
 
 @dataclasses.dataclass
 class Info:
-    _backward_fn: Optional[Callable]
-    _setup_context_fn: Optional[Callable]
+    _backward_fn: Callable | None
+    _setup_context_fn: Callable | None
 
 def make_autograd_impl(op: _ops.OpOverload, info: InfoProtocol) -> Callable: ...
 def supports_tensorlist(cls: Any) -> Any: ...

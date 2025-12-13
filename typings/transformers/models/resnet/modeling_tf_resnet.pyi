@@ -135,10 +135,10 @@ class TFResNetMainLayer(keras.layers.Layer):
     def call(
         self,
         pixel_values: tf.Tensor,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         training: bool = ...,
-    ) -> Union[tuple[tf.Tensor], TFBaseModelOutputWithPoolingAndNoAttention]: ...
+    ) -> tuple[tf.Tensor] | TFBaseModelOutputWithPoolingAndNoAttention: ...
     def build(self, input_shape=...):  # -> None:
         ...
 
@@ -159,10 +159,10 @@ class TFResNetModel(TFResNetPreTrainedModel):
     def call(
         self,
         pixel_values: tf.Tensor,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         training: bool = ...,
-    ) -> Union[tuple[tf.Tensor], TFBaseModelOutputWithPoolingAndNoAttention]: ...
+    ) -> tuple[tf.Tensor] | TFBaseModelOutputWithPoolingAndNoAttention: ...
     def build(self, input_shape=...):  # -> None:
         ...
 
@@ -186,12 +186,12 @@ class TFResNetForImageClassification(TFResNetPreTrainedModel, TFSequenceClassifi
     @unpack_inputs
     def call(
         self,
-        pixel_values: Optional[tf.Tensor] = ...,
-        labels: Optional[tf.Tensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        pixel_values: tf.Tensor | None = ...,
+        labels: tf.Tensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         training: bool = ...,
-    ) -> Union[tuple[tf.Tensor], TFImageClassifierOutputWithNoAttention]:
+    ) -> tuple[tf.Tensor] | TFImageClassifierOutputWithNoAttention:
         r"""
         labels (`tf.Tensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the image classification/regression loss. Indices should be in `[0, ...,

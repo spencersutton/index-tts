@@ -29,18 +29,18 @@ def lambda_init_fn(layer_idx):  # -> float:
 
 class DiffLlamaAttention(nn.Module):
     """Multi-headed attention from 'Attention Is All You Need' paper"""
-    def __init__(self, config: DiffLlamaConfig, layer_idx: Optional[int] = ...) -> None: ...
+    def __init__(self, config: DiffLlamaConfig, layer_idx: int | None = ...) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
         position_embeddings: tuple[torch.Tensor, torch.Tensor],
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[Cache] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: Cache | None = ...,
         use_cache: bool = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]: ...
 
 class DiffLlamaFlashAttention2(DiffLlamaAttention):
     """
@@ -53,12 +53,12 @@ class DiffLlamaFlashAttention2(DiffLlamaAttention):
         self,
         hidden_states: torch.Tensor,
         position_embeddings: tuple[torch.Tensor, torch.Tensor],
-        attention_mask: Optional[torch.LongTensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[Cache] = ...,
+        attention_mask: torch.LongTensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: Cache | None = ...,
         use_cache: bool = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+        cache_position: torch.LongTensor | None = ...,
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]: ...
 
 class DiffLlamaSdpaAttention(DiffLlamaAttention):
     """
@@ -70,13 +70,13 @@ class DiffLlamaSdpaAttention(DiffLlamaAttention):
         self,
         hidden_states: torch.Tensor,
         position_embeddings: tuple[torch.Tensor, torch.Tensor],
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[Cache] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: Cache | None = ...,
         use_cache: bool = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]: ...
 
 DIFFLLAMA_ATTENTION_CLASSES = ...
 

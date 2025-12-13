@@ -7,16 +7,16 @@ from threading import Thread
 from typing import Dict, Optional, Union
 
 logger = ...
-_TELEMETRY_THREAD: Optional[Thread] = ...
+_TELEMETRY_THREAD: Thread | None = ...
 _TELEMETRY_THREAD_LOCK = ...
 _TELEMETRY_QUEUE: Queue = ...
 
 def send_telemetry(
     topic: str,
     *,
-    library_name: Optional[str] = ...,
-    library_version: Optional[str] = ...,
-    user_agent: Union[Dict, str, None] = ...,
+    library_name: str | None = ...,
+    library_version: str | None = ...,
+    user_agent: dict | str | None = ...,
 ) -> None:
     """
     Sends telemetry that helps tracking usage of different HF libraries.

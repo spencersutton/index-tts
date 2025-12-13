@@ -42,10 +42,10 @@ class GenerationOutput:
     prompt_ids: list[int] = ...
     generated_tokens: list[int] = ...
     logprobs: list[float] = ...
-    error: Optional[str] = ...
+    error: str | None = ...
     status: RequestStatus = ...
     created_time: float = ...
-    next_token: Optional[int] = ...
+    next_token: int | None = ...
 
 @dataclass
 class RequestState:
@@ -57,8 +57,8 @@ class RequestState:
     """
 
     request_id: str
-    prompt_ids: Optional[list[int]] = ...
-    full_prompt_ids: Optional[list[int]] = ...
+    prompt_ids: list[int] | None = ...
+    full_prompt_ids: list[int] | None = ...
     remaining_prompt_ids: list[int] = ...
     static_outputs: list[int] = ...
     allocated_blocks: list[int] = ...
@@ -67,8 +67,8 @@ class RequestState:
     max_new_tokens: int = ...
     eos_token_id: int = ...
     created_time: float = ...
-    error: Optional[str] = ...
-    next_token: Optional[str] = ...
+    error: str | None = ...
+    next_token: str | None = ...
     def current_len(self) -> int:
         """Get the current length of the sequence (prompt + generated tokens)."""
         ...
@@ -104,8 +104,8 @@ class PagedAttentionCache:
         device: torch.device,
         dtype: torch.dtype = ...,
         num_requests: int = ...,
-        layer_device_map: Optional[dict[int, Union[str, torch.device, int]]] = ...,
-        tp_size: Optional[int] = ...,
+        layer_device_map: dict[int, str | torch.device | int] | None = ...,
+        tp_size: int | None = ...,
     ) -> None:
         """Initialize a paged attention cache for efficient memory usage.
 
@@ -332,7 +332,7 @@ class ContinuousBatchingManager:
         """Check if the background generation thread is running."""
         ...
 
-    def stop(self, block: bool = ..., timeout: Optional[float] = ...):  # -> None:
+    def stop(self, block: bool = ..., timeout: float | None = ...):  # -> None:
         """Signal the background thread to stop.
 
         Args:
@@ -341,7 +341,7 @@ class ContinuousBatchingManager:
         """
         ...
 
-    def join(self, timeout: Optional[float] = ...):  # -> None:
+    def join(self, timeout: float | None = ...):  # -> None:
         """Wait for the background thread to finish.
 
         Args:
@@ -349,9 +349,7 @@ class ContinuousBatchingManager:
         """
         ...
 
-    def add_request(
-        self, input_ids: list[int], request_id: Optional[str] = ..., max_new_tokens: Optional[int] = ...
-    ) -> str:
+    def add_request(self, input_ids: list[int], request_id: str | None = ..., max_new_tokens: int | None = ...) -> str:
         """Add a new generation request to the queue.
 
         Args:
@@ -366,7 +364,7 @@ class ContinuousBatchingManager:
 
     def add_requests(self, inputs: list[list[int]], **kwargs):  # -> None:
         ...
-    def get_result(self, timeout=...) -> Optional[GenerationOutput]:
+    def get_result(self, timeout=...) -> GenerationOutput | None:
         """Retrieve one result from the output queue.
 
         Args:
@@ -393,7 +391,7 @@ class ContinuousMixin:
     """Mixin class for models to add continuous batching capabilities."""
     def init_continuous_batching(
         self,
-        generation_config: Optional[GenerationConfig] = ...,
+        generation_config: GenerationConfig | None = ...,
         manual_eviction: bool = ...,
         max_queue_size: int = ...,
         streaming: bool = ...,
@@ -415,7 +413,7 @@ class ContinuousMixin:
     def generate_batch(
         self,
         inputs: list[list[int]],
-        generation_config: Optional[GenerationConfig] = ...,
+        generation_config: GenerationConfig | None = ...,
         progress_bar: bool = ...,
         **kwargs,
     ) -> list[list[int]]:

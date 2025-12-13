@@ -20,8 +20,8 @@ if is_flax_available(): ...
 
 def to_channel_dimension_format(
     image: np.ndarray,
-    channel_dim: Union[ChannelDimension, str],
-    input_channel_dim: Optional[Union[ChannelDimension, str]] = ...,
+    channel_dim: ChannelDimension | str,
+    input_channel_dim: ChannelDimension | str | None = ...,
 ) -> np.ndarray:
     """
     Converts `image` to the channel dimension format specified by `channel_dim`. The input
@@ -44,9 +44,9 @@ def to_channel_dimension_format(
 def rescale(
     image: np.ndarray,
     scale: float,
-    data_format: Optional[ChannelDimension] = ...,
+    data_format: ChannelDimension | None = ...,
     dtype: np.dtype = ...,
-    input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+    input_data_format: str | ChannelDimension | None = ...,
 ) -> np.ndarray:
     """
     Rescales `image` by `scale`.
@@ -70,10 +70,10 @@ def rescale(
     ...
 
 def to_pil_image(
-    image: Union[np.ndarray, PIL.Image.Image, torch.Tensor, tf.Tensor, jnp.ndarray],
-    do_rescale: Optional[bool] = ...,
-    image_mode: Optional[str] = ...,
-    input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+    image: np.ndarray | PIL.Image.Image | torch.Tensor | tf.Tensor | jnp.ndarray,
+    do_rescale: bool | None = ...,
+    image_mode: str | None = ...,
+    input_data_format: str | ChannelDimension | None = ...,
 ) -> PIL.Image.Image:
     """
     Converts `image` to a PIL Image. Optionally rescales it and puts the channel dimension back as the last axis if
@@ -112,10 +112,10 @@ def get_size_with_aspect_ratio(image_size, size, max_size=...) -> tuple[int, int
 
 def get_resize_output_image_size(
     input_image: np.ndarray,
-    size: Union[int, tuple[int, int], list[int], tuple[int]],
+    size: int | tuple[int, int] | list[int] | tuple[int],
     default_to_square: bool = ...,
-    max_size: Optional[int] = ...,
-    input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+    max_size: int | None = ...,
+    input_data_format: str | ChannelDimension | None = ...,
 ) -> tuple:
     """
     Find the target (height, width) dimension of the output image after resizing given the input image and the desired
@@ -153,10 +153,10 @@ def resize(
     image: np.ndarray,
     size: tuple[int, int],
     resample: PILImageResampling = ...,
-    reducing_gap: Optional[int] = ...,
-    data_format: Optional[ChannelDimension] = ...,
+    reducing_gap: int | None = ...,
+    data_format: ChannelDimension | None = ...,
     return_numpy: bool = ...,
-    input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+    input_data_format: str | ChannelDimension | None = ...,
 ) -> np.ndarray:
     """
     Resizes `image` to `(height, width)` specified by `size` using the PIL library.
@@ -186,10 +186,10 @@ def resize(
 
 def normalize(
     image: np.ndarray,
-    mean: Union[float, Collection[float]],
-    std: Union[float, Collection[float]],
-    data_format: Optional[ChannelDimension] = ...,
-    input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+    mean: float | Collection[float],
+    std: float | Collection[float],
+    data_format: ChannelDimension | None = ...,
+    input_data_format: str | ChannelDimension | None = ...,
 ) -> np.ndarray:
     """
     Normalizes `image` using the mean and standard deviation specified by `mean` and `std`.
@@ -213,8 +213,8 @@ def normalize(
 def center_crop(
     image: np.ndarray,
     size: tuple[int, int],
-    data_format: Optional[Union[str, ChannelDimension]] = ...,
-    input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+    data_format: str | ChannelDimension | None = ...,
+    input_data_format: str | ChannelDimension | None = ...,
 ) -> np.ndarray:
     """
     Crops the `image` to the specified `size` using a center crop. Note that if the image is too small to be cropped to
@@ -286,11 +286,11 @@ class PaddingMode(ExplicitEnum):
 
 def pad(
     image: np.ndarray,
-    padding: Union[int, tuple[int, int], Iterable[tuple[int, int]]],
+    padding: int | tuple[int, int] | Iterable[tuple[int, int]],
     mode: PaddingMode = ...,
-    constant_values: Union[float, Iterable[float]] = ...,
-    data_format: Optional[Union[str, ChannelDimension]] = ...,
-    input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+    constant_values: float | Iterable[float] = ...,
+    data_format: str | ChannelDimension | None = ...,
+    input_data_format: str | ChannelDimension | None = ...,
 ) -> np.ndarray:
     """
     Pads the `image` with the specified (height, width) `padding` and `mode`.
@@ -341,8 +341,8 @@ def convert_to_rgb(image: ImageInput) -> ImageInput:
 
 def flip_channel_order(
     image: np.ndarray,
-    data_format: Optional[ChannelDimension] = ...,
-    input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+    data_format: ChannelDimension | None = ...,
+    input_data_format: str | ChannelDimension | None = ...,
 ) -> np.ndarray:
     """
     Flips the channel order of the image.
@@ -366,8 +366,8 @@ def flip_channel_order(
     ...
 
 def group_images_by_shape(
-    images: Union[list[torch.Tensor], torch.Tensor], disable_grouping: bool, is_nested: bool = ...
-) -> tuple[dict[tuple[int, int], list[torch.Tensor]], dict[Union[int, tuple[int, int]], tuple[tuple[int, int], int]]]:
+    images: list[torch.Tensor] | torch.Tensor, disable_grouping: bool, is_nested: bool = ...
+) -> tuple[dict[tuple[int, int], list[torch.Tensor]], dict[int | tuple[int, int], tuple[tuple[int, int], int]]]:
     """
     Groups images by shape.
     Returns a dictionary with the shape as key and a list of images with that shape as value,
@@ -394,9 +394,9 @@ def group_images_by_shape(
 
 def reorder_images(
     processed_images: dict[tuple[int, int], torch.Tensor],
-    grouped_images_index: dict[Union[int, tuple[int, int]], tuple[tuple[int, int], int]],
+    grouped_images_index: dict[int | tuple[int, int], tuple[tuple[int, int], int]],
     is_nested: bool = ...,
-) -> Union[list[torch.Tensor], torch.Tensor]:
+) -> list[torch.Tensor] | torch.Tensor:
     """
     Reconstructs images in the original order, preserving the original structure (nested or not).
     The input structure is either all flat or all nested.

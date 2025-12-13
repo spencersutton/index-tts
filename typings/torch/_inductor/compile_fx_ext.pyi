@@ -6,7 +6,7 @@ import torch.fx
 import types
 from dataclasses import dataclass
 from typing import Any, Optional, TYPE_CHECKING
-from typing_extensions import Self, final, override
+from typing import Self, final, override
 from torch._inductor.metrics import CachedMetricsDeltas
 from torch._inductor.output_code import CompiledFxGraphConstants, CompiledFxGraphConstantsWithGm, OutputCode
 from torch._subclasses import FakeTensorMode
@@ -51,7 +51,7 @@ class _FakeTensorModeSerializer:
     allow_non_fake_inputs: bool
     def __init__(self, fake_mode: FakeTensorMode) -> None: ...
     @contextlib.contextmanager
-    def patch(self, fake_mode: FakeTensorMode) -> Generator[None, None, None]: ...
+    def patch(self, fake_mode: FakeTensorMode) -> Generator[None]: ...
 
 @dataclass
 class _WireProtocolInput:
@@ -59,10 +59,10 @@ class _WireProtocolInput:
     example_inputs: Sequence[InputType]
     inputs_to_check: Sequence[int]
     graph_kwargs: _CompileFxKwargs
-    tracing_context: Optional[torch._guards.TracingContext]
+    tracing_context: torch._guards.TracingContext | None
     config: dict[str, object]
     virtualized: _VirtualizedSerializer
-    deterministic_guard_for_testing: Optional[torch.testing._internal.common_utils.DeterministicGuard]
+    deterministic_guard_for_testing: torch.testing._internal.common_utils.DeterministicGuard | None
     logger_state: _LoggerState
     lowering: _LoweringSerializer
     fake_tensor_mode: _FakeTensorModeSerializer
@@ -78,8 +78,8 @@ class _WireProtocolOutput:
     graph: OutputCode
     metrics: CachedMetricsDeltas
     logs: list[logging.LogRecord]
-    warning_replay: Optional[list[warnings.WarningMessage]]
-    shape_env: Optional[torch.fx.experimental.symbolic_shapes.ShapeEnv]
+    warning_replay: list[warnings.WarningMessage] | None
+    shape_env: torch.fx.experimental.symbolic_shapes.ShapeEnv | None
     def serialize(self) -> _WireProtocolPickledOutput: ...
 
 @dataclass
@@ -89,20 +89,20 @@ class _WireProtocolPickledOutput:
 
 class _LoggerState:
     loggers: dict[str, int]
-    captured_logs: Optional[_CapturedLogs] = ...
+    captured_logs: _CapturedLogs | None = ...
     def __init__(self) -> None: ...
     def __enter__(self) -> _CapturedLogs: ...
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_value: Optional[BaseException],
-        traceback: Optional[types.TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: types.TracebackType | None,
     ) -> None: ...
 
 class _CapturedLogs:
     state: _LoggerState
     queue: queue.Queue[logging.LogRecord]
-    handlers: Optional[dict[str, logging.Handler]]
+    handlers: dict[str, logging.Handler] | None
     def __init__(self, state: _LoggerState) -> None: ...
     def finish(self) -> list[logging.LogRecord]: ...
     def remove(self) -> None: ...
@@ -123,7 +123,7 @@ class _SerializedFxCompile(FxCompile):
         example_inputs: Sequence[InputType],
         inputs_to_check: Sequence[int],
         graph_kwargs: _CompileFxKwargs,
-    ) -> Optional[tuple[_WireProtocolPickledInput, CompiledFxGraphConstantsWithGm]]: ...
+    ) -> tuple[_WireProtocolPickledInput, CompiledFxGraphConstantsWithGm] | None: ...
 
 @final
 class _DebugSerdeFxCompile(_SerializedFxCompile): ...

@@ -1,5 +1,6 @@
 import torch
-from typing import Any, Callable, TYPE_CHECKING, Union
+from typing import Any, TYPE_CHECKING, Union
+from collections.abc import Callable
 from torch._inductor.autotune_process import BenchmarkRequest, GPUDeviceBenchmarkMixin, TensorMeta
 from collections.abc import Iterable
 
@@ -10,8 +11,8 @@ class ROCmBenchmarkRequest(GPUDeviceBenchmarkMixin, BenchmarkRequest):
     def __init__(
         self,
         kernel_name: str,
-        input_tensor_meta: Union[TensorMeta, list[TensorMeta]],
-        output_tensor_meta: Union[TensorMeta, list[TensorMeta]],
+        input_tensor_meta: TensorMeta | list[TensorMeta],
+        output_tensor_meta: TensorMeta | list[TensorMeta],
         extra_args: Iterable[Any],
         source_code: str,
     ) -> None: ...

@@ -57,12 +57,12 @@ class NotebookProgressBar:
     def __init__(
         self,
         total: int,
-        prefix: Optional[str] = ...,
+        prefix: str | None = ...,
         leave: bool = ...,
-        parent: Optional[NotebookTrainingTracker] = ...,
+        parent: NotebookTrainingTracker | None = ...,
         width: int = ...,
     ) -> None: ...
-    def update(self, value: int, force_update: bool = ..., comment: Optional[str] = ...):  # -> None:
+    def update(self, value: int, force_update: bool = ..., comment: str | None = ...):  # -> None:
         """
         The main method to update the progress bar to `value`.
 

@@ -117,8 +117,8 @@ class AutoformerConfig(PretrainedConfig):
     attribute_map = ...
     def __init__(
         self,
-        prediction_length: Optional[int] = ...,
-        context_length: Optional[int] = ...,
+        prediction_length: int | None = ...,
+        context_length: int | None = ...,
         distribution_output: str = ...,
         loss: str = ...,
         input_size: int = ...,
@@ -128,8 +128,8 @@ class AutoformerConfig(PretrainedConfig):
         num_dynamic_real_features: int = ...,
         num_static_categorical_features: int = ...,
         num_static_real_features: int = ...,
-        cardinality: Optional[list[int]] = ...,
-        embedding_dimension: Optional[list[int]] = ...,
+        cardinality: list[int] | None = ...,
+        embedding_dimension: list[int] | None = ...,
         d_model: int = ...,
         encoder_attention_heads: int = ...,
         decoder_attention_heads: int = ...,

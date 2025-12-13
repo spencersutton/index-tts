@@ -5,8 +5,9 @@ import torch
 import numpy as np
 from dataclasses import dataclass
 from types import CellType, CodeType, FunctionType, ModuleType
-from typing import Any, Callable, Optional, TypeVar, Union
-from typing_extensions import ParamSpec
+from typing import Any, Optional, TypeVar, Union
+from collections.abc import Callable
+from typing import ParamSpec
 from torch._C._dynamo.guards import GlobalStateGuard
 from torch._guards import CompileId
 from torch.fx.graph_module import _forward_from_src as original_forward_from_src
@@ -44,7 +45,7 @@ NOTE: _torchdynamo_orig_backend is used for convert frame wrappers to identify t
 By going down the _torchdynamo_orig_backend chain, one can recover the original unwrapped backend,
 which is checked for during the Dynamo cache lookup.
 """
-np: Optional[ModuleType]
+np: ModuleType | None
 if typing.TYPE_CHECKING: ...
 log = ...
 bytecode_log = ...
@@ -63,31 +64,31 @@ class Tracker:
 
 input_codes = ...
 output_codes = ...
-initial_global_state: Optional[GlobalStateGuard] = ...
+initial_global_state: GlobalStateGuard | None = ...
 
 @functools.wraps(original_forward_from_src)
 def fx_forward_from_src_skip_result(
-    src: str, globals: dict[str, Any], co_fields: Optional[dict[str, str]] = ...
+    src: str, globals: dict[str, Any], co_fields: dict[str, str] | None = ...
 ) -> FunctionType: ...
 def log_dynamo_start(code: CodeType, skip: int = ...) -> list[str]: ...
 def preserve_global_state(fn: Callable[_P, _T]) -> Callable[_P, _T]: ...
 @TorchPatcher.suppress_torch_distributed_warnings
 def has_tensor_in_frame(frame: DynamoFrameType) -> bool: ...
 def exception_handler(
-    e: Exception, code: CodeType, frame: Optional[DynamoFrameType] = ..., export: bool = ...
+    e: Exception, code: CodeType, frame: DynamoFrameType | None = ..., export: bool = ...
 ) -> None: ...
 
 FRAME_COUNTER = ...
-FRAME_COMPILE_COUNTER: typing.Counter[Union[int, FrameStateSizeEntry]] = ...
+FRAME_COMPILE_COUNTER: typing.Counter[int | FrameStateSizeEntry] = ...
 
 def maybe_cprofile(func: Callable[_P, _T]) -> Callable[_P, _T]: ...
 def cprofile_wrapper(func: Callable[_P, _T]) -> Callable[_P, _T]: ...
 
 @dataclass
 class ConvertFrameBox:
-    error_on_graph_break: Optional[bool] = ...
+    error_on_graph_break: bool | None = ...
 
-def get_compile_id(frame_state: dict[str, Union[int, FrameStateSizeEntry]]) -> CompileId: ...
+def get_compile_id(frame_state: dict[str, int | FrameStateSizeEntry]) -> CompileId: ...
 
 class ConvertFrameAssert:
     def __init__(
@@ -95,15 +96,15 @@ class ConvertFrameAssert:
         compiler_fn: CompilerFn,
         one_graph: bool = ...,
         export: bool = ...,
-        export_constraints: Optional[typing.Never] = ...,
-        package: Optional[CompilePackage] = ...,
+        export_constraints: typing.Never | None = ...,
+        package: CompilePackage | None = ...,
     ) -> None: ...
     def __call__(
         self,
         frame: DynamoFrameType,
-        cache_entry: Optional[CacheEntry],
+        cache_entry: CacheEntry | None,
         hooks: Hooks,
-        frame_state: dict[str, Union[int, FrameStateSizeEntry]],
+        frame_state: dict[str, int | FrameStateSizeEntry],
         *,
         skip: int = ...,
     ) -> ConvertFrameReturn: ...
@@ -112,8 +113,8 @@ def convert_frame_assert(
     compiler_fn: CompilerFn,
     one_graph: bool = ...,
     export: bool = ...,
-    export_constraints: Optional[typing.Never] = ...,
-    package: Optional[CompilePackage] = ...,
+    export_constraints: typing.Never | None = ...,
+    package: CompilePackage | None = ...,
 ) -> ConvertFrameAssert: ...
 
 _bytecode_hooks: dict[int, BytecodeHook] = ...
@@ -134,23 +135,23 @@ def trace_frame(
     code_options: dict[str, object],
     *,
     export: bool = ...,
-    export_constraints: Optional[typing.Never] = ...,
-    frame_state: Optional[dict[str, Union[int, FrameStateSizeEntry]]] = ...,
-    distributed_state: Optional[DistributedState] = ...,
-    package: Optional[CompilePackage] = ...,
+    export_constraints: typing.Never | None = ...,
+    frame_state: dict[str, int | FrameStateSizeEntry] | None = ...,
+    distributed_state: DistributedState | None = ...,
+    package: CompilePackage | None = ...,
 ) -> DynamoTracerOutput: ...
 
 @dataclass
 class DynamoOutput:
     tracer_output: DynamoTracerOutput
     bytecode: types.CodeType
-    last_attempt_start_time: Optional[float]
+    last_attempt_start_time: float | None
     def build_guards(
         self,
         code: types.CodeType,
-        hooks: Optional[Hooks] = ...,
+        hooks: Hooks | None = ...,
         save: bool = ...,
-        cache_entry: Optional[CacheEntry] = ...,
+        cache_entry: CacheEntry | None = ...,
         strict_error: bool = ...,
     ) -> CheckFunctionManager: ...
 
@@ -186,24 +187,24 @@ def compile_frame(
     restart_reasons: set[str],
     *,
     export: bool = ...,
-    export_constraints: Optional[typing.Never] = ...,
-    frame_state: Optional[dict[str, Union[int, FrameStateSizeEntry]]] = ...,
-    distributed_state: Optional[DistributedState] = ...,
-    package: Optional[CompilePackage] = ...,
+    export_constraints: typing.Never | None = ...,
+    frame_state: dict[str, int | FrameStateSizeEntry] | None = ...,
+    distributed_state: DistributedState | None = ...,
+    package: CompilePackage | None = ...,
 ) -> DynamoOutput: ...
 
 class ConvertFrame:
-    def __init__(self, compiler_fn: CompilerFn, hooks: Hooks, package: Optional[CompilePackage] = ...) -> None: ...
+    def __init__(self, compiler_fn: CompilerFn, hooks: Hooks, package: CompilePackage | None = ...) -> None: ...
     def __call__(
         self,
         frame: DynamoFrameType,
-        cache_entry: Optional[CacheEntry],
+        cache_entry: CacheEntry | None,
         hooks: Hooks,
-        frame_state: dict[str, Union[int, FrameStateSizeEntry]],
+        frame_state: dict[str, int | FrameStateSizeEntry],
         skip: int = ...,
     ) -> ConvertFrameReturn: ...
 
-def convert_frame(compiler_fn: CompilerFn, hooks: Hooks, package: Optional[CompilePackage] = ...) -> ConvertFrame: ...
+def convert_frame(compiler_fn: CompilerFn, hooks: Hooks, package: CompilePackage | None = ...) -> ConvertFrame: ...
 def replay(filename: str) -> None: ...
 def first_real_inst_idx(code: CodeType) -> int: ...
 
@@ -211,9 +212,9 @@ class ConvertFrameProtocol(typing.Protocol):
     def __call__(
         self,
         frame: DynamoFrameType,
-        cache_entry: Optional[CacheEntry],
+        cache_entry: CacheEntry | None,
         hooks: Hooks,
-        frame_state: dict[str, Union[int, FrameStateSizeEntry]],
+        frame_state: dict[str, int | FrameStateSizeEntry],
         *,
         skip: int = ...,
     ) -> ConvertFrameReturn: ...
@@ -225,8 +226,8 @@ class CatchErrorsWrapper:
     def __call__(
         self,
         frame: DynamoFrameType,
-        cache_entry: Optional[CacheEntry],
-        frame_state: dict[str, Union[int, FrameStateSizeEntry]],
+        cache_entry: CacheEntry | None,
+        frame_state: dict[str, int | FrameStateSizeEntry],
     ) -> ConvertFrameReturn: ...
 
 def catch_errors_wrapper(callback: ConvertFrameProtocol, hooks: Hooks) -> CatchErrorsWrapper: ...

@@ -1,6 +1,7 @@
 import logging
 import torch
-from typing import Any, Callable, Optional
+from typing import Any, Optional
+from collections.abc import Callable
 from torch.utils._ordered_set import OrderedSet
 
 logger: logging.Logger = ...
@@ -8,13 +9,13 @@ logger: logging.Logger = ...
 def bucket_cap_mb_by_bucket_idx_default(bucket_id: int) -> float: ...
 def bucket_all_gather(
     gm: torch.fx.GraphModule,
-    bucket_cap_mb_by_bucket_idx: Optional[Callable[[int], float]] = ...,
-    mode: Optional[str] = ...,
+    bucket_cap_mb_by_bucket_idx: Callable[[int], float] | None = ...,
+    mode: str | None = ...,
 ) -> None: ...
 def bucket_reduce_scatter(
     gm: torch.fx.GraphModule,
-    bucket_cap_mb_by_bucket_idx: Optional[Callable[[int], float]] = ...,
-    mode: Optional[str] = ...,
+    bucket_cap_mb_by_bucket_idx: Callable[[int], float] | None = ...,
+    mode: str | None = ...,
 ) -> None: ...
 def is_all_gather_into_tensor(node: torch.fx.Node) -> bool: ...
 def is_reduce_scatter_tensor(node: torch.fx.Node) -> bool: ...
@@ -26,17 +27,17 @@ def greedy_bucket_collective_by_mb(
     bucket_cap_mb_by_bucket_idx: Callable[[int], float],
     filter_node: Callable[[torch.fx.Node], bool],
     node_group_key: Callable[[torch.fx.Node], Any],
-    filter_wait_node: Optional[Callable[[torch.fx.Node], bool]] = ...,
+    filter_wait_node: Callable[[torch.fx.Node], bool] | None = ...,
 ) -> list[list[torch.fx.Node]]: ...
 def bucket_all_gather_by_mb(
     gm: torch.fx.GraphModule,
     bucket_cap_mb_by_bucket_idx: Callable[[int], float],
-    filter_wait_node: Optional[Callable[[torch.fx.Node], bool]] = ...,
+    filter_wait_node: Callable[[torch.fx.Node], bool] | None = ...,
 ) -> list[list[torch.fx.Node]]: ...
 def bucket_reduce_scatter_by_mb(
     gm: torch.fx.GraphModule,
     bucket_cap_mb_by_bucket_idx: Callable[[int], float],
-    filter_wait_node: Optional[Callable[[torch.fx.Node], bool]] = ...,
+    filter_wait_node: Callable[[torch.fx.Node], bool] | None = ...,
 ) -> list[list[torch.fx.Node]]: ...
 def reduce_scatter_merge_fn_to_trace_custom_ops(
     rs_ins: list[torch.Tensor],
@@ -69,8 +70,8 @@ def all_gather_merge_fn_to_trace_functional(
     use_fsdp_ag_copy_in: bool = ...,
 ) -> list[torch.Tensor]: ...
 def merge_reduce_scatter(
-    gm: torch.fx.GraphModule, rs_buckets: list[list[torch.fx.Node]], mode: Optional[str] = ...
+    gm: torch.fx.GraphModule, rs_buckets: list[list[torch.fx.Node]], mode: str | None = ...
 ) -> None: ...
 def merge_all_gather(
-    gm: torch.fx.GraphModule, ag_buckets: list[list[torch.fx.Node]], mode: Optional[str] = ...
+    gm: torch.fx.GraphModule, ag_buckets: list[list[torch.fx.Node]], mode: str | None = ...
 ) -> None: ...

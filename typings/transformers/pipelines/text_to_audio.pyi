@@ -76,9 +76,7 @@ class TextToAudioPipeline(Pipeline):
     def __call__(self, text_inputs: str, **forward_params: Any) -> dict[str, Any]: ...
     @overload
     def __call__(self, text_inputs: list[str], **forward_params: Any) -> list[dict[str, Any]]: ...
-    def __call__(
-        self, text_inputs: Union[str, list[str]], **forward_params
-    ) -> Union[dict[str, Any], list[dict[str, Any]]]:
+    def __call__(self, text_inputs: str | list[str], **forward_params) -> dict[str, Any] | list[dict[str, Any]]:
         """
         Generates speech/audio from the inputs. See the [`TextToAudioPipeline`] documentation for more information.
 

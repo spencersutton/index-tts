@@ -19,7 +19,7 @@ from .configuration_mobilevit import MobileViTConfig
 """PyTorch MobileViT model."""
 logger = ...
 
-def make_divisible(value: int, divisor: int = ..., min_value: Optional[int] = ...) -> int:
+def make_divisible(value: int, divisor: int = ..., min_value: int | None = ...) -> int:
     """
     Ensure that all layers have a channel count that is divisible by `divisor`. This function is taken from the
     original TensorFlow repo. It can be seen here:
@@ -39,7 +39,7 @@ class MobileViTConvLayer(nn.Module):
         bias: bool = ...,
         dilation: int = ...,
         use_normalization: bool = ...,
-        use_activation: Union[bool, str] = ...,
+        use_activation: bool | str = ...,
     ) -> None: ...
     def forward(self, features: torch.Tensor) -> torch.Tensor: ...
 
@@ -109,7 +109,7 @@ class MobileViTEncoder(nn.Module):
     def __init__(self, config: MobileViTConfig) -> None: ...
     def forward(
         self, hidden_states: torch.Tensor, output_hidden_states: bool = ..., return_dict: bool = ...
-    ) -> Union[tuple, BaseModelOutputWithNoAttention]: ...
+    ) -> tuple | BaseModelOutputWithNoAttention: ...
 
 @auto_docstring
 class MobileViTPreTrainedModel(PreTrainedModel):
@@ -132,10 +132,10 @@ class MobileViTModel(MobileViTPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.Tensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPoolingAndNoAttention]: ...
+        pixel_values: torch.Tensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutputWithPoolingAndNoAttention: ...
 
 @auto_docstring(
     custom_intro="""
@@ -148,11 +148,11 @@ class MobileViTForImageClassification(MobileViTPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.Tensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ImageClassifierOutputWithNoAttention]:
+        pixel_values: torch.Tensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        labels: torch.Tensor | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | ImageClassifierOutputWithNoAttention:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
@@ -189,11 +189,11 @@ class MobileViTForSemanticSegmentation(MobileViTPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, SemanticSegmenterOutput]:
+        pixel_values: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | SemanticSegmenterOutput:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size, height, width)`, *optional*):
             Ground truth semantic segmentation maps for computing the loss. Indices should be in `[0, ...,

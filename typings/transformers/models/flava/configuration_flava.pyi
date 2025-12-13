@@ -345,10 +345,10 @@ class FlavaConfig(PretrainedConfig):
     sub_configs = ...
     def __init__(
         self,
-        image_config: Optional[dict[str, Any]] = ...,
-        text_config: Optional[dict[str, Any]] = ...,
-        multimodal_config: Optional[dict[str, Any]] = ...,
-        image_codebook_config: Optional[dict[str, Any]] = ...,
+        image_config: dict[str, Any] | None = ...,
+        text_config: dict[str, Any] | None = ...,
+        multimodal_config: dict[str, Any] | None = ...,
+        image_codebook_config: dict[str, Any] | None = ...,
         hidden_size: int = ...,
         layer_norm_eps: float = ...,
         projection_dim: int = ...,

@@ -35,7 +35,7 @@ def gen_alias_from_base(
     aliased_base_tensor,
     target_meta_tensor,
     target_requires_grad,
-    target_view_meta_sequence: Optional[ViewMetaSequence] = ...,
+    target_view_meta_sequence: ViewMetaSequence | None = ...,
     *,
     replay_views: bool,
 ): ...
@@ -47,8 +47,8 @@ class MetadataKey:
     size: tuple[SymIntEqByExpr, ...]
     layout: torch.layout
     is_sparse: bool
-    stride: Optional[tuple[SymIntEqByExpr, ...]]
-    storage_offset: Optional[SymIntEqByExpr]
+    stride: tuple[SymIntEqByExpr, ...] | None
+    storage_offset: SymIntEqByExpr | None
     is_conj: bool
     is_neg: bool
     @staticmethod

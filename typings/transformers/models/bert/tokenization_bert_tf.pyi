@@ -56,13 +56,13 @@ class TFBertTokenizer(keras.layers.Layer):
         self,
         vocab_list: list,
         do_lower_case: bool,
-        cls_token_id: Optional[int] = ...,
-        sep_token_id: Optional[int] = ...,
-        pad_token_id: Optional[int] = ...,
+        cls_token_id: int | None = ...,
+        sep_token_id: int | None = ...,
+        pad_token_id: int | None = ...,
         padding: str = ...,
         truncation: bool = ...,
         max_length: int = ...,
-        pad_to_multiple_of: Optional[int] = ...,
+        pad_to_multiple_of: int | None = ...,
         return_token_type_ids: bool = ...,
         return_attention_mask: bool = ...,
         use_fast_bert_tokenizer: bool = ...,
@@ -89,9 +89,7 @@ class TFBertTokenizer(keras.layers.Layer):
         ...
 
     @classmethod
-    def from_pretrained(
-        cls, pretrained_model_name_or_path: Union[str, os.PathLike], *init_inputs, **kwargs
-    ):  # -> Self:
+    def from_pretrained(cls, pretrained_model_name_or_path: str | os.PathLike, *init_inputs, **kwargs):  # -> Self:
         """
         Instantiate a `TFBertTokenizer` from a pre-trained tokenizer.
 

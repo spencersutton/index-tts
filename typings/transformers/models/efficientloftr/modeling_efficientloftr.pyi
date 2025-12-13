@@ -41,17 +41,17 @@ class KeypointMatchingOutput(ModelOutput):
         num_keypoints)`, returned when `output_attentions=True` is passed or when `config.output_attentions=True`)
     """
 
-    matches: Optional[torch.FloatTensor] = ...
-    matching_scores: Optional[torch.FloatTensor] = ...
-    keypoints: Optional[torch.FloatTensor] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
+    matches: torch.FloatTensor | None = ...
+    matching_scores: torch.FloatTensor | None = ...
+    keypoints: torch.FloatTensor | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
 
 class EfficientLoFTRRotaryEmbedding(nn.Module):
     def __init__(self, config: EfficientLoFTRConfig, device=...) -> None: ...
     @torch.no_grad()
     def forward(
-        self, x: torch.Tensor, position_ids: Optional[tuple[torch.LongTensor, torch.LongTensor]] = ...
+        self, x: torch.Tensor, position_ids: tuple[torch.LongTensor, torch.LongTensor] | None = ...
     ) -> tuple[torch.Tensor, torch.Tensor]: ...
 
 class EfficientLoFTRConvNormLayer(nn.Module):
@@ -77,7 +77,7 @@ class EfficientLoFTRepVGG(nn.Module):
 class EfficientLoFTRAggregationLayer(nn.Module):
     def __init__(self, config: EfficientLoFTRConfig) -> None: ...
     def forward(
-        self, hidden_states: torch.Tensor, encoder_hidden_states: Optional[torch.Tensor] = ...
+        self, hidden_states: torch.Tensor, encoder_hidden_states: torch.Tensor | None = ...
     ) -> tuple[torch.Tensor, torch.Tensor]: ...
 
 def rotate_half(x):  # -> Tensor:
@@ -116,7 +116,7 @@ def eager_attention_forward(
     query: torch.Tensor,
     key: torch.Tensor,
     value: torch.Tensor,
-    attention_mask: Optional[torch.Tensor],
+    attention_mask: torch.Tensor | None,
     scaling: float,
     dropout: float = ...,
     **kwargs: Unpack[TransformersKwargs],
@@ -129,10 +129,10 @@ class EfficientLoFTRAttention(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        encoder_hidden_states: Optional[torch.Tensor] = ...,
-        position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
+        encoder_hidden_states: torch.Tensor | None = ...,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor | None]: ...
 
 class EfficientLoFTRMLP(nn.Module):
     def __init__(self, config: EfficientLoFTRConfig) -> None: ...
@@ -143,8 +143,8 @@ class EfficientLoFTRAggregatedAttention(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        encoder_hidden_states: Optional[torch.Tensor] = ...,
-        position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
+        encoder_hidden_states: torch.Tensor | None = ...,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = ...,
         **kwargs: Unpack[TransformersKwargs],
     ) -> torch.Tensor: ...
 
@@ -226,7 +226,7 @@ class EfficientLoFTRModel(EfficientLoFTRPreTrainedModel):
     def forward(
         self,
         pixel_values: torch.FloatTensor,
-        labels: Optional[torch.LongTensor] = ...,
+        labels: torch.LongTensor | None = ...,
         **kwargs: Unpack[TransformersKwargs],
     ) -> BackboneOutput:
         r"""
@@ -253,7 +253,7 @@ class EfficientLoFTRModel(EfficientLoFTRPreTrainedModel):
         ```"""
         ...
 
-def mask_border(tensor: torch.Tensor, border_margin: int, value: Union[bool, float, int]) -> torch.Tensor:
+def mask_border(tensor: torch.Tensor, border_margin: int, value: bool | float | int) -> torch.Tensor:
     """
     Mask a tensor border with a given value
 
@@ -272,11 +272,11 @@ def mask_border(tensor: torch.Tensor, border_margin: int, value: Union[bool, flo
     ...
 
 def create_meshgrid(
-    height: Union[int, torch.Tensor],
-    width: Union[int, torch.Tensor],
+    height: int | torch.Tensor,
+    width: int | torch.Tensor,
     normalized_coordinates: bool = ...,
-    device: Optional[torch.device] = ...,
-    dtype: Optional[torch.dtype] = ...,
+    device: torch.device | None = ...,
+    dtype: torch.dtype | None = ...,
 ) -> torch.Tensor:
     """
     Copied from kornia library : kornia/kornia/utils/grid.py:26
@@ -377,7 +377,7 @@ class EfficientLoFTRForKeypointMatching(EfficientLoFTRPreTrainedModel):
     def forward(
         self,
         pixel_values: torch.FloatTensor,
-        labels: Optional[torch.LongTensor] = ...,
+        labels: torch.LongTensor | None = ...,
         **kwargs: Unpack[TransformersKwargs],
     ) -> KeypointMatchingOutput:
         r"""

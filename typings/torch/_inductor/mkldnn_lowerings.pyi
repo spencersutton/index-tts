@@ -12,17 +12,17 @@ def create_int8_compensation(
     w_scale: ir.TensorBox,
 ) -> tuple[
     bool,
-    Union[ir.TensorBox, ir.ShapeAsConstantBuffer],
-    Optional[Union[ir.TensorBox, ir.ShapeAsConstantBuffer]],
+    ir.TensorBox | ir.ShapeAsConstantBuffer,
+    ir.TensorBox | ir.ShapeAsConstantBuffer | None,
 ]: ...
 def codegen_int8_gemm_template_compensation(
     use_int8_fast_compensation_path: bool,
     input: OpsValue,
     _weight_compo: OpsValue,
-    _x_scale: Optional[OpsValue],
-    _x_zp: Optional[OpsValue],
-    _w_scale: Optional[OpsValue],
-    _x_w_scale: Optional[OpsValue],
+    _x_scale: OpsValue | None,
+    _x_zp: OpsValue | None,
+    _w_scale: OpsValue | None,
+    _x_w_scale: OpsValue | None,
 ) -> OpsValue: ...
 def grouped_gemm_lowering(
     x: TensorBox, w: list[TensorBox], b: list[TensorBox], attr=..., scalars=..., algorithm=..., layout=...

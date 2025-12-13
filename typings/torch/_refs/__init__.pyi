@@ -17,7 +17,8 @@ import torch._refs.special
 from collections.abc import Iterable, Sequence
 from enum import Enum
 from functools import partial, reduce, singledispatch, wraps
-from typing import Any, Callable, Optional, Union, cast, overload
+from typing import Any, Optional, Union, cast, overload
+from collections.abc import Callable
 from torch import sym_float, sym_int
 from torch._prims_common import (
     BoolLike,
@@ -434,7 +435,7 @@ def log2(a):  # -> Any:
 def log10(a):  # -> Any:
     ...
 @out_wrapper()
-def log_softmax(a: TensorLikeType, dim: int, dtype: Optional[torch.dtype] = ...) -> TensorLikeType: ...
+def log_softmax(a: TensorLikeType, dim: int, dtype: torch.dtype | None = ...) -> TensorLikeType: ...
 @register_decomposition(aten.logsumexp)
 @out_wrapper()
 @elementwise_type_promotion_wrapper(
@@ -445,9 +446,9 @@ def logsumexp(self: TensorLikeType, dim: DimsType, keepdim: bool = ...) -> Tenso
 @out_wrapper()
 def nan_to_num(
     a: TensorLikeType,
-    nan: Optional[NumberType] = ...,
-    posinf: Optional[NumberType] = ...,
-    neginf: Optional[NumberType] = ...,
+    nan: NumberType | None = ...,
+    posinf: NumberType | None = ...,
+    neginf: NumberType | None = ...,
 ) -> TensorLikeType: ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT, extra_meta=_neg_meta)
 def neg(a):  # -> Any:
@@ -506,9 +507,7 @@ def view_as_complex(self: TensorLikeType) -> TensorLikeType: ...
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("a", "b"), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT
 )
-def add(
-    a: Union[TensorLikeType, NumberType], b: Union[TensorLikeType, NumberType], *, alpha: Optional[NumberType] = ...
-): ...
+def add(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType, *, alpha: NumberType | None = ...): ...
 @_make_elementwise_binary_reference(
     type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT,
     supports_lhs_python_scalar=False,
@@ -529,11 +528,11 @@ def bitwise_xor(a: TensorLikeType, b: TensorLikeType) -> TensorLikeType: ...
 @_make_elementwise_binary_reference(
     type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT, supports_lhs_python_scalar=False
 )
-def copysign(a: Union[TensorLikeType, NumberType], b: Union[TensorLikeType, NumberType]): ...
+def copysign(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType): ...
 @register_decomposition(aten.div)
 @out_wrapper()
 def div(
-    a: Union[TensorLikeType, NumberType], b: Union[TensorLikeType, NumberType], *, rounding_mode: Optional[str] = ...
+    a: TensorLikeType | NumberType, b: TensorLikeType | NumberType, *, rounding_mode: str | None = ...
 ):  # -> TensorLikeType | Any | None:
 
     ...
@@ -542,15 +541,15 @@ def div(
 )
 def eq(a: TensorLikeType, b: TensorLikeType) -> TensorLikeType: ...
 @_make_elementwise_binary_reference(type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.BOOL_TO_LONG)
-def pow(a: Union[TensorLikeType, NumberType], b: Union[TensorLikeType, NumberType]) -> TensorLikeType: ...
+def pow(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType) -> TensorLikeType: ...
 @out_wrapper()
-def float_power(a: Union[TensorLikeType, NumberType], b: Union[TensorLikeType, NumberType]) -> Tensor: ...
+def float_power(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType) -> Tensor: ...
 @_make_elementwise_binary_reference(
     type_promotion_kind=utils.ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT,
     supports_two_python_scalars=True,
     should_register_decomposition=False,
 )
-def floor_divide(a: Union[TensorLikeType, NumberType], b: Union[TensorLikeType, NumberType]):  # -> Tensor | None:
+def floor_divide(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType):  # -> Tensor | None:
     ...
 @_make_elementwise_binary_reference(
     type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT,
@@ -675,16 +674,14 @@ def nextafter(a: TensorLikeType, b: TensorLikeType) -> TensorLikeType: ...
 def remainder(a: TensorLikeType, b: TensorLikeType) -> TensorLikeType: ...
 @register_decomposition(aten.rsub)
 @out_wrapper()
-def rsub(
-    a: Union[TensorLikeType, NumberType], b: Union[TensorLikeType, NumberType], alpha: NumberType = ...
-):  # -> Tensor:
+def rsub(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType, alpha: NumberType = ...):  # -> Tensor:
     ...
 @register_decomposition(aten.sub)
 @out_wrapper()
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("a", "b"), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT
 )
-def sub(a: Union[TensorLikeType, NumberType], b: Union[TensorLikeType, NumberType], *, alpha: NumberType = ...): ...
+def sub(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType, *, alpha: NumberType = ...): ...
 @_make_elementwise_binary_reference(
     type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT,
     name="true_divide",
@@ -697,12 +694,12 @@ def true_divide(a: TensorLikeType, b: TensorLikeType) -> TensorLikeType: ...
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("a", "b"), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT
 )
-def xlogy(a: Union[TensorLikeType, NumberType], b: Union[TensorLikeType, NumberType]):  # -> Tensor:
+def xlogy(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType):  # -> Tensor:
     ...
 @_make_elementwise_binary_reference(
     type_promotion_kind=utils.ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT, aten_op=None, supports_two_python_scalars=True
 )
-def trunc_divide(a: Union[TensorLikeType, NumberType], b: Union[TensorLikeType, NumberType]):  # -> Any:
+def trunc_divide(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType):  # -> Any:
     ...
 @register_decomposition(aten.addcdiv)
 @out_wrapper()
@@ -726,22 +723,20 @@ def addcmul(
     type_promoting_args=("a", "min", "max"), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT
 )
 def clamp(
-    a: TensorLikeType, min: Optional[TensorOrNumberLikeType] = ..., max: Optional[TensorOrNumberLikeType] = ...
+    a: TensorLikeType, min: TensorOrNumberLikeType | None = ..., max: TensorOrNumberLikeType | None = ...
 ) -> TensorLikeType: ...
 @register_decomposition(aten.clamp_min)
 @out_wrapper()
-def clamp_min(self: TensorLikeType, min: Optional[TensorOrNumberLikeType] = ...) -> TensorLikeType: ...
+def clamp_min(self: TensorLikeType, min: TensorOrNumberLikeType | None = ...) -> TensorLikeType: ...
 @register_decomposition(aten.clamp_max)
 @out_wrapper()
-def clamp_max(self: TensorLikeType, max: Optional[TensorOrNumberLikeType] = ...) -> TensorLikeType: ...
+def clamp_max(self: TensorLikeType, max: TensorOrNumberLikeType | None = ...) -> TensorLikeType: ...
 @register_decomposition(aten.where)
 @out_wrapper()
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("a", "b"), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.NO_OPMATH
 )
-def where(
-    pred: Tensor, a: Optional[TensorOrNumberLikeType] = ..., b: Optional[TensorOrNumberLikeType] = ...
-):  # -> Any:
+def where(pred: Tensor, a: TensorOrNumberLikeType | None = ..., b: TensorOrNumberLikeType | None = ...):  # -> Any:
 
     ...
 @register_decomposition(aten.clone)
@@ -754,81 +749,81 @@ def item(a: TensorLikeType) -> NumberType: ...
 def to(a: TensorLikeType, *args, **kwargs) -> TensorLikeType: ...
 @register_decomposition(aten.all)
 @out_wrapper()
-def all(a: TensorLikeType, dim: Optional[DimsType] = ..., keepdim: bool = ...) -> TensorLikeType: ...
+def all(a: TensorLikeType, dim: DimsType | None = ..., keepdim: bool = ...) -> TensorLikeType: ...
 @register_decomposition(aten.any)
 @out_wrapper()
-def any(a: TensorLikeType, dim: Optional[DimsType] = ..., keepdim: bool = ...) -> TensorLikeType: ...
+def any(a: TensorLikeType, dim: DimsType | None = ..., keepdim: bool = ...) -> TensorLikeType: ...
 @register_decomposition([aten.sum.dim_IntList, aten.sum.IntList_out])
 def sum(
     a: TensorLikeType,
-    dim: Union[None, int, list[int]] = ...,
+    dim: None | int | list[int] = ...,
     keepdim: bool = ...,
     *,
-    dtype: Optional[torch.dtype] = ...,
-    out: Optional[Tensor] = ...,
+    dtype: torch.dtype | None = ...,
+    out: Tensor | None = ...,
 ) -> TensorLikeType: ...
 def sum_to_size(a: Tensor, *shape) -> Tensor: ...
 @register_decomposition(aten.prod)
 def prod(
     a: TensorLikeType,
-    dim: Union[None, int, list[int]] = ...,
+    dim: None | int | list[int] = ...,
     keepdim: bool = ...,
     *,
     dtype=...,
-    out: Optional[Tensor] = ...,
+    out: Tensor | None = ...,
 ) -> TensorLikeType: ...
 @register_decomposition(aten.amin)
 def amin(
-    a: TensorLikeType, dim: Optional[DimsType] = ..., keepdim: bool = ..., *, out: Optional[Tensor] = ...
+    a: TensorLikeType, dim: DimsType | None = ..., keepdim: bool = ..., *, out: Tensor | None = ...
 ) -> TensorLikeType: ...
 @register_decomposition(aten.amax)
 def amax(
-    a: TensorLikeType, dim: Optional[DimsType] = ..., keepdim: bool = ..., *, out: Optional[Tensor] = ...
+    a: TensorLikeType, dim: DimsType | None = ..., keepdim: bool = ..., *, out: Tensor | None = ...
 ) -> TensorLikeType: ...
 @register_decomposition(aten.var)
 @out_wrapper()
 def var(
     a: TensorLikeType,
-    dim: Optional[DimsType] = ...,
-    unbiased: Optional[bool] = ...,
+    dim: DimsType | None = ...,
+    unbiased: bool | None = ...,
     keepdim: bool = ...,
     *,
-    correction: Optional[NumberType] = ...,
+    correction: NumberType | None = ...,
 ) -> TensorLikeType: ...
 @register_decomposition(aten.std)
 @out_wrapper()
 def std(
     a: TensorLikeType,
-    dim: Union[None, int, list[int]] = ...,
-    unbiased: Optional[bool] = ...,
+    dim: None | int | list[int] = ...,
+    unbiased: bool | None = ...,
     keepdim: bool = ...,
     *,
-    correction: Optional[NumberType] = ...,
+    correction: NumberType | None = ...,
 ) -> TensorLikeType: ...
 @register_decomposition(aten.mean)
 def mean(
-    a: TensorLikeType, dim: Optional[DimsType] = ..., keepdim: bool = ..., *, dtype=..., out=...
+    a: TensorLikeType, dim: DimsType | None = ..., keepdim: bool = ..., *, dtype=..., out=...
 ) -> TensorLikeType: ...
 @register_decomposition(aten.std_mean)
 @out_wrapper("out0", "out1")
 def std_mean(
     a: TensorLikeType,
-    dim: Optional[DimsType] = ...,
+    dim: DimsType | None = ...,
     *,
-    unbiased: Optional[bool] = ...,
+    unbiased: bool | None = ...,
     keepdim: bool = ...,
-    correction: Optional[NumberType] = ...,
+    correction: NumberType | None = ...,
 ):  # -> tuple[TensorLikeType, TensorLikeType]:
     ...
 @register_decomposition(aten.var_mean)
 @out_wrapper("out0", "out1")
 def var_mean(
     a: TensorLikeType,
-    dim: Optional[DimsType] = ...,
-    unbiased: Optional[bool] = ...,
+    dim: DimsType | None = ...,
+    unbiased: bool | None = ...,
     keepdim: bool = ...,
     *,
-    correction: Optional[NumberType] = ...,
+    correction: NumberType | None = ...,
 ):  # -> tuple[TensorLikeType, TensorLikeType]:
     ...
 @register_decomposition(aten.addr)
@@ -840,21 +835,21 @@ def addr(
     self: TensorLikeType, vec1: TensorLikeType, vec2: TensorLikeType, *, beta: NumberType = ..., alpha: NumberType = ...
 ) -> TensorLikeType: ...
 def atleast_1d(
-    arg: Union[TensorLikeType, Sequence[TensorLikeType]], *args: TensorLikeType
-) -> Union[TensorLikeType, tuple[TensorLikeType, ...]]: ...
+    arg: TensorLikeType | Sequence[TensorLikeType], *args: TensorLikeType
+) -> TensorLikeType | tuple[TensorLikeType, ...]: ...
 def atleast_2d(
-    arg: Union[TensorLikeType, Sequence[TensorLikeType]], *args: TensorLikeType
-) -> Union[TensorLikeType, tuple[TensorLikeType, ...]]: ...
+    arg: TensorLikeType | Sequence[TensorLikeType], *args: TensorLikeType
+) -> TensorLikeType | tuple[TensorLikeType, ...]: ...
 def atleast_3d(
-    arg: Union[TensorLikeType, Sequence[TensorLikeType]], *args: TensorLikeType
-) -> Union[TensorLikeType, tuple[TensorLikeType, ...]]: ...
+    arg: TensorLikeType | Sequence[TensorLikeType], *args: TensorLikeType
+) -> TensorLikeType | tuple[TensorLikeType, ...]: ...
 def as_strided(
-    a: TensorLikeType, size: ShapeType, stride: StrideType, storage_offset: Optional[int] = ...
+    a: TensorLikeType, size: ShapeType, stride: StrideType, storage_offset: int | None = ...
 ) -> TensorLikeType: ...
 @register_decomposition(aten.as_strided_scatter)
 @out_wrapper()
 def as_strided_scatter(
-    input: TensorLikeType, src: TensorLikeType, size: ShapeType, stride: StrideType, storage_offset: Optional[int] = ...
+    input: TensorLikeType, src: TensorLikeType, size: ShapeType, stride: StrideType, storage_offset: int | None = ...
 ) -> TensorLikeType: ...
 def broadcast_shapes(*shapes) -> ShapeType: ...
 @aten.broadcast_tensors.default.py_impl(DispatchKey.CompositeImplicitAutograd)
@@ -886,12 +881,12 @@ def flatten(a: TensorLikeType, start_dim: int = ..., end_dim: int = ...) -> Tens
 def flip(a: TensorLikeType, dims: DimsSequenceType) -> TensorLikeType: ...
 def fliplr(a: TensorLikeType) -> TensorLikeType: ...
 def flipud(a: TensorLikeType) -> TensorLikeType: ...
-def narrow(a: TensorLikeType, dim: int, start: Union[int, TensorLikeType], length: int) -> TensorLikeType: ...
+def narrow(a: TensorLikeType, dim: int, start: int | TensorLikeType, length: int) -> TensorLikeType: ...
 @register_decomposition(aten.native_group_norm.default)
 def native_group_norm(
     input: Tensor,
-    weight: Optional[Tensor],
-    bias: Optional[Tensor],
+    weight: Tensor | None,
+    bias: Tensor | None,
     batch_size: int,
     num_channels: int,
     flattened_inner_size: int,
@@ -901,7 +896,7 @@ def native_group_norm(
 @register_decomposition(aten.native_layer_norm)
 @out_wrapper("out0", "out1", "out2")
 def native_layer_norm(
-    input: Tensor, normalized_shape: ShapeType, weight: Optional[Tensor], bias: Optional[Tensor], eps: float
+    input: Tensor, normalized_shape: ShapeType, weight: Tensor | None, bias: Tensor | None, eps: float
 ) -> tuple[Tensor, Tensor, Tensor]: ...
 @torch._subclasses.fake_impls.register_op_impl(aten.native_layer_norm.default)
 def native_layer_norm_fake(fake_mode, func, *args, **kwargs):  # -> tuple[Tensor, Tensor, Tensor]:
@@ -915,27 +910,27 @@ def renorm(input: TensorLikeType, p: RealNumberType, dim: int, maxnorm: RealNumb
 def stft(
     input: Tensor,
     n_fft: int,
-    hop_length: Optional[int] = ...,
-    win_length: Optional[int] = ...,
-    window: Optional[Tensor] = ...,
+    hop_length: int | None = ...,
+    win_length: int | None = ...,
+    window: Tensor | None = ...,
     center: bool = ...,
     pad_mode: str = ...,
     normalized: bool = ...,
-    onesided: Optional[bool] = ...,
-    return_complex: Optional[bool] = ...,
-    align_to_window: Optional[bool] = ...,
+    onesided: bool | None = ...,
+    return_complex: bool | None = ...,
+    align_to_window: bool | None = ...,
 ) -> Tensor: ...
 @aten.istft.default.py_impl(DispatchKey.CompositeImplicitAutograd)
 def istft(
     input: Tensor,
     n_fft: int,
-    hop_length: Optional[int] = ...,
-    win_length: Optional[int] = ...,
-    window: Optional[Tensor] = ...,
+    hop_length: int | None = ...,
+    win_length: int | None = ...,
+    window: Tensor | None = ...,
     center: bool = ...,
     normalized: bool = ...,
-    onesided: Optional[bool] = ...,
-    length: Optional[int] = ...,
+    onesided: bool | None = ...,
+    length: int | None = ...,
     return_complex=...,
 ) -> Tensor: ...
 @register_decomposition(aten.repeat)
@@ -953,7 +948,7 @@ def rot90(a: TensorLikeType, k: int = ..., dims: DimsSequenceType = ...) -> Tens
 @out_wrapper()
 def stack(tensors: TensorSequenceType, dim: int = ...) -> TensorLikeType: ...
 @out_wrapper()
-def softmax(a: TensorLikeType, dim: int, dtype: Optional[torch.dtype] = ...) -> TensorLikeType: ...
+def softmax(a: TensorLikeType, dim: int, dtype: torch.dtype | None = ...) -> TensorLikeType: ...
 @out_wrapper()
 def hstack(tensors: TensorSequenceType) -> TensorLikeType: ...
 @out_wrapper()
@@ -968,10 +963,10 @@ def index_copy_(x: TensorLike, dim: int, index: TensorLike, tensor: TensorLike):
     ...
 @register_decomposition(aten.index_fill)
 @out_wrapper()
-def index_fill(x: TensorLike, dim: int, index: TensorLike, value: Union[NumberType, TensorLike]):  # -> TensorLike:
+def index_fill(x: TensorLike, dim: int, index: TensorLike, value: NumberType | TensorLike):  # -> TensorLike:
     ...
 @register_decomposition(aten.index_fill_)
-def index_fill_(x: TensorLike, dim: int, index: TensorLike, value: Union[NumberType, TensorLike]):  # -> TensorLike:
+def index_fill_(x: TensorLike, dim: int, index: TensorLike, value: NumberType | TensorLike):  # -> TensorLike:
     ...
 @out_wrapper()
 def index_add(x: TensorLike, dim: int, index: TensorLike, tensor: TensorLike, *, alpha: NumberType = ...):  # -> Tensor:
@@ -981,11 +976,11 @@ def index_add(x: TensorLike, dim: int, index: TensorLike, tensor: TensorLike, *,
 def index_select(x: TensorLike, dim: int, index: TensorLike):  # -> Tensor:
     ...
 @register_decomposition(aten.squeeze.dims)
-def squeeze(a: TensorLikeType, dim: Optional[DimsType] = ...) -> TensorLikeType: ...
+def squeeze(a: TensorLikeType, dim: DimsType | None = ...) -> TensorLikeType: ...
 @register_decomposition(aten.split_with_sizes)
 def split_with_sizes(self: Tensor, split_sizes: list[int], dim: int = ...) -> list[Tensor]: ...
 def tensor_split(
-    a: TensorLikeType, indices_or_sections: Union[Tensor, DimsType], dim: int = ...
+    a: TensorLikeType, indices_or_sections: Tensor | DimsType, dim: int = ...
 ) -> tuple[TensorLikeType, ...]: ...
 def hsplit(a: TensorLikeType, indices_or_sections: DimsType) -> tuple[TensorLikeType, ...]: ...
 def vsplit(a: TensorLikeType, indices_or_sections: DimsType) -> tuple[TensorLikeType, ...]: ...
@@ -1023,11 +1018,11 @@ def unfold_copy(self: TensorLikeType, dimension: int, size: int, step: int):  # 
     ...
 @register_decomposition(aten.cumsum)
 def cumsum(
-    a: TensorLikeType, dim: int, *, dtype: Optional[torch.dtype] = ..., out: Optional[Tensor] = ...
+    a: TensorLikeType, dim: int, *, dtype: torch.dtype | None = ..., out: Tensor | None = ...
 ) -> TensorLikeType: ...
 @register_decomposition(aten.cumprod)
 def cumprod(
-    a: TensorLikeType, dim: int, *, dtype: Optional[torch.dtype] = ..., out: Optional[Tensor] = ...
+    a: TensorLikeType, dim: int, *, dtype: torch.dtype | None = ..., out: Tensor | None = ...
 ) -> TensorLikeType: ...
 @register_decomposition(aten.unsqueeze)
 def unsqueeze(a: TensorLikeType, dim: int) -> TensorLikeType: ...
@@ -1036,13 +1031,13 @@ def view(a: TensorLikeType, *shape: ShapeType) -> TensorLikeType: ...
 def view_as(self: TensorLikeType, other: TensorLikeType) -> TensorLikeType: ...
 def ravel(a: TensorLikeType) -> TensorLikeType: ...
 @out_wrapper()
-def take_along_dim(a: torch.Tensor, indices: torch.Tensor, dim: Optional[int] = ...) -> torch.Tensor: ...
+def take_along_dim(a: torch.Tensor, indices: torch.Tensor, dim: int | None = ...) -> torch.Tensor: ...
 @out_wrapper()
 def empty(
     *shape,
-    dtype: Optional[torch.dtype] = ...,
+    dtype: torch.dtype | None = ...,
     layout: torch.layout = ...,
-    device: Optional[DeviceLikeType] = ...,
+    device: DeviceLikeType | None = ...,
     requires_grad: bool = ...,
     pin_memory: bool = ...,
     memory_format: torch.memory_format = ...,
@@ -1051,9 +1046,9 @@ def empty(
 def empty_permuted(
     shape,
     physical_layout,
-    dtype: Optional[torch.dtype] = ...,
+    dtype: torch.dtype | None = ...,
     layout: torch.layout = ...,
-    device: Optional[DeviceLikeType] = ...,
+    device: DeviceLikeType | None = ...,
     requires_grad: bool = ...,
     pin_memory: bool = ...,
 ) -> TensorLikeType: ...
@@ -1063,9 +1058,9 @@ def new_empty(
     a: TensorLikeType,
     size: ShapeType,
     *,
-    dtype: Optional[torch.dtype] = ...,
-    layout: Optional[torch.layout] = ...,
-    device: Optional[DeviceLikeType] = ...,
+    dtype: torch.dtype | None = ...,
+    layout: torch.layout | None = ...,
+    device: DeviceLikeType | None = ...,
     pin_memory: bool = ...,
 ) -> TensorLikeType: ...
 @register_decomposition(aten.new_empty_strided)
@@ -1075,18 +1070,18 @@ def new_empty_strided(
     size: ShapeType,
     stride: StrideType,
     *,
-    dtype: Optional[torch.dtype] = ...,
-    layout: Optional[torch.layout] = ...,
-    device: Optional[DeviceLikeType] = ...,
+    dtype: torch.dtype | None = ...,
+    layout: torch.layout | None = ...,
+    device: DeviceLikeType | None = ...,
     pin_memory: bool = ...,
 ) -> TensorLikeType: ...
 @register_decomposition(aten.zeros.default)
 @out_wrapper()
 def zeros(
     *size,
-    dtype: Optional[torch.dtype] = ...,
+    dtype: torch.dtype | None = ...,
     layout: torch.layout = ...,
-    device: Optional[DeviceLikeType] = ...,
+    device: DeviceLikeType | None = ...,
     pin_memory: bool = ...,
     requires_grad: bool = ...,
 ) -> TensorLikeType: ...
@@ -1096,9 +1091,9 @@ def new_zeros(
     a: TensorLikeType,
     size: ShapeType,
     *,
-    dtype: Optional[torch.dtype] = ...,
-    layout: Optional[torch.layout] = ...,
-    device: Optional[DeviceLikeType] = ...,
+    dtype: torch.dtype | None = ...,
+    layout: torch.layout | None = ...,
+    device: DeviceLikeType | None = ...,
     pin_memory: bool = ...,
     requires_grad: bool = ...,
 ) -> TensorLikeType: ...
@@ -1106,9 +1101,9 @@ def new_zeros(
 @out_wrapper()
 def ones(
     *size,
-    dtype: Optional[torch.dtype] = ...,
+    dtype: torch.dtype | None = ...,
     layout: torch.layout = ...,
-    device: Optional[DeviceLikeType] = ...,
+    device: DeviceLikeType | None = ...,
     pin_memory: bool = ...,
     requires_grad: bool = ...,
 ) -> TensorLikeType: ...
@@ -1118,9 +1113,9 @@ def new_ones(
     a: TensorLikeType,
     size: ShapeType,
     *,
-    dtype: Optional[torch.dtype] = ...,
-    layout: Optional[torch.layout] = ...,
-    device: Optional[DeviceLikeType] = ...,
+    dtype: torch.dtype | None = ...,
+    layout: torch.layout | None = ...,
+    device: DeviceLikeType | None = ...,
     pin_memory: bool = ...,
     requires_grad: bool = ...,
 ) -> TensorLikeType: ...
@@ -1131,23 +1126,23 @@ def new_full(
     size: ShapeType,
     fill_value: NumberType,
     *,
-    dtype: Optional[torch.dtype] = ...,
-    layout: Optional[torch.layout] = ...,
-    device: Optional[DeviceLikeType] = ...,
+    dtype: torch.dtype | None = ...,
+    layout: torch.layout | None = ...,
+    device: DeviceLikeType | None = ...,
     pin_memory: bool = ...,
 ) -> TensorLikeType: ...
 @aten.empty.out.py_impl(DispatchKey.CompositeImplicitAutograd)
 def empty_out(
-    size: TensorLikeType, out: TensorLikeType, memory_format: Optional[torch.memory_format] = ...
+    size: TensorLikeType, out: TensorLikeType, memory_format: torch.memory_format | None = ...
 ) -> TensorLikeType: ...
 @register_decomposition(aten.empty_like)
 @out_wrapper()
 def empty_like(
     a: TensorLikeType,
     *,
-    dtype: Optional[torch.dtype] = ...,
-    device: Optional[DeviceLikeType] = ...,
-    layout: Optional[torch.layout] = ...,
+    dtype: torch.dtype | None = ...,
+    device: DeviceLikeType | None = ...,
+    layout: torch.layout | None = ...,
     pin_memory: bool = ...,
     requires_grad: bool = ...,
     memory_format: torch.memory_format = ...,
@@ -1156,12 +1151,12 @@ def empty_like(
 @out_wrapper()
 def arange(
     start: NumberType = ...,
-    end: Optional[NumberType] = ...,
+    end: NumberType | None = ...,
     step: NumberType = ...,
     *,
-    dtype: Optional[torch.dtype] = ...,
+    dtype: torch.dtype | None = ...,
     layout: torch.layout = ...,
-    device: Optional[DeviceLikeType] = ...,
+    device: DeviceLikeType | None = ...,
     pin_memory: bool = ...,
     requires_grad: bool = ...,
 ) -> TensorLikeType: ...
@@ -1170,16 +1165,16 @@ def arange(
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("start", "end", "weight"), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT
 )
-def lerp(start: Tensor, end: Tensor, weight: Union[Tensor, NumberType]): ...
+def lerp(start: Tensor, end: Tensor, weight: Tensor | NumberType): ...
 @register_decomposition(aten.linspace)
 @out_wrapper()
 def linspace(
-    start: Union[NumberType, TensorLikeType],
-    end: Union[NumberType, TensorLikeType],
+    start: NumberType | TensorLikeType,
+    end: NumberType | TensorLikeType,
     steps: NumberType,
     *,
-    dtype: Optional[torch.dtype] = ...,
-    device: Optional[DeviceLikeType] = ...,
+    dtype: torch.dtype | None = ...,
+    device: DeviceLikeType | None = ...,
     layout: torch.layout = ...,
     pin_memory: bool = ...,
     requires_grad: bool = ...,
@@ -1187,13 +1182,13 @@ def linspace(
 @register_decomposition(aten.logspace)
 @out_wrapper()
 def logspace(
-    start: Union[NumberType, TensorLikeType],
-    end: Union[NumberType, TensorLikeType],
+    start: NumberType | TensorLikeType,
+    end: NumberType | TensorLikeType,
     steps: NumberType,
     base: NumberType = ...,
     *,
-    dtype: Optional[torch.dtype] = ...,
-    device: Optional[DeviceLikeType] = ...,
+    dtype: torch.dtype | None = ...,
+    device: DeviceLikeType | None = ...,
     layout: torch.layout = ...,
     pin_memory: bool = ...,
     requires_grad: bool = ...,
@@ -1204,19 +1199,19 @@ def meshgrid(tensors: Sequence[TensorLikeType], indexing: str): ...
 def meshgrid(*tensors: TensorLikeType, indexing: str): ...
 @register_decomposition(aten.meshgrid)
 def meshgrid(
-    *tensors: Union[TensorLikeType, list[TensorLikeType], tuple[TensorLikeType]], indexing: str
+    *tensors: TensorLikeType | list[TensorLikeType] | tuple[TensorLikeType], indexing: str
 ) -> list[TensorLikeType]: ...
 def movedim(
-    input: TensorLikeType, source: Union[int, DimsSequenceType], destination: Union[int, DimsSequenceType]
+    input: TensorLikeType, source: int | DimsSequenceType, destination: int | DimsSequenceType
 ) -> TensorLikeType: ...
 @register_decomposition(aten.empty_strided)
 @out_wrapper()
 def empty_strided(
-    shape: Union[ShapeType, tuple[ShapeType]],
+    shape: ShapeType | tuple[ShapeType],
     strides: StrideType,
     *,
-    dtype: Optional[torch.dtype] = ...,
-    device: Optional[DeviceLikeType] = ...,
+    dtype: torch.dtype | None = ...,
+    device: DeviceLikeType | None = ...,
     layout: torch.layout = ...,
     requires_grad: bool = ...,
     pin_memory: bool = ...,
@@ -1225,11 +1220,11 @@ def empty_strided(
 @out_wrapper()
 def eye(
     n: int,
-    m: Optional[int] = ...,
+    m: int | None = ...,
     *,
-    dtype: Optional[torch.dtype] = ...,
+    dtype: torch.dtype | None = ...,
     layout: torch.layout = ...,
-    device: Optional[DeviceLikeType] = ...,
+    device: DeviceLikeType | None = ...,
     pin_memory: bool = ...,
     requires_grad: bool = ...,
 ) -> TensorLikeType: ...
@@ -1239,9 +1234,9 @@ def full(
     shape: ShapeType,
     fill_value: NumberType,
     *,
-    dtype: Optional[torch.dtype] = ...,
+    dtype: torch.dtype | None = ...,
     layout: torch.layout = ...,
-    device: Optional[DeviceLikeType] = ...,
+    device: DeviceLikeType | None = ...,
     pin_memory: bool = ...,
     requires_grad: bool = ...,
 ) -> TensorLikeType: ...
@@ -1249,9 +1244,9 @@ def full_like(
     a: TensorLikeType,
     fill_value: NumberType,
     *,
-    dtype: Optional[torch.dtype] = ...,
-    layout: Optional[torch.layout] = ...,
-    device: Optional[DeviceLikeType] = ...,
+    dtype: torch.dtype | None = ...,
+    layout: torch.layout | None = ...,
+    device: DeviceLikeType | None = ...,
     pin_memory: bool = ...,
     requires_grad: bool = ...,
     memory_format: torch.memory_format = ...,
@@ -1261,9 +1256,9 @@ def full_like(
 def zeros_like(
     a: TensorLikeType,
     *,
-    dtype: Optional[torch.dtype] = ...,
-    layout: Optional[torch.layout] = ...,
-    device: Optional[DeviceLikeType] = ...,
+    dtype: torch.dtype | None = ...,
+    layout: torch.layout | None = ...,
+    device: DeviceLikeType | None = ...,
     pin_memory: bool = ...,
     requires_grad: bool = ...,
     memory_format: torch.memory_format = ...,
@@ -1273,9 +1268,9 @@ def zeros_like(
 def ones_like(
     a: TensorLikeType,
     *,
-    dtype: Optional[torch.dtype] = ...,
-    layout: Optional[torch.layout] = ...,
-    device: Optional[DeviceLikeType] = ...,
+    dtype: torch.dtype | None = ...,
+    layout: torch.layout | None = ...,
+    device: DeviceLikeType | None = ...,
     pin_memory: bool = ...,
     requires_grad: bool = ...,
     memory_format: torch.memory_format = ...,
@@ -1284,18 +1279,18 @@ def ones_like(
 @out_wrapper()
 def randn(
     *shape,
-    dtype: Optional[torch.dtype] = ...,
-    device: Optional[DeviceLikeType] = ...,
-    layout: Optional[torch.layout] = ...,
+    dtype: torch.dtype | None = ...,
+    device: DeviceLikeType | None = ...,
+    layout: torch.layout | None = ...,
     requires_grad: bool = ...,
     pin_memory: bool = ...,
 ) -> TensorLikeType: ...
 def scalar_tensor(
     a: NumberType,
     *,
-    dtype: Optional[torch.dtype] = ...,
+    dtype: torch.dtype | None = ...,
     layout: torch.layout = ...,
-    device: Optional[DeviceLikeType] = ...,
+    device: DeviceLikeType | None = ...,
     pin_memory: bool = ...,
 ) -> TensorLikeType: ...
 @register_decomposition(aten.masked_fill)
@@ -1312,11 +1307,11 @@ def equal(a: TensorLikeType, b: TensorLikeType) -> bool: ...
 @out_wrapper(exact_dtype=True)
 def norm(
     input: TensorLikeType,
-    p: Optional[Union[float, str]] = ...,
-    dim: Optional[DimsType] = ...,
+    p: float | str | None = ...,
+    dim: DimsType | None = ...,
     keepdim: bool = ...,
     *,
-    dtype: Optional[torch.dtype] = ...,
+    dtype: torch.dtype | None = ...,
 ) -> TensorLikeType: ...
 @register_decomposition(aten.trace)
 @out_wrapper()
@@ -1407,7 +1402,7 @@ def deg2rad(self: TensorLikeType):  # -> Tensor:
     ...
 @register_decomposition(aten.count_nonzero)
 @out_wrapper()
-def count_nonzero(self, dim: Optional[DimsType] = ...): ...
+def count_nonzero(self, dim: DimsType | None = ...): ...
 @register_decomposition(aten.dot)
 @out_wrapper(exact_dtype=True)
 @_dot_check_wrapper

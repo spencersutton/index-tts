@@ -9,8 +9,8 @@ from ...image_processing_utils import BatchFeature
 from ...image_utils import ImageInput
 
 class Llama4ImagesKwargs(ImagesKwargs, total=False):
-    max_patches: Optional[int]
-    resize_to_max_canvas: Optional[bool]
+    max_patches: int | None
+    resize_to_max_canvas: bool | None
     ...
 
 class Llama4ProcessorKwargs(ProcessingKwargs, total=False):
@@ -74,8 +74,8 @@ class Llama4Processor(ProcessorMixin):
     ) -> None: ...
     def __call__(
         self,
-        images: Optional[ImageInput] = ...,
-        text: Optional[Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]]] = ...,
+        images: ImageInput | None = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] | None = ...,
         audio=...,
         videos=...,
         **kwargs: Unpack[Llama4ProcessorKwargs],

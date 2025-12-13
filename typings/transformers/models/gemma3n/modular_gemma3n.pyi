@@ -183,7 +183,7 @@ class Gemma3nTextConfig(Gemma2Config, PretrainedConfig):
         vocab_size_per_layer_input: int = ...,
         hidden_size: int = ...,
         hidden_size_per_layer_input: int = ...,
-        intermediate_size: Union[int, Sequence[int]] = ...,
+        intermediate_size: int | Sequence[int] = ...,
         num_hidden_layers: int = ...,
         num_attention_heads: int = ...,
         num_key_value_heads: int = ...,
@@ -197,12 +197,12 @@ class Gemma3nTextConfig(Gemma2Config, PretrainedConfig):
         eos_token_id: int = ...,
         bos_token_id: int = ...,
         rope_theta: float = ...,
-        rope_scaling: Optional[dict[str, Any]] = ...,
+        rope_scaling: dict[str, Any] | None = ...,
         rope_local_base_freq: float = ...,
         attention_bias: bool = ...,
         attention_dropout: float = ...,
         sliding_window: int = ...,
-        layer_types: Optional[Sequence[str]] = ...,
+        layer_types: Sequence[str] | None = ...,
         final_logit_softcapping: float = ...,
         altup_active_idx: int = ...,
         altup_coef_clip: float = ...,
@@ -210,7 +210,7 @@ class Gemma3nTextConfig(Gemma2Config, PretrainedConfig):
         altup_num_inputs: int = ...,
         num_kv_shared_layers: int = ...,
         laurel_rank: int = ...,
-        activation_sparsity_pattern: Optional[Union[float, Sequence[float]]] = ...,
+        activation_sparsity_pattern: float | Sequence[float] | None = ...,
         **kwargs,
     ) -> None: ...
 
@@ -380,7 +380,7 @@ class Gemma3nVisionConfig(TimmWrapperConfig):
         vocab_size: int = ...,
         vocab_offset: int = ...,
         rms_norm_eps: float = ...,
-        model_args: Optional[dict] = ...,
+        model_args: dict | None = ...,
         **kwargs,
     ) -> None: ...
 
@@ -451,9 +451,9 @@ class Gemma3nConfig(PretrainedConfig):
     sub_configs = ...
     def __init__(
         self,
-        text_config: Optional[Union[Gemma3nTextConfig, dict[str, Any]]] = ...,
-        vision_config: Optional[Union[Gemma3nVisionConfig, dict[str, Any]]] = ...,
-        audio_config: Optional[Union[Gemma3nAudioConfig, dict[str, Any]]] = ...,
+        text_config: Gemma3nTextConfig | dict[str, Any] | None = ...,
+        vision_config: Gemma3nVisionConfig | dict[str, Any] | None = ...,
+        audio_config: Gemma3nAudioConfig | dict[str, Any] | None = ...,
         audio_soft_tokens_per_image: int = ...,
         vision_soft_tokens_per_image: int = ...,
         boi_token_id: int = ...,
@@ -482,7 +482,7 @@ class Gemma3nModelOutputWithPast(PaligemmaModelOutputWithPast):
         audio_hidden_states of the model produced by the audio encoder and after projecting the last hidden state.
     """
 
-    audio_hidden_states: Optional[torch.FloatTensor] = ...
+    audio_hidden_states: torch.FloatTensor | None = ...
 
 class Gemma3nCausalLMOutputWithPast(PaliGemmaCausalLMOutputWithPast):
     r"""
@@ -504,7 +504,7 @@ class Gemma3nCausalLMOutputWithPast(PaliGemmaCausalLMOutputWithPast):
         audio_hidden_states of the model produced by the audio encoder and after projecting the last hidden state.
     """
 
-    audio_hidden_states: Optional[torch.FloatTensor] = ...
+    audio_hidden_states: torch.FloatTensor | None = ...
 
 class Gemma3nRMSNorm(Gemma3RMSNorm):
     def __init__(self, dim: int, eps: float = ..., with_scale: bool = ...) -> None: ...
@@ -668,7 +668,7 @@ def apply_rotary_pos_emb(
     x: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = ...,
+    position_ids: torch.Tensor | None = ...,
     unsqueeze_dim: int = ...,
 ):  # -> Tensor:
     """Applies Rotary Position Embedding to the query and key tensors.
@@ -697,11 +697,11 @@ class Gemma3nTextAttention(Gemma3Attention):
         self,
         hidden_states: torch.Tensor,
         position_embeddings: torch.Tensor,
-        attention_mask: Optional[torch.Tensor],
-        past_key_value: Optional[Cache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        attention_mask: torch.Tensor | None,
+        past_key_value: Cache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]: ...
 
 class Gemma3nTextDecoderLayer(Gemma3DecoderLayer):
     def __init__(self, config: Gemma3nTextConfig, layer_idx: int) -> None: ...
@@ -711,14 +711,14 @@ class Gemma3nTextDecoderLayer(Gemma3DecoderLayer):
         position_embeddings_global: torch.Tensor,
         position_embeddings_local: torch.Tensor,
         per_layer_input: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[Cache] = ...,
-        output_attentions: Optional[bool] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: Cache | None = ...,
+        output_attentions: bool | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs,
-    ) -> tuple[torch.Tensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]: ...
+    ) -> tuple[torch.Tensor, tuple[torch.FloatTensor, torch.FloatTensor] | None]: ...
 
 class Gemma3nPreTrainedModel(Gemma2PreTrainedModel):
     config: Gemma3nConfig
@@ -731,22 +731,22 @@ class Gemma3nTextModel(Gemma3TextModel):
     def __init__(self, config: Gemma3nTextConfig) -> None: ...
     def get_per_layer_inputs(self, input_ids: torch.LongTensor) -> torch.Tensor: ...
     def project_per_layer_inputs(
-        self, inputs_embeds: torch.Tensor, per_layer_inputs: Optional[torch.Tensor] = ...
+        self, inputs_embeds: torch.Tensor, per_layer_inputs: torch.Tensor | None = ...
     ) -> torch.Tensor: ...
     @can_return_tuple
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        per_layer_inputs: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        per_layer_inputs: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Unpack[TransformersKwargs],
     ) -> BaseModelOutputWithPast:
         r"""
@@ -763,10 +763,10 @@ class Gemma3nForCausalLM(Gemma3ForCausalLM):
 class Gemma3nMultimodalEmbedder(nn.Module):
     """Embeds token ids or soft tokens for multimodal content into language model space."""
     def __init__(
-        self, multimodal_config: Union[Gemma3nAudioConfig, Gemma3nVisionConfig], text_config: Gemma3nTextConfig
+        self, multimodal_config: Gemma3nAudioConfig | Gemma3nVisionConfig, text_config: Gemma3nTextConfig
     ) -> None: ...
     def forward(
-        self, input_ids: Optional[torch.LongTensor] = ..., inputs_embeds: Optional[torch.Tensor] = ...
+        self, input_ids: torch.LongTensor | None = ..., inputs_embeds: torch.Tensor | None = ...
     ) -> torch.Tensor:
         """Embeds token ids or soft tokens for multimodal content into language model space.
 
@@ -804,10 +804,10 @@ class Gemma3nModel(PaliGemmaModel):
 
     def get_placeholder_mask(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        image_features: Optional[torch.FloatTensor] = ...,
-        audio_features: Optional[torch.FloatTensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        image_features: torch.FloatTensor | None = ...,
+        audio_features: torch.FloatTensor | None = ...,
     ):  # -> tuple[Any, Any]:
         """
         Obtains multimodal placeholdr mask from `input_ids` or `inputs_embeds`, and checks that the placeholder token count is
@@ -818,20 +818,20 @@ class Gemma3nModel(PaliGemmaModel):
     @can_return_tuple
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        input_features: Optional[torch.FloatTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        input_features_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Union[list[torch.FloatTensor], Cache]] = ...,
-        token_type_ids: Optional[torch.LongTensor] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        pixel_values: torch.FloatTensor | None = ...,
+        input_features: torch.FloatTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        input_features_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: list[torch.FloatTensor] | Cache | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
         **lm_kwargs,
     ) -> Gemma3nCausalLMOutputWithPast:
         r"""
@@ -899,21 +899,21 @@ class Gemma3nForConditionalGeneration(PaliGemmaForConditionalGeneration):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        input_features: Optional[torch.FloatTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        input_features_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Union[list[torch.FloatTensor], Cache]] = ...,
-        token_type_ids: Optional[torch.LongTensor] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        logits_to_keep: Union[int, torch.Tensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        pixel_values: torch.FloatTensor | None = ...,
+        input_features: torch.FloatTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        input_features_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: list[torch.FloatTensor] | Cache | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        logits_to_keep: int | torch.Tensor = ...,
         **lm_kwargs,
     ) -> Gemma3nCausalLMOutputWithPast:
         r"""

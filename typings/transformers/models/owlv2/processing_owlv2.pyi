@@ -16,7 +16,7 @@ Image/Text processor class for OWLv2
 if TYPE_CHECKING: ...
 
 class Owlv2ImagesKwargs(ImagesKwargs, total=False):
-    query_images: Optional[ImageInput]
+    query_images: ImageInput | None
     ...
 
 class Owlv2ProcessorKwargs(ProcessingKwargs, total=False):
@@ -42,8 +42,8 @@ class Owlv2Processor(ProcessorMixin):
     def __init__(self, image_processor, tokenizer, **kwargs) -> None: ...
     def __call__(
         self,
-        images: Optional[ImageInput] = ...,
-        text: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]] = ...,
+        images: ImageInput | None = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] = ...,
         audio=...,
         videos=...,
         **kwargs: Unpack[Owlv2ProcessorKwargs],
@@ -97,8 +97,8 @@ class Owlv2Processor(ProcessorMixin):
         self,
         outputs: Owlv2ObjectDetectionOutput,
         threshold: float = ...,
-        target_sizes: Optional[Union[TensorType, list[tuple]]] = ...,
-        text_labels: Optional[list[list[str]]] = ...,
+        target_sizes: TensorType | list[tuple] | None = ...,
+        text_labels: list[list[str]] | None = ...,
     ):
         """
         Converts the raw output of [`Owlv2ForObjectDetection`] into final bounding boxes in (top_left_x, top_left_y,
@@ -130,7 +130,7 @@ class Owlv2Processor(ProcessorMixin):
         outputs: Owlv2ImageGuidedObjectDetectionOutput,
         threshold: float = ...,
         nms_threshold: float = ...,
-        target_sizes: Optional[Union[TensorType, list[tuple]]] = ...,
+        target_sizes: TensorType | list[tuple] | None = ...,
     ):
         """
         Converts the output of [`Owlv2ForObjectDetection.image_guided_detection`] into the format expected by the COCO

@@ -2,17 +2,17 @@ import logging
 import torch
 from dataclasses import dataclass
 from typing import Any, Optional, TYPE_CHECKING, Union, Self
-from typing_extensions import TypeAlias
+from typing import TypeAlias
 from torch.export import ExportedProgram
 from torch.export.pt2_archive._package_weights import Weights
 from torch.types import FileLike
 
 if TYPE_CHECKING: ...
 DEFAULT_PICKLE_PROTOCOL = ...
-AOTI_FILES: TypeAlias = Union[list[Union[str, Weights]], dict[str, list[Union[str, Weights]]]]
+type AOTI_FILES = list[str | Weights] | dict[str, list[str | Weights]]
 logger: logging.Logger = ...
 
-def is_pt2_package(serialized_model: Union[bytes, str]) -> bool: ...
+def is_pt2_package(serialized_model: bytes | str) -> bool: ...
 
 class PT2ArchiveWriter:
     def __init__(self, archive_path_or_buffer: FileLike) -> None: ...
@@ -38,10 +38,10 @@ class PT2ArchiveReader:
 def package_pt2(
     f: FileLike,
     *,
-    exported_programs: Optional[Union[ExportedProgram, dict[str, ExportedProgram]]] = ...,
-    aoti_files: Optional[AOTI_FILES] = ...,
-    extra_files: Optional[dict[str, Any]] = ...,
-    opset_version: Optional[dict[str, int]] = ...,
+    exported_programs: ExportedProgram | dict[str, ExportedProgram] | None = ...,
+    aoti_files: AOTI_FILES | None = ...,
+    extra_files: dict[str, Any] | None = ...,
+    opset_version: dict[str, int] | None = ...,
     pickle_protocol: int = ...,
 ) -> FileLike: ...
 
@@ -54,7 +54,7 @@ class AOTICompiledModel:
         self, constants_map: dict[str, torch.Tensor], *, check_full_update: bool, user_managed: bool = ...
     ) -> None: ...
     def get_constant_fqns(self) -> list[str]: ...
-    def __deepcopy__(self, memo: Optional[dict[Any, Any]]) -> AOTICompiledModel: ...
+    def __deepcopy__(self, memo: dict[Any, Any] | None) -> AOTICompiledModel: ...
 
 @dataclass
 class PT2ArchiveContents:
@@ -65,7 +65,7 @@ class PT2ArchiveContents:
 def load_pt2(
     f: FileLike,
     *,
-    expected_opset_version: Optional[dict[str, int]] = ...,
+    expected_opset_version: dict[str, int] | None = ...,
     run_single_threaded: bool = ...,
     num_runners: int = ...,
     device_index: int = ...,

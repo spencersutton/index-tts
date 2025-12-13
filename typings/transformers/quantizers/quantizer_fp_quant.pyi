@@ -33,12 +33,12 @@ class FPQuantHfQuantizer(HfQuantizer):
         param_name: str,
         target_device: torch.device,
         state_dict: dict[str, Any],
-        unexpected_keys: Optional[list[str]] = ...,
+        unexpected_keys: list[str] | None = ...,
     ):  # -> None:
         ...
     def update_missing_keys(self, model, missing_keys: list[str], prefix: str) -> list[str]: ...
     @property
-    def is_trainable(self, model: Optional[PreTrainedModel] = ...):  # -> Literal[False]:
+    def is_trainable(self, model: PreTrainedModel | None = ...):  # -> Literal[False]:
         ...
     def is_serializable(self, safe_serialization=...):  # -> Literal[True]:
         ...

@@ -3,8 +3,9 @@ import torch
 import torch.fx
 import torch.utils._pytree as pytree
 from contextlib import contextmanager
-from typing import Any, Callable, Optional, Union
-from typing_extensions import TypeAlias
+from typing import Any, Optional, Union
+from collections.abc import Callable
+from typing import TypeAlias
 from torch._subclasses.fake_tensor import FakeTensorMode
 from torch.fx._symbolic_trace import _ConstantAttributeType
 from torch.utils._pytree import TreeSpec
@@ -13,7 +14,7 @@ from .graph_signature import ExportGraphSignature
 
 log = ...
 NONSTRICT_EXPORT_SANITIZE_TRACE = ...
-_DynamicShapesSpec: TypeAlias = Union[dict[str, Any], tuple[Any, ...], list[Any]]
+type _DynamicShapesSpec = dict[str, Any] | tuple[Any, ...] | list[Any]
 
 @dataclasses.dataclass
 class ExportDynamoConfig:
@@ -53,8 +54,8 @@ class _ExportModuleSpecTrackerDict(dict): ...
 
 def get_ep_stats(ep: ExportedProgram) -> dict[str, Any]: ...
 
-_EXPORT_FLAGS: Optional[set[str]] = ...
-_EXPORT_MODULE_HIERARCHY: Optional[dict[str, str]] = ...
+_EXPORT_FLAGS: set[str] | None = ...
+_EXPORT_MODULE_HIERARCHY: dict[str, str] | None = ...
 
 @contextmanager
 def patch_forward(obj: torch.nn.Module, new_method):  # -> Generator[None, Any, None]:

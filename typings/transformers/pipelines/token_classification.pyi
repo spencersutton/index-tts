@@ -15,7 +15,7 @@ class TokenClassificationArgumentHandler(ArgumentHandler):
     Handles arguments for token classification.
     """
     def __call__(
-        self, inputs: Union[str, list[str]], **kwargs
+        self, inputs: str | list[str], **kwargs
     ):  # -> tuple[list[str], Any, None, Any | None] | tuple[list[str], Any, list[list[Any]] | Any | list[Any] | None, Any | None]:
         ...
 
@@ -109,9 +109,7 @@ class TokenClassificationPipeline(ChunkPipeline):
     def __call__(self, inputs: str, **kwargs: Any) -> list[dict[str, str]]: ...
     @overload
     def __call__(self, inputs: list[str], **kwargs: Any) -> list[list[dict[str, str]]]: ...
-    def __call__(
-        self, inputs: Union[str, list[str]], **kwargs: Any
-    ) -> Union[list[dict[str, str]], list[list[dict[str, str]]]]:
+    def __call__(self, inputs: str | list[str], **kwargs: Any) -> list[dict[str, str]] | list[list[dict[str, str]]]:
         """
         Classify each token of the text(s) given as inputs.
 
@@ -150,11 +148,11 @@ class TokenClassificationPipeline(ChunkPipeline):
         sentence: str,
         input_ids: np.ndarray,
         scores: np.ndarray,
-        offset_mapping: Optional[list[tuple[int, int]]],
+        offset_mapping: list[tuple[int, int]] | None,
         special_tokens_mask: np.ndarray,
         aggregation_strategy: AggregationStrategy,
-        word_ids: Optional[list[Optional[int]]] = ...,
-        word_to_chars_map: Optional[list[tuple[int, int]]] = ...,
+        word_ids: list[int | None] | None = ...,
+        word_to_chars_map: list[tuple[int, int]] | None = ...,
     ) -> list[dict]:
         """Fuse various numpy arrays into dicts with all the information needed for aggregation"""
         ...

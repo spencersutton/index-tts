@@ -40,11 +40,11 @@ class YolosFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
         Whether to return segmentation masks.
     """
 
-    format: Optional[Union[str, AnnotationFormat]]
-    do_convert_annotations: Optional[bool]
-    do_pad: Optional[bool]
-    pad_size: Optional[dict[str, int]]
-    return_segmentation_masks: Optional[bool]
+    format: str | AnnotationFormat | None
+    do_convert_annotations: bool | None
+    do_pad: bool | None
+    pad_size: dict[str, int] | None
+    return_segmentation_masks: bool | None
     ...
 
 SUPPORTED_ANNOTATION_FORMATS = ...
@@ -67,7 +67,7 @@ def prepare_coco_detection_annotation(
     image,
     target,
     return_segmentation_masks: bool = ...,
-    input_data_format: Optional[Union[ChannelDimension, str]] = ...,
+    input_data_format: ChannelDimension | str | None = ...,
 ):  # -> dict[str, Tensor]:
     """
     Convert the target in COCO format into the format expected by YOLOS.
@@ -95,9 +95,9 @@ def rgb_to_id(color):  # -> Tensor | int:
 def prepare_coco_panoptic_annotation(
     image: torch.Tensor,
     target: dict,
-    masks_path: Union[str, pathlib.Path],
+    masks_path: str | pathlib.Path,
     return_masks: bool = ...,
-    input_data_format: Union[ChannelDimension, str] = ...,
+    input_data_format: ChannelDimension | str = ...,
 ) -> dict:
     """
     Prepare a coco panoptic annotation for YOLOS.
@@ -105,7 +105,7 @@ def prepare_coco_panoptic_annotation(
     ...
 
 def get_size_with_aspect_ratio(
-    image_size: tuple[int, int], size: int, max_size: Optional[int] = ..., mod_size: int = ...
+    image_size: tuple[int, int], size: int, max_size: int | None = ..., mod_size: int = ...
 ) -> tuple[int, int]:
     """
     Computes the output image size given the input image size and the desired output size with multiple of divisible_size.
@@ -151,10 +151,10 @@ class YolosImageProcessorFast(BaseImageProcessorFast):
         self,
         image: torch.Tensor,
         target: dict,
-        format: Optional[AnnotationFormat] = ...,
-        return_segmentation_masks: Optional[bool] = ...,
-        masks_path: Optional[Union[str, pathlib.Path]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        format: AnnotationFormat | None = ...,
+        return_segmentation_masks: bool | None = ...,
+        masks_path: str | pathlib.Path | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ) -> dict:
         """
         Prepare an annotation for feeding into YOLOS model.
@@ -216,7 +216,7 @@ class YolosImageProcessorFast(BaseImageProcessorFast):
         self,
         image: torch.Tensor,
         padded_size: tuple[int, int],
-        annotation: Optional[dict[str, Any]] = ...,
+        annotation: dict[str, Any] | None = ...,
         update_bboxes: bool = ...,
         fill: int = ...,
     ):  # -> tuple[Any | Tensor, Tensor, dict[str, Any] | None]:
@@ -225,8 +225,8 @@ class YolosImageProcessorFast(BaseImageProcessorFast):
     def preprocess(
         self,
         images: ImageInput,
-        annotations: Optional[Union[AnnotationType, list[AnnotationType]]] = ...,
-        masks_path: Optional[Union[str, pathlib.Path]] = ...,
+        annotations: AnnotationType | list[AnnotationType] | None = ...,
+        masks_path: str | pathlib.Path | None = ...,
         **kwargs: Unpack[YolosFastImageProcessorKwargs],
     ) -> BatchFeature:
         r"""
@@ -265,7 +265,7 @@ class YolosImageProcessorFast(BaseImageProcessorFast):
         ...
 
     def post_process_object_detection(
-        self, outputs, threshold: float = ..., target_sizes: Union[TensorType, list[tuple]] = ..., top_k: int = ...
+        self, outputs, threshold: float = ..., target_sizes: TensorType | list[tuple] = ..., top_k: int = ...
     ):  # -> list[Any]:
         """
         Converts the raw output of [`YolosForObjectDetection`] into final bounding boxes in (top_left_x,

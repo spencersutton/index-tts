@@ -112,7 +112,7 @@ class JukeboxTokenizer(PreTrainedTokenizer):
 
     def convert_lyric_tokens_to_string(self, lyrics: list[str]) -> str: ...
     def convert_to_tensors(
-        self, inputs, tensor_type: Optional[Union[str, TensorType]] = ..., prepend_batch_axis: bool = ...
+        self, inputs, tensor_type: str | TensorType | None = ..., prepend_batch_axis: bool = ...
     ):  # -> NDArray[Any] | Tensor | list[Any]:
         """
         Convert the inner content to tensors.
@@ -139,7 +139,7 @@ class JukeboxTokenizer(PreTrainedTokenizer):
         """
         ...
 
-    def save_vocabulary(self, save_directory: str, filename_prefix: Optional[str] = ...) -> tuple[str]:
+    def save_vocabulary(self, save_directory: str, filename_prefix: str | None = ...) -> tuple[str]:
         """
         Saves the tokenizer's vocabulary dictionary to the provided save_directory.
 

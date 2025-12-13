@@ -39,8 +39,8 @@ def render_text(
     right_padding: int = ...,
     top_padding: int = ...,
     bottom_padding: int = ...,
-    font_bytes: Optional[bytes] = ...,
-    font_path: Optional[str] = ...,
+    font_bytes: bytes | None = ...,
+    font_path: str | None = ...,
 ) -> Image.Image:
     """
     Render text. This script is entirely adapted from the original script that can be found here:
@@ -71,7 +71,7 @@ def render_text(
     ...
 
 def render_header(
-    image: np.ndarray, header: str, input_data_format: Optional[Union[str, ChildProcessError]] = ..., **kwargs
+    image: np.ndarray, header: str, input_data_format: str | ChildProcessError | None = ..., **kwargs
 ):  # -> ndarray[_AnyShape, dtype[Any]]:
     """
     Renders the input text as a header on the input image.
@@ -116,7 +116,7 @@ class Pix2StructImageProcessor(BaseImageProcessor):
         self,
         do_convert_rgb: bool = ...,
         do_normalize: bool = ...,
-        patch_size: Optional[dict[str, int]] = ...,
+        patch_size: dict[str, int] | None = ...,
         max_patches: int = ...,
         is_vqa: bool = ...,
         **kwargs,
@@ -126,7 +126,7 @@ class Pix2StructImageProcessor(BaseImageProcessor):
         image: np.ndarray,
         max_patches: int,
         patch_size: dict,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        input_data_format: str | ChannelDimension | None = ...,
         **kwargs,
     ) -> np.ndarray:
         """
@@ -149,8 +149,8 @@ class Pix2StructImageProcessor(BaseImageProcessor):
     def normalize(
         self,
         image: np.ndarray,
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
         **kwargs,
     ) -> np.ndarray:
         """
@@ -173,14 +173,14 @@ class Pix2StructImageProcessor(BaseImageProcessor):
     def preprocess(
         self,
         images: ImageInput,
-        header_text: Optional[str] = ...,
-        do_convert_rgb: Optional[bool] = ...,
-        do_normalize: Optional[bool] = ...,
-        max_patches: Optional[int] = ...,
-        patch_size: Optional[dict[str, int]] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
+        header_text: str | None = ...,
+        do_convert_rgb: bool | None = ...,
+        do_normalize: bool | None = ...,
+        max_patches: int | None = ...,
+        patch_size: dict[str, int] | None = ...,
+        return_tensors: str | TensorType | None = ...,
         data_format: ChannelDimension = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        input_data_format: str | ChannelDimension | None = ...,
         **kwargs,
     ) -> ImageInput:
         """

@@ -8,7 +8,8 @@ import torch.fx
 import torch.utils._pytree as pytree
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, NamedTuple, Optional, TYPE_CHECKING, Union
+from typing import Any, NamedTuple, Optional, TYPE_CHECKING, Union
+from collections.abc import Callable
 from unittest.mock import patch
 from torch import _guards
 from torch.export.dynamic_shapes import Constraint
@@ -58,10 +59,10 @@ unset = ...
 class DynamoStance:
     stance: str = ...
     skip_guard_eval_unsafe: bool = ...
-    backend: Union[str, Callable[..., Any], None] = ...
+    backend: str | Callable[..., Any] | None = ...
 
 _stance = ...
-_EXAMPLE_INPUTS: Optional[dict[str, list[Any]]] = ...
+_EXAMPLE_INPUTS: dict[str, list[Any]] | None = ...
 
 def get_example_inputs(key: str) -> list[Any]: ...
 
@@ -111,20 +112,20 @@ class _TorchDynamoContext:
         first_ctx: bool = ...,
         *,
         fullgraph: bool = ...,
-        error_on_graph_break: Optional[bool] = ...,
+        error_on_graph_break: bool | None = ...,
         export: bool = ...,
-        dynamic: Optional[bool] = ...,
-        compiler_config: Optional[Any] = ...,
-        package: Optional[CompilePackage] = ...,
-        hooks: Optional[Hooks] = ...,
+        dynamic: bool | None = ...,
+        compiler_config: Any | None = ...,
+        package: CompilePackage | None = ...,
+        hooks: Hooks | None = ...,
     ) -> None: ...
     def __enter__(self) -> None: ...
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[types.TracebackType],
-    ) -> Optional[bool]: ...
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: types.TracebackType | None,
+    ) -> bool | None: ...
     def __call__(self, fn: Any) -> Any: ...
 
 class OptimizeContext(_TorchDynamoContext):
@@ -135,13 +136,13 @@ class OptimizeContext(_TorchDynamoContext):
         first_ctx: bool = ...,
         *,
         fullgraph: bool = ...,
-        error_on_graph_break: Optional[bool] = ...,
+        error_on_graph_break: bool | None = ...,
         export: bool = ...,
-        dynamic: Optional[bool] = ...,
-        compiler_config: Optional[Any] = ...,
-        rebuild_ctx: Optional[Callable[[], Union[OptimizeContext, _NullDecorator]]] = ...,
-        package: Optional[CompilePackage] = ...,
-        hooks: Optional[Hooks] = ...,
+        dynamic: bool | None = ...,
+        compiler_config: Any | None = ...,
+        rebuild_ctx: Callable[[], OptimizeContext | _NullDecorator] | None = ...,
+        package: CompilePackage | None = ...,
+        hooks: Hooks | None = ...,
     ) -> None: ...
     def __reduce__(self) -> tuple[type[OptimizeContext], tuple[Any, ...], dict[str, Any]]: ...
 
@@ -150,11 +151,11 @@ class RunOnlyContext(_TorchDynamoContext):
     def __reduce__(self) -> tuple[type[RunOnlyContext], tuple[Any, ...]]: ...
 
 class DisableContext(_TorchDynamoContext):
-    def __init__(self, msg: Optional[str] = ..., wrapping: bool = ...) -> None: ...
+    def __init__(self, msg: str | None = ..., wrapping: bool = ...) -> None: ...
     def __call__(self, fn: Callable[..., Any]) -> Callable[..., Any]: ...
     def __reduce__(self) -> tuple[type[DisableContext], tuple[Any, ...]]: ...
 
-def get_compiler_fn(compiler_fn: Union[str, Callable[..., Any], None]) -> WrapBackendDebug: ...
+def get_compiler_fn(compiler_fn: str | Callable[..., Any] | None) -> WrapBackendDebug: ...
 
 class _NullDecorator(contextlib.nullcontext):
     def __call__(self, fn: Callable[..., Any]) -> Callable[..., Any]: ...
@@ -165,7 +166,7 @@ def is_dynamo_supported() -> bool: ...
 def check_if_inductor_supported() -> None: ...
 def is_inductor_supported() -> bool: ...
 def check_for_incompatible_configs() -> None: ...
-def optimize(*args: Any, **kwargs: Any) -> Union[OptimizeContext, _NullDecorator]: ...
+def optimize(*args: Any, **kwargs: Any) -> OptimizeContext | _NullDecorator: ...
 @patch("torch._dynamo.symbolic_convert.explain", True)
 def explain(f: Callable[..., Any], *extra_args: Any, **extra_kwargs: Any) -> Any: ...
 
@@ -179,7 +180,7 @@ class FlattenInputOutputSignature(torch.fx.Transformer):
         matched_output_elements_positions: list[int],
         example_fake_inputs: list[torch.Tensor],
         flat_args_dynamic_dims: list[set[int]],
-        fake_mode: Optional[fake_tensor.FakeTensorMode] = ...,
+        fake_mode: fake_tensor.FakeTensorMode | None = ...,
     ) -> None: ...
     def placeholder(self, target: Target, args: tuple[Argument, ...], kwargs: dict[str, Any]) -> Any: ...
     def output(self, target: Target, args: tuple[Argument, ...], kwargs: dict[str, Any]) -> Any: ...
@@ -194,12 +195,12 @@ def check_signature_rewritable(graph: torch.fx.GraphModule) -> None: ...
 def rewrite_signature(
     f_sig: inspect.Signature,
     graph: torch.fx.GraphModule,
-    fake_mode: Optional[fake_tensor.FakeTensorMode],
+    fake_mode: fake_tensor.FakeTensorMode | None,
     flat_args: list[Any],
     in_spec: pytree.TreeSpec,
     example_fake_inputs: list[Any],
     graph_captured_input: Iterable[Any],
-    graph_captured_output: Optional[Iterable[Any]],
+    graph_captured_output: Iterable[Any] | None,
     dynamo_traced_result: Any,
     flat_args_dynamic_dims: list[set[int]],
 ) -> torch.fx.GraphModule: ...
@@ -208,16 +209,16 @@ def export(
     *extra_args: Any,
     aten_graph: bool = ...,
     pre_dispatch: bool = ...,
-    decomposition_table: Optional[dict[torch._ops.OpOverload, Callable[..., Any]]] = ...,
+    decomposition_table: dict[torch._ops.OpOverload, Callable[..., Any]] | None = ...,
     tracing_mode: str = ...,
-    dynamic_shapes: Optional[Union[dict[str, Any], tuple[Any], list[Any]]] = ...,
+    dynamic_shapes: dict[str, Any] | tuple[Any] | list[Any] | None = ...,
     specialize_float: bool = ...,
     assume_static_by_default: bool = ...,
     same_signature: bool = ...,
     disable_constraint_solver: bool = ...,
     prefer_deferred_runtime_asserts_over_guards: bool = ...,
     _log_export_usage: bool = ...,
-    constraints: Optional[list[Constraint]] = ...,
+    constraints: list[Constraint] | None = ...,
     **extra_kwargs: Any,
 ) -> Callable[..., ExportResult]: ...
 def optimize_assert(*args: Any, **kwargs: Any) -> OptimizeContext: ...

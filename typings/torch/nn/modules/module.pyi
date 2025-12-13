@@ -17,7 +17,7 @@ __all__ = [
     "register_module_module_registration_hook",
     "register_module_parameter_registration_hook",
 ]
-_grad_t: TypeAlias = tuple[Tensor, ...] | Tensor
+type _grad_t = tuple[Tensor, ...] | Tensor
 T = TypeVar("T", bound=Module)
 
 class _IncompatibleKeys(namedtuple("IncompatibleKeys", ["missing_keys", "unexpected_keys"])):

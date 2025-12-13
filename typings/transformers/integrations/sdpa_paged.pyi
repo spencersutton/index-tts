@@ -17,9 +17,9 @@ def sdpa_attention_paged_forward(
     query: torch.Tensor,
     key: torch.Tensor,
     value: torch.Tensor,
-    attention_mask: Optional[torch.Tensor],
+    attention_mask: torch.Tensor | None,
     dropout: float = ...,
-    scaling: Optional[float] = ...,
-    is_causal: Optional[bool] = ...,
+    scaling: float | None = ...,
+    is_causal: bool | None = ...,
     **kwargs,
 ) -> tuple[torch.Tensor, None]: ...

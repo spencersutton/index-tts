@@ -13,17 +13,17 @@ if is_vision_available(): ...
 logger = ...
 
 class GotOcr2TextKwargs(TextKwargs, total=False):
-    format: Optional[bool]
+    format: bool | None
     ...
 
 class GotOcr2ImagesKwargs(ImagesKwargs, total=False):
-    box: Optional[Union[list, tuple[float, float], tuple[float, float, float, float]]]
-    color: Optional[str]
-    num_image_tokens: Optional[int]
-    multi_page: Optional[bool]
-    crop_to_patches: Optional[bool]
-    min_patches: Optional[int]
-    max_patches: Optional[int]
+    box: list | tuple[float, float] | tuple[float, float, float, float] | None
+    color: str | None
+    num_image_tokens: int | None
+    multi_page: bool | None
+    crop_to_patches: bool | None
+    min_patches: int | None
+    max_patches: int | None
     ...
 
 class GotOcr2ProcessorKwargs(ProcessingKwargs, total=False):
@@ -31,7 +31,7 @@ class GotOcr2ProcessorKwargs(ProcessingKwargs, total=False):
     images_kwargs: GotOcr2ImagesKwargs
     _defaults = ...
 
-def preprocess_box_annotation(box: Union[list, tuple], image_size: tuple[int, int]) -> list:
+def preprocess_box_annotation(box: list | tuple, image_size: tuple[int, int]) -> list:
     """
     Convert box annotation to the format [x1, y1, x2, y2] in the range [0, 1000].
     """
@@ -57,8 +57,8 @@ class GotOcr2Processor(ProcessorMixin):
     def __init__(self, image_processor=..., tokenizer=..., chat_template=..., **kwargs) -> None: ...
     def __call__(
         self,
-        images: Optional[ImageInput] = ...,
-        text: Optional[Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]]] = ...,
+        images: ImageInput | None = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] | None = ...,
         audio=...,
         videos=...,
         **kwargs: Unpack[GotOcr2ProcessorKwargs],

@@ -18,7 +18,7 @@ def is_deepspeed_available():  # -> bool | None:
 if is_accelerate_available() and is_deepspeed_available(): ...
 else: ...
 
-class HfDeepSpeedConfig(DeepSpeedConfig):
+class HfDeepSpeedConfig:
     """
     This object contains a DeepSpeed configuration dictionary and can be quickly queried for things like zero stage.
 

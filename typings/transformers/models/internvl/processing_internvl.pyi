@@ -10,9 +10,9 @@ from ...tokenization_utils_base import PreTokenizedInput, TextInput
 from ...video_utils import VideoInput
 
 class InternVLImagesKwargs(ImagesKwargs, total=False):
-    crop_to_patches: Optional[bool]
-    min_patches: Optional[int]
-    max_patches: Optional[int]
+    crop_to_patches: bool | None
+    min_patches: int | None
+    max_patches: int | None
     ...
 
 class InternVLProcessorKwargs(ProcessingKwargs, total=False):
@@ -53,10 +53,10 @@ class InternVLProcessor(ProcessorMixin):
     ) -> None: ...
     def __call__(
         self,
-        images: Optional[ImageInput] = ...,
-        text: Optional[Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]]] = ...,
+        images: ImageInput | None = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] | None = ...,
         audio=...,
-        videos: Optional[VideoInput] = ...,
+        videos: VideoInput | None = ...,
         **kwargs: Unpack[InternVLProcessorKwargs],
     ) -> BatchFeature:
         """

@@ -39,9 +39,9 @@ class VisionEncoderDecoderModel(PreTrainedModel, GenerationMixin):
     _supports_sdpa = ...
     def __init__(
         self,
-        config: Optional[PretrainedConfig] = ...,
-        encoder: Optional[PreTrainedModel] = ...,
-        decoder: Optional[PreTrainedModel] = ...,
+        config: PretrainedConfig | None = ...,
+        encoder: PreTrainedModel | None = ...,
+        decoder: PreTrainedModel | None = ...,
     ) -> None:
         r"""
         encoder (`PreTrainedModel`, *optional*):
@@ -93,8 +93,8 @@ class VisionEncoderDecoderModel(PreTrainedModel, GenerationMixin):
     @classmethod
     def from_encoder_decoder_pretrained(
         cls,
-        encoder_pretrained_model_name_or_path: Optional[str] = ...,
-        decoder_pretrained_model_name_or_path: Optional[str] = ...,
+        encoder_pretrained_model_name_or_path: str | None = ...,
+        decoder_pretrained_model_name_or_path: str | None = ...,
         *model_args,
         **kwargs,
     ) -> PreTrainedModel:
@@ -162,20 +162,20 @@ class VisionEncoderDecoderModel(PreTrainedModel, GenerationMixin):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        decoder_input_ids: Optional[torch.LongTensor] = ...,
-        decoder_attention_mask: Optional[torch.BoolTensor] = ...,
-        encoder_outputs: Optional[tuple[torch.FloatTensor]] = ...,
-        past_key_values: Optional[tuple[tuple[torch.FloatTensor]]] = ...,
-        decoder_inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        pixel_values: torch.FloatTensor | None = ...,
+        decoder_input_ids: torch.LongTensor | None = ...,
+        decoder_attention_mask: torch.BoolTensor | None = ...,
+        encoder_outputs: tuple[torch.FloatTensor] | None = ...,
+        past_key_values: tuple[tuple[torch.FloatTensor]] | None = ...,
+        decoder_inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs,
-    ) -> Union[tuple[torch.FloatTensor], Seq2SeqLMOutput]:
+    ) -> tuple[torch.FloatTensor] | Seq2SeqLMOutput:
         r"""
         decoder_input_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
             Indices of decoder input sequence tokens in the vocabulary.

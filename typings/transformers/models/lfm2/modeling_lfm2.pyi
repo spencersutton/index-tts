@@ -63,14 +63,14 @@ class Lfm2HybridConvCache:
         config: Lfm2Config,
         max_batch_size: int,
         dtype: torch.dtype = ...,
-        device: Union[torch.device, str, None] = ...,
+        device: torch.device | str | None = ...,
     ) -> None: ...
     def update(
         self,
         key_states: torch.Tensor,
         value_states: torch.Tensor,
         layer_idx: int,
-        cache_kwargs: Optional[dict[str, Any]] = ...,
+        cache_kwargs: dict[str, Any] | None = ...,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Updates the cache with the new `key_states` and `value_states` for the layer `layer_idx`.
@@ -94,7 +94,7 @@ class Lfm2HybridConvCache:
         """Reorders the cache for beam search, given the selected beam indices."""
         ...
 
-    def get_seq_length(self, layer_idx: Optional[int] = ...) -> int:
+    def get_seq_length(self, layer_idx: int | None = ...) -> int:
         """Returns the sequence length of the cached states. A layer index can be optionally passed."""
         ...
 
@@ -115,7 +115,7 @@ class Lfm2HybridConvCache:
     def __getitem__(self, layer_idx: int) -> tuple[torch.Tensor, torch.Tensor]: ...
     def to_legacy_cache(self) -> tuple[tuple[torch.Tensor], tuple[torch.Tensor]]: ...
     @classmethod
-    def from_legacy_cache(cls, past_key_values: Optional[tuple[tuple[torch.FloatTensor]]] = ...) -> DynamicCache: ...
+    def from_legacy_cache(cls, past_key_values: tuple[tuple[torch.FloatTensor]] | None = ...) -> DynamicCache: ...
     def reset(self):  # -> None:
         ...
 
@@ -157,7 +157,7 @@ def eager_attention_forward(
     query: torch.Tensor,
     key: torch.Tensor,
     value: torch.Tensor,
-    attention_mask: Optional[torch.Tensor],
+    attention_mask: torch.Tensor | None,
     scaling: float,
     dropout: float = ...,
     **kwargs: Unpack[TransformersKwargs],
@@ -171,11 +171,11 @@ class Lfm2Attention(nn.Module):
         self,
         hidden_states: torch.Tensor,
         position_embeddings: tuple[torch.Tensor, torch.Tensor],
-        attention_mask: Optional[torch.Tensor],
-        past_key_value: Optional[Lfm2HybridConvCache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        attention_mask: torch.Tensor | None,
+        past_key_value: Lfm2HybridConvCache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]: ...
 
 def apply_mask_to_padding_states(hidden_states, attention_mask):
     """
@@ -191,25 +191,25 @@ class Lfm2ShortConv(nn.Module):
     def cuda_kernels_forward(
         self,
         x: torch.Tensor,
-        past_key_value: Optional[Lfm2HybridConvCache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
+        past_key_value: Lfm2HybridConvCache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
     ):  # -> Any:
         ...
     def slow_forward(
         self,
         x: torch.Tensor,
-        past_key_value: Optional[Lfm2HybridConvCache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
+        past_key_value: Lfm2HybridConvCache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
     ):  # -> Any:
         ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        past_key_value: Optional[Lfm2HybridConvCache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
+        past_key_value: Lfm2HybridConvCache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
     ):  # -> Any:
         ...
 
@@ -219,10 +219,10 @@ class Lfm2DecoderLayer(GradientCheckpointingLayer):
         self,
         hidden_states: torch.Tensor,
         position_embeddings: tuple[torch.Tensor, torch.Tensor],
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[tuple[torch.Tensor]] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: tuple[torch.Tensor] | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs,
     ) -> torch.Tensor: ...
 
@@ -247,13 +247,13 @@ class Lfm2Model(Lfm2PreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Lfm2HybridConvCache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Lfm2HybridConvCache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Unpack[TransformersKwargs],
     ) -> BaseModelOutputWithPast: ...
 
@@ -271,15 +271,15 @@ class Lfm2ForCausalLM(Lfm2PreTrainedModel, GenerationMixin):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        logits_to_keep: Union[int, torch.Tensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        logits_to_keep: int | torch.Tensor = ...,
         **kwargs: Unpack[TransformersKwargs],
     ) -> CausalLMOutputWithPast:
         r"""

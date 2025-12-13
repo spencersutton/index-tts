@@ -45,7 +45,7 @@ def eager_attention_forward(
     query: torch.Tensor,
     key: torch.Tensor,
     value: torch.Tensor,
-    attention_mask: Optional[torch.Tensor],
+    attention_mask: torch.Tensor | None,
     scaling: float,
     dropout: float = ...,
     **kwargs: Unpack[TransformersKwargs],
@@ -55,12 +55,12 @@ def eager_attention_forward(
 class MllamaVisionAttention(nn.Module):
     def __init__(self, config: MllamaVisionConfig) -> None: ...
     def forward(
-        self, hidden_state: torch.Tensor, attention_mask: Optional[torch.Tensor] = ..., **kwargs
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]: ...
+        self, hidden_state: torch.Tensor, attention_mask: torch.Tensor | None = ..., **kwargs
+    ) -> tuple[torch.Tensor, torch.Tensor | None]: ...
 
 class MllamaVisionEncoderLayer(nn.Module):
     def __init__(self, config: MllamaVisionConfig, is_gated: bool = ...) -> None: ...
-    def forward(self, hidden_state: torch.Tensor, attention_mask: Optional[torch.Tensor] = ...):  # -> Tensor:
+    def forward(self, hidden_state: torch.Tensor, attention_mask: torch.Tensor | None = ...):  # -> Tensor:
         ...
 
 class MllamaVisionEncoder(nn.Module):
@@ -72,7 +72,7 @@ class MllamaVisionEncoder(nn.Module):
         config: MllamaConfig
     """
     def __init__(self, config: MllamaVisionConfig, num_layers=..., is_gated=...) -> None: ...
-    def forward(self, hidden_states: torch.Tensor, attention_mask: Optional[torch.Tensor] = ...) -> BaseModelOutput:
+    def forward(self, hidden_states: torch.Tensor, attention_mask: torch.Tensor | None = ...) -> BaseModelOutput:
         r"""
         Args:
             inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
@@ -103,17 +103,17 @@ class MllamaTextRMSNorm(nn.Module):
 
 class MllamaTextCrossAttention(nn.Module):
     """Multi-headed attention from 'Attention Is All You Need' paper"""
-    def __init__(self, config: Optional[MllamaTextConfig] = ..., layer_idx: Optional[int] = ...) -> None: ...
+    def __init__(self, config: MllamaTextConfig | None = ..., layer_idx: int | None = ...) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        cross_attention_states: Optional[torch.Tensor] = ...,
-        past_key_value: Optional[Cache] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        cross_attention_states: torch.Tensor | None = ...,
+        past_key_value: Cache | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]:
         """Input shape: Batch x Time x Channel"""
         ...
 
@@ -167,17 +167,17 @@ class MllamaSelfAttentionDecoderLayer(GradientCheckpointingLayer):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        cross_attention_states: Optional[torch.Tensor] = ...,
-        cross_attention_mask: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        full_text_row_masked_out_mask: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[Cache] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
+        cross_attention_states: torch.Tensor | None = ...,
+        cross_attention_mask: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        full_text_row_masked_out_mask: tuple[torch.Tensor, torch.Tensor] | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: Cache | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]:
+    ) -> tuple[torch.FloatTensor, tuple[torch.FloatTensor, torch.FloatTensor] | None]:
         """
         Args:
             hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
@@ -210,11 +210,11 @@ class MllamaCrossAttentionDecoderLayer(GradientCheckpointingLayer):
         cross_attention_mask: torch.Tensor,
         attention_mask: torch.Tensor,
         full_text_row_masked_out_mask: tuple[torch.Tensor, torch.Tensor],
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[Cache] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        position_embeddings: Optional[torch.Tensor] = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: Cache | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        position_embeddings: torch.Tensor | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
     ) -> tuple[torch.Tensor]: ...
 
@@ -315,16 +315,16 @@ class MllamaTextModel(MllamaPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        cross_attention_states: Optional[torch.FloatTensor] = ...,
-        cross_attention_mask: Optional[torch.Tensor] = ...,
-        full_text_row_masked_out_mask: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
-        past_key_values: Optional[Union[Cache, list[torch.FloatTensor]]] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        cross_attention_states: torch.FloatTensor | None = ...,
+        cross_attention_mask: torch.Tensor | None = ...,
+        full_text_row_masked_out_mask: tuple[torch.Tensor, torch.Tensor] | None = ...,
+        past_key_values: Cache | list[torch.FloatTensor] | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
     ) -> BaseModelOutputWithPast:
         r"""
@@ -387,20 +387,20 @@ class MllamaForCausalLM(MllamaPreTrainedModel, GenerationMixin):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        cross_attention_states: Optional[torch.LongTensor] = ...,
-        cross_attention_mask: Optional[torch.LongTensor] = ...,
-        full_text_row_masked_out_mask: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
-        past_key_values: Optional[Union[Cache, list[torch.FloatTensor]]] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        logits_to_keep: Union[int, torch.Tensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        cross_attention_states: torch.LongTensor | None = ...,
+        cross_attention_mask: torch.LongTensor | None = ...,
+        full_text_row_masked_out_mask: tuple[torch.Tensor, torch.Tensor] | None = ...,
+        past_key_values: Cache | list[torch.FloatTensor] | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        logits_to_keep: int | torch.Tensor = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> Union[tuple, CausalLMOutputWithPast]:
+    ) -> tuple | CausalLMOutputWithPast:
         r"""
         cross_attention_states (`torch.FloatTensor`, *optional*):
             Output of the vision model, used for cross-attention. This tensor contains the processed image features that
@@ -468,18 +468,18 @@ class MllamaModel(MllamaPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        aspect_ratio_mask: Optional[torch.Tensor] = ...,
-        aspect_ratio_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        cross_attention_mask: Optional[torch.Tensor] = ...,
-        cross_attention_states: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        pixel_values: torch.FloatTensor | None = ...,
+        aspect_ratio_mask: torch.Tensor | None = ...,
+        aspect_ratio_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        cross_attention_mask: torch.Tensor | None = ...,
+        cross_attention_states: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
     ) -> BaseModelOutputWithPast:
         r"""
@@ -540,22 +540,22 @@ class MllamaForConditionalGeneration(MllamaPreTrainedModel, GenerationMixin):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        aspect_ratio_mask: Optional[torch.Tensor] = ...,
-        aspect_ratio_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        cross_attention_mask: Optional[torch.Tensor] = ...,
-        cross_attention_states: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Union[Cache, list[torch.FloatTensor]]] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        logits_to_keep: Union[int, torch.Tensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        pixel_values: torch.FloatTensor | None = ...,
+        aspect_ratio_mask: torch.Tensor | None = ...,
+        aspect_ratio_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        cross_attention_mask: torch.Tensor | None = ...,
+        cross_attention_states: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | list[torch.FloatTensor] | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        logits_to_keep: int | torch.Tensor = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> Union[tuple, CausalLMOutputWithPast]:
+    ) -> tuple | CausalLMOutputWithPast:
         r"""
         aspect_ratio_mask (`torch.Tensor` of shape `(batch_size, max_num_images, max_num_tiles)`, *optional*):
             Mask to avoid performing attention on padding tiles. Mask values selected in `[0, 1]`:

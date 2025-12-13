@@ -36,7 +36,7 @@ class graph:
     def __enter__(self) -> None: ...
     def __exit__(self, *args: object) -> None: ...
 
-_ModuleOrCallable: TypeAlias = torch.nn.Module | Callable[..., object]
+type _ModuleOrCallable = torch.nn.Module | Callable[..., object]
 
 @overload
 def make_graphed_callables(

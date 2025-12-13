@@ -26,7 +26,7 @@ def dynamic_rope_update(rope_forward):  # -> _Wrapped[..., Any, ..., Any]:
 ROPE_INIT_FUNCTIONS = ...
 ROPE_VALIDATION_FUNCTIONS = ...
 
-def rope_config_validation(config: PretrainedConfig, ignore_keys: Optional[set] = ...):  # -> None:
+def rope_config_validation(config: PretrainedConfig, ignore_keys: set | None = ...):  # -> None:
     """
     Validate the RoPE config arguments, given a `PretrainedConfig` object
     """

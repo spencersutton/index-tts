@@ -68,25 +68,25 @@ class TextKwargs(TypedDict, total=False):
             Whether to return multimodal token type ids indicating mm placeholder token positions.
     """
 
-    text_pair: Optional[Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]]]
-    text_target: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]]
-    text_pair_target: Optional[Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]]]
-    add_special_tokens: Optional[bool]
-    padding: Union[bool, str, PaddingStrategy]
-    truncation: Union[bool, str, TruncationStrategy]
-    max_length: Optional[int]
-    stride: Optional[int]
-    is_split_into_words: Optional[bool]
-    pad_to_multiple_of: Optional[int]
-    return_token_type_ids: Optional[bool]
-    return_attention_mask: Optional[bool]
-    return_overflowing_tokens: Optional[bool]
-    return_special_tokens_mask: Optional[bool]
-    return_offsets_mapping: Optional[bool]
-    return_length: Optional[bool]
-    verbose: Optional[bool]
-    padding_side: Optional[str]
-    return_mm_token_type_ids: Optional[bool]
+    text_pair: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] | None
+    text_target: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput]
+    text_pair_target: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] | None
+    add_special_tokens: bool | None
+    padding: bool | str | PaddingStrategy
+    truncation: bool | str | TruncationStrategy
+    max_length: int | None
+    stride: int | None
+    is_split_into_words: bool | None
+    pad_to_multiple_of: int | None
+    return_token_type_ids: bool | None
+    return_attention_mask: bool | None
+    return_overflowing_tokens: bool | None
+    return_special_tokens_mask: bool | None
+    return_offsets_mapping: bool | None
+    return_length: bool | None
+    verbose: bool | None
+    padding_side: str | None
+    return_mm_token_type_ids: bool | None
     ...
 
 class ImagesKwargs(TypedDict, total=False):
@@ -129,22 +129,22 @@ class ImagesKwargs(TypedDict, total=False):
             The device to use for processing (e.g. "cpu", "cuda"), only relevant for fast image processing.
     """
 
-    do_resize: Optional[bool]
-    size: Optional[dict[str, int]]
-    size_divisor: Optional[int]
-    crop_size: Optional[dict[str, int]]
-    resample: Optional[Union[PILImageResampling, int]]
-    do_rescale: Optional[bool]
-    rescale_factor: Optional[float]
-    do_normalize: Optional[bool]
-    image_mean: Optional[Union[float, list[float]]]
-    image_std: Optional[Union[float, list[float]]]
-    do_pad: Optional[bool]
-    pad_size: Optional[dict[str, int]]
-    do_center_crop: Optional[bool]
-    data_format: Optional[ChannelDimension]
-    input_data_format: Optional[Union[str, ChannelDimension]]
-    device: Optional[str]
+    do_resize: bool | None
+    size: dict[str, int] | None
+    size_divisor: int | None
+    crop_size: dict[str, int] | None
+    resample: PILImageResampling | int | None
+    do_rescale: bool | None
+    rescale_factor: float | None
+    do_normalize: bool | None
+    image_mean: float | list[float] | None
+    image_std: float | list[float] | None
+    do_pad: bool | None
+    pad_size: dict[str, int] | None
+    do_center_crop: bool | None
+    data_format: ChannelDimension | None
+    input_data_format: str | ChannelDimension | None
+    device: str | None
     ...
 
 class VideosKwargs(TypedDict, total=False):
@@ -194,27 +194,27 @@ class VideosKwargs(TypedDict, total=False):
             The channel dimension format for the input video.
     """
 
-    do_convert_rgb: Optional[bool]
-    do_resize: Optional[bool]
-    size: Optional[dict[str, int]]
-    size_divisor: Optional[int]
-    default_to_square: Optional[bool]
-    resample: Optional[PILImageResampling]
-    do_rescale: Optional[bool]
-    rescale_factor: Optional[float]
-    do_normalize: Optional[bool]
-    image_mean: Optional[Union[float, list[float]]]
-    image_std: Optional[Union[float, list[float]]]
-    do_pad: Optional[bool]
-    do_center_crop: Optional[bool]
-    crop_size: Optional[dict[str, int]]
-    data_format: Optional[ChannelDimension]
-    input_data_format: Optional[Union[str, ChannelDimension]]
-    device: Optional[str]
-    do_sample_frames: Optional[bool]
-    video_metadata: Optional[Union[VideoMetadata, dict]]
-    fps: Optional[Union[int, float]]
-    num_frames: Optional[int]
+    do_convert_rgb: bool | None
+    do_resize: bool | None
+    size: dict[str, int] | None
+    size_divisor: int | None
+    default_to_square: bool | None
+    resample: PILImageResampling | None
+    do_rescale: bool | None
+    rescale_factor: float | None
+    do_normalize: bool | None
+    image_mean: float | list[float] | None
+    image_std: float | list[float] | None
+    do_pad: bool | None
+    do_center_crop: bool | None
+    crop_size: dict[str, int] | None
+    data_format: ChannelDimension | None
+    input_data_format: str | ChannelDimension | None
+    device: str | None
+    do_sample_frames: bool | None
+    video_metadata: VideoMetadata | dict | None
+    fps: int | float | None
+    num_frames: int | None
     ...
 
 class AudioKwargs(TypedDict, total=False):
@@ -247,17 +247,17 @@ class AudioKwargs(TypedDict, total=False):
             Whether or not [`~ASTFeatureExtractor.__call__`] should return `attention_mask`.
     """
 
-    sampling_rate: Optional[int]
-    raw_speech: Optional[Union[np.ndarray, list[float], list[np.ndarray], list[list[float]]]]
-    padding: Optional[Union[bool, str, PaddingStrategy]]
-    max_length: Optional[int]
-    truncation: Optional[bool]
-    pad_to_multiple_of: Optional[int]
-    return_attention_mask: Optional[bool]
+    sampling_rate: int | None
+    raw_speech: np.ndarray | list[float] | list[np.ndarray] | list[list[float]] | None
+    padding: bool | str | PaddingStrategy | None
+    max_length: int | None
+    truncation: bool | None
+    pad_to_multiple_of: int | None
+    return_attention_mask: bool | None
     ...
 
 class CommonKwargs(TypedDict, total=False):
-    return_tensors: Optional[Union[str, TensorType]]
+    return_tensors: str | TensorType | None
     ...
 
 class ProcessingKwargs(TextKwargs, ImagesKwargs, VideosKwargs, AudioKwargs, CommonKwargs, total=False):
@@ -336,11 +336,11 @@ class TokenizerChatTemplateKwargs(TypedDict, total=False):
         This functionality is only available for chat templates that support it via the `{% generation %}` keyword.
     """
 
-    tools: Optional[list[dict]] = ...
-    documents: Optional[list[dict[str, str]]] = ...
-    add_generation_prompt: Optional[bool] = ...
-    continue_final_message: Optional[bool] = ...
-    return_assistant_tokens_mask: Optional[bool] = ...
+    tools: list[dict] | None = ...
+    documents: list[dict[str, str]] | None = ...
+    add_generation_prompt: bool | None = ...
+    continue_final_message: bool | None = ...
+    return_assistant_tokens_mask: bool | None = ...
 
 class ChatTemplateLoadKwargs(TypedDict, total=False):
     """
@@ -364,9 +364,9 @@ class ChatTemplateLoadKwargs(TypedDict, total=False):
                 return np.linspace(start_idx, end_idx, num_frames, dtype=int)
     """
 
-    video_load_backend: Optional[str] = ...
-    sampling_rate: Optional[int] = ...
-    load_audio_from_video: Optional[bool] = ...
+    video_load_backend: str | None = ...
+    sampling_rate: int | None = ...
+    load_audio_from_video: bool | None = ...
 
 class ProcessorChatTemplateKwargs(ChatTemplateLoadKwargs, TokenizerChatTemplateKwargs, total=False):
     """
@@ -378,8 +378,8 @@ class ProcessorChatTemplateKwargs(ChatTemplateLoadKwargs, TokenizerChatTemplateK
         Whether to return a dictionary with named outputs. Has no effect if tokenize is `False`.
     """
 
-    tokenize: Optional[bool] = ...
-    return_dict: Optional[bool] = ...
+    tokenize: bool | None = ...
+    return_dict: bool | None = ...
 
 class AllKwargsForChatTemplate(
     TextKwargs, ImagesKwargs, VideosKwargs, AudioKwargs, CommonKwargs, ProcessorChatTemplateKwargs
@@ -447,7 +447,7 @@ class ProcessorMixin(PushToHubMixin):
         """
         ...
 
-    def to_json_file(self, json_file_path: Union[str, os.PathLike]):  # -> None:
+    def to_json_file(self, json_file_path: str | os.PathLike):  # -> None:
         """
         Save this instance to a JSON file.
 
@@ -487,7 +487,7 @@ class ProcessorMixin(PushToHubMixin):
 
     @classmethod
     def get_processor_dict(
-        cls, pretrained_model_name_or_path: Union[str, os.PathLike], **kwargs
+        cls, pretrained_model_name_or_path: str | os.PathLike, **kwargs
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         """
         From a `pretrained_model_name_or_path`, resolve to a dictionary of parameters, to be used for instantiating a
@@ -529,11 +529,11 @@ class ProcessorMixin(PushToHubMixin):
     @classmethod
     def from_pretrained(
         cls: type[SpecificProcessorType],
-        pretrained_model_name_or_path: Union[str, os.PathLike],
-        cache_dir: Optional[Union[str, os.PathLike]] = ...,
+        pretrained_model_name_or_path: str | os.PathLike,
+        cache_dir: str | os.PathLike | None = ...,
         force_download: bool = ...,
         local_files_only: bool = ...,
-        token: Optional[Union[str, bool]] = ...,
+        token: str | bool | None = ...,
         revision: str = ...,
         **kwargs,
     ) -> SpecificProcessorType:
@@ -593,8 +593,8 @@ class ProcessorMixin(PushToHubMixin):
     @deprecate_kwarg("video_fps", version="4.58", new_name="fps")
     def apply_chat_template(
         self,
-        conversation: Union[list[dict[str, str]], list[list[dict[str, str]]]],
-        chat_template: Optional[str] = ...,
+        conversation: list[dict[str, str]] | list[list[dict[str, str]]],
+        chat_template: str | None = ...,
         **kwargs: Unpack[AllKwargsForChatTemplate],
     ) -> str:
         """

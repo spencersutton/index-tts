@@ -46,7 +46,7 @@ class TextNetStage(nn.Module):
 class TextNetEncoder(nn.Module):
     def __init__(self, config: TextNetConfig) -> None: ...
     def forward(
-        self, hidden_state: torch.Tensor, output_hidden_states: Optional[bool] = ..., return_dict: Optional[bool] = ...
+        self, hidden_state: torch.Tensor, output_hidden_states: bool | None = ..., return_dict: bool | None = ...
     ) -> BaseModelOutputWithNoAttention: ...
 
 @auto_docstring
@@ -60,8 +60,8 @@ class TextNetModel(TextNetPreTrainedModel):
     def __init__(self, config) -> None: ...
     @auto_docstring
     def forward(
-        self, pixel_values: Tensor, output_hidden_states: Optional[bool] = ..., return_dict: Optional[bool] = ...
-    ) -> Union[tuple[Any, list[Any]], tuple[Any], BaseModelOutputWithPoolingAndNoAttention]: ...
+        self, pixel_values: Tensor, output_hidden_states: bool | None = ..., return_dict: bool | None = ...
+    ) -> tuple[Any, list[Any]] | tuple[Any] | BaseModelOutputWithPoolingAndNoAttention: ...
 
 @auto_docstring(
     custom_intro="""
@@ -74,10 +74,10 @@ class TextNetForImageClassification(TextNetPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        pixel_values: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
     ) -> ImageClassifierOutputWithNoAttention:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
@@ -115,8 +115,8 @@ class TextNetBackbone(TextNetPreTrainedModel, BackboneMixin):
     def __init__(self, config) -> None: ...
     @auto_docstring
     def forward(
-        self, pixel_values: Tensor, output_hidden_states: Optional[bool] = ..., return_dict: Optional[bool] = ...
-    ) -> Union[tuple[tuple], BackboneOutput]:
+        self, pixel_values: Tensor, output_hidden_states: bool | None = ..., return_dict: bool | None = ...
+    ) -> tuple[tuple] | BackboneOutput:
         r"""
         Examples:
 

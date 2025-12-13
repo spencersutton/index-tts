@@ -70,11 +70,9 @@ PROVIDER_T = Literal[
     "zai-org",
 ]
 PROVIDER_OR_POLICY_T = Union[PROVIDER_T, Literal["auto"]]
-PROVIDERS: Dict[PROVIDER_T, Dict[str, TaskProviderHelper]] = ...
+PROVIDERS: dict[PROVIDER_T, dict[str, TaskProviderHelper]] = ...
 
-def get_provider_helper(
-    provider: Optional[PROVIDER_OR_POLICY_T], task: str, model: Optional[str]
-) -> TaskProviderHelper:
+def get_provider_helper(provider: PROVIDER_OR_POLICY_T | None, task: str, model: str | None) -> TaskProviderHelper:
     """Get provider helper instance by name and task.
 
     Args:

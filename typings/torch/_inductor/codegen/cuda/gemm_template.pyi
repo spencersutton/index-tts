@@ -9,8 +9,8 @@ from ..common import IndentedBuffer
 from .cuda_kernel import CUDATemplateKernel
 from .cuda_template import CUTLASSTemplate
 
-GemmOperation: TypeAlias = Any
-EVTArgRenames: TypeAlias = Any
+type GemmOperation = Any
+type EVTArgRenames = Any
 log = ...
 GEMM_TEMPLATE_CUTLASS_3X = ...
 GEMM_ARGS_CUTLASS_3X = ...
@@ -31,8 +31,8 @@ class CUTLASSGemmTemplate(CUTLASSTemplate, ABC):
         layout: Layout,
         alpha: float,
         beta: float,
-        input_reorder: Optional[list[int]] = ...,
-        use_fast_accum: Optional[bool] = ...,
+        input_reorder: list[int] | None = ...,
+        use_fast_accum: bool | None = ...,
     ) -> None: ...
     @staticmethod
     @abstractmethod
@@ -42,13 +42,13 @@ class CUTLASSGemmTemplate(CUTLASSTemplate, ABC):
         input_nodes: list[Buffer],
         alpha: float = ...,
         beta: float = ...,
-        input_reorder: Optional[list[int]] = ...,
-        use_fast_accum: Optional[bool] = ...,
+        input_reorder: list[int] | None = ...,
+        use_fast_accum: bool | None = ...,
         **extra_kwargs,
     ) -> None: ...
     def header(self) -> IndentedBuffer: ...
     @staticmethod
-    def cutlass_layout(torch_layout: ir.Layout) -> Optional[cutlass_lib.LayoutType]: ...
+    def cutlass_layout(torch_layout: ir.Layout) -> cutlass_lib.LayoutType | None: ...
     @staticmethod
     def flip_cutlass_layout(cutlass_layout: cutlass_lib.LayoutType) -> cutlass_lib.LayoutType: ...
     @staticmethod
@@ -67,8 +67,8 @@ class CUTLASSGemmTemplate(CUTLASSTemplate, ABC):
         op: cutlass_library.gemm_op.GemmOperation,
         X: Buffer,
         W: Buffer,
-        Bias: Optional[Buffer],
-        Y: Union[Buffer, ReinterpretView],
+        Bias: Buffer | None,
+        Y: Buffer | ReinterpretView,
     ) -> cutlass_library.gemm_op.GemmOperation: ...
     @classmethod
     def global_filter_ops(
@@ -81,8 +81,8 @@ class CUTLASSGemmTemplate(CUTLASSTemplate, ABC):
         self,
         kernel: CUDATemplateKernel,
         op: cutlass_gemm_op.GemmOperation = ...,
-        template_buffer_node: Optional[CUDATemplateBuffer] = ...,
-        epilogue_nodes: Optional[list[BaseSchedulerNode]] = ...,
+        template_buffer_node: CUDATemplateBuffer | None = ...,
+        epilogue_nodes: list[BaseSchedulerNode] | None = ...,
         **kwargs,
     ) -> str: ...
     def test_call_statement(self, kernel, input_nodes, names_str: str = ...) -> str: ...
@@ -94,8 +94,8 @@ class CUTLASS3xGemmTemplate(CUTLASSGemmTemplate):
         layout: Layout,
         alpha: float,
         beta: float,
-        input_reorder: Optional[list[int]] = ...,
-        use_fast_accum: Optional[bool] = ...,
+        input_reorder: list[int] | None = ...,
+        use_fast_accum: bool | None = ...,
     ) -> None: ...
     @staticmethod
     def add_cutlass_gemm_choices(
@@ -104,8 +104,8 @@ class CUTLASS3xGemmTemplate(CUTLASSGemmTemplate):
         input_nodes: list[Buffer],
         alpha: float = ...,
         beta: float = ...,
-        input_reorder: Optional[list[int]] = ...,
-        use_fast_accum: Optional[bool] = ...,
+        input_reorder: list[int] | None = ...,
+        use_fast_accum: bool | None = ...,
         **extra_kwargs,
     ) -> None: ...
     @staticmethod
@@ -132,7 +132,7 @@ class CUTLASS2xGemmTemplate(CUTLASSGemmTemplate):
         layout: Layout,
         alpha: float,
         beta: float,
-        input_reorder: Optional[list[int]] = ...,
+        input_reorder: list[int] | None = ...,
     ) -> None: ...
     @staticmethod
     def add_cutlass_gemm_choices(
@@ -141,8 +141,8 @@ class CUTLASS2xGemmTemplate(CUTLASSGemmTemplate):
         input_nodes: list[Buffer],
         alpha: float = ...,
         beta: float = ...,
-        input_reorder: Optional[list[int]] = ...,
-        use_fast_accum: Optional[bool] = ...,
+        input_reorder: list[int] | None = ...,
+        use_fast_accum: bool | None = ...,
         **extra_kwargs,
     ) -> None: ...
     def render_gemm_arguments(

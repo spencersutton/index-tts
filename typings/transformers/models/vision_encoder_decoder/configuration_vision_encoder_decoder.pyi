@@ -93,7 +93,7 @@ class VisionEncoderDecoderDecoderOnnxConfig(OnnxConfig):
         batch_size: int = ...,
         seq_length: int = ...,
         is_pair: bool = ...,
-        framework: Optional[TensorType] = ...,
+        framework: TensorType | None = ...,
     ) -> Mapping[str, Any]: ...
 
 class VisionEncoderDecoderOnnxConfig(OnnxConfig):

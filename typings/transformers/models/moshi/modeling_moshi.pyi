@@ -61,16 +61,16 @@ class MoshiConditionalGenerationGenerateOutput(ModelOutput):
         The generated audio codes. Returned if `return_audio_codes=True`. Intermediate audio "tokens" which transforms to `audio_sequences` once passed through the audio decoder.
     """
 
-    audio_sequences: Optional[torch.Tensor] = ...
-    sequences: Optional[torch.LongTensor] = ...
-    sequences_scores: Optional[torch.FloatTensor] = ...
-    scores: Optional[tuple[torch.FloatTensor]] = ...
-    logits: Optional[tuple[torch.FloatTensor]] = ...
-    beam_indices: Optional[torch.LongTensor] = ...
-    attentions: Optional[tuple[tuple[torch.FloatTensor]]] = ...
-    hidden_states: Optional[tuple[tuple[torch.FloatTensor]]] = ...
-    past_key_values: Optional[tuple[tuple[tuple[torch.FloatTensor]]]] = ...
-    audio_codes: Optional[torch.LongTensor] = ...
+    audio_sequences: torch.Tensor | None = ...
+    sequences: torch.LongTensor | None = ...
+    sequences_scores: torch.FloatTensor | None = ...
+    scores: tuple[torch.FloatTensor] | None = ...
+    logits: tuple[torch.FloatTensor] | None = ...
+    beam_indices: torch.LongTensor | None = ...
+    attentions: tuple[tuple[torch.FloatTensor]] | None = ...
+    hidden_states: tuple[tuple[torch.FloatTensor]] | None = ...
+    past_key_values: tuple[tuple[tuple[torch.FloatTensor]]] | None = ...
+    audio_codes: torch.LongTensor | None = ...
 
 @dataclass
 @auto_docstring(
@@ -92,12 +92,12 @@ class MoshiCausalLMOutputWithPast(ModelOutput):
         `past_key_values` input) to speed up sequential decoding.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    logits: Optional[torch.FloatTensor] = ...
-    last_hidden_state: Optional[torch.FloatTensor] = ...
-    past_key_values: Optional[tuple[tuple[torch.FloatTensor]]] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
-    attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
+    loss: torch.FloatTensor | None = ...
+    logits: torch.FloatTensor | None = ...
+    last_hidden_state: torch.FloatTensor | None = ...
+    past_key_values: tuple[tuple[torch.FloatTensor]] | None = ...
+    hidden_states: tuple[torch.FloatTensor, ...] | None = ...
+    attentions: tuple[torch.FloatTensor, ...] | None = ...
 
 @dataclass
 @auto_docstring(
@@ -130,17 +130,17 @@ class MoshiConditionalGenerationOutputWithPast(ModelOutput):
         heads.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    logits: Optional[torch.FloatTensor] = ...
-    last_hidden_state: Optional[torch.FloatTensor] = ...
-    past_key_values: Optional[tuple[tuple[torch.FloatTensor]]] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
-    attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
-    depth_loss: Optional[torch.FloatTensor] = ...
-    audio_logits: Optional[torch.FloatTensor] = ...
-    depth_past_key_values: Optional[tuple[tuple[torch.FloatTensor]]] = ...
-    depth_hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
-    depth_attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
+    loss: torch.FloatTensor | None = ...
+    logits: torch.FloatTensor | None = ...
+    last_hidden_state: torch.FloatTensor | None = ...
+    past_key_values: tuple[tuple[torch.FloatTensor]] | None = ...
+    hidden_states: tuple[torch.FloatTensor, ...] | None = ...
+    attentions: tuple[torch.FloatTensor, ...] | None = ...
+    depth_loss: torch.FloatTensor | None = ...
+    audio_logits: torch.FloatTensor | None = ...
+    depth_past_key_values: tuple[tuple[torch.FloatTensor]] | None = ...
+    depth_hidden_states: tuple[torch.FloatTensor, ...] | None = ...
+    depth_attentions: tuple[torch.FloatTensor, ...] | None = ...
 
 @dataclass
 @auto_docstring
@@ -157,10 +157,10 @@ class MoshiUnconditionalInput(ModelOutput):
         1]`: 1 for tokens that are **not masked**, 0 for tokens that are **masked**.
     """
 
-    input_ids: Optional[torch.LongTensor] = ...
-    user_audio_codes: Optional[torch.Tensor] = ...
-    moshi_audio_codes: Optional[torch.Tensor] = ...
-    attention_mask: Optional[torch.LongTensor] = ...
+    input_ids: torch.LongTensor | None = ...
+    user_audio_codes: torch.Tensor | None = ...
+    moshi_audio_codes: torch.Tensor | None = ...
+    attention_mask: torch.LongTensor | None = ...
 
 class MoshiRMSNorm(nn.Module):
     def __init__(self, dim: int, eps: float = ...) -> None: ...
@@ -229,7 +229,7 @@ def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...):  
 
 class MoshiGatingMLP(nn.Module):
     def __init__(self, config, use_flexible_linear=...) -> None: ...
-    def forward(self, hidden_states: torch.Tensor, layer_idx: Optional[int] = ...) -> torch.Tensor: ...
+    def forward(self, hidden_states: torch.Tensor, layer_idx: int | None = ...) -> torch.Tensor: ...
 
 def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
     """
@@ -241,18 +241,18 @@ def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
 class MoshiAttention(nn.Module):
     """Multi-headed attention from 'Attention Is All You Need' paper"""
     def __init__(
-        self, config: MoshiConfig, layer_idx: Optional[int] = ..., use_flexible_linear=..., use_rope=...
+        self, config: MoshiConfig, layer_idx: int | None = ..., use_flexible_linear=..., use_rope=...
     ) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[Cache] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: Cache | None = ...,
         output_attentions: bool = ...,
         use_cache: bool = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+        cache_position: torch.LongTensor | None = ...,
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]: ...
 
 class MoshiFlashAttention2(MoshiAttention):
     """
@@ -264,13 +264,13 @@ class MoshiFlashAttention2(MoshiAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.LongTensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[Cache] = ...,
+        attention_mask: torch.LongTensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: Cache | None = ...,
         output_attentions: bool = ...,
         use_cache: bool = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+        cache_position: torch.LongTensor | None = ...,
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]: ...
 
 class MoshiSdpaAttention(MoshiAttention):
     """
@@ -281,14 +281,14 @@ class MoshiSdpaAttention(MoshiAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[Cache] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: Cache | None = ...,
         output_attentions: bool = ...,
         use_cache: bool = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]: ...
 
 MOSHI_ATTENTION_CLASSES = ...
 
@@ -297,14 +297,14 @@ class MoshiDecoderLayer(GradientCheckpointingLayer):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[Cache] = ...,
-        output_attentions: Optional[bool] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: Cache | None = ...,
+        output_attentions: bool | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs,
-    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]:
+    ) -> tuple[torch.FloatTensor, tuple[torch.FloatTensor, torch.FloatTensor] | None]:
         """
         Args:
             hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
@@ -348,19 +348,19 @@ class MoshiDepthDecoder(MoshiPreTrainedModel, GenerationMixin):
     def __init__(self, config: MoshiDepthConfig) -> None: ...
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        last_hidden_state: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.BoolTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPast]:
+        input_ids: torch.LongTensor | None = ...,
+        last_hidden_state: torch.LongTensor | None = ...,
+        attention_mask: torch.BoolTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+    ) -> tuple | BaseModelOutputWithPast:
         """
         Args:
             input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
@@ -440,17 +440,17 @@ class MoshiModel(MoshiPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Union[Cache, list[torch.FloatTensor]]] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPast]: ...
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | list[torch.FloatTensor] | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+    ) -> tuple | BaseModelOutputWithPast: ...
 
 @auto_docstring(
     custom_intro="""
@@ -467,20 +467,20 @@ class MoshiForCausalLM(MoshiPreTrainedModel, GenerationMixin):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Union[Cache, list[torch.FloatTensor]]] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        logits_to_keep: Union[int, torch.Tensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | list[torch.FloatTensor] | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        logits_to_keep: int | torch.Tensor = ...,
         **kwargs,
-    ) -> Union[tuple, MoshiCausalLMOutputWithPast]:
+    ) -> tuple | MoshiCausalLMOutputWithPast:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
             Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
@@ -527,22 +527,22 @@ class MoshiForConditionalGeneration(MoshiPreTrainedModel, GenerationMixin):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.BoolTensor] = ...,
-        user_input_values: Optional[torch.FloatTensor] = ...,
-        user_audio_codes: Optional[torch.Tensor] = ...,
-        moshi_input_values: Optional[torch.FloatTensor] = ...,
-        moshi_audio_codes: Optional[torch.Tensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        text_labels: Optional[torch.LongTensor] = ...,
-        audio_labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.BoolTensor | None = ...,
+        user_input_values: torch.FloatTensor | None = ...,
+        user_audio_codes: torch.Tensor | None = ...,
+        moshi_input_values: torch.FloatTensor | None = ...,
+        moshi_audio_codes: torch.Tensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        text_labels: torch.LongTensor | None = ...,
+        audio_labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         **kwargs,
-    ) -> Union[tuple, Seq2SeqLMOutput]:
+    ) -> tuple | Seq2SeqLMOutput:
         r"""
         user_input_values (`torch.Tensor `of shape `(batch_size, 1, audio_sequence_length), *optional*):
             The audio waveforms used as audio user prompt for the generation.
@@ -586,15 +586,15 @@ class MoshiForConditionalGeneration(MoshiPreTrainedModel, GenerationMixin):
     @torch.no_grad()
     def generate(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        user_input_values: Optional[torch.FloatTensor] = ...,
-        user_audio_codes: Optional[torch.Tensor] = ...,
-        moshi_input_values: Optional[torch.FloatTensor] = ...,
-        moshi_audio_codes: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        return_audio_waveforms: Optional[bool] = ...,
-        return_audio_codes: Optional[bool] = ...,
-        concat_unconditional_inputs: Optional[bool] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        user_input_values: torch.FloatTensor | None = ...,
+        user_audio_codes: torch.Tensor | None = ...,
+        moshi_input_values: torch.FloatTensor | None = ...,
+        moshi_audio_codes: torch.Tensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        return_audio_waveforms: bool | None = ...,
+        return_audio_codes: bool | None = ...,
+        concat_unconditional_inputs: bool | None = ...,
         **kwargs,
     ) -> torch.LongTensor:
         """
@@ -645,7 +645,7 @@ class MoshiForConditionalGeneration(MoshiPreTrainedModel, GenerationMixin):
         user_delay_pattern_mask=...,
         moshi_delay_pattern_mask=...,
         kwargs_depth_decoder=...,
-        blank_user_audio_codes: Optional[torch.FloatTensor] = ...,
+        blank_user_audio_codes: torch.FloatTensor | None = ...,
         **kwargs,
     ):  # -> dict[str, Any | None]:
         ...
@@ -676,7 +676,7 @@ class MoshiForConditionalGeneration(MoshiPreTrainedModel, GenerationMixin):
         ...
 
     def build_delay_pattern_mask(
-        self, input_ids: torch.LongTensor, bos_token_id: int, pad_token_id: int, max_length: Optional[int] = ...
+        self, input_ids: torch.LongTensor, bos_token_id: int, pad_token_id: int, max_length: int | None = ...
     ):  # -> tuple[LongTensor, Tensor]:
         """Build a delayed pattern mask to the input_ids. Each codebook, except the first one, is offset by
         one, giving a delayed pattern mask at the start of sequence and end of sequence. Take the example where there

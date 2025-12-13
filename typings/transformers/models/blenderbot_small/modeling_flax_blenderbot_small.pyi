@@ -6,7 +6,8 @@ import random
 import flax.linen as nn
 import jax
 import jax.numpy as jnp
-from typing import Callable, Optional
+from typing import Optional
+from collections.abc import Callable
 from flax.core.frozen_dict import FrozenDict
 from jax.random import PRNGKey
 from ...modeling_flax_outputs import (
@@ -45,8 +46,8 @@ class FlaxBlenderbotSmallAttention(nn.Module):
     def __call__(
         self,
         hidden_states: jnp.ndarray,
-        key_value_states: Optional[jnp.ndarray] = ...,
-        attention_mask: Optional[jnp.ndarray] = ...,
+        key_value_states: jnp.ndarray | None = ...,
+        attention_mask: jnp.ndarray | None = ...,
         init_cache: bool = ...,
         deterministic: bool = ...,
     ) -> tuple[jnp.ndarray]:
@@ -89,8 +90,8 @@ class FlaxBlenderbotSmallDecoderLayer(nn.Module):
         self,
         hidden_states: jnp.ndarray,
         attention_mask: jnp.ndarray,
-        encoder_hidden_states: Optional[jnp.ndarray] = ...,
-        encoder_attention_mask: Optional[jnp.ndarray] = ...,
+        encoder_hidden_states: jnp.ndarray | None = ...,
+        encoder_attention_mask: jnp.ndarray | None = ...,
         init_cache: bool = ...,
         output_attentions: bool = ...,
         deterministic: bool = ...,
@@ -105,8 +106,8 @@ class FlaxBlenderbotSmallDecoderLayerCollection(nn.Module):
         self,
         hidden_states,
         attention_mask,
-        encoder_hidden_states: Optional[jnp.ndarray] = ...,
-        encoder_attention_mask: Optional[jnp.ndarray] = ...,
+        encoder_hidden_states: jnp.ndarray | None = ...,
+        encoder_attention_mask: jnp.ndarray | None = ...,
         deterministic: bool = ...,
         init_cache: bool = ...,
         output_attentions: bool = ...,
@@ -144,8 +145,8 @@ class FlaxBlenderbotSmallDecoder(nn.Module):
         input_ids,
         attention_mask,
         position_ids,
-        encoder_hidden_states: Optional[jnp.ndarray] = ...,
-        encoder_attention_mask: Optional[jnp.ndarray] = ...,
+        encoder_hidden_states: jnp.ndarray | None = ...,
+        encoder_attention_mask: jnp.ndarray | None = ...,
         init_cache: bool = ...,
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
@@ -209,13 +210,13 @@ class FlaxBlenderbotSmallPreTrainedModel(FlaxPreTrainedModel):
     def encode(
         self,
         input_ids: jnp.ndarray,
-        attention_mask: Optional[jnp.ndarray] = ...,
-        position_ids: Optional[jnp.ndarray] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        attention_mask: jnp.ndarray | None = ...,
+        position_ids: jnp.ndarray | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         train: bool = ...,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: PRNGKey = ...,
     ):
         r"""
@@ -243,15 +244,15 @@ class FlaxBlenderbotSmallPreTrainedModel(FlaxPreTrainedModel):
         self,
         decoder_input_ids,
         encoder_outputs,
-        encoder_attention_mask: Optional[jnp.ndarray] = ...,
-        decoder_attention_mask: Optional[jnp.ndarray] = ...,
-        decoder_position_ids: Optional[jnp.ndarray] = ...,
-        past_key_values: Optional[dict] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        encoder_attention_mask: jnp.ndarray | None = ...,
+        decoder_attention_mask: jnp.ndarray | None = ...,
+        decoder_position_ids: jnp.ndarray | None = ...,
+        past_key_values: dict | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         train: bool = ...,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: PRNGKey = ...,
     ):
         r"""
@@ -281,16 +282,16 @@ class FlaxBlenderbotSmallPreTrainedModel(FlaxPreTrainedModel):
     def __call__(
         self,
         input_ids: jnp.ndarray,
-        attention_mask: Optional[jnp.ndarray] = ...,
-        decoder_input_ids: Optional[jnp.ndarray] = ...,
-        decoder_attention_mask: Optional[jnp.ndarray] = ...,
-        position_ids: Optional[jnp.ndarray] = ...,
-        decoder_position_ids: Optional[jnp.ndarray] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        attention_mask: jnp.ndarray | None = ...,
+        decoder_input_ids: jnp.ndarray | None = ...,
+        decoder_attention_mask: jnp.ndarray | None = ...,
+        position_ids: jnp.ndarray | None = ...,
+        decoder_position_ids: jnp.ndarray | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         train: bool = ...,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: PRNGKey = ...,
     ): ...
 
@@ -337,15 +338,15 @@ class FlaxBlenderbotSmallForConditionalGeneration(FlaxBlenderbotSmallPreTrainedM
         self,
         decoder_input_ids,
         encoder_outputs,
-        encoder_attention_mask: Optional[jnp.ndarray] = ...,
-        decoder_attention_mask: Optional[jnp.ndarray] = ...,
-        decoder_position_ids: Optional[jnp.ndarray] = ...,
-        past_key_values: Optional[dict] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        encoder_attention_mask: jnp.ndarray | None = ...,
+        decoder_attention_mask: jnp.ndarray | None = ...,
+        decoder_position_ids: jnp.ndarray | None = ...,
+        past_key_values: dict | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         deterministic: bool = ...,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: PRNGKey = ...,
     ):  # -> FlaxCausalLMOutputWithCrossAttentions | Any:
         r"""
@@ -376,8 +377,8 @@ class FlaxBlenderbotSmallForConditionalGeneration(FlaxBlenderbotSmallPreTrainedM
         self,
         decoder_input_ids,
         max_length,
-        attention_mask: Optional[jax.Array] = ...,
-        decoder_attention_mask: Optional[jax.Array] = ...,
+        attention_mask: jax.Array | None = ...,
+        decoder_attention_mask: jax.Array | None = ...,
         encoder_outputs=...,
         **kwargs,
     ):  # -> dict[str, Any | None]:

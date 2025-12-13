@@ -16,7 +16,7 @@ _HF_LOGO_ASCII = ...
 )
 @_deprecate_positional_args(version="1.0")
 def login(
-    token: Optional[str] = ...,
+    token: str | None = ...,
     *,
     add_to_git_credential: bool = ...,
     new_session: bool = ...,
@@ -65,7 +65,7 @@ def login(
     """
     ...
 
-def logout(token_name: Optional[str] = ...) -> None:
+def logout(token_name: str | None = ...) -> None:
     """Logout the machine from the Hub.
 
     Token is deleted from the machine and removed from git credential.

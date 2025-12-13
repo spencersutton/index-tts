@@ -20,8 +20,8 @@ class GraniteSpeechProcessor(ProcessorMixin):
     def __init__(self, audio_processor, tokenizer, audio_token=..., chat_template=...) -> None: ...
     def __call__(
         self,
-        text: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]],
-        audio: Union[torch.Tensor, list[torch.Tensor]] = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput],
+        audio: torch.Tensor | list[torch.Tensor] = ...,
         device: str = ...,
         images=...,
         videos=...,

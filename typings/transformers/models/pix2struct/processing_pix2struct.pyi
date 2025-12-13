@@ -12,8 +12,8 @@ Processor class for Pix2Struct.
 """
 
 class Pix2StructImagesKwargs(ImagesKwargs, total=False):
-    max_patches: Optional[int]
-    header_text: Optional[Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]]]
+    max_patches: int | None
+    header_text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] | None
     ...
 
 class Pix2StructProcessorKwargs(ProcessingKwargs, total=False):
@@ -44,11 +44,11 @@ class Pix2StructProcessor(ProcessorMixin):
     def __call__(
         self,
         images=...,
-        text: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]] = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] = ...,
         audio=...,
         videos=...,
         **kwargs: Unpack[Pix2StructProcessorKwargs],
-    ) -> Union[BatchEncoding, BatchFeature]:
+    ) -> BatchEncoding | BatchFeature:
         """
         This method uses [`Pix2StructImageProcessor.preprocess`] method to prepare image(s) for the model, and
         [`T5TokenizerFast.__call__`] to prepare text for the model.

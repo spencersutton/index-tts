@@ -166,7 +166,7 @@ def get_polynomial_decay_schedule_with_warmup(
     ...
 
 def get_inverse_sqrt_schedule(
-    optimizer: Optimizer, num_warmup_steps: int, timescale: Optional[int] = ..., last_epoch: int = ...
+    optimizer: Optimizer, num_warmup_steps: int, timescale: int | None = ..., last_epoch: int = ...
 ):  # -> LambdaLR:
     """
     Create a schedule with an inverse square-root learning rate, from the initial lr set in the optimizer, after a
@@ -193,8 +193,8 @@ def get_cosine_with_min_lr_schedule_with_warmup(
     num_training_steps: int,
     num_cycles: float = ...,
     last_epoch: int = ...,
-    min_lr: Optional[float] = ...,
-    min_lr_rate: Optional[float] = ...,
+    min_lr: float | None = ...,
+    min_lr_rate: float | None = ...,
 ):  # -> LambdaLR:
     """
     Create a schedule with a learning rate that decreases following the values of the cosine function between the
@@ -229,9 +229,9 @@ def get_cosine_with_min_lr_schedule_with_warmup_lr_rate(
     num_training_steps: int,
     num_cycles: float = ...,
     last_epoch: int = ...,
-    min_lr: Optional[float] = ...,
-    min_lr_rate: Optional[float] = ...,
-    warmup_lr_rate: Optional[float] = ...,
+    min_lr: float | None = ...,
+    min_lr_rate: float | None = ...,
+    warmup_lr_rate: float | None = ...,
 ):  # -> LambdaLR:
     """
     Create a schedule with a learning rate that decreases following the values of the cosine function between the
@@ -266,8 +266,8 @@ def get_wsd_schedule(
     optimizer: Optimizer,
     num_warmup_steps: int,
     num_decay_steps: int,
-    num_training_steps: Optional[int] = ...,
-    num_stable_steps: Optional[int] = ...,
+    num_training_steps: int | None = ...,
+    num_stable_steps: int | None = ...,
     warmup_type: str = ...,
     decay_type: str = ...,
     min_lr_ratio: float = ...,
@@ -311,11 +311,11 @@ def get_wsd_schedule(
 TYPE_TO_SCHEDULER_FUNCTION = ...
 
 def get_scheduler(
-    name: Union[str, SchedulerType],
+    name: str | SchedulerType,
     optimizer: Optimizer,
-    num_warmup_steps: Optional[int] = ...,
-    num_training_steps: Optional[int] = ...,
-    scheduler_specific_kwargs: Optional[dict] = ...,
+    num_warmup_steps: int | None = ...,
+    num_training_steps: int | None = ...,
+    scheduler_specific_kwargs: dict | None = ...,
 ):  # -> LayerWiseDummyScheduler | ReduceLROnPlateau | LambdaLR:
     """
     Unified API to get any scheduler from its name.

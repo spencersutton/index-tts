@@ -27,10 +27,10 @@ class Gemma3FastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
         Minimum aspect ratio to activate pan and scan.
     """
 
-    do_pan_and_scan: Optional[bool]
-    pan_and_scan_min_crop_size: Optional[int]
-    pan_and_scan_max_num_crops: Optional[int]
-    pan_and_scan_min_ratio_to_activate: Optional[float]
+    do_pan_and_scan: bool | None
+    pan_and_scan_min_crop_size: int | None
+    pan_and_scan_max_num_crops: int | None
+    pan_and_scan_min_ratio_to_activate: float | None
     ...
 
 @auto_docstring

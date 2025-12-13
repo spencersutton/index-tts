@@ -273,10 +273,10 @@ class RTDetrV2MultiscaleDeformableAttention(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
         encoder_hidden_states=...,
         encoder_attention_mask=...,
-        position_embeddings: Optional[torch.Tensor] = ...,
+        position_embeddings: torch.Tensor | None = ...,
         reference_points=...,
         spatial_shapes=...,
         spatial_shapes_list=...,

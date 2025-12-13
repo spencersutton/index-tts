@@ -108,7 +108,7 @@ def drop_path(input: torch.Tensor, drop_prob: float = ..., training: bool = ...)
 
 class BitDropPath(nn.Module):
     """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks)."""
-    def __init__(self, drop_prob: Optional[float] = ...) -> None: ...
+    def __init__(self, drop_prob: float | None = ...) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
     def extra_repr(self) -> str: ...
 
@@ -187,7 +187,7 @@ class BitModel(BitPreTrainedModel):
     def __init__(self, config) -> None: ...
     @auto_docstring
     def forward(
-        self, pixel_values: Tensor, output_hidden_states: Optional[bool] = ..., return_dict: Optional[bool] = ...
+        self, pixel_values: Tensor, output_hidden_states: bool | None = ..., return_dict: bool | None = ...
     ) -> BaseModelOutputWithPoolingAndNoAttention: ...
 
 @auto_docstring(
@@ -201,10 +201,10 @@ class BitForImageClassification(BitPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        pixel_values: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
     ) -> ImageClassifierOutputWithNoAttention:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
@@ -222,7 +222,7 @@ class BitBackbone(BitPreTrainedModel, BackboneMixin):
     def __init__(self, config) -> None: ...
     @auto_docstring
     def forward(
-        self, pixel_values: Tensor, output_hidden_states: Optional[bool] = ..., return_dict: Optional[bool] = ...
+        self, pixel_values: Tensor, output_hidden_states: bool | None = ..., return_dict: bool | None = ...
     ) -> BackboneOutput:
         r"""
         Examples:

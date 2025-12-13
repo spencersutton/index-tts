@@ -7,10 +7,10 @@ from typing import Dict, Optional
 """Contains an helper to get the token from machine (env variable, secret or config file)."""
 _IS_GOOGLE_COLAB_CHECKED = ...
 _GOOGLE_COLAB_SECRET_LOCK = ...
-_GOOGLE_COLAB_SECRET: Optional[str] = ...
+_GOOGLE_COLAB_SECRET: str | None = ...
 logger = ...
 
-def get_token() -> Optional[str]:
+def get_token() -> str | None:
     """
     Get token if user is logged in.
 
@@ -26,7 +26,7 @@ def get_token() -> Optional[str]:
     """
     ...
 
-def get_stored_tokens() -> Dict[str, str]:
+def get_stored_tokens() -> dict[str, str]:
     """
     Returns the parsed INI file containing the access tokens.
     The file is located at `HF_STORED_TOKENS_PATH`, defaulting to `~/.cache/huggingface/stored_tokens`.

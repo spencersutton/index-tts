@@ -6,7 +6,8 @@ import torch
 import datasets
 import optuna
 from collections.abc import Iterator
-from typing import Any, Callable, Optional, TYPE_CHECKING, Union
+from typing import Any, Optional, TYPE_CHECKING, Union
+from collections.abc import Callable
 from packaging import version
 from torch import nn
 from torch.utils.data import DataLoader, Dataset, IterableDataset
@@ -164,24 +165,26 @@ class Trainer:
     @deprecate_kwarg("tokenizer", new_name="processing_class", version="5.0.0", raise_if_both_names=True)
     def __init__(
         self,
-        model: Union[PreTrainedModel, nn.Module, None] = ...,
+        model: PreTrainedModel | nn.Module | None = ...,
         args: TrainingArguments = ...,
-        data_collator: Optional[DataCollator] = ...,
-        train_dataset: Optional[Union[Dataset, IterableDataset, datasets.Dataset]] = ...,
-        eval_dataset: Optional[Union[Dataset, dict[str, Dataset], datasets.Dataset]] = ...,
-        processing_class: Optional[
-            Union[PreTrainedTokenizerBase, BaseImageProcessor, FeatureExtractionMixin, ProcessorMixin]
-        ] = ...,
-        model_init: Optional[Callable[[], PreTrainedModel]] = ...,
-        compute_loss_func: Optional[Callable] = ...,
-        compute_metrics: Optional[Callable[[EvalPrediction], dict]] = ...,
-        callbacks: Optional[list[TrainerCallback]] = ...,
-        optimizers: tuple[Optional[torch.optim.Optimizer], Optional[torch.optim.lr_scheduler.LambdaLR]] = ...,
-        optimizer_cls_and_kwargs: Optional[tuple[type[torch.optim.Optimizer], dict[str, Any]]] = ...,
-        preprocess_logits_for_metrics: Optional[Callable[[torch.Tensor, torch.Tensor], torch.Tensor]] = ...,
+        data_collator: DataCollator | None = ...,
+        train_dataset: Dataset | IterableDataset | datasets.Dataset | None = ...,
+        eval_dataset: Dataset | dict[str, Dataset] | datasets.Dataset | None = ...,
+        processing_class: PreTrainedTokenizerBase
+        | BaseImageProcessor
+        | FeatureExtractionMixin
+        | ProcessorMixin
+        | None = ...,
+        model_init: Callable[[], PreTrainedModel] | None = ...,
+        compute_loss_func: Callable | None = ...,
+        compute_metrics: Callable[[EvalPrediction], dict] | None = ...,
+        callbacks: list[TrainerCallback] | None = ...,
+        optimizers: tuple[torch.optim.Optimizer | None, torch.optim.lr_scheduler.LambdaLR | None] = ...,
+        optimizer_cls_and_kwargs: tuple[type[torch.optim.Optimizer], dict[str, Any]] | None = ...,
+        preprocess_logits_for_metrics: Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None = ...,
     ) -> None: ...
     @property
-    def tokenizer(self) -> Optional[PreTrainedTokenizerBase]: ...
+    def tokenizer(self) -> PreTrainedTokenizerBase | None: ...
     @tokenizer.setter
     def tokenizer(self, processing_class) -> None: ...
     def add_callback(self, callback):  # -> None:
@@ -233,7 +236,7 @@ class Trainer:
         """
         ...
 
-    def get_eval_dataloader(self, eval_dataset: Optional[Union[str, Dataset]] = ...) -> DataLoader:
+    def get_eval_dataloader(self, eval_dataset: str | Dataset | None = ...) -> DataLoader:
         """
         Returns the evaluation [`~torch.utils.data.DataLoader`].
 
@@ -299,9 +302,7 @@ class Trainer:
         """
         ...
 
-    def get_optimizer_group(
-        self, param: Optional[Union[str, torch.nn.parameter.Parameter]] = ...
-    ):  # -> Any | list[Any]:
+    def get_optimizer_group(self, param: str | torch.nn.parameter.Parameter | None = ...):  # -> Any | list[Any]:
         """
         Returns optimizer group for a parameter if given, else returns all optimizer groups for params.
 
@@ -312,9 +313,7 @@ class Trainer:
         ...
 
     @staticmethod
-    def get_optimizer_cls_and_kwargs(
-        args: TrainingArguments, model: Optional[PreTrainedModel] = ...
-    ) -> tuple[Any, Any]:
+    def get_optimizer_cls_and_kwargs(args: TrainingArguments, model: PreTrainedModel | None = ...) -> tuple[Any, Any]:
         """
         Returns the optimizer class and optimizer parameters based on the training arguments.
 
@@ -345,7 +344,7 @@ class Trainer:
         ...
 
     @staticmethod
-    def num_tokens(train_dl: DataLoader, max_steps: Optional[int] = ...) -> int:
+    def num_tokens(train_dl: DataLoader, max_steps: int | None = ...) -> int:
         """
         Helper to get number of tokens in a [`~torch.utils.data.DataLoader`] by enumerating dataloader.
         """
@@ -358,9 +357,9 @@ class Trainer:
         ...
     def train(
         self,
-        resume_from_checkpoint: Optional[Union[str, bool]] = ...,
-        trial: Union[optuna.Trial, dict[str, Any], None] = ...,
-        ignore_keys_for_eval: Optional[list[str]] = ...,
+        resume_from_checkpoint: str | bool | None = ...,
+        trial: optuna.Trial | dict[str, Any] | None = ...,
+        ignore_keys_for_eval: list[str] | None = ...,
         **kwargs,
     ):
         """
@@ -393,14 +392,14 @@ class Trainer:
 
     def hyperparameter_search(
         self,
-        hp_space: Optional[Callable[[optuna.Trial], dict[str, float]]] = ...,
-        compute_objective: Optional[Callable[[dict[str, float]], float]] = ...,
+        hp_space: Callable[[optuna.Trial], dict[str, float]] | None = ...,
+        compute_objective: Callable[[dict[str, float]], float] | None = ...,
         n_trials: int = ...,
-        direction: Union[str, list[str]] = ...,
-        backend: Optional[Union[str, HPSearchBackend]] = ...,
-        hp_name: Optional[Callable[[optuna.Trial], str]] = ...,
+        direction: str | list[str] = ...,
+        backend: str | HPSearchBackend | None = ...,
+        hp_name: Callable[[optuna.Trial], str] | None = ...,
         **kwargs,
-    ) -> Union[BestRun, list[BestRun]]:
+    ) -> BestRun | list[BestRun]:
         """
         Launch an hyperparameter search using `optuna` or `Ray Tune` or `SigOpt`. The optimized quantity is determined
         by `compute_objective`, which defaults to a function returning the evaluation loss when no metric is provided,
@@ -457,7 +456,7 @@ class Trainer:
         """
         ...
 
-    def log(self, logs: dict[str, float], start_time: Optional[float] = ...) -> None:
+    def log(self, logs: dict[str, float], start_time: float | None = ...) -> None:
         """
         Log `logs` on the various objects watching training.
 
@@ -477,7 +476,7 @@ class Trainer:
         """
         ...
 
-    def autocast_smart_context_manager(self, cache_enabled: Optional[bool] = ...):  # -> nullcontext[None]:
+    def autocast_smart_context_manager(self, cache_enabled: bool | None = ...):  # -> nullcontext[None]:
         """
         A helper wrapper that creates an appropriate context manager for `autocast` while feeding it the desired
         arguments, depending on the situation.
@@ -487,8 +486,8 @@ class Trainer:
     def training_step(
         self,
         model: nn.Module,
-        inputs: dict[str, Union[torch.Tensor, Any]],
-        num_items_in_batch: Optional[torch.Tensor] = ...,
+        inputs: dict[str, torch.Tensor | Any],
+        num_items_in_batch: torch.Tensor | None = ...,
     ) -> torch.Tensor:
         """
         Perform a training step on a batch of inputs.
@@ -512,9 +511,9 @@ class Trainer:
     def compute_loss(
         self,
         model: nn.Module,
-        inputs: dict[str, Union[torch.Tensor, Any]],
+        inputs: dict[str, torch.Tensor | Any],
         return_outputs: bool = ...,
-        num_items_in_batch: Optional[torch.Tensor] = ...,
+        num_items_in_batch: torch.Tensor | None = ...,
     ):  # -> tuple[Any | Tensor, Any | dict[Any, Any]] | Tensor | Any:
         """
         How the loss is computed by Trainer. By default, all models return the loss in the first element.
@@ -551,7 +550,7 @@ class Trainer:
         """
         ...
 
-    def save_model(self, output_dir: Optional[str] = ..., _internal_call: bool = ...):  # -> None:
+    def save_model(self, output_dir: str | None = ..., _internal_call: bool = ...):  # -> None:
         """
         Will save the model, so you can reload it using `from_pretrained()`.
 
@@ -563,8 +562,8 @@ class Trainer:
         ...
     def evaluate(
         self,
-        eval_dataset: Optional[Union[Dataset, dict[str, Dataset]]] = ...,
-        ignore_keys: Optional[list[str]] = ...,
+        eval_dataset: Dataset | dict[str, Dataset] | None = ...,
+        ignore_keys: list[str] | None = ...,
         metric_key_prefix: str = ...,
     ) -> dict[str, float]:
         """
@@ -608,7 +607,7 @@ class Trainer:
         ...
 
     def predict(
-        self, test_dataset: Dataset, ignore_keys: Optional[list[str]] = ..., metric_key_prefix: str = ...
+        self, test_dataset: Dataset, ignore_keys: list[str] | None = ..., metric_key_prefix: str = ...
     ) -> PredictionOutput:
         """
         Run prediction and returns predictions and potential metrics.
@@ -648,8 +647,8 @@ class Trainer:
         self,
         dataloader: DataLoader,
         description: str,
-        prediction_loss_only: Optional[bool] = ...,
-        ignore_keys: Optional[list[str]] = ...,
+        prediction_loss_only: bool | None = ...,
+        ignore_keys: list[str] | None = ...,
         metric_key_prefix: str = ...,
     ) -> EvalLoopOutput:
         """
@@ -662,10 +661,10 @@ class Trainer:
     def prediction_step(
         self,
         model: nn.Module,
-        inputs: dict[str, Union[torch.Tensor, Any]],
+        inputs: dict[str, torch.Tensor | Any],
         prediction_loss_only: bool,
-        ignore_keys: Optional[list[str]] = ...,
-    ) -> tuple[Optional[torch.Tensor], Optional[torch.Tensor], Optional[torch.Tensor]]:
+        ignore_keys: list[str] | None = ...,
+    ) -> tuple[torch.Tensor | None, torch.Tensor | None, torch.Tensor | None]:
         """
         Perform an evaluation step on `model` using `inputs`.
 
@@ -691,7 +690,7 @@ class Trainer:
         """
         ...
 
-    def floating_point_ops(self, inputs: dict[str, Union[torch.Tensor, Any]]):  # -> Any | int:
+    def floating_point_ops(self, inputs: dict[str, torch.Tensor | Any]):  # -> Any | int:
         """
         For models that inherit from [`PreTrainedModel`], uses that method to compute the number of floating point
         operations for every backward + forward pass. If using another model, either implement such a method in the
@@ -706,7 +705,7 @@ class Trainer:
         """
         ...
 
-    def init_hf_repo(self, token: Optional[str] = ...):  # -> None:
+    def init_hf_repo(self, token: str | None = ...):  # -> None:
         """
         Initializes a git repo in `self.args.hub_model_id`.
         """
@@ -714,15 +713,15 @@ class Trainer:
 
     def create_model_card(
         self,
-        language: Optional[str] = ...,
-        license: Optional[str] = ...,
-        tags: Union[str, list[str], None] = ...,
-        model_name: Optional[str] = ...,
-        finetuned_from: Optional[str] = ...,
-        tasks: Union[str, list[str], None] = ...,
-        dataset_tags: Union[str, list[str], None] = ...,
-        dataset: Union[str, list[str], None] = ...,
-        dataset_args: Union[str, list[str], None] = ...,
+        language: str | None = ...,
+        license: str | None = ...,
+        tags: str | list[str] | None = ...,
+        model_name: str | None = ...,
+        finetuned_from: str | None = ...,
+        tasks: str | list[str] | None = ...,
+        dataset_tags: str | list[str] | None = ...,
+        dataset: str | list[str] | None = ...,
+        dataset_args: str | list[str] | None = ...,
     ):  # -> None:
         """
         Creates a draft of a model card using the information available to the `Trainer`.
@@ -753,10 +752,10 @@ class Trainer:
 
     def push_to_hub(
         self,
-        commit_message: Optional[str] = ...,
+        commit_message: str | None = ...,
         blocking: bool = ...,
-        token: Optional[str] = ...,
-        revision: Optional[str] = ...,
+        token: str | None = ...,
+        revision: str | None = ...,
         **kwargs,
     ) -> str:
         """
@@ -784,8 +783,8 @@ class Trainer:
         self,
         dataloader: DataLoader,
         description: str,
-        prediction_loss_only: Optional[bool] = ...,
-        ignore_keys: Optional[list[str]] = ...,
+        prediction_loss_only: bool | None = ...,
+        ignore_keys: list[str] | None = ...,
         metric_key_prefix: str = ...,
     ) -> EvalLoopOutput:
         """
@@ -805,7 +804,7 @@ class Trainer:
 
     def get_batch_samples(
         self, epoch_iterator: Iterator, num_batches: int, device: torch.device
-    ) -> tuple[list, Optional[torch.Tensor]]:
+    ) -> tuple[list, torch.Tensor | None]:
         """
         Collects a specified number of batches from the epoch iterator and optionally counts the number of items in the batches to properly scale the loss.
         """

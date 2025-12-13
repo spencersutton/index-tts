@@ -33,12 +33,12 @@ class SiglipProcessor(ProcessorMixin):
     def __init__(self, image_processor, tokenizer) -> None: ...
     def __call__(
         self,
-        text: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]] = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] = ...,
         images: ImageInput = ...,
-        padding: Union[bool, str, PaddingStrategy] = ...,
-        truncation: Union[bool, str, TruncationStrategy] = ...,
-        max_length: Optional[int] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
+        padding: bool | str | PaddingStrategy = ...,
+        truncation: bool | str | TruncationStrategy = ...,
+        max_length: int | None = ...,
+        return_tensors: str | TensorType | None = ...,
     ) -> BatchFeature:
         """
         Main method to prepare for the model one or several sequences(s) and image(s). This method forwards the `text`

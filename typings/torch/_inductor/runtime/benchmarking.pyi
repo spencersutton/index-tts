@@ -1,7 +1,8 @@
 import torch
 from functools import cached_property
-from typing import Any, Callable, Optional, Union
-from typing_extensions import Concatenate, ParamSpec, Self, TypeVar
+from typing import Any, Optional, Union
+from collections.abc import Callable
+from typing import Concatenate, ParamSpec, Self, TypeVar
 from torch._inductor.config import use_experimental_benchmarker
 
 logger = ...
@@ -45,8 +46,8 @@ class InductorBenchmarker(TritonBenchmarker):
         benchmark_iters: int = ...,
         max_benchmark_duration: int = ...,
         return_mode: str = ...,
-        grad_to_none: Optional[list[torch.Tensor]] = ...,
+        grad_to_none: list[torch.Tensor] | None = ...,
         **kwargs: Any,
-    ) -> Union[float, list[float]]: ...
+    ) -> float | list[float]: ...
 
 benchmarker = ...

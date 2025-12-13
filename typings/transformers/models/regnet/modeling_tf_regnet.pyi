@@ -35,7 +35,7 @@ class TFRegNetConvLayer(keras.layers.Layer):
         kernel_size: int = ...,
         stride: int = ...,
         groups: int = ...,
-        activation: Optional[str] = ...,
+        activation: str | None = ...,
         **kwargs,
     ) -> None: ...
     def call(self, hidden_state): ...
@@ -119,8 +119,8 @@ class TFRegNetMainLayer(keras.layers.Layer):
     def call(
         self,
         pixel_values: tf.Tensor,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         training: bool = ...,
     ) -> TFBaseModelOutputWithPoolingAndNoAttention: ...
     def build(self, input_shape=...):  # -> None:
@@ -159,10 +159,10 @@ class TFRegNetModel(TFRegNetPreTrainedModel):
     def call(
         self,
         pixel_values: tf.Tensor,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         training: bool = ...,
-    ) -> Union[TFBaseModelOutputWithPoolingAndNoAttention, tuple[tf.Tensor]]: ...
+    ) -> TFBaseModelOutputWithPoolingAndNoAttention | tuple[tf.Tensor]: ...
     def build(self, input_shape=...):  # -> None:
         ...
 
@@ -185,12 +185,12 @@ class TFRegNetForImageClassification(TFRegNetPreTrainedModel, TFSequenceClassifi
     )
     def call(
         self,
-        pixel_values: Optional[tf.Tensor] = ...,
-        labels: Optional[tf.Tensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        pixel_values: tf.Tensor | None = ...,
+        labels: tf.Tensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         training: bool = ...,
-    ) -> Union[TFSequenceClassifierOutput, tuple[tf.Tensor]]:
+    ) -> TFSequenceClassifierOutput | tuple[tf.Tensor]:
         r"""
         labels (`tf.Tensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the image classification/regression loss. Indices should be in `[0, ...,

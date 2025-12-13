@@ -31,7 +31,7 @@ class EomtImageProcessorFastKwargs(DefaultFastImageProcessorKwargs):
 
     do_split_image: bool
     do_pad: bool
-    ignore_index: Optional[int] = ...
+    ignore_index: int | None = ...
 
 def get_target_size(size_dict: dict[str, int]) -> tuple[int, int]:
     """Returns the height and width from a size dict."""
@@ -62,8 +62,8 @@ class EomtImageProcessorFast(BaseImageProcessorFast):
     def preprocess(
         self,
         images: ImageInput,
-        segmentation_maps: Optional[list[torch.Tensor]] = ...,
-        instance_id_to_semantic_id: Optional[dict[int, int]] = ...,
+        segmentation_maps: list[torch.Tensor] | None = ...,
+        instance_id_to_semantic_id: dict[int, int] | None = ...,
         **kwargs: Unpack[EomtImageProcessorFastKwargs],
     ) -> BatchFeature:
         r"""
@@ -107,7 +107,7 @@ class EomtImageProcessorFast(BaseImageProcessorFast):
         ...
 
     def post_process_semantic_segmentation(
-        self, outputs, target_sizes: list[tuple[int, int]], size: Optional[dict[str, int]] = ...
+        self, outputs, target_sizes: list[tuple[int, int]], size: dict[str, int] | None = ...
     ) -> np.ndarray:
         """Post-processes model outputs into final semantic segmentation prediction."""
         ...
@@ -119,15 +119,15 @@ class EomtImageProcessorFast(BaseImageProcessorFast):
         threshold: float = ...,
         mask_threshold: float = ...,
         overlap_mask_area_threshold: float = ...,
-        stuff_classes: Optional[list[int]] = ...,
-        size: Optional[dict[str, int]] = ...,
+        stuff_classes: list[int] | None = ...,
+        size: dict[str, int] | None = ...,
     ):  # -> list[Any]:
         """Post-processes model outputs into final panoptic segmentation prediction."""
         ...
 
     @filter_out_non_signature_kwargs()
     def post_process_instance_segmentation(
-        self, outputs, target_sizes: list[tuple[int, int]], threshold: float = ..., size: Optional[dict[str, int]] = ...
+        self, outputs, target_sizes: list[tuple[int, int]], threshold: float = ..., size: dict[str, int] | None = ...
     ):  # -> list[Any]:
         """Post-processes model outputs into Instance Segmentation Predictions."""
         ...

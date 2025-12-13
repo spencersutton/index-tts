@@ -134,7 +134,7 @@ def restore_session_state(app: App, body: PredictBodyInternal):  # -> tuple[Sess
     ...
 def prepare_event_data(blocks_config: BlocksConfig, body: PredictBodyInternal) -> EventData: ...
 async def call_process_api(
-    app: App, body: PredictBodyInternal, gr_request: Union[Request, list[Request]], fn: BlockFunction, root_path: str
+    app: App, body: PredictBodyInternal, gr_request: Request | list[Request], fn: BlockFunction, root_path: str
 ):  # -> dict[str, Any]:
     ...
 def get_first_header_value(request: fastapi.Request, header_name: str):  # -> str | None:
@@ -230,10 +230,10 @@ class GradioMultiPartParser:
     def __init__(
         self,
         headers: Headers,
-        stream: AsyncGenerator[bytes, None],
+        stream: AsyncGenerator[bytes],
         *,
-        max_files: Union[int, float] = ...,
-        max_fields: Union[int, float] = ...,
+        max_files: int | float = ...,
+        max_fields: int | float = ...,
         upload_id: str | None = ...,
         upload_progress: FileUploadProgress | None = ...,
         max_file_size: int | float,

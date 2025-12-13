@@ -43,8 +43,8 @@ class _Matmul:
     arg_ancestor_nodes: OrderedSet[torch.fx.Node] = ...
     A_node: torch.fx.Node
     B_node: torch.fx.Node
-    pre_mm_reshape: Optional[torch.fx.Node]
-    post_mm_reshape: Optional[torch.fx.Node]
+    pre_mm_reshape: torch.fx.Node | None
+    post_mm_reshape: torch.fx.Node | None
     def __post_init__(self):  # -> None:
         ...
     def replace_with(self, new_node: torch.fx.Node) -> None: ...
@@ -56,12 +56,12 @@ class _Matmul:
 class _ScaledMatmul(_Matmul):
     A_scale_node: torch.fx.Node
     B_scale_node: torch.fx.Node
-    bias_node: Optional[torch.fx.Node]
-    result_scale_node: Optional[torch.fx.Node]
-    out_dtype: Optional[torch.dtype]
+    bias_node: torch.fx.Node | None
+    result_scale_node: torch.fx.Node | None
+    out_dtype: torch.dtype | None
     use_fast_accum: bool
-    pre_mm_reshape: Optional[torch.fx.Node]
-    post_mm_reshape: Optional[torch.fx.Node]
+    pre_mm_reshape: torch.fx.Node | None
+    post_mm_reshape: torch.fx.Node | None
     def __post_init__(self):  # -> None:
         ...
     @classmethod

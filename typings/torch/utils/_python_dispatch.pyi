@@ -3,7 +3,7 @@ import torch
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Optional, Protocol, overload
-from typing_extensions import TypeIs
+from typing import TypeIs
 
 _is_in_torch_dispatch_mode = ...
 _is_in_non_infra_torch_dispatch_mode = ...
@@ -59,17 +59,17 @@ class TensorWithFlatten(Protocol):
         non_blocking: bool = ...,
         copy: bool = ...,
         *,
-        memory_format: Optional[torch.memory_format] = ...,
+        memory_format: torch.memory_format | None = ...,
     ) -> torch.Tensor: ...
     @overload
     def to(
         self,
-        device: Optional[torch._prims_common.DeviceLikeType] = ...,
-        dtype: Optional[torch.types._dtype] = ...,
+        device: torch._prims_common.DeviceLikeType | None = ...,
+        dtype: torch.types._dtype | None = ...,
         non_blocking: bool = ...,
         copy: bool = ...,
         *,
-        memory_format: Optional[torch.memory_format] = ...,
+        memory_format: torch.memory_format | None = ...,
     ) -> torch.Tensor: ...
     @overload
     def to(
@@ -78,7 +78,7 @@ class TensorWithFlatten(Protocol):
         non_blocking: bool = ...,
         copy: bool = ...,
         *,
-        memory_format: Optional[torch.memory_format] = ...,
+        memory_format: torch.memory_format | None = ...,
     ) -> torch.Tensor: ...
 
 def is_traceable_wrapper_subclass(t: object) -> TypeIs[TensorWithFlatten]: ...
@@ -89,7 +89,7 @@ def transform_subclass(t, callback, outer_size=..., outer_stride=...): ...
 class AliasInfo:
     alias_set: set[str]
     is_write: bool
-    name: Optional[str]
+    name: str | None
 
 @dataclass
 class SchemaInfo:

@@ -1,5 +1,5 @@
 import torch
-from typing import Callable
+from collections.abc import Callable
 from torch._ops import OpOverload
 
 aten = ...

@@ -7,7 +7,8 @@ import torch
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Any, Callable, Optional, Union
+from typing import Any, Optional, Union
+from collections.abc import Callable
 from .configuration_utils import PretrainedConfig
 from .utils import is_hqq_available, is_torch_greater_or_equal
 
@@ -21,7 +22,7 @@ class CacheLayerMixin(ABC):
     def __init__(self) -> None: ...
     @abstractmethod
     def update(
-        self, key_states: torch.Tensor, value_states: torch.Tensor, cache_kwargs: Optional[dict[str, Any]] = ...
+        self, key_states: torch.Tensor, value_states: torch.Tensor, cache_kwargs: dict[str, Any] | None = ...
     ) -> tuple[torch.Tensor, torch.Tensor]: ...
     @abstractmethod
     def get_seq_length(self, cache_position=...) -> int: ...
@@ -47,7 +48,7 @@ class DynamicLayer(CacheLayerMixin):
 
     is_sliding = ...
     def update(
-        self, key_states: torch.Tensor, value_states: torch.Tensor, cache_kwargs: Optional[dict[str, Any]] = ...
+        self, key_states: torch.Tensor, value_states: torch.Tensor, cache_kwargs: dict[str, Any] | None = ...
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Updates the cache with the new `key_states` and `value_states`.
@@ -131,7 +132,7 @@ class StaticLayer(CacheLayerMixin):
         head_dim: int,
         dtype: torch.dtype = ...,
         device: str = ...,
-        sliding_window: Optional[int] = ...,
+        sliding_window: int | None = ...,
     ) -> None:
         """
         Args:
@@ -160,7 +161,7 @@ class StaticLayer(CacheLayerMixin):
         ...
 
     def update(
-        self, key_states: torch.Tensor, value_states: torch.Tensor, cache_kwargs: Optional[dict[str, Any]] = ...
+        self, key_states: torch.Tensor, value_states: torch.Tensor, cache_kwargs: dict[str, Any] | None = ...
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Update the static cache tensors in place.
@@ -204,7 +205,7 @@ class SlidingWindowLayer(StaticLayer):
         ...
 
     def update(
-        self, key_states: torch.Tensor, value_states: torch.Tensor, cache_kwargs: Optional[dict[str, Any]] = ...
+        self, key_states: torch.Tensor, value_states: torch.Tensor, cache_kwargs: dict[str, Any] | None = ...
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Update the sliding window cache tensors in place.
@@ -231,7 +232,7 @@ class ChunkedSlidingLayer(SlidingWindowLayer):
     """
     def __init__(self, *args, **kwargs) -> None: ...
     def update(
-        self, key_states: torch.Tensor, value_states: torch.Tensor, cache_kwargs: Optional[dict[str, Any]] = ...
+        self, key_states: torch.Tensor, value_states: torch.Tensor, cache_kwargs: dict[str, Any] | None = ...
     ) -> tuple[torch.Tensor, torch.Tensor]: ...
     def reset(self) -> None: ...
     def get_mask_sizes(self, cache_position: torch.Tensor) -> tuple[int, int]: ...
@@ -257,7 +258,7 @@ class CacheProcessor:
         key_states: torch.Tensor,
         value_states: torch.Tensor,
         layer_idx: int,
-        cache_kwargs: Optional[dict[str, Any]] = ...,
+        cache_kwargs: dict[str, Any] | None = ...,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Function called before the cache update. Can modify the key/value states.
@@ -280,7 +281,7 @@ class CacheProcessor:
         key_tensors: torch.Tensor,
         value_tensors: torch.Tensor,
         layer_idx: int,
-        cache_kwargs: Optional[dict[str, Any]] = ...,
+        cache_kwargs: dict[str, Any] | None = ...,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Function called after the cache update. Can process the cached data.
@@ -305,7 +306,7 @@ class OffloadedCacheProcessor(CacheProcessor):
     using asynchronous prefetching to minimize performance impact. Works with both
     dynamic and static layers.
     """
-    def __init__(self, cache: Cache, offload_device: Union[str, torch.device] = ..., **kwargs) -> None:
+    def __init__(self, cache: Cache, offload_device: str | torch.device = ..., **kwargs) -> None:
         """Initialize the offload processor and check device compatibility."""
         ...
 
@@ -315,7 +316,7 @@ class OffloadedCacheProcessor(CacheProcessor):
         key_states: torch.Tensor,
         value_states: torch.Tensor,
         layer_idx: int,
-        cache_kwargs: Optional[dict[str, Any]] = ...,
+        cache_kwargs: dict[str, Any] | None = ...,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """Handles prefetching and eviction before cache update."""
         ...
@@ -372,7 +373,7 @@ class QuantizedCacheProcessor(CacheProcessor):
         key_tensors: torch.Tensor,
         value_tensors: torch.Tensor,
         layer_idx: int,
-        cache_kwargs: Optional[dict[str, Any]] = ...,
+        cache_kwargs: dict[str, Any] | None = ...,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """Apply quantization after cache update."""
         ...
@@ -482,15 +483,15 @@ class Cache:
     """
     def __init__(
         self,
-        layer_classes: Union[list[type[CacheLayerMixin]], type[CacheLayerMixin]],
-        config: Optional[PretrainedConfig] = ...,
-        cache_processor: Optional[Union[str, type[CacheProcessor]]] = ...,
-        max_batch_size: Optional[int] = ...,
-        max_cache_len: Optional[int] = ...,
-        device: Union[torch.device, str, None] = ...,
-        dtype: Optional[torch.dtype] = ...,
-        layer_device_map: Optional[dict[int, torch.device]] = ...,
-        tp_size: Optional[int] = ...,
+        layer_classes: list[type[CacheLayerMixin]] | type[CacheLayerMixin],
+        config: PretrainedConfig | None = ...,
+        cache_processor: str | type[CacheProcessor] | None = ...,
+        max_batch_size: int | None = ...,
+        max_cache_len: int | None = ...,
+        device: torch.device | str | None = ...,
+        dtype: torch.dtype | None = ...,
+        layer_device_map: dict[int, torch.device] | None = ...,
+        tp_size: int | None = ...,
         **kwargs,
     ) -> None: ...
     def __getitem__(self, layer_idx: int) -> tuple[torch.Tensor, torch.Tensor]:
@@ -533,7 +534,7 @@ class Cache:
         key_states: torch.Tensor,
         value_states: torch.Tensor,
         layer_idx: int,
-        cache_kwargs: Optional[dict[str, Any]] = ...,
+        cache_kwargs: dict[str, Any] | None = ...,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Updates the cache with the new `key_states` and `value_states` for the layer `layer_idx`.
@@ -648,7 +649,7 @@ class DynamicCache(Cache):
         ```
     """
     def __init__(
-        self, ddp_cache_data: Optional[Iterable[tuple[torch.Tensor, torch.Tensor]]] = ..., *args, **kwargs
+        self, ddp_cache_data: Iterable[tuple[torch.Tensor, torch.Tensor]] | None = ..., *args, **kwargs
     ) -> None: ...
     def to_legacy_cache(self) -> tuple[tuple[torch.Tensor, torch.Tensor], ...]:
         """
@@ -982,7 +983,7 @@ class EncoderDecoderCache(Cache):
         """Converts a cache in the legacy cache format into an equivalent `EncoderDecoderCache`."""
         ...
 
-    def get_seq_length(self, layer_idx: Optional[int] = ..., cache_position=...) -> int:
+    def get_seq_length(self, layer_idx: int | None = ..., cache_position=...) -> int:
         """Returns the sequence length of the cached states. A layer index can be optionally passed."""
         ...
 
@@ -1022,7 +1023,7 @@ class EncoderDecoderCache(Cache):
 
     def get_mask_sizes(self, cache_position: torch.Tensor, layer_idx: int) -> tuple[int, int]: ...
 
-def parse_processor_args(processor_class: Optional[type[CacheProcessor]], kwargs: dict) -> tuple[dict, dict]:
+def parse_processor_args(processor_class: type[CacheProcessor] | None, kwargs: dict) -> tuple[dict, dict]:
     """
     Parse processor arguments from kwargs based on the processor class init signature.
 
@@ -1036,14 +1037,14 @@ def parse_processor_args(processor_class: Optional[type[CacheProcessor]], kwargs
     ...
 
 def parse_layer_args_from_model_config(
-    config: Optional[PretrainedConfig],
-    batch_size: Optional[int] = ...,
-    max_cache_len: Optional[int] = ...,
-    device: Union[torch.device, str, None] = ...,
-    dtype: Optional[torch.dtype] = ...,
-    layer_device_map: Optional[dict[int, torch.device]] = ...,
-    tp_size: Optional[int] = ...,
-    max_batch_size: Optional[int] = ...,
+    config: PretrainedConfig | None,
+    batch_size: int | None = ...,
+    max_cache_len: int | None = ...,
+    device: torch.device | str | None = ...,
+    dtype: torch.dtype | None = ...,
+    layer_device_map: dict[int, torch.device] | None = ...,
+    tp_size: int | None = ...,
+    max_batch_size: int | None = ...,
 ) -> dict:
     """
     Parse layer arguments from model configuration for cache initialization.
@@ -1096,7 +1097,7 @@ class CacheConfig:
         """
         ...
 
-    def to_json_file(self, json_file_path: Union[str, os.PathLike]):  # -> None:
+    def to_json_file(self, json_file_path: str | os.PathLike):  # -> None:
         """
         Save this instance to a JSON file.
 
@@ -1172,13 +1173,13 @@ class QuantizedCacheConfig(CacheConfig):
     def __init__(
         self,
         backend: str = ...,
-        nbits: Optional[int] = ...,
-        axis_key: Optional[int] = ...,
-        axis_value: Optional[int] = ...,
-        q_group_size: Optional[int] = ...,
-        residual_length: Optional[int] = ...,
-        compute_dtype: Optional[torch.dtype] = ...,
-        device: Optional[str] = ...,
+        nbits: int | None = ...,
+        axis_key: int | None = ...,
+        axis_value: int | None = ...,
+        q_group_size: int | None = ...,
+        residual_length: int | None = ...,
+        compute_dtype: torch.dtype | None = ...,
+        device: str | None = ...,
     ) -> None: ...
     def validate(self):  # -> None:
         """Validates if the arguments passed are correct"""

@@ -16,12 +16,12 @@ class TensorMetadata:
     device: torch.device
     layout: torch.layout
     @staticmethod
-    def maybe_from_tensor(t: Any) -> Optional[TensorMetadata]: ...
+    def maybe_from_tensor(t: Any) -> TensorMetadata | None: ...
 
 @dataclass(frozen=True)
 class OpProfile:
-    args_profile: tuple[Optional[TensorMetadata]]
-    out_profile: Union[TensorMetadata, tuple[TensorMetadata]]
+    args_profile: tuple[TensorMetadata | None]
+    out_profile: TensorMetadata | tuple[TensorMetadata]
 
 @contextlib.contextmanager
 def unsafe_generate_fake_kernels(op_profiles: dict[str, set[OpProfile]]) -> Generator: ...

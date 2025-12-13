@@ -37,8 +37,8 @@ class DabDetrDecoderOutput(BaseModelOutputWithCrossAttentions):
         Reference points (reference points of each layer of the decoder).
     """
 
-    intermediate_hidden_states: Optional[torch.FloatTensor] = ...
-    reference_points: Optional[tuple[torch.FloatTensor]] = ...
+    intermediate_hidden_states: torch.FloatTensor | None = ...
+    reference_points: tuple[torch.FloatTensor] | None = ...
 
 @dataclass
 @auto_docstring(
@@ -60,8 +60,8 @@ class DabDetrModelOutput(Seq2SeqModelOutput):
         Reference points (reference points of each layer of the decoder).
     """
 
-    intermediate_hidden_states: Optional[torch.FloatTensor] = ...
-    reference_points: Optional[tuple[torch.FloatTensor]] = ...
+    intermediate_hidden_states: torch.FloatTensor | None = ...
+    reference_points: tuple[torch.FloatTensor] | None = ...
 
 @dataclass
 @auto_docstring(
@@ -92,18 +92,18 @@ class DabDetrObjectDetectionOutput(ModelOutput):
         Sequence of hidden-states at the output of the last layer of the decoder of the model.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    loss_dict: Optional[dict] = ...
-    logits: Optional[torch.FloatTensor] = ...
-    pred_boxes: Optional[torch.FloatTensor] = ...
-    auxiliary_outputs: Optional[list[dict]] = ...
-    last_hidden_state: Optional[torch.FloatTensor] = ...
-    decoder_hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    decoder_attentions: Optional[tuple[torch.FloatTensor]] = ...
-    cross_attentions: Optional[tuple[torch.FloatTensor]] = ...
-    encoder_last_hidden_state: Optional[torch.FloatTensor] = ...
-    encoder_hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    encoder_attentions: Optional[tuple[torch.FloatTensor]] = ...
+    loss: torch.FloatTensor | None = ...
+    loss_dict: dict | None = ...
+    logits: torch.FloatTensor | None = ...
+    pred_boxes: torch.FloatTensor | None = ...
+    auxiliary_outputs: list[dict] | None = ...
+    last_hidden_state: torch.FloatTensor | None = ...
+    decoder_hidden_states: tuple[torch.FloatTensor] | None = ...
+    decoder_attentions: tuple[torch.FloatTensor] | None = ...
+    cross_attentions: tuple[torch.FloatTensor] | None = ...
+    encoder_last_hidden_state: torch.FloatTensor | None = ...
+    encoder_hidden_states: tuple[torch.FloatTensor] | None = ...
+    encoder_attentions: tuple[torch.FloatTensor] | None = ...
 
 class DabDetrFrozenBatchNorm2d(nn.Module):
     """
@@ -181,11 +181,11 @@ class DetrAttention(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        object_queries: Optional[torch.Tensor] = ...,
-        key_value_states: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        object_queries: torch.Tensor | None = ...,
+        key_value_states: torch.Tensor | None = ...,
         output_attentions: bool = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]:
         """Input shape: Batch x Time x Channel"""
         ...
 
@@ -200,11 +200,11 @@ class DabDetrAttention(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        key_states: Optional[torch.Tensor] = ...,
-        value_states: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+        attention_mask: torch.Tensor | None = ...,
+        key_states: torch.Tensor | None = ...,
+        value_states: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]:
         """Input shape: Batch x Time x Channel"""
         ...
 
@@ -213,9 +213,9 @@ class DabDetrDecoderLayerSelfAttention(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        query_position_embeddings: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
+        query_position_embeddings: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
     ):  # -> tuple[Tensor, Any]:
         ...
 
@@ -224,12 +224,12 @@ class DabDetrDecoderLayerCrossAttention(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        encoder_hidden_states: Optional[torch.Tensor] = ...,
-        query_position_embeddings: Optional[torch.Tensor] = ...,
-        object_queries: Optional[torch.Tensor] = ...,
-        encoder_attention_mask: Optional[torch.Tensor] = ...,
-        query_sine_embed: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
+        encoder_hidden_states: torch.Tensor | None = ...,
+        query_position_embeddings: torch.Tensor | None = ...,
+        object_queries: torch.Tensor | None = ...,
+        encoder_attention_mask: torch.Tensor | None = ...,
+        query_sine_embed: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
     ):  # -> tuple[Tensor, Any | None]:
         ...
 
@@ -245,7 +245,7 @@ class DabDetrEncoderLayer(GradientCheckpointingLayer):
         hidden_states: torch.Tensor,
         attention_mask: torch.Tensor,
         object_queries: torch.Tensor,
-        output_attentions: Optional[bool] = ...,
+        output_attentions: bool | None = ...,
     ):  # -> tuple[Tensor, Any] | tuple[Tensor]:
         """
         Args:
@@ -266,13 +266,13 @@ class DabDetrDecoderLayer(GradientCheckpointingLayer):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        object_queries: Optional[torch.Tensor] = ...,
-        query_position_embeddings: Optional[torch.Tensor] = ...,
-        query_sine_embed: Optional[torch.Tensor] = ...,
-        encoder_hidden_states: Optional[torch.Tensor] = ...,
-        encoder_attention_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        object_queries: torch.Tensor | None = ...,
+        query_position_embeddings: torch.Tensor | None = ...,
+        query_sine_embed: torch.Tensor | None = ...,
+        encoder_hidden_states: torch.Tensor | None = ...,
+        encoder_attention_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
     ):  # -> tuple[Tensor, Any, Any] | tuple[Tensor]:
         """
         Args:
@@ -337,9 +337,9 @@ class DabDetrEncoder(DabDetrPreTrainedModel):
         inputs_embeds,
         attention_mask,
         object_queries,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
     ):  # -> tuple[Any | tuple[Any, ...] | tuple[()], ...] | BaseModelOutput:
         r"""
         Args:
@@ -390,9 +390,9 @@ class DabDetrDecoder(DabDetrPreTrainedModel):
         memory_key_padding_mask,
         object_queries,
         query_position_embeddings,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
     ):  # -> tuple[Any | tuple[Any, ...] | tuple[()] | Tensor, ...] | DabDetrDecoderOutput:
         r"""
         Args:
@@ -439,15 +439,15 @@ class DabDetrModel(DabDetrPreTrainedModel):
     def forward(
         self,
         pixel_values: torch.FloatTensor,
-        pixel_mask: Optional[torch.LongTensor] = ...,
-        decoder_attention_mask: Optional[torch.LongTensor] = ...,
-        encoder_outputs: Optional[torch.FloatTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        decoder_inputs_embeds: Optional[torch.FloatTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.FloatTensor], DabDetrModelOutput]:
+        pixel_mask: torch.LongTensor | None = ...,
+        decoder_attention_mask: torch.LongTensor | None = ...,
+        encoder_outputs: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        decoder_inputs_embeds: torch.FloatTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.FloatTensor] | DabDetrModelOutput:
         r"""
         decoder_attention_mask (`torch.FloatTensor` of shape `(batch_size, num_queries)`, *optional*):
             Not used by default. Can be used to mask object queries.
@@ -488,7 +488,7 @@ class DabDetrModel(DabDetrPreTrainedModel):
 class DabDetrMHAttentionMap(nn.Module):
     """This is a 2D attention module, which only returns the attention softmax (no multiplication by value)"""
     def __init__(self, query_dim, hidden_dim, num_heads, dropout=..., bias=..., std=...) -> None: ...
-    def forward(self, q, k, mask: Optional[Tensor] = ...):  # -> Any:
+    def forward(self, q, k, mask: Tensor | None = ...):  # -> Any:
         ...
 
 @auto_docstring(
@@ -504,16 +504,16 @@ class DabDetrForObjectDetection(DabDetrPreTrainedModel):
     def forward(
         self,
         pixel_values: torch.FloatTensor,
-        pixel_mask: Optional[torch.LongTensor] = ...,
-        decoder_attention_mask: Optional[torch.LongTensor] = ...,
-        encoder_outputs: Optional[torch.FloatTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        decoder_inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[list[dict]] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.FloatTensor], DabDetrObjectDetectionOutput]:
+        pixel_mask: torch.LongTensor | None = ...,
+        decoder_attention_mask: torch.LongTensor | None = ...,
+        encoder_outputs: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        decoder_inputs_embeds: torch.FloatTensor | None = ...,
+        labels: list[dict] | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.FloatTensor] | DabDetrObjectDetectionOutput:
         r"""
         decoder_attention_mask (`torch.FloatTensor` of shape `(batch_size, num_queries)`, *optional*):
             Not used by default. Can be used to mask object queries.

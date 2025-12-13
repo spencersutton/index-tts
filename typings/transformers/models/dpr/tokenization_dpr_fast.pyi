@@ -47,13 +47,13 @@ class CustomDPRReaderTokenizerMixin:
     def __call__(
         self,
         questions,
-        titles: Optional[str] = ...,
-        texts: Optional[str] = ...,
-        padding: Union[bool, str] = ...,
-        truncation: Union[bool, str] = ...,
-        max_length: Optional[int] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        return_attention_mask: Optional[bool] = ...,
+        titles: str | None = ...,
+        texts: str | None = ...,
+        padding: bool | str = ...,
+        truncation: bool | str = ...,
+        max_length: int | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        return_attention_mask: bool | None = ...,
         **kwargs,
     ) -> BatchEncoding: ...
     def decode_best_spans(

@@ -12,7 +12,7 @@ from ...utils import ModelOutput
 logger = ...
 if TYPE_CHECKING: ...
 VOCAB_FILES_NAMES = ...
-ListOfDict = list[dict[str, Union[int, str]]]
+ListOfDict = list[dict[str, int | str]]
 
 @dataclass
 class Wav2Vec2PhonemeCTCTokenizerOutput(ModelOutput):
@@ -28,8 +28,8 @@ class Wav2Vec2PhonemeCTCTokenizerOutput(ModelOutput):
             produced text.
     """
 
-    text: Union[list[str], str]
-    char_offsets: Union[list[ListOfDict], ListOfDict] = ...
+    text: list[str] | str
+    char_offsets: list[ListOfDict] | ListOfDict = ...
 
 class Wav2Vec2PhonemeCTCTokenizer(PreTrainedTokenizer):
     """
@@ -95,8 +95,8 @@ class Wav2Vec2PhonemeCTCTokenizer(PreTrainedTokenizer):
         self,
         text: str,
         is_split_into_words: bool = ...,
-        phonemizer_lang: Optional[str] = ...,
-        do_phonemize: Optional[bool] = ...,
+        phonemizer_lang: str | None = ...,
+        do_phonemize: bool | None = ...,
     ) -> tuple[str, dict[str, Any]]:
         """
         Performs any necessary transformations before tokenization.
@@ -123,7 +123,7 @@ class Wav2Vec2PhonemeCTCTokenizer(PreTrainedTokenizer):
         """
         ...
 
-    def phonemize(self, text: str, phonemizer_lang: Optional[str] = ...) -> str: ...
+    def phonemize(self, text: str, phonemizer_lang: str | None = ...) -> str: ...
     @property
     def word_delimiter_token(self) -> str:
         """
@@ -132,7 +132,7 @@ class Wav2Vec2PhonemeCTCTokenizer(PreTrainedTokenizer):
         ...
 
     @property
-    def word_delimiter_token_id(self) -> Optional[int]:
+    def word_delimiter_token_id(self) -> int | None:
         """
         `Optional[int]`: Id of the word_delimiter_token in the vocabulary. Returns `None` if the token has not been
         set.
@@ -153,7 +153,7 @@ class Wav2Vec2PhonemeCTCTokenizer(PreTrainedTokenizer):
         ...
 
     @property
-    def phone_delimiter_token_id(self) -> Optional[int]:
+    def phone_delimiter_token_id(self) -> int | None:
         """
         `Optional[int]`: Id of the phone_delimiter_token in the vocabulary. Returns `None` if the token has not been
         set.
@@ -181,9 +181,9 @@ class Wav2Vec2PhonemeCTCTokenizer(PreTrainedTokenizer):
 
     def decode(
         self,
-        token_ids: Union[int, list[int], np.ndarray, torch.Tensor, tf.Tensor],
+        token_ids: int | list[int] | np.ndarray | torch.Tensor | tf.Tensor,
         skip_special_tokens: bool = ...,
-        clean_up_tokenization_spaces: Optional[bool] = ...,
+        clean_up_tokenization_spaces: bool | None = ...,
         output_char_offsets: bool = ...,
         **kwargs,
     ) -> str:
@@ -225,9 +225,9 @@ class Wav2Vec2PhonemeCTCTokenizer(PreTrainedTokenizer):
 
     def batch_decode(
         self,
-        sequences: Union[list[int], list[list[int]], np.ndarray, torch.Tensor, tf.Tensor],
+        sequences: list[int] | list[list[int]] | np.ndarray | torch.Tensor | tf.Tensor,
         skip_special_tokens: bool = ...,
-        clean_up_tokenization_spaces: Optional[bool] = ...,
+        clean_up_tokenization_spaces: bool | None = ...,
         output_char_offsets: bool = ...,
         **kwargs,
     ) -> list[str]:
@@ -265,6 +265,6 @@ class Wav2Vec2PhonemeCTCTokenizer(PreTrainedTokenizer):
         """
         ...
 
-    def save_vocabulary(self, save_directory: str, filename_prefix: Optional[str] = ...) -> tuple[str]: ...
+    def save_vocabulary(self, save_directory: str, filename_prefix: str | None = ...) -> tuple[str]: ...
 
 __all__ = ["Wav2Vec2PhonemeCTCTokenizer"]

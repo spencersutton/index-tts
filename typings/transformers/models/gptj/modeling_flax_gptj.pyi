@@ -99,13 +99,13 @@ class FlaxGPTJPreTrainedModel(FlaxPreTrainedModel):
         input_ids,
         attention_mask=...,
         position_ids=...,
-        params: Optional[dict] = ...,
-        past_key_values: Optional[dict] = ...,
+        params: dict | None = ...,
+        past_key_values: dict | None = ...,
         dropout_rng: jax.random.PRNGKey = ...,
         train: bool = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
     ): ...
 
 class FlaxGPTJBlockCollection(nn.Module):
@@ -178,7 +178,7 @@ class FlaxGPTJForCausalLMModule(nn.Module):
 class FlaxGPTJForCausalLM(FlaxGPTJPreTrainedModel):
     module_class = ...
     def prepare_inputs_for_generation(
-        self, input_ids, max_length, attention_mask: Optional[jax.Array] = ...
+        self, input_ids, max_length, attention_mask: jax.Array | None = ...
     ):  # -> dict[str, Any]:
         ...
     def update_inputs_for_generation(self, model_outputs, model_kwargs): ...

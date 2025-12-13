@@ -69,7 +69,7 @@ def is_colab_enterprise() -> bool:
     """Return `True` if code is executed in a Google Colab Enterprise environment."""
     ...
 
-def dump_environment_info() -> Dict[str, Any]:
+def dump_environment_info() -> dict[str, Any]:
     """Dump information about the machine to help debugging issues.
 
     Similar helper exist in:

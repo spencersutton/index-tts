@@ -51,11 +51,11 @@ Offset = Union[torch.Tensor, int]
 
 def make_flex_block_causal_mask(
     attention_mask_2d: torch.Tensor,
-    attention_chunk_size: Optional[int] = ...,
+    attention_chunk_size: int | None = ...,
     query_length=...,
     key_length=...,
-    offsets: Optional[tuple[Offset, Offset]] = ...,
-    is_causal: Optional[bool] = ...,
+    offsets: tuple[Offset, Offset] | None = ...,
+    is_causal: bool | None = ...,
 ) -> BlockMask:
     """
     IMPORTANT NOTICE: This function is deprecated in favor of using the mask primitives in `masking_utils.py`,
@@ -97,10 +97,10 @@ def flex_attention_forward(
     query: torch.Tensor,
     key: torch.Tensor,
     value: torch.Tensor,
-    attention_mask: Union[torch.Tensor, BlockMask],
-    scaling: Optional[float] = ...,
-    softcap: Optional[float] = ...,
-    head_mask: Optional[torch.Tensor] = ...,
-    s_aux: Optional[torch.Tensor] = ...,
+    attention_mask: torch.Tensor | BlockMask,
+    scaling: float | None = ...,
+    softcap: float | None = ...,
+    head_mask: torch.Tensor | None = ...,
+    s_aux: torch.Tensor | None = ...,
     **kwargs,
 ) -> tuple[torch.Tensor, torch.Tensor]: ...

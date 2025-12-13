@@ -27,7 +27,7 @@ class DepthProImageProcessorFast(BaseImageProcessorFast):
     def post_process_depth_estimation(
         self,
         outputs: DepthProDepthEstimatorOutput,
-        target_sizes: Optional[Union[TensorType, list[tuple[int, int]], None]] = ...,
+        target_sizes: TensorType | list[tuple[int, int]] | None | None = ...,
     ) -> dict[str, list[TensorType]]:
         """
         Post-processes the raw depth predictions from the model to generate

@@ -134,7 +134,7 @@ class GPTNeoOnnxConfig(OnnxConfigWithPast):
         batch_size: int = ...,
         seq_length: int = ...,
         is_pair: bool = ...,
-        framework: Optional[TensorType] = ...,
+        framework: TensorType | None = ...,
     ) -> Mapping[str, Any]: ...
     @property
     def default_onnx_opset(self) -> int: ...

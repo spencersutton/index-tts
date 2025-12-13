@@ -32,11 +32,11 @@ class VitsModelOutput(ModelOutput):
         GAN decoder model to obtain the final audio waveform.
     """
 
-    waveform: Optional[torch.FloatTensor] = ...
-    sequence_lengths: Optional[torch.FloatTensor] = ...
-    spectrogram: Optional[tuple[torch.FloatTensor]] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
+    waveform: torch.FloatTensor | None = ...
+    sequence_lengths: torch.FloatTensor | None = ...
+    spectrogram: tuple[torch.FloatTensor] | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
 
 @dataclass
 @auto_docstring(
@@ -52,11 +52,11 @@ class VitsTextEncoderOutput(ModelOutput):
         The predicted log-variance values of the prior distribution for the latent text variables.
     """
 
-    last_hidden_state: Optional[torch.FloatTensor] = ...
-    prior_means: Optional[torch.FloatTensor] = ...
-    prior_log_variances: Optional[torch.FloatTensor] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
+    last_hidden_state: torch.FloatTensor | None = ...
+    prior_means: torch.FloatTensor | None = ...
+    prior_log_variances: torch.FloatTensor | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
 
 @torch.jit.script
 def fused_add_tanh_sigmoid_multiply(input_a, input_b, num_channels):  # -> Tensor:
@@ -89,7 +89,7 @@ class VitsHifiGan(nn.Module):
     def remove_weight_norm(self):  # -> None:
         ...
     def forward(
-        self, spectrogram: torch.FloatTensor, global_conditioning: Optional[torch.FloatTensor] = ...
+        self, spectrogram: torch.FloatTensor, global_conditioning: torch.FloatTensor | None = ...
     ) -> torch.FloatTensor:
         r"""
         Converts a spectrogram into a speech waveform.
@@ -152,11 +152,11 @@ class VitsAttention(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        key_value_states: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        layer_head_mask: Optional[torch.Tensor] = ...,
+        key_value_states: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        layer_head_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         """Input shape: Batch x Time x Channel"""
         ...
 
@@ -170,7 +170,7 @@ class VitsEncoderLayer(GradientCheckpointingLayer):
         self,
         hidden_states: torch.Tensor,
         padding_mask: torch.FloatTensor,
-        attention_mask: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
     ):  # -> tuple[Tensor, Any] | tuple[Tensor]:
         ...
@@ -181,11 +181,11 @@ class VitsEncoder(nn.Module):
         self,
         hidden_states: torch.FloatTensor,
         padding_mask: torch.FloatTensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutput]: ...
+        attention_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutput: ...
 
 class VitsTextEncoder(nn.Module):
     """
@@ -196,11 +196,11 @@ class VitsTextEncoder(nn.Module):
         self,
         input_ids: torch.Tensor,
         padding_mask: torch.FloatTensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], VitsTextEncoderOutput]: ...
+        attention_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.Tensor] | VitsTextEncoderOutput: ...
 
 @auto_docstring
 class VitsPreTrainedModel(PreTrainedModel):
@@ -221,14 +221,14 @@ class VitsModel(VitsPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        speaker_id: Optional[int] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        labels: Optional[torch.FloatTensor] = ...,
-    ) -> Union[tuple[Any], VitsModelOutput]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        speaker_id: int | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        labels: torch.FloatTensor | None = ...,
+    ) -> tuple[Any] | VitsModelOutput:
         r"""
         speaker_id (`int`, *optional*):
             Which speaker embedding to use. Only used for multispeaker models.

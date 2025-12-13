@@ -3,8 +3,9 @@ import types
 import torch
 from collections.abc import Sequence
 from types import FunctionType
-from typing import Any, Callable, Optional, TYPE_CHECKING, TypeVar
-from typing_extensions import Never
+from typing import Any, Optional, TYPE_CHECKING, TypeVar
+from collections.abc import Callable
+from typing import Never
 from .. import variables
 from ..source import AttrSource
 from .base import VariableTracker
@@ -114,7 +115,7 @@ class BuiltinMethodVariable(BaseUserFunctionVariable):
 
 class LocalGeneratorObjectVariable(VariableTracker):
     def __init__(
-        self, code: types.CodeType, f_globals, inline_tracer: Optional[InstructionTranslator], **kwargs
+        self, code: types.CodeType, f_globals, inline_tracer: InstructionTranslator | None, **kwargs
     ) -> None: ...
     def get_code(self):  # -> CodeType:
         ...
@@ -377,7 +378,7 @@ dynamo_triton_hopifier_singleton = ...
 class TritonKernelVariable(VariableTracker):
     grid: TritonGridType
     kernel: TritonKernelType
-    kernel_idx: Optional[int]
+    kernel_idx: int | None
     kernel_source: AttrSource
     def __init__(self, kernel, kernel_idx, grid, **kwargs) -> None: ...
     def call_function(

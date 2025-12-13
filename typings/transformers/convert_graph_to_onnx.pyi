@@ -71,7 +71,7 @@ def infer_shapes(nlp: Pipeline, framework: str) -> tuple[list[str], list[str], d
     ...
 
 def load_graph_from_args(
-    pipeline_name: str, framework: str, model: str, tokenizer: Optional[str] = ..., **models_kwargs
+    pipeline_name: str, framework: str, model: str, tokenizer: str | None = ..., **models_kwargs
 ) -> Pipeline:
     """
     Convert the set of arguments provided through the CLI to an actual pipeline reference (tokenizer + model
@@ -121,7 +121,7 @@ def convert(
     model: str,
     output: Path,
     opset: int,
-    tokenizer: Optional[str] = ...,
+    tokenizer: str | None = ...,
     use_external_format: bool = ...,
     pipeline_name: str = ...,
     **model_kwargs,

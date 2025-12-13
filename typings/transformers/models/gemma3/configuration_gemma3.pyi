@@ -219,8 +219,8 @@ class Gemma3Config(PretrainedConfig):
     sub_configs = ...
     def __init__(
         self,
-        text_config: Optional[Union[Gemma3TextConfig, dict[str, Any]]] = ...,
-        vision_config: Optional[Union[SiglipVisionConfig, dict[str, Any]]] = ...,
+        text_config: Gemma3TextConfig | dict[str, Any] | None = ...,
+        vision_config: SiglipVisionConfig | dict[str, Any] | None = ...,
         mm_tokens_per_image: int = ...,
         boi_token_index: int = ...,
         eoi_token_index: int = ...,

@@ -3,7 +3,8 @@ import sympy
 import torch
 import torch.utils._pytree as pytree
 from collections.abc import Iterator
-from typing import Any, Callable, NamedTuple, Optional, TYPE_CHECKING, Union, TypeAlias
+from typing import Any, NamedTuple, Optional, TYPE_CHECKING, Union, TypeAlias
+from collections.abc import Callable
 from torch.fx._symbolic_trace import _ConstantAttributeType
 from torch.utils._sympy.value_ranges import ValueRanges
 from torch._export.verifier import Verifier
@@ -14,7 +15,7 @@ from .graph_signature import ArgumentSpec, ExportGraphSignature
 
 if TYPE_CHECKING: ...
 __all__ = ["ExportedProgram", "ModuleCallEntry", "ModuleCallSignature", "default_decompositions"]
-PassType: TypeAlias = Callable[[torch.fx.GraphModule], Optional[PassResult]]
+type PassType = Callable[[torch.fx.GraphModule], PassResult | None]
 
 @dataclasses.dataclass
 class ModuleCallSignature:
@@ -22,14 +23,14 @@ class ModuleCallSignature:
     outputs: list[ArgumentSpec]
     in_spec: pytree.TreeSpec
     out_spec: pytree.TreeSpec
-    forward_arg_names: Optional[list[str]] = ...
+    forward_arg_names: list[str] | None = ...
     def replace_all_uses_with(self, original_node, new_node):  # -> None:
         ...
 
 @dataclasses.dataclass
 class ModuleCallEntry:
     fqn: str
-    signature: Optional[ModuleCallSignature] = ...
+    signature: ModuleCallSignature | None = ...
 
 _AUTOGRAD_ALIAS_BACKEND_KEYS_TO_OVERRIDE = ...
 _BACKEND_KEYS_TO_OVERRIDE = ...
@@ -42,22 +43,22 @@ class ExportedProgram:
     _state_dict: dict[str, Any]
     _range_constraints: dict[sympy.Symbol, ValueRanges]
     _module_call_graph: list[ModuleCallEntry]
-    _example_inputs: Optional[tuple[tuple[Any, ...], dict[str, Any]]]
+    _example_inputs: tuple[tuple[Any, ...], dict[str, Any]] | None
     _constants: dict[str, _ConstantAttributeType]
     _verifiers: list[type[Verifier]]
     _guards_code: list[str]
     def __init__(
         self,
-        root: Union[torch.nn.Module, dict[str, Any]],
+        root: torch.nn.Module | dict[str, Any],
         graph: torch.fx.Graph,
         graph_signature: ExportGraphSignature,
-        state_dict: dict[str, Union[torch.Tensor, torch.nn.Parameter]],
+        state_dict: dict[str, torch.Tensor | torch.nn.Parameter],
         range_constraints: dict[sympy.Symbol, Any],
         module_call_graph: list[ModuleCallEntry],
-        example_inputs: Optional[tuple[tuple[Any, ...], dict[str, Any]]] = ...,
-        constants: Optional[dict[str, _ConstantAttributeType]] = ...,
+        example_inputs: tuple[tuple[Any, ...], dict[str, Any]] | None = ...,
+        constants: dict[str, _ConstantAttributeType] | None = ...,
         *,
-        verifiers: Optional[list[type[Verifier]]] = ...,
+        verifiers: list[type[Verifier]] | None = ...,
     ) -> None: ...
     @property
     @compatibility(is_backward_compatible=False)
@@ -162,7 +163,7 @@ class ExportedProgram:
     @_disable_prexisiting_fake_mode
     def run_decompositions(
         self,
-        decomp_table: Optional[dict[torch._ops.OperatorBase, Callable]] = ...,
+        decomp_table: dict[torch._ops.OperatorBase, Callable] | None = ...,
         decompose_custom_triton_ops: bool = ...,
     ) -> ExportedProgram: ...
     @compatibility(is_backward_compatible=False)

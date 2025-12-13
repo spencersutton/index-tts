@@ -48,7 +48,7 @@ class TimmWrapperConfig(PretrainedConfig):
         self,
         initializer_range: float = ...,
         do_pooling: bool = ...,
-        model_args: Optional[dict[str, Any]] = ...,
+        model_args: dict[str, Any] | None = ...,
         **kwargs,
     ) -> None: ...
     @classmethod

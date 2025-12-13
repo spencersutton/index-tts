@@ -1,7 +1,8 @@
 import torch
 from dataclasses import dataclass
-from typing import Any, Callable, Optional, TypeVar, Union, TypeAlias
-from typing_extensions import ParamSpec
+from typing import Any, Optional, TypeVar, Union, TypeAlias
+from collections.abc import Callable
+from typing import ParamSpec
 from torch.utils._ordered_set import OrderedSet
 from . import ir
 from .graph import GraphLowering
@@ -11,23 +12,23 @@ from .virtualized import WrapperHandler
 T = TypeVar("T")
 _P = ParamSpec("_P")
 OpOverload = ...
-LoweringDict: TypeAlias = dict[Union[OpOverload, str], Callable[..., Any]]
-TargetType: TypeAlias = Union[Callable[..., Any], str]
+type LoweringDict = dict[OpOverload | str, Callable[..., Any]]
+type TargetType = Callable[..., Any] | str
 
 class PointwiseSubgraphLowering(torch.fx.Interpreter):
-    graph_outputs: Optional[list[ir.IRNode]]
+    graph_outputs: list[ir.IRNode] | None
     root_graph: GraphLowering
-    _current_op: Optional[TargetType]
-    allowed_mutations: Optional[OrderedSet[OpOverload]]
-    additional_lowerings: Optional[LoweringDict]
+    _current_op: TargetType | None
+    allowed_mutations: OrderedSet[OpOverload] | None
+    additional_lowerings: LoweringDict | None
     buffers: list[ir.Buffer]
     mutated_buffers: OrderedSet[str]
     def __init__(
         self,
         gm: torch.fx.GraphModule,
         root_graph_lowering: GraphLowering,
-        allowed_mutations: Optional[OrderedSet[OpOverload]] = ...,
-        additional_lowerings: Optional[LoweringDict] = ...,
+        allowed_mutations: OrderedSet[OpOverload] | None = ...,
+        additional_lowerings: LoweringDict | None = ...,
     ) -> None: ...
     def mark_buffer_mutated(self, name: str) -> None: ...
     def register_buffer(self, buffer: ir.Buffer, *, set_name: bool = ...) -> str: ...

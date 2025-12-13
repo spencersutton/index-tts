@@ -330,7 +330,7 @@ def simple_eager_attention_forward(
     query_states: torch.Tensor,
     key_states: torch.Tensor,
     value_states: torch.Tensor,
-    attention_mask: Optional[torch.Tensor],
+    attention_mask: torch.Tensor | None,
     scaling: float,
     dropout: float = ...,
     **kwargs: Unpack[TransformersKwargs],
@@ -340,8 +340,8 @@ def simple_eager_attention_forward(
 class Phi4MultimodalVisionAttention(nn.Module):
     def __init__(self, config: Phi4MultimodalVisionConfig) -> None: ...
     def forward(
-        self, hidden_states: torch.Tensor, attention_mask: Optional[torch.Tensor] = ..., **kwargs
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
+        self, hidden_states: torch.Tensor, attention_mask: torch.Tensor | None = ..., **kwargs
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         """Input shape: Batch x Time x Channel"""
         ...
 
@@ -377,9 +377,9 @@ class Phi4MultimodalVisionModel(Phi4MultimodalVisionPreTrainedModel):
     def forward(
         self,
         pixel_values,
-        patch_attention_mask: Optional[torch.BoolTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
+        patch_attention_mask: torch.BoolTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
     ) -> BaseModelOutputWithPooling: ...
 
 class Phi4MultimodalImageEmbedding(nn.Module):
@@ -391,8 +391,8 @@ class Phi4MultimodalImageEmbedding(nn.Module):
         input_ids: torch.LongTensor,
         inputs_embeds: torch.Tensor,
         image_pixel_values: torch.FloatTensor,
-        image_sizes: Optional[torch.Tensor] = ...,
-        image_attention_mask: Optional[torch.Tensor] = ...,
+        image_sizes: torch.Tensor | None = ...,
+        image_attention_mask: torch.Tensor | None = ...,
     ) -> torch.FloatTensor: ...
 
 class Phi4MultimodalAudioMLP(nn.Module):
@@ -427,7 +427,7 @@ class Phi4MultimodalAudioConformerEncoderLayer(nn.Module):
 class Phi4MultimodalAudioNemoConvSubsampling(torch.nn.Module):
     def __init__(self, config: Phi4MultimodalAudioConfig) -> None: ...
     def forward(
-        self, hidden_states: torch.Tensor, mask: Optional[torch.Tensor]
+        self, hidden_states: torch.Tensor, mask: torch.Tensor | None
     ):  # -> tuple[Tensor, None] | tuple[Tensor, Tensor]:
         ...
 
@@ -456,7 +456,7 @@ class Phi4MultimodalAudioModel(Phi4MultimodalAudioPreTrainedModel):
         ...
 
     def calculate_hs_mask(self, hidden_states, device, mask): ...
-    def forward(self, hidden_states: torch.Tensor, mask: Optional[torch.Tensor]):  # -> Tensor:
+    def forward(self, hidden_states: torch.Tensor, mask: torch.Tensor | None):  # -> Tensor:
         ...
 
 def unfold_tensor(tensor, max_seq_len):  # -> Tensor:
@@ -503,8 +503,8 @@ class Phi4MultimodalFeatureEmbedding(nn.Module):
         self,
         input_ids: torch.LongTensor,
         inputs_embeds: torch.Tensor,
-        image_pixel_values: Optional[torch.FloatTensor] = ...,
-        audio_input_features: Optional[torch.FloatTensor] = ...,
+        image_pixel_values: torch.FloatTensor | None = ...,
+        audio_input_features: torch.FloatTensor | None = ...,
         image_sizes=...,
         image_attention_mask=...,
         audio_embed_sizes=...,
@@ -519,21 +519,21 @@ class Phi4MultimodalModel(Phi3Model, nn.Module):
     @check_model_inputs
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        image_pixel_values: Optional[torch.FloatTensor] = ...,
-        image_sizes: Optional[torch.LongTensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        image_pixel_values: torch.FloatTensor | None = ...,
+        image_sizes: torch.LongTensor | None = ...,
         image_attention_mask=...,
-        audio_input_features: Optional[torch.FloatTensor] = ...,
+        audio_input_features: torch.FloatTensor | None = ...,
         audio_embed_sizes=...,
         audio_attention_mask=...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs,
     ) -> BaseModelOutputWithPast:
         r"""
@@ -559,23 +559,23 @@ class Phi4MultimodalForCausalLM(Phi3ForCausalLM, nn.Module):
     def __init__(self, config) -> None: ...
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        image_pixel_values: Optional[torch.FloatTensor] = ...,
-        image_sizes: Optional[torch.LongTensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        image_pixel_values: torch.FloatTensor | None = ...,
+        image_sizes: torch.LongTensor | None = ...,
         image_attention_mask=...,
-        audio_input_features: Optional[torch.FloatTensor] = ...,
+        audio_input_features: torch.FloatTensor | None = ...,
         audio_embed_sizes=...,
         audio_attention_mask=...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        logits_to_keep: Union[int, torch.Tensor] = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        logits_to_keep: int | torch.Tensor = ...,
         **kwargs,
     ) -> CausalLMOutputWithPast:
         r"""

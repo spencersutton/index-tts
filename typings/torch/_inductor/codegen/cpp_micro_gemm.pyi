@@ -1,7 +1,8 @@
 import dataclasses
 import torch
 from enum import Enum
-from typing import Callable, Optional
+from typing import Optional
+from collections.abc import Callable
 from .. import ir
 from ..cpu_vec_isa import VecAMX, VecAVX2, VecAVX512, VecISA, VecNEON, VecSVE256
 from .cpp_template_kernel import CppTemplateKernel
@@ -57,7 +58,7 @@ class CppMicroGemmConfig:
     compute_dtype: torch.dtype
     vec_isa_cls: type[VecISA]
     register_blocking: GemmBlocking
-    extra_check: Optional[Callable[..., bool]] = ...
+    extra_check: Callable[..., bool] | None = ...
 
 micro_gemm_configs: dict[type[CppMicroGemm], list[CppMicroGemmConfig]] = ...
 
@@ -299,4 +300,4 @@ def create_micro_gemm(
     num_threads=...,
     use_ref=...,
     q_group_size=...,
-) -> Optional[CppMicroGemm]: ...
+) -> CppMicroGemm | None: ...

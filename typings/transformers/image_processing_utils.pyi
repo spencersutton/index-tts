@@ -24,8 +24,8 @@ class BaseImageProcessor(ImageProcessingMixin):
         self,
         image: np.ndarray,
         scale: float,
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
         **kwargs,
     ) -> np.ndarray:
         """
@@ -55,10 +55,10 @@ class BaseImageProcessor(ImageProcessingMixin):
     def normalize(
         self,
         image: np.ndarray,
-        mean: Union[float, Iterable[float]],
-        std: Union[float, Iterable[float]],
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        mean: float | Iterable[float],
+        std: float | Iterable[float],
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
         **kwargs,
     ) -> np.ndarray:
         """
@@ -91,8 +91,8 @@ class BaseImageProcessor(ImageProcessingMixin):
         self,
         image: np.ndarray,
         size: dict[str, int],
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
         **kwargs,
     ) -> np.ndarray:
         """
@@ -125,12 +125,12 @@ VALID_SIZE_DICT_KEYS = ...
 def is_valid_size_dict(size_dict):  # -> bool:
     ...
 def convert_to_size_dict(
-    size, max_size: Optional[int] = ..., default_to_square: bool = ..., height_width_order: bool = ...
+    size, max_size: int | None = ..., default_to_square: bool = ..., height_width_order: bool = ...
 ):  # -> dict[str, int] | dict[str, Any]:
     ...
 def get_size_dict(
-    size: Optional[Union[int, Iterable[int], dict[str, int]]] = ...,
-    max_size: Optional[int] = ...,
+    size: int | Iterable[int] | dict[str, int] | None = ...,
+    max_size: int | None = ...,
     height_width_order: bool = ...,
     default_to_square: bool = ...,
     param_name=...,

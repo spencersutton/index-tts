@@ -22,7 +22,7 @@ def prepare_coco_detection_annotation(
     image,
     target,
     return_segmentation_masks: bool = ...,
-    input_data_format: Optional[Union[ChannelDimension, str]] = ...,
+    input_data_format: ChannelDimension | str | None = ...,
 ):  # -> dict[str, Tensor]:
     """
     Convert the target in COCO format into the format expected by RT-DETR.
@@ -49,24 +49,24 @@ class RTDetrImageProcessorFast(DetrImageProcessorFast, BaseImageProcessorFast):
     def preprocess(
         self,
         images: ImageInput,
-        annotations: Optional[Union[AnnotationType, list[AnnotationType]]] = ...,
-        masks_path: Optional[Union[str, pathlib.Path]] = ...,
+        annotations: AnnotationType | list[AnnotationType] | None = ...,
+        masks_path: str | pathlib.Path | None = ...,
         **kwargs: Unpack[RTDetrFastImageProcessorKwargs],
     ) -> BatchFeature: ...
     def prepare_annotation(
         self,
         image: torch.Tensor,
         target: dict,
-        format: Optional[AnnotationFormat] = ...,
-        return_segmentation_masks: Optional[bool] = ...,
-        masks_path: Optional[Union[str, pathlib.Path]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        format: AnnotationFormat | None = ...,
+        return_segmentation_masks: bool | None = ...,
+        masks_path: str | pathlib.Path | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ) -> dict: ...
     def post_process_object_detection(
         self,
         outputs,
         threshold: float = ...,
-        target_sizes: Union[TensorType, list[tuple]] = ...,
+        target_sizes: TensorType | list[tuple] = ...,
         use_focal_loss: bool = ...,
     ):  # -> list[Any]:
         """

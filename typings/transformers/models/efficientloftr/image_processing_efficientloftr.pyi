@@ -18,12 +18,10 @@ if is_vision_available(): ...
 logger = ...
 
 def is_grayscale(
-    image: np.ndarray, input_data_format: Optional[Union[str, ChannelDimension]] = ...
+    image: np.ndarray, input_data_format: str | ChannelDimension | None = ...
 ):  # -> numpy.bool[builtins.bool] | Literal[True] | None:
     ...
-def convert_to_grayscale(
-    image: ImageInput, input_data_format: Optional[Union[str, ChannelDimension]] = ...
-) -> ImageInput:
+def convert_to_grayscale(image: ImageInput, input_data_format: str | ChannelDimension | None = ...) -> ImageInput:
     """
     Converts an image to grayscale format using the NTSC formula. Only support numpy and PIL Image. TODO support torch
     and tensorflow grayscale conversion
@@ -72,7 +70,7 @@ class EfficientLoFTRImageProcessor(BaseImageProcessor):
     def __init__(
         self,
         do_resize: bool = ...,
-        size: Optional[dict[str, int]] = ...,
+        size: dict[str, int] | None = ...,
         resample: PILImageResampling = ...,
         do_rescale: bool = ...,
         rescale_factor: float = ...,
@@ -83,8 +81,8 @@ class EfficientLoFTRImageProcessor(BaseImageProcessor):
         self,
         image: np.ndarray,
         size: dict[str, int],
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
         **kwargs,
     ):  # -> ndarray[_AnyShape, dtype[Any]]:
         """
@@ -113,15 +111,15 @@ class EfficientLoFTRImageProcessor(BaseImageProcessor):
     def preprocess(
         self,
         images,
-        do_resize: Optional[bool] = ...,
-        size: Optional[dict[str, int]] = ...,
+        do_resize: bool | None = ...,
+        size: dict[str, int] | None = ...,
         resample: PILImageResampling = ...,
-        do_rescale: Optional[bool] = ...,
-        rescale_factor: Optional[float] = ...,
-        do_grayscale: Optional[bool] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
+        do_rescale: bool | None = ...,
+        rescale_factor: float | None = ...,
+        do_grayscale: bool | None = ...,
+        return_tensors: str | TensorType | None = ...,
         data_format: ChannelDimension = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        input_data_format: str | ChannelDimension | None = ...,
         **kwargs,
     ) -> BatchFeature:
         """
@@ -170,7 +168,7 @@ class EfficientLoFTRImageProcessor(BaseImageProcessor):
         ...
 
     def post_process_keypoint_matching(
-        self, outputs: KeypointMatchingOutput, target_sizes: Union[TensorType, list[tuple]], threshold: float = ...
+        self, outputs: KeypointMatchingOutput, target_sizes: TensorType | list[tuple], threshold: float = ...
     ) -> list[dict[str, torch.Tensor]]:
         """
         Converts the raw output of [`KeypointMatchingOutput`] into lists of keypoints, scores and descriptors

@@ -79,7 +79,7 @@ class Mamba2Cache:
             A tensor of shape `[num_layers, batch_size, num_heads, head_dim, state_size]` that holds ssm states.
     """
     def __init__(
-        self, config: Mamba2Config, batch_size: int, dtype: torch.dtype = ..., device: Optional[str] = ...
+        self, config: Mamba2Config, batch_size: int, dtype: torch.dtype = ..., device: str | None = ...
     ) -> None: ...
     def update_conv_state(
         self, layer_idx: int, new_conv_state: torch.Tensor, cache_init: bool = ...
@@ -104,25 +104,25 @@ class Mamba2Mixer(nn.Module):
     def cuda_kernels_forward(
         self,
         hidden_states: torch.Tensor,
-        cache_params: Optional[Mamba2Cache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
+        cache_params: Mamba2Cache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
     ):  # -> Any:
         ...
     def torch_forward(
         self,
         hidden_states: torch.Tensor,
-        cache_params: Optional[Mamba2Cache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
+        cache_params: Mamba2Cache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
     ):  # -> Any:
         ...
     def forward(
         self,
         hidden_states,
-        cache_params: Optional[Mamba2Cache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
+        cache_params: Mamba2Cache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
     ):  # -> Any:
         ...
 
@@ -140,9 +140,9 @@ class Mamba2Block(GradientCheckpointingLayer):
     def forward(
         self,
         hidden_states,
-        cache_params: Optional[Mamba2Cache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
+        cache_params: Mamba2Cache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
     ): ...
 
 @auto_docstring
@@ -168,9 +168,9 @@ class Mamba2Output(ModelOutput):
         Includes both the State space model state matrices after the selective scan, and the Convolutional states
     """
 
-    last_hidden_state: Optional[torch.FloatTensor] = ...
-    cache_params: Optional[Mamba2Cache] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
+    last_hidden_state: torch.FloatTensor | None = ...
+    cache_params: Mamba2Cache | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
 
 @dataclass
 @auto_docstring(
@@ -191,10 +191,10 @@ class Mamba2CausalLMOutput(ModelOutput):
         Includes both the State space model state matrices after the selective scan, and the Convolutional states
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    logits: Optional[torch.FloatTensor] = ...
-    cache_params: Optional[Mamba2Cache] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
+    loss: torch.FloatTensor | None = ...
+    logits: torch.FloatTensor | None = ...
+    cache_params: Mamba2Cache | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
 
 @auto_docstring
 class Mamba2Model(Mamba2PreTrainedModel):
@@ -208,16 +208,16 @@ class Mamba2Model(Mamba2PreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        inputs_embeds: Optional[torch.LongTensor] = ...,
-        cache_params: Optional[Mamba2Cache] = ...,
-        use_cache: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        inputs_embeds: torch.LongTensor | None = ...,
+        cache_params: Mamba2Cache | None = ...,
+        use_cache: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
         **kwargs,
-    ) -> Union[tuple, Mamba2Output]:
+    ) -> tuple | Mamba2Output:
         r"""
         cache_params (`Mamba2Cache`, *optional*):
             If passed along, the model uses the previous state in all the blocks (which will give the output for the
@@ -248,26 +248,26 @@ class Mamba2ForCausalLM(Mamba2PreTrainedModel, GenerationMixin):
         input_ids,
         inputs_embeds=...,
         use_cache=...,
-        cache_params: Optional[Mamba2Cache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
+        cache_params: Mamba2Cache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
         **kwargs,
     ):  # -> dict[str, Any]:
         ...
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        cache_params: Optional[Mamba2Cache] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        cache_params: Mamba2Cache | None = ...,
+        labels: torch.LongTensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
         **kwargs,
-    ) -> Union[tuple, Mamba2CausalLMOutput]:
+    ) -> tuple | Mamba2CausalLMOutput:
         r"""
         cache_params (`Mamba2Cache`, *optional*):
             If passed along, the model uses the previous state in all the blocks (which will give the output for the

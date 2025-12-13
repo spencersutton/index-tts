@@ -1,6 +1,6 @@
 import torch
 import torch.utils._pytree as pytree
-from typing import Callable
+from collections.abc import Callable
 from torch._C import DispatchKey
 from torch._ops import HigherOrderOperator
 from torch._subclasses.fake_tensor import FakeTensorMode

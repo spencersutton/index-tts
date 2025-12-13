@@ -3,7 +3,8 @@ import torch.nn as nn
 from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Optional
+from typing import Any, Optional
+from collections.abc import Callable
 from torch.distributed.tensor import DTensor, Shard
 from torch.distributed.tensor._dtensor_spec import DTensorSpec
 from ._fsdp_api import MixedPrecisionPolicy, OffloadPolicy
@@ -37,15 +38,15 @@ class ParamModuleInfo:
 
 @dataclass
 class ExtensionsData:
-    all_gather_metadata: Optional[Any] = ...
+    all_gather_metadata: Any | None = ...
     all_gather_input_sizes: Sequence[torch.Size] = ...
     def clear(self):  # -> None:
         ...
 
 class FSDPParam:
     orig_dtype: torch.dtype
-    param_dtype: Optional[torch.dtype]
-    reduce_dtype: Optional[torch.dtype]
+    param_dtype: torch.dtype | None
+    reduce_dtype: torch.dtype | None
     _orig_size: torch.Size
     sharded_size: torch.Size
     contiguous_sharded_stride: tuple[int, ...]
@@ -54,10 +55,10 @@ class FSDPParam:
     contiguous_sharded_post_forward_stride: tuple[int, ...]
     _sharded_param_data: torch.Tensor
     sharded_param: nn.Parameter
-    _sharded_post_forward_param_data: Optional[torch.Tensor]
-    _sharded_post_forward_param: Optional[nn.Parameter]
+    _sharded_post_forward_param_data: torch.Tensor | None
+    _sharded_post_forward_param: nn.Parameter | None
     _unsharded_param: nn.Parameter
-    unsharded_accumulated_grad: Optional[torch.Tensor]
+    unsharded_accumulated_grad: torch.Tensor | None
     _sharding_spec: DTensorSpec
     _tp_spec: DTensorSpec
     all_gather_outputs: list[torch.Tensor]
@@ -68,9 +69,9 @@ class FSDPParam:
         param: nn.Parameter,
         module_info: ParamModuleInfo,
         mesh_info: FSDPMeshInfo,
-        post_forward_mesh_info: Optional[FSDPMeshInfo],
+        post_forward_mesh_info: FSDPMeshInfo | None,
         device: torch.device,
-        shard_placement_fn: Optional[Callable[[nn.Parameter], Optional[Shard]]],
+        shard_placement_fn: Callable[[nn.Parameter], Shard | None] | None,
         mp_policy: MixedPrecisionPolicy,
         offload_policy: OffloadPolicy,
     ) -> None: ...

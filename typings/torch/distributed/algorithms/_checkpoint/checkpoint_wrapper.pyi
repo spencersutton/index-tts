@@ -3,7 +3,8 @@ import torch.nn as nn
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from enum import Enum
-from typing import Any, Callable, Optional
+from typing import Any, Optional
+from collections.abc import Callable
 
 _CHECKPOINT_WRAPPED_MODULE = ...
 _CHECKPOINT_PREFIX = ...
@@ -39,7 +40,7 @@ def apply_activation_checkpointing(
     model,
     checkpoint_wrapper_fn=...,
     check_fn=...,
-    auto_wrap_policy: Optional[Callable[[nn.Module, bool, int], bool]] = ...,
+    auto_wrap_policy: Callable[[nn.Module, bool, int], bool] | None = ...,
 ):  # -> None:
 
     ...

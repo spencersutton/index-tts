@@ -40,18 +40,18 @@ class WavLMAttention(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_bias: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_bias: torch.Tensor | None = ...,
         output_attentions: bool = ...,
         index=...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]:
         """Attention layer with relative attention"""
         ...
 
     def torch_multi_head_self_attention(
         self,
         hidden_states: torch.FloatTensor,
-        attention_mask: Union[torch.LongTensor, torch.BoolTensor],
+        attention_mask: torch.LongTensor | torch.BoolTensor,
         gated_position_bias: torch.FloatTensor,
         output_attentions: bool,
     ) -> (torch.FloatTensor, torch.FloatTensor):

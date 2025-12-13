@@ -1,7 +1,8 @@
 import contextlib
 import torch
 import torch.nn as nn
-from typing import Callable, Optional
+from typing import Optional
+from collections.abc import Callable
 from torch._inductor.cudagraph_utils import BoxedDeviceIndex
 from torch._inductor.utils import BoxedBool
 from torch._subclasses import FakeTensorMode
@@ -28,17 +29,17 @@ def create_aot_state(
     flat_args_descs: list[AOTInput],
     aot_config: AOTConfig,
     fake_mode: FakeTensorMode,
-    shape_env: Optional[ShapeEnv],
+    shape_env: ShapeEnv | None,
 ) -> AOTState: ...
 def aot_function(
     fn: Callable,
     fw_compiler: Callable,
-    bw_compiler: Optional[Callable] = ...,
+    bw_compiler: Callable | None = ...,
     partition_fn: Callable = ...,
-    decompositions: Optional[dict] = ...,
+    decompositions: dict | None = ...,
     num_params_buffers: int = ...,
     keep_inference_input_mutations: bool = ...,
-    inference_compiler: Optional[Callable] = ...,
+    inference_compiler: Callable | None = ...,
     *,
     dynamic=...,
     enable_log=...,
@@ -48,12 +49,12 @@ def prepare_aot_module_simplified(
     mod: nn.Module,
     args,
     kwargs,
-    fw_compiler: Optional[AOTDispatchCompiler],
-    bw_compiler: Optional[AOTDispatchCompiler],
+    fw_compiler: AOTDispatchCompiler | None,
+    bw_compiler: AOTDispatchCompiler | None,
     partition_fn: Callable,
     decompositions: dict,
     keep_inference_input_mutations,
-    inference_compiler: Optional[AOTDispatchCompiler],
+    inference_compiler: AOTDispatchCompiler | None,
     boxed_forward_device_index: BoxedDeviceIndex,
     ignore_shape_env: bool,
     flatten: bool,
@@ -65,13 +66,13 @@ def aot_module_simplified(
     mod: nn.Module,
     args,
     fw_compiler: AOTDispatchCompiler,
-    bw_compiler: Optional[AOTDispatchCompiler] = ...,
+    bw_compiler: AOTDispatchCompiler | None = ...,
     partition_fn: Callable = ...,
-    decompositions: Optional[dict] = ...,
+    decompositions: dict | None = ...,
     keep_inference_input_mutations=...,
-    inference_compiler: Optional[AOTDispatchCompiler] = ...,
-    cudagraphs: Optional[BoxedBool] = ...,
-    boxed_forward_device_index: Optional[BoxedDeviceIndex] = ...,
+    inference_compiler: AOTDispatchCompiler | None = ...,
+    cudagraphs: BoxedBool | None = ...,
+    boxed_forward_device_index: BoxedDeviceIndex | None = ...,
     ignore_shape_env: bool = ...,
 ) -> nn.Module: ...
 def boxed_nop_preserve_node_meta(fx_g, example_inputs):  # -> Callable[..., Any]:
@@ -82,26 +83,26 @@ def aot_export_joint_with_descriptors(
     args,
     kwargs=...,
     *,
-    decompositions: Optional[dict] = ...,
+    decompositions: dict | None = ...,
     keep_inference_input_mutations=...,
     ignore_shape_env=...,
-    fw_compiler: Optional[AOTDispatchCompiler] = ...,
-    bw_compiler: Optional[AOTDispatchCompiler] = ...,
+    fw_compiler: AOTDispatchCompiler | None = ...,
+    bw_compiler: AOTDispatchCompiler | None = ...,
 ) -> JointWithDescriptors: ...
 def aot_compile_joint_with_descriptors(jd: JointWithDescriptors) -> callable: ...
 def aot_export_module(
     mod: nn.Module,
     args,
     *,
-    decompositions: Optional[dict] = ...,
+    decompositions: dict | None = ...,
     trace_joint: bool,
-    output_loss_index: Optional[int] = ...,
+    output_loss_index: int | None = ...,
     pre_dispatch: bool = ...,
-    dynamic_shapes: Optional[bool] = ...,
+    dynamic_shapes: bool | None = ...,
     kwargs=...,
 ) -> tuple[torch.fx.GraphModule, GraphSignature]: ...
 def aot_export_joint_simple(
-    func: Callable, args, *, trace_joint: bool, num_params_buffers: int = ..., decompositions: Optional[dict] = ...
+    func: Callable, args, *, trace_joint: bool, num_params_buffers: int = ..., decompositions: dict | None = ...
 ) -> torch.fx.GraphModule: ...
 
 compiled_function = ...

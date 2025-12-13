@@ -79,13 +79,13 @@ class CodeGenTokenizerFast(PreTrainedTokenizerFast):
         return_token_type_ids=...,
         **kwargs,
     ) -> None: ...
-    def save_vocabulary(self, save_directory: str, filename_prefix: Optional[str] = ...) -> tuple[str]: ...
+    def save_vocabulary(self, save_directory: str, filename_prefix: str | None = ...) -> tuple[str]: ...
     def decode(
         self,
-        token_ids: Union[int, list[int], np.ndarray, torch.Tensor, tf.Tensor],
+        token_ids: int | list[int] | np.ndarray | torch.Tensor | tf.Tensor,
         skip_special_tokens: bool = ...,
-        clean_up_tokenization_spaces: Optional[bool] = ...,
-        truncate_before_pattern: Optional[list[str]] = ...,
+        clean_up_tokenization_spaces: bool | None = ...,
+        truncate_before_pattern: list[str] | None = ...,
         **kwargs,
     ) -> str:
         """

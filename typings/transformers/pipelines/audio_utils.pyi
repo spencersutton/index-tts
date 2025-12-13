@@ -15,8 +15,8 @@ def ffmpeg_microphone(
     sampling_rate: int,
     chunk_length_s: float,
     format_for_conversion: str = ...,
-    ffmpeg_input_device: Optional[str] = ...,
-    ffmpeg_additional_args: Optional[list[str]] = ...,
+    ffmpeg_input_device: str | None = ...,
+    ffmpeg_additional_args: list[str] | None = ...,
 ):  # -> Generator[bytes, Any, None]:
     """
     Helper function to read audio from a microphone using ffmpeg. The default input device will be used unless another
@@ -50,11 +50,11 @@ def ffmpeg_microphone(
 def ffmpeg_microphone_live(
     sampling_rate: int,
     chunk_length_s: float,
-    stream_chunk_s: Optional[int] = ...,
-    stride_length_s: Optional[Union[tuple[float, float], float]] = ...,
+    stream_chunk_s: int | None = ...,
+    stride_length_s: tuple[float, float] | float | None = ...,
     format_for_conversion: str = ...,
-    ffmpeg_input_device: Optional[str] = ...,
-    ffmpeg_additional_args: Optional[list[str]] = ...,
+    ffmpeg_input_device: str | None = ...,
+    ffmpeg_additional_args: list[str] | None = ...,
 ):  # -> Generator[dict[str, bytes | tuple[int, Literal[0]] | bool] | dict[str, bytes | tuple[int, int]], Any, None]:
     """
     Helper function to read audio from a microphone using ffmpeg. This will output `partial` overlapping chunks starting

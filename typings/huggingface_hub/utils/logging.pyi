@@ -10,7 +10,7 @@ from .. import constants
 log_levels = ...
 _default_log_level = ...
 
-def get_logger(name: Optional[str] = ...) -> logging.Logger:
+def get_logger(name: str | None = ...) -> logging.Logger:
     """
         Returns a logger with the specified name. This function is not supposed
         to be directly accessed by library users.

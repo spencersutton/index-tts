@@ -90,7 +90,7 @@ def get_default_qconfig_dict(backend=..., version=...) -> dict[str, Any]: ...
 )
 def get_default_qat_qconfig_dict(backend=..., version=...) -> dict[str, Any]: ...
 
-QConfigAny: TypeAlias = QConfig | None
-_ObserverOrFakeQuantizeConstructor: TypeAlias = type[ObserverBase | FakeQuantizeBase] | _PartialWrapper
+type QConfigAny = QConfig | None
+type _ObserverOrFakeQuantizeConstructor = type[ObserverBase | FakeQuantizeBase] | _PartialWrapper
 
 def qconfig_equals(q1: QConfigAny, q2: QConfigAny) -> bool: ...

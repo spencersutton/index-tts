@@ -23,7 +23,7 @@ _nil = ...
 def sympy_interp(
     analysis,
     env: dict[sympy.Symbol, Any],
-    expr: Union[sympy.Expr, SympyBoolean],
+    expr: sympy.Expr | SympyBoolean,
     *,
     index_dtype=...,
     missing_handler=...,

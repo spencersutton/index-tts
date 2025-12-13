@@ -29,8 +29,8 @@ class UnivNetModelOutput(ModelOutput):
         The batched length in samples of each unpadded waveform in `waveforms`.
     """
 
-    waveforms: Optional[torch.FloatTensor] = ...
-    waveform_lengths: Optional[torch.FloatTensor] = ...
+    waveforms: torch.FloatTensor | None = ...
+    waveform_lengths: torch.FloatTensor | None = ...
 
 class UnivNetKernelPredictorResidualBlock(nn.Module):
     """
@@ -175,11 +175,11 @@ class UnivNetModel(PreTrainedModel):
     def forward(
         self,
         input_features: torch.FloatTensor,
-        noise_sequence: Optional[torch.FloatTensor] = ...,
-        padding_mask: Optional[torch.FloatTensor] = ...,
-        generator: Optional[torch.Generator] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.FloatTensor], UnivNetModelOutput]:
+        noise_sequence: torch.FloatTensor | None = ...,
+        padding_mask: torch.FloatTensor | None = ...,
+        generator: torch.Generator | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.FloatTensor] | UnivNetModelOutput:
         r"""
         noise_sequence (`torch.FloatTensor`, *optional*):
             Tensor containing a noise sequence of standard Gaussian noise. Can be batched and of shape `(batch_size,

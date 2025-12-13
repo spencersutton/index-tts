@@ -13,8 +13,8 @@ Image/Text processor class for SigLIP2.
 """
 
 class Siglip2ImagesKwargs(ImagesKwargs, total=False):
-    max_num_patches: Optional[int]
-    patch_size: Optional[int]
+    max_num_patches: int | None
+    patch_size: int | None
     ...
 
 class Siglip2ProcessorKwargs(ProcessingKwargs, total=False):
@@ -41,8 +41,8 @@ class Siglip2Processor(ProcessorMixin):
     def __init__(self, image_processor, tokenizer) -> None: ...
     def __call__(
         self,
-        images: Optional[Union[ImageInput, list[ImageInput], list[list[ImageInput]]]] = ...,
-        text: Optional[Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]]] = ...,
+        images: ImageInput | list[ImageInput] | list[list[ImageInput]] | None = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] | None = ...,
         audio=...,
         videos=...,
         **kwargs: Unpack[Siglip2ProcessorKwargs],

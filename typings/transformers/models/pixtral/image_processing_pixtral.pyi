@@ -25,9 +25,9 @@ def convert_to_rgb(image: ImageInput) -> ImageInput:
 
 def get_resize_output_image_size(
     input_image: ImageInput,
-    size: Union[int, tuple[int, int], list[int], tuple[int]],
-    patch_size: Union[int, tuple[int, int], list[int], tuple[int]],
-    input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+    size: int | tuple[int, int] | list[int] | tuple[int],
+    patch_size: int | tuple[int, int] | list[int] | tuple[int],
+    input_data_format: str | ChannelDimension | None = ...,
 ) -> tuple:
     """
     Find the target (height, width) dimension of the output image after resizing given the input image and the desired
@@ -87,14 +87,14 @@ class PixtralImageProcessor(BaseImageProcessor):
     def __init__(
         self,
         do_resize: bool = ...,
-        size: Optional[dict[str, int]] = ...,
-        patch_size: Optional[dict[str, int]] = ...,
+        size: dict[str, int] | None = ...,
+        patch_size: dict[str, int] | None = ...,
         resample: PILImageResampling = ...,
         do_rescale: bool = ...,
-        rescale_factor: Union[int, float] = ...,
+        rescale_factor: int | float = ...,
         do_normalize: bool = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
         do_convert_rgb: bool = ...,
         **kwargs,
     ) -> None: ...
@@ -104,8 +104,8 @@ class PixtralImageProcessor(BaseImageProcessor):
         size: dict[str, int],
         patch_size: dict[str, int],
         resample: PILImageResampling = ...,
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
         **kwargs,
     ) -> np.ndarray:
         """
@@ -131,19 +131,19 @@ class PixtralImageProcessor(BaseImageProcessor):
     def preprocess(
         self,
         images: ImageInput,
-        do_resize: Optional[bool] = ...,
-        size: Optional[dict[str, int]] = ...,
-        patch_size: Optional[dict[str, int]] = ...,
+        do_resize: bool | None = ...,
+        size: dict[str, int] | None = ...,
+        patch_size: dict[str, int] | None = ...,
         resample: PILImageResampling = ...,
-        do_rescale: Optional[bool] = ...,
-        rescale_factor: Optional[float] = ...,
-        do_normalize: Optional[bool] = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
-        do_convert_rgb: Optional[bool] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        data_format: Optional[ChannelDimension] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        do_rescale: bool | None = ...,
+        rescale_factor: float | None = ...,
+        do_normalize: bool | None = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
+        do_convert_rgb: bool | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        data_format: ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
         **kwargs,
     ) -> PIL.Image.Image:
         """

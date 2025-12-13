@@ -45,7 +45,7 @@ def log_model_debug_trace(debug_path, model):  # -> None:
 @requires(backends=("torch",))
 @contextmanager
 def model_addition_debugger_context(
-    model, debug_path: Optional[str] = ..., do_prune_layers: Optional[bool] = ..., use_repr: Optional[bool] = ...
+    model, debug_path: str | None = ..., do_prune_layers: bool | None = ..., use_repr: bool | None = ...
 ):  # -> Generator[Any, Any, None]:
     """
     # Model addition debugger - context manager for model adders

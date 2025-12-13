@@ -4,8 +4,9 @@ import sys
 import weakref
 import torch
 import torch.distributed.rpc
-from typing import Any, Callable, Final, TypeVar, Union
-from typing_extensions import ParamSpec
+from typing import Any, Final, TypeVar, Union
+from collections.abc import Callable
+from typing import ParamSpec
 
 """
 The weak_script annotation needs to be here instead of inside torch/jit/ so it
@@ -15,7 +16,7 @@ circular dependency problems
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
 IS_PY310_PLUS: Final[bool] = ...
-BuiltinUnionType: Union[type, tuple[type, ...]]
+BuiltinUnionType: type | tuple[type, ...]
 if sys.version_info >= (3, 10):
     BuiltinUnionType = ...
 else: ...

@@ -12,11 +12,11 @@ class GraphInfoProvider:
         graph_nodes_in_order: list[str],
         graph_edges: list[tuple[str, str]],
         all_recomputable_banned_nodes: list[str],
-        all_node_runtimes: Optional[dict[str, float]] = ...,
-        all_node_memories: Optional[dict[str, float]] = ...,
-        recorded_knapsack_input_memories: Optional[list[float]] = ...,
-        recorded_knapsack_input_runtimes: Optional[list[float]] = ...,
-        joint_graph: Optional[Graph] = ...,
+        all_node_runtimes: dict[str, float] | None = ...,
+        all_node_memories: dict[str, float] | None = ...,
+        recorded_knapsack_input_memories: list[float] | None = ...,
+        recorded_knapsack_input_runtimes: list[float] | None = ...,
+        joint_graph: Graph | None = ...,
     ) -> None: ...
     @classmethod
     def inialize_from_graph(

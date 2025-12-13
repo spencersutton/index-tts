@@ -54,8 +54,8 @@ class EfficientFormerDenseMlp(nn.Module):
         self,
         config: EfficientFormerConfig,
         in_features: int,
-        hidden_features: Optional[int] = ...,
-        out_features: Optional[int] = ...,
+        hidden_features: int | None = ...,
+        out_features: int | None = ...,
     ) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
 
@@ -64,8 +64,8 @@ class EfficientFormerConvMlp(nn.Module):
         self,
         config: EfficientFormerConfig,
         in_features: int,
-        hidden_features: Optional[int] = ...,
-        out_features: Optional[int] = ...,
+        hidden_features: int | None = ...,
+        out_features: int | None = ...,
         drop: float = ...,
     ) -> None: ...
     def forward(self, hidden_state: torch.Tensor) -> torch.Tensor: ...
@@ -84,7 +84,7 @@ def drop_path(input: torch.Tensor, drop_prob: float = ..., training: bool = ...)
 
 class EfficientFormerDropPath(nn.Module):
     """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks)."""
-    def __init__(self, drop_prob: Optional[float] = ...) -> None: ...
+    def __init__(self, drop_prob: float | None = ...) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
     def extra_repr(self) -> str: ...
 
@@ -156,11 +156,11 @@ class EfficientFormerModel(EfficientFormerPreTrainedModel):
     )
     def forward(
         self,
-        pixel_values: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutput]: ...
+        pixel_values: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutput: ...
 
 @add_start_docstrings(
     """
@@ -180,12 +180,12 @@ class EfficientFormerForImageClassification(EfficientFormerPreTrainedModel):
     )
     def forward(
         self,
-        pixel_values: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ImageClassifierOutput]:
+        pixel_values: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | ImageClassifierOutput:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
@@ -218,11 +218,11 @@ class EfficientFormerForImageClassificationWithTeacherOutput(ModelOutput):
             the self-attention heads.
     """
 
-    logits: Optional[torch.FloatTensor] = ...
-    cls_logits: Optional[torch.FloatTensor] = ...
-    distillation_logits: Optional[torch.FloatTensor] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
+    logits: torch.FloatTensor | None = ...
+    cls_logits: torch.FloatTensor | None = ...
+    distillation_logits: torch.FloatTensor | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
 
 @add_start_docstrings(
     """
@@ -250,11 +250,11 @@ class EfficientFormerForImageClassificationWithTeacher(EfficientFormerPreTrained
     )
     def forward(
         self,
-        pixel_values: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, EfficientFormerForImageClassificationWithTeacherOutput]: ...
+        pixel_values: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | EfficientFormerForImageClassificationWithTeacherOutput: ...
 
 __all__ = [
     "EfficientFormerForImageClassification",

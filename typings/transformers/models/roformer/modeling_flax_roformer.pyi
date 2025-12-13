@@ -6,7 +6,8 @@ import flax.linen as nn
 import jax
 import jax.numpy as jnp
 import numpy as np
-from typing import Callable, Optional
+from typing import Optional
+from collections.abc import Callable
 from flax.core.frozen_dict import FrozenDict
 from ...modeling_flax_utils import FlaxPreTrainedModel
 from ...utils import add_start_docstrings, add_start_docstrings_to_model_forward
@@ -193,12 +194,12 @@ class FlaxRoFormerPreTrainedModel(FlaxPreTrainedModel):
         attention_mask=...,
         token_type_ids=...,
         head_mask=...,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: jax.random.PRNGKey = ...,
         train: bool = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
     ): ...
 
 class FlaxRoFormerModule(nn.Module):

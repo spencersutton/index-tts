@@ -6,7 +6,8 @@ import flax
 import flax.linen as nn
 import jax
 import jax.numpy as jnp
-from typing import Callable, Optional
+from typing import Optional
+from collections.abc import Callable
 from flax.core.frozen_dict import FrozenDict
 from ...modeling_flax_outputs import FlaxBaseModelOutputWithPooling
 from ...modeling_flax_utils import FlaxPreTrainedModel
@@ -53,7 +54,7 @@ class FlaxBeitDropPath(nn.Module):
 
     rate: float
     @nn.module.compact
-    def __call__(self, inputs, deterministic: Optional[bool] = ...): ...
+    def __call__(self, inputs, deterministic: bool | None = ...): ...
 
 class FlaxBeitPatchEmbeddings(nn.Module):
     config: BeitConfig
@@ -193,12 +194,12 @@ class FlaxBeitPreTrainedModel(FlaxPreTrainedModel):
         self,
         pixel_values,
         bool_masked_pos=...,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: jax.random.PRNGKey = ...,
         train: bool = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
     ): ...
 
 class FlaxBeitPooler(nn.Module):

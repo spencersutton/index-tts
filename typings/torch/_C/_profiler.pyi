@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import Literal
-from typing_extensions import TypeAlias
+from typing import TypeAlias
 from torch._C import device, dtype, layout
 
 class RecordScope(Enum):
@@ -130,8 +130,8 @@ class _TensorMetadata:
     @property
     def strides(self) -> list[int]: ...
 
-Scalar: TypeAlias = int | float | bool | complex
-Input: TypeAlias = _TensorMetadata | list[_TensorMetadata] | Scalar | None
+type Scalar = int | float | bool | complex
+type Input = _TensorMetadata | list[_TensorMetadata] | Scalar | None
 
 class _ExtraFields_TorchOp:
     name: str

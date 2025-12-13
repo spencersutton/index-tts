@@ -39,15 +39,15 @@ class DPTFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
         ADE20k). The background label will be replaced by 255.
     """
 
-    ensure_multiple_of: Optional[int]
-    size_divisor: Optional[int]
-    do_pad: Optional[bool]
-    keep_aspect_ratio: Optional[bool]
-    do_reduce_labels: Optional[bool]
+    ensure_multiple_of: int | None
+    size_divisor: int | None
+    do_pad: bool | None
+    keep_aspect_ratio: bool | None
+    do_reduce_labels: bool | None
     ...
 
 def get_resize_output_image_size(
-    input_image: torch.Tensor, output_size: Union[int, Iterable[int]], keep_aspect_ratio: bool, multiple: int
+    input_image: torch.Tensor, output_size: int | Iterable[int], keep_aspect_ratio: bool, multiple: int
 ) -> SizeDict: ...
 
 @auto_docstring
@@ -75,7 +75,7 @@ class DPTImageProcessorFast(BaseImageProcessorFast):
     def preprocess(
         self,
         images: ImageInput,
-        segmentation_maps: Optional[ImageInput] = ...,
+        segmentation_maps: ImageInput | None = ...,
         **kwargs: Unpack[DPTFastImageProcessorKwargs],
     ) -> BatchFeature:
         r"""
@@ -84,7 +84,7 @@ class DPTImageProcessorFast(BaseImageProcessorFast):
         """
         ...
 
-    def post_process_semantic_segmentation(self, outputs, target_sizes: Optional[list[tuple]] = ...):  # -> list[Any]:
+    def post_process_semantic_segmentation(self, outputs, target_sizes: list[tuple] | None = ...):  # -> list[Any]:
         """
         Converts the output of [`DPTForSemanticSegmentation`] into semantic segmentation maps. Only supports PyTorch.
 
@@ -108,7 +108,7 @@ class DPTImageProcessorFast(BaseImageProcessorFast):
         size: SizeDict,
         interpolation: F.InterpolationMode = ...,
         antialias: bool = ...,
-        ensure_multiple_of: Optional[int] = ...,
+        ensure_multiple_of: int | None = ...,
         keep_aspect_ratio: bool = ...,
     ) -> torch.Tensor:
         """
@@ -148,7 +148,7 @@ class DPTImageProcessorFast(BaseImageProcessorFast):
     def post_process_depth_estimation(
         self,
         outputs: DepthEstimatorOutput,
-        target_sizes: Optional[Union[TensorType, list[tuple[int, int]], None]] = ...,
+        target_sizes: TensorType | list[tuple[int, int]] | None | None = ...,
     ) -> list[dict[str, TensorType]]:
         """
         Converts the raw output of [`DepthEstimatorOutput`] into final depth predictions and depth PIL images.

@@ -112,7 +112,7 @@ class Pop2PianoTokenizer(PreTrainedTokenizer):
         ...
 
     def relative_tokens_ids_to_notes(
-        self, tokens: np.ndarray, start_idx: float, cutoff_time_idx: Optional[float] = ...
+        self, tokens: np.ndarray, start_idx: float, cutoff_time_idx: float | None = ...
     ):  # -> list[Any] | ndarray[_AnyShape, dtype[Any]]:
         """
         Converts relative tokens to notes which will then be used to create Pretty Midi objects.
@@ -141,7 +141,7 @@ class Pop2PianoTokenizer(PreTrainedTokenizer):
         """
         ...
 
-    def save_vocabulary(self, save_directory: str, filename_prefix: Optional[str] = ...) -> tuple[str]:
+    def save_vocabulary(self, save_directory: str, filename_prefix: str | None = ...) -> tuple[str]:
         """
         Saves the tokenizer's vocabulary dictionary to the provided save_directory.
 
@@ -155,9 +155,9 @@ class Pop2PianoTokenizer(PreTrainedTokenizer):
 
     def encode_plus(
         self,
-        notes: Union[np.ndarray, list[pretty_midi.Note]],
-        truncation_strategy: Optional[TruncationStrategy] = ...,
-        max_length: Optional[int] = ...,
+        notes: np.ndarray | list[pretty_midi.Note],
+        truncation_strategy: TruncationStrategy | None = ...,
+        max_length: int | None = ...,
         **kwargs,
     ) -> BatchEncoding:
         r"""
@@ -183,9 +183,9 @@ class Pop2PianoTokenizer(PreTrainedTokenizer):
 
     def batch_encode_plus(
         self,
-        notes: Union[np.ndarray, list[pretty_midi.Note]],
-        truncation_strategy: Optional[TruncationStrategy] = ...,
-        max_length: Optional[int] = ...,
+        notes: np.ndarray | list[pretty_midi.Note],
+        truncation_strategy: TruncationStrategy | None = ...,
+        max_length: int | None = ...,
         **kwargs,
     ) -> BatchEncoding:
         r"""
@@ -210,17 +210,13 @@ class Pop2PianoTokenizer(PreTrainedTokenizer):
 
     def __call__(
         self,
-        notes: Union[
-            np.ndarray,
-            list[pretty_midi.Note],
-            list[list[pretty_midi.Note]],
-        ],
-        padding: Union[bool, str, PaddingStrategy] = ...,
-        truncation: Union[bool, str, TruncationStrategy] = ...,
-        max_length: Optional[int] = ...,
-        pad_to_multiple_of: Optional[int] = ...,
-        return_attention_mask: Optional[bool] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
+        notes: np.ndarray | list[pretty_midi.Note] | list[list[pretty_midi.Note]],
+        padding: bool | str | PaddingStrategy = ...,
+        truncation: bool | str | TruncationStrategy = ...,
+        max_length: int | None = ...,
+        pad_to_multiple_of: int | None = ...,
+        return_attention_mask: bool | None = ...,
+        return_tensors: str | TensorType | None = ...,
         verbose: bool = ...,
         **kwargs,
     ) -> BatchEncoding:

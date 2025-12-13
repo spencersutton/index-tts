@@ -1,6 +1,7 @@
 import torch
-from typing import Any, Callable, NamedTuple, TypeVar, overload
-from typing_extensions import Never, TypeAlias
+from typing import Any, NamedTuple, TypeVar, overload
+from collections.abc import Callable
+from typing import Never, TypeAlias
 from _typeshed import Incomplete
 from torch.jit._monkeytype_config import JitTypeTraceStore as JitTypeTraceStore
 from torch.nn import Module as Module
@@ -8,7 +9,7 @@ from torch.package import PackageExporter as PackageExporter, PackageImporter as
 
 ScriptFunction = torch._C.ScriptFunction
 type_trace_db: JitTypeTraceStore
-ResolutionCallback: TypeAlias = Callable[[str], Callable[..., Any]]
+type ResolutionCallback = Callable[[str], Callable[..., Any]]
 _ClassVar = TypeVar("_ClassVar", bound=type)
 
 class Attribute(NamedTuple):

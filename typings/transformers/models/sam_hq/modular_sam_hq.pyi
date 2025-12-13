@@ -125,7 +125,7 @@ class SamHQVisionEncoderOutput(SamVisionEncoderOutput):
         This is specific to SAM-HQ and not present in base SAM.
     """
 
-    intermediate_embeddings: Optional[list[torch.FloatTensor]] = ...
+    intermediate_embeddings: list[torch.FloatTensor] | None = ...
 
 @dataclass
 class SamHQMMaskDecoderOutputs(ModelOutput):
@@ -140,8 +140,8 @@ class SamHQMMaskDecoderOutputs(ModelOutput):
     """
 
     masks: torch.FloatTensor
-    iou_scores: Optional[torch.FloatTensor] = ...
-    mask_decoder_attentions: Optional[torch.FloatTensor] = ...
+    iou_scores: torch.FloatTensor | None = ...
+    mask_decoder_attentions: torch.FloatTensor | None = ...
 
 class SamHQImageSegmentationOutput(SamImageSegmentationOutput): ...
 class SamHQVisionAttention(SamVisionAttention): ...
@@ -152,8 +152,8 @@ class SamHQVisionEncoder(SamVisionEncoder, SamHQPreTrainedModel):
     _can_record_outputs = ...
     @check_model_inputs
     def forward(
-        self, pixel_values: Optional[torch.FloatTensor] = ..., **kwargs: Unpack[TransformersKwargs]
-    ) -> Union[tuple, SamHQVisionEncoderOutput]: ...
+        self, pixel_values: torch.FloatTensor | None = ..., **kwargs: Unpack[TransformersKwargs]
+    ) -> tuple | SamHQVisionEncoderOutput: ...
 
 class SamHQLayerNorm(SamLayerNorm): ...
 class SamHQTwoWayTransformer(SamTwoWayTransformer): ...
@@ -169,9 +169,9 @@ class SamHQMaskDecoder(nn.Module):
         dense_prompt_embeddings: torch.Tensor,
         multimask_output: bool,
         hq_token_only: bool,
-        intermediate_embeddings: Optional[list[torch.Tensor]] = ...,
-        attention_similarity: Optional[torch.Tensor] = ...,
-        target_embedding: Optional[torch.Tensor] = ...,
+        intermediate_embeddings: list[torch.Tensor] | None = ...,
+        attention_similarity: torch.Tensor | None = ...,
+        target_embedding: torch.Tensor | None = ...,
     ) -> SamHQMMaskDecoderOutputs:
         """
         Predict high-quality masks given image and prompt embeddings.
@@ -228,17 +228,17 @@ class SamHQModel(SamModel):
 
     def forward(
         self,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        input_points: Optional[torch.FloatTensor] = ...,
-        input_labels: Optional[torch.LongTensor] = ...,
-        input_boxes: Optional[torch.FloatTensor] = ...,
-        input_masks: Optional[torch.LongTensor] = ...,
-        image_embeddings: Optional[torch.FloatTensor] = ...,
+        pixel_values: torch.FloatTensor | None = ...,
+        input_points: torch.FloatTensor | None = ...,
+        input_labels: torch.LongTensor | None = ...,
+        input_boxes: torch.FloatTensor | None = ...,
+        input_masks: torch.LongTensor | None = ...,
+        image_embeddings: torch.FloatTensor | None = ...,
         multimask_output: bool = ...,
         hq_token_only: bool = ...,
-        attention_similarity: Optional[torch.FloatTensor] = ...,
-        target_embedding: Optional[torch.FloatTensor] = ...,
-        intermediate_embeddings: Optional[list[torch.FloatTensor]] = ...,
+        attention_similarity: torch.FloatTensor | None = ...,
+        target_embedding: torch.FloatTensor | None = ...,
+        intermediate_embeddings: list[torch.FloatTensor] | None = ...,
         **kwargs: Unpack[TransformersKwargs],
     ) -> list[dict[str, torch.Tensor]]:
         r"""

@@ -8,7 +8,7 @@ from typing import Optional
 def fixed_cross_entropy(
     source: torch.Tensor,
     target: torch.Tensor,
-    num_items_in_batch: Optional[torch.Tensor] = ...,
+    num_items_in_batch: torch.Tensor | None = ...,
     ignore_index: int = ...,
     **kwargs,
 ) -> torch.Tensor: ...
@@ -16,16 +16,16 @@ def ForCausalLMLoss(
     logits,
     labels,
     vocab_size: int,
-    num_items_in_batch: Optional[torch.Tensor] = ...,
+    num_items_in_batch: torch.Tensor | None = ...,
     ignore_index: int = ...,
-    shift_labels: Optional[torch.Tensor] = ...,
+    shift_labels: torch.Tensor | None = ...,
     **kwargs,
 ) -> torch.Tensor: ...
 def ForMaskedLMLoss(
     logits: torch.Tensor,
     labels: torch.Tensor,
     vocab_size: int,
-    num_items_in_batch: Optional[torch.Tensor] = ...,
+    num_items_in_batch: torch.Tensor | None = ...,
     ignore_index: int = ...,
     **kwargs,
 ):  # -> Tensor:

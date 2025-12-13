@@ -48,7 +48,7 @@ def w8a8_block_fp8_matmul_compile(
     weight_q: torch.Tensor,
     input_scale: torch.Tensor,
     weight_scale: torch.Tensor,
-    block_size: Optional[tuple[int, int]] = ...,
+    block_size: tuple[int, int] | None = ...,
     output_dtype: torch.dtype = ...,
 ) -> torch.Tensor:
     """
@@ -72,7 +72,7 @@ class FP8Linear(nn.Linear):
         out_features: int,
         bias: bool = ...,
         dtype=...,
-        block_size: Optional[tuple[int, int]] = ...,
+        block_size: tuple[int, int] | None = ...,
         device=...,
         activation_scheme=...,
     ) -> None: ...

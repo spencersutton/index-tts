@@ -40,11 +40,11 @@ class DeformableDetrFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
         Whether to return segmentation masks.
     """
 
-    format: Optional[Union[str, AnnotationFormat]]
-    do_convert_annotations: Optional[bool]
-    do_pad: Optional[bool]
-    pad_size: Optional[dict[str, int]]
-    return_segmentation_masks: Optional[bool]
+    format: str | AnnotationFormat | None
+    do_convert_annotations: bool | None
+    do_pad: bool | None
+    pad_size: dict[str, int] | None
+    return_segmentation_masks: bool | None
     ...
 
 SUPPORTED_ANNOTATION_FORMATS = ...
@@ -67,7 +67,7 @@ def prepare_coco_detection_annotation(
     image,
     target,
     return_segmentation_masks: bool = ...,
-    input_data_format: Optional[Union[ChannelDimension, str]] = ...,
+    input_data_format: ChannelDimension | str | None = ...,
 ):  # -> dict[str, Tensor]:
     """
     Convert the target in COCO format into the format expected by DEFORMABLE_DETR.
@@ -95,9 +95,9 @@ def rgb_to_id(color):  # -> Tensor | int:
 def prepare_coco_panoptic_annotation(
     image: torch.Tensor,
     target: dict,
-    masks_path: Union[str, pathlib.Path],
+    masks_path: str | pathlib.Path,
     return_masks: bool = ...,
-    input_data_format: Union[ChannelDimension, str] = ...,
+    input_data_format: ChannelDimension | str = ...,
 ) -> dict:
     """
     Prepare a coco panoptic annotation for DEFORMABLE_DETR.
@@ -133,10 +133,10 @@ class DeformableDetrImageProcessorFast(BaseImageProcessorFast):
         self,
         image: torch.Tensor,
         target: dict,
-        format: Optional[AnnotationFormat] = ...,
-        return_segmentation_masks: Optional[bool] = ...,
-        masks_path: Optional[Union[str, pathlib.Path]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        format: AnnotationFormat | None = ...,
+        return_segmentation_masks: bool | None = ...,
+        masks_path: str | pathlib.Path | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ) -> dict:
         """
         Prepare an annotation for feeding into DEFORMABLE_DETR model.
@@ -198,7 +198,7 @@ class DeformableDetrImageProcessorFast(BaseImageProcessorFast):
         self,
         image: torch.Tensor,
         padded_size: tuple[int, int],
-        annotation: Optional[dict[str, Any]] = ...,
+        annotation: dict[str, Any] | None = ...,
         update_bboxes: bool = ...,
         fill: int = ...,
     ):  # -> tuple[Any | Tensor, Tensor, dict[str, Any] | None]:
@@ -207,8 +207,8 @@ class DeformableDetrImageProcessorFast(BaseImageProcessorFast):
     def preprocess(
         self,
         images: ImageInput,
-        annotations: Optional[Union[AnnotationType, list[AnnotationType]]] = ...,
-        masks_path: Optional[Union[str, pathlib.Path]] = ...,
+        annotations: AnnotationType | list[AnnotationType] | None = ...,
+        masks_path: str | pathlib.Path | None = ...,
         **kwargs: Unpack[DeformableDetrFastImageProcessorKwargs],
     ) -> BatchFeature:
         r"""
@@ -247,7 +247,7 @@ class DeformableDetrImageProcessorFast(BaseImageProcessorFast):
         ...
 
     def post_process_object_detection(
-        self, outputs, threshold: float = ..., target_sizes: Union[TensorType, list[tuple]] = ..., top_k: int = ...
+        self, outputs, threshold: float = ..., target_sizes: TensorType | list[tuple] = ..., top_k: int = ...
     ):  # -> list[Any]:
         """
         Converts the raw output of [`DeformableDetrForObjectDetection`] into final bounding boxes in (top_left_x,

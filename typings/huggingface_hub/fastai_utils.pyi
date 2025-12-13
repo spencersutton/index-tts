@@ -10,7 +10,7 @@ README_TEMPLATE = ...
 PYPROJECT_TEMPLATE = ...
 
 @validate_hf_hub_args
-def from_pretrained_fastai(repo_id: str, revision: Optional[str] = ...):
+def from_pretrained_fastai(repo_id: str, revision: str | None = ...):
     """
     Load pretrained fastai model from the Hub or from a local directory.
 
@@ -37,15 +37,15 @@ def push_to_hub_fastai(
     *,
     repo_id: str,
     commit_message: str = ...,
-    private: Optional[bool] = ...,
-    token: Optional[str] = ...,
-    config: Optional[dict] = ...,
-    branch: Optional[str] = ...,
-    create_pr: Optional[bool] = ...,
-    allow_patterns: Optional[Union[List[str], str]] = ...,
-    ignore_patterns: Optional[Union[List[str], str]] = ...,
-    delete_patterns: Optional[Union[List[str], str]] = ...,
-    api_endpoint: Optional[str] = ...,
+    private: bool | None = ...,
+    token: str | None = ...,
+    config: dict | None = ...,
+    branch: str | None = ...,
+    create_pr: bool | None = ...,
+    allow_patterns: list[str] | str | None = ...,
+    ignore_patterns: list[str] | str | None = ...,
+    delete_patterns: list[str] | str | None = ...,
+    api_endpoint: str | None = ...,
 ):  # -> CommitInfo:
     """
     Upload learner checkpoint files to the Hub.

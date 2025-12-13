@@ -1,6 +1,6 @@
 import functools
 from typing import TYPE_CHECKING
-from typing_extensions import final
+from typing import final
 from torch._inductor.compile_worker.subproc_pool import AnyPool
 from .compile_fx_ext import _OutOfProcessFxCompile
 

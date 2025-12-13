@@ -26,11 +26,11 @@ is_fast_path_available = ...
 logger = ...
 
 def load_balancing_loss_func(
-    router_logits: Union[torch.Tensor, tuple[torch.Tensor], None],
-    num_experts: Optional[int] = ...,
+    router_logits: torch.Tensor | tuple[torch.Tensor] | None,
+    num_experts: int | None = ...,
     top_k=...,
-    attention_mask: Optional[torch.Tensor] = ...,
-) -> Union[torch.Tensor, int]:
+    attention_mask: torch.Tensor | None = ...,
+) -> torch.Tensor | int:
     r"""
     Computes auxiliary load balancing loss as in Switch Transformer - implemented in Pytorch.
 
@@ -97,36 +97,36 @@ class HybridMambaAttentionDynamicCache:
         key_states: torch.Tensor,
         value_states: torch.Tensor,
         layer_idx: int,
-        cache_kwargs: Optional[dict[str, Any]] = ...,
+        cache_kwargs: dict[str, Any] | None = ...,
     ) -> tuple[torch.Tensor, torch.Tensor]: ...
     def reorder_cache(self, beam_idx: torch.LongTensor):  # -> None:
         """Reorders the cache for beam search, given the selected beam indices."""
         ...
 
-    def get_seq_length(self, layer_idx: Optional[int] = ...) -> int:
+    def get_seq_length(self, layer_idx: int | None = ...) -> int:
         """Returns the sequence length of the cached states. A layer index can be optionally passed."""
         ...
 
     def to_legacy_cache(self) -> tuple[tuple[torch.Tensor], tuple[torch.Tensor]]: ...
     @classmethod
-    def from_legacy_cache(cls, past_key_values: Optional[tuple[tuple[torch.FloatTensor]]] = ...) -> DynamicCache: ...
+    def from_legacy_cache(cls, past_key_values: tuple[tuple[torch.FloatTensor]] | None = ...) -> DynamicCache: ...
 
 class JambaAttention(nn.Module):
     """
     Multi-headed attention from 'Attention Is All You Need' paper. Modified to use sliding window attention: Longformer
     and "Generating Long Sequences with Sparse Transformers".
     """
-    def __init__(self, config: JambaConfig, layer_idx: Optional[int] = ...) -> None: ...
+    def __init__(self, config: JambaConfig, layer_idx: int | None = ...) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[HybridMambaAttentionDynamicCache] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: HybridMambaAttentionDynamicCache | None = ...,
         output_attentions: bool = ...,
         use_cache: bool = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+        cache_position: torch.LongTensor | None = ...,
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]: ...
 
 class JambaFlashAttention2(JambaAttention):
     """
@@ -138,12 +138,12 @@ class JambaFlashAttention2(JambaAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[HybridMambaAttentionDynamicCache] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: HybridMambaAttentionDynamicCache | None = ...,
         output_attentions: bool = ...,
         use_cache: bool = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs,
     ):  # -> tuple[Any, Any | None, HybridMambaAttentionDynamicCache | None]:
         ...
@@ -157,13 +157,13 @@ class JambaSdpaAttention(JambaAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[HybridMambaAttentionDynamicCache] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: HybridMambaAttentionDynamicCache | None = ...,
         output_attentions: bool = ...,
         use_cache: bool = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+        cache_position: torch.LongTensor | None = ...,
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]: ...
 
 JAMBA_ATTENTION_CLASSES = ...
 
@@ -179,21 +179,21 @@ class JambaMambaMixer(nn.Module):
         self,
         hidden_states: torch.Tensor,
         cache_params: HybridMambaAttentionDynamicCache = ...,
-        attention_mask: Optional[torch.LongTensor] = ...,
+        attention_mask: torch.LongTensor | None = ...,
     ):  # -> Any:
         ...
     def slow_forward(
         self,
         input_states,
         cache_params: HybridMambaAttentionDynamicCache = ...,
-        attention_mask: Optional[torch.LongTensor] = ...,
+        attention_mask: torch.LongTensor | None = ...,
     ):  # -> Any:
         ...
     def forward(
         self,
         hidden_states,
         cache_params: HybridMambaAttentionDynamicCache = ...,
-        attention_mask: Optional[torch.LongTensor] = ...,
+        attention_mask: torch.LongTensor | None = ...,
     ):  # -> Any:
         ...
 
@@ -223,14 +223,14 @@ class JambaAttentionDecoderLayer(GradientCheckpointingLayer):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[HybridMambaAttentionDynamicCache] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_router_logits: Optional[bool] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]:
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: HybridMambaAttentionDynamicCache | None = ...,
+        output_attentions: bool | None = ...,
+        output_router_logits: bool | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+    ) -> tuple[torch.FloatTensor, tuple[torch.FloatTensor, torch.FloatTensor] | None]:
         """
         Args:
             hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
@@ -256,14 +256,14 @@ class JambaMambaDecoderLayer(GradientCheckpointingLayer):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[HybridMambaAttentionDynamicCache] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_router_logits: Optional[bool] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]:
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: HybridMambaAttentionDynamicCache | None = ...,
+        output_attentions: bool | None = ...,
+        output_router_logits: bool | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+    ) -> tuple[torch.FloatTensor, tuple[torch.FloatTensor, torch.FloatTensor] | None]:
         """
         Args:
             hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
@@ -310,16 +310,16 @@ class JambaModel(JambaPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[HybridMambaAttentionDynamicCache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        output_router_logits: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: HybridMambaAttentionDynamicCache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        output_router_logits: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Unpack[TransformersKwargs],
     ) -> MoeModelOutputWithPast: ...
 
@@ -334,18 +334,18 @@ class JambaForCausalLM(JambaPreTrainedModel, GenerationMixin):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[HybridMambaAttentionDynamicCache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        output_router_logits: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        logits_to_keep: Union[int, torch.Tensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: HybridMambaAttentionDynamicCache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        output_router_logits: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        logits_to_keep: int | torch.Tensor = ...,
         **kwargs: Unpack[TransformersKwargs],
     ) -> MoeCausalLMOutputWithPast:
         r"""

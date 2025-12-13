@@ -2,8 +2,9 @@ import contextlib
 import functools
 import logging
 from dataclasses import dataclass
-from typing import Any, Callable, Generic, Optional, Union
-from typing_extensions import ParamSpec
+from typing import Any, Generic, Optional, Union
+from collections.abc import Callable
+from typing import ParamSpec
 from torch._guards import CompileId
 
 _P = ParamSpec("_P")
@@ -16,7 +17,7 @@ LOG_FORMAT_ENV_VAR = ...
 LOG_TRACE_ID_FILTER = ...
 TRACE_ENV_VAR = ...
 DTRACE_ENV_VAR = ...
-LOG_TRACE_HANDLER: Optional[LazyTraceHandler] = ...
+LOG_TRACE_HANDLER: LazyTraceHandler | None = ...
 GET_DTRACE_STRUCTURED = ...
 
 @dataclass
@@ -33,7 +34,7 @@ class LogRegistry:
         ...
     def is_log(self, alias):  # -> bool:
         ...
-    def register_log(self, alias, log_qnames: Union[str, list[str]]) -> None: ...
+    def register_log(self, alias, log_qnames: str | list[str]) -> None: ...
     def register_artifact_name(self, name, description, visible, off_by_default, log_format) -> None: ...
     def register_artifact_log(self, artifact_log_qname) -> None: ...
     def register_child_log(self, log_qname) -> None: ...
@@ -64,18 +65,18 @@ DEFAULT_LOGGING = ...
 
 def set_logs(
     *,
-    all: Optional[int] = ...,
-    dynamo: Optional[int] = ...,
-    aot: Optional[int] = ...,
-    autograd: Optional[int] = ...,
-    dynamic: Optional[int] = ...,
-    inductor: Optional[int] = ...,
-    distributed: Optional[int] = ...,
-    c10d: Optional[int] = ...,
-    ddp: Optional[int] = ...,
-    fsdp: Optional[int] = ...,
-    dtensor: Optional[int] = ...,
-    onnx: Optional[int] = ...,
+    all: int | None = ...,
+    dynamo: int | None = ...,
+    aot: int | None = ...,
+    autograd: int | None = ...,
+    dynamic: int | None = ...,
+    inductor: int | None = ...,
+    distributed: int | None = ...,
+    c10d: int | None = ...,
+    ddp: int | None = ...,
+    fsdp: int | None = ...,
+    dtensor: int | None = ...,
+    onnx: int | None = ...,
     bytecode: bool = ...,
     aot_graphs: bool = ...,
     aot_joint_graph: bool = ...,
@@ -102,8 +103,8 @@ def set_logs(
     onnx_diagnostics: bool = ...,
     fusion: bool = ...,
     overlap: bool = ...,
-    export: Optional[int] = ...,
-    modules: Optional[dict[str, Union[int, bool]]] = ...,
+    export: int | None = ...,
+    modules: dict[str, int | bool] | None = ...,
     cudagraphs: bool = ...,
     sym_node: bool = ...,
     compiled_autograd: bool = ...,
@@ -134,7 +135,7 @@ def make_module_path_relative(abs_path):  # -> str:
     ...
 
 class TorchLogsFormatter(logging.Formatter):
-    def __init__(self, *, trace: bool = ..., trace_id_filter: Optional[set[str]] = ...) -> None: ...
+    def __init__(self, *, trace: bool = ..., trace_id_filter: set[str] | None = ...) -> None: ...
     def format(self, record):  # -> str:
         ...
 
@@ -142,7 +143,7 @@ DEFAULT_FORMATTER = ...
 handlers = ...
 
 class LazyTraceHandler(logging.StreamHandler):
-    def __init__(self, root_dir: Optional[str]) -> None: ...
+    def __init__(self, root_dir: str | None) -> None: ...
     def close(self) -> None: ...
     def emit(self, record) -> None: ...
 
@@ -161,28 +162,28 @@ class LazyString(Generic[_P]):
 structured_logging_overhead: dict[str, float] = ...
 
 def add_structured_logging_overhead(time_spent: float) -> None: ...
-def get_structured_logging_overhead() -> Optional[float]: ...
+def get_structured_logging_overhead() -> float | None: ...
 def trace_structured_artifact(
     name: str,
     encoding: str,
-    payload_fn: Callable[[], Optional[Union[str, object]]] = ...,
-    compile_id: Optional[CompileId] = ...,
+    payload_fn: Callable[[], str | object | None] = ...,
+    compile_id: CompileId | None = ...,
 ) -> None: ...
 def trace_structured(
     name: str,
-    metadata_fn: Callable[[], Union[dict[str, Any], tuple[str, int]]] = ...,
+    metadata_fn: Callable[[], dict[str, Any] | tuple[str, int]] = ...,
     *,
-    payload_fn: Callable[[], Optional[Union[str, object]]] = ...,
+    payload_fn: Callable[[], str | object | None] = ...,
     suppress_context: bool = ...,
     expect_trace_id: bool = ...,
     record_logging_overhead: bool = ...,
-    compile_id: Optional[CompileId] = ...,
+    compile_id: CompileId | None = ...,
 ) -> None: ...
 def dtrace_structured(
     name: str,
-    metadata_fn: Callable[[], Union[dict[str, Any], tuple[str, int]]] = ...,
+    metadata_fn: Callable[[], dict[str, Any] | tuple[str, int]] = ...,
     *,
-    payload_fn: Callable[[], Optional[Union[str, object]]] = ...,
+    payload_fn: Callable[[], str | object | None] = ...,
     suppress_context: bool = ...,
     expect_trace_id: bool = ...,
     record_logging_overhead: bool = ...,

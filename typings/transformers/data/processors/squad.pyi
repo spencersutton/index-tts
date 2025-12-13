@@ -197,8 +197,8 @@ class SquadFeatures:
         start_position,
         end_position,
         is_impossible,
-        qas_id: Optional[str] = ...,
-        encoding: Optional[BatchEncoding] = ...,
+        qas_id: str | None = ...,
+        encoding: BatchEncoding | None = ...,
     ) -> None: ...
 
 class SquadResult:

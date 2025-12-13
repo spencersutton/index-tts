@@ -20,7 +20,7 @@ if TYPE_CHECKING: ...
 
 class DataframeData(GradioModel):
     headers: list[Any]
-    data: Union[list[list[Any]], list[tuple[Any, ...]]]
+    data: list[list[Any]] | list[tuple[Any, ...]]
     metadata: dict[str, list[Any] | None] | None = ...
 
 @document()

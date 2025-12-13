@@ -2,7 +2,8 @@ import torch
 import torch.distributed.tensor._dispatch as op_dispatch
 import torch.nn as nn
 from collections.abc import Sequence
-from typing import Any, Callable, Optional, Self
+from typing import Any, Optional, Self
+from collections.abc import Callable
 from torch._export.wrappers import mark_subclass_constructor_exportable_experimental
 from torch.distributed.device_mesh import DeviceMesh
 from torch.distributed.tensor._dtensor_spec import DTensorSpec
@@ -13,7 +14,7 @@ aten = ...
 
 class _ToTorchTensor(torch.autograd.Function):
     @staticmethod
-    def forward(ctx, input: DTensor, grad_placements: Optional[Sequence[Placement]]):  # -> Tensor:
+    def forward(ctx, input: DTensor, grad_placements: Sequence[Placement] | None):  # -> Tensor:
         ...
     @staticmethod
     def backward(ctx, grad_output: torch.Tensor):  # -> tuple[DTensor, None]:
@@ -27,8 +28,8 @@ class _FromTorchTensor(torch.autograd.Function):
         device_mesh: DeviceMesh,
         placements: tuple[Placement, ...],
         run_check: bool,
-        shape: Optional[torch.Size] = ...,
-        stride: Optional[tuple[int, ...]] = ...,
+        shape: torch.Size | None = ...,
+        stride: tuple[int, ...] | None = ...,
     ) -> DTensor: ...
     @staticmethod
     def backward(ctx, grad_output: DTensor):  # -> tuple[Tensor, None, None, None, None, None]:
@@ -64,24 +65,24 @@ class DTensor(torch.Tensor):
     @staticmethod
     def from_local(
         local_tensor: torch.Tensor,
-        device_mesh: Optional[DeviceMesh] = ...,
-        placements: Optional[Sequence[Placement]] = ...,
+        device_mesh: DeviceMesh | None = ...,
+        placements: Sequence[Placement] | None = ...,
         *,
         run_check: bool = ...,
-        shape: Optional[torch.Size] = ...,
-        stride: Optional[tuple[int, ...]] = ...,
+        shape: torch.Size | None = ...,
+        stride: tuple[int, ...] | None = ...,
     ) -> DTensor: ...
-    def to_local(self, *, grad_placements: Optional[Sequence[Placement]] = ...) -> torch.Tensor: ...
+    def to_local(self, *, grad_placements: Sequence[Placement] | None = ...) -> torch.Tensor: ...
     def redistribute(
         self,
-        device_mesh: Optional[DeviceMesh] = ...,
-        placements: Optional[Sequence[Placement]] = ...,
+        device_mesh: DeviceMesh | None = ...,
+        placements: Sequence[Placement] | None = ...,
         *,
         async_op: bool = ...,
-        forward_dtype: Optional[torch.dtype] = ...,
-        backward_dtype: Optional[torch.dtype] = ...,
+        forward_dtype: torch.dtype | None = ...,
+        backward_dtype: torch.dtype | None = ...,
     ) -> DTensor: ...
-    def full_tensor(self, *, grad_placements: Optional[Sequence[Placement]] = ...) -> torch.Tensor: ...
+    def full_tensor(self, *, grad_placements: Sequence[Placement] | None = ...) -> torch.Tensor: ...
     @property
     def device_mesh(self) -> DeviceMesh: ...
     @property
@@ -96,65 +97,65 @@ class DTensor(torch.Tensor):
 
 def distribute_tensor(
     tensor: torch.Tensor,
-    device_mesh: Optional[DeviceMesh] = ...,
-    placements: Optional[Sequence[Placement]] = ...,
+    device_mesh: DeviceMesh | None = ...,
+    placements: Sequence[Placement] | None = ...,
     *,
-    src_data_rank: Optional[int] = ...,
+    src_data_rank: int | None = ...,
 ) -> DTensor: ...
 def distribute_module(
     module: nn.Module,
-    device_mesh: Optional[DeviceMesh] = ...,
-    partition_fn: Optional[Callable[[str, nn.Module, DeviceMesh], None]] = ...,
-    input_fn: Optional[Callable[[nn.Module, Any, DeviceMesh], None]] = ...,
-    output_fn: Optional[Callable[[nn.Module, Any, DeviceMesh], None]] = ...,
+    device_mesh: DeviceMesh | None = ...,
+    partition_fn: Callable[[str, nn.Module, DeviceMesh], None] | None = ...,
+    input_fn: Callable[[nn.Module, Any, DeviceMesh], None] | None = ...,
+    output_fn: Callable[[nn.Module, Any, DeviceMesh], None] | None = ...,
 ) -> nn.Module: ...
 def ones(
     *size,
-    dtype: Optional[torch.dtype] = ...,
+    dtype: torch.dtype | None = ...,
     layout: torch.layout = ...,
     requires_grad: bool = ...,
-    device_mesh: Optional[DeviceMesh] = ...,
-    placements: Optional[Sequence[Placement]] = ...,
+    device_mesh: DeviceMesh | None = ...,
+    placements: Sequence[Placement] | None = ...,
 ) -> DTensor: ...
 def empty(
     *size,
-    dtype: Optional[torch.dtype] = ...,
+    dtype: torch.dtype | None = ...,
     layout: torch.layout = ...,
     requires_grad: bool = ...,
-    device_mesh: Optional[DeviceMesh] = ...,
-    placements: Optional[Sequence[Placement]] = ...,
+    device_mesh: DeviceMesh | None = ...,
+    placements: Sequence[Placement] | None = ...,
 ) -> DTensor: ...
 def full(
     size,
     fill_value,
     *,
-    dtype: Optional[torch.dtype] = ...,
+    dtype: torch.dtype | None = ...,
     layout: torch.layout = ...,
     requires_grad: bool = ...,
-    device_mesh: Optional[DeviceMesh] = ...,
-    placements: Optional[Sequence[Placement]] = ...,
+    device_mesh: DeviceMesh | None = ...,
+    placements: Sequence[Placement] | None = ...,
 ) -> DTensor: ...
 def rand(
     *size,
     requires_grad: bool = ...,
-    dtype: Optional[torch.dtype] = ...,
+    dtype: torch.dtype | None = ...,
     layout: torch.layout = ...,
-    device_mesh: Optional[DeviceMesh] = ...,
-    placements: Optional[Sequence[Placement]] = ...,
+    device_mesh: DeviceMesh | None = ...,
+    placements: Sequence[Placement] | None = ...,
 ) -> DTensor: ...
 def randn(
     *size,
     requires_grad: bool = ...,
-    dtype: Optional[torch.dtype] = ...,
+    dtype: torch.dtype | None = ...,
     layout: torch.layout = ...,
-    device_mesh: Optional[DeviceMesh] = ...,
-    placements: Optional[Sequence[Placement]] = ...,
+    device_mesh: DeviceMesh | None = ...,
+    placements: Sequence[Placement] | None = ...,
 ) -> DTensor: ...
 def zeros(
     *size,
     requires_grad: bool = ...,
-    dtype: Optional[torch.dtype] = ...,
+    dtype: torch.dtype | None = ...,
     layout: torch.layout = ...,
-    device_mesh: Optional[DeviceMesh] = ...,
-    placements: Optional[Sequence[Placement]] = ...,
+    device_mesh: DeviceMesh | None = ...,
+    placements: Sequence[Placement] | None = ...,
 ) -> DTensor: ...

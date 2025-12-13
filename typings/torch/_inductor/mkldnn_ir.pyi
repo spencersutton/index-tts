@@ -19,7 +19,7 @@ class ConvolutionUnary(ExternKernelAlloc):
         dilation_: list[int],
         groups: int,
         attr,
-        scalars: Optional[list[Any]],
+        scalars: list[Any] | None,
         algorithm,
     ):  # -> MultiOutput:
         ...
@@ -40,10 +40,10 @@ class ConvolutionBinary(ExternKernelAlloc):
         dilation_: list[int],
         groups: int,
         binary_attr: str,
-        binary_alpha: Optional[float],
-        unary_attr: Optional[str],
-        unary_scalars: Optional[list[Any]],
-        unary_algorithm: Optional[str],
+        binary_alpha: float | None,
+        unary_attr: str | None,
+        unary_scalars: list[Any] | None,
+        unary_algorithm: str | None,
     ):  # -> MultiOutput:
         ...
 
@@ -64,10 +64,10 @@ class ConvolutionBinaryInplace(ExternKernelAlloc):
         dilation_: list[int],
         groups: int,
         binary_attr: str,
-        binary_alpha: Optional[float],
-        unary_attr: Optional[str],
-        unary_scalars: Optional[list[Any]],
-        unary_algorithm: Optional[str],
+        binary_alpha: float | None,
+        unary_attr: str | None,
+        unary_scalars: list[Any] | None,
+        unary_algorithm: str | None,
     ):  # -> Any:
         ...
 
@@ -87,7 +87,7 @@ class ConvolutionTransposeUnary(ExternKernelAlloc):
         dilation_: list[int],
         groups_: int,
         attr,
-        scalars: Optional[list[Any]],
+        scalars: list[Any] | None,
         algorithm,
     ):  # -> MultiOutput:
         ...
@@ -100,8 +100,8 @@ class QConvPointWisePT2E(ExternKernelAlloc):
     def create(
         cls,
         qx: TensorBox,
-        x_scale: Union[ShapeAsConstantBuffer, TensorBox],
-        x_zero_point: Union[ShapeAsConstantBuffer, TensorBox],
+        x_scale: ShapeAsConstantBuffer | TensorBox,
+        x_zero_point: ShapeAsConstantBuffer | TensorBox,
         qw: TensorBox,
         w_scale: TensorBox,
         w_zero_point: TensorBox,

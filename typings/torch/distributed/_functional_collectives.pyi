@@ -4,14 +4,9 @@ import torch.distributed as dist
 from typing import Any, Optional, Union, TypeAlias
 from torch.distributed.device_mesh import DeviceMesh
 
-RANK_TYPES: TypeAlias = Union[
-    list[int],
-    list[list[int]],
-    dist.ProcessGroup,
-    DeviceMesh,
-    tuple[dist.tensor.DeviceMesh, int],
-    str,
-]
+type RANK_TYPES = (
+    list[int] | list[list[int]] | dist.ProcessGroup | DeviceMesh | tuple[dist.tensor.DeviceMesh, int] | str
+)
 
 def wait_tensor(tensor):  # -> Any:
 
@@ -49,15 +44,15 @@ def reduce_scatter_tensor_coalesced(
 ) -> list[torch.Tensor]: ...
 def all_to_all_single(
     self: torch.Tensor,
-    output_split_sizes: Optional[list[int]],
-    input_split_sizes: Optional[list[int]],
+    output_split_sizes: list[int] | None,
+    input_split_sizes: list[int] | None,
     group: RANK_TYPES,
     tag: str = ...,
 ) -> torch.Tensor: ...
 def all_to_all_single_autograd(
     self: torch.Tensor,
-    output_split_sizes: Optional[list[int]],
-    input_split_sizes: Optional[list[int]],
+    output_split_sizes: list[int] | None,
+    input_split_sizes: list[int] | None,
     group: RANK_TYPES,
     tag: str = ...,
 ) -> torch.Tensor: ...
@@ -77,7 +72,7 @@ class AsyncCollectiveTensor(torch.Tensor):
     def __tensor_unflatten__(inner_tensors, meta, outer_size, outer_stride):  # -> AsyncCollectiveTensor:
         ...
     def __coerce_same_metadata_as_tangent__(
-        self, expected_metadata: Any, expected_type: Optional[type] = ...
+        self, expected_metadata: Any, expected_type: type | None = ...
     ):  # -> Any | Tensor | None:
         ...
     def trigger_wait(self):  # -> Any | Tensor:

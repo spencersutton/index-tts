@@ -22,7 +22,7 @@ def remove_dupe_metadata(
 ) -> ViewAndMutationMeta: ...
 def create_synthetic_base_metadata(
     m: ViewAndMutationMeta,
-    synthetic_base_info: list[Union[int, tuple[int, torch.Tensor]]],
+    synthetic_base_info: list[int | tuple[int, torch.Tensor]],
     outer_args: list[Any],
     inner_args: list[Any],
     inner_args_desc: list[AOTInput],
@@ -40,6 +40,6 @@ def create_graph_signature(
     param_names: list[str],
     buffer_names: list[str],
     trace_joint: bool,
-    num_user_fw_outs: Optional[int],
-    loss_index: Optional[int],
+    num_user_fw_outs: int | None,
+    loss_index: int | None,
 ) -> GraphSignature: ...

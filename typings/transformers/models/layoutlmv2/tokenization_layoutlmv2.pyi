@@ -60,7 +60,7 @@ class LayoutLMv2Tokenizer(PreTrainedTokenizer):
         tokenize_chinese_chars=...,
         strip_accents=...,
         model_max_length: int = ...,
-        additional_special_tokens: Optional[list[str]] = ...,
+        additional_special_tokens: list[str] | None = ...,
         **kwargs,
     ) -> None: ...
     @property
@@ -76,7 +76,7 @@ class LayoutLMv2Tokenizer(PreTrainedTokenizer):
         ...
 
     def build_inputs_with_special_tokens(
-        self, token_ids_0: list[int], token_ids_1: Optional[list[int]] = ...
+        self, token_ids_0: list[int], token_ids_1: list[int] | None = ...
     ) -> list[int]:
         """
         Build model inputs from a sequence or a pair of sequence for sequence classification tasks by concatenating and
@@ -97,7 +97,7 @@ class LayoutLMv2Tokenizer(PreTrainedTokenizer):
         ...
 
     def get_special_tokens_mask(
-        self, token_ids_0: list[int], token_ids_1: Optional[list[int]] = ..., already_has_special_tokens: bool = ...
+        self, token_ids_0: list[int], token_ids_1: list[int] | None = ..., already_has_special_tokens: bool = ...
     ) -> list[int]:
         """
         Retrieve sequence ids from a token list that has no special tokens added. This method is called when adding
@@ -116,24 +116,24 @@ class LayoutLMv2Tokenizer(PreTrainedTokenizer):
         """
         ...
 
-    def save_vocabulary(self, save_directory: str, filename_prefix: Optional[str] = ...) -> tuple[str]: ...
+    def save_vocabulary(self, save_directory: str, filename_prefix: str | None = ...) -> tuple[str]: ...
     @add_end_docstrings(LAYOUTLMV2_ENCODE_KWARGS_DOCSTRING, LAYOUTLMV2_ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def __call__(
         self,
-        text: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]],
-        text_pair: Optional[Union[PreTokenizedInput, list[PreTokenizedInput]]] = ...,
-        boxes: Optional[Union[list[list[int]], list[list[list[int]]]]] = ...,
-        word_labels: Optional[Union[list[int], list[list[int]]]] = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput],
+        text_pair: PreTokenizedInput | list[PreTokenizedInput] | None = ...,
+        boxes: list[list[int]] | list[list[list[int]]] | None = ...,
+        word_labels: list[int] | list[list[int]] | None = ...,
         add_special_tokens: bool = ...,
-        padding: Union[bool, str, PaddingStrategy] = ...,
-        truncation: Union[bool, str, TruncationStrategy] = ...,
-        max_length: Optional[int] = ...,
+        padding: bool | str | PaddingStrategy = ...,
+        truncation: bool | str | TruncationStrategy = ...,
+        max_length: int | None = ...,
         stride: int = ...,
-        pad_to_multiple_of: Optional[int] = ...,
-        padding_side: Optional[str] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        return_token_type_ids: Optional[bool] = ...,
-        return_attention_mask: Optional[bool] = ...,
+        pad_to_multiple_of: int | None = ...,
+        padding_side: str | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        return_token_type_ids: bool | None = ...,
+        return_attention_mask: bool | None = ...,
         return_overflowing_tokens: bool = ...,
         return_special_tokens_mask: bool = ...,
         return_offsets_mapping: bool = ...,
@@ -163,24 +163,20 @@ class LayoutLMv2Tokenizer(PreTrainedTokenizer):
     @add_end_docstrings(LAYOUTLMV2_ENCODE_KWARGS_DOCSTRING, LAYOUTLMV2_ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def batch_encode_plus(
         self,
-        batch_text_or_text_pairs: Union[
-            list[TextInput],
-            list[TextInputPair],
-            list[PreTokenizedInput],
-        ],
-        is_pair: Optional[bool] = ...,
-        boxes: Optional[list[list[list[int]]]] = ...,
-        word_labels: Optional[Union[list[int], list[list[int]]]] = ...,
+        batch_text_or_text_pairs: list[TextInput] | list[TextInputPair] | list[PreTokenizedInput],
+        is_pair: bool | None = ...,
+        boxes: list[list[list[int]]] | None = ...,
+        word_labels: list[int] | list[list[int]] | None = ...,
         add_special_tokens: bool = ...,
-        padding: Union[bool, str, PaddingStrategy] = ...,
-        truncation: Union[bool, str, TruncationStrategy] = ...,
-        max_length: Optional[int] = ...,
+        padding: bool | str | PaddingStrategy = ...,
+        truncation: bool | str | TruncationStrategy = ...,
+        max_length: int | None = ...,
         stride: int = ...,
-        pad_to_multiple_of: Optional[int] = ...,
-        padding_side: Optional[str] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        return_token_type_ids: Optional[bool] = ...,
-        return_attention_mask: Optional[bool] = ...,
+        pad_to_multiple_of: int | None = ...,
+        padding_side: str | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        return_token_type_ids: bool | None = ...,
+        return_attention_mask: bool | None = ...,
         return_overflowing_tokens: bool = ...,
         return_special_tokens_mask: bool = ...,
         return_offsets_mapping: bool = ...,
@@ -191,20 +187,20 @@ class LayoutLMv2Tokenizer(PreTrainedTokenizer):
     @add_end_docstrings(LAYOUTLMV2_ENCODE_KWARGS_DOCSTRING)
     def encode(
         self,
-        text: Union[TextInput, PreTokenizedInput],
-        text_pair: Optional[PreTokenizedInput] = ...,
-        boxes: Optional[list[list[int]]] = ...,
-        word_labels: Optional[list[int]] = ...,
+        text: TextInput | PreTokenizedInput,
+        text_pair: PreTokenizedInput | None = ...,
+        boxes: list[list[int]] | None = ...,
+        word_labels: list[int] | None = ...,
         add_special_tokens: bool = ...,
-        padding: Union[bool, str, PaddingStrategy] = ...,
-        truncation: Union[bool, str, TruncationStrategy] = ...,
-        max_length: Optional[int] = ...,
+        padding: bool | str | PaddingStrategy = ...,
+        truncation: bool | str | TruncationStrategy = ...,
+        max_length: int | None = ...,
         stride: int = ...,
-        pad_to_multiple_of: Optional[int] = ...,
-        padding_side: Optional[str] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        return_token_type_ids: Optional[bool] = ...,
-        return_attention_mask: Optional[bool] = ...,
+        pad_to_multiple_of: int | None = ...,
+        padding_side: str | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        return_token_type_ids: bool | None = ...,
+        return_attention_mask: bool | None = ...,
         return_overflowing_tokens: bool = ...,
         return_special_tokens_mask: bool = ...,
         return_offsets_mapping: bool = ...,
@@ -215,20 +211,20 @@ class LayoutLMv2Tokenizer(PreTrainedTokenizer):
     @add_end_docstrings(LAYOUTLMV2_ENCODE_KWARGS_DOCSTRING, LAYOUTLMV2_ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def encode_plus(
         self,
-        text: Union[TextInput, PreTokenizedInput],
-        text_pair: Optional[PreTokenizedInput] = ...,
-        boxes: Optional[list[list[int]]] = ...,
-        word_labels: Optional[list[int]] = ...,
+        text: TextInput | PreTokenizedInput,
+        text_pair: PreTokenizedInput | None = ...,
+        boxes: list[list[int]] | None = ...,
+        word_labels: list[int] | None = ...,
         add_special_tokens: bool = ...,
-        padding: Union[bool, str, PaddingStrategy] = ...,
-        truncation: Union[bool, str, TruncationStrategy] = ...,
-        max_length: Optional[int] = ...,
+        padding: bool | str | PaddingStrategy = ...,
+        truncation: bool | str | TruncationStrategy = ...,
+        max_length: int | None = ...,
         stride: int = ...,
-        pad_to_multiple_of: Optional[int] = ...,
-        padding_side: Optional[str] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        return_token_type_ids: Optional[bool] = ...,
-        return_attention_mask: Optional[bool] = ...,
+        pad_to_multiple_of: int | None = ...,
+        padding_side: str | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        return_token_type_ids: bool | None = ...,
+        return_attention_mask: bool | None = ...,
         return_overflowing_tokens: bool = ...,
         return_special_tokens_mask: bool = ...,
         return_offsets_mapping: bool = ...,
@@ -252,20 +248,20 @@ class LayoutLMv2Tokenizer(PreTrainedTokenizer):
     @add_end_docstrings(LAYOUTLMV2_ENCODE_KWARGS_DOCSTRING, LAYOUTLMV2_ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def prepare_for_model(
         self,
-        text: Union[TextInput, PreTokenizedInput],
-        text_pair: Optional[PreTokenizedInput] = ...,
-        boxes: Optional[list[list[int]]] = ...,
-        word_labels: Optional[list[int]] = ...,
+        text: TextInput | PreTokenizedInput,
+        text_pair: PreTokenizedInput | None = ...,
+        boxes: list[list[int]] | None = ...,
+        word_labels: list[int] | None = ...,
         add_special_tokens: bool = ...,
-        padding: Union[bool, str, PaddingStrategy] = ...,
-        truncation: Union[bool, str, TruncationStrategy] = ...,
-        max_length: Optional[int] = ...,
+        padding: bool | str | PaddingStrategy = ...,
+        truncation: bool | str | TruncationStrategy = ...,
+        max_length: int | None = ...,
         stride: int = ...,
-        pad_to_multiple_of: Optional[int] = ...,
-        padding_side: Optional[str] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        return_token_type_ids: Optional[bool] = ...,
-        return_attention_mask: Optional[bool] = ...,
+        pad_to_multiple_of: int | None = ...,
+        padding_side: str | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        return_token_type_ids: bool | None = ...,
+        return_attention_mask: bool | None = ...,
         return_overflowing_tokens: bool = ...,
         return_special_tokens_mask: bool = ...,
         return_offsets_mapping: bool = ...,
@@ -298,11 +294,11 @@ class LayoutLMv2Tokenizer(PreTrainedTokenizer):
         self,
         ids: list[int],
         token_boxes: list[list[int]],
-        pair_ids: Optional[list[int]] = ...,
-        pair_token_boxes: Optional[list[list[int]]] = ...,
-        labels: Optional[list[int]] = ...,
+        pair_ids: list[int] | None = ...,
+        pair_token_boxes: list[list[int]] | None = ...,
+        labels: list[int] | None = ...,
         num_tokens_to_remove: int = ...,
-        truncation_strategy: Union[str, TruncationStrategy] = ...,
+        truncation_strategy: str | TruncationStrategy = ...,
         stride: int = ...,
     ) -> tuple[list[int], list[int], list[int]]:
         """

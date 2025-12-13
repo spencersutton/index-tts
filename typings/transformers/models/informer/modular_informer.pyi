@@ -63,18 +63,18 @@ class InformerProbSparseAttention(nn.Module):
         is_decoder: bool = ...,
         sampling_factor: int = ...,
         bias: bool = ...,
-        layer_idx: Optional[int] = ...,
+        layer_idx: int | None = ...,
     ) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        key_value_states: Optional[torch.Tensor] = ...,
-        past_key_value: Optional[tuple[torch.Tensor]] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        layer_head_mask: Optional[torch.Tensor] = ...,
+        key_value_states: torch.Tensor | None = ...,
+        past_key_value: tuple[torch.Tensor] | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        layer_head_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
-        cache_position: Optional[torch.Tensor] = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+        cache_position: torch.Tensor | None = ...,
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]:
         """Input shape: Batch x Time x Channel"""
         ...
 
@@ -87,19 +87,19 @@ class InformerEncoderLayer(TimeSeriesTransformerEncoderLayer):
     def __init__(self, config: InformerConfig) -> None: ...
 
 class InformerDecoderLayer(TimeSeriesTransformerDecoderLayer):
-    def __init__(self, config: InformerConfig, layer_idx: Optional[int] = ...) -> None: ...
+    def __init__(self, config: InformerConfig, layer_idx: int | None = ...) -> None: ...
 
 class InformerEncoder(TimeSeriesTransformerEncoder):
     def __init__(self, config: InformerConfig) -> None: ...
     def forward(
         self,
-        attention_mask: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutput]:
+        attention_mask: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutput:
         r"""
         Args:
             attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):

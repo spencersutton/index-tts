@@ -1,8 +1,9 @@
 import pickle
 import torch
 from datetime import timedelta
-from typing import Any, Callable, Optional, Union
-from typing_extensions import deprecated
+from typing import Any, Optional, Union
+from collections.abc import Callable
+from warnings import deprecated
 from torch._C._distributed_c10d import ProcessGroup, ReduceOp, Store, Work
 from .c10d_logger import _exception_logger, _time_logger
 
@@ -117,7 +118,7 @@ class Backend(str):
 
         ...
     @classmethod
-    def register_backend(cls, name, func, extended_api=..., devices: Optional[Union[str, list[str]]] = ...) -> None: ...
+    def register_backend(cls, name, func, extended_api=..., devices: str | list[str] | None = ...) -> None: ...
 
 class BackendConfig:
     def __init__(self, backend: Backend) -> None: ...
@@ -142,19 +143,19 @@ class P2POp:
         self,
         op: Callable,
         tensor: torch.Tensor,
-        peer: Optional[int] = ...,
-        group: Optional[ProcessGroup] = ...,
+        peer: int | None = ...,
+        group: ProcessGroup | None = ...,
         tag: int = ...,
-        group_peer: Optional[int] = ...,
+        group_peer: int | None = ...,
     ) -> None: ...
     def __new__(
         cls,
         op: Callable,
         tensor: torch.Tensor,
-        peer: Optional[int] = ...,
-        group: Optional[ProcessGroup] = ...,
+        peer: int | None = ...,
+        group: ProcessGroup | None = ...,
         tag: int = ...,
-        group_peer: Optional[int] = ...,
+        group_peer: int | None = ...,
     ):  # -> Self:
 
         ...
@@ -166,9 +167,9 @@ class _CollOp:
         self,
         op: Callable,
         tensor: torch.Tensor,
-        dst_tensor: Optional[torch.Tensor] = ...,
-        redop: Optional[ReduceOp] = ...,
-        root: Optional[int] = ...,
+        dst_tensor: torch.Tensor | None = ...,
+        redop: ReduceOp | None = ...,
+        root: int | None = ...,
     ) -> None: ...
 
 _pg_map: dict[ProcessGroup, tuple[str, Store]] = ...
@@ -178,12 +179,12 @@ _pg_backend_config: dict[ProcessGroup, str] = ...
 _group_count = ...
 _tags_to_pg: dict[str, list[ProcessGroup]] = ...
 _pg_to_tag: dict[ProcessGroup, str] = ...
-_backend: Optional[str] = ...
+_backend: str | None = ...
 
 class _World:
     def __init__(self) -> None: ...
     @property
-    def default_pg(self) -> Optional[ProcessGroup]: ...
+    def default_pg(self) -> ProcessGroup | None: ...
     @default_pg.setter
     def default_pg(self, value) -> None: ...
     @property
@@ -211,9 +212,9 @@ _world = ...
 
 class _WorldMeta(type):
     @property
-    def WORLD(cls) -> Optional[ProcessGroup]: ...
+    def WORLD(cls) -> ProcessGroup | None: ...
     @WORLD.setter
-    def WORLD(cls, pg: Optional[ProcessGroup]):  # -> None:
+    def WORLD(cls, pg: ProcessGroup | None):  # -> None:
         ...
 
 class group(metaclass=_WorldMeta): ...
@@ -221,12 +222,12 @@ class group(metaclass=_WorldMeta): ...
 class GroupMember(metaclass=_WorldMeta):
     NON_GROUP_MEMBER = ...
 
-_default_pg_init_method: Optional[str] = ...
+_default_pg_init_method: str | None = ...
 STORE_BASED_BARRIER_PREFIX = ...
 
 def get_group_rank(group: ProcessGroup, global_rank: int) -> int: ...
 def get_global_rank(group: ProcessGroup, group_rank: int) -> int: ...
-def get_process_group_ranks(group: Optional[ProcessGroup]) -> list[int]: ...
+def get_process_group_ranks(group: ProcessGroup | None) -> list[int]: ...
 def is_mpi_available() -> bool: ...
 def is_nccl_available() -> bool: ...
 def is_gloo_available() -> bool: ...
@@ -235,58 +236,58 @@ def is_xccl_available() -> bool: ...
 def is_backend_available(backend: str) -> bool: ...
 def is_initialized() -> bool: ...
 def is_torchelastic_launched() -> bool: ...
-def get_backend_config(group: Optional[ProcessGroup] = ...) -> str: ...
-def get_backend(group: Optional[ProcessGroup] = ...) -> Backend: ...
-def get_default_backend_for_device(device: Union[str, torch.device]) -> str: ...
+def get_backend_config(group: ProcessGroup | None = ...) -> str: ...
+def get_backend(group: ProcessGroup | None = ...) -> Backend: ...
+def get_default_backend_for_device(device: str | torch.device) -> str: ...
 def get_pg_count() -> int: ...
-def get_node_local_rank(fallback_rank: Optional[int] = ...) -> int: ...
+def get_node_local_rank(fallback_rank: int | None = ...) -> int: ...
 @_exception_logger
 @_time_logger
 def init_process_group(
-    backend: Optional[str] = ...,
-    init_method: Optional[str] = ...,
-    timeout: Optional[timedelta] = ...,
+    backend: str | None = ...,
+    init_method: str | None = ...,
+    timeout: timedelta | None = ...,
     world_size: int = ...,
     rank: int = ...,
-    store: Optional[Store] = ...,
+    store: Store | None = ...,
     group_name: str = ...,
-    pg_options: Optional[Any] = ...,
-    device_id: Optional[Union[torch.device, int]] = ...,
+    pg_options: Any | None = ...,
+    device_id: torch.device | int | None = ...,
 ) -> None: ...
-def destroy_process_group(group: Optional[ProcessGroup] = ...):  # -> None:
+def destroy_process_group(group: ProcessGroup | None = ...):  # -> None:
 
     ...
-def get_rank(group: Optional[ProcessGroup] = ...) -> int: ...
-def get_world_size(group: Optional[ProcessGroup] = ...) -> int: ...
+def get_rank(group: ProcessGroup | None = ...) -> int: ...
+def get_world_size(group: ProcessGroup | None = ...) -> int: ...
 def isend(
     tensor: torch.Tensor,
-    dst: Optional[int] = ...,
-    group: Optional[ProcessGroup] = ...,
+    dst: int | None = ...,
+    group: ProcessGroup | None = ...,
     tag: int = ...,
-    group_dst: Optional[int] = ...,
-) -> Optional[Work]: ...
+    group_dst: int | None = ...,
+) -> Work | None: ...
 def irecv(
     tensor: torch.Tensor,
-    src: Optional[int] = ...,
-    group: Optional[ProcessGroup] = ...,
+    src: int | None = ...,
+    group: ProcessGroup | None = ...,
     tag: int = ...,
-    group_src: Optional[int] = ...,
-) -> Optional[Work]: ...
+    group_src: int | None = ...,
+) -> Work | None: ...
 @_exception_logger
 def send(
     tensor: torch.Tensor,
-    dst: Optional[int] = ...,
-    group: Optional[ProcessGroup] = ...,
+    dst: int | None = ...,
+    group: ProcessGroup | None = ...,
     tag: int = ...,
-    group_dst: Optional[int] = ...,
+    group_dst: int | None = ...,
 ) -> None: ...
 @_exception_logger
 def recv(
     tensor: torch.Tensor,
-    src: Optional[int] = ...,
-    group: Optional[ProcessGroup] = ...,
+    src: int | None = ...,
+    group: ProcessGroup | None = ...,
     tag: int = ...,
-    group_src: Optional[int] = ...,
+    group_src: int | None = ...,
 ) -> int: ...
 
 class _IllegalWork(Work):
@@ -295,7 +296,7 @@ class _IllegalWork(Work):
 
 class _CoalescingManager:
     def __init__(self) -> None: ...
-    def append(self, work: Optional[Work] = ...):  # -> None:
+    def append(self, work: Work | None = ...):  # -> None:
         ...
     def wait(self):  # -> None:
         ...
@@ -307,10 +308,10 @@ def batch_isend_irecv(p2p_op_list: list[P2POp]) -> list[Work]: ...
 @_exception_logger
 def broadcast(
     tensor: torch.Tensor,
-    src: Optional[int] = ...,
-    group: Optional[ProcessGroup] = ...,
+    src: int | None = ...,
+    group: ProcessGroup | None = ...,
     async_op: bool = ...,
-    group_src: Optional[int] = ...,
+    group_src: int | None = ...,
 ):  # -> Work | None:
 
     ...
@@ -331,11 +332,11 @@ def all_reduce_coalesced(tensors, op=..., group=..., async_op=...):  # -> Future
 @_exception_logger
 def reduce(
     tensor: torch.Tensor,
-    dst: Optional[int] = ...,
+    dst: int | None = ...,
     op=...,
-    group: Optional[ProcessGroup] = ...,
+    group: ProcessGroup | None = ...,
     async_op: bool = ...,
-    group_dst: Optional[int] = ...,
+    group_dst: int | None = ...,
 ):  # -> Work | None:
 
     ...
@@ -346,20 +347,20 @@ def all_gather_object(object_list, obj, group=...):  # -> None:
 @_exception_logger
 def gather_object(
     obj: Any,
-    object_gather_list: Optional[list[Any]] = ...,
-    dst: Optional[int] = ...,
-    group: Optional[ProcessGroup] = ...,
-    group_dst: Optional[int] = ...,
+    object_gather_list: list[Any] | None = ...,
+    dst: int | None = ...,
+    group: ProcessGroup | None = ...,
+    group_dst: int | None = ...,
 ):  # -> None:
 
     ...
 @_exception_logger
 def send_object_list(
     object_list: list[Any],
-    dst: Optional[int] = ...,
-    group: Optional[ProcessGroup] = ...,
-    device: Optional[torch.device] = ...,
-    group_dst: Optional[int] = ...,
+    dst: int | None = ...,
+    group: ProcessGroup | None = ...,
+    device: torch.device | None = ...,
+    group_dst: int | None = ...,
     use_batch: bool = ...,
 ):  # -> None:
 
@@ -367,10 +368,10 @@ def send_object_list(
 @_exception_logger
 def recv_object_list(
     object_list: list[Any],
-    src: Optional[int] = ...,
-    group: Optional[ProcessGroup] = ...,
-    device: Optional[torch.device] = ...,
-    group_src: Optional[int] = ...,
+    src: int | None = ...,
+    group: ProcessGroup | None = ...,
+    device: torch.device | None = ...,
+    group_src: int | None = ...,
     use_batch: bool = ...,
 ):  # -> int:
 
@@ -378,20 +379,20 @@ def recv_object_list(
 @_exception_logger
 def broadcast_object_list(
     object_list: list[Any],
-    src: Optional[int] = ...,
-    group: Optional[ProcessGroup] = ...,
-    device: Optional[torch.device] = ...,
-    group_src: Optional[int] = ...,
+    src: int | None = ...,
+    group: ProcessGroup | None = ...,
+    device: torch.device | None = ...,
+    group_src: int | None = ...,
 ):  # -> None:
 
     ...
 @_exception_logger
 def scatter_object_list(
     scatter_object_output_list: list[Any],
-    scatter_object_input_list: Optional[list[Any]] = ...,
-    src: Optional[int] = ...,
-    group: Optional[ProcessGroup] = ...,
-    group_src: Optional[int] = ...,
+    scatter_object_input_list: list[Any] | None = ...,
+    src: int | None = ...,
+    group: ProcessGroup | None = ...,
+    group_src: int | None = ...,
 ):  # -> None:
 
     ...
@@ -418,22 +419,22 @@ def all_gather_coalesced(output_tensor_lists, input_tensor_list, group=..., asyn
 @_exception_logger
 def gather(
     tensor: torch.Tensor,
-    gather_list: Optional[list[torch.Tensor]] = ...,
-    dst: Optional[int] = ...,
-    group: Optional[ProcessGroup] = ...,
+    gather_list: list[torch.Tensor] | None = ...,
+    dst: int | None = ...,
+    group: ProcessGroup | None = ...,
     async_op: bool = ...,
-    group_dst: Optional[int] = ...,
+    group_dst: int | None = ...,
 ):  # -> Work | None:
 
     ...
 @_exception_logger
 def scatter(
     tensor: torch.Tensor,
-    scatter_list: Optional[list[torch.Tensor]] = ...,
-    src: Optional[int] = ...,
-    group: Optional[ProcessGroup] = ...,
+    scatter_list: list[torch.Tensor] | None = ...,
+    src: int | None = ...,
+    group: ProcessGroup | None = ...,
     async_op: bool = ...,
-    group_src: Optional[int] = ...,
+    group_src: int | None = ...,
 ):  # -> Work | None:
 
     ...
@@ -456,20 +457,20 @@ def all_to_all(output_tensor_list, input_tensor_list, group=..., async_op=...): 
 
     ...
 @_exception_logger
-def barrier(group: Optional[ProcessGroup] = ..., async_op=..., device_ids=...):  # -> Work | None:
+def barrier(group: ProcessGroup | None = ..., async_op=..., device_ids=...):  # -> Work | None:
 
     ...
-def monitored_barrier(group: Optional[ProcessGroup] = ..., timeout=..., wait_all_ranks=...):  # -> None:
+def monitored_barrier(group: ProcessGroup | None = ..., timeout=..., wait_all_ranks=...):  # -> None:
 
     ...
 @_time_logger
 def split_group(
-    parent_pg: Optional[ProcessGroup] = ...,
-    split_ranks: Optional[list] = ...,
-    timeout: Optional[timedelta] = ...,
-    pg_options: Optional[Any] = ...,
-    group_desc: Optional[str] = ...,
-) -> Optional[ProcessGroup]: ...
+    parent_pg: ProcessGroup | None = ...,
+    split_ranks: list | None = ...,
+    timeout: timedelta | None = ...,
+    pg_options: Any | None = ...,
+    group_desc: str | None = ...,
+) -> ProcessGroup | None: ...
 @_time_logger
 def new_group(
     ranks=...,
@@ -478,7 +479,7 @@ def new_group(
     pg_options=...,
     use_local_synchronization=...,
     group_desc=...,
-    device_id: Optional[torch.device] = ...,
+    device_id: torch.device | None = ...,
 ):  # -> None:
 
     ...

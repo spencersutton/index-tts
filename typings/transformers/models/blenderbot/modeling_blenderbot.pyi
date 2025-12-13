@@ -32,7 +32,7 @@ class BlenderbotLearnedPositionalEmbedding(nn.Embedding):
     """
     def __init__(self, num_embeddings: int, embedding_dim: int) -> None: ...
     def forward(
-        self, input_ids_shape: torch.Size, past_key_values_length: int = ..., position_ids: Optional[torch.Tensor] = ...
+        self, input_ids_shape: torch.Size, past_key_values_length: int = ..., position_ids: torch.Tensor | None = ...
     ):  # -> Tensor:
         """`input_ids_shape` is expected to be [bsz x seqlen]."""
         ...
@@ -42,7 +42,7 @@ class BlenderbotScaledWordEmbedding(nn.Embedding):
     This module overrides nn.Embeddings' forward by multiplying with embeddings scale.
     """
     def __init__(
-        self, num_embeddings: int, embedding_dim: int, padding_idx: int, embed_scale: Optional[float] = ...
+        self, num_embeddings: int, embedding_dim: int, padding_idx: int, embed_scale: float | None = ...
     ) -> None: ...
     def forward(self, input_ids: torch.Tensor):  # -> Tensor:
         ...
@@ -52,10 +52,10 @@ def eager_attention_forward(
     query: torch.Tensor,
     key: torch.Tensor,
     value: torch.Tensor,
-    attention_mask: Optional[torch.Tensor],
-    scaling: Optional[float] = ...,
+    attention_mask: torch.Tensor | None,
+    scaling: float | None = ...,
     dropout: float = ...,
-    head_mask: Optional[torch.Tensor] = ...,
+    head_mask: torch.Tensor | None = ...,
     **kwargs,
 ):  # -> tuple[Tensor, Tensor]:
     ...
@@ -70,20 +70,20 @@ class BlenderbotAttention(nn.Module):
         is_decoder: bool = ...,
         bias: bool = ...,
         is_causal: bool = ...,
-        config: Optional[BlenderbotConfig] = ...,
-        layer_idx: Optional[int] = ...,
+        config: BlenderbotConfig | None = ...,
+        layer_idx: int | None = ...,
     ) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        key_value_states: Optional[torch.Tensor] = ...,
-        past_key_value: Optional[Cache] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        layer_head_mask: Optional[torch.Tensor] = ...,
+        key_value_states: torch.Tensor | None = ...,
+        past_key_value: Cache | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        layer_head_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
-        cache_position: Optional[torch.Tensor] = ...,
+        cache_position: torch.Tensor | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]:
         """Input shape: Batch x Time x Channel"""
         ...
 
@@ -110,19 +110,19 @@ class BlenderbotEncoderLayer(GradientCheckpointingLayer):
         ...
 
 class BlenderbotDecoderLayer(GradientCheckpointingLayer):
-    def __init__(self, config: BlenderbotConfig, layer_idx: Optional[int] = ...) -> None: ...
+    def __init__(self, config: BlenderbotConfig, layer_idx: int | None = ...) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        encoder_hidden_states: Optional[torch.Tensor] = ...,
-        encoder_attention_mask: Optional[torch.Tensor] = ...,
-        layer_head_mask: Optional[torch.Tensor] = ...,
-        cross_attn_layer_head_mask: Optional[torch.Tensor] = ...,
-        past_key_value: Optional[Cache] = ...,
-        output_attentions: Optional[bool] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        encoder_hidden_states: torch.Tensor | None = ...,
+        encoder_attention_mask: torch.Tensor | None = ...,
+        layer_head_mask: torch.Tensor | None = ...,
+        cross_attn_layer_head_mask: torch.Tensor | None = ...,
+        past_key_value: Cache | None = ...,
+        output_attentions: bool | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.Tensor | None = ...,
     ) -> torch.Tensor:
         """
         Args:
@@ -169,7 +169,7 @@ class BlenderbotEncoder(BlenderbotPreTrainedModel):
         config: BlenderbotConfig
         embed_tokens (nn.Embedding): output embedding
     """
-    def __init__(self, config: BlenderbotConfig, embed_tokens: Optional[nn.Embedding] = ...) -> None: ...
+    def __init__(self, config: BlenderbotConfig, embed_tokens: nn.Embedding | None = ...) -> None: ...
     def forward(
         self,
         input_ids=...,
@@ -226,7 +226,7 @@ class BlenderbotDecoder(BlenderbotPreTrainedModel):
         config: BlenderbotConfig
         embed_tokens (nn.Embedding): output embedding
     """
-    def __init__(self, config: BlenderbotConfig, embed_tokens: Optional[nn.Embedding] = ...) -> None: ...
+    def __init__(self, config: BlenderbotConfig, embed_tokens: nn.Embedding | None = ...) -> None: ...
     def forward(
         self,
         input_ids=...,
@@ -241,7 +241,7 @@ class BlenderbotDecoder(BlenderbotPreTrainedModel):
         output_attentions=...,
         output_hidden_states=...,
         return_dict=...,
-        cache_position: Optional[torch.Tensor] = ...,
+        cache_position: torch.Tensor | None = ...,
     ):  # -> tuple[Any | tuple[tuple[Tensor]] | EncoderDecoderCache | Cache | tuple[Any, ...] | tuple[Tensor | Any, ...] | tuple[()], ...] | BaseModelOutputWithPastAndCrossAttentions:
         r"""
         Args:
@@ -320,7 +320,7 @@ class BlenderbotModel(BlenderbotPreTrainedModel):
     def __init__(self, config: BlenderbotConfig) -> None: ...
     @classmethod
     def from_pretrained(
-        cls, pretrained_model_name_or_path: Optional[Union[str, os.PathLike]], *model_args, **kwargs
+        cls, pretrained_model_name_or_path: str | os.PathLike | None, *model_args, **kwargs
     ):  # -> BlenderbotSmallModel | Self:
         ...
     def get_input_embeddings(self):  # -> BlenderbotScaledWordEmbedding | Module:
@@ -334,23 +334,23 @@ class BlenderbotModel(BlenderbotPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        decoder_input_ids: Optional[torch.LongTensor] = ...,
-        decoder_attention_mask: Optional[torch.LongTensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        decoder_head_mask: Optional[torch.Tensor] = ...,
-        cross_attn_head_mask: Optional[torch.Tensor] = ...,
-        encoder_outputs: Optional[Union[tuple, BaseModelOutput]] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        decoder_inputs_embeds: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple[torch.FloatTensor], Seq2SeqModelOutput]:
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        decoder_input_ids: torch.LongTensor | None = ...,
+        decoder_attention_mask: torch.LongTensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        decoder_head_mask: torch.Tensor | None = ...,
+        cross_attn_head_mask: torch.Tensor | None = ...,
+        encoder_outputs: tuple | BaseModelOutput | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        decoder_inputs_embeds: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.Tensor | None = ...,
+    ) -> tuple[torch.FloatTensor] | Seq2SeqModelOutput:
         r"""
         decoder_input_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
             Indices of decoder input sequence tokens in the vocabulary.
@@ -403,7 +403,7 @@ class BlenderbotForConditionalGeneration(BlenderbotPreTrainedModel, GenerationMi
     def __init__(self, config: BlenderbotConfig) -> None: ...
     @classmethod
     def from_pretrained(
-        cls, pretrained_model_name_or_path: Optional[Union[str, os.PathLike]], *model_args, **kwargs
+        cls, pretrained_model_name_or_path: str | os.PathLike | None, *model_args, **kwargs
     ):  # -> BlenderbotSmallForConditionalGeneration | Self:
         ...
     def get_encoder(self):  # -> BlenderbotEncoder:
@@ -411,29 +411,29 @@ class BlenderbotForConditionalGeneration(BlenderbotPreTrainedModel, GenerationMi
     def get_decoder(self):  # -> BlenderbotDecoder:
         ...
     def resize_token_embeddings(
-        self, new_num_tokens: int, pad_to_multiple_of: Optional[int] = ..., mean_resizing: bool = ...
+        self, new_num_tokens: int, pad_to_multiple_of: int | None = ..., mean_resizing: bool = ...
     ) -> nn.Embedding: ...
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        decoder_input_ids: Optional[torch.LongTensor] = ...,
-        decoder_attention_mask: Optional[torch.LongTensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        decoder_head_mask: Optional[torch.Tensor] = ...,
-        cross_attn_head_mask: Optional[torch.Tensor] = ...,
-        encoder_outputs: Optional[Union[tuple, BaseModelOutput]] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        decoder_inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple[torch.FloatTensor], Seq2SeqLMOutput]:
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        decoder_input_ids: torch.LongTensor | None = ...,
+        decoder_attention_mask: torch.LongTensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        decoder_head_mask: torch.Tensor | None = ...,
+        cross_attn_head_mask: torch.Tensor | None = ...,
+        encoder_outputs: tuple | BaseModelOutput | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        decoder_inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.Tensor | None = ...,
+    ) -> tuple[torch.FloatTensor] | Seq2SeqLMOutput:
         r"""
         decoder_input_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
             Indices of decoder input sequence tokens in the vocabulary.
@@ -517,21 +517,21 @@ class BlenderbotForCausalLM(BlenderbotPreTrainedModel, GenerationMixin):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        encoder_hidden_states: Optional[torch.FloatTensor] = ...,
-        encoder_attention_mask: Optional[torch.FloatTensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        cross_attn_head_mask: Optional[torch.Tensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple, CausalLMOutputWithCrossAttentions]:
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        encoder_hidden_states: torch.FloatTensor | None = ...,
+        encoder_attention_mask: torch.FloatTensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        cross_attn_head_mask: torch.Tensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+    ) -> tuple | CausalLMOutputWithCrossAttentions:
         r"""
         cross_attn_head_mask (`torch.Tensor` of shape `(decoder_layers, decoder_attention_heads)`, *optional*):
             Mask to nullify selected heads of the cross-attention modules. Mask values selected in `[0, 1]`:

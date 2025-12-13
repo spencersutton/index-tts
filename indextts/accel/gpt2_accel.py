@@ -153,7 +153,9 @@ class GPT2AccelModel(GPT2Model):
 
             for block in self.h:
                 assert isinstance(block, GPT2AccelBlock)
-                hidden_states = block(hidden_states)[0]
+                result = block.forward(hidden_states)
+                assert result is not None
+                hidden_states = result[0]
 
             hidden_states = self.ln_f(hidden_states)
 

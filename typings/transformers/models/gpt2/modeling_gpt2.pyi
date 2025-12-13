@@ -54,7 +54,7 @@ class GPT2Block(GradientCheckpointingLayer):
     def __init__(self, config, layer_idx=...) -> None: ...
     def forward(
         self,
-        hidden_states: tuple[torch.FloatTensor] | None,
+        hidden_states: tuple[torch.FloatTensor] | torch.Tensor | None,
         past_key_value: Cache | None = ...,
         cache_position: torch.LongTensor | None = ...,
         attention_mask: torch.FloatTensor | None = ...,

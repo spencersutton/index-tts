@@ -1,4 +1,5 @@
 import argparse
+import random
 import sys
 import time
 import warnings
@@ -8,7 +9,7 @@ import rich.traceback
 import torch
 
 from indextts.infer_v2 import IndexTTS2
-from indextts.profiler import dict_calls, profile_func
+from indextts.profiler import dict_calls, profile_func, random_words
 
 if __debug__:
     import omegaconf
@@ -95,6 +96,24 @@ def main() -> None:
         default=False,
         help="Use DeepSpeed for inference",
     )
+    parser.add_argument(
+        "--profile",
+        action="store_true",
+        default=False,
+        help="Enable profiling of function execution times",
+    )
+    parser.add_argument(
+        "--profile-warmup-steps",
+        type=int,
+        default=2,
+        help="Number of warmup steps before profiling starts",
+    )
+    parser.add_argument(
+        "--profile-steps",
+        type=int,
+        default=5,
+        help="Number of active profiling steps",
+    )
     args = parser.parse_args()
 
     assert isinstance(args.text, str)
@@ -109,8 +128,11 @@ def main() -> None:
     assert isinstance(args.use_torch_compile, bool)
     assert isinstance(args.use_cuda_kernel, bool)
     assert isinstance(args.use_deepspeed, bool)
+    assert isinstance(args.profile, bool)
+    assert isinstance(args.profile_warmup_steps, int)
+    assert isinstance(args.profile_steps, int)
 
-    if len(args.text.strip()) == 0:
+    if len(args.text.strip()) == 0 and not args.profile:
         print("ERROR: Text is empty.")
         parser.print_help()
         sys.exit(1)
@@ -155,15 +177,21 @@ def main() -> None:
         use_deepspeed=args.use_deepspeed,
     )
 
-    # Run inference and ensure profiling only captures this call
-    sys.setprofile(profile_func)
+    voice_file = Path(args.voice)
+    text = " ".join(random_words) if args.profile else args.text.strip()
 
-    tts.infer(
-        spk_audio_prompt=Path(args.voice),
-        text=args.text.strip(),
-        output_path=output_path,
-    )
-    sys.setprofile(None)
+    if args.profile:
+        for _ in range(args.profile_warmup_steps):
+            random.shuffle(random_words)
+            tts.infer(spk_audio_prompt=voice_file, text=text, output_path=output_path)
+
+        sys.setprofile(profile_func)
+        for _ in range(args.profile_steps):
+            random.shuffle(random_words)
+            tts.infer(spk_audio_prompt=voice_file, text=text, output_path=output_path)
+        sys.setprofile(None)
+    else:
+        tts.infer(spk_audio_prompt=voice_file, text=text, output_path=output_path)
 
 
 if __name__ == "__main__":

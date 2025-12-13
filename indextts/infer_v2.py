@@ -156,7 +156,7 @@ class IndexTTS2:
     bigvgan: "bigvgan.BigVGAN"
     tokenizer: TextTokenizer
     emo_matrix: tuple[Tensor, ...]
-    emo_num: list[int]
+    emo_num: tuple[int, ...]
     spk_matrix: tuple[Tensor, ...]
     mel_fn: Callable[[Tensor], Tensor]
 
@@ -384,7 +384,7 @@ class IndexTTS2:
         spk_matrix: Tensor = torch.load(self.model_dir / self.cfg.spk_matrix)
         spk_matrix = spk_matrix.to(self.device)
 
-        self.emo_num = self.cfg.emo_num
+        self.emo_num = tuple(self.cfg.emo_num)
         self.emo_matrix = torch.split(emo_matrix, self.emo_num)
         self.spk_matrix = torch.split(spk_matrix, self.emo_num)
 

@@ -1,5 +1,6 @@
 import argparse
 import sys
+import time
 import warnings
 from pathlib import Path
 
@@ -7,6 +8,7 @@ import rich.traceback
 import torch
 
 from indextts.infer_v2 import IndexTTS2
+from indextts.profiler import dict_calls, profile_func
 
 if __debug__:
     import omegaconf
@@ -154,12 +156,32 @@ def main() -> None:
     )
 
     # Run inference and ensure profiling only captures this call
+    sys.setprofile(profile_func)
+
     tts.infer(
         spk_audio_prompt=Path(args.voice),
         text=args.text.strip(),
         output_path=output_path,
     )
+    sys.setprofile(None)
 
 
 if __name__ == "__main__":
     main()
+    p = ["cumulative_time\tcall_count\tlocation\tfunction_name"]
+    for code_obj, exec_info in (
+        (o, info)
+        for (o, info) in sorted(dict_calls.items(), key=lambda item: item[1].cumulative_time, reverse=True)
+        if "site-packages" not in o.co_filename and info.cumulative_time >= 0.1
+    ):
+        p.append(
+            f"{exec_info.cumulative_time:.6f}s\t"
+            f"{exec_info.call_count}\t"
+            f"{code_obj.co_filename}:{code_obj.co_firstlineno}\t"
+            f"{code_obj.co_name}"
+        )
+
+    for line in p:
+        print(line)
+    profile_report = "\n".join(p)
+    Path(f"function_profile_{time.perf_counter()}.txt").write_text(profile_report)

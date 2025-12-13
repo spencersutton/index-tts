@@ -1,19 +1,12 @@
 import sys
 from collections.abc import Collection, Iterable, Sequence
-from typing import Final
+from typing import Final, cast
 
 import torch
 from torch import Tensor, nn
 from transformers import GPT2Model
 
-from indextts.gpt.model_v2 import LearnedPositionEmbeddings
-
-if sys.platform == "darwin":
-    msg = "accel_engine is not supported on MacOS."
-    raise ImportError(msg)
-
-
-from typing import cast
+from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
 
 from .attention import (
     ForwardContext,

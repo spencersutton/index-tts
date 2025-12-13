@@ -4,14 +4,12 @@ import os
 import platform
 import sys
 import torch
-from collections.abc import Callable as _Callable
+from collections.abc import Callable as Callable
 from typing import (
-    Any as _Any,
-    ParamSpec as _ParamSpec,
+    Any as Any,
     TYPE_CHECKING,
     TypeIs as _TypeIs,
-    TypeVar as _TypeVar,
-    overload as _overload,
+    overload as overload,
 )
 from torch import (
     _C as _C,
@@ -267,9 +265,9 @@ def sym_fresh_size(expr) -> Number: ...
 
 if not TYPE_CHECKING: ...
 
-def typename(obj: _Any, /) -> str: ...
-def is_tensor(obj: _Any, /) -> _TypeIs[torch.Tensor]: ...
-def is_storage(obj: _Any, /) -> _TypeIs[TypedStorage | UntypedStorage]: ...
+def typename(obj: Any, /) -> str: ...
+def is_tensor(obj: Any, /) -> _TypeIs[torch.Tensor]: ...
+def is_storage(obj: Any, /) -> _TypeIs[TypedStorage | UntypedStorage]: ...
 
 _GLOBAL_DEVICE_CONTEXT = ...
 
@@ -374,7 +372,7 @@ class _TorchCompileInductorWrapper:
     def __init__(self, mode, options, dynamic) -> None: ...
     def __eq__(self, other) -> bool: ...
     def apply_mode(self, mode: str | None) -> None: ...
-    def apply_options(self, options: dict[str, _Any] | None) -> None: ...
+    def apply_options(self, options: dict[str, Any] | None) -> None: ...
     def __call__(self, model_, inputs_) -> Callable[[list[object]], Sequence[Tensor]] | str | list[str] | Weights: ...
     def get_compiler_config(self) -> dict[str, Any]: ...
     def reset(self) -> None: ...
@@ -385,48 +383,45 @@ class _TorchCompileWrapper:
     def __call__(self, model_, inputs_) -> CompiledFn: ...
     def reset(self) -> None: ...
 
-_InputT = _ParamSpec("_InputT")
-_RetT = _TypeVar("_RetT")
-
-@_overload
+@overload
 def compile[**InputT, RetT](
-    model: _Callable[_InputT, _RetT],
+    model: Callable[InputT, RetT],
     *,
     fullgraph: builtins.bool = ...,
     dynamic: builtins.bool | None = ...,
-    backend: str | _Callable = ...,
+    backend: str | Callable[..., Any] = ...,
     mode: str | None = ...,
-    options: dict[str, str | builtins.int | builtins.bool | _Callable] | None = ...,
+    options: dict[str, str | builtins.int | builtins.bool | Callable[..., Any]] | None = ...,
     disable: builtins.bool = ...,
-) -> _Callable[_InputT, _RetT]: ...
-@_overload
-def compile(
+) -> Callable[InputT, RetT]: ...
+@overload
+def compile[**InputT, RetT](
     model: None = ...,
     *,
     fullgraph: builtins.bool = ...,
     dynamic: builtins.bool | None = ...,
-    backend: str | _Callable = ...,
+    backend: str | Callable[..., Any] = ...,
     mode: str | None = ...,
-    options: dict[str, str | builtins.int | builtins.bool | _Callable] | None = ...,
+    options: dict[str, str | builtins.int | builtins.bool | Callable[..., Any]] | None = ...,
     disable: builtins.bool = ...,
-) -> _Callable[[_Callable[_InputT, _RetT]], _Callable[_InputT, _RetT]]: ...
+) -> Callable[[Callable[InputT, RetT]], Callable[InputT, RetT]]: ...
 def compile[**InputT, RetT](
-    model: _Callable[_InputT, _RetT] | None = ...,
+    model: Callable[InputT, RetT] | None = ...,
     *,
     fullgraph: builtins.bool = ...,
     dynamic: builtins.bool | None = ...,
-    backend: str | _Callable = ...,
+    backend: str | Callable[..., Any] = ...,
     mode: str | None = ...,
-    options: dict[str, str | builtins.int | builtins.bool | _Callable] | None = ...,
+    options: dict[str, str | builtins.int | builtins.bool | Callable[..., Any]] | None = ...,
     disable: builtins.bool = ...,
-) -> _Callable[[_Callable[_InputT, _RetT]], _Callable[_InputT, _RetT]] | _Callable[_InputT, _RetT]: ...
+) -> Callable[[Callable[InputT, RetT]], Callable[InputT, RetT]] | Callable[InputT, RetT]: ...
 
 if not TYPE_CHECKING: ...
 if "TORCH_CUDA_SANITIZER" in os.environ: ...
 
 class _TritonLibrary:
     lib = ...
-    ops_table: dict[tuple[str, str], _Callable] = ...
+    ops_table: dict[tuple[str, str], Callable] = ...
     @classmethod
     def registerOp(cls, op_key, full_schema, op_impl, dispatch_key) -> Callable[..., Any]: ...
 

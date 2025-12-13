@@ -6,6 +6,7 @@ from builtins import (  # noqa: F401
     int as _int,
     str as _str,
 )
+from torch import layout as _layout
 
 import os
 from collections.abc import Sequence

@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import cast
 
 import torch
+from torch import Tensor
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
@@ -95,6 +96,7 @@ class QwenEmotion:
             pad_token_id=self.tokenizer.eos_token_id,
         )
         input_ids = cast(torch.LongTensor, model_inputs.input_ids)
+        assert isinstance(generated_ids, Tensor)
         output_ids = cast(list[int], generated_ids[0][len(input_ids[0]) :].tolist())
 
         # parsing thinking content

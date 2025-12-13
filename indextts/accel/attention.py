@@ -1,11 +1,12 @@
 # pyright: reportMissingImports=false, reportUnknownParameterType=false, reportUnknownArgumentType=false
 # pyright: reportUnknownMemberType=false, reportUntypedFunctionDecorator=false
+import typing
 from dataclasses import dataclass
 
 import torch
 import triton
 import triton.language as tl
-from flash_attn import flash_attn_varlen_func, flash_attn_with_kvcache
+from flash_attn import flash_attn_varlen_func, flash_attn_with_kvcache  # pyright: ignore[reportMissingModuleSource]
 from torch import Tensor, nn
 
 
@@ -56,6 +57,7 @@ def reset_forward_context() -> None:
     _forward_context = ForwardContext()
 
 
+@typing.no_type_check
 @triton.jit
 def store_kvcache_kernel(
     key_ptr: tl.pointer_type,

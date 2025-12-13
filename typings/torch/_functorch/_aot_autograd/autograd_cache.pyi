@@ -60,7 +60,7 @@ def autograd_cache_key(
 
 TOut = TypeVar("TOut", bound=OutputCode)
 
-class InductorOutput(ABC, Generic[TOut]):
+class InductorOutput[TOut: OutputCode](ABC):
     @abstractmethod
     def pre_save(self) -> None: ...
     @abstractmethod
@@ -115,7 +115,7 @@ TForward = TypeVar("TForward", bound=InductorOutput)
 TBackward = TypeVar("TBackward", bound=GenericCompiledBackward)
 
 @dataclass
-class GenericAOTAutogradCacheEntry(Generic[TForward, TBackward]):
+class GenericAOTAutogradCacheEntry[TForward: InductorOutput, TBackward: GenericCompiledBackward]:
     compiled_fw: TForward
     compiled_bw: TBackward | None
     aot_joint_graph_str: str | None

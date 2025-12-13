@@ -132,7 +132,7 @@ def compiled_fx_graph_hash(
 ) -> tuple[str, list[str]]: ...
 def add_ephemeral_timeout_increase_for_distributed(time_saved_ns: int) -> int: ...
 
-class GuardedCache(Generic[T]):
+class GuardedCache[T]:
     @classmethod
     def iterate_over_candidates(
         cls: type[GuardedCache[T]], local: bool, remote_cache: RemoteCache[JsonDataTy] | None, key: str

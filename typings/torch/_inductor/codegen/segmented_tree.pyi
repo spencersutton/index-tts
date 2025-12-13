@@ -3,7 +3,7 @@ from collections.abc import Callable
 
 T = TypeVar("T")
 
-class SegmentedTree(Generic[T]):
+class SegmentedTree[T]:
     def __init__(
         self, values: list[T], update_op: Callable[[T, T], T], summary_op: Callable[[T, T], T], identity_element: T
     ) -> None: ...

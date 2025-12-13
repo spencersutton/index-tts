@@ -122,7 +122,7 @@ class StorageOverlap(GuardEnvExpr):
     overlapping_sources: list[Source]
     non_overlapping_sources: list[Source]
 
-class Checkpointable(Generic[T]):
+class Checkpointable[T]:
     @abstractmethod
     def copy_graphstate(self) -> T: ...
     @abstractmethod

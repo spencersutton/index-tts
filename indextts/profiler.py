@@ -36,3 +36,39 @@ def profile_func(frame: FrameType, event: str, _arg: Any) -> None:
                 dict_calls[frame.f_code].stop()
         case _:
             ...
+
+
+random_words = [
+    "small",
+    "tribe",
+    "veteran",
+    "rotten",
+    "reasonable",
+    "entertainment",
+    "speech",
+    "excess",
+    "enfix",
+    "suitcase",
+    "violation",
+    "tray",
+    "pace",
+    "inn",
+    "owl",
+    "leader",
+    "hour",
+    "smooth",
+    "train",
+    "student",
+    "letter",
+    "debate",
+    "rocket",
+    "proud",
+    "gift",
+    "flag",
+    "illness",
+    "compose",
+    "fever",
+    "psychology",
+    "property",
+    "speaker",
+]

@@ -175,7 +175,7 @@ class GPT2Model(GPT2PreTrainedModel):
         token_type_ids: torch.LongTensor | None = ...,
         position_ids: torch.LongTensor | None = ...,
         head_mask: torch.FloatTensor | None = ...,
-        inputs_embeds: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
         encoder_hidden_states: torch.Tensor | None = ...,
         encoder_attention_mask: torch.FloatTensor | None = ...,
         use_cache: bool | None = ...,

@@ -1,8 +1,9 @@
 import hashlib
 import pickle  # noqa: S403
 from collections import deque
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, MutableSequence, Sequence
 from copy import copy
+from typing import overload
 
 import torch
 from transformers import GPT2Model
@@ -31,8 +32,8 @@ class KVCacheBlock:
         self.token_ids = []
 
 
-class Seq:
-    def __init__(self, token_ids: list[int], block_size: int = 256) -> None:
+class Seq(Sequence[int]):
+    def __init__(self, token_ids: MutableSequence[int], block_size: int = 256) -> None:
         self.token_ids = copy(token_ids)
         self.last_token = token_ids[-1] if token_ids else 0
         self.num_tokens = len(self.token_ids)
@@ -44,8 +45,14 @@ class Seq:
     def __len__(self) -> int:
         return self.num_tokens
 
-    def __getitem__(self, key: int) -> int:
-        return self.token_ids[key]
+    @overload
+    def __getitem__(self, index: int) -> int: ...
+
+    @overload
+    def __getitem__(self, index: slice[int, int | None, int | None]) -> Sequence[int]: ...
+
+    def __getitem__(self, index: int | slice[int, int | None, int | None]) -> int | Sequence[int]:
+        return self.token_ids[index]
 
     @property
     def num_blocks(self) -> int:
@@ -63,7 +70,7 @@ class Seq:
         assert 0 <= block_idx < self.num_blocks
         start = block_idx * self.block_size
         end = start + self.block_size
-        return self.token_ids[start:end]
+        return list(self.token_ids[start:end])
 
     def append_token(self, token_id: int) -> None:
         self.token_ids.append(token_id)

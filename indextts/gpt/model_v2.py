@@ -476,7 +476,7 @@ class UnifiedVoice(nn.Module):
         else:
             emb = torch.cat([speech_conditioning_inputs, first_inputs], dim=1)
 
-        gpt_out = self.gpt.forward(inputs_embeds=torch.FloatTensor(emb), return_dict=True, output_attentions=get_attns)
+        gpt_out = self.gpt.forward(inputs_embeds=emb, return_dict=True, output_attentions=get_attns)
         assert isinstance(gpt_out, BaseModelOutputWithPastAndCrossAttentions)
         if get_attns:
             assert gpt_out.attentions is not None

@@ -1,7 +1,8 @@
 from collections import deque
 from dataclasses import dataclass
-from typing import Any, Callable, Optional, TYPE_CHECKING
-from typing_extensions import final, override
+from typing import Any, Optional, TYPE_CHECKING
+from collections.abc import Callable
+from typing import final, override
 from torch._inductor.output_code import CompiledFxGraphConstants, OutputCode
 from .compile_fx import FxCompile, _CompileFxKwargs
 from collections.abc import Sequence
@@ -23,17 +24,17 @@ class _PostCompileData:
 class ProgressiveCompilationState:
     progression_futures: deque[Future[_WireProtocolPickledOutput]]
     callback: Callable[[_WireProtocolPickledOutput], OutputCode]
-    post_compile_data: Optional[_PostCompileData]
+    post_compile_data: _PostCompileData | None
     def check_and_get_ready_stage(self) -> int: ...
     def switch_to_progression_stage(self, stage_index: int) -> tuple[OutputCode, bool]: ...
 
 @final
 class _AsyncOutputCode(OutputCode):
-    _eager_fn: Optional[Callable[..., Any]]
-    _output_code: Optional[OutputCode]
-    _future: Optional[Future[_WireProtocolPickledOutput]]
+    _eager_fn: Callable[..., Any] | None
+    _output_code: OutputCode | None
+    _future: Future[_WireProtocolPickledOutput] | None
     _callback: Callable[[_WireProtocolPickledOutput], OutputCode]
-    _post_compile_data: Optional[_PostCompileData] = ...
+    _post_compile_data: _PostCompileData | None = ...
     _boxed_call: bool
     def __init__(
         self,
@@ -67,9 +68,9 @@ class _AsyncFxCompile(FxCompile):
 
 @final
 class _ProgressiveOutputCode(OutputCode):
-    _fast_output_code: Optional[OutputCode]
-    _optimized_output_code: Optional[OutputCode]
-    _compilation_state: Optional[ProgressiveCompilationState]
+    _fast_output_code: OutputCode | None
+    _optimized_output_code: OutputCode | None
+    _compilation_state: ProgressiveCompilationState | None
     _boxed_call: bool = ...
     def __init__(
         self,

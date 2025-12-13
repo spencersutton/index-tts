@@ -105,7 +105,7 @@ class TransfoXLTokenizer(PreTrainedTokenizer):
         lower_case=...,
         delimiter=...,
         vocab_file=...,
-        pretrained_vocab_file: Optional[str] = ...,
+        pretrained_vocab_file: str | None = ...,
         never_split=...,
         unk_token=...,
         eos_token=...,
@@ -124,7 +124,7 @@ class TransfoXLTokenizer(PreTrainedTokenizer):
         """
         ...
 
-    def save_vocabulary(self, save_directory: str, filename_prefix: Optional[str] = ...) -> tuple[str]: ...
+    def save_vocabulary(self, save_directory: str, filename_prefix: str | None = ...) -> tuple[str]: ...
     def build_vocab(self):  # -> None:
         ...
     @torch_only_method

@@ -30,9 +30,9 @@ class DiaTokenizer(PreTrainedTokenizer):
     model_input_names = ...
     def __init__(
         self,
-        pad_token: Optional[str] = ...,
-        unk_token: Optional[str] = ...,
-        max_length: Optional[int] = ...,
+        pad_token: str | None = ...,
+        unk_token: str | None = ...,
+        max_length: int | None = ...,
         offset: int = ...,
         **kwargs,
     ) -> None: ...
@@ -45,6 +45,6 @@ class DiaTokenizer(PreTrainedTokenizer):
         """Converts a sequence of tokens (string) in a single string."""
         ...
 
-    def save_vocabulary(self, save_directory: str, filename_prefix: Optional[str] = ...) -> tuple[str]: ...
+    def save_vocabulary(self, save_directory: str, filename_prefix: str | None = ...) -> tuple[str]: ...
 
 __all__ = ["DiaTokenizer"]

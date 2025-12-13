@@ -35,10 +35,10 @@ class CpmAntAttention(nn.Module):
         hidden_kv: torch.Tensor,
         attention_mask: torch.BoolTensor,
         position_bias: torch.Tensor,
-        output_attentions: Optional[bool] = ...,
-        past_key_values: Optional[Cache] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.Tensor] = ...,
+        output_attentions: bool | None = ...,
+        past_key_values: Cache | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.Tensor | None = ...,
     ):  # -> tuple[Any, Tensor | None]:
         """
         Args:
@@ -66,11 +66,11 @@ class CpmAntSelfAttentionBlock(nn.Module):
         self,
         hidden_states: torch.Tensor,
         attention_mask: torch.Tensor,
-        position_bias: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        past_key_values: Optional[Cache] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.Tensor] = ...,
+        position_bias: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        past_key_values: Cache | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.Tensor | None = ...,
     ):  # -> tuple[Tensor, Any]:
         """
         Args:
@@ -125,11 +125,11 @@ class CpmAntTransformerBlock(nn.Module):
         self,
         hidden_states: torch.Tensor,
         attention_mask: torch.Tensor,
-        position_bias: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        past_key_values: Optional[Cache] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.Tensor] = ...,
+        position_bias: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        past_key_values: Cache | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.Tensor | None = ...,
     ):  # -> tuple[Tensor, Any]:
         """
         Args:
@@ -156,11 +156,11 @@ class CpmAntEncoder(nn.Module):
         hidden_states: torch.Tensor,
         attention_mask: torch.Tensor,
         position_bias: torch.Tensor,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        past_key_values: Optional[Cache] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_postion: Optional[torch.Tensor] = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        past_key_values: Cache | None = ...,
+        use_cache: bool | None = ...,
+        cache_postion: torch.Tensor | None = ...,
     ):  # -> tuple[Tensor, tuple[Tensor, ...] | Any | tuple[()] | None, tuple[()] | tuple[Any, ...] | None]:
         """
         Args:
@@ -212,15 +212,15 @@ class CpmAntModel(CpmAntPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        past_key_values: Optional[tuple[tuple[torch.Tensor]]] = ...,
-        use_cache: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.Tensor] = ...,
+        input_ids: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        past_key_values: tuple[tuple[torch.Tensor]] | None = ...,
+        use_cache: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.Tensor | None = ...,
         **kwargs,
-    ) -> Union[tuple[torch.Tensor], BaseModelOutputWithPast]:
+    ) -> tuple[torch.Tensor] | BaseModelOutputWithPast:
         r"""
         input_ids (`torch.Tensor` of shape `(batch_size, seq_len)`):
             Indices of input sequence tokens in the vocabulary.
@@ -243,17 +243,17 @@ class CpmAntForCausalLM(CpmAntPreTrainedModel, GenerationMixin):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        past_key_values: Optional[list[tuple[torch.Tensor, torch.Tensor]]] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        return_dict: Optional[bool] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        cache_position: Optional[torch.Tensor] = ...,
+        input_ids: torch.Tensor | None = ...,
+        past_key_values: list[tuple[torch.Tensor, torch.Tensor]] | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        labels: torch.Tensor | None = ...,
+        return_dict: bool | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        cache_position: torch.Tensor | None = ...,
         **kwargs,
-    ) -> Union[tuple, CausalLMOutputWithPast]:
+    ) -> tuple | CausalLMOutputWithPast:
         r"""
         input_ids (`torch.Tensor` of shape `(batch_size, seq_len)`):
             Indices of input sequence tokens in the vocabulary.

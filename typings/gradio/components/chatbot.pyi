@@ -7,7 +7,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal, TYPE_CHECKING, Union
 from gradio_client.documentation import document
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import TypedDict
+from typing import NotRequired
 from gradio.components import Component as GradioComponent, Timer
 from gradio.components.base import Component
 from gradio.data_classes import FileData, GradioModel, GradioRootModel
@@ -120,7 +121,7 @@ class NormalizedMessageDict(TypedDict):
 class Message(GradioModel):
     role: str
     metadata: MetadataDict | None = ...
-    content: list[Union[TextMessage, FileMessage, ComponentMessage]]
+    content: list[TextMessage | FileMessage | ComponentMessage]
     options: list[OptionDict] | None = ...
 
 class ExampleMessage(TypedDict):

@@ -34,10 +34,10 @@ class TimmBackbone(PreTrainedModel, BackboneMixin):
     def forward(
         self,
         pixel_values: torch.FloatTensor,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         **kwargs,
-    ) -> Union[BackboneOutput, tuple[Tensor, ...]]: ...
+    ) -> BackboneOutput | tuple[Tensor, ...]: ...
 
 __all__ = ["TimmBackbone"]

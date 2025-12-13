@@ -60,9 +60,9 @@ class BaseVideoProcessor(BaseImageProcessorFast):
     def sample_frames(
         self,
         video: torch.Tensor,
-        metadata: Optional[Union[VideoMetadata, dict]] = ...,
-        num_frames: Optional[int] = ...,
-        fps: Optional[Union[int, float]] = ...,
+        metadata: VideoMetadata | dict | None = ...,
+        num_frames: int | None = ...,
+        fps: int | float | None = ...,
     ):  # -> Tensor:
         """
         Default sampling function which uniformly samples the desired number of frames between 0 and total number of frames.
@@ -90,11 +90,11 @@ class BaseVideoProcessor(BaseImageProcessorFast):
     @classmethod
     def from_pretrained(
         cls,
-        pretrained_model_name_or_path: Union[str, os.PathLike],
-        cache_dir: Optional[Union[str, os.PathLike]] = ...,
+        pretrained_model_name_or_path: str | os.PathLike,
+        cache_dir: str | os.PathLike | None = ...,
         force_download: bool = ...,
         local_files_only: bool = ...,
-        token: Optional[Union[str, bool]] = ...,
+        token: str | bool | None = ...,
         revision: str = ...,
         **kwargs,
     ):  # -> tuple[Self, dict[str, Any]] | Self:
@@ -179,9 +179,7 @@ class BaseVideoProcessor(BaseImageProcessorFast):
         ```"""
         ...
 
-    def save_pretrained(
-        self, save_directory: Union[str, os.PathLike], push_to_hub: bool = ..., **kwargs
-    ):  # -> list[str]:
+    def save_pretrained(self, save_directory: str | os.PathLike, push_to_hub: bool = ..., **kwargs):  # -> list[str]:
         """
         Save an video processor object to the directory `save_directory`, so that it can be re-loaded using the
         [`~video_processing_utils.VideoProcessorBase.from_pretrained`] class method.
@@ -200,7 +198,7 @@ class BaseVideoProcessor(BaseImageProcessorFast):
 
     @classmethod
     def get_video_processor_dict(
-        cls, pretrained_model_name_or_path: Union[str, os.PathLike], **kwargs
+        cls, pretrained_model_name_or_path: str | os.PathLike, **kwargs
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         """
         From a `pretrained_model_name_or_path`, resolve to a dictionary of parameters, to be used for instantiating a
@@ -255,7 +253,7 @@ class BaseVideoProcessor(BaseImageProcessorFast):
         """
         ...
 
-    def to_json_file(self, json_file_path: Union[str, os.PathLike]):  # -> None:
+    def to_json_file(self, json_file_path: str | os.PathLike):  # -> None:
         """
         Save this instance to a JSON file.
 
@@ -268,7 +266,7 @@ class BaseVideoProcessor(BaseImageProcessorFast):
     def __repr__(self):  # -> str:
         ...
     @classmethod
-    def from_json_file(cls, json_file: Union[str, os.PathLike]):  # -> Self:
+    def from_json_file(cls, json_file: str | os.PathLike):  # -> Self:
         """
         Instantiates a video processor of type [`~video_processing_utils.VideoProcessorBase`] from the path to a JSON
         file of parameters.
@@ -301,7 +299,7 @@ class BaseVideoProcessor(BaseImageProcessorFast):
         """
         ...
 
-    def fetch_videos(self, video_url_or_urls: Union[str, list[str]]):  # -> list[list[list[Any] | Any] | Any]:
+    def fetch_videos(self, video_url_or_urls: str | list[str]):  # -> list[list[list[Any] | Any] | Any]:
         """
         Convert a single or a list of urls into the corresponding `np.array` objects.
 

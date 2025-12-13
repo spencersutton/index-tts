@@ -60,7 +60,7 @@ class RepoCard:
         ...
 
     def __str__(self) -> str: ...
-    def save(self, filepath: Union[Path, str]):  # -> None:
+    def save(self, filepath: Path | str):  # -> None:
         r"""Save a RepoCard to a file.
 
         Args:
@@ -79,9 +79,9 @@ class RepoCard:
     @classmethod
     def load(
         cls,
-        repo_id_or_path: Union[str, Path],
-        repo_type: Optional[str] = ...,
-        token: Optional[str] = ...,
+        repo_id_or_path: str | Path,
+        repo_type: str | None = ...,
+        token: str | None = ...,
         ignore_metadata_errors: bool = ...,
     ):  # -> Self:
         """Initialize a RepoCard from a Hugging Face Hub repo's README.md or a local filepath.
@@ -113,7 +113,7 @@ class RepoCard:
         """
         ...
 
-    def validate(self, repo_type: Optional[str] = ...):  # -> None:
+    def validate(self, repo_type: str | None = ...):  # -> None:
         """Validates card against Hugging Face Hub's card validation logic.
         Using this function requires access to the internet, so it is only called
         internally by [`huggingface_hub.repocard.RepoCard.push_to_hub`].
@@ -136,13 +136,13 @@ class RepoCard:
     def push_to_hub(
         self,
         repo_id: str,
-        token: Optional[str] = ...,
-        repo_type: Optional[str] = ...,
-        commit_message: Optional[str] = ...,
-        commit_description: Optional[str] = ...,
-        revision: Optional[str] = ...,
-        create_pr: Optional[bool] = ...,
-        parent_commit: Optional[str] = ...,
+        token: str | None = ...,
+        repo_type: str | None = ...,
+        commit_message: str | None = ...,
+        commit_description: str | None = ...,
+        revision: str | None = ...,
+        create_pr: bool | None = ...,
+        parent_commit: str | None = ...,
     ):  # -> CommitInfo:
         """Push a RepoCard to a Hugging Face Hub repo.
 
@@ -178,8 +178,8 @@ class RepoCard:
     def from_template(
         cls,
         card_data: CardData,
-        template_path: Optional[str] = ...,
-        template_str: Optional[str] = ...,
+        template_path: str | None = ...,
+        template_str: str | None = ...,
         **template_kwargs,
     ):  # -> Self:
         """Initialize a RepoCard from a template. By default, it uses the default template.
@@ -208,8 +208,8 @@ class ModelCard(RepoCard):
     def from_template(
         cls,
         card_data: ModelCardData,
-        template_path: Optional[str] = ...,
-        template_str: Optional[str] = ...,
+        template_path: str | None = ...,
+        template_str: str | None = ...,
         **template_kwargs,
     ):  # -> Self:
         """Initialize a ModelCard from a template. By default, it uses the default template, which can be found here:
@@ -287,8 +287,8 @@ class DatasetCard(RepoCard):
     def from_template(
         cls,
         card_data: DatasetCardData,
-        template_path: Optional[str] = ...,
-        template_str: Optional[str] = ...,
+        template_path: str | None = ...,
+        template_str: str | None = ...,
         **template_kwargs,
     ):  # -> Self:
         """Initialize a DatasetCard from a template. By default, it uses the default template, which can be found here:
@@ -347,8 +347,8 @@ class SpaceCard(RepoCard):
     default_template_path = ...
     repo_type = ...
 
-def metadata_load(local_path: Union[str, Path]) -> Optional[Dict]: ...
-def metadata_save(local_path: Union[str, Path], data: Dict) -> None:
+def metadata_load(local_path: str | Path) -> dict | None: ...
+def metadata_save(local_path: str | Path, data: dict) -> None:
     """
     Save the metadata dict in the upper YAML part Trying to preserve newlines as
     in the existing file. Docs about open() with newline="" parameter:
@@ -367,13 +367,13 @@ def metadata_eval_result(
     metrics_value: Any,
     dataset_pretty_name: str,
     dataset_id: str,
-    metrics_config: Optional[str] = ...,
+    metrics_config: str | None = ...,
     metrics_verified: bool = ...,
-    dataset_config: Optional[str] = ...,
-    dataset_split: Optional[str] = ...,
-    dataset_revision: Optional[str] = ...,
-    metrics_verification_token: Optional[str] = ...,
-) -> Dict:
+    dataset_config: str | None = ...,
+    dataset_split: str | None = ...,
+    dataset_revision: str | None = ...,
+    metrics_verification_token: str | None = ...,
+) -> dict:
     """
     Creates a metadata dict with the result from a model evaluated on a dataset.
 
@@ -465,16 +465,16 @@ def metadata_eval_result(
 @validate_hf_hub_args
 def metadata_update(
     repo_id: str,
-    metadata: Dict,
+    metadata: dict,
     *,
-    repo_type: Optional[str] = ...,
+    repo_type: str | None = ...,
     overwrite: bool = ...,
-    token: Optional[str] = ...,
-    commit_message: Optional[str] = ...,
-    commit_description: Optional[str] = ...,
-    revision: Optional[str] = ...,
+    token: str | None = ...,
+    commit_message: str | None = ...,
+    commit_description: str | None = ...,
+    revision: str | None = ...,
     create_pr: bool = ...,
-    parent_commit: Optional[str] = ...,
+    parent_commit: str | None = ...,
 ) -> str:
     """
     Updates the metadata in the README.md of a repository on the Hugging Face Hub.

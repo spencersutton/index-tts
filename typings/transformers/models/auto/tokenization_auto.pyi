@@ -19,15 +19,15 @@ TOKENIZER_MAPPING_NAMES = ...
 TOKENIZER_MAPPING = ...
 CONFIG_TO_TYPE = ...
 
-def tokenizer_class_from_name(class_name: str) -> Union[type[Any], None]: ...
+def tokenizer_class_from_name(class_name: str) -> type[Any] | None: ...
 def get_tokenizer_config(
-    pretrained_model_name_or_path: Union[str, os.PathLike[str]],
-    cache_dir: Optional[Union[str, os.PathLike[str]]] = ...,
+    pretrained_model_name_or_path: str | os.PathLike[str],
+    cache_dir: str | os.PathLike[str] | None = ...,
     force_download: bool = ...,
-    resume_download: Optional[bool] = ...,
-    proxies: Optional[dict[str, str]] = ...,
-    token: Optional[Union[bool, str]] = ...,
-    revision: Optional[str] = ...,
+    resume_download: bool | None = ...,
+    proxies: dict[str, str] | None = ...,
+    token: bool | str | None = ...,
+    revision: str | None = ...,
     local_files_only: bool = ...,
     subfolder: str = ...,
     **kwargs,

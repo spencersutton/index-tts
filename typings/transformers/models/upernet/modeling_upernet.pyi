@@ -21,10 +21,10 @@ class UperNetConvModule(nn.Module):
         self,
         in_channels: int,
         out_channels: int,
-        kernel_size: Union[int, tuple[int, int]],
-        padding: Union[int, tuple[int, int], str] = ...,
+        kernel_size: int | tuple[int, int],
+        padding: int | tuple[int, int] | str = ...,
         bias: bool = ...,
-        dilation: Union[int, tuple[int, int]] = ...,
+        dilation: int | tuple[int, int] = ...,
     ) -> None: ...
     def forward(self, input: torch.Tensor) -> torch.Tensor: ...
 
@@ -80,7 +80,7 @@ class UperNetFCNHead(nn.Module):
         in_channels,
         in_index: int = ...,
         kernel_size: int = ...,
-        dilation: Union[int, tuple[int, int]] = ...,
+        dilation: int | tuple[int, int] = ...,
     ) -> None: ...
     def forward(self, encoder_hidden_states: torch.Tensor) -> torch.Tensor: ...
 
@@ -100,12 +100,12 @@ class UperNetForSemanticSegmentation(UperNetPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, SemanticSegmenterOutput]:
+        pixel_values: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        labels: torch.Tensor | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | SemanticSegmenterOutput:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size, height, width)`, *optional*):
             Ground truth semantic segmentation maps for computing the loss. Indices should be in `[0, ...,

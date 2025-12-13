@@ -6,7 +6,7 @@ import weakref
 import torch
 from dataclasses import dataclass
 from typing import Any, Literal, Optional, TYPE_CHECKING, TypeVar, Union, TypeAlias
-from typing_extensions import Self, TypeGuard
+from typing import Self, TypeGuard
 from weakref import ReferenceType
 from torch import SymFloat, SymInt, Tensor
 from torch._subclasses.meta_utils import MetaConverter
@@ -64,21 +64,19 @@ class MetadataMismatchError(RuntimeError):
     reason: str
 
 class FakeTensorTLS(threading.local):
-    allow_non_fake_inputs_override: Optional[bool]
+    allow_non_fake_inputs_override: bool | None
     def __init__(self) -> None: ...
 
 fake_tensor_tls = ...
 
 def ordered_set(*items: T) -> dict[T, Literal[True]]: ...
 @contextlib.contextmanager
-def unset_fake_temporarily() -> Generator[Optional[TorchDispatchMode], None, None]: ...
+def unset_fake_temporarily() -> Generator[TorchDispatchMode | None]: ...
 @contextlib.contextmanager
-def disable_fake_tensor_cache(fake_mode: FakeTensorMode) -> Generator[None, None, None]: ...
-def get_plain_tensors(
-    subclass: Tensor, *, out: list[Union[Tensor, int, SymInt]]
-) -> list[Union[Tensor, int, SymInt]]: ...
+def disable_fake_tensor_cache(fake_mode: FakeTensorMode) -> Generator[None]: ...
+def get_plain_tensors(subclass: Tensor, *, out: list[Tensor | int | SymInt]) -> list[Tensor | int | SymInt]: ...
 def is_fake(x: object) -> TypeGuard[Tensor]: ...
-def maybe_get_fake_mode(t: object) -> Optional[FakeTensorMode]: ...
+def maybe_get_fake_mode(t: object) -> FakeTensorMode | None: ...
 @functools.cache
 def get_schema_info(func: OpOverload) -> torch._C._SchemaInfo: ...
 @functools.cache
@@ -101,10 +99,10 @@ class FakeTensorConverter:
         fake_mode: FakeTensorMode,
         t: Tensor,
         make_constant: bool = ...,
-        shape_env: Optional[ShapeEnv] = ...,
+        shape_env: ShapeEnv | None = ...,
         *,
-        source: Optional[Source] = ...,
-        symbolic_context: Optional[SymbolicContext] = ...,
+        source: Source | None = ...,
+        symbolic_context: SymbolicContext | None = ...,
         trace: bool = ...,
     ) -> FakeTensor: ...
     def from_meta_and_device(
@@ -112,14 +110,14 @@ class FakeTensorConverter:
         fake_mode: FakeTensorMode,
         t: Tensor,
         device: torch.device,
-        pytype: Optional[type[torch.Tensor]] = ...,
-        dispatch_keys: Optional[torch.DispatchKeySet] = ...,
+        pytype: type[torch.Tensor] | None = ...,
+        dispatch_keys: torch.DispatchKeySet | None = ...,
     ) -> FakeTensor: ...
 
 @functools.cache
 def init_gpu_context(device: torch.device) -> None: ...
 @contextlib.contextmanager
-def in_kernel_invocation_manager(fake_mode: FakeTensorMode) -> Generator[None, None, None]: ...
+def in_kernel_invocation_manager(fake_mode: FakeTensorMode) -> Generator[None]: ...
 def should_allow_numbers_as_tensors(func: OpOverload) -> bool: ...
 
 class FakeTensorConfig:
@@ -131,22 +129,22 @@ class SymNumberMemoDescriptor:
     def __init__(self, *, is_nested_int: bool = ...) -> None: ...
     def __set_name__(self, owner: str, name: str) -> None: ...
     def __get__(
-        self, obj: FakeTensor, objtype: Optional[type[FakeTensor]] = ...
-    ) -> Optional[Union[torch.SymInt, torch.SymFloat]]: ...
-    def __set__(self, obj: FakeTensor, value: Optional[Union[torch.SymInt, torch.SymFloat]]) -> None: ...
+        self, obj: FakeTensor, objtype: type[FakeTensor] | None = ...
+    ) -> torch.SymInt | torch.SymFloat | None: ...
+    def __set__(self, obj: FakeTensor, value: torch.SymInt | torch.SymFloat | None) -> None: ...
 
 class FakeTensor(Tensor):
     fake_device: torch.device
     fake_mode: FakeTensorMode
-    constant: Optional[Tensor]
-    real_tensor: Optional[Tensor]
+    constant: Tensor | None
+    real_tensor: Tensor | None
     nonzero_memo = ...
     item_memo = ...
     unique_memo = ...
     unique_consecutive_memo = ...
     nested_int_memo = ...
-    pytype: Optional[type[Tensor]]
-    dispatch_keys: Optional[torch.DispatchKeySet]
+    pytype: type[Tensor] | None
+    dispatch_keys: torch.DispatchKeySet | None
     _mode_key = ...
     @property
     def device(self) -> torch.device: ...
@@ -162,10 +160,10 @@ class FakeTensor(Tensor):
         fake_mode: FakeTensorMode,
         elem: Tensor,
         device: torch.device,
-        constant: Optional[Tensor] = ...,
-        real_tensor: Optional[Tensor] = ...,
-        pytype: Optional[type[Tensor]] = ...,
-        dispatch_keys: Optional[torch.DispatchKeySet] = ...,
+        constant: Tensor | None = ...,
+        real_tensor: Tensor | None = ...,
+        pytype: type[Tensor] | None = ...,
+        dispatch_keys: torch.DispatchKeySet | None = ...,
     ) -> Self: ...
     def __init__(self, *args: object, **kwargs: object) -> None: ...
     @staticmethod
@@ -175,10 +173,10 @@ class FakeTensor(Tensor):
     def __torch_dispatch__(
         cls, func: OpOverload, types: Sequence[type], args: Sequence[object] = ..., kwargs: Mapping[str, object] = ...
     ) -> object: ...
-    def get_nested_int(self, *, coeff: Union[int, torch.SymInt] = ...) -> torch.SymInt: ...
+    def get_nested_int(self, *, coeff: int | torch.SymInt = ...) -> torch.SymInt: ...
     def tolist(self) -> Any: ...
 
-_MetadataIntLike: TypeAlias = Union[IntLikeType, _PySymInputStub, _SymIntOutputStub]
+type _MetadataIntLike = IntLikeType | _PySymInputStub | _SymIntOutputStub
 
 @dataclass_slots
 @dataclass
@@ -188,18 +186,18 @@ class TensorMetadata:
     stride: tuple[_MetadataIntLike, ...]
     device: torch.device
     layout: torch.layout
-    memory_format: Optional[torch.memory_format]
+    memory_format: torch.memory_format | None
     storage_offset: _MetadataIntLike
-    storage_bytes: Optional[_MetadataIntLike]
+    storage_bytes: _MetadataIntLike | None
     requires_grad: bool
     is_quantized: bool
     is_conj: bool
     is_neg: bool
     is_inference: bool
     is_sparse: bool
-    is_coalesced: Optional[bool]
-    dense_dim: Optional[int]
-    sparse_dim: Optional[int]
+    is_coalesced: bool | None
+    dense_dim: int | None
+    sparse_dim: int | None
 
 def extract_tensor_metadata(t: Tensor) -> TensorMetadata: ...
 
@@ -218,10 +216,10 @@ class SingletonConstant: ...
 @dataclass_slots
 @dataclass(frozen=True)
 class _DispatchCacheEntryOutputInfo:
-    inplace_idx: Optional[int]
-    metadata: Optional[TensorMetadata]
-    view_idx: Optional[int]
-    constant_value: Optional[Any] = ...
+    inplace_idx: int | None
+    metadata: TensorMetadata | None
+    view_idx: int | None
+    constant_value: Any | None = ...
 
 @dataclass_slots
 @dataclass(frozen=True)
@@ -235,7 +233,7 @@ class _DispatchCacheBypassEntry:
     reason: str
 
 if TYPE_CHECKING:
-    _DispatchCacheEntry: TypeAlias = Union[_DispatchCacheValidEntry, _DispatchCacheBypassEntry]
+    type _DispatchCacheEntry = _DispatchCacheValidEntry | _DispatchCacheBypassEntry
 
 @dataclass_slots
 @dataclass(frozen=True)
@@ -258,8 +256,8 @@ class FakeTensorMode(TorchDispatchMode):
     epoch: int = ...
     in_kernel_invocation: bool = ...
     static_shapes: bool
-    shape_env: Optional[ShapeEnv]
-    _stack: Optional[str]
+    shape_env: ShapeEnv | None
+    _stack: str | None
     allow_meta: bool
     nt_tensor_id_counter: int = ...
     nt_tensor_id_initial_count: int = ...
@@ -268,8 +266,8 @@ class FakeTensorMode(TorchDispatchMode):
         *,
         allow_fallback_kernels: bool = ...,
         allow_non_fake_inputs: bool = ...,
-        shape_env: Optional[ShapeEnv] = ...,
-        static_shapes: Optional[bool] = ...,
+        shape_env: ShapeEnv | None = ...,
+        static_shapes: bool | None = ...,
         export: bool = ...,
     ) -> None: ...
     def reset_nt_tensor_id_counter(self) -> None: ...
@@ -283,9 +281,7 @@ class FakeTensorMode(TorchDispatchMode):
         self, func: OpOverload, types: Sequence[type], args: Sequence[object] = ..., kwargs: Mapping[str, object] = ...
     ) -> object: ...
     def __enter__(self) -> Self: ...
-    def __exit__(
-        self, a: Optional[type[BaseException]], b: Optional[BaseException], c: Optional[TracebackType]
-    ) -> None: ...
+    def __exit__(self, a: type[BaseException] | None, b: BaseException | None, c: TracebackType | None) -> None: ...
     @classmethod
     def is_infra_mode(cls) -> bool: ...
     @classmethod
@@ -304,7 +300,7 @@ class FakeTensorMode(TorchDispatchMode):
     def wrap_meta_outputs_with_default_device_logic(
         self, r: object, func: OpOverload, flat_args: Sequence[object], device: torch.device
     ) -> PyTree: ...
-    def create_symbolic_nested_int(self, *, nt_tensor_id: Optional[int] = ...) -> torch.SymInt: ...
+    def create_symbolic_nested_int(self, *, nt_tensor_id: int | None = ...) -> torch.SymInt: ...
 
     _cpp_meta_supports_symint = ...
     _view_fake_tensor_impl_ops = ...
@@ -323,9 +319,9 @@ class FakeTensorMode(TorchDispatchMode):
         self,
         tensor: Tensor,
         *,
-        static_shapes: Optional[bool] = ...,
-        source: Optional[Source] = ...,
-        symbolic_context: Optional[SymbolicContext] = ...,
+        static_shapes: bool | None = ...,
+        source: Source | None = ...,
+        symbolic_context: SymbolicContext | None = ...,
         trace: bool = ...,
     ) -> FakeTensor: ...
 
@@ -346,7 +342,7 @@ class FakeCopyMode(TorchFunctionMode):
         func: OpOverload,
         types: Sequence[type],
         args: Sequence[object] = ...,
-        kwargs: Optional[Mapping[str, object]] = ...,
+        kwargs: Mapping[str, object] | None = ...,
     ) -> FakeTensor: ...
 
 _DISPATCH_META_HANDLERS = ...

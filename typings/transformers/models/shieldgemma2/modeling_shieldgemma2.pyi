@@ -19,7 +19,7 @@ class ShieldGemma2ImageClassifierOutputWithNoAttention(ImageClassifierOutputWith
     Args:
     """
 
-    probabilities: Optional[torch.Tensor] = ...
+    probabilities: torch.Tensor | None = ...
 
 @auto_docstring
 class ShieldGemma2ForImageClassification(PreTrainedModel):
@@ -43,20 +43,20 @@ class ShieldGemma2ForImageClassification(PreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Union[list[torch.FloatTensor], Cache]] = ...,
-        token_type_ids: Optional[torch.LongTensor] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        logits_to_keep: Union[int, torch.Tensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        pixel_values: torch.FloatTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: list[torch.FloatTensor] | Cache | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        logits_to_keep: int | torch.Tensor = ...,
         **lm_kwargs,
     ) -> ShieldGemma2ImageClassifierOutputWithNoAttention:
         r"""

@@ -197,7 +197,7 @@ class Emu3TextConfig(PretrainedConfig):
         intermediate_size: int = ...,
         num_hidden_layers: int = ...,
         num_attention_heads: int = ...,
-        num_key_value_heads: Optional[int] = ...,
+        num_key_value_heads: int | None = ...,
         hidden_act: str = ...,
         max_position_embeddings: int = ...,
         rms_norm_eps: float = ...,
@@ -240,9 +240,9 @@ class Emu3Config(PretrainedConfig):
     sub_configs = ...
     def __init__(
         self,
-        vq_config: Union[dict, Emu3VQVAEConfig] = ...,
-        text_config: Union[dict, Emu3TextConfig] = ...,
-        vocabulary_map: Optional[dict[int, int]] = ...,
+        vq_config: dict | Emu3VQVAEConfig = ...,
+        text_config: dict | Emu3TextConfig = ...,
+        vocabulary_map: dict[int, int] | None = ...,
         **kwargs,
     ) -> None: ...
 

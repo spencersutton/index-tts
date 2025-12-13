@@ -1,8 +1,8 @@
 import contextlib
 from typing import Union, TypeAlias
 
-in_dims_t: TypeAlias = Union[int, tuple]
-out_dims_t: TypeAlias = Union[int, tuple[int, ...]]
+type in_dims_t = int | tuple
+type out_dims_t = int | tuple[int, ...]
 
 def doesnt_support_saved_tensors_hooks(f):  # -> _Wrapped[..., Any, ..., Any]:
     ...

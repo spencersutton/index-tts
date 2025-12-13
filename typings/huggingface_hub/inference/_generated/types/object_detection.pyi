@@ -9,14 +9,14 @@ from .base import BaseInferenceType, dataclass_with_extra
 class ObjectDetectionParameters(BaseInferenceType):
     """Additional inference parameters for Object Detection"""
 
-    threshold: Optional[float] = ...
+    threshold: float | None = ...
 
 @dataclass_with_extra
 class ObjectDetectionInput(BaseInferenceType):
     """Inputs for Object Detection inference"""
 
     inputs: str
-    parameters: Optional[ObjectDetectionParameters] = ...
+    parameters: ObjectDetectionParameters | None = ...
 
 @dataclass_with_extra
 class ObjectDetectionBoundingBox(BaseInferenceType):

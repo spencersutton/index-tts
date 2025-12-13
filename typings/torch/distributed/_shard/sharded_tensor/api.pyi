@@ -2,8 +2,9 @@ import weakref
 import torch
 import torch.distributed._shard.sharding_spec as shard_spec
 from dataclasses import dataclass
-from typing import Callable, Optional, TYPE_CHECKING
-from typing_extensions import deprecated
+from typing import Optional, TYPE_CHECKING
+from collections.abc import Callable
+from warnings import deprecated
 from torch.distributed import rpc
 from torch.distributed._shard._utils import DEPRECATE_MSG
 from .metadata import ShardedTensorMetadata
@@ -47,9 +48,9 @@ class ShardedTensor(ShardedTensorBase):
     def gather(
         self,
         dst: int = ...,
-        out: Optional[torch.Tensor] = ...,
+        out: torch.Tensor | None = ...,
         enforce_dtype: bool = ...,
-        dtype: Optional[torch.dtype] = ...,
+        dtype: torch.dtype | None = ...,
     ) -> None: ...
     def cpu(self, memory_format=..., process_group=...) -> ShardedTensor: ...
     def cuda(self, device=..., non_blocking=..., memory_format=..., process_group=...) -> ShardedTensor: ...

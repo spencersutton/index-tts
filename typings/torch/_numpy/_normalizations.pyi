@@ -2,8 +2,8 @@ import typing
 
 """ "Normalize" arguments: convert array_likes to tensors, dtypes to torch dtypes and so on."""
 ArrayLike = typing.TypeVar("ArrayLike")
-Scalar: typing.TypeAlias = typing.Union[int, float, complex, bool]
-ArrayLikeOrScalar: typing.TypeAlias = typing.Union[ArrayLike, Scalar]
+type Scalar = int | float | complex | bool
+type ArrayLikeOrScalar[ArrayLike] = ArrayLike | Scalar
 DTypeLike = typing.TypeVar("DTypeLike")
 AxisLike = typing.TypeVar("AxisLike")
 NDArray = typing.TypeVar("NDArray")

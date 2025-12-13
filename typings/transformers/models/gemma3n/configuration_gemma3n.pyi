@@ -163,7 +163,7 @@ class Gemma3nTextConfig(PretrainedConfig):
         vocab_size_per_layer_input: int = ...,
         hidden_size: int = ...,
         hidden_size_per_layer_input: int = ...,
-        intermediate_size: Union[int, Sequence[int]] = ...,
+        intermediate_size: int | Sequence[int] = ...,
         num_hidden_layers: int = ...,
         num_attention_heads: int = ...,
         num_key_value_heads: int = ...,
@@ -177,12 +177,12 @@ class Gemma3nTextConfig(PretrainedConfig):
         eos_token_id: int = ...,
         bos_token_id: int = ...,
         rope_theta: float = ...,
-        rope_scaling: Optional[dict[str, Any]] = ...,
+        rope_scaling: dict[str, Any] | None = ...,
         rope_local_base_freq: float = ...,
         attention_bias: bool = ...,
         attention_dropout: float = ...,
         sliding_window: int = ...,
-        layer_types: Optional[Sequence[str]] = ...,
+        layer_types: Sequence[str] | None = ...,
         final_logit_softcapping: float = ...,
         altup_active_idx: int = ...,
         altup_coef_clip: float = ...,
@@ -190,7 +190,7 @@ class Gemma3nTextConfig(PretrainedConfig):
         altup_num_inputs: int = ...,
         num_kv_shared_layers: int = ...,
         laurel_rank: int = ...,
-        activation_sparsity_pattern: Optional[Union[float, Sequence[float]]] = ...,
+        activation_sparsity_pattern: float | Sequence[float] | None = ...,
         **kwargs,
     ) -> None: ...
 
@@ -360,7 +360,7 @@ class Gemma3nVisionConfig(PretrainedConfig):
         vocab_size: int = ...,
         vocab_offset: int = ...,
         rms_norm_eps: float = ...,
-        model_args: Optional[dict] = ...,
+        model_args: dict | None = ...,
         **kwargs,
     ) -> None: ...
     @classmethod
@@ -435,9 +435,9 @@ class Gemma3nConfig(PretrainedConfig):
     sub_configs = ...
     def __init__(
         self,
-        text_config: Optional[Union[Gemma3nTextConfig, dict[str, Any]]] = ...,
-        vision_config: Optional[Union[Gemma3nVisionConfig, dict[str, Any]]] = ...,
-        audio_config: Optional[Union[Gemma3nAudioConfig, dict[str, Any]]] = ...,
+        text_config: Gemma3nTextConfig | dict[str, Any] | None = ...,
+        vision_config: Gemma3nVisionConfig | dict[str, Any] | None = ...,
+        audio_config: Gemma3nAudioConfig | dict[str, Any] | None = ...,
         audio_soft_tokens_per_image: int = ...,
         vision_soft_tokens_per_image: int = ...,
         boi_token_id: int = ...,

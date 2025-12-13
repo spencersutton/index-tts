@@ -1,4 +1,5 @@
-from typing import Callable, Optional
+from typing import Optional
+from collections.abc import Callable
 from .utils import RegistrationHandle
 
 __all__ = ["SimpleLibraryRegistry", "SimpleOperatorEntry", "singleton"]
@@ -21,4 +22,4 @@ class GenericTorchDispatchRuleHolder:
     def find(self, torch_dispatch_class):  # -> None:
         ...
 
-def find_torch_dispatch_rule(op, torch_dispatch_class: type) -> Optional[Callable]: ...
+def find_torch_dispatch_rule(op, torch_dispatch_class: type) -> Callable | None: ...

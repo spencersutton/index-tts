@@ -10,7 +10,7 @@ class DepthEstimationInput(BaseInferenceType):
     """Inputs for Depth Estimation inference"""
 
     inputs: Any
-    parameters: Optional[Dict[str, Any]] = ...
+    parameters: dict[str, Any] | None = ...
 
 @dataclass_with_extra
 class DepthEstimationOutput(BaseInferenceType):

@@ -52,10 +52,10 @@ class TvltFeatureExtractor(SequenceFeatureExtractor):
     ) -> None: ...
     def __call__(
         self,
-        raw_speech: Union[np.ndarray, list[float], list[np.ndarray], list[list[float]]],
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        return_attention_mask: Optional[bool] = ...,
-        sampling_rate: Optional[int] = ...,
+        raw_speech: np.ndarray | list[float] | list[np.ndarray] | list[list[float]],
+        return_tensors: str | TensorType | None = ...,
+        return_attention_mask: bool | None = ...,
+        sampling_rate: int | None = ...,
         resample: bool = ...,
         mask_audio: bool = ...,
         **kwargs,

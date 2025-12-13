@@ -5,7 +5,8 @@ import torch.library
 from collections.abc import Sequence
 from enum import Enum
 from functools import partial, reduce
-from typing import Callable, Optional, Union
+from typing import Optional, Union
+from collections.abc import Callable
 from torch import Tensor, sym_float
 from torch._C import _get_default_device
 from torch._higher_order_ops.effects import new_token_tensor
@@ -168,12 +169,12 @@ __all__ = [
 ]
 
 def TensorMeta(
-    tensorlike: Optional[Union[NumberType, torch.Tensor]] = ...,
+    tensorlike: NumberType | torch.Tensor | None = ...,
     *,
-    shape: Optional[ShapeType] = ...,
-    strides: Optional[StrideType] = ...,
-    dtype: Optional[torch.dtype] = ...,
-    device: Optional[Union[torch.device, str]] = ...,
+    shape: ShapeType | None = ...,
+    strides: StrideType | None = ...,
+    dtype: torch.dtype | None = ...,
+    device: torch.device | str | None = ...,
 ):  # -> Tensor:
     ...
 

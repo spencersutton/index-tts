@@ -4,8 +4,9 @@ import optree
 import optree._C
 import torch.utils._cxx_pytree as cxx_pytree
 from dataclasses import dataclass
-from typing import Any, Callable, Literal, TYPE_CHECKING
-from typing_extensions import Self
+from typing import Any, Literal, TYPE_CHECKING
+from collections.abc import Callable
+from typing import Self
 from ..decorators import substitute_in_graph
 from collections.abc import Iterable
 

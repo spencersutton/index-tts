@@ -8,7 +8,8 @@ from collections.abc import MutableMapping
 from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, ContextManager, Optional, TypedDict
+from typing import Any, ContextManager, Optional, TypedDict
+from collections.abc import Callable
 from .import_utils import is_torch_available, requires
 
 """
@@ -281,7 +282,7 @@ def torch_float(x):  # -> int | Tensor:
     """
     ...
 
-def filter_out_non_signature_kwargs(extra: Optional[list] = ...):  # -> Callable[..., _Wrapped[..., Any, ..., Any]]:
+def filter_out_non_signature_kwargs(extra: list | None = ...):  # -> Callable[..., _Wrapped[..., Any, ..., Any]]:
     """
     Decorator to filter out named arguments that are not in the function signature.
 
@@ -334,14 +335,14 @@ class TransformersKwargs(TypedDict, total=False):
             Maximum sequence length for key state.
     """
 
-    num_items_in_batch: Optional[torch.Tensor]
-    output_hidden_states: Optional[bool]
-    output_attentions: Optional[bool]
-    output_router_logits: Optional[bool]
-    cumulative_seqlens_q: Optional[torch.LongTensor]
-    cumulative_seqlens_k: Optional[torch.LongTensor]
-    max_length_q: Optional[int]
-    max_length_k: Optional[int]
+    num_items_in_batch: torch.Tensor | None
+    output_hidden_states: bool | None
+    output_attentions: bool | None
+    output_router_logits: bool | None
+    cumulative_seqlens_q: torch.LongTensor | None
+    cumulative_seqlens_k: torch.LongTensor | None
+    max_length_q: int | None
+    max_length_k: int | None
     ...
 
 def is_timm_config_dict(config_dict: dict[str, Any]) -> bool:
@@ -390,9 +391,9 @@ class OutputRecorder:
     """
 
     target_class: type[torch.nn.Module]
-    index: Optional[int] = ...
-    layer_name: Optional[str] = ...
-    class_name: Optional[str] = ...
+    index: int | None = ...
+    layer_name: str | None = ...
+    class_name: str | None = ...
 
 def check_model_inputs(func):  # -> _Wrapped[..., Any, ..., Any]:
     """

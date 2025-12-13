@@ -84,7 +84,7 @@ class MBart50TokenizerFast(PreTrainedTokenizerFast):
     @src_lang.setter
     def src_lang(self, new_src_lang: str) -> None: ...
     def build_inputs_with_special_tokens(
-        self, token_ids_0: list[int], token_ids_1: Optional[list[int]] = ...
+        self, token_ids_0: list[int], token_ids_1: list[int] | None = ...
     ) -> list[int]:
         """
         Build model inputs from a sequence or a pair of sequence for sequence classification tasks by concatenating and
@@ -113,7 +113,7 @@ class MBart50TokenizerFast(PreTrainedTokenizerFast):
         self,
         src_texts: list[str],
         src_lang: str = ...,
-        tgt_texts: Optional[list[str]] = ...,
+        tgt_texts: list[str] | None = ...,
         tgt_lang: str = ...,
         **kwargs,
     ) -> BatchEncoding: ...
@@ -125,6 +125,6 @@ class MBart50TokenizerFast(PreTrainedTokenizerFast):
         """Reset the special tokens to the target language setting. prefix=[src_lang_code] and suffix=[eos]."""
         ...
 
-    def save_vocabulary(self, save_directory: str, filename_prefix: Optional[str] = ...) -> tuple[str]: ...
+    def save_vocabulary(self, save_directory: str, filename_prefix: str | None = ...) -> tuple[str]: ...
 
 __all__ = ["MBart50TokenizerFast"]

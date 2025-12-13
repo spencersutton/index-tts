@@ -60,7 +60,7 @@ def dequantize_per_tensor(
     quant_max: int,
     dtype: torch.dtype,
     *,
-    out_dtype: Optional[torch.dtype] = ...,
+    out_dtype: torch.dtype | None = ...,
 ) -> torch.Tensor: ...
 @impl(quantized_decomposed_lib, "dequantize_per_tensor", "Meta")
 def dequantize_per_tensor_meta(
@@ -71,7 +71,7 @@ def dequantize_per_tensor_meta(
     quant_max: int,
     dtype: torch.dtype,
     *,
-    out_dtype: Optional[torch.dtype] = ...,
+    out_dtype: torch.dtype | None = ...,
 ) -> torch.Tensor: ...
 @impl(quantized_decomposed_lib, "dequantize_per_tensor.tensor", "CompositeExplicitAutograd")
 def dequantize_per_tensor_tensor(
@@ -82,7 +82,7 @@ def dequantize_per_tensor_tensor(
     quant_max: int,
     dtype: torch.dtype,
     *,
-    out_dtype: Optional[torch.dtype] = ...,
+    out_dtype: torch.dtype | None = ...,
 ) -> torch.Tensor: ...
 @impl(quantized_decomposed_lib, "dequantize_per_tensor.tensor", "Meta")
 def dequantize_per_tensor_tensor_meta(
@@ -93,7 +93,7 @@ def dequantize_per_tensor_tensor_meta(
     quant_max: int,
     dtype: torch.dtype,
     *,
-    out_dtype: Optional[torch.dtype] = ...,
+    out_dtype: torch.dtype | None = ...,
 ) -> torch.Tensor: ...
 @impl(quantized_decomposed_lib, "dequantize_per_tensor.tensor2", "CompositeExplicitAutograd")
 def dequantize_per_tensor_tensor2(
@@ -104,11 +104,11 @@ def dequantize_per_tensor_tensor2(
     quant_max: torch.Tensor,
     dtype: torch.dtype,
     *,
-    out_dtype: Optional[torch.dtype] = ...,
+    out_dtype: torch.dtype | None = ...,
 ) -> torch.Tensor: ...
 @impl(quantized_decomposed_lib, "dequantize_per_tensor.tensor2", "Meta")
 def dequantize_per_tensor_tensor2_meta(
-    input, scale, zero_point, quant_min, quant_max, dtype, *, out_dtype: Optional[torch.dtype] = ...
+    input, scale, zero_point, quant_min, quant_max, dtype, *, out_dtype: torch.dtype | None = ...
 ) -> torch.Tensor: ...
 @impl(quantized_decomposed_lib, "choose_qparams.tensor", "CompositeExplicitAutograd")
 def choose_qparams_tensor(
@@ -150,25 +150,25 @@ def quantize_per_channel_meta(
 def dequantize_per_channel(
     input: torch.Tensor,
     scales: torch.Tensor,
-    zero_points: Optional[torch.Tensor],
+    zero_points: torch.Tensor | None,
     axis: int,
     quant_min: int,
     quant_max: int,
     dtype: torch.dtype,
     *,
-    out_dtype: Optional[torch.dtype] = ...,
+    out_dtype: torch.dtype | None = ...,
 ) -> torch.Tensor: ...
 @impl(quantized_decomposed_lib, "dequantize_per_channel", "Meta")
 def dequantize_per_channel_meta(
     input: torch.Tensor,
     scales: torch.Tensor,
-    zero_points: Optional[torch.Tensor],
+    zero_points: torch.Tensor | None,
     axis: int,
     quant_min: int,
     quant_max: int,
     dtype: torch.dtype,
     *,
-    out_dtype: Optional[torch.dtype] = ...,
+    out_dtype: torch.dtype | None = ...,
 ) -> torch.Tensor: ...
 @impl(quantized_decomposed_lib, "choose_qparams_per_token", "CompositeExplicitAutograd")
 def choose_qparams_per_token(input: torch.Tensor, dtype: torch.dtype) -> tuple[torch.Tensor, torch.Tensor]: ...
@@ -253,7 +253,7 @@ def quantize_per_channel_group_meta(
 def dequantize_per_channel_group(
     w_int8: torch.Tensor,
     scales: torch.Tensor,
-    zero_points: Optional[torch.Tensor],
+    zero_points: torch.Tensor | None,
     quant_min: int,
     quant_max: int,
     dtype: torch.dtype,

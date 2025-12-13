@@ -16,13 +16,13 @@ if is_torchvision_available(): ...
 if is_torch_available(): ...
 
 class Qwen2VLVideoProcessorInitKwargs(VideosKwargs):
-    min_pixels: Optional[int]
-    max_pixels: Optional[int]
-    patch_size: Optional[int]
-    temporal_patch_size: Optional[int]
-    merge_size: Optional[int]
-    min_frames: Optional[int]
-    max_frames: Optional[int]
+    min_pixels: int | None
+    max_pixels: int | None
+    patch_size: int | None
+    temporal_patch_size: int | None
+    merge_size: int | None
+    min_frames: int | None
+    max_frames: int | None
     ...
 
 @add_start_docstrings(
@@ -72,9 +72,9 @@ class Qwen2VLVideoProcessor(BaseVideoProcessor):
         frame_factor: int,
         min_frames: int,
         max_frames: int,
-        metadata: Optional[Union[VideoMetadata, dict]] = ...,
-        num_frames: Optional[int] = ...,
-        fps: Optional[Union[int, float]] = ...,
+        metadata: VideoMetadata | dict | None = ...,
+        num_frames: int | None = ...,
+        fps: int | float | None = ...,
     ):  # -> Tensor:
         """
         Default sampling function which uniformly samples the desired number of frames between 0 and total number of frames.

@@ -9,7 +9,7 @@ def process_inputs(
     flat_args: list[Any],
     aot_config: AOTConfig,
     fake_mode: FakeTensorMode,
-    shape_env: Optional[ShapeEnv],
+    shape_env: ShapeEnv | None,
     ignore_shape_env: bool = ...,
 ) -> FakifiedFlatArgs: ...
-def construct_fake_mode(flat_args: list[Any], aot_config: AOTConfig) -> tuple[FakeTensorMode, Optional[ShapeEnv]]: ...
+def construct_fake_mode(flat_args: list[Any], aot_config: AOTConfig) -> tuple[FakeTensorMode, ShapeEnv | None]: ...

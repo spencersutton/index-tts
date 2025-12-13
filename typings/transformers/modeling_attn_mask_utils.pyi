@@ -46,15 +46,15 @@ class AttentionMaskConverter:
 
     is_causal: bool
     sliding_window: int
-    def __init__(self, is_causal: bool, sliding_window: Optional[int] = ...) -> None: ...
+    def __init__(self, is_causal: bool, sliding_window: int | None = ...) -> None: ...
     def to_causal_4d(
         self,
         batch_size: int,
         query_length: int,
         key_value_length: int,
         dtype: torch.dtype,
-        device: Union[torch.device, str] = ...,
-    ) -> Optional[torch.Tensor]:
+        device: torch.device | str = ...,
+    ) -> torch.Tensor | None:
         """
         Creates a causal 4D mask of (bsz, head_dim=1, query_length, key_value_length) shape and adds large negative
         bias to upper right hand triangular matrix (causal mask).
@@ -66,7 +66,7 @@ class AttentionMaskConverter:
         attention_mask_2d: torch.Tensor,
         query_length: int,
         dtype: torch.dtype,
-        key_value_length: Optional[int] = ...,
+        key_value_length: int | None = ...,
     ) -> torch.Tensor:
         """
         Converts 2D attention mask to 4D attention mask by expanding mask to (bsz, head_dim=1, query_length,

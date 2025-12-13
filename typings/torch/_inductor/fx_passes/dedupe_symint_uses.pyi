@@ -5,7 +5,7 @@ from torch import SymBool, SymFloat, SymInt
 
 @dataclass
 class _SymExprHash:
-    sym_obj: Union[SymInt, SymFloat, SymBool]
+    sym_obj: SymInt | SymFloat | SymBool
     def __hash__(self) -> int: ...
     def __eq__(self, value) -> bool: ...
 

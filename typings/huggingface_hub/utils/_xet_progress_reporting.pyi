@@ -20,7 +20,7 @@ class XetProgressReporter:
         ...
 
     def update_progress(
-        self, total_update: PyTotalProgressUpdate, item_updates: List[PyItemProgressUpdate]
+        self, total_update: PyTotalProgressUpdate, item_updates: list[PyItemProgressUpdate]
     ):  # -> None:
         ...
     def close(self, _success):  # -> None:

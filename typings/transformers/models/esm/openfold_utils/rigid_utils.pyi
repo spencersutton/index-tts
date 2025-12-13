@@ -6,7 +6,8 @@ import numpy as np
 import torch
 from collections.abc import Sequence
 from functools import cache
-from typing import Any, Callable
+from typing import Any
+from collections.abc import Callable
 
 def rot_matmul(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     """

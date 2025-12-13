@@ -7,7 +7,7 @@ from typing import List, Optional
 """Contains utilities to manage Git credentials."""
 GIT_CREDENTIAL_REGEX = ...
 
-def list_credential_helpers(folder: Optional[str] = ...) -> List[str]:
+def list_credential_helpers(folder: str | None = ...) -> list[str]:
     """Return the list of git credential helpers configured.
 
     See https://git-scm.com/docs/gitcredentials.
@@ -21,7 +21,7 @@ def list_credential_helpers(folder: Optional[str] = ...) -> List[str]:
     """
     ...
 
-def set_git_credential(token: str, username: str = ..., folder: Optional[str] = ...) -> None:
+def set_git_credential(token: str, username: str = ..., folder: str | None = ...) -> None:
     """Save a username/token pair in git credential for HF Hub registry.
 
     Credentials are saved in all configured helpers (store, cache, macOS keychain,...).
@@ -38,7 +38,7 @@ def set_git_credential(token: str, username: str = ..., folder: Optional[str] = 
     """
     ...
 
-def unset_git_credential(username: str = ..., folder: Optional[str] = ...) -> None:
+def unset_git_credential(username: str = ..., folder: str | None = ...) -> None:
     """Erase credentials from git credential for HF Hub registry.
 
     Credentials are erased from the configured helpers (store, cache, macOS

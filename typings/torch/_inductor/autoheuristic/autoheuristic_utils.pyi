@@ -1,9 +1,10 @@
 import torch
-from typing import Any, Callable, TypeAlias
+from typing import Any, TypeAlias
+from collections.abc import Callable
 
 Feedback = float
 Choice = str
-Value: TypeAlias = Any
+type Value = Any
 CHOICE_COL = ...
 FEEDBACK_COL = ...
 

@@ -190,17 +190,17 @@ class DeepseekV2RotaryEmbedding(Llama4TextRotaryEmbedding):
 
 class DeepseekV2Attention(nn.Module):
     """Multi-headed attention from 'Attention Is All You Need' paper"""
-    def __init__(self, config: DeepseekV2Config, layer_idx: Optional[int] = ...) -> None: ...
+    def __init__(self, config: DeepseekV2Config, layer_idx: int | None = ...) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        past_key_value: Optional[Cache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
-        position_ids: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        past_key_value: Cache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = ...,
+        position_ids: torch.Tensor | None = ...,
         **kwargs,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]: ...
 
 class DeepseekV2DecoderLayer(LlamaDecoderLayer):
     def __init__(self, config: DeepseekV2Config, layer_idx: int) -> None: ...

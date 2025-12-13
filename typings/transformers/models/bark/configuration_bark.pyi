@@ -157,10 +157,10 @@ class BarkConfig(PretrainedConfig):
     sub_configs = ...
     def __init__(
         self,
-        semantic_config: Optional[dict] = ...,
-        coarse_acoustics_config: Optional[dict] = ...,
-        fine_acoustics_config: Optional[dict] = ...,
-        codec_config: Optional[dict] = ...,
+        semantic_config: dict | None = ...,
+        coarse_acoustics_config: dict | None = ...,
+        fine_acoustics_config: dict | None = ...,
+        codec_config: dict | None = ...,
         initializer_range=...,
         **kwargs,
     ) -> None: ...

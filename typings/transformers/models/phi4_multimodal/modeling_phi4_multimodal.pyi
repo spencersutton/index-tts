@@ -32,7 +32,7 @@ def simple_eager_attention_forward(
     query_states: torch.Tensor,
     key_states: torch.Tensor,
     value_states: torch.Tensor,
-    attention_mask: Optional[torch.Tensor],
+    attention_mask: torch.Tensor | None,
     scaling: float,
     dropout: float = ...,
     **kwargs: Unpack[TransformersKwargs],
@@ -42,15 +42,15 @@ def simple_eager_attention_forward(
 class Phi4MultimodalVisionAttention(nn.Module):
     def __init__(self, config: Phi4MultimodalVisionConfig) -> None: ...
     def forward(
-        self, hidden_states: torch.Tensor, attention_mask: Optional[torch.Tensor] = ..., **kwargs
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
+        self, hidden_states: torch.Tensor, attention_mask: torch.Tensor | None = ..., **kwargs
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         """Input shape: Batch x Time x Channel"""
         ...
 
 class Phi4MultimodalVisionEncoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: Phi4MultimodalVisionConfig) -> None: ...
     def forward(
-        self, hidden_states: torch.Tensor, attention_mask: torch.Tensor, output_attentions: Optional[bool] = ...
+        self, hidden_states: torch.Tensor, attention_mask: torch.Tensor, output_attentions: bool | None = ...
     ) -> tuple[torch.FloatTensor]:
         """
         Args:
@@ -77,9 +77,9 @@ class Phi4MultimodalVisionEncoder(nn.Module):
     def forward(
         self,
         inputs_embeds,
-        attention_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
     ) -> BaseModelOutput:
         r"""
         Args:
@@ -175,9 +175,9 @@ class Phi4MultimodalVisionModel(Phi4MultimodalVisionPreTrainedModel):
     def forward(
         self,
         pixel_values,
-        patch_attention_mask: Optional[torch.BoolTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
+        patch_attention_mask: torch.BoolTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
     ) -> BaseModelOutputWithPooling: ...
 
 class Phi4MultimodalImageEmbedding(nn.Module):
@@ -189,8 +189,8 @@ class Phi4MultimodalImageEmbedding(nn.Module):
         input_ids: torch.LongTensor,
         inputs_embeds: torch.Tensor,
         image_pixel_values: torch.FloatTensor,
-        image_sizes: Optional[torch.Tensor] = ...,
-        image_attention_mask: Optional[torch.Tensor] = ...,
+        image_sizes: torch.Tensor | None = ...,
+        image_attention_mask: torch.Tensor | None = ...,
     ) -> torch.FloatTensor: ...
 
 class Phi4MultimodalAudioMLP(nn.Module):
@@ -225,7 +225,7 @@ class Phi4MultimodalAudioConformerEncoderLayer(nn.Module):
 class Phi4MultimodalAudioNemoConvSubsampling(torch.nn.Module):
     def __init__(self, config: Phi4MultimodalAudioConfig) -> None: ...
     def forward(
-        self, hidden_states: torch.Tensor, mask: Optional[torch.Tensor]
+        self, hidden_states: torch.Tensor, mask: torch.Tensor | None
     ):  # -> tuple[Tensor, None] | tuple[Tensor, Tensor]:
         ...
 
@@ -276,7 +276,7 @@ class Phi4MultimodalAudioModel(Phi4MultimodalAudioPreTrainedModel):
         ...
 
     def calculate_hs_mask(self, hidden_states, device, mask): ...
-    def forward(self, hidden_states: torch.Tensor, mask: Optional[torch.Tensor]):  # -> Tensor:
+    def forward(self, hidden_states: torch.Tensor, mask: torch.Tensor | None):  # -> Tensor:
         ...
 
 class Phi4MultimodalAudioEmbedding(nn.Module):
@@ -323,7 +323,7 @@ def eager_attention_forward(
     query: torch.Tensor,
     key: torch.Tensor,
     value: torch.Tensor,
-    attention_mask: Optional[torch.Tensor],
+    attention_mask: torch.Tensor | None,
     scaling: float,
     dropout: float = ...,
     **kwargs: Unpack[TransformersKwargs],
@@ -353,30 +353,30 @@ def apply_rotary_pos_emb(q, k, cos, sin, position_ids=..., unsqueeze_dim=...):  
 
 class Phi4MultimodalAttention(nn.Module):
     """Multi-headed attention from 'Attention Is All You Need' paper"""
-    def __init__(self, config: Phi4MultimodalConfig, layer_idx: Optional[int] = ...) -> None: ...
+    def __init__(self, config: Phi4MultimodalConfig, layer_idx: int | None = ...) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
         position_embeddings: tuple[torch.Tensor, torch.Tensor],
-        attention_mask: Optional[torch.Tensor],
-        past_key_value: Optional[Cache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        attention_mask: torch.Tensor | None,
+        past_key_value: Cache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]: ...
 
 class Phi4MultimodalDecoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: Phi4MultimodalConfig, layer_idx: int) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[Cache] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: Cache | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]: ...
+    ) -> tuple[torch.FloatTensor, tuple[torch.FloatTensor, torch.FloatTensor] | None]: ...
 
 class Phi4MultimodalFeatureEmbedding(nn.Module):
     """Image-audio embedding."""
@@ -385,8 +385,8 @@ class Phi4MultimodalFeatureEmbedding(nn.Module):
         self,
         input_ids: torch.LongTensor,
         inputs_embeds: torch.Tensor,
-        image_pixel_values: Optional[torch.FloatTensor] = ...,
-        audio_input_features: Optional[torch.FloatTensor] = ...,
+        image_pixel_values: torch.FloatTensor | None = ...,
+        audio_input_features: torch.FloatTensor | None = ...,
         image_sizes=...,
         image_attention_mask=...,
         audio_embed_sizes=...,
@@ -421,21 +421,21 @@ class Phi4MultimodalModel(Phi4MultimodalPreTrainedModel):
     @check_model_inputs
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        image_pixel_values: Optional[torch.FloatTensor] = ...,
-        image_sizes: Optional[torch.LongTensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        image_pixel_values: torch.FloatTensor | None = ...,
+        image_sizes: torch.LongTensor | None = ...,
         image_attention_mask=...,
-        audio_input_features: Optional[torch.FloatTensor] = ...,
+        audio_input_features: torch.FloatTensor | None = ...,
         audio_embed_sizes=...,
         audio_attention_mask=...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs,
     ) -> BaseModelOutputWithPast:
         r"""
@@ -470,23 +470,23 @@ class Phi4MultimodalForCausalLM(Phi4MultimodalPreTrainedModel, GenerationMixin):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        image_pixel_values: Optional[torch.FloatTensor] = ...,
-        image_sizes: Optional[torch.LongTensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        image_pixel_values: torch.FloatTensor | None = ...,
+        image_sizes: torch.LongTensor | None = ...,
         image_attention_mask=...,
-        audio_input_features: Optional[torch.FloatTensor] = ...,
+        audio_input_features: torch.FloatTensor | None = ...,
         audio_embed_sizes=...,
         audio_attention_mask=...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        logits_to_keep: Union[int, torch.Tensor] = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        logits_to_keep: int | torch.Tensor = ...,
         **kwargs,
     ) -> CausalLMOutputWithPast:
         r"""

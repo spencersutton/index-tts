@@ -128,7 +128,7 @@ class BlenderbotOnnxConfig(OnnxSeq2SeqConfigWithPast):
         batch_size: int = ...,
         seq_length: int = ...,
         is_pair: bool = ...,
-        framework: Optional[TensorType] = ...,
+        framework: TensorType | None = ...,
     ) -> Mapping[str, Any]: ...
     def fill_with_past_key_values_(
         self, inputs_or_outputs: Mapping[str, Mapping[int, str]], direction: str

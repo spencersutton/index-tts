@@ -1,5 +1,6 @@
 import dataclasses
-from typing import Callable, TYPE_CHECKING, TypedDict, Union
+from typing import TYPE_CHECKING, TypedDict, Union
+from collections.abc import Callable
 from torch.utils._ordered_set import OrderedSet
 from .scheduler import BaseSchedulerNode, SchedulerBuffer
 
@@ -22,7 +23,7 @@ class MemoryPlanningInfoForBuffer:
 class MemoryPlanningInfoForNode:
     index: int = ...
     size: int = ...
-    pred_buffers: OrderedSet[Union[SchedulerBuffer, FreeableInputBuffer]] = ...
+    pred_buffers: OrderedSet[SchedulerBuffer | FreeableInputBuffer] = ...
     pred_nodes: OrderedSet[BaseSchedulerNode] = ...
     succ_nodes: OrderedSet[BaseSchedulerNode] = ...
 
@@ -49,7 +50,7 @@ def assign_memory_planning_info_for_scheduler_nodes(
 
 @dataclasses.dataclass
 class BufferInfo:
-    buffer: Union[SchedulerBuffer, FreeableInputBuffer]
+    buffer: SchedulerBuffer | FreeableInputBuffer
     size_alloc: int
     size_free: int
     start_step: int
@@ -62,7 +63,7 @@ def compute_memory_timeline(
 ) -> tuple[
     list[BufferInfo],
     dict[BaseSchedulerNode, int],
-    dict[Union[FreeableInputBuffer, SchedulerBuffer], BaseSchedulerNode],
+    dict[FreeableInputBuffer | SchedulerBuffer, BaseSchedulerNode],
 ]: ...
 def estimate_peak_memory(
     nodes: list[BaseSchedulerNode],
@@ -83,7 +84,7 @@ def estimate_peak_memory_allocfree(
     int,
     list[tuple[int, int]],
     dict[BaseSchedulerNode, SNodeMemory],
-    dict[Union[FreeableInputBuffer, SchedulerBuffer], BaseSchedulerNode],
+    dict[FreeableInputBuffer | SchedulerBuffer, BaseSchedulerNode],
 ]: ...
 def topological_sort_lpmf(
     nodes: list[BaseSchedulerNode],

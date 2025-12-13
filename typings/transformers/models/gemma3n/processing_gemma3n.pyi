@@ -10,11 +10,11 @@ from ...processing_utils import AudioKwargs, ImagesKwargs, ProcessingKwargs, Pro
 from ...tokenization_utils_base import PreTokenizedInput, TextInput
 
 class Gemma3nImagesKwargs(ImagesKwargs):
-    do_pan_and_scan: Optional[bool]
-    pan_and_scan_min_crop_size: Optional[int]
-    pan_and_scan_max_num_crops: Optional[int]
-    pan_and_scan_min_ratio_to_activate: Optional[float]
-    do_convert_rgb: Optional[bool]
+    do_pan_and_scan: bool | None
+    pan_and_scan_min_crop_size: int | None
+    pan_and_scan_max_num_crops: int | None
+    pan_and_scan_min_ratio_to_activate: float | None
+    do_convert_rgb: bool | None
     ...
 
 class Gemma3nProcessorKwargs(ProcessingKwargs, total=False):
@@ -61,8 +61,8 @@ class Gemma3nProcessor(ProcessorMixin):
     def __call__(
         self,
         images: ImageInput = ...,
-        text: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]] = ...,
-        audio: Optional[Union[np.ndarray, list[float], list[np.ndarray], list[list[float]]]] = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] = ...,
+        audio: np.ndarray | list[float] | list[np.ndarray] | list[list[float]] | None = ...,
         videos=...,
         **kwargs: Unpack[Gemma3nProcessorKwargs],
     ) -> BatchFeature: ...

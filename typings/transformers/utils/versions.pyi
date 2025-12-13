@@ -9,7 +9,7 @@ Utilities for working with package versions
 """
 ops = ...
 
-def require_version(requirement: str, hint: Optional[str] = ...) -> None:
+def require_version(requirement: str, hint: str | None = ...) -> None:
     """
     Perform a runtime check of the dependency versions, using the exact same syntax used by pip.
 

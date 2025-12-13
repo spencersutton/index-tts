@@ -1,7 +1,8 @@
 import torch
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from typing import Any, Callable, Optional, TypeVar, Union, overload
+from typing import Any, Optional, TypeVar, Union, overload
+from collections.abc import Callable
 from torch._higher_order_ops.schema import HopSchema
 from torch._ops import HigherOrderOperator, OpOverload, OperatorBase
 from torch._subclasses.fake_tensor import FakeTensor
@@ -16,8 +17,8 @@ def autograd_not_implemented(op: OperatorBase, deferred_error: bool) -> Callable
 def reenter_make_fx(fn):  # -> _Wrapped[..., Any, ..., GraphModule]:
     ...
 def check_meta_consistency(
-    lhs_list: list[Union[torch.Tensor, torch.SymInt, int]],
-    rhs_list: list[Union[torch.Tensor, torch.SymInt, int]],
+    lhs_list: list[torch.Tensor | torch.SymInt | int],
+    rhs_list: list[torch.Tensor | torch.SymInt | int],
     lhs_name: str,
     rhs_name: str,
     include_contiguity: bool = ...,
@@ -57,22 +58,22 @@ def get_dummy_aot_autograd_config():  # -> AOTConfig:
     ...
 def first_slice_copy(t: torch.Tensor, dim: int = ...) -> torch.Tensor: ...
 def get_tensor_mask(tensor_list: Iterable[Any]) -> list[bool]: ...
-def mask_list(mask: list[bool], inp: list[Any], other: Optional[list[Any]] = ...) -> list[Any]: ...
+def mask_list(mask: list[bool], inp: list[Any], other: list[Any] | None = ...) -> list[Any]: ...
 def first_slice_copy_with_grad(li: Iterable[Any]) -> list[Any]: ...
 def diff_tensor_meta(meta1: TensorMetadata, meta2: TensorMetadata, check_grad=...) -> list[str]: ...
-def validate_subgraph_args_types(lifted_args: Union[tuple[Any, ...], list[Any]]):  # -> None:
+def validate_subgraph_args_types(lifted_args: tuple[Any, ...] | list[Any]):  # -> None:
     ...
 def check_input_alias_and_mutation(
     gm: torch.fx.GraphModule, fake_args: list[FakeTensor]
 ) -> tuple[dict[int, int], dict[int, int], dict[int, int], list[int]]: ...
 def check_input_alias_and_mutation_return_outputs(
-    gm: torch.fx.GraphModule, fake_args: Union[list[FakeTensor], tuple[FakeTensor, ...]]
+    gm: torch.fx.GraphModule, fake_args: list[FakeTensor] | tuple[FakeTensor, ...]
 ) -> tuple[
     dict[int, int],
     dict[int, int],
     dict[int, int],
     list[int],
-    Union[tuple[Any, ...], list[Any]],
+    tuple[Any, ...] | list[Any],
 ]: ...
 
 registered_hop_fake_fns: dict[torch._ops.OpOverload, Callable] = ...
@@ -102,13 +103,13 @@ class HopInstance:
     def create(hop: HigherOrderOperator, *args, **kwargs):  # -> HopInstance:
         ...
 
-def call_op(op: Union[OpOverload, HopInstance], args, kwargs):  # -> Any | None:
+def call_op(op: OpOverload | HopInstance, args, kwargs):  # -> Any | None:
     ...
 def materialize_as_graph(
     fn: Callable,
     args: tuple[Any],
-    include_key_set: Optional[torch._C.DispatchKeySet] = ...,
-    exclude_key_set: Optional[torch._C.DispatchKeySet] = ...,
+    include_key_set: torch._C.DispatchKeySet | None = ...,
+    exclude_key_set: torch._C.DispatchKeySet | None = ...,
     force_enable_grad=...,
 ) -> torch.fx.GraphModule: ...
 def materialize_callable_in_args(op: HopInstance, args, kwargs):  # -> PyTree:
@@ -116,7 +117,7 @@ def materialize_callable_in_args(op: HopInstance, args, kwargs):  # -> PyTree:
 def has_user_subclass(args, allowed_subclasses):  # -> bool:
 
     ...
-def filter_with_masks(data: list[Optional[torch.Tensor]], masks: list[bool]):  # -> list[Tensor | None]:
+def filter_with_masks(data: list[torch.Tensor | None], masks: list[bool]):  # -> list[Tensor | None]:
     ...
-def fill_none_with_masks(data: list[Optional[torch.Tensor]], masks: list[bool]):  # -> list[Tensor | None]:
+def fill_none_with_masks(data: list[torch.Tensor | None], masks: list[bool]):  # -> list[Tensor | None]:
     ...

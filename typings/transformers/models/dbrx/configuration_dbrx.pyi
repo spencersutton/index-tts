@@ -30,7 +30,7 @@ class DbrxAttentionConfig(PretrainedConfig):
     def __init__(
         self,
         attn_pdrop: float = ...,
-        clip_qkv: Optional[float] = ...,
+        clip_qkv: float | None = ...,
         kv_n_heads: int = ...,
         rope_theta: float = ...,
         **kwargs: Any,
@@ -60,13 +60,13 @@ class DbrxFFNConfig(PretrainedConfig):
     base_config_key = ...
     def __init__(
         self,
-        ffn_act_fn: Optional[dict] = ...,
+        ffn_act_fn: dict | None = ...,
         ffn_hidden_size: int = ...,
         moe_num_experts: int = ...,
         moe_top_k: int = ...,
-        moe_jitter_eps: Optional[float] = ...,
+        moe_jitter_eps: float | None = ...,
         moe_loss_weight: float = ...,
-        moe_normalize_expert_weights: Optional[float] = ...,
+        moe_normalize_expert_weights: float | None = ...,
         **kwargs: Any,
     ) -> None: ...
 
@@ -137,8 +137,8 @@ class DbrxConfig(PretrainedConfig):
         vocab_size: int = ...,
         resid_pdrop: float = ...,
         emb_pdrop: float = ...,
-        attn_config: Optional[DbrxAttentionConfig] = ...,
-        ffn_config: Optional[DbrxFFNConfig] = ...,
+        attn_config: DbrxAttentionConfig | None = ...,
+        ffn_config: DbrxFFNConfig | None = ...,
         use_cache: bool = ...,
         initializer_range: float = ...,
         output_router_logits: bool = ...,

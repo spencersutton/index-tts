@@ -23,17 +23,18 @@ class SeamlessM4TFeatureExtractor(SequenceFeatureExtractor):
     ) -> list[np.ndarray]: ...
     def __call__(
         self,
-        raw_speech: Union[
-            np.ndarray, list[float], list[np.ndarray], list[list[float]] | torch.Tensor | list[torch.Tensor]
-        ],
-        padding: Union[bool, str, PaddingStrategy] = ...,
-        pad_to_multiple_of: Optional[int] = ...,
-        max_length: Optional[int] = ...,
+        raw_speech: np.ndarray
+        | list[float]
+        | list[np.ndarray]
+        | (list[list[float]] | torch.Tensor | list[torch.Tensor]),
+        padding: bool | str | PaddingStrategy = ...,
+        pad_to_multiple_of: int | None = ...,
+        max_length: int | None = ...,
         truncation: bool = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        sampling_rate: Optional[int] = ...,
-        return_attention_mask: Optional[bool] = ...,
-        do_normalize_per_mel_bins: Optional[bool] = ...,
+        return_tensors: str | TensorType | None = ...,
+        sampling_rate: int | None = ...,
+        return_attention_mask: bool | None = ...,
+        do_normalize_per_mel_bins: bool | None = ...,
         **kwargs,
     ) -> BatchFeature: ...
 

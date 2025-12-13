@@ -1,5 +1,5 @@
 from typing import Optional
-from typing_extensions import override
+from typing import override
 from torch._inductor import ir
 from .wrapper import PythonWrapperCodegen
 
@@ -10,7 +10,7 @@ class PythonWrapperMtia(PythonWrapperCodegen):
     @staticmethod
     def create(
         is_subgraph: bool,
-        subgraph_name: Optional[str],
-        parent_wrapper: Optional[PythonWrapperCodegen],
-        partition_signatures: Optional[ir.GraphPartitionSignature] = ...,
+        subgraph_name: str | None,
+        parent_wrapper: PythonWrapperCodegen | None,
+        partition_signatures: ir.GraphPartitionSignature | None = ...,
     ) -> PythonWrapperCodegen: ...

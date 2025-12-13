@@ -55,9 +55,9 @@ class DiaProcessor(ProcessorMixin):
 
     def __call__(
         self,
-        text: Union[str, list[str]],
-        audio: Optional[AudioInput] = ...,
-        output_labels: Optional[bool] = ...,
+        text: str | list[str],
+        audio: AudioInput | None = ...,
+        output_labels: bool | None = ...,
         **kwargs: Unpack[DiaProcessorKwargs],
     ):  # -> BatchFeature:
         """
@@ -71,7 +71,7 @@ class DiaProcessor(ProcessorMixin):
     def batch_decode(
         self,
         decoder_input_ids: torch.Tensor,
-        audio_prompt_len: Optional[int] = ...,
+        audio_prompt_len: int | None = ...,
         **kwargs: Unpack[DiaProcessorKwargs],
     ) -> list[torch.Tensor]:
         """
@@ -87,7 +87,7 @@ class DiaProcessor(ProcessorMixin):
     def decode(
         self,
         decoder_input_ids: torch.Tensor,
-        audio_prompt_len: Optional[int] = ...,
+        audio_prompt_len: int | None = ...,
         **kwargs: Unpack[DiaProcessorKwargs],
     ) -> torch.Tensor:
         """
@@ -103,7 +103,7 @@ class DiaProcessor(ProcessorMixin):
     def save_audio(
         self,
         audio: AudioInput,
-        saving_path: Union[str, Path, list[Union[str, Path]]],
+        saving_path: str | Path | list[str | Path],
         **kwargs: Unpack[DiaProcessorKwargs],
     ):  # -> None:
         ...

@@ -239,7 +239,7 @@ class Blip2Config(PretrainedConfig):
         cls,
         vision_config: Blip2VisionConfig,
         qformer_config: Blip2QFormerConfig,
-        text_config: Optional[PretrainedConfig] = ...,
+        text_config: PretrainedConfig | None = ...,
         **kwargs,
     ):  # -> Self:
         r"""

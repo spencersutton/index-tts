@@ -45,10 +45,10 @@ class MimiOutput(ModelOutput):
         have their past key value states given to this model).
     """
 
-    audio_codes: Optional[torch.LongTensor] = ...
-    audio_values: Optional[torch.FloatTensor] = ...
-    encoder_past_key_values: Optional[Union[Cache, list[torch.FloatTensor]]] = ...
-    decoder_past_key_values: Optional[Union[Cache, list[torch.FloatTensor]]] = ...
+    audio_codes: torch.LongTensor | None = ...
+    audio_values: torch.FloatTensor | None = ...
+    encoder_past_key_values: Cache | list[torch.FloatTensor] | None = ...
+    decoder_past_key_values: Cache | list[torch.FloatTensor] | None = ...
 
 class MimiConv1dPaddingCache:
     """
@@ -97,9 +97,9 @@ class MimiEncoderOutput(ModelOutput):
         Padding cache for MimiConv1d causal convolutions in order to support streaming via cache padding.
     """
 
-    audio_codes: Optional[torch.LongTensor] = ...
-    encoder_past_key_values: Optional[Union[Cache, list[torch.FloatTensor]]] = ...
-    padding_cache: Optional[MimiConv1dPaddingCache] = ...
+    audio_codes: torch.LongTensor | None = ...
+    encoder_past_key_values: Cache | list[torch.FloatTensor] | None = ...
+    padding_cache: MimiConv1dPaddingCache | None = ...
 
 @dataclass
 @auto_docstring
@@ -117,8 +117,8 @@ class MimiDecoderOutput(ModelOutput):
         have their past key value states given to this model).
     """
 
-    audio_values: Optional[torch.FloatTensor] = ...
-    decoder_past_key_values: Optional[Union[Cache, list[torch.FloatTensor]]] = ...
+    audio_values: torch.FloatTensor | None = ...
+    decoder_past_key_values: Cache | list[torch.FloatTensor] | None = ...
 
 class MimiConv1d(nn.Module):
     """Conv1d with asymmetric or causal padding and normalization."""
@@ -131,9 +131,9 @@ class MimiConv1d(nn.Module):
         stride: int = ...,
         dilation: int = ...,
         groups: int = ...,
-        pad_mode: Optional[str] = ...,
+        pad_mode: str | None = ...,
         bias: bool = ...,
-        layer_idx: Optional[int] = ...,
+        layer_idx: int | None = ...,
     ) -> None: ...
     def apply_weight_norm(self):  # -> None:
         ...
@@ -229,17 +229,17 @@ def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
 
 class MimiAttention(nn.Module):
     """Multi-headed attention from 'Attention Is All You Need' paper"""
-    def __init__(self, config: MimiConfig, layer_idx: Optional[int] = ...) -> None: ...
+    def __init__(self, config: MimiConfig, layer_idx: int | None = ...) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[Cache] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: Cache | None = ...,
         output_attentions: bool = ...,
         use_cache: bool = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+        cache_position: torch.LongTensor | None = ...,
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]: ...
 
 class MimiFlashAttention2(MimiAttention):
     """
@@ -251,13 +251,13 @@ class MimiFlashAttention2(MimiAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.LongTensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[Cache] = ...,
+        attention_mask: torch.LongTensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: Cache | None = ...,
         output_attentions: bool = ...,
         use_cache: bool = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+        cache_position: torch.LongTensor | None = ...,
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]: ...
 
 class MimiSdpaAttention(MimiAttention):
     """
@@ -268,14 +268,14 @@ class MimiSdpaAttention(MimiAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[Cache] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: Cache | None = ...,
         output_attentions: bool = ...,
         use_cache: bool = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]: ...
 
 MIMI_ATTENTION_CLASSES = ...
 
@@ -284,14 +284,14 @@ class MimiTransformerLayer(GradientCheckpointingLayer):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[Cache] = ...,
-        output_attentions: Optional[bool] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: Cache | None = ...,
+        output_attentions: bool | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs,
-    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]:
+    ) -> tuple[torch.FloatTensor, tuple[torch.FloatTensor, torch.FloatTensor] | None]:
         """
         Args:
             hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
@@ -323,16 +323,16 @@ class MimiTransformerModel(nn.Module):
     def __init__(self, config: MimiConfig) -> None: ...
     def forward(
         self,
-        hidden_states: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Union[Cache, list[torch.FloatTensor]]] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPast]:
+        hidden_states: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | list[torch.FloatTensor] | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+    ) -> tuple | BaseModelOutputWithPast:
         """
         Args:
             hidden_states (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`, *optional*):
@@ -423,8 +423,8 @@ class MimiVectorQuantization(nn.Module):
 
 class MimiResidualVectorQuantizer(nn.Module):
     """Residual Vector Quantizer."""
-    def __init__(self, config: MimiConfig, num_quantizers: Optional[int] = ...) -> None: ...
-    def encode(self, embeddings: torch.Tensor, num_quantizers: Optional[int] = ...) -> torch.Tensor:
+    def __init__(self, config: MimiConfig, num_quantizers: int | None = ...) -> None: ...
+    def encode(self, embeddings: torch.Tensor, num_quantizers: int | None = ...) -> torch.Tensor:
         """
         Encode a given input tensor with the specified frame rate at the given number of quantizers / codebooks. The RVQ encode method sets
         the appropriate number of quantizers to use and returns indices for each quantizer.
@@ -438,7 +438,7 @@ class MimiResidualVectorQuantizer(nn.Module):
 class MimiSplitResidualVectorQuantizer(nn.Module):
     """Split Residual Vector Quantizer."""
     def __init__(self, config: MimiConfig) -> None: ...
-    def encode(self, embeddings: torch.Tensor, num_quantizers: Optional[float] = ...) -> torch.Tensor:
+    def encode(self, embeddings: torch.Tensor, num_quantizers: float | None = ...) -> torch.Tensor:
         """
         Encode a given input tensor with the specified frame rate at the given number of quantizers / codebooks. The RVQ encode method sets
         the appropriate number of quantizers to use and returns indices for each quantizer.
@@ -487,13 +487,13 @@ class MimiModel(MimiPreTrainedModel):
     def encode(
         self,
         input_values: torch.Tensor,
-        padding_mask: Optional[torch.Tensor] = ...,
-        num_quantizers: Optional[float] = ...,
-        encoder_past_key_values: Optional[Union[Cache, list[torch.FloatTensor]]] = ...,
-        padding_cache: Optional[MimiConv1dPaddingCache] = ...,
-        use_streaming: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor, Optional[torch.Tensor]], MimiEncoderOutput]:
+        padding_mask: torch.Tensor | None = ...,
+        num_quantizers: float | None = ...,
+        encoder_past_key_values: Cache | list[torch.FloatTensor] | None = ...,
+        padding_cache: MimiConv1dPaddingCache | None = ...,
+        use_streaming: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.Tensor, torch.Tensor | None] | MimiEncoderOutput:
         """
         Encodes the input audio waveform into discrete codes.
 
@@ -524,10 +524,10 @@ class MimiModel(MimiPreTrainedModel):
     def decode(
         self,
         audio_codes: torch.Tensor,
-        padding_mask: Optional[torch.Tensor] = ...,
-        decoder_past_key_values: Optional[Union[Cache, list[torch.FloatTensor]]] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor, torch.Tensor], MimiDecoderOutput]:
+        padding_mask: torch.Tensor | None = ...,
+        decoder_past_key_values: Cache | list[torch.FloatTensor] | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.Tensor, torch.Tensor] | MimiDecoderOutput:
         """
         Decodes the given frames into an output audio waveform.
 
@@ -558,13 +558,13 @@ class MimiModel(MimiPreTrainedModel):
     def forward(
         self,
         input_values: torch.Tensor,
-        padding_mask: Optional[torch.Tensor] = ...,
-        num_quantizers: Optional[int] = ...,
-        audio_codes: Optional[torch.Tensor] = ...,
-        encoder_past_key_values: Optional[Union[Cache, list[torch.FloatTensor]]] = ...,
-        decoder_past_key_values: Optional[Union[Cache, list[torch.FloatTensor]]] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor, torch.Tensor], MimiOutput]:
+        padding_mask: torch.Tensor | None = ...,
+        num_quantizers: int | None = ...,
+        audio_codes: torch.Tensor | None = ...,
+        encoder_past_key_values: Cache | list[torch.FloatTensor] | None = ...,
+        decoder_past_key_values: Cache | list[torch.FloatTensor] | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.Tensor, torch.Tensor] | MimiOutput:
         r"""
         input_values (`torch.FloatTensor` of shape `(batch_size, channels, sequence_length)`, *optional*):
             Raw audio input converted to Float.

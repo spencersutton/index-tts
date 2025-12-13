@@ -45,7 +45,7 @@ class RealmRetriever:
         ...
     @classmethod
     def from_pretrained(
-        cls, pretrained_model_name_or_path: Optional[Union[str, os.PathLike]], *init_inputs, **kwargs
+        cls, pretrained_model_name_or_path: str | os.PathLike | None, *init_inputs, **kwargs
     ):  # -> Self:
         ...
     def save_pretrained(self, save_directory):  # -> None:

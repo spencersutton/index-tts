@@ -74,7 +74,7 @@ class ColPaliProcessor(ProcessorMixin):
     def __call__(
         self,
         images: ImageInput = ...,
-        text: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]] = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] = ...,
         audio=...,
         videos=...,
         **kwargs: Unpack[ColPaliProcessorKwargs],
@@ -176,7 +176,7 @@ class ColPaliProcessor(ProcessorMixin):
         ...
 
     def process_queries(
-        self, text: Union[TextInput, list[TextInput]], **kwargs: Unpack[ColPaliProcessorKwargs]
+        self, text: TextInput | list[TextInput], **kwargs: Unpack[ColPaliProcessorKwargs]
     ) -> BatchFeature:
         """
         Prepare for the model one or several texts. This method is a wrapper around the `__call__` method of the ColPaliProcessor's
@@ -209,11 +209,11 @@ class ColPaliProcessor(ProcessorMixin):
 
     def score_retrieval(
         self,
-        query_embeddings: Union[torch.Tensor, list[torch.Tensor]],
-        passage_embeddings: Union[torch.Tensor, list[torch.Tensor]],
+        query_embeddings: torch.Tensor | list[torch.Tensor],
+        passage_embeddings: torch.Tensor | list[torch.Tensor],
         batch_size: int = ...,
-        output_dtype: Optional[torch.dtype] = ...,
-        output_device: Union[torch.device, str] = ...,
+        output_dtype: torch.dtype | None = ...,
+        output_device: torch.device | str = ...,
     ) -> torch.Tensor:
         """
         Compute the late-interaction/MaxSim score (ColBERT-like) for the given multi-vector

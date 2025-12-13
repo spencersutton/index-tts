@@ -110,7 +110,7 @@ class LayoutLMConfig(PretrainedConfig):
 
 class LayoutLMOnnxConfig(OnnxConfig):
     def __init__(
-        self, config: PretrainedConfig, task: str = ..., patching_specs: Optional[list[PatchingSpec]] = ...
+        self, config: PretrainedConfig, task: str = ..., patching_specs: list[PatchingSpec] | None = ...
     ) -> None: ...
     @property
     def inputs(self) -> Mapping[str, Mapping[int, str]]: ...
@@ -120,7 +120,7 @@ class LayoutLMOnnxConfig(OnnxConfig):
         batch_size: int = ...,
         seq_length: int = ...,
         is_pair: bool = ...,
-        framework: Optional[TensorType] = ...,
+        framework: TensorType | None = ...,
     ) -> Mapping[str, Any]:
         """
         Generate inputs to provide to the ONNX exporter for the specific framework

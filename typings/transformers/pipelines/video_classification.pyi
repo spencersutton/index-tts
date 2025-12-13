@@ -33,7 +33,7 @@ class VideoClassificationPipeline(Pipeline):
     @overload
     def __call__(self, inputs: list[str], **kwargs: Any) -> list[list[dict[str, Any]]]: ...
     def __call__(
-        self, inputs: Optional[Union[str, list[str]]] = ..., **kwargs
+        self, inputs: str | list[str] | None = ..., **kwargs
     ):  # -> list[Any] | PipelineIterator | Generator[Any, Any, None] | Tensor | Any | None:
         """
         Assign labels to the video(s) passed as inputs.

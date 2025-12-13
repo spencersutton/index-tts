@@ -64,7 +64,7 @@ class LayerDropModuleList(nn.ModuleList):
         p (float): probability of dropping out each layer
         modules (iterable, optional): an iterable of modules to add
     """
-    def __init__(self, p: float, modules: Optional[Iterable[nn.Module]] = ...) -> None: ...
+    def __init__(self, p: float, modules: Iterable[nn.Module] | None = ...) -> None: ...
     def __iter__(self) -> Iterator[nn.Module]: ...
 
 class GraphormerGraphNodeFeature(nn.Module):
@@ -101,15 +101,15 @@ class GraphormerMultiheadAttention(nn.Module):
     def forward(
         self,
         query: torch.LongTensor,
-        key: Optional[torch.Tensor],
-        value: Optional[torch.Tensor],
-        attn_bias: Optional[torch.Tensor],
-        key_padding_mask: Optional[torch.Tensor] = ...,
+        key: torch.Tensor | None,
+        value: torch.Tensor | None,
+        attn_bias: torch.Tensor | None,
+        key_padding_mask: torch.Tensor | None = ...,
         need_weights: bool = ...,
-        attn_mask: Optional[torch.Tensor] = ...,
+        attn_mask: torch.Tensor | None = ...,
         before_softmax: bool = ...,
         need_head_weights: bool = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         """
         Args:
             key_padding_mask (Bytetorch.Tensor, optional): mask to exclude
@@ -133,14 +133,14 @@ class GraphormerGraphEncoderLayer(nn.Module):
     def __init__(self, config: GraphormerConfig) -> None: ...
     def build_fc(
         self, input_dim: int, output_dim: int, q_noise: float, qn_block_size: int
-    ) -> Union[nn.Module, nn.Linear, nn.Embedding, nn.Conv2d]: ...
+    ) -> nn.Module | nn.Linear | nn.Embedding | nn.Conv2d: ...
     def forward(
         self,
         input_nodes: torch.Tensor,
-        self_attn_bias: Optional[torch.Tensor] = ...,
-        self_attn_mask: Optional[torch.Tensor] = ...,
-        self_attn_padding_mask: Optional[torch.Tensor] = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
+        self_attn_bias: torch.Tensor | None = ...,
+        self_attn_mask: torch.Tensor | None = ...,
+        self_attn_padding_mask: torch.Tensor | None = ...,
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         """
         nn.LayerNorm is applied either before or after the self-attention/ffn modules similar to the original
         Transformer implementation.
@@ -160,9 +160,9 @@ class GraphormerGraphEncoder(nn.Module):
         attn_edge_type: torch.LongTensor,
         perturb=...,
         last_state_only: bool = ...,
-        token_embeddings: Optional[torch.Tensor] = ...,
-        attn_mask: Optional[torch.Tensor] = ...,
-    ) -> tuple[Union[torch.Tensor, list[torch.LongTensor]], torch.Tensor]: ...
+        token_embeddings: torch.Tensor | None = ...,
+        attn_mask: torch.Tensor | None = ...,
+    ) -> tuple[torch.Tensor | list[torch.LongTensor], torch.Tensor]: ...
 
 class GraphormerDecoderHead(nn.Module):
     def __init__(self, embedding_dim: int, num_classes: int) -> None: ...
@@ -180,7 +180,7 @@ class GraphormerPreTrainedModel(PreTrainedModel):
     main_input_name_edges = ...
     def normal_(self, data: torch.Tensor):  # -> None:
         ...
-    def init_graphormer_params(self, module: Union[nn.Linear, nn.Embedding, GraphormerMultiheadAttention]):  # -> None:
+    def init_graphormer_params(self, module: nn.Linear | nn.Embedding | GraphormerMultiheadAttention):  # -> None:
         """
         Initialize the weights specific to the Graphormer Model.
         """
@@ -205,11 +205,11 @@ class GraphormerModel(GraphormerPreTrainedModel):
         out_degree: torch.LongTensor,
         spatial_pos: torch.LongTensor,
         attn_edge_type: torch.LongTensor,
-        perturb: Optional[torch.FloatTensor] = ...,
+        perturb: torch.FloatTensor | None = ...,
         masked_tokens: None = ...,
-        return_dict: Optional[bool] = ...,
+        return_dict: bool | None = ...,
         **unused,
-    ) -> Union[tuple[torch.LongTensor], BaseModelOutputWithNoAttention]: ...
+    ) -> tuple[torch.LongTensor] | BaseModelOutputWithNoAttention: ...
     def max_nodes(self):  # -> Callable[[], ...]:
         """Maximum output length supported by the encoder."""
         ...
@@ -235,9 +235,9 @@ class GraphormerForGraphClassification(GraphormerPreTrainedModel):
         out_degree: torch.LongTensor,
         spatial_pos: torch.LongTensor,
         attn_edge_type: torch.LongTensor,
-        labels: Optional[torch.LongTensor] = ...,
-        return_dict: Optional[bool] = ...,
+        labels: torch.LongTensor | None = ...,
+        return_dict: bool | None = ...,
         **unused,
-    ) -> Union[tuple[torch.Tensor], SequenceClassifierOutput]: ...
+    ) -> tuple[torch.Tensor] | SequenceClassifierOutput: ...
 
 __all__ = ["GraphormerForGraphClassification", "GraphormerModel", "GraphormerPreTrainedModel"]

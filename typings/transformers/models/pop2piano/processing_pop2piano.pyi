@@ -34,18 +34,18 @@ class Pop2PianoProcessor(ProcessorMixin):
     def __init__(self, feature_extractor, tokenizer) -> None: ...
     def __call__(
         self,
-        audio: Union[np.ndarray, list[float], list[np.ndarray]] = ...,
-        sampling_rate: Optional[Union[int, list[int]]] = ...,
+        audio: np.ndarray | list[float] | list[np.ndarray] = ...,
+        sampling_rate: int | list[int] | None = ...,
         steps_per_beat: int = ...,
-        resample: Optional[bool] = ...,
-        notes: Union[list, TensorType] = ...,
-        padding: Union[bool, str, PaddingStrategy] = ...,
-        truncation: Union[bool, str, TruncationStrategy] = ...,
-        max_length: Optional[int] = ...,
-        pad_to_multiple_of: Optional[int] = ...,
+        resample: bool | None = ...,
+        notes: list | TensorType = ...,
+        padding: bool | str | PaddingStrategy = ...,
+        truncation: bool | str | TruncationStrategy = ...,
+        max_length: int | None = ...,
+        pad_to_multiple_of: int | None = ...,
         verbose: bool = ...,
         **kwargs,
-    ) -> Union[BatchFeature, BatchEncoding]:
+    ) -> BatchFeature | BatchEncoding:
         """
         This method uses [`Pop2PianoFeatureExtractor.__call__`] method to prepare log-mel-spectrograms for the model,
         and [`Pop2PianoTokenizer.__call__`] to prepare token_ids from notes.

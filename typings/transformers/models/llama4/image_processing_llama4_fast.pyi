@@ -84,7 +84,7 @@ def find_supported_resolutions(max_num_chunks: int, patch_size: SizeDict) -> tor
     ...
 
 def pad_to_best_fit(
-    images: torch.Tensor, target_size: tuple[int, int], background_color: Union[int, tuple[int, int, int]] = ...
+    images: torch.Tensor, target_size: tuple[int, int], background_color: int | tuple[int, int, int] = ...
 ) -> torch.Tensor:
     """
     Pads an image to fit the target size.
@@ -167,8 +167,8 @@ class Llama4ImageProcessorKwargs(DefaultFastImageProcessorKwargs):
         but never upsample, unless the image is smaller than the patch size.
     """
 
-    max_patches: Optional[int]
-    resize_to_max_canvas: Optional[bool]
+    max_patches: int | None
+    resize_to_max_canvas: bool | None
     ...
 
 @auto_docstring
@@ -192,8 +192,8 @@ class Llama4ImageProcessorFast(BaseImageProcessorFast):
         do_rescale: bool,
         rescale_factor: float,
         do_normalize: bool,
-        image_mean: Union[float, list[float]],
-        image_std: Union[float, list[float]],
+        image_mean: float | list[float],
+        image_std: float | list[float],
     ) -> torch.Tensor:
         """
         Rescale and normalize images.

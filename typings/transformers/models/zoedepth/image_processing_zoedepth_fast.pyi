@@ -34,9 +34,9 @@ class ZoeDepthFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
         Can be overridden by `ensure_multiple_of` in `preprocess`.
     """
 
-    do_pad: Optional[bool]
-    keep_aspect_ratio: Optional[bool]
-    ensure_multiple_of: Optional[int]
+    do_pad: bool | None
+    keep_aspect_ratio: bool | None
+    ensure_multiple_of: int | None
     ...
 
 @auto_docstring
@@ -61,7 +61,7 @@ class ZoeDepthImageProcessorFast(BaseImageProcessorFast):
         size: SizeDict,
         keep_aspect_ratio: bool = ...,
         ensure_multiple_of: int = ...,
-        interpolation: Optional[F.InterpolationMode] = ...,
+        interpolation: F.InterpolationMode | None = ...,
     ) -> torch.Tensor:
         """
         Resize an image or batchd images to target size `(size["height"], size["width"])`. If `keep_aspect_ratio` is `True`, the image
@@ -86,10 +86,10 @@ class ZoeDepthImageProcessorFast(BaseImageProcessorFast):
     def post_process_depth_estimation(
         self,
         outputs: ZoeDepthDepthEstimatorOutput,
-        source_sizes: Optional[Union[TensorType, list[tuple[int, int]], None]] = ...,
-        target_sizes: Optional[Union[TensorType, list[tuple[int, int]], None]] = ...,
-        outputs_flipped: Optional[Union[ZoeDepthDepthEstimatorOutput, None]] = ...,
-        do_remove_padding: Optional[Union[bool, None]] = ...,
+        source_sizes: TensorType | list[tuple[int, int]] | None | None = ...,
+        target_sizes: TensorType | list[tuple[int, int]] | None | None = ...,
+        outputs_flipped: ZoeDepthDepthEstimatorOutput | None | None = ...,
+        do_remove_padding: bool | None | None = ...,
     ) -> list[dict[str, TensorType]]:
         """
         Converts the raw output of [`ZoeDepthDepthEstimatorOutput`] into final depth predictions and depth PIL images.

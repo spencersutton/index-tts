@@ -28,10 +28,10 @@ class SmolVLMFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
         Whether to return the row and column information of the images.
     """
 
-    do_pad: Optional[bool]
-    do_image_splitting: Optional[bool]
-    max_image_size: Optional[dict[str, int]]
-    return_row_col_info: Optional[bool]
+    do_pad: bool | None
+    do_image_splitting: bool | None
+    max_image_size: dict[str, int] | None
+    return_row_col_info: bool | None
     ...
 
 MAX_IMAGE_SIZE = ...

@@ -31,36 +31,36 @@ class DecisionTransformerGPT2Attention(nn.Module):
         ...
     def forward(
         self,
-        hidden_states: Optional[tuple[torch.FloatTensor]],
-        past_key_value: Optional[Cache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        encoder_hidden_states: Optional[torch.Tensor] = ...,
-        encoder_attention_mask: Optional[torch.FloatTensor] = ...,
-        output_attentions: Optional[bool] = ...,
+        hidden_states: tuple[torch.FloatTensor] | None,
+        past_key_value: Cache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        encoder_hidden_states: torch.Tensor | None = ...,
+        encoder_attention_mask: torch.FloatTensor | None = ...,
+        output_attentions: bool | None = ...,
         **kwargs,
-    ) -> tuple[Union[torch.Tensor, tuple[torch.Tensor]], ...]: ...
+    ) -> tuple[torch.Tensor | tuple[torch.Tensor], ...]: ...
 
 class DecisionTransformerGPT2MLP(nn.Module):
     def __init__(self, intermediate_size, config) -> None: ...
-    def forward(self, hidden_states: Optional[tuple[torch.FloatTensor]]) -> torch.FloatTensor: ...
+    def forward(self, hidden_states: tuple[torch.FloatTensor] | None) -> torch.FloatTensor: ...
 
 class DecisionTransformerGPT2Block(GradientCheckpointingLayer):
     def __init__(self, config, layer_idx=...) -> None: ...
     def forward(
         self,
-        hidden_states: Optional[tuple[torch.FloatTensor]],
-        past_key_value: Optional[Cache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        encoder_hidden_states: Optional[torch.Tensor] = ...,
-        encoder_attention_mask: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
+        hidden_states: tuple[torch.FloatTensor] | None,
+        past_key_value: Cache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        encoder_hidden_states: torch.Tensor | None = ...,
+        encoder_attention_mask: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
         **kwargs,
-    ) -> Union[tuple[torch.Tensor], Optional[tuple[torch.Tensor, tuple[torch.FloatTensor, ...]]]]: ...
+    ) -> tuple[torch.Tensor] | tuple[torch.Tensor, tuple[torch.FloatTensor, ...]] | None: ...
 
 @auto_docstring
 class DecisionTransformerGPT2PreTrainedModel(PreTrainedModel):
@@ -80,21 +80,21 @@ class DecisionTransformerGPT2Model(DecisionTransformerGPT2PreTrainedModel):
         ...
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[tuple[tuple[torch.Tensor]]] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        token_type_ids: Optional[torch.LongTensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        encoder_hidden_states: Optional[torch.Tensor] = ...,
-        encoder_attention_mask: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPastAndCrossAttentions]: ...
+        input_ids: torch.LongTensor | None = ...,
+        past_key_values: tuple[tuple[torch.Tensor]] | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        encoder_hidden_states: torch.Tensor | None = ...,
+        encoder_attention_mask: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutputWithPastAndCrossAttentions: ...
 
 @dataclass
 @auto_docstring(
@@ -112,12 +112,12 @@ class DecisionTransformerOutput(ModelOutput):
         Predicted returns for each state
     """
 
-    state_preds: Optional[torch.FloatTensor] = ...
-    action_preds: Optional[torch.FloatTensor] = ...
-    return_preds: Optional[torch.FloatTensor] = ...
-    hidden_states: Optional[torch.FloatTensor] = ...
-    attentions: Optional[torch.FloatTensor] = ...
-    last_hidden_state: Optional[torch.FloatTensor] = ...
+    state_preds: torch.FloatTensor | None = ...
+    action_preds: torch.FloatTensor | None = ...
+    return_preds: torch.FloatTensor | None = ...
+    hidden_states: torch.FloatTensor | None = ...
+    attentions: torch.FloatTensor | None = ...
+    last_hidden_state: torch.FloatTensor | None = ...
 
 class DecisionTransformerPreTrainedModel(PreTrainedModel):
     """
@@ -146,16 +146,16 @@ class DecisionTransformerModel(DecisionTransformerPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        states: Optional[torch.FloatTensor] = ...,
-        actions: Optional[torch.FloatTensor] = ...,
-        rewards: Optional[torch.FloatTensor] = ...,
-        returns_to_go: Optional[torch.FloatTensor] = ...,
-        timesteps: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.FloatTensor], DecisionTransformerOutput]:
+        states: torch.FloatTensor | None = ...,
+        actions: torch.FloatTensor | None = ...,
+        rewards: torch.FloatTensor | None = ...,
+        returns_to_go: torch.FloatTensor | None = ...,
+        timesteps: torch.LongTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        output_attentions: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.FloatTensor] | DecisionTransformerOutput:
         r"""
         states (`torch.FloatTensor` of shape `(batch_size, episode_length, state_dim)`):
             The states for each step in the trajectory

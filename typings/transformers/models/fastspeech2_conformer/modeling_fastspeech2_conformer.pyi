@@ -35,16 +35,16 @@ class FastSpeech2ConformerModelOutput(ModelOutput):
         Outputs of the energy predictor.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    spectrogram: Optional[torch.FloatTensor] = ...
-    encoder_last_hidden_state: Optional[torch.FloatTensor] = ...
-    encoder_hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    encoder_attentions: Optional[tuple[torch.FloatTensor]] = ...
-    decoder_hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    decoder_attentions: Optional[tuple[torch.FloatTensor]] = ...
-    duration_outputs: Optional[torch.LongTensor] = ...
-    pitch_outputs: Optional[torch.FloatTensor] = ...
-    energy_outputs: Optional[torch.FloatTensor] = ...
+    loss: torch.FloatTensor | None = ...
+    spectrogram: torch.FloatTensor | None = ...
+    encoder_last_hidden_state: torch.FloatTensor | None = ...
+    encoder_hidden_states: tuple[torch.FloatTensor] | None = ...
+    encoder_attentions: tuple[torch.FloatTensor] | None = ...
+    decoder_hidden_states: tuple[torch.FloatTensor] | None = ...
+    decoder_attentions: tuple[torch.FloatTensor] | None = ...
+    duration_outputs: torch.LongTensor | None = ...
+    pitch_outputs: torch.FloatTensor | None = ...
+    energy_outputs: torch.FloatTensor | None = ...
 
 @dataclass
 @auto_docstring(
@@ -66,7 +66,7 @@ class FastSpeech2ConformerWithHifiGanOutput(FastSpeech2ConformerModelOutput):
         Speech output as a result of passing the predicted mel spectrogram through the vocoder.
     """
 
-    waveform: Optional[torch.FloatTensor] = ...
+    waveform: torch.FloatTensor | None = ...
 
 def length_regulator(encoded_embeddings, duration_labels, speaking_speed=...):
     """
@@ -188,9 +188,9 @@ class FastSpeech2ConformerAttention(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        pos_emb: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        pos_emb: torch.Tensor | None = ...,
+        output_attentions: torch.Tensor | None = ...,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Compute 'Scaled Dot Product Attention' with rel. positional encoding.
@@ -227,9 +227,9 @@ class FastSpeech2ConformerEncoderLayer(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        pos_emb: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[torch.Tensor] = ...,
+        pos_emb: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        output_attentions: torch.Tensor | None = ...,
     ):  # -> tuple[Tensor, Any] | tuple[Tensor]:
         """
         Compute encoded features.
@@ -326,10 +326,10 @@ class FastSpeech2ConformerEncoder(nn.Module):
     def forward(
         self,
         input_tensor: torch.LongTensor,
-        attention_mask: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        attention_mask: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        output_attentions: bool | None = ...,
+        return_dict: bool | None = ...,
     ):  # -> tuple[Any | tuple[Any, ...] | tuple[()], ...] | BaseModelOutput:
         """
         Args:
@@ -434,18 +434,18 @@ class FastSpeech2ConformerModel(FastSpeech2ConformerPreTrainedModel):
     def forward(
         self,
         input_ids: torch.LongTensor,
-        attention_mask: Optional[torch.LongTensor] = ...,
-        spectrogram_labels: Optional[torch.FloatTensor] = ...,
-        duration_labels: Optional[torch.LongTensor] = ...,
-        pitch_labels: Optional[torch.FloatTensor] = ...,
-        energy_labels: Optional[torch.FloatTensor] = ...,
-        speaker_ids: Optional[torch.LongTensor] = ...,
-        lang_ids: Optional[torch.LongTensor] = ...,
-        speaker_embedding: Optional[torch.FloatTensor] = ...,
-        return_dict: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-    ) -> Union[tuple, FastSpeech2ConformerModelOutput]:
+        attention_mask: torch.LongTensor | None = ...,
+        spectrogram_labels: torch.FloatTensor | None = ...,
+        duration_labels: torch.LongTensor | None = ...,
+        pitch_labels: torch.FloatTensor | None = ...,
+        energy_labels: torch.FloatTensor | None = ...,
+        speaker_ids: torch.LongTensor | None = ...,
+        lang_ids: torch.LongTensor | None = ...,
+        speaker_embedding: torch.FloatTensor | None = ...,
+        return_dict: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+    ) -> tuple | FastSpeech2ConformerModelOutput:
         r"""
         input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
             Input sequence of text vectors.
@@ -542,18 +542,18 @@ class FastSpeech2ConformerWithHifiGan(PreTrainedModel):
     def forward(
         self,
         input_ids: torch.LongTensor,
-        attention_mask: Optional[torch.LongTensor] = ...,
-        spectrogram_labels: Optional[torch.FloatTensor] = ...,
-        duration_labels: Optional[torch.LongTensor] = ...,
-        pitch_labels: Optional[torch.FloatTensor] = ...,
-        energy_labels: Optional[torch.FloatTensor] = ...,
-        speaker_ids: Optional[torch.LongTensor] = ...,
-        lang_ids: Optional[torch.LongTensor] = ...,
-        speaker_embedding: Optional[torch.FloatTensor] = ...,
-        return_dict: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-    ) -> Union[tuple, FastSpeech2ConformerModelOutput]:
+        attention_mask: torch.LongTensor | None = ...,
+        spectrogram_labels: torch.FloatTensor | None = ...,
+        duration_labels: torch.LongTensor | None = ...,
+        pitch_labels: torch.FloatTensor | None = ...,
+        energy_labels: torch.FloatTensor | None = ...,
+        speaker_ids: torch.LongTensor | None = ...,
+        lang_ids: torch.LongTensor | None = ...,
+        speaker_embedding: torch.FloatTensor | None = ...,
+        return_dict: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+    ) -> tuple | FastSpeech2ConformerModelOutput:
         r"""
         input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
             Input sequence of text vectors.

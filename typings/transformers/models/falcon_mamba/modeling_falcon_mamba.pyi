@@ -62,7 +62,7 @@ class FalconMambaCache:
         config: PretrainedConfig,
         max_batch_size: int,
         dtype: torch.dtype = ...,
-        device: Union[torch.device, str, None] = ...,
+        device: torch.device | str | None = ...,
     ) -> None: ...
     def update_conv_state(
         self, layer_idx: int, new_conv_state: torch.Tensor, cache_position: torch.LongTensor
@@ -98,25 +98,25 @@ class FalconMambaMixer(nn.Module):
     def cuda_kernels_forward(
         self,
         hidden_states: torch.Tensor,
-        cache_params: Optional[FalconMambaCache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.LongTensor] = ...,
+        cache_params: FalconMambaCache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        attention_mask: torch.LongTensor | None = ...,
     ):  # -> Any | None:
         ...
     def slow_forward(
         self,
         input_states,
-        cache_params: Optional[FalconMambaCache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.LongTensor] = ...,
+        cache_params: FalconMambaCache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        attention_mask: torch.LongTensor | None = ...,
     ):  # -> Any:
         ...
     def forward(
         self,
         hidden_states,
-        cache_params: Optional[FalconMambaCache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.LongTensor] = ...,
+        cache_params: FalconMambaCache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        attention_mask: torch.LongTensor | None = ...,
     ):  # -> Any | None:
         ...
 
@@ -136,9 +136,9 @@ class FalconMambaBlock(GradientCheckpointingLayer):
     def forward(
         self,
         hidden_states,
-        cache_params: Optional[FalconMambaCache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.LongTensor] = ...,
+        cache_params: FalconMambaCache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        attention_mask: torch.LongTensor | None = ...,
     ): ...
 
 @auto_docstring
@@ -164,9 +164,9 @@ class FalconMambaOutput(ModelOutput):
         Includes both the State space model state matrices after the selective scan, and the Convolutional states
     """
 
-    last_hidden_state: Optional[torch.FloatTensor] = ...
-    cache_params: Optional[FalconMambaCache] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
+    last_hidden_state: torch.FloatTensor | None = ...
+    cache_params: FalconMambaCache | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
 
 @dataclass
 @auto_docstring(
@@ -187,10 +187,10 @@ class FalconMambaCausalLMOutput(ModelOutput):
         Includes both the State space model state matrices after the selective scan, and the Convolutional states
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    logits: Optional[torch.FloatTensor] = ...
-    cache_params: Optional[FalconMambaCache] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
+    loss: torch.FloatTensor | None = ...
+    logits: torch.FloatTensor | None = ...
+    cache_params: FalconMambaCache | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
 
 @auto_docstring
 class FalconMambaModel(FalconMambaPreTrainedModel):
@@ -202,15 +202,15 @@ class FalconMambaModel(FalconMambaPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        inputs_embeds: Optional[torch.LongTensor] = ...,
-        cache_params: Optional[FalconMambaCache] = ...,
-        use_cache: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple, FalconMambaOutput]:
+        input_ids: torch.LongTensor | None = ...,
+        inputs_embeds: torch.LongTensor | None = ...,
+        cache_params: FalconMambaCache | None = ...,
+        use_cache: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        attention_mask: torch.LongTensor | None = ...,
+    ) -> tuple | FalconMambaOutput:
         r"""
         cache_params (`FalconMambaCache`, *optional*):
             If passed along, the model uses the previous state in all the blocks (which will give the output for the
@@ -238,26 +238,26 @@ class FalconMambaForCausalLM(FalconMambaPreTrainedModel, GenerationMixin):
         input_ids,
         inputs_embeds=...,
         use_cache=...,
-        cache_params: Optional[FalconMambaCache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.LongTensor] = ...,
+        cache_params: FalconMambaCache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        attention_mask: torch.LongTensor | None = ...,
         **kwargs,
     ):  # -> dict[str, Any]:
         ...
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.LongTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        cache_params: Optional[FalconMambaCache] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.Tensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.LongTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        cache_params: FalconMambaCache | None = ...,
+        labels: torch.LongTensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.Tensor | None = ...,
         **kwargs,
-    ) -> Union[tuple, FalconMambaCausalLMOutput]:
+    ) -> tuple | FalconMambaCausalLMOutput:
         r"""
         cache_params (`FalconMambaCache`, *optional*):
             If passed along, the model uses the previous state in all the blocks (which will give the output for the

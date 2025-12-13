@@ -11,16 +11,16 @@ ADAPTER_SAFE_WEIGHTS_NAME = ...
 
 def find_adapter_config_file(
     model_id: str,
-    cache_dir: Optional[Union[str, os.PathLike]] = ...,
+    cache_dir: str | os.PathLike | None = ...,
     force_download: bool = ...,
-    resume_download: Optional[bool] = ...,
-    proxies: Optional[dict[str, str]] = ...,
-    token: Optional[Union[bool, str]] = ...,
-    revision: Optional[str] = ...,
+    resume_download: bool | None = ...,
+    proxies: dict[str, str] | None = ...,
+    token: bool | str | None = ...,
+    revision: str | None = ...,
     local_files_only: bool = ...,
     subfolder: str = ...,
-    _commit_hash: Optional[str] = ...,
-) -> Optional[str]:
+    _commit_hash: str | None = ...,
+) -> str | None:
     r"""
     Simply checks if the model stored on the Hub or locally is an adapter model or not, return the path of the adapter
     config file if it is, None otherwise.

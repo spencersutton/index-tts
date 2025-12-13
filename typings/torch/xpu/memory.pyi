@@ -1,7 +1,7 @@
 from typing import Any, TypeAlias
 from torch.types import Device
 
-_device_t: TypeAlias = Device | str | int | None
+type _device_t = Device | str | int | None
 
 def empty_cache() -> None: ...
 def reset_peak_memory_stats(device: _device_t = ...) -> None: ...

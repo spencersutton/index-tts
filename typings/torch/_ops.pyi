@@ -3,8 +3,9 @@ import contextlib
 import types
 import torch
 from collections.abc import Iterator
-from typing import Any, Callable, ClassVar, Generic, TYPE_CHECKING, Union, final
-from typing_extensions import Concatenate, ParamSpec, TypeVar
+from typing import Any, ClassVar, Generic, TYPE_CHECKING, Union, final
+from collections.abc import Callable
+from typing import Concatenate, ParamSpec, TypeVar
 from torch._C import DispatchKey
 from torch._functorch.pyfunctorch import TransformType
 from torch.utils._python_dispatch import TorchDispatchMode
@@ -28,7 +29,7 @@ class OperatorBase:
     def has_kernel_for_any_dispatch_key(self, ks):  # -> bool:
         ...
     def py_impl(
-        self, k: Union[type[Union[TorchDispatchMode, torch.Tensor]], TransformType, DispatchKey]
+        self, k: type[TorchDispatchMode | torch.Tensor] | TransformType | DispatchKey
     ) -> Callable[[Callable[_P, _T]], Callable[_P, _T]]: ...
     def py_functionalize_impl(
         self, fn: Callable[Concatenate[BaseFunctionalizeAPI, _P], _T]
@@ -44,7 +45,7 @@ _HIGHER_ORDER_OP_DEFAULT_FALLTHROUGH_DISPATCH_KEYS = ...
 class HigherOrderOperator(OperatorBase, abc.ABC):
     def __init__(self, name, *, cacheable=...) -> None: ...
     def py_impl(
-        self, k: Union[type[Union[TorchDispatchMode, torch.Tensor]], TransformType, DispatchKey]
+        self, k: type[TorchDispatchMode | torch.Tensor] | TransformType | DispatchKey
     ) -> Callable[[Callable[_P, _T]], Callable[_P, _T]]: ...
     def py_autograd_impl(self, fn: Callable[_P, _T]) -> Callable[_P, _T]: ...
     @property

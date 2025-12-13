@@ -69,7 +69,7 @@ class TransformGetItemToIndex(TorchFunctionMode):
         func: OpOverload,
         types: tuple[torch._C._TensorMeta, ...],
         args: tuple[object, ...] = ...,
-        kwargs: Optional[dict[str, object]] = ...,
+        kwargs: dict[str, object] | None = ...,
     ) -> object: ...
 
 def trace_wrapped(*args: Any, **kwargs: Any) -> Any: ...
@@ -82,7 +82,7 @@ _trace_wrapped_op = ...
 
 @_trace_wrapped_op.py_impl(ProxyTorchDispatchMode)
 def inner_trace(
-    mode: ProxyTorchDispatchMode, *args: Any, bw_state: Optional[BackwardState] = ..., **kwargs: Any
+    mode: ProxyTorchDispatchMode, *args: Any, bw_state: BackwardState | None = ..., **kwargs: Any
 ) -> Any: ...
 @_trace_wrapped_op.py_impl(FakeTensorMode)
 def inner_fake(*args: Any, **kwargs: Any) -> None: ...

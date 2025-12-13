@@ -12,7 +12,7 @@ POLLING_INTERVAL = ...
 
 class BlackForestLabsTextToImageTask(TaskProviderHelper):
     def __init__(self) -> None: ...
-    def get_response(self, response: Union[bytes, Dict], request_params: Optional[RequestParameters] = ...) -> Any:
+    def get_response(self, response: bytes | dict, request_params: RequestParameters | None = ...) -> Any:
         """
         Polling mechanism for Black Forest Labs since the API is asynchronous.
         """

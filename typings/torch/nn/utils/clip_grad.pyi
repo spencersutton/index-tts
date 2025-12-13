@@ -3,7 +3,7 @@ import torch
 from warnings import deprecated
 
 __all__: list[str] = ...
-_tensor_or_tensors: typing.TypeAlias = torch.Tensor | typing.Iterable[torch.Tensor]
+type _tensor_or_tensors = torch.Tensor | typing.Iterable[torch.Tensor]
 
 @_no_grad
 def clip_grad_norm_(

@@ -20,7 +20,7 @@ _process_flash_kwargs_fn = ...
 _hf_api_to_flash_mapping = ...
 
 def lazy_import_flash_attention(
-    implementation: Optional[str],
+    implementation: str | None,
 ):  # -> tuple[tuple[Any | Callable[..., Any] | None, Any | Callable[..., Any] | None, Any | Callable[..., Tensor] | None, Any | Callable[..., tuple[Any, Tensor, Any, Any, Any]] | None], partial[dict[str, bool | float | None]]]:
     """
     Lazy loading flash attention and returning the respective functions + flags back
@@ -55,7 +55,7 @@ def prepare_fa_kwargs_from_position_ids(
     ...
 
 def fa_peft_integration_check(
-    q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, target_dtype: Optional[torch.dtype] = ...
+    q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, target_dtype: torch.dtype | None = ...
 ):  # -> tuple[Tensor, Tensor, Tensor]:
     """
     PEFT usually casts the layer norms in float32 for training stability reasons
@@ -80,8 +80,8 @@ class FlashAttentionKwargs(TypedDict, total=False):
             Maximum sequence length for key state.
     """
 
-    cumulative_seqlens_q: Optional[torch.LongTensor]
-    cumulative_seqlens_k: Optional[torch.LongTensor]
-    max_length_q: Optional[int]
-    max_length_k: Optional[int]
+    cumulative_seqlens_q: torch.LongTensor | None
+    cumulative_seqlens_k: torch.LongTensor | None
+    max_length_q: int | None
+    max_length_k: int | None
     ...

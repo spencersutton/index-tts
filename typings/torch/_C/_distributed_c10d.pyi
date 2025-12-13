@@ -101,7 +101,7 @@ class AllreduceOptions:
     reduceOp: ReduceOp
     timeout: timedelta
     asyncOp: bool
-    sparseIndices: Optional[Tensor]
+    sparseIndices: Tensor | None
 
 class AllreduceCoalescedOptions(AllreduceOptions): ...
 
@@ -155,7 +155,7 @@ class Store:
     @overload
     def wait(self, keys: list[str], timeout: timedelta): ...
     def queue_pop(self, key: str, block: bool = ...) -> bytes: ...
-    def queue_push(self, key: str, value: Union[bytes, str]) -> None: ...
+    def queue_push(self, key: str, value: bytes | str) -> None: ...
     def queue_len(self, key: str) -> int: ...
 
 class FileStore(Store):
@@ -290,18 +290,18 @@ class ProcessGroup:
     def split_group(
         self,
         new_ranks: list[int],
-        timeout: Optional[timedelta] = ...,
-        opts: Optional[Backend.Options] = ...,
-        group_name: Optional[str] = ...,
-        group_desc: Optional[str] = ...,
-    ) -> Optional[ProcessGroup]: ...
+        timeout: timedelta | None = ...,
+        opts: Backend.Options | None = ...,
+        group_name: str | None = ...,
+        group_desc: str | None = ...,
+    ) -> ProcessGroup | None: ...
     def merge_remote_group(
         self,
         store: Store,
         size: int,
         timeout: timedelta,
-        group_name: Optional[str] = ...,
-        group_desc: Optional[str] = ...,
+        group_name: str | None = ...,
+        group_desc: str | None = ...,
     ) -> ProcessGroup: ...
     def abort(self) -> None: ...
     def set_timeout(self, timeout: timedelta) -> None: ...
@@ -485,7 +485,7 @@ class _SymmetricMemory:
     @staticmethod
     def set_backend(name: str) -> None: ...
     @staticmethod
-    def get_backend(device: torch.device) -> Optional[str]: ...
+    def get_backend(device: torch.device) -> str | None: ...
     @staticmethod
     def get_mempool_allocator(device: torch.device) -> Any: ...
     @property

@@ -58,7 +58,7 @@ class FlaxSpeechEncoderDecoderModel(FlaxPreTrainedModel):
     def __init__(
         self,
         config: SpeechEncoderDecoderConfig,
-        input_shape: Optional[tuple] = ...,
+        input_shape: tuple | None = ...,
         seed: int = ...,
         dtype: jnp.dtype = ...,
         _do_init: bool = ...,
@@ -86,13 +86,13 @@ class FlaxSpeechEncoderDecoderModel(FlaxPreTrainedModel):
     def encode(
         self,
         inputs: jnp.ndarray,
-        attention_mask: Optional[jnp.ndarray] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        attention_mask: jnp.ndarray | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         train: bool = ...,
         freeze_feature_encoder: bool = ...,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: PRNGKey = ...,
     ):  # -> FlaxBaseModelOutput:
         r"""
@@ -119,15 +119,15 @@ class FlaxSpeechEncoderDecoderModel(FlaxPreTrainedModel):
         self,
         decoder_input_ids,
         encoder_outputs,
-        encoder_attention_mask: Optional[jnp.ndarray] = ...,
-        decoder_attention_mask: Optional[jnp.ndarray] = ...,
-        decoder_position_ids: Optional[jnp.ndarray] = ...,
-        past_key_values: Optional[dict] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        encoder_attention_mask: jnp.ndarray | None = ...,
+        decoder_attention_mask: jnp.ndarray | None = ...,
+        decoder_position_ids: jnp.ndarray | None = ...,
+        past_key_values: dict | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         train: bool = ...,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: PRNGKey = ...,
     ):
         r"""
@@ -160,16 +160,16 @@ class FlaxSpeechEncoderDecoderModel(FlaxPreTrainedModel):
     def __call__(
         self,
         inputs: jnp.ndarray,
-        attention_mask: Optional[jnp.ndarray] = ...,
-        decoder_input_ids: Optional[jnp.ndarray] = ...,
-        decoder_attention_mask: Optional[jnp.ndarray] = ...,
-        decoder_position_ids: Optional[jnp.ndarray] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        attention_mask: jnp.ndarray | None = ...,
+        decoder_input_ids: jnp.ndarray | None = ...,
+        decoder_attention_mask: jnp.ndarray | None = ...,
+        decoder_position_ids: jnp.ndarray | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         train: bool = ...,
         freeze_feature_encoder: bool = ...,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: PRNGKey = ...,
     ):
         r"""
@@ -202,8 +202,8 @@ class FlaxSpeechEncoderDecoderModel(FlaxPreTrainedModel):
         self,
         decoder_input_ids,
         max_length,
-        attention_mask: Optional[jax.Array] = ...,
-        decoder_attention_mask: Optional[jax.Array] = ...,
+        attention_mask: jax.Array | None = ...,
+        decoder_attention_mask: jax.Array | None = ...,
         encoder_outputs=...,
         **kwargs,
     ):  # -> dict[str, Any | None]:
@@ -212,8 +212,8 @@ class FlaxSpeechEncoderDecoderModel(FlaxPreTrainedModel):
     @classmethod
     def from_encoder_decoder_pretrained(
         cls,
-        encoder_pretrained_model_name_or_path: Optional[Union[str, os.PathLike]] = ...,
-        decoder_pretrained_model_name_or_path: Optional[Union[str, os.PathLike]] = ...,
+        encoder_pretrained_model_name_or_path: str | os.PathLike | None = ...,
+        decoder_pretrained_model_name_or_path: str | os.PathLike | None = ...,
         *model_args,
         **kwargs,
     ) -> FlaxPreTrainedModel:

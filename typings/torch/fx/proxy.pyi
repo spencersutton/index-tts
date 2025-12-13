@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from collections.abc import Iterator
-from typing import Any, Callable, Optional
+from typing import Any, Optional
+from collections.abc import Callable
 from ._compatibility import compatibility
 from .graph import Graph
 from .node import Argument, Node, Target
@@ -51,8 +52,8 @@ class TracerBase:
         target: Target,
         args: tuple[Argument, ...],
         kwargs: dict[str, Argument],
-        name: Optional[str] = ...,
-        type_expr: Optional[Any] = ...,
+        name: str | None = ...,
+        type_expr: Any | None = ...,
     ) -> Node: ...
     @compatibility(is_backward_compatible=True)
     def proxy(self, node: Node) -> Proxy: ...
@@ -63,8 +64,8 @@ class TracerBase:
         target: Target,
         args: tuple[Any, ...],
         kwargs: dict[str, Any],
-        name: Optional[str] = ...,
-        type_expr: Optional[Any] = ...,
+        name: str | None = ...,
+        type_expr: Any | None = ...,
         proxy_factory_fn: Callable[[Node], Proxy] = ...,
     ):  # -> Proxy:
 
@@ -92,7 +93,7 @@ class TraceError(ValueError): ...
 @compatibility(is_backward_compatible=True)
 class Proxy:
     @compatibility(is_backward_compatible=True)
-    def __init__(self, node: Node, tracer: Optional[TracerBase] = ...) -> None: ...
+    def __init__(self, node: Node, tracer: TracerBase | None = ...) -> None: ...
     def __getattr__(self, k) -> Attribute: ...
     def __getstate__(self) -> dict: ...
     def __deepcopy__(self, memo) -> dict: ...
@@ -113,7 +114,7 @@ class Proxy:
 
 @compatibility(is_backward_compatible=False)
 class MetaProxy(Proxy):
-    def __init__(self, node: Node, tracer: Optional[TracerBase] = ..., fake_mode=...) -> None: ...
+    def __init__(self, node: Node, tracer: TracerBase | None = ..., fake_mode=...) -> None: ...
     @classmethod
     def __torch_function__(cls, orig_method, types, args=..., kwargs=...):  # -> MetaProxy:
         ...

@@ -1,6 +1,6 @@
 import dataclasses
 from typing import Any, Optional, Union
-from typing_extensions import Self
+from typing import Self
 from torch import dtype as torch_dtype
 from ..ir import GraphPartitionSignature
 from ..utils import IndentedBuffer, cache_on_self
@@ -33,9 +33,9 @@ class CppWrapperGpu(CppWrapperCpu):
     @staticmethod
     def create(
         is_subgraph: bool,
-        subgraph_name: Optional[str],
-        parent_wrapper: Optional[PythonWrapperCodegen],
-        partition_signatures: Optional[GraphPartitionSignature] = ...,
+        subgraph_name: str | None,
+        parent_wrapper: PythonWrapperCodegen | None,
+        partition_signatures: GraphPartitionSignature | None = ...,
     ):  # -> CppWrapperGpu:
         ...
     def write_header(self):  # -> None:
@@ -57,12 +57,12 @@ class CppWrapperGpu(CppWrapperCpu):
         ...
     def generate_args_decl(
         self,
-        code: Union[IndentedBuffer, Self],
+        code: IndentedBuffer | Self,
         call_args,
         arg_types,
         arg_signatures,
         is_triton_kernel=...,
-        scratch_spaces: Optional[dict[str, int]] = ...,
+        scratch_spaces: dict[str, int] | None = ...,
     ):  # -> str:
 
         ...

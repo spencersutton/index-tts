@@ -77,10 +77,10 @@ class Emu3ImageProcessor(BaseImageProcessor):
         do_resize: bool = ...,
         resample: PILImageResampling = ...,
         do_rescale: bool = ...,
-        rescale_factor: Union[int, float] = ...,
+        rescale_factor: int | float = ...,
         do_normalize: bool = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
         do_convert_rgb: bool = ...,
         do_pad: bool = ...,
         min_pixels: int = ...,
@@ -91,19 +91,19 @@ class Emu3ImageProcessor(BaseImageProcessor):
     def preprocess(
         self,
         images: ImageInput,
-        do_resize: Optional[bool] = ...,
-        size: Optional[dict[str, int]] = ...,
+        do_resize: bool | None = ...,
+        size: dict[str, int] | None = ...,
         resample: PILImageResampling = ...,
-        do_rescale: Optional[bool] = ...,
-        rescale_factor: Optional[float] = ...,
-        do_normalize: Optional[bool] = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
-        do_convert_rgb: Optional[bool] = ...,
+        do_rescale: bool | None = ...,
+        rescale_factor: float | None = ...,
+        do_normalize: bool | None = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
+        do_convert_rgb: bool | None = ...,
         do_pad: bool = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        data_format: Optional[ChannelDimension] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        return_tensors: str | TensorType | None = ...,
+        data_format: ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ):  # -> BatchFeature:
         """
         Args:
@@ -159,13 +159,13 @@ class Emu3ImageProcessor(BaseImageProcessor):
     def postprocess(
         self,
         images: ImageInput,
-        do_rescale: Optional[bool] = ...,
-        rescale_factor: Optional[float] = ...,
-        do_normalize: Optional[bool] = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
-        return_tensors: Union[str, TensorType] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        do_rescale: bool | None = ...,
+        rescale_factor: float | None = ...,
+        do_normalize: bool | None = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
+        return_tensors: str | TensorType = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ):  # -> ImageInput | Any | BatchFeature:
         """
         Postprocess an image or batch of images tensor. Postprocess is the reverse process of preprocess.
@@ -200,9 +200,9 @@ class Emu3ImageProcessor(BaseImageProcessor):
     def unnormalize(
         self,
         image: np.array,
-        image_mean: Union[float, Iterable[float]],
-        image_std: Union[float, Iterable[float]],
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        image_mean: float | Iterable[float],
+        image_std: float | Iterable[float],
+        input_data_format: str | ChannelDimension | None = ...,
     ) -> np.array:
         """
         Unnormalizes `image` using the mean and standard deviation specified by `mean` and `std`.

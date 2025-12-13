@@ -16,15 +16,15 @@ if TYPE_CHECKING: ...
 
 def save_torch_model(
     model: torch.nn.Module,
-    save_directory: Union[str, Path],
+    save_directory: str | Path,
     *,
-    filename_pattern: Optional[str] = ...,
+    filename_pattern: str | None = ...,
     force_contiguous: bool = ...,
-    max_shard_size: Union[int, str] = ...,
-    metadata: Optional[Dict[str, str]] = ...,
+    max_shard_size: int | str = ...,
+    metadata: dict[str, str] | None = ...,
     safe_serialization: bool = ...,
     is_main_process: bool = ...,
-    shared_tensors_to_discard: Optional[List[str]] = ...,
+    shared_tensors_to_discard: list[str] | None = ...,
 ):  # -> None:
     """
     Saves a given torch model to disk, handling sharding and shared tensors issues.
@@ -98,16 +98,16 @@ def save_torch_model(
     ...
 
 def save_torch_state_dict(
-    state_dict: Dict[str, torch.Tensor],
-    save_directory: Union[str, Path],
+    state_dict: dict[str, torch.Tensor],
+    save_directory: str | Path,
     *,
-    filename_pattern: Optional[str] = ...,
+    filename_pattern: str | None = ...,
     force_contiguous: bool = ...,
-    max_shard_size: Union[int, str] = ...,
-    metadata: Optional[Dict[str, str]] = ...,
+    max_shard_size: int | str = ...,
+    metadata: dict[str, str] | None = ...,
     safe_serialization: bool = ...,
     is_main_process: bool = ...,
-    shared_tensors_to_discard: Optional[List[str]] = ...,
+    shared_tensors_to_discard: list[str] | None = ...,
 ) -> None:
     """
     Save a model state dictionary to the disk, handling sharding and shared tensors issues.
@@ -177,7 +177,7 @@ def save_torch_state_dict(
     ...
 
 def split_torch_state_dict_into_shards(
-    state_dict: Dict[str, torch.Tensor], *, filename_pattern: str = ..., max_shard_size: Union[int, str] = ...
+    state_dict: dict[str, torch.Tensor], *, filename_pattern: str = ..., max_shard_size: int | str = ...
 ) -> StateDictSplit:
     """
     Split a model state dictionary in shards so that each shard is smaller than a given size.
@@ -238,14 +238,14 @@ def split_torch_state_dict_into_shards(
 
 def load_torch_model(
     model: torch.nn.Module,
-    checkpoint_path: Union[str, os.PathLike],
+    checkpoint_path: str | os.PathLike,
     *,
     strict: bool = ...,
     safe: bool = ...,
     weights_only: bool = ...,
-    map_location: Optional[Union[str, torch.device]] = ...,
+    map_location: str | torch.device | None = ...,
     mmap: bool = ...,
-    filename_pattern: Optional[str] = ...,
+    filename_pattern: str | None = ...,
 ) -> NamedTuple:
     """
     Load a checkpoint into a model, handling both sharded and non-sharded checkpoints.
@@ -297,11 +297,11 @@ def load_torch_model(
     ...
 
 def load_state_dict_from_file(
-    checkpoint_file: Union[str, os.PathLike],
-    map_location: Optional[Union[str, torch.device]] = ...,
+    checkpoint_file: str | os.PathLike,
+    map_location: str | torch.device | None = ...,
     weights_only: bool = ...,
     mmap: bool = ...,
-) -> Union[Dict[str, torch.Tensor], Any]:
+) -> dict[str, torch.Tensor] | Any:
     """
     Loads a checkpoint file, handling both safetensors and pickle checkpoint formats.
 
@@ -351,7 +351,7 @@ def load_state_dict_from_file(
     """
     ...
 
-def get_torch_storage_id(tensor: torch.Tensor) -> Optional[Tuple[torch.device, Union[int, Tuple[Any, ...]], int]]:
+def get_torch_storage_id(tensor: torch.Tensor) -> tuple[torch.device, int | tuple[Any, ...], int] | None:
     """
     Return unique identifier to a tensor storage.
 
@@ -370,7 +370,7 @@ def get_torch_storage_size(tensor: torch.Tensor) -> int:
     """
     ...
 
-@lru_cache()
+@lru_cache
 def is_torch_tpu_available(check_device=...):  # -> bool:
     """
     Checks if `torch_xla` is installed and potentially if a TPU is in the environment
@@ -379,7 +379,7 @@ def is_torch_tpu_available(check_device=...):  # -> bool:
     """
     ...
 
-def storage_ptr(tensor: torch.Tensor) -> Union[int, Tuple[Any, ...]]:
+def storage_ptr(tensor: torch.Tensor) -> int | tuple[Any, ...]:
     """
     Taken from https://github.com/huggingface/safetensors/blob/079781fd0dc455ba0fe851e2b4507c33d0c0d407/bindings/python/py_src/safetensors/torch.py#L11.
     """

@@ -46,8 +46,8 @@ class BridgeTowerFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
             the `do_pad` parameter in the `preprocess` method.
     """
 
-    size_divisor: Optional[int]
-    do_pad: Optional[bool]
+    size_divisor: int | None
+    do_pad: bool | None
     ...
 
 @auto_docstring
@@ -115,9 +115,9 @@ class BridgeTowerImageProcessorFast(BaseImageProcessorFast):
     def pad(
         self,
         images: list[torch.Tensor],
-        constant_values: Union[float, Iterable[float]] = ...,
+        constant_values: float | Iterable[float] = ...,
         return_pixel_mask: bool = ...,
-        disable_grouping: Optional[bool] = ...,
+        disable_grouping: bool | None = ...,
     ) -> tuple:
         """
         Pads a batch of images to the bottom and right of the image with zeros to the size of largest height and width

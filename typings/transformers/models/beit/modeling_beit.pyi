@@ -54,7 +54,7 @@ def drop_path(input: torch.Tensor, drop_prob: float = ..., training: bool = ...)
 
 class BeitDropPath(nn.Module):
     """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks)."""
-    def __init__(self, drop_prob: Optional[float] = ...) -> None: ...
+    def __init__(self, drop_prob: float | None = ...) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
     def extra_repr(self) -> str: ...
 
@@ -78,8 +78,8 @@ class BeitEmbeddings(nn.Module):
     def forward(
         self,
         pixel_values: torch.Tensor,
-        bool_masked_pos: Optional[torch.BoolTensor] = ...,
-        interpolate_pos_encoding: Optional[bool] = ...,
+        bool_masked_pos: torch.BoolTensor | None = ...,
+        interpolate_pos_encoding: bool | None = ...,
     ) -> torch.Tensor: ...
 
 class BeitPatchEmbeddings(nn.Module):
@@ -92,27 +92,27 @@ class BeitPatchEmbeddings(nn.Module):
     def forward(self, pixel_values: torch.Tensor) -> torch.Tensor: ...
 
 class BeitSelfAttention(nn.Module):
-    def __init__(self, config: BeitConfig, window_size: Optional[tuple] = ...) -> None: ...
+    def __init__(self, config: BeitConfig, window_size: tuple | None = ...) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        head_mask: Optional[torch.Tensor] = ...,
+        head_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
-        relative_position_bias: Optional[torch.Tensor] = ...,
+        relative_position_bias: torch.Tensor | None = ...,
         interpolate_pos_encoding: bool = ...,
-        resolution: Optional[tuple[int]] = ...,
-    ) -> Union[tuple[torch.Tensor], tuple[torch.Tensor, torch.Tensor]]: ...
+        resolution: tuple[int] | None = ...,
+    ) -> tuple[torch.Tensor] | tuple[torch.Tensor, torch.Tensor]: ...
 
 class BeitSdpaSelfAttention(BeitSelfAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        head_mask: Optional[torch.Tensor] = ...,
+        head_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
-        relative_position_bias: Optional[torch.Tensor] = ...,
+        relative_position_bias: torch.Tensor | None = ...,
         interpolate_pos_encoding: bool = ...,
-        resolution: Optional[tuple[int]] = ...,
-    ) -> Union[tuple[torch.Tensor], tuple[torch.Tensor, torch.Tensor]]: ...
+        resolution: tuple[int] | None = ...,
+    ) -> tuple[torch.Tensor] | tuple[torch.Tensor, torch.Tensor]: ...
 
 class BeitSelfOutput(nn.Module):
     """
@@ -125,18 +125,18 @@ class BeitSelfOutput(nn.Module):
 BEIT_SELF_ATTENTION_CLASSES = ...
 
 class BeitAttention(nn.Module):
-    def __init__(self, config: BeitConfig, window_size: Optional[tuple] = ...) -> None: ...
+    def __init__(self, config: BeitConfig, window_size: tuple | None = ...) -> None: ...
     def prune_heads(self, heads):  # -> None:
         ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        head_mask: Optional[torch.Tensor] = ...,
+        head_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
-        relative_position_bias: Optional[torch.Tensor] = ...,
+        relative_position_bias: torch.Tensor | None = ...,
         interpolate_pos_encoding: bool = ...,
-        resolution: Optional[tuple[int]] = ...,
-    ) -> Union[tuple[torch.Tensor], tuple[torch.Tensor, torch.Tensor]]: ...
+        resolution: tuple[int] | None = ...,
+    ) -> tuple[torch.Tensor] | tuple[torch.Tensor, torch.Tensor]: ...
 
 class BeitIntermediate(nn.Module):
     def __init__(self, config: BeitConfig) -> None: ...
@@ -148,16 +148,16 @@ class BeitOutput(nn.Module):
 
 class BeitLayer(GradientCheckpointingLayer):
     """This corresponds to the Block class in the timm implementation."""
-    def __init__(self, config: BeitConfig, window_size: Optional[tuple] = ..., drop_path_rate: float = ...) -> None: ...
+    def __init__(self, config: BeitConfig, window_size: tuple | None = ..., drop_path_rate: float = ...) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        head_mask: Optional[torch.Tensor] = ...,
+        head_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
-        relative_position_bias: Optional[torch.Tensor] = ...,
+        relative_position_bias: torch.Tensor | None = ...,
         interpolate_pos_encoding: bool = ...,
-        resolution: Optional[tuple[int, int]] = ...,
-    ) -> Union[tuple[torch.Tensor], tuple[torch.Tensor, torch.Tensor]]: ...
+        resolution: tuple[int, int] | None = ...,
+    ) -> tuple[torch.Tensor] | tuple[torch.Tensor, torch.Tensor]: ...
 
 class BeitRelativePositionBias(nn.Module):
     def __init__(self, config: BeitConfig, window_size: tuple) -> None: ...
@@ -176,17 +176,17 @@ class BeitRelativePositionBias(nn.Module):
         ...
 
 class BeitEncoder(nn.Module):
-    def __init__(self, config: BeitConfig, window_size: Optional[tuple] = ...) -> None: ...
+    def __init__(self, config: BeitConfig, window_size: tuple | None = ...) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        head_mask: Optional[torch.Tensor] = ...,
+        head_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         interpolate_pos_encoding: bool = ...,
-        resolution: Optional[tuple[int, int]] = ...,
+        resolution: tuple[int, int] | None = ...,
         return_dict: bool = ...,
-    ) -> Union[tuple, BaseModelOutput]: ...
+    ) -> tuple | BaseModelOutput: ...
 
 @auto_docstring
 class BeitPreTrainedModel(PreTrainedModel):
@@ -213,13 +213,13 @@ class BeitModel(BeitPreTrainedModel):
     def forward(
         self,
         pixel_values: torch.Tensor,
-        bool_masked_pos: Optional[torch.BoolTensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
+        bool_masked_pos: torch.BoolTensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
         interpolate_pos_encoding: bool = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BeitModelOutputWithPooling]:
+        return_dict: bool | None = ...,
+    ) -> tuple | BeitModelOutputWithPooling:
         r"""
         bool_masked_pos (`torch.BoolTensor` of shape `(batch_size, num_patches)`, *optional*):
             Boolean masked positions. Indicates which patches are masked (1) and which aren't (0).
@@ -245,15 +245,15 @@ class BeitForMaskedImageModeling(BeitPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.Tensor] = ...,
-        bool_masked_pos: Optional[torch.BoolTensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
+        pixel_values: torch.Tensor | None = ...,
+        bool_masked_pos: torch.BoolTensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
         interpolate_pos_encoding: bool = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, MaskedLMOutput]:
+        return_dict: bool | None = ...,
+    ) -> tuple | MaskedLMOutput:
         r"""
         bool_masked_pos (`torch.BoolTensor` of shape `(batch_size, num_patches)`):
             Boolean masked positions. Indicates which patches are masked (1) and which aren't (0).
@@ -299,14 +299,14 @@ class BeitForImageClassification(BeitPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
+        pixel_values: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
         interpolate_pos_encoding: bool = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ImageClassifierOutput]:
+        return_dict: bool | None = ...,
+    ) -> tuple | ImageClassifierOutput:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
@@ -326,10 +326,10 @@ class BeitConvModule(nn.Module):
         self,
         in_channels: int,
         out_channels: int,
-        kernel_size: Union[int, tuple[int, int]],
-        padding: Union[int, tuple[int, int], str] = ...,
+        kernel_size: int | tuple[int, int],
+        padding: int | tuple[int, int] | str = ...,
         bias: bool = ...,
-        dilation: Union[int, tuple[int, int]] = ...,
+        dilation: int | tuple[int, int] = ...,
     ) -> None: ...
     def forward(self, input: torch.Tensor) -> torch.Tensor: ...
 
@@ -384,7 +384,7 @@ class BeitFCNHead(nn.Module):
         config: BeitConfig,
         in_index: int = ...,
         kernel_size: int = ...,
-        dilation: Union[int, tuple[int, int]] = ...,
+        dilation: int | tuple[int, int] = ...,
     ) -> None: ...
     def forward(self, encoder_hidden_states: torch.Tensor) -> torch.Tensor: ...
 
@@ -396,14 +396,14 @@ class BeitForSemanticSegmentation(BeitPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
+        pixel_values: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
         interpolate_pos_encoding: bool = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, SemanticSegmenterOutput]:
+        return_dict: bool | None = ...,
+    ) -> tuple | SemanticSegmenterOutput:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size, height, width)`, *optional*):
             Ground truth semantic segmentation maps for computing the loss. Indices should be in `[0, ...,
@@ -442,9 +442,9 @@ class BeitBackbone(BeitPreTrainedModel, BackboneMixin):
     def forward(
         self,
         pixel_values: Tensor,
-        output_hidden_states: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        output_hidden_states: bool | None = ...,
+        output_attentions: bool | None = ...,
+        return_dict: bool | None = ...,
     ) -> BackboneOutput:
         r"""
         Examples:

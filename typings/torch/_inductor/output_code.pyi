@@ -1,7 +1,8 @@
 import dataclasses
 import torch
-from typing import Any, Callable, Optional, TYPE_CHECKING, Union
-from typing_extensions import TypeAlias
+from typing import Any, Optional, TYPE_CHECKING, Union
+from collections.abc import Callable
+from typing import TypeAlias
 from torch._inductor.cudagraph_utils import BoxedDeviceIndex, CudagraphCachedInfo
 from torch._inductor.utils import BoxedBool, GraphPartitionMap, InputType
 from torch.utils._ordered_set import OrderedSet
@@ -40,41 +41,41 @@ log = ...
 
 @dataclasses.dataclass
 class OutputCode:
-    _fx_graph_cache_key: Optional[str] = ...
-    _fx_graph_cache_debug_lines: Optional[list[str]] = ...
-    _time_taken_ns: Optional[int] = ...
+    _fx_graph_cache_key: str | None = ...
+    _fx_graph_cache_debug_lines: list[str] | None = ...
+    _time_taken_ns: int | None = ...
     def __call__(self, inputs: Sequence[Any]) -> Any: ...
     def post_compile(
         self, example_inputs: Sequence[InputType], constants: CompiledFxGraphConstants, graph_kwargs: _CompileFxKwargs
     ) -> None: ...
     def set_triton_bundle(self, triton_bundle: Any) -> None: ...
 
-_StrideExprStr: TypeAlias = str
+type _StrideExprStr = str
 
 def get_expanded_dims(t: torch.Tensor) -> list[int]: ...
 def index_expanded_dims(t: torch.Tensor, expanded_dims: list[int]) -> torch.Tensor: ...
 def complex_memory_overlap(t: torch.Tensor) -> bool: ...
 def maybe_handle_backward_generation(
-    compiled_graph: CompiledFxGraph, boxed_forward_device_index: Optional[BoxedDeviceIndex]
+    compiled_graph: CompiledFxGraph, boxed_forward_device_index: BoxedDeviceIndex | None
 ) -> None: ...
 def prepare_cudagraph_post_compile(
     compiled_graph: CompiledFxGraph,
     example_inputs: Sequence[InputType],
-    boxed_forward_device_index: Optional[BoxedDeviceIndex],
+    boxed_forward_device_index: BoxedDeviceIndex | None,
 ) -> None: ...
 def cudagraph_post_compile(
     example_inputs: Sequence[InputType],
     compiled_graph: CompiledFxGraph,
     cudagraphs: BoxedBool,
     constants: dict[str, torch.Tensor],
-    boxed_forward_device_index: Optional[BoxedDeviceIndex],
+    boxed_forward_device_index: BoxedDeviceIndex | None,
 ) -> None: ...
 def cudagraph_partition_post_compile(
     example_inputs: Sequence[InputType],
     compiled_graph: CompiledFxGraph,
     cudagraphs: BoxedBool,
     constants: dict[str, torch.Tensor],
-    boxed_forward_device_index: Optional[BoxedDeviceIndex],
+    boxed_forward_device_index: BoxedDeviceIndex | None,
 ) -> None: ...
 def maybe_realign_inputs(
     ran_cudagraphs: BoxedBool,
@@ -92,41 +93,41 @@ class CompiledFxGraphConstantsWithGm(CompiledFxGraphConstants):
 
 @dataclasses.dataclass
 class CompiledFxGraph(OutputCode):
-    current_callable: Optional[Callable[..., Any]]
-    recursively_apply_fns: Optional[Callable[..., Any]]
-    compiled_fn_runner: Optional[Any]
+    current_callable: Callable[..., Any] | None
+    recursively_apply_fns: Callable[..., Any] | None
+    compiled_fn_runner: Any | None
     cache_key: str
     source_code: str = ...
     runnable_graph_str: str = ...
     inductor_post_grad_graph_str: str = ...
-    cache_linemap: Optional[list[tuple[int, str]]]
+    cache_linemap: list[tuple[int, str]] | None
     device_types: OrderedSet[str]
     device_idxs: OrderedSet[int]
     mutated_inputs: OrderedSet[str]
     mutated_input_idxs: OrderedSet[int]
-    constants: Optional[dict[str, torch.Tensor]]
+    constants: dict[str, torch.Tensor] | None
     frozen_param_names: dict[str, str]
     torchbind_constants: dict[str, torch._C.ScriptObject | FakeScriptObject]
-    output_strides: Optional[list[Optional[tuple[_StrideExprStr, ...]]]]
-    disabled_cudagraphs_reason: Optional[str]
+    output_strides: list[tuple[_StrideExprStr, ...] | None] | None
+    disabled_cudagraphs_reason: str | None
     metrics_deltas: metrics.CachedMetricsDeltas
     counter_deltas: Counter[str]
-    guards_expr: Optional[str]
-    inductor_provenance_mapping_str: Optional[str]
-    inductor_provenance_stack_traces_str: Optional[str]
-    cudagraph_info: Optional[CudagraphCachedInfo]
-    partition_maps: Optional[list[GraphPartitionMap]]
+    guards_expr: str | None
+    inductor_provenance_mapping_str: str | None
+    inductor_provenance_stack_traces_str: str | None
+    cudagraph_info: CudagraphCachedInfo | None
+    partition_maps: list[GraphPartitionMap] | None
     fx_kwargs: _CompileFxKwargs
     inputs_to_check: Sequence[int]
-    _boxed_call: Optional[bool] = ...
-    _triton_bundle: Optional[TritonBundle] = ...
+    _boxed_call: bool | None = ...
+    _triton_bundle: TritonBundle | None = ...
     def __init__(
         self,
-        current_callable: Optional[Callable[..., Any]],
+        current_callable: Callable[..., Any] | None,
         graph: GraphLowering,
         gm: torch.fx.GraphModule,
-        output_strides: list[Optional[tuple[_StrideExprStr, ...]]],
-        disabled_cudagraphs_reason: Optional[str],
+        output_strides: list[tuple[_StrideExprStr, ...] | None],
+        disabled_cudagraphs_reason: str | None,
         metrics_deltas: metrics.CachedMetricsDeltas,
         counter_deltas: Counter[str],
         cudagraphs: BoxedBool,
@@ -136,9 +137,9 @@ class CompiledFxGraph(OutputCode):
         inputs_to_check: Sequence[int],
         runnable_graph_str: str,
         inductor_post_grad_graph_str: str,
-        compiled_fn_runner: Optional[Any] = ...,
-        inductor_provenance_mapping_str: Optional[str] = ...,
-        inductor_provenance_stack_traces_str: Optional[str] = ...,
+        compiled_fn_runner: Any | None = ...,
+        inductor_provenance_mapping_str: str | None = ...,
+        inductor_provenance_stack_traces_str: str | None = ...,
     ) -> None: ...
     def __del__(self) -> None: ...
     def __call__(self, inputs: Sequence[Any]) -> Any: ...
@@ -152,7 +153,7 @@ class CompiledFxGraph(OutputCode):
 
 @dataclasses.dataclass
 class CompiledAOTI(OutputCode):
-    filename: Union[str, list[Union[str, Weights]], torch.fx.GraphModule]
+    filename: str | list[str | Weights] | torch.fx.GraphModule
     def __call__(self, inputs: Sequence[Any]) -> Any: ...
     def post_compile(
         self, example_inputs: Sequence[InputType], constants: CompiledFxGraphConstants, graph_kwargs: _CompileFxKwargs

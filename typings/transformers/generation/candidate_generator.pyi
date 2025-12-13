@@ -16,7 +16,7 @@ if TYPE_CHECKING: ...
 
 class CandidateGenerator:
     """Abstract base class for all candidate generators that can be applied during assisted generation."""
-    def get_candidates(self, input_ids: torch.LongTensor) -> tuple[torch.LongTensor, Optional[torch.FloatTensor]]:
+    def get_candidates(self, input_ids: torch.LongTensor) -> tuple[torch.LongTensor, torch.FloatTensor | None]:
         """
         Fetches the candidates to be tried for the current input.
 
@@ -74,10 +74,10 @@ class AssistedCandidateGenerator(CandidateGenerator):
         assistant_model: PreTrainedModel,
         generation_config: GenerationConfig,
         model_kwargs: dict,
-        inputs_tensor: Optional[torch.Tensor] = ...,
+        inputs_tensor: torch.Tensor | None = ...,
         logits_processor: LogitsProcessorList = ...,
     ) -> None: ...
-    def get_candidates(self, input_ids: torch.LongTensor) -> tuple[torch.LongTensor, Optional[torch.FloatTensor]]:
+    def get_candidates(self, input_ids: torch.LongTensor) -> tuple[torch.LongTensor, torch.FloatTensor | None]:
         """
         Fetches the candidates to be tried for the current input.
 
@@ -149,7 +149,7 @@ class AssistedCandidateGeneratorDifferentTokenizers(AssistedCandidateGenerator):
         assistant_tokenizer: PreTrainedTokenizerBase,
         generation_config: GenerationConfig,
         model_kwargs: dict,
-        inputs_tensor: Optional[torch.Tensor] = ...,
+        inputs_tensor: torch.Tensor | None = ...,
         logits_processor: LogitsProcessorList = ...,
     ) -> None: ...
     def convert_source_tokens_to_target_tokens(self, input_ids, source_tokenizer, destination_tokenizer):
@@ -164,7 +164,7 @@ class AssistedCandidateGeneratorDifferentTokenizers(AssistedCandidateGenerator):
         """
         ...
 
-    def get_candidates(self, input_ids: torch.LongTensor) -> tuple[torch.LongTensor, Optional[torch.FloatTensor]]:
+    def get_candidates(self, input_ids: torch.LongTensor) -> tuple[torch.LongTensor, torch.FloatTensor | None]:
         """
         Fetches the candidates to be tried for the current input.
 
@@ -244,7 +244,7 @@ class AssistantToTargetTranslator:
         target_tokenizer: PreTrainedTokenizerBase,
         assistant_tokenizer: PreTrainedTokenizerBase,
         target_vocab_size: int,
-        assistant_model: Optional[PreTrainedModel] = ...,
+        assistant_model: PreTrainedModel | None = ...,
         assistant_prune_lm_head: bool = ...,
     ) -> None: ...
     def unmap_input_ids(self):  # -> None:
@@ -285,7 +285,7 @@ class AssistantVocabTranslatorCache:
         target_tokenizer: PreTrainedTokenizerBase,
         assistant_tokenizer: PreTrainedTokenizerBase,
         target_vocab_size: int,
-        assistant_model: Optional[PreTrainedModel] = ...,
+        assistant_model: PreTrainedModel | None = ...,
         assistant_prune_lm_head: bool = ...,
     ) -> AssistantToTargetTranslator: ...
     @classmethod
@@ -311,10 +311,10 @@ class UniversalSpeculativeDecodingGenerator(AssistedCandidateGeneratorDifferentT
         generation_config: GenerationConfig,
         model_kwargs: dict,
         atm_translator: AssistantToTargetTranslator,
-        inputs_tensor: Optional[torch.Tensor] = ...,
+        inputs_tensor: torch.Tensor | None = ...,
         logits_processor: LogitsProcessorList = ...,
     ) -> None: ...
-    def get_candidates(self, input_ids: torch.LongTensor) -> tuple[torch.LongTensor, Optional[torch.FloatTensor]]:
+    def get_candidates(self, input_ids: torch.LongTensor) -> tuple[torch.LongTensor, torch.FloatTensor | None]:
         """
         Simplified version of get_candidates that uses the translator cache for token conversion.
         """
@@ -337,12 +337,12 @@ class PromptLookupCandidateGenerator(CandidateGenerator):
     """
     def __init__(
         self,
-        eos_token_id: Optional[torch.Tensor] = ...,
+        eos_token_id: torch.Tensor | None = ...,
         num_output_tokens: int = ...,
-        max_matching_ngram_size: Optional[int] = ...,
+        max_matching_ngram_size: int | None = ...,
         max_length: int = ...,
     ) -> None: ...
-    def get_candidates(self, input_ids: torch.LongTensor) -> tuple[torch.LongTensor, Optional[torch.FloatTensor]]:
+    def get_candidates(self, input_ids: torch.LongTensor) -> tuple[torch.LongTensor, torch.FloatTensor | None]:
         """
         Fetches the candidates to be tried for the current input.
 
@@ -401,7 +401,7 @@ class EarlyExitCandidateGenerator(AssistedCandidateGenerator):
         assistant_model: PreTrainedModel,
         generation_config: GenerationConfig,
         model_kwargs: dict,
-        inputs_tensor: Optional[torch.Tensor] = ...,
+        inputs_tensor: torch.Tensor | None = ...,
         logits_processor: LogitsProcessorList = ...,
     ) -> None: ...
-    def get_candidates(self, input_ids: torch.LongTensor) -> tuple[torch.LongTensor, Optional[torch.FloatTensor]]: ...
+    def get_candidates(self, input_ids: torch.LongTensor) -> tuple[torch.LongTensor, torch.FloatTensor | None]: ...

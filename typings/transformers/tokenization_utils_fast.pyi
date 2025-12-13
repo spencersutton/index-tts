@@ -113,7 +113,7 @@ class PreTrainedTokenizerFast(PreTrainedTokenizerBase):
         """
         ...
 
-    def convert_tokens_to_ids(self, tokens: Union[str, Iterable[str]]) -> Union[int, list[int]]:
+    def convert_tokens_to_ids(self, tokens: str | Iterable[str]) -> int | list[int]:
         """
         Converts a token string (or a sequence of tokens) in a single integer id (or a Iterable of ids), using the
         vocabulary.
@@ -147,9 +147,7 @@ class PreTrainedTokenizerFast(PreTrainedTokenizerBase):
         """
         ...
 
-    def convert_ids_to_tokens(
-        self, ids: Union[int, list[int]], skip_special_tokens: bool = ...
-    ) -> Union[str, list[str]]:
+    def convert_ids_to_tokens(self, ids: int | list[int], skip_special_tokens: bool = ...) -> str | list[str]:
         """
         Converts a single index or a sequence of indices in a token or a sequence of tokens, using the vocabulary and
         added tokens.
@@ -165,15 +163,15 @@ class PreTrainedTokenizerFast(PreTrainedTokenizerBase):
         """
         ...
 
-    def tokenize(self, text: str, pair: Optional[str] = ..., add_special_tokens: bool = ..., **kwargs) -> list[str]: ...
+    def tokenize(self, text: str, pair: str | None = ..., add_special_tokens: bool = ..., **kwargs) -> list[str]: ...
     def set_truncation_and_padding(
         self,
         padding_strategy: PaddingStrategy,
         truncation_strategy: TruncationStrategy,
         max_length: int,
         stride: int,
-        pad_to_multiple_of: Optional[int],
-        padding_side: Optional[str],
+        pad_to_multiple_of: int | None,
+        padding_side: str | None,
     ):  # -> None:
         """
         Define the truncation and the padding strategies for fast tokenizers (provided by HuggingFace tokenizers

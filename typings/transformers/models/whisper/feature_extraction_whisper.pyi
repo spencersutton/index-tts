@@ -73,17 +73,17 @@ class WhisperFeatureExtractor(SequenceFeatureExtractor):
 
     def __call__(
         self,
-        raw_speech: Union[np.ndarray, list[float], list[np.ndarray], list[list[float]]],
+        raw_speech: np.ndarray | list[float] | list[np.ndarray] | list[list[float]],
         truncation: bool = ...,
-        pad_to_multiple_of: Optional[int] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        return_attention_mask: Optional[bool] = ...,
-        padding: Optional[str] = ...,
-        max_length: Optional[int] = ...,
-        sampling_rate: Optional[int] = ...,
-        do_normalize: Optional[bool] = ...,
-        device: Optional[str] = ...,
-        return_token_timestamps: Optional[bool] = ...,
+        pad_to_multiple_of: int | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        return_attention_mask: bool | None = ...,
+        padding: str | None = ...,
+        max_length: int | None = ...,
+        sampling_rate: int | None = ...,
+        do_normalize: bool | None = ...,
+        device: str | None = ...,
+        return_token_timestamps: bool | None = ...,
         **kwargs,
     ) -> BatchFeature:
         """

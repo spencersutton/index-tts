@@ -20,7 +20,7 @@ class NodeScheduleMarker:
     @staticmethod
     def is_reduction() -> bool: ...
 
-NodeScheduleEntry: typing.TypeAlias = Union[SchedulerNode, type[NodeScheduleMarker]]
+type NodeScheduleEntry = SchedulerNode | type[NodeScheduleMarker]
 
 class DisableReduction(NodeScheduleMarker): ...
 
@@ -34,7 +34,7 @@ class SIMDKernelFeatures:
         node_schedule: list[NodeScheduleEntry],
         numel: sympy.Expr,
         reduction_numel: sympy.Expr = ...,
-        coalesce_analysis: Optional[CoalesceVarAnalysis] = ...,
+        coalesce_analysis: CoalesceVarAnalysis | None = ...,
     ) -> None: ...
     @cache_on_self
     def is_reduction(self) -> bool: ...
@@ -56,7 +56,7 @@ class SIMDKernelFeatures:
     def has_non_contiguous_pw_in_reduction_kernel(self) -> bool: ...
     @staticmethod
     def reduction_hint(node: Any) -> ReductionHint: ...
-    def memory_stats(self, groups_dict: Optional[dict[str, sympy.Expr]] = ...) -> MemoryStats: ...
+    def memory_stats(self, groups_dict: dict[str, sympy.Expr] | None = ...) -> MemoryStats: ...
 
 class MemoryEstimator:
     kernel_sizes: tuple[sympy.Expr, ...]

@@ -22,7 +22,7 @@ class HfFolder:
         ...
 
     @classmethod
-    def get_token(cls) -> Optional[str]:
+    def get_token(cls) -> str | None:
         """
         Get token or None if not existent.
 

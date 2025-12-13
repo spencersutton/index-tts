@@ -9,8 +9,8 @@ from .base import BaseInferenceType, dataclass_with_extra
 class ZeroShotImageClassificationParameters(BaseInferenceType):
     """Additional inference parameters for Zero Shot Image Classification"""
 
-    candidate_labels: List[str]
-    hypothesis_template: Optional[str] = ...
+    candidate_labels: list[str]
+    hypothesis_template: str | None = ...
 
 @dataclass_with_extra
 class ZeroShotImageClassificationInput(BaseInferenceType):

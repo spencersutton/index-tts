@@ -14,8 +14,8 @@ Processor class for UDOP.
 logger = ...
 
 class UdopTextKwargs(TextKwargs, total=False):
-    word_labels: Optional[Union[list[int], list[list[int]]]]
-    boxes: Union[list[list[int]], list[list[list[int]]]]
+    word_labels: list[int] | list[list[int]] | None
+    boxes: list[list[int]] | list[list[list[int]]]
     ...
 
 class UdopProcessorKwargs(ProcessingKwargs, total=False):
@@ -50,8 +50,8 @@ class UdopProcessor(ProcessorMixin):
     def __init__(self, image_processor, tokenizer) -> None: ...
     def __call__(
         self,
-        images: Optional[ImageInput] = ...,
-        text: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]] = ...,
+        images: ImageInput | None = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] = ...,
         audio=...,
         videos=...,
         **kwargs: Unpack[UdopProcessorKwargs],

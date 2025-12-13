@@ -44,18 +44,18 @@ class KyutaiSpeechToTextFeatureExtractor(EncodecFeatureExtractor):
     """
     def __init__(
         self,
-        audio_delay_seconds: Optional[float] = ...,
-        audio_silence_prefix_seconds: Optional[float] = ...,
+        audio_delay_seconds: float | None = ...,
+        audio_silence_prefix_seconds: float | None = ...,
         **super_kwargs,
     ) -> None: ...
     def __call__(
         self,
-        raw_audio: Union[np.ndarray, list[float], list[np.ndarray], list[list[float]]],
-        padding: Optional[Union[bool, str, PaddingStrategy]] = ...,
-        truncation: Optional[bool] = ...,
-        max_length: Optional[int] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        sampling_rate: Optional[int] = ...,
+        raw_audio: np.ndarray | list[float] | list[np.ndarray] | list[list[float]],
+        padding: bool | str | PaddingStrategy | None = ...,
+        truncation: bool | None = ...,
+        max_length: int | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        sampling_rate: int | None = ...,
     ) -> BatchFeature:
         """
         Main method to featurize and prepare for the model one or several sequence(s).
@@ -144,13 +144,13 @@ class KyutaiSpeechToTextForConditionalGeneration(LlamaForCausalLM, GenerationMix
     def prepare_inputs_for_generation(
         self,
         *args,
-        audio_tokens: Optional[torch.LongTensor] = ...,
-        input_values: Optional[torch.FloatTensor] = ...,
-        padding_mask: Optional[torch.Tensor] = ...,
-        audio_window_size: Optional[int] = ...,
-        current_window: Optional[tuple[int, int]] = ...,
-        encoder_past_key_values: Optional[Cache] = ...,
-        padding_cache: Optional[KyutaiSpeechToTextConv1dPaddingCache] = ...,
+        audio_tokens: torch.LongTensor | None = ...,
+        input_values: torch.FloatTensor | None = ...,
+        padding_mask: torch.Tensor | None = ...,
+        audio_window_size: int | None = ...,
+        current_window: tuple[int, int] | None = ...,
+        encoder_past_key_values: Cache | None = ...,
+        padding_cache: KyutaiSpeechToTextConv1dPaddingCache | None = ...,
         **kwargs,
     ):  # -> dict[Any, Any]:
         ...

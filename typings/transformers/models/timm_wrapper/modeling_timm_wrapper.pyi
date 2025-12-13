@@ -34,9 +34,9 @@ class TimmWrapperModelOutput(ModelOutput):
     """
 
     last_hidden_state: torch.FloatTensor
-    pooler_output: Optional[torch.FloatTensor] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
-    attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
+    pooler_output: torch.FloatTensor | None = ...
+    hidden_states: tuple[torch.FloatTensor, ...] | None = ...
+    attentions: tuple[torch.FloatTensor, ...] | None = ...
 
 @auto_docstring
 class TimmWrapperPreTrainedModel(PreTrainedModel):
@@ -64,12 +64,12 @@ class TimmWrapperModel(TimmWrapperPreTrainedModel):
     def forward(
         self,
         pixel_values: torch.FloatTensor,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[Union[bool, list[int]]] = ...,
-        return_dict: Optional[bool] = ...,
-        do_pooling: Optional[bool] = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | list[int] | None = ...,
+        return_dict: bool | None = ...,
+        do_pooling: bool | None = ...,
         **kwargs,
-    ) -> Union[TimmWrapperModelOutput, tuple[Tensor, ...]]:
+    ) -> TimmWrapperModelOutput | tuple[Tensor, ...]:
         r"""
         output_attentions (`bool`, *optional*):
             Whether or not to return the attentions tensors of all attention layers. Not compatible with timm wrapped models.
@@ -121,12 +121,12 @@ class TimmWrapperForImageClassification(TimmWrapperPreTrainedModel):
     def forward(
         self,
         pixel_values: torch.FloatTensor,
-        labels: Optional[torch.LongTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[Union[bool, list[int]]] = ...,
-        return_dict: Optional[bool] = ...,
+        labels: torch.LongTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | list[int] | None = ...,
+        return_dict: bool | None = ...,
         **kwargs,
-    ) -> Union[ImageClassifierOutput, tuple[Tensor, ...]]:
+    ) -> ImageClassifierOutput | tuple[Tensor, ...]:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the image classification/regression loss. Indices should be in `[0, ...,

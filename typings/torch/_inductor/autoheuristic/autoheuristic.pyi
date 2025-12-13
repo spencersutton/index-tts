@@ -1,4 +1,5 @@
-from typing import Any, Callable, Optional
+from typing import Any, Optional
+from collections.abc import Callable
 from torch._inductor.autoheuristic.autoheuristic_utils import AHContext, AHMetadata, AHOperation, Choice, Feedback
 from torch._inductor.ir import ChoiceCaller
 
@@ -14,15 +15,15 @@ class AutoHeuristic:
         self,
         fallback: Callable[[], Choice],
         choices: list[Choice],
-        feedback: Optional[LocalFeedback],
+        feedback: LocalFeedback | None,
         context: AHContext,
         name: str,
-        augment_context: Optional[list[AHOperation]] = ...,
-        precondition: Optional[Callable[[AHMetadata, AHContext], bool]] = ...,
+        augment_context: list[AHOperation] | None = ...,
+        precondition: Callable[[AHMetadata, AHContext], bool] | None = ...,
     ) -> None: ...
     def satisfies_precondition(self) -> bool: ...
     def get_choice(self) -> Choice: ...
-    def get_top_k_choices(self, top_k: int, always_included: Optional[list[str]] = ...) -> Optional[list[Choice]]: ...
+    def get_top_k_choices(self, top_k: int, always_included: list[str] | None = ...) -> list[Choice] | None: ...
     def get_collected_feedback(self, choice: Choice) -> Any: ...
     @staticmethod
     def get_device_identifier() -> str: ...
@@ -33,16 +34,16 @@ class AutoHeuristic:
 class AutoHeuristicSelectAlgorithm(AutoHeuristic):
     def __init__(
         self,
-        fallback: Callable[[], Optional[ChoiceCaller]],
+        fallback: Callable[[], ChoiceCaller | None],
         choices: list[ChoiceCaller],
         input_nodes: list[Any],
         context: AHContext,
         name: str,
-        augment_context: Optional[list[AHOperation]] = ...,
-        precondition: Optional[Callable[[AHMetadata, AHContext], bool]] = ...,
+        augment_context: list[AHOperation] | None = ...,
+        precondition: Callable[[AHMetadata, AHContext], bool] | None = ...,
     ) -> None: ...
     def register_global_feedback(self, input_nodes: list[Any], choices: list[ChoiceCaller]) -> None: ...
-    def get_choice_caller(self) -> Optional[ChoiceCaller]: ...
+    def get_choice_caller(self) -> ChoiceCaller | None: ...
     def get_top_k_choices_caller(
-        self, top_k: int, always_included: Optional[list[str]] = ...
-    ) -> Optional[list[ChoiceCaller]]: ...
+        self, top_k: int, always_included: list[str] | None = ...
+    ) -> list[ChoiceCaller] | None: ...

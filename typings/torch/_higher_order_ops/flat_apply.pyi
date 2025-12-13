@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable
+from collections.abc import Callable
 from torch._ops import HigherOrderOperator
 
 def is_graphable(val) -> bool: ...

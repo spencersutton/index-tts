@@ -26,9 +26,9 @@ class ViltFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
             The factor to rescale the image by.
     """
 
-    do_pad: Optional[bool]
-    size_divisor: Optional[int]
-    rescale_factor: Optional[float]
+    do_pad: bool | None
+    size_divisor: int | None
+    rescale_factor: float | None
     ...
 
 @auto_docstring
@@ -49,8 +49,8 @@ class ViltImageProcessorFast(BaseImageProcessorFast):
         self,
         images: torch.Tensor,
         size: SizeDict,
-        interpolation: Optional[F.InterpolationMode] = ...,
-        size_divisor: Optional[int] = ...,
+        interpolation: F.InterpolationMode | None = ...,
+        size_divisor: int | None = ...,
     ) -> torch.Tensor:
         """
         Resize an image or batch of images to specified size.

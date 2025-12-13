@@ -18,7 +18,7 @@ class HopArgumentInfoGen:
         example_value: Any,
         *,
         name: str = ...,
-        default_value: Optional[Any] = ...,
+        default_value: Any | None = ...,
         is_mutated: bool = ...,
         kw_only: bool = ...,
     ) -> HopArgumentInfo: ...
@@ -38,7 +38,7 @@ class HopSchemaGenerator:
         self,
         name: str,
         example_value: Any,
-        default_value: Optional[Any] = ...,
+        default_value: Any | None = ...,
         is_mutated: bool = ...,
         kw_only: bool = ...,
     ) -> None: ...
@@ -52,7 +52,7 @@ class CFunctionSchemaGen:
         op_name: str,
         inp_argument_info: list[HopArgumentInfo],
         out_argument_info: HopArgumentInfo,
-        schema_tree_spec: Optional[pytree.TreeSpec],
+        schema_tree_spec: pytree.TreeSpec | None,
     ) -> Any: ...
 
 class HopSchema(torch._C.FunctionSchema):
@@ -64,7 +64,7 @@ class HopSchema(torch._C.FunctionSchema):
         returns: list[torch._C.Argument],
         is_vararg: bool,
         is_varret: bool,
-        schema_tree_spec: Optional[pytree.TreeSpec],
+        schema_tree_spec: pytree.TreeSpec | None,
     ) -> None: ...
     def __deepcopy__(self, memo: Any) -> HopSchema: ...
 

@@ -122,16 +122,16 @@ class ProphetNetTokenizer(PreTrainedTokenizer):
     def __init__(
         self,
         vocab_file: str,
-        do_lower_case: Optional[bool] = ...,
-        do_basic_tokenize: Optional[bool] = ...,
-        never_split: Optional[Iterable] = ...,
-        unk_token: Optional[str] = ...,
-        sep_token: Optional[str] = ...,
-        x_sep_token: Optional[str] = ...,
-        pad_token: Optional[str] = ...,
-        mask_token: Optional[str] = ...,
-        tokenize_chinese_chars: Optional[bool] = ...,
-        strip_accents: Optional[bool] = ...,
+        do_lower_case: bool | None = ...,
+        do_basic_tokenize: bool | None = ...,
+        never_split: Iterable | None = ...,
+        unk_token: str | None = ...,
+        sep_token: str | None = ...,
+        x_sep_token: str | None = ...,
+        pad_token: str | None = ...,
+        mask_token: str | None = ...,
+        tokenize_chinese_chars: bool | None = ...,
+        strip_accents: bool | None = ...,
         clean_up_tokenization_spaces: bool = ...,
         **kwargs,
     ) -> None: ...
@@ -147,8 +147,8 @@ class ProphetNetTokenizer(PreTrainedTokenizer):
     def get_special_tokens_mask(
         self,
         token_ids_0: list[int],
-        token_ids_1: Optional[list[int]] = ...,
-        already_has_special_tokens: Optional[bool] = ...,
+        token_ids_1: list[int] | None = ...,
+        already_has_special_tokens: bool | None = ...,
     ) -> list[int]:
         """
         Retrieve sequence ids from a token list that has no special tokens added. This method is called when adding
@@ -167,9 +167,9 @@ class ProphetNetTokenizer(PreTrainedTokenizer):
         """
         ...
 
-    def save_vocabulary(self, save_directory: str, filename_prefix: Optional[str] = ...) -> tuple[str]: ...
+    def save_vocabulary(self, save_directory: str, filename_prefix: str | None = ...) -> tuple[str]: ...
     def build_inputs_with_special_tokens(
-        self, token_ids_0: list[int], token_ids_1: Optional[list[int]] = ...
+        self, token_ids_0: list[int], token_ids_1: list[int] | None = ...
     ) -> list[int]:
         """
         Build model inputs from a sequence or a pair of sequence for sequence classification tasks by concatenating and

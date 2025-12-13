@@ -32,10 +32,10 @@ class SamFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
         map size provided for preprocessing.
     """
 
-    mask_size: Optional[dict[str, int]]
-    do_pad: Optional[bool]
-    pad_size: Optional[dict[str, int]]
-    mask_pad_size: Optional[dict[str, int]]
+    mask_size: dict[str, int] | None
+    do_pad: bool | None
+    pad_size: dict[str, int] | None
+    mask_pad_size: dict[str, int] | None
     ...
 
 @auto_docstring
@@ -59,7 +59,7 @@ class SamImageProcessorFast(BaseImageProcessorFast):
         ...
 
     def resize(
-        self, image: torch.Tensor, size: SizeDict, interpolation: Optional[F.InterpolationMode], **kwargs
+        self, image: torch.Tensor, size: SizeDict, interpolation: F.InterpolationMode | None, **kwargs
     ) -> torch.Tensor:
         """
         Resize an image to `(size["height"], size["width"])`.
@@ -83,7 +83,7 @@ class SamImageProcessorFast(BaseImageProcessorFast):
     def preprocess(
         self,
         images: ImageInput,
-        segmentation_maps: Optional[ImageInput] = ...,
+        segmentation_maps: ImageInput | None = ...,
         **kwargs: Unpack[SamFastImageProcessorKwargs],
     ) -> BatchFeature:
         r"""
@@ -98,9 +98,9 @@ class SamImageProcessorFast(BaseImageProcessorFast):
         target_size,
         crop_n_layers: int = ...,
         overlap_ratio: float = ...,
-        points_per_crop: Optional[int] = ...,
-        crop_n_points_downscale_factor: Optional[list[int]] = ...,
-        device: Optional[torch.device] = ...,
+        points_per_crop: int | None = ...,
+        crop_n_points_downscale_factor: list[int] | None = ...,
+        device: torch.device | None = ...,
     ):  # -> tuple[Any, Any | int | None, Any, Any]:
         """
         Generates a list of crop boxes of different sizes. Each layer has (2**i)**2 boxes for the ith layer.

@@ -1,6 +1,7 @@
 import dataclasses
 import types
-from typing import Any, Callable, NamedTuple, Optional, Protocol, Union, TypeAlias
+from typing import Any, NamedTuple, Optional, Protocol, Union, TypeAlias
+from collections.abc import Callable
 from torch._C._dynamo.eval_frame import (
     _CacheEntry as CacheEntry,
     _ExtraState as ExtraState,
@@ -21,7 +22,7 @@ The types defined here fall into several categories:
 These types provide the foundational interfaces that enable Dynamo's dynamic compilation and optimization system,
 ensuring type safety and clear contracts between different components of the system.
 """
-FrameState: TypeAlias = dict[Any, Any]
+type FrameState = dict[Any, Any]
 
 class GuardFail(NamedTuple):
     reason: str
@@ -43,9 +44,9 @@ class GuardFn(Protocol):
     code_parts: list[str]
     verbose_code_parts: list[str]
     global_scope: dict[str, object]
-    guard_fail_fn: Optional[Callable[[GuardFail], None]]
-    cache_entry: Optional[CacheEntry]
-    extra_state: Optional[ExtraState]
+    guard_fail_fn: Callable[[GuardFail], None] | None
+    cache_entry: CacheEntry | None
+    extra_state: ExtraState | None
     def __call__(self, f_locals: dict[str, object]) -> bool: ...
 
 @dataclasses.dataclass
@@ -59,16 +60,16 @@ class GuardedCode:
 class ConvertFrameReturn:
     frame_exec_strategy: FrameExecStrategy = ...
     apply_to_code: bool = ...
-    guarded_code: Optional[GuardedCode] = ...
+    guarded_code: GuardedCode | None = ...
 
 def wrap_guarded_code(guarded_code: GuardedCode) -> ConvertFrameReturn: ...
 
 class DynamoCallbackFn(Protocol):
     def __call__(
-        self, frame: DynamoFrameType, cache_entry: Optional[CacheEntry], frame_state: FrameState
+        self, frame: DynamoFrameType, cache_entry: CacheEntry | None, frame_state: FrameState
     ) -> ConvertFrameReturn: ...
 
-DynamoCallback: TypeAlias = Union[DynamoCallbackFn, None, bool]
+type DynamoCallback = DynamoCallbackFn | None | bool
 
 class DynamoGuardHook(Protocol):
     def __call__(
@@ -85,4 +86,4 @@ class ProfilerEndHook(Protocol):
     def __call__(self, record: Any) -> None: ...
 
 class BytecodeHook(Protocol):
-    def __call__(self, code: types.CodeType, new_code: types.CodeType) -> Optional[types.CodeType]: ...
+    def __call__(self, code: types.CodeType, new_code: types.CodeType) -> types.CodeType | None: ...

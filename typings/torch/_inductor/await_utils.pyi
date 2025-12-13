@@ -7,7 +7,7 @@ from contextvars import Context
 from typing import Any, Protocol, TypeVar, TypeAlias
 
 T = TypeVar("T")
-TCoro: TypeAlias = Generator[Any, None, T]
+type TCoro[T] = Generator[Any, None, T]
 if sys.version_info >= (3, 11):
     class TaskFactory(Protocol):
         def __call__(

@@ -19,7 +19,7 @@ def is_image_or_image_url(elem):  # -> bool:
     ...
 
 class Idefics2ImagesKwargs(ImagesKwargs, total=False):
-    image_seq_len: Optional[int]
+    image_seq_len: int | None
     ...
 
 class Idefics2ProcessorKwargs(ProcessingKwargs, total=False):
@@ -50,12 +50,12 @@ class Idefics2Processor(ProcessorMixin):
     image_processor_class = ...
     tokenizer_class = ...
     def __init__(
-        self, image_processor, tokenizer=..., image_seq_len: int = ..., chat_template: Optional[str] = ..., **kwargs
+        self, image_processor, tokenizer=..., image_seq_len: int = ..., chat_template: str | None = ..., **kwargs
     ) -> None: ...
     def __call__(
         self,
-        images: Union[ImageInput, list[ImageInput], list[list[ImageInput]]] = ...,
-        text: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]] = ...,
+        images: ImageInput | list[ImageInput] | list[list[ImageInput]] = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] = ...,
         audio=...,
         videos=...,
         **kwargs: Unpack[Idefics2ProcessorKwargs],

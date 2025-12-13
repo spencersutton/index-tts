@@ -35,7 +35,7 @@ class ChineseCLIPProcessor(ProcessorMixin):
     def __init__(self, image_processor=..., tokenizer=..., **kwargs) -> None: ...
     def __call__(
         self,
-        text: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]] = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] = ...,
         images: ImageInput = ...,
         audio=...,
         videos=...,

@@ -100,19 +100,19 @@ class RoCBertTokenizer(PreTrainedTokenizer):
         ids: list[int],
         shape_ids: list[int],
         pronunciation_ids: list[int],
-        pair_ids: Optional[list[int]] = ...,
-        pair_shape_ids: Optional[list[int]] = ...,
-        pair_pronunciation_ids: Optional[list[int]] = ...,
+        pair_ids: list[int] | None = ...,
+        pair_shape_ids: list[int] | None = ...,
+        pair_pronunciation_ids: list[int] | None = ...,
         add_special_tokens: bool = ...,
-        padding: Union[bool, str, PaddingStrategy] = ...,
-        truncation: Union[bool, str, TruncationStrategy] = ...,
-        max_length: Optional[int] = ...,
+        padding: bool | str | PaddingStrategy = ...,
+        truncation: bool | str | TruncationStrategy = ...,
+        max_length: int | None = ...,
         stride: int = ...,
-        pad_to_multiple_of: Optional[int] = ...,
-        padding_side: Optional[str] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        return_token_type_ids: Optional[bool] = ...,
-        return_attention_mask: Optional[bool] = ...,
+        pad_to_multiple_of: int | None = ...,
+        padding_side: str | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        return_token_type_ids: bool | None = ...,
+        return_attention_mask: bool | None = ...,
         return_overflowing_tokens: bool = ...,
         return_special_tokens_mask: bool = ...,
         return_offsets_mapping: bool = ...,
@@ -150,8 +150,8 @@ class RoCBertTokenizer(PreTrainedTokenizer):
         """
         ...
 
-    def convert_tokens_to_shape_ids(self, tokens: Union[str, list[str]]) -> Union[int, list[int]]: ...
-    def convert_tokens_to_pronunciation_ids(self, tokens: Union[str, list[str]]) -> Union[int, list[int]]: ...
+    def convert_tokens_to_shape_ids(self, tokens: str | list[str]) -> int | list[int]: ...
+    def convert_tokens_to_pronunciation_ids(self, tokens: str | list[str]) -> int | list[int]: ...
     def convert_tokens_to_string(self, tokens):  # -> str:
         """Converts a sequence of tokens (string) in a single string."""
         ...
@@ -159,9 +159,9 @@ class RoCBertTokenizer(PreTrainedTokenizer):
     def build_inputs_with_special_tokens(
         self,
         token_ids_0: list[int],
-        token_ids_1: Optional[list[int]] = ...,
-        cls_token_id: Optional[int] = ...,
-        sep_token_id: Optional[int] = ...,
+        token_ids_1: list[int] | None = ...,
+        cls_token_id: int | None = ...,
+        sep_token_id: int | None = ...,
     ) -> list[int]:
         """
         Build model inputs from a sequence or a pair of sequence for sequence classification tasks by concatenating and
@@ -182,7 +182,7 @@ class RoCBertTokenizer(PreTrainedTokenizer):
         ...
 
     def get_special_tokens_mask(
-        self, token_ids_0: list[int], token_ids_1: Optional[list[int]] = ..., already_has_special_tokens: bool = ...
+        self, token_ids_0: list[int], token_ids_1: list[int] | None = ..., already_has_special_tokens: bool = ...
     ) -> list[int]:
         """
         Retrieve sequence ids from a token list that has no special tokens added. This method is called when adding
@@ -201,7 +201,7 @@ class RoCBertTokenizer(PreTrainedTokenizer):
         """
         ...
 
-    def save_vocabulary(self, save_directory: str, filename_prefix: Optional[str] = ...) -> tuple[str, str, str]: ...
+    def save_vocabulary(self, save_directory: str, filename_prefix: str | None = ...) -> tuple[str, str, str]: ...
 
 class RoCBertBasicTokenizer:
     """

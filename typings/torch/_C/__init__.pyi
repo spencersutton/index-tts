@@ -4,8 +4,9 @@ from collections.abc import Iterable, Iterator, Sequence
 from enum import Enum, IntEnum
 from pathlib import Path
 from types import EllipsisType
-from typing import Any, AnyStr, Callable, Generic, IO, Literal, NamedTuple, SupportsIndex, TypeVar, overload
-from typing_extensions import ParamSpec, Protocol, Self, TypeAlias, runtime_checkable
+from typing import Any, AnyStr, Generic, IO, Literal, NamedTuple, SupportsIndex, TypeVar, overload
+from collections.abc import Callable
+from typing import ParamSpec, Protocol, Self, TypeAlias, runtime_checkable
 from torch import SymInt, Tensor, inf
 from torch._C import (
     _VariableFunctions,
@@ -275,7 +276,7 @@ def fork(*args: Any, **kwargs: Any) -> Future: ...
 def wait(fut: Future) -> Any: ...
 def unify_type_list(types: list[JitType]) -> JitType: ...
 
-ResolutionCallback: TypeAlias = Callable[[str], Callable[..., Any]]
+type ResolutionCallback = Callable[[str], Callable[..., Any]]
 
 def parse_type_comment(comment: str) -> Decl: ...
 def merge_type_from_type_comment(decl: Decl, type_annotation_decl: Decl, is_method: _bool) -> Decl: ...
@@ -1079,7 +1080,7 @@ class _ImperativeEngine:
 
 class _TensorMeta(type): ...
 
-_Index: TypeAlias = (
+type _Index = (
     SupportsIndex
     | _bool
     | _int
@@ -2813,7 +2814,7 @@ class TracingState:
 
 class IValue: ...
 
-Stack: TypeAlias = list[IValue]
+type Stack = list[IValue]
 
 class JitType:
     annotation_str: str

@@ -37,7 +37,7 @@ def eager_attention_forward(
     query: torch.Tensor,
     key: torch.Tensor,
     value: torch.Tensor,
-    attention_mask: Optional[torch.Tensor],
+    attention_mask: torch.Tensor | None,
     scaling: float,
     dropout: float = ...,
     **kwargs,
@@ -47,8 +47,8 @@ def eager_attention_forward(
 class VitPoseBackboneSelfAttention(nn.Module):
     def __init__(self, config: VitPoseBackboneConfig) -> None: ...
     def forward(
-        self, hidden_states, head_mask: Optional[torch.Tensor] = ..., output_attentions: bool = ...
-    ) -> Union[tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor]]: ...
+        self, hidden_states, head_mask: torch.Tensor | None = ..., output_attentions: bool = ...
+    ) -> tuple[torch.Tensor, torch.Tensor] | tuple[torch.Tensor]: ...
 
 class VitPoseBackboneSelfOutput(nn.Module):
     """
@@ -62,8 +62,8 @@ class VitPoseBackboneAttention(nn.Module):
     def __init__(self, config: VitPoseBackboneConfig) -> None: ...
     def prune_heads(self, heads: set[int]) -> None: ...
     def forward(
-        self, hidden_states: torch.Tensor, head_mask: Optional[torch.Tensor] = ..., output_attentions: bool = ...
-    ) -> Union[tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor]]: ...
+        self, hidden_states: torch.Tensor, head_mask: torch.Tensor | None = ..., output_attentions: bool = ...
+    ) -> tuple[torch.Tensor, torch.Tensor] | tuple[torch.Tensor]: ...
 
 class VitPoseBackboneMoeMLP(nn.Module):
     def __init__(self, config: VitPoseBackboneConfig) -> None: ...
@@ -78,22 +78,22 @@ class VitPoseBackboneLayer(GradientCheckpointingLayer):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        dataset_index: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
+        dataset_index: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
-    ) -> Union[tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor]]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor] | tuple[torch.Tensor]: ...
 
 class VitPoseBackboneEncoder(nn.Module):
     def __init__(self, config: VitPoseBackboneConfig) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        dataset_index: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
+        dataset_index: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ) -> Union[tuple, BaseModelOutput]: ...
+    ) -> tuple | BaseModelOutput: ...
 
 @auto_docstring
 class VitPoseBackbonePreTrainedModel(PreTrainedModel):
@@ -116,11 +116,11 @@ class VitPoseBackbone(VitPoseBackbonePreTrainedModel, BackboneMixin):
     def forward(
         self,
         pixel_values: torch.Tensor,
-        dataset_index: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        dataset_index: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
     ):  # -> Any | BackboneOutput:
         r"""
         dataset_index (`torch.Tensor` of shape `(batch_size,)`):

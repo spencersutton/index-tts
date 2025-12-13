@@ -72,8 +72,8 @@ class TFEfficientFormerDenseMlp(keras.layers.Layer):
         self,
         config: EfficientFormerConfig,
         in_features: int,
-        hidden_features: Optional[int] = ...,
-        out_features: Optional[int] = ...,
+        hidden_features: int | None = ...,
+        out_features: int | None = ...,
         **kwargs,
     ) -> None: ...
     def call(self, hidden_states: tf.Tensor, training: bool = ...) -> tf.Tensor: ...
@@ -85,8 +85,8 @@ class TFEfficientFormerConvMlp(keras.layers.Layer):
         self,
         config: EfficientFormerConfig,
         in_features: int,
-        hidden_features: Optional[int] = ...,
-        out_features: Optional[int] = ...,
+        hidden_features: int | None = ...,
+        out_features: int | None = ...,
         drop: float = ...,
         **kwargs,
     ) -> None: ...
@@ -168,12 +168,12 @@ class TFEfficientFormerMainLayer(keras.layers.Layer):
     @unpack_inputs
     def call(
         self,
-        pixel_values: Optional[tf.Tensor] = ...,
-        output_attentions: Optional[tf.Tensor] = ...,
-        output_hidden_states: Optional[tf.Tensor] = ...,
-        return_dict: Optional[bool] = ...,
+        pixel_values: tf.Tensor | None = ...,
+        output_attentions: tf.Tensor | None = ...,
+        output_hidden_states: tf.Tensor | None = ...,
+        return_dict: bool | None = ...,
         training: bool = ...,
-    ) -> Union[TFBaseModelOutput, tuple[tf.Tensor, ...]]: ...
+    ) -> TFBaseModelOutput | tuple[tf.Tensor, ...]: ...
     def build(self, input_shape=...):  # -> None:
         ...
 
@@ -207,12 +207,12 @@ class TFEfficientFormerModel(TFEfficientFormerPreTrainedModel):
     )
     def call(
         self,
-        pixel_values: Optional[tf.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        pixel_values: tf.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         training: bool = ...,
-    ) -> Union[tuple, TFBaseModelOutput]: ...
+    ) -> tuple | TFBaseModelOutput: ...
     def build(self, input_shape=...):  # -> None:
         ...
 
@@ -235,13 +235,13 @@ class TFEfficientFormerForImageClassification(TFEfficientFormerPreTrainedModel, 
     )
     def call(
         self,
-        pixel_values: Optional[tf.Tensor] = ...,
-        labels: Optional[tf.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        pixel_values: tf.Tensor | None = ...,
+        labels: tf.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         training: bool = ...,
-    ) -> Union[tf.Tensor, TFImageClassifierOutput]:
+    ) -> tf.Tensor | TFImageClassifierOutput:
         r"""
         labels (`tf.Tensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
@@ -278,11 +278,11 @@ class TFEfficientFormerForImageClassificationWithTeacherOutput(ModelOutput):
             the self-attention heads.
     """
 
-    logits: Optional[tf.Tensor] = ...
-    cls_logits: Optional[tf.Tensor] = ...
-    distillation_logits: Optional[tf.Tensor] = ...
-    hidden_states: Optional[tuple[tf.Tensor]] = ...
-    attentions: Optional[tuple[tf.Tensor]] = ...
+    logits: tf.Tensor | None = ...
+    cls_logits: tf.Tensor | None = ...
+    distillation_logits: tf.Tensor | None = ...
+    hidden_states: tuple[tf.Tensor] | None = ...
+    attentions: tuple[tf.Tensor] | None = ...
 
 @add_start_docstrings(
     """
@@ -307,12 +307,12 @@ class TFEfficientFormerForImageClassificationWithTeacher(TFEfficientFormerPreTra
     )
     def call(
         self,
-        pixel_values: Optional[tf.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        pixel_values: tf.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         training: bool = ...,
-    ) -> Union[tuple, TFEfficientFormerForImageClassificationWithTeacherOutput]: ...
+    ) -> tuple | TFEfficientFormerForImageClassificationWithTeacherOutput: ...
     def build(self, input_shape=...):  # -> None:
         ...
 

@@ -30,10 +30,10 @@ class SamVisionEncoderOutput(ModelOutput):
         The image embeddings obtained by applying the projection layer to the pooler_output.
     """
 
-    image_embeds: Optional[torch.FloatTensor] = ...
-    last_hidden_state: Optional[torch.FloatTensor] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
-    attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
+    image_embeds: torch.FloatTensor | None = ...
+    last_hidden_state: torch.FloatTensor | None = ...
+    hidden_states: tuple[torch.FloatTensor, ...] | None = ...
+    attentions: tuple[torch.FloatTensor, ...] | None = ...
 
 @dataclass
 @auto_docstring(
@@ -66,11 +66,11 @@ class SamImageSegmentationOutput(ModelOutput):
         heads.
     """
 
-    iou_scores: Optional[torch.FloatTensor] = ...
-    pred_masks: Optional[torch.FloatTensor] = ...
-    vision_hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
-    vision_attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
-    mask_decoder_attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
+    iou_scores: torch.FloatTensor | None = ...
+    pred_masks: torch.FloatTensor | None = ...
+    vision_hidden_states: tuple[torch.FloatTensor, ...] | None = ...
+    vision_attentions: tuple[torch.FloatTensor, ...] | None = ...
+    mask_decoder_attentions: tuple[torch.FloatTensor, ...] | None = ...
 
 class SamPatchEmbeddings(nn.Module):
     """
@@ -99,7 +99,7 @@ def eager_attention_forward(
     query: torch.Tensor,
     key: torch.Tensor,
     value: torch.Tensor,
-    attention_mask: Optional[torch.Tensor],
+    attention_mask: torch.Tensor | None,
     scaling: float,
     dropout: float = ...,
     **kwargs,
@@ -117,7 +117,7 @@ class SamAttention(nn.Module):
         query: Tensor,
         key: Tensor,
         value: Tensor,
-        attention_similarity: Optional[Tensor] = ...,
+        attention_similarity: Tensor | None = ...,
         **kwargs: Unpack[TransformersKwargs],
     ) -> Tensor: ...
 
@@ -159,7 +159,7 @@ class SamTwoWayTransformer(nn.Module):
         attention_similarity: Tensor,
         target_embedding=...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> Union[tuple, BaseModelOutput]: ...
+    ) -> tuple | BaseModelOutput: ...
 
 class SamFeedForward(nn.Module):
     def __init__(
@@ -177,8 +177,8 @@ class SamMaskDecoder(nn.Module):
         sparse_prompt_embeddings: torch.Tensor,
         dense_prompt_embeddings: torch.Tensor,
         multimask_output: bool,
-        attention_similarity: Optional[torch.Tensor] = ...,
-        target_embedding: Optional[torch.Tensor] = ...,
+        attention_similarity: torch.Tensor | None = ...,
+        target_embedding: torch.Tensor | None = ...,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Predict masks given image and prompt embeddings.
@@ -212,10 +212,10 @@ class SamPromptEncoder(nn.Module):
     def __init__(self, config: SamConfig) -> None: ...
     def forward(
         self,
-        input_points: Optional[tuple[torch.Tensor, torch.Tensor]],
-        input_labels: Optional[torch.Tensor],
-        input_boxes: Optional[torch.Tensor],
-        input_masks: Optional[torch.Tensor],
+        input_points: tuple[torch.Tensor, torch.Tensor] | None,
+        input_labels: torch.Tensor | None,
+        input_boxes: torch.Tensor | None,
+        input_masks: torch.Tensor | None,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Embeds different types of prompts, returning both sparse and dense embeddings.
@@ -350,7 +350,7 @@ class SamVisionEncoder(SamPreTrainedModel):
         ...
     @check_model_inputs
     def forward(
-        self, pixel_values: Optional[torch.FloatTensor] = ..., **kwargs: Unpack[TransformersKwargs]
+        self, pixel_values: torch.FloatTensor | None = ..., **kwargs: Unpack[TransformersKwargs]
     ) -> SamVisionEncoderOutput: ...
 
 @auto_docstring(
@@ -365,8 +365,8 @@ class SamVisionModel(SamPreTrainedModel):
     def get_input_embeddings(self) -> nn.Module: ...
     @auto_docstring
     def forward(
-        self, pixel_values: Optional[torch.FloatTensor] = ..., **kwargs: Unpack[TransformersKwargs]
-    ) -> Union[tuple, SamVisionEncoderOutput]: ...
+        self, pixel_values: torch.FloatTensor | None = ..., **kwargs: Unpack[TransformersKwargs]
+    ) -> tuple | SamVisionEncoderOutput: ...
 
 @auto_docstring(
     custom_intro="""
@@ -396,10 +396,10 @@ class SamModel(SamPreTrainedModel):
     @torch.no_grad()
     def get_prompt_embeddings(
         self,
-        input_points: Optional[torch.FloatTensor] = ...,
-        input_labels: Optional[torch.LongTensor] = ...,
-        input_boxes: Optional[torch.FloatTensor] = ...,
-        input_masks: Optional[torch.LongTensor] = ...,
+        input_points: torch.FloatTensor | None = ...,
+        input_labels: torch.LongTensor | None = ...,
+        input_boxes: torch.FloatTensor | None = ...,
+        input_masks: torch.LongTensor | None = ...,
     ):  # -> Any:
         r"""
         Returns the prompt embeddings by passing the input points, labels, boxes and masks through the prompt encoder.
@@ -424,15 +424,15 @@ class SamModel(SamPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        input_points: Optional[torch.FloatTensor] = ...,
-        input_labels: Optional[torch.LongTensor] = ...,
-        input_boxes: Optional[torch.FloatTensor] = ...,
-        input_masks: Optional[torch.LongTensor] = ...,
-        image_embeddings: Optional[torch.FloatTensor] = ...,
+        pixel_values: torch.FloatTensor | None = ...,
+        input_points: torch.FloatTensor | None = ...,
+        input_labels: torch.LongTensor | None = ...,
+        input_boxes: torch.FloatTensor | None = ...,
+        input_masks: torch.LongTensor | None = ...,
+        image_embeddings: torch.FloatTensor | None = ...,
         multimask_output: bool = ...,
-        attention_similarity: Optional[torch.FloatTensor] = ...,
-        target_embedding: Optional[torch.FloatTensor] = ...,
+        attention_similarity: torch.FloatTensor | None = ...,
+        target_embedding: torch.FloatTensor | None = ...,
         **kwargs: Unpack[TransformersKwargs],
     ) -> SamImageSegmentationOutput:
         r"""

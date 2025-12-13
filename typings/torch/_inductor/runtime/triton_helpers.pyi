@@ -1,4 +1,5 @@
-from typing import Any, Callable, TypeVar
+from typing import Any, TypeVar
+from collections.abc import Callable
 from .triton_compat import tl, triton
 
 _T = TypeVar("_T")

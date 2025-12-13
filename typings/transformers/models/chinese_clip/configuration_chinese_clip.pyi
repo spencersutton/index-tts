@@ -245,7 +245,7 @@ class ChineseCLIPOnnxConfig(OnnxConfig):
         processor: ProcessorMixin,
         batch_size: int = ...,
         seq_length: int = ...,
-        framework: Optional[TensorType] = ...,
+        framework: TensorType | None = ...,
     ) -> Mapping[str, Any]: ...
     @property
     def default_onnx_opset(self) -> int: ...

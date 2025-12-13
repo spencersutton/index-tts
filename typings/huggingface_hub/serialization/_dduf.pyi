@@ -6,7 +6,8 @@ import os
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Generator, Iterable, Tuple, Union
+from typing import Dict, Tuple, Union
+from collections.abc import Generator, Iterable
 
 logger = ...
 DDUF_ALLOWED_ENTRIES = ...
@@ -34,7 +35,7 @@ class DDUFEntry:
     offset: int
     dduf_path: Path = ...
     @contextmanager
-    def as_mmap(self) -> Generator[bytes, None, None]:
+    def as_mmap(self) -> Generator[bytes]:
         """Open the file as a memory-mapped file.
 
         Useful to load safetensors directly from the file.
@@ -61,7 +62,7 @@ class DDUFEntry:
         """
         ...
 
-def read_dduf_file(dduf_path: Union[os.PathLike, str]) -> Dict[str, DDUFEntry]:
+def read_dduf_file(dduf_path: os.PathLike | str) -> dict[str, DDUFEntry]:
     """
     Read a DDUF file and return a dictionary of entries.
 
@@ -102,9 +103,7 @@ def read_dduf_file(dduf_path: Union[os.PathLike, str]) -> Dict[str, DDUFEntry]:
     """
     ...
 
-def export_entries_as_dduf(
-    dduf_path: Union[str, os.PathLike], entries: Iterable[Tuple[str, Union[str, Path, bytes]]]
-) -> None:
+def export_entries_as_dduf(dduf_path: str | os.PathLike, entries: Iterable[tuple[str, str | Path | bytes]]) -> None:
     """Write a DDUF file from an iterable of entries.
 
     This is a lower-level helper than [`export_folder_as_dduf`] that allows more flexibility when serializing data.
@@ -162,7 +161,7 @@ def export_entries_as_dduf(
     """
     ...
 
-def export_folder_as_dduf(dduf_path: Union[str, os.PathLike], folder_path: Union[str, os.PathLike]) -> None:
+def export_folder_as_dduf(dduf_path: str | os.PathLike, folder_path: str | os.PathLike) -> None:
     """
     Export a folder as a DDUF file.
 

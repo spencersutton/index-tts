@@ -16,11 +16,11 @@ IMAGE_TOKEN = ...
 EXTRA_TOKENS = ...
 
 class PaliGemmaTextKwargs(TextKwargs):
-    suffix: Optional[Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]]]
+    suffix: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] | None
     ...
 
 class PaliGemmaImagesKwargs(ImagesKwargs):
-    do_convert_rgb: Optional[bool]
+    do_convert_rgb: bool | None
     ...
 
 class PaliGemmaProcessorKwargs(ProcessingKwargs, total=False):
@@ -75,7 +75,7 @@ class PaliGemmaProcessor(ProcessorMixin):
     def __call__(
         self,
         images: ImageInput = ...,
-        text: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]] = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] = ...,
         audio=...,
         videos=...,
         **kwargs: Unpack[PaliGemmaProcessorKwargs],

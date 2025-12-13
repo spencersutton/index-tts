@@ -17,7 +17,7 @@ logger = ...
 def normalize_box(box, width, height):  # -> list[int]:
     ...
 def apply_tesseract(
-    image: Image.Image, lang: Optional[str], tesseract_config: Optional[str]
+    image: Image.Image, lang: str | None, tesseract_config: str | None
 ):  # -> tuple[list[Any], list[Any]]:
     """Applies Tesseract OCR on a document image, and returns recognized words + normalized bounding boxes."""
     ...
@@ -71,9 +71,9 @@ class DocumentQuestionAnsweringPipeline(ChunkPipeline):
     @overload
     def __call__(
         self,
-        image: Union[Image.Image, str],
+        image: Image.Image | str,
         question: str,
-        word_boxes: Optional[tuple[str, list[float]]] = ...,
+        word_boxes: tuple[str, list[float]] | None = ...,
         **kwargs: Any,
     ) -> list[dict[str, Any]]: ...
     @overload
@@ -82,11 +82,11 @@ class DocumentQuestionAnsweringPipeline(ChunkPipeline):
     def __call__(self, image: list[dict[str, Any]], **kwargs: Any) -> list[list[dict[str, Any]]]: ...
     def __call__(
         self,
-        image: Union[Image.Image, str, list[dict[str, Any]]],
-        question: Optional[str] = ...,
-        word_boxes: Optional[tuple[str, list[float]]] = ...,
+        image: Image.Image | str | list[dict[str, Any]],
+        question: str | None = ...,
+        word_boxes: tuple[str, list[float]] | None = ...,
         **kwargs: Any,
-    ) -> Union[dict[str, Any], list[dict[str, Any]]]:
+    ) -> dict[str, Any] | list[dict[str, Any]]:
         """
         Answer the question(s) given as inputs by using the document(s). A document is defined as an image and an
         optional list of (word, box) tuples which represent the text in the document. If the `word_boxes` are not
@@ -159,7 +159,7 @@ class DocumentQuestionAnsweringPipeline(ChunkPipeline):
         padding=...,
         doc_stride=...,
         max_seq_len=...,
-        word_boxes: Optional[tuple[str, list[float]]] = ...,
+        word_boxes: tuple[str, list[float]] | None = ...,
         lang=...,
         tesseract_config=...,
         timeout=...,

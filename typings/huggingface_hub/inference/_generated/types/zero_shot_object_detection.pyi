@@ -9,7 +9,7 @@ from .base import BaseInferenceType, dataclass_with_extra
 class ZeroShotObjectDetectionParameters(BaseInferenceType):
     """Additional inference parameters for Zero Shot Object Detection"""
 
-    candidate_labels: List[str]
+    candidate_labels: list[str]
     ...
 
 @dataclass_with_extra

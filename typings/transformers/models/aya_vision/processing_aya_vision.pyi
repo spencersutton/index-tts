@@ -9,9 +9,9 @@ from ...processing_utils import ImagesKwargs, ProcessingKwargs, ProcessorMixin, 
 from ...tokenization_utils_base import PreTokenizedInput, TextInput
 
 class AyaVisionImagesKwargs(ImagesKwargs, total=False):
-    crop_to_patches: Optional[bool]
-    min_patches: Optional[int]
-    max_patches: Optional[int]
+    crop_to_patches: bool | None
+    min_patches: int | None
+    max_patches: int | None
     ...
 
 class AyaVisionProcessorKwargs(ProcessingKwargs, total=False):
@@ -74,8 +74,8 @@ class AyaVisionProcessor(ProcessorMixin):
     ) -> None: ...
     def __call__(
         self,
-        images: Optional[ImageInput] = ...,
-        text: Optional[Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]]] = ...,
+        images: ImageInput | None = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] | None = ...,
         audio=...,
         videos=...,
         **kwargs: Unpack[AyaVisionProcessorKwargs],

@@ -14,7 +14,7 @@ logger = ...
 
 def build_palette(num_labels: int) -> list[tuple[int, int]]: ...
 def mask_to_rgb(
-    mask: np.ndarray, palette: Optional[list[tuple[int, int]]] = ..., data_format: Optional[ChannelDimension] = ...
+    mask: np.ndarray, palette: list[tuple[int, int]] | None = ..., data_format: ChannelDimension | None = ...
 ) -> np.ndarray: ...
 
 class SegGptImageProcessor(BaseImageProcessor):
@@ -55,13 +55,13 @@ class SegGptImageProcessor(BaseImageProcessor):
     def __init__(
         self,
         do_resize: bool = ...,
-        size: Optional[dict[str, int]] = ...,
+        size: dict[str, int] | None = ...,
         resample: PILImageResampling = ...,
         do_rescale: bool = ...,
-        rescale_factor: Union[int, float] = ...,
+        rescale_factor: int | float = ...,
         do_normalize: bool = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
         do_convert_rgb: bool = ...,
         **kwargs,
     ) -> None: ...
@@ -80,8 +80,8 @@ class SegGptImageProcessor(BaseImageProcessor):
     def mask_to_rgb(
         self,
         image: np.ndarray,
-        palette: Optional[list[tuple[int, int]]] = ...,
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
+        palette: list[tuple[int, int]] | None = ...,
+        data_format: str | ChannelDimension | None = ...,
     ) -> np.ndarray:
         """Converts a segmentation map to RGB format.
 
@@ -107,8 +107,8 @@ class SegGptImageProcessor(BaseImageProcessor):
         image: np.ndarray,
         size: dict[str, int],
         resample: PILImageResampling = ...,
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
         **kwargs,
     ) -> np.ndarray:
         """
@@ -141,22 +141,22 @@ class SegGptImageProcessor(BaseImageProcessor):
 
     def preprocess(
         self,
-        images: Optional[ImageInput] = ...,
-        prompt_images: Optional[ImageInput] = ...,
-        prompt_masks: Optional[ImageInput] = ...,
-        do_resize: Optional[bool] = ...,
-        size: Optional[dict[str, int]] = ...,
+        images: ImageInput | None = ...,
+        prompt_images: ImageInput | None = ...,
+        prompt_masks: ImageInput | None = ...,
+        do_resize: bool | None = ...,
+        size: dict[str, int] | None = ...,
         resample: PILImageResampling = ...,
-        do_rescale: Optional[bool] = ...,
-        rescale_factor: Optional[float] = ...,
-        do_normalize: Optional[bool] = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
-        do_convert_rgb: Optional[bool] = ...,
-        num_labels: Optional[int] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        data_format: Union[str, ChannelDimension] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        do_rescale: bool | None = ...,
+        rescale_factor: float | None = ...,
+        do_normalize: bool | None = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
+        do_convert_rgb: bool | None = ...,
+        num_labels: int | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        data_format: str | ChannelDimension = ...,
+        input_data_format: str | ChannelDimension | None = ...,
         **kwargs,
     ):  # -> BatchFeature:
         """
@@ -226,7 +226,7 @@ class SegGptImageProcessor(BaseImageProcessor):
         ...
 
     def post_process_semantic_segmentation(
-        self, outputs, target_sizes: Optional[list[tuple[int, int]]] = ..., num_labels: Optional[int] = ...
+        self, outputs, target_sizes: list[tuple[int, int]] | None = ..., num_labels: int | None = ...
     ):  # -> list[Any]:
         """
         Converts the output of [`SegGptImageSegmentationOutput`] into segmentation maps. Only supports

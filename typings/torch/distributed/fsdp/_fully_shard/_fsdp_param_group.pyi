@@ -1,7 +1,8 @@
 import contextlib
 import torch
 import torch.nn as nn
-from typing import Any, Callable, NamedTuple, Optional, TypeAlias
+from typing import Any, NamedTuple, Optional, TypeAlias
+from collections.abc import Callable
 from torch.distributed.tensor import Shard
 from torch.utils.hooks import RemovableHandle
 from ._fsdp_api import MixedPrecisionPolicy, OffloadPolicy
@@ -9,7 +10,7 @@ from ._fsdp_collectives import AllGatherResult
 from ._fsdp_common import FSDPMeshInfo, TrainingState
 
 logger = ...
-_ModuleToHandleDict: TypeAlias = dict[nn.Module, RemovableHandle]
+type _ModuleToHandleDict = dict[nn.Module, RemovableHandle]
 
 class FSDPCommContext:
     def lazy_init(self, device: torch.device):  # -> None:
@@ -20,27 +21,27 @@ class FSDPCommContext:
 
 class AllGatherState(NamedTuple):
     all_gather_result: AllGatherResult
-    event: Optional[torch.Event]
+    event: torch.Event | None
 
 class ReduceScatterState(NamedTuple):
     reduce_scatter_input: torch.Tensor
-    event: Optional[torch.Event]
+    event: torch.Event | None
 
 class AllReduceState(NamedTuple):
     all_reduce_input: torch.Tensor
-    event: Optional[torch.Event]
+    event: torch.Event | None
 
 class FSDPParamGroup:
-    _orig_dtype: Optional[torch.dtype]
-    _reduce_dtype: Optional[torch.dtype]
+    _orig_dtype: torch.dtype | None
+    _reduce_dtype: torch.dtype | None
     def __init__(
         self,
         params: list[nn.Parameter],
         modules: tuple[nn.Module, ...],
         mesh_info: FSDPMeshInfo,
-        post_forward_mesh_info: Optional[FSDPMeshInfo],
+        post_forward_mesh_info: FSDPMeshInfo | None,
         device: torch.device,
-        shard_placement_fn: Optional[Callable[[nn.Parameter], Optional[Shard]]],
+        shard_placement_fn: Callable[[nn.Parameter], Shard | None] | None,
         mp_policy: MixedPrecisionPolicy,
         offload_policy: OffloadPolicy,
     ) -> None: ...

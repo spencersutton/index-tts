@@ -1,7 +1,8 @@
 import torch
 import torch._ops
 from collections.abc import Sequence
-from typing import Any, Callable, Optional, Union
+from typing import Any, Optional, Union
+from collections.abc import Callable
 from .. import ir
 from .cpp_wrapper_cpu import CppWrapperCpu
 from .wrapper import BufferLike, PythonWrapperCodegen
@@ -14,9 +15,9 @@ class CppWrapperCpuArrayRef(CppWrapperCpu):
     @staticmethod
     def create(
         is_subgraph: bool,
-        subgraph_name: Optional[str],
-        parent_wrapper: Optional[PythonWrapperCodegen],
-        partition_signatures: Optional[ir.GraphPartitionSignature] = ...,
+        subgraph_name: str | None,
+        parent_wrapper: PythonWrapperCodegen | None,
+        partition_signatures: ir.GraphPartitionSignature | None = ...,
     ):  # -> CppWrapperCpuArrayRef:
         ...
     @staticmethod
@@ -65,11 +66,11 @@ class CppWrapperCpuArrayRef(CppWrapperCpu):
         buf_name: str,
         python_kernel_name: str,
         get_args: Callable[[], Sequence[str]],
-        op_overload: Union[torch._ops.OpOverload, torch._ops.HigherOrderOperator],
+        op_overload: torch._ops.OpOverload | torch._ops.HigherOrderOperator,
         raw_args: Sequence[Any],
         outputs: Sequence[ir.Buffer],
     ) -> None: ...
-    def codegen_device_copy(self, src, dst, non_blocking: Union[bool, str]):  # -> None:
+    def codegen_device_copy(self, src, dst, non_blocking: bool | str):  # -> None:
         ...
     def codegen_reinterpret_view(
         self, data, size, stride, offset, writeline: Callable[..., None], dtype=...

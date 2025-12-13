@@ -157,9 +157,9 @@ class PretrainedConfig(PushToHubMixin):
     sub_configs: dict[str, type[PretrainedConfig]] = ...
     has_no_defaults_at_init: bool = ...
     attribute_map: dict[str, str] = ...
-    base_model_tp_plan: Optional[dict[str, Any]] = ...
-    base_model_pp_plan: Optional[dict[str, tuple[list[str]]]] = ...
-    _auto_class: Optional[str] = ...
+    base_model_tp_plan: dict[str, Any] | None = ...
+    base_model_pp_plan: dict[str, tuple[list[str]]] | None = ...
+    _auto_class: str | None = ...
     def __setattr__(self, key, value):  # -> None:
         ...
     def __getattribute__(self, key):  # -> Any:
@@ -171,33 +171,33 @@ class PretrainedConfig(PushToHubMixin):
         output_attentions: bool = ...,
         return_dict: bool = ...,
         torchscript: bool = ...,
-        torch_dtype: Optional[Union[str, torch.dtype]] = ...,
-        pruned_heads: Optional[dict[int, list[int]]] = ...,
+        torch_dtype: str | torch.dtype | None = ...,
+        pruned_heads: dict[int, list[int]] | None = ...,
         tie_word_embeddings: bool = ...,
         chunk_size_feed_forward: int = ...,
         is_encoder_decoder: bool = ...,
         is_decoder: bool = ...,
-        cross_attention_hidden_size: Optional[int] = ...,
+        cross_attention_hidden_size: int | None = ...,
         add_cross_attention: bool = ...,
         tie_encoder_decoder: bool = ...,
-        architectures: Optional[list[str]] = ...,
-        finetuning_task: Optional[str] = ...,
-        id2label: Optional[dict[int, str]] = ...,
-        label2id: Optional[dict[str, int]] = ...,
-        num_labels: Optional[int] = ...,
-        task_specific_params: Optional[dict[str, Any]] = ...,
-        problem_type: Optional[str] = ...,
-        tokenizer_class: Optional[str] = ...,
-        prefix: Optional[str] = ...,
-        bos_token_id: Optional[int] = ...,
-        pad_token_id: Optional[int] = ...,
-        eos_token_id: Optional[int] = ...,
-        sep_token_id: Optional[int] = ...,
-        decoder_start_token_id: Optional[int] = ...,
+        architectures: list[str] | None = ...,
+        finetuning_task: str | None = ...,
+        id2label: dict[int, str] | None = ...,
+        label2id: dict[str, int] | None = ...,
+        num_labels: int | None = ...,
+        task_specific_params: dict[str, Any] | None = ...,
+        problem_type: str | None = ...,
+        tokenizer_class: str | None = ...,
+        prefix: str | None = ...,
+        bos_token_id: int | None = ...,
+        pad_token_id: int | None = ...,
+        eos_token_id: int | None = ...,
+        sep_token_id: int | None = ...,
+        decoder_start_token_id: int | None = ...,
         **kwargs,
     ) -> None: ...
     @property
-    def name_or_path(self) -> Optional[str]: ...
+    def name_or_path(self) -> str | None: ...
     @name_or_path.setter
     def name_or_path(self, value):  # -> None:
         ...
@@ -228,7 +228,7 @@ class PretrainedConfig(PushToHubMixin):
     @num_labels.setter
     def num_labels(self, num_labels: int):  # -> None:
         ...
-    def save_pretrained(self, save_directory: Union[str, os.PathLike], push_to_hub: bool = ..., **kwargs):  # -> None:
+    def save_pretrained(self, save_directory: str | os.PathLike, push_to_hub: bool = ..., **kwargs):  # -> None:
         """
         Save a configuration object to the directory `save_directory`, so that it can be re-loaded using the
         [`~PretrainedConfig.from_pretrained`] class method.
@@ -248,11 +248,11 @@ class PretrainedConfig(PushToHubMixin):
     @classmethod
     def from_pretrained(
         cls: type[SpecificPretrainedConfigType],
-        pretrained_model_name_or_path: Union[str, os.PathLike],
-        cache_dir: Optional[Union[str, os.PathLike]] = ...,
+        pretrained_model_name_or_path: str | os.PathLike,
+        cache_dir: str | os.PathLike | None = ...,
         force_download: bool = ...,
         local_files_only: bool = ...,
-        token: Optional[Union[str, bool]] = ...,
+        token: str | bool | None = ...,
         revision: str = ...,
         **kwargs,
     ) -> SpecificPretrainedConfigType:
@@ -335,7 +335,7 @@ class PretrainedConfig(PushToHubMixin):
 
     @classmethod
     def get_config_dict(
-        cls, pretrained_model_name_or_path: Union[str, os.PathLike], **kwargs
+        cls, pretrained_model_name_or_path: str | os.PathLike, **kwargs
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         """
         From a `pretrained_model_name_or_path`, resolve to a dictionary of parameters, to be used for instantiating a
@@ -372,7 +372,7 @@ class PretrainedConfig(PushToHubMixin):
 
     @classmethod
     def from_json_file(
-        cls: type[SpecificPretrainedConfigType], json_file: Union[str, os.PathLike]
+        cls: type[SpecificPretrainedConfigType], json_file: str | os.PathLike
     ) -> SpecificPretrainedConfigType:
         """
         Instantiates a [`PretrainedConfig`] from the path to a JSON file of parameters.
@@ -426,7 +426,7 @@ class PretrainedConfig(PushToHubMixin):
         """
         ...
 
-    def to_json_file(self, json_file_path: Union[str, os.PathLike], use_diff: bool = ...):  # -> None:
+    def to_json_file(self, json_file_path: str | os.PathLike, use_diff: bool = ...):  # -> None:
         """
         Save this instance to a JSON file.
 

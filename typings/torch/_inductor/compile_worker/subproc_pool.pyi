@@ -1,8 +1,9 @@
 import typing
 from concurrent.futures import Future, ProcessPoolExecutor
 from enum import Enum, IntEnum
-from typing import Callable, IO, Optional, TypeVar
-from typing_extensions import Never, ParamSpec
+from typing import IO, Optional, TypeVar
+from collections.abc import Callable
+from typing import Never, ParamSpec
 
 log = ...
 _P = ParamSpec("_P")
@@ -33,7 +34,7 @@ class SubprocKind(Enum):
     SPAWN = ...
 
 class SubprocPool:
-    def __init__(self, nprocs: int, pickler: Optional[SubprocPickler] = ..., kind: SubprocKind = ...) -> None: ...
+    def __init__(self, nprocs: int, pickler: SubprocPickler | None = ..., kind: SubprocKind = ...) -> None: ...
     def submit(self, job_fn: Callable[_P, _T], *args: _P.args, **kwargs: _P.kwargs) -> Future[_T]: ...
     def quiesce(self) -> None: ...
     def wakeup(self) -> None: ...
@@ -48,7 +49,7 @@ class SubprocMain:
     @staticmethod
     def do_job(pickler: SubprocPickler, data: bytes) -> bytes: ...
 
-AnyPool: typing.TypeAlias = typing.Union[ProcessPoolExecutor, SubprocPool]
+type AnyPool = ProcessPoolExecutor | SubprocPool
 
 class TestException(RuntimeError): ...
 

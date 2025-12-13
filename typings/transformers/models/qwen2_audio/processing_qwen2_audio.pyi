@@ -52,8 +52,8 @@ class Qwen2AudioProcessor(ProcessorMixin):
     ) -> None: ...
     def __call__(
         self,
-        text: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]] = ...,
-        audio: Union[np.ndarray, list[np.ndarray]] = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] = ...,
+        audio: np.ndarray | list[np.ndarray] = ...,
         **kwargs: Unpack[Qwen2AudioProcessorKwargs],
     ) -> BatchFeature:
         """

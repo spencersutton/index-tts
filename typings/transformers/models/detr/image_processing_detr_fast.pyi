@@ -40,7 +40,7 @@ def prepare_coco_detection_annotation(
     image,
     target,
     return_segmentation_masks: bool = ...,
-    input_data_format: Optional[Union[ChannelDimension, str]] = ...,
+    input_data_format: ChannelDimension | str | None = ...,
 ):  # -> dict[str, Tensor]:
     """
     Convert the target in COCO format into the format expected by DETR.
@@ -68,9 +68,9 @@ def rgb_to_id(color):  # -> Tensor | int:
 def prepare_coco_panoptic_annotation(
     image: torch.Tensor,
     target: dict,
-    masks_path: Union[str, pathlib.Path],
+    masks_path: str | pathlib.Path,
     return_masks: bool = ...,
-    input_data_format: Union[ChannelDimension, str] = ...,
+    input_data_format: ChannelDimension | str = ...,
 ) -> dict:
     """
     Prepare a coco panoptic annotation for DETR.
@@ -98,11 +98,11 @@ class DetrFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
         Whether to return segmentation masks.
     """
 
-    format: Optional[Union[str, AnnotationFormat]]
-    do_convert_annotations: Optional[bool]
-    do_pad: Optional[bool]
-    pad_size: Optional[dict[str, int]]
-    return_segmentation_masks: Optional[bool]
+    format: str | AnnotationFormat | None
+    do_convert_annotations: bool | None
+    do_pad: bool | None
+    pad_size: dict[str, int] | None
+    return_segmentation_masks: bool | None
     ...
 
 @auto_docstring
@@ -134,10 +134,10 @@ class DetrImageProcessorFast(BaseImageProcessorFast):
         self,
         image: torch.Tensor,
         target: dict,
-        format: Optional[AnnotationFormat] = ...,
-        return_segmentation_masks: Optional[bool] = ...,
-        masks_path: Optional[Union[str, pathlib.Path]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        format: AnnotationFormat | None = ...,
+        return_segmentation_masks: bool | None = ...,
+        masks_path: str | pathlib.Path | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ) -> dict:
         """
         Prepare an annotation for feeding into DETR model.
@@ -199,7 +199,7 @@ class DetrImageProcessorFast(BaseImageProcessorFast):
         self,
         image: torch.Tensor,
         padded_size: tuple[int, int],
-        annotation: Optional[dict[str, Any]] = ...,
+        annotation: dict[str, Any] | None = ...,
         update_bboxes: bool = ...,
         fill: int = ...,
     ):  # -> tuple[Any | Tensor, Tensor, dict[str, Any] | None]:
@@ -208,8 +208,8 @@ class DetrImageProcessorFast(BaseImageProcessorFast):
     def preprocess(
         self,
         images: ImageInput,
-        annotations: Optional[Union[AnnotationType, list[AnnotationType]]] = ...,
-        masks_path: Optional[Union[str, pathlib.Path]] = ...,
+        annotations: AnnotationType | list[AnnotationType] | None = ...,
+        masks_path: str | pathlib.Path | None = ...,
         **kwargs: Unpack[DetrFastImageProcessorKwargs],
     ) -> BatchFeature:
         r"""
@@ -317,7 +317,7 @@ class DetrImageProcessorFast(BaseImageProcessorFast):
         ...
 
     def post_process_object_detection(
-        self, outputs, threshold: float = ..., target_sizes: Union[TensorType, list[tuple]] = ...
+        self, outputs, threshold: float = ..., target_sizes: TensorType | list[tuple] = ...
     ):  # -> list[Any]:
         """
         Converts the raw output of [`DetrForObjectDetection`] into final bounding boxes in (top_left_x, top_left_y,
@@ -338,7 +338,7 @@ class DetrImageProcessorFast(BaseImageProcessorFast):
         ...
 
     def post_process_semantic_segmentation(
-        self, outputs, target_sizes: Optional[list[tuple[int, int]]] = ...
+        self, outputs, target_sizes: list[tuple[int, int]] | None = ...
     ):  # -> list[Tensor]:
         """
         Converts the output of [`DetrForSegmentation`] into semantic segmentation maps. Only supports PyTorch.
@@ -363,8 +363,8 @@ class DetrImageProcessorFast(BaseImageProcessorFast):
         threshold: float = ...,
         mask_threshold: float = ...,
         overlap_mask_area_threshold: float = ...,
-        target_sizes: Optional[list[tuple[int, int]]] = ...,
-        return_coco_annotation: Optional[bool] = ...,
+        target_sizes: list[tuple[int, int]] | None = ...,
+        return_coco_annotation: bool | None = ...,
     ) -> list[dict]:
         """
         Converts the output of [`DetrForSegmentation`] into instance segmentation predictions. Only supports PyTorch.
@@ -403,8 +403,8 @@ class DetrImageProcessorFast(BaseImageProcessorFast):
         threshold: float = ...,
         mask_threshold: float = ...,
         overlap_mask_area_threshold: float = ...,
-        label_ids_to_fuse: Optional[set[int]] = ...,
-        target_sizes: Optional[list[tuple[int, int]]] = ...,
+        label_ids_to_fuse: set[int] | None = ...,
+        target_sizes: list[tuple[int, int]] | None = ...,
     ) -> list[dict]:
         """
         Converts the output of [`DetrForSegmentation`] into image panoptic segmentation predictions. Only supports

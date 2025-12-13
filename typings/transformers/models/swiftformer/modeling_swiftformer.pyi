@@ -130,8 +130,8 @@ class SwiftFormerStage(nn.Module):
 class SwiftFormerEncoder(nn.Module):
     def __init__(self, config: SwiftFormerConfig) -> None: ...
     def forward(
-        self, hidden_states: torch.Tensor, output_hidden_states: Optional[bool] = ..., return_dict: Optional[bool] = ...
-    ) -> Union[tuple, BaseModelOutputWithNoAttention]: ...
+        self, hidden_states: torch.Tensor, output_hidden_states: bool | None = ..., return_dict: bool | None = ...
+    ) -> tuple | BaseModelOutputWithNoAttention: ...
 
 @auto_docstring
 class SwiftFormerPreTrainedModel(PreTrainedModel):
@@ -147,10 +147,10 @@ class SwiftFormerModel(SwiftFormerPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.Tensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithNoAttention]: ...
+        pixel_values: torch.Tensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutputWithNoAttention: ...
 
 @auto_docstring
 class SwiftFormerForImageClassification(SwiftFormerPreTrainedModel):
@@ -158,11 +158,11 @@ class SwiftFormerForImageClassification(SwiftFormerPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ImageClassifierOutputWithNoAttention]:
+        pixel_values: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | ImageClassifierOutputWithNoAttention:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the image classification/regression loss. Indices should be in `[0, ...,

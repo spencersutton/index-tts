@@ -15,7 +15,7 @@ Processor class for Grounding DINO.
 """
 if is_torch_available(): ...
 if TYPE_CHECKING: ...
-AnnotationType = dict[str, Union[int, str, list[dict]]]
+AnnotationType = dict[str, int | str | list[dict]]
 
 def get_phrases_from_posmap(posmaps, input_ids):  # -> list[Any]:
     """Get token ids of phrases from posmaps and input_ids.
@@ -34,11 +34,11 @@ class DictWithDeprecationWarning(dict):
     def get(self, key, *args, **kwargs): ...
 
 class GroundingDinoImagesKwargs(ImagesKwargs, total=False):
-    annotations: Optional[Union[AnnotationType, list[AnnotationType]]]
-    return_segmentation_masks: Optional[bool]
-    masks_path: Optional[Union[str, pathlib.Path]]
-    do_convert_annotations: Optional[bool]
-    format: Optional[Union[str, AnnotationFormat]]
+    annotations: AnnotationType | list[AnnotationType] | None
+    return_segmentation_masks: bool | None
+    masks_path: str | pathlib.Path | None
+    do_convert_annotations: bool | None
+    format: str | AnnotationFormat | None
     ...
 
 class GroundingDinoProcessorKwargs(ProcessingKwargs, total=False):
@@ -68,7 +68,7 @@ class GroundingDinoProcessor(ProcessorMixin):
     def __call__(
         self,
         images: ImageInput = ...,
-        text: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]] = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] = ...,
         audio=...,
         videos=...,
         **kwargs: Unpack[GroundingDinoProcessorKwargs],
@@ -109,11 +109,11 @@ class GroundingDinoProcessor(ProcessorMixin):
     def post_process_grounded_object_detection(
         self,
         outputs: GroundingDinoObjectDetectionOutput,
-        input_ids: Optional[TensorType] = ...,
+        input_ids: TensorType | None = ...,
         threshold: float = ...,
         text_threshold: float = ...,
-        target_sizes: Optional[Union[TensorType, list[tuple]]] = ...,
-        text_labels: Optional[list[list[str]]] = ...,
+        target_sizes: TensorType | list[tuple] | None = ...,
+        text_labels: list[list[str]] | None = ...,
     ):  # -> list[Any]:
         """
         Converts the raw output of [`GroundingDinoForObjectDetection`] into final bounding boxes in (top_left_x, top_left_y,

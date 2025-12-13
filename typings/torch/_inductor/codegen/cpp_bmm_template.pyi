@@ -1,4 +1,5 @@
-from typing import Any, Callable, Optional
+from typing import Any, Optional
+from collections.abc import Callable
 from .. import ir
 from .cpp_gemm_template import CppGemmTemplate
 from .cpp_template_kernel import CppTemplateKernel
@@ -18,7 +19,7 @@ class CppBmmTemplate(CppGemmTemplate):
         beta=...,
         alpha=...,
         has_bias=...,
-        epilogue_creator: Optional[Callable[[ir.Buffer], ir.Pointwise]] = ...,
+        epilogue_creator: Callable[[ir.Buffer], ir.Pointwise] | None = ...,
         should_block_weights: bool = ...,
         name=...,
     ) -> None: ...
@@ -36,17 +37,17 @@ class CppBmmTemplate(CppGemmTemplate):
     def get_options(
         self,
         kernel: CppTemplateKernel,
-        template_buffer_node: Optional[ir.CppTemplateBuffer] = ...,
-        flag_template_buffer_has_other_users: Optional[bool] = ...,
-        epilogue_nodes: Optional[list[ir.IRNode]] = ...,
+        template_buffer_node: ir.CppTemplateBuffer | None = ...,
+        flag_template_buffer_has_other_users: bool | None = ...,
+        epilogue_nodes: list[ir.IRNode] | None = ...,
         **kwargs,
     ) -> dict[str, Any]: ...
     def render(
         self,
         kernel: CppTemplateKernel,
-        template_buffer_node: Optional[ir.CppTemplateBuffer] = ...,
-        flag_template_buffer_has_other_users: Optional[bool] = ...,
-        epilogue_nodes: Optional[list[ir.IRNode]] = ...,
+        template_buffer_node: ir.CppTemplateBuffer | None = ...,
+        flag_template_buffer_has_other_users: bool | None = ...,
+        epilogue_nodes: list[ir.IRNode] | None = ...,
         **kwargs,
     ) -> str: ...
     def codegen_single_thread_gemm(self):  # -> Any:

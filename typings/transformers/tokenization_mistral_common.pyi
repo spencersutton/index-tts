@@ -7,7 +7,8 @@ import numpy as np
 import torch
 from enum import Enum
 from pathlib import Path
-from typing import Callable, Optional, Union, overload
+from typing import Optional, Union, overload
+from collections.abc import Callable
 from transformers.tokenization_utils_base import BatchEncoding, EncodedInput, TextInput, TruncationStrategy
 from transformers.utils import PaddingStrategy, TensorType, add_end_docstrings
 from transformers.utils.hub import PushToHubMixin
@@ -78,12 +79,12 @@ class MistralCommonTokenizer(PushToHubMixin):
     truncation_side: str = ...
     def __init__(
         self,
-        tokenizer_path: Union[str, os.PathLike, Path],
+        tokenizer_path: str | os.PathLike | Path,
         mode: ValidationMode = ...,
         model_max_length: int = ...,
         padding_side: str = ...,
         truncation_side: str = ...,
-        model_input_names: Optional[list[str]] = ...,
+        model_input_names: list[str] | None = ...,
         clean_up_tokenization_spaces: bool = ...,
         **kwargs,
     ) -> None:
@@ -217,16 +218,16 @@ class MistralCommonTokenizer(PushToHubMixin):
     )
     def encode(
         self,
-        text: Union[TextInput, EncodedInput],
+        text: TextInput | EncodedInput,
         text_pair: None = ...,
         add_special_tokens: bool = ...,
-        padding: Union[bool, str, PaddingStrategy] = ...,
-        truncation: Union[bool, str, TruncationStrategy, None] = ...,
-        max_length: Optional[int] = ...,
+        padding: bool | str | PaddingStrategy = ...,
+        truncation: bool | str | TruncationStrategy | None = ...,
+        max_length: int | None = ...,
         stride: int = ...,
-        pad_to_multiple_of: Optional[int] = ...,
-        padding_side: Optional[str] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
+        pad_to_multiple_of: int | None = ...,
+        padding_side: str | None = ...,
+        return_tensors: str | TensorType | None = ...,
         verbose: bool = ...,
         **kwargs,
     ) -> list[int]:
@@ -243,9 +244,9 @@ class MistralCommonTokenizer(PushToHubMixin):
 
     def decode(
         self,
-        token_ids: Union[int, list[int], np.ndarray, torch.Tensor],
+        token_ids: int | list[int] | np.ndarray | torch.Tensor,
         skip_special_tokens: bool = ...,
-        clean_up_tokenization_spaces: Optional[bool] = ...,
+        clean_up_tokenization_spaces: bool | None = ...,
         **kwargs,
     ) -> str:
         """
@@ -271,9 +272,9 @@ class MistralCommonTokenizer(PushToHubMixin):
 
     def batch_decode(
         self,
-        sequences: Union[list[int], list[list[int]], np.ndarray, torch.Tensor],
+        sequences: list[int] | list[list[int]] | np.ndarray | torch.Tensor,
         skip_special_tokens: bool = ...,
-        clean_up_tokenization_spaces: Optional[bool] = ...,
+        clean_up_tokenization_spaces: bool | None = ...,
         **kwargs,
     ) -> list[str]:
         """
@@ -300,9 +301,7 @@ class MistralCommonTokenizer(PushToHubMixin):
     def convert_ids_to_tokens(self, ids: int, skip_special_tokens: bool = ...) -> str: ...
     @overload
     def convert_ids_to_tokens(self, ids: list[int], skip_special_tokens: bool = ...) -> list[str]: ...
-    def convert_ids_to_tokens(
-        self, ids: Union[int, list[int]], skip_special_tokens: bool = ...
-    ) -> Union[str, list[str]]:
+    def convert_ids_to_tokens(self, ids: int | list[int], skip_special_tokens: bool = ...) -> str | list[str]:
         """
         Converts a single index or a sequence of indices in a token or a sequence of tokens, using the vocabulary and
         added tokens.
@@ -318,7 +317,7 @@ class MistralCommonTokenizer(PushToHubMixin):
         """
         ...
 
-    def convert_tokens_to_ids(self, tokens: Union[str, list[str]]) -> Union[int, list[int]]:
+    def convert_tokens_to_ids(self, tokens: str | list[str]) -> int | list[int]:
         """
         Converts a token string (or a sequence of tokens) in a single integer id (or a sequence of ids), using the
         vocabulary.
@@ -375,14 +374,14 @@ class MistralCommonTokenizer(PushToHubMixin):
         ids: list[int],
         pair_ids: None = ...,
         add_special_tokens: bool = ...,
-        padding: Union[bool, str, PaddingStrategy] = ...,
-        truncation: Union[bool, str, TruncationStrategy, None] = ...,
-        max_length: Optional[int] = ...,
+        padding: bool | str | PaddingStrategy = ...,
+        truncation: bool | str | TruncationStrategy | None = ...,
+        max_length: int | None = ...,
         stride: int = ...,
-        pad_to_multiple_of: Optional[int] = ...,
-        padding_side: Optional[str] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        return_attention_mask: Optional[bool] = ...,
+        pad_to_multiple_of: int | None = ...,
+        padding_side: str | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        return_attention_mask: bool | None = ...,
         return_overflowing_tokens: bool = ...,
         return_special_tokens_mask: bool = ...,
         return_length: bool = ...,
@@ -405,19 +404,17 @@ class MistralCommonTokenizer(PushToHubMixin):
 
     def pad(
         self,
-        encoded_inputs: Union[
-            BatchEncoding,
-            list[BatchEncoding],
-            dict[str, EncodedInput],
-            dict[str, list[EncodedInput]],
-            list[dict[str, EncodedInput]],
-        ],
-        padding: Union[bool, str, PaddingStrategy] = ...,
-        max_length: Optional[int] = ...,
-        pad_to_multiple_of: Optional[int] = ...,
-        padding_side: Optional[str] = ...,
-        return_attention_mask: Optional[bool] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
+        encoded_inputs: BatchEncoding
+        | list[BatchEncoding]
+        | dict[str, EncodedInput]
+        | dict[str, list[EncodedInput]]
+        | list[dict[str, EncodedInput]],
+        padding: bool | str | PaddingStrategy = ...,
+        max_length: int | None = ...,
+        pad_to_multiple_of: int | None = ...,
+        padding_side: str | None = ...,
+        return_attention_mask: bool | None = ...,
+        return_tensors: str | TensorType | None = ...,
         verbose: bool = ...,
     ) -> BatchEncoding:
         """
@@ -483,7 +480,7 @@ class MistralCommonTokenizer(PushToHubMixin):
         ids: list[int],
         pair_ids: None = ...,
         num_tokens_to_remove: int = ...,
-        truncation_strategy: Union[str, TruncationStrategy] = ...,
+        truncation_strategy: str | TruncationStrategy = ...,
         stride: int = ...,
         **kwargs,
     ) -> tuple[list[int], None, list[int]]:
@@ -517,17 +514,17 @@ class MistralCommonTokenizer(PushToHubMixin):
 
     def apply_chat_template(
         self,
-        conversation: Union[list[dict[str, str]], list[list[dict[str, str]]]],
-        tools: Optional[list[Union[dict, Callable]]] = ...,
+        conversation: list[dict[str, str]] | list[list[dict[str, str]]],
+        tools: list[dict | Callable] | None = ...,
         continue_final_message: bool = ...,
         tokenize: bool = ...,
-        padding: Union[bool, str, PaddingStrategy] = ...,
+        padding: bool | str | PaddingStrategy = ...,
         truncation: bool = ...,
-        max_length: Optional[int] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
+        max_length: int | None = ...,
+        return_tensors: str | TensorType | None = ...,
         return_dict: bool = ...,
         **kwargs,
-    ) -> Union[str, list[int], list[str], list[list[int]], BatchEncoding]:
+    ) -> str | list[int] | list[str] | list[list[int]] | BatchEncoding:
         """
         Converts a list of dictionaries with `"role"` and `"content"` keys to a list of token
         ids.
@@ -583,19 +580,19 @@ class MistralCommonTokenizer(PushToHubMixin):
     @add_end_docstrings(ENCODE_KWARGS_DOCSTRING, ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def __call__(
         self,
-        text: Union[TextInput, EncodedInput, list[TextInput], list[EncodedInput], None] = ...,
+        text: TextInput | EncodedInput | list[TextInput] | list[EncodedInput] | None = ...,
         text_pair: None = ...,
         text_target: None = ...,
         text_pair_target: None = ...,
         add_special_tokens: bool = ...,
-        padding: Union[bool, str, PaddingStrategy] = ...,
-        truncation: Union[bool, str, TruncationStrategy, None] = ...,
-        max_length: Optional[int] = ...,
+        padding: bool | str | PaddingStrategy = ...,
+        truncation: bool | str | TruncationStrategy | None = ...,
+        max_length: int | None = ...,
         stride: int = ...,
-        pad_to_multiple_of: Optional[int] = ...,
-        padding_side: Optional[str] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        return_attention_mask: Optional[bool] = ...,
+        pad_to_multiple_of: int | None = ...,
+        padding_side: str | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        return_attention_mask: bool | None = ...,
         return_overflowing_tokens: bool = ...,
         return_special_tokens_mask: bool = ...,
         return_length: bool = ...,
@@ -622,18 +619,18 @@ class MistralCommonTokenizer(PushToHubMixin):
     @classmethod
     def from_pretrained(
         cls,
-        pretrained_model_name_or_path: Union[str, os.PathLike],
+        pretrained_model_name_or_path: str | os.PathLike,
         *init_inputs,
         mode: ValidationMode = ...,
-        cache_dir: Optional[Union[str, os.PathLike]] = ...,
+        cache_dir: str | os.PathLike | None = ...,
         force_download: bool = ...,
         local_files_only: bool = ...,
-        token: Optional[Union[str, bool]] = ...,
+        token: str | bool | None = ...,
         revision: str = ...,
         model_max_length: int = ...,
         padding_side: str = ...,
         truncation_side: str = ...,
-        model_input_names: Optional[list[str]] = ...,
+        model_input_names: list[str] | None = ...,
         clean_up_tokenization_spaces: bool = ...,
         **kwargs,
     ):  # -> Self:
@@ -691,14 +688,14 @@ class MistralCommonTokenizer(PushToHubMixin):
 
     def save_pretrained(
         self,
-        save_directory: Union[str, os.PathLike, Path],
+        save_directory: str | os.PathLike | Path,
         push_to_hub: bool = ...,
-        token: Optional[Union[str, bool]] = ...,
-        commit_message: Optional[str] = ...,
-        repo_id: Optional[str] = ...,
-        private: Optional[bool] = ...,
-        repo_url: Optional[str] = ...,
-        organization: Optional[str] = ...,
+        token: str | bool | None = ...,
+        commit_message: str | None = ...,
+        repo_id: str | None = ...,
+        private: bool | None = ...,
+        repo_url: str | None = ...,
+        organization: str | None = ...,
         **kwargs,
     ) -> tuple[str]:
         """

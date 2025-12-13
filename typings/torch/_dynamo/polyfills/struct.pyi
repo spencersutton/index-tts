@@ -1,6 +1,6 @@
 import struct
 from typing import Any
-from typing_extensions import Buffer
+from collections.abc import Buffer
 from ..decorators import substitute_in_graph
 
 """

@@ -47,7 +47,7 @@ def compute_serialized_parameters_size(num_parameters: int, dtype: ParameterForm
     """
     ...
 
-def get_preprocessor(model_name: str) -> Optional[Union[AutoTokenizer, AutoFeatureExtractor, AutoProcessor]]:
+def get_preprocessor(model_name: str) -> AutoTokenizer | AutoFeatureExtractor | AutoProcessor | None:
     """
     Gets a preprocessor (tokenizer, feature extractor or processor) that is available for `model_name`.
 

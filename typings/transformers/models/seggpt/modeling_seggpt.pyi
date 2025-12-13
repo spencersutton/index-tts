@@ -37,9 +37,9 @@ class SegGptEncoderOutput(ModelOutput):
     """
 
     last_hidden_state: torch.FloatTensor
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
-    intermediate_hidden_states: Optional[tuple[torch.FloatTensor]] = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
+    intermediate_hidden_states: tuple[torch.FloatTensor] | None = ...
 
 @dataclass
 @auto_docstring(
@@ -61,10 +61,10 @@ class SegGptImageSegmentationOutput(ModelOutput):
         `(batch_size, num_heads, seq_len, seq_len)`.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    pred_masks: Optional[torch.FloatTensor] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
+    loss: torch.FloatTensor | None = ...
+    pred_masks: torch.FloatTensor | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
 
 class SegGptPatchEmbeddings(nn.Module):
     """
@@ -86,8 +86,8 @@ class SegGptEmbeddings(nn.Module):
         self,
         pixel_values: torch.Tensor,
         prompt_pixel_values: torch.Tensor,
-        bool_masked_pos: Optional[torch.BoolTensor] = ...,
-        embedding_type: Optional[str] = ...,
+        bool_masked_pos: torch.BoolTensor | None = ...,
+        embedding_type: str | None = ...,
     ) -> torch.Tensor: ...
 
 class SegGptAttention(nn.Module):
@@ -164,7 +164,7 @@ def drop_path(input: torch.Tensor, drop_prob: float = ..., training: bool = ...)
 
 class SegGptDropPath(nn.Module):
     """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks)."""
-    def __init__(self, drop_prob: Optional[float] = ...) -> None: ...
+    def __init__(self, drop_prob: float | None = ...) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
     def extra_repr(self) -> str: ...
 
@@ -176,7 +176,7 @@ class SegGptLayer(GradientCheckpointingLayer):
         ensemble_cond: int,
         feature_ensemble: bool = ...,
         output_attentions: bool = ...,
-    ) -> Union[tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor]]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor] | tuple[torch.Tensor]: ...
 
 class SegGptEncoder(nn.Module):
     def __init__(self, config: SegGptConfig) -> None: ...
@@ -187,7 +187,7 @@ class SegGptEncoder(nn.Module):
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ) -> Union[tuple, SegGptEncoderOutput]: ...
+    ) -> tuple | SegGptEncoderOutput: ...
 
 class SegGptLayerNorm(nn.Module):
     r"""LayerNorm that supports two data formats: channels_last (default) or channels_first.
@@ -225,14 +225,14 @@ class SegGptModel(SegGptPreTrainedModel):
         pixel_values: torch.Tensor,
         prompt_pixel_values: torch.Tensor,
         prompt_masks: torch.Tensor,
-        bool_masked_pos: Optional[torch.BoolTensor] = ...,
-        feature_ensemble: Optional[bool] = ...,
-        embedding_type: Optional[str] = ...,
-        labels: Optional[torch.FloatTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, SegGptEncoderOutput]:
+        bool_masked_pos: torch.BoolTensor | None = ...,
+        feature_ensemble: bool | None = ...,
+        embedding_type: str | None = ...,
+        labels: torch.FloatTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | SegGptEncoderOutput:
         r"""
         prompt_pixel_values (`torch.FloatTensor` of shape `(batch_size, num_channels, height, width)`):
             Prompt pixel values. Prompt pixel values can be obtained using [`AutoImageProcessor`]. See
@@ -325,14 +325,14 @@ class SegGptForImageSegmentation(SegGptPreTrainedModel):
         pixel_values: torch.Tensor,
         prompt_pixel_values: torch.Tensor,
         prompt_masks: torch.Tensor,
-        bool_masked_pos: Optional[torch.BoolTensor] = ...,
-        feature_ensemble: Optional[bool] = ...,
-        embedding_type: Optional[str] = ...,
-        labels: Optional[torch.FloatTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, SegGptImageSegmentationOutput]:
+        bool_masked_pos: torch.BoolTensor | None = ...,
+        feature_ensemble: bool | None = ...,
+        embedding_type: str | None = ...,
+        labels: torch.FloatTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | SegGptImageSegmentationOutput:
         r"""
         prompt_pixel_values (`torch.FloatTensor` of shape `(batch_size, num_channels, height, width)`):
             Prompt pixel values. Prompt pixel values can be obtained using [`AutoImageProcessor`]. See

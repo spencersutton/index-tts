@@ -51,7 +51,7 @@ class ImageFeatureExtractionPipeline(Pipeline):
     def preprocess(self, image, timeout=..., **image_processor_kwargs) -> dict[str, GenericTensor]: ...
     def postprocess(self, model_outputs, pool=..., return_tensors=...):  # -> None:
         ...
-    def __call__(self, *args: Union[str, Image.Image, list[Image.Image], list[str]], **kwargs: Any) -> list[Any]:
+    def __call__(self, *args: str | Image.Image | list[Image.Image] | list[str], **kwargs: Any) -> list[Any]:
         """
         Extract the features of the input(s).
 

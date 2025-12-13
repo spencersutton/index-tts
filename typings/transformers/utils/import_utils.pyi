@@ -226,7 +226,7 @@ def is_xlstm_available():  # -> tuple[bool, str] | bool:
     ...
 def is_mambapy_available():  # -> tuple[bool, str] | bool:
     ...
-def is_torch_mps_available(min_version: Optional[str] = ...):  # -> bool:
+def is_torch_mps_available(min_version: str | None = ...):  # -> bool:
     ...
 def is_torch_bf16_gpu_available() -> bool: ...
 def is_torch_bf16_cpu_available() -> bool: ...
@@ -603,9 +603,9 @@ class _LazyModule(ModuleType):
         name: str,
         module_file: str,
         import_structure: IMPORT_STRUCTURE_T,
-        module_spec: Optional[importlib.machinery.ModuleSpec] = ...,
-        extra_objects: Optional[dict[str, object]] = ...,
-        explicit_import_shortcut: Optional[dict[str, list[str]]] = ...,
+        module_spec: importlib.machinery.ModuleSpec | None = ...,
+        extra_objects: dict[str, object] | None = ...,
+        explicit_import_shortcut: dict[str, list[str]] | None = ...,
     ) -> None: ...
     def __dir__(self):  # -> Iterable[str]:
         ...
@@ -775,7 +775,7 @@ def spread_import_structure(nested_import_structure):  # -> dict[Any, Any]:
     ...
 
 @lru_cache
-def define_import_structure(module_path: str, prefix: Optional[str] = ...) -> IMPORT_STRUCTURE_T:
+def define_import_structure(module_path: str, prefix: str | None = ...) -> IMPORT_STRUCTURE_T:
     """
     This method takes a module_path as input and creates an import structure digestible by a _LazyModule.
 

@@ -75,7 +75,7 @@ class ClapFeatureExtractor(SequenceFeatureExtractor):
         return_attention_mask=...,
         frequency_min: float = ...,
         frequency_max: float = ...,
-        top_db: Optional[int] = ...,
+        top_db: int | None = ...,
         truncation: str = ...,
         padding: str = ...,
         **kwargs,
@@ -92,12 +92,12 @@ class ClapFeatureExtractor(SequenceFeatureExtractor):
 
     def __call__(
         self,
-        raw_speech: Union[np.ndarray, list[float], list[np.ndarray], list[list[float]]],
-        truncation: Optional[str] = ...,
-        padding: Optional[str] = ...,
-        max_length: Optional[int] = ...,
-        sampling_rate: Optional[int] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
+        raw_speech: np.ndarray | list[float] | list[np.ndarray] | list[list[float]],
+        truncation: str | None = ...,
+        padding: str | None = ...,
+        max_length: int | None = ...,
+        sampling_rate: int | None = ...,
+        return_tensors: str | TensorType | None = ...,
         **kwargs,
     ) -> BatchFeature:
         """

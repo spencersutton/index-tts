@@ -75,21 +75,21 @@ class Owlv2ImageProcessor(BaseImageProcessor):
     def __init__(
         self,
         do_rescale: bool = ...,
-        rescale_factor: Union[int, float] = ...,
+        rescale_factor: int | float = ...,
         do_pad: bool = ...,
         do_resize: bool = ...,
-        size: Optional[dict[str, int]] = ...,
+        size: dict[str, int] | None = ...,
         resample: PILImageResampling = ...,
         do_normalize: bool = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
         **kwargs,
     ) -> None: ...
     def pad(
         self,
         image: np.array,
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ):
         """
         Pad an image to a square with gray pixels on the bottom and the right, as per the original OWLv2
@@ -112,8 +112,8 @@ class Owlv2ImageProcessor(BaseImageProcessor):
         size: dict[str, int],
         anti_aliasing: bool = ...,
         anti_aliasing_sigma=...,
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
         **kwargs,
     ) -> np.ndarray:
         """
@@ -141,17 +141,17 @@ class Owlv2ImageProcessor(BaseImageProcessor):
     def preprocess(
         self,
         images: ImageInput,
-        do_pad: Optional[bool] = ...,
-        do_resize: Optional[bool] = ...,
-        size: Optional[dict[str, int]] = ...,
-        do_rescale: Optional[bool] = ...,
-        rescale_factor: Optional[float] = ...,
-        do_normalize: Optional[bool] = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
+        do_pad: bool | None = ...,
+        do_resize: bool | None = ...,
+        size: dict[str, int] | None = ...,
+        do_rescale: bool | None = ...,
+        rescale_factor: float | None = ...,
+        do_normalize: bool | None = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
+        return_tensors: str | TensorType | None = ...,
         data_format: ChannelDimension = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ) -> PIL.Image.Image:
         """
         Preprocess an image or batch of images.
@@ -201,7 +201,7 @@ class Owlv2ImageProcessor(BaseImageProcessor):
         self,
         outputs: Owlv2ObjectDetectionOutput,
         threshold: float = ...,
-        target_sizes: Optional[Union[TensorType, list[tuple]]] = ...,
+        target_sizes: TensorType | list[tuple] | None = ...,
     ):  # -> list[Any]:
         """
         Converts the raw output of [`Owlv2ForObjectDetection`] into final bounding boxes in (top_left_x, top_left_y,

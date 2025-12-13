@@ -44,9 +44,9 @@ class Phi4MultimodalProcessor(ProcessorMixin):
     def __init__(self, image_processor, audio_processor, tokenizer, **kwargs) -> None: ...
     def __call__(
         self,
-        text: Union[TextInput, list[TextInput]],
-        images: Optional[ImageInput] = ...,
-        audio: Optional[AudioInput] = ...,
+        text: TextInput | list[TextInput],
+        images: ImageInput | None = ...,
+        audio: AudioInput | None = ...,
         **kwargs: Unpack[ProcessingKwargs],
     ) -> BatchFeature:
         """

@@ -6,7 +6,7 @@ from typing import BinaryIO, Optional
 
 """Utilities to efficiently compute the SHA 256 hash of a bunch of bytes."""
 
-def sha_fileobj(fileobj: BinaryIO, chunk_size: Optional[int] = ...) -> bytes:
+def sha_fileobj(fileobj: BinaryIO, chunk_size: int | None = ...) -> bytes:
     """
     Computes the sha256 hash of the given file object, by chunks of size `chunk_size`.
 

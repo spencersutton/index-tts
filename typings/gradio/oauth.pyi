@@ -16,7 +16,7 @@ def attach_oauth(app: fastapi.FastAPI):  # -> None:
     ...
 
 @dataclass
-class OAuthProfile(typing.Dict):
+class OAuthProfile(dict):
     """
     A Gradio OAuthProfile object that can be used to inject the profile of a user in a
     function. If a function expects `OAuthProfile` or `Optional[OAuthProfile]` as input,

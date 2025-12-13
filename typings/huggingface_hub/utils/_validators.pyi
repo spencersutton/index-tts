@@ -91,7 +91,7 @@ def validate_repo_id(repo_id: str) -> None:
     """
     ...
 
-def smoothly_deprecate_use_auth_token(fn_name: str, has_token: bool, kwargs: Dict[str, Any]) -> Dict[str, Any]:
+def smoothly_deprecate_use_auth_token(fn_name: str, has_token: bool, kwargs: dict[str, Any]) -> dict[str, Any]:
     """Smoothly deprecate `use_auth_token` in the `huggingface_hub` codebase.
 
     The long-term goal is to remove any mention of `use_auth_token` in the codebase in

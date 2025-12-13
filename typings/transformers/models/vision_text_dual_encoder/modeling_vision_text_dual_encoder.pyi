@@ -23,9 +23,9 @@ class VisionTextDualEncoderModel(PreTrainedModel):
     _supports_sdpa = ...
     def __init__(
         self,
-        config: Optional[VisionTextDualEncoderConfig] = ...,
-        vision_model: Optional[PreTrainedModel] = ...,
-        text_model: Optional[PreTrainedModel] = ...,
+        config: VisionTextDualEncoderConfig | None = ...,
+        vision_model: PreTrainedModel | None = ...,
+        text_model: PreTrainedModel | None = ...,
     ) -> None:
         r"""
         vision_model (`PreTrainedModel`):
@@ -95,16 +95,16 @@ class VisionTextDualEncoderModel(PreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        return_loss: Optional[bool] = ...,
-        token_type_ids: Optional[torch.LongTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], CLIPOutput]:
+        input_ids: torch.LongTensor | None = ...,
+        pixel_values: torch.FloatTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        return_loss: bool | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.Tensor] | CLIPOutput:
         r"""
         return_loss (`bool`, *optional*):
             Whether or not to return the contrastive loss.
@@ -159,8 +159,8 @@ class VisionTextDualEncoderModel(PreTrainedModel):
     @classmethod
     def from_vision_text_pretrained(
         cls,
-        vision_model_name_or_path: Optional[str] = ...,
-        text_model_name_or_path: Optional[str] = ...,
+        vision_model_name_or_path: str | None = ...,
+        text_model_name_or_path: str | None = ...,
         *model_args,
         **kwargs,
     ) -> PreTrainedModel:

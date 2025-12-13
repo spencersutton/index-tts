@@ -18,12 +18,12 @@ if is_torchvision_available(): ...
 class FlavaMaskingGenerator:
     def __init__(
         self,
-        input_size: Union[int, tuple[int, int]] = ...,
+        input_size: int | tuple[int, int] = ...,
         total_mask_patches: int = ...,
-        mask_group_max_patches: Optional[int] = ...,
+        mask_group_max_patches: int | None = ...,
         mask_group_min_patches: int = ...,
-        mask_group_min_aspect_ratio: Optional[float] = ...,
-        mask_group_max_aspect_ratio: Optional[float] = ...,
+        mask_group_min_aspect_ratio: float | None = ...,
+        mask_group_max_aspect_ratio: float | None = ...,
     ) -> None: ...
     def __repr__(self):  # -> str:
         ...
@@ -93,25 +93,25 @@ class FlavaFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
             be overridden by the `codebook_image_std` parameter in `preprocess`.
     """
 
-    return_image_mask: Optional[bool]
-    input_size_patches: Optional[int]
-    total_mask_patches: Optional[int]
-    mask_group_min_patches: Optional[int]
-    mask_group_max_patches: Optional[int]
-    mask_group_min_aspect_ratio: Optional[float]
-    mask_group_max_aspect_ratio: Optional[float]
-    return_codebook_pixels: Optional[bool]
-    codebook_do_resize: Optional[bool]
-    codebook_size: Optional[bool]
-    codebook_resample: Optional[int]
-    codebook_do_center_crop: Optional[bool]
-    codebook_crop_size: Optional[int]
-    codebook_do_rescale: Optional[bool]
-    codebook_rescale_factor: Optional[Union[int, float]]
-    codebook_do_map_pixels: Optional[bool]
-    codebook_do_normalize: Optional[bool]
-    codebook_image_mean: Optional[Union[float, Iterable[float]]]
-    codebook_image_std: Optional[Union[float, Iterable[float]]]
+    return_image_mask: bool | None
+    input_size_patches: int | None
+    total_mask_patches: int | None
+    mask_group_min_patches: int | None
+    mask_group_max_patches: int | None
+    mask_group_min_aspect_ratio: float | None
+    mask_group_max_aspect_ratio: float | None
+    return_codebook_pixels: bool | None
+    codebook_do_resize: bool | None
+    codebook_size: bool | None
+    codebook_resample: int | None
+    codebook_do_center_crop: bool | None
+    codebook_crop_size: int | None
+    codebook_do_rescale: bool | None
+    codebook_rescale_factor: int | float | None
+    codebook_do_map_pixels: bool | None
+    codebook_do_normalize: bool | None
+    codebook_image_mean: float | Iterable[float] | None
+    codebook_image_std: float | Iterable[float] | None
     ...
 
 @auto_docstring

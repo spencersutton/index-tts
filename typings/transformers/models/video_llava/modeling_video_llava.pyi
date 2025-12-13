@@ -41,11 +41,11 @@ class VideoLlavaModelOutputWithPast(ModelOutput):
     """
 
     last_hidden_state: torch.FloatTensor = ...
-    past_key_values: Optional[list[torch.FloatTensor]] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
-    image_hidden_states: Optional[torch.FloatTensor] = ...
-    video_hidden_states: Optional[torch.FloatTensor] = ...
+    past_key_values: list[torch.FloatTensor] | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
+    image_hidden_states: torch.FloatTensor | None = ...
+    video_hidden_states: torch.FloatTensor | None = ...
 
 @dataclass
 @auto_docstring(
@@ -73,13 +73,13 @@ class VideoLlavaCausalLMOutputWithPast(ModelOutput):
         video_hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    logits: Optional[torch.FloatTensor] = ...
-    past_key_values: Optional[list[torch.FloatTensor]] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
-    image_hidden_states: Optional[torch.FloatTensor] = ...
-    video_hidden_states: Optional[torch.FloatTensor] = ...
+    loss: torch.FloatTensor | None = ...
+    logits: torch.FloatTensor | None = ...
+    past_key_values: list[torch.FloatTensor] | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
+    image_hidden_states: torch.FloatTensor | None = ...
+    video_hidden_states: torch.FloatTensor | None = ...
 
 class VideoLlavaMultiModalProjector(nn.Module):
     def __init__(self, config: VideoLlavaConfig) -> None: ...
@@ -117,8 +117,8 @@ class VideoLlavaModel(VideoLlavaPreTrainedModel):
     def get_image_features(
         self,
         pixel_values_images: torch.FloatTensor,
-        vision_feature_layer: Optional[Union[int, list[int]]] = ...,
-        vision_feature_select_strategy: Optional[str] = ...,
+        vision_feature_layer: int | list[int] | None = ...,
+        vision_feature_select_strategy: str | None = ...,
     ):  # -> Any:
         """
         Obtains image last hidden states from the vision tower and apply multimodal projection.
@@ -139,7 +139,7 @@ class VideoLlavaModel(VideoLlavaPreTrainedModel):
         ...
 
     def get_video_features(
-        self, pixel_values_videos: torch.FloatTensor, vision_feature_layer: Optional[Union[int, list[int]]] = ...
+        self, pixel_values_videos: torch.FloatTensor, vision_feature_layer: int | list[int] | None = ...
     ):  # -> tuple[Any, int]:
         """
         Obtains video last hidden states from the vision tower and apply multimodal projection.
@@ -177,19 +177,19 @@ class VideoLlavaModel(VideoLlavaPreTrainedModel):
         input_ids: torch.LongTensor = ...,
         pixel_values_images: torch.FloatTensor = ...,
         pixel_values_videos: torch.FloatTensor = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        vision_feature_layer: Optional[Union[int, list[int]]] = ...,
-        vision_feature_select_strategy: Optional[str] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        vision_feature_layer: int | list[int] | None = ...,
+        vision_feature_select_strategy: str | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> Union[tuple, VideoLlavaModelOutputWithPast]:
+    ) -> tuple | VideoLlavaModelOutputWithPast:
         r"""
         pixel_values_images (`torch.FloatTensor` of shape `(batch_size, num_channels, image_size, image_size)):
             The tensors corresponding to the input images. Pixel values can be obtained using
@@ -219,8 +219,8 @@ class VideoLlavaForConditionalGeneration(VideoLlavaPreTrainedModel, GenerationMi
     def get_image_features(
         self,
         pixel_values_images: torch.FloatTensor,
-        vision_feature_layer: Optional[Union[int, list[int]]] = ...,
-        vision_feature_select_strategy: Optional[str] = ...,
+        vision_feature_layer: int | list[int] | None = ...,
+        vision_feature_select_strategy: str | None = ...,
     ):  # -> Any:
         ...
     @property
@@ -242,21 +242,21 @@ class VideoLlavaForConditionalGeneration(VideoLlavaPreTrainedModel, GenerationMi
         input_ids: torch.LongTensor = ...,
         pixel_values_images: torch.FloatTensor = ...,
         pixel_values_videos: torch.FloatTensor = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        vision_feature_layer: Optional[Union[int, list[int]]] = ...,
-        vision_feature_select_strategy: Optional[str] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        logits_to_keep: Union[int, torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        vision_feature_layer: int | list[int] | None = ...,
+        vision_feature_select_strategy: str | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        logits_to_keep: int | torch.Tensor = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> Union[tuple, VideoLlavaCausalLMOutputWithPast]:
+    ) -> tuple | VideoLlavaCausalLMOutputWithPast:
         r"""
         pixel_values_images (`torch.FloatTensor` of shape `(batch_size, num_channels, image_size, image_size)):
             The tensors corresponding to the input images. Pixel values can be obtained using

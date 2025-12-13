@@ -15,8 +15,8 @@ if is_torch_available(): ...
 
 def convert_segmentation_map_to_binary_masks(
     segmentation_map: np.ndarray,
-    instance_id_to_semantic_id: Optional[dict[int, int]] = ...,
-    ignore_index: Optional[int] = ...,
+    instance_id_to_semantic_id: dict[int, int] | None = ...,
+    ignore_index: int | None = ...,
 ):  # -> tuple[ndarray[tuple[int], dtype[floating[_32Bit]]] | ndarray[_AnyShape, dtype[floating[_32Bit]]], ndarray[tuple[int], dtype[signedinteger[_64Bit]]] | ndarray[_AnyShape, dtype[signedinteger[_64Bit]]]]:
     ...
 def get_size_with_aspect_ratio(image_size, size, max_size=...) -> tuple[int, int]:
@@ -66,7 +66,7 @@ def compute_segments(
     stuff_classes,
     mask_threshold: float = ...,
     overlap_mask_area_threshold: float = ...,
-    target_size: Optional[tuple[int, int]] = ...,
+    target_size: tuple[int, int] | None = ...,
 ):  # -> tuple[Tensor, list[dict[Any, Any]]]:
     ...
 def get_target_size(size_dict: dict[str, int]) -> tuple[int, int]:
@@ -123,17 +123,17 @@ class EomtImageProcessor(BaseImageProcessor):
     def __init__(
         self,
         do_resize: bool = ...,
-        size: Optional[dict[str, int]] = ...,
+        size: dict[str, int] | None = ...,
         resample: PILImageResampling = ...,
         do_rescale: bool = ...,
         rescale_factor: float = ...,
         do_normalize: bool = ...,
         do_split_image: bool = ...,
         do_pad: bool = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
-        ignore_index: Optional[int] = ...,
-        num_labels: Optional[int] = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
+        ignore_index: int | None = ...,
+        num_labels: int | None = ...,
         **kwargs,
     ) -> None: ...
     def resize(
@@ -142,7 +142,7 @@ class EomtImageProcessor(BaseImageProcessor):
         size: dict,
         resample: PILImageResampling = ...,
         data_format=...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        input_data_format: str | ChannelDimension | None = ...,
         **kwargs,
     ) -> np.ndarray:
         """
@@ -165,22 +165,22 @@ class EomtImageProcessor(BaseImageProcessor):
     def preprocess(
         self,
         images: ImageInput,
-        segmentation_maps: Optional[Union[list[dict[int, int]], dict[int, int]]] = ...,
-        instance_id_to_semantic_id: Optional[dict[int, int]] = ...,
-        do_split_image: Optional[bool] = ...,
-        do_resize: Optional[bool] = ...,
-        size: Optional[dict[str, int]] = ...,
+        segmentation_maps: list[dict[int, int]] | dict[int, int] | None = ...,
+        instance_id_to_semantic_id: dict[int, int] | None = ...,
+        do_split_image: bool | None = ...,
+        do_resize: bool | None = ...,
+        size: dict[str, int] | None = ...,
         resample: PILImageResampling = ...,
-        do_rescale: Optional[bool] = ...,
-        rescale_factor: Optional[float] = ...,
-        do_normalize: Optional[bool] = ...,
-        do_pad: Optional[bool] = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
-        ignore_index: Optional[int] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        data_format: Union[str, ChannelDimension] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        do_rescale: bool | None = ...,
+        rescale_factor: float | None = ...,
+        do_normalize: bool | None = ...,
+        do_pad: bool | None = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
+        ignore_index: int | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        data_format: str | ChannelDimension = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ) -> BatchFeature:
         """
         Preprocesses images or a batch of images.
@@ -229,10 +229,10 @@ class EomtImageProcessor(BaseImageProcessor):
         self,
         pixel_values_list: list[ImageInput],
         segmentation_maps: ImageInput = ...,
-        instance_id_to_semantic_id: Optional[Union[list[dict[int, int]], dict[int, int]]] = ...,
-        ignore_index: Optional[int] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        instance_id_to_semantic_id: list[dict[int, int]] | dict[int, int] | None = ...,
+        ignore_index: int | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ):  # -> BatchFeature:
         """
         Pad images up to the largest image in a batch and create a corresponding `pixel_mask`.
@@ -317,7 +317,7 @@ class EomtImageProcessor(BaseImageProcessor):
         ...
 
     def post_process_semantic_segmentation(
-        self, outputs, target_sizes: list[tuple[int, int]], size: Optional[dict[str, int]] = ...
+        self, outputs, target_sizes: list[tuple[int, int]], size: dict[str, int] | None = ...
     ) -> np.ndarray:
         """Post-processes model outputs into final semantic segmentation prediction."""
         ...
@@ -329,15 +329,15 @@ class EomtImageProcessor(BaseImageProcessor):
         threshold: float = ...,
         mask_threshold: float = ...,
         overlap_mask_area_threshold: float = ...,
-        stuff_classes: Optional[list[int]] = ...,
-        size: Optional[dict[str, int]] = ...,
+        stuff_classes: list[int] | None = ...,
+        size: dict[str, int] | None = ...,
     ):  # -> list[Any]:
         """Post-processes model outputs into final panoptic segmentation prediction."""
         ...
 
     @filter_out_non_signature_kwargs()
     def post_process_instance_segmentation(
-        self, outputs, target_sizes: list[tuple[int, int]], threshold: float = ..., size: Optional[dict[str, int]] = ...
+        self, outputs, target_sizes: list[tuple[int, int]], threshold: float = ..., size: dict[str, int] | None = ...
     ):  # -> list[Any]:
         """Post-processes model outputs into Instance Segmentation Predictions."""
         ...

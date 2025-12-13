@@ -11,8 +11,8 @@ from requests import HTTPError, Response
 class CacheNotFound(Exception):
     """Exception thrown when the Huggingface cache is not found."""
 
-    cache_dir: Union[str, Path]
-    def __init__(self, msg: str, cache_dir: Union[str, Path], *args, **kwargs) -> None: ...
+    cache_dir: str | Path
+    def __init__(self, msg: str, cache_dir: str | Path, *args, **kwargs) -> None: ...
 
 class CorruptedCacheException(Exception):
     """Exception for any unexpected structure in the Huggingface cache-system."""
@@ -58,9 +58,7 @@ class HfHubHTTPError(HTTPError):
             raise
     ```
     """
-    def __init__(
-        self, message: str, response: Optional[Response] = ..., *, server_message: Optional[str] = ...
-    ) -> None: ...
+    def __init__(self, message: str, response: Response | None = ..., *, server_message: str | None = ...) -> None: ...
     def append_to_message(self, additional_message: str) -> None:
         """Append additional information to the `HfHubHTTPError` initial message."""
         ...

@@ -31,10 +31,10 @@ class VitPoseEstimatorOutput(ModelOutput):
         (also called feature maps) of the model at the output of each stage.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    heatmaps: Optional[torch.FloatTensor] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
-    attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
+    loss: torch.FloatTensor | None = ...
+    heatmaps: torch.FloatTensor | None = ...
+    hidden_states: tuple[torch.FloatTensor, ...] | None = ...
+    attentions: tuple[torch.FloatTensor, ...] | None = ...
 
 @auto_docstring
 class VitPosePreTrainedModel(PreTrainedModel):
@@ -68,7 +68,7 @@ class VitPoseSimpleDecoder(nn.Module):
     feature maps into heatmaps.
     """
     def __init__(self, config) -> None: ...
-    def forward(self, hidden_state: torch.Tensor, flip_pairs: Optional[torch.Tensor] = ...) -> torch.Tensor: ...
+    def forward(self, hidden_state: torch.Tensor, flip_pairs: torch.Tensor | None = ...) -> torch.Tensor: ...
 
 class VitPoseClassicDecoder(nn.Module):
     """
@@ -76,7 +76,7 @@ class VitPoseClassicDecoder(nn.Module):
     turning the feature maps into heatmaps.
     """
     def __init__(self, config: VitPoseConfig) -> None: ...
-    def forward(self, hidden_state: torch.Tensor, flip_pairs: Optional[torch.Tensor] = ...):  # -> Any:
+    def forward(self, hidden_state: torch.Tensor, flip_pairs: torch.Tensor | None = ...):  # -> Any:
         ...
 
 @auto_docstring(
@@ -90,13 +90,13 @@ class VitPoseForPoseEstimation(VitPosePreTrainedModel):
     def forward(
         self,
         pixel_values: torch.Tensor,
-        dataset_index: Optional[torch.Tensor] = ...,
-        flip_pairs: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, VitPoseEstimatorOutput]:
+        dataset_index: torch.Tensor | None = ...,
+        flip_pairs: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | VitPoseEstimatorOutput:
         r"""
         dataset_index (`torch.Tensor` of shape `(batch_size,)`):
             Index to use in the Mixture-of-Experts (MoE) blocks of the backbone.

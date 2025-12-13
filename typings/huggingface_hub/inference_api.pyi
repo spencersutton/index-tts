@@ -62,7 +62,7 @@ class InferenceApi:
         " this guide to learn how to convert your script to use it:"
         " https://huggingface.co/docs/huggingface_hub/guides/inference#legacy-inferenceapi-client.",
     )
-    def __init__(self, repo_id: str, task: Optional[str] = ..., token: Optional[str] = ..., gpu: bool = ...) -> None:
+    def __init__(self, repo_id: str, task: str | None = ..., token: str | None = ..., gpu: bool = ...) -> None:
         """Inits headers and API call information.
 
         Args:
@@ -87,9 +87,9 @@ class InferenceApi:
         ...
     def __call__(
         self,
-        inputs: Optional[Union[str, Dict, List[str], List[List[str]]]] = ...,
-        params: Optional[Dict] = ...,
-        data: Optional[bytes] = ...,
+        inputs: str | dict | list[str] | list[list[str]] | None = ...,
+        params: dict | None = ...,
+        data: bytes | None = ...,
         raw_response: bool = ...,
     ) -> Any:
         """Make a call to the Inference API.

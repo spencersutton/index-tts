@@ -34,7 +34,7 @@ __all__ = [
     "save",
     "unflatten",
 ]
-PassType: TypeAlias = Callable[[torch.fx.GraphModule], PassResult | None]
+type PassType = Callable[[torch.fx.GraphModule], PassResult | None]
 log: logging.Logger = ...
 
 @deprecated(

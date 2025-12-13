@@ -1,4 +1,5 @@
-from typing import Callable, Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
+from collections.abc import Callable
 from .triton_compat import triton
 
 if TYPE_CHECKING: ...
@@ -42,5 +43,5 @@ class CoordescTuner:
         self,
         func: Callable[[triton.Config], float],
         baseline_config: triton.Config,
-        baseline_timing: Optional[float] = ...,
+        baseline_timing: float | None = ...,
     ) -> triton.Config: ...

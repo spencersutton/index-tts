@@ -21,22 +21,22 @@ class ByteRewriter:
     """
 
     LEAF = ...
-    def __init__(self, rewriting_rules: Union[str, dict[str, str]]) -> None: ...
+    def __init__(self, rewriting_rules: str | dict[str, str]) -> None: ...
     def add_leaf(
-        self, hash_tree: dict[str, Union[dict, list[str]]], byte_in_sequence: str, byte_out_sequence: str
+        self, hash_tree: dict[str, dict | list[str]], byte_in_sequence: str, byte_out_sequence: str
     ):  # -> None:
         """
         Add a leaf with the output byte sequence to the hash tree.
         """
         ...
 
-    def construct_hash_tree(self, rewriting_rules: dict[str, str]) -> dict[str, Union[dict, list[str]]]:
+    def construct_hash_tree(self, rewriting_rules: dict[str, str]) -> dict[str, dict | list[str]]:
         """
         Construct a hash tree for rewritten byte sequences.
         """
         ...
 
-    def search_hash_tree(self, byte_sequence: list[str]) -> Union[None, list[str]]:
+    def search_hash_tree(self, byte_sequence: list[str]) -> None | list[str]:
         """
         Search the hash tree and return the rewritten byte sequence if found.
         """
@@ -99,7 +99,7 @@ class MyT5Tokenizer(PreTrainedTokenizer):
     def get_vocab(self):  # -> dict[str, int]:
         ...
     def get_special_tokens_mask(
-        self, token_ids_0: list[int], token_ids_1: Optional[list[int]] = ..., already_has_special_tokens: bool = ...
+        self, token_ids_0: list[int], token_ids_1: list[int] | None = ..., already_has_special_tokens: bool = ...
     ) -> list[int]:
         """
         Retrieve sequence ids from a token list that has no special tokens added. This method is called when adding
@@ -119,7 +119,7 @@ class MyT5Tokenizer(PreTrainedTokenizer):
         ...
 
     def create_token_type_ids_from_sequences(
-        self, token_ids_0: list[int], token_ids_1: Optional[list[int]] = ...
+        self, token_ids_0: list[int], token_ids_1: list[int] | None = ...
     ) -> list[int]:
         """
         Create a mask from the two sequences passed to be used in a sequence-pair classification task. MyT5 does not
@@ -137,7 +137,7 @@ class MyT5Tokenizer(PreTrainedTokenizer):
         ...
 
     def build_inputs_with_special_tokens(
-        self, token_ids_0: list[int], token_ids_1: Optional[list[int]] = ...
+        self, token_ids_0: list[int], token_ids_1: list[int] | None = ...
     ) -> list[int]:
         """
         Build model inputs from a sequence or a pair of sequence for sequence classification tasks by concatenating and
@@ -163,6 +163,6 @@ class MyT5Tokenizer(PreTrainedTokenizer):
         """Converts a sequence of tokens (string) in a single string."""
         ...
 
-    def save_vocabulary(self, save_directory: str, filename_prefix: Optional[str] = ...) -> tuple[str]: ...
+    def save_vocabulary(self, save_directory: str, filename_prefix: str | None = ...) -> tuple[str]: ...
 
 __all__ = ["MyT5Tokenizer"]

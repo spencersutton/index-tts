@@ -39,8 +39,8 @@ class LlavaOnevisionModelOutputWithPast(BaseModelOutputWithPast):
         video_hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
     """
 
-    image_hidden_states: Optional[torch.FloatTensor] = ...
-    video_hidden_states: Optional[torch.FloatTensor] = ...
+    image_hidden_states: torch.FloatTensor | None = ...
+    video_hidden_states: torch.FloatTensor | None = ...
 
 @dataclass
 @auto_docstring(
@@ -68,13 +68,13 @@ class LlavaOnevisionCausalLMOutputWithPast(ModelOutput):
         video_hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    logits: Optional[torch.FloatTensor] = ...
-    past_key_values: Optional[list[torch.FloatTensor]] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
-    image_hidden_states: Optional[torch.FloatTensor] = ...
-    video_hidden_states: Optional[torch.FloatTensor] = ...
+    loss: torch.FloatTensor | None = ...
+    logits: torch.FloatTensor | None = ...
+    past_key_values: list[torch.FloatTensor] | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
+    image_hidden_states: torch.FloatTensor | None = ...
+    video_hidden_states: torch.FloatTensor | None = ...
 
 class LlavaOnevisionPooler(nn.Module):
     def __init__(self, config) -> None: ...
@@ -192,10 +192,10 @@ class LlavaOnevisionModel(LlavaOnevisionPreTrainedModel):
         self,
         pixel_values: torch.FloatTensor,
         image_sizes: torch.Tensor,
-        vision_feature_layer: Optional[Union[int, list[int]]] = ...,
-        vision_feature_select_strategy: Optional[str] = ...,
-        vision_aspect_ratio: Optional[str] = ...,
-        batch_num_images: Optional[torch.LongTensor] = ...,
+        vision_feature_layer: int | list[int] | None = ...,
+        vision_feature_select_strategy: str | None = ...,
+        vision_aspect_ratio: str | None = ...,
+        batch_num_images: torch.LongTensor | None = ...,
     ):  # -> list[Any]:
         """
         Obtains image last hidden states from the vision tower and apply multimodal projection.
@@ -239,24 +239,24 @@ class LlavaOnevisionModel(LlavaOnevisionPreTrainedModel):
         self,
         input_ids: torch.LongTensor = ...,
         pixel_values: torch.FloatTensor = ...,
-        image_sizes: Optional[torch.LongTensor] = ...,
+        image_sizes: torch.LongTensor | None = ...,
         pixel_values_videos: torch.FloatTensor = ...,
-        image_sizes_videos: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        vision_feature_layer: Optional[Union[int, list[int]]] = ...,
-        vision_feature_select_strategy: Optional[str] = ...,
-        vision_aspect_ratio: Optional[str] = ...,
-        batch_num_images: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        image_sizes_videos: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        vision_feature_layer: int | list[int] | None = ...,
+        vision_feature_select_strategy: str | None = ...,
+        vision_aspect_ratio: str | None = ...,
+        batch_num_images: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> Union[tuple, LlavaOnevisionModelOutputWithPast]:
+    ) -> tuple | LlavaOnevisionModelOutputWithPast:
         r"""
         image_sizes_videos (`torch.LongTensor` of shape `(batch_size, frames, 2)`, *optional*):
             The sizes of the videos in the batch, being (height, width) for each frame in the video.
@@ -270,7 +270,7 @@ class LlavaOnevisionModel(LlavaOnevisionPreTrainedModel):
     def get_video_features(
         self,
         pixel_values: torch.FloatTensor,
-        vision_feature_layer: Union[int, list[int]],
+        vision_feature_layer: int | list[int],
         vision_feature_select_strategy: str,
     ):  # -> Tensor:
         """
@@ -318,8 +318,8 @@ class LlavaOnevisionForConditionalGeneration(LlavaOnevisionPreTrainedModel, Gene
         self,
         pixel_values: torch.FloatTensor,
         image_sizes: torch.Tensor,
-        vision_feature_layer: Optional[Union[int, list[int]]] = ...,
-        vision_feature_select_strategy: Optional[str] = ...,
+        vision_feature_layer: int | list[int] | None = ...,
+        vision_feature_select_strategy: str | None = ...,
     ):  # -> list[Any]:
         ...
     @property
@@ -337,26 +337,26 @@ class LlavaOnevisionForConditionalGeneration(LlavaOnevisionPreTrainedModel, Gene
         self,
         input_ids: torch.LongTensor = ...,
         pixel_values: torch.FloatTensor = ...,
-        image_sizes: Optional[torch.LongTensor] = ...,
+        image_sizes: torch.LongTensor | None = ...,
         pixel_values_videos: torch.FloatTensor = ...,
-        image_sizes_videos: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        vision_feature_layer: Optional[Union[int, list[int]]] = ...,
-        vision_feature_select_strategy: Optional[str] = ...,
-        vision_aspect_ratio: Optional[str] = ...,
-        batch_num_images: Optional[torch.LongTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        logits_to_keep: Union[int, torch.Tensor] = ...,
+        image_sizes_videos: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        vision_feature_layer: int | list[int] | None = ...,
+        vision_feature_select_strategy: str | None = ...,
+        vision_aspect_ratio: str | None = ...,
+        batch_num_images: torch.LongTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        logits_to_keep: int | torch.Tensor = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> Union[tuple, LlavaOnevisionCausalLMOutputWithPast]:
+    ) -> tuple | LlavaOnevisionCausalLMOutputWithPast:
         r"""
         image_sizes_videos (`torch.LongTensor` of shape `(batch_size, frames, 2)`, *optional*):
             The sizes of the videos in the batch, being (height, width) for each frame in the video.
@@ -419,8 +419,8 @@ class LlavaOnevisionForConditionalGeneration(LlavaOnevisionPreTrainedModel, Gene
     def get_video_features(
         self,
         pixel_values: torch.FloatTensor,
-        vision_feature_layer: Optional[Union[int, list[int]]] = ...,
-        vision_feature_select_strategy: Optional[str] = ...,
+        vision_feature_layer: int | list[int] | None = ...,
+        vision_feature_select_strategy: str | None = ...,
     ):  # -> Tensor:
         ...
 

@@ -1,7 +1,8 @@
 import torch
 from enum import Enum
-from typing import Any, Callable, Optional, TypeVar
-from typing_extensions import ParamSpec
+from typing import Any, Optional, TypeVar
+from collections.abc import Callable
+from typing import ParamSpec
 from torch.jit._script import ScriptModule
 from torch.nn import Module
 
@@ -79,7 +80,7 @@ def trace(
 
     ...
 
-_trace_module_map: Optional[dict[Any, Any]] = ...
+_trace_module_map: dict[Any, Any] | None = ...
 
 def trace_module(
     mod,

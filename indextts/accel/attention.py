@@ -1,4 +1,5 @@
-# pyright: reportMissingImports=false, reportUnknownParameterType=false
+# pyright: reportMissingImports=false, reportUnknownParameterType=false, reportUnknownArgumentType=false
+# pyright: reportUnknownMemberType=false, reportUntypedFunctionDecorator=false
 import sys
 from dataclasses import dataclass
 

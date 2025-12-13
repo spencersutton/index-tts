@@ -1,10 +1,5 @@
 from .accel_engine import AccelInferenceEngine
-from .attention import (
-    Attention,
-    get_forward_context,
-    reset_forward_context,
-    set_forward_context,
-)
+from .attention import Attention
 from .gpt2_accel import GPT2AccelAttention, GPT2AccelModel
 from .kv_manager import KVCacheManager, Seq
 
@@ -15,7 +10,4 @@ __all__ = [
     "GPT2AccelModel",
     "KVCacheManager",
     "Seq",
-    "get_forward_context",
-    "reset_forward_context",
-    "set_forward_context",
 ]

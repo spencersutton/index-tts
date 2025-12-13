@@ -1,8 +1,8 @@
-from typing import cast
+from typing import Any, cast
 
 import torch
 from torch import Tensor, nn
-from transformers import Cache, Conv1D, PretrainedConfig
+from transformers import Cache, Conv1D, GPT2Config, PretrainedConfig
 from transformers.modeling_outputs import (
     BaseModelOutputWithPastAndCrossAttentions,
 )
@@ -61,7 +61,6 @@ class GPT2AccelAttention(nn.Module):
         use_cache: bool = False,
         output_attentions: bool = False,
         past_key_value: tuple[Tensor, Tensor] | None = None,
-        **kwargs,  # noqa: ANN003
     ) -> tuple[Tensor | None, ...]:
         if encoder_hidden_states is not None:
             msg = "Cross attention not supported in accel mode"
@@ -127,32 +126,33 @@ class GPT2AccelBlock(GPT2Block):
 
 
 class GPT2AccelModel(GPT2Model):
-    def __init__(self, config: PretrainedConfig) -> None:
+    def __init__(self, config: GPT2Config) -> None:
         super().__init__(config)
         self.h = nn.ModuleList([GPT2AccelBlock(config, layer_idx=i) for i in range(config.num_hidden_layers)])
 
     def forward(
         self,
-        input_ids: torch.Tensor | None = None,
+        input_ids: torch.LongTensor | None = None,
         past_key_values: tuple[tuple[torch.Tensor]] | Cache | None = None,
         cache_position: torch.Tensor | None = None,
-        attention_mask: torch.Tensor | None = None,
-        token_type_ids: torch.Tensor | None = None,
-        position_ids: torch.Tensor | None = None,
-        head_mask: torch.Tensor | None = None,
+        attention_mask: torch.FloatTensor | None = None,
+        token_type_ids: torch.LongTensor | None = None,
+        position_ids: torch.LongTensor | None = None,
+        head_mask: torch.FloatTensor | None = None,
         inputs_embeds: torch.Tensor | None = None,
         encoder_hidden_states: torch.Tensor | None = None,
-        encoder_attention_mask: torch.Tensor | None = None,
+        encoder_attention_mask: torch.FloatTensor | None = None,
         use_cache: bool | None = None,
         output_attentions: bool | None = None,
         output_hidden_states: bool | None = None,
         return_dict: bool | None = None,
-        **kwargs,  # noqa: ANN003
-    ) -> tuple | BaseModelOutputWithPastAndCrossAttentions:
+        **kwargs: Any,  # noqa: ANN401
+    ) -> tuple[torch.FloatTensor, ...] | BaseModelOutputWithPastAndCrossAttentions:
         if inputs_embeds is not None:
             hidden_states = inputs_embeds
 
             for block in self.h:
+                assert isinstance(block, GPT2AccelBlock)
                 hidden_states = block(hidden_states)[0]
 
             hidden_states = self.ln_f(hidden_states)

@@ -188,7 +188,12 @@ def main() -> None:
         sys.setprofile(profile_func)
         for _ in range(args.profile_steps):
             random.shuffle(random_words)
-            tts.infer(spk_audio_prompt=voice_file, text=text, output_path=output_path)
+            tts.infer(
+                spk_audio_prompt=voice_file,
+                text=text,
+                output_path=output_path,
+                max_text_tokens_per_segment=1500,
+            )
         sys.setprofile(None)
     else:
         tts.infer(spk_audio_prompt=voice_file, text=text, output_path=output_path)
@@ -196,17 +201,17 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-    p = ["cumulative_time\tcall_count\tlocation\tfunction_name"]
+    p = ["location\tfunction_name\tcumulative_time\tcall_count"]
     for code_obj, exec_info in (
         (o, info)
         for (o, info) in sorted(dict_calls.items(), key=lambda item: item[1].cumulative_time, reverse=True)
         if "site-packages" not in o.co_filename and info.cumulative_time >= 0.1
     ):
         p.append(
-            f"{exec_info.cumulative_time:.6f}s\t"
-            f"{exec_info.call_count}\t"
             f"{code_obj.co_filename}:{code_obj.co_firstlineno}\t"
-            f"{code_obj.co_name}"
+            f"{code_obj.co_name}\t"
+            f"{exec_info.cumulative_time:.6f}s\t"
+            f"{exec_info.call_count}"
         )
 
     for line in p:

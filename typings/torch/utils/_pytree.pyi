@@ -155,7 +155,7 @@ class ConstantNode:
     value: Any
 
 @dataclasses.dataclass(frozen=True)
-class SequenceKey(Generic[T]):
+class SequenceKey[T]:
     idx: int
 
     def get(self, sequence: Sequence[T]) -> T: ...
@@ -163,7 +163,7 @@ class SequenceKey(Generic[T]):
 K = TypeVar("K", bound=Hashable)
 
 @dataclasses.dataclass(frozen=True)
-class MappingKey(Generic[K, T]):
+class MappingKey[K: Hashable, T]:
     key: K
 
     def get(self, mapping: Mapping[K, T]) -> T: ...
@@ -242,9 +242,7 @@ def tree_map_(
 
 type Type2[T, S] = tuple[type[T], type[S]]
 type Type3[T, S, U] = tuple[type[T], type[S], type[U]]
-if sys.version_info >= (3, 10):
-    type TypeAny = type[Any] | tuple[type[Any], ...] | types.UnionType
-else: ...
+type TypeAny = type[Any] | tuple[type[Any], ...] | types.UnionType
 type Fn2[T, S, R] = Callable[[T | S], R]
 type Fn3[T, S, U, R] = Callable[[T | S | U], R]
 type Fn[T, R] = Callable[[T], R]
@@ -252,11 +250,11 @@ type FnAny[R] = Callable[[Any], R]
 type MapOnlyFn[T] = Callable[[T], Callable[[Any], Any]]
 
 @overload
-def map_only(type_or_types_or_pred: type[T], /) -> MapOnlyFn[Fn[T, Any]]: ...
+def map_only[T](type_or_types_or_pred: type[T], /) -> MapOnlyFn[Fn[T, Any]]: ...
 @overload
-def map_only(type_or_types_or_pred: Type2[T, S], /) -> MapOnlyFn[Fn2[T, S, Any]]: ...
+def map_only[T, S](type_or_types_or_pred: Type2[T, S], /) -> MapOnlyFn[Fn2[T, S, Any]]: ...
 @overload
-def map_only(type_or_types_or_pred: Type3[T, S, U], /) -> MapOnlyFn[Fn3[T, S, U, Any]]: ...
+def map_only[T, S, U](type_or_types_or_pred: Type3[T, S, U], /) -> MapOnlyFn[Fn3[T, S, U, Any]]: ...
 @overload
 def map_only(type_or_types_or_pred: TypeAny, /) -> MapOnlyFn[FnAny[Any]]: ...
 @overload

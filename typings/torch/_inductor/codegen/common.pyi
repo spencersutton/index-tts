@@ -408,7 +408,7 @@ if TYPE_CHECKING:
         CSEVariable | tuple[CSEVariable, ...],
     ]
 
-class CSE(Generic[CSEVariableType, AugmentedKeyT]):
+class CSE[CSEVariableType: CSEVariable = CSEVariable, AugmentedKeyT = str]:
     def __init__(
         self,
         prefix: str = ...,
@@ -450,7 +450,7 @@ class CodeGen:
     def __enter__(self) -> Self: ...
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None: ...
 
-class Kernel(CodeGen, Generic[CSEVariableType]):
+class Kernel[CSEVariableType: CSEVariable = CSEVariable](CodeGen):
     newvar_prefix: str = ...
     suffix: str = ...
     overrides: Callable[[], OpsHandler[Any]] | None = ...

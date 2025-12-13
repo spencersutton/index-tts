@@ -22,7 +22,7 @@ _TensorT = TypeVar("_TensorT", bound=torch.Tensor)
 _TensorT_cov = TypeVar("_TensorT_cov", bound=torch.Tensor, covariant=True)
 
 def safe_is_leaf(t: MetaTensorDesc | torch.Tensor) -> bool: ...
-def safe_grad(t: _TensorLikeT) -> _TensorLikeT | None: ...
+def safe_grad[TensorLikeT: (MetaTensorDesc, torch.Tensor)](t: _TensorLikeT) -> _TensorLikeT | None: ...
 def assert_eq(a: _T, b: _T) -> None: ...
 
 tls = ...
@@ -62,7 +62,7 @@ class MetaStorageDesc:
     def as_json(self, describer_id: _DescriberId) -> dict[str, object]: ...
 
 @dataclass(frozen=True)
-class ViewFunc(Generic[_TensorT]):
+class ViewFunc[TensorT: torch.Tensor]:
     @abstractmethod
     def apply(
         self,
@@ -86,7 +86,7 @@ class _FakeTensorViewFunc(ViewFunc["FakeTensor"]):
     ) -> FakeTensor: ...
 
 @dataclass(frozen=True)
-class _CustomViewFunc(ViewFunc[_TensorT], Generic[_TensorT]):
+class _CustomViewFunc[TensorT: torch.Tensor](ViewFunc[TensorT]):
     func: Callable[
         [torch.Tensor, Callable[[int], int] | None, Callable[[torch.Tensor], _TensorT] | None],
         _TensorT,
@@ -100,19 +100,19 @@ class _CustomViewFunc(ViewFunc[_TensorT], Generic[_TensorT]):
         tensor_visitor_fn: Callable[[torch.Tensor], _TensorT] | None = ...,
     ) -> _TensorT: ...
 
-class _MetaTensorCallback(Protocol, Generic[_TensorT_cov]):
+class _MetaTensorCallback[TensorT_cov: torch.Tensor](Protocol):
     def __call__(self, arg: Callable[[], torch.Tensor], /, *, device: torch.device | str) -> _TensorT_cov: ...
 
 class _MetaTensorCallbackKwargs(TypedDict, total=False):
     device: torch.device | str
 
-class _MetaTensorCallbackOptDevice(Protocol, Generic[_TensorT_cov]):
+class _MetaTensorCallbackOptDevice[TensorT_cov: torch.Tensor](Protocol):
     def __call__(
         self, arg: Callable[[], torch.Tensor], /, **kwargs: Unpack[_MetaTensorCallbackKwargs]
     ) -> _TensorT_cov: ...
 
 @dataclass(frozen=True)
-class MetaTensorDesc(Generic[_TensorT]):
+class MetaTensorDesc[TensorT: torch.Tensor]:
     id: MetaTensorId
     ndim: int
     dtype: torch.dtype
@@ -169,7 +169,7 @@ class MetaTensorDesc(Generic[_TensorT]):
     @property
     def shape(self) -> tuple[int, ...]: ...
 
-class MetaConverter(Generic[_TensorT]):
+class MetaConverter[TensorT: torch.Tensor]:
     def __init__(self, *, copy_data: bool = ...) -> None: ...
     def successful(self) -> bool: ...
     def get_tensor_memo(self, t: MetaTensorDesc) -> torch.Tensor | None: ...

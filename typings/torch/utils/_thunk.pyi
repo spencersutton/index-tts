@@ -3,7 +3,7 @@ from collections.abc import Callable
 
 R = TypeVar("R")
 
-class Thunk(Generic[R]):
+class Thunk[R]:
     f: Callable[[], R] | None
     r: R | None
     __slots__ = ...

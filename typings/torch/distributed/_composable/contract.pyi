@@ -18,11 +18,11 @@ class RegistryItem: ...
 _TState = TypeVar("_TState", bound=_State, covariant=True)
 _M = TypeVar("_M", nn.Module, list[nn.Module])
 
-class _ContractFn(Protocol, Generic[_P, _T, _TState]):
+class _ContractFn[**P, T, TState: _State](Protocol):
     def __call__(self, *args: _P.args, **kwargs: _P.kwargs) -> _T: ...
     def state(self, module: nn.Module) -> _TState: ...
 
-def contract(
+def contract[TState: _State](
     state_cls: type[_TState] = ...,
 ) -> Callable[
     [Callable[Concatenate[_M, _P], _M]],

@@ -1,11 +1,6 @@
 # pyright: reportMissingImports=false, reportUnknownParameterType=false, reportUnknownArgumentType=false
 # pyright: reportUnknownMemberType=false, reportUntypedFunctionDecorator=false
-import sys
 from dataclasses import dataclass
-
-if sys.platform == "darwin":
-    msg = "flash attention is not supported on MacOS."
-    raise ImportError(msg)
 
 import torch
 import triton

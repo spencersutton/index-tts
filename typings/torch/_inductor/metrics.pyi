@@ -1,7 +1,8 @@
 import dataclasses
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Callable, Optional, TYPE_CHECKING, Union
+from typing import Optional, TYPE_CHECKING, Union
+from collections.abc import Callable
 from torch.utils._ordered_set import OrderedSet
 from torch._inductor.scheduler import BaseSchedulerNode
 
@@ -56,7 +57,7 @@ class MetricTable:
     table_name: str
     column_names: list[str]
     num_rows_added: int = ...
-    def add_row(self, row_fn: Callable[[], dict[str, Optional[Union[str, float]]]]) -> None: ...
+    def add_row(self, row_fn: Callable[[], dict[str, str | float | None]]) -> None: ...
     def output_filename(self) -> str: ...
     def write_header(self) -> None: ...
     @staticmethod

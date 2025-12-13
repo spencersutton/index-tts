@@ -155,7 +155,7 @@ class TapexTokenizer(PreTrainedTokenizer):
         **kwargs,
     ) -> None: ...
     def build_inputs_with_special_tokens(
-        self, token_ids_0: list[int], token_ids_1: Optional[list[int]] = ...
+        self, token_ids_0: list[int], token_ids_1: list[int] | None = ...
     ) -> list[int]:
         """
         Build model inputs from a sequence or a pair of sequence for sequence classification tasks by concatenating and
@@ -174,7 +174,7 @@ class TapexTokenizer(PreTrainedTokenizer):
         ...
 
     def get_special_tokens_mask(
-        self, token_ids_0: list[int], token_ids_1: Optional[list[int]] = ..., already_has_special_tokens: bool = ...
+        self, token_ids_0: list[int], token_ids_1: list[int] | None = ..., already_has_special_tokens: bool = ...
     ) -> list[int]:
         """
         Args:
@@ -192,7 +192,7 @@ class TapexTokenizer(PreTrainedTokenizer):
         ...
 
     def create_token_type_ids_from_sequences(
-        self, token_ids_0: list[int], token_ids_1: Optional[list[int]] = ...
+        self, token_ids_0: list[int], token_ids_1: list[int] | None = ...
     ) -> list[int]:
         """
         Args:
@@ -220,22 +220,22 @@ class TapexTokenizer(PreTrainedTokenizer):
         """Converts a sequence of tokens (string) in a single string."""
         ...
 
-    def save_vocabulary(self, save_directory: str, filename_prefix: Optional[str] = ...) -> tuple[str]: ...
+    def save_vocabulary(self, save_directory: str, filename_prefix: str | None = ...) -> tuple[str]: ...
     @add_end_docstrings(ENCODE_KWARGS_DOCSTRING, TAPEX_ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def __call__(
         self,
-        table: Union[pd.DataFrame, list[pd.DataFrame]] = ...,
-        query: Optional[Union[TextInput, list[TextInput]]] = ...,
-        answer: Optional[Union[str, list[str]]] = ...,
+        table: pd.DataFrame | list[pd.DataFrame] = ...,
+        query: TextInput | list[TextInput] | None = ...,
+        answer: str | list[str] | None = ...,
         add_special_tokens: bool = ...,
-        padding: Union[bool, str, PaddingStrategy] = ...,
-        truncation: Union[bool, str, TruncationStrategy] = ...,
-        max_length: Optional[int] = ...,
+        padding: bool | str | PaddingStrategy = ...,
+        truncation: bool | str | TruncationStrategy = ...,
+        max_length: int | None = ...,
         stride: int = ...,
-        pad_to_multiple_of: Optional[int] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        return_token_type_ids: Optional[bool] = ...,
-        return_attention_mask: Optional[bool] = ...,
+        pad_to_multiple_of: int | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        return_token_type_ids: bool | None = ...,
+        return_attention_mask: bool | None = ...,
         return_overflowing_tokens: bool = ...,
         return_special_tokens_mask: bool = ...,
         return_offsets_mapping: bool = ...,
@@ -259,18 +259,18 @@ class TapexTokenizer(PreTrainedTokenizer):
 
     def source_call_func(
         self,
-        table: Union[pd.DataFrame, list[pd.DataFrame]],
-        query: Optional[Union[TextInput, list[TextInput]]] = ...,
-        answer: Optional[Union[str, list[str]]] = ...,
+        table: pd.DataFrame | list[pd.DataFrame],
+        query: TextInput | list[TextInput] | None = ...,
+        answer: str | list[str] | None = ...,
         add_special_tokens: bool = ...,
-        padding: Union[bool, str, PaddingStrategy] = ...,
-        truncation: Union[bool, str, TruncationStrategy] = ...,
-        max_length: Optional[int] = ...,
+        padding: bool | str | PaddingStrategy = ...,
+        truncation: bool | str | TruncationStrategy = ...,
+        max_length: int | None = ...,
         stride: int = ...,
-        pad_to_multiple_of: Optional[int] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        return_token_type_ids: Optional[bool] = ...,
-        return_attention_mask: Optional[bool] = ...,
+        pad_to_multiple_of: int | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        return_token_type_ids: bool | None = ...,
+        return_attention_mask: bool | None = ...,
         return_overflowing_tokens: bool = ...,
         return_special_tokens_mask: bool = ...,
         return_offsets_mapping: bool = ...,
@@ -281,17 +281,17 @@ class TapexTokenizer(PreTrainedTokenizer):
     @add_end_docstrings(ENCODE_KWARGS_DOCSTRING, TAPEX_ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def batch_encode_plus(
         self,
-        table: Union[pd.DataFrame, list[pd.DataFrame]],
-        query: Optional[list[TextInput]] = ...,
-        answer: Optional[list[str]] = ...,
+        table: pd.DataFrame | list[pd.DataFrame],
+        query: list[TextInput] | None = ...,
+        answer: list[str] | None = ...,
         add_special_tokens: bool = ...,
-        padding: Union[bool, str, PaddingStrategy] = ...,
-        truncation: Optional[Union[bool, str]] = ...,
-        max_length: Optional[int] = ...,
-        pad_to_multiple_of: Optional[int] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        return_token_type_ids: Optional[bool] = ...,
-        return_attention_mask: Optional[bool] = ...,
+        padding: bool | str | PaddingStrategy = ...,
+        truncation: bool | str | None = ...,
+        max_length: int | None = ...,
+        pad_to_multiple_of: int | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        return_token_type_ids: bool | None = ...,
+        return_attention_mask: bool | None = ...,
         return_overflowing_tokens: bool = ...,
         return_special_tokens_mask: bool = ...,
         return_offsets_mapping: bool = ...,
@@ -312,13 +312,13 @@ class TapexTokenizer(PreTrainedTokenizer):
     def encode(
         self,
         table: pd.DataFrame,
-        query: Optional[TextInput] = ...,
-        answer: Optional[str] = ...,
+        query: TextInput | None = ...,
+        answer: str | None = ...,
         add_special_tokens: bool = ...,
-        padding: Union[bool, str, PaddingStrategy] = ...,
-        truncation: Union[bool, str, TruncationStrategy, TapexTruncationStrategy] = ...,
-        max_length: Optional[int] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
+        padding: bool | str | PaddingStrategy = ...,
+        truncation: bool | str | TruncationStrategy | TapexTruncationStrategy = ...,
+        max_length: int | None = ...,
+        return_tensors: str | TensorType | None = ...,
         **kwargs,
     ) -> list[int]:
         """
@@ -332,16 +332,16 @@ class TapexTokenizer(PreTrainedTokenizer):
     def encode_plus(
         self,
         table: pd.DataFrame,
-        query: Optional[TextInput] = ...,
-        answer: Optional[str] = ...,
+        query: TextInput | None = ...,
+        answer: str | None = ...,
         add_special_tokens: bool = ...,
-        padding: Union[bool, str, PaddingStrategy] = ...,
-        truncation: Optional[Union[bool, str]] = ...,
-        max_length: Optional[int] = ...,
-        pad_to_multiple_of: Optional[int] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        return_token_type_ids: Optional[bool] = ...,
-        return_attention_mask: Optional[bool] = ...,
+        padding: bool | str | PaddingStrategy = ...,
+        truncation: bool | str | None = ...,
+        max_length: int | None = ...,
+        pad_to_multiple_of: int | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        return_token_type_ids: bool | None = ...,
+        return_attention_mask: bool | None = ...,
         return_special_tokens_mask: bool = ...,
         return_offsets_mapping: bool = ...,
         return_length: bool = ...,
@@ -350,16 +350,16 @@ class TapexTokenizer(PreTrainedTokenizer):
     ) -> BatchEncoding: ...
     def target_call_func(
         self,
-        answer: Union[str, list[str]],
+        answer: str | list[str],
         add_special_tokens: bool = ...,
-        padding: Union[bool, str, PaddingStrategy] = ...,
-        truncation: Union[bool, str, TruncationStrategy] = ...,
-        max_length: Optional[int] = ...,
+        padding: bool | str | PaddingStrategy = ...,
+        truncation: bool | str | TruncationStrategy = ...,
+        max_length: int | None = ...,
         stride: int = ...,
-        pad_to_multiple_of: Optional[int] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        return_token_type_ids: Optional[bool] = ...,
-        return_attention_mask: Optional[bool] = ...,
+        pad_to_multiple_of: int | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        return_token_type_ids: bool | None = ...,
+        return_attention_mask: bool | None = ...,
         return_overflowing_tokens: bool = ...,
         return_special_tokens_mask: bool = ...,
         return_offsets_mapping: bool = ...,
@@ -380,13 +380,13 @@ class TapexTokenizer(PreTrainedTokenizer):
         self,
         answer: list[str],
         add_special_tokens: bool = ...,
-        padding: Union[bool, str, PaddingStrategy] = ...,
-        truncation: Optional[Union[bool, str]] = ...,
-        max_length: Optional[int] = ...,
-        pad_to_multiple_of: Optional[int] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        return_token_type_ids: Optional[bool] = ...,
-        return_attention_mask: Optional[bool] = ...,
+        padding: bool | str | PaddingStrategy = ...,
+        truncation: bool | str | None = ...,
+        max_length: int | None = ...,
+        pad_to_multiple_of: int | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        return_token_type_ids: bool | None = ...,
+        return_attention_mask: bool | None = ...,
         return_overflowing_tokens: bool = ...,
         return_special_tokens_mask: bool = ...,
         return_offsets_mapping: bool = ...,
@@ -407,10 +407,10 @@ class TapexTokenizer(PreTrainedTokenizer):
         self,
         answer: str,
         add_special_tokens: bool = ...,
-        padding: Union[bool, str, PaddingStrategy] = ...,
-        truncation: Union[bool, str, TruncationStrategy, TapexTruncationStrategy] = ...,
-        max_length: Optional[int] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
+        padding: bool | str | PaddingStrategy = ...,
+        truncation: bool | str | TruncationStrategy | TapexTruncationStrategy = ...,
+        max_length: int | None = ...,
+        return_tensors: str | TensorType | None = ...,
         **kwargs,
     ) -> list[int]:
         """
@@ -428,13 +428,13 @@ class TapexTokenizer(PreTrainedTokenizer):
         self,
         answer: str,
         add_special_tokens: bool = ...,
-        padding: Union[bool, str, PaddingStrategy] = ...,
-        truncation: Optional[Union[bool, str]] = ...,
-        max_length: Optional[int] = ...,
-        pad_to_multiple_of: Optional[int] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        return_token_type_ids: Optional[bool] = ...,
-        return_attention_mask: Optional[bool] = ...,
+        padding: bool | str | PaddingStrategy = ...,
+        truncation: bool | str | None = ...,
+        max_length: int | None = ...,
+        pad_to_multiple_of: int | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        return_token_type_ids: bool | None = ...,
+        return_attention_mask: bool | None = ...,
         return_special_tokens_mask: bool = ...,
         return_offsets_mapping: bool = ...,
         return_length: bool = ...,
@@ -467,7 +467,7 @@ class TapexTokenizer(PreTrainedTokenizer):
     def truncate_cell(self, cell_value):  # -> int | float | str | None:
         ...
     def truncate_table_rows(
-        self, table_content: dict, question: str, answer: Optional[Union[str, list[str]]] = ..., max_length=...
+        self, table_content: dict, question: str, answer: str | list[str] | None = ..., max_length=...
     ):  # -> None:
         """
         Args:

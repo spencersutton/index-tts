@@ -1,7 +1,8 @@
 import itertools
 import sys
-from typing import Callable, Optional, TYPE_CHECKING, TypeVar, overload
-from typing_extensions import TypeAlias
+from typing import Optional, TYPE_CHECKING, TypeVar, overload
+from collections.abc import Callable
+from typing import TypeAlias
 from ..decorators import substitute_in_graph
 from collections.abc import Iterable, Iterator
 
@@ -23,7 +24,7 @@ __all__ = [
 ]
 _T = TypeVar("_T")
 _U = TypeVar("_U")
-_Predicate: TypeAlias = Callable[[_T], object]
+type _Predicate[_T] = Callable[[_T], object]
 _T1 = TypeVar("_T1")
 _T2 = TypeVar("_T2")
 
@@ -31,7 +32,7 @@ _T2 = TypeVar("_T2")
 def chain(*iterables: Iterable[_T]) -> Iterator[_T]: ...
 @substitute_in_graph(itertools.accumulate, is_embedded_type=True)
 def accumulate(
-    iterable: Iterable[_T], func: Optional[Callable[[_T, _T], _T]] = ..., *, initial: Optional[_T] = ...
+    iterable: Iterable[_T], func: Callable[[_T, _T], _T] | None = ..., *, initial: _T | None = ...
 ) -> Iterator[_T]: ...
 @substitute_in_graph(itertools.chain.from_iterable)
 def chain_from_iterable(iterable: Iterable[Iterable[_T]], /) -> Iterator[_T]: ...

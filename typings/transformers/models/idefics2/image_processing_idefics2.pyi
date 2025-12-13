@@ -36,7 +36,7 @@ def max_across_indices(values: Iterable[Any]) -> list[Any]:
     ...
 
 def get_max_height_width(
-    images_list: list[list[np.ndarray]], input_data_format: Optional[Union[str, ChannelDimension]] = ...
+    images_list: list[list[np.ndarray]], input_data_format: str | ChannelDimension | None = ...
 ) -> list[int]:
     """
     Get the maximum height and width across all images in a batch.
@@ -44,7 +44,7 @@ def get_max_height_width(
     ...
 
 def make_pixel_mask(
-    image: np.ndarray, output_size: tuple[int, int], input_data_format: Optional[Union[str, ChannelDimension]] = ...
+    image: np.ndarray, output_size: tuple[int, int], input_data_format: str | ChannelDimension | None = ...
 ) -> np.ndarray:
     """
     Make a pixel mask for the image, where 1 indicates a valid pixel and 0 indicates padding.
@@ -110,13 +110,13 @@ class Idefics2ImageProcessor(BaseImageProcessor):
         self,
         do_convert_rgb: bool = ...,
         do_resize: bool = ...,
-        size: Optional[dict[str, int]] = ...,
+        size: dict[str, int] | None = ...,
         resample: PILImageResampling = ...,
         do_rescale: bool = ...,
         rescale_factor: float = ...,
         do_normalize: bool = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
         do_pad: bool = ...,
         do_image_splitting: bool = ...,
         **kwargs,
@@ -126,8 +126,8 @@ class Idefics2ImageProcessor(BaseImageProcessor):
         image: np.ndarray,
         size: dict[str, int],
         resample: PILImageResampling = ...,
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
         **kwargs,
     ) -> np.ndarray:
         """
@@ -151,11 +151,11 @@ class Idefics2ImageProcessor(BaseImageProcessor):
     def pad(
         self,
         images: list[np.ndarray],
-        constant_values: Union[float, Iterable[float]] = ...,
+        constant_values: float | Iterable[float] = ...,
         return_pixel_mask: bool = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        data_format: Optional[ChannelDimension] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        return_tensors: str | TensorType | None = ...,
+        data_format: ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ) -> BatchFeature:
         """
         For a list of images, for each images, pads a batch of images to the bottom and right of the image with zeros to the size of largest height and width.
@@ -183,7 +183,7 @@ class Idefics2ImageProcessor(BaseImageProcessor):
         ...
 
     def split_image(
-        self, image: np.ndarray, input_data_format: Optional[Union[str, ChannelDimension]] = ...
+        self, image: np.ndarray, input_data_format: str | ChannelDimension | None = ...
     ):  # -> list[ndarray[_AnyShape, dtype[Any]]]:
         """
         Split an image into 4 equal sub-images, and the concatenate that sequence with the original image.
@@ -201,20 +201,20 @@ class Idefics2ImageProcessor(BaseImageProcessor):
     def preprocess(
         self,
         images: ImageInput,
-        do_convert_rgb: Optional[bool] = ...,
-        do_resize: Optional[bool] = ...,
-        size: Optional[dict[str, int]] = ...,
+        do_convert_rgb: bool | None = ...,
+        do_resize: bool | None = ...,
+        size: dict[str, int] | None = ...,
         resample: PILImageResampling = ...,
-        do_rescale: Optional[bool] = ...,
-        rescale_factor: Optional[float] = ...,
-        do_normalize: Optional[bool] = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
-        do_pad: Optional[bool] = ...,
-        do_image_splitting: Optional[bool] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        input_data_format: Optional[ChannelDimension] = ...,
-        data_format: Optional[ChannelDimension] = ...,
+        do_rescale: bool | None = ...,
+        rescale_factor: float | None = ...,
+        do_normalize: bool | None = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
+        do_pad: bool | None = ...,
+        do_image_splitting: bool | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        input_data_format: ChannelDimension | None = ...,
+        data_format: ChannelDimension | None = ...,
     ):  # -> BatchFeature:
         """
         Preprocess a batch of images.

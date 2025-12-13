@@ -3,7 +3,8 @@ import torch.utils._pytree as pytree
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any, Callable, Optional, Union, TypeAlias
+from typing import Any, Optional, Union, TypeAlias
+from collections.abc import Callable
 from torch import Tensor
 from torch._C import DispatchKey
 from torch._higher_order_ops.utils import HopInstance
@@ -30,8 +31,8 @@ class ViewInfo(ABC):
 
 @dataclass
 class AsStridedViewInfo(ViewInfo):
-    size: Sequence[Union[int, torch.SymInt]]
-    stride: Sequence[Union[int, torch.SymInt]]
+    size: Sequence[int | torch.SymInt]
+    stride: Sequence[int | torch.SymInt]
     storage_offset: int
     def __init__(self, base_index, size, stride, storage_offset) -> None: ...
     def regenerate_view(self, bases_list: list[Tensor]):  # -> Tensor:
@@ -39,9 +40,9 @@ class AsStridedViewInfo(ViewInfo):
 
 @dataclass
 class SliceViewInfo(ViewInfo):
-    dim: Union[int, torch.SymInt]
-    start: Union[int, torch.SymInt]
-    end: Union[int, torch.SymInt]
+    dim: int | torch.SymInt
+    start: int | torch.SymInt
+    end: int | torch.SymInt
     def __init__(self, base_index, dim, start, end) -> None: ...
     def regenerate_view(self, bases_list: list[Tensor]):  # -> Any:
         ...
@@ -81,7 +82,7 @@ class AutoFunctionalized(HigherOrderOperator):
     def __call__(self, /, _mutable_op: OpOverload, **kwargs: Any) -> tuple[Any, tuple[Tensor, ...]]: ...
 
 auto_functionalized = ...
-_MutableOpType: TypeAlias = Union[OpOverload, HigherOrderOperator]
+type _MutableOpType = OpOverload | HigherOrderOperator
 
 class AutoFunctionalizedV2(HigherOrderOperator):
     def __init__(self) -> None: ...
@@ -89,7 +90,7 @@ class AutoFunctionalizedV2(HigherOrderOperator):
 
 auto_functionalized_v2 = ...
 
-def can_auto_functionalize(op: Union[OperatorBase, HopInstance]) -> bool: ...
+def can_auto_functionalize(op: OperatorBase | HopInstance) -> bool: ...
 def get_mutable_args_from_schema(schema: torch.FunctionSchema) -> tuple[list[str], list[torch.Type]]: ...
 def get_mutable_args(op: OpOverload) -> tuple[list[str], list[torch.Type]]: ...
 def do_auto_functionalize(
@@ -107,13 +108,13 @@ class FunctionalCallableWithEpilogue:
 
 def do_auto_functionalize_v2(
     mode: torch._subclasses.functional_tensor.FunctionalTensorMode,
-    op: Union[OpOverload, HopInstance],
+    op: OpOverload | HopInstance,
     args: tuple[Any, ...],
     kwargs: dict[str, Any],
 ) -> Any: ...
 @auto_functionalized.py_impl(DispatchKey.CompositeExplicitAutograd)
 def auto_functionalized_dense(
-    _mutable_op: OpOverload, _only_clone_these_tensors: Optional[tuple[str, ...]] = ..., **kwargs: Any
+    _mutable_op: OpOverload, _only_clone_these_tensors: tuple[str, ...] | None = ..., **kwargs: Any
 ) -> tuple[Any, tuple[Tensor, ...]]: ...
 @auto_functionalized.py_impl(FakeTensorMode)
 def auto_functionalized_fake(mode, _mutable_op: OpOverload, **kwargs: Any) -> tuple[Any, tuple[Tensor, ...]]: ...
@@ -123,7 +124,7 @@ def auto_functionalized_proxy(mode, _mutable_op: OpOverload, **kwargs: Any) -> t
 def auto_functionalized_func(ctx, _mutable_op, **kwargs): ...
 @auto_functionalized_v2.py_impl(DispatchKey.CompositeExplicitAutograd)
 def auto_functionalized_v2_dense(
-    _mutable_op: _MutableOpType, _only_clone_these_bases: Optional[tuple[int, ...]] = ..., **kwargs: Any
+    _mutable_op: _MutableOpType, _only_clone_these_bases: tuple[int, ...] | None = ..., **kwargs: Any
 ) -> tuple[Any, tuple[Tensor, ...]]: ...
 @auto_functionalized_v2.py_impl(FakeTensorMode)
 def auto_functionalized_v2_fake(

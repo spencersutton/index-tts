@@ -1,6 +1,7 @@
 import functools
 import torch
-from typing import Callable, Union
+from typing import Union
+from collections.abc import Callable
 from torch._ops import OpOverload
 
 pytree = ...
@@ -19,7 +20,7 @@ _non_kwarg_device_constructors = ...
 
 def contains_tensor_types(type):  # -> bool:
     ...
-def register_op_impl(run_impl_check: Union[Callable[[OpOverload], bool], OpOverload]):  # -> Callable[..., Any]:
+def register_op_impl(run_impl_check: Callable[[OpOverload], bool] | OpOverload):  # -> Callable[..., Any]:
     ...
 @register_op_impl(op_implementations_dict.__contains__)
 def dispatch_to_op_implementations_dict(fake_mode, func, *args, **kwargs): ...

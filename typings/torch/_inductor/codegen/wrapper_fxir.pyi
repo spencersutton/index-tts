@@ -1,7 +1,8 @@
 import dataclasses
 import sympy
 import torch
-from typing import Any, Callable, Optional, Union, TypeAlias
+from typing import Any, Optional, Union, TypeAlias
+from collections.abc import Callable
 from torch._higher_order_ops.triton_kernel_wrap import TraceableTritonKernelWrapper
 from torch._inductor.runtime.triton_heuristics import CachingAutotuner
 from torch.fx import GraphModule
@@ -16,9 +17,9 @@ log = ...
 class SymbolBuffer(CodegenSymbol):
     symbol: sympy.Symbol
     def get_name(self) -> str: ...
-    def get_example(self) -> Union[torch.Tensor, sympy.Symbol]: ...
+    def get_example(self) -> torch.Tensor | sympy.Symbol: ...
 
-CodegenBuffer: TypeAlias = Union[BufferLike, SymbolBuffer]
+type CodegenBuffer = BufferLike | SymbolBuffer
 
 @dataclasses.dataclass
 class TritonKernel:
@@ -34,9 +35,9 @@ class WrapperFxCodegen(PythonWrapperCodegen):
     def create(
         cls,
         is_subgraph: bool,
-        subgraph_name: Optional[str],
-        parent_wrapper: Optional[PythonWrapperCodegen],
-        partition_signatures: Optional[ir.GraphPartitionSignature] = ...,
+        subgraph_name: str | None,
+        parent_wrapper: PythonWrapperCodegen | None,
+        partition_signatures: ir.GraphPartitionSignature | None = ...,
     ) -> WrapperFxCodegen: ...
 
 @dataclasses.dataclass

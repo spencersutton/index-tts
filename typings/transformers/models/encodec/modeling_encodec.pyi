@@ -23,8 +23,8 @@ class EncodecOutput(ModelOutput):
         Decoded audio values, obtained using the decoder part of Encodec.
     """
 
-    audio_codes: Optional[torch.LongTensor] = ...
-    audio_values: Optional[torch.FloatTensor] = ...
+    audio_codes: torch.LongTensor | None = ...
+    audio_values: torch.FloatTensor | None = ...
 
 @dataclass
 @auto_docstring
@@ -40,9 +40,9 @@ class EncodecEncoderOutput(ModelOutput):
         encoded frames.
     """
 
-    audio_codes: Optional[torch.LongTensor] = ...
-    audio_scales: Optional[torch.FloatTensor] = ...
-    last_frame_pad_length: Optional[int] = ...
+    audio_codes: torch.LongTensor | None = ...
+    audio_scales: torch.FloatTensor | None = ...
+    last_frame_pad_length: int | None = ...
 
 @dataclass
 @auto_docstring
@@ -52,7 +52,7 @@ class EncodecDecoderOutput(ModelOutput):
         Decoded audio values, obtained using the decoder part of Encodec.
     """
 
-    audio_values: Optional[torch.FloatTensor] = ...
+    audio_values: torch.FloatTensor | None = ...
 
 class EncodecConv1d(nn.Module):
     """Conv1d with asymmetric or causal padding and normalization."""
@@ -115,11 +115,11 @@ class EncodecVectorQuantization(nn.Module):
 class EncodecResidualVectorQuantizer(nn.Module):
     """Residual Vector Quantizer."""
     def __init__(self, config: EncodecConfig) -> None: ...
-    def get_num_quantizers_for_bandwidth(self, bandwidth: Optional[float] = ...) -> int:
+    def get_num_quantizers_for_bandwidth(self, bandwidth: float | None = ...) -> int:
         """Return num_quantizers based on specified target bandwidth."""
         ...
 
-    def encode(self, embeddings: torch.Tensor, bandwidth: Optional[float] = ...) -> torch.Tensor:
+    def encode(self, embeddings: torch.Tensor, bandwidth: float | None = ...) -> torch.Tensor:
         """
         Encode a given input tensor with the specified frame rate at the given bandwidth. The RVQ encode method sets
         the appropriate number of quantizers to use and returns indices for each quantizer.
@@ -150,10 +150,10 @@ class EncodecModel(EncodecPreTrainedModel):
     def encode(
         self,
         input_values: torch.Tensor,
-        padding_mask: Optional[torch.Tensor] = ...,
-        bandwidth: Optional[float] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor, Optional[torch.Tensor], int], EncodecEncoderOutput]:
+        padding_mask: torch.Tensor | None = ...,
+        bandwidth: float | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.Tensor, torch.Tensor | None, int] | EncodecEncoderOutput:
         """
         Encodes the input audio waveform into discrete codes of shape
         `(nb_frames, batch_size, nb_quantizers, frame_len)`.
@@ -188,10 +188,10 @@ class EncodecModel(EncodecPreTrainedModel):
         self,
         audio_codes: torch.LongTensor,
         audio_scales: torch.Tensor,
-        padding_mask: Optional[torch.Tensor] = ...,
-        return_dict: Optional[bool] = ...,
-        last_frame_pad_length: Optional[int] = ...,
-    ) -> Union[tuple[torch.Tensor, torch.Tensor], EncodecDecoderOutput]:
+        padding_mask: torch.Tensor | None = ...,
+        return_dict: bool | None = ...,
+        last_frame_pad_length: int | None = ...,
+    ) -> tuple[torch.Tensor, torch.Tensor] | EncodecDecoderOutput:
         """
         Decodes the given frames into an output audio waveform.
 
@@ -217,13 +217,13 @@ class EncodecModel(EncodecPreTrainedModel):
     def forward(
         self,
         input_values: torch.FloatTensor,
-        padding_mask: Optional[torch.BoolTensor] = ...,
-        bandwidth: Optional[float] = ...,
-        audio_codes: Optional[torch.LongTensor] = ...,
-        audio_scales: Optional[torch.Tensor] = ...,
-        return_dict: Optional[bool] = ...,
-        last_frame_pad_length: Optional[int] = ...,
-    ) -> Union[tuple[torch.Tensor, torch.Tensor], EncodecOutput]:
+        padding_mask: torch.BoolTensor | None = ...,
+        bandwidth: float | None = ...,
+        audio_codes: torch.LongTensor | None = ...,
+        audio_scales: torch.Tensor | None = ...,
+        return_dict: bool | None = ...,
+        last_frame_pad_length: int | None = ...,
+    ) -> tuple[torch.Tensor, torch.Tensor] | EncodecOutput:
         r"""
         input_values (`torch.FloatTensor` of shape `(batch_size, channels, sequence_length)`, *optional*):
             Raw audio input converted to Float and padded to the appropriate length in order to be encoded using chunks

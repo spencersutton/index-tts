@@ -6,7 +6,8 @@ import random
 import flax.linen as nn
 import jax
 import jax.numpy as jnp
-from typing import Callable, Optional
+from typing import Optional
+from collections.abc import Callable
 from flax.core.frozen_dict import FrozenDict
 from jax.random import PRNGKey
 from ...modeling_flax_outputs import (
@@ -45,8 +46,8 @@ class FlaxBartAttention(nn.Module):
     def __call__(
         self,
         hidden_states: jnp.ndarray,
-        key_value_states: Optional[jnp.ndarray] = ...,
-        attention_mask: Optional[jnp.ndarray] = ...,
+        key_value_states: jnp.ndarray | None = ...,
+        attention_mask: jnp.ndarray | None = ...,
         init_cache: bool = ...,
         deterministic: bool = ...,
     ) -> tuple[jnp.ndarray]:
@@ -89,8 +90,8 @@ class FlaxBartDecoderLayer(nn.Module):
         self,
         hidden_states: jnp.ndarray,
         attention_mask: jnp.ndarray,
-        encoder_hidden_states: Optional[jnp.ndarray] = ...,
-        encoder_attention_mask: Optional[jnp.ndarray] = ...,
+        encoder_hidden_states: jnp.ndarray | None = ...,
+        encoder_attention_mask: jnp.ndarray | None = ...,
         init_cache: bool = ...,
         output_attentions: bool = ...,
         deterministic: bool = ...,
@@ -105,8 +106,8 @@ class FlaxBartDecoderLayerCollection(nn.Module):
         self,
         hidden_states,
         attention_mask,
-        encoder_hidden_states: Optional[jnp.ndarray] = ...,
-        encoder_attention_mask: Optional[jnp.ndarray] = ...,
+        encoder_hidden_states: jnp.ndarray | None = ...,
+        encoder_attention_mask: jnp.ndarray | None = ...,
         deterministic: bool = ...,
         init_cache: bool = ...,
         output_attentions: bool = ...,
@@ -156,8 +157,8 @@ class FlaxBartDecoder(nn.Module):
         input_ids,
         attention_mask,
         position_ids,
-        encoder_hidden_states: Optional[jnp.ndarray] = ...,
-        encoder_attention_mask: Optional[jnp.ndarray] = ...,
+        encoder_hidden_states: jnp.ndarray | None = ...,
+        encoder_attention_mask: jnp.ndarray | None = ...,
         init_cache: bool = ...,
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
@@ -221,13 +222,13 @@ class FlaxBartPreTrainedModel(FlaxPreTrainedModel):
     def encode(
         self,
         input_ids: jnp.ndarray,
-        attention_mask: Optional[jnp.ndarray] = ...,
-        position_ids: Optional[jnp.ndarray] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        attention_mask: jnp.ndarray | None = ...,
+        position_ids: jnp.ndarray | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         train: bool = ...,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: PRNGKey = ...,
     ):
         r"""
@@ -253,15 +254,15 @@ class FlaxBartPreTrainedModel(FlaxPreTrainedModel):
         self,
         decoder_input_ids,
         encoder_outputs,
-        encoder_attention_mask: Optional[jnp.ndarray] = ...,
-        decoder_attention_mask: Optional[jnp.ndarray] = ...,
-        decoder_position_ids: Optional[jnp.ndarray] = ...,
-        past_key_values: Optional[dict] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        encoder_attention_mask: jnp.ndarray | None = ...,
+        decoder_attention_mask: jnp.ndarray | None = ...,
+        decoder_position_ids: jnp.ndarray | None = ...,
+        past_key_values: dict | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         train: bool = ...,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: PRNGKey = ...,
     ):
         r"""
@@ -292,16 +293,16 @@ class FlaxBartPreTrainedModel(FlaxPreTrainedModel):
     def __call__(
         self,
         input_ids: jnp.ndarray,
-        attention_mask: Optional[jnp.ndarray] = ...,
-        decoder_input_ids: Optional[jnp.ndarray] = ...,
-        decoder_attention_mask: Optional[jnp.ndarray] = ...,
-        position_ids: Optional[jnp.ndarray] = ...,
-        decoder_position_ids: Optional[jnp.ndarray] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        attention_mask: jnp.ndarray | None = ...,
+        decoder_input_ids: jnp.ndarray | None = ...,
+        decoder_attention_mask: jnp.ndarray | None = ...,
+        position_ids: jnp.ndarray | None = ...,
+        decoder_position_ids: jnp.ndarray | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         train: bool = ...,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: PRNGKey = ...,
     ): ...
 
@@ -347,15 +348,15 @@ class FlaxBartForConditionalGeneration(FlaxBartPreTrainedModel):
         self,
         decoder_input_ids,
         encoder_outputs,
-        encoder_attention_mask: Optional[jnp.ndarray] = ...,
-        decoder_attention_mask: Optional[jnp.ndarray] = ...,
-        decoder_position_ids: Optional[jnp.ndarray] = ...,
-        past_key_values: Optional[dict] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        encoder_attention_mask: jnp.ndarray | None = ...,
+        decoder_attention_mask: jnp.ndarray | None = ...,
+        decoder_position_ids: jnp.ndarray | None = ...,
+        past_key_values: dict | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         train: bool = ...,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: PRNGKey = ...,
     ):  # -> FlaxCausalLMOutputWithCrossAttentions | Any:
         r"""
@@ -386,8 +387,8 @@ class FlaxBartForConditionalGeneration(FlaxBartPreTrainedModel):
         self,
         decoder_input_ids,
         max_length,
-        attention_mask: Optional[jax.Array] = ...,
-        decoder_attention_mask: Optional[jax.Array] = ...,
+        attention_mask: jax.Array | None = ...,
+        decoder_attention_mask: jax.Array | None = ...,
         encoder_outputs=...,
         **kwargs,
     ):  # -> dict[str, Any | None]:
@@ -399,7 +400,7 @@ FLAX_BART_CONDITIONAL_GENERATION_DOCSTRING = ...
 class FlaxBartForSequenceClassificationModule(nn.Module):
     config: BartConfig
     dtype: jnp.dtype = ...
-    num_labels: Optional[int] = ...
+    num_labels: int | None = ...
     def setup(self):  # -> None:
         ...
     def __call__(
@@ -489,16 +490,16 @@ class FlaxBartDecoderPreTrainedModel(FlaxPreTrainedModel):
     def __call__(
         self,
         input_ids: jnp.ndarray,
-        attention_mask: Optional[jnp.ndarray] = ...,
-        position_ids: Optional[jnp.ndarray] = ...,
-        encoder_hidden_states: Optional[jnp.ndarray] = ...,
-        encoder_attention_mask: Optional[jnp.ndarray] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        attention_mask: jnp.ndarray | None = ...,
+        position_ids: jnp.ndarray | None = ...,
+        encoder_hidden_states: jnp.ndarray | None = ...,
+        encoder_attention_mask: jnp.ndarray | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         train: bool = ...,
-        params: Optional[dict] = ...,
-        past_key_values: Optional[dict] = ...,
+        params: dict | None = ...,
+        past_key_values: dict | None = ...,
         dropout_rng: PRNGKey = ...,
     ): ...
 
@@ -527,8 +528,8 @@ class FlaxBartForCausalLMModule(nn.Module):
         input_ids,
         attention_mask,
         position_ids,
-        encoder_hidden_states: Optional[jnp.ndarray] = ...,
-        encoder_attention_mask: Optional[jnp.ndarray] = ...,
+        encoder_hidden_states: jnp.ndarray | None = ...,
+        encoder_attention_mask: jnp.ndarray | None = ...,
         init_cache: bool = ...,
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
@@ -547,7 +548,7 @@ class FlaxBartForCausalLMModule(nn.Module):
 class FlaxBartForCausalLM(FlaxBartDecoderPreTrainedModel):
     module_class = ...
     def prepare_inputs_for_generation(
-        self, input_ids, max_length, attention_mask: Optional[jax.Array] = ...
+        self, input_ids, max_length, attention_mask: jax.Array | None = ...
     ):  # -> dict[str, Any]:
         ...
     def update_inputs_for_generation(self, model_outputs, model_kwargs): ...

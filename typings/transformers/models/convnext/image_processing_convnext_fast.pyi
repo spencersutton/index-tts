@@ -21,7 +21,7 @@ class ConvNextFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
         overridden by `crop_pct` in the`preprocess` method.
     """
 
-    crop_pct: Optional[float]
+    crop_pct: float | None
     ...
 
 @auto_docstring

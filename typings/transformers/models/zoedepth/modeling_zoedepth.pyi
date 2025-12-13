@@ -28,11 +28,11 @@ class ZoeDepthDepthEstimatorOutput(ModelOutput):
         Logits for each domain (e.g. NYU and KITTI) in case multiple metric heads are used.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    predicted_depth: Optional[torch.FloatTensor] = ...
-    domain_logits: Optional[torch.FloatTensor] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
-    attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
+    loss: torch.FloatTensor | None = ...
+    predicted_depth: torch.FloatTensor | None = ...
+    domain_logits: torch.FloatTensor | None = ...
+    hidden_states: tuple[torch.FloatTensor, ...] | None = ...
+    attentions: tuple[torch.FloatTensor, ...] | None = ...
 
 class ZoeDepthReassembleStage(nn.Module):
     """
@@ -310,13 +310,13 @@ class ZoeDepthMultiheadAttention(nn.Module):
         queries: torch.Tensor,
         keys: torch.Tensor,
         values: torch.Tensor,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        output_attentions: Optional[bool] = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        output_attentions: bool | None = ...,
     ) -> tuple[torch.Tensor]: ...
 
 class ZoeDepthTransformerEncoderLayer(nn.Module):
     def __init__(self, config, dropout=..., activation=...) -> None: ...
-    def forward(self, src, src_mask: Optional[torch.Tensor] = ...):  # -> Any:
+    def forward(self, src, src_mask: torch.Tensor | None = ...):  # -> Any:
         ...
 
 class ZoeDepthPatchTransformerEncoder(nn.Module):
@@ -388,11 +388,11 @@ class ZoeDepthForDepthEstimation(ZoeDepthPreTrainedModel):
     def forward(
         self,
         pixel_values: torch.FloatTensor,
-        labels: Optional[torch.LongTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], DepthEstimatorOutput]:
+        labels: torch.LongTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.Tensor] | DepthEstimatorOutput:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size, height, width)`, *optional*):
             Ground truth depth estimation maps for computing the loss.

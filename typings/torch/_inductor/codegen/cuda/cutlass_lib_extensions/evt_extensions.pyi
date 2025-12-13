@@ -1,14 +1,15 @@
-from typing import Any, Callable, Union, TypeAlias
+from typing import Any, Union, TypeAlias
+from collections.abc import Callable
 from sympy import Expr
 from torch._inductor.ir import ComputedBuffer, InputBuffer
 from ..cutlass_utils import try_import_cutlass
 from cutlass_library import DataType, EpilogueScheduleType, TileDescription
 
-EpilogueFunctor: TypeAlias = Any
-Buffer: TypeAlias = Union[ComputedBuffer, InputBuffer]
-CutlassTupleType: TypeAlias = Any
-CutlassVisitorType: TypeAlias = Any
-CutlassArgType: TypeAlias = Any
+type EpilogueFunctor = Any
+type Buffer = ComputedBuffer | InputBuffer
+type CutlassTupleType = Any
+type CutlassVisitorType = Any
+type CutlassArgType = Any
 if try_import_cutlass():
     _CUTLASS_C_DTYPES = ...
     class EVTArgRenames:
@@ -19,7 +20,7 @@ if try_import_cutlass():
     def create_example_tensors(
         var_name_to_buffer_name: dict[str, str],
         name_to_buffer: dict[str, Buffer],
-        size_hint_fn: Callable[[Union[Expr, int]], int],
+        size_hint_fn: Callable[[Expr | int], int],
     ) -> dict[str, python_cutlass.backend.evt.ir.tensor.Tensor]: ...
     def trace(
         fn_src: str,
@@ -29,6 +30,6 @@ if try_import_cutlass():
         tile_description: TileDescription,
         epilogue_schedule: EpilogueScheduleType,
         name_to_buffer: dict[str, Buffer],
-        size_hint_fn: Callable[[Union[Expr, int]], int],
+        size_hint_fn: Callable[[Expr | int], int],
         **kwargs: dict[str, Any],
     ) -> tuple[str, str, str, EVTArgRenames]: ...

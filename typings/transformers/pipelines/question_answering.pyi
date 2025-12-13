@@ -108,17 +108,15 @@ class QuestionAnsweringPipeline(ChunkPipeline):
     handle_impossible_answer = ...
     def __init__(
         self,
-        model: Union[PreTrainedModel, TFPreTrainedModel],
+        model: PreTrainedModel | TFPreTrainedModel,
         tokenizer: PreTrainedTokenizer,
-        modelcard: Optional[ModelCard] = ...,
-        framework: Optional[str] = ...,
+        modelcard: ModelCard | None = ...,
+        framework: str | None = ...,
         task: str = ...,
         **kwargs,
     ) -> None: ...
     @staticmethod
-    def create_sample(
-        question: Union[str, list[str]], context: Union[str, list[str]]
-    ) -> Union[SquadExample, list[SquadExample]]:
+    def create_sample(question: str | list[str], context: str | list[str]) -> SquadExample | list[SquadExample]:
         """
         QuestionAnsweringPipeline leverages the [`SquadExample`] internally. This helper method encapsulate all the
         logic for converting question(s) and context(s) to [`SquadExample`].
@@ -183,11 +181,11 @@ class QuestionAnsweringPipeline(ChunkPipeline):
         self, model_outputs, top_k=..., handle_impossible_answer=..., max_answer_len=..., align_to_words=...
     ):  # -> list[Any]:
         ...
-    def get_answer(self, answers: list[dict], target: str) -> Optional[dict]: ...
+    def get_answer(self, answers: list[dict], target: str) -> dict | None: ...
     def get_indices(
         self, enc: tokenizers.Encoding, s: int, e: int, sequence_index: int, align_to_words: bool
     ) -> tuple[int, int]: ...
-    def span_to_answer(self, text: str, start: int, end: int) -> dict[str, Union[str, int]]:
+    def span_to_answer(self, text: str, start: int, end: int) -> dict[str, str | int]:
         """
         When decoding from token probabilities, this method maps token indexes to actual word in the initial context.
 

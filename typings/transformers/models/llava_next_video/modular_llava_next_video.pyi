@@ -121,7 +121,7 @@ class LlavaNextVideoModelOutputWithPast(LlavaNextModelOutputWithPast):
         video_hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
     """
 
-    video_hidden_states: Optional[torch.FloatTensor] = ...
+    video_hidden_states: torch.FloatTensor | None = ...
 
 class LlavaNextVideoCausalLMOutputWithPast(LlavaNextCausalLMOutputWithPast):
     r"""
@@ -143,7 +143,7 @@ class LlavaNextVideoCausalLMOutputWithPast(LlavaNextCausalLMOutputWithPast):
         video_hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
     """
 
-    video_hidden_states: Optional[torch.FloatTensor] = ...
+    video_hidden_states: torch.FloatTensor | None = ...
 
 class LlavaNextVideoPooler(nn.Module):
     def __init__(self, config) -> None: ...
@@ -158,8 +158,8 @@ class LlavaNextVideoModel(LlavaNextModel):
         self,
         pixel_values: torch.FloatTensor,
         image_sizes: torch.Tensor,
-        vision_feature_layer: Optional[Union[int, list[int]]] = ...,
-        vision_feature_select_strategy: Optional[str] = ...,
+        vision_feature_layer: int | list[int] | None = ...,
+        vision_feature_select_strategy: str | None = ...,
     ):  # -> list[Any]:
         """
         Obtains image last hidden states from the vision tower and apply multimodal projection.
@@ -185,8 +185,8 @@ class LlavaNextVideoModel(LlavaNextModel):
     def get_video_features(
         self,
         pixel_values: torch.FloatTensor,
-        vision_feature_layer: Optional[Union[int, list[int]]] = ...,
-        vision_feature_select_strategy: Optional[str] = ...,
+        vision_feature_layer: int | list[int] | None = ...,
+        vision_feature_select_strategy: str | None = ...,
     ):  # -> tuple[Tensor, ...]:
         """
         Obtains video last hidden states from the vision tower and apply multimodal projection.
@@ -225,27 +225,27 @@ class LlavaNextVideoModel(LlavaNextModel):
         input_ids: torch.LongTensor = ...,
         pixel_values: torch.FloatTensor = ...,
         pixel_values_videos: torch.FloatTensor = ...,
-        image_sizes: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        vision_feature_layer: Optional[Union[int, list[int]]] = ...,
-        vision_feature_select_strategy: Optional[str] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        image_sizes: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        vision_feature_layer: int | list[int] | None = ...,
+        vision_feature_select_strategy: str | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> Union[tuple, LlavaNextVideoModelOutputWithPast]: ...
+    ) -> tuple | LlavaNextVideoModelOutputWithPast: ...
 
 class LlavaNextVideoForConditionalGeneration(LlavaNextForConditionalGeneration):
     def get_video_features(
         self,
         pixel_values: torch.FloatTensor,
-        vision_feature_layer: Optional[Union[int, list[int]]] = ...,
-        vision_feature_select_strategy: Optional[str] = ...,
+        vision_feature_layer: int | list[int] | None = ...,
+        vision_feature_select_strategy: str | None = ...,
     ):  # -> Any:
         ...
     def forward(
@@ -253,22 +253,22 @@ class LlavaNextVideoForConditionalGeneration(LlavaNextForConditionalGeneration):
         input_ids: torch.LongTensor = ...,
         pixel_values: torch.FloatTensor = ...,
         pixel_values_videos: torch.FloatTensor = ...,
-        image_sizes: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        vision_feature_layer: Optional[Union[int, list[int]]] = ...,
-        vision_feature_select_strategy: Optional[str] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        logits_to_keep: Union[int, torch.Tensor] = ...,
+        image_sizes: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        vision_feature_layer: int | list[int] | None = ...,
+        vision_feature_select_strategy: str | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        logits_to_keep: int | torch.Tensor = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> Union[tuple, LlavaNextVideoCausalLMOutputWithPast]:
+    ) -> tuple | LlavaNextVideoCausalLMOutputWithPast:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
             Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,

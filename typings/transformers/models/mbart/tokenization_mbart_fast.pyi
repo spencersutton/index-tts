@@ -65,7 +65,7 @@ class MBartTokenizerFast(PreTrainedTokenizerFast):
     @src_lang.setter
     def src_lang(self, new_src_lang: str) -> None: ...
     def build_inputs_with_special_tokens(
-        self, token_ids_0: list[int], token_ids_1: Optional[list[int]] = ...
+        self, token_ids_0: list[int], token_ids_1: list[int] | None = ...
     ) -> list[int]:
         """
         Build model inputs from a sequence or a pair of sequence for sequence classification tasks by concatenating and
@@ -91,7 +91,7 @@ class MBartTokenizerFast(PreTrainedTokenizerFast):
         ...
 
     def create_token_type_ids_from_sequences(
-        self, token_ids_0: list[int], token_ids_1: Optional[list[int]] = ...
+        self, token_ids_0: list[int], token_ids_1: list[int] | None = ...
     ) -> list[int]:
         """
         Create a mask from the two sequences passed to be used in a sequence-pair classification task. mBART does not
@@ -113,7 +113,7 @@ class MBartTokenizerFast(PreTrainedTokenizerFast):
         self,
         src_texts: list[str],
         src_lang: str = ...,
-        tgt_texts: Optional[list[str]] = ...,
+        tgt_texts: list[str] | None = ...,
         tgt_lang: str = ...,
         **kwargs,
     ) -> BatchEncoding: ...
@@ -125,6 +125,6 @@ class MBartTokenizerFast(PreTrainedTokenizerFast):
         """Reset the special tokens to the target language setting. No prefix and suffix=[eos, tgt_lang_code]."""
         ...
 
-    def save_vocabulary(self, save_directory: str, filename_prefix: Optional[str] = ...) -> tuple[str]: ...
+    def save_vocabulary(self, save_directory: str, filename_prefix: str | None = ...) -> tuple[str]: ...
 
 __all__ = ["MBartTokenizerFast"]

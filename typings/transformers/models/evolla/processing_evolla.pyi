@@ -40,10 +40,10 @@ class EvollaProcessor(ProcessorMixin):
     def process_text(self, texts, text_max_length: int = ...): ...
     def __call__(
         self,
-        proteins: Optional[Union[list[dict], dict]] = ...,
-        messages_list: Optional[Union[list[list[dict]], list[dict]]] = ...,
-        protein_max_length: Optional[int] = ...,
-        text_max_length: Optional[int] = ...,
+        proteins: list[dict] | dict | None = ...,
+        messages_list: list[list[dict]] | list[dict] | None = ...,
+        protein_max_length: int | None = ...,
+        text_max_length: int | None = ...,
         **kwargs,
     ):  # -> BatchFeature:
         r"""This method takes batched or non-batched proteins and messages_list and converts them into format that can be used by

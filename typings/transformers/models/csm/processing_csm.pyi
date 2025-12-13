@@ -13,7 +13,7 @@ if is_torch_available(): ...
 if is_soundfile_available(): ...
 
 class CsmAudioKwargs(AudioKwargs, total=False):
-    encoded_length_kwargs: Optional[dict[str, Any]]
+    encoded_length_kwargs: dict[str, Any] | None
     ...
 
 class CsmProcessorKwargs(ProcessingKwargs, total=False):
@@ -63,16 +63,16 @@ class CsmProcessor(ProcessorMixin):
     def save_audio(
         self,
         audio: AudioInput,
-        saving_path: Union[str, Path, list[Union[str, Path]]],
+        saving_path: str | Path | list[str | Path],
         **kwargs: Unpack[CsmProcessorKwargs],
     ):  # -> None:
         ...
     def __call__(
         self,
-        text: Optional[Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]]],
-        audio: Optional[AudioInput] = ...,
-        output_labels: Optional[bool] = ...,
-        depth_decoder_labels_ratio: Optional[float] = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] | None,
+        audio: AudioInput | None = ...,
+        output_labels: bool | None = ...,
+        depth_decoder_labels_ratio: float | None = ...,
         **kwargs: Unpack[CsmProcessorKwargs],
     ):  # -> BatchFeature:
         r"""

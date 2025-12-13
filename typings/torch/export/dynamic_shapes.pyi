@@ -94,7 +94,7 @@ class _RelaxedConstraint(_ConstraintTarget):
     @property
     def serializable_spec(self) -> dict[str, int]: ...
 
-Constraint: TypeAlias = _Constraint | _DerivedConstraint | _RelaxedConstraint
+type Constraint = _Constraint | _DerivedConstraint | _RelaxedConstraint
 
 @dataclasses.dataclass
 class _IntWrapper:

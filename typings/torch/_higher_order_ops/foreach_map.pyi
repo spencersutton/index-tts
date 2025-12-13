@@ -1,4 +1,5 @@
-from typing import Any, Callable
+from typing import Any
+from collections.abc import Callable
 from torch._higher_order_ops.base_hop import BaseHOP
 
 class ForeachMap(BaseHOP):

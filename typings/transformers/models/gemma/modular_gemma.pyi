@@ -176,7 +176,7 @@ class GemmaTokenizer(LlamaTokenizer, PreTrainedTokenizer):
         bos_token=...,
         eos_token=...,
         pad_token=...,
-        sp_model_kwargs: Optional[dict[str, Any]] = ...,
+        sp_model_kwargs: dict[str, Any] | None = ...,
         add_bos_token=...,
         add_eos_token=...,
         clean_up_tokenization_spaces=...,
@@ -210,13 +210,13 @@ class GemmaMLP(LlamaMLP):
 class GemmaModel(LlamaModel):
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Unpack[TransformersKwargs],
     ) -> BaseModelOutputWithPast: ...
 

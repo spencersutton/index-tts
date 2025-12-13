@@ -111,14 +111,14 @@ class AutomaticSpeechRecognitionPipeline(ChunkPipeline):
     def __init__(
         self,
         model: PreTrainedModel,
-        feature_extractor: Union[SequenceFeatureExtractor, str] = ...,
-        tokenizer: Optional[PreTrainedTokenizer] = ...,
-        decoder: Optional[Union[BeamSearchDecoderCTC, str]] = ...,
-        device: Union[int, torch.device] = ...,
-        torch_dtype: Optional[Union[str, torch.dtype]] = ...,
+        feature_extractor: SequenceFeatureExtractor | str = ...,
+        tokenizer: PreTrainedTokenizer | None = ...,
+        decoder: BeamSearchDecoderCTC | str | None = ...,
+        device: int | torch.device = ...,
+        torch_dtype: str | torch.dtype | None = ...,
         **kwargs,
     ) -> None: ...
-    def __call__(self, inputs: Union[np.ndarray, bytes, str, dict], **kwargs: Any) -> list[dict[str, Any]]:
+    def __call__(self, inputs: np.ndarray | bytes | str | dict, **kwargs: Any) -> list[dict[str, Any]]:
         """
         Transcribe the audio sequence(s) given as inputs to text. See the [`AutomaticSpeechRecognitionPipeline`]
         documentation for more information.
@@ -179,6 +179,6 @@ class AutomaticSpeechRecognitionPipeline(ChunkPipeline):
 
     def preprocess(self, inputs, chunk_length_s=..., stride_length_s=...): ...
     def postprocess(
-        self, model_outputs, decoder_kwargs: Optional[dict] = ..., return_timestamps=..., return_language=...
+        self, model_outputs, decoder_kwargs: dict | None = ..., return_timestamps=..., return_language=...
     ):  # -> dict[str | Any, Any | str | list[Any]]:
         ...

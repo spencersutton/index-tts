@@ -53,7 +53,7 @@ class ErnieMTokenizer(PreTrainedTokenizer):
         pad_token=...,
         cls_token=...,
         mask_token=...,
-        sp_model_kwargs: Optional[dict[str, Any]] = ...,
+        sp_model_kwargs: dict[str, Any] | None = ...,
         **kwargs,
     ) -> None: ...
     def get_offset_mapping(self, text):  # -> list[Any] | None:
@@ -136,7 +136,7 @@ class ErnieMTokenizer(PreTrainedTokenizer):
         ...
 
     def create_token_type_ids_from_sequences(
-        self, token_ids_0: list[int], token_ids_1: Optional[list[int]] = ...
+        self, token_ids_0: list[int], token_ids_1: list[int] | None = ...
     ) -> list[int]:
         """
         Create the token type IDs corresponding to the sequences passed. [What are token type
@@ -179,6 +179,6 @@ class ErnieMTokenizer(PreTrainedTokenizer):
 
     def load_vocab(self, filepath):  # -> dict[Any, Any]:
         ...
-    def save_vocabulary(self, save_directory: str, filename_prefix: Optional[str] = ...) -> tuple[str]: ...
+    def save_vocabulary(self, save_directory: str, filename_prefix: str | None = ...) -> tuple[str]: ...
 
 __all__ = ["ErnieMTokenizer"]

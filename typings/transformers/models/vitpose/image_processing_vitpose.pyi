@@ -18,7 +18,7 @@ if TYPE_CHECKING: ...
 logger = ...
 
 def box_to_center_and_scale(
-    box: Union[tuple, list, np.ndarray],
+    box: tuple | list | np.ndarray,
     image_width: int,
     image_height: int,
     normalize_factor: float = ...,
@@ -189,12 +189,12 @@ class VitPoseImageProcessor(BaseImageProcessor):
     def __init__(
         self,
         do_affine_transform: bool = ...,
-        size: Optional[dict[str, int]] = ...,
+        size: dict[str, int] | None = ...,
         do_rescale: bool = ...,
-        rescale_factor: Union[int, float] = ...,
+        rescale_factor: int | float = ...,
         do_normalize: bool = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
         **kwargs,
     ) -> None: ...
     def affine_transform(
@@ -204,8 +204,8 @@ class VitPoseImageProcessor(BaseImageProcessor):
         scale: tuple[float],
         rotation: float,
         size: dict[str, int],
-        data_format: Optional[ChannelDimension] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        data_format: ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ) -> np.array:
         """
         Apply an affine transformation to an image.
@@ -231,17 +231,17 @@ class VitPoseImageProcessor(BaseImageProcessor):
     def preprocess(
         self,
         images: ImageInput,
-        boxes: Union[list[list[float]], np.ndarray],
-        do_affine_transform: Optional[bool] = ...,
-        size: Optional[dict[str, int]] = ...,
-        do_rescale: Optional[bool] = ...,
-        rescale_factor: Optional[float] = ...,
-        do_normalize: Optional[bool] = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
-        data_format: Union[str, ChannelDimension] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        boxes: list[list[float]] | np.ndarray,
+        do_affine_transform: bool | None = ...,
+        size: dict[str, int] | None = ...,
+        do_rescale: bool | None = ...,
+        rescale_factor: float | None = ...,
+        do_normalize: bool | None = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
+        return_tensors: str | TensorType | None = ...,
+        data_format: str | ChannelDimension = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ) -> PIL.Image.Image:
         """
         Preprocess an image or batch of images.
@@ -317,10 +317,10 @@ class VitPoseImageProcessor(BaseImageProcessor):
     def post_process_pose_estimation(
         self,
         outputs: VitPoseEstimatorOutput,
-        boxes: Union[list[list[list[float]]], np.ndarray],
+        boxes: list[list[list[float]]] | np.ndarray,
         kernel_size: int = ...,
-        threshold: Optional[float] = ...,
-        target_sizes: Union[TensorType, list[tuple]] = ...,
+        threshold: float | None = ...,
+        target_sizes: TensorType | list[tuple] = ...,
     ):  # -> list[list[dict[str, Tensor]]]:
         """
         Transform the heatmaps into keypoint predictions and transform them back to the image.

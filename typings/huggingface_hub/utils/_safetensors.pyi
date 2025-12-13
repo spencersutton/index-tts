@@ -27,8 +27,8 @@ class TensorInfo:
     """
 
     dtype: DTYPE_T
-    shape: List[int]
-    data_offsets: Tuple[int, int]
+    shape: list[int]
+    data_offsets: tuple[int, int]
     parameter_count: int = ...
     def __post_init__(self) -> None: ...
 
@@ -51,9 +51,9 @@ class SafetensorsFileMetadata:
             of that data type.
     """
 
-    metadata: Dict[str, str]
-    tensors: Dict[TENSOR_NAME_T, TensorInfo]
-    parameter_count: Dict[DTYPE_T, int] = ...
+    metadata: dict[str, str]
+    tensors: dict[TENSOR_NAME_T, TensorInfo]
+    parameter_count: dict[DTYPE_T, int] = ...
     def __post_init__(self) -> None: ...
 
 @dataclass
@@ -83,9 +83,9 @@ class SafetensorsRepoMetadata:
             of that data type.
     """
 
-    metadata: Optional[Dict]
+    metadata: dict | None
     sharded: bool
-    weight_map: Dict[TENSOR_NAME_T, FILENAME_T]
-    files_metadata: Dict[FILENAME_T, SafetensorsFileMetadata]
-    parameter_count: Dict[DTYPE_T, int] = ...
+    weight_map: dict[TENSOR_NAME_T, FILENAME_T]
+    files_metadata: dict[FILENAME_T, SafetensorsFileMetadata]
+    parameter_count: dict[DTYPE_T, int] = ...
     def __post_init__(self) -> None: ...

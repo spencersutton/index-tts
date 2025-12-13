@@ -31,11 +31,11 @@ class MobileNetV1ConvLayer(nn.Module):
         in_channels: int,
         out_channels: int,
         kernel_size: int,
-        stride: Optional[int] = ...,
-        groups: Optional[int] = ...,
+        stride: int | None = ...,
+        groups: int | None = ...,
         bias: bool = ...,
-        use_normalization: Optional[bool] = ...,
-        use_activation: Optional[bool or str] = ...,
+        use_normalization: bool | None = ...,
+        use_activation: (bool or str) | None = ...,
     ) -> None: ...
     def forward(self, features: torch.Tensor) -> torch.Tensor: ...
 
@@ -60,10 +60,10 @@ class MobileNetV1Model(MobileNetV1PreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.Tensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPoolingAndNoAttention]: ...
+        pixel_values: torch.Tensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutputWithPoolingAndNoAttention: ...
 
 @auto_docstring(
     custom_intro="""
@@ -76,11 +76,11 @@ class MobileNetV1ForImageClassification(MobileNetV1PreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.Tensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ImageClassifierOutputWithNoAttention]:
+        pixel_values: torch.Tensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        labels: torch.Tensor | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | ImageClassifierOutputWithNoAttention:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the image classification/regression loss. Indices should be in `[0, ...,

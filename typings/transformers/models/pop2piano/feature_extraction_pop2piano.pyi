@@ -113,7 +113,7 @@ class Pop2PianoFeatureExtractor(SequenceFeatureExtractor):
         inputs: BatchFeature,
         is_batched: bool,
         return_attention_mask: bool,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
+        return_tensors: str | TensorType | None = ...,
     ):  # -> BatchFeature:
         """
         Pads the inputs to same length and returns attention_mask.
@@ -153,12 +153,12 @@ class Pop2PianoFeatureExtractor(SequenceFeatureExtractor):
 
     def __call__(
         self,
-        audio: Union[np.ndarray, list[float], list[np.ndarray], list[list[float]]],
-        sampling_rate: Union[int, list[int]],
+        audio: np.ndarray | list[float] | list[np.ndarray] | list[list[float]],
+        sampling_rate: int | list[int],
         steps_per_beat: int = ...,
-        resample: Optional[bool] = ...,
-        return_attention_mask: Optional[bool] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
+        resample: bool | None = ...,
+        return_attention_mask: bool | None = ...,
+        return_tensors: str | TensorType | None = ...,
         **kwargs,
     ) -> BatchFeature:
         """

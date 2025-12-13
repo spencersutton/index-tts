@@ -29,8 +29,8 @@ class Redistribute(torch.autograd.Function):
         device_mesh: DeviceMesh,
         placements: tuple[Placement, ...],
         async_op: bool = ...,
-        forward_dtype: Optional[torch.dtype] = ...,
-        backward_dtype: Optional[torch.dtype] = ...,
+        forward_dtype: torch.dtype | None = ...,
+        backward_dtype: torch.dtype | None = ...,
     ):  # -> DTensor:
         ...
     @staticmethod

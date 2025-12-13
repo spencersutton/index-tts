@@ -45,8 +45,8 @@ class FlaxCLIPTextModelOutput(ModelOutput):
 
     text_embeds: jnp.ndarray = ...
     last_hidden_state: jnp.ndarray = ...
-    hidden_states: Optional[tuple[jnp.ndarray, ...]] = ...
-    attentions: Optional[tuple[jnp.ndarray, ...]] = ...
+    hidden_states: tuple[jnp.ndarray, ...] | None = ...
+    attentions: tuple[jnp.ndarray, ...] | None = ...
 
 @flax.struct.dataclass
 class FlaxCLIPOutput(ModelOutput):
@@ -93,7 +93,7 @@ class FlaxCLIPTextEmbeddings(nn.Module):
     def __call__(self, input_ids, position_ids): ...
 
 class FlaxCLIPAttention(nn.Module):
-    config: Union[CLIPTextConfig, CLIPVisionConfig]
+    config: CLIPTextConfig | CLIPVisionConfig
     dtype: jnp.dtype = ...
     def setup(self):  # -> None:
         ...
@@ -103,14 +103,14 @@ class FlaxCLIPAttention(nn.Module):
         ...
 
 class FlaxCLIPMLP(nn.Module):
-    config: Union[CLIPTextConfig, CLIPVisionConfig]
+    config: CLIPTextConfig | CLIPVisionConfig
     dtype: jnp.dtype = ...
     def setup(self):  # -> None:
         ...
     def __call__(self, hidden_states): ...
 
 class FlaxCLIPEncoderLayer(nn.Module):
-    config: Union[CLIPTextConfig, CLIPVisionConfig]
+    config: CLIPTextConfig | CLIPVisionConfig
     dtype: jnp.dtype = ...
     def setup(self):  # -> None:
         ...
@@ -120,7 +120,7 @@ class FlaxCLIPEncoderLayer(nn.Module):
         ...
 
 class FlaxCLIPLayerCollection(nn.Module):
-    config: Union[CLIPTextConfig, CLIPVisionConfig]
+    config: CLIPTextConfig | CLIPVisionConfig
     dtype: jnp.dtype = ...
     def setup(self):  # -> None:
         ...
@@ -136,7 +136,7 @@ class FlaxCLIPLayerCollection(nn.Module):
         ...
 
 class FlaxCLIPEncoder(nn.Module):
-    config: Union[CLIPTextConfig, CLIPVisionConfig]
+    config: CLIPTextConfig | CLIPVisionConfig
     dtype: jnp.dtype = ...
     def setup(self):  # -> None:
         ...
@@ -201,12 +201,12 @@ class FlaxCLIPTextPreTrainedModel(FlaxPreTrainedModel):
         input_ids,
         attention_mask=...,
         position_ids=...,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: jax.random.PRNGKey = ...,
         train: bool = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
     ): ...
 
 class FlaxCLIPVisionPreTrainedModel(FlaxPreTrainedModel):
@@ -216,7 +216,7 @@ class FlaxCLIPVisionPreTrainedModel(FlaxPreTrainedModel):
     def __init__(
         self,
         config: CLIPVisionConfig,
-        input_shape: Optional[tuple] = ...,
+        input_shape: tuple | None = ...,
         seed: int = ...,
         dtype: jnp.dtype = ...,
         _do_init: bool = ...,
@@ -226,12 +226,12 @@ class FlaxCLIPVisionPreTrainedModel(FlaxPreTrainedModel):
     def __call__(
         self,
         pixel_values,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: jax.random.PRNGKey = ...,
         train: bool = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
     ): ...
 
 class FlaxCLIPPreTrainedModel(FlaxPreTrainedModel):
@@ -240,7 +240,7 @@ class FlaxCLIPPreTrainedModel(FlaxPreTrainedModel):
     def __init__(
         self,
         config: CLIPConfig,
-        input_shape: Optional[tuple] = ...,
+        input_shape: tuple | None = ...,
         seed: int = ...,
         dtype: jnp.dtype = ...,
         _do_init: bool = ...,
@@ -253,19 +253,19 @@ class FlaxCLIPPreTrainedModel(FlaxPreTrainedModel):
         pixel_values,
         attention_mask=...,
         position_ids=...,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: jax.random.PRNGKey = ...,
         train: bool = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
     ): ...
     def get_text_features(
         self,
         input_ids,
         attention_mask=...,
         position_ids=...,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: jax.random.PRNGKey = ...,
         train=...,
     ):
@@ -298,7 +298,7 @@ class FlaxCLIPPreTrainedModel(FlaxPreTrainedModel):
         ...
 
     def get_image_features(
-        self, pixel_values, params: Optional[dict] = ..., dropout_rng: jax.random.PRNGKey = ..., train=...
+        self, pixel_values, params: dict | None = ..., dropout_rng: jax.random.PRNGKey = ..., train=...
     ):
         r"""
         Args:

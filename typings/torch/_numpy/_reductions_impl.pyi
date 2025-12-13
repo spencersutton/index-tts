@@ -11,20 +11,16 @@ if TYPE_CHECKING: ...
 @_deco_axis_expand
 def count_nonzero(a: ArrayLike, axis: AxisLike = ..., *, keepdims: KeepDims = ...): ...
 @_deco_axis_expand
-def argmax(
-    a: ArrayLike, axis: AxisLike = ..., out: Optional[OutArray] = ..., *, keepdims: KeepDims = ...
-):  # -> Tensor:
+def argmax(a: ArrayLike, axis: AxisLike = ..., out: OutArray | None = ..., *, keepdims: KeepDims = ...):  # -> Tensor:
     ...
 @_deco_axis_expand
-def argmin(
-    a: ArrayLike, axis: AxisLike = ..., out: Optional[OutArray] = ..., *, keepdims: KeepDims = ...
-):  # -> Tensor:
+def argmin(a: ArrayLike, axis: AxisLike = ..., out: OutArray | None = ..., *, keepdims: KeepDims = ...):  # -> Tensor:
     ...
 @_deco_axis_expand
 def any(
     a: ArrayLike,
     axis: AxisLike = ...,
-    out: Optional[OutArray] = ...,
+    out: OutArray | None = ...,
     keepdims: KeepDims = ...,
     *,
     where: NotImplementedType = ...,
@@ -33,7 +29,7 @@ def any(
 def all(
     a: ArrayLike,
     axis: AxisLike = ...,
-    out: Optional[OutArray] = ...,
+    out: OutArray | None = ...,
     keepdims: KeepDims = ...,
     *,
     where: NotImplementedType = ...,
@@ -42,7 +38,7 @@ def all(
 def amax(
     a: ArrayLike,
     axis: AxisLike = ...,
-    out: Optional[OutArray] = ...,
+    out: OutArray | None = ...,
     keepdims: KeepDims = ...,
     initial: NotImplementedType = ...,
     where: NotImplementedType = ...,
@@ -54,7 +50,7 @@ max = ...
 def amin(
     a: ArrayLike,
     axis: AxisLike = ...,
-    out: Optional[OutArray] = ...,
+    out: OutArray | None = ...,
     keepdims: KeepDims = ...,
     initial: NotImplementedType = ...,
     where: NotImplementedType = ...,
@@ -63,13 +59,13 @@ def amin(
 min = ...
 
 @_deco_axis_expand
-def ptp(a: ArrayLike, axis: AxisLike = ..., out: Optional[OutArray] = ..., keepdims: KeepDims = ...): ...
+def ptp(a: ArrayLike, axis: AxisLike = ..., out: OutArray | None = ..., keepdims: KeepDims = ...): ...
 @_deco_axis_expand
 def sum(
     a: ArrayLike,
     axis: AxisLike = ...,
-    dtype: Optional[DTypeLike] = ...,
-    out: Optional[OutArray] = ...,
+    dtype: DTypeLike | None = ...,
+    out: OutArray | None = ...,
     keepdims: KeepDims = ...,
     initial: NotImplementedType = ...,
     where: NotImplementedType = ...,
@@ -78,8 +74,8 @@ def sum(
 def prod(
     a: ArrayLike,
     axis: AxisLike = ...,
-    dtype: Optional[DTypeLike] = ...,
-    out: Optional[OutArray] = ...,
+    dtype: DTypeLike | None = ...,
+    out: OutArray | None = ...,
     keepdims: KeepDims = ...,
     initial: NotImplementedType = ...,
     where: NotImplementedType = ...,
@@ -91,8 +87,8 @@ product = ...
 def mean(
     a: ArrayLike,
     axis: AxisLike = ...,
-    dtype: Optional[DTypeLike] = ...,
-    out: Optional[OutArray] = ...,
+    dtype: DTypeLike | None = ...,
+    out: OutArray | None = ...,
     keepdims: KeepDims = ...,
     *,
     where: NotImplementedType = ...,
@@ -101,8 +97,8 @@ def mean(
 def std(
     a: ArrayLike,
     axis: AxisLike = ...,
-    dtype: Optional[DTypeLike] = ...,
-    out: Optional[OutArray] = ...,
+    dtype: DTypeLike | None = ...,
+    out: OutArray | None = ...,
     ddof=...,
     keepdims: KeepDims = ...,
     *,
@@ -112,15 +108,15 @@ def std(
 def var(
     a: ArrayLike,
     axis: AxisLike = ...,
-    dtype: Optional[DTypeLike] = ...,
-    out: Optional[OutArray] = ...,
+    dtype: DTypeLike | None = ...,
+    out: OutArray | None = ...,
     ddof=...,
     keepdims: KeepDims = ...,
     *,
     where: NotImplementedType = ...,
 ): ...
-def cumsum(a: ArrayLike, axis: AxisLike = ..., dtype: Optional[DTypeLike] = ..., out: Optional[OutArray] = ...): ...
-def cumprod(a: ArrayLike, axis: AxisLike = ..., dtype: Optional[DTypeLike] = ..., out: Optional[OutArray] = ...): ...
+def cumsum(a: ArrayLike, axis: AxisLike = ..., dtype: DTypeLike | None = ..., out: OutArray | None = ...): ...
+def cumprod(a: ArrayLike, axis: AxisLike = ..., dtype: DTypeLike | None = ..., out: OutArray | None = ...): ...
 
 cumproduct = ...
 
@@ -132,7 +128,7 @@ def quantile(
     a: ArrayLike,
     q: ArrayLike,
     axis: AxisLike = ...,
-    out: Optional[OutArray] = ...,
+    out: OutArray | None = ...,
     overwrite_input=...,
     method=...,
     keepdims: KeepDims = ...,
@@ -143,11 +139,11 @@ def percentile(
     a: ArrayLike,
     q: ArrayLike,
     axis: AxisLike = ...,
-    out: Optional[OutArray] = ...,
+    out: OutArray | None = ...,
     overwrite_input=...,
     method=...,
     keepdims: KeepDims = ...,
     *,
     interpolation: NotImplementedType = ...,
 ): ...
-def median(a: ArrayLike, axis=..., out: Optional[OutArray] = ..., overwrite_input=..., keepdims: KeepDims = ...): ...
+def median(a: ArrayLike, axis=..., out: OutArray | None = ..., overwrite_input=..., keepdims: KeepDims = ...): ...

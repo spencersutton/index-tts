@@ -21,7 +21,7 @@ class PixtralFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
         Size of the patches in the model, used to calculate the output image size. Can be overridden by `patch_size` in the `preprocess` method.
     """
 
-    patch_size: Optional[dict[str, int]]
+    patch_size: dict[str, int] | None
     ...
 
 @auto_docstring

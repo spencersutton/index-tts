@@ -29,7 +29,7 @@ class JobStage(str, Enum):
 @dataclass
 class JobStatus:
     stage: JobStage
-    message: Optional[str]
+    message: str | None
     ...
 
 @dataclass
@@ -92,14 +92,14 @@ class JobInfo:
     """
 
     id: str
-    created_at: Optional[datetime]
-    docker_image: Optional[str]
-    space_id: Optional[str]
-    command: Optional[List[str]]
-    arguments: Optional[List[str]]
-    environment: Optional[Dict[str, Any]]
-    secrets: Optional[Dict[str, Any]]
-    flavor: Optional[SpaceHardware]
+    created_at: datetime | None
+    docker_image: str | None
+    space_id: str | None
+    command: list[str] | None
+    arguments: list[str] | None
+    environment: dict[str, Any] | None
+    secrets: dict[str, Any] | None
+    flavor: SpaceHardware | None
     status: JobStatus
     owner: JobOwner
     endpoint: str
@@ -108,16 +108,16 @@ class JobInfo:
 
 @dataclass
 class JobSpec:
-    docker_image: Optional[str]
-    space_id: Optional[str]
-    command: Optional[List[str]]
-    arguments: Optional[List[str]]
-    environment: Optional[Dict[str, Any]]
-    secrets: Optional[Dict[str, Any]]
-    flavor: Optional[SpaceHardware]
-    timeout: Optional[int]
-    tags: Optional[List[str]]
-    arch: Optional[str]
+    docker_image: str | None
+    space_id: str | None
+    command: list[str] | None
+    arguments: list[str] | None
+    environment: dict[str, Any] | None
+    secrets: dict[str, Any] | None
+    flavor: SpaceHardware | None
+    timeout: int | None
+    tags: list[str] | None
+    arch: str | None
     def __init__(self, **kwargs) -> None: ...
 
 @dataclass
@@ -128,8 +128,8 @@ class LastJobInfo:
 
 @dataclass
 class ScheduledJobStatus:
-    last_job: Optional[LastJobInfo]
-    next_job_run_at: Optional[datetime]
+    last_job: LastJobInfo | None
+    next_job_run_at: datetime | None
     def __init__(self, **kwargs) -> None: ...
 
 @dataclass
@@ -175,11 +175,11 @@ class ScheduledJobInfo:
     """
 
     id: str
-    created_at: Optional[datetime]
+    created_at: datetime | None
     job_spec: JobSpec
-    schedule: Optional[str]
-    suspend: Optional[bool]
-    concurrency: Optional[bool]
+    schedule: str | None
+    suspend: bool | None
+    concurrency: bool | None
     status: ScheduledJobStatus
     owner: JobOwner
     def __init__(self, **kwargs) -> None: ...

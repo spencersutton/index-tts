@@ -15,7 +15,7 @@ __all__ = [
     "get_swa_multi_avg_fn",
     "update_bn",
 ]
-PARAM_LIST: TypeAlias = tuple[Tensor, ...] | list[Tensor]
+type PARAM_LIST = tuple[Tensor, ...] | list[Tensor]
 
 def get_ema_multi_avg_fn(decay=...) -> Callable[..., None]: ...
 def get_swa_multi_avg_fn() -> Callable[..., None]: ...

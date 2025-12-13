@@ -72,8 +72,8 @@ def register_multi_grad_hook(
 ) -> RemovableHandle: ...
 
 _allow_mutation_on_saved_tensors_enabled: bool = ...
-_TID: TypeAlias = tuple[int, int, int]
-_SID: TypeAlias = tuple[int, int]
+type _TID = tuple[int, int, int]
+type _SID = tuple[int, int]
 
 class _Handle: ...
 

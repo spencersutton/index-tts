@@ -2,7 +2,8 @@ import collections
 import sympy
 import torch.fx
 from enum import Enum
-from typing import Any, Callable, NamedTuple, Optional, TYPE_CHECKING, TypeVar
+from typing import Any, NamedTuple, Optional, TYPE_CHECKING, TypeVar
+from collections.abc import Callable
 from torch.fx.proxy import TracerBase
 from .ops_handler import DefaultHandler, OpsHandler, WrapperHandler
 from .utils import cache_on_self
@@ -21,8 +22,8 @@ class LightTracer(TracerBase):
 
 class MemoryEntry(NamedTuple):
     index_name: str
-    buffer_name: Optional[str]
-    mode: Optional[str]
+    buffer_name: str | None
+    mode: str | None
 
 class MemoryUsageType(Enum):
     LOAD = ...
@@ -74,7 +75,7 @@ class LoopBody:
 
     __repr__ = ...
     def add_index_expr(
-        self, expr: sympy.Expr, mtype: MemoryUsageType, buffer_name: Optional[str] = ..., mode: Optional[str] = ...
+        self, expr: sympy.Expr, mtype: MemoryUsageType, buffer_name: str | None = ..., mode: str | None = ...
     ):  # -> str:
         ...
     def add_submodule(self, block, prefix):  # -> str:
@@ -134,8 +135,8 @@ class CaptureIndexing(WrapperHandler):
         boundary_indices: T,
         indexing_dtype: torch.dtype,
         right: bool,
-        sorter: Optional[tuple[str, sympy.Expr]] = ...,
-        sorter_indices: Optional[T] = ...,
+        sorter: tuple[str, sympy.Expr] | None = ...,
+        sorter_indices: T | None = ...,
     ) -> T: ...
     def masked(self, mask_proxy, masked_body: Callable[..., Any], other_proxy):  # -> Proxy:
 

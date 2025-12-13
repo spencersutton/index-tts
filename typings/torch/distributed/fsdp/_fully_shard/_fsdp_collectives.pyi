@@ -1,15 +1,16 @@
 import torch
 import torch.distributed as dist
 from collections.abc import Sequence
-from typing import Any, Callable, NamedTuple, Optional, Union
+from typing import Any, NamedTuple, Optional, Union
+from collections.abc import Callable
 from torch.distributed.fsdp._fully_shard._fsdp_api import AllGather, ReduceScatter
 from ._fsdp_api import _ReduceOp
 from ._fsdp_param import FSDPParam
 
 class AllGatherResult(NamedTuple):
     all_gather_output: torch.Tensor
-    all_gather_event: Optional[torch.Event]
-    all_gather_work: Optional[dist.distributed_c10d.Work]
+    all_gather_event: torch.Event | None
+    all_gather_work: dist.distributed_c10d.Work | None
     param_all_gather_input_dtypes: list[list[torch.dtype]]
     param_all_gather_input_numels: list[list[int]]
     all_gather_input_split_sizes: list[int]
@@ -18,25 +19,25 @@ lib = ...
 
 class DefaultAllocMixin:
     def allocate(
-        self, size: Sequence[Union[int, torch.SymInt]], *, dtype: torch.dtype, device: torch.device
+        self, size: Sequence[int | torch.SymInt], *, dtype: torch.dtype, device: torch.device
     ) -> torch.Tensor: ...
 
 class ProcessGroupAllocMixin:
     def __init__(self, group: dist.ProcessGroup, *args: Any, **kwargs: Any) -> None: ...
     def allocate(
-        self, size: Sequence[Union[int, torch.SymInt]], *, dtype: torch.dtype, device: torch.device
+        self, size: Sequence[int | torch.SymInt], *, dtype: torch.dtype, device: torch.device
     ) -> torch.Tensor: ...
 
 class DefaultAllGather(DefaultAllocMixin, AllGather):
     def __call__(
         self, output_tensor: torch.Tensor, input_tensor: torch.Tensor, group: dist.ProcessGroup, async_op: bool = ...
-    ) -> Optional[dist.Work]: ...
+    ) -> dist.Work | None: ...
 
 class ProcessGroupAllocAllGather(ProcessGroupAllocMixin, AllGather):
     def __init__(self, group: dist.ProcessGroup) -> None: ...
     def __call__(
         self, output_tensor: torch.Tensor, input_tensor: torch.Tensor, group: dist.ProcessGroup, async_op: bool = ...
-    ) -> Optional[dist.Work]: ...
+    ) -> dist.Work | None: ...
 
 class DefaultReduceScatter(DefaultAllocMixin, ReduceScatter):
     def __call__(
@@ -107,7 +108,7 @@ def foreach_all_gather(
     all_gather_stream: torch.Stream,
     device: torch.device,
     all_gather_comm: AllGather,
-) -> Optional[AllGatherResult]: ...
+) -> AllGatherResult | None: ...
 @torch.no_grad()
 def foreach_all_gather_copy_out(
     all_gather_result: AllGatherResult, fsdp_params: list[FSDPParam], group: dist.ProcessGroup
@@ -119,23 +120,23 @@ def foreach_reduce(
     reduce_scatter_group: dist.ProcessGroup,
     reduce_scatter_stream: torch.Stream,
     reduce_scatter_comm: ReduceScatter,
-    orig_dtype: Optional[torch.dtype],
-    reduce_dtype: Optional[torch.dtype],
+    orig_dtype: torch.dtype | None,
+    reduce_dtype: torch.dtype | None,
     device: torch.device,
-    gradient_divide_factor: Optional[float],
-    all_reduce_group: Optional[dist.ProcessGroup],
+    gradient_divide_factor: float | None,
+    all_reduce_group: dist.ProcessGroup | None,
     all_reduce_stream: torch.Stream,
     all_reduce_grads: bool,
-    partial_reduce_output: Optional[torch.Tensor],
-    all_reduce_hook: Optional[Callable[[torch.Tensor], None]],
+    partial_reduce_output: torch.Tensor | None,
+    all_reduce_hook: Callable[[torch.Tensor], None] | None,
     force_sum_reduction_for_comms: bool = ...,
 ) -> tuple[
     torch.Tensor,
     torch.Event,
     torch.Event,
-    Optional[torch.Tensor],
-    Optional[torch.Event],
-    Optional[torch.Tensor],
+    torch.Tensor | None,
+    torch.Event | None,
+    torch.Tensor | None,
 ]: ...
 def foreach_reduce_scatter_copy_in(
     unsharded_grads: list[torch.Tensor], reduce_scatter_input: torch.Tensor, world_size: int

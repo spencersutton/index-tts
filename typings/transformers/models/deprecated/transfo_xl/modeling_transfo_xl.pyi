@@ -79,9 +79,7 @@ class TransfoXLPreTrainedModel(PreTrainedModel):
     config: TransfoXLConfig
     load_tf_weights = ...
     base_model_prefix = ...
-    def resize_token_embeddings(
-        self, new_num_tokens: Optional[int] = ..., layer: Optional[int] = ...
-    ):  # -> Module | Any:
+    def resize_token_embeddings(self, new_num_tokens: int | None = ..., layer: int | None = ...):  # -> Module | Any:
         """
         Resize input token embeddings matrix of the model if new_num_tokens != config.vocab_size. Take care of tying
         weights embeddings afterwards if the model class has a *tie_weights()* method.
@@ -127,8 +125,8 @@ class TransfoXLModelOutput(ModelOutput):
 
     last_hidden_state: torch.FloatTensor
     mems: list[torch.FloatTensor] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
 
 @dataclass
 class TransfoXLSequenceClassifierOutputWithPast(ModelOutput):
@@ -157,11 +155,11 @@ class TransfoXLSequenceClassifierOutputWithPast(ModelOutput):
             heads.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    logits: Optional[torch.FloatTensor] = ...
+    loss: torch.FloatTensor | None = ...
+    logits: torch.FloatTensor | None = ...
     mems: list[torch.FloatTensor] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
 
 @dataclass
 class TransfoXLLMHeadModelOutput(ModelOutput):
@@ -192,12 +190,12 @@ class TransfoXLLMHeadModelOutput(ModelOutput):
             Reduced language modeling loss.
     """
 
-    losses: Optional[torch.FloatTensor] = ...
-    prediction_scores: Optional[torch.FloatTensor] = ...
+    losses: torch.FloatTensor | None = ...
+    prediction_scores: torch.FloatTensor | None = ...
     mems: list[torch.FloatTensor] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
-    loss: Optional[torch.FloatTensor] = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
+    loss: torch.FloatTensor | None = ...
     @property
     def logits(self):  # -> FloatTensor | None:
         ...
@@ -227,14 +225,14 @@ class TransfoXLModel(TransfoXLPreTrainedModel):
     )
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        mems: Optional[list[torch.FloatTensor]] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, TransfoXLModelOutput]: ...
+        input_ids: torch.LongTensor | None = ...,
+        mems: list[torch.FloatTensor] | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | TransfoXLModelOutput: ...
 
 @add_start_docstrings(
     """
@@ -262,15 +260,15 @@ class TransfoXLLMHeadModel(TransfoXLPreTrainedModel):
     )
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        mems: Optional[list[torch.FloatTensor]] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, TransfoXLLMHeadModelOutput]:
+        input_ids: torch.LongTensor | None = ...,
+        mems: list[torch.FloatTensor] | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | TransfoXLLMHeadModelOutput:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
             Labels for language modeling. Note that the labels **are shifted** inside the model, i.e. you can set
@@ -311,15 +309,15 @@ class TransfoXLForSequenceClassification(TransfoXLPreTrainedModel):
     )
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        mems: Optional[list[torch.FloatTensor]] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, TransfoXLSequenceClassifierOutputWithPast]:
+        input_ids: torch.LongTensor | None = ...,
+        mems: list[torch.FloatTensor] | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | TransfoXLSequenceClassifierOutputWithPast:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,

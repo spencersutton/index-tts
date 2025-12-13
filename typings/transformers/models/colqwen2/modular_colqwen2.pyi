@@ -47,14 +47,14 @@ class ColQwen2Processor(ColPaliProcessor):
         image_processor=...,
         tokenizer=...,
         chat_template=...,
-        visual_prompt_prefix: Optional[str] = ...,
-        query_prefix: Optional[str] = ...,
+        visual_prompt_prefix: str | None = ...,
+        query_prefix: str | None = ...,
         **kwargs,
     ) -> None: ...
     def __call__(
         self,
         images: ImageInput = ...,
-        text: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]] = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] = ...,
         audio=...,
         videos=...,
         **kwargs: Unpack[ColQwen2ProcessorKwargs],
@@ -120,11 +120,11 @@ class ColQwen2ForRetrievalOutput(ModelOutput):
         `past_key_values` input) to speed up sequential decoding.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    embeddings: Optional[torch.Tensor] = ...
-    past_key_values: Optional[Union[list[torch.FloatTensor], Cache]] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
+    loss: torch.FloatTensor | None = ...
+    embeddings: torch.Tensor | None = ...
+    past_key_values: list[torch.FloatTensor] | Cache | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
 
 @auto_docstring(
     custom_intro="""
@@ -147,19 +147,19 @@ class ColQwen2ForRetrieval(ColPaliForRetrieval):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        pixel_values: Optional[torch.Tensor] = ...,
-        image_grid_thw: Optional[torch.LongTensor] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        labels: torch.LongTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        pixel_values: torch.Tensor | None = ...,
+        image_grid_thw: torch.LongTensor | None = ...,
+        cache_position: torch.LongTensor | None = ...,
     ) -> ColQwen2ForRetrievalOutput:
         r"""
         image_grid_thw (`torch.LongTensor` of shape `(num_images, 3)`, *optional*):

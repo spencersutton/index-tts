@@ -43,7 +43,7 @@ def validate_joint_graph(joint_graph: torch.fx.Graph):  # -> None:
 class JointOutputResult:
     grad_input: ComputedBuffer
     captured_grads_compute: list[ComputedBuffer]
-    captured_grads: list[Optional[TensorBox]]
+    captured_grads: list[TensorBox | None]
     mutated_grads: list[TensorBox]
 
 def process_joint_outputs(all_joint_outputs: SubgraphResults, num_placeholders: int) -> JointOutputResult: ...
@@ -55,4 +55,4 @@ def flex_attention_backward(
     ...
 def get_bwd_subgraph_outputs(
     subgraph_buffer: SubgraphResults, mask_graph_buffer: SubgraphResults, joint_outputs: JointOutputResult
-) -> list[Optional[Union[ComputedBuffer, TensorBox]]]: ...
+) -> list[ComputedBuffer | TensorBox | None]: ...

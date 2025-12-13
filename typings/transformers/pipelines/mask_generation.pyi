@@ -79,14 +79,12 @@ class MaskGenerationPipeline(ChunkPipeline):
     _load_tokenizer = ...
     def __init__(self, **kwargs) -> None: ...
     @overload
-    def __call__(self, image: Union[str, Image.Image], *args: Any, **kwargs: Any) -> dict[str, Any]: ...
+    def __call__(self, image: str | Image.Image, *args: Any, **kwargs: Any) -> dict[str, Any]: ...
     @overload
+    def __call__(self, image: list[str] | list[Image.Image], *args: Any, **kwargs: Any) -> list[dict[str, Any]]: ...
     def __call__(
-        self, image: Union[list[str], list[Image.Image]], *args: Any, **kwargs: Any
-    ) -> list[dict[str, Any]]: ...
-    def __call__(
-        self, image: Union[str, Image.Image, list[str], list[Image.Image]], *args: Any, **kwargs: Any
-    ) -> Union[dict[str, Any], list[dict[str, Any]]]:
+        self, image: str | Image.Image | list[str] | list[Image.Image], *args: Any, **kwargs: Any
+    ) -> dict[str, Any] | list[dict[str, Any]]:
         """
         Generates binary segmentation masks
 
@@ -132,9 +130,9 @@ class MaskGenerationPipeline(ChunkPipeline):
         points_per_batch=...,
         crops_n_layers: int = ...,
         crop_overlap_ratio: float = ...,
-        points_per_crop: Optional[int] = ...,
-        crop_n_points_downscale_factor: Optional[int] = ...,
-        timeout: Optional[float] = ...,
+        points_per_crop: int | None = ...,
+        crop_n_points_downscale_factor: int | None = ...,
+        timeout: float | None = ...,
     ):  # -> Generator[dict[str | Any, Any], Any, None]:
         ...
     def postprocess(

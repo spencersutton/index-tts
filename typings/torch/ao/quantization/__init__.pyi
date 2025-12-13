@@ -27,7 +27,7 @@ from .quantize_jit import *
 from .stubs import *
 from typing import TypeAlias
 
-ObserverOrFakeQuantize: TypeAlias = ObserverBase | FakeQuantizeBase
+type ObserverOrFakeQuantize = ObserverBase | FakeQuantizeBase
 __all__ = [
     "CUSTOM_KEY",
     "NUMERIC_DEBUG_HANDLE_KEY",

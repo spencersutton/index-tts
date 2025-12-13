@@ -159,21 +159,21 @@ class SmolVLMModel(Idefics3Model):
     )
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        pixel_attention_mask: Optional[torch.BoolTensor] = ...,
-        image_hidden_states: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        pixel_values: torch.FloatTensor | None = ...,
+        pixel_attention_mask: torch.BoolTensor | None = ...,
+        image_hidden_states: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> Union[tuple, SmolVLMBaseModelOutputWithPast]: ...
+    ) -> tuple | SmolVLMBaseModelOutputWithPast: ...
 
 class SmolVLMForConditionalGeneration(Idefics3ForConditionalGeneration):
     def __init__(self, config) -> None: ...

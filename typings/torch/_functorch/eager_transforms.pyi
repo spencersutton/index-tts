@@ -1,6 +1,7 @@
 import contextlib
 import torch
-from typing import Any, Callable, Optional, Union
+from typing import Any, Optional, Union
+from collections.abc import Callable
 from torch._functorch.utils import argnums_t, exposed_in
 from .vmap import doesnt_support_saved_tensors_hooks
 
@@ -30,10 +31,10 @@ def error_if_complex(func_name, args, is_input):  # -> None:
 @exposed_in("torch.func")
 def jacrev(
     func: Callable,
-    argnums: Union[int, tuple[int]] = ...,
+    argnums: int | tuple[int] = ...,
     *,
     has_aux=...,
-    chunk_size: Optional[int] = ...,
+    chunk_size: int | None = ...,
     _preallocate_and_copy=...,
 ):  # -> _Wrapped[..., Any, ..., tuple[PyTree, PyTree | Any] | PyTree]:
 

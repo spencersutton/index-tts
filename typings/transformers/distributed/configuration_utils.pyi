@@ -25,7 +25,7 @@ class DistributedConfig:
         """
         ...
 
-    def to_json_file(self, json_file_path: Union[str, os.PathLike]):  # -> None:
+    def to_json_file(self, json_file_path: str | os.PathLike):  # -> None:
         """
         Save this instance to a JSON file.
         Args:

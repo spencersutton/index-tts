@@ -64,7 +64,7 @@ class Discussion:
     created_at: datetime
     endpoint: str
     @property
-    def git_reference(self) -> Optional[str]:
+    def git_reference(self) -> str | None:
         """
         If this is a Pull Request , returns the git reference to which changes can be pushed.
         Returns `None` otherwise.
@@ -128,11 +128,11 @@ class DiscussionWithDetails(Discussion):
             (property) URL of the discussion on the Hub.
     """
 
-    events: List[DiscussionEvent]
-    conflicting_files: Union[List[str], bool, None]
-    target_branch: Optional[str]
-    merge_commit_oid: Optional[str]
-    diff: Optional[str]
+    events: list[DiscussionEvent]
+    conflicting_files: list[str] | bool | None
+    target_branch: str | None
+    merge_commit_oid: str | None
+    diff: str | None
     ...
 
 class DiscussionEventArgs(TypedDict):
@@ -219,7 +219,7 @@ class DiscussionComment(DiscussionEvent):
         ...
 
     @property
-    def edit_history(self) -> List[dict]:
+    def edit_history(self) -> list[dict]:
         """The edit history of the comment"""
         ...
 

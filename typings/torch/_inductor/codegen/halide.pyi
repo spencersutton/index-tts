@@ -1,7 +1,8 @@
 import dataclasses
 import sympy
 import torch
-from typing import Any, Callable, Optional, TYPE_CHECKING, Union
+from typing import Any, Optional, TYPE_CHECKING, Union
+from collections.abc import Callable
 from ...utils._ordered_set import OrderedSet
 from ...utils._sympy.value_ranges import ValueRanges
 from ..ops_handler import ReductionType, StoreMode
@@ -43,7 +44,7 @@ def halide_acc_type(dtype):  # -> str:
 
 class HalideOverrides(OpOverrides):
     @staticmethod
-    def to_dtype(x, dtype: torch.dtype, src_dtype: Optional[torch.dtype] = ..., use_compute_types=...):  # -> str:
+    def to_dtype(x, dtype: torch.dtype, src_dtype: torch.dtype | None = ..., use_compute_types=...):  # -> str:
         ...
     @staticmethod
     def to_dtype_bitcast(x, dtype: torch.dtype, src_dtype: torch.dtype):  # -> str:
@@ -233,7 +234,7 @@ class HalideOverrides(OpOverrides):
 class HalideCSEVariable(CSEVariable):
     undefined_re = ...
     def __init__(
-        self, name, bounds: ValueRanges[Any], dtype: Optional[torch.dtype] = ..., shape: BlockShapeType = ...
+        self, name, bounds: ValueRanges[Any], dtype: torch.dtype | None = ..., shape: BlockShapeType = ...
     ) -> None: ...
     def update_on_args(self, name, args, kwargs):  # -> None:
         ...
@@ -244,7 +245,7 @@ class HalideCSEVariable(CSEVariable):
 
 @dataclasses.dataclass
 class DimensionInfo:
-    expr: Optional[sympy.Expr]
+    expr: sympy.Expr | None
     size: sympy.Expr
     stride: sympy.Expr
     def __init__(self, expr, size, stride) -> None: ...
@@ -299,8 +300,8 @@ class HalideKernel(SIMDKernel):
         dtype: torch.dtype,
         src_dtype: torch.dtype,
         reduction_type: ReductionType,
-        value: Union[CSEVariable, tuple[CSEVariable, ...]],
-    ) -> Union[CSEVariable, tuple[CSEVariable, ...]]: ...
+        value: CSEVariable | tuple[CSEVariable, ...],
+    ) -> CSEVariable | tuple[CSEVariable, ...]: ...
     def welford_combine_impl(self, mean, m2, weight):  # -> tuple[Any, ...]:
         ...
     def scan(

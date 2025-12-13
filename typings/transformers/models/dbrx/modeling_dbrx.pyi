@@ -59,7 +59,7 @@ def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
     ...
 
 def load_balancing_loss_func(
-    gate_probabilities: torch.Tensor, num_experts: int, top_k: int, attention_mask: Optional[torch.Tensor]
+    gate_probabilities: torch.Tensor, num_experts: int, top_k: int, attention_mask: torch.Tensor | None
 ) -> torch.Tensor:
     r"""Computes auxiliary load balancing loss as in Switch Transformer - implemented in Pytorch.
 
@@ -86,18 +86,18 @@ def load_balancing_loss_func(
 
 class DbrxAttention(nn.Module):
     """Multi-head self attention."""
-    def __init__(self, config: DbrxConfig, block_idx: Optional[int] = ...) -> None: ...
+    def __init__(self, config: DbrxConfig, block_idx: int | None = ...) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
         position_ids: torch.LongTensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        past_key_value: Optional[Cache] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        past_key_value: Cache | None = ...,
         output_attentions: bool = ...,
         use_cache: bool = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Any,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[Cache]]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor | None, Cache | None]: ...
 
 class DbrxFlashAttention2(DbrxAttention):
     """Dbrx flash attention module.
@@ -110,14 +110,14 @@ class DbrxFlashAttention2(DbrxAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.LongTensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[Cache] = ...,
+        attention_mask: torch.LongTensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: Cache | None = ...,
         output_attentions: bool = ...,
         use_cache: bool = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Any,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]: ...
 
 class DbrxSdpaAttention(DbrxAttention):
     """
@@ -128,29 +128,29 @@ class DbrxSdpaAttention(DbrxAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[Cache] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: Cache | None = ...,
         output_attentions: bool = ...,
         use_cache: bool = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+        cache_position: torch.LongTensor | None = ...,
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]: ...
 
 DBRX_ATTENTION_CLASSES = ...
 
 class DbrxNormAttentionNorm(nn.Module):
-    def __init__(self, config: DbrxConfig, block_idx: Optional[int] = ...) -> None: ...
+    def __init__(self, config: DbrxConfig, block_idx: int | None = ...) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
         position_ids: torch.LongTensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        past_key_value: Optional[Cache] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        past_key_value: Cache | None = ...,
         output_attentions: bool = ...,
         use_cache: bool = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Any,
-    ) -> tuple[torch.Tensor, torch.Tensor, Optional[torch.Tensor], Optional[Cache]]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor | None, Cache | None]: ...
 
 class DbrxRouter(nn.Module):
     def __init__(
@@ -158,8 +158,8 @@ class DbrxRouter(nn.Module):
         hidden_size: int,
         moe_num_experts: int,
         moe_top_k: int,
-        moe_jitter_eps: Optional[float],
-        moe_normalize_expert_weights: Optional[float],
+        moe_jitter_eps: float | None,
+        moe_normalize_expert_weights: float | None,
     ) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.LongTensor]: ...
 
@@ -184,23 +184,23 @@ class DbrxBlock(GradientCheckpointingLayer):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[Cache] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_router_logits: Optional[bool] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: Cache | None = ...,
+        output_attentions: bool | None = ...,
+        output_router_logits: bool | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Any,
-    ) -> Union[
-        tuple[torch.Tensor],
-        tuple[torch.Tensor, Optional[torch.Tensor]],
-        tuple[torch.Tensor, Optional[Cache]],
-        tuple[torch.Tensor, Optional[torch.Tensor], Optional[Cache]],
-        tuple[torch.Tensor, Optional[torch.Tensor], Optional[torch.Tensor]],
-        tuple[torch.Tensor, Optional[Cache], Optional[torch.Tensor]],
-        tuple[torch.Tensor, Optional[torch.Tensor], Optional[Cache], Optional[torch.Tensor]],
-    ]:
+    ) -> (
+        tuple[torch.Tensor]
+        | tuple[torch.Tensor, torch.Tensor | None]
+        | tuple[torch.Tensor, Cache | None]
+        | tuple[torch.Tensor, torch.Tensor | None, Cache | None]
+        | tuple[torch.Tensor, torch.Tensor | None, torch.Tensor | None]
+        | tuple[torch.Tensor, Cache | None, torch.Tensor | None]
+        | tuple[torch.Tensor, torch.Tensor | None, Cache | None, torch.Tensor | None]
+    ):
         """Forward function for DbrxBlock.
 
         Args:
@@ -246,19 +246,19 @@ class DbrxModel(DbrxPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        output_router_logits: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        output_router_logits: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs,
-    ) -> Union[tuple, MoeModelOutputWithPast]: ...
+    ) -> tuple | MoeModelOutputWithPast: ...
 
 @auto_docstring(
     custom_intro="""
@@ -279,21 +279,21 @@ class DbrxForCausalLM(DbrxPreTrainedModel, GenerationMixin):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        output_router_logits: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        logits_to_keep: Union[int, torch.Tensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        output_router_logits: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        logits_to_keep: int | torch.Tensor = ...,
         **kwargs,
-    ) -> Union[tuple, MoeCausalLMOutputWithPast]:
+    ) -> tuple | MoeCausalLMOutputWithPast:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
             Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,

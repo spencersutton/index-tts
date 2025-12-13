@@ -25,20 +25,20 @@ from torch.autograd.graph import GradientEdge
 
 if TYPE_CHECKING: ...
 __all__ = ["Device", "FileLike", "Number", "Storage"]
-_TensorOrTensors: TypeAlias = Tensor | Sequence[Tensor]
-_TensorOrTensorsOrGradEdge: TypeAlias = Tensor | Sequence[Tensor] | GradientEdge | Sequence[GradientEdge]
-_size: TypeAlias = Size | list[int] | tuple[int, ...]
-_symsize: TypeAlias = Size | Sequence[int | SymInt]
-_dispatchkey: TypeAlias = str | DispatchKey
-IntLikeType: TypeAlias = int | SymInt
-FloatLikeType: TypeAlias = float | SymFloat
-BoolLikeType: TypeAlias = bool | SymBool
+type _TensorOrTensors = Tensor | Sequence[Tensor]
+type _TensorOrTensorsOrGradEdge = Tensor | Sequence[Tensor] | GradientEdge | Sequence[GradientEdge]
+type _size = Size | list[int] | tuple[int, ...]
+type _symsize = Size | Sequence[int | SymInt]
+type _dispatchkey = str | DispatchKey
+type IntLikeType = int | SymInt
+type FloatLikeType = float | SymFloat
+type BoolLikeType = bool | SymBool
 py_sym_types = ...
-PySymType: TypeAlias = SymInt | SymFloat | SymBool
-Number: TypeAlias = int | float | bool
+type PySymType = SymInt | SymFloat | SymBool
+type Number = int | float | bool
 _Number = ...
-FileLike: TypeAlias = str | os.PathLike[str] | IO[bytes]
-Device: TypeAlias = _device | str | int | None
+type FileLike = str | os.PathLike[str] | IO[bytes]
+type Device = _device | str | int | None
 
 class Storage:
     _cdata: int

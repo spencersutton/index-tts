@@ -10,7 +10,7 @@ class TableQuestionAnsweringInputData(BaseInferenceType):
     """One (table, question) pair to answer"""
 
     question: str
-    table: Dict[str, List[str]]
+    table: dict[str, list[str]]
     ...
 
 Padding = Literal["do_not_pad", "longest", "max_length"]
@@ -19,22 +19,22 @@ Padding = Literal["do_not_pad", "longest", "max_length"]
 class TableQuestionAnsweringParameters(BaseInferenceType):
     """Additional inference parameters for Table Question Answering"""
 
-    padding: Optional[Padding] = ...
-    sequential: Optional[bool] = ...
-    truncation: Optional[bool] = ...
+    padding: Padding | None = ...
+    sequential: bool | None = ...
+    truncation: bool | None = ...
 
 @dataclass_with_extra
 class TableQuestionAnsweringInput(BaseInferenceType):
     """Inputs for Table Question Answering inference"""
 
     inputs: TableQuestionAnsweringInputData
-    parameters: Optional[TableQuestionAnsweringParameters] = ...
+    parameters: TableQuestionAnsweringParameters | None = ...
 
 @dataclass_with_extra
 class TableQuestionAnsweringOutputElement(BaseInferenceType):
     """Outputs of inference for the Table Question Answering task"""
 
     answer: str
-    cells: List[str]
-    coordinates: List[List[int]]
-    aggregator: Optional[str] = ...
+    cells: list[str]
+    coordinates: list[list[int]]
+    aggregator: str | None = ...

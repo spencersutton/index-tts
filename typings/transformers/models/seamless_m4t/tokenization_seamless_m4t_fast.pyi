@@ -113,7 +113,7 @@ class SeamlessM4TTokenizerFast(PreTrainedTokenizerFast):
     @tgt_lang.setter
     def tgt_lang(self, new_tgt_lang: str) -> None: ...
     def build_inputs_with_special_tokens(
-        self, token_ids_0: list[int], token_ids_1: Optional[list[int]] = ...
+        self, token_ids_0: list[int], token_ids_1: list[int] | None = ...
     ) -> list[int]:
         """
         Build model inputs from a sequence or a pair of sequence for sequence classification tasks by concatenating and
@@ -139,7 +139,7 @@ class SeamlessM4TTokenizerFast(PreTrainedTokenizerFast):
         ...
 
     def create_token_type_ids_from_sequences(
-        self, token_ids_0: list[int], token_ids_1: Optional[list[int]] = ...
+        self, token_ids_0: list[int], token_ids_1: list[int] | None = ...
     ) -> list[int]:
         """
         Create a mask from the two sequences passed to be used in a sequence-pair classification task. nllb does not
@@ -161,7 +161,7 @@ class SeamlessM4TTokenizerFast(PreTrainedTokenizerFast):
         self,
         src_texts: list[str],
         src_lang: str = ...,
-        tgt_texts: Optional[list[str]] = ...,
+        tgt_texts: list[str] | None = ...,
         tgt_lang: str = ...,
         **kwargs,
     ) -> BatchEncoding: ...
@@ -177,17 +177,17 @@ class SeamlessM4TTokenizerFast(PreTrainedTokenizerFast):
         """
         ...
 
-    def save_vocabulary(self, save_directory: str, filename_prefix: Optional[str] = ...) -> tuple[str]: ...
+    def save_vocabulary(self, save_directory: str, filename_prefix: str | None = ...) -> tuple[str]: ...
     def __call__(
         self,
-        text: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]] = ...,
-        text_pair: Optional[Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]]] = ...,
-        text_target: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]] = ...,
-        text_pair_target: Optional[Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]]] = ...,
-        padding: Union[bool, str, PaddingStrategy] = ...,
-        pad_to_multiple_of: Optional[int] = ...,
-        src_lang: Optional[str] = ...,
-        tgt_lang: Optional[str] = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] = ...,
+        text_pair: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] | None = ...,
+        text_target: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] = ...,
+        text_pair_target: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] | None = ...,
+        padding: bool | str | PaddingStrategy = ...,
+        pad_to_multiple_of: int | None = ...,
+        src_lang: str | None = ...,
+        tgt_lang: str | None = ...,
         **kwargs,
     ):  # -> BatchEncoding:
         """

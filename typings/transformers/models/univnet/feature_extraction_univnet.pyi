@@ -92,10 +92,10 @@ class UnivNetFeatureExtractor(SequenceFeatureExtractor):
         hop_length: int = ...,
         win_length: int = ...,
         win_function: str = ...,
-        filter_length: Optional[int] = ...,
+        filter_length: int | None = ...,
         max_length_s: int = ...,
         fmin: float = ...,
-        fmax: Optional[float] = ...,
+        fmax: float | None = ...,
         mel_floor: float = ...,
         center: bool = ...,
         compression_factor: float = ...,
@@ -123,7 +123,7 @@ class UnivNetFeatureExtractor(SequenceFeatureExtractor):
         """
         ...
 
-    def generate_noise(self, noise_length: int, generator: Optional[np.random.Generator] = ...) -> np.ndarray:
+    def generate_noise(self, noise_length: int, generator: np.random.Generator | None = ...) -> np.ndarray:
         """
         Generates a random noise sequence of standard Gaussian noise for use in the `noise_sequence` argument of
         [`UnivNetModel.forward`].
@@ -164,19 +164,19 @@ class UnivNetFeatureExtractor(SequenceFeatureExtractor):
 
     def __call__(
         self,
-        raw_speech: Union[np.ndarray, list[float], list[np.ndarray], list[list[float]]],
-        sampling_rate: Optional[int] = ...,
-        padding: Union[bool, str, PaddingStrategy] = ...,
-        max_length: Optional[int] = ...,
+        raw_speech: np.ndarray | list[float] | list[np.ndarray] | list[list[float]],
+        sampling_rate: int | None = ...,
+        padding: bool | str | PaddingStrategy = ...,
+        max_length: int | None = ...,
         truncation: bool = ...,
-        pad_to_multiple_of: Optional[int] = ...,
+        pad_to_multiple_of: int | None = ...,
         return_noise: bool = ...,
-        generator: Optional[np.random.Generator] = ...,
+        generator: np.random.Generator | None = ...,
         pad_end: bool = ...,
-        pad_length: Optional[int] = ...,
-        do_normalize: Optional[str] = ...,
-        return_attention_mask: Optional[bool] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
+        pad_length: int | None = ...,
+        do_normalize: str | None = ...,
+        return_attention_mask: bool | None = ...,
+        return_tensors: str | TensorType | None = ...,
     ) -> BatchFeature:
         """
         Main method to featurize and prepare for the model one or several sequence(s).

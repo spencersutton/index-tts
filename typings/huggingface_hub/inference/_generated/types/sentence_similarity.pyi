@@ -7,7 +7,7 @@ from .base import BaseInferenceType, dataclass_with_extra
 
 @dataclass_with_extra
 class SentenceSimilarityInputData(BaseInferenceType):
-    sentences: List[str]
+    sentences: list[str]
     source_sentence: str
     ...
 
@@ -16,4 +16,4 @@ class SentenceSimilarityInput(BaseInferenceType):
     """Inputs for Sentence similarity inference"""
 
     inputs: SentenceSimilarityInputData
-    parameters: Optional[Dict[str, Any]] = ...
+    parameters: dict[str, Any] | None = ...

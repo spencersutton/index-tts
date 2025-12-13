@@ -36,10 +36,10 @@ class TFIdeficsVisionModelOutput(ModelOutput):
             heads.
     """
 
-    image_embeds: Optional[tf.Tensor] = ...
-    last_hidden_state: Optional[tf.Tensor] = ...
-    hidden_states: Optional[tuple[tf.Tensor]] = ...
-    attentions: Optional[tuple[tf.Tensor]] = ...
+    image_embeds: tf.Tensor | None = ...
+    last_hidden_state: tf.Tensor | None = ...
+    hidden_states: tuple[tf.Tensor] | None = ...
+    attentions: tuple[tf.Tensor] | None = ...
 
 class TFIdeficsVisionEmbeddings(tf.keras.layers.Layer):
     def __init__(self, config: IdeficsVisionConfig, **kwargs) -> None: ...
@@ -54,10 +54,10 @@ class TFIdeficsVisionAttention(tf.keras.layers.Layer):
     def call(
         self,
         hidden_states: tf.Tensor,
-        attention_mask: Optional[tf.Tensor] = ...,
-        causal_attention_mask: Optional[tf.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-    ) -> tuple[tf.Tensor, Optional[tf.Tensor], Optional[tuple[tf.Tensor]]]:
+        attention_mask: tf.Tensor | None = ...,
+        causal_attention_mask: tf.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+    ) -> tuple[tf.Tensor, tf.Tensor | None, tuple[tf.Tensor] | None]:
         """Input shape: Batch x Time x Channel"""
         ...
 
@@ -77,7 +77,7 @@ class TFIdeficsVisionEncoderLayer(tf.keras.layers.Layer):
         hidden_states: tf.Tensor,
         attention_mask: tf.Tensor,
         causal_attention_mask: tf.Tensor,
-        output_attentions: Optional[bool] = ...,
+        output_attentions: bool | None = ...,
     ) -> tuple[tf.Tensor]:
         """
         Args:
@@ -106,13 +106,13 @@ class TFIdeficsVisionEncoder(tf.keras.layers.Layer):
     def call(
         self,
         inputs_embeds,
-        attention_mask: Optional[tf.Tensor] = ...,
-        causal_attention_mask: Optional[tf.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        training: Optional[bool] = ...,
-    ) -> Union[tuple, TFBaseModelOutput]:
+        attention_mask: tf.Tensor | None = ...,
+        causal_attention_mask: tf.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        training: bool | None = ...,
+    ) -> tuple | TFBaseModelOutput:
         r"""
         Args:
             inputs_embeds (`tf.Tensor` of shape `(batch_size, sequence_length, hidden_size)`):
@@ -151,13 +151,13 @@ class TFIdeficsVisionTransformer(TFPreTrainedModel):
     def __init__(self, config: IdeficsVisionConfig, **kwargs) -> None: ...
     def call(
         self,
-        pixel_values: Optional[tf.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        interpolate_pos_encoding: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        training: Optional[bool] = ...,
-    ) -> Union[tuple, TFBaseModelOutputWithPooling]:
+        pixel_values: tf.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        interpolate_pos_encoding: bool | None = ...,
+        return_dict: bool | None = ...,
+        training: bool | None = ...,
+    ) -> tuple | TFBaseModelOutputWithPooling:
         r"""
         Returns:
 

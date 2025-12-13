@@ -10,13 +10,13 @@ from ...tokenization_utils_base import PreTokenizedInput, TextInput
 from ...video_utils import VideoInput
 
 class Glm4vVideosProcessorKwargs(VideosKwargs, total=False):
-    fps: Union[list[float], float]
+    fps: list[float] | float
     ...
 
 class Glm4vImagesKwargs(ImagesKwargs):
-    patch_size: Optional[int]
-    temporal_patch_size: Optional[int]
-    merge_size: Optional[int]
+    patch_size: int | None
+    temporal_patch_size: int | None
+    merge_size: int | None
     ...
 
 class Glm4vProcessorKwargs(ProcessingKwargs, total=False):
@@ -49,7 +49,7 @@ class Glm4vProcessor(ProcessorMixin):
     def __call__(
         self,
         images: ImageInput = ...,
-        text: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]] = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] = ...,
         videos: VideoInput = ...,
         **kwargs: Unpack[Glm4vProcessorKwargs],
     ) -> BatchFeature:

@@ -1,10 +1,11 @@
-from typing import Callable, Generic, Optional, TypeVar
+from typing import Generic, Optional, TypeVar
+from collections.abc import Callable
 
 R = TypeVar("R")
 
 class Thunk(Generic[R]):
-    f: Optional[Callable[[], R]]
-    r: Optional[R]
+    f: Callable[[], R] | None
+    r: R | None
     __slots__ = ...
     def __init__(self, f: Callable[[], R]) -> None: ...
     def force(self) -> R: ...

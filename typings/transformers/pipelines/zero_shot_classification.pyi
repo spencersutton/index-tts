@@ -66,7 +66,7 @@ class ZeroShotClassificationPipeline(ChunkPipeline):
     def entailment_id(self):  # -> int:
         ...
     def __call__(
-        self, sequences: Union[str, list[str]], *args, **kwargs
+        self, sequences: str | list[str], *args, **kwargs
     ):  # -> list[Any] | PipelineIterator | Generator[Any, Any, None] | Tensor | Any | None:
         """
         Classify the sequence(s) given as inputs. See the [`ZeroShotClassificationPipeline`] documentation for more

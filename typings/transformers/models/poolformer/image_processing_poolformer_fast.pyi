@@ -20,7 +20,7 @@ class PoolFormerFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
             Percentage of the image to crop. Only has an effect if `do_resize` is set to `True`.
     """
 
-    crop_pct: Optional[float]
+    crop_pct: float | None
     ...
 
 @auto_docstring
@@ -44,7 +44,7 @@ class PoolFormerImageProcessorFast(BaseImageProcessorFast):
         self,
         image: torch.Tensor,
         size: SizeDict,
-        crop_pct: Optional[float] = ...,
+        crop_pct: float | None = ...,
         interpolation: F.InterpolationMode = ...,
         antialias: bool = ...,
         **kwargs,

@@ -102,7 +102,7 @@ class WhisperTokenizer(PreTrainedTokenizer):
     def bpe(self, token):  # -> LiteralString:
         ...
     def set_prefix_tokens(
-        self, language: Optional[str] = ..., task: Optional[str] = ..., predict_timestamps: Optional[bool] = ...
+        self, language: str | None = ..., task: str | None = ..., predict_timestamps: bool | None = ...
     ):  # -> None:
         """
         Override the prefix tokens appended to the start of the label sequence. This method can be used standalone to
@@ -132,7 +132,7 @@ class WhisperTokenizer(PreTrainedTokenizer):
         ...
 
     def get_special_tokens_mask(
-        self, token_ids_0: list[int], token_ids_1: Optional[list[int]] = ..., already_has_special_tokens: bool = ...
+        self, token_ids_0: list[int], token_ids_1: list[int] | None = ..., already_has_special_tokens: bool = ...
     ) -> list[int]:
         """
         Retrieve sequence ids from a token list that has no special tokens added. This method is called when adding
@@ -181,7 +181,7 @@ class WhisperTokenizer(PreTrainedTokenizer):
         self,
         token_ids,
         skip_special_tokens: bool = ...,
-        clean_up_tokenization_spaces: Optional[bool] = ...,
+        clean_up_tokenization_spaces: bool | None = ...,
         output_offsets: bool = ...,
         time_precision: float = ...,
         decode_with_timestamps: bool = ...,
@@ -233,7 +233,7 @@ class WhisperTokenizer(PreTrainedTokenizer):
         """Converts a sequence of tokens (string) in a single string."""
         ...
 
-    def save_vocabulary(self, save_directory: str, filename_prefix: Optional[str] = ...) -> tuple[str]: ...
+    def save_vocabulary(self, save_directory: str, filename_prefix: str | None = ...) -> tuple[str]: ...
     def prepare_for_tokenization(self, text, is_split_into_words=..., **kwargs):  # -> tuple[str, dict[str, Any]]:
         ...
     def get_decoder_prompt_ids(self, task=..., language=..., no_timestamps=...):  # -> list[tuple[int, int]]:

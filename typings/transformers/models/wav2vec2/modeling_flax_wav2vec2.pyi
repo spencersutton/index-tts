@@ -41,8 +41,8 @@ class FlaxWav2Vec2BaseModelOutput(ModelOutput):
 
     last_hidden_state: jnp.ndarray = ...
     extract_features: jnp.ndarray = ...
-    hidden_states: Optional[tuple[jnp.ndarray]] = ...
-    attentions: Optional[tuple[jnp.ndarray]] = ...
+    hidden_states: tuple[jnp.ndarray] | None = ...
+    attentions: tuple[jnp.ndarray] | None = ...
 
 @flax.struct.dataclass
 class FlaxWav2Vec2ForPreTrainingOutput(ModelOutput):
@@ -75,8 +75,8 @@ class FlaxWav2Vec2ForPreTrainingOutput(ModelOutput):
     projected_states: jnp.ndarray = ...
     projected_quantized_states: jnp.ndarray = ...
     codevector_perplexity: jnp.ndarray = ...
-    hidden_states: Optional[tuple[jnp.ndarray]] = ...
-    attentions: Optional[tuple[jnp.ndarray]] = ...
+    hidden_states: tuple[jnp.ndarray] | None = ...
+    attentions: tuple[jnp.ndarray] | None = ...
 
 WAV2VEC2_START_DOCSTRING = ...
 WAV2VEC2_INPUTS_DOCSTRING = ...
@@ -138,8 +138,8 @@ class FlaxWav2Vec2Attention(nn.Module):
     def __call__(
         self,
         hidden_states: jnp.ndarray,
-        key_value_states: Optional[jnp.ndarray] = ...,
-        attention_mask: Optional[jnp.ndarray] = ...,
+        key_value_states: jnp.ndarray | None = ...,
+        attention_mask: jnp.ndarray | None = ...,
         deterministic: bool = ...,
     ) -> tuple[jnp.ndarray]:
         """Input shape: Batch x Time x Channel"""
@@ -254,13 +254,13 @@ class FlaxWav2Vec2PreTrainedModel(FlaxPreTrainedModel):
         input_values,
         attention_mask=...,
         mask_time_indices=...,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: jax.random.PRNGKey = ...,
         train: bool = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
         freeze_feature_encoder: bool = ...,
-        return_dict: Optional[bool] = ...,
+        return_dict: bool | None = ...,
     ): ...
 
 class FlaxWav2Vec2Module(nn.Module):
@@ -354,14 +354,14 @@ class FlaxWav2Vec2ForPreTraining(FlaxWav2Vec2PreTrainedModel):
         attention_mask=...,
         mask_time_indices=...,
         gumbel_temperature: int = ...,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: jax.random.PRNGKey = ...,
         gumbel_rng: jax.random.PRNGKey = ...,
         train: bool = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
         freeze_feature_encoder: bool = ...,
-        return_dict: Optional[bool] = ...,
+        return_dict: bool | None = ...,
     ): ...
 
 FLAX_WAV2VEC2_FOR_PRETRAINING_DOCSTRING = ...

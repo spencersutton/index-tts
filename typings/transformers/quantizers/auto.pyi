@@ -32,7 +32,7 @@ class AutoHfQuantizer:
     """
     @classmethod
     def from_config(
-        cls, quantization_config: Union[QuantizationConfigMixin, dict], **kwargs
+        cls, quantization_config: QuantizationConfigMixin | dict, **kwargs
     ):  # -> AqlmHfQuantizer | AutoRoundQuantizer | CompressedTensorsHfQuantizer | FPQuantHfQuantizer | GptqHfQuantizer | HiggsHfQuantizer | QuantoHfQuantizer | SpQRHfQuantizer | VptqHfQuantizer | AwqQuantizer | BitNetHfQuantizer | Bnb4BitHfQuantizer | Bnb8BitHfQuantizer | EetqHfQuantizer | FbgemmFp8HfQuantizer | FineGrainedFP8HfQuantizer | HqqHfQuantizer | Mxfp4HfQuantizer | QuarkHfQuantizer | TorchAoHfQuantizer:
         ...
     @classmethod
@@ -43,8 +43,8 @@ class AutoHfQuantizer:
     @classmethod
     def merge_quantization_configs(
         cls,
-        quantization_config: Union[dict, QuantizationConfigMixin],
-        quantization_config_from_args: Optional[QuantizationConfigMixin],
+        quantization_config: dict | QuantizationConfigMixin,
+        quantization_config_from_args: QuantizationConfigMixin | None,
     ):  # -> GPTQConfig | AwqConfig | AutoRoundConfig | FbgemmFp8Config | CompressedTensorsConfig | dict[Any, Any] | QuantizationConfigMixin | Mxfp4Config:
         """
         handles situations where both quantization_config from args and quantization_config from model config are present.

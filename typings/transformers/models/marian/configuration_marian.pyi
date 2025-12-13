@@ -128,7 +128,7 @@ class MarianOnnxConfig(OnnxSeq2SeqConfigWithPast):
         batch_size: int = ...,
         seq_length: int = ...,
         is_pair: bool = ...,
-        framework: Optional[TensorType] = ...,
+        framework: TensorType | None = ...,
     ) -> Mapping[str, Any]: ...
     @property
     def atol_for_validation(self) -> float: ...

@@ -1,9 +1,10 @@
 import enum
 import torch
-from typing import Any, Callable, Optional
-from typing_extensions import TypeAlias
+from typing import Any, Optional
+from collections.abc import Callable
+from typing import TypeAlias
 
-GuardManagerType: TypeAlias = enum.Enum
+type GuardManagerType = enum.Enum
 
 class GlobalStateGuard:
     def check(self) -> bool: ...
@@ -205,7 +206,7 @@ class TensorGuards:
         dynamic_dims_strides: list[torch.SymInt | None] | None = ...,
     ) -> None: ...
     def check(self, *args: Any) -> bool: ...
-    def check_verbose(self, *args: Any, tensor_check_names: Optional[list[str]] = ...) -> bool | str: ...
+    def check_verbose(self, *args: Any, tensor_check_names: list[str] | None = ...) -> bool | str: ...
 
 def assert_size_stride(
     item: torch.Tensor, size: torch.types._size, stride: torch.types._size, op_name: str | None = ...

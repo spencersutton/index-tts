@@ -8,7 +8,7 @@ from typing import Optional, Union
 
 logger = ...
 
-def shape_list(tensor: Union[tf.Tensor, np.ndarray]) -> list[int]:
+def shape_list(tensor: tf.Tensor | np.ndarray) -> list[int]:
     """
     Deal with dynamic shape in tensorflow cleanly.
 
@@ -20,7 +20,7 @@ def shape_list(tensor: Union[tf.Tensor, np.ndarray]) -> list[int]:
     """
     ...
 
-def stable_softmax(logits: tf.Tensor, axis: Optional[int] = ..., name: Optional[str] = ...) -> tf.Tensor:
+def stable_softmax(logits: tf.Tensor, axis: int | None = ..., name: str | None = ...) -> tf.Tensor:
     """
     Stable wrapper that returns the same output as `tf.nn.softmax`, but that works reliably with XLA on CPU. It is
     meant as a workaround for the [following issue](https://github.com/tensorflow/tensorflow/issues/55682), and will be
@@ -43,7 +43,7 @@ def stable_softmax(logits: tf.Tensor, axis: Optional[int] = ..., name: Optional[
 
 def functional_layernorm(inputs, weight, bias, epsilon=..., axis=...): ...
 def scaled_dot_product_attention(
-    query, key, value, attn_mask=..., dropout_p=..., is_causal=..., scale: Optional[float] = ...
+    query, key, value, attn_mask=..., dropout_p=..., is_causal=..., scale: float | None = ...
 ):
     """TF equivalent for torch's nn.functional.scaled_dot_product_attention"""
     ...

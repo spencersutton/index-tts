@@ -7,7 +7,8 @@ import PIL.Image
 import torch
 from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Callable, Optional, Union
+from typing import Optional, Union
+from collections.abc import Callable
 from .image_transforms import PaddingMode
 from .image_utils import ChannelDimension
 from .utils import is_torch_available, is_vision_available
@@ -49,7 +50,7 @@ def is_scaled_video(video: np.ndarray) -> bool:
     """
     ...
 
-def convert_pil_frames_to_video(videos: list[VideoInput]) -> list[Union[np.ndarray, torch.Tensor]]:
+def convert_pil_frames_to_video(videos: list[VideoInput]) -> list[np.ndarray | torch.Tensor]:
     """
     Given a batch of videos, converts each video to a 4D array. If video is already in array type,
     it is simply returned. We assume that all inputs in the list are in the same format, based on the type of the first element.
@@ -60,7 +61,7 @@ def convert_pil_frames_to_video(videos: list[VideoInput]) -> list[Union[np.ndarr
     """
     ...
 
-def make_batched_videos(videos) -> list[Union[np.ndarray, torch.Tensor]]:
+def make_batched_videos(videos) -> list[np.ndarray | torch.Tensor]:
     """
     Ensure that the input is a list of videos. If the input is a single video, it is converted to a list of length 1.
     If the input is a batch of videos, it is converted to a list of 4D video arrays. Videos passed as list `PIL.Image`
@@ -90,7 +91,7 @@ def get_video_size(video: np.ndarray, channel_dim: ChannelDimension = ...) -> tu
     ...
 
 def get_uniform_frame_indices(
-    total_num_frames: int, num_frames: Optional[int] = ...
+    total_num_frames: int, num_frames: int | None = ...
 ):  # -> ndarray[tuple[int], dtype[Any]]:
     """
     Creates a numpy array for uniform sampling of `num_frame` frames from `total_num_frames`
@@ -148,7 +149,7 @@ def read_video_opencv(video_path: str, sample_indices_fn: Callable, **kwargs):  
     ...
 
 def read_video_decord(
-    video_path: str, sample_indices_fn: Optional[Callable] = ..., **kwargs
+    video_path: str, sample_indices_fn: Callable | None = ..., **kwargs
 ):  # -> tuple[Any, VideoMetadata]:
     """
     Decode a video using the Decord backend.
@@ -240,11 +241,11 @@ def read_video_torchcodec(video_path: str, sample_indices_fn: Callable, **kwargs
 VIDEO_DECODERS = ...
 
 def load_video(
-    video: Union[str, VideoInput],
-    num_frames: Optional[int] = ...,
-    fps: Optional[Union[int, float]] = ...,
+    video: str | VideoInput,
+    num_frames: int | None = ...,
+    fps: int | float | None = ...,
     backend: str = ...,
-    sample_indices_fn: Optional[Callable] = ...,
+    sample_indices_fn: Callable | None = ...,
     **kwargs,
 ) -> np.array:
     """
@@ -280,8 +281,8 @@ def load_video(
 
 def convert_to_rgb(
     video: np.array,
-    data_format: Optional[ChannelDimension] = ...,
-    input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+    data_format: ChannelDimension | None = ...,
+    input_data_format: str | ChannelDimension | None = ...,
 ) -> np.array:
     """
     Convert video to RGB by blending the transparency layer if it's in RGBA format, otherwise simply returns it.
@@ -298,11 +299,11 @@ def convert_to_rgb(
 
 def pad(
     video: np.ndarray,
-    padding: Union[int, tuple[int, int], Iterable[tuple[int, int]]],
+    padding: int | tuple[int, int] | Iterable[tuple[int, int]],
     mode: PaddingMode = ...,
-    constant_values: Union[float, Iterable[float]] = ...,
-    data_format: Optional[Union[str, ChannelDimension]] = ...,
-    input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+    constant_values: float | Iterable[float] = ...,
+    data_format: str | ChannelDimension | None = ...,
+    input_data_format: str | ChannelDimension | None = ...,
 ) -> np.ndarray:
     """
     Pads the `video` with the specified (height, width) `padding` and `mode`.

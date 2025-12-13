@@ -1,8 +1,9 @@
 import dataclasses
 import sympy
 from collections.abc import Sequence
-from typing import Any, Callable, Optional, TYPE_CHECKING, Union, TypeAlias
-from typing_extensions import Never
+from typing import Any, Optional, TYPE_CHECKING, Union, TypeAlias
+from collections.abc import Callable
+from typing import Never
 from torch import SymInt
 from torch._C import DispatchKey
 from torch._ops import HigherOrderOperator
@@ -17,14 +18,14 @@ from torch._subclasses.functional_tensor import BaseFunctionalizeAPI
 from torch.fx.proxy import Proxy
 
 if TYPE_CHECKING:
-    TritonMetaParamsType: TypeAlias = dict[str, int]
-    TritonGridTupleType: TypeAlias = tuple[Union[int, sympy.Expr, SymInt], ...]
-    TritonGridCallableType: TypeAlias = Callable[[TritonMetaParamsType], tuple[int, ...]]
-    TritonGridType: TypeAlias = Union[TritonGridTupleType, TritonGridCallableType]
-    TritonKernelType: TypeAlias = Union[Autotuner, JITFunction]
-    TritonAutotunerType: TypeAlias = Union[Autotuner]
+    type TritonMetaParamsType = dict[str, int]
+    type TritonGridTupleType = tuple[int | sympy.Expr | SymInt, ...]
+    type TritonGridCallableType = Callable[[TritonMetaParamsType], tuple[int, ...]]
+    type TritonGridType = TritonGridTupleType | TritonGridCallableType
+    type TritonKernelType = Autotuner | JITFunction
+    type TritonAutotunerType = Autotuner
 log = ...
-TMAExperimentalMetadata: TypeAlias = tuple[
+type TMAExperimentalMetadata = tuple[
     str,
     tuple[
         list[IntLikeType],
@@ -32,7 +33,7 @@ TMAExperimentalMetadata: TypeAlias = tuple[
         IntLikeType,
     ],
 ]
-TMAStableMetadata: TypeAlias = tuple[
+type TMAStableMetadata = tuple[
     str,
     tuple[list[IntLikeType],],
 ]
@@ -41,16 +42,16 @@ def create_tma_experimental_metadata(
     dims: list[IntLikeType], block_dims: list[IntLikeType], element_size: IntLikeType
 ) -> TMAExperimentalMetadata: ...
 def maybe_unpack_tma_experimental_metadata(
-    tma_meta: Union[TMAExperimentalMetadata, TMAStableMetadata],
-) -> Optional[tuple[list[IntLikeType], list[IntLikeType], IntLikeType]]: ...
+    tma_meta: TMAExperimentalMetadata | TMAStableMetadata,
+) -> tuple[list[IntLikeType], list[IntLikeType], IntLikeType] | None: ...
 def create_tma_stable_metadata(block_shape: list[IntLikeType]) -> TMAStableMetadata: ...
 def maybe_unpack_tma_stable_metadata(
-    tma_meta: Union[TMAExperimentalMetadata, TMAStableMetadata],
-) -> Optional[tuple[list[IntLikeType]]]: ...
+    tma_meta: TMAExperimentalMetadata | TMAStableMetadata,
+) -> tuple[list[IntLikeType]] | None: ...
 
-TMADescriptorMetadata: TypeAlias = dict[
+type TMADescriptorMetadata = dict[
     str,
-    Union[TMAExperimentalMetadata, TMAStableMetadata],
+    TMAExperimentalMetadata | TMAStableMetadata,
 ]
 
 class KernelSideTable:
@@ -78,10 +79,10 @@ class Intermediate:
 @dataclasses.dataclass(frozen=True)
 class Op:
     name: str
-    fn_call_name: Optional[str]
-    args: list[Union[Param, Intermediate]]
+    fn_call_name: str | None
+    args: list[Param | Intermediate]
     ret: Intermediate = ...
-    sub_idx: Optional[int] = ...
+    sub_idx: int | None = ...
     is_pure: bool = ...
     def __post_init__(self) -> None: ...
 
@@ -98,9 +99,7 @@ class MemoizeWithCycleCheck:
     def reset(self) -> None: ...
 
 @MemoizeWithCycleCheck
-def get_tma_stores(
-    functions: dict[str, dict[Intermediate, list[Op]]], fn_name: str
-) -> set[Union[Intermediate, Param]]: ...
+def get_tma_stores(functions: dict[str, dict[Intermediate, list[Op]]], fn_name: str) -> set[Intermediate | Param]: ...
 @MemoizeWithCycleCheck
 def analyze_kernel_mutations(
     functions: dict[str, dict[Intermediate, list[Op]]], fn_name: str, num_args: int
@@ -166,7 +165,7 @@ def _(
 ) -> None: ...
 def trace_triton_kernel_wrapper(
     proxy_mode: ProxyTorchDispatchMode, func_overload: Callable[..., Any], node_args: dict[str, Any]
-) -> Optional[dict[str, Any]]: ...
+) -> dict[str, Any] | None: ...
 @triton_kernel_wrapper_mutation.py_impl(ProxyTorchDispatchMode)
 def triton_kernel_wrapper_mutation_proxy_torch_dispatch_mode(
     mode: ProxyTorchDispatchMode,
@@ -236,12 +235,12 @@ class TritonHOPifier:
     def raise_unsupported(self, msg: str) -> Never: ...
     def is_callable(self, maybe_callable: Any) -> bool: ...
     def get_value(self, val: Any) -> Any: ...
-    def call_grid(self, grid, meta, tx) -> Union[tuple[Union[int, sympy.Expr, SymInt], ...], tuple[Proxy, ...]]: ...
+    def call_grid(self, grid, meta, tx) -> tuple[int | sympy.Expr | SymInt, ...] | tuple[Proxy, ...]: ...
     def wrap_user_defined_obj(
         self,
         user_obj: Any,
-        tx: Optional[InstructionTranslator],
-        variable: Optional[Union[TritonKernelVariable, TraceableTritonKernelWrapper]],
+        tx: InstructionTranslator | None,
+        variable: TritonKernelVariable | TraceableTritonKernelWrapper | None,
         name: str,
     ) -> Any: ...
     def call_user_defined_fn(
@@ -249,49 +248,49 @@ class TritonHOPifier:
         user_fn: Callable[..., Any],
         args: list,
         kwargs: dict,
-        tx: Optional[InstructionTranslator],
-        variable: Optional[Union[TritonKernelVariable, TraceableTritonKernelWrapper]],
+        tx: InstructionTranslator | None,
+        variable: TritonKernelVariable | TraceableTritonKernelWrapper | None,
     ) -> Any: ...
     def maybe_unpack_configs(
-        self, configs: list[TritonConfig], tx: Optional[InstructionTranslator]
+        self, configs: list[TritonConfig], tx: InstructionTranslator | None
     ) -> list[TritonConfig]: ...
     def maybe_unpack_heuristic_result(self, result: Any) -> Any: ...
     @staticmethod
     def do_prune_configs(
         autotuner: TritonAutotunerType,
-        early_config_prune: Optional[Callable],
-        perf_model: Optional[Callable],
+        early_config_prune: Callable | None,
+        perf_model: Callable | None,
         top_k: float,
         configs: list,
         named_args: dict,
         kwargs: dict,
     ) -> list[TritonConfig]: ...
-    def call_HOP(self, variable, grids, combined_args: dict[str, Any], tx) -> Optional[ConstantVariable]: ...
-    def check_grid(self, grid) -> Union[tuple[Union[int, sympy.Expr, SymInt], ...], tuple[Proxy, ...]]: ...
+    def call_HOP(self, variable, grids, combined_args: dict[str, Any], tx) -> ConstantVariable | None: ...
+    def check_grid(self, grid) -> tuple[int | sympy.Expr | SymInt, ...] | tuple[Proxy, ...]: ...
     def init_variable(
         self,
-        variable: Union[TraceableTritonKernelWrapper, TritonKernelVariable],
+        variable: TraceableTritonKernelWrapper | TritonKernelVariable,
         kernel: TritonKernelType,
-        kernel_idx: Optional[int],
-        grid: Optional[TritonGridType],
+        kernel_idx: int | None,
+        grid: TritonGridType | None,
     ) -> None: ...
     def call_getitem(
-        self, variable: Union[TritonKernelVariable, TraceableTritonKernelWrapper], args: Sequence[Any]
-    ) -> Union[TritonKernelVariable, TraceableTritonKernelWrapper]: ...
+        self, variable: TritonKernelVariable | TraceableTritonKernelWrapper, args: Sequence[Any]
+    ) -> TritonKernelVariable | TraceableTritonKernelWrapper: ...
     def call_run(
         self,
-        variable: Union[TritonKernelVariable, TraceableTritonKernelWrapper],
+        variable: TritonKernelVariable | TraceableTritonKernelWrapper,
         args: Sequence[Any],
         kwargs: dict[str, Any],
-        tx: Optional[InstructionTranslator],
-    ) -> Optional[ConstantVariable]: ...
+        tx: InstructionTranslator | None,
+    ) -> ConstantVariable | None: ...
     def call_triton_kernel(
         self,
-        variable: Union[TritonKernelVariable, TraceableTritonKernelWrapper],
+        variable: TritonKernelVariable | TraceableTritonKernelWrapper,
         args: Sequence[Any],
         kwargs: dict[str, Any],
-        tx: Optional[InstructionTranslator],
-    ) -> Optional[ConstantVariable]: ...
+        tx: InstructionTranslator | None,
+    ) -> ConstantVariable | None: ...
 
 class TracingTritonHOPifier(TritonHOPifier):
     def raise_unsupported(self, msg: str) -> Never: ...
@@ -299,12 +298,12 @@ class TracingTritonHOPifier(TritonHOPifier):
     def get_value(self, val: Any) -> Any: ...
     def call_grid(
         self, grid: TritonGridCallableType, meta: TritonMetaParamsType, tx: None
-    ) -> tuple[Union[int, sympy.Expr, SymInt], ...]: ...
+    ) -> tuple[int | sympy.Expr | SymInt, ...]: ...
     def wrap_user_defined_obj(
         self,
         user_obj: Any,
-        tx: Optional[InstructionTranslator],
-        variable: Optional[Union[TritonKernelVariable, TraceableTritonKernelWrapper]],
+        tx: InstructionTranslator | None,
+        variable: TritonKernelVariable | TraceableTritonKernelWrapper | None,
         name: str,
     ) -> Any: ...
     def call_user_defined_fn(
@@ -312,14 +311,14 @@ class TracingTritonHOPifier(TritonHOPifier):
         user_fn: Callable[..., Any],
         args: list,
         kwargs: dict,
-        tx: Optional[InstructionTranslator],
-        variable: Optional[Union[TritonKernelVariable, TraceableTritonKernelWrapper]],
+        tx: InstructionTranslator | None,
+        variable: TritonKernelVariable | TraceableTritonKernelWrapper | None,
     ) -> Any: ...
     def maybe_unpack_configs(
-        self, configs: list[TritonConfig], tx: Optional[InstructionTranslator]
+        self, configs: list[TritonConfig], tx: InstructionTranslator | None
     ) -> list[TritonConfig]: ...
     def maybe_unpack_heuristic_result(self, result: Any) -> Any: ...
-    def check_grid(self, grid: TritonGridType) -> tuple[Union[int, sympy.Expr, SymInt], ...]: ...
+    def check_grid(self, grid: TritonGridType) -> tuple[int | sympy.Expr | SymInt, ...]: ...
     def store_non_graphable_args(self, combined_args: dict[str, Any]) -> tuple[dict, int]: ...
     def call_HOP(
         self,
@@ -333,9 +332,9 @@ tracing_triton_hopifier_singleton = ...
 
 class TraceableTritonKernelWrapper:
     kernel: TritonKernelType
-    kernel_idx: Optional[int]
-    grid: Optional[TritonGridType]
-    def __init__(self, kernel: TritonKernelType, kernel_idx: Optional[int], grid: Optional[TritonGridType]) -> None: ...
+    kernel_idx: int | None
+    grid: TritonGridType | None
+    def __init__(self, kernel: TritonKernelType, kernel_idx: int | None, grid: TritonGridType | None) -> None: ...
     def __getitem__(self, *args: Sequence[Any]) -> TraceableTritonKernelWrapper: ...
     def run(self, *args: Sequence[Any], **kwargs: dict[str, Any]) -> Any: ...
     def __call__(self, *args: Sequence[Any], **kwargs: dict[str, Any]) -> Any: ...

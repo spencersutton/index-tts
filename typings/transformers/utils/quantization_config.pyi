@@ -73,7 +73,7 @@ class QuantizationConfigMixin:
         """
         ...
 
-    def to_json_file(self, json_file_path: Union[str, os.PathLike]):  # -> None:
+    def to_json_file(self, json_file_path: str | os.PathLike):  # -> None:
         """
         Save this instance to a JSON file.
 
@@ -181,8 +181,8 @@ class HqqConfig(QuantizationConfigMixin):
         nbits: int = ...,
         group_size: int = ...,
         view_as_float: bool = ...,
-        axis: Optional[int] = ...,
-        dynamic_config: Optional[dict] = ...,
+        axis: int | None = ...,
+        dynamic_config: dict | None = ...,
         skip_modules: list[str] = ...,
         **kwargs,
     ) -> None: ...
@@ -410,26 +410,26 @@ class GPTQConfig(QuantizationConfigMixin):
         self,
         bits: int,
         tokenizer: Any = ...,
-        dataset: Optional[Union[list[str], str]] = ...,
+        dataset: list[str] | str | None = ...,
         group_size: int = ...,
         damp_percent: float = ...,
         desc_act: bool = ...,
         sym: bool = ...,
         true_sequential: bool = ...,
         checkpoint_format: str = ...,
-        meta: Optional[dict[str, Any]] = ...,
-        backend: Optional[str] = ...,
+        meta: dict[str, Any] | None = ...,
+        backend: str | None = ...,
         use_cuda_fp16: bool = ...,
-        model_seqlen: Optional[int] = ...,
-        block_name_to_quantize: Optional[str] = ...,
-        module_name_preceding_first_block: Optional[list[str]] = ...,
+        model_seqlen: int | None = ...,
+        block_name_to_quantize: str | None = ...,
+        module_name_preceding_first_block: list[str] | None = ...,
         batch_size: int = ...,
-        pad_token_id: Optional[int] = ...,
-        use_exllama: Optional[bool] = ...,
-        max_input_length: Optional[int] = ...,
-        exllama_config: Optional[dict[str, Any]] = ...,
+        pad_token_id: int | None = ...,
+        use_exllama: bool | None = ...,
+        max_input_length: int | None = ...,
+        exllama_config: dict[str, Any] | None = ...,
         cache_block_outputs: bool = ...,
-        modules_in_block_to_quantize: Optional[list[list[str]]] = ...,
+        modules_in_block_to_quantize: list[list[str]] | None = ...,
         **kwargs,
     ) -> None: ...
     def get_loading_attributes(self):  # -> dict[str, Any]:
@@ -496,11 +496,11 @@ class AwqConfig(QuantizationConfigMixin):
         zero_point: bool = ...,
         version: AWQLinearVersion = ...,
         backend: AwqBackendPackingMethod = ...,
-        do_fuse: Optional[bool] = ...,
-        fuse_max_seq_len: Optional[int] = ...,
-        modules_to_fuse: Optional[dict] = ...,
-        modules_to_not_convert: Optional[list] = ...,
-        exllama_config: Optional[dict[str, int]] = ...,
+        do_fuse: bool | None = ...,
+        fuse_max_seq_len: int | None = ...,
+        modules_to_fuse: dict | None = ...,
+        modules_to_not_convert: list | None = ...,
+        exllama_config: dict[str, int] | None = ...,
         **kwargs,
     ) -> None: ...
     def post_init(self):  # -> None:
@@ -537,7 +537,7 @@ class AqlmConfig(QuantizationConfigMixin):
         out_group_size: int = ...,
         num_codebooks: int = ...,
         nbits_per_codebook: int = ...,
-        linear_weights_not_to_quantize: Optional[list[str]] = ...,
+        linear_weights_not_to_quantize: list[str] | None = ...,
         **kwargs,
     ) -> None: ...
     def post_init(self):  # -> None:
@@ -604,7 +604,7 @@ class VptqConfig(QuantizationConfigMixin):
         enable_proxy_error: bool = ...,
         config_for_layers: dict[str, Any] = ...,
         shared_layer_config: dict[str, Any] = ...,
-        modules_to_not_convert: Optional[list] = ...,
+        modules_to_not_convert: list | None = ...,
         **kwargs,
     ) -> None: ...
     def post_init(self):  # -> None:
@@ -628,9 +628,7 @@ class QuantoConfig(QuantizationConfigMixin):
             The list of modules to not quantize, useful for quantizing models that explicitly require to have
             some modules left in their original precision (e.g. Whisper encoder, Llava encoder, Mixtral gate layers).
     """
-    def __init__(
-        self, weights=..., activations=..., modules_to_not_convert: Optional[list] = ..., **kwargs
-    ) -> None: ...
+    def __init__(self, weights=..., activations=..., modules_to_not_convert: list | None = ..., **kwargs) -> None: ...
     def post_init(self):  # -> None:
         r"""
         Safety checker that arguments are correct
@@ -650,7 +648,7 @@ class EetqConfig(QuantizationConfigMixin):
             The list of modules to not quantize, useful for quantizing models that explicitly require to have
             some modules left in their original precision.
     """
-    def __init__(self, weights: str = ..., modules_to_not_convert: Optional[list] = ..., **kwargs) -> None: ...
+    def __init__(self, weights: str = ..., modules_to_not_convert: list | None = ..., **kwargs) -> None: ...
     def post_init(self):  # -> None:
         r"""
         Safety checker that arguments are correct
@@ -684,13 +682,13 @@ class CompressedTensorsConfig(QuantizationConfigMixin):
     """
     def __init__(
         self,
-        config_groups: Optional[dict[str, Union[QuantizationScheme, list[str]]]] = ...,
+        config_groups: dict[str, QuantizationScheme | list[str]] | None = ...,
         format: str = ...,
         quantization_status: QuantizationStatus = ...,
-        kv_cache_scheme: Optional[QuantizationArgs] = ...,
-        global_compression_ratio: Optional[float] = ...,
-        ignore: Optional[list[str]] = ...,
-        sparsity_config: Optional[dict[str, Any]] = ...,
+        kv_cache_scheme: QuantizationArgs | None = ...,
+        global_compression_ratio: float | None = ...,
+        ignore: list[str] | None = ...,
+        sparsity_config: dict[str, Any] | None = ...,
         quant_method: str = ...,
         run_compressed: bool = ...,
         **kwargs,
@@ -762,7 +760,7 @@ class FbgemmFp8Config(QuantizationConfigMixin):
             some modules left in their original precision.
     """
     def __init__(
-        self, activation_scale_ub: float = ..., modules_to_not_convert: Optional[list] = ..., **kwargs
+        self, activation_scale_ub: float = ..., modules_to_not_convert: list | None = ..., **kwargs
     ) -> None: ...
     def get_loading_attributes(self):  # -> dict[str, Any]:
         ...
@@ -790,10 +788,10 @@ class HiggsConfig(QuantizationConfigMixin):
         self,
         bits: int = ...,
         p: int = ...,
-        modules_to_not_convert: Optional[list[str]] = ...,
+        modules_to_not_convert: list[str] | None = ...,
         hadamard_size: int = ...,
         group_size: int = ...,
-        tune_metadata: Optional[dict[str, Any]] = ...,
+        tune_metadata: dict[str, Any] | None = ...,
         **kwargs,
     ) -> None: ...
     def post_init(self):  # -> None:
@@ -832,7 +830,7 @@ class FPQuantConfig(QuantizationConfigMixin):
         store_master_weights: bool = ...,
         hadamard_group_size: int = ...,
         pseudoquantization: bool = ...,
-        modules_to_not_convert: Optional[list[str]] = ...,
+        modules_to_not_convert: list[str] | None = ...,
         **kwargs,
     ) -> None: ...
     def post_init(self):  # -> None:
@@ -844,15 +842,15 @@ class FPQuantConfig(QuantizationConfigMixin):
 @dataclass
 class TorchAoConfig(QuantizationConfigMixin):
     quant_method: QuantizationMethod
-    quant_type: Union[str, AOBaseConfig]
-    modules_to_not_convert: Optional[list]
+    quant_type: str | AOBaseConfig
+    modules_to_not_convert: list | None
     quant_type_kwargs: dict[str, Any]
     include_input_output_embeddings: bool
     untie_embedding_weights: bool
     def __init__(
         self,
-        quant_type: Union[str, AOBaseConfig],
-        modules_to_not_convert: Optional[list] = ...,
+        quant_type: str | AOBaseConfig,
+        modules_to_not_convert: list | None = ...,
         include_input_output_embeddings: bool = ...,
         untie_embedding_weights: bool = ...,
         **kwargs,
@@ -904,11 +902,11 @@ class BitNetQuantConfig(QuantizationConfigMixin):
     """
     def __init__(
         self,
-        modules_to_not_convert: Optional[list] = ...,
-        linear_class: Optional[str] = ...,
-        quantization_mode: Optional[str] = ...,
-        use_rms_norm: Optional[bool] = ...,
-        rms_norm_eps: Optional[float] = ...,
+        modules_to_not_convert: list | None = ...,
+        linear_class: str | None = ...,
+        quantization_mode: str | None = ...,
+        use_rms_norm: bool | None = ...,
+        rms_norm_eps: float | None = ...,
         **kwargs,
     ) -> None: ...
     def post_init(self):  # -> None:
@@ -944,8 +942,8 @@ class SpQRConfig(QuantizationConfigMixin):
         bits: int = ...,
         beta1: int = ...,
         beta2: int = ...,
-        shapes: Optional[dict[str, int]] = ...,
-        modules_to_not_convert: Optional[list[str]] = ...,
+        shapes: dict[str, int] | None = ...,
+        modules_to_not_convert: list[str] | None = ...,
         **kwargs,
     ) -> None: ...
     def post_init(self):  # -> None:
@@ -971,7 +969,7 @@ class FineGrainedFP8Config(QuantizationConfigMixin):
         self,
         activation_scheme: str = ...,
         weight_block_size: tuple[int, int] = ...,
-        modules_to_not_convert: Optional[list] = ...,
+        modules_to_not_convert: list | None = ...,
         **kwargs,
     ) -> None: ...
     def post_init(self):  # -> None:
@@ -994,6 +992,6 @@ class Mxfp4Config(QuantizationConfigMixin):
             The list of modules to not quantize, useful for quantizing models that explicitly require to have
             some modules left in their original precision.
     """
-    def __init__(self, modules_to_not_convert: Optional[list] = ..., dequantize: bool = ..., **kwargs) -> None: ...
+    def __init__(self, modules_to_not_convert: list | None = ..., dequantize: bool = ..., **kwargs) -> None: ...
     def get_loading_attributes(self):  # -> dict[str, bool]:
         ...

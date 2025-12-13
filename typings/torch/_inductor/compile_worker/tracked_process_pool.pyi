@@ -1,8 +1,9 @@
 from concurrent.futures import Future, ProcessPoolExecutor
 from dataclasses import dataclass
 from multiprocessing.context import BaseContext
-from typing import Callable, Optional, TypeVar
-from typing_extensions import ParamSpec
+from typing import Optional, TypeVar
+from collections.abc import Callable
+from typing import ParamSpec
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
@@ -23,8 +24,8 @@ _queue_stats_lock = ...
 class TrackedProcessPoolExecutor(ProcessPoolExecutor):
     def __init__(
         self,
-        max_workers: Optional[int] = ...,
-        mp_context: Optional[BaseContext] = ...,
-        initializer: Optional[Callable[[], object]] = ...,
+        max_workers: int | None = ...,
+        mp_context: BaseContext | None = ...,
+        initializer: Callable[[], object] | None = ...,
     ) -> None: ...
     def submit(self, fn: Callable[_P, _R], /, *args: _P.args, **kwargs: _P.kwargs) -> Future[_R]: ...

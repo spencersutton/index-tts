@@ -1,7 +1,8 @@
 import torch
 import torch.fx as fx
 from dataclasses import dataclass
-from typing import Any, Callable, Optional, TYPE_CHECKING, Union
+from typing import Any, Optional, TYPE_CHECKING, Union
+from collections.abc import Callable
 from torch import Tensor
 from torch._guards import CompileContext, TracingContext
 from .descriptors import AOTInput
@@ -76,7 +77,7 @@ class FunctionalizedRngRuntimeWrapper(InductorWrapper):
 @dataclass
 class FakifiedOutWrapper(InductorWrapper):
     out_metas: list[torch.Tensor] = ...
-    fwd_output_strides: Optional[list[Optional[list[int]]]] = ...
+    fwd_output_strides: list[list[int] | None] | None = ...
     needs_post_compile: bool = ...
     def pre_compile(self, fw_module: fx.GraphModule, flat_args, aot_config, *, fw_metadata) -> None: ...
     def set_fwd_output_strides(self, fwd_output_strides):  # -> None:
@@ -89,9 +90,9 @@ class FakifiedOutWrapper(InductorWrapper):
 @dataclass
 class AOTDispatchSubclassWrapper(CompilerWrapper):
     trace_joint: bool
-    fw_only: Optional[Callable]
-    maybe_subclass_meta: Optional[SubclassMeta]
-    num_fw_outs_saved_for_bw: Optional[int]
+    fw_only: Callable | None
+    maybe_subclass_meta: SubclassMeta | None
+    num_fw_outs_saved_for_bw: int | None
     def pre_compile(
         self,
         flat_fn: TraceFn,
@@ -160,18 +161,18 @@ class AOTSyntheticBaseWrapper(CompilerWrapper):
 def merge_view_inputs(
     aot_config: AOTConfig,
     fwd_inputs: list[Any],
-    fwd_inputs_descs: Optional[list[AOTInput]],
+    fwd_inputs_descs: list[AOTInput] | None,
     mutated_input_info: list[InputAliasInfo],
     *,
     is_inference: bool,
-) -> tuple[list[Any], list[AOTInput], Optional[list[Union[int, tuple[int, torch.Tensor]]]]]: ...
+) -> tuple[list[Any], list[AOTInput], list[int | tuple[int, torch.Tensor]] | None]: ...
 
 @dataclass
 class AutogradLazyBackwardCompileInfo:
     bw_module: Callable
     placeholder_list: list[Any]
-    saved_context: Optional[TracingContext]
-    saved_compile_context: Optional[CompileContext]
+    saved_context: TracingContext | None
+    saved_compile_context: CompileContext | None
 
 @dataclass
 class CachedAutogradLazyBackwardCompileInfo:
@@ -188,34 +189,29 @@ def coerce_to_expected_memory_format(x: torch.Tensor, memory_format: MemoryForma
 class AOTDispatchAutograd:
     @staticmethod
     def process_runtime_tangent(
-        x, meta: Union[PlainTensorMeta, SubclassCreationMeta]
+        x, meta: PlainTensorMeta | SubclassCreationMeta
     ):  # -> tuple[Any, list[Any]] | tuple[Tensor, list[Tensor]] | tuple[<subclass of Tensor and TensorWithFlatten>, list[Any]]:
         ...
     @staticmethod
     def post_compile(
         compiled_fw_func,
         compiled_bw_func,
-        maybe_subclass_meta: Optional[SubclassMeta],
+        maybe_subclass_meta: SubclassMeta | None,
         num_symints_saved_for_bw_: int,
         backward_state_indices: list[int],
         disable_amp: bool,
         indices_of_inps_to_detach: list[int],
-        lazy_backward_info: Optional[
-            Union[
-                AutogradLazyBackwardCompileInfo,
-                CachedAutogradLazyBackwardCompileInfo,
-            ]
-        ],
+        lazy_backward_info: AutogradLazyBackwardCompileInfo | CachedAutogradLazyBackwardCompileInfo | None,
         aot_config: AOTConfig,
         *,
         fw_metadata: ViewAndMutationMeta,
-        try_save_cache_entry: Optional[Callable],
+        try_save_cache_entry: Callable | None,
     ):  # -> Callable[..., list[Any]]:
         ...
 
 @dataclass
 class DebugAssertWrapper(CompilerWrapper):
-    flat_requires_grad: list[Optional[bool]] = ...
+    flat_requires_grad: list[bool | None] = ...
     def post_compile(
         self, compiled_fn, aot_config: AOTConfig, *, runtime_metadata: ViewAndMutationMeta
     ):  # -> _Wrapped[..., Any, ..., Any]:
@@ -237,6 +233,6 @@ def post_compile(
     *,
     runtime_metadata: ViewAndMutationMeta,
 ) -> tuple[Callable, ViewAndMutationMeta]: ...
-def make_runtime_safe(fw_metadata: ViewAndMutationMeta, maybe_subclass_meta: Optional[SubclassMeta]):  # -> None:
+def make_runtime_safe(fw_metadata: ViewAndMutationMeta, maybe_subclass_meta: SubclassMeta | None):  # -> None:
 
     ...

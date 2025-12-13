@@ -29,9 +29,7 @@ class BatchFeature(UserDict):
             You can give a tensor_type here to convert the lists of integers in PyTorch/TensorFlow/Numpy Tensors at
             initialization.
     """
-    def __init__(
-        self, data: Optional[dict[str, Any]] = ..., tensor_type: Union[None, str, TensorType] = ...
-    ) -> None: ...
+    def __init__(self, data: dict[str, Any] | None = ..., tensor_type: None | str | TensorType = ...) -> None: ...
     def __getitem__(self, item: str) -> Any:
         """
         If the key is a string, returns the value of the dict associated to `key` ('input_values', 'attention_mask',
@@ -44,7 +42,7 @@ class BatchFeature(UserDict):
         ...
     def __setstate__(self, state):  # -> None:
         ...
-    def convert_to_tensors(self, tensor_type: Optional[Union[str, TensorType]] = ...):  # -> Self:
+    def convert_to_tensors(self, tensor_type: str | TensorType | None = ...):  # -> Self:
         """
         Convert the inner content to tensors.
 
@@ -86,11 +84,11 @@ class FeatureExtractionMixin(PushToHubMixin):
     @classmethod
     def from_pretrained(
         cls: type[SpecificFeatureExtractorType],
-        pretrained_model_name_or_path: Union[str, os.PathLike[str]],
-        cache_dir: Optional[Union[str, os.PathLike[str]]] = ...,
+        pretrained_model_name_or_path: str | os.PathLike[str],
+        cache_dir: str | os.PathLike[str] | None = ...,
         force_download: bool = ...,
         local_files_only: bool = ...,
-        token: Optional[Union[str, bool]] = ...,
+        token: str | bool | None = ...,
         revision: str = ...,
         **kwargs: Any,
     ) -> SpecificFeatureExtractorType:
@@ -173,9 +171,7 @@ class FeatureExtractionMixin(PushToHubMixin):
         ```"""
         ...
 
-    def save_pretrained(
-        self, save_directory: Union[str, os.PathLike], push_to_hub: bool = ..., **kwargs
-    ):  # -> list[str]:
+    def save_pretrained(self, save_directory: str | os.PathLike, push_to_hub: bool = ..., **kwargs):  # -> list[str]:
         """
         Save a feature_extractor object to the directory `save_directory`, so that it can be re-loaded using the
         [`~feature_extraction_utils.FeatureExtractionMixin.from_pretrained`] class method.
@@ -194,7 +190,7 @@ class FeatureExtractionMixin(PushToHubMixin):
 
     @classmethod
     def get_feature_extractor_dict(
-        cls, pretrained_model_name_or_path: Union[str, os.PathLike], **kwargs
+        cls, pretrained_model_name_or_path: str | os.PathLike, **kwargs
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         """
         From a `pretrained_model_name_or_path`, resolve to a dictionary of parameters, to be used for instantiating a
@@ -237,7 +233,7 @@ class FeatureExtractionMixin(PushToHubMixin):
         ...
 
     @classmethod
-    def from_json_file(cls, json_file: Union[str, os.PathLike]) -> PreTrainedFeatureExtractor:
+    def from_json_file(cls, json_file: str | os.PathLike) -> PreTrainedFeatureExtractor:
         """
         Instantiates a feature extractor of type [`~feature_extraction_utils.FeatureExtractionMixin`] from the path to
         a JSON file of parameters.
@@ -261,7 +257,7 @@ class FeatureExtractionMixin(PushToHubMixin):
         """
         ...
 
-    def to_json_file(self, json_file_path: Union[str, os.PathLike]):  # -> None:
+    def to_json_file(self, json_file_path: str | os.PathLike):  # -> None:
         """
         Save this instance to a JSON file.
 

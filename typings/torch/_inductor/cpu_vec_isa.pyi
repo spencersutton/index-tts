@@ -1,7 +1,8 @@
 import dataclasses
 import functools
 import torch
-from typing import Any, Callable, Union
+from typing import Any, Union
+from collections.abc import Callable
 
 _IS_WINDOWS = ...
 
@@ -111,7 +112,7 @@ invalid_vec_isa = ...
 supported_vec_isa_list = ...
 
 def get_isa_from_cpu_capability(
-    capability: Union[str, None], vec_isa_list: list[VecISA], invalid_vec_isa: InvalidVecISA
+    capability: str | None, vec_isa_list: list[VecISA], invalid_vec_isa: InvalidVecISA
 ):  # -> InvalidVecISA | VecISA:
     ...
 @functools.cache

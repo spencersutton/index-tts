@@ -1,12 +1,13 @@
 import sympy
-from typing import Any, Callable, Optional, Union
+from typing import Any, Optional, Union
+from collections.abc import Callable
 from .. import ir
 from ..autotune_process import CppBenchmarkRequest
 from .cpp import CppKernel
 
 def parse_expr_with_index_symbols(expr):  # -> list[Any | list[Any]]:
     ...
-def wrap_with_tensorbox(node) -> Union[ir.TensorBox, ir.ShapeAsConstantBuffer]: ...
+def wrap_with_tensorbox(node) -> ir.TensorBox | ir.ShapeAsConstantBuffer: ...
 
 class CppTemplateKernel(CppKernel):
     def __init__(self, kernel_name, num_threads) -> None: ...
@@ -16,9 +17,9 @@ class CppTemplateKernel(CppKernel):
         self,
         inputs: dict[str, ir.Buffer],
         outputs: dict[str, ir.Buffer],
-        aliases: Optional[dict[str, str]] = ...,
+        aliases: dict[str, str] | None = ...,
         function_name: str = ...,
-        extra_sizevars: Optional[list[sympy.Expr]] = ...,
+        extra_sizevars: list[sympy.Expr] | None = ...,
         placeholder: str = ...,
     ) -> str: ...
     def call_kernel(self, name: str, node: ir.CppTemplateBuffer):  # -> None:
@@ -48,25 +49,25 @@ class CppTemplateKernel(CppKernel):
         self,
         dst: ir.Buffer,
         nodes: list[ir.IRNode],
-        offsets: Optional[list[sympy.Expr]] = ...,
-        reindexers: Optional[list[Optional[Callable[[list[Any]], list[Any]]]]] = ...,
+        offsets: list[sympy.Expr] | None = ...,
+        reindexers: list[Callable[[list[Any]], list[Any]] | None] | None = ...,
     ) -> str: ...
     def store_grouped_gemm_pointwise_nodes(
         self,
         dst: tuple[ir.Buffer],
         nodes: list[ir.IRNode],
         offsets: list[sympy.Expr],
-        reindexers: list[Optional[Callable[[list[Any]], list[Any]]]],
+        reindexers: list[Callable[[list[Any]], list[Any]] | None],
         output_names: list[str],
     ) -> str: ...
     def store_output(
         self,
         dst: ir.Buffer,
         src: ir.Buffer,
-        orig_src: Optional[ir.Buffer] = ...,
-        epilogue_nodes: Optional[list[ir.IRNode]] = ...,
-        offsets: Optional[list[Any]] = ...,
-        reindexers: Optional[list[Optional[Callable[[list[Any]], list[Any]]]]] = ...,
+        orig_src: ir.Buffer | None = ...,
+        epilogue_nodes: list[ir.IRNode] | None = ...,
+        offsets: list[Any] | None = ...,
+        reindexers: list[Callable[[list[Any]], list[Any]] | None] | None = ...,
     ):  # -> str:
 
         ...
@@ -74,11 +75,11 @@ class CppTemplateKernel(CppKernel):
         self,
         dst: tuple[ir.Buffer],
         src: tuple[ir.IRNode],
-        orig_src: Optional[tuple[ir.IRNode]] = ...,
-        epilogue_nodes: Optional[list[ir.IRNode]] = ...,
-        offsets: Optional[list[Any]] = ...,
-        reindexers: Optional[list[Optional[Callable[[list[Any]], list[Any]]]]] = ...,
-        multi_output_buffers: Optional[tuple[ir.MultiOutput]] = ...,
+        orig_src: tuple[ir.IRNode] | None = ...,
+        epilogue_nodes: list[ir.IRNode] | None = ...,
+        offsets: list[Any] | None = ...,
+        reindexers: list[Callable[[list[Any]], list[Any]] | None] | None = ...,
+        multi_output_buffers: tuple[ir.MultiOutput] | None = ...,
     ):  # -> str:
         ...
     def check_bounds(self, expr, size, lower, upper):  # -> None:
@@ -92,15 +93,15 @@ class CppTemplateCaller(ir.ChoiceCaller):
         input_nodes: list[ir.Buffer],
         layout: ir.Layout,
         make_kernel_render: Callable[
-            [ir.CppTemplateBuffer, bool, Optional[list[ir.IRNode]]],
+            [ir.CppTemplateBuffer, bool, list[ir.IRNode] | None],
             str,
         ],
         bmreq: CppBenchmarkRequest,
         template: CppTemplate,
-        info_kwargs: Optional[dict[str, Union[ir.PrimitiveInfoType, list[ir.PrimitiveInfoType]]]] = ...,
+        info_kwargs: dict[str, ir.PrimitiveInfoType | list[ir.PrimitiveInfoType]] | None = ...,
     ) -> None: ...
     def precompile(self) -> None: ...
     def benchmark(self, *args, out) -> float: ...
     def hash_key(self) -> str: ...
-    def info_dict(self) -> dict[str, Union[ir.PrimitiveInfoType, list[ir.PrimitiveInfoType]]]: ...
-    def output_node(self) -> Union[ir.TensorBox, ir.ShapeAsConstantBuffer]: ...
+    def info_dict(self) -> dict[str, ir.PrimitiveInfoType | list[ir.PrimitiveInfoType]]: ...
+    def output_node(self) -> ir.TensorBox | ir.ShapeAsConstantBuffer: ...

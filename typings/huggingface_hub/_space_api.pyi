@@ -102,12 +102,12 @@ class SpaceRuntime:
     """
 
     stage: SpaceStage
-    hardware: Optional[SpaceHardware]
-    requested_hardware: Optional[SpaceHardware]
-    sleep_time: Optional[int]
-    storage: Optional[SpaceStorage]
-    raw: Dict
-    def __init__(self, data: Dict) -> None: ...
+    hardware: SpaceHardware | None
+    requested_hardware: SpaceHardware | None
+    sleep_time: int | None
+    storage: SpaceStorage | None
+    raw: dict
+    def __init__(self, data: dict) -> None: ...
 
 @dataclass
 class SpaceVariable:
@@ -127,6 +127,6 @@ class SpaceVariable:
 
     key: str
     value: str
-    description: Optional[str]
-    updated_at: Optional[datetime]
-    def __init__(self, key: str, values: Dict) -> None: ...
+    description: str | None
+    updated_at: datetime | None
+    def __init__(self, key: str, values: dict) -> None: ...

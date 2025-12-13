@@ -21,10 +21,10 @@ logger = ...
 class RequestParameters:
     url: str
     task: str
-    model: Optional[str]
-    json: Optional[Union[str, Dict, List]]
-    data: Optional[bytes]
-    headers: Dict[str, Any]
+    model: str | None
+    json: str | dict | list | None
+    data: bytes | None
+    headers: dict[str, Any]
     ...
 
 class MimeBytes(bytes):
@@ -42,11 +42,11 @@ class MimeBytes(bytes):
     ```
     """
 
-    mime_type: Optional[str]
-    def __new__(cls, data: bytes, mime_type: Optional[str] = ...):  # -> Self:
+    mime_type: str | None
+    def __new__(cls, data: bytes, mime_type: str | None = ...):  # -> Self:
         ...
 
-_UNSUPPORTED_TEXT_GENERATION_KWARGS: Dict[Optional[str], List[str]] = ...
+_UNSUPPORTED_TEXT_GENERATION_KWARGS: dict[str | None, list[str]] = ...
 
 def raise_text_generation_error(http_error: HTTPError) -> NoReturn:
     """

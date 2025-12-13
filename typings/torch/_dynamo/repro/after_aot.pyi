@@ -1,7 +1,8 @@
 import torch
 import torch.fx as fx
 import torch.nn as nn
-from typing import Any, Callable, IO, Optional, TYPE_CHECKING, Union
+from typing import Any, IO, Optional, TYPE_CHECKING, Union
+from collections.abc import Callable
 from collections.abc import Sequence
 from torch._inductor.compile_fx import _CompileFxCallable
 
@@ -35,7 +36,7 @@ def generate_compiler_repro_string(
     args: Sequence[Any],
     *,
     stable_output: bool = ...,
-    save_dir: Optional[str] = ...,
+    save_dir: str | None = ...,
     stable_hash: bool = ...,
     has_distributed_ops: bool = ...,
 ) -> str: ...
@@ -46,32 +47,32 @@ def save_graph_repro(
     compiler_name: str,
     *,
     stable_output: bool = ...,
-    save_dir: Optional[str] = ...,
+    save_dir: str | None = ...,
     command: str = ...,
-    accuracy: Optional[Union[str, bool]] = ...,
-    tracing_mode: Optional[str] = ...,
-    check_str: Optional[str] = ...,
+    accuracy: str | bool | None = ...,
+    tracing_mode: str | None = ...,
+    check_str: str | None = ...,
     stable_hash: bool = ...,
 ) -> None: ...
 def dump_compiler_graph_state(
-    gm: torch.fx.GraphModule, args: Sequence[Any], compiler_name: str, *, accuracy: Optional[Union[str, bool]] = ...
+    gm: torch.fx.GraphModule, args: Sequence[Any], compiler_name: str, *, accuracy: str | bool | None = ...
 ) -> None: ...
 def dump_to_minify(gm: torch.fx.GraphModule, args: Sequence[Any], compiler_name: str) -> None: ...
 def isolate_fails(
     fx_g: torch.fx.GraphModule,
     args: Sequence[Any],
     compiler_name: str,
-    env: Optional[dict[str, Any]] = ...,
-    save_dir: Optional[str] = ...,
-    accuracy: Optional[Union[bool, str]] = ...,
-    tracing_mode: Optional[str] = ...,
-    check_str: Optional[str] = ...,
+    env: dict[str, Any] | None = ...,
+    save_dir: str | None = ...,
+    accuracy: bool | str | None = ...,
+    tracing_mode: str | None = ...,
+    check_str: str | None = ...,
 ) -> bool: ...
-def inductor_fails(fx_g: torch.fx.GraphModule, args: Sequence[Any], check_str: Optional[str] = ...) -> bool: ...
+def inductor_fails(fx_g: torch.fx.GraphModule, args: Sequence[Any], check_str: str | None = ...) -> bool: ...
 def inductor_accuracy_fails(
     fx_g: torch.fx.GraphModule,
     args: Sequence[Any],
-    check_str: Optional[str] = ...,
+    check_str: str | None = ...,
     *,
     require_fp64: bool = ...,
     ignore_non_fp: bool = ...,
@@ -97,10 +98,10 @@ def run_repro(
     load_args: Any,
     *,
     command: str = ...,
-    accuracy: Union[bool, str] = ...,
-    save_dir: Optional[str] = ...,
-    tracing_mode: Optional[str] = ...,
-    patch_code: Optional[str] = ...,
-    check_str: Optional[str] = ...,
+    accuracy: bool | str = ...,
+    save_dir: str | None = ...,
+    tracing_mode: str | None = ...,
+    patch_code: str | None = ...,
+    check_str: str | None = ...,
     **kwargs: Any,
 ) -> Any: ...

@@ -7,7 +7,8 @@ import flax.linen as nn
 import jax
 import jax.numpy as jnp
 import numpy as np
-from typing import Callable, Optional
+from typing import Optional
+from collections.abc import Callable
 from flax.core.frozen_dict import FrozenDict
 from ...modeling_flax_utils import FlaxPreTrainedModel
 from ...utils import ModelOutput, add_start_docstrings, add_start_docstrings_to_model_forward
@@ -43,8 +44,8 @@ class FlaxAlbertForPreTrainingOutput(ModelOutput):
 
     prediction_logits: jnp.ndarray = ...
     sop_logits: jnp.ndarray = ...
-    hidden_states: Optional[tuple[jnp.ndarray]] = ...
-    attentions: Optional[tuple[jnp.ndarray]] = ...
+    hidden_states: tuple[jnp.ndarray] | None = ...
+    attentions: tuple[jnp.ndarray] | None = ...
 
 ALBERT_START_DOCSTRING = ...
 ALBERT_INPUTS_DOCSTRING = ...
@@ -96,7 +97,7 @@ class FlaxAlbertLayerCollection(nn.Module):
 class FlaxAlbertLayerCollections(nn.Module):
     config: AlbertConfig
     dtype: jnp.dtype = ...
-    layer_index: Optional[str] = ...
+    layer_index: str | None = ...
     def setup(self):  # -> None:
         ...
     def __call__(
@@ -182,12 +183,12 @@ class FlaxAlbertPreTrainedModel(FlaxPreTrainedModel):
         attention_mask=...,
         token_type_ids=...,
         position_ids=...,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: jax.random.PRNGKey = ...,
         train: bool = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
     ): ...
 
 class FlaxAlbertModule(nn.Module):
@@ -200,8 +201,8 @@ class FlaxAlbertModule(nn.Module):
         self,
         input_ids,
         attention_mask,
-        token_type_ids: Optional[np.ndarray] = ...,
-        position_ids: Optional[np.ndarray] = ...,
+        token_type_ids: np.ndarray | None = ...,
+        position_ids: np.ndarray | None = ...,
         deterministic: bool = ...,
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,

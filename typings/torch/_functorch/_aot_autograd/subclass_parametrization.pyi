@@ -10,8 +10,8 @@ class SubclassCreationMeta:
     class_type: Any
     attrs: dict[str, SubclassCreationMeta]
     metadata: Any
-    outer_size: Iterable[Union[None, int, torch.SymInt]]
-    outer_stride: Iterable[Union[None, int, torch.SymInt]]
+    outer_size: Iterable[None | int | torch.SymInt]
+    outer_stride: Iterable[None | int | torch.SymInt]
 
 class UnwrapTensorSubclass(torch.nn.Module):
     def forward(self, *tensors) -> torch.Tensor: ...

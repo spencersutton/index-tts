@@ -22,8 +22,8 @@ class Swin2SRFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
         The size of the sliding window for the local attention.
     """
 
-    do_pad: Optional[bool]
-    pad_size: Optional[int]
+    do_pad: bool | None
+    pad_size: int | None
     ...
 
 @auto_docstring

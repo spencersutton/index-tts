@@ -126,9 +126,7 @@ class ChatInterface(Blocks):
 
     def example_populated(self, example: SelectData):  # -> Any:
         ...
-    def example_clicked(
-        self, example: SelectData
-    ) -> Generator[tuple[list[MessageDict], str | MultimodalPostprocess], None, None]:
+    def example_clicked(self, example: SelectData) -> Generator[tuple[list[MessageDict], str | MultimodalPostprocess]]:
         """
         When an example is clicked, the chat history (and saved input) is initially set only
         to the example message. Then, if example caching is enabled, the cached response is loaded

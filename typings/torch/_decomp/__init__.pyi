@@ -7,8 +7,9 @@ from collections import defaultdict
 from collections.abc import Sequence
 from functools import lru_cache, partial, wraps
 from itertools import chain
-from typing import Callable, Optional, TYPE_CHECKING, TypeVar, Union
-from typing_extensions import ParamSpec
+from typing import Optional, TYPE_CHECKING, TypeVar, Union
+from collections.abc import Callable
+from typing import ParamSpec
 from torch.export.decomp_utils import CustomDecompTable
 from torch._ops import HigherOrderOperator, OpOverload, OpOverloadPacket, OperatorBase
 from torch._prims_common import CustomOutParamAnnotation
@@ -36,9 +37,9 @@ def register_decomposition(
     aten_op, registry=..., *, type=..., unsafe=...
 ) -> Callable[[Callable[_P, _T]], Callable[_P, _T]]: ...
 def get_decompositions(
-    aten_ops: Sequence[Union[torch._ops.OperatorBase, OpOverloadPacket]], type: str = ...
+    aten_ops: Sequence[torch._ops.OperatorBase | OpOverloadPacket], type: str = ...
 ) -> dict[torch._ops.OperatorBase, Callable]: ...
 def remove_decompositions(
-    decompositions: dict[torch._ops.OperatorBase, Callable], aten_ops: Sequence[Union[OpOverload, OpOverloadPacket]]
+    decompositions: dict[torch._ops.OperatorBase, Callable], aten_ops: Sequence[OpOverload | OpOverloadPacket]
 ) -> None: ...
 def core_aten_decompositions() -> CustomDecompTable: ...

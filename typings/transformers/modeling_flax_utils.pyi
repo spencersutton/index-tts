@@ -91,15 +91,15 @@ class FlaxPreTrainedModel(PushToHubMixin, FlaxGenerationMixin):
     @property
     def module(self) -> nn.Module: ...
     @property
-    def params(self) -> Union[dict, FrozenDict]: ...
+    def params(self) -> dict | FrozenDict: ...
     @property
     def required_params(self) -> set: ...
     @property
     def params_shape_tree(self) -> dict: ...
     @params.setter
-    def params(self, params: Union[dict, FrozenDict]):  # -> None:
+    def params(self, params: dict | FrozenDict):  # -> None:
         ...
-    def to_bf16(self, params: Union[dict, FrozenDict], mask: Any = ...):  # -> Any:
+    def to_bf16(self, params: dict | FrozenDict, mask: Any = ...):  # -> Any:
         r"""
         Cast the floating-point `params` to `jax.numpy.bfloat16`. This returns a new `params` tree and does not cast
         the `params` in place.
@@ -138,7 +138,7 @@ class FlaxPreTrainedModel(PushToHubMixin, FlaxGenerationMixin):
         ```"""
         ...
 
-    def to_fp32(self, params: Union[dict, FrozenDict], mask: Any = ...):  # -> Any:
+    def to_fp32(self, params: dict | FrozenDict, mask: Any = ...):  # -> Any:
         r"""
         Cast the floating-point `params` to `jax.numpy.float32`. This method can be used to explicitly convert the
         model parameters to fp32 precision. This returns a new `params` tree and does not cast the `params` in place.
@@ -165,7 +165,7 @@ class FlaxPreTrainedModel(PushToHubMixin, FlaxGenerationMixin):
         ```"""
         ...
 
-    def to_fp16(self, params: Union[dict, FrozenDict], mask: Any = ...):  # -> Any:
+    def to_fp16(self, params: dict | FrozenDict, mask: Any = ...):  # -> Any:
         r"""
         Cast the floating-point `params` to `jax.numpy.float16`. This returns a new `params` tree and does not cast the
         `params` in place.
@@ -236,15 +236,15 @@ class FlaxPreTrainedModel(PushToHubMixin, FlaxGenerationMixin):
     @classmethod
     def from_pretrained(
         cls,
-        pretrained_model_name_or_path: Union[str, os.PathLike],
+        pretrained_model_name_or_path: str | os.PathLike,
         dtype: jnp.dtype = ...,
         *model_args,
-        config: Optional[Union[PretrainedConfig, str, os.PathLike]] = ...,
-        cache_dir: Optional[Union[str, os.PathLike]] = ...,
+        config: PretrainedConfig | str | os.PathLike | None = ...,
+        cache_dir: str | os.PathLike | None = ...,
         ignore_mismatched_sizes: bool = ...,
         force_download: bool = ...,
         local_files_only: bool = ...,
-        token: Optional[Union[str, bool]] = ...,
+        token: str | bool | None = ...,
         revision: str = ...,
         **kwargs,
     ):  # -> Self | tuple[Self, Any]:
@@ -366,11 +366,11 @@ class FlaxPreTrainedModel(PushToHubMixin, FlaxGenerationMixin):
 
     def save_pretrained(
         self,
-        save_directory: Union[str, os.PathLike],
+        save_directory: str | os.PathLike,
         params=...,
         push_to_hub=...,
         max_shard_size=...,
-        token: Optional[Union[str, bool]] = ...,
+        token: str | bool | None = ...,
         safe_serialization: bool = ...,
         **kwargs,
     ):  # -> None:

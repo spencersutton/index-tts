@@ -43,7 +43,7 @@ class FlaxVisionTextDualEncoderModel(FlaxPreTrainedModel):
     def __init__(
         self,
         config: VisionTextDualEncoderConfig,
-        input_shape: Optional[tuple] = ...,
+        input_shape: tuple | None = ...,
         seed: int = ...,
         dtype: jnp.dtype = ...,
         _do_init: bool = ...,
@@ -57,12 +57,12 @@ class FlaxVisionTextDualEncoderModel(FlaxPreTrainedModel):
         attention_mask=...,
         position_ids=...,
         token_type_ids=...,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: jax.random.PRNGKey = ...,
         train: bool = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
     ): ...
     def get_text_features(
         self,
@@ -70,7 +70,7 @@ class FlaxVisionTextDualEncoderModel(FlaxPreTrainedModel):
         attention_mask=...,
         position_ids=...,
         token_type_ids=...,
-        params: Optional[dict] = ...,
+        params: dict | None = ...,
         dropout_rng: jax.random.PRNGKey = ...,
         train=...,
     ):
@@ -92,7 +92,7 @@ class FlaxVisionTextDualEncoderModel(FlaxPreTrainedModel):
         ...
 
     def get_image_features(
-        self, pixel_values, params: Optional[dict] = ..., dropout_rng: jax.random.PRNGKey = ..., train=...
+        self, pixel_values, params: dict | None = ..., dropout_rng: jax.random.PRNGKey = ..., train=...
     ):
         r"""
         Args:
@@ -109,8 +109,8 @@ class FlaxVisionTextDualEncoderModel(FlaxPreTrainedModel):
     @classmethod
     def from_vision_text_pretrained(
         cls,
-        vision_model_name_or_path: Optional[str] = ...,
-        text_model_name_or_path: Optional[str] = ...,
+        vision_model_name_or_path: str | None = ...,
+        text_model_name_or_path: str | None = ...,
         *model_args,
         **kwargs,
     ) -> FlaxPreTrainedModel:

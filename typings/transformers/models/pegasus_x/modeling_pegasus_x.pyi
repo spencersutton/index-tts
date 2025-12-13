@@ -46,7 +46,7 @@ class PegasusXScaledWordEmbedding(nn.Embedding):
     This module overrides nn.Embeddings' forward by multiplying with embeddings scale.
     """
     def __init__(
-        self, num_embeddings: int, embedding_dim: int, padding_idx: int, embed_scale: Optional[float] = ...
+        self, num_embeddings: int, embedding_dim: int, padding_idx: int, embed_scale: float | None = ...
     ) -> None: ...
     def forward(self, input_ids: torch.Tensor):  # -> Tensor:
         ...
@@ -56,7 +56,7 @@ class PegasusXSinusoidalPositionalEmbedding(nn.Module):
     def __init__(self, embed_dim, max_scale: int = ...) -> None: ...
     @torch.no_grad()
     def forward(
-        self, input_embeds: torch.Tensor, past_key_values_length: int = ..., position_ids: Optional[torch.Tensor] = ...
+        self, input_embeds: torch.Tensor, past_key_values_length: int = ..., position_ids: torch.Tensor | None = ...
     ) -> torch.Tensor:
         """`input_ids_shape` is expected to be [bsz x seqlen]."""
         ...
@@ -66,10 +66,10 @@ def eager_attention_forward(
     query: torch.Tensor,
     key: torch.Tensor,
     value: torch.Tensor,
-    attention_mask: Optional[torch.Tensor],
-    scaling: Optional[float] = ...,
+    attention_mask: torch.Tensor | None,
+    scaling: float | None = ...,
     dropout: float = ...,
-    head_mask: Optional[torch.Tensor] = ...,
+    head_mask: torch.Tensor | None = ...,
     **kwargs,
 ):  # -> tuple[Tensor, Tensor]:
     ...
@@ -84,20 +84,20 @@ class PegasusXAttention(nn.Module):
         is_decoder: bool = ...,
         bias: bool = ...,
         is_causal: bool = ...,
-        config: Optional[PegasusXConfig] = ...,
-        layer_idx: Optional[int] = ...,
+        config: PegasusXConfig | None = ...,
+        layer_idx: int | None = ...,
     ) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        key_value_states: Optional[torch.Tensor] = ...,
-        past_key_value: Optional[Cache] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        layer_head_mask: Optional[torch.Tensor] = ...,
+        key_value_states: torch.Tensor | None = ...,
+        past_key_value: Cache | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        layer_head_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
-        cache_position: Optional[torch.Tensor] = ...,
+        cache_position: torch.Tensor | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]:
         """Input shape: Batch x Time x Channel"""
         ...
 
@@ -110,9 +110,9 @@ class PegasusXGlobalLocalAttention(nn.Module):
         self,
         token_hidden_states: torch.Tensor,
         global_hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
-    ) -> tuple[torch.Tensor, torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor | None]:
         """Input shape: Batch x Time x Channel"""
         ...
 
@@ -199,17 +199,17 @@ class PegasusXEncoderLayer(GradientCheckpointingLayer):
     def unpad_local_tokens(cls, padded_hidden_states, block_size): ...
 
 class PegasusXDecoderLayer(GradientCheckpointingLayer):
-    def __init__(self, config: PegasusXConfig, layer_idx: Optional[int] = ...) -> None: ...
+    def __init__(self, config: PegasusXConfig, layer_idx: int | None = ...) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        encoder_hidden_states: Optional[torch.Tensor] = ...,
-        encoder_attention_mask: Optional[torch.Tensor] = ...,
-        past_key_value: Optional[Cache] = ...,
-        output_attentions: Optional[bool] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        encoder_hidden_states: torch.Tensor | None = ...,
+        encoder_attention_mask: torch.Tensor | None = ...,
+        past_key_value: Cache | None = ...,
+        output_attentions: bool | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.Tensor | None = ...,
     ) -> torch.Tensor:
         """
         Args:
@@ -251,7 +251,7 @@ class PegasusXEncoder(PegasusXPreTrainedModel):
         config: PegasusXConfig
         embed_tokens (nn.Embedding): output embedding
     """
-    def __init__(self, config: PegasusXConfig, embed_tokens: Optional[nn.Embedding] = ...) -> None: ...
+    def __init__(self, config: PegasusXConfig, embed_tokens: nn.Embedding | None = ...) -> None: ...
     def resize_position_embeddings(self, new_num_position_embeddings: int):  # -> None:
         """
         Resizes position embeddings matrix of the model if `new_num_position_embeddings !=
@@ -323,7 +323,7 @@ class PegasusXDecoder(PegasusXPreTrainedModel):
         config: PegasusXConfig
         embed_tokens (nn.Embedding): output embedding
     """
-    def __init__(self, config: PegasusXConfig, embed_tokens: Optional[nn.Embedding] = ...) -> None: ...
+    def __init__(self, config: PegasusXConfig, embed_tokens: nn.Embedding | None = ...) -> None: ...
     def forward(
         self,
         input_ids=...,
@@ -433,20 +433,20 @@ class PegasusXModel(PegasusXPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        decoder_input_ids: Optional[torch.Tensor] = ...,
-        decoder_attention_mask: Optional[torch.Tensor] = ...,
-        encoder_outputs: Optional[tuple[torch.FloatTensor]] = ...,
-        past_key_values: Optional[tuple[torch.FloatTensor]] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        decoder_inputs_embeds: Optional[torch.Tensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple, Seq2SeqModelOutput]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        decoder_input_ids: torch.Tensor | None = ...,
+        decoder_attention_mask: torch.Tensor | None = ...,
+        encoder_outputs: tuple[torch.FloatTensor] | None = ...,
+        past_key_values: tuple[torch.FloatTensor] | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        decoder_inputs_embeds: torch.Tensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.Tensor | None = ...,
+    ) -> tuple | Seq2SeqModelOutput:
         r"""
         decoder_input_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
             Indices of decoder input sequence tokens in the vocabulary.
@@ -518,21 +518,21 @@ class PegasusXForConditionalGeneration(PegasusXPreTrainedModel, GenerationMixin)
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        decoder_input_ids: Optional[torch.Tensor] = ...,
-        decoder_attention_mask: Optional[torch.Tensor] = ...,
-        encoder_outputs: Optional[tuple[torch.FloatTensor]] = ...,
-        past_key_values: Optional[tuple[torch.FloatTensor]] = ...,
-        inputs_embeds: Optional[torch.Tensor] = ...,
-        decoder_inputs_embeds: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.Tensor] = ...,
-    ) -> Union[tuple, Seq2SeqLMOutput]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        decoder_input_ids: torch.Tensor | None = ...,
+        decoder_attention_mask: torch.Tensor | None = ...,
+        encoder_outputs: tuple[torch.FloatTensor] | None = ...,
+        past_key_values: tuple[torch.FloatTensor] | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        decoder_inputs_embeds: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.Tensor | None = ...,
+    ) -> tuple | Seq2SeqLMOutput:
         r"""
         decoder_input_ids (`torch.LongTensor` of shape `(batch_size, target_sequence_length)`, *optional*):
             Indices of decoder input sequence tokens in the vocabulary.

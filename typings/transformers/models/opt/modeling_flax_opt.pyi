@@ -31,8 +31,8 @@ class FlaxOPTAttention(nn.Module):
     def __call__(
         self,
         hidden_states: jnp.ndarray,
-        key_value_states: Optional[jnp.ndarray] = ...,
-        attention_mask: Optional[jnp.ndarray] = ...,
+        key_value_states: jnp.ndarray | None = ...,
+        attention_mask: jnp.ndarray | None = ...,
         init_cache: bool = ...,
         deterministic: bool = ...,
     ) -> tuple[jnp.ndarray]:
@@ -125,13 +125,13 @@ class FlaxOPTPreTrainedModel(FlaxPreTrainedModel):
     def __call__(
         self,
         input_ids: jnp.ndarray,
-        attention_mask: Optional[jnp.ndarray] = ...,
-        position_ids: Optional[jnp.ndarray] = ...,
-        params: Optional[dict] = ...,
-        past_key_values: Optional[dict] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        attention_mask: jnp.ndarray | None = ...,
+        position_ids: jnp.ndarray | None = ...,
+        params: dict | None = ...,
+        past_key_values: dict | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
         dropout_rng: PRNGKey = ...,
         deterministic: bool = ...,
     ): ...
@@ -190,7 +190,7 @@ class FlaxOPTForCausalLMModule(nn.Module):
 class FlaxOPTForCausalLM(FlaxOPTPreTrainedModel):
     module_class = ...
     def prepare_inputs_for_generation(
-        self, input_ids, max_length, attention_mask: Optional[jax.Array] = ...
+        self, input_ids, max_length, attention_mask: jax.Array | None = ...
     ):  # -> dict[str, Any]:
         ...
     def update_inputs_for_generation(self, model_outputs, model_kwargs): ...

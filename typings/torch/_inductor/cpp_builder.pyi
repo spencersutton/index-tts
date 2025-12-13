@@ -55,13 +55,13 @@ class BuildOptionsBase:
     def __init__(
         self,
         compiler: str = ...,
-        definitions: Optional[list[str]] = ...,
-        include_dirs: Optional[list[str]] = ...,
-        cflags: Optional[list[str]] = ...,
-        ldflags: Optional[list[str]] = ...,
-        libraries_dirs: Optional[list[str]] = ...,
-        libraries: Optional[list[str]] = ...,
-        passthrough_args: Optional[list[str]] = ...,
+        definitions: list[str] | None = ...,
+        include_dirs: list[str] | None = ...,
+        cflags: list[str] | None = ...,
+        ldflags: list[str] | None = ...,
+        libraries_dirs: list[str] | None = ...,
+        libraries: list[str] | None = ...,
+        passthrough_args: list[str] | None = ...,
         aot_mode: bool = ...,
         use_relative_path: bool = ...,
         compile_only: bool = ...,
@@ -165,7 +165,7 @@ def get_name_and_dir_from_output_file_path(file_path: str) -> tuple[str, str]: .
 
 class CppBuilder:
     def __init__(
-        self, name: str, sources: Union[str, list[str]], BuildOption: BuildOptionsBase, output_dir: str = ...
+        self, name: str, sources: str | list[str], BuildOption: BuildOptionsBase, output_dir: str = ...
     ) -> None: ...
     def get_command_line(self) -> str: ...
     def get_target_file_path(self) -> str: ...

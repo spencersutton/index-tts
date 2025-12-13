@@ -72,7 +72,7 @@ class Text2TextGenerationPipeline(Pipeline):
         """
         ...
 
-    def __call__(self, *args: Union[str, list[str]], **kwargs: Any) -> list[dict[str, str]]:
+    def __call__(self, *args: str | list[str], **kwargs: Any) -> list[dict[str, str]]:
         r"""
         Generate the output text(s) using text(s) given as inputs.
 

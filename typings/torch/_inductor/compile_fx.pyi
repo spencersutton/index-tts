@@ -5,8 +5,10 @@ import types
 from abc import ABC, abstractmethod
 from contextlib import AbstractContextManager
 from dataclasses import dataclass
-from typing import Any, Callable, Optional, TYPE_CHECKING, TypeVar, Union
-from typing_extensions import ParamSpec, Protocol, TypedDict, Unpack, override
+from typing import Any, Optional, TYPE_CHECKING, TypeVar, Union
+from collections.abc import Callable
+from typing_extensions import TypedDict
+from typing import ParamSpec, Protocol, Unpack, override
 from torch import fx
 from torch._inductor.cudagraph_utils import BoxedDeviceIndex, PlaceholderInfo
 from torch._inductor.output_code import OutputCode
@@ -54,8 +56,8 @@ def record_original_output_strides(gm: GraphModule) -> None: ...
 def split_const_gm(
     gm: GraphModule,
     skip_constructor: bool = ...,
-    lifted_constant_names: Optional[list[str]] = ...,
-    skip_folding_node_fn: Optional[Callable[[torch.fx.Node], bool]] = ...,
+    lifted_constant_names: list[str] | None = ...,
+    skip_folding_node_fn: Callable[[torch.fx.Node], bool] | None = ...,
 ) -> tuple[GraphModule, dict[str, int]]: ...
 def is_tf32_warning_applicable(gm: GraphModule) -> bool: ...
 def maybe_disable_comprehensive_padding(example_inputs: Sequence[InputType]) -> AbstractContextManager[None, None]: ...
@@ -63,21 +65,21 @@ def maybe_disable_graph_partition(cpp_wrapper: bool, aot_mode: bool) -> Abstract
 def fake_tensor_prop(
     gm: GraphModule, example_inputs: Sequence[InputType], force_allow_non_fake_inputs: bool = ...
 ) -> torch._subclasses.FakeTensorMode: ...
-def get_patched_config_dict(config_patches: Optional[Union[str, dict[str, Any]]] = ...) -> dict[str, Any]: ...
+def get_patched_config_dict(config_patches: str | dict[str, Any] | None = ...) -> dict[str, Any]: ...
 @contextlib.contextmanager
-def with_fresh_cache_if_config() -> Generator[None, None, None]: ...
+def with_fresh_cache_if_config() -> Generator[None]: ...
 
 class _CompileFxKwargs(TypedDict, total=False):
-    cudagraphs: Optional[BoxedBool]
+    cudagraphs: BoxedBool | None
     static_input_idxs: Sequence[int]
     is_backward: bool
-    graph_id: Optional[int]
+    graph_id: int | None
     cpp_wrapper: bool
     aot_mode: bool
     is_inference: bool
-    layout_opt: Optional[bool]
-    extern_node_serializer: Optional[Callable[[list[ExternKernelNode]], Any]]
-    boxed_forward_device_index: Optional[BoxedDeviceIndex]
+    layout_opt: bool | None
+    extern_node_serializer: Callable[[list[ExternKernelNode]], Any] | None
+    boxed_forward_device_index: BoxedDeviceIndex | None
     fx_wrapper: bool
 
 class _CompileFxCallable(Protocol):
@@ -125,7 +127,7 @@ def cudagraphify(
     static_input_idxs: Sequence[int] = ...,
     *,
     device_index: int,
-    stack_traces: list[Optional[str]],
+    stack_traces: list[str | None],
     is_backward: bool,
     is_inference: bool,
     constants: tuple[torch.Tensor, ...] = ...,
@@ -141,8 +143,8 @@ def compile_fx_aot(
     model_: GraphModule,
     example_inputs_: list[InputType],
     inner_compile: _CompileFxCallable = ...,
-    config_patches: Optional[dict[str, Any]] = ...,
-) -> Union[list[Union[str, Weights]], str, GraphModule]: ...
+    config_patches: dict[str, Any] | None = ...,
+) -> list[str | Weights] | str | GraphModule: ...
 
 _graph_counter = ...
 
@@ -190,10 +192,10 @@ def compile_fx(
     model_: GraphModule,
     example_inputs_: Sequence[InputType],
     inner_compile: Callable[..., OutputCode] = ...,
-    config_patches: Optional[dict[str, Any]] = ...,
-    decompositions: Optional[dict[OpOverload, Callable[..., Any]]] = ...,
+    config_patches: dict[str, Any] | None = ...,
+    decompositions: dict[OpOverload, Callable[..., Any]] | None = ...,
     ignore_shape_env: bool = ...,
-) -> Union[Callable[[list[object]], Sequence[torch.Tensor]], str, list[str], Weights]: ...
+) -> Callable[[list[object]], Sequence[torch.Tensor]] | str | list[str] | Weights: ...
 def graph_returns_tuple(gm: GraphModule) -> bool: ...
 def make_graph_return_tuple(
     gm: GraphModule, inputs: Sequence[InputType], compile_gm: Callable[..., Any]

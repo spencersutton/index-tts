@@ -23,7 +23,7 @@ class BeitFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
         ADE20k). The background label will be replaced by 255.
     """
 
-    do_reduce_labels: Optional[bool]
+    do_reduce_labels: bool | None
     ...
 
 @auto_docstring
@@ -47,7 +47,7 @@ class BeitImageProcessorFast(BaseImageProcessorFast):
     def preprocess(
         self,
         images: ImageInput,
-        segmentation_maps: Optional[ImageInput] = ...,
+        segmentation_maps: ImageInput | None = ...,
         **kwargs: Unpack[BeitFastImageProcessorKwargs],
     ) -> BatchFeature:
         r"""
@@ -56,7 +56,7 @@ class BeitImageProcessorFast(BaseImageProcessorFast):
         """
         ...
 
-    def post_process_semantic_segmentation(self, outputs, target_sizes: Optional[list[tuple]] = ...):  # -> list[Any]:
+    def post_process_semantic_segmentation(self, outputs, target_sizes: list[tuple] | None = ...):  # -> list[Any]:
         """
         Converts the output of [`BeitForSemanticSegmentation`] into semantic segmentation maps. Only supports PyTorch.
 

@@ -18,7 +18,7 @@ _CONFIG_FOR_DOC = ...
 BLOOM_START_DOCSTRING = ...
 BLOOM_INPUTS_DOCSTRING = ...
 
-def build_alibi_tensor(attention_mask: jnp.ndarray, num_heads: int, dtype: Optional[jnp.dtype] = ...):
+def build_alibi_tensor(attention_mask: jnp.ndarray, num_heads: int, dtype: jnp.dtype | None = ...):
     """
     Flax implementation of the BLOOM Alibi tensor. BLOOM Alibi tensor is not causal as the original paper mentions, it
     relies on a translation invariance of softmax for quick implementation: with l being a tensor, and a fixed value
@@ -118,13 +118,13 @@ class FlaxBloomPreTrainedModel(FlaxPreTrainedModel):
         self,
         input_ids,
         attention_mask=...,
-        past_key_values: Optional[dict] = ...,
-        params: Optional[dict] = ...,
+        past_key_values: dict | None = ...,
+        params: dict | None = ...,
         dropout_rng: jax.random.PRNGKey = ...,
         train: bool = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
     ): ...
 
 class FlaxBloomBlockCollection(nn.Module):
@@ -195,7 +195,7 @@ class FlaxBloomForCausalLMModule(nn.Module):
 class FlaxBloomForCausalLM(FlaxBloomPreTrainedModel):
     module_class = ...
     def prepare_inputs_for_generation(
-        self, input_ids, max_length, attention_mask: Optional[jax.Array] = ...
+        self, input_ids, max_length, attention_mask: jax.Array | None = ...
     ):  # -> dict[str, Any]:
         ...
     def update_inputs_for_generation(self, model_outputs, model_kwargs): ...

@@ -1,6 +1,7 @@
 import operator
-from typing import Any, Callable, TYPE_CHECKING, TypeVar, overload
-from typing_extensions import TypeVarTuple, Unpack
+from typing import Any, TYPE_CHECKING, TypeVar, overload
+from collections.abc import Callable
+from typing import TypeVarTuple, Unpack
 from ..decorators import substitute_in_graph
 from collections.abc import Iterable
 

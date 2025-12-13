@@ -21,7 +21,8 @@ from pydantic import (
 )
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import core_schema
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import TypedDict
+from typing import NotRequired
 from gradio.i18n import I18nData
 
 """Pydantic data models and other dataclasses. This is the only file that uses Optional[]

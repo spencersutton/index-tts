@@ -17,13 +17,13 @@ BboxInput = Union[
 ]
 
 class Kosmos2ImagesKwargs(ImagesKwargs, total=False):
-    bboxes: Optional[list[float]]
-    num_image_tokens: Optional[int]
-    first_image_token_id: Optional[int]
+    bboxes: list[float] | None
+    num_image_tokens: int | None
+    first_image_token_id: int | None
     ...
 
 class Kosmos2TextKwargs(TextKwargs, total=False):
-    add_eos_token: Optional[bool]
+    add_eos_token: bool | None
     ...
 
 class Kosmos2ProcessorKwargs(ProcessingKwargs, total=False):
@@ -56,7 +56,7 @@ class Kosmos2Processor(ProcessorMixin):
     def __call__(
         self,
         images: ImageInput = ...,
-        text: Union[TextInput, list[TextInput]] = ...,
+        text: TextInput | list[TextInput] = ...,
         audio=...,
         videos=...,
         **kwargs: Unpack[Kosmos2ProcessorKwargs],
@@ -85,11 +85,11 @@ class Kosmos2Processor(ProcessorMixin):
 
     def preprocess_examples(
         self,
-        texts: Union[TextInput, list[TextInput]],
+        texts: TextInput | list[TextInput],
         images: ImageInput = ...,
         bboxes: BboxInput = ...,
-        num_image_tokens: Optional[int] = ...,
-    ) -> Union[str, list[str]]:
+        num_image_tokens: int | None = ...,
+    ) -> str | list[str]:
         """Add image and bounding box information to `texts` as image and patch index tokens.
 
         Args:

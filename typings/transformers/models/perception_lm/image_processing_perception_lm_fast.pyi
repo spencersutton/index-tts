@@ -50,7 +50,7 @@ class PerceptionLMImageProcessorFast(BaseImageProcessorFast):
         tile_size: int,
         max_num_tiles: int,
         resample: PILImageResampling = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ):  # -> tuple[Any | ndarray[_AnyShape, dtype[Any]], tuple[Any, ...] | tuple[Any, Any] | tuple[Literal[1], Literal[1]]]:
         ...
 

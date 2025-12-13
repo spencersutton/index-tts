@@ -16,11 +16,11 @@ class Action(ExplicitEnum):
 def deprecate_kwarg(
     old_name: str,
     version: str,
-    new_name: Optional[str] = ...,
+    new_name: str | None = ...,
     warn_if_greater_or_equal_version: bool = ...,
     raise_if_greater_or_equal_version: bool = ...,
     raise_if_both_names: bool = ...,
-    additional_message: Optional[str] = ...,
+    additional_message: str | None = ...,
 ):  # -> Callable[..., _Wrapped[..., Any, ..., Any]]:
     """
     Function or method decorator to notify users about deprecated keyword arguments, replacing them with a new name if specified.

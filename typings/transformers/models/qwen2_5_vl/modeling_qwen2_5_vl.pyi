@@ -68,7 +68,7 @@ def eager_attention_forward(
     query: torch.Tensor,
     key: torch.Tensor,
     value: torch.Tensor,
-    attention_mask: Optional[torch.Tensor],
+    attention_mask: torch.Tensor | None,
     scaling: float,
     dropout: float = ...,
     **kwargs,
@@ -81,8 +81,8 @@ class Qwen2_5_VLVisionAttention(nn.Module):
         self,
         hidden_states: torch.Tensor,
         cu_seqlens: torch.Tensor,
-        rotary_pos_emb: Optional[torch.Tensor] = ...,
-        position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
+        rotary_pos_emb: torch.Tensor | None = ...,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = ...,
         **kwargs,
     ) -> torch.Tensor: ...
 
@@ -92,8 +92,8 @@ class Qwen2_5_VLVisionBlock(GradientCheckpointingLayer):
         self,
         hidden_states: torch.Tensor,
         cu_seqlens: torch.Tensor,
-        rotary_pos_emb: Optional[torch.Tensor] = ...,
-        position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
+        rotary_pos_emb: torch.Tensor | None = ...,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = ...,
         **kwargs,
     ) -> torch.Tensor: ...
 
@@ -149,10 +149,10 @@ class Qwen2_5_VLModelOutputWithPast(ModelOutput):
     """
 
     last_hidden_state: torch.FloatTensor = ...
-    past_key_values: Optional[list[torch.FloatTensor]] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
-    rope_deltas: Optional[torch.LongTensor] = ...
+    past_key_values: list[torch.FloatTensor] | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
+    rope_deltas: torch.LongTensor | None = ...
 
 class Qwen2_5_VLRotaryEmbedding(nn.Module):
     def __init__(self, config: Qwen2_5_VLTextConfig, device=...) -> None: ...
@@ -205,34 +205,34 @@ class Qwen2_5_VLAttention(nn.Module):
     Multi-headed attention from 'Attention Is All You Need' paper. Modified to use sliding window attention: Longformer
     and "Generating Long Sequences with Sparse Transformers".
     """
-    def __init__(self, config: Qwen2_5_VLTextConfig, layer_idx: Optional[int] = ...) -> None: ...
+    def __init__(self, config: Qwen2_5_VLTextConfig, layer_idx: int | None = ...) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[Cache] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: Cache | None = ...,
         output_attentions: bool = ...,
         use_cache: bool = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
+        cache_position: torch.LongTensor | None = ...,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]: ...
 
 class Qwen2_5_VLDecoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: Qwen2_5_VLTextConfig, layer_idx: int) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_value: Optional[tuple[torch.Tensor]] = ...,
-        output_attentions: Optional[bool] = ...,
-        use_cache: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: tuple[torch.Tensor] | None = ...,
+        output_attentions: bool | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> tuple[torch.FloatTensor, Optional[tuple[torch.FloatTensor, torch.FloatTensor]]]:
+    ) -> tuple[torch.FloatTensor, tuple[torch.FloatTensor, torch.FloatTensor] | None]:
         """
         Args:
             hidden_states (`torch.FloatTensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
@@ -263,18 +263,18 @@ class Qwen2_5_VLTextModel(Qwen2_5_VLPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> Union[tuple, BaseModelOutputWithPast]: ...
+    ) -> tuple | BaseModelOutputWithPast: ...
 
 @auto_docstring
 class Qwen2_5_VLModel(Qwen2_5_VLPreTrainedModel):
@@ -293,11 +293,11 @@ class Qwen2_5_VLModel(Qwen2_5_VLPreTrainedModel):
         ...
     def get_rope_index(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        image_grid_thw: Optional[torch.LongTensor] = ...,
-        video_grid_thw: Optional[torch.LongTensor] = ...,
-        second_per_grid_ts: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        image_grid_thw: torch.LongTensor | None = ...,
+        video_grid_thw: torch.LongTensor | None = ...,
+        second_per_grid_ts: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Calculate the 3D rope index based on image and video's temporal, height and width in LLM.
@@ -355,7 +355,7 @@ class Qwen2_5_VLModel(Qwen2_5_VLPreTrainedModel):
         ...
 
     def get_video_features(
-        self, pixel_values_videos: torch.FloatTensor, video_grid_thw: Optional[torch.LongTensor] = ...
+        self, pixel_values_videos: torch.FloatTensor, video_grid_thw: torch.LongTensor | None = ...
     ):  # -> tuple[Tensor, ...]:
         """
         Encodes videos into continuous embeddings that can be forwarded to the language model.
@@ -369,7 +369,7 @@ class Qwen2_5_VLModel(Qwen2_5_VLPreTrainedModel):
         ...
 
     def get_image_features(
-        self, pixel_values: torch.FloatTensor, image_grid_thw: Optional[torch.LongTensor] = ...
+        self, pixel_values: torch.FloatTensor, image_grid_thw: torch.LongTensor | None = ...
     ):  # -> tuple[Tensor, ...]:
         """
         Encodes images into continuous embeddings that can be forwarded to the language model.
@@ -399,23 +399,23 @@ class Qwen2_5_VLModel(Qwen2_5_VLPreTrainedModel):
     def forward(
         self,
         input_ids: torch.LongTensor = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        pixel_values: Optional[torch.Tensor] = ...,
-        pixel_values_videos: Optional[torch.FloatTensor] = ...,
-        image_grid_thw: Optional[torch.LongTensor] = ...,
-        video_grid_thw: Optional[torch.LongTensor] = ...,
-        rope_deltas: Optional[torch.LongTensor] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        second_per_grid_ts: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        pixel_values: torch.Tensor | None = ...,
+        pixel_values_videos: torch.FloatTensor | None = ...,
+        image_grid_thw: torch.LongTensor | None = ...,
+        video_grid_thw: torch.LongTensor | None = ...,
+        rope_deltas: torch.LongTensor | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        second_per_grid_ts: torch.Tensor | None = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> Union[tuple, Qwen2_5_VLModelOutputWithPast]:
+    ) -> tuple | Qwen2_5_VLModelOutputWithPast:
         r"""
         image_grid_thw (`torch.LongTensor` of shape `(num_images, 3)`, *optional*):
             The temporal, height and width of feature shape of each image in LLM.
@@ -450,12 +450,12 @@ class Qwen2_5_VLCausalLMOutputWithPast(ModelOutput):
         The rope index difference between sequence length and multimodal rope.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    logits: Optional[torch.FloatTensor] = ...
-    past_key_values: Optional[list[torch.FloatTensor]] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
-    rope_deltas: Optional[torch.LongTensor] = ...
+    loss: torch.FloatTensor | None = ...
+    logits: torch.FloatTensor | None = ...
+    past_key_values: list[torch.FloatTensor] | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
+    rope_deltas: torch.LongTensor | None = ...
 
 class Qwen2_5_VLForConditionalGeneration(Qwen2_5_VLPreTrainedModel, GenerationMixin):
     _checkpoint_conversion_mapping = ...
@@ -470,11 +470,11 @@ class Qwen2_5_VLForConditionalGeneration(Qwen2_5_VLPreTrainedModel, GenerationMi
     def get_decoder(self):  # -> Qwen2_5_VLTextModel:
         ...
     def get_video_features(
-        self, pixel_values_videos: torch.FloatTensor, video_grid_thw: Optional[torch.LongTensor] = ...
+        self, pixel_values_videos: torch.FloatTensor, video_grid_thw: torch.LongTensor | None = ...
     ):  # -> tuple[Tensor, ...]:
         ...
     def get_image_features(
-        self, pixel_values: torch.FloatTensor, image_grid_thw: Optional[torch.LongTensor] = ...
+        self, pixel_values: torch.FloatTensor, image_grid_thw: torch.LongTensor | None = ...
     ):  # -> tuple[Tensor, ...]:
         ...
     @property
@@ -488,24 +488,24 @@ class Qwen2_5_VLForConditionalGeneration(Qwen2_5_VLPreTrainedModel, GenerationMi
     def forward(
         self,
         input_ids: torch.LongTensor = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        pixel_values: Optional[torch.Tensor] = ...,
-        pixel_values_videos: Optional[torch.FloatTensor] = ...,
-        image_grid_thw: Optional[torch.LongTensor] = ...,
-        video_grid_thw: Optional[torch.LongTensor] = ...,
-        rope_deltas: Optional[torch.LongTensor] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        second_per_grid_ts: Optional[torch.Tensor] = ...,
-        logits_to_keep: Union[int, torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        pixel_values: torch.Tensor | None = ...,
+        pixel_values_videos: torch.FloatTensor | None = ...,
+        image_grid_thw: torch.LongTensor | None = ...,
+        video_grid_thw: torch.LongTensor | None = ...,
+        rope_deltas: torch.LongTensor | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        second_per_grid_ts: torch.Tensor | None = ...,
+        logits_to_keep: int | torch.Tensor = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> Union[tuple, Qwen2_5_VLCausalLMOutputWithPast]:
+    ) -> tuple | Qwen2_5_VLCausalLMOutputWithPast:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
             Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,

@@ -30,7 +30,7 @@ __all__ = [
     "xavier_uniform_",
     "zeros_",
 ]
-_NonlinearityType: TypeAlias = Literal[
+type _NonlinearityType = Literal[
     "linear",
     "conv1d",
     "conv2d",
@@ -44,7 +44,7 @@ _NonlinearityType: TypeAlias = Literal[
     "leaky_relu",
     "selu",
 ]
-_FanMode: TypeAlias = Literal["fan_in", "fan_out"]
+type _FanMode = Literal["fan_in", "fan_out"]
 
 def calculate_gain(nonlinearity: _NonlinearityType, param: float | None = ...) -> float: ...
 def uniform_(tensor: Tensor, a: float = ..., b: float = ..., generator: torch.Generator | None = ...) -> Tensor: ...

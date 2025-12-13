@@ -159,25 +159,25 @@ class FalconMambaMixer(MambaMixer):
     def cuda_kernels_forward(
         self,
         hidden_states: torch.Tensor,
-        cache_params: Optional[FalconMambaCache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.LongTensor] = ...,
+        cache_params: FalconMambaCache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        attention_mask: torch.LongTensor | None = ...,
     ):  # -> Any | None:
         ...
     def slow_forward(
         self,
         input_states,
-        cache_params: Optional[FalconMambaCache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.LongTensor] = ...,
+        cache_params: FalconMambaCache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        attention_mask: torch.LongTensor | None = ...,
     ):  # -> Any:
         ...
     def forward(
         self,
         hidden_states,
-        cache_params: Optional[FalconMambaCache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.LongTensor] = ...,
+        cache_params: FalconMambaCache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        attention_mask: torch.LongTensor | None = ...,
     ):  # -> Any | None:
         ...
 

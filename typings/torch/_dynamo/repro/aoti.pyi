@@ -24,25 +24,25 @@ inductor_config = ...
 use_buck = ...
 
 class AOTIMinifierError(Exception):
-    def __init__(self, original_exception: Union[str, Exception]) -> None: ...
+    def __init__(self, original_exception: str | Exception) -> None: ...
 
 def dump_to_minify(
-    exported_program: ExportedProgram, compiler_name: str, command: str = ..., options: Optional[dict[str, Any]] = ...
+    exported_program: ExportedProgram, compiler_name: str, command: str = ..., options: dict[str, Any] | None = ...
 ) -> None: ...
 def get_module_string(gm: torch.fx.GraphModule) -> str: ...
 def save_graph_repro_ep(
     fd: IO[Any],
     compiler_name: str,
     *,
-    exported_program: Optional[ExportedProgram] = ...,
-    gm: Optional[torch.nn.Module] = ...,
-    args: Optional[tuple[Any]] = ...,
-    config_patches: Optional[dict[str, str]] = ...,
+    exported_program: ExportedProgram | None = ...,
+    gm: torch.nn.Module | None = ...,
+    args: tuple[Any] | None = ...,
+    config_patches: dict[str, str] | None = ...,
     stable_output: bool = ...,
-    save_dir: Optional[str] = ...,
+    save_dir: str | None = ...,
     command: str = ...,
-    accuracy: Optional[Union[str, bool]] = ...,
-    check_str: Optional[str] = ...,
+    accuracy: str | bool | None = ...,
+    check_str: str | None = ...,
     module_in_comment: bool = ...,
     strict: bool = ...,
 ) -> None: ...
@@ -51,36 +51,36 @@ def dump_compiler_graph_state(
     args: Sequence[Any],
     compiler_name: str,
     *,
-    config_patches: Optional[dict[str, str]] = ...,
-    accuracy: Optional[Union[str, bool]] = ...,
+    config_patches: dict[str, str] | None = ...,
+    accuracy: str | bool | None = ...,
     strict: bool = ...,
 ) -> None: ...
 def generate_compiler_repro_exported_program(
     exported_program: ExportedProgram,
     *,
-    options: Optional[dict[str, str]] = ...,
+    options: dict[str, str] | None = ...,
     stable_output: bool = ...,
-    save_dir: Optional[str] = ...,
+    save_dir: str | None = ...,
 ) -> str: ...
-def repro_load_args(load_args: Any, save_dir: Optional[str]) -> tuple[Any]: ...
+def repro_load_args(load_args: Any, save_dir: str | None) -> tuple[Any]: ...
 def repro_common(options: Any, exported_program: ExportedProgram) -> tuple[torch.fx.GraphModule, Any, Any]: ...
 def repro_get_args(
-    options: Any, exported_program: ExportedProgram, config_patches: Optional[dict[str, Any]]
+    options: Any, exported_program: ExportedProgram, config_patches: dict[str, Any] | None
 ) -> tuple[torch.fx.GraphModule, Any, Any]: ...
-def repro_run(options: Any, exported_program: ExportedProgram, config_patches: Optional[dict[str, Any]]) -> None: ...
+def repro_run(options: Any, exported_program: ExportedProgram, config_patches: dict[str, Any] | None) -> None: ...
 def export_for_aoti_minifier(
     gm: torch.nn.Module, tuple_inputs: tuple[Any], strict: bool = ..., skip_export_error: bool = ...
-) -> Optional[torch.nn.Module]: ...
-def repro_minify(options: Any, exported_program: ExportedProgram, config_patches: Optional[dict[str, Any]]) -> None: ...
+) -> torch.nn.Module | None: ...
+def repro_minify(options: Any, exported_program: ExportedProgram, config_patches: dict[str, Any] | None) -> None: ...
 def run_repro(
     exported_program: ExportedProgram,
     *,
-    config_patches: Optional[dict[str, str]] = ...,
+    config_patches: dict[str, str] | None = ...,
     command: str = ...,
-    accuracy: Union[bool, str] = ...,
-    save_dir: Optional[str] = ...,
-    tracing_mode: Optional[str] = ...,
-    check_str: Optional[str] = ...,
+    accuracy: bool | str = ...,
+    save_dir: str | None = ...,
+    tracing_mode: str | None = ...,
+    check_str: str | None = ...,
     minifier_export_mode: str = ...,
     skip_export_error: bool = ...,
     **more_kwargs: Any,

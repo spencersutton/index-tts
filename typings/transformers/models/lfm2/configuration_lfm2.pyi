@@ -108,8 +108,8 @@ class Lfm2Config(PretrainedConfig):
         block_multiple_of: int = ...,
         block_ffn_dim_multiplier: float = ...,
         block_auto_adjust_ff_dim: bool = ...,
-        full_attn_idxs: Optional[list[int]] = ...,
-        layer_types: Optional[list[str]] = ...,
+        full_attn_idxs: list[int] | None = ...,
+        layer_types: list[str] | None = ...,
         **kwargs,
     ) -> None: ...
 

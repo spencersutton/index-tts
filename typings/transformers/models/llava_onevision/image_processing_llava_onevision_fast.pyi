@@ -24,8 +24,8 @@ class LlavaOnevisionFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
         number of patches in the batch. Padding will be applied to the bottom and right with zeros.
     """
 
-    image_grid_pinpoints: Optional[list[list[int]]]
-    do_pad: Optional[bool]
+    image_grid_pinpoints: list[list[int]] | None
+    do_pad: bool | None
     ...
 
 @auto_docstring
@@ -50,9 +50,7 @@ class LlavaOnevisionImageProcessorFast(BaseImageProcessorFast):
     def preprocess(
         self, images: ImageInput, **kwargs: Unpack[LlavaOnevisionFastImageProcessorKwargs]
     ) -> BatchFeature: ...
-    def pad_to_square(
-        self, images: torch.Tensor, background_color: Union[int, tuple[int, int, int]] = ...
-    ) -> torch.Tensor:
+    def pad_to_square(self, images: torch.Tensor, background_color: int | tuple[int, int, int] = ...) -> torch.Tensor:
         """
         Pads an image to a square based on the longest edge.
 

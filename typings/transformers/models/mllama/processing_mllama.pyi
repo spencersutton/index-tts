@@ -12,7 +12,7 @@ from ...tokenization_utils_base import PreTokenizedInput, TextInput
 """Processor class for Mllama."""
 
 class MllamaImagesKwargs(ImagesKwargs, total=False):
-    max_image_tiles: Optional[int]
+    max_image_tiles: int | None
     ...
 
 class MllamaProcessorKwargs(ProcessingKwargs, total=False):
@@ -134,8 +134,8 @@ class MllamaProcessor(ProcessorMixin):
     def __init__(self, image_processor, tokenizer, chat_template=...) -> None: ...
     def __call__(
         self,
-        images: Optional[ImageInput] = ...,
-        text: Optional[Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]]] = ...,
+        images: ImageInput | None = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] | None = ...,
         audio=...,
         videos=...,
         **kwargs: Unpack[MllamaProcessorKwargs],

@@ -27,10 +27,10 @@ class DepthProOutput(ModelOutput):
         Features from encoders. Can be a single feature or a list of features.
     """
 
-    last_hidden_state: Optional[torch.FloatTensor] = ...
-    features: Union[torch.FloatTensor, list[torch.FloatTensor]] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
-    attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
+    last_hidden_state: torch.FloatTensor | None = ...
+    features: torch.FloatTensor | list[torch.FloatTensor] = ...
+    hidden_states: tuple[torch.FloatTensor, ...] | None = ...
+    attentions: tuple[torch.FloatTensor, ...] | None = ...
 
 @dataclass
 @auto_docstring(
@@ -46,11 +46,11 @@ class DepthProDepthEstimatorOutput(ModelOutput):
         Field of View Scaler.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    predicted_depth: Optional[torch.FloatTensor] = ...
-    field_of_view: Optional[torch.FloatTensor] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
-    attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
+    loss: torch.FloatTensor | None = ...
+    predicted_depth: torch.FloatTensor | None = ...
+    field_of_view: torch.FloatTensor | None = ...
+    hidden_states: tuple[torch.FloatTensor, ...] | None = ...
+    attentions: tuple[torch.FloatTensor, ...] | None = ...
 
 def split_to_patches(pixel_values: torch.Tensor, patch_size: int, overlap_ratio: float) -> torch.Tensor:
     """Creates Patches from Batch."""
@@ -86,29 +86,29 @@ def reconstruct_feature_maps(
 
 class DepthProPatchEncoder(nn.Module):
     def __init__(self, config: DepthProConfig) -> None: ...
-    def forward(self, pixel_values: torch.Tensor, head_mask: Optional[torch.Tensor] = ...) -> list[torch.Tensor]: ...
+    def forward(self, pixel_values: torch.Tensor, head_mask: torch.Tensor | None = ...) -> list[torch.Tensor]: ...
 
 class DepthProImageEncoder(nn.Module):
     def __init__(self, config: DepthProConfig) -> None: ...
     def forward(
         self,
         pixel_values: torch.Tensor,
-        head_mask: Optional[torch.Tensor] = ...,
+        head_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ) -> Union[tuple, DepthProOutput]: ...
+    ) -> tuple | DepthProOutput: ...
 
 class DepthProEncoder(nn.Module):
     def __init__(self, config: DepthProConfig) -> None: ...
     def forward(
         self,
         pixel_values: torch.Tensor,
-        head_mask: Optional[torch.Tensor] = ...,
+        head_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ) -> Union[tuple, DepthProOutput]: ...
+    ) -> tuple | DepthProOutput: ...
 
 class DepthProFeatureUpsampleBlock(nn.Module):
     def __init__(
@@ -154,11 +154,11 @@ class DepthProModel(DepthProPreTrainedModel):
     def forward(
         self,
         pixel_values: torch.FloatTensor,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, DepthProOutput]:
+        head_mask: torch.FloatTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | DepthProOutput:
         r"""
         Examples:
 
@@ -199,7 +199,7 @@ class DepthProPreActResidualLayer(nn.Module):
 
 class DepthProFeatureFusionLayer(nn.Module):
     def __init__(self, config: DepthProConfig, use_deconv: bool = ...) -> None: ...
-    def forward(self, hidden_state: torch.Tensor, residual: Optional[torch.Tensor] = ...) -> torch.Tensor: ...
+    def forward(self, hidden_state: torch.Tensor, residual: torch.Tensor | None = ...) -> torch.Tensor: ...
 
 class DepthProFeatureFusionStage(nn.Module):
     def __init__(self, config) -> None: ...
@@ -207,7 +207,7 @@ class DepthProFeatureFusionStage(nn.Module):
 
 class DepthProFovEncoder(nn.Module):
     def __init__(self, config: DepthProConfig) -> None: ...
-    def forward(self, pixel_values: torch.Tensor, head_mask: Optional[torch.Tensor] = ...) -> torch.Tensor: ...
+    def forward(self, pixel_values: torch.Tensor, head_mask: torch.Tensor | None = ...) -> torch.Tensor: ...
 
 class DepthProFovHead(nn.Module):
     def __init__(self, config: DepthProConfig) -> None: ...
@@ -216,7 +216,7 @@ class DepthProFovHead(nn.Module):
 class DepthProFovModel(nn.Module):
     def __init__(self, config: DepthProConfig) -> None: ...
     def forward(
-        self, pixel_values: torch.Tensor, global_features: torch.Tensor, head_mask: Optional[torch.Tensor] = ...
+        self, pixel_values: torch.Tensor, global_features: torch.Tensor, head_mask: torch.Tensor | None = ...
     ) -> torch.Tensor: ...
 
 class DepthProDepthEstimationHead(nn.Module):
@@ -246,12 +246,12 @@ class DepthProForDepthEstimation(DepthProPreTrainedModel):
     def forward(
         self,
         pixel_values: torch.FloatTensor,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], DepthProDepthEstimatorOutput]:
+        head_mask: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.Tensor] | DepthProDepthEstimatorOutput:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size, height, width)`, *optional*):
             Ground truth depth estimation maps for computing the loss.

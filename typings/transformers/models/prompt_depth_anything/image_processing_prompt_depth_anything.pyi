@@ -59,17 +59,17 @@ class PromptDepthAnythingImageProcessor(BaseImageProcessor):
     def __init__(
         self,
         do_resize: bool = ...,
-        size: Optional[dict[str, int]] = ...,
+        size: dict[str, int] | None = ...,
         resample: PILImageResampling = ...,
         keep_aspect_ratio: bool = ...,
         ensure_multiple_of: int = ...,
         do_rescale: bool = ...,
-        rescale_factor: Union[int, float] = ...,
+        rescale_factor: int | float = ...,
         do_normalize: bool = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
         do_pad: bool = ...,
-        size_divisor: Optional[int] = ...,
+        size_divisor: int | None = ...,
         prompt_scale_to_meter: float = ...,
         **kwargs,
     ) -> None: ...
@@ -80,8 +80,8 @@ class PromptDepthAnythingImageProcessor(BaseImageProcessor):
         keep_aspect_ratio: bool = ...,
         ensure_multiple_of: int = ...,
         resample: PILImageResampling = ...,
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
         **kwargs,
     ) -> np.ndarray:
         """
@@ -111,8 +111,8 @@ class PromptDepthAnythingImageProcessor(BaseImageProcessor):
         self,
         image: np.ndarray,
         size_divisor: int,
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ):  # -> ndarray[_AnyShape, dtype[Any]]:
         """
         Center pad an image to be a multiple of `multiple`.
@@ -140,23 +140,23 @@ class PromptDepthAnythingImageProcessor(BaseImageProcessor):
     def preprocess(
         self,
         images: ImageInput,
-        prompt_depth: Optional[ImageInput] = ...,
-        do_resize: Optional[bool] = ...,
-        size: Optional[int] = ...,
-        keep_aspect_ratio: Optional[bool] = ...,
-        ensure_multiple_of: Optional[int] = ...,
-        resample: Optional[PILImageResampling] = ...,
-        do_rescale: Optional[bool] = ...,
-        rescale_factor: Optional[float] = ...,
-        do_normalize: Optional[bool] = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
-        do_pad: Optional[bool] = ...,
-        size_divisor: Optional[int] = ...,
-        prompt_scale_to_meter: Optional[float] = ...,
-        return_tensors: Optional[Union[str, TensorType]] = ...,
+        prompt_depth: ImageInput | None = ...,
+        do_resize: bool | None = ...,
+        size: int | None = ...,
+        keep_aspect_ratio: bool | None = ...,
+        ensure_multiple_of: int | None = ...,
+        resample: PILImageResampling | None = ...,
+        do_rescale: bool | None = ...,
+        rescale_factor: float | None = ...,
+        do_normalize: bool | None = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
+        do_pad: bool | None = ...,
+        size_divisor: int | None = ...,
+        prompt_scale_to_meter: float | None = ...,
+        return_tensors: str | TensorType | None = ...,
         data_format: ChannelDimension = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ) -> BatchFeature:
         """
         Preprocess an image or batch of images.
@@ -221,7 +221,7 @@ class PromptDepthAnythingImageProcessor(BaseImageProcessor):
     def post_process_depth_estimation(
         self,
         outputs: DepthEstimatorOutput,
-        target_sizes: Optional[Union[TensorType, list[tuple[int, int]], None]] = ...,
+        target_sizes: TensorType | list[tuple[int, int]] | None | None = ...,
     ) -> list[dict[str, TensorType]]:
         """
         Converts the raw output of [`DepthEstimatorOutput`] into final depth predictions and depth PIL images.

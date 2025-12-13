@@ -19,7 +19,7 @@ class KyutaiSpeechToTextProcessor(ProcessorMixin):
 
     feature_extractor_class = ...
     tokenizer_class = ...
-    def __call__(self, audio: Optional[AudioInput] = ..., **kwargs: Unpack[KyutaiSpeechToTextProcessorKwargs]):
+    def __call__(self, audio: AudioInput | None = ..., **kwargs: Unpack[KyutaiSpeechToTextProcessorKwargs]):
         r"""
         Main method to prepare audio to be fed as input to the model. This method forwards the `audio`
         arguments to KyutaiSpeechToTextFeatureExtractor's [`~KyutaiSpeechToTextFeatureExtractor.__call__`]. Please refer

@@ -61,7 +61,7 @@ class VitsTokenizer(PreTrainedTokenizer):
         ...
 
     def prepare_for_tokenization(
-        self, text: str, is_split_into_words: bool = ..., normalize: Optional[bool] = ..., **kwargs
+        self, text: str, is_split_into_words: bool = ..., normalize: bool | None = ..., **kwargs
     ) -> tuple[str, dict[str, Any]]:
         """
         Performs any necessary transformations before tokenization.
@@ -89,6 +89,6 @@ class VitsTokenizer(PreTrainedTokenizer):
         ...
 
     def convert_tokens_to_string(self, tokens: list[str]) -> str: ...
-    def save_vocabulary(self, save_directory: str, filename_prefix: Optional[str] = ...) -> Union[tuple[str], None]: ...
+    def save_vocabulary(self, save_directory: str, filename_prefix: str | None = ...) -> tuple[str] | None: ...
 
 __all__ = ["VitsTokenizer"]

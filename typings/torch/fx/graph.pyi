@@ -1,7 +1,8 @@
 import torch
 import torch.utils._pytree as pytree
 from dataclasses import dataclass
-from typing import Any, Callable, Literal, NamedTuple, Optional, TYPE_CHECKING, TypeAlias
+from typing import Any, Literal, NamedTuple, Optional, TYPE_CHECKING, TypeAlias
+from collections.abc import Callable
 from ._compatibility import compatibility
 from .node import Argument, Node, Target
 from ._symbolic_trace import Tracer
@@ -11,7 +12,7 @@ __all__ = ["PythonCode", "CodeGen", "Graph"]
 if TYPE_CHECKING: ...
 _origin_type_map = ...
 _legal_ops = ...
-TransformCodeFunc: TypeAlias = Callable[[list[str]], list[str]]
+type TransformCodeFunc = Callable[[list[str]], list[str]]
 
 class _CustomBuiltin(NamedTuple):
     import_str: str
@@ -26,7 +27,7 @@ _torch_but_not_dynamo = ...
 
 class _Namespace:
     def __init__(self) -> None: ...
-    def create_name(self, candidate: str, obj: Optional[Any]) -> str: ...
+    def create_name(self, candidate: str, obj: Any | None) -> str: ...
     def associate_name_with_obj(self, name: str, obj: Any):  # -> None:
 
         ...
@@ -36,7 +37,7 @@ class _Namespace:
 class PythonCode:
     src: str
     globals: dict[str, Any]
-    _lineno_map: Optional[dict[int, Optional[int]]]
+    _lineno_map: dict[int, int | None] | None
 
 class _InsertPoint:
     def __init__(self, graph, new_insert) -> None: ...
@@ -57,7 +58,7 @@ class _node_list:
 class _PyTreeInfo(NamedTuple):
     orig_args: list[str]
     in_spec: pytree.TreeSpec
-    out_spec: Optional[pytree.TreeSpec]
+    out_spec: pytree.TreeSpec | None
 
 @dataclass(frozen=True)
 class _ParsedStackTrace:
@@ -73,7 +74,7 @@ class CodeGen:
     _sym_repr: Callable[[torch.types.PySymType], str] = ...
     def __init__(self) -> None: ...
     def gen_fn_def(self, free_vars: list[str], maybe_return_annotation: str, *, expanded_def: bool = ...) -> str: ...
-    def generate_output(self, output_args: Argument, *, descs: Optional[Any] = ...) -> str: ...
+    def generate_output(self, output_args: Argument, *, descs: Any | None = ...) -> str: ...
     def process_inputs(self, *args: Any) -> Any: ...
     def process_outputs(self, outputs: Any) -> Any: ...
     def additional_globals(self) -> list[tuple[str, Any]]: ...
@@ -84,7 +85,7 @@ class _PyTreeCodeGen(CodeGen):
     def process_outputs(self, out: Any) -> Any: ...
     def gen_fn_def(self, free_vars, maybe_return_annotation, *, expanded_def: bool = ...):  # -> str:
         ...
-    def generate_output(self, output_args, *, descs: Optional[Any] = ...):  # -> str:
+    def generate_output(self, output_args, *, descs: Any | None = ...):  # -> str:
         ...
 
 class _FindNodesLookupTable:
@@ -92,7 +93,7 @@ class _FindNodesLookupTable:
     def __contains__(self, node) -> bool: ...
     def insert(self, node: Node) -> None: ...
     def remove(self, node: Node) -> None: ...
-    def find_nodes(self, *, op: str, target: Optional[Target] = ...):  # -> list[Node]:
+    def find_nodes(self, *, op: str, target: Target | None = ...):  # -> list[Node]:
         ...
 
 @compatibility(is_backward_compatible=True)
@@ -100,36 +101,36 @@ class Graph:
     @compatibility(is_backward_compatible=True)
     def __init__(
         self,
-        owning_module: Optional[GraphModule] = ...,
-        tracer_cls: Optional[type[Tracer]] = ...,
-        tracer_extras: Optional[dict[str, Any]] = ...,
+        owning_module: GraphModule | None = ...,
+        tracer_cls: type[Tracer] | None = ...,
+        tracer_extras: dict[str, Any] | None = ...,
     ) -> None: ...
     @property
     def owning_module(self):  # -> GraphModule | None:
         ...
     @owning_module.setter
-    def owning_module(self, mod: Optional[GraphModule]):  # -> None:
+    def owning_module(self, mod: GraphModule | None):  # -> None:
         ...
     @property
     def nodes(self) -> _node_list: ...
     @compatibility(is_backward_compatible=False)
     def output_node(self) -> Node: ...
     @compatibility(is_backward_compatible=False)
-    def find_nodes(self, *, op: str, target: Optional[Target] = ..., sort: bool = ...):  # -> list[Node]:
+    def find_nodes(self, *, op: str, target: Target | None = ..., sort: bool = ...):  # -> list[Node]:
 
         ...
     @compatibility(is_backward_compatible=True)
-    def graph_copy(self, g: Graph, val_map: dict[Node, Node], return_output_node=...) -> Optional[Argument]: ...
+    def graph_copy(self, g: Graph, val_map: dict[Node, Node], return_output_node=...) -> Argument | None: ...
     def __deepcopy__(self, memo=...) -> Graph: ...
     @compatibility(is_backward_compatible=True)
     def create_node(
         self,
         op: str,
         target: Target,
-        args: Optional[tuple[Argument, ...]] = ...,
-        kwargs: Optional[dict[str, Argument]] = ...,
-        name: Optional[str] = ...,
-        type_expr: Optional[Any] = ...,
+        args: tuple[Argument, ...] | None = ...,
+        kwargs: dict[str, Argument] | None = ...,
+        name: str | None = ...,
+        type_expr: Any | None = ...,
     ) -> Node: ...
     @compatibility(is_backward_compatible=False)
     def process_inputs(self, *args):  # -> Any:
@@ -141,46 +142,46 @@ class Graph:
     @compatibility(is_backward_compatible=True)
     def erase_node(self, to_erase: Node) -> None: ...
     @compatibility(is_backward_compatible=True)
-    def inserting_before(self, n: Optional[Node] = ...):  # -> _InsertPoint:
+    def inserting_before(self, n: Node | None = ...):  # -> _InsertPoint:
 
         ...
     @compatibility(is_backward_compatible=True)
-    def inserting_after(self, n: Optional[Node] = ...):  # -> _InsertPoint:
+    def inserting_after(self, n: Node | None = ...):  # -> _InsertPoint:
 
         ...
     @compatibility(is_backward_compatible=True)
-    def placeholder(self, name: str, type_expr: Optional[Any] = ..., default_value: Any = ...) -> Node: ...
+    def placeholder(self, name: str, type_expr: Any | None = ..., default_value: Any = ...) -> Node: ...
     @compatibility(is_backward_compatible=True)
-    def get_attr(self, qualified_name: str, type_expr: Optional[Any] = ...) -> Node: ...
+    def get_attr(self, qualified_name: str, type_expr: Any | None = ...) -> Node: ...
     @compatibility(is_backward_compatible=True)
     def call_module(
         self,
         module_name: str,
-        args: Optional[tuple[Argument, ...]] = ...,
-        kwargs: Optional[dict[str, Argument]] = ...,
-        type_expr: Optional[Any] = ...,
+        args: tuple[Argument, ...] | None = ...,
+        kwargs: dict[str, Argument] | None = ...,
+        type_expr: Any | None = ...,
     ) -> Node: ...
     @compatibility(is_backward_compatible=True)
     def call_method(
         self,
         method_name: str,
-        args: Optional[tuple[Argument, ...]] = ...,
-        kwargs: Optional[dict[str, Argument]] = ...,
-        type_expr: Optional[Any] = ...,
+        args: tuple[Argument, ...] | None = ...,
+        kwargs: dict[str, Argument] | None = ...,
+        type_expr: Any | None = ...,
     ) -> Node: ...
     @compatibility(is_backward_compatible=True)
     def call_function(
         self,
         the_function: Callable[..., Any],
-        args: Optional[tuple[Argument, ...]] = ...,
-        kwargs: Optional[dict[str, Argument]] = ...,
-        type_expr: Optional[Any] = ...,
-        name: Optional[str] = ...,
+        args: tuple[Argument, ...] | None = ...,
+        kwargs: dict[str, Argument] | None = ...,
+        type_expr: Any | None = ...,
+        name: str | None = ...,
     ) -> Node: ...
     @compatibility(is_backward_compatible=True)
     def node_copy(self, node: Node, arg_transform: Callable[[Node], Argument] = ...) -> Node: ...
     @compatibility(is_backward_compatible=True)
-    def output(self, result: Argument, type_expr: Optional[Any] = ...):  # -> Node:
+    def output(self, result: Argument, type_expr: Any | None = ...):  # -> Node:
 
         ...
     @compatibility(is_backward_compatible=True)
@@ -203,13 +204,13 @@ class Graph:
 
         ...
     @compatibility(is_backward_compatible=True)
-    def eliminate_dead_code(self, is_impure_node: Optional[Callable[[Node], bool]] = ...) -> bool: ...
+    def eliminate_dead_code(self, is_impure_node: Callable[[Node], bool] | None = ...) -> bool: ...
     @compatibility(is_backward_compatible=False)
     def set_codegen(self, codegen: CodeGen):  # -> None:
         ...
     @compatibility(is_backward_compatible=False)
     def on_generate_code(
-        self, make_transformer: Callable[[Optional[TransformCodeFunc]], TransformCodeFunc]
+        self, make_transformer: Callable[[TransformCodeFunc | None], TransformCodeFunc]
     ):  # -> _GeneratorContextManager[None, None, None]:
 
         ...

@@ -1,6 +1,7 @@
 import functools
 from collections.abc import Iterable
-from typing import Callable, TypeVar
+from typing import TypeVar
+from collections.abc import Callable
 from ..decorators import substitute_in_graph
 
 """

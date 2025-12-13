@@ -143,7 +143,7 @@ class Dinov2WithRegistersEmbeddings(nn.Module):
         """
         ...
 
-    def forward(self, pixel_values: torch.Tensor, bool_masked_pos: Optional[torch.Tensor] = ...) -> torch.Tensor: ...
+    def forward(self, pixel_values: torch.Tensor, bool_masked_pos: torch.Tensor | None = ...) -> torch.Tensor: ...
 
 class Dinov2WithRegistersEncoder(Dinov2Encoder): ...
 class Dinov2WithRegistersPreTrainedModel(Dinov2PreTrainedModel): ...
@@ -152,13 +152,13 @@ class Dinov2WithRegistersModel(Dinov2Model): ...
 class Dinov2WithRegistersForImageClassification(Dinov2ForImageClassification):
     def forward(
         self,
-        pixel_values: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ImageClassifierOutput]:
+        pixel_values: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | ImageClassifierOutput:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
@@ -173,9 +173,9 @@ class Dinov2WithRegistersBackbone(Dinov2Backbone):
     def forward(
         self,
         pixel_values: torch.Tensor,
-        output_hidden_states: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        output_hidden_states: bool | None = ...,
+        output_attentions: bool | None = ...,
+        return_dict: bool | None = ...,
     ) -> BackboneOutput:
         r"""
         Examples:

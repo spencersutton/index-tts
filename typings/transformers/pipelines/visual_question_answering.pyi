@@ -61,8 +61,8 @@ class VisualQuestionAnsweringPipeline(Pipeline):
     def __init__(self, *args, **kwargs) -> None: ...
     def __call__(
         self,
-        image: Union[Image.Image, str, list[Image.Image], list[str], KeyDataset],
-        question: Optional[Union[str, list[str]]] = ...,
+        image: Image.Image | str | list[Image.Image] | list[str] | KeyDataset,
+        question: str | list[str] | None = ...,
         **kwargs,
     ):  # -> list[Any] | PipelineIterator | Generator[Any, Any, None] | Tensor | Any | None:
         r"""

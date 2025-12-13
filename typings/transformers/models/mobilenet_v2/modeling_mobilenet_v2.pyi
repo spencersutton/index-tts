@@ -21,7 +21,7 @@ def load_tf_weights_in_mobilenet_v2(model, config, tf_checkpoint_path):
     """Load TensorFlow checkpoints in a PyTorch model."""
     ...
 
-def make_divisible(value: int, divisor: int = ..., min_value: Optional[int] = ...) -> int:
+def make_divisible(value: int, divisor: int = ..., min_value: int | None = ...) -> int:
     """
     Ensure that all layers have a channel count that is divisible by `divisor`. This function is taken from the
     original TensorFlow repo. It can be seen here:
@@ -49,8 +49,8 @@ class MobileNetV2ConvLayer(nn.Module):
         bias: bool = ...,
         dilation: int = ...,
         use_normalization: bool = ...,
-        use_activation: Union[bool, str] = ...,
-        layer_norm_eps: Optional[float] = ...,
+        use_activation: bool | str = ...,
+        layer_norm_eps: float | None = ...,
     ) -> None: ...
     def forward(self, features: torch.Tensor) -> torch.Tensor: ...
 
@@ -87,10 +87,10 @@ class MobileNetV2Model(MobileNetV2PreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.Tensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPoolingAndNoAttention]: ...
+        pixel_values: torch.Tensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutputWithPoolingAndNoAttention: ...
 
 @auto_docstring(
     custom_intro="""
@@ -103,11 +103,11 @@ class MobileNetV2ForImageClassification(MobileNetV2PreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.Tensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, ImageClassifierOutputWithNoAttention]:
+        pixel_values: torch.Tensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        labels: torch.Tensor | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | ImageClassifierOutputWithNoAttention:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the image classification/regression loss. Indices should be in `[0, ...,
@@ -134,11 +134,11 @@ class MobileNetV2ForSemanticSegmentation(MobileNetV2PreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.Tensor] = ...,
-        labels: Optional[torch.Tensor] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, SemanticSegmenterOutput]:
+        pixel_values: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | SemanticSegmenterOutput:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size, height, width)`, *optional*):
             Ground truth semantic segmentation maps for computing the loss. Indices should be in `[0, ...,

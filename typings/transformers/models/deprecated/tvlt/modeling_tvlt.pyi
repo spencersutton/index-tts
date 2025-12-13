@@ -52,15 +52,15 @@ class TvltModelOutput(ModelOutput):
             the self-attention heads.
     """
 
-    last_hidden_state: Optional[torch.FloatTensor] = ...
-    last_pixel_hidden_state: Optional[torch.FloatTensor] = ...
-    last_audio_hidden_state: Optional[torch.FloatTensor] = ...
-    pixel_label_masks: Optional[torch.LongTensor] = ...
-    audio_label_masks: Optional[torch.LongTensor] = ...
-    pixel_ids_restore: Optional[torch.LongTensor] = ...
-    audio_ids_restore: Optional[torch.LongTensor] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
-    attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
+    last_hidden_state: torch.FloatTensor | None = ...
+    last_pixel_hidden_state: torch.FloatTensor | None = ...
+    last_audio_hidden_state: torch.FloatTensor | None = ...
+    pixel_label_masks: torch.LongTensor | None = ...
+    audio_label_masks: torch.LongTensor | None = ...
+    pixel_ids_restore: torch.LongTensor | None = ...
+    audio_ids_restore: torch.LongTensor | None = ...
+    hidden_states: tuple[torch.FloatTensor, ...] | None = ...
+    attentions: tuple[torch.FloatTensor, ...] | None = ...
 
 @dataclass
 class TvltDecoderOutput(ModelOutput):
@@ -80,9 +80,9 @@ class TvltDecoderOutput(ModelOutput):
             the self-attention heads.
     """
 
-    logits: Optional[torch.FloatTensor] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
-    attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
+    logits: torch.FloatTensor | None = ...
+    hidden_states: tuple[torch.FloatTensor, ...] | None = ...
+    attentions: tuple[torch.FloatTensor, ...] | None = ...
 
 @dataclass
 class TvltForPreTrainingOutput(ModelOutput):
@@ -110,12 +110,12 @@ class TvltForPreTrainingOutput(ModelOutput):
             the self-attention heads.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    matching_logits: Optional[torch.FloatTensor] = ...
-    pixel_logits: Optional[torch.FloatTensor] = ...
-    audio_logits: Optional[torch.FloatTensor] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor, ...]] = ...
-    attentions: Optional[tuple[torch.FloatTensor, ...]] = ...
+    loss: torch.FloatTensor | None = ...
+    matching_logits: torch.FloatTensor | None = ...
+    pixel_logits: torch.FloatTensor | None = ...
+    audio_logits: torch.FloatTensor | None = ...
+    hidden_states: tuple[torch.FloatTensor, ...] | None = ...
+    attentions: tuple[torch.FloatTensor, ...] | None = ...
 
 def generate_pixel_mask_noise(pixel_values, pixel_mask=..., mask_ratio=...):  # -> tuple[Tensor, int]:
     """Generate noise for audio masking."""
@@ -244,14 +244,14 @@ class TvltModel(TvltPreTrainedModel):
         self,
         pixel_values: torch.FloatTensor,
         audio_values: torch.FloatTensor,
-        pixel_mask: Optional[torch.FloatTensor] = ...,
-        audio_mask: Optional[torch.FloatTensor] = ...,
+        pixel_mask: torch.FloatTensor | None = ...,
+        audio_mask: torch.FloatTensor | None = ...,
         mask_pixel: bool = ...,
         mask_audio: bool = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.FloatTensor], TvltModelOutput]:
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.FloatTensor] | TvltModelOutput:
         r"""
         Returns:
 
@@ -310,15 +310,15 @@ class TvltForPreTraining(TvltPreTrainedModel):
         self,
         pixel_values: torch.FloatTensor,
         audio_values: torch.FloatTensor,
-        pixel_mask: Optional[torch.FloatTensor] = ...,
-        audio_mask: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        pixel_values_mixed: Optional[torch.FloatTensor] = ...,
-        pixel_mask_mixed: Optional[torch.FloatTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple[torch.FloatTensor], TvltForPreTrainingOutput]:
+        pixel_mask: torch.FloatTensor | None = ...,
+        audio_mask: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        pixel_values_mixed: torch.FloatTensor | None = ...,
+        pixel_mask_mixed: torch.FloatTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple[torch.FloatTensor] | TvltForPreTrainingOutput:
         r"""
         pixel_values_mixed (`torch.FloatTensor` of shape `(batch_size, num_frames, num_channels, height, width)`):
             Pixel values that mix positive and negative samples in Tvlt vision-audio matching. Audio values can be
@@ -385,13 +385,13 @@ class TvltForAudioVisualClassification(TvltPreTrainedModel):
         self,
         pixel_values: torch.FloatTensor,
         audio_values: torch.FloatTensor,
-        pixel_mask: Optional[torch.FloatTensor] = ...,
-        audio_mask: Optional[torch.FloatTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple[torch.FloatTensor], SequenceClassifierOutput]:
+        pixel_mask: torch.FloatTensor | None = ...,
+        audio_mask: torch.FloatTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        labels: torch.LongTensor | None = ...,
+    ) -> tuple[torch.FloatTensor] | SequenceClassifierOutput:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size, num_labels)`, *optional*):
             Labels for computing the audiovisual loss. Indices should be in `[0, ..., num_classes-1]` where num_classes

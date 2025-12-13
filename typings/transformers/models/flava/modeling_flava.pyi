@@ -51,12 +51,12 @@ class FlavaModelOutput(ModelOutput):
         The output of the [`FlavaMultimodalModel`].
     """
 
-    image_embeddings: Optional[torch.FloatTensor] = ...
-    image_output: Optional[BaseModelOutputWithPooling] = ...
-    text_embeddings: Optional[torch.FloatTensor] = ...
-    text_output: Optional[BaseModelOutputWithPooling] = ...
-    multimodal_embeddings: Optional[torch.FloatTensor] = ...
-    multimodal_output: Optional[BaseModelOutputWithPooling] = ...
+    image_embeddings: torch.FloatTensor | None = ...
+    image_output: BaseModelOutputWithPooling | None = ...
+    text_embeddings: torch.FloatTensor | None = ...
+    text_output: BaseModelOutputWithPooling | None = ...
+    multimodal_embeddings: torch.FloatTensor | None = ...
+    multimodal_output: BaseModelOutputWithPooling | None = ...
     def to_tuple(self) -> tuple[Any]: ...
 
 @dataclass
@@ -83,12 +83,12 @@ class FlavaLosses(ModelOutput):
         Masked Multimodal Modeling loss's text component calculated on paired image-text data.
     """
 
-    mim: Optional[torch.FloatTensor] = ...
-    mlm: Optional[torch.FloatTensor] = ...
-    itm: Optional[torch.FloatTensor] = ...
-    global_contrastive: Optional[torch.FloatTensor] = ...
-    mmm_image: Optional[torch.FloatTensor] = ...
-    mmm_text: Optional[torch.FloatTensor] = ...
+    mim: torch.FloatTensor | None = ...
+    mlm: torch.FloatTensor | None = ...
+    itm: torch.FloatTensor | None = ...
+    global_contrastive: torch.FloatTensor | None = ...
+    mmm_image: torch.FloatTensor | None = ...
+    mmm_text: torch.FloatTensor | None = ...
     def all_none(self) -> bool: ...
 
 @dataclass
@@ -157,27 +157,27 @@ class FlavaForPreTrainingOutput(ModelOutput):
             some of the tokens masked.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
+    loss: torch.FloatTensor | None = ...
     loss_info: FlavaLosses = ...
-    image_embeddings: Optional[torch.FloatTensor] = ...
-    image_output: Optional[BaseModelOutputWithPooling] = ...
-    text_embeddings: Optional[torch.FloatTensor] = ...
-    text_output: Optional[BaseModelOutputWithPooling] = ...
-    multimodal_embeddings: Optional[torch.FloatTensor] = ...
-    multimodal_output: Optional[BaseModelOutputWithPooling] = ...
-    image_masked_embeddings: Optional[torch.FloatTensor] = ...
-    image_masked_output: Optional[BaseModelOutputWithPooling] = ...
-    text_masked_embeddings: Optional[torch.FloatTensor] = ...
-    text_masked_output: Optional[BaseModelOutputWithPooling] = ...
-    multimodal_masked_embeddings: Optional[torch.FloatTensor] = ...
-    multimodal_masked_output: Optional[BaseModelOutputWithPooling] = ...
-    mim_logits: Optional[torch.FloatTensor] = ...
-    mlm_logits: Optional[torch.FloatTensor] = ...
-    itm_logits: Optional[torch.FloatTensor] = ...
-    contrastive_logits_per_image: Optional[torch.FloatTensor] = ...
-    contrastive_logits_per_text: Optional[torch.FloatTensor] = ...
-    mmm_image_logits: Optional[torch.FloatTensor] = ...
-    mmm_text_logits: Optional[torch.FloatTensor] = ...
+    image_embeddings: torch.FloatTensor | None = ...
+    image_output: BaseModelOutputWithPooling | None = ...
+    text_embeddings: torch.FloatTensor | None = ...
+    text_output: BaseModelOutputWithPooling | None = ...
+    multimodal_embeddings: torch.FloatTensor | None = ...
+    multimodal_output: BaseModelOutputWithPooling | None = ...
+    image_masked_embeddings: torch.FloatTensor | None = ...
+    image_masked_output: BaseModelOutputWithPooling | None = ...
+    text_masked_embeddings: torch.FloatTensor | None = ...
+    text_masked_output: BaseModelOutputWithPooling | None = ...
+    multimodal_masked_embeddings: torch.FloatTensor | None = ...
+    multimodal_masked_output: BaseModelOutputWithPooling | None = ...
+    mim_logits: torch.FloatTensor | None = ...
+    mlm_logits: torch.FloatTensor | None = ...
+    itm_logits: torch.FloatTensor | None = ...
+    contrastive_logits_per_image: torch.FloatTensor | None = ...
+    contrastive_logits_per_text: torch.FloatTensor | None = ...
+    mmm_image_logits: torch.FloatTensor | None = ...
+    mmm_text_logits: torch.FloatTensor | None = ...
     def to_tuple(self) -> tuple[Any]: ...
 
 class FlavaImageEmbeddings(nn.Module):
@@ -199,7 +199,7 @@ class FlavaImageEmbeddings(nn.Module):
     def forward(
         self,
         pixel_values: torch.Tensor,
-        bool_masked_pos: Optional[torch.BoolTensor] = ...,
+        bool_masked_pos: torch.BoolTensor | None = ...,
         interpolate_pos_encoding: bool = ...,
     ) -> torch.Tensor: ...
 
@@ -210,7 +210,7 @@ class PatchEmbeddings(nn.Module):
     def __init__(
         self,
         image_size: int = ...,
-        patch_size: Union[int, tuple[int, int]] = ...,
+        patch_size: int | tuple[int, int] = ...,
         num_channels: int = ...,
         embed_dim: int = ...,
     ) -> None: ...
@@ -221,9 +221,9 @@ class FlavaTextEmbeddings(nn.Module):
     def __init__(self, config) -> None: ...
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.Tensor] = ...,
+        input_ids: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        position_ids: torch.Tensor | None = ...,
     ):  # -> Any:
         ...
 
@@ -232,10 +232,10 @@ class FlavaSelfAttention(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
-    ) -> Union[tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor]]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor] | tuple[torch.Tensor]: ...
 
 class FlavaSelfOutput(nn.Module):
     """
@@ -251,10 +251,10 @@ class FlavaAttention(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
-    ) -> Union[tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor]]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor] | tuple[torch.Tensor]: ...
 
 class FlavaIntermediate(nn.Module):
     def __init__(self, config: FlavaPossibleConfigs) -> None: ...
@@ -270,22 +270,22 @@ class FlavaLayer(GradientCheckpointingLayer):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
-    ) -> Union[tuple[torch.Tensor, torch.Tensor], tuple[torch.Tensor]]: ...
+    ) -> tuple[torch.Tensor, torch.Tensor] | tuple[torch.Tensor]: ...
 
 class FlavaEncoder(nn.Module):
     def __init__(self, config: FlavaConfig) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
         output_hidden_states: bool = ...,
         return_dict: bool = ...,
-    ) -> Union[tuple, BaseModelOutput]: ...
+    ) -> tuple | BaseModelOutput: ...
 
 class FlavaPooler(nn.Module):
     def __init__(self, config: FlavaPossibleConfigs) -> None: ...
@@ -316,15 +316,15 @@ class FlavaImageModel(FlavaPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: Optional[torch.Tensor] = ...,
-        bool_masked_pos: Optional[torch.BoolTensor] = ...,
-        interpolate_pos_encoding: Optional[bool] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPooling]:
+        pixel_values: torch.Tensor | None = ...,
+        bool_masked_pos: torch.BoolTensor | None = ...,
+        interpolate_pos_encoding: bool | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutputWithPooling:
         r"""
         bool_masked_pos (`torch.BoolTensor` of shape `(batch_size, image_num_patches)`):
             Boolean masked positions. Indicates which patches are masked (1) and which aren't (0).
@@ -348,15 +348,15 @@ class FlavaTextModel(FlavaPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPooling]:
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        position_ids: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutputWithPooling:
         r"""
         input_ids (`torch.LongTensor` of shape `(batch_size, text_seq_length)`):
             Indices of input sequence tokens in the vocabulary. Indices can be obtained using [`AutoTokenizer`]. See
@@ -387,12 +387,12 @@ class FlavaMultimodalModel(FlavaPreTrainedModel):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, BaseModelOutputWithPooling]:
+        attention_mask: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | BaseModelOutputWithPooling:
         r"""
         hidden_states (`torch.FloatTensor` of shape `(batch_size, image_num_patches + text_seq_len, hidden_size)`):
             The concatenated hidden states of unimodal encoders.
@@ -406,13 +406,13 @@ class FlavaModel(FlavaPreTrainedModel):
     @auto_docstring
     def get_text_features(
         self,
-        input_ids: Optional[torch.Tensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        position_ids: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
     ) -> torch.FloatTensor:
         r"""
         input_ids (`torch.LongTensor` of shape `(batch_size, text_seq_length)`):
@@ -449,14 +449,14 @@ class FlavaModel(FlavaPreTrainedModel):
     @auto_docstring
     def get_image_features(
         self,
-        pixel_values: Optional[torch.Tensor] = ...,
-        bool_masked_pos: Optional[torch.BoolTensor] = ...,
-        interpolate_pos_encoding: Optional[bool] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        head_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        pixel_values: torch.Tensor | None = ...,
+        bool_masked_pos: torch.BoolTensor | None = ...,
+        interpolate_pos_encoding: bool | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
     ) -> torch.FloatTensor:
         r"""
         bool_masked_pos (`torch.BoolTensor` of shape `(batch_size, image_num_patches)`):
@@ -489,18 +489,18 @@ class FlavaModel(FlavaPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.Tensor] = ...,
-        bool_masked_pos: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        image_attention_mask: Optional[torch.Tensor] = ...,
-        skip_multimodal_encoder: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        pixel_values: torch.FloatTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        bool_masked_pos: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        image_attention_mask: torch.Tensor | None = ...,
+        skip_multimodal_encoder: bool | None = ...,
+        output_attentions: bool | None = ...,
         output_hidden_states: bool = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, FlavaOutput]:
+        return_dict: bool | None = ...,
+    ) -> tuple | FlavaOutput:
         r"""
         input_ids (`torch.LongTensor` of shape `(batch_size, image_num_patches + text_seq_len)`):
             Indices of input sequence tokens in the vocabulary. Indices can be obtained using [`AutoTokenizer`]. See
@@ -664,7 +664,7 @@ class FlavaGlobalContrastiveHead(nn.Module):
 )
 class FlavaForPreTraining(FlavaPreTrainedModel):
     _tied_weights_keys = ...
-    def __init__(self, config: FlavaConfig, image_codebook: Optional[nn.Module] = ...) -> None:
+    def __init__(self, config: FlavaConfig, image_codebook: nn.Module | None = ...) -> None:
         r"""
         image_codebook ([`nn.Module`]):
             If passed, the image codebook will be set to this. Otherwise, it will be initialized using the
@@ -675,24 +675,24 @@ class FlavaForPreTraining(FlavaPreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        input_ids_masked: Optional[torch.LongTensor] = ...,
-        pixel_values: Optional[torch.FloatTensor] = ...,
-        codebook_pixel_values: Optional[torch.FloatTensor] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        token_type_ids: Optional[torch.Tensor] = ...,
-        bool_masked_pos: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        image_attention_mask: Optional[torch.Tensor] = ...,
-        skip_unmasked_multimodal_encoder: Optional[bool] = ...,
-        mlm_labels: Optional[torch.Tensor] = ...,
-        mim_labels: Optional[torch.Tensor] = ...,
-        itm_labels: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[bool] = ...,
+        input_ids: torch.LongTensor | None = ...,
+        input_ids_masked: torch.LongTensor | None = ...,
+        pixel_values: torch.FloatTensor | None = ...,
+        codebook_pixel_values: torch.FloatTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        bool_masked_pos: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        image_attention_mask: torch.Tensor | None = ...,
+        skip_unmasked_multimodal_encoder: bool | None = ...,
+        mlm_labels: torch.Tensor | None = ...,
+        mim_labels: torch.Tensor | None = ...,
+        itm_labels: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
         output_hidden_states: bool = ...,
-        return_dict: Optional[bool] = ...,
-        return_loss: Optional[bool] = ...,
-    ) -> Union[tuple[torch.Tensor], FlavaForPreTrainingOutput]:
+        return_dict: bool | None = ...,
+        return_loss: bool | None = ...,
+    ) -> tuple[torch.Tensor] | FlavaForPreTrainingOutput:
         r"""
         input_ids (`torch.LongTensor` of shape `(batch_size, text_seq_len)`):
             Indices of input sequence tokens in the vocabulary. Indices can be obtained using [`AutoTokenizer`]. See

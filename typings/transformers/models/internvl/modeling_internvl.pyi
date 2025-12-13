@@ -34,7 +34,7 @@ def eager_attention_forward(
     query: torch.Tensor,
     key: torch.Tensor,
     value: torch.Tensor,
-    attention_mask: Optional[torch.Tensor],
+    attention_mask: torch.Tensor | None,
     scaling: float,
     dropout: float = ...,
     **kwargs,
@@ -47,8 +47,8 @@ class InternVLVisionAttention(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
-        output_attentions: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        output_attentions: torch.Tensor | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
     ):  # -> tuple[Any, Any] | tuple[Any, None]:
         ...
@@ -107,9 +107,7 @@ class InternVLVisionEmbeddings(nn.Module):
         """
         ...
 
-    def forward(
-        self, pixel_values: torch.Tensor, bool_masked_pos: Optional[torch.BoolTensor] = ...
-    ) -> torch.Tensor: ...
+    def forward(self, pixel_values: torch.Tensor, bool_masked_pos: torch.BoolTensor | None = ...) -> torch.Tensor: ...
 
 class InternVLVisionMLP(nn.Module):
     def __init__(self, config) -> None: ...
@@ -122,14 +120,14 @@ class InternVLVisionLayer(GradientCheckpointingLayer):
     def __init__(self, config: InternVLVisionConfig) -> None: ...
     def forward(
         self, hidden_states: torch.Tensor, output_attentions: bool = ...
-    ) -> Union[tuple[torch.Tensor], tuple[torch.Tensor, torch.Tensor]]: ...
+    ) -> tuple[torch.Tensor] | tuple[torch.Tensor, torch.Tensor]: ...
 
 class InternVLVisionEncoder(nn.Module):
     def __init__(self, config: InternVLVisionConfig) -> None: ...
     @can_return_tuple
     def forward(
         self, hidden_states: torch.Tensor, output_attentions: bool = ..., output_hidden_states: bool = ...
-    ) -> Union[tuple, BaseModelOutput]: ...
+    ) -> tuple | BaseModelOutput: ...
 
 @auto_docstring
 class InternVLVisionModel(InternVLVisionPreTrainedModel):
@@ -141,10 +139,10 @@ class InternVLVisionModel(InternVLVisionPreTrainedModel):
     def forward(
         self,
         pixel_values: torch.Tensor,
-        bool_masked_pos: Optional[torch.BoolTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-    ) -> Union[tuple, InternVLVisionModelOutputWithPooling]:
+        bool_masked_pos: torch.BoolTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+    ) -> tuple | InternVLVisionModelOutputWithPooling:
         r"""
         bool_masked_pos (`torch.BoolTensor` of shape `(batch_size, num_patches)`, *optional*):
             Boolean masked positions. Indicates which patches are masked (1) and which aren't (0).
@@ -187,7 +185,7 @@ class InternVLModelOutputWithPast(BaseModelOutputWithPast):
         image_hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
     """
 
-    image_hidden_states: Optional[torch.FloatTensor] = ...
+    image_hidden_states: torch.FloatTensor | None = ...
 
 @auto_docstring(
     custom_intro="""
@@ -208,8 +206,8 @@ class InternVLModel(InternVLPreTrainedModel):
     def get_image_features(
         self,
         pixel_values: torch.FloatTensor,
-        vision_feature_layer: Optional[Union[int, list[int]]] = ...,
-        vision_feature_select_strategy: Optional[str] = ...,
+        vision_feature_layer: int | list[int] | None = ...,
+        vision_feature_select_strategy: str | None = ...,
         **kwargs,
     ):  # -> Any:
         """
@@ -240,19 +238,19 @@ class InternVLModel(InternVLPreTrainedModel):
         self,
         input_ids: torch.LongTensor = ...,
         pixel_values: torch.FloatTensor = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        vision_feature_layer: Optional[Union[int, list[int]]] = ...,
-        vision_feature_select_strategy: Optional[str] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        vision_feature_layer: int | list[int] | None = ...,
+        vision_feature_select_strategy: str | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
         **kwargs: Unpack[FlashAttentionKwargs],
-    ) -> Union[tuple, InternVLModelOutputWithPast]: ...
+    ) -> tuple | InternVLModelOutputWithPast: ...
     def pixel_shuffle(self, vision_features: torch.Tensor, scale_factor: float = ...):  # -> Tensor:
         """Perform pixel shuffle downsampling on vision features.
 
@@ -291,12 +289,12 @@ class InternVLCausalLMOutputWithPast(ModelOutput):
         image_hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
     """
 
-    loss: Optional[torch.FloatTensor] = ...
-    logits: Optional[torch.FloatTensor] = ...
-    past_key_values: Optional[list[torch.FloatTensor]] = ...
-    hidden_states: Optional[tuple[torch.FloatTensor]] = ...
-    attentions: Optional[tuple[torch.FloatTensor]] = ...
-    image_hidden_states: Optional[torch.FloatTensor] = ...
+    loss: torch.FloatTensor | None = ...
+    logits: torch.FloatTensor | None = ...
+    past_key_values: list[torch.FloatTensor] | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
+    image_hidden_states: torch.FloatTensor | None = ...
 
 @auto_docstring(
     custom_intro="""
@@ -319,8 +317,8 @@ class InternVLForConditionalGeneration(InternVLPreTrainedModel, GenerationMixin)
     def get_image_features(
         self,
         pixel_values: torch.FloatTensor,
-        vision_feature_layer: Optional[Union[int, list[int]]] = ...,
-        vision_feature_select_strategy: Optional[str] = ...,
+        vision_feature_layer: int | list[int] | None = ...,
+        vision_feature_select_strategy: str | None = ...,
         **kwargs,
     ):  # -> Any:
         ...
@@ -339,22 +337,22 @@ class InternVLForConditionalGeneration(InternVLPreTrainedModel, GenerationMixin)
         self,
         input_ids: torch.LongTensor = ...,
         pixel_values: torch.FloatTensor = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        vision_feature_layer: Optional[Union[int, list[int]]] = ...,
-        vision_feature_select_strategy: Optional[str] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        logits_to_keep: Union[int, torch.Tensor] = ...,
-        image_sizes: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        vision_feature_layer: int | list[int] | None = ...,
+        vision_feature_select_strategy: str | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        logits_to_keep: int | torch.Tensor = ...,
+        image_sizes: torch.Tensor | None = ...,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> Union[tuple, InternVLCausalLMOutputWithPast]:
+    ) -> tuple | InternVLCausalLMOutputWithPast:
         r"""
         Example:
 

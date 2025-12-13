@@ -17,18 +17,18 @@ class VisualQuestionAnsweringInputData(BaseInferenceType):
 class VisualQuestionAnsweringParameters(BaseInferenceType):
     """Additional inference parameters for Visual Question Answering"""
 
-    top_k: Optional[int] = ...
+    top_k: int | None = ...
 
 @dataclass_with_extra
 class VisualQuestionAnsweringInput(BaseInferenceType):
     """Inputs for Visual Question Answering inference"""
 
     inputs: VisualQuestionAnsweringInputData
-    parameters: Optional[VisualQuestionAnsweringParameters] = ...
+    parameters: VisualQuestionAnsweringParameters | None = ...
 
 @dataclass_with_extra
 class VisualQuestionAnsweringOutputElement(BaseInferenceType):
     """Outputs of inference for the Visual Question Answering task"""
 
     score: float
-    answer: Optional[str] = ...
+    answer: str | None = ...

@@ -132,11 +132,11 @@ class OneFormerConfig(PretrainedConfig):
     attribute_map = ...
     def __init__(
         self,
-        backbone_config: Optional[dict] = ...,
-        backbone: Optional[str] = ...,
+        backbone_config: dict | None = ...,
+        backbone: str | None = ...,
         use_pretrained_backbone: bool = ...,
         use_timm_backbone: bool = ...,
-        backbone_kwargs: Optional[dict] = ...,
+        backbone_kwargs: dict | None = ...,
         ignore_value: int = ...,
         num_queries: int = ...,
         no_object_weight: int = ...,
@@ -154,7 +154,7 @@ class OneFormerConfig(PretrainedConfig):
         is_training: bool = ...,
         use_auxiliary_loss: bool = ...,
         output_auxiliary_logits: bool = ...,
-        strides: Optional[list] = ...,
+        strides: list | None = ...,
         task_seq_len: int = ...,
         text_encoder_width: int = ...,
         text_encoder_context_length: int = ...,

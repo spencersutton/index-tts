@@ -1,5 +1,6 @@
 import torch
-from typing import Any, Callable, Optional, TypeVar, Union
+from typing import Any, Optional, TypeVar, Union
+from collections.abc import Callable
 from .. import ir
 from .cpp_micro_gemm import CppMicroGemm
 from .cpp_template import CppTemplate
@@ -23,7 +24,7 @@ def get_padded_n(n, block_n): ...
 _T = TypeVar("_T", ir.IRNode, torch.Tensor)
 
 def transpose_w(W: _T, trans_w: bool) -> _T: ...
-def expand_bias(B: Optional[_T], X: _T) -> Optional[_T]: ...
+def expand_bias(B: _T | None, X: _T) -> _T | None: ...
 def prune_tensors(input_nodes: list[ir.IRNode], new_input_nodes: list[ir.IRNode]):  # -> None:
 
     ...
@@ -31,11 +32,11 @@ def gen_2d_view_of_epilogue_buf(
     Y: ir.Buffer,
     template_buffer: ir.Buffer,
     epilogue_nodes: list[ir.IRNode],
-    reindexers: list[Optional[Callable[[list[Any]], list[Any]]]],
-    default_reindexers: list[Optional[Callable[[list[Any]], list[Any]]]],
+    reindexers: list[Callable[[list[Any]], list[Any]] | None],
+    default_reindexers: list[Callable[[list[Any]], list[Any]] | None],
 ) -> tuple[
-    Union[ir.Buffer, ir.ReinterpretView],
-    list[Optional[Callable[[list[Any]], list[Any]]]],
+    ir.Buffer | ir.ReinterpretView,
+    list[Callable[[list[Any]], list[Any]] | None],
 ]: ...
 
 class CppGemmTemplate(CppTemplate):
@@ -48,7 +49,7 @@ class CppGemmTemplate(CppTemplate):
         beta=...,
         alpha=...,
         has_bias=...,
-        epilogue_creator: Optional[Callable[[ir.Buffer], ir.Pointwise]] = ...,
+        epilogue_creator: Callable[[ir.Buffer], ir.Pointwise] | None = ...,
         should_block_weights: bool = ...,
         name=...,
     ) -> None: ...
@@ -71,8 +72,8 @@ class CppGemmTemplate(CppTemplate):
         has_bias=...,
         trans_w=...,
         input_indices=...,
-        epilogue_creator: Optional[Callable[[ir.Buffer], ir.Pointwise]] = ...,
-        act_mapping: Optional[dict[int, ir.IRNode]] = ...,
+        epilogue_creator: Callable[[ir.Buffer], ir.Pointwise] | None = ...,
+        act_mapping: dict[int, ir.IRNode] | None = ...,
     ):  # -> DataProcessorTemplateWrapper:
 
         ...
@@ -105,9 +106,9 @@ class CppGemmTemplate(CppTemplate):
     def get_options(
         self,
         kernel: CppTemplateKernel,
-        template_buffer_node: Optional[ir.CppTemplateBuffer] = ...,
-        flag_template_buffer_has_other_users: Optional[bool] = ...,
-        epilogue_nodes: Optional[list[ir.IRNode]] = ...,
+        template_buffer_node: ir.CppTemplateBuffer | None = ...,
+        flag_template_buffer_has_other_users: bool | None = ...,
+        epilogue_nodes: list[ir.IRNode] | None = ...,
     ) -> dict[str, Any]: ...
     def is_int8_woq_gemm_small_m_dim(self, X: ir.ReinterpretView, W: ir.ReinterpretView, N, K, micro_gemm):  # -> bool:
 
@@ -115,9 +116,9 @@ class CppGemmTemplate(CppTemplate):
     def render(
         self,
         kernel: CppTemplateKernel,
-        template_buffer_node: Optional[ir.CppTemplateBuffer] = ...,
-        flag_template_buffer_has_other_users: Optional[bool] = ...,
-        epilogue_nodes: Optional[list[ir.IRNode]] = ...,
+        template_buffer_node: ir.CppTemplateBuffer | None = ...,
+        flag_template_buffer_has_other_users: bool | None = ...,
+        epilogue_nodes: list[ir.IRNode] | None = ...,
         **kwargs,
     ) -> str: ...
     def codegen_blocks(

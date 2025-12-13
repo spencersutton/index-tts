@@ -980,7 +980,7 @@ def get_tests_dir(append_path=...):  # -> str:
     ...
 
 def get_steps_per_epoch(trainer: Trainer) -> int: ...
-def evaluate_side_effect_factory(side_effect_values: list[dict[str, float]]) -> Generator[dict[str, float], None, None]:
+def evaluate_side_effect_factory(side_effect_values: list[dict[str, float]]) -> Generator[dict[str, float]]:
     """
     Function that returns side effects for the _evaluate method.
     Used when we're unsure of exactly how many times _evaluate will be called.
@@ -1125,14 +1125,14 @@ class TemporaryHubRepo:
         model.push_to_hub(tmp_repo.repo_id, token=self._token)
     ```
     """
-    def __init__(self, namespace: Optional[str] = ..., token: Optional[str] = ...) -> None: ...
+    def __init__(self, namespace: str | None = ..., token: str | None = ...) -> None: ...
     def __enter__(self):  # -> RepoUrl:
         ...
     def __exit__(self, exc, value, tb):  # -> None:
         ...
 
 @contextlib.contextmanager
-def ExtendSysPath(path: Union[str, os.PathLike]) -> Iterator[None]:
+def ExtendSysPath(path: str | os.PathLike) -> Iterator[None]:
     """
     Temporary add given path to `sys.path`.
 
@@ -1448,7 +1448,7 @@ class RequestCounter:
     def total_calls(self) -> int: ...
 
 def is_flaky(
-    max_attempts: int = ..., wait_before_retry: Optional[float] = ..., description: Optional[str] = ...
+    max_attempts: int = ..., wait_before_retry: float | None = ..., description: str | None = ...
 ):  # -> Callable[..., _Wrapped[..., Any, ..., Any]]:
     """
     To decorate flaky tests. They will be retried on failures.
@@ -1470,7 +1470,7 @@ def is_flaky(
     ...
 
 def hub_retry(
-    max_attempts: int = ..., wait_before_retry: Optional[float] = ...
+    max_attempts: int = ..., wait_before_retry: float | None = ...
 ):  # -> Callable[..., _Wrapped[..., Any, ..., Any]]:
     """
     To decorate tests that download from the Hub. They can fail due to a
@@ -1605,8 +1605,8 @@ def compare_pipeline_output_to_hub_spec(output, hub_spec):  # -> None:
 def cleanup(device: str, gc_collect=...):  # -> None:
     ...
 
-DeviceProperties = tuple[Optional[str], Optional[int], Optional[int]]
-PackedDeviceProperties = tuple[Optional[str], Union[None, int, tuple[int, int]]]
+DeviceProperties = tuple[str | None, int | None, int | None]
+PackedDeviceProperties = tuple[str | None, None | int | tuple[int, int]]
 
 @cache
 def get_device_properties() -> DeviceProperties:
@@ -1615,7 +1615,7 @@ def get_device_properties() -> DeviceProperties:
     """
     ...
 
-def unpack_device_properties(properties: Optional[PackedDeviceProperties] = ...) -> DeviceProperties:
+def unpack_device_properties(properties: PackedDeviceProperties | None = ...) -> DeviceProperties:
     """
     Unpack a `PackedDeviceProperties` tuple into consistently formatted `DeviceProperties` tuple. If properties is None, it is fetched.
     """
@@ -1663,6 +1663,6 @@ class Expectations(UserDict[PackedDeviceProperties, Any]):
     def __repr__(self):  # -> str:
         ...
 
-def torchrun(script: str, nproc_per_node: int, is_torchrun: bool = ..., env: Optional[dict] = ...):  # -> None:
+def torchrun(script: str, nproc_per_node: int, is_torchrun: bool = ..., env: dict | None = ...):  # -> None:
     """Run the `script` using `torchrun` command for multi-processing in a subprocess. Captures errors as necessary."""
     ...

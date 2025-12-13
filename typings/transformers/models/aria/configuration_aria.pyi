@@ -192,7 +192,7 @@ class AriaConfig(PretrainedConfig):
         vision_config=...,
         vision_feature_layer: int = ...,
         text_config: AriaTextConfig = ...,
-        projector_patch_to_query_dict: Optional[dict] = ...,
+        projector_patch_to_query_dict: dict | None = ...,
         image_token_index: int = ...,
         initializer_range: float = ...,
         **kwargs,

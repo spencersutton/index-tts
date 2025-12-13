@@ -3,8 +3,9 @@ import functools
 import torch
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Callable, Generic, Optional, TYPE_CHECKING, TypeVar, Union
-from typing_extensions import override
+from typing import Any, Generic, Optional, TYPE_CHECKING, TypeVar, Union
+from collections.abc import Callable
+from typing import override
 from torch._dynamo.precompile_context import PrecompileCacheArtifact
 from torch._inductor.codecache import FxGraphCachePickler, FxGraphHashDetails, GuardedCache
 from torch._inductor.cudagraph_utils import BoxedDeviceIndex
@@ -77,7 +78,7 @@ class CompiledFxGraphLoadable(InductorOutput[CompiledFxGraph]):
 @dataclass
 class FxGraphCacheLoadable(InductorOutput[CompiledFxGraph]):
     fx_graph_cache_info: tuple[str, list[str]]
-    fx_graph_guard_expr: Optional[str]
+    fx_graph_guard_expr: str | None
     def pre_save(self):  # -> None:
         ...
     def load(self, example_inputs) -> CompiledFxGraph: ...
@@ -116,20 +117,20 @@ TBackward = TypeVar("TBackward", bound=GenericCompiledBackward)
 @dataclass
 class GenericAOTAutogradCacheEntry(Generic[TForward, TBackward]):
     compiled_fw: TForward
-    compiled_bw: Optional[TBackward]
-    aot_joint_graph_str: Optional[str]
-    aot_forward_graph_str: Optional[str]
-    aot_backward_graph_str: Optional[str]
+    compiled_bw: TBackward | None
+    aot_joint_graph_str: str | None
+    aot_forward_graph_str: str | None
+    aot_backward_graph_str: str | None
     runtime_metadata: ViewAndMutationMeta
     dispatch_wrappers: list[CompilerWrapper]
-    maybe_subclass_meta: Optional[SubclassMeta]
-    num_fw_outs_saved_for_bw: Optional[int]
+    maybe_subclass_meta: SubclassMeta | None
+    num_fw_outs_saved_for_bw: int | None
     indices_of_inps_to_detach: list[int]
     forward_time_taken_ns: int
     backward_time_taken_ns: int
     sanitized_aot_config: AOTConfig
-    guards_expr: Optional[str]
-    serialized_bw_module: Optional[SerializedGraphModule]
+    guards_expr: str | None
+    serialized_bw_module: SerializedGraphModule | None
     def pre_save(self):  # -> None:
 
         ...
@@ -171,18 +172,18 @@ class AOTAutogradCache(GuardedCache[GenericAOTAutogradCacheEntry]):
         ...
     @staticmethod
     def try_load(
-        mod: Union[torch.fx.GraphModule, torch._dynamo.utils.GmWrapper],
+        mod: torch.fx.GraphModule | torch._dynamo.utils.GmWrapper,
         args,
         aot_config: AOTConfig,
         cudagraphs: BoxedBool,
-        boxed_forward_device_index: Optional[BoxedDeviceIndex],
+        boxed_forward_device_index: BoxedDeviceIndex | None,
         local: bool,
         remote: bool,
-    ) -> Optional[Callable]: ...
+    ) -> Callable | None: ...
     @classmethod
-    def generate_guards_expression(cls: type[AOTAutogradCache], cache_info: AOTAutogradCacheInfo) -> Optional[str]: ...
+    def generate_guards_expression(cls: type[AOTAutogradCache], cache_info: AOTAutogradCacheInfo) -> str | None: ...
     @staticmethod
-    def evaluate_guards(guard_expr: str, hints: Union[list[int], list[torch.SymInt]]):  # -> bool:
+    def evaluate_guards(guard_expr: str, hints: list[int] | list[torch.SymInt]):  # -> bool:
         ...
     @staticmethod
     def save(key: str, entry: GenericAOTAutogradCacheEntry, remote: bool):  # -> None:
@@ -190,24 +191,24 @@ class AOTAutogradCache(GuardedCache[GenericAOTAutogradCacheEntry]):
         ...
     @staticmethod
     @functools.cache
-    def get_remote_cache() -> Optional[RemoteCache[JsonDataTy]]: ...
+    def get_remote_cache() -> RemoteCache[JsonDataTy] | None: ...
     @staticmethod
     def make_entry(
         compiled_fw_func: CompiledFxGraph,
-        compiled_bw_func: Optional[CompiledFxGraph],
-        aot_joint_graph_str: Optional[str],
-        aot_forward_graph_str: Optional[str],
-        aot_backward_graph_str: Optional[str],
+        compiled_bw_func: CompiledFxGraph | None,
+        aot_joint_graph_str: str | None,
+        aot_forward_graph_str: str | None,
+        aot_backward_graph_str: str | None,
         runtime_metadata: ViewAndMutationMeta,
         dispatch_wrappers: list[CompilerWrapper],
-        maybe_subclass_meta: Optional[SubclassMeta],
-        num_fw_outs_saved_for_bw: Optional[int],
+        maybe_subclass_meta: SubclassMeta | None,
+        num_fw_outs_saved_for_bw: int | None,
         indices_of_inps_to_detach: list[int],
         forward_time_taken_ns: int,
         backward_time_taken_ns: int,
         sanitized_aot_config: AOTConfig,
-        guards_expr: Optional[str],
-        backward_state_indices: Optional[list[int]],
-        num_symints_saved_for_bw: Optional[int],
-        serialized_bw_module: Optional[SerializedGraphModule],
+        guards_expr: str | None,
+        backward_state_indices: list[int] | None,
+        num_symints_saved_for_bw: int | None,
+        serialized_bw_module: SerializedGraphModule | None,
     ) -> GenericAOTAutogradCacheEntry: ...

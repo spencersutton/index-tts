@@ -36,8 +36,8 @@ class VisionTextDualEncoderProcessor(ProcessorMixin):
     def __init__(self, image_processor=..., tokenizer=..., **kwargs) -> None: ...
     def __call__(
         self,
-        images: Optional[ImageInput] = ...,
-        text: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]] = ...,
+        images: ImageInput | None = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] = ...,
         audio=...,
         videos=...,
         **kwargs: Unpack[VisionTextDualEncoderProcessorKwargs],

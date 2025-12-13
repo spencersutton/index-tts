@@ -16,7 +16,7 @@ Image/Text processor class for OWL-ViT
 if TYPE_CHECKING: ...
 
 class OwlViTImagesKwargs(ImagesKwargs, total=False):
-    query_images: Optional[ImageInput]
+    query_images: ImageInput | None
     ...
 
 class OwlViTProcessorKwargs(ProcessingKwargs, total=False):
@@ -42,8 +42,8 @@ class OwlViTProcessor(ProcessorMixin):
     def __init__(self, image_processor=..., tokenizer=..., **kwargs) -> None: ...
     def __call__(
         self,
-        images: Optional[ImageInput] = ...,
-        text: Union[TextInput, PreTokenizedInput, list[TextInput], list[PreTokenizedInput]] = ...,
+        images: ImageInput | None = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] = ...,
         audio=...,
         videos=...,
         **kwargs: Unpack[OwlViTProcessorKwargs],
@@ -104,8 +104,8 @@ class OwlViTProcessor(ProcessorMixin):
         self,
         outputs: OwlViTObjectDetectionOutput,
         threshold: float = ...,
-        target_sizes: Optional[Union[TensorType, list[tuple]]] = ...,
-        text_labels: Optional[list[list[str]]] = ...,
+        target_sizes: TensorType | list[tuple] | None = ...,
+        text_labels: list[list[str]] | None = ...,
     ):
         """
         Converts the raw output of [`OwlViTForObjectDetection`] into final bounding boxes in (top_left_x, top_left_y,
@@ -137,7 +137,7 @@ class OwlViTProcessor(ProcessorMixin):
         outputs: OwlViTImageGuidedObjectDetectionOutput,
         threshold: float = ...,
         nms_threshold: float = ...,
-        target_sizes: Optional[Union[TensorType, list[tuple]]] = ...,
+        target_sizes: TensorType | list[tuple] | None = ...,
     ):
         """
         Converts the output of [`OwlViTForObjectDetection.image_guided_detection`] into the format expected by the COCO

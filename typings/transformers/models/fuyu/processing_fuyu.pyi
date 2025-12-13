@@ -44,7 +44,7 @@ def full_unpacked_stream_to_tensor(
     ...
 
 def construct_full_unpacked_stream(
-    num_real_text_tokens: Union[list[list[int]], torch.Tensor],
+    num_real_text_tokens: list[list[int]] | torch.Tensor,
     input_stream: torch.Tensor,
     image_tokens: list[list[torch.Tensor]],
     batch_size: int,
@@ -95,7 +95,7 @@ class FuyuProcessor(ProcessorMixin):
     def __call__(
         self,
         images: ImageInput = ...,
-        text: Optional[Union[str, list[str], TextInput, PreTokenizedInput]] = ...,
+        text: str | list[str] | TextInput | PreTokenizedInput | None = ...,
         audio=...,
         videos=...,
         **kwargs: Unpack[FuyuProcessorKwargs],

@@ -22,7 +22,7 @@ class Muon(Optimizer):
         ns_coefficients: tuple[float, float, float] = ...,
         eps: float = ...,
         ns_steps: int = ...,
-        adjust_lr_fn: Optional[str] = ...,
+        adjust_lr_fn: str | None = ...,
     ) -> None: ...
     @torch.no_grad()
     def step(self, closure=...):  # -> None:
@@ -35,7 +35,7 @@ def muon(
     grads: list[Tensor],
     muon_momentum_bufs: list[Tensor],
     *,
-    foreach: Optional[bool] = ...,
+    foreach: bool | None = ...,
     lr: float,
     weight_decay: float,
     momentum: float,
@@ -43,7 +43,7 @@ def muon(
     ns_coefficients: tuple[float, float, float],
     ns_steps: int,
     eps: float,
-    adjust_lr_fn: Optional[str],
+    adjust_lr_fn: str | None,
     has_complex: bool,
 ):  # -> None:
 

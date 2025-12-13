@@ -1,6 +1,7 @@
 import torch.nn as nn
-from typing import Callable, Generic, Protocol
-from typing_extensions import Concatenate, ParamSpec, TypeVar
+from typing import Generic, Protocol
+from collections.abc import Callable
+from typing import Concatenate, ParamSpec, TypeVar
 from torch.distributed._composable_state import _State
 
 _T = TypeVar("_T", covariant=True)

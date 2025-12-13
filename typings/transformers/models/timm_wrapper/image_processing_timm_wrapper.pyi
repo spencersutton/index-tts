@@ -27,7 +27,7 @@ class TimmWrapperImageProcessor(BaseImageProcessor):
     """
 
     main_input_name = ...
-    def __init__(self, pretrained_cfg: dict[str, Any], architecture: Optional[str] = ..., **kwargs) -> None: ...
+    def __init__(self, pretrained_cfg: dict[str, Any], architecture: str | None = ..., **kwargs) -> None: ...
     def to_dict(self) -> dict[str, Any]:
         """
         Serializes this instance to a Python dictionary.
@@ -36,14 +36,14 @@ class TimmWrapperImageProcessor(BaseImageProcessor):
 
     @classmethod
     def get_image_processor_dict(
-        cls, pretrained_model_name_or_path: Union[str, os.PathLike], **kwargs
+        cls, pretrained_model_name_or_path: str | os.PathLike, **kwargs
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         """
         Get the image processor dict for the model.
         """
         ...
 
-    def preprocess(self, images: ImageInput, return_tensors: Optional[Union[str, TensorType]] = ...) -> BatchFeature:
+    def preprocess(self, images: ImageInput, return_tensors: str | TensorType | None = ...) -> BatchFeature:
         """
         Preprocess an image or batch of images.
 

@@ -248,7 +248,7 @@ class JanusVQVAEOutput(ModelOutput):
         Embedding loss.
     """
 
-    decoded_pixel_values: Optional[torch.FloatTensor] = ...
+    decoded_pixel_values: torch.FloatTensor | None = ...
     embedding_loss: torch.FloatTensor = ...
 
 class JanusBaseModelOutputWithPast(IdeficsBaseModelOutputWithPast): ...
@@ -263,7 +263,7 @@ class JanusVisionAttention(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
         **kwargs: Unpack[TransformersKwargs],
     ):  # -> tuple[Any, Any]:
         ...
@@ -369,13 +369,13 @@ class JanusModel(JanusPreTrainedModel):
         self,
         input_ids: torch.LongTensor = ...,
         pixel_values: torch.FloatTensor = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        logits_to_keep: Union[int, torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        logits_to_keep: int | torch.Tensor = ...,
         **kwargs,
     ):  # -> JanusBaseModelOutputWithPast:
         ...
@@ -399,14 +399,14 @@ class JanusForConditionalGeneration(JanusPreTrainedModel, GenerationMixin):
         self,
         input_ids: torch.LongTensor = ...,
         pixel_values: torch.FloatTensor = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        position_ids: Optional[torch.LongTensor] = ...,
-        past_key_values: Optional[Cache] = ...,
-        cache_position: Optional[torch.LongTensor] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        logits_to_keep: Union[int, torch.Tensor] = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        logits_to_keep: int | torch.Tensor = ...,
         **kwargs: Unpack[TransformersKwargs],
     ):  # -> JanusCausalLMOutputWithPast:
         r"""
@@ -443,8 +443,8 @@ class JanusForConditionalGeneration(JanusPreTrainedModel, GenerationMixin):
     def generate(
         self,
         inputs: torch.Tensor = ...,
-        attention_mask: Optional[torch.LongTensor] = ...,
-        logits_processor: Optional[LogitsProcessorList] = ...,
+        attention_mask: torch.LongTensor | None = ...,
+        logits_processor: LogitsProcessorList | None = ...,
         **kwargs,
     ):  # -> GenerateOutput | LongTensor | Tensor:
         ...
@@ -489,23 +489,23 @@ class JanusImageProcessor(BlipImageProcessor):
     def __init__(
         self,
         do_resize: bool = ...,
-        size: Optional[dict[str, int]] = ...,
+        size: dict[str, int] | None = ...,
         min_size: int = ...,
         resample: PILImageResampling = ...,
         do_rescale: bool = ...,
-        rescale_factor: Union[int, float] = ...,
+        rescale_factor: int | float = ...,
         do_normalize: bool = ...,
-        image_mean: Optional[Union[float, list[float]]] = ...,
-        image_std: Optional[Union[float, list[float]]] = ...,
-        do_convert_rgb: Optional[bool] = ...,
+        image_mean: float | list[float] | None = ...,
+        image_std: float | list[float] | None = ...,
+        do_convert_rgb: bool | None = ...,
         **kwargs,
     ) -> None: ...
     def pad_to_square(
         self,
         image: np.ndarray,
-        background_color: Union[int, tuple[int, int, int]] = ...,
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        background_color: int | tuple[int, int, int] = ...,
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
     ) -> np.array:
         """
         Pads an image to a square based on the longest edge.
@@ -535,11 +535,11 @@ class JanusImageProcessor(BlipImageProcessor):
     def resize(
         self,
         image: np.ndarray,
-        size: Union[dict[str, int], int],
-        background_color: Optional[tuple[int, int, int]] = ...,
+        size: dict[str, int] | int,
+        background_color: tuple[int, int, int] | None = ...,
         resample: PILImageResampling = ...,
-        data_format: Optional[Union[str, ChannelDimension]] = ...,
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        data_format: str | ChannelDimension | None = ...,
+        input_data_format: str | ChannelDimension | None = ...,
         **kwargs,
     ) -> np.ndarray:
         """
@@ -575,13 +575,13 @@ class JanusImageProcessor(BlipImageProcessor):
     def postprocess(
         self,
         images: ImageInput,
-        do_rescale: Optional[bool] = ...,
-        rescale_factor: Optional[float] = ...,
-        do_normalize: Optional[bool] = ...,
-        image_mean: Optional[list[float]] = ...,
-        image_std: Optional[list[float]] = ...,
-        input_data_format: Optional[str] = ...,
-        return_tensors: Optional[str] = ...,
+        do_rescale: bool | None = ...,
+        rescale_factor: float | None = ...,
+        do_normalize: bool | None = ...,
+        image_mean: list[float] | None = ...,
+        image_std: list[float] | None = ...,
+        input_data_format: str | None = ...,
+        return_tensors: str | None = ...,
     ):  # -> ImageInput | Any | BatchFeature:
         """Applies post-processing to the decoded image tokens by reversing transformations applied during preprocessing."""
         ...
@@ -589,9 +589,9 @@ class JanusImageProcessor(BlipImageProcessor):
     def unnormalize(
         self,
         image: np.array,
-        image_mean: Union[float, Iterable[float]],
-        image_std: Union[float, Iterable[float]],
-        input_data_format: Optional[Union[str, ChannelDimension]] = ...,
+        image_mean: float | Iterable[float],
+        image_std: float | Iterable[float],
+        input_data_format: str | ChannelDimension | None = ...,
     ) -> np.array:
         """
         Unnormalizes `image` using the mean and standard deviation specified by `mean` and `std`.

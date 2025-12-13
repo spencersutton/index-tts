@@ -174,17 +174,17 @@ class GPTSanJapaneseAttention(nn.Module):
         is_decoder: bool = ...,
         bias: bool = ...,
         is_causal: bool = ...,
-        config: Optional[GPTSanJapaneseConfig] = ...,
+        config: GPTSanJapaneseConfig | None = ...,
     ) -> None: ...
     def forward(
         self,
         hidden_states: torch.Tensor,
-        key_value_states: Optional[torch.Tensor] = ...,
-        past_key_value: Optional[tuple[torch.Tensor]] = ...,
-        attention_mask: Optional[torch.Tensor] = ...,
-        layer_head_mask: Optional[torch.Tensor] = ...,
+        key_value_states: torch.Tensor | None = ...,
+        past_key_value: tuple[torch.Tensor] | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        layer_head_mask: torch.Tensor | None = ...,
         output_attentions: bool = ...,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]:
         """Input shape: Batch x Time x Channel"""
         ...
 
@@ -195,13 +195,13 @@ class GPTSanJapaneseLayerSelfAttention(nn.Module):
     def __init__(self, config, has_relative_attention_bias=...) -> None: ...
     def forward(
         self,
-        hidden_states: Optional[tuple[torch.FloatTensor]],
-        past_key_value: Optional[tuple[torch.Tensor]] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-    ) -> tuple[Union[torch.Tensor, tuple[torch.Tensor]], ...]:
+        hidden_states: tuple[torch.FloatTensor] | None,
+        past_key_value: tuple[torch.Tensor] | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+    ) -> tuple[torch.Tensor | tuple[torch.Tensor], ...]:
         r"""
         Self-attention and normalize block.
 
@@ -245,14 +245,14 @@ class GPTSanJapaneseBlock(nn.Module):
     def __init__(self, config, ext_layer=...) -> None: ...
     def forward(
         self,
-        hidden_states: Optional[tuple[torch.FloatTensor]],
-        past_key_value: Optional[tuple[torch.Tensor]] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_router_tuple: Optional[bool] = ...,
-    ) -> tuple[Union[torch.Tensor, tuple[torch.Tensor]], ...]:
+        hidden_states: tuple[torch.FloatTensor] | None,
+        past_key_value: tuple[torch.Tensor] | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_router_tuple: bool | None = ...,
+    ) -> tuple[torch.Tensor | tuple[torch.Tensor], ...]:
         r"""
         GPTSAN transformer block.
 
@@ -319,21 +319,21 @@ class GPTSanJapaneseModel(GPTSanJapanesePreTrainedModel):
     @add_start_docstrings_to_model_forward(GPTSAN_JAPANESE_INPUTS_DOCSTRING)
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        token_type_ids: Optional[torch.FloatTensor] = ...,
-        spout: Optional[torch.FloatTensor] = ...,
-        past_key_values: Optional[tuple[tuple[torch.FloatTensor]]] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        decoder_inputs_embeds: Optional[torch.FloatTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        output_router_logits: Optional[bool] = ...,
-        num_precontext: Optional[torch.LongTensor] = ...,
-    ) -> Union[MoEModelOutputWithPastAndCrossAttentions, tuple[torch.FloatTensor]]:
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        token_type_ids: torch.FloatTensor | None = ...,
+        spout: torch.FloatTensor | None = ...,
+        past_key_values: tuple[tuple[torch.FloatTensor]] | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        decoder_inputs_embeds: torch.FloatTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        output_router_logits: bool | None = ...,
+        num_precontext: torch.LongTensor | None = ...,
+    ) -> MoEModelOutputWithPastAndCrossAttentions | tuple[torch.FloatTensor]:
         r"""
         num_precontext (`torch.LongTensor` of shape `(batch_size,1)`):
             length of `hybrid` input tokens in the input. Tokens up to this length refer to both front and back like
@@ -353,21 +353,21 @@ class GPTSanJapaneseForConditionalGeneration(GPTSanJapanesePreTrainedModel):
     @add_start_docstrings_to_model_forward(GPTSAN_JAPANESE_INPUTS_DOCSTRING)
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = ...,
-        attention_mask: Optional[torch.FloatTensor] = ...,
-        token_type_ids: Optional[torch.FloatTensor] = ...,
-        spout: Optional[torch.FloatTensor] = ...,
-        past_key_values: Optional[tuple[tuple[torch.FloatTensor]]] = ...,
-        head_mask: Optional[torch.FloatTensor] = ...,
-        use_cache: Optional[bool] = ...,
-        inputs_embeds: Optional[torch.FloatTensor] = ...,
-        decoder_inputs_embeds: Optional[torch.FloatTensor] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-        output_router_logits: Optional[bool] = ...,
-        labels: Optional[torch.LongTensor] = ...,
-    ) -> Union[tuple[torch.FloatTensor], MoECausalLMOutputWithPast]:
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        token_type_ids: torch.FloatTensor | None = ...,
+        spout: torch.FloatTensor | None = ...,
+        past_key_values: tuple[tuple[torch.FloatTensor]] | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        decoder_inputs_embeds: torch.FloatTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        output_router_logits: bool | None = ...,
+        labels: torch.LongTensor | None = ...,
+    ) -> tuple[torch.FloatTensor] | MoECausalLMOutputWithPast:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the sequence classification loss. Indices should be in `[-100, 0, ...,
@@ -436,16 +436,16 @@ class GPTSanJapaneseForConditionalGeneration(GPTSanJapanesePreTrainedModel):
         self,
         input_ids: torch.LongTensor,
         attention_mask: torch.FloatTensor,
-        token_type_ids: Optional[torch.FloatTensor] = ...,
-        spout: Optional[Union[list, torch.FloatTensor]] = ...,
-        past_key_values: Optional[tuple[tuple[torch.FloatTensor]]] = ...,
+        token_type_ids: torch.FloatTensor | None = ...,
+        spout: list | torch.FloatTensor | None = ...,
+        past_key_values: tuple[tuple[torch.FloatTensor]] | None = ...,
         **kwargs,
     ):  # -> dict[str, Tensor | FloatTensor | list[Any] | tuple[tuple[FloatTensor]] | None] | dict[str, LongTensor | FloatTensor | list[Any] | None]:
         ...
     def prepare_decoder_input_ids_from_labels(self, labels: torch.Tensor):  # -> Tensor:
         ...
     def resize_token_embeddings(
-        self, new_num_tokens: int, pad_to_multiple_of: Optional[int] = ..., mean_resizing: bool = ...
+        self, new_num_tokens: int, pad_to_multiple_of: int | None = ..., mean_resizing: bool = ...
     ) -> nn.Embedding: ...
     def get_input_embeddings(self):  # -> Module:
         ...

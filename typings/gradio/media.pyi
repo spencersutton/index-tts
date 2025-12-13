@@ -28,7 +28,7 @@ Usage:
 MEDIA_ROOT = ...
 MEDIA_PATHS = ...
 
-def get_image(filename: Optional[str] = ...) -> str:
+def get_image(filename: str | None = ...) -> str:
     """
     Get path to an image file.
 
@@ -44,7 +44,7 @@ def get_image(filename: Optional[str] = ...) -> str:
     """
     ...
 
-def get_video(filename: Optional[str] = ...) -> str:
+def get_video(filename: str | None = ...) -> str:
     """
     Get path to a video file.
 
@@ -60,7 +60,7 @@ def get_video(filename: Optional[str] = ...) -> str:
     """
     ...
 
-def get_audio(filename: Optional[str] = ...) -> str:
+def get_audio(filename: str | None = ...) -> str:
     """
     Get path to an audio file.
 
@@ -76,7 +76,7 @@ def get_audio(filename: Optional[str] = ...) -> str:
     """
     ...
 
-def get_model3d(filename: Optional[str] = ...) -> str:
+def get_model3d(filename: str | None = ...) -> str:
     """
     Get path to a 3D model file.
 
@@ -92,7 +92,7 @@ def get_model3d(filename: Optional[str] = ...) -> str:
     """
     ...
 
-def get_file(filename: Optional[str] = ...) -> str:
+def get_file(filename: str | None = ...) -> str:
     """
     Get path to a data file (CSV, JSON, text, etc.).
 

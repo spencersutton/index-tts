@@ -59,8 +59,8 @@ class Idefics2FastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
         Whether to pad images to the largest height and width in the batch.
     """
 
-    do_image_splitting: Optional[bool]
-    do_pad: Optional[bool]
+    do_image_splitting: bool | None
+    do_pad: bool | None
     ...
 
 @auto_docstring
@@ -85,7 +85,7 @@ class Idefics2ImageProcessorFast(BaseImageProcessorFast):
         ...
 
     def resize(
-        self, image: torch.Tensor, size: SizeDict, interpolation: Optional[F.InterpolationMode] = ..., **kwargs
+        self, image: torch.Tensor, size: SizeDict, interpolation: F.InterpolationMode | None = ..., **kwargs
     ) -> torch.Tensor:
         """
         Resize an image using torchvision's functional resize.

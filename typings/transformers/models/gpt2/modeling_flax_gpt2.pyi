@@ -35,7 +35,7 @@ class FlaxGPT2Attention(nn.Module):
     def __call__(
         self,
         hidden_states,
-        key_value_states: Optional[jnp.ndarray] = ...,
+        key_value_states: jnp.ndarray | None = ...,
         attention_mask=...,
         deterministic: bool = ...,
         init_cache: bool = ...,
@@ -60,8 +60,8 @@ class FlaxGPT2Block(nn.Module):
         self,
         hidden_states,
         attention_mask=...,
-        encoder_hidden_states: Optional[jnp.ndarray] = ...,
-        encoder_attention_mask: Optional[jnp.ndarray] = ...,
+        encoder_hidden_states: jnp.ndarray | None = ...,
+        encoder_attention_mask: jnp.ndarray | None = ...,
         deterministic: bool = ...,
         init_cache: bool = ...,
         output_attentions: bool = ...,
@@ -104,15 +104,15 @@ class FlaxGPT2PreTrainedModel(FlaxPreTrainedModel):
         input_ids,
         attention_mask=...,
         position_ids=...,
-        encoder_hidden_states: Optional[jnp.ndarray] = ...,
-        encoder_attention_mask: Optional[jnp.ndarray] = ...,
-        params: Optional[dict] = ...,
-        past_key_values: Optional[dict] = ...,
+        encoder_hidden_states: jnp.ndarray | None = ...,
+        encoder_attention_mask: jnp.ndarray | None = ...,
+        params: dict | None = ...,
+        past_key_values: dict | None = ...,
         dropout_rng: jax.random.PRNGKey = ...,
         train: bool = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
     ): ...
 
 class FlaxGPT2BlockCollection(nn.Module):
@@ -124,8 +124,8 @@ class FlaxGPT2BlockCollection(nn.Module):
         self,
         hidden_states,
         attention_mask=...,
-        encoder_hidden_states: Optional[jnp.ndarray] = ...,
-        encoder_attention_mask: Optional[jnp.ndarray] = ...,
+        encoder_hidden_states: jnp.ndarray | None = ...,
+        encoder_attention_mask: jnp.ndarray | None = ...,
         deterministic: bool = ...,
         init_cache: bool = ...,
         output_attentions: bool = ...,
@@ -144,8 +144,8 @@ class FlaxGPT2Module(nn.Module):
         input_ids,
         attention_mask,
         position_ids,
-        encoder_hidden_states: Optional[jnp.ndarray] = ...,
-        encoder_attention_mask: Optional[jnp.ndarray] = ...,
+        encoder_hidden_states: jnp.ndarray | None = ...,
+        encoder_attention_mask: jnp.ndarray | None = ...,
         deterministic=...,
         init_cache: bool = ...,
         output_attentions: bool = ...,
@@ -171,8 +171,8 @@ class FlaxGPT2LMHeadModule(nn.Module):
         input_ids,
         attention_mask,
         position_ids,
-        encoder_hidden_states: Optional[jnp.ndarray] = ...,
-        encoder_attention_mask: Optional[jnp.ndarray] = ...,
+        encoder_hidden_states: jnp.ndarray | None = ...,
+        encoder_attention_mask: jnp.ndarray | None = ...,
         deterministic: bool = ...,
         init_cache: bool = ...,
         output_attentions: bool = ...,
@@ -191,7 +191,7 @@ class FlaxGPT2LMHeadModule(nn.Module):
 class FlaxGPT2LMHeadModel(FlaxGPT2PreTrainedModel):
     module_class = ...
     def prepare_inputs_for_generation(
-        self, input_ids, max_length, attention_mask: Optional[jax.Array] = ...
+        self, input_ids, max_length, attention_mask: jax.Array | None = ...
     ):  # -> dict[str, Any]:
         ...
     def update_inputs_for_generation(self, model_outputs, model_kwargs): ...

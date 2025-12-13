@@ -16,13 +16,13 @@ from ._validators import validate_hf_hub_args
 @validate_hf_hub_args
 def build_hf_headers(
     *,
-    token: Optional[Union[bool, str]] = ...,
-    library_name: Optional[str] = ...,
-    library_version: Optional[str] = ...,
-    user_agent: Union[Dict, str, None] = ...,
-    headers: Optional[Dict[str, str]] = ...,
+    token: bool | str | None = ...,
+    library_name: str | None = ...,
+    library_version: str | None = ...,
+    user_agent: dict | str | None = ...,
+    headers: dict[str, str] | None = ...,
     is_write_action: bool = ...,
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """
     Build headers dictionary to send in a HF Hub call.
 
@@ -96,6 +96,6 @@ def build_hf_headers(
     """
     ...
 
-def get_token_to_send(token: Optional[Union[bool, str]]) -> Optional[str]:
+def get_token_to_send(token: bool | str | None) -> str | None:
     """Select the token to send from either `token` or the cache."""
     ...

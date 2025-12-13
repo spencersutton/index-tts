@@ -39,8 +39,8 @@ class Siglip2FastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
         and then padded in "patch" dimension to match this number exactly.
     """
 
-    patch_size: Optional[int]
-    max_num_patches: Optional[int]
+    patch_size: int | None
+    max_num_patches: int | None
     ...
 
 @auto_docstring

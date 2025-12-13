@@ -81,11 +81,11 @@ class BeamSearchScorer(BeamScorer):
         batch_size: int,
         num_beams: int,
         device: torch.device,
-        length_penalty: Optional[float] = ...,
-        do_early_stopping: Optional[Union[bool, str]] = ...,
-        num_beam_hyps_to_keep: Optional[int] = ...,
-        num_beam_groups: Optional[int] = ...,
-        max_length: Optional[int] = ...,
+        length_penalty: float | None = ...,
+        do_early_stopping: bool | str | None = ...,
+        num_beam_hyps_to_keep: int | None = ...,
+        num_beam_groups: int | None = ...,
+        max_length: int | None = ...,
     ) -> None: ...
     @property
     def is_done(self) -> bool: ...
@@ -95,11 +95,11 @@ class BeamSearchScorer(BeamScorer):
         next_scores: torch.FloatTensor,
         next_tokens: torch.LongTensor,
         next_indices: torch.LongTensor,
-        pad_token_id: Optional[Union[int, torch.Tensor]] = ...,
-        eos_token_id: Optional[Union[int, list[int], torch.Tensor]] = ...,
-        beam_indices: Optional[torch.LongTensor] = ...,
-        group_index: Optional[int] = ...,
-        decoder_prompt_len: Optional[int] = ...,
+        pad_token_id: int | torch.Tensor | None = ...,
+        eos_token_id: int | list[int] | torch.Tensor | None = ...,
+        beam_indices: torch.LongTensor | None = ...,
+        group_index: int | None = ...,
+        decoder_prompt_len: int | None = ...,
     ) -> dict[str, torch.Tensor]: ...
     def finalize(
         self,
@@ -108,10 +108,10 @@ class BeamSearchScorer(BeamScorer):
         final_beam_tokens: torch.LongTensor,
         final_beam_indices: torch.LongTensor,
         max_length: int,
-        pad_token_id: Optional[Union[int, torch.Tensor]] = ...,
-        eos_token_id: Optional[Union[int, list[int], torch.Tensor]] = ...,
-        beam_indices: Optional[torch.LongTensor] = ...,
-        decoder_prompt_len: Optional[int] = ...,
+        pad_token_id: int | torch.Tensor | None = ...,
+        eos_token_id: int | list[int] | torch.Tensor | None = ...,
+        beam_indices: torch.LongTensor | None = ...,
+        decoder_prompt_len: int | None = ...,
     ) -> tuple[torch.LongTensor]: ...
 
 class ConstrainedBeamSearchScorer(BeamScorer):
@@ -156,11 +156,11 @@ class ConstrainedBeamSearchScorer(BeamScorer):
         num_beams: int,
         constraints: list[Constraint],
         device: torch.device,
-        length_penalty: Optional[float] = ...,
-        do_early_stopping: Optional[Union[bool, str]] = ...,
-        num_beam_hyps_to_keep: Optional[int] = ...,
-        num_beam_groups: Optional[int] = ...,
-        max_length: Optional[int] = ...,
+        length_penalty: float | None = ...,
+        do_early_stopping: bool | str | None = ...,
+        num_beam_hyps_to_keep: int | None = ...,
+        num_beam_groups: int | None = ...,
+        max_length: int | None = ...,
     ) -> None: ...
     @property
     def is_done(self) -> bool: ...
@@ -175,10 +175,10 @@ class ConstrainedBeamSearchScorer(BeamScorer):
         next_tokens: torch.LongTensor,
         next_indices: torch.LongTensor,
         scores_for_all_vocab: torch.FloatTensor,
-        pad_token_id: Optional[Union[int, torch.Tensor]] = ...,
-        eos_token_id: Optional[Union[int, list[int], torch.Tensor]] = ...,
-        beam_indices: Optional[torch.LongTensor] = ...,
-        decoder_prompt_len: Optional[int] = ...,
+        pad_token_id: int | torch.Tensor | None = ...,
+        eos_token_id: int | list[int] | torch.Tensor | None = ...,
+        beam_indices: torch.LongTensor | None = ...,
+        decoder_prompt_len: int | None = ...,
     ) -> tuple[torch.Tensor]:
         r"""
         Args:
@@ -238,15 +238,15 @@ class ConstrainedBeamSearchScorer(BeamScorer):
         final_beam_tokens: torch.LongTensor,
         final_beam_indices: torch.LongTensor,
         max_length: int,
-        pad_token_id: Optional[Union[int, torch.Tensor]] = ...,
-        eos_token_id: Optional[Union[int, list[int], torch.Tensor]] = ...,
-        beam_indices: Optional[torch.LongTensor] = ...,
-        decoder_prompt_len: Optional[int] = ...,
+        pad_token_id: int | torch.Tensor | None = ...,
+        eos_token_id: int | list[int] | torch.Tensor | None = ...,
+        beam_indices: torch.LongTensor | None = ...,
+        decoder_prompt_len: int | None = ...,
     ) -> tuple[torch.LongTensor]: ...
 
 class BeamHypotheses:
     def __init__(
-        self, num_beams: int, length_penalty: float, early_stopping: bool, max_length: Optional[int] = ...
+        self, num_beams: int, length_penalty: float, early_stopping: bool, max_length: int | None = ...
     ) -> None:
         """
         Initialize n-best list of hypotheses.
@@ -263,15 +263,15 @@ class BeamHypotheses:
         self,
         hyp: torch.LongTensor,
         sum_logprobs: float,
-        beam_indices: Optional[torch.LongTensor] = ...,
-        generated_len: Optional[int] = ...,
+        beam_indices: torch.LongTensor | None = ...,
+        generated_len: int | None = ...,
     ):  # -> None:
         """
         Add a new hypothesis to the list.
         """
         ...
 
-    def is_done(self, best_sum_logprobs: float, cur_len: int, decoder_prompt_len: Optional[int] = ...) -> bool:
+    def is_done(self, best_sum_logprobs: float, cur_len: int, decoder_prompt_len: int | None = ...) -> bool:
         """
         If there are enough hypotheses and that none of the hypotheses being generated can become better than the worst
         one in the heap, then we are done with this sentence.

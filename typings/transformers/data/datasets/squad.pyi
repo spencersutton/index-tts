@@ -50,11 +50,11 @@ class SquadDataset(Dataset):
         self,
         args: SquadDataTrainingArguments,
         tokenizer: PreTrainedTokenizer,
-        limit_length: Optional[int] = ...,
-        mode: Union[str, Split] = ...,
-        is_language_sensitive: Optional[bool] = ...,
-        cache_dir: Optional[str] = ...,
-        dataset_format: Optional[str] = ...,
+        limit_length: int | None = ...,
+        mode: str | Split = ...,
+        is_language_sensitive: bool | None = ...,
+        cache_dir: str | None = ...,
+        dataset_format: str | None = ...,
     ) -> None: ...
     def __len__(self):  # -> int:
         ...

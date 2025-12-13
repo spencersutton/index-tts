@@ -22,7 +22,7 @@ class LlavaFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
             Whether to pad the image to a square based on the longest edge.
     """
 
-    do_pad: Optional[bool]
+    do_pad: bool | None
     ...
 
 @auto_docstring
@@ -43,9 +43,7 @@ class LlavaImageProcessorFast(BaseImageProcessorFast):
     def __init__(self, **kwargs: Unpack[LlavaFastImageProcessorKwargs]) -> None: ...
     @auto_docstring
     def preprocess(self, images: ImageInput, **kwargs: Unpack[LlavaFastImageProcessorKwargs]) -> BatchFeature: ...
-    def pad_to_square(
-        self, images: torch.Tensor, background_color: Union[int, tuple[int, int, int]] = ...
-    ) -> torch.Tensor:
+    def pad_to_square(self, images: torch.Tensor, background_color: int | tuple[int, int, int] = ...) -> torch.Tensor:
         """
         Pads an image to a square based on the longest edge.
 

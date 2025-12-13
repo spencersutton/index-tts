@@ -9,9 +9,9 @@ if TYPE_CHECKING: ...
 
 @dataclass
 class ChunkShardingSpec(ShardingSpec):
-    ShardingDim: TypeAlias = Union[int, str]
+    type ShardingDim = int | str
     dim: ShardingDim
-    placements: list[Union[torch.distributed._remote_device, str]]
+    placements: list[torch.distributed._remote_device | str]
     def __post_init__(self):  # -> None:
         ...
     def build_metadata(

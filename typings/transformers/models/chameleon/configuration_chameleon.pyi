@@ -59,7 +59,7 @@ class ChameleonVQVAEConfig(PretrainedConfig):
         base_channels: int = ...,
         channel_multiplier: list[int] = ...,
         num_res_blocks: int = ...,
-        attn_resolutions: Optional[list[int]] = ...,
+        attn_resolutions: list[int] | None = ...,
         dropout: float = ...,
         attn_type: str = ...,
         initializer_range=...,

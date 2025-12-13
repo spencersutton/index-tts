@@ -46,9 +46,7 @@ class JanusImageProcessorFast(BaseImageProcessorFast):
         antialias: bool = ...,
         **kwargs,
     ) -> torch.Tensor: ...
-    def pad_to_square(
-        self, images: torch.Tensor, background_color: Union[int, tuple[int, int, int]] = ...
-    ) -> torch.Tensor:
+    def pad_to_square(self, images: torch.Tensor, background_color: int | tuple[int, int, int] = ...) -> torch.Tensor:
         """
         Pads an image to a square based on the longest edge.
 
@@ -68,12 +66,12 @@ class JanusImageProcessorFast(BaseImageProcessorFast):
     def postprocess(
         self,
         images: ImageInput,
-        do_rescale: Optional[bool] = ...,
-        rescale_factor: Optional[float] = ...,
-        do_normalize: Optional[bool] = ...,
-        image_mean: Optional[list[float]] = ...,
-        image_std: Optional[list[float]] = ...,
-        return_tensors: Optional[str] = ...,
+        do_rescale: bool | None = ...,
+        rescale_factor: float | None = ...,
+        do_normalize: bool | None = ...,
+        image_mean: list[float] | None = ...,
+        image_std: list[float] | None = ...,
+        return_tensors: str | None = ...,
     ) -> torch.Tensor: ...
 
 __all__ = ["JanusImageProcessorFast"]

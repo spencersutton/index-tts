@@ -85,18 +85,18 @@ class TFMistralAttention(keras.layers.Layer):
     Multi-headed attention from 'Attention Is All You Need' paper. Modified to use sliding window attention: Longformer
     and "Generating Long Sequences with Sparse Transformers".
     """
-    def __init__(self, config: MistralConfig, layer_idx: Optional[int] = ..., **kwargs) -> None: ...
+    def __init__(self, config: MistralConfig, layer_idx: int | None = ..., **kwargs) -> None: ...
     def call(
         self,
         hidden_states: tf.Tensor,
-        attention_mask: Optional[tf.Tensor] = ...,
-        position_ids: Optional[tf.Tensor] = ...,
-        past_key_value: Optional[tuple[tf.Tensor]] = ...,
-        output_attentions: Optional[bool] = ...,
-        use_cache: Optional[bool] = ...,
+        attention_mask: tf.Tensor | None = ...,
+        position_ids: tf.Tensor | None = ...,
+        past_key_value: tuple[tf.Tensor] | None = ...,
+        output_attentions: bool | None = ...,
+        use_cache: bool | None = ...,
         training=...,
         **kwargs,
-    ) -> tuple[tf.Tensor, Optional[tf.Tensor], Optional[tuple[tf.Tensor]]]: ...
+    ) -> tuple[tf.Tensor, tf.Tensor | None, tuple[tf.Tensor] | None]: ...
     def build(self, input_shape=...):  # -> None:
         ...
 
@@ -105,13 +105,13 @@ class TFMistralDecoderLayer(keras.layers.Layer):
     def call(
         self,
         hidden_states: tf.Tensor,
-        attention_mask: Optional[tf.Tensor] = ...,
-        position_ids: Optional[tf.Tensor] = ...,
-        past_key_value: Optional[tuple[tf.Tensor]] = ...,
-        output_attentions: Optional[bool] = ...,
-        use_cache: Optional[bool] = ...,
+        attention_mask: tf.Tensor | None = ...,
+        position_ids: tf.Tensor | None = ...,
+        past_key_value: tuple[tf.Tensor] | None = ...,
+        output_attentions: bool | None = ...,
+        use_cache: bool | None = ...,
         **kwargs,
-    ) -> tuple[tf.Tensor, Optional[tuple[tf.Tensor, tf.Tensor]]]:
+    ) -> tuple[tf.Tensor, tuple[tf.Tensor, tf.Tensor] | None]:
         """
         Args:
             hidden_states (`tf.Tensor`): input to the layer of shape `(batch, seq_len, embed_dim)`
@@ -144,16 +144,16 @@ class TFMistralMainLayer(keras.layers.Layer):
     @unpack_inputs
     def call(
         self,
-        input_ids: Optional[tf.Tensor] = ...,
-        attention_mask: Optional[tf.Tensor] = ...,
-        position_ids: Optional[tf.Tensor] = ...,
-        past_key_values: Optional[list[tf.Tensor]] = ...,
-        inputs_embeds: Optional[tf.Tensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, TFBaseModelOutputWithPast]: ...
+        input_ids: tf.Tensor | None = ...,
+        attention_mask: tf.Tensor | None = ...,
+        position_ids: tf.Tensor | None = ...,
+        past_key_values: list[tf.Tensor] | None = ...,
+        inputs_embeds: tf.Tensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | TFBaseModelOutputWithPast: ...
     def build(self, input_shape=...):  # -> None:
         ...
 
@@ -177,16 +177,16 @@ class TFMistralModel(TFMistralPreTrainedModel):
     @add_start_docstrings_to_model_forward(MISTRAL_INPUTS_DOCSTRING)
     def call(
         self,
-        input_ids: Optional[tf.Tensor] = ...,
-        attention_mask: Optional[tf.Tensor] = ...,
-        position_ids: Optional[tf.Tensor] = ...,
-        past_key_values: Optional[list[tf.Tensor]] = ...,
-        inputs_embeds: Optional[tf.Tensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, TFBaseModelOutputWithPast]: ...
+        input_ids: tf.Tensor | None = ...,
+        attention_mask: tf.Tensor | None = ...,
+        position_ids: tf.Tensor | None = ...,
+        past_key_values: list[tf.Tensor] | None = ...,
+        inputs_embeds: tf.Tensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | TFBaseModelOutputWithPast: ...
     def build(self, input_shape=...):  # -> None:
         ...
 
@@ -200,17 +200,17 @@ class TFMistralForCausalLM(TFMistralPreTrainedModel, TFCausalLanguageModelingLos
     @add_start_docstrings_to_model_forward(MISTRAL_INPUTS_DOCSTRING.format("batch_size, sequence_length"))
     def call(
         self,
-        input_ids: Optional[tf.Tensor] = ...,
-        attention_mask: Optional[tf.Tensor] = ...,
-        position_ids: Optional[tf.Tensor] = ...,
-        past_key_values: Optional[list[tf.Tensor]] = ...,
-        inputs_embeds: Optional[tf.Tensor] = ...,
-        labels: Optional[tf.Tensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, TFCausalLMOutputWithPast]:
+        input_ids: tf.Tensor | None = ...,
+        attention_mask: tf.Tensor | None = ...,
+        position_ids: tf.Tensor | None = ...,
+        past_key_values: list[tf.Tensor] | None = ...,
+        inputs_embeds: tf.Tensor | None = ...,
+        labels: tf.Tensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | TFCausalLMOutputWithPast:
         r"""
         labels (`tf.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
             Labels for computing the masked language modeling loss. Indices should either be in `[0, ..., config.vocab_size]`
@@ -247,17 +247,17 @@ class TFMistralForSequenceClassification(TFMistralPreTrainedModel, TFSequenceCla
     @add_start_docstrings_to_model_forward(MISTRAL_INPUTS_DOCSTRING.format("batch_size, sequence_length"))
     def call(
         self,
-        input_ids: Optional[tf.Tensor] = ...,
-        attention_mask: Optional[tf.Tensor] = ...,
-        position_ids: Optional[tf.Tensor] = ...,
-        past_key_values: Optional[list[tf.Tensor]] = ...,
-        inputs_embeds: Optional[tf.Tensor] = ...,
-        labels: Optional[tf.Tensor] = ...,
-        use_cache: Optional[bool] = ...,
-        output_attentions: Optional[bool] = ...,
-        output_hidden_states: Optional[bool] = ...,
-        return_dict: Optional[bool] = ...,
-    ) -> Union[tuple, TFSequenceClassifierOutputWithPast]:
+        input_ids: tf.Tensor | None = ...,
+        attention_mask: tf.Tensor | None = ...,
+        position_ids: tf.Tensor | None = ...,
+        past_key_values: list[tf.Tensor] | None = ...,
+        inputs_embeds: tf.Tensor | None = ...,
+        labels: tf.Tensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | TFSequenceClassifierOutputWithPast:
         r"""
         labels (`tf.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
             Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,

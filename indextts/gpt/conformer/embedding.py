@@ -16,6 +16,7 @@
 """Positonal Encoding Module."""
 
 import math
+from typing import TYPE_CHECKING
 
 import torch
 import torch.nn.functional as F
@@ -54,6 +55,8 @@ class PositionalEncoding(torch.nn.Module):
         pe[:, 1::2] = torch.cos(position * div_term)
         pe = pe.unsqueeze(0)
         self.register_buffer("pe", pe)
+        if TYPE_CHECKING:
+            self.pe = pe
 
     def forward(self, x: Tensor, offset: int | Tensor = 0) -> tuple[Tensor, Tensor]:
         """Add positional encoding.

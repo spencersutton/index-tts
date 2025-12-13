@@ -92,7 +92,7 @@ class BASECFM(torch.nn.Module, ABC):
 
         # I am storing this because I can later plot it by putting a debugger here and saving it to a file
         # Or in future might add like a return_all_steps flag
-        sol = []
+        sol: list[Tensor] = []
         # apply prompt
         prompt_len = prompt.size(-1)
         prompt_x = torch.zeros_like(x)

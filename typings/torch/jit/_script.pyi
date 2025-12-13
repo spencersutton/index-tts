@@ -154,7 +154,7 @@ def script(
     example_inputs: list[tuple] | dict[Callable, list[tuple]] | None = ...,
 ) -> RecursiveScriptModule: ...
 @overload
-def script(
+def script[ClassVar: type](
     obj: _ClassVar,
     optimize: bool | None = ...,
     _frames_up: int = ...,

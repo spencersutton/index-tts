@@ -8,19 +8,18 @@ from typing import Any, Protocol, TypeVar, TypeAlias
 
 T = TypeVar("T")
 type TCoro[T] = Generator[Any, None, T]
-if sys.version_info >= (3, 11):
-    class TaskFactory(Protocol):
-        def __call__(
-            self,
-            __loop: AbstractEventLoop,
-            __factory: Coroutine[None, None, object] | Generator[None, None, object],
-            __context: Context | None = ...,
-            /,
-        ) -> asyncio.futures.Future[object]: ...
 
-    TaskFactoryType = TaskFactory
-else: ...
+class TaskFactory(Protocol):
+    def __call__(
+        self,
+        __loop: AbstractEventLoop,
+        __factory: Coroutine[None, None, object] | Generator[None, None, object],
+        __context: Context | None = ...,
+        /,
+    ) -> asyncio.futures.Future[object]: ...
 
-def await_sync(awaitable: Awaitable[T]) -> T: ...
+TaskFactoryType = TaskFactory
+
+def await_sync[T](awaitable: Awaitable[T]) -> T: ...
 @contextmanager
 def get_loop(always_create_new_loop: bool = ...) -> Iterator[AbstractEventLoop]: ...

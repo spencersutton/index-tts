@@ -10,10 +10,10 @@ Validator_T = Callable[[Any], None]
 T = TypeVar("T")
 
 @overload
-def strict(cls: type[T]) -> type[T]: ...
+def strict[T](cls: type[T]) -> type[T]: ...
 @overload
 def strict(*, accept_kwargs: bool = ...) -> Callable[[type[T]], type[T]]: ...
-def strict(cls: type[T] | None = ..., *, accept_kwargs: bool = ...) -> type[T] | Callable[[type[T]], type[T]]:
+def strict[T](cls: type[T] | None = ..., *, accept_kwargs: bool = ...) -> type[T] | Callable[[type[T]], type[T]]:
     """
     Decorator to add strict validation to a dataclass.
 

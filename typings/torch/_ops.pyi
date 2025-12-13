@@ -90,7 +90,7 @@ def reset_cached_ops():  # -> None:
 def get_cached_ops():  # -> set[OpOverload[..., Any]]:
     ...
 
-class OpOverload(OperatorBase, Generic[_P, _T]):
+class OpOverload[**P = ..., T = Any](OperatorBase):
     def __init__(
         self,
         overloadpacket: OpOverloadPacket,
@@ -126,7 +126,7 @@ class OpOverload(OperatorBase, Generic[_P, _T]):
 class TorchBindOpOverload(OpOverload[_P, _T]):
     def __call__(self, /, *args: _P.args, **kwargs: _P.kwargs) -> _T: ...
 
-class OpOverloadPacket(Generic[_P, _T]):
+class OpOverloadPacket[**P = ..., T = Any]:
     __file__: ClassVar[str] = ...
     def __init__(
         self, qualified_op_name: str, op_name: str, op: Callable[_P, _T], overload_names: list[str]

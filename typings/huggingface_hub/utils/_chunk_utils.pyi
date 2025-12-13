@@ -8,7 +8,7 @@ from collections.abc import Iterable
 """Contains a utility to iterate by chunks over an iterator."""
 T = TypeVar("T")
 
-def chunk_iterable(iterable: Iterable[T], chunk_size: int) -> Iterable[Iterable[T]]:
+def chunk_iterable[T](iterable: Iterable[T], chunk_size: int) -> Iterable[Iterable[T]]:
     """Iterates over an iterator chunk by chunk.
 
     Taken from https://stackoverflow.com/a/8998040.

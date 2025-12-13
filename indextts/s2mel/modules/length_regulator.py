@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import cast
+from typing import cast, override
 
 import torch
 from torch import Tensor, nn
@@ -39,6 +39,7 @@ class InterpolateRegulator(nn.Module):
         self.n_codebooks = 1
         self.content_in_proj = nn.Linear(in_channels, channels)
 
+    @override
     def forward(
         self,
         x: Tensor,

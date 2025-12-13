@@ -8,6 +8,7 @@ import triton
 import triton.language as tl
 from flash_attn import flash_attn_varlen_func, flash_attn_with_kvcache  # pyright: ignore[reportMissingModuleSource]
 from torch import Tensor, nn
+from typing import override
 
 
 @dataclass
@@ -130,6 +131,7 @@ class Attention(nn.Module):
         self.num_kv_heads = num_kv_heads
         self.k_cache = self.v_cache = torch.tensor([])
 
+    @override
     def forward(self, q: Tensor, k: Tensor, v: Tensor) -> Tensor:
         context = get_forward_context()
         k_cache, v_cache = self.k_cache, self.v_cache

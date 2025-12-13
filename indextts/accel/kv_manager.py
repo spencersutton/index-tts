@@ -3,7 +3,7 @@ import pickle  # noqa: S403
 from collections import deque
 from collections.abc import Iterable, MutableSequence, Sequence
 from copy import copy
-from typing import overload
+from typing import overload, override
 
 import torch
 from transformers import GPT2Model
@@ -42,6 +42,7 @@ class Seq(Sequence[int]):
         self.block_table: list[int] = []
         self.block_size = block_size
 
+    @override
     def __len__(self) -> int:
         return self.num_tokens
 
@@ -51,6 +52,7 @@ class Seq(Sequence[int]):
     @overload
     def __getitem__(self, index: slice[int, int | None, int | None]) -> Sequence[int]: ...
 
+    @override
     def __getitem__(self, index: int | slice[int, int | None, int | None]) -> int | Sequence[int]:
         return self.token_ids[index]
 

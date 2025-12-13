@@ -1,4 +1,5 @@
 from abc import ABC
+from typing import override
 
 import torch
 from torch import Tensor, nn
@@ -36,6 +37,7 @@ class _PositionwiseFeedForward(torch.nn.Module):
         self.dropout = torch.nn.Dropout(dropout_rate)
         self.w_2 = torch.nn.Linear(hidden_units, idim)
 
+    @override
     def forward(self, xs: Tensor) -> Tensor:
         """Forward function.
 
@@ -108,6 +110,7 @@ class _ConvolutionModule(nn.Module):
         )
         self.activation = activation
 
+    @override
     def forward(
         self,
         x: Tensor,
@@ -210,6 +213,7 @@ class _ConformerEncoderLayer(nn.Module):
         self.dropout = nn.Dropout(dropout_rate)
         self.size = size
 
+    @override
     def forward(
         self,
         x: Tensor,
@@ -328,6 +332,7 @@ class _BaseEncoder(torch.nn.Module, ABC):
     def output_size(self) -> int:
         return self._output_size
 
+    @override
     def forward(
         self,
         xs: Tensor,

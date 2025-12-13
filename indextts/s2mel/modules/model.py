@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import cast
+from typing import cast, override
 
 import torch
 from torch import Tensor, nn
@@ -43,6 +43,7 @@ class MyModel(nn.Module):
             )
             self.models["gpt_layer"] = self.gpt_layer
 
+    @override
     def forward(
         self,
         x: Tensor,

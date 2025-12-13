@@ -1,3 +1,4 @@
+from typing import override
 import torch
 from torch import Tensor, nn
 
@@ -63,6 +64,7 @@ class WN(torch.nn.Module):
             )
             self.res_skip_layers.append(res_skip_layer)
 
+    @override
     def forward(self, x: Tensor, x_mask: Tensor, g: Tensor | None = None) -> Tensor:
         output = torch.zeros_like(x)
 

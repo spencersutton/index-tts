@@ -3,7 +3,7 @@ import traceback
 import warnings
 from collections.abc import Collection, Iterable, Sequence
 from pathlib import Path
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from sentencepiece import SentencePieceProcessor
 from wetext import Normalizer
@@ -259,7 +259,7 @@ class TextTokenizer:
     def tokenize(self, text: str) -> list[str]:
         return self.encode(text, out_type=str)
 
-    def encode(self, text: str, **kwargs: object) -> list[str]:
+    def encode(self, text: str, **kwargs: Any) -> list[str]:
         if len(text) == 0:
             return []
         if len(text.strip()) == 1:
@@ -331,7 +331,7 @@ class TextTokenizer:
             # If the length of the current tokens exceeds the maximum limit
             else:
                 # 按照长度分割
-                sub_segments = []
+                sub_segments: list[list[str]] = []
                 for j in range(0, len(current_segment), max_text_tokens_per_segment):
                     if j + max_text_tokens_per_segment < len(current_segment):
                         sub_segments.append(current_segment[j : j + max_text_tokens_per_segment])

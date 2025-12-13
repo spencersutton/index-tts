@@ -475,7 +475,7 @@ class IndexTTS2:
         max_text_tokens_per_segment: int = 120,
         stream_return: bool = False,
         more_segment_before: int = 0,
-        **generation_kwargs: Any,  # noqa: ANN401
+        **generation_kwargs: Any,
     ) -> Tensor | Generator[Tensor | Path | tuple[int, np.ndarray] | None] | Path | tuple[int, np.ndarray] | None:
         gen = self.infer_generator(
             spk_audio_prompt,
@@ -517,7 +517,7 @@ class IndexTTS2:
         max_text_tokens_per_segment: int = 120,
         stream_return: bool = False,
         quick_streaming_tokens: int = 0,
-        **generation_kwargs: Any,  # noqa: ANN401
+        **generation_kwargs: Any,
     ) -> Generator[Tensor | Path | tuple[int, np.ndarray] | None]:
         # Mark CUDA graph step begin at the start of each inference
         # This tells PyTorch it's safe to reuse CUDA graph buffers

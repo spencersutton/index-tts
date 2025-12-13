@@ -86,13 +86,13 @@ class FeatureExtractionMixin(PushToHubMixin):
     @classmethod
     def from_pretrained(
         cls: type[SpecificFeatureExtractorType],
-        pretrained_model_name_or_path: Union[str, os.PathLike],
-        cache_dir: Optional[Union[str, os.PathLike]] = ...,
+        pretrained_model_name_or_path: Union[str, os.PathLike[str]],
+        cache_dir: Optional[Union[str, os.PathLike[str]]] = ...,
         force_download: bool = ...,
         local_files_only: bool = ...,
         token: Optional[Union[str, bool]] = ...,
         revision: str = ...,
-        **kwargs,
+        **kwargs: Any,
     ) -> SpecificFeatureExtractorType:
         r"""
         Instantiate a type of [`~feature_extraction_utils.FeatureExtractionMixin`] from a feature extractor, *e.g.* a

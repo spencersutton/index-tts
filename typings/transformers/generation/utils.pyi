@@ -400,7 +400,7 @@ class GenerationMixin(ContinuousMixin):
         negative_prompt_attention_mask: Optional[torch.Tensor] = ...,
         use_model_defaults: Optional[bool] = ...,
         custom_generate: Optional[str] = ...,
-        **kwargs,
+        **kwargs: object,
     ) -> Union[GenerateOutput, torch.LongTensor]:
         r"""
 

@@ -743,13 +743,12 @@ class PreTrainedModel(nn.Module, EmbeddingAccessMixin, ModuleUtilsMixin, PushToH
     ):  # -> list[_GeneratorContextManager[None, None, None]]:
         ...
     @classmethod
-    @restore_default_torch_dtype
     def from_pretrained(
         cls: type[SpecificPreTrainedModelType],
-        pretrained_model_name_or_path: Optional[Union[str, os.PathLike]],
-        *model_args,
-        config: Optional[Union[PretrainedConfig, str, os.PathLike]] = ...,
-        cache_dir: Optional[Union[str, os.PathLike]] = ...,
+        pretrained_model_name_or_path: Optional[Union[str, os.PathLike[str]]],
+        *model_args: Any,
+        config: Optional[Union[PretrainedConfig, str, os.PathLike[str]]] = ...,
+        cache_dir: Optional[Union[str, os.PathLike[str]]] = ...,
         ignore_mismatched_sizes: bool = ...,
         force_download: bool = ...,
         local_files_only: bool = ...,
@@ -757,7 +756,7 @@ class PreTrainedModel(nn.Module, EmbeddingAccessMixin, ModuleUtilsMixin, PushToH
         revision: str = ...,
         use_safetensors: Optional[bool] = ...,
         weights_only: bool = ...,
-        **kwargs,
+        **kwargs: Any,
     ) -> SpecificPreTrainedModelType:
         r"""
         Instantiate a pretrained pytorch model from a pre-trained model configuration.

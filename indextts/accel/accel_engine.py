@@ -5,6 +5,7 @@ from typing import Final, cast
 
 import torch
 from torch import Tensor, nn
+from torch.types import Number
 from transformers import GPT2Model
 
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
@@ -32,6 +33,7 @@ class Sampler(nn.Module):
 
 
 GRAPH_BS: Final = [1, 2, 4, 8]
+MAX_BS: Final = 8  # Support up to batch size 8
 
 
 class AccelInferenceEngine:
@@ -149,7 +151,7 @@ class AccelInferenceEngine:
             msg = "FATAL: No requests provided to _prepare_decode!"
             raise RuntimeError(msg)
 
-        input_ids_int: list[int] = []
+        input_ids_int: list[Number] = []
         positions_int: list[int] = []
         slot_mapping_int: list[int] = []
         context_lens_int: list[int] = []
@@ -201,16 +203,15 @@ class AccelInferenceEngine:
         tts_text_pos_embedding: LearnedPositionEmbeddings | None = None,
     ) -> None:
         print("Capturing CUDA graphs for decode optimization...")
-        max_bs = 8  # Support up to batch size 8
         max_num_blocks = (2048 + self.block_size - 1) // self.block_size
         model_dtype = next(self.model.parameters()).dtype
-        input_ids = torch.ones(max_bs, dtype=torch.int64, device="cuda")
-        positions = torch.ones(max_bs, dtype=torch.int64, device="cuda")
-        slot_mapping = torch.zeros(max_bs, dtype=torch.int32, device="cuda")
-        context_lens = torch.zeros(max_bs, dtype=torch.int32, device="cuda")
-        block_tables = torch.zeros(max_bs, max_num_blocks, dtype=torch.int32, device="cuda")
-        outputs = torch.zeros(max_bs, self.hidden_size, dtype=model_dtype, device="cuda")
-        inputs_embeds_buffer = torch.zeros(max_bs, self.hidden_size, dtype=model_dtype, device="cuda")
+        input_ids = torch.ones(MAX_BS, dtype=torch.int64, device="cuda")
+        positions = torch.ones(MAX_BS, dtype=torch.int64, device="cuda")
+        slot_mapping = torch.zeros(MAX_BS, dtype=torch.int32, device="cuda")
+        context_lens = torch.zeros(MAX_BS, dtype=torch.int32, device="cuda")
+        block_tables = torch.zeros(MAX_BS, max_num_blocks, dtype=torch.int32, device="cuda")
+        outputs = torch.zeros(MAX_BS, self.hidden_size, dtype=model_dtype, device="cuda")
+        inputs_embeds_buffer = torch.zeros(MAX_BS, self.hidden_size, dtype=model_dtype, device="cuda")
 
         use_tts = tts_mel_embedding is not None and tts_text_pos_embedding is not None
 
@@ -482,12 +483,10 @@ class AccelInferenceEngine:
         else:
             first_token = torch.argmax(logits, dim=-1)
 
-        first_token_list = cast(list[int], first_token.tolist())
-
-        generated_tokens: list[list[int]] = [[] for _ in range(batch_size)]
+        generated_tokens: list[list[Number]] = [[] for _ in range(batch_size)]
         is_finished = [False] * batch_size
 
-        for i, token_id in enumerate(first_token_list):
+        for i, token_id in enumerate(first_token.tolist()):
             if stop_tokens and token_id in stop_tokens:
                 is_finished[i] = True
             else:
@@ -507,9 +506,9 @@ class AccelInferenceEngine:
                 self.kv_manager.remove_seq(req)
             self.current_sequences: list[Seq] = []
 
-            output_ids: list[list[int]] = []
+            output_ids: list[list[Number]] = []
             for i in range(batch_size):
-                full_sequence = cast(list[int], input_ids[i].tolist()) + generated_tokens[i]
+                full_sequence = input_ids[i].tolist() + generated_tokens[i]
                 output_ids.append(full_sequence)
 
             return torch.tensor(output_ids, dtype=torch.long, device=device)
@@ -520,11 +519,10 @@ class AccelInferenceEngine:
         for _ in range(remaining_tokens):
             decode_ids, decode_pos = self._prepare_decode(sequences)
 
-            context = ForwardContext.get()
             hidden_states = self._run_decode_with_graph(
                 decode_ids,
                 decode_pos,
-                context,
+                ForwardContext.get(),
                 tts_mel_embedding=tts_mel_embedding,
                 tts_text_pos_embedding=tts_text_pos_embedding,
             )

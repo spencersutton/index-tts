@@ -1,11 +1,13 @@
 import hashlib
 import pickle  # noqa: S403
 from collections import deque
-from collections.abc import Iterable, MutableSequence, Sequence
+from collections.abc import Iterable, Sequence
 from copy import copy
-from typing import overload, override
+from typing import cast, overload, override
+from collections.abc import MutableSequence
 
 import torch
+from torch.types import Number
 from transformers import GPT2Model
 
 from indextts.accel.attention import Attention
@@ -16,13 +18,13 @@ class KVCacheBlock:
         self.block_id = block_id
         self.ref_cnt = 0
         self._block_hash = None
-        self.token_ids: Sequence[int] = []
+        self.token_ids: Sequence[Number] = []
 
     @property
     def block_hash(self) -> bytes | None:
         return self._block_hash
 
-    def update(self, block_hash: bytes, token_ids: Sequence[int]) -> None:
+    def update(self, block_hash: bytes, token_ids: Sequence[Number]) -> None:
         self._block_hash = block_hash
         self.token_ids = token_ids
 
@@ -33,8 +35,8 @@ class KVCacheBlock:
 
 
 class Seq(Sequence[int]):
-    def __init__(self, token_ids: MutableSequence[int], block_size: int = 256) -> None:
-        self.token_ids = copy(token_ids)
+    def __init__(self, token_ids: Sequence[Number], block_size: int = 256) -> None:
+        self.token_ids = cast(MutableSequence[Number], copy(token_ids))
         self.last_token = token_ids[-1] if token_ids else 0
         self.num_tokens = len(self.token_ids)
         self.num_prompt_tokens = len(token_ids)
@@ -53,7 +55,7 @@ class Seq(Sequence[int]):
     def __getitem__(self, index: slice) -> Sequence[int]: ...
 
     @override
-    def __getitem__(self, index: int | slice) -> int | Sequence[int]:
+    def __getitem__(self, index: int | slice) -> Number | Sequence[Number]:
         return self.token_ids[index]
 
     @property
@@ -68,13 +70,13 @@ class Seq(Sequence[int]):
     def last_block_num_tokens(self) -> int:
         return self.num_tokens - (self.num_blocks - 1) * self.block_size
 
-    def get_block_tokens(self, block_idx: int) -> list[int]:
+    def get_block_tokens(self, block_idx: int) -> list[Number]:
         assert 0 <= block_idx < self.num_blocks
         start = block_idx * self.block_size
         end = start + self.block_size
         return list(self.token_ids[start:end])
 
-    def append_token(self, token_id: int) -> None:
+    def append_token(self, token_id: Number) -> None:
         self.token_ids.append(token_id)
         self.last_token = token_id
         self.num_tokens += 1
@@ -116,8 +118,8 @@ class KVCacheManager:
         )
 
     @classmethod
-    def compute_block_hash(cls, token_ids: Iterable[int], parent_hash: bytes | None = None) -> bytes:
-        hash_input: list[bytes | int] = []
+    def compute_block_hash(cls, token_ids: Iterable[Number], parent_hash: bytes | None = None) -> bytes:
+        hash_input: list[bytes | Number] = []
         if parent_hash is not None:
             hash_input.append(parent_hash)
         hash_input.extend(token_ids)

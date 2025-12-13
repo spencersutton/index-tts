@@ -12,7 +12,7 @@ if __debug__:
     import omegaconf
     import transformers
 
-    rich.traceback.install(suppress=[omegaconf, torch, transformers])
+    rich.traceback.install(suppress=[omegaconf, torch, transformers], width=120)
 
 # Suppress warnings from tensorflow and other libraries
 warnings.filterwarnings("ignore", category=UserWarning)

@@ -1,7 +1,7 @@
 # Adapted from https://github.com/lucidrains/naturalspeech2-pytorch/blob/659bec7f7543e7747e809e950cc2f84242fbeec7/naturalspeech2_pytorch/naturalspeech2_pytorch.py#L532
 from typing import TYPE_CHECKING, Any, NamedTuple, cast
 
-from typing_extensions import override
+from typing import override
 
 import torch
 import torch.nn.functional as F

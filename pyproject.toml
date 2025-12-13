@@ -187,7 +187,6 @@ reportImplicitOverride = false
 reportImplicitStringConcatenation = false
 reportUnannotatedClassAttribute = false
 reportUnknownMemberType = false
-reportUnknownVariableType = false
 reportUnusedCallResult = false
 stubPath = "./typings"
 useLibraryCodeForTypes = false

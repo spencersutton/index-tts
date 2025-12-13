@@ -463,7 +463,7 @@ class AccelInferenceEngine:
         if is_varlen_batch:
             context = get_forward_context()
             assert context.cu_seqlens_q is not None
-            cu_seqlens = context.cu_seqlens_q.cpu().tolist()
+            cu_seqlens = cast(list[int], context.cu_seqlens_q.cpu().tolist())
             last_hidden = torch.stack([hidden_states[0, cu_seqlens[i + 1] - 1] for i in range(batch_size)])
         else:
             last_hidden = hidden_states[:, -1, :]  # [batch_size, hidden_size]

@@ -26,7 +26,7 @@ def load_checkpoint2(model: torch.nn.Module, model_pth: Path) -> dict[str, objec
     checkpoint = checkpoint.get("model", checkpoint)
     model.load_state_dict(checkpoint, strict=True)
     info_path = model_pth.with_suffix(".yaml")
-    configs = {}
+    configs: dict[str, object] = {}
     if info_path.exists():
         with info_path.open(encoding="utf-8") as fin:
             configs = yaml.safe_load(fin)

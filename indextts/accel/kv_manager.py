@@ -8,8 +8,6 @@ from typing import overload, override
 import torch
 from transformers import GPT2Model
 
-from indextts.s2mel.modules.gpt_fast.model import KVCache
-
 
 class KVCacheBlock:
     def __init__(self, block_id: int) -> None:
@@ -205,7 +203,7 @@ class KVCacheManager:
     def wire_kv_cache_to_model(self, model: GPT2Model) -> None:
         layer_id = 0
         for module in model.modules():
-            if isinstance(module, KVCache):
+            if hasattr(module, "k_cache") and hasattr(module, "v_cache"):
                 module.k_cache = self.kv_cache[0, layer_id]
                 module.v_cache = self.kv_cache[1, layer_id]
                 layer_id += 1

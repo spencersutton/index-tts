@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 class NullPositionEmbedding(nn.Embedding):
     def __init__(self, dim: int) -> None:
         super().__init__(1, dim)
+        del self.weight
 
     @override
     def forward(self, input: Tensor) -> Tensor:  # noqa: A002

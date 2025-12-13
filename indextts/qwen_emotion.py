@@ -1,7 +1,9 @@
 import json
 import re
 from pathlib import Path
+from typing import cast
 
+import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
@@ -86,14 +88,14 @@ class QwenEmotion:
         )
         assert isinstance(text, str)
         model_inputs = self.tokenizer([text], return_tensors="pt").to(self.model.device)
-
         # conduct text completion
         generated_ids = self.model.generate(
-            **model_inputs,
+            **model_inputs,  # pyright: ignore[reportArgumentType]
             max_new_tokens=32768,
             pad_token_id=self.tokenizer.eos_token_id,
         )
-        output_ids = generated_ids[0][len(model_inputs.input_ids[0]) :].tolist()
+        input_ids = cast(torch.LongTensor, model_inputs.input_ids)
+        output_ids = cast(list[int], generated_ids[0][len(input_ids[0]) :].tolist())
 
         # parsing thinking content
         try:

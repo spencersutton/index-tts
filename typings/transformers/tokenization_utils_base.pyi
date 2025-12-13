@@ -1500,10 +1500,10 @@ class PreTrainedTokenizerBase(SpecialTokensMixin, PushToHubMixin):
 
     def decode(
         self,
-        token_ids: int | list[int] | np.ndarray | torch.Tensor | tf.Tensor,
+        token_ids: int | list[int] | np.ndarray | torch.Tensor,
         skip_special_tokens: bool = ...,
         clean_up_tokenization_spaces: bool | None = ...,
-        **kwargs,
+        **kwargs: object,
     ) -> str:
         """
         Converts a sequence of ids in a string, using the tokenizer and vocabulary with options to remove special

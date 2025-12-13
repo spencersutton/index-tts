@@ -85,7 +85,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
 
     def deparallelize(self) -> None:
         self.transformer.deparallelize()
-        self.transformer = self.transformer.to("cpu")  # ty:ignore[invalid-argument-type]  # pyright: ignore[reportArgumentType]
+        self.transformer = self.transformer.to("cpu")
         self.lm_head = self.lm_head.to("cpu")
         self.model_parallel = False
         torch.cuda.empty_cache()
@@ -193,7 +193,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         # Set device for model parallelism
         if self.model_parallel:
             if torch.backends.mps.is_available():
-                self.to(self.transformer.first_device)  # ty:ignore[invalid-argument-type]  # pyright: ignore[reportArgumentType]
+                self.to(self.transformer.first_device)
             else:
                 torch.cuda.set_device(self.transformer.first_device)
             hidden_states = hidden_states.to(self.lm_head[1].weight.device)
@@ -266,7 +266,7 @@ class UnifiedVoice(nn.Module):
     cond_num = 32
     mel_solo_embedding = 0
     text_solo_embedding = 0
-    ds_engine: Any = None
+    ds_engine: object = None
 
     def __init__(self, use_accel: bool = False) -> None:
         super().__init__()
@@ -395,25 +395,25 @@ class UnifiedVoice(nn.Module):
         )
         assert self.inference_model is not None
         if use_deepspeed and half and torch.cuda.is_available():
-            import deepspeed  # noqa: PLC0415  # ty:ignore[unresolved-import]  # pyright: ignore[reportMissingImports]
+            import deepspeed  # noqa: PLC0415  # pyright: ignore[reportMissingImports]
 
-            self.ds_engine = deepspeed.init_inference(
+            self.ds_engine = deepspeed.init_inference(  # pyright: ignore[reportUnknownMemberType]
                 model=self.inference_model,
                 mp_size=1,
                 replace_with_kernel_inject=True,
                 dtype=torch.float16,
             )
-            self.inference_model = self.ds_engine.module.eval()
+            self.inference_model = self.ds_engine.module.eval()  # pyright: ignore
         elif use_deepspeed and torch.cuda.is_available():
-            import deepspeed  # noqa: PLC0415  # ty:ignore[unresolved-import]  # pyright: ignore[reportMissingImports]
+            import deepspeed  # noqa: PLC0415  # pyright: ignore[reportMissingImports]
 
-            self.ds_engine = deepspeed.init_inference(
+            self.ds_engine = deepspeed.init_inference(  # pyright: ignore[reportUnknownMemberType]
                 model=self.inference_model,
                 mp_size=1,
                 replace_with_kernel_inject=True,
                 dtype=torch.float32,
             )
-            self.inference_model = self.ds_engine.module.eval()
+            self.inference_model = self.ds_engine.module.eval()  # pyright: ignore
         else:
             self.inference_model = self.inference_model.eval()
 

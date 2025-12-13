@@ -793,6 +793,7 @@ class UnifiedVoice(nn.Module):
         logger.info("generation: %.4fs", time.perf_counter() - t4)
         logger.info("total inference_speech: %.4fs", time.perf_counter() - t0)
 
+        assert isinstance(output, Tensor)
         return output[:, trunc_index:], speech_conditioning_latent
 
     def get_emovec(self, emo_speech_conditioning_latent: Tensor, emo_cond_lengths: Tensor) -> Tensor:

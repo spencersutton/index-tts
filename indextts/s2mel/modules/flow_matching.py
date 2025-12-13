@@ -1,6 +1,6 @@
 # pyright: reportPrivateUsage=false
 from abc import ABC
-from typing import cast
+from typing import cast, override
 
 import torch
 from torch import Tensor
@@ -132,6 +132,7 @@ class BASECFM(torch.nn.Module, ABC):
 
         return sol[-1]
 
+    @override
     def forward(
         self,
         x1: Tensor,

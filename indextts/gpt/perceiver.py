@@ -1,6 +1,8 @@
 # Adapted from https://github.com/lucidrains/naturalspeech2-pytorch/blob/659bec7f7543e7747e809e950cc2f84242fbeec7/naturalspeech2_pytorch/naturalspeech2_pytorch.py#L532
 from typing import TYPE_CHECKING, Any, NamedTuple, cast
 
+from typing_extensions import override
+
 import torch
 import torch.nn.functional as F
 from einops import rearrange, repeat
@@ -118,6 +120,7 @@ class _Attend(nn.Module):
                 is_causal=self.causal,
             )
 
+    @override
     def forward(
         self,
         q: Tensor,
@@ -179,6 +182,7 @@ class _RMSNorm(nn.Module):
         self.scale = dim**0.5
         self.gamma = nn.Parameter(torch.ones(dim)) if scale else None
 
+    @override
     def forward(self, x: Tensor, cond: Tensor | None = None) -> Tensor:
         gamma = self.gamma if self.gamma is not None else 1
         out = F.normalize(x, dim=-1) * self.scale * gamma
@@ -203,12 +207,14 @@ class _CausalConv1d(nn.Conv1d):
         assert stride == 1
         self.causal_padding = dilation * (kernel_size - 1)
 
+    @override
     def forward(self, input: Tensor) -> Tensor:  # noqa: A002
         causal_padded_x = F.pad(input, (self.causal_padding, 0), value=0.0)
         return super().forward(causal_padded_x)
 
 
 class _GEGLU(nn.Module):
+    @override
     def forward(self, x: Tensor) -> Tensor:
         x, gate = x.chunk(2, dim=-1)
         return F.gelu(gate) * x
@@ -265,6 +271,7 @@ class PerceiverResampler(nn.Module):
 
         self.norm = _RMSNorm(dim)
 
+    @override
     def forward(self, x: Tensor, mask: Tensor | None = None) -> Tensor:
         batch = x.shape[0]
 
@@ -306,6 +313,7 @@ class _Attention(nn.Module):
         self.to_kv = nn.Linear(dim_context, dim_inner * 2, bias=False)
         self.to_out = nn.Linear(dim_inner, dim, bias=False)
 
+    @override
     def forward(self, x: Tensor, context: Tensor | None = None, mask: Tensor | None = None) -> Tensor:
         h, has_context = self.heads, context is not None
 

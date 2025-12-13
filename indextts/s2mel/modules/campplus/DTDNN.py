@@ -4,6 +4,7 @@
 # Copied from: https://github.com/modelscope/3D-Speaker/blob/main/speakerlab/models/campplus/DTDNN.py
 from collections import OrderedDict
 from collections.abc import Sequence
+from typing import override
 
 import torch.nn.functional as F
 from torch import Tensor, nn
@@ -60,6 +61,7 @@ class FCM(nn.Module):
             self.in_planes = planes * block.expansion
         return nn.Sequential(*layers)
 
+    @override
     def forward(self, x: Tensor) -> Tensor:
         x = x.unsqueeze(1)
         out = F.relu(self.bn1(self.conv1(x)))
@@ -132,6 +134,7 @@ class CAMPPlus(nn.Module):
                     assert isinstance(m.bias, Tensor)
                     nn.init.zeros_(m.bias)
 
+    @override
     def forward(self, x: Tensor) -> Tensor:
         x = x.permute(0, 2, 1)  # (B,T,F) => (B,F,T)
         x = self.head(x)

@@ -17,6 +17,7 @@
 """Subsampling layer definition."""
 
 from abc import ABC
+from typing import override
 
 import torch
 from torch import Tensor
@@ -61,6 +62,7 @@ class Conv2dSubsampling2(_BaseSubsampling):
         # 2 = (3 - 1) * 1
         self.right_context = 2
 
+    @override
     def forward(self, x: Tensor, x_mask: Tensor, offset: int | Tensor = 0) -> tuple[Tensor, Tensor, Tensor]:
         """Subsample x.
 

@@ -2,6 +2,7 @@
 # Licensed under the Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
 
 # Copied from: https://github.com/modelscope/3D-Speaker/blob/main/speakerlab/models/campplus/layers.py
+from typing import override
 import torch
 import torch.nn.functional as F
 import torch.utils.checkpoint as cp
@@ -32,6 +33,7 @@ def statistics_pooling(x: Tensor) -> Tensor:
 
 
 class StatsPool(nn.Module):
+    @override
     def forward(self, x: Tensor) -> Tensor:
         return statistics_pooling(x)
 
@@ -63,6 +65,7 @@ class TDNNLayer(nn.Module):
         )
         self.nonlinear = get_nonlinear(config_str, out_channels)
 
+    @override
     def forward(self, x: Tensor) -> Tensor:
         x = self.linear(x)
         return self.nonlinear(x)
@@ -95,6 +98,7 @@ class CAMLayer(nn.Module):
         self.linear2 = nn.Conv1d(bn_channels // reduction, out_channels, 1)
         self.sigmoid = nn.Sigmoid()
 
+    @override
     def forward(self, x: Tensor) -> Tensor:
         y = self.linear_local(x)
         context = x.mean(-1, keepdim=True) + self.seg_pooling(x)
@@ -148,6 +152,7 @@ class CAMDenseTDNNLayer(nn.Module):
     def bn_function(self, x: Tensor) -> Tensor:
         return self.linear1(self.nonlinear1(x))
 
+    @override
     def forward(self, x: Tensor) -> Tensor:
         if self.training and self.memory_efficient:
             x = cp.checkpoint(self.bn_function, x)
@@ -185,6 +190,7 @@ class CAMDenseTDNNBlock(nn.ModuleList):
             )
             self.add_module(f"tdnnd{i + 1}", layer)
 
+    @override
     def forward(self, x: Tensor) -> Tensor:
         for layer in self:
             x = torch.cat([x, layer(x)], dim=1)
@@ -203,6 +209,7 @@ class TransitLayer(nn.Module):
         self.nonlinear = get_nonlinear(config_str, in_channels)
         self.linear = nn.Conv1d(in_channels, out_channels, 1, bias=bias)
 
+    @override
     def forward(self, x: Tensor) -> Tensor:
         x = self.nonlinear(x)
         return self.linear(x)
@@ -220,6 +227,7 @@ class DenseLayer(nn.Module):
         self.linear = nn.Conv1d(in_channels, out_channels, 1, bias=bias)
         self.nonlinear = get_nonlinear(config_str, out_channels)
 
+    @override
     def forward(self, x: Tensor) -> Tensor:
         x = self.linear(x.unsqueeze(dim=-1)).squeeze(dim=-1) if len(x.shape) == 2 else self.linear(x)
         return self.nonlinear(x)
@@ -255,6 +263,7 @@ class BasicResBlock(nn.Module):
                 nn.BatchNorm2d(self.expansion * planes),
             )
 
+    @override
     def forward(self, x: Tensor) -> Tensor:
         out = F.relu(self.bn1(self.conv1(x)))
         out = self.bn2(self.conv2(out))

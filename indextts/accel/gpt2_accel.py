@@ -1,4 +1,4 @@
-from typing import Any, cast
+from typing import Any, cast, override
 
 import torch
 from torch import Tensor, nn
@@ -50,6 +50,7 @@ class GPT2AccelAttention(nn.Module):
         scale = (self.head_dim**-0.5) if self.scale_attn_weights else 1.0
         self.accel_attn = Attention(self.num_heads, self.head_dim, scale, self.num_heads)
 
+    @override
     def forward(
         self,
         hidden_states: Tensor,
@@ -120,7 +121,7 @@ class GPT2AccelAttention(nn.Module):
 
 
 class GPT2AccelBlock(GPT2Block):
-    def __init__(self, config: PretrainedConfig, layer_idx: int | None = None) -> None:
+    def __init__(self, config: GPT2Config, layer_idx: int | None = None) -> None:
         super().__init__(config, layer_idx)
         self.attn = GPT2AccelAttention(config, layer_idx)
 
@@ -130,6 +131,7 @@ class GPT2AccelModel(GPT2Model):
         super().__init__(config)
         self.h = nn.ModuleList([GPT2AccelBlock(config, layer_idx=i) for i in range(config.num_hidden_layers)])
 
+    @override
     def forward(
         self,
         input_ids: torch.LongTensor | None = None,

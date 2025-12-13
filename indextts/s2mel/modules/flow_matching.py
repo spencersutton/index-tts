@@ -108,7 +108,7 @@ class BASECFM(torch.nn.Module, ABC):
             stacked_t = torch.cat([t.unsqueeze(0), t.unsqueeze(0)], dim=0)
 
             # Perform a single forward pass for both original and CFG inputs
-            stacked_dphi_dt = self.estimator(
+            stacked_dphi_dt = self.estimator.forward(
                 stacked_x,
                 stacked_prompt_x,
                 x_lens,

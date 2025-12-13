@@ -51,7 +51,7 @@ dependencies = [
 webui = ["gradio>=5.45.0"]
 # To install the DeepSpeed support, use `uv sync --extra deepspeed` (or `--all-extras`).
 deepspeed = ["deepspeed>=0.17.1"]
-accelerate = ["flash-attn>=2.8.3; sys_platform != 'darwin'"]
+accelerate = ["flash-attn; sys_platform != 'darwin'"]
 
 [project.urls]
 Homepage = "https://github.com/index-tts/index-tts"
@@ -74,6 +74,9 @@ build-backend = "hatchling.build"
 # its compilation to determine what GPU support to compile for itself. It also
 # saves time, since it won't waste time downloading a generic PyTorch version.
 no-build-isolation-package = ["deepspeed"]
+
+[tool.uv.sources]
+flash-attn = { url = "https://github.com/mjun0812/flash-attention-prebuild-wheels/releases/download/v0.4.17/flash_attn-2.8.3%2Bcu128torch2.9-cp313-cp313-linux_x86_64.whl" }
 
 [tool.ruff]
 preview = true

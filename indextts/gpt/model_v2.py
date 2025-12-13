@@ -22,6 +22,7 @@ from transformers.modeling_outputs import (
 from transformers.utils.model_parallel_utils import assert_device_map, get_device_map
 
 from indextts.gpt.conformer_encoder import ConformerEncoder
+from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
 from indextts.gpt.perceiver import PerceiverResampler
 
 logger = logging.getLogger(__name__)
@@ -33,21 +34,6 @@ class NullPositionEmbedding(nn.Embedding):
 
     def forward(self, input: Tensor) -> Tensor:  # noqa: A002
         return torch.zeros((input.shape[0], input.shape[1], self.embedding_dim), device=input.device)
-
-
-class LearnedPositionEmbeddings(nn.Module):
-    def __init__(self, seq_len: int, model_dim: int, init: float = 0.02) -> None:
-        super().__init__()
-        self.emb = nn.Embedding(seq_len, model_dim)
-        # Initializing this way is standard for GPT-2
-        self.emb.weight.data.normal_(mean=0.0, std=init)
-
-    def forward(self, x: Tensor) -> Tensor:
-        sl = x.shape[1]
-        return self.emb(torch.arange(0, sl, device=x.device))
-
-    def get_fixed_embedding(self, ind: int, dev: torch.device) -> Tensor:
-        return self.emb(torch.tensor([ind], device=dev)).unsqueeze(0)
 
 
 class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):

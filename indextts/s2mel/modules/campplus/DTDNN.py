@@ -54,7 +54,7 @@ class FCM(nn.Module):
         stride: int,
     ) -> nn.Sequential:
         strides = [stride] + [1] * (num_blocks - 1)
-        layers = []
+        layers: list[nn.Module] = []
         for stride in strides:
             layers.append(block(self.in_planes, planes, stride))
             self.in_planes = planes * block.expansion

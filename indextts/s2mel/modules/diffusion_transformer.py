@@ -1,5 +1,5 @@
 import math
-from typing import Final, override
+from typing import TYPE_CHECKING, Final, override
 
 import torch
 from torch import Tensor, nn
@@ -84,7 +84,7 @@ CONTENT_DIM: Final = 512
 
 
 class DiT(torch.nn.Module):
-    input_pos: Tensor  # pyright: ignore[reportUninitializedInstanceVariable]
+    input_pos: Tensor
 
     def __init__(self, args: S2MelConfig) -> None:
         super().__init__()
@@ -107,6 +107,8 @@ class DiT(torch.nn.Module):
         self.t_embedder = TimestepEmbedder(HIDDEN_DIM)
 
         input_pos = torch.arange(16384)
+        if TYPE_CHECKING:
+            self.input_pos = input_pos
         self.register_buffer("input_pos", input_pos)
 
         self.t_embedder2 = TimestepEmbedder(HIDDEN_DIM)

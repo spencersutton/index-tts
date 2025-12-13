@@ -215,15 +215,15 @@ class ModelHubMixin:
     def from_pretrained(
         cls: Type[T],
         pretrained_model_name_or_path: Union[str, Path],
-        *,
+        *args: Any,
         force_download: bool = ...,
         resume_download: Optional[bool] = ...,
-        proxies: Optional[Dict] = ...,
+        proxies: Optional[dict[object, object]] = ...,
         token: Optional[Union[str, bool]] = ...,
         cache_dir: Optional[Union[str, Path]] = ...,
         local_files_only: bool = ...,
         revision: Optional[str] = ...,
-        **model_kwargs,
+        **model_kwargs: Any,
     ) -> T:
         """
         Download a model from the Huggingface Hub and instantiate it.

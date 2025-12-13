@@ -11,6 +11,7 @@ class Identity(Module):
     def forward(self, input: Tensor) -> Tensor: ...
 
 class Linear(Module):
+    bias: Tensor | None
     __constants__ = ...
     in_features: int
     out_features: int

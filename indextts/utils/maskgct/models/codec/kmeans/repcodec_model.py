@@ -2,7 +2,7 @@
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
-from torch import nn
+from torch import Tensor, nn
 from torch.nn import functional as F
 
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize import (
@@ -18,6 +18,7 @@ def init_weights(m: nn.Module) -> None:
         nn.init.constant_(m.bias, 0)
     if isinstance(m, nn.Linear):
         nn.init.trunc_normal_(m.weight, std=0.02)
+        assert m.bias is not None
         nn.init.constant_(m.bias, 0)
 
 
@@ -34,10 +35,6 @@ downsample_scale = 1
 class RepCodec(nn.Module):
     def __init__(self) -> None:
         super().__init__()
-
-        if downsample_scale is not None and downsample_scale > 1:
-            self.down = nn.Conv1d(hidden_size, hidden_size, kernel_size=3, stride=2, padding=1)
-            self.up = nn.Conv1d(hidden_size, hidden_size, kernel_size=3, stride=1, padding=1)
 
         self.encoder = nn.Sequential(
             VocosBackbone(

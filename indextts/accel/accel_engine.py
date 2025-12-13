@@ -555,12 +555,12 @@ class AccelInferenceEngine:
             for i in range(batch_size):
                 padding_len = max_prompt_len - seq_lens[i]
                 initial_tokens = sequences[i].token_ids[: sequences[i].num_prompt_tokens]
-                padded_prompt = [pad_token] * padding_len + initial_tokens
+                padded_prompt = [pad_token] * padding_len + list(initial_tokens)
                 full_sequence = padded_prompt + generated_tokens[i]
                 output_ids.append(full_sequence)
         else:
             output_ids = [
-                sequences[i].token_ids[: sequences[i].num_prompt_tokens] + generated_tokens[i]
+                list(sequences[i].token_ids[: sequences[i].num_prompt_tokens]) + generated_tokens[i]
                 for i in range(batch_size)
             ]
 

@@ -10,7 +10,7 @@
 import math
 import warnings
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, override
 
 import einops
 import torch
@@ -29,6 +29,7 @@ class ConvLayerNorm(nn.LayerNorm):
     def __init__(self, normalized_shape: int | list[int] | torch.Size, **kwargs: Any) -> None:  # noqa: ANN401
         super().__init__(normalized_shape, **kwargs)
 
+    @override
     def forward(self, input: Tensor) -> Tensor:  # noqa: A002
         input = einops.rearrange(input, "b ... t -> b t ...")
         input = super().forward(input)
@@ -126,6 +127,7 @@ class NormConv1d(nn.Module):
         self.norm = get_norm_module(self.conv, causal, norm)
         self.norm_type = norm
 
+    @override
     def forward(self, x: Tensor) -> Tensor:
         x = self.conv(x)
         return self.norm(x)
@@ -172,6 +174,7 @@ class SConv1d(nn.Module):
         self.causal = causal
         self.pad_mode = pad_mode
 
+    @override
     def forward(self, x: Tensor) -> Tensor:
         _B, _C, _T = x.shape
         assert isinstance(self.conv.conv, nn.Conv1d)

@@ -1,7 +1,7 @@
 import importlib.util
 import logging
 import time
-from typing import Any
+from typing import Any, override
 
 import torch
 import torch.nn.functional as F
@@ -32,6 +32,7 @@ class NullPositionEmbedding(nn.Embedding):
     def __init__(self, dim: int) -> None:
         super().__init__(1, dim)
 
+    @override
     def forward(self, input: Tensor) -> Tensor:  # noqa: A002
         return torch.zeros((input.shape[0], input.shape[1], self.embedding_dim), device=input.device)
 
@@ -92,15 +93,18 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         if torch.backends.mps.is_available():
             torch.mps.empty_cache()
 
+    @override
     def get_output_embeddings(self) -> nn.Module:
         return self.lm_head
 
+    @override
     def set_output_embeddings(self, new_embeddings: nn.Sequential) -> None:
         self.lm_head = new_embeddings
 
     def store_mel_emb(self, mel_emb: torch.Tensor) -> None:
         self.cached_mel_emb = mel_emb
 
+    @override
     def prepare_inputs_for_generation(
         self,
         input_ids: torch.Tensor,
@@ -138,6 +142,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
             "token_type_ids": inputs_embeds,
         }
 
+    @override
     def forward(
         self,
         input_ids: Tensor,
@@ -515,6 +520,7 @@ class UnifiedVoice(nn.Module):
         conds = self.emo_perceiver_encoder(speech_conditioning_input, conds_mask)  # (b, 1, d)
         return conds.squeeze(1)
 
+    @override
     def forward(
         self,
         speech_conditioning_latent: Tensor,

@@ -20,10 +20,10 @@ from typing import TYPE_CHECKING, override
 
 import torch
 import torch.nn.functional as F
-from torch import Tensor
+from torch import Tensor, nn
 
 
-class PositionalEncoding(torch.nn.Module):
+class PositionalEncoding(nn.Module):
     """Positional encoding.
 
     :param int d_model: embedding dim
@@ -142,7 +142,7 @@ class RelPositionalEncoding(PositionalEncoding):
         return self.dropout(x), self.dropout(pos_emb)
 
 
-class NoPositionalEncoding(torch.nn.Module):
+class NoPositionalEncoding(nn.Module):
     """No position encoding."""
 
     def __init__(self, d_model: int, dropout_rate: float) -> None:

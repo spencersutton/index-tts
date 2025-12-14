@@ -7,7 +7,7 @@ from indextts.s2mel.modules.commons import fused_add_tanh_sigmoid_multiply
 from indextts.s2mel.modules.encodec import SConv1d
 
 
-class WN(torch.nn.Module):
+class WN(nn.Module):
     def __init__(
         self,
         hidden_channels: int,

@@ -20,12 +20,12 @@ from abc import ABC
 from typing import override
 
 import torch
-from torch import Tensor
+from torch import Tensor, nn
 
 from indextts.gpt.conformer.embedding import PositionalEncoding
 
 
-class _BaseSubsampling(torch.nn.Module, ABC):
+class _BaseSubsampling(nn.Module, ABC):
     pos_enc: PositionalEncoding  # Module with position_encoding method
 
     def __init__(self) -> None:

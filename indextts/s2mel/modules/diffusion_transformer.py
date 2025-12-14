@@ -83,7 +83,7 @@ NUM_HEADS: Final = 8
 CONTENT_DIM: Final = 512
 
 
-class DiT(torch.nn.Module):
+class DiT(nn.Module):
     input_pos: Tensor
 
     def __init__(self, args: S2MelConfig) -> None:

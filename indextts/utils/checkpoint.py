@@ -16,12 +16,13 @@ from typing import TYPE_CHECKING, Any
 
 import torch
 import yaml
+from torch import nn
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
 
-def load_checkpoint2(model: torch.nn.Module, model_pth: Path) -> dict[str, object]:
+def load_checkpoint2(model: nn.Module, model_pth: Path) -> dict[str, object]:
     checkpoint: Mapping[str, Any] = torch.load(model_pth, map_location="cpu")
     checkpoint = checkpoint.get("model", checkpoint)
     model.load_state_dict(checkpoint, strict=True)

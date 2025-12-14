@@ -1,12 +1,14 @@
 import contextlib
 import dataclasses
 import functools
-import sympy
-import torch
 from collections.abc import Sequence
 from enum import Enum
 from typing import Optional, Union
+
+import sympy
+import torch
 from torch.utils._ordered_set import OrderedSet
+
 from ..loop_body import LoopBody
 from ..scheduler import BaseSchedulerNode, BaseScheduling, FusedSchedulerNode, Scheduler, SchedulerNode
 from ..utils import cache_on_self

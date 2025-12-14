@@ -1,5 +1,6 @@
-import torch
 from typing import Any
+
+import torch
 from torch._ops import HigherOrderOperator
 from torch._subclasses.fake_tensor import FakeTensorMode
 from torch.fx.experimental.proxy_tensor import ProxyTorchDispatchMode

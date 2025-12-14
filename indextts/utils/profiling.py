@@ -5,8 +5,8 @@ This module provides utilities to profile with torch.profiler while
 keeping output manageable and focused on your code.
 """
 
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 import torch
 

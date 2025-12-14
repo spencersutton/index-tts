@@ -1,31 +1,46 @@
 import contextlib
 import dataclasses
 import traceback
+from collections.abc import Callable, Container, Generator, Iterable, Iterator, Sequence
+from enum import Enum
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Literal,
+    Never,
+    Optional,
+    ParamSpec,
+    Self,
+    TypeAlias,
+    TypeIs,
+    TypeVar,
+    Union,
+    overload,
+    override,
+)
+
 import sympy
 import torch._export.serde.schema as export_schema
 import torch.fx
 import torch.utils._pytree as pytree
-from collections.abc import Container, Generator, Iterable, Iterator, Sequence
-from enum import Enum
-from typing import Any, ClassVar, Literal, Optional, TYPE_CHECKING, TypeVar, Union, overload
-from collections.abc import Callable
-from typing import Never, ParamSpec, Self, TypeAlias, TypeIs, override
 from sympy import Expr, Integer, Symbol
+from torch._library.fake_class_registry import FakeScriptObject
 from torch.fx.experimental.symbolic_shapes import IterateExprs, ShapeEnv, SympyBoolean
 from torch.fx.node import Node
 from torch.utils._ordered_set import OrderedSet
+
 from . import dependencies
 from .codegen.common import CodegenSymbol, Kernel
+from .codegen.cuda.cuda_template import CUDATemplate
+from .codegen.wrapper import PythonWrapperCodegen
 from .dependencies import Dep
+from .graph import GraphLowering
 from .loop_body import LoopBody
 from .ops_handler import OpCountResult, ReductionType, StoreMode
 from .runtime.hints import ReductionHint
 from .utils import IndentedBuffer, cache_on_self, cache_on_self_and_args, ir_dataclass
 from .virtualized import OpsValue
-from torch._library.fake_class_registry import FakeScriptObject
-from .codegen.cuda.cuda_template import CUDATemplate
-from .codegen.wrapper import PythonWrapperCodegen
-from .graph import GraphLowering
 
 if TYPE_CHECKING: ...
 else: ...

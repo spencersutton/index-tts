@@ -1,9 +1,11 @@
+from collections.abc import Callable
+from typing import Any, Optional
+
 import sympy
 import torch
-from typing import Any, Optional
-from collections.abc import Callable
 from torch.utils._sympy.printers import CppPrinter as _CppPrinter
 from torch.utils._sympy.value_ranges import ValueRanges
+
 from .. import ir
 from ..scheduler import BaseSchedulerNode
 from ..shape_propagation import BlockShapeType

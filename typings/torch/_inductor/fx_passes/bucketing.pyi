@@ -1,7 +1,8 @@
 import logging
-import torch
-from typing import Any, Optional
 from collections.abc import Callable
+from typing import Any, Optional
+
+import torch
 from torch.utils._ordered_set import OrderedSet
 
 logger: logging.Logger = ...

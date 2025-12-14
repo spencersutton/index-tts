@@ -1,6 +1,7 @@
 import io
 from collections.abc import Callable
-from typing import Any, ParamSpec, TYPE_CHECKING, TypeVar, TypeAlias
+from typing import TYPE_CHECKING, Any, ParamSpec, TypeAlias, TypeVar
+
 from . import config
 from ._cache import CacheInfo
 

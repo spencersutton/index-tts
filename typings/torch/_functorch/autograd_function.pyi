@@ -1,5 +1,6 @@
-import torch
 from typing import NamedTuple
+
+import torch
 from torch._C._functorch import TransformType
 from torch._ops import HigherOrderOperator
 

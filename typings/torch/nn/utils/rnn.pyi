@@ -1,6 +1,7 @@
-import torch
 from collections.abc import Callable
 from typing import Any, NamedTuple, Self, TypeVar, overload
+
+import torch
 from torch import Tensor
 
 __all__ = [

@@ -1,7 +1,9 @@
 from typing import TYPE_CHECKING, Union
-from .base import VariableTracker
+
 from torch._dynamo.codegen import PyCodegen
 from torch._dynamo.symbolic_convert import InstructionTranslator
+
+from .base import VariableTracker
 
 """
 This module provides iterator-related variable tracking functionality for Dynamo.

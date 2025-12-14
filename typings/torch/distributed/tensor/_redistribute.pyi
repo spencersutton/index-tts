@@ -1,6 +1,7 @@
+from typing import NamedTuple, Optional
+
 import torch
 import torch.distributed.tensor._api as dtensor
-from typing import NamedTuple, Optional
 from torch.distributed.tensor._dtensor_spec import DTensorSpec
 from torch.distributed.tensor.device_mesh import DeviceMesh
 from torch.distributed.tensor.placement_types import Placement

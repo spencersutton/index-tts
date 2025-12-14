@@ -1,7 +1,9 @@
-from typing import Optional, TYPE_CHECKING
-from .base import VariableTracker
+from typing import TYPE_CHECKING, Optional
+
 from torch._dynamo.codegen import PyCodegen
 from torch._dynamo.symbolic_convert import InstructionTranslator
+
+from .base import VariableTracker
 
 """
 Dictionary-related variable tracking classes for PyTorch Dynamo.

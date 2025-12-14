@@ -1,5 +1,6 @@
-import sympy
 from typing import NamedTuple
+
+import sympy
 from torch.fx.passes.infra.pass_base import PassBase, PassResult
 from torch.utils._sympy.value_ranges import ValueRanges
 

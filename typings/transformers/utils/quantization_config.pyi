@@ -6,6 +6,7 @@ import os
 from dataclasses import dataclass
 from enum import Enum, StrEnum
 from typing import Any, Optional, Union
+
 from ..utils import is_torch_available
 
 if is_torch_available(): ...

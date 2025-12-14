@@ -1,5 +1,6 @@
-import torch
 from collections.abc import Sequence
+
+import torch
 from torch.distributed._shard.metadata import ShardMetadata
 
 DEPRECATE_MSG = ...

@@ -1,8 +1,8 @@
 import dataclasses
 import functools
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Optional
-from collections.abc import Callable
 
 SUBDIR_NAME = ...
 

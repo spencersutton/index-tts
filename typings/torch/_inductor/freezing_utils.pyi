@@ -1,7 +1,8 @@
 import contextlib
-import torch
 from collections.abc import Generator
 from typing import Any
+
+import torch
 
 _TLS = ...
 

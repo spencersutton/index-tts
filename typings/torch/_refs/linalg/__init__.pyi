@@ -1,24 +1,25 @@
+import operator
+from functools import partial
+from typing import Optional, Union
+
 import torch
 import torch._prims as prims
 import torch._prims_common as utils
 import torch._refs as refs
 import torch._refs.linalg as linalg
-import operator
-from functools import partial
-from typing import Optional, Union
 from torch import Tensor
+from torch._decomp import register_decomposition
+from torch._decomp.decompositions import pw_cast_for_opmath
 from torch._prims_common import (
+    ELEMENTWISE_TYPE_PROMOTION_KIND,
     Dim,
     DimsType,
-    ELEMENTWISE_TYPE_PROMOTION_KIND,
     IntLike,
     TensorLikeType,
     check_fp_or_complex,
     check_is_matrix,
 )
 from torch._prims_common.wrappers import _maybe_convert_to_dtype, elementwise_type_promotion_wrapper, out_wrapper
-from torch._decomp import register_decomposition
-from torch._decomp.decompositions import pw_cast_for_opmath
 
 __all__ = ["diagonal", "matrix_norm", "norm", "svd", "svdvals", "vector_norm", "vecdot", "cross"]
 

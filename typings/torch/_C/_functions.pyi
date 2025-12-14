@@ -1,4 +1,5 @@
 from typing import AnyStr, overload
+
 from torch import Tensor
 
 class UndefinedGrad:

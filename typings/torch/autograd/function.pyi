@@ -1,7 +1,8 @@
-import torch
 from collections.abc import Callable
 from typing import Any, Concatenate, ParamSpec, TypeVar
 from warnings import deprecated
+
+import torch
 from torch import _C
 
 __all__ = [

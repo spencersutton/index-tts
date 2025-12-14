@@ -1,5 +1,6 @@
-from typing import Any, Optional, TypeVar, TypeAlias
 from collections.abc import Callable
+from typing import Any, Optional, TypeAlias, TypeVar
+
 from torch.utils._pytree import PyTree, TreeSpec
 
 type FlattenFuncSpec = Callable[[PyTree, TreeSpec], list]

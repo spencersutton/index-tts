@@ -1,10 +1,11 @@
 import functools
+from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING, Any, Optional, Protocol, TypeAlias, TypeVar, Union
+
 import sympy
 import torch
-from collections.abc import Sequence
-from typing import Any, Optional, Protocol, TYPE_CHECKING, TypeVar, Union, TypeAlias
-from collections.abc import Callable
 from torch._prims_common import ELEMENTWISE_TYPE_PROMOTION_KIND
+
 from .ops_handler import OpsHandler
 from .virtualized import OpsValue
 

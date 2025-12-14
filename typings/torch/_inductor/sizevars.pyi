@@ -1,11 +1,12 @@
-import sympy
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from typing import Any, Optional, Union
-from collections.abc import Callable
+
+import sympy
 from sympy import Expr
 from torch.fx.experimental.symbolic_shapes import ShapeEnv
 from torch.utils._ordered_set import OrderedSet
 from torch.utils._sympy.value_ranges import ValueRanges
+
 from .utils import VarRanges
 from .virtualized import V
 

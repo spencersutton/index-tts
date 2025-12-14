@@ -1,15 +1,17 @@
 import functools
-from dataclasses import dataclass
-from typing import Any, Literal, Optional, TYPE_CHECKING, Union, TypeAlias
 from collections.abc import Callable
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Literal, Optional, TypeAlias, Union
+
 from sympy import Expr
+from torch._inductor.codegen.cuda.cuda_template import CUDATemplate
 from torch._inductor.scheduler import BaseSchedulerNode
-from .cuda_template import ArgInfo
+
 from ...autotune_process import CUDABenchmarkRequest
 from ...ir import (
     Buffer,
-    CUDATemplateBuffer,
     ChoiceCaller,
+    CUDATemplateBuffer,
     IRNode,
     Layout,
     PrimitiveInfoType,
@@ -17,7 +19,7 @@ from ...ir import (
     TensorBox,
 )
 from ..common import CSEVariable, Kernel, OpOverrides
-from torch._inductor.codegen.cuda.cuda_template import CUDATemplate
+from .cuda_template import ArgInfo
 
 if TYPE_CHECKING: ...
 if TYPE_CHECKING: ...

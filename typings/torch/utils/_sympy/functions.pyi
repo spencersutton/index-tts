@@ -1,6 +1,6 @@
+from typing import TYPE_CHECKING, Optional, SupportsFloat, TypeVar, TypeVarTuple, Union
+
 import sympy
-from typing import Optional, SupportsFloat, TYPE_CHECKING, TypeVar, Union
-from typing import TypeVarTuple
 from sympy.core.expr import Expr
 from sympy.core.function import Application
 from sympy.core.operations import LatticeOp

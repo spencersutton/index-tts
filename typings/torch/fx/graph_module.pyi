@@ -1,8 +1,10 @@
 import os
+from typing import Any, Optional, Union
+
 import torch
 import torch.nn as nn
-from typing import Any, Optional, Union
 from torch.package import PackageExporter, PackageImporter
+
 from ._compatibility import compatibility
 from .graph import Graph, PythonCode
 

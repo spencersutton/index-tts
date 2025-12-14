@@ -1,8 +1,9 @@
-import torch
-import torch._prims_common as utils
+from collections.abc import Callable
 from enum import Enum
 from typing import Optional, Union
-from collections.abc import Callable
+
+import torch
+import torch._prims_common as utils
 from torch import Tensor
 from torch._decomp import register_decomposition
 from torch._higher_order_ops.out_dtype import out_dtype

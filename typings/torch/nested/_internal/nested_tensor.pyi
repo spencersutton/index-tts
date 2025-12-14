@@ -1,5 +1,6 @@
-import torch
 from typing import *
+
+import torch
 from torch.utils.weak import WeakTensorKeyDictionary
 
 _tensor_id_counter = ...

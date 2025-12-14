@@ -2,28 +2,28 @@ import dataclasses
 import functools
 import hashlib
 import pickle
-import torch
+from collections.abc import Callable, Generator, KeysView, Sequence
+from concurrent.futures import Future
 from ctypes import CDLL, c_void_p
 from functools import lru_cache
 from pathlib import Path
 from tempfile import _TemporaryFileWrapper
 from types import ModuleType
-from typing import Any, Generic, Optional, TYPE_CHECKING, TypeVar, Union
-from collections.abc import Callable
-from typing import Self, override
+from typing import TYPE_CHECKING, Any, Generic, Optional, Self, TypeVar, Union, override
+
+import torch
 from torch import SymInt, Tensor
 from torch._inductor import config
 from torch._inductor.utils import clear_on_fresh_cache
 from torch._subclasses.fake_tensor import TensorMetadata
 from torch.compiler._cache import CacheArtifact, CacheArtifactFactory
 from torch.export.pt2_archive._package_weights import Weights
-from .output_code import CompiledFxGraph, CompiledFxGraphConstants
-from .remote_cache import JsonDataTy, RemoteCache
-from collections.abc import Generator, KeysView, Sequence
-from concurrent.futures import Future
+
 from .compile_fx import _CompileFxKwargs
 from .graph import GraphLowering
 from .ir import ChoiceCaller
+from .output_code import CompiledFxGraph, CompiledFxGraphConstants
+from .remote_cache import JsonDataTy, RemoteCache
 from .runtime.hints import HalideMeta
 from .runtime.triton_heuristics import CachingAutotuner
 from .utils import InputType

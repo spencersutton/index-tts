@@ -1,13 +1,15 @@
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Optional, Union, overload
+from warnings import deprecated
+
 import torch
 import torch.nn as nn
-from typing import Optional, TYPE_CHECKING, Union, overload
-from collections.abc import Callable
-from warnings import deprecated
 from torch.distributed._composable import contract
+from torch.distributed.tensor import DeviceMesh, Shard
+
 from ._fsdp_api import AllGather, MixedPrecisionPolicy, OffloadPolicy, ReduceScatter
 from ._fsdp_param_group import FSDPParamGroup
 from ._fsdp_state import FSDPState
-from torch.distributed.tensor import DeviceMesh, Shard
 
 if TYPE_CHECKING: ...
 __all__ = ["fully_shard", "FSDPModule", "UnshardHandle", "register_fsdp_forward_method"]

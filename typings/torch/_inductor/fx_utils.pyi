@@ -1,7 +1,8 @@
+from collections.abc import Callable
+from typing import Any, Optional
+
 import torch
 import torch.fx
-from typing import Any, Optional
-from collections.abc import Callable
 
 def matches_module_function_pattern(
     pattern: tuple[type[torch.nn.modules.Module], Callable[..., Any]],

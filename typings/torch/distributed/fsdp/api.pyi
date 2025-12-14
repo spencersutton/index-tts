@@ -1,8 +1,9 @@
-import torch
 from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
+
+import torch
 
 """
 This file includes public APIs for FSDP such as the classes used for the

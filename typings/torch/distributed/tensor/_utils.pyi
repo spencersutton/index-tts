@@ -1,5 +1,6 @@
-import torch
 from collections.abc import Sequence
+
+import torch
 from torch._prims_common import ShapeType
 from torch.distributed.device_mesh import DeviceMesh
 from torch.distributed.tensor.placement_types import Placement

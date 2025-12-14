@@ -1,5 +1,6 @@
+from typing import TYPE_CHECKING, Any
+
 import torch
-from typing import Any, TYPE_CHECKING
 from torch._C import DispatchKey
 from torch._ops import HigherOrderOperator
 from torch._subclasses.fake_tensor import FakeTensorMode

@@ -1,5 +1,6 @@
 from collections.abc import Callable
 from typing import Any, Final, TypeVar, overload
+
 from torch import Tensor
 from torch.types import Number
 

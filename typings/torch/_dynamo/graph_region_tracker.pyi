@@ -1,7 +1,9 @@
 import pickle
-import torch.fx
-from typing import Any, Optional, TYPE_CHECKING, TypeVar, TypeAlias
 from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Optional, TypeAlias, TypeVar
+
+import torch.fx
+
 from .symbolic_convert import InstructionTranslatorBase
 
 """

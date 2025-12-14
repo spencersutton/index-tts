@@ -1,6 +1,6 @@
 import contextlib
 from collections.abc import Generator
-from typing import Any, Union, TypeAlias
+from typing import Any, TypeAlias, Union
 
 __all__ = ["exposed_in", "argnums_t", "enable_single_level_autograd_function", "unwrap_dead_wrappers"]
 

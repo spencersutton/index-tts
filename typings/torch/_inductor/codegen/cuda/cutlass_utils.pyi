@@ -1,10 +1,12 @@
 import atexit
 import functools
-import torch
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
+
+import torch
 from torch.utils._ordered_set import OrderedSet
+
 from ...ir import Layout
 
 log = ...

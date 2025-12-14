@@ -1,14 +1,14 @@
+from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING, Any, Optional, Union
+
 import torch
-from collections.abc import Sequence
-from typing import Any, Optional, TYPE_CHECKING, Union
-from collections.abc import Callable
 from torch._dynamo.source import GetItemSource
 from torch._guards import Source
 from torch._subclasses.fake_tensor import FakeTensor
 from torch.fx import GraphModule
 from torch.fx.experimental._backward_state import BackwardState
-from torch.types import FloatLikeType, IntLikeType
 from torch.fx.proxy import Proxy
+from torch.types import FloatLikeType, IntLikeType
 
 """
 Provides functionality for compiling PyTorch's autograd (automatic differentiation) system.

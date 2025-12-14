@@ -1,8 +1,8 @@
 import contextlib
+from collections.abc import Callable
 from dataclasses import dataclass
 from types import ModuleType
-from typing import Any, Generic, NoReturn, Optional, TYPE_CHECKING, TypeVar, Union
-from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Generic, NoReturn, Optional, TypeVar, Union
 from warnings import deprecated
 
 CONFIG_TYPES = ...

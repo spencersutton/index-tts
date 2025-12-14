@@ -1,7 +1,8 @@
 import dataclasses
-from typing import Any, Optional, TYPE_CHECKING, TypeAlias
-from typing import override
+from typing import TYPE_CHECKING, Any, Optional, TypeAlias, override
+
 from torch.compiler._cache import CacheArtifact, CacheArtifactFactory
+
 from ..remote_cache import JsonDataTy, RemoteCache, RemoteCacheBackend
 from .triton_compat import Config
 

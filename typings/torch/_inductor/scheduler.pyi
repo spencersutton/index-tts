@@ -1,14 +1,14 @@
 import contextlib
 import dataclasses
 import functools
+from collections.abc import Callable, Sequence
+from types import ModuleType
+from typing import TYPE_CHECKING, Any, Generic, Optional, ParamSpec, TypeAlias, TypeVar, Union
+
 import sympy
 import torch
-from typing import Any, Generic, Optional, TYPE_CHECKING, TypeVar, Union
-from collections.abc import Callable
-from typing import ParamSpec, TypeAlias
-from collections.abc import Sequence
-from types import ModuleType
 from torch.utils._ordered_set import OrderedSet
+
 from . import dependencies, ir
 from .codegen.common import BackendFeature
 from .dependencies import Dep, MemoryDep, StarDep, WeakDep

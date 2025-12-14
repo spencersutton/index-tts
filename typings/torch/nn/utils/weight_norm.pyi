@@ -1,5 +1,6 @@
 from typing import Any, TypeVar
 from warnings import deprecated
+
 from torch.nn.modules import Module
 
 __all__ = ["WeightNorm", "remove_weight_norm", "weight_norm"]

@@ -1,12 +1,13 @@
-import torch
-import torch.nn as nn
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Optional
-from collections.abc import Callable
+
+import torch
+import torch.nn as nn
 from torch.distributed.tensor import DTensor, Shard
 from torch.distributed.tensor._dtensor_spec import DTensorSpec
+
 from ._fsdp_api import MixedPrecisionPolicy, OffloadPolicy
 from ._fsdp_common import FSDPMeshInfo
 

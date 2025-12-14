@@ -1,8 +1,9 @@
-from typing import Any
-from typing import override
+from typing import Any, override
+
 from torch._inductor.codegen.rocm.rocm_template import ROCmTemplate
 from torch._inductor.ir import IRNode
 from torch._inductor.utils import IndentedBuffer
+
 from .rocm_template import ArgInfo
 
 class CKTemplate(ROCmTemplate):

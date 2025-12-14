@@ -1,6 +1,8 @@
 from collections.abc import Callable
 from warnings import deprecated
+
 from torch import Tensor
+
 from .module import Module
 
 __all__ = [

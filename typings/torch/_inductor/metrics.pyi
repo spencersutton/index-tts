@@ -1,10 +1,11 @@
 import dataclasses
+from collections.abc import Callable
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Optional, TYPE_CHECKING, Union
-from collections.abc import Callable
-from torch.utils._ordered_set import OrderedSet
+from typing import TYPE_CHECKING, Optional, Union
+
 from torch._inductor.scheduler import BaseSchedulerNode
+from torch.utils._ordered_set import OrderedSet
 
 if TYPE_CHECKING: ...
 generated_kernel_count = ...

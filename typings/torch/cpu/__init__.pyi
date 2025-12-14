@@ -1,6 +1,7 @@
-import torch
 from contextlib import AbstractContextManager
 from typing import Any
+
+import torch
 
 __all__ = [
     "Event",

@@ -1,4 +1,5 @@
 from typing import Optional
+
 from ._normalizations import ArrayLike, normalizer
 
 """Wrapper to mimic (parts of) np.random API surface.

@@ -1,5 +1,6 @@
-import torch
 from typing import TypeVar
+
+import torch
 
 _M = TypeVar("_M", bound=torch.nn.Module)
 

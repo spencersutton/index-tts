@@ -1,5 +1,6 @@
 import collections
-from typing import Any, TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
+
 from torch._C._distributed_rpc import PyRRef
 
 __all__ = [

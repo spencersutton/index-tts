@@ -1,6 +1,7 @@
 import contextlib
-from typing import Any
 from collections.abc import Generator
+from typing import Any
+
 from torch._C import _SDPBackend as SDPBackend
 
 __all__: list[str] = ["SDPBackend", "sdpa_kernel", "WARN_FOR_UNFUSED_KERNELS"]

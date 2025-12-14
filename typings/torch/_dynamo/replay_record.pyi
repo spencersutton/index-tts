@@ -1,8 +1,7 @@
 import dataclasses
 from io import BufferedReader, BufferedWriter
 from types import CellType, CodeType, ModuleType
-from typing import Any, IO, Union
-from typing import Self
+from typing import IO, Any, Self, Union
 
 """
 Python execution state recording and replay functionality.

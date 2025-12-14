@@ -1,8 +1,9 @@
+from collections.abc import Callable
+from typing import Any, ParamSpec, TypeVar
+
 import torch
 import torch.nn.functional as F
-from typing import Any, TypeVar
-from collections.abc import Callable
-from typing import ParamSpec
+
 from .expanded_weights_impl import implements_per_sample_grads
 
 _P = ParamSpec("_P")

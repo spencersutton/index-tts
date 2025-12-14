@@ -1,7 +1,8 @@
 import contextlib
-import torch
 from collections.abc import Callable
 from warnings import deprecated
+
+import torch
 from torch._library.utils import RegistrationHandle
 
 class FakeImplHolder:

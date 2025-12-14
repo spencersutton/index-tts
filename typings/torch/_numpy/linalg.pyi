@@ -1,6 +1,7 @@
-from typing import TYPE_CHECKING
-from ._normalizations import ArrayLike, KeepDims, normalizer
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
+
+from ._normalizations import ArrayLike, KeepDims, normalizer
 
 if TYPE_CHECKING: ...
 

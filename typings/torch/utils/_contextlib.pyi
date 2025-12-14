@@ -1,5 +1,5 @@
-from typing import Any, TypeVar, TypeAlias
 from collections.abc import Callable
+from typing import Any, TypeAlias, TypeVar
 
 type FuncType = Callable[..., Any]
 F = TypeVar("F", bound=FuncType)

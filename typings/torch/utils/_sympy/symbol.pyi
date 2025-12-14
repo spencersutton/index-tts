@@ -1,7 +1,8 @@
-import sympy
 from collections.abc import Iterable
 from enum import Enum
 from typing import Union
+
+import sympy
 
 """
 This file contains canonical definitions for our symbol naming conventions,

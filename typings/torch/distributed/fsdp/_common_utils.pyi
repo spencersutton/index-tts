@@ -1,7 +1,8 @@
 import weakref
-import torch
 from enum import Enum
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+
+import torch
 from torch.distributed._composable_state import _State
 
 """

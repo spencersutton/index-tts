@@ -1,10 +1,9 @@
 import hashlib
 import pickle  # noqa: S403
 from collections import deque
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, MutableSequence, Sequence
 from copy import copy
 from typing import cast, overload, override
-from collections.abc import MutableSequence
 
 import torch
 from torch.types import Number

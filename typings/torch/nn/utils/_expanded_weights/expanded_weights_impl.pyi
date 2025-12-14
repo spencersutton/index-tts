@@ -1,6 +1,7 @@
-import torch
-from contextlib import contextmanager
 from collections.abc import Callable
+from contextlib import contextmanager
+
+import torch
 
 HANDLED_FUNCTIONS: dict[Callable, torch.autograd.Function] = ...
 aten = ...

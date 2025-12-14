@@ -1,7 +1,9 @@
-import torch
 from dataclasses import dataclass
 from typing import Optional
+
+import torch
 from torch.utils._ordered_set import OrderedSet
+
 from ..pattern_matcher import Match
 
 log = ...

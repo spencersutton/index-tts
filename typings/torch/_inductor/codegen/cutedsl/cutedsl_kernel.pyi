@@ -1,8 +1,9 @@
 import contextlib
 import dataclasses
-import sympy
-from typing import Any, Optional
 from collections.abc import Callable
+from typing import Any, Optional
+
+import sympy
 from torch._inductor.codegen.common import CSEVariable, IndentedBuffer, Kernel
 from torch._inductor.ir import Buffer
 from torch._inductor.ops_handler import StoreMode

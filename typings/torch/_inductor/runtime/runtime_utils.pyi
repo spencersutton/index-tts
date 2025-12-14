@@ -1,6 +1,8 @@
-import torch
-from typing import Any, TYPE_CHECKING
 from collections.abc import Hashable
+from typing import TYPE_CHECKING, Any
+
+import torch
+
 from .triton_compat import Config
 
 if TYPE_CHECKING: ...

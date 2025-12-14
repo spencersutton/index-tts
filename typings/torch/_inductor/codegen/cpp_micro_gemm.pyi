@@ -1,8 +1,10 @@
 import dataclasses
-import torch
+from collections.abc import Callable
 from enum import Enum
 from typing import Optional
-from collections.abc import Callable
+
+import torch
+
 from .. import ir
 from ..cpu_vec_isa import VecAMX, VecAVX2, VecAVX512, VecISA, VecNEON, VecSVE256
 from .cpp_template_kernel import CppTemplateKernel

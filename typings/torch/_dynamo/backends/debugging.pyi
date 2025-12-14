@@ -1,12 +1,14 @@
 import dataclasses
+from collections.abc import Callable, Iterable
+from typing import TYPE_CHECKING, Any, Optional, Union
+
 import torch
-from collections.abc import Iterable
-from typing import Any, Optional, TYPE_CHECKING, Union
-from collections.abc import Callable
 from torch import _guards
 from torch._dynamo.output_graph import GraphCompileReason
-from .registry import CompiledFn, CompilerFn, register_debug_backend as register_backend
 from torch.fx.node import Target
+
+from .registry import CompiledFn, CompilerFn
+from .registry import register_debug_backend as register_backend
 
 """
 This module provides debugging backends for TorchDynamo to help diagnose and troubleshoot

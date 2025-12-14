@@ -1,6 +1,7 @@
-import torch
 from dataclasses import dataclass
 from typing import Any, NamedTuple, Optional
+
+import torch
 from torch.distributed.device_mesh import DeviceMesh
 from torch.distributed.tensor.placement_types import Placement
 

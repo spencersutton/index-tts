@@ -1,6 +1,7 @@
-from ..cutlass_utils import try_import_cutlass
 from cutlass_library.gemm_operation import *
 from cutlass_library.library import *
+
+from ..cutlass_utils import try_import_cutlass
 
 if try_import_cutlass():
     _LOGGER = ...

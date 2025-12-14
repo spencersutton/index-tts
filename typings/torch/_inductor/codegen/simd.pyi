@@ -1,14 +1,15 @@
 import contextlib
 import dataclasses
 import functools
+from collections.abc import Callable, Iterable, Iterator, Sequence
+from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar, Union, no_type_check
+
 import sympy
 import torch
-from typing import Any, Generic, Optional, TYPE_CHECKING, Union, no_type_check
-from collections.abc import Callable
-from typing import TypeVar
 from torch._inductor.tiling_utils import CoalesceVarAnalysis
 from torch.fx.immutable_collections import immutable_dict
 from torch.utils._sympy.symbol import SymT
+
 from .. import ir, scheduler
 from ..ir import IRNode
 from ..scheduler import BaseSchedulerNode, BaseScheduling
@@ -16,7 +17,6 @@ from ..utils import cache_on_self
 from ..virtualized import OpsWrapper
 from .common import CSEVariable, Kernel
 from .simd_kernel_features import NodeScheduleEntry, SIMDKernelFeatures
-from collections.abc import Iterable, Iterator, Sequence
 
 if TYPE_CHECKING: ...
 if TYPE_CHECKING: ...

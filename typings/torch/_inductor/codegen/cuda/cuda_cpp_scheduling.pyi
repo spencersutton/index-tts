@@ -1,5 +1,7 @@
 from collections.abc import Sequence
+
 from torch.utils._ordered_set import OrderedSet
+
 from ...scheduler import BaseSchedulerNode, BaseScheduling, WhyNoFuse
 from ..common import BackendFeature
 

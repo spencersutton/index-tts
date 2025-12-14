@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 from functools import lru_cache as _lru_cache
 from typing import Any
+
 from torch.backends import PropModule
 
 @_lru_cache

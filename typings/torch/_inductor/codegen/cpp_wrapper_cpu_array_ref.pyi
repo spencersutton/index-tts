@@ -1,8 +1,9 @@
+from collections.abc import Callable, Sequence
+from typing import Any, Optional, Union
+
 import torch
 import torch._ops
-from collections.abc import Sequence
-from typing import Any, Optional, Union
-from collections.abc import Callable
+
 from .. import ir
 from .cpp_wrapper_cpu import CppWrapperCpu
 from .wrapper import BufferLike, PythonWrapperCodegen

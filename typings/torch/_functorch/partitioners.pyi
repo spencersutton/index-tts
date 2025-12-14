@@ -1,10 +1,11 @@
 import functools
 import logging
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Optional, Union
+
 import torch
 import torch.fx as fx
-from dataclasses import dataclass
-from typing import Optional, TYPE_CHECKING, Union
-from collections.abc import Callable
 from torch.utils._ordered_set import OrderedSet
 
 if TYPE_CHECKING: ...

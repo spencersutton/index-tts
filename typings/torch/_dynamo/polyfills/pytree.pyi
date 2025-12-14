@@ -1,14 +1,14 @@
-import torch.utils._pytree as python_pytree
 import builtins
+from collections.abc import Callable, Iterable
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Literal, Self
+
 import optree
 import optree._C
 import torch.utils._cxx_pytree as cxx_pytree
-from dataclasses import dataclass
-from typing import Any, Literal, TYPE_CHECKING
-from collections.abc import Callable
-from typing import Self
+import torch.utils._pytree as python_pytree
+
 from ..decorators import substitute_in_graph
-from collections.abc import Iterable
 
 """
 Python polyfills for torch.utils.pytree

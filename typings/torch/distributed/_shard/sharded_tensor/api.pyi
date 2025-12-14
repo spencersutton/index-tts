@@ -1,12 +1,14 @@
 import weakref
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Optional
+from warnings import deprecated
+
 import torch
 import torch.distributed._shard.sharding_spec as shard_spec
-from dataclasses import dataclass
-from typing import Optional, TYPE_CHECKING
-from collections.abc import Callable
-from warnings import deprecated
 from torch.distributed import rpc
 from torch.distributed._shard._utils import DEPRECATE_MSG
+
 from .metadata import ShardedTensorMetadata
 from .shard import Shard
 

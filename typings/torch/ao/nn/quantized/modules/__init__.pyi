@@ -1,10 +1,11 @@
 import torch
+
 from .activation import ELU, Hardswish, LeakyReLU, MultiheadAttention, PReLU, ReLU6, Sigmoid, Softmax
 from .batchnorm import BatchNorm2d, BatchNorm3d
 from .conv import Conv1d, Conv2d, Conv3d, ConvTranspose1d, ConvTranspose2d, ConvTranspose3d
 from .dropout import Dropout
 from .embedding_ops import Embedding, EmbeddingBag
-from .functional_modules import FXFloatFunctional, FloatFunctional, QFunctional
+from .functional_modules import FloatFunctional, FXFloatFunctional, QFunctional
 from .linear import Linear
 from .normalization import GroupNorm, InstanceNorm1d, InstanceNorm2d, InstanceNorm3d, LayerNorm
 from .rnn import LSTM

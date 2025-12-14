@@ -1,8 +1,11 @@
-from collections import OrderedDict, abc as container_abcs
+from collections import OrderedDict
+from collections import abc as container_abcs
 from collections.abc import Iterable, Iterator, Mapping
-from typing import Any, Self, TYPE_CHECKING, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Self, TypeVar, overload
 from warnings import deprecated
+
 from torch._jit_internal import _copy_to_script_wrapper
+
 from .module import Module
 
 if TYPE_CHECKING: ...

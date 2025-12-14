@@ -1,6 +1,7 @@
-import torch
 from typing import Any
 from warnings import deprecated
+
+import torch
 from torch import Tensor
 
 __all__ = ["functional_call"]

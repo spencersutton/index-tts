@@ -1,17 +1,18 @@
 import dataclasses
 import json
+from collections.abc import Callable, Iterator, Sequence
+from contextlib import contextmanager
+from dataclasses import dataclass
+from typing import Any, Optional, TypeAlias, Union, final
+
 import sympy
 import torch
 import torch.export.exported_program as ep
-from collections.abc import Iterator, Sequence
-from contextlib import contextmanager
-from dataclasses import dataclass
-from typing import Any, Optional, Union, final, TypeAlias
-from collections.abc import Callable
 from torch._subclasses.fake_tensor import FakeTensor
 from torch.fx._symbolic_trace import _ConstantAttributeType
 from torch.fx.experimental import symbolic_shapes
 from torch.utils._sympy.value_ranges import ValueRanges
+
 from .schema import (
     Argument,
     ConstantValue,

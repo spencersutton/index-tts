@@ -1,18 +1,29 @@
-import torch
 from abc import abstractmethod
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import ClassVar, Generic, NewType, Optional, Protocol, TYPE_CHECKING, TypeVar, Union
-from collections.abc import Callable
-from typing_extensions import TypedDict
-from typing import TypeGuard, Unpack, override
+from typing import (
+    TYPE_CHECKING,
+    ClassVar,
+    Generic,
+    NewType,
+    Optional,
+    Protocol,
+    TypeGuard,
+    TypeVar,
+    Union,
+    Unpack,
+    override,
+)
+
+import torch
 from torch._C._autograd import CreationMeta
 from torch._C._functorch import CInterpreter, is_batchedtensor, is_gradtrackingtensor, is_legacy_batchedtensor
-from torch.utils._python_dispatch import is_traceable_wrapper_subclass
-from collections.abc import Generator
 from torch._guards import Source
 from torch._subclasses.fake_tensor import FakeTensor, FakeTensorMode
 from torch.fx.experimental.symbolic_shapes import ShapeEnv, SymbolicContext
+from torch.utils._python_dispatch import is_traceable_wrapper_subclass
+from typing_extensions import TypedDict
 
 if TYPE_CHECKING: ...
 DimList = list

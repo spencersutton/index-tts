@@ -1,20 +1,21 @@
-import functools
-import torch
-import torch.utils._pytree as pytree
 import contextlib
+import functools
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, NewType, Optional, Protocol, TYPE_CHECKING, TypeVar, Union, TypeAlias
-from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, NewType, Optional, Protocol, TypeAlias, TypeVar, Union
+
+import torch
+import torch.utils._pytree as pytree
 from torch import SymInt, Tensor
-from torch.fx.experimental._backward_state import BackwardState
-from .functional_utils import ViewMetaSequence
-from collections.abc import Iterable, Sequence
 from torch._guards import Source
 from torch._inductor.output_code import OutputCode
 from torch._inductor.utils import InputType
 from torch._ops import OpOverload
+from torch.fx.experimental._backward_state import BackwardState
+
 from .descriptors import AOTInput, AOTOutput
+from .functional_utils import ViewMetaSequence
 from .graph_capture_wrappers import JointFnHandle
 
 """

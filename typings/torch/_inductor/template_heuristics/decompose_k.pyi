@@ -1,5 +1,7 @@
-import torch
 from typing import TYPE_CHECKING
+
+import torch
+
 from ..kernel.mm import decompose_k_subgraph_template
 from .base import TemplateConfigHeuristics
 from .gemm import GemmMaxAutotuneTemplateConfigHeuristics

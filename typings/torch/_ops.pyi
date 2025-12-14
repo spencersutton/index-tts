@@ -1,15 +1,14 @@
 import abc
 import contextlib
 import types
+from collections.abc import Callable, Iterator
+from typing import TYPE_CHECKING, Any, ClassVar, Concatenate, Generic, ParamSpec, TypeVar, Union, final
+
 import torch
-from collections.abc import Iterator
-from typing import Any, ClassVar, Generic, TYPE_CHECKING, Union, final
-from collections.abc import Callable
-from typing import Concatenate, ParamSpec, TypeVar
 from torch._C import DispatchKey
 from torch._functorch.pyfunctorch import TransformType
-from torch.utils._python_dispatch import TorchDispatchMode
 from torch._subclasses.functional_tensor import BaseFunctionalizeAPI
+from torch.utils._python_dispatch import TorchDispatchMode
 
 if TYPE_CHECKING: ...
 _T = TypeVar("_T", default=Any)

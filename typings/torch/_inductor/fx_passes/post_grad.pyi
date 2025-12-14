@@ -1,18 +1,19 @@
 import operator
-import torch
-from typing import Any, Optional, TypeVar, Union
 from collections.abc import Callable
-from typing import ParamSpec
+from typing import Any, Optional, ParamSpec, TypeVar, Union
+
+import torch
 from torch import fx
 from torch._inductor.virtualized import ops
 from torch.utils._ordered_set import OrderedSet
+
 from ..pattern_matcher import (
+    MULTIPLE,
     Arg,
     CallFunction,
     Ignored,
     KeywordArg,
     ListOf,
-    MULTIPLE,
     Match,
     init_once_fakemode,
     register_graph_pattern,

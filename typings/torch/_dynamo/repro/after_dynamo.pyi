@@ -1,7 +1,9 @@
-import torch
-import torch.fx as fx
 from collections.abc import Sequence
 from typing import Any, Optional, Union
+
+import torch
+import torch.fx as fx
+
 from ..backends.registry import CompilerFn, register_debug_backend
 
 """

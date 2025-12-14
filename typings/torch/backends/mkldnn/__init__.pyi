@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 from typing import TYPE_CHECKING
+
 from torch.backends import ContextProp, PropModule
 
 def is_available() -> bool: ...

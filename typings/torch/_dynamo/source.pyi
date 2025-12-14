@@ -1,9 +1,11 @@
 import dataclasses
 import enum
 import functools
-from typing import Any, Optional, TYPE_CHECKING, Union
 from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Optional, Union
+
 from torch._guards import ChainedSource, Guard, GuardSource, Source
+
 from .codegen import PyCodegen
 
 """

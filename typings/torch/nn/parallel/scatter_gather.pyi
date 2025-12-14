@@ -1,7 +1,8 @@
-import torch
 from collections.abc import Sequence
 from typing import Any, TypeVar, overload
 from warnings import deprecated
+
+import torch
 
 __all__ = ["gather", "scatter", "scatter_kwargs"]
 

@@ -1,7 +1,8 @@
 import dataclasses
-import torch
 from collections.abc import Iterable
 from typing import Any, Union
+
+import torch
 
 @dataclasses.dataclass
 class SubclassCreationMeta:

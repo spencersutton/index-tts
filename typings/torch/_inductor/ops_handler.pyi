@@ -1,7 +1,9 @@
+from collections.abc import Callable
+from typing import Any, Generic, Literal, NamedTuple, Optional, TypeAlias, TypeVar, Union
+
 import sympy
 import torch
-from typing import Any, Generic, Literal, NamedTuple, Optional, TypeVar, Union, TypeAlias
-from collections.abc import Callable
+
 from ..utils._ordered_set import OrderedSet
 
 T = TypeVar("T")

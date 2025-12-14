@@ -1,6 +1,8 @@
-import torch.nn
 from typing import Any
+
+import torch.nn
 from torch.nn import Module
+
 from .utils import ExactWeakKeyDictionary
 
 """Mutation tracking and dynamic module detection system for Dynamo.

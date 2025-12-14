@@ -1,6 +1,7 @@
-import torch
-from typing import Any, Union, TypeAlias
 from collections.abc import Callable
+from typing import Any, TypeAlias, Union
+
+import torch
 
 type KeyPath = tuple[Any, ...]
 type NonTensorShapeFn = Callable[[int | float], tuple[Any, ...]]

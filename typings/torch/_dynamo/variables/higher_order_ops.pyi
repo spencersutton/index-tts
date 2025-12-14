@@ -1,13 +1,15 @@
 import contextlib
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
+
+from torch._dynamo.symbolic_convert import InstructionTranslator
 from torch._dynamo.variables.functions import UserFunctionVariable
 from torch._guards import Source
 from torch._ops import HigherOrderOperator
 from torch.utils import _pytree as pytree
+
 from .base import VariableTracker
-from torch._dynamo.symbolic_convert import InstructionTranslator
 
 """
 This module contains classes and utilities for handling higher-order operators in Dynamo.

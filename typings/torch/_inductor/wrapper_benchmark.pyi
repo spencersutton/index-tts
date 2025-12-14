@@ -1,8 +1,9 @@
 import argparse
-import torch
 from dataclasses import dataclass
 from types import ModuleType
 from typing import Any, Optional, Protocol
+
+import torch
 
 class BenchmarkCallableType(Protocol):
     def __call__(self, times: int, repeat: int) -> float: ...

@@ -1,10 +1,9 @@
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
+from typing import ParamSpec, TypeVar, Union
+
 import torch
 import torch._ops
-from collections.abc import Iterator
-from contextlib import contextmanager
-from typing import TypeVar, Union
-from collections.abc import Callable
-from typing import ParamSpec
 from torch._C import DispatchKey
 
 __all__ = ["enable_python_dispatcher", "no_python_dispatcher", "enable_pre_dispatch"]

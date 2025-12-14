@@ -1,7 +1,8 @@
-import torch
-import torch.utils._pytree as pytree
 from dataclasses import dataclass
 from typing import Any, Optional
+
+import torch
+import torch.utils._pytree as pytree
 from torch.fx.node import Target
 
 @dataclass(frozen=True)

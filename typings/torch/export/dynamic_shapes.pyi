@@ -1,7 +1,8 @@
 import dataclasses
 from collections.abc import Callable
 from enum import Enum
-from typing import Any, TYPE_CHECKING, TypeAlias
+from typing import TYPE_CHECKING, Any, TypeAlias
+
 from torch.fx.experimental.symbolic_shapes import StrictMinMaxConstraint
 
 if TYPE_CHECKING: ...

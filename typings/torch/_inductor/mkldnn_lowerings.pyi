@@ -1,5 +1,7 @@
-import torch
 from typing import Optional, Union
+
+import torch
+
 from . import ir
 from .ir import TensorBox
 from .virtualized import OpsValue

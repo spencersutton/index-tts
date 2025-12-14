@@ -1,6 +1,7 @@
-import torch
 from dataclasses import dataclass
-from typing import Any, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
+
+import torch
 from torch import fx
 from torch._dynamo.backends.registry import CompiledFn, CompilerFn
 from torch.fx.node import Node

@@ -1,7 +1,8 @@
-import torch
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
-from collections.abc import Callable
+
+import torch
 
 log = ...
 aten = ...

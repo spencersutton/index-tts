@@ -3,23 +3,23 @@ import functools
 import json
 import sys
 import types
-from collections.abc import Hashable, Iterable, Mapping, Sequence
+from collections.abc import Callable, Hashable, Iterable, Mapping, Sequence
 from enum import Enum
 from typing import (
     Any,
     ClassVar,
     Final,
     Generic,
+    NamedTuple,
     NoReturn,
     Optional,
     Protocol,
+    Self,
+    TypeAlias,
     TypeVar,
     Union,
     overload,
-    TypeAlias,
 )
-from collections.abc import Callable
-from typing import NamedTuple, Self
 from warnings import deprecated
 
 """

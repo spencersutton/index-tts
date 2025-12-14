@@ -1,6 +1,7 @@
-import torch
 from collections import UserDict
 from collections.abc import Callable
+
+import torch
 
 __all__ = ["CustomDecompTable"]
 PRESERVED_ATEN_CIA_OPS = ...

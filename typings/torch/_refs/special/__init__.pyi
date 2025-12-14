@@ -1,9 +1,10 @@
 import math
+from typing import Optional, Union
+
 import torch
 import torch._prims as prims
 import torch._prims_common as utils
 import torch._refs as refs
-from typing import Optional, Union
 from torch import Tensor
 from torch._decomp import register_decomposition
 from torch._prims_common import ELEMENTWISE_TYPE_PROMOTION_KIND, Number, NumberType, TensorLike, TensorLikeType

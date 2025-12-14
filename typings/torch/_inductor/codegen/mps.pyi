@@ -1,12 +1,14 @@
+from typing import TYPE_CHECKING, Any, Optional, Union
+
 import sympy
 import torch
-from typing import Any, Optional, TYPE_CHECKING, Union
 from torch.utils._ordered_set import OrderedSet
 from torch.utils._sympy.printers import ExprPrinter as ExprPrinter_
-from .common import CSEVariable, OpOverrides, OpVarT
-from .simd import IterationRangesEntry, SIMDKernel, SIMDScheduling
+
 from ..ops_handler import ReductionType, StoreMode
 from ..scheduler import Scheduler, SchedulerNode
+from .common import CSEVariable, OpOverrides, OpVarT
+from .simd import IterationRangesEntry, SIMDKernel, SIMDScheduling
 
 if TYPE_CHECKING: ...
 log = ...

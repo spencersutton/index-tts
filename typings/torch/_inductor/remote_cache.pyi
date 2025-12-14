@@ -1,12 +1,12 @@
 import atexit
 import dataclasses
-import redis
 from abc import abstractmethod
-from typing import Any, Generic, Optional, TypeVar, Union
 from collections.abc import Callable
-from typing import TypeAlias
-from torch._inductor import config
+from typing import Any, Generic, Optional, TypeAlias, TypeVar, Union
+
+import redis
 from rfe.scubadata.scubadata_py3 import Sample as Sample_
+from torch._inductor import config
 
 log = ...
 if config.is_fbcode():

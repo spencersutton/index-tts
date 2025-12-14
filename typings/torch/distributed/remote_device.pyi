@@ -1,5 +1,6 @@
-import torch
 from typing import Optional, Union
+
+import torch
 
 class _remote_device:
     def __init__(self, remote_device: str | torch.device) -> None: ...

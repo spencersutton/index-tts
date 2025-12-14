@@ -1,7 +1,6 @@
-from collections.abc import Sequence
-from typing import TypeVar
-from collections.abc import Callable
-from typing import ParamSpec
+from collections.abc import Callable, Sequence
+from typing import ParamSpec, TypeVar
+
 from ...ir import Buffer, Layout, TemplateBuffer
 
 _P = ParamSpec("_P")

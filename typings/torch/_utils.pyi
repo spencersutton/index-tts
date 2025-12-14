@@ -1,9 +1,9 @@
-import torch
-from types import ModuleType
-from typing import Generic, Optional, TYPE_CHECKING
 from collections.abc import Callable
-from typing import ParamSpec
+from types import ModuleType
+from typing import TYPE_CHECKING, Generic, Optional, ParamSpec
 from warnings import deprecated
+
+import torch
 
 def get_tensor_metadata(tensor): ...
 def set_tensor_metadata(tensor, metadata):  # -> None:

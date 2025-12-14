@@ -1,7 +1,9 @@
+from collections.abc import Callable
+from typing import Union
+
 import torch.fx as fx
 import torch.nn as nn
-from typing import Union
-from collections.abc import Callable
+
 from .aot_autograd import make_boxed_compiler
 
 log = ...

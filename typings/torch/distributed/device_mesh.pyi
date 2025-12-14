@@ -1,8 +1,9 @@
 import threading
+from typing import Optional, Self, Union
+
 import torch
-from typing import Optional, Union, Self
-from torch.distributed import is_available
 from torch._C._distributed_c10d import Backend as C10dBackend
+from torch.distributed import is_available
 from torch.distributed.distributed_c10d import ProcessGroup
 
 __all__ = ["init_device_mesh", "DeviceMesh"]

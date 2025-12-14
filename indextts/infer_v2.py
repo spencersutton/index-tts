@@ -5,7 +5,7 @@ import os
 import random
 import time
 import typing
-from collections.abc import Callable, Collection, Generator, Mapping, Sequence
+from collections.abc import Callable, Collection, Generator, Sequence
 from pathlib import Path
 from subprocess import CalledProcessError
 from typing import Any, cast
@@ -243,6 +243,7 @@ class IndexTTS2:
             self.use_fp16 = False
             self.use_cuda_kernel = False
             logger.info("Be patient, it may take a while to run in CPU mode.")
+        torch.set_default_device(self.device)
 
         if self.device.startswith("cuda"):
             with contextlib.suppress(AttributeError):

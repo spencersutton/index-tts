@@ -22,7 +22,7 @@ classifiers = [
 
   "Operating System :: OS Independent",
 ]
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 dependencies = [
   # IMPORTANT: Always run `uv lock` or `uv lock --upgrade` to resolve dependencies
   # and update the lockfile after editing anything below.
@@ -30,7 +30,6 @@ dependencies = [
   # while generating the lockfile: https://github.com/astral-sh/uv/issues/15741
   "accelerate>=1.8.1",
   "einops>=0.8.1",
-  "ffmpeg-python>=0.2.0",
   "numpy>=1.26.2",
   "omegaconf>=2.3.0",
   "pandas>=2.3.2",
@@ -61,6 +60,9 @@ Repository = "https://github.com/index-tts/index-tts.git"
 # Set the installed binary names and entry points.
 indextts = "indextts.cli:main"
 
+[[tool.uv.index]]
+url = "https://download.pytorch.org/whl/nightly/cu128"
+
 [build-system]
 # How to build the project as a CLI tool or PyPI package.
 # NOTE: Use `uv tool install -e .` to install the package as a CLI tool.
@@ -74,6 +76,7 @@ build-backend = "hatchling.build"
 # its compilation to determine what GPU support to compile for itself. It also
 # saves time, since it won't waste time downloading a generic PyTorch version.
 no-build-isolation-package = ["deepspeed"]
+prerelease = "allow"
 
 [tool.uv.sources]
 flash-attn = { url = "https://github.com/mjun0812/flash-attention-prebuild-wheels/releases/download/v0.4.17/flash_attn-2.8.3%2Bcu128torch2.9-cp313-cp313-linux_x86_64.whl" }

@@ -16,7 +16,7 @@ import einops
 import torch
 from torch import Tensor, nn
 from torch.nn import functional as F
-from torch.nn.utils import spectral_norm, weight_norm
+from torch.nn.utils import weight_norm
 
 
 class ConvLayerNorm(nn.LayerNorm):
@@ -32,50 +32,6 @@ class ConvLayerNorm(nn.LayerNorm):
         input = einops.rearrange(input, "b ... t -> b t ...")
         input = super().forward(input)
         return einops.rearrange(input, "b t ... -> b ... t")
-
-
-CONV_NORMALIZATIONS = frozenset([
-    "none",
-    "weight_norm",
-    "spectral_norm",
-    "time_layer_norm",
-    "layer_norm",
-    "time_group_norm",
-])
-
-
-def _apply_parametrization_norm(module: nn.Module, norm: str = "none") -> nn.Module:
-    assert norm in CONV_NORMALIZATIONS
-    match norm:
-        case "weight_norm":
-            return weight_norm(module)
-        case "spectral_norm":
-            return spectral_norm(module)
-        case _:
-            # We already check was in CONV_NORMALIZATION, so any other choice
-            # doesn't need reparametrization.
-            return module
-
-
-def get_norm_module(
-    module: nn.Module,
-    causal: bool = False,
-    norm: str = "none",
-) -> nn.Module:
-    """Return the proper normalization module. If causal is True, this will ensure the returned
-    module is causal, or return an error if the normalization doesn't support causal evaluation.
-    """
-    assert norm in CONV_NORMALIZATIONS
-    if norm == "layer_norm":
-        assert isinstance(module, nn.modules.conv._ConvNd)  # noqa: SLF001
-        return ConvLayerNorm(module.out_channels)
-    if norm == "time_group_norm":
-        if causal:
-            msg = "GroupNorm doesn't support causal evaluation."
-            raise ValueError(msg)
-        assert isinstance(module, nn.modules.conv._ConvNd)  # noqa: SLF001
-        return nn.GroupNorm(1, module.out_channels)
-    return nn.Identity()
 
 
 def get_extra_padding_for_conv1d(x: Tensor, kernel_size: int, stride: int, padding_total: int = 0) -> int:
@@ -115,15 +71,15 @@ class NormConv1d(nn.Module):
 
     def __init__(
         self,
-        *args: Any,  # noqa: ANN401
+        *args: Any,  # noqa: ANN401  # pyright: ignore[reportAny]
         causal: bool = False,
         norm: str = "none",
         **kwargs: object,
     ) -> None:
         super().__init__()
-        self.conv = _apply_parametrization_norm(nn.Conv1d(*args, **kwargs), norm)
-        self.norm = get_norm_module(self.conv, causal, norm)
-        self.norm_type = norm
+        self.conv = weight_norm(nn.Conv1d(*args, **kwargs, device=torch.get_default_device()))  # pyright: ignore[reportAny]
+        self.norm = nn.Identity()
+        self.norm_type = "weight_norm"
 
     @override
     def forward(self, x: Tensor) -> Tensor:

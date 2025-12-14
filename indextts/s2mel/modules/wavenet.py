@@ -1,4 +1,4 @@
-from typing import override
+from typing import cast, override
 
 import torch
 from torch import Tensor, nn
@@ -27,8 +27,8 @@ class WN(nn.Module):
         self.gin_channels = gin_channels
         self.p_dropout = p_dropout
 
-        self.in_layers = torch.nn.ModuleList()
-        self.res_skip_layers = torch.nn.ModuleList()
+        self.in_layers: nn.ModuleList[SConv1d] = torch.nn.ModuleList()
+        self.res_skip_layers: nn.ModuleList[SConv1d] = torch.nn.ModuleList()
         self.drop = nn.Dropout(p_dropout)
 
         if gin_channels != 0:
@@ -40,7 +40,7 @@ class WN(nn.Module):
             )
 
         for i in range(n_layers):
-            dilation = dilation_rate**i
+            dilation = cast(int, dilation_rate**i)
             padding = int((kernel_size * dilation - dilation) / 2)
             in_layer = SConv1d(
                 hidden_channels,
@@ -70,10 +70,10 @@ class WN(nn.Module):
         output = torch.zeros_like(x)
 
         if g is not None:
-            g = self.cond_layer(g)
+            g = self.cond_layer.forward(g)
 
         for i in range(self.n_layers):
-            x_in = self.in_layers[i](x)
+            x_in = self.in_layers[i].forward(x)
             if g is not None:
                 cond_offset = i * 2 * self.hidden_channels
                 g_l = g[:, cond_offset : cond_offset + 2 * self.hidden_channels, :]
@@ -81,9 +81,9 @@ class WN(nn.Module):
                 g_l = torch.zeros_like(x_in)
 
             acts = fused_add_tanh_sigmoid_multiply(x_in, g_l)
-            acts = self.drop(acts)
+            acts = self.drop.forward(acts)
 
-            res_skip_acts = self.res_skip_layers[i](acts)
+            res_skip_acts = self.res_skip_layers[i].forward(acts)
             if i < self.n_layers - 1:
                 res_acts = res_skip_acts[:, : self.hidden_channels, :]
                 x = (x + res_acts) * x_mask

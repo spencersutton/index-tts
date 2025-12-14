@@ -2,6 +2,7 @@
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
+from typing import override
 import torch
 import torch.nn.functional as F
 from einops import rearrange
@@ -17,11 +18,16 @@ class FactorizedVectorQuantize(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-        self.in_project = weight_norm(nn.Conv1d(self.input_dim, self.codebook_dim, kernel_size=1))
-        self.out_project = weight_norm(nn.Conv1d(self.codebook_dim, self.input_dim, kernel_size=1))
+        self.in_project = weight_norm(
+            nn.Conv1d(self.input_dim, self.codebook_dim, kernel_size=1, device=torch.get_default_device())
+        )
+        self.out_project = weight_norm(
+            nn.Conv1d(self.codebook_dim, self.input_dim, kernel_size=1, device=torch.get_default_device())
+        )
 
         self.codebook = nn.Embedding(self.codebook_size, self.codebook_dim)
 
+    @override
     def forward(self, z: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
         """Parameters
         ----------

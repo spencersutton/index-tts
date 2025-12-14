@@ -1,5 +1,6 @@
-from typing import Optional, TYPE_CHECKING
 from collections.abc import Callable
+from typing import TYPE_CHECKING, Optional
+
 from .triton_compat import triton
 
 if TYPE_CHECKING: ...

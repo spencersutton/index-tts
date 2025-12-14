@@ -1,5 +1,6 @@
-from typing import Optional, TYPE_CHECKING
 from collections.abc import Sequence
+from typing import TYPE_CHECKING, Optional
+
 from ._normalizations import (
     ArrayLike,
     ArrayLikeOrScalar,

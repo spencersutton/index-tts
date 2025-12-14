@@ -1,7 +1,7 @@
-from typing import Any, Literal, Optional, TYPE_CHECKING
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING, Any, Literal, Optional
+
 from torch._inductor.utils import InputType
-from collections.abc import Sequence
 from torch.compiler._cache import CacheInfo
 from torch.fx import GraphModule
 

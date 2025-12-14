@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from typing import Any
+
 from ._utils import _device_t
 
 __all__ = [

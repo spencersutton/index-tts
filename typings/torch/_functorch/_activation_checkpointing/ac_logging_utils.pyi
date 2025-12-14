@@ -1,5 +1,6 @@
 import logging
 from typing import Any
+
 from torch.fx import Graph, Node
 
 log: logging.Logger = ...

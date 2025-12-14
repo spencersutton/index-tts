@@ -1,7 +1,9 @@
 import logging
 from dataclasses import dataclass
 from typing import Any
+
 from torch._guards import CompileId
+
 from .types import DynamoFrameType
 
 log: logging.Logger = ...

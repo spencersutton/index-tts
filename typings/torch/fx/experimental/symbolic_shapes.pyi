@@ -1,19 +1,20 @@
 import abc
 import functools
 import inspect
-import sympy
-import torch
-import torch.fx
-import torch.utils._pytree as pytree
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import _GeneratorContextManager, contextmanager
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, NamedTuple, NoReturn, ParamSpec, TYPE_CHECKING, TypeGuard, TypeVar, TypeAlias
+from typing import TYPE_CHECKING, Any, NamedTuple, NoReturn, ParamSpec, TypeAlias, TypeGuard, TypeVar
 from warnings import deprecated
+
+import sympy
+import torch
+import torch.fx
+import torch.utils._pytree as pytree
 from torch import SymBool, SymFloat, SymInt, Tensor
 from torch._dynamo.source import TensorPropertySource
-from torch._guards import SLoc, ShapeGuard, Source
+from torch._guards import ShapeGuard, SLoc, Source
 from torch._subclasses.fake_tensor import FakeTensor
 from torch.fx.experimental.recording import record_shapeenv_event
 from torch.fx.experimental.sym_node import SymNode

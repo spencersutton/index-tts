@@ -1,11 +1,18 @@
 import dataclasses
 import types
-from typing import Any, NamedTuple, Optional, Protocol, Union, TypeAlias
 from collections.abc import Callable
+from typing import Any, NamedTuple, Optional, Protocol, TypeAlias, Union
+
 from torch._C._dynamo.eval_frame import (
     _CacheEntry as CacheEntry,
+)
+from torch._C._dynamo.eval_frame import (
     _ExtraState as ExtraState,
+)
+from torch._C._dynamo.eval_frame import (
     _FrameExecStrategy as FrameExecStrategy,
+)
+from torch._C._dynamo.eval_frame import (
     _PyInterpreterFrame as DynamoFrameType,
 )
 from torch._guards import CompileId, Guard

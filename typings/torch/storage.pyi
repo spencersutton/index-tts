@@ -1,6 +1,7 @@
 import threading
+from typing import TYPE_CHECKING, Any, Self, TypeVar
+
 import torch
-from typing import Any, Self, TYPE_CHECKING, TypeVar
 from torch._prims_common import DeviceLikeType
 from torch.types import _bool, _int
 

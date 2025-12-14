@@ -1,10 +1,10 @@
-import torch
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from typing import Any, Optional, TypeVar, Union, overload
-from collections.abc import Callable
+
+import torch
 from torch._higher_order_ops.schema import HopSchema
-from torch._ops import HigherOrderOperator, OpOverload, OperatorBase
+from torch._ops import HigherOrderOperator, OperatorBase, OpOverload
 from torch._subclasses.fake_tensor import FakeTensor
 from torch.fx.passes.shape_prop import TensorMetadata
 

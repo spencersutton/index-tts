@@ -1,12 +1,14 @@
-import torch
 from collections.abc import Sequence
-from torch.types import _TensorOrTensors, _TensorOrTensorsOrGradEdge, _size
+from typing import TypeAlias
+
+import torch
+from torch.types import _size, _TensorOrTensors, _TensorOrTensorsOrGradEdge
+
 from .anomaly_mode import detect_anomaly, set_detect_anomaly
 from .function import Function, NestedIOFunction
 from .grad_mode import enable_grad, inference_mode, no_grad, set_grad_enabled, set_multithreading_enabled
 from .gradcheck import gradcheck, gradgradcheck
 from .variable import Variable
-from typing import TypeAlias
 
 __all__ = [
     "Function",

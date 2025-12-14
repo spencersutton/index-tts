@@ -1,6 +1,7 @@
-import torch
-from typing import Any, Union
 from collections.abc import Callable
+from typing import Any, Union
+
+import torch
 from torch._inductor import ir
 from torch._inductor.codegen.common import KernelTemplate
 from torch._inductor.ir import Buffer, Layout

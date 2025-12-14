@@ -1,8 +1,8 @@
+from collections.abc import Callable
 from dataclasses import dataclass
 from types import TracebackType
-from typing import Any, Optional, TYPE_CHECKING, TypeVar, Union, overload, TypeAlias
-from collections.abc import Callable
-from typing import ParamSpec
+from typing import TYPE_CHECKING, Any, Optional, ParamSpec, TypeAlias, TypeVar, Union, overload
+
 from torch.utils._contextlib import _DecoratorContextManager
 
 """

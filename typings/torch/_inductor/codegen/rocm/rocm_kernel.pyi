@@ -1,11 +1,12 @@
-from collections.abc import Sequence
-from typing import Any, Optional, TYPE_CHECKING, Union
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING, Any, Optional, Union
+
+from torch._inductor.codegen.rocm.rocm_template import ArgInfo, ROCmTemplate
+
 from ...ir import Buffer, ChoiceCaller, IRNode, Layout, PrimitiveInfoType, ShapeAsConstantBuffer, TensorBox
 from ..common import Kernel, OpOverrides
 from .rocm_benchmark_request import ROCmBenchmarkRequest
 from .rocm_template_buffer import ROCmTemplateBuffer
-from torch._inductor.codegen.rocm.rocm_template import ArgInfo, ROCmTemplate
 
 if TYPE_CHECKING: ...
 log = ...

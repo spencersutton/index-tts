@@ -1,4 +1,5 @@
 from typing import Optional
+
 from torch.jit._script import ScriptModule
 
 """Freezing.

@@ -2,9 +2,8 @@ import contextlib
 import dataclasses
 import enum
 import functools
-import sympy
-import torch
 from collections.abc import (
+    Callable,
     Collection,
     Generator,
     Iterable,
@@ -15,23 +14,41 @@ from collections.abc import (
     Sequence,
     ValuesView,
 )
-from typing import Any, Generic, Literal, NamedTuple, Optional, Protocol, TYPE_CHECKING, TypeVar, Union
-from collections.abc import Callable
-from typing import Concatenate, ParamSpec, Self, TypeAlias, TypeGuard, dataclass_transform
-from torch.utils._ordered_set import OrderedSet
-from torch.fx.experimental.symbolic_shapes import IterateExprs, ShapeEnv
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Concatenate,
+    Generic,
+    Literal,
+    NamedTuple,
+    Optional,
+    ParamSpec,
+    Protocol,
+    Self,
+    TypeAlias,
+    TypeGuard,
+    TypeVar,
+    Union,
+    dataclass_transform,
+)
+
+import sympy
+import torch
 from torch import SymInt
 from torch._prims_common import ELEMENTWISE_TYPE_PROMOTION_KIND
 from torch.fx import GraphModule
+from torch.fx.experimental.symbolic_shapes import IterateExprs, ShapeEnv
 from torch.fx.node import Node
+from torch.utils._ordered_set import OrderedSet
+from torch.utils._sympy.symbol import SymT
+from torch.utils._sympy.value_ranges import ValueRanges
+
 from .codegen.common import WorkspaceArg
 from .codegen.wrapper import PythonWrapperCodegen
 from .graph import GraphLowering
 from .ir import Buffer, ExternKernel, IRNode, Layout, Operation, ReinterpretView
 from .output_code import CompiledFxGraph
 from .scheduler import BaseSchedulerNode, SchedulerBuffer
-from torch.utils._sympy.symbol import SymT
-from torch.utils._sympy.value_ranges import ValueRanges
 
 OPTIMUS_EXCLUDE_POST_GRAD = ...
 if TYPE_CHECKING: ...

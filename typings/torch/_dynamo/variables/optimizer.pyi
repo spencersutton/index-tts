@@ -1,7 +1,9 @@
 from typing import TYPE_CHECKING
+
+from torch._dynamo.symbolic_convert import InstructionTranslator
+
 from .base import VariableTracker
 from .user_defined import UserDefinedObjectVariable
-from torch._dynamo.symbolic_convert import InstructionTranslator
 
 """
 This module implements variable tracking for PyTorch optimizers during Dynamo tracing.

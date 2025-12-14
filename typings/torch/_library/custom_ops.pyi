@@ -1,9 +1,9 @@
 import weakref
-import torch
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from contextlib import contextmanager
-from typing import Any, Literal, Optional, Union, overload, TypeAlias
-from collections.abc import Callable
+from typing import Any, Literal, Optional, TypeAlias, Union, overload
+
+import torch
 from torch import _C
 from torch.types import _dtype
 from torch.utils._exposed_in import exposed_in

@@ -1,5 +1,6 @@
-import torch
 from typing import Any, Generic, TypeVar, overload
+
+import torch
 from torch._C._distributed_c10d import Store
 
 _DEFAULT_INIT_METHOD: str

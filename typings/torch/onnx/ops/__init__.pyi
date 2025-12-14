@@ -1,6 +1,7 @@
-import torch
 from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING
+
+import torch
 
 __all__ = ["aten_decompositions", "attention", "rotary_embedding", "symbolic", "symbolic_multi_out"]
 if TYPE_CHECKING: ...

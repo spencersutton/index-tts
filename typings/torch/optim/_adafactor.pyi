@@ -1,6 +1,8 @@
-import torch
 from typing import Optional, Union
+
+import torch
 from torch import Tensor
+
 from .optimizer import Optimizer, ParamsT, _disable_dynamo_if_unsupported
 
 __all__ = ["Adafactor", "adafactor"]

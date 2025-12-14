@@ -1,4 +1,5 @@
 from collections.abc import Callable
+
 from torch._functorch._activation_checkpointing.graph_info_provider import GraphInfoProvider
 
 class KnapsackEvaluator:

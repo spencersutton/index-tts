@@ -1,10 +1,9 @@
 import itertools
 import sys
-from typing import Optional, TYPE_CHECKING, TypeVar, overload
-from collections.abc import Callable
-from typing import TypeAlias
+from collections.abc import Callable, Iterable, Iterator
+from typing import TYPE_CHECKING, Optional, TypeAlias, TypeVar, overload
+
 from ..decorators import substitute_in_graph
-from collections.abc import Iterable, Iterator
 
 """
 Python polyfills for itertools

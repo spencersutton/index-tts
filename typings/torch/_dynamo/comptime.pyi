@@ -1,7 +1,7 @@
-import torch
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import Any, Optional, TextIO, Union
-from collections.abc import Callable
+
+import torch
 from torch._dynamo.symbolic_convert import InstructionTranslatorBase
 from torch._dynamo.variables.base import VariableTracker
 from torch._subclasses.fake_tensor import FakeTensor

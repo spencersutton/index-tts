@@ -1,9 +1,8 @@
-import torch
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from enum import Enum
-from typing import Optional, TypeVar, Union
-from collections.abc import Callable
-from typing import ParamSpec
+from typing import Optional, ParamSpec, TypeVar, Union
+
+import torch
 from torch import Tensor
 from torch._prims_common import ELEMENTWISE_TYPE_PROMOTION_KIND
 from torch._prims_common.wrappers import out_wrapper

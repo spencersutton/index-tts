@@ -3,19 +3,19 @@ import dataclasses
 import enum
 import traceback
 import weakref
-import torch
-import sympy
 from abc import abstractmethod
+from collections.abc import Callable, Generator, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any, Generic, NamedTuple, Optional, TYPE_CHECKING, TypeVar, Union
-from collections.abc import Callable
-from torch.utils._backport_slots import dataclass_slots
-from torch.utils._traceback import CapturedTraceback
-from collections.abc import Generator, Iterator
 from types import CodeType
+from typing import TYPE_CHECKING, Any, Generic, NamedTuple, Optional, TypeVar, Union
+
+import sympy
+import torch
 from torch._dynamo.codegen import PyCodegen
 from torch._subclasses.fake_tensor import FakeTensorMode
+from torch.utils._backport_slots import dataclass_slots
+from torch.utils._traceback import CapturedTraceback
 
 log = ...
 if TYPE_CHECKING: ...

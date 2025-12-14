@@ -1,8 +1,9 @@
-import torch
 from abc import abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
+
+import torch
 from torch import nn
 from torch.fx import Node
 

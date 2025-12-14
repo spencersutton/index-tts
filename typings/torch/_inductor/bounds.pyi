@@ -1,9 +1,11 @@
+from collections.abc import Callable
+from typing import Any, Optional
+
 import sympy
 import torch
-from typing import Any, Optional
-from collections.abc import Callable
 from sympy import Expr
 from torch.utils._sympy.value_ranges import SymPyValueRangeAnalysis, ValueRanges
+
 from .loop_body import LoopBody, LoopBodyBlock
 from .ops_handler import DefaultHandler, ReductionType, StoreMode
 from .utils import cache_on_self

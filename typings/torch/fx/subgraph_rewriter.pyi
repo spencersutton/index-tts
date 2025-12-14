@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import NamedTuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, NamedTuple
+
 from ._compatibility import compatibility
 from .graph import Graph
 from .graph_module import GraphModule

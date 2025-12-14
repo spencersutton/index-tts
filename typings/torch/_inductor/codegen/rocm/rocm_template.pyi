@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Any, Optional
+
 from ...ir import Buffer, Layout
 from ...utils import IndentedBuffer
 from ..common import KernelTemplate

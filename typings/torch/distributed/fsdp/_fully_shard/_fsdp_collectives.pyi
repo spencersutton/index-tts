@@ -1,9 +1,10 @@
+from collections.abc import Callable, Sequence
+from typing import Any, NamedTuple, Optional, Union
+
 import torch
 import torch.distributed as dist
-from collections.abc import Sequence
-from typing import Any, NamedTuple, Optional, Union
-from collections.abc import Callable
 from torch.distributed.fsdp._fully_shard._fsdp_api import AllGather, ReduceScatter
+
 from ._fsdp_api import _ReduceOp
 from ._fsdp_param import FSDPParam
 

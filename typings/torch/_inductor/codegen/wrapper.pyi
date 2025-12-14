@@ -1,20 +1,21 @@
 import contextlib
 import dataclasses
+from collections.abc import Callable, Iterator, Sequence
+from typing import TYPE_CHECKING, Any, Optional, TypeAlias, Union
+
 import sympy
 import torch
 import torch._ops
 import torch.utils._pytree as pytree
 import triton
-from typing import Any, Optional, TYPE_CHECKING, Union, TypeAlias
-from collections.abc import Callable
 from sympy import Expr
 from torch.utils._ordered_set import OrderedSet
+
 from .. import ir
+from ..graph import GraphLowering
 from ..ir import IRNode, ReinterpretView
 from ..utils import IndentedBuffer, LineContext, cache_on_self
 from .common import CodeGen, WorkspaceArg
-from collections.abc import Iterator, Sequence
-from ..graph import GraphLowering
 from .wrapper_fxir import FxConverter
 
 if TYPE_CHECKING: ...

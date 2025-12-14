@@ -1,27 +1,28 @@
 import functools
 import types
 import typing
-import torch
-import numpy as np
+from collections.abc import Callable
 from dataclasses import dataclass
 from types import CellType, CodeType, FunctionType, ModuleType
-from typing import Any, Optional, TypeVar, Union
-from collections.abc import Callable
-from typing import ParamSpec
+from typing import Any, Optional, ParamSpec, TypeVar, Union
+
+import numpy as np
+import torch
 from torch._C._dynamo.guards import GlobalStateGuard
 from torch._guards import CompileId
 from torch.fx.graph_module import _forward_from_src as original_forward_from_src
+from torch.utils.hooks import RemovableHandle
+
+from .backends.registry import CompilerFn
 from .bytecode_transformation import Instruction
 from .eval_frame import TorchPatcher
 from .guards import CheckFunctionManager
 from .hooks import Hooks
 from .output_graph import DynamoTracerOutput
+from .package import CompilePackage
 from .symbolic_convert import DistributedState, SpeculationLog
 from .types import BytecodeHook, CacheEntry, ConvertFrameReturn, DynamoFrameType
-from .backends.registry import CompilerFn
-from .package import CompilePackage
 from .variables.builder import FrameStateSizeEntry
-from torch.utils.hooks import RemovableHandle
 
 """
 This module implements TorchDynamo's core frame conversion functionality, transforming Python

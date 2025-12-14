@@ -1,14 +1,14 @@
 from collections import deque
-from dataclasses import dataclass
-from typing import Any, Optional, TYPE_CHECKING
-from collections.abc import Callable
-from typing import final, override
-from torch._inductor.output_code import CompiledFxGraphConstants, OutputCode
-from .compile_fx import FxCompile, _CompileFxKwargs
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from concurrent.futures import Future
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Optional, final, override
+
+from torch._inductor.output_code import CompiledFxGraphConstants, OutputCode
 from torch._inductor.utils import InputType
 from torch.fx import GraphModule
+
+from .compile_fx import FxCompile, _CompileFxKwargs
 from .compile_fx_ext import _OutOfProcessFxCompile, _WireProtocolPickledOutput
 
 BUG_CACHES_DONT_WORK_WITH_ASYNC = ...

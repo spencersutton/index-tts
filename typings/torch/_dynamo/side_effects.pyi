@@ -1,15 +1,17 @@
 import contextlib
 from collections.abc import Generator
 from types import CellType
-from typing import Any, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
+
+from torch._dynamo.output_graph import OutputGraph
+from torch._dynamo.symbolic_convert import InstructionTranslatorBase
+from torch._dynamo.variables.lists import ListVariable
 from torch._dynamo.variables.misc import AutogradFunctionContextVariable
+
 from . import variables
 from .codegen import PyCodegen
 from .source import Source
 from .variables.base import VariableTracker
-from torch._dynamo.output_graph import OutputGraph
-from torch._dynamo.symbolic_convert import InstructionTranslatorBase
-from torch._dynamo.variables.lists import ListVariable
 
 """
 Side effect tracking and management for TorchDynamo's compilation system.

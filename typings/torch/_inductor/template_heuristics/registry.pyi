@@ -1,7 +1,8 @@
 import contextlib
-from typing import Any, Optional, TYPE_CHECKING, Union
-from .base import TemplateConfigHeuristics
 from collections.abc import Iterator
+from typing import TYPE_CHECKING, Any, Optional, Union
+
+from .base import TemplateConfigHeuristics
 
 """
 Template heuristic registry system for PyTorch Inductor.

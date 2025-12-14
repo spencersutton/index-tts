@@ -1,9 +1,11 @@
 import weakref
-import torch
-import torch.nn as nn
 from collections.abc import Iterable
 from typing import Any, NoReturn, Optional
+
+import torch
+import torch.nn as nn
 from torch.distributed._composable_state import _State
+
 from .contract import contract
 
 _ROOT_MODULE_PREFIX = ...

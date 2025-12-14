@@ -1,9 +1,9 @@
 import abc
-import torch
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import Any, Optional, Union
-from collections.abc import Callable
 from warnings import deprecated
+
+import torch
 
 HAS_NUMPY = ...
 

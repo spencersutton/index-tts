@@ -1,5 +1,7 @@
-import torch
 from typing import Any, Optional
+
+import torch
+
 from .descriptors import AOTInput
 from .schemas import AOTConfig, FxValue, SubclassMeta, TraceFn, ViewAndMutationMeta
 

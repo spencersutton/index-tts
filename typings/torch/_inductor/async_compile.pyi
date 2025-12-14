@@ -1,12 +1,13 @@
 import contextlib
 import functools
-from concurrent.futures import Future, ThreadPoolExecutor
-from typing import Any, Optional, TYPE_CHECKING
 from collections.abc import Callable
+from concurrent.futures import Future, ThreadPoolExecutor
+from typing import TYPE_CHECKING, Any, Optional
+
 from torch._inductor.codecache import CodeCacheFuture
 from torch._inductor.compile_worker.subproc_pool import AnyPool
-from torch._inductor.utils import clear_on_fresh_cache
 from torch._inductor.runtime.hints import HalideMeta
+from torch._inductor.utils import clear_on_fresh_cache
 
 if TYPE_CHECKING: ...
 _cumulative_compile_time = ...

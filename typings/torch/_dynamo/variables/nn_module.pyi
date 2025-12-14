@@ -1,9 +1,11 @@
-import torch.nn
 from contextlib import contextmanager
 from typing import TYPE_CHECKING
+
+import torch.nn
+from torch._dynamo.symbolic_convert import InstructionTranslator
+
 from .base import VariableTracker
 from .user_defined import UserDefinedObjectVariable
-from torch._dynamo.symbolic_convert import InstructionTranslator
 
 """
 This module implements variable tracking for PyTorch nn.Module instances during Dynamo tracing.

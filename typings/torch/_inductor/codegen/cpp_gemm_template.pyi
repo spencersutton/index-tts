@@ -1,6 +1,8 @@
-import torch
-from typing import Any, Optional, TypeVar, Union
 from collections.abc import Callable
+from typing import Any, Optional, TypeVar, Union
+
+import torch
+
 from .. import ir
 from .cpp_micro_gemm import CppMicroGemm
 from .cpp_template import CppTemplate

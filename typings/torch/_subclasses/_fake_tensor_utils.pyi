@@ -1,12 +1,14 @@
-import torch
-import sympy
 from dataclasses import dataclass
-from typing import Optional, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Optional, Union
+
+import sympy
+import torch
 from torch import SymInt
 from torch.fx.experimental.sym_node import SymNode
+from torch.fx.experimental.symbolic_shapes import ShapeEnv
 from torch.types import PySymType
 from torch.utils._backport_slots import dataclass_slots
-from torch.fx.experimental.symbolic_shapes import ShapeEnv
+
 from .fake_tensor import _DispatchCacheKey, _MetadataIntLike
 
 if TYPE_CHECKING: ...

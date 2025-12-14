@@ -1,5 +1,6 @@
-import torch
 from typing import Any
+
+import torch
 from torch.utils._contextlib import F, _DecoratorContextManager, _NoParamDecoratorContextManager
 
 __all__ = ["enable_grad", "inference_mode", "no_grad", "set_grad_enabled", "set_multithreading_enabled"]

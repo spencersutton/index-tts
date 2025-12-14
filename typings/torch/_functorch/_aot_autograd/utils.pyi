@@ -1,8 +1,8 @@
+from collections.abc import Callable
+from typing import Any, Optional, ParamSpec, TypeVar, Union
+
 import torch
 import torch.utils._pytree as pytree
-from typing import Any, Optional, TypeVar, Union
-from collections.abc import Callable
-from typing import ParamSpec
 
 """
 Contains various utils for AOTAutograd, including those for handling collections.

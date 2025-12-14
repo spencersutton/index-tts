@@ -1,5 +1,7 @@
+from typing import TYPE_CHECKING, Any
+
 import torch
-from typing import Any, TYPE_CHECKING
+
 from ._compatibility import compatibility
 from .graph import Graph
 from .graph_module import GraphModule

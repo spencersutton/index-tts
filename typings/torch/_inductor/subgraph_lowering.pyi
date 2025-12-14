@@ -1,9 +1,10 @@
-import torch
-from dataclasses import dataclass
-from typing import Any, Optional, TypeVar, Union, TypeAlias
 from collections.abc import Callable
-from typing import ParamSpec
+from dataclasses import dataclass
+from typing import Any, Optional, ParamSpec, TypeAlias, TypeVar, Union
+
+import torch
 from torch.utils._ordered_set import OrderedSet
+
 from . import ir
 from .graph import GraphLowering
 from .virtualized import WrapperHandler

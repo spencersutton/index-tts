@@ -1,7 +1,9 @@
-import torch
 from collections.abc import Sequence
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
+
+import torch
 from torch.distributed import distributed_c10d as c10d
+
 from .metadata import ShardedTensorMetadata
 from .shard import Shard
 

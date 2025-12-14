@@ -1,8 +1,9 @@
-import torch
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Optional, TypeAlias
 from types import ModuleType
+from typing import Any, Optional, TypeAlias
+
+import torch
 
 _TAGS: dict[str, dict[str, Any]] = ...
 

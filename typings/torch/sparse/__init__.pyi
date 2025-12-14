@@ -1,6 +1,8 @@
 from typing import TYPE_CHECKING, TypeAlias
+
 from torch import Tensor
 from torch.types import _dtype as DType
+
 from .semi_structured import (
     SparseSemiStructuredTensor,
     SparseSemiStructuredTensorCUSPARSELT,

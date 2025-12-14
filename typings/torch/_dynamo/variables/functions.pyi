@@ -1,18 +1,18 @@
 import builtins
 import types
-import torch
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from types import FunctionType
-from typing import Any, Optional, TYPE_CHECKING, TypeVar
-from collections.abc import Callable
-from typing import Never
+from typing import TYPE_CHECKING, Any, Never, Optional, TypeVar
+
+import torch
+from torch._dynamo.codegen import PyCodegen
+from torch._dynamo.symbolic_convert import InstructionTranslator
+from torch._higher_order_ops.triton_kernel_wrap import TritonGridType, TritonHOPifier, TritonKernelType
+
 from .. import variables
 from ..source import AttrSource
 from .base import VariableTracker
 from .constant import ConstantVariable
-from torch._dynamo.codegen import PyCodegen
-from torch._dynamo.symbolic_convert import InstructionTranslator
-from torch._higher_order_ops.triton_kernel_wrap import TritonGridType, TritonHOPifier, TritonKernelType
 
 """
 Function-related variable tracking classes for Dynamo's symbolic execution.

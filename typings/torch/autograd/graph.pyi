@@ -1,8 +1,9 @@
 import abc
 import contextlib
-import torch
 from collections.abc import Callable, Generator, Iterable, Sequence
-from typing import Any, Literal, NamedTuple, TYPE_CHECKING, TypeAlias
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, TypeAlias
+
+import torch
 from torch._ops import OpOverload
 from torch.utils._python_dispatch import TorchDispatchMode
 from torch.utils.hooks import RemovableHandle

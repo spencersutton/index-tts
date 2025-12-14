@@ -1,17 +1,17 @@
 import dataclasses
-import torch
-from typing import Any, Optional, TYPE_CHECKING, Union
-from collections.abc import Callable
-from typing import TypeAlias
-from torch._inductor.cudagraph_utils import BoxedDeviceIndex, CudagraphCachedInfo
-from torch._inductor.utils import BoxedBool, GraphPartitionMap, InputType
-from torch.utils._ordered_set import OrderedSet
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING, Any, Optional, TypeAlias, Union
+
+import torch
 from torch._inductor import metrics
+from torch._inductor.cudagraph_utils import BoxedDeviceIndex, CudagraphCachedInfo
 from torch._inductor.graph import GraphLowering
+from torch._inductor.utils import BoxedBool, GraphPartitionMap, InputType
 from torch._library.fake_class_registry import FakeScriptObject
 from torch.export.pt2_archive._package_weights import Weights
+from torch.utils._ordered_set import OrderedSet
+
 from .compile_fx import _CompileFxKwargs
 from .triton_bundler import TritonBundle
 

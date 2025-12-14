@@ -1,5 +1,6 @@
+from typing import TypeAlias, Union
+
 import torch
-from typing import Union, TypeAlias
 from torch._inductor.codegen.common import CSEVariable, OpOverrides
 
 """

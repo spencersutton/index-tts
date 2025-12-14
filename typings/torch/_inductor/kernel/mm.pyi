@@ -1,5 +1,6 @@
 import functools
 from typing import Any, Optional
+
 from ..codegen.subgraph import SubgraphChoiceCaller, SubgraphTemplate
 from ..ir import Buffer, Layout
 from ..lowering import register_lowering

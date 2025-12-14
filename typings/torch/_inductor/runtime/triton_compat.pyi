@@ -1,13 +1,14 @@
+from typing import Any, TypeAlias, Union
+
 import triton
-from typing import Any, Union, TypeAlias
 from triton import Config, knobs
-from triton.compiler import CompiledKernel
-from triton.runtime.jit import KernelInterface
-from triton.compiler.compiler import ASTSource
 from triton.backends.compiler import GPUTarget
+from triton.compiler import CompiledKernel
+from triton.compiler.compiler import ASTSource
 from triton.language.extra import libdevice
 from triton.language.standard import _log2
 from triton.runtime.cache import triton_key
+from triton.runtime.jit import KernelInterface
 
 if triton is not None:
     libdevice = ...

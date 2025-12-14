@@ -1,6 +1,7 @@
-import torch
 from collections.abc import Sequence
-from typing import Any, IO, Optional, Union
+from typing import IO, Any, Optional, Union
+
+import torch
 from torch.export import ExportedProgram
 
 """

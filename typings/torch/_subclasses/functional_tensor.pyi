@@ -1,9 +1,10 @@
 import contextlib
-import torch
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from contextlib import AbstractContextManager
 from typing import Any, Optional, Union
-from collections.abc import Callable
+
+import torch
 from torch.utils._python_dispatch import TorchDispatchMode
 
 not_implemented_log = ...

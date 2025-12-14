@@ -1,8 +1,7 @@
+from collections.abc import Callable, Sequence
+from typing import Optional, ParamSpec, TypeVar, Union
+
 import torch
-from collections.abc import Sequence
-from typing import Optional, TypeVar, Union
-from collections.abc import Callable
-from typing import ParamSpec
 from torch._prims_common import ELEMENTWISE_TYPE_PROMOTION_KIND, NumberType, TensorLikeType
 
 _T = TypeVar("_T")

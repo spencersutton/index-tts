@@ -1,13 +1,12 @@
 import contextlib
 import enum
-from collections.abc import Generator
-from typing import Any, ContextManager
-from collections.abc import Callable, Iterable
-from weakref import ReferenceType
+from collections.abc import Callable, Generator, Iterable
 from contextlib import nullcontext
-from torch import Tensor
+from typing import Any, ContextManager
+from weakref import ReferenceType
 
 import torch
+from torch import Tensor
 from torch.utils._python_dispatch import TorchDispatchMode
 
 __all__ = [

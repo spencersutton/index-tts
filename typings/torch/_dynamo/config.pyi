@@ -1,5 +1,6 @@
-from typing import Any, Literal, Optional, TYPE_CHECKING, Union
 from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
+
 from torch.utils._config_typing import *
 
 """

@@ -1,6 +1,7 @@
-import torch
-from typing import Union
 from collections.abc import Callable
+from typing import Union
+
+import torch
 from torch._C import DispatchKey
 from torch._ops import HigherOrderOperator
 from torch._subclasses.fake_tensor import FakeTensorMode

@@ -1,6 +1,7 @@
-import torch
 from collections.abc import Callable
 from typing import Any
+
+import torch
 
 __all__ = [
     "SparseSemiStructuredTensor",

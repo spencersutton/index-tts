@@ -1,6 +1,7 @@
-import torch
-from typing import Any, Union
 from collections.abc import Callable
+from typing import Any, Union
+
+import torch
 from torch._ops import OpOverload
 from torch._subclasses.fake_tensor import FakeTensor
 from torch.utils._python_dispatch import TorchDispatchMode

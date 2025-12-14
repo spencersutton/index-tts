@@ -1,10 +1,12 @@
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Optional, Union
+
 import torch
 import torch.fx as fx
-from dataclasses import dataclass
-from typing import Any, Optional, TYPE_CHECKING, Union
-from collections.abc import Callable
 from torch import Tensor
 from torch._guards import CompileContext, TracingContext
+
 from .descriptors import AOTInput
 from .schemas import (
     AOTConfig,

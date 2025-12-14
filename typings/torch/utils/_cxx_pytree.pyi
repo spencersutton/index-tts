@@ -1,12 +1,12 @@
 import functools
 import sys
 import types
+from collections.abc import Callable, Iterable
+from typing import Any, Optional, Self, TypeAlias, TypeVar, Union, overload
+
 import torch.utils._pytree as python_pytree
-from collections.abc import Iterable
-from typing import Any, Optional, TypeVar, Union, overload, TypeAlias, Self
-from collections.abc import Callable
-from torch.utils._pytree import KeyEntry as KeyEntry
 from optree import PyTreeSpec as TreeSpec
+from torch.utils._pytree import KeyEntry as KeyEntry
 
 """
 Contains utility functions for working with nested python data structures.

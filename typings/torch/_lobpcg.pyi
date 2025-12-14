@@ -1,5 +1,6 @@
-import torch
 from typing import Optional
+
+import torch
 from torch import Tensor
 
 """Locally Optimal Block Preconditioned Conjugate Gradient methods."""

@@ -1,6 +1,7 @@
-import torch
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, TypeVar
+
+import torch
 from torch.nn.modules import Module
 
 if TYPE_CHECKING: ...

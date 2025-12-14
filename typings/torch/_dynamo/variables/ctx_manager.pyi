@@ -1,8 +1,10 @@
 from typing import TYPE_CHECKING, Union
-from .base import VariableTracker
-from .user_defined import UserDefinedObjectVariable
+
 from torch._dynamo.codegen import PyCodegen
 from torch._dynamo.symbolic_convert import InstructionTranslator
+
+from .base import VariableTracker
+from .user_defined import UserDefinedObjectVariable
 
 """
 This file contains a collection of context manager classes used by Dynamo for tracking

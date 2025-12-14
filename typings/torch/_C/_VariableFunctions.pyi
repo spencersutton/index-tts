@@ -1,7 +1,8 @@
-import torch
 from collections.abc import Sequence
 from types import EllipsisType
 from typing import Any, Literal, overload
+
+import torch
 from torch import Generator, SymInt, Tensor, memory_format
 from torch._prims_common import DeviceLikeType
 from torch.types import Number, _bool, _complex, _dtype, _float, _int, _layout, _size

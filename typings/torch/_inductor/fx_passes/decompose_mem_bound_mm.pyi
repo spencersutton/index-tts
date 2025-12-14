@@ -1,5 +1,6 @@
 import torch
 from torch import Tensor
+
 from .. import config
 from ..pattern_matcher import Arg, CallFunction, Match, register_graph_pattern
 from .split_cat import construct_pattern_matcher_pass

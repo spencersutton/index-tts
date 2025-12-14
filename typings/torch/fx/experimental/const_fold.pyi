@@ -1,5 +1,6 @@
-import torch.fx
 from collections.abc import Callable
+
+import torch.fx
 
 __all__ = ["FoldedGraphModule", "get_unique_attr_name_in_module", "split_const_subgraphs"]
 

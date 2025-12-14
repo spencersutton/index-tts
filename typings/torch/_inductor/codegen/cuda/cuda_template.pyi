@@ -1,7 +1,8 @@
 from dataclasses import dataclass
-from typing import Any, Optional, TYPE_CHECKING, Union, TypeAlias
-from typing import override
+from typing import TYPE_CHECKING, Any, Optional, TypeAlias, Union, override
+
 from torch._inductor.utils import clear_on_fresh_cache
+
 from ...autotune_process import TensorMeta
 from ...ir import Buffer, IRNode, Layout
 from ...utils import IndentedBuffer

@@ -1,7 +1,8 @@
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
+
 import torch
 import torch._inductor.custom_graph_pass
-from typing import Any, Literal, Optional, TYPE_CHECKING, Union
-from collections.abc import Callable
 from torch._environment import is_fbcode
 from torch.utils._config_typing import *
 

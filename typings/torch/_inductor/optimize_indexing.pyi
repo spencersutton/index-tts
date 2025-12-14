@@ -1,6 +1,8 @@
-import sympy
 from typing import Any
+
+import sympy
 from torch.utils._sympy.value_ranges import ValueRanges
+
 from .loop_body import LoopBody
 
 def val_expressable_in_32_bits(val: Any) -> bool: ...

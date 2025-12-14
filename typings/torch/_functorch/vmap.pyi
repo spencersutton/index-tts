@@ -1,5 +1,5 @@
 import contextlib
-from typing import Union, TypeAlias
+from typing import TypeAlias, Union
 
 type in_dims_t = int | tuple
 type out_dims_t = int | tuple[int, ...]

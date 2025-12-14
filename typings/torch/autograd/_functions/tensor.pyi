@@ -1,4 +1,5 @@
 from warnings import deprecated
+
 from torch.autograd.function import Function
 
 class Type(Function):

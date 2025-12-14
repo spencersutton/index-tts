@@ -1,5 +1,6 @@
-import torch.distributed as dist
 from typing import Optional
+
+import torch.distributed as dist
 
 """
 Manages process groups for distributed compilation in TorchDynamo.

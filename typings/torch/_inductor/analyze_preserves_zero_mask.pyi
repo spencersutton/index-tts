@@ -1,11 +1,13 @@
 import dataclasses
+from typing import TYPE_CHECKING, Any
+
 import sympy
 import torch
-from typing import Any, TYPE_CHECKING
 from torch._inductor.index_propagation import SymPyOps, TypedExpr
+from torch._inductor.scheduler import SchedulerNode
+
 from .ops_handler import DefaultHandler
 from .virtualized import StoreMode
-from torch._inductor.scheduler import SchedulerNode
 
 if TYPE_CHECKING: ...
 

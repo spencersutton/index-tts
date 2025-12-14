@@ -1,6 +1,7 @@
 import os
 import types
-from typing import Any, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
+
 from torch._dynamo.exc import BackendCompilerFailed, ShortenTraceback
 from torch.cuda import _CudaDeviceProperties
 

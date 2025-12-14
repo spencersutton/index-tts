@@ -1,9 +1,9 @@
+from collections.abc import Callable, Sequence
+from typing import Any, Optional, Self
+
 import torch
 import torch.distributed.tensor._dispatch as op_dispatch
 import torch.nn as nn
-from collections.abc import Sequence
-from typing import Any, Optional, Self
-from collections.abc import Callable
 from torch._export.wrappers import mark_subclass_constructor_exportable_experimental
 from torch.distributed.device_mesh import DeviceMesh
 from torch.distributed.tensor._dtensor_spec import DTensorSpec

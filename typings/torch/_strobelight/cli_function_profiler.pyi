@@ -1,6 +1,5 @@
-from typing import Any, Optional, TypeVar
 from collections.abc import Callable
-from typing import ParamSpec
+from typing import Any, Optional, ParamSpec, TypeVar
 
 logger = ...
 console_handler = ...

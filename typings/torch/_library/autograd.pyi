@@ -1,7 +1,8 @@
 import dataclasses
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Optional, Protocol
-from collections.abc import Callable
+
 from torch import _ops
 
 class InfoProtocol(Protocol):

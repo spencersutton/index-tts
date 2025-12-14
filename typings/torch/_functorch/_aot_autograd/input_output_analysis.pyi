@@ -1,7 +1,9 @@
+from typing import Any, Optional, Union
+
 import torch
 import torch.utils._pytree as pytree
-from typing import Any, Optional, Union
 from torch import Tensor
+
 from .descriptors import AOTInput
 from .schemas import GraphSignature, ViewAndMutationMeta
 

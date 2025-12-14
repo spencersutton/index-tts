@@ -1,6 +1,6 @@
+from collections.abc import Callable
 from enum import Enum
 from typing import Optional
-from collections.abc import Callable
 
 log = ...
 

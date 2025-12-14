@@ -1,8 +1,9 @@
-import sympy
-import torch
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager
 from typing import Any, Optional
+
+import sympy
+import torch
 from torch._inductor.ir import ComputedBuffer
 from torch._inductor.ops_handler import DefaultHandler, WrapperHandler
 from torch._inductor.scheduler import BaseSchedulerNode

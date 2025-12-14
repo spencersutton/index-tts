@@ -1,23 +1,40 @@
 import types
-import torch
 from collections import OrderedDict
-from collections.abc import Hashable, Iterable, MutableMapping, Sequence
+from collections.abc import Callable, Hashable, Iterable, MutableMapping, Sequence
 from itertools import repeat as _repeat
-from typing import Any, TYPE_CHECKING
-from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
+
+import torch
+from torch.overrides import BaseTorchFunctionMode
+
 from ..utils import dict_keys
 from . import (
     _collections as _collections,
+)
+from . import (
     builtins as builtins,
+)
+from . import (
     functools as functools,
+)
+from . import (
     itertools as itertools,
+)
+from . import (
     operator as operator,
+)
+from . import (
     os as os,
+)
+from . import (
     pytree as pytree,
+)
+from . import (
     struct as struct,
+)
+from . import (
     sys as sys,
 )
-from torch.overrides import BaseTorchFunctionMode
 
 """
 Python polyfills for common builtins.

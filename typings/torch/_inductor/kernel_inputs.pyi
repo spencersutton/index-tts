@@ -1,7 +1,8 @@
-import torch
-import sympy
-from typing import Any, Optional, TYPE_CHECKING, Union
 from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Optional, Union
+
+import sympy
+import torch
 
 if TYPE_CHECKING: ...
 

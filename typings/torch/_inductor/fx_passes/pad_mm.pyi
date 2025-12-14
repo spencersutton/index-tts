@@ -1,10 +1,11 @@
 import functools
-import torch
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import Any, Optional, Union
-from collections.abc import Callable
+
+import torch
 from torch import Tensor
 from torch._inductor.autoheuristic.autoheuristic import AHContext
+
 from ..pattern_matcher import Match
 
 aten = ...

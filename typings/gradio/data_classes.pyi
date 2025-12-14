@@ -6,8 +6,10 @@ import pathlib
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from enum import Enum
-from typing import Annotated, Any, Literal, NewType, Union
+from typing import Annotated, Any, Literal, NewType, NotRequired, Union
+
 from fastapi import Request
+from gradio.i18n import I18nData
 from gradio_client.data_classes import ParameterInfo
 from gradio_client.documentation import document
 from pydantic import (
@@ -22,8 +24,6 @@ from pydantic import (
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import core_schema
 from typing_extensions import TypedDict
-from typing import NotRequired
-from gradio.i18n import I18nData
 
 """Pydantic data models and other dataclasses. This is the only file that uses Optional[]
 typing syntax instead of | None syntax to work with pydantic"""

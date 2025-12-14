@@ -1,5 +1,6 @@
-from typing import Optional
 from collections.abc import Callable
+from typing import Optional
+
 from .. import ir
 from ..utils import IndentedBuffer
 from .common import KernelTemplate

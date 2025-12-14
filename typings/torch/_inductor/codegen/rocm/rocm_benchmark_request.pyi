@@ -1,8 +1,8 @@
+from collections.abc import Callable, Iterable
+from typing import TYPE_CHECKING, Any, Union
+
 import torch
-from typing import Any, TYPE_CHECKING, Union
-from collections.abc import Callable
 from torch._inductor.autotune_process import BenchmarkRequest, GPUDeviceBenchmarkMixin, TensorMeta
-from collections.abc import Iterable
 
 if TYPE_CHECKING: ...
 log = ...

@@ -1,8 +1,10 @@
 from collections import namedtuple
-from warnings import deprecated
-from torch.ao.quantization.fake_quantize import FakeQuantizeBase
-from .observer import ObserverBase, _PartialWrapper
 from typing import TypeAlias
+from warnings import deprecated
+
+from torch.ao.quantization.fake_quantize import FakeQuantizeBase
+
+from .observer import ObserverBase, _PartialWrapper
 
 __all__ = [
     "QConfig",

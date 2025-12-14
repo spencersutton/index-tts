@@ -1,4 +1,5 @@
 from typing import Any, TypeAlias
+
 from torch.types import Device
 
 type _device_t = Device | str | int | None

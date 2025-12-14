@@ -1,5 +1,6 @@
-import torch
 from warnings import deprecated
+
+import torch
 
 __all__ = ["GradScaler"]
 

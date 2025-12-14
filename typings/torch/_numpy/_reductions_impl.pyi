@@ -1,4 +1,5 @@
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
+
 from ._normalizations import ArrayLike, AxisLike, DTypeLike, KeepDims, NotImplementedType, OutArray
 
 """Implementation of reduction operations, to be wrapped into arrays, dtypes etc

@@ -15,7 +15,7 @@ from gradio.components.base import (
 )
 from gradio.components.browser_state import BrowserState
 from gradio.components.button import Button
-from gradio.components.chatbot import ChatMessage, Chatbot, MessageDict
+from gradio.components.chatbot import Chatbot, ChatMessage, MessageDict
 from gradio.components.checkbox import Checkbox
 from gradio.components.checkboxgroup import CheckboxGroup
 from gradio.components.clear_button import ClearButton

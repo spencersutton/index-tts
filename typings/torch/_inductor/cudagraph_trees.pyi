@@ -1,10 +1,12 @@
 import contextlib
 import dataclasses
+from collections.abc import Callable, Generator, Iterator, Sequence
 from contextlib import AbstractContextManager
 from enum import Enum
-from typing import Any, Optional, TYPE_CHECKING, TypeVar, Union, TypeAlias
-from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Optional, TypeAlias, TypeVar, Union
+
 from torch import Tensor
+from torch._guards import CompileId
 from torch._inductor.cudagraph_utils import (
     CheckInvariantStatus,
     FunctionID,
@@ -13,12 +15,10 @@ from torch._inductor.cudagraph_utils import (
     PlaceholderInfo,
     WrappedFunction,
 )
-from torch.multiprocessing.reductions import StorageWeakRef
-from torch.storage import UntypedStorage
-from collections.abc import Generator, Iterator, Sequence
-from torch._guards import CompileId
 from torch._inductor.utils import InputType
 from torch.cuda import _POOL_HANDLE
+from torch.multiprocessing.reductions import StorageWeakRef
+from torch.storage import UntypedStorage
 
 """
 CUDA graph trees are a safety abstraction over CUDAGraphs, similar to make_graph_callables,

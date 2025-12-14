@@ -1,5 +1,6 @@
-import torch
 from typing import Any, Optional, Protocol, Union
+
+import torch
 
 log = ...
 

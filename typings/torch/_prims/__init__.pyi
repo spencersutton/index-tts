@@ -1,12 +1,12 @@
 import operator
-import torch
-import torch._prims_common as utils
-import torch.library
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from enum import Enum
 from functools import partial, reduce
 from typing import Optional, Union
-from collections.abc import Callable
+
+import torch
+import torch._prims_common as utils
+import torch.library
 from torch import Tensor, sym_float
 from torch._C import _get_default_device
 from torch._higher_order_ops.effects import new_token_tensor
@@ -14,13 +14,13 @@ from torch._library.utils import is_functional_schema
 from torch._prims.debug_prims import register_debug_prims
 from torch._prims.rng_prims import register_rng_prims
 from torch._prims_common import (
+    RETURN_TYPE,
     Dim,
     DimsSequenceType,
     DimsType,
     IntLike,
     Number,
     NumberType,
-    RETURN_TYPE,
     ShapeType,
     StrideType,
     TensorLike,

@@ -1,6 +1,8 @@
-import torch.nn as nn
 from collections.abc import Generator
 from typing import Optional
+
+import torch.nn as nn
+
 from .contract import _State, contract
 
 class _CheckpointState(_State):

@@ -3,13 +3,18 @@ import contextlib
 import functools
 import threading
 import weakref
-import torch
+from collections.abc import Generator, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Literal, Optional, TYPE_CHECKING, TypeVar, Union, TypeAlias
-from typing import Self, TypeGuard
+from types import TracebackType
+from typing import TYPE_CHECKING, Any, Literal, Optional, Self, TypeAlias, TypeGuard, TypeVar, Union
 from weakref import ReferenceType
+
+import torch
 from torch import SymFloat, SymInt, Tensor
+from torch._guards import Source
+from torch._ops import OpOverload
 from torch._subclasses.meta_utils import MetaConverter
+from torch.fx.experimental.symbolic_shapes import ShapeEnv, SymbolicContext
 from torch.multiprocessing.reductions import StorageWeakRef
 from torch.overrides import TorchFunctionMode
 from torch.types import IntLikeType
@@ -17,12 +22,8 @@ from torch.utils._backport_slots import dataclass_slots
 from torch.utils._python_dispatch import TorchDispatchMode
 from torch.utils._pytree import PyTree, TreeSpec
 from torch.utils._stats import count
+
 from ._fake_tensor_utils import _PySymInputStub, _SymIntOutputStub
-from collections.abc import Generator, Mapping, Sequence
-from types import TracebackType
-from torch._guards import Source
-from torch._ops import OpOverload
-from torch.fx.experimental.symbolic_shapes import ShapeEnv, SymbolicContext
 
 if TYPE_CHECKING: ...
 log = ...

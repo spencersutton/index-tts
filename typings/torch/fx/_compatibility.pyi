@@ -1,5 +1,5 @@
-from typing import Any, TypeVar
 from collections.abc import Callable
+from typing import Any, TypeVar
 
 _BACK_COMPAT_OBJECTS: dict[Any, None] = ...
 _MARKED_WITH_COMPATIBILITY: dict[Any, None] = ...

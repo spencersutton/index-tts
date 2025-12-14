@@ -2,18 +2,19 @@ import math
 import os
 import socket
 import uuid
-import torch
-import torch.distributed._functional_collectives as funcol
-import torch.distributed.distributed_c10d as c10d
-from collections.abc import Generator, Sequence
+from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager
 from datetime import timedelta
 from enum import Enum
 from functools import partial
-from typing import Any, Literal, TYPE_CHECKING, Union, overload
-from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Literal, Union, overload
+
+import torch
+import torch.distributed._functional_collectives as funcol
+import torch.distributed.distributed_c10d as c10d
 from torch._C._autograd import DeviceType
-from torch._C._distributed_c10d import ProcessGroup, Work as _Work, _SymmetricMemory
+from torch._C._distributed_c10d import ProcessGroup, _SymmetricMemory
+from torch._C._distributed_c10d import Work as _Work
 from torch.types import _device, _dtype, _int
 
 _group_name_to_store: dict[str, c10d.Store] = ...

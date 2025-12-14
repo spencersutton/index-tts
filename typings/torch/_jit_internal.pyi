@@ -2,11 +2,11 @@ import contextlib
 import pickle
 import sys
 import weakref
+from collections.abc import Callable
+from typing import Any, Final, ParamSpec, TypeVar, Union
+
 import torch
 import torch.distributed.rpc
-from typing import Any, Final, TypeVar, Union
-from collections.abc import Callable
-from typing import ParamSpec
 
 """
 The weak_script annotation needs to be here instead of inside torch/jit/ so it

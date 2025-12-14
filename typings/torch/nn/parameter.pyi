@@ -1,4 +1,5 @@
 from typing import TypeIs
+
 from torch import Tensor, device, dtype
 
 class Parameter(Tensor):

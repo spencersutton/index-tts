@@ -1,6 +1,7 @@
-import torch
 from collections.abc import Sequence
-from typing import Any, TYPE_CHECKING, TypeAlias
+from typing import TYPE_CHECKING, Any, TypeAlias
+
+import torch
 from torch import Tensor
 
 __all__ = [

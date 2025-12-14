@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import Any
+
 from torch._C._profiler import _ProfilerEvent
 
 class DeviceType(Enum):

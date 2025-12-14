@@ -1,11 +1,12 @@
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+
+from ..ir import Layout
 from ..kernel.bmm import aten_baddbmm, aten_bmm, aten_bmm_dtype
 from ..kernel.mm import aten__fp8_mm, aten__int_mm, aten_addmm, aten_bias_addmm, aten_mm
 from ..kernel.mm_plus_mm import aten_mm_plus_mm
+from ..kernel_inputs import KernelInputs
 from .base import TemplateConfigHeuristics
 from .gemm import GemmMaxAutotuneTemplateConfigHeuristics
-from ..ir import Layout
-from ..kernel_inputs import KernelInputs
 from .registry import register_template_heuristic
 
 if TYPE_CHECKING: ...

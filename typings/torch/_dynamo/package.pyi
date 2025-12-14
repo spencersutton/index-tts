@@ -3,9 +3,9 @@ import contextlib
 import dataclasses
 import functools
 import types
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from typing import Any, NewType, Optional, TypeAlias
-from collections.abc import Callable
+
 from torch._dynamo.precompile_context import PrecompileCacheArtifact
 from torch.compiler._cache import CacheArtifactFactory
 

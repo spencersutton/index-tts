@@ -1,7 +1,9 @@
-import torch
 from typing import TYPE_CHECKING
-from .base import VariableTracker
+
+import torch
 from torch._dynamo.symbolic_convert import InstructionTranslator
+
+from .base import VariableTracker
 
 """
 Distributed computing variable tracking classes for PyTorch Dynamo.

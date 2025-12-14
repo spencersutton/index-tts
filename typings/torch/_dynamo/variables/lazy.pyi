@@ -1,5 +1,5 @@
-from typing import Any, Optional, Union, final
-from typing import Self
+from typing import Any, Optional, Self, Union, final
+
 from .base import VariableTracker
 from .tensor import SymNodeVariable
 

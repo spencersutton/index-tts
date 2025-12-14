@@ -1,5 +1,6 @@
 from collections.abc import Callable, Iterable, Sequence
-from typing import Any, Literal, Self, SupportsFloat, TYPE_CHECKING, TypedDict, override
+from typing import TYPE_CHECKING, Any, Literal, Self, SupportsFloat, TypedDict, override
+
 from .optimizer import Optimizer
 
 if TYPE_CHECKING: ...

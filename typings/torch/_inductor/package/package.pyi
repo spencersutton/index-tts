@@ -1,4 +1,4 @@
-from torch.export.pt2_archive._package import AOTICompiledModel, AOTI_FILES
+from torch.export.pt2_archive._package import AOTI_FILES, AOTICompiledModel
 from torch.types import FileLike
 
 log = ...

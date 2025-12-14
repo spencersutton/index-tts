@@ -1,5 +1,7 @@
 import functools
+
 import torch
+
 from ..pattern_matcher import CallFunction, Ignored, KeywordArg, Match, init_once_fakemode, register_graph_pattern
 
 aten = ...

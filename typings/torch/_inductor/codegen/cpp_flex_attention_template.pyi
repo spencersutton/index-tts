@@ -1,4 +1,5 @@
 from typing import Optional
+
 from .. import ir
 from .cpp_template import CppTemplate
 

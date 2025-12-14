@@ -1,9 +1,11 @@
-import torch
 from collections.abc import Callable, Iterable
 from typing import Any, Literal, TypeAlias
+
+import torch
 from torch import Tensor
 from torch.nn import Module
 from torch.optim.lr_scheduler import LRScheduler
+
 from .optimizer import Optimizer
 
 __all__ = [

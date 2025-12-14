@@ -1,10 +1,12 @@
+from typing import TYPE_CHECKING, Optional
+
 import torch
 import torch.fx
-from typing import Optional, TYPE_CHECKING
-from .base import VariableTracker
-from .iter import IteratorVariable
 from torch._dynamo.codegen import PyCodegen
 from torch._dynamo.symbolic_convert import InstructionTranslator
+
+from .base import VariableTracker
+from .iter import IteratorVariable
 
 """
 Variable tracking implementations for list-like data structures in Dynamo.

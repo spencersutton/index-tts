@@ -1,14 +1,16 @@
 import io
 import logging
 import os
+from typing import IO, TYPE_CHECKING, Any, Literal, Optional, Union
+
 import torch.fx
-from typing import Any, IO, Literal, Optional, TYPE_CHECKING, Union
-from .standalone_compile import CompiledArtifact
 from torch._inductor.utils import InputType
 from torch.export import ExportedProgram
 from torch.export.pt2_archive._package import AOTICompiledModel
 from torch.export.pt2_archive._package_weights import Weights
 from torch.types import FileLike
+
+from .standalone_compile import CompiledArtifact
 
 if TYPE_CHECKING: ...
 __all__ = ["compile", "list_mode_options", "list_options", "cudagraph_mark_step_begin", "standalone_compile"]

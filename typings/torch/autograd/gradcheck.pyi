@@ -1,6 +1,7 @@
-import torch
 from collections.abc import Callable
 from warnings import deprecated
+
+import torch
 from torch.types import _TensorOrTensors
 
 __all__ = [

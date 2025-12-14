@@ -3,14 +3,14 @@ from abc import ABC
 from typing import cast, override
 
 import torch
-from torch import Tensor
+from torch import Tensor, nn
 from tqdm import tqdm
 
 from indextts.config import S2MelConfig
 from indextts.s2mel.modules.diffusion_transformer import DiT
 
 
-class BASECFM(torch.nn.Module, ABC):
+class BASECFM(nn.Module, ABC):
     estimator: DiT | None
 
     def __init__(self, args: S2MelConfig) -> None:

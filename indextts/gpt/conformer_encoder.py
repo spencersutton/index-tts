@@ -9,7 +9,7 @@ from indextts.gpt.conformer.subsampling import Conv2dSubsampling2
 from indextts.utils.common import make_pad_mask
 
 
-class _PositionwiseFeedForward(torch.nn.Module):
+class _PositionwiseFeedForward(nn.Module):
     """Positionwise feed forward layer.
 
     FeedForward are appied on each position of the sequence.
@@ -19,7 +19,7 @@ class _PositionwiseFeedForward(torch.nn.Module):
         idim (int): Input dimenstion.
         hidden_units (int): The number of hidden units.
         dropout_rate (float): Dropout rate.
-        activation (torch.nn.Module): Activation function
+        activation (nn.Module): Activation function
 
     """
 
@@ -28,7 +28,7 @@ class _PositionwiseFeedForward(torch.nn.Module):
         idim: int,
         hidden_units: int,
         dropout_rate: float,
-        activation: torch.nn.Module = torch.nn.ReLU(),
+        activation: nn.Module = torch.nn.ReLU(),
     ) -> None:
         """Construct a PositionwiseFeedForward object."""
         super().__init__()
@@ -165,15 +165,15 @@ class _ConformerEncoderLayer(nn.Module):
 
     Args:
         size (int): Input dimension.
-        self_attn (torch.nn.Module): Self-attention module instance.
+        self_attn (nn.Module): Self-attention module instance.
             `MultiHeadedAttention` or `RelPositionMultiHeadedAttention`
             instance can be used as the argument.
-        feed_forward (torch.nn.Module): Feed-forward module instance.
+        feed_forward (nn.Module): Feed-forward module instance.
             `PositionwiseFeedForward` instance can be used as the argument.
-        feed_forward_macaron (torch.nn.Module): Additional feed-forward module
+        feed_forward_macaron (nn.Module): Additional feed-forward module
              instance.
             `PositionwiseFeedForward` instance can be used as the argument.
-        conv_module (torch.nn.Module): Convolution module instance.
+        conv_module (nn.Module): Convolution module instance.
             `ConvlutionModule` instance can be used as the argument.
         dropout_rate (float): Dropout rate.
         normalize_before (bool):
@@ -186,12 +186,12 @@ class _ConformerEncoderLayer(nn.Module):
 
     """
 
-    feed_forward: torch.nn.Module | None
+    feed_forward: nn.Module | None
 
     def __init__(
         self,
         size: int,
-        self_attn: torch.nn.Module,
+        self_attn: nn.Module,
         feed_forward: nn.Module | None = None,
         feed_forward_macaron: nn.Module | None = None,
         conv_module: nn.Module | None = None,
@@ -273,7 +273,7 @@ class _ConformerEncoderLayer(nn.Module):
         return x, mask, new_att_cache, new_cnn_cache
 
 
-class _BaseEncoder(torch.nn.Module, ABC):
+class _BaseEncoder(nn.Module, ABC):
     encoders: torch.nn.ModuleList
 
     def __init__(
@@ -316,7 +316,7 @@ class _BaseEncoder(torch.nn.Module, ABC):
         use_dynamic_chunk (bool): whether use dynamic chunk size for
             training or not, You can only use fixed chunk(chunk_size > 0)
             or dyanmic chunk size(use_dynamic_chunk = True)
-        global_cmvn (Optional[torch.nn.Module]): Optional GlobalCMVN module
+        global_cmvn (Optional[nn.Module]): Optional GlobalCMVN module
         use_dynamic_left_chunk (bool): whether use dynamic left chunk in
             dynamic chunk training.
 

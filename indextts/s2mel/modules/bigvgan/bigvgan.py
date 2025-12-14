@@ -23,7 +23,7 @@ def load_hparams_from_json(path: Path) -> dict[str, Any]:
     return json.loads(data)
 
 
-class AMPBlock1(torch.nn.Module):
+class AMPBlock1(nn.Module):
     """AMPBlock applies Snake / SnakeBeta activation functions with trainable parameters that control periodicity, defined for each layer.
     AMPBlock1 has additional self.convs2 that contains additional Conv1d layers with a fixed dilation=1 followed by each layer in self.convs1.
 
@@ -121,7 +121,7 @@ class AMPBlock1(torch.nn.Module):
             remove_weight_norm(l)
 
 
-class AMPBlock2(torch.nn.Module):
+class AMPBlock2(nn.Module):
     """AMPBlock applies Snake / SnakeBeta activation functions with trainable parameters that control periodicity, defined for each layer.
     Unlike AMPBlock1, AMPBlock2 does not contain extra Conv1d layers with fixed dilation=1.
 
@@ -213,7 +213,7 @@ class BigVGANParams(TypedDict):
 
 
 class BigVGAN(
-    torch.nn.Module,
+    nn.Module,
     PyTorchModelHubMixin,
     library_name="bigvgan",
     repo_url="https://github.com/NVIDIA/BigVGAN",

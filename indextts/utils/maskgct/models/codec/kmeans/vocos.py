@@ -45,16 +45,16 @@ class ConvNeXtBlock(nn.Module):
 
     def forward(self, x: Tensor, cond_embedding_id: Tensor | None = None) -> Tensor:
         residual = x
-        x = self.dwconv(x)
+        x = self.dwconv.forward(x)
         x = x.transpose(1, 2)  # (B, C, T) -> (B, T, C)
         if self.adanorm:
             assert cond_embedding_id is not None
-            x = self.norm(x, cond_embedding_id)
+            x = self.norm.forward(x, cond_embedding_id)
         else:
-            x = self.norm(x)
-        x = self.pwconv1(x)
-        x = self.act(x)
-        x = self.pwconv2(x)
+            x = self.norm.forward(x)
+        x = self.pwconv1.forward(x)
+        x = self.act.forward(x)
+        x = self.pwconv2.forward(x)
         if self.gamma is not None:
             x = self.gamma * x
         x = x.transpose(1, 2)  # (B, T, C) -> (B, C, T)
@@ -81,8 +81,8 @@ class AdaLayerNorm(nn.Module):
         torch.nn.init.zeros_(self.shift.weight)
 
     def forward(self, x: Tensor, cond_embedding_id: Tensor) -> Tensor:
-        scale = self.scale(cond_embedding_id)
-        shift = self.shift(cond_embedding_id)
+        scale = self.scale.forward(cond_embedding_id)
+        shift = self.shift.forward(cond_embedding_id)
         x = nn.functional.layer_norm(x, (self.dim,), eps=self.eps)
         return x * scale + shift
 
@@ -155,13 +155,13 @@ class VocosBackbone(Backbone):
 
     def forward(self, x: Tensor, **kwargs) -> Tensor:
         bandwidth_id = kwargs.get("bandwidth_id")
-        x = self.embed(x)
+        x = self.embed.forward(x)
         if self.adanorm:
             assert bandwidth_id is not None
-            x = self.norm(x.transpose(1, 2), cond_embedding_id=bandwidth_id)
+            x = self.norm.forward(x.transpose(1, 2), cond_embedding_id=bandwidth_id)
         else:
-            x = self.norm(x.transpose(1, 2))
+            x = self.norm.forward(x.transpose(1, 2))
         x = x.transpose(1, 2)
         for conv_block in self.convnext:
-            x = conv_block(x, cond_embedding_id=bandwidth_id)
-        return self.final_layer_norm(x.transpose(1, 2))
+            x = conv_block.forward(x, cond_embedding_id=bandwidth_id)
+        return self.final_layer_norm.forward(x.transpose(1, 2))

@@ -58,7 +58,7 @@ class ResidualVQ(nn.Module):
         if n_quantizers is None:
             n_quantizers = self.num_quantizers
 
-        z_q_i, commit_loss_i, codebook_loss_i, indices_i, _z_e_i = self.quantizer(residual)
+        z_q_i, commit_loss_i, codebook_loss_i, indices_i, _z_e_i = self.quantizer.forward(residual)
 
         # Create mask to apply quantizer dropout
         mask = torch.full((z.shape[0],), fill_value=0, device=z.device) < n_quantizers

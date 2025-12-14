@@ -160,7 +160,7 @@ class _Attend(nn.Module):
         # attention
 
         attn = sim.softmax(dim=-1)
-        attn = self.attn_dropout(attn)
+        attn = self.attn_dropout.forward(attn)
 
         # aggregate values
 
@@ -273,16 +273,16 @@ class PerceiverResampler(nn.Module):
     def forward(self, x: Tensor, mask: Tensor | None = None) -> Tensor:
         batch = x.shape[0]
 
-        x = self.proj_context(x)
+        x = self.proj_context.forward(x)
 
         latents = repeat(self.latents, "n d -> b n d", b=batch)
 
         for item in self.layers:
             attn, ff = cast(nn.ModuleList, item)
-            latents = attn(latents, x, mask=mask) + latents
-            latents = ff(latents) + latents
+            latents = attn.forward(latents, x, mask=mask) + latents
+            latents = ff.forward(latents) + latents
 
-        return self.norm(latents)
+        return self.norm.forward(latents)
 
 
 class _Attention(nn.Module):
@@ -324,7 +324,7 @@ class _Attention(nn.Module):
         q = self.to_q(x)
         q, k, v = (rearrange(t, "b n (h d) -> b h n d", h=h) for t in (q, k, v))
 
-        out = self.attend(q, k, v, mask=mask)
+        out = self.attend.forward(q, k, v, mask=mask)
 
         out = rearrange(out, "b h n d -> b n (h d)")
         return self.to_out(out)

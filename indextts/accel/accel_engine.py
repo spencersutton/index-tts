@@ -233,32 +233,32 @@ class AccelInferenceEngine:
             if use_tts:
                 assert tts_mel_embedding is not None
                 assert tts_text_pos_embedding is not None
-                emb = tts_mel_embedding(input_ids[:bs])
+                emb = tts_mel_embedding.forward(input_ids[:bs])
                 pos_clamped = torch.clamp(positions[:bs], min=0)
-                pos_emb = tts_text_pos_embedding.emb(pos_clamped)
+                pos_emb = tts_text_pos_embedding.emb.forward(pos_clamped)
                 inputs_embeds_buffer[:bs] = emb + pos_emb
-                out = self.model(
+                out = self.model.forward(
                     inputs_embeds=inputs_embeds_buffer[:bs].unsqueeze(1),
                     return_dict=True,
                 ).last_hidden_state
             else:
-                out = self.model(input_ids=input_ids[:bs].unsqueeze(1), return_dict=True).last_hidden_state
+                out = self.model.forward(input_ids=input_ids[:bs].unsqueeze(1), return_dict=True).last_hidden_state
             outputs[:bs] = out.squeeze(1) if out.dim() == 3 else out
 
             with torch.cuda.graph(graph, self.graph_pool):
                 if use_tts:
                     assert tts_mel_embedding is not None
                     assert tts_text_pos_embedding is not None
-                    emb = tts_mel_embedding(input_ids[:bs])
+                    emb = tts_mel_embedding.forward(input_ids[:bs])
                     pos_clamped = torch.clamp(positions[:bs], min=0)
-                    pos_emb = tts_text_pos_embedding.emb(pos_clamped)
+                    pos_emb = tts_text_pos_embedding.emb.forward(pos_clamped)
                     inputs_embeds_buffer[:bs] = emb + pos_emb
-                    out = self.model(
+                    out = self.model.forward(
                         inputs_embeds=inputs_embeds_buffer[:bs].unsqueeze(1),
                         return_dict=True,
                     ).last_hidden_state
                 else:
-                    out = self.model(input_ids=input_ids[:bs].unsqueeze(1), return_dict=True).last_hidden_state
+                    out = self.model.forward(input_ids=input_ids[:bs].unsqueeze(1), return_dict=True).last_hidden_state
                 outputs[:bs] = out.squeeze(1) if out.dim() == 3 else out
 
             if self.graph_pool is None:
@@ -294,13 +294,13 @@ class AccelInferenceEngine:
             if use_tts_embedding:
                 assert tts_mel_embedding is not None
                 assert tts_text_pos_embedding is not None
-                inputs_embeds = tts_mel_embedding(input_ids)
+                inputs_embeds = tts_mel_embedding.forward(input_ids)
                 pos_clamped = torch.clamp(positions, min=0)
-                pos_emb = tts_text_pos_embedding.emb(pos_clamped)
+                pos_emb = tts_text_pos_embedding.emb.forward(pos_clamped)
                 inputs_embeds += pos_emb
-                out = self.model(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True).last_hidden_state
+                out = self.model.forward(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True).last_hidden_state
             else:
-                out = self.model(input_ids=input_ids.unsqueeze(1), return_dict=True).last_hidden_state
+                out = self.model.forward(input_ids=input_ids.unsqueeze(1), return_dict=True).last_hidden_state
             return out.squeeze(1) if out.dim() == 3 else out
 
         graph_bs = next((x for x in GRAPH_BS if x >= bs), None)
@@ -308,13 +308,13 @@ class AccelInferenceEngine:
             if use_tts_embedding:
                 assert tts_mel_embedding is not None
                 assert tts_text_pos_embedding is not None
-                inputs_embeds = tts_mel_embedding(input_ids)
+                inputs_embeds = tts_mel_embedding.forward(input_ids)
                 pos_clamped = torch.clamp(positions, min=0)
-                pos_emb = tts_text_pos_embedding.emb(pos_clamped)
+                pos_emb = tts_text_pos_embedding.emb.forward(pos_clamped)
                 inputs_embeds += pos_emb
-                out = self.model(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True).last_hidden_state
+                out = self.model.forward(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True).last_hidden_state
             else:
-                out = self.model(input_ids=input_ids.unsqueeze(1), return_dict=True).last_hidden_state
+                out = self.model.forward(input_ids=input_ids.unsqueeze(1), return_dict=True).last_hidden_state
             return out.squeeze(1) if out.dim() == 3 else out
 
         graph = self.graphs[graph_bs]
@@ -428,10 +428,10 @@ class AccelInferenceEngine:
         if tts_embeddings is not None and tts_mel_embedding is not None and tts_text_pos_embedding is not None:
             start_token_id = input_ids[0, -1] if input_ids.size(1) > 0 else 8192
 
-            start_emb = tts_mel_embedding(torch.tensor([[start_token_id]], device="cuda"))  # [1, 1, hidden_dim]
+            start_emb = tts_mel_embedding.forward(torch.tensor([[start_token_id]], device="cuda"))  # [1, 1, hidden_dim]
 
             start_pos = torch.tensor([[tts_embeddings.size(1)]], device="cuda", dtype=torch.long)
-            pos_emb = tts_text_pos_embedding.emb(start_pos)
+            pos_emb = tts_text_pos_embedding.emb.forward(start_pos)
             start_emb += pos_emb
             start_emb = start_emb.repeat(batch_size, 1, 1)
 
@@ -450,10 +450,10 @@ class AccelInferenceEngine:
             if full_embeddings.dtype != model_dtype:
                 full_embeddings = full_embeddings.to(model_dtype)
 
-            hidden_states = self.model(inputs_embeds=full_embeddings, return_dict=True).last_hidden_state
+            hidden_states = self.model.forward(inputs_embeds=full_embeddings, return_dict=True).last_hidden_state
 
         else:
-            hidden_states = self.model(
+            hidden_states = self.model.forward(
                 input_ids=input_ids,
                 attention_mask=attention_mask,
                 return_dict=True,
@@ -475,7 +475,7 @@ class AccelInferenceEngine:
         t_first_token_start = time.perf_counter()
         if last_hidden.dtype != next(self.lm_head.parameters()).dtype:
             last_hidden = last_hidden.to(next(self.lm_head.parameters()).dtype)
-        logits = self.lm_head(last_hidden)  # [batch_size, vocab_size]
+        logits = self.lm_head.forward(last_hidden)  # [batch_size, vocab_size]
 
         temperatures = self._prepare_sample(sequences, temperature)
         if temperature > 0:
@@ -528,7 +528,7 @@ class AccelInferenceEngine:
             )
 
             # Get logits
-            logits = self.lm_head(hidden_states)  # [batch_size, vocab_size]
+            logits = self.lm_head.forward(hidden_states)  # [batch_size, vocab_size]
 
             ForwardContext.reset()
 

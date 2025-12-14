@@ -4,12 +4,12 @@ from typing import override
 import torch
 from torch import Tensor, nn
 
-from indextts.gpt.conformer.attention import RelPositionMultiHeadedAttention
+from indextts.gpt.conformer.attention import MultiHeadedAttention, RelPositionMultiHeadedAttention
 from indextts.gpt.conformer.subsampling import Conv2dSubsampling2
 from indextts.utils.common import make_pad_mask
 
 
-class _PositionwiseFeedForward(nn.Module):
+class PositionwiseFeedForward(nn.Module):
     """Positionwise feed forward layer.
 
     FeedForward are appied on each position of the sequence.
@@ -28,7 +28,7 @@ class _PositionwiseFeedForward(nn.Module):
         idim: int,
         hidden_units: int,
         dropout_rate: float,
-        activation: nn.Module = torch.nn.ReLU(),
+        activation: nn.Module[[Tensor], Tensor] = torch.nn.ReLU(),
     ) -> None:
         """Construct a PositionwiseFeedForward object."""
         super().__init__()
@@ -48,17 +48,17 @@ class _PositionwiseFeedForward(nn.Module):
             output tensor, (B, L, D)
 
         """
-        return self.w_2(self.dropout(self.activation(self.w_1(xs))))
+        return self.w_2.forward(self.dropout.forward(self.activation.forward(self.w_1.forward(xs))))
 
 
-class _ConvolutionModule(nn.Module):
+class ConvolutionModule(nn.Module):
     """ConvolutionModule in Conformer model."""
 
     def __init__(
         self,
         channels: int,
         kernel_size: int = 15,
-        activation: nn.Module = nn.ReLU(),
+        activation: nn.Module[[Tensor], Tensor] = nn.ReLU(),
         bias: bool = True,
     ) -> None:
         """Construct an ConvolutionModule object.
@@ -144,15 +144,15 @@ class _ConvolutionModule(nn.Module):
         new_cache = torch.zeros((0, 0, 0), dtype=x.dtype, device=x.device)
 
         # GLU mechanism
-        x = self.pointwise_conv1(x)  # (batch, 2*channel, dim)
+        x = self.pointwise_conv1.forward(x)  # (batch, 2*channel, dim)
         x = nn.functional.glu(x, dim=1)  # (batch, channel, dim)
 
         # 1D Depthwise Conv
-        x = self.depthwise_conv(x)
+        x = self.depthwise_conv.forward(x)
         x = x.transpose(1, 2)
-        x = self.activation(self.norm(x))
+        x = self.activation.forward(self.norm.forward(x))
         x = x.transpose(1, 2)
-        x = self.pointwise_conv2(x)
+        x = self.pointwise_conv2.forward(x)
         # mask batch padding
         if mask_pad.size(2) > 0:  # time > 0
             x.masked_fill_(~mask_pad, 0.0)
@@ -160,7 +160,7 @@ class _ConvolutionModule(nn.Module):
         return x.transpose(1, 2), new_cache
 
 
-class _ConformerEncoderLayer(nn.Module):
+class ConformerEncoderLayer(nn.Module):
     """Encoder layer module.
 
     Args:
@@ -186,15 +186,13 @@ class _ConformerEncoderLayer(nn.Module):
 
     """
 
-    feed_forward: nn.Module | None
-
     def __init__(
         self,
         size: int,
-        self_attn: nn.Module,
-        feed_forward: nn.Module | None = None,
-        feed_forward_macaron: nn.Module | None = None,
-        conv_module: nn.Module | None = None,
+        self_attn: MultiHeadedAttention | RelPositionMultiHeadedAttention,
+        feed_forward: PositionwiseFeedForward | None = None,
+        feed_forward_macaron: PositionwiseFeedForward | None = None,
+        conv_module: ConvolutionModule | None = None,
         dropout_rate: float = 0.1,
         normalize_before: bool = True,
         concat_after: bool = False,
@@ -248,33 +246,33 @@ class _ConformerEncoderLayer(nn.Module):
         """
         # multi-headed self-attention module
         residual = x
-        x = self.norm_mha(x)
+        x = self.norm_mha.forward(x)
 
-        x_att, new_att_cache = self.self_attn(x, x, x, mask, pos_emb, att_cache)
-        x = residual + self.dropout(x_att)
+        x_att, new_att_cache = self.self_attn.forward(x, x, x, mask, pos_emb, att_cache)
+        x = residual + self.dropout.forward(x_att)
 
         # convolution module
         # Fake new cnn cache here, and then change it in conv_module
         new_cnn_cache = torch.zeros((0, 0, 0), dtype=x.dtype, device=x.device)
         residual = x
-        x = self.norm_conv(x)
-        x, new_cnn_cache = self.conv_module(x, mask_pad, cnn_cache)
-        x = residual + self.dropout(x)
+        x = self.norm_conv.forward(x)
+        x, new_cnn_cache = self.conv_module.forward(x, mask_pad, cnn_cache)
+        x = residual + self.dropout.forward(x)
 
         # feed forward module
         residual = x
-        x = self.norm_ff(x)
+        x = self.norm_ff.forward(x)
 
         assert self.feed_forward is not None
-        x = residual + self.dropout(self.feed_forward(x))
+        x = residual + self.dropout.forward(self.feed_forward.forward(x))
 
-        x = self.norm_final(x)
+        x = self.norm_final.forward(x)
 
         return x, mask, new_att_cache, new_cnn_cache
 
 
 class _BaseEncoder(nn.Module, ABC):
-    encoders: torch.nn.ModuleList
+    encoders: torch.nn.ModuleList[ConformerEncoderLayer]
 
     def __init__(
         self,
@@ -360,12 +358,12 @@ class _BaseEncoder(nn.Module, ABC):
         """
         T = xs.size(1)
         masks = ~make_pad_mask(xs_lens, T).unsqueeze(1)  # (B, 1, T)
-        xs, pos_emb, masks = self.embed(xs, masks)
+        xs, pos_emb, masks = self.embed.forward(xs, masks)
         chunk_masks = masks
         mask_pad = masks  # (B, 1, T/subsample_rate)
         for layer in self.encoders:
-            xs, chunk_masks, _, _ = layer(xs, chunk_masks, pos_emb, mask_pad)
-        xs = self.after_norm(xs)
+            xs, chunk_masks, _, _ = layer.forward(xs, chunk_masks, pos_emb, mask_pad)
+        xs = self.after_norm.forward(xs)
         # Here we assume the mask is not changed in encoder layers, so just
         # return the masks before encoder layers, and the masks will be used
         # for cross attention with decoder later
@@ -424,12 +422,12 @@ class ConformerEncoder(_BaseEncoder):
         activation = torch.nn.SiLU()
 
         self.encoders = torch.nn.ModuleList([
-            _ConformerEncoderLayer(
+            ConformerEncoderLayer(
                 output_size,
                 RelPositionMultiHeadedAttention(attention_heads, output_size, dropout_rate),
-                _PositionwiseFeedForward(output_size, linear_units, dropout_rate, activation),
+                PositionwiseFeedForward(output_size, linear_units, dropout_rate, activation),
                 None,
-                _ConvolutionModule(output_size, cnn_module_kernel, activation),
+                ConvolutionModule(output_size, cnn_module_kernel, activation),
                 dropout_rate,
                 normalize_before,
                 concat_after,

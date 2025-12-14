@@ -74,7 +74,7 @@ class PositionalEncoding(nn.Module):
         self.pe = self.pe.to(x.device)
         pos_emb = self.position_encoding(offset, x.size(1), False)
         x = x * self.xscale + pos_emb
-        return self.dropout(x), self.dropout(pos_emb)
+        return self.dropout.forward(x), self.dropout.forward(pos_emb)
 
     def position_encoding(self, offset: int | Tensor, size: int, apply_dropout: bool = True) -> Tensor:
         """For getting encoding in a streaming fashion.
@@ -107,7 +107,7 @@ class PositionalEncoding(nn.Module):
             pos_emb = F.embedding(index, self.pe[0])  # B X T X d_model
 
         if apply_dropout:
-            pos_emb = self.dropout(pos_emb)
+            pos_emb = self.dropout.forward(pos_emb)
         return pos_emb
 
 
@@ -139,7 +139,7 @@ class RelPositionalEncoding(PositionalEncoding):
         self.pe = self.pe.to(x.device)
         x *= self.xscale
         pos_emb = self.position_encoding(offset, x.size(1), False)
-        return self.dropout(x), self.dropout(pos_emb)
+        return self.dropout.forward(x), self.dropout.forward(pos_emb)
 
 
 class NoPositionalEncoding(nn.Module):
@@ -154,7 +154,7 @@ class NoPositionalEncoding(nn.Module):
     def forward(self, x: Tensor, offset: int | Tensor = 0) -> tuple[Tensor, Tensor]:
         """Just return zero vector for interface compatibility."""
         pos_emb = torch.zeros(1, x.size(1), self.d_model).to(x.device)
-        return self.dropout(x), pos_emb
+        return self.dropout.forward(x), pos_emb
 
     def position_encoding(self, _offset: int | Tensor, size: int) -> Tensor:
         return torch.zeros(1, size, self.d_model)

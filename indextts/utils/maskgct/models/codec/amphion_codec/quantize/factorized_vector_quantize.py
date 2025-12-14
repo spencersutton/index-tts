@@ -42,7 +42,7 @@ class FactorizedVectorQuantize(nn.Module):
 
         """
         # Factorized codes project input into low-dimensional space if self.input_dim != self.codebook_dim
-        z_e = self.in_project(z)
+        z_e = self.in_project.forward(z)
         z_q, indices = self.decode_latents(z_e)
 
         # Compute commitment loss and codebook loss
@@ -51,7 +51,7 @@ class FactorizedVectorQuantize(nn.Module):
 
         z_q = z_e + (z_q - z_e).detach()
 
-        z_q = self.out_project(z_q)
+        z_q = self.out_project.forward(z_q)
 
         return z_q, commit_loss, codebook_loss, indices, z_e
 
@@ -84,7 +84,7 @@ class FactorizedVectorQuantize(nn.Module):
     def vq2emb(self, vq: Tensor, out_proj: bool = True) -> Tensor:
         emb = self.decode_code(vq)
         if out_proj:
-            emb = self.out_project(emb)
+            emb = self.out_project.forward(emb)
         return emb
 
     def latent2dist(self, latents: Tensor) -> tuple[Tensor, Tensor, Tensor]:

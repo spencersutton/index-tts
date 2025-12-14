@@ -193,10 +193,10 @@ class IndexTTS2:
             sample_frequency=16000,
         )
         feat -= feat.mean(dim=0, keepdim=True)  # feat2另外一个滤波器能量组特征[922, 80]
-        style = self.campplus_model(feat.unsqueeze(0))  # 参考音频的全局style2[1,192]
+        style = self.campplus_model.forward(feat.unsqueeze(0))  # 参考音频的全局style2[1,192]
 
         length_regulator = cast(InterpolateRegulator, self.s2mel.models["length_regulator"])
-        prompt_condition = length_regulator(S_ref, ylens=ref_target_lengths, n_quantizers=3, f0=None)[0]
+        prompt_condition = length_regulator.forward(S_ref, ylens=ref_target_lengths, n_quantizers=3, f0=None)[0]
 
         return (spk_cond_emb, style, prompt_condition, ref_mel)
 
@@ -447,7 +447,7 @@ class IndexTTS2:
 
     @torch.inference_mode()
     def get_emb(self, input_features: Tensor, attention_mask: Tensor) -> Tensor:
-        vq_emb = self.semantic_model(
+        vq_emb = self.semantic_model.forward(
             input_features=input_features,
             attention_mask=attention_mask,
             output_hidden_states=True,
@@ -748,7 +748,7 @@ class IndexTTS2:
                         dtype=self.dtype,
                     ),
                 ):
-                    latent = self.gpt(
+                    latent = self.gpt.forward(
                         speech_conditioning_latent[seg_idx : seg_idx + 1],
                         text_tokens,
                         torch.tensor([text_tokens.shape[-1]], device=self.device),
@@ -777,7 +777,12 @@ class IndexTTS2:
                     S_infer += latent
                     target_lengths = (code_lens * 1.72).long()
 
-                    cond = self.s2mel.length_regulator(S_infer, ylens=target_lengths, n_quantizers=3, f0=None)[0]
+                    cond = self.s2mel.length_regulator.forward(
+                        S_infer,
+                        ylens=target_lengths,
+                        n_quantizers=3,
+                        f0=None,
+                    )[0]
                     cat_condition = torch.cat([prompt_condition, cond], dim=1)
 
                     assert ref_mel is not None

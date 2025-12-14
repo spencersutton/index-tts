@@ -169,18 +169,18 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         mel_len = self.cached_mel_emb.shape[1]
         if input_ids.shape[1] != 1:
             text_inputs = input_ids[:, mel_len:]
-            text_emb = self.embeddings(text_inputs)
-            text_emb += self.text_pos_embedding(text_emb)
+            text_emb = self.embeddings.forward(text_inputs)
+            text_emb += self.text_pos_embedding.forward(text_emb)
             if self.cached_mel_emb.shape[0] != text_emb.shape[0]:
                 mel_emb = self.cached_mel_emb.repeat_interleave(text_emb.shape[0] // self.cached_mel_emb.shape[0], 0)
             else:  # this outcome only occurs once per loop in most cases
                 mel_emb = self.cached_mel_emb
             emb = torch.cat([mel_emb, text_emb], dim=1)
         else:
-            emb = self.embeddings(input_ids)
+            emb = self.embeddings.forward(input_ids)
             assert attention_mask is not None
             emb += self.text_pos_embedding.get_fixed_embedding(attention_mask.shape[1] - mel_len, attention_mask.device)
-        transformer_outputs = self.transformer(
+        transformer_outputs = self.transformer.forward(
             inputs_embeds=emb,
             past_key_values=past_key_values,
             attention_mask=attention_mask,
@@ -204,7 +204,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
                 torch.cuda.set_device(self.transformer.first_device)
             hidden_states = hidden_states.to(self.lm_head[1].weight.device)
 
-        lm_logits = self.lm_head(hidden_states)
+        lm_logits = self.lm_head.forward(hidden_states)
 
         if not return_dict:
             return (lm_logits, *transformer_outputs[1:])
@@ -507,18 +507,18 @@ class UnifiedVoice(nn.Module):
         speech_conditioning_input: Tensor,
         cond_mel_lengths: Tensor | None = None,
     ) -> Tensor:
-        speech_conditioning_input, mask = self.conditioning_encoder(
+        speech_conditioning_input, mask = self.conditioning_encoder.forward(
             speech_conditioning_input.transpose(1, 2), cond_mel_lengths
         )  # (b, s, d), (b, 1, s)
-        conds_mask = self.cond_mask_pad(mask.squeeze(1))
-        return self.perceiver_encoder(speech_conditioning_input, conds_mask)  # (b, 32, d)
+        conds_mask = self.cond_mask_pad.forward(mask.squeeze(1))
+        return self.perceiver_encoder.forward(speech_conditioning_input, conds_mask)  # (b, 32, d)
 
     def get_emo_conditioning(self, speech_conditioning_input: Tensor, cond_mel_lengths: Tensor | None = None) -> Tensor:
-        speech_conditioning_input, mask = self.emo_conditioning_encoder(
+        speech_conditioning_input, mask = self.emo_conditioning_encoder.forward(
             speech_conditioning_input.transpose(1, 2), cond_mel_lengths
         )  # (b, s, d), (b, 1, s)
-        conds_mask = self.emo_cond_mask_pad(mask.squeeze(1))
-        conds = self.emo_perceiver_encoder(speech_conditioning_input, conds_mask)  # (b, 1, d)
+        conds_mask = self.emo_cond_mask_pad.forward(mask.squeeze(1))
+        conds = self.emo_perceiver_encoder.forward(speech_conditioning_input, conds_mask)  # (b, 1, d)
         return conds.squeeze(1)
 
     @override
@@ -568,8 +568,8 @@ class UnifiedVoice(nn.Module):
         mel_codes = F.pad(mel_codes, (0, 1), value=self.stop_mel_token)
 
         assert use_speed is not None
-        duration_emb = self.speed_emb(torch.zeros_like(use_speed))
-        duration_emb_half = self.speed_emb(torch.ones_like(use_speed))
+        duration_emb = self.speed_emb.forward(torch.zeros_like(use_speed))
+        duration_emb_half = self.speed_emb.forward(torch.ones_like(use_speed))
         assert isinstance(duration_emb, Tensor)
         assert isinstance(duration_emb_half, Tensor)
         conds = torch.cat(
@@ -583,13 +583,13 @@ class UnifiedVoice(nn.Module):
         text_inputs, _text_targets = self.build_aligned_inputs_and_targets(
             text_inputs, self.start_text_token, self.stop_text_token
         )
-        text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs)
+        text_emb = self.text_embedding.forward(text_inputs) + self.text_pos_embedding.forward(text_inputs)
         mel_codes, _mel_targets = self.build_aligned_inputs_and_targets(
             mel_codes, self.start_mel_token, self.stop_mel_token
         )
 
-        mel_emb = self.mel_embedding(mel_codes)
-        mel_emb += self.mel_pos_embedding(mel_codes)
+        mel_emb = self.mel_embedding.forward(mel_codes)
+        mel_emb += self.mel_pos_embedding.forward(mel_codes)
 
         _text_logits, mel_logits = self.get_logits(
             conds,
@@ -635,7 +635,7 @@ class UnifiedVoice(nn.Module):
             text_input = F.pad(text_input, (1, 0), value=self.start_text_token)
             text_input = F.pad(text_input, (0, 1), value=self.stop_text_token)
             text_input_pos = torch.arange(0, text_input.size(-1), device=device)
-            text_emb = self.text_embedding(text_input) + self.text_pos_embedding.emb(text_input_pos)
+            text_emb = self.text_embedding.forward(text_input) + self.text_pos_embedding.emb.forward(text_input_pos)
             # concatenate [conditional latents][text embeddings]
             conds_text_emb = [
                 conditional_latents.squeeze(0) if single_cond else conditional_latents[i],
@@ -724,8 +724,8 @@ class UnifiedVoice(nn.Module):
             logger.info("Use the specified emotion vector")
 
         tmp = torch.zeros(text_inputs.size(0)).to(text_inputs.device)
-        duration_emb = self.speed_emb(torch.zeros_like(tmp).long())
-        duration_emb_half = self.speed_emb(torch.ones_like(tmp).long())
+        duration_emb = self.speed_emb.forward(torch.zeros_like(tmp).long())
+        duration_emb_half = self.speed_emb.forward(torch.ones_like(tmp).long())
         conds_latent = torch.cat(
             (
                 speech_conditioning_latent + emo_vec.unsqueeze(1),

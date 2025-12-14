@@ -59,7 +59,7 @@ class TimestepEmbedder(nn.Module):
     @override
     def forward(self, t: Tensor) -> Tensor:
         t_freq = self.timestep_embedding(t)
-        return self.mlp(t_freq)
+        return self.mlp.forward(t_freq)
 
 
 class FinalLayer(nn.Module):
@@ -73,9 +73,9 @@ class FinalLayer(nn.Module):
 
     @override
     def forward(self, x: Tensor, c: Tensor) -> Tensor:
-        shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
-        x = modulate(self.norm_final(x), shift, scale)
-        return self.linear(x)
+        shift, scale = self.adaLN_modulation.forward(c).chunk(2, dim=1)
+        x = modulate(self.norm_final.forward(x), shift, scale)
+        return self.linear.forward(x)
 
 
 HIDDEN_DIM: Final = 512
@@ -166,8 +166,8 @@ class DiT(nn.Module):
 
         _B, _, T = x.size()
 
-        t1 = self.t_embedder(t)  # (N, D) # t1 [2, 512]
-        cond = cond_in_module(cond)  # cond [2,1863,512]->[2,1863,512]
+        t1 = self.t_embedder.forward(t)  # (N, D) # t1 [2, 512]
+        cond = cond_in_module.forward(cond)  # cond [2,1863,512]->[2,1863,512]
 
         x = x.transpose(1, 2)  # [2,1863,80]
         prompt_x = prompt_x.transpose(1, 2)  # [2,1863,80]

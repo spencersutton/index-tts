@@ -18,8 +18,6 @@ from torch import Tensor, nn
 from torch.nn import functional as F
 from torch.nn.utils import spectral_norm, weight_norm
 
-from indextts.util import patch_call
-
 
 class ConvLayerNorm(nn.LayerNorm):
     """Convolution-friendly LayerNorm that moves channels to last dimensions
@@ -129,8 +127,8 @@ class NormConv1d(nn.Module):
 
     @override
     def forward(self, x: Tensor) -> Tensor:
-        x = self.conv(x)
-        return self.norm(x)
+        x = self.conv.forward(x)
+        return self.norm.forward(x)
 
 
 class SConv1d(nn.Module):
@@ -196,7 +194,4 @@ class SConv1d(nn.Module):
                 (padding_left, padding_right + extra_padding),
                 mode=self.pad_mode,
             )
-        return self.conv(x)
-
-    @patch_call(forward, Tensor)
-    def __call__(self) -> None: ...
+        return self.conv.forward(x)

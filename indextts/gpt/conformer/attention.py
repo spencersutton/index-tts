@@ -23,7 +23,7 @@ import torch
 from torch import Tensor, nn
 
 
-class _MultiHeadedAttention(nn.Module):
+class MultiHeadedAttention(nn.Module):
     """Multi-Head Attention layer.
 
     Args:
@@ -111,11 +111,11 @@ class _MultiHeadedAttention(nn.Module):
         else:
             attn = torch.softmax(scores, dim=-1)  # (batch, head, time1, time2)
 
-        p_attn = self.dropout(attn)
+        p_attn = self.dropout.forward(attn)
         x = torch.matmul(p_attn, value)  # (batch, head, time1, d_k)
         x = x.transpose(1, 2).contiguous().view(n_batch, -1, self.h * self.d_k)  # (batch, time1, d_model)
 
-        return self.linear_out(x)  # (batch, time1, d_model)
+        return self.linear_out.forward(x)  # (batch, time1, d_model)
 
     @override
     def forward(
@@ -187,7 +187,7 @@ class _MultiHeadedAttention(nn.Module):
         return self.forward_attention(v, scores, mask), new_cache
 
 
-class RelPositionMultiHeadedAttention(_MultiHeadedAttention):
+class RelPositionMultiHeadedAttention(MultiHeadedAttention):
     """Multi-Head Attention layer with relative position encoding.
     Paper: https://arxiv.org/abs/1901.02860
     Args:

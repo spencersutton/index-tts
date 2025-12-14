@@ -6,7 +6,6 @@ from torch import Tensor, nn
 from torch.nn import functional as F
 
 from indextts.s2mel.modules.commons import sequence_mask
-from indextts.util import patch_call
 
 
 class InterpolateRegulator(nn.Module):
@@ -57,12 +56,6 @@ class InterpolateRegulator(nn.Module):
             mode="nearest",
         )
 
-        model_output = cast(Tensor, self.model(x))
+        model_output = cast(Tensor, self.model.forward(x))
         out = model_output.transpose(1, 2).contiguous()
         return out * mask, ylens, None, None, None
-
-    @patch_call(
-        forward,
-        tuple[Tensor, Tensor, Tensor | None, Tensor | None, Tensor | None],
-    )
-    def __call__(self) -> None: ...

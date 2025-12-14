@@ -69,7 +69,7 @@ class RepCodec(nn.Module):
             _all_commit_losses,
             _all_codebook_losses,
             _,
-        ) = self.quantizer(x)
+        ) = self.quantizer.forward(x)
 
         if all_indices.shape[0] == 1:
             return all_indices.squeeze(0), quantized_out.transpose(1, 2)

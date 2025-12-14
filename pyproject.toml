@@ -81,12 +81,7 @@ flash-attn = { url = "https://github.com/mjun0812/flash-attention-prebuild-wheel
 [tool.ruff]
 preview = true
 line-length = 120
-exclude = [
-  "./tools",
-  "./tests",
-  "./override",
-  "indextts/utils/maskgct/models/codec/",
-]
+exclude = ["./tools", "./tests", "./override"]
 
 [tool.ruff.lint.per-file-ignores]
 "typings/**/*.pyi" = ["F"]

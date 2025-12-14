@@ -60,7 +60,7 @@ class RepCodec(nn.Module):
 
         self.reset_parameters()
 
-    def quantize(self, x:Tensor) -> tuple[Tensor, Tensor]:
+    def quantize(self, x: Tensor) -> tuple[Tensor, Tensor]:
         x = self.encoder.forward(x.transpose(1, 2)).transpose(1, 2)
 
         (

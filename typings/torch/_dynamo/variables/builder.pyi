@@ -1,18 +1,20 @@
 import dataclasses
 import re
 import weakref
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
+
 import torch
-from typing import Any, NamedTuple, Optional, TYPE_CHECKING, Union
 from torch import SymInt
+from torch._dynamo.codegen import PyCodegen
+from torch._dynamo.symbolic_convert import InstructionTranslator
 from torch._subclasses.fake_tensor import FakeTensor
 from torch.fx.experimental.symbolic_shapes import DimDynamic, SymIntSymbolicContext
 from torch.utils.weak import TensorWeakRef
+
 from ..pgo import FrameStateSizeEntry
 from ..source import Source
 from ..utils import odict_values, range_iterator, tuple_iterator
 from .base import VariableTracker
-from torch._dynamo.codegen import PyCodegen
-from torch._dynamo.symbolic_convert import InstructionTranslator
 
 """
 This module contains classes and utilities for building variable trackers in Dynamo.

@@ -1,5 +1,6 @@
-from typing import Optional
 from collections.abc import Callable
+from typing import Optional
+
 from .. import ir
 from ..select_algorithm import ChoiceCaller, DataProcessorTemplateWrapper
 from .cpp_gemm_template import CppGemmTemplate

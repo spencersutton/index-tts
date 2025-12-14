@@ -1,5 +1,7 @@
-import torch
 from typing import TYPE_CHECKING
+
+import torch
+
 from ..kernel.mm import addmm_contiguous_subgraph_template, mm_contiguous_subgraph_template
 from .base import TemplateConfigHeuristics
 from .gemm import GemmMaxAutotuneTemplateConfigHeuristics

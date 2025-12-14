@@ -1,5 +1,6 @@
-import torch
 from collections.abc import Callable
+
+import torch
 from torch._ops import OpOverload
 
 aten = ...

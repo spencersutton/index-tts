@@ -1,7 +1,9 @@
 from typing import TYPE_CHECKING
-from .base import VariableTracker
+
 from torch._dynamo.codegen import PyCodegen
 from torch._dynamo.symbolic_convert import InstructionTranslator
+
+from .base import VariableTracker
 
 if TYPE_CHECKING: ...
 PARAM_NAMES = ...

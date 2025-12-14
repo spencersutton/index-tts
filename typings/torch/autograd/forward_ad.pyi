@@ -1,5 +1,7 @@
-import torch
 from typing import Any, NamedTuple
+
+import torch
+
 from .grad_mode import _DecoratorContextManager
 
 __all__ = ["UnpackedDualTensor", "dual_level", "enter_dual_level", "exit_dual_level", "make_dual", "unpack_dual"]

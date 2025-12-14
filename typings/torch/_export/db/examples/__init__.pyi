@@ -1,14 +1,15 @@
 import dataclasses
 import glob
 import inspect
-import torch
 from os.path import basename, dirname, isfile, join
+
+import torch
 from torch._export.db.case import (
-    ExportCase,
-    SupportLevel,
     _EXAMPLE_CASES,
     _EXAMPLE_CONFLICT_CASES,
     _EXAMPLE_REWRITE_CASES,
+    ExportCase,
+    SupportLevel,
     export_case,
 )
 

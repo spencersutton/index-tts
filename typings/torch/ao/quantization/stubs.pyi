@@ -1,5 +1,6 @@
-import torch
 from typing import Any
+
+import torch
 from torch import nn
 from torch.ao.quantization import QConfig
 

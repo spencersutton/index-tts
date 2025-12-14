@@ -1,6 +1,8 @@
-import torch
 from dataclasses import dataclass
 from typing import Optional, Union
+
+import torch
+
 from ...ir import ComputedBuffer, TensorBox
 from ...lowering import register_lowering
 from ...select_algorithm import SymbolicGridFn

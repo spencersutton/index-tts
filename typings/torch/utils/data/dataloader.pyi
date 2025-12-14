@@ -1,5 +1,6 @@
 from collections.abc import Callable, Iterable
-from typing import Any, Self, TYPE_CHECKING, TypeVar, TypeAlias
+from typing import TYPE_CHECKING, Any, Self, TypeAlias, TypeVar
+
 from torch.utils.data.dataset import Dataset
 from torch.utils.data.sampler import Sampler
 

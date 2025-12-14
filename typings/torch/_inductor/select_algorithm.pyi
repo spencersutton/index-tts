@@ -1,14 +1,15 @@
 import contextlib
 import dataclasses
 import functools
+from collections.abc import Callable, Sequence
+from types import ModuleType
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Self, TypeAlias, Union
+
 import sympy
 import torch
-from collections.abc import Sequence
-from types import ModuleType
-from typing import Any, NamedTuple, Optional, TYPE_CHECKING, Union, TypeAlias
-from collections.abc import Callable
-from typing import Self
+from torch._inductor.codegen.simd import IterationRangesRoot
 from torch.utils._ordered_set import OrderedSet
+
 from . import ir
 from .codecache import PersistentCache
 from .codegen.common import CSEVariable, IndentedBuffer, KernelTemplate, WorkspaceArg
@@ -16,7 +17,6 @@ from .codegen.triton import TMACompatibilityChecker, TritonKernel
 from .ir import ChoiceCaller, PrimitiveInfoType
 from .ops_handler import StoreMode
 from .virtualized import V
-from torch._inductor.codegen.simd import IterationRangesRoot
 
 log = ...
 VERIFY: dict[str, Any] = ...

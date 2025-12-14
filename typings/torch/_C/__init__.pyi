@@ -1,15 +1,28 @@
-import numpy
-import torch
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from enum import Enum, IntEnum
 from pathlib import Path
 from types import EllipsisType
-from typing import Any, AnyStr, Generic, IO, Literal, NamedTuple, SupportsIndex, TypeVar, overload
-from collections.abc import Callable
-from typing import ParamSpec, Protocol, Self, TypeAlias, runtime_checkable
+from typing import (
+    IO,
+    Any,
+    AnyStr,
+    Generic,
+    Literal,
+    NamedTuple,
+    ParamSpec,
+    Protocol,
+    Self,
+    SupportsIndex,
+    TypeAlias,
+    TypeVar,
+    overload,
+    runtime_checkable,
+)
+
+import numpy
+import torch
 from torch import SymInt, Tensor, inf
 from torch._C import (
-    _VariableFunctions,
     _aoti,
     _cpu,
     _dynamo,
@@ -20,6 +33,7 @@ from torch._C import (
     _lazy_ts_backend,
     _nn,
     _onnx,
+    _VariableFunctions,
     _verbose,
 )
 from torch._prims_common import DeviceLikeType

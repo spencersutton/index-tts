@@ -1,8 +1,8 @@
-import torch
-from typing import Any, Optional, TYPE_CHECKING, TypeVar, Union
 from collections.abc import Callable
-from typing import ParamSpec
+from typing import TYPE_CHECKING, Any, Optional, ParamSpec, TypeVar, Union
 from warnings import deprecated
+
+import torch
 
 """
 This module contains utility functions that are explicitly allowed to be called during

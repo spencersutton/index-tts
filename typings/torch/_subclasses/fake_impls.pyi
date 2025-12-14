@@ -1,7 +1,8 @@
 import functools
-import torch
-from typing import Union
 from collections.abc import Callable
+from typing import Union
+
+import torch
 from torch._ops import OpOverload
 
 pytree = ...

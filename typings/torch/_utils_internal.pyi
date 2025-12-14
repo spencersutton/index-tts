@@ -1,8 +1,7 @@
 import functools
 import os
-from typing import Any, Optional, TypeVar
 from collections.abc import Callable
-from typing import ParamSpec
+from typing import Any, Optional, ParamSpec, TypeVar
 
 _T = TypeVar("_T")
 _P = ParamSpec("_P")

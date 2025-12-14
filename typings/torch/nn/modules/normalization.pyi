@@ -1,7 +1,9 @@
+from typing import TypeAlias
+
 import torch
 from torch import Size, Tensor
+
 from .module import Module
-from typing import TypeAlias
 
 __all__ = ["CrossMapLRN2d", "GroupNorm", "LayerNorm", "LocalResponseNorm", "RMSNorm"]
 

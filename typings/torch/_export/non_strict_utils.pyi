@@ -1,6 +1,7 @@
 import inspect
+from typing import TYPE_CHECKING, Any, Optional, Union
+
 import torch
-from typing import Any, Optional, TYPE_CHECKING, Union
 from torch._guards import Source
 from torch._subclasses.fake_tensor import FakeTensorMode
 from torch.export import Constraint

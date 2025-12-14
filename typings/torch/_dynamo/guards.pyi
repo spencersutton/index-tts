@@ -5,21 +5,21 @@ import functools
 import pickle
 import types
 import weakref
+from collections.abc import Callable, Generator, KeysView, Sequence
+from typing import TYPE_CHECKING, Any, LiteralString, NoReturn, Optional, TypeAliasType, TypeVar, Union
+
 import torch
 import torch.overrides
-from typing import Any, LiteralString, NoReturn, Optional, TYPE_CHECKING, Union
-from collections.abc import Callable
-from typing import TypeAliasType, TypeVar
+from torch._C import DispatchKeySet
 from torch._C._dynamo.guards import DictGuardManager, GuardDebugInfo, GuardManager, LeafGuard, RootGuardManager
+from torch._dynamo.output_graph import OutputGraph, OutputGraphGuardsState
 from torch._guards import CompileId, Guard, GuardBuilderBase, Source
 from torch._inductor.utils import IndentedBuffer
 from torch.fx.experimental.symbolic_shapes import _CppShapeGuardsHelper, _ShapeGuardsHelper
 from torch.utils._ordered_set import OrderedSet
+
 from .source import AttrSource, DictGetItemSource, DictSubclassGetItemSource
 from .types import CacheEntry, DynamoFrameType, GuardFail, GuardFilterEntry, GuardFn
-from collections.abc import Generator, KeysView, Sequence
-from torch._C import DispatchKeySet
-from torch._dynamo.output_graph import OutputGraph, OutputGraphGuardsState
 
 """
 Core guard system for Dynamo that detects when compiled code needs to be recompiled due to

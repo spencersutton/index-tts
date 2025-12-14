@@ -1,9 +1,9 @@
-from collections.abc import Iterator
 import enum
+from collections.abc import Iterator
+from typing import Any, Optional, ParamSpec, TypeVar, Union
+
 import torch
 import torch._C as _C
-from typing import Any, Optional, TypeVar, Union
-from typing import ParamSpec
 
 class Tensor(torch._C.TensorBase):
     _is_param: bool

@@ -1,7 +1,8 @@
-import torch
 from abc import ABC, abstractmethod
 from types import TracebackType
 from typing import Any, NamedTuple
+
+import torch
 
 __all__ = ["Join", "JoinHook", "Joinable"]
 

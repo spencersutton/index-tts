@@ -1,11 +1,15 @@
-import torch
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from typing import Any, Literal, Optional, Union
-from collections.abc import Callable
+
+import torch
 from torch._C import (
     _cuda_getCurrentRawStream as get_cuda_stream,
+)
+from torch._C import (
     _mtia_getCurrentRawStream as get_mtia_stream,
+)
+from torch._C import (
     _xpu_getCurrentRawStream as get_xpu_stream,
 )
 

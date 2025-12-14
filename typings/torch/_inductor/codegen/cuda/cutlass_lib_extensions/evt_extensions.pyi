@@ -1,9 +1,11 @@
-from typing import Any, Union, TypeAlias
 from collections.abc import Callable
+from typing import Any, TypeAlias, Union
+
+from cutlass_library import DataType, EpilogueScheduleType, TileDescription
 from sympy import Expr
 from torch._inductor.ir import ComputedBuffer, InputBuffer
+
 from ..cutlass_utils import try_import_cutlass
-from cutlass_library import DataType, EpilogueScheduleType, TileDescription
 
 type EpilogueFunctor = Any
 type Buffer = ComputedBuffer | InputBuffer

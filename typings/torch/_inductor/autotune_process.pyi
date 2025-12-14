@@ -1,9 +1,9 @@
 import dataclasses
 import functools
+from collections.abc import Callable, Iterable, Sequence
+from typing import IO, TYPE_CHECKING, Any, Optional, TypeAlias, Union
+
 import torch
-from collections.abc import Iterable, Sequence
-from typing import Any, IO, Optional, TYPE_CHECKING, Union, TypeAlias
-from collections.abc import Callable
 from torch._inductor import ir
 from torch._inductor.select_algorithm import PartialRender, TritonTemplateCaller
 

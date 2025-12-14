@@ -2,6 +2,7 @@ import weakref
 from collections.abc import MutableMapping
 from typing import Self
 from weakref import ref
+
 from torch import Tensor
 
 WeakRef = ref

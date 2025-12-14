@@ -1,11 +1,13 @@
 import abc
 import inspect
 import types
-import torch
-import torch.fx
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Optional
-from collections.abc import Callable
+
+import torch
+import torch.fx
+
 from .hooks import Hooks
 
 log = ...

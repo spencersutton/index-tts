@@ -1,7 +1,10 @@
-import torch
 from collections.abc import Callable
 from typing import Any, TypeAlias
-from torch import Tensor, device as _device
+
+import torch
+from torch import Tensor
+from torch import device as _device
+
 from .memory import *
 
 type _device_t = _device | str | int

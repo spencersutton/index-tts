@@ -1,9 +1,11 @@
-import torch.fx
 from typing import TYPE_CHECKING
-from .base import VariableTracker
-from .user_defined import UserDefinedClassVariable
+
+import torch.fx
 from torch._dynamo.codegen import PyCodegen
 from torch._dynamo.symbolic_convert import InstructionTranslator
+
+from .base import VariableTracker
+from .user_defined import UserDefinedClassVariable
 
 """
 This module contains variable tracker classes for handling tensors and tensor-related operations in Dynamo.

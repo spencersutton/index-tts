@@ -1,4 +1,5 @@
 from typing import Optional
+
 from torch._inductor.autoheuristic.autoheuristic_utils import AHContext, AHMetadata, Choice
 
 class LearnedHeuristic:

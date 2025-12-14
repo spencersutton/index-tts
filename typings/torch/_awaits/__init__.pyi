@@ -1,5 +1,6 @@
-import torch
 from typing import Generic, TypeVar
+
+import torch
 
 __all__ = ["Await"]
 W = TypeVar("W")

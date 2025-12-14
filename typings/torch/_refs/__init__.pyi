@@ -5,34 +5,35 @@ import itertools
 import math
 import operator
 import warnings
+from collections.abc import Callable, Iterable, Sequence
+from enum import Enum
+from functools import partial, reduce, singledispatch, wraps
+from typing import Any, Optional, Union, cast, overload
+
 import torch
 import torch._prims as prims
 import torch._prims_common as utils
-import torch.utils._pytree as pytree
 import torch._refs._conversions
 import torch._refs.fft
 import torch._refs.linalg
 import torch._refs.nn.functional
 import torch._refs.special
-from collections.abc import Iterable, Sequence
-from enum import Enum
-from functools import partial, reduce, singledispatch, wraps
-from typing import Any, Optional, Union, cast, overload
-from collections.abc import Callable
+import torch.utils._pytree as pytree
 from torch import sym_float, sym_int
+from torch._decomp import register_decomposition
 from torch._prims_common import (
+    ELEMENTWISE_TYPE_PROMOTION_KIND,
+    REDUCTION_OUTPUT_TYPE_KIND,
     BoolLike,
     DeviceLikeType,
     Dim,
     DimsSequenceType,
     DimsType,
-    ELEMENTWISE_TYPE_PROMOTION_KIND,
     FloatLike,
     FloatWithoutSymFloat,
     IntLike,
     Number,
     NumberType,
-    REDUCTION_OUTPUT_TYPE_KIND,
     RealNumberType,
     ShapeType,
     StrideType,
@@ -53,7 +54,6 @@ from torch._prims_common.wrappers import (
     elementwise_unary_scalar_wrapper,
     out_wrapper,
 )
-from torch._decomp import register_decomposition
 
 __all__ = [
     "abs",

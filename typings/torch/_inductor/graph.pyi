@@ -1,26 +1,27 @@
 import contextlib
+from collections.abc import Callable, Iterable, Iterator, Sequence
+from contextlib import contextmanager
+from types import ModuleType
+from typing import TYPE_CHECKING, Any, NoReturn, Optional, TypeAlias, Union
+
 import sympy
 import torch
 import torch.fx
-from contextlib import contextmanager
-from typing import Any, NoReturn, Optional, TYPE_CHECKING, Union, TypeAlias
-from collections.abc import Callable
 from sympy import Expr
 from torch import Tensor, device
+from torch.fx import GraphModule
 from torch.fx.experimental.symbolic_shapes import ShapeEnv
+from torch.fx.graph import Graph
 from torch.fx.node import Node
 from torch.utils._ordered_set import OrderedSet
+
 from . import config, ir
 from .codegen.common import BackendFeature, FileBackedGraphModule, WorkspaceArg
-from .ir import Constant, GraphPartitionSignature, ShapeAsConstantBuffer, StorageBox, TensorBox, TorchBindObject
-from .utils import ValueWithLineMap
-from collections.abc import Iterable, Iterator, Sequence
-from types import ModuleType
-from torch.fx import GraphModule
-from torch.fx.graph import Graph
 from .codegen.wrapper import PythonWrapperCodegen
 from .dependencies import Dep
+from .ir import Constant, GraphPartitionSignature, ShapeAsConstantBuffer, StorageBox, TensorBox, TorchBindObject
 from .scheduler import BaseSchedulerNode
+from .utils import ValueWithLineMap
 
 if TYPE_CHECKING:
     type CompiledModule = ModuleType | FileBackedGraphModule

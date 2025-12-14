@@ -1,13 +1,14 @@
 import functools
 import os
+from collections.abc import Callable
+from types import ModuleType
+from typing import Any, NamedTuple, Optional, TypeAlias, Union
+
 import torch
 import torch.utils._pytree as pytree
-from types import ModuleType
-from typing import Any, NamedTuple, Optional, Union
-from collections.abc import Callable
-from typing import TypeAlias
 from torch._C import ScriptObject
 from torch._library.fake_class_registry import FakeScriptObject
+
 from ._compatibility import compatibility
 from .graph import Graph
 from .graph_module import GraphModule

@@ -10,7 +10,11 @@ from collections import UserDict
 from collections.abc import Generator, Iterable, Iterator
 from functools import cache
 from typing import Any, Optional, Union
+
+from _pytest.doctest import Module
+from pytest import DoctestItem
 from transformers import Trainer
+
 from .utils import (
     is_accelerate_available,
     is_flax_available,
@@ -23,8 +27,6 @@ from .utils import (
     is_torch_xla_available,
     is_torch_xpu_available,
 )
-from _pytest.doctest import Module
-from pytest import DoctestItem
 
 if is_accelerate_available(): ...
 if is_pytest_available(): ...

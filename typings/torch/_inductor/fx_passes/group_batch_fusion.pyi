@@ -1,7 +1,8 @@
 import collections
-import torch
 from collections.abc import Iterable, Iterator
 from typing import Any, Optional
+
+import torch
 from torch.utils._ordered_set import OrderedSet
 
 has_fbgemm = ...

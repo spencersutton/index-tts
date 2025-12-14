@@ -1,8 +1,10 @@
-import torch
 from collections.abc import Sequence
 from typing import Any, Union
+
+import torch
 from torch._inductor.constant_folding import ConstantFolder
 from torch.utils._ordered_set import OrderedSet
+
 from ..pattern_matcher import Arg, CallFunction, KeywordArg, Match, init_once_fakemode, register_graph_pattern
 
 log = ...

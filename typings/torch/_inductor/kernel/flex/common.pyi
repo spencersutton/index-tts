@@ -1,6 +1,8 @@
-import torch
 from collections.abc import Sequence
-from typing import Any, Optional, Union, TypeAlias
+from typing import Any, Optional, TypeAlias, Union
+
+import torch
+
 from ...ir import ComputedBuffer, IRNode, ShapeAsConstantBuffer, Subgraph, TensorBox
 
 """Common utilities and functions for flex attention kernels"""

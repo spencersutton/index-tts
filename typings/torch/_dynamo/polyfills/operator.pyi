@@ -1,9 +1,8 @@
 import operator
-from typing import Any, TYPE_CHECKING, TypeVar, overload
-from collections.abc import Callable
-from typing import TypeVarTuple, Unpack
+from collections.abc import Callable, Iterable
+from typing import TYPE_CHECKING, Any, TypeVar, TypeVarTuple, Unpack, overload
+
 from ..decorators import substitute_in_graph
-from collections.abc import Iterable
 
 """
 Python polyfills for operator

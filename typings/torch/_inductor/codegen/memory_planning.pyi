@@ -1,10 +1,12 @@
 import dataclasses
+from collections.abc import Iterable
+from typing import TYPE_CHECKING, Any, Optional, Protocol
+
 import sympy
 import torch
-from typing import Any, Optional, Protocol, TYPE_CHECKING
+
 from ..utils import CachedMethod, IndentedBuffer, cache_on_self
 from .wrapper import BufferLike, MemoryPlanningLine
-from collections.abc import Iterable
 
 if TYPE_CHECKING: ...
 

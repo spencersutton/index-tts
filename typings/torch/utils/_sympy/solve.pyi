@@ -1,5 +1,6 @@
-import sympy
 from typing import Optional
+
+import sympy
 
 log = ...
 _MIRROR_REL_OP: dict[type[sympy.Basic], type[sympy.Rel]] = ...

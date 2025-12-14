@@ -1,8 +1,7 @@
+from collections.abc import Callable, Iterable
+from typing import Any, ParamSpec, TypeVar
+
 import torch
-from collections.abc import Iterable
-from typing import Any
-from collections.abc import Callable
-from typing import ParamSpec, TypeVar
 
 """
 This module provides common utilities and base classes for TorchDynamo backends.

@@ -1,7 +1,8 @@
 import dataclasses
 from collections.abc import Collection, Mapping
 from enum import Enum
-from typing import Optional, TYPE_CHECKING, Union, TypeAlias
+from typing import TYPE_CHECKING, Optional, TypeAlias, Union
+
 from torch._library.fake_class_registry import FakeScriptObject
 
 if TYPE_CHECKING: ...

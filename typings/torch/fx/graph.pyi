@@ -1,12 +1,14 @@
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional, TypeAlias
+
 import torch
 import torch.utils._pytree as pytree
-from dataclasses import dataclass
-from typing import Any, Literal, NamedTuple, Optional, TYPE_CHECKING, TypeAlias
-from collections.abc import Callable
+
 from ._compatibility import compatibility
-from .node import Argument, Node, Target
 from ._symbolic_trace import Tracer
 from .graph_module import GraphModule
+from .node import Argument, Node, Target
 
 __all__ = ["PythonCode", "CodeGen", "Graph"]
 if TYPE_CHECKING: ...

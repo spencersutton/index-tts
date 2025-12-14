@@ -1,8 +1,8 @@
-import torch
-from contextlib import AbstractContextManager
-from typing import Any, Generic, TYPE_CHECKING, TypeVar, Union
 from collections.abc import Callable
-from .ops_handler import DefaultHandler, KernelFormatterHandler, MockHandler, OpsHandler, WrapperHandler
+from contextlib import AbstractContextManager
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, Union
+
+import torch
 from torch._inductor.choices import InductorChoices
 from torch._inductor.codegen.cpp_utils import LocalBufferContext
 from torch._inductor.debug import DebugContext
@@ -10,6 +10,8 @@ from torch._inductor.graph import GraphLowering
 from torch._inductor.ir import ExternKernelNode
 from torch._inductor.loop_body import InterpreterShim
 from torch._subclasses import FakeTensorMode
+
+from .ops_handler import DefaultHandler, KernelFormatterHandler, MockHandler, OpsHandler, WrapperHandler
 
 """
 This file provides a number of "global" variables/handlers that are actually

@@ -1,8 +1,10 @@
+from typing import ClassVar, Literal
+
 import torch
 import torch.ao.nn.intrinsic as nni
-from typing import ClassVar, Literal
 from torch import nn
 from torch.nn.common_types import _size_1_t
+
 from .utils import WeightedQuantizedModule
 
 __all__ = ["Conv1d", "Conv2d", "Conv3d", "ConvTranspose1d", "ConvTranspose2d", "ConvTranspose3d"]

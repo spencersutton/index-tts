@@ -1,23 +1,23 @@
 import contextlib
 import enum
-import torch.fx
 import types
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Generator, Sequence
 from contextlib import AbstractContextManager
 from dataclasses import dataclass
-from typing import Any, Optional, TYPE_CHECKING, TypeVar, Union
-from collections.abc import Callable
-from typing_extensions import TypedDict
-from typing import ParamSpec, Protocol, Unpack, override
+from typing import TYPE_CHECKING, Any, Optional, ParamSpec, Protocol, TypeVar, Union, Unpack, override
+
+import torch.fx
 from torch import fx
 from torch._inductor.cudagraph_utils import BoxedDeviceIndex, PlaceholderInfo
 from torch._inductor.output_code import OutputCode
 from torch._inductor.utils import BoxedBool, InputType
-from torch.fx import GraphModule
-from .ir import ExternKernelNode
-from collections.abc import Generator, Sequence
 from torch._ops import OpOverload
 from torch.export.pt2_archive._package_weights import Weights
+from torch.fx import GraphModule
+from typing_extensions import TypedDict
+
+from .ir import ExternKernelNode
 
 if TYPE_CHECKING: ...
 _P = ParamSpec("_P")

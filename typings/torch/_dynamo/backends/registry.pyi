@@ -1,8 +1,8 @@
-import torch
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from importlib.metadata import EntryPoint
-from typing import Any, Optional, Protocol, Union, TypeAlias
-from collections.abc import Callable
+from typing import Any, Optional, Protocol, TypeAlias, Union
+
+import torch
 from torch import fx
 
 """

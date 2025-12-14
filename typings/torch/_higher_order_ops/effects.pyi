@@ -1,6 +1,7 @@
-import torch
 from enum import Enum
-from typing import Any, Optional, Union, TypeAlias
+from typing import Any, Optional, TypeAlias, Union
+
+import torch
 from torch._C import DispatchKey
 from torch._ops import HigherOrderOperator
 from torch._subclasses.fake_tensor import FakeTensorMode

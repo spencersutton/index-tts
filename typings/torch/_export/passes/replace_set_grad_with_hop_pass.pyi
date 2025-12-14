@@ -1,5 +1,6 @@
+from typing import TYPE_CHECKING, Optional
+
 import torch
-from typing import Optional, TYPE_CHECKING
 from torch.export.graph_signature import ExportGraphSignature
 
 if TYPE_CHECKING: ...

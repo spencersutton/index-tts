@@ -1,8 +1,7 @@
+from collections.abc import Callable, Iterable, Sequence
+from typing import Optional, ParamSpec, TypeVar, Union
+
 import torch
-from collections.abc import Iterable, Sequence
-from typing import Optional, TypeVar, Union
-from collections.abc import Callable
-from typing import ParamSpec
 from torch._prims_common import DimsSequenceType, DimsType
 from torch.distributed.tensor._dtensor_spec import DTensorSpec
 from torch.distributed.tensor._op_schema import (

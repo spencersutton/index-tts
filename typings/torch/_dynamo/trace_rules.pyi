@@ -2,11 +2,13 @@ import dataclasses
 import functools
 import sys
 import types
+from collections.abc import Callable
+from typing import Any, Optional, Union
+
+import numpy as np
 import torch
 import torch.distributed
-import numpy as np
-from typing import Any, Optional, Union
-from collections.abc import Callable
+
 from .variables import SkipFunctionVariable, TorchInGraphFunctionVariable, UserFunctionVariable
 from .variables.base import VariableTracker
 

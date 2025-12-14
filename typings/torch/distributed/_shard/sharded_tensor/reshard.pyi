@@ -2,6 +2,7 @@ import torch
 import torch.distributed._shard.sharding_spec as shard_spec
 from torch._C._distributed_c10d import ProcessGroup
 from torch.distributed._shard.metadata import ShardMetadata
+
 from .shard import Shard
 
 def get_idx_from_placements(placements, current_rank) -> int: ...

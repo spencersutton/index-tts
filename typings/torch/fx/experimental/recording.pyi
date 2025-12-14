@@ -1,7 +1,8 @@
-import torch
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
+
+import torch
 
 log = ...
 trace_shape_events_log = ...

@@ -1,4 +1,5 @@
-from typing import Literal, NamedTuple, Optional, Union, TypeAlias
+from typing import Literal, NamedTuple, Optional, TypeAlias, Union
+
 from torch._decomp import register_decomposition
 from torch._prims_common import DimsType, ShapeType, TensorLikeType
 from torch._prims_common.wrappers import out_wrapper

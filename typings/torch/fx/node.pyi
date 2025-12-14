@@ -1,10 +1,10 @@
+from collections.abc import Callable, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Optional, ParamSpec, TypeAlias, TypeVar, Union
+
 import torch
-from collections.abc import Mapping, Sequence
-from typing import Any, Optional, TYPE_CHECKING, Union
-from collections.abc import Callable
-from typing import ParamSpec, TypeAlias, TypeVar
 from torch._C import _NodeBase
 from torch.fx.operator_schemas import ArgsKwargsPair
+
 from .._ops import ops as _ops
 from ._compatibility import compatibility
 from .graph import Graph

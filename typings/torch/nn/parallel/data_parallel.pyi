@@ -1,6 +1,7 @@
-import torch
 from collections.abc import Sequence
 from typing import Any, TypeVar
+
+import torch
 from torch.nn.modules import Module
 
 __all__ = ["DataParallel", "data_parallel"]

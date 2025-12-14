@@ -1,9 +1,10 @@
-import torch
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from typing import Any, Optional, TypeVar, Union
-from collections.abc import Callable
+
+import torch
 from torch import SymInt, Tensor
 from torch.types import IntLikeType
+
 from .descriptors import AOTInput, AOTOutput
 from .schemas import FxValue, MemoryFormatMeta, PlainTensorMeta, SubclassCreationMeta, ViewAndMutationMeta
 

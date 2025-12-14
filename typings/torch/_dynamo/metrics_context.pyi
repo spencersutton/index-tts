@@ -1,7 +1,5 @@
-from typing import Any, Optional, TYPE_CHECKING
-from collections.abc import Callable
-from typing import Self, TypeAlias
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
+from typing import TYPE_CHECKING, Any, Optional, Self, TypeAlias
 
 """Metrics collection and management system for Dynamo.
 

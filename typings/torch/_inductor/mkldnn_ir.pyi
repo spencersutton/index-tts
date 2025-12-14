@@ -1,7 +1,9 @@
-import sympy
 from collections.abc import Sequence
 from typing import Any, Optional, Union
+
+import sympy
 from torch.utils._ordered_set import OrderedSet
+
 from .ir import ExternKernelAlloc, ShapeAsConstantBuffer, TensorBox
 
 class ConvolutionUnary(ExternKernelAlloc):

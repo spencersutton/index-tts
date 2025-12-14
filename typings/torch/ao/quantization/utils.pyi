@@ -1,6 +1,7 @@
-import torch
 from collections.abc import Callable
 from typing import Any, TypeAlias
+
+import torch
 from torch.fx import Node
 
 type NodePattern = tuple[Node, Node] | tuple[Node, tuple[Node, Node]] | Any

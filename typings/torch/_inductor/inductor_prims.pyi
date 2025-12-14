@@ -1,7 +1,8 @@
-import torch
-from typing import Optional, TYPE_CHECKING
-from torch import Tensor
 from collections.abc import Sequence
+from typing import TYPE_CHECKING, Optional
+
+import torch
+from torch import Tensor
 
 if TYPE_CHECKING: ...
 log = ...

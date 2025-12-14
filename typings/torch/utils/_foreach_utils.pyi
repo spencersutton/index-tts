@@ -1,5 +1,5 @@
-from typing import Optional
-from typing import TypeAlias
+from typing import Optional, TypeAlias
+
 from torch import Tensor
 
 type TensorListList = list[list[Tensor | None]]

@@ -1,5 +1,5 @@
-from typing import TypeVar
-from typing import Self
+from typing import Self, TypeVar
+
 from ._compatibility import compatibility
 
 __all__ = ["immutable_list", "immutable_dict"]

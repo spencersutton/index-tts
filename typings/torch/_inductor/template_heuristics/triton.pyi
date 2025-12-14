@@ -1,20 +1,21 @@
 import dataclasses
-import sympy
-import torch
+from collections.abc import Callable, Generator
 from functools import partial
 from threading import Lock
-from typing import Any, Optional, TYPE_CHECKING
-from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Optional
+
+import sympy
+import torch
 from torch._inductor.template_heuristics.triton_addmm import AddMMConfigMixin
+from triton import Config as TritonConfig
+
+from ..ir import Layout
 from ..kernel.bmm import bmm_template
 from ..kernel.mm import mm_template, persistent_tma_mm_template, scaled_mm_device_tma_template
 from ..kernel.mm_plus_mm import mm_plus_mm_template
 from ..kernel_inputs import KernelInputs
 from .gemm import GemmMaxAutotuneTemplateConfigHeuristics
 from .registry import register_template_heuristic
-from collections.abc import Generator
-from triton import Config as TritonConfig
-from ..ir import Layout
 
 if TYPE_CHECKING: ...
 

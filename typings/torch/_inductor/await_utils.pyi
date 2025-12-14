@@ -4,7 +4,7 @@ from asyncio import AbstractEventLoop, Future
 from collections.abc import Awaitable, Coroutine, Generator, Iterator
 from contextlib import contextmanager
 from contextvars import Context
-from typing import Any, Protocol, TypeVar, TypeAlias
+from typing import Any, Protocol, TypeAlias, TypeVar
 
 T = TypeVar("T")
 type TCoro[T] = Generator[Any, None, T]

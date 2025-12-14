@@ -1,16 +1,17 @@
 import dataclasses
+from collections.abc import Callable, Iterator
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeAlias, Union
+
 import sympy
 import torch
 import torch.utils._pytree as pytree
-from collections.abc import Iterator
-from typing import Any, NamedTuple, Optional, TYPE_CHECKING, Union, TypeAlias
-from collections.abc import Callable
-from torch.fx._symbolic_trace import _ConstantAttributeType
-from torch.utils._sympy.value_ranges import ValueRanges
 from torch._export.verifier import Verifier
 from torch.export.decomp_utils import CustomDecompTable
 from torch.fx._compatibility import compatibility
+from torch.fx._symbolic_trace import _ConstantAttributeType
 from torch.fx.passes.infra.pass_base import PassResult
+from torch.utils._sympy.value_ranges import ValueRanges
+
 from .graph_signature import ArgumentSpec, ExportGraphSignature
 
 if TYPE_CHECKING: ...

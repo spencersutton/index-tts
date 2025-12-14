@@ -1,5 +1,6 @@
-from typing import Any, Optional
 from collections.abc import Callable
+from typing import Any, Optional
+
 from .. import ir
 from .cpp_gemm_template import CppGemmTemplate
 from .cpp_template_kernel import CppTemplateKernel

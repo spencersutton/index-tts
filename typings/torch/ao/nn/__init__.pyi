@@ -1,10 +1,19 @@
 from types import ModuleType
 from typing import TYPE_CHECKING as _TYPE_CHECKING
+
 from torch.ao.nn import (
     intrinsic as intrinsic,
+)
+from torch.ao.nn import (
     qat as qat,
+)
+from torch.ao.nn import (
     quantizable as quantizable,
+)
+from torch.ao.nn import (
     quantized as quantized,
+)
+from torch.ao.nn import (
     sparse as sparse,
 )
 

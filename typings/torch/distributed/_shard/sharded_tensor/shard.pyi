@@ -1,5 +1,6 @@
-import torch
 from dataclasses import dataclass
+
+import torch
 from torch.distributed._shard.metadata import ShardMetadata
 
 @dataclass

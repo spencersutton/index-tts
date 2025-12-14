@@ -3,29 +3,29 @@ import dataclasses
 import enum
 import functools
 import itertools
+from abc import ABC, abstractmethod
+from collections.abc import Callable, Iterator, MutableMapping, Sequence
+from enum import Enum
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, NamedTuple, Optional, Self, TypeAlias, TypeVar, Union
+
 import sympy
 import torch
 import torch.fx
-from abc import ABC, abstractmethod
-from enum import Enum
-from typing import Any, ClassVar, Generic, NamedTuple, Optional, TYPE_CHECKING, Union, TypeAlias
-from collections.abc import Callable
-from typing import Self, TypeVar
 from torch._prims_common import ELEMENTWISE_TYPE_PROMOTION_KIND
+from torch.fx import GraphModule
 from torch.utils._config_module import ConfigModule
 from torch.utils._ordered_set import OrderedSet
 from torch.utils._sympy.printers import PythonPrinter as _PythonPrinter
 from torch.utils._sympy.value_ranges import ValueRanges
-from ..ops_handler import BasicMathOpsMixin, DefaultHandler
-from ..shape_propagation import BlockShapeType
-from ..utils import DeferredLineBase, IndentedBuffer, ir_dataclass
-from ..virtualized import OpsHandler, OpsValue, ReductionType, StoreMode
-from collections.abc import Iterator, MutableMapping, Sequence
-from torch.fx import GraphModule
+
 from ..custom_graph_pass import CustomGraphModulePass
 from ..ir import ChoiceCaller, FixedLayout, IRNode
 from ..loop_body import LoopBody
+from ..ops_handler import BasicMathOpsMixin, DefaultHandler
 from ..scheduler import BaseScheduling, Scheduler, SchedulerNode
+from ..shape_propagation import BlockShapeType
+from ..utils import DeferredLineBase, IndentedBuffer, ir_dataclass
+from ..virtualized import OpsHandler, OpsValue, ReductionType, StoreMode
 from .wrapper import PythonWrapperCodegen
 
 if TYPE_CHECKING:

@@ -1,4 +1,5 @@
 import typing_extensions
+
 from .utils import DEPRECATION_WARNING
 
 __all__ = [

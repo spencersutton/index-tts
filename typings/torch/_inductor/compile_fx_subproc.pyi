@@ -1,7 +1,8 @@
 import functools
-from typing import TYPE_CHECKING
-from typing import final
+from typing import TYPE_CHECKING, final
+
 from torch._inductor.compile_worker.subproc_pool import AnyPool
+
 from .compile_fx_ext import _OutOfProcessFxCompile
 
 if TYPE_CHECKING: ...

@@ -1,7 +1,8 @@
 import dataclasses
-from typing import Any, Optional, Union
-from typing import Self
+from typing import Any, Optional, Self, Union
+
 from torch import dtype as torch_dtype
+
 from ..ir import GraphPartitionSignature
 from ..utils import IndentedBuffer, cache_on_self
 from .cpp_wrapper_cpu import CppWrapperCpu

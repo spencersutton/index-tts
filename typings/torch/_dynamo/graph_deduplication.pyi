@@ -1,7 +1,9 @@
+from typing import Optional, TypeAlias
+
 import torch
 import torch.fx
-from typing import Optional, TypeAlias
 from torch.utils._ordered_set import OrderedSet
+
 from .graph_region_tracker import Node
 
 """

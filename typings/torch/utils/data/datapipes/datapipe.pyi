@@ -1,6 +1,7 @@
 from collections import UserList
 from collections.abc import Callable, Iterable, Iterator
 from typing import Any, Literal, TypeVar
+
 from torch.utils.data import Dataset, IterableDataset
 from torch.utils.data.datapipes._hook_iterator import _SnapshotState
 from torch.utils.data.datapipes._typing import _DataPipeMeta, _IterDataPipeMeta

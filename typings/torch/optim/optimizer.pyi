@@ -1,9 +1,8 @@
-import torch
 from collections import OrderedDict
-from collections.abc import Iterable
-from typing import Any, Optional, TypeVar, Union, overload
-from collections.abc import Callable
-from typing import ParamSpec, Self, TypeAlias
+from collections.abc import Callable, Iterable
+from typing import Any, Optional, ParamSpec, Self, TypeAlias, TypeVar, Union, overload
+
+import torch
 from torch.utils.hooks import RemovableHandle
 
 """Base optimizer."""

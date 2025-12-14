@@ -1,12 +1,13 @@
 import contextlib
 import typing
-from collections.abc import Sequence
-from typing import Any, TYPE_CHECKING, Union
-from collections.abc import Callable
-from torch.overrides import BaseTorchFunctionMode
-from .base import VariableTracker
+from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING, Any, Union
+
 from torch._dynamo.codegen import PyCodegen
 from torch._dynamo.symbolic_convert import InstructionTranslator
+from torch.overrides import BaseTorchFunctionMode
+
+from .base import VariableTracker
 
 """
 Built-in function and type variable tracking for TorchDynamo's symbolic execution.

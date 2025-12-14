@@ -1,9 +1,9 @@
+from collections.abc import Callable, Sequence
+from typing import IO, TYPE_CHECKING, Any, Optional, Union
+
 import torch
 import torch.fx as fx
 import torch.nn as nn
-from typing import Any, IO, Optional, TYPE_CHECKING, Union
-from collections.abc import Callable
-from collections.abc import Sequence
 from torch._inductor.compile_fx import _CompileFxCallable
 
 """

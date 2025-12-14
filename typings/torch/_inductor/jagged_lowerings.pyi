@@ -1,6 +1,8 @@
+from typing import Union
+
 import sympy
 import torch
-from typing import Union
+
 from .ir import ShapeAsConstantBuffer, TensorBox
 
 def dense_idx_to_jagged_idx(batch_idx, seq_idx, offsets_loader, jagged_len):  # -> tuple[Any, Any]:

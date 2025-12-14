@@ -1,6 +1,7 @@
-import torch
-from typing import Any, TypeAlias
 from collections.abc import Callable
+from typing import Any, TypeAlias
+
+import torch
 
 Feedback = float
 Choice = str

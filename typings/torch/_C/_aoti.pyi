@@ -1,5 +1,6 @@
 from ctypes import c_void_p
 from typing import Protocol, overload
+
 from torch import Tensor
 
 def unsafe_alloc_void_ptrs_from_tensors(tensors: list[Tensor]) -> list[c_void_p]: ...

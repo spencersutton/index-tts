@@ -2,11 +2,11 @@ import dataclasses
 import enum
 import types
 from collections import defaultdict
-from typing import Optional, TYPE_CHECKING, TypeVar, Union
-from typing import Self, override
-from torch.compiler._cache import CacheArtifact, CacheArtifactFactory
+from typing import TYPE_CHECKING, Optional, Self, TypeVar, Union, override
+
 from torch._dynamo.symbolic_convert import InstructionTranslator
 from torch._inductor.remote_cache import JsonDataTy, RemoteCache
+from torch.compiler._cache import CacheArtifact, CacheArtifactFactory
 
 """
 Profile Guided Optimization (PGO) implementation for Dynamo.

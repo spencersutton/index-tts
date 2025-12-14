@@ -1,6 +1,7 @@
-import torch
 from dataclasses import dataclass
 from enum import Enum
+
+import torch
 from torch.distributed._shard.metadata import ShardMetadata
 
 class MEM_FORMAT_ENCODING(Enum):

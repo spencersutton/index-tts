@@ -9,25 +9,48 @@ import sys
 import types
 import typing
 import weakref
-import torch
-import numpy as np
 from collections import Counter
+from collections.abc import (
+    Callable,
+    Container,
+    Generator,
+    ItemsView,
+    Iterable,
+    Iterator,
+    KeysView,
+    Mapping,
+    Sequence,
+    ValuesView,
+)
 from contextlib import AbstractContextManager, contextmanager
 from functools import lru_cache
 from types import CodeType, MethodWrapperType
-from typing import Any, ClassVar, Generic, Optional, TypeVar, Union, overload
-from collections.abc import Callable
-from typing import Literal, ParamSpec, TypeAlias, TypeGuard, TypeIs
+from typing import (
+    Any,
+    ClassVar,
+    Generic,
+    Literal,
+    Optional,
+    ParamSpec,
+    TypeAlias,
+    TypeGuard,
+    TypeIs,
+    TypeVar,
+    Union,
+    overload,
+)
+
+import numpy as np
+import torch
 from torch import fx
 from torch._dynamo.metrics_context import MetricsContext, RuntimeMetricsContext
-from torch._guards import CompileId, Source
-from torch.utils._triton import has_triton_package
-from torch.utils.hooks import RemovableHandle
-from collections.abc import Container, Generator, ItemsView, Iterable, Iterator, KeysView, Mapping, Sequence, ValuesView
 from torch._dynamo.replay_record import ExecutionRecord
 from torch._dynamo.symbolic_convert import InstructionTranslator, InstructionTranslatorBase
 from torch._dynamo.variables.base import VariableTracker
+from torch._guards import CompileId, Source
 from torch._prims_common import DeviceLikeType
+from torch.utils._triton import has_triton_package
+from torch.utils.hooks import RemovableHandle
 
 """
 Utility functions and classes used throughout the TorchDynamo system.

@@ -1,3 +1,5 @@
+from math import e, pi
+
 from . import fft, linalg, random
 from ._dtypes import *
 from ._funcs import *
@@ -5,7 +7,6 @@ from ._getlimits import finfo, iinfo
 from ._ndarray import array, asarray, ascontiguousarray, can_cast, from_dlpack, ndarray, newaxis, result_type
 from ._ufuncs import *
 from ._util import AxisError, UFuncTypeError
-from math import e, pi
 
 all = ...
 alltrue = ...

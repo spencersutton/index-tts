@@ -1,11 +1,13 @@
 import contextlib
 import functools
 from typing import TYPE_CHECKING
+
+from torch._dynamo.codegen import PyCodegen
+from torch._dynamo.symbolic_convert import InstructionTranslator
+
 from .base import VariableTracker
 from .ctx_manager import GenericContextWrappingVariable
 from .tensor import TensorVariable
-from torch._dynamo.codegen import PyCodegen
-from torch._dynamo.symbolic_convert import InstructionTranslator
 
 """TorchDynamo support for __torch_function__ tensor subclasses.
 

@@ -1,19 +1,18 @@
 import inspect
-import torch
-import torch.library
-import torch._decomp.decompositions
-import torch._refs
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from functools import lru_cache, partial, wraps
 from itertools import chain
-from typing import Optional, TYPE_CHECKING, TypeVar, Union
-from collections.abc import Callable
-from typing import ParamSpec
-from torch.export.decomp_utils import CustomDecompTable
-from torch._ops import HigherOrderOperator, OpOverload, OpOverloadPacket, OperatorBase
+from typing import TYPE_CHECKING, Optional, ParamSpec, TypeVar, Union
+
+import torch
+import torch._decomp.decompositions
+import torch._refs
+import torch.library
+from torch._ops import HigherOrderOperator, OperatorBase, OpOverload, OpOverloadPacket
 from torch._prims_common import CustomOutParamAnnotation
 from torch._subclasses.functional_tensor import FunctionalTensor
+from torch.export.decomp_utils import CustomDecompTable
 from torch.utils import _pytree as pytree
 
 if TYPE_CHECKING: ...

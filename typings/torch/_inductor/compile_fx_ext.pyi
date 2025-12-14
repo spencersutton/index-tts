@@ -1,21 +1,22 @@
 import contextlib
 import logging
 import queue
-import warnings
-import torch.fx
 import types
+import warnings
+from collections.abc import Generator, Sequence
 from dataclasses import dataclass
-from typing import Any, Optional, TYPE_CHECKING
-from typing import Self, final, override
+from typing import TYPE_CHECKING, Any, Optional, Self, final, override
+
+import torch.fx
 from torch._inductor.metrics import CachedMetricsDeltas
 from torch._inductor.output_code import CompiledFxGraphConstants, CompiledFxGraphConstantsWithGm, OutputCode
+from torch._inductor.utils import InputType
 from torch._subclasses import FakeTensorMode
+from torch.fx import GraphModule
 from torch.utils._ordered_set import OrderedSet
+
 from . import config
 from .compile_fx import FxCompile, _CompileFxKwargs
-from collections.abc import Generator, Sequence
-from torch._inductor.utils import InputType
-from torch.fx import GraphModule
 
 if TYPE_CHECKING: ...
 

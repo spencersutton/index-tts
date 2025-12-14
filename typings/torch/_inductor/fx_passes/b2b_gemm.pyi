@@ -1,5 +1,7 @@
-import torch
 from typing import Union
+
+import torch
+
 from ..ir import ShapeAsConstantBuffer, Subgraph, TensorBox
 from ..pattern_matcher import Arg, CallFunction, Match, register_graph_pattern
 from ..select_algorithm import SymbolicGridFn

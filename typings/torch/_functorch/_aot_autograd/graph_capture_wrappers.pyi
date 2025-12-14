@@ -1,8 +1,10 @@
+from collections.abc import Callable
 from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any, Optional, TypeVar, Union
-from collections.abc import Callable
+
 from torch import Tensor
+
 from .descriptors import AOTInput
 from .schemas import (
     AOTConfig,

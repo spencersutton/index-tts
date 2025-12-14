@@ -1,17 +1,18 @@
 import operator
-import torch
-from typing import Any, Optional, Union
 from collections.abc import Callable
-from typing import TypeAlias
+from typing import Any, Optional, TypeAlias, Union
+
+import torch
 from torch.utils._ordered_set import OrderedSet
+
 from ..pattern_matcher import (
+    MULTIPLE,
     CallFunction,
     CallFunctionVarArgs,
     CallMethodVarArgs,
     Ignored,
     KeywordArg,
     ListOf,
-    MULTIPLE,
     Match,
     MatchContext,
     PatternMatcherPass,

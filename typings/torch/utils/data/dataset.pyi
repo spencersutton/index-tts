@@ -1,6 +1,7 @@
 from collections.abc import Iterable, Sequence
 from typing import TypeVar
 from warnings import deprecated
+
 from torch import Generator, Tensor
 
 __all__ = [

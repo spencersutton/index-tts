@@ -4,15 +4,18 @@ import functools
 import sys
 import traceback
 import types
+from collections.abc import Callable, Generator, Sequence
 from traceback import StackSummary
-from typing import Any, Optional, TYPE_CHECKING, Union
-from collections.abc import Callable
-from typing import TypeAlias
+from typing import TYPE_CHECKING, Any, Optional, TypeAlias, Union
+
 from torch._dynamo.exc import ObservedException
+from torch._subclasses.fake_tensor import FakeTensorMode
 from torch.utils._functools import cache_method
+
 from . import trace_rules, variables
 from .bytecode_transformation import Instruction
 from .output_graph import GraphCompileReason, OutputGraph
+from .package import CompilePackage
 from .replay_record import ExecutionRecorder
 from .resume_execution import ReenterWith
 from .source import GlobalSource, Source
@@ -24,9 +27,6 @@ from .variables.functions import BaseUserFunctionVariable
 from .variables.misc import ExceptionVariable
 from .variables.torch_function import SymbolicTorchFunctionState
 from .variables.user_defined import UserDefinedExceptionClassVariable, UserDefinedExceptionObjectVariable
-from collections.abc import Generator, Sequence
-from torch._subclasses.fake_tensor import FakeTensorMode
-from .package import CompilePackage
 
 """
 Core module responsible for converting Python bytecode into TorchDynamo's symbolic execution format.

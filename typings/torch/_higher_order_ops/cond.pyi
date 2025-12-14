@@ -1,6 +1,7 @@
-import torch
-from typing import Any, Union
 from collections.abc import Callable
+from typing import Any, Union
+
+import torch
 from torch._C import DispatchKey
 from torch._functorch.utils import exposed_in
 from torch._ops import HigherOrderOperator

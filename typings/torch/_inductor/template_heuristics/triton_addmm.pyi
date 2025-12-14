@@ -1,7 +1,8 @@
-from typing import Any, TYPE_CHECKING
-from .base import TemplateConfigHeuristics
+from typing import TYPE_CHECKING, Any
+
 from ..ir import Layout
 from ..kernel_inputs import KernelInputs
+from .base import TemplateConfigHeuristics
 
 if TYPE_CHECKING: ...
 

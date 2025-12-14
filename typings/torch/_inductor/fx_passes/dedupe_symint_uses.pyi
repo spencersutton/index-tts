@@ -1,6 +1,7 @@
-import torch
 from dataclasses import dataclass
 from typing import Union
+
+import torch
 from torch import SymBool, SymFloat, SymInt
 
 @dataclass

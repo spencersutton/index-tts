@@ -1,5 +1,6 @@
-import torch
 from collections.abc import Sequence
+
+import torch
 from torch import Tensor
 from torch.distributions import constraints
 from torch.distributions.distribution import Distribution

@@ -1,7 +1,11 @@
 from . import parametrizations, rnn, stateless
 from .clip_grad import (
     _clip_grads_with_norm_ as clip_grads_with_norm_,
+)
+from .clip_grad import (
     _get_total_norm as get_total_norm,
+)
+from .clip_grad import (
     clip_grad_norm,
     clip_grad_norm_,
     clip_grad_value_,

@@ -1,6 +1,7 @@
 import dataclasses
 import types
 from typing import Any, Optional
+
 from .bytecode_transformation import Instruction
 
 """

@@ -1,10 +1,11 @@
-import torch
-from typing import Any, Optional, TYPE_CHECKING, Union
-from ..scheduler import BaseSchedulerNode, BaseScheduling, FusedSchedulerNode, Scheduler, SchedulerNode
 from collections.abc import Sequence
-from typing import TypeAlias
+from typing import TYPE_CHECKING, Any, Optional, TypeAlias, Union
+
+import torch
 from sympy import Expr
 from torch.utils._ordered_set import OrderedSet
+
+from ..scheduler import BaseSchedulerNode, BaseScheduling, FusedSchedulerNode, Scheduler, SchedulerNode
 from .common import BackendFeature
 
 if TYPE_CHECKING:

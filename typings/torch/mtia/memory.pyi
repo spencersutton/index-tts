@@ -1,4 +1,5 @@
 from typing import Any
+
 from . import _device_t
 
 def memory_stats(device: _device_t | None = ...) -> dict[str, Any]: ...

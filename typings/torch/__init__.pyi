@@ -3,73 +3,185 @@ import functools
 import os
 import platform
 import sys
-import torch
 from collections.abc import Callable as Callable
 from typing import (
-    Any as Any,
     TYPE_CHECKING,
+)
+from typing import (
+    Any as Any,
+)
+from typing import (
     TypeIs as _TypeIs,
+)
+from typing import (
     overload as overload,
 )
+
+import torch
 from torch import (
     _C as _C,
+)
+from torch import (
     _VF as _VF,
+)
+from torch import (
     __config__ as __config__,
+)
+from torch import (
     __future__ as __future__,
+)
+from torch import (
     _awaits as _awaits,
+)
+from torch import (
     _dynamo as _dynamo,
+)
+from torch import (
     _inductor as _inductor,
+)
+from torch import (
     _library as _library,
+)
+from torch import (
     _ops as _ops,
+)
+from torch import (
     _subclasses as _subclasses,
+)
+from torch import (
     accelerator as accelerator,
+)
+from torch import (
     amp as amp,
+)
+from torch import (
     ao as ao,
+)
+from torch import (
     autograd as autograd,
+)
+from torch import (
     backends as backends,
+)
+from torch import (
     compiler as compiler,
+)
+from torch import (
     cpu as cpu,
+)
+from torch import (
     cuda as cuda,
+)
+from torch import (
     distributed as distributed,
+)
+from torch import (
     distributions as distributions,
+)
+from torch import (
     export as export,
+)
+from torch import (
     fft as fft,
+)
+from torch import (
     func as func,
+)
+from torch import (
     functional as functional,
+)
+from torch import (
     futures as futures,
+)
+from torch import (
     fx as fx,
+)
+from torch import (
     hub as hub,
+)
+from torch import (
     jit as jit,
+)
+from torch import (
     library as library,
+)
+from torch import (
     linalg as linalg,
+)
+from torch import (
     masked as masked,
+)
+from torch import (
     mps as mps,
+)
+from torch import (
     mtia as mtia,
+)
+from torch import (
     multiprocessing as multiprocessing,
+)
+from torch import (
     nested as nested,
+)
+from torch import (
     nn as nn,
+)
+from torch import (
     onnx as onnx,
+)
+from torch import (
     optim as optim,
+)
+from torch import (
     overrides as overrides,
+)
+from torch import (
     profiler as profiler,
+)
+from torch import (
     quantization as quantization,
+)
+from torch import (
     quasirandom as quasirandom,
+)
+from torch import (
     random as random,
+)
+from torch import (
     return_types as return_types,
+)
+from torch import (
     serialization as serialization,
+)
+from torch import (
     sparse as sparse,
+)
+from torch import (
     special as special,
+)
+from torch import (
     storage as storage,
+)
+from torch import (
     testing as testing,
+)
+from torch import (
     types as types,
+)
+from torch import (
     utils as utils,
+)
+from torch import (
     version as version,
+)
+from torch import (
     xpu as xpu,
 )
 from torch._C import *
 from torch._C._VariableFunctions import *
 from torch._classes import classes as classes
-from torch._higher_order_ops import cond as cond, while_loop as while_loop
+from torch._higher_order_ops import cond as cond
+from torch._higher_order_ops import while_loop as while_loop
 from torch._lobpcg import lobpcg as lobpcg
 from torch._ops import ops as ops
 from torch._tensor import Tensor
@@ -79,8 +191,14 @@ from torch._utils_internal import USE_RTLD_GLOBAL_WITH_LIBTORCH
 from torch.amp import GradScaler, autocast
 from torch.autograd import (
     enable_grad as enable_grad,
+)
+from torch.autograd import (
     inference_mode as inference_mode,
+)
+from torch.autograd import (
     no_grad as no_grad,
+)
+from torch.autograd import (
     set_grad_enabled as set_grad_enabled,
 )
 from torch.func import vmap as vmap

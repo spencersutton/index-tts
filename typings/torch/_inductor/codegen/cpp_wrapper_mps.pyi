@@ -1,4 +1,5 @@
 from typing import Optional
+
 from ..ir import GraphPartitionSignature
 from .cpp_wrapper_gpu import CppWrapperGpu
 from .wrapper import PythonWrapperCodegen

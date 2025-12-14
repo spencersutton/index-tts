@@ -1,6 +1,7 @@
-import torch
 from collections.abc import Sequence
 from typing import Any
+
+import torch
 from torch.nn.modules import Module
 
 __all__ = ["get_a_var", "parallel_apply"]

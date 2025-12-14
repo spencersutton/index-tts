@@ -1,14 +1,14 @@
 import dataclasses
 import functools
+from abc import ABC, abstractmethod
+from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
+from typing import Any, Optional, Protocol, TypeAlias, TypeIs, TypeVar, Union
+
 import torch
 import torch.fx
 import torch.utils._pytree as pytree
-from abc import ABC, abstractmethod
-from collections.abc import Generator, Iterable, Mapping, Sequence
-from typing import Any, Optional, Protocol, TypeVar, Union, TypeAlias
-from collections.abc import Callable
-from typing import TypeIs
 from torch.utils._ordered_set import OrderedSet
+
 from .._functorch import config as functorch_config
 from ..fx import Transformer
 

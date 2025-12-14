@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+
 from .. import lowering as L
 from ..select_algorithm import SymbolicGridFn
 

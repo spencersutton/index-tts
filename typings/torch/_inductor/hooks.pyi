@@ -1,7 +1,8 @@
 import contextlib
-import torch
-from typing import TYPE_CHECKING
 from collections.abc import Callable
+from typing import TYPE_CHECKING
+
+import torch
 
 if TYPE_CHECKING: ...
 INTERMEDIATE_HOOKS: list[Callable[[str, torch.Tensor], None]] = ...

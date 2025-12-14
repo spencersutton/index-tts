@@ -1,9 +1,11 @@
 import dataclasses
-import torch
-from typing import Any, Optional, TYPE_CHECKING, TypeAlias
 from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Optional, TypeAlias
+
+import torch
 from torch._subclasses import FakeTensor
 from torch.fx.graph_module import GraphModule
+
 from .schemas import AOTConfig, AOTGraphCapture, AOTState, FlatFn, ViewAndMutationMeta
 
 """

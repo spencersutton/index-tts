@@ -1,16 +1,15 @@
 import operator
 import typing
 import warnings
-import torch
-import sympy
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from contextlib import AbstractContextManager, nullcontext
 from enum import Enum
 from functools import reduce
-from typing import Any, NamedTuple, Optional, TYPE_CHECKING, TypeVar, Union, cast, overload
-from collections.abc import Callable
-from typing import TypeAlias
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeAlias, TypeVar, Union, cast, overload
 from warnings import deprecated
+
+import sympy
+import torch
 from torch import sym_float, sym_int, sym_max
 
 if TYPE_CHECKING:

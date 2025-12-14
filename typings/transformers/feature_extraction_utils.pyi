@@ -16,7 +16,7 @@ logger = ...
 PreTrainedFeatureExtractor = Union["SequenceFeatureExtractor"]
 SpecificFeatureExtractorType = TypeVar("SpecificFeatureExtractorType", bound="FeatureExtractionMixin")
 
-class BatchFeature(UserDict):
+class BatchFeature[T](UserDict[str, T]):
     r"""
     Holds the output of the [`~SequenceFeatureExtractor.pad`] and feature extractor specific `__call__` methods.
 
@@ -30,8 +30,8 @@ class BatchFeature(UserDict):
             You can give a tensor_type here to convert the lists of integers in PyTorch/TensorFlow/Numpy Tensors at
             initialization.
     """
-    def __init__(self, data: dict[str, Any] | None = ..., tensor_type: None | str | TensorType = ...) -> None: ...
-    def __getitem__(self, item: str) -> Any:
+    def __init__(self, data: dict[str, T] | None = ..., tensor_type: None | str | TensorType = ...) -> None: ...
+    def __getitem__(self, item: str) -> T:
         """
         If the key is a string, returns the value of the dict associated to `key` ('input_values', 'attention_mask',
         etc.).

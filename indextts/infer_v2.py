@@ -279,13 +279,13 @@ class IndexTTS2:
                     inductor_config.fx_graph_cache = True
                     # Remote cache for distributed setups (local file-based)
                     inductor_config.fx_graph_remote_cache = False
-                except (ImportError, AttributeError):
+                except ImportError, AttributeError:
                     pass  # Older PyTorch versions may not have these options
 
             logger.info("torch.compile cache directory: %s", cache_dir)
 
-        cfg = cast(Mapping[str, Any], OmegaConf.load(cfg_path))
-        self.cfg = CheckpointsConfig(**cfg)
+        cfg = cast(CheckpointsConfig, OmegaConf.load(cfg_path))  # pyright: ignore[reportInvalidCast]
+        self.cfg = cfg
         self.model_dir = model_dir
         self.dtype = torch.float16 if self.use_fp16 else None
         self.stop_mel_token = self.cfg.gpt.stop_mel_token
@@ -452,6 +452,7 @@ class IndexTTS2:
             attention_mask=attention_mask,
             output_hidden_states=True,
         )
+        assert not isinstance(vq_emb, tuple) and vq_emb.hidden_states is not None
         feat = vq_emb.hidden_states[17]  # (B, T, C)
         return (feat - self.semantic_mean) / self.semantic_std
 

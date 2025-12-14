@@ -121,7 +121,7 @@ class Wav2Vec2BertModel(Wav2Vec2BertPreTrainedModel):
         output_attentions: bool | None = ...,
         output_hidden_states: bool | None = ...,
         return_dict: bool | None = ...,
-    ) -> tuple | Wav2Vec2BertBaseModelOutput:
+    ) -> tuple[object] | Wav2Vec2BertBaseModelOutput:
         r"""
         mask_time_indices (`torch.BoolTensor` of shape `(batch_size, sequence_length)`, *optional*):
             Indices to mask extracted features for contrastive loss. When in training mode, model learns to predict

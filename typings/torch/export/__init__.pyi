@@ -1,10 +1,12 @@
 import logging
-import torch
 from collections.abc import Callable, Mapping
 from typing import Any, TypeAlias
 from warnings import deprecated
+
+import torch
 from torch.fx.passes.infra.pass_base import PassResult
 from torch.types import FileLike
+
 from .decomp_utils import CustomDecompTable
 from .dynamic_shapes import AdditionalInputs, Constraint, Dim, ShapesCollection, dims
 from .exported_program import ExportedProgram, ModuleCallEntry, ModuleCallSignature, default_decompositions

@@ -1,6 +1,8 @@
-import torch
 from collections.abc import Sequence
 from typing import Optional
+
+import torch
+
 from ..pattern_matcher import init_once_fakemode
 
 log = ...

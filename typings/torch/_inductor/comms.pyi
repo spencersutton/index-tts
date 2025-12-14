@@ -1,9 +1,11 @@
-import torch
 from dataclasses import dataclass
-from typing import Optional, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Optional, Union
+
+import torch
+from torch._inductor.scheduler import BaseSchedulerNode
+
 from .ir import IRNode, Operation
 from .scheduler import SchedulerBuffer
-from torch._inductor.scheduler import BaseSchedulerNode
 
 if TYPE_CHECKING: ...
 log = ...

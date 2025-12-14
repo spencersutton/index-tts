@@ -1,9 +1,11 @@
-import torch
 from typing import overload
 from warnings import deprecated
+
+import torch
 from torch import Tensor
 from torch.nn.parameter import Parameter
 from torch.nn.utils.rnn import PackedSequence
+
 from .module import Module
 
 __all__ = ["GRU", "LSTM", "RNN", "GRUCell", "LSTMCell", "RNNBase", "RNNCell", "RNNCellBase"]

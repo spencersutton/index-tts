@@ -1,5 +1,6 @@
-import torch
 from collections.abc import Iterable
+
+import torch
 from torch import Tensor
 
 def get_rng_state(device: int | str | torch.device = ...) -> Tensor: ...

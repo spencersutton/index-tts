@@ -1,5 +1,6 @@
-from typing import Any, TYPE_CHECKING
 from collections.abc import Generator
+from typing import TYPE_CHECKING, Any
+
 from ..ir import Layout
 from ..kernel_inputs import KernelInputs
 

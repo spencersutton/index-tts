@@ -7,14 +7,15 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Sequence
 from enum import Enum
 from pathlib import Path
-from typing import Any, Literal, TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING, Any, Literal, TypedDict
+
 from gradio.blocks import Block
 from gradio.component_meta import ComponentMeta
+from gradio.components import Timer
 from gradio.data_classes import FileData, FileDataDict, GradioDataModel, MediaStreamChunk
 from gradio.events import EventListener
 from gradio.i18n import I18nData
 from gradio.layouts import Form
-from gradio.components import Timer
 
 """Contains all of the components that can be used with Gradio Interface / Blocks.
 Along with the docs for each component, you can find the names of example demos that use

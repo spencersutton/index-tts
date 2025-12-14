@@ -1,9 +1,11 @@
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, TypeAlias, Union
+
 import torch
 import torch.distributed._shard.sharded_tensor.metadata as sharded_tensor_meta
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Union, TypeAlias
-from .api import ShardingSpec
 from torch.distributed._shard.sharded_tensor import ShardedTensor
+
+from .api import ShardingSpec
 
 if TYPE_CHECKING: ...
 

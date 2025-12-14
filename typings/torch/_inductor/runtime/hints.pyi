@@ -2,6 +2,7 @@ import functools
 import typing
 from enum import Enum
 from typing import Optional, Union
+
 from torch.utils._triton import has_triton_package
 
 TRITON_MAX_BLOCK = ...

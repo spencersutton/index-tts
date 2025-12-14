@@ -1,8 +1,8 @@
-import torch
-from functools import cached_property
-from typing import Any, Optional, Union
 from collections.abc import Callable
-from typing import Concatenate, ParamSpec, Self, TypeVar
+from functools import cached_property
+from typing import Any, Concatenate, Optional, ParamSpec, Self, TypeVar, Union
+
+import torch
 from torch._inductor.config import use_experimental_benchmarker
 
 logger = ...

@@ -1,5 +1,6 @@
-import torch
 from typing import Optional
+
+import torch
 
 def lazy_format_graph_code(name, gm, maybe_id=..., **kwargs):  # -> LazyString[[]]:
 

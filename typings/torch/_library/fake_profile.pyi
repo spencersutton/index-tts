@@ -1,8 +1,9 @@
 import contextlib
-import torch
 from collections.abc import Generator
 from dataclasses import dataclass
 from typing import Any, Optional, Union
+
+import torch
 from torch.types import FileLike
 
 log = ...

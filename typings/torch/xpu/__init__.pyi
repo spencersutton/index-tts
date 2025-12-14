@@ -1,9 +1,11 @@
-import torch
-import torch._C
 from collections.abc import Callable
 from functools import lru_cache
 from typing import Any, TypeAlias
+
+import torch
+import torch._C
 from torch import device as _device
+
 from .memory import (
     empty_cache,
     max_memory_allocated,

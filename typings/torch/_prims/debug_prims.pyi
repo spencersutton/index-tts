@@ -1,6 +1,7 @@
 import contextlib
 from collections.abc import Generator
 from typing import Optional
+
 from torch.utils._content_store import ContentStoreReader
 
 LOAD_TENSOR_READER: ContentStoreReader | None = ...

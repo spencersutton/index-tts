@@ -1,6 +1,7 @@
 import collections
-import torch
 from typing import Any
+
+import torch
 from torch.export.exported_program import ExportGraphSignature
 from torch.fx._symbolic_trace import _ConstantAttributeType
 

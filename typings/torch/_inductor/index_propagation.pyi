@@ -1,9 +1,10 @@
-import sympy
-import torch
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any, Literal, Optional, Union, overload
-from typing import TypeAlias
+from typing import Any, Literal, Optional, TypeAlias, Union, overload
+
+import sympy
+import torch
+
 from .ops_handler import DefaultHandler
 
 """This file implements the IndexPropagation ops handler, which wraps an

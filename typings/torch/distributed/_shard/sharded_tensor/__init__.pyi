@@ -1,19 +1,21 @@
 import functools
-import torch
 from typing import TYPE_CHECKING
+
+import torch
 from torch.distributed._shard.op_registry_utils import _decorator_func
+from torch.distributed._shard.sharding_spec import ShardingSpec
+
+from ._ops import *
 from .api import (
+    _CUSTOM_SHARDED_OPS,
+    _SHARDED_OPS,
     Shard,
     ShardedTensor,
     ShardedTensorBase,
     ShardedTensorMetadata,
     TensorProperties,
-    _CUSTOM_SHARDED_OPS,
-    _SHARDED_OPS,
 )
 from .metadata import ShardMetadata
-from torch.distributed._shard.sharding_spec import ShardingSpec
-from ._ops import *
 
 if TYPE_CHECKING: ...
 else: ...

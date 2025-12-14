@@ -1,18 +1,20 @@
 import typing
-import sympy
-import torch
-from typing import Any, Optional, TYPE_CHECKING, Union
-from .kernel_inputs import KernelInputs
-from .scheduler import BaseSchedulerNode, Scheduler
-from .template_heuristics.triton import BaseConfigHeuristic
 from collections.abc import Generator
 from functools import partial
+from typing import TYPE_CHECKING, Any, Optional, Union
+
+import sympy
+import torch
 from triton import Config as TritonConfig
+
 from .codegen.common import KernelTemplate
 from .codegen.simd_kernel_features import SIMDKernelFeatures
 from .codegen.triton import TritonKernel
 from .ir import ChoiceCaller
+from .kernel_inputs import KernelInputs
+from .scheduler import BaseSchedulerNode, Scheduler
 from .select_algorithm import ExternKernelChoice
+from .template_heuristics.triton import BaseConfigHeuristic
 
 if TYPE_CHECKING: ...
 

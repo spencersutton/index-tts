@@ -1,11 +1,13 @@
 import dataclasses
+from collections.abc import Callable
+from typing import Any, Optional, TypeAlias, Union
+
 import sympy
 import torch
-from typing import Any, Optional, Union, TypeAlias
-from collections.abc import Callable
 from torch._higher_order_ops.triton_kernel_wrap import TraceableTritonKernelWrapper
 from torch._inductor.runtime.triton_heuristics import CachingAutotuner
 from torch.fx import GraphModule
+
 from .. import ir
 from .common import CodegenSymbol
 from .wrapper import BufferLike, Line, PythonWrapperCodegen

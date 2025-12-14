@@ -1,8 +1,8 @@
-import torch
-from enum import Enum, StrEnum
-from typing import Any, Optional, TypeVar
 from collections.abc import Callable
-from typing import ParamSpec
+from enum import Enum, StrEnum
+from typing import Any, Optional, ParamSpec, TypeVar
+
+import torch
 from torch.jit._script import ScriptModule
 from torch.nn import Module
 

@@ -3,24 +3,25 @@ import functools
 import inspect
 import threading
 import types
+from collections.abc import Callable, Iterable, Sequence
+from dataclasses import dataclass
+from enum import Enum
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
+from unittest.mock import patch
+
 import torch
 import torch.fx
 import torch.utils._pytree as pytree
-from dataclasses import dataclass
-from enum import Enum
-from typing import Any, NamedTuple, Optional, TYPE_CHECKING, Union
-from collections.abc import Callable
-from unittest.mock import patch
 from torch import _guards
-from torch.export.dynamic_shapes import Constraint
-from torch.fx import GraphModule
-from .backends.registry import CompilerFn
-from .hooks import Hooks
-from collections.abc import Iterable, Sequence
 from torch._dynamo.package import CompilePackage
 from torch._dynamo.repro.after_dynamo import WrapBackendDebug
 from torch._subclasses import fake_tensor
+from torch.export.dynamic_shapes import Constraint
+from torch.fx import GraphModule
 from torch.fx.node import Argument, Node, Target
+
+from .backends.registry import CompilerFn
+from .hooks import Hooks
 from .types import DynamoCallback
 
 """

@@ -1,7 +1,7 @@
 import threading
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import Optional, Union
-from collections.abc import Callable
+
 from torch._ops import OpOverload
 from torch.distributed.tensor._dtensor_spec import TensorMeta
 from torch.distributed.tensor._op_schema import OpInfo, OpSchema, OutputSharding, RuntimeSchemaInfo, StrategyType

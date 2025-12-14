@@ -1,6 +1,7 @@
-import torch
-from typing import Any, Optional, Union
 from collections.abc import Callable
+from typing import Any, Optional, Union
+
+import torch
 from torch import Tensor
 from torch._C import DispatchKey
 from torch._higher_order_ops.utils import register_fake

@@ -1,18 +1,18 @@
 import contextlib
+from collections.abc import Callable, Iterable, Sequence
+from typing import TYPE_CHECKING, Any, Optional, ParamSpec, TypeVar, Union
+
 import sympy
 import torch
 import torch.fx
-from collections.abc import Iterable, Sequence
-from typing import Any, Optional, TYPE_CHECKING, TypeVar, Union
-from collections.abc import Callable
-from typing import ParamSpec
 from torch._higher_order_ops.associative_scan import associative_scan_op
 from torch._higher_order_ops.triton_kernel_wrap import triton_kernel_wrapper_mutation
 from torch._prims_common import ELEMENTWISE_TYPE_PROMOTION_KIND
+
 from . import inductor_prims, ir
 from .ir import IRNode, ShapeAsConstantBuffer, TensorBox
-from .virtualized import ops
 from .ops_handler import ReductionType
+from .virtualized import ops
 
 if TYPE_CHECKING: ...
 _T = TypeVar("_T")

@@ -1,10 +1,12 @@
 import pickle
-import torch
+from collections.abc import Callable
 from datetime import timedelta
 from typing import Any, Optional, Union
-from collections.abc import Callable
 from warnings import deprecated
+
+import torch
 from torch._C._distributed_c10d import ProcessGroup, ReduceOp, Store, Work
+
 from .c10d_logger import _exception_logger, _time_logger
 
 """Distributed Collective Communication (c10d)."""

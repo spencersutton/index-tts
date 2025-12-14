@@ -1,5 +1,6 @@
-import torch
 from typing import Literal, TypeAlias
+
+import torch
 from torch import Tensor
 
 __all__ = [

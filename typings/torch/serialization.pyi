@@ -1,10 +1,11 @@
 import os
 import threading
-import torch
 from collections.abc import Callable
 from contextlib import contextmanager
 from enum import Enum
-from typing import Any, IO, TypeVar, TypeAlias
+from typing import IO, Any, TypeAlias, TypeVar
+
+import torch
 from torch import _weights_only_unpickler
 from torch.types import FileLike, Storage
 

@@ -1,8 +1,8 @@
 import enum
-import torch
-from typing import Any, Optional
 from collections.abc import Callable
-from typing import TypeAlias
+from typing import Any, Optional, TypeAlias
+
+import torch
 
 type GuardManagerType = enum.Enum
 

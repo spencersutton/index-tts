@@ -1,9 +1,10 @@
 import functools
+from collections.abc import Callable, Sequence
+from typing import Optional, Protocol, TypeAlias, Union
+
 import sympy
 import torch
-from collections.abc import Sequence
-from typing import Optional, Protocol, Union, TypeAlias
-from collections.abc import Callable
+
 from .virtualized import OpsValue
 
 type BlockShapeType = Sequence[int | str] | None

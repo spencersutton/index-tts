@@ -1,8 +1,9 @@
 import functools
-import torch
 from collections.abc import Callable, Sequence
-from typing import Any, ParamSpec, TYPE_CHECKING, TypeVar, overload, TypeAlias
+from typing import TYPE_CHECKING, Any, ParamSpec, TypeAlias, TypeVar, overload
 from warnings import deprecated
+
+import torch
 from torch._library.custom_ops import CustomOpDef, device_types_t
 from torch.types import _dtype
 

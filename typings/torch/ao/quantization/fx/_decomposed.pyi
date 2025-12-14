@@ -1,5 +1,6 @@
-import torch
 from typing import Optional
+
+import torch
 from torch.library import impl
 
 quantized_decomposed_lib = ...

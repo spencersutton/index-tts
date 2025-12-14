@@ -1,8 +1,8 @@
 import logging
-import torch
 from dataclasses import dataclass
-from typing import Any, Optional, TYPE_CHECKING, Union, Self
-from typing import TypeAlias
+from typing import TYPE_CHECKING, Any, Optional, Self, TypeAlias, Union
+
+import torch
 from torch.export import ExportedProgram
 from torch.export.pt2_archive._package_weights import Weights
 from torch.types import FileLike

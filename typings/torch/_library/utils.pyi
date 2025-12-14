@@ -1,8 +1,8 @@
 import dataclasses
-import torch
-from collections.abc import Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from typing import Any, Literal, Optional, Union, overload
-from collections.abc import Callable
+
+import torch
 from torch import _C
 from torch._ops import OpOverload
 

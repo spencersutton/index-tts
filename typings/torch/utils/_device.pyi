@@ -1,5 +1,6 @@
-import torch
 from typing import Optional
+
+import torch
 from torch.overrides import TorchFunctionMode
 
 CURRENT_DEVICE: torch.device | None = ...

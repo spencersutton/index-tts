@@ -1,6 +1,7 @@
 import functools
-import sympy
 from typing import Any, Union
+
+import sympy
 from sympy.logic.boolalg import Boolean as SympyBoolean
 
 """

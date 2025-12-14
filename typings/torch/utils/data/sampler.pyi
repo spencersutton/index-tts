@@ -1,6 +1,7 @@
-import torch
 from collections.abc import Iterable, Iterator, Sequence, Sized
 from typing import TypeVar
+
+import torch
 
 __all__ = [
     "BatchSampler",

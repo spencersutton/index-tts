@@ -1,6 +1,7 @@
+from collections.abc import Callable
+
 import torch
 import torch.fx as fx
-from collections.abc import Callable
 
 aten = ...
 

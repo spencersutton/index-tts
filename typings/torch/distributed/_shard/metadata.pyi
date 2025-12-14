@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional, Union
+
 from torch.distributed.remote_device import _remote_device
 
 @dataclass

@@ -1,16 +1,17 @@
 import dataclasses
+from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING, Any, Optional, Union
+
 import sympy
 import torch
-from typing import Any, Optional, TYPE_CHECKING, Union
-from collections.abc import Callable
+
 from ...utils._ordered_set import OrderedSet
 from ...utils._sympy.value_ranges import ValueRanges
 from ..ops_handler import ReductionType, StoreMode
 from ..runtime.hints import HalideMeta
+from ..shape_propagation import BlockShapeType
 from .common import BackendFeature, CSEVariable, OpOverrides, PythonPrinter
 from .simd import SIMDKernel, SIMDScheduling
-from collections.abc import Sequence
-from ..shape_propagation import BlockShapeType
 
 if TYPE_CHECKING: ...
 log = ...

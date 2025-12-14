@@ -1,8 +1,9 @@
 import contextlib
-import torch
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from warnings import deprecated
-from torch._C import _MemPool, _cuda_CUDAAllocator
+
+import torch
+from torch._C import _cuda_CUDAAllocator, _MemPool
 from torch.types import Device
 
 if TYPE_CHECKING: ...

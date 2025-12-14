@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING, TypeVar
+
 from _typeshed import DataclassInstance
 
 if TYPE_CHECKING: ...

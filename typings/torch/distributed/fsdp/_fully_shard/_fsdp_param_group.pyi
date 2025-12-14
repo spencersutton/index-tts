@@ -1,10 +1,12 @@
 import contextlib
+from collections.abc import Callable
+from typing import Any, NamedTuple, Optional, TypeAlias
+
 import torch
 import torch.nn as nn
-from typing import Any, NamedTuple, Optional, TypeAlias
-from collections.abc import Callable
 from torch.distributed.tensor import Shard
 from torch.utils.hooks import RemovableHandle
+
 from ._fsdp_api import MixedPrecisionPolicy, OffloadPolicy
 from ._fsdp_collectives import AllGatherResult
 from ._fsdp_common import FSDPMeshInfo, TrainingState

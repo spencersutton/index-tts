@@ -1,9 +1,9 @@
 import dataclasses
 import functools
-import sympy
-from typing import Generic, Optional, TYPE_CHECKING, TypeVar, Union, overload, TypeAlias
 from collections.abc import Callable
-from typing import TypeGuard
+from typing import TYPE_CHECKING, Generic, Optional, TypeAlias, TypeGuard, TypeVar, Union, overload
+
+import sympy
 from sympy.logic.boolalg import Boolean as SympyBoolean
 
 log = ...

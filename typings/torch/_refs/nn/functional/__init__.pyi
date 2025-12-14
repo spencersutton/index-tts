@@ -1,12 +1,12 @@
 import math
+from collections.abc import Callable
+from functools import wraps
+from typing import Concatenate, Optional, ParamSpec, TypeVar, Union
+
 import torch
 import torch._prims as prims
 import torch._prims_common as utils
 import torch._refs as refs
-from functools import wraps
-from typing import Optional, TypeVar, Union
-from collections.abc import Callable
-from typing import Concatenate, ParamSpec
 from torch._decomp import register_decomposition
 from torch._prims_common import ELEMENTWISE_TYPE_PROMOTION_KIND, NumberType, ShapeType, TensorLike, TensorLikeType
 from torch._prims_common.wrappers import (

@@ -3,9 +3,9 @@ import dis
 import functools
 import sys
 import types
-from collections.abc import Iterable, Iterator, Mapping, Sequence
-from typing import Any, Optional, TYPE_CHECKING, Union
-from collections.abc import Callable
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Optional, Union
+
 from ..utils._backport_slots import dataclass_slots
 from .output_graph import DynamoTracerOutput
 

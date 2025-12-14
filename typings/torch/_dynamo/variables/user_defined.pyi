@@ -1,9 +1,11 @@
 import functools
 from typing import TYPE_CHECKING
-from .. import variables
-from .base import VariableTracker
+
 from torch._dynamo.codegen import PyCodegen
 from torch._dynamo.symbolic_convert import InstructionTranslator
+
+from .. import variables
+from .base import VariableTracker
 
 """
 This module contains variable classes for handling user-defined objects in Dynamo's tracing system.

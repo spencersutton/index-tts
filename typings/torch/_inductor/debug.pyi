@@ -1,14 +1,15 @@
 import contextlib
 import dataclasses
 import functools
+from collections.abc import Callable, Iterator, Sequence
+from typing import IO, Any, Optional, TypeAlias, Union
+
 import torch
-from collections.abc import Iterator, Sequence
-from typing import Any, IO, Optional, Union, TypeAlias
-from collections.abc import Callable
 from torch import fx as fx
 from torch.fx.graph_module import GraphModule
 from torch.fx.passes.shape_prop import TensorMetadata
 from torch.types import FileLike
+
 from . import ir
 from .ir import ExternKernel
 from .scheduler import BaseSchedulerNode

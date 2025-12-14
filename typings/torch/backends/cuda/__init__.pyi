@@ -1,6 +1,7 @@
 import contextlib
-import torch
 from warnings import deprecated
+
+import torch
 from torch._C import _SDPAParams as SDPAParams
 
 __all__ = [

@@ -1,5 +1,6 @@
-from typing import Optional
 from collections.abc import Callable
+from typing import Optional
+
 from .utils import RegistrationHandle
 
 __all__ = ["SimpleLibraryRegistry", "SimpleOperatorEntry", "singleton"]

@@ -1,6 +1,7 @@
 import functools
 from collections.abc import Sequence
 from typing import Any, Optional, Union
+
 from torch._inductor import config
 from torch._inductor.cpu_vec_isa import VecISA
 

@@ -1,6 +1,7 @@
-import torch
 from abc import ABC, abstractmethod
 from typing import Any
+
+import torch
 from torch.nn import Module
 
 __all__ = [

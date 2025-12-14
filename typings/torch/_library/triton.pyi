@@ -1,7 +1,7 @@
 import contextlib
-from collections.abc import Generator, Iterable
+from collections.abc import Callable, Generator, Iterable
 from typing import Any, Optional, Union
-from collections.abc import Callable
+
 from torch.utils._exposed_in import exposed_in
 
 triton_ops_to_kernels: dict[str, list[object]] = ...

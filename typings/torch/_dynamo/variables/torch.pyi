@@ -1,10 +1,11 @@
 import functools
-from collections.abc import Sequence
-from typing import Any, Optional, TYPE_CHECKING
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING, Any, Optional
+
+from torch._dynamo.symbolic_convert import InstructionTranslator
+
 from ..codegen import PyCodegen
 from .base import VariableTracker
-from torch._dynamo.symbolic_convert import InstructionTranslator
 
 """
 This module implements variable tracking for torch functions and operations during Dynamo tracing.

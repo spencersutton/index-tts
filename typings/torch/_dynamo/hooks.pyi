@@ -1,7 +1,9 @@
 import dataclasses
-from typing import Optional
 from collections.abc import Callable
+from typing import Optional
+
 from torch._guards import GuardsSet
+
 from .types import GuardFail, GuardFilterEntry
 
 """Hook system for Dynamo's guard functionality.

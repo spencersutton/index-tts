@@ -1,11 +1,11 @@
 import types
-import torch
+from collections.abc import Callable, Sequence
+from typing import Any, Optional, ParamSpec, TypeVar, Union, overload
+
 import numpy as np
-from collections.abc import Sequence
-from typing import Any, Optional, TypeVar, Union, overload
-from collections.abc import Callable
-from typing import ParamSpec
+import torch
 from torch import fx
+
 from .types import ConvertFrameReturn, DynamoFrameType
 
 """Testing utilities and infrastructure for Dynamo.

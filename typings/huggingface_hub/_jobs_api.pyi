@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum, StrEnum
 from typing import Any, Dict, List, Optional
+
 from huggingface_hub._space_api import SpaceHardware
 
 class JobStage(StrEnum):

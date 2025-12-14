@@ -1,6 +1,8 @@
 from collections.abc import Callable
 from functools import total_ordering
+
 from torch import Tensor
+
 from .distribution import Distribution
 
 _KL_REGISTRY: dict[tuple[type, type], Callable] = ...

@@ -1,4 +1,5 @@
 from typing import Optional
+
 from sympy import Expr, Symbol
 
 class BlockPatternMatcher:

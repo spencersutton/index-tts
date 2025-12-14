@@ -1,6 +1,8 @@
-import sympy
-from typing import Any, Optional, Union
 from collections.abc import Callable
+from typing import Any, Optional, Union
+
+import sympy
+
 from .. import ir
 from ..autotune_process import CppBenchmarkRequest
 from .cpp import CppKernel

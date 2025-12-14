@@ -1,8 +1,9 @@
+from typing import TYPE_CHECKING, Optional
+
 import torch
-from typing import Optional, TYPE_CHECKING
 from torch.export.exported_program import ModuleCallSignature
-from torch.fx.passes.infra.pass_base import PassBase, PassResult
 from torch.export.graph_signature import ExportGraphSignature
+from torch.fx.passes.infra.pass_base import PassBase, PassResult
 
 if TYPE_CHECKING: ...
 __all__ = ["CollectTracepointsPass"]

@@ -1,10 +1,12 @@
 import collections
+from collections.abc import Callable
+from enum import Enum
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeVar
+
 import sympy
 import torch.fx
-from enum import Enum
-from typing import Any, NamedTuple, Optional, TYPE_CHECKING, TypeVar
-from collections.abc import Callable
 from torch.fx.proxy import TracerBase
+
 from .ops_handler import DefaultHandler, OpsHandler, WrapperHandler
 from .utils import cache_on_self
 

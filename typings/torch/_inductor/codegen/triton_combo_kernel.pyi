@@ -1,7 +1,9 @@
-import sympy
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Optional
-from collections.abc import Callable
+
+import sympy
+
 from ..runtime.triton_heuristics import RoundRobinComboKernelGrid, SequentialComboKernelGrid
 from ..scheduler import BaseSchedulerNode
 from .common import ArgName, ConstexprArg, IndentedBuffer, Kernel

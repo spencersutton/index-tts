@@ -1,4 +1,5 @@
 from typing import Optional
+
 from torch import Tensor
 
 """Various linear algebra utility methods for internal use."""

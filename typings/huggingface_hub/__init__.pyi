@@ -6,6 +6,7 @@ import importlib
 import os
 import sys
 from typing import TYPE_CHECKING
+
 from ._commit_scheduler import CommitScheduler
 from ._inference_endpoints import (
     InferenceEndpoint,
@@ -55,8 +56,8 @@ from .constants import (
 )
 from .fastai_utils import _save_pretrained_fastai, from_pretrained_fastai, push_to_hub_fastai
 from .file_download import (
-    HfFileMetadata,
     _CACHED_NO_EXIST,
+    HfFileMetadata,
     get_hf_file_metadata,
     hf_hub_download,
     hf_hub_url,
@@ -402,10 +403,10 @@ from .serialization import (
 )
 from .serialization._dduf import DDUFEntry, export_entries_as_dduf, export_folder_as_dduf, read_dduf_file
 from .utils import (
-    CacheNotFound,
     CachedFileInfo,
     CachedRepoInfo,
     CachedRevisionInfo,
+    CacheNotFound,
     CorruptedCacheException,
     DeleteCacheStrategy,
     HFCacheInfo,

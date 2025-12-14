@@ -1,10 +1,9 @@
-import torch.fx.graph
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from functools import lru_cache
-from typing import Any, Optional, Union
-from collections.abc import Callable
-from typing import TypeAlias
+from typing import Any, Optional, TypeAlias, Union
+
+import torch.fx.graph
 
 class CustomGraphPass(ABC):
     @abstractmethod

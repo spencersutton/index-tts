@@ -1,9 +1,10 @@
-import torch
-import torch.distributed._shard.sharded_tensor.metadata as sharded_tensor_meta
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
-from collections.abc import Callable
+
+import torch
+import torch.distributed._shard.sharded_tensor.metadata as sharded_tensor_meta
 from torch.distributed._shard.metadata import ShardMetadata
 from torch.distributed._shard.sharded_tensor import ShardedTensor
 

@@ -1,12 +1,12 @@
 import abc
 import dataclasses
+from collections.abc import Callable, Iterable, Sequence
+from typing import Any, Optional, Self, TypeVar, Union
+
 import sympy
 import torch
-from collections.abc import Iterable, Sequence
-from typing import Any, Optional, TypeVar, Union
-from collections.abc import Callable
-from typing import Self
 from torch.utils._ordered_set import OrderedSet
+
 from .ops_handler import DefaultHandler
 from .utils import VarRanges
 from .virtualized import ReductionType, V

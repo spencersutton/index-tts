@@ -1,21 +1,22 @@
 import dataclasses
+from collections.abc import Callable, Sequence
+from functools import lru_cache
+from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union
+
 import sympy
 import torch
-from collections.abc import Sequence
-from functools import lru_cache
-from typing import Any, Optional, TYPE_CHECKING, TypeVar, Union
-from collections.abc import Callable
+from torch._inductor.dtype_propagation import DtypePropagationOpsHandler
 from torch.utils._ordered_set import OrderedSet
+
 from ...utils._sympy.symbol import SymT
 from ...utils._sympy.value_ranges import ValueRanges
 from .. import config
+from ..ir import IRNode
 from ..scheduler import BaseSchedulerNode, Scheduler
 from ..utils import cache_on_self
 from ..virtualized import ReductionType, StoreMode
-from .common import BlockShapeType, CSE, CSEVariable, IndentedBuffer, OpOverrides, PythonPrinter
+from .common import CSE, BlockShapeType, CSEVariable, IndentedBuffer, OpOverrides, PythonPrinter
 from .simd import IterationRanges, IterationRangesEntry, IterationRangesRoot, SIMDKernel, SIMDScheduling
-from torch._inductor.dtype_propagation import DtypePropagationOpsHandler
-from ..ir import IRNode
 from .simd_kernel_features import SIMDKernelFeatures
 
 if TYPE_CHECKING:

@@ -2,6 +2,7 @@ from collections.abc import Iterable
 from contextlib import ContextDecorator as _ContextDecorator
 from dataclasses import dataclass
 from typing import Any
+
 from torch.autograd import ProfilerActivity
 
 __all__ = [

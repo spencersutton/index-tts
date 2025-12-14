@@ -3,6 +3,7 @@ from .activation import (
     ELU,
     GELU,
     GLU,
+    SELU,
     Hardshrink,
     Hardsigmoid,
     Hardswish,
@@ -13,12 +14,11 @@ from .activation import (
     Mish,
     MultiheadAttention,
     PReLU,
-    RReLU,
     ReLU,
     ReLU6,
-    SELU,
-    SiLU,
+    RReLU,
     Sigmoid,
+    SiLU,
     Softmax,
     Softmax2d,
     Softmin,
@@ -71,16 +71,16 @@ from .linear import Bilinear, Identity, LazyLinear, Linear
 from .loss import (
     BCELoss,
     BCEWithLogitsLoss,
-    CTCLoss,
     CosineEmbeddingLoss,
     CrossEntropyLoss,
+    CTCLoss,
     GaussianNLLLoss,
     HingeEmbeddingLoss,
     HuberLoss,
     KLDivLoss,
     L1Loss,
-    MSELoss,
     MarginRankingLoss,
+    MSELoss,
     MultiLabelMarginLoss,
     MultiLabelSoftMarginLoss,
     MultiMarginLoss,
@@ -134,7 +134,7 @@ from .pooling import (
     MaxUnpool2d,
     MaxUnpool3d,
 )
-from .rnn import GRU, GRUCell, LSTM, LSTMCell, RNN, RNNBase, RNNCell, RNNCellBase
+from .rnn import GRU, LSTM, RNN, GRUCell, LSTMCell, RNNBase, RNNCell, RNNCellBase
 from .sparse import Embedding, EmbeddingBag
 from .transformer import (
     Transformer,

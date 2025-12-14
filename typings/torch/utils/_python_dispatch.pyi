@@ -1,9 +1,9 @@
 import functools
-import torch
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Optional, Protocol, overload
-from typing import TypeIs
+from typing import Optional, Protocol, TypeIs, overload
+
+import torch
 
 _is_in_torch_dispatch_mode = ...
 _is_in_non_infra_torch_dispatch_mode = ...

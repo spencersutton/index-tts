@@ -1,9 +1,8 @@
 import typing
+from collections.abc import Callable
 from concurrent.futures import Future, ProcessPoolExecutor
 from enum import Enum, IntEnum
-from typing import IO, Optional, TypeVar
-from collections.abc import Callable
-from typing import Never, ParamSpec
+from typing import IO, Never, Optional, ParamSpec, TypeVar
 
 log = ...
 _P = ParamSpec("_P")

@@ -1,7 +1,9 @@
 import inspect
-import torch
-from typing import Any, NamedTuple, Optional, TYPE_CHECKING
 from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional
+
+import torch
+
 from ._compatibility import compatibility
 from .node import Argument
 

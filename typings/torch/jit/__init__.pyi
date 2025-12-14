@@ -1,5 +1,6 @@
-import torch._C
 from typing import Any
+
+import torch._C
 from torch._jit_internal import Future, export, ignore, unused
 from torch.jit._async import fork, wait
 from torch.jit._freeze import freeze, optimize_for_inference

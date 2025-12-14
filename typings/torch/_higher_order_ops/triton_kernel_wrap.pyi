@@ -1,21 +1,20 @@
 import dataclasses
+from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING, Any, Never, Optional, TypeAlias, Union
+
 import sympy
-from collections.abc import Sequence
-from typing import Any, Optional, TYPE_CHECKING, Union, TypeAlias
-from collections.abc import Callable
-from typing import Never
 from torch import SymInt
 from torch._C import DispatchKey
-from torch._ops import HigherOrderOperator
-from torch._subclasses.fake_tensor import FakeTensorMode
-from torch.fx.experimental.proxy_tensor import ProxyTorchDispatchMode
-from torch.types import IntLikeType
-from triton._C.libtriton.ir import module as TritonIRModule
 from torch._dynamo.symbolic_convert import InstructionTranslator
 from torch._dynamo.variables.constant import ConstantVariable
 from torch._dynamo.variables.functions import TritonKernelVariable
+from torch._ops import HigherOrderOperator
+from torch._subclasses.fake_tensor import FakeTensorMode
 from torch._subclasses.functional_tensor import BaseFunctionalizeAPI
+from torch.fx.experimental.proxy_tensor import ProxyTorchDispatchMode
 from torch.fx.proxy import Proxy
+from torch.types import IntLikeType
+from triton._C.libtriton.ir import module as TritonIRModule
 
 if TYPE_CHECKING:
     type TritonMetaParamsType = dict[str, int]

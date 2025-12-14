@@ -1,7 +1,8 @@
-import monkeytype
 from collections.abc import Iterable
 from types import CodeType
 from typing import Optional
+
+import monkeytype
 from monkeytype import trace as monkeytype_trace
 from monkeytype.db.base import CallTraceStore, CallTraceStoreLogger, CallTraceThunk
 from monkeytype.tracing import CallTrace, CodeFilter

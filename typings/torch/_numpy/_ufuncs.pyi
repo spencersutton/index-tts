@@ -1,4 +1,5 @@
 from typing import Optional
+
 from ._normalizations import (
     ArrayLike,
     ArrayLikeOrScalar,

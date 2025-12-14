@@ -1,11 +1,12 @@
 import dataclasses
-import torch
+from collections.abc import Callable, Sequence
+from collections.abc import Set as AbstractSet
 from enum import Enum
-from typing import Any, Optional, TYPE_CHECKING, Union, TypeAlias
-from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Optional, TypeAlias, Union
+
+import torch
 from torch._inductor.utils import GraphPartitionMap, InputType
 from torch.utils._ordered_set import OrderedSet
-from collections.abc import Sequence, Set as AbstractSet
 
 if TYPE_CHECKING: ...
 perf_hint_log = ...

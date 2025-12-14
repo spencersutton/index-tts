@@ -10,8 +10,8 @@ from huggingface_hub.errors import (
     EntryNotFoundError,
     FileMetadataError,
     GatedRepoError,
-    HFValidationError,
     HfHubHTTPError,
+    HFValidationError,
     LocalEntryNotFoundError,
     LocalTokenNotFoundError,
     NotASafetensorsRepoError,
@@ -20,6 +20,7 @@ from huggingface_hub.errors import (
     RevisionNotFoundError,
     SafetensorsParsingError,
 )
+
 from . import tqdm as _tqdm
 from ._auth import get_stored_tokens, get_token
 from ._cache_assets import cached_assets_path

@@ -1,6 +1,6 @@
 from types import TracebackType
-from typing import Optional
-from typing import Self
+from typing import Optional, Self
+
 from filelock import FileLock as base_FileLock
 
 class FileLock(base_FileLock):

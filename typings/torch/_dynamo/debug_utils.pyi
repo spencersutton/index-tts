@@ -1,8 +1,8 @@
+from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING, Any, Optional, TypeVar
+
 import torch
-from typing import Any, Optional, TYPE_CHECKING, TypeVar
-from collections.abc import Callable
 from torch import Tensor
-from collections.abc import Sequence
 from torch.hub import tqdm
 from torch.storage import UntypedStorage
 

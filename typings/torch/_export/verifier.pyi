@@ -1,7 +1,8 @@
-from typing import Any, TYPE_CHECKING, final
+from typing import TYPE_CHECKING, Any, final
+
 from torch._ops import OpOverload
-from torch.fx import GraphModule
 from torch.export.exported_program import ExportedProgram
+from torch.fx import GraphModule
 
 if TYPE_CHECKING: ...
 

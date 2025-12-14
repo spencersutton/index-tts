@@ -1,5 +1,7 @@
 from typing import Any
+
 from torch._inductor.select_algorithm import SymbolicGridFn
+
 from ..ir import TensorBox
 
 log = ...

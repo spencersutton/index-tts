@@ -1,6 +1,7 @@
-import torch
 from collections.abc import Callable
-from typing import Self, TYPE_CHECKING, overload, TypeAlias
+from typing import TYPE_CHECKING, Self, TypeAlias, overload
+
+import torch
 from torch import Tensor
 from torch.cuda import _POOL_HANDLE
 

@@ -1,8 +1,9 @@
 import dataclasses
 import functools
-import torch
-from typing import Any, Union
 from collections.abc import Callable
+from typing import Any, Union
+
+import torch
 
 _IS_WINDOWS = ...
 

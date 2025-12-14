@@ -1,5 +1,6 @@
-import torch
 from enum import Enum
+
+import torch
 from torch import Tensor
 from torch.nn.modules import Module
 

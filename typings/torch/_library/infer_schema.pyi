@@ -1,7 +1,8 @@
 import inspect
 import typing
-import torch
 from typing import Optional, Union
+
+import torch
 from torch import Tensor
 from torch.utils._exposed_in import exposed_in
 

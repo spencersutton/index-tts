@@ -1,7 +1,8 @@
-import torch
-import torch.nn as nn
 from collections.abc import Sequence
 from typing import Any, Optional, Union
+
+import torch
+import torch.nn as nn
 from torch import Tensor
 from torch._functorch.utils import exposed_in
 

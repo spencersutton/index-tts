@@ -1,6 +1,6 @@
 import functools
-from typing import Any
-from typing import Unpack
+from typing import Any, Unpack
+
 from .triton_compat import ASTSource, CompiledKernel
 
 class StaticallyLaunchedCudaKernel:

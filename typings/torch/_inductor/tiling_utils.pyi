@@ -1,10 +1,11 @@
 import dataclasses
 import sys
-import sympy
-from typing import Literal, Optional, TYPE_CHECKING, TypeVar, Union, overload, TypeAlias
 from collections.abc import Callable
-from torch.utils._ordered_set import OrderedSet
+from typing import TYPE_CHECKING, Literal, Optional, TypeAlias, TypeVar, Union, overload
+
+import sympy
 from torch._inductor.scheduler import FusedSchedulerNode, SchedulerNode
+from torch.utils._ordered_set import OrderedSet
 
 T = TypeVar("T")
 U = TypeVar("U")

@@ -1,7 +1,8 @@
-import torch
 from datetime import timedelta
 from enum import Enum
 from typing import Any, Optional, Union, overload
+
+import torch
 from torch import Tensor
 from torch._C import ScriptObject
 from torch._C._autograd import DeviceType

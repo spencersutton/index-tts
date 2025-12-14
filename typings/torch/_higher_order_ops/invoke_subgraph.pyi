@@ -1,6 +1,7 @@
-import torch
 from dataclasses import dataclass
 from typing import Optional, Union
+
+import torch
 from torch._C import DispatchKey
 from torch._higher_order_ops.utils import FunctionalizeCtxWrapper, register_fake
 from torch._ops import HigherOrderOperator

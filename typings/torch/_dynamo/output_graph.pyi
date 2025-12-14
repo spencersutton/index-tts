@@ -1,28 +1,28 @@
 import contextlib
 import traceback
+from collections.abc import Callable, Generator, Sequence
+from dataclasses import dataclass
+from types import CodeType
+from typing import TYPE_CHECKING, Any, Optional, ParamSpec, TypeAlias, TypeVar, Union
+
 import sympy
 import torch._guards
 import torch.nn
-from collections.abc import Generator, Sequence
-from dataclasses import dataclass
-from types import CodeType
-from typing import Any, Optional, TYPE_CHECKING, Union, TypeAlias
-from collections.abc import Callable
-from typing import ParamSpec, TypeVar
 from torch import Tensor, fx
 from torch._C._dynamo import guards
+from torch._dynamo.package import CompilePackage
+from torch._dynamo.symbolic_convert import InstructionTranslatorBase
 from torch._guards import Source
 from torch.export.dynamic_shapes import _ConstraintTarget
 from torch.fx.experimental.symbolic_shapes import ShapeEnv
 from torch.fx.node import Target
+
 from .backends.registry import CompiledFn, CompilerFn
 from .bytecode_transformation import Instruction
 from .codegen import PyCodegen
 from .side_effects import SideEffects
 from .variables.base import VariableTracker
 from .variables.builder import GraphArg
-from torch._dynamo.package import CompilePackage
-from torch._dynamo.symbolic_convert import InstructionTranslatorBase
 
 """
 Core graph building functionality for PyTorch's Dynamo system. This module contains

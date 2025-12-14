@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import Annotated, Optional
+
 from torch._export.serde.union import _Union, _union_dataclass
 
 SCHEMA_VERSION = ...

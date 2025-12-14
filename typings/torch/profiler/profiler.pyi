@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable
 from enum import Enum
 from typing import Any, Self
+
 from torch._C._profiler import _ExperimentalConfig
 from torch.autograd import ProfilerActivity
 

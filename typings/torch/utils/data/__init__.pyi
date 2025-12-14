@@ -7,7 +7,7 @@ from torch.utils.data.datapipes._decorator import (
     runtime_validation,
     runtime_validation_disabled,
 )
-from torch.utils.data.datapipes.datapipe import DFIterDataPipe, DataChunk, IterDataPipe, MapDataPipe
+from torch.utils.data.datapipes.datapipe import DataChunk, DFIterDataPipe, IterDataPipe, MapDataPipe
 from torch.utils.data.dataset import (
     ChainDataset,
     ConcatDataset,

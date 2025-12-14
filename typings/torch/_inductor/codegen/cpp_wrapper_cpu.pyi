@@ -1,15 +1,16 @@
 import functools
+from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING, Any, Optional, Protocol, TypeAlias, Union
+
 import sympy
 import torch
 import torch._ops
-from typing import Any, Optional, Protocol, TYPE_CHECKING, Union, TypeAlias
-from collections.abc import Callable
 from torch.utils._ordered_set import OrderedSet
+
 from .. import ir
 from ..utils import DeferredLineBase, LineContext
 from .common import IndentedBuffer
 from .wrapper import PythonWrapperCodegen
-from collections.abc import Sequence
 
 if TYPE_CHECKING:
     type _OUTPUT_ARGS_TYPE = list[str | None | list[str | None]]

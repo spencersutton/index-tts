@@ -1,12 +1,14 @@
 import contextlib
+from collections.abc import Callable
+from typing import Optional
+
 import torch
 import torch.nn as nn
-from typing import Optional
-from collections.abc import Callable
 from torch._inductor.cudagraph_utils import BoxedDeviceIndex
 from torch._inductor.utils import BoxedBool
 from torch._subclasses import FakeTensorMode
 from torch.fx.experimental.symbolic_shapes import ShapeEnv
+
 from ._aot_autograd.descriptors import AOTInput
 from ._aot_autograd.schemas import (
     AOTConfig,

@@ -1,14 +1,14 @@
+from abc import ABC, abstractmethod
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass
+from typing import Any, Optional, TypeAlias, Union
+
 import torch
 import torch.utils._pytree as pytree
-from abc import ABC, abstractmethod
-from collections.abc import Sequence
-from dataclasses import dataclass
-from typing import Any, Optional, Union, TypeAlias
-from collections.abc import Callable
 from torch import Tensor
 from torch._C import DispatchKey
 from torch._higher_order_ops.utils import HopInstance
-from torch._ops import HigherOrderOperator, OpOverload, OperatorBase
+from torch._ops import HigherOrderOperator, OperatorBase, OpOverload
 from torch._subclasses.fake_tensor import FakeTensorMode
 from torch.fx.experimental.proxy_tensor import ProxyTorchDispatchMode
 

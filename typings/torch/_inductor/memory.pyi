@@ -1,7 +1,9 @@
 import dataclasses
-from typing import TYPE_CHECKING, TypedDict, Union
 from collections.abc import Callable
+from typing import TYPE_CHECKING, TypedDict, Union
+
 from torch.utils._ordered_set import OrderedSet
+
 from .scheduler import BaseSchedulerNode, SchedulerBuffer
 
 if TYPE_CHECKING: ...

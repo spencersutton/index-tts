@@ -1,7 +1,9 @@
+from typing import TYPE_CHECKING
+
 import torch
 import torch.nn as nn
-from typing import TYPE_CHECKING
 from torch.distributed._composable_state import _State
+
 from ._fsdp_api import MixedPrecisionPolicy
 
 if TYPE_CHECKING: ...

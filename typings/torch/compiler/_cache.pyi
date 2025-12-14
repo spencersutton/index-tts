@@ -4,6 +4,7 @@ from collections import defaultdict
 from collections.abc import Generator
 from contextlib import contextmanager
 from typing import Any, Optional, TypeAlias
+
 from torch.utils._appending_byte_serializer import AppendingByteSerializer, BytesReader, BytesWriter
 from torch.utils._ordered_set import OrderedSet
 

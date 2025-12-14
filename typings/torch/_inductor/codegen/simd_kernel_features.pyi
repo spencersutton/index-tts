@@ -1,16 +1,18 @@
 import collections
 import dataclasses
 import typing
+from collections.abc import Iterable, Sequence
+from typing import Any, Optional, Union
+
 import sympy
 import torch
-from typing import Any, Optional, Union
+from torch._inductor.tiling_utils import CoalesceVarAnalysis
+
 from ...utils._ordered_set import OrderedSet
 from ..dependencies import Dep, MemoryDep
 from ..runtime.hints import ReductionHint
 from ..scheduler import SchedulerNode
 from ..utils import cache_on_self
-from collections.abc import Iterable, Sequence
-from torch._inductor.tiling_utils import CoalesceVarAnalysis
 
 if typing.TYPE_CHECKING: ...
 

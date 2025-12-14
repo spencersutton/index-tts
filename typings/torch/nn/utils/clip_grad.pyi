@@ -1,6 +1,7 @@
 import typing
-import torch
 from warnings import deprecated
+
+import torch
 
 __all__: list[str] = ...
 type _tensor_or_tensors = torch.Tensor | typing.Iterable[torch.Tensor]

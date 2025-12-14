@@ -1,13 +1,14 @@
 import dataclasses
-from typing import Any, Generic, Literal, Optional, TYPE_CHECKING, TypeVar, Union, TypeAlias
-from collections.abc import Callable
+from collections.abc import Callable, Container
+from typing import TYPE_CHECKING, Any, Generic, Literal, Optional, TypeAlias, TypeVar, Union
+
+from torch._guards import CompileId
 from torch.utils._ordered_set import OrderedSet
+
 from .autotune_cache import AutotuneCache
 from .hints import AutotuneHint, DeviceProperties, HeuristicType
 from .static_cuda_launcher import StaticallyLaunchedCudaKernel
 from .triton_compat import CompiledKernel, Config, KernelInterface
-from collections.abc import Container
-from torch._guards import CompileId
 
 class InductorConfig(Config):
     def __init__(self, *args, dynamic_scale_rblock=..., **kwargs) -> None: ...

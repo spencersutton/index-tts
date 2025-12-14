@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 from enum import Enum
 from typing import Any
+
 from ._compatibility import compatibility
 from .graph import Graph
 from .node import Node

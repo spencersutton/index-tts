@@ -1,4 +1,5 @@
 from collections.abc import Callable
+
 from torch import nn
 from torch.ao.quantization.utils import Pattern
 

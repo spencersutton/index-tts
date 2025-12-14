@@ -1,6 +1,7 @@
-import torch
-from typing import Any, Optional
 from collections.abc import Callable
+from typing import Any, Optional
+
+import torch
 
 aten = ...
 META_TAG = ...

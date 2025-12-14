@@ -1,9 +1,9 @@
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from enum import Enum
-from typing import Any, Optional, TYPE_CHECKING
-from collections.abc import Callable
-from ..source import Source
+from typing import TYPE_CHECKING, Any, Optional
+
 from ..codegen import PyCodegen
+from ..source import Source
 from ..symbolic_convert import InstructionTranslator, InstructionTranslatorBase
 
 """

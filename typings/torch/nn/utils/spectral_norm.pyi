@@ -1,5 +1,6 @@
-import torch
 from typing import Any, TypeVar
+
+import torch
 from torch.nn.modules import Module
 
 __all__ = [

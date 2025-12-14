@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 from typing import Literal
+
 from torch import Tensor
 from torch.types import _int, _size
 

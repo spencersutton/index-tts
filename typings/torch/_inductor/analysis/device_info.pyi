@@ -1,6 +1,7 @@
-import torch
 from dataclasses import dataclass
 from typing import Optional, Union
+
+import torch
 
 log = ...
 

@@ -24,6 +24,7 @@ from transformers.utils.model_parallel_utils import assert_device_map, get_devic
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
 from indextts.gpt.perceiver import PerceiverResampler
+from indextts.util import patch_call
 
 logger = logging.getLogger(__name__)
 
@@ -217,6 +218,9 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
             attentions=transformer_outputs.attentions,
             cross_attentions=transformer_outputs.cross_attentions,
         )
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 
 def _build_hf_gpt_transformer(
@@ -820,3 +824,6 @@ class UnifiedVoice(nn.Module):
         base_vec = self.get_emovec(speech_conditioning_latent, cond_lengths)
 
         return base_vec + alpha * (emo_vec - base_vec)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...

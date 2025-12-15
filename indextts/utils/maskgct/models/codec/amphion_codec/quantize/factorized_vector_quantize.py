@@ -2,11 +2,15 @@
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
+from typing import override
+
 import torch
 import torch.nn.functional as F
 from einops import rearrange
 from torch import Tensor, nn
 from torch.nn.utils import weight_norm
+
+from indextts.util import patch_call
 
 
 class FactorizedVectorQuantize(nn.Module):
@@ -22,6 +26,7 @@ class FactorizedVectorQuantize(nn.Module):
 
         self.codebook = nn.Embedding(self.codebook_size, self.codebook_dim)
 
+    @override
     def forward(self, z: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
         """Parameters
         ----------
@@ -54,6 +59,9 @@ class FactorizedVectorQuantize(nn.Module):
         z_q = self.out_project(z_q)
 
         return z_q, commit_loss, codebook_loss, indices, z_e
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
     def embed_code(self, embed_id: Tensor) -> Tensor:
         return F.embedding(embed_id, self.codebook.weight)

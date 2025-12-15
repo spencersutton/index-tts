@@ -122,6 +122,9 @@ class AMPBlock1(nn.Module):
         for l in self.convs2:
             remove_weight_norm(l)
 
+    @patch_call(forward)
+    def __call__(self) -> None: ...
+
 
 class AMPBlock2(nn.Module):
     """AMPBlock applies Snake / SnakeBeta activation functions with trainable parameters that control periodicity, defined for each layer.
@@ -198,6 +201,9 @@ class AMPBlock2(nn.Module):
     def remove_weight_norm(self) -> None:
         for l in self.convs:
             remove_weight_norm(l)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 
 class BigVGANParams(TypedDict):

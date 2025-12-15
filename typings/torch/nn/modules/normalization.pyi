@@ -3,6 +3,8 @@ from typing import TypeAlias
 import torch
 from torch import Size, Tensor
 
+from indextts.util import patch_call
+
 from .module import Module
 
 __all__ = ["CrossMapLRN2d", "GroupNorm", "LayerNorm", "LocalResponseNorm", "RMSNorm"]
@@ -58,6 +60,8 @@ class GroupNorm(Module):
     def reset_parameters(self) -> None: ...
     def forward(self, input: Tensor) -> Tensor: ...
     def extra_repr(self) -> str: ...
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 class RMSNorm(Module):
     __constants__ = ...

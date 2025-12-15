@@ -301,6 +301,7 @@ class VocosBackbone(Backbone):
             nn.init.trunc_normal_(m.weight, std=0.02)
             nn.init.constant_(m.bias, 0)
 
+    @override
     def forward(self, x: Tensor, **kwargs: object) -> Tensor:
         bandwidth_id = kwargs.get("bandwidth_id")
         x = self.embed(x)

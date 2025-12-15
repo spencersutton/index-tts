@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+from typing import override
+
 import torch
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize.lookup_free_quantize import LookupFreeQuantize
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize.vector_quantize import VectorQuantize
@@ -28,6 +30,7 @@ class ResidualVQ(nn.Module):
 
         self.quantizer = FactorizedVectorQuantize()
 
+    @override
     def forward(self, z: Tensor, n_quantizers: int | None = None) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
         """Parameters
         ----------

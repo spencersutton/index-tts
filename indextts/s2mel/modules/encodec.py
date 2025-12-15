@@ -26,11 +26,11 @@ class ConvLayerNorm(nn.LayerNorm):
     before running the normalization and moves them back to original position right after.
     """
 
-    def __init__(self, normalized_shape: int | list[int] | torch.Size, **kwargs: Any) -> None:  # noqa: ANN401
+    def __init__(self, normalized_shape: int | list[int] | torch.Size, **kwargs: Any) -> None:
         super().__init__(normalized_shape, **kwargs)
 
     @override
-    def forward(self, input: Tensor) -> Tensor:  # noqa: A002
+    def forward(self, input: Tensor) -> Tensor:
         input = einops.rearrange(input, "b ... t -> b t ...")
         input = super().forward(input)
         return einops.rearrange(input, "b t ... -> b ... t")
@@ -117,7 +117,7 @@ class NormConv1d(nn.Module):
 
     def __init__(
         self,
-        *args: Any,  # noqa: ANN401
+        *args: Any,
         causal: bool = False,
         norm: str = "none",
         **kwargs: object,
@@ -198,5 +198,5 @@ class SConv1d(nn.Module):
             )
         return self.conv(x)
 
-    @patch_call(forward, Tensor)
+    @patch_call(forward)
     def __call__(self) -> None: ...

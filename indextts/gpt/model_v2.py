@@ -35,7 +35,7 @@ class NullPositionEmbedding(nn.Embedding):
         del self.weight
 
     @override
-    def forward(self, input: Tensor) -> Tensor:  # noqa: A002
+    def forward(self, input: Tensor) -> Tensor:
         return torch.zeros((input.shape[0], input.shape[1], self.embedding_dim), device=input.device)
 
 
@@ -691,7 +691,7 @@ class UnifiedVoice(nn.Module):
         max_generate_length: int | None = None,
         typical_sampling: bool = False,
         typical_mass: float = 0.9,
-        **hf_generate_kwargs: Any,  # noqa: ANN401
+        **hf_generate_kwargs: Any,
     ) -> tuple[Tensor, Tensor]:
         t0 = time.perf_counter()
         """Args:

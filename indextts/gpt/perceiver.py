@@ -9,6 +9,8 @@ from packaging import version
 from torch import Tensor, einsum, nn
 from torch.nn.attention import SDPBackend, sdpa_kernel
 
+from indextts.util import patch_call
+
 warning_printed = False
 
 
@@ -166,6 +168,9 @@ class _Attend(nn.Module):
 
         return einsum(f"b h i j, {kv_einsum_eq} -> b h i d", attn, v)
 
+    @patch_call(forward)
+    def __call__(self) -> None: ...
+
 
 def _sequential(*mods: nn.Module | None) -> nn.Sequential:
     return nn.Sequential(*(m for m in mods if m is not None))
@@ -194,9 +199,12 @@ class _RMSNorm(nn.Module):
         gamma, beta = (rearrange(t, "b d -> b 1 d") for t in (gamma, beta))
         return out * gamma + beta
 
+    @patch_call(forward)
+    def __call__(self) -> None: ...
+
 
 class _CausalConv1d(nn.Conv1d):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:  # noqa: ANN401
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         (kernel_size,) = self.kernel_size
         (dilation,) = self.dilation
@@ -206,9 +214,12 @@ class _CausalConv1d(nn.Conv1d):
         self.causal_padding = dilation * (kernel_size - 1)
 
     @override
-    def forward(self, input: Tensor) -> Tensor:  # noqa: A002
+    def forward(self, input: Tensor) -> Tensor:
         causal_padded_x = F.pad(input, (self.causal_padding, 0), value=0.0)
         return super().forward(causal_padded_x)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 
 class _GEGLU(nn.Module):
@@ -216,6 +227,9 @@ class _GEGLU(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         x, gate = x.chunk(2, dim=-1)
         return F.gelu(gate) * x
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 
 def _feed_forward(dim: int, mult: int = 4, causal_conv: bool = False) -> nn.Sequential:
@@ -284,6 +298,9 @@ class PerceiverResampler(nn.Module):
 
         return self.norm(latents)
 
+    @patch_call(forward)
+    def __call__(self) -> None: ...
+
 
 class _Attention(nn.Module):
     def __init__(
@@ -328,3 +345,6 @@ class _Attention(nn.Module):
 
         out = rearrange(out, "b h n d -> b n (h d)")
         return self.to_out(out)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...

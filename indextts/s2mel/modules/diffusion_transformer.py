@@ -9,6 +9,7 @@ from indextts.config import S2MelConfig
 from indextts.s2mel.modules.commons import sequence_mask
 from indextts.s2mel.modules.gpt_fast.model import ModelArgs, Transformer
 from indextts.s2mel.modules.wavenet import WN
+from indextts.util import patch_call
 
 
 def modulate(x: Tensor, shift: Tensor, scale: Tensor) -> Tensor:
@@ -76,6 +77,9 @@ class FinalLayer(nn.Module):
         shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
         x = modulate(self.norm_final(x), shift, scale)
         return self.linear(x)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 
 HIDDEN_DIM: Final = 512
@@ -193,3 +197,6 @@ class DiT(nn.Module):
         x = self.final_layer(x, t1).transpose(1, 2)
         return self.conv2(x)
         # x [2,80,1863]
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...

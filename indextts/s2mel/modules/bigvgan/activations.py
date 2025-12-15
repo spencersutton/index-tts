@@ -5,6 +5,8 @@ import torch
 from torch import Tensor, nn, pow, sin  # noqa: A004
 from torch.nn import Parameter
 
+from indextts.util import patch_call
+
 
 class Snake(nn.Module):
     """Implementation of a sine-based periodic activation function
@@ -59,6 +61,9 @@ class Snake(nn.Module):
         if self.alpha_logscale:
             alpha = torch.exp(alpha)
         return x + (1.0 / (alpha + self.no_div_by_zero)) * pow(sin(x * alpha), 2)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 
 class SnakeBeta(nn.Module):
@@ -122,3 +127,6 @@ class SnakeBeta(nn.Module):
             alpha = torch.exp(alpha)
             beta = torch.exp(beta)
         return x + (1.0 / (beta + self.no_div_by_zero)) * pow(sin(x * alpha), 2)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...

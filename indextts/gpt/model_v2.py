@@ -38,6 +38,9 @@ class NullPositionEmbedding(nn.Embedding):
     def forward(self, input: Tensor) -> Tensor:
         return torch.zeros((input.shape[0], input.shape[1], self.embedding_dim), device=input.device)
 
+    @patch_call(forward)
+    def __call__(self) -> None: ...
+
 
 class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
     lm_head: nn.Sequential

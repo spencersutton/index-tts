@@ -23,6 +23,7 @@ import torch
 from torch import Tensor, nn
 
 from indextts.gpt.conformer.embedding import PositionalEncoding
+from indextts.util import patch_call
 
 
 class _BaseSubsampling(nn.Module, ABC):
@@ -84,3 +85,6 @@ class Conv2dSubsampling2(_BaseSubsampling):
         x = self.out(x.transpose(1, 2).contiguous().view(b, t, c * f))
         x, pos_emb = self.pos_enc(x, offset)
         return x, pos_emb, x_mask[:, :, 2::2]
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...

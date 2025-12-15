@@ -3,8 +3,12 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+from typing import override
+
 import torch
 from torch import Tensor, nn
+
+from indextts.util import patch_call
 
 
 class ConvNeXtBlock(nn.Module):
@@ -43,6 +47,7 @@ class ConvNeXtBlock(nn.Module):
             else None
         )
 
+    @override
     def forward(self, x: Tensor, cond_embedding_id: Tensor | None = None) -> Tensor:
         residual = x
         x = self.dwconv(x)
@@ -60,6 +65,9 @@ class ConvNeXtBlock(nn.Module):
         x = x.transpose(1, 2)  # (B, T, C) -> (B, C, T)
 
         return residual + x
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 
 class AdaLayerNorm(nn.Module):
@@ -80,11 +88,15 @@ class AdaLayerNorm(nn.Module):
         torch.nn.init.ones_(self.scale.weight)
         torch.nn.init.zeros_(self.shift.weight)
 
+    @override
     def forward(self, x: Tensor, cond_embedding_id: Tensor) -> Tensor:
         scale = self.scale(cond_embedding_id)
         shift = self.shift(cond_embedding_id)
         x = nn.functional.layer_norm(x, (self.dim,), eps=self.eps)
         return x * scale + shift
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 
 class ResBlock1(nn.Module):
@@ -222,7 +234,8 @@ class ResBlock1(nn.Module):
 class Backbone(nn.Module):
     """Base class for the generator's backbone. It preserves the same temporal resolution across all layers."""
 
-    def forward(self, x: Tensor, **kwargs) -> Tensor:
+    @override
+    def forward(self, x: Tensor, **kwargs: object) -> Tensor:
         """Args:
             x (Tensor): Input tensor of shape (B, C, L), where B is the batch size,
                         C denotes output features, and L is the sequence length.
@@ -234,6 +247,9 @@ class Backbone(nn.Module):
         """
         msg = "Subclasses must implement the forward method."
         raise NotImplementedError(msg)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 
 class VocosBackbone(Backbone):
@@ -285,7 +301,7 @@ class VocosBackbone(Backbone):
             nn.init.trunc_normal_(m.weight, std=0.02)
             nn.init.constant_(m.bias, 0)
 
-    def forward(self, x: Tensor, **kwargs) -> Tensor:
+    def forward(self, x: Tensor, **kwargs: object) -> Tensor:
         bandwidth_id = kwargs.get("bandwidth_id")
         x = self.embed(x)
         if self.adanorm:

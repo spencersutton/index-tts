@@ -54,11 +54,6 @@ class ResidualVQ(nn.Module):
         quantized_out = 0.0
         residual = z
 
-        all_commit_losses = []
-        all_codebook_losses = []
-        all_indices = []
-        all_quantized = []
-
         if n_quantizers is None:
             n_quantizers = self.num_quantizers
 
@@ -72,10 +67,10 @@ class ResidualVQ(nn.Module):
         commit_loss_i = (commit_loss_i * mask).mean()
         codebook_loss_i = (codebook_loss_i * mask).mean()
 
-        all_commit_losses.append(commit_loss_i)
-        all_codebook_losses.append(codebook_loss_i)
-        all_indices.append(indices_i)
-        all_quantized.append(z_q_i)
+        all_commit_losses = [commit_loss_i]
+        all_codebook_losses = [codebook_loss_i]
+        all_indices = [indices_i]
+        all_quantized = [z_q_i]
 
         all_commit_losses, all_codebook_losses, all_indices, all_quantized = map(
             torch.stack,
@@ -99,33 +94,19 @@ class ResidualVQ(nn.Module):
     def __call__(self) -> None: ...
 
     def vq2emb(self, vq: Tensor, n_quantizers: int | None = None) -> Tensor:
-        quantized_out = 0.0
         if n_quantizers is None:
             n_quantizers = self.num_quantizers
         if n_quantizers > 0:
-            quantized_out += self.quantizer.vq2emb(vq[0])
-        assert isinstance(quantized_out, Tensor)
-        return quantized_out
+            return self.quantizer.vq2emb(vq[0])
+        return torch.tensor(0.0, device=vq.device)
 
     def latent2dist(self, z: Tensor, n_quantizers: int | None = None) -> tuple[Tensor, Tensor]:
-        quantized_out = 0.0
-        residual = z
-
-        all_dists = []
-        all_indices = []
-
         if n_quantizers is None:
             n_quantizers = self.num_quantizers
 
         if n_quantizers > 0:
-            dist_i, indices_i, z_q_i = self.quantizer.latent2dist(residual)
-            all_dists.append(dist_i)
-            all_indices.append(indices_i)
+            dist_i, indices_i, _z_q_i = self.quantizer.latent2dist(z)
+            return torch.stack([dist_i]), torch.stack([indices_i])
 
-            quantized_out += z_q_i
-            residual -= z_q_i
-
-        all_dists = torch.stack(all_dists)
-        all_indices = torch.stack(all_indices)
-
-        return all_dists, all_indices
+        # Return empty tensors if no quantizers
+        return torch.stack([]), torch.stack([])

@@ -13,6 +13,8 @@ from torch import Tensor, nn
 from torch.nn import Conv1d, ConvTranspose1d
 from torch.nn.utils import remove_weight_norm, weight_norm
 
+from indextts.util import patch_call
+
 from . import activations
 from .alias_free_activation.torch.act import Activation1d as TorchActivation1d
 from .utils import get_padding, init_weights
@@ -452,3 +454,6 @@ class BigVGAN(
             model.load_state_dict(checkpoint_dict["generator"])
 
         return model
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...

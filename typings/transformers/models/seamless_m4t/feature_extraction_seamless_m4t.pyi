@@ -38,6 +38,6 @@ class SeamlessM4TFeatureExtractor(SequenceFeatureExtractor):
         return_attention_mask: bool | None = ...,
         do_normalize_per_mel_bins: bool | None = ...,
         **kwargs,
-    ) -> BatchFeature: ...
+    ) -> BatchFeature[torch.Tensor]: ...
 
 __all__ = ["SeamlessM4TFeatureExtractor"]

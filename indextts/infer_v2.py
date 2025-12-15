@@ -175,8 +175,8 @@ class IndexTTS2:
     @functools.lru_cache  # noqa: B019
     def process_audio_prompt(self, prompt: Path) -> tuple[Tensor, Tensor, Tensor, Tensor]:
         audio, sr = _load_and_cut_audio(prompt, 15)
-        audio_22k = torchaudio.transforms.Resample(sr, 22050).forward(audio)
-        audio_16k = torchaudio.transforms.Resample(sr, 16000).forward(audio)
+        audio_22k = torchaudio.transforms.Resample(sr, 22050)(audio)
+        audio_16k = torchaudio.transforms.Resample(sr, 16000)(audio)
 
         inputs = self.extract_features(audio_16k, sampling_rate=16000, return_tensors="pt")
         input_features = inputs["input_features"].to(self.device)
@@ -795,7 +795,7 @@ class IndexTTS2:
                     s2mel_time += time.perf_counter() - m_start_time
 
                     m_start_time = time.perf_counter()
-                    wav = self.bigvgan.forward(vc_target.float()).squeeze().unsqueeze(0)
+                    wav = self.bigvgan(vc_target.float()).squeeze().unsqueeze(0)
                     logger.debug(wav.shape)
                     bigvgan_time += time.perf_counter() - m_start_time
                     wav = wav.squeeze(1)

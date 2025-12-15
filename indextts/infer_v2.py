@@ -285,7 +285,7 @@ class IndexTTS2:
             logger.info("torch.compile cache directory: %s", cache_dir)
 
         cfg = cast(Mapping[str, Any], OmegaConf.load(cfg_path))
-        self.cfg = CheckpointsConfig(**cfg)
+        self.cfg = CheckpointsConfig(**cfg)  # pyright: ignore[reportAny]
         self.model_dir = model_dir
         self.dtype = torch.float16 if self.use_fp16 else None
         self.stop_mel_token = self.cfg.gpt.stop_mel_token
@@ -334,7 +334,7 @@ class IndexTTS2:
 
         self.semantic_model = Wav2Vec2BertModel.from_pretrained("facebook/w2v-bert-2.0", device_map=device).eval()
 
-        stat_mean_var = torch.load(self.model_dir / self.cfg.w2v_stat)
+        stat_mean_var = cast(dict[str, Tensor], torch.load(self.model_dir / self.cfg.w2v_stat))
         self.semantic_mean = stat_mean_var["mean"].to(self.device)
         self.semantic_std = torch.sqrt(stat_mean_var["var"]).to(self.device)
 
@@ -378,10 +378,10 @@ class IndexTTS2:
         self.tokenizer = TextTokenizer(bpe_path, normalizer)
         logger.info("bpe model loaded from: %s", bpe_path)
 
-        emo_matrix: Tensor = torch.load(self.model_dir / self.cfg.emo_matrix)
+        emo_matrix = cast(Tensor, torch.load(self.model_dir / self.cfg.emo_matrix))
         emo_matrix = emo_matrix.to(self.device)
 
-        spk_matrix: Tensor = torch.load(self.model_dir / self.cfg.spk_matrix)
+        spk_matrix = cast(Tensor, torch.load(self.model_dir / self.cfg.spk_matrix))
         spk_matrix = spk_matrix.to(self.device)
 
         self.emo_num = tuple(self.cfg.emo_num)
@@ -624,7 +624,7 @@ class IndexTTS2:
         logger.debug("segments count: %d", len(segments))
         logger.debug("max_text_tokens_per_segment: %d", max_text_tokens_per_segment)
         logger.debug(*segments)
-        max_mel_tokens = generation_kwargs.pop("max_mel_tokens", 1500)
+        max_mel_tokens = cast(generation_kwargs.pop("max_mel_tokens", 1500))
 
         # [OPTIMIZATION] Pre-calculate emovec once before the loop
         with (

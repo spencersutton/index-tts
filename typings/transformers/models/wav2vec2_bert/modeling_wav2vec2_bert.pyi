@@ -7,6 +7,8 @@ from typing import Optional, Union
 import torch
 from torch import nn
 
+from indextts.util import patch_call
+
 from ...modeling_layers import GradientCheckpointingLayer
 from ...modeling_outputs import (
     CausalLMOutput,
@@ -109,10 +111,8 @@ class Wav2Vec2BertPreTrainedModel(PreTrainedModel):
 
 Wav2Vec2BertBaseModelOutput = Wav2Vec2BaseModelOutput
 
-@auto_docstring
 class Wav2Vec2BertModel(Wav2Vec2BertPreTrainedModel):
     def __init__(self, config: Wav2Vec2BertConfig) -> None: ...
-    @auto_docstring
     def forward(
         self,
         input_features: torch.Tensor | None,
@@ -121,21 +121,13 @@ class Wav2Vec2BertModel(Wav2Vec2BertPreTrainedModel):
         output_attentions: bool | None = ...,
         output_hidden_states: bool | None = ...,
         return_dict: bool | None = ...,
-    ) -> tuple | Wav2Vec2BertBaseModelOutput:
-        r"""
-        mask_time_indices (`torch.BoolTensor` of shape `(batch_size, sequence_length)`, *optional*):
-            Indices to mask extracted features for contrastive loss. When in training mode, model learns to predict
-            masked extracted features in *config.proj_codevector_dim* space.
-        """
-        ...
+    ) -> tuple[object, ...] | Wav2Vec2BertBaseModelOutput: ...
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 _HIDDEN_STATES_START_POSITION = ...
 
-@auto_docstring(
-    custom_intro="""
-    Wav2Vec2Bert Model with a `language modeling` head on top for Connectionist Temporal Classification (CTC).
-    """
-)
+@auto_docstring(custom_intro=...)
 class Wav2Vec2BertForCTC(Wav2Vec2BertPreTrainedModel):
     def __init__(self, config, target_lang: str | None = ...) -> None:
         r"""
@@ -144,7 +136,6 @@ class Wav2Vec2BertForCTC(Wav2Vec2BertPreTrainedModel):
             adapter.<lang>.bin. Only relevant when using an instance of [`UniSpeechSatForCTC`] with adapters. Uses 'eng' by
             default.
         """
-        ...
 
     @auto_docstring
     def forward(
@@ -163,14 +154,8 @@ class Wav2Vec2BertForCTC(Wav2Vec2BertPreTrainedModel):
             All labels set to `-100` are ignored (masked), the loss is only computed for labels in `[0, ...,
             config.vocab_size - 1]`.
         """
-        ...
 
-@auto_docstring(
-    custom_intro="""
-    Wav2Vec2Bert Model with a sequence classification head on top (a linear layer over the pooled output) for tasks like
-    SUPERB Keyword Spotting.
-    """
-)
+@auto_docstring(custom_intro=...)
 class Wav2Vec2BertForSequenceClassification(Wav2Vec2BertPreTrainedModel):
     def __init__(self, config) -> None: ...
     def freeze_base_model(self):  # -> None:
@@ -178,7 +163,6 @@ class Wav2Vec2BertForSequenceClassification(Wav2Vec2BertPreTrainedModel):
         Calling this function will disable the gradient computation for the base model so that its parameters will not
         be updated during training. Only the classification head will be updated.
         """
-        ...
 
     @auto_docstring
     def forward(
@@ -196,7 +180,6 @@ class Wav2Vec2BertForSequenceClassification(Wav2Vec2BertPreTrainedModel):
             config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
             `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
         """
-        ...
 
 @auto_docstring
 class Wav2Vec2BertForAudioFrameClassification(Wav2Vec2BertPreTrainedModel):
@@ -206,7 +189,6 @@ class Wav2Vec2BertForAudioFrameClassification(Wav2Vec2BertPreTrainedModel):
         Calling this function will disable the gradient computation for the base model so that its parameters will not
         be updated during training. Only the classification head will be updated.
         """
-        ...
 
     @auto_docstring
     def forward(
@@ -224,7 +206,6 @@ class Wav2Vec2BertForAudioFrameClassification(Wav2Vec2BertPreTrainedModel):
             config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
             `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
         """
-        ...
 
 class AMSoftmaxLoss(nn.Module):
     def __init__(self, input_dim, num_labels, scale=..., margin=...) -> None: ...
@@ -235,11 +216,7 @@ class TDNNLayer(nn.Module):
     def __init__(self, config, layer_id=...) -> None: ...
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
 
-@auto_docstring(
-    custom_intro="""
-    Wav2Vec2Bert Model with an XVector feature extraction head on top for tasks like Speaker Verification.
-    """
-)
+@auto_docstring(custom_intro=...)
 class Wav2Vec2BertForXVector(Wav2Vec2BertPreTrainedModel):
     def __init__(self, config) -> None: ...
     def freeze_base_model(self):  # -> None:
@@ -247,7 +224,6 @@ class Wav2Vec2BertForXVector(Wav2Vec2BertPreTrainedModel):
         Calling this function will disable the gradient computation for the base model so that its parameters will not
         be updated during training. Only the classification head will be updated.
         """
-        ...
 
     @auto_docstring
     def forward(
@@ -265,7 +241,6 @@ class Wav2Vec2BertForXVector(Wav2Vec2BertPreTrainedModel):
             config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
             `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
         """
-        ...
 
 __all__ = [
     "Wav2Vec2BertForAudioFrameClassification",

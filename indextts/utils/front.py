@@ -3,7 +3,7 @@ import traceback
 import warnings
 from collections.abc import Collection, Iterable, Sequence
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import ClassVar
 
 from sentencepiece import SentencePieceProcessor
 from wetext import Normalizer
@@ -259,18 +259,18 @@ class TextTokenizer:
     def tokenize(self, text: str) -> list[str]:
         return self.encode(text, out_type=str)
 
-    def encode(self, text: str, **kwargs: Any) -> list[str]:
+    def encode(self, text: str, out_type: type) -> list[str]:
         if len(text) == 0:
             return []
         if len(text.strip()) == 1:
-            return self.sp_model.Encode(text, out_type=kwargs.pop("out_type", int), **kwargs)
+            return self.sp_model.Encode(text, out_type=out_type)
         # 预处理
         if self.normalizer:
             text = self.normalizer.normalize(text)
         if len(self.pre_tokenizers) > 0:
             for pre_tokenizer in self.pre_tokenizers:
                 text = pre_tokenizer(text)
-        return self.sp_model.Encode(text, out_type=kwargs.pop("out_type", int), **kwargs)
+        return self.sp_model.Encode(text, out_type=out_type)
 
     @staticmethod
     def split_segments_by_token(

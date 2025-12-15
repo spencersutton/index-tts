@@ -14,7 +14,7 @@ class MyModel(nn.Module):
     gpt_layer: nn.Sequential | None
     cfm: CFM
     length_regulator: InterpolateRegulator
-    models: nn.ModuleDict
+    models: nn.ModuleDict[CFM | InterpolateRegulator | nn.Sequential]
 
     def __init__(self, args: S2MelConfig, use_gpt_latent: bool = False) -> None:
         super().__init__()

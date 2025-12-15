@@ -5,6 +5,7 @@ from re import M
 from typing import TYPE_CHECKING, Any, Self, TypeVar, overload
 from warnings import deprecated
 
+from torch import Tensor
 from torch._jit_internal import _copy_to_script_wrapper
 
 from .module import Module
@@ -20,7 +21,7 @@ T = TypeVar("T", bound=Module)
 class Container(Module):
     def __init__(self, **kwargs: Any) -> None: ...
 
-class Sequential[**P, R](Module[P, R]):
+class Sequential[**P = [Tensor], R = Tensor](Module[P, R]):
     _modules: dict[str, Module[P, R]]
     @overload
     def __init__(self, *args: Module[P, R]) -> None: ...

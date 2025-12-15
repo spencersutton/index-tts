@@ -3,6 +3,8 @@ from typing import Any
 from torch import Tensor
 from torch.nn.parameter import UninitializedParameter
 
+from indextts.util import patch_call
+
 from .lazy import LazyModuleMixin
 from .module import Module
 
@@ -11,6 +13,8 @@ __all__ = ["Bilinear", "Identity", "LazyLinear", "Linear"]
 class Identity(Module):
     def __init__(self, *args: Any, **kwargs: Any) -> None: ...
     def forward(self, input: Tensor) -> Tensor: ...
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 class Linear(Module[[Tensor], Tensor]):
     bias: Tensor | None
@@ -23,6 +27,8 @@ class Linear(Module[[Tensor], Tensor]):
     def forward(self, input: Tensor) -> Tensor: ...
     def __call__(self, input: Tensor) -> Tensor: ...
     def extra_repr(self) -> str: ...
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 class NonDynamicallyQuantizableLinear(Linear):
     def __init__(self, in_features: int, out_features: int, bias: bool = ..., device=..., dtype=...) -> None: ...

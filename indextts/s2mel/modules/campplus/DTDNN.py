@@ -18,6 +18,7 @@ from indextts.s2mel.modules.campplus.layers import (
     TransitLayer,
     get_nonlinear,
 )
+from indextts.util import patch_call
 
 
 class FCM(nn.Module):
@@ -139,3 +140,6 @@ class CAMPPlus(nn.Module):
         x = x.permute(0, 2, 1)  # (B,T,F) => (B,F,T)
         x = self.head(x)
         return self.xvector(x)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...

@@ -8,8 +8,5 @@ def _returns_nn_module_call(*_args: Any):  # noqa: ANN202, ANN401
     return nn.Module.__call__
 
 
-def patch_call[**P, R](
-    _src_func: Callable[P, R],
-    _return_type: type[R],
-) -> Callable[..., Callable[P, R]]:
+def patch_call[**P, R](_src_func: Callable[P, R]) -> Callable[..., Callable[P, R]]:
     return _returns_nn_module_call

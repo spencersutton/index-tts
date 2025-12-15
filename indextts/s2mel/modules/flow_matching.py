@@ -8,6 +8,7 @@ from tqdm import tqdm
 
 from indextts.config import S2MelConfig
 from indextts.s2mel.modules.diffusion_transformer import DiT
+from indextts.util import patch_call
 
 
 class BASECFM(nn.Module, ABC):
@@ -213,3 +214,6 @@ class CFM(BASECFM):
                 dynamic=True,
             ),
         )
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...

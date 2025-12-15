@@ -113,7 +113,7 @@ class SentencePieceProcessor:
     def Encode(
         self,
         input: str | list[str],
-        out_type: str = ...,
+        out_type: type = ...,
         add_bos: bool = ...,
         add_eos: bool = ...,
         reverse: bool = ...,

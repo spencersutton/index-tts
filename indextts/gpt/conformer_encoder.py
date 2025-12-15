@@ -6,6 +6,7 @@ from torch import Tensor, nn
 
 from indextts.gpt.conformer.attention import RelPositionMultiHeadedAttention
 from indextts.gpt.conformer.subsampling import Conv2dSubsampling2
+from indextts.util import patch_call
 from indextts.utils.common import make_pad_mask
 
 
@@ -49,6 +50,9 @@ class _PositionwiseFeedForward(nn.Module):
 
         """
         return self.w_2(self.dropout(self.activation(self.w_1(xs))))
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 
 class _ConvolutionModule(nn.Module):
@@ -158,6 +162,9 @@ class _ConvolutionModule(nn.Module):
             x.masked_fill_(~mask_pad, 0.0)
 
         return x.transpose(1, 2), new_cache
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 
 class _ConformerEncoderLayer(nn.Module):
@@ -272,6 +279,9 @@ class _ConformerEncoderLayer(nn.Module):
 
         return x, mask, new_att_cache, new_cnn_cache
 
+    @patch_call(forward)
+    def __call__(self) -> None: ...
+
 
 class _BaseEncoder(nn.Module, ABC):
     encoders: torch.nn.ModuleList
@@ -370,6 +380,9 @@ class _BaseEncoder(nn.Module, ABC):
         # return the masks before encoder layers, and the masks will be used
         # for cross attention with decoder later
         return xs, masks
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 
 class ConformerEncoder(_BaseEncoder):

@@ -9,6 +9,8 @@ import torch.nn.functional as F
 import torch.utils.checkpoint as cp
 from torch import Tensor, nn
 
+from indextts.util import patch_call
+
 
 def get_nonlinear(config_str: str, channels: int) -> nn.Sequential:
     nonlinear = nn.Sequential()
@@ -37,6 +39,9 @@ class StatsPool(nn.Module):
     @override
     def forward(self, x: Tensor) -> Tensor:
         return statistics_pooling(x)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 
 class TDNNLayer(nn.Module):
@@ -70,6 +75,9 @@ class TDNNLayer(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         x = self.linear(x)
         return self.nonlinear(x)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 
 class CAMLayer(nn.Module):
@@ -106,6 +114,9 @@ class CAMLayer(nn.Module):
         context = self.relu(self.linear1(context))
         m = self.sigmoid(self.linear2(context))
         return y * m
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
     def seg_pooling(self, x: Tensor, seg_len: int = 100, stype: str = "avg") -> Tensor:
         if stype == "avg":
@@ -161,6 +172,9 @@ class CAMDenseTDNNLayer(nn.Module):
             x = self.bn_function(x)
         return self.cam_layer(self.nonlinear2(x))
 
+    @patch_call(forward)
+    def __call__(self) -> None: ...
+
 
 class CAMDenseTDNNBlock(nn.ModuleList):
     def __init__(
@@ -197,6 +211,9 @@ class CAMDenseTDNNBlock(nn.ModuleList):
             x = torch.cat([x, layer(x)], dim=1)
         return x
 
+    @patch_call(forward)
+    def __call__(self) -> None: ...
+
 
 class TransitLayer(nn.Module):
     def __init__(
@@ -214,6 +231,9 @@ class TransitLayer(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         x = self.nonlinear(x)
         return self.linear(x)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 
 class DenseLayer(nn.Module):
@@ -235,6 +255,9 @@ class DenseLayer(nn.Module):
         else:
             x = self.linear(x)
         return self.nonlinear(x)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 
 class BasicResBlock(nn.Module):
@@ -273,3 +296,6 @@ class BasicResBlock(nn.Module):
         out = self.bn2(self.conv2(out))
         out += self.shortcut(x)
         return F.relu(out)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...

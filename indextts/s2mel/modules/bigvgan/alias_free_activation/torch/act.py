@@ -3,6 +3,8 @@
 
 from torch import Tensor, nn
 
+from indextts.util import patch_call
+
 from .resample import DownSample1d, UpSample1d
 
 
@@ -27,3 +29,6 @@ class Activation1d(nn.Module):
         x = self.upsample(x)
         x = self.act(x)
         return self.downsample(x)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...

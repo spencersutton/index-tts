@@ -5,6 +5,8 @@ from typing import Any
 import torch
 from torch import Tensor, nn
 
+from indextts.util import patch_call
+
 from ...activations import Snake, SnakeBeta
 from ..torch.resample import DownSample1d, UpSample1d
 from . import load
@@ -20,11 +22,11 @@ class FusedAntiAliasActivation(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx: Any, inputs: Tensor, up_ftr: Tensor, down_ftr: Tensor, alpha: Tensor, beta: Tensor) -> Tensor:  # noqa: ANN401, ARG004
+    def forward(ctx: Any, inputs: Tensor, up_ftr: Tensor, down_ftr: Tensor, alpha: Tensor, beta: Tensor) -> Tensor:  # noqa: ARG004
         return anti_alias_activation_cuda.forward(inputs, up_ftr, down_ftr, alpha, beta)
 
     @staticmethod
-    def backward(ctx: Any, *output_grads: Any) -> Any:  # noqa: ANN401, ARG004
+    def backward(ctx: Any, *output_grads: Any) -> Any:  # noqa: ARG004
         raise NotImplementedError
         return output_grads, None, None
 
@@ -70,3 +72,6 @@ class Activation1d(nn.Module):
             beta = torch.log(beta)
 
         return FusedAntiAliasActivation.apply(x, self.upsample.filter, self.downsample.lowpass.filter, alpha, beta)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...

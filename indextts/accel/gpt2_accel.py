@@ -8,6 +8,8 @@ from transformers.modeling_outputs import (
 )
 from transformers.models.gpt2.modeling_gpt2 import GPT2Attention, GPT2Block, GPT2Model
 
+from indextts.util import patch_call
+
 from .attention import Attention
 
 
@@ -109,6 +111,9 @@ class GPT2AccelAttention(GPT2Attention):
 
         return cast(tuple[Tensor | tuple[Tensor], ...], outputs)
 
+    @patch_call(forward)
+    def __call__(self) -> None: ...
+
     def _split_heads(self, tensor: Tensor, num_heads: int, head_dim: int) -> Tensor:
         new_shape = (*tensor.size()[:-1], num_heads, head_dim)
         tensor = tensor.view(new_shape)
@@ -148,7 +153,7 @@ class GPT2AccelModel(GPT2Model):
         output_attentions: bool | None = None,
         output_hidden_states: bool | None = None,
         return_dict: bool | None = None,
-        **kwargs: Any,  # noqa: ANN401
+        **kwargs: Any,
     ) -> tuple[torch.FloatTensor, ...] | BaseModelOutputWithPastAndCrossAttentions:
         if inputs_embeds is not None:
             hidden_states = inputs_embeds
@@ -184,3 +189,6 @@ class GPT2AccelModel(GPT2Model):
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
         )
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...

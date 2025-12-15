@@ -35,6 +35,9 @@ class ConvLayerNorm(nn.LayerNorm):
         input = super().forward(input)
         return einops.rearrange(input, "b t ... -> b ... t")
 
+    @patch_call(forward)
+    def __call__(self) -> None: ...
+
 
 def get_extra_padding_for_conv1d(x: Tensor, kernel_size: int, stride: int, padding_total: int = 0) -> int:
     """See `pad_for_conv1d`."""

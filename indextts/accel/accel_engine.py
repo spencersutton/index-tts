@@ -9,6 +9,7 @@ from torch.types import Number
 from transformers import GPT2Model
 
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
+from indextts.util import patch_call
 
 from .attention import ForwardContext
 from .kv_manager import KVCacheManager, Seq
@@ -30,6 +31,9 @@ class Sampler(nn.Module):
         sampled_tokens = probs.div_(q).argmax(dim=-1)
         greedy_tokens = logits.argmax(dim=-1)
         return torch.where(greedy_mask, greedy_tokens, sampled_tokens)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 
 GRAPH_BS: Final = [1, 2, 4, 8]

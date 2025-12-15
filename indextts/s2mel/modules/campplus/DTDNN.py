@@ -73,6 +73,9 @@ class FCM(nn.Module):
         shape = out.shape
         return out.reshape(shape[0], shape[1] * shape[2], shape[3])
 
+    @patch_call(forward)
+    def __call__(self) -> None: ...
+
 
 class CAMPPlus(nn.Module):
     def __init__(

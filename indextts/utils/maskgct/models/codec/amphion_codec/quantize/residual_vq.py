@@ -8,6 +8,7 @@ from indextts.utils.maskgct.models.codec.amphion_codec.quantize.lookup_free_quan
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize.vector_quantize import VectorQuantize
 from torch import Tensor, nn
 
+from indextts.util import patch_call
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize.factorized_vector_quantize import (
     FactorizedVectorQuantize,
 )
@@ -92,6 +93,9 @@ class ResidualVQ(nn.Module):
             all_codebook_losses,
             all_quantized,
         )
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
     def vq2emb(self, vq: Tensor, n_quantizers: int | None = None) -> Tensor:
         quantized_out = 0.0

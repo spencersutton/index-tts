@@ -451,6 +451,7 @@ class IndexTTS2:
             attention_mask=attention_mask,
             output_hidden_states=True,
         )
+        assert not isinstance(vq_emb, tuple) and vq_emb.hidden_states is not None
         feat = vq_emb.hidden_states[17]  # (B, T, C)
         return (feat - self.semantic_mean) / self.semantic_std
 
@@ -475,7 +476,7 @@ class IndexTTS2:
         max_text_tokens_per_segment: int = 120,
         stream_return: bool = False,
         more_segment_before: int = 0,
-        **generation_kwargs: Any,
+        **generation_kwargs: object,
     ) -> Tensor | Generator[Tensor | Path | tuple[int, np.ndarray] | None] | Path | tuple[int, np.ndarray] | None:
         gen = self.infer_generator(
             spk_audio_prompt,
@@ -623,7 +624,7 @@ class IndexTTS2:
         logger.debug("segments count: %d", len(segments))
         logger.debug("max_text_tokens_per_segment: %d", max_text_tokens_per_segment)
         logger.debug(*segments)
-        max_mel_tokens = cast(generation_kwargs.pop("max_mel_tokens", 1500))
+        max_mel_tokens = cast(int, generation_kwargs.pop("max_mel_tokens", 1500))
 
         # [OPTIMIZATION] Pre-calculate emovec once before the loop
         with (
@@ -770,7 +771,8 @@ class IndexTTS2:
                     m_start_time = time.perf_counter()
                     diffusion_steps = 25
                     inference_cfg_rate = 0.7
-                    latent = self.s2mel.models["gpt_layer"](latent)
+                    assert self.s2mel.gpt_layer is not None
+                    latent = self.s2mel.gpt_layer(latent)
                     S_infer = self.semantic_codec.quantizer.vq2emb(code.unsqueeze(1))
                     S_infer = S_infer.transpose(1, 2)
                     S_infer += latent

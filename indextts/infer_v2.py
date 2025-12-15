@@ -324,7 +324,7 @@ class IndexTTS2:
 
                 logger.info(
                     "Preload custom CUDA kernel for BigVGAN: %s",
-                    activation1d.anti_alias_activation_cuda,
+                    activation1d.anti_alias_activation_cuda,  # pyright: ignore[reportAny]
                 )
             except Exception as e:  # noqa: BLE001
                 logger.info("Failed to load custom CUDA kernel for BigVGAN. Falling back to torch. %r", e)
@@ -358,7 +358,7 @@ class IndexTTS2:
         # load campplus_model
         campplus_ckpt_path = hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
         campplus_model = CAMPPlus(feat_dim=80, embedding_size=192)
-        campplus_model.load_state_dict(torch.load(campplus_ckpt_path, map_location="cpu"))
+        campplus_model.load_state_dict(torch.load(campplus_ckpt_path, map_location="cpu"))  # pyright: ignore[reportAny]
         self.campplus_model = campplus_model.to(self.device)
         self.campplus_model.eval()
         logger.info("campplus_model weights restored from: %s", campplus_ckpt_path)
@@ -519,7 +519,7 @@ class IndexTTS2:
         max_text_tokens_per_segment: int = 120,
         stream_return: bool = False,
         quick_streaming_tokens: int = 0,
-        **generation_kwargs: Any,
+        **generation_kwargs: Any,  # pyright: ignore[reportAny]
     ) -> Generator[Tensor | Path | tuple[int, np.ndarray] | None]:
         # Mark CUDA graph step begin at the start of each inference
         # This tells PyTorch it's safe to reuse CUDA graph buffers
@@ -705,7 +705,7 @@ class IndexTTS2:
                     num_beams=generation_kwargs.pop("num_beams", 3),
                     repetition_penalty=generation_kwargs.pop("repetition_penalty", 10.0),
                     max_generate_length=max_mel_tokens,
-                    **generation_kwargs,
+                    **generation_kwargs,  # pyright: ignore[reportAny]
                 )
             gpt_gen_time += time.perf_counter() - m_start_time
 

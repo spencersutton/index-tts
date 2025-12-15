@@ -22,6 +22,8 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
 
+from indextts.util import patch_call
+
 
 class PositionalEncoding(nn.Module):
     """Positional encoding.
@@ -110,6 +112,9 @@ class PositionalEncoding(nn.Module):
             pos_emb = self.dropout(pos_emb)
         return pos_emb
 
+    @patch_call(forward)
+    def __call__(self) -> None: ...
+
 
 class RelPositionalEncoding(PositionalEncoding):
     """Relative positional encoding module.
@@ -155,6 +160,9 @@ class NoPositionalEncoding(nn.Module):
         """Just return zero vector for interface compatibility."""
         pos_emb = torch.zeros(1, x.size(1), self.d_model).to(x.device)
         return self.dropout(x), pos_emb
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
     def position_encoding(self, _offset: int | Tensor, size: int) -> Tensor:
         return torch.zeros(1, size, self.d_model)

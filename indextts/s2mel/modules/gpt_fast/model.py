@@ -14,6 +14,8 @@ import torch
 from torch import Tensor, nn
 from torch.nn import functional as F
 
+from indextts.util import patch_call
+
 
 def _find_multiple(n: int, k: int) -> int:
     if n % k == 0:
@@ -32,7 +34,7 @@ class AdaptiveLayerNorm(nn.Module):
         self.eps = self.norm.eps
 
     @override
-    def forward(self, input: Tensor, embedding: Tensor | None = None) -> Tensor:  # noqa: A002
+    def forward(self, input: Tensor, embedding: Tensor | None = None) -> Tensor:
         if embedding is None:
             return self.norm(input)
         weight, bias = torch.split(
@@ -41,6 +43,9 @@ class AdaptiveLayerNorm(nn.Module):
             dim=-1,
         )
         return weight * self.norm(input) + bias
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 
 @dataclass
@@ -203,6 +208,9 @@ class Transformer(nn.Module):
                 skip_in_x_list.append(x)
         return self.norm(x, c)
 
+    @patch_call(forward)
+    def __call__(self) -> None: ...
+
 
 class TransformerBlock(nn.Module):
     def __init__(self, config: ModelArgs) -> None:
@@ -254,6 +262,9 @@ class TransformerBlock(nn.Module):
                 context_freqs_cis,
             )
         return h + self.feed_forward(self.ffn_norm(h, c))
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 
 class Attention(nn.Module):
@@ -324,6 +335,9 @@ class Attention(nn.Module):
 
         return self.wo(y)
 
+    @patch_call(forward)
+    def __call__(self) -> None: ...
+
 
 class FeedForward(nn.Module):
     def __init__(self, config: ModelArgs) -> None:
@@ -336,6 +350,9 @@ class FeedForward(nn.Module):
     @override
     def forward(self, x: Tensor) -> Tensor:
         return self.w2(F.silu(self.w1(x)) * self.w3(x))
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 
 class RMSNorm(nn.Module):
@@ -351,6 +368,9 @@ class RMSNorm(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         output = self._norm(x.float()).type_as(x)
         return output * self.weight
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 
 def _precompute_freqs_cis(

@@ -189,6 +189,9 @@ class BASECFM(nn.Module, ABC):
 
         return torch.tensor(loss), estimator_out + (1 - self.sigma_min) * z
 
+    @patch_call(forward)
+    def __call__(self) -> None: ...
+
 
 class CFM(BASECFM):
     def __init__(self, args: S2MelConfig) -> None:
@@ -214,6 +217,3 @@ class CFM(BASECFM):
                 dynamic=True,
             ),
         )
-
-    @patch_call(forward)
-    def __call__(self) -> None: ...

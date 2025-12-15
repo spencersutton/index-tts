@@ -164,6 +164,8 @@ ignore = [
   "S404",    # suspicious-subprocess-import
   "SIM108",  # if-else-block-instead-of-if-exp
   "T201",    # print
+  "TC001",
+  "TC003",
   "TC006",   # runtime-cast-value
   "TID252",  # relative-imports
   "TRY003",  # raise-vanilla-args

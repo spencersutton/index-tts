@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pathlib import Path
 from typing import cast, override
 
@@ -5,6 +7,7 @@ import torch
 from torch import Tensor, nn
 
 from indextts.config import S2MelConfig
+from indextts.util import patch_call
 
 
 class MyModel(nn.Module):
@@ -48,11 +51,14 @@ class MyModel(nn.Module):
         self,
         x: Tensor,
         target_lengths: Tensor,
-        prompt_len: int,
+        prompt_len: Tensor,
         cond: Tensor,
         y: Tensor,
-    ) -> Tensor:
+    ) -> tuple[Tensor, Tensor]:
         return self.cfm(x, target_lengths, prompt_len, cond, y)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
     def enable_torch_compile(self) -> None:
         """Enable torch.compile optimization.

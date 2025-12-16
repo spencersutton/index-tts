@@ -13,10 +13,10 @@ class MyModel(nn.Module):
     from indextts.s2mel.modules.flow_matching import CFM  # noqa: PLC0415
     from indextts.s2mel.modules.length_regulator import InterpolateRegulator  # noqa: PLC0415
 
-    gpt_layer: nn.Sequential[[Tensor], Tensor] | None
+    gpt_layer: nn.Sequential[nn.Module] | None
     cfm: CFM
     length_regulator: InterpolateRegulator
-    models: nn.ModuleDict[CFM | InterpolateRegulator | nn.Sequential]
+    models: nn.ModuleDict[CFM | InterpolateRegulator | nn.Sequential[nn.Module]]
 
     def __init__(self, args: S2MelConfig, use_gpt_latent: bool = False) -> None:
         super().__init__()

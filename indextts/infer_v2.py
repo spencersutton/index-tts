@@ -29,7 +29,6 @@ from indextts.s2mel.modules.bigvgan import bigvgan
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
 from indextts.s2mel.modules.length_regulator import InterpolateRegulator
 from indextts.s2mel.modules.model import MyModel
-from indextts.utils.checkpoint import load_checkpoint2
 from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.maskgct.models.codec.kmeans.repcodec_model import RepCodec
 
@@ -44,7 +43,7 @@ SAMPLING_RATE = 22050
 
 
 def _load_bigvgan(name: str, device: str, use_cuda_kernel: bool) -> bigvgan.BigVGAN:
-    model = bigvgan.BigVGAN.from_pretrained(name, use_cuda_kernel=use_cuda_kernel)
+    model = bigvgan.BigVGAN.from_pretrained(name, use_cuda_kernel=use_cuda_kernel, map_location=device)
     model.remove_weight_norm()
     logger.info("bigvgan weights restored from: %s", name)
     return model.to(device).eval()
@@ -53,30 +52,31 @@ def _load_bigvgan(name: str, device: str, use_cuda_kernel: bool) -> bigvgan.BigV
 def _load_camp_plus(device: str) -> CAMPPlus:
     checkpoint = hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
     model = CAMPPlus(feat_dim=80, embedding_size=192)
-    model.load_state_dict(torch.load(checkpoint, map_location="cpu"))  # pyright: ignore[reportAny]
+    model.load_state_dict(torch.load(checkpoint, map_location=device))  # pyright: ignore[reportAny]
     logger.info("campplus_model weights restored from: %s", checkpoint)
     return model.to(device).eval()
 
 
 def _load_semantic_codec_model(device: str) -> RepCodec:
-    model = RepCodec()
     checkpoint = hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
-    safetensors.torch.load_model(model, checkpoint, strict=False)
-    model = model.to(device).eval()
+    model = RepCodec()
+    safetensors.torch.load_model(model, checkpoint, strict=False, device=device)
     logger.info("semantic_codec weights restored from: %s", checkpoint)
-    return model
+    return model.to(device).eval()
 
 
 def _load_s2mel_model(cfg: CheckpointsConfig, model_dir: Path, device: str) -> MyModel:
     model = MyModel(cfg.s2mel)
 
-    safetensors.torch.load_model(model.cfm, model_dir / cfg.cfm_checkpoint, strict=False)
+    safetensors.torch.load_model(model.cfm, model_dir / cfg.cfm_checkpoint, strict=False, device=device)
     model.cfm.eval()
 
-    safetensors.torch.load_model(model.gpt_layer, model_dir / cfg.gpt_layer_checkpoint, strict=False)
+    safetensors.torch.load_model(model.gpt_layer, model_dir / cfg.gpt_layer_checkpoint, strict=False, device=device)
     model.gpt_layer.eval()
 
-    safetensors.torch.load_model(model.length_regulator, model_dir / cfg.len_reg_checkpoint, strict=False)
+    safetensors.torch.load_model(
+        model.length_regulator, model_dir / cfg.len_reg_checkpoint, strict=False, device=device
+    )
     model.length_regulator.eval()
 
     model = model.to(device)
@@ -183,7 +183,6 @@ class IndexTTS2:
     device: str
     use_fp16: bool
     cfg: CheckpointsConfig
-    model_dir: Path
     dtype: torch.dtype | None
     stop_mel_token: int
     qwen_emo: QwenEmotion
@@ -328,23 +327,21 @@ class IndexTTS2:
 
         cfg = cast(Mapping[str, Any], OmegaConf.load(cfg_path))
         self.cfg = CheckpointsConfig(**cfg)  # pyright: ignore[reportAny]
-        self.model_dir = model_dir
         self.dtype = torch.float16 if self.use_fp16 else None
         self.stop_mel_token = self.cfg.gpt.stop_mel_token
         self.use_accel = use_accel
         self.use_torch_compile = use_torch_compile
 
-        self.qwen_emo = QwenEmotion(self.model_dir / self.cfg.qwen_emo_path)
+        self.qwen_emo = QwenEmotion(model_dir / self.cfg.qwen_emo_path)
 
         self.gpt = UnifiedVoice(use_accel=self.use_accel)
-        self.gpt_path = self.model_dir / self.cfg.gpt_checkpoint
-        load_checkpoint2(self.gpt, self.gpt_path)
-        self.gpt = self.gpt.to(self.device)
+        gpt_path = model_dir / self.cfg.gpt_checkpoint
+        safetensors.torch.load_model(self.gpt, gpt_path, strict=False, device=self.device)
+
+        self.gpt = self.gpt.to(self.device).eval()
         if self.use_fp16:
-            self.gpt.eval().half()
-        else:
-            self.gpt.eval()
-        logger.info("GPT weights restored from: %s", self.gpt_path)
+            self.gpt.half()
+        logger.info("GPT weights restored from: %s", gpt_path)
 
         if use_deepspeed:
             try:
@@ -376,13 +373,13 @@ class IndexTTS2:
 
         self.semantic_model = Wav2Vec2BertModel.from_pretrained("facebook/w2v-bert-2.0", device_map=device).eval()
 
-        stat_mean_var = safetensors.safe_open(self.model_dir / self.cfg.w2v_stat, framework="pt", device=self.device)
+        stat_mean_var = safetensors.safe_open(model_dir / self.cfg.w2v_stat, framework="pt", device=self.device)
         self.semantic_mean = stat_mean_var.get_tensor("mean")
         self.semantic_std = torch.sqrt(stat_mean_var.get_tensor("var"))
 
         self.semantic_codec = _load_semantic_codec_model(self.device)
 
-        self.s2mel = _load_s2mel_model(self.cfg, self.model_dir, self.device)
+        self.s2mel = _load_s2mel_model(self.cfg, model_dir, self.device)
 
         self.campplus_model = _load_camp_plus(self.device)
 
@@ -392,14 +389,14 @@ class IndexTTS2:
         normalizer.load()
         logger.info("TextNormalizer loaded")
 
-        bpe_path = self.model_dir / self.cfg.dataset.bpe_model
+        bpe_path = model_dir / self.cfg.dataset.bpe_model
         self.tokenizer = TextTokenizer(bpe_path, normalizer)
         logger.info("bpe model loaded from: %s", bpe_path)
 
-        emo_matrix = cast(Tensor, torch.load(self.model_dir / self.cfg.emo_matrix))
+        emo_matrix = cast(Tensor, torch.load(model_dir / self.cfg.emo_matrix))
         emo_matrix = emo_matrix.to(self.device)
 
-        spk_matrix = cast(Tensor, torch.load(self.model_dir / self.cfg.spk_matrix))
+        spk_matrix = cast(Tensor, torch.load(model_dir / self.cfg.spk_matrix))
         spk_matrix = spk_matrix.to(self.device)
 
         self.emo_num = tuple(self.cfg.emo_num)

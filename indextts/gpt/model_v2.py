@@ -43,7 +43,7 @@ class NullPositionEmbedding(nn.Embedding):
 
 
 class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
-    lm_head: nn.Sequential
+    lm_head: nn.Sequential[nn.Module]
     text_pos_embedding: LearnedPositionEmbeddings
     transformer: GPT2Model
     kv_cache: bool
@@ -101,10 +101,6 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
     @override
     def get_output_embeddings(self) -> nn.Module:
         return self.lm_head
-
-    @override
-    def set_output_embeddings(self, new_embeddings: nn.Sequential) -> None:
-        self.lm_head = new_embeddings
 
     def store_mel_emb(self, mel_emb: torch.Tensor) -> None:
         self.cached_mel_emb = mel_emb

@@ -186,6 +186,11 @@ class Transformer(nn.Module):
             else:
                 mask = self.causal_mask[None, None, input_pos]
                 mask = mask[..., input_pos]
+
+        if self.freqs_cis.device != input_pos.device:
+            raise ValueError(
+                f"Caches must be initialized on the same device as input_pos: {self.freqs_cis.device} vs {input_pos.device}"
+            )
         freqs_cis = self.freqs_cis[input_pos]
         context_freqs_cis = self.freqs_cis[context_input_pos] if context is not None else None
         skip_in_x_list: list[Tensor] = []

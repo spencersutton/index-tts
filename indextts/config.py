@@ -163,7 +163,9 @@ class CheckpointsConfig:
     # simple file pointers / other runtime fields
     gpt_checkpoint: str
     w2v_stat: str
-    s2mel_checkpoint: str
+    gpt_layer_checkpoint: str
+    cfm_checkpoint: str
+    len_reg_checkpoint: str
     emo_matrix: str
     spk_matrix: str
     emo_num: list[int]

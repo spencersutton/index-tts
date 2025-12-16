@@ -29,7 +29,7 @@ from indextts.s2mel.modules.audio import mel_spectrogram
 from indextts.s2mel.modules.bigvgan import bigvgan
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
 from indextts.s2mel.modules.length_regulator import InterpolateRegulator
-from indextts.s2mel.modules.model import MyModel, load_checkpoint
+from indextts.s2mel.modules.model import MyModel
 from indextts.utils.checkpoint import load_checkpoint2
 from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.maskgct.models.codec.kmeans.repcodec_model import RepCodec
@@ -345,15 +345,22 @@ class IndexTTS2:
         self.semantic_codec.eval()
         logger.info("semantic_codec weights restored from: %s", semantic_code_ckpt)
 
-        s2mel_path = self.model_dir / self.cfg.s2mel_checkpoint
-        s2mel = MyModel(self.cfg.s2mel, use_gpt_latent=True)
-        s2mel = load_checkpoint(s2mel, s2mel_path)
+        s2mel = MyModel(self.cfg.s2mel)
+
+        safetensors.torch.load_model(s2mel.cfm, self.model_dir / self.cfg.cfm_checkpoint, strict=False)
+        s2mel.cfm.eval()
+
+        safetensors.torch.load_model(s2mel.gpt_layer, self.model_dir / self.cfg.gpt_layer_checkpoint, strict=False)
+        s2mel.gpt_layer.eval()
+
+        safetensors.torch.load_model(s2mel.length_regulator, self.model_dir / self.cfg.len_reg_checkpoint, strict=False)
+        s2mel.length_regulator.eval()
+
         self.s2mel = s2mel.to(self.device)
         assert self.s2mel.cfm.estimator is not None
         self.s2mel.cfm.estimator.setup_caches(max_batch_size=1, max_seq_length=8192)
 
         self.s2mel.eval()
-        logger.info("s2mel weights restored from: %s", s2mel_path)
 
         # load campplus_model
         campplus_ckpt_path = hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")

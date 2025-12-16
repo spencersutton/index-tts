@@ -1,9 +1,8 @@
 import enum
 from collections.abc import Iterator
-from typing import Any, Optional, ParamSpec, TypeVar, Union
+from typing import Any
 
 import torch
-import torch._C as _C
 
 class Tensor(torch._C.TensorBase):
     _is_param: bool
@@ -90,9 +89,7 @@ class Tensor(torch._C.TensorBase):
         ...
     def resize_as(self, tensor):  # -> Any | None:
         ...
-    def split(self, split_size, dim=...):  # -> Any | tuple[Tensor, ...]:
-
-        ...
+    def split(self, split_size: int | list[Any], dim: int = ...) -> tuple[Tensor, ...]: ...
     def unique(self, sorted=..., return_inverse=..., return_counts=..., dim=...):  # -> Any:
 
         ...

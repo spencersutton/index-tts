@@ -7,6 +7,7 @@ from torch import Tensor, nn
 
 from indextts.s2mel.modules.commons import fused_add_tanh_sigmoid_multiply
 from indextts.s2mel.modules.encodec import SConv1d
+from indextts.util import patch_call
 
 
 class WN(nn.Module):
@@ -93,6 +94,9 @@ class WN(nn.Module):
             else:
                 output += res_skip_acts
         return output * x_mask
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
     def remove_weight_norm(self) -> None:
         if self.gin_channels != 0:

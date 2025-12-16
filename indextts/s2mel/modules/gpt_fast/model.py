@@ -172,7 +172,7 @@ class Transformer(nn.Module):
         self,
         x: Tensor,
         c: Tensor,
-        input_pos: Tensor | None = None,
+        input_pos: Tensor,
         mask: Tensor | None = None,
         context: Tensor | None = None,
         context_input_pos: Tensor | None = None,
@@ -215,7 +215,7 @@ class Transformer(nn.Module):
 class TransformerBlock(nn.Module):
     def __init__(self, config: ModelArgs) -> None:
         super().__init__()
-        self.attention = Attention(config)
+        self.attention: Attention = Attention(config)
         self.feed_forward = FeedForward(config)
         self.ffn_norm = AdaptiveLayerNorm(config.dim, RMSNorm(config.dim, eps=config.norm_eps))
         self.attention_norm = AdaptiveLayerNorm(config.dim, RMSNorm(config.dim, eps=config.norm_eps))
@@ -298,8 +298,8 @@ class Attention(nn.Module):
         self,
         x: Tensor,
         freqs_cis: Tensor,
-        mask: Tensor,
-        input_pos: Tensor | None = None,
+        mask: Tensor | None,
+        input_pos: Tensor,
         context: Tensor | None = None,
         context_freqs_cis: Tensor | None = None,
     ) -> Tensor:
@@ -324,7 +324,6 @@ class Attention(nn.Module):
         q, k, v = (x.transpose(1, 2) for x in (q, k, v))
 
         if self.kv_cache is not None:
-            assert input_pos is not None, "input_pos must be provided when using kv_cache"
             k, v = self.kv_cache.update(input_pos, k, v)
 
         k = k.repeat_interleave(self.n_head // self.n_local_heads, dim=1)

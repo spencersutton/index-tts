@@ -93,19 +93,20 @@ class SConv1d(nn.Module):
 
     @override
     def forward(self, x: Tensor) -> Tensor:
-        _B, _C, _T = x.shape
+        # B, C, T = x.shape
         kernel_size = self.conv.conv.kernel_size[0]
         stride = self.conv.conv.stride[0]
         dilation = self.conv.conv.dilation[0]
+
         kernel_size = (kernel_size - 1) * dilation + 1  # effective kernel size with dilations
         padding_total = kernel_size - stride
+
         length = x.shape[-1]
-        n_frames = (length - kernel_size + padding_total) / stride + 1
-        ideal_length = (math.ceil(n_frames) - 1) * stride + (kernel_size - padding_total)
-        extra_padding = ideal_length - length
+        extra_padding = math.ceil(length / stride) * stride - length
         # Asymmetric padding required for odd strides
         padding_right = padding_total // 2
         padding_left = padding_total - padding_right
+
         x = pad1d(
             x,
             (padding_left, padding_right + extra_padding),

@@ -2,6 +2,8 @@
 # Licensed under the Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
 
 # Copied from: https://github.com/modelscope/3D-Speaker/blob/main/speakerlab/models/campplus/layers.py
+from __future__ import annotations
+
 from typing import override
 
 import torch
@@ -12,8 +14,8 @@ from torch import Tensor, nn
 from indextts.util import patch_call
 
 
-def get_nonlinear(config_str: str, channels: int) -> nn.Sequential:
-    nonlinear = nn.Sequential()
+def get_nonlinear(config_str: str, channels: int) -> nn.Sequential[nn.Module]:
+    nonlinear: nn.Sequential[nn.Module] = nn.Sequential()
     for name in config_str.split("-"):
         if name == "relu":
             nonlinear.add_module("relu", nn.ReLU(inplace=True))
@@ -274,7 +276,7 @@ class BasicResBlock(nn.Module):
         self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(planes)
 
-        self.shortcut = nn.Sequential()
+        self.shortcut: nn.Sequential[nn.Conv2d | nn.BatchNorm2d] = nn.Sequential()
         if stride != 1 or in_planes != self.expansion * planes:
             self.shortcut = nn.Sequential(
                 nn.Conv2d(

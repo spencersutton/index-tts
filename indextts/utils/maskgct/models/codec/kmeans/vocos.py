@@ -21,9 +21,6 @@ class ConvNeXtBlock(nn.Module):
         intermediate_dim (int): Dimensionality of the intermediate layer.
         layer_scale_init_value (float, optional): Initial value for the layer scale. None means no scaling.
             Defaults to None.
-        adanorm_num_embeddings (int, optional): Number of embeddings for AdaLayerNorm.
-            None means non-conditional LayerNorm. Defaults to None.
-
     """
 
     def __init__(
@@ -31,15 +28,10 @@ class ConvNeXtBlock(nn.Module):
         dim: int,
         intermediate_dim: int,
         layer_scale_init_value: float,
-        adanorm_num_embeddings: int | None = None,
     ) -> None:
         super().__init__()
         self.dwconv = nn.Conv1d(dim, dim, kernel_size=7, padding=3, groups=dim)  # depthwise conv
-        self.adanorm = adanorm_num_embeddings is not None
-        if adanorm_num_embeddings:
-            self.norm = AdaLayerNorm(adanorm_num_embeddings, dim, eps=1e-6)
-        else:
-            self.norm = nn.LayerNorm(dim, eps=1e-6)
+        self.norm = nn.LayerNorm(dim, eps=1e-6)
         self.pwconv1 = nn.Linear(dim, intermediate_dim)  # pointwise/1x1 convs, implemented with linear layers
         self.act = nn.GELU()
         self.pwconv2 = nn.Linear(intermediate_dim, dim)
@@ -50,15 +42,11 @@ class ConvNeXtBlock(nn.Module):
         )
 
     @override
-    def forward(self, x: Tensor, cond_embedding_id: Tensor | None = None) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         residual = x
         x = self.dwconv(x)
         x = x.transpose(1, 2)  # (B, C, T) -> (B, T, C)
-        if self.adanorm:
-            assert cond_embedding_id is not None
-            x = self.norm(x, cond_embedding_id)
-        else:
-            x = self.norm(x)
+        x = self.norm(x)
         x = self.pwconv1(x)
         x = self.act(x)
         x = self.pwconv2(x)
@@ -263,8 +251,6 @@ class VocosBackbone(Backbone):
         intermediate_dim (int): Intermediate dimension used in ConvNeXtBlock.
         num_layers (int): Number of ConvNeXtBlock layers.
         layer_scale_init_value (float, optional): Initial value for layer scaling. Defaults to `1 / num_layers`.
-        adanorm_num_embeddings (int, optional): Number of embeddings for AdaLayerNorm.
-                                                None means non-conditional model. Defaults to None.
 
     """
 
@@ -275,43 +261,33 @@ class VocosBackbone(Backbone):
         intermediate_dim: int,
         num_layers: int,
         layer_scale_init_value: float | None = None,
-        adanorm_num_embeddings: int | None = None,
     ) -> None:
         super().__init__()
         self.input_channels = input_channels
         self.embed = nn.Conv1d(input_channels, dim, kernel_size=7, padding=3)
-        self.adanorm = adanorm_num_embeddings is not None
-        if adanorm_num_embeddings:
-            self.norm = AdaLayerNorm(adanorm_num_embeddings, dim, eps=1e-6)
-        else:
-            self.norm = nn.LayerNorm(dim, eps=1e-6)
+        self.norm = nn.LayerNorm(dim, eps=1e-6)
         layer_scale_init_value = layer_scale_init_value or 1 / num_layers
         self.convnext = nn.ModuleList([
             ConvNeXtBlock(
                 dim=dim,
                 intermediate_dim=intermediate_dim,
                 layer_scale_init_value=layer_scale_init_value,
-                adanorm_num_embeddings=adanorm_num_embeddings,
             )
             for _ in range(num_layers)
         ])
         self.final_layer_norm = nn.LayerNorm(dim, eps=1e-6)
         self.apply(self._init_weights)
 
-    def _init_weights(self, m) -> None:
+    def _init_weights(self, m: nn.Module) -> None:
         if isinstance(m, (nn.Conv1d, nn.Linear)):
+            assert m.bias is not None
             nn.init.trunc_normal_(m.weight, std=0.02)
             nn.init.constant_(m.bias, 0)
 
     @override
     def forward(self, x: Tensor, **kwargs: object) -> Tensor:
-        bandwidth_id = kwargs.get("bandwidth_id")
         x = self.embed(x)
-        if self.adanorm:
-            assert bandwidth_id is not None
-            x = self.norm(x.transpose(1, 2), cond_embedding_id=bandwidth_id)
-        else:
-            x = self.norm(x.transpose(1, 2))
+        x = self.norm(x.transpose(1, 2))
         x = x.transpose(1, 2)
         for conv_block in self.convnext:
             x = conv_block(x, cond_embedding_id=bandwidth_id)

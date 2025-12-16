@@ -4,9 +4,9 @@ from collections.abc import Callable, Iterable, Iterator, Mapping
 from re import M
 from typing import TYPE_CHECKING, Any, Self, TypeVar, overload
 from warnings import deprecated
-
 from torch import Tensor
 from torch._jit_internal import _copy_to_script_wrapper
+from indextts.util import patch_call
 
 from .module import Module
 
@@ -43,6 +43,9 @@ class Sequential[**P = [Tensor], R = Tensor](Module[P, R]):
     def append(self, module: Module[P, R]) -> Self: ...
     def insert(self, index: int, module: Module[P, R]) -> Self: ...
     def extend(self, sequential: Iterable[Module[P, R]]) -> Self: ...
+    def forward(self, *args: P.args, **kwargs: P.kwargs) -> R: ...
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 class ModuleList[T: Module](Module):
     _modules: dict[str, T]

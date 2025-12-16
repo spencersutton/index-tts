@@ -1,10 +1,9 @@
 from collections.abc import Callable
-from typing import Any
 
 from torch import nn
 
 
-def _returns_nn_module_call(*_args: Any):  # noqa: ANN202, ANN401
+def _returns_nn_module_call(*_args: object):  # noqa: ANN202
     return nn.Module.__call__
 
 

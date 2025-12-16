@@ -2,6 +2,8 @@
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
+from __future__ import annotations
+
 from typing import override
 
 import torch
@@ -172,7 +174,7 @@ class RepCodec(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-        self.encoder = nn.Sequential[[Tensor], Tensor](
+        self.encoder = nn.Sequential(
             VocosBackbone(
                 input_channels=HIDDEN_SIZE,
                 dim=VOCOS_DIM,

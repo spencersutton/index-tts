@@ -43,6 +43,15 @@ logger = logging.getLogger(__name__)
 SAMPLING_RATE = 22050
 
 
+def _load_semantic_codec_model(device: str) -> RepCodec:
+    model = RepCodec().eval()
+    checkpoint = hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
+    safetensors.torch.load_model(model, checkpoint, strict=False)
+    model = model.to(device).eval()
+    logger.info("semantic_codec weights restored from: %s", checkpoint)
+    return model
+
+
 def _load_s2mel_model(cfg: CheckpointsConfig, model_dir: Path, device: str) -> MyModel:
     model = MyModel(cfg.s2mel)
 
@@ -59,8 +68,7 @@ def _load_s2mel_model(cfg: CheckpointsConfig, model_dir: Path, device: str) -> M
     assert model.cfm.estimator is not None
     model.cfm.estimator.setup_caches(max_batch_size=1, max_seq_length=8192)
 
-    model.eval()
-    return model
+    return model.eval()
 
 
 def generate_silence_interval(
@@ -357,12 +365,7 @@ class IndexTTS2:
         self.semantic_mean = stat_mean_var["mean"].to(self.device)
         self.semantic_std = torch.sqrt(stat_mean_var["var"]).to(self.device)
 
-        semantic_codec = RepCodec().eval()
-        semantic_code_ckpt = hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
-        safetensors.torch.load_model(semantic_codec, semantic_code_ckpt, strict=False)
-        self.semantic_codec = semantic_codec.to(self.device)
-        self.semantic_codec.eval()
-        logger.info("semantic_codec weights restored from: %s", semantic_code_ckpt)
+        self.semantic_codec = _load_semantic_codec_model(self.device)
 
         self.s2mel = _load_s2mel_model(self.cfg, self.model_dir, self.device)
 

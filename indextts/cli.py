@@ -1,18 +1,15 @@
 import argparse
-import random
 import sys
-import time
 import warnings
 from pathlib import Path
 
-import rich.traceback
 import torch
 
 from indextts.infer_v2 import IndexTTS2
-from indextts.profiler import dict_calls, profile_func, random_words
 
 if __debug__:
     import omegaconf
+    import rich.traceback
     import transformers
 
     rich.traceback.install(suppress=[omegaconf, torch, transformers], width=120)
@@ -178,43 +175,9 @@ def main() -> None:
     )
 
     voice_file = Path(args.voice)
-    text = " ".join(random_words) if args.profile else args.text.strip()
 
-    if args.profile:
-        for _ in range(args.profile_warmup_steps):
-            random.shuffle(random_words)
-            tts.infer(spk_audio_prompt=voice_file, text=text, output_path=output_path)
-
-        sys.setprofile(profile_func)
-        for _ in range(args.profile_steps):
-            random.shuffle(random_words)
-            tts.infer(
-                spk_audio_prompt=voice_file,
-                text=text,
-                output_path=output_path,
-                max_text_tokens_per_segment=1500,
-            )
-        sys.setprofile(None)
-    else:
-        tts.infer(spk_audio_prompt=voice_file, text=text, output_path=output_path)
+    tts.infer(spk_audio_prompt=voice_file, text=args.text, output_path=output_path)
 
 
 if __name__ == "__main__":
     main()
-    p = ["location\tfunction_name\tcumulative_time\tcall_count"]
-    for code_obj, exec_info in (
-        (o, info)
-        for (o, info) in sorted(dict_calls.items(), key=lambda item: item[1].cumulative_time, reverse=True)
-        if "site-packages" not in o.co_filename and info.cumulative_time >= 0.1
-    ):
-        p.append(
-            f"{code_obj.co_filename}:{code_obj.co_firstlineno}\t"
-            f"{code_obj.co_name}\t"
-            f"{exec_info.cumulative_time:.6f}s\t"
-            f"{exec_info.call_count}"
-        )
-
-    for line in p:
-        print(line)
-    profile_report = "\n".join(p)
-    Path(f"function_profile_{time.perf_counter()}.txt").write_text(profile_report)

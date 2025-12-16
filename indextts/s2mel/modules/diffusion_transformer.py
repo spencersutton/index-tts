@@ -128,7 +128,6 @@ class DiT(nn.Module):
             n_layers=args.wavenet.num_layers,
             gin_channels=HIDDEN_DIM,
             p_dropout=args.wavenet.p_dropout,
-            causal=False,
         )
         self.final_layer = FinalLayer(HIDDEN_DIM, 1, HIDDEN_DIM)
         self.res_projection = nn.Linear(

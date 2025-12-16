@@ -8,35 +8,14 @@
 """Convolutional layers wrappers and utilities."""
 
 import math
-import warnings
 from collections.abc import Sequence
 from typing import override
 
-import einops
-import torch
 from torch import Tensor, nn
 from torch.nn import functional as F
 from torch.nn.utils import weight_norm
 
 from indextts.util import patch_call
-
-
-class ConvLayerNorm(nn.LayerNorm):
-    """Convolution-friendly LayerNorm that moves channels to last dimensions
-    before running the normalization and moves them back to original position right after.
-    """
-
-    def __init__(self, normalized_shape: int | list[int] | torch.Size, **kwargs: object) -> None:
-        super().__init__(normalized_shape, **kwargs)
-
-    @override
-    def forward(self, input: Tensor) -> Tensor:
-        input = einops.rearrange(input, "b ... t -> b t ...")
-        input = super().forward(input)
-        return einops.rearrange(input, "b t ... -> b ... t")
-
-    @patch_call(forward)
-    def __call__(self) -> None: ...
 
 
 def get_extra_padding_for_conv1d(x: Tensor, kernel_size: int, stride: int, padding_total: int = 0) -> int:
@@ -76,20 +55,24 @@ class NormConv1d(nn.Module):
 
     def __init__(
         self,
-        *args: object,
-        causal: bool = False,
-        norm: str = "none",
-        **kwargs: object,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: int,
+        dilation: int = 1,
     ) -> None:
         super().__init__()
-        self.conv = weight_norm(nn.Conv1d(*args, **kwargs))
-        self.norm = nn.Identity()
-        self.norm_type = norm
+        self.conv = weight_norm(
+            nn.Conv1d(
+                in_channels,
+                out_channels,
+                kernel_size,
+                dilation=dilation,
+            )
+        )
 
     @override
     def forward(self, x: Tensor) -> Tensor:
-        x = self.conv(x)
-        return self.norm(x)
+        return self.conv(x)
 
     @patch_call(forward)
     def __call__(self) -> None: ...
@@ -105,59 +88,34 @@ class SConv1d(nn.Module):
         in_channels: int,
         out_channels: int,
         kernel_size: int,
-        stride: int = 1,
         dilation: int = 1,
-        groups: int = 1,
-        bias: bool = True,
-        causal: bool = False,
-        norm: str = "none",
-        pad_mode: str = "reflect",
-        **kwargs: object,
     ) -> None:
         super().__init__()
-        # warn user on unusual setup between dilation and stride
-        if stride > 1 and dilation > 1:
-            warnings.warn(
-                "SConv1d has been initialized with stride > 1 and dilation > 1"
-                f" (kernel_size={kernel_size} stride={stride}, dilation={dilation}).",
-                stacklevel=2,
-            )
         self.conv = NormConv1d(
             in_channels,
             out_channels,
             kernel_size,
-            stride,
             dilation=dilation,
-            groups=groups,
-            bias=bias,
-            causal=causal,
-            norm=norm,
         )
-        self.causal = causal
-        self.pad_mode = pad_mode
+        self.pad_mode = "reflect"
 
     @override
     def forward(self, x: Tensor) -> Tensor:
         _B, _C, _T = x.shape
-        assert isinstance(self.conv.conv, nn.Conv1d)
         kernel_size = self.conv.conv.kernel_size[0]
         stride = self.conv.conv.stride[0]
         dilation = self.conv.conv.dilation[0]
         kernel_size = (kernel_size - 1) * dilation + 1  # effective kernel size with dilations
         padding_total = kernel_size - stride
         extra_padding = get_extra_padding_for_conv1d(x, kernel_size, stride, padding_total)
-        if self.causal:
-            # Left padding for causal
-            x = pad1d(x, (padding_total, extra_padding), mode=self.pad_mode)
-        else:
-            # Asymmetric padding required for odd strides
-            padding_right = padding_total // 2
-            padding_left = padding_total - padding_right
-            x = pad1d(
-                x,
-                (padding_left, padding_right + extra_padding),
-                mode=self.pad_mode,
-            )
+        # Asymmetric padding required for odd strides
+        padding_right = padding_total // 2
+        padding_left = padding_total - padding_right
+        x = pad1d(
+            x,
+            (padding_left, padding_right + extra_padding),
+            mode=self.pad_mode,
+        )
         return self.conv(x)
 
     @patch_call(forward)

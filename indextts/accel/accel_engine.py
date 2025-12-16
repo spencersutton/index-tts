@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Final, cast
 import torch
 from torch import Tensor, nn
 from transformers import GPT2Model
-from transformers.models.gpt2.modeling_gpt2 import GPT2Model
 
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
 from indextts.util import patch_call
@@ -490,6 +489,7 @@ class AccelInferenceEngine:
         t_prefill_end = time.perf_counter()
         print(f"[Profile] Prefill time: {(t_prefill_end - t_prefill_start) * 1000:.2f}ms", file=sys.stderr, flush=True)
 
+        assert hidden_states is not None
         if is_varlen_batch:
             context = ForwardContext.get()
             assert context.cu_seqlens_q is not None
@@ -503,7 +503,7 @@ class AccelInferenceEngine:
         t_first_token_start = time.perf_counter()
         if last_hidden.dtype != next(self.lm_head.parameters()).dtype:
             last_hidden = last_hidden.to(next(self.lm_head.parameters()).dtype)
-        logits = self.lm_head(last_hidden)  # [batch_size, vocab_size]
+        logits = cast(torch.FloatTensor, self.lm_head(last_hidden))  # [batch_size, vocab_size]
 
         temperatures = self._prepare_sample(sequences, temperature)
         if temperature > 0:

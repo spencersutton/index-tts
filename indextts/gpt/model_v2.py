@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import importlib.util
 import logging
 import time
-from typing import Any, override
+from typing import TYPE_CHECKING, Any, cast, override
 
 import torch
 import torch.nn.functional as F
@@ -43,7 +45,8 @@ class NullPositionEmbedding(nn.Embedding):
 
 
 class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
-    lm_head: nn.Sequential[nn.Module]
+    if TYPE_CHECKING:
+        lm_head: nn.Sequential[nn.LayerNorm | nn.Linear]
     text_pos_embedding: LearnedPositionEmbeddings
     transformer: GPT2Model
     kv_cache: bool
@@ -194,6 +197,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
         )
+        assert not isinstance(transformer_outputs, tuple)
         hidden_states = transformer_outputs[0]
 
         # Set device for model parallelism
@@ -204,7 +208,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
                 torch.cuda.set_device(self.transformer.first_device)
             hidden_states = hidden_states.to(self.lm_head[1].weight.device)
 
-        lm_logits = self.lm_head(hidden_states)
+        lm_logits = cast(torch.FloatTensor, self.lm_head(hidden_states))
 
         if not return_dict:
             return (lm_logits, *transformer_outputs[1:])

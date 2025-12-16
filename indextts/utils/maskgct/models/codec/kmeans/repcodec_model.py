@@ -63,11 +63,8 @@ class FactorizedVectorQuantize(nn.Module):
     @patch_call(forward)
     def __call__(self) -> None: ...
 
-    def _embed_code(self, embed_id: Tensor) -> Tensor:
-        return F.embedding(embed_id, self.codebook.weight)
-
     def _decode_code(self, embed_id: Tensor) -> Tensor:
-        return self._embed_code(embed_id).transpose(1, 2)
+        return F.embedding(embed_id, self.codebook.weight).transpose(1, 2)
 
     def _decode_latents(self, latents: Tensor) -> tuple[Tensor, Tensor]:
         encodings = latents.transpose(1, 2).reshape(-1, latents.size(1))
@@ -89,11 +86,9 @@ class FactorizedVectorQuantize(nn.Module):
 
         return z_q, indices
 
-    def vq2emb(self, vq: Tensor, out_proj: bool = True) -> Tensor:
+    def vq2emb(self, vq: Tensor) -> Tensor:
         emb = self._decode_code(vq)
-        if out_proj:
-            emb = self._out_project(emb)
-        return emb
+        return self._out_project(emb)
 
 
 class ResidualVQ(nn.Module):

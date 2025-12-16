@@ -1,6 +1,8 @@
 import torch
 from torch import Tensor
 
+from indextts.util import patch_call
+
 from .module import Module
 
 __all__ = [
@@ -147,6 +149,8 @@ class GELU(Module):
     approximate: str
     def __init__(self, approximate: str = ...) -> None: ...
     def forward(self, input: Tensor) -> Tensor: ...
+    @patch_call(forward)
+    def __call__(self) -> None: ...
     def extra_repr(self) -> str: ...
 
 class Hardshrink(Module):

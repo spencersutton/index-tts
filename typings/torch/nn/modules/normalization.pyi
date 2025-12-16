@@ -1,7 +1,5 @@
-from typing import TypeAlias
-
 import torch
-from torch import Size, Tensor
+from torch import Size, Tensor, nn
 
 from indextts.util import patch_call
 
@@ -49,6 +47,7 @@ class LayerNorm(Module):
     @patch_call(forward)
     def __call__(self) -> None: ...
     def extra_repr(self) -> str: ...
+    weight: nn.Parameter
 
 class GroupNorm(Module):
     __constants__ = ...

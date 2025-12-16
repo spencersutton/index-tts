@@ -109,7 +109,7 @@ class BASECFM(nn.Module, ABC):
             stacked_t = torch.cat([t.unsqueeze(0), t.unsqueeze(0)], dim=0)
 
             # Perform a single forward pass for both original and CFG inputs
-            stacked_dphi_dt = self.estimator.forward(
+            stacked_dphi_dt = self.estimator(
                 stacked_x,
                 stacked_prompt_x,
                 x_lens,
@@ -185,7 +185,7 @@ class BASECFM(nn.Module, ABC):
                 estimator_out[bib, :, prompt_lens[bib] : x_lens[bib]],
                 u[bib, :, prompt_lens[bib] : x_lens[bib]],
             )
-        loss /= b
+        loss = loss / b
 
         return torch.tensor(loss), estimator_out + (1 - self.sigma_min) * z
 

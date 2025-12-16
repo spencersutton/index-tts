@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import cast, override
+from typing import override
 
 import torch
 from torch import Tensor, nn
@@ -24,7 +24,7 @@ class InterpolateRegulator(nn.Module):
         super().__init__()
         self.sampling_ratios = sampling_ratios
         out_channels = out_channels or channels
-        model = nn.ModuleList([])
+        model: nn.ModuleList[nn.Module] = nn.ModuleList([])
         for _ in sampling_ratios:
             module = nn.Conv1d(channels, channels, 3, 1, 1)
             norm = nn.GroupNorm(groups, channels)
@@ -57,7 +57,7 @@ class InterpolateRegulator(nn.Module):
             mode="nearest",
         )
 
-        model_output = cast(Tensor, self.model(x))
+        model_output = self.model(x)
         out = model_output.transpose(1, 2).contiguous()
         return out * mask, ylens, None, None, None
 

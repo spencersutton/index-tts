@@ -109,7 +109,9 @@ s2mel:
 
 gpt_checkpoint: gpt.pth
 w2v_stat: wav2vec2bert_stats.pt
-s2mel_checkpoint: s2mel.pth
+gpt_layer_checkpoint: gpt_layer.safetensors
+cfm_checkpoint: cfm.safetensors
+len_reg_checkpoint: length_regulator.safetensors
 emo_matrix: feat2.pt 
 spk_matrix: feat1.pt
 emo_num: [3, 17, 2, 8, 4, 5, 10, 24]

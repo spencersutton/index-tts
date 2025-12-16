@@ -7,18 +7,19 @@ import torch
 from torch import Tensor, nn
 
 from indextts.config import S2MelConfig
+from indextts.s2mel.modules.flow_matching import CFM
 
 
 class MyModel(nn.Module):
     from indextts.s2mel.modules.flow_matching import CFM  # noqa: PLC0415
     from indextts.s2mel.modules.length_regulator import InterpolateRegulator  # noqa: PLC0415
 
-    gpt_layer: nn.Sequential[nn.Module] | None
+    gpt_layer: nn.Sequential[nn.Module]
     cfm: CFM
     length_regulator: InterpolateRegulator
     models: nn.ModuleDict[CFM | InterpolateRegulator | nn.Sequential[nn.Module]]
 
-    def __init__(self, args: S2MelConfig, use_gpt_latent: bool = False) -> None:
+    def __init__(self, args: S2MelConfig) -> None:
         super().__init__()
         from indextts.s2mel.modules.flow_matching import CFM  # noqa: PLC0415
         from indextts.s2mel.modules.length_regulator import InterpolateRegulator  # noqa: PLC0415
@@ -37,13 +38,12 @@ class MyModel(nn.Module):
             "length_regulator": self.length_regulator,
         })
 
-        if use_gpt_latent:
-            self.gpt_layer = torch.nn.Sequential(
-                torch.nn.Linear(1280, 256),
-                torch.nn.Linear(256, 128),
-                torch.nn.Linear(128, 1024),
-            )
-            self.models["gpt_layer"] = self.gpt_layer
+        self.gpt_layer = torch.nn.Sequential(
+            torch.nn.Linear(1280, 256),
+            torch.nn.Linear(256, 128),
+            torch.nn.Linear(128, 1024),
+        )
+        self.models["gpt_layer"] = self.gpt_layer
 
     def enable_torch_compile(self) -> None:
         """Enable torch.compile optimization.
@@ -54,26 +54,14 @@ class MyModel(nn.Module):
         self.cfm.enable_torch_compile()
 
 
-def load_checkpoint(model: MyModel, path: Path) -> MyModel:
+def load_checkpoint(model: nn.Module, path: Path) -> nn.Module:
     state = cast(
         dict[str, dict[str, dict[str, Tensor]]],
         torch.load(path, map_location="cpu"),
     )
-    params = state["net"]
 
-    for key, module in model.models.items():
-        if key not in params:
-            continue
-
-        state_dict = params[key]
-        state_dict = {k.removeprefix("module."): v for k, v in state_dict.items()}
-        model_state: dict[str, Tensor] = module.state_dict()
-        filtered = {k: v for k, v in state_dict.items() if k in model_state and v.shape == model_state[k].shape}
-        skipped = set(state_dict) - set(filtered)
-        if skipped:
-            print(f"Warning: Skipped loading keys due to shape mismatch: {skipped}")
-        print(f"{key} loaded")
-        module.load_state_dict(filtered, strict=False)
+    print(f"{model.__class__.__name__} loaded")
+    model.load_state_dict(state, strict=False)
     model.eval()
 
     return model

@@ -29,8 +29,8 @@ class FactorizedVectorQuantize(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-        self.in_project = weight_norm(nn.Conv1d(INPUT_DIM, CODEBOOK_DIM, kernel_size=1))
-        self.out_project = weight_norm(nn.Conv1d(CODEBOOK_DIM, INPUT_DIM, kernel_size=1))
+        self._in_project = weight_norm(nn.Conv1d(INPUT_DIM, CODEBOOK_DIM, kernel_size=1))
+        self._out_project = weight_norm(nn.Conv1d(CODEBOOK_DIM, INPUT_DIM, kernel_size=1))
 
         self.codebook = nn.Embedding(CODEBOOK_SIZE, CODEBOOK_DIM)
 
@@ -51,25 +51,25 @@ class FactorizedVectorQuantize(nn.Module):
 
         """
         # Factorized codes project input into low-dimensional space if self.input_dim != self.codebook_dim
-        z_e = self.in_project(z)
-        z_q, indices = self.decode_latents(z_e)
+        z_e = self._in_project(z)
+        z_q, indices = self._decode_latents(z_e)
 
         z_q = z_e + (z_q - z_e).detach()
 
-        z_q = self.out_project(z_q)
+        z_q = self._out_project(z_q)
 
         return z_q, indices, z_e
 
     @patch_call(forward)
     def __call__(self) -> None: ...
 
-    def embed_code(self, embed_id: Tensor) -> Tensor:
+    def _embed_code(self, embed_id: Tensor) -> Tensor:
         return F.embedding(embed_id, self.codebook.weight)
 
-    def decode_code(self, embed_id: Tensor) -> Tensor:
-        return self.embed_code(embed_id).transpose(1, 2)
+    def _decode_code(self, embed_id: Tensor) -> Tensor:
+        return self._embed_code(embed_id).transpose(1, 2)
 
-    def decode_latents(self, latents: Tensor) -> tuple[Tensor, Tensor]:
+    def _decode_latents(self, latents: Tensor) -> tuple[Tensor, Tensor]:
         encodings = latents.transpose(1, 2).reshape(-1, latents.size(1))
         codebook = self.codebook.weight
 
@@ -85,14 +85,14 @@ class FactorizedVectorQuantize(nn.Module):
             + codebook.pow(2).sum(1, keepdim=True).t()
         )
         indices = (-dist).max(1)[1].reshape(latents.size(0), latents.size(2))
-        z_q = self.decode_code(indices)
+        z_q = self._decode_code(indices)
 
         return z_q, indices
 
     def vq2emb(self, vq: Tensor, out_proj: bool = True) -> Tensor:
-        emb = self.decode_code(vq)
+        emb = self._decode_code(vq)
         if out_proj:
-            emb = self.out_project(emb)
+            emb = self._out_project(emb)
         return emb
 
 
@@ -138,7 +138,7 @@ class ResidualVQ(nn.Module):
         return self.quantizer.vq2emb(vq[0])
 
 
-def init_weights(m: nn.Module) -> None:
+def _init_weights(m: nn.Module) -> None:
     if isinstance(m, (nn.Linear, nn.Conv1d)):
         nn.init.trunc_normal_(m.weight, std=0.02)
         assert m.bias is not None
@@ -161,7 +161,7 @@ class RepCodec(nn.Module):
 
         self.quantizer = ResidualVQ()
 
-        self.apply(init_weights)
+        self.apply(_init_weights)
 
     def quantize(self, x):
 

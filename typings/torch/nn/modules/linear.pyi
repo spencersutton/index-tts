@@ -16,7 +16,7 @@ class Identity(Module):
     @patch_call(forward)
     def __call__(self) -> None: ...
 
-class Linear(Module[[Tensor], Tensor]):
+class Linear(Module):
     bias: Tensor | None
     __constants__ = ...
     in_features: int

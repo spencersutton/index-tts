@@ -8,7 +8,6 @@ from typing import override
 
 import torch
 import torch.nn.functional as F
-from einops import rearrange
 from torch import Tensor, nn
 from torch.nn.utils import weight_norm
 
@@ -79,7 +78,7 @@ class FactorizedVectorQuantize(nn.Module):
         return self.embed_code(embed_id).transpose(1, 2)
 
     def decode_latents(self, latents: Tensor) -> tuple[Tensor, Tensor]:
-        encodings = rearrange(latents, "b d t -> (b t) d")
+        encodings = latents.transpose(1, 2).reshape(-1, latents.size(1))
         codebook = self.codebook.weight
 
         # L2 normalize encodings and codebook
@@ -93,7 +92,7 @@ class FactorizedVectorQuantize(nn.Module):
             - 2 * encodings @ codebook.t()
             + codebook.pow(2).sum(1, keepdim=True).t()
         )
-        indices = rearrange((-dist).max(1)[1], "(b t) -> b t", b=latents.size(0))
+        indices = (-dist).max(1)[1].reshape(latents.size(0), latents.size(2))
         z_q = self.decode_code(indices)
 
         return z_q, indices

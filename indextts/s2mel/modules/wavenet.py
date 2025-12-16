@@ -39,20 +39,15 @@ class WN(nn.Module):
                 gin_channels,
                 2 * hidden_channels * n_layers,
                 1,
-                norm="weight_norm",
             )
 
         for i in range(n_layers):
             dilation = cast(int, dilation_rate**i)
-            padding = int((kernel_size * dilation - dilation) / 2)
             in_layer = SConv1d(
                 hidden_channels,
                 2 * hidden_channels,
                 kernel_size,
                 dilation=dilation,
-                padding=padding,
-                norm="weight_norm",
-                causal=causal,
             )
             self.in_layers.append(in_layer)
 
@@ -63,8 +58,6 @@ class WN(nn.Module):
                 hidden_channels,
                 res_skip_channels,
                 1,
-                norm="weight_norm",
-                causal=causal,
             )
             self.res_skip_layers.append(res_skip_layer)
 

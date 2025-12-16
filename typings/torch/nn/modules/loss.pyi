@@ -3,6 +3,8 @@ from warnings import deprecated
 
 from torch import Tensor
 
+from indextts.util import patch_call
+
 from .module import Module
 
 __all__ = [
@@ -41,6 +43,8 @@ class L1Loss(_Loss):
     __constants__ = ...
     def __init__(self, size_average=..., reduce=..., reduction: str = ...) -> None: ...
     def forward(self, input: Tensor, target: Tensor) -> Tensor: ...
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 class NLLLoss(_WeightedLoss):
     __constants__ = ...

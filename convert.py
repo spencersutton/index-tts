@@ -29,3 +29,5 @@ for filename in ["cfm", "length_regulator", "gpt_layer"]:
     s2mel = torch.load((base / "s2mel.pth"), map_location="cpu")
     model = s2mel["net"][filename]
     safetensors.torch.save_file(model, new_file)
+
+convert_checkpoint("wav2vec2bert_stats.pt")

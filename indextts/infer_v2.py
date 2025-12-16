@@ -43,6 +43,26 @@ logger = logging.getLogger(__name__)
 SAMPLING_RATE = 22050
 
 
+def _load_s2mel_model(cfg: CheckpointsConfig, model_dir: Path, device: str) -> MyModel:
+    model = MyModel(cfg.s2mel)
+
+    safetensors.torch.load_model(model.cfm, model_dir / cfg.cfm_checkpoint, strict=False)
+    model.cfm.eval()
+
+    safetensors.torch.load_model(model.gpt_layer, model_dir / cfg.gpt_layer_checkpoint, strict=False)
+    model.gpt_layer.eval()
+
+    safetensors.torch.load_model(model.length_regulator, model_dir / cfg.len_reg_checkpoint, strict=False)
+    model.length_regulator.eval()
+
+    model = model.to(device)
+    assert model.cfm.estimator is not None
+    model.cfm.estimator.setup_caches(max_batch_size=1, max_seq_length=8192)
+
+    model.eval()
+    return model
+
+
 def generate_silence_interval(
     wavs: Sequence[Tensor],
     interval_silence: int = 200,
@@ -344,22 +364,7 @@ class IndexTTS2:
         self.semantic_codec.eval()
         logger.info("semantic_codec weights restored from: %s", semantic_code_ckpt)
 
-        s2mel = MyModel(self.cfg.s2mel)
-
-        safetensors.torch.load_model(s2mel.cfm, self.model_dir / self.cfg.cfm_checkpoint, strict=False)
-        s2mel.cfm.eval()
-
-        safetensors.torch.load_model(s2mel.gpt_layer, self.model_dir / self.cfg.gpt_layer_checkpoint, strict=False)
-        s2mel.gpt_layer.eval()
-
-        safetensors.torch.load_model(s2mel.length_regulator, self.model_dir / self.cfg.len_reg_checkpoint, strict=False)
-        s2mel.length_regulator.eval()
-
-        self.s2mel = s2mel.to(self.device)
-        assert self.s2mel.cfm.estimator is not None
-        self.s2mel.cfm.estimator.setup_caches(max_batch_size=1, max_seq_length=8192)
-
-        self.s2mel.eval()
+        self.s2mel = _load_s2mel_model(self.cfg, self.model_dir, self.device)
 
         # load campplus_model
         campplus_ckpt_path = hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")

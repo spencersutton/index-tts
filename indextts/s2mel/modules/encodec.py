@@ -18,14 +18,6 @@ from torch.nn.utils import weight_norm
 from indextts.util import patch_call
 
 
-def get_extra_padding_for_conv1d(x: Tensor, kernel_size: int, stride: int, padding_total: int = 0) -> int:
-    """See `pad_for_conv1d`."""
-    length = x.shape[-1]
-    n_frames = (length - kernel_size + padding_total) / stride + 1
-    ideal_length = (math.ceil(n_frames) - 1) * stride + (kernel_size - padding_total)
-    return ideal_length - length
-
-
 def pad1d(x: Tensor, paddings: Sequence[int], mode: str = "zero", value: float = 0.0) -> Tensor:
     """Tiny wrapper around F.pad, just to allow for reflect padding on small input.
     If this is the case, we insert extra 0 padding to the right before the reflection happen.
@@ -107,7 +99,10 @@ class SConv1d(nn.Module):
         dilation = self.conv.conv.dilation[0]
         kernel_size = (kernel_size - 1) * dilation + 1  # effective kernel size with dilations
         padding_total = kernel_size - stride
-        extra_padding = get_extra_padding_for_conv1d(x, kernel_size, stride, padding_total)
+        length = x.shape[-1]
+        n_frames = (length - kernel_size + padding_total) / stride + 1
+        ideal_length = (math.ceil(n_frames) - 1) * stride + (kernel_size - padding_total)
+        extra_padding = ideal_length - length
         # Asymmetric padding required for odd strides
         padding_right = padding_total // 2
         padding_left = padding_total - padding_right

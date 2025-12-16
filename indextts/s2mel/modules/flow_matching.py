@@ -178,7 +178,7 @@ class BASECFM(nn.Module, ABC):
             y[bib, :, : prompt_lens[bib]] = 0
 
         assert self.estimator is not None
-        estimator_out = self.estimator(y, prompt, x_lens, t.squeeze(1).squeeze(1), style, mu, prompt_lens)
+        estimator_out = self.estimator(y, prompt, x_lens, t.squeeze(1).squeeze(1), style, mu, bool(prompt_lens))
         loss = 0
         for bib in range(b):
             loss += self.criterion(

@@ -376,9 +376,9 @@ class IndexTTS2:
 
         self.semantic_model = Wav2Vec2BertModel.from_pretrained("facebook/w2v-bert-2.0", device_map=device).eval()
 
-        stat_mean_var = cast(dict[str, Tensor], torch.load(self.model_dir / self.cfg.w2v_stat))
-        self.semantic_mean = stat_mean_var["mean"].to(self.device)
-        self.semantic_std = torch.sqrt(stat_mean_var["var"]).to(self.device)
+        stat_mean_var = safetensors.safe_open(self.model_dir / self.cfg.w2v_stat, framework="pt", device=self.device)
+        self.semantic_mean = stat_mean_var.get_tensor("mean")
+        self.semantic_std = torch.sqrt(stat_mean_var.get_tensor("var"))
 
         self.semantic_codec = _load_semantic_codec_model(self.device)
 

@@ -108,7 +108,7 @@ s2mel:
         style_condition: true
 
 gpt_checkpoint: gpt.pth
-w2v_stat: wav2vec2bert_stats.pt
+w2v_stat: wav2vec2bert_stats.safetensors
 gpt_layer_checkpoint: gpt_layer.safetensors
 cfm_checkpoint: cfm.safetensors
 len_reg_checkpoint: length_regulator.safetensors

@@ -5,7 +5,7 @@ import os
 import random
 import time
 import typing
-from collections.abc import Callable, Collection, Generator, Mapping, Sequence
+from collections.abc import Callable, Collection, Generator, Sequence
 from pathlib import Path
 from subprocess import CalledProcessError
 from typing import Any, cast
@@ -183,7 +183,6 @@ def normalize_emo_vec(emo_vector: Sequence[float], apply_bias: bool = True) -> l
 class IndexTTS2:
     device: str
     use_fp16: bool
-    cfg: CheckpointsConfig
     dtype: torch.dtype | None
     stop_mel_token: int
     qwen_emo: QwenEmotion
@@ -326,20 +325,19 @@ class IndexTTS2:
 
             logger.info("torch.compile cache directory: %s", cache_dir)
 
-        cfg = cast(Mapping[str, Any], OmegaConf.load(cfg_path))
-        self.cfg = CheckpointsConfig(**cfg)  # pyright: ignore[reportAny]
+        cfg = CheckpointsConfig(**OmegaConf.load(cfg_path))  # pyright: ignore[reportCallIssue]
         self.dtype = torch.float16 if self.use_fp16 else None
-        self.stop_mel_token = self.cfg.gpt.stop_mel_token
+        self.stop_mel_token = cfg.gpt.stop_mel_token
         self.use_accel = use_accel
         self.use_torch_compile = use_torch_compile
 
-        self.qwen_emo = QwenEmotion(model_dir / self.cfg.qwen_emo_path)
+        self.qwen_emo = QwenEmotion(model_dir / cfg.qwen_emo_path)
 
         self.gpt = UnifiedVoice(use_accel=self.use_accel)
-        gpt_path = model_dir / self.cfg.gpt_checkpoint
+        gpt_path = model_dir / cfg.gpt_checkpoint
         safetensors.torch.load_model(self.gpt, gpt_path, strict=False, device=self.device)
 
-        self.gpt = self.gpt.to(self.device).eval()
+        self.gpt = self.gpt.eval()
         if self.use_fp16:
             self.gpt.half()
         logger.info("GPT weights restored from: %s", gpt_path)
@@ -374,43 +372,43 @@ class IndexTTS2:
 
         self.semantic_model = Wav2Vec2BertModel.from_pretrained("facebook/w2v-bert-2.0", device_map=device).eval()
 
-        stat_mean_var = safetensors.safe_open(model_dir / self.cfg.w2v_stat, framework="pt", device=self.device)
+        stat_mean_var = safetensors.safe_open(model_dir / cfg.w2v_stat, framework="pt", device=self.device)
         self.semantic_mean = stat_mean_var.get_tensor("mean")
         self.semantic_std = torch.sqrt(stat_mean_var.get_tensor("var"))
 
         self.semantic_codec = _load_semantic_codec_model(self.device)
 
-        self.s2mel = _load_s2mel_model(self.cfg, model_dir, self.device)
+        self.s2mel = _load_s2mel_model(cfg, model_dir, self.device)
 
         self.campplus_model = _load_camp_plus(self.device)
 
-        self.bigvgan = _load_bigvgan(self.cfg.vocoder.name, self.device, self.use_cuda_kernel)
+        self.bigvgan = _load_bigvgan(cfg.vocoder.name, self.device, self.use_cuda_kernel)
 
         normalizer = TextNormalizer()
         normalizer.load()
         logger.info("TextNormalizer loaded")
 
-        bpe_path = model_dir / self.cfg.dataset.bpe_model
+        bpe_path = model_dir / cfg.dataset.bpe_model
         self.tokenizer = TextTokenizer(bpe_path, normalizer)
         logger.info("bpe model loaded from: %s", bpe_path)
 
-        emo_matrix = cast(Tensor, torch.load(model_dir / self.cfg.emo_matrix))
+        emo_matrix = cast(Tensor, torch.load(model_dir / cfg.emo_matrix))
         emo_matrix = emo_matrix.to(self.device)
 
-        spk_matrix = cast(Tensor, torch.load(model_dir / self.cfg.spk_matrix))
+        spk_matrix = cast(Tensor, torch.load(model_dir / cfg.spk_matrix))
         spk_matrix = spk_matrix.to(self.device)
 
-        self.emo_num = tuple(self.cfg.emo_num)
+        self.emo_num = tuple(cfg.emo_num)
         self.emo_matrix = torch.split(emo_matrix, self.emo_num)
         self.spk_matrix = torch.split(spk_matrix, self.emo_num)
 
-        spect_params = self.cfg.s2mel.preprocess_params.spect_params
+        spect_params = cfg.s2mel.preprocess_params.spect_params
         mel_fn_args = {
             "n_fft": spect_params.n_fft,
             "win_size": spect_params.win_length,
             "hop_size": spect_params.hop_length,
             "num_mels": spect_params.n_mels,
-            "sampling_rate": self.cfg.s2mel.preprocess_params.sr,
+            "sampling_rate": cfg.s2mel.preprocess_params.sr,
             "fmin": spect_params.fmin or 0,
             "fmax": None if spect_params.fmax == "None" else 8000,
             "center": False,
@@ -459,7 +457,7 @@ class IndexTTS2:
         # 进度引用显示（可选）
         # Progress reference display (optional)
         self.gr_progress = None
-        self.model_version = self.cfg.version
+        self.model_version = cfg.version
 
     @torch.inference_mode()
     def get_emb(self, input_features: Tensor, attention_mask: Tensor) -> Tensor:

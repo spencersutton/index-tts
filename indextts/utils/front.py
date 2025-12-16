@@ -3,7 +3,7 @@ import traceback
 import warnings
 from collections.abc import Collection, Iterable, Sequence
 from pathlib import Path
-from typing import ClassVar
+from typing import ClassVar, cast
 
 from sentencepiece import SentencePieceProcessor
 from wetext import Normalizer
@@ -152,7 +152,7 @@ class TextNormalizer:
         """
         # 人名
         name_pattern = re.compile(TextNormalizer.NAME_PATTERN, re.IGNORECASE)
-        original_name_list = re.findall(name_pattern, original_text)
+        original_name_list = cast(list[str], re.findall(name_pattern, original_text))
         if len(original_name_list) == 0:
             return (original_text, None)
         original_name_list = list({"".join(n) for n in original_name_list})
@@ -184,7 +184,7 @@ class TextNormalizer:
         """
         # 声母韵母+声调数字
         origin_pinyin_pattern = re.compile(TextNormalizer.PINYIN_TONE_PATTERN, re.IGNORECASE)
-        original_pinyin_list = re.findall(origin_pinyin_pattern, original_text)
+        original_pinyin_list = cast(list[str], re.findall(origin_pinyin_pattern, original_text))
         if len(original_pinyin_list) == 0:
             return (original_text, None)
         original_pinyin_list = {"".join(p) for p in original_pinyin_list}

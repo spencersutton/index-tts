@@ -8,7 +8,6 @@
 """Convolutional layers wrappers and utilities."""
 
 import math
-from collections.abc import Sequence
 from typing import override
 
 from torch import Tensor, nn
@@ -16,28 +15,6 @@ from torch.nn import functional as F
 from torch.nn.utils import weight_norm
 
 from indextts.util import patch_call
-
-
-def pad1d(x: Tensor, paddings: Sequence[int], mode: str = "zero", value: float = 0.0) -> Tensor:
-    """Tiny wrapper around F.pad, just to allow for reflect padding on small input.
-    If this is the case, we insert extra 0 padding to the right before the reflection happen.
-    """
-    length = x.shape[-1]
-    padding_left, padding_right = paddings
-    assert padding_left >= 0 and padding_right >= 0, (
-        padding_left,
-        padding_right,
-    )
-    if mode == "reflect":
-        max_pad = max(padding_left, padding_right)
-        extra_pad = 0
-        if length <= max_pad:
-            extra_pad = max_pad - length + 1
-            x = F.pad(x, (0, extra_pad))
-        padded = F.pad(x, paddings, mode, value)
-        end = padded.shape[-1] - extra_pad
-        return padded[..., :end]
-    return F.pad(x, paddings, mode, value)
 
 
 class NormConv1d(nn.Module):
@@ -106,12 +83,17 @@ class SConv1d(nn.Module):
         # Asymmetric padding required for odd strides
         padding_right = padding_total // 2
         padding_left = padding_total - padding_right
+        padding_right += extra_padding
 
-        x = pad1d(
-            x,
-            (padding_left, padding_right + extra_padding),
-            mode=self.pad_mode,
-        )
+        assert padding_left >= 0 and padding_right >= 0, (padding_left, padding_right)
+        max_pad = max(padding_left, padding_right)
+        extra_pad = 0
+        if length <= max_pad:
+            extra_pad = max_pad - length + 1
+            x = F.pad(x, (0, extra_pad))
+        padded = F.pad(x, (padding_left, padding_right), "reflect")
+        end = padded.shape[-1] - extra_pad
+        x = padded[..., :end]
         return self.conv(x)
 
     @patch_call(forward)

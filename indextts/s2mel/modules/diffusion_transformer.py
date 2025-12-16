@@ -62,6 +62,9 @@ class TimestepEmbedder(nn.Module):
         t_freq = self.timestep_embedding(t)
         return self.mlp(t_freq)
 
+    @patch_call(forward)
+    def __call__(self) -> None: ...
+
 
 class FinalLayer(nn.Module):
     """The final layer of DiT."""

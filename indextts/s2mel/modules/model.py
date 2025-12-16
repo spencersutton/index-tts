@@ -17,7 +17,7 @@ class MyModel(nn.Module):
     gpt_layer: nn.Sequential[[Tensor], Tensor] | None
     cfm: CFM
     length_regulator: InterpolateRegulator
-    models: nn.ModuleDict[CFM | InterpolateRegulator | nn.Sequential[[Tensor], Tensor]]
+    models: nn.ModuleDict[CFM | InterpolateRegulator | nn.Sequential]
 
     def __init__(self, args: S2MelConfig, use_gpt_latent: bool = False) -> None:
         super().__init__()
@@ -82,7 +82,7 @@ def load_checkpoint(model: MyModel, path: Path) -> MyModel:
 
         state_dict = params[key]
         state_dict = {k.removeprefix("module."): v for k, v in state_dict.items()}
-        model_state = module.state_dict()
+        model_state: dict[str, Tensor] = module.state_dict()
         filtered = {k: v for k, v in state_dict.items() if k in model_state and v.shape == model_state[k].shape}
         skipped = set(state_dict) - set(filtered)
         if skipped:

@@ -35,7 +35,7 @@ class FactorizedVectorQuantize(nn.Module):
         self.codebook = nn.Embedding(CODEBOOK_SIZE, CODEBOOK_DIM)
 
     @override
-    def forward(self, z: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
+    def forward(self, z: Tensor) -> tuple[Tensor, Tensor, Tensor]:
         """Parameters
         ----------
         z: Tensor[B x D x T]
@@ -44,10 +44,6 @@ class FactorizedVectorQuantize(nn.Module):
         -------
         z_q: Tensor[B x D x T]
             Quantized continuous representation of input
-        commit_loss: Tensor[B]
-            Commitment loss to train encoder to predict vectors closer to codebook entries
-        codebook_loss: Tensor[B]
-            Codebook loss to update the codebook
         indices: Tensor[B x T]
             Codebook indices (quantized discrete representation of input)
         z_e: Tensor[B x D x T]
@@ -58,15 +54,11 @@ class FactorizedVectorQuantize(nn.Module):
         z_e = self.in_project(z)
         z_q, indices = self.decode_latents(z_e)
 
-        # Compute commitment loss and codebook loss
-        commit_loss = torch.zeros(z.shape[0], device=z.device)
-        codebook_loss = torch.zeros(z.shape[0], device=z.device)
-
         z_q = z_e + (z_q - z_e).detach()
 
         z_q = self.out_project(z_q)
 
-        return z_q, commit_loss, codebook_loss, indices, z_e
+        return z_q, indices, z_e
 
     @patch_call(forward)
     def __call__(self) -> None: ...
@@ -118,15 +110,10 @@ class ResidualVQ(nn.Module):
         self.quantizer = FactorizedVectorQuantize()
 
     @override
-    def forward(self, z: Tensor, n_quantizers: int = 1) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
+    def forward(self, z: Tensor) -> tuple[Tensor, Tensor]:
         """Parameters
         ----------
         z : Tensor[B x D x T]
-        n_quantizers : int, optional
-            No. of quantizers to use
-            (n_quantizers < self.n_codebooks ex: for quantizer dropout)
-            Note: if `self.quantizer_dropout` is True, this argument is ignored
-                when in training mode, and a random number of quantizers is used.
 
         Returns
         -------
@@ -135,31 +122,20 @@ class ResidualVQ(nn.Module):
         "all_indices" : Tensor[N x B x T]
             Codebook indices for each codebook
             (quantized discrete representation of input)
-        "all_commit_losses" : Tensor[N]
-        "all_codebook_losses" : Tensor[N]
-        "all_quantized" : Tensor[N x B x D x T]
 
         """
-        z_q_i, commit_loss_i, codebook_loss_i, indices_i, _z_e_i = self.quantizer(z)
+        z_q_i, indices_i, _z_e_i = self.quantizer(z)
 
         # Create mask to apply quantizer dropout
-        mask = torch.full((z.shape[0],), fill_value=0, device=z.device) < n_quantizers
+        mask = torch.full((z.shape[0],), fill_value=0, device=z.device) < 1
 
-        return (
-            z_q_i * mask[:, None, None],
-            torch.stack([indices_i]),
-            torch.stack([(commit_loss_i * mask).mean()]),
-            torch.stack([(codebook_loss_i * mask).mean()]),
-            torch.stack([z_q_i]),
-        )
+        return (z_q_i * mask[:, None, None], torch.stack([indices_i]))
 
     @patch_call(forward)
     def __call__(self) -> None: ...
 
-    def vq2emb(self, vq: Tensor, n_quantizers: int = 1) -> Tensor:
-        if n_quantizers > 0:
-            return self.quantizer.vq2emb(vq[0])
-        return torch.tensor(0.0, device=vq.device)
+    def vq2emb(self, vq: Tensor) -> Tensor:
+        return self.quantizer.vq2emb(vq[0])
 
 
 def init_weights(m: nn.Module) -> None:
@@ -197,7 +173,7 @@ class RepCodec(nn.Module):
 
         x = self.encoder(x.transpose(1, 2)).transpose(1, 2)
 
-        (quantized_out, all_indices, _all_commit_losses, _all_codebook_losses, _) = self.quantizer(x)
+        (quantized_out, all_indices) = self.quantizer(x)
 
         if all_indices.shape[0] == 1:
             return all_indices.squeeze(0), quantized_out.transpose(1, 2)

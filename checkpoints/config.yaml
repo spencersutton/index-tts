@@ -107,7 +107,7 @@ s2mel:
         p_dropout: 0.2
         style_condition: true
 
-gpt_checkpoint: gpt.pth
+gpt_checkpoint: gpt.safetensors
 w2v_stat: wav2vec2bert_stats.safetensors
 gpt_layer_checkpoint: gpt_layer.safetensors
 cfm_checkpoint: cfm.safetensors

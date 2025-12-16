@@ -43,6 +43,7 @@ dependencies = [
   "wetext>=0.0.9",
   "scipy>=1.15.3",
   "soundfile>=0.13.1",
+  "einops>=0.8.1",
 ]
 
 [project.optional-dependencies]

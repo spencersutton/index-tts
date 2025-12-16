@@ -179,17 +179,6 @@ class RepCodec(nn.Module):
                 dim=VOCOS_DIM,
                 intermediate_dim=VOCOS_INTERMEDIATE_DIM,
                 num_layers=VOCOS_NUM_LAYERS,
-                adanorm_num_embeddings=None,
-            ),
-            nn.Linear(VOCOS_DIM, HIDDEN_SIZE),
-        )
-        self.decoder = nn.Sequential(
-            VocosBackbone(
-                input_channels=HIDDEN_SIZE,
-                dim=VOCOS_DIM,
-                intermediate_dim=VOCOS_INTERMEDIATE_DIM,
-                num_layers=VOCOS_NUM_LAYERS,
-                adanorm_num_embeddings=None,
             ),
             nn.Linear(VOCOS_DIM, HIDDEN_SIZE),
         )

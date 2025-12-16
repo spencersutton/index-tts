@@ -40,6 +40,7 @@ logger = logging.getLogger(__name__)
 
 
 SAMPLING_RATE = 22050
+FEATURE_SAMPLING_RATE = 16000
 
 
 def _load_bigvgan(name: str, device: str, use_cuda_kernel: bool) -> bigvgan.BigVGAN:
@@ -126,8 +127,8 @@ def insert_interval_silence(
 
 def _load_and_cut_audio(
     audio_path: Path,
-    max_audio_length_seconds: float,
-    sr: int | None = None,
+    sampling_rate: int | None = None,
+    max_audio_length_seconds: float = 15.0,
 ) -> tuple[Tensor, int]:
     samples = AudioDecoder(audio_path).get_all_samples()
     orig_sr = samples.sample_rate
@@ -137,16 +138,16 @@ def _load_and_cut_audio(
     if audio.shape[0] > 1:
         audio = audio.mean(dim=0, keepdim=True)
     # Resample if needed
-    if sr is not None and orig_sr != sr:
-        audio = torchaudio.functional.resample(audio, orig_sr, sr)
+    if sampling_rate is not None and orig_sr != sampling_rate:
+        audio = torchaudio.functional.resample(audio, orig_sr, sampling_rate)
     else:
-        sr = orig_sr
-    max_audio_samples = int(max_audio_length_seconds * sr)
+        sampling_rate = orig_sr
+    max_audio_samples = int(max_audio_length_seconds * sampling_rate)
 
     if audio.shape[1] > max_audio_samples:
         logger.debug("Audio too long (%d samples), truncating to %d samples", audio.shape[1], max_audio_samples)
         audio = audio[:, :max_audio_samples]
-    return audio, sr
+    return audio, sampling_rate
 
 
 def normalize_emo_vec(emo_vector: Sequence[float], apply_bias: bool = True) -> list[float]:
@@ -205,20 +206,12 @@ class IndexTTS2:
     model_version: float
 
     @functools.lru_cache  # noqa: B019
-    def process_audio(self, prompt: Path) -> Tensor:
-        audio, _ = _load_and_cut_audio(prompt, 15, sr=16000)
-        inputs = self.extract_features(audio, sampling_rate=16000, return_tensors="pt")
-        input_features = inputs["input_features"].to(self.device)
-        attention_mask = inputs["attention_mask"].to(self.device)
-        return self.get_emb(input_features, attention_mask)
-
-    @functools.lru_cache  # noqa: B019
     def process_audio_prompt(self, prompt: Path) -> tuple[Tensor, Tensor, Tensor, Tensor]:
-        audio, sr = _load_and_cut_audio(prompt, 15)
-        audio_22k = torchaudio.transforms.Resample(sr, 22050)(audio)
-        audio_16k = torchaudio.transforms.Resample(sr, 16000)(audio)
+        audio, sr = _load_and_cut_audio(prompt)
+        audio_22k = torchaudio.transforms.Resample(sr, SAMPLING_RATE)(audio)
+        audio_16k = torchaudio.transforms.Resample(sr, FEATURE_SAMPLING_RATE)(audio)
 
-        inputs = self.extract_features(audio_16k, sampling_rate=16000, return_tensors="pt")
+        inputs = self.extract_features(audio_16k, sampling_rate=FEATURE_SAMPLING_RATE, return_tensors="pt")
         input_features = inputs["input_features"].to(self.device)
         attention_mask = inputs["attention_mask"].to(self.device)
         spk_cond_emb = self.get_emb(input_features, attention_mask)
@@ -230,7 +223,7 @@ class IndexTTS2:
             audio_16k.to(ref_mel.device),
             num_mel_bins=80,
             dither=0,
-            sample_frequency=16000,
+            sample_frequency=FEATURE_SAMPLING_RATE,
         )
         feat -= feat.mean(dim=0, keepdim=True)  # feat2另外一个滤波器能量组特征[922, 80]
         style = self.campplus_model(feat.unsqueeze(0))  # 参考音频的全局style2[1,192]
@@ -603,8 +596,8 @@ class IndexTTS2:
             emovec_mat = torch.sum(emovec_mat, 0)
             emovec_mat = emovec_mat.unsqueeze(0)
 
-        emo_audio, _ = _load_and_cut_audio(emo_audio_prompt, 15, sr=16000)
-        emo_inputs = self.extract_features(emo_audio, sampling_rate=16000, return_tensors="pt")
+        emo_audio, _ = _load_and_cut_audio(emo_audio_prompt, sampling_rate=FEATURE_SAMPLING_RATE)
+        emo_inputs = self.extract_features(emo_audio, sampling_rate=FEATURE_SAMPLING_RATE, return_tensors="pt")
         emo_cond_emb = self.get_emb(
             emo_inputs["input_features"].to(self.device),
             emo_inputs["attention_mask"].to(self.device),

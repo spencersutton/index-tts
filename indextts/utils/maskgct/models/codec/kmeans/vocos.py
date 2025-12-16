@@ -99,7 +99,7 @@ class AdaLayerNorm(nn.Module):
     def __call__(self) -> None: ...
 
 
-class Backbone(nn.Module):
+class Backbone(nn.Module[[Tensor], Tensor]):
     """Base class for the generator's backbone. It preserves the same temporal resolution across all layers."""
 
     @override

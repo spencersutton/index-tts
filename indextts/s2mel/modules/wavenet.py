@@ -1,4 +1,6 @@
-from typing import override
+from __future__ import annotations
+
+from typing import cast, override
 
 import torch
 from torch import Tensor, nn
@@ -27,8 +29,8 @@ class WN(nn.Module):
         self.gin_channels = gin_channels
         self.p_dropout = p_dropout
 
-        self.in_layers = torch.nn.ModuleList()
-        self.res_skip_layers = torch.nn.ModuleList()
+        self.in_layers: nn.ModuleList[SConv1d] = torch.nn.ModuleList()
+        self.res_skip_layers: nn.ModuleList[SConv1d] = torch.nn.ModuleList()
         self.drop = nn.Dropout(p_dropout)
 
         if gin_channels != 0:
@@ -40,7 +42,7 @@ class WN(nn.Module):
             )
 
         for i in range(n_layers):
-            dilation = dilation_rate**i
+            dilation = cast(int, dilation_rate**i)
             padding = int((kernel_size * dilation - dilation) / 2)
             in_layer = SConv1d(
                 hidden_channels,

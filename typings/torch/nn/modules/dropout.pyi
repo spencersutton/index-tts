@@ -1,5 +1,7 @@
 from torch import Tensor
 
+from indextts.util import patch_call
+
 from .module import Module
 
 __all__ = ["AlphaDropout", "Dropout", "Dropout1d", "Dropout2d", "Dropout3d", "FeatureAlphaDropout"]
@@ -13,6 +15,8 @@ class _DropoutNd(Module):
 
 class Dropout(_DropoutNd):
     def forward(self, input: Tensor) -> Tensor: ...
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 class Dropout1d(_DropoutNd):
     def forward(self, input: Tensor) -> Tensor: ...

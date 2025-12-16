@@ -43,8 +43,23 @@ logger = logging.getLogger(__name__)
 SAMPLING_RATE = 22050
 
 
+def _load_bigvgan(name: str, device: str, use_cuda_kernel: bool) -> bigvgan.BigVGAN:
+    model = bigvgan.BigVGAN.from_pretrained(name, use_cuda_kernel=use_cuda_kernel)
+    model.remove_weight_norm()
+    logger.info("bigvgan weights restored from: %s", name)
+    return model.to(device).eval()
+
+
+def _load_camp_plus(device: str) -> CAMPPlus:
+    checkpoint = hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
+    model = CAMPPlus(feat_dim=80, embedding_size=192)
+    model.load_state_dict(torch.load(checkpoint, map_location="cpu"))  # pyright: ignore[reportAny]
+    logger.info("campplus_model weights restored from: %s", checkpoint)
+    return model.to(device).eval()
+
+
 def _load_semantic_codec_model(device: str) -> RepCodec:
-    model = RepCodec().eval()
+    model = RepCodec()
     checkpoint = hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
     safetensors.torch.load_model(model, checkpoint, strict=False)
     model = model.to(device).eval()
@@ -369,20 +384,9 @@ class IndexTTS2:
 
         self.s2mel = _load_s2mel_model(self.cfg, self.model_dir, self.device)
 
-        # load campplus_model
-        campplus_ckpt_path = hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
-        campplus_model = CAMPPlus(feat_dim=80, embedding_size=192)
-        campplus_model.load_state_dict(torch.load(campplus_ckpt_path, map_location="cpu"))  # pyright: ignore[reportAny]
-        self.campplus_model = campplus_model.to(self.device)
-        self.campplus_model.eval()
-        logger.info("campplus_model weights restored from: %s", campplus_ckpt_path)
+        self.campplus_model = _load_camp_plus(self.device)
 
-        bigvgan_name = self.cfg.vocoder.name
-        self.bigvgan = bigvgan.BigVGAN.from_pretrained(bigvgan_name, use_cuda_kernel=self.use_cuda_kernel)
-        self.bigvgan = self.bigvgan.to(self.device)
-        self.bigvgan.remove_weight_norm()
-        self.bigvgan.eval()
-        logger.info("bigvgan weights restored from: %s", bigvgan_name)
+        self.bigvgan = _load_bigvgan(self.cfg.vocoder.name, self.device, self.use_cuda_kernel)
 
         normalizer = TextNormalizer()
         normalizer.load()

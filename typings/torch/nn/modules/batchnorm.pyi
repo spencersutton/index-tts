@@ -3,6 +3,8 @@ from typing import Any
 from torch import Tensor
 from torch.nn.parameter import UninitializedParameter
 
+from indextts.util import patch_call
+
 from .lazy import LazyModuleMixin
 from .module import Module
 
@@ -50,6 +52,8 @@ class _BatchNorm(_NormBase):
         dtype=...,
     ) -> None: ...
     def forward(self, input: Tensor) -> Tensor: ...
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 class _LazyNormBase(LazyModuleMixin, _NormBase):
     weight: UninitializedParameter

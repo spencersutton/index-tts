@@ -17,10 +17,8 @@ from torch.nn.utils import weight_norm
 from indextts.util import patch_call
 
 
-class NormConv1d(nn.Module):
-    """Wrapper around Conv1d and normalization applied to this conv
-    to provide a uniform interface across normalization approaches.
-    """
+class Conv1dWrapper(nn.Module):
+    """Wrapper around Conv1d"""
 
     def __init__(
         self,
@@ -60,13 +58,12 @@ class SConv1d(nn.Module):
         dilation: int = 1,
     ) -> None:
         super().__init__()
-        self.conv = NormConv1d(
+        self.conv = Conv1dWrapper(
             in_channels,
             out_channels,
             kernel_size,
             dilation=dilation,
         )
-        self.pad_mode = "reflect"
 
     @override
     def forward(self, x: Tensor) -> Tensor:

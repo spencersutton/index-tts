@@ -47,7 +47,7 @@ class Sequential[T: Module](Module):
     @patch_call(forward)
     def __call__(self) -> None: ...
 
-class ModuleList[T: Module](Module):
+class ModuleList[T: Module = Module](Module):
     _modules: dict[str, T]
     def __init__(self, modules: Iterable[T] | None = ...) -> None: ...
     @overload

@@ -10,7 +10,7 @@
 import math
 import warnings
 from collections.abc import Sequence
-from typing import Any, override
+from typing import override
 
 import einops
 import torch
@@ -26,7 +26,7 @@ class ConvLayerNorm(nn.LayerNorm):
     before running the normalization and moves them back to original position right after.
     """
 
-    def __init__(self, normalized_shape: int | list[int] | torch.Size, **kwargs: Any) -> None:
+    def __init__(self, normalized_shape: int | list[int] | torch.Size, **kwargs: object) -> None:
         super().__init__(normalized_shape, **kwargs)
 
     @override
@@ -76,7 +76,7 @@ class NormConv1d(nn.Module):
 
     def __init__(
         self,
-        *args: Any,
+        *args: object,
         causal: bool = False,
         norm: str = "none",
         **kwargs: object,

@@ -1,18 +1,21 @@
 import sys
 import time
 from collections.abc import Collection, Iterable, Sequence
-from typing import Final, cast
+from typing import TYPE_CHECKING, Final, cast
 
 import torch
 from torch import Tensor, nn
-from torch.types import Number
 from transformers import GPT2Model
+from transformers.models.gpt2.modeling_gpt2 import GPT2Model
 
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
 from indextts.util import patch_call
 
 from .attention import ForwardContext
 from .kv_manager import KVCacheManager, Seq
+
+if TYPE_CHECKING:
+    from torch.types import Number
 
 
 class Sampler(nn.Module):
@@ -47,7 +50,7 @@ class AccelInferenceEngine:
     def __init__(
         self,
         model: GPT2Model,
-        lm_head: nn.Sequential,
+        lm_head: nn.Sequential[nn.LayerNorm | nn.Linear],
         num_layers: int,
         num_heads: int,
         head_dim: int,
@@ -66,7 +69,7 @@ class AccelInferenceEngine:
         use_cuda_graph: Whether to use CUDA Graph for decode optimization.
 
         """
-        self.model = model
+        self.model: GPT2Model = model
         self.lm_head = lm_head
         self.block_size = block_size
         self.num_blocks = num_blocks
@@ -241,12 +244,18 @@ class AccelInferenceEngine:
                 pos_clamped = torch.clamp(positions[:bs], min=0)
                 pos_emb = tts_text_pos_embedding.emb(pos_clamped)
                 inputs_embeds_buffer[:bs] = emb + pos_emb
-                out = self.model(
+                result = self.model(
                     inputs_embeds=inputs_embeds_buffer[:bs].unsqueeze(1),
                     return_dict=True,
-                ).last_hidden_state
+                )
+                assert not isinstance(result, tuple)
+                out = result.last_hidden_state
             else:
-                out = self.model(input_ids=input_ids[:bs].unsqueeze(1), return_dict=True).last_hidden_state
+                input_ids = torch.LongTensor(input_ids[:bs].unsqueeze(1))
+                result = self.model(input_ids=input_ids, return_dict=True)
+            assert not isinstance(result, tuple)
+            out = result.last_hidden_state
+            assert out is not None
             outputs[:bs] = out.squeeze(1) if out.dim() == 3 else out
 
             with torch.cuda.graph(graph, self.graph_pool):
@@ -257,12 +266,15 @@ class AccelInferenceEngine:
                     pos_clamped = torch.clamp(positions[:bs], min=0)
                     pos_emb = tts_text_pos_embedding.emb(pos_clamped)
                     inputs_embeds_buffer[:bs] = emb + pos_emb
-                    out = self.model(
+                    result = self.model(
                         inputs_embeds=inputs_embeds_buffer[:bs].unsqueeze(1),
                         return_dict=True,
-                    ).last_hidden_state
+                    )
                 else:
-                    out = self.model(input_ids=input_ids[:bs].unsqueeze(1), return_dict=True).last_hidden_state
+                    result = self.model(input_ids=torch.LongTensor(input_ids[:bs].unsqueeze(1)), return_dict=True)
+                assert not isinstance(result, tuple)
+                out = result.last_hidden_state
+                assert out is not None
                 outputs[:bs] = out.squeeze(1) if out.dim() == 3 else out
 
             if self.graph_pool is None:
@@ -302,9 +314,14 @@ class AccelInferenceEngine:
                 pos_clamped = torch.clamp(positions, min=0)
                 pos_emb = tts_text_pos_embedding.emb(pos_clamped)
                 inputs_embeds += pos_emb
-                out = self.model(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True).last_hidden_state
+                result = self.model(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True)
             else:
-                out = self.model(input_ids=input_ids.unsqueeze(1), return_dict=True).last_hidden_state
+                input_ids = torch.LongTensor(input_ids.unsqueeze(1))
+                result = self.model(input_ids=input_ids, return_dict=True)
+            assert not isinstance(result, tuple)
+            out = result.last_hidden_state
+            assert out is not None
+
             return out.squeeze(1) if out.dim() == 3 else out
 
         graph_bs = next((x for x in GRAPH_BS if x >= bs), None)
@@ -316,9 +333,12 @@ class AccelInferenceEngine:
                 pos_clamped = torch.clamp(positions, min=0)
                 pos_emb = tts_text_pos_embedding.emb(pos_clamped)
                 inputs_embeds += pos_emb
-                out = self.model(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True).last_hidden_state
+                result = self.model(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True)
             else:
-                out = self.model(input_ids=input_ids.unsqueeze(1), return_dict=True).last_hidden_state
+                result = self.model(input_ids=torch.LongTensor(input_ids.unsqueeze(1)), return_dict=True)
+            assert not isinstance(result, tuple)
+            out = result.last_hidden_state
+            assert out is not None
             return out.squeeze(1) if out.dim() == 3 else out
 
         graph = self.graphs[graph_bs]
@@ -454,14 +474,18 @@ class AccelInferenceEngine:
             if full_embeddings.dtype != model_dtype:
                 full_embeddings = full_embeddings.to(model_dtype)
 
-            hidden_states = self.model(inputs_embeds=full_embeddings, return_dict=True).last_hidden_state
+            result = self.model(inputs_embeds=full_embeddings, return_dict=True)
+            assert not isinstance(result, tuple)
+            hidden_states = result.last_hidden_state
 
         else:
-            hidden_states = self.model(
-                input_ids=input_ids,
-                attention_mask=attention_mask,
+            result = self.model(
+                input_ids=torch.LongTensor(input_ids),
+                attention_mask=torch.FloatTensor(attention_mask),
                 return_dict=True,
-            ).last_hidden_state
+            )
+            assert not isinstance(result, tuple)
+            hidden_states = result.last_hidden_state
 
         t_prefill_end = time.perf_counter()
         print(f"[Profile] Prefill time: {(t_prefill_end - t_prefill_start) * 1000:.2f}ms", file=sys.stderr, flush=True)

@@ -29,7 +29,6 @@ dependencies = [
   # WARNING: Ensure that you don't have a local `uv.toml` which overrides PyPI
   # while generating the lockfile: https://github.com/astral-sh/uv/issues/15741
   "accelerate>=1.8.1",
-  "einops>=0.8.1",
   "ffmpeg-python>=0.2.0",
   "numpy>=1.26.2",
   "omegaconf>=2.3.0",

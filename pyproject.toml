@@ -190,7 +190,6 @@ useLibraryCodeForTypes = false
 
 [tool.ty.rules]
 unused-ignore-comment = "warn"
-division-by-zero = "warn"
 possibly-unresolved-reference = "warn"
 
 [tool.ty.src]

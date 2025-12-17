@@ -262,7 +262,7 @@ class _ConformerEncoderLayer(nn.Module):
 
         # convolution module
         # Fake new cnn cache here, and then change it in conv_module
-        new_cnn_cache = torch.zeros((0, 0, 0), dtype=x.dtype, device=x.device)
+        new_cnn_cache = torch.zeros((0, 0, 0), dtype=x.dtype)
         residual = x
         x = self.norm_conv(x)
         x, new_cnn_cache = self.conv_module(x, mask_pad, cnn_cache)

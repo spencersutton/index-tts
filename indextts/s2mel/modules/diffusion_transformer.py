@@ -142,7 +142,7 @@ class DiT(nn.Module):
         )
 
     def setup_caches(self, max_batch_size: int, max_seq_length: int) -> None:
-        self.transformer.setup_caches(max_batch_size, max_seq_length, use_kv_cache=False)
+        self.transformer.setup_caches(max_batch_size, max_seq_length)
 
     @override
     def forward(

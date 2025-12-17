@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import ABC
 from typing import override
 
@@ -10,7 +12,7 @@ from indextts.util import patch_call
 from indextts.utils.common import make_pad_mask
 
 
-class _PositionwiseFeedForward(nn.Module):
+class PositionwiseFeedForward(nn.Module):
     """Positionwise feed forward layer.
 
     FeedForward are appied on each position of the sequence.
@@ -24,13 +26,7 @@ class _PositionwiseFeedForward(nn.Module):
 
     """
 
-    def __init__(
-        self,
-        idim: int,
-        hidden_units: int,
-        dropout_rate: float,
-        activation: nn.Module = torch.nn.ReLU(),
-    ) -> None:
+    def __init__(self, idim: int, hidden_units: int, dropout_rate: float, activation: nn.SiLU) -> None:
         """Construct a PositionwiseFeedForward object."""
         super().__init__()
         self.w_1 = torch.nn.Linear(idim, hidden_units)
@@ -55,14 +51,14 @@ class _PositionwiseFeedForward(nn.Module):
     def __call__(self) -> None: ...
 
 
-class _ConvolutionModule(nn.Module):
+class ConvolutionModule(nn.Module):
     """ConvolutionModule in Conformer model."""
 
     def __init__(
         self,
         channels: int,
         kernel_size: int = 15,
-        activation: nn.Module = nn.ReLU(),
+        activation: nn.SiLU = nn.SiLU(),
         bias: bool = True,
     ) -> None:
         """Construct an ConvolutionModule object.
@@ -167,21 +163,18 @@ class _ConvolutionModule(nn.Module):
     def __call__(self) -> None: ...
 
 
-class _ConformerEncoderLayer(nn.Module):
+class ConformerEncoderLayer(nn.Module):
     """Encoder layer module.
 
     Args:
         size (int): Input dimension.
-        self_attn (nn.Module): Self-attention module instance.
+        self_attn (RelPositionMultiHeadedAttention): Self-attention module instance.
             `MultiHeadedAttention` or `RelPositionMultiHeadedAttention`
             instance can be used as the argument.
-        feed_forward (nn.Module): Feed-forward module instance.
+        feed_forward (PositionwiseFeedForward): Feed-forward module instance.
             `PositionwiseFeedForward` instance can be used as the argument.
-        feed_forward_macaron (nn.Module): Additional feed-forward module
-             instance.
-            `PositionwiseFeedForward` instance can be used as the argument.
-        conv_module (nn.Module): Convolution module instance.
-            `ConvlutionModule` instance can be used as the argument.
+        conv_module (ConvolutionModule): Convolution module instance.
+            `ConvolutionModule` instance can be used as the argument.
         dropout_rate (float): Dropout rate.
         normalize_before (bool):
             True: use layer_norm before each sub-block.
@@ -193,15 +186,14 @@ class _ConformerEncoderLayer(nn.Module):
 
     """
 
-    feed_forward: nn.Module | None
+    feed_forward: PositionwiseFeedForward | None
 
     def __init__(
         self,
         size: int,
-        self_attn: nn.Module,
-        feed_forward: nn.Module | None = None,
-        feed_forward_macaron: nn.Module | None = None,
-        conv_module: nn.Module | None = None,
+        self_attn: RelPositionMultiHeadedAttention,
+        feed_forward: PositionwiseFeedForward | None = None,
+        conv_module: ConvolutionModule | None = None,
         dropout_rate: float = 0.1,
         normalize_before: bool = True,
         concat_after: bool = False,
@@ -210,7 +202,6 @@ class _ConformerEncoderLayer(nn.Module):
         super().__init__()
         self.self_attn = self_attn
         self.feed_forward = feed_forward
-        self.feed_forward_macaron = feed_forward_macaron
         assert conv_module is not None
         self.conv_module = conv_module
         self.norm_ff = nn.LayerNorm(size, eps=1e-5)  # for the FNN module
@@ -234,12 +225,12 @@ class _ConformerEncoderLayer(nn.Module):
 
         Args:
             x (Tensor): (#batch, time, size)
-            mask (Tensor): Mask tensor for the input (#batch, time，time),
+            mask (Tensor): Mask tensor for the input (#batch, time, time),
                 (0, 0, 0) means fake mask.
             pos_emb (Tensor): positional encoding, must not be None
                 for ConformerEncoderLayer.
             mask_pad (Tensor): batch padding mask used for conv module.
-                (#batch, 1，time), (0, 0, 0) means fake mask.
+                (#batch, 1, time), (0, 0, 0) means fake mask.
             att_cache (Tensor): Cache tensor of the KEY & VALUE
                 (#batch=1, head, cache_t1, d_k * 2), head * d_k == size.
             cnn_cache (Tensor): Convolution cache in conformer layer
@@ -283,8 +274,8 @@ class _ConformerEncoderLayer(nn.Module):
     def __call__(self) -> None: ...
 
 
-class _BaseEncoder(nn.Module, ABC):
-    encoders: torch.nn.ModuleList
+class BaseEncoder(nn.Module, ABC):
+    encoders: torch.nn.ModuleList[ConformerEncoderLayer]
 
     def __init__(
         self,
@@ -385,7 +376,7 @@ class _BaseEncoder(nn.Module, ABC):
     def __call__(self) -> None: ...
 
 
-class ConformerEncoder(_BaseEncoder):
+class ConformerEncoder(BaseEncoder):
     """Conformer encoder module."""
 
     def __init__(
@@ -437,12 +428,11 @@ class ConformerEncoder(_BaseEncoder):
         activation = torch.nn.SiLU()
 
         self.encoders = torch.nn.ModuleList([
-            _ConformerEncoderLayer(
+            ConformerEncoderLayer(
                 output_size,
                 RelPositionMultiHeadedAttention(attention_heads, output_size, dropout_rate),
-                _PositionwiseFeedForward(output_size, linear_units, dropout_rate, activation),
-                None,
-                _ConvolutionModule(output_size, cnn_module_kernel, activation),
+                PositionwiseFeedForward(output_size, linear_units, dropout_rate, activation),
+                ConvolutionModule(output_size, cnn_module_kernel, activation),
                 dropout_rate,
                 normalize_before,
                 concat_after,

@@ -64,6 +64,13 @@ from torch import utils as utils
 from torch import version as version
 from torch import xpu as xpu
 from torch._C import (
+    BoolTensor,
+    ByteTensor,
+    DoubleTensor,
+    FloatTensor,
+    IntTensor,
+    LongTensor,
+    ShortTensor,
     bool,
     device,
     dtype,
@@ -72,6 +79,7 @@ from torch._C import (
     float32,
     float64,
     half,
+    iinfo,
     int,
     int16,
     int32,
@@ -1055,6 +1063,7 @@ __all__ = [
     "i0_",
     "igamma",
     "igammac",
+    "iinfo",
     "imag",
     "index_add",
     "index_copy",

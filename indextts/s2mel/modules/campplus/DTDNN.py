@@ -88,12 +88,9 @@ class CAMPPlus(nn.Module):
             self.xvector.add_module(f"transit{i + 1}", TransitLayer(channels, channels // 2))
             channels //= 2
 
-        self.xvector.add_module("out_nonlinear", get_nonlinear("batchnorm-relu", channels))
+        self.xvector.add_module("out_nonlinear", get_nonlinear(channels))
         self.xvector.add_module("stats", StatsPool())
-        self.xvector.add_module(
-            "dense",
-            DenseLayer(channels * 2),
-        )
+        self.xvector.add_module("dense", DenseLayer(channels * 2))
 
         for m in self.modules():
             if isinstance(m, (nn.Conv1d, nn.Linear)):

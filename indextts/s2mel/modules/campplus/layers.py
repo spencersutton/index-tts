@@ -4,7 +4,8 @@
 # Copied from: https://github.com/modelscope/3D-Speaker/blob/main/speakerlab/models/campplus/layers.py
 from __future__ import annotations
 
-from typing import Literal, override
+from collections import OrderedDict
+from typing import override
 
 import torch
 import torch.nn.functional as F
@@ -14,16 +15,13 @@ from torch import Tensor, nn
 from indextts.util import patch_call
 
 
-def get_nonlinear(config_str: Literal["batchnorm-relu", "batchnorm_"], channels: int) -> nn.Sequential[nn.Module]:
-    nonlinear: nn.Sequential[nn.Module] = nn.Sequential()
-    match config_str:
-        case "batchnorm-relu":
-            nonlinear.add_module("batchnorm", nn.BatchNorm1d(channels))
-            nonlinear.add_module("relu", nn.ReLU(inplace=True))
-            return nonlinear
-        case "batchnorm_":
-            nonlinear.add_module("batchnorm", nn.BatchNorm1d(channels, affine=False))
-    return nonlinear
+def get_nonlinear(channels: int = 128) -> nn.Sequential[nn.Module]:
+    return nn.Sequential(
+        OrderedDict({
+            "batchnorm": nn.BatchNorm1d(channels),
+            "relu": nn.ReLU(inplace=True),
+        })
+    )
 
 
 def statistics_pooling(x: Tensor) -> Tensor:
@@ -45,7 +43,7 @@ class TDNNLayer(nn.Module):
     def __init__(self) -> None:
         super().__init__()
         self.linear = nn.Conv1d(320, 128, 5, stride=2, padding=2, bias=False)
-        self.nonlinear = get_nonlinear("batchnorm-relu", 128)
+        self.nonlinear = get_nonlinear()
 
     @override
     def forward(self, x: Tensor) -> Tensor:
@@ -100,9 +98,9 @@ class CAMLayer(nn.Module):
 class CAMDenseTDNNLayer(nn.Module):
     def __init__(self, in_channels: int, dilation: int = 1) -> None:
         super().__init__()
-        self.nonlinear1 = get_nonlinear("batchnorm-relu", in_channels)
+        self.nonlinear1 = get_nonlinear(in_channels)
         self.linear1 = nn.Conv1d(in_channels, 128, 1, bias=False)
-        self.nonlinear2 = get_nonlinear("batchnorm-relu", 128)
+        self.nonlinear2 = get_nonlinear()
         self.cam_layer = CAMLayer(padding=dilation, dilation=dilation)
 
     def bn_function(self, x: Tensor) -> Tensor:
@@ -146,7 +144,7 @@ class CAMDenseTDNNBlock(nn.ModuleList):
 class TransitLayer(nn.Module):
     def __init__(self, in_channels: int, out_channels: int) -> None:
         super().__init__()
-        self.nonlinear = get_nonlinear("batchnorm-relu", in_channels)
+        self.nonlinear = get_nonlinear(in_channels)
         self.linear = nn.Conv1d(in_channels, out_channels, 1, bias=False)
 
     @override
@@ -162,7 +160,7 @@ class DenseLayer(nn.Module):
     def __init__(self, in_channels: int) -> None:
         super().__init__()
         self.linear = nn.Conv1d(in_channels, 192, 1, bias=False)
-        self.nonlinear = get_nonlinear("batchnorm_", 192)
+        self.nonlinear = nn.Sequential(OrderedDict([("batchnorm", nn.BatchNorm1d(192, affine=False))]))
 
     @override
     def forward(self, x: Tensor) -> Tensor:

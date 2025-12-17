@@ -149,15 +149,15 @@ class Transformer(nn.Module):
                     self.config.n_local_heads,
                     head_dim,
                     dtype,
-                ).to(device)
+                )
 
         self.freqs_cis = _precompute_freqs_cis(
             self.config.block_size,
             self.config.head_dim,
             self.config.rope_base,
             dtype,
-        ).to(device)
-        self.causal_mask = torch.tril(torch.ones(self.max_seq_length, self.max_seq_length, dtype=torch.bool)).to(device)
+        )
+        self.causal_mask = torch.tril(torch.ones(self.max_seq_length, self.max_seq_length, dtype=torch.bool))
         self.use_kv_cache = use_kv_cache
         self.uvit_skip_connection = self.config.uvit_skip_connection
         if self.uvit_skip_connection:
@@ -388,7 +388,7 @@ def _precompute_freqs_cis(
     freqs = torch.outer(t, freqs)
     freqs_cis = torch.polar(torch.ones_like(freqs), freqs)
     cache = torch.stack([freqs_cis.real, freqs_cis.imag], dim=-1)
-    return cache.to(dtype=dtype)
+    return cache
 
 
 def _apply_rotary_emb(x: Tensor, freqs_cis: Tensor) -> Tensor:

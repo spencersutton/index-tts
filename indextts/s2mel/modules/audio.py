@@ -22,20 +22,18 @@ SAMPLING_RATE = 22050
 FMAX = SAMPLING_RATE / 2.0
 
 
-mel = F.melscale_fbanks(
-    n_freqs=N_FFT // 2 + 1,
-    f_min=FMIN,
-    f_max=FMAX,
-    n_mels=NUM_MELS,
-    sample_rate=SAMPLING_RATE,
-    norm="slaney",
-    mel_scale="slaney",
-)
-
-
 @functools.cache
-def get_mel_and_window(device: torch.device) -> tuple[Tensor, Tensor]:
-    return mel.T.to(device), torch.hann_window(WIN_SIZE).to(device)
+def get_mel_and_window() -> tuple[Tensor, Tensor]:
+    mel = F.melscale_fbanks(
+        n_freqs=N_FFT // 2 + 1,
+        f_min=FMIN,
+        f_max=FMAX,
+        n_mels=NUM_MELS,
+        sample_rate=SAMPLING_RATE,
+        norm="slaney",
+        mel_scale="slaney",
+    )
+    return mel.T, torch.hann_window(WIN_SIZE)
 
 
 def mel_spectrogram(y: Tensor) -> Tensor:
@@ -45,7 +43,7 @@ def mel_spectrogram(y: Tensor) -> Tensor:
         mode="reflect",
     ).squeeze(1)
 
-    mel_bases, hann_window = get_mel_and_window(y.device)
+    mel_bases, hann_window = get_mel_and_window()
 
     spec = torch.view_as_real(
         torch.stft(

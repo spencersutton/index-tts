@@ -88,7 +88,7 @@ class QwenEmotion:
             enable_thinking=False,
         )
         assert isinstance(text, str)
-        model_inputs = self.tokenizer([text], return_tensors="pt").to(self.model.device)
+        model_inputs = self.tokenizer([text], return_tensors="pt")
         # conduct text completion
         generated_ids = self.model.generate(
             **model_inputs,  # pyright: ignore[reportArgumentType]

@@ -27,7 +27,7 @@ from indextts.config import CheckpointsConfig
 from indextts.gpt.model_v2 import GPT2InferenceModel, UnifiedVoice
 from indextts.qwen_emotion import QwenEmotion
 from indextts.s2mel.modules.audio import mel_spectrogram
-from indextts.s2mel.modules.bigvgan import bigvgan
+from indextts.s2mel.modules.bigvgan import BigVGAN, bigvgan
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
 from indextts.s2mel.modules.length_regulator import InterpolateRegulator
 from indextts.s2mel.modules.model import MyModel
@@ -45,8 +45,8 @@ SAMPLING_RATE = 22050
 FEATURE_SAMPLING_RATE = 16000
 
 
-def _load_bigvgan(name: str, use_cuda_kernel: bool) -> bigvgan.BigVGAN:
-    model = bigvgan.BigVGAN.from_pretrained(name, use_cuda_kernel=use_cuda_kernel)
+def _load_bigvgan(name: str, use_cuda_kernel: bool) -> BigVGAN:
+    model = BigVGAN.from_pretrained(name, use_cuda_kernel=use_cuda_kernel)
     model.remove_weight_norm()
     logger.info("bigvgan weights restored from: %s", name)
     return model.eval()

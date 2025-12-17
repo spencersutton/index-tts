@@ -110,7 +110,7 @@ class QwenEmotion:
 
         # decode the JSON emotion detections as a dictionary
         try:
-            content = json.loads(content)
+            content = cast(dict[str, float], json.loads(content))
         except json.decoder.JSONDecodeError:
             # invalid JSON; fallback to manual string parsing
             content = {m.group(1): float(m.group(2)) for m in re.finditer(r'([^\s":.,]+?)"?\s*:\s*([\d.]+)', content)}

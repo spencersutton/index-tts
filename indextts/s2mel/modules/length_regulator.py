@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Sequence
 from typing import override
 
@@ -10,7 +12,7 @@ from indextts.util import patch_call
 
 
 class InterpolateRegulator(nn.Module):
-    model: nn.Sequential
+    model: nn.Sequential[nn.Module]
 
     def __init__(
         self,

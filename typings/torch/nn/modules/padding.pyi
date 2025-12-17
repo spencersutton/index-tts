@@ -1,8 +1,9 @@
 from collections.abc import Sequence
 
-from indextts.util import patch_call
 from torch import Tensor
 from torch.nn.common_types import _size_2_t, _size_4_t, _size_6_t
+
+from indextts.util import patch_call
 
 from .module import Module
 

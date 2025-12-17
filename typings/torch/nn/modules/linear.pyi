@@ -1,8 +1,9 @@
 from typing import Any
 
-from indextts.util import patch_call
 from torch import Tensor
 from torch.nn.parameter import UninitializedParameter
+
+from indextts.util import patch_call
 
 from .lazy import LazyModuleMixin
 from .module import Module

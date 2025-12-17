@@ -15,7 +15,7 @@ from torch.nn.utils import remove_weight_norm, weight_norm
 
 from indextts.util import patch_call
 
-from . import activations
+from .activations import Snake, SnakeBeta
 from .alias_free_activation.torch.act import Activation1d as TorchActivation1d
 from .utils import get_padding, init_weights
 
@@ -92,12 +92,12 @@ class AMPBlock1(nn.Module):
         # Activation functions
         if activation == "snake":
             self.activations = nn.ModuleList([
-                Activation1d(activation=activations.Snake(channels, alpha_logscale=h["snake_logscale"]))
+                Activation1d(activation=Snake(channels, alpha_logscale=h["snake_logscale"]))
                 for _ in range(self.num_layers)
             ])
         elif activation == "snakebeta":
             self.activations = nn.ModuleList([
-                Activation1d(activation=activations.SnakeBeta(channels, alpha_logscale=h["snake_logscale"]))
+                Activation1d(activation=SnakeBeta(channels, alpha_logscale=h["snake_logscale"]))
                 for _ in range(self.num_layers)
             ])
         else:
@@ -178,12 +178,12 @@ class AMPBlock2(nn.Module):
         # Activation functions
         if activation == "snake":
             self.activations = nn.ModuleList([
-                Activation1d(activation=activations.Snake(channels, alpha_logscale=h["snake_logscale"]))
+                Activation1d(activation=Snake(channels, alpha_logscale=h["snake_logscale"]))
                 for _ in range(self.num_layers)
             ])
         elif activation == "snakebeta":
             self.activations = nn.ModuleList([
-                Activation1d(activation=activations.SnakeBeta(channels, alpha_logscale=h["snake_logscale"]))
+                Activation1d(activation=SnakeBeta(channels, alpha_logscale=h["snake_logscale"]))
                 for _ in range(self.num_layers)
             ])
         else:
@@ -299,13 +299,9 @@ class BigVGAN(
 
         # Post-conv
         activation_post = (
-            activations.Snake(ch, alpha_logscale=h["snake_logscale"])
+            Snake(ch, alpha_logscale=h["snake_logscale"])
             if h["activation"] == "snake"
-            else (
-                activations.SnakeBeta(ch, alpha_logscale=h["snake_logscale"])
-                if h["activation"] == "snakebeta"
-                else None
-            )
+            else (SnakeBeta(ch, alpha_logscale=h["snake_logscale"]) if h["activation"] == "snakebeta" else None)
         )
         if activation_post is None:
             raise NotImplementedError(

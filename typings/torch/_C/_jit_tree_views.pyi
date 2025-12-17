@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 class SourceRange:
     def highlight(self) -> str: ...

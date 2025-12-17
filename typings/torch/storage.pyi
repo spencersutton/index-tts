@@ -1,11 +1,10 @@
 import threading
-from typing import TYPE_CHECKING, Any, Self, TypeVar
+from typing import Any, Self, TypeVar
 
 import torch
 from torch._prims_common import DeviceLikeType
 from torch.types import _bool, _int
 
-if TYPE_CHECKING: ...
 __all__ = ["TypedStorage", "UntypedStorage"]
 HAS_NUMPY = ...
 _share_memory_lock = ...

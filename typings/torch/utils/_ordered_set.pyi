@@ -1,6 +1,6 @@
 from collections.abc import Hashable, Iterable, Iterator, MutableSet, Reversible
 from collections.abc import Set as AbstractSet
-from typing import Optional, TypeVar
+from typing import TypeVar
 
 T = TypeVar("T", bound=Hashable)
 T_co = TypeVar("T_co", bound=Hashable, covariant=True)

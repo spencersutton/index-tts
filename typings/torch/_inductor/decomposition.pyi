@@ -1,7 +1,6 @@
 import functools
-import typing
 from collections.abc import Callable
-from typing import Any, Optional, ParamSpec, TypeAlias, TypeVar, Union
+from typing import Any, ParamSpec, TypeVar
 
 import torch
 from torch._decomp.decompositions import pw_cast_for_opmath, pw_cast_for_opmath_non_tensor_args

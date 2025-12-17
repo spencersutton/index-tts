@@ -1,5 +1,3 @@
-from typing import Optional
-
 from ..common import DeviceOpOverrides, TritonScratchWorkspace
 
 class XPUDeviceOpOverrides(DeviceOpOverrides):

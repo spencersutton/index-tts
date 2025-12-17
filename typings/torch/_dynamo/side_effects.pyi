@@ -1,41 +1,16 @@
 import contextlib
 from collections.abc import Generator
 from types import CellType
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any
 
 from torch._dynamo.output_graph import OutputGraph
 from torch._dynamo.symbolic_convert import InstructionTranslatorBase
-from torch._dynamo.variables.lists import ListVariable
 from torch._dynamo.variables.misc import AutogradFunctionContextVariable
 
 from . import variables
 from .codegen import PyCodegen
 from .source import Source
 from .variables.base import VariableTracker
-
-"""
-Side effect tracking and management for TorchDynamo's compilation system.
-
-This module provides infrastructure for tracking and managing side effects that occur
-during symbolic execution, including:
-
-- Tracking mutations to objects, attributes, and variables
-- Managing context changes (cell variables, global namespace modifications)
-- Handling aliasing and object identity preservation
-- Managing stack frame state and local variable changes
-- Tracking function calls with side effects
-
-Key classes:
-- SideEffects: Main container for tracking all side effects during execution
-- MutableSideEffects: Specialization for mutable object tracking
-- AttributeMutation/ValueMutation: Track specific types of mutations
-- Various specialized side effect classes for different scenarios
-
-The side effect system ensures that mutations performed during symbolic execution
-are properly replayed during runtime, maintaining the correctness of compiled code
-while enabling optimizations where safe.
-"""
-if TYPE_CHECKING: ...
 
 class SideEffects:
     id_to_variable: dict[int, VariableTracker]
@@ -119,8 +94,6 @@ class SideEffects:
 @contextlib.contextmanager
 def allow_side_effects_under_checkpoint(tx: InstructionTranslatorBase) -> Generator[None]: ...
 @contextlib.contextmanager
-def allow_externally_visible_side_effects_in_subtracer(
-    tx: InstructionTranslatorBase,
-) -> Generator[None]: ...
+def allow_externally_visible_side_effects_in_subtracer(tx: InstructionTranslatorBase) -> Generator[None]: ...
 @contextlib.contextmanager
 def disallow_side_effects_in_generator(tx: InstructionTranslatorBase) -> Generator[None]: ...

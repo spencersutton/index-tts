@@ -3,7 +3,7 @@ import dataclasses
 import functools
 from collections.abc import Callable, Sequence
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Generic, Optional, ParamSpec, TypeAlias, TypeVar, Union
+from typing import Any
 
 import sympy
 import torch
@@ -17,7 +17,6 @@ from .loop_body import LoopBody
 from .memory import MemoryPlanningInfoForBuffer, MemoryPlanningInfoForNode
 from .utils import IndentedBuffer, cache_on_self
 
-if TYPE_CHECKING: ...
 log = ...
 fusion_log = ...
 loop_ordering_log = ...

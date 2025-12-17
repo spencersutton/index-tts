@@ -1,5 +1,4 @@
 from threading import Thread
-from typing import Optional
 
 _IN_TOPLEVEL_PROCESS = ...
 

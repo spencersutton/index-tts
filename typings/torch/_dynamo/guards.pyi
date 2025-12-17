@@ -6,7 +6,7 @@ import pickle
 import types
 import weakref
 from collections.abc import Callable, Generator, KeysView, Sequence
-from typing import TYPE_CHECKING, Any, LiteralString, NoReturn, Optional, TypeAliasType, TypeVar, Union
+from typing import Any, LiteralString, NoReturn, TypeVar
 
 import torch
 import torch.overrides
@@ -21,24 +21,8 @@ from torch.utils._ordered_set import OrderedSet
 from .source import AttrSource, DictGetItemSource, DictSubclassGetItemSource
 from .types import CacheEntry, DynamoFrameType, GuardFail, GuardFilterEntry, GuardFn
 
-"""
-Core guard system for Dynamo that detects when compiled code needs to be recompiled due to
-changes in program state. Guards are conditions that must remain true for previously-compiled
-code to be valid for reuse.
-
-This module provides the infrastructure for creating, managing and checking guards, including:
-- Guard creation and composition
-- Guard state management and invalidation
-- Guard checking and failure handling
-- Utilities for guard optimization and debugging
-- Integration with Dynamo's compilation caching
-
-The guard system is critical for Dynamo's ability to efficiently reuse compiled code while
-maintaining correctness by detecting when recompilation is necessary due to changes in
-program state, tensor properties, or control flow.
-"""
 guard_manager_testing_hook_fn: Callable[[Any, Any, Any], Any] | None = ...
-if TYPE_CHECKING: ...
+
 T = TypeVar("T")
 log = ...
 guards_log = ...

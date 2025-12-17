@@ -31,23 +31,7 @@ class _ConvNd(WeightedQuantizedModule):
     @torch.jit.export
     def __getstate__(
         self,
-    ) -> tuple[
-        Any,
-        Any,
-        Any,
-        Any,
-        Any,
-        Any,
-        Any,
-        Any,
-        Any,
-        str | Any,
-        Any,
-        Any,
-        float | Any,
-        int | Any,
-        bool,
-    ]: ...
+    ) -> tuple[Any, Any, Any, Any, Any, Any, Any, Any, Any, str | Any, Any, Any, float | Any, int | Any, bool]: ...
     @torch.jit.export
     def __setstate__(self, state) -> None: ...
     def __deepcopy__(self, memo) -> Self: ...

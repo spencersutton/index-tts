@@ -3,7 +3,7 @@ import threading
 from collections.abc import Callable
 from contextlib import contextmanager
 from enum import Enum
-from typing import IO, Any, TypeAlias, TypeVar
+from typing import IO, Any, TypeVar
 
 import torch
 from torch import _weights_only_unpickler
@@ -60,13 +60,7 @@ class SourceChangeWarning(Warning): ...
 @contextmanager
 def mkdtemp() -> Generator[str, Any, None]: ...
 
-_package_registry: list[
-    tuple[
-        int,
-        Callable[[STORAGE], str | None],
-        Callable[[STORAGE, str], STORAGE | None],
-    ]
-] = ...
+_package_registry: list[tuple[int, Callable[[STORAGE], str | None], Callable[[STORAGE, str], STORAGE | None]]] = ...
 
 class LoadEndianness(Enum):
     NATIVE = ...

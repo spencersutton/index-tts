@@ -1,5 +1,5 @@
 from collections.abc import Callable, Iterable, Sequence
-from typing import Optional, ParamSpec, TypeVar, Union
+from typing import ParamSpec, TypeVar
 
 import torch
 from torch._prims_common import DimsSequenceType, DimsType

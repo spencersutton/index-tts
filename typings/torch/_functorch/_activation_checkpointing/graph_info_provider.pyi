@@ -1,5 +1,3 @@
-from typing import Optional
-
 import networkx as nx
 from torch.fx import Graph, Node
 

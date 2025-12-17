@@ -1,10 +1,9 @@
 from collections.abc import Callable, Iterable
-from typing import TYPE_CHECKING, Any, Self, TypeAlias, TypeVar
+from typing import Any, Self, TypeVar
 
 from torch.utils.data.dataset import Dataset
 from torch.utils.data.sampler import Sampler
 
-if TYPE_CHECKING: ...
 __all__ = ["DataLoader", "default_collate", "default_convert", "get_worker_info"]
 _T_co = TypeVar("_T_co", covariant=True)
 type _worker_init_fn_t = Callable[[int], None]

@@ -1,18 +1,10 @@
-import math
-import os
-import socket
-import uuid
-from collections.abc import Callable, Generator, Sequence
-from contextlib import contextmanager
+from collections.abc import Sequence
 from datetime import timedelta
 from enum import Enum
-from functools import partial
-from typing import TYPE_CHECKING, Any, Literal, Union, overload
+from typing import Any, Literal, overload
 
 import torch
-import torch.distributed._functional_collectives as funcol
 import torch.distributed.distributed_c10d as c10d
-from torch._C._autograd import DeviceType
 from torch._C._distributed_c10d import ProcessGroup, _SymmetricMemory
 from torch._C._distributed_c10d import Work as _Work
 from torch.types import _device, _dtype, _int
@@ -47,8 +39,6 @@ class Work(_Work):
     def __init__(self) -> None: ...
     def wait(self, timeout: timedelta = ...) -> bool: ...
 
-if TYPE_CHECKING: ...
-
 @overload
 def empty(*size: _int, dtype: _dtype | None = ..., device: _device | None = ...) -> torch.Tensor: ...
 @overload
@@ -58,8 +48,6 @@ def rendezvous(tensor: torch.Tensor, group: str | ProcessGroup) -> _SymmetricMem
 def is_nvshmem_available() -> bool: ...
 def set_backend(name: Literal["NVSHMEM", "CUDA", "NCCL"]) -> None: ...
 def get_backend(device: _device) -> str | None: ...
-def get_mempool_allocator(device: _device):  # -> Any:
+def get_mempool_allocator(device: _device): ...
 
-    ...
-
-__all__ = ["empty", "rendezvous", "is_nvshmem_available", "set_backend", "get_backend"]
+__all__ = ["empty", "get_backend", "is_nvshmem_available", "rendezvous", "set_backend"]

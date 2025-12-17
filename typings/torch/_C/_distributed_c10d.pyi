@@ -1,6 +1,6 @@
 from datetime import timedelta
 from enum import Enum
-from typing import Any, Optional, Union, overload
+from typing import Any, overload
 
 import torch
 from torch import Tensor
@@ -297,12 +297,7 @@ class ProcessGroup:
         group_desc: str | None = ...,
     ) -> ProcessGroup | None: ...
     def merge_remote_group(
-        self,
-        store: Store,
-        size: int,
-        timeout: timedelta,
-        group_name: str | None = ...,
-        group_desc: str | None = ...,
+        self, store: Store, size: int, timeout: timedelta, group_name: str | None = ..., group_desc: str | None = ...
     ) -> ProcessGroup: ...
     def abort(self) -> None: ...
     def set_timeout(self, timeout: timedelta) -> None: ...

@@ -18,17 +18,11 @@ def fuse_as_graphmodule(
 ) -> tuple[GraphModule, tuple[Node, ...], tuple[Node, ...]]: ...
 @compatibility(is_backward_compatible=False)
 def insert_subgm(
-    gm: GraphModule,
-    sub_gm: GraphModule,
-    orig_inputs: tuple[Node, ...],
-    orig_outputs: tuple[Node, ...],
+    gm: GraphModule, sub_gm: GraphModule, orig_inputs: tuple[Node, ...], orig_outputs: tuple[Node, ...]
 ) -> GraphModule: ...
 @compatibility(is_backward_compatible=False)
 def erase_nodes(gm: GraphModule, nodes: NodeList) -> None: ...
 @compatibility(is_backward_compatible=False)
 def fuse_by_partitions(
-    gm: GraphModule,
-    partitions: list[dict[Node, int | None]],
-    prefix: str = ...,
-    always_return_tuple: bool = ...,
+    gm: GraphModule, partitions: list[dict[Node, int | None]], prefix: str = ..., always_return_tuple: bool = ...
 ) -> GraphModule: ...

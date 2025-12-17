@@ -2,7 +2,7 @@ import dataclasses
 import functools
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
-from typing import Any, Optional, Protocol, TypeAlias, TypeIs, TypeVar, Union
+from typing import Any, Protocol, TypeIs, TypeVar
 
 import torch
 import torch.fx
@@ -10,42 +10,7 @@ import torch.utils._pytree as pytree
 from torch.utils._ordered_set import OrderedSet
 
 from .._functorch import config as functorch_config
-from ..fx import Transformer
 
-"""
-# Inductor Pattern Matcher
-
-The pattern matcher enables search/replace within an FX graph.
-
-The main entrypoint to the pattern matcher is register_replacement(). Given a
-search function and a replacement function this will register a replacement with
-a pass (such as torch._inductor.fx_passes.joint_graph.patterns).
-
-Internally the pattern matcher represents patterns as a graph (a DAG). Creating
-new patterns manually as a graph is cumbersome and error-prone so the standard
-way to create patterns (using register_replacement()) is to provide a search
-function and a replacement function which is traced and converted into a graph.
-
-Because the search functions are built somewhat generic (they tend to ignore
-tensor sizes, for example) register_replacement() allows you to specify an
-`extra_check` function which performs additional checks to verify that the
-matched pattern fully matches before returning it.
-
-## Precompiled Patterns
-
-New patterns are added using register_replacement(). Patterns added in this way
-can have a compile-time overhead because they need to be traced before
-use. Patterns can be precompiled and added using gen_register_replacement()
-instead. To do this you call gen_register_replacement() instead of
-register_replacement(). The arguments are the same except for an additional
-unique name which is used as a lookup key.
-
-## Internals
-
-The match DAG is represented by a graph of `PatternExpr` nodes. Each PatternExpr
-implements a `_match` method which returns either a `Match` object for a
-successful match or a `FailedMatch` object for a failure to match.
-"""
 log = ...
 aten = ...
 prims = ...
@@ -166,11 +131,7 @@ type _SimpleSpec = tuple[Any, ...]
 
 class _TargetArgsExpr(_TargetExpr):
     def __init__(
-        self,
-        fns: torch.fx.node.Target | str | Sequence[Any],
-        *args: Any,
-        _users: int | Multiple = ...,
-        **kwargs: Any,
+        self, fns: torch.fx.node.Target | str | Sequence[Any], *args: Any, _users: int | Multiple = ..., **kwargs: Any
     ) -> None: ...
     @staticmethod
     def simple_flatten(
@@ -293,13 +254,7 @@ def register_replacement(
 _serialized_patterns: OrderedSet[str] = ...
 SERIALIZED_PATTERN_PATH = ...
 _known_precompiled_patterns: list[
-    tuple[
-        Any,
-        Iterable[Any],
-        Callable[[Callable[..., Any], Iterable[Any]], torch.fx.GraphModule],
-        Any,
-        PatternExpr,
-    ]
+    tuple[Any, Iterable[Any], Callable[[Callable[..., Any], Iterable[Any]], torch.fx.GraphModule], Any, PatternExpr]
 ] = ...
 
 def gen_register_replacement(

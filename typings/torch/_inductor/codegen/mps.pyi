@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import Any
 
 import sympy
 import torch
@@ -10,7 +10,6 @@ from ..scheduler import Scheduler, SchedulerNode
 from .common import CSEVariable, OpOverrides, OpVarT
 from .simd import IterationRangesEntry, SIMDKernel, SIMDScheduling
 
-if TYPE_CHECKING: ...
 log = ...
 DTYPE_TO_METAL = ...
 

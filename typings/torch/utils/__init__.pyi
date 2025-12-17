@@ -1,33 +1,11 @@
-import copyreg
-import os.path as _osp
-import weakref
+from torch.utils import backcompat as backcompat
+from torch.utils import collect_env as collect_env
+from torch.utils import data as data
+from torch.utils import deterministic as deterministic
+from torch.utils import hooks as hooks
 
-import torch
-from torch.utils import (
-    backcompat as backcompat,
-)
-from torch.utils import (
-    collect_env as collect_env,
-)
-from torch.utils import (
-    data as data,
-)
-from torch.utils import (
-    deterministic as deterministic,
-)
-from torch.utils import (
-    hooks as hooks,
-)
-from torch.utils.backend_registration import generate_methods_for_privateuse1_backend, rename_privateuse1_backend
-from torch.utils.cpp_backtrace import get_cpp_backtrace
-from torch.utils.throughput_benchmark import ThroughputBenchmark
-
-def set_module(obj, mod):  # -> None:
-
-    ...
+def set_module(obj, mod): ...
 
 cmake_prefix_path = ...
 
-def swap_tensors(t1, t2):  # -> None:
-
-    ...
+def swap_tensors(t1, t2): ...

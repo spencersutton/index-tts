@@ -1,22 +1,11 @@
-from typing import TYPE_CHECKING, Optional
-
 from ._normalizations import ArrayLike, AxisLike, DTypeLike, KeepDims, NotImplementedType, OutArray
-
-"""Implementation of reduction operations, to be wrapped into arrays, dtypes etc
-in the 'public' layer.
-
-Anything here only deals with torch objects, e.g. "dtype" is a torch.dtype instance etc
-"""
-if TYPE_CHECKING: ...
 
 @_deco_axis_expand
 def count_nonzero(a: ArrayLike, axis: AxisLike = ..., *, keepdims: KeepDims = ...): ...
 @_deco_axis_expand
-def argmax(a: ArrayLike, axis: AxisLike = ..., out: OutArray | None = ..., *, keepdims: KeepDims = ...):  # -> Tensor:
-    ...
+def argmax(a: ArrayLike, axis: AxisLike = ..., out: OutArray | None = ..., *, keepdims: KeepDims = ...): ...
 @_deco_axis_expand
-def argmin(a: ArrayLike, axis: AxisLike = ..., out: OutArray | None = ..., *, keepdims: KeepDims = ...):  # -> Tensor:
-    ...
+def argmin(a: ArrayLike, axis: AxisLike = ..., out: OutArray | None = ..., *, keepdims: KeepDims = ...): ...
 @_deco_axis_expand
 def any(
     a: ArrayLike,
@@ -121,10 +110,7 @@ def cumprod(a: ArrayLike, axis: AxisLike = ..., dtype: DTypeLike | None = ..., o
 
 cumproduct = ...
 
-def average(
-    a: ArrayLike, axis=..., weights: ArrayLike = ..., returned=..., *, keepdims=...
-):  # -> tuple[Any, Tensor | Any]:
-    ...
+def average(a: ArrayLike, axis=..., weights: ArrayLike = ..., returned=..., *, keepdims=...): ...
 def quantile(
     a: ArrayLike,
     q: ArrayLike,

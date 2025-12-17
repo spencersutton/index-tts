@@ -1,48 +1,20 @@
 import types
 from contextlib import contextmanager
 
-from torch.backends import (
-    cpu as cpu,
-)
-from torch.backends import (
-    cuda as cuda,
-)
-from torch.backends import (
-    cudnn as cudnn,
-)
-from torch.backends import (
-    cusparselt as cusparselt,
-)
-from torch.backends import (
-    kleidiai as kleidiai,
-)
-from torch.backends import (
-    mha as mha,
-)
-from torch.backends import (
-    miopen as miopen,
-)
-from torch.backends import (
-    mkl as mkl,
-)
-from torch.backends import (
-    mkldnn as mkldnn,
-)
-from torch.backends import (
-    mps as mps,
-)
-from torch.backends import (
-    nnpack as nnpack,
-)
-from torch.backends import (
-    openmp as openmp,
-)
-from torch.backends import (
-    opt_einsum as opt_einsum,
-)
-from torch.backends import (
-    quantized as quantized,
-)
+from torch.backends import cpu as cpu
+from torch.backends import cuda as cuda
+from torch.backends import cudnn as cudnn
+from torch.backends import cusparselt as cusparselt
+from torch.backends import kleidiai as kleidiai
+from torch.backends import mha as mha
+from torch.backends import miopen as miopen
+from torch.backends import mkl as mkl
+from torch.backends import mkldnn as mkldnn
+from torch.backends import mps as mps
+from torch.backends import nnpack as nnpack
+from torch.backends import openmp as openmp
+from torch.backends import opt_einsum as opt_einsum
+from torch.backends import quantized as quantized
 
 __allow_nonbracketed_mutation_flag = ...
 

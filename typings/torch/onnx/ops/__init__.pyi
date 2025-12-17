@@ -1,10 +1,9 @@
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING
 
 import torch
 
 __all__ = ["aten_decompositions", "attention", "rotary_embedding", "symbolic", "symbolic_multi_out"]
-if TYPE_CHECKING: ...
+
 _TORCH_DTYPE_TO_ONNX_DTYPE = ...
 
 def aten_decompositions() -> dict[torch._ops.OpOverload, Callable]: ...
@@ -12,10 +11,7 @@ def symbolic(
     domain_op: str,
     /,
     inputs: Sequence[torch.Tensor | None],
-    attrs: dict[
-        str,
-        int | float | str | bool | Sequence[int] | Sequence[float] | Sequence[str] | Sequence[bool],
-    ]
+    attrs: dict[str, int | float | str | bool | Sequence[int] | Sequence[float] | Sequence[str] | Sequence[bool]]
     | None = ...,
     *,
     dtype: torch.dtype | int,
@@ -27,10 +23,7 @@ def symbolic_multi_out(
     domain_op: str,
     /,
     inputs: Sequence[torch.Tensor | None],
-    attrs: dict[
-        str,
-        int | float | str | bool | Sequence[int] | Sequence[float] | Sequence[str] | Sequence[bool],
-    ]
+    attrs: dict[str, int | float | str | bool | Sequence[int] | Sequence[float] | Sequence[str] | Sequence[bool]]
     | None = ...,
     *,
     dtypes: Sequence[torch.dtype | int],

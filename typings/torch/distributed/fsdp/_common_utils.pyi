@@ -1,14 +1,10 @@
 import weakref
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import torch
 from torch.distributed._composable_state import _State
 
-"""
-This file includes private common utilities for FSDP.
-"""
-if TYPE_CHECKING: ...
 FSDP_WRAPPED_MODULE = ...
 FSDP_PREFIX = ...
 FSDP_FLATTENED = ...

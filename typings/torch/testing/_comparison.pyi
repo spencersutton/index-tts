@@ -1,6 +1,6 @@
 import abc
 from collections.abc import Callable, Sequence
-from typing import Any, Optional, Union
+from typing import Any
 from warnings import deprecated
 
 import torch
@@ -35,10 +35,10 @@ def make_tensor_mismatch_msg(
     rtol: float,
     atol: float,
     identifier: str | Callable[[str], str] | None = ...,
-):  # -> str:
+): ...
 
-    ...
-
+class UnsupportedInputs(Exception): ...
+class UnsupportedInputs(Exception): ...
 class UnsupportedInputs(Exception): ...
 
 class Pair(abc.ABC):
@@ -128,9 +128,7 @@ def assert_close(
     check_layout: bool = ...,
     check_stride: bool = ...,
     msg: str | Callable[[str], str] | None = ...,
-):  # -> None:
-
-    ...
+): ...
 @deprecated(
     "`torch.testing.assert_allclose()` is deprecated since 1.12 and will be removed in a future release. "
     "Please use `torch.testing.assert_close()` instead. "

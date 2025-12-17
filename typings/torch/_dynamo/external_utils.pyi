@@ -1,30 +1,9 @@
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Optional, ParamSpec, TypeVar, Union
+from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar
 from warnings import deprecated
 
 import torch
 
-"""
-This module contains utility functions that are explicitly allowed to be called during
-TorchDynamo compilation. These functions are carefully vetted to ensure they work
-correctly within the TorchDynamo tracing and compilation process.
-
-Key functionality groups:
-
-- Compilation State:
-  Functions for checking compilation state (is_compiling)
-
-- Function Wrapping:
-  Utilities for wrapping functions (wrap_inline, wrap_numpy) to work with
-  TorchDynamo compilation
-
-- Autograd Hooks:
-  Functions and classes for handling autograd hooks and backward passes
-  (call_hook, FakeBackwardCFunction, etc.)
-
-- Tensor Operations:
-  Utility functions for tensor operations and transformations
-"""
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
 if TYPE_CHECKING:
@@ -33,8 +12,6 @@ if TYPE_CHECKING:
         category=FutureWarning,
     )
     def is_compiling() -> bool: ...
-
-else: ...
 
 def wrap_inline[**P, R](fn: Callable[_P, _R]) -> Callable[_P, _R]: ...
 def call_hook(hook: Callable[..., torch.Tensor | None], *args: Any, **kwargs: Any) -> torch.Tensor: ...

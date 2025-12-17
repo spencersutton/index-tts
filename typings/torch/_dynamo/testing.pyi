@@ -1,6 +1,6 @@
 import types
 from collections.abc import Callable, Sequence
-from typing import Any, Optional, ParamSpec, TypeVar, Union, overload
+from typing import Any, ParamSpec, TypeVar, overload
 
 import numpy as np
 import torch
@@ -8,20 +8,6 @@ from torch import fx
 
 from .types import ConvertFrameReturn, DynamoFrameType
 
-"""Testing utilities and infrastructure for Dynamo.
-
-This module provides a comprehensive set of testing utilities including:
-- Test result collection and validation
-- Graph manipulation and comparison tools
-- Test case management and execution helpers
-- Specialized test decorators for different Python versions and features
-- RNG state management
-- Compilation counting and monitoring
-- Debug utilities for bytecode transformation
-
-The utilities in this module are used across Dynamo's test suite to ensure
-consistent testing patterns and proper test isolation.
-"""
 np: types.ModuleType | None = ...
 unsupported = ...
 three = ...
@@ -30,8 +16,7 @@ _P = ParamSpec("_P")
 
 def clone_me(x: torch.Tensor | None) -> torch.Tensor | None: ...
 def remove_optimized_module_prefix(name: str) -> str: ...
-def extract_graph_and_tracker(fn, *args, **kwargs):  # -> tuple[Any, None]:
-    ...
+def extract_graph_and_tracker(fn, *args, **kwargs): ...
 def collect_results(model: torch.nn.Module, prediction: Any, loss: Any, example_inputs: Any) -> list[Any]: ...
 def requires_bwd_pass(out: Any) -> bool: ...
 @overload
@@ -65,10 +50,7 @@ class AotEagerAndRecordGraphs:
 
 class InductorAndRecordGraphs:
     def __init__(self) -> None: ...
-    def __call__(
-        self, gm, example_inputs
-    ):  # -> Callable[[list[object]], Sequence[Tensor]] | str | list[str] | Weights:
-        ...
+    def __call__(self, gm, example_inputs): ...
 
 def strip_comment(code: str) -> str: ...
 def remove_trailing_space(code: str) -> str: ...

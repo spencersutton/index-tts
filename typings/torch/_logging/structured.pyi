@@ -1,10 +1,7 @@
 import traceback
 from collections.abc import Sequence
-from typing import Any, Optional
+from typing import Any
 
-"""
-Utilities for converting data types into structured JSON for dumping.
-"""
 INTERN_TABLE: dict[str, int] = ...
 DUMPED_FILES: set[str] = ...
 

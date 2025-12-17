@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Optional, ParamSpec, TypeAlias, TypeVar, Union
+from typing import Any, ParamSpec, TypeVar
 
 import torch
 from torch.utils._ordered_set import OrderedSet
@@ -9,7 +9,6 @@ from . import ir
 from .graph import GraphLowering
 from .virtualized import WrapperHandler
 
-"""Utilities for lowering subgraphs used by higher order operators"""
 T = TypeVar("T")
 _P = ParamSpec("_P")
 OpOverload = ...

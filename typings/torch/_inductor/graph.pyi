@@ -2,7 +2,7 @@ import contextlib
 from collections.abc import Callable, Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, NoReturn, Optional, TypeAlias, Union
+from typing import TYPE_CHECKING, Any, NoReturn
 
 import sympy
 import torch
@@ -19,7 +19,7 @@ from . import config, ir
 from .codegen.common import BackendFeature, FileBackedGraphModule, WorkspaceArg
 from .codegen.wrapper import PythonWrapperCodegen
 from .dependencies import Dep
-from .ir import Constant, GraphPartitionSignature, ShapeAsConstantBuffer, StorageBox, TensorBox, TorchBindObject
+from .ir import Constant, GraphPartitionSignature, ShapeAsConstantBuffer, TensorBox, TorchBindObject
 from .scheduler import BaseSchedulerNode
 from .utils import ValueWithLineMap
 
@@ -113,8 +113,7 @@ class GraphLowering(torch.fx.Interpreter):
     def output(self, target: str, args: tuple[object], kwargs: dict[str, object]) -> None: ...
     def finalize(self) -> None: ...
     @contextmanager
-    def set_current_node(self, node: torch.fx.Node):  # -> Generator[None, Any, None]:
-        ...
+    def set_current_node(self, node: torch.fx.Node): ...
     @contextmanager
     def set_current_wrapper_code(self) -> Iterator[None]: ...
     def propagate_mutation(

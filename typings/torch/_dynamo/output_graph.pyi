@@ -3,7 +3,7 @@ import traceback
 from collections.abc import Callable, Generator, Sequence
 from dataclasses import dataclass
 from types import CodeType
-from typing import TYPE_CHECKING, Any, Optional, ParamSpec, TypeAlias, TypeVar, Union
+from typing import Any, ParamSpec, TypeVar
 
 import sympy
 import torch._guards
@@ -24,27 +24,6 @@ from .side_effects import SideEffects
 from .variables.base import VariableTracker
 from .variables.builder import GraphArg
 
-"""
-Core graph building functionality for PyTorch's Dynamo system. This module contains
-the essential components for constructing and managing FX graphs during compilation:
-
-- OutputGraph: Manages the overall graph construction and compilation process. It owns
-  a SubgraphTracer and handles graph compilation, execution, and state management.
-  OutputGraph also manages features like graph deduplication, symbolic shape handling,
-  and tracking of side effects.
-
-- SubgraphTracer: Handles the actual FX graph construction by tracing Python code.
-  It supports advanced features like higher-order operators through nested tracers,
-  lifting of free variables, and handling of symbolic shapes.
-
-The module supports key Dynamo features including:
-- Higher-order operators through nested SubgraphTracers
-- Graph deduplication for optimization
-- Symbolic shape handling and propagation
-- Side effect tracking and management
-- Guard insertion and management
-"""
-if TYPE_CHECKING: ...
 log = ...
 graph_tabular_log = ...
 graph_code_log = ...

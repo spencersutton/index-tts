@@ -1,5 +1,5 @@
 import inspect
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import Any
 
 import torch
 from torch._guards import Source
@@ -8,7 +8,6 @@ from torch.export import Constraint
 from torch.fx.experimental.symbolic_shapes import EqualityConstraint
 from torch.utils._pytree import KeyPath
 
-if TYPE_CHECKING: ...
 log = ...
 
 class _KeyPath:
@@ -16,8 +15,7 @@ class _KeyPath:
 
 class _KeyPathTrie:
     def __init__(self) -> None: ...
-    def add(self, kp: KeyPath, src: Source):  # -> None:
-        ...
+    def add(self, kp: KeyPath, src: Source): ...
     def get(self, kp: KeyPath) -> tuple[Source, KeyPath]: ...
 
 def make_sourced_prefixes(nn_module, args, kwargs) -> _KeyPathTrie: ...
@@ -29,22 +27,15 @@ def fakify(
     t_constraints: dict[int, dict[int, Constraint]],
     sources: dict[tuple[int, int], list[Source]],
     sourced_prefixes: _KeyPathTrie | None = ...,
-):  # -> IntLikeType | Any | ScriptObject | Module | FakeTensor:
-    ...
-def make_fake_inputs(
-    nn_module, args, kwargs, dynamic_shapes, prefer_deferred_runtime_asserts_over_guards=...
-):  # -> tuple[Any | FakeTensorMode, PyTree, PyTree, EqualityConstraint, Signature, Any]:
-
-    ...
+): ...
+def make_fake_inputs(nn_module, args, kwargs, dynamic_shapes, prefer_deferred_runtime_asserts_over_guards=...): ...
 def produce_guards_and_solve_constraints(
     fake_mode: FakeTensorMode,
     gm: torch.fx.GraphModule,
     dynamic_shapes: dict[str, Any] | tuple[Any] | list[Any] | None,
     equalities_inputs: EqualityConstraint,
     original_signature: inspect.Signature,
-):  # -> None:
-
-    ...
+): ...
 def is_int(x: object) -> bool: ...
 def make_constraints(
     fake_mode: FakeTensorMode,
@@ -52,10 +43,7 @@ def make_constraints(
     combined_args: dict[str, Any],
     dynamic_shapes: dict[str, Any] | tuple[Any] | list[Any] | None,
     num_lifted_inputs: int,
-):  # -> dict[Any, Any]:
-
-    ...
+): ...
 
 class _NonStrictTorchFunctionHandler(torch.overrides.TorchFunctionMode):
-    def __torch_function__(self, func, types, args=..., kwargs=...):  # -> Tensor | list[Tensor]:
-        ...
+    def __torch_function__(self, func, types, args=..., kwargs=...): ...

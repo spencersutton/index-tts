@@ -2,7 +2,7 @@ import contextlib
 from collections.abc import Callable
 from dataclasses import dataclass
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Generic, NoReturn, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, NoReturn, TypeVar
 from warnings import deprecated
 
 CONFIG_TYPES = ...
@@ -37,8 +37,6 @@ if TYPE_CHECKING:
         value_type: type | None = ...,
         alias: str | None = ...,
     ) -> T: ...
-
-else: ...
 
 def install_config_module(module: ModuleType) -> None: ...
 

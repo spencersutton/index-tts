@@ -1,8 +1,7 @@
 import abc
 from dataclasses import dataclass
-from typing import Optional, Union
 
-import torch.nn as nn
+from torch import nn
 from torch.distributed._shard.sharder import Sharder
 from torch.distributed._shard.sharding_spec import ShardingSpec
 

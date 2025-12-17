@@ -1,9 +1,7 @@
 import inspect
 import typing
-from typing import Optional, Union
 
 import torch
-from torch import Tensor
 from torch.utils._exposed_in import exposed_in
 
 _TestTensor = torch.Tensor
@@ -16,15 +14,12 @@ def derived_types(
     list_base: bool,
     optional_base_list: bool,
     optional_list_base: bool,
-):  # -> list[tuple[type | _SpecialForm | GenericAlias, str]]:
-    ...
-def get_supported_param_types():  # -> dict[Any, Any]:
-    ...
+): ...
+def get_supported_param_types(): ...
 
 SUPPORTED_RETURN_TYPES = ...
 
-def parse_return(annotation, error_fn):  # -> str:
-    ...
+def parse_return(annotation, error_fn): ...
 
 SUPPORTED_PARAM_TYPES = ...
 

@@ -4,9 +4,6 @@ from typing import TypeVar
 
 from ..decorators import substitute_in_graph
 
-"""
-Python polyfills for functools
-"""
 __all__ = ["reduce"]
 _T = TypeVar("_T")
 _U = TypeVar("_U")

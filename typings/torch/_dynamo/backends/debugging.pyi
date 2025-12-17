@@ -1,6 +1,6 @@
 import dataclasses
 from collections.abc import Callable, Iterable
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import Any
 
 import torch
 from torch import _guards
@@ -10,31 +10,6 @@ from torch.fx.node import Target
 from .registry import CompiledFn, CompilerFn
 from .registry import register_debug_backend as register_backend
 
-"""
-This module provides debugging backends for TorchDynamo to help diagnose and troubleshoot
-compilation and execution issues. It includes:
-
-Key Debugging Backends:
-- eager: Simple pass-through backend that runs models in eager mode
-- eager_noexcept: Similar to eager but with additional exception handling
-- eager_debug: Adds schema validation checks for custom operators
-- aot_eager: Uses AOT Autograd with nop compiler for debugging
-- aot_eager_decomp_partition: Uses TorchInductor decompositions for debugging
-- torchscript: Compiles using TorchScript for debugging JIT-related issues
-
-Testing and Development Tools:
-- Backends for inducing specific errors (compile/runtime/accuracy)
-- ExplainOutput class for detailed graph compilation analysis
-- Utilities for cross-referencing and mode management
-- Tools for graph detail inspection and break reason analysis
-
-These backends are primarily used for:
-1. Debugging graph breaks and compilation failures
-2. Testing error handling and recovery mechanisms
-3. Analyzing performance bottlenecks
-4. Validating operator schemas and decompositions
-"""
-if TYPE_CHECKING: ...
 log = ...
 
 @register_backend

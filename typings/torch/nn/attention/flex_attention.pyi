@@ -6,7 +6,6 @@ import torch
 from torch import Tensor
 from torch._prims_common import DeviceLikeType
 
-"""This module implements the user facing API for flex_attention in PyTorch."""
 _FLEX_ATTENTION_DISABLE_COMPILE_DEBUG = ...
 _WARNINGS_SHOWN: set[str] = ...
 __all__ = [

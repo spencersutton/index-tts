@@ -5,7 +5,7 @@ from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import _GeneratorContextManager, contextmanager
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Any, NamedTuple, NoReturn, ParamSpec, TypeAlias, TypeGuard, TypeVar
+from typing import Any, NamedTuple, NoReturn, ParamSpec, TypeGuard, TypeVar
 from warnings import deprecated
 
 import sympy
@@ -24,7 +24,6 @@ from torch.utils._sympy.printers import CppPrinter, PythonPrinter
 from torch.utils._sympy.value_ranges import ValueRanges
 from torch.utils._traceback import CapturedTraceback
 
-if TYPE_CHECKING: ...
 InputList = list
 DimList = list
 log = ...
@@ -86,7 +85,7 @@ CURRENT_NODE_KEY = ...
 
 def log_lru_cache_stats(wrapped_f: functools._lru_cache_wrapper[object]) -> None: ...
 
-SympyBoolean = sympy.logic.boolalg.Boolean
+type SympyBoolean = sympy.logic.boolalg.Boolean
 _T = TypeVar("_T")
 _SympyT = TypeVar("_SympyT", sympy.Expr, SympyBoolean, sympy.Basic)
 

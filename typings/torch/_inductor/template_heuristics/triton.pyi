@@ -2,7 +2,7 @@ import dataclasses
 from collections.abc import Callable, Generator
 from functools import partial
 from threading import Lock
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any
 
 import sympy
 import torch
@@ -16,8 +16,6 @@ from ..kernel.mm_plus_mm import mm_plus_mm_template
 from ..kernel_inputs import KernelInputs
 from .gemm import GemmMaxAutotuneTemplateConfigHeuristics
 from .registry import register_template_heuristic
-
-if TYPE_CHECKING: ...
 
 @dataclasses.dataclass
 class BaseConfig:

@@ -1,29 +1,11 @@
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Optional, TypeVar
+from typing import Any, TypeVar
 
 import torch
 from torch import Tensor
 from torch.hub import tqdm
 from torch.storage import UntypedStorage
 
-"""
-Debug utilities for TorchDynamo compilation and execution.
-
-This module provides various debugging tools and utilities for TorchDynamo, including:
-
-- Minification support for reducing test cases while preserving bugs
-- Input/output handling via InputReader and InputWriter for reproducible testing
-- Accuracy checking between original and compiled models
-- Neural network module string conversion via NNModuleToString
-- Profiling tools and system information collection
-- Buck build system integration for Meta-internal testing
-
-Key classes:
-- InputReader/InputWriter: Handle serialization of model inputs/outputs
-- NNModuleToString: Converts nn.Modules to string representations
-- BuckTargetWriter: Manages Buck build system integration
-"""
-if TYPE_CHECKING: ...
 log = ...
 T = TypeVar("T")
 inductor_config = ...

@@ -2,23 +2,11 @@ import dataclasses
 import enum
 import types
 from collections import defaultdict
-from typing import TYPE_CHECKING, Optional, Self, TypeVar, Union, override
+from typing import Self, override
 
 from torch._dynamo.symbolic_convert import InstructionTranslator
 from torch._inductor.remote_cache import JsonDataTy, RemoteCache
 from torch.compiler._cache import CacheArtifact, CacheArtifactFactory
-
-"""
-Profile Guided Optimization (PGO) implementation for Dynamo.
-
-This module provides functionality for caching and managing code state profiles
-that guide optimization decisions in Dynamo. It implements both local and remote
-caching mechanisms for storing profile information across runs, handles profile
-merging across distributed ranks, and manages the lifecycle of profile data
-during compilation. The profiles track dynamic vs static properties of tensors
-and help Dynamo make better specialization decisions.
-"""
-if TYPE_CHECKING: ...
 
 class ReservedWorkflowIdUserError(ValueError): ...
 

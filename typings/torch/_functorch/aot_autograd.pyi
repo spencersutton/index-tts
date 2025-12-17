@@ -1,9 +1,8 @@
 import contextlib
 from collections.abc import Callable
-from typing import Optional
 
 import torch
-import torch.nn as nn
+from torch import nn
 from torch._inductor.cudagraph_utils import BoxedDeviceIndex
 from torch._inductor.utils import BoxedBool
 from torch._subclasses import FakeTensorMode
@@ -62,8 +61,7 @@ def prepare_aot_module_simplified(
     flatten: bool,
     *,
     force_non_lazy_backward_lowering: bool = ...,
-):  # -> tuple[Callable[..., Any] | Callable[..., Any | tuple[Any, ...] | list[Any]], list[Tensor | Parameter], list[str], list[str], FakifiedFlatArgs, list[Any], AOTConfig, FakeTensorMode, ShapeEnv | None, TreeSpec | None, PytreeThunk | None]:
-    ...
+): ...
 def aot_module_simplified(
     mod: nn.Module,
     args,
@@ -77,8 +75,7 @@ def aot_module_simplified(
     boxed_forward_device_index: BoxedDeviceIndex | None = ...,
     ignore_shape_env: bool = ...,
 ) -> nn.Module: ...
-def boxed_nop_preserve_node_meta(fx_g, example_inputs):  # -> Callable[..., Any]:
-    ...
+def boxed_nop_preserve_node_meta(fx_g, example_inputs): ...
 def aot_export_joint_with_descriptors(
     stack: contextlib.ExitStack,
     mod: nn.Module,

@@ -1,5 +1,4 @@
 import functools
-from typing import Optional
 
 from torch._inductor.utils import clear_on_fresh_cache
 

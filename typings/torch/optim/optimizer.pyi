@@ -1,11 +1,10 @@
 from collections import OrderedDict
 from collections.abc import Callable, Iterable
-from typing import Any, Optional, ParamSpec, Self, TypeAlias, TypeVar, Union, overload
+from typing import Any, ParamSpec, Self, TypeVar, overload
 
 import torch
 from torch.utils.hooks import RemovableHandle
 
-"""Base optimizer."""
 _P = ParamSpec("_P")
 type Args = tuple[Any, ...]
 type Kwargs = dict[str, Any]
@@ -14,7 +13,7 @@ type DeviceDict = dict[torch.device | None, torch.Tensor]
 type DeviceDtypeDict = dict[tuple[torch.device, torch.dtype] | None, torch.Tensor]
 type GlobalOptimizerPreHook = Callable[[Optimizer, Args, Kwargs], tuple[Args, Kwargs] | None]
 type GlobalOptimizerPostHook = Callable[[Optimizer, Args, Kwargs], None]
-__all__ = ["Optimizer", "register_optimizer_step_pre_hook", "register_optimizer_step_post_hook"]
+__all__ = ["Optimizer", "register_optimizer_step_post_hook", "register_optimizer_step_pre_hook"]
 _global_optimizer_pre_hooks: dict[int, GlobalOptimizerPreHook] = ...
 _global_optimizer_post_hooks: dict[int, GlobalOptimizerPostHook] = ...
 _foreach_supported_types = ...
@@ -37,10 +36,7 @@ R = TypeVar("R")
 T = TypeVar("T")
 
 class Optimizer:
-    type OptimizerPreHook = Callable[
-        [Self, Args, Kwargs],
-        tuple[Args, Kwargs] | None,
-    ]
+    type OptimizerPreHook = Callable[[Self, Args, Kwargs], tuple[Args, Kwargs] | None]
     type OptimizerPostHook = Callable[[Self, Args, Kwargs], None]
     _optimizer_step_pre_hooks: dict[int, OptimizerPreHook]
     _optimizer_step_post_hooks: dict[int, OptimizerPostHook]

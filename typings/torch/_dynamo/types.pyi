@@ -1,34 +1,14 @@
 import dataclasses
 import types
 from collections.abc import Callable
-from typing import Any, NamedTuple, Optional, Protocol, TypeAlias, Union
+from typing import Any, NamedTuple, Protocol
 
-from torch._C._dynamo.eval_frame import (
-    _CacheEntry as CacheEntry,
-)
-from torch._C._dynamo.eval_frame import (
-    _ExtraState as ExtraState,
-)
-from torch._C._dynamo.eval_frame import (
-    _FrameExecStrategy as FrameExecStrategy,
-)
-from torch._C._dynamo.eval_frame import (
-    _PyInterpreterFrame as DynamoFrameType,
-)
+from torch._C._dynamo.eval_frame import _CacheEntry as CacheEntry
+from torch._C._dynamo.eval_frame import _ExtraState as ExtraState
+from torch._C._dynamo.eval_frame import _FrameExecStrategy as FrameExecStrategy
+from torch._C._dynamo.eval_frame import _PyInterpreterFrame as DynamoFrameType
 from torch._guards import CompileId, Guard
 
-"""This module contains the core type definitions and protocols used throughout Dynamo.
-
-The types defined here fall into several categories:
-- Guard related types (GuardFn, GuardFail, GuardedCode): Used for tracking and managing guards that protect compiled code
-- Frame and cache types (FrameState, CacheEntry): Used for managing interpreter frame state and caching
-- Callback protocols (DynamoCallbackFn): Define the interface for frame evaluation callbacks
-- Hook protocols (DynamoGuardHook, ProfilerStartHook, ProfilerEndHook, BytecodeHook): Define various hook points for
-  instrumentation and customization
-
-These types provide the foundational interfaces that enable Dynamo's dynamic compilation and optimization system,
-ensuring type safety and clear contracts between different components of the system.
-"""
 type FrameState = dict[Any, Any]
 
 class GuardFail(NamedTuple):

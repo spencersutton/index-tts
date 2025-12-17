@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Literal, TypeAlias
+from typing import Literal
 
 from torch._C import device, dtype, layout
 
@@ -175,15 +175,7 @@ class _NNModuleInfo:
 
 class _OptimizerInfo:
     @property
-    def parameters(
-        self,
-    ) -> list[
-        tuple[
-            _TensorMetadata,
-            _TensorMetadata | None,
-            list[tuple[str, _TensorMetadata]],
-        ]
-    ]: ...
+    def parameters(self) -> list[tuple[_TensorMetadata, _TensorMetadata | None, list[tuple[str, _TensorMetadata]]]]: ...
 
 class _ExtraFields_PyCCall:
     @property

@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Optional, TypeAlias, Union
 
 import torch
 import torch.distributed as dist

@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from collections.abc import Callable
-from typing import Any, Generic, Optional, TypeVar, Union, override
+from typing import Any, TypeVar, override
 
 from torch.compiler._cache import CacheArtifact, CacheArtifactManager, CacheArtifactsResult, CacheInfo
 from torch.utils._appending_byte_serializer import AppendingByteSerializer

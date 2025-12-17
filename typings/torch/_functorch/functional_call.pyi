@@ -1,9 +1,8 @@
 from collections.abc import Sequence
-from typing import Any, Optional, Union
+from typing import Any
 
 import torch
-import torch.nn as nn
-from torch import Tensor
+from torch import Tensor, nn
 from torch._functorch.utils import exposed_in
 
 @exposed_in("torch.func")

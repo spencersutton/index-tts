@@ -1,11 +1,10 @@
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from typing import Any, Literal
 
 from torch._inductor.utils import InputType
 from torch.compiler._cache import CacheInfo
 from torch.fx import GraphModule
 
-if TYPE_CHECKING: ...
 log = ...
 
 class CompiledArtifact:

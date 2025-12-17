@@ -2,11 +2,10 @@ import contextlib
 import dataclasses
 import functools
 from collections.abc import Callable, Iterator, Sequence
-from typing import IO, Any, Optional, TypeAlias, Union
+from typing import IO, Any
 
 import torch
 from torch import fx as fx
-from torch.fx.graph_module import GraphModule
 from torch.fx.passes.shape_prop import TensorMetadata
 from torch.types import FileLike
 

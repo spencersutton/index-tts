@@ -3,7 +3,7 @@ import io
 import pickle
 from abc import abstractmethod
 from collections.abc import Callable
-from typing import Any, NewType, Optional, Self, TypeVar, override
+from typing import Any, NewType, Self, TypeVar, override
 
 import torch
 from torch._guards import TracingContext
@@ -79,10 +79,7 @@ class _GraphModulePickleData:
     @classmethod
     def reduce_helper(
         cls, pickler: GraphPickler, obj: torch.fx.GraphModule
-    ) -> tuple[
-        Callable[[Self, _UnpickleState], torch.fx.GraphModule],
-        tuple[Self, _UnpickleStateToken],
-    ]: ...
+    ) -> tuple[Callable[[Self, _UnpickleState], torch.fx.GraphModule], tuple[Self, _UnpickleStateToken]]: ...
     def __init__(self, gm: torch.fx.GraphModule, options: Options) -> None: ...
     def unpickle(self, unpickle_state: _UnpickleState) -> torch.fx.GraphModule: ...
 
@@ -132,9 +129,6 @@ class _TracingContextPickleData:
     @classmethod
     def reduce_helper(
         cls, pickler: GraphPickler, obj: torch._guards.TracingContext
-    ) -> tuple[
-        Callable[[Self, _UnpickleState], torch._guards.TracingContext],
-        tuple[Self, _UnpickleStateToken],
-    ]: ...
+    ) -> tuple[Callable[[Self, _UnpickleState], torch._guards.TracingContext], tuple[Self, _UnpickleStateToken]]: ...
     def __init__(self, context: TracingContext) -> None: ...
     def unpickle(self, unpickle_state: _UnpickleState) -> TracingContext: ...

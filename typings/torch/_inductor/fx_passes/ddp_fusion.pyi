@@ -1,10 +1,10 @@
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Optional, Union
+from typing import Any
 
 import torch
-import torch.fx as fx
+from torch import fx
 from torch.utils._ordered_set import OrderedSet
 
 aten = ...

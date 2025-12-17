@@ -1,10 +1,8 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Optional
 
 import torch
 from torch import Tensor
 
-if TYPE_CHECKING: ...
 log = ...
 
 def make_prim(schema: str, impl_aten, return_type=..., doc: str = ..., tags: Sequence[torch.Tag] | None = ...): ...

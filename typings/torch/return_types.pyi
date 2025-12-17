@@ -154,17 +154,7 @@ class _lu_with_info(tuple[Tensor, Tensor, Tensor]):
     def __init_subclass__(cls) -> NoReturn: ...
 
 class _scaled_dot_product_cudnn_attention(
-    tuple[
-        Tensor,
-        Tensor,
-        Tensor,
-        Tensor,
-        _int | SymInt,
-        _int | SymInt,
-        Tensor,
-        Tensor,
-        Tensor,
-    ]
+    tuple[Tensor, Tensor, Tensor, Tensor, _int | SymInt, _int | SymInt, Tensor, Tensor, Tensor]
 ):
     @property
     def output(self) -> Tensor: ...
@@ -185,18 +175,7 @@ class _scaled_dot_product_cudnn_attention(
     @property
     def debug_attn_mask(self) -> Tensor: ...
     def __new__(
-        cls,
-        sequence: tuple[
-            Tensor,
-            Tensor,
-            Tensor,
-            Tensor,
-            _int | SymInt,
-            _int | SymInt,
-            Tensor,
-            Tensor,
-            Tensor,
-        ],
+        cls, sequence: tuple[Tensor, Tensor, Tensor, Tensor, _int | SymInt, _int | SymInt, Tensor, Tensor, Tensor]
     ) -> Self: ...
 
     n_fields: Final[_int] = ...
@@ -221,17 +200,7 @@ class _scaled_dot_product_efficient_attention(tuple[Tensor, Tensor, Tensor, Tens
     def __init_subclass__(cls) -> NoReturn: ...
 
 class _scaled_dot_product_flash_attention(
-    tuple[
-        Tensor,
-        Tensor,
-        Tensor,
-        Tensor,
-        _int | SymInt,
-        _int | SymInt,
-        Tensor,
-        Tensor,
-        Tensor,
-    ]
+    tuple[Tensor, Tensor, Tensor, Tensor, _int | SymInt, _int | SymInt, Tensor, Tensor, Tensor]
 ):
     @property
     def output(self) -> Tensor: ...
@@ -252,18 +221,7 @@ class _scaled_dot_product_flash_attention(
     @property
     def debug_attn_mask(self) -> Tensor: ...
     def __new__(
-        cls,
-        sequence: tuple[
-            Tensor,
-            Tensor,
-            Tensor,
-            Tensor,
-            _int | SymInt,
-            _int | SymInt,
-            Tensor,
-            Tensor,
-            Tensor,
-        ],
+        cls, sequence: tuple[Tensor, Tensor, Tensor, Tensor, _int | SymInt, _int | SymInt, Tensor, Tensor, Tensor]
     ) -> Self: ...
 
     n_fields: Final[_int] = ...

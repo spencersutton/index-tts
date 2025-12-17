@@ -1,13 +1,11 @@
 import os
 import types
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any
 
 from torch._dynamo.exc import BackendCompilerFailed, ShortenTraceback
 from torch.cuda import _CudaDeviceProperties
 
-if TYPE_CHECKING: ...
 if os.environ.get("TORCHINDUCTOR_WRITE_MISSING_OPS") == "1": ...
-else: ...
 
 class OperatorIssue(RuntimeError):
     @staticmethod

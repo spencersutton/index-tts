@@ -1,10 +1,9 @@
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import Any
 
 import torch
-import torch.fx as fx
-from torch import Tensor
+from torch import fx
 from torch._guards import CompileContext, TracingContext
 
 from .descriptors import AOTInput
@@ -22,14 +21,6 @@ from .schemas import (
     ViewAndMutationMeta,
 )
 
-"""
-This module defines runtime wrappers, which, based on previous analysis attempts to:
-1. process the inputs and outputs
-2. apply mutations
-3. handle functionalized randomness
-4. deduplicate inputs and consolidate views into their bases (see input_output_analysis)
-"""
-if TYPE_CHECKING: ...
 zip = ...
 
 @dataclass
@@ -37,10 +28,7 @@ class RuntimeWrapper(CompilerWrapper):
     indices_of_inps_to_detach: list[int]
     trace_joint: bool
     disable_amp: bool
-    def post_compile(
-        self, compiled_fn, aot_config: AOTConfig, *, runtime_metadata: ViewAndMutationMeta
-    ):  # -> Callable[..., list[Any]]:
-        ...
+    def post_compile(self, compiled_fn, aot_config: AOTConfig, *, runtime_metadata: ViewAndMutationMeta): ...
 
 class NoopAliasHandler:
     def __init__(self, info, runtime_metadata, trace_joint) -> None: ...
@@ -60,21 +48,14 @@ class AliasOfIntermediateHandler:
 
 _HANDLER_MAP = ...
 
-def make_output_handler(
-    info, runtime_metadata, trace_joint
-):  # -> AliasOfInputHandler | AliasOfIntermediateHandler | IsInputHandler | NoopAliasHandler:
-    ...
-def maybe_mark_dynamic_helper(t: torch.Tensor, dims: set[int]):  # -> None:
-    ...
+def make_output_handler(info, runtime_metadata, trace_joint): ...
+def maybe_mark_dynamic_helper(t: torch.Tensor, dims: set[int]): ...
 
 @dataclass
 class FunctionalizedRngRuntimeWrapper(InductorWrapper):
     return_new_outs: bool = ...
     def pre_compile(self, flat_fn: torch.fx.GraphModule, flat_args, aot_config, *, fw_metadata) -> None: ...
-    def post_compile(
-        self, compiled_fn, aot_config: AOTConfig, *, runtime_metadata: ViewAndMutationMeta
-    ):  # -> _Wrapped[..., Any, ..., Any]:
-        ...
+    def post_compile(self, compiled_fn, aot_config: AOTConfig, *, runtime_metadata: ViewAndMutationMeta): ...
 
 @dataclass
 class FakifiedOutWrapper(InductorWrapper):
@@ -82,12 +63,8 @@ class FakifiedOutWrapper(InductorWrapper):
     fwd_output_strides: list[list[int] | None] | None = ...
     needs_post_compile: bool = ...
     def pre_compile(self, fw_module: fx.GraphModule, flat_args, aot_config, *, fw_metadata) -> None: ...
-    def set_fwd_output_strides(self, fwd_output_strides):  # -> None:
-        ...
-    def post_compile(
-        self, compiled_fn, aot_config: AOTConfig, *, runtime_metadata: ViewAndMutationMeta
-    ):  # -> _Wrapped[..., Any, ..., list[Tensor] | Any]:
-        ...
+    def set_fwd_output_strides(self, fwd_output_strides): ...
+    def post_compile(self, compiled_fn, aot_config: AOTConfig, *, runtime_metadata: ViewAndMutationMeta): ...
 
 @dataclass
 class AOTDispatchSubclassWrapper(CompilerWrapper):
@@ -103,19 +80,12 @@ class AOTDispatchSubclassWrapper(CompilerWrapper):
         aot_config: AOTConfig,
         *,
         fw_metadata: ViewAndMutationMeta,
-    ):  # -> tuple[Any, Any, Any, ViewAndMutationMeta]:
-        ...
-    def post_compile(
-        self, compiled_fn, _aot_config: AOTConfig, *, runtime_metadata: ViewAndMutationMeta
-    ):  # -> _Wrapped[..., Any, ..., tuple[Any, ...]]:
-        ...
+    ): ...
+    def post_compile(self, compiled_fn, _aot_config: AOTConfig, *, runtime_metadata: ViewAndMutationMeta): ...
 
 @dataclass
 class EffectTokensWrapper(CompilerWrapper):
-    def post_compile(
-        self, compiled_fn, _aot_config, *, runtime_metadata: ViewAndMutationMeta
-    ):  # -> _Wrapped[..., Any, ..., Any | None]:
-        ...
+    def post_compile(self, compiled_fn, _aot_config, *, runtime_metadata: ViewAndMutationMeta): ...
 
 @dataclass
 class AOTDedupeWrapper(CompilerWrapper):
@@ -123,10 +93,8 @@ class AOTDedupeWrapper(CompilerWrapper):
     add_dupe_map: list[int] = ...
     old_input_metadata: list[InputAliasInfo] = ...
     needs_post_compile: bool = ...
-    def remove_dupe_args(self, args):  # -> list[Any]:
-        ...
-    def add_dupe_args(self, args):  # -> list[Any]:
-        ...
+    def remove_dupe_args(self, args): ...
+    def add_dupe_args(self, args): ...
     def pre_compile(
         self,
         flat_fn: TraceFn,
@@ -136,10 +104,7 @@ class AOTDedupeWrapper(CompilerWrapper):
         *,
         fw_metadata: ViewAndMutationMeta,
     ) -> tuple[TraceFn, list[FxValue], list[AOTInput], ViewAndMutationMeta]: ...
-    def post_compile(
-        self, compiled_fn, aot_config: AOTConfig, *, runtime_metadata: ViewAndMutationMeta
-    ):  # -> _Wrapped[..., Any, ..., Any]:
-        ...
+    def post_compile(self, compiled_fn, aot_config: AOTConfig, *, runtime_metadata: ViewAndMutationMeta): ...
 
 @dataclass
 class AOTSyntheticBaseWrapper(CompilerWrapper):
@@ -155,10 +120,7 @@ class AOTSyntheticBaseWrapper(CompilerWrapper):
         *,
         fw_metadata: ViewAndMutationMeta,
     ) -> tuple[Callable, list[FxValue], list[AOTInput], ViewAndMutationMeta]: ...
-    def post_compile(
-        self, compiled_fn, aot_config: AOTConfig, *, runtime_metadata: ViewAndMutationMeta
-    ):  # -> _Wrapped[..., Any, ..., Any]:
-        ...
+    def post_compile(self, compiled_fn, aot_config: AOTConfig, *, runtime_metadata: ViewAndMutationMeta): ...
 
 def merge_view_inputs(
     aot_config: AOTConfig,
@@ -182,18 +144,12 @@ class CachedAutogradLazyBackwardCompileInfo:
 
 def initialize_rng_states(
     num_rng: int, graphsafe_idx: int, fwd_rng_states: list[torch.Generator], bwd_rng_states: list[torch.Generator]
-):  # -> None:
-
-    ...
-def coerce_to_expected_memory_format(x: torch.Tensor, memory_format: MemoryFormatMeta):  # -> Tensor:
-    ...
+): ...
+def coerce_to_expected_memory_format(x: torch.Tensor, memory_format: MemoryFormatMeta): ...
 
 class AOTDispatchAutograd:
     @staticmethod
-    def process_runtime_tangent(
-        x, meta: PlainTensorMeta | SubclassCreationMeta
-    ):  # -> tuple[Any, list[Any]] | tuple[Tensor, list[Tensor]] | tuple[<subclass of Tensor and TensorWithFlatten>, list[Any]]:
-        ...
+    def process_runtime_tangent(x, meta: PlainTensorMeta | SubclassCreationMeta): ...
     @staticmethod
     def post_compile(
         compiled_fw_func,
@@ -208,16 +164,12 @@ class AOTDispatchAutograd:
         *,
         fw_metadata: ViewAndMutationMeta,
         try_save_cache_entry: Callable | None,
-    ):  # -> Callable[..., list[Any]]:
-        ...
+    ) -> None: ...
 
 @dataclass
 class DebugAssertWrapper(CompilerWrapper):
     flat_requires_grad: list[bool | None] = ...
-    def post_compile(
-        self, compiled_fn, aot_config: AOTConfig, *, runtime_metadata: ViewAndMutationMeta
-    ):  # -> _Wrapped[..., Any, ..., Any]:
-        ...
+    def post_compile(self, compiled_fn, aot_config: AOTConfig, *, runtime_metadata: ViewAndMutationMeta): ...
 
 def pre_compile(
     wrappers: list[CompilerWrapper],
@@ -235,6 +187,4 @@ def post_compile(
     *,
     runtime_metadata: ViewAndMutationMeta,
 ) -> tuple[Callable, ViewAndMutationMeta]: ...
-def make_runtime_safe(fw_metadata: ViewAndMutationMeta, maybe_subclass_meta: SubclassMeta | None):  # -> None:
-
-    ...
+def make_runtime_safe(fw_metadata: ViewAndMutationMeta, maybe_subclass_meta: SubclassMeta | None): ...

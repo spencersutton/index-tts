@@ -1,5 +1,3 @@
-from typing import Optional
-
 import torch
 
 log = ...
@@ -13,5 +11,4 @@ def jagged_scaled_dot_product_attention(
     is_causal=...,
     scale=...,
     enable_gqa=...,
-):  # -> Tensor:
-    ...
+): ...

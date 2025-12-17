@@ -1,7 +1,7 @@
 import abc
 import dataclasses
 from collections.abc import Callable, Iterable, Sequence
-from typing import Any, Optional, Self, TypeVar, Union
+from typing import Any, Self, TypeVar
 
 import sympy
 import torch
@@ -168,11 +168,7 @@ class FreeSymbolsOpsHandler(DefaultHandler):
     def scan(self, dtypes: Any, combine_fn: Any, values: Sequence[Any]) -> tuple[None, ...]: ...
     def sort(self, dtypes: Any, values: Sequence[Any], stable: Any, descending: Any) -> tuple[None, ...]: ...
     def reduction(
-        self,
-        dtype: torch.dtype,
-        src_dtype: torch.dtype,
-        reduction_type: ReductionType,
-        value: None | tuple[None, ...],
+        self, dtype: torch.dtype, src_dtype: torch.dtype, reduction_type: ReductionType, value: None | tuple[None, ...]
     ) -> None | tuple[None, ...]: ...
     def masked(self, mask: Any, body: Callable[..., Any], other: Any) -> None: ...
 

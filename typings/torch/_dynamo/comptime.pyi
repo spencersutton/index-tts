@@ -1,46 +1,10 @@
 from collections.abc import Callable, Sequence
-from typing import Any, Optional, TextIO, Union
+from typing import Any, TextIO
 
 import torch
 from torch._dynamo.symbolic_convert import InstructionTranslatorBase
 from torch._dynamo.variables.base import VariableTracker
 from torch._subclasses.fake_tensor import FakeTensor
-
-"""
-This module provides the public comptime interface to TorchDynamo, enabling users to execute
-arbitrary Python code during symbolic evaluation of their programs.
-
-The comptime interface allows inspection and modification of TorchDynamo's compilation
-process while it is running. This can be useful for:
-
-- Debugging compilation issues
-- Inspecting intermediate state
-- Adding custom guards or graph breaks
-- Analyzing symbolic shapes and values
-
-Example usage:
-
-    import torch
-    from torch._dynamo.comptime import comptime
-
-    def my_model(x):
-        # Print the compile-time known information about x
-        comptime.print(x)
-
-        # Print the current FX graph being constructed
-        comptime.print_graph()
-
-        # Force a value to be treated as static
-        if comptime(lambda ctx: ctx.get_local("x").is_dynamic()):
-            comptime.force_static(x)
-
-        # Add a manual graph break
-        comptime.graph_break()
-
-Note: While this API provides significant flexibility, it intentionally avoids
-exposing internal implementation details of TorchDynamo to maintain compatibility
-across versions.
-"""
 
 class ComptimeVar:
     def __init__(self, v: VariableTracker) -> None: ...

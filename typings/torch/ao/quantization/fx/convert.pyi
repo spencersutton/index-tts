@@ -10,12 +10,7 @@ from torch.fx.graph import Graph, Node
 
 from .custom_config import ConvertCustomConfig
 
-__all__ = [
-    "convert",
-    "convert_custom_module",
-    "convert_standalone_module",
-    "convert_weighted_module",
-]
+__all__ = ["convert", "convert_custom_module", "convert_standalone_module", "convert_weighted_module"]
 SUPPORTED_QDTYPES = ...
 _QSCHEME_TO_CHOOSE_QPARAMS_OP = ...
 

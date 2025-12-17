@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Any, TypeAlias
+from typing import Any
 
 import torch
 from torch.fx import Node

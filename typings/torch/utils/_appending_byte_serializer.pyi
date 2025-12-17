@@ -1,5 +1,5 @@
 from collections.abc import Callable, Iterable
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 T = TypeVar("T")
 _ENCODING_VERSION: int = ...

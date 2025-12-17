@@ -5,7 +5,6 @@ import dataclasses
 import dis
 import enum
 import functools
-import sys
 import types
 import typing
 import weakref
@@ -25,20 +24,7 @@ from collections.abc import (
 from contextlib import AbstractContextManager, contextmanager
 from functools import lru_cache
 from types import CodeType, MethodWrapperType
-from typing import (
-    Any,
-    ClassVar,
-    Generic,
-    Literal,
-    Optional,
-    ParamSpec,
-    TypeAlias,
-    TypeGuard,
-    TypeIs,
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import Any, ClassVar, Literal, ParamSpec, TypeGuard, TypeIs, TypeVar, overload
 
 import numpy as np
 import torch
@@ -52,19 +38,6 @@ from torch._prims_common import DeviceLikeType
 from torch.utils._triton import has_triton_package
 from torch.utils.hooks import RemovableHandle
 
-"""
-Utility functions and classes used throughout the TorchDynamo system.
-
-This module contains a collection of helper utilities used by various parts of Dynamo for:
-- Performance metrics collection and reporting
-- Compilation timing and debugging
-- Graph manipulation and tensor operations
-- Runtime guards and checks
-- Common data structure operations
-- Testing and development tools
-
-This is an internal module that provides shared functionality used across the Dynamo codebase.
-"""
 if typing.TYPE_CHECKING: ...
 if np:
     NP_SUPPORTED_MODULES: tuple[types.ModuleType, ...] = ...
@@ -242,9 +215,7 @@ type _FuncTypes = (
     types.FunctionType | types.BuiltinFunctionType | types.MethodDescriptorType | types.WrapperDescriptorType
 )
 
-def is_function_or_wrapper(
-    value: Any,
-) -> TypeIs[_FuncTypes | torch._ops.OpOverloadPacket | torch._ops.OpOverload]: ...
+def is_function_or_wrapper(value: Any) -> TypeIs[_FuncTypes | torch._ops.OpOverloadPacket | torch._ops.OpOverload]: ...
 def is_function(value: Any) -> TypeIs[_FuncTypes]: ...
 
 cmp_name_to_op_mapping = ...

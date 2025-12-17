@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Any, TypeAlias, Union
+from typing import Any
 
 from cutlass_library import DataType, EpilogueScheduleType, TileDescription
 from sympy import Expr

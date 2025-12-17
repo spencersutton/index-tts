@@ -1,29 +1,18 @@
-import inspect
-from collections import defaultdict
 from collections.abc import Callable, Sequence
-from functools import lru_cache, partial, wraps
-from itertools import chain
-from typing import TYPE_CHECKING, Optional, ParamSpec, TypeVar, Union
+from typing import ParamSpec, TypeVar
 
 import torch
-import torch._decomp.decompositions
-import torch._refs
-import torch.library
-from torch._ops import HigherOrderOperator, OperatorBase, OpOverload, OpOverloadPacket
-from torch._prims_common import CustomOutParamAnnotation
-from torch._subclasses.functional_tensor import FunctionalTensor
+from torch._ops import OpOverload, OpOverloadPacket
 from torch.export.decomp_utils import CustomDecompTable
-from torch.utils import _pytree as pytree
 
-if TYPE_CHECKING: ...
 __all__ = [
-    "decomposition_table",
-    "pre_autograd_decomposition_table",
-    "meta_table",
-    "register_decomposition",
-    "get_decompositions",
-    "core_aten_decompositions",
     "_should_decompose_because_unsafe_op",
+    "core_aten_decompositions",
+    "decomposition_table",
+    "get_decompositions",
+    "meta_table",
+    "pre_autograd_decomposition_table",
+    "register_decomposition",
 ]
 _T = TypeVar("_T")
 _P = ParamSpec("_P")

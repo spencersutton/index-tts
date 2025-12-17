@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from functools import lru_cache
-from typing import Any, TypeAlias
+from typing import Any
 
 import torch
 import torch._C

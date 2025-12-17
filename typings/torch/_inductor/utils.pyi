@@ -15,26 +15,20 @@ from collections.abc import (
     ValuesView,
 )
 from typing import (
-    TYPE_CHECKING,
     Any,
     Concatenate,
-    Generic,
     Literal,
     NamedTuple,
-    Optional,
     ParamSpec,
     Protocol,
     Self,
-    TypeAlias,
     TypeGuard,
     TypeVar,
-    Union,
     dataclass_transform,
 )
 
 import sympy
 import torch
-from torch import SymInt
 from torch._prims_common import ELEMENTWISE_TYPE_PROMOTION_KIND
 from torch.fx import GraphModule
 from torch.fx.experimental.symbolic_shapes import IterateExprs, ShapeEnv
@@ -51,7 +45,7 @@ from .output_code import CompiledFxGraph
 from .scheduler import BaseSchedulerNode, SchedulerBuffer
 
 OPTIMUS_EXCLUDE_POST_GRAD = ...
-if TYPE_CHECKING: ...
+
 GPU_TYPES = ...
 T = TypeVar("T")
 
@@ -62,8 +56,8 @@ _IS_WINDOWS = ...
 log = ...
 perf_hint_log = ...
 _T = TypeVar("_T")
-VarRanges = dict[sympy.Expr, sympy.Expr]
-InputType = Optional[torch.Tensor | int | torch.SymInt]
+type VarRanges = dict[sympy.Expr, sympy.Expr]
+type InputType = torch.Tensor | int | torch.SymInt | None
 GPU_KERNEL_BIN_EXTS = ...
 GPU_ALIGN_BYTES = ...
 ALIGNMENT = ...
@@ -119,7 +113,7 @@ def tuple_sorted[_T](x: tuple[_T, ...]) -> list[_T]: ...
 
 P = ParamSpec("P")
 RV = TypeVar("RV", covariant=True)
-FN_TYPE = Callable[Concatenate[Any, P], RV]
+type FN_TYPE[**P, RV] = Callable[Concatenate[Any, P], RV]
 
 class CachedMethod[**P, RV](Protocol):
     @staticmethod
@@ -462,8 +456,8 @@ class CUDAGraphWrapperMetadata:
     num_partitions: int
     partition_index: int
 
-PartitionFnType = Callable[..., Any]
-CUDAGraphWrapperType = Callable[[PartitionFnType, CUDAGraphWrapperMetadata], PartitionFnType]
+type PartitionFnType = Callable[..., Any]
+type CUDAGraphWrapperType = Callable[[PartitionFnType, CUDAGraphWrapperMetadata], PartitionFnType]
 
 class CUDAGraphWrapper:
     wrapper: CUDAGraphWrapperType | None = ...

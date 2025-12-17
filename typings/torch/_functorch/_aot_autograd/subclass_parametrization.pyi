@@ -1,6 +1,6 @@
 import dataclasses
 from collections.abc import Iterable
-from typing import Any, Union
+from typing import Any
 
 import torch
 

@@ -2,12 +2,7 @@ from abc import ABC, abstractmethod
 from types import ModuleType
 from typing import Any
 
-__all__ = [
-    "Importer",
-    "ObjMismatchError",
-    "ObjNotFoundError",
-    "OrderedImporter",
-]
+__all__ = ["Importer", "ObjMismatchError", "ObjNotFoundError", "OrderedImporter"]
 log = ...
 
 class ObjNotFoundError(Exception): ...

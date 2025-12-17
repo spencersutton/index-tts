@@ -851,12 +851,7 @@ def scaled_dot_product_attention(
     scale: float | None = None,
     enable_gqa: bool = False,
 ) -> Tensor: ...
-def pad(
-    input: Tensor,
-    pad: Sequence[int],
-    mode: str = "constant",
-    value: float | None = None,
-) -> Tensor: ...
+def pad(input: Tensor, pad: Sequence[int], mode: str = "constant", value: float | None = None) -> Tensor: ...
 def gelu(input: Tensor, approximate: str = "none") -> Tensor: ...
 def avg_pool1d(
     input: Tensor,

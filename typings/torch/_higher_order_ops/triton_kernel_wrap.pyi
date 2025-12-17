@@ -1,6 +1,6 @@
 import dataclasses
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Never, Optional, TypeAlias, Union
+from typing import TYPE_CHECKING, Any, Never
 
 import sympy
 from torch import SymInt
@@ -24,18 +24,8 @@ if TYPE_CHECKING:
     type TritonKernelType = Autotuner | JITFunction
     type TritonAutotunerType = Autotuner
 log = ...
-type TMAExperimentalMetadata = tuple[
-    str,
-    tuple[
-        list[IntLikeType],
-        list[IntLikeType],
-        IntLikeType,
-    ],
-]
-type TMAStableMetadata = tuple[
-    str,
-    tuple[list[IntLikeType],],
-]
+type TMAExperimentalMetadata = tuple[str, tuple[list[IntLikeType], list[IntLikeType], IntLikeType]]
+type TMAStableMetadata = tuple[str, tuple[list[IntLikeType],]]
 
 def create_tma_experimental_metadata(
     dims: list[IntLikeType], block_dims: list[IntLikeType], element_size: IntLikeType
@@ -48,10 +38,7 @@ def maybe_unpack_tma_stable_metadata(
     tma_meta: TMAExperimentalMetadata | TMAStableMetadata,
 ) -> tuple[list[IntLikeType]] | None: ...
 
-type TMADescriptorMetadata = dict[
-    str,
-    TMAExperimentalMetadata | TMAStableMetadata,
-]
+type TMADescriptorMetadata = dict[str, TMAExperimentalMetadata | TMAStableMetadata]
 
 class KernelSideTable:
     id_to_kernel: dict[int, TritonKernelType] = ...

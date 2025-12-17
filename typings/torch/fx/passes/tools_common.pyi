@@ -5,13 +5,7 @@ import torch
 import torch.fx
 from torch.fx._compatibility import compatibility
 
-__all__ = [
-    "FxNetAccFusionsFinder",
-    "get_acc_ops_name",
-    "get_node_target",
-    "is_node_output_tensor",
-    "legalize_graph",
-]
+__all__ = ["FxNetAccFusionsFinder", "get_acc_ops_name", "get_node_target", "is_node_output_tensor", "legalize_graph"]
 type Tensors = tuple[torch.Tensor] | list[torch.Tensor]
 type TensorOrTensors = torch.Tensor | Tensors
 type NodeList = list[torch.fx.Node]
@@ -29,7 +23,6 @@ def is_node_output_tensor(node: torch.fx.Node) -> bool: ...
 @compatibility(is_backward_compatible=False)
 class FxNetAccFusionsFinder:
     def __init__(self, module: torch.fx.GraphModule, acc_nodes: NodeSet) -> None: ...
-
     @dataclass
     class FusionGroup:
         top_node_idx: int
@@ -39,10 +32,7 @@ class FxNetAccFusionsFinder:
         def add_node(self, node) -> None: ...
 
     def recursive_add_node(
-        self,
-        fusion_group: FxNetAccFusionsFinder.FusionGroup,
-        inputs: NodeSet | NodeList,
-        visited: NodeSet | None = ...,
+        self, fusion_group: FxNetAccFusionsFinder.FusionGroup, inputs: NodeSet | NodeList, visited: NodeSet | None = ...
     ) -> bool: ...
     def __call__(self) -> dict[torch.fx.Node, NodeSet]: ...
 

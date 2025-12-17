@@ -1,4 +1,4 @@
-from typing import Any, Optional, Self, Union, final
+from typing import Any, Self, final
 
 from .base import VariableTracker
 from .tensor import SymNodeVariable

@@ -1,25 +1,19 @@
 import os
 from collections.abc import Callable, Collection, Mapping, Sequence
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import torch
 from torch._C import _onnx as _C_onnx
-from torch._C._onnx import (
-    OperatorExportTypes as OperatorExportTypes,
-)
-from torch._C._onnx import (
-    TensorProtoDataType as TensorProtoDataType,
-)
-from torch._C._onnx import (
-    TrainingMode as TrainingMode,
-)
+from torch._C._onnx import OperatorExportTypes as OperatorExportTypes
+from torch._C._onnx import TensorProtoDataType as TensorProtoDataType
+from torch._C._onnx import TrainingMode as TrainingMode
 
 from . import errors, ops
 from ._internal.exporter._onnx_program import ONNXProgram
 from .errors import OnnxExporterError
 
 __all__ = ["ONNXProgram", "OnnxExporterError", "errors", "export", "is_in_onnx_export", "ops"]
-if TYPE_CHECKING: ...
+
 producer_name = ...
 producer_version = ...
 

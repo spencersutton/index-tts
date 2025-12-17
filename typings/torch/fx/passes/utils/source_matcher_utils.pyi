@@ -6,11 +6,7 @@ from torch.fx._compatibility import compatibility
 from torch.fx.graph import Graph
 from torch.fx.node import Node
 
-__all__ = [
-    "SourcePartition",
-    "check_subgraphs_connected",
-    "get_source_partitions",
-]
+__all__ = ["SourcePartition", "check_subgraphs_connected", "get_source_partitions"]
 logger = ...
 
 @compatibility(is_backward_compatible=False)
@@ -24,9 +20,7 @@ class SourcePartition:
 
 @compatibility(is_backward_compatible=False)
 def get_source_partitions(
-    graph: Graph,
-    wanted_sources: list[Any],
-    filter_fn: Callable[[Node], bool] | None = ...,
+    graph: Graph, wanted_sources: list[Any], filter_fn: Callable[[Node], bool] | None = ...
 ) -> dict[Any, list[SourcePartition]]: ...
 @compatibility(is_backward_compatible=False)
 def check_subgraphs_connected(subgraph1: SourcePartition, subgraph2: SourcePartition) -> bool: ...

@@ -4,9 +4,8 @@ import typing
 from collections.abc import Callable
 from dataclasses import dataclass
 from types import CellType, CodeType, FunctionType, ModuleType
-from typing import Any, Optional, ParamSpec, TypeVar, Union
+from typing import Any, ParamSpec, TypeVar
 
-import numpy as np
 import torch
 from torch._C._dynamo.guards import GlobalStateGuard
 from torch._guards import CompileId
@@ -24,28 +23,6 @@ from .symbolic_convert import DistributedState, SpeculationLog
 from .types import BytecodeHook, CacheEntry, ConvertFrameReturn, DynamoFrameType
 from .variables.builder import FrameStateSizeEntry
 
-"""
-This module implements TorchDynamo's core frame conversion functionality, transforming Python
-frames into FX graphs. It handles:
-
-- Frame analysis and bytecode transformation
-- Guard creation and management for dynamic behaviors
-- Cache management for recompilation
-- Error handling and fallback mechanisms
-
-Key classes:
-- ConvertFrame: Main entry point for frame conversion with error handling
-- ConvertFrameAssert: Implements core frame to graph conversion logic
-- Tracker: Tracks input/output code objects during conversion
-- CatchErrorsWrapper: Provides error handling and suppression logic
-
-The conversion process preserves program semantics while enabling optimizations
-through torch.compile() and related systems.
-
-NOTE: _torchdynamo_orig_backend is used for convert frame wrappers to identify the inner wrapped function.
-By going down the _torchdynamo_orig_backend chain, one can recover the original unwrapped backend,
-which is checked for during the Dynamo cache lookup.
-"""
 np: ModuleType | None
 if typing.TYPE_CHECKING: ...
 log = ...
@@ -91,13 +68,19 @@ class ConvertFrameBox:
 
 def get_compile_id(frame_state: dict[str, int | FrameStateSizeEntry]) -> CompileId: ...
 
+@dataclass
+class ConvertFrameBox:
+    error_on_graph_break: bool | None = ...
+
+def get_compile_id(frame_state: dict[str, int | FrameStateSizeEntry]) -> CompileId: ...
+
 class ConvertFrameAssert:
     def __init__(
         self,
         compiler_fn: CompilerFn,
         one_graph: bool = ...,
         export: bool = ...,
-        export_constraints: typing.Never | None = ...,
+        export_constraints: None = ...,
         package: CompilePackage | None = ...,
     ) -> None: ...
     def __call__(
@@ -114,7 +97,7 @@ def convert_frame_assert(
     compiler_fn: CompilerFn,
     one_graph: bool = ...,
     export: bool = ...,
-    export_constraints: typing.Never | None = ...,
+    export_constraints: None = ...,
     package: CompilePackage | None = ...,
 ) -> ConvertFrameAssert: ...
 
@@ -136,7 +119,7 @@ def trace_frame(
     code_options: dict[str, object],
     *,
     export: bool = ...,
-    export_constraints: typing.Never | None = ...,
+    export_constraints: None = ...,
     frame_state: dict[str, int | FrameStateSizeEntry] | None = ...,
     distributed_state: DistributedState | None = ...,
     package: CompilePackage | None = ...,
@@ -188,7 +171,7 @@ def compile_frame(
     restart_reasons: set[str],
     *,
     export: bool = ...,
-    export_constraints: typing.Never | None = ...,
+    export_constraints: None = ...,
     frame_state: dict[str, int | FrameStateSizeEntry] | None = ...,
     distributed_state: DistributedState | None = ...,
     package: CompilePackage | None = ...,
@@ -225,10 +208,7 @@ def should_skip_due_to_torch_dispatch_mode() -> bool: ...
 class CatchErrorsWrapper:
     def __init__(self, callback: ConvertFrameProtocol, hooks: Hooks) -> None: ...
     def __call__(
-        self,
-        frame: DynamoFrameType,
-        cache_entry: CacheEntry | None,
-        frame_state: dict[str, int | FrameStateSizeEntry],
+        self, frame: DynamoFrameType, cache_entry: CacheEntry | None, frame_state: dict[str, int | FrameStateSizeEntry]
     ) -> ConvertFrameReturn: ...
 
 def catch_errors_wrapper(callback: ConvertFrameProtocol, hooks: Hooks) -> CatchErrorsWrapper: ...

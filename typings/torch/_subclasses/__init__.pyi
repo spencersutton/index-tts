@@ -1,4 +1,3 @@
-import torch
 from torch._subclasses.fake_tensor import (
     DynamicOutputShapeException,
     FakeTensor,
@@ -8,9 +7,9 @@ from torch._subclasses.fake_tensor import (
 from torch._subclasses.fake_utils import CrossRefFakeMode
 
 __all__ = [
+    "CrossRefFakeMode",
+    "DynamicOutputShapeException",
     "FakeTensor",
     "FakeTensorMode",
     "UnsupportedFakeTensorException",
-    "DynamicOutputShapeException",
-    "CrossRefFakeMode",
 ]

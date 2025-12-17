@@ -1,4 +1,4 @@
-from typing import Any, TypeAlias, Union
+from typing import Any
 
 import triton
 from triton import Config, knobs
@@ -49,19 +49,19 @@ def cc_warp_size(cc: str | int) -> int: ...
 
 autograd_profiler = ...
 __all__ = [
-    "Config",
-    "CompiledKernel",
-    "OutOfResources",
-    "KernelInterface",
-    "PTXASError",
     "ASTSource",
+    "CompiledKernel",
+    "Config",
     "GPUTarget",
-    "tl",
+    "KernelInterface",
+    "OutOfResources",
+    "PTXASError",
     "_log2",
-    "libdevice",
-    "math",
-    "triton",
     "cc_warp_size",
     "knobs",
+    "libdevice",
+    "math",
+    "tl",
+    "triton",
     "triton_key",
 ]

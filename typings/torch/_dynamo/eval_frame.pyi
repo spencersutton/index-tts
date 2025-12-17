@@ -6,7 +6,7 @@ import types
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
+from typing import Any, NamedTuple
 from unittest.mock import patch
 
 import torch
@@ -17,35 +17,12 @@ from torch._dynamo.package import CompilePackage
 from torch._dynamo.repro.after_dynamo import WrapBackendDebug
 from torch._subclasses import fake_tensor
 from torch.export.dynamic_shapes import Constraint
-from torch.fx import GraphModule
 from torch.fx.node import Argument, Node, Target
 
 from .backends.registry import CompilerFn
 from .hooks import Hooks
 from .types import DynamoCallback
 
-"""
-This module implements the core frame evaluation handler for TorchDynamo's compilation system.
-The eval frame handler intercepts Python bytecode execution at runtime to enable dynamic
-compilation and optimization of PyTorch code.
-
-Key components defined here:
-- Frame evaluation handlers that intercept and analyze Python execution frames
-- Guards management for tracking dependencies and invalidating compiled code
-- Optimization contexts and decorators (optimize, run_once, disable, etc.)
-- Export functionality for saving optimized graphs
-- Backend compiler integrations and callback management
-
-Functions in this file are responsible for modifying the eval frame handler at RUNTIME.
-Therefore, all functions in this file are hot and performance-critical. Functions that
-only execute at compile time should be placed in torch._dynamo.convert_frame.
-
-The eval frame handler is the core mechanism that enables TorchDynamo to dynamically
-intercept, analyze and optimize PyTorch code during execution. It works by registering
-a custom frame evaluation function that gets called for every Python frame, allowing
-us to detect PyTorch operations and trigger compilation as needed.
-"""
-if TYPE_CHECKING: ...
 log = ...
 always_optimize_code_objects = ...
 null_context = contextlib.nullcontext
@@ -122,10 +99,7 @@ class _TorchDynamoContext:
     ) -> None: ...
     def __enter__(self) -> None: ...
     def __exit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: types.TracebackType | None,
+        self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: types.TracebackType | None
     ) -> bool | None: ...
     def __call__(self, fn: Any) -> Any: ...
 

@@ -1,8 +1,5 @@
-from typing import TYPE_CHECKING
-
 from matplotlib.figure import Figure
 
-if TYPE_CHECKING: ...
 __all__ = ["FileWriter", "SummaryWriter"]
 
 class FileWriter:

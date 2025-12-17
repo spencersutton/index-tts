@@ -1,11 +1,10 @@
 import dataclasses
 from collections.abc import Callable
 from enum import Enum
-from typing import TYPE_CHECKING, Any, TypeAlias
+from typing import Any
 
 from torch.fx.experimental.symbolic_shapes import StrictMinMaxConstraint
 
-if TYPE_CHECKING: ...
 __all__ = ["AdditionalInputs", "Constraint", "Dim", "dims", "refine_dynamic_shapes_from_suggested_fixes"]
 log = ...
 

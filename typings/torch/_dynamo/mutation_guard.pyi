@@ -1,23 +1,9 @@
 from typing import Any
 
 import torch.nn
-from torch.nn import Module
 
 from .utils import ExactWeakKeyDictionary
 
-"""Mutation tracking and dynamic module detection system for Dynamo.
-
-This module provides mechanisms to track and respond to mutations in PyTorch modules
-and detect dynamically created or modified modules.
-
-Key components:
-- MutationTracker: Tracks mutations to objects and invalidates associated cached code
-- GenerationTracker: Tracks module creation timing to identify dynamic instances
-- Patching system for nn.Module to detect mutations and dynamic creation
-
-The system ensures that Dynamo's optimizations remain valid by detecting and responding
-to runtime changes in module state and structure.
-"""
 unpatched_nn_module_init = ...
 
 class MutationTracker:

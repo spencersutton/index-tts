@@ -5,7 +5,7 @@ import types
 import warnings
 from collections.abc import Generator, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional, Self, final, override
+from typing import Any, Self, final, override
 
 import torch.fx
 from torch._inductor.metrics import CachedMetricsDeltas
@@ -15,10 +15,7 @@ from torch._subclasses import FakeTensorMode
 from torch.fx import GraphModule
 from torch.utils._ordered_set import OrderedSet
 
-from . import config
 from .compile_fx import FxCompile, _CompileFxKwargs
-
-if TYPE_CHECKING: ...
 
 @dataclass
 class _VirtualizedSerializer:

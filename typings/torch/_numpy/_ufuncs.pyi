@@ -1,5 +1,3 @@
-from typing import Optional
-
 from ._normalizations import (
     ArrayLike,
     ArrayLikeOrScalar,
@@ -13,9 +11,7 @@ from ._normalizations import (
 _binary = ...
 NEP50_FUNCS = ...
 
-def deco_binary_ufunc(torch_func):  # -> Callable[..., Tensor | Any]:
-
-    ...
+def deco_binary_ufunc(torch_func): ...
 @normalizer
 def matmul(
     x1: ArrayLike,
@@ -31,8 +27,7 @@ def matmul(
     extobj: NotImplementedType = ...,
     axes: NotImplementedType = ...,
     axis: NotImplementedType = ...,
-):  # -> Tensor:
-    ...
+): ...
 @normalizer
 def ldexp(
     x1: ArrayLikeOrScalar,
@@ -47,8 +42,7 @@ def ldexp(
     subok: NotImplementedType = ...,
     signature: NotImplementedType = ...,
     extobj: NotImplementedType = ...,
-):  # -> Tensor:
-    ...
+): ...
 @normalizer
 def divmod(
     x1: ArrayLike,
@@ -65,17 +59,13 @@ def divmod(
     subok: NotImplementedType = ...,
     signature: NotImplementedType = ...,
     extobj: NotImplementedType = ...,
-):  # -> tuple[Tensor | Any, Tensor | Any]:
-    ...
-def modf(x, /, *args, **kwds):  # -> tuple[Tensor | Any, Tensor | Any]:
-    ...
+): ...
+def modf(x, /, *args, **kwds): ...
 
 _binary = ...
 _unary = ...
 _fp_unary = ...
 
-def deco_unary_ufunc(torch_func):  # -> Callable[..., Tensor | Any]:
-
-    ...
+def deco_unary_ufunc(torch_func): ...
 
 __all__ = _binary + _unary

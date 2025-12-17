@@ -2,7 +2,7 @@ import atexit
 import dataclasses
 from abc import abstractmethod
 from collections.abc import Callable
-from typing import Any, Generic, Optional, TypeAlias, TypeVar, Union
+from typing import Any, TypeVar
 
 import redis
 from rfe.scubadata.scubadata_py3 import Sample as Sample_
@@ -29,7 +29,7 @@ class RemoteCacheSerde[T, U]:
     @abstractmethod
     def decode(self, data: _U) -> _T: ...
 
-JsonDataTy = Optional[int | float | str | bool | dict[str, JsonDataTy] | list[JsonDataTy]]
+type JsonDataTy = int | float | str | bool | dict[str, JsonDataTy] | list[JsonDataTy] | None
 
 class RemoteCacheJsonSerde(RemoteCacheSerde[JsonDataTy, bytes]):
     def encode(self, data: JsonDataTy) -> bytes: ...

@@ -1,5 +1,3 @@
-from typing import Optional
-
 import torch
 from torch.library import impl
 
@@ -191,9 +189,7 @@ def quantize_per_token(
     quant_min: int,
     quant_max: int,
     dtype: torch.dtype,
-):  # -> Tensor:
-
-    ...
+): ...
 @impl(quantized_decomposed_lib, "quantize_per_token", "Meta")
 def quantize_per_token_meta(
     input: torch.Tensor,
@@ -202,8 +198,7 @@ def quantize_per_token_meta(
     quant_min: int,
     quant_max: int,
     dtype: torch.dtype,
-):  # -> Tensor:
-    ...
+): ...
 @impl(quantized_decomposed_lib, "dequantize_per_token", "CompositeExplicitAutograd")
 def dequantize_per_token(
     input: torch.Tensor,
@@ -213,9 +208,7 @@ def dequantize_per_token(
     quant_max: int,
     dtype: torch.dtype,
     output_dtype: torch.dtype = ...,
-):  # -> Tensor:
-
-    ...
+): ...
 @impl(quantized_decomposed_lib, "dequantize_per_token", "Meta")
 def dequantize_per_token_meta(
     input: torch.Tensor,
@@ -225,8 +218,7 @@ def dequantize_per_token_meta(
     quant_max: int,
     dtype: torch.dtype,
     output_dtype: torch.dtype = ...,
-):  # -> Tensor:
-    ...
+): ...
 @impl(quantized_decomposed_lib, "quantize_per_channel_group", "CompositeExplicitAutograd")
 def quantize_per_channel_group(
     input: torch.Tensor,
@@ -236,8 +228,7 @@ def quantize_per_channel_group(
     quant_max: int,
     dtype: torch.dtype,
     group_size=...,
-):  # -> Tensor:
-    ...
+): ...
 @impl(quantized_decomposed_lib, "quantize_per_channel_group", "Meta")
 def quantize_per_channel_group_meta(
     input: torch.Tensor,
@@ -247,9 +238,7 @@ def quantize_per_channel_group_meta(
     quant_max: int,
     dtype: torch.dtype,
     group_size=...,
-):  # -> Tensor:
-
-    ...
+): ...
 @impl(quantized_decomposed_lib, "dequantize_per_channel_group", "CompositeExplicitAutograd")
 def dequantize_per_channel_group(
     w_int8: torch.Tensor,
@@ -260,17 +249,13 @@ def dequantize_per_channel_group(
     dtype: torch.dtype,
     group_size: int = ...,
     output_dtype: torch.dtype = ...,
-):  # -> Tensor:
-
-    ...
+): ...
 
 class FakeQuantPerChannel(torch.autograd.Function):
     @staticmethod
-    def forward(ctx, input, scales, zero_points, axis, quant_min, quant_max):  # -> Tensor:
-        ...
+    def forward(ctx, input, scales, zero_points, axis, quant_min, quant_max): ...
     @staticmethod
-    def backward(ctx, gy):  # -> tuple[Any, None, None, None, None, None]:
-        ...
+    def backward(ctx, gy): ...
 
 @impl(quantized_decomposed_lib, "fake_quant_per_channel", "Autograd")
 def fake_quant_per_channel(

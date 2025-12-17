@@ -1,6 +1,6 @@
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager
-from typing import Any, Optional
+from typing import Any
 
 import sympy
 import torch

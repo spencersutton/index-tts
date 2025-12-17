@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from torch._subclasses import FakeTensorMode
 from torch.fx.experimental.symbolic_shapes import ShapeEnv

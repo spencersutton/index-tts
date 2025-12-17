@@ -1,6 +1,6 @@
 import contextlib
 from collections.abc import Callable, Generator, Iterable
-from typing import Any, Optional, Union
+from typing import Any
 
 from torch.utils._exposed_in import exposed_in
 

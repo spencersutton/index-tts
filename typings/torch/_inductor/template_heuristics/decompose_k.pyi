@@ -1,13 +1,9 @@
-from typing import TYPE_CHECKING
-
 import torch
 
 from ..kernel.mm import decompose_k_subgraph_template
 from .base import TemplateConfigHeuristics
 from .gemm import GemmMaxAutotuneTemplateConfigHeuristics
 from .registry import register_template_heuristic
-
-if TYPE_CHECKING: ...
 
 @register_template_heuristic(decompose_k_subgraph_template.uid, None, op_name="mm")
 class EmptyDecomposeKConfigHeuristics(TemplateConfigHeuristics): ...

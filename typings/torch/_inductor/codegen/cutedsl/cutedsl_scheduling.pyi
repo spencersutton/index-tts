@@ -20,6 +20,4 @@ class CuteDSLScheduling(BaseScheduling):
         template_node: BaseSchedulerNode,
         epilogue_nodes: Sequence[BaseSchedulerNode],
         prologue_nodes: Sequence[BaseSchedulerNode],
-    ):  # -> None:
-
-        ...
+    ): ...

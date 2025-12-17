@@ -1,9 +1,9 @@
 import weakref
 from collections.abc import Iterable
-from typing import Any, NoReturn, Optional
+from typing import Any, NoReturn
 
 import torch
-import torch.nn as nn
+from torch import nn
 from torch.distributed._composable_state import _State
 
 from .contract import contract

@@ -1,4 +1,4 @@
-from typing import Any, Generic, TypeVar, overload
+from typing import Any, TypeVar, overload
 
 import torch
 from torch._C._distributed_c10d import Store

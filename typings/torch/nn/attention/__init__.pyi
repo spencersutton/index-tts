@@ -4,7 +4,7 @@ from typing import Any
 
 from torch._C import _SDPBackend as SDPBackend
 
-__all__: list[str] = ["SDPBackend", "sdpa_kernel", "WARN_FOR_UNFUSED_KERNELS"]
+__all__: list[str] = ["WARN_FOR_UNFUSED_KERNELS", "SDPBackend", "sdpa_kernel"]
 WARN_FOR_UNFUSED_KERNELS = ...
 _backend_names = ...
 

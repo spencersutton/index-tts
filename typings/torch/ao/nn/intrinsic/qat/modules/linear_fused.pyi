@@ -5,14 +5,7 @@ __all__ = ["LinearBn1d"]
 
 class LinearBn1d(nn.modules.linear.Linear, nni._FusedModule):
     def __init__(
-        self,
-        in_features,
-        out_features,
-        bias=...,
-        eps=...,
-        momentum=...,
-        freeze_bn=...,
-        qconfig=...,
+        self, in_features, out_features, bias=..., eps=..., momentum=..., freeze_bn=..., qconfig=...
     ) -> None: ...
     def reset_running_stats(self) -> None: ...
     def reset_bn_parameters(self) -> None: ...

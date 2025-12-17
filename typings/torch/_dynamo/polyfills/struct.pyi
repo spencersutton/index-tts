@@ -4,9 +4,6 @@ from typing import Any
 
 from ..decorators import substitute_in_graph
 
-"""
-Python polyfills for struct
-"""
 __all__ = ["pack", "unpack"]
 
 @substitute_in_graph(struct.pack, can_constant_fold_through=True)

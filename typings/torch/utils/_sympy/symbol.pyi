@@ -1,21 +1,7 @@
 from collections.abc import Iterable
 from enum import Enum
-from typing import Union
 
 import sympy
-
-"""
-This file contains canonical definitions for our symbol naming conventions,
-across torch.fx.experimental.symbolic_shapes and torch._inductor.  The
-intention is:
-
-1. To make it easily greppable where all the sites we use a prefix are
-2. Make it possible to easily tell if we can introduce a new prefix without
-   introducing a conflict
-
-You can occasionally test if prefixes have been hardcoded by renaming prefixes
-in this file and seeing what breaks.
-"""
 
 class SymT(Enum):
     SIZE = ...

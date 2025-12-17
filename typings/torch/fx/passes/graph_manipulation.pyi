@@ -5,21 +5,11 @@ from torch.fx._compatibility import compatibility
 from torch.fx.graph_module import GraphModule
 from torch.fx.node import Node, Target
 
-__all__ = [
-    "get_size_of_all_nodes",
-    "get_size_of_node",
-    "get_tensor_meta",
-    "replace_target_nodes_with",
-    "size_bytes",
-]
+__all__ = ["get_size_of_all_nodes", "get_size_of_node", "get_tensor_meta", "replace_target_nodes_with", "size_bytes"]
 
 @compatibility(is_backward_compatible=False)
 def replace_target_nodes_with(
-    fx_module: GraphModule,
-    old_op: str,
-    old_target: Target,
-    new_op: str,
-    new_target: Target,
+    fx_module: GraphModule, old_op: str, old_target: Target, new_op: str, new_target: Target
 ) -> None: ...
 
 @compatibility(is_backward_compatible=False)

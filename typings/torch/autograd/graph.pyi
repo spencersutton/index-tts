@@ -1,14 +1,13 @@
 import abc
 import contextlib
 from collections.abc import Callable, Generator, Iterable, Sequence
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, TypeAlias
+from typing import Any, Literal, NamedTuple
 
 import torch
 from torch._ops import OpOverload
 from torch.utils._python_dispatch import TorchDispatchMode
 from torch.utils.hooks import RemovableHandle
 
-if TYPE_CHECKING: ...
 __all__ = [
     "GradientEdge",
     "Node",

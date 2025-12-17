@@ -1,34 +1,12 @@
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 
 import torch
-from torch._C import (
-    _cuda_getCurrentRawStream as get_cuda_stream,
-)
-from torch._C import (
-    _mtia_getCurrentRawStream as get_mtia_stream,
-)
-from torch._C import (
-    _xpu_getCurrentRawStream as get_xpu_stream,
-)
+from torch._C import _cuda_getCurrentRawStream as get_cuda_stream
+from torch._C import _mtia_getCurrentRawStream as get_mtia_stream
+from torch._C import _xpu_getCurrentRawStream as get_xpu_stream
 
-"""
-Device abstraction layer for TorchDynamo and Inductor backends.
-
-This module provides a unified interface for different hardware backends (CUDA, XPU,
-CPU, MPS, MTIA) through a common device interface. Key components include:
-
-- DeviceInterface: Base class defining the common API for all device types
-- Device-specific implementations: CudaInterface, XpuInterface, CpuInterface, MpsInterface, MtiaInterface
-- Device registration system for managing available backends
-- Worker APIs for multi-processing scenarios
-- Stream and event management across different devices
-- Device property caching for worker processes
-
-The abstraction layer enables device-agnostic code in TorchDynamo while allowing
-specialized implementations for each hardware backend's unique features.
-"""
 get_cuda_stream: Callable[[int], int] | None
 if torch.cuda._is_compiled(): ...
 else:

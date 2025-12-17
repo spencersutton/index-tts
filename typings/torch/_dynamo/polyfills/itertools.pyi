@@ -1,14 +1,9 @@
 import itertools
-import sys
 from collections.abc import Callable, Iterable, Iterator
-from typing import TYPE_CHECKING, Optional, TypeAlias, TypeVar, overload
+from typing import TypeVar, overload
 
 from ..decorators import substitute_in_graph
 
-"""
-Python polyfills for itertools
-"""
-if TYPE_CHECKING: ...
 __all__ = [
     "accumulate",
     "chain",

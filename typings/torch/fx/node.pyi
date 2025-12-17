@@ -1,5 +1,5 @@
 from collections.abc import Callable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional, ParamSpec, TypeAlias, TypeVar, Union
+from typing import Any, ParamSpec, TypeVar
 
 import torch
 from torch._C import _NodeBase
@@ -9,30 +9,29 @@ from .._ops import ops as _ops
 from ._compatibility import compatibility
 from .graph import Graph
 
-if TYPE_CHECKING: ...
-__all__ = ["Node", "map_arg", "map_aggregate", "has_side_effect"]
+__all__ = ["Node", "has_side_effect", "map_aggregate", "map_arg"]
 log = ...
-BaseArgumentTypes = Union[
-    str,
-    int,
-    float,
-    bool,
-    complex,
-    torch.dtype,
-    torch.Tensor,
-    torch.device,
-    torch.memory_format,
-    torch.layout,
-    torch._ops.OpOverload,
-    torch.SymInt,
-    torch.SymBool,
-    torch.SymFloat,
-]
+type BaseArgumentTypes = (
+    str
+    | int
+    | float
+    | bool
+    | complex
+    | torch.dtype
+    | torch.Tensor
+    | torch.device
+    | torch.memory_format
+    | torch.layout
+    | torch._ops.OpOverload
+    | torch.SymInt
+    | torch.SymBool
+    | torch.SymFloat
+)
 base_types = ...
 type Target = Callable[..., Any] | str
-Argument = Optional[
-    tuple[Argument, ...] | Sequence[Argument] | Mapping[str, Argument] | slice | range | Node | BaseArgumentTypes
-]
+type Argument = (
+    tuple[Argument, ...] | Sequence[Argument] | Mapping[str, Argument] | slice | range | Node | BaseArgumentTypes | None
+)
 ArgumentT = TypeVar("ArgumentT", bound=Argument)
 _P = ParamSpec("_P")
 _R = TypeVar("_R")

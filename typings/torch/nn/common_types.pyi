@@ -1,8 +1,4 @@
-from typing import TypeVar
-
 from torch import Tensor
-
-# ruff: noqa: PYI042,PYI047
 
 # Create some useful type aliases
 

@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Optional
 
 import torch
 import torch.distributed.tensor._dtensor_spec as dtensor_spec
@@ -9,8 +8,7 @@ from torch.distributed.distributed_c10d import Work
 
 logger = ...
 
-def shard_dim_alltoall(input, gather_dim, shard_dim, mesh, mesh_dim):  # -> Any:
-    ...
+def shard_dim_alltoall(input, gather_dim, shard_dim, mesh, mesh_dim): ...
 def mesh_scatter(
     output: torch.Tensor,
     scatter_list: list[torch.Tensor],

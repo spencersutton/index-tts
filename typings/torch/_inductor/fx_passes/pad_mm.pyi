@@ -1,6 +1,6 @@
 import functools
 from collections.abc import Callable, Sequence
-from typing import Any, Optional, Union
+from typing import Any
 
 import torch
 from torch import Tensor

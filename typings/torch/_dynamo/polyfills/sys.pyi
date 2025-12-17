@@ -2,10 +2,7 @@ import sys
 
 from ..decorators import substitute_in_graph
 
-"""
-Python polyfills for sys
-"""
-__all__ = ["intern", "getrecursionlimit"]
+__all__ = ["getrecursionlimit", "intern"]
 
 @substitute_in_graph(sys.intern, can_constant_fold_through=True)
 def intern(string: str, /) -> str: ...

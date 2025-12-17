@@ -6,7 +6,7 @@ import itertools
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterator, MutableMapping, Sequence
 from enum import Enum
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, NamedTuple, Optional, Self, TypeAlias, TypeVar, Union
+from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple, Self, TypeVar
 
 import sympy
 import torch
@@ -303,10 +303,7 @@ class OpOverrides(BasicMathOpsMixin, OpDecompositions, OpsHandler[Any]):
     def scan(
         self,
         dtypes: tuple[torch.dtype, ...],
-        combine_fn: Callable[
-            [tuple[OpVarT, ...], tuple[OpVarT, ...]],
-            tuple[OpVarT, ...],
-        ],
+        combine_fn: Callable[[tuple[OpVarT, ...], tuple[OpVarT, ...]], tuple[OpVarT, ...]],
         values: tuple[OpVarT, ...],
     ) -> tuple[OpVarT, ...]: ...
     def sort(
@@ -402,11 +399,7 @@ class CSEVariable:
 AugmentedKeyT = TypeVar("AugmentedKeyT", default=str)
 CSEVariableType = TypeVar("CSEVariableType", bound=CSEVariable, default=CSEVariable)
 if TYPE_CHECKING:
-    type ReductionCacheKey = tuple[
-        torch.dtype,
-        ReductionType,
-        CSEVariable | tuple[CSEVariable, ...],
-    ]
+    type ReductionCacheKey = tuple[torch.dtype, ReductionType, CSEVariable | tuple[CSEVariable, ...]]
 
 class CSE[CSEVariableType: CSEVariable = CSEVariable, AugmentedKeyT = str]:
     def __init__(
@@ -495,11 +488,7 @@ class Kernel[CSEVariableType: CSEVariable = CSEVariable](CodeGen):
     @property
     def assert_function(self) -> str: ...
     def indirect_assert(
-        self,
-        var: CSEVariable | str,
-        lower: str | None,
-        upper: str | None,
-        mask: CSEVariable | str | None = ...,
+        self, var: CSEVariable | str, lower: str | None, upper: str | None, mask: CSEVariable | str | None = ...
     ) -> str: ...
     def check_bounds(self, expr: sympy.Expr, size: sympy.Expr, lower: bool, upper: bool) -> None: ...
     def index_to_str(self, index: sympy.Expr) -> str: ...
@@ -551,10 +540,7 @@ class CSEProxy(DefaultHandler):
     def scan(
         self,
         dtypes: tuple[torch.dtype, ...],
-        combine_fn: Callable[
-            [tuple[CSEVariable, ...], tuple[CSEVariable, ...]],
-            tuple[CSEVariable, ...],
-        ],
+        combine_fn: Callable[[tuple[CSEVariable, ...], tuple[CSEVariable, ...]], tuple[CSEVariable, ...]],
         values: tuple[CSEVariable, ...],
     ) -> tuple[CSEVariable, ...]: ...
     def sort(

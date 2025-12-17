@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from functools import cached_property
-from typing import Any, Concatenate, Optional, ParamSpec, Self, TypeVar, Union
+from typing import Any, Concatenate, ParamSpec, Self, TypeVar
 
 import torch
 from torch._inductor.config import use_experimental_benchmarker

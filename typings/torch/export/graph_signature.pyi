@@ -1,11 +1,9 @@
 import dataclasses
 from collections.abc import Collection, Mapping
 from enum import Enum
-from typing import TYPE_CHECKING, Optional, TypeAlias, Union
 
 from torch._library.fake_class_registry import FakeScriptObject
 
-if TYPE_CHECKING: ...
 __all__ = [
     "ConstantArgument",
     "CustomObjArgument",
@@ -15,9 +13,9 @@ __all__ = [
     "InputSpec",
     "OutputKind",
     "OutputSpec",
-    "SymIntArgument",
-    "SymFloatArgument",
     "SymBoolArgument",
+    "SymFloatArgument",
+    "SymIntArgument",
     "TensorArgument",
 ]
 
@@ -76,8 +74,7 @@ class InputSpec:
     arg: ArgumentSpec
     target: str | None
     persistent: bool | None = ...
-    def __post_init__(self):  # -> None:
-        ...
+    def __post_init__(self): ...
 
 class OutputKind(Enum):
     USER_OUTPUT = ...
@@ -94,8 +91,7 @@ class OutputSpec:
     kind: OutputKind
     arg: ArgumentSpec
     target: str | None
-    def __post_init__(self):  # -> None:
-        ...
+    def __post_init__(self): ...
 
 @dataclasses.dataclass
 class ExportBackwardSignature:
@@ -144,8 +140,5 @@ class ExportGraphSignature:
     @property
     def output_tokens(self) -> Collection[str]: ...
     def __post_init__(self) -> None: ...
-    def replace_all_uses(self, old: str, new: str):  # -> None:
-
-        ...
-    def get_replace_hook(self, replace_inputs=...):  # -> Callable[..., None]:
-        ...
+    def replace_all_uses(self, old: str, new: str): ...
+    def get_replace_hook(self, replace_inputs=...): ...

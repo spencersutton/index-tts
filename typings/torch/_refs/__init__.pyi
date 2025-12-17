@@ -1,38 +1,14 @@
-import builtins
-import collections
-import inspect
-import itertools
-import math
-import operator
-import warnings
-from collections.abc import Callable, Iterable, Sequence
-from enum import Enum
-from functools import partial, reduce, singledispatch, wraps
-from typing import Any, Optional, Union, cast, overload
+from collections.abc import Sequence
+from typing import overload
 
 import torch
-import torch._prims as prims
 import torch._prims_common as utils
-import torch._refs._conversions
-import torch._refs.fft
-import torch._refs.linalg
-import torch._refs.nn.functional
-import torch._refs.special
-import torch.utils._pytree as pytree
-from torch import sym_float, sym_int
 from torch._decomp import register_decomposition
 from torch._prims_common import (
     ELEMENTWISE_TYPE_PROMOTION_KIND,
-    REDUCTION_OUTPUT_TYPE_KIND,
-    BoolLike,
     DeviceLikeType,
-    Dim,
     DimsSequenceType,
     DimsType,
-    FloatLike,
-    FloatWithoutSymFloat,
-    IntLike,
-    Number,
     NumberType,
     RealNumberType,
     ShapeType,
@@ -41,351 +17,319 @@ from torch._prims_common import (
     TensorLikeType,
     TensorOrNumberLikeType,
     TensorSequenceType,
-    dtype_to_type,
-    is_contiguous_for_memory_format_or_false,
-    is_contiguous_or_false,
-    is_weakly_lesser_type,
 )
-from torch._prims_common.wrappers import (
-    _maybe_convert_to_dtype,
-    _maybe_resize_out,
-    _safe_copy_out,
-    elementwise_type_promotion_wrapper,
-    elementwise_unary_scalar_wrapper,
-    out_wrapper,
-)
+from torch._prims_common.wrappers import elementwise_type_promotion_wrapper, out_wrapper
 
 __all__ = [
+    "T",
     "abs",
     "acos",
     "acosh",
-    "asinh",
+    "add",
+    "addcdiv",
+    "addcmul",
+    "addr",
+    "alias",
+    "alias_copy",
+    "all",
+    "allclose",
+    "amax",
+    "amin",
+    "any",
+    "arange",
+    "as_strided",
+    "as_strided_copy",
+    "as_strided_scatter",
     "asin",
+    "asinh",
     "atan",
+    "atan2",
     "atanh",
+    "atleast_1d",
+    "atleast_2d",
+    "atleast_3d",
+    "bitwise_and",
+    "bitwise_left_shift",
     "bitwise_not",
+    "bitwise_or",
+    "bitwise_right_shift",
+    "bitwise_xor",
+    "block_diag",
+    "broadcast_shapes",
+    "broadcast_tensors",
+    "broadcast_to",
+    "bucketize",
+    "cat",
+    "cauchy",
     "ceil",
+    "chunk",
+    "clamp",
+    "clamp_max",
+    "clamp_min",
+    "clone",
+    "column_stack",
+    "conj",
     "conj_physical",
+    "constant_pad_nd",
+    "contiguous",
+    "copy_to",
+    "copysign",
     "cos",
     "cosh",
     "count_nonzero",
+    "cumprod",
+    "cumsum",
     "deg2rad",
+    "diag",
+    "diag_embed",
+    "diagonal",
+    "diagonal_copy",
+    "diagonal_scatter",
     "digamma",
+    "div",
+    "dot",
+    "dsplit",
+    "dstack",
+    "empty",
+    "empty_like",
+    "empty_permuted",
+    "empty_strided",
+    "eq",
+    "equal",
     "erf",
-    "erfinv",
     "erfc",
+    "erfinv",
     "exp",
+    "exp2",
+    "expand",
+    "expand_as",
+    "expand_copy",
     "expm1",
     "exponential",
-    "exp2",
+    "eye",
     "fill",
     "fill_",
+    "flatten",
+    "flip",
+    "fliplr",
+    "flipud",
+    "float_power",
     "floor",
+    "floor_divide",
+    "fmax",
+    "fmin",
+    "fmod",
     "frac",
+    "full",
+    "full_like",
+    "gcd",
+    "ge",
     "geometric",
+    "gt",
+    "heaviside",
+    "hsplit",
+    "hstack",
+    "hypot",
+    "i0",
+    "igamma",
+    "igammac",
+    "imag",
     "index_add",
     "index_copy",
     "index_copy_",
-    "index_select",
     "index_fill",
     "index_fill_",
+    "index_select",
+    "is_complex",
+    "isclose",
     "isfinite",
     "isinf",
-    "isposinf",
-    "isneginf",
     "isnan",
+    "isneginf",
+    "isposinf",
     "isreal",
-    "i0",
+    "istft",
+    "item",
+    "lcm",
+    "le",
     "lerp",
     "lgamma",
+    "linspace",
     "log",
     "log1p",
     "log2",
     "log10",
     "log_normal",
     "log_softmax",
-    "mvlgamma",
-    "norm",
-    "normal",
-    "nan_to_num",
-    "neg",
-    "positive",
-    "rad2deg",
-    "reciprocal",
-    "round",
-    "sigmoid",
-    "sgn",
-    "sign",
-    "signbit",
-    "sin",
-    "sinc",
-    "sinh",
-    "softmax",
-    "sqrt",
-    "square",
-    "tan",
-    "tanh",
-    "trace",
-    "trunc",
-    "add",
-    "atan2",
-    "bitwise_and",
-    "bitwise_left_shift",
-    "bitwise_or",
-    "bitwise_right_shift",
-    "bitwise_xor",
-    "clamp_min",
-    "clamp_max",
-    "copysign",
-    "div",
-    "eq",
-    "float_power",
-    "floor_divide",
-    "fmax",
-    "fmin",
-    "fmod",
-    "gcd",
-    "ge",
-    "gt",
-    "heaviside",
-    "hypot",
-    "igamma",
-    "igammac",
-    "imag",
-    "isclose",
-    "lcm",
-    "le",
     "logaddexp",
     "logaddexp2",
     "logical_and",
     "logical_not",
     "logical_or",
     "logical_xor",
+    "logspace",
     "logsumexp",
     "lt",
-    "maximum",
-    "minimum",
-    "mul",
-    "ne",
-    "nextafter",
-    "pow",
-    "real",
-    "rpow",
-    "remainder",
-    "rsub",
-    "rtruediv",
-    "rfloordiv",
-    "sub",
-    "true_divide",
-    "trunc_divide",
-    "xlogy",
-    "addcdiv",
-    "addcmul",
-    "clamp",
     "masked_fill",
     "masked_fill_",
-    "where",
-    "clone",
-    "copy_to",
-    "item",
-    "to",
-    "all",
-    "amax",
-    "amin",
-    "any",
-    "cumsum",
-    "cumprod",
+    "maximum",
     "mean",
-    "dot",
-    "vdot",
-    "std",
-    "std_mean",
-    "sum",
-    "sum_to_size",
-    "prod",
-    "var",
-    "var_mean",
-    "addr",
-    "alias",
-    "alias_copy",
-    "atleast_1d",
-    "atleast_2d",
-    "atleast_3d",
-    "as_strided",
-    "as_strided_copy",
-    "as_strided_scatter",
-    "block_diag",
-    "broadcast_shapes",
-    "broadcast_tensors",
-    "broadcast_to",
-    "cat",
-    "chunk",
-    "column_stack",
-    "conj",
-    "constant_pad_nd",
-    "contiguous",
-    "diag_embed",
-    "diag",
-    "diagonal",
-    "diagonal_copy",
-    "diagonal_scatter",
-    "dsplit",
-    "dstack",
-    "expand",
-    "expand_as",
-    "expand_copy",
-    "flatten",
-    "flip",
-    "fliplr",
-    "flipud",
-    "hsplit",
-    "hstack",
     "meshgrid",
+    "minimum",
     "movedim",
+    "mul",
+    "mvlgamma",
+    "nan_to_num",
     "narrow",
     "narrow_copy",
     "native_group_norm",
     "native_layer_norm",
-    "permute",
-    "permute_copy",
-    "ravel",
-    "repeat",
-    "reshape",
-    "reshape_as",
-    "roll",
-    "rot90",
-    "rsqrt",
-    "split_with_sizes",
-    "stack",
-    "swap_axes",
-    "squeeze",
-    "squeeze_copy",
-    "t",
-    "t_copy",
-    "T",
-    "take_along_dim",
-    "tensor_split",
-    "transpose",
-    "transpose_copy",
-    "unbind_copy",
-    "unfold",
-    "unfold_copy",
-    "unsqueeze",
-    "unsqueeze_copy",
-    "view",
-    "view_as",
-    "view_copy",
-    "vsplit",
-    "vstack",
-    "view_as_complex",
-    "unflatten",
-    "unbind",
-    "triu",
-    "tril",
-    "triu_indices",
-    "tril_indices",
-    "arange",
-    "cauchy",
-    "empty",
-    "empty_like",
-    "empty_permuted",
-    "empty_strided",
-    "eye",
-    "full",
-    "full_like",
-    "linspace",
-    "logspace",
+    "ne",
+    "neg",
     "new_empty",
     "new_empty_strided",
     "new_full",
     "new_ones",
     "new_zeros",
+    "nextafter",
+    "norm",
+    "normal",
     "ones",
     "ones_like",
+    "permute",
+    "permute_copy",
+    "positive",
+    "pow",
+    "prod",
+    "rad2deg",
     "randn",
+    "ravel",
+    "real",
+    "reciprocal",
+    "remainder",
+    "renorm",
+    "repeat",
+    "reshape",
+    "reshape_as",
+    "rfloordiv",
+    "roll",
+    "rot90",
+    "round",
+    "rpow",
+    "rsqrt",
+    "rsub",
+    "rtruediv",
     "scalar_tensor",
+    "sgn",
+    "sigmoid",
+    "sign",
+    "signbit",
+    "sin",
+    "sinc",
+    "sinh",
+    "softmax",
+    "split_with_sizes",
+    "sqrt",
+    "square",
+    "squeeze",
+    "squeeze_copy",
+    "stack",
+    "std",
+    "std_mean",
+    "stft",
+    "sub",
+    "sum",
+    "sum_to_size",
+    "swap_axes",
+    "t",
+    "t_copy",
+    "take_along_dim",
+    "tan",
+    "tanh",
+    "tensor_split",
+    "to",
+    "trace",
+    "transpose",
+    "transpose_copy",
+    "tril",
+    "tril_indices",
+    "triu",
+    "triu_indices",
+    "true_divide",
+    "trunc",
+    "trunc_divide",
+    "unbind",
+    "unbind_copy",
+    "unflatten",
+    "unfold",
+    "unfold_copy",
+    "unsqueeze",
+    "unsqueeze_copy",
+    "var",
+    "var_mean",
+    "vdot",
+    "view",
+    "view_as",
+    "view_as_complex",
+    "view_copy",
+    "vsplit",
+    "vstack",
+    "where",
+    "xlogy",
     "zero",
     "zeros",
     "zeros_like",
-    "allclose",
-    "equal",
-    "bucketize",
-    "is_complex",
-    "renorm",
-    "stft",
-    "istft",
 ]
 Tensor = torch.Tensor
 DispatchKey = torch._C.DispatchKey
 aten = ...
 
-def is_noncontiguous_supported(device):  # -> Literal[True]:
-    ...
+def is_noncontiguous_supported(device): ...
 def handle_noncontiguous_outputs(input_tlist, output): ...
 
 infer_aten_op = ...
 
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.COMPLEX_TO_FLOAT, exact_dtype=True)
-def abs(a):  # -> Any:
-    ...
+def abs(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
-def acos(a):  # -> Any:
-    ...
+def acos(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
-def acosh(a):  # -> Any:
-    ...
+def acosh(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
-def asin(a):  # -> Any:
-    ...
+def asin(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
-def asinh(a):  # -> Any:
-    ...
+def asinh(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
-def atan(a):  # -> Any:
-    ...
+def atan(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
-def atanh(a):  # -> Any:
-    ...
+def atanh(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT)
-def bitwise_not(a):  # -> Any:
-    ...
+def bitwise_not(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT, exact_dtype=True)
-def ceil(a):  # -> Any:
-    ...
+def ceil(a): ...
 @register_decomposition(aten.is_complex)
-def is_complex(input: TensorLikeType):  # -> bool:
-    ...
+def is_complex(input: TensorLikeType): ...
 @register_decomposition(aten.conj_physical)
 @out_wrapper()
-def conj_physical(input: TensorLikeType):  # -> TensorLikeType | Any:
-    ...
+def conj_physical(input: TensorLikeType): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
-def cos(a):  # -> Any:
-    ...
+def cos(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
-def cosh(a):  # -> Any:
-    ...
+def cosh(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
-def digamma(a):  # -> Any:
-    ...
+def digamma(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
-def erf(a):  # -> Any:
-    ...
+def erf(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
-def erfinv(a):  # -> Any:
-    ...
+def erfinv(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
-def erfc(a):  # -> Any:
-    ...
+def erfc(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
-def exp(a):  # -> Any:
-    ...
+def exp(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
-def expm1(a):  # -> Any:
-    ...
+def expm1(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
-def exp2(a):  # -> Any:
-    ...
+def exp2(a): ...
 @out_wrapper()
 @elementwise_type_promotion_wrapper(
     type_promoting_args="a,", type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.NO_OPMATH
@@ -396,8 +340,7 @@ def fill_(a: TensorLikeType, value: NumberType) -> TensorLikeType: ...
 @out_wrapper()
 def zero(input: TensorLikeType) -> TensorLikeType: ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT, exact_dtype=True)
-def floor(a):  # -> Any:
-    ...
+def floor(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT, exact_dtype=True)
 def frac(x: TensorLikeType) -> TensorLikeType: ...
 def imag(a: TensorLikeType) -> TensorLikeType: ...
@@ -417,23 +360,17 @@ mvlgamma = ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.ALWAYS_BOOL, aten_op=None)
 def isreal(a: TensorLikeType) -> TensorLikeType: ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT, aten_op=aten.i0)
-def i0(a):  # -> Any:
-    ...
+def i0(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
-def lgamma(a):  # -> Any:
-    ...
+def lgamma(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
-def log(a):  # -> Any:
-    ...
+def log(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
-def log1p(a):  # -> Any:
-    ...
+def log1p(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
-def log2(a):  # -> Any:
-    ...
+def log2(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
-def log10(a):  # -> Any:
-    ...
+def log10(a): ...
 @out_wrapper()
 def log_softmax(a: TensorLikeType, dim: int, dtype: torch.dtype | None = ...) -> TensorLikeType: ...
 @register_decomposition(aten.logsumexp)
@@ -445,19 +382,14 @@ def logsumexp(self: TensorLikeType, dim: DimsType, keepdim: bool = ...) -> Tenso
 @register_decomposition(aten.nan_to_num)
 @out_wrapper()
 def nan_to_num(
-    a: TensorLikeType,
-    nan: NumberType | None = ...,
-    posinf: NumberType | None = ...,
-    neginf: NumberType | None = ...,
+    a: TensorLikeType, nan: NumberType | None = ..., posinf: NumberType | None = ..., neginf: NumberType | None = ...
 ) -> TensorLikeType: ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT, extra_meta=_neg_meta)
-def neg(a):  # -> Any:
-    ...
+def neg(a): ...
 def positive(a: TensorLikeType) -> TensorLikeType: ...
 def real(a: TensorLikeType) -> TensorLikeType: ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
-def reciprocal(a):  # -> Any:
-    ...
+def reciprocal(a): ...
 @register_decomposition(aten.round)
 @out_wrapper()
 @elementwise_type_promotion_wrapper(
@@ -465,42 +397,31 @@ def reciprocal(a):  # -> Any:
 )
 def round(a: TensorLikeType, *, decimals: int = ...) -> TensorLikeType: ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
-def rsqrt(a):  # -> Any:
-    ...
+def rsqrt(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
 def sigmoid(a: TensorLikeType) -> TensorLikeType: ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT, exact_dtype=True)
-def sgn(a):  # -> Tensor:
-    ...
+def sgn(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT, exact_dtype=True)
-def sign(a):  # -> Any:
-    ...
+def sign(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.ALWAYS_BOOL, exact_dtype=True)
-def signbit(a):  # -> Any:
-    ...
+def signbit(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
-def sin(a):  # -> Any:
-    ...
+def sin(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
-def sinc(a):  # -> Tensor:
-    ...
+def sinc(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
-def sinh(a):  # -> Any:
-    ...
+def sinh(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
-def sqrt(a):  # -> Any:
-    ...
+def sqrt(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.BOOL_TO_LONG, aten_op=None)
 def square(a: TensorLikeType) -> TensorLikeType: ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
-def tan(a):  # -> Any:
-    ...
+def tan(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
-def tanh(a):  # -> Any:
-    ...
+def tanh(a): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT, exact_dtype=True)
-def trunc(a):  # -> Any:
-    ...
+def trunc(a): ...
 def view_as_complex(self: TensorLikeType) -> TensorLikeType: ...
 @register_decomposition(aten.add)
 @out_wrapper()
@@ -513,8 +434,7 @@ def add(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType, *, alpha
     supports_lhs_python_scalar=False,
     supports_rhs_python_scalar=False,
 )
-def atan2(a, b):  # -> Any:
-    ...
+def atan2(a, b): ...
 @_make_elementwise_binary_reference(type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT)
 def bitwise_and(a: TensorLikeType, b: TensorLikeType) -> TensorLikeType: ...
 @_make_elementwise_binary_reference(type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT)
@@ -531,11 +451,7 @@ def bitwise_xor(a: TensorLikeType, b: TensorLikeType) -> TensorLikeType: ...
 def copysign(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType): ...
 @register_decomposition(aten.div)
 @out_wrapper()
-def div(
-    a: TensorLikeType | NumberType, b: TensorLikeType | NumberType, *, rounding_mode: str | None = ...
-):  # -> TensorLikeType | Any | None:
-
-    ...
+def div(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType, *, rounding_mode: str | None = ...): ...
 @_make_elementwise_binary_reference(
     type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.ALWAYS_BOOL, supports_lhs_python_scalar=False
 )
@@ -549,8 +465,7 @@ def float_power(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType) 
     supports_two_python_scalars=True,
     should_register_decomposition=False,
 )
-def floor_divide(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType):  # -> Tensor | None:
-    ...
+def floor_divide(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType): ...
 @_make_elementwise_binary_reference(
     type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT,
     supports_lhs_python_scalar=False,
@@ -618,8 +533,7 @@ def isclose(
     supports_lhs_python_scalar=False,
     supports_rhs_python_scalar=False,
 )
-def lcm(a: TensorLikeType, b: TensorLikeType):  # -> Tensor | Any:
-    ...
+def lcm(a: TensorLikeType, b: TensorLikeType): ...
 @_make_elementwise_binary_reference(
     type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.ALWAYS_BOOL, supports_lhs_python_scalar=False
 )
@@ -637,17 +551,13 @@ def logaddexp(a: TensorLikeType, b: TensorLikeType) -> TensorLikeType: ...
 )
 def logaddexp2(a: TensorLikeType, b: TensorLikeType) -> TensorLikeType: ...
 @_make_elementwise_binary_reference(type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.ALWAYS_BOOL)
-def logical_and(a: TensorLikeType, b: TensorLikeType):  # -> Tensor:
-    ...
+def logical_and(a: TensorLikeType, b: TensorLikeType): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.ALWAYS_BOOL)
-def logical_not(a: TensorLikeType):  # -> Tensor:
-    ...
+def logical_not(a: TensorLikeType): ...
 @_make_elementwise_binary_reference(type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.ALWAYS_BOOL)
-def logical_or(a: TensorLikeType, b: TensorLikeType):  # -> TensorLikeType:
-    ...
+def logical_or(a: TensorLikeType, b: TensorLikeType): ...
 @_make_elementwise_binary_reference(type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.ALWAYS_BOOL)
-def logical_xor(a: TensorLikeType, b: TensorLikeType):  # -> Tensor:
-    ...
+def logical_xor(a: TensorLikeType, b: TensorLikeType): ...
 @_make_elementwise_binary_reference(
     type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.ALWAYS_BOOL, supports_lhs_python_scalar=False
 )
@@ -674,8 +584,7 @@ def nextafter(a: TensorLikeType, b: TensorLikeType) -> TensorLikeType: ...
 def remainder(a: TensorLikeType, b: TensorLikeType) -> TensorLikeType: ...
 @register_decomposition(aten.rsub)
 @out_wrapper()
-def rsub(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType, alpha: NumberType = ...):  # -> Tensor:
-    ...
+def rsub(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType, alpha: NumberType = ...): ...
 @register_decomposition(aten.sub)
 @out_wrapper()
 @elementwise_type_promotion_wrapper(
@@ -694,13 +603,11 @@ def true_divide(a: TensorLikeType, b: TensorLikeType) -> TensorLikeType: ...
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("a", "b"), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT
 )
-def xlogy(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType):  # -> Tensor:
-    ...
+def xlogy(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType): ...
 @_make_elementwise_binary_reference(
     type_promotion_kind=utils.ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT, aten_op=None, supports_two_python_scalars=True
 )
-def trunc_divide(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType):  # -> Any:
-    ...
+def trunc_divide(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType): ...
 @register_decomposition(aten.addcdiv)
 @out_wrapper()
 @elementwise_type_promotion_wrapper(
@@ -736,14 +643,11 @@ def clamp_max(self: TensorLikeType, max: TensorOrNumberLikeType | None = ...) ->
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("a", "b"), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.NO_OPMATH
 )
-def where(pred: Tensor, a: TensorOrNumberLikeType | None = ..., b: TensorOrNumberLikeType | None = ...):  # -> Any:
-
-    ...
+def where(pred: Tensor, a: TensorOrNumberLikeType | None = ..., b: TensorOrNumberLikeType | None = ...): ...
 @register_decomposition(aten.clone)
 @out_wrapper()
 def clone(a: TensorLikeType, *, memory_format: torch.memory_format = ...) -> TensorLikeType: ...
-def copy_to(a: Tensor, b: Tensor, *, allow_cross_device=...):  # -> Any:
-    ...
+def copy_to(a: Tensor, b: Tensor, *, allow_cross_device=...): ...
 @register_decomposition(aten.item)
 def item(a: TensorLikeType) -> NumberType: ...
 def to(a: TensorLikeType, *args, **kwargs) -> TensorLikeType: ...
@@ -765,12 +669,7 @@ def sum(
 def sum_to_size(a: Tensor, *shape) -> Tensor: ...
 @register_decomposition(aten.prod)
 def prod(
-    a: TensorLikeType,
-    dim: None | int | list[int] = ...,
-    keepdim: bool = ...,
-    *,
-    dtype=...,
-    out: Tensor | None = ...,
+    a: TensorLikeType, dim: int | None | list[int] = ..., keepdim: bool = ..., *, dtype=..., out: Tensor | None = ...
 ) -> TensorLikeType: ...
 @register_decomposition(aten.amin)
 def amin(
@@ -794,7 +693,7 @@ def var(
 @out_wrapper()
 def std(
     a: TensorLikeType,
-    dim: None | int | list[int] = ...,
+    dim: int | None | list[int] = ...,
     unbiased: bool | None = ...,
     keepdim: bool = ...,
     *,
@@ -813,8 +712,7 @@ def std_mean(
     unbiased: bool | None = ...,
     keepdim: bool = ...,
     correction: NumberType | None = ...,
-):  # -> tuple[TensorLikeType, TensorLikeType]:
-    ...
+): ...
 @register_decomposition(aten.var_mean)
 @out_wrapper("out0", "out1")
 def var_mean(
@@ -824,8 +722,7 @@ def var_mean(
     keepdim: bool = ...,
     *,
     correction: NumberType | None = ...,
-):  # -> tuple[TensorLikeType, TensorLikeType]:
-    ...
+): ...
 @register_decomposition(aten.addr)
 @out_wrapper()
 @elementwise_type_promotion_wrapper(
@@ -899,8 +796,7 @@ def native_layer_norm(
     input: Tensor, normalized_shape: ShapeType, weight: Tensor | None, bias: Tensor | None, eps: float
 ) -> tuple[Tensor, Tensor, Tensor]: ...
 @torch._subclasses.fake_impls.register_op_impl(aten.native_layer_norm.default)
-def native_layer_norm_fake(fake_mode, func, *args, **kwargs):  # -> tuple[Tensor, Tensor, Tensor]:
-    ...
+def native_layer_norm_fake(fake_mode, func, *args, **kwargs): ...
 @register_decomposition(aten.permute)
 def permute(a: TensorLikeType, *dims) -> TensorLikeType: ...
 @register_decomposition(aten.renorm)
@@ -957,24 +853,18 @@ def unflatten(a: TensorLikeType, dim: int, sizes: ShapeType) -> TensorLikeType: 
 @register_decomposition(aten.unbind)
 def unbind(t: TensorLikeType, dim: int = ...) -> TensorSequenceType: ...
 @out_wrapper()
-def index_copy(x: TensorLike, dim: int, index: TensorLike, tensor: TensorLike):  # -> Tensor:
-    ...
-def index_copy_(x: TensorLike, dim: int, index: TensorLike, tensor: TensorLike):  # -> TensorLike:
-    ...
+def index_copy(x: TensorLike, dim: int, index: TensorLike, tensor: TensorLike): ...
+def index_copy_(x: TensorLike, dim: int, index: TensorLike, tensor: TensorLike): ...
 @register_decomposition(aten.index_fill)
 @out_wrapper()
-def index_fill(x: TensorLike, dim: int, index: TensorLike, value: NumberType | TensorLike):  # -> TensorLike:
-    ...
+def index_fill(x: TensorLike, dim: int, index: TensorLike, value: NumberType | TensorLike): ...
 @register_decomposition(aten.index_fill_)
-def index_fill_(x: TensorLike, dim: int, index: TensorLike, value: NumberType | TensorLike):  # -> TensorLike:
-    ...
+def index_fill_(x: TensorLike, dim: int, index: TensorLike, value: NumberType | TensorLike): ...
 @out_wrapper()
-def index_add(x: TensorLike, dim: int, index: TensorLike, tensor: TensorLike, *, alpha: NumberType = ...):  # -> Tensor:
-    ...
+def index_add(x: TensorLike, dim: int, index: TensorLike, tensor: TensorLike, *, alpha: NumberType = ...): ...
 @register_decomposition(aten.index_select)
 @out_wrapper()
-def index_select(x: TensorLike, dim: int, index: TensorLike):  # -> Tensor:
-    ...
+def index_select(x: TensorLike, dim: int, index: TensorLike): ...
 @register_decomposition(aten.squeeze.dims)
 def squeeze(a: TensorLikeType, dim: DimsType | None = ...) -> TensorLikeType: ...
 @register_decomposition(aten.split_with_sizes)
@@ -1000,8 +890,7 @@ def diag_embed(t: TensorLikeType, offset: int = ..., dim1: int = ..., dim2: int 
 def block_diag(*tensors: list[TensorLikeType]) -> TensorLikeType: ...
 def dsplit(a: TensorLikeType, sections: DimsType) -> TensorSequenceType: ...
 @register_decomposition(aten.t.default)
-def t(a: TensorLikeType):  # -> Tensor:
-    ...
+def t(a: TensorLikeType): ...
 def T(a: TensorLikeType) -> TensorLikeType: ...
 @register_decomposition(aten.alias)
 def alias(a: TensorLikeType) -> TensorLikeType: ...
@@ -1014,8 +903,7 @@ swap_axes = ...
 def unfold(self: TensorLikeType, dimension: int, size: int, step: int) -> TensorLikeType: ...
 @register_decomposition(aten.unfold_copy)
 @out_wrapper()
-def unfold_copy(self: TensorLikeType, dimension: int, size: int, step: int):  # -> Tensor:
-    ...
+def unfold_copy(self: TensorLikeType, dimension: int, size: int, step: int): ...
 @register_decomposition(aten.cumsum)
 def cumsum(
     a: TensorLikeType, dim: int, *, dtype: torch.dtype | None = ..., out: Tensor | None = ...
@@ -1295,8 +1183,7 @@ def scalar_tensor(
 ) -> TensorLikeType: ...
 @register_decomposition(aten.masked_fill)
 @out_wrapper()
-def masked_fill(a: TensorLikeType, mask: TensorLikeType, value: TensorOrNumberLikeType):  # -> Tensor:
-    ...
+def masked_fill(a: TensorLikeType, mask: TensorLikeType, value: TensorOrNumberLikeType): ...
 @register_decomposition(aten.masked_fill_)
 def masked_fill_(a: TensorLikeType, mask: TensorLikeType, value: TensorOrNumberLikeType) -> TensorLikeType: ...
 def allclose(
@@ -1353,53 +1240,43 @@ def triu_indices(
 ) -> TensorLikeType: ...
 @register_decomposition(aten.bucketize)
 @out_wrapper(exact_dtype=True)
-def bucketize(
-    a: TensorOrNumberLikeType, boundaries: TensorLikeType, *, out_int32: bool = ..., right: bool = ...
-):  # -> Tensor:
-    ...
+def bucketize(a: TensorOrNumberLikeType, boundaries: TensorLikeType, *, out_int32: bool = ..., right: bool = ...): ...
 @register_decomposition(aten.cauchy)
 @out_wrapper()
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("self",), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT
 )
-def cauchy(self, median=..., sigma=..., generator=...):  # -> Tensor:
-    ...
+def cauchy(self, median=..., sigma=..., generator=...): ...
 @register_decomposition(aten.exponential)
 @out_wrapper()
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("self",), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT
 )
-def exponential(self, rate=..., generator=...):  # -> Tensor:
-    ...
+def exponential(self, rate=..., generator=...): ...
 @register_decomposition(aten.geometric)
 @out_wrapper()
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("self",), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT
 )
-def geometric(self, p, generator=...):  # -> Tensor:
-    ...
+def geometric(self, p, generator=...): ...
 @register_decomposition(aten.log_normal)
 @out_wrapper()
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("self",), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT
 )
-def log_normal(self, mean=..., std=..., generator=...):  # -> Tensor:
-    ...
+def log_normal(self, mean=..., std=..., generator=...): ...
 @register_decomposition(aten.normal)
 @out_wrapper()
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("mean", "std"), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT
 )
-def normal(mean=..., std=..., size=..., *, generator=..., dtype=..., layout=..., device=..., pin_memory=...):  # -> Any:
-    ...
+def normal(mean=..., std=..., size=..., *, generator=..., dtype=..., layout=..., device=..., pin_memory=...): ...
 @register_decomposition(aten.normal_)
 def normal_(self, mean=..., std=..., *, generator=...): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
-def rad2deg(self: TensorLikeType):  # -> Tensor:
-    ...
+def rad2deg(self: TensorLikeType): ...
 @_make_elementwise_unary_reference(ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT)
-def deg2rad(self: TensorLikeType):  # -> Tensor:
-    ...
+def deg2rad(self: TensorLikeType): ...
 @register_decomposition(aten.count_nonzero)
 @out_wrapper()
 def count_nonzero(self, dim: DimsType | None = ...): ...
@@ -1409,20 +1286,17 @@ def count_nonzero(self, dim: DimsType | None = ...): ...
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("self", "other"), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT
 )
-def dot(self, other):  # -> Tensor:
-    ...
+def dot(self, other): ...
 @register_decomposition(aten.vdot)
 @out_wrapper(exact_dtype=True)
 @_dot_check_wrapper
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("self", "other"), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT
 )
-def vdot(self, other):  # -> Tensor:
-    ...
+def vdot(self, other): ...
 @register_decomposition(aten.select_scatter)
 @out_wrapper()
-def select_scatter(x: TensorLikeType, src: TensorLikeType, dim: int, index: int):  # -> Tensor:
-    ...
+def select_scatter(x: TensorLikeType, src: TensorLikeType, dim: int, index: int): ...
 
 abs_ = ...
 acos_ = ...
@@ -1532,5 +1406,4 @@ unbind_copy = ...
 unsqueeze_copy = ...
 view_copy = ...
 
-def tensor(data, *, dtype=..., device=..., pin_memory=..., requires_grad=...):  # -> Tensor | _NotImplementedType:
-    ...
+def tensor(data, *, dtype=..., device=..., pin_memory=..., requires_grad=...): ...

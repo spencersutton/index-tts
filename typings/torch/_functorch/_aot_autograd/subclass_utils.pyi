@@ -1,5 +1,5 @@
 from collections.abc import Callable, Iterable
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, TypeVar
 
 import torch
 from torch import SymInt, Tensor
@@ -8,11 +8,6 @@ from torch.types import IntLikeType
 from .descriptors import AOTInput, AOTOutput
 from .schemas import FxValue, MemoryFormatMeta, PlainTensorMeta, SubclassCreationMeta, ViewAndMutationMeta
 
-"""
-This file contains utilities for tracing through __torch_dispatch__ based tensor subclasses and modes.
-AOTAutograd's responsibility is to trace through all pytorch capabilities that live in the pytorch dispatcher,
-and this includes tensor subclasses that implement __torch_dispatch__.
-"""
 zip = ...
 T = TypeVar("T", bound=torch.Tensor)
 
@@ -21,10 +16,7 @@ def maybe_suggest_memory_format(t, with_memory_format: bool) -> MemoryFormatMeta
 def get_subclass_typing_container(
     tensor_subclass: torch.Tensor,
 ) -> dict[type[torch.Tensor], list[type[torch.Tensor]]]: ...
-def create_subclass_metadata(
-    a: Any, start_idx: int, count_symints: bool, with_memory_format: bool = ...
-):  # -> tuple[PlainTensorMeta, int] | tuple[SubclassCreationMeta, int | Any]:
-    ...
+def create_subclass_metadata(a: Any, start_idx: int, count_symints: bool, with_memory_format: bool = ...): ...
 def create_subclass_meta(
     curr_args: list[Any] | tuple[Any, ...], *, count_symints: bool = ..., with_memory_format: bool = ...
 ) -> list[PlainTensorMeta | SubclassCreationMeta]: ...
@@ -41,12 +33,9 @@ def runtime_unwrap_tensor_subclasses(
     *,
     append_symints: bool,
     subclass_metas: list[PlainTensorMeta | SubclassCreationMeta] | None = ...,
-):  # -> list[int | Tensor | SymInt]:
-    ...
-def unwrap_tensor_subclasses_with_indices_to_original(wrapped_args):  # -> tuple[list[Any], list[Any]]:
-    ...
-def remap_unwrapped_subclass_arg_indices(wrapped_args, static_input_indices):  # -> list[Any]:
-    ...
+): ...
+def unwrap_tensor_subclasses_with_indices_to_original(wrapped_args): ...
+def remap_unwrapped_subclass_arg_indices(wrapped_args, static_input_indices): ...
 def wrap_tensor_subclasses(
     unwrapped_args: tuple[Any, ...] | list[Any],
     *,

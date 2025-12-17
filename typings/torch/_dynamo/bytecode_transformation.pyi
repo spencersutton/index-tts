@@ -1,29 +1,12 @@
 import dataclasses
 import dis
 import functools
-import sys
 import types
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import Any
 
 from ..utils._backport_slots import dataclass_slots
 from .output_graph import DynamoTracerOutput
-
-"""
-This module provides utilities for analyzing, transforming and manipulating Python bytecode.
-It includes functionality for:
-- Converting between different bytecode formats and versions
-- Virtualizing jumps and managing jump targets
-- Handling exception tables and their entries
-- Managing instruction offsets and extended arguments
-- Providing a clean API for bytecode modification and transformation
-- Supporting Python version-specific bytecode features
-- Generating bytecode from template functions
-
-The module is designed to work across different Python versions (3.7+) and handles
-version-specific bytecode differences transparently.
-"""
-if TYPE_CHECKING: ...
 
 @dataclass_slots
 @dataclasses.dataclass
@@ -136,9 +119,7 @@ HAS_CONST = ...
 
 def get_const_index(code_options: dict[str, Any], val: Any) -> int: ...
 def fix_vars(
-    instructions: list[Instruction],
-    code_options: dict[str, Any],
-    varname_from_oparg: Callable[..., Any] | None = ...,
+    instructions: list[Instruction], code_options: dict[str, Any], varname_from_oparg: Callable[..., Any] | None = ...
 ) -> None: ...
 def clear_instruction_args(instructions: list[Instruction]) -> None: ...
 @functools.lru_cache

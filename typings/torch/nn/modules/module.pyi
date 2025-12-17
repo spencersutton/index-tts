@@ -124,10 +124,7 @@ class Module:
     def register_forward_pre_hook(
         self,
         hook: Callable[[T, tuple[Any, ...]], Any | None]
-        | Callable[
-            [T, tuple[Any, ...], dict[str, Any]],
-            tuple[Any, dict[str, Any]] | None,
-        ],
+        | Callable[[T, tuple[Any, ...], dict[str, Any]], tuple[Any, dict[str, Any]] | None],
         *,
         prepend: bool = ...,
         with_kwargs: bool = ...,

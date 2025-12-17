@@ -1,9 +1,8 @@
 from collections.abc import Callable, Iterable, Sequence
-from typing import TYPE_CHECKING, Any, Literal, Self, SupportsFloat, TypedDict, override
+from typing import Any, Literal, Self, SupportsFloat, TypedDict, override
 
 from .optimizer import Optimizer
 
-if TYPE_CHECKING: ...
 __all__ = [
     "ChainedScheduler",
     "ConstantLR",

@@ -10,21 +10,10 @@ from torch.ao.nn.quantized.modules.activation import (
     Softmax,
 )
 from torch.ao.nn.quantized.modules.batchnorm import BatchNorm2d, BatchNorm3d
-from torch.ao.nn.quantized.modules.conv import (
-    Conv1d,
-    Conv2d,
-    Conv3d,
-    ConvTranspose1d,
-    ConvTranspose2d,
-    ConvTranspose3d,
-)
+from torch.ao.nn.quantized.modules.conv import Conv1d, Conv2d, Conv3d, ConvTranspose1d, ConvTranspose2d, ConvTranspose3d
 from torch.ao.nn.quantized.modules.dropout import Dropout
 from torch.ao.nn.quantized.modules.embedding_ops import Embedding, EmbeddingBag
-from torch.ao.nn.quantized.modules.functional_modules import (
-    FloatFunctional,
-    FXFloatFunctional,
-    QFunctional,
-)
+from torch.ao.nn.quantized.modules.functional_modules import FloatFunctional, FXFloatFunctional, QFunctional
 from torch.ao.nn.quantized.modules.linear import Linear
 from torch.ao.nn.quantized.modules.normalization import (
     GroupNorm,
@@ -35,12 +24,6 @@ from torch.ao.nn.quantized.modules.normalization import (
 )
 from torch.ao.nn.quantized.modules.rnn import LSTM
 
-r"""Quantized Modules.
-
-Note::
-    The `torch.nn.quantized` namespace is in the process of being deprecated.
-    Please, use `torch.ao.nn.quantized` instead.
-"""
 __all__ = [
     "ELU",
     "LSTM",

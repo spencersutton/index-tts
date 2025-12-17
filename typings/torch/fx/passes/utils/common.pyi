@@ -11,10 +11,7 @@ class HolderModule(Module):
 
 @compatibility(is_backward_compatible=False)
 def lift_subgraph_as_module(
-    gm: GraphModule,
-    subgraph: Graph,
-    comp_name: str = ...,
-    class_name: str = ...,
+    gm: GraphModule, subgraph: Graph, comp_name: str = ..., class_name: str = ...
 ) -> tuple[GraphModule, dict[str, str]]: ...
 @compatibility(is_backward_compatible=False)
 def compare_graphs(left: Graph, right: Graph) -> bool: ...

@@ -2,14 +2,12 @@ import types
 import typing
 from enum import Enum
 from traceback import StackSummary
-from typing import TYPE_CHECKING, Any, NoReturn, Optional
+from typing import Any, NoReturn
 
 from torch._guards import CompileId
 
 from .symbolic_convert import InstructionTranslatorBase
 from .types import DynamoFrameType
-
-if TYPE_CHECKING: ...
 
 def exportdb_error_message(case_name: str) -> str: ...
 

@@ -2,31 +2,12 @@ import dataclasses
 import enum
 import functools
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import Any
 
 from torch._guards import ChainedSource, Guard, GuardSource, Source
 
 from .codegen import PyCodegen
 
-"""
-This module provides Source classes that track the origins of values in PyTorch Dynamo.
-Sources represent where values come from (e.g. local variables, globals, attributes) and
-are used for guard generation and code reconstruction during compilation.
-
-The module includes specialized sources for:
-- Local variables and synthetic locals
-- Global variables and constants
-- Object attributes and method calls
-- NN module specialization (specialized vs unspecialized)
-- Random values and tensor properties
-- Default argument handling
-- FSDP (Fully Sharded Data Parallel) modules
-
-Sources play a key role in Dynamo's guard system by tracking value origins for
-guard generation, and in code reconstruction by providing methods to rebuild
-the code needed to recreate values.
-"""
-if TYPE_CHECKING: ...
 _GUARD_SOURCE_SPECIALIZED_NN_MODULE = ...
 _GUARD_SOURCE_UNSPECIALIZED_NN_MODULE = ...
 _GUARD_SOURCE_UNSPECIALIZED_BUILTIN_NN_MODULE = ...

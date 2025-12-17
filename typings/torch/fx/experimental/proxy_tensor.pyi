@@ -3,7 +3,7 @@ import types
 from collections.abc import Callable, Generator, Mapping, MutableMapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ParamSpec, Protocol, Self, TypeAlias, TypeVar, TypeVarTuple, Unpack, overload
+from typing import Any, ParamSpec, Protocol, Self, TypeVar, TypeVarTuple, Unpack, overload
 
 import sympy
 import torch
@@ -21,7 +21,6 @@ from torch.utils._thunk import Thunk
 
 from ._backward_state import BackwardState
 
-if TYPE_CHECKING: ...
 __all__ = [
     "DecompositionInterpreter",
     "PythonKeyTracer",

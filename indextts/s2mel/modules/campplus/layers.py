@@ -24,16 +24,12 @@ def get_nonlinear(channels: int = 128) -> nn.Sequential[nn.Module]:
     )
 
 
-def statistics_pooling(x: Tensor) -> Tensor:
-    mean = x.mean(dim=-1)
-    std = x.std(dim=-1, unbiased=True)
-    return torch.cat([mean, std], dim=-1)
-
-
 class StatsPool(nn.Module):
     @override
     def forward(self, x: Tensor) -> Tensor:
-        return statistics_pooling(x)
+        mean = x.mean(dim=-1)
+        std = x.std(dim=-1, unbiased=True)
+        return torch.cat([mean, std], dim=-1)
 
     @patch_call(forward)
     def __call__(self) -> None: ...
@@ -124,7 +120,6 @@ class CAMDenseTDNNBlock(nn.ModuleList):
         num_layers: int,
         in_channels: int,
         dilation: int = 1,
-        bias: bool = False,
     ) -> None:
         super().__init__()
         for i in range(num_layers):
@@ -157,9 +152,9 @@ class TransitLayer(nn.Module):
 
 
 class DenseLayer(nn.Module):
-    def __init__(self, in_channels: int) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.linear = nn.Conv1d(in_channels, 192, 1, bias=False)
+        self.linear = nn.Conv1d(1024, 192, 1, bias=False)
         self.nonlinear = nn.Sequential(OrderedDict([("batchnorm", nn.BatchNorm1d(192, affine=False))]))
 
     @override

@@ -3,6 +3,8 @@ from collections.abc import Sequence
 from torch import Tensor
 from torch.nn.common_types import _size_2_t, _size_4_t, _size_6_t
 
+from indextts.util import patch_call
+
 from .module import Module
 
 __all__ = [
@@ -48,6 +50,8 @@ class _ConstantPadNd(Module):
     def __init__(self, value: float) -> None: ...
     def forward(self, input: Tensor) -> Tensor: ...
     def extra_repr(self) -> str: ...
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 class ConstantPad1d(_ConstantPadNd):
     padding: tuple[int, int]

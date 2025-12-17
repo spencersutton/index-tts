@@ -99,23 +99,19 @@ class Transformer(nn.Module):
         self.max_seq_length = max_seq_length
         self.max_batch_size = max_batch_size
 
+        config = self.config
         self.freqs_cis = _precompute_freqs_cis(
-            self.config.block_size,
-            self.config.head_dim,
-            self.config.rope_base,
+            config.block_size,
+            config.head_dim,
+            config.rope_base,
         )
+        n_layer = config.n_layer
         self.causal_mask = torch.tril(torch.ones(self.max_seq_length, self.max_seq_length, dtype=torch.bool))
-        self.layers_emit_skip = [i for i in range(self.config.n_layer) if i < self.config.n_layer // 2]
-        self.layers_receive_skip = [i for i in range(self.config.n_layer) if i > self.config.n_layer // 2]
+        self.layers_emit_skip = [i for i in range(n_layer) if i < n_layer // 2]
+        self.layers_receive_skip = [i for i in range(n_layer) if i > n_layer // 2]
 
     @override
-    def forward(
-        self,
-        x: Tensor,
-        c: Tensor,
-        input_pos: Tensor,
-        mask: Tensor,
-    ) -> Tensor:
+    def forward(self, x: Tensor, c: Tensor, input_pos: Tensor, mask: Tensor) -> Tensor:
         assert self.freqs_cis is not None, "Caches must be initialized first"
 
         if self.freqs_cis.device != input_pos.device:
@@ -140,7 +136,7 @@ class Transformer(nn.Module):
 class TransformerBlock(nn.Module):
     def __init__(self, config: ModelArgs) -> None:
         super().__init__()
-        self.attention: Attention = Attention(config)
+        self.attention = Attention(config)
         self.feed_forward = FeedForward(config)
         self.ffn_norm = AdaptiveLayerNorm(config.dim, RMSNorm(config.dim, eps=config.norm_eps))
         self.attention_norm = AdaptiveLayerNorm(config.dim, RMSNorm(config.dim, eps=config.norm_eps))
@@ -166,21 +162,13 @@ class TransformerBlock(nn.Module):
 
 
 class Attention(nn.Module):
-    def __init__(self, config: ModelArgs, is_cross_attention: bool = False) -> None:
+    def __init__(self, config: ModelArgs) -> None:
         super().__init__()
         assert config.dim % config.n_head == 0
 
         total_head_dim = (config.n_head + 2 * config.n_local_heads) * config.head_dim
         # key, query, value projections for all heads, but in a batch
-        if is_cross_attention:
-            self.wq = nn.Linear(config.dim, config.n_head * config.head_dim, bias=False)
-            self.wkv = nn.Linear(
-                config.context_dim,
-                2 * config.n_local_heads * config.head_dim,
-                bias=False,
-            )
-        else:
-            self.wqkv = nn.Linear(config.dim, total_head_dim, bias=False)
+        self.wqkv = nn.Linear(config.dim, total_head_dim, bias=False)
         self.wo = nn.Linear(config.head_dim * config.n_head, config.dim, bias=False)
 
         self.n_head = config.n_head
@@ -195,26 +183,18 @@ class Attention(nn.Module):
         freqs_cis: Tensor,
         mask: Tensor | None,
         input_pos: Tensor,
-        context: Tensor | None = None,
-        context_freqs_cis: Tensor | None = None,
     ) -> Tensor:
         bsz, seqlen, _ = x.shape
 
         kv_size = self.n_local_heads * self.head_dim
-        if context is None:
-            q, k, v = self.wqkv(x).split([kv_size, kv_size, kv_size], dim=-1)
-            context_seqlen = seqlen
-        else:
-            q = self.wq(x)
-            k, v = self.wkv(context).split([kv_size, kv_size], dim=-1)
-            context_seqlen = context.shape[1]
+        q, k, v = self.wqkv(x).split([kv_size, kv_size, kv_size], dim=-1)
 
         q = q.view(bsz, seqlen, self.n_head, self.head_dim)
-        k = k.view(bsz, context_seqlen, self.n_local_heads, self.head_dim)
-        v = v.view(bsz, context_seqlen, self.n_local_heads, self.head_dim)
+        k = k.view(bsz, seqlen, self.n_local_heads, self.head_dim)
+        v = v.view(bsz, seqlen, self.n_local_heads, self.head_dim)
 
         q = _apply_rotary_emb(q, freqs_cis)
-        k = _apply_rotary_emb(k, context_freqs_cis if context_freqs_cis is not None else freqs_cis)
+        k = _apply_rotary_emb(k, freqs_cis)
 
         q, k, v = (x.transpose(1, 2) for x in (q, k, v))
 

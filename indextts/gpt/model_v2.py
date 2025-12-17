@@ -38,7 +38,7 @@ class NullPositionEmbedding(nn.Embedding):
 
     @override
     def forward(self, input: Tensor) -> Tensor:
-        return torch.zeros((input.shape[0], input.shape[1], self.embedding_dim), device=input.device)
+        return torch.zeros((input.shape[0], input.shape[1], self.embedding_dim))
 
     @patch_call(forward)
     def __call__(self) -> None: ...
@@ -89,13 +89,13 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         )
         assert_device_map(self.device_map, len(self.transformer.h))
         self.transformer.parallelize(self.device_map)
-        self.lm_head = self.lm_head.to(self.transformer.first_device)
+        self.lm_head = self.lm_head
         self.model_parallel = True
 
     def deparallelize(self) -> None:
         self.transformer.deparallelize()
-        self.transformer = self.transformer.to("cpu")
-        self.lm_head = self.lm_head.to("cpu")
+        self.transformer = self.transformer
+        self.lm_head = self.lm_head
         self.model_parallel = False
         torch.cuda.empty_cache()
         if torch.backends.mps.is_available():
@@ -182,7 +182,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         else:
             emb = self.embeddings(input_ids)
             assert attention_mask is not None
-            emb += self.text_pos_embedding.get_fixed_embedding(attention_mask.shape[1] - mel_len, attention_mask.device)
+            emb += self.text_pos_embedding.get_fixed_embedding(attention_mask.shape[1] - mel_len)
         transformer_outputs = self.transformer(
             inputs_embeds=emb,
             past_key_values=past_key_values,
@@ -203,10 +203,10 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         # Set device for model parallelism
         if self.model_parallel:
             if torch.backends.mps.is_available():
-                self.to(self.transformer.first_device)
+                self
             else:
                 torch.cuda.set_device(self.transformer.first_device)
-            hidden_states = hidden_states.to(self.lm_head[1].weight.device)
+            hidden_states = hidden_states
 
         lm_logits = cast(torch.FloatTensor, self.lm_head(hidden_states))
 
@@ -629,7 +629,6 @@ class UnifiedVoice(nn.Module):
 
         """
         b, L = text_inputs.shape[:2]
-        device = text_inputs.device
         single_cond = conditional_latents.ndim == 3 and conditional_latents.shape[0] == 1
         if not single_cond:
             assert conditional_latents.shape[0] == b, f"batch size mismatch: {conditional_latents.shape[0]} vs {b}"
@@ -641,7 +640,7 @@ class UnifiedVoice(nn.Module):
             text_input = text_inputs[i][valid_mask]
             text_input = F.pad(text_input, (1, 0), value=self.start_text_token)
             text_input = F.pad(text_input, (0, 1), value=self.stop_text_token)
-            text_input_pos = torch.arange(0, text_input.size(-1), device=device)
+            text_input_pos = torch.arange(0, text_input.size(-1))
             text_emb = self.text_embedding(text_input) + self.text_pos_embedding.emb(text_input_pos)
             # concatenate [conditional latents][text embeddings]
             conds_text_emb = [
@@ -649,7 +648,7 @@ class UnifiedVoice(nn.Module):
                 text_emb,
             ]
             # +1 for the start_mel_token
-            attention_mask = torch.ones(target_len + 1, dtype=torch.long, device=device)
+            attention_mask = torch.ones(target_len + 1, dtype=torch.long)
             # check this text input is padded
             padding: int = L + 2 - text_input.size(-1)
             # pad left of [cond][text] -> [pad][cond][text]
@@ -657,7 +656,6 @@ class UnifiedVoice(nn.Module):
                 pad = torch.zeros(
                     (padding, conditional_latents.size(-1)),
                     dtype=text_emb.dtype,
-                    device=device,
                 )  # [p, dim]
                 conds_text_emb.insert(0, pad)
                 attention_mask[:padding] = 0
@@ -676,7 +674,6 @@ class UnifiedVoice(nn.Module):
                 batched_mel_emb.shape[1] + 1,  # +1 for the start_mel_token
             ),
             dtype=torch.long,
-            device=device,
         )
         fake_inputs[:, -1] = self.start_mel_token
         return fake_inputs, batched_mel_emb, attention_mask
@@ -711,9 +708,9 @@ class UnifiedVoice(nn.Module):
         if emo_speech_condition is None:
             emo_speech_condition = speech_condition
         if cond_lengths is None:
-            cond_lengths = torch.tensor([speech_condition.shape[-1]], device=speech_condition.device)
+            cond_lengths = torch.tensor([speech_condition.shape[-1]])
         if emo_cond_lengths is None:
-            emo_cond_lengths = torch.tensor([emo_speech_condition.shape[-1]], device=speech_condition.device)
+            emo_cond_lengths = torch.tensor([emo_speech_condition.shape[-1]])
 
         t1 = time.perf_counter()
         speech_conditioning_latent = self.get_conditioning(speech_condition.transpose(1, 2), cond_lengths)
@@ -730,7 +727,7 @@ class UnifiedVoice(nn.Module):
         else:
             logger.info("Use the specified emotion vector")
 
-        tmp = torch.zeros(text_inputs.size(0)).to(text_inputs.device)
+        tmp = torch.zeros(text_inputs.size(0))
         duration_emb = self.speed_emb(torch.zeros_like(tmp).long())
         duration_emb_half = self.speed_emb(torch.ones_like(tmp).long())
         conds_latent = torch.cat(

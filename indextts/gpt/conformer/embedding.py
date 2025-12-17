@@ -73,7 +73,7 @@ class PositionalEncoding(nn.Module):
             Tensor: for compatibility to RelPositionalEncoding
 
         """
-        self.pe = self.pe.to(x.device)
+        self.pe = self.pe
         pos_emb = self.position_encoding(offset, x.size(1), False)
         x = x * self.xscale + pos_emb
         return self.dropout(x), self.dropout(pos_emb)
@@ -102,7 +102,7 @@ class PositionalEncoding(nn.Module):
             pos_emb = self.pe[:, offset : offset + size]
         else:  # for batched streaming decoding on GPU
             assert torch.max(offset) + size < self.max_len
-            index = offset.unsqueeze(1) + torch.arange(0, size).to(offset.device)  # B X T
+            index = offset.unsqueeze(1) + torch.arange(0, size)  # B X T
             flag = index > 0
             # remove negative offset
             index *= flag
@@ -141,7 +141,7 @@ class RelPositionalEncoding(PositionalEncoding):
             Tensor: Positional embedding tensor (1, time, `*`).
 
         """
-        self.pe = self.pe.to(x.device)
+        self.pe = self.pe
         x *= self.xscale
         pos_emb = self.position_encoding(offset, x.size(1), False)
         return self.dropout(x), self.dropout(pos_emb)
@@ -158,7 +158,7 @@ class NoPositionalEncoding(nn.Module):
     @override
     def forward(self, x: Tensor, offset: int | Tensor = 0) -> tuple[Tensor, Tensor]:
         """Just return zero vector for interface compatibility."""
-        pos_emb = torch.zeros(1, x.size(1), self.d_model).to(x.device)
+        pos_emb = torch.zeros(1, x.size(1), self.d_model)
         return self.dropout(x), pos_emb
 
     @patch_call(forward)

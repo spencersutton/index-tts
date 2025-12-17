@@ -5,7 +5,7 @@ import os
 import random
 import time
 import typing
-from collections.abc import Callable, Collection, Generator, Sequence
+from collections.abc import Collection, Generator, Sequence
 from pathlib import Path
 from subprocess import CalledProcessError
 from typing import Any, cast
@@ -184,7 +184,6 @@ class IndexTTS2:
     emo_matrix: tuple[Tensor, ...]
     emo_num: tuple[int, ...]
     spk_matrix: tuple[Tensor, ...]
-    mel_fn: Callable[[Tensor], Tensor]
 
     if typing.TYPE_CHECKING:
         gr_progress: Progress | None
@@ -202,14 +201,14 @@ class IndexTTS2:
         spk_cond_emb = self.get_emb(inputs["input_features"], inputs["attention_mask"])
         _, S_ref = self.semantic_codec.quantize(spk_cond_emb)
 
-        ref_mel = self.mel_fn(audio_22k.data.to(spk_cond_emb.device).float())
-        ref_target_lengths = torch.tensor([ref_mel.size(2)]).to(ref_mel.device)
+        ref_mel = mel_spectrogram(audio_22k.data.to(self.device).float())
+        ref_target_lengths = torch.tensor([ref_mel.size(2)]).to(self.device)
         feat = torchaudio.compliance.kaldi.fbank(
             audio_16k.data,
             num_mel_bins=80,
             dither=0,
             sample_frequency=FEATURE_SAMPLING_RATE,
-        )
+        ).to(self.device)
         feat -= feat.mean(dim=0, keepdim=True)  # feat2 Another filter energy group feature [922, 80]
         style = self.campplus_model(feat.unsqueeze(0))  # Reference audio's global style 2 [1, 192]
 
@@ -378,19 +377,6 @@ class IndexTTS2:
         self.emo_num = tuple(cfg.emo_num)
         self.emo_matrix = torch.split(emo_matrix, self.emo_num)
         self.spk_matrix = torch.split(spk_matrix, self.emo_num)
-
-        spect_params = cfg.s2mel.preprocess_params.spect_params
-        mel_fn_args = {
-            "n_fft": spect_params.n_fft,
-            "win_size": spect_params.win_length,
-            "hop_size": spect_params.hop_length,
-            "num_mels": spect_params.n_mels,
-            "sampling_rate": cfg.s2mel.preprocess_params.sr,
-            "fmin": spect_params.fmin or 0,
-            "fmax": None if spect_params.fmax == "None" else 8000,
-            "center": False,
-        }
-        self.mel_fn = functools.partial(mel_spectrogram, **mel_fn_args)
 
         # Enable torch.compile optimization if requested
         if use_torch_compile:

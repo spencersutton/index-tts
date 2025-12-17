@@ -184,7 +184,7 @@ class DiT(nn.Module):
 
         x_in = self.cond_x_merge_linear(x_in)  # (N, T, D) [2, 1863, 512]
 
-        x_mask = sequence_mask(x_lens, max_length=x_in.size(1)).to(x.device).unsqueeze(1)  # torch.Size([1, 1, 1863])
+        x_mask = sequence_mask(x_lens, max_length=x_in.size(1)).unsqueeze(1)  # torch.Size([1, 1, 1863])
         input_pos = self.input_pos[: x_in.size(1)]  # (T,) range（0，1863）
         x_mask_expanded = x_mask[:, None, :].repeat(1, 1, x_in.size(1), 1)  # torch.Size([1, 1, 1863, 1863]
         x_res = self.transformer(x_in, t1.unsqueeze(1), input_pos, x_mask_expanded)  # [2, 1863, 512]

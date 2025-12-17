@@ -14,7 +14,7 @@ Set it to empty stringo avoid recompilation and assign arch flags explicity in e
 os.environ["TORCH_CUDA_ARCH_LIST"] = ""
 
 
-def load() -> Any:  # noqa: ANN401
+def load() -> Any:
     # Check if cuda 11 is installed for compute capability 8.0
     cc_flag: list[str] = []
     assert cpp_extension.CUDA_HOME is not None, (
@@ -30,7 +30,7 @@ def load() -> Any:  # noqa: ANN401
     _create_build_dir(buildpath)
 
     # Helper function to build the kernels.
-    def _cpp_extention_load_helper(name: str, sources: list[str], extra_cuda_flags: list[str]) -> Any:  # noqa: ANN401
+    def _cpp_extention_load_helper(name: str, sources: list[str], extra_cuda_flags: list[str]) -> Any:
         return cpp_extension.load(
             name=name,
             sources=sources,

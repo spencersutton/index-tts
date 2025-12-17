@@ -60,8 +60,8 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         gpt: GPT2Model,
         text_pos_emb: LearnedPositionEmbeddings,
         embeddings: nn.Embedding,
-        norm: nn.Module,
-        linear: nn.Module,
+        norm: nn.LayerNorm,
+        linear: nn.Linear,
         kv_cache: bool = False,
     ) -> None:
         super().__init__(config)
@@ -151,14 +151,14 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         self,
         input_ids: Tensor,
         past_key_values: Cache | None = None,
-        attention_mask: Tensor | None = None,
-        token_type_ids: Tensor | None = None,
-        position_ids: Tensor | None = None,
-        head_mask: Tensor | None = None,
-        inputs_embeds: Tensor | None = None,
-        encoder_hidden_states: Tensor | None = None,
-        encoder_attention_mask: Tensor | None = None,
-        labels: Tensor | None = None,
+        attention_mask: torch.FloatTensor | None = None,
+        token_type_ids: torch.LongTensor | None = None,
+        position_ids: torch.LongTensor | None = None,
+        head_mask: torch.FloatTensor | None = None,
+        inputs_embeds: torch.FloatTensor | None = None,
+        encoder_hidden_states: torch.FloatTensor | None = None,
+        encoder_attention_mask: torch.FloatTensor | None = None,
+        labels: torch.LongTensor | None = None,
         use_cache: bool | None = None,
         output_attentions: bool | None = None,
         output_hidden_states: bool | None = None,
@@ -198,20 +198,20 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
             return_dict=return_dict,
         )
         assert not isinstance(transformer_outputs, tuple)
-        hidden_states = transformer_outputs[0]
+        hidden_states = cast(Tensor, transformer_outputs[0])
 
         # Set device for model parallelism
         if self.model_parallel:
             if torch.backends.mps.is_available():
-                self
+                self.to(self.transformer.first_device)
             else:
                 torch.cuda.set_device(self.transformer.first_device)
-            hidden_states = hidden_states
+            hidden_states = hidden_states.to(self.lm_head[1].weight.device)
 
         lm_logits = cast(torch.FloatTensor, self.lm_head(hidden_states))
 
         if not return_dict:
-            return (lm_logits, *transformer_outputs[1:])
+            return (lm_logits, *transformer_outputs[1:])  # pyright: ignore[reportUnknownVariableType]
 
         return CausalLMOutputWithCrossAttentions(
             loss=None,
@@ -408,7 +408,7 @@ class UnifiedVoice(nn.Module):
         )
         assert self.inference_model is not None
         if use_deepspeed and half and torch.cuda.is_available():
-            import deepspeed  # noqa: PLC0415  # pyright: ignore[reportMissingImports]
+            import deepspeed  # noqa: PLC0415  # pyright: ignore[reportMissingTypeStubs]
 
             self.ds_engine = deepspeed.init_inference(  # pyright: ignore[reportUnknownMemberType]
                 model=self.inference_model,
@@ -418,7 +418,7 @@ class UnifiedVoice(nn.Module):
             )
             self.inference_model = self.ds_engine.module.eval()  # pyright: ignore
         elif use_deepspeed and torch.cuda.is_available():
-            import deepspeed  # noqa: PLC0415  # pyright: ignore[reportMissingImports]
+            import deepspeed  # noqa: PLC0415  # pyright: ignore[reportMissingTypeStubs]
 
             self.ds_engine = deepspeed.init_inference(  # pyright: ignore[reportUnknownMemberType]
                 model=self.inference_model,
@@ -509,18 +509,14 @@ class UnifiedVoice(nn.Module):
             return first_logits, second_logits
         return first_logits
 
-    def get_conditioning(
-        self,
-        speech_conditioning_input: Tensor,
-        cond_mel_lengths: Tensor | None = None,
-    ) -> Tensor:
+    def get_conditioning(self, speech_conditioning_input: Tensor, cond_mel_lengths: Tensor) -> Tensor:
         speech_conditioning_input, mask = self.conditioning_encoder(
             speech_conditioning_input.transpose(1, 2), cond_mel_lengths
         )  # (b, s, d), (b, 1, s)
         conds_mask = self.cond_mask_pad(mask.squeeze(1))
         return self.perceiver_encoder(speech_conditioning_input, conds_mask)  # (b, 32, d)
 
-    def get_emo_conditioning(self, speech_conditioning_input: Tensor, cond_mel_lengths: Tensor | None = None) -> Tensor:
+    def get_emo_conditioning(self, speech_conditioning_input: Tensor, cond_mel_lengths: Tensor) -> Tensor:
         speech_conditioning_input, mask = self.emo_conditioning_encoder(
             speech_conditioning_input.transpose(1, 2), cond_mel_lengths
         )  # (b, s, d), (b, 1, s)
@@ -537,8 +533,8 @@ class UnifiedVoice(nn.Module):
         mel_codes: Tensor,
         mel_codes_lengths: Tensor,
         emo_speech_conditioning_latent: Tensor,
-        cond_mel_lengths: Tensor | None = None,
-        emo_cond_mel_lengths: Tensor | None = None,
+        cond_mel_lengths: Tensor,
+        emo_cond_mel_lengths: Tensor,
         emo_vec: Tensor | None = None,
         use_speed: Tensor | None = None,
         do_spk_cond: bool = False,
@@ -691,7 +687,7 @@ class UnifiedVoice(nn.Module):
         max_generate_length: int | None = None,
         typical_sampling: bool = False,
         typical_mass: float = 0.9,
-        **hf_generate_kwargs: Any,
+        **hf_generate_kwargs: Any,  # pyright: ignore[reportAny]
     ) -> tuple[Tensor, Tensor]:
         t0 = time.perf_counter()
         """Args:
@@ -783,7 +779,7 @@ class UnifiedVoice(nn.Module):
                 inputs,  # fake input_ids (all 1s + start_mel_token)
                 max_new_tokens=max_length - trunc_index,
                 attention_mask=attention_mask,
-                temperature=hf_generate_kwargs.get("temperature", 1),
+                temperature=hf_generate_kwargs.get("temperature", 1),  # pyright: ignore[reportAny]
                 stop_tokens=[self.stop_mel_token],
                 tts_embeddings=inputs_embeds,  # [pad][cond][text] embeddings (87 tokens, NO start_mel_token)
                 tts_mel_embedding=self.inference_model.embeddings,  # mel_embedding layer
@@ -799,7 +795,7 @@ class UnifiedVoice(nn.Module):
                 max_length=max_length,
                 logits_processor=logits_processor,
                 num_return_sequences=num_return_sequences,
-                **hf_generate_kwargs,
+                **hf_generate_kwargs,  # pyright: ignore[reportAny]
             )
         logger.info("generation: %.4fs", time.perf_counter() - t4)
         logger.info("total inference_speech: %.4fs", time.perf_counter() - t0)

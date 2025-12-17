@@ -1,7 +1,7 @@
 import typing
 from collections.abc import Generator
 from functools import partial
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import Any
 
 import sympy
 import torch
@@ -15,8 +15,6 @@ from .kernel_inputs import KernelInputs
 from .scheduler import BaseSchedulerNode, Scheduler
 from .select_algorithm import ExternKernelChoice
 from .template_heuristics.triton import BaseConfigHeuristic
-
-if TYPE_CHECKING: ...
 
 class Sortable(typing.Protocol):
     def __lt__(self, other: typing.Self) -> bool: ...

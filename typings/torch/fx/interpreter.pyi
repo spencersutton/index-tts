@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import torch
 
@@ -8,7 +8,6 @@ from .graph_module import GraphModule
 from .node import Argument, Node, Target
 from .proxy import Proxy
 
-if TYPE_CHECKING: ...
 __all__ = ["Interpreter", "Transformer"]
 
 @compatibility(is_backward_compatible=True)

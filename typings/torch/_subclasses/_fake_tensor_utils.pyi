@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional, Union
 
 import sympy
 import torch
@@ -10,8 +9,6 @@ from torch.types import PySymType
 from torch.utils._backport_slots import dataclass_slots
 
 from .fake_tensor import _DispatchCacheKey, _MetadataIntLike
-
-if TYPE_CHECKING: ...
 
 @dataclass_slots
 @dataclass(frozen=True)

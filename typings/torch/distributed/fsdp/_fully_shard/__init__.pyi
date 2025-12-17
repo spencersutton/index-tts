@@ -4,9 +4,9 @@ from ._fully_shard import FSDPModule, UnshardHandle, fully_shard, register_fsdp_
 __all__ = [
     "CPUOffloadPolicy",
     "FSDPModule",
-    "fully_shard",
     "MixedPrecisionPolicy",
     "OffloadPolicy",
-    "register_fsdp_forward_method",
     "UnshardHandle",
+    "fully_shard",
+    "register_fsdp_forward_method",
 ]

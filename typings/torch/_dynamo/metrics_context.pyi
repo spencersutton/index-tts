@@ -1,21 +1,6 @@
 from collections.abc import Callable, Iterator
-from typing import TYPE_CHECKING, Any, Optional, Self, TypeAlias
+from typing import Any, Self
 
-"""Metrics collection and management system for Dynamo.
-
-This module provides context managers for gathering and reporting metrics during
-compilation and runtime.
-
-It includes two main components:
-- MetricsContext: A context manager for collecting metrics during compilation, supporting
-  nested contexts and various metric types (counters, sets, key-value pairs)
-- RuntimeMetricsContext: A specialized context for runtime metrics collection that doesn't
-  require explicit context management
-
-The metrics system enables comprehensive monitoring and analysis of both compilation and
-execution performance.
-"""
-if TYPE_CHECKING: ...
 log = ...
 
 class TopN:
@@ -24,10 +9,7 @@ class TopN:
     def __len__(self) -> int: ...
     def __iter__(self) -> Iterator[tuple[Any, int]]: ...
 
-type OnExitType = Callable[
-    [int, int, dict[str, Any], type[BaseException] | None, BaseException | None],
-    None,
-]
+type OnExitType = Callable[[int, int, dict[str, Any], type[BaseException] | None, BaseException | None], None]
 
 class MetricsContext:
     def __init__(self, on_exit: OnExitType) -> None: ...

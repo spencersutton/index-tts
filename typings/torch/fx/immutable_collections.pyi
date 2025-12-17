@@ -1,15 +1,16 @@
+from collections import UserDict, UserList
 from typing import Self, TypeVar
 
 from ._compatibility import compatibility
 
-__all__ = ["immutable_list", "immutable_dict"]
+__all__ = ["immutable_dict", "immutable_list"]
 _help_mutation = ...
 _T = TypeVar("_T")
 _KT = TypeVar("_KT")
 _VT = TypeVar("_VT")
 
 @compatibility(is_backward_compatible=True)
-class immutable_list(list[_T]):
+class immutable_list(UserList[_T]):
     __delitem__ = ...
     __iadd__ = ...
     __imul__ = ...
@@ -26,7 +27,7 @@ class immutable_list(list[_T]):
     def __reduce__(self) -> tuple[type[Self], tuple[tuple[_T, ...]]]: ...
 
 @compatibility(is_backward_compatible=True)
-class immutable_dict(dict[_KT, _VT]):
+class immutable_dict(UserDict[_KT, _VT]):
     __delitem__ = ...
     __ior__ = ...
     __setitem__ = ...

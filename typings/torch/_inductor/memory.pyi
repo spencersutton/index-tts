@@ -1,12 +1,11 @@
 import dataclasses
 from collections.abc import Callable
-from typing import TYPE_CHECKING, TypedDict, Union
+from typing import TypedDict
 
 from torch.utils._ordered_set import OrderedSet
 
 from .scheduler import BaseSchedulerNode, SchedulerBuffer
 
-if TYPE_CHECKING: ...
 torch_log = ...
 
 @dataclasses.dataclass
@@ -63,9 +62,7 @@ def compute_memory_timeline(
     name_to_freeable_input_buf: dict[str, FreeableInputBuffer],
     graph_outputs: OrderedSet[str],
 ) -> tuple[
-    list[BufferInfo],
-    dict[BaseSchedulerNode, int],
-    dict[FreeableInputBuffer | SchedulerBuffer, BaseSchedulerNode],
+    list[BufferInfo], dict[BaseSchedulerNode, int], dict[FreeableInputBuffer | SchedulerBuffer, BaseSchedulerNode]
 ]: ...
 def estimate_peak_memory(
     nodes: list[BaseSchedulerNode],
@@ -94,12 +91,10 @@ def topological_sort_lpmf(
     name_to_buf: dict[str, SchedulerBuffer],
     graph_outputs: OrderedSet[str],
 ) -> list[BaseSchedulerNode]:
-
     class NodeInfo(TypedDict): ...
     class BufferInfo(TypedDict): ...
 
 def topological_sort_bfs(nodes: list[BaseSchedulerNode]) -> list[BaseSchedulerNode]:
-
     class NodeInfo(TypedDict): ...
 
     @dataclasses.dataclass

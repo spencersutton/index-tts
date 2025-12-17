@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 import torch
 
 from . import ir
@@ -12,11 +10,7 @@ def create_int8_compensation(
     x_scale: ir.TensorBox,
     x_zp: ir.TensorBox,
     w_scale: ir.TensorBox,
-) -> tuple[
-    bool,
-    ir.TensorBox | ir.ShapeAsConstantBuffer,
-    ir.TensorBox | ir.ShapeAsConstantBuffer | None,
-]: ...
+) -> tuple[bool, ir.TensorBox | ir.ShapeAsConstantBuffer, ir.TensorBox | ir.ShapeAsConstantBuffer | None]: ...
 def codegen_int8_gemm_template_compensation(
     use_int8_fast_compensation_path: bool,
     input: OpsValue,
@@ -28,7 +22,5 @@ def codegen_int8_gemm_template_compensation(
 ) -> OpsValue: ...
 def grouped_gemm_lowering(
     x: TensorBox, w: list[TensorBox], b: list[TensorBox], attr=..., scalars=..., algorithm=..., layout=...
-):  # -> list[TensorBox | ShapeAsConstantBuffer]:
-    ...
-def register_onednn_fusion_ops():  # -> None:
-    ...
+): ...
+def register_onednn_fusion_ops(): ...

@@ -1,14 +1,13 @@
 from collections.abc import Callable
-from typing import Concatenate, Generic, ParamSpec, Protocol, TypeVar
+from typing import Concatenate, ParamSpec, Protocol, TypeVar
 
-import torch.nn as nn
+from torch import nn
 from torch.distributed._composable_state import _State
 
 _T = TypeVar("_T", covariant=True)
 _P = ParamSpec("_P")
 
-def generate_state_key(string=...):  # -> str:
-    ...
+def generate_state_key(string=...): ...
 
 STATE_KEY = ...
 REGISTRY_KEY = ...
@@ -24,7 +23,4 @@ class _ContractFn[**P, T, TState: _State](Protocol):
 
 def contract[TState: _State](
     state_cls: type[_TState] = ...,
-) -> Callable[
-    [Callable[Concatenate[_M, _P], _M]],
-    _ContractFn[Concatenate[_M, _P], _M, _TState],
-]: ...
+) -> Callable[[Callable[Concatenate[_M, _P], _M]], _ContractFn[Concatenate[_M, _P], _M, _TState]]: ...

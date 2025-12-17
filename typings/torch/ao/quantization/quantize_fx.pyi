@@ -5,11 +5,7 @@ import typing_extensions
 from torch.fx import GraphModule
 
 from .backend_config import BackendConfig
-from .fx.custom_config import (
-    ConvertCustomConfig,
-    FuseCustomConfig,
-    PrepareCustomConfig,
-)
+from .fx.custom_config import ConvertCustomConfig, FuseCustomConfig, PrepareCustomConfig
 from .qconfig_mapping import QConfigMapping
 from .utils import DEPRECATION_WARNING
 

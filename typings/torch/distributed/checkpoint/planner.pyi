@@ -84,10 +84,7 @@ class SavePlanner(abc.ABC):
     _cached_metadata: dict[str, Metadata] = ...
     @abc.abstractmethod
     def set_up_planner(
-        self,
-        state_dict: STATE_DICT_TYPE,
-        storage_meta: StorageMeta | None = ...,
-        is_coordinator: bool = ...,
+        self, state_dict: STATE_DICT_TYPE, storage_meta: StorageMeta | None = ..., is_coordinator: bool = ...
     ) -> None: ...
     @abc.abstractmethod
     def create_local_plan(self) -> SavePlan: ...
@@ -101,10 +98,7 @@ class SavePlanner(abc.ABC):
 class LoadPlanner:
     @abc.abstractmethod
     def set_up_planner(
-        self,
-        state_dict: STATE_DICT_TYPE,
-        metadata: Metadata | None = ...,
-        is_coordinator: bool = ...,
+        self, state_dict: STATE_DICT_TYPE, metadata: Metadata | None = ..., is_coordinator: bool = ...
     ) -> None: ...
     @abc.abstractmethod
     def create_local_plan(self) -> LoadPlan: ...

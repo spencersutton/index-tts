@@ -1,27 +1,11 @@
 import dataclasses
 import sys
-from typing import TYPE_CHECKING, Any, Union
+from typing import Any
 
 from .bytecode_transformation import Instruction
 
-"""
-This module provides utilities for analyzing and optimizing Python bytecode.
-Key functionality includes:
-- Dead code elimination
-- Jump instruction optimization
-- Stack size analysis and verification
-- Live variable analysis
-- Line number propagation and cleanup
-- Exception table handling for Python 3.11+
-
-The utilities in this module are used to analyze and transform bytecode
-for better performance while maintaining correct semantics.
-"""
-if TYPE_CHECKING: ...
 TERMINAL_OPCODES = ...
-...
 if (3, 12) <= sys.version_info < (3, 14): ...
-...
 JUMP_OPCODES = ...
 JUMP_OPNAMES = ...
 HASLOCAL = ...

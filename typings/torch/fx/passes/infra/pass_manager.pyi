@@ -5,11 +5,7 @@ from torch.fx._compatibility import compatibility
 from torch.fx.passes.infra.pass_base import PassResult
 
 logger = ...
-__all__ = [
-    "PassManager",
-    "pass_result_wrapper",
-    "this_before_that_pass_constraint",
-]
+__all__ = ["PassManager", "pass_result_wrapper", "this_before_that_pass_constraint"]
 
 @compatibility(is_backward_compatible=False)
 def pass_result_wrapper(fn: Callable) -> Callable: ...

@@ -1,10 +1,8 @@
 from collections.abc import Generator
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from ..ir import Layout
 from ..kernel_inputs import KernelInputs
-
-if TYPE_CHECKING: ...
 
 class TemplateConfigHeuristics:
     def should_run(self, inputs: KernelInputs, layout: Layout) -> bool: ...

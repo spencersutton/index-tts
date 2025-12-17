@@ -9,10 +9,10 @@ from functools import lru_cache
 from pathlib import Path
 from tempfile import _TemporaryFileWrapper
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Generic, Optional, Self, TypeVar, Union, override
+from typing import Any, Self, TypeVar, override
 
 import torch
-from torch import SymInt, Tensor
+from torch import Tensor
 from torch._inductor import config
 from torch._inductor.utils import clear_on_fresh_cache
 from torch._subclasses.fake_tensor import TensorMetadata
@@ -30,7 +30,7 @@ from .utils import InputType
 
 if config.is_fbcode(): ...
 T = TypeVar("T")
-if TYPE_CHECKING: ...
+
 _IS_WINDOWS = ...
 LOCK_TIMEOUT = ...
 output_code_log = ...

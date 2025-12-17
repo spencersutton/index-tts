@@ -5,14 +5,7 @@ import torch
 import torch.fx
 from torch.fx._compatibility import compatibility
 
-__all__ = [
-    "OpSupports",
-    "OperatorSupport",
-    "OperatorSupportBase",
-    "any_chain",
-    "chain",
-    "create_op_support",
-]
+__all__ = ["OpSupports", "OperatorSupport", "OperatorSupportBase", "any_chain", "chain", "create_op_support"]
 TargetTypeName = str
 type SupportedArgumentDTypes = tuple[t.Sequence[t.Sequence[torch.dtype]], dict[str, t.Sequence[torch.dtype]]] | None
 type SupportDict = t.Mapping[TargetTypeName, SupportedArgumentDTypes]
@@ -31,9 +24,7 @@ class OperatorSupport(OperatorSupportBase):
 type IsNodeSupported = t.Callable[[t.Mapping[str, torch.nn.Module], torch.fx.Node], bool]
 
 @compatibility(is_backward_compatible=False)
-def create_op_support(
-    is_node_supported: IsNodeSupported,
-) -> OperatorSupportBase: ...
+def create_op_support(is_node_supported: IsNodeSupported) -> OperatorSupportBase: ...
 @compatibility(is_backward_compatible=False)
 def chain(*op_support: OperatorSupportBase) -> OperatorSupportBase: ...
 @compatibility(is_backward_compatible=False)

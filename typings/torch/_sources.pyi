@@ -1,6 +1,6 @@
 import ast
 import functools
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple
 
 from torch._C._jit_tree_views import SourceRangeFactory
 
@@ -13,10 +13,8 @@ class SourceContext(SourceRangeFactory):
     ) -> None: ...
 
 @functools.cache
-def make_source_context(*args):  # -> SourceContext:
-    ...
-def fake_range():  # -> SourceRange:
-    ...
+def make_source_context(*args): ...
+def fake_range(): ...
 
 class ParsedDef(NamedTuple):
     ast: ast.Module
@@ -25,5 +23,4 @@ class ParsedDef(NamedTuple):
     filename: str | None
     file_lineno: int
 
-def parse_def(fn):  # -> ParsedDef:
-    ...
+def parse_def(fn): ...

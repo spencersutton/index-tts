@@ -32,10 +32,7 @@ class EventList(UserList):
     def supported_export_stacks_metrics(self) -> list[str]: ...
     def export_stacks(self, path: str, metric: str) -> None: ...
     def key_averages(
-        self,
-        group_by_input_shapes=...,
-        group_by_stack_n=...,
-        group_by_overload_name=...,
+        self, group_by_input_shapes=..., group_by_stack_n=..., group_by_overload_name=...
     ) -> EventList: ...
     def total_average(self) -> FunctionEventAvg: ...
 
@@ -51,10 +48,7 @@ class FormattedTimesMixin:
     @property
     def device_time(self) -> float: ...
     @property
-    @deprecated(
-        "`cuda_time` is deprecated, please use `device_time` instead.",
-        category=FutureWarning,
-    )
+    @deprecated("`cuda_time` is deprecated, please use `device_time` instead.", category=FutureWarning)
     def cuda_time(self) -> float: ...
 
 class Interval:
@@ -102,8 +96,7 @@ class FunctionEvent(FormattedTimesMixin):
     def self_device_memory_usage(self) -> int: ...
     @property
     @deprecated(
-        "`self_cuda_memory_usage` is deprecated. Use `self_device_memory_usage` instead.",
-        category=FutureWarning,
+        "`self_cuda_memory_usage` is deprecated. Use `self_device_memory_usage` instead.", category=FutureWarning
     )
     def self_cuda_memory_usage(self) -> int: ...
     @property
@@ -113,18 +106,12 @@ class FunctionEvent(FormattedTimesMixin):
     @property
     def device_time_total(self) -> int: ...
     @property
-    @deprecated(
-        "`cuda_time_total` is deprecated. Use `device_time_total` instead.",
-        category=FutureWarning,
-    )
+    @deprecated("`cuda_time_total` is deprecated. Use `device_time_total` instead.", category=FutureWarning)
     def cuda_time_total(self) -> int: ...
     @property
     def self_device_time_total(self) -> int: ...
     @property
-    @deprecated(
-        "`self_cuda_time_total` is deprecated. Use `self_device_time_total` instead.",
-        category=FutureWarning,
-    )
+    @deprecated("`self_cuda_time_total` is deprecated. Use `self_device_time_total` instead.", category=FutureWarning)
     def self_cuda_time_total(self) -> int: ...
     @property
     def key(self) -> str: ...

@@ -1,12 +1,11 @@
 import contextlib
-from typing import TYPE_CHECKING, Any
+from typing import Any
 from warnings import deprecated
 
 import torch
 from torch._C import _cuda_CUDAAllocator, _MemPool
 from torch.types import Device
 
-if TYPE_CHECKING: ...
 __all__ = [
     "CUDAPluggableAllocator",
     "MemPool",

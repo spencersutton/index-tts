@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Any, NamedTuple, Never, TypeAlias, TypeVar, overload
+from typing import Any, NamedTuple, Never, TypeVar, overload
 
 import torch
 from _typeshed import Incomplete

@@ -1,7 +1,7 @@
 import contextlib
 from collections.abc import Generator
 from dataclasses import dataclass
-from typing import Any, Optional, Union
+from typing import Any
 
 import torch
 from torch.types import FileLike

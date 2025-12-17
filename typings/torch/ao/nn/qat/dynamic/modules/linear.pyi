@@ -1,9 +1,6 @@
-from typing import TYPE_CHECKING
-
 import torch
 from torch.ao.quantization.qconfig import QConfig
 
-if TYPE_CHECKING: ...
 __all__ = ["Linear"]
 
 class Linear(torch.ao.nn.qat.Linear):

@@ -1,82 +1,51 @@
 import dataclasses
 import functools
 import json
-import sys
 import types
 from collections.abc import Callable, Hashable, Iterable, Mapping, Sequence
 from enum import Enum
-from typing import (
-    Any,
-    ClassVar,
-    Final,
-    Generic,
-    NamedTuple,
-    NoReturn,
-    Optional,
-    Protocol,
-    Self,
-    TypeAlias,
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import Any, ClassVar, Final, NamedTuple, NoReturn, Protocol, Self, TypeVar, overload
 from warnings import deprecated
 
-"""
-Contains utility functions for working with nested python data structures.
-
-A *pytree* is Python nested data structure. It is a tree in the sense that
-nodes are Python collections (e.g., list, tuple, dict) and the leaves are
-Python values. Furthermore, a pytree should not contain reference cycles.
-
-pytrees are useful for working with nested collections of Tensors. For example,
-one can use `tree_map` to map a function over all Tensors inside some nested
-collection of Tensors and `tree_leaves` to get a flat list of all Tensors
-inside some nested collection. pytrees are helpful for implementing nested
-collection support for PyTorch APIs.
-
-This pytree implementation is not very performant due to Python overhead
-To improve the performance we can move parts of the implementation to C++.
-"""
 __all__ = [
-    "PyTree",
     "Context",
-    "FlattenFunc",
-    "UnflattenFunc",
     "DumpableContext",
-    "ToDumpableContextFn",
+    "FlattenFunc",
     "FromDumpableContextFn",
-    "TreeSpec",
     "LeafSpec",
-    "keystr",
-    "key_get",
-    "register_pytree_node",
-    "tree_is_leaf",
-    "tree_flatten",
-    "tree_flatten_with_path",
-    "tree_unflatten",
-    "tree_iter",
-    "tree_leaves",
-    "tree_leaves_with_path",
-    "tree_structure",
-    "tree_map",
-    "tree_map_with_path",
-    "tree_map_",
-    "tree_map_only",
-    "tree_map_only_",
-    "tree_all",
-    "tree_any",
-    "tree_all_only",
-    "tree_any_only",
-    "treespec_dumps",
-    "treespec_loads",
-    "treespec_pprint",
+    "PyTree",
+    "ToDumpableContextFn",
+    "TreeSpec",
+    "UnflattenFunc",
     "is_namedtuple",
     "is_namedtuple_class",
     "is_namedtuple_instance",
     "is_structseq",
     "is_structseq_class",
     "is_structseq_instance",
+    "key_get",
+    "keystr",
+    "register_pytree_node",
+    "tree_all",
+    "tree_all_only",
+    "tree_any",
+    "tree_any_only",
+    "tree_flatten",
+    "tree_flatten_with_path",
+    "tree_is_leaf",
+    "tree_iter",
+    "tree_leaves",
+    "tree_leaves_with_path",
+    "tree_map",
+    "tree_map_",
+    "tree_map_only",
+    "tree_map_only_",
+    "tree_map_with_path",
+    "tree_structure",
+    "tree_unflatten",
+    "treespec_dumps",
+    "treespec_loads",
+    "treespec_pprint",
 ]
 T = TypeVar("T")
 S = TypeVar("S")
@@ -346,11 +315,7 @@ def tree_all_only(
 ) -> bool: ...
 @overload
 def tree_all_only(
-    type_or_types: Type2[T, S],
-    /,
-    pred: Fn2[T, S, bool],
-    tree: PyTree,
-    is_leaf: Callable[[PyTree], bool] | None = ...,
+    type_or_types: Type2[T, S], /, pred: Fn2[T, S, bool], tree: PyTree, is_leaf: Callable[[PyTree], bool] | None = ...
 ) -> bool: ...
 @overload
 def tree_all_only(
@@ -369,11 +334,7 @@ def tree_any_only(
 ) -> bool: ...
 @overload
 def tree_any_only(
-    type_or_types: Type2[T, S],
-    /,
-    pred: Fn2[T, S, bool],
-    tree: PyTree,
-    is_leaf: Callable[[PyTree], bool] | None = ...,
+    type_or_types: Type2[T, S], /, pred: Fn2[T, S, bool], tree: PyTree, is_leaf: Callable[[PyTree], bool] | None = ...
 ) -> bool: ...
 @overload
 def tree_any_only(

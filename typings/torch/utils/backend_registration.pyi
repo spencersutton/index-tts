@@ -1,9 +1,6 @@
 import torch
 
-__all__ = [
-    "generate_methods_for_privateuse1_backend",
-    "rename_privateuse1_backend",
-]
+__all__ = ["generate_methods_for_privateuse1_backend", "rename_privateuse1_backend"]
 _privateuse1_backend_name = ...
 
 def rename_privateuse1_backend(backend_name: str) -> None: ...

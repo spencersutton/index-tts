@@ -1,4 +1,4 @@
-from typing import Any, TypeAlias
+from typing import Any
 
 from torch.types import Device
 

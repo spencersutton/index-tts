@@ -29,10 +29,7 @@ class CustomPolicy(_Policy):
 
 def lambda_auto_wrap_policy(module: nn.Module, recurse: bool, nonwrapped_numel: int, lambda_fn: Callable) -> bool: ...
 def transformer_auto_wrap_policy(
-    module: nn.Module,
-    recurse: bool,
-    nonwrapped_numel: int,
-    transformer_layer_cls: set[type[nn.Module]],
+    module: nn.Module, recurse: bool, nonwrapped_numel: int, transformer_layer_cls: set[type[nn.Module]]
 ) -> bool: ...
 def size_based_auto_wrap_policy(
     module: nn.Module,

@@ -1,6 +1,6 @@
 import functools
 from abc import ABC, abstractmethod
-from typing import Any, Optional, TypeAlias, Union
+from typing import Any
 
 from torch._inductor.scheduler import BaseSchedulerNode
 from torch._inductor.utils import clear_on_fresh_cache

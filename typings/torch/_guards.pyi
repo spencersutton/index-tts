@@ -8,7 +8,7 @@ from collections.abc import Callable, Generator, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from types import CodeType
-from typing import TYPE_CHECKING, Any, Generic, NamedTuple, Optional, TypeVar, Union
+from typing import Any, NamedTuple, TypeVar
 
 import sympy
 import torch
@@ -18,7 +18,7 @@ from torch.utils._backport_slots import dataclass_slots
 from torch.utils._traceback import CapturedTraceback
 
 log = ...
-if TYPE_CHECKING: ...
+
 COMPILE_ID_PATTERN = ...
 CA_COMPILE_ID_PATTERN = ...
 

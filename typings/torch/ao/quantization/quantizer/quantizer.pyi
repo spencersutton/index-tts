@@ -73,7 +73,5 @@ class Quantizer(ABC):
     @abstractmethod
     def validate(self, model: torch.fx.GraphModule) -> None: ...
     def prepare_obs_or_fq_callback(
-        self,
-        model: torch.fx.GraphModule,
-        edge_or_node_to_obs_or_fq: dict[EdgeOrNode, ObserverOrFakeQuantize],
+        self, model: torch.fx.GraphModule, edge_or_node_to_obs_or_fq: dict[EdgeOrNode, ObserverOrFakeQuantize]
     ) -> None: ...

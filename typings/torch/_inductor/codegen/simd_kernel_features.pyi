@@ -2,7 +2,7 @@ import collections
 import dataclasses
 import typing
 from collections.abc import Iterable, Sequence
-from typing import Any, Optional, Union
+from typing import Any
 
 import sympy
 import torch

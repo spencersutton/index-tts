@@ -1,21 +1,20 @@
 import inspect
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional
+from typing import Any, NamedTuple
 
 import torch
 
 from ._compatibility import compatibility
 from .node import Argument
 
-if TYPE_CHECKING: ...
 __all__ = [
     "ArgsKwargsPair",
     "check_for_mutable_operation",
-    "get_signature_for_torch_op",
     "create_type_hint",
-    "type_matches",
+    "get_signature_for_torch_op",
     "normalize_function",
     "normalize_module",
+    "type_matches",
 ]
 
 @compatibility(is_backward_compatible=False)
@@ -26,28 +25,19 @@ class ArgsKwargsPair(NamedTuple):
 _manual_overrides: dict[Callable, list[inspect.Signature]] = ...
 
 class _FakeGlobalNamespace:
-    def __getattr__(self, name):  # -> Any:
-        ...
+    def __getattr__(self, name): ...
 
 _type_eval_globals = ...
 _SCHEMA_TO_SIGNATURE_CACHE: dict[tuple[str, str], inspect.Signature] = ...
 
 @compatibility(is_backward_compatible=False)
-def check_for_mutable_operation(target: Callable, args: tuple[Argument, ...], kwargs: dict[str, Argument]):  # -> None:
-    ...
+def check_for_mutable_operation(target: Callable, args: tuple[Argument, ...], kwargs: dict[str, Argument]): ...
 @compatibility(is_backward_compatible=False)
-def get_signature_for_torch_op(
-    op: Callable, return_schemas: bool = ...
-):  # -> tuple[list[Signature], None] | tuple[None, None] | tuple[list[Signature], list[FunctionSchema] | list[Any] | Any] | list[Signature] | None:
-
-    ...
+def get_signature_for_torch_op(op: Callable, return_schemas: bool = ...): ...
 @compatibility(is_backward_compatible=False)
-def create_type_hint(x):  # -> type[list[Any]] | list[Any] | tuple[Any, ...] | tuple[()] | tuple[Any, *tuple[Any, ...]]:
-
-    ...
+def create_type_hint(x): ...
 @compatibility(is_backward_compatible=False)
-def type_matches(signature_type: Any, argument_type: Any):  # -> bool:
-    ...
+def type_matches(signature_type: Any, argument_type: Any): ...
 @compatibility(is_backward_compatible=False)
 def normalize_function(
     target: Callable,

@@ -1,7 +1,7 @@
 import dataclasses
 import types
 from collections.abc import Callable, Iterable
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import Any
 
 import torch.nn
 from torch._dynamo.variables.builder import GraphArg
@@ -10,19 +10,6 @@ from .bytecode_transformation import Instruction
 from .source import Source
 from .symbolic_convert import InstructionTranslatorBase
 from .variables.base import VariableTracker
-
-"""
-This module provides utilities for generating Python bytecode in PyTorch's Dynamo system.
-It includes functionality for:
-- Constructing bytecode sequences for Python operations
-- Managing stack operations and variable tracking
-- Handling graph outputs and their conversions
-- Supporting different Python versions (3.11+, 3.12+, 3.13+)
-- Converting high-level operations to low-level bytecode instructions
-- Managing constant loading and attribute access
-- Supporting function creation and closure handling
-"""
-if TYPE_CHECKING: ...
 
 @dataclasses.dataclass
 class GraphOutputEntry:

@@ -1,6 +1,5 @@
-from torch import Tensor
-
 from indextts.util import patch_call
+from torch import Tensor
 
 from .module import Module
 
@@ -40,8 +39,6 @@ class Embedding(Module):
     def from_pretrained(
         cls, embeddings, freeze=..., padding_idx=..., max_norm=..., norm_type=..., scale_grad_by_freq=..., sparse=...
     ) -> Self: ...
-    @patch_call(forward)
-    def __call__(self) -> None: ...
 
 class EmbeddingBag(Module):
     __constants__ = ...

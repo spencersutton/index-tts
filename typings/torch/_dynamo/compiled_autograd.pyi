@@ -1,5 +1,5 @@
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import Any
 
 import torch
 from torch._dynamo.source import GetItemSource
@@ -7,25 +7,8 @@ from torch._guards import Source
 from torch._subclasses.fake_tensor import FakeTensor
 from torch.fx import GraphModule
 from torch.fx.experimental._backward_state import BackwardState
-from torch.fx.proxy import Proxy
 from torch.types import FloatLikeType, IntLikeType
 
-"""
-Provides functionality for compiling PyTorch's autograd (automatic differentiation) system.
-
-This module implements compiled autograd, which traces and optimizes backward pass
-computations at runtime. The key components are:
-
-- AutogradCompilerInstance: Traces and compiles autograd graphs using FX
-- Context managers (_enable/_disable): Control when compiled autograd is active
-- Utility functions: Support graph manipulation, tensor operations, and hooks
-
-Compiled autograd can significantly improve backward pass performance by removing
-Python overhead and enabling additional optimizations. It works by capturing
-backward computations into an FX graph that can be compiled and optimized,
-while maintaining the same semantics as eager mode autograd.
-"""
-if TYPE_CHECKING: ...
 TURN_OFF_MSG = ...
 compiled_autograd_log = ...
 verbose_log = ...
@@ -168,8 +151,5 @@ def copy_slices_prologue(
     view_storage_offset: IntLikeType,
 ) -> list[torch.Tensor]: ...
 def copy_slices_epilogue(
-    needs_input_grad: Sequence[bool],
-    result: torch.Tensor,
-    res: Sequence[torch.Tensor | None],
-    grad_slice: torch.Tensor,
+    needs_input_grad: Sequence[bool], result: torch.Tensor, res: Sequence[torch.Tensor | None], grad_slice: torch.Tensor
 ) -> list[torch.Tensor | None]: ...

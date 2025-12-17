@@ -1,13 +1,12 @@
-from torch.fx import immutable_collections
-from torch.fx._symbolic_trace import PH, ProxyableClassMeta, Tracer, symbolic_trace, wrap
-from torch.fx.graph import CodeGen, Graph
+from torch.fx._symbolic_trace import Tracer, symbolic_trace, wrap
+from torch.fx.graph import Graph
 from torch.fx.graph_module import GraphModule
 from torch.fx.interpreter import Interpreter, Transformer
 from torch.fx.node import Node, has_side_effect, map_arg
 from torch.fx.proxy import Proxy
 from torch.fx.subgraph_rewriter import replace_pattern
 
-r'''
+r"""
 FX is a toolkit for developers to use to transform ``nn.Module``
 instances. FX consists of three main components: a **symbolic tracer,**
 an **intermediate representation**, and **Python code generation**. A
@@ -38,26 +37,11 @@ demonstration of these components in action:
 
     # High-level intermediate representation (IR) - Graph representation
     print(symbolic_traced.graph)
-    """
-    graph():
-        %x : [num_users=1] = placeholder[target=x]
-        %param : [num_users=1] = get_attr[target=param]
-        %add : [num_users=1] = call_function[target=operator.add](args = (%x, %param), kwargs = {})
-        %linear : [num_users=1] = call_module[target=linear](args = (%add,), kwargs = {})
-        %clamp : [num_users=1] = call_method[target=clamp](args = (%linear,), kwargs = {min: 0.0, max: 1.0})
-        return clamp
-    """
+
 
     # Code generation - valid Python code
     print(symbolic_traced.code)
-    """
-    def forward(self, x):
-        param = self.param
-        add = x + param;  x = param = None
-        linear = self.linear(add);  add = None
-        clamp = linear.clamp(min = 0.0, max = 1.0);  linear = None
-        return clamp
-    """
+
 
 The **symbolic tracer** performs "symbolic execution" of the Python
 code. It feeds fake values, called Proxies, through the code. Operations
@@ -91,18 +75,18 @@ example from a config file. There are many uses for FX!
 Several example transformations can be found at the
 `examples <https://github.com/pytorch/examples/tree/master/fx>`__
 repository.
-'''
+"""
 __all__ = [
-    "symbolic_trace",
-    "Tracer",
-    "wrap",
     "Graph",
     "GraphModule",
     "Interpreter",
-    "Transformer",
     "Node",
     "Proxy",
-    "replace_pattern",
+    "Tracer",
+    "Transformer",
     "has_side_effect",
     "map_arg",
+    "replace_pattern",
+    "symbolic_trace",
+    "wrap",
 ]

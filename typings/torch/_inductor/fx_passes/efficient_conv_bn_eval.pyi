@@ -1,5 +1,5 @@
 import torch
-import torch.nn as nn
+from torch import nn
 from torch._inductor import config as inductor_config
 
 from ..pattern_matcher import CallFunctionVarArgs, CallModuleVarArgs, Match, register_graph_pattern
@@ -23,15 +23,13 @@ def efficient_conv_bn_eval_decomposed(
     pass_dict=efficient_conv_bn_eval_pass,
     extra_check=lambda match: not inductor_config.freezing and inductor_config.efficient_conv_bn_eval_fx_passes,
 )
-def efficient_conv_bn_eval_graph_transform_inlined(match: Match, *args, **kwargs):  # -> None:
-    ...
+def efficient_conv_bn_eval_graph_transform_inlined(match: Match, *args, **kwargs): ...
 @register_graph_pattern(
     CallFunctionVarArgs([torch.ops.aten.batch_norm.default]),
     pass_dict=efficient_conv_bn_eval_pass,
     extra_check=lambda match: not inductor_config.freezing and inductor_config.efficient_conv_bn_eval_fx_passes,
 )
-def efficient_conv_bn_eval_graph_transform_decomposed(match: Match, *args, **kwargs):  # -> None:
-    ...
+def efficient_conv_bn_eval_graph_transform_decomposed(match: Match, *args, **kwargs): ...
 @register_graph_pattern(
     CallModuleVarArgs([
         nn.modules.batchnorm._BatchNorm,
@@ -43,5 +41,4 @@ def efficient_conv_bn_eval_graph_transform_decomposed(match: Match, *args, **kwa
     pass_dict=efficient_conv_bn_eval_pass,
     extra_check=lambda match: not inductor_config.freezing and inductor_config.efficient_conv_bn_eval_fx_passes,
 )
-def efficient_conv_bn_eval_graph_transform(match: Match, *args, **kwargs):  # -> None:
-    ...
+def efficient_conv_bn_eval_graph_transform(match: Match, *args, **kwargs): ...

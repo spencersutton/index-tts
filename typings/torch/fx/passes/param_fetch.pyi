@@ -5,11 +5,7 @@ from torch import nn
 from torch.fx._compatibility import compatibility
 from torch.fx.graph_module import GraphModule
 
-__all__ = [
-    "default_matching",
-    "extract_attrs_for_lowering",
-    "lift_lowering_attrs_to_nodes",
-]
+__all__ = ["default_matching", "extract_attrs_for_lowering", "lift_lowering_attrs_to_nodes"]
 
 @compatibility(is_backward_compatible=False)
 def default_matching(name: str, target_version: int) -> str: ...

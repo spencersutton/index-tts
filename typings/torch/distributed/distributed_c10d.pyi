@@ -1,7 +1,8 @@
 import pickle
+from collections import UserString
 from collections.abc import Callable
 from datetime import timedelta
-from typing import Any, Optional, Union
+from typing import Any
 from warnings import deprecated
 
 import torch
@@ -9,14 +10,29 @@ from torch._C._distributed_c10d import ProcessGroup, ReduceOp, Store, Work
 
 from .c10d_logger import _exception_logger, _time_logger
 
-"""Distributed Collective Communication (c10d)."""
 __all__ = [
+    "AllToAllOptions",
+    "AllreduceCoalescedOptions",
+    "AllreduceOptions",
     "Backend",
     "BackendConfig",
+    "BarrierOptions",
+    "BroadcastOptions",
+    "DebugLevel",
+    "GatherOptions",
     "GroupMember",
     "P2POp",
+    "PrefixStore",
+    "ProcessGroup",
+    "ReduceOp",
+    "ReduceOptions",
+    "ReduceScatterOptions",
+    "ScatterOptions",
+    "Store",
+    "Work",
     "all_gather",
     "all_gather_coalesced",
+    "all_gather_into_tensor",
     "all_gather_object",
     "all_reduce",
     "all_reduce_coalesced",
@@ -25,25 +41,29 @@ __all__ = [
     "barrier",
     "batch_isend_irecv",
     "broadcast",
-    "send_object_list",
-    "recv_object_list",
     "broadcast_object_list",
+    "default_pg_timeout",
     "destroy_process_group",
     "gather",
     "gather_object",
-    "get_backend_config",
     "get_backend",
+    "get_backend_config",
+    "get_debug_level",
     "get_default_backend_for_device",
+    "get_global_rank",
+    "get_group_rank",
+    "get_node_local_rank",
+    "get_pg_count",
+    "get_process_group_ranks",
     "get_rank",
     "get_world_size",
-    "get_pg_count",
     "group",
     "init_process_group",
     "irecv",
+    "is_backend_available",
     "is_gloo_available",
     "is_initialized",
     "is_mpi_available",
-    "is_backend_available",
     "is_nccl_available",
     "is_torchelastic_launched",
     "is_ucc_available",
@@ -54,37 +74,17 @@ __all__ = [
     "new_subgroups",
     "new_subgroups_by_enumeration",
     "recv",
+    "recv_object_list",
     "reduce",
+    "reduce_op",
     "reduce_scatter",
+    "reduce_scatter_tensor",
     "scatter",
     "scatter_object_list",
     "send",
-    "supports_complex",
-    "AllreduceCoalescedOptions",
-    "AllreduceOptions",
-    "AllToAllOptions",
-    "BarrierOptions",
-    "BroadcastOptions",
-    "GatherOptions",
-    "PrefixStore",
-    "ProcessGroup",
-    "ReduceOp",
-    "ReduceOptions",
-    "ReduceScatterOptions",
-    "ScatterOptions",
-    "Store",
-    "DebugLevel",
-    "get_debug_level",
-    "Work",
-    "default_pg_timeout",
-    "get_group_rank",
-    "get_global_rank",
-    "get_process_group_ranks",
-    "reduce_op",
-    "all_gather_into_tensor",
-    "reduce_scatter_tensor",
-    "get_node_local_rank",
+    "send_object_list",
     "split_group",
+    "supports_complex",
 ]
 _MPI_AVAILABLE = ...
 _NCCL_AVAILABLE = ...
@@ -103,7 +103,7 @@ PG_WRAPPER_STORE_PREFIX = ...
 
 def supports_complex(reduceOp: ReduceOp) -> bool: ...
 
-class Backend(str):
+class Backend(UserString):
     UNDEFINED = ...
     GLOO = ...
     NCCL = ...
@@ -116,17 +116,12 @@ class Backend(str):
     default_device_backend_map: dict[str, str] = ...
     backend_capability: dict[str, list[str]] = ...
     backend_type_map: dict[str, ProcessGroup.BackendType] = ...
-    def __new__(cls, name: str):  # -> str | Any:
-
-        ...
+    def __new__(cls, name: str): ...
     @classmethod
     def register_backend(cls, name, func, extended_api=..., devices: str | list[str] | None = ...) -> None: ...
 
 class BackendConfig:
     def __init__(self, backend: Backend) -> None: ...
-    def __repr__(self):  # -> str:
-
-        ...
     def get_device_backend_map(self) -> dict[str, Backend]: ...
 
 class _reduce_op:
@@ -135,8 +130,7 @@ class _reduce_op:
         "`torch.distributed.reduce_op` is deprecated, please use `torch.distributed.ReduceOp` instead",
         category=FutureWarning,
     )
-    def __getattribute__(self, key):  # -> Any:
-        ...
+    def __getattribute__(self, key): ...
 
 reduce_op = ...
 
@@ -158,11 +152,7 @@ class P2POp:
         group: ProcessGroup | None = ...,
         tag: int = ...,
         group_peer: int | None = ...,
-    ):  # -> Self:
-
-        ...
-    def __repr__(self):  # -> str:
-        ...
+    ): ...
 
 class _CollOp:
     def __init__(
@@ -216,8 +206,7 @@ class _WorldMeta(type):
     @property
     def WORLD(cls) -> ProcessGroup | None: ...
     @WORLD.setter
-    def WORLD(cls, pg: ProcessGroup | None):  # -> None:
-        ...
+    def WORLD(cls, pg: ProcessGroup | None): ...
 
 class group(metaclass=_WorldMeta): ...
 
@@ -256,9 +245,7 @@ def init_process_group(
     pg_options: Any | None = ...,
     device_id: torch.device | int | None = ...,
 ) -> None: ...
-def destroy_process_group(group: ProcessGroup | None = ...):  # -> None:
-
-    ...
+def destroy_process_group(group: ProcessGroup | None = ...): ...
 def get_rank(group: ProcessGroup | None = ...) -> int: ...
 def get_world_size(group: ProcessGroup | None = ...) -> int: ...
 def isend(
@@ -293,15 +280,12 @@ def recv(
 ) -> int: ...
 
 class _IllegalWork(Work):
-    def __getattribute__(self, name):  # -> None:
-        ...
+    def __getattribute__(self, name): ...
 
 class _CoalescingManager:
     def __init__(self) -> None: ...
-    def append(self, work: Work | None = ...):  # -> None:
-        ...
-    def wait(self):  # -> None:
-        ...
+    def append(self, work: Work | None = ...): ...
+    def wait(self): ...
 
 class _TimeEstimator:
     def __init__(self) -> None: ...
@@ -314,13 +298,9 @@ def broadcast(
     group: ProcessGroup | None = ...,
     async_op: bool = ...,
     group_src: int | None = ...,
-):  # -> Work | None:
-
-    ...
+): ...
 @_exception_logger
-def all_reduce(tensor, op=..., group=..., async_op=...):  # -> Any | _IllegalWork | Work | None:
-
-    ...
+def all_reduce(tensor, op=..., group=..., async_op=...): ...
 @_exception_logger
 @deprecated(
     "`torch.distributed.all_reduce_coalesced` will be deprecated. If you must "
@@ -328,9 +308,7 @@ def all_reduce(tensor, op=..., group=..., async_op=...):  # -> Any | _IllegalWor
     "https://pytorch.org/docs/main/distributed.html#collective-functions",
     category=FutureWarning,
 )
-def all_reduce_coalesced(tensors, op=..., group=..., async_op=...):  # -> Future[Any] | None:
-
-    ...
+def all_reduce_coalesced(tensors, op=..., group=..., async_op=...): ...
 @_exception_logger
 def reduce(
     tensor: torch.Tensor,
@@ -339,13 +317,9 @@ def reduce(
     group: ProcessGroup | None = ...,
     async_op: bool = ...,
     group_dst: int | None = ...,
-):  # -> Work | None:
-
-    ...
+): ...
 @_exception_logger
-def all_gather_object(object_list, obj, group=...):  # -> None:
-
-    ...
+def all_gather_object(object_list, obj, group=...): ...
 @_exception_logger
 def gather_object(
     obj: Any,
@@ -353,9 +327,7 @@ def gather_object(
     dst: int | None = ...,
     group: ProcessGroup | None = ...,
     group_dst: int | None = ...,
-):  # -> None:
-
-    ...
+): ...
 @_exception_logger
 def send_object_list(
     object_list: list[Any],
@@ -364,9 +336,7 @@ def send_object_list(
     device: torch.device | None = ...,
     group_dst: int | None = ...,
     use_batch: bool = ...,
-):  # -> None:
-
-    ...
+): ...
 @_exception_logger
 def recv_object_list(
     object_list: list[Any],
@@ -375,9 +345,7 @@ def recv_object_list(
     device: torch.device | None = ...,
     group_src: int | None = ...,
     use_batch: bool = ...,
-):  # -> int:
-
-    ...
+): ...
 @_exception_logger
 def broadcast_object_list(
     object_list: list[Any],
@@ -385,9 +353,7 @@ def broadcast_object_list(
     group: ProcessGroup | None = ...,
     device: torch.device | None = ...,
     group_src: int | None = ...,
-):  # -> None:
-
-    ...
+): ...
 @_exception_logger
 def scatter_object_list(
     scatter_object_output_list: list[Any],
@@ -395,19 +361,11 @@ def scatter_object_list(
     src: int | None = ...,
     group: ProcessGroup | None = ...,
     group_src: int | None = ...,
-):  # -> None:
-
-    ...
+): ...
 @_exception_logger
-def all_gather(tensor_list, tensor, group=..., async_op=...):  # -> Any | Work | None:
-
-    ...
+def all_gather(tensor_list, tensor, group=..., async_op=...): ...
 @_exception_logger
-def all_gather_into_tensor(
-    output_tensor, input_tensor, group=..., async_op=...
-):  # -> Any | _IllegalWork | Work | None:
-
-    ...
+def all_gather_into_tensor(output_tensor, input_tensor, group=..., async_op=...): ...
 @_exception_logger
 @deprecated(
     "`torch.distributed.all_gather_coalesced` will be deprecated. If you must use it, "
@@ -415,9 +373,7 @@ def all_gather_into_tensor(
     "https://pytorch.org/docs/main/distributed.html#collective-functions",
     category=FutureWarning,
 )
-def all_gather_coalesced(output_tensor_lists, input_tensor_list, group=..., async_op=...):  # -> Future[Any] | None:
-
-    ...
+def all_gather_coalesced(output_tensor_lists, input_tensor_list, group=..., async_op=...): ...
 @_exception_logger
 def gather(
     tensor: torch.Tensor,
@@ -426,9 +382,7 @@ def gather(
     group: ProcessGroup | None = ...,
     async_op: bool = ...,
     group_dst: int | None = ...,
-):  # -> Work | None:
-
-    ...
+): ...
 @_exception_logger
 def scatter(
     tensor: torch.Tensor,
@@ -437,34 +391,18 @@ def scatter(
     group: ProcessGroup | None = ...,
     async_op: bool = ...,
     group_src: int | None = ...,
-):  # -> Work | None:
-
-    ...
+): ...
 @_exception_logger
-def reduce_scatter(output, input_list, op=..., group=..., async_op=...):  # -> Work | None:
-
-    ...
+def reduce_scatter(output, input_list, op=..., group=..., async_op=...): ...
 @_exception_logger
-def reduce_scatter_tensor(output, input, op=..., group=..., async_op=...):  # -> Any | _IllegalWork | Work | None:
-
-    ...
+def reduce_scatter_tensor(output, input, op=..., group=..., async_op=...): ...
 @_exception_logger
-def all_to_all_single(
-    output, input, output_split_sizes=..., input_split_sizes=..., group=..., async_op=...
-):  # -> Any | Work | None:
-
-    ...
+def all_to_all_single(output, input, output_split_sizes=..., input_split_sizes=..., group=..., async_op=...): ...
 @_exception_logger
-def all_to_all(output_tensor_list, input_tensor_list, group=..., async_op=...):  # -> Work | None:
-
-    ...
+def all_to_all(output_tensor_list, input_tensor_list, group=..., async_op=...): ...
 @_exception_logger
-def barrier(group: ProcessGroup | None = ..., async_op=..., device_ids=...):  # -> Work | None:
-
-    ...
-def monitored_barrier(group: ProcessGroup | None = ..., timeout=..., wait_all_ranks=...):  # -> None:
-
-    ...
+def barrier(group: ProcessGroup | None = ..., async_op=..., device_ids=...): ...
+def monitored_barrier(group: ProcessGroup | None = ..., timeout=..., wait_all_ranks=...): ...
 @_time_logger
 def split_group(
     parent_pg: ProcessGroup | None = ...,
@@ -482,16 +420,6 @@ def new_group(
     use_local_synchronization=...,
     group_desc=...,
     device_id: torch.device | None = ...,
-):  # -> None:
-
-    ...
-def new_subgroups(
-    group_size=..., group=..., timeout=..., backend=..., pg_options=..., group_desc=...
-):  # -> tuple[Any | None, list[Any]]:
-
-    ...
-def new_subgroups_by_enumeration(
-    ranks_per_subgroup_list, timeout=..., backend=..., pg_options=..., group_desc=...
-):  # -> tuple[Any | None, list[Any]]:
-
-    ...
+): ...
+def new_subgroups(group_size=..., group=..., timeout=..., backend=..., pg_options=..., group_desc=...): ...
+def new_subgroups_by_enumeration(ranks_per_subgroup_list, timeout=..., backend=..., pg_options=..., group_desc=...): ...

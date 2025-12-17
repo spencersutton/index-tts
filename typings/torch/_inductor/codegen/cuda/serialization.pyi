@@ -1,5 +1,4 @@
 import functools
-from typing import Optional
 
 class CUTLASSOperationSerializer:
     _SUPPORTED_CLASSES: list[str] = ...

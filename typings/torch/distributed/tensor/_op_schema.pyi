@@ -1,7 +1,6 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Optional, TypeAlias, Union
 from warnings import deprecated
 
 from torch._ops import OpOverload
@@ -10,29 +9,6 @@ from torch.distributed.tensor._dtensor_spec import DTensorSpec
 from torch.distributed.tensor.placement_types import Placement
 from torch.utils._cxx_pytree import TreeSpec
 
-"""
-DTensor operator schema definitions and utilities.
-
-This module defines the core data structures and utilities for describing and managing
-distributed tensor operations in PyTorch's DTensor system. It provides the foundational
-schema types used for sharding propagation, operator strategy selection, and distributed
-execution planning.
-
-Key components:
-- OpSpec: Describes acceptable sharding placements for operations
-- OpStrategy: Represents the possible sharding strategies for an operator
-- TupleStrategy: Container for multiple strategies when ops have tuple/list of tensors input
-- OpSchema: Describes operator input/output schemas with DTensorSpecs
-- OutputSharding: Manages output sharding specifications and redistribution
-- RuntimeSchemaInfo: Runtime execution metadata for operators
-- OpInfo: Complete runtime operator execution information
-
-These schema definitions enable the DTensor system to:
-1. Propagate tensor sharding information to the operator outputs
-2. Greedily select sharding strategies for distributed operations
-3. Plan and execute tensor redistributions when needed
-4. Cache sharding decisions for performance optimization
-"""
 type ArgsType = tuple[object, ...]
 type KwargsType = dict[str, object]
 type PlacementList = list[Placement | None]
@@ -46,8 +22,7 @@ class OpSpec:
     @cached_property
     def output_spec(self) -> DTensorSpec: ...
     @cached_property
-    def mesh(self):  # -> DeviceMesh:
-        ...
+    def mesh(self): ...
     def input_spec(self, index: int = ...) -> DTensorSpec: ...
 
 class StrategyType: ...
@@ -56,17 +31,13 @@ class OpStrategy(StrategyType):
     def __init__(self, strategies: list[OpSpec]) -> None: ...
     def max_num_shards(self) -> int: ...
     @property
-    def mesh(self):  # -> DeviceMesh:
-        ...
+    def mesh(self): ...
     @property
-    def mesh_shape(self):  # -> tuple[int, ...]:
-        ...
+    def mesh_shape(self): ...
     @property
-    def ndim(self):  # -> int:
-        ...
+    def ndim(self): ...
     @property
-    def shape(self):  # -> Size:
-        ...
+    def shape(self): ...
 
 class TupleStrategy(StrategyType):
     def __init__(self, children: Sequence[StrategyType]) -> None: ...
@@ -113,8 +84,7 @@ class OutputSharding:
     needs_redistribute: bool = ...
     use_val_from_redistribute_schema: bool = ...
     @cached_property
-    def mesh(self):  # -> DeviceMesh:
-        ...
+    def mesh(self): ...
 
 @dataclass
 class OpInfo:

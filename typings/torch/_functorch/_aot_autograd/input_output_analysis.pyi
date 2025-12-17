@@ -1,4 +1,4 @@
-from typing import Any, Optional, Union
+from typing import Any
 
 import torch
 import torch.utils._pytree as pytree
@@ -7,16 +7,6 @@ from torch import Tensor
 from .descriptors import AOTInput
 from .schemas import GraphSignature, ViewAndMutationMeta
 
-"""
-This module is one of the analysis modules - it takes as input a function or graph
-and some preexisting properties, and returns some data that is useful for deciding
-how to further proceed with compilation or construct runtime wrappers.
-
-In particular, the following analyses are provided:
-1. Refine the view and mutation metadata collected previously - removing duplicate
-   inputs or mapping views to their bases.
-2. We also analyze the function signature for export graphs.
-"""
 zip = ...
 
 def remove_dupe_metadata(
@@ -29,8 +19,7 @@ def create_synthetic_base_metadata(
     inner_args: list[Any],
     inner_args_desc: list[AOTInput],
 ) -> tuple[ViewAndMutationMeta, list[int]]: ...
-def compute_overlapping_inputs(aot_config, fwd_inputs, aliased_input_indices):  # -> set[Any]:
-    ...
+def compute_overlapping_inputs(aot_config, fwd_inputs, aliased_input_indices): ...
 def create_graph_signature(
     fx_g: torch.fx.GraphModule,
     fw_metadata: ViewAndMutationMeta,

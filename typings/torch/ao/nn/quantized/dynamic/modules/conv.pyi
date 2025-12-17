@@ -4,15 +4,7 @@ import torch.ao.nn.quantized as nnq
 from torch import Tensor, nn
 from torch.nn.common_types import _size_1_t
 
-r"""Dynamically quantized convolution modules."""
-__all__ = [
-    "Conv1d",
-    "Conv2d",
-    "Conv3d",
-    "ConvTranspose1d",
-    "ConvTranspose2d",
-    "ConvTranspose3d",
-]
+__all__ = ["Conv1d", "Conv2d", "Conv3d", "ConvTranspose1d", "ConvTranspose2d", "ConvTranspose3d"]
 
 class Conv1d(nnq.Conv1d):
     _FLOAT_MODULE: ClassVar[type[nn.Conv1d]] = ...

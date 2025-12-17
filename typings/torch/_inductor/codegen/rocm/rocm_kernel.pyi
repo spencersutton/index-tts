@@ -1,5 +1,5 @@
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import Any
 
 from torch._inductor.codegen.rocm.rocm_template import ArgInfo, ROCmTemplate
 
@@ -8,7 +8,6 @@ from ..common import Kernel, OpOverrides
 from .rocm_benchmark_request import ROCmBenchmarkRequest
 from .rocm_template_buffer import ROCmTemplateBuffer
 
-if TYPE_CHECKING: ...
 log = ...
 cexpr = ...
 
@@ -18,8 +17,7 @@ class ROCmKernel(Kernel):
 class ROCmTemplateKernel(ROCmKernel):
     _EXTRA_CPP_ARGS = ...
     def __init__(self, kernel_name: str, runtime_arg_info: list[ArgInfo], runtime_arg_values: list[Any]) -> None: ...
-    def get_signature(self):  # -> str:
-        ...
+    def get_signature(self): ...
     def def_kernel(
         self,
         inputs: list[IRNode],

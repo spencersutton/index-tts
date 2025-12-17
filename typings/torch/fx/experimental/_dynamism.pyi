@@ -1,15 +1,15 @@
 from collections.abc import Callable
-from typing import Any, TypeAlias, Union
+from typing import Any
 
 import torch
 
 type KeyPath = tuple[Any, ...]
 type NonTensorShapeFn = Callable[[int | float], tuple[Any, ...]]
 __all__ = [
-    "normalize_source_name",
-    "module_to_nested_dict",
-    "track_dynamism_across_examples",
     "clone_and_convert_to_meta",
+    "module_to_nested_dict",
+    "normalize_source_name",
+    "track_dynamism_across_examples",
 ]
 
 def normalize_source_name(name: str) -> str: ...

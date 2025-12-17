@@ -13,11 +13,5 @@ class WeightNormSparsifier(BaseSparsifier):
         norm: Callable | int | None = ...,
     ) -> None: ...
     def update_mask(
-        self,
-        module,
-        tensor_name,
-        sparsity_level,
-        sparse_block_shape,
-        zeros_per_block,
-        **kwargs,
+        self, module, tensor_name, sparsity_level, sparse_block_shape, zeros_per_block, **kwargs
     ) -> None: ...

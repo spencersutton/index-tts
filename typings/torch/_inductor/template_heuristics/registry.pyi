@@ -1,17 +1,9 @@
 import contextlib
 from collections.abc import Iterator
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import Any
 
 from .base import TemplateConfigHeuristics
 
-"""
-Template heuristic registry system for PyTorch Inductor.
-
-This module provides a centralized registration system for template heuristics,
-allowing automatic registration based on device type and conditional registration
-for CUDA vs ROCm based on torch.version.hip.
-"""
-if TYPE_CHECKING: ...
 _TEMPLATE_HEURISTIC_REGISTRY: dict[tuple[str | None, ...], type[TemplateConfigHeuristics]] = ...
 _HEURISTIC_CACHE: dict[tuple[str, str, str], TemplateConfigHeuristics] = ...
 log = ...

@@ -27,7 +27,6 @@ from indextts.qwen_emotion import QwenEmotion
 from indextts.s2mel.modules.audio import mel_spectrogram
 from indextts.s2mel.modules.bigvgan import bigvgan
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
-from indextts.s2mel.modules.length_regulator import InterpolateRegulator
 from indextts.s2mel.modules.model import MyModel
 from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.maskgct.models.codec.kmeans.repcodec_model import RepCodec
@@ -144,32 +143,34 @@ class IndexTTS2:
 
     @functools.lru_cache  # noqa: B019
     def process_audio_prompt(self, prompt: Path) -> tuple[Tensor, Tensor, Tensor, Tensor]:
-        decoder = AudioDecoder(prompt, num_channels=1, sample_rate=SAMPLING_RATE)
-        audio_22k = decoder.get_samples_played_in_range(0, 15)
-        decoder = AudioDecoder(prompt, num_channels=1, sample_rate=FEATURE_SAMPLING_RATE)
-        audio_16k = decoder.get_samples_played_in_range(0, 15)
+        # Load audio at both sample rates
+        audio_22k = AudioDecoder(prompt, num_channels=1, sample_rate=SAMPLING_RATE).get_samples_played_in_range(0, 15)
+        audio_16k = AudioDecoder(prompt, num_channels=1, sample_rate=FEATURE_SAMPLING_RATE).get_samples_played_in_range(
+            0, 15
+        )
 
-        inputs = self.extract_features(audio_16k.data, sampling_rate=audio_16k.sample_rate, return_tensors="pt")
-
+        # Move to device
         audio_22k.data = audio_22k.data.to(self.device)
         audio_16k.data = audio_16k.data.to(self.device)
-        inputs = inputs.to(self.device)
+
+        # Extract embeddings
+        inputs = self.extract_features(
+            audio_16k.data.cpu(), sampling_rate=audio_16k.sample_rate, return_tensors="pt"
+        ).to(self.device)
         spk_cond_emb = self.get_emb(inputs)
         _, S_ref = self.semantic_codec.quantize(spk_cond_emb)
 
+        # Extract mel spectrogram and style
         ref_mel = mel_spectrogram(audio_22k.data.float())
-        ref_target_lengths = torch.tensor([ref_mel.size(2)])
         feat = torchaudio.compliance.kaldi.fbank(
-            audio_16k.data,
-            num_mel_bins=80,
-            dither=0,
-            sample_frequency=FEATURE_SAMPLING_RATE,
+            audio_16k.data, num_mel_bins=80, dither=0, sample_frequency=FEATURE_SAMPLING_RATE
         )
-        feat -= feat.mean(dim=0, keepdim=True)  # feat2 Another filter energy group feature [922, 80]
-        style = self.campplus_model(feat.unsqueeze(0))  # Reference audio's global style 2 [1, 192]
+        feat -= feat.mean(dim=0, keepdim=True)
+        style = self.campplus_model(feat.unsqueeze(0))
 
-        length_regulator = cast(InterpolateRegulator, self.s2mel.models["length_regulator"])
-        prompt_condition = length_regulator(S_ref, ylens=ref_target_lengths, n_quantizers=3, f0=None)[0]
+        # Generate prompt condition
+        length_regulator = self.s2mel.length_regulator
+        prompt_condition = length_regulator(S_ref, ylens=torch.tensor([ref_mel.size(2)]), n_quantizers=3, f0=None)[0]
 
         return (spk_cond_emb, style, prompt_condition, ref_mel)
 

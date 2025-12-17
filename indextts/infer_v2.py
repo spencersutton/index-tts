@@ -38,8 +38,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-SAMPLING_RATE = 22050
-FEATURE_SAMPLING_RATE = 16000
+OUTPUT_SR = 22050
+SEMANTIC_SR = 16000
+MAX_LEN = 15
 
 
 def generate_silence_interval(
@@ -53,7 +54,7 @@ def generate_silence_interval(
     # get channel_size
     channel_size = wavs[0].size(0)
     # get silence tensor
-    sil_dur = int(SAMPLING_RATE * interval_silence / 1000.0)
+    sil_dur = int(OUTPUT_SR * interval_silence / 1000.0)
     return torch.zeros(channel_size, sil_dur)
 
 
@@ -68,7 +69,7 @@ def insert_interval_silence(
     # get channel_size
     channel_size = wavs[0].size(0)
     # get silence tensor
-    sil_dur = int(SAMPLING_RATE * interval_silence / 1000.0)
+    sil_dur = int(OUTPUT_SR * interval_silence / 1000.0)
     sil_tensor = torch.zeros(channel_size, sil_dur)
 
     wavs_list: list[Tensor] = []
@@ -135,35 +136,34 @@ class IndexTTS2:
     model_version: float
 
     def _get_emo_embedding(self, path: Path) -> Tensor:
-        decoder = AudioDecoder(path, num_channels=1, sample_rate=FEATURE_SAMPLING_RATE)
-        samples = decoder.get_samples_played_in_range(0, 15)
-        inputs = self.extract_features(samples.data, sampling_rate=samples.sample_rate, return_tensors="pt")
+        decoder = AudioDecoder(path, num_channels=1, sample_rate=SEMANTIC_SR)
+        audio = decoder.get_samples_played_in_range(0, MAX_LEN)
+        inputs = self.extract_features(audio.data, sampling_rate=audio.sample_rate, return_tensors="pt")
         inputs = inputs.to(self.device)
         return self.get_emb(inputs)
 
     @functools.lru_cache  # noqa: B019
     def process_audio_prompt(self, prompt: Path) -> tuple[Tensor, Tensor, Tensor, Tensor]:
         # Load audio at both sample rates
-        audio_22k = AudioDecoder(prompt, num_channels=1, sample_rate=SAMPLING_RATE).get_samples_played_in_range(0, 15)
-        audio_16k = AudioDecoder(prompt, num_channels=1, sample_rate=FEATURE_SAMPLING_RATE).get_samples_played_in_range(
-            0, 15
-        )
+        decoder = AudioDecoder(prompt, num_channels=1, sample_rate=OUTPUT_SR)
+        audio_22k = decoder.get_samples_played_in_range(0, MAX_LEN)
+        decoder = AudioDecoder(prompt, num_channels=1, sample_rate=SEMANTIC_SR)
+        audio_16k = decoder.get_samples_played_in_range(0, MAX_LEN)
 
         # Move to device
         audio_22k.data = audio_22k.data.to(self.device)
         audio_16k.data = audio_16k.data.to(self.device)
 
         # Extract embeddings
-        inputs = self.extract_features(
-            audio_16k.data.cpu(), sampling_rate=audio_16k.sample_rate, return_tensors="pt"
-        ).to(self.device)
+        inputs = self.extract_features(audio_16k.data.cpu(), sampling_rate=audio_16k.sample_rate, return_tensors="pt")
+        inputs = inputs.to(self.device)
         spk_cond_emb = self.get_emb(inputs)
         _, S_ref = self.semantic_codec.quantize(spk_cond_emb)
 
         # Extract mel spectrogram and style
         ref_mel = mel_spectrogram(audio_22k.data.float())
         feat = torchaudio.compliance.kaldi.fbank(
-            audio_16k.data, num_mel_bins=80, dither=0, sample_frequency=FEATURE_SAMPLING_RATE
+            audio_16k.data, num_mel_bins=80, dither=0, sample_frequency=SEMANTIC_SR
         )
         feat -= feat.mean(dim=0, keepdim=True)
         style = self.campplus_model(feat.unsqueeze(0))
@@ -716,7 +716,7 @@ class IndexTTS2:
         self._set_gr_progress(0.9, "saving audio...")
         wavs = insert_interval_silence(wavs, interval_silence=interval_silence)
         wav = torch.cat(wavs, dim=1)
-        wav_length = wav.shape[-1] / SAMPLING_RATE
+        wav_length = wav.shape[-1] / OUTPUT_SR
         logger.info("gpt_gen_time: %.2f seconds", gpt_gen_time)
         logger.info("gpt_forward_time: %.2f seconds", gpt_forward_time)
         logger.info("s2mel_time: %.2f seconds", s2mel_time)
@@ -734,14 +734,14 @@ class IndexTTS2:
             output_path.unlink(missing_ok=True)
             output_path.parent.mkdir(exist_ok=True, parents=True)
 
-            AudioEncoder(wav, sample_rate=SAMPLING_RATE).to_file(output_path)
+            AudioEncoder(wav, sample_rate=OUTPUT_SR).to_file(output_path)
             logger.info("wav file saved to: %s", output_path)
             yield output_path
         else:
             # Scale to int16 range for Gradio compatibility
             wav_data = (wav * torch.iinfo(torch.int16).max).type(torch.int16)
             wav_data = wav_data.numpy().T
-            yield (SAMPLING_RATE, wav_data)
+            yield (OUTPUT_SR, wav_data)
 
 
 def _find_most_similar_cosine(query_vector: Tensor, matrix: Tensor) -> Tensor:

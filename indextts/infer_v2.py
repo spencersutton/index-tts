@@ -261,6 +261,7 @@ class IndexTTS2:
             logger.info("torch.compile cache directory: %s", cache_dir)
 
         cfg = CheckpointsConfig(**OmegaConf.load(cfg_path))  # pyright: ignore[reportCallIssue]
+        self.cfg = cfg
         self.dtype = torch.float16 if self.use_fp16 else None
         self.stop_mel_token = cfg.gpt.stop_mel_token
         self.use_accel = use_accel

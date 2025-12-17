@@ -1,8 +1,9 @@
 from collections.abc import Callable
 from warnings import deprecated
 
-from indextts.util import patch_call
 from torch import Tensor
+
+from indextts.util import patch_call
 
 from .module import Module
 

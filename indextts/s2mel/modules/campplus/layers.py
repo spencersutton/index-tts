@@ -14,6 +14,8 @@ from torch import Tensor, nn
 
 from indextts.util import patch_call
 
+PLANES = 32
+
 
 def get_nonlinear(channels: int = 128) -> nn.Sequential[nn.Module]:
     return nn.Sequential(
@@ -123,7 +125,7 @@ class CAMDenseTDNNBlock(nn.ModuleList):
     ) -> None:
         super().__init__()
         for i in range(num_layers):
-            layer = CAMDenseTDNNLayer(in_channels=in_channels + i * 32, dilation=dilation)
+            layer = CAMDenseTDNNLayer(in_channels + i * 32, dilation)
             self.add_module(f"tdnnd{i + 1}", layer)
 
     @override
@@ -137,10 +139,10 @@ class CAMDenseTDNNBlock(nn.ModuleList):
 
 
 class TransitLayer(nn.Module):
-    def __init__(self, in_channels: int, out_channels: int) -> None:
+    def __init__(self, in_channels: int) -> None:
         super().__init__()
         self.nonlinear = get_nonlinear(in_channels)
-        self.linear = nn.Conv1d(in_channels, out_channels, 1, bias=False)
+        self.linear = nn.Conv1d(in_channels, in_channels // 2, 1, bias=False)
 
     @override
     def forward(self, x: Tensor) -> Tensor:
@@ -164,9 +166,6 @@ class DenseLayer(nn.Module):
 
     @patch_call(forward)
     def __call__(self) -> None: ...
-
-
-PLANES = 32
 
 
 class BasicResBlock(nn.Module):

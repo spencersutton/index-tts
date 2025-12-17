@@ -56,7 +56,6 @@ class MarkupLMTokenizerFast(PreTrainedTokenizerFast):
     def get_xpath_seq(self, xpath):  # -> tuple[list[Any], list[Any]]:
 
         ...
-    @add_end_docstrings(ENCODE_KWARGS_DOCSTRING, MARKUPLM_ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def __call__(
         self,
         text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput],
@@ -80,7 +79,6 @@ class MarkupLMTokenizerFast(PreTrainedTokenizerFast):
         verbose: bool = ...,
         **kwargs,
     ) -> BatchEncoding: ...
-    @add_end_docstrings(ENCODE_KWARGS_DOCSTRING, MARKUPLM_ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def batch_encode_plus(
         self,
         batch_text_or_text_pairs: list[TextInput] | list[TextInputPair] | list[PreTokenizedInput],
@@ -105,7 +103,6 @@ class MarkupLMTokenizerFast(PreTrainedTokenizerFast):
         **kwargs,
     ) -> BatchEncoding: ...
     def tokenize(self, text: str, pair: str | None = ..., add_special_tokens: bool = ..., **kwargs) -> list[str]: ...
-    @add_end_docstrings(ENCODE_KWARGS_DOCSTRING, MARKUPLM_ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def encode_plus(
         self,
         text: TextInput | PreTokenizedInput,

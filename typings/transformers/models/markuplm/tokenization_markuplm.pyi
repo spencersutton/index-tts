@@ -78,7 +78,6 @@ class MarkupLMTokenizer(PreTrainedTokenizer):
     def create_token_type_ids_from_sequences(
         self, token_ids_0: list[int], token_ids_1: list[int] | None = ...
     ) -> list[int]: ...
-    @add_end_docstrings(ENCODE_KWARGS_DOCSTRING, MARKUPLM_ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def __call__(
         self,
         text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput],
@@ -102,7 +101,6 @@ class MarkupLMTokenizer(PreTrainedTokenizer):
         verbose: bool = ...,
         **kwargs,
     ) -> BatchEncoding: ...
-    @add_end_docstrings(ENCODE_KWARGS_DOCSTRING, MARKUPLM_ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def batch_encode_plus(
         self,
         batch_text_or_text_pairs: list[TextInput] | list[TextInputPair] | list[PreTokenizedInput],
@@ -126,7 +124,6 @@ class MarkupLMTokenizer(PreTrainedTokenizer):
         verbose: bool = ...,
         **kwargs,
     ) -> BatchEncoding: ...
-    @add_end_docstrings(ENCODE_KWARGS_DOCSTRING)
     def encode(
         self,
         text: TextInput | PreTokenizedInput,
@@ -150,7 +147,6 @@ class MarkupLMTokenizer(PreTrainedTokenizer):
         verbose: bool = ...,
         **kwargs,
     ) -> list[int]: ...
-    @add_end_docstrings(ENCODE_KWARGS_DOCSTRING, MARKUPLM_ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def encode_plus(
         self,
         text: TextInput | PreTokenizedInput,
@@ -174,7 +170,6 @@ class MarkupLMTokenizer(PreTrainedTokenizer):
         verbose: bool = ...,
         **kwargs,
     ) -> BatchEncoding: ...
-    @add_end_docstrings(ENCODE_KWARGS_DOCSTRING, MARKUPLM_ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def prepare_for_model(
         self,
         text: TextInput | PreTokenizedInput,

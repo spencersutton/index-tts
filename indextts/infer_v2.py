@@ -5,7 +5,7 @@ import logging
 import random
 import time
 import typing
-from collections.abc import Collection, Generator, Sequence
+from collections.abc import Collection, Generator, Mapping, Sequence
 from pathlib import Path
 from subprocess import CalledProcessError
 from typing import Any, cast
@@ -259,7 +259,7 @@ class IndexTTS2:
 
             logger.info("torch.compile cache directory: %s", cache_dir)
 
-        cfg = CheckpointsConfig(**OmegaConf.load(cfg_path))  # pyright: ignore[reportCallIssue]
+        cfg = CheckpointsConfig(**cast(Mapping[str, Any], OmegaConf.load(cfg_path)))
         self.cfg = cfg
         self.dtype = torch.float16 if self.use_fp16 else None
         self.stop_mel_token = cfg.gpt.stop_mel_token

@@ -77,7 +77,6 @@ class TapexTokenizer(PreTrainedTokenizer):
 
         ...
     def save_vocabulary(self, save_directory: str, filename_prefix: str | None = ...) -> tuple[str]: ...
-    @add_end_docstrings(ENCODE_KWARGS_DOCSTRING, TAPEX_ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def __call__(
         self,
         table: pd.DataFrame | list[pd.DataFrame] = ...,
@@ -120,7 +119,6 @@ class TapexTokenizer(PreTrainedTokenizer):
         verbose: bool = ...,
         **kwargs,
     ) -> BatchEncoding: ...
-    @add_end_docstrings(ENCODE_KWARGS_DOCSTRING, TAPEX_ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def batch_encode_plus(
         self,
         table: pd.DataFrame | list[pd.DataFrame],
@@ -141,7 +139,6 @@ class TapexTokenizer(PreTrainedTokenizer):
         verbose: bool = ...,
         **kwargs,
     ) -> BatchEncoding: ...
-    @add_end_docstrings(ENCODE_KWARGS_DOCSTRING)
     def encode(
         self,
         table: pd.DataFrame,
@@ -154,7 +151,6 @@ class TapexTokenizer(PreTrainedTokenizer):
         return_tensors: str | TensorType | None = ...,
         **kwargs,
     ) -> list[int]: ...
-    @add_end_docstrings(ENCODE_KWARGS_DOCSTRING, TAPEX_ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def encode_plus(
         self,
         table: pd.DataFrame,

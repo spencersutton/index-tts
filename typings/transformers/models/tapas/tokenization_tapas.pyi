@@ -110,7 +110,6 @@ class TapasTokenizer(PreTrainedTokenizer):
     def get_special_tokens_mask(
         self, token_ids_0: list[int], token_ids_1: list[int] | None = ..., already_has_special_tokens: bool = ...
     ) -> list[int]: ...
-    @add_end_docstrings(TAPAS_ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def __call__(
         self,
         table: pd.DataFrame,
@@ -139,7 +138,6 @@ class TapasTokenizer(PreTrainedTokenizer):
         verbose: bool = ...,
         **kwargs,
     ) -> BatchEncoding: ...
-    @add_end_docstrings(ENCODE_KWARGS_DOCSTRING, TAPAS_ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def batch_encode_plus(
         self,
         table: pd.DataFrame,
@@ -162,7 +160,6 @@ class TapasTokenizer(PreTrainedTokenizer):
         verbose: bool = ...,
         **kwargs,
     ) -> BatchEncoding: ...
-    @add_end_docstrings(ENCODE_KWARGS_DOCSTRING)
     def encode(
         self,
         table: pd.DataFrame,
@@ -174,7 +171,6 @@ class TapasTokenizer(PreTrainedTokenizer):
         return_tensors: str | TensorType | None = ...,
         **kwargs,
     ) -> list[int]: ...
-    @add_end_docstrings(ENCODE_KWARGS_DOCSTRING, TAPAS_ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def encode_plus(
         self,
         table: pd.DataFrame,
@@ -196,7 +192,6 @@ class TapasTokenizer(PreTrainedTokenizer):
         verbose: bool = ...,
         **kwargs,
     ) -> BatchEncoding: ...
-    @add_end_docstrings(ENCODE_KWARGS_DOCSTRING, TAPAS_ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def prepare_for_model(
         self,
         raw_table: pd.DataFrame,

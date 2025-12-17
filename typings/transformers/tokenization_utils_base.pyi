@@ -152,7 +152,6 @@ ENCODE_KWARGS_DOCSTRING = ...
 ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING = ...
 INIT_TOKENIZER_DOCSTRING = ...
 
-@add_end_docstrings(INIT_TOKENIZER_DOCSTRING)
 class PreTrainedTokenizerBase(SpecialTokensMixin, PushToHubMixin):
     vocab_files_names: dict[str, str] = ...
     pretrained_vocab_files_map: dict[str, dict[str, str]] = ...
@@ -230,11 +229,6 @@ class PreTrainedTokenizerBase(SpecialTokensMixin, PushToHubMixin):
     ) -> tuple[str]: ...
     def save_vocabulary(self, save_directory: str, filename_prefix: str | None = ...) -> tuple[str]: ...
     def tokenize(self, text: str, pair: str | None = ..., add_special_tokens: bool = ..., **kwargs) -> list[str]: ...
-    @add_end_docstrings(
-        ENCODE_KWARGS_DOCSTRING,
-        ...,
-        ...,
-    )
     def encode(
         self,
         text: TextInput | PreTokenizedInput | EncodedInput,
@@ -249,7 +243,6 @@ class PreTrainedTokenizerBase(SpecialTokensMixin, PushToHubMixin):
         **kwargs,
     ) -> list[int]: ...
     def num_special_tokens_to_add(self, pair: bool = ...) -> int: ...
-    @add_end_docstrings(ENCODE_KWARGS_DOCSTRING, ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def __call__(
         self,
         text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] | None = ...,
@@ -274,7 +267,6 @@ class PreTrainedTokenizerBase(SpecialTokensMixin, PushToHubMixin):
         verbose: bool = ...,
         **kwargs,
     ) -> BatchEncoding: ...
-    @add_end_docstrings(ENCODE_KWARGS_DOCSTRING, ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def encode_plus(
         self,
         text: TextInput | PreTokenizedInput | EncodedInput,
@@ -297,7 +289,6 @@ class PreTrainedTokenizerBase(SpecialTokensMixin, PushToHubMixin):
         verbose: bool = ...,
         **kwargs,
     ) -> BatchEncoding: ...
-    @add_end_docstrings(ENCODE_KWARGS_DOCSTRING, ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def batch_encode_plus(
         self,
         batch_text_or_text_pairs: list[TextInput]
@@ -346,7 +337,6 @@ class PreTrainedTokenizerBase(SpecialTokensMixin, PushToHubMixin):
     def build_inputs_with_special_tokens(
         self, token_ids_0: list[int], token_ids_1: list[int] | None = ...
     ) -> list[int]: ...
-    @add_end_docstrings(ENCODE_KWARGS_DOCSTRING, ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def prepare_for_model(
         self,
         ids: list[int],

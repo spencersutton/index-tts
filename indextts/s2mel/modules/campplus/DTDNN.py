@@ -22,6 +22,8 @@ from indextts.s2mel.modules.campplus.layers import (
 from indextts.util import patch_call
 
 M_CHANNELS = 32
+GROWTH_RATE: Final = 32
+INIT_CHANNELS: Final = 128
 
 
 class FCM(nn.Module):
@@ -64,14 +66,6 @@ class FCM(nn.Module):
     def __call__(self) -> None: ...
 
 
-GROWTH_RATE: Final = 32
-BN_SIZE: Final = 4
-INIT_CHANNELS: Final = 128
-CONFIG_STR: Final = "batchnorm-relu"
-EMBEDDING_SIZE: Final = 192
-FEAT_DIM: Final = 80
-
-
 class CAMPPlus(nn.Module):
     def __init__(self) -> None:
         super().__init__()
@@ -90,7 +84,7 @@ class CAMPPlus(nn.Module):
 
         self.xvector.add_module("out_nonlinear", get_nonlinear(channels))
         self.xvector.add_module("stats", StatsPool())
-        self.xvector.add_module("dense", DenseLayer(channels * 2))
+        self.xvector.add_module("dense", DenseLayer())
 
         for m in self.modules():
             if isinstance(m, (nn.Conv1d, nn.Linear)):

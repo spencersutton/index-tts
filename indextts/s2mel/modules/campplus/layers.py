@@ -262,34 +262,35 @@ class DenseLayer(nn.Module):
     def __call__(self) -> None: ...
 
 
-class BasicResBlock(nn.Module):
-    expansion = 1
+PLANES = 32
 
-    def __init__(self, in_planes: int, planes: int, stride: int = 1) -> None:
+
+class BasicResBlock(nn.Module):
+    def __init__(self, stride: int = 1) -> None:
         super().__init__()
         self.conv1 = nn.Conv2d(
-            in_planes,
-            planes,
+            PLANES,
+            PLANES,
             kernel_size=3,
             stride=(stride, 1),
             padding=1,
             bias=False,
         )
-        self.bn1 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=1, padding=1, bias=False)
-        self.bn2 = nn.BatchNorm2d(planes)
+        self.bn1 = nn.BatchNorm2d(PLANES)
+        self.conv2 = nn.Conv2d(PLANES, PLANES, kernel_size=3, stride=1, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(PLANES)
 
         self.shortcut: nn.Sequential[nn.Conv2d | nn.BatchNorm2d] = nn.Sequential()
-        if stride != 1 or in_planes != self.expansion * planes:
+        if stride != 1:
             self.shortcut = nn.Sequential(
                 nn.Conv2d(
-                    in_planes,
-                    self.expansion * planes,
+                    PLANES,
+                    PLANES,
                     kernel_size=1,
                     stride=(stride, 1),
                     bias=False,
                 ),
-                nn.BatchNorm2d(self.expansion * planes),
+                nn.BatchNorm2d(PLANES),
             )
 
     @override

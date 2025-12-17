@@ -2,8 +2,9 @@
 # Licensed under the Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
 
 # Copied from: https://github.com/modelscope/3D-Speaker/blob/main/speakerlab/models/campplus/DTDNN.py
+from __future__ import annotations
+
 from collections import OrderedDict
-from collections.abc import Sequence
 from typing import override
 
 import torch.nn.functional as F
@@ -20,46 +21,32 @@ from indextts.s2mel.modules.campplus.layers import (
 )
 from indextts.util import patch_call
 
+M_CHANNELS = 32
+
 
 class FCM(nn.Module):
-    def __init__(
-        self,
-        block: type[BasicResBlock] = BasicResBlock,
-        num_blocks: Sequence[int] = [2, 2],
-        m_channels: int = 32,
-        feat_dim: int = 80,
-    ) -> None:
+    def __init__(self, feat_dim: int = 80) -> None:
         super().__init__()
-        self.in_planes = m_channels
-        self.conv1 = nn.Conv2d(1, m_channels, kernel_size=3, stride=1, padding=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(m_channels)
+        self.in_planes = M_CHANNELS
+        self.conv1 = nn.Conv2d(1, M_CHANNELS, kernel_size=3, stride=1, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(M_CHANNELS)
 
-        self.layer1 = self._make_layer(block, m_channels, num_blocks[0], stride=2)
-        self.layer2 = self._make_layer(block, m_channels, num_blocks[1], stride=2)
+        self.layer1 = self._make_layer()
+        self.layer2 = self._make_layer()
 
         self.conv2 = nn.Conv2d(
-            m_channels,
-            m_channels,
+            M_CHANNELS,
+            M_CHANNELS,
             kernel_size=3,
             stride=(2, 1),
             padding=1,
             bias=False,
         )
-        self.bn2 = nn.BatchNorm2d(m_channels)
-        self.out_channels = m_channels * (feat_dim // 8)
+        self.bn2 = nn.BatchNorm2d(M_CHANNELS)
+        self.out_channels = M_CHANNELS * 10
 
-    def _make_layer(
-        self,
-        block: type[BasicResBlock],
-        planes: int,
-        num_blocks: int,
-        stride: int,
-    ) -> nn.Sequential:
-        strides = [stride] + [1] * (num_blocks - 1)
-        layers: list[nn.Module] = []
-        for stride in strides:
-            layers.append(block(self.in_planes, planes, stride))
-            self.in_planes = planes * block.expansion
+    def _make_layer(self) -> nn.Sequential[BasicResBlock]:
+        layers = [BasicResBlock(stride) for stride in (2, 1)]
         return nn.Sequential(*layers)
 
     @override

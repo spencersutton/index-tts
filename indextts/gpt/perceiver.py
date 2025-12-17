@@ -10,9 +10,11 @@ from einops.layers.torch import Rearrange
 from packaging import version
 from torch import Tensor, einsum, nn
 from torch.nn.attention import SDPBackend, sdpa_kernel
-from torch.nn.modules import Sequential
 
 from indextts.util import patch_call
+
+if TYPE_CHECKING:
+    from torch.nn.modules import Sequential
 
 warning_printed = False
 

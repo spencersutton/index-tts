@@ -47,31 +47,10 @@ class StatsPool(nn.Module):
 
 
 class TDNNLayer(nn.Module):
-    def __init__(
-        self,
-        in_channels: int,
-        out_channels: int,
-        kernel_size: int,
-        stride: int = 1,
-        padding: int = 0,
-        dilation: int = 1,
-        bias: bool = False,
-        config_str: str = "batchnorm-relu",
-    ) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        if padding < 0:
-            assert kernel_size % 2 == 1, f"Expect equal paddings, but got even kernel size ({kernel_size})"
-            padding = (kernel_size - 1) // 2 * dilation
-        self.linear = nn.Conv1d(
-            in_channels,
-            out_channels,
-            kernel_size,
-            stride=stride,
-            padding=padding,
-            dilation=dilation,
-            bias=bias,
-        )
-        self.nonlinear = get_nonlinear(config_str, out_channels)
+        self.linear = nn.Conv1d(320, 128, 5, stride=2, padding=2, bias=False)
+        self.nonlinear = get_nonlinear("batchnorm-relu", 128)
 
     @override
     def forward(self, x: Tensor) -> Tensor:
@@ -83,30 +62,20 @@ class TDNNLayer(nn.Module):
 
 
 class CAMLayer(nn.Module):
-    def __init__(
-        self,
-        bn_channels: int,
-        out_channels: int,
-        kernel_size: int,
-        stride: int,
-        padding: int,
-        dilation: int,
-        bias: bool,
-        reduction: int = 2,
-    ) -> None:
+    def __init__(self, padding: int, dilation: int) -> None:
         super().__init__()
         self.linear_local = nn.Conv1d(
-            bn_channels,
-            out_channels,
-            kernel_size,
-            stride=stride,
+            128,
+            32,
+            3,
+            stride=1,
             padding=padding,
             dilation=dilation,
-            bias=bias,
+            bias=False,
         )
-        self.linear1 = nn.Conv1d(bn_channels, bn_channels // reduction, 1)
+        self.linear1 = nn.Conv1d(128, 64, 1)
         self.relu = nn.ReLU(inplace=True)
-        self.linear2 = nn.Conv1d(bn_channels // reduction, out_channels, 1)
+        self.linear2 = nn.Conv1d(64, 32, 1)
         self.sigmoid = nn.Sigmoid()
 
     @override
@@ -134,41 +103,19 @@ class CAMLayer(nn.Module):
 
 
 class CAMDenseTDNNLayer(nn.Module):
-    def __init__(
-        self,
-        in_channels: int,
-        out_channels: int,
-        bn_channels: int,
-        kernel_size: int,
-        stride: int = 1,
-        dilation: int = 1,
-        bias: bool = False,
-        config_str: str = "batchnorm-relu",
-        memory_efficient: bool = False,
-    ) -> None:
+    def __init__(self, in_channels: int, dilation: int = 1) -> None:
         super().__init__()
-        assert kernel_size % 2 == 1, f"Expect equal paddings, but got even kernel size ({kernel_size})"
-        padding = (kernel_size - 1) // 2 * dilation
-        self.memory_efficient = memory_efficient
-        self.nonlinear1 = get_nonlinear(config_str, in_channels)
-        self.linear1 = nn.Conv1d(in_channels, bn_channels, 1, bias=False)
-        self.nonlinear2 = get_nonlinear(config_str, bn_channels)
-        self.cam_layer = CAMLayer(
-            bn_channels,
-            out_channels,
-            kernel_size,
-            stride=stride,
-            padding=padding,
-            dilation=dilation,
-            bias=bias,
-        )
+        self.nonlinear1 = get_nonlinear("batchnorm-relu", in_channels)
+        self.linear1 = nn.Conv1d(in_channels, 128, 1, bias=False)
+        self.nonlinear2 = get_nonlinear("batchnorm-relu", 128)
+        self.cam_layer = CAMLayer(padding=dilation, dilation=dilation)
 
     def bn_function(self, x: Tensor) -> Tensor:
         return self.linear1(self.nonlinear1(x))
 
     @override
     def forward(self, x: Tensor) -> Tensor:
-        if self.training and self.memory_efficient:
+        if self.training:
             x = cp.checkpoint(self.bn_function, x)
         else:
             x = self.bn_function(x)
@@ -183,28 +130,12 @@ class CAMDenseTDNNBlock(nn.ModuleList):
         self,
         num_layers: int,
         in_channels: int,
-        out_channels: int,
-        bn_channels: int,
-        kernel_size: int,
-        stride: int = 1,
         dilation: int = 1,
         bias: bool = False,
-        config_str: str = "batchnorm-relu",
-        memory_efficient: bool = False,
     ) -> None:
         super().__init__()
         for i in range(num_layers):
-            layer = CAMDenseTDNNLayer(
-                in_channels=in_channels + i * out_channels,
-                out_channels=out_channels,
-                bn_channels=bn_channels,
-                kernel_size=kernel_size,
-                stride=stride,
-                dilation=dilation,
-                bias=bias,
-                config_str=config_str,
-                memory_efficient=memory_efficient,
-            )
+            layer = CAMDenseTDNNLayer(in_channels=in_channels + i * 32, dilation=dilation)
             self.add_module(f"tdnnd{i + 1}", layer)
 
     @override
@@ -218,16 +149,10 @@ class CAMDenseTDNNBlock(nn.ModuleList):
 
 
 class TransitLayer(nn.Module):
-    def __init__(
-        self,
-        in_channels: int,
-        out_channels: int,
-        bias: bool = True,
-        config_str: str = "batchnorm-relu",
-    ) -> None:
+    def __init__(self, in_channels: int, out_channels: int) -> None:
         super().__init__()
-        self.nonlinear = get_nonlinear(config_str, in_channels)
-        self.linear = nn.Conv1d(in_channels, out_channels, 1, bias=bias)
+        self.nonlinear = get_nonlinear("batchnorm-relu", in_channels)
+        self.linear = nn.Conv1d(in_channels, out_channels, 1, bias=False)
 
     @override
     def forward(self, x: Tensor) -> Tensor:
@@ -239,16 +164,10 @@ class TransitLayer(nn.Module):
 
 
 class DenseLayer(nn.Module):
-    def __init__(
-        self,
-        in_channels: int,
-        out_channels: int,
-        bias: bool = False,
-        config_str: str = "batchnorm-relu",
-    ) -> None:
+    def __init__(self, in_channels: int) -> None:
         super().__init__()
-        self.linear = nn.Conv1d(in_channels, out_channels, 1, bias=bias)
-        self.nonlinear = get_nonlinear(config_str, out_channels)
+        self.linear = nn.Conv1d(in_channels, 192, 1, bias=False)
+        self.nonlinear = get_nonlinear("batchnorm_", 192)
 
     @override
     def forward(self, x: Tensor) -> Tensor:

@@ -14,7 +14,6 @@ import numpy as np
 import safetensors.torch
 import torch
 import torchaudio
-from huggingface_hub import hf_hub_download
 from omegaconf import OmegaConf
 from torch import Tensor
 from torch.nn.utils.rnn import pad_sequence
@@ -25,9 +24,10 @@ from transformers import SeamlessM4TFeatureExtractor, Wav2Vec2BertModel
 
 from indextts.config import CheckpointsConfig
 from indextts.gpt.model_v2 import GPT2InferenceModel, UnifiedVoice
+from indextts.load_modules import load_bigvgan, load_campplus, load_s2mel_model, load_semantic_codec_model
 from indextts.qwen_emotion import QwenEmotion
 from indextts.s2mel.modules.audio import mel_spectrogram
-from indextts.s2mel.modules.bigvgan import BigVGAN, bigvgan
+from indextts.s2mel.modules.bigvgan import bigvgan
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
 from indextts.s2mel.modules.length_regulator import InterpolateRegulator
 from indextts.s2mel.modules.model import MyModel
@@ -43,47 +43,6 @@ logger = logging.getLogger(__name__)
 
 SAMPLING_RATE = 22050
 FEATURE_SAMPLING_RATE = 16000
-
-
-def _load_bigvgan(name: str, use_cuda_kernel: bool) -> BigVGAN:
-    model = BigVGAN.from_pretrained(name, use_cuda_kernel=use_cuda_kernel)
-    model.remove_weight_norm()
-    logger.info("bigvgan weights restored from: %s", name)
-    return model.eval()
-
-
-def _load_camp_plus() -> CAMPPlus:
-    checkpoint = hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
-    model = CAMPPlus(feat_dim=80, embedding_size=192)
-    model.load_state_dict(torch.load(checkpoint))  # pyright: ignore[reportAny]
-    logger.info("campplus_model weights restored from: %s", checkpoint)
-    return model.eval()
-
-
-def _load_semantic_codec_model() -> RepCodec:
-    checkpoint = hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
-    model = RepCodec()
-    safetensors.torch.load_model(model, checkpoint, strict=False)
-    logger.info("semantic_codec weights restored from: %s", checkpoint)
-    return model.eval()
-
-
-def _load_s2mel_model(cfg: CheckpointsConfig, model_dir: Path) -> MyModel:
-    model = MyModel(cfg.s2mel)
-
-    safetensors.torch.load_model(model.cfm, model_dir / cfg.cfm_checkpoint, strict=False)
-    model.cfm.eval()
-
-    safetensors.torch.load_model(model.gpt_layer, model_dir / cfg.gpt_layer_checkpoint, strict=False)
-    model.gpt_layer.eval()
-
-    safetensors.torch.load_model(model.length_regulator, model_dir / cfg.len_reg_checkpoint, strict=False)
-    model.length_regulator.eval()
-
-    assert model.cfm.estimator is not None
-    model.cfm.estimator.setup_caches(max_batch_size=1, max_seq_length=8192)
-
-    return model.eval()
 
 
 def generate_silence_interval(
@@ -355,13 +314,12 @@ class IndexTTS2:
         self.semantic_mean = stat_mean_var.get_tensor("mean")
         self.semantic_std = torch.sqrt(stat_mean_var.get_tensor("var"))
 
-        self.semantic_codec = _load_semantic_codec_model()
+        self.semantic_codec = load_semantic_codec_model()
 
-        self.s2mel = _load_s2mel_model(cfg, model_dir)
+        self.s2mel = load_s2mel_model(cfg, model_dir)
 
-        self.campplus_model = _load_camp_plus()
-
-        self.bigvgan = _load_bigvgan(cfg.vocoder.name, self.use_cuda_kernel)
+        self.campplus_model = load_campplus()
+        self.bigvgan = load_bigvgan(cfg.vocoder.name, self.use_cuda_kernel)
         normalizer = TextNormalizer()
         normalizer.load()
         logger.info("TextNormalizer loaded")

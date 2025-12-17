@@ -4,7 +4,7 @@
 # Copied from: https://github.com/modelscope/3D-Speaker/blob/main/speakerlab/models/campplus/layers.py
 from __future__ import annotations
 
-from typing import override
+from typing import Literal, override
 
 import torch
 import torch.nn.functional as F
@@ -14,20 +14,15 @@ from torch import Tensor, nn
 from indextts.util import patch_call
 
 
-def get_nonlinear(config_str: str, channels: int) -> nn.Sequential[nn.Module]:
+def get_nonlinear(config_str: Literal["batchnorm-relu", "batchnorm_"], channels: int) -> nn.Sequential[nn.Module]:
     nonlinear: nn.Sequential[nn.Module] = nn.Sequential()
-    for name in config_str.split("-"):
-        if name == "relu":
-            nonlinear.add_module("relu", nn.ReLU(inplace=True))
-        elif name == "prelu":
-            nonlinear.add_module("prelu", nn.PReLU(channels))
-        elif name == "batchnorm":
+    match config_str:
+        case "batchnorm-relu":
             nonlinear.add_module("batchnorm", nn.BatchNorm1d(channels))
-        elif name == "batchnorm_":
+            nonlinear.add_module("relu", nn.ReLU(inplace=True))
+            return nonlinear
+        case "batchnorm_":
             nonlinear.add_module("batchnorm", nn.BatchNorm1d(channels, affine=False))
-        else:
-            msg = f"Unexpected module ({name})."
-            raise ValueError(msg)
     return nonlinear
 
 

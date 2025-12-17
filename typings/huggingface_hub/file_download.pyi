@@ -22,7 +22,6 @@ class HfFileMetadata:
     size: int | None
     xet_file_data: XetFileData | None
 
-@validate_hf_hub_args
 def hf_hub_url(
     repo_id: str,
     filename: str,
@@ -53,9 +52,7 @@ def xet_get(
     displayed_filename: str | None = ...,
     _tqdm_bar: tqdm | None = ...,
 ) -> None: ...
-@validate_hf_hub_args
 def repo_folder_name(*, repo_id: str, repo_type: str) -> str: ...
-@validate_hf_hub_args
 def hf_hub_download(
     repo_id: str,
     filename: str,
@@ -79,7 +76,6 @@ def hf_hub_download(
     force_filename: str | None = ...,
     local_dir_use_symlinks: bool | Literal["auto"] = ...,
 ) -> str: ...
-@validate_hf_hub_args
 def try_to_load_from_cache(
     repo_id: str,
     filename: str,
@@ -87,7 +83,6 @@ def try_to_load_from_cache(
     revision: str | None = ...,
     repo_type: str | None = ...,
 ) -> str | _CACHED_NO_EXIST_T | None: ...
-@validate_hf_hub_args
 def get_hf_file_metadata(
     url: str,
     token: bool | str | None = ...,

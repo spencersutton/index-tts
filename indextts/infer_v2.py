@@ -17,10 +17,9 @@ import torchaudio
 from omegaconf import OmegaConf
 from torch import Tensor
 from torch.nn.utils.rnn import pad_sequence
-from torchcodec import AudioSamples
 from torchcodec.decoders import AudioDecoder
 from torchcodec.encoders import AudioEncoder
-from transformers import SeamlessM4TFeatureExtractor, Wav2Vec2BertModel
+from transformers import BatchFeature, SeamlessM4TFeatureExtractor, Wav2Vec2BertModel
 
 from indextts.config import CheckpointsConfig
 from indextts.gpt.model_v2 import GPT2InferenceModel, UnifiedVoice
@@ -83,14 +82,6 @@ def insert_interval_silence(
     return wavs_list
 
 
-def _load_and_cut_audio(
-    source: Path,
-    sample_rate: int | None = None,
-) -> AudioSamples:
-    decoder = AudioDecoder(source, num_channels=1, sample_rate=sample_rate)
-    return decoder.get_samples_played_in_range(0, 15)
-
-
 def normalize_emo_vec(emo_vector: Sequence[float], apply_bias: bool = True) -> list[float]:
     """
     Normalizes an emotion vector by applying optional bias factors and scaling the sum.
@@ -145,6 +136,13 @@ class IndexTTS2:
         gr_progress: Progress | None
     model_version: float
 
+    def _get_emo_embedding(self, path: Path) -> Tensor:
+        decoder = AudioDecoder(path, num_channels=1, sample_rate=FEATURE_SAMPLING_RATE)
+        samples = decoder.get_samples_played_in_range(0, 15)
+        inputs = self.extract_features(samples.data, sampling_rate=samples.sample_rate, return_tensors="pt")
+        inputs = inputs.to(self.device)
+        return self.get_emb(inputs)
+
     @functools.lru_cache  # noqa: B019
     def process_audio_prompt(self, prompt: Path) -> tuple[Tensor, Tensor, Tensor, Tensor]:
         decoder = AudioDecoder(prompt, num_channels=1, sample_rate=SAMPLING_RATE)
@@ -157,7 +155,7 @@ class IndexTTS2:
         audio_22k.data = audio_22k.data.to(self.device)
         audio_16k.data = audio_16k.data.to(self.device)
         inputs = inputs.to(self.device)
-        spk_cond_emb = self.get_emb(inputs["input_features"], inputs["attention_mask"])
+        spk_cond_emb = self.get_emb(inputs)
         _, S_ref = self.semantic_codec.quantize(spk_cond_emb)
 
         ref_mel = mel_spectrogram(audio_22k.data.float())
@@ -380,10 +378,10 @@ class IndexTTS2:
         self.model_version = cfg.version
 
     @torch.inference_mode()
-    def get_emb(self, input_features: Tensor, attention_mask: Tensor) -> Tensor:
+    def get_emb(self, features: BatchFeature[Tensor]) -> Tensor:
         vq_emb = self.semantic_model(
-            input_features=input_features,
-            attention_mask=attention_mask,
+            input_features=features["input_features"],
+            attention_mask=features["attention_mask"],
             output_hidden_states=True,
         )
         assert not isinstance(vq_emb, tuple) and vq_emb.hidden_states is not None
@@ -524,13 +522,7 @@ class IndexTTS2:
             emovec_mat = torch.sum(emovec_mat, 0)
             emovec_mat = emovec_mat.unsqueeze(0)
 
-        samples = _load_and_cut_audio(emo_audio_prompt, sample_rate=FEATURE_SAMPLING_RATE)
-        emo_inputs = self.extract_features(samples.data, sampling_rate=FEATURE_SAMPLING_RATE, return_tensors="pt")
-        emo_inputs = emo_inputs.to(self.device)
-        emo_cond_emb = self.get_emb(
-            emo_inputs["input_features"],
-            emo_inputs["attention_mask"],
-        )
+        emo_cond_emb = self._get_emo_embedding(emo_audio_prompt)
 
         self._set_gr_progress(0.1, "text processing...")
         text_tokens_list = self.tokenizer.tokenize(text)

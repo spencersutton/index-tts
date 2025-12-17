@@ -1,5 +1,7 @@
 # Adapted from https://github.com/lucidrains/naturalspeech2-pytorch/blob/659bec7f7543e7747e809e950cc2f84242fbeec7/naturalspeech2_pytorch/naturalspeech2_pytorch.py#L532
-from typing import TYPE_CHECKING, Any, NamedTuple, cast, override
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, NamedTuple, cast, override
 
 import torch
 import torch.nn.functional as F
@@ -8,6 +10,7 @@ from einops.layers.torch import Rearrange
 from packaging import version
 from torch import Tensor, einsum, nn
 from torch.nn.attention import SDPBackend, sdpa_kernel
+from torch.nn.modules import Sequential
 
 from indextts.util import patch_call
 
@@ -39,7 +42,7 @@ class _Attend(nn.Module):
         self.register_buffer("mask", None, persistent=False)
 
         self.use_flash = use_flash
-        assert not (use_flash and version.parse(torch.__version__) < version.parse("2.0.0")), (
+        assert not (use_flash and version.parse(torch.__version__) < version.parse("2.0.0")), (  # pyright: ignore[reportAny]
             "in order to use flash attention, you must be using pytorch 2.0 or above"
         )
 
@@ -136,7 +139,7 @@ class _Attend(nn.Module):
         """
         n, device = q.shape[-2], q.device
 
-        scale = q.shape[-1] ** -0.5
+        scale = cast(float, q.shape[-1] ** -0.5)
 
         if self.use_flash:
             return self.flash_attn(q, k, v, mask=mask)
@@ -172,17 +175,13 @@ class _Attend(nn.Module):
     def __call__(self) -> None: ...
 
 
-def _sequential(*mods: nn.Module | None) -> nn.Sequential:
-    return nn.Sequential(*(m for m in mods if m is not None))
-
-
 class _RMSNorm(nn.Module):
     def __init__(self, dim: int, scale: bool = True, dim_cond: int | None = None) -> None:
         super().__init__()
         self.cond = dim_cond is not None
         self.to_gamma_beta = nn.Linear(dim_cond, dim * 2) if dim_cond is not None else None
 
-        self.scale = dim**0.5
+        self.scale = cast(float, dim**0.5)
         self.gamma = nn.Parameter(torch.ones(dim)) if scale else None
 
     @override
@@ -203,9 +202,9 @@ class _RMSNorm(nn.Module):
     def __call__(self) -> None: ...
 
 
-class _CausalConv1d(nn.Conv1d):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
+class CausalConv1d(nn.Conv1d):
+    def __init__(self, *args: object, **kwargs: object) -> None:
+        super().__init__(*args, **kwargs)  # pyright: ignore[reportArgumentType]
         (kernel_size,) = self.kernel_size
         (dilation,) = self.dilation
         (stride,) = self.stride
@@ -222,7 +221,7 @@ class _CausalConv1d(nn.Conv1d):
     def __call__(self) -> None: ...
 
 
-class _GEGLU(nn.Module):
+class GEGLU(nn.Module):
     @override
     def forward(self, x: Tensor) -> Tensor:
         x, gate = x.chunk(2, dim=-1)
@@ -232,18 +231,21 @@ class _GEGLU(nn.Module):
     def __call__(self) -> None: ...
 
 
-def _feed_forward(dim: int, mult: int = 4, causal_conv: bool = False) -> nn.Sequential:
+def _feed_forward(
+    dim: int, mult: int = 4, causal_conv: bool = False
+) -> Sequential[nn.Linear | GEGLU | Sequential[Rearrange | CausalConv1d]]:
     dim_inner = int(dim * mult * 2 / 3)
 
     conv = None
     if causal_conv:
         conv = nn.Sequential(
             Rearrange("b n d -> b d n"),
-            _CausalConv1d(dim_inner, dim_inner, 3),
+            CausalConv1d(dim_inner, dim_inner, 3),
             Rearrange("b d n -> b n d"),
         )
 
-    return _sequential(nn.Linear(dim, dim_inner * 2), _GEGLU(), conv, nn.Linear(dim_inner, dim))
+    mods = (nn.Linear(dim, dim_inner * 2), GEGLU(), conv, nn.Linear(dim_inner, dim))
+    return nn.Sequential(*(m for m in mods if m is not None))
 
 
 class PerceiverResampler(nn.Module):
@@ -266,25 +268,24 @@ class PerceiverResampler(nn.Module):
         self.latents = nn.Parameter(torch.randn(num_latents, dim))
         nn.init.normal_(self.latents, std=0.02)
 
-        self.layers = nn.ModuleList([])
-        for _ in range(depth):
-            self.layers.append(
-                nn.ModuleList([
-                    _Attention(
-                        dim=dim,
-                        dim_head=dim_head,
-                        heads=heads,
-                        use_flash=use_flash_attn,
-                        cross_attn_include_queries=True,
-                    ),
-                    _feed_forward(dim=dim, mult=ff_mult),
-                ])
-            )
+        self.layers = nn.ModuleList([
+            nn.ModuleList([
+                Attention(
+                    dim=dim,
+                    dim_head=dim_head,
+                    heads=heads,
+                    use_flash=use_flash_attn,
+                    cross_attn_include_queries=True,
+                ),
+                _feed_forward(dim=dim, mult=ff_mult),
+            ])
+            for _ in range(depth)
+        ])
 
         self.norm = _RMSNorm(dim)
 
     @override
-    def forward(self, x: Tensor, mask: Tensor | None = None) -> Tensor:
+    def forward(self, x: Tensor, mask: Tensor) -> Tensor:
         batch = x.shape[0]
 
         x = self.proj_context(x)
@@ -292,7 +293,7 @@ class PerceiverResampler(nn.Module):
         latents = repeat(self.latents, "n d -> b n d", b=batch)
 
         for item in self.layers:
-            attn, ff = cast(nn.ModuleList, item)
+            attn, ff = item
             latents = attn(latents, x, mask=mask) + latents
             latents = ff(latents) + latents
 
@@ -302,7 +303,7 @@ class PerceiverResampler(nn.Module):
     def __call__(self) -> None: ...
 
 
-class _Attention(nn.Module):
+class Attention(nn.Module):
     def __init__(
         self,
         dim: int,
@@ -316,7 +317,7 @@ class _Attention(nn.Module):
         cross_attn_include_queries: bool = False,
     ) -> None:
         super().__init__()
-        self.scale = dim_head**-0.5
+        self.scale = cast(float, dim_head**-0.5)
         self.heads = heads
         self.cross_attn_include_queries = cross_attn_include_queries
 

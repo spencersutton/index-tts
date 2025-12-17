@@ -26,7 +26,7 @@ from indextts.gpt.model_v2 import GPT2InferenceModel, UnifiedVoice
 from indextts.load_modules import load_bigvgan, load_campplus, load_s2mel_model, load_semantic_codec_model
 from indextts.qwen_emotion import QwenEmotion
 from indextts.s2mel.modules.audio import mel_spectrogram
-from indextts.s2mel.modules.bigvgan import bigvgan
+from indextts.s2mel.modules.bigvgan import BigVGAN
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
 from indextts.s2mel.modules.model import MyModel
 from indextts.utils.front import TextNormalizer, TextTokenizer
@@ -126,7 +126,7 @@ class IndexTTS2:
     semantic_codec: RepCodec
     s2mel: MyModel
     campplus_model: CAMPPlus
-    bigvgan: "bigvgan.BigVGAN"
+    bigvgan: BigVGAN
     tokenizer: TextTokenizer
     emo_matrix: tuple[Tensor, ...]
     emo_num: tuple[int, ...]
@@ -295,10 +295,7 @@ class IndexTTS2:
             try:
                 from indextts.s2mel.modules.bigvgan.alias_free_activation.cuda import activation1d  # noqa: PLC0415
 
-                logger.info(
-                    "Preload custom CUDA kernel for BigVGAN: %s",
-                    activation1d.anti_alias_activation_cuda,  # pyright: ignore[reportAny]
-                )
+                logger.info("Preload custom CUDA kernel for BigVGAN: %s", activation1d.anti_alias_activation_cuda)
             except Exception as e:  # noqa: BLE001
                 logger.info("Failed to load custom CUDA kernel for BigVGAN. Falling back to torch. %r", e)
                 self.use_cuda_kernel = False
@@ -352,10 +349,7 @@ class IndexTTS2:
             # Compile BigVGAN only when not using custom CUDA kernels
             # Custom CUDA kernels conflict with torch.compile tracing
             if not self.use_cuda_kernel:
-                self.bigvgan = cast(
-                    bigvgan.BigVGAN,
-                    torch.compile(self.bigvgan, dynamic=True),
-                )
+                self.bigvgan = cast(BigVGAN, torch.compile(self.bigvgan, dynamic=True))
 
             self.semantic_model = cast(
                 Wav2Vec2BertModel,

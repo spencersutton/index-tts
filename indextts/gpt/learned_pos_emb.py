@@ -3,6 +3,8 @@ from typing import override
 import torch
 from torch import Tensor, nn
 
+from indextts.util import patch_call
+
 
 class LearnedPositionEmbeddings(nn.Module):
     def __init__(self, seq_len: int, model_dim: int, init: float = 0.02) -> None:
@@ -15,6 +17,9 @@ class LearnedPositionEmbeddings(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         sl = x.shape[1]
         return self.emb(torch.arange(0, sl))
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
     def get_fixed_embedding(self, ind: int) -> Tensor:
         return self.emb(torch.tensor([ind])).unsqueeze(0)

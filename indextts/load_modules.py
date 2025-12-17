@@ -23,7 +23,7 @@ def load_bigvgan(name: str, use_cuda_kernel: bool) -> BigVGAN:
 
 def load_campplus() -> CAMPPlus:
     checkpoint = hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
-    model = CAMPPlus(feat_dim=80, embedding_size=192)
+    model = CAMPPlus()
     model.load_state_dict(torch.load(checkpoint))  # pyright: ignore[reportAny]
     logger.info("campplus_model weights restored from: %s", checkpoint)
     return model.eval()

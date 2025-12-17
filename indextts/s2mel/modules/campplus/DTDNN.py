@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from typing import override
+from typing import Final, override
 
 import torch.nn.functional as F
 from torch import Tensor, nn
@@ -25,7 +25,7 @@ M_CHANNELS = 32
 
 
 class FCM(nn.Module):
-    def __init__(self, feat_dim: int = 80) -> None:
+    def __init__(self) -> None:
         super().__init__()
         self.in_planes = M_CHANNELS
         self.conv1 = nn.Conv2d(1, M_CHANNELS, kernel_size=3, stride=1, padding=1, bias=False)
@@ -64,58 +64,35 @@ class FCM(nn.Module):
     def __call__(self) -> None: ...
 
 
+GROWTH_RATE: Final = 32
+BN_SIZE: Final = 4
+INIT_CHANNELS: Final = 128
+CONFIG_STR: Final = "batchnorm-relu"
+EMBEDDING_SIZE: Final = 192
+FEAT_DIM: Final = 80
+
+
 class CAMPPlus(nn.Module):
-    def __init__(
-        self,
-        feat_dim: int = 80,
-        embedding_size: int = 512,
-        growth_rate: int = 32,
-        bn_size: int = 4,
-        init_channels: int = 128,
-        config_str: str = "batchnorm-relu",
-        memory_efficient: bool = True,
-    ) -> None:
+    def __init__(self) -> None:
         super().__init__()
 
-        self.head = FCM(feat_dim=feat_dim)
-        channels = self.head.out_channels
+        self.head = FCM()
 
-        layer = TDNNLayer(
-            channels,
-            init_channels,
-            5,
-            stride=2,
-            dilation=1,
-            padding=-1,
-            config_str=config_str,
-        )
+        layer = TDNNLayer()
         self.xvector = nn.Sequential(OrderedDict([("tdnn", layer)]))
-        channels = init_channels
-        for i, (num_layers, kernel_size, dilation) in enumerate(zip((12, 24, 16), (3, 3, 3), (1, 2, 2))):
-            block = CAMDenseTDNNBlock(
-                num_layers=num_layers,
-                in_channels=channels,
-                out_channels=growth_rate,
-                bn_channels=bn_size * growth_rate,
-                kernel_size=kernel_size,
-                dilation=dilation,
-                config_str=config_str,
-                memory_efficient=memory_efficient,
-            )
+        channels = INIT_CHANNELS
+        for i, (num_layers, dilation) in enumerate(zip((12, 24, 16), (1, 2, 2))):
+            block = CAMDenseTDNNBlock(num_layers=num_layers, in_channels=channels, dilation=dilation)
             self.xvector.add_module(f"block{i + 1}", block)
-            channels += num_layers * growth_rate
-            self.xvector.add_module(
-                f"transit{i + 1}",
-                TransitLayer(channels, channels // 2, bias=False, config_str=config_str),
-            )
+            channels += num_layers * GROWTH_RATE
+            self.xvector.add_module(f"transit{i + 1}", TransitLayer(channels, channels // 2))
             channels //= 2
 
-        self.xvector.add_module("out_nonlinear", get_nonlinear(config_str, channels))
-
+        self.xvector.add_module("out_nonlinear", get_nonlinear("batchnorm-relu", channels))
         self.xvector.add_module("stats", StatsPool())
         self.xvector.add_module(
             "dense",
-            DenseLayer(channels * 2, embedding_size, config_str="batchnorm_"),
+            DenseLayer(channels * 2),
         )
 
         for m in self.modules():

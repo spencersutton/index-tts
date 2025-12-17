@@ -1,14 +1,10 @@
 import operator
 from collections.abc import Callable, Iterable
-from typing import TYPE_CHECKING, Any, TypeVar, TypeVarTuple, Unpack, overload
+from typing import Any, TypeVar, TypeVarTuple, overload
 
 from ..decorators import substitute_in_graph
 
-"""
-Python polyfills for operator
-"""
-if TYPE_CHECKING: ...
-__all__ = ["attrgetter", "itemgetter", "methodcaller", "countOf"]
+__all__ = ["attrgetter", "countOf", "itemgetter", "methodcaller"]
 _T = TypeVar("_T")
 _T1 = TypeVar("_T1")
 _T2 = TypeVar("_T2")

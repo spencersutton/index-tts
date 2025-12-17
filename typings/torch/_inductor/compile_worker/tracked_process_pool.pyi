@@ -2,7 +2,7 @@ from collections.abc import Callable
 from concurrent.futures import Future, ProcessPoolExecutor
 from dataclasses import dataclass
 from multiprocessing.context import BaseContext
-from typing import Optional, ParamSpec, TypeVar
+from typing import ParamSpec, TypeVar
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")

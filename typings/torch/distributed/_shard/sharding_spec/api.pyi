@@ -1,22 +1,18 @@
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 import torch
 import torch.distributed._shard.sharded_tensor.metadata as sharded_tensor_meta
 from torch.distributed._shard.metadata import ShardMetadata
 from torch.distributed._shard.sharded_tensor import ShardedTensor
 
-if TYPE_CHECKING: ...
-
 class PlacementSpec(ABC): ...
 
 @dataclass
 class DevicePlacementSpec(PlacementSpec):
     device: torch.distributed._remote_device
-    def __post_init__(self):  # -> None:
-        ...
+    def __post_init__(self): ...
 
 class ShardingSpec(ABC):
     @abstractmethod
@@ -28,15 +24,12 @@ class ShardingSpec(ABC):
 
 _CUSTOM_SHARDING_SPEC_OPS: dict[str, dict[Callable, Callable]] = ...
 
-def custom_sharding_spec_op(sharding_spec_class, func):  # -> partial[_Wrapped[..., Any, ..., Any]]:
-
-    ...
+def custom_sharding_spec_op(sharding_spec_class, func): ...
 
 @dataclass
 class EnumerableShardingSpec(ShardingSpec):
     shards: list[ShardMetadata]
-    def __post_init__(self):  # -> None:
-        ...
+    def __post_init__(self): ...
     def build_metadata(
         self, tensor_sizes: torch.Size, tensor_properties: sharded_tensor_meta.TensorProperties
     ) -> sharded_tensor_meta.ShardedTensorMetadata: ...

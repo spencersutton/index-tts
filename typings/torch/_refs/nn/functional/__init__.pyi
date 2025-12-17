@@ -1,20 +1,12 @@
-import math
-from collections.abc import Callable
-from functools import wraps
-from typing import Concatenate, Optional, ParamSpec, TypeVar, Union
-
 import torch
-import torch._prims as prims
 import torch._prims_common as utils
-import torch._refs as refs
 from torch._decomp import register_decomposition
-from torch._prims_common import ELEMENTWISE_TYPE_PROMOTION_KIND, NumberType, ShapeType, TensorLike, TensorLikeType
+from torch._prims_common import ELEMENTWISE_TYPE_PROMOTION_KIND, NumberType, ShapeType, TensorLikeType
 from torch._prims_common.wrappers import (
     elementwise_type_promotion_wrapper,
     elementwise_unary_scalar_wrapper,
     out_wrapper,
 )
-from torch._refs import _make_inplace
 
 __all__ = [
     "alpha_dropout",
@@ -103,11 +95,7 @@ def group_norm(
     input: Tensor, num_groups: int, weight: Tensor | None = ..., bias: Tensor | None = ..., eps: float = ...
 ) -> Tensor: ...
 def layer_norm(
-    input: Tensor,
-    normalized_shape: ShapeType,
-    weight: Tensor | None = ...,
-    bias: Tensor | None = ...,
-    eps: float = ...,
+    input: Tensor, normalized_shape: ShapeType, weight: Tensor | None = ..., bias: Tensor | None = ..., eps: float = ...
 ) -> Tensor: ...
 @register_decomposition(aten.leaky_relu)
 @_inplace_wrapper
@@ -148,13 +136,11 @@ def softplus(
 @aten.hardshrink.default.py_impl(DispatchKey.Autograd)
 @register_decomposition(aten.hardshrink)
 @out_wrapper()
-def hardshrink(a: TensorLikeType, lambd: float = ...):  # -> Tensor:
-    ...
+def hardshrink(a: TensorLikeType, lambd: float = ...): ...
 @aten.softshrink.default.py_impl(DispatchKey.Autograd)
 @register_decomposition(aten.softshrink)
 @out_wrapper()
-def softshrink(a: TensorLikeType, lambd: float = ...):  # -> Tensor:
-    ...
+def softshrink(a: TensorLikeType, lambd: float = ...): ...
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("input", "target"), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.COMPLEX_TO_FLOAT
 )
@@ -301,12 +287,10 @@ def pairwise_distance(
 def pdist(a: TensorLikeType, p: float = ...) -> TensorLikeType: ...
 @register_decomposition(aten.pixel_shuffle)
 @out_wrapper()
-def pixel_shuffle(self: Tensor, upscale_factor: int):  # -> Tensor:
-    ...
+def pixel_shuffle(self: Tensor, upscale_factor: int): ...
 @register_decomposition(aten.pixel_unshuffle)
 @out_wrapper()
-def pixel_unshuffle(self: Tensor, downscale_factor: int):  # -> Tensor:
-    ...
+def pixel_unshuffle(self: Tensor, downscale_factor: int): ...
 
 celu_ = ...
 elu_ = ...

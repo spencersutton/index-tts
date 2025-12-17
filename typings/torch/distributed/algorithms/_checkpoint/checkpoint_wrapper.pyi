@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterator
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 import torch
-import torch.nn as nn
+from torch import nn
 
 _CHECKPOINT_WRAPPED_MODULE = ...
 _CHECKPOINT_PREFIX = ...
@@ -29,8 +29,7 @@ class CheckpointWrapper(ActivationWrapper):
     def __init__(
         self, mod: torch.nn.Module, checkpoint_impl: CheckpointImpl = ..., checkpoint_fn=..., **checkpoint_fn_kwargs
     ) -> None: ...
-    def forward(self, *args, **kwargs):  # -> Any | None:
-        ...
+    def forward(self, *args, **kwargs): ...
 
 def offload_wrapper(module: torch.nn.Module) -> torch.nn.Module: ...
 def checkpoint_wrapper(
@@ -41,6 +40,4 @@ def apply_activation_checkpointing(
     checkpoint_wrapper_fn=...,
     check_fn=...,
     auto_wrap_policy: Callable[[nn.Module, bool, int], bool] | None = ...,
-):  # -> None:
-
-    ...
+): ...

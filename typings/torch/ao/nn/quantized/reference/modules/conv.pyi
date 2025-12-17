@@ -6,14 +6,7 @@ from torch.nn.common_types import _size_1_t
 
 from .utils import ReferenceQuantizedModule
 
-__all__ = [
-    "Conv1d",
-    "Conv2d",
-    "Conv3d",
-    "ConvTranspose1d",
-    "ConvTranspose2d",
-    "ConvTranspose3d",
-]
+__all__ = ["Conv1d", "Conv2d", "Conv3d", "ConvTranspose1d", "ConvTranspose2d", "ConvTranspose3d"]
 
 class _ConvNd(torch.nn.modules.conv._ConvNd, ReferenceQuantizedModule):
     __annotations__ = ...

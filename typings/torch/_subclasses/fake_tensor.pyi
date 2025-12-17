@@ -6,11 +6,11 @@ import weakref
 from collections.abc import Generator, Mapping, Sequence
 from dataclasses import dataclass
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Literal, Optional, Self, TypeAlias, TypeGuard, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Literal, Self, TypeGuard, TypeVar
 from weakref import ReferenceType
 
 import torch
-from torch import SymFloat, SymInt, Tensor
+from torch import SymInt, Tensor
 from torch._guards import Source
 from torch._ops import OpOverload
 from torch._subclasses.meta_utils import MetaConverter
@@ -25,7 +25,6 @@ from torch.utils._stats import count
 
 from ._fake_tensor_utils import _PySymInputStub, _SymIntOutputStub
 
-if TYPE_CHECKING: ...
 log = ...
 hc_log = ...
 not_implemented_log = ...

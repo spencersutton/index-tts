@@ -1,7 +1,6 @@
 from collections.abc import Generator
-from typing import Optional
 
-import torch.nn as nn
+from torch import nn
 
 from .contract import _State, contract
 

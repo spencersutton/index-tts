@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple
 
 import torch
 from torch.distributed.device_mesh import DeviceMesh

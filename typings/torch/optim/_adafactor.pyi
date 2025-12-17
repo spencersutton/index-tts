@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 import torch
 from torch import Tensor
 
@@ -20,12 +18,9 @@ class Adafactor(Optimizer):
         foreach: bool | None = ...,
         maximize: bool = ...,
     ) -> None: ...
-    def __setstate__(self, state):  # -> None:
-        ...
+    def __setstate__(self, state): ...
     @torch.no_grad()
-    def step(self, closure=...):  # -> None:
-
-        ...
+    def step(self, closure=...): ...
 
 @_disable_dynamo_if_unsupported(single_tensor_fn=_single_tensor_adafactor)
 def adafactor(
@@ -47,6 +42,4 @@ def adafactor(
     eps1: float,
     eps2: float,
     maximize: bool,
-):  # -> None:
-
-    ...
+): ...

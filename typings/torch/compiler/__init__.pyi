@@ -1,11 +1,10 @@
 import io
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, ParamSpec, TypeAlias, TypeVar
+from typing import Any, ParamSpec, TypeVar
 
 from . import config
 from ._cache import CacheInfo
 
-if TYPE_CHECKING: ...
 __all__ = [
     "allow_in_graph",
     "assume_constant_result",

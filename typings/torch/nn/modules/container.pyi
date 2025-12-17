@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from collections import abc as container_abcs
 from collections.abc import Iterable, Iterator, Mapping
-from typing import TYPE_CHECKING, Any, Self, TypeVar, overload
+from typing import Any, Self, TypeVar, overload
 from warnings import deprecated
 
 from torch import Tensor
@@ -10,7 +10,6 @@ from indextts.util import patch_call
 
 from .module import Module
 
-if TYPE_CHECKING: ...
 __all__ = ["Container", "ModuleDict", "ModuleList", "ParameterDict", "ParameterList", "Sequential"]
 T = TypeVar("T", bound=Module)
 
@@ -83,7 +82,7 @@ class ModuleDict[T: Module](Module):
     def values(self) -> container_abcs.ValuesView[T]: ...
     def update(self, modules: Mapping[str, T]) -> None: ...
 
-class ParameterList(Module):
+class ParameterList[T](Module):
     def __init__(self, values: Iterable[Any] | None = ...) -> None: ...
     @overload
     def __getitem__(self, idx: int) -> Any: ...

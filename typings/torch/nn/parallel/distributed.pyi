@@ -2,7 +2,7 @@ from collections.abc import Callable
 from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import torch
 import torch.distributed as dist
@@ -14,7 +14,7 @@ RPC_AVAILABLE = ...
 if dist.is_available(): ...
 if dist.rpc.is_available():
     RPC_AVAILABLE = ...
-if TYPE_CHECKING: ...
+
 __all__ = ["DistributedDataParallel"]
 logger = ...
 

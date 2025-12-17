@@ -1,14 +1,6 @@
-from typing import TypeAlias, Union
-
 import torch
 from torch._inductor.codegen.common import CSEVariable, OpOverrides
 
-"""
-CuteDSL-specific operation overrides for pointwise operations.
-
-This module provides CuteDSL implementations of common operations used in
-template kernels, particularly for flex attention modifications.
-"""
 type CuteDSLArg = CSEVariable | str
 
 def upcast_compute_type(dtype: torch.dtype) -> torch.dtype: ...
@@ -29,8 +21,7 @@ class CuteDSLOpOverrides(OpOverrides):
     @staticmethod
     def mod(a: CuteDSLArg, b: CuteDSLArg) -> CuteDSLArg: ...
     @staticmethod
-    def remainder(a, b):  # -> CuteDSLArg:
-        ...
+    def remainder(a, b): ...
     @staticmethod
     def exp(x: CuteDSLArg) -> CuteDSLArg: ...
     @staticmethod
@@ -50,8 +41,7 @@ class CuteDSLOpOverrides(OpOverrides):
     @staticmethod
     def where(condition: CuteDSLArg, a: CuteDSLArg, b: CuteDSLArg) -> CuteDSLArg: ...
     @staticmethod
-    def pow(a: CuteDSLArg, b: CuteDSLArg):  # -> CuteDSLArg:
-        ...
+    def pow(a: CuteDSLArg, b: CuteDSLArg): ...
     @staticmethod
     def abs(x: CuteDSLArg) -> CuteDSLArg: ...
     @staticmethod
@@ -65,9 +55,7 @@ class CuteDSLOpOverrides(OpOverrides):
     @staticmethod
     def logical_or(x0: CuteDSLArg, x1: CuteDSLArg) -> CuteDSLArg: ...
     @staticmethod
-    def logical_not(a):  # -> CuteDSLArg:
-
-        ...
+    def logical_not(a): ...
     @staticmethod
     def eq(a: CuteDSLArg, b: CuteDSLArg) -> CuteDSLArg: ...
     @staticmethod

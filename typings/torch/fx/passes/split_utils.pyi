@@ -3,12 +3,7 @@ from dataclasses import dataclass
 import torch.fx
 from torch.fx._compatibility import compatibility
 
-__all__ = [
-    "Component",
-    "getattr_recursive",
-    "setattr_recursive",
-    "split_by_tags",
-]
+__all__ = ["Component", "getattr_recursive", "setattr_recursive", "split_by_tags"]
 
 @compatibility(is_backward_compatible=False)
 def getattr_recursive(obj, name) -> Module | Any | None: ...

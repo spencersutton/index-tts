@@ -1,23 +1,9 @@
 import dataclasses
 import types
-from typing import Any, Optional
+from typing import Any
 
 from .bytecode_transformation import Instruction
 
-"""
-This module provides functionality for resuming Python execution at specific points in code,
-primarily used by PyTorch Dynamo for control flow handling and optimization. It implements
-bytecode transformation and execution state management to enable:
-
-- Resuming execution at arbitrary points in Python bytecode
-- Managing context managers and their state across execution boundaries
-- Transforming and generating new code objects with preserved execution state
-- Supporting Python 3.11+ exception handling and block management
-- Restoring torch function mode stacks and other execution context
-
-The module is critical for PyTorch Dynamo's ability to optimize code while preserving
-Python semantics and execution state.
-"""
 CO_OPTIMIZED = ...
 CO_NEWLOCALS = ...
 CO_VARARGS = ...

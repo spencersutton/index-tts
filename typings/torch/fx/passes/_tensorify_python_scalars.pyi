@@ -1,5 +1,4 @@
 import torch
-import torch.fx as fx
 from torch._subclasses import fake_tensor
 from torch.fx.experimental.symbolic_shapes import ShapeEnv
 from torch.fx.graph_module import GraphModule

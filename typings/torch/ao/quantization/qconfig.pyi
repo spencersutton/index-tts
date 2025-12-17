@@ -1,5 +1,4 @@
 from collections import namedtuple
-from typing import TypeAlias
 from warnings import deprecated
 
 from torch.ao.quantization.fake_quantize import FakeQuantizeBase

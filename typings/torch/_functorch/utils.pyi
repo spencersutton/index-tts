@@ -1,8 +1,8 @@
 import contextlib
 from collections.abc import Generator
-from typing import Any, TypeAlias, Union
+from typing import Any
 
-__all__ = ["exposed_in", "argnums_t", "enable_single_level_autograd_function", "unwrap_dead_wrappers"]
+__all__ = ["argnums_t", "enable_single_level_autograd_function", "exposed_in", "unwrap_dead_wrappers"]
 
 @contextlib.contextmanager
 def enable_single_level_autograd_function() -> Generator[None]: ...

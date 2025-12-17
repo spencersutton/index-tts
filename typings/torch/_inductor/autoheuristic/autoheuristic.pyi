@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Any, Optional
+from typing import Any
 
 from torch._inductor.autoheuristic.autoheuristic_utils import AHContext, AHMetadata, AHOperation, Choice, Feedback
 from torch._inductor.ir import ChoiceCaller

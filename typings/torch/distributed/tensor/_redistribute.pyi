@@ -1,4 +1,4 @@
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 import torch
 import torch.distributed.tensor._api as dtensor
@@ -32,8 +32,6 @@ class Redistribute(torch.autograd.Function):
         async_op: bool = ...,
         forward_dtype: torch.dtype | None = ...,
         backward_dtype: torch.dtype | None = ...,
-    ):  # -> DTensor:
-        ...
+    ): ...
     @staticmethod
-    def backward(ctx, grad_output: dtensor.DTensor):  # -> tuple[DTensor, None, None, None, None, None]:
-        ...
+    def backward(ctx, grad_output: dtensor.DTensor): ...

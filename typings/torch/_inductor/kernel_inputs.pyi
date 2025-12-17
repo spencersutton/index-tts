@@ -1,10 +1,8 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import Any
 
 import sympy
 import torch
-
-if TYPE_CHECKING: ...
 
 class KernelInputs:
     def __init__(self, input_nodes: list[Any], scalars: dict[str, float | int] | None = ...) -> None: ...

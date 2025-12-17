@@ -1,6 +1,6 @@
 import functools
 from collections.abc import Callable, Sequence
-from typing import Optional, Protocol, TypeAlias, Union
+from typing import Protocol
 
 import sympy
 import torch

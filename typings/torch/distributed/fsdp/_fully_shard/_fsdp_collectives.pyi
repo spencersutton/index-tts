@@ -1,5 +1,5 @@
 from collections.abc import Callable, Sequence
-from typing import Any, NamedTuple, Optional, Union
+from typing import Any, NamedTuple
 
 import torch
 import torch.distributed as dist
@@ -131,14 +131,7 @@ def foreach_reduce(
     partial_reduce_output: torch.Tensor | None,
     all_reduce_hook: Callable[[torch.Tensor], None] | None,
     force_sum_reduction_for_comms: bool = ...,
-) -> tuple[
-    torch.Tensor,
-    torch.Event,
-    torch.Event,
-    torch.Tensor | None,
-    torch.Event | None,
-    torch.Tensor | None,
-]: ...
+) -> tuple[torch.Tensor, torch.Event, torch.Event, torch.Tensor | None, torch.Event | None, torch.Tensor | None]: ...
 def foreach_reduce_scatter_copy_in(
     unsharded_grads: list[torch.Tensor], reduce_scatter_input: torch.Tensor, world_size: int
 ) -> None: ...

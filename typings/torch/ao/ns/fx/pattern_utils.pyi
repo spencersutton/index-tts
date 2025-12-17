@@ -19,8 +19,5 @@ type NSFusionType = (
 
 def get_reversed_fusions() -> list[tuple[NSFusionType, int]]: ...
 def end_node_matches_reversed_fusion(
-    end_node: Node,
-    reversed_fusion: NSFusionType,
-    gm: GraphModule,
-    seen_nodes: set[Node],
+    end_node: Node, reversed_fusion: NSFusionType, gm: GraphModule, seen_nodes: set[Node]
 ) -> bool: ...

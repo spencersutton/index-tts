@@ -6,11 +6,7 @@ from torch.fx._compatibility import compatibility
 
 from .tools_common import Names, NodeList, NodeSet, TensorOrTensors, Tensors
 
-__all__ = [
-    "FxNetMinimizerBadModuleError",
-    "FxNetMinimizerResultMismatchError",
-    "FxNetMinimizerRunFuncError",
-]
+__all__ = ["FxNetMinimizerBadModuleError", "FxNetMinimizerResultMismatchError", "FxNetMinimizerRunFuncError"]
 _LOGGER = ...
 
 @compatibility(is_backward_compatible=False)

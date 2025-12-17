@@ -1,32 +1,17 @@
 import functools
-from typing import Any, Union
+from typing import Any
 
 import sympy
 from sympy.logic.boolalg import Boolean as SympyBoolean
 
-"""
-This is a simple interpreter for Sympy expressions that dispatches to
-classes following the torch._inductor.virtualized calling convention.
-For directness, the interpreter takes the handler directly rather than
-consulting the TLS.  It does not use most of the methods on the full
-handler; only those with corresponding Sympy expressions.  To see an example
-of a full handler, see torch.utils._sympy.value_ranges.ValueRangeAnalysis.
-"""
 log = ...
 
 @functools.cache
-def handlers():  # -> dict[Any | type[IntTrueDiv] | type[FloatTrueDiv] | type[FloorDiv] | type[CleanDiv] | type[TruncToFloat] | type[Where] | type[FloatPow] | type[PowByNatural] | type[Mod] | type[PythonMod] | type[Min] | type[Max] | type[ModularIndexing] | type[Identity] | type[IsNonOverlappingAndDenseIndicator] | type[RoundDecimal] | type[OpaqueUnaryFn] | type[BitwiseFn], str]:
-    ...
+def handlers(): ...
 
 ASSOCIATIVE_OPS = ...
 _nil = ...
 
 def sympy_interp(
-    analysis,
-    env: dict[sympy.Symbol, Any],
-    expr: sympy.Expr | SympyBoolean,
-    *,
-    index_dtype=...,
-    missing_handler=...,
-):  # -> Any:
-    ...
+    analysis, env: dict[sympy.Symbol, Any], expr: sympy.Expr | SympyBoolean, *, index_dtype=..., missing_handler=...
+): ...

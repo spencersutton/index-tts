@@ -1,5 +1,5 @@
 import dataclasses
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import sympy
 import torch
@@ -8,8 +8,6 @@ from torch._inductor.scheduler import SchedulerNode
 
 from .ops_handler import DefaultHandler
 from .virtualized import StoreMode
-
-if TYPE_CHECKING: ...
 
 def construct_symbol(count: int, dtype: torch.dtype) -> sympy.Symbol: ...
 

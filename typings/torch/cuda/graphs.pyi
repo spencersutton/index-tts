@@ -1,11 +1,10 @@
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Self, TypeAlias, overload
+from typing import Self, overload
 
 import torch
 from torch import Tensor
 from torch.cuda import _POOL_HANDLE
 
-if TYPE_CHECKING: ...
 __all__ = ["CUDAGraph", "graph", "graph_pool_handle", "is_current_stream_capturing", "make_graphed_callables"]
 if not hasattr(torch._C, "_CudaStreamBase"): ...
 

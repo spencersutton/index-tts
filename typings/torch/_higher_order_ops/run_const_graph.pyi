@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import torch
 from torch._C import DispatchKey
@@ -6,8 +6,6 @@ from torch._ops import HigherOrderOperator
 from torch._subclasses.fake_tensor import FakeTensorMode
 from torch._subclasses.functional_tensor import BaseFunctionalizeAPI
 from torch.fx.experimental.proxy_tensor import ProxyTorchDispatchMode
-
-if TYPE_CHECKING: ...
 
 class RunConstGraph(HigherOrderOperator):
     def __init__(self) -> None: ...

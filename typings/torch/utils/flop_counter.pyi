@@ -23,29 +23,10 @@ def addmm_flop(self_shape, a_shape, b_shape, out_shape=..., **kwargs) -> int: ..
 def bmm_flop(a_shape, b_shape, out_shape=..., **kwargs) -> int: ...
 @register_flop_formula(aten.baddbmm)
 def baddbmm_flop(self_shape, a_shape, b_shape, out_shape=..., **kwargs) -> int: ...
-def conv_flop_count(
-    x_shape: list[int],
-    w_shape: list[int],
-    out_shape: list[int],
-    transposed: bool = ...,
-) -> int: ...
-@register_flop_formula([
-    aten.convolution,
-    aten._convolution,
-    aten.cudnn_convolution,
-    aten._slow_conv2d_forward,
-])
+def conv_flop_count(x_shape: list[int], w_shape: list[int], out_shape: list[int], transposed: bool = ...) -> int: ...
+@register_flop_formula([aten.convolution, aten._convolution, aten.cudnn_convolution, aten._slow_conv2d_forward])
 def conv_flop(
-    x_shape,
-    w_shape,
-    _bias,
-    _stride,
-    _padding,
-    _dilation,
-    transposed,
-    *args,
-    out_shape=...,
-    **kwargs,
+    x_shape, w_shape, _bias, _stride, _padding, _dilation, transposed, *args, out_shape=..., **kwargs
 ) -> int: ...
 @register_flop_formula(aten.convolution_backward)
 def conv_backward_flop(
@@ -75,15 +56,7 @@ def sdpa_backward_flop_count(grad_out_shape, query_shape, key_shape, value_shape
     aten._scaled_dot_product_flash_attention_backward,
     aten._scaled_dot_product_cudnn_attention_backward,
 ])
-def sdpa_backward_flop(
-    grad_out_shape,
-    query_shape,
-    key_shape,
-    value_shape,
-    *args,
-    out_shape=...,
-    **kwargs,
-) -> int: ...
+def sdpa_backward_flop(grad_out_shape, query_shape, key_shape, value_shape, *args, out_shape=..., **kwargs) -> int: ...
 
 flop_registry = ...
 

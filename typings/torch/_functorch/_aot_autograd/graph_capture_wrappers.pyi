@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, TypeVar
 
 from torch import Tensor
 
@@ -16,24 +16,11 @@ from .schemas import (
     ViewAndMutationMeta,
 )
 
-"""
-This module is responsible for transforming functions to be traced into a form
-that is easier for the downstream infra (e.g. Autograd, FX, AOTAutograd analysis)
-to handle.
-
-It does so by:
-1. functionalization (including RNG functionalzation)
-2. creating a joint graph when required
-3. transforming mutations into extra outputs
-4. dispatching subclasses
-"""
-
 def fn_input_mutations_to_outputs(
     fn: Callable, args_descs: list[AOTInput], meta: ViewAndMutationMeta, keep_data_input_mutations: bool
 ) -> Any: ...
 @contextmanager
-def disable_autocast():  # -> Generator[None, Any, None]:
-    ...
+def disable_autocast(): ...
 def fn_prepped_for_autograd(
     fn: TraceFn, args_descs: list[AOTInput], meta: ViewAndMutationMeta
 ) -> PreppedForAutogradTraceFn: ...
@@ -45,14 +32,10 @@ class JointFnHandle:
 def create_joint(fn: Any, primals_descs: list[AOTInput] | None = ..., *, aot_config: AOTConfig) -> Any: ...
 def create_functionalized_rng_ops_wrapper(func, args, args_descs, trace_joint=...) -> Any: ...
 @contextmanager
-def set_partitioner_tag(tag: str):  # -> Generator[None, Any, None]:
-    ...
-def set_partitioner_tag_is_backward():  # -> _GeneratorContextManager[None, None, None]:
-    ...
-def set_partitioner_tag_must_be_in_backward():  # -> _GeneratorContextManager[None, None, None]:
-    ...
-def set_partitioner_tag_must_be_in_forward():  # -> _GeneratorContextManager[None, None, None]:
-    ...
+def set_partitioner_tag(tag: str): ...
+def set_partitioner_tag_is_backward(): ...
+def set_partitioner_tag_must_be_in_backward(): ...
+def set_partitioner_tag_must_be_in_forward(): ...
 
 @dataclass
 class MutationCounters:
@@ -71,8 +54,7 @@ def apply_in_graph_mutations(
     input_idx,
     mcs: MutationCounters | None = ...,
     applied_mcs: MutationCounters | None = ...,
-):  # -> None:
-    ...
+): ...
 def create_functionalized_fn(
     fn,
     args,
@@ -95,7 +77,4 @@ def aot_dispatch_subclass(
     meta: ViewAndMutationMeta,
     fw_only: Callable,
 ) -> SubclassTracingInfo: ...
-def create_functional_call(
-    mod, params_spec, params_len, store_orig_mod=..., strict_out_tuple=...
-):  # -> Callable[..., Any | tuple[Any, ...] | list[Any]]:
-    ...
+def create_functional_call(mod, params_spec, params_len, store_orig_mod=..., strict_out_tuple=...): ...

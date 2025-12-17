@@ -1,19 +1,15 @@
 import builtins
+from collections import UserString
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, Self
+from typing import Any, Literal, Self
 
-import optree
 import optree._C
 import torch.utils._cxx_pytree as cxx_pytree
 import torch.utils._pytree as python_pytree
 
 from ..decorators import substitute_in_graph
 
-"""
-Python polyfills for torch.utils.pytree
-"""
-if TYPE_CHECKING: ...
 __all__: list[str] = ...
 if python_pytree._cxx_pytree_dynamo_traceable:
     @substitute_in_graph(optree._C.is_dict_insertion_ordered, can_constant_fold_through=True)
@@ -27,7 +23,7 @@ if python_pytree._cxx_pytree_dynamo_traceable:
     @substitute_in_graph(cxx_pytree.tree_leaves, can_constant_fold_through=True)
     def tree_leaves(tree: PyTree, is_leaf: Callable[[PyTree], bool] | None = ...) -> list[Any]: ...
 
-    class _Asterisk(str):
+    class _Asterisk(UserString):
         __slots__ = ...
         def __new__(cls) -> Self: ...
 

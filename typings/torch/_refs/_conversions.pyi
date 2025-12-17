@@ -11,14 +11,14 @@ __all__ = [
     "cfloat",
     "chalf",
     "char",
+    "complex",
     "double",
     "float",
     "half",
     "int",
     "long",
-    "short",
-    "complex",
     "polar",
+    "short",
 ]
 bfloat16 = ...
 bool = ...

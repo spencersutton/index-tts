@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional, TypeAlias, Union, override
+from typing import Any, override
 
 from torch._inductor.utils import clear_on_fresh_cache
 
@@ -9,8 +9,6 @@ from ...utils import IndentedBuffer
 from ..common import KernelTemplate
 from .cuda_kernel import CUDATemplateCaller
 
-if TYPE_CHECKING: ...
-else: ...
 type GemmOperation = Any
 autotuning_log = ...
 

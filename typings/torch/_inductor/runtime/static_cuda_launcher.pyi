@@ -1,5 +1,5 @@
 import functools
-from typing import Any, Unpack
+from typing import Any
 
 from .triton_compat import ASTSource, CompiledKernel
 

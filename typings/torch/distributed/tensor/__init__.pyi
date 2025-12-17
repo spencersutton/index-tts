@@ -9,18 +9,9 @@ from torch.distributed.tensor._api import (
     randn,
     zeros,
 )
-from torch.distributed.tensor.placement_types import (
-    Partial,
-    Placement,
-    Replicate,
-    Shard,
-)
-from torch.optim.optimizer import (
-    _foreach_supported_types as _optim_foreach_supported_types,
-)
-from torch.utils._foreach_utils import (
-    _foreach_supported_types as _util_foreach_supported_types,
-)
+from torch.distributed.tensor.placement_types import Partial, Placement, Replicate, Shard
+from torch.optim.optimizer import _foreach_supported_types as _optim_foreach_supported_types
+from torch.utils._foreach_utils import _foreach_supported_types as _util_foreach_supported_types
 
 __all__ = [
     "DTensor",

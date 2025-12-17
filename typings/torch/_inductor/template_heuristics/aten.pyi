@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from ..ir import Layout
 from ..kernel.bmm import aten_baddbmm, aten_bmm, aten_bmm_dtype
@@ -8,8 +8,6 @@ from ..kernel_inputs import KernelInputs
 from .base import TemplateConfigHeuristics
 from .gemm import GemmMaxAutotuneTemplateConfigHeuristics
 from .registry import register_template_heuristic
-
-if TYPE_CHECKING: ...
 
 @register_template_heuristic(aten_mm.uid, None)
 @register_template_heuristic(aten__fp8_mm.uid, None)

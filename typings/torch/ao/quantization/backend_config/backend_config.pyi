@@ -1,19 +1,12 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import torch
 from torch.ao.quantization.utils import Pattern
 
-if TYPE_CHECKING: ...
-__all__ = [
-    "BackendConfig",
-    "BackendPatternConfig",
-    "DTypeConfig",
-    "DTypeWithConstraints",
-    "ObservationType",
-]
+__all__ = ["BackendConfig", "BackendPatternConfig", "DTypeConfig", "DTypeWithConstraints", "ObservationType"]
 INPUT_DTYPE_DICT_KEY = ...
 OUTPUT_DTYPE_DICT_KEY = ...
 WEIGHT_DTYPE_DICT_KEY = ...

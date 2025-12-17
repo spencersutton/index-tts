@@ -1,7 +1,4 @@
-import io
-import logging
-import os
-from typing import IO, TYPE_CHECKING, Any, Literal, Optional, Union
+from typing import Any, Literal
 
 import torch.fx
 from torch._inductor.utils import InputType
@@ -12,15 +9,10 @@ from torch.types import FileLike
 
 from .standalone_compile import CompiledArtifact
 
-if TYPE_CHECKING: ...
-__all__ = ["compile", "list_mode_options", "list_options", "cudagraph_mark_step_begin", "standalone_compile"]
+__all__ = ["compile", "cudagraph_mark_step_begin", "list_mode_options", "list_options", "standalone_compile"]
 log = ...
 
-def compile(
-    gm: torch.fx.GraphModule, example_inputs: list[InputType], options: dict[str, Any] | None = ...
-):  # -> Callable[[list[object]], Sequence[Tensor]] | str | list[str] | Weights:
-
-    ...
+def compile(gm: torch.fx.GraphModule, example_inputs: list[InputType], options: dict[str, Any] | None = ...): ...
 def aoti_compile_and_package(
     exported_program: ExportedProgram,
     _deprecated_unused_args=...,
@@ -41,9 +33,7 @@ def aot_compile(
 ) -> str | list[str | Weights] | torch.fx.GraphModule: ...
 def list_mode_options(mode: str | None = ..., dynamic: bool | None = ...) -> dict[str, Any]: ...
 def list_options() -> list[str]: ...
-def cudagraph_mark_step_begin():  # -> None:
-
-    ...
+def cudagraph_mark_step_begin(): ...
 def standalone_compile(
     gm: torch.fx.GraphModule,
     example_inputs: list[InputType],

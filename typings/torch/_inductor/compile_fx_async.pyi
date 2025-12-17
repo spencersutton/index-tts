@@ -2,7 +2,7 @@ from collections import deque
 from collections.abc import Callable, Sequence
 from concurrent.futures import Future
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional, final, override
+from typing import Any, final, override
 
 from torch._inductor.output_code import CompiledFxGraphConstants, OutputCode
 from torch._inductor.utils import InputType
@@ -12,7 +12,6 @@ from .compile_fx import FxCompile, _CompileFxKwargs
 from .compile_fx_ext import _OutOfProcessFxCompile, _WireProtocolPickledOutput
 
 BUG_CACHES_DONT_WORK_WITH_ASYNC = ...
-if TYPE_CHECKING: ...
 
 @dataclass
 class _PostCompileData:

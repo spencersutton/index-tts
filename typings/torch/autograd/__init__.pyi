@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-from typing import TypeAlias
 
 import torch
 from torch.types import _size, _TensorOrTensors, _TensorOrTensorsOrGradEdge

@@ -1,7 +1,7 @@
 import dataclasses
 from collections import Counter
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Optional, TypeAlias, Union
+from typing import Any
 
 import torch
 from torch._inductor import metrics
@@ -15,28 +15,6 @@ from torch.utils._ordered_set import OrderedSet
 from .compile_fx import _CompileFxKwargs
 from .triton_bundler import TritonBundle
 
-"""
-This provides an abstract class which parametrizes over an "output code" concept
-for Inductor.  Intuitively, this represents the compiled callable which Inductor
-produces which you can call to get optimized code.  However, this callable
-has some other capabilities:
-
-- It is serializable, so you can save/load this product from disk without
-  having to do compilation again.
-
-- (When using remote cache) it is addressable, so you can save just a key
-  which you can use to load this product from remote cache later.
-
-This class is abstract because we have several different implementations of
-serialized format:
-
-- Python wrapper (the default)
-
-- AOTInductor (this produces ABI stable binaries which work across PyTorch
-  versions)
-
-"""
-if TYPE_CHECKING: ...
 log = ...
 
 @dataclasses.dataclass

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Sequence
 from functools import lru_cache
-from typing import Any, Optional, TypeAlias, Union
+from typing import Any
 
 import torch.fx.graph
 

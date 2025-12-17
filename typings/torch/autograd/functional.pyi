@@ -39,12 +39,7 @@ def jacobian(
     | tuple[Tensor, ...]
 ): ...
 def hessian(
-    func,
-    inputs,
-    create_graph=...,
-    strict=...,
-    vectorize=...,
-    outer_jacobian_strategy=...,
+    func, inputs, create_graph=..., strict=..., vectorize=..., outer_jacobian_strategy=...
 ) -> (
     Any
     | tuple[Any, ...]

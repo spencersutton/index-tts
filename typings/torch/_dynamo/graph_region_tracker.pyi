@@ -1,27 +1,13 @@
 import pickle
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Optional, TypeAlias, TypeVar
+from typing import Any, TypeVar
 
 import torch.fx
 
 from .symbolic_convert import InstructionTranslatorBase
 
-"""
-This module provides functionality for tracking and managing regions in computational graphs.
-It supports graph optimization by identifying and grouping similar regions based on their
-structure and behavior. The module implements algorithms for:
-
-1. Tracking nodes and their relationships in the computational graph
-2. Identifying identical or similar regions across the graph
-3. Managing graph regions for optimization purposes
-4. Supporting deduplication and other graph transformation passes
-
-The core functionality revolves around the GraphRegionTracker class which maintains
-mappings between nodes and their duplicates, enabling efficient graph analysis and
-optimization operations.
-"""
 T = TypeVar("T")
-if TYPE_CHECKING: ...
+
 Node = torch.fx.Node
 type Region = list[Node]
 type IdenticalNodes = list[Node]

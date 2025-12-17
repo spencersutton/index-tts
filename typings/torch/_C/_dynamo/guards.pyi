@@ -1,6 +1,6 @@
 import enum
 from collections.abc import Callable
-from typing import Any, Optional, TypeAlias
+from typing import Any
 
 import torch
 

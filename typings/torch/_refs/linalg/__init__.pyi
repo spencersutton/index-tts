@@ -1,33 +1,16 @@
-import operator
-from functools import partial
-from typing import Optional, Union
-
 import torch
-import torch._prims as prims
-import torch._prims_common as utils
-import torch._refs as refs
-import torch._refs.linalg as linalg
 from torch import Tensor
 from torch._decomp import register_decomposition
 from torch._decomp.decompositions import pw_cast_for_opmath
-from torch._prims_common import (
-    ELEMENTWISE_TYPE_PROMOTION_KIND,
-    Dim,
-    DimsType,
-    IntLike,
-    TensorLikeType,
-    check_fp_or_complex,
-    check_is_matrix,
-)
-from torch._prims_common.wrappers import _maybe_convert_to_dtype, elementwise_type_promotion_wrapper, out_wrapper
+from torch._prims_common import ELEMENTWISE_TYPE_PROMOTION_KIND, DimsType, TensorLikeType
+from torch._prims_common.wrappers import elementwise_type_promotion_wrapper, out_wrapper
 
-__all__ = ["diagonal", "matrix_norm", "norm", "svd", "svdvals", "vector_norm", "vecdot", "cross"]
+__all__ = ["cross", "diagonal", "matrix_norm", "norm", "svd", "svdvals", "vecdot", "vector_norm"]
 
 @register_decomposition(torch._ops.ops.aten.linalg_cross)
 @out_wrapper()
 @pw_cast_for_opmath
-def cross(a: Tensor, b: Tensor, dim: int = ...):  # -> Tensor:
-    ...
+def cross(a: Tensor, b: Tensor, dim: int = ...): ...
 def diagonal(input: TensorLikeType, *, offset: int = ..., dim1: int = ..., dim2: int = ...) -> TensorLikeType: ...
 @register_decomposition(torch._ops.ops.aten.linalg_vector_norm)
 @out_wrapper(exact_dtype=True)

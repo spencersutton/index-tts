@@ -1,6 +1,6 @@
 import enum
 import types
-from typing import Optional, overload
+from typing import overload
 
 from torch._dynamo.guards import GuardManagerWrapper
 from torch._dynamo.types import DynamoCallback, DynamoGuardCompleteHook, DynamoGuardHook

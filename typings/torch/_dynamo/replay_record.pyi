@@ -1,22 +1,8 @@
 import dataclasses
 from io import BufferedReader, BufferedWriter
 from types import CellType, CodeType, ModuleType
-from typing import IO, Any, Self, Union
+from typing import IO, Any, Self
 
-"""
-Python execution state recording and replay functionality.
-
-This module provides mechanisms for capturing and replaying Python execution state:
-
-- ModuleRecord: Tracks module access patterns and attribute usage
-- DummyModule: Lightweight module substitute for replay
-- ExecutionRecord: Manages execution context including globals, locals and builtins
-- ExecutionRecorder: Records variable states and module access during execution
-
-The module enables serialization and reproduction of Python execution environments,
-particularly useful for debugging and testing frameworks that need to capture
-and recreate specific program states.
-"""
 dill = ...
 
 @dataclasses.dataclass

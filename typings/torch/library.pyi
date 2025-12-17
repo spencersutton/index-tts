@@ -1,6 +1,6 @@
 import functools
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, ParamSpec, TypeAlias, TypeVar, overload
+from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar, overload
 from warnings import deprecated
 
 import torch

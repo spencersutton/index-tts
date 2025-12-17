@@ -4,20 +4,11 @@ import dataclasses
 import functools
 import types
 from collections.abc import Callable, Generator
-from typing import Any, NewType, Optional, TypeAlias
+from typing import Any, NewType
 
 from torch._dynamo.precompile_context import PrecompileCacheArtifact
 from torch.compiler._cache import CacheArtifactFactory
 
-"""
-This module provides the infrastructure for creating and managing compile package
-for torch.compile. We mainly have two abstractions here:
-  - CompilePackage: Overarching data structure for store and lookup a list of compiled codes.
-  - CodeCacheEntry: Data structure for a single code being compiled by torch.compile.
-The caching behavior is always under user control explicitly so that a stronger guarantee can
-be provided about cache hit for a specific compiled model. Users can load the compile package
-from a different process or host.
-"""
 logger = ...
 
 @dataclasses.dataclass(frozen=True)
@@ -96,10 +87,7 @@ class _DynamoCacheArtifact(PrecompileCacheArtifact[_DynamoCacheEntry]):
 
 class CompilePackage:
     def __init__(
-        self,
-        fn: Callable[..., Any] | None,
-        dynamo: _DynamoCacheEntry | None = ...,
-        ignore_inlined_sources: bool = ...,
+        self, fn: Callable[..., Any] | None, dynamo: _DynamoCacheEntry | None = ..., ignore_inlined_sources: bool = ...
     ) -> None: ...
     def is_initialized(self) -> bool: ...
     def initialize(

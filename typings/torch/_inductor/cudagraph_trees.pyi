@@ -3,7 +3,7 @@ import dataclasses
 from collections.abc import Callable, Generator, Iterator, Sequence
 from contextlib import AbstractContextManager
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Optional, TypeAlias, TypeVar, Union
+from typing import Any, TypeVar
 
 from torch import Tensor
 from torch._guards import CompileId
@@ -20,42 +20,6 @@ from torch.cuda import _POOL_HANDLE
 from torch.multiprocessing.reductions import StorageWeakRef
 from torch.storage import UntypedStorage
 
-"""
-CUDA graph trees are a safety abstraction over CUDAGraphs, similar to make_graph_callables,
-which share the same memory pool.  Sharing a memory pool is an extremely
-important optimization when chaining multiple CUDA graphs together, as it
-prevents you from needing to copy intermediate tensors from one graph to the
-next, and reduces overall memory usage by allowing dead memory from the first
-pool to be reused in the second.
-
-The standard graph/make_graph_callables support sharing memory pool, but
-with a lot of caveats.  CUDA graph trees remove these restrictions:
-
-* Previously, if you recorded graphs A, B, you had to replay A, B in that
-  order.  With CUDA graph trees, after replaying A, you can change your
-  mind and record/replay a different graph B'; we will support efficient
-  execution of both A, B and A, B', using only max(mem(A, B), mem(A, B')).  In
-  other words: we support arbitrary trees of CUDA graph operations, not just
-  sequences (this is why this feature is called CUDA graph trees.)
-
-* Previously, if you executed graph A, some non-CUDA graph code, and then
-  graph B, after executing graph B, it was not safe to retain any references
-  to intermediates produced by A.  With CUDA graph trees, we track if any
-outputs of graph A are still live by the time graph B is run, and make
-  sure graph B doesn't clobber there memory when reusing the CUDA graphs
-  pool.  You'll get a separate recording of B depending on what tensors
-  stay live or dead.
-
-CUDA graph trees are flexible enough to be used in Dynamo across graph breaks,
-which is their primary use case.
-
-The ability to switch from replay to record is fairly nontrivial: remember that
-when you replay a CUDA graph, you only replay CUDA operations; no CPU side state
-is updated.  In particular, the CPU-side book-keeping for the allocator is not
-reconstructed.  However, to record a new child CUDA graph, we must restore this
-book-keeping.  This is what checkpoint pool state is used for.
-"""
-if TYPE_CHECKING: ...
 StorageWeakRefPointer = int
 StorageDataPtr = int
 NBytes = int
@@ -257,10 +221,7 @@ class CUDAGraphTreeManager:
         placeholders: tuple[PlaceholderInfo, ...],
         mutated_input_idxs: tuple[int, ...],
         compile_id: CompileId | None,
-    ) -> tuple[
-        ModelType,
-        OutputType,
-    ]: ...
+    ) -> tuple[ModelType, OutputType]: ...
     @property
     def in_recording(self) -> bool: ...
     @property

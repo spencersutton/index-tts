@@ -1,15 +1,9 @@
-import math
-from typing import Optional, Union
-
 import torch
-import torch._prims as prims
 import torch._prims_common as utils
-import torch._refs as refs
-from torch import Tensor
 from torch._decomp import register_decomposition
-from torch._prims_common import ELEMENTWISE_TYPE_PROMOTION_KIND, Number, NumberType, TensorLike, TensorLikeType
+from torch._prims_common import ELEMENTWISE_TYPE_PROMOTION_KIND, NumberType, TensorLikeType
 from torch._prims_common.wrappers import elementwise_type_promotion_wrapper, out_wrapper
-from torch._refs import _make_alias, _make_elementwise_binary_reference, _make_elementwise_unary_reference
+from torch._refs import _make_elementwise_binary_reference, _make_elementwise_unary_reference
 
 __all__ = [
     "bessel_j0",
@@ -21,8 +15,8 @@ __all__ = [
     "i1",
     "i1e",
     "log_ndtr",
-    "logit",
     "log_softmax",
+    "logit",
     "multigammaln",
     "ndtr",
     "ndtri",
@@ -75,8 +69,7 @@ def logit(self: TensorLikeType, eps: float | None = ...) -> TensorLikeType: ...
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("a", "b"), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT
 )
-def xlog1py(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType):  # -> Tensor:
-    ...
+def xlog1py(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType): ...
 @register_decomposition(aten.mvlgamma)
 @out_wrapper()
 @elementwise_type_promotion_wrapper(

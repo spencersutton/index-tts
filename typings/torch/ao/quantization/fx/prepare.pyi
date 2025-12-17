@@ -9,11 +9,7 @@ from torch.fx.graph import Graph, Node
 from .custom_config import PrepareCustomConfig
 from .match_utils import _MatchResultWithQConfig
 
-__all__ = [
-    "insert_observers_for_model",
-    "prepare",
-    "propagate_dtypes_for_known_nodes",
-]
+__all__ = ["insert_observers_for_model", "prepare", "propagate_dtypes_for_known_nodes"]
 _DO_NOT_OBS_DTYPE_LIST = ...
 _OBS_DTYPE_LIST = ...
 _DEFAULT_FP32_OBS_OR_FQ_CTR = ...
@@ -21,8 +17,7 @@ _DEFAULT_FP32_QCONFIG_FOR_TARGET_DTYPE_INFO = ...
 _DEFAULT_QUINT8_QCONFIG_FOR_TARGET_DTYPE_INFO = ...
 
 def propagate_dtypes_for_known_nodes(
-    graph: Graph,
-    node_name_to_match_result_with_qconfig: dict[str, _MatchResultWithQConfig],
+    graph: Graph, node_name_to_match_result_with_qconfig: dict[str, _MatchResultWithQConfig]
 ) -> None: ...
 def insert_observers_for_model(
     model: GraphModule,

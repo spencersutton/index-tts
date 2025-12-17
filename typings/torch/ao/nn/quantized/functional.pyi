@@ -1,7 +1,6 @@
 from torch import Tensor
 from torch.jit.annotations import BroadcastingList2
 
-r"""Functional interface (quantized)."""
 __all__ = [
     "adaptive_avg_pool2d",
     "adaptive_avg_pool3d",
@@ -28,22 +27,10 @@ __all__ = [
 ]
 
 def avg_pool2d(
-    input,
-    kernel_size,
-    stride=...,
-    padding=...,
-    ceil_mode=...,
-    count_include_pad=...,
-    divisor_override=...,
+    input, kernel_size, stride=..., padding=..., ceil_mode=..., count_include_pad=..., divisor_override=...
 ) -> Tensor: ...
 def avg_pool3d(
-    input,
-    kernel_size,
-    stride=...,
-    padding=...,
-    ceil_mode=...,
-    count_include_pad=...,
-    divisor_override=...,
+    input, kernel_size, stride=..., padding=..., ceil_mode=..., count_include_pad=..., divisor_override=...
 ) -> Tensor: ...
 def adaptive_avg_pool2d(input: Tensor, output_size: BroadcastingList2[int]) -> Tensor: ...
 def adaptive_avg_pool3d(input: Tensor, output_size: BroadcastingList2[int]) -> Tensor: ...
@@ -88,29 +75,13 @@ def conv3d(
 ) -> Any: ...
 def interpolate(input, size=..., scale_factor=..., mode=..., align_corners=...) -> Tensor: ...
 def linear(
-    input: Tensor,
-    weight: Tensor,
-    bias: Tensor | None = ...,
-    scale: float | None = ...,
-    zero_point: int | None = ...,
+    input: Tensor, weight: Tensor, bias: Tensor | None = ..., scale: float | None = ..., zero_point: int | None = ...
 ) -> Tensor: ...
 def max_pool1d(
-    input,
-    kernel_size,
-    stride=...,
-    padding=...,
-    dilation=...,
-    ceil_mode=...,
-    return_indices=...,
+    input, kernel_size, stride=..., padding=..., dilation=..., ceil_mode=..., return_indices=...
 ) -> Tensor: ...
 def max_pool2d(
-    input,
-    kernel_size,
-    stride=...,
-    padding=...,
-    dilation=...,
-    ceil_mode=...,
-    return_indices=...,
+    input, kernel_size, stride=..., padding=..., dilation=..., ceil_mode=..., return_indices=...
 ) -> Tensor: ...
 def celu(input: Tensor, scale: float, zero_point: int, alpha: float = ...) -> Tensor: ...
 def leaky_relu(
@@ -120,12 +91,7 @@ def leaky_relu(
     scale: float | None = ...,
     zero_point: int | None = ...,
 ) -> Tensor: ...
-def hardtanh(
-    input: Tensor,
-    min_val: float = ...,
-    max_val: float = ...,
-    inplace: bool = ...,
-) -> Tensor: ...
+def hardtanh(input: Tensor, min_val: float = ..., max_val: float = ..., inplace: bool = ...) -> Tensor: ...
 def hardswish(input: Tensor, scale: float, zero_point: int) -> Tensor: ...
 def threshold(input: Tensor, threshold: float, value: float) -> Tensor: ...
 def elu(input: Tensor, scale: float, zero_point: int, alpha: float = ...) -> Tensor: ...

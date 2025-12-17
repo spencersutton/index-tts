@@ -1,4 +1,4 @@
-from typing import Optional, override
+from typing import override
 
 from torch._inductor import ir
 

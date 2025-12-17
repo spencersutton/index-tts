@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Callable, Mapping
-from typing import Any, TypeAlias
+from typing import Any
 from warnings import deprecated
 
 import torch

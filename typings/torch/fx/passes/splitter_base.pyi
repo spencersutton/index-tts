@@ -32,11 +32,7 @@ TRACKER_MODE: Literal["0", "1", "2", "3"] = ...
 
 class _SplitterSettingBase:
     def __init__(
-        self,
-        min_acc_module_size=...,
-        skip_fusion=...,
-        allow_non_tensor=...,
-        max_acc_splits: int = ...,
+        self, min_acc_module_size=..., skip_fusion=..., allow_non_tensor=..., max_acc_splits: int = ...
     ) -> None: ...
 
 @compatibility(is_backward_compatible=False)
@@ -56,10 +52,7 @@ class NodeEventTracker:
 @compatibility(is_backward_compatible=False)
 class FxNetAccNodesFinder:
     def __init__(
-        self,
-        module: torch.fx.GraphModule,
-        operator_support: OperatorSupportBase,
-        allow_non_tensor: bool,
+        self, module: torch.fx.GraphModule, operator_support: OperatorSupportBase, allow_non_tensor: bool
     ) -> None: ...
     def reduce_acc_nodes_non_tensor_input_helper(self, cpu_worklist: NodeList) -> None: ...
     def reduce_acc_nodes_non_tensor_input(self) -> None: ...
@@ -84,10 +77,7 @@ class SplitResult(NamedTuple):
 
 @compatibility(is_backward_compatible=False)
 def generate_inputs_for_submodules(
-    model: torch.nn.Module,
-    inputs: Sequence[Any],
-    target_submodules: Iterable[str],
-    deepcopy: bool = ...,
+    model: torch.nn.Module, inputs: Sequence[Any], target_submodules: Iterable[str], deepcopy: bool = ...
 ) -> dict[str, Any]: ...
 
 class _SplitterBase:

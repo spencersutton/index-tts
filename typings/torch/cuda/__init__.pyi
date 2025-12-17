@@ -1,7 +1,7 @@
 import ctypes
 from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, NewType
+from typing import Any, NewType
 
 import torch
 import torch._C
@@ -16,7 +16,6 @@ from .memory import *
 from .random import *
 from .streams import Event, ExternalStream, Stream
 
-if TYPE_CHECKING: ...
 _initialized = ...
 _tls = ...
 _initialization_lock = ...

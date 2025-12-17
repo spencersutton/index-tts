@@ -5,10 +5,9 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Generator, Sequence
 from contextlib import AbstractContextManager
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional, ParamSpec, Protocol, TypeVar, Union, Unpack, override
+from typing import TYPE_CHECKING, Any, ParamSpec, Protocol, TypeVar, Unpack, override
 
 import torch.fx
-from torch import fx
 from torch._inductor.cudagraph_utils import BoxedDeviceIndex, PlaceholderInfo
 from torch._inductor.output_code import OutputCode
 from torch._inductor.utils import BoxedBool, InputType
@@ -19,15 +18,11 @@ from typing_extensions import TypedDict
 
 from .ir import ExternKernelNode
 
-if TYPE_CHECKING: ...
 _P = ParamSpec("_P")
 _T = TypeVar("_T")
 if TYPE_CHECKING or not config.is_fbcode():
     def time_and_log(attr: str) -> Callable[[Callable[_P, _T]], Callable[_P, _T]]: ...
     def log_optimus_to_scuba(*args: object, **kwargs: object) -> None: ...
-
-else: ...
-if TYPE_CHECKING: ...
 
 class FxCompileMode(enum.Enum):
     NORMAL = ...

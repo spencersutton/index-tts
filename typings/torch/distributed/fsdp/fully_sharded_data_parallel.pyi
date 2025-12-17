@@ -102,9 +102,7 @@ class FullyShardedDataParallel(nn.Module, _FSDPState):
     ) -> dict[str, Any]: ...
     @staticmethod
     def sharded_optim_state_dict(
-        model: torch.nn.Module,
-        optim: torch.optim.Optimizer,
-        group: dist.ProcessGroup | None = ...,
+        model: torch.nn.Module, optim: torch.optim.Optimizer, group: dist.ProcessGroup | None = ...
     ) -> dict[str, Any]: ...
     @staticmethod
     def shard_full_optim_state_dict(
@@ -115,9 +113,7 @@ class FullyShardedDataParallel(nn.Module, _FSDPState):
     ) -> dict[str, Any]: ...
     @staticmethod
     def flatten_sharded_optim_state_dict(
-        sharded_optim_state_dict: dict[str, Any],
-        model: torch.nn.Module,
-        optim: torch.optim.Optimizer,
+        sharded_optim_state_dict: dict[str, Any], model: torch.nn.Module, optim: torch.optim.Optimizer
     ) -> dict[str, Any]: ...
     @staticmethod
     def scatter_full_optim_state_dict(

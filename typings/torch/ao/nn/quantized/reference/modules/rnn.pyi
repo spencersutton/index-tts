@@ -2,16 +2,7 @@ from typing import Any
 
 from torch import Tensor, nn
 
-__all__ = [
-    "GRU",
-    "LSTM",
-    "GRUCell",
-    "LSTMCell",
-    "RNNBase",
-    "RNNCell",
-    "RNNCellBase",
-    "get_quantized_weight",
-]
+__all__ = ["GRU", "LSTM", "GRUCell", "LSTMCell", "RNNBase", "RNNCell", "RNNCellBase", "get_quantized_weight"]
 
 def get_quantized_weight(module, wn) -> Tensor | None: ...
 
@@ -95,12 +86,7 @@ class LSTM(RNNBase):
     def __init__(self, *args, **kwargs) -> None: ...
     def permute_hidden(self, hx: tuple[Tensor, Tensor], permutation: Tensor | None) -> tuple[Tensor, Tensor]: ...
     def get_expected_cell_size(self, input: Tensor, batch_sizes: Tensor | None) -> tuple[int, int, int]: ...
-    def check_forward_args(
-        self,
-        input: Tensor,
-        hidden: tuple[Tensor, Tensor],
-        batch_sizes: Tensor | None,
-    ) -> None: ...
+    def check_forward_args(self, input: Tensor, hidden: tuple[Tensor, Tensor], batch_sizes: Tensor | None) -> None: ...
     def get_quantized_weight_bias_dict(self) -> dict[Any, Any]: ...
     def get_flat_weights(self) -> list[Any]: ...
     def forward(

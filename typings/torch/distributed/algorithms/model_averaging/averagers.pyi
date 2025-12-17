@@ -12,13 +12,7 @@ class ModelAverager(ABC):
     def average_parameters(self, params): ...
 
 class PeriodicModelAverager(ModelAverager):
-    def __init__(
-        self,
-        period,
-        warmup_steps=...,
-        process_group: dist.ProcessGroup | None = ...,
-    ) -> None: ...
+    def __init__(self, period, warmup_steps=..., process_group: dist.ProcessGroup | None = ...) -> None: ...
     def average_parameters(
-        self,
-        params: Iterable[torch.nn.Parameter] | Iterable[dict[str, torch.nn.Parameter]],
+        self, params: Iterable[torch.nn.Parameter] | Iterable[dict[str, torch.nn.Parameter]]
     ) -> None: ...

@@ -1,24 +1,8 @@
 import contextlib
 import dataclasses
-import traceback
 from collections.abc import Callable, Container, Generator, Iterable, Iterator, Sequence
 from enum import Enum
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-    Literal,
-    Never,
-    Optional,
-    ParamSpec,
-    Self,
-    TypeAlias,
-    TypeIs,
-    TypeVar,
-    Union,
-    overload,
-    override,
-)
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Never, ParamSpec, Self, TypeIs, TypeVar, overload, override
 
 import sympy
 import torch._export.serde.schema as export_schema
@@ -42,8 +26,6 @@ from .runtime.hints import ReductionHint
 from .utils import IndentedBuffer, cache_on_self, cache_on_self_and_args, ir_dataclass
 from .virtualized import OpsValue
 
-if TYPE_CHECKING: ...
-else: ...
 triton_version = ...
 has_triton = ...
 _P = ParamSpec("_P")
@@ -903,11 +885,7 @@ class ComputedBuffer(OperationBuffer):
     @cache_on_self
     def get_default_sizes_body(
         self,
-    ) -> tuple[
-        tuple[list[Expr], list[Expr]],
-        LoopBody,
-        tuple[list[Expr], list[Expr]],
-    ]: ...
+    ) -> tuple[tuple[list[Expr], list[Expr]], LoopBody, tuple[list[Expr], list[Expr]]]: ...
     def simplify_and_reorder(
         self,
         extra_indexing_constraints: tuple[dict[Any, Any], list[Any]] | None = ...,
@@ -948,7 +926,7 @@ class TritonTemplateBuffer(TemplateBuffer):
     def get_outputs(self) -> list[Buffer]: ...
     def get_allowed_prologue_inps(self) -> OrderedSet[str]: ...
 
-PrimitiveInfoType = Union[int, float, bool, str, list[int | str | float | bool]]
+type PrimitiveInfoType = int | float | bool | str | list[int | str | float | bool]
 
 class ChoiceCaller:
     def __init__(self, name: str, input_nodes: list[Buffer], layout: Layout, description: str) -> None: ...
@@ -1090,13 +1068,7 @@ class ExternKernel(InputsKernel):
     @classmethod
     def process_kernel(
         cls, kernel: _OpOverloads, *args: Any, **kwargs: Any
-    ) -> tuple[
-        Any,
-        list[Any],
-        list[Any],
-        Callable[[Any, Any], Any],
-        dict[sympy.Symbol, pytree.KeyPath] | None,
-    ]: ...
+    ) -> tuple[Any, list[Any], list[Any], Callable[[Any, Any], Any], dict[sympy.Symbol, pytree.KeyPath] | None]: ...
     @classmethod
     def convert_to_reinterpret_view(cls, x: IRNode) -> ReinterpretView: ...
     @classmethod
@@ -1348,9 +1320,7 @@ class FallbackKernel(ExternKernelAlloc):
     def has_side_effects(self) -> bool: ...
     def get_inputs_that_alias_output(self) -> Sequence[str]: ...
     def get_mutation_names(self) -> Sequence[str]: ...
-    def export_extern_kernel_node(self):  # -> list[Any]:
-
-        ...
+    def export_extern_kernel_node(self): ...
     @override
     def codegen(self, wrapper: PythonWrapperCodegen) -> None: ...
     @staticmethod

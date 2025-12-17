@@ -1,29 +1,24 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
 
 import torch
 
-"""
-This file includes public APIs for FSDP such as the classes used for the
-constructor arguments.
-"""
 __all__ = [
-    "ShardingStrategy",
     "BackwardPrefetch",
-    "MixedPrecision",
     "CPUOffload",
-    "StateDictType",
-    "StateDictConfig",
-    "FullStateDictConfig",
-    "LocalStateDictConfig",
-    "ShardedStateDictConfig",
-    "OptimStateDictConfig",
     "FullOptimStateDictConfig",
+    "FullStateDictConfig",
     "LocalOptimStateDictConfig",
+    "LocalStateDictConfig",
+    "MixedPrecision",
+    "OptimStateDictConfig",
     "ShardedOptimStateDictConfig",
+    "ShardedStateDictConfig",
+    "ShardingStrategy",
+    "StateDictConfig",
     "StateDictSettings",
+    "StateDictType",
 ]
 
 class ShardingStrategy(Enum):

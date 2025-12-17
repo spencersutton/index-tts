@@ -4,8 +4,7 @@ toq = ...
 
 def get_base_name_to_sets_of_related_ops() -> dict[str, set[NSNodeTargetType]]: ...
 def get_base_name_for_op(
-    base_name_to_sets_of_related_ops: dict[str, set[NSNodeTargetType]],
-    op: NSNodeTargetType,
+    base_name_to_sets_of_related_ops: dict[str, set[NSNodeTargetType]], op: NSNodeTargetType
 ) -> str | None: ...
 def add_op_to_sets_of_related_ops(
     base_name_to_sets_of_related_ops: dict[str, set[NSNodeTargetType]],

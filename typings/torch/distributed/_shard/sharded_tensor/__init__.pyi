@@ -1,24 +1,7 @@
-import functools
-from typing import TYPE_CHECKING
-
-import torch
-from torch.distributed._shard.op_registry_utils import _decorator_func
 from torch.distributed._shard.sharding_spec import ShardingSpec
 
 from ._ops import *
-from .api import (
-    _CUSTOM_SHARDED_OPS,
-    _SHARDED_OPS,
-    Shard,
-    ShardedTensor,
-    ShardedTensorBase,
-    ShardedTensorMetadata,
-    TensorProperties,
-)
-from .metadata import ShardMetadata
-
-if TYPE_CHECKING: ...
-else: ...
+from .api import Shard, ShardedTensor
 
 def empty(
     sharding_spec: ShardingSpec,
@@ -91,14 +74,8 @@ def randn(
 def init_from_local_shards(
     local_shards: list[Shard], *global_size, process_group=..., init_rrefs=...
 ) -> ShardedTensor: ...
-def state_dict_hook(module, destination, prefix, local_metadata):  # -> None:
-
-    ...
+def state_dict_hook(module, destination, prefix, local_metadata): ...
 def pre_load_state_dict_hook(
     module, state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs
-):  # -> None:
-
-    ...
-def custom_sharded_op_impl(func):  # -> partial[_Wrapped[..., Any, ..., Any]]:
-
-    ...
+): ...
+def custom_sharded_op_impl(func): ...

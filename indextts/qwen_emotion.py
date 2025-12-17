@@ -3,7 +3,6 @@ import re
 from pathlib import Path
 from typing import cast
 
-import torch
 from torch import Tensor
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -95,7 +94,7 @@ class QwenEmotion:
             max_new_tokens=32768,
             pad_token_id=self.tokenizer.eos_token_id,
         )
-        input_ids = cast(torch.LongTensor, model_inputs.input_ids)
+        input_ids = model_inputs.input_ids
         assert isinstance(generated_ids, Tensor)
         output_ids = cast(list[int], generated_ids[0][len(input_ids[0]) :].tolist())
 
@@ -113,7 +112,9 @@ class QwenEmotion:
             content = cast(dict[str, float], json.loads(content))
         except json.decoder.JSONDecodeError:
             # invalid JSON; fallback to manual string parsing
-            content = {m.group(1): float(m.group(2)) for m in re.finditer(r'([^\s":.,]+?)"?\s*:\s*([\d.]+)', content)}
+            content = {
+                m.group(1): float(m.group(2)) for m in re.finditer(r'([^\s":.,]+?)"?\s*:\s*([\d.]+)', str(content))
+            }
 
         # workaround for QwenEmotion's inability to distinguish "悲伤" (sad) vs "低落" (melancholic).
         # if we detect any of the IndexTTS "melancholic" words, we swap those vectors

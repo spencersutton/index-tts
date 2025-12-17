@@ -245,7 +245,6 @@ class TFBartForConditionalGeneration(TFBartPretrainedModel, TFCausalLanguageMode
         ...
     @add_start_docstrings_to_model_forward(BART_INPUTS_DOCSTRING)
     @replace_return_docstrings(output_type=TFSeq2SeqLMOutput, config_class=_CONFIG_FOR_DOC)
-    @add_end_docstrings(BART_GENERATION_EXAMPLE)
     @unpack_inputs
     def call(
         self,

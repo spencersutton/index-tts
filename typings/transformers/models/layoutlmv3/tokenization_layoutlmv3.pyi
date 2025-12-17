@@ -63,7 +63,6 @@ class LayoutLMv3Tokenizer(PreTrainedTokenizer):
     ) -> list[int]: ...
     def prepare_for_tokenization(self, text, is_split_into_words=..., **kwargs):  # -> tuple[str, dict[str, Any]]:
         ...
-    @add_end_docstrings(LAYOUTLMV3_ENCODE_KWARGS_DOCSTRING, LAYOUTLMV3_ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def __call__(
         self,
         text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput],
@@ -87,7 +86,6 @@ class LayoutLMv3Tokenizer(PreTrainedTokenizer):
         verbose: bool = ...,
         **kwargs,
     ) -> BatchEncoding: ...
-    @add_end_docstrings(LAYOUTLMV3_ENCODE_KWARGS_DOCSTRING, LAYOUTLMV3_ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def batch_encode_plus(
         self,
         batch_text_or_text_pairs: list[TextInput] | list[TextInputPair] | list[PreTokenizedInput],
@@ -111,7 +109,6 @@ class LayoutLMv3Tokenizer(PreTrainedTokenizer):
         verbose: bool = ...,
         **kwargs,
     ) -> BatchEncoding: ...
-    @add_end_docstrings(LAYOUTLMV3_ENCODE_KWARGS_DOCSTRING)
     def encode(
         self,
         text: TextInput | PreTokenizedInput,
@@ -135,7 +132,6 @@ class LayoutLMv3Tokenizer(PreTrainedTokenizer):
         verbose: bool = ...,
         **kwargs,
     ) -> list[int]: ...
-    @add_end_docstrings(LAYOUTLMV3_ENCODE_KWARGS_DOCSTRING, LAYOUTLMV3_ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def encode_plus(
         self,
         text: TextInput | PreTokenizedInput,
@@ -159,7 +155,6 @@ class LayoutLMv3Tokenizer(PreTrainedTokenizer):
         verbose: bool = ...,
         **kwargs,
     ) -> BatchEncoding: ...
-    @add_end_docstrings(LAYOUTLMV3_ENCODE_KWARGS_DOCSTRING, LAYOUTLMV3_ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def prepare_for_model(
         self,
         text: TextInput | PreTokenizedInput,

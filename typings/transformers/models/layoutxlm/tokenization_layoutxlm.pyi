@@ -53,7 +53,6 @@ class LayoutXLMTokenizer(PreTrainedTokenizer):
 
         ...
     def save_vocabulary(self, save_directory: str, filename_prefix: str | None = ...) -> tuple[str]: ...
-    @add_end_docstrings(LAYOUTXLM_ENCODE_KWARGS_DOCSTRING)
     def __call__(
         self,
         text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput],
@@ -77,7 +76,6 @@ class LayoutXLMTokenizer(PreTrainedTokenizer):
         verbose: bool = ...,
         **kwargs,
     ) -> BatchEncoding: ...
-    @add_end_docstrings(LAYOUTXLM_ENCODE_KWARGS_DOCSTRING)
     def prepare_for_model(
         self,
         text: TextInput | PreTokenizedInput,

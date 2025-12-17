@@ -3,10 +3,6 @@ from typing import Any
 from ..utils import add_end_docstrings
 from .base import GenericTensor, Pipeline, build_pipeline_init_args
 
-@add_end_docstrings(
-    build_pipeline_init_args(has_tokenizer=True, supports_binary_output=False),
-    ...,
-)
 class FeatureExtractionPipeline(Pipeline):
     _load_processor = ...
     _load_image_processor = ...

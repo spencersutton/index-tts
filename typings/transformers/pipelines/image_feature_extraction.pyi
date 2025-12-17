@@ -7,10 +7,6 @@ from .base import GenericTensor, Pipeline, build_pipeline_init_args
 
 if is_vision_available(): ...
 
-@add_end_docstrings(
-    build_pipeline_init_args(has_image_processor=True),
-    ...,
-)
 class ImageFeatureExtractionPipeline(Pipeline):
     _load_processor = ...
     _load_image_processor = ...

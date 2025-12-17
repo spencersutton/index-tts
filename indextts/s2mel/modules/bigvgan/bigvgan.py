@@ -21,8 +21,7 @@ from .utils import get_padding, init_weights
 
 
 def load_hparams_from_json(path: Path) -> dict[str, Any]:
-    data = path.read_text()
-    return json.loads(data)
+    return json.loads(path.read_text())
 
 
 class AMPBlock1(nn.Module):
@@ -273,7 +272,7 @@ class BigVGAN(
             raise ValueError(f"Incorrect resblock class specified in hyperparameters. Got {h['resblock']}")
 
         # Transposed conv-based upsamplers. does not apply anti-aliasing
-        self.ups = nn.ModuleList()
+        self.ups: nn.ModuleList[nn.ModuleList[nn.Module]] = nn.ModuleList()
         for i, (u, k) in enumerate(zip(h["upsample_rates"], h["upsample_kernel_sizes"])):
             assert isinstance(u, int) and isinstance(k, int)
             self.ups.append(
@@ -291,7 +290,7 @@ class BigVGAN(
             )
 
         # Residual blocks using anti-aliased multi-periodicity composition modules (AMP)
-        self.resblocks = nn.ModuleList()
+        self.resblocks: nn.ModuleList[AMPBlock1 | AMPBlock2] = nn.ModuleList()
         for i in range(len(self.ups)):
             ch = h["upsample_initial_channel"] // (2 ** (i + 1))
             for k, d in zip(h["resblock_kernel_sizes"], h["resblock_dilation_sizes"]):
@@ -411,7 +410,7 @@ class BigVGAN(
                 token=token,
                 local_files_only=local_files_only,
             )
-        h = load_hparams_from_json(Path(config_file))
+        h = json.loads(Path(config_file).read_text())
 
         # instantiate BigVGAN using h
         if use_cuda_kernel:

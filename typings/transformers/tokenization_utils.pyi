@@ -30,7 +30,6 @@ class ExtensionsTrie(Trie):
 
         ...
 
-@add_end_docstrings(INIT_TOKENIZER_DOCSTRING)
 class PreTrainedTokenizer(PreTrainedTokenizerBase):
     def __init__(self, **kwargs) -> None: ...
     @property

@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from typing import Final, override
+from typing import override
 
 import torch.nn.functional as F
 from torch import Tensor, nn
@@ -22,8 +22,6 @@ from indextts.s2mel.modules.campplus.layers import (
 from indextts.util import patch_call
 
 M_CHANNELS = 32
-GROWTH_RATE: Final = 32
-INIT_CHANNELS: Final = 128
 
 
 class FCM(nn.Module):
@@ -33,23 +31,12 @@ class FCM(nn.Module):
         self.conv1 = nn.Conv2d(1, M_CHANNELS, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(M_CHANNELS)
 
-        self.layer1 = self._make_layer()
-        self.layer2 = self._make_layer()
+        self.layer1 = nn.Sequential(*(BasicResBlock(x) for x in (2, 1)))
+        self.layer2 = self.layer1
 
-        self.conv2 = nn.Conv2d(
-            M_CHANNELS,
-            M_CHANNELS,
-            kernel_size=3,
-            stride=(2, 1),
-            padding=1,
-            bias=False,
-        )
+        self.conv2 = nn.Conv2d(M_CHANNELS, M_CHANNELS, kernel_size=3, stride=(2, 1), padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(M_CHANNELS)
         self.out_channels = M_CHANNELS * 10
-
-    def _make_layer(self) -> nn.Sequential[BasicResBlock]:
-        layers = [BasicResBlock(stride) for stride in (2, 1)]
-        return nn.Sequential(*layers)
 
     @override
     def forward(self, x: Tensor) -> Tensor:
@@ -72,26 +59,28 @@ class CAMPPlus(nn.Module):
 
         self.head = FCM()
 
-        layer = TDNNLayer()
-        self.xvector = nn.Sequential(OrderedDict([("tdnn", layer)]))
-        channels = INIT_CHANNELS
-        for i, (num_layers, dilation) in enumerate(zip((12, 24, 16), (1, 2, 2))):
-            block = CAMDenseTDNNBlock(num_layers=num_layers, in_channels=channels, dilation=dilation)
-            self.xvector.add_module(f"block{i + 1}", block)
-            channels += num_layers * GROWTH_RATE
-            self.xvector.add_module(f"transit{i + 1}", TransitLayer(channels, channels // 2))
-            channels //= 2
-
-        self.xvector.add_module("out_nonlinear", get_nonlinear(channels))
-        self.xvector.add_module("stats", StatsPool())
-        self.xvector.add_module("dense", DenseLayer())
+        self.xvector = nn.Sequential(
+            OrderedDict({
+                "tdnn": TDNNLayer(),
+                "block1": CAMDenseTDNNBlock(12, 128, 1),
+                "transit1": TransitLayer(512),
+                "block2": CAMDenseTDNNBlock(24, 256, 2),
+                "transit2": TransitLayer(1024),
+                "block3": CAMDenseTDNNBlock(16, 512, 2),
+                "transit3": TransitLayer(1024),
+                "out_nonlinear": get_nonlinear(512),
+                "stats": StatsPool(),
+                "dense": DenseLayer(),
+            })
+        )
 
         for m in self.modules():
-            if isinstance(m, (nn.Conv1d, nn.Linear)):
-                nn.init.kaiming_normal_(m.weight.data)
-                if m.bias is not None:
-                    assert isinstance(m.bias, Tensor)
-                    nn.init.zeros_(m.bias)
+            if not isinstance(m, (nn.Conv1d, nn.Linear)):
+                continue
+
+            nn.init.kaiming_normal_(m.weight.data)
+            if m.bias is not None:
+                nn.init.zeros_(m.bias)
 
     @override
     def forward(self, x: Tensor) -> Tensor:

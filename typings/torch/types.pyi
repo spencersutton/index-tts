@@ -1,5 +1,5 @@
 import os
-from builtins import bool as _bool  # noqa: F401
+from builtins import bool as _bool
 from collections.abc import Sequence
 from typing import IO, Any, Self
 

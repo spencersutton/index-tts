@@ -33,7 +33,6 @@ def get_tokenizer_config(
 class AutoTokenizer:
     def __init__(self) -> None: ...
     @classmethod
-    @replace_list_option_in_docstrings(TOKENIZER_MAPPING_NAMES)
     def from_pretrained(
         cls, pretrained_model_name_or_path: str | os.PathLike[str], *inputs: object, **kwargs: object
     ) -> PreTrainedTokenizer: ...

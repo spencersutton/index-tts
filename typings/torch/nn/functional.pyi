@@ -1,5 +1,5 @@
 from collections.abc import Callable, Sequence
-from typing import Any, Literal, TypeAlias, overload
+from typing import Any, Literal, overload
 
 from torch import Tensor
 from torch.types import _dtype, _int, _size
@@ -865,6 +865,25 @@ def avg_pool1d(
     padding: _int | _size = ...,
     ceil_mode: bool = ...,
     count_include_pad: bool = ...,
+) -> Tensor: ...
+def conv_transpose1d(
+    input: Tensor,
+    weight: Tensor,
+    bias: Tensor | None = None,
+    stride: _int | _size = 1,
+    padding: _int | _size = 0,
+    output_padding: _int | _size = 0,
+    groups: int = 1,
+    dilation: _int | _size = 1,
+) -> Tensor: ...
+def conv1d(
+    input: Tensor,
+    weight: Tensor,
+    bias: Tensor | None = None,
+    stride: _int | _size = 1,
+    padding: _int | _size = 0,
+    dilation: _int | _size = 1,
+    groups: int = 1,
 ) -> Tensor: ...
 
 __all__ += [

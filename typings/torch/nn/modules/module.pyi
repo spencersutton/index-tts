@@ -1,6 +1,6 @@
 from collections import namedtuple
 from collections.abc import Callable, Iterator, Mapping
-from typing import Any, Self, TypeAlias, TypeVar, overload
+from typing import Any, Self, TypeVar, overload
 
 from torch import Tensor, device, dtype
 from torch._prims_common import DeviceLikeType

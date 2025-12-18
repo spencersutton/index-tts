@@ -23,6 +23,13 @@ class ConvNeXtBlock(nn.Module):
             Defaults to None.
     """
 
+    dwconv: nn.Conv1d
+    norm: nn.LayerNorm
+    pwconv1: nn.Linear
+    act: nn.GELU
+    pwconv2: nn.Linear
+    gamma: nn.Parameter
+
     def __init__(
         self,
         dim: int,
@@ -248,6 +255,11 @@ class VocosBackbone(Backbone):
         layer_scale_init_value (float, optional): Initial value for layer scaling. Defaults to `1 / num_layers`.
 
     """
+
+    embed: nn.Conv1d
+    norm: nn.LayerNorm
+    convnext: nn.ModuleList[nn.Module]
+    final_layer_norm: nn.LayerNorm
 
     def __init__(
         self,

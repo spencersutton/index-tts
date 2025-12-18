@@ -43,7 +43,6 @@ class LayoutLMv2TokenizerFast(PreTrainedTokenizerFast):
         strip_accents=...,
         **kwargs,
     ) -> None: ...
-    @add_end_docstrings(LAYOUTLMV2_ENCODE_KWARGS_DOCSTRING, LAYOUTLMV2_ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def __call__(
         self,
         text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput],
@@ -67,7 +66,6 @@ class LayoutLMv2TokenizerFast(PreTrainedTokenizerFast):
         verbose: bool = ...,
         **kwargs,
     ) -> BatchEncoding: ...
-    @add_end_docstrings(LAYOUTLMV2_ENCODE_KWARGS_DOCSTRING, LAYOUTLMV2_ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def batch_encode_plus(
         self,
         batch_text_or_text_pairs: list[TextInput] | list[TextInputPair] | list[PreTokenizedInput],
@@ -92,7 +90,6 @@ class LayoutLMv2TokenizerFast(PreTrainedTokenizerFast):
         **kwargs,
     ) -> BatchEncoding: ...
     def tokenize(self, text: str, pair: str | None = ..., add_special_tokens: bool = ..., **kwargs) -> list[str]: ...
-    @add_end_docstrings(LAYOUTLMV2_ENCODE_KWARGS_DOCSTRING, LAYOUTLMV2_ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def encode_plus(
         self,
         text: TextInput | PreTokenizedInput,

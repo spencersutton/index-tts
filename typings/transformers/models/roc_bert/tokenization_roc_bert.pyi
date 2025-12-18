@@ -47,7 +47,6 @@ class RoCBertTokenizer(PreTrainedTokenizer):
         ...
     def get_vocab(self):  # -> dict[str, int]:
         ...
-    @add_end_docstrings(ENCODE_KWARGS_DOCSTRING, ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def prepare_for_model(
         self,
         ids: list[int],

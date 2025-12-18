@@ -37,7 +37,6 @@ class UdopTokenizerFast(PreTrainedTokenizerFast):
         additional_special_tokens=...,
         **kwargs,
     ) -> None: ...
-    @add_end_docstrings(UDOP_ENCODE_KWARGS_DOCSTRING)
     def __call__(
         self,
         text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] = ...,
@@ -48,7 +47,6 @@ class UdopTokenizerFast(PreTrainedTokenizerFast):
         text_pair_target: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] | None = ...,
         **kwargs,
     ) -> BatchEncoding: ...
-    @add_end_docstrings(UDOP_ENCODE_KWARGS_DOCSTRING)
     def call_boxes(
         self,
         text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput],

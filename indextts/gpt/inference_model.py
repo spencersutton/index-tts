@@ -120,7 +120,6 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
     def deparallelize(self) -> None:
         """Move the model back to a single device."""
         self.transformer.deparallelize()
-        self.transformer = self.transformer
         self.lm_head = self.lm_head
         self.model_parallel = False
         torch.cuda.empty_cache()

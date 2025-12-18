@@ -137,7 +137,7 @@ def test_set_token_padding_partial() -> None:
     assert torch.all(result[1, 2:] == stop_token)
 
     # Third sequence: padding after position 1
-    assert result[1, 0].item() == 8
+    assert result[2, 0].item() == 8
     assert torch.all(result[2, 1:] == stop_token)
 
 

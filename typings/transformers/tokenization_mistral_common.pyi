@@ -60,11 +60,6 @@ class MistralCommonTokenizer(PushToHubMixin):
     def __len__(self) -> int:  # -> int:
 
         ...
-    @add_end_docstrings(
-        ENCODE_KWARGS_DOCSTRING,
-        ...,
-        ...,
-    )
     def encode(
         self,
         text: TextInput | EncodedInput,
@@ -104,7 +99,6 @@ class MistralCommonTokenizer(PushToHubMixin):
     def get_special_tokens_mask(
         self, token_ids_0: list, token_ids_1: None = ..., already_has_special_tokens: bool = ...
     ) -> list[int]: ...
-    @add_end_docstrings(ENCODE_KWARGS_DOCSTRING, ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def prepare_for_model(
         self,
         ids: list[int],
@@ -162,7 +156,6 @@ class MistralCommonTokenizer(PushToHubMixin):
         return_dict: bool = ...,
         **kwargs,
     ) -> str | list[int] | list[str] | list[list[int]] | BatchEncoding: ...
-    @add_end_docstrings(ENCODE_KWARGS_DOCSTRING, ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def __call__(
         self,
         text: TextInput | EncodedInput | list[TextInput] | list[EncodedInput] | None = ...,

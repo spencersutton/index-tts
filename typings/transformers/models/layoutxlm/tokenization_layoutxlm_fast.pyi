@@ -32,7 +32,6 @@ class LayoutXLMTokenizerFast(PreTrainedTokenizerFast):
         only_label_first_subword=...,
         **kwargs,
     ) -> None: ...
-    @add_end_docstrings(LAYOUTXLM_ENCODE_KWARGS_DOCSTRING)
     def __call__(
         self,
         text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput],

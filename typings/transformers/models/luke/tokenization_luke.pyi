@@ -78,7 +78,6 @@ class LukeTokenizer(PreTrainedTokenizer):
     ) -> list[int]: ...
     def prepare_for_tokenization(self, text, is_split_into_words=..., **kwargs):  # -> tuple[str, dict[str, Any]]:
         ...
-    @add_end_docstrings(ENCODE_KWARGS_DOCSTRING, ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def __call__(
         self,
         text: TextInput | list[TextInput],
@@ -106,7 +105,6 @@ class LukeTokenizer(PreTrainedTokenizer):
         verbose: bool = ...,
         **kwargs,
     ) -> BatchEncoding: ...
-    @add_end_docstrings(ENCODE_KWARGS_DOCSTRING, ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING)
     def prepare_for_model(
         self,
         ids: list[int],

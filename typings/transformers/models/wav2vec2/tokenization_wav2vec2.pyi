@@ -109,7 +109,6 @@ class Wav2Vec2Tokenizer(PreTrainedTokenizer):
     @word_delimiter_token_id.setter
     def word_delimiter_token_id(self, value):  # -> None:
         ...
-    @add_end_docstrings(WAV2VEC2_KWARGS_DOCSTRING)
     def __call__(
         self,
         raw_speech: np.ndarray | list[float] | list[np.ndarray] | list[list[float]],

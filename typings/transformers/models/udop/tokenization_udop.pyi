@@ -64,7 +64,6 @@ class UdopTokenizer(PreTrainedTokenizer):
     def tokenize(self, text: TextInput, **kwargs) -> list[str]: ...
     def convert_tokens_to_string(self, tokens): ...
     def save_vocabulary(self, save_directory: str, filename_prefix: str | None = ...) -> tuple[str]: ...
-    @add_end_docstrings(UDOP_ENCODE_KWARGS_DOCSTRING)
     def __call__(
         self,
         text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] = ...,
@@ -160,7 +159,6 @@ class UdopTokenizer(PreTrainedTokenizer):
         verbose: bool = ...,
         **kwargs,
     ) -> BatchEncoding: ...
-    @add_end_docstrings(UDOP_ENCODE_KWARGS_DOCSTRING)
     def prepare_for_model_boxes(
         self,
         text: TextInput | PreTokenizedInput,

@@ -31,42 +31,40 @@ class GPT2Attention(nn.Module):
         ...
     def forward(
         self,
-        hidden_states: tuple[torch.FloatTensor] | None,
+        hidden_states: tuple[torch.Tensor] | None,
         past_key_value: Cache | None = ...,
-        cache_position: torch.LongTensor | None = ...,
-        attention_mask: torch.FloatTensor | None = ...,
-        head_mask: torch.FloatTensor | None = ...,
+        cache_position: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
         encoder_hidden_states: torch.Tensor | None = ...,
-        encoder_attention_mask: torch.FloatTensor | None = ...,
+        encoder_attention_mask: torch.Tensor | None = ...,
         output_attentions: bool | None = ...,
         **kwargs,
     ) -> tuple[torch.Tensor | tuple[torch.Tensor], ...]: ...
 
 class GPT2MLP(nn.Module):
     def __init__(self, intermediate_size, config) -> None: ...
-    def forward(self, hidden_states: tuple[torch.FloatTensor] | None) -> torch.FloatTensor: ...
+    def forward(self, hidden_states: tuple[torch.Tensor] | None) -> torch.Tensor: ...
 
 class GPT2Block(GradientCheckpointingLayer):
     def __init__(self, config: GPT2Config, layer_idx: int | None = ...) -> None: ...
     def forward(
         self,
-        hidden_states: tuple[torch.FloatTensor] | torch.Tensor | None,
+        hidden_states: tuple[torch.Tensor] | torch.Tensor | None,
         past_key_value: Cache | None = ...,
-        cache_position: torch.LongTensor | None = ...,
-        attention_mask: torch.FloatTensor | None = ...,
-        head_mask: torch.FloatTensor | None = ...,
+        cache_position: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
         encoder_hidden_states: torch.Tensor | None = ...,
-        encoder_attention_mask: torch.FloatTensor | None = ...,
+        encoder_attention_mask: torch.Tensor | None = ...,
         use_cache: bool | None = ...,
         output_attentions: bool | None = ...,
         **kwargs: object,
-    ) -> tuple[torch.Tensor] | (tuple[torch.Tensor, tuple[torch.FloatTensor, ...]] | None): ...
+    ) -> tuple[torch.Tensor] | (tuple[torch.Tensor, tuple[torch.Tensor, ...]] | None): ...
 
 class GPT2SequenceSummary(nn.Module):
     def __init__(self, config: GPT2Config) -> None: ...
-    def forward(
-        self, hidden_states: torch.FloatTensor, cls_index: torch.LongTensor | None = ...
-    ) -> torch.FloatTensor: ...
+    def forward(self, hidden_states: torch.Tensor, cls_index: torch.Tensor | None = ...) -> torch.Tensor: ...
 
 class GPT2PreTrainedModel(PreTrainedModel):
     config: GPT2Config
@@ -83,13 +81,13 @@ class GPT2PreTrainedModel(PreTrainedModel):
     def __init__(self, *inputs: object, **kwargs: object) -> None: ...
 
 class GPT2DoubleHeadsModelOutput(ModelOutput):
-    loss: torch.FloatTensor | None = ...
-    mc_loss: torch.FloatTensor | None = ...
-    logits: torch.FloatTensor | None = ...
-    mc_logits: torch.FloatTensor | None = ...
-    past_key_values: tuple[tuple[torch.FloatTensor]] | None = ...
-    hidden_states: tuple[torch.FloatTensor] | None = ...
-    attentions: tuple[torch.FloatTensor] | None = ...
+    loss: torch.Tensor | None = ...
+    mc_loss: torch.Tensor | None = ...
+    logits: torch.Tensor | None = ...
+    mc_logits: torch.Tensor | None = ...
+    past_key_values: tuple[tuple[torch.Tensor]] | None = ...
+    hidden_states: tuple[torch.Tensor] | None = ...
+    attentions: tuple[torch.Tensor] | None = ...
 
 PARALLELIZE_DOCSTRING = ...
 DEPARALLELIZE_DOCSTRING = ...
@@ -112,22 +110,22 @@ class GPT2Model(GPT2PreTrainedModel):
         ...
     def forward(
         self,
-        input_ids: torch.LongTensor | None = ...,
+        input_ids: torch.Tensor | None = ...,
         past_key_values: tuple[tuple[torch.Tensor]] | Cache | None = ...,
-        cache_position: torch.LongTensor | None = ...,
-        attention_mask: torch.FloatTensor | None = ...,
-        token_type_ids: torch.LongTensor | None = ...,
-        position_ids: torch.LongTensor | None = ...,
-        head_mask: torch.FloatTensor | None = ...,
+        cache_position: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        position_ids: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
         inputs_embeds: torch.Tensor | None = ...,
         encoder_hidden_states: torch.Tensor | None = ...,
-        encoder_attention_mask: torch.FloatTensor | None = ...,
+        encoder_attention_mask: torch.Tensor | None = ...,
         use_cache: bool | None = ...,
         output_attentions: bool | None = ...,
         output_hidden_states: bool | None = ...,
         return_dict: bool | None = ...,
         **kwargs: object,
-    ) -> tuple[torch.FloatTensor, ...] | BaseModelOutputWithPastAndCrossAttentions: ...
+    ) -> tuple[torch.Tensor, ...] | BaseModelOutputWithPastAndCrossAttentions: ...
     @patch_call(forward)
     def __call__(self) -> None: ...
 
@@ -138,17 +136,17 @@ class GPT2LMHeadModel(GPT2PreTrainedModel, GenerationMixin):
     def deparallelize(self) -> None: ...
     def forward(
         self,
-        input_ids: torch.LongTensor | None = ...,
+        input_ids: torch.Tensor | None = ...,
         past_key_values: tuple[tuple[torch.Tensor]] | None = ...,
-        cache_position: torch.LongTensor | None = ...,
-        attention_mask: torch.FloatTensor | None = ...,
-        token_type_ids: torch.LongTensor | None = ...,
-        position_ids: torch.LongTensor | None = ...,
-        head_mask: torch.FloatTensor | None = ...,
-        inputs_embeds: torch.FloatTensor | None = ...,
+        cache_position: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        position_ids: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
         encoder_hidden_states: torch.Tensor | None = ...,
-        encoder_attention_mask: torch.FloatTensor | None = ...,
-        labels: torch.LongTensor | None = ...,
+        encoder_attention_mask: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
         use_cache: bool | None = ...,
         output_attentions: bool | None = ...,
         output_hidden_states: bool | None = ...,
@@ -166,17 +164,17 @@ class GPT2DoubleHeadsModel(GPT2PreTrainedModel, GenerationMixin):
         ...
     def forward(
         self,
-        input_ids: torch.LongTensor | None = ...,
+        input_ids: torch.Tensor | None = ...,
         past_key_values: tuple[tuple[torch.Tensor]] | None = ...,
-        cache_position: torch.LongTensor | None = ...,
-        attention_mask: torch.FloatTensor | None = ...,
-        token_type_ids: torch.LongTensor | None = ...,
-        position_ids: torch.LongTensor | None = ...,
-        head_mask: torch.FloatTensor | None = ...,
-        inputs_embeds: torch.FloatTensor | None = ...,
-        mc_token_ids: torch.LongTensor | None = ...,
-        labels: torch.LongTensor | None = ...,
-        mc_labels: torch.LongTensor | None = ...,
+        cache_position: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        position_ids: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        mc_token_ids: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
+        mc_labels: torch.Tensor | None = ...,
         use_cache: bool | None = ...,
         output_attentions: bool | None = ...,
         output_hidden_states: bool | None = ...,
@@ -188,14 +186,14 @@ class GPT2ForSequenceClassification(GPT2PreTrainedModel):
     def __init__(self, config) -> None: ...
     def forward(
         self,
-        input_ids: torch.LongTensor | None = ...,
+        input_ids: torch.Tensor | None = ...,
         past_key_values: tuple[tuple[torch.Tensor]] | None = ...,
-        attention_mask: torch.FloatTensor | None = ...,
-        token_type_ids: torch.LongTensor | None = ...,
-        position_ids: torch.LongTensor | None = ...,
-        head_mask: torch.FloatTensor | None = ...,
-        inputs_embeds: torch.FloatTensor | None = ...,
-        labels: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        position_ids: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
         use_cache: bool | None = ...,
         output_attentions: bool | None = ...,
         output_hidden_states: bool | None = ...,
@@ -206,14 +204,14 @@ class GPT2ForTokenClassification(GPT2PreTrainedModel):
     def __init__(self, config) -> None: ...
     def forward(
         self,
-        input_ids: torch.LongTensor | None = ...,
+        input_ids: torch.Tensor | None = ...,
         past_key_values: tuple[tuple[torch.Tensor]] | None = ...,
-        attention_mask: torch.FloatTensor | None = ...,
-        token_type_ids: torch.LongTensor | None = ...,
-        position_ids: torch.LongTensor | None = ...,
-        head_mask: torch.FloatTensor | None = ...,
-        inputs_embeds: torch.FloatTensor | None = ...,
-        labels: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        position_ids: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        labels: torch.Tensor | None = ...,
         use_cache: bool | None = ...,
         output_attentions: bool | None = ...,
         output_hidden_states: bool | None = ...,
@@ -224,14 +222,14 @@ class GPT2ForQuestionAnswering(GPT2PreTrainedModel):
     def __init__(self, config) -> None: ...
     def forward(
         self,
-        input_ids: torch.LongTensor | None = ...,
-        attention_mask: torch.FloatTensor | None = ...,
-        token_type_ids: torch.LongTensor | None = ...,
-        position_ids: torch.LongTensor | None = ...,
-        head_mask: torch.FloatTensor | None = ...,
-        inputs_embeds: torch.FloatTensor | None = ...,
-        start_positions: torch.LongTensor | None = ...,
-        end_positions: torch.LongTensor | None = ...,
+        input_ids: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        token_type_ids: torch.Tensor | None = ...,
+        position_ids: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        inputs_embeds: torch.Tensor | None = ...,
+        start_positions: torch.Tensor | None = ...,
+        end_positions: torch.Tensor | None = ...,
         output_attentions: bool | None = ...,
         output_hidden_states: bool | None = ...,
         return_dict: bool | None = ...,

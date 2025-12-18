@@ -253,7 +253,6 @@ class TFBlenderbotForConditionalGeneration(TFBlenderbotPreTrainedModel, TFCausal
     @unpack_inputs
     @add_start_docstrings_to_model_forward(BLENDERBOT_INPUTS_DOCSTRING)
     @replace_return_docstrings(output_type=TFSeq2SeqLMOutput, config_class=_CONFIG_FOR_DOC)
-    @add_end_docstrings(BLENDERBOT_GENERATION_EXAMPLE)
     def call(
         self,
         input_ids: tf.Tensor | None = ...,

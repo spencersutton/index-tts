@@ -205,8 +205,8 @@ class _RMSNorm(nn.Module):
 
 
 class CausalConv1d(nn.Conv1d):
-    def __init__(self, *args: object, **kwargs: object) -> None:
-        super().__init__(*args, **kwargs)  # pyright: ignore[reportArgumentType]
+    def __init__(self, in_channels: int, out_channels: int, kernel_size: int) -> None:
+        super().__init__(in_channels, out_channels, kernel_size)
         (kernel_size,) = self.kernel_size
         (dilation,) = self.dilation
         (stride,) = self.stride

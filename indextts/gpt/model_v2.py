@@ -26,22 +26,15 @@ from transformers.utils.model_parallel_utils import assert_device_map, get_devic
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
 from indextts.gpt.perceiver import PerceiverResampler
+from indextts.gpt.utils import (
+    NullPositionEmbedding,
+    build_aligned_inputs_and_targets,
+    build_hf_gpt_transformer,
+    set_token_padding,
+)
 from indextts.util import patch_call
 
 logger = logging.getLogger(__name__)
-
-
-class NullPositionEmbedding(nn.Embedding):
-    def __init__(self, dim: int) -> None:
-        super().__init__(1, dim)
-        del self.weight
-
-    @override
-    def forward(self, input: Tensor) -> Tensor:
-        return torch.zeros((input.shape[0], input.shape[1], self.embedding_dim))
-
-    @patch_call(forward)
-    def __call__(self) -> None: ...
 
 
 class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
@@ -226,40 +219,6 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
     def __call__(self) -> None: ...
 
 
-def _build_hf_gpt_transformer(
-    layers: int,
-    model_dim: int,
-    heads: int,
-    max_mel_seq_len: int,
-    max_text_seq_len: int,
-) -> tuple[GPT2Model, LearnedPositionEmbeddings, LearnedPositionEmbeddings, None, None]:
-    """GPT-2 implemented by the HuggingFace library."""
-
-    gpt_config = GPT2Config(
-        vocab_size=256,  # Unused.
-        n_positions=max_mel_seq_len + max_text_seq_len,
-        n_ctx=max_mel_seq_len + max_text_seq_len,
-        n_embd=model_dim,
-        n_layer=layers,
-        n_head=heads,
-        gradient_checkpointing=True,
-        use_cache=False,
-    )
-    gpt = GPT2Model(gpt_config)
-    # Override the built in positional embeddings
-    del gpt.wpe
-    gpt.wpe = NullPositionEmbedding(model_dim)
-    # Built-in token embeddings are unused.
-    del gpt.wte
-    return (
-        gpt,
-        LearnedPositionEmbeddings(max_mel_seq_len, model_dim),
-        LearnedPositionEmbeddings(max_text_seq_len, model_dim),
-        None,
-        None,
-    )
-
-
 class UnifiedVoice(nn.Module):
     gst_encoder: nn.Module | None
     inference_model: GPT2InferenceModel | None
@@ -328,7 +287,7 @@ class UnifiedVoice(nn.Module):
             self.text_pos_embedding,
             self.mel_layer_pos_embedding,
             self.text_layer_pos_embedding,
-        ) = _build_hf_gpt_transformer(
+        ) = build_hf_gpt_transformer(
             self.layers,
             self.model_dim,
             self.heads,
@@ -432,41 +391,19 @@ class UnifiedVoice(nn.Module):
 
         self.gpt.wte = self.mel_embedding
 
-    def build_aligned_inputs_and_targets(
-        self,
-        input: Tensor,  # noqa: A002
-        start_token: int,
-        stop_token: int,
-    ) -> tuple[Tensor, Tensor]:
-        inp = F.pad(input, (1, 0), value=start_token)
-        tar = F.pad(input, (0, 1), value=stop_token)
-        return inp, tar
-
     def set_mel_padding(self, mel_input_tokens: Tensor, mel_lengths: Tensor) -> Tensor:
         """Given mel tokens that are derived from a padded audio clip and the actual lengths of each batch element in
         that audio clip, reformats the tokens with STOP_MEL_TOKEN in place of the zero padding. This is required
         preformatting to create a working TTS model.
         """
-        for b in range(len(mel_lengths)):
-            # Due to the convolutional nature of how these tokens are generated,
-            # it would be best if the model predicts a token past the actual last token.
-            actual_end = mel_lengths[b]
-            if actual_end < mel_input_tokens.shape[-1]:
-                mel_input_tokens[b, actual_end:] = self.stop_mel_token
-        return mel_input_tokens
+        return set_token_padding(mel_input_tokens, mel_lengths, self.stop_mel_token)
 
     def set_text_padding(self, text_input_tokens: Tensor, text_lengths: Tensor) -> Tensor:
-        """Given mel tokens that are derived from a padded audio clip and the actual lengths of each batch element in
-        that audio clip, reformats the tokens with STOP_MEL_TOKEN in place of the zero padding. This is required
+        """Given text tokens that are derived from a padded sequence and the actual lengths of each batch element,
+        reformats the tokens with STOP_TEXT_TOKEN in place of the zero padding. This is required
         preformatting to create a working TTS model.
         """
-        for b in range(len(text_lengths)):
-            # Due to the convolutional nature of how these tokens are generated,
-            # it would be best if the model predicts a token past the actual last token.
-            actual_end = text_lengths[b]
-            if actual_end < text_input_tokens.shape[-1]:
-                text_input_tokens[b, actual_end:] = self.stop_text_token
-        return text_input_tokens
+        return set_token_padding(text_input_tokens, text_lengths, self.stop_text_token)
 
     def get_logits(
         self,
@@ -583,11 +520,11 @@ class UnifiedVoice(nn.Module):
             ),
             1,
         )
-        text_inputs, _text_targets = self.build_aligned_inputs_and_targets(
+        text_inputs, _text_targets = build_aligned_inputs_and_targets(
             text_inputs, self.start_text_token, self.stop_text_token
         )
         text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs)
-        mel_codes, _mel_targets = self.build_aligned_inputs_and_targets(
+        mel_codes, _mel_targets = build_aligned_inputs_and_targets(
             mel_codes, self.start_mel_token, self.stop_mel_token
         )
 

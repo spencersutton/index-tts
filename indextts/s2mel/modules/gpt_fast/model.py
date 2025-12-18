@@ -8,7 +8,7 @@
 
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from typing import override
+from typing import Final, override
 
 import torch
 from torch import Tensor, nn
@@ -74,16 +74,16 @@ class ModelArgs:
 
 
 class Transformer(nn.Module):
-    max_batch_size = -1
-    max_seq_length = -1
-    freqs_cis: Tensor | None = None
+    max_batch_size: Final = 1
+    max_seq_length: Final = 8192
+    freqs_cis: Tensor
     mask_cache: Tensor | None = None
     layers: "Iterable[TransformerBlock]"
-    causal_mask: Tensor | None = None
+    causal_mask: Tensor
     use_kv_cache: bool = False
     uvit_skip_connection: bool = False
-    layers_emit_skip: Sequence[int] = []
-    layers_receive_skip: Sequence[int] = []
+    layers_emit_skip: Sequence[int]
+    layers_receive_skip: Sequence[int]
 
     def __init__(self, config: ModelArgs) -> None:
         super().__init__()
@@ -91,13 +91,6 @@ class Transformer(nn.Module):
 
         self.layers = nn.ModuleList(TransformerBlock(config) for _ in range(config.n_layer))
         self.norm = AdaptiveLayerNorm(config.dim, RMSNorm(config.dim, eps=config.norm_eps))
-
-    def setup_caches(self, max_batch_size: int, max_seq_length: int) -> None:
-        if self.max_seq_length >= max_seq_length and self.max_batch_size >= max_batch_size:
-            return
-        max_seq_length = _find_multiple(max_seq_length, 8)
-        self.max_seq_length = max_seq_length
-        self.max_batch_size = max_batch_size
 
         config = self.config
         self.freqs_cis = _precompute_freqs_cis(

@@ -550,7 +550,7 @@ class IndexTTS2:
         logger.debug(*segments)
         max_mel_tokens = cast(int, generation_kwargs.pop("max_mel_tokens", 1500))
 
-        # [OPTIMIZATION] Pre-calculate emovec once before the loop
+        # Pre-calculate emovec once before the loop
         with torch.inference_mode():
             emovec = self.gpt.merge_emovec(
                 spk_cond_emb,
@@ -660,9 +660,6 @@ class IndexTTS2:
                     gpt_forward_time += time.perf_counter() - m_start_time
 
                 m_start_time = time.perf_counter()
-                diffusion_steps = 25
-                inference_cfg_rate = 0.7
-                assert self.s2mel.gpt_layer is not None
                 latent = self.s2mel.gpt_layer(latent)
                 S_infer = self.semantic_codec.quantizer.vq2emb(code.unsqueeze(1))
                 S_infer = S_infer.transpose(1, 2)
@@ -680,8 +677,8 @@ class IndexTTS2:
                     ref_mel,
                     style,
                     None,
-                    diffusion_steps,
-                    inference_cfg_rate=inference_cfg_rate,
+                    25,  # diffusion steps
+                    inference_cfg_rate=0.7,
                 )
                 vc_target = vc_target[:, :, ref_mel.size(-1) :]
                 s2mel_time += time.perf_counter() - m_start_time

@@ -113,7 +113,7 @@ def store_kvcache(
         k_cache,  # ty:ignore[invalid-argument-type]
         v_cache,  # ty:ignore[invalid-argument-type]
         slot_mapping,  # ty:ignore[invalid-argument-type]
-        D,
+        D,  # ty:ignore[invalid-argument-type]
     )
 
 

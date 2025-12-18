@@ -49,7 +49,4 @@ def load_s2mel_model(cfg: CheckpointsConfig, model_dir: Path) -> MyModel:
     safetensors.torch.load_model(model.length_regulator, model_dir / cfg.len_reg_checkpoint, strict=False)
     model.length_regulator.eval()
 
-    assert model.cfm.estimator is not None
-    model.cfm.estimator.setup_caches(max_batch_size=1, max_seq_length=8192)
-
     return model.eval()

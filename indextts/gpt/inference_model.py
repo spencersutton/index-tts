@@ -18,7 +18,6 @@ from transformers import (
     GPT2PreTrainedModel,
 )
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
-from transformers.utils.model_parallel_utils import assert_device_map, get_device_map
 
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
 from indextts.util import patch_call
@@ -96,35 +95,6 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         self.model_parallel = False
         self.device_map = None
         self.cached_mel_emb = None
-
-    def parallelize(self, device_map: dict[int, int] | None = None) -> None:
-        """Distribute the model across multiple GPUs.
-
-        Args:
-            device_map: Mapping of transformer layers to GPU devices.
-                If None, automatically distributes across available GPUs.
-        """
-        self.device_map = (
-            get_device_map(
-                len(self.transformer.h),
-                range(max(1, torch.cuda.device_count())),
-            )
-            if device_map is None
-            else device_map
-        )
-        assert_device_map(self.device_map, len(self.transformer.h))
-        self.transformer.parallelize(self.device_map)
-        self.lm_head = self.lm_head
-        self.model_parallel = True
-
-    def deparallelize(self) -> None:
-        """Move the model back to a single device."""
-        self.transformer.deparallelize()
-        self.lm_head = self.lm_head
-        self.model_parallel = False
-        torch.cuda.empty_cache()
-        if torch.backends.mps.is_available():
-            torch.mps.empty_cache()
 
     @override
     def get_output_embeddings(self) -> nn.Module:

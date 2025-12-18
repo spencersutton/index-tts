@@ -141,9 +141,6 @@ class DiT(nn.Module):
             HIDDEN_DIM,
         )
 
-    def setup_caches(self, max_batch_size: int, max_seq_length: int) -> None:
-        self.transformer.setup_caches(max_batch_size, max_seq_length)
-
     @override
     def forward(
         self,

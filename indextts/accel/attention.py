@@ -1,8 +1,7 @@
 # pyright: reportMissingImports=false, reportUnknownParameterType=false, reportUnknownArgumentType=false
 # pyright: reportUnknownMemberType=false, reportUntypedFunctionDecorator=false
-import typing
 from dataclasses import dataclass
-from typing import ClassVar, Self, override
+from typing import Any, ClassVar, Self, override
 
 import torch
 import triton
@@ -15,7 +14,7 @@ from indextts.util import patch_call
 
 @dataclass
 class ForwardContext:
-    _instance: ClassVar[Self]
+    _instance: ClassVar[Any]
 
     is_prefill: bool = False
     cu_seqlens_q: Tensor | None = None
@@ -61,7 +60,6 @@ class ForwardContext:
 ForwardContext.reset()
 
 
-@typing.no_type_check
 @triton.jit
 def store_kvcache_kernel(
     key_ptr: tl.pointer_type,
@@ -73,14 +71,14 @@ def store_kvcache_kernel(
     slot_mapping_ptr: tl.pointer_type,
     D: tl.constexpr,  # noqa: N803
 ) -> None:
-    BLOCK_SIZE: tl.constexpr = 2048
+    BLOCK_SIZE: tl.constexpr = 2048  # ty:ignore[invalid-assignment]
     idx: int = tl.program_id(0)
     slot: int = tl.load(slot_mapping_ptr + idx)
     if slot == -1:
         return
     d_offset: int = 0
     while d_offset < D:
-        cur_block_size: int = min(BLOCK_SIZE, D - d_offset)
+        cur_block_size: int = min(BLOCK_SIZE, D - d_offset)  # ty:ignore[invalid-assignment]
         key_offsets = idx * key_stride + d_offset + tl.arange(0, BLOCK_SIZE)
         value_offsets = idx * value_stride + d_offset + tl.arange(0, BLOCK_SIZE)
         cache_offsets = slot * D + d_offset + tl.arange(0, BLOCK_SIZE)
@@ -107,14 +105,14 @@ def store_kvcache(
     assert key.stride(1) == head_dim and value.stride(1) == head_dim
     assert k_cache.stride(1) == D and v_cache.stride(1) == D
     assert slot_mapping.numel() == N
-    store_kvcache_kernel[N,](  # pyright: ignore[reportIndexIssue]
-        key,
+    store_kvcache_kernel[N,](
+        key,  # ty:ignore[invalid-argument-type]
         key.stride(0),
-        value,
+        value,  # ty:ignore[invalid-argument-type]
         value.stride(0),
-        k_cache,
-        v_cache,
-        slot_mapping,
+        k_cache,  # ty:ignore[invalid-argument-type]
+        v_cache,  # ty:ignore[invalid-argument-type]
+        slot_mapping,  # ty:ignore[invalid-argument-type]
         D,
     )
 

@@ -27,7 +27,6 @@ from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
 from indextts.gpt.perceiver import PerceiverResampler
 from indextts.gpt.utils import (
-    NullPositionEmbedding,
     build_aligned_inputs_and_targets,
     build_hf_gpt_transformer,
     set_token_padding,
@@ -524,9 +523,7 @@ class UnifiedVoice(nn.Module):
             text_inputs, self.start_text_token, self.stop_text_token
         )
         text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs)
-        mel_codes, _mel_targets = build_aligned_inputs_and_targets(
-            mel_codes, self.start_mel_token, self.stop_mel_token
-        )
+        mel_codes, _mel_targets = build_aligned_inputs_and_targets(mel_codes, self.start_mel_token, self.stop_mel_token)
 
         mel_emb = self.mel_embedding(mel_codes)
         mel_emb += self.mel_pos_embedding(mel_codes)

@@ -16,7 +16,7 @@ from indextts.util import patch_call
 class PositionwiseFeedForward(nn.Module):
     """Positionwise feed forward layer.
 
-    FeedForward are applied on each position of the sequence.
+    FeedForward layers are applied on each position of the sequence.
     The output dim is same with the input dim.
 
     Args:

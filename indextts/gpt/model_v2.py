@@ -408,25 +408,25 @@ class UnifiedVoice(nn.Module):
         )
         assert self.inference_model is not None
         if use_deepspeed and half and torch.cuda.is_available():
-            import deepspeed  # noqa: PLC0415  # pyright: ignore[reportMissingTypeStubs]
+            import deepspeed  # noqa: PLC0415  # ty:ignore[unresolved-import]
 
-            self.ds_engine = deepspeed.init_inference(  # pyright: ignore[reportUnknownMemberType]
+            self.ds_engine = deepspeed.init_inference(
                 model=self.inference_model,
                 mp_size=1,
                 replace_with_kernel_inject=True,
                 dtype=torch.float16,
             )
-            self.inference_model = self.ds_engine.module.eval()  # pyright: ignore
+            self.inference_model = self.ds_engine.module.eval()
         elif use_deepspeed and torch.cuda.is_available():
-            import deepspeed  # noqa: PLC0415  # pyright: ignore[reportMissingTypeStubs]
+            import deepspeed  # ty:ignore[unresolved-import]  # noqa: PLC0415
 
-            self.ds_engine = deepspeed.init_inference(  # pyright: ignore[reportUnknownMemberType]
+            self.ds_engine = deepspeed.init_inference(
                 model=self.inference_model,
                 mp_size=1,
                 replace_with_kernel_inject=True,
                 dtype=torch.float32,
             )
-            self.inference_model = self.ds_engine.module.eval()  # pyright: ignore
+            self.inference_model = self.ds_engine.module.eval()
         else:
             self.inference_model = self.inference_model.eval()
 

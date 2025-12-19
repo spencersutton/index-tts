@@ -112,62 +112,56 @@ class ResBlock1(nn.Module):
     ):
         super().__init__()
         self.lrelu_slope = lrelu_slope
-        self.convs1 = nn.ModuleList(
-            [
-                weight_norm(
-                    nn.Conv1d(
-                        dim,
-                        dim,
-                        kernel_size,
-                        1,
-                        dilation=dilation[0],
-                        padding=self.get_padding(kernel_size, dilation[0]),
-                    )
-                ),
-                weight_norm(
-                    nn.Conv1d(
-                        dim,
-                        dim,
-                        kernel_size,
-                        1,
-                        dilation=dilation[1],
-                        padding=self.get_padding(kernel_size, dilation[1]),
-                    )
-                ),
-                weight_norm(
-                    nn.Conv1d(
-                        dim,
-                        dim,
-                        kernel_size,
-                        1,
-                        dilation=dilation[2],
-                        padding=self.get_padding(kernel_size, dilation[2]),
-                    )
-                ),
-            ]
-        )
+        self.convs1 = nn.ModuleList([
+            weight_norm(
+                nn.Conv1d(
+                    dim,
+                    dim,
+                    kernel_size,
+                    1,
+                    dilation=dilation[0],
+                    padding=self.get_padding(kernel_size, dilation[0]),
+                )
+            ),
+            weight_norm(
+                nn.Conv1d(
+                    dim,
+                    dim,
+                    kernel_size,
+                    1,
+                    dilation=dilation[1],
+                    padding=self.get_padding(kernel_size, dilation[1]),
+                )
+            ),
+            weight_norm(
+                nn.Conv1d(
+                    dim,
+                    dim,
+                    kernel_size,
+                    1,
+                    dilation=dilation[2],
+                    padding=self.get_padding(kernel_size, dilation[2]),
+                )
+            ),
+        ])
 
-        self.convs2 = nn.ModuleList(
-            [
-                weight_norm(nn.Conv1d(dim, dim, kernel_size, 1, dilation=1, padding=self.get_padding(kernel_size, 1))),
-                weight_norm(nn.Conv1d(dim, dim, kernel_size, 1, dilation=1, padding=self.get_padding(kernel_size, 1))),
-                weight_norm(nn.Conv1d(dim, dim, kernel_size, 1, dilation=1, padding=self.get_padding(kernel_size, 1))),
-            ]
-        )
+        self.convs2 = nn.ModuleList([
+            weight_norm(nn.Conv1d(dim, dim, kernel_size, 1, dilation=1, padding=self.get_padding(kernel_size, 1))),
+            weight_norm(nn.Conv1d(dim, dim, kernel_size, 1, dilation=1, padding=self.get_padding(kernel_size, 1))),
+            weight_norm(nn.Conv1d(dim, dim, kernel_size, 1, dilation=1, padding=self.get_padding(kernel_size, 1))),
+        ])
 
-        self.gamma = nn.ParameterList(
-            [
-                nn.Parameter(layer_scale_init_value * torch.ones(dim, 1), requires_grad=True)
-                if layer_scale_init_value is not None
-                else None,
-                nn.Parameter(layer_scale_init_value * torch.ones(dim, 1), requires_grad=True)
-                if layer_scale_init_value is not None
-                else None,
-                nn.Parameter(layer_scale_init_value * torch.ones(dim, 1), requires_grad=True)
-                if layer_scale_init_value is not None
-                else None,
-            ]
-        )
+        self.gamma = nn.ParameterList([
+            nn.Parameter(layer_scale_init_value * torch.ones(dim, 1), requires_grad=True)
+            if layer_scale_init_value is not None
+            else None,
+            nn.Parameter(layer_scale_init_value * torch.ones(dim, 1), requires_grad=True)
+            if layer_scale_init_value is not None
+            else None,
+            nn.Parameter(layer_scale_init_value * torch.ones(dim, 1), requires_grad=True)
+            if layer_scale_init_value is not None
+            else None,
+        ])
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         for c1, c2, gamma in zip(self.convs1, self.convs2, self.gamma):

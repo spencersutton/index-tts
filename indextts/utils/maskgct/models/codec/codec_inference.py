@@ -114,9 +114,7 @@ class VocoderInference(object):
             start = time.monotonic_ns()
             self._set_random_seed(self.cfg.train.random_seed)
             end = time.monotonic_ns()
-            self.logger.debug(
-                f"Setting random seed done in {(end - start) / 1e6:.2f}ms"
-            )
+            self.logger.debug(f"Setting random seed done in {(end - start) / 1e6:.2f}ms")
             self.logger.debug(f"Random seed: {self.cfg.train.random_seed}")
 
         # Setup inference mode
@@ -149,9 +147,7 @@ class VocoderInference(object):
         self.logger.info("Initializing accelerate...")
         start = time.monotonic_ns()
         self.accelerator = accelerate.Accelerator()
-        (self.model, self.test_dataloader) = self.accelerator.prepare(
-            self.model, self.test_dataloader
-        )
+        (self.model, self.test_dataloader) = self.accelerator.prepare(self.model, self.test_dataloader)
         end = time.monotonic_ns()
         self.accelerator.wait_for_everyone()
         self.logger.info(f"Initializing accelerate done in {(end - start) / 1e6:.3f}ms")
@@ -184,9 +180,7 @@ class VocoderInference(object):
             utts.append(utt)
 
         os.makedirs(os.path.join(self.cfg.preprocess.processed_dir, "tmp"))
-        with open(
-            os.path.join(self.cfg.preprocess.processed_dir, "tmp", "test.json"), "w"
-        ) as f:
+        with open(os.path.join(self.cfg.preprocess.processed_dir, "tmp", "test.json"), "w") as f:
             json.dump(utts, f)
 
         meta_info = {"dataset": "tmp", "test": {"size": len(utts)}}
@@ -219,9 +213,7 @@ class VocoderInference(object):
             utts.append(utt)
 
         os.makedirs(os.path.join(self.cfg.preprocess.processed_dir, "tmp"))
-        with open(
-            os.path.join(self.cfg.preprocess.processed_dir, "tmp", "test.json"), "w"
-        ) as f:
+        with open(os.path.join(self.cfg.preprocess.processed_dir, "tmp", "test.json"), "w") as f:
             json.dump(utts, f)
 
         meta_info = {"dataset": "tmp", "test": {"size": len(utts)}}
@@ -278,11 +270,7 @@ class VocoderInference(object):
                 checkpoint_path = checkpoint_dir
             else:
                 # Load the latest accelerator state dicts
-                ls = [
-                    str(i)
-                    for i in Path(checkpoint_dir).glob("*")
-                    if not "audio" in str(i)
-                ]
+                ls = [str(i) for i in Path(checkpoint_dir).glob("*") if not "audio" in str(i)]
                 ls.sort(
                     key=lambda x: int(x.split("/")[-1].split("_")[0].split("-")[-1]),
                     reverse=True,
@@ -303,11 +291,7 @@ class VocoderInference(object):
             ]:
                 ckpt = torch.load(
                     checkpoint_dir,
-                    map_location=(
-                        torch.device("cuda")
-                        if torch.cuda.is_available()
-                        else torch.device("cpu")
-                    ),
+                    map_location=(torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")),
                 )
                 if from_multi_gpu:
                     pretrained_generator_dict = ckpt["generator_state_dict"]
@@ -414,11 +398,7 @@ def load_nnvocoder(
         if vocoder_name in ["bigvgan", "hifigan", "melgan", "nsfhifigan"]:
             ckpt = torch.load(
                 weights_file,
-                map_location=(
-                    torch.device("cuda")
-                    if torch.cuda.is_available()
-                    else torch.device("cpu")
-                ),
+                map_location=(torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")),
             )
             if from_multi_gpu:
                 pretrained_generator_dict = ckpt["generator_state_dict"]
@@ -495,9 +475,7 @@ def synthesis(
     #     return
 
     # ====== Loading neural vocoder model ======
-    vocoder = load_nnvocoder(
-        cfg, vocoder_name, weights_file=vocoder_weight_file, from_multi_gpu=True
-    )
+    vocoder = load_nnvocoder(cfg, vocoder_name, weights_file=vocoder_weight_file, from_multi_gpu=True)
     device = next(vocoder.parameters()).device
 
     # ====== Inference for predicted acoustic features ======

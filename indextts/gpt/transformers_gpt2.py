@@ -34,7 +34,10 @@ from indextts.gpt.transformers_generation_utils import GenerationMixin
 from indextts.gpt.transformers_modeling_utils import PreTrainedModel
 from transformers.modeling_utils import SequenceSummary
 
-from transformers.modeling_attn_mask_utils import _prepare_4d_attention_mask_for_sdpa, _prepare_4d_causal_attention_mask_for_sdpa
+from transformers.modeling_attn_mask_utils import (
+    _prepare_4d_attention_mask_for_sdpa,
+    _prepare_4d_causal_attention_mask_for_sdpa,
+)
 from transformers.modeling_outputs import (
     BaseModelOutputWithPastAndCrossAttentions,
     CausalLMOutputWithCrossAttentions,
@@ -1609,9 +1612,9 @@ class GPT2ForSequenceClassification(GPT2PreTrainedModel):
         else:
             batch_size, sequence_length = inputs_embeds.shape[:2]
 
-        assert (
-            self.config.pad_token_id is not None or batch_size == 1
-        ), "Cannot handle batch sizes > 1 if no padding token is defined."
+        assert self.config.pad_token_id is not None or batch_size == 1, (
+            "Cannot handle batch sizes > 1 if no padding token is defined."
+        )
         if self.config.pad_token_id is None:
             sequence_lengths = -1
         else:

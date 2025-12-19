@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Any
 
 import gradio as gr
-import pandas as pd
 
 from indextts.infer_v2 import IndexTTS2, normalize_emo_vec
 from tools.i18n.i18n import I18nAuto
@@ -549,9 +548,9 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
             return {
                 segments_preview: gr.update(value=data, visible=True, type="array"),
             }
-        df = pd.DataFrame([], columns=[i18n("序号"), i18n("分句内容"), i18n("Token数")])
+
         return {
-            segments_preview: gr.update(value=df),
+            segments_preview: gr.update(value=[]),
         }
 
     def on_method_change(emo_control_method: int) -> tuple[dict[str, Any], ...]:

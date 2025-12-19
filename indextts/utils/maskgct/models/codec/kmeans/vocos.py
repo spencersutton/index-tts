@@ -37,12 +37,18 @@ class ConvNeXtBlock(nn.Module):
         layer_scale_init_value: float,
     ) -> None:
         super().__init__()
-        self.dwconv = nn.Conv1d(dim, dim, kernel_size=7, padding=3, groups=dim)  # depthwise conv
+        self.dwconv = nn.Conv1d(
+            dim, dim, kernel_size=7, padding=3, groups=dim
+        )  # depthwise conv
         self.norm = nn.LayerNorm(dim, eps=1e-6)
-        self.pwconv1 = nn.Linear(dim, intermediate_dim)  # pointwise/1x1 convs, implemented with linear layers
+        self.pwconv1 = nn.Linear(
+            dim, intermediate_dim
+        )  # pointwise/1x1 convs, implemented with linear layers
         self.act = nn.GELU()
         self.pwconv2 = nn.Linear(intermediate_dim, dim)
-        self.gamma = nn.Parameter(layer_scale_init_value * torch.ones(dim), requires_grad=True)
+        self.gamma = nn.Parameter(
+            layer_scale_init_value * torch.ones(dim), requires_grad=True
+        )
 
     @override
     def forward(self, x: Tensor) -> Tensor:
@@ -62,189 +68,7 @@ class ConvNeXtBlock(nn.Module):
     def __call__(self) -> None: ...
 
 
-class AdaLayerNorm(nn.Module):
-    """Adaptive Layer Normalization module with learnable embeddings per `num_embeddings` classes.
-
-    Args:
-        num_embeddings (int): Number of embeddings.
-        embedding_dim (int): Dimension of the embeddings.
-
-    """
-
-    def __init__(self, num_embeddings: int, embedding_dim: int, eps: float = 1e-6) -> None:
-        super().__init__()
-        self.eps = eps
-        self.dim = embedding_dim
-        self.scale = nn.Embedding(num_embeddings=num_embeddings, embedding_dim=embedding_dim)
-        self.shift = nn.Embedding(num_embeddings=num_embeddings, embedding_dim=embedding_dim)
-        torch.nn.init.ones_(self.scale.weight)
-        torch.nn.init.zeros_(self.shift.weight)
-
-    @override
-    def forward(self, x: Tensor, cond_embedding_id: Tensor) -> Tensor:
-        scale = self.scale(cond_embedding_id)
-        shift = self.shift(cond_embedding_id)
-        x = nn.functional.layer_norm(x, (self.dim,), eps=self.eps)
-        return x * scale + shift
-
-    @patch_call(forward)
-    def __call__(self) -> None: ...
-
-
-class ResBlock1(nn.Module):
-    """
-    ResBlock adapted from HiFi-GAN V1 (https://github.com/jik876/hifi-gan) with dilated 1D convolutions,
-    but without upsampling layers.
-
-    Args:
-        dim (int): Number of input channels.
-        kernel_size (int, optional): Size of the convolutional kernel. Defaults to 3.
-        dilation (tuple[int], optional): Dilation factors for the dilated convolutions.
-            Defaults to (1, 3, 5).
-        lrelu_slope (float, optional): Negative slope of the LeakyReLU activation function.
-            Defaults to 0.1.
-        layer_scale_init_value (float, optional): Initial value for the layer scale. None means no scaling.
-            Defaults to None.
-    """
-
-    def __init__(
-        self,
-        dim: int,
-        kernel_size: int = 3,
-        dilation: tuple[int, int, int] = (1, 3, 5),
-        lrelu_slope: float = 0.1,
-        layer_scale_init_value: float | None = None,
-    ) -> None:
-        super().__init__()
-        self.lrelu_slope = lrelu_slope
-        self.convs1 = nn.ModuleList([
-            weight_norm(
-                nn.Conv1d(
-                    dim,
-                    dim,
-                    kernel_size,
-                    1,
-                    dilation=dilation[0],
-                    padding=self.get_padding(kernel_size, dilation[0]),
-                )
-            ),
-            weight_norm(
-                nn.Conv1d(
-                    dim,
-                    dim,
-                    kernel_size,
-                    1,
-                    dilation=dilation[1],
-                    padding=self.get_padding(kernel_size, dilation[1]),
-                )
-            ),
-            weight_norm(
-                nn.Conv1d(
-                    dim,
-                    dim,
-                    kernel_size,
-                    1,
-                    dilation=dilation[2],
-                    padding=self.get_padding(kernel_size, dilation[2]),
-                )
-            ),
-        ])
-
-        self.convs2 = nn.ModuleList([
-            weight_norm(
-                nn.Conv1d(
-                    dim,
-                    dim,
-                    kernel_size,
-                    1,
-                    dilation=1,
-                    padding=self.get_padding(kernel_size, 1),
-                )
-            ),
-            weight_norm(
-                nn.Conv1d(
-                    dim,
-                    dim,
-                    kernel_size,
-                    1,
-                    dilation=1,
-                    padding=self.get_padding(kernel_size, 1),
-                )
-            ),
-            weight_norm(
-                nn.Conv1d(
-                    dim,
-                    dim,
-                    kernel_size,
-                    1,
-                    dilation=1,
-                    padding=self.get_padding(kernel_size, 1),
-                )
-            ),
-        ])
-
-        self.gamma = nn.ParameterList([
-            (
-                nn.Parameter(layer_scale_init_value * torch.ones(dim, 1), requires_grad=True)
-                if layer_scale_init_value is not None
-                else None
-            ),
-            (
-                nn.Parameter(layer_scale_init_value * torch.ones(dim, 1), requires_grad=True)
-                if layer_scale_init_value is not None
-                else None
-            ),
-            (
-                nn.Parameter(layer_scale_init_value * torch.ones(dim, 1), requires_grad=True)
-                if layer_scale_init_value is not None
-                else None
-            ),
-        ])
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        for c1, c2, gamma in zip(self.convs1, self.convs2, self.gamma):
-            xt = torch.nn.functional.leaky_relu(x, negative_slope=self.lrelu_slope)
-            xt = c1(xt)
-            xt = torch.nn.functional.leaky_relu(xt, negative_slope=self.lrelu_slope)
-            xt = c2(xt)
-            if gamma is not None:
-                xt = gamma * xt
-            x = xt + x
-        return x
-
-    def remove_weight_norm(self) -> None:
-        for l in self.convs1:
-            remove_weight_norm(l)
-        for l in self.convs2:
-            remove_weight_norm(l)
-
-    @staticmethod
-    def get_padding(kernel_size: int, dilation: int = 1) -> int:
-        return int((kernel_size * dilation - dilation) / 2)
-
-
-class Backbone(nn.Module):
-    """Base class for the generator's backbone. It preserves the same temporal resolution across all layers."""
-
-    @override
-    def forward(self, x: Tensor, **kwargs: object) -> Tensor:
-        """Args:
-            x (Tensor): Input tensor of shape (B, C, L), where B is the batch size,
-                        C denotes output features, and L is the sequence length.
-
-        Returns:
-            Tensor: Output of shape (B, L, H), where B is the batch size, L is the sequence length,
-                    and H denotes the model dimension.
-
-        """
-        msg = "Subclasses must implement the forward method."
-        raise NotImplementedError(msg)
-
-    @patch_call(forward)
-    def __call__(self) -> None: ...
-
-
-class VocosBackbone(Backbone):
+class VocosBackbone(nn.Module):
     """Vocos backbone module built with ConvNeXt blocks. Supports additional conditioning with Adaptive Layer Normalization.
 
     Args:
@@ -271,14 +95,16 @@ class VocosBackbone(Backbone):
         super().__init__()
         self.embed = nn.Conv1d(input_channels, dim, kernel_size=7, padding=3)
         self.norm = nn.LayerNorm(dim, eps=1e-6)
-        self.convnext = nn.ModuleList([
-            ConvNeXtBlock(
-                dim=dim,
-                intermediate_dim=intermediate_dim,
-                layer_scale_init_value=1 / num_layers,
-            )
-            for _ in range(num_layers)
-        ])
+        self.convnext = nn.ModuleList(
+            [
+                ConvNeXtBlock(
+                    dim=dim,
+                    intermediate_dim=intermediate_dim,
+                    layer_scale_init_value=1 / num_layers,
+                )
+                for _ in range(num_layers)
+            ]
+        )
         self.final_layer_norm = nn.LayerNorm(dim, eps=1e-6)
         self.apply(self._init_weights)
 
@@ -294,67 +120,8 @@ class VocosBackbone(Backbone):
         x = self.norm(x.transpose(1, 2))
         x = x.transpose(1, 2)
         for conv_block in self.convnext:
-            x = conv_block(x, cond_embedding_id=bandwidth_id)
+            x = conv_block(x)
         return self.final_layer_norm(x.transpose(1, 2))
 
-
-class VocosResNetBackbone(Backbone):
-    """
-    Vocos backbone module built with ResBlocks.
-
-    Args:
-        input_channels (int): Number of input features channels.
-        dim (int): Hidden dimension of the model.
-        num_blocks (int): Number of ResBlock1 blocks.
-        layer_scale_init_value (float, optional): Initial value for layer scaling. Defaults to None.
-    """
-
-    def __init__(
-        self,
-        input_channels,
-        dim,
-        num_blocks,
-        layer_scale_init_value=None,
-    ) -> None:
-        super().__init__()
-        self.input_channels = input_channels
-        self.embed = weight_norm(nn.Conv1d(input_channels, dim, kernel_size=3, padding=1))
-        layer_scale_init_value = layer_scale_init_value or 1 / num_blocks / 3
-        self.resnet = nn.Sequential(*[
-            ResBlock1(dim=dim, layer_scale_init_value=layer_scale_init_value) for _ in range(num_blocks)
-        ])
-
-    def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
-        x = self.embed(x)
-        x = self.resnet(x)
-        return x.transpose(1, 2)
-
-
-class Vocos(nn.Module):
-    def __init__(
-        self,
-        input_channels: int = 256,
-        dim: int = 384,
-        intermediate_dim: int = 1152,
-        num_layers: int = 8,
-        adanorm_num_embeddings: int = 4,
-        n_fft: int = 800,
-        hop_size: int = 200,
-        padding: str = "same",
-    ) -> None:
-        super().__init__()
-
-        self.backbone = VocosBackbone(
-            input_channels=input_channels,
-            dim=dim,
-            intermediate_dim=intermediate_dim,
-            num_layers=num_layers,
-            adanorm_num_embeddings=adanorm_num_embeddings,
-        )
-        self.head = ISTFTHead(dim, n_fft, hop_size, padding)
-
-    def forward(self, x):
-        x = self.backbone(x)
-        x = self.head(x)
-
-        return x[:, None, :]
+    @patch_call(forward)
+    def __call__(self) -> None: ...

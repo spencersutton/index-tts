@@ -158,14 +158,7 @@ class RepCodec(nn.Module):
 
         self.apply(_init_weights)
 
-    def quantize(self, x):
-
-        if self.downsample_scale is not None and self.downsample_scale > 1:
-            x = x.transpose(1, 2)
-            x = self.down(x)
-            x = F.gelu(x)
-            x = x.transpose(1, 2)
-
+    def quantize(self, x: Tensor) -> tuple[Tensor, Tensor]:
         x = self.encoder(x.transpose(1, 2)).transpose(1, 2)
 
         (quantized_out, all_indices) = self.quantizer(x)

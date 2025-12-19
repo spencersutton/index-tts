@@ -1,4 +1,5 @@
 import sys
+from collections.abc import Collection, Iterable, Sequence
 from typing import Final
 
 import torch
@@ -95,7 +96,7 @@ class AccelInferenceEngine:
         self.graph_pool = None
         self.graph_captured = False
 
-    def _prepare_prefill(self, requests: list[Seq]) -> tuple[Tensor, Tensor]:
+    def _prepare_prefill(self, requests: Iterable[Seq]) -> tuple[Tensor, Tensor]:
         input_ids_int: list[int] = []
         positions_int: list[int] = []
         cu_seqlens_q = [0]
@@ -154,7 +155,7 @@ class AccelInferenceEngine:
 
         return input_ids, positions
 
-    def _prepare_decode(self, requests: list[Seq]) -> tuple[Tensor, Tensor]:
+    def _prepare_decode(self, requests: Collection[Seq]) -> tuple[Tensor, Tensor]:
         if not requests:
             msg = "FATAL: No requests provided to _prepare_decode!"
             raise RuntimeError(msg)
@@ -201,7 +202,7 @@ class AccelInferenceEngine:
 
         return input_ids, positions
 
-    def _prepare_sample(self, requests: list[Seq], temperature: float) -> Tensor:
+    def _prepare_sample(self, requests: Collection[Seq], temperature: float) -> Tensor:
         temperatures = [temperature] * len(requests)
         return torch.tensor(temperatures, dtype=torch.float32, pin_memory=True).cuda(non_blocking=True)
 
@@ -355,7 +356,7 @@ class AccelInferenceEngine:
         temperature: float = 1.0,
         _top_k: int = 50,
         _top_p: float = 1.0,
-        stop_tokens: list[int] | None = None,
+        stop_tokens: Sequence[int] | None = None,
         attention_mask: Tensor | None = None,
         tts_embeddings: Tensor | None = None,  # TTS: [pad][cond][text] embeddings (87 tokens, NO start_mel)
         tts_mel_embedding: nn.Embedding | None = None,  # TTS: mel_embedding layer
@@ -469,7 +470,7 @@ class AccelInferenceEngine:
         if is_varlen_batch:
             context = get_forward_context()
             assert context.cu_seqlens_q is not None
-            cu_seqlens = context.cu_seqlens_q.cpu().tolist()
+            cu_seqlens = cast(list[int], context.cu_seqlens_q.cpu().tolist())
             last_hidden = torch.stack([hidden_states[0, cu_seqlens[i + 1] - 1] for i in range(batch_size)])
         else:
             last_hidden = hidden_states[:, -1, :]  # [batch_size, hidden_size]

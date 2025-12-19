@@ -38,7 +38,7 @@ def predict(prompt, style, audio_file_pth, agree):
     # initialize a empty info
     text_hint = ""
     # agree with the terms
-    if agree == False:
+    if not agree:
         text_hint += "[ERROR] Please accept the Terms & Condition!\n"
         gr.Warning("Please accept the Terms & Condition!")
         return (

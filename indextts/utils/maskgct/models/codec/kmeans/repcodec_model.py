@@ -64,7 +64,7 @@ class RepCodec(nn.Module):
         self.num_quantizers = num_quantizers
         self.downsample_scale = downsample_scale
 
-        if self.downsample_scale != None and self.downsample_scale > 1:
+        if self.downsample_scale is not None and self.downsample_scale > 1:
             self.down = nn.Conv1d(self.hidden_size, self.hidden_size, kernel_size=3, stride=2, padding=1)
             self.up = nn.Conv1d(self.hidden_size, self.hidden_size, kernel_size=3, stride=1, padding=1)
 
@@ -106,7 +106,7 @@ class RepCodec(nn.Module):
     def forward(self, x):
 
         # downsample
-        if self.downsample_scale != None and self.downsample_scale > 1:
+        if self.downsample_scale is not None and self.downsample_scale > 1:
             x = x.transpose(1, 2)
             x = self.down(x)
             x = F.gelu(x)
@@ -128,7 +128,7 @@ class RepCodec(nn.Module):
         x = self.decoder(quantized_out)
 
         # up
-        if self.downsample_scale != None and self.downsample_scale > 1:
+        if self.downsample_scale is not None and self.downsample_scale > 1:
             x = x.transpose(1, 2)
             x = F.interpolate(x, scale_factor=2, mode="nearest")
             x_rec = self.up(x).transpose(1, 2)
@@ -140,7 +140,7 @@ class RepCodec(nn.Module):
 
     def quantize(self, x):
 
-        if self.downsample_scale != None and self.downsample_scale > 1:
+        if self.downsample_scale is not None and self.downsample_scale > 1:
             x = x.transpose(1, 2)
             x = self.down(x)
             x = F.gelu(x)

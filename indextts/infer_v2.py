@@ -729,7 +729,7 @@ class IndexTTS2:
                 wavs.append(wav.cpu())  # to cpu before saving
                 if stream_return:
                     yield wav.cpu()
-                    if silence == None:
+                    if silence is None:
                         silence = self.interval_silence(
                             wavs, sampling_rate=sampling_rate, interval_silence=interval_silence
                         )

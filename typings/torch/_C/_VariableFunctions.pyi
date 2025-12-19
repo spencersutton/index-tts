@@ -3,9 +3,10 @@ from types import EllipsisType
 from typing import Any, Literal, overload
 
 import torch
-from torch import Generator, SymInt, Tensor, memory_format
+from torch import SymInt, Tensor, dtype as _dtype, layout as _layout, memory_format
+from torch._C import Generator
 from torch._prims_common import DeviceLikeType
-from torch.types import Number, _bool, _complex, _dtype, _float, _int, _layout, _size
+from torch.types import Number, _complex, _float, _size
 
 __all__ = [
     "__and__",
@@ -1001,8 +1002,8 @@ def acos(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def acos_(input: Tensor) -> Tensor: ...
 def acosh(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def acosh_(input: Tensor) -> Tensor: ...
-def adaptive_avg_pool1d(input: Tensor, output_size: _int | _size) -> Tensor: ...
-def adaptive_max_pool1d(input: Tensor, output_size: _int | _size) -> tuple[Tensor, Tensor]: ...
+def adaptive_avg_pool1d(input: Tensor, output_size: int | _size) -> Tensor: ...
+def adaptive_max_pool1d(input: Tensor, output_size: int | _size) -> tuple[Tensor, Tensor]: ...
 @overload
 def add(
     input: Tensor | Number | _complex,
@@ -1133,37 +1134,37 @@ def addr(beta: Number | _complex, self: Tensor, vec1: Tensor, vec2: Tensor) -> T
 @overload
 def addr(beta: Number | _complex, self: Tensor, vec1: Tensor, vec2: Tensor, *, out: Tensor) -> Tensor: ...
 def adjoint(input: Tensor) -> Tensor: ...
-def affine_grid_generator(theta: Tensor, size: Sequence[_int | SymInt], align_corners: _bool) -> Tensor: ...
+def affine_grid_generator(theta: Tensor, size: Sequence[int | SymInt], align_corners: bool) -> Tensor: ...
 def alias_copy(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
 def all(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
-def all(input: Tensor, dim: _size | None = ..., keepdim: _bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
+def all(input: Tensor, dim: _size | None = ..., keepdim: bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
 @overload
-def all(input: Tensor, dim: _int, keepdim: _bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
+def all(input: Tensor, dim: int, keepdim: bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
 @overload
-def all(input: Tensor, dim: str | EllipsisType | None, keepdim: _bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
-def allclose(input: Tensor, other: Tensor, rtol: _float = ..., atol: _float = ..., equal_nan: _bool = ...) -> _bool: ...
-def alpha_dropout(input: Tensor, p: _float, train: _bool) -> Tensor: ...
-def alpha_dropout_(input: Tensor, p: _float, train: _bool) -> Tensor: ...
-def amax(input: Tensor, dim: _int | _size = ..., keepdim: _bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
-def amin(input: Tensor, dim: _int | _size = ..., keepdim: _bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
+def all(input: Tensor, dim: str | EllipsisType | None, keepdim: bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
+def allclose(input: Tensor, other: Tensor, rtol: _float = ..., atol: _float = ..., equal_nan: bool = ...) -> bool: ...
+def alpha_dropout(input: Tensor, p: _float, train: bool) -> Tensor: ...
+def alpha_dropout_(input: Tensor, p: _float, train: bool) -> Tensor: ...
+def amax(input: Tensor, dim: int | _size = ..., keepdim: bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
+def amin(input: Tensor, dim: int | _size = ..., keepdim: bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
 def aminmax(
     input: Tensor,
     *,
-    dim: _int | None = ...,
-    keepdim: _bool = ...,
+    dim: int | None = ...,
+    keepdim: bool = ...,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...,
 ) -> torch.return_types.aminmax: ...
 def angle(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
 def any(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
-def any(input: Tensor, dim: _size | None = ..., keepdim: _bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
+def any(input: Tensor, dim: _size | None = ..., keepdim: bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
 @overload
-def any(input: Tensor, dim: _int, keepdim: _bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
+def any(input: Tensor, dim: int, keepdim: bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
 @overload
-def any(input: Tensor, dim: str | EllipsisType | None, keepdim: _bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
+def any(input: Tensor, dim: str | EllipsisType | None, keepdim: bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
 @overload
 def arange(
     start: Number,
@@ -1173,8 +1174,8 @@ def arange(
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     device: DeviceLikeType | None = ...,
-    requires_grad: _bool = ...,
-    pin_memory: _bool = ...,
+    requires_grad: bool = ...,
+    pin_memory: bool = ...,
 ) -> Tensor: ...
 @overload
 def arange(
@@ -1184,8 +1185,8 @@ def arange(
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     device: DeviceLikeType | None = ...,
-    requires_grad: _bool = ...,
-    pin_memory: _bool = ...,
+    requires_grad: bool = ...,
+    pin_memory: bool = ...,
 ) -> Tensor: ...
 @overload
 def arange(
@@ -1194,8 +1195,8 @@ def arange(
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     device: DeviceLikeType | None = ...,
-    requires_grad: _bool = ...,
-    pin_memory: _bool = ...,
+    requires_grad: bool = ...,
+    pin_memory: bool = ...,
 ) -> Tensor: ...
 @overload
 def arange(
@@ -1205,8 +1206,8 @@ def arange(
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def arange(
@@ -1216,8 +1217,8 @@ def arange(
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def arange(
@@ -1229,8 +1230,8 @@ def arange(
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 def arccos(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def arccos_(input: Tensor) -> Tensor: ...
@@ -1245,43 +1246,43 @@ def arctan2(input: Tensor, other: Tensor, *, out: Tensor | None = ...) -> Tensor
 def arctan_(input: Tensor) -> Tensor: ...
 def arctanh(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def arctanh_(input: Tensor) -> Tensor: ...
-def argmax(input: Tensor, dim: _int | None = ..., keepdim: _bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
-def argmin(input: Tensor, dim: _int | None = ..., keepdim: _bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
+def argmax(input: Tensor, dim: int | None = ..., keepdim: bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
+def argmin(input: Tensor, dim: int | None = ..., keepdim: bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
 @overload
 def argsort(
-    input: Tensor, *, stable: _bool, dim: _int = ..., descending: _bool = ..., out: Tensor | None = ...
+    input: Tensor, *, stable: bool, dim: int = ..., descending: bool = ..., out: Tensor | None = ...
 ) -> Tensor: ...
 @overload
-def argsort(input: Tensor, dim: _int = ..., descending: _bool = ...) -> Tensor: ...
+def argsort(input: Tensor, dim: int = ..., descending: bool = ...) -> Tensor: ...
 @overload
-def argsort(input: Tensor, dim: str | EllipsisType | None, descending: _bool = ...) -> Tensor: ...
+def argsort(input: Tensor, dim: str | EllipsisType | None, descending: bool = ...) -> Tensor: ...
 def argwhere(input: Tensor) -> Tensor: ...
 def as_strided(
     input: Tensor,
-    size: Sequence[_int | SymInt],
-    stride: Sequence[_int | SymInt],
-    storage_offset: _int | SymInt | None = ...,
+    size: Sequence[int | SymInt],
+    stride: Sequence[int | SymInt],
+    storage_offset: int | SymInt | None = ...,
 ) -> Tensor: ...
 def as_strided_(
     input: Tensor,
-    size: Sequence[_int | SymInt],
-    stride: Sequence[_int | SymInt],
-    storage_offset: _int | SymInt | None = ...,
+    size: Sequence[int | SymInt],
+    stride: Sequence[int | SymInt],
+    storage_offset: int | SymInt | None = ...,
 ) -> Tensor: ...
 def as_strided_copy(
     input: Tensor,
-    size: Sequence[_int | SymInt],
-    stride: Sequence[_int | SymInt],
-    storage_offset: _int | SymInt | None = ...,
+    size: Sequence[int | SymInt],
+    stride: Sequence[int | SymInt],
+    storage_offset: int | SymInt | None = ...,
     *,
     out: Tensor | None = ...,
 ) -> Tensor: ...
 def as_strided_scatter(
     input: Tensor,
     src: Tensor,
-    size: Sequence[_int | SymInt],
-    stride: Sequence[_int | SymInt],
-    storage_offset: _int | SymInt | None = ...,
+    size: Sequence[int | SymInt],
+    stride: Sequence[int | SymInt],
+    storage_offset: int | SymInt | None = ...,
 ) -> Tensor: ...
 def as_tensor(data: Any, dtype: _dtype | None = ..., device: DeviceLikeType | None = ...) -> Tensor: ...
 def asarray(
@@ -1289,8 +1290,8 @@ def asarray(
     *,
     dtype: _dtype | None = ...,
     device: DeviceLikeType | None = ...,
-    copy: _bool | None = ...,
-    requires_grad: _bool = ...,
+    copy: bool | None = ...,
+    requires_grad: bool = ...,
 ) -> Tensor: ...
 def asin(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def asin_(input: Tensor) -> Tensor: ...
@@ -1303,11 +1304,11 @@ def atanh(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def atanh_(input: Tensor) -> Tensor: ...
 def avg_pool1d(
     input: Tensor,
-    kernel_size: _int | _size,
-    stride: _int | _size = ...,
-    padding: _int | _size = ...,
-    ceil_mode: _bool = ...,
-    count_include_pad: _bool = ...,
+    kernel_size: int | _size,
+    stride: int | _size = ...,
+    padding: int | _size = ...,
+    ceil_mode: bool = ...,
+    count_include_pad: bool = ...,
 ) -> Tensor: ...
 @overload
 def baddbmm(
@@ -1344,24 +1345,24 @@ def baddbmm(beta: Number | _complex, self: Tensor, batch1: Tensor, batch2: Tenso
 def baddbmm(beta: Number | _complex, self: Tensor, batch1: Tensor, batch2: Tensor, *, out: Tensor) -> Tensor: ...
 @overload
 def bartlett_window(
-    window_length: _int,
+    window_length: int,
     *,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def bartlett_window(
-    window_length: _int,
-    periodic: _bool,
+    window_length: int,
+    periodic: bool,
     *,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 def batch_norm(
     input: Tensor,
@@ -1369,10 +1370,10 @@ def batch_norm(
     bias: Tensor | None,
     running_mean: Tensor | None,
     running_var: Tensor | None,
-    training: _bool,
+    training: bool,
     momentum: _float,
     eps: _float,
-    cudnn_enabled: _bool,
+    cudnn_enabled: bool,
 ) -> Tensor: ...
 def batch_norm_backward_elemt(
     grad_out: Tensor,
@@ -1390,9 +1391,9 @@ def batch_norm_backward_reduce(
     mean: Tensor,
     invstd: Tensor,
     weight: Tensor | None,
-    input_g: _bool,
-    weight_g: _bool,
-    bias_g: _bool,
+    input_g: bool,
+    weight_g: bool,
+    bias_g: bool,
 ) -> tuple[Tensor, Tensor, Tensor, Tensor]: ...
 def batch_norm_elemt(
     input: Tensor,
@@ -1412,7 +1413,7 @@ def batch_norm_gather_stats(
     running_var: Tensor | None,
     momentum: _float,
     eps: _float,
-    count: _int,
+    count: int,
 ) -> tuple[Tensor, Tensor]: ...
 def batch_norm_gather_stats_with_counts(
     input: Tensor,
@@ -1434,9 +1435,9 @@ def bernoulli(input: Tensor, *, generator: Generator | None = ..., out: Tensor |
 def bernoulli(input: Tensor, p: _float, *, generator: Generator | None = ...) -> Tensor: ...
 def bilinear(input1: Tensor, input2: Tensor, weight: Tensor, bias: Tensor | None = ...) -> Tensor: ...
 def binary_cross_entropy_with_logits(
-    input: Tensor, target: Tensor, weight: Tensor | None = ..., pos_weight: Tensor | None = ..., reduction: _int = ...
+    input: Tensor, target: Tensor, weight: Tensor | None = ..., pos_weight: Tensor | None = ..., reduction: int = ...
 ) -> Tensor: ...
-def bincount(input: Tensor, weights: Tensor | None = ..., minlength: _int | SymInt = ...) -> Tensor: ...
+def bincount(input: Tensor, weights: Tensor | None = ..., minlength: int | SymInt = ...) -> Tensor: ...
 def binomial(count: Tensor, prob: Tensor, generator: Generator | None = ...) -> Tensor: ...
 @overload
 def bitwise_and(input: Tensor, other: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
@@ -1471,39 +1472,39 @@ def bitwise_xor(self: Number | _complex, other: Tensor) -> Tensor: ...
 def bitwise_xor(input: Tensor, other: Number | _complex, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
 def blackman_window(
-    window_length: _int,
+    window_length: int,
     *,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def blackman_window(
-    window_length: _int,
-    periodic: _bool,
+    window_length: int,
+    periodic: bool,
     *,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def bmm(input: Tensor, mat2: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
 def bmm(input: Tensor, mat2: Tensor, out_dtype: _dtype, *, out: Tensor | None = ...) -> Tensor: ...
-def broadcast_to(input: Tensor, size: Sequence[_int | SymInt]) -> Tensor: ...
+def broadcast_to(input: Tensor, size: Sequence[int | SymInt]) -> Tensor: ...
 @overload
 def bucketize(
-    input: Tensor, boundaries: Tensor, *, out_int32: _bool = ..., right: _bool = ..., out: Tensor | None = ...
+    input: Tensor, boundaries: Tensor, *, out_int32: bool = ..., right: bool = ..., out: Tensor | None = ...
 ) -> Tensor: ...
 @overload
-def bucketize(self: Number | _complex, boundaries: Tensor, *, out_int32: _bool = ..., right: _bool = ...) -> Tensor: ...
-def can_cast(from_: _dtype, to: _dtype) -> _bool: ...
+def bucketize(self: Number | _complex, boundaries: Tensor, *, out_int32: bool = ..., right: bool = ...) -> Tensor: ...
+def can_cast(from_: _dtype, to: _dtype) -> bool: ...
 @overload
-def cat(tensors: tuple[Tensor, ...] | list[Tensor] | None, dim: _int = ..., *, out: Tensor | None = ...) -> Tensor: ...
+def cat(tensors: tuple[Tensor, ...] | list[Tensor] | None, dim: int = ..., *, out: Tensor | None = ...) -> Tensor: ...
 @overload
 def cat(
     tensors: tuple[Tensor, ...] | list[Tensor] | None, dim: str | EllipsisType | None, *, out: Tensor | None = ...
@@ -1513,14 +1514,14 @@ def ceil(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def ceil_(input: Tensor) -> Tensor: ...
 def celu(input: Tensor, alpha: Number | _complex = ...) -> Tensor: ...
 def celu_(input: Tensor, alpha: Number | _complex = ...) -> Tensor: ...
-def channel_shuffle(input: Tensor, groups: _int | SymInt) -> Tensor: ...
-def cholesky(input: Tensor, upper: _bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
-def cholesky_inverse(input: Tensor, upper: _bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
-def cholesky_solve(input: Tensor, input2: Tensor, upper: _bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
+def channel_shuffle(input: Tensor, groups: int | SymInt) -> Tensor: ...
+def cholesky(input: Tensor, upper: bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
+def cholesky_inverse(input: Tensor, upper: bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
+def cholesky_solve(input: Tensor, input2: Tensor, upper: bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
 def choose_qparams_optimized(
-    input: Tensor, numel: _int, n_bins: _int, ratio: _float, bit_width: _int
+    input: Tensor, numel: int, n_bins: int, ratio: _float, bit_width: int
 ) -> tuple[Tensor, Tensor]: ...
-def chunk(input: Tensor, chunks: _int, dim: _int = ...) -> tuple[Tensor, ...]: ...
+def chunk(input: Tensor, chunks: int, dim: int = ...) -> tuple[Tensor, ...]: ...
 @overload
 def clamp(input: Tensor, min: Tensor | None = ..., max: Tensor | None = ..., *, out: Tensor | None = ...) -> Tensor: ...
 @overload
@@ -1560,11 +1561,11 @@ def clip_(input: Tensor, min: Number | _complex | None = ..., max: Number | _com
 def clone(input: Tensor, *, memory_format: memory_format | None = ...) -> Tensor: ...
 def col_indices_copy(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def column_stack(tensors: tuple[Tensor, ...] | list[Tensor] | None, *, out: Tensor | None = ...) -> Tensor: ...
-def combinations(input: Tensor, r: _int = ..., with_replacement: _bool = ...) -> Tensor: ...
+def combinations(input: Tensor, r: int = ..., with_replacement: bool = ...) -> Tensor: ...
 def complex(real: Tensor, imag: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
 def concat(
-    tensors: tuple[Tensor, ...] | list[Tensor] | None, dim: _int = ..., *, out: Tensor | None = ...
+    tensors: tuple[Tensor, ...] | list[Tensor] | None, dim: int = ..., *, out: Tensor | None = ...
 ) -> Tensor: ...
 @overload
 def concat(
@@ -1572,7 +1573,7 @@ def concat(
 ) -> Tensor: ...
 @overload
 def concatenate(
-    tensors: tuple[Tensor, ...] | list[Tensor] | None, dim: _int = ..., *, out: Tensor | None = ...
+    tensors: tuple[Tensor, ...] | list[Tensor] | None, dim: int = ..., *, out: Tensor | None = ...
 ) -> Tensor: ...
 @overload
 def concatenate(
@@ -1581,108 +1582,108 @@ def concatenate(
 def conj(input: Tensor) -> Tensor: ...
 def conj_physical(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def conj_physical_(input: Tensor) -> Tensor: ...
-def constant_pad_nd(input: Tensor, pad: Sequence[_int | SymInt], value: Number | _complex = ...) -> Tensor: ...
+def constant_pad_nd(input: Tensor, pad: Sequence[int | SymInt], value: Number | _complex = ...) -> Tensor: ...
 @overload
 def conv1d(
     input: Tensor,
     weight: Tensor,
     bias: Tensor | None = ...,
-    stride: _int | SymInt | Sequence[_int | SymInt] = ...,
-    padding: _int | SymInt | Sequence[_int | SymInt] = ...,
-    dilation: _int | SymInt | Sequence[_int | SymInt] = ...,
-    groups: _int | SymInt = ...,
+    stride: int | SymInt | Sequence[int | SymInt] = ...,
+    padding: int | SymInt | Sequence[int | SymInt] = ...,
+    dilation: int | SymInt | Sequence[int | SymInt] = ...,
+    groups: int | SymInt = ...,
 ) -> Tensor: ...
 @overload
 def conv1d(
     input: Tensor,
     weight: Tensor,
     bias: Tensor | None = ...,
-    stride: _int | SymInt | Sequence[_int | SymInt] = ...,
+    stride: int | SymInt | Sequence[int | SymInt] = ...,
     padding: str = ...,
-    dilation: _int | SymInt | Sequence[_int | SymInt] = ...,
-    groups: _int | SymInt = ...,
+    dilation: int | SymInt | Sequence[int | SymInt] = ...,
+    groups: int | SymInt = ...,
 ) -> Tensor: ...
 @overload
 def conv2d(
     input: Tensor,
     weight: Tensor,
     bias: Tensor | None = ...,
-    stride: _int | SymInt | Sequence[_int | SymInt] = ...,
-    padding: _int | SymInt | Sequence[_int | SymInt] = ...,
-    dilation: _int | SymInt | Sequence[_int | SymInt] = ...,
-    groups: _int | SymInt = ...,
+    stride: int | SymInt | Sequence[int | SymInt] = ...,
+    padding: int | SymInt | Sequence[int | SymInt] = ...,
+    dilation: int | SymInt | Sequence[int | SymInt] = ...,
+    groups: int | SymInt = ...,
 ) -> Tensor: ...
 @overload
 def conv2d(
     input: Tensor,
     weight: Tensor,
     bias: Tensor | None = ...,
-    stride: _int | SymInt | Sequence[_int | SymInt] = ...,
+    stride: int | SymInt | Sequence[int | SymInt] = ...,
     padding: str = ...,
-    dilation: _int | SymInt | Sequence[_int | SymInt] = ...,
-    groups: _int | SymInt = ...,
+    dilation: int | SymInt | Sequence[int | SymInt] = ...,
+    groups: int | SymInt = ...,
 ) -> Tensor: ...
 @overload
 def conv3d(
     input: Tensor,
     weight: Tensor,
     bias: Tensor | None = ...,
-    stride: _int | SymInt | Sequence[_int | SymInt] = ...,
-    padding: _int | SymInt | Sequence[_int | SymInt] = ...,
-    dilation: _int | SymInt | Sequence[_int | SymInt] = ...,
-    groups: _int | SymInt = ...,
+    stride: int | SymInt | Sequence[int | SymInt] = ...,
+    padding: int | SymInt | Sequence[int | SymInt] = ...,
+    dilation: int | SymInt | Sequence[int | SymInt] = ...,
+    groups: int | SymInt = ...,
 ) -> Tensor: ...
 @overload
 def conv3d(
     input: Tensor,
     weight: Tensor,
     bias: Tensor | None = ...,
-    stride: _int | SymInt | Sequence[_int | SymInt] = ...,
+    stride: int | SymInt | Sequence[int | SymInt] = ...,
     padding: str = ...,
-    dilation: _int | SymInt | Sequence[_int | SymInt] = ...,
-    groups: _int | SymInt = ...,
+    dilation: int | SymInt | Sequence[int | SymInt] = ...,
+    groups: int | SymInt = ...,
 ) -> Tensor: ...
-def conv_tbc(input: Tensor, weight: Tensor, bias: Tensor, pad: _int = ...) -> Tensor: ...
+def conv_tbc(input: Tensor, weight: Tensor, bias: Tensor, pad: int = ...) -> Tensor: ...
 def conv_transpose1d(
     input: Tensor,
     weight: Tensor,
     bias: Tensor | None = ...,
-    stride: _int | SymInt | Sequence[_int | SymInt] = ...,
-    padding: _int | SymInt | Sequence[_int | SymInt] = ...,
-    output_padding: _int | SymInt | Sequence[_int | SymInt] = ...,
-    groups: _int | SymInt = ...,
-    dilation: _int | SymInt | Sequence[_int | SymInt] = ...,
+    stride: int | SymInt | Sequence[int | SymInt] = ...,
+    padding: int | SymInt | Sequence[int | SymInt] = ...,
+    output_padding: int | SymInt | Sequence[int | SymInt] = ...,
+    groups: int | SymInt = ...,
+    dilation: int | SymInt | Sequence[int | SymInt] = ...,
 ) -> Tensor: ...
 def conv_transpose2d(
     input: Tensor,
     weight: Tensor,
     bias: Tensor | None = ...,
-    stride: _int | SymInt | Sequence[_int | SymInt] = ...,
-    padding: _int | SymInt | Sequence[_int | SymInt] = ...,
-    output_padding: _int | SymInt | Sequence[_int | SymInt] = ...,
-    groups: _int | SymInt = ...,
-    dilation: _int | SymInt | Sequence[_int | SymInt] = ...,
+    stride: int | SymInt | Sequence[int | SymInt] = ...,
+    padding: int | SymInt | Sequence[int | SymInt] = ...,
+    output_padding: int | SymInt | Sequence[int | SymInt] = ...,
+    groups: int | SymInt = ...,
+    dilation: int | SymInt | Sequence[int | SymInt] = ...,
 ) -> Tensor: ...
 def conv_transpose3d(
     input: Tensor,
     weight: Tensor,
     bias: Tensor | None = ...,
-    stride: _int | SymInt | Sequence[_int | SymInt] = ...,
-    padding: _int | SymInt | Sequence[_int | SymInt] = ...,
-    output_padding: _int | SymInt | Sequence[_int | SymInt] = ...,
-    groups: _int | SymInt = ...,
-    dilation: _int | SymInt | Sequence[_int | SymInt] = ...,
+    stride: int | SymInt | Sequence[int | SymInt] = ...,
+    padding: int | SymInt | Sequence[int | SymInt] = ...,
+    output_padding: int | SymInt | Sequence[int | SymInt] = ...,
+    groups: int | SymInt = ...,
+    dilation: int | SymInt | Sequence[int | SymInt] = ...,
 ) -> Tensor: ...
 def convolution(
     input: Tensor,
     weight: Tensor,
     bias: Tensor | None,
-    stride: Sequence[_int | SymInt],
-    padding: Sequence[_int | SymInt],
-    dilation: Sequence[_int | SymInt],
-    transposed: _bool,
-    output_padding: Sequence[_int | SymInt],
-    groups: _int | SymInt,
+    stride: Sequence[int | SymInt],
+    padding: Sequence[int | SymInt],
+    dilation: Sequence[int | SymInt],
+    transposed: bool,
+    output_padding: Sequence[int | SymInt],
+    groups: int | SymInt,
 ) -> Tensor: ...
 @overload
 def copysign(input: Tensor, other: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
@@ -1694,17 +1695,17 @@ def cos_(input: Tensor) -> Tensor: ...
 def cosh(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def cosh_(input: Tensor) -> Tensor: ...
 def cosine_embedding_loss(
-    input1: Tensor, input2: Tensor, target: Tensor, margin: _float = ..., reduction: _int = ...
+    input1: Tensor, input2: Tensor, target: Tensor, margin: _float = ..., reduction: int = ...
 ) -> Tensor: ...
-def cosine_similarity(x1: Tensor, x2: Tensor, dim: _int = ..., eps: _float = ...) -> Tensor: ...
+def cosine_similarity(x1: Tensor, x2: Tensor, dim: int = ..., eps: _float = ...) -> Tensor: ...
 @overload
-def count_nonzero(input: Tensor, dim: _int | None = ...) -> Tensor: ...
+def count_nonzero(input: Tensor, dim: int | None = ...) -> Tensor: ...
 @overload
 def count_nonzero(input: Tensor, dim: _size) -> Tensor: ...
 def cov(
-    input: Tensor, *, correction: _int = ..., fweights: Tensor | None = ..., aweights: Tensor | None = ...
+    input: Tensor, *, correction: int = ..., fweights: Tensor | None = ..., aweights: Tensor | None = ...
 ) -> Tensor: ...
-def cross(input: Tensor, other: Tensor, dim: _int | None = ..., *, out: Tensor | None = ...) -> Tensor: ...
+def cross(input: Tensor, other: Tensor, dim: int | None = ..., *, out: Tensor | None = ...) -> Tensor: ...
 def crow_indices_copy(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
 def ctc_loss(
@@ -1712,9 +1713,9 @@ def ctc_loss(
     targets: Tensor,
     input_lengths: _size,
     target_lengths: _size,
-    blank: _int = ...,
-    reduction: _int = ...,
-    zero_infinity: _bool = ...,
+    blank: int = ...,
+    reduction: int = ...,
+    zero_infinity: bool = ...,
 ) -> Tensor: ...
 @overload
 def ctc_loss(
@@ -1722,18 +1723,18 @@ def ctc_loss(
     targets: Tensor,
     input_lengths: Tensor,
     target_lengths: Tensor,
-    blank: _int = ...,
-    reduction: _int = ...,
-    zero_infinity: _bool = ...,
+    blank: int = ...,
+    reduction: int = ...,
+    zero_infinity: bool = ...,
 ) -> Tensor: ...
-def cudnn_affine_grid_generator(theta: Tensor, N: _int, C: _int, H: _int, W: _int) -> Tensor: ...
+def cudnn_affine_grid_generator(theta: Tensor, N: int, C: int, H: int, W: int) -> Tensor: ...
 def cudnn_batch_norm(
     input: Tensor,
     weight: Tensor,
     bias: Tensor | None,
     running_mean: Tensor | None,
     running_var: Tensor | None,
-    training: _bool,
+    training: bool,
     exponential_average_factor: _float,
     epsilon: _float,
     *,
@@ -1742,13 +1743,13 @@ def cudnn_batch_norm(
 def cudnn_convolution(
     input: Tensor,
     weight: Tensor,
-    padding: Sequence[_int | SymInt],
-    stride: Sequence[_int | SymInt],
-    dilation: Sequence[_int | SymInt],
-    groups: _int | SymInt,
-    benchmark: _bool,
-    deterministic: _bool,
-    allow_tf32: _bool,
+    padding: Sequence[int | SymInt],
+    stride: Sequence[int | SymInt],
+    dilation: Sequence[int | SymInt],
+    groups: int | SymInt,
+    benchmark: bool,
+    deterministic: bool,
+    allow_tf32: bool,
     *,
     out: Tensor | None = ...,
 ) -> Tensor: ...
@@ -1758,37 +1759,37 @@ def cudnn_convolution_add_relu(
     z: Tensor,
     alpha: Number | _complex | None,
     bias: Tensor | None,
-    stride: Sequence[_int | SymInt],
-    padding: Sequence[_int | SymInt],
-    dilation: Sequence[_int | SymInt],
-    groups: _int | SymInt,
+    stride: Sequence[int | SymInt],
+    padding: Sequence[int | SymInt],
+    dilation: Sequence[int | SymInt],
+    groups: int | SymInt,
 ) -> Tensor: ...
 def cudnn_convolution_relu(
     input: Tensor,
     weight: Tensor,
     bias: Tensor | None,
-    stride: Sequence[_int | SymInt],
-    padding: Sequence[_int | SymInt],
-    dilation: Sequence[_int | SymInt],
-    groups: _int | SymInt,
+    stride: Sequence[int | SymInt],
+    padding: Sequence[int | SymInt],
+    dilation: Sequence[int | SymInt],
+    groups: int | SymInt,
 ) -> Tensor: ...
 def cudnn_convolution_transpose(
     input: Tensor,
     weight: Tensor,
-    padding: Sequence[_int | SymInt],
-    output_padding: Sequence[_int | SymInt],
-    stride: Sequence[_int | SymInt],
-    dilation: Sequence[_int | SymInt],
-    groups: _int | SymInt,
-    benchmark: _bool,
-    deterministic: _bool,
-    allow_tf32: _bool,
+    padding: Sequence[int | SymInt],
+    output_padding: Sequence[int | SymInt],
+    stride: Sequence[int | SymInt],
+    dilation: Sequence[int | SymInt],
+    groups: int | SymInt,
+    benchmark: bool,
+    deterministic: bool,
+    allow_tf32: bool,
 ) -> Tensor: ...
 def cudnn_grid_sampler(input: Tensor, grid: Tensor) -> Tensor: ...
-def cudnn_is_acceptable(input: Tensor) -> _bool: ...
+def cudnn_is_acceptable(input: Tensor) -> bool: ...
 @overload
 def cummax(
-    input: Tensor, dim: _int, *, out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...
+    input: Tensor, dim: int, *, out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...
 ) -> torch.return_types.cummax: ...
 @overload
 def cummax(
@@ -1796,28 +1797,28 @@ def cummax(
 ) -> torch.return_types.cummax: ...
 @overload
 def cummin(
-    input: Tensor, dim: _int, *, out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...
+    input: Tensor, dim: int, *, out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...
 ) -> torch.return_types.cummin: ...
 @overload
 def cummin(
     input: Tensor, dim: str | EllipsisType | None, *, out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...
 ) -> torch.return_types.cummin: ...
 @overload
-def cumprod(input: Tensor, dim: _int, *, dtype: _dtype | None = ..., out: Tensor | None = ...) -> Tensor: ...
+def cumprod(input: Tensor, dim: int, *, dtype: _dtype | None = ..., out: Tensor | None = ...) -> Tensor: ...
 @overload
 def cumprod(
     input: Tensor, dim: str | EllipsisType | None, *, dtype: _dtype | None = ..., out: Tensor | None = ...
 ) -> Tensor: ...
 @overload
-def cumsum(input: Tensor, dim: _int, *, dtype: _dtype | None = ..., out: Tensor | None = ...) -> Tensor: ...
+def cumsum(input: Tensor, dim: int, *, dtype: _dtype | None = ..., out: Tensor | None = ...) -> Tensor: ...
 @overload
 def cumsum(
     input: Tensor, dim: str | EllipsisType | None, *, dtype: _dtype | None = ..., out: Tensor | None = ...
 ) -> Tensor: ...
 @overload
-def cumulative_trapezoid(y: Tensor, x: Tensor, *, dim: _int = ...) -> Tensor: ...
+def cumulative_trapezoid(y: Tensor, x: Tensor, *, dim: int = ...) -> Tensor: ...
 @overload
-def cumulative_trapezoid(y: Tensor, *, dx: Number | _complex = ..., dim: _int = ...) -> Tensor: ...
+def cumulative_trapezoid(y: Tensor, *, dx: Number | _complex = ..., dim: int = ...) -> Tensor: ...
 def deg2rad(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def deg2rad_(input: Tensor) -> Tensor: ...
 @overload
@@ -1828,11 +1829,11 @@ def det(input: Tensor) -> Tensor: ...
 def detach(input: Tensor) -> Tensor: ...
 def detach_(input: Tensor) -> Tensor: ...
 def detach_copy(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
-def diag(input: Tensor, diagonal: _int = ..., *, out: Tensor | None = ...) -> Tensor: ...
-def diag_embed(input: Tensor, offset: _int = ..., dim1: _int = ..., dim2: _int = ...) -> Tensor: ...
-def diagflat(input: Tensor, offset: _int = ...) -> Tensor: ...
+def diag(input: Tensor, diagonal: int = ..., *, out: Tensor | None = ...) -> Tensor: ...
+def diag_embed(input: Tensor, offset: int = ..., dim1: int = ..., dim2: int = ...) -> Tensor: ...
+def diagflat(input: Tensor, offset: int = ...) -> Tensor: ...
 @overload
-def diagonal(input: Tensor, offset: _int = ..., dim1: _int = ..., dim2: _int = ...) -> Tensor: ...
+def diagonal(input: Tensor, offset: int = ..., dim1: int = ..., dim2: int = ...) -> Tensor: ...
 @overload
 def diagonal(
     input: Tensor,
@@ -1840,16 +1841,16 @@ def diagonal(
     outdim: str | EllipsisType | None,
     dim1: str | EllipsisType | None,
     dim2: str | EllipsisType | None,
-    offset: _int = ...,
+    offset: int = ...,
 ) -> Tensor: ...
 def diagonal_copy(
-    input: Tensor, offset: _int = ..., dim1: _int = ..., dim2: _int = ..., *, out: Tensor | None = ...
+    input: Tensor, offset: int = ..., dim1: int = ..., dim2: int = ..., *, out: Tensor | None = ...
 ) -> Tensor: ...
-def diagonal_scatter(input: Tensor, src: Tensor, offset: _int = ..., dim1: _int = ..., dim2: _int = ...) -> Tensor: ...
+def diagonal_scatter(input: Tensor, src: Tensor, offset: int = ..., dim1: int = ..., dim2: int = ...) -> Tensor: ...
 def diff(
     input: Tensor,
-    n: _int = ...,
-    dim: _int = ...,
+    n: int = ...,
+    dim: int = ...,
     prepend: Tensor | None = ...,
     append: Tensor | None = ...,
     *,
@@ -1869,67 +1870,67 @@ def divide(input: Tensor, other: Number | _complex, *, rounding_mode: str | None
 @overload
 def divide(input: Tensor, other: Number | _complex) -> Tensor: ...
 def dot(input: Tensor, tensor: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
-def dropout(input: Tensor, p: _float, train: _bool) -> Tensor: ...
-def dropout_(input: Tensor, p: _float, train: _bool) -> Tensor: ...
+def dropout(input: Tensor, p: _float, train: bool) -> Tensor: ...
+def dropout_(input: Tensor, p: _float, train: bool) -> Tensor: ...
 def dsmm(input: Tensor, mat2: Tensor) -> Tensor: ...
 @overload
-def dsplit(input: Tensor, sections: _int) -> tuple[Tensor, ...]: ...
+def dsplit(input: Tensor, sections: int) -> tuple[Tensor, ...]: ...
 @overload
 def dsplit(input: Tensor, indices: _size) -> tuple[Tensor, ...]: ...
 def dstack(tensors: tuple[Tensor, ...] | list[Tensor] | None, *, out: Tensor | None = ...) -> Tensor: ...
 def embedding(
     weight: Tensor,
     indices: Tensor,
-    padding_idx: _int | SymInt = ...,
-    scale_grad_by_freq: _bool = ...,
-    sparse: _bool = ...,
+    padding_idx: int | SymInt = ...,
+    scale_grad_by_freq: bool = ...,
+    sparse: bool = ...,
 ) -> Tensor: ...
 @overload
 def embedding_bag(
     weight: Tensor,
     indices: Tensor,
     offsets: Tensor,
-    scale_grad_by_freq: _bool,
-    mode: _int,
-    sparse: _bool,
+    scale_grad_by_freq: bool,
+    mode: int,
+    sparse: bool,
     per_sample_weights: Tensor | None,
-    include_last_offset: _bool,
-    padding_idx: _int | None,
+    include_last_offset: bool,
+    padding_idx: int | None,
 ) -> tuple[Tensor, Tensor, Tensor, Tensor]: ...
 @overload
 def embedding_bag(
     weight: Tensor,
     indices: Tensor,
     offsets: Tensor,
-    scale_grad_by_freq: _bool = ...,
-    mode: _int = ...,
-    sparse: _bool = ...,
+    scale_grad_by_freq: bool = ...,
+    mode: int = ...,
+    sparse: bool = ...,
     per_sample_weights: Tensor | None = ...,
-    include_last_offset: _bool = ...,
+    include_last_offset: bool = ...,
 ) -> tuple[Tensor, Tensor, Tensor, Tensor]: ...
 def embedding_renorm_(input: Tensor, indices: Tensor, max_norm: _float, norm_type: _float) -> Tensor: ...
 @overload
 def empty(
-    size: Sequence[_int | SymInt],
+    size: Sequence[int | SymInt],
     *,
     memory_format: memory_format | None = ...,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def empty(
-    *size: _int | SymInt,
+    *size: int | SymInt,
     memory_format: memory_format | None = ...,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def empty(
@@ -1940,19 +1941,19 @@ def empty(
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def empty(
-    *size: _int,
+    *size: int,
     names: Sequence[str | EllipsisType | None] | None,
     memory_format: memory_format | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 def empty_like(
     input: Tensor,
@@ -1961,18 +1962,18 @@ def empty_like(
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 def empty_permuted(
-    size: Sequence[_int | SymInt],
+    size: Sequence[int | SymInt],
     physical_layout: _size,
     *,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 def empty_quantized(
     size: _size,
@@ -1982,24 +1983,24 @@ def empty_quantized(
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 def empty_strided(
-    size: Sequence[_int | SymInt],
-    stride: Sequence[_int | SymInt],
+    size: Sequence[int | SymInt],
+    stride: Sequence[int | SymInt],
     *,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def eq(input: Tensor, other: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
 def eq(input: Tensor, other: Number | _complex, *, out: Tensor | None = ...) -> Tensor: ...
-def equal(input: Tensor, other: Tensor) -> _bool: ...
+def equal(input: Tensor, other: Tensor) -> bool: ...
 def erf(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def erf_(input: Tensor) -> Tensor: ...
 def erfc(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
@@ -2010,43 +2011,43 @@ def exp2(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def exp2_(input: Tensor) -> Tensor: ...
 def exp_(input: Tensor) -> Tensor: ...
 def expand_copy(
-    input: Tensor, size: Sequence[_int | SymInt], *, implicit: _bool = ..., out: Tensor | None = ...
+    input: Tensor, size: Sequence[int | SymInt], *, implicit: bool = ..., out: Tensor | None = ...
 ) -> Tensor: ...
 def expm1(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def expm1_(input: Tensor) -> Tensor: ...
 @overload
 def eye(
-    n: _int | SymInt,
+    n: int | SymInt,
     *,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def eye(
-    n: _int | SymInt,
-    m: _int | SymInt,
+    n: int | SymInt,
+    m: int | SymInt,
     *,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 def fake_quantize_per_channel_affine(
-    input: Tensor, scale: Tensor, zero_point: Tensor, axis: _int, quant_min: _int, quant_max: _int
+    input: Tensor, scale: Tensor, zero_point: Tensor, axis: int, quant_min: int, quant_max: int
 ) -> Tensor: ...
 @overload
 def fake_quantize_per_tensor_affine(
-    input: Tensor, scale: _float, zero_point: _int, quant_min: _int, quant_max: _int
+    input: Tensor, scale: _float, zero_point: int, quant_min: int, quant_max: int
 ) -> Tensor: ...
 @overload
 def fake_quantize_per_tensor_affine(
-    input: Tensor, scale: Tensor, zero_point: Tensor, quant_min: _int, quant_max: _int
+    input: Tensor, scale: Tensor, zero_point: Tensor, quant_min: int, quant_max: int
 ) -> Tensor: ...
 @overload
 def fbgemm_linear_fp16_weight(input: Tensor, packed_weight: Tensor, bias: Tensor) -> Tensor: ...
@@ -2076,16 +2077,16 @@ def fbgemm_linear_int8_weight_fp32_activation(
     weight_zero_point: Number | _complex,
     bias: Tensor,
 ) -> Tensor: ...
-def fbgemm_linear_quantize_weight(input: Tensor) -> tuple[Tensor, Tensor, _float, _int]: ...
+def fbgemm_linear_quantize_weight(input: Tensor) -> tuple[Tensor, Tensor, _float, int]: ...
 def fbgemm_pack_gemm_matrix_fp16(input: Tensor) -> Tensor: ...
 @overload
 def fbgemm_pack_quantized_matrix(input: Tensor) -> Tensor: ...
 @overload
-def fbgemm_pack_quantized_matrix(input: Tensor, K: _int, N: _int) -> Tensor: ...
-def feature_alpha_dropout(input: Tensor, p: _float, train: _bool) -> Tensor: ...
-def feature_alpha_dropout_(input: Tensor, p: _float, train: _bool) -> Tensor: ...
-def feature_dropout(input: Tensor, p: _float, train: _bool) -> Tensor: ...
-def feature_dropout_(input: Tensor, p: _float, train: _bool) -> Tensor: ...
+def fbgemm_pack_quantized_matrix(input: Tensor, K: int, N: int) -> Tensor: ...
+def feature_alpha_dropout(input: Tensor, p: _float, train: bool) -> Tensor: ...
+def feature_alpha_dropout_(input: Tensor, p: _float, train: bool) -> Tensor: ...
+def feature_dropout(input: Tensor, p: _float, train: bool) -> Tensor: ...
+def feature_dropout_(input: Tensor, p: _float, train: bool) -> Tensor: ...
 @overload
 def fill(input: Tensor, value: Tensor) -> Tensor: ...
 @overload
@@ -2097,9 +2098,9 @@ def fill_(input: Tensor, value: Number | _complex) -> Tensor: ...
 def fix(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def fix_(input: Tensor) -> Tensor: ...
 @overload
-def flatten(input: Tensor, start_dim: _int = ..., end_dim: _int = ...) -> Tensor: ...
+def flatten(input: Tensor, start_dim: int = ..., end_dim: int = ...) -> Tensor: ...
 @overload
-def flatten(input: Tensor, start_dim: _int, end_dim: _int, out_dim: str | EllipsisType | None) -> Tensor: ...
+def flatten(input: Tensor, start_dim: int, end_dim: int, out_dim: str | EllipsisType | None) -> Tensor: ...
 @overload
 def flatten(
     input: Tensor,
@@ -2132,21 +2133,21 @@ def frac_(input: Tensor) -> Tensor: ...
 def frexp(
     input: Tensor, *, out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...
 ) -> torch.return_types.frexp: ...
-def frobenius_norm(input: Tensor, dim: _int | _size, keepdim: _bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
+def frobenius_norm(input: Tensor, dim: int | _size, keepdim: bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
 def from_file(
     filename: str,
-    shared: _bool | None = ...,
-    size: _int | None = ...,
+    shared: bool | None = ...,
+    size: int | None = ...,
     *,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 def from_numpy(ndarray) -> Tensor: ...
 def frombuffer(
-    buffer: Any, *, dtype: _dtype, count: int = ..., offset: int = ..., requires_grad: _bool = ...
+    buffer: Any, *, dtype: _dtype, count: int = ..., offset: int = ..., requires_grad: bool = ...
 ) -> Tensor: ...
 @overload
 def full(
@@ -2157,8 +2158,8 @@ def full(
     layout: _layout = ...,
     dtype: _dtype | None = ...,
     device: DeviceLikeType | None = ...,
-    requires_grad: _bool = ...,
-    pin_memory: _bool = ...,
+    requires_grad: bool = ...,
+    pin_memory: bool = ...,
 ) -> Tensor: ...
 @overload
 def full(
@@ -2169,20 +2170,20 @@ def full(
     layout: _layout = ...,
     dtype: _dtype | None = ...,
     device: DeviceLikeType | None = ...,
-    requires_grad: _bool = ...,
-    pin_memory: _bool = ...,
+    requires_grad: bool = ...,
+    pin_memory: bool = ...,
 ) -> Tensor: ...
 @overload
 def full(
-    size: Sequence[_int | SymInt],
+    size: Sequence[int | SymInt],
     fill_value: Number | _complex,
     *,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def full(
@@ -2193,8 +2194,8 @@ def full(
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 def full_like(
     input: Tensor,
@@ -2204,8 +2205,8 @@ def full_like(
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 def fused_moving_avg_obs_fake_quant(
     input: Tensor,
@@ -2216,19 +2217,17 @@ def fused_moving_avg_obs_fake_quant(
     scale: Tensor,
     zero_point: Tensor,
     averaging_const: _float,
-    quant_min: _int,
-    quant_max: _int,
-    ch_axis: _int,
-    per_row_fake_quant: _bool = ...,
-    symmetric_quant: _bool = ...,
+    quant_min: int,
+    quant_max: int,
+    ch_axis: int,
+    per_row_fake_quant: bool = ...,
+    symmetric_quant: bool = ...,
 ) -> Tensor: ...
 @overload
-def gather(
-    input: Tensor, dim: _int, index: Tensor, *, sparse_grad: _bool = ..., out: Tensor | None = ...
-) -> Tensor: ...
+def gather(input: Tensor, dim: int, index: Tensor, *, sparse_grad: bool = ..., out: Tensor | None = ...) -> Tensor: ...
 @overload
 def gather(
-    input: Tensor, dim: str | EllipsisType | None, index: Tensor, *, sparse_grad: _bool = ..., out: Tensor | None = ...
+    input: Tensor, dim: str | EllipsisType | None, index: Tensor, *, sparse_grad: bool = ..., out: Tensor | None = ...
 ) -> Tensor: ...
 def gcd(input: Tensor, other: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def gcd_(input: Tensor, other: Tensor) -> Tensor: ...
@@ -2241,34 +2240,32 @@ def geqrf(
 ) -> torch.return_types.geqrf: ...
 def ger(input: Tensor, vec2: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def get_default_dtype() -> _dtype: ...
-def get_num_interop_threads() -> _int: ...
-def get_num_threads() -> _int: ...
+def get_num_interop_threads() -> int: ...
+def get_num_threads() -> int: ...
 @overload
 def gradient(
-    input: Tensor, *, spacing: Number | _complex | None = ..., dim: _int | None = ..., edge_order: _int = ...
+    input: Tensor, *, spacing: Number | _complex | None = ..., dim: int | None = ..., edge_order: int = ...
 ) -> tuple[Tensor, ...]: ...
 @overload
 def gradient(
-    input: Tensor, *, spacing: Sequence[Number | _complex], dim: _int | None = ..., edge_order: _int = ...
+    input: Tensor, *, spacing: Sequence[Number | _complex], dim: int | None = ..., edge_order: int = ...
 ) -> tuple[Tensor, ...]: ...
 @overload
 def gradient(
-    input: Tensor, *, spacing: Sequence[Number | _complex], dim: _size, edge_order: _int = ...
+    input: Tensor, *, spacing: Sequence[Number | _complex], dim: _size, edge_order: int = ...
 ) -> tuple[Tensor, ...]: ...
 @overload
 def gradient(
-    input: Tensor, *, spacing: tuple[Tensor, ...] | list[Tensor] | None, dim: _int | None = ..., edge_order: _int = ...
+    input: Tensor, *, spacing: tuple[Tensor, ...] | list[Tensor] | None, dim: int | None = ..., edge_order: int = ...
 ) -> tuple[Tensor, ...]: ...
+@overload
+def gradient(input: Tensor, *, spacing: Number | _complex, dim: _size, edge_order: int = ...) -> tuple[Tensor, ...]: ...
 @overload
 def gradient(
-    input: Tensor, *, spacing: Number | _complex, dim: _size, edge_order: _int = ...
+    input: Tensor, *, spacing: tuple[Tensor, ...] | list[Tensor] | None, dim: _size, edge_order: int = ...
 ) -> tuple[Tensor, ...]: ...
 @overload
-def gradient(
-    input: Tensor, *, spacing: tuple[Tensor, ...] | list[Tensor] | None, dim: _size, edge_order: _int = ...
-) -> tuple[Tensor, ...]: ...
-@overload
-def gradient(input: Tensor, *, dim: _size, edge_order: _int = ...) -> tuple[Tensor, ...]: ...
+def gradient(input: Tensor, *, dim: _size, edge_order: int = ...) -> tuple[Tensor, ...]: ...
 @overload
 def greater(input: Tensor, other: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
@@ -2278,21 +2275,21 @@ def greater_equal(input: Tensor, other: Tensor, *, out: Tensor | None = ...) -> 
 @overload
 def greater_equal(input: Tensor, other: Number | _complex, *, out: Tensor | None = ...) -> Tensor: ...
 def grid_sampler(
-    input: Tensor, grid: Tensor, interpolation_mode: _int, padding_mode: _int, align_corners: _bool
+    input: Tensor, grid: Tensor, interpolation_mode: int, padding_mode: int, align_corners: bool
 ) -> Tensor: ...
 def grid_sampler_2d(
-    input: Tensor, grid: Tensor, interpolation_mode: _int, padding_mode: _int, align_corners: _bool
+    input: Tensor, grid: Tensor, interpolation_mode: int, padding_mode: int, align_corners: bool
 ) -> Tensor: ...
 def grid_sampler_3d(
-    input: Tensor, grid: Tensor, interpolation_mode: _int, padding_mode: _int, align_corners: _bool
+    input: Tensor, grid: Tensor, interpolation_mode: int, padding_mode: int, align_corners: bool
 ) -> Tensor: ...
 def group_norm(
     input: Tensor,
-    num_groups: _int,
+    num_groups: int,
     weight: Tensor | None = ...,
     bias: Tensor | None = ...,
     eps: _float = ...,
-    cudnn_enabled: _bool = ...,
+    cudnn_enabled: bool = ...,
 ) -> Tensor: ...
 @overload
 def gru(
@@ -2300,23 +2297,23 @@ def gru(
     batch_sizes: Tensor,
     hx: Tensor,
     params: tuple[Tensor, ...] | list[Tensor] | None,
-    has_biases: _bool,
-    num_layers: _int,
+    has_biases: bool,
+    num_layers: int,
     dropout: _float,
-    train: _bool,
-    bidirectional: _bool,
+    train: bool,
+    bidirectional: bool,
 ) -> tuple[Tensor, Tensor]: ...
 @overload
 def gru(
     input: Tensor,
     hx: Tensor,
     params: tuple[Tensor, ...] | list[Tensor] | None,
-    has_biases: _bool,
-    num_layers: _int,
+    has_biases: bool,
+    num_layers: int,
     dropout: _float,
-    train: _bool,
-    bidirectional: _bool,
-    batch_first: _bool,
+    train: bool,
+    bidirectional: bool,
+    batch_first: bool,
 ) -> tuple[Tensor, Tensor]: ...
 def gru_cell(
     input: Tensor, hx: Tensor, w_ih: Tensor, w_hh: Tensor, b_ih: Tensor | None = ..., b_hh: Tensor | None = ...
@@ -2327,80 +2324,80 @@ def gt(input: Tensor, other: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def gt(input: Tensor, other: Number | _complex, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
 def hamming_window(
-    window_length: _int,
+    window_length: int,
     *,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def hamming_window(
-    window_length: _int,
-    periodic: _bool,
+    window_length: int,
+    periodic: bool,
     *,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def hamming_window(
-    window_length: _int,
-    periodic: _bool,
+    window_length: int,
+    periodic: bool,
     alpha: _float,
     *,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def hamming_window(
-    window_length: _int,
-    periodic: _bool,
+    window_length: int,
+    periodic: bool,
     alpha: _float,
     beta: _float,
     *,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def hann_window(
-    window_length: _int,
+    window_length: int,
     *,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def hann_window(
-    window_length: _int,
-    periodic: _bool,
+    window_length: int,
+    periodic: bool,
     *,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 def hardshrink(input: Tensor, lambd: Number | _complex = ..., *, out: Tensor | None = ...) -> Tensor: ...
 def hash_tensor(
-    input: Tensor, dim: _int | _size = ..., *, keepdim: _bool = ..., mode: _int = ..., out: Tensor | None = ...
+    input: Tensor, dim: int | _size = ..., *, keepdim: bool = ..., mode: int = ..., out: Tensor | None = ...
 ) -> Tensor: ...
 def heaviside(input: Tensor, values: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
-def hinge_embedding_loss(input: Tensor, target: Tensor, margin: _float = ..., reduction: _int = ...) -> Tensor: ...
+def hinge_embedding_loss(input: Tensor, target: Tensor, margin: _float = ..., reduction: int = ...) -> Tensor: ...
 def histc(
     input: Tensor,
-    bins: _int = ...,
+    bins: int = ...,
     min: Number | _complex = ...,
     max: Number | _complex = ...,
     *,
@@ -2412,26 +2409,26 @@ def histogram(
     bins: Tensor,
     *,
     weight: Tensor | None = ...,
-    density: _bool = ...,
+    density: bool = ...,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...,
 ) -> torch.return_types.histogram: ...
 @overload
 def histogram(
     input: Tensor,
-    bins: _int = ...,
+    bins: int = ...,
     *,
     range: Sequence[_float] | None = ...,
     weight: Tensor | None = ...,
-    density: _bool = ...,
+    density: bool = ...,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...,
 ) -> torch.return_types.histogram: ...
 @overload
 def histogramdd(
-    input: Tensor, bins: _int, range: Sequence[_float] | None = ..., weight: Tensor | None = ..., density: _bool = ...
+    input: Tensor, bins: int, range: Sequence[_float] | None = ..., weight: Tensor | None = ..., density: bool = ...
 ) -> torch.return_types.histogramdd: ...
 @overload
 def histogramdd(
-    input: Tensor, bins: _size, range: Sequence[_float] | None = ..., weight: Tensor | None = ..., density: _bool = ...
+    input: Tensor, bins: _size, range: Sequence[_float] | None = ..., weight: Tensor | None = ..., density: bool = ...
 ) -> torch.return_types.histogramdd: ...
 @overload
 def histogramdd(
@@ -2439,11 +2436,11 @@ def histogramdd(
     bins: tuple[Tensor, ...] | list[Tensor] | None,
     range: Sequence[_float] | None = ...,
     weight: Tensor | None = ...,
-    density: _bool = ...,
+    density: bool = ...,
 ) -> torch.return_types.histogramdd: ...
 def hsmm(input: Tensor, mat2: Tensor) -> Tensor: ...
 @overload
-def hsplit(input: Tensor, sections: _int) -> tuple[Tensor, ...]: ...
+def hsplit(input: Tensor, sections: int) -> tuple[Tensor, ...]: ...
 @overload
 def hsplit(input: Tensor, indices: _size) -> tuple[Tensor, ...]: ...
 def hspmm(mat1: Tensor, mat2: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
@@ -2456,42 +2453,42 @@ def igammac(input: Tensor, other: Tensor, *, out: Tensor | None = ...) -> Tensor
 def imag(input: Tensor) -> Tensor: ...
 @overload
 def index_add(
-    input: Tensor, dim: _int, index: Tensor, source: Tensor, *, alpha: Number | _complex = ..., out: Tensor | None = ...
+    input: Tensor, dim: int, index: Tensor, source: Tensor, *, alpha: Number | _complex = ..., out: Tensor | None = ...
 ) -> Tensor: ...
 @overload
 def index_add(
     input: Tensor, dim: str | EllipsisType | None, index: Tensor, source: Tensor, *, alpha: Number | _complex = ...
 ) -> Tensor: ...
 @overload
-def index_copy(input: Tensor, dim: _int, index: Tensor, source: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
+def index_copy(input: Tensor, dim: int, index: Tensor, source: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
 def index_copy(input: Tensor, dim: str | EllipsisType | None, index: Tensor, source: Tensor) -> Tensor: ...
 @overload
-def index_fill(input: Tensor, dim: _int, index: Tensor, value: Tensor) -> Tensor: ...
+def index_fill(input: Tensor, dim: int, index: Tensor, value: Tensor) -> Tensor: ...
 @overload
 def index_fill(input: Tensor, dim: str | EllipsisType | None, index: Tensor, value: Tensor) -> Tensor: ...
 @overload
-def index_fill(input: Tensor, dim: _int, index: Tensor, value: Number | _complex) -> Tensor: ...
+def index_fill(input: Tensor, dim: int, index: Tensor, value: Number | _complex) -> Tensor: ...
 @overload
 def index_fill(input: Tensor, dim: str | EllipsisType | None, index: Tensor, value: Number | _complex) -> Tensor: ...
 def index_put(
-    input: Tensor, indices: tuple[Tensor, ...] | list[Tensor] | None, values: Tensor, accumulate: _bool = ...
+    input: Tensor, indices: tuple[Tensor, ...] | list[Tensor] | None, values: Tensor, accumulate: bool = ...
 ) -> Tensor: ...
 def index_put_(
-    input: Tensor, indices: tuple[Tensor, ...] | list[Tensor] | None, values: Tensor, accumulate: _bool = ...
+    input: Tensor, indices: tuple[Tensor, ...] | list[Tensor] | None, values: Tensor, accumulate: bool = ...
 ) -> Tensor: ...
 def index_reduce(
     input: Tensor,
-    dim: _int,
+    dim: int,
     index: Tensor,
     source: Tensor,
     reduce: str,
     *,
-    include_self: _bool = ...,
+    include_self: bool = ...,
     out: Tensor | None = ...,
 ) -> Tensor: ...
 @overload
-def index_select(input: Tensor, dim: _int, index: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
+def index_select(input: Tensor, dim: int, index: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
 def index_select(
     input: Tensor, dim: str | EllipsisType | None, index: Tensor, *, out: Tensor | None = ...
@@ -2505,34 +2502,34 @@ def instance_norm(
     bias: Tensor | None,
     running_mean: Tensor | None,
     running_var: Tensor | None,
-    use_input_stats: _bool,
+    use_input_stats: bool,
     momentum: _float,
     eps: _float,
-    cudnn_enabled: _bool,
+    cudnn_enabled: bool,
 ) -> Tensor: ...
 def int_repr(input: Tensor) -> Tensor: ...
 def inverse(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
-def is_complex(input: Tensor) -> _bool: ...
-def is_conj(input: Tensor) -> _bool: ...
-def is_distributed(input: Tensor) -> _bool: ...
-def is_floating_point(input: Tensor) -> _bool: ...
-def is_grad_enabled() -> _bool: ...
-def is_inference(input: Tensor) -> _bool: ...
-def is_inference_mode_enabled() -> _bool: ...
-def is_neg(input: Tensor) -> _bool: ...
-def is_nonzero(input: Tensor) -> _bool: ...
-def is_same_size(input: Tensor, other: Tensor) -> _bool: ...
-def is_signed(input: Tensor) -> _bool: ...
-def is_vulkan_available() -> _bool: ...
-def isclose(input: Tensor, other: Tensor, rtol: _float = ..., atol: _float = ..., equal_nan: _bool = ...) -> Tensor: ...
+def is_complex(input: Tensor) -> bool: ...
+def is_conj(input: Tensor) -> bool: ...
+def is_distributed(input: Tensor) -> bool: ...
+def is_floating_point(input: Tensor) -> bool: ...
+def is_grad_enabled() -> bool: ...
+def is_inference(input: Tensor) -> bool: ...
+def is_inference_mode_enabled() -> bool: ...
+def is_neg(input: Tensor) -> bool: ...
+def is_nonzero(input: Tensor) -> bool: ...
+def is_same_size(input: Tensor, other: Tensor) -> bool: ...
+def is_signed(input: Tensor) -> bool: ...
+def is_vulkan_available() -> bool: ...
+def isclose(input: Tensor, other: Tensor, rtol: _float = ..., atol: _float = ..., equal_nan: bool = ...) -> Tensor: ...
 def isfinite(input: Tensor) -> Tensor: ...
 @overload
 def isin(
     elements: Tensor,
     test_elements: Tensor,
     *,
-    assume_unique: _bool = ...,
-    invert: _bool = ...,
+    assume_unique: bool = ...,
+    invert: bool = ...,
     out: Tensor | None = ...,
 ) -> Tensor: ...
 @overload
@@ -2540,8 +2537,8 @@ def isin(
     element: Number | _complex,
     test_elements: Tensor,
     *,
-    assume_unique: _bool = ...,
-    invert: _bool = ...,
+    assume_unique: bool = ...,
+    invert: bool = ...,
     out: Tensor | None = ...,
 ) -> Tensor: ...
 @overload
@@ -2549,8 +2546,8 @@ def isin(
     elements: Tensor,
     test_element: Number | _complex,
     *,
-    assume_unique: _bool = ...,
-    invert: _bool = ...,
+    assume_unique: bool = ...,
+    invert: bool = ...,
     out: Tensor | None = ...,
 ) -> Tensor: ...
 def isinf(input: Tensor) -> Tensor: ...
@@ -2560,76 +2557,76 @@ def isposinf(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def isreal(input: Tensor) -> Tensor: ...
 def istft(
     input: Tensor,
-    n_fft: _int,
-    hop_length: _int | None = ...,
-    win_length: _int | None = ...,
+    n_fft: int,
+    hop_length: int | None = ...,
+    win_length: int | None = ...,
     window: Tensor | None = ...,
-    center: _bool = ...,
-    normalized: _bool = ...,
-    onesided: _bool | None = ...,
-    length: _int | None = ...,
-    return_complex: _bool = ...,
+    center: bool = ...,
+    normalized: bool = ...,
+    onesided: bool | None = ...,
+    length: int | None = ...,
+    return_complex: bool = ...,
 ) -> Tensor: ...
 @overload
 def kaiser_window(
-    window_length: _int,
+    window_length: int,
     *,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def kaiser_window(
-    window_length: _int,
-    periodic: _bool,
+    window_length: int,
+    periodic: bool,
     *,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def kaiser_window(
-    window_length: _int,
-    periodic: _bool,
+    window_length: int,
+    periodic: bool,
     beta: _float,
     *,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
-def kl_div(input: Tensor, target: Tensor, reduction: _int = ..., *, log_target: _bool = ...) -> Tensor: ...
+def kl_div(input: Tensor, target: Tensor, reduction: int = ..., *, log_target: bool = ...) -> Tensor: ...
 def kron(input: Tensor, other: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
 def kthvalue(
     input: Tensor,
-    k: _int | SymInt,
-    dim: _int = ...,
-    keepdim: _bool = ...,
+    k: int | SymInt,
+    dim: int = ...,
+    keepdim: bool = ...,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...,
 ) -> torch.return_types.kthvalue: ...
 @overload
 def kthvalue(
     input: Tensor,
-    k: _int | SymInt,
+    k: int | SymInt,
     dim: str | EllipsisType | None,
-    keepdim: _bool = ...,
+    keepdim: bool = ...,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...,
 ) -> torch.return_types.kthvalue: ...
 def layer_norm(
     input: Tensor,
-    normalized_shape: Sequence[_int | SymInt],
+    normalized_shape: Sequence[int | SymInt],
     weight: Tensor | None = ...,
     bias: Tensor | None = ...,
     eps: _float = ...,
-    cudnn_enable: _bool = ...,
+    cudnn_enable: bool = ...,
 ) -> Tensor: ...
 def lcm(input: Tensor, other: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def lcm_(input: Tensor, other: Tensor) -> Tensor: ...
@@ -2656,65 +2653,65 @@ def lgamma(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def linspace(
     start: Number,
     end: Number,
-    steps: _int | None = ...,
+    steps: int | None = ...,
     *,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     device: DeviceLikeType | None = ...,
-    requires_grad: _bool = ...,
-    pin_memory: _bool = ...,
+    requires_grad: bool = ...,
+    pin_memory: bool = ...,
 ) -> Tensor: ...
 @overload
 def linspace(
     start: Tensor,
     end: Tensor,
-    steps: _int,
+    steps: int,
     *,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def linspace(
     start: Number | _complex,
     end: Tensor,
-    steps: _int,
+    steps: int,
     *,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def linspace(
     start: Tensor,
     end: Number | _complex,
-    steps: _int,
+    steps: int,
     *,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def linspace(
     start: Number | _complex,
     end: Number | _complex,
-    steps: _int,
+    steps: int,
     *,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 def log(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def log10(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
@@ -2725,13 +2722,13 @@ def log2(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def log2_(input: Tensor) -> Tensor: ...
 def log_(input: Tensor) -> Tensor: ...
 @overload
-def log_softmax(input: Tensor, dim: _int, dtype: _dtype | None = ..., *, out: Tensor | None = ...) -> Tensor: ...
+def log_softmax(input: Tensor, dim: int, dtype: _dtype | None = ..., *, out: Tensor | None = ...) -> Tensor: ...
 @overload
 def log_softmax(input: Tensor, dim: str | EllipsisType | None, *, dtype: _dtype | None = ...) -> Tensor: ...
 def logaddexp(input: Tensor, other: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def logaddexp2(input: Tensor, other: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
-def logcumsumexp(input: Tensor, dim: _int, *, out: Tensor | None = ...) -> Tensor: ...
+def logcumsumexp(input: Tensor, dim: int, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
 def logcumsumexp(input: Tensor, dim: str | EllipsisType | None, *, out: Tensor | None = ...) -> Tensor: ...
 def logdet(input: Tensor) -> Tensor: ...
@@ -2745,76 +2742,76 @@ def logit_(input: Tensor, eps: _float | None = ...) -> Tensor: ...
 def logspace(
     start: Number,
     end: Number,
-    steps: _int | None = ...,
+    steps: int | None = ...,
     base: _float = ...,
     *,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     device: DeviceLikeType | None = ...,
-    requires_grad: _bool = ...,
-    pin_memory: _bool = ...,
+    requires_grad: bool = ...,
+    pin_memory: bool = ...,
 ) -> Tensor: ...
 @overload
 def logspace(
     start: Tensor,
     end: Tensor,
-    steps: _int,
+    steps: int,
     base: _float = ...,
     *,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def logspace(
     start: Number | _complex,
     end: Tensor,
-    steps: _int,
+    steps: int,
     base: _float = ...,
     *,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def logspace(
     start: Tensor,
     end: Number | _complex,
-    steps: _int,
+    steps: int,
     base: _float = ...,
     *,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def logspace(
     start: Number | _complex,
     end: Number | _complex,
-    steps: _int,
+    steps: int,
     base: _float = ...,
     *,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
-def logsumexp(input: Tensor, dim: _int | _size, keepdim: _bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
+def logsumexp(input: Tensor, dim: int | _size, keepdim: bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
 @overload
 def logsumexp(
-    input: Tensor, dim: Sequence[str | EllipsisType | None], keepdim: _bool = ..., *, out: Tensor | None = ...
+    input: Tensor, dim: Sequence[str | EllipsisType | None], keepdim: bool = ..., *, out: Tensor | None = ...
 ) -> Tensor: ...
 @overload
 def lstm(
@@ -2822,23 +2819,23 @@ def lstm(
     batch_sizes: Tensor,
     hx: tuple[Tensor, ...] | list[Tensor] | None,
     params: tuple[Tensor, ...] | list[Tensor] | None,
-    has_biases: _bool,
-    num_layers: _int,
+    has_biases: bool,
+    num_layers: int,
     dropout: _float,
-    train: _bool,
-    bidirectional: _bool,
+    train: bool,
+    bidirectional: bool,
 ) -> tuple[Tensor, Tensor, Tensor]: ...
 @overload
 def lstm(
     input: Tensor,
     hx: tuple[Tensor, ...] | list[Tensor] | None,
     params: tuple[Tensor, ...] | list[Tensor] | None,
-    has_biases: _bool,
-    num_layers: _int,
+    has_biases: bool,
+    num_layers: int,
     dropout: _float,
-    train: _bool,
-    bidirectional: _bool,
-    batch_first: _bool,
+    train: bool,
+    bidirectional: bool,
+    batch_first: bool,
 ) -> tuple[Tensor, Tensor, Tensor]: ...
 def lstm_cell(
     input: Tensor,
@@ -2856,13 +2853,13 @@ def lu_solve(input: Tensor, LU_data: Tensor, LU_pivots: Tensor, *, out: Tensor |
 def lu_unpack(
     LU_data: Tensor,
     LU_pivots: Tensor,
-    unpack_data: _bool = ...,
-    unpack_pivots: _bool = ...,
+    unpack_data: bool = ...,
+    unpack_pivots: bool = ...,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...,
 ) -> torch.return_types.lu_unpack: ...
 def margin_ranking_loss(
-    input1: Tensor, input2: Tensor, target: Tensor, margin: _float = ..., reduction: _int = ...
+    input1: Tensor, input2: Tensor, target: Tensor, margin: _float = ..., reduction: int = ...
 ) -> Tensor: ...
 @overload
 def masked_fill(input: Tensor, mask: Tensor, value: Tensor) -> Tensor: ...
@@ -2872,54 +2869,54 @@ def masked_scatter(input: Tensor, mask: Tensor, source: Tensor) -> Tensor: ...
 def masked_select(input: Tensor, mask: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def matmul(input: Tensor, other: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def matrix_exp(input: Tensor) -> Tensor: ...
-def matrix_power(input: Tensor, n: _int, *, out: Tensor | None = ...) -> Tensor: ...
+def matrix_power(input: Tensor, n: int, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
 def max(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
 def max(input: Tensor, other: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
 def max(
-    input: Tensor, dim: _int, keepdim: _bool = ..., *, out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...
+    input: Tensor, dim: int, keepdim: bool = ..., *, out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...
 ) -> torch.return_types.max: ...
 @overload
 def max(
     input: Tensor,
     dim: str | EllipsisType | None,
-    keepdim: _bool = ...,
+    keepdim: bool = ...,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...,
 ) -> torch.return_types.max: ...
 def max_pool1d(
     input: Tensor,
-    kernel_size: _int | _size,
-    stride: _int | _size = ...,
-    padding: _int | _size = ...,
-    dilation: _int | _size = ...,
-    ceil_mode: _bool = ...,
+    kernel_size: int | _size,
+    stride: int | _size = ...,
+    padding: int | _size = ...,
+    dilation: int | _size = ...,
+    ceil_mode: bool = ...,
 ) -> Tensor: ...
 def max_pool1d_with_indices(
     input: Tensor,
-    kernel_size: _int | _size,
-    stride: _int | _size = ...,
-    padding: _int | _size = ...,
-    dilation: _int | _size = ...,
-    ceil_mode: _bool = ...,
+    kernel_size: int | _size,
+    stride: int | _size = ...,
+    padding: int | _size = ...,
+    dilation: int | _size = ...,
+    ceil_mode: bool = ...,
 ) -> tuple[Tensor, Tensor]: ...
 def max_pool2d(
     input: Tensor,
-    kernel_size: _int | _size,
-    stride: _int | _size = ...,
-    padding: _int | _size = ...,
-    dilation: _int | _size = ...,
-    ceil_mode: _bool = ...,
+    kernel_size: int | _size,
+    stride: int | _size = ...,
+    padding: int | _size = ...,
+    dilation: int | _size = ...,
+    ceil_mode: bool = ...,
 ) -> Tensor: ...
 def max_pool3d(
     input: Tensor,
-    kernel_size: _int | _size,
-    stride: _int | _size = ...,
-    padding: _int | _size = ...,
-    dilation: _int | _size = ...,
-    ceil_mode: _bool = ...,
+    kernel_size: int | _size,
+    stride: int | _size = ...,
+    padding: int | _size = ...,
+    dilation: int | _size = ...,
+    ceil_mode: bool = ...,
 ) -> Tensor: ...
 def maximum(input: Tensor, other: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
@@ -2927,8 +2924,8 @@ def mean(input: Tensor, *, dtype: _dtype | None = ..., out: Tensor | None = ...)
 @overload
 def mean(
     input: Tensor,
-    dim: _int | _size | None,
-    keepdim: _bool = ...,
+    dim: int | _size | None,
+    keepdim: bool = ...,
     *,
     dtype: _dtype | None = ...,
     out: Tensor | None = ...,
@@ -2937,7 +2934,7 @@ def mean(
 def mean(
     input: Tensor,
     dim: Sequence[str | EllipsisType | None],
-    keepdim: _bool = ...,
+    keepdim: bool = ...,
     *,
     dtype: _dtype | None = ...,
     out: Tensor | None = ...,
@@ -2946,13 +2943,13 @@ def mean(
 def median(input: Tensor) -> Tensor: ...
 @overload
 def median(
-    input: Tensor, dim: _int, keepdim: _bool = ..., *, out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...
+    input: Tensor, dim: int, keepdim: bool = ..., *, out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...
 ) -> torch.return_types.median: ...
 @overload
 def median(
     input: Tensor,
     dim: str | EllipsisType | None,
-    keepdim: _bool = ...,
+    keepdim: bool = ...,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...,
 ) -> torch.return_types.median: ...
@@ -2962,13 +2959,13 @@ def min(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def min(input: Tensor, other: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
 def min(
-    input: Tensor, dim: _int, keepdim: _bool = ..., *, out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...
+    input: Tensor, dim: int, keepdim: bool = ..., *, out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...
 ) -> torch.return_types.min: ...
 @overload
 def min(
     input: Tensor,
     dim: str | EllipsisType | None,
-    keepdim: _bool = ...,
+    keepdim: bool = ...,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...,
 ) -> torch.return_types.min: ...
@@ -2979,7 +2976,7 @@ def miopen_batch_norm(
     bias: Tensor | None,
     running_mean: Tensor | None,
     running_var: Tensor | None,
-    training: _bool,
+    training: bool,
     exponential_average_factor: _float,
     epsilon: _float,
 ) -> tuple[Tensor, Tensor, Tensor]: ...
@@ -2987,12 +2984,12 @@ def miopen_convolution(
     input: Tensor,
     weight: Tensor,
     bias: Tensor | None,
-    padding: Sequence[_int | SymInt],
-    stride: Sequence[_int | SymInt],
-    dilation: Sequence[_int | SymInt],
-    groups: _int | SymInt,
-    benchmark: _bool,
-    deterministic: _bool,
+    padding: Sequence[int | SymInt],
+    stride: Sequence[int | SymInt],
+    dilation: Sequence[int | SymInt],
+    groups: int | SymInt,
+    benchmark: bool,
+    deterministic: bool,
 ) -> Tensor: ...
 def miopen_convolution_add_relu(
     input: Tensor,
@@ -3000,87 +2997,87 @@ def miopen_convolution_add_relu(
     z: Tensor,
     alpha: Number | _complex | None,
     bias: Tensor | None,
-    stride: Sequence[_int | SymInt],
-    padding: Sequence[_int | SymInt],
-    dilation: Sequence[_int | SymInt],
-    groups: _int | SymInt,
+    stride: Sequence[int | SymInt],
+    padding: Sequence[int | SymInt],
+    dilation: Sequence[int | SymInt],
+    groups: int | SymInt,
 ) -> Tensor: ...
 def miopen_convolution_relu(
     input: Tensor,
     weight: Tensor,
     bias: Tensor | None,
-    stride: Sequence[_int | SymInt],
-    padding: Sequence[_int | SymInt],
-    dilation: Sequence[_int | SymInt],
-    groups: _int | SymInt,
+    stride: Sequence[int | SymInt],
+    padding: Sequence[int | SymInt],
+    dilation: Sequence[int | SymInt],
+    groups: int | SymInt,
 ) -> Tensor: ...
 def miopen_convolution_transpose(
     input: Tensor,
     weight: Tensor,
     bias: Tensor | None,
-    padding: Sequence[_int | SymInt],
-    output_padding: Sequence[_int | SymInt],
-    stride: Sequence[_int | SymInt],
-    dilation: Sequence[_int | SymInt],
-    groups: _int | SymInt,
-    benchmark: _bool,
-    deterministic: _bool,
+    padding: Sequence[int | SymInt],
+    output_padding: Sequence[int | SymInt],
+    stride: Sequence[int | SymInt],
+    dilation: Sequence[int | SymInt],
+    groups: int | SymInt,
+    benchmark: bool,
+    deterministic: bool,
 ) -> Tensor: ...
 def miopen_depthwise_convolution(
     input: Tensor,
     weight: Tensor,
     bias: Tensor | None,
-    padding: Sequence[_int | SymInt],
-    stride: Sequence[_int | SymInt],
-    dilation: Sequence[_int | SymInt],
-    groups: _int | SymInt,
-    benchmark: _bool,
-    deterministic: _bool,
+    padding: Sequence[int | SymInt],
+    stride: Sequence[int | SymInt],
+    dilation: Sequence[int | SymInt],
+    groups: int | SymInt,
+    benchmark: bool,
+    deterministic: bool,
 ) -> Tensor: ...
 def miopen_rnn(
     input: Tensor,
     weight: tuple[Tensor, ...] | list[Tensor] | None,
-    weight_stride0: _int,
+    weight_stride0: int,
     hx: Tensor,
     cx: Tensor | None,
-    mode: _int,
-    hidden_size: _int,
-    num_layers: _int,
-    batch_first: _bool,
+    mode: int,
+    hidden_size: int,
+    num_layers: int,
+    batch_first: bool,
     dropout: _float,
-    train: _bool,
-    bidirectional: _bool,
+    train: bool,
+    bidirectional: bool,
     batch_sizes: _size,
     dropout_state: Tensor | None,
 ) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor]: ...
-def mkldnn_adaptive_avg_pool2d(input: Tensor, output_size: _int | _size, *, out: Tensor | None = ...) -> Tensor: ...
+def mkldnn_adaptive_avg_pool2d(input: Tensor, output_size: int | _size, *, out: Tensor | None = ...) -> Tensor: ...
 def mkldnn_convolution(
     input: Tensor,
     weight: Tensor,
     bias: Tensor | None,
-    padding: Sequence[_int | SymInt],
-    stride: Sequence[_int | SymInt],
-    dilation: Sequence[_int | SymInt],
-    groups: _int | SymInt,
+    padding: Sequence[int | SymInt],
+    stride: Sequence[int | SymInt],
+    dilation: Sequence[int | SymInt],
+    groups: int | SymInt,
 ) -> Tensor: ...
 def mkldnn_linear_backward_weights(
-    grad_output: Tensor, input: Tensor, weight: Tensor, bias_defined: _bool
+    grad_output: Tensor, input: Tensor, weight: Tensor, bias_defined: bool
 ) -> tuple[Tensor, Tensor]: ...
 def mkldnn_max_pool2d(
     input: Tensor,
-    kernel_size: _int | _size,
-    stride: _int | _size = ...,
-    padding: _int | _size = ...,
-    dilation: _int | _size = ...,
-    ceil_mode: _bool = ...,
+    kernel_size: int | _size,
+    stride: int | _size = ...,
+    padding: int | _size = ...,
+    dilation: int | _size = ...,
+    ceil_mode: bool = ...,
 ) -> Tensor: ...
 def mkldnn_max_pool3d(
     input: Tensor,
-    kernel_size: _int | _size,
-    stride: _int | _size = ...,
-    padding: _int | _size = ...,
-    dilation: _int | _size = ...,
-    ceil_mode: _bool = ...,
+    kernel_size: int | _size,
+    stride: int | _size = ...,
+    padding: int | _size = ...,
+    dilation: int | _size = ...,
+    ceil_mode: bool = ...,
 ) -> Tensor: ...
 def mkldnn_rnn_layer(
     input: Tensor,
@@ -3090,15 +3087,15 @@ def mkldnn_rnn_layer(
     weight3: Tensor,
     hx_: Tensor,
     cx_: Tensor,
-    reverse: _bool,
+    reverse: bool,
     batch_sizes: _size,
-    mode: _int,
-    hidden_size: _int,
-    num_layers: _int,
-    has_biases: _bool,
-    bidirectional: _bool,
-    batch_first: _bool,
-    train: _bool,
+    mode: int,
+    hidden_size: int,
+    num_layers: int,
+    has_biases: bool,
+    bidirectional: bool,
+    batch_first: bool,
+    train: bool,
 ) -> tuple[Tensor, Tensor, Tensor, Tensor]: ...
 @overload
 def mm(input: Tensor, mat2: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
@@ -3107,8 +3104,8 @@ def mm(input: Tensor, mat2: Tensor, out_dtype: _dtype, *, out: Tensor | None = .
 @overload
 def mode(
     input: Tensor,
-    dim: _int = ...,
-    keepdim: _bool = ...,
+    dim: int = ...,
+    keepdim: bool = ...,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...,
 ) -> torch.return_types.mode: ...
@@ -3116,16 +3113,16 @@ def mode(
 def mode(
     input: Tensor,
     dim: str | EllipsisType | None,
-    keepdim: _bool = ...,
+    keepdim: bool = ...,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...,
 ) -> torch.return_types.mode: ...
 @overload
-def moveaxis(input: Tensor, source: _int, destination: _int) -> Tensor: ...
+def moveaxis(input: Tensor, source: int, destination: int) -> Tensor: ...
 @overload
 def moveaxis(input: Tensor, source: _size, destination: _size) -> Tensor: ...
 @overload
-def movedim(input: Tensor, source: _int, destination: _int) -> Tensor: ...
+def movedim(input: Tensor, source: int, destination: int) -> Tensor: ...
 @overload
 def movedim(input: Tensor, source: _size, destination: _size) -> Tensor: ...
 def msort(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
@@ -3134,8 +3131,8 @@ def mul(
 ) -> Tensor: ...
 def multinomial(
     input: Tensor,
-    num_samples: _int | SymInt,
-    replacement: _bool = ...,
+    num_samples: int | SymInt,
+    replacement: bool = ...,
     *,
     generator: Generator | None = ...,
     out: Tensor | None = ...,
@@ -3145,7 +3142,7 @@ def multiply(input: Tensor, other: Tensor, *, out: Tensor | None = ...) -> Tenso
 @overload
 def multiply(input: Tensor, other: Number | _complex) -> Tensor: ...
 def mv(input: Tensor, vec: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
-def mvlgamma(input: Tensor, p: _int, *, out: Tensor | None = ...) -> Tensor: ...
+def mvlgamma(input: Tensor, p: int, *, out: Tensor | None = ...) -> Tensor: ...
 def nan_to_num(
     input: Tensor,
     nan: _float | None = ...,
@@ -3159,8 +3156,8 @@ def nan_to_num_(
 ) -> Tensor: ...
 def nanmean(
     input: Tensor,
-    dim: _int | _size | None = ...,
-    keepdim: _bool = ...,
+    dim: int | _size | None = ...,
+    keepdim: bool = ...,
     *,
     dtype: _dtype | None = ...,
     out: Tensor | None = ...,
@@ -3169,13 +3166,13 @@ def nanmean(
 def nanmedian(input: Tensor) -> Tensor: ...
 @overload
 def nanmedian(
-    input: Tensor, dim: _int, keepdim: _bool = ..., *, out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...
+    input: Tensor, dim: int, keepdim: bool = ..., *, out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...
 ) -> torch.return_types.nanmedian: ...
 @overload
 def nanmedian(
     input: Tensor,
     dim: str | EllipsisType | None,
-    keepdim: _bool = ...,
+    keepdim: bool = ...,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...,
 ) -> torch.return_types.nanmedian: ...
@@ -3183,8 +3180,8 @@ def nanmedian(
 def nanquantile(
     input: Tensor,
     q: Tensor,
-    dim: _int | None = ...,
-    keepdim: _bool = ...,
+    dim: int | None = ...,
+    keepdim: bool = ...,
     *,
     interpolation: str = ...,
     out: Tensor | None = ...,
@@ -3193,26 +3190,26 @@ def nanquantile(
 def nanquantile(
     input: Tensor,
     q: _float,
-    dim: _int | None = ...,
-    keepdim: _bool = ...,
+    dim: int | None = ...,
+    keepdim: bool = ...,
     *,
     interpolation: str = ...,
     out: Tensor | None = ...,
 ) -> Tensor: ...
 def nansum(
     input: Tensor,
-    dim: _int | _size | None = ...,
-    keepdim: _bool = ...,
+    dim: int | _size | None = ...,
+    keepdim: bool = ...,
     *,
     dtype: _dtype | None = ...,
     out: Tensor | None = ...,
 ) -> Tensor: ...
 @overload
-def narrow(input: Tensor, dim: _int, start: Tensor, length: _int | SymInt) -> Tensor: ...
+def narrow(input: Tensor, dim: int, start: Tensor, length: int | SymInt) -> Tensor: ...
 @overload
-def narrow(input: Tensor, dim: _int, start: _int | SymInt, length: _int | SymInt) -> Tensor: ...
+def narrow(input: Tensor, dim: int, start: int | SymInt, length: int | SymInt) -> Tensor: ...
 def narrow_copy(
-    input: Tensor, dim: _int, start: _int | SymInt, length: _int | SymInt, *, out: Tensor | None = ...
+    input: Tensor, dim: int, start: int | SymInt, length: int | SymInt, *, out: Tensor | None = ...
 ) -> Tensor: ...
 def native_batch_norm(
     input: Tensor,
@@ -3220,30 +3217,30 @@ def native_batch_norm(
     bias: Tensor | None,
     running_mean: Tensor | None,
     running_var: Tensor | None,
-    training: _bool,
+    training: bool,
     momentum: _float,
     eps: _float,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...,
 ) -> tuple[Tensor, Tensor, Tensor]: ...
-def native_channel_shuffle(input: Tensor, groups: _int | SymInt) -> Tensor: ...
-def native_dropout(input: Tensor, p: _float, train: _bool | None) -> tuple[Tensor, Tensor]: ...
+def native_channel_shuffle(input: Tensor, groups: int | SymInt) -> Tensor: ...
+def native_dropout(input: Tensor, p: _float, train: bool | None) -> tuple[Tensor, Tensor]: ...
 def native_group_norm(
     input: Tensor,
     weight: Tensor | None,
     bias: Tensor | None,
-    N: _int | SymInt,
-    C: _int | SymInt,
-    HxW: _int | SymInt,
-    group: _int,
+    N: int | SymInt,
+    C: int | SymInt,
+    HxW: int | SymInt,
+    group: int,
     eps: _float,
 ) -> tuple[Tensor, Tensor, Tensor]: ...
 def native_layer_norm(
-    input: Tensor, normalized_shape: Sequence[_int | SymInt], weight: Tensor | None, bias: Tensor | None, eps: _float
+    input: Tensor, normalized_shape: Sequence[int | SymInt], weight: Tensor | None, bias: Tensor | None, eps: _float
 ) -> tuple[Tensor, Tensor, Tensor]: ...
 @overload
 def native_norm(
-    input: Tensor, p: Number | _complex | None, dim: _int | _size, keepdim: _bool, dtype: _dtype | None
+    input: Tensor, p: Number | _complex | None, dim: int | _size, keepdim: bool, dtype: _dtype | None
 ) -> Tensor: ...
 @overload
 def native_norm(input: Tensor, p: Number | _complex = ...) -> Tensor: ...
@@ -3260,10 +3257,8 @@ def nextafter(input: Tensor, other: Tensor, *, out: Tensor | None = ...) -> Tens
 def nonzero(input: Tensor, *, as_tuple: Literal[False] = ..., out: Tensor | None = ...) -> Tensor: ...
 @overload
 def nonzero(input: Tensor, *, as_tuple: Literal[True]) -> tuple[Tensor, ...]: ...
-def nonzero_static(
-    input: Tensor, *, size: _int | SymInt, fill_value: _int = ..., out: Tensor | None = ...
-) -> Tensor: ...
-def norm_except_dim(v: Tensor, pow: _int = ..., dim: _int = ...) -> Tensor: ...
+def nonzero_static(input: Tensor, *, size: int | SymInt, fill_value: int = ..., out: Tensor | None = ...) -> Tensor: ...
+def norm_except_dim(v: Tensor, pow: int = ..., dim: int = ...) -> Tensor: ...
 @overload
 def normal(mean: Tensor, std: Tensor, *, generator: Generator | None = ..., out: Tensor | None = ...) -> Tensor: ...
 @overload
@@ -3276,45 +3271,45 @@ def normal(mean: _float, std: Tensor, *, generator: Generator | None = ..., out:
 def normal(
     mean: _float,
     std: _float,
-    size: Sequence[_int | SymInt],
+    size: Sequence[int | SymInt],
     *,
     generator: Generator | None = ...,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def not_equal(input: Tensor, other: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
 def not_equal(input: Tensor, other: Number | _complex, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
-def nuclear_norm(input: Tensor, dim: _int | _size, keepdim: _bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
+def nuclear_norm(input: Tensor, dim: int | _size, keepdim: bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
 @overload
-def nuclear_norm(input: Tensor, keepdim: _bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
-def numel(self: Tensor) -> _int: ...
+def nuclear_norm(input: Tensor, keepdim: bool = ..., *, out: Tensor | None = ...) -> Tensor: ...
+def numel(self: Tensor) -> int: ...
 @overload
 def ones(
-    size: Sequence[_int | SymInt],
+    size: Sequence[int | SymInt],
     *,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def ones(
-    *size: _int | SymInt,
+    *size: int | SymInt,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def ones(
@@ -3324,18 +3319,18 @@ def ones(
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def ones(
-    *size: _int,
+    *size: int,
     names: Sequence[str | EllipsisType | None] | None,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 def ones_like(
     input: Tensor,
@@ -3344,33 +3339,33 @@ def ones_like(
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 def orgqr(input: Tensor, input2: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def ormqr(
     input: Tensor,
     input2: Tensor,
     input3: Tensor,
-    left: _bool = ...,
-    transpose: _bool = ...,
+    left: bool = ...,
+    transpose: bool = ...,
     *,
     out: Tensor | None = ...,
 ) -> Tensor: ...
 def outer(input: Tensor, vec2: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
-def pairwise_distance(x1: Tensor, x2: Tensor, p: _float = ..., eps: _float = ..., keepdim: _bool = ...) -> Tensor: ...
+def pairwise_distance(x1: Tensor, x2: Tensor, p: _float = ..., eps: _float = ..., keepdim: bool = ...) -> Tensor: ...
 def pdist(input: Tensor, p: _float = ...) -> Tensor: ...
 def permute(input: Tensor, dims: _size) -> Tensor: ...
 def permute_copy(input: Tensor, dims: _size, *, out: Tensor | None = ...) -> Tensor: ...
 def pinverse(input: Tensor, rcond: _float = ...) -> Tensor: ...
-def pixel_shuffle(input: Tensor, upscale_factor: _int) -> Tensor: ...
-def pixel_unshuffle(input: Tensor, downscale_factor: _int) -> Tensor: ...
+def pixel_shuffle(input: Tensor, upscale_factor: int) -> Tensor: ...
+def pixel_unshuffle(input: Tensor, downscale_factor: int) -> Tensor: ...
 def poisson(input: Tensor, generator: Generator | None = ...) -> Tensor: ...
 def poisson_nll_loss(
-    input: Tensor, target: Tensor, log_input: _bool, full: _bool, eps: _float, reduction: _int
+    input: Tensor, target: Tensor, log_input: bool, full: bool, eps: _float, reduction: int
 ) -> Tensor: ...
 def polar(abs: Tensor, angle: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
-def polygamma(n: _int, input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
+def polygamma(n: int, input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def positive(input: Tensor) -> Tensor: ...
 @overload
 def pow(input: Tensor, exponent: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
@@ -3383,33 +3378,33 @@ def prelu(input: Tensor, weight: Tensor) -> Tensor: ...
 def prod(input: Tensor, *, dtype: _dtype | None = ...) -> Tensor: ...
 @overload
 def prod(
-    input: Tensor, dim: _int, keepdim: _bool = ..., *, dtype: _dtype | None = ..., out: Tensor | None = ...
+    input: Tensor, dim: int, keepdim: bool = ..., *, dtype: _dtype | None = ..., out: Tensor | None = ...
 ) -> Tensor: ...
 @overload
 def prod(
     input: Tensor,
     dim: str | EllipsisType | None,
-    keepdim: _bool = ...,
+    keepdim: bool = ...,
     *,
     dtype: _dtype | None = ...,
     out: Tensor | None = ...,
 ) -> Tensor: ...
 def promote_types(type1: _dtype, type2: _dtype) -> _dtype: ...
-def put(input: Tensor, index: Tensor, source: Tensor, accumulate: _bool = ...) -> Tensor: ...
-def q_per_channel_axis(input: Tensor) -> _int: ...
+def put(input: Tensor, index: Tensor, source: Tensor, accumulate: bool = ...) -> Tensor: ...
+def q_per_channel_axis(input: Tensor) -> int: ...
 def q_per_channel_scales(input: Tensor) -> Tensor: ...
 def q_per_channel_zero_points(input: Tensor) -> Tensor: ...
 def q_scale(input: Tensor) -> _float: ...
-def q_zero_point(input: Tensor) -> _int: ...
+def q_zero_point(input: Tensor) -> int: ...
 def qr(
-    input: Tensor, some: _bool = ..., *, out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...
+    input: Tensor, some: bool = ..., *, out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...
 ) -> torch.return_types.qr: ...
 @overload
 def quantile(
     input: Tensor,
     q: Tensor,
-    dim: _int | None = ...,
-    keepdim: _bool = ...,
+    dim: int | None = ...,
+    keepdim: bool = ...,
     *,
     interpolation: str = ...,
     out: Tensor | None = ...,
@@ -3418,22 +3413,22 @@ def quantile(
 def quantile(
     input: Tensor,
     q: _float,
-    dim: _int | None = ...,
-    keepdim: _bool = ...,
+    dim: int | None = ...,
+    keepdim: bool = ...,
     *,
     interpolation: str = ...,
     out: Tensor | None = ...,
 ) -> Tensor: ...
-def quantize_per_channel(input: Tensor, scales: Tensor, zero_points: Tensor, axis: _int, dtype: _dtype) -> Tensor: ...
+def quantize_per_channel(input: Tensor, scales: Tensor, zero_points: Tensor, axis: int, dtype: _dtype) -> Tensor: ...
 @overload
 def quantize_per_tensor(input: Tensor, scale: Tensor, zero_point: Tensor, dtype: _dtype) -> Tensor: ...
 @overload
-def quantize_per_tensor(input: Tensor, scale: _float, zero_point: _int, dtype: _dtype) -> Tensor: ...
+def quantize_per_tensor(input: Tensor, scale: _float, zero_point: int, dtype: _dtype) -> Tensor: ...
 @overload
 def quantize_per_tensor(
     tensors: tuple[Tensor, ...] | list[Tensor] | None, scales: Tensor, zero_points: Tensor, dtype: _dtype
 ) -> tuple[Tensor, ...]: ...
-def quantize_per_tensor_dynamic(input: Tensor, dtype: _dtype, reduce_range: _bool) -> Tensor: ...
+def quantize_per_tensor_dynamic(input: Tensor, dtype: _dtype, reduce_range: bool) -> Tensor: ...
 def quantized_batch_norm(
     input: Tensor,
     weight: Tensor | None,
@@ -3442,7 +3437,7 @@ def quantized_batch_norm(
     var: Tensor,
     eps: _float,
     output_scale: _float,
-    output_zero_point: _int,
+    output_zero_point: int,
 ) -> Tensor: ...
 def quantized_gru_cell(
     input: Tensor,
@@ -3478,27 +3473,27 @@ def quantized_lstm_cell(
 ) -> tuple[Tensor, Tensor]: ...
 def quantized_max_pool1d(
     input: Tensor,
-    kernel_size: _int | _size,
-    stride: _int | _size = ...,
-    padding: _int | _size = ...,
-    dilation: _int | _size = ...,
-    ceil_mode: _bool = ...,
+    kernel_size: int | _size,
+    stride: int | _size = ...,
+    padding: int | _size = ...,
+    dilation: int | _size = ...,
+    ceil_mode: bool = ...,
 ) -> Tensor: ...
 def quantized_max_pool2d(
     input: Tensor,
-    kernel_size: _int | _size,
-    stride: _int | _size = ...,
-    padding: _int | _size = ...,
-    dilation: _int | _size = ...,
-    ceil_mode: _bool = ...,
+    kernel_size: int | _size,
+    stride: int | _size = ...,
+    padding: int | _size = ...,
+    dilation: int | _size = ...,
+    ceil_mode: bool = ...,
 ) -> Tensor: ...
 def quantized_max_pool3d(
     input: Tensor,
-    kernel_size: _int | _size,
-    stride: _int | _size = ...,
-    padding: _int | _size = ...,
-    dilation: _int | _size = ...,
-    ceil_mode: _bool = ...,
+    kernel_size: int | _size,
+    stride: int | _size = ...,
+    padding: int | _size = ...,
+    dilation: int | _size = ...,
+    ceil_mode: bool = ...,
 ) -> Tensor: ...
 def quantized_rnn_relu_cell(
     input: Tensor,
@@ -3536,91 +3531,91 @@ def rad2deg(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def rad2deg_(input: Tensor) -> Tensor: ...
 @overload
 def rand(
-    size: Sequence[_int | SymInt],
+    size: Sequence[int | SymInt],
     *,
     generator: Generator | None,
     names: Sequence[str | EllipsisType | None] | None,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def rand(
-    *size: _int | SymInt,
+    *size: int | SymInt,
     generator: Generator | None,
     names: Sequence[str | EllipsisType | None] | None,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def rand(
-    size: Sequence[_int | SymInt],
+    size: Sequence[int | SymInt],
     *,
     generator: Generator | None,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def rand(
-    *size: _int | SymInt,
+    *size: int | SymInt,
     generator: Generator | None,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def rand(
-    size: Sequence[_int | SymInt],
+    size: Sequence[int | SymInt],
     *,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def rand(
-    *size: _int | SymInt,
+    *size: int | SymInt,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def rand(
-    size: Sequence[_int | SymInt],
+    size: Sequence[int | SymInt],
     *,
     names: Sequence[str | EllipsisType | None] | None,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def rand(
-    *size: _int | SymInt,
+    *size: int | SymInt,
     names: Sequence[str | EllipsisType | None] | None,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 def rand_like(
     input: Tensor,
@@ -3629,96 +3624,96 @@ def rand_like(
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def randint(
-    low: _int,
-    high: _int,
+    low: int,
+    high: int,
     size: _size,
     *,
     generator: Generator | None = ...,
     dtype: _dtype | None = ...,
     device: DeviceLikeType | None = ...,
-    requires_grad: _bool = ...,
-    pin_memory: _bool = ...,
+    requires_grad: bool = ...,
+    pin_memory: bool = ...,
 ) -> Tensor: ...
 @overload
 def randint(
-    high: _int,
+    high: int,
     size: _size,
     *,
     generator: Generator | None = ...,
     dtype: _dtype | None = ...,
     device: DeviceLikeType | None = ...,
-    requires_grad: _bool = ...,
-    pin_memory: _bool = ...,
+    requires_grad: bool = ...,
+    pin_memory: bool = ...,
 ) -> Tensor: ...
 @overload
 def randint(
-    high: _int | SymInt,
-    size: Sequence[_int | SymInt],
+    high: int | SymInt,
+    size: Sequence[int | SymInt],
     *,
     generator: Generator | None,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def randint(
-    high: _int | SymInt,
-    size: Sequence[_int | SymInt],
+    high: int | SymInt,
+    size: Sequence[int | SymInt],
     *,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def randint(
-    low: _int | SymInt,
-    high: _int | SymInt,
-    size: Sequence[_int | SymInt],
+    low: int | SymInt,
+    high: int | SymInt,
+    size: Sequence[int | SymInt],
     *,
     generator: Generator | None,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def randint(
-    low: _int | SymInt,
-    high: _int | SymInt,
-    size: Sequence[_int | SymInt],
+    low: int | SymInt,
+    high: int | SymInt,
+    size: Sequence[int | SymInt],
     *,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def randint_like(
     input: Tensor,
-    low: _int | SymInt,
-    high: _int | SymInt,
+    low: int | SymInt,
+    high: int | SymInt,
     *,
     memory_format: memory_format | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def randint_like(
@@ -3729,108 +3724,108 @@ def randint_like(
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def randint_like(
     input: Tensor,
-    high: _int | SymInt,
+    high: int | SymInt,
     *,
     memory_format: memory_format | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def randn(
-    size: Sequence[_int | SymInt],
+    size: Sequence[int | SymInt],
     *,
     generator: Generator | None,
     names: Sequence[str | EllipsisType | None] | None,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def randn(
-    *size: _int | SymInt,
+    *size: int | SymInt,
     generator: Generator | None,
     names: Sequence[str | EllipsisType | None] | None,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def randn(
-    size: Sequence[_int | SymInt],
+    size: Sequence[int | SymInt],
     *,
     generator: Generator | None,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def randn(
-    *size: _int | SymInt,
+    *size: int | SymInt,
     generator: Generator | None,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def randn(
-    size: Sequence[_int | SymInt],
+    size: Sequence[int | SymInt],
     *,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def randn(
-    *size: _int | SymInt,
+    *size: int | SymInt,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def randn(
-    size: Sequence[_int | SymInt],
+    size: Sequence[int | SymInt],
     *,
     names: Sequence[str | EllipsisType | None] | None,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def randn(
-    *size: _int | SymInt,
+    *size: int | SymInt,
     names: Sequence[str | EllipsisType | None] | None,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 def randn_like(
     input: Tensor,
@@ -3839,31 +3834,31 @@ def randn_like(
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def randperm(
-    n: _int | SymInt,
+    n: int | SymInt,
     *,
     generator: Generator | None,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def randperm(
-    n: _int | SymInt,
+    n: int | SymInt,
     *,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 def range(
     start: Number,
@@ -3873,8 +3868,8 @@ def range(
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     device: DeviceLikeType | None = ...,
-    requires_grad: _bool = ...,
-    pin_memory: _bool = ...,
+    requires_grad: bool = ...,
+    pin_memory: bool = ...,
 ) -> Tensor: ...
 def ravel(input: Tensor) -> Tensor: ...
 def real(input: Tensor) -> Tensor: ...
@@ -3889,19 +3884,19 @@ def remainder(self: Number | _complex, other: Tensor) -> Tensor: ...
 @overload
 def remainder(input: Tensor, other: Number | _complex, *, out: Tensor | None = ...) -> Tensor: ...
 def renorm(
-    input: Tensor, p: Number | _complex, dim: _int, maxnorm: Number | _complex, *, out: Tensor | None = ...
+    input: Tensor, p: Number | _complex, dim: int, maxnorm: Number | _complex, *, out: Tensor | None = ...
 ) -> Tensor: ...
 @overload
 def repeat_interleave(
-    input: Tensor, repeats: Tensor, dim: _int | None = ..., *, output_size: _int | SymInt | None = ...
+    input: Tensor, repeats: Tensor, dim: int | None = ..., *, output_size: int | SymInt | None = ...
 ) -> Tensor: ...
 @overload
-def repeat_interleave(repeats: Tensor, *, output_size: _int | SymInt | None = ...) -> Tensor: ...
+def repeat_interleave(repeats: Tensor, *, output_size: int | SymInt | None = ...) -> Tensor: ...
 @overload
 def repeat_interleave(
-    input: Tensor, repeats: _int | SymInt, dim: _int | None = ..., *, output_size: _int | SymInt | None = ...
+    input: Tensor, repeats: int | SymInt, dim: int | None = ..., *, output_size: int | SymInt | None = ...
 ) -> Tensor: ...
-def reshape(input: Tensor, shape: Sequence[_int | SymInt]) -> Tensor: ...
+def reshape(input: Tensor, shape: Sequence[int | SymInt]) -> Tensor: ...
 def resize_as_(input: Tensor, the_template: Tensor, *, memory_format: memory_format | None = ...) -> Tensor: ...
 def resize_as_sparse_(input: Tensor, the_template: Tensor) -> Tensor: ...
 def resolve_conj(input: Tensor) -> Tensor: ...
@@ -3915,7 +3910,7 @@ def result_type(tensor: Tensor, other: Number | _complex) -> _dtype: ...
 @overload
 def result_type(scalar1: Number | _complex, scalar2: Number | _complex) -> _dtype: ...
 def rms_norm(
-    input: Tensor, normalized_shape: Sequence[_int | SymInt], weight: Tensor | None = ..., eps: _float | None = ...
+    input: Tensor, normalized_shape: Sequence[int | SymInt], weight: Tensor | None = ..., eps: _float | None = ...
 ) -> Tensor: ...
 @overload
 def rnn_relu(
@@ -3923,23 +3918,23 @@ def rnn_relu(
     batch_sizes: Tensor,
     hx: Tensor,
     params: tuple[Tensor, ...] | list[Tensor] | None,
-    has_biases: _bool,
-    num_layers: _int,
+    has_biases: bool,
+    num_layers: int,
     dropout: _float,
-    train: _bool,
-    bidirectional: _bool,
+    train: bool,
+    bidirectional: bool,
 ) -> tuple[Tensor, Tensor]: ...
 @overload
 def rnn_relu(
     input: Tensor,
     hx: Tensor,
     params: tuple[Tensor, ...] | list[Tensor] | None,
-    has_biases: _bool,
-    num_layers: _int,
+    has_biases: bool,
+    num_layers: int,
     dropout: _float,
-    train: _bool,
-    bidirectional: _bool,
-    batch_first: _bool,
+    train: bool,
+    bidirectional: bool,
+    batch_first: bool,
 ) -> tuple[Tensor, Tensor]: ...
 def rnn_relu_cell(
     input: Tensor, hx: Tensor, w_ih: Tensor, w_hh: Tensor, b_ih: Tensor | None = ..., b_hh: Tensor | None = ...
@@ -3950,51 +3945,51 @@ def rnn_tanh(
     batch_sizes: Tensor,
     hx: Tensor,
     params: tuple[Tensor, ...] | list[Tensor] | None,
-    has_biases: _bool,
-    num_layers: _int,
+    has_biases: bool,
+    num_layers: int,
     dropout: _float,
-    train: _bool,
-    bidirectional: _bool,
+    train: bool,
+    bidirectional: bool,
 ) -> tuple[Tensor, Tensor]: ...
 @overload
 def rnn_tanh(
     input: Tensor,
     hx: Tensor,
     params: tuple[Tensor, ...] | list[Tensor] | None,
-    has_biases: _bool,
-    num_layers: _int,
+    has_biases: bool,
+    num_layers: int,
     dropout: _float,
-    train: _bool,
-    bidirectional: _bool,
-    batch_first: _bool,
+    train: bool,
+    bidirectional: bool,
+    batch_first: bool,
 ) -> tuple[Tensor, Tensor]: ...
 def rnn_tanh_cell(
     input: Tensor, hx: Tensor, w_ih: Tensor, w_hh: Tensor, b_ih: Tensor | None = ..., b_hh: Tensor | None = ...
 ) -> Tensor: ...
-def roll(input: Tensor, shifts: _int | SymInt | Sequence[_int | SymInt], dims: _int | _size = ...) -> Tensor: ...
-def rot90(input: Tensor, k: _int = ..., dims: _size = ...) -> Tensor: ...
+def roll(input: Tensor, shifts: int | SymInt | Sequence[int | SymInt], dims: int | _size = ...) -> Tensor: ...
+def rot90(input: Tensor, k: int = ..., dims: _size = ...) -> Tensor: ...
 @overload
 def round(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
-def round(input: Tensor, *, decimals: _int, out: Tensor | None = ...) -> Tensor: ...
+def round(input: Tensor, *, decimals: int, out: Tensor | None = ...) -> Tensor: ...
 @overload
 def round_(input: Tensor) -> Tensor: ...
 @overload
-def round_(input: Tensor, *, decimals: _int) -> Tensor: ...
+def round_(input: Tensor, *, decimals: int) -> Tensor: ...
 def row_indices_copy(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def row_stack(tensors: tuple[Tensor, ...] | list[Tensor] | None, *, out: Tensor | None = ...) -> Tensor: ...
 def rrelu(
     input: Tensor,
     lower: Number | _complex = ...,
     upper: Number | _complex = ...,
-    training: _bool = ...,
+    training: bool = ...,
     generator: Generator | None = ...,
 ) -> Tensor: ...
 def rrelu_(
     input: Tensor,
     lower: Number | _complex = ...,
     upper: Number | _complex = ...,
-    training: _bool = ...,
+    training: bool = ...,
     generator: Generator | None = ...,
 ) -> Tensor: ...
 def rsqrt(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
@@ -4012,39 +4007,39 @@ def scalar_tensor(
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def scatter(
-    input: Tensor, dim: _int, index: Tensor, src: Tensor, *, reduce: str, out: Tensor | None = ...
+    input: Tensor, dim: int, index: Tensor, src: Tensor, *, reduce: str, out: Tensor | None = ...
 ) -> Tensor: ...
 @overload
-def scatter(input: Tensor, dim: _int, index: Tensor, src: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
+def scatter(input: Tensor, dim: int, index: Tensor, src: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
 def scatter(
-    input: Tensor, dim: _int, index: Tensor, value: Number | _complex, *, reduce: str, out: Tensor | None = ...
+    input: Tensor, dim: int, index: Tensor, value: Number | _complex, *, reduce: str, out: Tensor | None = ...
 ) -> Tensor: ...
 @overload
 def scatter(input: Tensor, dim: str | EllipsisType | None, index: Tensor, src: Tensor) -> Tensor: ...
 @overload
 def scatter(
-    input: Tensor, dim: _int, index: Tensor, value: Number | _complex, *, out: Tensor | None = ...
+    input: Tensor, dim: int, index: Tensor, value: Number | _complex, *, out: Tensor | None = ...
 ) -> Tensor: ...
 @overload
 def scatter(input: Tensor, dim: str | EllipsisType | None, index: Tensor, value: Number | _complex) -> Tensor: ...
 @overload
-def scatter_add(input: Tensor, dim: _int, index: Tensor, src: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
+def scatter_add(input: Tensor, dim: int, index: Tensor, src: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
 def scatter_add(input: Tensor, dim: str | EllipsisType | None, index: Tensor, src: Tensor) -> Tensor: ...
 def scatter_reduce(
     input: Tensor,
-    dim: _int,
+    dim: int,
     index: Tensor,
     src: Tensor,
     reduce: str,
     *,
-    include_self: _bool = ...,
+    include_self: bool = ...,
     out: Tensor | None = ...,
 ) -> Tensor: ...
 @overload
@@ -4052,8 +4047,8 @@ def searchsorted(
     sorted_sequence: Tensor,
     input: Tensor,
     *,
-    out_int32: _bool = ...,
-    right: _bool = ...,
+    out_int32: bool = ...,
+    right: bool = ...,
     side: str | None = ...,
     sorter: Tensor | None = ...,
     out: Tensor | None = ...,
@@ -4063,8 +4058,8 @@ def searchsorted(
     sorted_sequence: Tensor,
     self: Number | _complex,
     *,
-    out_int32: _bool = ...,
-    right: _bool = ...,
+    out_int32: bool = ...,
+    right: bool = ...,
     side: str | None = ...,
     sorter: Tensor | None = ...,
     out: Tensor | None = ...,
@@ -4076,21 +4071,21 @@ def segment_reduce(
     lengths: Tensor | None = ...,
     indices: Tensor | None = ...,
     offsets: Tensor | None = ...,
-    axis: _int = ...,
-    unsafe: _bool = ...,
+    axis: int = ...,
+    unsafe: bool = ...,
     initial: Number | _complex | None = ...,
 ) -> Tensor: ...
 @overload
-def select(input: Tensor, dim: _int, index: _int | SymInt) -> Tensor: ...
+def select(input: Tensor, dim: int, index: int | SymInt) -> Tensor: ...
 @overload
-def select(input: Tensor, dim: str | EllipsisType | None, index: _int) -> Tensor: ...
-def select_copy(input: Tensor, dim: _int, index: _int | SymInt, *, out: Tensor | None = ...) -> Tensor: ...
-def select_scatter(input: Tensor, src: Tensor, dim: _int, index: _int | SymInt) -> Tensor: ...
+def select(input: Tensor, dim: str | EllipsisType | None, index: int) -> Tensor: ...
+def select_copy(input: Tensor, dim: int, index: int | SymInt, *, out: Tensor | None = ...) -> Tensor: ...
+def select_scatter(input: Tensor, src: Tensor, dim: int, index: int | SymInt) -> Tensor: ...
 def selu(input: Tensor) -> Tensor: ...
 def selu_(input: Tensor) -> Tensor: ...
-def set_flush_denormal(mode: _bool) -> _bool: ...
-def set_num_interop_threads(num: _int) -> None: ...
-def set_num_threads(num: _int) -> None: ...
+def set_flush_denormal(mode: bool) -> bool: ...
+def set_num_interop_threads(num: int) -> None: ...
+def set_num_threads(num: int) -> None: ...
 def sgn(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def sigmoid(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def sigmoid_(input: Tensor) -> Tensor: ...
@@ -4104,28 +4099,28 @@ def sinh(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def sinh_(input: Tensor) -> Tensor: ...
 def slice_copy(
     input: Tensor,
-    dim: _int = ...,
-    start: _int | SymInt | None = ...,
-    end: _int | SymInt | None = ...,
-    step: _int | SymInt = ...,
+    dim: int = ...,
+    start: int | SymInt | None = ...,
+    end: int | SymInt | None = ...,
+    step: int | SymInt = ...,
     *,
     out: Tensor | None = ...,
 ) -> Tensor: ...
 def slice_inverse(
     input: Tensor,
     src: Tensor,
-    dim: _int = ...,
-    start: _int | SymInt | None = ...,
-    end: _int | SymInt | None = ...,
-    step: _int | SymInt = ...,
+    dim: int = ...,
+    start: int | SymInt | None = ...,
+    end: int | SymInt | None = ...,
+    step: int | SymInt = ...,
 ) -> Tensor: ...
 def slice_scatter(
     input: Tensor,
     src: Tensor,
-    dim: _int = ...,
-    start: _int | SymInt | None = ...,
-    end: _int | SymInt | None = ...,
-    step: _int | SymInt = ...,
+    dim: int = ...,
+    start: int | SymInt | None = ...,
+    end: int | SymInt | None = ...,
+    step: int | SymInt = ...,
     *,
     out: Tensor | None = ...,
 ) -> Tensor: ...
@@ -4134,23 +4129,23 @@ def slogdet(
 ) -> torch.return_types.slogdet: ...
 def smm(input: Tensor, mat2: Tensor) -> Tensor: ...
 @overload
-def softmax(input: Tensor, dim: _int, dtype: _dtype | None = ..., *, out: Tensor | None = ...) -> Tensor: ...
+def softmax(input: Tensor, dim: int, dtype: _dtype | None = ..., *, out: Tensor | None = ...) -> Tensor: ...
 @overload
 def softmax(input: Tensor, dim: str | EllipsisType | None, *, dtype: _dtype | None = ...) -> Tensor: ...
 @overload
 def sort(
     input: Tensor,
     *,
-    stable: _bool | None,
-    dim: _int = ...,
-    descending: _bool = ...,
+    stable: bool | None,
+    dim: int = ...,
+    descending: bool = ...,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...,
 ) -> torch.return_types.sort: ...
 @overload
 def sort(
     input: Tensor,
-    dim: _int = ...,
-    descending: _bool = ...,
+    dim: int = ...,
+    descending: bool = ...,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...,
 ) -> torch.return_types.sort: ...
@@ -4158,16 +4153,16 @@ def sort(
 def sort(
     input: Tensor,
     *,
-    stable: _bool | None,
+    stable: bool | None,
     dim: str | EllipsisType | None,
-    descending: _bool = ...,
+    descending: bool = ...,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...,
 ) -> torch.return_types.sort: ...
 @overload
 def sort(
     input: Tensor,
     dim: str | EllipsisType | None,
-    descending: _bool = ...,
+    descending: bool = ...,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...,
 ) -> torch.return_types.sort: ...
@@ -4179,8 +4174,8 @@ def sparse_bsc_tensor(
     *,
     dtype: _dtype | None = ...,
     device: DeviceLikeType | None = ...,
-    requires_grad: _bool = ...,
-    check_invariants: _bool | None = ...,
+    requires_grad: bool = ...,
+    check_invariants: bool | None = ...,
 ) -> Tensor: ...
 def sparse_bsr_tensor(
     crow_indices: Tensor | list,
@@ -4190,8 +4185,8 @@ def sparse_bsr_tensor(
     *,
     dtype: _dtype | None = ...,
     device: DeviceLikeType | None = ...,
-    requires_grad: _bool = ...,
-    check_invariants: _bool | None = ...,
+    requires_grad: bool = ...,
+    check_invariants: bool | None = ...,
 ) -> Tensor: ...
 def sparse_compressed_tensor(
     compressed_indices: Tensor | list,
@@ -4202,8 +4197,8 @@ def sparse_compressed_tensor(
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    requires_grad: _bool = ...,
-    check_invariants: _bool | None = ...,
+    requires_grad: bool = ...,
+    check_invariants: bool | None = ...,
 ) -> Tensor: ...
 def sparse_coo_tensor(
     indices: Tensor,
@@ -4212,9 +4207,9 @@ def sparse_coo_tensor(
     *,
     dtype: _dtype | None = ...,
     device: DeviceLikeType | None = ...,
-    requires_grad: _bool = ...,
-    check_invariants: _bool | None = ...,
-    is_coalesced: _bool | None = ...,
+    requires_grad: bool = ...,
+    check_invariants: bool | None = ...,
+    is_coalesced: bool | None = ...,
 ) -> Tensor: ...
 def sparse_csc_tensor(
     ccol_indices: Tensor | list,
@@ -4224,8 +4219,8 @@ def sparse_csc_tensor(
     *,
     dtype: _dtype | None = ...,
     device: DeviceLikeType | None = ...,
-    requires_grad: _bool = ...,
-    check_invariants: _bool | None = ...,
+    requires_grad: bool = ...,
+    check_invariants: bool | None = ...,
 ) -> Tensor: ...
 def sparse_csr_tensor(
     crow_indices: Tensor | list,
@@ -4235,17 +4230,17 @@ def sparse_csr_tensor(
     *,
     dtype: _dtype | None = ...,
     device: DeviceLikeType | None = ...,
-    requires_grad: _bool = ...,
-    check_invariants: _bool | None = ...,
+    requires_grad: bool = ...,
+    check_invariants: bool | None = ...,
 ) -> Tensor: ...
 def split_copy(
-    input: Tensor, split_size: _int | SymInt, dim: _int = ..., *, out: tuple[Tensor, ...] | list[Tensor] | None = ...
+    input: Tensor, split_size: int | SymInt, dim: int = ..., *, out: tuple[Tensor, ...] | list[Tensor] | None = ...
 ) -> None: ...
-def split_with_sizes(input: Tensor, split_sizes: Sequence[_int | SymInt], dim: _int = ...) -> tuple[Tensor, ...]: ...
+def split_with_sizes(input: Tensor, split_sizes: Sequence[int | SymInt], dim: int = ...) -> tuple[Tensor, ...]: ...
 def split_with_sizes_copy(
     input: Tensor,
-    split_sizes: Sequence[_int | SymInt],
-    dim: _int = ...,
+    split_sizes: Sequence[int | SymInt],
+    dim: int = ...,
     *,
     out: tuple[Tensor, ...] | list[Tensor] | None = ...,
 ) -> None: ...
@@ -4257,7 +4252,7 @@ def square_(input: Tensor) -> Tensor: ...
 @overload
 def squeeze(input: Tensor) -> Tensor: ...
 @overload
-def squeeze(input: Tensor, dim: _int) -> Tensor: ...
+def squeeze(input: Tensor, dim: int) -> Tensor: ...
 @overload
 def squeeze(input: Tensor, dim: _size) -> Tensor: ...
 @overload
@@ -4265,7 +4260,7 @@ def squeeze(input: Tensor, dim: str | EllipsisType | None) -> Tensor: ...
 @overload
 def squeeze_copy(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
-def squeeze_copy(input: Tensor, dim: _int, *, out: Tensor | None = ...) -> Tensor: ...
+def squeeze_copy(input: Tensor, dim: int, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
 def squeeze_copy(input: Tensor, dim: _size, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
@@ -4282,63 +4277,61 @@ def sspaddmm(
 ) -> Tensor: ...
 @overload
 def sspaddmm(beta: Number | _complex, self: Tensor, mat1: Tensor, mat2: Tensor) -> Tensor: ...
-def stack(
-    tensors: tuple[Tensor, ...] | list[Tensor] | None, dim: _int = ..., *, out: Tensor | None = ...
-) -> Tensor: ...
+def stack(tensors: tuple[Tensor, ...] | list[Tensor] | None, dim: int = ..., *, out: Tensor | None = ...) -> Tensor: ...
 @overload
 def std(
-    input: Tensor, dim: _int | _size | None, unbiased: _bool = ..., keepdim: _bool = ..., *, out: Tensor | None = ...
+    input: Tensor, dim: int | _size | None, unbiased: bool = ..., keepdim: bool = ..., *, out: Tensor | None = ...
 ) -> Tensor: ...
 @overload
 def std(
     input: Tensor,
-    dim: _int | _size | None = ...,
+    dim: int | _size | None = ...,
     *,
     correction: Number | _complex | None = ...,
-    keepdim: _bool = ...,
+    keepdim: bool = ...,
     out: Tensor | None = ...,
 ) -> Tensor: ...
 @overload
-def std(input: Tensor, unbiased: _bool = ...) -> Tensor: ...
+def std(input: Tensor, unbiased: bool = ...) -> Tensor: ...
 @overload
 def std(
     input: Tensor,
     dim: Sequence[str | EllipsisType | None],
     *,
     correction: Number | _complex | None = ...,
-    keepdim: _bool = ...,
+    keepdim: bool = ...,
     out: Tensor | None = ...,
 ) -> Tensor: ...
 @overload
 def std(
     input: Tensor,
     dim: Sequence[str | EllipsisType | None],
-    unbiased: _bool = ...,
-    keepdim: _bool = ...,
+    unbiased: bool = ...,
+    keepdim: bool = ...,
     *,
     out: Tensor | None = ...,
 ) -> Tensor: ...
 @overload
 def std_mean(
-    input: Tensor, dim: _int | _size | None, unbiased: _bool = ..., keepdim: _bool = ...
+    input: Tensor, dim: int | _size | None, unbiased: bool = ..., keepdim: bool = ...
 ) -> tuple[Tensor, Tensor]: ...
 @overload
 def std_mean(
-    input: Tensor, dim: _int | _size | None = ..., *, correction: Number | _complex | None = ..., keepdim: _bool = ...
+    input: Tensor, dim: int | _size | None = ..., *, correction: Number | _complex | None = ..., keepdim: bool = ...
 ) -> tuple[Tensor, Tensor]: ...
 @overload
-def std_mean(input: Tensor, unbiased: _bool = ...) -> tuple[Tensor, Tensor]: ...
+def std_mean(input: Tensor, unbiased: bool = ...) -> tuple[Tensor, Tensor]: ...
 @overload
 def std_mean(
     input: Tensor,
     dim: Sequence[str | EllipsisType | None],
     *,
     correction: Number | _complex | None = ...,
-    keepdim: _bool = ...,
+    keepdim: bool = ...,
 ) -> tuple[Tensor, Tensor]: ...
 @overload
 def std_mean(
-    input: Tensor, dim: Sequence[str | EllipsisType | None], unbiased: _bool = ..., keepdim: _bool = ...
+    input: Tensor, dim: Sequence[str | EllipsisType | None], unbiased: bool = ..., keepdim: bool = ...
 ) -> tuple[Tensor, Tensor]: ...
 @overload
 def sub(
@@ -4361,8 +4354,8 @@ def sum(input: Tensor, *, dtype: _dtype | None = ...) -> Tensor: ...
 @overload
 def sum(
     input: Tensor,
-    dim: _int | _size | None,
-    keepdim: _bool = ...,
+    dim: int | _size | None,
+    keepdim: bool = ...,
     *,
     dtype: _dtype | None = ...,
     out: Tensor | None = ...,
@@ -4371,28 +4364,26 @@ def sum(
 def sum(
     input: Tensor,
     dim: Sequence[str | EllipsisType | None],
-    keepdim: _bool = ...,
+    keepdim: bool = ...,
     *,
     dtype: _dtype | None = ...,
     out: Tensor | None = ...,
 ) -> Tensor: ...
 def svd(
     input: Tensor,
-    some: _bool = ...,
-    compute_uv: _bool = ...,
+    some: bool = ...,
+    compute_uv: bool = ...,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...,
 ) -> torch.return_types.svd: ...
-def swapaxes(input: Tensor, axis0: _int, axis1: _int) -> Tensor: ...
-def swapdims(input: Tensor, dim0: _int, dim1: _int) -> Tensor: ...
-def sym_constrain_range(size: Number | _complex, *, min: _int | None = ..., max: _int | None = ...) -> None: ...
-def sym_constrain_range_for_size(
-    size: Number | _complex, *, min: _int | None = ..., max: _int | None = ...
-) -> None: ...
+def swapaxes(input: Tensor, axis0: int, axis1: int) -> Tensor: ...
+def swapdims(input: Tensor, dim0: int, dim1: int) -> Tensor: ...
+def sym_constrain_range(size: Number | _complex, *, min: int | None = ..., max: int | None = ...) -> None: ...
+def sym_constrain_range_for_size(size: Number | _complex, *, min: int | None = ..., max: int | None = ...) -> None: ...
 def t(input: Tensor) -> Tensor: ...
 def t_copy(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def take(input: Tensor, index: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
-def take_along_dim(input: Tensor, indices: Tensor, dim: _int | None = ..., *, out: Tensor | None = ...) -> Tensor: ...
+def take_along_dim(input: Tensor, indices: Tensor, dim: int | None = ..., *, out: Tensor | None = ...) -> Tensor: ...
 def tan(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def tan_(input: Tensor) -> Tensor: ...
 def tanh(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
@@ -4401,63 +4392,63 @@ def tensor(
     data: Any,
     dtype: _dtype | None = ...,
     device: DeviceLikeType | None = ...,
-    requires_grad: _bool = ...,
-    pin_memory: _bool = ...,
+    requires_grad: bool = ...,
+    pin_memory: bool = ...,
 ) -> Tensor: ...
 @overload
-def tensor_split(input: Tensor, tensor_indices_or_sections: Tensor, dim: _int = ...) -> tuple[Tensor, ...]: ...
+def tensor_split(input: Tensor, tensor_indices_or_sections: Tensor, dim: int = ...) -> tuple[Tensor, ...]: ...
 @overload
-def tensor_split(input: Tensor, sections: _int | SymInt, dim: _int = ...) -> tuple[Tensor, ...]: ...
+def tensor_split(input: Tensor, sections: int | SymInt, dim: int = ...) -> tuple[Tensor, ...]: ...
 @overload
-def tensor_split(input: Tensor, indices: Sequence[_int | SymInt], dim: _int = ...) -> tuple[Tensor, ...]: ...
+def tensor_split(input: Tensor, indices: Sequence[int | SymInt], dim: int = ...) -> tuple[Tensor, ...]: ...
 def threshold(
     input: Tensor, threshold: Number | _complex, value: Number | _complex, *, out: Tensor | None = ...
 ) -> Tensor: ...
 def threshold_(input: Tensor, threshold: Number | _complex, value: Number | _complex) -> Tensor: ...
-def tile(input: Tensor, dims: Sequence[_int | SymInt]) -> Tensor: ...
+def tile(input: Tensor, dims: Sequence[int | SymInt]) -> Tensor: ...
 def topk(
     input: Tensor,
-    k: _int | SymInt,
-    dim: _int = ...,
-    largest: _bool = ...,
-    sorted: _bool = ...,
+    k: int | SymInt,
+    dim: int = ...,
+    largest: bool = ...,
+    sorted: bool = ...,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...,
 ) -> torch.return_types.topk: ...
 def trace(input: Tensor) -> Tensor: ...
 @overload
-def transpose(input: Tensor, dim0: _int, dim1: _int) -> Tensor: ...
+def transpose(input: Tensor, dim0: int, dim1: int) -> Tensor: ...
 @overload
 def transpose(input: Tensor, dim0: str | EllipsisType | None, dim1: str | EllipsisType | None) -> Tensor: ...
-def transpose_copy(input: Tensor, dim0: _int, dim1: _int, *, out: Tensor | None = ...) -> Tensor: ...
+def transpose_copy(input: Tensor, dim0: int, dim1: int, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
-def trapezoid(y: Tensor, x: Tensor, *, dim: _int = ...) -> Tensor: ...
+def trapezoid(y: Tensor, x: Tensor, *, dim: int = ...) -> Tensor: ...
 @overload
-def trapezoid(y: Tensor, *, dx: Number | _complex = ..., dim: _int = ...) -> Tensor: ...
+def trapezoid(y: Tensor, *, dx: Number | _complex = ..., dim: int = ...) -> Tensor: ...
 @overload
-def trapz(y: Tensor, *, dx: _float = ..., dim: _int = ...) -> Tensor: ...
+def trapz(y: Tensor, *, dx: _float = ..., dim: int = ...) -> Tensor: ...
 @overload
-def trapz(y: Tensor, x: Tensor, *, dim: _int = ...) -> Tensor: ...
+def trapz(y: Tensor, x: Tensor, *, dim: int = ...) -> Tensor: ...
 def triangular_solve(
     input: Tensor,
     A: Tensor,
-    upper: _bool = ...,
-    transpose: _bool = ...,
-    unitriangular: _bool = ...,
+    upper: bool = ...,
+    transpose: bool = ...,
+    unitriangular: bool = ...,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = ...,
 ) -> torch.return_types.triangular_solve: ...
-def tril(input: Tensor, diagonal: _int = ..., *, out: Tensor | None = ...) -> Tensor: ...
+def tril(input: Tensor, diagonal: int = ..., *, out: Tensor | None = ...) -> Tensor: ...
 def tril_indices(
-    row: _int,
-    col: _int,
-    offset: _int = ...,
+    row: int,
+    col: int,
+    offset: int = ...,
     *,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 def triplet_margin_loss(
     anchor: Tensor,
@@ -4466,105 +4457,105 @@ def triplet_margin_loss(
     margin: _float = ...,
     p: _float = ...,
     eps: _float = ...,
-    swap: _bool = ...,
-    reduction: _int = ...,
+    swap: bool = ...,
+    reduction: int = ...,
 ) -> Tensor: ...
-def triu(input: Tensor, diagonal: _int = ..., *, out: Tensor | None = ...) -> Tensor: ...
+def triu(input: Tensor, diagonal: int = ..., *, out: Tensor | None = ...) -> Tensor: ...
 def triu_indices(
-    row: _int,
-    col: _int,
-    offset: _int = ...,
+    row: int,
+    col: int,
+    offset: int = ...,
     *,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 def true_divide(input: Tensor | Number, other: Tensor | Number, *, out: Tensor | None = ...) -> Tensor: ...
 def trunc(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def trunc_(input: Tensor) -> Tensor: ...
 @overload
-def unbind(input: Tensor, dim: _int = ...) -> tuple[Tensor, ...]: ...
+def unbind(input: Tensor, dim: int = ...) -> tuple[Tensor, ...]: ...
 @overload
 def unbind(input: Tensor, dim: str | EllipsisType | None) -> tuple[Tensor, ...]: ...
-def unbind_copy(input: Tensor, dim: _int = ..., *, out: tuple[Tensor, ...] | list[Tensor] | None = ...) -> None: ...
+def unbind_copy(input: Tensor, dim: int = ..., *, out: tuple[Tensor, ...] | list[Tensor] | None = ...) -> None: ...
 @overload
 def unflatten(
     input: Tensor,
     dim: str | EllipsisType | None,
-    sizes: Sequence[_int | SymInt],
+    sizes: Sequence[int | SymInt],
     names: Sequence[str | EllipsisType | None],
 ) -> Tensor: ...
 @overload
-def unflatten(input: Tensor, dim: _int, sizes: Sequence[_int | SymInt]) -> Tensor: ...
-def unfold_copy(input: Tensor, dimension: _int, size: _int, step: _int, *, out: Tensor | None = ...) -> Tensor: ...
+def unflatten(input: Tensor, dim: int, sizes: Sequence[int | SymInt]) -> Tensor: ...
+def unfold_copy(input: Tensor, dimension: int, size: int, step: int, *, out: Tensor | None = ...) -> Tensor: ...
 def unique_dim(
-    input: Tensor, dim: _int, sorted: _bool = ..., return_inverse: _bool = ..., return_counts: _bool = ...
+    input: Tensor, dim: int, sorted: bool = ..., return_inverse: bool = ..., return_counts: bool = ...
 ) -> tuple[Tensor, Tensor, Tensor]: ...
-def unsafe_chunk(input: Tensor, chunks: _int, dim: _int = ...) -> tuple[Tensor, ...]: ...
-def unsafe_split(input: Tensor, split_size: _int | SymInt, dim: _int = ...) -> tuple[Tensor, ...]: ...
+def unsafe_chunk(input: Tensor, chunks: int, dim: int = ...) -> tuple[Tensor, ...]: ...
+def unsafe_split(input: Tensor, split_size: int | SymInt, dim: int = ...) -> tuple[Tensor, ...]: ...
 def unsafe_split_with_sizes(
-    input: Tensor, split_sizes: Sequence[_int | SymInt], dim: _int = ...
+    input: Tensor, split_sizes: Sequence[int | SymInt], dim: int = ...
 ) -> tuple[Tensor, ...]: ...
-def unsqueeze(input: Tensor, dim: _int) -> Tensor: ...
-def unsqueeze_copy(input: Tensor, dim: _int, *, out: Tensor | None = ...) -> Tensor: ...
+def unsqueeze(input: Tensor, dim: int) -> Tensor: ...
+def unsqueeze_copy(input: Tensor, dim: int, *, out: Tensor | None = ...) -> Tensor: ...
 def values_copy(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
-def vander(x: Tensor, N: _int | None = ..., increasing: _bool = ...) -> Tensor: ...
+def vander(x: Tensor, N: int | None = ..., increasing: bool = ...) -> Tensor: ...
 @overload
 def var(
-    input: Tensor, dim: _int | _size | None, unbiased: _bool = ..., keepdim: _bool = ..., *, out: Tensor | None = ...
+    input: Tensor, dim: int | _size | None, unbiased: bool = ..., keepdim: bool = ..., *, out: Tensor | None = ...
 ) -> Tensor: ...
 @overload
 def var(
     input: Tensor,
-    dim: _int | _size | None = ...,
+    dim: int | _size | None = ...,
     *,
     correction: Number | _complex | None = ...,
-    keepdim: _bool = ...,
+    keepdim: bool = ...,
     out: Tensor | None = ...,
 ) -> Tensor: ...
 @overload
-def var(input: Tensor, unbiased: _bool = ...) -> Tensor: ...
+def var(input: Tensor, unbiased: bool = ...) -> Tensor: ...
 @overload
 def var(
     input: Tensor,
     dim: Sequence[str | EllipsisType | None],
     *,
     correction: Number | _complex | None = ...,
-    keepdim: _bool = ...,
+    keepdim: bool = ...,
     out: Tensor | None = ...,
 ) -> Tensor: ...
 @overload
 def var(
     input: Tensor,
     dim: Sequence[str | EllipsisType | None],
-    unbiased: _bool = ...,
-    keepdim: _bool = ...,
+    unbiased: bool = ...,
+    keepdim: bool = ...,
     *,
     out: Tensor | None = ...,
 ) -> Tensor: ...
 @overload
 def var_mean(
-    input: Tensor, dim: _int | _size | None, unbiased: _bool = ..., keepdim: _bool = ...
+    input: Tensor, dim: int | _size | None, unbiased: bool = ..., keepdim: bool = ...
 ) -> tuple[Tensor, Tensor]: ...
 @overload
 def var_mean(
-    input: Tensor, dim: _int | _size | None = ..., *, correction: Number | _complex | None = ..., keepdim: _bool = ...
+    input: Tensor, dim: int | _size | None = ..., *, correction: Number | _complex | None = ..., keepdim: bool = ...
 ) -> tuple[Tensor, Tensor]: ...
 @overload
-def var_mean(input: Tensor, unbiased: _bool = ...) -> tuple[Tensor, Tensor]: ...
+def var_mean(input: Tensor, unbiased: bool = ...) -> tuple[Tensor, Tensor]: ...
 @overload
 def var_mean(
     input: Tensor,
     dim: Sequence[str | EllipsisType | None],
     *,
     correction: Number | _complex | None = ...,
-    keepdim: _bool = ...,
+    keepdim: bool = ...,
 ) -> tuple[Tensor, Tensor]: ...
 @overload
 def var_mean(
-    input: Tensor, dim: Sequence[str | EllipsisType | None], unbiased: _bool = ..., keepdim: _bool = ...
+    input: Tensor, dim: Sequence[str | EllipsisType | None], unbiased: bool = ..., keepdim: bool = ...
 ) -> tuple[Tensor, Tensor]: ...
 def vdot(input: Tensor, other: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 def view_as_complex(input: Tensor) -> Tensor: ...
@@ -4574,9 +4565,9 @@ def view_as_real_copy(input: Tensor, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
 def view_copy(input: Tensor, dtype: _dtype, *, out: Tensor | None = ...) -> Tensor: ...
 @overload
-def view_copy(input: Tensor, size: Sequence[_int | SymInt], *, out: Tensor | None = ...) -> Tensor: ...
+def view_copy(input: Tensor, size: Sequence[int | SymInt], *, out: Tensor | None = ...) -> Tensor: ...
 @overload
-def vsplit(input: Tensor, sections: _int) -> tuple[Tensor, ...]: ...
+def vsplit(input: Tensor, sections: int) -> tuple[Tensor, ...]: ...
 @overload
 def vsplit(input: Tensor, indices: _size) -> tuple[Tensor, ...]: ...
 def vstack(tensors: tuple[Tensor, ...] | list[Tensor] | None, *, out: Tensor | None = ...) -> Tensor: ...
@@ -4603,24 +4594,24 @@ def xlogy_(input: Tensor, other: Number | _complex) -> Tensor: ...
 def zero_(input: Tensor) -> Tensor: ...
 @overload
 def zeros(
-    size: Sequence[_int | SymInt],
+    size: Sequence[int | SymInt],
     *,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def zeros(
-    *size: _int | SymInt,
+    *size: int | SymInt,
     out: Tensor | None = ...,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def zeros(
@@ -4630,18 +4621,18 @@ def zeros(
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 @overload
 def zeros(
-    *size: _int,
+    *size: int,
     names: Sequence[str | EllipsisType | None] | None,
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...
 def zeros_like(
     input: Tensor,
@@ -4650,6 +4641,6 @@ def zeros_like(
     dtype: _dtype | None = ...,
     layout: _layout | None = ...,
     device: DeviceLikeType | None = ...,
-    pin_memory: _bool | None = ...,
-    requires_grad: _bool | None = ...,
+    pin_memory: bool | None = ...,
+    requires_grad: bool | None = ...,
 ) -> Tensor: ...

@@ -7,17 +7,15 @@ from typing import TYPE_CHECKING, Any, NamedTuple
 
 import numpy as np
 import torch
-from tokenizers import AddedToken
-from tokenizers import Encoding as EncodingFast
+from tokenizers import AddedToken, Encoding as EncodingFast
 
 from .utils import (
     ExplicitEnum,
-    PaddingStrategy,
     PushToHubMixin,
-    TensorType,
     add_end_docstrings,
     is_tokenizers_available,
 )
+from .utils.generic import PaddingStrategy, TensorType
 
 """
 Base classes common to both the slow and the fast tokenization classes: PreTrainedTokenizerBase (host all the user

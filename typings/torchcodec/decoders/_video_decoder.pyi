@@ -4,8 +4,7 @@ from pathlib import Path
 from typing import Literal
 
 import torch
-from torch import Tensor
-from torch import device as torch_device
+from torch import Tensor, device as torch_device
 from torchcodec import Frame, FrameBatch
 
 class VideoDecoder:

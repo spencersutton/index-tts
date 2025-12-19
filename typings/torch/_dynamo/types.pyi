@@ -3,10 +3,12 @@ import types
 from collections.abc import Callable
 from typing import Any, NamedTuple, Protocol
 
-from torch._C._dynamo.eval_frame import _CacheEntry as CacheEntry
-from torch._C._dynamo.eval_frame import _ExtraState as ExtraState
-from torch._C._dynamo.eval_frame import _FrameExecStrategy as FrameExecStrategy
-from torch._C._dynamo.eval_frame import _PyInterpreterFrame as DynamoFrameType
+from torch._C._dynamo.eval_frame import (
+    _CacheEntry as CacheEntry,
+    _ExtraState as ExtraState,
+    _FrameExecStrategy as FrameExecStrategy,
+    _PyInterpreterFrame as DynamoFrameType,
+)
 from torch._guards import CompileId, Guard
 
 type FrameState = dict[Any, Any]

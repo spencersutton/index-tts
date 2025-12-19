@@ -5,8 +5,7 @@ from typing import Any, Literal, overload
 
 import torch
 import torch.distributed.distributed_c10d as c10d
-from torch._C._distributed_c10d import ProcessGroup, _SymmetricMemory
-from torch._C._distributed_c10d import Work as _Work
+from torch._C._distributed_c10d import ProcessGroup, Work as _Work, _SymmetricMemory
 from torch.types import _device, _dtype, _int
 
 _group_name_to_store: dict[str, c10d.Store] = ...

@@ -1,6 +1,5 @@
 import weakref
-from collections.abc import AsyncIterator, Callable, Sequence
-from collections.abc import Set as AbstractSet
+from collections.abc import AsyncIterator, Callable, Sequence, Set as AbstractSet
 from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Literal

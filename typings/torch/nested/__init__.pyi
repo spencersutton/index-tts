@@ -1,6 +1,5 @@
 from torch import Tensor
-from torch.types import _device as Device
-from torch.types import _dtype as DType
+from torch.types import _device as Device, _dtype as DType
 
 __all__ = [
     "as_nested_tensor",

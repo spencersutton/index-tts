@@ -19,11 +19,9 @@ class DirectiveToken(Token):
 
 class DocumentStartToken(Token):
     id: Any
-    ...
 
 class DocumentEndToken(Token):
     id: Any
-    ...
 
 class StreamStartToken(Token):
     id: Any
@@ -34,51 +32,39 @@ class StreamStartToken(Token):
 
 class StreamEndToken(Token):
     id: Any
-    ...
 
 class BlockSequenceStartToken(Token):
     id: Any
-    ...
 
 class BlockMappingStartToken(Token):
     id: Any
-    ...
 
 class BlockEndToken(Token):
     id: Any
-    ...
 
 class FlowSequenceStartToken(Token):
     id: Any
-    ...
 
 class FlowMappingStartToken(Token):
     id: Any
-    ...
 
 class FlowSequenceEndToken(Token):
     id: Any
-    ...
 
 class FlowMappingEndToken(Token):
     id: Any
-    ...
 
 class KeyToken(Token):
     id: Any
-    ...
 
 class ValueToken(Token):
     id: Any
-    ...
 
 class BlockEntryToken(Token):
     id: Any
-    ...
 
 class FlowEntryToken(Token):
     id: Any
-    ...
 
 class AliasToken(Token):
     id: Any

@@ -4,8 +4,10 @@
 # LICENSE file in the root directory of this source tree.
 
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize.factorized_vector_quantize import (
-    FactorizedVectorQuantize,
+    FactorizedVectorQuantize as FactorizedVectorQuantize,
 )
-from indextts.utils.maskgct.models.codec.amphion_codec.quantize.vector_quantize import VectorQuantize
-from indextts.utils.maskgct.models.codec.amphion_codec.quantize.lookup_free_quantize import LookupFreeQuantize
-from indextts.utils.maskgct.models.codec.amphion_codec.quantize.residual_vq import ResidualVQ
+from indextts.utils.maskgct.models.codec.amphion_codec.quantize.vector_quantize import VectorQuantize as VectorQuantize
+from indextts.utils.maskgct.models.codec.amphion_codec.quantize.lookup_free_quantize import (
+    LookupFreeQuantize as LookupFreeQuantize,
+)
+from indextts.utils.maskgct.models.codec.amphion_codec.quantize.residual_vq import ResidualVQ as ResidualVQ

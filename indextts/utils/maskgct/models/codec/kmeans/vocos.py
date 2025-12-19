@@ -9,7 +9,6 @@ import numpy as np
 import scipy
 import torch
 from torch import nn, view_as_real, view_as_complex
-from torch import nn
 from torch.nn.utils import weight_norm, remove_weight_norm
 from torchaudio.functional.functional import _hz_to_mel, _mel_to_hz
 

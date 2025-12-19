@@ -28,9 +28,7 @@ class Conv1dGLU(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, dropout):
         super(Conv1dGLU, self).__init__()
         self.out_channels = out_channels
-        self.conv1 = nn.Conv1d(
-            in_channels, 2 * out_channels, kernel_size=kernel_size, padding=2
-        )
+        self.conv1 = nn.Conv1d(in_channels, 2 * out_channels, kernel_size=kernel_size, padding=2)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):

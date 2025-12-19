@@ -72,9 +72,7 @@ class SnakeBeta(nn.Module):
         >>> x = a1(x)
     """
 
-    def __init__(
-        self, in_features, alpha=1.0, alpha_trainable=True, alpha_logscale=False
-    ):
+    def __init__(self, in_features, alpha=1.0, alpha_trainable=True, alpha_logscale=False):
         """
         Initialization.
         INPUT:
@@ -378,24 +376,16 @@ class FACodecDecoder(nn.Module):
         self.use_gr_x_timbre = use_gr_x_timbre
 
         if self.vq_num_q_r > 0 and self.use_gr_residual_f0:
-            self.res_f0_predictor = nn.Sequential(
-                GradientReversal(alpha=1.0), CNNLSTM(in_channels, 1, 2)
-            )
+            self.res_f0_predictor = nn.Sequential(GradientReversal(alpha=1.0), CNNLSTM(in_channels, 1, 2))
 
         if self.vq_num_q_r > 0 and self.use_gr_residual_phone > 0:
-            self.res_phone_predictor = nn.Sequential(
-                GradientReversal(alpha=1.0), CNNLSTM(in_channels, 5003, 1)
-            )
+            self.res_phone_predictor = nn.Sequential(GradientReversal(alpha=1.0), CNNLSTM(in_channels, 5003, 1))
 
         if self.use_gr_content_f0:
-            self.content_f0_predictor = nn.Sequential(
-                GradientReversal(alpha=1.0), CNNLSTM(in_channels, 1, 2)
-            )
+            self.content_f0_predictor = nn.Sequential(GradientReversal(alpha=1.0), CNNLSTM(in_channels, 1, 2))
 
         if self.use_gr_prosody_phone:
-            self.prosody_phone_predictor = nn.Sequential(
-                GradientReversal(alpha=1.0), CNNLSTM(in_channels, 5003, 1)
-            )
+            self.prosody_phone_predictor = nn.Sequential(GradientReversal(alpha=1.0), CNNLSTM(in_channels, 5003, 1))
 
         if self.use_gr_x_timbre:
             self.x_timbre_predictor = nn.Sequential(
@@ -420,9 +410,7 @@ class FACodecDecoder(nn.Module):
         # phone
         phone_input = x
         phone_quantizer = self.quantizer[1]
-        out, q, commit, quantized = phone_quantizer(
-            phone_input, n_quantizers=n_quantizers
-        )
+        out, q, commit, quantized = phone_quantizer(phone_input, n_quantizers=n_quantizers)
         outs += out
         qs.append(q)
         quantized_buf.append(quantized.sum(0))
@@ -432,9 +420,7 @@ class FACodecDecoder(nn.Module):
         if self.vq_num_q_r > 0:
             residual_quantizer = self.quantizer[2]
             residual_input = x - (quantized_buf[0] + quantized_buf[1]).detach()
-            out, q, commit, quantized = residual_quantizer(
-                residual_input, n_quantizers=n_quantizers
-            )
+            out, q, commit, quantized = residual_quantizer(residual_input, n_quantizers=n_quantizers)
             outs += out
             qs.append(q)
             quantized_buf.append(quantized.sum(0))  # [L, B, C, T] -> [B, C, T]
@@ -460,9 +446,7 @@ class FACodecDecoder(nn.Module):
             if eval_vq:
                 self.quantizer.eval()
             x_timbre = x
-            outs, qs, commit_loss, quantized_buf = self.quantize(
-                x, n_quantizers=n_quantizers
-            )
+            outs, qs, commit_loss, quantized_buf = self.quantize(x, n_quantizers=n_quantizers)
 
             x_timbre = x_timbre.transpose(1, 2)
             x_timbre = self.timbre_encoder(x_timbre, None, None)
@@ -520,17 +504,9 @@ class FACodecDecoder(nn.Module):
                         1 - self.prob_random_mask_residual,
                     ],
                 )
-                res_mask = (
-                    torch.from_numpy(res_mask).unsqueeze(1).unsqueeze(1)
-                )  # (B, 1, 1)
-                res_mask = res_mask.to(
-                    device=quantized[2].device, dtype=quantized[2].dtype
-                )
-                x = (
-                    quantized[0].detach()
-                    + quantized[1].detach()
-                    + quantized[2] * res_mask
-                )
+                res_mask = torch.from_numpy(res_mask).unsqueeze(1).unsqueeze(1)  # (B, 1, 1)
+                res_mask = res_mask.to(device=quantized[2].device, dtype=quantized[2].dtype)
+                x = quantized[0].detach() + quantized[1].detach() + quantized[2] * res_mask
                 # x = quantized_perturbe[0].detach() + quantized[1].detach() + quantized[2] * res_mask
             else:
                 x = quantized[0].detach() + quantized[1].detach() + quantized[2]
@@ -558,9 +534,7 @@ class FACodecDecoder(nn.Module):
         self.quantizer = self.quantizer.eval()
         out = 0
         out += self.quantizer[0].vq2emb(vq[0 : self.vq_num_q_p])
-        out += self.quantizer[1].vq2emb(
-            vq[self.vq_num_q_p : self.vq_num_q_p + self.vq_num_q_c]
-        )
+        out += self.quantizer[1].vq2emb(vq[self.vq_num_q_p : self.vq_num_q_p + self.vq_num_q_c])
         if self.vq_num_q_r > 0 and use_residual_code:
             out += self.quantizer[2].vq2emb(vq[self.vq_num_q_p + self.vq_num_q_c :])
         return out
@@ -701,9 +675,7 @@ class FACodecRedecoder(nn.Module):
         for i in range(self.vq_num_q_p):
             x_p = x_p + self.prosody_embs[i](vq[i])  # (B, T, d)
         spk_cond = speaker_embedding.unsqueeze(1).expand(-1, x_p.shape[1], -1)
-        x_p = self.timbre_cond_prosody_enc(
-            x_p, key_padding_mask=None, condition=spk_cond
-        )
+        x_p = self.timbre_cond_prosody_enc(x_p, key_padding_mask=None, condition=spk_cond)
         x = x + x_p
 
         x_c = 0
@@ -713,12 +685,9 @@ class FACodecRedecoder(nn.Module):
         x = x + x_c
 
         if use_residual_code:
-
             x_r = 0
             for i in range(self.vq_num_q_r):
-                x_r = x_r + self.residual_embs[i](
-                    vq[self.vq_num_q_p + self.vq_num_q_c + i]
-                )
+                x_r = x_r + self.residual_embs[i](vq[self.vq_num_q_p + self.vq_num_q_c + i])
             x = x + x_r
 
         style = self.timbre_linear(speaker_embedding).unsqueeze(2)  # (B, 2d, 1)
@@ -739,9 +708,7 @@ class FACodecRedecoder(nn.Module):
         for i in range(self.vq_num_q_p):
             x_t += self.prosody_embs[i](vq[i])  # (B, T, d)
             spk_cond = speaker_embedding.unsqueeze(1).expand(-1, x_t.shape[1], -1)
-            x_t = self.timbre_cond_prosody_enc(
-                x_t, key_padding_mask=None, condition=spk_cond
-            )
+            x_t = self.timbre_cond_prosody_enc(x_t, key_padding_mask=None, condition=spk_cond)
 
         # prosody
         out += x_t
@@ -984,24 +951,16 @@ class FACodecDecoderV2(nn.Module):
         self.use_gr_x_timbre = use_gr_x_timbre
 
         if self.vq_num_q_r > 0 and self.use_gr_residual_f0:
-            self.res_f0_predictor = nn.Sequential(
-                GradientReversal(alpha=1.0), CNNLSTM(in_channels, 1, 2)
-            )
+            self.res_f0_predictor = nn.Sequential(GradientReversal(alpha=1.0), CNNLSTM(in_channels, 1, 2))
 
         if self.vq_num_q_r > 0 and self.use_gr_residual_phone > 0:
-            self.res_phone_predictor = nn.Sequential(
-                GradientReversal(alpha=1.0), CNNLSTM(in_channels, 5003, 1)
-            )
+            self.res_phone_predictor = nn.Sequential(GradientReversal(alpha=1.0), CNNLSTM(in_channels, 5003, 1))
 
         if self.use_gr_content_f0:
-            self.content_f0_predictor = nn.Sequential(
-                GradientReversal(alpha=1.0), CNNLSTM(in_channels, 1, 2)
-            )
+            self.content_f0_predictor = nn.Sequential(GradientReversal(alpha=1.0), CNNLSTM(in_channels, 1, 2))
 
         if self.use_gr_prosody_phone:
-            self.prosody_phone_predictor = nn.Sequential(
-                GradientReversal(alpha=1.0), CNNLSTM(in_channels, 5003, 1)
-            )
+            self.prosody_phone_predictor = nn.Sequential(GradientReversal(alpha=1.0), CNNLSTM(in_channels, 5003, 1))
 
         if self.use_gr_x_timbre:
             self.x_timbre_predictor = nn.Sequential(
@@ -1042,9 +1001,7 @@ class FACodecDecoderV2(nn.Module):
         # phone
         phone_input = x
         phone_quantizer = self.quantizer[1]
-        out, q, commit, quantized = phone_quantizer(
-            phone_input, n_quantizers=n_quantizers
-        )
+        out, q, commit, quantized = phone_quantizer(phone_input, n_quantizers=n_quantizers)
         outs += out
         qs.append(q)
         quantized_buf.append(quantized.sum(0))
@@ -1054,9 +1011,7 @@ class FACodecDecoderV2(nn.Module):
         if self.vq_num_q_r > 0:
             residual_quantizer = self.quantizer[2]
             residual_input = x - (quantized_buf[0] + quantized_buf[1]).detach()
-            out, q, commit, quantized = residual_quantizer(
-                residual_input, n_quantizers=n_quantizers
-            )
+            out, q, commit, quantized = residual_quantizer(residual_input, n_quantizers=n_quantizers)
             outs += out
             qs.append(q)
             quantized_buf.append(quantized.sum(0))  # [L, B, C, T] -> [B, C, T]
@@ -1083,9 +1038,7 @@ class FACodecDecoderV2(nn.Module):
             if eval_vq:
                 self.quantizer.eval()
             x_timbre = x
-            outs, qs, commit_loss, quantized_buf = self.quantize(
-                x, prosody_feature, n_quantizers=n_quantizers
-            )
+            outs, qs, commit_loss, quantized_buf = self.quantize(x, prosody_feature, n_quantizers=n_quantizers)
 
             x_timbre = x_timbre.transpose(1, 2)
             x_timbre = self.timbre_encoder(x_timbre, None, None)
@@ -1143,17 +1096,9 @@ class FACodecDecoderV2(nn.Module):
                         1 - self.prob_random_mask_residual,
                     ],
                 )
-                res_mask = (
-                    torch.from_numpy(res_mask).unsqueeze(1).unsqueeze(1)
-                )  # (B, 1, 1)
-                res_mask = res_mask.to(
-                    device=quantized[2].device, dtype=quantized[2].dtype
-                )
-                x = (
-                    quantized[0].detach()
-                    + quantized[1].detach()
-                    + quantized[2] * res_mask
-                )
+                res_mask = torch.from_numpy(res_mask).unsqueeze(1).unsqueeze(1)  # (B, 1, 1)
+                res_mask = res_mask.to(device=quantized[2].device, dtype=quantized[2].dtype)
+                x = quantized[0].detach() + quantized[1].detach() + quantized[2] * res_mask
                 # x = quantized_perturbe[0].detach() + quantized[1].detach() + quantized[2] * res_mask
             else:
                 x = quantized[0].detach() + quantized[1].detach() + quantized[2]
@@ -1181,9 +1126,7 @@ class FACodecDecoderV2(nn.Module):
         self.quantizer = self.quantizer.eval()
         out = 0
         out += self.quantizer[0].vq2emb(vq[0 : self.vq_num_q_p])
-        out += self.quantizer[1].vq2emb(
-            vq[self.vq_num_q_p : self.vq_num_q_p + self.vq_num_q_c]
-        )
+        out += self.quantizer[1].vq2emb(vq[self.vq_num_q_p : self.vq_num_q_p + self.vq_num_q_c])
         if self.vq_num_q_r > 0 and use_residual:
             out += self.quantizer[2].vq2emb(vq[self.vq_num_q_p + self.vq_num_q_c :])
         return out

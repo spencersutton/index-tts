@@ -92,9 +92,7 @@ class FAcodecInference(object):
         source_audio = torch.tensor(source_audio).unsqueeze(0).float().to(self.device)
 
         reference_audio = librosa.load(reference, sr=self.cfg.preprocess_params.sr)[0]
-        reference_audio = (
-            torch.tensor(reference_audio).unsqueeze(0).float().to(self.device)
-        )
+        reference_audio = torch.tensor(reference_audio).unsqueeze(0).float().to(self.device)
 
         z = self.model.encoder(source_audio[None, ...].to(self.device).float())
         z, quantized, commitment_loss, codebook_loss, timbre = self.model.quantizer(

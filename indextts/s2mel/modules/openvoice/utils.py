@@ -11,6 +11,7 @@ def get_hparams_from_file(config_path):
     hparams = HParams(**config)
     return hparams
 
+
 class HParams:
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
@@ -46,13 +47,13 @@ class HParams:
 def string_to_bits(string, pad_len=8):
     # Convert each character to its ASCII value
     ascii_values = [ord(char) for char in string]
-    
+
     # Convert ASCII values to binary representation
     binary_values = [bin(value)[2:].zfill(8) for value in ascii_values]
-    
+
     # Convert binary strings to integer arrays
     bit_arrays = [[int(bit) for bit in binary] for binary in binary_values]
-    
+
     # Convert list of arrays to NumPy array
     numpy_array = np.array(bit_arrays)
     numpy_array_full = np.zeros((pad_len, 8), dtype=numpy_array.dtype)
@@ -64,23 +65,24 @@ def string_to_bits(string, pad_len=8):
 
 def bits_to_string(bits_array):
     # Convert each row of the array to a binary string
-    binary_values = [''.join(str(bit) for bit in row) for row in bits_array]
-    
+    binary_values = ["".join(str(bit) for bit in row) for row in bits_array]
+
     # Convert binary strings to ASCII values
     ascii_values = [int(binary, 2) for binary in binary_values]
-    
+
     # Convert ASCII values to characters
-    output_string = ''.join(chr(value) for value in ascii_values)
-    
+    output_string = "".join(chr(value) for value in ascii_values)
+
     return output_string
 
 
-def split_segment(text, min_len=10, language_str='[EN]'):
-    if language_str in ['EN']:
+def split_segment(text, min_len=10, language_str="[EN]"):
+    if language_str in ["EN"]:
         segments = split_segments_latin(text, min_len=min_len)
     else:
         segments = split_segments_zh(text, min_len=min_len)
     return segments
+
 
 def split_segments_latin(text, min_len=10):
     """Split Long sentences into list of short segments.
@@ -92,16 +94,17 @@ def split_segments_latin(text, min_len=10):
         List[str]: list of output segments.
     """
     # deal with dirty text characters
-    text = re.sub('[。！？；]', '.', text)
-    text = re.sub('[，]', ',', text)
-    text = re.sub('[“”]', '"', text)
-    text = re.sub('[‘’]', "'", text)
+    text = re.sub("[。！？；]", ".", text)
+    text = re.sub("[，]", ",", text)
+    text = re.sub("[“”]", '"', text)
+    text = re.sub("[‘’]", "'", text)
     text = re.sub(r"[\<\>\(\)\[\]\"\«\»]+", "", text)
-    text = re.sub('[\n\t ]+', ' ', text)
-    text = re.sub('([,.!?;])', r'\1 $#!', text)
+    text = re.sub("[\n\t ]+", " ", text)
+    text = re.sub("([,.!?;])", r"\1 $#!", text)
     # split
-    segments = [s.strip() for s in text.split('$#!')]
-    if len(segments[-1]) == 0: del segments[-1]
+    segments = [s.strip() for s in text.split("$#!")]
+    if len(segments[-1]) == 0:
+        del segments[-1]
 
     new_segments = []
     new_sent = []
@@ -112,7 +115,7 @@ def split_segments_latin(text, min_len=10):
         count_len += len(sent.split(" "))
         if count_len > min_len or ind == len(segments) - 1:
             count_len = 0
-            new_segments.append(' '.join(new_sent))
+            new_segments.append(" ".join(new_sent))
             new_sent = []
     return merge_short_segments_latin(new_segments)
 
@@ -142,17 +145,19 @@ def merge_short_segments_latin(sens):
         pass
     return sens_out
 
+
 def split_segments_zh(text, min_len=10):
-    text = re.sub('[。！？；]', '.', text)
-    text = re.sub('[，]', ',', text)
+    text = re.sub("[。！？；]", ".", text)
+    text = re.sub("[，]", ",", text)
     # 将文本中的换行符、空格和制表符替换为空格
-    text = re.sub('[\n\t ]+', ' ', text)
+    text = re.sub("[\n\t ]+", " ", text)
     # 在标点符号后添加一个空格
-    text = re.sub('([,.!?;])', r'\1 $#!', text)
+    text = re.sub("([,.!?;])", r"\1 $#!", text)
     # 分隔句子并去除前后空格
     # segments = [s.strip() for s in re.split('(。|！|？|；)', text)]
-    segments = [s.strip() for s in text.split('$#!')]
-    if len(segments[-1]) == 0: del segments[-1]
+    segments = [s.strip() for s in text.split("$#!")]
+    if len(segments[-1]) == 0:
+        del segments[-1]
 
     new_segments = []
     new_sent = []
@@ -162,7 +167,7 @@ def split_segments_zh(text, min_len=10):
         count_len += len(sent)
         if count_len > min_len or ind == len(segments) - 1:
             count_len = 0
-            new_segments.append(' '.join(new_sent))
+            new_segments.append(" ".join(new_sent))
             new_sent = []
     return merge_short_segments_zh(new_segments)
 

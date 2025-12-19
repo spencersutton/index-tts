@@ -48,9 +48,7 @@ class DACFile:
         artifacts = np.load(path, allow_pickle=True)[()]
         codes = torch.from_numpy(artifacts["codes"].astype(int))
         if artifacts["metadata"].get("dac_version", None) not in SUPPORTED_VERSIONS:
-            raise RuntimeError(
-                f"Given file {path} can't be loaded with this version of descript-audio-codec."
-            )
+            raise RuntimeError(f"Given file {path} can't be loaded with this version of descript-audio-codec.")
         return cls(codes=codes, **artifacts["metadata"])
 
 
@@ -65,9 +63,7 @@ class CodecMixin:
     def padding(self, value):
         assert isinstance(value, bool)
 
-        layers = [
-            l for l in self.modules() if isinstance(l, (nn.Conv1d, nn.ConvTranspose1d))
-        ]
+        layers = [l for l in self.modules() if isinstance(l, (nn.Conv1d, nn.ConvTranspose1d))]
 
         for layer in layers:
             if value:
@@ -181,9 +177,7 @@ class CodecMixin:
 
         nb, nac, nt = audio_signal.audio_data.shape
         audio_signal.audio_data = audio_signal.audio_data.reshape(nb * nac, 1, nt)
-        win_duration = (
-            audio_signal.signal_duration if win_duration is None else win_duration
-        )
+        win_duration = audio_signal.signal_duration if win_duration is None else win_duration
 
         if audio_signal.signal_duration <= win_duration:
             # Unchunked compression (used if signal length < win duration)
@@ -286,9 +280,7 @@ class CodecMixin:
         resample_fn(obj.sample_rate)
         recons = recons[..., : obj.original_length]
         loudness_fn()
-        recons.audio_data = recons.audio_data.reshape(
-            -1, obj.channels, obj.original_length
-        )
+        recons.audio_data = recons.audio_data.reshape(-1, obj.channels, obj.original_length)
 
         self.padding = original_padding
         return recons

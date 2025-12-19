@@ -170,9 +170,7 @@ class CodecDataset(torch.utils.data.Dataset):
             if "target_len" not in single_feature.keys():
                 single_feature["target_len"] = len(frame_pitch)
 
-            aligned_frame_pitch = align_length(
-                frame_pitch, single_feature["target_len"]
-            )
+            aligned_frame_pitch = align_length(frame_pitch, single_feature["target_len"])
 
             single_feature["frame_pitch"] = aligned_frame_pitch
 
@@ -241,24 +239,14 @@ class CodecCollator(object):
 
         for key in batch[0].keys():
             if key == "target_len":
-                packed_batch_features["target_len"] = torch.LongTensor(
-                    [b["target_len"] for b in batch]
-                )
-                masks = [
-                    torch.ones((b["target_len"], 1), dtype=torch.long) for b in batch
-                ]
-                packed_batch_features["mask"] = pad_sequence(
-                    masks, batch_first=True, padding_value=0
-                )
+                packed_batch_features["target_len"] = torch.LongTensor([b["target_len"] for b in batch])
+                masks = [torch.ones((b["target_len"], 1), dtype=torch.long) for b in batch]
+                packed_batch_features["mask"] = pad_sequence(masks, batch_first=True, padding_value=0)
             elif key == "mel":
                 values = [torch.from_numpy(b[key]).T for b in batch]
-                packed_batch_features[key] = pad_sequence(
-                    values, batch_first=True, padding_value=0
-                )
+                packed_batch_features[key] = pad_sequence(values, batch_first=True, padding_value=0)
             else:
                 values = [torch.from_numpy(b[key]) for b in batch]
-                packed_batch_features[key] = pad_sequence(
-                    values, batch_first=True, padding_value=0
-                )
+                packed_batch_features[key] = pad_sequence(values, batch_first=True, padding_value=0)
 
         return packed_batch_features

@@ -18,9 +18,7 @@ class MultiOptimizer:
         self.optimizers = optimizers
         self.schedulers = schedulers
         self.keys = list(optimizers.keys())
-        self.param_groups = reduce(
-            lambda x, y: x + y, [v.param_groups for v in self.optimizers.values()]
-        )
+        self.param_groups = reduce(lambda x, y: x + y, [v.param_groups for v in self.optimizers.values()])
 
     def state_dict(self):
         state_dicts = [(key, self.optimizers[key].state_dict()) for key in self.keys]
@@ -79,9 +77,7 @@ def build_optimizer(model_dict, scheduler_params_dict, lr, type="AdamW"):
     for key, model in model_dict.items():
         model_parameters = model.parameters()
         parameters_names = []
-        parameters_names.append(
-            [name_param_pair[0] for name_param_pair in model.named_parameters()]
-        )
+        parameters_names.append([name_param_pair[0] for name_param_pair in model.named_parameters()])
         if type == "AdamW":
             optim[key] = AdamW(
                 model_parameters,
@@ -93,12 +89,9 @@ def build_optimizer(model_dict, scheduler_params_dict, lr, type="AdamW"):
         else:
             raise ValueError("Unknown optimizer type: %s" % type)
 
-    schedulers = dict(
-        [
-            (key, torch.optim.lr_scheduler.ExponentialLR(opt, gamma=0.999996))
-            for key, opt in optim.items()
-        ]
-    )
+    schedulers = dict([
+        (key, torch.optim.lr_scheduler.ExponentialLR(opt, gamma=0.999996)) for key, opt in optim.items()
+    ])
 
     multi_optim = MultiOptimizer(optim, schedulers)
     return multi_optim

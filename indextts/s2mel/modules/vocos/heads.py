@@ -63,7 +63,7 @@ class ISTFTHead(FourierHead):
         # only costs time
         # phase = torch.atan2(y, x)
         # S = mag * torch.exp(phase * 1j)
-        # better directly produce the complex value 
+        # better directly produce the complex value
         S = mag * (x + 1j * y)
         audio = self.istft(S)
         return audio

@@ -24,16 +24,14 @@ from torch.nn.utils import spectral_norm, weight_norm
 from .norm import ConvLayerNorm
 
 
-CONV_NORMALIZATIONS = frozenset(
-    [
-        "none",
-        "weight_norm",
-        "spectral_norm",
-        "time_layer_norm",
-        "layer_norm",
-        "time_group_norm",
-    ]
-)
+CONV_NORMALIZATIONS = frozenset([
+    "none",
+    "weight_norm",
+    "spectral_norm",
+    "time_layer_norm",
+    "layer_norm",
+    "time_group_norm",
+])
 
 
 def apply_parametrization_norm(module: nn.Module, norm: str = "none") -> nn.Module:
@@ -48,9 +46,7 @@ def apply_parametrization_norm(module: nn.Module, norm: str = "none") -> nn.Modu
         return module
 
 
-def get_norm_module(
-    module: nn.Module, causal: bool = False, norm: str = "none", **norm_kwargs
-) -> nn.Module:
+def get_norm_module(module: nn.Module, causal: bool = False, norm: str = "none", **norm_kwargs) -> nn.Module:
     """Return the proper normalization module. If causal is True, this will ensure the returned
     module is causal, or return an error if the normalization doesn't support causal evaluation.
     """
@@ -67,9 +63,7 @@ def get_norm_module(
         return nn.Identity()
 
 
-def get_extra_padding_for_conv1d(
-    x: torch.Tensor, kernel_size: int, stride: int, padding_total: int = 0
-) -> int:
+def get_extra_padding_for_conv1d(x: torch.Tensor, kernel_size: int, stride: int, padding_total: int = 0) -> int:
     """See `pad_for_conv1d`."""
     length = x.shape[-1]
     n_frames = (length - kernel_size + padding_total) / stride + 1
@@ -77,9 +71,7 @@ def get_extra_padding_for_conv1d(
     return ideal_length - length
 
 
-def pad_for_conv1d(
-    x: torch.Tensor, kernel_size: int, stride: int, padding_total: int = 0
-):
+def pad_for_conv1d(x: torch.Tensor, kernel_size: int, stride: int, padding_total: int = 0):
     """Pad for a convolution to make sure that the last window is full.
     Extra padding is added at the end. This is required to ensure that we can rebuild
     an output of the same length, as otherwise, even with padding, some time steps
@@ -189,9 +181,7 @@ class NormConvTranspose1d(nn.Module):
         **kwargs,
     ):
         super().__init__()
-        self.convtr = apply_parametrization_norm(
-            nn.ConvTranspose1d(*args, **kwargs), norm
-        )
+        self.convtr = apply_parametrization_norm(nn.ConvTranspose1d(*args, **kwargs), norm)
         self.norm = get_norm_module(self.convtr, causal, norm, **norm_kwargs)
         self.norm_type = norm
 
@@ -214,9 +204,7 @@ class NormConvTranspose2d(nn.Module):
         **kwargs,
     ):
         super().__init__()
-        self.convtr = apply_parametrization_norm(
-            nn.ConvTranspose2d(*args, **kwargs), norm
-        )
+        self.convtr = apply_parametrization_norm(nn.ConvTranspose2d(*args, **kwargs), norm)
         self.norm = get_norm_module(self.convtr, causal=False, norm=norm, **norm_kwargs)
 
     def forward(self, x):
@@ -272,9 +260,7 @@ class SConv1d(nn.Module):
         stride = self.conv.conv.stride[0]
         dilation = self.conv.conv.dilation[0]
         padding_total = (kernel_size - 1) * dilation - (stride - 1)
-        extra_padding = get_extra_padding_for_conv1d(
-            x, kernel_size, stride, padding_total
-        )
+        extra_padding = get_extra_padding_for_conv1d(x, kernel_size, stride, padding_total)
         if self.causal:
             # Left padding for causal
             x = pad1d(x, (padding_total, extra_padding), mode=self.pad_mode)
@@ -282,9 +268,7 @@ class SConv1d(nn.Module):
             # Asymmetric padding required for odd strides
             padding_right = padding_total // 2
             padding_left = padding_total - padding_right
-            x = pad1d(
-                x, (padding_left, padding_right + extra_padding), mode=self.pad_mode
-            )
+            x = pad1d(x, (padding_left, padding_right + extra_padding), mode=self.pad_mode)
         return self.conv(x)
 
 
@@ -316,9 +300,9 @@ class SConvTranspose1d(nn.Module):
         )
         self.causal = causal
         self.trim_right_ratio = trim_right_ratio
-        assert (
-            self.causal or self.trim_right_ratio == 1.0
-        ), "`trim_right_ratio` != 1.0 only makes sense for causal convolutions"
+        assert self.causal or self.trim_right_ratio == 1.0, (
+            "`trim_right_ratio` != 1.0 only makes sense for causal convolutions"
+        )
         assert self.trim_right_ratio >= 0.0 and self.trim_right_ratio <= 1.0
 
     def forward(self, x):

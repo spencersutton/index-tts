@@ -116,11 +116,7 @@ class SISDRLoss(nn.Module):
         references_projection = (_references**2).sum(dim=-2) + eps
         references_on_estimates = (_estimates * _references).sum(dim=-2) + eps
 
-        scale = (
-            (references_on_estimates / references_projection).unsqueeze(1)
-            if self.scaling
-            else 1
-        )
+        scale = (references_on_estimates / references_projection).unsqueeze(1) if self.scaling else 1
 
         e_true = scale * _references
         e_res = _estimates - e_true
@@ -308,9 +304,7 @@ class MelSpectrogramLoss(nn.Module):
             Mel loss.
         """
         loss = 0.0
-        for n_mels, fmin, fmax, s in zip(
-            self.n_mels, self.mel_fmin, self.mel_fmax, self.stft_params
-        ):
+        for n_mels, fmin, fmax, s in zip(self.n_mels, self.mel_fmin, self.mel_fmax, self.stft_params):
             kwargs = {
                 "window_length": s.window_length,
                 "hop_length": s.hop_length,

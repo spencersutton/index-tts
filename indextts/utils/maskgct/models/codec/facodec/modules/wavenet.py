@@ -53,11 +53,7 @@ class ConvReluNorm(nn.Module):
 
         self.conv_layers = nn.ModuleList()
         self.norm_layers = nn.ModuleList()
-        self.conv_layers.append(
-            nn.Conv1d(
-                in_channels, hidden_channels, kernel_size, padding=kernel_size // 2
-            )
-        )
+        self.conv_layers.append(nn.Conv1d(in_channels, hidden_channels, kernel_size, padding=kernel_size // 2))
         self.norm_layers.append(LayerNorm(hidden_channels))
         self.relu_drop = nn.Sequential(nn.ReLU(), nn.Dropout(p_dropout))
         for _ in range(n_layers - 1):
@@ -159,9 +155,7 @@ class WN(torch.nn.Module):
         self.drop = nn.Dropout(p_dropout)
 
         if gin_channels != 0:
-            self.cond_layer = conv1d_type(
-                gin_channels, 2 * hidden_channels * n_layers, 1, norm="weight_norm"
-            )
+            self.cond_layer = conv1d_type(gin_channels, 2 * hidden_channels * n_layers, 1, norm="weight_norm")
 
         for i in range(n_layers):
             dilation = dilation_rate**i
@@ -183,9 +177,7 @@ class WN(torch.nn.Module):
             else:
                 res_skip_channels = hidden_channels
 
-            res_skip_layer = conv1d_type(
-                hidden_channels, res_skip_channels, 1, norm="weight_norm", causal=causal
-            )
+            res_skip_layer = conv1d_type(hidden_channels, res_skip_channels, 1, norm="weight_norm", causal=causal)
             self.res_skip_layers.append(res_skip_layer)
 
     def forward(self, x, x_mask, g=None, **kwargs):

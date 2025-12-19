@@ -1,5 +1,4 @@
-from builtins import bool as _bool
-from builtins import int as _int
+from builtins import bool as _bool, int as _int
 from collections.abc import Callable, Iterable, Iterator, Sequence
 from enum import Enum
 from pathlib import Path

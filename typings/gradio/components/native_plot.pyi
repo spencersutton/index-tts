@@ -1,5 +1,4 @@
-from collections.abc import Callable, Sequence
-from collections.abc import Set as AbstractSet
+from collections.abc import Callable, Sequence, Set as AbstractSet
 from typing import TYPE_CHECKING, Any, Literal
 
 import pandas as pd

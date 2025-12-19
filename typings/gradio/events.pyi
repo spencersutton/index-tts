@@ -1,7 +1,6 @@
 import dataclasses
 from collections import UserDict, UserString
-from collections.abc import Callable, Sequence
-from collections.abc import Set as AbstractSet
+from collections.abc import Callable, Sequence, Set as AbstractSet
 from typing import TYPE_CHECKING, Any, Literal
 
 from gradio.blocks import Block, BlockContext, Component

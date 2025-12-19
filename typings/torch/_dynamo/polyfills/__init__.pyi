@@ -3,15 +3,17 @@ from typing import Any
 
 from torch.overrides import BaseTorchFunctionMode
 
-from . import _collections as _collections
-from . import builtins as builtins
-from . import functools as functools
-from . import itertools as itertools
-from . import operator as operator
-from . import os as os
-from . import pytree as pytree
-from . import struct as struct
-from . import sys as sys
+from . import (
+    _collections as _collections,
+    builtins as builtins,
+    functools as functools,
+    itertools as itertools,
+    operator as operator,
+    os as os,
+    pytree as pytree,
+    struct as struct,
+    sys as sys,
+)
 
 class NoEnterTorchFunctionMode(BaseTorchFunctionMode):
     def __enter__(self): ...

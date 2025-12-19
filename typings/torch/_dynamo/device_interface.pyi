@@ -3,9 +3,11 @@ from dataclasses import dataclass
 from typing import Any, Literal
 
 import torch
-from torch._C import _cuda_getCurrentRawStream as get_cuda_stream
-from torch._C import _mtia_getCurrentRawStream as get_mtia_stream
-from torch._C import _xpu_getCurrentRawStream as get_xpu_stream
+from torch._C import (
+    _cuda_getCurrentRawStream as get_cuda_stream,
+    _mtia_getCurrentRawStream as get_mtia_stream,
+    _xpu_getCurrentRawStream as get_xpu_stream,
+)
 
 get_cuda_stream: Callable[[int], int] | None
 if torch.cuda._is_compiled(): ...

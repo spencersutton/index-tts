@@ -7,8 +7,7 @@ from torch import _guards
 from torch._dynamo.output_graph import GraphCompileReason
 from torch.fx.node import Target
 
-from .registry import CompiledFn, CompilerFn
-from .registry import register_debug_backend as register_backend
+from .registry import CompiledFn, CompilerFn, register_debug_backend as register_backend
 
 log = ...
 

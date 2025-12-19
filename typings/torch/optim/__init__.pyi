@@ -1,5 +1,4 @@
-from torch.optim import lr_scheduler as lr_scheduler
-from torch.optim import swa_utils as swa_utils
+from torch.optim import lr_scheduler as lr_scheduler, swa_utils as swa_utils
 from torch.optim._adafactor import Adafactor as Adafactor
 from torch.optim._muon import Muon as Muon
 from torch.optim.adadelta import Adadelta as Adadelta

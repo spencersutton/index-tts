@@ -1,6 +1,5 @@
 import dataclasses
-from collections.abc import Callable, Sequence
-from collections.abc import Set as AbstractSet
+from collections.abc import Callable, Sequence, Set as AbstractSet
 from enum import Enum
 from typing import Any
 

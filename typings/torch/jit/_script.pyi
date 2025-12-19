@@ -5,8 +5,7 @@ import torch
 from _typeshed import Incomplete
 from torch.jit._monkeytype_config import JitTypeTraceStore as JitTypeTraceStore
 from torch.nn import Module as Module
-from torch.package import PackageExporter as PackageExporter
-from torch.package import PackageImporter as PackageImporter
+from torch.package import PackageExporter as PackageExporter, PackageImporter as PackageImporter
 
 ScriptFunction = torch._C.ScriptFunction
 type_trace_db: JitTypeTraceStore

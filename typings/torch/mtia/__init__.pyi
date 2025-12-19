@@ -2,8 +2,7 @@ from collections.abc import Callable
 from typing import Any
 
 import torch
-from torch import Tensor
-from torch import device as _device
+from torch import Tensor, device as _device
 
 from .memory import *
 

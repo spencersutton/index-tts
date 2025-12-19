@@ -1,8 +1,10 @@
 from typing import *
 
 import torch
-from torch._higher_order_ops.flex_attention import flex_attention as flex_attention_hop
-from torch._higher_order_ops.flex_attention import flex_attention_backward as flex_attention_backward_hop
+from torch._higher_order_ops.flex_attention import (
+    flex_attention as flex_attention_hop,
+    flex_attention_backward as flex_attention_backward_hop,
+)
 from torch.fx.graph_module import GraphModule
 
 from .nested_tensor import NestedTensor

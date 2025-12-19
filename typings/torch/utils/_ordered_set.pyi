@@ -1,5 +1,4 @@
-from collections.abc import Hashable, Iterable, Iterator, MutableSet, Reversible
-from collections.abc import Set as AbstractSet
+from collections.abc import Hashable, Iterable, Iterator, MutableSet, Reversible, Set as AbstractSet
 from typing import TypeVar
 
 T = TypeVar("T", bound=Hashable)

@@ -3,8 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, NotRequired
 
-from gradio.components import Component as GradioComponent
-from gradio.components import Timer
+from gradio.components import Component as GradioComponent, Timer
 from gradio.components.base import Component
 from gradio.data_classes import FileData, GradioModel, GradioRootModel
 from gradio.events import Dependency

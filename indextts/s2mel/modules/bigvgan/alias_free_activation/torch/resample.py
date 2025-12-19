@@ -1,8 +1,11 @@
 # Adapted from https://github.com/junjun3518/alias-free-torch under the Apache License 2.0
 #   LICENSE is in incl_licenses directory.
+from typing import override
 
 from torch import Tensor, nn
 from torch.nn import functional as F
+
+from indextts.util import patch_call
 
 from .filter import LowPassFilter1d, kaiser_sinc_filter1d
 
@@ -22,6 +25,7 @@ class UpSample1d(nn.Module):
         self.register_buffer("filter", filter)
 
     # x: [B, C, T]
+    @override
     def forward(self, x: Tensor) -> Tensor:
         _, C, _ = x.shape
 
@@ -29,8 +33,13 @@ class UpSample1d(nn.Module):
         x = self.ratio * F.conv_transpose1d(x, self.filter.expand(C, -1, -1), stride=self.stride, groups=C)
         return x[..., self.pad_left : -self.pad_right]
 
+    @patch_call(forward)
+    def __call__(self) -> None: ...
+
 
 class DownSample1d(nn.Module):
+    lowpass: LowPassFilter1d
+
     def __init__(self, ratio: int = 2, kernel_size: int | None = None) -> None:
         super().__init__()
         self.ratio = ratio
@@ -42,5 +51,6 @@ class DownSample1d(nn.Module):
             kernel_size=self.kernel_size,
         )
 
+    @override
     def forward(self, x: Tensor) -> Tensor:
         return self.lowpass(x)

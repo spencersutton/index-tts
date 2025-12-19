@@ -8,6 +8,16 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
 class QwenEmotion:
+    model_dir: Path
+    tokenizer: AutoTokenizer
+    model: AutoModelForCausalLM
+    prompt: str
+    cn_key_to_en: dict[str, str]
+    desired_vector_order: list[str]
+    melancholic_words: set[str]
+    max_score: float
+    min_score: float
+
     def __init__(self, model_dir: Path) -> None:
         self.model_dir = model_dir
         self.tokenizer = AutoTokenizer.from_pretrained(model_dir)
@@ -90,7 +100,7 @@ class QwenEmotion:
         model_inputs = self.tokenizer([text], return_tensors="pt")
         # conduct text completion
         generated_ids = self.model.generate(
-            **model_inputs,  # pyright: ignore[reportArgumentType]
+            **model_inputs,
             max_new_tokens=32768,
             pad_token_id=self.tokenizer.eos_token_id,
         )

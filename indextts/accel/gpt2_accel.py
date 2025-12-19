@@ -14,6 +14,8 @@ from .attention import Attention
 
 
 class GPT2AccelAttention(GPT2Attention):
+    c_attn: Conv1D
+
     def __init__(self, config: GPT2Config, layer_idx: int | None = None) -> None:
         super().__init__(config, layer_idx=layer_idx)
         self.config = config

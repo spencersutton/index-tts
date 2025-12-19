@@ -118,7 +118,7 @@ class IndexTTS2:
     dtype: torch.dtype | None
     stop_mel_token: int
     qwen_emo: QwenEmotion
-    gpt: "UnifiedVoice"
+    gpt: UnifiedVoice
     extract_features: SeamlessM4TFeatureExtractor
     semantic_model: Wav2Vec2BertModel
     semantic_mean: Tensor
@@ -260,7 +260,7 @@ class IndexTTS2:
 
             logger.info("torch.compile cache directory: %s", cache_dir)
 
-        cfg = CheckpointsConfig(**cast(Mapping[str, Any], OmegaConf.load(cfg_path)))
+        cfg = CheckpointsConfig(**cast(Mapping[str, Any], OmegaConf.load(cfg_path)))  # pyright ignore[reportAny]
         self.cfg = cfg
         self.dtype = torch.float16 if self.use_fp16 else None
         self.stop_mel_token = cfg.gpt.stop_mel_token
@@ -305,9 +305,7 @@ class IndexTTS2:
 
         self.semantic_model = Wav2Vec2BertModel.from_pretrained("facebook/w2v-bert-2.0").eval()
 
-        stat_mean_var = safetensors.safe_open(
-            model_dir / cfg.w2v_stat, framework="pt", device=str(torch.get_default_device())
-        )
+        stat_mean_var = safetensors.safe_open(model_dir / cfg.w2v_stat, framework="pt", device=self.device)
         self.semantic_mean = stat_mean_var.get_tensor("mean")
         self.semantic_std = torch.sqrt(stat_mean_var.get_tensor("var"))
 
@@ -507,13 +505,15 @@ class IndexTTS2:
 
         if emo_vector is not None:
             weight_vector = torch.tensor(emo_vector)
+            random_index: list[int | Tensor]
             if use_random:
                 random_index = [random.randint(0, x - 1) for x in self.emo_num]  # noqa: S311
             else:
                 random_index = [_find_most_similar_cosine(style, tmp) for tmp in self.spk_matrix]
 
-            emo_matrix = [tmp[index].unsqueeze(0) for index, tmp in zip(random_index, self.emo_matrix)]
-            emo_matrix = torch.cat(emo_matrix, 0)
+            emo_index_matrix_pairs: zip[tuple[int | Tensor, Tensor]] = zip(random_index, list(self.emo_matrix))
+            emo_matrix: list[Tensor] = [tmp[index].unsqueeze(0) for index, tmp in emo_index_matrix_pairs]
+            emo_matrix: Tensor = torch.cat(emo_matrix, 0)
             emovec_mat = weight_vector.unsqueeze(1) * emo_matrix
             emovec_mat = torch.sum(emovec_mat, 0)
             emovec_mat = emovec_mat.unsqueeze(0)

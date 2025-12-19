@@ -39,7 +39,7 @@ def chinese_path_compile_support(sources, buildpath):
     for filename in os.listdir(current_dir):
         item = pathlib.Path(current_dir).joinpath(filename)
         tar_path = pathlib.Path(ninja_compile_dir).joinpath(item.name)
-        if not item.suffix.lower() in ALLOWED_EXTENSIONS:
+        if item.suffix.lower() not in ALLOWED_EXTENSIONS:
             continue
         pathlib.Path(shutil.copy2(item, tar_path))
         if tar_path.name in resolves:

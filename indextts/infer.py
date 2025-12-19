@@ -281,7 +281,7 @@ class IndexTTS:
                 torch.cuda.empty_cache()
             elif "mps" in str(self.device):
                 torch.mps.empty_cache()
-        except Exception as e:
+        except Exception:
             pass
 
     def _set_gr_progress(self, value, desc):

@@ -1,5 +1,3 @@
-import os
-import random
 import re
 
 import torch
@@ -18,7 +16,7 @@ def load_audio(audiopath, sampling_rate):
     if sr != sampling_rate:
         try:
             audio = torchaudio.functional.resample(audio, sr, sampling_rate)
-        except Exception as e:
+        except Exception:
             print(f"Warning: {audiopath}, wave shape: {audio.shape}, sample_rate: {sr}")
             return None
     # clip audio invalid values

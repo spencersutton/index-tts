@@ -2,7 +2,6 @@ import os
 import torch
 import argparse
 import gradio as gr
-from zipfile import ZipFile
 import langid
 from . import se_extractor
 from .api import BaseSpeakerTTS, ToneColorConverter
@@ -108,7 +107,7 @@ def predict(prompt, style, audio_file_pth, agree):
     speaker_wav = audio_file_pth
 
     if len(prompt) < 2:
-        text_hint += f"[ERROR] Please give a longer prompt text \n"
+        text_hint += "[ERROR] Please give a longer prompt text \n"
         gr.Warning("Please give a longer prompt text")
         return (
             text_hint,
@@ -116,7 +115,7 @@ def predict(prompt, style, audio_file_pth, agree):
             None,
         )
     if len(prompt) > 200:
-        text_hint += f"[ERROR] Text length limited to 200 characters for this demo, please try shorter text. You can clone our open-source repo and try for your usage \n"
+        text_hint += "[ERROR] Text length limited to 200 characters for this demo, please try shorter text. You can clone our open-source repo and try for your usage \n"
         gr.Warning(
             "Text length limited to 200 characters for this demo, please try shorter text. You can clone our open-source repo for your usage"
         )
@@ -148,7 +147,7 @@ def predict(prompt, style, audio_file_pth, agree):
         audio_src_path=src_path, src_se=source_se, tgt_se=target_se, output_path=save_path, message=encode_message
     )
 
-    text_hint += f"""Get response successfully \n"""
+    text_hint += """Get response successfully \n"""
 
     return (
         text_hint,

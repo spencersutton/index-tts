@@ -1,11 +1,13 @@
 # Adapted from https://github.com/junjun3518/alias-free-torch under the Apache License 2.0
 #   LICENSE is in incl_licenses directory.
-
 import math
+from typing import override
 
 import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
+
+from indextts.util import patch_call
 
 
 # This code is adopted from adefossez's julius.lowpass.LowPassFilters under the MIT License
@@ -76,9 +78,13 @@ class LowPassFilter1d(nn.Module):
         self.register_buffer("filter", filter)
 
     # Input [B, C, T]
+    @override
     def forward(self, x: Tensor) -> Tensor:
         _, C, _ = x.shape
 
         if self.padding:
             x = F.pad(x, (self.pad_left, self.pad_right), mode=self.padding_mode)
         return F.conv1d(x, self.filter.expand(C, -1, -1), stride=self.stride, groups=C)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...

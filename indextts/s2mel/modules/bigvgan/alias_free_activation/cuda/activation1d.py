@@ -1,6 +1,6 @@
 # Copyright (c) 2024 NVIDIA CORPORATION.
 #   Licensed under the MIT license.
-from typing import Any
+from typing import Any, override
 
 import torch
 from torch import Tensor, nn
@@ -57,6 +57,7 @@ class Activation1d(nn.Module):
 
         self.fused = fused  # Whether to use fused CUDA kernel or not
 
+    @override
     def forward(self, x: Tensor) -> Tensor:
         if not self.fused:
             x = self.upsample(x)

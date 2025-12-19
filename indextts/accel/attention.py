@@ -1,5 +1,6 @@
 # pyright: reportMissingImports=false, reportUnknownParameterType=false, reportUnknownArgumentType=false
 # pyright: reportUnknownMemberType=false, reportUntypedFunctionDecorator=false
+import typing
 from dataclasses import dataclass
 from typing import Any, ClassVar, Self, override
 
@@ -61,6 +62,7 @@ ForwardContext.reset()
 
 
 @triton.jit
+@typing.no_type_check
 def store_kvcache_kernel(
     key_ptr: tl.pointer_type,
     key_stride: int,
@@ -71,14 +73,14 @@ def store_kvcache_kernel(
     slot_mapping_ptr: tl.pointer_type,
     D: tl.constexpr,  # noqa: N803
 ) -> None:
-    BLOCK_SIZE: tl.constexpr = 2048  # ty:ignore[invalid-assignment]
+    BLOCK_SIZE: tl.constexpr = 2048
     idx: int = tl.program_id(0)
     slot: int = tl.load(slot_mapping_ptr + idx)
     if slot == -1:
         return
     d_offset: int = 0
     while d_offset < D:
-        cur_block_size: int = min(BLOCK_SIZE, D - d_offset)  # ty:ignore[invalid-assignment]
+        cur_block_size: int = min(BLOCK_SIZE, D - d_offset)
         key_offsets = idx * key_stride + d_offset + tl.arange(0, BLOCK_SIZE)
         value_offsets = idx * value_stride + d_offset + tl.arange(0, BLOCK_SIZE)
         cache_offsets = slot * D + d_offset + tl.arange(0, BLOCK_SIZE)
@@ -106,14 +108,14 @@ def store_kvcache(
     assert k_cache.stride(1) == D and v_cache.stride(1) == D
     assert slot_mapping.numel() == N
     store_kvcache_kernel[N,](
-        key,  # ty:ignore[invalid-argument-type]
+        key,
         key.stride(0),
-        value,  # ty:ignore[invalid-argument-type]
+        value,
         value.stride(0),
-        k_cache,  # ty:ignore[invalid-argument-type]
-        v_cache,  # ty:ignore[invalid-argument-type]
-        slot_mapping,  # ty:ignore[invalid-argument-type]
-        D,  # ty:ignore[invalid-argument-type]
+        k_cache,
+        v_cache,
+        slot_mapping,
+        D,
     )
 
 

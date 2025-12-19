@@ -6,6 +6,8 @@ to improve maintainability and testability.
 
 from __future__ import annotations
 
+from typing import override
+
 import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
@@ -25,6 +27,7 @@ class NullPositionEmbedding(nn.Embedding):
         super().__init__(1, dim)
         del self.weight
 
+    @override
     def forward(self, input: Tensor) -> Tensor:
         """Return zero embeddings for the given input shape."""
         return torch.zeros((input.shape[0], input.shape[1], self.embedding_dim))

@@ -181,9 +181,11 @@ class Transformer(nn.Module):
                 mask = mask[..., input_pos]
         freqs_cis = self.freqs_cis[input_pos]
         context_freqs_cis = self.freqs_cis[context_input_pos] if context is not None else None
-        skip_in_x_list = []
+        skip_in_x_list: list[Tensor] = []
         for i, layer in enumerate(self.layers):
-            skip_in_x = skip_in_x_list.pop(-1) if self.uvit_skip_connection and i in self.layers_receive_skip else None
+            skip_in_x = None
+            if self.uvit_skip_connection and i in self.layers_receive_skip:
+                skip_in_x = skip_in_x_list.pop(-1)
             x = layer(
                 x,
                 c,

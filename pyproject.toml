@@ -64,13 +64,9 @@ dependencies = [
 
 [project.optional-dependencies]
 # To install the WebUI support, use `uv sync --extra webui` (or `--all-extras`).
-webui = [
-  "gradio==5.45.0",
-]
+webui = ["gradio==5.45.0"]
 # To install the DeepSpeed support, use `uv sync --extra deepspeed` (or `--all-extras`).
-deepspeed = [
-  "deepspeed==0.17.1",
-]
+deepspeed = ["deepspeed==0.17.1"]
 
 [project.urls]
 Homepage = "https://github.com/index-tts/index-tts"

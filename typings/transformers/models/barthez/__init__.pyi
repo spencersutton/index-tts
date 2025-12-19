@@ -1,0 +1,6 @@
+from typing import TYPE_CHECKING
+
+from .tokenization_barthez import *
+from .tokenization_barthez_fast import *
+
+if TYPE_CHECKING: ...

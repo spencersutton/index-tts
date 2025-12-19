@@ -1,0 +1,3 @@
+def print_environment_info():  # -> None:
+
+    ...

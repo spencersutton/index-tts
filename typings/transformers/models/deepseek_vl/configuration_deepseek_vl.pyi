@@ -1,0 +1,13 @@
+from ...configuration_utils import PretrainedConfig
+from ..auto import AutoConfig
+
+logger = ...
+
+class DeepseekVLConfig(PretrainedConfig):
+    model_type = ...
+    sub_configs = ...
+    def __init__(
+        self, text_config: AutoConfig = ..., vision_config: AutoConfig = ..., image_token_id: int = ..., **kwargs
+    ) -> None: ...
+
+__all__ = ["DeepseekVLConfig"]

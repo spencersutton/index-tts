@@ -1,0 +1,12 @@
+from typing import Any
+
+from huggingface_hub.inference._common import RequestParameters
+
+from ._common import BaseConversationalTask, TaskProviderHelper
+
+class ScalewayConversationalTask(BaseConversationalTask):
+    def __init__(self) -> None: ...
+
+class ScalewayFeatureExtractionTask(TaskProviderHelper):
+    def __init__(self) -> None: ...
+    def get_response(self, response: bytes | dict, request_params: RequestParameters | None = ...) -> Any: ...

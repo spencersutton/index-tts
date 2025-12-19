@@ -1,0 +1,315 @@
+from dataclasses import dataclass
+
+import torch
+import torch.nn as nn
+
+from ...cache_utils import Cache
+from ...generation import GenerationMixin
+from ...modeling_flash_attention_utils import FlashAttentionKwargs
+from ...modeling_layers import GradientCheckpointingLayer
+from ...modeling_outputs import BaseModelOutputWithPast, ModelOutput
+from ...modeling_rope_utils import dynamic_rope_update
+from ...modeling_utils import PreTrainedModel
+from ...processing_utils import Unpack
+from ...utils import TransformersKwargs, can_return_tuple
+from .configuration_qwen2_5_vl import Qwen2_5_VLConfig, Qwen2_5_VLTextConfig, Qwen2_5_VLVisionConfig
+
+logger = ...
+
+class Qwen2_5_VLMLP(nn.Module):
+    def __init__(self, config, bias: bool = ...) -> None: ...
+    def forward(self, hidden_state):  # -> Any:
+        ...
+
+class Qwen2_5_VisionPatchEmbed(nn.Module):
+    def __init__(
+        self, patch_size: int = ..., temporal_patch_size: int = ..., in_channels: int = ..., embed_dim: int = ...
+    ) -> None: ...
+    def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
+
+class Qwen2_5_VisionRotaryEmbedding(nn.Module):
+    def __init__(self, dim: int, theta: float = ...) -> None: ...
+    def forward(self, seqlen: int) -> torch.Tensor: ...
+
+class Qwen2RMSNorm(nn.Module):
+    def __init__(self, hidden_size, eps=...) -> None: ...
+    def forward(self, hidden_states): ...
+    def extra_repr(self):  # -> str:
+        ...
+
+class Qwen2_5_VLPatchMerger(nn.Module):
+    def __init__(self, dim: int, context_dim: int, spatial_merge_size: int = ...) -> None: ...
+    def forward(self, x: torch.Tensor) -> torch.Tensor: ...
+
+def rotate_half(x):  # -> Tensor:
+
+    ...
+def apply_rotary_pos_emb_vision(
+    q: torch.Tensor, k: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor
+) -> tuple[torch.Tensor, torch.Tensor]: ...
+def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor: ...
+def eager_attention_forward(
+    module: nn.Module,
+    query: torch.Tensor,
+    key: torch.Tensor,
+    value: torch.Tensor,
+    attention_mask: torch.Tensor | None,
+    scaling: float,
+    dropout: float = ...,
+    **kwargs,
+):  # -> tuple[Tensor, Tensor]:
+    ...
+
+class Qwen2_5_VLVisionAttention(nn.Module):
+    def __init__(self, config: Qwen2_5_VLVisionConfig) -> None: ...
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        cu_seqlens: torch.Tensor,
+        rotary_pos_emb: torch.Tensor | None = ...,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = ...,
+        **kwargs,
+    ) -> torch.Tensor: ...
+
+class Qwen2_5_VLVisionBlock(GradientCheckpointingLayer):
+    def __init__(self, config, attn_implementation: str = ...) -> None: ...
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        cu_seqlens: torch.Tensor,
+        rotary_pos_emb: torch.Tensor | None = ...,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = ...,
+        **kwargs,
+    ) -> torch.Tensor: ...
+
+class Qwen2_5_VLPreTrainedModel(PreTrainedModel):
+    config: Qwen2_5_VLConfig
+    base_model_prefix = ...
+    supports_gradient_checkpointing = ...
+    _no_split_modules = ...
+    _skip_keys_device_placement = ...
+    _supports_flash_attn = ...
+    _supports_sdpa = ...
+    _can_compile_fullgraph = ...
+    _supports_attention_backend = ...
+
+class Qwen2_5_VisionTransformerPretrainedModel(Qwen2_5_VLPreTrainedModel):
+    config: Qwen2_5_VLVisionConfig
+    _no_split_modules = ...
+    def __init__(self, config, *inputs, **kwargs) -> None: ...
+    def rot_pos_emb(self, grid_thw):  # -> Any:
+        ...
+    def get_window_index(self, grid_thw):  # -> tuple[list[Any], list[Any]]:
+        ...
+    def forward(self, hidden_states: torch.Tensor, grid_thw: torch.Tensor, **kwargs) -> torch.Tensor: ...
+
+@dataclass
+class Qwen2_5_VLModelOutputWithPast(ModelOutput):
+    last_hidden_state: torch.FloatTensor = ...
+    past_key_values: list[torch.FloatTensor] | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
+    rope_deltas: torch.LongTensor | None = ...
+
+class Qwen2_5_VLRotaryEmbedding(nn.Module):
+    def __init__(self, config: Qwen2_5_VLTextConfig, device=...) -> None: ...
+    @torch.no_grad()
+    @dynamic_rope_update
+    def forward(self, x, position_ids):  # -> tuple[Tensor, Tensor]:
+        ...
+
+class Qwen2MLP(nn.Module):
+    def __init__(self, config) -> None: ...
+    def forward(self, x):  # -> Any:
+        ...
+
+def apply_multimodal_rotary_pos_emb(q, k, cos, sin, mrope_section, unsqueeze_dim=...):  # -> tuple[Any, Any]:
+
+    ...
+
+class Qwen2_5_VLAttention(nn.Module):
+    def __init__(self, config: Qwen2_5_VLTextConfig, layer_idx: int | None = ...) -> None: ...
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: Cache | None = ...,
+        output_attentions: bool = ...,
+        use_cache: bool = ...,
+        cache_position: torch.LongTensor | None = ...,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = ...,
+        **kwargs: Unpack[FlashAttentionKwargs],
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]: ...
+
+class Qwen2_5_VLDecoderLayer(GradientCheckpointingLayer):
+    def __init__(self, config: Qwen2_5_VLTextConfig, layer_idx: int) -> None: ...
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_value: tuple[torch.Tensor] | None = ...,
+        output_attentions: bool | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = ...,
+        **kwargs: Unpack[FlashAttentionKwargs],
+    ) -> tuple[torch.FloatTensor, tuple[torch.FloatTensor, torch.FloatTensor] | None]: ...
+
+class Qwen2_5_VLTextModel(Qwen2_5_VLPreTrainedModel):
+    config: Qwen2_5_VLTextConfig
+    def __init__(self, config: Qwen2_5_VLTextConfig) -> None: ...
+    def forward(
+        self,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        **kwargs: Unpack[FlashAttentionKwargs],
+    ) -> tuple | BaseModelOutputWithPast: ...
+
+class Qwen2_5_VLModel(Qwen2_5_VLPreTrainedModel):
+    base_model_prefix = ...
+    _checkpoint_conversion_mapping = ...
+    config: Qwen2_5_VLConfig
+    _no_split_modules = ...
+    def __init__(self, config) -> None: ...
+    def get_input_embeddings(self):  # -> Module:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> Qwen2_5_VLTextModel:
+        ...
+    def get_rope_index(
+        self,
+        input_ids: torch.LongTensor | None = ...,
+        image_grid_thw: torch.LongTensor | None = ...,
+        video_grid_thw: torch.LongTensor | None = ...,
+        second_per_grid_ts: torch.Tensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+    ) -> tuple[torch.Tensor, torch.Tensor]: ...
+    def get_video_features(
+        self, pixel_values_videos: torch.FloatTensor, video_grid_thw: torch.LongTensor | None = ...
+    ):  # -> tuple[Tensor, ...]:
+
+        ...
+    def get_image_features(
+        self, pixel_values: torch.FloatTensor, image_grid_thw: torch.LongTensor | None = ...
+    ):  # -> tuple[Tensor, ...]:
+
+        ...
+    def get_placeholder_mask(
+        self,
+        input_ids: torch.LongTensor,
+        inputs_embeds: torch.FloatTensor,
+        image_features: torch.FloatTensor = ...,
+        video_features: torch.FloatTensor = ...,
+    ):  # -> tuple[Tensor | Any, Tensor | Any]:
+
+        ...
+    def forward(
+        self,
+        input_ids: torch.LongTensor = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        pixel_values: torch.Tensor | None = ...,
+        pixel_values_videos: torch.FloatTensor | None = ...,
+        image_grid_thw: torch.LongTensor | None = ...,
+        video_grid_thw: torch.LongTensor | None = ...,
+        rope_deltas: torch.LongTensor | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        second_per_grid_ts: torch.Tensor | None = ...,
+        **kwargs: Unpack[TransformersKwargs],
+    ) -> tuple | Qwen2_5_VLModelOutputWithPast: ...
+
+@dataclass
+class Qwen2_5_VLCausalLMOutputWithPast(ModelOutput):
+    loss: torch.FloatTensor | None = ...
+    logits: torch.FloatTensor | None = ...
+    past_key_values: list[torch.FloatTensor] | None = ...
+    hidden_states: tuple[torch.FloatTensor] | None = ...
+    attentions: tuple[torch.FloatTensor] | None = ...
+    rope_deltas: torch.LongTensor | None = ...
+
+class Qwen2_5_VLForConditionalGeneration(Qwen2_5_VLPreTrainedModel, GenerationMixin):
+    _checkpoint_conversion_mapping = ...
+    _tied_weights_keys = ...
+    def __init__(self, config) -> None: ...
+    def get_input_embeddings(self):  # -> Module:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
+    def set_decoder(self, decoder):  # -> None:
+        ...
+    def get_decoder(self):  # -> Qwen2_5_VLTextModel:
+        ...
+    def get_video_features(
+        self, pixel_values_videos: torch.FloatTensor, video_grid_thw: torch.LongTensor | None = ...
+    ):  # -> tuple[Tensor, ...]:
+        ...
+    def get_image_features(
+        self, pixel_values: torch.FloatTensor, image_grid_thw: torch.LongTensor | None = ...
+    ):  # -> tuple[Tensor, ...]:
+        ...
+    @property
+    def language_model(self):  # -> Qwen2_5_VLTextModel:
+        ...
+    @property
+    def visual(self):  # -> Qwen2_5_VisionTransformerPretrainedModel:
+        ...
+    @can_return_tuple
+    def forward(
+        self,
+        input_ids: torch.LongTensor = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        pixel_values: torch.Tensor | None = ...,
+        pixel_values_videos: torch.FloatTensor | None = ...,
+        image_grid_thw: torch.LongTensor | None = ...,
+        video_grid_thw: torch.LongTensor | None = ...,
+        rope_deltas: torch.LongTensor | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        second_per_grid_ts: torch.Tensor | None = ...,
+        logits_to_keep: int | torch.Tensor = ...,
+        **kwargs: Unpack[TransformersKwargs],
+    ) -> tuple | Qwen2_5_VLCausalLMOutputWithPast: ...
+    def prepare_inputs_for_generation(
+        self,
+        input_ids,
+        past_key_values=...,
+        attention_mask=...,
+        inputs_embeds=...,
+        cache_position=...,
+        position_ids=...,
+        use_cache=...,
+        pixel_values=...,
+        pixel_values_videos=...,
+        image_grid_thw=...,
+        video_grid_thw=...,
+        second_per_grid_ts=...,
+        **kwargs,
+    ):  # -> dict[Any, Any]:
+        ...
+
+__all__ = ["Qwen2_5_VLForConditionalGeneration", "Qwen2_5_VLModel", "Qwen2_5_VLPreTrainedModel", "Qwen2_5_VLTextModel"]

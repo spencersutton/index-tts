@@ -1,0 +1,13 @@
+from dataclasses import dataclass
+
+import huggingface_hub
+
+@dataclass
+class ThemeAsset:
+    filename: str
+    version: semver.Version = ...
+    def __post_init__(self):  # -> None:
+        ...
+
+def get_theme_assets(space_info: huggingface_hub.hf_api.SpaceInfo) -> list[ThemeAsset]: ...
+def get_matching_version(assets: list[ThemeAsset], expression: str | None) -> ThemeAsset | None: ...

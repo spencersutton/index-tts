@@ -1,0 +1,33 @@
+from collections.abc import Callable, Sequence
+from typing import ParamSpec, TypeVar
+
+import torch
+from torch._ops import OpOverload, OpOverloadPacket
+from torch.export.decomp_utils import CustomDecompTable
+
+__all__ = [
+    "_should_decompose_because_unsafe_op",
+    "core_aten_decompositions",
+    "decomposition_table",
+    "get_decompositions",
+    "meta_table",
+    "pre_autograd_decomposition_table",
+    "register_decomposition",
+]
+_T = TypeVar("_T")
+_P = ParamSpec("_P")
+global_decomposition_table: dict[str, dict[torch._ops.OperatorBase, Callable]] = ...
+decomposition_table = ...
+pre_autograd_decomposition_table = ...
+meta_table = ...
+
+def register_decomposition(
+    aten_op, registry=..., *, type=..., unsafe=...
+) -> Callable[[Callable[_P, _T]], Callable[_P, _T]]: ...
+def get_decompositions(
+    aten_ops: Sequence[torch._ops.OperatorBase | OpOverloadPacket], type: str = ...
+) -> dict[torch._ops.OperatorBase, Callable]: ...
+def remove_decompositions(
+    decompositions: dict[torch._ops.OperatorBase, Callable], aten_ops: Sequence[OpOverload | OpOverloadPacket]
+) -> None: ...
+def core_aten_decompositions() -> CustomDecompTable: ...

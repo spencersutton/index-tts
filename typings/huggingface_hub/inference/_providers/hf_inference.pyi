@@ -1,0 +1,16 @@
+from typing import Any
+
+from huggingface_hub.inference._common import RequestParameters
+from huggingface_hub.inference._providers._common import TaskProviderHelper
+
+class HFInferenceTask(TaskProviderHelper):
+    def __init__(self, task: str) -> None: ...
+
+class HFInferenceBinaryInputTask(HFInferenceTask): ...
+
+class HFInferenceConversational(HFInferenceTask):
+    def __init__(self) -> None: ...
+
+class HFInferenceFeatureExtractionTask(HFInferenceTask):
+    def __init__(self) -> None: ...
+    def get_response(self, response: bytes | dict, request_params: RequestParameters | None = ...) -> Any: ...

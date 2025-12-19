@@ -1,0 +1,28 @@
+from typing import Literal
+
+from wetext.config import NormalizerConfig
+
+def get_lang(text: str) -> Literal["en", "zh", "ja"]: ...
+def preprocess(text: str, traditional_to_simple: bool = ...) -> str: ...
+def postprocess(
+    text: str,
+    full_to_half: bool = ...,
+    remove_interjections: bool = ...,
+    remove_puncts: bool = ...,
+    tag_oov: bool = ...,
+) -> str: ...
+def should_normalize(text: str, operator: Literal["tn", "itn"], remove_erhua: bool = ...) -> bool: ...
+def reorder(text: str, lang: Literal["en", "zh", "ja"], operator: Literal["tn", "itn"]) -> str: ...
+def tag(
+    text: str,
+    lang: Literal["en", "zh", "ja"],
+    operator: Literal["tn", "itn"],
+    enable_0_to_9: bool = ...,
+) -> str: ...
+def verbalize(
+    text: str,
+    lang: Literal["en", "zh", "ja"],
+    operator: Literal["tn", "itn"],
+    remove_erhua: bool = ...,
+) -> str: ...
+def normalize(text: str, config: NormalizerConfig | None = ..., **kwargs) -> str: ...

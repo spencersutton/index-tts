@@ -1,0 +1,21 @@
+from collections.abc import Callable
+
+from .. import ir
+from ..utils import IndentedBuffer
+from .common import KernelTemplate
+
+log = ...
+
+class CppTemplate(KernelTemplate):
+    index_counter = ...
+    def __init__(
+        self,
+        name: str,
+        input_nodes,
+        layout: ir.Layout,
+        num_threads: int,
+        epilogue_creator: Callable[[ir.Buffer], ir.Pointwise] | None = ...,
+    ) -> None: ...
+    def generate(self, **kwargs): ...
+    def header(self) -> IndentedBuffer: ...
+    def render(self, **kwargs) -> str: ...

@@ -1,0 +1,108 @@
+import torch
+from torch import nn
+
+from ...modeling_layers import GradientCheckpointingLayer
+from ...modeling_outputs import BaseModelOutput
+from ...modeling_utils import PreTrainedModel
+from ...utils.backbone_utils import BackboneMixin
+from .configuration_vitpose_backbone import VitPoseBackboneConfig
+
+"""PyTorch VitPose backbone model.
+
+This code is the same as the original Vision Transformer (ViT) with 2 modifications:
+- use of padding=2 in the patch embedding layer
+- addition of a mixture-of-experts MLP layer
+"""
+logger = ...
+
+class VitPoseBackbonePatchEmbeddings(nn.Module):
+    def __init__(self, config) -> None: ...
+    def forward(self, pixel_values: torch.Tensor) -> torch.Tensor: ...
+
+class VitPoseBackboneEmbeddings(nn.Module):
+    def __init__(self, config: VitPoseBackboneConfig) -> None: ...
+    def forward(self, pixel_values: torch.Tensor) -> torch.Tensor: ...
+
+def eager_attention_forward(
+    module: nn.Module,
+    query: torch.Tensor,
+    key: torch.Tensor,
+    value: torch.Tensor,
+    attention_mask: torch.Tensor | None,
+    scaling: float,
+    dropout: float = ...,
+    **kwargs,
+):  # -> tuple[Tensor, Tensor]:
+    ...
+
+class VitPoseBackboneSelfAttention(nn.Module):
+    def __init__(self, config: VitPoseBackboneConfig) -> None: ...
+    def forward(
+        self, hidden_states, head_mask: torch.Tensor | None = ..., output_attentions: bool = ...
+    ) -> tuple[torch.Tensor, torch.Tensor] | tuple[torch.Tensor]: ...
+
+class VitPoseBackboneSelfOutput(nn.Module):
+    def __init__(self, config: VitPoseBackboneConfig) -> None: ...
+    def forward(self, hidden_states: torch.Tensor, input_tensor: torch.Tensor) -> torch.Tensor: ...
+
+class VitPoseBackboneAttention(nn.Module):
+    def __init__(self, config: VitPoseBackboneConfig) -> None: ...
+    def prune_heads(self, heads: set[int]) -> None: ...
+    def forward(
+        self, hidden_states: torch.Tensor, head_mask: torch.Tensor | None = ..., output_attentions: bool = ...
+    ) -> tuple[torch.Tensor, torch.Tensor] | tuple[torch.Tensor]: ...
+
+class VitPoseBackboneMoeMLP(nn.Module):
+    def __init__(self, config: VitPoseBackboneConfig) -> None: ...
+    def forward(self, hidden_state: torch.Tensor, indices: torch.Tensor) -> torch.Tensor: ...
+
+class VitPoseBackboneMLP(nn.Module):
+    def __init__(self, config: VitPoseBackboneConfig) -> None: ...
+    def forward(self, hidden_state: torch.Tensor) -> torch.Tensor: ...
+
+class VitPoseBackboneLayer(GradientCheckpointingLayer):
+    def __init__(self, config: VitPoseBackboneConfig) -> None: ...
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        dataset_index: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        output_attentions: bool = ...,
+    ) -> tuple[torch.Tensor, torch.Tensor] | tuple[torch.Tensor]: ...
+
+class VitPoseBackboneEncoder(nn.Module):
+    def __init__(self, config: VitPoseBackboneConfig) -> None: ...
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        dataset_index: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        output_attentions: bool = ...,
+        output_hidden_states: bool = ...,
+        return_dict: bool = ...,
+    ) -> tuple | BaseModelOutput: ...
+
+class VitPoseBackbonePreTrainedModel(PreTrainedModel):
+    config: VitPoseBackboneConfig
+    base_model_prefix = ...
+    main_input_name = ...
+    supports_gradient_checkpointing = ...
+    _no_split_modules = ...
+    _supports_sdpa = ...
+    _supports_flash_attn = ...
+
+class VitPoseBackbone(VitPoseBackbonePreTrainedModel, BackboneMixin):
+    def __init__(self, config: VitPoseBackboneConfig) -> None: ...
+    def forward(
+        self,
+        pixel_values: torch.Tensor,
+        dataset_index: torch.Tensor | None = ...,
+        head_mask: torch.Tensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ):  # -> Any | BackboneOutput:
+
+        ...
+
+__all__ = ["VitPoseBackbone", "VitPoseBackbonePreTrainedModel"]

@@ -15,7 +15,6 @@ def get_text_syllable_num(text):
     number_char_pattern = re.compile(r"[0-9]")
     syllable_num = 0
     tokens = re.findall(r"[\u4e00-\u9fff]+|[a-zA-Z]+|[0-9]+", text)
-    # print(tokens)
     if contains_chinese(text):
         for token in tokens:
             if chinese_char_pattern.search(token) or number_char_pattern.search(token):

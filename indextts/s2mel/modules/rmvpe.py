@@ -169,7 +169,6 @@ class ConvBlockRes(nn.Module):
             nn.BatchNorm2d(out_channels, momentum=momentum),
             nn.ReLU(),
         )
-        # self.shortcut:Optional[nn.Module] = None
         if in_channels != out_channels:
             self.shortcut = nn.Conv2d(in_channels, out_channels, (1, 1))
 
@@ -356,11 +355,9 @@ class E2E(nn.Module):
             self.fc = nn.Sequential(nn.Linear(3 * nn.N_MELS, nn.N_CLASS), nn.Dropout(0.25), nn.Sigmoid())
 
     def forward(self, mel):
-        # print(mel.shape)
         mel = mel.transpose(-1, -2).unsqueeze(1)
         x = self.cnn(self.unet(mel)).transpose(1, 2).flatten(-2)
         x = self.fc(x)
-        # print(x.shape)
         return x
 
 
@@ -502,22 +499,13 @@ class RMVPE:
         cents_pred = self.to_local_average_cents(hidden, thred=thred)
         f0 = 10 * (2 ** (cents_pred / 1200))
         f0[f0 == 10] = 0
-        # f0 = np.array([10 * (2 ** (cent_pred / 1200)) if cent_pred else 0 for cent_pred in cents_pred])
         return f0
 
     def infer_from_audio(self, audio, thred=0.03):
-        # torch.cuda.synchronize()
-        # t0 = ttime()
         if not torch.is_tensor(audio):
             audio = torch.from_numpy(audio)
         mel = self.mel_extractor(audio.float().to(self.device).unsqueeze(0), center=True)
-        # print(123123123,mel.device.type)
-        # torch.cuda.synchronize()
-        # t1 = ttime()
         hidden = self.mel2hidden(mel)
-        # torch.cuda.synchronize()
-        # t2 = ttime()
-        # print(234234,hidden.device.type)
         if "privateuseone" not in str(self.device):
             hidden = hidden.squeeze(0).cpu().numpy()
         else:
@@ -526,24 +514,13 @@ class RMVPE:
             hidden = hidden.astype("float32")
 
         f0 = self.decode(hidden, thred=thred)
-        # torch.cuda.synchronize()
-        # t3 = ttime()
-        # print("hmvpe:%s\t%s\t%s\t%s"%(t1-t0,t2-t1,t3-t2,t3-t0))
         return f0
 
     def infer_from_audio_batch(self, audio, thred=0.03):
-        # torch.cuda.synchronize()
-        # t0 = ttime()
         if not torch.is_tensor(audio):
             audio = torch.from_numpy(audio)
         mel = self.mel_extractor(audio.float().to(self.device), center=True)
-        # print(123123123,mel.device.type)
-        # torch.cuda.synchronize()
-        # t1 = ttime()
         hidden = self.mel2hidden(mel)
-        # torch.cuda.synchronize()
-        # t2 = ttime()
-        # print(234234,hidden.device.type)
         if "privateuseone" not in str(self.device):
             hidden = hidden.cpu().numpy()
         else:
@@ -556,16 +533,11 @@ class RMVPE:
             f0s.append(self.decode(hidden[bib], thred=thred))
         f0s = np.stack(f0s)
         f0s = torch.from_numpy(f0s).to(self.device)
-        # torch.cuda.synchronize()
-        # t3 = ttime()
-        # print("hmvpe:%s\t%s\t%s\t%s"%(t1-t0,t2-t1,t3-t2,t3-t0))
         return f0s
 
     def to_local_average_cents(self, salience, thred=0.05):
-        # t0 = ttime()
         center = np.argmax(salience, axis=1)  # 帧长#index
         salience = np.pad(salience, ((0, 0), (4, 4)))  # 帧长,368
-        # t1 = ttime()
         center += 4
         todo_salience = []
         todo_cents_mapping = []
@@ -574,15 +546,11 @@ class RMVPE:
         for idx in range(salience.shape[0]):
             todo_salience.append(salience[:, starts[idx] : ends[idx]][idx])
             todo_cents_mapping.append(self.cents_mapping[starts[idx] : ends[idx]])
-        # t2 = ttime()
         todo_salience = np.array(todo_salience)  # 帧长，9
         todo_cents_mapping = np.array(todo_cents_mapping)  # 帧长，9
         product_sum = np.sum(todo_salience * todo_cents_mapping, 1)
         weight_sum = np.sum(todo_salience, 1)  # 帧长
         devided = product_sum / weight_sum  # 帧长
-        # t3 = ttime()
         maxx = np.max(salience, axis=1)  # 帧长
         devided[maxx <= thred] = 0
-        # t4 = ttime()
-        # print("decode:%s\t%s\t%s\t%s" % (t1 - t0, t2 - t1, t3 - t2, t4 - t3))
         return devided

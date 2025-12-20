@@ -85,8 +85,6 @@ class TextNormalizer:
         return has_pinyin
 
     def load(self):
-        # print(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-        # sys.path.append(model_dir)
         import platform
 
         if self.zh_normalizer is not None and self.en_normalizer is not None:
@@ -206,8 +204,6 @@ class TextNormalizer:
             number = chr(ord("a") + i)
             transformed_text = transformed_text.replace(pinyin, f"<pinyin_{number}>")
 
-        # print("original_text: ", original_text)
-        # print("transformed_text: ", transformed_text)
         return transformed_text, original_pinyin_list
 
     def restore_pinyin_tones(self, normalized_text, original_pinyin_list):
@@ -224,8 +220,6 @@ class TextNormalizer:
             number = chr(ord("a") + i)
             pinyin = self.correct_pinyin(pinyin)
             transformed_text = transformed_text.replace(f"<pinyin_{number}>", pinyin)
-        # print("normalized_text: ", normalized_text)
-        # print("transformed_text: ", transformed_text)
         return transformed_text
 
 
@@ -518,7 +512,6 @@ if __name__ == "__main__":
     )
 
     print(f"vocab_size: {tokenizer.vocab_size}")
-    # print(f"pad_token: {tokenizer.pad_token}, pad_token_id: {tokenizer.pad_token_id}")
     print(f"bos_token: {tokenizer.bos_token}, bos_token_id: {tokenizer.bos_token_id}")
     print(f"eos_token: {tokenizer.eos_token}, eos_token_id: {tokenizer.eos_token_id}")
     print(f"unk_token: {tokenizer.unk_token}, unk_token_id: {tokenizer.unk_token_id}")
@@ -553,7 +546,6 @@ if __name__ == "__main__":
                 print(f"  {j}, count:", len(segments[j]), ", tokens:", "".join(segments[j]))
                 if len(segments[j]) > max_text_tokens_per_segment:
                     print(f"Warning: segment {j} is too long, length: {len(segments[j])}")
-        # print(f"Token IDs (first 10): {codes[i][:10]}")
         if tokenizer.unk_token in codes[i]:
             print(f"Warning: `{cases[i]}` contains UNKNOWN token")
         print(f"Decoded: {tokenizer.decode(codes[i], do_lower_case=True)}")

@@ -3404,7 +3404,6 @@ class GenerationMixin:
         decoder_prompt_len = input_ids.shape[-1]  # record the prompt length of decoder
 
         while self._has_unfinished_sequences(this_peer_finished, synced_gpus, device=input_ids.device):
-            # print("model_kwargs: ", model_kwargs)
             model_inputs = self.prepare_inputs_for_generation(input_ids, **model_kwargs)
 
             # prepare variable output controls (note: some models won't accept all output controls)
@@ -3496,15 +3495,11 @@ class GenerationMixin:
             n_eos_tokens = eos_token_id.shape[0] if eos_token_id is not None else 0
             n_tokens_to_keep = max(2, 1 + n_eos_tokens) * num_beams
             if do_sample:
-                # import time
-                # start = time.time()
                 probs = nn.functional.softmax(next_token_scores, dim=-1)
                 next_tokens = torch.multinomial(probs, num_samples=n_tokens_to_keep)
                 next_token_scores = torch.gather(next_token_scores, -1, next_tokens)
                 next_token_scores, _indices = torch.sort(next_token_scores, descending=True, dim=1)
                 next_tokens = torch.gather(next_tokens, -1, _indices)
-                # print("*"*20, probs.shape, n_tokens_to_keep, next_token_scores.shape, next_tokens.shape)
-                # print("*"*20, time.time() - start)
             else:
                 next_token_scores, next_tokens = torch.topk(
                     next_token_scores, n_tokens_to_keep, dim=1, largest=True, sorted=True

@@ -144,8 +144,6 @@ def gen_single(
         "num_beams": num_beams,
         "repetition_penalty": float(repetition_penalty),
         "max_mel_tokens": int(max_mel_tokens),
-        # "typical_sampling": bool(typical_sampling),
-        # "typical_mass": float(typical_mass),
     }
     if type(emo_control_method) is not int:
         emo_control_method = emo_control_method.value
@@ -312,9 +310,6 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
                         info=i18n("生成Token最大数量，过小导致音频被截断"),
                         key="max_mel_tokens",
                     )
-                    # with gr.Row():
-                    #     typical_sampling = gr.Checkbox(label="typical_sampling", value=False, info="不建议使用")
-                    #     typical_mass = gr.Slider(label="typical_mass", value=0.9, minimum=0.0, maximum=1.0, step=0.1)
                 with gr.Column(scale=2):
                     gr.Markdown(f"**{i18n('分句设置')}** _{i18n('参数会影响音频质量和生成速度')}_")
                     with gr.Row():

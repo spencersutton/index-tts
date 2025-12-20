@@ -154,7 +154,6 @@ class IndexTTS:
 
             count = torch.sum(code == silent_token).item()
             if count > max_consecutive:
-                # code = code.cpu().tolist()
                 ncode_idx = []
                 n = 0
                 for k in range(len_):
@@ -167,8 +166,6 @@ class IndexTTS:
                     elif code[k] == silent_token and n < 10:
                         ncode_idx.append(k)
                         n += 1
-                    # if (k == 0 and code[k] == 52) or (code[k] == 52 and code[k-1] == 52):
-                    #    n += 1
                 # new code
                 len_ = len(ncode_idx)
                 codes_list.append(code[ncode_idx])
@@ -238,7 +235,6 @@ class IndexTTS:
                     out_buckets.append(b)
             if len(only_ones) > 0:
                 # merge into previous buckets if possible
-                # print("only_ones:", [(o["idx"], o["len"]) for o in only_ones])
                 for i in range(len(out_buckets)):
                     b = out_buckets[i]
                     if len(b) < bucket_max_size:
@@ -366,8 +362,6 @@ class IndexTTS:
         repetition_penalty = generation_kwargs.pop("repetition_penalty", 10.0)
         max_mel_tokens = generation_kwargs.pop("max_mel_tokens", 600)
         sampling_rate = 24000
-        # lang = "EN"
-        # lang = "ZH"
         wavs = []
         gpt_gen_time = 0
         gpt_forward_time = 0
@@ -427,7 +421,6 @@ class IndexTTS:
                         auto_conditioning,
                         batch_text_tokens,
                         cond_mel_lengths=cond_mel_lengths,
-                        # text_lengths=text_len,
                         do_sample=do_sample,
                         top_p=top_p,
                         top_k=top_k,
@@ -606,9 +599,6 @@ class IndexTTS:
         for sent in segments:
             text_tokens = self.tokenizer.convert_tokens_to_ids(sent)
             text_tokens = torch.tensor(text_tokens, dtype=torch.int32, device=self.device).unsqueeze(0)
-            # text_tokens = F.pad(text_tokens, (0, 1))  # This may not be necessary.
-            # text_tokens = F.pad(text_tokens, (1, 0), value=0)
-            # text_tokens = F.pad(text_tokens, (0, 1), value=1)
             if verbose:
                 print(text_tokens)
                 print(f"text_tokens shape: {text_tokens.shape}, text_tokens type: {text_tokens.dtype}")
@@ -616,8 +606,6 @@ class IndexTTS:
                 text_token_syms = self.tokenizer.convert_ids_to_tokens(text_tokens[0].tolist())
                 print("text_token_syms is same as segment tokens", text_token_syms == sent)
 
-            # text_len = torch.IntTensor([text_tokens.size(1)], device=text_tokens.device)
-            # print(text_len)
             progress += 1
             self._set_gr_progress(
                 0.2 + 0.4 * (progress - 1) / len(segments), f"gpt latents inference {progress}/{len(segments)}..."
@@ -629,7 +617,6 @@ class IndexTTS:
                         auto_conditioning,
                         text_tokens,
                         cond_mel_lengths=torch.tensor([auto_conditioning.shape[-1]], device=text_tokens.device),
-                        # text_lengths=text_len,
                         do_sample=do_sample,
                         top_p=top_p,
                         top_k=top_k,
@@ -668,7 +655,6 @@ class IndexTTS:
                     0.2 + 0.4 * progress / len(segments), f"gpt speech inference {progress}/{len(segments)}..."
                 )
                 m_start_time = time.perf_counter()
-                # latent, text_lens_out, code_lens_out = \
                 with torch.amp.autocast(text_tokens.device.type, enabled=self.dtype is not None, dtype=self.dtype):
                     latent = self.gpt(
                         auto_conditioning,
@@ -690,7 +676,6 @@ class IndexTTS:
                 wav = torch.clamp(32767 * wav, -32767.0, 32767.0)
                 if verbose:
                     print(f"wav shape: {wav.shape}", "min:", wav.min(), "max:", wav.max())
-                # wavs.append(wav[:, :-512])
                 wavs.append(wav.cpu())  # to cpu before saving
         end_time = time.perf_counter()
         self._set_gr_progress(0.9, "saving audio...")

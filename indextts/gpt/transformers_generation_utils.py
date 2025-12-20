@@ -1823,7 +1823,7 @@ class GenerationMixin:
                         "The attention mask and the pad token id were not set. As a consequence, you may observe "
                         "unexpected behavior. Please pass your input's `attention_mask` to obtain reliable results."
                     )
-                logger.warning(f"Setting `pad_token_id` to `eos_token_id`:{pad_token_tensor} for open-end generation.")
+                logger.warning("Setting `pad_token_id` to `eos_token_id`:%s for open-end generation.", pad_token_tensor)
             pad_token_tensor = eos_token_tensor[0]
 
         # Sanity checks/warnings
@@ -1849,8 +1849,8 @@ class GenerationMixin:
                 torch.is_floating_point(eos_token_tensor) or (eos_token_tensor < 0).any()
             ):
                 logger.warning(
-                    f"`eos_token_id` should consist of positive integers, but is {eos_token_tensor}. Your generation "
-                    "will not stop until the maximum length is reached. Depending on other flags, it may even crash."
+                    "`eos_token_id` should consist of positive integers, but is %s. Your generation will not stop until the maximum length is reached. Depending on other flags, it may even crash.",
+                    eos_token_tensor,
                 )
 
         # Update generation config with the updated special tokens tensors

@@ -124,6 +124,7 @@ extend-select = [
   "B",
   "C",
   "FURB",
+  "G",
   "I",
   "PIE",
   "PLW",
@@ -131,6 +132,7 @@ extend-select = [
   "RUF",
   "SIM",
   "UP",
+  "W",
 ]
 ignore = [
   "ANN401",

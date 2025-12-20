@@ -490,7 +490,9 @@ def load_sharded_checkpoint(model, folder, strict=True, prefer_safe=True):
             if is_safetensors_available():
                 load_safe = True  # load safe due to preference
             else:
-                logger.warning(f"Cannot load sharded checkpoint at {folder} safely since safetensors is not installed!")
+                logger.warning(
+                    "Cannot load sharded checkpoint at %s safely since safetensors is not installed!", folder
+                )
         elif not index_present:
             load_safe = True  # load safe since we have no other choice
 
@@ -1998,7 +2000,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
 
         if len(uninitialized_encoder_weights) > 0:
             logger.warning(
-                f"The following encoder weights were not tied to the decoder {uninitialized_encoder_weights}"
+                "The following encoder weights were not tied to the decoder %s", uninitialized_encoder_weights
             )
         return tied_weights
 
@@ -2199,10 +2201,8 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
             new_num_tokens = ((new_num_tokens + pad_to_multiple_of - 1) // pad_to_multiple_of) * pad_to_multiple_of
         else:
             logger.info(
-                "You are resizing the embedding layer without providing a `pad_to_multiple_of` parameter. This means that the new embedding"
-                f" dimension will be {new_num_tokens}. This might induce some performance reduction as *Tensor Cores* will not be available."
-                " For more details about this, or help on choosing the correct value for resizing, refer to this guide:"
-                " https://docs.nvidia.com/deeplearning/performance/dl-performance-matrix-multiplication/index.html#requirements-tc"
+                "You are resizing the embedding layer without providing a `pad_to_multiple_of` parameter. This means that the new embedding dimension will be %s. This might induce some performance reduction as *Tensor Cores* will not be available. For more details about this, or help on choosing the correct value for resizing, refer to this guide: https://docs.nvidia.com/deeplearning/performance/dl-performance-matrix-multiplication/index.html#requirements-tc",
+                new_num_tokens,
             )
 
         if new_num_tokens is None:
@@ -2750,7 +2750,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
             raise ImportError("`safe_serialization` requires the `safetensors library: `pip install safetensors`.")
 
         if os.path.isfile(save_directory):
-            logger.error(f"Provided path ({save_directory}) should be a directory, not a file")
+            logger.error("Provided path (%s) should be a directory, not a file", save_directory)
             return
 
         os.makedirs(save_directory, exist_ok=True)
@@ -3004,7 +3004,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
 
         if index is None:
             path_to_weights = os.path.join(save_directory, weights_name)
-            logger.info(f"Model weights saved in {path_to_weights}")
+            logger.info("Model weights saved in %s", path_to_weights)
         else:
             save_index_file = SAFE_WEIGHTS_INDEX_NAME if safe_serialization else WEIGHTS_INDEX_NAME
             save_index_file = os.path.join(save_directory, _add_variant(save_index_file, variant))
@@ -3900,10 +3900,10 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                     ) from e
 
             if is_local:
-                logger.info(f"loading weights file {archive_file}")
+                logger.info("loading weights file %s", archive_file)
                 resolved_archive_file = archive_file
             else:
-                logger.info(f"loading weights file {filename} from cache at {resolved_archive_file}")
+                logger.info("loading weights file %s from cache at %s", filename, resolved_archive_file)
         elif gguf_file:
             from transformers.modeling_gguf_pytorch_utils import load_gguf_checkpoint
 
@@ -4000,7 +4000,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                     if torch_dtype == "auto":
                         if hasattr(config, "torch_dtype") and config.torch_dtype is not None:
                             torch_dtype = config.torch_dtype
-                            logger.info(f"Will use torch_dtype={torch_dtype} as defined in model's config object")
+                            logger.info("Will use torch_dtype=%s as defined in model's config object", torch_dtype)
                         else:
                             if is_sharded and "dtype" in sharded_metadata:
                                 torch_dtype = sharded_metadata["dtype"]

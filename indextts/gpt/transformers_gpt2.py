@@ -79,13 +79,13 @@ def load_tf_weights_in_gpt2(model, config, gpt2_checkpoint_path):
         )
         raise
     tf_path = os.path.abspath(gpt2_checkpoint_path)
-    logger.info(f"Converting TensorFlow checkpoint from {tf_path}")
+    logger.info("Converting TensorFlow checkpoint from %s", tf_path)
     # Load weights from TF model
     init_vars = tf.train.list_variables(tf_path)
     names = []
     arrays = []
     for name, shape in init_vars:
-        logger.info(f"Loading TF weight {name} with shape {shape}")
+        logger.info("Loading TF weight %s with shape %s", name, shape)
         array = tf.train.load_variable(tf_path, name)
         names.append(name)
         arrays.append(array.squeeze())
@@ -117,7 +117,7 @@ def load_tf_weights_in_gpt2(model, config, gpt2_checkpoint_path):
         except ValueError as e:
             e.args += (pointer.shape, array.shape)
             raise
-        logger.info(f"Initialize PyTorch weight {name}")
+        logger.info("Initialize PyTorch weight %s", name)
         pointer.data = torch.from_numpy(array)
     return model
 

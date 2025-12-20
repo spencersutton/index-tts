@@ -55,7 +55,11 @@ class ScheduledSampler(Sampler):
         for dataset_name, dataset_len in zip(affected_dataset_name, affected_dataset_len):
             if type != "valid":
                 logger.warning(
-                    f"The {type} dataset {dataset_name} has a length of {dataset_len}, which is smaller than the batch size {batch_size}. This may cause unexpected behavior."
+                    "The %s dataset %s has a length of %s, which is smaller than the batch size %s. This may cause unexpected behavior.",
+                    type,
+                    dataset_name,
+                    dataset_len,
+                    batch_size,
                 )
 
     def __len__(self) -> int:

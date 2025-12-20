@@ -6,7 +6,7 @@ from torch.optim import AdamW
 
 
 class MultiOptimizer:
-    def __init__(self, optimizers={}, schedulers={}):
+    def __init__(self, optimizers={}, schedulers={}) -> None:
         self.optimizers = optimizers
         self.schedulers = schedulers
         self.keys = list(optimizers.keys())
@@ -20,38 +20,38 @@ class MultiOptimizer:
         state_dicts = [(key, self.schedulers[key].state_dict()) for key in self.keys]
         return state_dicts
 
-    def load_state_dict(self, state_dict):
+    def load_state_dict(self, state_dict) -> None:
         for key, val in state_dict:
             try:
                 self.optimizers[key].load_state_dict(val)
             except:
                 print("Unloaded %s" % key)
 
-    def load_scheduler_state_dict(self, state_dict):
+    def load_scheduler_state_dict(self, state_dict) -> None:
         for key, val in state_dict:
             try:
                 self.schedulers[key].load_state_dict(val)
             except:
                 print("Unloaded %s" % key)
 
-    def step(self, key=None, scaler=None):
+    def step(self, key=None, scaler=None) -> None:
         keys = [key] if key is not None else self.keys
         _ = [self._step(key, scaler) for key in keys]
 
-    def _step(self, key, scaler=None):
+    def _step(self, key, scaler=None) -> None:
         if scaler is not None:
             scaler.step(self.optimizers[key])
             scaler.update()
         else:
             self.optimizers[key].step()
 
-    def zero_grad(self, key=None):
+    def zero_grad(self, key=None) -> None:
         if key is not None:
             self.optimizers[key].zero_grad()
         else:
             _ = [self.optimizers[key].zero_grad() for key in self.keys]
 
-    def scheduler(self, *args, key=None):
+    def scheduler(self, *args, key=None) -> None:
         if key is not None:
             self.schedulers[key].step(*args)
         else:

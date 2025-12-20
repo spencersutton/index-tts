@@ -23,10 +23,10 @@ class ConvLayerNorm(nn.LayerNorm):
     before running the normalization and moves them back to original position right after.
     """
 
-    def __init__(self, normalized_shape: tp.Union[int, tp.List[int], torch.Size], **kwargs):
+    def __init__(self, normalized_shape: tp.Union[int, tp.List[int], torch.Size], **kwargs) -> None:
         super().__init__(normalized_shape, **kwargs)
 
-    def forward(self, x):
+    def forward(self, x) -> None:
         x = einops.rearrange(x, "b ... t -> b t ...")
         x = super().forward(x)
         x = einops.rearrange(x, "b t ... -> b ... t")
@@ -131,7 +131,7 @@ class NormConv1d(nn.Module):
 
     def __init__(
         self, *args, causal: bool = False, norm: str = "none", norm_kwargs: tp.Dict[str, tp.Any] = {}, **kwargs
-    ):
+    ) -> None:
         super().__init__()
         self.conv = apply_parametrization_norm(nn.Conv1d(*args, **kwargs), norm)
         self.norm = get_norm_module(self.conv, causal, norm, **norm_kwargs)
@@ -148,7 +148,7 @@ class NormConv2d(nn.Module):
     to provide a uniform interface across normalization approaches.
     """
 
-    def __init__(self, *args, norm: str = "none", norm_kwargs: tp.Dict[str, tp.Any] = {}, **kwargs):
+    def __init__(self, *args, norm: str = "none", norm_kwargs: tp.Dict[str, tp.Any] = {}, **kwargs) -> None:
         super().__init__()
         self.conv = apply_parametrization_norm(nn.Conv2d(*args, **kwargs), norm)
         self.norm = get_norm_module(self.conv, causal=False, norm=norm, **norm_kwargs)
@@ -167,7 +167,7 @@ class NormConvTranspose1d(nn.Module):
 
     def __init__(
         self, *args, causal: bool = False, norm: str = "none", norm_kwargs: tp.Dict[str, tp.Any] = {}, **kwargs
-    ):
+    ) -> None:
         super().__init__()
         self.convtr = apply_parametrization_norm(nn.ConvTranspose1d(*args, **kwargs), norm)
         self.norm = get_norm_module(self.convtr, causal, norm, **norm_kwargs)
@@ -184,7 +184,7 @@ class NormConvTranspose2d(nn.Module):
     to provide a uniform interface across normalization approaches.
     """
 
-    def __init__(self, *args, norm: str = "none", norm_kwargs: tp.Dict[str, tp.Any] = {}, **kwargs):
+    def __init__(self, *args, norm: str = "none", norm_kwargs: tp.Dict[str, tp.Any] = {}, **kwargs) -> None:
         super().__init__()
         self.convtr = apply_parametrization_norm(nn.ConvTranspose2d(*args, **kwargs), norm)
         self.norm = get_norm_module(self.convtr, causal=False, norm=norm, **norm_kwargs)
@@ -214,7 +214,7 @@ class SConv1d(nn.Module):
         norm_kwargs: tp.Dict[str, tp.Any] = {},
         pad_mode: str = "reflect",
         **kwargs,
-    ):
+    ) -> None:
         super().__init__()
         # warn user on unusual setup between dilation and stride
         if stride > 1 and dilation > 1:
@@ -239,7 +239,7 @@ class SConv1d(nn.Module):
 
         self.cache_enabled = False
 
-    def reset_cache(self):
+    def reset_cache(self) -> None:
         """Reset the cache when starting a new stream."""
         self.cache = None
         self.cache_enabled = True
@@ -294,7 +294,7 @@ class SConvTranspose1d(nn.Module):
         trim_right_ratio: float = 1.0,
         norm_kwargs: tp.Dict[str, tp.Any] = {},
         **kwargs,
-    ):
+    ) -> None:
         super().__init__()
         self.convtr = NormConvTranspose1d(
             in_channels, out_channels, kernel_size, stride, causal=causal, norm=norm, norm_kwargs=norm_kwargs
@@ -337,7 +337,7 @@ class SLSTM(nn.Module):
     Expects input as convolutional layout.
     """
 
-    def __init__(self, dimension: int, num_layers: int = 2, skip: bool = True):
+    def __init__(self, dimension: int, num_layers: int = 2, skip: bool = True) -> None:
         super().__init__()
         self.skip = skip
         self.lstm = nn.LSTM(dimension, dimension, num_layers)
@@ -355,6 +355,6 @@ class SLSTM(nn.Module):
         y = y.permute(1, 2, 0)
         return y
 
-    def reset_cache(self):
+    def reset_cache(self) -> None:
         self.hidden = None
         self.cache_enabled = True

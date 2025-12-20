@@ -70,7 +70,7 @@ class LowPassFilter1d(nn.Module):
         padding: bool = True,
         padding_mode: str = "replicate",
         kernel_size: int = 12,
-    ):
+    ) -> None:
         """
         kernel_size should be even number for stylegan3 setup, in this implementation, odd number is also possible.
         """

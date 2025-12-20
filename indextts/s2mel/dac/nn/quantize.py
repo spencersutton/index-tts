@@ -16,7 +16,7 @@ class VectorQuantizeLegacy(nn.Module):
     removed in-out projection
     """
 
-    def __init__(self, input_dim: int, codebook_size: int):
+    def __init__(self, input_dim: int, codebook_size: int) -> None:
         super().__init__()
         self.codebook_size = codebook_size
         self.codebook = nn.Embedding(codebook_size, input_dim)
@@ -94,7 +94,7 @@ class VectorQuantize(nn.Module):
             improves training stability
     """
 
-    def __init__(self, input_dim: int, codebook_size: int, codebook_dim: int):
+    def __init__(self, input_dim: int, codebook_size: int, codebook_dim: int) -> None:
         super().__init__()
         self.codebook_size = codebook_size
         self.codebook_dim = codebook_dim
@@ -181,7 +181,7 @@ class ResidualVectorQuantize(nn.Module):
         codebook_size: int = 1024,
         codebook_dim: Union[int, list] = 8,
         quantizer_dropout: float = 0.0,
-    ):
+    ) -> None:
         super().__init__()
         if isinstance(codebook_dim, int):
             codebook_dim = [codebook_dim for _ in range(n_codebooks)]

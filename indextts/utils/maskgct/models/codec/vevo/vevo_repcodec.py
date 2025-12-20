@@ -27,7 +27,7 @@ class VectorQuantize(nn.Module):
         commitment=1.0,
         eps=1e-5,
         n_embed=None,
-    ):
+    ) -> None:
         super().__init__()
         n_embed = self.default(n_embed, codebook_size)
 
@@ -52,7 +52,7 @@ class VectorQuantize(nn.Module):
     def default(self, val, d):
         return val if self.exists(val) else d
 
-    def ema_inplace(self, moving_avg, new, decay):
+    def ema_inplace(self, moving_avg, new, decay) -> None:
         moving_avg.data.mul_(decay).add_(new, alpha=(1 - decay))
 
     def laplace_smoothing(self, x, n_categories, eps=1e-5):
@@ -97,7 +97,7 @@ class VectorQuantize(nn.Module):
 class ResidualVQ(nn.Module):
     """Residual VQ following algorithm 1. in https://arxiv.org/pdf/2107.03312.pdf"""
 
-    def __init__(self, *, num_quantizers, **kwargs):
+    def __init__(self, *, num_quantizers, **kwargs) -> None:
         super().__init__()
         self.layers = nn.ModuleList([VectorQuantize(**kwargs) for _ in range(num_quantizers)])
 
@@ -136,7 +136,7 @@ class ResidualVQ(nn.Module):
         all_indices = torch.stack(all_indices)
         return quantized_out, all_indices
 
-    def initial(self):
+    def initial(self) -> None:
         self.codebook = []
         for layer in self.layers:
             self.codebook.append(layer.codebook)
@@ -155,11 +155,11 @@ class Quantizer(nn.Module):
         code_dim: int,
         codebook_num: int,
         codebook_size: int,
-    ):
+    ) -> None:
         super().__init__()
         self.codebook = ResidualVQ(dim=code_dim, num_quantizers=codebook_num, codebook_size=codebook_size)
 
-    def initial(self):
+    def initial(self) -> None:
         self.codebook.initial()
 
     def forward(self, z):
@@ -184,7 +184,7 @@ class Quantizer(nn.Module):
 class Conv1d1x1(nn.Conv1d):
     """1x1 Conv1d."""
 
-    def __init__(self, in_channels, out_channels, bias=True):
+    def __init__(self, in_channels, out_channels, bias=True) -> None:
         super(Conv1d1x1, self).__init__(in_channels, out_channels, kernel_size=1, bias=bias)
 
 
@@ -199,7 +199,7 @@ class Conv1d(nn.Module):
         dilation: int = 1,
         groups: int = 1,
         bias: bool = True,
-    ):
+    ) -> None:
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -240,7 +240,7 @@ class ConvTranspose1d(nn.Module):
         output_padding=-1,
         groups=1,
         bias=True,
-    ):
+    ) -> None:
         super().__init__()
         if padding < 0:
             padding = (stride + 1) // 2
@@ -278,7 +278,7 @@ class ResidualUnit(nn.Module):
         bias=False,
         nonlinear_activation="ELU",
         nonlinear_activation_params={},
-    ):
+    ) -> None:
         super().__init__()
         self.activation = getattr(nn, nonlinear_activation)(**nonlinear_activation_params)
         self.conv1 = Conv1d(
@@ -298,7 +298,7 @@ class ResidualUnit(nn.Module):
 
 
 class Projector(nn.Module):
-    def __init__(self, input_channels: int, code_dim: int, kernel_size=3, stride=1, bias=False):
+    def __init__(self, input_channels: int, code_dim: int, kernel_size=3, stride=1, bias=False) -> None:
         super().__init__()
         self.project = Conv1d(input_channels, code_dim, kernel_size=kernel_size, stride=stride, bias=bias)
 
@@ -315,7 +315,7 @@ class EncoderBlock(nn.Module):
         dilations=(1, 1),
         unit_kernel_size=3,
         bias=True,
-    ):
+    ) -> None:
         super().__init__()
         self.res_units = torch.nn.ModuleList()
         for dilation in dilations:
@@ -355,7 +355,7 @@ class Encoder(nn.Module):
         bias=True,
         block_dilations=(1, 1),
         unit_kernel_size=3,
-    ):
+    ) -> None:
         super().__init__()
         assert len(channel_ratios) == len(strides)
 
@@ -402,7 +402,7 @@ class DecoderBlock(nn.Module):
         dilations=(1, 1),
         unit_kernel_size=3,
         bias=True,
-    ):
+    ) -> None:
         super().__init__()
 
         if stride == 1:
@@ -453,7 +453,7 @@ class Decoder(nn.Module):
         bias=True,
         block_dilations=(1, 1),
         unit_kernel_size=3,
-    ):
+    ) -> None:
         super().__init__()
         assert len(channel_ratios) == len(strides)
 
@@ -515,7 +515,7 @@ class VevoRepCodec(nn.Module):
         enc_block_kernel_size=3,
         dec_block_dilations=(1, 1),
         dec_block_kernel_size=3,
-    ):
+    ) -> None:
         super().__init__()
 
         self.input_channels = input_channels

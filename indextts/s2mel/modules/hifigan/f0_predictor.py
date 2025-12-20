@@ -17,7 +17,7 @@ from torch.nn.utils import weight_norm
 
 
 class ConvRNNF0Predictor(nn.Module):
-    def __init__(self, num_class: int = 1, in_channels: int = 80, cond_channels: int = 512):
+    def __init__(self, num_class: int = 1, in_channels: int = 80, cond_channels: int = 512) -> None:
         super().__init__()
 
         self.num_class = num_class

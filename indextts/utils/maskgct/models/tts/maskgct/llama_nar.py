@@ -14,7 +14,7 @@ from transformers.models.llama.modeling_llama import BaseModelOutputWithPast, Ll
 
 # sinusoidal positional encoding
 class SinusoidalPosEmb(nn.Module):
-    def __init__(self, dim):
+    def __init__(self, dim) -> None:
         super().__init__()
         self.dim = dim
 
@@ -29,7 +29,7 @@ class SinusoidalPosEmb(nn.Module):
 
 
 class LlamaAdaptiveRMSNorm(nn.Module):
-    def __init__(self, hidden_size=1024, eps=1e-6, dim_cond=1024):
+    def __init__(self, hidden_size=1024, eps=1e-6, dim_cond=1024) -> None:
         super().__init__()
         self.to_weight = nn.Linear(dim_cond, hidden_size)
         nn.init.zeros_(self.to_weight.weight)
@@ -50,7 +50,7 @@ class LlamaAdaptiveRMSNorm(nn.Module):
 
 
 class LlamaNARDecoderLayer(LlamaDecoderLayer):
-    def __init__(self, config: LlamaConfig, layer_idx: int):
+    def __init__(self, config: LlamaConfig, layer_idx: int) -> None:
         """Override to adaptive layer norm"""
         super().__init__(config, layer_idx)  # init attention, mlp, etc.
         self.input_layernorm = LlamaAdaptiveRMSNorm(
@@ -116,7 +116,7 @@ class LlamaNARDecoderLayer(LlamaDecoderLayer):
 
         return outputs
 
-    def __init__(self, config: LlamaConfig, layer_idx: int):
+    def __init__(self, config: LlamaConfig, layer_idx: int) -> None:
         """Override to adaptive layer norm"""
         super().__init__(config, layer_idx)  # init attention, mlp, etc.
         self.layer_idx = layer_idx
@@ -190,7 +190,7 @@ class DiffLlama(LlamaModel):
         num_heads=16,
         num_layers=16,
         config=LlamaConfig(0, 256, 1024, 1, 1),
-    ):
+    ) -> None:
         super().__init__(config)
 
         self.layers = nn.ModuleList([
@@ -384,7 +384,7 @@ class DiffLlamaPrefix(LlamaModel):
         num_heads=16,
         num_layers=16,
         config=LlamaConfig(0, 256, 1024, 1, 1),
-    ):
+    ) -> None:
         super().__init__(config)
 
         self.layers = nn.ModuleList([

@@ -14,7 +14,7 @@ from utils.data_utils import *
 
 
 class CodecDataset(torch.utils.data.Dataset):
-    def __init__(self, cfg, dataset, is_valid=False):
+    def __init__(self, cfg, dataset, is_valid=False) -> None:
         """
         Args:
             cfg: config
@@ -191,12 +191,12 @@ class CodecDataset(torch.utils.data.Dataset):
     def get_dataset_name(self):
         return self.metadata[0]["Dataset"]
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.metadata)
 
 
 class CodecConcatDataset(ConcatDataset):
-    def __init__(self, datasets: Iterable[Dataset], full_audio_inference=False):
+    def __init__(self, datasets: Iterable[Dataset], full_audio_inference=False) -> None:
         """Concatenate a series of datasets with their random inference audio merged."""
         super().__init__(datasets)
 
@@ -228,7 +228,7 @@ class CodecConcatDataset(ConcatDataset):
 class CodecCollator(object):
     """Zero-pads model inputs and targets based on number of frames per step"""
 
-    def __init__(self, cfg):
+    def __init__(self, cfg) -> None:
         self.cfg = cfg
 
     def __call__(self, batch):

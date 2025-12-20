@@ -14,14 +14,14 @@ from .base import CodecMixin
 from .encodec import SLSTM, SConv1d, SConvTranspose1d
 
 
-def init_weights(m):
+def init_weights(m) -> None:
     if isinstance(m, nn.Conv1d):
         nn.init.trunc_normal_(m.weight, std=0.02)
         nn.init.constant_(m.bias, 0)
 
 
 class ResidualUnit(nn.Module):
-    def __init__(self, dim: int = 16, dilation: int = 1, causal: bool = False):
+    def __init__(self, dim: int = 16, dilation: int = 1, causal: bool = False) -> None:
         super().__init__()
         conv1d_type = SConv1d  # if causal else WNConv1d
         pad = ((7 - 1) * dilation) // 2
@@ -41,7 +41,7 @@ class ResidualUnit(nn.Module):
 
 
 class EncoderBlock(nn.Module):
-    def __init__(self, dim: int = 16, stride: int = 1, causal: bool = False):
+    def __init__(self, dim: int = 16, stride: int = 1, causal: bool = False) -> None:
         super().__init__()
         conv1d_type = SConv1d  # if causal else WNConv1d
         self.block = nn.Sequential(
@@ -72,7 +72,7 @@ class Encoder(nn.Module):
         d_latent: int = 64,
         causal: bool = False,
         lstm: int = 2,
-    ):
+    ) -> None:
         super().__init__()
         conv1d_type = SConv1d  # if causal else WNConv1d
         # Create first convolution
@@ -101,9 +101,9 @@ class Encoder(nn.Module):
     def forward(self, x):
         return self.block(x)
 
-    def reset_cache(self):
+    def reset_cache(self) -> None:
         # recursively find all submodules named SConv1d in self.block and use their reset_cache method
-        def reset_cache(m):
+        def reset_cache(m) -> None:
             if isinstance(m, (SConv1d, SLSTM)):
                 m.reset_cache()
                 return
@@ -114,7 +114,7 @@ class Encoder(nn.Module):
 
 
 class DecoderBlock(nn.Module):
-    def __init__(self, input_dim: int = 16, output_dim: int = 8, stride: int = 1, causal: bool = False):
+    def __init__(self, input_dim: int = 16, output_dim: int = 8, stride: int = 1, causal: bool = False) -> None:
         super().__init__()
         conv1d_type = SConvTranspose1d  # if causal else WNConvTranspose1d
         self.block = nn.Sequential(
@@ -146,7 +146,7 @@ class Decoder(nn.Module):
         d_out: int = 1,
         causal: bool = False,
         lstm: int = 2,
-    ):
+    ) -> None:
         super().__init__()
         conv1d_type = SConv1d  # if causal else WNConv1d
         # Add first conv layer
@@ -189,7 +189,7 @@ class DAC(BaseModel, CodecMixin):
         sample_rate: int = 44100,
         lstm: int = 2,
         causal: bool = False,
-    ):
+    ) -> None:
         super().__init__()
 
         self.encoder_dim = encoder_dim

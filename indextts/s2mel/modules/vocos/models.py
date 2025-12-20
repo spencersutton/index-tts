@@ -45,7 +45,7 @@ class VocosBackbone(Backbone):
         num_layers: int,
         layer_scale_init_value: Optional[float] = None,
         adanorm_num_embeddings: Optional[int] = None,
-    ):
+    ) -> None:
         super().__init__()
         self.input_channels = input_channels
         self.embed = nn.Conv1d(input_channels, dim, kernel_size=7, padding=3)
@@ -67,7 +67,7 @@ class VocosBackbone(Backbone):
         self.final_layer_norm = nn.LayerNorm(dim, eps=1e-6)
         self.apply(self._init_weights)
 
-    def _init_weights(self, m):
+    def _init_weights(self, m) -> None:
         if isinstance(m, (nn.Conv1d, nn.Linear)):
             nn.init.trunc_normal_(m.weight, std=0.02)
             nn.init.constant_(m.bias, 0)
@@ -104,7 +104,7 @@ class VocosResNetBackbone(Backbone):
         dim,
         num_blocks,
         layer_scale_init_value=None,
-    ):
+    ) -> None:
         super().__init__()
         self.input_channels = input_channels
         self.embed = weight_norm(nn.Conv1d(input_channels, dim, kernel_size=3, padding=1))

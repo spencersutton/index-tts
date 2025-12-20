@@ -60,7 +60,7 @@ class CodecMixin:
         return self._padding
 
     @padding.setter
-    def padding(self, value):
+    def padding(self, value) -> None:
         assert isinstance(value, bool)
 
         layers = [l for l in self.modules() if isinstance(l, (nn.Conv1d, nn.ConvTranspose1d))]

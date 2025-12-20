@@ -22,7 +22,7 @@ def l2norm(t):
     return F.normalize(t, p=2, dim=-1)
 
 
-def ema_inplace(moving_avg, new, decay):
+def ema_inplace(moving_avg, new, decay) -> None:
     moving_avg.data.mul_(decay).add_(new, alpha=(1 - decay))
 
 
@@ -81,7 +81,7 @@ class EuclideanCodebook(nn.Module):
         eps=1e-5,
         threshold_ema_dead_code=2,
         weight_init=False,
-    ):
+    ) -> None:
         super().__init__()
 
         self.decay = decay
@@ -103,18 +103,18 @@ class EuclideanCodebook(nn.Module):
         self.register_buffer("embed", embed)
         self.register_buffer("embed_avg", embed.clone())
 
-    def init_embed_(self, data):
+    def init_embed_(self, data) -> None:
         embed, cluster_size = kmeans(data, self.codebook_size, self.kmeans_iters)
         self.embed.data.copy_(embed)
         self.embed_avg.data.copy_(embed)
         self.cluster_size.data.copy_(cluster_size)
         self.initted.data.copy_(torch.Tensor([True]))
 
-    def replace(self, samples, mask):
+    def replace(self, samples, mask) -> None:
         modified_codebook = torch.where(mask[..., None], sample_vectors(samples, self.codebook_size), self.embed)
         self.embed.data.copy_(modified_codebook)
 
-    def expire_codes_(self, batch_samples):
+    def expire_codes_(self, batch_samples) -> None:
         if self.threshold_ema_dead_code == 0:
             return
 
@@ -179,7 +179,7 @@ class SimpleCodebook(nn.Module):
         dim,
         codebook_size,
         use_l2_normlize=False,
-    ):
+    ) -> None:
         super().__init__()
 
         self.dim = dim
@@ -264,7 +264,7 @@ class VectorQuantize(nn.Module):
         eps=1e-5,
         threshold_ema_dead_code=2,
         weight_init=False,
-    ):
+    ) -> None:
         super().__init__()
         self.input_dim = input_dim
         self.codebook_size = codebook_size

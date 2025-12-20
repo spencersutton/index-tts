@@ -153,7 +153,7 @@ def group_dequantize_tensor(w_int32, scales_and_zeros, n_bit=4, groupsize=128):
 
 
 class QuantHandler:
-    def __init__(self, mod):
+    def __init__(self, mod) -> None:
         self.mod = mod
 
     def create_quantized_state_dict(self) -> "StateDict":
@@ -226,7 +226,7 @@ class GPTQQuantHandler(QuantHandler):
             corresponding quantized weights and qparams.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         assert self.mod is not None
         assert self.get_qparams_func is not None
         assert self.quantize_func is not None
@@ -306,7 +306,7 @@ class GPTQQuantHandler(QuantHandler):
 ##### Weight-only int8 per-channel quantized code ######
 
 
-def replace_linear_weight_only_int8_per_channel(module):
+def replace_linear_weight_only_int8_per_channel(module) -> None:
     for name, child in module.named_children():
         if isinstance(child, nn.Linear):
             setattr(module, name, WeightOnlyInt8Linear(child.in_features, child.out_features))
@@ -315,7 +315,7 @@ def replace_linear_weight_only_int8_per_channel(module):
 
 
 class WeightOnlyInt8QuantHandler:
-    def __init__(self, mod):
+    def __init__(self, mod) -> None:
         self.mod = mod
 
     @torch.no_grad()
@@ -373,7 +373,7 @@ def _check_linear_int4_k(k, groupsize=1, inner_k_tiles=1):
     return k % groupsize == 0 and k % (inner_k_tiles * 16) == 0
 
 
-def replace_linear_int4(module, groupsize, inner_k_tiles, padding):
+def replace_linear_int4(module, groupsize, inner_k_tiles, padding) -> None:
     for name, child in module.named_children():
         if isinstance(child, nn.Linear):
             if _check_linear_int4_k(child.in_features, groupsize, inner_k_tiles):
@@ -407,7 +407,7 @@ def replace_linear_int4(module, groupsize, inner_k_tiles, padding):
 
 
 class WeightOnlyInt4QuantHandler:
-    def __init__(self, mod, groupsize=128, inner_k_tiles=8, padding=True):
+    def __init__(self, mod, groupsize=128, inner_k_tiles=8, padding=True) -> None:
         self.mod = mod
         self.groupsize = groupsize
         self.inner_k_tiles = inner_k_tiles
@@ -460,7 +460,7 @@ class WeightOnlyInt4QuantHandler:
 
 
 class WeightOnlyInt4GPTQQuantHandler(GPTQQuantHandler):
-    def __init__(self, mod, groupsize=128, inner_k_tiles=8, padding=True):
+    def __init__(self, mod, groupsize=128, inner_k_tiles=8, padding=True) -> None:
         from model import find_multiple
 
         self.mod = mod

@@ -43,7 +43,7 @@ class InterpolateRegulator(nn.Module):
         quantizer_dropout: float = 0.0,  # dropout for quantizer
         f0_condition: bool = False,
         n_f0_bins: int = 512,
-    ):
+    ) -> None:
         super().__init__()
         self.sampling_ratios = sampling_ratios
         out_channels = out_channels or channels

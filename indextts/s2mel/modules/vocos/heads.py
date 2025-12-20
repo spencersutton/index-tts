@@ -35,7 +35,7 @@ class ISTFTHead(FourierHead):
         padding (str, optional): Type of padding. Options are "center" or "same". Defaults to "same".
     """
 
-    def __init__(self, dim: int, n_fft: int, hop_length: int, padding: str = "same"):
+    def __init__(self, dim: int, n_fft: int, hop_length: int, padding: str = "same") -> None:
         super().__init__()
         out_dim = n_fft + 2
         self.out = torch.nn.Linear(dim, out_dim)
@@ -89,7 +89,7 @@ class IMDCTSymExpHead(FourierHead):
         padding: str = "same",
         sample_rate: Optional[int] = None,
         clip_audio: bool = False,
-    ):
+    ) -> None:
         super().__init__()
         out_dim = mdct_frame_len // 2
         self.out = nn.Linear(dim, out_dim)
@@ -138,7 +138,7 @@ class IMDCTCosHead(FourierHead):
         clip_audio (bool, optional): Whether to clip the audio output within the range of [-1.0, 1.0]. Defaults to False.
     """
 
-    def __init__(self, dim: int, mdct_frame_len: int, padding: str = "same", clip_audio: bool = False):
+    def __init__(self, dim: int, mdct_frame_len: int, padding: str = "same", clip_audio: bool = False) -> None:
         super().__init__()
         self.clip_audio = clip_audio
         self.out = nn.Linear(dim, mdct_frame_len)

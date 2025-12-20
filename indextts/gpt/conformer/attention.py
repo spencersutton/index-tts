@@ -33,7 +33,7 @@ class MultiHeadedAttention(nn.Module):
 
     """
 
-    def __init__(self, n_head: int, n_feat: int, dropout_rate: float):
+    def __init__(self, n_head: int, n_feat: int, dropout_rate: float) -> None:
         """Construct an MultiHeadedAttention object."""
         super().__init__()
         assert n_feat % n_head == 0
@@ -194,7 +194,7 @@ class RelPositionMultiHeadedAttention(MultiHeadedAttention):
         dropout_rate (float): Dropout rate.
     """
 
-    def __init__(self, n_head, n_feat, dropout_rate):
+    def __init__(self, n_head, n_feat, dropout_rate) -> None:
         """Construct an RelPositionMultiHeadedAttention object."""
         super().__init__(n_head, n_feat, dropout_rate)
         # linear transformation for positional encoding

@@ -44,13 +44,13 @@ def plot_spectrogram_clipped(spectrogram, clip_max=2.0):
     return fig
 
 
-def init_weights(m, mean=0.0, std=0.01):
+def init_weights(m, mean=0.0, std=0.01) -> None:
     classname = m.__class__.__name__
     if classname.find("Conv") != -1:
         m.weight.data.normal_(mean, std)
 
 
-def apply_weight_norm(m):
+def apply_weight_norm(m) -> None:
     classname = m.__class__.__name__
     if classname.find("Conv") != -1:
         weight_norm(m)
@@ -68,7 +68,7 @@ def load_checkpoint(filepath, device):
     return checkpoint_dict
 
 
-def save_checkpoint(filepath, obj):
+def save_checkpoint(filepath, obj) -> None:
     print(f"Saving checkpoint to {filepath}")
     torch.save(obj, filepath)
     print("Complete.")
@@ -94,7 +94,7 @@ def scan_checkpoint(cp_dir, prefix, renamed_file=None):
     return None
 
 
-def save_audio(audio, path, sr):
+def save_audio(audio, path, sr) -> None:
     # wav: torch with 1d shape
     audio = audio * MAX_WAV_VALUE
     audio = audio.cpu().numpy().astype("int16")

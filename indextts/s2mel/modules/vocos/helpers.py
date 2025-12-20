@@ -51,7 +51,7 @@ class GradNormCallback(Callback):
     Callback to log the gradient norm.
     """
 
-    def on_after_backward(self, trainer, model):
+    def on_after_backward(self, trainer, model) -> None:
         model.log("grad_norm", gradient_norm(model))
 
 

@@ -26,7 +26,7 @@ def encode(
     model_type: str = "44khz",
     win_duration: float = 5.0,
     verbose: bool = False,
-):
+) -> None:
     """Encode audio files in input path to .dac format.
 
     Parameters

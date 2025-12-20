@@ -23,7 +23,7 @@ def WNConv2d(*args, **kwargs):
 
 
 class MPD(nn.Module):
-    def __init__(self, period):
+    def __init__(self, period) -> None:
         super().__init__()
         self.period = period
         self.convs = nn.ModuleList([
@@ -57,7 +57,7 @@ class MPD(nn.Module):
 
 
 class MSD(nn.Module):
-    def __init__(self, rate: int = 1, sample_rate: int = 44100):
+    def __init__(self, rate: int = 1, sample_rate: int = 44100) -> None:
         super().__init__()
         self.convs = nn.ModuleList([
             WNConv1d(1, 16, 15, 1, padding=7),
@@ -97,7 +97,7 @@ class MRD(nn.Module):
         hop_factor: float = 0.25,
         sample_rate: int = 44100,
         bands: list = BANDS,
-    ):
+    ) -> None:
         """Complex multi-band spectrogram discriminator.
         Parameters
         ----------
@@ -173,7 +173,7 @@ class Discriminator(nn.Module):
         fft_sizes: list = [2048, 1024, 512],
         sample_rate: int = 44100,
         bands: list = BANDS,
-    ):
+    ) -> None:
         """Discriminator that combines multiple discriminators.
 
         Parameters

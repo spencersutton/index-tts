@@ -66,7 +66,7 @@ _vocoder_infer_funcs = {
 
 
 class VocoderInference(object):
-    def __init__(self, args=None, cfg=None, infer_type="from_dataset"):
+    def __init__(self, args=None, cfg=None, infer_type="from_dataset") -> None:
         super().__init__()
 
         start = time.monotonic_ns()
@@ -158,7 +158,7 @@ class VocoderInference(object):
         self.model.eval()
         self.accelerator.wait_for_everyone()
 
-    def _build_tmp_dataset_from_feature(self):
+    def _build_tmp_dataset_from_feature(self) -> None:
         if os.path.exists(os.path.join(self.cfg.preprocess.processed_dir, "tmp")):
             shutil.rmtree(os.path.join(self.cfg.preprocess.processed_dir, "tmp"))
 
@@ -191,7 +191,7 @@ class VocoderInference(object):
                 os.path.join(self.cfg.preprocess.processed_dir, "tmp", feature_name),
             )
 
-    def _build_tmp_dataset_from_audio(self):
+    def _build_tmp_dataset_from_audio(self) -> None:
         if os.path.exists(os.path.join(self.cfg.preprocess.processed_dir, "tmp")):
             shutil.rmtree(os.path.join(self.cfg.preprocess.processed_dir, "tmp"))
 
@@ -305,7 +305,7 @@ class VocoderInference(object):
                 self.model.load_state_dict(torch.load(checkpoint_dir)["state_dict"])
             return str(checkpoint_dir)
 
-    def inference(self):
+    def inference(self) -> None:
         """Inference via batches"""
         for i, batch in tqdm(enumerate(self.test_dataloader)):
             if self.cfg.preprocess.use_frame_pitch:
@@ -347,7 +347,7 @@ class VocoderInference(object):
         if os.path.exists(os.path.join(self.cfg.preprocess.processed_dir, "tmp")):
             shutil.rmtree(os.path.join(self.cfg.preprocess.processed_dir, "tmp"))
 
-    def _set_random_seed(self, seed):
+    def _set_random_seed(self, seed) -> None:
         """Set random seed for all possible random modules."""
         random.seed(seed)
         np.random.seed(seed)
@@ -356,7 +356,7 @@ class VocoderInference(object):
     def _count_parameters(self, model):
         return sum(p.numel() for p in model.parameters())
 
-    def _dump_cfg(self, path):
+    def _dump_cfg(self, path) -> None:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         json5.dump(
             self.cfg,

@@ -30,7 +30,7 @@ class PositionwiseFeedForward(torch.nn.Module):
 
     def __init__(
         self, idim: int, hidden_units: int, dropout_rate: float, activation: torch.nn.Module = torch.nn.ReLU()
-    ):
+    ) -> None:
         """Construct a PositionwiseFeedForward object."""
         super(PositionwiseFeedForward, self).__init__()
         self.w_1 = torch.nn.Linear(idim, hidden_units)
@@ -52,7 +52,9 @@ class PositionwiseFeedForward(torch.nn.Module):
 class ConvolutionModule(nn.Module):
     """ConvolutionModule in Conformer model."""
 
-    def __init__(self, channels: int, kernel_size: int = 15, activation: nn.Module = nn.ReLU(), bias: bool = True):
+    def __init__(
+        self, channels: int, kernel_size: int = 15, activation: nn.Module = nn.ReLU(), bias: bool = True
+    ) -> None:
         """Construct an ConvolutionModule object.
         Args:
             channels (int): The number of channels of conv layers.
@@ -193,7 +195,7 @@ class ConformerEncoderLayer(nn.Module):
         dropout_rate: float = 0.1,
         normalize_before: bool = True,
         concat_after: bool = False,
-    ):
+    ) -> None:
         """Construct an EncoderLayer object."""
         super().__init__()
         self.self_attn = self_attn
@@ -314,7 +316,7 @@ class BaseEncoder(torch.nn.Module):
         pos_enc_layer_type: str = "abs_pos",
         normalize_before: bool = True,
         concat_after: bool = False,
-    ):
+    ) -> None:
         """
         Args:
             input_size (int): input dim
@@ -442,7 +444,7 @@ class ConformerEncoder(BaseEncoder):
         macaron_style: bool = False,
         use_cnn_module: bool = True,
         cnn_module_kernel: int = 15,
-    ):
+    ) -> None:
         """Construct ConformerEncoder
 
         Args:

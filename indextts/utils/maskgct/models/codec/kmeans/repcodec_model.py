@@ -11,7 +11,7 @@ from indextts.utils.maskgct.models.codec.amphion_codec.quantize import ResidualV
 from indextts.utils.maskgct.models.codec.kmeans.vocos import VocosBackbone
 
 
-def init_weights(m):
+def init_weights(m) -> None:
     if isinstance(m, nn.Conv1d):
         nn.init.trunc_normal_(m.weight, std=0.02)
         nn.init.constant_(m.bias, 0)
@@ -39,7 +39,7 @@ class RepCodec(nn.Module):
         num_quantizers=1,
         downsample_scale=1,
         cfg=None,
-    ):
+    ) -> None:
         super().__init__()
         codebook_size = cfg.codebook_size if cfg is not None and hasattr(cfg, "codebook_size") else codebook_size
         codebook_dim = cfg.codebook_dim if cfg is not None and hasattr(cfg, "codebook_dim") else codebook_dim
@@ -159,7 +159,7 @@ class RepCodec(nn.Module):
             return all_indices.squeeze(0), quantized_out.transpose(1, 2)
         return all_indices, quantized_out.transpose(1, 2)
 
-    def reset_parameters(self):
+    def reset_parameters(self) -> None:
         self.apply(init_weights)
 
 

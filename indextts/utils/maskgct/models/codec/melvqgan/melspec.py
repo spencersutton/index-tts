@@ -46,7 +46,7 @@ class MelSpectrogram(nn.Module):
         fmin,
         fmax,
         center=False,
-    ):
+    ) -> None:
         super(MelSpectrogram, self).__init__()
         self.n_fft = n_fft
         self.hop_size = hop_size

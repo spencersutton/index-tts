@@ -12,7 +12,7 @@ from indextts.utils.common import de_tokenized_by_CJK_char, tokenize_by_CJK_char
 
 
 class TextNormalizer:
-    def __init__(self):
+    def __init__(self) -> None:
         self.zh_normalizer = None
         self.en_normalizer = None
         self.char_rep_map = {
@@ -87,7 +87,7 @@ class TextNormalizer:
         has_pinyin = bool(re.search(TextNormalizer.PINYIN_TONE_PATTERN, s, re.IGNORECASE))
         return has_pinyin
 
-    def load(self):
+    def load(self) -> None:
         import platform
 
         if self.zh_normalizer is not None and self.en_normalizer is not None:
@@ -226,7 +226,7 @@ class TextNormalizer:
 
 
 class TextTokenizer:
-    def __init__(self, vocab_file: str, normalizer: TextNormalizer = None):
+    def __init__(self, vocab_file: str, normalizer: TextNormalizer = None) -> None:
         self.vocab_file = vocab_file
         self.normalizer = normalizer
 
@@ -249,31 +249,31 @@ class TextTokenizer:
         return self.sp_model.GetPieceSize()
 
     @property
-    def unk_token(self):
+    def unk_token(self) -> str:
         return "<unk>"
 
     @property
-    def pad_token(self):
+    def pad_token(self) -> None:
         return None
 
     @property
-    def bos_token(self):
+    def bos_token(self) -> str:
         return "<s>"
 
     @property
-    def eos_token(self):
+    def eos_token(self) -> str:
         return "</s>"
 
     @property
-    def pad_token_id(self):
+    def pad_token_id(self) -> int:
         return -1
 
     @property
-    def bos_token_id(self):
+    def bos_token_id(self) -> int:
         return 0
 
     @property
-    def eos_token_id(self):
+    def eos_token_id(self) -> int:
         return 1
 
     @property

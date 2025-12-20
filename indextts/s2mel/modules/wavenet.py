@@ -10,7 +10,7 @@ LRELU_SLOPE = 0.1
 
 
 class LayerNorm(nn.Module):
-    def __init__(self, channels, eps=1e-5):
+    def __init__(self, channels, eps=1e-5) -> None:
         super().__init__()
         self.channels = channels
         self.eps = eps
@@ -25,7 +25,7 @@ class LayerNorm(nn.Module):
 
 
 class ConvReluNorm(nn.Module):
-    def __init__(self, in_channels, hidden_channels, out_channels, kernel_size, n_layers, p_dropout):
+    def __init__(self, in_channels, hidden_channels, out_channels, kernel_size, n_layers, p_dropout) -> None:
         super().__init__()
         self.in_channels = in_channels
         self.hidden_channels = hidden_channels
@@ -62,7 +62,7 @@ class DDSConv(nn.Module):
     Dialted and Depth-Separable Convolution
     """
 
-    def __init__(self, channels, kernel_size, n_layers, p_dropout=0.0):
+    def __init__(self, channels, kernel_size, n_layers, p_dropout=0.0) -> None:
         super().__init__()
         self.channels = channels
         self.kernel_size = kernel_size
@@ -102,7 +102,7 @@ class DDSConv(nn.Module):
 class WN(torch.nn.Module):
     def __init__(
         self, hidden_channels, kernel_size, dilation_rate, n_layers, gin_channels=0, p_dropout=0, causal=False
-    ):
+    ) -> None:
         super(WN, self).__init__()
         conv1d_type = SConv1d
         assert kernel_size % 2 == 1
@@ -170,7 +170,7 @@ class WN(torch.nn.Module):
                 output = output + res_skip_acts
         return output * x_mask
 
-    def remove_weight_norm(self):
+    def remove_weight_norm(self) -> None:
         if self.gin_channels != 0:
             torch.nn.utils.remove_weight_norm(self.cond_layer)
         for l in self.in_layers:

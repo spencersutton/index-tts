@@ -20,7 +20,7 @@ def _get_activation_fn(activ):
 
 
 class LinearNorm(torch.nn.Module):
-    def __init__(self, in_dim, out_dim, bias=True, w_init_gain="linear"):
+    def __init__(self, in_dim, out_dim, bias=True, w_init_gain="linear") -> None:
         super(LinearNorm, self).__init__()
         self.linear_layer = torch.nn.Linear(in_dim, out_dim, bias=bias)
 
@@ -42,7 +42,7 @@ class ConvNorm(torch.nn.Module):
         bias=True,
         w_init_gain="linear",
         param=None,
-    ):
+    ) -> None:
         super(ConvNorm, self).__init__()
         if padding is None:
             assert kernel_size % 2 == 1
@@ -77,7 +77,7 @@ class CausualConv(nn.Module):
         bias=True,
         w_init_gain="linear",
         param=None,
-    ):
+    ) -> None:
         super(CausualConv, self).__init__()
         if padding is None:
             assert kernel_size % 2 == 1
@@ -103,7 +103,7 @@ class CausualConv(nn.Module):
 
 
 class CausualBlock(nn.Module):
-    def __init__(self, hidden_dim, n_conv=3, dropout_p=0.2, activ="lrelu"):
+    def __init__(self, hidden_dim, n_conv=3, dropout_p=0.2, activ="lrelu") -> None:
         super(CausualBlock, self).__init__()
         self.blocks = nn.ModuleList([
             self._get_conv(hidden_dim, dilation=3**i, activ=activ, dropout_p=dropout_p) for i in range(n_conv)
@@ -130,7 +130,7 @@ class CausualBlock(nn.Module):
 
 
 class ConvBlock(nn.Module):
-    def __init__(self, hidden_dim, n_conv=3, dropout_p=0.2, activ="relu"):
+    def __init__(self, hidden_dim, n_conv=3, dropout_p=0.2, activ="relu") -> None:
         super().__init__()
         self._n_groups = 8
         self.blocks = nn.ModuleList([
@@ -158,7 +158,7 @@ class ConvBlock(nn.Module):
 
 
 class LocationLayer(nn.Module):
-    def __init__(self, attention_n_filters, attention_kernel_size, attention_dim):
+    def __init__(self, attention_n_filters, attention_kernel_size, attention_dim) -> None:
         super(LocationLayer, self).__init__()
         padding = int((attention_kernel_size - 1) / 2)
         self.location_conv = ConvNorm(
@@ -181,7 +181,7 @@ class Attention(nn.Module):
         attention_dim,
         attention_location_n_filters,
         attention_location_kernel_size,
-    ):
+    ) -> None:
         super(Attention, self).__init__()
         self.query_layer = LinearNorm(attention_rnn_dim, attention_dim, bias=False, w_init_gain="tanh")
         self.memory_layer = LinearNorm(embedding_dim, attention_dim, bias=False, w_init_gain="tanh")
@@ -238,7 +238,7 @@ class ForwardAttentionV2(nn.Module):
         attention_dim,
         attention_location_n_filters,
         attention_location_kernel_size,
-    ):
+    ) -> None:
         super(ForwardAttentionV2, self).__init__()
         self.query_layer = LinearNorm(attention_rnn_dim, attention_dim, bias=False, w_init_gain="tanh")
         self.memory_layer = LinearNorm(embedding_dim, attention_dim, bias=False, w_init_gain="tanh")
@@ -302,7 +302,7 @@ class ForwardAttentionV2(nn.Module):
 
 
 class PhaseShuffle2d(nn.Module):
-    def __init__(self, n=2):
+    def __init__(self, n=2) -> None:
         super(PhaseShuffle2d, self).__init__()
         self.n = n
         self.random = random.Random(1)
@@ -322,7 +322,7 @@ class PhaseShuffle2d(nn.Module):
 
 
 class PhaseShuffle1d(nn.Module):
-    def __init__(self, n=2):
+    def __init__(self, n=2) -> None:
         super(PhaseShuffle1d, self).__init__()
         self.n = n
         self.random = random.Random(1)
@@ -343,7 +343,7 @@ class PhaseShuffle1d(nn.Module):
 
 
 class MFCC(nn.Module):
-    def __init__(self, n_mfcc=40, n_mels=80):
+    def __init__(self, n_mfcc=40, n_mels=80) -> None:
         super(MFCC, self).__init__()
         self.n_mfcc = n_mfcc
         self.n_mels = n_mels

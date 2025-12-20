@@ -30,7 +30,7 @@ class IndexTTS:
         use_fp16=True,
         device=None,
         use_cuda_kernel=None,
-    ):
+    ) -> None:
         """
         Args:
             cfg_path (str): path to the config file.
@@ -268,7 +268,7 @@ class IndexTTS:
         tokens = torch.cat(outputs, dim=0)
         return tokens
 
-    def torch_empty_cache(self):
+    def torch_empty_cache(self) -> None:
         try:
             if "cuda" in str(self.device):
                 torch.cuda.empty_cache()
@@ -277,7 +277,7 @@ class IndexTTS:
         except Exception:
             pass
 
-    def _set_gr_progress(self, value, desc):
+    def _set_gr_progress(self, value, desc) -> None:
         if self.gr_progress is not None:
             self.gr_progress(value, desc=desc)
 

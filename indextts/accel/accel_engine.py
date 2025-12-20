@@ -14,7 +14,7 @@ from .kv_manager import KVCacheManager, Seq
 
 
 class Sampler(nn.Module):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
     @torch.compile
@@ -42,7 +42,7 @@ class AccelInferenceEngine:
         block_size: int = 256,
         num_blocks: int = 128,
         use_cuda_graph: bool = True,
-    ):
+    ) -> None:
         """
         Args:
             model: The GPT transformer model (should have accel attention)
@@ -186,7 +186,7 @@ class AccelInferenceEngine:
         temperatures = torch.tensor(temperatures, dtype=torch.float32, pin_memory=True).cuda(non_blocking=True)
         return temperatures
 
-    def _capture_cuda_graphs(self, tts_mel_embedding=None, tts_text_pos_embedding=None):
+    def _capture_cuda_graphs(self, tts_mel_embedding=None, tts_text_pos_embedding=None) -> None:
         print("Capturing CUDA graphs for decode optimization...")
         max_bs = 8  # Support up to batch size 8
         max_num_blocks = (2048 + self.block_size - 1) // self.block_size
@@ -561,7 +561,7 @@ class AccelInferenceEngine:
 
 
 class Sampler(nn.Module):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
     @torch.compile

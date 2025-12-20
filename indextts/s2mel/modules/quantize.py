@@ -10,7 +10,7 @@ from torch.nn.utils import weight_norm
 from .alias_free_torch import *
 
 
-def init_weights(m):
+def init_weights(m) -> None:
     if isinstance(m, nn.Conv1d):
         nn.init.trunc_normal_(m.weight, std=0.02)
         nn.init.constant_(m.bias, 0)
@@ -42,7 +42,7 @@ class SnakeBeta(nn.Module):
         >>> x = a1(x)
     """
 
-    def __init__(self, in_features, alpha=1.0, alpha_trainable=True, alpha_logscale=False):
+    def __init__(self, in_features, alpha=1.0, alpha_trainable=True, alpha_logscale=False) -> None:
         """
         Initialization.
         INPUT:
@@ -87,7 +87,7 @@ class SnakeBeta(nn.Module):
 
 
 class ResidualUnit(nn.Module):
-    def __init__(self, dim: int = 16, dilation: int = 1):
+    def __init__(self, dim: int = 16, dilation: int = 1) -> None:
         super().__init__()
         pad = ((7 - 1) * dilation) // 2
         self.block = nn.Sequential(
@@ -102,7 +102,7 @@ class ResidualUnit(nn.Module):
 
 
 class CNNLSTM(nn.Module):
-    def __init__(self, indim, outdim, head, global_pred=False):
+    def __init__(self, indim, outdim, head, global_pred=False) -> None:
         super().__init__()
         self.global_pred = global_pred
         self.model = nn.Sequential(
@@ -144,7 +144,7 @@ class FAquantizer(nn.Module):
         causal=False,
         separate_prosody_encoder=False,
         timbre_norm=False,
-    ):
+    ) -> None:
         super(FAquantizer, self).__init__()
         conv1d_type = SConv1d  # if causal else nn.Conv1d
         self.prosody_quantizer = ResidualVectorQuantize(

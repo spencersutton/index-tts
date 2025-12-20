@@ -8,7 +8,7 @@ import torch
 
 
 class KVCacheBlock:
-    def __init__(self, block_id: int):
+    def __init__(self, block_id: int) -> None:
         self.block_id = block_id
         self.ref_cnt = 0
         self._block_hash = None
@@ -18,18 +18,18 @@ class KVCacheBlock:
     def block_hash(self) -> Optional[bytes]:
         return self._block_hash
 
-    def update(self, block_hash: bytes, token_ids: List[int]):
+    def update(self, block_hash: bytes, token_ids: List[int]) -> None:
         self._block_hash = block_hash
         self.token_ids = token_ids
 
-    def reset(self):
+    def reset(self) -> None:
         self.ref_cnt = 1
         self._block_hash = None
         self.token_ids = []
 
 
 class Seq:
-    def __init__(self, token_ids: List[int], block_size: int = 256):
+    def __init__(self, token_ids: List[int], block_size: int = 256) -> None:
         self.token_ids = copy(token_ids)
         self.last_token = token_ids[-1] if token_ids else 0
         self.num_tokens = len(self.token_ids)
@@ -38,7 +38,7 @@ class Seq:
         self.block_table: List[int] = []
         self.block_size = block_size
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.num_tokens
 
     def __getitem__(self, key):
@@ -62,7 +62,7 @@ class Seq:
         end = start + self.block_size
         return self.token_ids[start:end]
 
-    def append_token(self, token_id: int):
+    def append_token(self, token_id: int) -> None:
         self.token_ids.append(token_id)
         self.last_token = token_id
         self.num_tokens += 1
@@ -77,7 +77,7 @@ class KVCacheManager:
         block_size: int,
         num_blocks: int,
         dtype: torch.dtype,
-    ):
+    ) -> None:
         self.num_layers = num_layers
         self.num_heads = num_heads
         self.head_dim = head_dim
@@ -120,12 +120,12 @@ class KVCacheManager:
         self.used_block_ids.add(block_id)
         return block
 
-    def _deallocate_block(self, block_id: int):
+    def _deallocate_block(self, block_id: int) -> None:
         assert self.blocks[block_id].ref_cnt == 0
         self.used_block_ids.remove(block_id)
         self.free_block_ids.append(block_id)
 
-    def allocate(self, sequence: Seq):
+    def allocate(self, sequence: Seq) -> None:
         assert not sequence.block_table, "Sequence already has allocated blocks"
 
         parent_hash = None
@@ -158,7 +158,7 @@ class KVCacheManager:
 
             sequence.block_table.append(block_id)
 
-    def deallocate(self, sequence: Seq):
+    def deallocate(self, sequence: Seq) -> None:
         for block_id in reversed(sequence.block_table):
             block = self.blocks[block_id]
             block.ref_cnt -= 1
@@ -168,7 +168,7 @@ class KVCacheManager:
         sequence.num_cached_tokens = 0
         sequence.block_table.clear()
 
-    def append_to_seq(self, sequence: Seq):
+    def append_to_seq(self, sequence: Seq) -> None:
         block_table = sequence.block_table
         last_block = self.blocks[block_table[-1]]
 
@@ -187,10 +187,10 @@ class KVCacheManager:
         else:
             assert last_block.block_hash is None
 
-    def remove_seq(self, sequence: Seq):
+    def remove_seq(self, sequence: Seq) -> None:
         self.deallocate(sequence)
 
-    def wire_kv_cache_to_model(self, model):
+    def wire_kv_cache_to_model(self, model) -> None:
         layer_id = 0
         for module in model.modules():
             if hasattr(module, "k_cache") and hasattr(module, "v_cache"):

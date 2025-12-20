@@ -20,7 +20,7 @@ class Vocos(nn.Module):
     def __init__(
         self,
         args,
-    ):
+    ) -> None:
         super().__init__()
         self.backbone = VocosBackbone(
             input_channels=args.vocos.backbone.input_channels,

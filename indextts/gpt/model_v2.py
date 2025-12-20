@@ -25,7 +25,7 @@ class ResBlock(nn.Module):
     Basic residual convolutional block that uses GroupNorm.
     """
 
-    def __init__(self, chan):
+    def __init__(self, chan) -> None:
         super().__init__()
         self.net = nn.Sequential(
             nn.Conv1d(chan, chan, kernel_size=3, padding=1),
@@ -40,7 +40,7 @@ class ResBlock(nn.Module):
 
 
 class GPT2InferenceModel(GPT2PreTrainedModel):
-    def __init__(self, config, gpt, text_pos_emb, embeddings, norm, linear, kv_cache=False):
+    def __init__(self, config, gpt, text_pos_emb, embeddings, norm, linear, kv_cache=False) -> None:
         super().__init__(config)
         # Note: the argument named `text_pos_emb` here actually represents the mel position embedding
         self.transformer = gpt
@@ -55,7 +55,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel):
         self.device_map = None
         self.cached_mel_emb = None
 
-    def parallelize(self, device_map=None):
+    def parallelize(self, device_map=None) -> None:
         self.device_map = (
             get_device_map(len(self.transformer.h), range(max(1, torch.cuda.device_count())))
             if device_map is None
@@ -66,7 +66,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel):
         self.lm_head = self.lm_head.to(self.transformer.first_device)
         self.model_parallel = True
 
-    def deparallelize(self):
+    def deparallelize(self) -> None:
         self.transformer.deparallelize()
         self.transformer = self.transformer.to("cpu")
         self.lm_head = self.lm_head.to("cpu")
@@ -78,10 +78,10 @@ class GPT2InferenceModel(GPT2PreTrainedModel):
     def get_output_embeddings(self):
         return self.lm_head
 
-    def set_output_embeddings(self, new_embeddings):
+    def set_output_embeddings(self, new_embeddings) -> None:
         self.lm_head = new_embeddings
 
-    def store_mel_emb(self, mel_emb):
+    def store_mel_emb(self, mel_emb) -> None:
         self.cached_mel_emb = mel_emb
 
     def prepare_inputs_for_generation(self, input_ids, past_key_values=None, **kwargs):
@@ -203,7 +203,9 @@ class GPT2InferenceModel(GPT2PreTrainedModel):
 
 
 class ConditioningEncoder(nn.Module):
-    def __init__(self, spec_dim, embedding_dim, attn_blocks=6, num_attn_heads=4, do_checkpointing=False, mean=False):
+    def __init__(
+        self, spec_dim, embedding_dim, attn_blocks=6, num_attn_heads=4, do_checkpointing=False, mean=False
+    ) -> None:
         super().__init__()
         attn = []
         self.init = nn.Conv1d(spec_dim, embedding_dim, kernel_size=1)
@@ -225,7 +227,7 @@ class ConditioningEncoder(nn.Module):
 
 
 class LearnedPositionEmbeddings(nn.Module):
-    def __init__(self, seq_len, model_dim, init=0.02):
+    def __init__(self, seq_len, model_dim, init=0.02) -> None:
         super().__init__()
         self.emb = nn.Embedding(seq_len, model_dim)
         # Initializing this way is standard for GPT-2
@@ -271,7 +273,7 @@ def build_hf_gpt_transformer(layers, model_dim, heads, max_mel_seq_len, max_text
 
 
 class MelEncoder(nn.Module):
-    def __init__(self, channels, mel_channels=80, resblocks_per_reduction=2):
+    def __init__(self, channels, mel_channels=80, resblocks_per_reduction=2) -> None:
         super().__init__()
         self.channels = channels
         self.encoder = nn.Sequential(
@@ -319,7 +321,7 @@ class UnifiedVoice(nn.Module):
         condition_module=None,
         emo_condition_module=None,
         use_accel=False,
-    ):
+    ) -> None:
         """
         Args:
             layers: Number of layers in transformer stack.
@@ -443,7 +445,7 @@ class UnifiedVoice(nn.Module):
         self.use_accel = use_accel
         self.accel_engine = None  # Will be initialized in post_init_gpt2_config
 
-    def post_init_gpt2_config(self, use_deepspeed=False, kv_cache=False, half=False):
+    def post_init_gpt2_config(self, use_deepspeed=False, kv_cache=False, half=False) -> None:
         seq_length = self.max_mel_tokens + self.max_text_tokens + 2
         gpt_config = GPT2Config(
             vocab_size=self.number_mel_codes,

@@ -45,7 +45,7 @@ class IndexTTS2:
         use_deepspeed=False,
         use_accel=False,
         use_torch_compile=False,
-    ):
+    ) -> None:
         """
         Args:
             cfg_path (str): path to the config file.
@@ -315,7 +315,7 @@ class IndexTTS2:
 
         return wavs_list
 
-    def _set_gr_progress(self, value, desc):
+    def _set_gr_progress(self, value, desc) -> None:
         if self.gr_progress is not None:
             self.gr_progress(value, desc=desc)
 
@@ -775,7 +775,7 @@ def find_most_similar_cosine(query_vector, matrix):
 
 
 class QwenEmotion:
-    def __init__(self, model_dir):
+    def __init__(self, model_dir) -> None:
         self.model_dir = model_dir
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_dir)
         self.model = AutoModelForCausalLM.from_pretrained(

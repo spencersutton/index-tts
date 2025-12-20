@@ -17,10 +17,10 @@ from torch.utils.data import DataLoader
 
 
 class CodecTrainer:
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-    def _init_accelerator(self):
+    def _init_accelerator(self) -> None:
         """Initialize the accelerator components."""
         self.exp_dir = os.path.join(os.path.abspath(self.cfg.log_dir), self.args.exp_name)
         project_config = ProjectConfiguration(project_dir=self.exp_dir, logging_dir=os.path.join(self.exp_dir, "log"))
@@ -35,13 +35,13 @@ class CodecTrainer:
         with self.accelerator.main_process_first():
             self.accelerator.init_trackers(self.args.exp_name)
 
-    def _build_dataset(self):
+    def _build_dataset(self) -> None:
         pass
 
-    def _build_criterion(self):
+    def _build_criterion(self) -> None:
         pass
 
-    def _build_model(self):
+    def _build_model(self) -> None:
         pass
 
     def _build_dataloader(self):
@@ -69,10 +69,10 @@ class CodecTrainer:
         )
         return train_loader, None
 
-    def _build_optimizer(self):
+    def _build_optimizer(self) -> None:
         pass
 
-    def _build_scheduler(self):
+    def _build_scheduler(self) -> None:
         pass
 
     def _load_model(self, checkpoint_dir, checkpoint_path=None, resume_type="resume"):
@@ -99,36 +99,36 @@ class CodecTrainer:
         self.step = int(checkpoint_path.split("_")[-2].split("-")[-1]) + 1
         return checkpoint_path
 
-    def train_loop(self):
+    def train_loop(self) -> None:
         pass
 
-    def _train_epoch(self):
+    def _train_epoch(self) -> None:
         pass
 
-    def _valid_epoch(self):
+    def _valid_epoch(self) -> None:
         pass
 
-    def _train_step(self):
+    def _train_step(self) -> None:
         pass
 
-    def _valid_step(self):
+    def _valid_step(self) -> None:
         pass
 
-    def _inference(self):
+    def _inference(self) -> None:
         pass
 
-    def _set_random_seed(self, seed):
+    def _set_random_seed(self, seed) -> None:
         """Set random seed for all possible random modules."""
         random.seed(seed)
         np.random.seed(seed)
         torch.random.manual_seed(seed)
 
-    def _check_nan(self, loss):
+    def _check_nan(self, loss) -> None:
         if torch.any(torch.isnan(loss)):
             self.logger.fatal("Fatal Error: NaN!")
             self.logger.error("loss = {:.6f}".format(loss.item()), in_order=True)
 
-    def _check_basic_configs(self):
+    def _check_basic_configs(self) -> None:
         if self.cfg.train.gradient_accumulation_step <= 0:
             self.logger.fatal("Invalid gradient_accumulation_step value!")
             self.logger.error(
@@ -139,10 +139,10 @@ class CodecTrainer:
                 f"Invalid gradient_accumulation_step value: {self.cfg.train.gradient_accumulation_step}. It should be positive."
             )
 
-    def _count_parameters(self):
+    def _count_parameters(self) -> None:
         pass
 
-    def _dump_cfg(self, path):
+    def _dump_cfg(self, path) -> None:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         json5.dump(
             self.cfg,

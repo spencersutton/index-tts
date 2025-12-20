@@ -21,12 +21,12 @@ def str2bool(v):
 
 
 class AttrDict(UserDict):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super(AttrDict, self).__init__(*args, **kwargs)
         self.__dict__ = self
 
 
-def init_weights(m, mean=0.0, std=0.01):
+def init_weights(m, mean=0.0, std=0.01) -> None:
     classname = m.__class__.__name__
     if classname.find("Conv") != -1:
         m.weight.data.normal_(mean, std)
@@ -372,7 +372,7 @@ def normalize_f0(f0_sequence):
 
 
 class MyModel(nn.Module):
-    def __init__(self, args, use_emovec=False, use_gpt_latent=False):
+    def __init__(self, args, use_emovec=False, use_gpt_latent=False) -> None:
         super(MyModel, self).__init__()
         from indextts.s2mel.modules.flow_matching import CFM
         from indextts.s2mel.modules.length_regulator import InterpolateRegulator
@@ -428,7 +428,7 @@ class MyModel(nn.Module):
         x = self.models["gpt_layer"](x)
         return x
 
-    def enable_torch_compile(self):
+    def enable_torch_compile(self) -> None:
         """Enable torch.compile optimization.
 
         This method applies torch.compile to the model for significant

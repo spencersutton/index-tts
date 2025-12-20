@@ -125,7 +125,7 @@ def load_tf_weights_in_gpt2(model, config, gpt2_checkpoint_path):
 
 
 class GPT2Attention(nn.Module):
-    def __init__(self, config, is_cross_attention=False, layer_idx=None):
+    def __init__(self, config, is_cross_attention=False, layer_idx=None) -> None:
         super().__init__()
         self.config = config
         max_positions = config.max_position_embeddings
@@ -169,7 +169,7 @@ class GPT2Attention(nn.Module):
 
         self.pruned_heads = set()
 
-    def prune_heads(self, heads):
+    def prune_heads(self, heads) -> None:
         if len(heads) == 0:
             return
         heads, index = find_pruneable_heads_and_indices(heads, self.num_heads, self.head_dim, self.pruned_heads)
@@ -354,7 +354,7 @@ class GPT2FlashAttention2(GPT2Attention):
     """
 
     # Copied from transformers.models.llama.modeling_llama.LlamaFlashAttention2.__init__
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
         # TODO: Should be removed once Flash Attention for RoCm is bumped to 2.1.
@@ -466,7 +466,7 @@ class GPT2SdpaAttention(GPT2Attention):
     to adapt to the SDPA API.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
         # Idea adapted from transformers.models.bert.modeling_bert.BertSdpaSelfAttention.__init__
@@ -567,7 +567,7 @@ class GPT2SdpaAttention(GPT2Attention):
 
 
 class GPT2MLP(nn.Module):
-    def __init__(self, intermediate_size, config):
+    def __init__(self, intermediate_size, config) -> None:
         super().__init__()
         embed_dim = config.hidden_size
         self.c_fc = Conv1D(intermediate_size, embed_dim)
@@ -587,7 +587,7 @@ GPT2_ATTENTION_CLASSES = {"eager": GPT2Attention, "flash_attention_2": GPT2Flash
 
 
 class GPT2Block(nn.Module):
-    def __init__(self, config, layer_idx=None):
+    def __init__(self, config, layer_idx=None) -> None:
         super().__init__()
         hidden_size = config.hidden_size
         inner_dim = config.n_inner if config.n_inner is not None else 4 * hidden_size
@@ -681,10 +681,10 @@ class GPT2PreTrainedModel(PreTrainedModel):
     _supports_flash_attn_2 = True
     _supports_sdpa = True
 
-    def __init__(self, *inputs, **kwargs):
+    def __init__(self, *inputs, **kwargs) -> None:
         super().__init__(*inputs, **kwargs)
 
-    def _init_weights(self, module):
+    def _init_weights(self, module) -> None:
         """Initialize the weights."""
         if isinstance(module, (nn.Linear, Conv1D)):
             # Slightly different from the TF version which uses truncated_normal for initialization
@@ -896,7 +896,7 @@ DEPARALLELIZE_DOCSTRING = r"""
 class GPT2Model(GPT2PreTrainedModel):
     _supports_param_buffer_assignment = False
 
-    def __init__(self, config):
+    def __init__(self, config) -> None:
         super().__init__(config)
 
         self.embed_dim = config.hidden_size
@@ -918,7 +918,7 @@ class GPT2Model(GPT2PreTrainedModel):
         self.post_init()
 
     @add_start_docstrings(PARALLELIZE_DOCSTRING)
-    def parallelize(self, device_map=None):
+    def parallelize(self, device_map=None) -> None:
         # Check validity of device_map
         warnings.warn(
             "`GPT2Model.parallelize` is deprecated and will be removed in v5 of Transformers, you should load your"
@@ -945,7 +945,7 @@ class GPT2Model(GPT2PreTrainedModel):
         self.ln_f = self.ln_f.to(self.last_device)
 
     @add_start_docstrings(DEPARALLELIZE_DOCSTRING)
-    def deparallelize(self):
+    def deparallelize(self) -> None:
         warnings.warn(
             "Like `parallelize`, `deparallelize` is deprecated and will be removed in v5 of Transformers.",
             FutureWarning,
@@ -964,10 +964,10 @@ class GPT2Model(GPT2PreTrainedModel):
     def get_input_embeddings(self):
         return self.wte
 
-    def set_input_embeddings(self, new_embeddings):
+    def set_input_embeddings(self, new_embeddings) -> None:
         self.wte = new_embeddings
 
-    def _prune_heads(self, heads_to_prune):
+    def _prune_heads(self, heads_to_prune) -> None:
         """
         Prunes heads of the model. heads_to_prune: dict of {layer_num: list of heads to prune in this layer}
         """
@@ -1191,7 +1191,7 @@ class GPT2Model(GPT2PreTrainedModel):
 class GPT2LMHeadModel(GPT2PreTrainedModel, GenerationMixin):
     _tied_weights_keys = ["lm_head.weight"]
 
-    def __init__(self, config):
+    def __init__(self, config) -> None:
         super().__init__(config)
         self.transformer = GPT2Model(config)
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
@@ -1204,7 +1204,7 @@ class GPT2LMHeadModel(GPT2PreTrainedModel, GenerationMixin):
         self.post_init()
 
     @add_start_docstrings(PARALLELIZE_DOCSTRING)
-    def parallelize(self, device_map=None):
+    def parallelize(self, device_map=None) -> None:
         warnings.warn(
             "`GPT2LMHeadModel.parallelize` is deprecated and will be removed in v5 of Transformers, you should load"
             " your model with `device_map='balanced'` in the call to `from_pretrained`. You can also provide your own"
@@ -1223,7 +1223,7 @@ class GPT2LMHeadModel(GPT2PreTrainedModel, GenerationMixin):
         self.model_parallel = True
 
     @add_start_docstrings(DEPARALLELIZE_DOCSTRING)
-    def deparallelize(self):
+    def deparallelize(self) -> None:
         warnings.warn(
             "Like `parallelize`, `deparallelize` is deprecated and will be removed in v5 of Transformers.",
             FutureWarning,
@@ -1237,7 +1237,7 @@ class GPT2LMHeadModel(GPT2PreTrainedModel, GenerationMixin):
     def get_output_embeddings(self):
         return self.lm_head
 
-    def set_output_embeddings(self, new_embeddings):
+    def set_output_embeddings(self, new_embeddings) -> None:
         self.lm_head = new_embeddings
 
     @add_start_docstrings_to_model_forward(GPT2_INPUTS_DOCSTRING)
@@ -1346,7 +1346,7 @@ input sequence).
 class GPT2DoubleHeadsModel(GPT2PreTrainedModel, GenerationMixin):
     _tied_weights_keys = ["lm_head.weight"]
 
-    def __init__(self, config):
+    def __init__(self, config) -> None:
         super().__init__(config)
         config.num_labels = 1
         self.transformer = GPT2Model(config)
@@ -1361,7 +1361,7 @@ class GPT2DoubleHeadsModel(GPT2PreTrainedModel, GenerationMixin):
         self.post_init()
 
     @add_start_docstrings(PARALLELIZE_DOCSTRING)
-    def parallelize(self, device_map=None):
+    def parallelize(self, device_map=None) -> None:
         warnings.warn(
             "`GPT2DoubleHeadsModel.parallelize` is deprecated and will be removed in v5 of Transformers, you should"
             " load your model with `device_map='balanced'` in the call to `from_pretrained`. You can also provide your"
@@ -1381,7 +1381,7 @@ class GPT2DoubleHeadsModel(GPT2PreTrainedModel, GenerationMixin):
         self.model_parallel = True
 
     @add_start_docstrings(DEPARALLELIZE_DOCSTRING)
-    def deparallelize(self):
+    def deparallelize(self) -> None:
         warnings.warn(
             "Like `parallelize`, `deparallelize` is deprecated and will be removed in v5 of Transformers.",
             FutureWarning,
@@ -1396,7 +1396,7 @@ class GPT2DoubleHeadsModel(GPT2PreTrainedModel, GenerationMixin):
     def get_output_embeddings(self):
         return self.lm_head
 
-    def set_output_embeddings(self, new_embeddings):
+    def set_output_embeddings(self, new_embeddings) -> None:
         self.lm_head = new_embeddings
 
     @add_start_docstrings_to_model_forward(GPT2_INPUTS_DOCSTRING)
@@ -1543,7 +1543,7 @@ class GPT2DoubleHeadsModel(GPT2PreTrainedModel, GenerationMixin):
     GPT2_START_DOCSTRING,
 )
 class GPT2ForSequenceClassification(GPT2PreTrainedModel):
-    def __init__(self, config):
+    def __init__(self, config) -> None:
         super().__init__(config)
         self.num_labels = config.num_labels
         self.transformer = GPT2Model(config)
@@ -1669,7 +1669,7 @@ class GPT2ForSequenceClassification(GPT2PreTrainedModel):
     GPT2_START_DOCSTRING,
 )
 class GPT2ForTokenClassification(GPT2PreTrainedModel):
-    def __init__(self, config):
+    def __init__(self, config) -> None:
         super().__init__(config)
         self.num_labels = config.num_labels
 
@@ -1780,7 +1780,7 @@ class GPT2ForTokenClassification(GPT2PreTrainedModel):
     GPT2_START_DOCSTRING,
 )
 class GPT2ForQuestionAnswering(GPT2PreTrainedModel):
-    def __init__(self, config):
+    def __init__(self, config) -> None:
         super().__init__(config)
         self.num_labels = config.num_labels
         self.transformer = GPT2Model(config)

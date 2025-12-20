@@ -40,7 +40,7 @@ def cast_tuple(val, depth):
 
 
 class always:
-    def __init__(self, val):
+    def __init__(self, val) -> None:
         self.val = val
 
     def __call__(self, *args, **kwargs):
@@ -48,7 +48,7 @@ class always:
 
 
 class not_equals:
-    def __init__(self, val):
+    def __init__(self, val) -> None:
         self.val = val
 
     def __call__(self, x, *args, **kwargs):
@@ -56,7 +56,7 @@ class not_equals:
 
 
 class equals:
-    def __init__(self, val):
+    def __init__(self, val) -> None:
         self.val = val
 
     def __call__(self, x, *args, **kwargs):
@@ -74,7 +74,7 @@ def l2norm(t):
 # init helpers
 
 
-def init_zero_(layer):
+def init_zero_(layer) -> None:
     nn.init.constant_(layer.weight, 0.0)
     if exists(layer.bias):
         nn.init.constant_(layer.bias, 0.0)
@@ -123,7 +123,7 @@ class ReluSquared(nn.Module):
 
 
 class AbsolutePositionalEmbedding(nn.Module):
-    def __init__(self, dim, max_seq_len):
+    def __init__(self, dim, max_seq_len) -> None:
         super().__init__()
         self.scale = dim**-0.5
         self.emb = nn.Embedding(max_seq_len, dim)
@@ -136,7 +136,7 @@ class AbsolutePositionalEmbedding(nn.Module):
 
 
 class FixedPositionalEmbedding(nn.Module):
-    def __init__(self, dim):
+    def __init__(self, dim) -> None:
         super().__init__()
         inv_freq = 1.0 / (10000 ** (torch.arange(0, dim, 2).float() / dim))
         self.register_buffer("inv_freq", inv_freq)
@@ -149,7 +149,7 @@ class FixedPositionalEmbedding(nn.Module):
 
 
 class RelativePositionBias(nn.Module):
-    def __init__(self, scale, causal=False, num_buckets=32, max_distance=128, heads=8):
+    def __init__(self, scale, causal=False, num_buckets=32, max_distance=128, heads=8) -> None:
         super().__init__()
         self.scale = scale
         self.causal = causal
@@ -194,7 +194,7 @@ class RelativePositionBias(nn.Module):
 
 
 class AlibiPositionalBias(nn.Module):
-    def __init__(self, heads, **kwargs):
+    def __init__(self, heads, **kwargs) -> None:
         super().__init__()
         self.heads = heads
         slopes = torch.Tensor(self._get_slopes(heads))
@@ -236,7 +236,7 @@ class AlibiPositionalBias(nn.Module):
 
 
 class LearnedAlibiPositionalBias(AlibiPositionalBias):
-    def __init__(self, heads, bidirectional=False):
+    def __init__(self, heads, bidirectional=False) -> None:
         super().__init__(heads)
         los_slopes = torch.log(self.slopes)
         self.learned_logslopes = nn.Parameter(los_slopes)
@@ -271,7 +271,7 @@ class LearnedAlibiPositionalBias(AlibiPositionalBias):
 
 
 class RotaryEmbedding(nn.Module):
-    def __init__(self, dim):
+    def __init__(self, dim) -> None:
         super().__init__()
         inv_freq = 1.0 / (10000 ** (torch.arange(0, dim, 2).float() / dim))
         self.register_buffer("inv_freq", inv_freq)
@@ -299,7 +299,7 @@ def apply_rotary_pos_emb(t, freqs):
 
 
 class Scale(nn.Module):
-    def __init__(self, value, fn):
+    def __init__(self, value, fn) -> None:
         super().__init__()
         self.value = value
         self.fn = fn
@@ -317,7 +317,7 @@ class Scale(nn.Module):
 
 
 class Rezero(nn.Module):
-    def __init__(self, fn):
+    def __init__(self, fn) -> None:
         super().__init__()
         self.fn = fn
         self.g = nn.Parameter(torch.zeros(1))
@@ -335,7 +335,7 @@ class Rezero(nn.Module):
 
 
 class ScaleNorm(nn.Module):
-    def __init__(self, dim, eps=1e-5):
+    def __init__(self, dim, eps=1e-5) -> None:
         super().__init__()
         self.scale = dim**-0.5
         self.eps = eps
@@ -347,7 +347,7 @@ class ScaleNorm(nn.Module):
 
 
 class RMSNorm(nn.Module):
-    def __init__(self, dim, eps=1e-8):
+    def __init__(self, dim, eps=1e-8) -> None:
         super().__init__()
         self.scale = dim**-0.5
         self.eps = eps
@@ -359,7 +359,7 @@ class RMSNorm(nn.Module):
 
 
 class RMSScaleShiftNorm(nn.Module):
-    def __init__(self, dim, eps=1e-8):
+    def __init__(self, dim, eps=1e-8) -> None:
         super().__init__()
         self.scale = dim**-0.5
         self.eps = eps
@@ -380,7 +380,7 @@ class RMSScaleShiftNorm(nn.Module):
 
 
 class Residual(nn.Module):
-    def __init__(self, dim, scale_residual=False):
+    def __init__(self, dim, scale_residual=False) -> None:
         super().__init__()
         self.residual_scale = nn.Parameter(torch.ones(dim)) if scale_residual else None
 
@@ -392,7 +392,7 @@ class Residual(nn.Module):
 
 
 class GRUGating(nn.Module):
-    def __init__(self, dim, scale_residual=False):
+    def __init__(self, dim, scale_residual=False) -> None:
         super().__init__()
         self.gru = nn.GRUCell(dim, dim)
         self.residual_scale = nn.Parameter(torch.ones(dim)) if scale_residual else None
@@ -420,7 +420,7 @@ def shift(t, amount, mask=None):
 
 
 class ShiftTokens(nn.Module):
-    def __init__(self, shifts, fn):
+    def __init__(self, shifts, fn) -> None:
         super().__init__()
         self.fn = fn
         self.shifts = tuple(shifts)
@@ -441,7 +441,7 @@ class ShiftTokens(nn.Module):
 
 
 class GLU(nn.Module):
-    def __init__(self, dim_in, dim_out, activation):
+    def __init__(self, dim_in, dim_out, activation) -> None:
         super().__init__()
         self.act = activation
         self.proj = nn.Linear(dim_in, dim_out * 2)
@@ -462,7 +462,7 @@ class FeedForward(nn.Module):
         post_act_ln=False,
         dropout=0.0,
         zero_init_output=False,
-    ):
+    ) -> None:
         super().__init__()
         inner_dim = int(dim * mult)
         dim_out = default(dim_out, dim)
@@ -514,7 +514,7 @@ class Attention(nn.Module):
         rel_pos_bias=False,
         rel_pos_num_buckets=32,
         rel_pos_max_distance=128,
-    ):
+    ) -> None:
         super().__init__()
         self.scale = dim_head**-0.5
 
@@ -791,7 +791,7 @@ class AttentionLayers(nn.Module):
         qk_norm_attn_seq_len=None,
         zero_init_branch_output=False,
         **kwargs,
-    ):
+    ) -> None:
         super().__init__()
         ff_kwargs, kwargs = groupby_prefix_and_trim("ff_", kwargs)
         attn_kwargs, _ = groupby_prefix_and_trim("attn_", kwargs)
@@ -1052,24 +1052,24 @@ class AttentionLayers(nn.Module):
 
 
 class Encoder(AttentionLayers):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         assert "causal" not in kwargs, "cannot set causality on encoder"
         super().__init__(causal=False, **kwargs)
 
 
 class Decoder(AttentionLayers):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         assert "causal" not in kwargs, "cannot set causality on decoder"
         super().__init__(causal=True, **kwargs)
 
 
 class CrossAttender(AttentionLayers):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(cross_attend=True, only_cross=True, **kwargs)
 
 
 class ViTransformerWrapper(nn.Module):
-    def __init__(self, *, image_size, patch_size, attn_layers, num_classes=None, dropout=0.0, emb_dropout=0.0):
+    def __init__(self, *, image_size, patch_size, attn_layers, num_classes=None, dropout=0.0, emb_dropout=0.0) -> None:
         super().__init__()
         assert isinstance(attn_layers, Encoder), "attention layers must be an Encoder"
         assert image_size % patch_size == 0, "image dimensions must be divisible by the patch size"
@@ -1123,7 +1123,7 @@ class TransformerWrapper(nn.Module):
         num_memory_tokens=None,
         tie_embedding=False,
         use_pos_emb=True,
-    ):
+    ) -> None:
         super().__init__()
         assert isinstance(attn_layers, AttentionLayers), "attention layers must be one of Encoder or Decoder"
 
@@ -1156,7 +1156,7 @@ class TransformerWrapper(nn.Module):
         if num_memory_tokens > 0:
             self.memory_tokens = nn.Parameter(torch.randn(num_memory_tokens, dim))
 
-    def init_(self):
+    def init_(self) -> None:
         nn.init.kaiming_normal_(self.token_emb.weight)
 
     def forward(
@@ -1215,7 +1215,7 @@ class TransformerWrapper(nn.Module):
 class ContinuousTransformerWrapper(nn.Module):
     def __init__(
         self, *, max_seq_len, attn_layers, dim_in=None, dim_out=None, emb_dim=None, emb_dropout=0.0, use_pos_emb=True
-    ):
+    ) -> None:
         super().__init__()
         assert isinstance(attn_layers, AttentionLayers), "attention layers must be one of Encoder or Decoder"
 

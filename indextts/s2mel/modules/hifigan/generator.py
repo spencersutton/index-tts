@@ -53,7 +53,7 @@ class Snake(nn.Module):
         >>> x = a1(x)
     """
 
-    def __init__(self, in_features, alpha=1.0, alpha_trainable=True, alpha_logscale=False):
+    def __init__(self, in_features, alpha=1.0, alpha_trainable=True, alpha_logscale=False) -> None:
         """
         Initialization.
         INPUT:
@@ -94,7 +94,7 @@ def get_padding(kernel_size, dilation=1):
     return int((kernel_size * dilation - dilation) / 2)
 
 
-def init_weights(m, mean=0.0, std=0.01):
+def init_weights(m, mean=0.0, std=0.01) -> None:
     classname = m.__class__.__name__
     if classname.find("Conv") != -1:
         m.weight.data.normal_(mean, std)
@@ -108,7 +108,7 @@ class ResBlock(torch.nn.Module):
         channels: int = 512,
         kernel_size: int = 3,
         dilations: tp.List[int] = [1, 3, 5],
-    ):
+    ) -> None:
         super(ResBlock, self).__init__()
         self.convs1 = nn.ModuleList()
         self.convs2 = nn.ModuleList()
@@ -143,7 +143,7 @@ class ResBlock(torch.nn.Module):
             x = xt + x
         return x
 
-    def remove_weight_norm(self):
+    def remove_weight_norm(self) -> None:
         for idx in range(len(self.convs1)):
             remove_weight_norm(self.convs1[idx])
             remove_weight_norm(self.convs2[idx])
@@ -165,7 +165,7 @@ class SineGen(torch.nn.Module):
         segment is always sin(np.pi) or cos(0)
     """
 
-    def __init__(self, samp_rate, harmonic_num=0, sine_amp=0.1, noise_std=0.003, voiced_threshold=0):
+    def __init__(self, samp_rate, harmonic_num=0, sine_amp=0.1, noise_std=0.003, voiced_threshold=0) -> None:
         super(SineGen, self).__init__()
         self.sine_amp = sine_amp
         self.noise_std = noise_std
@@ -232,7 +232,7 @@ class SourceModuleHnNSF(torch.nn.Module):
 
     def __init__(
         self, sampling_rate, upsample_scale, harmonic_num=0, sine_amp=0.1, add_noise_std=0.003, voiced_threshod=0
-    ):
+    ) -> None:
         super(SourceModuleHnNSF, self).__init__()
 
         self.sine_amp = sine_amp
@@ -289,7 +289,7 @@ class HiFTGenerator(nn.Module):
         lrelu_slope: float = 0.1,
         audio_limit: float = 0.99,
         f0_predictor: torch.nn.Module = None,
-    ):
+    ) -> None:
         super(HiFTGenerator, self).__init__()
 
         self.out_channels = 1
@@ -427,7 +427,7 @@ class HiFTGenerator(nn.Module):
         x = torch.clamp(x, -self.audio_limit, self.audio_limit)
         return x
 
-    def remove_weight_norm(self):
+    def remove_weight_norm(self) -> None:
         print("Removing weight norm...")
         for l in self.ups:
             remove_weight_norm(l)

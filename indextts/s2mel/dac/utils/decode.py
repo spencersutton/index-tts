@@ -23,7 +23,7 @@ def decode(
     device: str = "cuda",
     model_type: str = "44khz",
     verbose: bool = False,
-):
+) -> None:
     """Decode audio from codes.
 
     Parameters

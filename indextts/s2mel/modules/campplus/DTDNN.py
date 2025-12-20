@@ -18,7 +18,7 @@ from indextts.s2mel.modules.campplus.layers import (
 
 
 class FCM(nn.Module):
-    def __init__(self, block=BasicResBlock, num_blocks=[2, 2], m_channels=32, feat_dim=80):
+    def __init__(self, block=BasicResBlock, num_blocks=[2, 2], m_channels=32, feat_dim=80) -> None:
         super(FCM, self).__init__()
         self.in_planes = m_channels
         self.conv1 = nn.Conv2d(1, m_channels, kernel_size=3, stride=1, padding=1, bias=False)
@@ -61,7 +61,7 @@ class CAMPPlus(nn.Module):
         init_channels=128,
         config_str="batchnorm-relu",
         memory_efficient=True,
-    ):
+    ) -> None:
         super(CAMPPlus, self).__init__()
 
         self.head = FCM(feat_dim=feat_dim)

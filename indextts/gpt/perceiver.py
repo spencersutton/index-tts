@@ -34,7 +34,7 @@ print_once = once(print)
 
 # main class
 class Attend(nn.Module):
-    def __init__(self, dropout=0.0, causal=False, use_flash=False):
+    def __init__(self, dropout=0.0, causal=False, use_flash=False) -> None:
         super().__init__()
         self.dropout = dropout
         self.attn_dropout = nn.Dropout(dropout)
@@ -165,7 +165,7 @@ def default(val, d):
 
 
 class RMSNorm(nn.Module):
-    def __init__(self, dim, scale=True, dim_cond=None):
+    def __init__(self, dim, scale=True, dim_cond=None) -> None:
         super().__init__()
         self.cond = exists(dim_cond)
         self.to_gamma_beta = nn.Linear(dim_cond, dim * 2) if self.cond else None
@@ -187,7 +187,7 @@ class RMSNorm(nn.Module):
 
 
 class CausalConv1d(nn.Conv1d):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         (kernel_size,) = self.kernel_size
         (dilation,) = self.dilation
@@ -232,7 +232,7 @@ class PerceiverResampler(nn.Module):
         heads=8,
         ff_mult=4,
         use_flash_attn=False,
-    ):
+    ) -> None:
         super().__init__()
         dim_context = default(dim_context, dim)
 
@@ -284,7 +284,7 @@ class Attention(nn.Module):
         dropout=0.0,
         use_flash=False,
         cross_attn_include_queries=False,
-    ):
+    ) -> None:
         super().__init__()
         self.scale = dim_head**-0.5
         self.heads = heads

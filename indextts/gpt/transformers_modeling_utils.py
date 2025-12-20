@@ -30,7 +30,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import partial, wraps
 from threading import Thread
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, List, NoReturn, Optional, Set, Tuple, Union
 from zipfile import is_zipfile
 
 import torch
@@ -196,7 +196,7 @@ def no_init_weights(_enable=True):
     if _enable:
         _init_weights = False
 
-        def _skip_init(*args, **kwargs):
+        def _skip_init(*args, **kwargs) -> None:
             pass
 
         # # Save the original initialization functions
@@ -738,7 +738,7 @@ def _load_state_dict_into_model(model_to_load, state_dict, start_prefix, assign_
 
     # PyTorch's `_load_from_state_dict` does not copy parameters in a module's descendants
     # so we need to apply the function recursively.
-    def load(module: nn.Module, state_dict, prefix="", assign_to_params_buffers=False):
+    def load(module: nn.Module, state_dict, prefix="", assign_to_params_buffers=False) -> None:
         local_metadata = {} if metadata is None else metadata.get(prefix[:-1], {})
         local_metadata["assign_to_params_buffers"] = assign_to_params_buffers
 
@@ -798,7 +798,7 @@ def find_submodule_and_param_name(model, long_key, start_prefix):
     return submodule, split_key[0]
 
 
-def _move_model_to_meta(model, loaded_state_dict_keys, start_prefix):
+def _move_model_to_meta(model, loaded_state_dict_keys, start_prefix) -> None:
     """
     Moves `loaded_state_dict_keys` in model to meta device which frees up the memory taken by those params.
 
@@ -1018,7 +1018,7 @@ class ModuleUtilsMixin:
     """
 
     @staticmethod
-    def _hook_rss_memory_pre_forward(module, *args, **kwargs):
+    def _hook_rss_memory_pre_forward(module, *args, **kwargs) -> None:
         try:
             import psutil
         except ImportError:
@@ -1030,7 +1030,7 @@ class ModuleUtilsMixin:
         return None
 
     @staticmethod
-    def _hook_rss_memory_post_forward(module, *args, **kwargs):
+    def _hook_rss_memory_post_forward(module, *args, **kwargs) -> None:
         try:
             import psutil
         except ImportError:
@@ -1043,7 +1043,7 @@ class ModuleUtilsMixin:
         module.mem_rss_diff = mem_rss_diff + (module.mem_rss_diff if hasattr(module, "mem_rss_diff") else 0)
         return None
 
-    def add_memory_hooks(self):
+    def add_memory_hooks(self) -> None:
         """
         Add a memory hook before and after each sub-module forward pass to record increase in memory consumption.
 
@@ -1055,7 +1055,7 @@ class ModuleUtilsMixin:
             module.register_forward_hook(self._hook_rss_memory_post_forward)
         self.reset_memory_hooks_state()
 
-    def reset_memory_hooks_state(self):
+    def reset_memory_hooks_state(self) -> None:
         """
         Reset the `mem_rss_diff` attribute of each module (see [`~modeling_utils.ModuleUtilsMixin.add_memory_hooks`]).
         """
@@ -1406,7 +1406,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         """
         return "pt"
 
-    def __init__(self, config: PretrainedConfig, *inputs, **kwargs):
+    def __init__(self, config: PretrainedConfig, *inputs, **kwargs) -> None:
         super().__init__()
         if not isinstance(config, PretrainedConfig):
             raise ValueError(
@@ -1429,7 +1429,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         # when a different component (e.g. language_model) is used.
         self._keep_in_fp32_modules = copy.copy(self.__class__._keep_in_fp32_modules)
 
-    def post_init(self):
+    def post_init(self) -> None:
         """
         A method executed at the end of each Transformer model initialization, to execute code that needs the model's
         modules properly initialized (such as weight initialization).
@@ -1449,7 +1449,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
 
         return hf_quantizer.dequantize(self)
 
-    def _backward_compatibility_gradient_checkpointing(self):
+    def _backward_compatibility_gradient_checkpointing(self) -> None:
         if self.supports_gradient_checkpointing and getattr(self.config, "gradient_checkpointing", False):
             self.gradient_checkpointing_enable()
             # Remove the attribute now that is has been consumed, so it's no saved in the config.
@@ -1834,18 +1834,18 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
             config._attn_implementation = "sdpa"
         return config
 
-    def enable_input_require_grads(self):
+    def enable_input_require_grads(self) -> None:
         """
         Enables the gradients for the input embeddings. This is useful for fine-tuning adapter weights while keeping
         the model weights fixed.
         """
 
-        def make_inputs_require_grads(module, input, output):
+        def make_inputs_require_grads(module, input, output) -> None:
             output.requires_grad_(True)
 
         self._require_grads_hook = self.get_input_embeddings().register_forward_hook(make_inputs_require_grads)
 
-    def disable_input_require_grads(self):
+    def disable_input_require_grads(self) -> None:
         """
         Removes the `_require_grads_hook`.
         """
@@ -1864,7 +1864,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         else:
             raise NotImplementedError
 
-    def set_input_embeddings(self, value: nn.Module):
+    def set_input_embeddings(self, value: nn.Module) -> None:
         """
         Set model's input embeddings.
 
@@ -1886,7 +1886,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         """
         return None  # Overwrite for models with output embeddings
 
-    def _init_weights(self, module):
+    def _init_weights(self, module) -> None:
         """
         Initialize the weights. This method should be overridden by derived class and is
         the only initialization method that will be called when loading a checkpoint
@@ -1895,7 +1895,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         """
         pass
 
-    def _initialize_weights(self, module):
+    def _initialize_weights(self, module) -> None:
         """
         Initialize the weights if they are not already initialized.
         """
@@ -1904,7 +1904,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         self._init_weights(module)
         module._is_hf_initialized = True
 
-    def tie_weights(self):
+    def tie_weights(self) -> None:
         """
         Tie the weights between the input embeddings and the output embeddings.
 
@@ -1952,7 +1952,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
             depth=0,
             total_decoder_name="",
             total_encoder_name="",
-        ):
+        ) -> None:
             assert isinstance(decoder_pointer, nn.Module) and isinstance(encoder_pointer, nn.Module), (
                 f"{decoder_pointer} and {encoder_pointer} have to be of type nn.Module"
             )
@@ -2021,7 +2021,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
             )
         return tied_weights
 
-    def _tie_or_clone_weights(self, output_embeddings, input_embeddings):
+    def _tie_or_clone_weights(self, output_embeddings, input_embeddings) -> None:
         """Tie or clone module weights depending of whether we are using TorchScript or not"""
         if self.config.torchscript:
             output_embeddings.weight = nn.Parameter(input_embeddings.weight.clone())
@@ -2454,7 +2454,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
 
     def _init_added_embeddings_weights_with_mean(
         self, old_embeddings, new_embeddings, old_embedding_dim, old_num_tokens, added_num_tokens
-    ):
+    ) -> None:
         old_embeddings_weight = old_embeddings.weight.data.to(torch.float32)
         mean_embeddings = torch.mean(old_embeddings_weight, axis=0)
         old_centered_embeddings = old_embeddings_weight - mean_embeddings
@@ -2487,7 +2487,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         old_num_tokens,
         added_num_tokens,
         transposed=False,
-    ):
+    ) -> None:
         if transposed:
             # Transpose to the desired shape for the function.
             new_lm_head.weight.data = new_lm_head.weight.data.T
@@ -2503,14 +2503,14 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
             new_lm_head.weight.data = new_lm_head.weight.data.T
             old_lm_head.weight.data = old_lm_head.weight.data.T
 
-    def _init_added_lm_head_bias_with_mean(self, old_lm_head, new_lm_head, added_num_tokens):
+    def _init_added_lm_head_bias_with_mean(self, old_lm_head, new_lm_head, added_num_tokens) -> None:
         bias_mean = torch.mean(old_lm_head.bias.data, axis=0, dtype=torch.float32)
         bias_std = torch.std(old_lm_head.bias.data, axis=0).to(torch.float32)
         new_lm_head.bias.data[-1 * added_num_tokens :].normal_(mean=bias_mean, std=1e-9 * bias_std)
 
     def _copy_lm_head_original_to_resized(
         self, new_lm_head, old_lm_head, num_tokens_to_copy, transposed, has_new_lm_head_bias
-    ):
+    ) -> None:
         # Copy old lm head weights to new lm head
         if not transposed:
             new_lm_head.weight.data[:num_tokens_to_copy, :] = old_lm_head.weight.data[:num_tokens_to_copy, :]
@@ -2521,7 +2521,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         if has_new_lm_head_bias:
             new_lm_head.bias.data[:num_tokens_to_copy] = old_lm_head.bias.data[:num_tokens_to_copy]
 
-    def resize_position_embeddings(self, new_num_position_embeddings: int):
+    def resize_position_embeddings(self, new_num_position_embeddings: int) -> NoReturn:
         raise NotImplementedError(
             f"`resize_position_embeddings` is not implemented for {self.__class__}`. To implement it, you should "
             f"overwrite this method in the class {self.__class__} in `modeling_{self.__class__.__module__}.py`"
@@ -2533,7 +2533,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
             f"overwrite this method in the class {self.__class__} in `modeling_{self.__class__.__module__}.py`"
         )
 
-    def init_weights(self):
+    def init_weights(self) -> None:
         """
         If needed prunes and maybe initializes weights. If using a custom `PreTrainedModel`, you need to implement any
         initialization logic in `_init_weights`.
@@ -2550,7 +2550,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
             # since from_pretrained(...) calls tie weights anyways
             self.tie_weights()
 
-    def prune_heads(self, heads_to_prune: Dict[int, List[int]]):
+    def prune_heads(self, heads_to_prune: Dict[int, List[int]]) -> None:
         """
         Prunes heads of the base model.
 
@@ -2567,7 +2567,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
 
         self.base_model._prune_heads(heads_to_prune)
 
-    def gradient_checkpointing_enable(self, gradient_checkpointing_kwargs=None):
+    def gradient_checkpointing_enable(self, gradient_checkpointing_kwargs=None) -> None:
         """
         Activates gradient checkpointing for the current model.
 
@@ -2609,7 +2609,9 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
             # the gradients to make sure the gradient flows.
             self.enable_input_require_grads()
 
-    def _set_gradient_checkpointing(self, enable: bool = True, gradient_checkpointing_func: Callable = checkpoint):
+    def _set_gradient_checkpointing(
+        self, enable: bool = True, gradient_checkpointing_func: Callable = checkpoint
+    ) -> None:
         is_gradient_checkpointing_set = False
 
         # Apply it on the top-level module in case the top-level modules supports it
@@ -2631,7 +2633,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                 " `gradient_checkpointing` to modules of the model that uses checkpointing."
             )
 
-    def gradient_checkpointing_disable(self):
+    def gradient_checkpointing_disable(self) -> None:
         """
         Deactivates gradient checkpointing for the current model.
 
@@ -2677,7 +2679,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         token: Optional[Union[str, bool]] = None,
         save_peft_format: bool = True,
         **kwargs,
-    ):
+    ) -> None:
         """
         Save a model and its configuration file to a directory, so that it can be re-loaded using the
         [`~PreTrainedModel.from_pretrained`] class method.
@@ -4875,7 +4877,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         return error_msgs
 
     @classmethod
-    def register_for_auto_class(cls, auto_class="AutoModel"):
+    def register_for_auto_class(cls, auto_class="AutoModel") -> None:
         """
         Register this class with a given auto class. This should only be used for custom models as the ones in the
         library are already mapped with an auto class.
@@ -4950,7 +4952,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
 
         return BetterTransformer.reverse(self)
 
-    def warn_if_padding_and_no_attention_mask(self, input_ids, attention_mask):
+    def warn_if_padding_and_no_attention_mask(self, input_ids, attention_mask) -> None:
         """
         Shows a one-time warning if the input_ids appear to contain padding and no attention mask was given.
         """
@@ -5035,7 +5037,7 @@ class PoolerStartLogits(nn.Module):
             The config used by the model, will be used to grab the `hidden_size` of the model.
     """
 
-    def __init__(self, config: PretrainedConfig):
+    def __init__(self, config: PretrainedConfig) -> None:
         super().__init__()
         self.dense = nn.Linear(config.hidden_size, 1)
 
@@ -5074,7 +5076,7 @@ class PoolerEndLogits(nn.Module):
             to use.
     """
 
-    def __init__(self, config: PretrainedConfig):
+    def __init__(self, config: PretrainedConfig) -> None:
         super().__init__()
         self.dense_0 = nn.Linear(config.hidden_size * 2, config.hidden_size)
         self.activation = nn.Tanh()
@@ -5142,7 +5144,7 @@ class PoolerAnswerClass(nn.Module):
             The config used by the model, will be used to grab the `hidden_size` of the model.
     """
 
-    def __init__(self, config):
+    def __init__(self, config) -> None:
         super().__init__()
         self.dense_0 = nn.Linear(config.hidden_size * 2, config.hidden_size)
         self.activation = nn.Tanh()
@@ -5239,7 +5241,7 @@ class SQuADHead(nn.Module):
             to use.
     """
 
-    def __init__(self, config):
+    def __init__(self, config) -> None:
         super().__init__()
         self.start_n_top = config.start_n_top
         self.end_n_top = config.end_n_top
@@ -5372,7 +5374,7 @@ class SequenceSummary(nn.Module):
             - **summary_last_dropout** (`float`)-- Optional dropout probability after the projection and activation.
     """
 
-    def __init__(self, config: PretrainedConfig):
+    def __init__(self, config: PretrainedConfig) -> None:
         super().__init__()
 
         self.summary_type = getattr(config, "summary_type", "last")

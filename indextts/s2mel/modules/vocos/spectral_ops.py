@@ -19,7 +19,7 @@ class ISTFT(nn.Module):
         padding (str, optional): Type of padding. Options are "center" or "same". Defaults to "same".
     """
 
-    def __init__(self, n_fft: int, hop_length: int, win_length: int, padding: str = "same"):
+    def __init__(self, n_fft: int, hop_length: int, win_length: int, padding: str = "same") -> None:
         super().__init__()
         if padding not in ["center", "same"]:
             raise ValueError("Padding must be 'center' or 'same'.")
@@ -90,7 +90,7 @@ class MDCT(nn.Module):
         padding (str, optional): Type of padding. Options are "center" or "same". Defaults to "same".
     """
 
-    def __init__(self, frame_len: int, padding: str = "same"):
+    def __init__(self, frame_len: int, padding: str = "same") -> None:
         super().__init__()
         if padding not in ["center", "same"]:
             raise ValueError("Padding must be 'center' or 'same'.")
@@ -145,7 +145,7 @@ class IMDCT(nn.Module):
         padding (str, optional): Type of padding. Options are "center" or "same". Defaults to "same".
     """
 
-    def __init__(self, frame_len: int, padding: str = "same"):
+    def __init__(self, frame_len: int, padding: str = "same") -> None:
         super().__init__()
         if padding not in ["center", "same"]:
             raise ValueError("Padding must be 'center' or 'same'.")

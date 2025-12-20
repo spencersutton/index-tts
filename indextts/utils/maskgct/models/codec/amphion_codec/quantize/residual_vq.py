@@ -29,7 +29,7 @@ class ResidualVQ(nn.Module):
         quantizer_type: str = "vq",  # "vq" or "fvq" or "lfq"
         quantizer_dropout: float = 0.5,
         **kwargs,
-    ):
+    ) -> None:
         super().__init__()
 
         self.input_dim = input_dim

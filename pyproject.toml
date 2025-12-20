@@ -119,8 +119,8 @@ preview = true
 show-fixes = true
 
 [tool.ruff.lint]
-extend-select = ["I", "SIM", "FURB"]
-ignore = ["SIM108", "FURB118"]
+extend-select = ["I", "SIM", "FURB", "ANN"]
+ignore = ["SIM108", "FURB118", "ANN401"]
 
 [tool.ruff.lint.isort]
 combine-as-imports = true

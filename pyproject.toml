@@ -133,6 +133,7 @@ extend-select = [
   "SIM",
   "UP",
   "W",
+  "PLR",
 ]
 ignore = [
   "ANN401",

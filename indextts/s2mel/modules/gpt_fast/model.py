@@ -6,8 +6,7 @@
 from dataclasses import dataclass
 
 import torch
-import torch.nn as nn
-from torch import Tensor
+from torch import Tensor, nn
 from torch.nn import functional as F
 
 
@@ -273,7 +272,7 @@ class TransformerBlock(nn.Module):
             x = self.skip_in_linear(torch.cat([x, skip_in_x], dim=-1))
         h = x + self.attention(self.attention_norm(x, c), freqs_cis, mask, input_pos)
         if self.has_cross_attention:
-            h = h + self.cross_attention(
+            h += self.cross_attention(
                 self.cross_attention_norm(h, c), freqs_cis, cross_attention_mask, input_pos, context, context_freqs_cis
             )
         return h + self.feed_forward(self.ffn_norm(h, c))

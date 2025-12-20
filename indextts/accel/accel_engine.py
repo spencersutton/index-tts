@@ -148,7 +148,7 @@ class AccelInferenceEngine:
 
             pos = len(req) - 1
             if hasattr(self, "_tts_mode") and self._tts_mode:
-                pos = pos - (self._tts_prompt_len - 1)
+                pos -= self._tts_prompt_len - 1
             positions.append(pos)
 
             context_lens.append(len(req))
@@ -283,7 +283,7 @@ class AccelInferenceEngine:
                 inputs_embeds = tts_mel_embedding(input_ids)
                 pos_clamped = torch.clamp(positions, min=0)
                 pos_emb = tts_text_pos_embedding.emb(pos_clamped)
-                inputs_embeds = inputs_embeds + pos_emb
+                inputs_embeds += pos_emb
                 out = self.model(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True).last_hidden_state
             else:
                 out = self.model(input_ids=input_ids.unsqueeze(1), return_dict=True).last_hidden_state
@@ -297,7 +297,7 @@ class AccelInferenceEngine:
                 inputs_embeds = tts_mel_embedding(input_ids)
                 pos_clamped = torch.clamp(positions, min=0)
                 pos_emb = tts_text_pos_embedding.emb(pos_clamped)
-                inputs_embeds = inputs_embeds + pos_emb
+                inputs_embeds += pos_emb
                 out = self.model(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True).last_hidden_state
             else:
                 out = self.model(input_ids=input_ids.unsqueeze(1), return_dict=True).last_hidden_state
@@ -411,7 +411,7 @@ class AccelInferenceEngine:
 
             start_pos = torch.tensor([[tts_embeddings.size(1)]], device="cuda", dtype=torch.long)
             pos_emb = tts_text_pos_embedding.emb(start_pos)
-            start_emb = start_emb + pos_emb
+            start_emb += pos_emb
             start_emb = start_emb.repeat(batch_size, 1, 1)
 
             if is_varlen_batch:

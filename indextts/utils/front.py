@@ -374,7 +374,7 @@ class TextTokenizer:
                 )
             elif current_segment_tokens_len <= max_text_tokens_per_segment:
                 if token in split_tokens and current_segment_tokens_len > 2:
-                    if i < len(tokenized_str) - 1 and tokenized_str[i + 1] in ["'", "▁'"]:
+                    if i < len(tokenized_str) - 1 and tokenized_str[i + 1] in {"'", "▁'"}:
                         # 后续token是'，则不切分
                         current_segment.append(tokenized_str[i + 1])
                         i += 1
@@ -416,7 +416,7 @@ class TextTokenizer:
                 len(merged_segments[-1]) + len(segment) <= max_text_tokens_per_segment
                 and total_token > quick_streaming_tokens
             ) or len(merged_segments[-1]) + len(segment) <= max_text_tokens_per_segment / 2:
-                merged_segments[-1] = merged_segments[-1] + segment
+                merged_segments[-1] += segment
             else:
                 merged_segments.append(segment)
         return merged_segments

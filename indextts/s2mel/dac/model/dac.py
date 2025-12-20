@@ -104,7 +104,7 @@ class Encoder(nn.Module):
     def reset_cache(self):
         # recursively find all submodules named SConv1d in self.block and use their reset_cache method
         def reset_cache(m):
-            if isinstance(m, SConv1d) or isinstance(m, SLSTM):
+            if isinstance(m, (SConv1d, SLSTM)):
                 m.reset_cache()
                 return
             for child in m.children():

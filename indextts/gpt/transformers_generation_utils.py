@@ -1835,15 +1835,18 @@ class GenerationMixin:
             )
         if not is_torchdynamo_compiling():  # Checks that depend on tensor-dependent control flow
             if (
-                eos_token_tensor is not None
-                and isin_mps_friendly(elements=eos_token_tensor, test_elements=pad_token_tensor).any()
+                (
+                    eos_token_tensor is not None
+                    and isin_mps_friendly(elements=eos_token_tensor, test_elements=pad_token_tensor).any()
+                )
+                and kwargs_has_attention_mask is not None
+                and not kwargs_has_attention_mask
             ):
-                if kwargs_has_attention_mask is not None and not kwargs_has_attention_mask:
-                    logger.warning_once(
-                        "The attention mask is not set and cannot be inferred from input because pad token is same as "
-                        "eos token. As a consequence, you may observe unexpected behavior. Please pass your input's "
-                        "`attention_mask` to obtain reliable results."
-                    )
+                logger.warning_once(
+                    "The attention mask is not set and cannot be inferred from input because pad token is same as "
+                    "eos token. As a consequence, you may observe unexpected behavior. Please pass your input's "
+                    "`attention_mask` to obtain reliable results."
+                )
             if eos_token_tensor is not None and (
                 torch.is_floating_point(eos_token_tensor) or (eos_token_tensor < 0).any()
             ):
@@ -4646,7 +4649,7 @@ def stack_model_outputs(model_outputs: List[ModelOutput], config: PretrainedConf
     # Use a dictionary comprehension to gather attributes from all objects and concatenate them
     concatenated_data = {
         k: _concat([getattr(model_output, k) for model_output in model_outputs])
-        for k in model_output_cls.__dataclass_fields__.keys()
+        for k in model_output_cls.__dataclass_fields__
     }
 
     # Return a new object of the inferred class with the concatenated attributes

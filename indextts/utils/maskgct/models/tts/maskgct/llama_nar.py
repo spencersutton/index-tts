@@ -332,9 +332,8 @@ class DiffLlama(LlamaModel):
 
         hidden_states = inputs_embeds
 
-        if self.gradient_checkpointing and self.training:
-            if use_cache:
-                use_cache = False
+        if self.gradient_checkpointing and self.training and use_cache:
+            use_cache = False
 
         # decoder layers
         all_hidden_states = () if output_hidden_states else None
@@ -527,9 +526,8 @@ class DiffLlamaPrefix(LlamaModel):
 
         hidden_states = inputs_embeds
 
-        if self.gradient_checkpointing and self.training:
-            if use_cache:
-                use_cache = False
+        if self.gradient_checkpointing and self.training and use_cache:
+            use_cache = False
 
         # decoder layers
         all_hidden_states = () if output_hidden_states else None

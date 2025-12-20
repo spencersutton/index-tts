@@ -129,7 +129,7 @@ class TextNormalizer:
             result = self.restore_names(result, original_name_list)
             # 恢复拼音声调
             result = self.restore_pinyin_tones(result, pinyin_list)
-            pattern = re.compile("|".join(re.escape(p) for p in self.zh_char_rep_map.keys()))
+            pattern = re.compile("|".join(re.escape(p) for p in self.zh_char_rep_map))
             result = pattern.sub(lambda x: self.zh_char_rep_map[x.group()], result)
         else:
             try:
@@ -138,7 +138,7 @@ class TextNormalizer:
             except Exception:
                 result = text
                 print(traceback.format_exc())
-            pattern = re.compile("|".join(re.escape(p) for p in self.char_rep_map.keys()))
+            pattern = re.compile("|".join(re.escape(p) for p in self.char_rep_map))
             result = pattern.sub(lambda x: self.char_rep_map[x.group()], result)
         return result
 
@@ -378,11 +378,10 @@ class TextTokenizer:
                 )
             elif current_segment_tokens_len <= max_text_tokens_per_segment:
                 if token in split_tokens and current_segment_tokens_len > 2:
-                    if i < len(tokenized_str) - 1:
-                        if tokenized_str[i + 1] in ["'", "▁'"]:
-                            # 后续token是'，则不切分
-                            current_segment.append(tokenized_str[i + 1])
-                            i += 1
+                    if i < len(tokenized_str) - 1 and tokenized_str[i + 1] in ["'", "▁'"]:
+                        # 后续token是'，则不切分
+                        current_segment.append(tokenized_str[i + 1])
+                        i += 1
                     segments.append(current_segment)
                     current_segment = []
                     current_segment_tokens_len = 0

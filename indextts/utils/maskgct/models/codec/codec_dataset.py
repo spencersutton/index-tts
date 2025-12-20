@@ -238,7 +238,7 @@ class CodecCollator(object):
         # frame_pitch: [b, frame]
         # audios: [b, frame * hop_size]
 
-        for key in batch[0].keys():
+        for key in batch[0]:
             if key == "target_len":
                 packed_batch_features["target_len"] = torch.LongTensor([b["target_len"] for b in batch])
                 masks = [torch.ones((b["target_len"], 1), dtype=torch.long) for b in batch]

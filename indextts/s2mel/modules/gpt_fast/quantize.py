@@ -17,6 +17,9 @@ try:
 except:
     pass
 
+import builtins
+import contextlib
+
 from model import Transformer
 
 ##### Quantization Primitives ######
@@ -242,10 +245,8 @@ class GPTQQuantHandler(QuantHandler):
             pad_calibration_inputs,
         )
 
-        try:
+        with contextlib.suppress(builtins.BaseException):
             lm_eval.tasks.initialize_tasks()
-        except:
-            pass
         task_dict = get_task_dict(calibration_tasks)
         print("Obtaining GPTQ calibration inputs on: ", calibration_tasks)
 

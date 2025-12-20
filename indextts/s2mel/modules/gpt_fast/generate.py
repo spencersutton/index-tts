@@ -306,11 +306,10 @@ def main(
 
     rank = maybe_init_dist()
     use_tp = rank is not None
-    if use_tp:
-        if rank != 0:
-            # only print on rank 0
-            def print(*args, **kwargs):
-                return None
+    if use_tp and rank != 0:
+        # only print on rank 0
+        def print(*args, **kwargs):
+            return None
 
     print(f"Using device={device}")
     precision = torch.bfloat16

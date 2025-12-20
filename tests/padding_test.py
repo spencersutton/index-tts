@@ -59,7 +59,7 @@ if __name__ == "__main__":
             F.pad(F.pad(text_tokens, (0, 4), value=0), (0, 4), value=1),
         ]
         output_for_padded = []
-        for t in pad_text_tokens:
+        for _ in pad_text_tokens:
             # test for each padded text
             out = tts.gpt.inference_speech(auto_conditioning, text_tokens, **kwargs)
             output_for_padded.append(out.squeeze(0))

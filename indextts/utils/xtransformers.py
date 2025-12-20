@@ -975,7 +975,7 @@ class AttentionLayers(nn.Module):
 
         present_key_values = []
         cross_attn_count = 0
-        for ind, (layer_type, (norm, block, residual_fn)) in enumerate(zip(self.layer_types, self.layers)):
+        for layer_type, (norm, block, residual_fn) in zip(self.layer_types, self.layers):
             if layer_type == "a":
                 layer_mem = mems.pop(0) if mems else None
 

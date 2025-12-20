@@ -83,7 +83,7 @@ def decode_n_tokens(
     **sampling_kwargs,
 ):
     new_tokens, new_probs = [], []
-    for i in range(num_new_tokens):
+    for _ in range(num_new_tokens):
         with torch.backends.cuda.sdp_kernel(
             enable_flash=False, enable_mem_efficient=False, enable_math=True
         ):  # Actually better for Inductor to codegen attention here
@@ -268,7 +268,7 @@ def _load_model(checkpoint_path, device, precision, use_tp):
 
 def _get_model_size(model):
     model_size = 0
-    for name, child in model.named_children():
+    for _name, child in model.named_children():
         if not isinstance(child, torch.nn.Embedding):
             model_size += sum([
                 p.numel() * p.dtype.itemsize for p in itertools.chain(child.parameters(), child.buffers())

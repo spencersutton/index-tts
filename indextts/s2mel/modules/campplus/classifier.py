@@ -19,7 +19,7 @@ class CosineClassifier(nn.Module):
         super().__init__()
         self.blocks = nn.ModuleList()
 
-        for index in range(num_blocks):
+        for _ in range(num_blocks):
             self.blocks.append(DenseLayer(input_dim, inter_dim, config_str="batchnorm"))
             input_dim = inter_dim
 
@@ -49,7 +49,7 @@ class LinearClassifier(nn.Module):
         self.blocks = nn.ModuleList()
 
         self.nonlinear = nn.ReLU(inplace=True)
-        for index in range(num_blocks):
+        for _ in range(num_blocks):
             self.blocks.append(DenseLayer(input_dim, inter_dim, bias=True))
             input_dim = inter_dim
 

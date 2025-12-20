@@ -886,7 +886,7 @@ if __name__ == "__main__":
     import string
 
     time_buckets = []
-    for i in range(10):
+    for _ in range(10):
         text = "".join(random.choices(string.ascii_letters, k=char_size))
         start_time = time.time()
         tts.infer(spk_audio_prompt=prompt_wav, text=text, output_path="gen.wav", verbose=True)

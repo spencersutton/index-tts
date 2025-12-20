@@ -306,7 +306,9 @@ class Scale(nn.Module):
 
     def forward(self, x, **kwargs):
         out = self.fn(x, **kwargs)
-        scale_fn = lambda t: t * self.value
+
+        def scale_fn(t):
+            return t * self.value
 
         if not isinstance(out, tuple):
             return scale_fn(out)
@@ -322,7 +324,9 @@ class Rezero(nn.Module):
 
     def forward(self, x, **kwargs):
         out = self.fn(x, **kwargs)
-        rezero_fn = lambda t: t * self.g
+
+        def rezero_fn(t):
+            return t * self.g
 
         if not isinstance(out, tuple):
             return rezero_fn(out)

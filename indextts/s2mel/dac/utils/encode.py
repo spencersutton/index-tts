@@ -21,7 +21,7 @@ def encode(
     weights_path: str = "",
     model_tag: str = "latest",
     model_bitrate: str = "8kbps",
-    n_quantizers: int = None,
+    n_quantizers: int | None = None,
     device: str = "cuda",
     model_type: str = "44khz",
     win_duration: float = 5.0,

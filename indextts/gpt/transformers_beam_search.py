@@ -273,7 +273,7 @@ class BeamSearchScorer(BeamScorer):
                         continue
                     if beam_indices is not None:
                         beam_index = beam_indices[batch_beam_idx]
-                        beam_index = beam_index + (batch_beam_idx,)
+                        beam_index = (*beam_index, batch_beam_idx)
                     else:
                         beam_index = None
 
@@ -608,7 +608,7 @@ class ConstrainedBeamSearchScorer(BeamScorer):
                     if completes_constraint:
                         if beam_indices is not None:
                             beam_index = beam_indices[batch_beam_idx]
-                            beam_index = beam_index + (batch_beam_idx,)
+                            beam_index = (*beam_index, batch_beam_idx)
                         else:
                             beam_index = None
 

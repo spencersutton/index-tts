@@ -44,7 +44,7 @@ class AMPBlock1(torch.nn.Module):
         channels: int,
         kernel_size: int = 3,
         dilation: tuple = (1, 3, 5),
-        activation: str = None,
+        activation: str | None = None,
     ) -> None:
         super().__init__()
 
@@ -145,7 +145,7 @@ class AMPBlock2(torch.nn.Module):
         channels: int,
         kernel_size: int = 3,
         dilation: tuple = (1, 3, 5),
-        activation: str = None,
+        activation: str | None = None,
     ) -> None:
         super().__init__()
 

@@ -176,7 +176,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel):
         lm_logits = self.lm_head(hidden_states)
 
         if not return_dict:
-            return (lm_logits,) + transformer_outputs[1:]
+            return (lm_logits, *transformer_outputs[1:])
 
         return CausalLMOutputWithCrossAttentions(
             loss=None,

@@ -85,7 +85,7 @@ def slice_segments_audio(x, ids_str, segment_size=4):
 
 
 def rand_slice_segments(x, x_lengths=None, segment_size=4):
-    b, d, t = x.size()
+    b, _d, t = x.size()
     if x_lengths is None:
         x_lengths = t
     ids_str_max = x_lengths - segment_size + 1
@@ -109,13 +109,13 @@ def get_timing_signal_1d(length, channels, min_timescale=1.0, max_timescale=1.0e
 
 
 def add_timing_signal_1d(x, min_timescale=1.0, max_timescale=1.0e4):
-    b, channels, length = x.size()
+    _b, channels, length = x.size()
     signal = get_timing_signal_1d(length, channels, min_timescale, max_timescale)
     return x + signal.to(dtype=x.dtype, device=x.device)
 
 
 def cat_timing_signal_1d(x, min_timescale=1.0, max_timescale=1.0e4, axis=1):
-    b, channels, length = x.size()
+    _b, channels, length = x.size()
     signal = get_timing_signal_1d(length, channels, min_timescale, max_timescale)
     return torch.cat([x, signal.to(dtype=x.dtype, device=x.device)], axis)
 
@@ -267,7 +267,7 @@ def modify_w2v_forward(self, output_layer=15):
 
         for i, layer in enumerate(self.layers):
             if output_hidden_states:
-                all_hidden_states = all_hidden_states + (hidden_states,)
+                all_hidden_states = (*all_hidden_states, hidden_states)
 
             # add LayerDrop (see https://arxiv.org/abs/1909.11556 for description)
             dropout_probability = torch.rand([])
@@ -298,13 +298,13 @@ def modify_w2v_forward(self, output_layer=15):
                 layer_outputs = (None, None)
 
             if output_attentions:
-                all_self_attentions = all_self_attentions + (layer_outputs[1],)
+                all_self_attentions = (*all_self_attentions, layer_outputs[1])
 
             if i == output_layer - 1:
                 break
 
         if output_hidden_states:
-            all_hidden_states = all_hidden_states + (hidden_states,)
+            all_hidden_states = (*all_hidden_states, hidden_states)
 
         if not return_dict:
             return tuple(v for v in [hidden_states, all_hidden_states, all_self_attentions] if v is not None)
@@ -343,7 +343,7 @@ def plot_spectrogram_to_numpy(spectrogram):
 
     fig.canvas.draw()
     data = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8, sep="")
-    data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+    data = data.reshape((*fig.canvas.get_width_height()[::-1], 3))
     plt.close()
     return data
 

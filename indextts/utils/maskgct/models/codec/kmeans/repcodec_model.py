@@ -150,8 +150,8 @@ class RepCodec(nn.Module):
         (
             quantized_out,
             all_indices,
-            all_commit_losses,
-            all_codebook_losses,
+            _all_commit_losses,
+            _all_codebook_losses,
             _,
         ) = self.quantizer(x)
 

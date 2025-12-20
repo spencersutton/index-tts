@@ -208,7 +208,7 @@ class DiT(torch.nn.Module):
             class_dropout = True
         cond_in_module = self.cond_projection
 
-        B, _, T = x.size()
+        _B, _, T = x.size()
 
         t1 = self.t_embedder(t)  # (N, D) # t1 [2, 512]
         cond = cond_in_module(cond)  # cond [2,1863,512]->[2,1863,512]

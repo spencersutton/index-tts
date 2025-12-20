@@ -278,7 +278,7 @@ class GPT2Attention(nn.Module):
         """
         Splits hidden_size dim into attn_head_size and num_heads
         """
-        new_shape = tensor.size()[:-1] + (num_heads, attn_head_size)
+        new_shape = (*tensor.size()[:-1], num_heads, attn_head_size)
         tensor = tensor.view(new_shape)
         return tensor.permute(0, 2, 1, 3)  # (batch, head, seq_length, head_features)
 
@@ -287,7 +287,7 @@ class GPT2Attention(nn.Module):
         Merges attn_head_size dim and num_attn_heads dim into hidden_size
         """
         tensor = tensor.permute(0, 2, 1, 3).contiguous()
-        new_shape = tensor.size()[:-2] + (num_heads * attn_head_size,)
+        new_shape = (*tensor.size()[:-2], num_heads * attn_head_size)
         return tensor.view(new_shape)
 
     def forward(
@@ -656,9 +656,9 @@ class GPT2Block(nn.Module):
         hidden_states = residual + feed_forward_hidden_states
 
         if use_cache:
-            outputs = (hidden_states,) + outputs
+            outputs = (hidden_states, *outputs)
         else:
-            outputs = (hidden_states,) + outputs[1:]
+            outputs = (hidden_states, *outputs[1:])
 
         return outputs  # hidden_states, present, (attentions, cross_attentions)
 
@@ -1034,11 +1034,11 @@ class GPT2Model(GPT2PreTrainedModel):
         hidden_states = inputs_embeds + position_embeds
 
         # Attention mask.
-        _use_sdpa = self._attn_implementation == "sdpa" and output_attentions is False and head_mask is None
+        use_sdpa = self._attn_implementation == "sdpa" and output_attentions is False and head_mask is None
         attention_mask = attention_mask.view(batch_size, -1) if attention_mask is not None else None
         if self._attn_implementation == "flash_attention_2":
             attention_mask = attention_mask if (attention_mask is not None and 0 in attention_mask) else None
-        elif _use_sdpa:
+        elif use_sdpa:
             attention_mask = _prepare_4d_causal_attention_mask_for_sdpa(
                 attention_mask=attention_mask,
                 input_shape=(batch_size, input_shape[-1]),
@@ -1069,7 +1069,7 @@ class GPT2Model(GPT2PreTrainedModel):
             encoder_hidden_shape = (encoder_batch_size, encoder_sequence_length)
             if encoder_attention_mask is None:
                 encoder_attention_mask = torch.ones(encoder_hidden_shape, device=device)
-            if _use_sdpa:
+            if use_sdpa:
                 encoder_attention_mask = _prepare_4d_attention_mask_for_sdpa(
                     mask=encoder_attention_mask, dtype=inputs_embeds.dtype, tgt_len=input_shape[-1]
                 )
@@ -1090,7 +1090,7 @@ class GPT2Model(GPT2PreTrainedModel):
 
         hidden_states = self.drop(hidden_states)
 
-        output_shape = (-1,) + input_shape[1:] + (hidden_states.size(-1),)
+        output_shape = (-1, *input_shape[1:], hidden_states.size(-1))
 
         if self.gradient_checkpointing and self.training and use_cache:
             logger.warning_once(
@@ -1115,7 +1115,7 @@ class GPT2Model(GPT2PreTrainedModel):
                 if isinstance(head_mask, torch.Tensor):
                     head_mask = head_mask.to(hidden_states.device)
             if output_hidden_states:
-                all_hidden_states = all_hidden_states + (hidden_states,)
+                all_hidden_states = (*all_hidden_states, hidden_states)
 
             if self.gradient_checkpointing and self.training:
                 outputs = self._gradient_checkpointing_func(
@@ -1143,12 +1143,12 @@ class GPT2Model(GPT2PreTrainedModel):
 
             hidden_states = outputs[0]
             if use_cache is True:
-                presents = presents + (outputs[1],)
+                presents = (*presents, outputs[1])
 
             if output_attentions:
-                all_self_attentions = all_self_attentions + (outputs[2 if use_cache else 1],)
+                all_self_attentions = (*all_self_attentions, outputs[2 if use_cache else 1])
                 if self.config.add_cross_attention:
-                    all_cross_attentions = all_cross_attentions + (outputs[3 if use_cache else 2],)
+                    all_cross_attentions = (*all_cross_attentions, outputs[3 if use_cache else 2])
 
             # Model Parallel: If it's the last layer for that device, put things on the next device
             if self.model_parallel:
@@ -1161,7 +1161,7 @@ class GPT2Model(GPT2PreTrainedModel):
         hidden_states = hidden_states.view(output_shape)
         # Add last hidden state
         if output_hidden_states:
-            all_hidden_states = all_hidden_states + (hidden_states,)
+            all_hidden_states = (*all_hidden_states, hidden_states)
 
         if not return_dict:
             return tuple(
@@ -1305,8 +1305,8 @@ class GPT2LMHeadModel(GPT2PreTrainedModel, GenerationMixin):
             loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
 
         if not return_dict:
-            output = (lm_logits,) + transformer_outputs[1:]
-            return ((loss,) + output) if loss is not None else output
+            output = (lm_logits, *transformer_outputs[1:])
+            return ((loss, *output)) if loss is not None else output
 
         return CausalLMOutputWithCrossAttentions(
             loss=loss,
@@ -1495,10 +1495,10 @@ class GPT2DoubleHeadsModel(GPT2PreTrainedModel, GenerationMixin):
             lm_loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
 
         if not return_dict:
-            output = (lm_logits, mc_logits) + transformer_outputs[1:]
+            output = (lm_logits, mc_logits, *transformer_outputs[1:])
             if mc_loss is not None:
-                output = (mc_loss,) + output
-            return ((lm_loss,) + output) if lm_loss is not None else output
+                output = (mc_loss, *output)
+            return ((lm_loss, *output)) if lm_loss is not None else output
 
         return GPT2DoubleHeadsModelOutput(
             loss=lm_loss,
@@ -1602,7 +1602,7 @@ class GPT2ForSequenceClassification(GPT2PreTrainedModel):
         if input_ids is not None:
             batch_size, sequence_length = input_ids.shape[:2]
         else:
-            batch_size, sequence_length = inputs_embeds.shape[:2]
+            batch_size, _sequence_length = inputs_embeds.shape[:2]
 
         assert self.config.pad_token_id is not None or batch_size == 1, (
             "Cannot handle batch sizes > 1 if no padding token is defined."
@@ -1647,8 +1647,8 @@ class GPT2ForSequenceClassification(GPT2PreTrainedModel):
                 loss_fct = BCEWithLogitsLoss()
                 loss = loss_fct(pooled_logits, labels)
         if not return_dict:
-            output = (pooled_logits,) + transformer_outputs[1:]
-            return ((loss,) + output) if loss is not None else output
+            output = (pooled_logits, *transformer_outputs[1:])
+            return ((loss, *output)) if loss is not None else output
 
         return SequenceClassifierOutputWithPast(
             loss=loss,
@@ -1689,7 +1689,6 @@ class GPT2ForTokenClassification(GPT2PreTrainedModel):
         self.post_init()
 
     @add_start_docstrings_to_model_forward(GPT2_INPUTS_DOCSTRING)
-    # fmt: off
     @add_code_sample_docstrings(
         checkpoint="brad1141/gpt2-finetuned-comp2",
         output_type=TokenClassifierOutput,
@@ -1710,7 +1709,6 @@ class GPT2ForTokenClassification(GPT2PreTrainedModel):
             "Lead",
         ],
     )
-    # fmt: on
     def forward(
         self,
         input_ids: torch.LongTensor | None = None,
@@ -1759,8 +1757,8 @@ class GPT2ForTokenClassification(GPT2PreTrainedModel):
             loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
 
         if not return_dict:
-            output = (logits,) + transformer_outputs[2:]
-            return ((loss,) + output) if loss is not None else output
+            output = (logits, *transformer_outputs[2:])
+            return ((loss, *output)) if loss is not None else output
 
         return TokenClassifierOutput(
             loss=loss,
@@ -1861,8 +1859,8 @@ class GPT2ForQuestionAnswering(GPT2PreTrainedModel):
             total_loss = (start_loss + end_loss) / 2
 
         if not return_dict:
-            output = (start_logits, end_logits) + outputs[2:]
-            return ((total_loss,) + output) if total_loss is not None else output
+            output = (start_logits, end_logits, *outputs[2:])
+            return ((total_loss, *output)) if total_loss is not None else output
 
         return QuestionAnsweringModelOutput(
             loss=total_loss,

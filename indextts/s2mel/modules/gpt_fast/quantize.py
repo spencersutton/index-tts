@@ -364,7 +364,7 @@ def linear_forward_int4(x, weight_int4pack, scales_and_zeros, out_features, grou
     origin_x_size = x.size()
     x = x.reshape(-1, origin_x_size[-1])
     c = torch.ops.aten._weight_int4pack_mm(x, weight_int4pack, groupsize, scales_and_zeros)
-    new_shape = origin_x_size[:-1] + (out_features,)
+    new_shape = (*origin_x_size[:-1], out_features)
     c = c.reshape(new_shape)
     return c
 

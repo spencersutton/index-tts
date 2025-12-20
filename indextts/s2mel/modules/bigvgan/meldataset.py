@@ -65,7 +65,7 @@ def mel_spectrogram(
     hop_size: int,
     win_size: int,
     fmin: int,
-    fmax: int = None,
+    fmax: int | None = None,
     center: bool = False,
 ) -> torch.Tensor:
     """

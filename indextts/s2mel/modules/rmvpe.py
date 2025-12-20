@@ -521,8 +521,6 @@ class RMVPE:
         hidden = self.mel2hidden(mel)
         if "privateuseone" not in str(self.device):
             hidden = hidden.cpu().numpy()
-        else:
-            pass
         if self.is_half:
             hidden = hidden.astype("float32")
 

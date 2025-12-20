@@ -76,7 +76,7 @@ class SISDRLoss(nn.Module):
         scaling: int = True,
         reduction: str = "mean",
         zero_mean: int = True,
-        clip_min: int = None,
+        clip_min: int | None = None,
         weight: float = 1.0,
     ) -> None:
         self.scaling = scaling
@@ -108,16 +108,16 @@ class SISDRLoss(nn.Module):
             mean_reference = 0
             mean_estimate = 0
 
-        _references = references - mean_reference
-        _estimates = estimates - mean_estimate
+        references_ = references - mean_reference
+        estimates_ = estimates - mean_estimate
 
-        references_projection = (_references**2).sum(dim=-2) + eps
-        references_on_estimates = (_estimates * _references).sum(dim=-2) + eps
+        references_projection = (references_**2).sum(dim=-2) + eps
+        references_on_estimates = (estimates_ * references_).sum(dim=-2) + eps
 
         scale = (references_on_estimates / references_projection).unsqueeze(1) if self.scaling else 1
 
-        e_true = scale * _references
-        e_res = _estimates - e_true
+        e_true = scale * references_
+        e_res = estimates_ - e_true
 
         signal = (e_true**2).sum(dim=1)
         noise = (e_res**2).sum(dim=1)
@@ -175,7 +175,7 @@ class MultiScaleSTFTLoss(nn.Module):
         pow: float = 2.0,
         weight: float = 1.0,
         match_stride: bool = False,
-        window_type: str = None,
+        window_type: str | None = None,
     ) -> None:
         super().__init__()
         self.stft_params = [
@@ -263,7 +263,7 @@ class MelSpectrogramLoss(nn.Module):
         match_stride: bool = False,
         mel_fmin: list[float] = [0.0, 0.0],
         mel_fmax: list[float] = [None, None],
-        window_type: str = None,
+        window_type: str | None = None,
     ) -> None:
         super().__init__()
         self.stft_params = [

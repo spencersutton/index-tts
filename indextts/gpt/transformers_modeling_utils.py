@@ -361,7 +361,7 @@ def check_support_param_buffer_assignment(model_to_load, state_dict, start_prefi
         return False
 
     # If the model does, the incoming `state_dict` and the `model_to_load` must be the same dtype
-    first_key = list(model_to_load.state_dict().keys())[0]
+    first_key = next(iter(model_to_load.state_dict().keys()))
     if start_prefix + first_key in state_dict:
         return state_dict[start_prefix + first_key].dtype == model_to_load.state_dict()[first_key].dtype
 
@@ -1006,7 +1006,7 @@ def _load_state_dict_into_meta_model(
 def _add_variant(weights_name: str, variant: str | None = None) -> str:
     if variant is not None:
         splits = weights_name.split(".")
-        splits = splits[:-1] + [variant] + splits[-1:]
+        splits = [*splits[:-1], variant, *splits[-1:]]
         weights_name = ".".join(splits)
 
     return weights_name
@@ -1758,9 +1758,9 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                 else:
                     raise ImportError(f"{preface} Flash Attention 2 is not available. {install_message}")
 
-        _is_bettertransformer = getattr(cls, "use_bettertransformer", False)
+        is_bettertransformer = getattr(cls, "use_bettertransformer", False)
 
-        if _is_bettertransformer:
+        if is_bettertransformer:
             raise ValueError(
                 "Flash Attention 2 and BetterTransformer API are not compatible. Please make sure to disable BetterTransformers by doing model.reverse_bettertransformer()"
             )
@@ -1824,8 +1824,8 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         if not is_torch_sdpa_available() or not cls._supports_sdpa:
             return config
 
-        _is_bettertransformer = getattr(cls, "use_bettertransformer", False)
-        if _is_bettertransformer:
+        is_bettertransformer = getattr(cls, "use_bettertransformer", False)
+        if is_bettertransformer:
             return config
 
         if not hard_check_only:
@@ -2051,12 +2051,12 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         Returns:
             `List[str]`: List of modules that should not be split
         """
-        _no_split_modules = set()
+        no_split_modules = set()
         modules_to_check = [self]
         while len(modules_to_check) > 0:
             module = modules_to_check.pop(-1)
             # if the module does not appear in _no_split_modules, we also check the children
-            if module.__class__.__name__ not in _no_split_modules:
+            if module.__class__.__name__ not in no_split_modules:
                 if isinstance(module, PreTrainedModel):
                     if module._no_split_modules is None:
                         raise ValueError(
@@ -2064,9 +2064,9 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                             "class needs to implement the `_no_split_modules` attribute."
                         )
                     else:
-                        _no_split_modules = _no_split_modules | set(module._no_split_modules)
+                        no_split_modules = no_split_modules | set(module._no_split_modules)
                 modules_to_check += list(module.children())
-        return list(_no_split_modules)
+        return list(no_split_modules)
 
     def resize_token_embeddings(
         self,
@@ -2589,9 +2589,9 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
 
         # For old GC format (transformers < 4.35.0) for models that live on the Hub
         # we will fall back to the overwritten `_set_gradient_checkpointing` method
-        _is_using_old_format = "value" in inspect.signature(self._set_gradient_checkpointing).parameters
+        is_using_old_format = "value" in inspect.signature(self._set_gradient_checkpointing).parameters
 
-        if not _is_using_old_format:
+        if not is_using_old_format:
             self._set_gradient_checkpointing(enable=True, gradient_checkpointing_func=gradient_checkpointing_func)
         else:
             self.apply(partial(self._set_gradient_checkpointing, value=True))
@@ -2641,8 +2641,8 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         if self.supports_gradient_checkpointing:
             # For old GC format (transformers < 4.35.0) for models that live on the Hub
             # we will fall back to the overwritten `_set_gradient_checkpointing` methid
-            _is_using_old_format = "value" in inspect.signature(self._set_gradient_checkpointing).parameters
-            if not _is_using_old_format:
+            is_using_old_format = "value" in inspect.signature(self._set_gradient_checkpointing).parameters
+            if not is_using_old_format:
                 self._set_gradient_checkpointing(enable=False)
             else:
                 logger.warning(
@@ -2744,7 +2744,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         if token is not None:
             kwargs["token"] = token
 
-        _hf_peft_config_loaded = getattr(self, "_hf_peft_config_loaded", False)
+        hf_peft_config_loaded = getattr(self, "_hf_peft_config_loaded", False)
 
         hf_quantizer = getattr(self, "hf_quantizer", None)
         quantization_serializable = (
@@ -2753,7 +2753,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
             and hf_quantizer.is_serializable(safe_serialization=safe_serialization)
         )
 
-        if hf_quantizer is not None and not _hf_peft_config_loaded and not quantization_serializable:
+        if hf_quantizer is not None and not hf_peft_config_loaded and not quantization_serializable:
             raise ValueError(
                 f"The model is quantized with {hf_quantizer.quantization_config.quant_method} and is not serializable - check out the warnings from"
                 " the logger on the traceback to understand the reason why the quantized model is not serializable."
@@ -2800,7 +2800,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
 
         # Save the config
         if is_main_process:
-            if not _hf_peft_config_loaded:
+            if not hf_peft_config_loaded:
                 # If the model config has set attributes that should be in the generation config, move them there.
                 misplaced_generation_parameters = model_to_save.config._get_non_default_generation_parameters()
                 if self.can_generate() and len(misplaced_generation_parameters) > 0:
@@ -2818,7 +2818,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
             if self.can_generate():
                 model_to_save.generation_config.save_pretrained(save_directory)
 
-            if _hf_peft_config_loaded:
+            if hf_peft_config_loaded:
                 logger.info(
                     "Detected adapters on the model, saving the model in the PEFT format, only adapter weights will be saved."
                 )
@@ -2906,16 +2906,16 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                 shared_ptrs = {ptr: names for ptr, names in ptrs.items() if len(names) > 1}
 
             # Recursively descend to find tied weight keys
-            _tied_weights_keys = _get_tied_weight_keys(self)
+            tied_weights_keys = _get_tied_weight_keys(self)
             error_names = []
             to_delete_names = set()
             for names in shared_ptrs.values():
                 # Removing the keys which are declared as known duplicates on
                 # load. This allows to make sure the name which is kept is consistent.
-                if _tied_weights_keys is not None:
+                if tied_weights_keys is not None:
                     found = 0
                     for name in sorted(names):
-                        matches_pattern = any(re.search(pat, name) for pat in _tied_weights_keys)
+                        matches_pattern = any(re.search(pat, name) for pat in tied_weights_keys)
                         if matches_pattern and name in state_dict:
                             found += 1
                             if found < len(names):
@@ -2951,7 +2951,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                 )
 
         # Shard the model if it is too big.
-        if not _hf_peft_config_loaded:
+        if not hf_peft_config_loaded:
             weights_name = SAFE_WEIGHTS_NAME if safe_serialization else WEIGHTS_NAME
             weights_name = _add_variant(weights_name, variant)
         else:
@@ -3178,7 +3178,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         local_files_only: bool = False,
         token: str | bool | None = None,
         revision: str = "main",
-        use_safetensors: bool = None,
+        use_safetensors: bool | None = None,
         weights_only: bool = True,
         **kwargs,
     ) -> "PreTrainedModel":
@@ -3439,7 +3439,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         _ = kwargs.pop("mirror", None)
         from_pipeline = kwargs.pop("_from_pipeline", None)
         from_auto_class = kwargs.pop("_from_auto", False)
-        _fast_init = kwargs.pop("_fast_init", True)
+        fast_init = kwargs.pop("_fast_init", True)
         torch_dtype = kwargs.pop("torch_dtype", None)
         low_cpu_mem_usage = kwargs.pop("low_cpu_mem_usage", None)
         device_map = kwargs.pop("device_map", None)
@@ -3513,10 +3513,10 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                 commit_hash = getattr(config, "_commit_hash", None)
 
         if is_peft_available():
-            _adapter_model_path = adapter_kwargs.pop("_adapter_model_path", None)
+            adapter_model_path = adapter_kwargs.pop("_adapter_model_path", None)
 
-            if _adapter_model_path is None:
-                _adapter_model_path = find_adapter_config_file(
+            if adapter_model_path is None:
+                adapter_model_path = find_adapter_config_file(
                     pretrained_model_name_or_path,
                     cache_dir=cache_dir,
                     force_download=force_download,
@@ -3526,12 +3526,12 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                     _commit_hash=commit_hash,
                     **adapter_kwargs,
                 )
-            if _adapter_model_path is not None and os.path.isfile(_adapter_model_path):
-                with open(_adapter_model_path, encoding="utf-8") as f:
-                    _adapter_model_path = pretrained_model_name_or_path
+            if adapter_model_path is not None and os.path.isfile(adapter_model_path):
+                with open(adapter_model_path, encoding="utf-8") as f:
+                    adapter_model_path = pretrained_model_name_or_path
                     pretrained_model_name_or_path = json.load(f)["base_model_name_or_path"]
         else:
-            _adapter_model_path = None
+            adapter_model_path = None
 
         # change device_map into a map if we passed an int, a str or a torch.device
         if isinstance(device_map, torch.device):
@@ -4062,13 +4062,13 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         config.name_or_path = pretrained_model_name_or_path
 
         # Instantiate model.
-        init_contexts = [no_init_weights(_enable=_fast_init)]
+        init_contexts = [no_init_weights(_enable=fast_init)]
 
         if is_deepspeed_zero3_enabled() and not is_quantized:
             import deepspeed
 
             logger.info("Detected DeepSpeed ZeRO-3: activating zero.init() for this model")
-            init_contexts = [deepspeed.zero.Init(config_dict_or_path=deepspeed_config())] + init_contexts
+            init_contexts = [deepspeed.zero.Init(config_dict_or_path=deepspeed_config()), *init_contexts]
         elif low_cpu_mem_usage:
             if not is_accelerate_available():
                 raise ImportError(
@@ -4216,7 +4216,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                 pretrained_model_name_or_path,
                 ignore_mismatched_sizes=ignore_mismatched_sizes,
                 sharded_metadata=sharded_metadata,
-                _fast_init=_fast_init,
+                _fast_init=fast_init,
                 low_cpu_mem_usage=low_cpu_mem_usage,
                 device_map=device_map,
                 offload_folder=offload_folder,
@@ -4292,9 +4292,9 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
             hf_quantizer.postprocess_model(model)
             model.hf_quantizer = hf_quantizer
 
-        if _adapter_model_path is not None:
+        if adapter_model_path is not None:
             model.load_adapter(
-                _adapter_model_path,
+                adapter_model_path,
                 adapter_name=adapter_name,
                 token=token,
                 adapter_kwargs=adapter_kwargs,
@@ -4402,9 +4402,9 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         add_prefix_to_model = has_prefix_module and not expects_prefix_module
 
         if remove_prefix_from_model:
-            _prefix = f"{prefix}."
-            expected_keys_not_prefixed = [s for s in expected_keys if not s.startswith(_prefix)]
-            expected_keys = [s.removeprefix(_prefix) for s in expected_keys]
+            prefix_ = f"{prefix}."
+            expected_keys_not_prefixed = [s for s in expected_keys if not s.startswith(prefix_)]
+            expected_keys = [s.removeprefix(prefix_) for s in expected_keys]
         elif add_prefix_to_model:
             expected_keys = [".".join([prefix, s]) for s in expected_keys]
 
@@ -4415,7 +4415,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         # buffers
         model_buffers = {n for n, _ in model.named_buffers()}
         if remove_prefix_from_model:
-            model_buffers = {key.removeprefix(_prefix) for key in model_buffers}
+            model_buffers = {key.removeprefix(prefix_) for key in model_buffers}
         elif add_prefix_to_model:
             model_buffers = {".".join([prefix, key]) for key in model_buffers}
         unexpected_keys = sorted(unexpected_keys - model_buffers)
@@ -4435,7 +4435,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
 
         for group in tied_params:
             if remove_prefix_from_model:
-                group = [key.removeprefix(_prefix) for key in group]
+                group = [key.removeprefix(prefix_) for key in group]
             elif add_prefix_to_model:
                 group = [".".join([prefix, key]) for key in group]
             missing_in_group = [k for k in missing_keys if k in group]
@@ -4492,12 +4492,12 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         if _fast_init:
             if not ignore_mismatched_sizes:
                 if remove_prefix_from_model:
-                    _loaded_keys = [f"{prefix}.{k}" for k in loaded_keys]
+                    loaded_keys_ = [f"{prefix}.{k}" for k in loaded_keys]
                 elif add_prefix_to_model:
-                    _loaded_keys = [k[len(prefix) + 1 :] for k in loaded_keys]
+                    loaded_keys_ = [k[len(prefix) + 1 :] for k in loaded_keys]
                 else:
-                    _loaded_keys = loaded_keys
-                not_initialized_submodules = set_initialized_submodules(model, _loaded_keys)
+                    loaded_keys_ = loaded_keys
+                not_initialized_submodules = set_initialized_submodules(model, loaded_keys_)
                 # If we're about to tie the output embeds to the input embeds we don't need to init them
                 if hasattr(model.config, "tie_word_embeddings") and model.config.tie_word_embeddings:
                     output_embeddings = model.get_output_embeddings()
@@ -4688,7 +4688,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                     and hf_quantizer.quantization_config.quant_method == QuantizationMethod.TORCHAO
                     and hf_quantizer.quantization_config.quant_type == "int4_weight_only"
                 ):
-                    map_location = torch.device([d for d in device_map.values() if d not in ["cpu", "disk"]][0])
+                    map_location = torch.device(next(d for d in device_map.values() if d not in ["cpu", "disk"]))
                 state_dict = load_state_dict(
                     shard_file, is_quantized=is_quantized, map_location=map_location, weights_only=weights_only
                 )
@@ -4824,8 +4824,8 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         # retrieve all modules that has at least one missing weight name
         for name, module in self.named_modules():
             if remove_prefix:
-                _prefix = f"{self.base_model_prefix}."
-                name = name.removeprefix(_prefix)
+                prefix = f"{self.base_model_prefix}."
+                name = name.removeprefix(prefix)
             elif add_prefix:
                 name = ".".join([self.base_model_prefix, name]) if len(name) > 0 else self.base_model_prefix
 
@@ -5010,7 +5010,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                     loss_type = loss_type[0]
                 else:
                     loss_type = None
-        if loss_type is None or loss_type not in LOSS_MAPPING and getattr(self.config, "loss_type", None) is not None:
+        if loss_type is None or (loss_type not in LOSS_MAPPING and getattr(self.config, "loss_type", None) is not None):
             logger.warning_once(
                 f"`loss_type={loss_type}` was set in the config but it is unrecognised."
                 f"Using the default loss: `ForCausalLMLoss`."
@@ -5306,7 +5306,7 @@ class SQuADHead(nn.Module):
 
         else:
             # during inference, compute the end logits based on beam search
-            bsz, slen, hsz = hidden_states.size()
+            _bsz, slen, hsz = hidden_states.size()
             start_log_probs = nn.functional.softmax(start_logits, dim=-1)  # shape (bsz, slen)
 
             start_top_log_probs, start_top_index = torch.topk(

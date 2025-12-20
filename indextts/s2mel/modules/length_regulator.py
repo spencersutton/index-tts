@@ -32,10 +32,10 @@ class InterpolateRegulator(nn.Module):
         channels: int,
         sampling_ratios: tuple,
         is_discrete: bool = False,
-        in_channels: int = None,  # only applies to continuous input
+        in_channels: int | None = None,  # only applies to continuous input
         vector_quantize: bool = False,  # whether to use vector quantization, only applies to continuous input
         codebook_size: int = 1024,  # for discrete only
-        out_channels: int = None,
+        out_channels: int | None = None,
         groups: int = 1,
         n_codebooks: int = 1,  # number of codebooks
         quantizer_dropout: float = 0.0,  # dropout for quantizer

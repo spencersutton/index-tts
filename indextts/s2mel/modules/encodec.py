@@ -238,7 +238,7 @@ class SConv1d(nn.Module):
         self.pad_mode = pad_mode
 
     def forward(self, x):
-        B, C, T = x.shape
+        _B, _C, _T = x.shape
         kernel_size = self.conv.conv.kernel_size[0]
         stride = self.conv.conv.stride[0]
         dilation = self.conv.conv.dilation[0]

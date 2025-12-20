@@ -55,12 +55,12 @@ def decode(
     generator.eval()
 
     # Find all .dac files in input directory
-    _input = Path(input)
-    input_files = list(_input.glob("**/*.dac"))
+    input_ = Path(input)
+    input_files = list(input_.glob("**/*.dac"))
 
     # If input is a .dac file, add it to the list
-    if _input.suffix == ".dac":
-        input_files.append(_input)
+    if input_.suffix == ".dac":
+        input_files.append(input_)
 
     # Create output directory
     output = Path(output)

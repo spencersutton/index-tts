@@ -1,4 +1,5 @@
 import functools
+import itertools
 from math import sqrt
 
 import torch
@@ -119,7 +120,7 @@ class Quantize(nn.Module):
         quantize = input + (quantize - input).detach()
 
         if return_soft_codes:
-            return quantize, diff, embed_ind, soft_codes.view(input.shape[:-1] + (-1,))
+            return quantize, diff, embed_ind, soft_codes.view((*input.shape[:-1], -1))
         elif self.new_return_order:
             return quantize, embed_ind, diff
         else:
@@ -260,7 +261,7 @@ class DiscreteVAE(nn.Module):
             dec_init_chan = codebook_dim if not has_resblocks else dec_chans[0]
             dec_chans = [dec_init_chan, *dec_chans]
 
-            enc_chans_io, dec_chans_io = map(lambda t: list(zip(t[:-1], t[1:])), (enc_chans, dec_chans))
+            enc_chans_io, dec_chans_io = map(lambda t: list(itertools.pairwise(t)), (enc_chans, dec_chans))
 
             pad = (kernel_size - 1) // 2
             for (enc_in, enc_out), (dec_in, dec_out) in zip(enc_chans_io, dec_chans_io):
@@ -325,7 +326,7 @@ class DiscreteVAE(nn.Module):
     def get_codebook_indices(self, images):
         img = self.norm(images)
         logits = self.encoder(img).permute((0, 2, 3, 1) if len(img.shape) == 4 else (0, 2, 1))
-        sampled, codes, _ = self.codebook(logits)
+        _sampled, codes, _ = self.codebook(logits)
         self.log_codes(codes)
         return codes
 
@@ -335,7 +336,7 @@ class DiscreteVAE(nn.Module):
             image_embeds = self.codebook.embed_code(img_seq)
         else:
             image_embeds = F.embedding(img_seq, self.codebook.codebook)
-        b, n, d = image_embeds.shape
+        _b, n, _d = image_embeds.shape
 
         kwargs = {}
         if self.positional_dims == 1:
@@ -353,7 +354,7 @@ class DiscreteVAE(nn.Module):
     def infer(self, img):
         img = self.norm(img)
         logits = self.encoder(img).permute((0, 2, 3, 1) if len(img.shape) == 4 else (0, 2, 1))
-        sampled, codes, commitment_loss = self.codebook(logits)
+        _sampled, codes, _commitment_loss = self.codebook(logits)
         return self.decode(codes)
 
     # Note: This module is not meant to be run in forward() except while training. It has special logic which performs

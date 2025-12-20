@@ -193,7 +193,7 @@ class ResidualVectorQuantize(nn.Module):
         ])
         self.quantizer_dropout = quantizer_dropout
 
-    def forward(self, z, n_quantizers: int = None):
+    def forward(self, z, n_quantizers: int | None = None):
         """Quantized the input tensor using a fixed set of `n` codebooks and returns
         the corresponding codebook vectors
         Parameters

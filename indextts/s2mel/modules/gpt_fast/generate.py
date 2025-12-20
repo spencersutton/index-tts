@@ -227,7 +227,7 @@ def generate(
 def encode_tokens(tokenizer, string, bos=True, device=default_device):
     tokens = tokenizer.encode(string)
     if bos:
-        tokens = [tokenizer.bos_id()] + tokens
+        tokens = [tokenizer.bos_id(), *tokens]
     return torch.tensor(tokens, dtype=torch.int, device=device)
 
 
@@ -372,7 +372,7 @@ def main(
                 nonlocal done_generating
                 if done_generating:
                     return
-                buffer.append(tokenizer.decode([period_id] + x.tolist())[1:])
+                buffer.append(tokenizer.decode([period_id, *x.tolist()])[1:])
                 if x.item() == tokenizer.eos_id():
                     done_generating = True
                 if len(buffer) == 4 or done_generating:

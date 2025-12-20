@@ -1,39 +1,9 @@
+
+
 import torch
 from transformers import Wav2Vec2BertModel
 
 from indextts.utils.maskgct.models.codec.kmeans.repcodec_model import RepCodec
-
-
-class JsonHParams:
-    def __init__(self, **kwargs) -> None:
-        for k, v in kwargs.items():
-            if type(v) == dict:
-                v = JsonHParams(**v)
-            self[k] = v
-
-    def keys(self):
-        return self.__dict__.keys()
-
-    def items(self):
-        return self.__dict__.items()
-
-    def values(self):
-        return self.__dict__.values()
-
-    def __len__(self) -> int:
-        return len(self.__dict__)
-
-    def __getitem__(self, key):
-        return getattr(self, key)
-
-    def __setitem__(self, key, value) -> None:
-        return setattr(self, key, value)
-
-    def __contains__(self, key) -> bool:
-        return key in self.__dict__
-
-    def __repr__(self) -> str:
-        return self.__dict__.__repr__()
 
 
 def build_semantic_model(path_="./models/tts/maskgct/ckpt/wav2vec2bert_stats.pt"):

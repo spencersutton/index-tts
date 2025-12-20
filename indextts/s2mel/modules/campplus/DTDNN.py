@@ -3,16 +3,16 @@
 
 from collections import OrderedDict
 
-from torch import nn
 import torch.nn.functional as F
+from torch import nn
 
 from indextts.s2mel.modules.campplus.layers import (
+    BasicResBlock,
+    CAMDenseTDNNBlock,
     DenseLayer,
     StatsPool,
     TDNNLayer,
-    CAMDenseTDNNBlock,
     TransitLayer,
-    BasicResBlock,
     get_nonlinear,
 )
 

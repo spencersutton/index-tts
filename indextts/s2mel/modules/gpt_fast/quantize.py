@@ -12,8 +12,8 @@ import torch.nn.functional as F
 from tokenizer import get_tokenizer
 
 try:
+    from eval import evaluate, get_task_dict, lm_eval
     from GPTQ import GenericGPTQRunner, InputRecorder
-    from eval import get_task_dict, evaluate, lm_eval
 except:
     pass
 
@@ -433,8 +433,8 @@ class WeightOnlyInt4QuantHandler:
                 weight = mod.weight.data
                 if not _check_linear_int4_k(in_features, self.groupsize, self.inner_k_tiles):
                     if self.padding:
-                        from model import find_multiple
                         import torch.nn.functional as F
+                        from model import find_multiple
 
                         print(f"warning: {fqn} is padded to satisfy in_features % 1024 == 0")
                         padded_in_features = find_multiple(in_features, 1024)

@@ -25,13 +25,7 @@ import torch
 from packaging import version
 from torch import nn
 from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
-
 from transformers.activations import ACT2FN
-
-from indextts.gpt.transformers_generation_utils import GenerationMixin
-from indextts.gpt.transformers_modeling_utils import PreTrainedModel
-from transformers.modeling_utils import SequenceSummary
-
 from transformers.modeling_attn_mask_utils import (
     _prepare_4d_attention_mask_for_sdpa,
     _prepare_4d_causal_attention_mask_for_sdpa,
@@ -43,8 +37,10 @@ from transformers.modeling_outputs import (
     SequenceClassifierOutputWithPast,
     TokenClassifierOutput,
 )
-# from transformers.modeling_utils import PreTrainedModel, SequenceSummary
+from transformers.modeling_utils import SequenceSummary
+from transformers.models.gpt2.configuration_gpt2 import GPT2Config
 
+# from transformers.modeling_utils import PreTrainedModel, SequenceSummary
 from transformers.pytorch_utils import Conv1D, find_pruneable_heads_and_indices, prune_conv1d_layer
 from transformers.utils import (
     ModelOutput,
@@ -58,8 +54,9 @@ from transformers.utils import (
     replace_return_docstrings,
 )
 from transformers.utils.model_parallel_utils import assert_device_map, get_device_map
-from transformers.models.gpt2.configuration_gpt2 import GPT2Config
 
+from indextts.gpt.transformers_generation_utils import GenerationMixin
+from indextts.gpt.transformers_modeling_utils import PreTrainedModel
 
 if is_flash_attn_2_available():
     from transformers.modeling_flash_attention_utils import _flash_attention_forward

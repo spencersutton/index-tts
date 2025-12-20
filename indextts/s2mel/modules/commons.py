@@ -1,10 +1,11 @@
+import argparse
 import math
+
 import numpy as np
 import torch
+from munch import Munch
 from torch import nn
 from torch.nn import functional as F
-from munch import Munch
-import argparse
 
 
 def str2bool(v):
@@ -321,8 +322,9 @@ MATPLOTLIB_FLAG = False
 def plot_spectrogram_to_numpy(spectrogram):
     global MATPLOTLIB_FLAG
     if not MATPLOTLIB_FLAG:
-        import matplotlib
         import logging
+
+        import matplotlib
 
         matplotlib.use("Agg")
         MATPLOTLIB_FLAG = True

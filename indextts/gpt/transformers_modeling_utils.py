@@ -43,9 +43,6 @@ from transformers.activations import get_activation
 from transformers.configuration_utils import PretrainedConfig
 from transformers.dynamic_module_utils import custom_object_save
 from transformers.generation import GenerationConfig
-from indextts.gpt.transformers_generation_utils import GenerationMixin
-
-
 from transformers.integrations import PeftAdapterMixin, deepspeed_config, is_deepspeed_zero3_enabled
 from transformers.loss.loss_utils import LOSS_MAPPING
 from transformers.pytorch_utils import (  # noqa: F401
@@ -105,6 +102,7 @@ from transformers.utils.import_utils import (
 )
 from transformers.utils.quantization_config import BitsAndBytesConfig, QuantizationMethod
 
+from indextts.gpt.transformers_generation_utils import GenerationMixin
 
 XLA_USE_BF16 = os.environ.get("XLA_USE_BF16", "0").upper()
 XLA_DOWNCAST_BF16 = os.environ.get("XLA_DOWNCAST_BF16", "0").upper()
@@ -131,8 +129,7 @@ if is_accelerate_available():
 
 if is_safetensors_available():
     from safetensors import safe_open
-    from safetensors.torch import load_file as safe_load_file
-    from safetensors.torch import save_file as safe_save_file
+    from safetensors.torch import load_file as safe_load_file, save_file as safe_save_file
 
 logger = logging.get_logger(__name__)
 

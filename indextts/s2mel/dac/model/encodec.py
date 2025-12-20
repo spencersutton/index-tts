@@ -10,13 +10,11 @@ import math
 import typing as tp
 import warnings
 
+import einops
 import torch
 from torch import nn
 from torch.nn import functional as F
 from torch.nn.utils import spectral_norm, weight_norm
-
-
-import einops
 
 
 class ConvLayerNorm(nn.LayerNorm):

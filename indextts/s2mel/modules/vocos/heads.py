@@ -4,8 +4,8 @@ import torch
 from torch import nn
 from torchaudio.functional.functional import _hz_to_mel, _mel_to_hz
 
-from .spectral_ops import IMDCT, ISTFT
 from .modules import symexp
+from .spectral_ops import IMDCT, ISTFT
 
 
 class FourierHead(nn.Module):

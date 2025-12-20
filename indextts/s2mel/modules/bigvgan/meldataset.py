@@ -6,14 +6,15 @@
 
 import math
 import os
+import pathlib
 import random
+
+import numpy as np
 import torch
 import torch.utils.data
-import numpy as np
+from librosa.filters import mel as librosa_mel_fn
 from librosa.util import normalize
 from scipy.io.wavfile import read
-from librosa.filters import mel as librosa_mel_fn
-import pathlib
 from tqdm import tqdm
 
 MAX_WAV_VALUE = 32767.0  # NOTE: 32768.0 -1 to prevent int16 overflow (results in popping sound in corner cases)

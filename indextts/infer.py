@@ -2,16 +2,15 @@ import os
 
 os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 import time
+import warnings
 from subprocess import CalledProcessError
 from typing import Dict, List
 
 import torch
 import torchaudio
-from torch.nn.utils.rnn import pad_sequence
 from omegaconf import OmegaConf
+from torch.nn.utils.rnn import pad_sequence
 from tqdm import tqdm
-
-import warnings
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -20,7 +19,6 @@ from indextts.BigVGAN.models import BigVGAN as Generator
 from indextts.gpt.model import UnifiedVoice
 from indextts.utils.checkpoint import load_checkpoint
 from indextts.utils.feature_extractors import MelSpectrogramFeatures
-
 from indextts.utils.front import TextNormalizer, TextTokenizer
 
 

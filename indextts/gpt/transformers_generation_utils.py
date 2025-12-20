@@ -24,7 +24,6 @@ import torch
 import torch.distributed as dist
 from torch import nn
 from torch.nn import functional as F
-
 from transformers.cache_utils import (
     Cache,
     DynamicCache,
@@ -34,20 +33,6 @@ from transformers.cache_utils import (
     StaticCache,
 )
 from transformers.configuration_utils import PretrainedConfig
-from transformers.integrations.deepspeed import is_deepspeed_zero3_enabled
-from transformers.integrations.fsdp import is_fsdp_managed_module
-from transformers.modeling_outputs import CausalLMOutputWithPast, Seq2SeqLMOutput
-from transformers.pytorch_utils import isin_mps_friendly
-from transformers.tokenization_utils import ExtensionsTrie
-from transformers.utils import (
-    ModelOutput,
-    is_accelerate_available,
-    is_hqq_available,
-    is_optimum_quanto_available,
-    # is_quanto_available,
-    is_torchdynamo_compiling,
-    logging,
-)
 from transformers.generation.beam_constraints import DisjunctiveConstraint, PhrasalConstraint
 from transformers.generation.beam_search import BeamScorer, BeamSearchScorer, ConstrainedBeamSearchScorer
 from transformers.generation.candidate_generator import (
@@ -102,12 +87,25 @@ from transformers.generation.stopping_criteria import (
     StoppingCriteriaList,
     StopStringCriteria,
 )
-
+from transformers.integrations.deepspeed import is_deepspeed_zero3_enabled
+from transformers.integrations.fsdp import is_fsdp_managed_module
+from transformers.modeling_outputs import CausalLMOutputWithPast, Seq2SeqLMOutput
+from transformers.pytorch_utils import isin_mps_friendly
+from transformers.tokenization_utils import ExtensionsTrie
+from transformers.utils import (
+    ModelOutput,
+    is_accelerate_available,
+    is_hqq_available,
+    is_optimum_quanto_available,
+    # is_quanto_available,
+    is_torchdynamo_compiling,
+    logging,
+)
 
 if TYPE_CHECKING:
+    from transformers.generation.streamers import BaseStreamer
     from transformers.modeling_utils import PreTrainedModel
     from transformers.tokenization_utils_base import PreTrainedTokenizerBase
-    from transformers.generation.streamers import BaseStreamer
 
 logger = logging.get_logger(__name__)
 

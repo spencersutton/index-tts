@@ -1,14 +1,14 @@
-from transformers import SeamlessM4TFeatureExtractor
-from transformers import Wav2Vec2BertModel
-import torch
-import numpy as np
-import librosa
 import os
-import safetensors
+
 import json5
+import librosa
+import numpy as np
+import safetensors
+import torch
 
 # from codec.kmeans.repcodec_model import RepCodec
 from startts.examples.ftchar.models.codec.kmeans.repcodec_model import RepCodec
+from transformers import SeamlessM4TFeatureExtractor, Wav2Vec2BertModel
 
 
 class JsonHParams:

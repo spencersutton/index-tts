@@ -1,3 +1,1 @@
-from . import layers as layers
-from . import loss as loss
-from . import quantize as quantize
+from . import layers as layers, loss as loss, quantize as quantize

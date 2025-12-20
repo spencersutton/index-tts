@@ -2,7 +2,6 @@ import sys
 
 import argbind
 
-
 STAGES = ["encode", "decode", "download"]
 
 

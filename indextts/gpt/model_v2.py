@@ -3,9 +3,7 @@ import functools
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from transformers import GPT2Config, LogitsProcessorList
-from indextts.gpt.transformers_gpt2 import GPT2PreTrainedModel
 
 # from transformers import GPT2Config, GPT2PreTrainedModel, LogitsProcessorList
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
@@ -13,6 +11,7 @@ from transformers.utils.model_parallel_utils import assert_device_map, get_devic
 
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.perceiver import PerceiverResampler
+from indextts.gpt.transformers_gpt2 import GPT2PreTrainedModel
 from indextts.utils.arch_util import AttentionBlock
 from indextts.utils.typical_sampling import TypicalLogitsWarper
 
@@ -466,7 +465,7 @@ class UnifiedVoice(nn.Module):
                     "flash_attn is required for acceleration but not installed. Please install from https://github.com/Dao-AILab/flash-attention/releases/"
                 )
 
-            from indextts.accel import GPT2AccelModel, AccelInferenceEngine
+            from indextts.accel import AccelInferenceEngine, GPT2AccelModel
 
             # Create accel model
             accel_gpt = GPT2AccelModel(gpt_config)

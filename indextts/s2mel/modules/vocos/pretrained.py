@@ -4,6 +4,7 @@ from typing import Any
 
 import torch
 from torch import nn
+
 from .heads import ISTFTHead
 from .models import VocosBackbone
 

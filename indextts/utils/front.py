@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 import os
-import traceback
 import re
-from typing import List, Union, overload
+import traceback
 import warnings
-from indextts.utils.common import tokenize_by_CJK_char, de_tokenized_by_CJK_char
+from typing import List, Union, overload
+
 from sentencepiece import SentencePieceProcessor
+
+from indextts.utils.common import de_tokenized_by_CJK_char, tokenize_by_CJK_char
 
 
 class TextNormalizer:

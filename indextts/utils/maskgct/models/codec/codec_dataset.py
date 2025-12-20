@@ -4,12 +4,13 @@
 # LICENSE file in the root directory of this source tree.
 
 from typing import Iterable
-import torch
+
 import numpy as np
+import torch
 import torch.utils.data
 from torch.nn.utils.rnn import pad_sequence
-from utils.data_utils import *
 from torch.utils.data import ConcatDataset, Dataset
+from utils.data_utils import *
 
 
 class CodecDataset(torch.utils.data.Dataset):

@@ -4,7 +4,6 @@ import os
 import sys
 import threading
 import time
-
 import warnings
 
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -45,6 +44,7 @@ for file in ["bpe.model", "gpt.pth", "config.yaml", "s2mel.pth", "wav2vec2bert_s
         sys.exit(1)
 
 import gradio as gr
+
 from indextts.infer_v2 import IndexTTS2
 from tools.i18n.i18n import I18nAuto
 

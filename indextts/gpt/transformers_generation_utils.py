@@ -678,7 +678,7 @@ class GenerationMixin:
             or (
                 self.config.model_type == "vision-encoder-decoder" and "donut" in self.config.encoder.model_type.lower()
             )
-            or self.config.model_type in ["whisper"]
+            or self.config.model_type == "whisper"
         ):
             pass
         # user input but doesn't start with decoder_start_token_id -> prepend decoder_start_token_id (and adjust

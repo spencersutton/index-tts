@@ -516,7 +516,6 @@ class UnifiedVoice(nn.Module):
         else:
             self.inference_model = self.inference_model.eval()
 
-        # self.inference_model = PrunedGPT2InferenceModel(gpt_config, self.gpt, self.mel_pos_embedding, self.mel_embedding, self.final_norm, self.mel_head)
         self.gpt.wte = self.mel_embedding
 
     def build_aligned_inputs_and_targets(self, input, start_token, stop_token):
@@ -599,7 +598,6 @@ class UnifiedVoice(nn.Module):
                 speech_conditioning_input.transpose(1, 2), cond_mel_lengths
             )  # (b, s, d), (b, 1, s)
             if self.condition_type == "conformer_perceiver":
-                # conds_mask = torch.cat([torch.ones((mask.shape[0], self.cond_num), dtype=torch.bool), mask.squeeze(1)], dim=1)
                 conds_mask = self.cond_mask_pad(mask.squeeze(1))
                 conds = self.perceiver_encoder(speech_conditioning_input, conds_mask)  # (b, 32, d)
         elif self.condition_type == "gst":

@@ -32,7 +32,7 @@ class STFT(torch.nn.Module):
         super(STFT, self).__init__()
         self.filter_length = filter_length
         self.hop_length = hop_length
-        self.win_length = win_length if win_length else filter_length
+        self.win_length = win_length or filter_length
         self.window = window
         self.forward_transform = None
         self.pad_amount = int(self.filter_length / 2)

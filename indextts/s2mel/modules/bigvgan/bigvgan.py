@@ -22,8 +22,7 @@ from .utils import get_padding, init_weights
 
 
 def load_hparams_from_json(path) -> AttrDict:
-    with open(path) as f:
-        data = f.read()
+    data = Path(path).read_text()
     return AttrDict(json.loads(data))
 
 

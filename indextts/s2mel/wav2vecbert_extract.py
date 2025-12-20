@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import json5
 import librosa
@@ -53,8 +54,7 @@ def _load_config(config_fn, lowercase=False):
     Returns:
         dict: dictionary that stores configurations
     """
-    with open(config_fn, "r") as f:
-        data = f.read()
+    data = Path(config_fn).read_text()
     config_ = json5.loads(data)
     if "base_config" in config_:
         # load configurations from new path

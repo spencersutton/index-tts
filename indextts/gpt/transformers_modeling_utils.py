@@ -710,11 +710,11 @@ def _load_state_dict_into_model(model_to_load, state_dict, start_prefix, assign_
         if "gamma" in key:
             # We add only the first key as an example
             new_key = key.replace("gamma", "weight")
-            renamed_gamma[key] = renamed_gamma if renamed_gamma else new_key
+            renamed_gamma[key] = renamed_gamma or new_key
         if "beta" in key:
             # We add only the first key as an example
             new_key = key.replace("beta", "bias")
-            renamed_beta[key] = renamed_beta if renamed_beta else new_key
+            renamed_beta[key] = renamed_beta or new_key
         if new_key:
             old_keys.append(key)
             new_keys.append(new_key)
@@ -869,11 +869,11 @@ def _load_state_dict_into_meta_model(
         if "gamma" in key:
             # We add only the first key as an example
             new_key = key.replace("gamma", "weight")
-            renamed_gamma[key] = renamed_gamma if renamed_gamma else new_key
+            renamed_gamma[key] = renamed_gamma or new_key
         if "beta" in key:
             # We add only the first key as an example
             new_key = key.replace("beta", "bias")
-            renamed_beta[key] = renamed_beta if renamed_beta else new_key
+            renamed_beta[key] = renamed_beta or new_key
 
         # To reproduce `_load_state_dict_into_model` behaviour, we need to manually rename parametrized weigth norm, if necessary.
         if hasattr(nn.utils.parametrizations, "weight_norm"):
@@ -905,8 +905,7 @@ def _load_state_dict_into_meta_model(
         if param_name not in expected_keys:
             continue
 
-        if param_name.startswith(start_prefix):
-            param_name = param_name[len(start_prefix) :]
+        param_name = param_name.removeprefix(start_prefix)
 
         module_name = param_name
         set_module_kwargs = {}
@@ -4405,7 +4404,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         if remove_prefix_from_model:
             _prefix = f"{prefix}."
             expected_keys_not_prefixed = [s for s in expected_keys if not s.startswith(_prefix)]
-            expected_keys = [s[len(_prefix) :] if s.startswith(_prefix) else s for s in expected_keys]
+            expected_keys = [s.removeprefix(_prefix) for s in expected_keys]
         elif add_prefix_to_model:
             expected_keys = [".".join([prefix, s]) for s in expected_keys]
 
@@ -4416,7 +4415,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         # buffers
         model_buffers = {n for n, _ in model.named_buffers()}
         if remove_prefix_from_model:
-            model_buffers = {key[len(_prefix) :] if key.startswith(_prefix) else key for key in model_buffers}
+            model_buffers = {key.removeprefix(_prefix) for key in model_buffers}
         elif add_prefix_to_model:
             model_buffers = {".".join([prefix, key]) for key in model_buffers}
         unexpected_keys = sorted(unexpected_keys - model_buffers)
@@ -4436,7 +4435,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
 
         for group in tied_params:
             if remove_prefix_from_model:
-                group = [key[len(_prefix) :] if key.startswith(_prefix) else key for key in group]
+                group = [key.removeprefix(_prefix) for key in group]
             elif add_prefix_to_model:
                 group = [".".join([prefix, key]) for key in group]
             missing_in_group = [k for k in missing_keys if k in group]
@@ -4826,7 +4825,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         for name, module in self.named_modules():
             if remove_prefix:
                 _prefix = f"{self.base_model_prefix}."
-                name = name[len(_prefix) :] if name.startswith(_prefix) else name
+                name = name.removeprefix(_prefix)
             elif add_prefix:
                 name = ".".join([self.base_model_prefix, name]) if len(name) > 0 else self.base_model_prefix
 

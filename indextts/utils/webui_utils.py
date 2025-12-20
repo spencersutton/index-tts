@@ -38,7 +38,5 @@ def prev_page(page_number):
 def update_current_texts(page_number, sentences):
     start_index = (int(page_number) - 1) * 20
     end_index = int(page_number) * 20
-    current_texts = sentences.values[
-        start_index : end_index if end_index < len(sentences.values) else len(sentences.values)
-    ]
+    current_texts = sentences.values[start_index : min(len(sentences.values), end_index)]
     return gr.update(values=current_texts)

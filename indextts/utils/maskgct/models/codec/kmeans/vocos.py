@@ -37,18 +37,12 @@ class ConvNeXtBlock(nn.Module):
         layer_scale_init_value: float,
     ) -> None:
         super().__init__()
-        self.dwconv = nn.Conv1d(
-            dim, dim, kernel_size=7, padding=3, groups=dim
-        )  # depthwise conv
+        self.dwconv = nn.Conv1d(dim, dim, kernel_size=7, padding=3, groups=dim)  # depthwise conv
         self.norm = nn.LayerNorm(dim, eps=1e-6)
-        self.pwconv1 = nn.Linear(
-            dim, intermediate_dim
-        )  # pointwise/1x1 convs, implemented with linear layers
+        self.pwconv1 = nn.Linear(dim, intermediate_dim)  # pointwise/1x1 convs, implemented with linear layers
         self.act = nn.GELU()
         self.pwconv2 = nn.Linear(intermediate_dim, dim)
-        self.gamma = nn.Parameter(
-            layer_scale_init_value * torch.ones(dim), requires_grad=True
-        )
+        self.gamma = nn.Parameter(layer_scale_init_value * torch.ones(dim), requires_grad=True)
 
     @override
     def forward(self, x: Tensor) -> Tensor:
@@ -95,16 +89,14 @@ class VocosBackbone(nn.Module):
         super().__init__()
         self.embed = nn.Conv1d(input_channels, dim, kernel_size=7, padding=3)
         self.norm = nn.LayerNorm(dim, eps=1e-6)
-        self.convnext = nn.ModuleList(
-            [
-                ConvNeXtBlock(
-                    dim=dim,
-                    intermediate_dim=intermediate_dim,
-                    layer_scale_init_value=1 / num_layers,
-                )
-                for _ in range(num_layers)
-            ]
-        )
+        self.convnext = nn.ModuleList([
+            ConvNeXtBlock(
+                dim=dim,
+                intermediate_dim=intermediate_dim,
+                layer_scale_init_value=1 / num_layers,
+            )
+            for _ in range(num_layers)
+        ])
         self.final_layer_norm = nn.LayerNorm(dim, eps=1e-6)
         self.apply(self._init_weights)
 

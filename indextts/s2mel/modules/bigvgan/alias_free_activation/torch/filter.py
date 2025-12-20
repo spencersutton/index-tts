@@ -30,13 +30,13 @@ def kaiser_sinc_filter1d(
     else:
         beta = 0.0
 
-    window = torch.kaiser_window(kernel_size, beta=beta, periodic=False)
+    window = torch.kaiser_window(kernel_size, beta=beta, periodic=False, device="cpu")
 
     # Create time axis centered at 0
     if even:
-        time = torch.arange(-half_size, half_size) + 0.5
+        time = torch.arange(-half_size, half_size, device="cpu") + 0.5
     else:
-        time = torch.arange(kernel_size) - half_size
+        time = torch.arange(kernel_size, device="cpu") - half_size
 
     # Apply sinc filter with Kaiser window
     if cutoff == 0:

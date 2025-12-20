@@ -141,7 +141,7 @@ class IndexTTS:
         codes_list = []
         device = codes.device
         isfix = False
-        for i in range(0, codes.shape[0]):
+        for i in range(codes.shape[0]):
             code = codes[i]
             if not torch.any(code == self.stop_mel_token).item():
                 len_ = code.size(0)
@@ -333,7 +333,6 @@ class IndexTTS:
         else:
             cond_mel = self.cache_cond_mel
             cond_mel_frame = cond_mel.shape[-1]
-            pass
 
         auto_conditioning = cond_mel
         cond_mel_lengths = torch.tensor([cond_mel_frame], device=self.device)
@@ -496,7 +495,6 @@ class IndexTTS:
                     wav, _ = self.bigvgan(latent, auto_conditioning.transpose(1, 2))
                     bigvgan_time += time.perf_counter() - m_start_time
                     wav = wav.squeeze(1)
-                    pass
             wav = torch.clamp(32767 * wav, -32767.0, 32767.0)
             wavs.append(wav.cpu())  # to cpu before saving
 
@@ -564,7 +562,6 @@ class IndexTTS:
         else:
             cond_mel = self.cache_cond_mel
             cond_mel_frame = cond_mel.shape[-1]
-            pass
 
         self._set_gr_progress(0.1, "text processing...")
         auto_conditioning = cond_mel

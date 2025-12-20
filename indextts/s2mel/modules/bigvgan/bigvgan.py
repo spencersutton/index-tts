@@ -346,7 +346,6 @@ class BigVGAN(
             remove_weight_norm(self.conv_post)
         except ValueError:
             print("[INFO] Model already removed weight norm. Skipping!")
-            pass
 
     # Additional methods for huggingface_hub support
     def _save_pretrained(self, save_directory: Path) -> None:

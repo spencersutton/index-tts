@@ -84,38 +84,6 @@ output-format = "concise"
 preview = true
 show-fixes = true
 
-[tool.ruff.lint]
-extend-select = [
-  "ANN",
-  "B",
-  "C",
-  "FURB",
-  "G",
-  "I",
-  "PIE",
-  "PLR",
-  "PLW",
-  "PTH",
-  "RET",
-  "RUF",
-  "SIM",
-  "UP",
-  "W",
-]
-ignore = [
-  "ANN401",
-  "B006",
-  "B008",
-  "B028",
-  "B905",
-  "FURB118",
-  "PLW1514",
-  "RUF001",
-  "RUF002",
-  "RUF003",
-  "SIM108",
-]
-
 [tool.ruff.lint.isort]
 combine-as-imports = true
 

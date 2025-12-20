@@ -1,6 +1,5 @@
 import html
 import json
-import os
 import sys
 import time
 import warnings
@@ -8,11 +7,13 @@ import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
+from pathlib import Path
+
 import pandas as pd
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(current_dir)
-sys.path.append(os.path.join(current_dir, "indextts"))
+current_dir = (Path(__file__).resolve()).parent
+sys.path.append(str(current_dir))
+sys.path.append(str(current_dir / "indextts"))
 
 import argparse
 
@@ -32,15 +33,16 @@ parser.add_argument(
 parser.add_argument("--gui_seg_tokens", type=int, default=120, help="GUI: Max tokens per generation segment")
 cmd_args = parser.parse_args()
 
-if not os.path.exists(cmd_args.model_dir):
+if not Path(cmd_args.model_dir).exists():
     print(f"Model directory {cmd_args.model_dir} does not exist. Please download the model first.")
     sys.exit(1)
 
 for file in ["bpe.model", "gpt.pth", "config.yaml", "s2mel.pth", "wav2vec2bert_stats.pt"]:
-    file_path = os.path.join(cmd_args.model_dir, file)
-    if not os.path.exists(file_path):
+    file_path = Path(cmd_args.model_dir) / file
+    if not file_path.exists():
         print(f"Required file {file_path} does not exist. Please download it.")
         sys.exit(1)
+
 
 import gradio as gr
 
@@ -50,7 +52,7 @@ from tools.i18n.i18n import I18nAuto
 i18n = I18nAuto(language="Auto")
 tts = IndexTTS2(
     model_dir=cmd_args.model_dir,
-    cfg_path=os.path.join(cmd_args.model_dir, "config.yaml"),
+    cfg_path=str(Path(cmd_args.model_dir) / "config.yaml"),
     use_fp16=cmd_args.fp16,
     use_deepspeed=cmd_args.deepspeed,
     use_cuda_kernel=cmd_args.cuda_kernel,
@@ -64,23 +66,23 @@ EMO_CHOICES_ALL = [
 ]
 EMO_CHOICES_OFFICIAL = EMO_CHOICES_ALL[:-1]  # skip experimental features
 
-os.makedirs("outputs/tasks", exist_ok=True)
-os.makedirs("prompts", exist_ok=True)
+Path("outputs/tasks").mkdir(exist_ok=True, parents=True)
+Path("prompts").mkdir(exist_ok=True, parents=True)
 
 example_cases = []
-with open("examples/cases.jsonl", encoding="utf-8") as f:
+with Path("examples/cases.jsonl").open(encoding="utf-8") as f:
     for line in f:
         line = line.strip()
         if not line:
             continue
         example = json.loads(line)
         if example.get("emo_audio", None):
-            emo_audio_path = os.path.join("examples", example["emo_audio"])
+            emo_audio_path = Path("examples") / example["emo_audio"]
         else:
             emo_audio_path = None
 
         example_cases.append([
-            os.path.join("examples", example.get("prompt_audio", "sample_prompt.wav")),
+            str(Path("examples") / example.get("prompt_audio", "sample_prompt.wav")),
             EMO_CHOICES_ALL[example.get("emo_mode", 0)],
             example.get("text"),
             emo_audio_path,
@@ -127,7 +129,7 @@ def gen_single(
 ):
     output_path = None
     if not output_path:
-        output_path = os.path.join("outputs", f"spk_{int(time.time())}.wav")
+        output_path = Path("outputs") / f"spk_{int(time.time())}.wav"
     # set gradio progress
     tts.gr_progress = progress
     do_sample, top_p, top_k, temperature, length_penalty, num_beams, repetition_penalty, max_mel_tokens = args
@@ -200,11 +202,11 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
 
     with gr.Tab(i18n("音频生成")):
         with gr.Row():
-            os.makedirs("prompts", exist_ok=True)
+            Path("prompts").mkdir(exist_ok=True, parents=True)
             prompt_audio = gr.Audio(
                 label=i18n("音色参考音频"), key="prompt_audio", sources=["upload", "microphone"], type="filepath"
             )
-            prompt_list = os.listdir("prompts")
+            prompt_list = [p.name for p in Path("prompts").iterdir() if p.is_file()]
             with gr.Column():
                 input_text_single = gr.TextArea(
                     label=i18n("文本"),

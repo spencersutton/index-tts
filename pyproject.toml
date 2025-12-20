@@ -119,7 +119,7 @@ preview = true
 show-fixes = true
 
 [tool.ruff.lint]
-extend-select = ["I", "SIM", "FURB", "ANN", "UP", "B", "RUF", "PIE"]
+extend-select = ["I", "SIM", "FURB", "ANN", "UP", "B", "RUF", "PIE", "C"]
 ignore = [
   "SIM108",
   "FURB118",

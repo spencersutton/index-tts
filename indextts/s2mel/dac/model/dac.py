@@ -360,14 +360,14 @@ if __name__ == "__main__":
 
     for _n, m in model.named_modules():
         o = m.extra_repr()
-        p = sum([np.prod(p.size()) for p in m.parameters()])
+        p = sum(np.prod(p.size()) for p in m.parameters())
 
         def fn(o, p):
             return o + f" {p / 1e6:<.3f}M params."
 
         m.extra_repr = partial(fn, o=o, p=p)
     print(model)
-    print("Total # of params: ", sum([np.prod(p.size()) for p in model.parameters()]))
+    print("Total # of params: ", sum(np.prod(p.size()) for p in model.parameters()))
 
     length = 88200 * 2
     x = torch.randn(1, 1, length).to(model.device)

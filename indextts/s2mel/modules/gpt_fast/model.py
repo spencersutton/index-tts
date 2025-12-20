@@ -81,37 +81,56 @@ class ModelArgs:
 
 
 transformer_configs = {
-    "CodeLlama-7b-Python-hf": dict(block_size=16384, vocab_size=32000, n_layer=32, dim=4096, rope_base=1000000),
-    "7B": dict(n_layer=32, n_head=32, dim=4096),
-    "13B": dict(n_layer=40, n_head=40, dim=5120),
-    "30B": dict(n_layer=60, n_head=52, dim=6656),
-    "34B": dict(
-        n_layer=48, n_head=64, dim=8192, vocab_size=32000, n_local_heads=8, intermediate_size=22016, rope_base=1000000
-    ),  # CodeLlama-34B-Python-hf
-    "70B": dict(n_layer=80, n_head=64, dim=8192, n_local_heads=8, intermediate_size=28672),
-    "Mistral-7B": dict(n_layer=32, n_head=32, n_local_heads=8, dim=4096, intermediate_size=14336, vocab_size=32000),
-    "stories15M": dict(n_layer=6, n_head=6, dim=288),
-    "stories110M": dict(n_layer=12, n_head=12, dim=768),
-    "llama-3-8b": dict(
-        block_size=8192,
-        n_layer=32,
-        n_head=32,
-        n_local_heads=8,
-        dim=4096,
-        intermediate_size=14336,
-        vocab_size=128256,
-        rope_base=500000,
-    ),
-    "llama-3-70b": dict(
-        block_size=8192,
-        n_layer=80,
-        n_head=64,
-        n_local_heads=8,
-        dim=8192,
-        intermediate_size=28672,
-        vocab_size=128256,
-        rope_base=500000,
-    ),
+    "CodeLlama-7b-Python-hf": {
+        "block_size": 16384,
+        "vocab_size": 32000,
+        "n_layer": 32,
+        "dim": 4096,
+        "rope_base": 1000000,
+    },
+    "7B": {"n_layer": 32, "n_head": 32, "dim": 4096},
+    "13B": {"n_layer": 40, "n_head": 40, "dim": 5120},
+    "30B": {"n_layer": 60, "n_head": 52, "dim": 6656},
+    "34B": {
+        "n_layer": 48,
+        "n_head": 64,
+        "dim": 8192,
+        "vocab_size": 32000,
+        "n_local_heads": 8,
+        "intermediate_size": 22016,
+        "rope_base": 1000000,
+    },  # CodeLlama-34B-Python-hf
+    "70B": {"n_layer": 80, "n_head": 64, "dim": 8192, "n_local_heads": 8, "intermediate_size": 28672},
+    "Mistral-7B": {
+        "n_layer": 32,
+        "n_head": 32,
+        "n_local_heads": 8,
+        "dim": 4096,
+        "intermediate_size": 14336,
+        "vocab_size": 32000,
+    },
+    "stories15M": {"n_layer": 6, "n_head": 6, "dim": 288},
+    "stories110M": {"n_layer": 12, "n_head": 12, "dim": 768},
+    "llama-3-8b": {
+        "block_size": 8192,
+        "n_layer": 32,
+        "n_head": 32,
+        "n_local_heads": 8,
+        "dim": 4096,
+        "intermediate_size": 14336,
+        "vocab_size": 128256,
+        "rope_base": 500000,
+    },
+    "llama-3-70b": {
+        "block_size": 8192,
+        "n_layer": 80,
+        "n_head": 64,
+        "n_local_heads": 8,
+        "dim": 8192,
+        "intermediate_size": 28672,
+        "vocab_size": 128256,
+        "rope_base": 500000,
+    },
 }
 
 
@@ -309,7 +328,7 @@ class Attention(nn.Module):
         q = apply_rotary_emb(q, freqs_cis)
         k = apply_rotary_emb(k, context_freqs_cis if context_freqs_cis is not None else freqs_cis)
 
-        q, k, v = map(lambda x: x.transpose(1, 2), (q, k, v))
+        q, k, v = (x.transpose(1, 2) for x in (q, k, v))
 
         if self.kv_cache is not None:
             k, v = self.kv_cache.update(input_pos, k, v)

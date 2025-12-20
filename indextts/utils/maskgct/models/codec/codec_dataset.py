@@ -154,7 +154,7 @@ class CodecDataset(torch.utils.data.Dataset):
         uid = utt_info["Uid"]
         utt = f"{dataset}_{uid}"
 
-        single_feature = dict()
+        single_feature = {}
 
         if self.cfg.preprocess.use_mel:
             mel = np.load(self.utt2mel_path[utt])
@@ -232,7 +232,7 @@ class CodecCollator:
         self.cfg = cfg
 
     def __call__(self, batch):
-        packed_batch_features = dict()
+        packed_batch_features = {}
 
         # mel: [b, n_mels, frame]
         # frame_pitch: [b, frame]

@@ -270,9 +270,9 @@ def _get_model_size(model):
     model_size = 0
     for _name, child in model.named_children():
         if not isinstance(child, torch.nn.Embedding):
-            model_size += sum([
+            model_size += sum(
                 p.numel() * p.dtype.itemsize for p in itertools.chain(child.parameters(), child.buffers())
-            ])
+            )
     return model_size
 
 
@@ -430,7 +430,7 @@ def main(
         counts_aggregated = [sum(i) for i in zip(*aggregate_metrics["accept_counts"])]
         acceptance_probs = [i / sum(counts_aggregated) for i in counts_aggregated]
         print(f"Acceptance probs: {acceptance_probs}")
-        print(f"Mean Accepted: {sum([idx * i for idx, i in enumerate(counts_aggregated)]) / sum(counts_aggregated)}")
+        print(f"Mean Accepted: {sum(idx * i for idx, i in enumerate(counts_aggregated)) / sum(counts_aggregated)}")
 
     print(f"Average tokens/sec: {torch.mean(torch.tensor(aggregate_metrics['tokens_per_sec'])).item():.2f}")
     print(f"Memory used: {torch.cuda.max_memory_reserved() / 1e9:.02f} GB")

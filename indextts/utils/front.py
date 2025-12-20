@@ -164,7 +164,7 @@ class TextNormalizer:
         original_name_list = re.findall(name_pattern, original_text)
         if len(original_name_list) == 0:
             return (original_text, None)
-        original_name_list = list(set("".join(n) for n in original_name_list))
+        original_name_list = list({"".join(n) for n in original_name_list})
         transformed_text = original_text
         # 替换占位符 <n_a>、 <n_b>, ...
         for i, name in enumerate(original_name_list):
@@ -198,7 +198,7 @@ class TextNormalizer:
         original_pinyin_list = re.findall(origin_pinyin_pattern, original_text)
         if len(original_pinyin_list) == 0:
             return (original_text, None)
-        original_pinyin_list = list(set("".join(p) for p in original_pinyin_list))
+        original_pinyin_list = list({"".join(p) for p in original_pinyin_list})
         transformed_text = original_text
         # 替换为占位符 <pinyin_a>, <pinyin_b>, ...
         for i, pinyin in enumerate(original_pinyin_list):
@@ -521,7 +521,7 @@ if __name__ == "__main__":
         if re.match(TextNormalizer.PINYIN_TONE_PATTERN, badcase, re.IGNORECASE) is not None:
             print(f"{badcase} should not be matched!")
     # 不应该有 unk_token_id
-    for t in set([*TextTokenizer.punctuation_marks_tokens, ",", "▁,", "-", "▁..."]):
+    for t in {*TextTokenizer.punctuation_marks_tokens, ",", "▁,", "-", "▁..."}:
         tokens = tokenizer.convert_tokens_to_ids(t)
         if tokenizer.unk_token_id in tokens:
             print(f"Warning: {t} is unknown token")

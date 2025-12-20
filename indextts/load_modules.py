@@ -2,7 +2,6 @@ import logging
 from pathlib import Path
 
 import safetensors.torch
-import torch
 from huggingface_hub import hf_hub_download
 
 from indextts.config import CheckpointsConfig
@@ -22,10 +21,11 @@ def load_bigvgan(name: str, use_cuda_kernel: bool) -> BigVGAN:
 
 
 def load_campplus() -> CAMPPlus:
-    checkpoint = hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
     model = CAMPPlus()
-    model.load_state_dict(torch.load(checkpoint))  # pyright: ignore[reportAny]
-    logger.info("campplus_model weights restored from: %s", checkpoint)
+    path = "checkpoints/campplus_cn_common.safetensors"
+    safetensors.torch.load_model(model, path)
+
+    logger.info("campplus_model weights restored from: %s", path)
     return model.eval()
 
 

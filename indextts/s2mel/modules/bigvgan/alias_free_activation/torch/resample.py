@@ -30,7 +30,7 @@ class UpSample1d(nn.Module):
         _, C, _ = x.shape
 
         x = F.pad(x, (self.pad, self.pad), mode="replicate")
-        x = self.ratio * F.conv_transpose1d(x, self.filter.expand(C, -1, -1), stride=self.stride, groups=C)
+        x = self.ratio * F.conv_transpose1d(x, self.filter.to(x.device).expand(C, -1, -1), stride=self.stride, groups=C)
         return x[..., self.pad_left : -self.pad_right]
 
     @patch_call(forward)

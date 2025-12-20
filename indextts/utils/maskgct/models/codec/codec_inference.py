@@ -224,8 +224,7 @@ class VocoderInference:
         return VocoderDataset, VocoderCollator
 
     def _build_model(self):
-        model = _vocoders[self.cfg.model.generator](self.cfg)
-        return model
+        return _vocoders[self.cfg.model.generator](self.cfg)
 
     def _build_dataloader(self):
         """Build dataloader which merges a series of datasets."""
@@ -271,39 +270,38 @@ class VocoderInference:
                 os.path.join(checkpoint_path, "pytorch_model.bin"),
             )
             return str(checkpoint_path)
-        else:
-            # Load old .pt checkpoints
-            if self.cfg.model.generator in [
-                "bigvgan",
-                "hifigan",
-                "melgan",
-                "nsfhifigan",
-            ]:
-                ckpt = torch.load(
-                    checkpoint_dir,
-                    map_location=(torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")),
-                )
-                if from_multi_gpu:
-                    pretrained_generator_dict = ckpt["generator_state_dict"]
-                    generator_dict = self.model.state_dict()
+        # Load old .pt checkpoints
+        if self.cfg.model.generator in [
+            "bigvgan",
+            "hifigan",
+            "melgan",
+            "nsfhifigan",
+        ]:
+            ckpt = torch.load(
+                checkpoint_dir,
+                map_location=(torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")),
+            )
+            if from_multi_gpu:
+                pretrained_generator_dict = ckpt["generator_state_dict"]
+                generator_dict = self.model.state_dict()
 
-                    new_generator_dict = {
-                        k.split("module.")[-1]: v
-                        for k, v in pretrained_generator_dict.items()
-                        if (
-                            k.split("module.")[-1] in generator_dict
-                            and v.shape == generator_dict[k.split("module.")[-1]].shape
-                        )
-                    }
+                new_generator_dict = {
+                    k.split("module.")[-1]: v
+                    for k, v in pretrained_generator_dict.items()
+                    if (
+                        k.split("module.")[-1] in generator_dict
+                        and v.shape == generator_dict[k.split("module.")[-1]].shape
+                    )
+                }
 
-                    generator_dict.update(new_generator_dict)
+                generator_dict.update(new_generator_dict)
 
-                    self.model.load_state_dict(generator_dict)
-                else:
-                    self.model.load_state_dict(ckpt["generator_state_dict"])
+                self.model.load_state_dict(generator_dict)
             else:
-                self.model.load_state_dict(torch.load(checkpoint_dir)["state_dict"])
-            return str(checkpoint_dir)
+                self.model.load_state_dict(ckpt["generator_state_dict"])
+        else:
+            self.model.load_state_dict(torch.load(checkpoint_dir)["state_dict"])
+        return str(checkpoint_dir)
 
     def inference(self) -> None:
         """Inference via batches"""
@@ -423,8 +421,7 @@ def load_nnvocoder(
     if torch.cuda.is_available():
         model = model.cuda()
 
-    model = model.eval()
-    return model
+    return model.eval()
 
 
 def tensorize(data, device, n_samples):
@@ -434,8 +431,7 @@ def tensorize(data, device, n_samples):
     assert type(data) == list
     if n_samples:
         data = data[:n_samples]
-    data = [torch.as_tensor(x, device=device) for x in data]
-    return data
+    return [torch.as_tensor(x, device=device) for x in data]
 
 
 def synthesis(
@@ -465,7 +461,7 @@ def synthesis(
     # pred: (frame_len, n_mels) -> (n_mels, frame_len)
     mels_pred = tensorize([p.T for p in pred], device, n_samples)
     print(f"For predicted mels, #sample = {len(mels_pred)}...")
-    audios_pred = _vocoder_infer_funcs[vocoder_name](
+    return _vocoder_infer_funcs[vocoder_name](
         cfg,
         vocoder,
         mels_pred,
@@ -473,4 +469,3 @@ def synthesis(
         batch_size=batch_size,
         fast_inference=fast_inference,
     )
-    return audios_pred

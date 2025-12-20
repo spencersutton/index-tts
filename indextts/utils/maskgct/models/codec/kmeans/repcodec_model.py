@@ -23,8 +23,7 @@ def init_weights(m) -> None:
 def compute_codebook_perplexity(indices, codebook_size):
     indices = indices.flatten()
     prob = torch.bincount(indices, minlength=codebook_size).float() / indices.size(0)
-    perp = torch.exp(-torch.sum(prob * torch.log(prob + 1e-10)))
-    return perp
+    return torch.exp(-torch.sum(prob * torch.log(prob + 1e-10)))
 
 
 class RepCodec(nn.Module):

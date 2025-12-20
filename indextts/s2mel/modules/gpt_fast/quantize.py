@@ -119,9 +119,7 @@ def group_quantize_tensor_from_qparams(w, scales, zeros, n_bit=4, groupsize=128)
     min_val = zeros - scales * (2 ** (n_bit - 1))
     max_int = 2**n_bit - 1
     min_int = 0
-    w_int32 = to_quant.sub(min_val).div(scales).round().clamp_(min_int, max_int).to(torch.int32).reshape_as(w)
-
-    return w_int32
+    return to_quant.sub(min_val).div(scales).round().clamp_(min_int, max_int).to(torch.int32).reshape_as(w)
 
 
 def group_quantize_tensor(w, n_bit=4, groupsize=128):
@@ -143,8 +141,7 @@ def group_dequantize_tensor_from_qparams(w_int32, scales, zeros, n_bit=4, groups
     scales = scales.reshape(-1, 1)
     zeros = zeros.reshape(-1, 1)
 
-    w_dq = w_int32_grouped.sub(2 ** (n_bit - 1)).mul(scales).add(zeros).reshape_as(w_int32)
-    return w_dq
+    return w_int32_grouped.sub(2 ** (n_bit - 1)).mul(scales).add(zeros).reshape_as(w_int32)
 
 
 def group_dequantize_tensor(w_int32, scales_and_zeros, n_bit=4, groupsize=128):
@@ -365,8 +362,7 @@ def linear_forward_int4(x, weight_int4pack, scales_and_zeros, out_features, grou
     x = x.reshape(-1, origin_x_size[-1])
     c = torch.ops.aten._weight_int4pack_mm(x, weight_int4pack, groupsize, scales_and_zeros)
     new_shape = (*origin_x_size[:-1], out_features)
-    c = c.reshape(new_shape)
-    return c
+    return c.reshape(new_shape)
 
 
 def _check_linear_int4_k(k, groupsize=1, inner_k_tiles=1):

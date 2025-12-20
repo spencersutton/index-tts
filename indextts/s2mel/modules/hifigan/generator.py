@@ -83,9 +83,7 @@ class Snake(nn.Module):
         alpha = self.alpha.unsqueeze(0).unsqueeze(-1)  # line up with x to [B, C, T]
         if self.alpha_logscale:
             alpha = torch.exp(alpha)
-        x = x + (1.0 / (alpha + self.no_div_by_zero)) * pow(sin(x * alpha), 2)
-
-        return x
+        return x + (1.0 / (alpha + self.no_div_by_zero)) * pow(sin(x * alpha), 2)
 
 
 def get_padding(kernel_size, dilation=1):
@@ -173,8 +171,7 @@ class SineGen(torch.nn.Module):
 
     def _f02uv(self, f0):
         # generate uv signal
-        uv = (f0 > self.voiced_threshold).type(torch.float32)
-        return uv
+        return (f0 > self.voiced_threshold).type(torch.float32)
 
     @torch.no_grad()
     def forward(self, f0):
@@ -378,14 +375,13 @@ class HiFTGenerator(nn.Module):
         magnitude = torch.clip(magnitude, max=1e2)
         real = magnitude * torch.cos(phase)
         img = magnitude * torch.sin(phase)
-        inverse_transform = torch.istft(
+        return torch.istft(
             torch.complex(real, img),
             self.istft_params["n_fft"],
             self.istft_params["hop_len"],
             self.istft_params["n_fft"],
             window=self.stft_window.to(magnitude.device),
         )
-        return inverse_transform
 
     def forward(self, x: torch.Tensor, f0=None) -> torch.Tensor:
         if f0 is None:
@@ -422,8 +418,7 @@ class HiFTGenerator(nn.Module):
         phase = torch.sin(x[:, self.istft_params["n_fft"] // 2 + 1 :, :])  # actually, sin is redundancy
 
         x = self._istft(magnitude, phase)
-        x = torch.clamp(x, -self.audio_limit, self.audio_limit)
-        return x
+        return torch.clamp(x, -self.audio_limit, self.audio_limit)
 
     def remove_weight_norm(self) -> None:
         print("Removing weight norm...")

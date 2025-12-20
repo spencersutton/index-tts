@@ -219,8 +219,7 @@ class ConditioningEncoder(nn.Module):
         h = self.attn(h)
         if self.mean:
             return h.mean(dim=2)
-        else:
-            return h
+        return h
 
 
 class LearnedPositionEmbeddings(nn.Module):
@@ -526,8 +525,7 @@ class UnifiedVoice(nn.Module):
             second_logits = second_head(second_logits)
             second_logits = second_logits.permute(0, 2, 1)
             return first_logits, second_logits
-        else:
-            return first_logits
+        return first_logits
 
     def get_conditioning(self, speech_conditioning_input, cond_mel_lengths=None):
         if self.condition_type == "perceiver":

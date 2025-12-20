@@ -12,12 +12,10 @@ class MultiOptimizer:
         self.param_groups = reduce(lambda x, y: x + y, [v.param_groups for v in self.optimizers.values()])
 
     def state_dict(self):
-        state_dicts = [(key, self.optimizers[key].state_dict()) for key in self.keys]
-        return state_dicts
+        return [(key, self.optimizers[key].state_dict()) for key in self.keys]
 
     def scheduler_state_dict(self):
-        state_dicts = [(key, self.schedulers[key].state_dict()) for key in self.keys]
-        return state_dicts
+        return [(key, self.schedulers[key].state_dict()) for key in self.keys]
 
     def load_state_dict(self, state_dict) -> None:
         for key, val in state_dict:
@@ -58,9 +56,7 @@ class MultiOptimizer:
 
 
 def define_scheduler(optimizer, params):
-    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=params["gamma"])
-
-    return scheduler
+    return torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=params["gamma"])
 
 
 def build_optimizer(model_dict, lr, type="AdamW"):
@@ -82,5 +78,4 @@ def build_optimizer(model_dict, lr, type="AdamW"):
 
     schedulers = {key: torch.optim.lr_scheduler.ExponentialLR(opt, gamma=0.999996) for key, opt in optim.items()}
 
-    multi_optim = MultiOptimizer(optim, schedulers)
-    return multi_optim
+    return MultiOptimizer(optim, schedulers)

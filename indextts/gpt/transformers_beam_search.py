@@ -230,11 +230,10 @@ class BeamSearchScorer(BeamScorer):
                     f"A group beam size of {input_ids.shape[0]} is used as the input, but a group beam "
                     f"size of {self.group_size} is expected by the beam scorer."
                 )
-            else:
-                raise ValueError(
-                    f"A beam size of {input_ids.shape[0]} is used as the input, but a beam size of "
-                    f"{self.group_size} is expected by the beam scorer."
-                )
+            raise ValueError(
+                f"A beam size of {input_ids.shape[0]} is used as the input, but a beam size of "
+                f"{self.group_size} is expected by the beam scorer."
+            )
 
         device = input_ids.device
         next_beam_scores = torch.zeros((batch_size, self.group_size), dtype=next_scores.dtype, device=device)
@@ -562,11 +561,10 @@ class ConstrainedBeamSearchScorer(BeamScorer):
                     f"A group beam size of {input_ids.shape[0]} is used as the input, but a group beam "
                     f"size of {self.group_size} is expected by the beam scorer."
                 )
-            else:
-                raise ValueError(
-                    f"A beam size of {input_ids.shape[0]} is used as the input, but a beam size of "
-                    f"{self.group_size} is expected by the beam scorer."
-                )
+            raise ValueError(
+                f"A beam size of {input_ids.shape[0]} is used as the input, but a beam size of "
+                f"{self.group_size} is expected by the beam scorer."
+            )
 
         device = input_ids.device
 
@@ -981,23 +979,18 @@ class BeamHypotheses:
         # `False`: heuristic -- compute best possible score from `cur_len`, even though it is not entirely accurate
         #  when `length_penalty` is positive. See the discussion below for more details.
         # https://github.com/huggingface/transformers/pull/20901#issuecomment-1369845565
-        elif self.early_stopping is False:
+        if self.early_stopping is False:
             highest_attainable_score = best_sum_logprobs / (cur_len - decoder_prompt_len) ** self.length_penalty
-            ret = self.worst_score >= highest_attainable_score
-            return ret
+            return self.worst_score >= highest_attainable_score
         # `"never"`: compute the best possible score, depending on the signal of `length_penalty`
+        # `length_penalty` > 0.0 -> max denominator is obtaned from `max_length`, not from `cur_len` -> min
+        # abs(`highest_attainable_score`) is obtained -> `highest_attainable_score` is negative, hence we obtain
+        # its max this way
+        if self.length_penalty > 0.0:
+            if self.max_length <= decoder_prompt_len:
+                raise ValueError("max_length is not larger than decoder prompt length")
+            highest_attainable_score = best_sum_logprobs / (self.max_length - decoder_prompt_len) ** self.length_penalty
+        # the opposite logic applies here (max `highest_attainable_score` from `cur_len`)
         else:
-            # `length_penalty` > 0.0 -> max denominator is obtaned from `max_length`, not from `cur_len` -> min
-            # abs(`highest_attainable_score`) is obtained -> `highest_attainable_score` is negative, hence we obtain
-            # its max this way
-            if self.length_penalty > 0.0:
-                if self.max_length <= decoder_prompt_len:
-                    raise ValueError("max_length is not larger than decoder prompt length")
-                highest_attainable_score = (
-                    best_sum_logprobs / (self.max_length - decoder_prompt_len) ** self.length_penalty
-                )
-            # the opposite logic applies here (max `highest_attainable_score` from `cur_len`)
-            else:
-                highest_attainable_score = best_sum_logprobs / (cur_len - decoder_prompt_len) ** self.length_penalty
-            ret = self.worst_score >= highest_attainable_score
-            return ret
+            highest_attainable_score = best_sum_logprobs / (cur_len - decoder_prompt_len) ** self.length_penalty
+        return self.worst_score >= highest_attainable_score

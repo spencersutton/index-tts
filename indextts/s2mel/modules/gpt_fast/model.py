@@ -226,8 +226,7 @@ class Transformer(nn.Module):
             x = layer(x, c, input_pos, freqs_cis, mask, context, context_freqs_cis, cross_attention_mask, skip_in_x)
             if self.uvit_skip_connection and i in self.layers_emit_skip:
                 skip_in_x_list.append(x)
-        x = self.norm(x, c)
-        return x
+        return self.norm(x, c)
 
     @classmethod
     def from_name(cls, name: str):
@@ -277,8 +276,7 @@ class TransformerBlock(nn.Module):
             h = h + self.cross_attention(
                 self.cross_attention_norm(h, c), freqs_cis, cross_attention_mask, input_pos, context, context_freqs_cis
             )
-        out = h + self.feed_forward(self.ffn_norm(h, c))
-        return out
+        return h + self.feed_forward(self.ffn_norm(h, c))
 
 
 class Attention(nn.Module):
@@ -339,8 +337,7 @@ class Attention(nn.Module):
 
         y = y.transpose(1, 2).contiguous().view(bsz, seqlen, self.head_dim * self.n_head)
 
-        y = self.wo(y)
-        return y
+        return self.wo(y)
 
 
 class FeedForward(nn.Module):

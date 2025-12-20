@@ -22,8 +22,7 @@ def f0_to_coarse(f0, f0_bin):
     f0_coarse = f0_coarse * (f0_coarse > 0)
     f0_coarse = f0_coarse + ((f0_coarse < 1) * 1)
     f0_coarse = f0_coarse * (f0_coarse < f0_bin)
-    f0_coarse = f0_coarse + ((f0_coarse >= f0_bin) * (f0_bin - 1))
-    return f0_coarse
+    return f0_coarse + ((f0_coarse >= f0_bin) * (f0_bin - 1))
 
 
 class InterpolateRegulator(nn.Module):

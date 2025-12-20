@@ -7,8 +7,7 @@ I18N_JSON_DIR: os.PathLike = os.path.join(os.path.dirname(os.path.relpath(__file
 
 def load_language_list(language):
     with open(os.path.join(I18N_JSON_DIR, f"{language}.json"), encoding="utf-8") as f:
-        language_list = json.load(f)
-    return language_list
+        return json.load(f)
 
 
 def scan_language_list():

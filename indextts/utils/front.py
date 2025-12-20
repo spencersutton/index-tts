@@ -83,8 +83,7 @@ class TextNormalizer:
         if has_chinese or not has_alpha or is_email:
             return True
 
-        has_pinyin = bool(re.search(TextNormalizer.PINYIN_TONE_PATTERN, s, re.IGNORECASE))
-        return has_pinyin
+        return bool(re.search(TextNormalizer.PINYIN_TONE_PATTERN, s, re.IGNORECASE))
 
     def load(self) -> None:
         import platform
@@ -289,8 +288,7 @@ class TextTokenizer:
         }
 
     def get_vocab(self):
-        vocab = {self.convert_ids_to_tokens(i): i for i in range(self.vocab_size)}
-        return vocab
+        return {self.convert_ids_to_tokens(i): i for i in range(self.vocab_size)}
 
     @overload
     def convert_ids_to_tokens(self, ids: int) -> str: ...

@@ -81,9 +81,7 @@ class SnakeBeta(nn.Module):
         if self.alpha_logscale:
             alpha = torch.exp(alpha)
             beta = torch.exp(beta)
-        x = x + (1.0 / (beta + self.no_div_by_zero)) * pow(sin(x * alpha), 2)
-
-        return x
+        return x + (1.0 / (beta + self.no_div_by_zero)) * pow(sin(x * alpha), 2)
 
 
 class ResidualUnit(nn.Module):
@@ -119,8 +117,7 @@ class CNNLSTM(nn.Module):
         x = self.model(x)
         if self.global_pred:
             x = torch.mean(x, dim=1, keepdim=False)
-        outs = [head(x) for head in self.heads]
-        return outs
+        return [head(x) for head in self.heads]
 
 
 def sequence_mask(length, max_length=None):

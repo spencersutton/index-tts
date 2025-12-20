@@ -46,8 +46,7 @@ def load_config(config_fn, lowercase=False):
     """
     config_ = _load_config(config_fn, lowercase=lowercase)
     # create an JsonHParams object with configuration dict
-    cfg = JsonHParams(**config_)
-    return cfg
+    return JsonHParams(**config_)
 
 
 class JsonHParams:
@@ -144,15 +143,13 @@ class Inference_Pipeline:
             output_hidden_states=True,
         )
         feat = vq_emb.hidden_states[17]  # (B, T, C)
-        feat = (feat - self.semantic_mean.to(feat)) / self.semantic_std.to(feat)
-        return feat
+        return (feat - self.semantic_mean.to(feat)) / self.semantic_std.to(feat)
 
     @torch.no_grad()
     def extract_acoustic_code(self, speech):
         vq_emb = self.codec_encoder(speech.unsqueeze(1))
         _, vq, _, _, _ = self.codec_decoder.quantizer(vq_emb)
-        acoustic_code = vq.permute(1, 2, 0)
-        return acoustic_code
+        return vq.permute(1, 2, 0)
 
     @torch.no_grad()
     def get_scode(self, inputs):
@@ -249,5 +246,4 @@ class Inference_Pipeline:
             torch.tensor(speech).unsqueeze(0).unsqueeze(1).to(combine_semantic_code.device)
         )
         recovered_prompt_audio = self.codec_decoder(prompt_vq_emb)
-        recovered_prompt_audio = recovered_prompt_audio[0][0].cpu().numpy()
-        return recovered_prompt_audio
+        return recovered_prompt_audio[0][0].cpu().numpy()

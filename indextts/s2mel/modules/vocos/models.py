@@ -81,8 +81,7 @@ class VocosBackbone(Backbone):
         x = x.transpose(1, 2)
         for conv_block in self.convnext:
             x = conv_block(x, cond_embedding_id=bandwidth_id)
-        x = self.final_layer_norm(x.transpose(1, 2))
-        return x
+        return self.final_layer_norm(x.transpose(1, 2))
 
 
 class VocosResNetBackbone(Backbone):
@@ -114,5 +113,4 @@ class VocosResNetBackbone(Backbone):
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
         x = self.embed(x)
         x = self.resnet(x)
-        x = x.transpose(1, 2)
-        return x
+        return x.transpose(1, 2)

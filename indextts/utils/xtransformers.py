@@ -372,8 +372,7 @@ class RMSScaleShiftNorm(nn.Module):
 
         ss_emb = self.scale_shift_process(norm_scale_shift_inp)
         scale, shift = torch.chunk(ss_emb, 2, dim=1)
-        h = norm * (1 + scale.unsqueeze(1)) + shift.unsqueeze(1)
-        return h
+        return norm * (1 + scale.unsqueeze(1)) + shift.unsqueeze(1)
 
 
 # residual and residual gates

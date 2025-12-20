@@ -49,8 +49,7 @@ def logits_to_probs(logits, temperature: float = 1.0, top_k: int | None = None):
         v, _ = torch.topk(logits, min(top_k, logits.size(-1)))
         pivot = v.select(-1, -1).unsqueeze(-1)
         logits = torch.where(logits < pivot, -float("Inf"), logits)
-    probs = torch.nn.functional.softmax(logits, dim=-1)
-    return probs
+    return torch.nn.functional.softmax(logits, dim=-1)
 
 
 def sample(logits, temperature: float = 1.0, top_k: int | None = None):
@@ -143,15 +142,14 @@ def speculative_decode(
             orig_input_pos + speculate_k,
         )
         return torch.cat([draft_tokens, last_token])
-    else:
-        accept_length = rejected_locations[0].item()
-        p = draft_probs[accept_length]
-        q = target_probs[accept_length]
-        new = q - p
-        new = torch.where(new > 0, new, 0.0)
-        new = new / new.sum()
-        next_token = multinomial_sample_one_no_sync(new)
-        return torch.cat([draft_tokens[:accept_length], next_token])
+    accept_length = rejected_locations[0].item()
+    p = draft_probs[accept_length]
+    q = target_probs[accept_length]
+    new = q - p
+    new = torch.where(new > 0, new, 0.0)
+    new = new / new.sum()
+    next_token = multinomial_sample_one_no_sync(new)
+    return torch.cat([draft_tokens[:accept_length], next_token])
 
 
 @torch.no_grad()

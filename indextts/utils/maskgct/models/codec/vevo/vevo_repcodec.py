@@ -177,8 +177,7 @@ class Quantizer(nn.Module):
         return zq, indices
 
     def decode(self, indices):
-        z = self.codebook.lookup(indices)
-        return z
+        return self.codebook.lookup(indices)
 
 
 class Conv1d1x1(nn.Conv1d):
@@ -225,8 +224,7 @@ class Conv1d(nn.Module):
         Returns:
             Tensor: Float tensor variable with the shape (B, C, T).
         """
-        x = self.conv(x)
-        return x
+        return self.conv(x)
 
 
 class ConvTranspose1d(nn.Module):
@@ -264,8 +262,7 @@ class ConvTranspose1d(nn.Module):
         Returns:
             Tensor: Float tensor variable with the shape (B, C', T').
         """
-        x = self.deconv(x)
-        return x
+        return self.deconv(x)
 
 
 class ResidualUnit(nn.Module):
@@ -340,8 +337,7 @@ class EncoderBlock(nn.Module):
     def forward(self, x):
         for idx in range(self.num_res):
             x = self.res_units[idx](x)
-        x = self.conv(x)
-        return x
+        return self.conv(x)
 
 
 class Encoder(nn.Module):
@@ -490,8 +486,7 @@ class Decoder(nn.Module):
         x = self.conv1(z)
         for i in range(self.num_blocks):
             x = self.conv_blocks[i](x)
-        x = self.conv2(x)
-        return x
+        return self.conv2(x)
 
 
 class VevoRepCodec(nn.Module):

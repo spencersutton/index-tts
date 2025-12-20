@@ -219,8 +219,7 @@ def get_parameter_device(parameter: Union[nn.Module, "ModuleUtilsMixin"]):
         # For nn.DataParallel compatibility in PyTorch 1.5
 
         def find_tensor_attributes(module: nn.Module) -> list[tuple[str, Tensor]]:
-            tuples = [(k, v) for k, v in module.__dict__.items() if torch.is_tensor(v)]
-            return tuples
+            return [(k, v) for k, v in module.__dict__.items() if torch.is_tensor(v)]
 
         gen = parameter._named_members(get_members_fn=find_tensor_attributes)
         first_tuple = next(gen)
@@ -237,8 +236,7 @@ def get_first_parameter_dtype(parameter: Union[nn.Module, "ModuleUtilsMixin"]):
         # For nn.DataParallel compatibility in PyTorch > 1.5
 
         def find_tensor_attributes(module: nn.Module) -> list[tuple[str, Tensor]]:
-            tuples = [(k, v) for k, v in module.__dict__.items() if torch.is_tensor(v)]
-            return tuples
+            return [(k, v) for k, v in module.__dict__.items() if torch.is_tensor(v)]
 
         gen = parameter._named_members(get_members_fn=find_tensor_attributes)
         first_tuple = next(gen)
@@ -272,8 +270,7 @@ def get_parameter_dtype(parameter: Union[nn.Module, "ModuleUtilsMixin"]):
 
     # For nn.DataParallel compatibility in PyTorch > 1.5
     def find_tensor_attributes(module: nn.Module) -> list[tuple[str, Tensor]]:
-        tuples = [(k, v) for k, v in module.__dict__.items() if torch.is_tensor(v)]
-        return tuples
+        return [(k, v) for k, v in module.__dict__.items() if torch.is_tensor(v)]
 
     gen = parameter._named_members(get_members_fn=find_tensor_attributes)
     last_tuple = None
@@ -411,8 +408,7 @@ def shard_checkpoint(
         # check: https://github.com/huggingface/transformers/pull/24416 for more details
         if isinstance(weight, str):
             continue
-        else:
-            storage_id = id_tensor_storage(weight)
+        storage_id = id_tensor_storage(weight)
 
         # If a `weight` shares the same underlying storage as another tensor, we put `weight` in the same `block`
         if storage_id in storage_id_to_block and weight.device != torch.device("meta"):
@@ -592,11 +588,10 @@ def load_state_dict(
                         "git-lfs and run `git lfs install` followed by `git lfs pull` in the folder "
                         "you cloned."
                     )
-                else:
-                    raise ValueError(
-                        f"Unable to locate the file {checkpoint_file} which is necessary to load this pretrained "
-                        "model. Make sure you have saved the model properly."
-                    ) from e
+                raise ValueError(
+                    f"Unable to locate the file {checkpoint_file} which is necessary to load this pretrained "
+                    "model. Make sure you have saved the model properly."
+                ) from e
         except (UnicodeDecodeError, ValueError):
             raise OSError(
                 f"Unable to load weights from pytorch checkpoint file for '{checkpoint_file}' "
@@ -1026,7 +1021,6 @@ class ModuleUtilsMixin:
         process = psutil.Process(os.getpid())
         mem = process.memory_info()
         module.mem_rss_pre_forward = mem.rss
-        return None
 
     @staticmethod
     def _hook_rss_memory_post_forward(module, *args, **kwargs) -> None:
@@ -1040,7 +1034,6 @@ class ModuleUtilsMixin:
         module.mem_rss_post_forward = mem.rss
         mem_rss_diff = module.mem_rss_post_forward - module.mem_rss_pre_forward
         module.mem_rss_diff = mem_rss_diff + (module.mem_rss_diff if hasattr(module, "mem_rss_diff") else 0)
-        return None
 
     def add_memory_hooks(self) -> None:
         """
@@ -1098,9 +1091,7 @@ class ModuleUtilsMixin:
         # encoder_extended_attention_mask = (encoder_extended_attention_mask ==
         # encoder_extended_attention_mask.transpose(-1, -2))
         encoder_extended_attention_mask = encoder_extended_attention_mask.to(dtype=self.dtype)  # fp16 compatibility
-        encoder_extended_attention_mask = (1.0 - encoder_extended_attention_mask) * torch.finfo(self.dtype).min
-
-        return encoder_extended_attention_mask
+        return (1.0 - encoder_extended_attention_mask) * torch.finfo(self.dtype).min
 
     @staticmethod
     def create_extended_attention_mask_for_decoder(input_shape, attention_mask, device=None):
@@ -1127,8 +1118,7 @@ class ModuleUtilsMixin:
                 axis=-1,
             )
 
-        extended_attention_mask = causal_mask[:, None, :, :] * attention_mask[:, None, None, :]
-        return extended_attention_mask
+        return causal_mask[:, None, :, :] * attention_mask[:, None, None, :]
 
     def get_extended_attention_mask(
         self, attention_mask: Tensor, input_shape: tuple[int], device: torch.device = None, dtype: torch.float = None
@@ -1179,8 +1169,7 @@ class ModuleUtilsMixin:
         # Since we are adding it to the raw scores before the softmax, this is
         # effectively the same as removing these entirely.
         extended_attention_mask = extended_attention_mask.to(dtype=dtype)  # fp16 compatibility
-        extended_attention_mask = (1.0 - extended_attention_mask) * torch.finfo(dtype).min
-        return extended_attention_mask
+        return (1.0 - extended_attention_mask) * torch.finfo(dtype).min
 
     def get_head_mask(
         self, head_mask: Tensor | None, num_hidden_layers: int, is_attention_chunked: bool = False
@@ -1217,8 +1206,7 @@ class ModuleUtilsMixin:
         elif head_mask.dim() == 2:
             head_mask = head_mask.unsqueeze(1).unsqueeze(-1).unsqueeze(-1)  # We can specify head_mask for each layer
         assert head_mask.dim() == 5, f"head_mask.dim != 5, instead {head_mask.dim()}"
-        head_mask = head_mask.to(dtype=self.dtype)  # switch to float if need + fp16 compatibility
-        return head_mask
+        return head_mask.to(dtype=self.dtype)  # switch to float if need + fp16 compatibility
 
     def num_parameters(self, only_trainable: bool = False, exclude_embeddings: bool = False) -> int:
         """
@@ -1288,7 +1276,7 @@ class ModuleUtilsMixin:
             self.warnings_issued = {}
         if self.main_input_name in input_dict:
             return input_dict[self.main_input_name].numel()
-        elif "estimate_tokens" not in self.warnings_issued:
+        if "estimate_tokens" not in self.warnings_issued:
             logger.warning(
                 "Could not estimate the number of tokens of the input, floating-point operations will not be computed"
             )
@@ -1743,19 +1731,17 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                     raise ImportError(
                         f"{preface} you need flash_attn package version to be greater or equal than 2.1.0. Detected version {flash_attention_version}. {install_message}"
                     )
-                elif not torch.cuda.is_available():
+                if not torch.cuda.is_available():
                     raise ValueError(
                         f"{preface} Flash Attention 2 is not available on CPU. Please make sure torch can access a CUDA device."
                     )
-                else:
-                    raise ImportError(f"{preface} Flash Attention 2 is not available. {install_message}")
-            elif torch.version.hip:
+                raise ImportError(f"{preface} Flash Attention 2 is not available. {install_message}")
+            if torch.version.hip:
                 if flash_attention_version < version.parse("2.0.4"):
                     raise ImportError(
                         f"{preface} you need flash_attn package version to be greater or equal than 2.0.4. Make sure to have that version installed - detected version {flash_attention_version}. {install_message}"
                     )
-                else:
-                    raise ImportError(f"{preface} Flash Attention 2 is not available. {install_message}")
+                raise ImportError(f"{preface} Flash Attention 2 is not available. {install_message}")
 
         is_bettertransformer = getattr(cls, "use_bettertransformer", False)
 
@@ -1858,8 +1844,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         base_model = getattr(self, self.base_model_prefix, self)
         if base_model is not self:
             return base_model.get_input_embeddings()
-        else:
-            raise NotImplementedError
+        raise NotImplementedError
 
     def set_input_embeddings(self, value: nn.Module) -> None:
         """
@@ -2061,8 +2046,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                             f"{module.__class__.__name__} does not support `device_map='{device_map}'`. To implement support, the model "
                             "class needs to implement the `_no_split_modules` attribute."
                         )
-                    else:
-                        no_split_modules = no_split_modules | set(module._no_split_modules)
+                    no_split_modules = no_split_modules | set(module._no_split_modules)
                 modules_to_check += list(module.children())
         return list(no_split_modules)
 
@@ -3096,13 +3080,14 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                     "Calling `cuda()` is not supported for `8-bit` quantized models. "
                     " Please use the model as it is, since the model has already been set to the correct devices."
                 )
-            elif version.parse(importlib.metadata.version("bitsandbytes")) < version.parse("0.43.2"):
+            if version.parse(importlib.metadata.version("bitsandbytes")) < version.parse("0.43.2"):
                 raise ValueError(
                     "Calling `cuda()` is not supported for `4-bit` quantized models with the installed version of bitsandbytes. "
                     f"The current device is `{self.device}`. If you intended to move the model, please install bitsandbytes >= 0.43.2."
                 )
         else:
             return super().cuda(*args, **kwargs)
+        return None
 
     @wraps(torch.nn.Module.to)
     def to(self, *args, **kwargs):
@@ -3131,7 +3116,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                     "`.to` is not supported for `8-bit` bitsandbytes models. Please use the model as it is, since the"
                     " model has already been set to the correct devices and casted to the correct `dtype`."
                 )
-            elif version.parse(importlib.metadata.version("bitsandbytes")) < version.parse("0.43.2"):
+            if version.parse(importlib.metadata.version("bitsandbytes")) < version.parse("0.43.2"):
                 raise ValueError(
                     "Calling `to()` is not supported for `4-bit` quantized models with the installed version of bitsandbytes. "
                     f"The current device is `{self.device}`. If you intended to move the model, please install bitsandbytes >= 0.43.2."
@@ -3151,8 +3136,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                 "`.half()` is not supported for quantized model. Please use the model as it is, since the"
                 " model has already been casted to the correct `dtype`."
             )
-        else:
-            return super().half(*args)
+        return super().half(*args)
 
     def float(self, *args):
         # Checks if the model is quantized
@@ -3161,8 +3145,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                 "`.float()` is not supported for quantized model. Please use the model as it is, since the"
                 " model has already been casted to the correct `dtype`."
             )
-        else:
-            return super().float(*args)
+        return super().float(*args)
 
     @classmethod
     def from_pretrained(
@@ -3547,8 +3530,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                 raise ValueError(
                     "You can't pass device_map as a negative int. If you want to put the model on the cpu, pass device_map = 'cpu' "
                 )
-            else:
-                device_map = {"": device_map}
+            device_map = {"": device_map}
 
         if device_map is not None:
             if low_cpu_mem_usage is None:
@@ -3561,7 +3543,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                 raise ValueError(
                     "DeepSpeed Zero-3 is not compatible with `low_cpu_mem_usage=True` or with passing a `device_map`."
                 )
-            elif not is_accelerate_available():
+            if not is_accelerate_available():
                 raise ImportError(
                     f"Using `low_cpu_mem_usage=True` or a `device_map` requires Accelerate: `pip install 'accelerate>={ACCELERATE_MIN_VERSION}'`"
                 )
@@ -3883,13 +3865,13 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                                     f" {_add_variant(WEIGHTS_NAME, variant)} but there is a file for TensorFlow weights."
                                     " Use `from_tf=True` to load this model from those weights."
                                 )
-                            elif has_file(pretrained_model_name_or_path, FLAX_WEIGHTS_NAME, **has_file_kwargs):
+                            if has_file(pretrained_model_name_or_path, FLAX_WEIGHTS_NAME, **has_file_kwargs):
                                 raise OSError(
                                     f"{pretrained_model_name_or_path} does not appear to have a file named"
                                     f" {_add_variant(WEIGHTS_NAME, variant)} but there is a file for Flax weights. Use"
                                     " `from_flax=True` to load this model from those weights."
                                 )
-                            elif variant is not None and has_file(
+                            if variant is not None and has_file(
                                 pretrained_model_name_or_path, WEIGHTS_NAME, **has_file_kwargs
                             ):
                                 raise OSError(
@@ -3897,12 +3879,11 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                                     f" {_add_variant(WEIGHTS_NAME, variant)} but there is a file without the variant"
                                     f" {variant}. Use `variant=None` to load this model from those weights."
                                 )
-                            else:
-                                raise OSError(
-                                    f"{pretrained_model_name_or_path} does not appear to have a file named"
-                                    f" {_add_variant(WEIGHTS_NAME, variant)}, {_add_variant(SAFE_WEIGHTS_NAME, variant)},"
-                                    f" {TF2_WEIGHTS_NAME}, {TF_WEIGHTS_NAME} or {FLAX_WEIGHTS_NAME}."
-                                )
+                            raise OSError(
+                                f"{pretrained_model_name_or_path} does not appear to have a file named"
+                                f" {_add_variant(WEIGHTS_NAME, variant)}, {_add_variant(SAFE_WEIGHTS_NAME, variant)},"
+                                f" {TF2_WEIGHTS_NAME}, {TF_WEIGHTS_NAME} or {FLAX_WEIGHTS_NAME}."
+                            )
 
                 except OSError:
                     # Raise any environment error raise by `cached_file`. It will have a helpful error message adapted
@@ -4862,14 +4843,13 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         _move_model_to_meta(model, loaded_state_dict_keys, start_prefix)
         state_dict = load_state_dict(resolved_archive_file, weights_only=weights_only)
         expected_keys = loaded_state_dict_keys  # plug for missing expected_keys. TODO: replace with proper keys
-        error_msgs = _load_state_dict_into_meta_model(
+        return _load_state_dict_into_meta_model(
             model,
             state_dict,
             start_prefix,
             expected_keys=expected_keys,
             hf_quantizer=hf_quantizer,
         )
-        return error_msgs
 
     @classmethod
     def register_for_auto_class(cls, auto_class="AutoModel") -> None:
@@ -5188,9 +5168,7 @@ class PoolerAnswerClass(nn.Module):
 
         x = self.dense_0(torch.cat([start_states, cls_token_state], dim=-1))
         x = self.activation(x)
-        x = self.dense_1(x).squeeze(-1)
-
-        return x
+        return self.dense_1(x).squeeze(-1)
 
 
 @dataclass
@@ -5301,44 +5279,42 @@ class SQuADHead(nn.Module):
 
             return SquadHeadOutput(loss=total_loss) if return_dict else (total_loss,)
 
-        else:
-            # during inference, compute the end logits based on beam search
-            _bsz, slen, hsz = hidden_states.size()
-            start_log_probs = nn.functional.softmax(start_logits, dim=-1)  # shape (bsz, slen)
+        # during inference, compute the end logits based on beam search
+        _bsz, slen, hsz = hidden_states.size()
+        start_log_probs = nn.functional.softmax(start_logits, dim=-1)  # shape (bsz, slen)
 
-            start_top_log_probs, start_top_index = torch.topk(
-                start_log_probs, self.start_n_top, dim=-1
-            )  # shape (bsz, start_n_top)
-            start_top_index_exp = start_top_index.unsqueeze(-1).expand(-1, -1, hsz)  # shape (bsz, start_n_top, hsz)
-            start_states = torch.gather(hidden_states, -2, start_top_index_exp)  # shape (bsz, start_n_top, hsz)
-            start_states = start_states.unsqueeze(1).expand(-1, slen, -1, -1)  # shape (bsz, slen, start_n_top, hsz)
+        start_top_log_probs, start_top_index = torch.topk(
+            start_log_probs, self.start_n_top, dim=-1
+        )  # shape (bsz, start_n_top)
+        start_top_index_exp = start_top_index.unsqueeze(-1).expand(-1, -1, hsz)  # shape (bsz, start_n_top, hsz)
+        start_states = torch.gather(hidden_states, -2, start_top_index_exp)  # shape (bsz, start_n_top, hsz)
+        start_states = start_states.unsqueeze(1).expand(-1, slen, -1, -1)  # shape (bsz, slen, start_n_top, hsz)
 
-            hidden_states_expanded = hidden_states.unsqueeze(2).expand_as(
-                start_states
-            )  # shape (bsz, slen, start_n_top, hsz)
-            p_mask = p_mask.unsqueeze(-1) if p_mask is not None else None
-            end_logits = self.end_logits(hidden_states_expanded, start_states=start_states, p_mask=p_mask)
-            end_log_probs = nn.functional.softmax(end_logits, dim=1)  # shape (bsz, slen, start_n_top)
+        hidden_states_expanded = hidden_states.unsqueeze(2).expand_as(
+            start_states
+        )  # shape (bsz, slen, start_n_top, hsz)
+        p_mask = p_mask.unsqueeze(-1) if p_mask is not None else None
+        end_logits = self.end_logits(hidden_states_expanded, start_states=start_states, p_mask=p_mask)
+        end_log_probs = nn.functional.softmax(end_logits, dim=1)  # shape (bsz, slen, start_n_top)
 
-            end_top_log_probs, end_top_index = torch.topk(
-                end_log_probs, self.end_n_top, dim=1
-            )  # shape (bsz, end_n_top, start_n_top)
-            end_top_log_probs = end_top_log_probs.view(-1, self.start_n_top * self.end_n_top)
-            end_top_index = end_top_index.view(-1, self.start_n_top * self.end_n_top)
+        end_top_log_probs, end_top_index = torch.topk(
+            end_log_probs, self.end_n_top, dim=1
+        )  # shape (bsz, end_n_top, start_n_top)
+        end_top_log_probs = end_top_log_probs.view(-1, self.start_n_top * self.end_n_top)
+        end_top_index = end_top_index.view(-1, self.start_n_top * self.end_n_top)
 
-            start_states = torch.einsum("blh,bl->bh", hidden_states, start_log_probs)
-            cls_logits = self.answer_class(hidden_states, start_states=start_states, cls_index=cls_index)
+        start_states = torch.einsum("blh,bl->bh", hidden_states, start_log_probs)
+        cls_logits = self.answer_class(hidden_states, start_states=start_states, cls_index=cls_index)
 
-            if not return_dict:
-                return (start_top_log_probs, start_top_index, end_top_log_probs, end_top_index, cls_logits)
-            else:
-                return SquadHeadOutput(
-                    start_top_log_probs=start_top_log_probs,
-                    start_top_index=start_top_index,
-                    end_top_log_probs=end_top_log_probs,
-                    end_top_index=end_top_index,
-                    cls_logits=cls_logits,
-                )
+        if not return_dict:
+            return (start_top_log_probs, start_top_index, end_top_log_probs, end_top_index, cls_logits)
+        return SquadHeadOutput(
+            start_top_log_probs=start_top_log_probs,
+            start_top_index=start_top_index,
+            end_top_log_probs=end_top_log_probs,
+            end_top_index=end_top_index,
+            cls_logits=cls_logits,
+        )
 
 
 class SequenceSummary(nn.Module):
@@ -5433,9 +5409,7 @@ class SequenceSummary(nn.Module):
         output = self.first_dropout(output)
         output = self.summary(output)
         output = self.activation(output)
-        output = self.last_dropout(output)
-
-        return output
+        return self.last_dropout(output)
 
 
 def unwrap_model(model: nn.Module, recursive: bool = False) -> nn.Module:
@@ -5457,15 +5431,12 @@ def unwrap_model(model: nn.Module, recursive: bool = False) -> nn.Module:
                 raise RuntimeError(
                     "Setting `recursive=True` to `unwrap_model` requires `accelerate` v0.29.0. Please upgrade your version of accelerate"
                 )
-            else:
-                kwargs["recursive"] = recursive
+            kwargs["recursive"] = recursive
         return extract_model_from_parallel(model, **kwargs)
-    else:
-        # since there could be multiple levels of wrapping, unwrap recursively
-        if hasattr(model, "module"):
-            return unwrap_model(model.module)
-        else:
-            return model
+    # since there could be multiple levels of wrapping, unwrap recursively
+    if hasattr(model, "module"):
+        return unwrap_model(model.module)
+    return model
 
 
 def expand_device_map(device_map, param_names, start_prefix):

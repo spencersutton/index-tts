@@ -221,8 +221,7 @@ class IndexTTS2:
             output_hidden_states=True,
         )
         feat = vq_emb.hidden_states[17]  # (B, T, C)
-        feat = (feat - self.semantic_mean) / self.semantic_std
-        return feat
+        return (feat - self.semantic_mean) / self.semantic_std
 
     def remove_long_silence(self, codes: torch.Tensor, silent_token=52, max_consecutive=30):
         """
@@ -386,31 +385,30 @@ class IndexTTS2:
                 more_segment_before,
                 **generation_kwargs,
             )
-        else:
-            try:
-                return next(
-                    iter(
-                        self.infer_generator(
-                            spk_audio_prompt,
-                            text,
-                            output_path,
-                            emo_audio_prompt,
-                            emo_alpha,
-                            emo_vector,
-                            use_emo_text,
-                            emo_text,
-                            use_random,
-                            interval_silence,
-                            verbose,
-                            max_text_tokens_per_segment,
-                            stream_return,
-                            more_segment_before,
-                            **generation_kwargs,
-                        )
+        try:
+            return next(
+                iter(
+                    self.infer_generator(
+                        spk_audio_prompt,
+                        text,
+                        output_path,
+                        emo_audio_prompt,
+                        emo_alpha,
+                        emo_vector,
+                        use_emo_text,
+                        emo_text,
+                        use_random,
+                        interval_silence,
+                        verbose,
+                        max_text_tokens_per_segment,
+                        stream_return,
+                        more_segment_before,
+                        **generation_kwargs,
                     )
                 )
-            except IndexError:
-                return None
+            )
+        except IndexError:
+            return None
 
     def infer_generator(
         self,
@@ -772,8 +770,7 @@ def find_most_similar_cosine(query_vector, matrix):
     matrix = matrix.float()
 
     similarities = F.cosine_similarity(query_vector, matrix, dim=1)
-    most_similar_index = torch.argmax(similarities)
-    return most_similar_index
+    return torch.argmax(similarities)
 
 
 class QwenEmotion:

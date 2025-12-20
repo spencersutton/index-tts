@@ -119,19 +119,31 @@ preview = true
 show-fixes = true
 
 [tool.ruff.lint]
-extend-select = ["I", "SIM", "FURB", "ANN", "UP", "B", "RUF", "PIE", "C", "PLW"]
+extend-select = [
+  "ANN",
+  "B",
+  "C",
+  "FURB",
+  "I",
+  "PIE",
+  "PLW",
+  "RET",
+  "RUF",
+  "SIM",
+  "UP",
+]
 ignore = [
-  "SIM108",
-  "FURB118",
   "ANN401",
-  "B008",
-  "B905",
-  "B028",
   "B006",
+  "B008",
+  "B028",
+  "B905",
+  "FURB118",
+  "PLW1514",
   "RUF001",
   "RUF002",
   "RUF003",
-  "PLW1514",
+  "SIM108",
 ]
 
 [tool.ruff.lint.isort]

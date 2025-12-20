@@ -221,9 +221,8 @@ class ConditioningEncoder(nn.Module):
         h = self.attn(h)
         if self.mean:
             return h.mean(dim=2)
-        else:
-            return h
-            # return h[:, :, 0]
+        return h
+        # return h[:, :, 0]
 
 
 class LearnedPositionEmbeddings(nn.Module):
@@ -587,8 +586,7 @@ class UnifiedVoice(nn.Module):
             second_logits = second_head(second_logits)
             second_logits = second_logits.permute(0, 2, 1)
             return first_logits, second_logits
-        else:
-            return first_logits
+        return first_logits
 
     def get_conditioning(self, speech_conditioning_input, cond_mel_lengths=None):
         if self.condition_type == "perceiver":
@@ -893,8 +891,7 @@ class UnifiedVoice(nn.Module):
     def get_emovec(self, emo_speech_conditioning_latent, emo_cond_lengths):
         emo_vec_syn_ori = self.get_emo_conditioning(emo_speech_conditioning_latent.transpose(1, 2), emo_cond_lengths)
         emo_vec_syn = self.emovec_layer(emo_vec_syn_ori)
-        emo_vec = self.emo_layer(emo_vec_syn)
-        return emo_vec
+        return self.emo_layer(emo_vec_syn)
 
     def merge_emovec(
         self, speech_conditioning_latent, emo_speech_conditioning_latent, cond_lengths, emo_cond_lengths, alpha=1.0
@@ -902,5 +899,4 @@ class UnifiedVoice(nn.Module):
         emo_vec = self.get_emovec(emo_speech_conditioning_latent, emo_cond_lengths)
         base_vec = self.get_emovec(speech_conditioning_latent, cond_lengths)
 
-        out = base_vec + alpha * (emo_vec - base_vec)
-        return out
+        return base_vec + alpha * (emo_vec - base_vec)

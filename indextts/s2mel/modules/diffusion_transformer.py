@@ -57,8 +57,7 @@ class TimestepEmbedder(nn.Module):
 
     def forward(self, t):
         t_freq = self.timestep_embedding(t)
-        t_emb = self.mlp(t_freq)
-        return t_emb
+        return self.mlp(t_freq)
 
 
 class StyleEmbedder(nn.Module):
@@ -80,8 +79,7 @@ class StyleEmbedder(nn.Module):
             labels = self.token_drop(labels, force_drop_ids)
         else:
             labels = self.style_in(labels)
-        embeddings = labels
-        return embeddings
+        return labels
 
 
 class FinalLayer(nn.Module):
@@ -98,8 +96,7 @@ class FinalLayer(nn.Module):
     def forward(self, x, c):
         shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
         x = modulate(self.norm_final(x), shift, scale)
-        x = self.linear(x)
-        return x
+        return self.linear(x)
 
 
 class DiT(torch.nn.Module):

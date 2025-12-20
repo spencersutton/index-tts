@@ -37,8 +37,7 @@ class MPD(nn.Module):
 
     def pad_to_period(self, x):
         t = x.shape[-1]
-        x = F.pad(x, (0, self.period - t % self.period), mode="reflect")
-        return x
+        return F.pad(x, (0, self.period - t % self.period), mode="reflect")
 
     def forward(self, x):
         fmap = []
@@ -144,8 +143,7 @@ class MRD(nn.Module):
         x = torch.view_as_real(x.stft())
         x = rearrange(x, "b 1 f t c -> (b 1) c t f")
         # Split into bands
-        x_bands = [x[..., b[0] : b[1]] for b in self.bands]
-        return x_bands
+        return [x[..., b[0] : b[1]] for b in self.bands]
 
     def forward(self, x):
         x_bands = self.spectrogram(x)
@@ -201,13 +199,11 @@ class Discriminator(nn.Module):
         # Remove DC offset
         y = y - y.mean(dim=-1, keepdims=True)
         # Peak normalize the volume of input audio
-        y = 0.8 * y / (y.abs().max(dim=-1, keepdim=True)[0] + 1e-9)
-        return y
+        return 0.8 * y / (y.abs().max(dim=-1, keepdim=True)[0] + 1e-9)
 
     def forward(self, x):
         x = self.preprocess(x)
-        fmaps = [d(x) for d in self.discriminators]
-        return fmaps
+        return [d(x) for d in self.discriminators]
 
 
 if __name__ == "__main__":

@@ -498,7 +498,7 @@ class GenerationMixin:
                 f"`inputs`: {inputs}` were passed alongside {input_name} which is not allowed. "
                 f"Make sure to either pass {inputs} or {input_name}=..."
             )
-        elif inputs_kwarg is not None:
+        if inputs_kwarg is not None:
             inputs = inputs_kwarg
 
         # 3. In the presence of `inputs_embeds` for text models:
@@ -588,10 +588,9 @@ class GenerationMixin:
         can_infer_attention_mask = is_pad_token_in_inputs * is_pad_token_not_equal_to_eos_token_id
         attention_mask_from_padding = inputs.ne(pad_token_id).long()
 
-        attention_mask = (
+        return (
             attention_mask_from_padding * can_infer_attention_mask + default_attention_mask * ~can_infer_attention_mask
         )
-        return attention_mask
 
     def _prepare_encoder_decoder_kwargs_for_generation(
         self,
@@ -1101,8 +1100,7 @@ class GenerationMixin:
             criteria.append(
                 ConfidenceCriteria(assistant_confidence_threshold=generation_config.assistant_confidence_threshold)
             )
-        criteria = self._merge_criteria_processor_list(criteria, stopping_criteria)
-        return criteria
+        return self._merge_criteria_processor_list(criteria, stopping_criteria)
 
     def _merge_criteria_processor_list(
         self,
@@ -1597,7 +1595,7 @@ class GenerationMixin:
             def get_layer_device_map(execution_device_map: dict | None = None):
                 if execution_device_map is None:
                     return None
-                elif len(execution_device_map) == 1 and "" in execution_device_map:
+                if len(execution_device_map) == 1 and "" in execution_device_map:
                     return dict.fromkeys(range(self.config.num_hidden_layers), execution_device_map[""])
                 layer_device_map = {}
                 for layer in execution_device_map:
@@ -1751,7 +1749,7 @@ class GenerationMixin:
                         "You need to install optimum-quanto in order to use KV cache quantization with optimum-quanto backend. "
                         "Please install it via  with `pip install optimum-quanto`"
                     )
-                elif cache_config.backend == "HQQ" and not is_hqq_available():
+                if cache_config.backend == "HQQ" and not is_hqq_available():
                     raise ImportError(
                         "You need to install `HQQ` in order to use KV cache quantization with HQQ backend. "
                         "Please install it via  with `pip install hqq`"
@@ -2400,19 +2398,18 @@ class GenerationMixin:
         # TODO (joao): remove this when torch's support for control flow is not experimental (https://pytorch.org/docs/stable/generated/torch.cond.html)
         if is_torchdynamo_compiling():
             return cur_len < max_length
-        else:
-            if synced_gpus:
-                # Under synced_gpus the `forward` call must continue until all gpus complete their sequence.
-                # The following logic allows an early break if all peers finished generating their sequence
-                this_peer_finished_flag = torch.tensor(0.0 if this_peer_finished else 1.0).to(device)
-                # send 0.0 if we finished, 1.0 otherwise
-                dist.all_reduce(this_peer_finished_flag, op=dist.ReduceOp.SUM)
-                # did all peers finish? the reduced sum will be 0.0 then
-                if this_peer_finished_flag.item() == 0.0:
-                    return False
-            elif this_peer_finished:
+        if synced_gpus:
+            # Under synced_gpus the `forward` call must continue until all gpus complete their sequence.
+            # The following logic allows an early break if all peers finished generating their sequence
+            this_peer_finished_flag = torch.tensor(0.0 if this_peer_finished else 1.0).to(device)
+            # send 0.0 if we finished, 1.0 otherwise
+            dist.all_reduce(this_peer_finished_flag, op=dist.ReduceOp.SUM)
+            # did all peers finish? the reduced sum will be 0.0 then
+            if this_peer_finished_flag.item() == 0.0:
                 return False
-            return True
+        elif this_peer_finished:
+            return False
+        return True
 
     def heal_tokens(
         self, input_ids: torch.LongTensor, tokenizer: Optional["PreTrainedTokenizerBase"] = None
@@ -2706,8 +2703,7 @@ class GenerationMixin:
                 hidden_states=decoder_hidden_states,
                 past_key_values=model_kwargs.get("past_key_values"),
             )
-        else:
-            return input_ids
+        return input_ids
 
     @torch.no_grad()
     def _contrastive_search(
@@ -2843,7 +2839,7 @@ class GenerationMixin:
                         f"{self.__class__.__name__} does not support caching and therefore **can't** be used "
                         "for contrastive search."
                     )
-                elif (
+                if (
                     not isinstance(past_key_values[0], (tuple, torch.Tensor))
                     or past_key_values[0][0].shape[0] != batch_size
                 ):
@@ -3103,17 +3099,15 @@ class GenerationMixin:
                     decoder_hidden_states=decoder_hidden_states,
                     past_key_values=model_kwargs.get("past_key_values"),
                 )
-            else:
-                return GenerateDecoderOnlyOutput(
-                    sequences=input_ids,
-                    scores=scores,
-                    logits=raw_logits,
-                    attentions=decoder_attentions,
-                    hidden_states=decoder_hidden_states,
-                    past_key_values=model_kwargs.get("past_key_values"),
-                )
-        else:
-            return input_ids
+            return GenerateDecoderOnlyOutput(
+                sequences=input_ids,
+                scores=scores,
+                logits=raw_logits,
+                attentions=decoder_attentions,
+                hidden_states=decoder_hidden_states,
+                past_key_values=model_kwargs.get("past_key_values"),
+            )
+        return input_ids
 
     def _sample(
         self,
@@ -3277,17 +3271,15 @@ class GenerationMixin:
                     decoder_hidden_states=decoder_hidden_states,
                     past_key_values=model_kwargs.get("past_key_values"),
                 )
-            else:
-                return GenerateDecoderOnlyOutput(
-                    sequences=input_ids,
-                    scores=scores,
-                    logits=raw_logits,
-                    attentions=decoder_attentions,
-                    hidden_states=decoder_hidden_states,
-                    past_key_values=model_kwargs.get("past_key_values"),
-                )
-        else:
-            return input_ids
+            return GenerateDecoderOnlyOutput(
+                sequences=input_ids,
+                scores=scores,
+                logits=raw_logits,
+                attentions=decoder_attentions,
+                hidden_states=decoder_hidden_states,
+                past_key_values=model_kwargs.get("past_key_values"),
+            )
+        return input_ids
 
     def _temporary_reorder_cache(self, past_key_values, beam_idx):
         """
@@ -3579,19 +3571,17 @@ class GenerationMixin:
                     decoder_hidden_states=decoder_hidden_states,
                     past_key_values=model_kwargs.get("past_key_values"),
                 )
-            else:
-                return GenerateBeamDecoderOnlyOutput(
-                    sequences=sequence_outputs["sequences"],
-                    sequences_scores=sequence_outputs["sequence_scores"],
-                    scores=scores,
-                    logits=raw_logits,
-                    beam_indices=sequence_outputs["beam_indices"],
-                    attentions=decoder_attentions,
-                    hidden_states=decoder_hidden_states,
-                    past_key_values=model_kwargs.get("past_key_values"),
-                )
-        else:
-            return sequence_outputs["sequences"]
+            return GenerateBeamDecoderOnlyOutput(
+                sequences=sequence_outputs["sequences"],
+                sequences_scores=sequence_outputs["sequence_scores"],
+                scores=scores,
+                logits=raw_logits,
+                beam_indices=sequence_outputs["beam_indices"],
+                attentions=decoder_attentions,
+                hidden_states=decoder_hidden_states,
+                past_key_values=model_kwargs.get("past_key_values"),
+            )
+        return sequence_outputs["sequences"]
 
     def _group_beam_search(
         self,
@@ -3868,19 +3858,17 @@ class GenerationMixin:
                     decoder_hidden_states=decoder_hidden_states,
                     past_key_values=model_kwargs.get("past_key_values"),
                 )
-            else:
-                return GenerateBeamDecoderOnlyOutput(
-                    sequences=sequence_outputs["sequences"],
-                    sequences_scores=sequence_outputs["sequence_scores"],
-                    scores=scores,
-                    logits=raw_logits,
-                    beam_indices=sequence_outputs["beam_indices"],
-                    attentions=decoder_attentions,
-                    hidden_states=decoder_hidden_states,
-                    past_key_values=model_kwargs.get("past_key_values"),
-                )
-        else:
-            return sequence_outputs["sequences"]
+            return GenerateBeamDecoderOnlyOutput(
+                sequences=sequence_outputs["sequences"],
+                sequences_scores=sequence_outputs["sequence_scores"],
+                scores=scores,
+                logits=raw_logits,
+                beam_indices=sequence_outputs["beam_indices"],
+                attentions=decoder_attentions,
+                hidden_states=decoder_hidden_states,
+                past_key_values=model_kwargs.get("past_key_values"),
+            )
+        return sequence_outputs["sequences"]
 
     def _constrained_beam_search(
         self,
@@ -4105,19 +4093,17 @@ class GenerationMixin:
                     decoder_hidden_states=decoder_hidden_states,
                     past_key_values=model_kwargs.get("past_key_values"),
                 )
-            else:
-                return GenerateBeamDecoderOnlyOutput(
-                    sequences=sequence_outputs["sequences"],
-                    sequences_scores=sequence_outputs["sequence_scores"],
-                    scores=scores,
-                    logits=raw_logits,
-                    beam_indices=sequence_outputs["beam_indices"],
-                    attentions=decoder_attentions,
-                    hidden_states=decoder_hidden_states,
-                    past_key_values=model_kwargs.get("past_key_values"),
-                )
-        else:
-            return sequence_outputs["sequences"]
+            return GenerateBeamDecoderOnlyOutput(
+                sequences=sequence_outputs["sequences"],
+                sequences_scores=sequence_outputs["sequence_scores"],
+                scores=scores,
+                logits=raw_logits,
+                beam_indices=sequence_outputs["beam_indices"],
+                attentions=decoder_attentions,
+                hidden_states=decoder_hidden_states,
+                past_key_values=model_kwargs.get("past_key_values"),
+            )
+        return sequence_outputs["sequences"]
 
     def _assisted_decoding(
         self,
@@ -4373,17 +4359,15 @@ class GenerationMixin:
                     decoder_hidden_states=decoder_hidden_states,
                     past_key_values=model_kwargs.get("past_key_values"),
                 )
-            else:
-                return GenerateDecoderOnlyOutput(
-                    sequences=input_ids,
-                    scores=scores,
-                    logits=raw_logits,
-                    attentions=decoder_attentions,
-                    hidden_states=decoder_hidden_states,
-                    past_key_values=model_kwargs.get("past_key_values"),
-                )
-        else:
-            return input_ids
+            return GenerateDecoderOnlyOutput(
+                sequences=input_ids,
+                scores=scores,
+                logits=raw_logits,
+                attentions=decoder_attentions,
+                hidden_states=decoder_hidden_states,
+                past_key_values=model_kwargs.get("past_key_values"),
+            )
+        return input_ids
 
 
 def _speculative_sampling(
@@ -4514,11 +4498,11 @@ def _split(data, full_batch_size: int, num_hidden_layers: int, split_size: int |
     if isinstance(data, torch.Tensor):
         return [data[i : i + split_size] for i in range(0, full_batch_size, split_size)]
     # New cache format
-    elif isinstance(data, DynamicCache) or (
+    if isinstance(data, DynamicCache) or (
         isinstance(data, EncoderDecoderCache) and isinstance(data.self_attention_cache, DynamicCache)
     ):
         return data.batch_split(full_batch_size, split_size, num_hidden_layers)
-    elif isinstance(data, tuple):
+    if isinstance(data, tuple):
         # If the elements of the tuple are also tuples (e.g., past_key_values in our earlier example)
         if isinstance(data[0], tuple):
             return [
@@ -4526,13 +4510,10 @@ def _split(data, full_batch_size: int, num_hidden_layers: int, split_size: int |
                 for i in range(0, full_batch_size, split_size)
             ]
 
-        else:
-            return [
-                tuple(sub_tensor[i : i + split_size] for sub_tensor in data)
-                for i in range(0, full_batch_size, split_size)
-            ]
-    else:
-        raise TypeError(f"Unexpected attribute type: {type(data)}")
+        return [
+            tuple(sub_tensor[i : i + split_size] for sub_tensor in data) for i in range(0, full_batch_size, split_size)
+        ]
+    raise TypeError(f"Unexpected attribute type: {type(data)}")
 
 
 def _split_model_inputs(
@@ -4627,24 +4608,22 @@ def stack_model_outputs(model_outputs: list[ModelOutput], config: PretrainedConf
         if isinstance(data[0], torch.Tensor):
             return torch.cat(data, dim=0)
         # New cache format
-        elif isinstance(data[0], DynamicCache):
+        if isinstance(data[0], DynamicCache):
             return DynamicCache.from_batch_splits(data, num_hidden_layers=num_hidden_layers)
-        elif isinstance(data[0], EncoderDecoderCache):
+        if isinstance(data[0], EncoderDecoderCache):
             return EncoderDecoderCache.from_batch_splits(data, num_hidden_layers=num_hidden_layers)
-        elif isinstance(data[0], tuple):
+        if isinstance(data[0], tuple):
             # If the elements of the tuple are also tuples (e.g., past_key_values in our earlier example)
             if isinstance(data[0][0], tuple):
                 return tuple(
                     tuple(torch.cat([attr[i][j] for attr in data], dim=0) for j in range(len(data[0][0])))
                     for i in range(len(data[0]))
                 )
-            else:
-                return tuple(torch.cat([attr[i] for attr in data], dim=0) for i in range(len(data[0])))
-        elif isinstance(data[0], (int, float)):
+            return tuple(torch.cat([attr[i] for attr in data], dim=0) for i in range(len(data[0])))
+        if isinstance(data[0], (int, float)):
             # If the elements are integers or floats, return a tensor
             return torch.tensor(data)
-        else:
-            raise TypeError(f"Unexpected attribute type: {type(data[0])}")
+        raise TypeError(f"Unexpected attribute type: {type(data[0])}")
 
     # Use a dictionary comprehension to gather attributes from all objects and concatenate them
     concatenated_data = {
@@ -4689,8 +4668,7 @@ def _dola_select_contrast(
     if len(candidate_premature_layers) == 1:
         base_logits = candidate_premature_logits[candidate_premature_layers[0]]
         final_logits, base_logits = _relative_top_filter(final_logits, base_logits)
-        logits = final_logits - base_logits
-        return logits
+        return final_logits - base_logits
 
     # 1. Stacking all premature_layers into a new dimension
     stacked_premature_layers = torch.stack([candidate_premature_logits[i] for i in candidate_premature_layers], dim=0)
@@ -4724,5 +4702,4 @@ def _dola_select_contrast(
 
     base_logits = candidate_premature_logits[premature_layer]
     final_logits, base_logits = _relative_top_filter(final_logits, base_logits)
-    logits = final_logits - base_logits
-    return logits
+    return final_logits - base_logits

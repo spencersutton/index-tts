@@ -79,8 +79,7 @@ def load_config(config_fn, lowercase=False):
     """
     config_ = _load_config(config_fn, lowercase=lowercase)
     # create an JsonHParams object with configuration dict
-    cfg = JsonHParams(**config_)
-    return cfg
+    return JsonHParams(**config_)
 
 
 class Extract_wav2vectbert:

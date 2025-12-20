@@ -26,13 +26,11 @@ def dynamic_range_decompression_torch(x, C=1):
 
 
 def spectral_normalize_torch(magnitudes):
-    output = dynamic_range_compression_torch(magnitudes)
-    return output
+    return dynamic_range_compression_torch(magnitudes)
 
 
 def spectral_de_normalize_torch(magnitudes):
-    output = dynamic_range_decompression_torch(magnitudes)
-    return output
+    return dynamic_range_decompression_torch(magnitudes)
 
 
 class MelSpectrogram(nn.Module):
@@ -94,6 +92,4 @@ class MelSpectrogram(nn.Module):
         spec = torch.sqrt(spec.pow(2).sum(-1) + (1e-9))
 
         spec = torch.matmul(self.mel_basis, spec)
-        spec = spectral_normalize_torch(spec)
-
-        return spec
+        return spectral_normalize_torch(spec)

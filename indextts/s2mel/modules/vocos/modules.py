@@ -54,8 +54,7 @@ class ConvNeXtBlock(nn.Module):
             x = self.gamma * x
         x = x.transpose(1, 2)  # (B, T, C) -> (B, C, T)
 
-        x = residual + x
-        return x
+        return residual + x
 
 
 class AdaLayerNorm(nn.Module):
@@ -80,8 +79,7 @@ class AdaLayerNorm(nn.Module):
         scale = self.scale(cond_embedding_id)
         shift = self.shift(cond_embedding_id)
         x = nn.functional.layer_norm(x, (self.dim,), eps=self.eps)
-        x = x * scale + shift
-        return x
+        return x * scale + shift
 
 
 class ResBlock1(nn.Module):

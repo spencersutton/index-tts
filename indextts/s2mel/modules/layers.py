@@ -11,12 +11,11 @@ random.seed(0)
 def _get_activation_fn(activ):
     if activ == "relu":
         return nn.ReLU()
-    elif activ == "lrelu":
+    if activ == "lrelu":
         return nn.LeakyReLU(0.2)
-    elif activ == "swish":
+    if activ == "swish":
         return lambda x: x * torch.sigmoid(x)
-    else:
-        raise RuntimeError(f"Unexpected activ type {activ}, expected [relu, lrelu, swish]")
+    raise RuntimeError(f"Unexpected activ type {activ}, expected [relu, lrelu, swish]")
 
 
 class LinearNorm(torch.nn.Module):
@@ -61,8 +60,7 @@ class ConvNorm(torch.nn.Module):
         torch.nn.init.xavier_uniform_(self.conv.weight, gain=torch.nn.init.calculate_gain(w_init_gain, param=param))
 
     def forward(self, signal):
-        conv_signal = self.conv(signal)
-        return conv_signal
+        return self.conv(signal)
 
 
 class CausualConv(nn.Module):
@@ -98,8 +96,7 @@ class CausualConv(nn.Module):
 
     def forward(self, x):
         x = self.conv(x)
-        x = x[:, :, : -self.padding]
-        return x
+        return x[:, :, : -self.padding]
 
 
 class CausualBlock(nn.Module):
@@ -169,8 +166,7 @@ class LocationLayer(nn.Module):
     def forward(self, attention_weights_cat):
         processed_attention = self.location_conv(attention_weights_cat)
         processed_attention = processed_attention.transpose(1, 2)
-        processed_attention = self.location_dense(processed_attention)
-        return processed_attention
+        return self.location_dense(processed_attention)
 
 
 class Attention(nn.Module):
@@ -205,8 +201,7 @@ class Attention(nn.Module):
         processed_attention_weights = self.location_layer(attention_weights_cat)
         energies = self.v(torch.tanh(processed_query + processed_attention_weights + processed_memory))
 
-        energies = energies.squeeze(-1)
-        return energies
+        return energies.squeeze(-1)
 
     def forward(self, attention_hidden_state, memory, processed_memory, attention_weights_cat, mask):
         """
@@ -262,8 +257,7 @@ class ForwardAttentionV2(nn.Module):
         processed_attention_weights = self.location_layer(attention_weights_cat)
         energies = self.v(torch.tanh(processed_query + processed_attention_weights + processed_memory))
 
-        energies = energies.squeeze(-1)
-        return energies
+        return energies.squeeze(-1)
 
     def forward(self, attention_hidden_state, memory, processed_memory, attention_weights_cat, mask, log_alpha):
         """
@@ -314,11 +308,9 @@ class PhaseShuffle2d(nn.Module):
 
         if move == 0:
             return x
-        else:
-            left = x[:, :, :, :move]
-            right = x[:, :, :, move:]
-            shuffled = torch.cat([right, left], dim=3)
-        return shuffled
+        left = x[:, :, :, :move]
+        right = x[:, :, :, move:]
+        return torch.cat([right, left], dim=3)
 
 
 class PhaseShuffle1d(nn.Module):
@@ -334,12 +326,9 @@ class PhaseShuffle1d(nn.Module):
 
         if move == 0:
             return x
-        else:
-            left = x[:, :, :move]
-            right = x[:, :, move:]
-            shuffled = torch.cat([right, left], dim=2)
-
-        return shuffled
+        left = x[:, :, :move]
+        right = x[:, :, move:]
+        return torch.cat([right, left], dim=2)
 
 
 class MFCC(nn.Module):

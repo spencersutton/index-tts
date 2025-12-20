@@ -57,9 +57,7 @@ def load():
         srcpath / "anti_alias_activation.cpp",
         srcpath / "anti_alias_activation_cuda.cu",
     ]
-    anti_alias_activation_cuda = _cpp_extention_load_helper("anti_alias_activation_cuda", sources, extra_cuda_flags)
-
-    return anti_alias_activation_cuda
+    return _cpp_extention_load_helper("anti_alias_activation_cuda", sources, extra_cuda_flags)
 
 
 def _get_cuda_bare_metal_version(cuda_dir):

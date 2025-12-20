@@ -125,7 +125,7 @@ class ISTFT(nn.Module):
                 self.window,
                 center=True,
             )
-        elif self.padding == "same":
+        if self.padding == "same":
             pad = (self.win_length - self.hop_length) // 2
         else:
             raise ValueError("Padding must be 'center' or 'same'.")
@@ -157,9 +157,7 @@ class ISTFT(nn.Module):
 
         # Normalize
         assert (window_envelope > 1e-11).all()
-        y = y / window_envelope
-
-        return y
+        return y / window_envelope
 
 
 class MDCT(nn.Module):
@@ -275,8 +273,7 @@ class IMDCT(nn.Module):
         else:
             raise ValueError("Padding must be 'center' or 'same'.")
 
-        audio = audio[:, pad:-pad]
-        return audio
+        return audio[:, pad:-pad]
 
 
 class FourierHead(nn.Module):
@@ -336,8 +333,7 @@ class ISTFTHead(FourierHead):
         # S = mag * torch.exp(phase * 1j)
         # better directly produce the complex value
         S = mag * (x + 1j * y)
-        audio = self.istft(S)
-        return audio
+        return self.istft(S)
 
 
 class IMDCTSymExpHead(FourierHead):
@@ -492,8 +488,7 @@ class ConvNeXtBlock(nn.Module):
             x = self.gamma * x
         x = x.transpose(1, 2)  # (B, T, C) -> (B, C, T)
 
-        x = residual + x
-        return x
+        return residual + x
 
 
 class AdaLayerNorm(nn.Module):
@@ -518,8 +513,7 @@ class AdaLayerNorm(nn.Module):
         scale = self.scale(cond_embedding_id)
         shift = self.shift(cond_embedding_id)
         x = nn.functional.layer_norm(x, (self.dim,), eps=self.eps)
-        x = x * scale + shift
-        return x
+        return x * scale + shift
 
 
 class ResBlock1(nn.Module):
@@ -730,8 +724,7 @@ class VocosBackbone(Backbone):
         x = x.transpose(1, 2)
         for conv_block in self.convnext:
             x = conv_block(x, cond_embedding_id=bandwidth_id)
-        x = self.final_layer_norm(x.transpose(1, 2))
-        return x
+        return self.final_layer_norm(x.transpose(1, 2))
 
 
 class VocosResNetBackbone(Backbone):
@@ -763,8 +756,7 @@ class VocosResNetBackbone(Backbone):
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
         x = self.embed(x)
         x = self.resnet(x)
-        x = x.transpose(1, 2)
-        return x
+        return x.transpose(1, 2)
 
 
 class Vocos(nn.Module):

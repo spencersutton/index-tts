@@ -264,8 +264,7 @@ class IndexTTS:
                 tensor = torch.nn.functional.pad(tensor, (0, pad_len - n), value=self.cfg.gpt.start_text_token)
             tensor = tensor[:, :max_len]
             outputs.append(tensor)
-        tokens = torch.cat(outputs, dim=0)
-        return tokens
+        return torch.cat(outputs, dim=0)
 
     def torch_empty_cache(self) -> None:
         try:
@@ -529,11 +528,10 @@ class IndexTTS:
             torchaudio.save(output_path, wav.type(torch.int16), sampling_rate)
             print(">> wav file saved to:", output_path)
             return output_path
-        else:
-            # 返回以符合Gradio的格式要求
-            wav_data = wav.type(torch.int16)
-            wav_data = wav_data.numpy().T
-            return (sampling_rate, wav_data)
+        # 返回以符合Gradio的格式要求
+        wav_data = wav.type(torch.int16)
+        wav_data = wav_data.numpy().T
+        return (sampling_rate, wav_data)
 
     # 原始推理模式
     def infer(
@@ -695,11 +693,10 @@ class IndexTTS:
             torchaudio.save(output_path, wav.type(torch.int16), sampling_rate)
             print(">> wav file saved to:", output_path)
             return output_path
-        else:
-            # 返回以符合Gradio的格式要求
-            wav_data = wav.type(torch.int16)
-            wav_data = wav_data.numpy().T
-            return (sampling_rate, wav_data)
+        # 返回以符合Gradio的格式要求
+        wav_data = wav.type(torch.int16)
+        wav_data = wav_data.numpy().T
+        return (sampling_rate, wav_data)
 
 
 if __name__ == "__main__":

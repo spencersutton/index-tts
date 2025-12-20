@@ -105,5 +105,4 @@ def load_model(
 ):
     if not load_path:
         load_path = download(model_type=model_type, model_bitrate=model_bitrate, tag=tag)
-    generator = DAC.load(load_path)
-    return generator
+    return DAC.load(load_path)

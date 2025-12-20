@@ -184,9 +184,7 @@ class CodecDataset(torch.utils.data.Dataset):
 
     def get_metadata(self):
         with open(self.metafile_path, encoding="utf-8") as f:
-            metadata = json.load(f)
-
-        return metadata
+            return json.load(f)
 
     def get_dataset_name(self):
         return self.metadata[0]["Dataset"]

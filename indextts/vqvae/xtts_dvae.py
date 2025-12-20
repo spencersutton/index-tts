@@ -45,8 +45,7 @@ def dvae_wav_to_mel(
     mel = torch.log(torch.clamp(mel, min=1e-5))
     if mel_norms is None:
         mel_norms = torch.load(mel_norms_file, map_location=device)
-    mel = mel / mel_norms.unsqueeze(0).unsqueeze(-1)
-    return mel
+    return mel / mel_norms.unsqueeze(0).unsqueeze(-1)
 
 
 class Quantize(nn.Module):
@@ -121,10 +120,9 @@ class Quantize(nn.Module):
 
         if return_soft_codes:
             return quantize, diff, embed_ind, soft_codes.view((*input.shape[:-1], -1))
-        elif self.new_return_order:
+        if self.new_return_order:
             return quantize, embed_ind, diff
-        else:
-            return quantize, diff, embed_ind
+        return quantize, diff, embed_ind
 
     def embed_code(self, embed_id):
         return F.embedding(embed_id, self.embed.transpose(0, 1))
@@ -318,8 +316,7 @@ class DiscreteVAE(nn.Module):
         if self.record_codes and self.total_codes > 0:
             # Report annealing schedule
             return {"histogram_codes": self.codes[: self.total_codes]}
-        else:
-            return {}
+        return {}
 
     @torch.no_grad()
     @eval_decorator

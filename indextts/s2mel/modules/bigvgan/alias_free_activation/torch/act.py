@@ -26,6 +26,4 @@ class Activation1d(nn.Module):
     def forward(self, x):
         x = self.upsample(x)
         x = self.act(x)
-        x = self.downsample(x)
-
-        return x
+        return self.downsample(x)

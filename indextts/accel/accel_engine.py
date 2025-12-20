@@ -182,8 +182,7 @@ class AccelInferenceEngine:
 
     def _prepare_sample(self, requests: list[Seq], temperature: float):
         temperatures = [temperature] * len(requests)
-        temperatures = torch.tensor(temperatures, dtype=torch.float32, pin_memory=True).cuda(non_blocking=True)
-        return temperatures
+        return torch.tensor(temperatures, dtype=torch.float32, pin_memory=True).cuda(non_blocking=True)
 
     def _capture_cuda_graphs(self, tts_mel_embedding=None, tts_text_pos_embedding=None) -> None:
         print("Capturing CUDA graphs for decode optimization...")
@@ -482,8 +481,7 @@ class AccelInferenceEngine:
                 full_sequence = input_ids[i].tolist() + generated_tokens[i]
                 output_ids.append(full_sequence)
 
-            output = torch.tensor(output_ids, dtype=torch.long, device=device)
-            return output
+            return torch.tensor(output_ids, dtype=torch.long, device=device)
 
         remaining_tokens = max_new_tokens - 1
 
@@ -517,7 +515,7 @@ class AccelInferenceEngine:
             for i, token_id in enumerate(next_token_list):
                 if is_finished[i]:
                     continue
-                elif stop_tokens and token_id in stop_tokens:
+                if stop_tokens and token_id in stop_tokens:
                     is_finished[i] = True
                 else:
                     sequences[i].append_token(token_id)
@@ -567,5 +565,4 @@ class Sampler(nn.Module):
     def forward(self, logits: torch.Tensor, temperatures: torch.Tensor):
         logits = logits.float().div_(temperatures.unsqueeze(dim=1))
         probs = torch.softmax(logits, dim=-1)
-        sample_tokens = probs.div_(torch.empty_like(probs).exponential_(1).clamp_min_(1e-10)).argmax(dim=-1)
-        return sample_tokens
+        return probs.div_(torch.empty_like(probs).exponential_(1).clamp_min_(1e-10)).argmax(dim=-1)

@@ -47,8 +47,7 @@ class FCM(nn.Module):
         out = F.relu(self.bn2(self.conv2(out)))
 
         shape = out.shape
-        out = out.reshape(shape[0], shape[1] * shape[2], shape[3])
-        return out
+        return out.reshape(shape[0], shape[1] * shape[2], shape[3])
 
 
 class CAMPPlus(nn.Module):
@@ -108,5 +107,4 @@ class CAMPPlus(nn.Module):
     def forward(self, x):
         x = x.permute(0, 2, 1)  # (B,T,F) => (B,F,T)
         x = self.head(x)
-        x = self.xvector(x)
-        return x
+        return self.xvector(x)

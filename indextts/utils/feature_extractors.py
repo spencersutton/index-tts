@@ -57,5 +57,4 @@ class MelSpectrogramFeatures(FeatureExtractor):
             pad = self.mel_spec.win_length - self.mel_spec.hop_length
             audio = torch.nn.functional.pad(audio, (pad // 2, pad // 2), mode="reflect")
         mel = self.mel_spec(audio)
-        mel = safe_log(mel)
-        return mel
+        return safe_log(mel)

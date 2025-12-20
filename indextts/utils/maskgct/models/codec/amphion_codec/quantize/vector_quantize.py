@@ -151,8 +151,7 @@ class EuclideanCodebook(nn.Module):
         return quantize, embed_ind
 
     def vq2emb(self, vq):
-        quantize = F.embedding(vq, self.embed)
-        return quantize
+        return F.embedding(vq, self.embed)
 
     def latent2dist(self, x):
         shape, _dtype = x.shape, x.dtype
@@ -206,8 +205,7 @@ class SimpleCodebook(nn.Module):
         return quantize, embed_ind
 
     def vq2emb(self, vq):
-        quantize = F.embedding(vq, self.embed.weight)
-        return quantize
+        return F.embedding(vq, self.embed.weight)
 
     def latent2dist(self, x):
         shape, _dtype = x.shape, x.dtype

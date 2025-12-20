@@ -47,12 +47,11 @@ def apply_parametrization_norm(module: nn.Module, norm: str = "none") -> nn.Modu
     assert norm in CONV_NORMALIZATIONS
     if norm == "weight_norm":
         return weight_norm(module)
-    elif norm == "spectral_norm":
+    if norm == "spectral_norm":
         return spectral_norm(module)
-    else:
-        # We already check was in CONV_NORMALIZATION, so any other choice
-        # doesn't need reparametrization.
-        return module
+    # We already check was in CONV_NORMALIZATION, so any other choice
+    # doesn't need reparametrization.
+    return module
 
 
 def get_norm_module(module: nn.Module, causal: bool = False, norm: str = "none", **norm_kwargs) -> nn.Module:
@@ -63,13 +62,12 @@ def get_norm_module(module: nn.Module, causal: bool = False, norm: str = "none",
     if norm == "layer_norm":
         assert isinstance(module, nn.modules.conv._ConvNd)
         return ConvLayerNorm(module.out_channels, **norm_kwargs)
-    elif norm == "time_group_norm":
+    if norm == "time_group_norm":
         if causal:
             raise ValueError("GroupNorm doesn't support causal evaluation.")
         assert isinstance(module, nn.modules.conv._ConvNd)
         return nn.GroupNorm(1, module.out_channels, **norm_kwargs)
-    else:
-        return nn.Identity()
+    return nn.Identity()
 
 
 def get_extra_padding_for_conv1d(x: torch.Tensor, kernel_size: int, stride: int, padding_total: int = 0) -> int:
@@ -111,8 +109,7 @@ def pad1d(x: torch.Tensor, paddings: tuple[int, int], mode: str = "zero", value:
         padded = F.pad(x, paddings, mode, value)
         end = padded.shape[-1] - extra_pad
         return padded[..., :end]
-    else:
-        return F.pad(x, paddings, mode, value)
+    return F.pad(x, paddings, mode, value)
 
 
 def unpad1d(x: torch.Tensor, paddings: tuple[int, int]):
@@ -139,8 +136,7 @@ class NormConv1d(nn.Module):
 
     def forward(self, x):
         x = self.conv(x)
-        x = self.norm(x)
-        return x
+        return self.norm(x)
 
 
 class NormConv2d(nn.Module):
@@ -156,8 +152,7 @@ class NormConv2d(nn.Module):
 
     def forward(self, x):
         x = self.conv(x)
-        x = self.norm(x)
-        return x
+        return self.norm(x)
 
 
 class NormConvTranspose1d(nn.Module):
@@ -175,8 +170,7 @@ class NormConvTranspose1d(nn.Module):
 
     def forward(self, x):
         x = self.convtr(x)
-        x = self.norm(x)
-        return x
+        return self.norm(x)
 
 
 class NormConvTranspose2d(nn.Module):
@@ -191,8 +185,7 @@ class NormConvTranspose2d(nn.Module):
 
     def forward(self, x):
         x = self.convtr(x)
-        x = self.norm(x)
-        return x
+        return self.norm(x)
 
 
 class SConv1d(nn.Module):
@@ -329,5 +322,4 @@ class SLSTM(nn.Module):
             y, self.hidden = self.lstm(x, self.hidden)
         if self.skip:
             y = y + x
-        y = y.permute(1, 2, 0)
-        return y
+        return y.permute(1, 2, 0)

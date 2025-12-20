@@ -120,9 +120,7 @@ def mel_spectrogram(
     spec = torch.sqrt(torch.view_as_real(spec).pow(2).sum(-1) + 1e-9)
 
     mel_spec = torch.matmul(mel_basis, spec)
-    mel_spec = spectral_normalize_torch(mel_spec)
-
-    return mel_spec
+    return spectral_normalize_torch(mel_spec)
 
 
 def get_mel_spectrogram(wav, h):

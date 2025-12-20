@@ -1,0 +1,13 @@
+from typing import Literal
+
+from .base import BaseInferenceType, dataclass_with_extra
+
+type FeatureExtractionInputTruncationDirection = Literal["Left", "Right"]
+
+@dataclass_with_extra
+class FeatureExtractionInput(BaseInferenceType):
+    inputs: list[str] | str
+    normalize: bool | None = ...
+    prompt_name: str | None = ...
+    truncate: bool | None = ...
+    truncation_direction: FeatureExtractionInputTruncationDirection | None = ...

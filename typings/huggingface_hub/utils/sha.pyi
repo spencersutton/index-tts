@@ -1,0 +1,6 @@
+from typing import BinaryIO
+
+"""Utilities to efficiently compute the SHA 256 hash of a bunch of bytes."""
+
+def sha_fileobj(fileobj: BinaryIO, chunk_size: int | None = ...) -> bytes: ...
+def git_hash(data: bytes) -> str: ...

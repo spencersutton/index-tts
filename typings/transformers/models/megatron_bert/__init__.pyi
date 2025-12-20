@@ -1,0 +1,6 @@
+from typing import TYPE_CHECKING
+
+from .configuration_megatron_bert import *
+from .modeling_megatron_bert import *
+
+if TYPE_CHECKING: ...

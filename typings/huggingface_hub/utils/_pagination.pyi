@@ -1,0 +1,6 @@
+from collections.abc import Iterable
+
+"""Contains utilities to handle pagination on Huggingface Hub."""
+logger = ...
+
+def paginate(path: str, params: dict, headers: dict) -> Iterable: ...

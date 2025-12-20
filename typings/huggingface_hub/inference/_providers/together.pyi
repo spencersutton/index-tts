@@ -1,0 +1,26 @@
+from abc import ABC
+from typing import Any
+
+from huggingface_hub.inference._common import RequestParameters
+from huggingface_hub.inference._providers._common import (
+    BaseConversationalTask,
+    BaseTextGenerationTask,
+    TaskProviderHelper,
+)
+
+_PROVIDER = ...
+_BASE_URL = ...
+
+class TogetherTask(TaskProviderHelper, ABC):
+    def __init__(self, task: str) -> None: ...
+
+class TogetherTextGenerationTask(BaseTextGenerationTask):
+    def __init__(self) -> None: ...
+    def get_response(self, response: bytes | dict, request_params: RequestParameters | None = ...) -> Any: ...
+
+class TogetherConversationalTask(BaseConversationalTask):
+    def __init__(self) -> None: ...
+
+class TogetherTextToImageTask(TogetherTask):
+    def __init__(self) -> None: ...
+    def get_response(self, response: bytes | dict, request_params: RequestParameters | None = ...) -> Any: ...

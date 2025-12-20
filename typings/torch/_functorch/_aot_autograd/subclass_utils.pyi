@@ -1,0 +1,53 @@
+from collections.abc import Callable, Iterable
+from typing import Any, TypeVar
+
+import torch
+from torch import SymInt, Tensor
+from torch.types import IntLikeType
+
+from .descriptors import AOTInput, AOTOutput
+from .schemas import FxValue, MemoryFormatMeta, PlainTensorMeta, SubclassCreationMeta, ViewAndMutationMeta
+
+zip = ...
+T = TypeVar("T", bound=torch.Tensor)
+
+def requires_subclass_dispatch(args, fw_metadata: ViewAndMutationMeta) -> bool: ...
+def maybe_suggest_memory_format(t, with_memory_format: bool) -> MemoryFormatMeta | None: ...
+def get_subclass_typing_container(
+    tensor_subclass: torch.Tensor,
+) -> dict[type[torch.Tensor], list[type[torch.Tensor]]]: ...
+def create_subclass_metadata(a: Any, start_idx: int, count_symints: bool, with_memory_format: bool = ...): ...
+def create_subclass_meta(
+    curr_args: list[Any] | tuple[Any, ...], *, count_symints: bool = ..., with_memory_format: bool = ...
+) -> list[PlainTensorMeta | SubclassCreationMeta]: ...
+def enumerate_filter_symints(lst: Iterable[IntLikeType]) -> list[tuple[int, SymInt]]: ...
+def compute_symint_placeholders(lst: Iterable[None | int | SymInt]) -> list[bool]: ...
+
+AOTDescriptor = TypeVar("AOTDescriptor", AOTInput, AOTOutput)
+
+def unwrap_tensor_subclasses[AOTDescriptor: (AOTInput, AOTOutput)](
+    wrapped_args: list[FxValue], wrapped_args_descs: list[AOTDescriptor], *, append_symints: bool
+) -> tuple[list[FxValue], list[AOTDescriptor]]: ...
+def runtime_unwrap_tensor_subclasses(
+    wrapped_args: list[Tensor | int],
+    *,
+    append_symints: bool,
+    subclass_metas: list[PlainTensorMeta | SubclassCreationMeta] | None = ...,
+): ...
+def unwrap_tensor_subclasses_with_indices_to_original(wrapped_args): ...
+def remap_unwrapped_subclass_arg_indices(wrapped_args, static_input_indices): ...
+def wrap_tensor_subclasses(
+    unwrapped_args: tuple[Any, ...] | list[Any],
+    *,
+    subclass_metas: list[PlainTensorMeta | SubclassCreationMeta],
+    num_fw_outs_saved_for_bw: int | None = ...,
+    included_subclass_symints: bool = ...,
+    is_runtime: bool = ...,
+    make_subclass_override: Callable | None = ...,
+) -> tuple[Any, ...]: ...
+def wrap_tensor_subclasses_maybe_joint(
+    unwrapped_args, *, is_joint_structure: bool, meta: ViewAndMutationMeta
+) -> tuple[Any, ...] | list[Any]: ...
+def compute_inner_mutated_inp_indices_from_subclass_meta(
+    fw_metadata: ViewAndMutationMeta, inner_metadata: ViewAndMutationMeta
+) -> list[int]: ...

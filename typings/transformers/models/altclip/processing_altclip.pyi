@@ -1,0 +1,33 @@
+from ...image_utils import ImageInput
+from ...processing_utils import ProcessingKwargs, ProcessorMixin, Unpack
+from ...tokenization_utils_base import BatchEncoding, PreTokenizedInput, TextInput
+from ...utils.deprecation import deprecate_kwarg
+
+"""
+Image/Text processor class for AltCLIP
+"""
+
+class AltClipProcessorKwargs(ProcessingKwargs, total=False):
+    _defaults = ...
+
+class AltCLIPProcessor(ProcessorMixin):
+    attributes = ...
+    image_processor_class = ...
+    tokenizer_class = ...
+    @deprecate_kwarg(old_name="feature_extractor", version="5.0.0", new_name="image_processor")
+    def __init__(self, image_processor=..., tokenizer=...) -> None: ...
+    def __call__(
+        self,
+        images: ImageInput = ...,
+        text: TextInput | PreTokenizedInput | list[TextInput] | list[PreTokenizedInput] = ...,
+        audio=...,
+        videos=...,
+        **kwargs: Unpack[AltClipProcessorKwargs],
+    ) -> BatchEncoding: ...
+    def batch_decode(self, *args, **kwargs): ...
+    def decode(self, *args, **kwargs): ...
+    @property
+    def model_input_names(self):  # -> list[Any]:
+        ...
+
+__all__ = ["AltCLIPProcessor"]

@@ -1,0 +1,286 @@
+import torch
+from torch import nn
+
+from ...cache_utils import Cache
+from ...generation import GenerationMixin
+from ...modeling_layers import GradientCheckpointingLayer
+from ...modeling_outputs import (
+    BaseModelOutputWithPastAndCrossAttentions,
+    BaseModelOutputWithPoolingAndCrossAttentions,
+    CausalLMOutputWithCrossAttentions,
+    MaskedLMOutput,
+    MultipleChoiceModelOutput,
+    QuestionAnsweringModelOutput,
+    SequenceClassifierOutput,
+    TokenClassifierOutput,
+)
+from ...modeling_utils import PreTrainedModel
+from .configuration_rembert import RemBertConfig
+
+"""PyTorch RemBERT model."""
+logger = ...
+
+def load_tf_weights_in_rembert(model, config, tf_checkpoint_path): ...
+
+class RemBertEmbeddings(nn.Module):
+    def __init__(self, config) -> None: ...
+    def forward(
+        self,
+        input_ids: torch.LongTensor | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        past_key_values_length: int = ...,
+    ) -> torch.Tensor: ...
+
+class RemBertPooler(nn.Module):
+    def __init__(self, config) -> None: ...
+    def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
+
+class RemBertSelfAttention(nn.Module):
+    def __init__(self, config, layer_idx=...) -> None: ...
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.FloatTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        encoder_hidden_states: torch.FloatTensor | None = ...,
+        past_key_value: Cache | None = ...,
+        output_attentions: bool = ...,
+        cache_position: torch.Tensor | None = ...,
+    ) -> tuple: ...
+
+class RemBertSelfOutput(nn.Module):
+    def __init__(self, config) -> None: ...
+    def forward(self, hidden_states: torch.Tensor, input_tensor: torch.Tensor) -> torch.Tensor: ...
+
+class RemBertAttention(nn.Module):
+    def __init__(self, config, layer_idx=...) -> None: ...
+    def prune_heads(self, heads):  # -> None:
+        ...
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.FloatTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        encoder_hidden_states: torch.FloatTensor | None = ...,
+        past_key_value: Cache | None = ...,
+        output_attentions: bool | None = ...,
+        cache_position: torch.Tensor | None = ...,
+    ) -> tuple[torch.Tensor]: ...
+
+class RemBertIntermediate(nn.Module):
+    def __init__(self, config) -> None: ...
+    def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
+
+class RemBertOutput(nn.Module):
+    def __init__(self, config) -> None: ...
+    def forward(self, hidden_states: torch.Tensor, input_tensor: torch.Tensor) -> torch.Tensor: ...
+
+class RemBertLayer(GradientCheckpointingLayer):
+    def __init__(self, config, layer_idx=...) -> None: ...
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.FloatTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        encoder_hidden_states: torch.FloatTensor | None = ...,
+        encoder_attention_mask: torch.FloatTensor | None = ...,
+        past_key_value: Cache | None = ...,
+        output_attentions: bool | None = ...,
+        cache_position: torch.Tensor | None = ...,
+    ) -> tuple[torch.Tensor]: ...
+    def feed_forward_chunk(self, attention_output):  # -> Any:
+        ...
+
+class RemBertEncoder(nn.Module):
+    def __init__(self, config) -> None: ...
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.FloatTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        encoder_hidden_states: torch.FloatTensor | None = ...,
+        encoder_attention_mask: torch.FloatTensor | None = ...,
+        past_key_values: tuple[tuple[torch.FloatTensor]] | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool = ...,
+        output_hidden_states: bool = ...,
+        return_dict: bool = ...,
+        cache_position: torch.Tensor | None = ...,
+    ) -> tuple | BaseModelOutputWithPastAndCrossAttentions: ...
+
+class RemBertPredictionHeadTransform(nn.Module):
+    def __init__(self, config) -> None: ...
+    def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
+
+class RemBertLMPredictionHead(nn.Module):
+    def __init__(self, config) -> None: ...
+    def forward(self, hidden_states: torch.Tensor) -> torch.Tensor: ...
+
+class RemBertOnlyMLMHead(nn.Module):
+    def __init__(self, config) -> None: ...
+    def forward(self, sequence_output: torch.Tensor) -> torch.Tensor: ...
+
+class RemBertPreTrainedModel(PreTrainedModel):
+    config: RemBertConfig
+    load_tf_weights = ...
+    base_model_prefix = ...
+    supports_gradient_checkpointing = ...
+
+class RemBertModel(RemBertPreTrainedModel):
+    def __init__(self, config, add_pooling_layer=...) -> None: ...
+    def get_input_embeddings(self):  # -> Embedding:
+        ...
+    def set_input_embeddings(self, value):  # -> None:
+        ...
+    def forward(
+        self,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.LongTensor | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        encoder_hidden_states: torch.FloatTensor | None = ...,
+        encoder_attention_mask: torch.FloatTensor | None = ...,
+        past_key_values: tuple[tuple[torch.FloatTensor]] | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        cache_position: torch.Tensor | None = ...,
+    ) -> tuple | BaseModelOutputWithPoolingAndCrossAttentions: ...
+
+class RemBertForMaskedLM(RemBertPreTrainedModel):
+    _tied_weights_keys = ...
+    def __init__(self, config) -> None: ...
+    def get_output_embeddings(self):  # -> Linear:
+        ...
+    def set_output_embeddings(self, new_embeddings):  # -> None:
+        ...
+    def forward(
+        self,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.LongTensor | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        encoder_hidden_states: torch.FloatTensor | None = ...,
+        encoder_attention_mask: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | MaskedLMOutput: ...
+    def prepare_inputs_for_generation(
+        self, input_ids, attention_mask=..., **model_kwargs
+    ):  # -> dict[str, Tensor | Any]:
+        ...
+    @classmethod
+    def can_generate(cls) -> bool: ...
+
+class RemBertForCausalLM(RemBertPreTrainedModel, GenerationMixin):
+    _tied_weights_keys = ...
+    def __init__(self, config) -> None: ...
+    def get_output_embeddings(self):  # -> Linear:
+        ...
+    def set_output_embeddings(self, new_embeddings):  # -> None:
+        ...
+    def forward(
+        self,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.LongTensor | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        encoder_hidden_states: torch.FloatTensor | None = ...,
+        encoder_attention_mask: torch.FloatTensor | None = ...,
+        past_key_values: tuple[tuple[torch.FloatTensor]] | None = ...,
+        labels: torch.LongTensor | None = ...,
+        use_cache: bool | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+        **kwargs,
+    ) -> tuple | CausalLMOutputWithCrossAttentions: ...
+
+class RemBertForSequenceClassification(RemBertPreTrainedModel):
+    def __init__(self, config) -> None: ...
+    def forward(
+        self,
+        input_ids: torch.FloatTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        position_ids: torch.FloatTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | SequenceClassifierOutput: ...
+
+class RemBertForMultipleChoice(RemBertPreTrainedModel):
+    def __init__(self, config) -> None: ...
+    def forward(
+        self,
+        input_ids: torch.FloatTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        position_ids: torch.FloatTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | MultipleChoiceModelOutput: ...
+
+class RemBertForTokenClassification(RemBertPreTrainedModel):
+    def __init__(self, config) -> None: ...
+    def forward(
+        self,
+        input_ids: torch.FloatTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        position_ids: torch.FloatTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        labels: torch.LongTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | TokenClassifierOutput: ...
+
+class RemBertForQuestionAnswering(RemBertPreTrainedModel):
+    def __init__(self, config) -> None: ...
+    def forward(
+        self,
+        input_ids: torch.FloatTensor | None = ...,
+        attention_mask: torch.FloatTensor | None = ...,
+        token_type_ids: torch.LongTensor | None = ...,
+        position_ids: torch.FloatTensor | None = ...,
+        head_mask: torch.FloatTensor | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        start_positions: torch.LongTensor | None = ...,
+        end_positions: torch.LongTensor | None = ...,
+        output_attentions: bool | None = ...,
+        output_hidden_states: bool | None = ...,
+        return_dict: bool | None = ...,
+    ) -> tuple | QuestionAnsweringModelOutput: ...
+
+__all__ = [
+    "RemBertForCausalLM",
+    "RemBertForMaskedLM",
+    "RemBertForMultipleChoice",
+    "RemBertForQuestionAnswering",
+    "RemBertForSequenceClassification",
+    "RemBertForTokenClassification",
+    "RemBertLayer",
+    "RemBertModel",
+    "RemBertPreTrainedModel",
+    "load_tf_weights_in_rembert",
+]

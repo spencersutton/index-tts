@@ -1,0 +1,23 @@
+import dataclasses
+from collections.abc import Callable
+from typing import Any, Protocol
+
+from torch import _ops
+
+class InfoProtocol(Protocol):
+    _backward_fn: Callable | None
+    _setup_context_fn: Callable | None
+
+@dataclasses.dataclass
+class Info:
+    _backward_fn: Callable | None
+    _setup_context_fn: Callable | None
+
+def make_autograd_impl(op: _ops.OpOverload, info: InfoProtocol) -> Callable: ...
+def supports_tensorlist(cls: Any) -> Any: ...
+def not_list_of_tensor(tree): ...
+def not_list_of_optional_tensor(tree): ...
+
+flatten = ...
+unflatten = ...
+spec_t = ...

@@ -1,0 +1,43 @@
+import os
+from typing import Any
+
+from transformers.tokenization_utils import PreTrainedTokenizer
+
+from ...tokenization_utils_fast import PreTrainedTokenizerFast
+from ...utils import is_tokenizers_available
+from .configuration_auto import replace_list_option_in_docstrings
+
+"""Auto Tokenizer class."""
+if is_tokenizers_available(): ...
+else:
+    PreTrainedTokenizerFast = ...
+logger = ...
+TOKENIZER_MAPPING_NAMES = ...
+TOKENIZER_MAPPING = ...
+CONFIG_TO_TYPE = ...
+
+def tokenizer_class_from_name(class_name: str) -> type[Any] | None: ...
+def get_tokenizer_config(
+    pretrained_model_name_or_path: str | os.PathLike[str],
+    cache_dir: str | os.PathLike[str] | None = ...,
+    force_download: bool = ...,
+    resume_download: bool | None = ...,
+    proxies: dict[str, str] | None = ...,
+    token: bool | str | None = ...,
+    revision: str | None = ...,
+    local_files_only: bool = ...,
+    subfolder: str = ...,
+    **kwargs: object,
+) -> dict[str, Any]: ...
+
+class AutoTokenizer:
+    def __init__(self) -> None: ...
+    @classmethod
+    def from_pretrained(
+        cls, pretrained_model_name_or_path: str | os.PathLike[str], *inputs: object, **kwargs: object
+    ) -> PreTrainedTokenizer: ...
+    @staticmethod
+    def register(config_class, slow_tokenizer_class=..., fast_tokenizer_class=..., exist_ok=...):  # -> None:
+        ...
+
+__all__ = ["TOKENIZER_MAPPING", "AutoTokenizer"]

@@ -1,0 +1,215 @@
+from typing import Any, Literal
+
+from .base import BaseInferenceType, dataclass_with_extra
+
+@dataclass_with_extra
+class ChatCompletionInputURL(BaseInferenceType):
+    url: str
+
+type ChatCompletionInputMessageChunkType = Literal["text", "image_url"]
+
+@dataclass_with_extra
+class ChatCompletionInputMessageChunk(BaseInferenceType):
+    type: ChatCompletionInputMessageChunkType
+    image_url: ChatCompletionInputURL | None = ...
+    text: str | None = ...
+
+@dataclass_with_extra
+class ChatCompletionInputFunctionDefinition(BaseInferenceType):
+    name: str
+    parameters: Any
+    description: str | None = ...
+
+@dataclass_with_extra
+class ChatCompletionInputToolCall(BaseInferenceType):
+    function: ChatCompletionInputFunctionDefinition
+    id: str
+    type: str
+
+@dataclass_with_extra
+class ChatCompletionInputMessage(BaseInferenceType):
+    role: str
+    content: list[ChatCompletionInputMessageChunk] | str | None = ...
+    name: str | None = ...
+    tool_calls: list[ChatCompletionInputToolCall] | None = ...
+
+@dataclass_with_extra
+class ChatCompletionInputJSONSchema(BaseInferenceType):
+    name: str
+    description: str | None = ...
+    schema: dict[str, object] | None = ...
+    strict: bool | None = ...
+
+@dataclass_with_extra
+class ChatCompletionInputResponseFormatText(BaseInferenceType):
+    type: Literal["text"]
+
+@dataclass_with_extra
+class ChatCompletionInputResponseFormatJSONSchema(BaseInferenceType):
+    type: Literal["json_schema"]
+    json_schema: ChatCompletionInputJSONSchema
+
+@dataclass_with_extra
+class ChatCompletionInputResponseFormatJSONObject(BaseInferenceType):
+    type: Literal["json_object"]
+
+type ChatCompletionInputGrammarType = (
+    ChatCompletionInputResponseFormatText
+    | ChatCompletionInputResponseFormatJSONSchema
+    | ChatCompletionInputResponseFormatJSONObject
+)
+
+@dataclass_with_extra
+class ChatCompletionInputStreamOptions(BaseInferenceType):
+    include_usage: bool | None = ...
+
+@dataclass_with_extra
+class ChatCompletionInputFunctionName(BaseInferenceType):
+    name: str
+
+@dataclass_with_extra
+class ChatCompletionInputToolChoiceClass(BaseInferenceType):
+    function: ChatCompletionInputFunctionName
+
+type ChatCompletionInputToolChoiceEnum = Literal["auto", "none", "required"]
+
+@dataclass_with_extra
+class ChatCompletionInputTool(BaseInferenceType):
+    function: ChatCompletionInputFunctionDefinition
+    type: str
+
+@dataclass_with_extra
+class ChatCompletionInput(BaseInferenceType):
+    messages: list[ChatCompletionInputMessage]
+    frequency_penalty: float | None = ...
+    logit_bias: list[float] | None = ...
+    logprobs: bool | None = ...
+    max_tokens: int | None = ...
+    model: str | None = ...
+    n: int | None = ...
+    presence_penalty: float | None = ...
+    response_format: ChatCompletionInputGrammarType | None = ...
+    seed: int | None = ...
+    stop: list[str] | None = ...
+    stream: bool | None = ...
+    stream_options: ChatCompletionInputStreamOptions | None = ...
+    temperature: float | None = ...
+    tool_choice: ChatCompletionInputToolChoiceClass | ChatCompletionInputToolChoiceEnum | None = ...
+    tool_prompt: str | None = ...
+    tools: list[ChatCompletionInputTool] | None = ...
+    top_logprobs: int | None = ...
+    top_p: float | None = ...
+
+@dataclass_with_extra
+class ChatCompletionOutputTopLogprob(BaseInferenceType):
+    logprob: float
+    token: str
+
+@dataclass_with_extra
+class ChatCompletionOutputLogprob(BaseInferenceType):
+    logprob: float
+    token: str
+    top_logprobs: list[ChatCompletionOutputTopLogprob]
+
+@dataclass_with_extra
+class ChatCompletionOutputLogprobs(BaseInferenceType):
+    content: list[ChatCompletionOutputLogprob]
+
+@dataclass_with_extra
+class ChatCompletionOutputFunctionDefinition(BaseInferenceType):
+    arguments: str
+    name: str
+    description: str | None = ...
+
+@dataclass_with_extra
+class ChatCompletionOutputToolCall(BaseInferenceType):
+    function: ChatCompletionOutputFunctionDefinition
+    id: str
+    type: str
+
+@dataclass_with_extra
+class ChatCompletionOutputMessage(BaseInferenceType):
+    role: str
+    content: str | None = ...
+    reasoning: str | None = ...
+    tool_call_id: str | None = ...
+    tool_calls: list[ChatCompletionOutputToolCall] | None = ...
+
+@dataclass_with_extra
+class ChatCompletionOutputComplete(BaseInferenceType):
+    finish_reason: str
+    index: int
+    message: ChatCompletionOutputMessage
+    logprobs: ChatCompletionOutputLogprobs | None = ...
+
+@dataclass_with_extra
+class ChatCompletionOutputUsage(BaseInferenceType):
+    completion_tokens: int
+    prompt_tokens: int
+    total_tokens: int
+
+@dataclass_with_extra
+class ChatCompletionOutput(BaseInferenceType):
+    choices: list[ChatCompletionOutputComplete]
+    created: int
+    id: str
+    model: str
+    system_fingerprint: str
+    usage: ChatCompletionOutputUsage
+
+@dataclass_with_extra
+class ChatCompletionStreamOutputFunction(BaseInferenceType):
+    arguments: str
+    name: str | None = ...
+
+@dataclass_with_extra
+class ChatCompletionStreamOutputDeltaToolCall(BaseInferenceType):
+    function: ChatCompletionStreamOutputFunction
+    id: str
+    index: int
+    type: str
+
+@dataclass_with_extra
+class ChatCompletionStreamOutputDelta(BaseInferenceType):
+    role: str
+    content: str | None = ...
+    reasoning: str | None = ...
+    tool_call_id: str | None = ...
+    tool_calls: list[ChatCompletionStreamOutputDeltaToolCall] | None = ...
+
+@dataclass_with_extra
+class ChatCompletionStreamOutputTopLogprob(BaseInferenceType):
+    logprob: float
+    token: str
+
+@dataclass_with_extra
+class ChatCompletionStreamOutputLogprob(BaseInferenceType):
+    logprob: float
+    token: str
+    top_logprobs: list[ChatCompletionStreamOutputTopLogprob]
+
+@dataclass_with_extra
+class ChatCompletionStreamOutputLogprobs(BaseInferenceType):
+    content: list[ChatCompletionStreamOutputLogprob]
+
+@dataclass_with_extra
+class ChatCompletionStreamOutputChoice(BaseInferenceType):
+    delta: ChatCompletionStreamOutputDelta
+    index: int
+    finish_reason: str | None = ...
+    logprobs: ChatCompletionStreamOutputLogprobs | None = ...
+
+@dataclass_with_extra
+class ChatCompletionStreamOutputUsage(BaseInferenceType):
+    completion_tokens: int
+    prompt_tokens: int
+    total_tokens: int
+
+@dataclass_with_extra
+class ChatCompletionStreamOutput(BaseInferenceType):
+    choices: list[ChatCompletionStreamOutputChoice]
+    created: int
+    id: str
+    model: str
+    system_fingerprint: str
+    usage: ChatCompletionStreamOutputUsage | None = ...

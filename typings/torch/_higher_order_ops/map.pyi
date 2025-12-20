@@ -1,0 +1,39 @@
+from collections.abc import Callable
+from typing import TypeVarTuple
+
+import torch
+import torch.utils._pytree as pytree
+from torch._C import DispatchKey
+from torch._ops import HigherOrderOperator
+from torch._subclasses.fake_tensor import FakeTensorMode
+from torch.fx.experimental.proxy_tensor import ProxyTorchDispatchMode
+
+class MapImpl(HigherOrderOperator):
+    def __init__(self) -> None: ...
+    def __call__(self, *args, **kwargs): ...
+
+map_impl = ...
+
+def map(
+    f: Callable[[pytree.PyTree, tuple[pytree.PyTree, ...]], pytree.PyTree],
+    xs: pytree.PyTree | torch.Tensor,
+    *args: TypeVarTuple,
+): ...
+
+class MapAutogradOp(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, f, num_mapped_args, *flat_args): ...
+    @staticmethod
+    def backward(ctx, *flat_grads): ...
+
+def trace_map(proxy_mode, func_overload, f, xs, pos_args): ...
+@map_impl.py_impl(DispatchKey.CompositeExplicitAutograd)
+def map_dense(f, xs, pos_args): ...
+@map_impl.py_autograd_impl
+def map_autograd(f, xs, pos_args): ...
+@map_impl.py_impl(ProxyTorchDispatchMode)
+def map_proxy_torch_dispatch_mode(mode, f, xs, args): ...
+@map_impl.py_impl(FakeTensorMode)
+def map_fake_tensor_mode(mode, f, xs, args): ...
+@map_impl.py_functionalize_impl
+def map_functionalize(ctx, f, xs, pos_args): ...

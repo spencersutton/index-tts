@@ -1,0 +1,71 @@
+import torch
+
+from ...cache_utils import Cache
+from ...modeling_flash_attention_utils import FlashAttentionKwargs
+from ...modeling_outputs import BaseModelOutputWithPast
+from ...processing_utils import Unpack
+from ...utils import TransformersKwargs
+from ...utils.generic import check_model_inputs
+from ..llama.modeling_llama import (
+    LlamaAttention,
+    LlamaDecoderLayer,
+    LlamaForCausalLM,
+    LlamaForQuestionAnswering,
+    LlamaForSequenceClassification,
+    LlamaForTokenClassification,
+    LlamaMLP,
+    LlamaPreTrainedModel,
+)
+from ..mistral.modeling_mistral import MistralModel
+from .configuration_qwen2 import Qwen2Config
+
+logger = ...
+
+class Qwen2MLP(LlamaMLP):
+    def __init__(self, config) -> None: ...
+
+class Qwen2Attention(LlamaAttention):
+    def __init__(self, config: Qwen2Config, layer_idx: int) -> None: ...
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor],
+        attention_mask: torch.Tensor | None,
+        past_key_value: Cache | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        **kwargs: Unpack[FlashAttentionKwargs],
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]: ...
+
+class Qwen2DecoderLayer(LlamaDecoderLayer):
+    def __init__(self, config: Qwen2Config, layer_idx: int) -> None: ...
+
+class Qwen2PreTrainedModel(LlamaPreTrainedModel): ...
+
+class Qwen2Model(MistralModel):
+    def __init__(self, config: Qwen2Config) -> None: ...
+    @check_model_inputs
+    def forward(
+        self,
+        input_ids: torch.LongTensor | None = ...,
+        attention_mask: torch.Tensor | None = ...,
+        position_ids: torch.LongTensor | None = ...,
+        past_key_values: Cache | None = ...,
+        inputs_embeds: torch.FloatTensor | None = ...,
+        use_cache: bool | None = ...,
+        cache_position: torch.LongTensor | None = ...,
+        **kwargs: Unpack[TransformersKwargs],
+    ) -> BaseModelOutputWithPast: ...
+
+class Qwen2ForCausalLM(LlamaForCausalLM): ...
+class Qwen2ForSequenceClassification(LlamaForSequenceClassification): ...
+class Qwen2ForTokenClassification(LlamaForTokenClassification): ...
+class Qwen2ForQuestionAnswering(LlamaForQuestionAnswering): ...
+
+__all__ = [
+    "Qwen2ForCausalLM",
+    "Qwen2ForQuestionAnswering",
+    "Qwen2ForSequenceClassification",
+    "Qwen2ForTokenClassification",
+    "Qwen2Model",
+    "Qwen2PreTrainedModel",
+]

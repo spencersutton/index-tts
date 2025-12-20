@@ -1,0 +1,6 @@
+from typing import TYPE_CHECKING
+
+from .configuration_dinov2_with_registers import *
+from .modeling_dinov2_with_registers import *
+
+if TYPE_CHECKING: ...

@@ -1,0 +1,23 @@
+from typing import Any
+
+from huggingface_hub.inference._common import RequestParameters
+from huggingface_hub.inference._providers._common import (
+    BaseConversationalTask,
+    BaseTextGenerationTask,
+    TaskProviderHelper,
+)
+
+class NebiusTextGenerationTask(BaseTextGenerationTask):
+    def __init__(self) -> None: ...
+    def get_response(self, response: bytes | dict, request_params: RequestParameters | None = ...) -> Any: ...
+
+class NebiusConversationalTask(BaseConversationalTask):
+    def __init__(self) -> None: ...
+
+class NebiusTextToImageTask(TaskProviderHelper):
+    def __init__(self) -> None: ...
+    def get_response(self, response: bytes | dict, request_params: RequestParameters | None = ...) -> Any: ...
+
+class NebiusFeatureExtractionTask(TaskProviderHelper):
+    def __init__(self) -> None: ...
+    def get_response(self, response: bytes | dict, request_params: RequestParameters | None = ...) -> Any: ...

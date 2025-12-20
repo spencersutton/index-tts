@@ -1,0 +1,11 @@
+from ...utils.import_utils import requires
+from .image_processing_convnext import ConvNextImageProcessor
+
+"""Feature extractor class for ConvNeXT."""
+logger = ...
+
+@requires(backends=("vision",))
+class ConvNextFeatureExtractor(ConvNextImageProcessor):
+    def __init__(self, *args, **kwargs) -> None: ...
+
+__all__ = ["ConvNextFeatureExtractor"]

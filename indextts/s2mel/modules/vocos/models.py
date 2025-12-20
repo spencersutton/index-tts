@@ -1,5 +1,3 @@
-from typing import Optional
-
 import torch
 from torch import nn
 from torch.nn.utils import weight_norm
@@ -43,8 +41,8 @@ class VocosBackbone(Backbone):
         dim: int,
         intermediate_dim: int,
         num_layers: int,
-        layer_scale_init_value: Optional[float] = None,
-        adanorm_num_embeddings: Optional[int] = None,
+        layer_scale_init_value: float | None = None,
+        adanorm_num_embeddings: int | None = None,
     ) -> None:
         super().__init__()
         self.input_channels = input_channels

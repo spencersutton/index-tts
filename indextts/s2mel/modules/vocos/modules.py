@@ -1,5 +1,3 @@
-from typing import Optional, Tuple
-
 import torch
 from torch import nn
 from torch.nn.utils import remove_weight_norm, weight_norm
@@ -22,7 +20,7 @@ class ConvNeXtBlock(nn.Module):
         dim: int,
         intermediate_dim: int,
         layer_scale_init_value: float,
-        adanorm_num_embeddings: Optional[int] = None,
+        adanorm_num_embeddings: int | None = None,
     ) -> None:
         super().__init__()
         self.dwconv = nn.Conv1d(dim, dim, kernel_size=7, padding=3, groups=dim)  # depthwise conv
@@ -40,7 +38,7 @@ class ConvNeXtBlock(nn.Module):
             else None
         )
 
-    def forward(self, x: torch.Tensor, cond_embedding_id: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, cond_embedding_id: torch.Tensor | None = None) -> torch.Tensor:
         residual = x
         x = self.dwconv(x)
         x = x.transpose(1, 2)  # (B, C, T) -> (B, T, C)
@@ -106,9 +104,9 @@ class ResBlock1(nn.Module):
         self,
         dim: int,
         kernel_size: int = 3,
-        dilation: Tuple[int, int, int] = (1, 3, 5),
+        dilation: tuple[int, int, int] = (1, 3, 5),
         lrelu_slope: float = 0.1,
-        layer_scale_init_value: Optional[float] = None,
+        layer_scale_init_value: float | None = None,
     ) -> None:
         super().__init__()
         self.lrelu_slope = lrelu_slope

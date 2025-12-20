@@ -7,7 +7,6 @@
 import json
 import os
 from pathlib import Path
-from typing import Dict, Optional, Union
 
 import torch
 import torch.nn as nn
@@ -368,10 +367,10 @@ class BigVGAN(
         revision: str,
         cache_dir: str,
         force_download: bool,
-        proxies: Optional[Dict],
+        proxies: dict | None,
         resume_download: bool,
         local_files_only: bool,
-        token: Union[str, bool, None],
+        token: str | bool | None,
         map_location: str = "cpu",  # Additional argument
         strict: bool = False,  # Additional argument
         use_cuda_kernel: bool = False,

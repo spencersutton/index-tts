@@ -2,7 +2,6 @@ import hashlib
 import pickle
 from collections import deque
 from copy import copy
-from typing import Dict, List, Optional, Set
 
 import torch
 
@@ -15,10 +14,10 @@ class KVCacheBlock:
         self.token_ids = []
 
     @property
-    def block_hash(self) -> Optional[bytes]:
+    def block_hash(self) -> bytes | None:
         return self._block_hash
 
-    def update(self, block_hash: bytes, token_ids: List[int]) -> None:
+    def update(self, block_hash: bytes, token_ids: list[int]) -> None:
         self._block_hash = block_hash
         self.token_ids = token_ids
 
@@ -29,13 +28,13 @@ class KVCacheBlock:
 
 
 class Seq:
-    def __init__(self, token_ids: List[int], block_size: int = 256) -> None:
+    def __init__(self, token_ids: list[int], block_size: int = 256) -> None:
         self.token_ids = copy(token_ids)
         self.last_token = token_ids[-1] if token_ids else 0
         self.num_tokens = len(self.token_ids)
         self.num_prompt_tokens = len(token_ids)
         self.num_cached_tokens = 0
-        self.block_table: List[int] = []
+        self.block_table: list[int] = []
         self.block_size = block_size
 
     def __len__(self) -> int:
@@ -56,7 +55,7 @@ class Seq:
     def last_block_num_tokens(self):
         return self.num_tokens - (self.num_blocks - 1) * self.block_size
 
-    def get_block_tokens(self, block_idx: int) -> List[int]:
+    def get_block_tokens(self, block_idx: int) -> list[int]:
         assert 0 <= block_idx < self.num_blocks
         start = block_idx * self.block_size
         end = start + self.block_size
@@ -85,10 +84,10 @@ class KVCacheManager:
         self.num_blocks = num_blocks
         self.dtype = dtype
 
-        self.blocks: List[KVCacheBlock] = [KVCacheBlock(i) for i in range(num_blocks)]
-        self.block_hash_to_id: Dict[bytes, int] = {}
+        self.blocks: list[KVCacheBlock] = [KVCacheBlock(i) for i in range(num_blocks)]
+        self.block_hash_to_id: dict[bytes, int] = {}
         self.free_block_ids: deque = deque(range(num_blocks))
-        self.used_block_ids: Set[int] = set()
+        self.used_block_ids: set[int] = set()
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
         cache_dtype = torch.float16 if device == "cuda" else dtype
@@ -104,7 +103,7 @@ class KVCacheManager:
         )
 
     @classmethod
-    def compute_block_hash(cls, token_ids: List[int], parent_hash: Optional[bytes] = None) -> bytes:
+    def compute_block_hash(cls, token_ids: list[int], parent_hash: bytes | None = None) -> bytes:
         hash_input = []
         if parent_hash is not None:
             hash_input.append(parent_hash)

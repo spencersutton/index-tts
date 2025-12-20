@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import numpy as np
 import torch
 import torch.nn as nn
@@ -32,7 +30,7 @@ class InterpolateRegulator(nn.Module):
     def __init__(
         self,
         channels: int,
-        sampling_ratios: Tuple,
+        sampling_ratios: tuple,
         is_discrete: bool = False,
         in_channels: int = None,  # only applies to continuous input
         vector_quantize: bool = False,  # whether to use vector quantization, only applies to continuous input

@@ -1,5 +1,4 @@
 import sys
-from typing import List, Optional
 
 import torch
 from torch import nn
@@ -76,7 +75,7 @@ class AccelInferenceEngine:
         self.graph_pool = None
         self.graph_captured = False
 
-    def _prepare_prefill(self, requests: List[Seq]):
+    def _prepare_prefill(self, requests: list[Seq]):
         input_ids = []
         positions = []
         cu_seqlens_q = [0]
@@ -135,7 +134,7 @@ class AccelInferenceEngine:
 
         return input_ids, positions
 
-    def _prepare_decode(self, requests: List[Seq]):
+    def _prepare_decode(self, requests: list[Seq]):
         if not requests:
             raise RuntimeError("FATAL: No requests provided to _prepare_decode!")
 
@@ -181,7 +180,7 @@ class AccelInferenceEngine:
 
         return input_ids, positions
 
-    def _prepare_sample(self, requests: List[Seq], temperature: float):
+    def _prepare_sample(self, requests: list[Seq], temperature: float):
         temperatures = [temperature] * len(requests)
         temperatures = torch.tensor(temperatures, dtype=torch.float32, pin_memory=True).cuda(non_blocking=True)
         return temperatures
@@ -272,8 +271,8 @@ class AccelInferenceEngine:
         input_ids: torch.Tensor,
         positions: torch.Tensor,
         context: ForwardContext,
-        tts_mel_embedding: Optional[torch.nn.Module] = None,
-        tts_text_pos_embedding: Optional[torch.nn.Module] = None,
+        tts_mel_embedding: torch.nn.Module | None = None,
+        tts_text_pos_embedding: torch.nn.Module | None = None,
     ) -> torch.Tensor:
         bs = input_ids.size(0)
         use_tts_embedding = hasattr(self, "_tts_mode") and self._tts_mode
@@ -330,11 +329,11 @@ class AccelInferenceEngine:
         temperature: float = 1.0,
         top_k: int = 50,
         top_p: float = 1.0,
-        stop_tokens: Optional[List[int]] = None,
-        attention_mask: Optional[torch.Tensor] = None,
-        tts_embeddings: Optional[torch.Tensor] = None,  # TTS: [pad][cond][text] embeddings (87 tokens, NO start_mel)
-        tts_mel_embedding: Optional[torch.nn.Module] = None,  # TTS: mel_embedding layer
-        tts_text_pos_embedding: Optional[torch.nn.Module] = None,  # TTS: text_pos_embedding layer
+        stop_tokens: list[int] | None = None,
+        attention_mask: torch.Tensor | None = None,
+        tts_embeddings: torch.Tensor | None = None,  # TTS: [pad][cond][text] embeddings (87 tokens, NO start_mel)
+        tts_mel_embedding: torch.nn.Module | None = None,  # TTS: mel_embedding layer
+        tts_text_pos_embedding: torch.nn.Module | None = None,  # TTS: text_pos_embedding layer
     ) -> torch.Tensor:
         """
         Generate tokens.

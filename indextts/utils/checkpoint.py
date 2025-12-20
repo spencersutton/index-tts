@@ -26,6 +26,6 @@ def load_checkpoint(model: torch.nn.Module, model_pth: str) -> dict:
     info_path = re.sub(".pth$", ".yaml", model_pth)
     configs = {}
     if os.path.exists(info_path):
-        with open(info_path, "r") as fin:
+        with open(info_path) as fin:
             configs = yaml.load(fin, Loader=yaml.FullLoader)
     return configs

@@ -94,7 +94,7 @@ class CodecTrainer:
             )
             self.logger.info("Load model weights for finetune SUCCESS!")
         else:
-            raise ValueError("Unsupported resume type: {}".format(resume_type))
+            raise ValueError(f"Unsupported resume type: {resume_type}")
         self.epoch = int(checkpoint_path.split("_")[-3].split("-")[-1]) + 1
         self.step = int(checkpoint_path.split("_")[-2].split("-")[-1]) + 1
         return checkpoint_path
@@ -126,7 +126,7 @@ class CodecTrainer:
     def _check_nan(self, loss) -> None:
         if torch.any(torch.isnan(loss)):
             self.logger.fatal("Fatal Error: NaN!")
-            self.logger.error("loss = {:.6f}".format(loss.item()), in_order=True)
+            self.logger.error(f"loss = {loss.item():.6f}", in_order=True)
 
     def _check_basic_configs(self) -> None:
         if self.cfg.train.gradient_accumulation_step <= 0:

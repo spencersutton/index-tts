@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Iterable
+from collections.abc import Iterable
 
 import numpy as np
 import torch
@@ -37,7 +37,7 @@ class CodecDataset(torch.utils.data.Dataset):
             for utt_info in self.metadata:
                 dataset = utt_info["Dataset"]
                 uid = utt_info["Uid"]
-                utt = "{}_{}".format(dataset, uid)
+                utt = f"{dataset}_{uid}"
 
                 self.utt2audio_path[utt] = os.path.join(
                     cfg.preprocess.processed_dir,
@@ -50,7 +50,7 @@ class CodecDataset(torch.utils.data.Dataset):
             for utt_info in self.metadata:
                 dataset = utt_info["Dataset"]
                 uid = utt_info["Uid"]
-                utt = "{}_{}".format(dataset, uid)
+                utt = f"{dataset}_{uid}"
 
                 self.utt2label_path[utt] = os.path.join(
                     cfg.preprocess.processed_dir,
@@ -63,7 +63,7 @@ class CodecDataset(torch.utils.data.Dataset):
             for utt_info in self.metadata:
                 dataset = utt_info["Dataset"]
                 uid = utt_info["Uid"]
-                utt = "{}_{}".format(dataset, uid)
+                utt = f"{dataset}_{uid}"
 
                 self.utt2one_hot_path[utt] = os.path.join(
                     cfg.preprocess.processed_dir,
@@ -77,7 +77,7 @@ class CodecDataset(torch.utils.data.Dataset):
             for utt_info in self.metadata:
                 dataset = utt_info["Dataset"]
                 uid = utt_info["Uid"]
-                utt = "{}_{}".format(dataset, uid)
+                utt = f"{dataset}_{uid}"
 
                 self.utt2mel_path[utt] = os.path.join(
                     cfg.preprocess.processed_dir,
@@ -91,7 +91,7 @@ class CodecDataset(torch.utils.data.Dataset):
             for utt_info in self.metadata:
                 dataset = utt_info["Dataset"]
                 uid = utt_info["Uid"]
-                utt = "{}_{}".format(dataset, uid)
+                utt = f"{dataset}_{uid}"
 
                 self.utt2frame_pitch_path[utt] = os.path.join(
                     cfg.preprocess.processed_dir,
@@ -105,7 +105,7 @@ class CodecDataset(torch.utils.data.Dataset):
             for utt_info in self.metadata:
                 dataset = utt_info["Dataset"]
                 uid = utt_info["Uid"]
-                utt = "{}_{}".format(dataset, uid)
+                utt = f"{dataset}_{uid}"
                 self.utt2uv_path[utt] = os.path.join(
                     cfg.preprocess.processed_dir,
                     dataset,
@@ -121,7 +121,7 @@ class CodecDataset(torch.utils.data.Dataset):
             for utt_info in self.metadata:
                 dataset = utt_info["Dataset"]
                 uid = utt_info["Uid"]
-                utt = "{}_{}".format(dataset, uid)
+                utt = f"{dataset}_{uid}"
                 self.utt2logamp_path[utt] = os.path.join(
                     cfg.preprocess.processed_dir,
                     dataset,
@@ -152,7 +152,7 @@ class CodecDataset(torch.utils.data.Dataset):
 
         dataset = utt_info["Dataset"]
         uid = utt_info["Uid"]
-        utt = "{}_{}".format(dataset, uid)
+        utt = f"{dataset}_{uid}"
 
         single_feature = dict()
 
@@ -183,7 +183,7 @@ class CodecDataset(torch.utils.data.Dataset):
         return single_feature
 
     def get_metadata(self):
-        with open(self.metafile_path, "r", encoding="utf-8") as f:
+        with open(self.metafile_path, encoding="utf-8") as f:
             metadata = json.load(f)
 
         return metadata
@@ -225,7 +225,7 @@ class CodecConcatDataset(ConcatDataset):
                     self.eval_pitchs.append(dataset.eval_pitch)
 
 
-class CodecCollator(object):
+class CodecCollator:
     """Zero-pads model inputs and targets based on number of frames per step"""
 
     def __init__(self, cfg) -> None:

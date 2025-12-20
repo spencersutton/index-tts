@@ -4,7 +4,6 @@ os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 import time
 import warnings
 from subprocess import CalledProcessError
-from typing import Dict, List
 
 import torch
 import torchaudio
@@ -187,18 +186,18 @@ class IndexTTS:
         code_lens = torch.tensor(code_lens, dtype=torch.long, device=device)
         return codes, code_lens
 
-    def bucket_segments(self, segments, bucket_max_size=4) -> List[List[Dict]]:
+    def bucket_segments(self, segments, bucket_max_size=4) -> list[list[dict]]:
         """
         Segment data bucketing.
         if ``bucket_max_size=1``, return all segments in one bucket.
         """
-        outputs: List[Dict] = []
+        outputs: list[dict] = []
         for idx, sent in enumerate(segments):
             outputs.append({"idx": idx, "sent": sent, "len": len(sent)})
 
         if len(outputs) > bucket_max_size:
             # split segments into buckets by segment length
-            buckets: List[List[Dict]] = []
+            buckets: list[list[dict]] = []
             factor = 1.5
             last_bucket = None
             last_bucket_sent_len_median = 0
@@ -224,8 +223,8 @@ class IndexTTS:
                     last_bucket_sent_len_median = last_bucket[mid]["len"]
             last_bucket = None
             # merge all buckets with size 1
-            out_buckets: List[List[Dict]] = []
-            only_ones: List[Dict] = []
+            out_buckets: list[list[dict]] = []
+            only_ones: list[dict] = []
             for b in buckets:
                 if len(b) == 1:
                     only_ones.append(b[0])
@@ -247,7 +246,7 @@ class IndexTTS:
             return out_buckets
         return [outputs]
 
-    def pad_tokens_cat(self, tokens: List[torch.Tensor]) -> torch.Tensor:
+    def pad_tokens_cat(self, tokens: list[torch.Tensor]) -> torch.Tensor:
         if self.model_version and self.model_version >= 1.5:
             # 1.5版本以上，直接使用stop_text_token 右侧填充，填充到最大长度
             # [1, N] -> [N,]
@@ -366,7 +365,7 @@ class IndexTTS:
         bigvgan_time = 0
 
         # text processing
-        all_text_tokens: List[List[torch.Tensor]] = []
+        all_text_tokens: list[list[torch.Tensor]] = []
         self._set_gr_progress(0.1, "text processing...")
         bucket_max_size = segments_bucket_max_size if self.device != "cpu" else 1
         all_segments = self.bucket_segments(segments, bucket_max_size=bucket_max_size)
@@ -381,7 +380,7 @@ class IndexTTS:
                 bucket_max_size,
             )
         for segments in all_segments:
-            temp_tokens: List[torch.Tensor] = []
+            temp_tokens: list[torch.Tensor] = []
             all_text_tokens.append(temp_tokens)
             for item in segments:
                 sent = item["sent"]

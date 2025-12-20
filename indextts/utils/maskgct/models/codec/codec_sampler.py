@@ -32,13 +32,11 @@ class ScheduledSampler(Sampler):
 
     def __init__(self, concat_dataset, batch_size, holistic_shuffle, logger=None, type="train") -> None:
         if not isinstance(concat_dataset, ConcatDataset):
-            raise ValueError(
-                "concat_dataset must be an instance of ConcatDataset, but got {}".format(type(concat_dataset))
-            )
+            raise ValueError(f"concat_dataset must be an instance of ConcatDataset, but got {type(concat_dataset)}")
         if not isinstance(batch_size, int):
-            raise ValueError("batch_size must be an integer, but got {}".format(type(batch_size)))
+            raise ValueError(f"batch_size must be an integer, but got {type(batch_size)}")
         if not isinstance(holistic_shuffle, bool):
-            raise ValueError("holistic_shuffle must be a boolean, but got {}".format(type(holistic_shuffle)))
+            raise ValueError(f"holistic_shuffle must be a boolean, but got {type(holistic_shuffle)}")
 
         self.concat_dataset = concat_dataset
         self.batch_size = batch_size
@@ -57,9 +55,7 @@ class ScheduledSampler(Sampler):
         for dataset_name, dataset_len in zip(affected_dataset_name, affected_dataset_len):
             if type != "valid":
                 logger.warning(
-                    "The {} dataset {} has a length of {}, which is smaller than the batch size {}. This may cause unexpected behavior.".format(
-                        type, dataset_name, dataset_len, batch_size
-                    )
+                    f"The {type} dataset {dataset_name} has a length of {dataset_len}, which is smaller than the batch size {batch_size}. This may cause unexpected behavior."
                 )
 
     def __len__(self) -> int:

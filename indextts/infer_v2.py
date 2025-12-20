@@ -132,7 +132,7 @@ class IndexTTS2:
         safetensors.torch.load_model(semantic_codec, semantic_code_ckpt)
         self.semantic_codec = semantic_codec.to(self.device)
         self.semantic_codec.eval()
-        print(">> semantic_codec weights restored from: {}".format(semantic_code_ckpt))
+        print(f">> semantic_codec weights restored from: {semantic_code_ckpt}")
 
         s2mel_path = os.path.join(self.model_dir, self.cfg.s2mel_checkpoint)
         s2mel = MyModel(self.cfg.s2mel, use_gpt_latent=True)

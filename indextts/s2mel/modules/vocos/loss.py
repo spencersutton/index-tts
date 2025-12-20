@@ -1,5 +1,3 @@
-from typing import List, Tuple
-
 import torch
 import torchaudio
 from torch import nn
@@ -51,7 +49,7 @@ class GeneratorLoss(nn.Module):
     Generator Loss module. Calculates the loss for the generator based on discriminator outputs.
     """
 
-    def forward(self, disc_outputs: List[torch.Tensor]) -> Tuple[torch.Tensor, List[torch.Tensor]]:
+    def forward(self, disc_outputs: list[torch.Tensor]) -> tuple[torch.Tensor, list[torch.Tensor]]:
         """
         Args:
             disc_outputs (List[Tensor]): List of discriminator outputs.
@@ -76,8 +74,8 @@ class DiscriminatorLoss(nn.Module):
     """
 
     def forward(
-        self, disc_real_outputs: List[torch.Tensor], disc_generated_outputs: List[torch.Tensor]
-    ) -> Tuple[torch.Tensor, List[torch.Tensor], List[torch.Tensor]]:
+        self, disc_real_outputs: list[torch.Tensor], disc_generated_outputs: list[torch.Tensor]
+    ) -> tuple[torch.Tensor, list[torch.Tensor], list[torch.Tensor]]:
         """
         Args:
             disc_real_outputs (List[Tensor]): List of discriminator outputs for real samples.
@@ -106,7 +104,7 @@ class FeatureMatchingLoss(nn.Module):
     Feature Matching Loss module. Calculates the feature matching loss between feature maps of the sub-discriminators.
     """
 
-    def forward(self, fmap_r: List[List[torch.Tensor]], fmap_g: List[List[torch.Tensor]]) -> torch.Tensor:
+    def forward(self, fmap_r: list[list[torch.Tensor]], fmap_g: list[list[torch.Tensor]]) -> torch.Tensor:
         """
         Args:
             fmap_r (List[List[Tensor]]): List of feature maps from real samples.

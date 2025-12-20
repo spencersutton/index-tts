@@ -103,7 +103,7 @@ class WN(torch.nn.Module):
     def __init__(
         self, hidden_channels, kernel_size, dilation_rate, n_layers, gin_channels=0, p_dropout=0, causal=False
     ) -> None:
-        super(WN, self).__init__()
+        super().__init__()
         conv1d_type = SConv1d
         assert kernel_size % 2 == 1
         self.hidden_channels = hidden_channels

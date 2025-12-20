@@ -1,5 +1,4 @@
 import math
-from typing import List, Union
 
 import numpy as np
 import torch
@@ -178,13 +177,13 @@ class DAC(BaseModel, CodecMixin):
     def __init__(
         self,
         encoder_dim: int = 64,
-        encoder_rates: List[int] = [2, 4, 8, 8],
+        encoder_rates: list[int] = [2, 4, 8, 8],
         latent_dim: int = None,
         decoder_dim: int = 1536,
-        decoder_rates: List[int] = [8, 8, 4, 2],
+        decoder_rates: list[int] = [8, 8, 4, 2],
         n_codebooks: int = 9,
         codebook_size: int = 1024,
-        codebook_dim: Union[int, list] = 8,
+        codebook_dim: int | list = 8,
         quantizer_dropout: bool = False,
         sample_rate: int = 44100,
         lstm: int = 2,

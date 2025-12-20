@@ -7,7 +7,6 @@ import itertools
 import sys
 import time
 from pathlib import Path
-from typing import Optional, Tuple
 
 import torch
 import torch._inductor.config
@@ -43,7 +42,7 @@ def multinomial_sample_one_no_sync(probs_sort):  # Does multinomial sampling wit
     return torch.argmax(probs_sort / q, dim=-1, keepdim=True).to(dtype=torch.int)
 
 
-def logits_to_probs(logits, temperature: float = 1.0, top_k: Optional[int] = None):
+def logits_to_probs(logits, temperature: float = 1.0, top_k: int | None = None):
     logits = logits / max(temperature, 1e-5)
 
     if top_k is not None:
@@ -54,7 +53,7 @@ def logits_to_probs(logits, temperature: float = 1.0, top_k: Optional[int] = Non
     return probs
 
 
-def sample(logits, temperature: float = 1.0, top_k: Optional[int] = None):
+def sample(logits, temperature: float = 1.0, top_k: int | None = None):
     probs = logits_to_probs(logits[0, -1], temperature, top_k)
     idx_next = multinomial_sample_one_no_sync(probs)
     return idx_next, probs
@@ -68,7 +67,7 @@ def prefill(model: Transformer, x: torch.Tensor, input_pos: torch.Tensor, **samp
 
 def decode_one_token(
     model: Transformer, x: torch.Tensor, input_pos: torch.Tensor, **sampling_kwargs
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     # input_pos: [B, 1]
     assert input_pos.shape[-1] == 1
     logits = model(x, input_pos)
@@ -163,7 +162,7 @@ def generate(
     *,
     interactive: bool,
     draft_model: Transformer,
-    speculate_k: Optional[int] = 8,
+    speculate_k: int | None = 8,
     callback=lambda x: x,
     **sampling_kwargs,
 ) -> torch.Tensor:
@@ -290,8 +289,8 @@ def main(
     checkpoint_path: Path = Path("checkpoints/meta-Transformer/Transformer-2-7b-chat-hf/model.pth"),
     compile: bool = True,
     compile_prefill: bool = False,
-    profile: Optional[Path] = None,
-    draft_checkpoint_path: Optional[Path] = None,
+    profile: Path | None = None,
+    draft_checkpoint_path: Path | None = None,
     speculate_k: int = 5,
     device=default_device,
 ) -> None:

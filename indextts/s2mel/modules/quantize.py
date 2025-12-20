@@ -53,7 +53,7 @@ class SnakeBeta(nn.Module):
             beta is initialized to 1 by default, higher values = higher-magnitude.
             alpha will be trained along with the rest of your model.
         """
-        super(SnakeBeta, self).__init__()
+        super().__init__()
         self.in_features = in_features
 
         # initialize alpha
@@ -145,7 +145,7 @@ class FAquantizer(nn.Module):
         separate_prosody_encoder=False,
         timbre_norm=False,
     ) -> None:
-        super(FAquantizer, self).__init__()
+        super().__init__()
         conv1d_type = SConv1d  # if causal else nn.Conv1d
         self.prosody_quantizer = ResidualVectorQuantize(
             input_dim=in_dim,

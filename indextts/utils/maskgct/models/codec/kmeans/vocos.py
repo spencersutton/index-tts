@@ -3,7 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Optional, Tuple
 
 import numpy as np
 import scipy
@@ -359,7 +358,7 @@ class IMDCTSymExpHead(FourierHead):
         dim: int,
         mdct_frame_len: int,
         padding: str = "same",
-        sample_rate: Optional[int] = None,
+        sample_rate: int | None = None,
         clip_audio: bool = False,
     ) -> None:
         super().__init__()
@@ -459,7 +458,7 @@ class ConvNeXtBlock(nn.Module):
         dim: int,
         intermediate_dim: int,
         layer_scale_init_value: float,
-        adanorm_num_embeddings: Optional[int] = None,
+        adanorm_num_embeddings: int | None = None,
     ) -> None:
         super().__init__()
         self.dwconv = nn.Conv1d(dim, dim, kernel_size=7, padding=3, groups=dim)  # depthwise conv
@@ -477,7 +476,7 @@ class ConvNeXtBlock(nn.Module):
             else None
         )
 
-    def forward(self, x: torch.Tensor, cond_embedding_id: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, cond_embedding_id: torch.Tensor | None = None) -> torch.Tensor:
         residual = x
         x = self.dwconv(x)
         x = x.transpose(1, 2)  # (B, C, T) -> (B, T, C)
@@ -543,9 +542,9 @@ class ResBlock1(nn.Module):
         self,
         dim: int,
         kernel_size: int = 3,
-        dilation: Tuple[int, int, int] = (1, 3, 5),
+        dilation: tuple[int, int, int] = (1, 3, 5),
         lrelu_slope: float = 0.1,
-        layer_scale_init_value: Optional[float] = None,
+        layer_scale_init_value: float | None = None,
     ) -> None:
         super().__init__()
         self.lrelu_slope = lrelu_slope
@@ -691,8 +690,8 @@ class VocosBackbone(Backbone):
         dim: int,
         intermediate_dim: int,
         num_layers: int,
-        layer_scale_init_value: Optional[float] = None,
-        adanorm_num_embeddings: Optional[int] = None,
+        layer_scale_init_value: float | None = None,
+        adanorm_num_embeddings: int | None = None,
     ) -> None:
         super().__init__()
         self.input_channels = input_channels

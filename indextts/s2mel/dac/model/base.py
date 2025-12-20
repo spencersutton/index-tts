@@ -1,7 +1,6 @@
 import math
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Union
 
 import numpy as np
 import torch
@@ -121,7 +120,7 @@ class CodecMixin:
     @torch.no_grad()
     def compress(
         self,
-        audio_path_or_signal: Union[str, Path, AudioSignal],
+        audio_path_or_signal: str | Path | AudioSignal,
         win_duration: float = 1.0,
         verbose: bool = False,
         normalize_db: float = -16,
@@ -229,7 +228,7 @@ class CodecMixin:
     @torch.no_grad()
     def decompress(
         self,
-        obj: Union[str, Path, DACFile],
+        obj: str | Path | DACFile,
         verbose: bool = False,
     ) -> AudioSignal:
         """Reconstruct audio from a given .dac file

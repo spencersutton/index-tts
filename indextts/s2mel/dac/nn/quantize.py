@@ -1,5 +1,3 @@
-from typing import Union
-
 import numpy as np
 import torch
 import torch.nn as nn
@@ -179,7 +177,7 @@ class ResidualVectorQuantize(nn.Module):
         input_dim: int = 512,
         n_codebooks: int = 9,
         codebook_size: int = 1024,
-        codebook_dim: Union[int, list] = 8,
+        codebook_dim: int | list = 8,
         quantizer_dropout: float = 0.0,
     ) -> None:
         super().__init__()

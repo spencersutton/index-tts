@@ -1,6 +1,5 @@
 import logging
 import os
-from typing import List
 
 import numpy as np
 import torch
@@ -29,7 +28,7 @@ class STFT(torch.nn.Module):
             window {str} -- Type of window to use (options are bartlett, hann, hamming, blackman, blackmanharris)
                 (default: {'hann'})
         """
-        super(STFT, self).__init__()
+        super().__init__()
         self.filter_length = filter_length
         self.hop_length = hop_length
         self.win_length = win_length or filter_length
@@ -38,7 +37,7 @@ class STFT(torch.nn.Module):
         self.pad_amount = int(self.filter_length / 2)
         fourier_basis = np.fft.fft(np.eye(self.filter_length))
 
-        cutoff = int((self.filter_length / 2 + 1))
+        cutoff = int(self.filter_length / 2 + 1)
         fourier_basis = np.vstack([np.real(fourier_basis[:cutoff, :]), np.imag(fourier_basis[:cutoff, :])])
         forward_basis = torch.FloatTensor(fourier_basis)
         inverse_basis = torch.FloatTensor(np.linalg.pinv(fourier_basis))
@@ -130,7 +129,7 @@ class STFT(torch.nn.Module):
 
 class BiGRU(nn.Module):
     def __init__(self, input_features, hidden_features, num_layers) -> None:
-        super(BiGRU, self).__init__()
+        super().__init__()
         self.gru = nn.GRU(
             input_features,
             hidden_features,
@@ -145,7 +144,7 @@ class BiGRU(nn.Module):
 
 class ConvBlockRes(nn.Module):
     def __init__(self, in_channels, out_channels, momentum=0.01) -> None:
-        super(ConvBlockRes, self).__init__()
+        super().__init__()
         self.conv = nn.Sequential(
             nn.Conv2d(
                 in_channels=in_channels,
@@ -189,7 +188,7 @@ class Encoder(nn.Module):
         out_channels=16,
         momentum=0.01,
     ) -> None:
-        super(Encoder, self).__init__()
+        super().__init__()
         self.n_encoders = n_encoders
         self.bn = nn.BatchNorm2d(in_channels, momentum=momentum)
         self.layers = nn.ModuleList()
@@ -204,7 +203,7 @@ class Encoder(nn.Module):
         self.out_channel = out_channels
 
     def forward(self, x: torch.Tensor):
-        concat_tensors: List[torch.Tensor] = []
+        concat_tensors: list[torch.Tensor] = []
         x = self.bn(x)
         for i, layer in enumerate(self.layers):
             t, x = layer(x)
@@ -214,7 +213,7 @@ class Encoder(nn.Module):
 
 class ResEncoderBlock(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, n_blocks=1, momentum=0.01) -> None:
-        super(ResEncoderBlock, self).__init__()
+        super().__init__()
         self.n_blocks = n_blocks
         self.conv = nn.ModuleList()
         self.conv.append(ConvBlockRes(in_channels, out_channels, momentum))
@@ -235,7 +234,7 @@ class ResEncoderBlock(nn.Module):
 
 class Intermediate(nn.Module):  #
     def __init__(self, in_channels, out_channels, n_inters, n_blocks, momentum=0.01) -> None:
-        super(Intermediate, self).__init__()
+        super().__init__()
         self.n_inters = n_inters
         self.layers = nn.ModuleList()
         self.layers.append(ResEncoderBlock(in_channels, out_channels, None, n_blocks, momentum))
@@ -250,7 +249,7 @@ class Intermediate(nn.Module):  #
 
 class ResDecoderBlock(nn.Module):
     def __init__(self, in_channels, out_channels, stride, n_blocks=1, momentum=0.01) -> None:
-        super(ResDecoderBlock, self).__init__()
+        super().__init__()
         out_padding = (0, 1) if stride == (1, 2) else (1, 1)
         self.n_blocks = n_blocks
         self.conv1 = nn.Sequential(
@@ -281,7 +280,7 @@ class ResDecoderBlock(nn.Module):
 
 class Decoder(nn.Module):
     def __init__(self, in_channels, n_decoders, stride, n_blocks, momentum=0.01) -> None:
-        super(Decoder, self).__init__()
+        super().__init__()
         self.layers = nn.ModuleList()
         self.n_decoders = n_decoders
         for i in range(self.n_decoders):
@@ -289,7 +288,7 @@ class Decoder(nn.Module):
             self.layers.append(ResDecoderBlock(in_channels, out_channels, stride, n_blocks, momentum))
             in_channels = out_channels
 
-    def forward(self, x: torch.Tensor, concat_tensors: List[torch.Tensor]):
+    def forward(self, x: torch.Tensor, concat_tensors: list[torch.Tensor]):
         for i, layer in enumerate(self.layers):
             x = layer(x, concat_tensors[-1 - i])
         return x
@@ -305,7 +304,7 @@ class DeepUnet(nn.Module):
         in_channels=1,
         en_out_channels=16,
     ) -> None:
-        super(DeepUnet, self).__init__()
+        super().__init__()
         self.encoder = Encoder(in_channels, 128, en_de_layers, kernel_size, n_blocks, en_out_channels)
         self.intermediate = Intermediate(
             self.encoder.out_channel // 2,
@@ -333,7 +332,7 @@ class E2E(nn.Module):
         in_channels=1,
         en_out_channels=16,
     ) -> None:
-        super(E2E, self).__init__()
+        super().__init__()
         self.unet = DeepUnet(
             kernel_size,
             n_blocks,

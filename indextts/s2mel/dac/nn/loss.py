@@ -1,5 +1,4 @@
 import typing
-from typing import List
 
 import torch
 import torch.nn.functional as F
@@ -168,7 +167,7 @@ class MultiScaleSTFTLoss(nn.Module):
 
     def __init__(
         self,
-        window_lengths: List[int] = [2048, 512],
+        window_lengths: list[int] = [2048, 512],
         loss_fn: typing.Callable = nn.L1Loss(),
         clamp_eps: float = 1e-5,
         mag_weight: float = 1.0,
@@ -253,8 +252,8 @@ class MelSpectrogramLoss(nn.Module):
 
     def __init__(
         self,
-        n_mels: List[int] = [150, 80],
-        window_lengths: List[int] = [2048, 512],
+        n_mels: list[int] = [150, 80],
+        window_lengths: list[int] = [2048, 512],
         loss_fn: typing.Callable = nn.L1Loss(),
         clamp_eps: float = 1e-5,
         mag_weight: float = 1.0,
@@ -262,8 +261,8 @@ class MelSpectrogramLoss(nn.Module):
         pow: float = 2.0,
         weight: float = 1.0,
         match_stride: bool = False,
-        mel_fmin: List[float] = [0.0, 0.0],
-        mel_fmax: List[float] = [None, None],
+        mel_fmin: list[float] = [0.0, 0.0],
+        mel_fmax: list[float] = [None, None],
         window_type: str = None,
     ) -> None:
         super().__init__()

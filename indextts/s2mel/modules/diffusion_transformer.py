@@ -104,7 +104,7 @@ class FinalLayer(nn.Module):
 
 class DiT(torch.nn.Module):
     def __init__(self, args) -> None:
-        super(DiT, self).__init__()
+        super().__init__()
         self.time_as_token = args.DiT.time_as_token if hasattr(args.DiT, "time_as_token") else False
         self.style_as_token = args.DiT.style_as_token if hasattr(args.DiT, "style_as_token") else False
         self.uvit_skip_connection = (

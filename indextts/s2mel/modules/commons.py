@@ -22,7 +22,7 @@ def str2bool(v):
 
 class AttrDict(UserDict):
     def __init__(self, *args, **kwargs) -> None:
-        super(AttrDict, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.__dict__ = self
 
 
@@ -373,7 +373,7 @@ def normalize_f0(f0_sequence):
 
 class MyModel(nn.Module):
     def __init__(self, args, use_emovec=False, use_gpt_latent=False) -> None:
-        super(MyModel, self).__init__()
+        super().__init__()
         from indextts.s2mel.modules.flow_matching import CFM
         from indextts.s2mel.modules.length_regulator import InterpolateRegulator
 

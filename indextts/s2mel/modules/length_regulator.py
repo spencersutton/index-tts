@@ -1,9 +1,9 @@
 import numpy as np
 import torch
 import torch.nn as nn
+from indextts.s2mel.dac.nn.quantize import VectorQuantize
 from torch.nn import functional as F
 
-from indextts.s2mel.dac.nn.quantize import VectorQuantize
 from indextts.s2mel.modules.commons import sequence_mask
 
 f0_max = 1100.0

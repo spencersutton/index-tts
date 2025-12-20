@@ -314,8 +314,7 @@ def get_state_dict_dtype(state_dict):
             return t.dtype
 
     # if no floating dtype was found return whatever the first dtype is
-    else:
-        return next(state_dict.values()).dtype
+    return next(state_dict.values()).dtype
 
 
 def dtype_byte_size(dtype):

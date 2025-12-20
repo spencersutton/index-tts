@@ -426,7 +426,7 @@ class ShiftTokens(nn.Module):
         self.shifts = tuple(shifts)
 
     def forward(self, x, **kwargs):
-        mask = kwargs.get("mask", None)
+        mask = kwargs.get("mask")
         shifts = self.shifts
         segments = len(shifts)
         feats_per_shift = x.shape[-1] // segments

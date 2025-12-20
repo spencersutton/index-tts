@@ -186,7 +186,7 @@ class ResBlock(nn.Module):
 class UpsampledConv(nn.Module):
     def __init__(self, conv, *args, **kwargs):
         super().__init__()
-        assert "stride" in kwargs.keys()
+        assert "stride" in kwargs
         self.stride = kwargs["stride"]
         del kwargs["stride"]
         self.conv = conv(*args, **kwargs)

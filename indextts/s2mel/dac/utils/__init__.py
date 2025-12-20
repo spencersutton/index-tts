@@ -76,7 +76,7 @@ def download(model_type: str = "44khz", model_bitrate: str = "8kbps", tag: str =
     if tag == "latest":
         tag = __MODEL_LATEST_TAGS__[(model_type, model_bitrate)]
 
-    download_link = __MODEL_URLS__.get((model_type, tag, model_bitrate), None)
+    download_link = __MODEL_URLS__.get((model_type, tag, model_bitrate))
 
     if download_link is None:
         raise ValueError(f"Could not find model with tag {tag} and model type {model_type}")

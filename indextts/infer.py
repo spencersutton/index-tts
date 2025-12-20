@@ -411,26 +411,26 @@ class IndexTTS:
                 0.2 + 0.3 * processed_num / all_batch_num, f"gpt speech inference {processed_num}/{all_batch_num}..."
             )
             m_start_time = time.perf_counter()
-            with torch.no_grad():
-                with torch.amp.autocast(
-                    batch_text_tokens.device.type, enabled=self.dtype is not None, dtype=self.dtype
-                ):
-                    temp_codes = self.gpt.inference_speech(
-                        auto_conditioning,
-                        batch_text_tokens,
-                        cond_mel_lengths=cond_mel_lengths,
-                        do_sample=do_sample,
-                        top_p=top_p,
-                        top_k=top_k,
-                        temperature=temperature,
-                        num_return_sequences=autoregressive_batch_size,
-                        length_penalty=length_penalty,
-                        num_beams=num_beams,
-                        repetition_penalty=repetition_penalty,
-                        max_generate_length=max_mel_tokens,
-                        **generation_kwargs,
-                    )
-                    all_batch_codes.append(temp_codes)
+            with (
+                torch.no_grad(),
+                torch.amp.autocast(batch_text_tokens.device.type, enabled=self.dtype is not None, dtype=self.dtype),
+            ):
+                temp_codes = self.gpt.inference_speech(
+                    auto_conditioning,
+                    batch_text_tokens,
+                    cond_mel_lengths=cond_mel_lengths,
+                    do_sample=do_sample,
+                    top_p=top_p,
+                    top_k=top_k,
+                    temperature=temperature,
+                    num_return_sequences=autoregressive_batch_size,
+                    length_penalty=length_penalty,
+                    num_beams=num_beams,
+                    repetition_penalty=repetition_penalty,
+                    max_generate_length=max_mel_tokens,
+                    **generation_kwargs,
+                )
+                all_batch_codes.append(temp_codes)
             gpt_gen_time += time.perf_counter() - m_start_time
 
         # gpt latent

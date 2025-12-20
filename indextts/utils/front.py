@@ -420,10 +420,7 @@ class TextTokenizer:
             elif (
                 len(merged_segments[-1]) + len(segment) <= max_text_tokens_per_segment
                 and total_token > quick_streaming_tokens
-            ):
-                merged_segments[-1] = merged_segments[-1] + segment
-            # 或小于最大长度限制的一半，则合并
-            elif len(merged_segments[-1]) + len(segment) <= max_text_tokens_per_segment / 2:
+            ) or len(merged_segments[-1]) + len(segment) <= max_text_tokens_per_segment / 2:
                 merged_segments[-1] = merged_segments[-1] + segment
             else:
                 merged_segments.append(segment)

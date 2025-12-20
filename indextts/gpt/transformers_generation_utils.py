@@ -673,11 +673,13 @@ class GenerationMixin:
         # exception: Donut checkpoints have task-specific decoder starts and don't expect a BOS token. Note that the
         # original checkpoints can't be detected through `self.__class__.__name__.lower()`, needing custom logic.
         # See: https://github.com/huggingface/transformers/pull/31470
-        elif "donut" in self.__class__.__name__.lower() or (
-            self.config.model_type == "vision-encoder-decoder" and "donut" in self.config.encoder.model_type.lower()
+        elif (
+            "donut" in self.__class__.__name__.lower()
+            or (
+                self.config.model_type == "vision-encoder-decoder" and "donut" in self.config.encoder.model_type.lower()
+            )
+            or self.config.model_type in ["whisper"]
         ):
-            pass
-        elif self.config.model_type in ["whisper"]:
             pass
         # user input but doesn't start with decoder_start_token_id -> prepend decoder_start_token_id (and adjust
         # decoder_attention_mask if provided)
@@ -1299,7 +1301,7 @@ class GenerationMixin:
     def _validate_model_kwargs(self, model_kwargs: Dict[str, Any]):
         """Validates model kwargs for generation. Generate argument typos will also be caught here."""
         # If a `Cache` instance is passed, checks whether the model is compatible with it
-        if isinstance(model_kwargs.get("past_key_values", None), Cache) and not self._supports_cache_class:
+        if isinstance(model_kwargs.get("past_key_values"), Cache) and not self._supports_cache_class:
             raise ValueError(
                 f"{self.__class__.__name__} does not support an instance of `Cache` as `past_key_values`. Please "
                 "check the model documentation for supported cache formats."

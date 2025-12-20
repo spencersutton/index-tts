@@ -160,7 +160,7 @@ class CodecDataset(torch.utils.data.Dataset):
             mel = np.load(self.utt2mel_path[utt])
             assert mel.shape[0] == self.cfg.preprocess.n_mel  # [n_mels, T]
 
-            if "target_len" not in single_feature.keys():
+            if "target_len" not in single_feature:
                 single_feature["target_len"] = mel.shape[1]
 
             single_feature["mel"] = mel
@@ -168,7 +168,7 @@ class CodecDataset(torch.utils.data.Dataset):
         if self.cfg.preprocess.use_frame_pitch:
             frame_pitch = np.load(self.utt2frame_pitch_path[utt])
 
-            if "target_len" not in single_feature.keys():
+            if "target_len" not in single_feature:
                 single_feature["target_len"] = len(frame_pitch)
 
             aligned_frame_pitch = align_length(frame_pitch, single_feature["target_len"])

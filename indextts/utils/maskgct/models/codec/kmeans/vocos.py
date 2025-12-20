@@ -721,7 +721,7 @@ class VocosBackbone(Backbone):
             nn.init.constant_(m.bias, 0)
 
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
-        bandwidth_id = kwargs.get("bandwidth_id", None)
+        bandwidth_id = kwargs.get("bandwidth_id")
         x = self.embed(x)
         if self.adanorm:
             assert bandwidth_id is not None

@@ -246,27 +246,25 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
                     visible=False,
                 )  # do not render
         # 情感参考音频部分
-        with gr.Group(visible=False) as emotion_reference_group:
-            with gr.Row():
-                emo_upload = gr.Audio(label=i18n("上传情感参考音频"), type="filepath")
+        with gr.Group(visible=False) as emotion_reference_group, gr.Row():
+            emo_upload = gr.Audio(label=i18n("上传情感参考音频"), type="filepath")
 
         # 情感随机采样
         with gr.Row(visible=False) as emotion_randomize_group:
             emo_random = gr.Checkbox(label=i18n("情感随机采样"), value=False)
 
         # 情感向量控制部分
-        with gr.Group(visible=False) as emotion_vector_group:
-            with gr.Row():
-                with gr.Column():
-                    vec1 = gr.Slider(label=i18n("喜"), minimum=0.0, maximum=1.0, value=0.0, step=0.05)
-                    vec2 = gr.Slider(label=i18n("怒"), minimum=0.0, maximum=1.0, value=0.0, step=0.05)
-                    vec3 = gr.Slider(label=i18n("哀"), minimum=0.0, maximum=1.0, value=0.0, step=0.05)
-                    vec4 = gr.Slider(label=i18n("惧"), minimum=0.0, maximum=1.0, value=0.0, step=0.05)
-                with gr.Column():
-                    vec5 = gr.Slider(label=i18n("厌恶"), minimum=0.0, maximum=1.0, value=0.0, step=0.05)
-                    vec6 = gr.Slider(label=i18n("低落"), minimum=0.0, maximum=1.0, value=0.0, step=0.05)
-                    vec7 = gr.Slider(label=i18n("惊喜"), minimum=0.0, maximum=1.0, value=0.0, step=0.05)
-                    vec8 = gr.Slider(label=i18n("平静"), minimum=0.0, maximum=1.0, value=0.0, step=0.05)
+        with gr.Group(visible=False) as emotion_vector_group, gr.Row():
+            with gr.Column():
+                vec1 = gr.Slider(label=i18n("喜"), minimum=0.0, maximum=1.0, value=0.0, step=0.05)
+                vec2 = gr.Slider(label=i18n("怒"), minimum=0.0, maximum=1.0, value=0.0, step=0.05)
+                vec3 = gr.Slider(label=i18n("哀"), minimum=0.0, maximum=1.0, value=0.0, step=0.05)
+                vec4 = gr.Slider(label=i18n("惧"), minimum=0.0, maximum=1.0, value=0.0, step=0.05)
+            with gr.Column():
+                vec5 = gr.Slider(label=i18n("厌恶"), minimum=0.0, maximum=1.0, value=0.0, step=0.05)
+                vec6 = gr.Slider(label=i18n("低落"), minimum=0.0, maximum=1.0, value=0.0, step=0.05)
+                vec7 = gr.Slider(label=i18n("惊喜"), minimum=0.0, maximum=1.0, value=0.0, step=0.05)
+                vec8 = gr.Slider(label=i18n("平静"), minimum=0.0, maximum=1.0, value=0.0, step=0.05)
 
         with gr.Group(visible=False) as emo_text_group:
             create_experimental_warning_message()

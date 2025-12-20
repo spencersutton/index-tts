@@ -23,7 +23,7 @@ def load_bigvgan(name: str, use_cuda_kernel: bool) -> BigVGAN:
 def load_campplus() -> CAMPPlus:
     model = CAMPPlus()
     path = "checkpoints/campplus_cn_common.safetensors"
-    safetensors.torch.load_model(model, path)
+    safetensors.torch.load_model(model, path, strict=False)
 
     logger.info("campplus_model weights restored from: %s", path)
     return model.eval()

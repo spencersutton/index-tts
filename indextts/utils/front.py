@@ -1,7 +1,7 @@
-import os
 import re
 import traceback
 import warnings
+from pathlib import Path
 from typing import overload
 
 from sentencepiece import SentencePieceProcessor
@@ -99,10 +99,10 @@ class TextNormalizer:
             from tn.english.normalizer import Normalizer as NormalizerEn
 
             # use new cache dir for build tagger rules with disable remove_interjections and remove_erhua
-            cache_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tagger_cache")
-            if not os.path.exists(cache_dir):
-                os.makedirs(cache_dir)
-                Path(os.path.join(cache_dir, ".gitignore")).write_text("*\n")
+            cache_dir = Path(__file__).resolve().parent / "tagger_cache"
+            if not Path(cache_dir).exists():
+                Path(cache_dir).mkdir(parents=True)
+                (Path(cache_dir) / ".gitignore").write_text("*\n")
             self.zh_normalizer = NormalizerZh(
                 cache_dir=cache_dir, remove_interjections=False, remove_erhua=False, overwrite_cache=False
             )
@@ -229,7 +229,7 @@ class TextTokenizer:
 
         if self.vocab_file is None:
             raise ValueError("vocab_file is None")
-        if not os.path.exists(self.vocab_file):
+        if not Path(self.vocab_file).exists():
             raise ValueError(f"vocab_file {self.vocab_file} does not exist")
         if self.normalizer:
             self.normalizer.load()

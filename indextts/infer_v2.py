@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from subprocess import CalledProcessError
 
 os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
@@ -85,10 +86,10 @@ class IndexTTS2:
         self.use_accel = use_accel
         self.use_torch_compile = use_torch_compile
 
-        self.qwen_emo = QwenEmotion(os.path.join(self.model_dir, self.cfg.qwen_emo_path))
+        self.qwen_emo = QwenEmotion(Path(self.model_dir) / self.cfg.qwen_emo_path)
 
         self.gpt = UnifiedVoice(**self.cfg.gpt, use_accel=self.use_accel)
-        self.gpt_path = os.path.join(self.model_dir, self.cfg.gpt_checkpoint)
+        self.gpt_path = Path(self.model_dir) / self.cfg.gpt_checkpoint
         load_checkpoint(self.gpt, self.gpt_path)
         self.gpt = self.gpt.to(self.device)
         if self.use_fp16:
@@ -119,7 +120,7 @@ class IndexTTS2:
 
         self.extract_features = SeamlessM4TFeatureExtractor.from_pretrained("facebook/w2v-bert-2.0")
         self.semantic_model, self.semantic_mean, self.semantic_std = build_semantic_model(
-            os.path.join(self.model_dir, self.cfg.w2v_stat)
+            Path(self.model_dir) / self.cfg.w2v_stat
         )
         self.semantic_model = self.semantic_model.to(self.device)
         self.semantic_model.eval()
@@ -133,7 +134,7 @@ class IndexTTS2:
         self.semantic_codec.eval()
         print(f">> semantic_codec weights restored from: {semantic_code_ckpt}")
 
-        s2mel_path = os.path.join(self.model_dir, self.cfg.s2mel_checkpoint)
+        s2mel_path = Path(self.model_dir) / self.cfg.s2mel_checkpoint
         s2mel = MyModel(self.cfg.s2mel, use_gpt_latent=True)
         s2mel, _, _, _ = load_checkpoint2(
             s2mel,
@@ -170,18 +171,18 @@ class IndexTTS2:
         self.bigvgan.eval()
         print(">> bigvgan weights restored from:", bigvgan_name)
 
-        self.bpe_path = os.path.join(self.model_dir, self.cfg.dataset["bpe_model"])
+        self.bpe_path = Path(self.model_dir) / self.cfg.dataset["bpe_model"]
         self.normalizer = TextNormalizer()
         self.normalizer.load()
         print(">> TextNormalizer loaded")
         self.tokenizer = TextTokenizer(self.bpe_path, self.normalizer)
         print(">> bpe model loaded from:", self.bpe_path)
 
-        emo_matrix = torch.load(os.path.join(self.model_dir, self.cfg.emo_matrix))
+        emo_matrix = torch.load(Path(self.model_dir) / self.cfg.emo_matrix)
         self.emo_matrix = emo_matrix.to(self.device)
         self.emo_num = list(self.cfg.emo_num)
 
-        spk_matrix = torch.load(os.path.join(self.model_dir, self.cfg.spk_matrix))
+        spk_matrix = torch.load(Path(self.model_dir) / self.cfg.spk_matrix)
         self.spk_matrix = spk_matrix.to(self.device)
 
         self.emo_matrix = torch.split(self.emo_matrix, self.emo_num)
@@ -685,11 +686,11 @@ class IndexTTS2:
         wav = wav.cpu()  # to cpu
         if output_path:
             # 直接保存音频到指定路径中
-            if os.path.isfile(output_path):
-                os.remove(output_path)
+            if Path(output_path).is_file():
+                Path(output_path).unlink()
                 print(">> remove old wav file:", output_path)
-            if os.path.dirname(output_path) != "":
-                os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            if Path(output_path).parent != "":
+                Path(output_path).parent.mkdir(exist_ok=True, parents=True)
             torchaudio.save(output_path, wav.type(torch.int16), sampling_rate)
             print(">> wav file saved to:", output_path)
             if stream_return:

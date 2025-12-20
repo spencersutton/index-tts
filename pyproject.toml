@@ -127,13 +127,14 @@ extend-select = [
   "G",
   "I",
   "PIE",
+  "PLR",
   "PLW",
+  "PTH",
   "RET",
   "RUF",
   "SIM",
   "UP",
   "W",
-  "PLR",
 ]
 ignore = [
   "ANN401",

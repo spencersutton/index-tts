@@ -11,9 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-import os
 import re
+from pathlib import Path
 
 import torch
 import yaml
@@ -25,7 +24,7 @@ def load_checkpoint(model: torch.nn.Module, model_pth: str) -> dict:
     model.load_state_dict(checkpoint, strict=True)
     info_path = re.sub(r".pth$", ".yaml", model_pth)
     configs = {}
-    if os.path.exists(info_path):
-        with open(info_path) as fin:
+    if Path(info_path).exists():
+        with Path(info_path).open() as fin:
             configs = yaml.load(fin, Loader=yaml.FullLoader)
     return configs

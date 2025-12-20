@@ -234,7 +234,6 @@ class IndexTTS2:
         code_lens = []
         codes_list = []
         device = codes.device
-        dtype = codes.dtype
         isfix = False
         for i in range(0, codes.shape[0]):
             code = codes[i]
@@ -840,7 +839,6 @@ class QwenEmotion:
         return emotion_dict
 
     def inference(self, text_input):
-        start = time.time()
         messages = [{"role": "system", "content": f"{self.prompt}"}, {"role": "user", "content": f"{text_input}"}]
         text = self.tokenizer.apply_chat_template(
             messages,

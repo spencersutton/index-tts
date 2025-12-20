@@ -233,7 +233,6 @@ def encode_tokens(tokenizer, string, bos=True, device=default_device):
 
 
 def _load_model(checkpoint_path, device, precision, use_tp):
-    use_cuda = "cuda" in device
     with torch.device("meta"):
         model = Transformer.from_name(checkpoint_path.parent.name)
 

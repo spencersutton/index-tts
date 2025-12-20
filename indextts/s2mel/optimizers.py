@@ -24,14 +24,14 @@ class MultiOptimizer:
             try:
                 self.optimizers[key].load_state_dict(val)
             except:
-                print("Unloaded %s" % key)
+                print(f"Unloaded {key}")
 
     def load_scheduler_state_dict(self, state_dict) -> None:
         for key, val in state_dict:
             try:
                 self.schedulers[key].load_state_dict(val)
             except:
-                print("Unloaded %s" % key)
+                print(f"Unloaded {key}")
 
     def step(self, key=None, scaler=None) -> None:
         keys = [key] if key is not None else self.keys
@@ -78,7 +78,7 @@ def build_optimizer(model_dict, lr, type="AdamW"):
                 weight_decay=0.1,
             )
         else:
-            raise ValueError("Unknown optimizer type: %s" % type)
+            raise ValueError(f"Unknown optimizer type: {type}")
 
     schedulers = dict([
         (key, torch.optim.lr_scheduler.ExponentialLR(opt, gamma=0.999996)) for key, opt in optim.items()

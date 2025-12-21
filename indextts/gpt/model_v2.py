@@ -179,62 +179,6 @@ class UnifiedVoice(nn.Module):
         self.mel_head = nn.Linear(self.cfg.model_dim, self.cfg.number_mel_codes)
 
     # -------------------------------------------------------------------------
-    # Config Property Accessors (for backward compatibility)
-    # -------------------------------------------------------------------------
-
-    @property
-    def number_text_tokens(self) -> int:
-        return self.cfg.number_text_tokens
-
-    @property
-    def start_text_token(self) -> int:
-        return self.cfg.start_text_token
-
-    @property
-    def stop_text_token(self) -> int:
-        return self.cfg.stop_text_token
-
-    @property
-    def number_mel_codes(self) -> int:
-        return self.cfg.number_mel_codes
-
-    @property
-    def start_mel_token(self) -> int:
-        return self.cfg.start_mel_token
-
-    @property
-    def stop_mel_token(self) -> int:
-        return self.cfg.stop_mel_token
-
-    @property
-    def layers(self) -> int:
-        return self.cfg.layers
-
-    @property
-    def heads(self) -> int:
-        return self.cfg.heads
-
-    @property
-    def max_mel_tokens(self) -> int:
-        return self.cfg.max_mel_tokens
-
-    @property
-    def max_text_tokens(self) -> int:
-        return self.cfg.max_text_tokens
-
-    @property
-    def model_dim(self) -> int:
-        return self.cfg.model_dim
-
-    @property
-    def max_conditioning_inputs(self) -> int:
-        return self.cfg.max_conditioning_inputs
-
-    @property
-    def cond_num(self) -> int:
-        return self.cfg.cond_num
-
-    # -------------------------------------------------------------------------
     # Post-initialization for Inference
     # -------------------------------------------------------------------------
 
@@ -335,11 +279,11 @@ class UnifiedVoice(nn.Module):
 
     def set_mel_padding(self, mel_input_tokens: Tensor, mel_lengths: Tensor) -> Tensor:
         """Replace zero padding in mel tokens with STOP_MEL_TOKEN."""
-        return set_token_padding(mel_input_tokens, mel_lengths, self.stop_mel_token)
+        return set_token_padding(mel_input_tokens, mel_lengths, self.cfg.stop_mel_token)
 
     def set_text_padding(self, text_input_tokens: Tensor, text_lengths: Tensor) -> Tensor:
         """Replace zero padding in text tokens with STOP_TEXT_TOKEN."""
-        return set_token_padding(text_input_tokens, text_lengths, self.stop_text_token)
+        return set_token_padding(text_input_tokens, text_lengths, self.cfg.stop_text_token)
 
     # -------------------------------------------------------------------------
     # Conditioning Extraction
@@ -531,20 +475,22 @@ class UnifiedVoice(nn.Module):
 
         # Prepare text and mel tokens
         text_inputs = self.set_text_padding(text_inputs, text_lengths)
-        text_inputs = F.pad(text_inputs, (0, 1), value=self.stop_text_token)
+        text_inputs = F.pad(text_inputs, (0, 1), value=self.cfg.stop_text_token)
 
         mel_codes = self.set_mel_padding(mel_codes, mel_codes_lengths)
-        mel_codes = F.pad(mel_codes, (0, 1), value=self.stop_mel_token)
+        mel_codes = F.pad(mel_codes, (0, 1), value=self.cfg.stop_mel_token)
 
         # Build conditioning
         assert use_speed is not None
         conds = self._build_conditioning_concat(speech_conditioning_latent, emo_vec, use_speed)
 
         # Build aligned inputs
-        text_inputs, _ = build_aligned_inputs_and_targets(text_inputs, self.start_text_token, self.stop_text_token)
+        text_inputs, _ = build_aligned_inputs_and_targets(
+            text_inputs, self.cfg.start_text_token, self.cfg.stop_text_token
+        )
         text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs)
 
-        mel_codes, _ = build_aligned_inputs_and_targets(mel_codes, self.start_mel_token, self.stop_mel_token)
+        mel_codes, _ = build_aligned_inputs_and_targets(mel_codes, self.cfg.start_mel_token, self.cfg.stop_mel_token)
 
         mel_emb = self.mel_embedding(mel_codes) + self.mel_pos_embedding(mel_codes)
 
@@ -609,7 +555,7 @@ class UnifiedVoice(nn.Module):
 
         # Create fake input IDs with start_mel_token at the end
         fake_inputs = torch.ones((batch_size, target_len + 1), dtype=torch.long)
-        fake_inputs[:, -1] = self.start_mel_token
+        fake_inputs[:, -1] = self.cfg.start_mel_token
 
         return fake_inputs, batched_mel_emb, attention_mask
 
@@ -633,10 +579,10 @@ class UnifiedVoice(nn.Module):
             attention_mask: (target_len+1,) attention mask
         """
         # Filter out special tokens and add start/stop
-        valid_mask = (text_input != self.stop_text_token) & (text_input != self.start_text_token)
+        valid_mask = (text_input != self.cfg.stop_text_token) & (text_input != self.cfg.start_text_token)
         text_input = text_input[valid_mask]
-        text_input = F.pad(text_input, (1, 0), value=self.start_text_token)
-        text_input = F.pad(text_input, (0, 1), value=self.stop_text_token)
+        text_input = F.pad(text_input, (1, 0), value=self.cfg.start_text_token)
+        text_input = F.pad(text_input, (0, 1), value=self.cfg.stop_text_token)
 
         # Compute text embeddings
         text_pos = torch.arange(text_input.size(-1))
@@ -745,7 +691,9 @@ class UnifiedVoice(nn.Module):
         trunc_index = inputs.shape[1]
         logits_processor = self._build_logits_processor(typical_sampling, typical_mass, hf_generate_kwargs)
         max_length = (
-            trunc_index + self.max_mel_tokens - 1 if max_generate_length is None else trunc_index + max_generate_length
+            trunc_index + self.cfg.max_mel_tokens - 1
+            if max_generate_length is None
+            else trunc_index + max_generate_length
         )
 
         # Generate
@@ -836,7 +784,7 @@ class UnifiedVoice(nn.Module):
                 max_new_tokens=max_length - trunc_index,
                 attention_mask=attention_mask,
                 temperature=hf_generate_kwargs.get("temperature", 1),
-                stop_tokens=[self.stop_mel_token],
+                stop_tokens=[self.cfg.stop_mel_token],
                 tts_embeddings=inputs_embeds,
                 tts_mel_embedding=self.inference_model.embeddings,
                 tts_text_pos_embedding=self.inference_model.text_pos_embedding,
@@ -844,9 +792,9 @@ class UnifiedVoice(nn.Module):
         else:
             output = self.inference_model.generate(
                 inputs,
-                bos_token_id=self.start_mel_token,
-                pad_token_id=self.stop_mel_token,
-                eos_token_id=self.stop_mel_token,
+                bos_token_id=self.cfg.start_mel_token,
+                pad_token_id=self.cfg.stop_mel_token,
+                eos_token_id=self.cfg.stop_mel_token,
                 attention_mask=attention_mask,
                 max_length=max_length,
                 logits_processor=logits_processor,

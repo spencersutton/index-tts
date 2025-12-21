@@ -791,7 +791,9 @@ class IndexTTS2:
         has_warned = False
 
         # Pad batch
-        text_tokens_batch = pad_sequence(batch_text_tokens, batch_first=True, padding_value=self.gpt.stop_text_token)
+        text_tokens_batch = pad_sequence(
+            batch_text_tokens, batch_first=True, padding_value=self.gpt.cfg.stop_text_token
+        )
         batch_size = text_tokens_batch.size(0)
 
         # Generate mel codes

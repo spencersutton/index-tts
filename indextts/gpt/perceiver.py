@@ -44,7 +44,7 @@ class _Attend(nn.Module):
         self.register_buffer("mask", None, persistent=False)
 
         self.use_flash = use_flash
-        assert not (use_flash and version.parse(torch.__version__) < version.parse("2.0.0")), (  # pyright: ignore[reportAny]
+        assert not (use_flash and version.parse(torch.__version__) < version.parse("2.0.0")), (
             "in order to use flash attention, you must be using pytorch 2.0 or above"
         )
 

@@ -238,7 +238,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         lm_logits = cast(torch.FloatTensor, self.lm_head(hidden_states))
 
         if not return_dict:
-            return (lm_logits, *transformer_outputs[1:])  # pyright: ignore[reportUnknownVariableType]
+            return (lm_logits, *transformer_outputs[1:])
 
         return CausalLMOutputWithCrossAttentions(
             loss=None,

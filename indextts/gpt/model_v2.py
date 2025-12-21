@@ -606,7 +606,7 @@ class UnifiedVoice(nn.Module):
         max_generate_length: int | None = None,
         typical_sampling: bool = False,
         typical_mass: float = 0.9,
-        **hf_generate_kwargs: Any,  # pyright: ignore[reportAny]
+        **hf_generate_kwargs: Any,
     ) -> tuple[Tensor, Tensor]:
         """Generate speech tokens from text and conditioning.
 

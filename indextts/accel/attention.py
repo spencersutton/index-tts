@@ -1,5 +1,3 @@
-# pyright: reportMissingImports=false, reportUnknownParameterType=false, reportUnknownArgumentType=false
-# pyright: reportUnknownMemberType=false, reportUntypedFunctionDecorator=false
 import typing
 from dataclasses import dataclass
 from typing import Any, ClassVar, Self, override

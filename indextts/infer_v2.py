@@ -596,7 +596,7 @@ class IndexTTS2:
         stream_return: bool = False,
         quick_streaming_tokens: int = 0,
         cfm_steps: int = 25,
-        **generation_kwargs: Any,  # pyright: ignore[reportAny]
+        **generation_kwargs: Any,
     ) -> Generator[Tensor | Path | tuple[int, np.ndarray] | None]:
         """Generator-based inference for streaming synthesis.
 

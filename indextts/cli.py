@@ -97,18 +97,18 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    assert isinstance(args.text, str)  # pyright: ignore[reportAny]
-    assert isinstance(args.voice, str)  # pyright: ignore[reportAny]
-    assert isinstance(args.config, str)  # pyright: ignore[reportAny]
-    assert isinstance(args.output_path, str)  # pyright: ignore[reportAny]
-    assert isinstance(args.model_dir, str)  # pyright: ignore[reportAny]
-    assert isinstance(args.device, (str, type(None)))  # pyright: ignore[reportAny]
-    assert isinstance(args.fp16, bool)  # pyright: ignore[reportAny]
-    assert isinstance(args.force, bool)  # pyright: ignore[reportAny]
-    assert isinstance(args.use_accel, bool)  # pyright: ignore[reportAny]
-    assert isinstance(args.use_torch_compile, bool)  # pyright: ignore[reportAny]
-    assert isinstance(args.use_cuda_kernel, bool)  # pyright: ignore[reportAny]
-    assert isinstance(args.use_deepspeed, bool)  # pyright: ignore[reportAny]
+    assert isinstance(args.text, str)
+    assert isinstance(args.voice, str)
+    assert isinstance(args.config, str)
+    assert isinstance(args.output_path, str)
+    assert isinstance(args.model_dir, str)
+    assert isinstance(args.device, (str, type(None)))
+    assert isinstance(args.fp16, bool)
+    assert isinstance(args.force, bool)
+    assert isinstance(args.use_accel, bool)
+    assert isinstance(args.use_torch_compile, bool)
+    assert isinstance(args.use_cuda_kernel, bool)
+    assert isinstance(args.use_deepspeed, bool)
 
     if len(args.text.strip()) == 0:
         print("ERROR: Text is empty.")

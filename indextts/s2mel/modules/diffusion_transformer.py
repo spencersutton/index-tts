@@ -1,5 +1,4 @@
 import math
-from typing import override
 from typing import TYPE_CHECKING, Final, override
 
 import torch
@@ -25,7 +24,7 @@ def modulate(x: Tensor, shift: Tensor, scale: Tensor) -> Tensor:
 class TimestepEmbedder(nn.Module):
     """Embeds scalar timesteps into vector representations."""
 
-    freqs: Tensor  # pyright: ignore[reportUninitializedInstanceVariable]
+    freqs: Tensor
 
     def __init__(
         self,

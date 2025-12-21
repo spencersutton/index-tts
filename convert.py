@@ -1,4 +1,3 @@
-# pyright: reportUnknownVariableType=false, reportAny=false, reportUnknownArgumentType=false
 from pathlib import Path
 
 import safetensors.torch

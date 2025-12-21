@@ -8,8 +8,8 @@ from ..modelcard import ModelCard
 from ..modeling_tf_utils import TFPreTrainedModel
 from ..modeling_utils import PreTrainedModel
 from ..tokenization_utils import PreTrainedTokenizer
-from ..utils import add_end_docstrings, is_tf_available, is_torch_available
-from .base import ArgumentHandler, ChunkPipeline, build_pipeline_init_args
+from ..utils import is_tf_available, is_torch_available
+from .base import ArgumentHandler, ChunkPipeline
 
 logger = ...
 if TYPE_CHECKING: ...

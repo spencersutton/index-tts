@@ -1,5 +1,5 @@
 import torch
-import torch.nn as nn
+from torch import nn
 from transformers.models.depth_anything.configuration_depth_anything import DepthAnythingConfig
 from transformers.models.depth_anything.modeling_depth_anything import (
     DepthAnythingDepthEstimationHead,

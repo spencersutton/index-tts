@@ -1,7 +1,7 @@
 from typing import Any
 
-from ..utils import ExplicitEnum, add_end_docstrings, is_tf_available, is_torch_available
-from .base import GenericTensor, Pipeline, build_pipeline_init_args
+from ..utils import ExplicitEnum, is_tf_available, is_torch_available
+from .base import GenericTensor, Pipeline
 
 if is_tf_available(): ...
 if is_torch_available(): ...

@@ -2,8 +2,8 @@ from typing import Any, overload
 
 import numpy as np
 
-from ..utils import add_end_docstrings, is_tf_available, is_torch_available
-from .base import GenericTensor, Pipeline, build_pipeline_init_args
+from ..utils import is_tf_available, is_torch_available
+from .base import GenericTensor, Pipeline
 
 if is_tf_available(): ...
 if is_torch_available(): ...

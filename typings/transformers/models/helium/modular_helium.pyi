@@ -1,4 +1,4 @@
-import torch.nn as nn
+from torch import nn
 
 from ..gemma.modeling_gemma import GemmaForCausalLM, GemmaForSequenceClassification, GemmaForTokenClassification
 from ..granite.modeling_granite import GraniteAttention

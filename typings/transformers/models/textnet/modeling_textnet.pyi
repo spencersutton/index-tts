@@ -1,8 +1,7 @@
 from typing import Any
 
 import torch
-import torch.nn as nn
-from torch import Tensor
+from torch import Tensor, nn
 from transformers import PreTrainedModel
 from transformers.modeling_outputs import (
     BackboneOutput,

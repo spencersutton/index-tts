@@ -1,9 +1,8 @@
 from functools import lru_cache
 
-from ...file_utils import PaddingStrategy, TensorType, add_end_docstrings
+from ...file_utils import PaddingStrategy, TensorType
 from ...tokenization_utils import PreTrainedTokenizer
 from ...tokenization_utils_base import (
-    ENCODE_KWARGS_DOCSTRING,
     BatchEncoding,
     PreTokenizedInput,
     TextInput,

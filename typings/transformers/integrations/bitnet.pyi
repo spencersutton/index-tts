@@ -1,5 +1,5 @@
 import torch
-import torch.nn as nn
+from torch import nn
 
 from ..utils import is_accelerate_available, is_torch_available
 

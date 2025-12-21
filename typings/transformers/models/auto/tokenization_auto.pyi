@@ -5,7 +5,6 @@ from transformers.tokenization_utils import PreTrainedTokenizer
 
 from ...tokenization_utils_fast import PreTrainedTokenizerFast
 from ...utils import is_tokenizers_available
-from .configuration_auto import replace_list_option_in_docstrings
 
 """Auto Tokenizer class."""
 if is_tokenizers_available(): ...

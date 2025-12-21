@@ -1,15 +1,7 @@
 # pyright: reportUnusedImport=false
 import os
-from builtins import (
-    bool as _bool,
-    bytes as _bytes,
-    complex as _complex,
-    float as _float,
-    int as _int,
-    str as _str,
-)
 from collections.abc import Sequence
-from typing import IO, TYPE_CHECKING, Any, Self
+from typing import IO, Any, Self
 
 from torch import (
     DispatchKey as DispatchKey,
@@ -20,19 +12,17 @@ from torch import (
     Tensor as Tensor,
     device as _device,
     dtype as _dtype,
-    layout as _layout,
-    qscheme as _qscheme,
 )
 from torch.autograd.graph import GradientEdge
 
 __all__ = ["Device", "FileLike", "Number", "Storage"]
 
-type _TensorOrTensors = Tensor | Sequence[Tensor]  # noqa: PYI047
+type _TensorOrTensors = Tensor | Sequence[Tensor]
 type _TensorOrTensorsOrGradEdge = Tensor | Sequence[Tensor] | GradientEdge | Sequence[GradientEdge]
 
-type _size = Size | list[int] | tuple[int, ...]  # noqa: PYI042,PYI047
-type _symsize = Size | Sequence[int | SymInt]  # noqa: PYI042,PYI047
-type _dispatchkey = str | DispatchKey  # noqa: PYI042,PYI047
+type _size = Size | list[int] | tuple[int, ...]
+type _symsize = Size | Sequence[int | SymInt]
+type _dispatchkey = str | DispatchKey
 
 type IntLikeType = int | SymInt
 type FloatLikeType = float | SymFloat

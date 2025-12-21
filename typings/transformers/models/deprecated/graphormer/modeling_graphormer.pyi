@@ -1,7 +1,7 @@
 from collections.abc import Iterable, Iterator
 
 import torch
-import torch.nn as nn
+from torch import nn
 
 from ....modeling_outputs import BaseModelOutputWithNoAttention, SequenceClassifierOutput
 from ....modeling_utils import PreTrainedModel

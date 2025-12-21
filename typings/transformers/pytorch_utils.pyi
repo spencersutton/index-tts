@@ -1,9 +1,8 @@
 from collections.abc import Callable
 
 import torch
-from torch import Tensor, nn
-
 from indextts.util import patch_call
+from torch import Tensor, nn
 
 ALL_LAYERNORM_LAYERS = ...
 logger = ...

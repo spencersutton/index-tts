@@ -15,7 +15,7 @@ from ..modeling_utils import PreTrainedModel
 from ..models.auto import AutoConfig
 from ..processing_utils import ProcessorMixin
 from ..tokenization_utils import PreTrainedTokenizer
-from ..utils import ModelOutput, PushToHubMixin, add_end_docstrings, is_tf_available, is_torch_available
+from ..utils import ModelOutput, PushToHubMixin, is_tf_available, is_torch_available
 from .pt_utils import KeyDataset
 
 type GenericTensor = list[GenericTensor] | torch.Tensor | tf.Tensor

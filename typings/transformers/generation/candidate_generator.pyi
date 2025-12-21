@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 import torch
-import torch.nn as nn
+from torch import nn
 
 from ..modeling_utils import PreTrainedModel
 from ..tokenization_utils_base import PreTrainedTokenizerBase

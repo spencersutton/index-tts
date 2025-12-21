@@ -1,5 +1,5 @@
 import torch
-import torch.nn as nn
+from torch import nn
 from transformers.utils.generic import TransformersKwargs
 
 from ...cache_utils import Cache

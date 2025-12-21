@@ -1,7 +1,7 @@
 from collections.abc import Callable
 
 import torch
-import torch.nn as nn
+from torch import nn
 from transformers.utils.generic import check_model_inputs
 
 from ...cache_utils import Cache, EncoderDecoderCache

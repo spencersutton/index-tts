@@ -1,7 +1,6 @@
 from typing import Any, overload
 
-from .tokenization_utils_base import INIT_TOKENIZER_DOCSTRING, AddedToken, PreTrainedTokenizerBase, TextInput
-from .utils import add_end_docstrings
+from .tokenization_utils_base import AddedToken, PreTrainedTokenizerBase, TextInput
 
 """
 Tokenization classes for python tokenizers. For fast tokenizers (provided by HuggingFace's tokenizers library) see

@@ -1,7 +1,6 @@
 import torch
-from torch import nn
-
 from indextts.util import patch_call
+from torch import nn
 
 from ...modeling_layers import GradientCheckpointingLayer
 from ...modeling_outputs import (

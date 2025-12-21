@@ -3,9 +3,8 @@ from collections.abc import Iterable, Iterator, Mapping
 from typing import Any, Self, TypeVar, overload
 from warnings import deprecated
 
-from torch import Tensor
-
 from indextts.util import patch_call
+from torch import Tensor
 
 from .module import Module
 

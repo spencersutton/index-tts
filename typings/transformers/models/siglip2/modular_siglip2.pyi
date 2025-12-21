@@ -1,5 +1,5 @@
 import torch
-import torch.nn as nn
+from torch import nn
 from transformers.models.siglip.configuration_siglip import SiglipConfig, SiglipTextConfig, SiglipVisionConfig
 from transformers.models.siglip.modeling_siglip import (
     BaseModelOutputWithPooling,

@@ -1,5 +1,5 @@
 import torch
-import torch.nn as nn
+from torch import nn
 
 from ...configuration_utils import PretrainedConfig
 from ...image_processing_utils import BatchFeature

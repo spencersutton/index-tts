@@ -36,7 +36,7 @@ def wordaround_stride_incorrect_op(fake_mode, func, *args, **kwargs): ...
 def resize_as_(fake_mode, func, *args, **kwargs): ...
 @register_op_impl(
     lambda func: torch.Tag.dynamic_output_shape in func.tags
-    and func not in [aten.index.Tensor, aten.nonzero.default, aten.repeat_interleave.Tensor]
+    and func not in {aten.index.Tensor, aten.nonzero.default, aten.repeat_interleave.Tensor}
 )
 def dyn_shape(fake_mode, func, *args, **kwargs): ...
 @register_op_impl(aten._unique2.default)
@@ -97,13 +97,13 @@ def nested_tensors_unsupported(fake_mode, func, *args, **kwargs): ...
     x
     for x in _device_not_kwarg_ops
     if x
-    not in (
+    not in {
         aten.is_pinned.default,
         aten.to.device,
         aten.to.prim_Device,
         aten._nested_tensor_from_tensor_list.default,
         aten._nested_tensor_from_tensor_list.out,
-    )
+    }
 ])
 def nyi(fake_mode, func, *args, **kwargs): ...
 @register_op_impl([aten.convolution.default, aten.convolution_backward.default])

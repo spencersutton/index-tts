@@ -1,7 +1,6 @@
 import torch
-from torch import nn
-
 from indextts.util import patch_call
+from torch import nn
 
 from ...cache_utils import Cache
 from ...generation import GenerationMixin

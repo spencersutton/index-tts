@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 import torch
-import torch.nn as nn
+from torch import nn
 from transformers.models.llama4.configuration_llama4 import Llama4VisionConfig
 
 from ...cache_utils import Cache

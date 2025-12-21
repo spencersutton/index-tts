@@ -1,8 +1,7 @@
 from functools import lru_cache
 
-from ...file_utils import PaddingStrategy, TensorType, add_end_docstrings
+from ...file_utils import PaddingStrategy, TensorType
 from ...tokenization_utils_base import (
-    ENCODE_KWARGS_DOCSTRING,
     BatchEncoding,
     PreTokenizedInput,
     TextInput,
@@ -10,7 +9,6 @@ from ...tokenization_utils_base import (
     TruncationStrategy,
 )
 from ...tokenization_utils_fast import PreTrainedTokenizerFast
-from .tokenization_markuplm import MARKUPLM_ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING
 
 """
 Fast tokenization class for MarkupLM. It overwrites 2 methods of the slow tokenizer class, namely _batch_encode_plus

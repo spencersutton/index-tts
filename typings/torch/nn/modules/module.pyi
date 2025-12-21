@@ -2,12 +2,11 @@ from collections import namedtuple
 from collections.abc import Callable, Iterator, Mapping
 from typing import Any, Self, TypeVar, overload
 
+from indextts.util import patch_call
 from torch import Tensor, device, dtype
 from torch._prims_common import DeviceLikeType
 from torch.nn.parameter import Parameter
 from torch.utils.hooks import RemovableHandle
-
-from indextts.util import patch_call
 
 __all__ = [
     "Module",

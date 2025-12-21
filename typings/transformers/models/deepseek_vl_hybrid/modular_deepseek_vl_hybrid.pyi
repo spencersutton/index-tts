@@ -1,5 +1,5 @@
 import torch
-import torch.nn as nn
+from torch import nn
 
 from ...cache_utils import Cache
 from ...image_processing_utils_fast import BatchFeature, DefaultFastImageProcessorKwargs

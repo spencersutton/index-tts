@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 import torch
-import torch.nn as nn
+from torch import nn
 from transformers.modeling_utils import PreTrainedModel
 from transformers.utils import ModelOutput
 

@@ -2,7 +2,7 @@ from typing import Any
 
 from ...tokenization_utils import PreTrainedTokenizer
 from ...tokenization_utils_base import BatchEncoding, PreTokenizedInput, TextInput, TruncationStrategy
-from ...utils import PaddingStrategy, TensorType, add_end_docstrings
+from ...utils import PaddingStrategy, TensorType
 from ...utils.import_utils import requires
 
 """Tokenization classes for LayoutXLM model."""

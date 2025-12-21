@@ -2,8 +2,7 @@ from typing import Any
 
 import numpy as np
 
-from ..utils import add_end_docstrings
-from .base import Pipeline, build_pipeline_init_args
+from .base import Pipeline
 
 logger = ...
 

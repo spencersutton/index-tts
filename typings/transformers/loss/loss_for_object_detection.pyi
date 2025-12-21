@@ -1,6 +1,5 @@
 import torch
-import torch.nn as nn
-from torch import Tensor
+from torch import Tensor, nn
 
 from ..utils import is_accelerate_available, is_scipy_available, is_vision_available
 

@@ -2,7 +2,6 @@ from functools import lru_cache
 
 from ...tokenization_utils import PreTrainedTokenizer
 from ...tokenization_utils_base import (
-    ENCODE_KWARGS_DOCSTRING,
     BatchEncoding,
     EncodedInput,
     PaddingStrategy,
@@ -10,7 +9,6 @@ from ...tokenization_utils_base import (
     TextInput,
     TruncationStrategy,
 )
-from ...utils import add_end_docstrings
 
 """Tokenization classes for LUKE."""
 logger = ...

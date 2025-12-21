@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from typing import Any
 
 import torch
-import torch.nn as nn
+from torch import nn
 
 from ...cache_utils import Cache
 from ...configuration_utils import PretrainedConfig

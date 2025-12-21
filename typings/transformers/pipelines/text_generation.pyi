@@ -1,8 +1,8 @@
 import enum
 from typing import Any, overload
 
-from ..utils import add_end_docstrings, is_tf_available, is_torch_available
-from .base import Pipeline, build_pipeline_init_args
+from ..utils import is_tf_available, is_torch_available
+from .base import Pipeline
 
 if is_torch_available(): ...
 if is_tf_available(): ...

@@ -1,6 +1,5 @@
-from torch import Tensor
-
 from indextts.util import patch_call
+from torch import Tensor
 
 from .module import Module
 

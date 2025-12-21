@@ -8,11 +8,6 @@ from ...tokenization_utils_base import (
     TruncationStrategy,
 )
 from ...tokenization_utils_fast import PreTrainedTokenizerFast
-from ...utils import add_end_docstrings
-from .tokenization_layoutlmv3 import (
-    LAYOUTLMV3_ENCODE_KWARGS_DOCSTRING,
-    LAYOUTLMV3_ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING,
-)
 
 """
 Fast tokenization class for LayoutLMv3. It overwrites 2 methods of the slow tokenizer class, namely _batch_encode_plus

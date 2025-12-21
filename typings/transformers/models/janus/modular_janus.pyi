@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import torch
-import torch.nn as nn
+from torch import nn
 from transformers.models.blip.image_processing_blip import BlipImageProcessor
 
 from ...cache_utils import Cache

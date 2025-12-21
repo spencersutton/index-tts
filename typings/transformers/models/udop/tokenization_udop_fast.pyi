@@ -7,7 +7,7 @@ from ...tokenization_utils_base import (
     TruncationStrategy,
 )
 from ...tokenization_utils_fast import PreTrainedTokenizerFast
-from ...utils import PaddingStrategy, TensorType, add_end_docstrings, is_sentencepiece_available
+from ...utils import PaddingStrategy, TensorType, is_sentencepiece_available
 from .tokenization_udop import UdopTokenizer
 
 """Tokenization classes for UDOP model."""

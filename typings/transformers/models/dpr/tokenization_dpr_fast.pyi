@@ -1,5 +1,5 @@
 from ...tokenization_utils_base import BatchEncoding
-from ...utils import TensorType, add_end_docstrings, add_start_docstrings
+from ...utils import TensorType, add_start_docstrings
 from ..bert.tokenization_bert_fast import BertTokenizerFast
 from .tokenization_dpr import DPRContextEncoderTokenizer, DPRQuestionEncoderTokenizer, DPRReaderTokenizer
 

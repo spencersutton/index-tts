@@ -2,8 +2,8 @@ from typing import Any, overload
 
 from PIL import Image
 
-from ..utils import ExplicitEnum, add_end_docstrings, is_pytesseract_available, is_torch_available, is_vision_available
-from .base import ChunkPipeline, build_pipeline_init_args
+from ..utils import ExplicitEnum, is_pytesseract_available, is_torch_available, is_vision_available
+from .base import ChunkPipeline
 
 if is_vision_available(): ...
 if is_torch_available(): ...

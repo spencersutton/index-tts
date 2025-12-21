@@ -1,5 +1,5 @@
-from ..utils import add_end_docstrings, is_tf_available, is_torch_available
-from .base import ArgumentHandler, Pipeline, build_pipeline_init_args
+from ..utils import is_tf_available, is_torch_available
+from .base import ArgumentHandler, Pipeline
 
 if is_torch_available(): ...
 if is_tf_available(): ...

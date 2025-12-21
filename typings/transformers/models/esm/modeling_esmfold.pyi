@@ -2,7 +2,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
 import torch
-import torch.nn as nn
+from torch import nn
 
 from ...modeling_outputs import ModelOutput
 from .modeling_esm import EsmPreTrainedModel

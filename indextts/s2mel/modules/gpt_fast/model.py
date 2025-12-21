@@ -7,6 +7,7 @@
 # Adapted from: https://github.com/meta-pytorch/gpt-fast/blob/main/model.py
 
 from dataclasses import dataclass
+from typing import override
 
 import torch
 from torch import Tensor, nn
@@ -29,6 +30,7 @@ class AdaptiveLayerNorm(nn.Module):
         self.d_model = d_model
         self.eps = self.norm.eps
 
+    @override
     def forward(self, input: Tensor, embedding: Tensor = None) -> Tensor:
         if embedding is None:
             return self.norm(input)
@@ -127,6 +129,7 @@ class Transformer(nn.Module):
             self.layers_emit_skip = []
             self.layers_receive_skip = []
 
+    @override
     def forward(
         self,
         x: Tensor,
@@ -178,6 +181,7 @@ class TransformerBlock(nn.Module):
 
         self.time_as_token = config.time_as_token
 
+    @override
     def forward(
         self,
         x: Tensor,
@@ -221,6 +225,7 @@ class Attention(nn.Module):
         self.n_local_heads = config.n_local_heads
         self.dim = config.dim
 
+    @override
     def forward(
         self,
         x: Tensor,
@@ -269,6 +274,7 @@ class FeedForward(nn.Module):
         self.w3 = nn.Linear(config.dim, config.intermediate_size, bias=False)
         self.w2 = nn.Linear(config.intermediate_size, config.dim, bias=False)
 
+    @override
     def forward(self, x: Tensor) -> Tensor:
         return self.w2(F.silu(self.w1(x)) * self.w3(x))
 
@@ -282,6 +288,7 @@ class RMSNorm(nn.Module):
     def _norm(self, x):
         return x * torch.rsqrt(torch.mean(x * x, dim=-1, keepdim=True) + self.eps)
 
+    @override
     def forward(self, x: Tensor) -> Tensor:
         output = self._norm(x.float()).type_as(x)
         return output * self.weight

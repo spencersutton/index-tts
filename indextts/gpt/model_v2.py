@@ -1,4 +1,5 @@
 import functools
+from typing import override
 
 import torch
 import torch.nn.functional as F
@@ -32,6 +33,7 @@ class ResBlock(nn.Module):
             nn.GroupNorm(chan // 8, chan),
         )
 
+    @override
     def forward(self, x):
         return F.relu(self.net(x) + x)
 
@@ -111,6 +113,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel):
             "token_type_ids": token_type_ids,
         }
 
+    @override
     def forward(
         self,
         input_ids=None,
@@ -192,6 +195,7 @@ class LearnedPositionEmbeddings(nn.Module):
         # Initializing this way is standard for GPT-2
         self.emb.weight.data.normal_(mean=0.0, std=init)
 
+    @override
     def forward(self, x):
         sl = x.shape[1]
         return self.emb(torch.arange(0, sl, device=x.device))
@@ -249,6 +253,7 @@ class MelEncoder(nn.Module):
         )
         self.reduction = 4
 
+    @override
     def forward(self, x):
         for e in self.encoder:
             x = e(x)
@@ -583,6 +588,7 @@ class UnifiedVoice(nn.Module):
         conds = self.emo_perceiver_encoder(speech_conditioning_input, conds_mask)  # (b, 1, d)
         return conds.squeeze(1)
 
+    @override
     def forward(
         self,
         speech_conditioning_latent,

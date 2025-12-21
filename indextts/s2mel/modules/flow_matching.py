@@ -1,4 +1,5 @@
 from abc import ABC
+from typing import override
 
 import torch
 from tqdm import tqdm
@@ -116,6 +117,7 @@ class BASECFM(torch.nn.Module, ABC):
 
         return sol[-1]
 
+    @override
     def forward(self, x1, x_lens, prompt_lens, mu, style):
         """Computes diffusion loss
 

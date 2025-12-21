@@ -9,6 +9,7 @@
 import math
 import typing as tp
 import warnings
+from typing import override
 
 import einops
 import torch
@@ -26,6 +27,7 @@ class ConvLayerNorm(nn.LayerNorm):
     def __init__(self, normalized_shape: int | list[int] | torch.Size, **kwargs) -> None:
         super().__init__(normalized_shape, **kwargs)
 
+    @override
     def forward(self, x) -> None:
         x = einops.rearrange(x, "b ... t -> b t ...")
         x = super().forward(x)
@@ -109,6 +111,7 @@ class NormConv1d(nn.Module):
         self.norm = get_norm_module(self.conv, causal, norm, **norm_kwargs)
         self.norm_type = norm
 
+    @override
     def forward(self, x):
         x = self.conv(x)
         return self.norm(x)
@@ -125,6 +128,7 @@ class NormConv2d(nn.Module):
         self.norm = get_norm_module(self.conv, causal=False, norm=norm, **norm_kwargs)
         self.norm_type = norm
 
+    @override
     def forward(self, x):
         x = self.conv(x)
         return self.norm(x)
@@ -143,6 +147,7 @@ class NormConvTranspose1d(nn.Module):
         self.norm = get_norm_module(self.convtr, causal, norm, **norm_kwargs)
         self.norm_type = norm
 
+    @override
     def forward(self, x):
         x = self.convtr(x)
         return self.norm(x)
@@ -158,6 +163,7 @@ class NormConvTranspose2d(nn.Module):
         self.convtr = apply_parametrization_norm(nn.ConvTranspose2d(*args, **kwargs), norm)
         self.norm = get_norm_module(self.convtr, causal=False, norm=norm, **norm_kwargs)
 
+    @override
     def forward(self, x):
         x = self.convtr(x)
         return self.norm(x)
@@ -205,6 +211,7 @@ class SConv1d(nn.Module):
         self.causal = causal
         self.pad_mode = pad_mode
 
+    @override
     def forward(self, x):
         _B, _C, _T = x.shape
         kernel_size = self.conv.conv.kernel_size[0]

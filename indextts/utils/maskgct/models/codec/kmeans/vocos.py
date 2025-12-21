@@ -4,6 +4,8 @@
 # LICENSE file in the root directory of this source tree.
 
 
+from typing import override
+
 import torch
 from torch import nn
 
@@ -43,6 +45,7 @@ class ConvNeXtBlock(nn.Module):
             else None
         )
 
+    @override
     def forward(self, x: torch.Tensor, cond_embedding_id: torch.Tensor | None = None) -> torch.Tensor:
         residual = x
         x = self.dwconv(x)
@@ -80,6 +83,7 @@ class AdaLayerNorm(nn.Module):
         torch.nn.init.ones_(self.scale.weight)
         torch.nn.init.zeros_(self.shift.weight)
 
+    @override
     def forward(self, x: torch.Tensor, cond_embedding_id: torch.Tensor) -> torch.Tensor:
         scale = self.scale(cond_embedding_id)
         shift = self.shift(cond_embedding_id)
@@ -197,6 +201,7 @@ class ResBlock1(nn.Module):
             ),
         ])
 
+    @override
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         for c1, c2, gamma in zip(self.convs1, self.convs2, self.gamma):
             xt = torch.nn.functional.leaky_relu(x, negative_slope=self.lrelu_slope)
@@ -222,6 +227,7 @@ class ResBlock1(nn.Module):
 class Backbone(nn.Module):
     """Base class for the generator's backbone. It preserves the same temporal resolution across all layers."""
 
+    @override
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
         """
         Args:
@@ -284,6 +290,7 @@ class VocosBackbone(Backbone):
             nn.init.trunc_normal_(m.weight, std=0.02)
             nn.init.constant_(m.bias, 0)
 
+    @override
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
         bandwidth_id = kwargs.get("bandwidth_id")
         x = self.embed(x)
@@ -324,6 +331,7 @@ class VocosResNetBackbone(Backbone):
             ResBlock1(dim=dim, layer_scale_init_value=layer_scale_init_value) for _ in range(num_blocks)
         ])
 
+    @override
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
         x = self.embed(x)
         x = self.resnet(x)
@@ -353,6 +361,7 @@ class Vocos(nn.Module):
         )
         self.head = ISTFTHead(dim, n_fft, hop_size, padding)
 
+    @override
     def forward(self, x):
         x = self.backbone(x)
         x = self.head(x)

@@ -1,3 +1,5 @@
+from typing import override
+
 import numpy as np
 import torch
 from indextts.s2mel.dac.nn.quantize import VectorQuantize
@@ -84,6 +86,7 @@ class InterpolateRegulator(nn.Module):
             if vector_quantize:
                 self.vq = VectorQuantize(channels, codebook_size, 8)
 
+    @override
     def forward(self, x, ylens=None, n_quantizers=None, f0=None):
         # apply token drop
         if self.training:

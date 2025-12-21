@@ -4,6 +4,8 @@
 # LICENSE file in the root directory of this source tree.
 
 
+from typing import override
+
 import torch
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize.lookup_free_quantize import LookupFreeQuantize
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize.vector_quantize import VectorQuantize
@@ -58,6 +60,7 @@ class ResidualVQ(nn.Module):
             for _ in range(num_quantizers)
         ])
 
+    @override
     def forward(self, z, n_quantizers: int | None = None):
         """
         Parameters

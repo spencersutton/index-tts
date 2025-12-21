@@ -17,6 +17,7 @@
 """Multi-Head Attention layer definition."""
 
 import math
+from typing import override
 
 import torch
 from torch import nn
@@ -45,6 +46,7 @@ class MultiHeadedAttention(nn.Module):
         self.linear_out = nn.Linear(n_feat, n_feat)
         self.dropout = nn.Dropout(p=dropout_rate)
 
+    @override
     def forward_qkv(
         self, query: torch.Tensor, key: torch.Tensor, value: torch.Tensor
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -74,6 +76,7 @@ class MultiHeadedAttention(nn.Module):
 
         return q, k, v
 
+    @override
     def forward_attention(
         self, value: torch.Tensor, scores: torch.Tensor, mask: torch.Tensor = torch.ones((0, 0, 0), dtype=torch.bool)
     ) -> torch.Tensor:
@@ -115,6 +118,7 @@ class MultiHeadedAttention(nn.Module):
 
         return self.linear_out(x)  # (batch, time1, d_model)
 
+    @override
     def forward(
         self,
         query: torch.Tensor,
@@ -227,6 +231,7 @@ class RelPositionMultiHeadedAttention(MultiHeadedAttention):
 
         return x
 
+    @override
     def forward(
         self,
         query: torch.Tensor,

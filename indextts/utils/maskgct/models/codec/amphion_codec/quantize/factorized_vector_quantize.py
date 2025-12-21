@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+from typing import override
+
 import torch
 import torch.nn.functional as F
 from einops import rearrange
@@ -42,6 +44,7 @@ class FactorizedVectorQuantize(nn.Module):
 
         self.codebook = nn.Embedding(self.codebook_size, self.codebook_dim)
 
+    @override
     def forward(self, z):
         """
         Parameters

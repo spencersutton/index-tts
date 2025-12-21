@@ -1,4 +1,5 @@
 import sys
+from typing import override
 
 import torch
 from torch import nn
@@ -17,6 +18,7 @@ class Sampler(nn.Module):
         super().__init__()
 
     @torch.compile
+    @override
     def forward(self, logits: torch.Tensor, temperatures: torch.Tensor):
         temperatures = temperatures.to(logits.device).clamp(min=1e-8)
         greedy_mask = temperatures < 1e-5
@@ -35,6 +37,7 @@ class Sampler(nn.Module):
         super().__init__()
 
     @torch.compile
+    @override
     def forward(self, logits: torch.Tensor, temperatures: torch.Tensor):
         logits = logits.float().div_(temperatures.unsqueeze(dim=1))
         probs = torch.softmax(logits, dim=-1)

@@ -2,6 +2,7 @@
 
 from collections import namedtuple
 from functools import wraps
+from typing import override
 
 import torch
 import torch.nn.functional as F
@@ -106,6 +107,7 @@ class Attend(nn.Module):
                 q, k, v, attn_mask=mask, dropout_p=self.dropout if self.training else 0.0, is_causal=self.causal
             )
 
+    @override
     def forward(self, q, k, v, mask=None):
         """
         einstein notation
@@ -169,6 +171,7 @@ class RMSNorm(nn.Module):
         self.scale = dim**0.5
         self.gamma = nn.Parameter(torch.ones(dim)) if scale else None
 
+    @override
     def forward(self, x, cond=None):
         gamma = default(self.gamma, 1)
         out = F.normalize(x, dim=-1) * self.scale * gamma
@@ -192,12 +195,14 @@ class CausalConv1d(nn.Conv1d):
         assert stride == 1
         self.causal_padding = dilation * (kernel_size - 1)
 
+    @override
     def forward(self, x):
         causal_padded_x = F.pad(x, (self.causal_padding, 0), value=0.0)
         return super().forward(causal_padded_x)
 
 
 class GEGLU(nn.Module):
+    @override
     def forward(self, x):
         x, gate = x.chunk(2, dim=-1)
         return F.gelu(gate) * x
@@ -254,6 +259,7 @@ class PerceiverResampler(nn.Module):
 
         self.norm = RMSNorm(dim)
 
+    @override
     def forward(self, x, mask=None):
         batch = x.shape[0]
 
@@ -294,6 +300,7 @@ class Attention(nn.Module):
         self.to_kv = nn.Linear(dim_context, dim_inner * 2, bias=False)
         self.to_out = nn.Linear(dim_inner, dim, bias=False)
 
+    @override
     def forward(self, x, context=None, mask=None):
         h, has_context = self.heads, exists(context)
 

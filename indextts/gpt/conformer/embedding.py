@@ -16,6 +16,7 @@
 """Positonal Encoding Module."""
 
 import math
+from typing import override
 
 import torch
 import torch.nn.functional as F
@@ -48,6 +49,7 @@ class PositionalEncoding(torch.nn.Module):
         pe = pe.unsqueeze(0)
         self.register_buffer("pe", pe)
 
+    @override
     def forward(self, x: torch.Tensor, offset: int | torch.Tensor = 0) -> tuple[torch.Tensor, torch.Tensor]:
         """Add positional encoding.
 
@@ -112,6 +114,7 @@ class RelPositionalEncoding(PositionalEncoding):
         """Initialize class."""
         super().__init__(d_model, dropout_rate, max_len, reverse=True)
 
+    @override
     def forward(self, x: torch.Tensor, offset: int | torch.Tensor = 0) -> tuple[torch.Tensor, torch.Tensor]:
         """Compute positional encoding.
         Args:
@@ -134,6 +137,7 @@ class NoPositionalEncoding(torch.nn.Module):
         self.d_model = d_model
         self.dropout = torch.nn.Dropout(p=dropout_rate)
 
+    @override
     def forward(self, x: torch.Tensor, offset: int | torch.Tensor = 0) -> tuple[torch.Tensor, torch.Tensor]:
         """Just return zero vector for interface compatibility"""
         pos_emb = torch.zeros(1, x.size(1), self.d_model).to(x.device)

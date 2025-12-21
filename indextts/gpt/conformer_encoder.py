@@ -1,3 +1,5 @@
+from typing import override
+
 import torch
 from torch import nn
 
@@ -36,6 +38,7 @@ class PositionwiseFeedForward(torch.nn.Module):
         self.dropout = torch.nn.Dropout(dropout_rate)
         self.w_2 = torch.nn.Linear(hidden_units, idim)
 
+    @override
     def forward(self, xs: torch.Tensor) -> torch.Tensor:
         """Forward function.
 
@@ -101,6 +104,7 @@ class ConvolutionModule(nn.Module):
         )
         self.activation = activation
 
+    @override
     def forward(
         self,
         x: torch.Tensor,
@@ -219,6 +223,7 @@ class ConformerEncoderLayer(nn.Module):
         else:
             self.concat_linear = nn.Identity()
 
+    @override
     def forward(
         self,
         x: torch.Tensor,
@@ -385,6 +390,7 @@ class BaseEncoder(torch.nn.Module):
     def output_size(self) -> int:
         return self._output_size
 
+    @override
     def forward(
         self,
         xs: torch.Tensor,

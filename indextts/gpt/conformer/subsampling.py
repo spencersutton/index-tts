@@ -16,6 +16,8 @@
 
 """Subsampling layer definition."""
 
+from typing import override
+
 import torch
 
 
@@ -51,6 +53,7 @@ class LinearNoSubsampling(BaseSubsampling):
         self.right_context = 0
         self.subsampling_rate = 1
 
+    @override
     def forward(
         self, x: torch.Tensor, x_mask: torch.Tensor, offset: int | torch.Tensor = 0
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -97,6 +100,7 @@ class Conv2dSubsampling2(_BaseSubsampling):
         # 2 = (3 - 1) * 1
         self.right_context = 2
 
+    @override
     def forward(
         self, x: torch.Tensor, x_mask: torch.Tensor, offset: int | torch.Tensor = 0
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -149,6 +153,7 @@ class Conv2dSubsampling4(BaseSubsampling):
         # 6 = (3 - 1) * 1 + (3 - 1) * 2
         self.right_context = 6
 
+    @override
     def forward(
         self, x: torch.Tensor, x_mask: torch.Tensor, offset: int | torch.Tensor = 0
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -198,6 +203,7 @@ class Conv2dSubsampling6(BaseSubsampling):
         self.subsampling_rate = 6
         self.right_context = 10
 
+    @override
     def forward(
         self, x: torch.Tensor, x_mask: torch.Tensor, offset: int | torch.Tensor = 0
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -248,6 +254,7 @@ class Conv2dSubsampling8(BaseSubsampling):
         # 14 = (3 - 1) * 1 + (3 - 1) * 2 + (3 - 1) * 4
         self.right_context = 14
 
+    @override
     def forward(
         self, x: torch.Tensor, x_mask: torch.Tensor, offset: int | torch.Tensor = 0
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:

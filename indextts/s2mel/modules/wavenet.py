@@ -1,3 +1,5 @@
+from typing import override
+
 import torch
 from torch import nn
 
@@ -47,6 +49,7 @@ class WN(torch.nn.Module):
             res_skip_layer = conv1d_type(hidden_channels, res_skip_channels, 1, norm="weight_norm", causal=causal)
             self.res_skip_layers.append(res_skip_layer)
 
+    @override
     def forward(self, x, x_mask, g=None, **kwargs):
         output = torch.zeros_like(x)
         n_channels_tensor = torch.IntTensor([self.hidden_channels])

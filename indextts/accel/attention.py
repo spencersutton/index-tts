@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import override
 
 import torch
 import triton
@@ -117,6 +118,7 @@ class Attention(nn.Module):
         self.num_kv_heads = num_kv_heads
         self.k_cache = self.v_cache = torch.tensor([])
 
+    @override
     def forward(self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor):
         context = get_forward_context()
         k_cache, v_cache = self.k_cache, self.v_cache

@@ -1,3 +1,5 @@
+from typing import override
+
 import torch
 from torch import nn
 
@@ -57,6 +59,7 @@ class MyModel(nn.Module):
         else:
             self.models = nn.ModuleDict({"cfm": CFM(args), "length_regulator": length_regulator})
 
+    @override
     def forward(self, x, target_lengths, prompt_len, cond, y):
         return self.models["cfm"](x, target_lengths, prompt_len, cond, y)
 

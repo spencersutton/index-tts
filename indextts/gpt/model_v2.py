@@ -218,7 +218,7 @@ class UnifiedVoice(nn.Module):
             )
             raise ImportError(msg)
 
-        from indextts.accel import AccelInferenceEngine, GPT2AccelModel
+        from indextts.accel import AccelInferenceEngine, GPT2AccelModel  # noqa: PLC0415
 
         accel_gpt = GPT2AccelModel(gpt_config)
         accel_gpt.load_state_dict(self.gpt.state_dict(), strict=False)

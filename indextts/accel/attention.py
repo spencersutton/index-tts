@@ -69,16 +69,16 @@ def store_kvcache_kernel(
     k_cache_ptr: tl.pointer_type,
     v_cache_ptr: tl.pointer_type,
     slot_mapping_ptr: tl.pointer_type,
-    D: tl.constexpr,
+    D: tl.constexpr,  # noqa: N803
 ) -> None:
-    BLOCK_SIZE: tl.constexpr = 2048
+    BLOCK_SIZE: tl.constexpr = 2048  # ty:ignore[invalid-assignment]
     idx: int = tl.program_id(0)
     slot: int = tl.load(slot_mapping_ptr + idx)
     if slot == -1:
         return
     d_offset: int = 0
     while d_offset < D:
-        cur_block_size: int = min(BLOCK_SIZE, D - d_offset)
+        cur_block_size: int = min(BLOCK_SIZE, D - d_offset)  # ty:ignore[invalid-assignment]
         key_offsets = idx * key_stride + d_offset + tl.arange(0, BLOCK_SIZE)
         value_offsets = idx * value_stride + d_offset + tl.arange(0, BLOCK_SIZE)
         cache_offsets = slot * D + d_offset + tl.arange(0, BLOCK_SIZE)
@@ -106,14 +106,14 @@ def store_kvcache(
     assert k_cache.stride(1) == D and v_cache.stride(1) == D
     assert slot_mapping.numel() == N
     store_kvcache_kernel[N,](
-        key,
+        key,  # ty:ignore[invalid-argument-type]
         key.stride(0),
-        value,
+        value,  # ty:ignore[invalid-argument-type]
         value.stride(0),
-        k_cache,
-        v_cache,
-        slot_mapping,
-        D,
+        k_cache,  # ty:ignore[invalid-argument-type]
+        v_cache,  # ty:ignore[invalid-argument-type]
+        slot_mapping,  # ty:ignore[invalid-argument-type]
+        D,  # ty:ignore[invalid-argument-type]
     )
 
 

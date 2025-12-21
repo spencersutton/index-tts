@@ -4,13 +4,13 @@ from pathlib import Path
 from typing import cast
 
 from torch import Tensor
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoTokenizer, Qwen2Tokenizer, Qwen3ForCausalLM
 
 
 class QwenEmotion:
     model_dir: Path
-    tokenizer: AutoTokenizer
-    model: AutoModelForCausalLM
+    tokenizer: Qwen2Tokenizer
+    model: Qwen3ForCausalLM
     prompt: str
     cn_key_to_en: dict[str, str]
     desired_vector_order: list[str]
@@ -21,7 +21,7 @@ class QwenEmotion:
     def __init__(self, model_dir: Path) -> None:
         self.model_dir = model_dir
         self.tokenizer = AutoTokenizer.from_pretrained(model_dir)
-        self.model = AutoModelForCausalLM.from_pretrained(
+        self.model = Qwen3ForCausalLM.from_pretrained(
             model_dir,
             torch_dtype="float16",  # "auto"
             device_map="auto",

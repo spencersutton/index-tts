@@ -138,7 +138,7 @@ class UnifiedVoice(nn.Module):
                 msg = "flash_attn is required for acceleration but not installed. Please install from https://github.com/Dao-AILab/flash-attention/releases/"
                 raise ImportError(msg)
 
-            from indextts.accel import AccelInferenceEngine, GPT2AccelModel  # noqa: PLC0415
+            from indextts.accel import AccelInferenceEngine, GPT2AccelModel
 
             # Create accel model
             accel_gpt = GPT2AccelModel(gpt_config)
@@ -173,7 +173,7 @@ class UnifiedVoice(nn.Module):
         )
         assert self.inference_model is not None
         if use_deepspeed and half and torch.cuda.is_available():
-            import deepspeed  # noqa: PLC0415  # ty:ignore[unresolved-import]
+            import deepspeed  # ty:ignore[unresolved-import]
 
             self.ds_engine = deepspeed.init_inference(
                 model=self.inference_model,
@@ -183,7 +183,7 @@ class UnifiedVoice(nn.Module):
             )
             self.inference_model = self.ds_engine.module.eval()
         elif use_deepspeed and torch.cuda.is_available():
-            import deepspeed  # ty:ignore[unresolved-import]  # noqa: PLC0415
+            import deepspeed  # ty:ignore[unresolved-import]
 
             self.ds_engine = deepspeed.init_inference(
                 model=self.inference_model,
@@ -293,6 +293,7 @@ class UnifiedVoice(nn.Module):
         If return_attentions is specified, only logits are returned.
         If return_latent is specified, loss & logits are not computed or returned. Only the predicted latents are returned.
         """
+
         if do_spk_cond:
             speech_conditioning_latent = self.get_conditioning(
                 speech_conditioning_latent.transpose(1, 2), cond_mel_lengths
@@ -353,17 +354,15 @@ class UnifiedVoice(nn.Module):
         conditional_latents: Tensor,
         text_inputs: Tensor,
     ) -> tuple[Tensor, Tensor, Tensor]:
-        """Prepare the inputs for the GPT2InferenceModel to generate.
-
+        """
+        Prepare the inputs for the GPT2InferenceModel to generate.
         Args:
             conds_latent: (b, 32, dim) audio conditioning embedding by `get_conditioning()`
             text_inputs: (b, L)
-
         Returns:
             input_ids: (b, s+1) the input ids for the GPT2InferenceModel.generate()
             inputs_embeds: (b, s+1, dim) the input embeddings for the GPT2InferenceModel.forward()
             attention_mask: (b, s+1) the attention mask for the GPT2InferenceModel.generate()
-
         """
         b, L = text_inputs.shape[:2]
         single_cond = conditional_latents.ndim == 3 and conditional_latents.shape[0] == 1
@@ -431,15 +430,16 @@ class UnifiedVoice(nn.Module):
         **hf_generate_kwargs: Any,  # pyright: ignore[reportAny]
     ) -> tuple[Tensor, Tensor]:
         t0 = time.perf_counter()
-        """Args:
+        """
+        Args:
         speech_condition: (b, d, frames) or (d, frames)
         text_inputs: (b, L)
         cond_mel_lengths: lengths of the conditioning mel spectrograms in shape (b,) or (1,)
         input_tokens: additional tokens for generation in shape (b, s) or (s,)
         max_generate_length: limit the number of generated tokens
-        hf_generate_kwargs: kwargs for `GPT2InferenceModel.generate(**hf_generate_kwargs)`.
-
+        hf_generate_kwargs: kwargs for `GPT2InferenceModel.generate(**hf_generate_kwargs)`
         """
+
         if speech_condition.ndim == 2:
             speech_condition = speech_condition.unsqueeze(0)
         if emo_speech_condition is None:

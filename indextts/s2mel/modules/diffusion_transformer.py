@@ -1,4 +1,5 @@
 import math
+from typing import override
 from typing import TYPE_CHECKING, Final, override
 
 import torch

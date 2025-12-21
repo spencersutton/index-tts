@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from typing import override
+from collections.abc import Sequence
 
 import torch.nn.functional as F
 from torch import Tensor, nn

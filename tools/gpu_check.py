@@ -9,8 +9,8 @@ def show_device_list(backend: str) -> int:
 
     Returns:
         The number of devices found if the backend is usable, otherwise 0.
-
     """
+
     backend_upper = backend.upper()
 
     try:
@@ -64,6 +64,7 @@ def check_torch_devices() -> None:
     """Checks for the availability of various PyTorch hardware acceleration
     platforms and prints information about the discovered devices.
     """
+
     print("Scanning for PyTorch hardware acceleration devices...\n")
 
     device_count = 0

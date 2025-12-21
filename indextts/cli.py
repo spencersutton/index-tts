@@ -93,24 +93,6 @@ def main() -> None:
         default=False,
         help="Use DeepSpeed for inference",
     )
-    parser.add_argument(
-        "--profile",
-        action="store_true",
-        default=False,
-        help="Enable profiling of function execution times",
-    )
-    parser.add_argument(
-        "--profile-warmup-steps",
-        type=int,
-        default=2,
-        help="Number of warmup steps before profiling starts",
-    )
-    parser.add_argument(
-        "--profile-steps",
-        type=int,
-        default=5,
-        help="Number of active profiling steps",
-    )
     args = parser.parse_args()
 
     assert isinstance(args.text, str)  # pyright: ignore[reportAny]
@@ -125,11 +107,8 @@ def main() -> None:
     assert isinstance(args.use_torch_compile, bool)  # pyright: ignore[reportAny]
     assert isinstance(args.use_cuda_kernel, bool)  # pyright: ignore[reportAny]
     assert isinstance(args.use_deepspeed, bool)  # pyright: ignore[reportAny]
-    assert isinstance(args.profile, bool)  # pyright: ignore[reportAny]
-    assert isinstance(args.profile_warmup_steps, int)  # pyright: ignore[reportAny]
-    assert isinstance(args.profile_steps, int)  # pyright: ignore[reportAny]
 
-    if len(args.text.strip()) == 0 and not args.profile:
+    if len(args.text.strip()) == 0:
         print("ERROR: Text is empty.")
         parser.print_help()
         sys.exit(1)

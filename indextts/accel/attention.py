@@ -71,7 +71,7 @@ def store_kvcache_kernel(
     k_cache_ptr: tl.pointer_type,
     v_cache_ptr: tl.pointer_type,
     slot_mapping_ptr: tl.pointer_type,
-    D: tl.constexpr,  # noqa: N803
+    D: tl.constexpr,
 ) -> None:
     BLOCK_SIZE: tl.constexpr = 2048
     idx: int = tl.program_id(0)

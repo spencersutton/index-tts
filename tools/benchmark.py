@@ -16,7 +16,6 @@ Examples:
 
     # Benchmark with torch.compile optimization
     python benchmark.py -v outputs/mizora.ogg --use_torch_compile
-
 """
 
 import argparse
@@ -230,7 +229,8 @@ def run_benchmark(
     use_deepspeed: bool = False,
     verbose: bool = False,
 ) -> BenchmarkResult:
-    """Run the benchmark and return results.
+    """
+    Run the benchmark and return results.
 
     Args:
         voice_path: Path to the voice prompt audio file
@@ -250,7 +250,6 @@ def run_benchmark(
 
     Returns:
         BenchmarkResult with timing data
-
     """
     import tempfile
 

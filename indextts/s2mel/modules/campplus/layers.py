@@ -161,7 +161,10 @@ class DenseLayer(nn.Module):
 
     @override
     def forward(self, x: Tensor) -> Tensor:
-        x = self.linear(x.unsqueeze(dim=-1)).squeeze(dim=-1) if len(x.shape) == 2 else self.linear(x)
+        if len(x.shape) == 2:
+            x = self.linear(x.unsqueeze(dim=-1)).squeeze(dim=-1)
+        else:
+            x = self.linear(x)
         return self.nonlinear(x)
 
     @patch_call(forward)

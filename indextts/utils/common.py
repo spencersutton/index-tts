@@ -20,7 +20,6 @@ def tokenize_by_CJK_char(line: str, do_upper_case: bool = True) -> str:  # noqa:
 
     Return:
       A new string tokenize by CJK char.
-
     """
     # The CJK ranges is from https://github.com/alvations/nltk/blob/79eed6ddea0d0a2c212c1060b477fc268fec4d4b/nltk/tokenize/util.py
     CJK_RANGE_PATTERN = (
@@ -38,7 +37,6 @@ def de_tokenized_by_CJK_char(line: str, do_lower_case: bool = False) -> str:  # 
     do_lower_case:
       input = "SEE YOU!"
       output = "see you!"
-
     """
     # replace english words in the line with placeholders
     english_word_pattern = re.compile(r"([A-Z]+(?:[\s-][A-Z-]+)*)", re.IGNORECASE)
@@ -67,7 +65,6 @@ def make_pad_mask(lengths: Tensor, max_len: int = 0) -> Tensor:
 
     Args:
         lengths (Tensor): Batch of lengths (B,).
-
     Returns:
         Tensor: Mask tensor containing indices of padded part.
 
@@ -77,7 +74,6 @@ def make_pad_mask(lengths: Tensor, max_len: int = 0) -> Tensor:
         masks = [[0, 0, 0, 0 ,0],
                  [0, 0, 0, 1, 1],
                  [0, 0, 1, 1, 1]]
-
     """
     batch_size = lengths.size(0)
     max_len = max_len if max_len > 0 else int(lengths.max().item())

@@ -1,7 +1,7 @@
 import sys
 import time
 from collections.abc import Collection, Iterable, Sequence
-from typing import TYPE_CHECKING, Final, cast
+from typing import TYPE_CHECKING, Final, cast, override
 
 import torch
 from torch import Tensor, nn
@@ -22,6 +22,7 @@ class Sampler(nn.Module):
         super().__init__()
 
     @torch.compile(dynamic=True, mode="reduce-overhead")
+    @override
     def forward(self, logits: Tensor, temperatures: Tensor) -> Tensor:
         temperatures = temperatures.clamp(min=1e-8)
         greedy_mask = temperatures < 1e-5
@@ -57,7 +58,8 @@ class AccelInferenceEngine:
         num_blocks: int = 128,
         use_cuda_graph: bool = True,
     ) -> None:
-        """Args:
+        """
+        Args:
         model: The GPT transformer model (should have accel attention)
         lm_head: Language model head for generating logits
         num_layers: Number of transformer layers
@@ -65,8 +67,7 @@ class AccelInferenceEngine:
         head_dim: Dimension per head
         block_size: KV cache block size
         num_blocks: Total number of KV cache blocks
-        use_cuda_graph: Whether to use CUDA Graph for decode optimization.
-
+        use_cuda_graph: Whether to use CUDA Graph for decode optimization
         """
         self.model: GPT2Model = model
         self.lm_head = lm_head
@@ -387,7 +388,6 @@ class AccelInferenceEngine:
 
         Returns:
             Generated token IDs [batch_size, total_len]
-
         """
         t_start = time.perf_counter()
         batch_size = input_ids.size(0)
@@ -567,7 +567,7 @@ class AccelInferenceEngine:
             for i, token_id in enumerate(next_token_list):
                 if is_finished[i]:
                     continue
-                elif stop_tokens and token_id in stop_tokens:
+                if stop_tokens and token_id in stop_tokens:
                     is_finished[i] = True
                 else:
                     sequences[i].append_token(token_id)

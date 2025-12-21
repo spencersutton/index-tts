@@ -1,11 +1,9 @@
 # pyright: reportPrivateUsage=false
 from abc import ABC
-from typing import override
 from typing import cast, override
 
 import torch
 from torch import Tensor, nn
-from tqdm import tqdm
 
 from indextts.config import S2MelConfig
 from indextts.s2mel.modules.diffusion_transformer import DiT
@@ -88,24 +86,33 @@ class BASECFM(nn.Module, ABC):
                 shape: (batch_size, 192)
         """
         assert self.estimator is not None
-        t, _, _ = t_span[0], t_span[-1], t_span[1] - t_span[0]
+        t = t_span[0]
 
-        # I am storing this because I can later plot it by putting a debugger here and saving it to a file
-        # Or in future might add like a return_all_steps flag
-        sol: list[Tensor] = []
-        # apply prompt
+        # Pre-compute prompt masking
         prompt_len = prompt.size(-1)
         prompt_x = torch.zeros_like(x)
         prompt_x[..., :prompt_len] = prompt[..., :prompt_len]
         x[..., :prompt_len] = 0
-        for step in tqdm(range(1, len(t_span))):
-            dt = t_span[step] - t_span[step - 1]
+
+        # Pre-allocate CFG tensors (reused each iteration to avoid allocation overhead)
+        null_prompt_x = torch.zeros_like(prompt_x)
+        null_style = torch.zeros_like(style)
+        null_mu = torch.zeros_like(mu)
+
+        # Pre-compute CFG scale factors
+        cfg_scale = 1.0 + inference_cfg_rate
+        neg_cfg_rate = -inference_cfg_rate
+
+        n_steps = len(t_span) - 1
+        for step in range(n_steps):
+            dt = t_span[step + 1] - t_span[step]
+
             # Stack original and CFG (null) inputs for batched processing
-            stacked_prompt_x = torch.cat([prompt_x, torch.zeros_like(prompt_x)], dim=0)
-            stacked_style = torch.cat([style, torch.zeros_like(style)], dim=0)
-            stacked_mu = torch.cat([mu, torch.zeros_like(mu)], dim=0)
+            stacked_prompt_x = torch.cat([prompt_x, null_prompt_x], dim=0)
+            stacked_style = torch.cat([style, null_style], dim=0)
+            stacked_mu = torch.cat([mu, null_mu], dim=0)
             stacked_x = torch.cat([x, x], dim=0)
-            stacked_t = torch.cat([t.unsqueeze(0), t.unsqueeze(0)], dim=0)
+            stacked_t = t.unsqueeze(0).expand(2)
 
             # Perform a single forward pass for both original and CFG inputs
             stacked_dphi_dt = self.estimator(
@@ -120,17 +127,16 @@ class BASECFM(nn.Module, ABC):
             # Split the output back into the original and CFG components
             dphi_dt, cfg_dphi_dt = stacked_dphi_dt.chunk(2, dim=0)
 
-            # Apply CFG formula
-            dphi_dt = (1.0 + inference_cfg_rate) * dphi_dt - inference_cfg_rate * cfg_dphi_dt
+            # Apply CFG formula: (1 + cfg_rate) * dphi - cfg_rate * cfg_dphi
+            # Fused operation to avoid intermediate tensor allocation
+            dphi_dt = cfg_scale * dphi_dt + neg_cfg_rate * cfg_dphi_dt
 
-            x += dt * dphi_dt
-            t += dt
-            sol.append(x)
-            if step < len(t_span) - 1:
-                dt = t_span[step + 1] - t
+            # In-place update
+            x = x + dt * dphi_dt
+            t = t + dt
             x[:, :, :prompt_len] = 0
 
-        return sol[-1]
+        return x
 
     @override
     def forward(

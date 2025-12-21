@@ -30,6 +30,7 @@ from transformers import BatchFeature, SeamlessM4TFeatureExtractor, Wav2Vec2Bert
 from indextts.config import CheckpointsConfig
 from indextts.gpt.model_v2 import GPT2InferenceModel, UnifiedVoice
 from indextts.load_modules import load_bigvgan, load_campplus, load_s2mel_model, load_semantic_codec_model
+from indextts.profiling import InferenceProfiler
 from indextts.qwen_emotion import QwenEmotion
 from indextts.s2mel.modules.audio import mel_spectrogram
 from indextts.s2mel.modules.bigvgan import BigVGAN
@@ -273,6 +274,7 @@ class IndexTTS2:
         self.use_torch_compile = use_torch_compile
         self.dtype = torch.float16 if self.use_fp16 else None
         self.gr_progress = None
+        self.profiler = InferenceProfiler(enabled=True, cuda_sync=self.device.startswith("cuda"))
 
         torch.set_default_device(self.device)
         if self.device.startswith("cuda"):
@@ -593,9 +595,19 @@ class IndexTTS2:
         max_text_tokens_per_segment: int = 120,
         stream_return: bool = False,
         quick_streaming_tokens: int = 0,
+        cfm_steps: int = 25,
         **generation_kwargs: Any,  # pyright: ignore[reportAny]
     ) -> Generator[Tensor | Path | tuple[int, np.ndarray] | None]:
-        """Generator-based inference for streaming synthesis."""
+        """Generator-based inference for streaming synthesis.
+
+        Args:
+            cfm_steps: Number of CFM diffusion steps (default 25). Lower values are faster
+                but may reduce quality. Values 15-25 are recommended.
+        """
+        # Reset and start profiler session
+        self.profiler.reset()
+        self.profiler.start_session()
+
         # Mark CUDA graph step for torch.compile
         if self.use_torch_compile and torch.cuda.is_available():
             torch.compiler.cudagraph_mark_step_begin()
@@ -605,27 +617,33 @@ class IndexTTS2:
         start_time = time.perf_counter()
 
         # Process emotion configuration
-        emo_audio_prompt, emo_alpha, emo_vector = self._process_emotion_config(
-            spk_audio_prompt, emo_audio_prompt, emo_alpha, emo_vector, use_emo_text, emo_text, text
-        )
+        with self.profiler.measure("emotion_config"):
+            emo_audio_prompt, emo_alpha, emo_vector = self._process_emotion_config(
+                spk_audio_prompt, emo_audio_prompt, emo_alpha, emo_vector, use_emo_text, emo_text, text
+            )
 
         # Load speaker conditioning
-        spk_cond_emb, style, prompt_condition, ref_mel = self.process_audio_prompt(spk_audio_prompt)
+        with self.profiler.measure("process_audio_prompt"):
+            spk_cond_emb, style, prompt_condition, ref_mel = self.process_audio_prompt(spk_audio_prompt)
 
         # Compute emotion matrix if using explicit vectors
-        emovec_mat, weight_vector = self._compute_emo_matrix(emo_vector, style, use_random)
+        with self.profiler.measure("compute_emo_matrix"):
+            emovec_mat, weight_vector = self._compute_emo_matrix(emo_vector, style, use_random)
 
         # Get emotion conditioning embedding
-        emo_cond_emb = self._get_emo_embedding(emo_audio_prompt)
+        with self.profiler.measure("get_emo_embedding"):
+            emo_cond_emb = self._get_emo_embedding(emo_audio_prompt)
 
         # Tokenize and segment text
         self._set_gr_progress(0.1, "text processing...")
-        segments, batch_text_tokens = self._tokenize_and_segment(
-            text, max_text_tokens_per_segment, quick_streaming_tokens
-        )
+        with self.profiler.measure("tokenize_and_segment"):
+            segments, batch_text_tokens = self._tokenize_and_segment(
+                text, max_text_tokens_per_segment, quick_streaming_tokens
+            )
 
         # Pre-calculate emotion vector
-        emovec = self._compute_emovec(spk_cond_emb, emo_cond_emb, emo_alpha, emovec_mat, weight_vector)
+        with self.profiler.measure("compute_emovec"):
+            emovec = self._compute_emovec(spk_cond_emb, emo_cond_emb, emo_alpha, emovec_mat, weight_vector)
 
         # Run batch inference
         max_mel_tokens = cast(int, generation_kwargs.pop("max_mel_tokens", 1500))
@@ -646,6 +664,7 @@ class IndexTTS2:
             output_path=output_path,
             start_time=start_time,
             generation_kwargs=generation_kwargs,
+            cfm_steps=cfm_steps,
         )
 
     # -------------------------------------------------------------------------
@@ -776,8 +795,13 @@ class IndexTTS2:
         output_path: Path | None,
         start_time: float,
         generation_kwargs: dict[str, Any],
+        cfm_steps: int = 25,
     ) -> Generator[Tensor | Path | tuple[int, np.ndarray] | None]:
-        """Run batched inference over text segments."""
+        """Run batched inference over text segments.
+
+        Args:
+            cfm_steps: Number of CFM diffusion steps (default 25).
+        """
         if not batch_text_tokens:
             return
 
@@ -791,31 +815,33 @@ class IndexTTS2:
         has_warned = False
 
         # Pad batch
-        text_tokens_batch = pad_sequence(
-            batch_text_tokens, batch_first=True, padding_value=self.gpt.cfg.stop_text_token
-        )
-        batch_size = text_tokens_batch.size(0)
+        with self.profiler.measure("pad_batch"):
+            text_tokens_batch = pad_sequence(
+                batch_text_tokens, batch_first=True, padding_value=self.gpt.cfg.stop_text_token
+            )
+            batch_size = text_tokens_batch.size(0)
 
         # Generate mel codes
         t0 = time.perf_counter()
-        codes_batch, speech_conditioning_latent = self.gpt.inference_speech(
-            spk_cond_emb.expand(batch_size, -1, -1),
-            text_tokens_batch,
-            emo_cond_emb.expand(batch_size, -1, -1),
-            cond_lengths=torch.tensor([spk_cond_emb.shape[-1]] * batch_size),
-            emo_cond_lengths=torch.tensor([emo_cond_emb.shape[-1]] * batch_size),
-            emo_vec=emovec,
-            do_sample=generation_kwargs.pop("do_sample", True),
-            top_p=generation_kwargs.pop("top_p", 0.8),
-            top_k=generation_kwargs.pop("top_k", 30),
-            temperature=generation_kwargs.pop("temperature", 0.8),
-            num_return_sequences=1,
-            length_penalty=generation_kwargs.pop("length_penalty", 0.0),
-            num_beams=generation_kwargs.pop("num_beams", 3),
-            repetition_penalty=generation_kwargs.pop("repetition_penalty", 10.0),
-            max_generate_length=max_mel_tokens,
-            **generation_kwargs,
-        )
+        with self.profiler.measure("gpt_inference_speech"):
+            codes_batch, speech_conditioning_latent = self.gpt.inference_speech(
+                spk_cond_emb.expand(batch_size, -1, -1),
+                text_tokens_batch,
+                emo_cond_emb.expand(batch_size, -1, -1),
+                cond_lengths=torch.tensor([spk_cond_emb.shape[-1]] * batch_size),
+                emo_cond_lengths=torch.tensor([emo_cond_emb.shape[-1]] * batch_size),
+                emo_vec=emovec,
+                do_sample=generation_kwargs.pop("do_sample", True),
+                top_p=generation_kwargs.pop("top_p", 0.8),
+                top_k=generation_kwargs.pop("top_k", 30),
+                temperature=generation_kwargs.pop("temperature", 0.8),
+                num_return_sequences=1,
+                length_penalty=generation_kwargs.pop("length_penalty", 0.0),
+                num_beams=generation_kwargs.pop("num_beams", 3),
+                repetition_penalty=generation_kwargs.pop("repetition_penalty", 10.0),
+                max_generate_length=max_mel_tokens,
+                **generation_kwargs,
+            )
         gpt_gen_time = time.perf_counter() - t0
 
         # Warn if generation was truncated
@@ -834,17 +860,19 @@ class IndexTTS2:
                 f"Synthesizing segment {seg_idx + 1}/{len(segments)}...",
             )
 
-            wav, seg_gpt_time, seg_s2mel_time, seg_bigvgan_time = self._process_segment(
-                code=code,
-                text_tokens=batch_text_tokens[seg_idx],
-                speech_conditioning_latent=speech_conditioning_latent[seg_idx : seg_idx + 1],
-                emo_cond_emb=emo_cond_emb,
-                emovec=emovec,
-                spk_cond_emb=spk_cond_emb,
-                prompt_condition=prompt_condition,
-                ref_mel=ref_mel,
-                style=style,
-            )
+            with self.profiler.measure("process_segment"):
+                wav, seg_gpt_time, seg_s2mel_time, seg_bigvgan_time = self._process_segment(
+                    code=code,
+                    text_tokens=batch_text_tokens[seg_idx],
+                    speech_conditioning_latent=speech_conditioning_latent[seg_idx : seg_idx + 1],
+                    emo_cond_emb=emo_cond_emb,
+                    emovec=emovec,
+                    spk_cond_emb=spk_cond_emb,
+                    prompt_condition=prompt_condition,
+                    ref_mel=ref_mel,
+                    style=style,
+                    cfm_steps=cfm_steps,
+                )
 
             gpt_forward_time += seg_gpt_time
             s2mel_time += seg_s2mel_time
@@ -858,11 +886,15 @@ class IndexTTS2:
                 yield silence
 
         end_time = time.perf_counter()
+        self.profiler.end_session()
 
         # Log timing stats
         self._log_inference_stats(
             gpt_gen_time, gpt_forward_time, s2mel_time, bigvgan_time, start_time, end_time, wavs, interval_silence
         )
+
+        # Log profiling report
+        self.profiler.log_report()
 
         if stream_return:
             return
@@ -882,8 +914,13 @@ class IndexTTS2:
         prompt_condition: Tensor,
         ref_mel: Tensor,
         style: Tensor,
+        cfm_steps: int = 25,
     ) -> tuple[Tensor, float, float, float]:
-        """Process a single segment to generate audio."""
+        """Process a single segment to generate audio.
+
+        Args:
+            cfm_steps: Number of CFM diffusion steps.
+        """
         # Trim code at stop token
         if self.stop_mel_token in code:
             stop_idx = (code == self.stop_mel_token).nonzero(as_tuple=False)
@@ -897,45 +934,53 @@ class IndexTTS2:
 
         # GPT forward pass
         t0 = time.perf_counter()
-        latent = self.gpt(
-            speech_conditioning_latent,
-            text_tokens,
-            torch.tensor([text_tokens.shape[-1]]),
-            code,
-            torch.tensor([code.shape[-1]]),
-            emo_cond_emb,
-            cond_mel_lengths=torch.tensor([spk_cond_emb.shape[-1]]),
-            emo_cond_mel_lengths=torch.tensor([emo_cond_emb.shape[-1]]),
-            emo_vec=emovec,
-            use_speed=torch.zeros(spk_cond_emb.size(0)).long(),
-        )
+        with self.profiler.measure("gpt_forward"):
+            latent = self.gpt(
+                speech_conditioning_latent,
+                text_tokens,
+                torch.tensor([text_tokens.shape[-1]]),
+                code,
+                torch.tensor([code.shape[-1]]),
+                emo_cond_emb,
+                cond_mel_lengths=torch.tensor([spk_cond_emb.shape[-1]]),
+                emo_cond_mel_lengths=torch.tensor([emo_cond_emb.shape[-1]]),
+                emo_vec=emovec,
+                use_speed=torch.zeros(spk_cond_emb.size(0)).long(),
+            )
         gpt_time = time.perf_counter() - t0
 
         # S2Mel conversion
         t0 = time.perf_counter()
-        latent = self.s2mel.gpt_layer(latent)
-        S_infer = self.semantic_codec.quantizer.vq2emb(code.unsqueeze(1)).transpose(1, 2)
-        S_infer += latent
+        with self.profiler.measure("s2mel_gpt_layer"):
+            latent = self.s2mel.gpt_layer(latent)
+
+        with self.profiler.measure("s2mel_vq2emb"):
+            S_infer = self.semantic_codec.quantizer.vq2emb(code.unsqueeze(1)).transpose(1, 2)
+            S_infer += latent
+
         target_lengths = (code_lens * 1.72).long()
 
-        cond = self.s2mel.length_regulator(S_infer, ylens=target_lengths, n_quantizers=3, f0=None)[0]
+        with self.profiler.measure("s2mel_length_regulator"):
+            cond = self.s2mel.length_regulator(S_infer, ylens=target_lengths, n_quantizers=3, f0=None)[0]
         cat_condition = torch.cat([prompt_condition, cond], dim=1)
 
-        vc_target = self.s2mel.cfm.inference(
-            cat_condition,
-            torch.tensor([cat_condition.size(1)]),
-            ref_mel,
-            style,
-            None,
-            25,
-            inference_cfg_rate=0.7,
-        )
+        with self.profiler.measure("s2mel_cfm_inference"):
+            vc_target = self.s2mel.cfm.inference(
+                cat_condition,
+                torch.tensor([cat_condition.size(1)]),
+                ref_mel,
+                style,
+                None,
+                cfm_steps,
+                inference_cfg_rate=0.7,
+            )
         vc_target = vc_target[:, :, ref_mel.size(-1) :]
         s2mel_time = time.perf_counter() - t0
 
         # BigVGAN vocoder
         t0 = time.perf_counter()
-        wav = self.bigvgan(vc_target.float()).squeeze().unsqueeze(0).squeeze(1)
+        with self.profiler.measure("bigvgan"):
+            wav = self.bigvgan(vc_target.float()).squeeze().unsqueeze(0).squeeze(1)
         bigvgan_time = time.perf_counter() - t0
 
         return wav, gpt_time, s2mel_time, bigvgan_time

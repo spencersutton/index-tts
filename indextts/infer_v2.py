@@ -3,13 +3,10 @@
 from __future__ import annotations
 
 import contextlib
-import cProfile
 import functools
 import importlib.util
-import io
 import logging
 import os
-import pstats
 import random
 import time
 import typing
@@ -276,7 +273,6 @@ class IndexTTS2:
         self.use_torch_compile = use_torch_compile
         self.dtype = torch.float16 if self.use_fp16 else None
         self.gr_progress = None
-        self.profiler = cProfile.Profile()
 
         torch.set_default_device(self.device)
         if self.device.startswith("cuda"):
@@ -606,10 +602,6 @@ class IndexTTS2:
             cfm_steps: Number of CFM diffusion steps (default 25). Lower values are faster
                 but may reduce quality. Values 15-25 are recommended.
         """
-        # Reset and start profiler session
-        self.profiler = cProfile.Profile()
-        self.profiler.enable()
-
         # Mark CUDA graph step for torch.compile
         if self.use_torch_compile and torch.cuda.is_available():
             torch.compiler.cudagraph_mark_step_begin()
@@ -878,22 +870,11 @@ class IndexTTS2:
                 yield silence
 
         end_time = time.perf_counter()
-        self.profiler.disable()
 
         # Log timing stats
         self._log_inference_stats(
             gpt_gen_time, gpt_forward_time, s2mel_time, bigvgan_time, start_time, end_time, wavs, interval_silence
         )
-
-        # Log profiling report
-        print("\n" + "=" * 60)
-        print("PROFILING REPORT:")
-        print("=" * 60)
-        s = io.StringIO()
-        ps = pstats.Stats(self.profiler, stream=s).sort_stats("cumulative")
-        ps.print_stats(50)
-        print(s.getvalue())
-        print("=" * 60 + "")
 
         if stream_return:
             return

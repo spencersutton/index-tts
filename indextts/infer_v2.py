@@ -16,7 +16,6 @@ from pathlib import Path
 from subprocess import CalledProcessError
 from typing import Any, cast
 
-import numpy as np
 import safetensors.torch
 import torch
 import torchaudio
@@ -40,6 +39,7 @@ from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.maskgct.models.codec.kmeans.repcodec_model import RepCodec
 
 if typing.TYPE_CHECKING:
+    import numpy as np
     from gradio import Progress
 
 logger = logging.getLogger(__name__)
@@ -721,7 +721,7 @@ class IndexTTS2:
 
         # Select emotion indices
         if use_random:
-            indices: list[int | Tensor] = [random.randint(0, n - 1) for n in self.emo_num]
+            indices: list[int | Tensor] = [random.randint(0, n - 1) for n in self.emo_num]  # noqa: S311
         else:
             indices = [_find_most_similar_cosine(style, mat) for mat in self.spk_matrix]
 
@@ -845,13 +845,12 @@ class IndexTTS2:
         gpt_gen_time = time.perf_counter() - t0
 
         # Warn if generation was truncated
-        if (codes_batch[:, -1] != self.stop_mel_token).any():
-            if not has_warned:
-                logger.warning(
-                    "Generation exceeded max_mel_tokens (%d). Consider adjusting parameters.",
-                    max_mel_tokens,
-                )
-                has_warned = True
+        if (codes_batch[:, -1] != self.stop_mel_token).any() and not has_warned:
+            logger.warning(
+                "Generation exceeded max_mel_tokens (%d). Consider adjusting parameters.",
+                max_mel_tokens,
+            )
+            has_warned = True
 
         # Process each segment
         for seg_idx, code in enumerate(codes_batch):
@@ -894,7 +893,12 @@ class IndexTTS2:
         )
 
         # Log profiling report
-        self.profiler.log_report()
+        print("\n" + "=" * 60)
+        print("PROFILING REPORT:")
+        print("=" * 60)
+        profiling_report = self.profiler.report()
+        print(profiling_report)
+        print("=" * 60 + "")
 
         if stream_return:
             return

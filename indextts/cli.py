@@ -1,4 +1,5 @@
 import argparse
+import logging
 import sys
 import warnings
 from pathlib import Path
@@ -14,9 +15,10 @@ if __debug__:
 
     rich.traceback.install(suppress=[omegaconf, torch, transformers], width=120)
 
-# Suppress warnings from tensorflow and other libraries
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)
+
+logging.basicConfig(level=logging.INFO)
 
 
 def main() -> None:

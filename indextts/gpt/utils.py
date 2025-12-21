@@ -9,7 +9,6 @@ from __future__ import annotations
 from typing import override
 
 import torch
-import torch.nn.functional as F
 from torch import Tensor, nn
 from transformers import GPT2Config, GPT2Model
 
@@ -31,36 +30,6 @@ class NullPositionEmbedding(nn.Embedding):
     def forward(self, input: Tensor) -> Tensor:
         """Return zero embeddings for the given input shape."""
         return torch.zeros((input.shape[0], input.shape[1], self.embedding_dim))
-
-
-def build_aligned_inputs_and_targets(
-    input: Tensor,  # noqa: A002
-    start_token: int,
-    stop_token: int,
-) -> tuple[Tensor, Tensor]:
-    """Build aligned inputs and targets by padding with start/stop tokens.
-
-    Args:
-        input: Input tensor to be padded.
-        start_token: Token ID to prepend to the input.
-        stop_token: Token ID to append to the target.
-
-    Returns:
-        A tuple of (input_padded, target_padded) where:
-        - input_padded has start_token prepended
-        - target_padded has stop_token appended
-
-    Example:
-        >>> input_ids = torch.tensor([[1, 2, 3]])
-        >>> inp, tar = build_aligned_inputs_and_targets(input_ids, start_token=0, stop_token=4)
-        >>> inp
-        tensor([[0, 1, 2, 3]])
-        >>> tar
-        tensor([[1, 2, 3, 4]])
-    """
-    inp = F.pad(input, (1, 0), value=start_token)
-    tar = F.pad(input, (0, 1), value=stop_token)
-    return inp, tar
 
 
 def set_token_padding(

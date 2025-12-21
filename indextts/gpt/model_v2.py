@@ -17,7 +17,6 @@ from indextts.gpt import GPT2InferenceModel
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.perceiver import PerceiverResampler
 from indextts.gpt.utils import (
-    build_aligned_inputs_and_targets,
     build_hf_gpt_transformer,
     set_token_padding,
 )
@@ -263,7 +262,7 @@ class UnifiedVoice(nn.Module):
 
     def _apply_deepspeed(self, half: bool) -> None:
         """Apply DeepSpeed inference optimization."""
-        import deepspeed  # ty:ignore[unresolved-import]
+        import deepspeed  # ty:ignore[unresolved-import]  # noqa: PLC0415
 
         self.ds_engine = deepspeed.init_inference(
             model=self.inference_model,
@@ -272,18 +271,6 @@ class UnifiedVoice(nn.Module):
             dtype=torch.float16 if half else torch.float32,
         )
         self.inference_model = self.ds_engine.module.eval()
-
-    # -------------------------------------------------------------------------
-    # Token Padding
-    # -------------------------------------------------------------------------
-
-    def set_mel_padding(self, mel_input_tokens: Tensor, mel_lengths: Tensor) -> Tensor:
-        """Replace zero padding in mel tokens with STOP_MEL_TOKEN."""
-        return set_token_padding(mel_input_tokens, mel_lengths, self.cfg.stop_mel_token)
-
-    def set_text_padding(self, text_input_tokens: Tensor, text_lengths: Tensor) -> Tensor:
-        """Replace zero padding in text tokens with STOP_TEXT_TOKEN."""
-        return set_token_padding(text_input_tokens, text_lengths, self.cfg.stop_text_token)
 
     # -------------------------------------------------------------------------
     # Conditioning Extraction
@@ -474,10 +461,10 @@ class UnifiedVoice(nn.Module):
             emo_vec = self._compute_emo_vec(emo_speech_conditioning_latent, emo_cond_mel_lengths)
 
         # Prepare text and mel tokens
-        text_inputs = self.set_text_padding(text_inputs, text_lengths)
+        text_inputs = set_token_padding(text_inputs, text_lengths, self.cfg.stop_text_token)
         text_inputs = F.pad(text_inputs, (0, 1), value=self.cfg.stop_text_token)
 
-        mel_codes = self.set_mel_padding(mel_codes, mel_codes_lengths)
+        mel_codes = set_token_padding(mel_codes, mel_codes_lengths, self.cfg.stop_mel_token)
         mel_codes = F.pad(mel_codes, (0, 1), value=self.cfg.stop_mel_token)
 
         # Build conditioning
@@ -485,12 +472,10 @@ class UnifiedVoice(nn.Module):
         conds = self._build_conditioning_concat(speech_conditioning_latent, emo_vec, use_speed)
 
         # Build aligned inputs
-        text_inputs, _ = build_aligned_inputs_and_targets(
-            text_inputs, self.cfg.start_text_token, self.cfg.stop_text_token
-        )
+        text_inputs = F.pad(text_inputs, (1, 0), value=self.cfg.start_text_token)
         text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs)
 
-        mel_codes, _ = build_aligned_inputs_and_targets(mel_codes, self.cfg.start_mel_token, self.cfg.stop_mel_token)
+        mel_codes = F.pad(mel_codes, (1, 0), value=self.cfg.start_mel_token)
 
         mel_emb = self.mel_embedding(mel_codes) + self.mel_pos_embedding(mel_codes)
 

@@ -1,5 +1,6 @@
 import json
 import re
+from functools import cache
 from pathlib import Path
 from typing import Final, cast
 
@@ -47,29 +48,21 @@ class QwenEmotion:
     _model: Qwen3ForCausalLM | None = None
 
     @property
+    @cache
     def model(self) -> Qwen3ForCausalLM:
-        if self._model is not None:
-            return self._model
-        self._model = Qwen3ForCausalLM.from_pretrained(
+        return Qwen3ForCausalLM.from_pretrained(
             self.model_path,
             torch_dtype="float16",  # "auto"
             device_map="auto",
         )
-        if self._model is None:
-            raise ValueError("Failed to load Qwen3ForCausalLM model.")
-        return self._model
 
     @property
+    @cache
     def tokenizer(self) -> Qwen2Tokenizer:
-        if self._tokenizer is not None:
-            return self._tokenizer
-        self._tokenizer = Qwen2Tokenizer.from_pretrained(self.model_path)
-        if self._tokenizer is None:
-            raise ValueError("Failed to load Qwen2Tokenizer tokenizer.")
-        return self._tokenizer
+        return Qwen2Tokenizer.from_pretrained(self.model_path)
 
-    def __init__(self, model_dir: Path) -> None:
-        self.model_path = model_dir
+    def __init__(self, path: Path) -> None:
+        self.model_path = path
 
     def convert(self, content: dict[str, float]) -> dict[str, float]:
         # generate emotion vector dictionary:

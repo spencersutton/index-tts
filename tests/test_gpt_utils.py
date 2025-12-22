@@ -152,7 +152,7 @@ def test_build_hf_gpt_transformer_different_seq_lengths() -> None:
     max_mel_seq_len = 500
     max_text_seq_len = 200
 
-    gpt, mel_pos_emb, text_pos_emb, _, _ = build_hf_gpt_transformer(
+    gpt, _mel_pos_emb, _text_pos_emb, _, _ = build_hf_gpt_transformer(
         layers, model_dim, heads, max_mel_seq_len, max_text_seq_len
     )
 

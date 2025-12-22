@@ -42,6 +42,7 @@ if typing.TYPE_CHECKING:
     import numpy as np
     from gradio import Progress
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # =============================================================================

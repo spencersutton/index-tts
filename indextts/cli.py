@@ -15,6 +15,19 @@ if __debug__:
 
     rich.traceback.install(suppress=[omegaconf, torch, transformers], width=120)
 
+if False:
+    torch._inductor.config.debug = False  # ty:ignore[possibly-missing-attribute]
+    torch._inductor.config.fx_graph_cache = True  # ty:ignore[possibly-missing-attribute]
+    torch._inductor.config.trace.enabled = False  # ty:ignore[possibly-missing-attribute]
+    torch._logging.set_logs(  # ty:ignore[possibly-missing-attribute]
+        recompiles=True,
+        graph_breaks=True,
+        guards=True,
+        inductor_metrics=True,
+        recompiles_verbose=True,
+        perf_hints=True,
+    )
+
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)
 

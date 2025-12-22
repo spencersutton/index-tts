@@ -866,7 +866,7 @@ class IndexTTS2:
             if stream_return:
                 yield wav.cpu()
                 if silence is None:
-                    silence = generate_silence_interval(wavs, interval_silence)
+                    silence = generate_silence_interval(wavs, interval_silence).cpu()
                 yield silence
 
         end_time = time.perf_counter()
@@ -974,6 +974,10 @@ class IndexTTS2:
         self._set_gr_progress(0.9, "saving audio...")
 
         all_wavs = insert_interval_silence(wavs, interval_silence)
+        # `insert_interval_silence()` and other helpers may create tensors on the
+        # current default device (e.g., CUDA) even if `wavs` are on CPU.
+        # Normalize to CPU before concatenation to avoid device-mismatch errors.
+        all_wavs = [w.detach().cpu() for w in all_wavs]
         wav = torch.cat(all_wavs, dim=1)
         wav_length = wav.shape[-1] / OUTPUT_SR
         total_time = end_time - start_time
@@ -994,7 +998,8 @@ class IndexTTS2:
     ) -> Generator[Path | tuple[int, np.ndarray]]:
         """Finalize and output generated audio."""
         all_wavs = insert_interval_silence(wavs, interval_silence)
-        wav = torch.cat(all_wavs, dim=1).cpu()
+        all_wavs = [w.detach().cpu() for w in all_wavs]
+        wav = torch.cat(all_wavs, dim=1)
 
         if output_path:
             output_path.unlink(missing_ok=True)

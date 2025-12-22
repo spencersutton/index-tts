@@ -26,6 +26,7 @@ from torchcodec.decoders import AudioDecoder
 from torchcodec.encoders import AudioEncoder
 from transformers import BatchFeature, SeamlessM4TFeatureExtractor, Wav2Vec2BertModel
 
+from indextts.audio_utils import generate_silence_interval, insert_interval_silence
 from indextts.config import CheckpointsConfig
 from indextts.gpt.model_v2 import GPT2InferenceModel, UnifiedVoice
 from indextts.load_modules import load_bigvgan, load_campplus, load_s2mel_model, load_semantic_codec_model
@@ -108,60 +109,6 @@ class DeviceConfig:
 
         logger.info("Running on CPU - inference will be slow")
         return cls(device="cpu", use_fp16=False, use_cuda_kernel=False)
-
-
-# =============================================================================
-# Audio Utilities
-# =============================================================================
-
-
-def generate_silence_interval(wavs: Sequence[Tensor], interval_silence: int = 200) -> Tensor:
-    """Generate a silence tensor for insertion between audio segments.
-
-    Args:
-        wavs: Sequence of waveform tensors to get channel info from
-        interval_silence: Duration of silence in milliseconds
-
-    Returns:
-        Silence tensor with shape (channels, samples)
-    """
-    assert interval_silence > 0, "interval_silence must be positive"
-    assert len(wavs) > 0, "wavs list must not be empty"
-
-    channel_size = wavs[0].size(0)
-    sil_samples = int(OUTPUT_SR * interval_silence / 1000.0)
-    return torch.zeros(channel_size, sil_samples)
-
-
-def insert_interval_silence(wavs: Sequence[Tensor], interval_silence: int = 200) -> list[Tensor]:
-    """Insert silence tensors between audio segments.
-
-    Args:
-        wavs: Sequence of waveform tensors
-        interval_silence: Duration of silence in milliseconds
-
-    Returns:
-        List of waveforms with silence inserted between segments
-    """
-    if not wavs or interval_silence <= 0:
-        return list(wavs)
-
-    channel_size = wavs[0].size(0)
-    sil_samples = int(OUTPUT_SR * interval_silence / 1000.0)
-    sil_tensor = torch.zeros(channel_size, sil_samples)
-
-    result: list[Tensor] = []
-    for i, wav in enumerate(wavs):
-        result.append(wav)
-        if i < len(wavs) - 1:
-            result.append(sil_tensor)
-
-    return result
-
-
-# =============================================================================
-# Emotion Processing
-# =============================================================================
 
 
 # =============================================================================
@@ -528,8 +475,8 @@ class IndexTTS2:
         interval_silence: int = 200,
         max_text_tokens_per_segment: int = 120,
         stream_return: bool = False,
-        more_segment_before: int = 0,
-        **generation_kwargs: object,
+        verbose: bool = False,
+        **generation_kwargs: Any,
     ) -> Tensor | Generator[Tensor | Path | tuple[int, np.ndarray] | None] | Path | tuple[int, np.ndarray] | None:
         """Synthesize speech from text.
 
@@ -546,26 +493,24 @@ class IndexTTS2:
             interval_silence: Silence duration between segments (ms)
             max_text_tokens_per_segment: Max tokens per synthesis segment
             stream_return: If True, return generator for streaming
-            more_segment_before: Extra segments before main content
             **generation_kwargs: Additional generation parameters
 
         Returns:
             Generated audio as Tensor, Path, or streaming generator
         """
         gen = self.infer_generator(
-            spk_audio_prompt,
-            text,
-            output_path,
-            emo_audio_prompt,
-            emo_alpha,
-            emo_vector,
-            use_emo_text,
-            emo_text,
-            use_random,
-            interval_silence,
-            max_text_tokens_per_segment,
-            stream_return,
-            more_segment_before,
+            spk_audio_prompt=spk_audio_prompt,
+            text=text,
+            output_path=output_path,
+            emo_audio_prompt=emo_audio_prompt,
+            emo_alpha=emo_alpha,
+            emo_vector=emo_vector,
+            use_emo_text=use_emo_text,
+            emo_text=emo_text,
+            use_random=use_random,
+            interval_silence=interval_silence,
+            max_text_tokens_per_segment=max_text_tokens_per_segment,
+            stream_return=stream_return,
             **generation_kwargs,
         )
 
@@ -866,7 +811,7 @@ class IndexTTS2:
             if stream_return:
                 yield wav.cpu()
                 if silence is None:
-                    silence = generate_silence_interval(wavs, interval_silence).cpu()
+                    silence = generate_silence_interval(wavs, interval_silence, sample_rate=OUTPUT_SR).cpu()
                 yield silence
 
         end_time = time.perf_counter()
@@ -973,7 +918,7 @@ class IndexTTS2:
         """Log inference timing statistics."""
         self._set_gr_progress(0.9, "saving audio...")
 
-        all_wavs = insert_interval_silence(wavs, interval_silence)
+        all_wavs = insert_interval_silence(wavs, interval_silence, sample_rate=OUTPUT_SR)
         # `insert_interval_silence()` and other helpers may create tensors on the
         # current default device (e.g., CUDA) even if `wavs` are on CPU.
         # Normalize to CPU before concatenation to avoid device-mismatch errors.
@@ -997,7 +942,7 @@ class IndexTTS2:
         output_path: Path | None,
     ) -> Generator[Path | tuple[int, np.ndarray]]:
         """Finalize and output generated audio."""
-        all_wavs = insert_interval_silence(wavs, interval_silence)
+        all_wavs = insert_interval_silence(wavs, interval_silence, sample_rate=OUTPUT_SR)
         all_wavs = [w.detach().cpu() for w in all_wavs]
         wav = torch.cat(all_wavs, dim=1)
 

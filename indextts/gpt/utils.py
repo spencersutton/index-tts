@@ -6,12 +6,15 @@ to improve maintainability and testability.
 
 from __future__ import annotations
 
-import torch
-from torch import Tensor
+from typing import TYPE_CHECKING
+
 from transformers import GPT2Config, GPT2Model
 
 from indextts.gpt.inference_model import NullPositionEmbedding
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
+
+if TYPE_CHECKING:
+    from torch import Tensor
 
 
 def set_token_padding(

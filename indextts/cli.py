@@ -1,9 +1,9 @@
 import argparse
-import logging
 import sys
 import warnings
 from pathlib import Path
 
+import pyinstrument
 import torch
 
 from indextts.infer_v2 import IndexTTS2
@@ -17,8 +17,6 @@ if __debug__:
 
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)
-
-logging.basicConfig(level=logging.INFO)
 
 
 def main() -> None:
@@ -157,7 +155,10 @@ def main() -> None:
 
     voice_file = Path(args.voice)
 
-    tts.infer(spk_audio_prompt=voice_file, text=args.text, output_path=output_path)
+    with pyinstrument.Profiler() as profiler:
+        tts.infer(spk_audio_prompt=voice_file, text=args.text, output_path=output_path)
+
+    profiler.write_html("profile.html")
 
 
 if __name__ == "__main__":

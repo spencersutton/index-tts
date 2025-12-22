@@ -1,4 +1,4 @@
-import sys
+import logging
 import time
 from collections.abc import Collection, Iterable, Sequence
 from typing import TYPE_CHECKING, Final, cast, override
@@ -15,6 +15,9 @@ from .kv_manager import KVCacheManager, Seq
 
 if TYPE_CHECKING:
     from torch.types import Number
+
+
+logger = logging.getLogger(__name__)
 
 
 class Sampler(nn.Module):
@@ -293,7 +296,7 @@ class AccelInferenceEngine:
             "outputs": outputs,
             "inputs_embeds": inputs_embeds_buffer,
         }
-        print(f"CUDA graphs captured for batch sizes: {GRAPH_BS}")
+        logger.info("CUDA graphs_captured batch_sizes=%s", GRAPH_BS)
 
     def _run_decode_with_graph(
         self,
@@ -397,21 +400,13 @@ class AccelInferenceEngine:
         self._tts_prompt_len = input_ids.size(1) if self._tts_mode else 0
 
         if self.use_cuda_graph and not self.graph_captured:
-            print(
-                f"[CAPTURE] use_cuda_graph={self.use_cuda_graph}, graph_captured={self.graph_captured}",
-                file=sys.stderr,
-                flush=True,
-            )
+            logger.info(f"[CAPTURE] use_cuda_graph={self.use_cuda_graph}, graph_captured={self.graph_captured}")
             self._capture_cuda_graphs(
                 tts_mel_embedding=tts_mel_embedding,
                 tts_text_pos_embedding=tts_text_pos_embedding,
             )
             self.graph_captured = True
-            print(
-                f"[CAPTURE] Completed! graphs={list(self.graphs.keys())}",
-                file=sys.stderr,
-                flush=True,
-            )
+            logger.info("[CAPTURE] Completed! graphs=%s", list(self.graphs.keys()))
 
         actual_seq_len = tts_embeddings.size(1) + 1 if tts_embeddings is not None else input_ids.size(1)
 
@@ -487,7 +482,7 @@ class AccelInferenceEngine:
             hidden_states = result.last_hidden_state
 
         t_prefill_end = time.perf_counter()
-        print(f"[Profile] Prefill time: {(t_prefill_end - t_prefill_start) * 1000:.2f}ms", file=sys.stderr, flush=True)
+        logger.info(f"[Profile] Prefill time: {(t_prefill_end - t_prefill_start) * 1000:.2f}ms")
 
         assert hidden_states is not None
         if is_varlen_batch:
@@ -523,11 +518,7 @@ class AccelInferenceEngine:
                 self.kv_manager.append_to_seq(sequences[i])
 
         t_first_token_end = time.perf_counter()
-        print(
-            f"[Profile] First token time: {(t_first_token_end - t_first_token_start) * 1000:.2f}ms",
-            file=sys.stderr,
-            flush=True,
-        )
+        logger.info(f"[Profile] First token time: {(t_first_token_end - t_first_token_start) * 1000:.2f}ms")
 
         if all(is_finished):
             for req in sequences:
@@ -579,11 +570,7 @@ class AccelInferenceEngine:
 
         t_decode_end = time.perf_counter()
         if remaining_tokens > 0:
-            print(
-                f"[Profile] Decode loop time: {(t_decode_end - t_decode_start) * 1000:.2f}ms",
-                file=sys.stderr,
-                flush=True,
-            )
+            logger.info(f"[Profile] Decode loop time: {(t_decode_end - t_decode_start) * 1000:.2f}ms")
 
         for req in sequences:
             self.kv_manager.remove_seq(req)
@@ -616,6 +603,6 @@ class AccelInferenceEngine:
         assert output.size(0) == batch_size, f"Output batch size mismatch: {output.size(0)} != {batch_size}"
 
         t_end = time.perf_counter()
-        print(f"[Profile] Total generation time: {(t_end - t_start) * 1000:.2f}ms", file=sys.stderr, flush=True)
+        logger.info(f"[Profile] Total generation time: {(t_end - t_start) * 1000:.2f}ms")
 
         return output

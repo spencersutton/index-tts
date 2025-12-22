@@ -625,10 +625,6 @@ class UnifiedVoice(nn.Module):
             generated_tokens: (batch, generated_len) generated mel tokens
             speech_conditioning_latent: (batch, cond_num, dim) conditioning used
         """
-        # `verbose` is used by our higher-level APIs, but HuggingFace `generate()`
-        # will error on unknown kwargs. Strip it here to keep inference robust.
-        hf_generate_kwargs.pop("verbose", None)
-
         t0 = time.perf_counter()
 
         # Normalize input dimensions

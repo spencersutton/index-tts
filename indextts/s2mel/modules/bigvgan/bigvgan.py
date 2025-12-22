@@ -352,7 +352,6 @@ class BigVGAN(
 
     def remove_weight_norm(self) -> None:
         try:
-            print("Removing weight norm...")
             for l in self.ups:
                 for l_i in l:
                     remove_weight_norm(l_i)

@@ -446,7 +446,7 @@ class IndexTTS2:
         inputs = self.extract_features(audio.data, sampling_rate=audio.sample_rate, return_tensors="pt")
         return self.get_emb(inputs.to(self.device))
 
-    @functools.lru_cache  # noqa: B019
+    @functools.lru_cache
     def process_audio_prompt(self, prompt: Path) -> tuple[Tensor, Tensor, Tensor, Tensor]:
         """Process audio prompt to extract conditioning features.
 

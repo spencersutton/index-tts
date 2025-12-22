@@ -16,7 +16,6 @@
 """Positonal Encoding Module."""
 
 import math
-from typing import override
 from typing import TYPE_CHECKING, override
 
 import torch

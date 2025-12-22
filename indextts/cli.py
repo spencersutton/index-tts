@@ -106,6 +106,8 @@ def main() -> None:
         default=False,
         help="Use DeepSpeed for inference",
     )
+    parser.add_argument("--profile", action="store_true", default=False, help="Enable profiling")
+    parser.add_argument("--warmup", type=int, default=0, help="Number of warmup runs to perform")
     args = parser.parse_args()
 
     assert isinstance(args.text, str)
@@ -120,6 +122,8 @@ def main() -> None:
     assert isinstance(args.use_torch_compile, bool)
     assert isinstance(args.use_cuda_kernel, bool)
     assert isinstance(args.use_deepspeed, bool)
+    assert isinstance(args.profile, bool)
+    assert isinstance(args.warmup, int)
 
     if len(args.text.strip()) == 0:
         print("ERROR: Text is empty.")
@@ -168,10 +172,14 @@ def main() -> None:
 
     voice_file = Path(args.voice)
 
-    with pyinstrument.Profiler() as profiler:
+    if args.profile:
+        for _ in range(args.warmup):
+            tts.infer(spk_audio_prompt=voice_file, text=args.text, output_path=output_path)
+        with pyinstrument.Profiler() as profiler:
+            tts.infer(spk_audio_prompt=voice_file, text=args.text, output_path=output_path)
+        profiler.write_html("profile.html")
+    else:
         tts.infer(spk_audio_prompt=voice_file, text=args.text, output_path=output_path)
-
-    profiler.write_html("profile.html")
 
 
 if __name__ == "__main__":

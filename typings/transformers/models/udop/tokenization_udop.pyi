@@ -9,7 +9,7 @@ from ...tokenization_utils_base import (
     TextInputPair,
     TruncationStrategy,
 )
-from ...utils import PaddingStrategy, TensorType, add_end_docstrings
+from ...utils import PaddingStrategy, TensorType
 from ...utils.import_utils import requires
 
 """Tokenization classes for UDOP model."""

@@ -1,7 +1,6 @@
 from typing import Any
 
-from ..utils import add_end_docstrings
-from .base import GenericTensor, Pipeline, build_pipeline_init_args
+from .base import GenericTensor, Pipeline
 
 class FeatureExtractionPipeline(Pipeline):
     _load_processor = ...

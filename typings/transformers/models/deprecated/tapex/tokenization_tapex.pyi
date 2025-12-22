@@ -2,9 +2,9 @@ from functools import lru_cache
 
 import pandas as pd
 
-from ....file_utils import ExplicitEnum, PaddingStrategy, TensorType, add_end_docstrings, is_pandas_available
+from ....file_utils import ExplicitEnum, PaddingStrategy, TensorType, is_pandas_available
 from ....tokenization_utils import PreTrainedTokenizer
-from ....tokenization_utils_base import ENCODE_KWARGS_DOCSTRING, BatchEncoding, TextInput, TruncationStrategy
+from ....tokenization_utils_base import BatchEncoding, TextInput, TruncationStrategy
 
 """Tokenization classes for TAPEX."""
 if is_pandas_available(): ...

@@ -1,15 +1,7 @@
 # pyright: reportUnusedImport=false
 import os
-from builtins import (
-    bool as _bool,
-    bytes as _bytes,
-    complex as _complex,
-    float as _float,
-    int as _int,
-    str as _str,
-)
 from collections.abc import Sequence
-from typing import IO, TYPE_CHECKING, Any, Self
+from typing import IO, Any, Self
 
 from torch import (
     DispatchKey as DispatchKey,
@@ -20,8 +12,6 @@ from torch import (
     Tensor as Tensor,
     device as _device,
     dtype as _dtype,
-    layout as _layout,
-    qscheme as _qscheme,
 )
 from torch.autograd.graph import GradientEdge
 

@@ -1,6 +1,4 @@
-from transformers.tokenization_utils_base import INIT_TOKENIZER_DOCSTRING
 from transformers.tokenization_utils_fast import PreTrainedTokenizerFast
-from transformers.utils import add_end_docstrings
 
 from ...utils import is_levenshtein_available, is_nltk_available
 

@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import IO, Any, TypeAlias
+from typing import IO, Any
 
 from _typeshed import SupportsRead
 

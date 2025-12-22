@@ -1,13 +1,10 @@
 from ...tokenization_utils import PreTrainedTokenizer
 from ...tokenization_utils_base import (
-    ENCODE_KWARGS_DOCSTRING,
-    ENCODE_PLUS_ADDITIONAL_KWARGS_DOCSTRING,
     BatchEncoding,
     PaddingStrategy,
     TensorType,
     TruncationStrategy,
 )
-from ...utils import add_end_docstrings
 
 """Tokenization classes for RoCBert."""
 logger = ...

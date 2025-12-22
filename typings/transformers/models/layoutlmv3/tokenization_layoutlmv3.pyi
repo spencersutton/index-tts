@@ -2,7 +2,7 @@ from functools import lru_cache
 
 from ...tokenization_utils import PreTrainedTokenizer
 from ...tokenization_utils_base import BatchEncoding, PreTokenizedInput, TextInput, TextInputPair, TruncationStrategy
-from ...utils import PaddingStrategy, TensorType, add_end_docstrings
+from ...utils import PaddingStrategy, TensorType
 
 """Tokenization class for LayoutLMv3. Same as LayoutLMv2, but RoBERTa-like BPE tokenization instead of WordPiece."""
 logger = ...

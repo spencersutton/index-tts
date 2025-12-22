@@ -1,6 +1,5 @@
 from typing import Literal
 
-import torch
 from torch import Tensor
 from torch._C import Generator
 

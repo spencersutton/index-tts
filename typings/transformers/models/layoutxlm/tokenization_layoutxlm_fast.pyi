@@ -1,6 +1,6 @@
 from ...tokenization_utils_base import BatchEncoding, PreTokenizedInput, TextInput, TruncationStrategy
 from ...tokenization_utils_fast import PreTrainedTokenizerFast
-from ...utils import PaddingStrategy, TensorType, add_end_docstrings, is_sentencepiece_available
+from ...utils import PaddingStrategy, TensorType, is_sentencepiece_available
 from .tokenization_layoutxlm import LayoutXLMTokenizer
 
 """Tokenization classes for LayoutXLM model."""

@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import Any, TypeAlias
+from typing import Any
 
 from yaml.emitter import Emitter
 from yaml.representer import BaseRepresenter, Representer, SafeRepresenter

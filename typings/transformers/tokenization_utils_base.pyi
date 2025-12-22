@@ -12,7 +12,6 @@ from tokenizers import AddedToken, Encoding as EncodingFast
 from .utils import (
     ExplicitEnum,
     PushToHubMixin,
-    add_end_docstrings,
     is_tokenizers_available,
 )
 from .utils.generic import PaddingStrategy, TensorType

@@ -2,8 +2,8 @@ from typing import Any
 
 import numpy as np
 
-from ..utils import add_end_docstrings, is_torch_available
-from .base import Pipeline, build_pipeline_init_args
+from ..utils import is_torch_available
+from .base import Pipeline
 
 if is_torch_available(): ...
 logger = ...

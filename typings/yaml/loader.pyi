@@ -1,4 +1,3 @@
-from typing import TypeAlias
 
 from yaml.composer import Composer
 from yaml.constructor import BaseConstructor, Constructor, FullConstructor, SafeConstructor

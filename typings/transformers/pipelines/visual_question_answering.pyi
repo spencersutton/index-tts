@@ -1,7 +1,7 @@
 from PIL import Image
 
-from ..utils import add_end_docstrings, is_torch_available, is_vision_available
-from .base import Pipeline, build_pipeline_init_args
+from ..utils import is_torch_available, is_vision_available
+from .base import Pipeline
 from .pt_utils import KeyDataset
 
 if is_vision_available(): ...

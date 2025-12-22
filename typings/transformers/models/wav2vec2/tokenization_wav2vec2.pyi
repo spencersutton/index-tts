@@ -5,7 +5,7 @@ import numpy as np
 
 from ...tokenization_utils import PreTrainedTokenizer
 from ...tokenization_utils_base import BatchEncoding
-from ...utils import ModelOutput, PaddingStrategy, TensorType, add_end_docstrings
+from ...utils import ModelOutput, PaddingStrategy, TensorType
 
 """Tokenization class for Wav2Vec2."""
 logger = ...

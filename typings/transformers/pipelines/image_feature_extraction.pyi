@@ -2,8 +2,8 @@ from typing import Any
 
 from PIL import Image
 
-from ..utils import add_end_docstrings, is_vision_available
-from .base import GenericTensor, Pipeline, build_pipeline_init_args
+from ..utils import is_vision_available
+from .base import GenericTensor, Pipeline
 
 if is_vision_available(): ...
 

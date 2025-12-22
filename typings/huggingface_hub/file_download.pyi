@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, BinaryIO, Literal
 
-from .utils import XetFileData, tqdm, validate_hf_hub_args
+from .utils import XetFileData, tqdm
 
 logger = ...
 _CACHED_NO_EXIST = ...

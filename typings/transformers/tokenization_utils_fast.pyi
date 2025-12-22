@@ -4,8 +4,8 @@ from tokenizers import Tokenizer as TokenizerFast
 from tokenizers.decoders import Decoder as DecoderFast
 
 from .tokenization_utils import PreTrainedTokenizer
-from .tokenization_utils_base import INIT_TOKENIZER_DOCSTRING, AddedToken, PreTrainedTokenizerBase, TruncationStrategy
-from .utils import PaddingStrategy, add_end_docstrings
+from .tokenization_utils_base import AddedToken, PreTrainedTokenizerBase, TruncationStrategy
+from .utils import PaddingStrategy
 
 """
 Tokenization classes for fast tokenizers (provided by HuggingFace's tokenizers library). For slow (python) tokenizers

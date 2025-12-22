@@ -2,8 +2,8 @@ from typing import TYPE_CHECKING, Any, overload
 
 from PIL import Image
 
-from ..utils import add_end_docstrings, is_torch_available
-from .base import ChunkPipeline, build_pipeline_init_args
+from ..utils import is_torch_available
+from .base import ChunkPipeline
 
 if is_torch_available(): ...
 if TYPE_CHECKING: ...

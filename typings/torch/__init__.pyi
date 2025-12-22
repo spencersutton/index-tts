@@ -68,7 +68,6 @@ from torch._C import (
     DispatchKey,
     DoubleTensor,
     FloatTensor,
-    Generator,
     IntTensor,
     LongTensor,
     ShortTensor,

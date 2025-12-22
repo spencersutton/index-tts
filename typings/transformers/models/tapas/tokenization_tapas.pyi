@@ -6,13 +6,12 @@ import pandas as pd
 
 from ...tokenization_utils import PreTrainedTokenizer
 from ...tokenization_utils_base import (
-    ENCODE_KWARGS_DOCSTRING,
     BatchEncoding,
     EncodedInput,
     PreTokenizedInput,
     TextInput,
 )
-from ...utils import ExplicitEnum, PaddingStrategy, TensorType, add_end_docstrings, is_pandas_available
+from ...utils import ExplicitEnum, PaddingStrategy, TensorType, is_pandas_available
 
 """Tokenization class for TAPAS model."""
 if is_pandas_available(): ...

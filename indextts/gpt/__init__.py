@@ -6,7 +6,6 @@ text-to-speech synthesis using GPT-2 based autoregressive generation.
 
 from __future__ import annotations
 
-from indextts.gpt.factory import build_hf_gpt_transformer
 from indextts.gpt.inference_model import GPT2InferenceModel, NullPositionEmbedding
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
 from indextts.gpt.model_v2 import UnifiedVoice
@@ -16,5 +15,4 @@ __all__ = [
     "LearnedPositionEmbeddings",
     "NullPositionEmbedding",
     "UnifiedVoice",
-    "build_hf_gpt_transformer",
 ]

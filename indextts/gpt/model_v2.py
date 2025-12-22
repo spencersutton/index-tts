@@ -16,10 +16,7 @@ from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttenti
 from indextts.gpt import GPT2InferenceModel
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.perceiver import PerceiverResampler
-from indextts.gpt.utils import (
-    build_hf_gpt_transformer,
-    set_token_padding,
-)
+from indextts.gpt.utils import set_token_padding
 from indextts.util import patch_call
 
 logger = logging.getLogger(__name__)

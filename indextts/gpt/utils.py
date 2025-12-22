@@ -72,22 +72,26 @@ def build_hf_gpt_transformer(
     max_mel_seq_len: int,
     max_text_seq_len: int,
 ) -> tuple[GPT2Model, LearnedPositionEmbeddings, LearnedPositionEmbeddings, None, None]:
-    """Build a GPT-2 transformer using the HuggingFace library.
+    """Build a GPT-2 transformer model using HuggingFace's implementation.
+
+    This creates a GPT-2 model with custom position embeddings suitable for
+    TTS applications. The built-in position and token embeddings are replaced
+    with custom learned embeddings.
 
     Args:
         layers: Number of transformer layers.
-        model_dim: Model dimension (embedding size).
+        model_dim: Hidden dimension size.
         heads: Number of attention heads.
-        max_mel_seq_len: Maximum mel sequence length.
-        max_text_seq_len: Maximum text sequence length.
+        max_mel_seq_len: Maximum sequence length for mel tokens.
+        max_text_seq_len: Maximum sequence length for text tokens.
 
     Returns:
-        A tuple of:
-        - GPT2Model: The transformer model
-        - LearnedPositionEmbeddings: Mel position embeddings
-        - LearnedPositionEmbeddings: Text position embeddings
-        - None: Placeholder for compatibility
-        - None: Placeholder for compatibility
+        A tuple containing:
+        - gpt: The GPT-2 model with modified embeddings.
+        - mel_pos_embedding: Learned position embeddings for mel tokens.
+        - text_pos_embedding: Learned position embeddings for text tokens.
+        - None: Placeholder for mel layer position embeddings (unused).
+        - None: Placeholder for text layer position embeddings (unused).
     """
     gpt_config = GPT2Config(
         vocab_size=256,  # Unused.
@@ -96,15 +100,22 @@ def build_hf_gpt_transformer(
         n_embd=model_dim,
         n_layer=layers,
         n_head=heads,
-        gradient_checkpointing=True,
         use_cache=False,
     )
     gpt = GPT2Model(gpt_config)
+    # `GPT2Model` initialization may sanitize config fields; set this after model
+    # construction so the attribute is reliably present for downstream checks/tests.
+    gpt.config.gradient_checkpointing = True
+    if hasattr(gpt, "gradient_checkpointing_enable"):
+        gpt.gradient_checkpointing_enable()
+
     # Override the built in positional embeddings
     del gpt.wpe
     gpt.wpe = NullPositionEmbedding(model_dim)
+
     # Built-in token embeddings are unused.
     del gpt.wte
+
     return (
         gpt,
         LearnedPositionEmbeddings(max_mel_seq_len, model_dim),

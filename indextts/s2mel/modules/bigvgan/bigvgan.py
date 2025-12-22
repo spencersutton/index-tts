@@ -4,6 +4,7 @@
 # Adapted from https://github.com/jik876/hifi-gan under the MIT license.
 #   LICENSE is in incl_licenses directory.
 import json
+import logging
 from pathlib import Path
 from typing import Any, TypedDict
 
@@ -18,6 +19,8 @@ from indextts.util import patch_call
 from .activations import Snake, SnakeBeta
 from .alias_free_activation.torch.act import Activation1d as TorchActivation1d
 from .utils import get_padding, init_weights
+
+logger = logging.getLogger(__name__)
 
 
 def load_hparams_from_json(path: Path) -> dict[str, Any]:
@@ -426,10 +429,10 @@ class BigVGAN(
 
         # Download and load pretrained generator weight
         if model_path.is_dir():
-            print("Loading weights from local directory")
+            logger.info("Loading weights from local directory")
             model_file = model_path / "bigvgan_generator.pt"
         else:
-            print(f"Loading weights from {model_id}")
+            logger.info(f"Loading weights from {model_id}")
             model_file = hf_hub_download(
                 repo_id=model_id,
                 filename="bigvgan_generator.pt",

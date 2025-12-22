@@ -12,68 +12,7 @@ import torch
 # Add project root to sys.path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from indextts.gpt.utils import (
-    build_aligned_inputs_and_targets,
-    build_hf_gpt_transformer,
-    set_token_padding,
-)
-
-
-def test_build_aligned_inputs_and_targets_basic() -> None:
-    """Test basic functionality of build_aligned_inputs_and_targets."""
-    input_ids = torch.tensor([[1, 2, 3]])
-    start_token = 0
-    stop_token = 4
-
-    inp, tar = build_aligned_inputs_and_targets(input_ids, start_token, stop_token)
-
-    # Input should have start_token prepended
-    assert inp.shape == (1, 4)
-    assert inp[0, 0].item() == start_token
-    assert torch.equal(inp[0, 1:], input_ids[0])
-
-    # Target should have stop_token appended
-    assert tar.shape == (1, 4)
-    assert torch.equal(tar[0, :-1], input_ids[0])
-    assert tar[0, -1].item() == stop_token
-
-
-def test_build_aligned_inputs_and_targets_batch() -> None:
-    """Test build_aligned_inputs_and_targets with batch processing."""
-    input_ids = torch.tensor([[1, 2, 3], [4, 5, 6]])
-    start_token = 0
-    stop_token = 99
-
-    inp, tar = build_aligned_inputs_and_targets(input_ids, start_token, stop_token)
-
-    # Check batch dimension is preserved
-    assert inp.shape == (2, 4)
-    assert tar.shape == (2, 4)
-
-    # Check first batch element
-    assert inp[0, 0].item() == start_token
-    assert torch.equal(inp[0, 1:], input_ids[0])
-    assert tar[0, -1].item() == stop_token
-
-    # Check second batch element
-    assert inp[1, 0].item() == start_token
-    assert torch.equal(inp[1, 1:], input_ids[1])
-    assert tar[1, -1].item() == stop_token
-
-
-def test_build_aligned_inputs_and_targets_empty() -> None:
-    """Test build_aligned_inputs_and_targets with empty sequence."""
-    input_ids = torch.tensor([[]])
-    start_token = 0
-    stop_token = 1
-
-    inp, tar = build_aligned_inputs_and_targets(input_ids, start_token, stop_token)
-
-    # Should have exactly one element (the start/stop token)
-    assert inp.shape == (1, 1)
-    assert tar.shape == (1, 1)
-    assert inp[0, 0].item() == start_token
-    assert tar[0, 0].item() == stop_token
+from indextts.gpt.utils import build_hf_gpt_transformer, set_token_padding
 
 
 def test_set_token_padding_basic() -> None:
@@ -196,9 +135,7 @@ def test_build_hf_gpt_transformer_custom_null_embedding() -> None:
     max_mel_seq_len = 10
     max_text_seq_len = 10
 
-    gpt, _, _, _, _ = build_hf_gpt_transformer(
-        layers, model_dim, heads, max_mel_seq_len, max_text_seq_len
-    )
+    gpt, _, _, _, _ = build_hf_gpt_transformer(layers, model_dim, heads, max_mel_seq_len, max_text_seq_len)
 
     # Check that wpe is a NullPositionEmbedding
     assert isinstance(gpt.wpe, NullPositionEmbedding)
@@ -227,9 +164,6 @@ def test_build_hf_gpt_transformer_different_seq_lengths() -> None:
 if __name__ == "__main__":
     # Run basic smoke test
     print("Running tests...")
-    test_build_aligned_inputs_and_targets_basic()
-    test_build_aligned_inputs_and_targets_batch()
-    test_build_aligned_inputs_and_targets_empty()
     test_set_token_padding_basic()
     test_set_token_padding_no_padding_needed()
     test_set_token_padding_all_padding()

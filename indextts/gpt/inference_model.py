@@ -36,7 +36,11 @@ class NullPositionEmbedding(nn.Embedding):
 
     @override
     def forward(self, input: Tensor) -> Tensor:
-        return torch.zeros((input.shape[0], input.shape[1], self.embedding_dim))
+        return torch.zeros(
+            (input.shape[0], input.shape[1], self.embedding_dim),
+            device=input.device,
+            dtype=input.dtype,
+        )
 
     @patch_call(forward)
     def __call__(self) -> None: ...

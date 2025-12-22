@@ -47,7 +47,8 @@ def generate_silence_interval(
     channel_size = wavs[0].size(0)
     # get silence tensor
     sil_dur = int(sample_rate * interval_silence / 1000.0)
-    return torch.zeros(channel_size, sil_dur)
+    ref = wavs[0]
+    return torch.zeros(channel_size, sil_dur, device=ref.device, dtype=ref.dtype)
 
 
 def insert_interval_silence(
@@ -74,7 +75,8 @@ def insert_interval_silence(
     channel_size = wavs[0].size(0)
     # get silence tensor
     sil_dur = int(sample_rate * interval_silence / 1000.0)
-    sil_tensor = torch.zeros(channel_size, sil_dur)
+    ref = wavs[0]
+    sil_tensor = torch.zeros(channel_size, sil_dur, device=ref.device, dtype=ref.dtype)
 
     wavs_list: list[Tensor] = []
     for i, wav in enumerate(wavs):

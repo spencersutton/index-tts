@@ -6,30 +6,12 @@ to improve maintainability and testability.
 
 from __future__ import annotations
 
-from typing import override
-
 import torch
-from torch import Tensor, nn
+from torch import Tensor
 from transformers import GPT2Config, GPT2Model
 
+from indextts.gpt.inference_model import NullPositionEmbedding
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
-
-
-class NullPositionEmbedding(nn.Embedding):
-    """A position embedding that always returns zeros.
-
-    Used to replace the built-in position embeddings in GPT-2 when we want
-    to use custom position embeddings instead.
-    """
-
-    def __init__(self, dim: int) -> None:
-        super().__init__(1, dim)
-        del self.weight
-
-    @override
-    def forward(self, input: Tensor) -> Tensor:
-        """Return zero embeddings for the given input shape."""
-        return torch.zeros((input.shape[0], input.shape[1], self.embedding_dim))
 
 
 def set_token_padding(

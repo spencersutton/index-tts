@@ -271,7 +271,7 @@ class IndexTTS2:
             except (ImportError, AttributeError):
                 pass
 
-        logger.info("torch.compile cache directory: %s", cache_dir)
+        logger.info(f"torch.compile cache directory: {cache_dir}")
 
     def _load_models(self, model_dir: Path, use_deepspeed: bool) -> None:
         """Load all model components."""
@@ -287,7 +287,7 @@ class IndexTTS2:
         self.gpt = self.gpt.eval()
         if self.use_fp16:
             self.gpt.half()
-        logger.info("GPT weights restored from: %s", gpt_path)
+        logger.info(f"GPT weights restored from: {gpt_path}")
 
         # Initialize GPT inference mode
         use_deepspeed = self._check_deepspeed(use_deepspeed)
@@ -334,7 +334,7 @@ class IndexTTS2:
                 logger.info("DeepSpeed not found, falling back to normal inference")
                 return False
         except (ImportError, OSError, CalledProcessError) as e:
-            logger.info("Failed to load DeepSpeed: %s", e)
+            logger.info(f"Failed to load DeepSpeed: {e}")
             return False
 
         return True
@@ -347,11 +347,10 @@ class IndexTTS2:
             )
 
             logger.info(
-                "Preloaded custom CUDA kernel: %s",
-                activation1d.anti_alias_activation_cuda,
+                f"Preloaded custom CUDA kernel: {activation1d.anti_alias_activation_cuda}",
             )
         except Exception as e:  # noqa: BLE001
-            logger.info("Failed to load CUDA kernel, falling back to torch: %r", e)
+            logger.info(f"Failed to load CUDA kernel, falling back to torch: {e}")
             self.use_cuda_kernel = False
 
     def _apply_torch_compile(self) -> None:
@@ -623,7 +622,7 @@ class IndexTTS2:
         if use_emo_text:
             emo_text = emo_text or text
             emo_dict = self.qwen_emo.inference(emo_text)
-            logger.info("Detected emotion from text: %s", emo_dict)
+            logger.info(f"Detected emotion from text: {emo_dict}")
             emo_vector = list(emo_dict.values())
 
         # Scale emotion vectors by alpha
@@ -631,7 +630,7 @@ class IndexTTS2:
             scale = max(0.0, min(1.0, emo_alpha))
             if scale != 1.0:
                 emo_vector = [int(x * scale * 10000) / 10000 for x in emo_vector]
-                logger.info("Scaled emotion vectors to %.2fx: %s", scale, emo_vector)
+                logger.info(f"Scaled emotion vectors to {scale:.2f}x: {emo_vector}")
 
         # Use speaker audio as emotion reference if not specified
         if emo_audio_prompt is None:
@@ -681,7 +680,7 @@ class IndexTTS2:
         token_ids = self.tokenizer.convert_tokens_to_ids(tokens)
         if self.tokenizer.unk_token_id in token_ids:
             unk_tokens = [t for t, tid in zip(tokens, token_ids) if tid == self.tokenizer.unk_token_id]
-            logger.warning("Text contains %d unknown tokens: %s", len(unk_tokens), unk_tokens)
+            logger.warning(f"Text contains {len(unk_tokens)} unknown tokens: {unk_tokens}")
 
         # Convert segments to tensors
         batch_tokens = [torch.tensor(self.tokenizer.convert_tokens_to_ids(seg), dtype=torch.int32) for seg in segments]
@@ -927,13 +926,13 @@ class IndexTTS2:
         wav_length = wav.shape[-1] / OUTPUT_SR
         total_time = end_time - start_time
 
-        logger.info("gpt_gen_time: %.2fs", gpt_gen_time)
-        logger.info("gpt_forward_time: %.2fs", gpt_forward_time)
-        logger.info("s2mel_time: %.2fs", s2mel_time)
-        logger.info("bigvgan_time: %.2fs", bigvgan_time)
-        logger.info("Total inference time: %.2fs", total_time)
-        logger.info("Generated audio length: %.2fs", wav_length)
-        logger.info("RTF: %.4f", total_time / wav_length if wav_length > 0 else 0)
+        logger.info(f"gpt_gen_time: {gpt_gen_time:.2f}s")
+        logger.info(f"gpt_forward_time: {gpt_forward_time:.2f}s")
+        logger.info(f"s2mel_time: {s2mel_time:.2f}s")
+        logger.info(f"bigvgan_time: {bigvgan_time:.2f}s")
+        logger.info(f"Total inference time: {total_time:.2f}s")
+        logger.info(f"Generated audio length: {wav_length:.2f}s")
+        logger.info(f"RTF: {total_time / wav_length if wav_length > 0 else 0:.4f}")
 
     def _finalize_audio(
         self,
@@ -950,7 +949,7 @@ class IndexTTS2:
             output_path.unlink(missing_ok=True)
             output_path.parent.mkdir(exist_ok=True, parents=True)
             AudioEncoder(wav, sample_rate=OUTPUT_SR).to_file(output_path)
-            logger.info("Audio saved to: %s", output_path)
+            logger.info(f"Audio saved to: {output_path}")
             yield output_path
         else:
             wav_data = (wav * torch.iinfo(torch.int16).max).type(torch.int16)

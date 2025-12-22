@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 def load_bigvgan(name: str, use_cuda_kernel: bool) -> BigVGAN:
     model = BigVGAN.from_pretrained(name, use_cuda_kernel=use_cuda_kernel)
     model.remove_weight_norm()
-    logger.info("bigvgan weights restored from: %s", name)
+    logger.info(f"bigvgan weights restored from: {name}")
     return model.eval()
 
 
@@ -25,7 +25,7 @@ def load_campplus() -> CAMPPlus:
     path = "checkpoints/campplus_cn_common.safetensors"
     safetensors.torch.load_model(model, path, strict=False)
 
-    logger.info("campplus_model weights restored from: %s", path)
+    logger.info(f"campplus_model weights restored from: {path}")
     return model.eval()
 
 
@@ -33,7 +33,7 @@ def load_semantic_codec_model() -> RepCodec:
     checkpoint = hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
     model = RepCodec()
     safetensors.torch.load_model(model, checkpoint, strict=False)
-    logger.info("semantic_codec weights restored from: %s", checkpoint)
+    logger.info(f"semantic_codec weights restored from: {checkpoint}")
     return model.eval()
 
 

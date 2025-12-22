@@ -639,14 +639,14 @@ class UnifiedVoice(nn.Module):
 
         # Compute conditioning latents
         speech_conditioning_latent = self.get_conditioning(speech_condition.transpose(1, 2), cond_lengths)
-        logger.info("get_conditioning: %.4fs", time.perf_counter() - t0)
+        logger.info(f"get_conditioning: {time.perf_counter() - t0:.4f}s")
 
         # Compute or use provided emotion vector
         if emo_vec is None:
             t1 = time.perf_counter()
             emo_vec = self.get_emo_conditioning(emo_speech_condition.transpose(1, 2), emo_cond_lengths)
             emo_vec = self.emo_layer(self.emovec_layer(emo_vec))
-            logger.info("get_emo_conditioning: %.4fs", time.perf_counter() - t1)
+            logger.info(f"get_emo_conditioning: {time.perf_counter() - t1:.4f}s")
         else:
             logger.info("Using provided emotion vector")
 
@@ -662,7 +662,7 @@ class UnifiedVoice(nn.Module):
         input_ids, inputs_embeds, attention_mask = self.prepare_gpt_inputs(conds_latent, text_inputs)
         assert self.inference_model is not None
         self.inference_model.store_mel_emb(inputs_embeds)
-        logger.info("prepare_gpt_inputs: %.4fs", time.perf_counter() - t2)
+        logger.info(f"prepare_gpt_inputs: {time.perf_counter() - t2:.4f}s")
 
         # Handle additional input tokens
         inputs, attention_mask = self._prepare_generation_inputs(
@@ -690,8 +690,8 @@ class UnifiedVoice(nn.Module):
             logits_processor,
             hf_generate_kwargs,
         )
-        logger.info("generation: %.4fs", time.perf_counter() - t3)
-        logger.info("total inference_speech: %.4fs", time.perf_counter() - t0)
+        logger.info(f"generation: {time.perf_counter() - t3:.4f}s")
+        logger.info(f"total inference_speech: {time.perf_counter() - t0:.4f}s")
 
         return output[:, trunc_index:], speech_conditioning_latent
 

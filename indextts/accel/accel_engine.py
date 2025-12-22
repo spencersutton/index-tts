@@ -296,7 +296,7 @@ class AccelInferenceEngine:
             "outputs": outputs,
             "inputs_embeds": inputs_embeds_buffer,
         }
-        logger.info("CUDA graphs_captured batch_sizes=%s", GRAPH_BS)
+        logger.info(f"CUDA graphs_captured batch_sizes={GRAPH_BS}")
 
     def _run_decode_with_graph(
         self,
@@ -406,7 +406,7 @@ class AccelInferenceEngine:
                 tts_text_pos_embedding=tts_text_pos_embedding,
             )
             self.graph_captured = True
-            logger.info("[CAPTURE] Completed! graphs=%s", list(self.graphs.keys()))
+            logger.info(f"[CAPTURE] Completed! graphs={list(self.graphs.keys())}")
 
         actual_seq_len = tts_embeddings.size(1) + 1 if tts_embeddings is not None else input_ids.size(1)
 

@@ -27,12 +27,12 @@ from torch.autograd.graph import GradientEdge
 
 __all__ = ["Device", "FileLike", "Number", "Storage"]
 
-type _TensorOrTensors = Tensor | Sequence[Tensor]  # noqa: PYI047
+type _TensorOrTensors = Tensor | Sequence[Tensor]
 type _TensorOrTensorsOrGradEdge = Tensor | Sequence[Tensor] | GradientEdge | Sequence[GradientEdge]
 
-type _size = Size | list[int] | tuple[int, ...]  # noqa: PYI042,PYI047
-type _symsize = Size | Sequence[int | SymInt]  # noqa: PYI042,PYI047
-type _dispatchkey = str | DispatchKey  # noqa: PYI042,PYI047
+type _size = Size | list[int] | tuple[int, ...]
+type _symsize = Size | Sequence[int | SymInt]
+type _dispatchkey = str | DispatchKey
 
 type IntLikeType = int | SymInt
 type FloatLikeType = float | SymFloat

@@ -1,5 +1,6 @@
 import argparse
 import sys
+import time
 import warnings
 from pathlib import Path
 
@@ -177,7 +178,7 @@ def main() -> None:
             tts.infer(spk_audio_prompt=voice_file, text=args.text, output_path=output_path)
         with pyinstrument.Profiler() as profiler:
             tts.infer(spk_audio_prompt=voice_file, text=args.text, output_path=output_path)
-        profiler.write_html("profile.html")
+        profiler.write_html(f"output/profile_{int(time.time())}.html")
     else:
         tts.infer(spk_audio_prompt=voice_file, text=args.text, output_path=output_path)
 

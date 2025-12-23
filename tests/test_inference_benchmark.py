@@ -1,9 +1,11 @@
+# noqa: INP001
+from collections.abc import Callable
 from pathlib import Path
 
 from indextts.infer_v2 import IndexTTS2
 
 
-def test_inference(benchmark):
+def test_inference(benchmark: Callable) -> None:
     tts = IndexTTS2(
         use_cuda_kernel=False,
         use_accel=False,

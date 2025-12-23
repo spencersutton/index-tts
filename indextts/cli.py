@@ -9,13 +9,6 @@ import torch
 
 from indextts.infer_v2 import IndexTTS2
 
-if __debug__:
-    import omegaconf
-    import rich.traceback
-    import transformers
-
-    rich.traceback.install(suppress=[omegaconf, torch, transformers], width=120)
-
 if False:
     torch._inductor.config.debug = False  # noqa: SLF001
     torch._inductor.config.fx_graph_cache = True  # noqa: SLF001
@@ -148,23 +141,10 @@ def main() -> None:
         else:
             output_path.unlink()
 
-    if args.device is None:
-        if torch.cuda.is_available():
-            args.device = "cuda:0"
-        elif hasattr(torch, "xpu") and torch.xpu.is_available():
-            args.device = "xpu"
-        elif hasattr(torch, "mps") and torch.mps.is_available():
-            args.device = "mps"
-        else:
-            args.device = "cpu"
-            args.fp16 = False  # Disable FP16 on CPU
-            print("WARNING: Running on CPU may be slow.")
-
     tts = IndexTTS2(
         cfg_path=Path(args.config),
         model_dir=Path(args.model_dir),
         use_fp16=args.fp16,
-        device=args.device,
         use_accel=args.use_accel,
         use_torch_compile=args.use_torch_compile,
         use_cuda_kernel=args.use_cuda_kernel,

@@ -242,7 +242,7 @@ class UnifiedVoice(nn.Module):
         half: bool,
     ) -> None:
         """Initialize the GPT2 inference model with optional DeepSpeed."""
-        self.inference_model = GPT2InferenceModel(
+        inference_model = GPT2InferenceModel(
             gpt_config,
             self.gpt,
             self.mel_pos_embedding,
@@ -251,15 +251,16 @@ class UnifiedVoice(nn.Module):
             self.mel_head,
             kv_cache=kv_cache,
         )
+        self.inference_model = inference_model
 
         if use_deepspeed and torch.cuda.is_available():
             self._apply_deepspeed(half)
         else:
-            self.inference_model = self.inference_model.eval()
+            self.inference_model = inference_model.eval()
 
     def _apply_deepspeed(self, half: bool) -> None:
         """Apply DeepSpeed inference optimization."""
-        import deepspeed  # ty:ignore[unresolved-import]  # noqa: PLC0415
+        import deepspeed  # noqa: PLC0415
 
         self.ds_engine = deepspeed.init_inference(
             model=self.inference_model,

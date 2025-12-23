@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Final, cast, override
 
 import torch
 from torch import Tensor, nn
-from transformers import GPT2Model
 
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
 from indextts.util import patch_call
@@ -17,6 +16,7 @@ from .kv_manager import KVCacheManager, Seq
 
 if TYPE_CHECKING:
     from torch.types import Number
+    from transformers import GPT2Model
 
 
 logger = logging.getLogger(__name__)

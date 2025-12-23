@@ -101,7 +101,7 @@ class PositionalEncoding(nn.Module):
             pos_emb = self.pe[:, offset : offset + size]
         else:  # for batched streaming decoding on GPU
             assert torch.max(offset) + size < self.max_len
-            index = offset.unsqueeze(1) + torch.arange(0, size)  # B X T
+            index = offset.unsqueeze(1) + torch.arange(0, size, device=offset.device)  # B X T
             flag = index > 0
             # remove negative offset
             index *= flag
@@ -154,11 +154,12 @@ class NoPositionalEncoding(nn.Module):
     @override
     def forward(self, x: Tensor, offset: int | Tensor = 0) -> tuple[Tensor, Tensor]:
         """Just return zero vector for interface compatibility."""
-        pos_emb = torch.zeros(1, x.size(1), self.d_model)
+        pos_emb = torch.zeros(1, x.size(1), self.d_model, device=x.device, dtype=x.dtype)
         return self.dropout(x), pos_emb
 
     @patch_call(forward)
     def __call__(self) -> None: ...
 
     def position_encoding(self, _offset: int | Tensor, size: int) -> Tensor:
-        return torch.zeros(1, size, self.d_model)
+        device = _offset.device if isinstance(_offset, Tensor) else None
+        return torch.zeros(1, size, self.d_model, device=device)

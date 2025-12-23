@@ -536,7 +536,7 @@ class UnifiedVoice(nn.Module):
         attention_mask = torch.stack(attention_masks, dim=0)
 
         # Create fake input IDs with start_mel_token at the end
-        fake_inputs = torch.ones((batch_size, target_len + 1), dtype=torch.long)
+        fake_inputs = torch.ones((batch_size, target_len + 1), dtype=torch.long, device=batched_mel_emb.device)
         fake_inputs[:, -1] = self.cfg.start_mel_token
 
         return fake_inputs, batched_mel_emb, attention_mask
@@ -567,17 +567,21 @@ class UnifiedVoice(nn.Module):
         text_input = F.pad(text_input, (0, 1), value=self.cfg.stop_text_token)
 
         # Compute text embeddings
-        text_pos = torch.arange(text_input.size(-1))
+        text_pos = torch.arange(text_input.size(-1), device=text_input.device, dtype=torch.long)
         text_emb = self.text_embedding(text_input) + self.text_pos_embedding.emb(text_pos)
 
         # Build sequence: [optional_pad][cond][text]
         parts: list[Tensor] = [cond_latent, text_emb]
-        attention_mask = torch.ones(target_len + 1, dtype=torch.long)
+        attention_mask = torch.ones(target_len + 1, dtype=torch.long, device=text_emb.device)
 
         # Add left padding if needed
         padding = max_text_len + 2 - text_input.size(-1)
         if padding > 0:
-            pad = torch.zeros((padding, cond_latent.size(-1)), dtype=text_emb.dtype)
+            pad = torch.zeros(
+                (padding, cond_latent.size(-1)),
+                dtype=text_emb.dtype,
+                device=text_emb.device,
+            )
             parts.insert(0, pad)
             attention_mask[:padding] = 0
 
@@ -633,9 +637,9 @@ class UnifiedVoice(nn.Module):
         if emo_speech_condition is None:
             emo_speech_condition = speech_condition
         if cond_lengths is None:
-            cond_lengths = torch.tensor([speech_condition.shape[-1]])
+            cond_lengths = torch.tensor([speech_condition.shape[-1]], device=speech_condition.device)
         if emo_cond_lengths is None:
-            emo_cond_lengths = torch.tensor([emo_speech_condition.shape[-1]])
+            emo_cond_lengths = torch.tensor([emo_speech_condition.shape[-1]], device=emo_speech_condition.device)
 
         # Compute conditioning latents
         speech_conditioning_latent = self.get_conditioning(speech_condition.transpose(1, 2), cond_lengths)
@@ -654,7 +658,7 @@ class UnifiedVoice(nn.Module):
         conds_latent = self._build_conditioning_concat(
             speech_conditioning_latent,
             emo_vec,
-            torch.zeros(text_inputs.size(0), dtype=torch.long),
+            torch.zeros(text_inputs.size(0), dtype=torch.long, device=text_inputs.device),
         )
 
         # Prepare GPT inputs

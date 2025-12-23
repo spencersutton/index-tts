@@ -16,10 +16,12 @@ class LearnedPositionEmbeddings(nn.Module):
     @override
     def forward(self, x: Tensor) -> Tensor:
         sl = x.shape[1]
-        return self.emb(torch.arange(0, sl))
+        pos = torch.arange(sl, device=x.device, dtype=torch.long)
+        return self.emb(pos)
 
     @patch_call(forward)
     def __call__(self) -> None: ...
 
     def get_fixed_embedding(self, ind: int) -> Tensor:
-        return self.emb(torch.tensor([ind])).unsqueeze(0)
+        idx = torch.tensor([ind], device=self.emb.weight.device, dtype=torch.long)
+        return self.emb(idx).unsqueeze(0)

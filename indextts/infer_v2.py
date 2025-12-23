@@ -13,7 +13,7 @@ from collections.abc import Collection, Generator, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from subprocess import CalledProcessError
-from typing import Any, cast
+from typing import Annotated, Any, cast
 
 import safetensors.torch
 import torch
@@ -34,6 +34,7 @@ from indextts.s2mel.modules.audio import mel_spectrogram
 from indextts.s2mel.modules.bigvgan import BigVGAN
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
 from indextts.s2mel.modules.model import MyModel
+from indextts.util import verify_shapes
 from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.maskgct.models.codec.kmeans.repcodec_model import RepCodec
 
@@ -142,7 +143,11 @@ def normalize_emo_vec(emo_vector: Sequence[float], apply_bias: bool = True) -> l
     return result
 
 
-def _find_most_similar_cosine(query_vector: Tensor, matrix: Tensor) -> Tensor:
+@verify_shapes
+def _find_most_similar_cosine(
+    query_vector: Annotated[Tensor, (..., 192)],
+    matrix: Annotated[Tensor, (..., 192)],
+) -> Tensor:
     """Find the index of the most similar vector in matrix using cosine similarity."""
     similarities = torch.cosine_similarity(query_vector.float(), matrix.float(), dim=1)
     return torch.argmax(similarities)
@@ -576,10 +581,11 @@ class IndexTTS2:
 
         return emo_audio_prompt, emo_alpha, emo_vector
 
+    @verify_shapes
     def _compute_emo_matrix(
         self,
         emo_vector: Collection[float] | None,
-        style: Tensor,
+        style: Annotated[Tensor, (1, 192)],
         use_random: bool,
     ) -> tuple[Tensor | None, Tensor | None]:
         """Compute emotion matrix from explicit emotion vector."""
@@ -624,13 +630,14 @@ class IndexTTS2:
 
         return segments, batch_tokens
 
+    @verify_shapes
     def _compute_emovec(
         self,
-        spk_cond_emb: Tensor,
-        emo_cond_emb: Tensor,
+        spk_cond_emb: Annotated[Tensor, (1, 749, 1024)],
+        emo_cond_emb: Annotated[Tensor, (1, 749, 1024)],
         emo_alpha: float,
-        emovec_mat: Tensor | None,
-        weight_vector: Tensor | None,
+        emovec_mat: Annotated[Tensor, (..., 192)] | None,
+        weight_vector: Annotated[Tensor, (...,)] | None,
     ) -> Tensor:
         """Compute final emotion vector with optional matrix blending."""
         emovec = self.gpt.merge_emovec(
@@ -646,17 +653,18 @@ class IndexTTS2:
 
         return emovec
 
+    @verify_shapes
     def _run_batch_inference(
         self,
         *,
         segments: list[list[str]],
-        batch_text_tokens: list[Tensor],
-        spk_cond_emb: Tensor,
-        emo_cond_emb: Tensor,
-        emovec: Tensor,
-        prompt_condition: Tensor,
-        ref_mel: Tensor,
-        style: Tensor,
+        batch_text_tokens: list[Annotated[Tensor, (...,)]],
+        spk_cond_emb: Annotated[Tensor, (1, 749, 1024)],
+        emo_cond_emb: Annotated[Tensor, (1, 749, 1024)],
+        emovec: Annotated[Tensor, (1, 1280)],
+        prompt_condition: Annotated[Tensor, (1, 1291, 512)],
+        ref_mel: Annotated[Tensor, (1, 80, 1291)],
+        style: Annotated[Tensor, (1, 192)],
         max_mel_tokens: int,
         max_text_tokens_per_segment: int,
         interval_silence: int,
@@ -665,7 +673,7 @@ class IndexTTS2:
         start_time: float,
         generation_kwargs: dict[str, Any],
         cfm_steps: int = 25,
-    ) -> Generator[Tensor | Path | tuple[int, np.ndarray] | None]:
+    ) -> Generator[Tensor | Path | None]:
         """Run batched inference over text segments.
 
         Args:
@@ -763,18 +771,19 @@ class IndexTTS2:
         # Save or return audio
         yield from self._finalize_audio(wavs, interval_silence, output_path)
 
+    @verify_shapes
     def _process_segment(
         self,
         *,
-        code: Tensor,
-        text_tokens: Tensor,
-        speech_conditioning_latent: Tensor,
-        emo_cond_emb: Tensor,
-        emovec: Tensor,
-        spk_cond_emb: Tensor,
-        prompt_condition: Tensor,
-        ref_mel: Tensor,
-        style: Tensor,
+        code: Annotated[Tensor, (...,)],
+        text_tokens: Annotated[Tensor, (2,)],
+        speech_conditioning_latent: Annotated[Tensor, (1, 32, 1280)],
+        emo_cond_emb: Annotated[Tensor, (1, 749, 1024)],
+        emovec: Annotated[Tensor, (1, 1280)],
+        spk_cond_emb: Annotated[Tensor, (1, 749, 1024)],
+        prompt_condition: Annotated[Tensor, (1, 1291, 512)],
+        ref_mel: Annotated[Tensor, (1, 80, 1291)],
+        style: Annotated[Tensor, (1, 192)],
         cfm_steps: int = 25,
     ) -> tuple[Tensor, float, float, float]:
         """Process a single segment to generate audio.
@@ -848,7 +857,7 @@ class IndexTTS2:
         bigvgan_time: float,
         start_time: float,
         end_time: float,
-        wavs: list[Tensor],
+        wavs: list[Annotated[Tensor, (..., ...)]],
         interval_silence: int,
     ) -> None:
         """Log inference timing statistics."""
@@ -873,7 +882,7 @@ class IndexTTS2:
 
     def _finalize_audio(
         self,
-        wavs: list[Tensor],
+        wavs: list[Annotated[Tensor, (..., ...)]],
         interval_silence: int,
         output_path: Path | None,
     ) -> Generator[Path | tuple[int, np.ndarray]]:

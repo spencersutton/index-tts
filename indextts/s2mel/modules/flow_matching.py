@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import cast, override
+from typing import Annotated, cast, override
 
 import torch
 from torch import Tensor, nn
@@ -25,10 +25,10 @@ class BASECFM(nn.Module, ABC):
     @torch.inference_mode()
     def inference(
         self,
-        mu: Tensor,
-        x_lens: Tensor,
-        prompt: Tensor,
-        style: Tensor,
+        mu: Annotated[Tensor, (..., ..., 512)],
+        x_lens: Annotated[Tensor, (...,)],
+        prompt: Annotated[Tensor, (..., 80, ...)],
+        style: Annotated[Tensor, (..., 192)],
         f0: None,
         n_timesteps: int,
         temperature: float = 1.0,
@@ -60,13 +60,13 @@ class BASECFM(nn.Module, ABC):
 
     def solve_euler(
         self,
-        x: Tensor,
-        x_lens: Tensor,
-        prompt: Tensor,
-        mu: Tensor,
-        style: Tensor,
+        x: Annotated[Tensor, (..., ..., ...)],
+        x_lens: Annotated[Tensor, (...,)],
+        prompt: Annotated[Tensor, (..., 80, ...)],
+        mu: Annotated[Tensor, (..., ..., 512)],
+        style: Annotated[Tensor, (..., 192)],
         _f0: None,
-        t_span: Tensor,
+        t_span: Annotated[Tensor, (...,)],
         inference_cfg_rate: float = 0.5,
     ) -> Tensor:
         """
@@ -140,11 +140,11 @@ class BASECFM(nn.Module, ABC):
     @override
     def forward(
         self,
-        x1: Tensor,
-        x_lens: Tensor,
-        prompt_lens: Tensor,
-        mu: Tensor,
-        style: Tensor,
+        x1: Annotated[Tensor, (..., 80, ...)],
+        x_lens: Annotated[Tensor, (...,)],
+        prompt_lens: Annotated[Tensor, (...,)],
+        mu: Annotated[Tensor, (..., ..., 512)],
+        style: Annotated[Tensor, (..., 192)],
     ) -> tuple[Tensor, Tensor]:
         """Computes diffusion loss.
 

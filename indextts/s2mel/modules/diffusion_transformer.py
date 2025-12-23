@@ -1,5 +1,5 @@
 import math
-from typing import TYPE_CHECKING, Final, override
+from typing import TYPE_CHECKING, Annotated, Final, override
 
 import torch
 from torch import Tensor, nn
@@ -9,10 +9,15 @@ from indextts.config import S2MelConfig
 from indextts.s2mel.modules.commons import sequence_mask
 from indextts.s2mel.modules.gpt_fast.model import ModelArgs, Transformer
 from indextts.s2mel.modules.wavenet import WN
-from indextts.util import patch_call
+from indextts.util import patch_call, verify_shapes
 
 
-def modulate(x: Tensor, shift: Tensor, scale: Tensor) -> Tensor:
+@verify_shapes
+def modulate(
+    x: Annotated[Tensor, (2, ..., 512)],
+    shift: Annotated[Tensor, (2, 512)],
+    scale: Annotated[Tensor, (2, 512)],
+) -> Tensor:
     return x * (1 + scale.unsqueeze(1)) + shift.unsqueeze(1)
 
 
@@ -44,7 +49,7 @@ class TimestepEmbedder(nn.Module):
         freqs = torch.exp(-math.log(self.max_period) * torch.arange(start=0, end=half, dtype=torch.float32) / half)
         self.register_buffer("freqs", freqs)
 
-    def timestep_embedding(self, t: Tensor) -> Tensor:
+    def timestep_embedding(self, t: Annotated[Tensor, (...,)]) -> Tensor:
         """Create sinusoidal timestep embeddings.
         :param t: a 1-D Tensor of N indices, one per batch element.
                           These may be fractional.
@@ -58,7 +63,7 @@ class TimestepEmbedder(nn.Module):
         return torch.cat([torch.cos(args), torch.sin(args)], dim=-1)
 
     @override
-    def forward(self, t: Tensor) -> Tensor:
+    def forward(self, t: Annotated[Tensor, (...,)]) -> Tensor:
         t_freq = self.timestep_embedding(t)
         return self.mlp(t_freq)
 
@@ -76,7 +81,12 @@ class FinalLayer(nn.Module):
         self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(hidden_size, 2 * hidden_size, bias=True))
 
     @override
-    def forward(self, x: Tensor, c: Tensor) -> Tensor:
+    @verify_shapes
+    def forward(
+        self,
+        x: Annotated[Tensor, (..., ..., 512)],
+        c: Annotated[Tensor, (..., 512)],
+    ) -> Tensor:
         shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
         x = modulate(self.norm_final(x), shift, scale)
         return self.linear(x)
@@ -142,14 +152,15 @@ class DiT(nn.Module):
         )
 
     @override
+    @verify_shapes
     def forward(
         self,
-        x: Tensor,
-        prompt_x: Tensor,
-        x_lens: Tensor,
-        t: Tensor,
-        style: Tensor,
-        cond: Tensor,
+        x: Annotated[Tensor, (2, 80, ...)],
+        prompt_x: Annotated[Tensor, (2, 80, ...)],
+        x_lens: Annotated[Tensor, (1,)],
+        t: Annotated[Tensor, (2,)],
+        style: Annotated[Tensor, (2, 192)],
+        cond: Annotated[Tensor, (2, ..., 512)],
         mask_content: bool = False,
     ) -> Tensor:
         """x (Tensor): random noise
@@ -163,7 +174,6 @@ class DiT(nn.Module):
             shape: (batch_size, 192)
         cond (Tensor): semantic info of reference audio and altered audio
             shape: (batch_size, mel_timesteps(795+1069), 512)
-
         """
         cond_in_module = self.cond_projection
 

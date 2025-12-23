@@ -6,7 +6,6 @@ import contextlib
 import functools
 import importlib.util
 import logging
-import os
 import random
 import time
 import typing
@@ -28,7 +27,7 @@ from transformers import BatchFeature, SeamlessM4TFeatureExtractor, Wav2Vec2Bert
 
 from indextts.audio_utils import generate_silence_interval, insert_interval_silence
 from indextts.config import CheckpointsConfig
-from indextts.gpt.model_v2 import GPT2InferenceModel, UnifiedVoice
+from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.load_modules import load_bigvgan, load_campplus, load_s2mel_model, load_semantic_codec_model
 from indextts.qwen_emotion import QwenEmotion
 from indextts.s2mel.modules.audio import mel_spectrogram
@@ -227,10 +226,6 @@ class IndexTTS2:
             with contextlib.suppress(AttributeError):
                 torch.set_float32_matmul_precision("high")
 
-        # Configure torch.compile if requested
-        if use_torch_compile:
-            self._configure_torch_compile(model_dir)
-
         # Load configuration
         self.cfg = CheckpointsConfig(**cast(Mapping[str, Any], OmegaConf.load(cfg_path)))
         self.stop_mel_token = self.cfg.gpt.stop_mel_token
@@ -241,38 +236,11 @@ class IndexTTS2:
 
         # Apply torch.compile if requested
         if use_torch_compile:
-            self._apply_torch_compile()
+            self.s2mel.enable_torch_compile()
 
     # -------------------------------------------------------------------------
     # Initialization Helpers
     # -------------------------------------------------------------------------
-
-    def _configure_torch_compile(self, model_dir: Path) -> None:
-        """Configure torch.compile caching and inductor settings."""
-        import torch._dynamo.config as dynamo_config  # noqa: PLC0415, PLC2701
-
-        cache_dir = model_dir / ".torch_compile_cache"
-        cache_dir.mkdir(exist_ok=True, parents=True)
-
-        os.environ.setdefault("TORCHINDUCTOR_CACHE_DIR", str(cache_dir))
-        os.environ.setdefault("TORCHINDUCTOR_FX_GRAPH_CACHE", "1")
-
-        dynamo_config.verbose = False
-        dynamo_config.cache_size_limit = 256
-
-        if self.device.startswith("cuda"):
-            try:
-                import torch._inductor.config as inductor_config  # noqa: PLC0415, PLC2701
-
-                inductor_config.triton.cudagraphs = True
-                inductor_config.coordinate_descent_tuning = True
-                inductor_config.freezing = True
-                inductor_config.fx_graph_cache = True
-                inductor_config.fx_graph_remote_cache = False
-            except (ImportError, AttributeError):
-                pass
-
-        logger.info(f"torch.compile cache directory: {cache_dir}")
 
     def _load_models(self, model_dir: Path, use_deepspeed: bool) -> None:
         """Load all model components."""
@@ -353,28 +321,6 @@ class IndexTTS2:
         except Exception as e:  # noqa: BLE001
             logger.info(f"Failed to load CUDA kernel, falling back to torch: {e}")
             self.use_cuda_kernel = False
-
-    def _apply_torch_compile(self) -> None:
-        """Apply torch.compile to models."""
-        logger.info("Applying torch.compile optimization")
-
-        self.s2mel.enable_torch_compile()
-
-        assert self.gpt.inference_model is not None
-        self.gpt.inference_model = cast(
-            GPT2InferenceModel,
-            torch.compile(self.gpt.inference_model, dynamic=True),
-        )
-        self.gpt = torch.compile(self.gpt)
-
-        if not self.use_cuda_kernel:
-            self.bigvgan = torch.compile(self.bigvgan, dynamic=True)
-
-        self.semantic_model = torch.compile(self.semantic_model, dynamic=True)
-        self.semantic_codec = torch.compile(self.semantic_codec, dynamic=True)
-        self.campplus_model = torch.compile(self.campplus_model, dynamic=True, mode="reduce-overhead")
-
-        logger.info("torch.compile optimization applied successfully")
 
     # -------------------------------------------------------------------------
     # Audio Prompt Processing
@@ -541,10 +487,6 @@ class IndexTTS2:
             cfm_steps: Number of CFM diffusion steps (default 25). Lower values are faster
                 but may reduce quality. Values 15-25 are recommended.
         """
-        # Mark CUDA graph step for torch.compile
-        if self.use_torch_compile and torch.cuda.is_available():
-            torch.compiler.cudagraph_mark_step_begin()
-
         logger.info("Starting inference...")
         self._set_gr_progress(0, "starting inference...")
         start_time = time.perf_counter()

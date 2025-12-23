@@ -776,7 +776,7 @@ class IndexTTS2:
         self,
         *,
         code: Annotated[Tensor, (...,)],
-        text_tokens: Annotated[Tensor, (2,)],
+        text_tokens: Annotated[Tensor, (...,)],
         speech_conditioning_latent: Annotated[Tensor, (1, 32, 1280)],
         emo_cond_emb: Annotated[Tensor, (1, 749, 1024)],
         emovec: Annotated[Tensor, (1, 1280)],

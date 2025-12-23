@@ -33,6 +33,19 @@ def _extract_tensor_shape_spec(tp: Any) -> tuple[bool, bool, tuple[Any, ...]] | 
     def _inner(t: Any) -> tuple[bool, bool, tuple[Any, ...]] | None:
         origin = get_origin(t)
 
+        # Optional / Union (including PEP604 |)
+        if origin is types.UnionType or origin is typing.Union:
+            args = list(get_args(t))
+            is_optional = any(a is type(None) for a in args)
+            non_none = [a for a in args if a is not type(None)]
+            if len(non_none) != 1:
+                return None
+            inner = _inner(non_none[0])
+            if inner is None:
+                return None
+            is_list, _opt, metadata = inner
+            return is_list, (is_optional or _opt), metadata
+
         # list[T]
         if origin is list:
             (elem,) = get_args(t) or (None,)
@@ -53,14 +66,6 @@ def _extract_tensor_shape_spec(tp: Any) -> tuple[bool, bool, tuple[Any, ...]] | 
             if not isinstance(metadata, tuple):
                 return None
             return False, False, metadata
-
-        if origin is types.UnionType or origin is typing.Union:
-            args = list(get_args(t))
-            if len(args) != 2:
-                return None
-            if get_origin(args[0]) is not Annotated:
-                return None
-            return _inner(args[0])
 
         return None
 

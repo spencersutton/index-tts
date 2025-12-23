@@ -85,7 +85,7 @@ class FinalLayer(nn.Module):
     def forward(
         self,
         x: Annotated[Tensor, (..., ..., 512)],
-        c: Annotated[Tensor, (..., 512)],
+        c: Annotated[Tensor, (2, 512)],
     ) -> Tensor:
         shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
         x = modulate(self.norm_final(x), shift, scale)

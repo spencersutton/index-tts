@@ -1,4 +1,4 @@
-from builtins import bool as _bool, int as _int
+from builtins import bool as _bool, complex as _complex, float as _float, int as _int, str as _str
 from collections.abc import Callable, Iterable, Iterator, Sequence
 from enum import Enum
 from pathlib import Path
@@ -17,15 +17,12 @@ from torch.types import (
     IntLikeType,
     Number,
     Storage,
-    _complex,
     _device,
     _dispatchkey,
     _dtype,
-    _float,
     _layout,
     _qscheme,
     _size,
-    _str,
     _symsize,
 )
 

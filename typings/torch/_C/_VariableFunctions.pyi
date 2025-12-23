@@ -6,7 +6,7 @@ import torch
 from torch import SymInt, Tensor, dtype as _dtype, layout as _layout, memory_format
 from torch._C import Generator
 from torch._prims_common import DeviceLikeType
-from torch.types import Number, _complex, _float, _size
+from torch.types import Number, _complex, _float, _size  # pyright: ignore[reportPrivateUsage]
 
 __all__ = [
     "__and__",

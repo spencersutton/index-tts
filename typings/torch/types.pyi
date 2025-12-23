@@ -1,5 +1,6 @@
 # pyright: reportUnusedImport=false
 import os
+from builtins import complex as _complex, float as _float, int as _int, str as _str  # noqa: F401
 from collections.abc import Sequence
 from typing import IO, Any, Self
 

@@ -416,7 +416,7 @@ class IndexTTS2:
         max_text_tokens_per_segment: int = 120,
         stream_return: bool = False,
         verbose: bool = False,
-        **generation_kwargs: Any,
+        **generation_kwargs: object,
     ) -> Tensor | Generator[Tensor | Path | tuple[int, np.ndarray] | None] | Path | tuple[int, np.ndarray] | None:
         """Synthesize speech from text.
 
@@ -438,6 +438,9 @@ class IndexTTS2:
         Returns:
             Generated audio as Tensor, Path, or streaming generator
         """
+        if verbose:
+            logging.basicConfig(level=logging.DEBUG)
+
         gen = self.infer_generator(
             spk_audio_prompt=spk_audio_prompt,
             text=text,
@@ -527,7 +530,6 @@ class IndexTTS2:
             ref_mel=ref_mel,
             style=style,
             max_mel_tokens=max_mel_tokens,
-            max_text_tokens_per_segment=max_text_tokens_per_segment,
             interval_silence=interval_silence,
             stream_return=stream_return,
             output_path=output_path,
@@ -658,7 +660,6 @@ class IndexTTS2:
         ref_mel: Tensor,
         style: Tensor,
         max_mel_tokens: int,
-        max_text_tokens_per_segment: int,
         interval_silence: int,
         stream_return: bool,
         output_path: Path | None,

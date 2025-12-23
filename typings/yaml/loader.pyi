@@ -1,4 +1,3 @@
-
 from yaml.composer import Composer
 from yaml.constructor import BaseConstructor, Constructor, FullConstructor, SafeConstructor
 from yaml.parser import Parser

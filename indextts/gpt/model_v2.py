@@ -4,7 +4,7 @@ import importlib.util
 import logging
 import time
 from dataclasses import dataclass
-from typing import Any, override
+from typing import TYPE_CHECKING, Any, override
 
 import torch
 import torch.nn.functional as F
@@ -260,15 +260,16 @@ class UnifiedVoice(nn.Module):
 
     def _apply_deepspeed(self, half: bool) -> None:
         """Apply DeepSpeed inference optimization."""
-        import deepspeed  # noqa: PLC0415
+        if not TYPE_CHECKING:
+            import deepspeed  # noqa: PLC0415
 
-        self.ds_engine = deepspeed.init_inference(
-            model=self.inference_model,
-            mp_size=1,
-            replace_with_kernel_inject=True,
-            dtype=torch.float16 if half else torch.float32,
-        )
-        self.inference_model = self.ds_engine.module.eval()
+            self.ds_engine = deepspeed.init_inference(
+                model=self.inference_model,
+                mp_size=1,
+                replace_with_kernel_inject=True,
+                dtype=torch.float16 if half else torch.float32,
+            )
+            self.inference_model = self.ds_engine.module.eval()
 
     # -------------------------------------------------------------------------
     # Conditioning Extraction

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import typing
-from typing import Any, cast, override
+from typing import cast, override
 
 import torch
 from torch import Tensor, nn
@@ -143,7 +143,7 @@ class GPT2AccelModel(GPT2Model):
 
     def __init__(self, config: GPT2Config) -> None:
         super().__init__(config)
-        self.h = nn.ModuleList([GPT2AccelBlock(config, layer_idx=i) for i in range(config.num_hidden_layers)])
+        self.h = nn.ModuleList([GPT2AccelBlock(config, layer_idx=i) for i in range(config.num_hidden_layers)])  # pyright: ignore[reportIncompatibleVariableOverride]
 
     @override
     def forward(
@@ -162,7 +162,7 @@ class GPT2AccelModel(GPT2Model):
         output_attentions: bool | None = None,
         output_hidden_states: bool | None = None,
         return_dict: bool | None = None,
-        **kwargs: Any,
+        **kwargs: object,
     ) -> tuple[torch.Tensor, ...] | BaseModelOutputWithPastAndCrossAttentions:
         if inputs_embeds is not None:
             hidden_states = inputs_embeds

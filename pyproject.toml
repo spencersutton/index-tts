@@ -246,7 +246,7 @@ unused-ignore-comment = "warn"
 possibly-unresolved-reference = "warn"
 
 [tool.ty.src]
-exclude = ["./typings", "./tools", "./override"]
+exclude = ["./typings", "./tools", "./override", "./tests"]
 
 [tool.ty.environment]
 extra-paths = ["./typings"]

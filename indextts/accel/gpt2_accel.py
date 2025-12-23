@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import typing
 from typing import Any, cast, override
 
 import torch
@@ -57,7 +60,7 @@ class GPT2AccelAttention(GPT2Attention):
     @override
     def forward(
         self,
-        hidden_states: tuple[torch.Tensor] | None,
+        hidden_states: tuple[torch.Tensor] | Tensor | None,
         past_key_value: Cache | None = None,
         cache_position: torch.Tensor | None = None,
         attention_mask: torch.Tensor | None = None,
@@ -71,6 +74,7 @@ class GPT2AccelAttention(GPT2Attention):
             msg = "Cross attention not supported in accel mode"
             raise NotImplementedError(msg)
 
+        assert isinstance(hidden_states, Tensor)
         qkv = self.c_attn(hidden_states)
         query, key, value = qkv.split(self.split_size, dim=2)
 
@@ -134,6 +138,9 @@ class GPT2AccelBlock(GPT2Block):
 
 
 class GPT2AccelModel(GPT2Model):
+    if typing.TYPE_CHECKING:
+        h: nn.ModuleList[GPT2AccelBlock]
+
     def __init__(self, config: GPT2Config) -> None:
         super().__init__(config)
         self.h = nn.ModuleList([GPT2AccelBlock(config, layer_idx=i) for i in range(config.num_hidden_layers)])
@@ -161,8 +168,7 @@ class GPT2AccelModel(GPT2Model):
             hidden_states = inputs_embeds
 
             for block in self.h:
-                assert isinstance(block, GPT2AccelBlock)
-                result = block.forward(hidden_states)
+                result = block(hidden_states)
                 assert result is not None
                 hidden_states = result[0]
 

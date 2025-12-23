@@ -356,7 +356,7 @@ class UnifiedVoice(nn.Module):
         emb = torch.cat(parts, dim=1)
 
         # GPT forward pass
-        gpt_out = self.gpt.forward(inputs_embeds=emb, return_dict=True, output_attentions=get_attns)
+        gpt_out = self.gpt(inputs_embeds=emb, return_dict=True, output_attentions=get_attns)
         assert isinstance(gpt_out, BaseModelOutputWithPastAndCrossAttentions)
 
         if get_attns:

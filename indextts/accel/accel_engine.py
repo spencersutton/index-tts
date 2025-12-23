@@ -504,7 +504,7 @@ class AccelInferenceEngine:
 
         temperatures = self._prepare_sample(sequences, temperature)
         if temperature > 0:
-            first_token = self.sampler.forward(logits, temperatures)
+            first_token = self.sampler(logits, temperatures)
         else:
             first_token = torch.argmax(logits, dim=-1)
 
@@ -554,7 +554,7 @@ class AccelInferenceEngine:
             ForwardContext.reset()
 
             temperatures = self._prepare_sample(sequences, temperature)
-            next_token = self.sampler.forward(logits, temperatures) if temperature > 0 else torch.argmax(logits, dim=-1)
+            next_token = self.sampler(logits, temperatures) if temperature > 0 else torch.argmax(logits, dim=-1)
             next_token_list = cast(list[int], next_token.tolist())
 
             for i, token_id in enumerate(next_token_list):

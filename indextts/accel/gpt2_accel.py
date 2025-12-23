@@ -98,7 +98,7 @@ class GPT2AccelAttention(GPT2Attention):
         else:
             orig_dtype = q_flat.dtype
 
-        o_flat = self.accel_attn.forward(q_flat, k_flat, v_flat)  # [B*T, H, D]
+        o_flat = self.accel_attn(q_flat, k_flat, v_flat)  # [B*T, H, D]
 
         if o_flat.dtype != orig_dtype:
             o_flat = o_flat.to(orig_dtype)
@@ -108,7 +108,7 @@ class GPT2AccelAttention(GPT2Attention):
 
         attn_output = self._merge_heads(attn_output, self.num_heads, self.head_dim)
 
-        attn_output = self.c_proj.forward(attn_output)
+        attn_output = self.c_proj(attn_output)
         attn_output = self.resid_dropout(attn_output)
 
         outputs = (attn_output, None)

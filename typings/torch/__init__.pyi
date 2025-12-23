@@ -1681,8 +1681,8 @@ class _TorchCompileWrapper:
     def reset(self) -> None: ...
 
 @overload
-def compile[**InputT, RetT](
-    model: Callable[InputT, RetT],
+def compile[T: Callable](
+    model: T,
     *,
     fullgraph: builtins.bool = ...,
     dynamic: builtins.bool | None = ...,
@@ -1690,9 +1690,9 @@ def compile[**InputT, RetT](
     mode: str | None = ...,
     options: dict[str, str | builtins.int | builtins.bool | Callable[..., Any]] | None = ...,
     disable: builtins.bool = ...,
-) -> Callable[InputT, RetT]: ...
+) -> T: ...
 @overload
-def compile[**InputT, RetT](
+def compile[T: Callable](
     model: None = ...,
     *,
     fullgraph: builtins.bool = ...,
@@ -1701,9 +1701,9 @@ def compile[**InputT, RetT](
     mode: str | None = ...,
     options: dict[str, str | builtins.int | builtins.bool | Callable[..., Any]] | None = ...,
     disable: builtins.bool = ...,
-) -> Callable[[Callable[InputT, RetT]], Callable[InputT, RetT]]: ...
-def compile[**InputT, RetT](
-    model: Callable[InputT, RetT] | None = ...,
+) -> T: ...
+def compile[T: Callable](
+    model: T | None = ...,
     *,
     fullgraph: builtins.bool = ...,
     dynamic: builtins.bool | None = ...,
@@ -1711,7 +1711,7 @@ def compile[**InputT, RetT](
     mode: str | None = ...,
     options: dict[str, str | builtins.int | builtins.bool | Callable[..., Any]] | None = ...,
     disable: builtins.bool = ...,
-) -> Callable[[Callable[InputT, RetT]], Callable[InputT, RetT]] | Callable[InputT, RetT]: ...
+) -> T: ...
 
 if not TYPE_CHECKING: ...
 if "TORCH_CUDA_SANITIZER" in os.environ: ...

@@ -365,20 +365,14 @@ class IndexTTS2:
             GPT2InferenceModel,
             torch.compile(self.gpt.inference_model, dynamic=True),
         )
-        self.gpt = cast(UnifiedVoice, torch.compile(self.gpt))
+        self.gpt = torch.compile(self.gpt)
 
         if not self.use_cuda_kernel:
-            self.bigvgan = cast(BigVGAN, torch.compile(self.bigvgan, dynamic=True))
+            self.bigvgan = torch.compile(self.bigvgan, dynamic=True)
 
-        self.semantic_model = cast(
-            Wav2Vec2BertModel,
-            torch.compile(self.semantic_model, dynamic=True),
-        )
-        self.semantic_codec = cast(RepCodec, torch.compile(self.semantic_codec, dynamic=True))
-        self.campplus_model = cast(
-            CAMPPlus,
-            torch.compile(self.campplus_model, dynamic=True, mode="reduce-overhead"),
-        )
+        self.semantic_model = torch.compile(self.semantic_model, dynamic=True)
+        self.semantic_codec = torch.compile(self.semantic_codec, dynamic=True)
+        self.campplus_model = torch.compile(self.campplus_model, dynamic=True, mode="reduce-overhead")
 
         logger.info("torch.compile optimization applied successfully")
 

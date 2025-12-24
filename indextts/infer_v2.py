@@ -297,7 +297,6 @@ class IndexTTS2:
                 channels=cfg.s2mel.length_regulator.channels,
                 sampling_ratios=cfg.s2mel.length_regulator.sampling_ratios,
                 in_channels=cfg.s2mel.length_regulator.in_channels,
-                codebook_size=cfg.s2mel.length_regulator.content_codebook_size,
             ),
             model_dir / cfg.len_reg_checkpoint,
             self.device,

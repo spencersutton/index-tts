@@ -8,7 +8,7 @@ from torch.nn.utils import weight_norm
 from indextts.config import S2MelConfig
 from indextts.s2mel.modules.commons import sequence_mask
 from indextts.s2mel.modules.gpt_fast.model import ModelArgs, Transformer
-from indextts.s2mel.modules.wavenet import WN
+from indextts.s2mel.modules.wavenet import WaveNet
 from indextts.util import patch_call
 
 
@@ -121,7 +121,7 @@ class DiT(nn.Module):
         self.t_embedder2 = TimestepEmbedder(HIDDEN_DIM)
         self.conv1 = nn.Linear(HIDDEN_DIM, HIDDEN_DIM)
         self.conv2 = nn.Conv1d(HIDDEN_DIM, args.DiT.in_channels, 1)
-        self.wavenet = WN(
+        self.wavenet = WaveNet(
             hidden_channels=HIDDEN_DIM,
             kernel_size=args.wavenet.kernel_size,
             dilation_rate=args.wavenet.dilation_rate,

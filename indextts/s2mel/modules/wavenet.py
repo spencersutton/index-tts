@@ -10,7 +10,14 @@ from indextts.s2mel.modules.encodec import SConv1d
 from indextts.util import patch_call
 
 
-class WN(nn.Module):
+class WaveNet(nn.Module):
+    res_skip_layers: nn.ModuleList[SConv1d]
+    in_layers: nn.ModuleList[SConv1d]
+    cond_layer: SConv1d
+    drop: nn.Dropout
+    hidden_channels: int
+    n_layers: int
+
     def __init__(
         self,
         hidden_channels: int,
@@ -22,16 +29,13 @@ class WN(nn.Module):
         causal: bool = False,
     ) -> None:
         super().__init__()
+
         assert kernel_size % 2 == 1
         self.hidden_channels = hidden_channels
-        self.kernel_size = (kernel_size,)
-        self.dilation_rate = dilation_rate
         self.n_layers = n_layers
-        self.gin_channels = gin_channels
-        self.p_dropout = p_dropout
 
-        self.in_layers: nn.ModuleList[SConv1d] = nn.ModuleList()
-        self.res_skip_layers: nn.ModuleList[SConv1d] = nn.ModuleList()
+        self.in_layers = nn.ModuleList()
+        self.res_skip_layers = nn.ModuleList()
         self.drop = nn.Dropout(p_dropout)
 
         if gin_channels != 0:
@@ -54,11 +58,7 @@ class WN(nn.Module):
             # last one is not necessary
             res_skip_channels = 2 * hidden_channels if i < n_layers - 1 else hidden_channels
 
-            res_skip_layer = SConv1d(
-                hidden_channels,
-                res_skip_channels,
-                1,
-            )
+            res_skip_layer = SConv1d(hidden_channels, res_skip_channels, 1)
             self.res_skip_layers.append(res_skip_layer)
 
     @override
@@ -90,11 +90,3 @@ class WN(nn.Module):
 
     @patch_call(forward)
     def __call__(self) -> None: ...
-
-    def remove_weight_norm(self) -> None:
-        if self.gin_channels != 0:
-            nn.utils.remove_weight_norm(self.cond_layer)
-        for l in self.in_layers:
-            nn.utils.remove_weight_norm(l)
-        for l in self.res_skip_layers:
-            nn.utils.remove_weight_norm(l)

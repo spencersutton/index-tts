@@ -19,7 +19,6 @@
 from abc import ABC
 from typing import override
 
-import torch
 from torch import Tensor, nn
 
 from indextts.gpt.conformer.embedding import PositionalEncoding
@@ -51,11 +50,8 @@ class Conv2dSubsampling2(_BaseSubsampling):
     def __init__(self, idim: int, odim: int, dropout_rate: float) -> None:
         """Construct an Conv2dSubsampling4 object."""
         super().__init__()
-        self.conv = torch.nn.Sequential(
-            torch.nn.Conv2d(1, odim, 3, 2),
-            torch.nn.ReLU(),
-        )
-        self.out = torch.nn.Sequential(torch.nn.Linear(odim * ((idim - 1) // 2), odim))
+        self.conv = nn.Sequential(nn.Conv2d(1, odim, 3, 2), nn.ReLU())
+        self.out = nn.Sequential(nn.Linear(odim * ((idim - 1) // 2), odim))
         self.pos_enc = PositionalEncoding(odim, dropout_rate)
         # The right context for every conv layer is computed by:
         # (kernel_size - 1) * frame_rate_of_this_layer

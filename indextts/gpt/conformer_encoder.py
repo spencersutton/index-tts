@@ -3,7 +3,6 @@ from __future__ import annotations
 from abc import ABC
 from typing import override
 
-import torch
 from torch import Tensor, nn
 
 from indextts.gpt.conformer.attention import RelPositionMultiHeadedAttention
@@ -15,7 +14,7 @@ from indextts.utils.common import make_pad_mask
 
 
 class BaseEncoder(nn.Module, ABC):
-    encoders: torch.nn.ModuleList[ConformerEncoderLayer]
+    encoders: nn.ModuleList[ConformerEncoderLayer]
 
     def __init__(
         self,
@@ -69,7 +68,7 @@ class BaseEncoder(nn.Module, ABC):
         self.embed = Conv2dSubsampling2(input_size, output_size, dropout_rate)
 
         self.normalize_before = normalize_before
-        self.after_norm = torch.nn.LayerNorm(output_size, eps=1e-5)
+        self.after_norm = nn.LayerNorm(output_size, eps=1e-5)
 
     def output_size(self) -> int:
         return self._output_size
@@ -165,9 +164,9 @@ class ConformerEncoder(BaseEncoder):
             concat_after,
         )
 
-        activation = torch.nn.SiLU()
+        activation = nn.SiLU()
 
-        self.encoders = torch.nn.ModuleList([
+        self.encoders = nn.ModuleList([
             ConformerEncoderLayer(
                 output_size,
                 RelPositionMultiHeadedAttention(attention_heads, output_size, dropout_rate),

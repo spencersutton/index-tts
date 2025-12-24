@@ -47,7 +47,7 @@ class PositionalEncoding(nn.Module):
         super().__init__()
         self.d_model = d_model
         self.xscale = math.sqrt(self.d_model)
-        self.dropout = torch.nn.Dropout(p=dropout_rate)
+        self.dropout = nn.Dropout(p=dropout_rate)
         self.max_len = max_len
 
         pe = torch.zeros(self.max_len, self.d_model)
@@ -149,7 +149,7 @@ class NoPositionalEncoding(nn.Module):
     def __init__(self, d_model: int, dropout_rate: float) -> None:
         super().__init__()
         self.d_model = d_model
-        self.dropout = torch.nn.Dropout(p=dropout_rate)
+        self.dropout = nn.Dropout(p=dropout_rate)
 
     @override
     def forward(self, x: Tensor, offset: int | Tensor = 0) -> tuple[Tensor, Tensor]:

@@ -210,8 +210,8 @@ class RelPositionMultiHeadedAttention(_MultiHeadedAttention):
         # as described in https://arxiv.org/abs/1901.02860 Section 3.3
         self.pos_bias_u = nn.Parameter(Tensor(self.h, self.d_k))
         self.pos_bias_v = nn.Parameter(Tensor(self.h, self.d_k))
-        torch.nn.init.xavier_uniform_(self.pos_bias_u)
-        torch.nn.init.xavier_uniform_(self.pos_bias_v)
+        nn.init.xavier_uniform_(self.pos_bias_u)
+        nn.init.xavier_uniform_(self.pos_bias_v)
 
     def rel_shift(self, x: Tensor, zero_triu: bool = False) -> Tensor:
         """Compute relative positinal encoding.

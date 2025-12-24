@@ -20,7 +20,7 @@ class BASECFM(nn.Module, ABC):
 
         self.in_channels = args.DiT.in_channels
 
-        self.criterion = torch.nn.L1Loss()
+        self.criterion = nn.L1Loss()
 
     @torch.inference_mode()
     def inference(

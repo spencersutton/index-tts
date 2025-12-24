@@ -30,8 +30,8 @@ class WN(nn.Module):
         self.gin_channels = gin_channels
         self.p_dropout = p_dropout
 
-        self.in_layers: nn.ModuleList[SConv1d] = torch.nn.ModuleList()
-        self.res_skip_layers: nn.ModuleList[SConv1d] = torch.nn.ModuleList()
+        self.in_layers: nn.ModuleList[SConv1d] = nn.ModuleList()
+        self.res_skip_layers: nn.ModuleList[SConv1d] = nn.ModuleList()
         self.drop = nn.Dropout(p_dropout)
 
         if gin_channels != 0:
@@ -93,8 +93,8 @@ class WN(nn.Module):
 
     def remove_weight_norm(self) -> None:
         if self.gin_channels != 0:
-            torch.nn.utils.remove_weight_norm(self.cond_layer)
+            nn.utils.remove_weight_norm(self.cond_layer)
         for l in self.in_layers:
-            torch.nn.utils.remove_weight_norm(l)
+            nn.utils.remove_weight_norm(l)
         for l in self.res_skip_layers:
-            torch.nn.utils.remove_weight_norm(l)
+            nn.utils.remove_weight_norm(l)

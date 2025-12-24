@@ -112,7 +112,7 @@ class DeviceConfig:
         return cls(device="cpu", use_fp16=False, use_cuda_kernel=False)
 
 
-def _load_model[T: torch.nn.Module](model: T, path: Path | str, device: str = "cpu") -> T:
+def _load_model[T: nn.Module](model: T, path: Path | str, device: str = "cpu") -> T:
     """Load model weights from safetensors file."""
     safetensors.torch.load_model(model, path, device=device, strict=False)
     logger.info(f"{model.__class__.__name__} weights restored from: {path}")
@@ -284,10 +284,10 @@ class IndexTTS2:
         # S2Mel model
         self.cfm = _load_model(CFM(cfg.s2mel), model_dir / cfg.cfm_checkpoint, self.device)
         self.gpt_layer = _load_model(
-            torch.nn.Sequential(
-                torch.nn.Linear(1280, 256),
-                torch.nn.Linear(256, 128),
-                torch.nn.Linear(128, 1024),
+            nn.Sequential(
+                nn.Linear(1280, 256),
+                nn.Linear(256, 128),
+                nn.Linear(128, 1024),
             ),
             model_dir / cfg.gpt_layer_checkpoint,
             self.device,

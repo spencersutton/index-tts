@@ -397,9 +397,7 @@ class IndexTTS2:
         style = self.campplus_model(feat.unsqueeze(0)).to(self.device)
 
         # Generate prompt condition
-        prompt_condition = self.length_regulator(
-            S_ref, ylens=torch.tensor([ref_mel.size(2)], device=self.device), n_quantizers=3, f0=None
-        )[0]
+        prompt_condition = self.length_regulator(S_ref, ylens=torch.tensor([ref_mel.size(2)], device=self.device))
 
         return spk_cond_emb, style, prompt_condition, ref_mel
 
@@ -854,7 +852,7 @@ class IndexTTS2:
 
         target_lengths = (code_lens * 1.72).long()
 
-        cond = self.length_regulator(S_infer, ylens=target_lengths, n_quantizers=3, f0=None)[0]
+        cond = self.length_regulator(S_infer, ylens=target_lengths)
         cat_condition = torch.cat([prompt_condition, cond], dim=1)
 
         vc_target = self.cfm.inference(
@@ -862,7 +860,6 @@ class IndexTTS2:
             torch.tensor([cat_condition.size(1)], device=cat_condition.device),
             ref_mel,
             style,
-            None,
             cfm_steps,
             inference_cfg_rate=0.7,
         )

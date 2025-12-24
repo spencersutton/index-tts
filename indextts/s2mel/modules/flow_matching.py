@@ -9,18 +9,18 @@ from indextts.s2mel.modules.diffusion_transformer import DiT
 from indextts.util import patch_call
 
 
-class BASECFM(nn.Module, ABC):
-    estimator: DiT | None
+class CFM(nn.Module, ABC):
+    estimator: DiT
+    criterion: nn.L1Loss
+    in_channels: int
+    sigma_min = 1e-6
 
     def __init__(self, args: S2MelConfig) -> None:
         super().__init__()
-        self.sigma_min = 1e-6
-
-        self.estimator = None
-
-        self.in_channels = args.DiT.in_channels
 
         self.criterion = nn.L1Loss()
+        self.estimator = DiT(args)
+        self.in_channels = args.DiT.in_channels
 
     @torch.inference_mode()
     def inference(
@@ -29,7 +29,6 @@ class BASECFM(nn.Module, ABC):
         x_lens: Tensor,
         prompt: Tensor,
         style: Tensor,
-        f0: None,
         n_timesteps: int,
         temperature: float = 1.0,
         inference_cfg_rate: float = 0.5,
@@ -45,7 +44,6 @@ class BASECFM(nn.Module, ABC):
                 shape: (batch_size, 80, 795)
             style (Tensor): reference global style
                 shape: (batch_size, 192)
-            f0: None
             n_timesteps (int): number of diffusion steps
             temperature (float, optional): temperature for scaling noise. Defaults to 1.0.
 
@@ -56,7 +54,7 @@ class BASECFM(nn.Module, ABC):
         B, T = mu.size(0), mu.size(1)
         z = torch.randn([B, self.in_channels, T], device=mu.device) * temperature
         t_span = torch.linspace(0, 1, n_timesteps + 1, device=mu.device)
-        return self.solve_euler(z, x_lens, prompt, mu, style, f0, t_span, inference_cfg_rate)
+        return self.solve_euler(z, x_lens, prompt, mu, style, t_span, inference_cfg_rate)
 
     def solve_euler(
         self,
@@ -65,7 +63,6 @@ class BASECFM(nn.Module, ABC):
         prompt: Tensor,
         mu: Tensor,
         style: Tensor,
-        _f0: None,
         t_span: Tensor,
         inference_cfg_rate: float = 0.5,
     ) -> Tensor:
@@ -84,7 +81,6 @@ class BASECFM(nn.Module, ABC):
             style (Tensor): reference global style
                 shape: (batch_size, 192)
         """
-        assert self.estimator is not None
         t = t_span[0]
 
         # Pre-compute prompt masking
@@ -194,12 +190,6 @@ class BASECFM(nn.Module, ABC):
 
     @patch_call(forward)
     def __call__(self) -> None: ...
-
-
-class CFM(BASECFM):
-    def __init__(self, args: S2MelConfig) -> None:
-        super().__init__(args)
-        self.estimator = DiT(args)
 
     def enable_torch_compile(self) -> None:
         """Enable torch.compile optimization for the estimator model.

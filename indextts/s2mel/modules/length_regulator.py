@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import override
 
-import torch
 from torch import Tensor, nn
 from torch.nn import functional as F
 
@@ -24,21 +23,17 @@ class InterpolateRegulator(nn.Module):
         groups: int = 1,
     ) -> None:
         super().__init__()
+
         self.sampling_ratios = sampling_ratios
         out_channels = out_channels or channels
-        model: nn.ModuleList[nn.Module] = nn.ModuleList([])
+        self.model = nn.Sequential()
         for _ in sampling_ratios:
             module = nn.Conv1d(channels, channels, 3, 1, 1)
             norm = nn.GroupNorm(groups, channels)
             act = nn.Mish()
-            model.extend([module, norm, act])
-        model.append(nn.Conv1d(channels, out_channels, 1, 1))
-        self.model = nn.Sequential(*model)
-        self.embedding = nn.Embedding(codebook_size, channels)
+            self.model.extend([module, norm, act])
+        self.model.append(nn.Conv1d(channels, out_channels, 1, 1))
 
-        self.mask_token = nn.Parameter(torch.zeros(1, channels))
-
-        self.n_codebooks = 1
         self.content_in_proj = nn.Linear(in_channels, channels)
 
     @override
@@ -46,12 +41,10 @@ class InterpolateRegulator(nn.Module):
         self,
         x: Tensor,
         ylens: Tensor,
-        n_quantizers: int = 1,
-        f0: Tensor | None = None,
-    ) -> tuple[Tensor, Tensor, Tensor | None, Tensor | None, Tensor | None]:
+        n_quantizers: int = 3,
+    ) -> Tensor:
+        x = self.content_in_proj(x)  # x in (B, T, D)
 
-        x = self.content_in_proj(x)
-        # x in (B, T, D)
         mask = sequence_mask(ylens).unsqueeze(-1)
         x = F.interpolate(
             x.transpose(1, 2).contiguous(),
@@ -59,9 +52,7 @@ class InterpolateRegulator(nn.Module):
             mode="nearest",
         )
 
-        model_output = self.model(x)
-        out = model_output.transpose(1, 2).contiguous()
-        return out * mask, ylens, None, None, None
+        return self.model(x).transpose(1, 2).contiguous() * mask
 
     @patch_call(forward)
     def __call__(self) -> None: ...

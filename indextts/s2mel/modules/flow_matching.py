@@ -131,8 +131,8 @@ class BASECFM(nn.Module, ABC):
             dphi_dt = cfg_scale * dphi_dt + neg_cfg_rate * cfg_dphi_dt
 
             # In-place update
-            x = x + dt * dphi_dt
-            t = t + dt
+            x += dt * dphi_dt
+            t += dt
             x[:, :, :prompt_len] = 0
 
         return x
@@ -188,7 +188,7 @@ class BASECFM(nn.Module, ABC):
                 estimator_out[bib, :, prompt_lens[bib] : x_lens[bib]],
                 u[bib, :, prompt_lens[bib] : x_lens[bib]],
             )
-        loss = loss / b
+        loss /= b
 
         return torch.tensor(loss), estimator_out + (1 - self.sigma_min) * z
 

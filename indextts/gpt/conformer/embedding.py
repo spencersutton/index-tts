@@ -16,7 +16,7 @@
 """Positonal Encoding Module."""
 
 import math
-from typing import TYPE_CHECKING, override
+from typing import override
 
 import torch
 import torch.nn.functional as F
@@ -36,6 +36,12 @@ class PositionalEncoding(nn.Module):
     PE(pos, 2i+1) = cos(pos/(10000^(2i/dmodel)))
     """
 
+    pe: Tensor
+    d_model: int
+    xscale: float
+    dropout: nn.Dropout
+    max_len: int
+
     def __init__(
         self,
         d_model: int,
@@ -43,22 +49,20 @@ class PositionalEncoding(nn.Module):
         max_len: int = 5000,
         reverse: bool = False,
     ) -> None:
-        """Construct an PositionalEncoding object."""
         super().__init__()
+
         self.d_model = d_model
-        self.xscale = math.sqrt(self.d_model)
+        self.xscale = math.sqrt(d_model)
         self.dropout = nn.Dropout(p=dropout_rate)
         self.max_len = max_len
 
-        pe = torch.zeros(self.max_len, self.d_model)
-        position = torch.arange(0, self.max_len).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, self.d_model, 2) * -(math.log(10000.0) / self.d_model))
+        pe = torch.zeros(max_len, d_model)
+        position = torch.arange(0, max_len).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2) * -(math.log(10000.0) / d_model))
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
         pe = pe.unsqueeze(0)
         self.register_buffer("pe", pe)
-        if TYPE_CHECKING:
-            self.pe = pe
 
     @override
     def forward(self, x: Tensor, offset: int | Tensor = 0) -> tuple[Tensor, Tensor]:
@@ -73,9 +77,8 @@ class PositionalEncoding(nn.Module):
             Tensor: for compatibility to RelPositionalEncoding
         """
 
-        self.pe = self.pe
         pos_emb = self.position_encoding(offset, x.size(1), False)
-        x = x * self.xscale + pos_emb
+        x *= self.xscale + pos_emb
         return self.dropout(x), self.dropout(pos_emb)
 
     def position_encoding(self, offset: int | Tensor, size: int, apply_dropout: bool = True) -> Tensor:
@@ -137,7 +140,6 @@ class RelPositionalEncoding(PositionalEncoding):
             Tensor: Encoded tensor (batch, time, `*`).
             Tensor: Positional embedding tensor (1, time, `*`).
         """
-        self.pe = self.pe
         x *= self.xscale
         pos_emb = self.position_encoding(offset, x.size(1), False)
         return self.dropout(x), self.dropout(pos_emb)

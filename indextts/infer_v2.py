@@ -298,7 +298,7 @@ class IndexTTS2:
         safetensors.torch.load_model(self.campplus_model, path, strict=False)
         # CAMPPlus is relatively small and only run once per prompt; keeping it on CPU
         # can save VRAM without materially affecting throughput.
-        self.campplus_model = self.campplus_model.eval().to("cpu")
+        self.campplus_model = self.campplus_model.eval().cpu()
         logger.info(f"campplus_model weights restored from: {path}")
 
         # BigVGAN vocoder

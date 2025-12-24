@@ -111,6 +111,13 @@ class DeviceConfig:
         return cls(device="cpu", use_fp16=False, use_cuda_kernel=False)
 
 
+def _load_model[T: torch.nn.Module](model: T, path: Path | str, device: str = "cpu") -> T:
+    """Load model weights from safetensors file."""
+    safetensors.torch.load_model(model, path, device=device, strict=False)
+    logger.info(f"{model.__class__.__name__} weights restored from: {path}")
+    return model.eval().to(device)
+
+
 # =============================================================================
 # Emotion Processing
 # =============================================================================
@@ -249,13 +256,9 @@ class IndexTTS2:
         self.qwen_emo = QwenEmotion(model_dir / cfg.qwen_emo_path)
 
         # GPT model
-        self.gpt = UnifiedVoice(use_accel=self.use_accel).to(self.device)
-        gpt_path = model_dir / cfg.gpt_checkpoint
-        safetensors.torch.load_model(self.gpt, gpt_path, device=self.device)
-        self.gpt = self.gpt.eval()
+        self.gpt = _load_model(UnifiedVoice(use_accel=self.use_accel), model_dir / cfg.gpt_checkpoint, self.device)
         if self.use_fp16:
             self.gpt.half()
-        logger.info(f"GPT weights restored from: {gpt_path}")
 
         # Initialize GPT inference mode
         use_deepspeed = self._check_deepspeed(use_deepspeed)
@@ -275,31 +278,21 @@ class IndexTTS2:
 
         # Semantic codec model
         checkpoint = hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
-        self.semantic_codec = RepCodec()
-        safetensors.torch.load_model(self.semantic_codec, checkpoint, strict=False)
-        self.semantic_codec = self.semantic_codec.eval().to(self.device)
-        logger.info(f"semantic_codec weights restored from: {checkpoint}")
+        self.semantic_codec = _load_model(RepCodec(), checkpoint, self.device)
 
         # S2Mel model
         self.s2mel = MyModel(cfg.s2mel)
-        safetensors.torch.load_model(self.s2mel.cfm, model_dir / cfg.cfm_checkpoint)
-        self.s2mel.cfm.eval()
-        safetensors.torch.load_model(self.s2mel.gpt_layer, model_dir / cfg.gpt_layer_checkpoint)
-        self.s2mel.gpt_layer.eval()
-        safetensors.torch.load_model(self.s2mel.length_regulator, model_dir / cfg.len_reg_checkpoint)
-        self.s2mel.length_regulator.eval()
+        self.s2mel.cfm = _load_model(self.s2mel.cfm, model_dir / cfg.cfm_checkpoint, self.device)
+        self.s2mel.gpt_layer = _load_model(self.s2mel.gpt_layer, model_dir / cfg.gpt_layer_checkpoint, self.device)
+        self.s2mel.length_regulator = _load_model(
+            self.s2mel.length_regulator, model_dir / cfg.len_reg_checkpoint, self.device
+        )
         self.s2mel = self.s2mel.eval().to(self.device)
         if self.use_fp16:
             self.s2mel.half()
 
         # CAMPPlus model
-        self.campplus_model = CAMPPlus()
-        path = "checkpoints/campplus_cn_common.safetensors"
-        safetensors.torch.load_model(self.campplus_model, path)
-        # CAMPPlus is relatively small and only run once per prompt; keeping it on CPU
-        # can save VRAM without materially affecting throughput.
-        self.campplus_model = self.campplus_model.eval().cpu()
-        logger.info(f"campplus_model weights restored from: {path}")
+        self.campplus_model = _load_model(CAMPPlus(), "checkpoints/campplus_cn_common.safetensors")
 
         # BigVGAN vocoder
         self.bigvgan = BigVGAN.from_pretrained(cfg.vocoder.name, use_cuda_kernel=self.use_cuda_kernel)

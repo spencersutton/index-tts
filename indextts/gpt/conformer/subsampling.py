@@ -13,10 +13,8 @@
 # limitations under the License.
 # Modified from ESPnet(https://github.com/espnet/espnet)
 
-
 """Subsampling layer definition."""
 
-from abc import ABC
 from typing import override
 
 from torch import Tensor, nn
@@ -25,19 +23,7 @@ from indextts.gpt.conformer.embedding import PositionalEncoding
 from indextts.util import patch_call
 
 
-class _BaseSubsampling(nn.Module, ABC):
-    pos_enc: PositionalEncoding  # Module with position_encoding method
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.right_context = 0
-        self.subsampling_rate = 1
-
-    def position_encoding(self, offset: int | Tensor, size: int) -> Tensor:
-        return self.pos_enc.position_encoding(offset, size)
-
-
-class Conv2dSubsampling2(_BaseSubsampling):
+class Conv2dSubsampling2(nn.Module):
     """Convolutional 2D subsampling (to 1/2 length).
 
     Args:
@@ -47,17 +33,16 @@ class Conv2dSubsampling2(_BaseSubsampling):
 
     """
 
+    positional_encoder: PositionalEncoding  # Module with position_encoding method
+    conv: nn.Sequential
+    out: nn.Sequential
+
     def __init__(self, idim: int, odim: int, dropout_rate: float) -> None:
-        """Construct an Conv2dSubsampling4 object."""
         super().__init__()
+
         self.conv = nn.Sequential(nn.Conv2d(1, odim, 3, 2), nn.ReLU())
         self.out = nn.Sequential(nn.Linear(odim * ((idim - 1) // 2), odim))
-        self.pos_enc = PositionalEncoding(odim, dropout_rate)
-        # The right context for every conv layer is computed by:
-        # (kernel_size - 1) * frame_rate_of_this_layer
-        self.subsampling_rate = 2
-        # 2 = (3 - 1) * 1
-        self.right_context = 2
+        self.positional_encoder = PositionalEncoding(odim, dropout_rate)
 
     @override
     def forward(self, x: Tensor, x_mask: Tensor, offset: int | Tensor = 0) -> tuple[Tensor, Tensor, Tensor]:
@@ -79,7 +64,7 @@ class Conv2dSubsampling2(_BaseSubsampling):
         x = self.conv(x)
         b, c, t, f = x.size()
         x = self.out(x.transpose(1, 2).contiguous().view(b, t, c * f))
-        x, pos_emb = self.pos_enc(x, offset)
+        x, pos_emb = self.positional_encoder(x, offset)
         return x, pos_emb, x_mask[:, :, 2::2]
 
     @patch_call(forward)

@@ -569,7 +569,7 @@ class UnifiedVoice(nn.Module):
         text_input = F.pad(text_input, (0, 1), value=self.cfg.stop_text_token)
 
         # Compute text embeddings
-        text_pos = torch.arange(text_input.size(-1), device=text_input.device, dtype=torch.long)
+        text_pos = torch.arange(text_input.size(-1), device=cond_latent.device, dtype=torch.long)
         text_emb = self.text_embedding(text_input) + self.text_pos_embedding.emb(text_pos)
 
         # Build sequence: [optional_pad][cond][text]

@@ -18,6 +18,7 @@ from typing import Any, cast
 import safetensors.torch
 import torch
 import torchaudio
+from huggingface_hub import hf_hub_download
 from omegaconf import OmegaConf
 from torch import Tensor
 from torch.nn.utils.rnn import pad_sequence
@@ -28,7 +29,6 @@ from transformers import BatchFeature, SeamlessM4TFeatureExtractor, Wav2Vec2Bert
 from indextts.audio_utils import generate_silence_interval, insert_interval_silence
 from indextts.config import CheckpointsConfig
 from indextts.gpt.model_v2 import UnifiedVoice
-from indextts.load_modules import load_bigvgan, load_campplus, load_s2mel_model, load_semantic_codec_model
 from indextts.qwen_emotion import QwenEmotion
 from indextts.s2mel.modules.audio import mel_spectrogram
 from indextts.s2mel.modules.bigvgan import BigVGAN
@@ -221,7 +221,6 @@ class IndexTTS2:
         self.dtype = torch.float16 if self.use_fp16 else None
         self.gr_progress = None
 
-        torch.set_default_device(self.device)
         if self.device.startswith("cuda"):
             with contextlib.suppress(AttributeError):
                 torch.set_float32_matmul_precision("high")
@@ -268,17 +267,47 @@ class IndexTTS2:
 
         # Semantic models
         self.extract_features = SeamlessM4TFeatureExtractor.from_pretrained("facebook/w2v-bert-2.0")
-        self.semantic_model = Wav2Vec2BertModel.from_pretrained("facebook/w2v-bert-2.0").eval()
+        self.semantic_model = Wav2Vec2BertModel.from_pretrained("facebook/w2v-bert-2.0").eval().to(self.device)
 
         stat_mean_var = safetensors.safe_open(model_dir / cfg.w2v_stat, framework="pt", device=self.device)
         self.semantic_mean = stat_mean_var.get_tensor("mean")
         self.semantic_std = torch.sqrt(stat_mean_var.get_tensor("var"))
 
-        # Audio processing models
-        self.semantic_codec = load_semantic_codec_model()
-        self.s2mel = load_s2mel_model(cfg, model_dir)
-        self.campplus_model = load_campplus()
-        self.bigvgan = load_bigvgan(cfg.vocoder.name, self.use_cuda_kernel)
+        # Semantic codec model
+        checkpoint = hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
+        self.semantic_codec = RepCodec()
+        safetensors.torch.load_model(self.semantic_codec, checkpoint, strict=False)
+        self.semantic_codec = self.semantic_codec.eval().to(self.device)
+        logger.info(f"semantic_codec weights restored from: {checkpoint}")
+
+        # S2Mel model
+        self.s2mel = MyModel(cfg.s2mel)
+        safetensors.torch.load_model(self.s2mel.cfm, model_dir / cfg.cfm_checkpoint, strict=False)
+        self.s2mel.cfm.eval()
+        safetensors.torch.load_model(self.s2mel.gpt_layer, model_dir / cfg.gpt_layer_checkpoint, strict=False)
+        self.s2mel.gpt_layer.eval()
+        safetensors.torch.load_model(self.s2mel.length_regulator, model_dir / cfg.len_reg_checkpoint, strict=False)
+        self.s2mel.length_regulator.eval()
+        self.s2mel = self.s2mel.eval().to(self.device)
+        if self.use_fp16:
+            self.s2mel.half()
+
+        # CAMPPlus model
+        self.campplus_model = CAMPPlus()
+        path = "checkpoints/campplus_cn_common.safetensors"
+        safetensors.torch.load_model(self.campplus_model, path, strict=False)
+        # CAMPPlus is relatively small and only run once per prompt; keeping it on CPU
+        # can save VRAM without materially affecting throughput.
+        self.campplus_model = self.campplus_model.eval().to("cpu")
+        logger.info(f"campplus_model weights restored from: {path}")
+
+        # BigVGAN vocoder
+        self.bigvgan = BigVGAN.from_pretrained(cfg.vocoder.name, use_cuda_kernel=self.use_cuda_kernel)
+        self.bigvgan.remove_weight_norm()
+        self.bigvgan = self.bigvgan.eval().to(self.device)
+        if self.use_fp16:
+            self.bigvgan.half()
+        logger.info(f"bigvgan weights restored from: {cfg.vocoder.name}")
 
         # Text processing
         normalizer = TextNormalizer()
@@ -350,10 +379,6 @@ class IndexTTS2:
         decoder_16k = AudioDecoder(prompt, num_channels=1, sample_rate=SEMANTIC_SR)
         audio_16k = decoder_16k.get_samples_played_in_range(0, MAX_LEN)
 
-        # Move to device
-        audio_22k.data = audio_22k.data.to(self.device)
-        audio_16k.data = audio_16k.data.to(self.device)
-
         # Extract speaker conditioning embedding
         inputs = self.extract_features(audio_16k.data.cpu(), sampling_rate=audio_16k.sample_rate, return_tensors="pt")
         spk_cond_emb = self.get_emb(inputs.to(self.device))
@@ -367,11 +392,11 @@ class IndexTTS2:
             audio_16k.data, num_mel_bins=80, dither=0, sample_frequency=SEMANTIC_SR
         )
         feat -= feat.mean(dim=0, keepdim=True)
-        style = self.campplus_model(feat.unsqueeze(0))
+        style = self.campplus_model(feat.unsqueeze(0)).to(self.device)
 
         # Generate prompt condition
         prompt_condition = self.s2mel.length_regulator(
-            S_ref, ylens=torch.tensor([ref_mel.size(2)]), n_quantizers=3, f0=None
+            S_ref, ylens=torch.tensor([ref_mel.size(2)], device=self.device), n_quantizers=3, f0=None
         )[0]
 
         return spk_cond_emb, style, prompt_condition, ref_mel
@@ -622,7 +647,10 @@ class IndexTTS2:
             logger.warning(f"Text contains {len(unk_tokens)} unknown tokens: {unk_tokens}")
 
         # Convert segments to tensors
-        batch_tokens = [torch.tensor(self.tokenizer.convert_tokens_to_ids(seg), dtype=torch.int32) for seg in segments]
+        batch_tokens = [
+            torch.tensor(self.tokenizer.convert_tokens_to_ids(seg), dtype=torch.int32, device=self.device)
+            for seg in segments
+        ]
 
         return segments, batch_tokens
 
@@ -635,11 +663,12 @@ class IndexTTS2:
         weight_vector: Tensor | None,
     ) -> Tensor:
         """Compute final emotion vector with optional matrix blending."""
+        device = spk_cond_emb.device
         emovec = self.gpt.merge_emovec(
             spk_cond_emb,
             emo_cond_emb,
-            torch.tensor([spk_cond_emb.shape[-1]]),
-            torch.tensor([emo_cond_emb.shape[-1]]),
+            torch.tensor([spk_cond_emb.shape[-1]], device=device),
+            torch.tensor([emo_cond_emb.shape[-1]], device=device),
             alpha=emo_alpha,
         )
 
@@ -696,8 +725,8 @@ class IndexTTS2:
             spk_cond_emb.expand(batch_size, -1, -1),
             text_tokens_batch,
             emo_cond_emb.expand(batch_size, -1, -1),
-            cond_lengths=torch.tensor([spk_cond_emb.shape[-1]] * batch_size),
-            emo_cond_lengths=torch.tensor([emo_cond_emb.shape[-1]] * batch_size),
+            cond_lengths=torch.tensor([spk_cond_emb.shape[-1]] * batch_size, device=spk_cond_emb.device),
+            emo_cond_lengths=torch.tensor([emo_cond_emb.shape[-1]] * batch_size, device=emo_cond_emb.device),
             emo_vec=emovec,
             do_sample=generation_kwargs.pop("do_sample", True),
             top_p=generation_kwargs.pop("top_p", 0.8),
@@ -791,22 +820,23 @@ class IndexTTS2:
             code_len = len(code)
 
         code = code[:code_len].unsqueeze(0)
-        code_lens = torch.tensor([code_len])
         text_tokens = text_tokens.unsqueeze(0)
+
+        code_lens = torch.tensor([code_len], device=code.device)
 
         # GPT forward pass
         t0 = time.perf_counter()
         latent = self.gpt(
             speech_conditioning_latent,
             text_tokens,
-            torch.tensor([text_tokens.shape[-1]]),
+            torch.tensor([text_tokens.shape[-1]], device=text_tokens.device),
             code,
-            torch.tensor([code.shape[-1]]),
+            torch.tensor([code.shape[-1]], device=code.device),
             emo_cond_emb,
-            cond_mel_lengths=torch.tensor([spk_cond_emb.shape[-1]]),
-            emo_cond_mel_lengths=torch.tensor([emo_cond_emb.shape[-1]]),
+            cond_mel_lengths=torch.tensor([spk_cond_emb.shape[-1]], device=spk_cond_emb.device),
+            emo_cond_mel_lengths=torch.tensor([emo_cond_emb.shape[-1]], device=emo_cond_emb.device),
             emo_vec=emovec,
-            use_speed=torch.zeros(spk_cond_emb.size(0)).long(),
+            use_speed=torch.zeros(spk_cond_emb.size(0), device=spk_cond_emb.device).long(),
         )
         gpt_time = time.perf_counter() - t0
 
@@ -824,7 +854,7 @@ class IndexTTS2:
 
         vc_target = self.s2mel.cfm.inference(
             cat_condition,
-            torch.tensor([cat_condition.size(1)]),
+            torch.tensor([cat_condition.size(1)], device=cat_condition.device),
             ref_mel,
             style,
             None,

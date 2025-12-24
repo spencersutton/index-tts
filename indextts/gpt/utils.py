@@ -44,7 +44,9 @@ def set_token_padding(
                 [ 1,  2, 99, 99, 99]])
     """
     for b in range(len(lengths)):
-        actual_end = lengths[b]
+        # Support lengths on either CPU or CUDA by materializing a Python int.
+        # This also avoids ambiguous Tensor-to-bool conversions in the condition.
+        actual_end = int(lengths[b].item())
         if actual_end < input_tokens.shape[-1]:
             input_tokens[b, actual_end:] = stop_token
     return input_tokens

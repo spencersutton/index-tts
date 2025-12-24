@@ -93,13 +93,18 @@ class Transformer(nn.Module):
         self.norm = AdaptiveLayerNorm(config.dim, RMSNorm(config.dim, eps=config.norm_eps))
 
         config = self.config
-        self.freqs_cis = _precompute_freqs_cis(
-            config.block_size,
-            config.head_dim,
-            config.rope_base,
+        # Precomputed RoPE cache; register as a buffer so it follows `.to(device)`.
+        self.register_buffer(
+            "freqs_cis",
+            _precompute_freqs_cis(config.block_size, config.head_dim, config.rope_base),
+            persistent=False,
         )
         n_layer = config.n_layer
-        self.causal_mask = torch.tril(torch.ones(self.max_seq_length, self.max_seq_length, dtype=torch.bool))
+        self.register_buffer(
+            "causal_mask",
+            torch.tril(torch.ones(self.max_seq_length, self.max_seq_length, dtype=torch.bool)),
+            persistent=False,
+        )
         self.layers_emit_skip = [i for i in range(n_layer) if i < n_layer // 2]
         self.layers_receive_skip = [i for i in range(n_layer) if i > n_layer // 2]
 
@@ -107,9 +112,10 @@ class Transformer(nn.Module):
     def forward(self, x: Tensor, c: Tensor, input_pos: Tensor, mask: Tensor) -> Tensor:
         assert self.freqs_cis is not None, "Caches must be initialized first"
 
+        # Ensure callers created `input_pos` on the same device.
         if self.freqs_cis.device != input_pos.device:
             raise ValueError(
-                f"Caches must be initialized on the same device as input_pos: {self.freqs_cis.device} vs {input_pos.device}"
+                f"RoPE cache device mismatch: freqs_cis={self.freqs_cis.device} input_pos={input_pos.device}"
             )
         freqs_cis = self.freqs_cis[input_pos]
         skip_in_x_list: list[Tensor] = []

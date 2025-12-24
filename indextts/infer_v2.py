@@ -251,7 +251,7 @@ class IndexTTS2:
         # GPT model
         self.gpt = UnifiedVoice(use_accel=self.use_accel).to(self.device)
         gpt_path = model_dir / cfg.gpt_checkpoint
-        safetensors.torch.load_model(self.gpt, gpt_path)
+        safetensors.torch.load_model(self.gpt, gpt_path, device=self.device)
         self.gpt = self.gpt.eval()
         if self.use_fp16:
             self.gpt.half()

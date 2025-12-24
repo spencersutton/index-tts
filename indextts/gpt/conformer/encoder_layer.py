@@ -28,12 +28,6 @@ class ConformerEncoderLayer(nn.Module):
         feed_forward (PositionwiseFeedForward): Feed-forward module instance.
         conv_module (ConvolutionModule): Convolution module instance.
         dropout_rate (float): Dropout rate.
-        normalize_before (bool):
-            True: use layer_norm before each sub-block.
-            False: use layer_norm after each sub-block.
-        concat_after (bool): Whether to concat attention layer's input and output.
-            True: x -> x + linear(concat(x, att(x)))
-            False: x -> x + att(x)
     """
 
     feed_forward: PositionwiseFeedForward | None
@@ -45,8 +39,6 @@ class ConformerEncoderLayer(nn.Module):
         feed_forward: PositionwiseFeedForward | None = None,
         conv_module: ConvolutionModule | None = None,
         dropout_rate: float = 0.1,
-        normalize_before: bool = True,
-        concat_after: bool = False,
     ) -> None:
         """Construct an EncoderLayer object."""
         super().__init__()

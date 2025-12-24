@@ -108,7 +108,6 @@ class UnifiedVoice(nn.Module):
             linear_units=2048,
             attention_heads=8,
             num_blocks=6,
-            input_layer="conv2d2",
         )
         self.perceiver_encoder = PerceiverResampler(
             self.config.model_dim,
@@ -125,7 +124,6 @@ class UnifiedVoice(nn.Module):
             linear_units=1024,
             attention_heads=4,
             num_blocks=4,
-            input_layer="conv2d2",
         )
         self.emo_perceiver_encoder = PerceiverResampler(
             1024,

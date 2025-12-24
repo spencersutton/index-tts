@@ -170,7 +170,6 @@ class IndexTTS2:
     use_cuda_kernel: bool
     use_torch_compile: bool
     use_accel: bool
-    dtype: torch.dtype | None
     stop_mel_token: int
     cfg: CheckpointsConfig
 
@@ -228,7 +227,6 @@ class IndexTTS2:
         self.use_cuda_kernel = dev_cfg.use_cuda_kernel
         self.use_accel = use_accel
         self.use_torch_compile = use_torch_compile
-        self.dtype = torch.float16 if self.use_fp16 else None
         self.gr_progress = None
 
         if self.device.startswith("cuda"):

@@ -364,13 +364,6 @@ class IndexTTS2:
     # Audio Prompt Processing
     # -------------------------------------------------------------------------
 
-    def _get_emo_embedding(self, path: Path) -> Tensor:
-        """Extract emotion embedding from audio file."""
-        decoder = AudioDecoder(path, num_channels=1, sample_rate=SEMANTIC_SR)
-        audio = decoder.get_samples_played_in_range(0, MAX_LEN)
-        inputs = self.extract_features(audio.data, sampling_rate=audio.sample_rate, return_tensors="pt")
-        return self.get_emb(inputs.to(self.device))
-
     @functools.lru_cache
     def process_audio_prompt(self, prompt: Path) -> tuple[Tensor, Tensor, Tensor, Tensor]:
         """Process audio prompt to extract conditioning features.
@@ -540,7 +533,10 @@ class IndexTTS2:
         emovec_mat, weight_vector = self._compute_emo_matrix(emo_vector, style, use_random)
 
         # Get emotion conditioning embedding
-        emo_cond_emb = self._get_emo_embedding(emo_audio_prompt)
+        decoder = AudioDecoder(emo_audio_prompt, num_channels=1, sample_rate=SEMANTIC_SR)
+        audio = decoder.get_samples_played_in_range(0, MAX_LEN)
+        inputs = self.extract_features(audio.data, sampling_rate=audio.sample_rate, return_tensors="pt")
+        emo_cond_emb = self.get_emb(inputs.to(self.device))
 
         # Tokenize and segment text
         self._set_gr_progress(0.1, "text processing...")

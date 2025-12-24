@@ -67,6 +67,8 @@ class SemanticCodecConfig:
 
 @dataclass
 class SpectParams:
+    """Spectrogram parameters."""
+
     n_fft: int
     win_length: int
     hop_length: int

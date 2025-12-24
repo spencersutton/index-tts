@@ -33,17 +33,16 @@ class MyModel(nn.Module):
 
         self.cfm = CFM(args)
         self.length_regulator = length_regulator
-        self.models = nn.ModuleDict({
-            "cfm": self.cfm,
-            "length_regulator": self.length_regulator,
-        })
-
         self.gpt_layer = torch.nn.Sequential(
             torch.nn.Linear(1280, 256),
             torch.nn.Linear(256, 128),
             torch.nn.Linear(128, 1024),
         )
-        self.models["gpt_layer"] = self.gpt_layer
+        self.models = nn.ModuleDict({
+            "cfm": self.cfm,
+            "length_regulator": self.length_regulator,
+            "gpt_layer": self.gpt_layer,
+        })
 
     def enable_torch_compile(self) -> None:
         """Enable torch.compile optimization.

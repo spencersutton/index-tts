@@ -32,7 +32,7 @@ class FCM(nn.Module):
         self.bn1 = nn.BatchNorm2d(M_CHANNELS)
 
         self.layer1 = nn.Sequential(*(BasicResBlock(x) for x in (2, 1)))
-        self.layer2 = self.layer1
+        self.layer2 = nn.Sequential(*(BasicResBlock(x) for x in (2, 1)))
 
         self.conv2 = nn.Conv2d(M_CHANNELS, M_CHANNELS, kernel_size=3, stride=(2, 1), padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(M_CHANNELS)

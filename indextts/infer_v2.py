@@ -251,7 +251,7 @@ class IndexTTS2:
         # GPT model
         self.gpt = UnifiedVoice(use_accel=self.use_accel).to(self.device)
         gpt_path = model_dir / cfg.gpt_checkpoint
-        safetensors.torch.load_model(self.gpt, gpt_path, strict=False)
+        safetensors.torch.load_model(self.gpt, gpt_path)
         self.gpt = self.gpt.eval()
         if self.use_fp16:
             self.gpt.half()
@@ -282,11 +282,11 @@ class IndexTTS2:
 
         # S2Mel model
         self.s2mel = MyModel(cfg.s2mel)
-        safetensors.torch.load_model(self.s2mel.cfm, model_dir / cfg.cfm_checkpoint, strict=False)
+        safetensors.torch.load_model(self.s2mel.cfm, model_dir / cfg.cfm_checkpoint)
         self.s2mel.cfm.eval()
-        safetensors.torch.load_model(self.s2mel.gpt_layer, model_dir / cfg.gpt_layer_checkpoint, strict=False)
+        safetensors.torch.load_model(self.s2mel.gpt_layer, model_dir / cfg.gpt_layer_checkpoint)
         self.s2mel.gpt_layer.eval()
-        safetensors.torch.load_model(self.s2mel.length_regulator, model_dir / cfg.len_reg_checkpoint, strict=False)
+        safetensors.torch.load_model(self.s2mel.length_regulator, model_dir / cfg.len_reg_checkpoint)
         self.s2mel.length_regulator.eval()
         self.s2mel = self.s2mel.eval().to(self.device)
         if self.use_fp16:
@@ -295,7 +295,7 @@ class IndexTTS2:
         # CAMPPlus model
         self.campplus_model = CAMPPlus()
         path = "checkpoints/campplus_cn_common.safetensors"
-        safetensors.torch.load_model(self.campplus_model, path, strict=False)
+        safetensors.torch.load_model(self.campplus_model, path)
         # CAMPPlus is relatively small and only run once per prompt; keeping it on CPU
         # can save VRAM without materially affecting throughput.
         self.campplus_model = self.campplus_model.eval().cpu()

@@ -373,7 +373,7 @@ class IndexTTS2:
         audio_16k = decoder_16k.get_samples_played_in_range(0, MAX_LEN)
 
         # Extract speaker conditioning embedding
-        inputs = self.extract_features(audio_16k.data.cpu(), sampling_rate=audio_16k.sample_rate, return_tensors="pt")
+        inputs = self.extract_features(audio_16k.data, sampling_rate=audio_16k.sample_rate, return_tensors="pt")
         spk_cond_emb = self.get_emb(inputs.to(self.device))
         _, S_ref = self.semantic_codec.quantize(spk_cond_emb)
 

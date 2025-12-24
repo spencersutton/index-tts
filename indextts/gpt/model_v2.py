@@ -72,8 +72,6 @@ class VoiceModelConfig:
 class UnifiedVoice(nn.Module):
     """Unified voice synthesis model combining GPT-2 with conditioning encoders."""
 
-    # Type annotations for dynamically initialized attributes
-    gst_encoder: nn.Module | None
     inference_model: GPT2InferenceModel | None
     ds_engine: object
 
@@ -89,7 +87,6 @@ class UnifiedVoice(nn.Module):
         self.use_accel = use_accel
         self.accel_engine = None
         self.inference_model = None
-        self.gst_encoder = None
         self.ds_engine = None
 
     # -------------------------------------------------------------------------

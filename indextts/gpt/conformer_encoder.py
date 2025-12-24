@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from abc import ABC
 from typing import override
 
 from torch import Tensor, nn
@@ -13,8 +12,12 @@ from indextts.util import patch_call
 from indextts.utils.common import make_pad_mask
 
 
-class BaseEncoder(nn.Module, ABC):
+class ConformerEncoder(nn.Module):
+    """Conformer encoder module."""
+
     encoders: nn.ModuleList[ConformerEncoderLayer]
+    after_norm: nn.LayerNorm
+    embed: Conv2dSubsampling2
 
     def __init__(
         self,
@@ -24,22 +27,25 @@ class BaseEncoder(nn.Module, ABC):
         linear_units: int = 2048,
         num_blocks: int = 6,
         dropout_rate: float = 0.0,
+        macaron_style: bool = False,
+        cnn_module_kernel: int = 15,
     ) -> None:
-        """
-        Args:
-            input_size (int): input dim
-            output_size (int): dimension of attention
-            attention_heads (int): the number of heads of multi head attention
-            linear_units (int): the hidden units number of position-wise feed
-                forward
-            num_blocks (int): the number of decoder blocks
-            dropout_rate (float): dropout rate
-        """
         super().__init__()
 
         self.embed = Conv2dSubsampling2(input_size, output_size, dropout_rate)
-
         self.after_norm = nn.LayerNorm(output_size, eps=1e-5)
+        activation = nn.SiLU()
+
+        self.encoders = nn.ModuleList([
+            ConformerEncoderLayer(
+                output_size,
+                RelPositionMultiHeadedAttention(attention_heads, output_size, dropout_rate),
+                PositionwiseFeedForward(output_size, linear_units, dropout_rate, activation),
+                ConvolutionModule(output_size, cnn_module_kernel, activation),
+                dropout_rate,
+            )
+            for _ in range(num_blocks)
+        ])
 
     @override
     def forward(
@@ -73,40 +79,3 @@ class BaseEncoder(nn.Module, ABC):
 
     @patch_call(forward)
     def __call__(self) -> None: ...
-
-
-class ConformerEncoder(BaseEncoder):
-    """Conformer encoder module."""
-
-    def __init__(
-        self,
-        input_size: int,
-        output_size: int = 256,
-        attention_heads: int = 4,
-        linear_units: int = 2048,
-        num_blocks: int = 6,
-        dropout_rate: float = 0.0,
-        macaron_style: bool = False,
-        cnn_module_kernel: int = 15,
-    ) -> None:
-        super().__init__(
-            input_size,
-            output_size,
-            attention_heads,
-            linear_units,
-            num_blocks,
-            dropout_rate,
-        )
-
-        activation = nn.SiLU()
-
-        self.encoders = nn.ModuleList([
-            ConformerEncoderLayer(
-                output_size,
-                RelPositionMultiHeadedAttention(attention_heads, output_size, dropout_rate),
-                PositionwiseFeedForward(output_size, linear_units, dropout_rate, activation),
-                ConvolutionModule(output_size, cnn_module_kernel, activation),
-                dropout_rate,
-            )
-            for _ in range(num_blocks)
-        ])

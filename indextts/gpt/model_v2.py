@@ -73,11 +73,14 @@ class UnifiedVoice(nn.Module):
     """Unified voice synthesis model combining GPT-2 with conditioning encoders."""
 
     inference_model: GPT2InferenceModel | None
-    ds_engine: object
+    deepspeed_engine: object
+    use_accel: bool
+    accel_engine: object | None = None
+    config: VoiceModelConfig
 
     def __init__(self, use_accel: bool = False, config: VoiceModelConfig | None = None) -> None:
         super().__init__()
-        self.cfg = config or VoiceModelConfig()
+        self.config = config or VoiceModelConfig()
         self._init_conditioning_encoders()
         self._init_embeddings()
         self._init_gpt_transformer()
@@ -87,7 +90,7 @@ class UnifiedVoice(nn.Module):
         self.use_accel = use_accel
         self.accel_engine = None
         self.inference_model = None
-        self.ds_engine = None
+        self.deepspeed_engine = None
 
     # -------------------------------------------------------------------------
     # Initialization Helpers
@@ -95,7 +98,7 @@ class UnifiedVoice(nn.Module):
 
     def _init_conditioning_encoders(self) -> None:
         """Initialize speaker and emotion conditioning encoders."""
-        self.cond_mask_pad = nn.ConstantPad1d((self.cfg.cond_num, 0), True)
+        self.cond_mask_pad = nn.ConstantPad1d((self.config.cond_num, 0), True)
         self.emo_cond_mask_pad = nn.ConstantPad1d((1, 0), True)
 
         # Speaker conditioning encoder
@@ -108,11 +111,11 @@ class UnifiedVoice(nn.Module):
             input_layer="conv2d2",
         )
         self.perceiver_encoder = PerceiverResampler(
-            self.cfg.model_dim,
+            self.config.model_dim,
             dim_context=512,
             ff_mult=2,
             heads=8,
-            num_latents=self.cfg.cond_num,
+            num_latents=self.config.cond_num,
         )
 
         # Emotion conditioning encoder (smaller architecture)
@@ -134,15 +137,15 @@ class UnifiedVoice(nn.Module):
 
     def _init_embeddings(self) -> None:
         """Initialize text and mel embeddings with GPT-2 initialization."""
-        self.text_embedding = nn.Embedding(self.cfg.number_text_tokens + 1, self.cfg.model_dim)
-        self.mel_embedding = nn.Embedding(self.cfg.number_mel_codes, self.cfg.model_dim)
+        self.text_embedding = nn.Embedding(self.config.number_text_tokens + 1, self.config.model_dim)
+        self.mel_embedding = nn.Embedding(self.config.number_mel_codes, self.config.model_dim)
 
         # Emotion projection layers
-        self.emo_layer = nn.Linear(self.cfg.model_dim, self.cfg.model_dim)
-        self.emovec_layer = nn.Linear(1024, self.cfg.model_dim)
+        self.emo_layer = nn.Linear(self.config.model_dim, self.config.model_dim)
+        self.emovec_layer = nn.Linear(1024, self.config.model_dim)
 
         # Speed/duration embedding (initialized to zero)
-        self.speed_emb = nn.Embedding(2, self.cfg.model_dim)
+        self.speed_emb = nn.Embedding(2, self.config.model_dim)
         self.speed_emb.weight.data.zero_()
 
         # GPT-2 style initialization
@@ -158,18 +161,18 @@ class UnifiedVoice(nn.Module):
             self.mel_layer_pos_embedding,
             self.text_layer_pos_embedding,
         ) = build_hf_gpt_transformer(
-            self.cfg.layers,
-            self.cfg.model_dim,
-            self.cfg.heads,
-            self.cfg.max_mel_tokens + 2 + self.cfg.max_conditioning_inputs,
-            self.cfg.max_text_tokens + 2,
+            self.config.layers,
+            self.config.model_dim,
+            self.config.heads,
+            self.config.max_mel_tokens + 2 + self.config.max_conditioning_inputs,
+            self.config.max_text_tokens + 2,
         )
 
     def _init_output_heads(self) -> None:
         """Initialize output projection heads and normalization."""
-        self.final_norm = nn.LayerNorm(self.cfg.model_dim)
-        self.text_head = nn.Linear(self.cfg.model_dim, self.cfg.number_text_tokens + 1)
-        self.mel_head = nn.Linear(self.cfg.model_dim, self.cfg.number_mel_codes)
+        self.final_norm = nn.LayerNorm(self.config.model_dim)
+        self.text_head = nn.Linear(self.config.model_dim, self.config.number_text_tokens + 1)
+        self.mel_head = nn.Linear(self.config.model_dim, self.config.number_mel_codes)
 
     # -------------------------------------------------------------------------
     # Post-initialization for Inference
@@ -193,12 +196,12 @@ class UnifiedVoice(nn.Module):
     def _create_gpt_config(self) -> GPT2Config:
         """Create GPT2Config for inference model."""
         return GPT2Config(
-            vocab_size=self.cfg.number_mel_codes,
-            n_positions=self.cfg.seq_length,
-            n_ctx=self.cfg.seq_length,
-            n_embd=self.cfg.model_dim,
-            n_layer=self.cfg.layers,
-            n_head=self.cfg.heads,
+            vocab_size=self.config.number_mel_codes,
+            n_positions=self.config.seq_length,
+            n_ctx=self.config.seq_length,
+            n_embd=self.config.model_dim,
+            n_layer=self.config.layers,
+            n_head=self.config.heads,
             gradient_checkpointing=False,
             use_cache=True,
         )
@@ -222,9 +225,9 @@ class UnifiedVoice(nn.Module):
         self.accel_engine = AccelInferenceEngine(
             model=accel_gpt,
             lm_head=lm_head_with_norm,
-            num_layers=self.cfg.layers,
-            num_heads=self.cfg.heads,
-            head_dim=self.cfg.head_dim,
+            num_layers=self.config.layers,
+            num_heads=self.config.heads,
+            head_dim=self.config.head_dim,
             block_size=256,
             num_blocks=16,  # 16 * 256 = 4096 tokens capacity
             use_cuda_graph=True,
@@ -457,21 +460,21 @@ class UnifiedVoice(nn.Module):
             emo_vec = self._compute_emo_vec(emo_speech_conditioning_latent, emo_cond_mel_lengths)
 
         # Prepare text and mel tokens
-        text_inputs = set_token_padding(text_inputs, text_lengths, self.cfg.stop_text_token)
-        text_inputs = F.pad(text_inputs, (0, 1), value=self.cfg.stop_text_token)
+        text_inputs = set_token_padding(text_inputs, text_lengths, self.config.stop_text_token)
+        text_inputs = F.pad(text_inputs, (0, 1), value=self.config.stop_text_token)
 
-        mel_codes = set_token_padding(mel_codes, mel_codes_lengths, self.cfg.stop_mel_token)
-        mel_codes = F.pad(mel_codes, (0, 1), value=self.cfg.stop_mel_token)
+        mel_codes = set_token_padding(mel_codes, mel_codes_lengths, self.config.stop_mel_token)
+        mel_codes = F.pad(mel_codes, (0, 1), value=self.config.stop_mel_token)
 
         # Build conditioning
         assert use_speed is not None
         conds = self._build_conditioning_concat(speech_conditioning_latent, emo_vec, use_speed)
 
         # Build aligned inputs
-        text_inputs = F.pad(text_inputs, (1, 0), value=self.cfg.start_text_token)
+        text_inputs = F.pad(text_inputs, (1, 0), value=self.config.start_text_token)
         text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs)
 
-        mel_codes = F.pad(mel_codes, (1, 0), value=self.cfg.start_mel_token)
+        mel_codes = F.pad(mel_codes, (1, 0), value=self.config.start_mel_token)
 
         mel_emb = self.mel_embedding(mel_codes) + self.mel_pos_embedding(mel_codes)
 
@@ -536,7 +539,7 @@ class UnifiedVoice(nn.Module):
 
         # Create fake input IDs with start_mel_token at the end
         fake_inputs = torch.ones((batch_size, target_len + 1), dtype=torch.long, device=batched_mel_emb.device)
-        fake_inputs[:, -1] = self.cfg.start_mel_token
+        fake_inputs[:, -1] = self.config.start_mel_token
 
         return fake_inputs, batched_mel_emb, attention_mask
 
@@ -560,10 +563,10 @@ class UnifiedVoice(nn.Module):
             attention_mask: (target_len+1,) attention mask
         """
         # Filter out special tokens and add start/stop
-        valid_mask = (text_input != self.cfg.stop_text_token) & (text_input != self.cfg.start_text_token)
+        valid_mask = (text_input != self.config.stop_text_token) & (text_input != self.config.start_text_token)
         text_input = text_input[valid_mask]
-        text_input = F.pad(text_input, (1, 0), value=self.cfg.start_text_token)
-        text_input = F.pad(text_input, (0, 1), value=self.cfg.stop_text_token)
+        text_input = F.pad(text_input, (1, 0), value=self.config.start_text_token)
+        text_input = F.pad(text_input, (0, 1), value=self.config.stop_text_token)
 
         # Compute text embeddings
         text_pos = torch.arange(text_input.size(-1), device=cond_latent.device, dtype=torch.long)
@@ -676,7 +679,7 @@ class UnifiedVoice(nn.Module):
         trunc_index = inputs.shape[1]
         logits_processor = self._build_logits_processor(typical_sampling, typical_mass, hf_generate_kwargs)
         max_length = (
-            trunc_index + self.cfg.max_mel_tokens - 1
+            trunc_index + self.config.max_mel_tokens - 1
             if max_generate_length is None
             else trunc_index + max_generate_length
         )
@@ -769,7 +772,7 @@ class UnifiedVoice(nn.Module):
                 max_new_tokens=max_length - trunc_index,
                 attention_mask=attention_mask,
                 temperature=hf_generate_kwargs.get("temperature", 1),
-                stop_tokens=[self.cfg.stop_mel_token],
+                stop_tokens=[self.config.stop_mel_token],
                 tts_embeddings=inputs_embeds,
                 tts_mel_embedding=self.inference_model.embeddings,
                 tts_text_pos_embedding=self.inference_model.text_pos_embedding,
@@ -777,9 +780,9 @@ class UnifiedVoice(nn.Module):
         else:
             output = self.inference_model.generate(
                 inputs,
-                bos_token_id=self.cfg.start_mel_token,
-                pad_token_id=self.cfg.stop_mel_token,
-                eos_token_id=self.cfg.stop_mel_token,
+                bos_token_id=self.config.start_mel_token,
+                pad_token_id=self.config.stop_mel_token,
+                eos_token_id=self.config.stop_mel_token,
                 attention_mask=attention_mask,
                 max_length=max_length,
                 logits_processor=logits_processor,

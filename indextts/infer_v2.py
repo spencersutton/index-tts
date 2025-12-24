@@ -20,7 +20,7 @@ import torch
 import torchaudio
 from huggingface_hub import hf_hub_download
 from omegaconf import OmegaConf
-from torch import Tensor
+from torch import Tensor, nn
 from torch.nn.utils.rnn import pad_sequence
 from torchcodec.decoders import AudioDecoder
 from torchcodec.encoders import AudioEncoder
@@ -33,7 +33,8 @@ from indextts.qwen_emotion import QwenEmotion
 from indextts.s2mel.modules.audio import mel_spectrogram
 from indextts.s2mel.modules.bigvgan import BigVGAN
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
-from indextts.s2mel.modules.model import MyModel
+from indextts.s2mel.modules.flow_matching import CFM
+from indextts.s2mel.modules.length_regulator import InterpolateRegulator
 from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.maskgct.models.codec.kmeans.repcodec_model import RepCodec
 
@@ -179,10 +180,12 @@ class IndexTTS2:
     extract_features: SeamlessM4TFeatureExtractor
     semantic_model: Wav2Vec2BertModel
     semantic_codec: RepCodec
-    s2mel: MyModel
     campplus_model: CAMPPlus
     bigvgan: BigVGAN
     tokenizer: TextTokenizer
+    gpt_layer: nn.Sequential[nn.Module]
+    cfm: CFM
+    length_regulator: InterpolateRegulator
 
     # Tensors
     semantic_mean: Tensor
@@ -242,7 +245,7 @@ class IndexTTS2:
 
         # Apply torch.compile if requested
         if use_torch_compile:
-            self.s2mel.enable_torch_compile()
+            self.cfm.enable_torch_compile()
 
     # -------------------------------------------------------------------------
     # Initialization Helpers
@@ -281,15 +284,30 @@ class IndexTTS2:
         self.semantic_codec = _load_model(RepCodec(), checkpoint, self.device)
 
         # S2Mel model
-        self.s2mel = MyModel(cfg.s2mel)
-        self.s2mel.cfm = _load_model(self.s2mel.cfm, model_dir / cfg.cfm_checkpoint, self.device)
-        self.s2mel.gpt_layer = _load_model(self.s2mel.gpt_layer, model_dir / cfg.gpt_layer_checkpoint, self.device)
-        self.s2mel.length_regulator = _load_model(
-            self.s2mel.length_regulator, model_dir / cfg.len_reg_checkpoint, self.device
+        self.cfm = _load_model(CFM(cfg.s2mel), model_dir / cfg.cfm_checkpoint, self.device)
+        self.gpt_layer = _load_model(
+            torch.nn.Sequential(
+                torch.nn.Linear(1280, 256),
+                torch.nn.Linear(256, 128),
+                torch.nn.Linear(128, 1024),
+            ),
+            model_dir / cfg.gpt_layer_checkpoint,
+            self.device,
         )
-        self.s2mel = self.s2mel.eval().to(self.device)
+        self.length_regulator = _load_model(
+            InterpolateRegulator(
+                channels=cfg.s2mel.length_regulator.channels,
+                sampling_ratios=cfg.s2mel.length_regulator.sampling_ratios,
+                in_channels=cfg.s2mel.length_regulator.in_channels,
+                codebook_size=cfg.s2mel.length_regulator.content_codebook_size,
+            ),
+            model_dir / cfg.len_reg_checkpoint,
+            self.device,
+        )
         if self.use_fp16:
-            self.s2mel.half()
+            self.cfm.half()
+            self.gpt_layer.half()
+            self.length_regulator.half()
 
         # CAMPPlus model
         self.campplus_model = _load_model(CAMPPlus(), "checkpoints/campplus_cn_common.safetensors")
@@ -388,7 +406,7 @@ class IndexTTS2:
         style = self.campplus_model(feat.unsqueeze(0)).to(self.device)
 
         # Generate prompt condition
-        prompt_condition = self.s2mel.length_regulator(
+        prompt_condition = self.length_regulator(
             S_ref, ylens=torch.tensor([ref_mel.size(2)], device=self.device), n_quantizers=3, f0=None
         )[0]
 
@@ -835,17 +853,17 @@ class IndexTTS2:
 
         # S2Mel conversion
         t0 = time.perf_counter()
-        latent = self.s2mel.gpt_layer(latent)
+        latent = self.gpt_layer(latent)
 
         S_infer = self.semantic_codec.quantizer.vq2emb(code.unsqueeze(1)).transpose(1, 2)
         S_infer += latent
 
         target_lengths = (code_lens * 1.72).long()
 
-        cond = self.s2mel.length_regulator(S_infer, ylens=target_lengths, n_quantizers=3, f0=None)[0]
+        cond = self.length_regulator(S_infer, ylens=target_lengths, n_quantizers=3, f0=None)[0]
         cat_condition = torch.cat([prompt_condition, cond], dim=1)
 
-        vc_target = self.s2mel.cfm.inference(
+        vc_target = self.cfm.inference(
             cat_condition,
             torch.tensor([cat_condition.size(1)], device=cat_condition.device),
             ref_mel,

@@ -1,5 +1,4 @@
 from abc import ABC
-from typing import cast
 
 import torch
 from torch import Tensor, nn
@@ -143,4 +142,4 @@ class CFM(nn.Module, ABC):
         if torch.distributed.is_initialized():
             assert hasattr(torch._inductor, "config")  # noqa: SLF001
             torch._inductor.config.reorder_for_compute_comm_overlap = True  # noqa: SLF001
-        self.estimator = cast(DiT, torch.compile(self.estimator, fullgraph=True, dynamic=True))
+        self.estimator = torch.compile(self.estimator, fullgraph=True, dynamic=True)

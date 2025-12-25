@@ -1,12 +1,11 @@
 from abc import ABC
-from typing import cast, override
+from typing import cast
 
 import torch
 from torch import Tensor, nn
 
 from indextts.config import S2MelConfig
 from indextts.s2mel.modules.diffusion_transformer import DiT
-from indextts.util import patch_call
 
 
 class CFM(nn.Module, ABC):
@@ -132,64 +131,6 @@ class CFM(nn.Module, ABC):
             x[:, :, :prompt_len] = 0
 
         return x
-
-    @override
-    def forward(
-        self,
-        x1: Tensor,
-        x_lens: Tensor,
-        prompt_lens: Tensor,
-        mu: Tensor,
-        style: Tensor,
-    ) -> tuple[Tensor, Tensor]:
-        """Computes diffusion loss.
-
-        Args:
-            mu (Tensor): semantic info of reference audio and altered audio
-                shape: (batch_size, mel_timesteps(795+1069), 512)
-            x1: mel
-            x_lens (Tensor): mel frames output
-                shape: (batch_size, mel_timesteps)
-            prompt (Tensor): reference mel
-                shape: (batch_size, 80, 795)
-            style (Tensor): reference global style
-                shape: (batch_size, 192)
-
-        Returns:
-            loss: conditional flow matching loss
-            y: conditional flow
-                shape: (batch_size, n_feats, mel_timesteps)
-        """
-        b, _, t = x1.shape
-
-        # random timestep
-        t = torch.rand([b, 1, 1], device=mu.device, dtype=x1.dtype)
-        # sample noise p(x_0)
-        z = torch.randn_like(x1)
-
-        y = (1 - (1 - self.sigma_min) * t) * z + t * x1
-        u = x1 - (1 - self.sigma_min) * z
-
-        prompt = torch.zeros_like(x1)
-        for bib in range(b):
-            prompt[bib, :, : prompt_lens[bib]] = x1[bib, :, : prompt_lens[bib]]
-            # range covered by prompt are set to 0
-            y[bib, :, : prompt_lens[bib]] = 0
-
-        assert self.estimator is not None
-        estimator_out = self.estimator(y, prompt, x_lens, t.squeeze(1).squeeze(1), style, mu, bool(prompt_lens))
-        loss = 0
-        for bib in range(b):
-            loss += self.criterion(
-                estimator_out[bib, :, prompt_lens[bib] : x_lens[bib]],
-                u[bib, :, prompt_lens[bib] : x_lens[bib]],
-            )
-        loss /= b
-
-        return torch.tensor(loss), estimator_out + (1 - self.sigma_min) * z
-
-    @patch_call(forward)
-    def __call__(self) -> None: ...
 
     def enable_torch_compile(self) -> None:
         """Enable torch.compile optimization for the estimator model.

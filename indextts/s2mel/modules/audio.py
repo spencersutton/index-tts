@@ -4,13 +4,13 @@ import torch
 import torchaudio.functional as F
 from torch import Tensor
 
-N_FFT = 1024
-WIN_SIZE = 1024
-HOP_SIZE = 256
-NUM_MELS = 80
-F_MIN = 0
-SAMPLING_RATE = 22050
-F_MAX = SAMPLING_RATE / 2.0
+N_FFT = 1024  # self.cfg.s2mel["preprocess_params"]["spect_params"]["n_fft"]
+WIN_SIZE = 1024  # self.cfg.s2mel["preprocess_params"]["spect_params"]["win_length"]
+HOP_SIZE = 256  # self.cfg.s2mel["preprocess_params"]["spect_params"]["hop_length"]
+NUM_MELS = 80  # self.cfg.s2mel["preprocess_params"]["spect_params"]["n_mels"]
+F_MIN = 0  # self.cfg.s2mel["preprocess_params"]["spect_params"].get("fmin", 0)
+SAMPLING_RATE = 22050  # self.cfg.s2mel["preprocess_params"]["sr"]
+F_MAX = SAMPLING_RATE / 2.0  # self.cfg.s2mel["preprocess_params"]["spect_params"].get("fmax", "None")
 
 
 @functools.cache

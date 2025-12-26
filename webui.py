@@ -1,16 +1,31 @@
 import argparse
 import html
+import inspect
 import json
 import sys
 import time
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import gradio as gr
+import numpy as np
+import torch
 
-from indextts.infer_v2 import IndexTTS2, normalize_emo_vec
+from indextts.infer_v2 import OUTPUT_SR, IndexTTS2, normalize_emo_vec
 from tools.i18n.i18n import I18nAuto
+
+
+def _gradio_audio_supports_streaming_output() -> bool:
+    try:
+        sig = inspect.signature(gr.Audio.__init__)
+    except (TypeError, ValueError):
+        return False
+    else:
+        return "streaming" in sig.parameters
+
+
+GR_AUDIO_STREAMING_SUPPORTED = _gradio_audio_supports_streaming_output()
 
 parser = argparse.ArgumentParser(
     description="IndexTTS WebUI",
@@ -129,12 +144,15 @@ def gen_single(
     vec8: float,
     emo_text: str | None,
     emo_random: bool,
+    stream_output: bool,
     max_text_tokens_per_segment: int = 120,
     *args: float,
     progress: gr.Progress = gr.Progress(),
-) -> dict[str, Any]:
-    output_path: Path | None = None
-    if not output_path:
+) -> Any:
+    output_path: Path | None
+    if stream_output:
+        output_path = None
+    else:
         output_path = Path("outputs") / f"spk_{int(time.time())}.wav"
     # set gradio progress
     tts.gr_progress = progress
@@ -167,6 +185,79 @@ def gen_single(
         emo_text = None
 
     print(f"Emo control mode:{emo_control_method},weight:{emo_weight},vec:{vec}")
+
+    # Streaming mode: return a generator that yields audio chunks to Gradio.
+    if stream_output:
+        stream_gen = tts.infer(
+            spk_audio_prompt=Path(prompt),
+            text=text,
+            output_path=None,
+            emo_audio_prompt=Path(emo_ref_path) if emo_ref_path else None,
+            emo_alpha=emo_weight,
+            emo_vector=vec,
+            use_emo_text=(emo_control_method == 3),
+            emo_text=emo_text,
+            use_random=emo_random,
+            verbose=cmd_args.verbose,
+            max_text_tokens_per_segment=int(max_text_tokens_per_segment),
+            stream_return=True,
+            do_sample=bool(do_sample),
+            top_p=float(top_p),
+            top_k=int(top_k) if int(top_k) > 0 else None,
+            temperature=float(temperature),
+            length_penalty=float(length_penalty),
+            num_beams=num_beams,
+            repetition_penalty=float(repetition_penalty),
+            max_mel_tokens=int(max_mel_tokens),
+        )
+
+        stream_iter = cast(Iterable[Any], stream_gen)
+
+        # Some Gradio versions can append-play streamed audio chunks when
+        # `gr.Audio(streaming=True)` is supported; otherwise we fall back to
+        # yielding cumulative audio so users still see/hear progressive output.
+        audio_chunks: list[np.ndarray] = []
+
+        # infer(..., stream_return=True) yields torch.Tensor chunks in [-1, 1]
+        # (plus silence chunks). Convert to (sr, int16 ndarray) expected by gr.Audio.
+        for chunk in stream_iter:
+            if chunk is None:
+                continue
+            print("CHUNK")
+
+            if isinstance(chunk, tuple) and len(chunk) == 2:
+                # Just in case upstream ever yields (sr, np.ndarray) directly.
+                yield chunk
+                continue
+
+            if isinstance(chunk, Path):
+                # Shouldn't happen in stream_return mode, but handle gracefully.
+                yield str(chunk)
+                continue
+
+            if isinstance(chunk, torch.Tensor):
+                wav = chunk.detach().cpu()
+                if wav.ndim == 1:
+                    wav = wav.unsqueeze(0)
+                # Normalize to shape (1, T)
+                if wav.ndim != 2:
+                    wav = wav.reshape(1, -1)
+
+                wav = wav.clamp(-1.0, 1.0)
+                wav_i16 = (wav * float(np.iinfo(np.int16).max)).to(torch.int16)
+                wav_np = wav_i16.numpy().T  # (T, 1)
+                if True:
+                    yield (OUTPUT_SR, wav_np)
+                else:
+                    audio_chunks.append(wav_np)
+                    yield (OUTPUT_SR, np.concatenate(audio_chunks, axis=0))
+                continue
+
+            # Fallback: let Gradio try to interpret whatever it is.
+            yield chunk
+
+        return
+
     output = tts.infer(
         spk_audio_prompt=Path(prompt),
         text=text,
@@ -188,7 +279,8 @@ def gen_single(
         repetition_penalty=float(repetition_penalty),
         max_mel_tokens=int(max_mel_tokens),
     )
-    return gr.update(value=output, visible=True)
+    # Non-streaming: yield once (Path or (sr, np.ndarray))
+    yield output
 
 
 def update_prompt_audio() -> dict[str, Any]:
@@ -229,7 +321,17 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
                     info=f"{i18n('当前模型版本')}{tts.model_version or '1.0'}",
                 )
                 gen_button = gr.Button(i18n("生成语音"), key="gen_button", interactive=True)
-            output_audio = gr.Audio(label=i18n("生成结果"), visible=True, key="output_audio")
+            # Enable streaming playback in Gradio when supported by the installed version.
+            audio_kwargs: dict[str, Any] = {"label": i18n("生成结果"), "visible": True, "key": "output_audio"}
+            try:
+                sig = inspect.signature(gr.Audio.__init__)
+                if "autoplay" in sig.parameters:
+                    audio_kwargs["autoplay"] = True
+                if "streaming" in sig.parameters:
+                    audio_kwargs["streaming"] = True
+            except (TypeError, ValueError):
+                pass
+            output_audio = gr.Audio(**audio_kwargs)
 
         experimental_checkbox = gr.Checkbox(label=i18n("显示实验功能"), value=False)
 
@@ -340,6 +442,11 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
             )
 
         with gr.Accordion(i18n("高级生成参数设置"), open=False, visible=True):
+            stream_output = gr.Checkbox(
+                label=i18n("流式播放（实验）"),
+                value=True,
+                info=i18n("开启后将边生成边播放；关闭后生成完成再返回整段音频。"),
+            )
             with gr.Row():
                 with gr.Column(scale=1):
                     gr.Markdown(
@@ -636,6 +743,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
             vec8,
             emo_text,
             emo_random,
+            stream_output,
             max_text_tokens_per_segment,
             *advanced_params,
         ],

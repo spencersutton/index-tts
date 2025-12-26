@@ -77,6 +77,21 @@ class UnifiedVoice(nn.Module):
     use_accel: bool
     accel_engine: Any | None = None
     config: VoiceModelConfig
+    conditioning_encoder: ConformerEncoder
+    emo_conditioning_encoder: ConformerEncoder
+    perceiver_encoder: PerceiverResampler
+    emo_perceiver_encoder: PerceiverResampler
+    text_embedding: nn.Embedding
+    mel_embedding: nn.Embedding
+    emo_layer: nn.Linear
+    emovec_layer: nn.Linear
+    speed_emb: nn.Embedding
+    gpt: GPT2Model
+    mel_pos_embedding: LearnedPositionEmbeddings
+    text_pos_embedding: LearnedPositionEmbeddings
+    final_norm: nn.LayerNorm
+    text_head: nn.Linear
+    mel_head: nn.Linear
 
     def __init__(self, use_accel: bool = False, config: VoiceModelConfig | None = None) -> None:
         super().__init__()

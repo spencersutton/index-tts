@@ -141,24 +141,20 @@ class UnifiedVoice(nn.Module):
         # -----------------------------------------------------------------
         # GPT-2 transformer + positional embeddings
         # -----------------------------------------------------------------
-        self.text_layer_pos_embedding = None
-        self.mel_layer_pos_embedding = None
-
-        layers = self.config.layers
-        model_dim = self.config.model_dim
-        heads = self.config.heads
         max_mel_seq_len = self.config.max_mel_tokens + 2 + self.config.max_conditioning_inputs
         max_text_seq_len = self.config.max_text_tokens + 2
-        gpt_config = GPT2Config(
-            vocab_size=256,  # Unused.
-            n_positions=max_mel_seq_len + max_text_seq_len,
-            n_ctx=max_mel_seq_len + max_text_seq_len,
-            n_embd=model_dim,
-            n_layer=layers,
-            n_head=heads,
-            use_cache=False,
+
+        gpt = GPT2Model(
+            GPT2Config(
+                vocab_size=256,  # Unused.
+                n_positions=max_mel_seq_len + max_text_seq_len,
+                n_ctx=max_mel_seq_len + max_text_seq_len,
+                n_embd=self.config.model_dim,
+                n_layer=self.config.layers,
+                n_head=self.config.heads,
+                use_cache=False,
+            )
         )
-        gpt = GPT2Model(gpt_config)
         # `GPT2Model` initialization may sanitize config fields; set this after model
         # construction so the attribute is reliably present for downstream checks/tests.
         gpt.config.gradient_checkpointing = True
@@ -167,14 +163,14 @@ class UnifiedVoice(nn.Module):
 
         # Override the built in positional embeddings
         del gpt.wpe
-        gpt.wpe = NullPositionEmbedding(model_dim)
+        gpt.wpe = NullPositionEmbedding(self.config.model_dim)
 
         # Built-in token embeddings are unused.
         del gpt.wte
 
         self.gpt = gpt
-        self.mel_pos_embedding = LearnedPositionEmbeddings(max_mel_seq_len, model_dim)
-        self.text_pos_embedding = LearnedPositionEmbeddings(max_text_seq_len, model_dim)
+        self.mel_pos_embedding = LearnedPositionEmbeddings(max_mel_seq_len, self.config.model_dim)
+        self.text_pos_embedding = LearnedPositionEmbeddings(max_text_seq_len, self.config.model_dim)
 
         # -----------------------------------------------------------------
         # Output heads
@@ -323,41 +319,6 @@ class UnifiedVoice(nn.Module):
         base_vec = self.get_emovec(speech_conditioning_latent, cond_lengths)
         return base_vec + alpha * (emo_vec - base_vec)
 
-    def get_logits(
-        self,
-        speech_conditioning_inputs: Tensor,
-        first_inputs: Tensor,
-        first_head: nn.Linear,
-        second_inputs: Tensor,
-        second_head: nn.Linear,
-    ) -> Tensor:
-        """Compute logits or latents from GPT forward pass.
-
-        Args:
-            speech_conditioning_inputs: Conditioning embeddings (batch, cond_len, dim)
-            first_inputs: First sequence embeddings (batch, seq1_len, dim)
-            first_head: Linear head for first sequence output
-            second_inputs: Optional second sequence embeddings
-            second_head: Linear head for second sequence output
-
-        Returns:
-            Logits, latents, or attention weights depending on flags
-        """
-        # Concatenate all inputs
-        parts = [speech_conditioning_inputs, first_inputs, second_inputs]
-        emb = torch.cat(parts, dim=1)
-
-        # GPT forward pass
-        gpt_out = self.gpt(inputs_embeds=emb, return_dict=True, output_attentions=False)
-        assert isinstance(gpt_out, BaseModelOutputWithPastAndCrossAttentions)
-
-        # Extract encoded representations (skip conditioning)
-        offset = speech_conditioning_inputs.shape[1]
-        assert gpt_out.last_hidden_state is not None
-        enc = self.final_norm(gpt_out.last_hidden_state[:, offset:])
-
-        return enc[:, -second_inputs.shape[1] :]
-
     def _build_conditioning_concat(
         self,
         speech_conditioning_latent: Tensor,
@@ -443,13 +404,20 @@ class UnifiedVoice(nn.Module):
         mel_emb = self.mel_embedding(mel_codes) + self.mel_pos_embedding(mel_codes)
 
         # Get latent representations
-        mel_latent = self.get_logits(
-            speech_conditioning_inputs=conds,
-            first_inputs=text_emb,
-            first_head=self.text_head,
-            second_inputs=mel_emb,
-            second_head=self.mel_head,
-        )
+        parts = [conds, text_emb, mel_emb]
+        emb = torch.cat(parts, dim=1)
+
+        # GPT forward pass
+        gpt_out = self.gpt(inputs_embeds=emb, return_dict=True)
+        assert isinstance(gpt_out, BaseModelOutputWithPastAndCrossAttentions)
+
+        # Extract encoded representations (skip conditioning)
+        offset = conds.shape[1]
+        assert gpt_out.last_hidden_state is not None
+        enc = self.final_norm(gpt_out.last_hidden_state[:, offset:])
+
+        mel_latent = enc[:, -mel_emb.shape[1] :]
+
         # Strip the two tokens added by padding
         return mel_latent[:, :-2]
 

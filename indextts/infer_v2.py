@@ -326,7 +326,7 @@ class IndexTTS2:
                 logger.info(f"Failed to load DeepSpeed: {e}")
                 use_deepspeed = False
 
-        self.gpt.post_init_gpt2_config(use_deepspeed=use_deepspeed, kv_cache=True, half=self.use_fp16)
+        self.gpt.post_init_gpt2_config(use_deepspeed=use_deepspeed, half=self.use_fp16)
 
         # Preload CUDA kernel if needed
         if self.use_cuda_kernel:

@@ -207,7 +207,6 @@ class UnifiedVoice(nn.Module):
     def post_init_gpt2_config(
         self,
         use_deepspeed: bool = False,
-        kv_cache: bool = False,
         half: bool = False,
     ) -> None:
         """Initialize inference components after model loading."""
@@ -255,7 +254,7 @@ class UnifiedVoice(nn.Module):
             self.mel_embedding,
             self.final_norm,
             self.mel_head,
-            kv_cache=kv_cache,
+            kv_cache=True,
         )
         self.inference_model = inference_model
 

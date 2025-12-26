@@ -4,7 +4,7 @@ import importlib.util
 import logging
 import time
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, override
+from typing import Any, override
 
 import torch
 import torch.nn.functional as F
@@ -73,7 +73,6 @@ class UnifiedVoice(nn.Module):
     """Unified voice synthesis model combining GPT-2 with conditioning encoders."""
 
     inference_model: GPT2InferenceModel | None
-    deepspeed_engine: object
     use_accel: bool
     accel_engine: Any | None = None
     config: VoiceModelConfig
@@ -198,17 +197,12 @@ class UnifiedVoice(nn.Module):
         self.use_accel = use_accel
         self.accel_engine = None
         self.inference_model = None
-        self.deepspeed_engine = None
 
     # -------------------------------------------------------------------------
     # Post-initialization for Inference
     # -------------------------------------------------------------------------
 
-    def post_init_gpt2_config(
-        self,
-        use_deepspeed: bool = False,
-        half: bool = False,
-    ) -> None:
+    def post_init_gpt2_config(self, half: bool = False) -> None:
         """Initialize inference components after model loading."""
         gpt_config = GPT2Config(
             vocab_size=self.config.number_mel_codes,
@@ -256,21 +250,8 @@ class UnifiedVoice(nn.Module):
             self.mel_head,
             kv_cache=True,
         )
-        self.inference_model = inference_model
+        self.inference_model = inference_model.eval()
 
-        if use_deepspeed and torch.cuda.is_available() and not TYPE_CHECKING:
-            import deepspeed  # noqa: PLC0415
-
-            self.ds_engine = deepspeed.init_inference(
-                model=self.inference_model,
-                mp_size=1,
-                replace_with_kernel_inject=True,
-                dtype=torch.float16 if half else torch.float32,
-            )
-            self.inference_model = self.ds_engine.module.eval()
-
-        else:
-            self.inference_model = inference_model.eval()
         self.gpt.wte = self.mel_embedding
 
     # -------------------------------------------------------------------------

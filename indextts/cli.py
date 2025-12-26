@@ -94,12 +94,6 @@ def main() -> None:
         default=False,
         help="Use custom CUDA kernel for BigVGAN",
     )
-    parser.add_argument(
-        "--use-deepspeed",
-        action="store_true",
-        default=False,
-        help="Use DeepSpeed for inference",
-    )
     parser.add_argument("--profile", action="store_true", default=False, help="Enable profiling")
     parser.add_argument("--warmup", type=int, default=0, help="Number of warmup runs to perform")
     args = parser.parse_args()
@@ -115,7 +109,6 @@ def main() -> None:
     assert isinstance(args.use_accel, bool)
     assert isinstance(args.use_torch_compile, bool)
     assert isinstance(args.use_cuda_kernel, bool)
-    assert isinstance(args.use_deepspeed, bool)
     assert isinstance(args.profile, bool)
     assert isinstance(args.warmup, int)
 
@@ -148,7 +141,6 @@ def main() -> None:
         use_accel=args.use_accel,
         use_torch_compile=args.use_torch_compile,
         use_cuda_kernel=args.use_cuda_kernel,
-        use_deepspeed=args.use_deepspeed,
     )
 
     voice_file = Path(args.voice)

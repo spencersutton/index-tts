@@ -32,12 +32,6 @@ parser.add_argument(
     help="Use FP16 for inference if available",
 )
 parser.add_argument(
-    "--deepspeed",
-    action="store_true",
-    default=False,
-    help="Use DeepSpeed to accelerate if available",
-)
-parser.add_argument(
     "--cuda_kernel",
     action="store_true",
     default=False,
@@ -79,7 +73,6 @@ tts = IndexTTS2(
     model_dir=model_dir,
     cfg_path=model_dir / "config.yaml",
     use_fp16=cmd_args.fp16,
-    use_deepspeed=cmd_args.deepspeed,
     use_cuda_kernel=cmd_args.cuda_kernel,
     use_torch_compile=cmd_args.torch_compile,
 )

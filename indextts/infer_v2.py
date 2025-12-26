@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import contextlib
 import functools
-import importlib.util
 import logging
 import random
 import time
@@ -12,7 +11,6 @@ import typing
 from collections.abc import Collection, Generator, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from subprocess import CalledProcessError
 from typing import Any, cast
 
 import safetensors.torch
@@ -271,7 +269,6 @@ class IndexTTS2:
         use_fp16: bool = False,
         device: str | None = None,
         use_cuda_kernel: bool | None = None,
-        use_deepspeed: bool = False,
         use_accel: bool = False,
         use_torch_compile: bool = False,
     ) -> None:
@@ -283,7 +280,6 @@ class IndexTTS2:
             use_fp16: Enable FP16 precision (not supported on CPU/MPS)
             device: Compute device (auto-detected if None)
             use_cuda_kernel: Use custom CUDA kernels for BigVGAN
-            use_deepspeed: Enable DeepSpeed inference optimization
             use_accel: Enable flash attention acceleration
             use_torch_compile: Enable torch.compile optimization
         """
@@ -316,17 +312,7 @@ class IndexTTS2:
         if self.use_fp16:
             self.gpt.half()
 
-        # Initialize GPT inference mode
-        if use_deepspeed:
-            try:
-                if importlib.util.find_spec("deepspeed") is None:
-                    logger.info("DeepSpeed not found, falling back to normal inference")
-                    use_deepspeed = False
-            except (ImportError, OSError, CalledProcessError) as e:
-                logger.info(f"Failed to load DeepSpeed: {e}")
-                use_deepspeed = False
-
-        self.gpt.post_init_gpt2_config(use_deepspeed=use_deepspeed, half=self.use_fp16)
+        self.gpt.post_init_gpt2_config(half=self.use_fp16)
 
         # Preload CUDA kernel if needed
         if self.use_cuda_kernel:

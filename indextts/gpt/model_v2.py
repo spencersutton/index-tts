@@ -539,55 +539,6 @@ class UnifiedVoice(nn.Module):
 
         return fake_inputs, batched_mel_emb, attention_mask
 
-    def _prepare_single_gpt_input(
-        self,
-        cond_latent: Tensor,
-        text_input: Tensor,
-        max_text_len: int,
-        target_len: int,
-    ) -> tuple[Tensor, Tensor]:
-        """Prepare GPT input for a single sequence.
-
-        Args:
-            cond_latent: (cond_num, dim) conditioning for this sequence
-            text_input: (text_len,) text tokens for this sequence
-            max_text_len: Maximum text length in batch
-            target_len: Target sequence length
-
-        Returns:
-            mel_emb: (target_len, dim) concatenated embeddings
-            attention_mask: (target_len+1,) attention mask
-        """
-        # Filter out special tokens and add start/stop
-        valid_mask = (text_input != self.config.stop_text_token) & (text_input != self.config.start_text_token)
-        text_input = text_input[valid_mask]
-        text_input = F.pad(text_input, (1, 0), value=self.config.start_text_token)
-        text_input = F.pad(text_input, (0, 1), value=self.config.stop_text_token)
-
-        # Compute text embeddings
-        text_pos = torch.arange(text_input.size(-1), device=cond_latent.device, dtype=torch.long)
-        text_emb = self.text_embedding(text_input) + self.text_pos_embedding.emb(text_pos)
-
-        # Build sequence: [optional_pad][cond][text]
-        parts: list[Tensor] = [cond_latent, text_emb]
-        attn_mask = torch.ones(target_len + 1, dtype=torch.long, device=text_emb.device)
-
-        # Add left padding if needed
-        padding = max_text_len + 2 - text_input.size(-1)
-        if padding > 0:
-            pad = torch.zeros(
-                (padding, cond_latent.size(-1)),
-                dtype=text_emb.dtype,
-                device=text_emb.device,
-            )
-            parts.insert(0, pad)
-            attn_mask[:padding] = 0
-
-        mel_emb = torch.cat(parts)
-        assert mel_emb.shape[0] == target_len, f"mel_emb.shape: {mel_emb.shape}, target_len: {target_len}"
-
-        return mel_emb, attn_mask
-
     # -------------------------------------------------------------------------
     # Speech Generation
     # -------------------------------------------------------------------------

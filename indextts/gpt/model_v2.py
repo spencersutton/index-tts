@@ -75,29 +75,16 @@ class UnifiedVoice(nn.Module):
     inference_model: GPT2InferenceModel | None
     deepspeed_engine: object
     use_accel: bool
-    accel_engine: object | None = None
+    accel_engine: Any | None = None
     config: VoiceModelConfig
 
     def __init__(self, use_accel: bool = False, config: VoiceModelConfig | None = None) -> None:
         super().__init__()
         self.config = config or VoiceModelConfig()
-        self._init_conditioning_encoders()
-        self._init_embeddings()
-        self._init_gpt_transformer()
-        self._init_output_heads()
 
-        # Runtime state
-        self.use_accel = use_accel
-        self.accel_engine = None
-        self.inference_model = None
-        self.deepspeed_engine = None
-
-    # -------------------------------------------------------------------------
-    # Initialization Helpers
-    # -------------------------------------------------------------------------
-
-    def _init_conditioning_encoders(self) -> None:
-        """Initialize speaker and emotion conditioning encoders."""
+        # -----------------------------------------------------------------
+        # Conditioning encoders
+        # -----------------------------------------------------------------
         self.cond_mask_pad = nn.ConstantPad1d((self.config.cond_num, 0), True)
         self.emo_cond_mask_pad = nn.ConstantPad1d((1, 0), True)
 
@@ -133,8 +120,9 @@ class UnifiedVoice(nn.Module):
             num_latents=1,
         )
 
-    def _init_embeddings(self) -> None:
-        """Initialize text and mel embeddings with GPT-2 initialization."""
+        # -----------------------------------------------------------------
+        # Embeddings
+        # -----------------------------------------------------------------
         self.text_embedding = nn.Embedding(self.config.number_text_tokens + 1, self.config.model_dim)
         self.mel_embedding = nn.Embedding(self.config.number_mel_codes, self.config.model_dim)
 
@@ -150,8 +138,9 @@ class UnifiedVoice(nn.Module):
         for emb in [self.text_embedding, self.mel_embedding]:
             emb.weight.data.normal_(mean=0.0, std=0.02)
 
-    def _init_gpt_transformer(self) -> None:
-        """Initialize GPT-2 transformer and positional embeddings."""
+        # -----------------------------------------------------------------
+        # GPT-2 transformer + positional embeddings
+        # -----------------------------------------------------------------
         (
             self.gpt,
             self.mel_pos_embedding,
@@ -166,11 +155,18 @@ class UnifiedVoice(nn.Module):
             self.config.max_text_tokens + 2,
         )
 
-    def _init_output_heads(self) -> None:
-        """Initialize output projection heads and normalization."""
+        # -----------------------------------------------------------------
+        # Output heads
+        # -----------------------------------------------------------------
         self.final_norm = nn.LayerNorm(self.config.model_dim)
         self.text_head = nn.Linear(self.config.model_dim, self.config.number_text_tokens + 1)
         self.mel_head = nn.Linear(self.config.model_dim, self.config.number_mel_codes)
+
+        # Runtime state
+        self.use_accel = use_accel
+        self.accel_engine = None
+        self.inference_model = None
+        self.deepspeed_engine = None
 
     # -------------------------------------------------------------------------
     # Post-initialization for Inference

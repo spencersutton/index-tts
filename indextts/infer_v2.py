@@ -310,10 +310,6 @@ class IndexTTS2:
 
         self.gpt.post_init_gpt2_config(half=self.use_fp16)
 
-        # Preload CUDA kernel if needed
-        if self.use_cuda_kernel:
-            self._preload_cuda_kernel()
-
         # Semantic models
         self.extract_features = SeamlessM4TFeatureExtractor.from_pretrained("facebook/w2v-bert-2.0")
         self.semantic_model = Wav2Vec2BertModel.from_pretrained("facebook/w2v-bert-2.0").eval().to(self.device)
@@ -374,24 +370,6 @@ class IndexTTS2:
         self.emo_num = tuple(cfg.emo_num)
         self.emo_matrix = torch.split(emo_matrix, self.emo_num)
         self.spk_matrix = torch.split(spk_matrix, self.emo_num)
-
-    # -------------------------------------------------------------------------
-    # Initialization Helpers
-    # -------------------------------------------------------------------------
-
-    def _preload_cuda_kernel(self) -> None:
-        """Preload custom CUDA kernel for BigVGAN."""
-        try:
-            from indextts.s2mel.modules.bigvgan.alias_free_activation.cuda import (  # noqa: PLC0415
-                activation1d,
-            )
-
-            logger.info(
-                f"Preloaded custom CUDA kernel: {activation1d.anti_alias_activation_cuda}",
-            )
-        except Exception as e:  # noqa: BLE001
-            logger.info(f"Failed to load CUDA kernel, falling back to torch: {e}")
-            self.use_cuda_kernel = False
 
     # -------------------------------------------------------------------------
     # Audio Prompt Processing

@@ -179,17 +179,7 @@ class UnifiedVoice(nn.Module):
         half: bool = False,
     ) -> None:
         """Initialize inference components after model loading."""
-        gpt_config = self._create_gpt_config()
-
-        if self.use_accel and torch.cuda.is_available():
-            self._init_accel_engine(gpt_config, half)
-
-        self._init_inference_model(gpt_config, kv_cache, use_deepspeed, half)
-        self.gpt.wte = self.mel_embedding
-
-    def _create_gpt_config(self) -> GPT2Config:
-        """Create GPT2Config for inference model."""
-        return GPT2Config(
+        gpt_config = GPT2Config(
             vocab_size=self.config.number_mel_codes,
             n_positions=self.config.seq_length,
             n_ctx=self.config.seq_length,
@@ -199,6 +189,26 @@ class UnifiedVoice(nn.Module):
             gradient_checkpointing=False,
             use_cache=True,
         )
+
+        if self.use_accel and torch.cuda.is_available():
+            self._init_accel_engine(gpt_config, half)
+
+        inference_model = GPT2InferenceModel(
+            gpt_config,
+            self.gpt,
+            self.mel_pos_embedding,
+            self.mel_embedding,
+            self.final_norm,
+            self.mel_head,
+            kv_cache=kv_cache,
+        )
+        self.inference_model = inference_model
+
+        if use_deepspeed and torch.cuda.is_available():
+            self._apply_deepspeed(half)
+        else:
+            self.inference_model = inference_model.eval()
+        self.gpt.wte = self.mel_embedding
 
     def _init_accel_engine(self, gpt_config: GPT2Config, half: bool) -> None:
         """Initialize flash attention acceleration engine."""
@@ -227,30 +237,6 @@ class UnifiedVoice(nn.Module):
             use_cuda_graph=True,
         )
         logger.info("acceleration engine initialized")
-
-    def _init_inference_model(
-        self,
-        gpt_config: GPT2Config,
-        kv_cache: bool,
-        use_deepspeed: bool,
-        half: bool,
-    ) -> None:
-        """Initialize the GPT2 inference model with optional DeepSpeed."""
-        inference_model = GPT2InferenceModel(
-            gpt_config,
-            self.gpt,
-            self.mel_pos_embedding,
-            self.mel_embedding,
-            self.final_norm,
-            self.mel_head,
-            kv_cache=kv_cache,
-        )
-        self.inference_model = inference_model
-
-        if use_deepspeed and torch.cuda.is_available():
-            self._apply_deepspeed(half)
-        else:
-            self.inference_model = inference_model.eval()
 
     def _apply_deepspeed(self, half: bool) -> None:
         """Apply DeepSpeed inference optimization."""
@@ -380,18 +366,6 @@ class UnifiedVoice(nn.Module):
     # Forward Pass
     # -------------------------------------------------------------------------
 
-    def _compute_emo_vec(
-        self,
-        emo_speech_conditioning_latent: Tensor,
-        emo_cond_mel_lengths: Tensor,
-    ) -> Tensor:
-        """Compute emotion vector from conditioning latent."""
-        emo_vec = self.get_emo_conditioning(
-            emo_speech_conditioning_latent.transpose(1, 2),
-            emo_cond_mel_lengths,
-        )
-        return self.emo_layer(self.emovec_layer(emo_vec))
-
     def _build_conditioning_concat(
         self,
         speech_conditioning_latent: Tensor,
@@ -451,7 +425,11 @@ class UnifiedVoice(nn.Module):
 
         # Compute emotion vector if not provided
         if emo_vec is None:
-            emo_vec = self._compute_emo_vec(emo_speech_conditioning_latent, emo_cond_mel_lengths)
+            emo_vec = self.get_emo_conditioning(
+                emo_speech_conditioning_latent.transpose(1, 2),
+                emo_cond_mel_lengths,
+            )
+            emo_vec = self.emo_layer(self.emovec_layer(emo_vec))
 
         # Prepare text and mel tokens
         text_inputs = set_token_padding(text_inputs, text_lengths, self.config.stop_text_token)
@@ -518,12 +496,36 @@ class UnifiedVoice(nn.Module):
         attention_masks: list[Tensor] = []
 
         for i in range(batch_size):
-            mel_emb, attn_mask = self._prepare_single_gpt_input(
-                conditional_latents.squeeze(0) if single_cond else conditional_latents[i],
-                text_inputs[i],
-                text_len,
-                target_len,
-            )
+            cond_latent = conditional_latents.squeeze(0) if single_cond else conditional_latents[i]
+            text_input = text_inputs[i]
+            # Filter out special tokens and add start/stop
+            valid_mask = (text_input != self.config.stop_text_token) & (text_input != self.config.start_text_token)
+            text_input = text_input[valid_mask]
+            text_input = F.pad(text_input, (1, 0), value=self.config.start_text_token)
+            text_input = F.pad(text_input, (0, 1), value=self.config.stop_text_token)
+
+            # Compute text embeddings
+            text_pos = torch.arange(text_input.size(-1), device=cond_latent.device, dtype=torch.long)
+            text_emb = self.text_embedding(text_input) + self.text_pos_embedding.emb(text_pos)
+
+            # Build sequence: [optional_pad][cond][text]
+            parts: list[Tensor] = [cond_latent, text_emb]
+            attn_mask = torch.ones(target_len + 1, dtype=torch.long, device=text_emb.device)
+
+            # Add left padding if needed
+            padding = text_len + 2 - text_input.size(-1)
+            if padding > 0:
+                pad = torch.zeros(
+                    (padding, cond_latent.size(-1)),
+                    dtype=text_emb.dtype,
+                    device=text_emb.device,
+                )
+                parts.insert(0, pad)
+                attn_mask[:padding] = 0
+
+            mel_emb = torch.cat(parts)
+            assert mel_emb.shape[0] == target_len, f"mel_emb.shape: {mel_emb.shape}, target_len: {target_len}"
+
             batched_mel_embs.append(mel_emb)
             attention_masks.append(attn_mask)
 
@@ -568,7 +570,7 @@ class UnifiedVoice(nn.Module):
 
         # Build sequence: [optional_pad][cond][text]
         parts: list[Tensor] = [cond_latent, text_emb]
-        attention_mask = torch.ones(target_len + 1, dtype=torch.long, device=text_emb.device)
+        attn_mask = torch.ones(target_len + 1, dtype=torch.long, device=text_emb.device)
 
         # Add left padding if needed
         padding = max_text_len + 2 - text_input.size(-1)
@@ -579,12 +581,12 @@ class UnifiedVoice(nn.Module):
                 device=text_emb.device,
             )
             parts.insert(0, pad)
-            attention_mask[:padding] = 0
+            attn_mask[:padding] = 0
 
         mel_emb = torch.cat(parts)
         assert mel_emb.shape[0] == target_len, f"mel_emb.shape: {mel_emb.shape}, target_len: {target_len}"
 
-        return mel_emb, attention_mask
+        return mel_emb, attn_mask
 
     # -------------------------------------------------------------------------
     # Speech Generation

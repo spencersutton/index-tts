@@ -130,16 +130,3 @@ class CFM(nn.Module, ABC):
             x[:, :, :prompt_len] = 0
 
         return x
-
-    def enable_torch_compile(self) -> None:
-        """Enable torch.compile optimization for the estimator model.
-
-        This method applies torch.compile to the estimator (DiT model) for significant
-        performance improvements during inference. It also configures distributed
-        training optimizations if applicable.
-        """
-        assert hasattr(torch.distributed, "is_initialized")
-        if torch.distributed.is_initialized():
-            assert hasattr(torch._inductor, "config")  # noqa: SLF001
-            torch._inductor.config.reorder_for_compute_comm_overlap = True  # noqa: SLF001
-        self.estimator = torch.compile(self.estimator, fullgraph=True, dynamic=True)

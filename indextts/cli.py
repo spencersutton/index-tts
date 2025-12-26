@@ -5,22 +5,8 @@ import warnings
 from pathlib import Path
 
 import pyinstrument
-import torch
 
 from indextts.infer_v2 import IndexTTS2
-
-if False:
-    torch._inductor.config.debug = False  # noqa: SLF001
-    torch._inductor.config.fx_graph_cache = True  # noqa: SLF001
-    torch._inductor.config.trace.enabled = False  # noqa: SLF001
-    torch._logging.set_logs(  # noqa: SLF001
-        recompiles=True,
-        graph_breaks=True,
-        guards=True,
-        inductor_metrics=True,
-        recompiles_verbose=True,
-        perf_hints=True,
-    )
 
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -83,12 +69,6 @@ def main() -> None:
         help="Use acceleration engine (FlashAttention) for GPT",
     )
     parser.add_argument(
-        "--use-torch-compile",
-        action="store_true",
-        default=False,
-        help="Use torch.compile for optimization",
-    )
-    parser.add_argument(
         "--use-cuda-kernel",
         action="store_true",
         default=False,
@@ -107,7 +87,6 @@ def main() -> None:
     assert isinstance(args.fp16, bool)
     assert isinstance(args.force, bool)
     assert isinstance(args.use_accel, bool)
-    assert isinstance(args.use_torch_compile, bool)
     assert isinstance(args.use_cuda_kernel, bool)
     assert isinstance(args.profile, bool)
     assert isinstance(args.warmup, int)
@@ -139,7 +118,6 @@ def main() -> None:
         model_dir=Path(args.model_dir),
         use_fp16=args.fp16,
         use_accel=args.use_accel,
-        use_torch_compile=args.use_torch_compile,
         use_cuda_kernel=args.use_cuda_kernel,
     )
 

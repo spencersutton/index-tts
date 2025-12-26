@@ -6,11 +6,7 @@ from indextts.infer_v2 import IndexTTS2
 
 
 def test_inference(benchmark: Callable) -> None:
-    tts = IndexTTS2(
-        use_cuda_kernel=False,
-        use_accel=False,
-        use_torch_compile=False,
-    )
+    tts = IndexTTS2(use_cuda_kernel=False, use_accel=False)
 
     benchmark(
         tts.infer,

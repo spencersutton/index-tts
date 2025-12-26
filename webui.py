@@ -43,12 +43,6 @@ parser.add_argument(
     default=120,
     help="GUI: Max tokens per generation segment",
 )
-parser.add_argument(
-    "--torch-compile",
-    action="store_true",
-    default=False,
-    help="Use torch.compile for optimization",
-)
 cmd_args = parser.parse_args()
 
 model_dir = Path(cmd_args.model_dir)
@@ -74,7 +68,6 @@ tts = IndexTTS2(
     cfg_path=model_dir / "config.yaml",
     use_fp16=cmd_args.fp16,
     use_cuda_kernel=cmd_args.cuda_kernel,
-    use_torch_compile=cmd_args.torch_compile,
 )
 # 支持的语言列表
 EMO_CHOICES_ALL = [

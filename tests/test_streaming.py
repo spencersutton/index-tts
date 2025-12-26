@@ -42,7 +42,6 @@ class TestStreamingEndToEnd(unittest.TestCase):
                 model_dir=checkpoint_dir,
                 device=device,
                 use_fp16=False,
-                use_torch_compile=False,
             )
 
             text = "Hello world. This is a test of streaming inference."

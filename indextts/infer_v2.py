@@ -233,7 +233,6 @@ class IndexTTS2:
     device: str
     use_fp16: bool
     use_cuda_kernel: bool
-    use_torch_compile: bool
     use_accel: bool
     stop_mel_token: int
     cfg: CheckpointsConfig
@@ -270,7 +269,6 @@ class IndexTTS2:
         device: str | None = None,
         use_cuda_kernel: bool | None = None,
         use_accel: bool = False,
-        use_torch_compile: bool = False,
     ) -> None:
         """Initialize IndexTTS2 synthesis engine.
 
@@ -281,7 +279,6 @@ class IndexTTS2:
             device: Compute device (auto-detected if None)
             use_cuda_kernel: Use custom CUDA kernels for BigVGAN
             use_accel: Enable flash attention acceleration
-            use_torch_compile: Enable torch.compile optimization
         """
         # Configure device
         dev_cfg = DeviceConfig.auto_detect(device, use_fp16, use_cuda_kernel)
@@ -289,7 +286,6 @@ class IndexTTS2:
         self.use_fp16 = dev_cfg.use_fp16
         self.use_cuda_kernel = dev_cfg.use_cuda_kernel
         self.use_accel = use_accel
-        self.use_torch_compile = use_torch_compile
         self.gr_progress = None
 
         if self.device.startswith("cuda"):
@@ -378,10 +374,6 @@ class IndexTTS2:
         self.emo_num = tuple(cfg.emo_num)
         self.emo_matrix = torch.split(emo_matrix, self.emo_num)
         self.spk_matrix = torch.split(spk_matrix, self.emo_num)
-
-        # Apply torch.compile if requested
-        if use_torch_compile:
-            self.cfm.enable_torch_compile()
 
     # -------------------------------------------------------------------------
     # Initialization Helpers

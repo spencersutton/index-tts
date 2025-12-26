@@ -9,14 +9,14 @@ from typing import TYPE_CHECKING, Any, override
 import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
-from transformers import GPT2Config, LogitsProcessorList
+from transformers import GPT2Config, GPT2Model, LogitsProcessorList
 from transformers.generation.logits_process import TypicalLogitsWarper
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions
 
-from indextts.gpt import GPT2InferenceModel
+from indextts.gpt import GPT2InferenceModel, LearnedPositionEmbeddings, NullPositionEmbedding
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.perceiver import PerceiverResampler
-from indextts.gpt.utils import build_hf_gpt_transformer, set_token_padding
+from indextts.gpt.utils import set_token_padding
 from indextts.util import patch_call
 
 logger = logging.getLogger(__name__)
@@ -141,19 +141,40 @@ class UnifiedVoice(nn.Module):
         # -----------------------------------------------------------------
         # GPT-2 transformer + positional embeddings
         # -----------------------------------------------------------------
-        (
-            self.gpt,
-            self.mel_pos_embedding,
-            self.text_pos_embedding,
-            self.mel_layer_pos_embedding,
-            self.text_layer_pos_embedding,
-        ) = build_hf_gpt_transformer(
-            self.config.layers,
-            self.config.model_dim,
-            self.config.heads,
-            self.config.max_mel_tokens + 2 + self.config.max_conditioning_inputs,
-            self.config.max_text_tokens + 2,
+        self.text_layer_pos_embedding = None
+        self.mel_layer_pos_embedding = None
+
+        layers = self.config.layers
+        model_dim = self.config.model_dim
+        heads = self.config.heads
+        max_mel_seq_len = self.config.max_mel_tokens + 2 + self.config.max_conditioning_inputs
+        max_text_seq_len = self.config.max_text_tokens + 2
+        gpt_config = GPT2Config(
+            vocab_size=256,  # Unused.
+            n_positions=max_mel_seq_len + max_text_seq_len,
+            n_ctx=max_mel_seq_len + max_text_seq_len,
+            n_embd=model_dim,
+            n_layer=layers,
+            n_head=heads,
+            use_cache=False,
         )
+        gpt = GPT2Model(gpt_config)
+        # `GPT2Model` initialization may sanitize config fields; set this after model
+        # construction so the attribute is reliably present for downstream checks/tests.
+        gpt.config.gradient_checkpointing = True
+        if hasattr(gpt, "gradient_checkpointing_enable"):
+            gpt.gradient_checkpointing_enable()
+
+        # Override the built in positional embeddings
+        del gpt.wpe
+        gpt.wpe = NullPositionEmbedding(model_dim)
+
+        # Built-in token embeddings are unused.
+        del gpt.wte
+
+        self.gpt = gpt
+        self.mel_pos_embedding = LearnedPositionEmbeddings(max_mel_seq_len, model_dim)
+        self.text_pos_embedding = LearnedPositionEmbeddings(max_text_seq_len, model_dim)
 
         # -----------------------------------------------------------------
         # Output heads
@@ -307,11 +328,9 @@ class UnifiedVoice(nn.Module):
         speech_conditioning_inputs: Tensor,
         first_inputs: Tensor,
         first_head: nn.Linear,
-        second_inputs: Tensor | None = None,
-        second_head: nn.Linear | None = None,
-        get_attns: bool = False,
-        return_latent: bool = False,
-    ) -> Tensor | tuple[Tensor, ...]:
+        second_inputs: Tensor,
+        second_head: nn.Linear,
+    ) -> Tensor:
         """Compute logits or latents from GPT forward pass.
 
         Args:
@@ -320,43 +339,24 @@ class UnifiedVoice(nn.Module):
             first_head: Linear head for first sequence output
             second_inputs: Optional second sequence embeddings
             second_head: Linear head for second sequence output
-            get_attns: If True, return attention weights only
-            return_latent: If True, return latent encodings instead of logits
 
         Returns:
             Logits, latents, or attention weights depending on flags
         """
         # Concatenate all inputs
-        parts = [speech_conditioning_inputs, first_inputs]
-        if second_inputs is not None:
-            parts.append(second_inputs)
+        parts = [speech_conditioning_inputs, first_inputs, second_inputs]
         emb = torch.cat(parts, dim=1)
 
         # GPT forward pass
-        gpt_out = self.gpt(inputs_embeds=emb, return_dict=True, output_attentions=get_attns)
+        gpt_out = self.gpt(inputs_embeds=emb, return_dict=True, output_attentions=False)
         assert isinstance(gpt_out, BaseModelOutputWithPastAndCrossAttentions)
-
-        if get_attns:
-            assert gpt_out.attentions is not None
-            return gpt_out.attentions
 
         # Extract encoded representations (skip conditioning)
         offset = speech_conditioning_inputs.shape[1]
         assert gpt_out.last_hidden_state is not None
         enc = self.final_norm(gpt_out.last_hidden_state[:, offset:])
 
-        if return_latent:
-            assert second_inputs is not None
-            return enc[:, : first_inputs.shape[1]], enc[:, -second_inputs.shape[1] :]
-
-        # Compute logits
-        first_logits = first_head(enc[:, : first_inputs.shape[1]]).permute(0, 2, 1)
-
-        if second_inputs is not None:
-            assert second_head is not None
-            second_logits = second_head(enc[:, -second_inputs.shape[1] :]).permute(0, 2, 1)
-            return first_logits, second_logits
-        return first_logits
+        return enc[:, -second_inputs.shape[1] :]
 
     def _build_conditioning_concat(
         self,
@@ -443,14 +443,12 @@ class UnifiedVoice(nn.Module):
         mel_emb = self.mel_embedding(mel_codes) + self.mel_pos_embedding(mel_codes)
 
         # Get latent representations
-        _, mel_latent = self.get_logits(
-            conds,
-            text_emb,
-            self.text_head,
-            mel_emb,
-            self.mel_head,
-            get_attns=False,
-            return_latent=True,
+        mel_latent = self.get_logits(
+            speech_conditioning_inputs=conds,
+            first_inputs=text_emb,
+            first_head=self.text_head,
+            second_inputs=mel_emb,
+            second_head=self.mel_head,
         )
         # Strip the two tokens added by padding
         return mel_latent[:, :-2]

@@ -45,6 +45,73 @@ if typing.TYPE_CHECKING:
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+def _strip_dead_functorch_predispatch_calls(gm: torch.fx.GraphModule) -> int:
+    """Remove dead functorch predispatch calls that break torch.export.save().
+
+    Certain PyTorch versions can leave dead (num_users=0) call_function nodes
+    targeting internal functorch predispatch helpers, e.g.:
+
+    - torch._functorch.predispatch.lazy_load_decompositions
+    - torch._functorch.predispatch._vmap_increment_nesting
+
+    The .pt2 serializer cannot serialize these Python functions, even when
+    they're dead. We remove them if they have zero users.
+
+    Returns:
+        Number of nodes removed.
+    """
+    # Best-effort: trigger lazy decompositions load outside the graph so the
+    # graph does not need to encode it as a side-effecting call.
+    with contextlib.suppress(Exception):
+        pred = getattr(getattr(torch, "_functorch", None), "predispatch", None)
+        lazy_fn = getattr(pred, "lazy_load_decompositions", None)
+        if callable(lazy_fn):
+            lazy_fn()
+
+    removed = 0
+    graph = gm.graph
+    for node in list(graph.nodes):
+        if node.op != "call_function":
+            continue
+        if len(node.users) != 0:
+            continue
+
+        target = node.target
+        mod = str(getattr(target, "__module__", ""))
+        if mod.startswith(("torch._functorch.predispatch", "torch._functorch")):
+            graph.erase_node(node)
+            removed += 1
+
+    if removed:
+        graph.lint()
+        gm.recompile()
+    return removed
+
+
+def _safe_torch_export_save(program: Any, path: str | Path) -> None:
+    """Save an ExportedProgram, retrying after sanitizing known bad nodes."""
+    gm = getattr(program, "graph_module", None)
+    # Retry a few times: stripping one dead node may reveal another.
+    for _ in range(5):
+        try:
+            torch.export.save(program, path)
+            return
+        except Exception as e:
+            msg = str(e)
+            if gm is None:
+                raise
+            if "Serializing <function" not in msg and "torch._functorch" not in msg:
+                raise
+
+            removed = _strip_dead_functorch_predispatch_calls(gm)
+            if removed == 0:
+                raise
+
+    # If we fall out of the loop, re-raise with a final attempt for a clearer error.
+    torch.export.save(program, path)
+
+
 # =============================================================================
 # Constants
 # =============================================================================

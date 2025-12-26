@@ -302,10 +302,6 @@ class UnifiedVoice(nn.Module):
         base_vec = self.get_emovec(speech_conditioning_latent, cond_lengths)
         return base_vec + alpha * (emo_vec - base_vec)
 
-    # -------------------------------------------------------------------------
-    # GPT Logits Computation
-    # -------------------------------------------------------------------------
-
     def get_logits(
         self,
         speech_conditioning_inputs: Tensor,
@@ -361,10 +357,6 @@ class UnifiedVoice(nn.Module):
             second_logits = second_head(enc[:, -second_inputs.shape[1] :]).permute(0, 2, 1)
             return first_logits, second_logits
         return first_logits
-
-    # -------------------------------------------------------------------------
-    # Forward Pass
-    # -------------------------------------------------------------------------
 
     def _build_conditioning_concat(
         self,
@@ -463,10 +455,6 @@ class UnifiedVoice(nn.Module):
         # Strip the two tokens added by padding
         return mel_latent[:, :-2]
 
-    # -------------------------------------------------------------------------
-    # Inference Input Preparation
-    # -------------------------------------------------------------------------
-
     def prepare_gpt_inputs(
         self,
         conditional_latents: Tensor,
@@ -538,10 +526,6 @@ class UnifiedVoice(nn.Module):
         fake_inputs[:, -1] = self.config.start_mel_token
 
         return fake_inputs, batched_mel_emb, attention_mask
-
-    # -------------------------------------------------------------------------
-    # Speech Generation
-    # -------------------------------------------------------------------------
 
     def inference_speech(
         self,
@@ -618,76 +602,31 @@ class UnifiedVoice(nn.Module):
         logger.info(f"prepare_gpt_inputs: {time.perf_counter() - t2:.4f}s")
 
         # Handle additional input tokens
-        inputs, attention_mask = self._prepare_generation_inputs(
-            input_ids, attention_mask, input_tokens, num_return_sequences, text_inputs.shape[0]
-        )
+        if input_tokens is None:
+            inputs = input_ids
+        else:
+            batch_size = text_inputs.shape[0]
+            if input_tokens.ndim == 1:
+                input_tokens = input_tokens.unsqueeze(0)
+
+            assert num_return_sequences % input_tokens.shape[0] == 0, (
+                "num_return_sequences must be divisible by input_tokens batch size"
+            )
+            assert num_return_sequences % batch_size == 0, (
+                "num_return_sequences must be divisible by text_inputs batch size"
+            )
+
+            repeat_factor = num_return_sequences // input_ids.shape[0]
+            if repeat_factor > 1:
+                input_ids = input_ids.repeat(repeat_factor, 1)
+                attention_mask = attention_mask.repeat(repeat_factor, 1)
+
+            input_tokens = input_tokens.repeat(num_return_sequences // input_tokens.shape[0], 1)
+            inputs = torch.cat([input_ids, input_tokens], dim=1)
+            attention_mask = F.pad(attention_mask, (0, input_tokens.shape[1]), value=1)
 
         # Setup generation parameters
         trunc_index = inputs.shape[1]
-        logits_processor = self._build_logits_processor(typical_sampling, typical_mass, hf_generate_kwargs)
-        max_length = (
-            trunc_index + self.config.max_mel_tokens - 1
-            if max_generate_length is None
-            else trunc_index + max_generate_length
-        )
-
-        # Generate
-        t3 = time.perf_counter()
-        output = self._run_generation(
-            inputs,
-            attention_mask,
-            inputs_embeds,
-            max_length,
-            trunc_index,
-            num_return_sequences,
-            logits_processor,
-            hf_generate_kwargs,
-        )
-        logger.info(f"generation: {time.perf_counter() - t3:.4f}s")
-        logger.info(f"total inference_speech: {time.perf_counter() - t0:.4f}s")
-
-        return output[:, trunc_index:], speech_conditioning_latent
-
-    def _prepare_generation_inputs(
-        self,
-        input_ids: Tensor,
-        attention_mask: Tensor,
-        input_tokens: Tensor | None,
-        num_return_sequences: int,
-        batch_size: int,
-    ) -> tuple[Tensor, Tensor]:
-        """Prepare inputs for generation, handling additional tokens."""
-        if input_tokens is None:
-            return input_ids, attention_mask
-
-        if input_tokens.ndim == 1:
-            input_tokens = input_tokens.unsqueeze(0)
-
-        assert num_return_sequences % input_tokens.shape[0] == 0, (
-            "num_return_sequences must be divisible by input_tokens batch size"
-        )
-        assert num_return_sequences % batch_size == 0, (
-            "num_return_sequences must be divisible by text_inputs batch size"
-        )
-
-        repeat_factor = num_return_sequences // input_ids.shape[0]
-        if repeat_factor > 1:
-            input_ids = input_ids.repeat(repeat_factor, 1)
-            attention_mask = attention_mask.repeat(repeat_factor, 1)
-
-        input_tokens = input_tokens.repeat(num_return_sequences // input_tokens.shape[0], 1)
-        inputs = torch.cat([input_ids, input_tokens], dim=1)
-        attention_mask = F.pad(attention_mask, (0, input_tokens.shape[1]), value=1)
-
-        return inputs, attention_mask
-
-    def _build_logits_processor(
-        self,
-        typical_sampling: bool,
-        typical_mass: float,
-        hf_generate_kwargs: dict[str, Any],
-    ) -> LogitsProcessorList:
-        """Build logits processor list for generation."""
         logits_processor = LogitsProcessorList()
 
         if typical_sampling:
@@ -697,21 +636,14 @@ class UnifiedVoice(nn.Module):
             min_tokens = 2 if hf_generate_kwargs.get("num_beams", 1) > 1 else 1
             logits_processor.append(TypicalLogitsWarper(mass=typical_mass, min_tokens_to_keep=min_tokens))
 
-        return logits_processor
+        max_length = (
+            trunc_index + self.config.max_mel_tokens - 1
+            if max_generate_length is None
+            else trunc_index + max_generate_length
+        )
 
-    def _run_generation(
-        self,
-        inputs: Tensor,
-        attention_mask: Tensor,
-        inputs_embeds: Tensor,
-        max_length: int,
-        trunc_index: int,
-        num_return_sequences: int,
-        logits_processor: LogitsProcessorList,
-        hf_generate_kwargs: dict[str, Any],
-    ) -> Tensor:
-        """Run generation using accel engine or standard inference model."""
-        assert self.inference_model is not None
+        # Generate
+        t3 = time.perf_counter()
 
         if self.accel_engine is not None and num_return_sequences == 1:
             output = self.accel_engine.generate(
@@ -738,7 +670,11 @@ class UnifiedVoice(nn.Module):
             )
 
         assert isinstance(output, Tensor)
-        return output
+
+        logger.info(f"generation: {time.perf_counter() - t3:.4f}s")
+        logger.info(f"total inference_speech: {time.perf_counter() - t0:.4f}s")
+
+        return output[:, trunc_index:], speech_conditioning_latent
 
     @patch_call(forward)
     def __call__(self) -> None: ...

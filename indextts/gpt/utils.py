@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import torch
 from transformers import GPT2Config, GPT2Model
 
 from indextts.gpt.inference_model import NullPositionEmbedding
@@ -43,12 +44,16 @@ def set_token_padding(
         tensor([[ 1,  2,  3, 99, 99],
                 [ 1,  2, 99, 99, 99]])
     """
-    for b in range(len(lengths)):
-        # Support lengths on either CPU or CUDA by materializing a Python int.
-        # This also avoids ambiguous Tensor-to-bool conversions in the condition.
-        actual_end = int(lengths[b].item())
-        if actual_end < input_tokens.shape[-1]:
-            input_tokens[b, actual_end:] = stop_token
+    # NOTE: This function must be compatible with torch.export/torch.compile.
+    # Avoid Python control flow (loops/ifs) that depends on tensor data.
+    #
+    # Build a mask for all positions >= length for each batch item.
+    # input_tokens: (B, T)
+    # lengths:      (B,)
+    seq_len = input_tokens.shape[-1]
+    positions = torch.arange(seq_len, device=input_tokens.device).unsqueeze(0)
+    mask = positions >= lengths.to(device=input_tokens.device).unsqueeze(1)
+    input_tokens.masked_fill_(mask, stop_token)
     return input_tokens
 
 

@@ -223,7 +223,30 @@ class UnifiedVoice(nn.Module):
         )
 
         if self.use_accel and torch.cuda.is_available():
-            self._init_accel_engine(gpt_config, half)
+            if importlib.util.find_spec("flash_attn") is None:
+                raise ImportError(
+                    "flash_attn is required for acceleration but not installed. "
+                    "Please install from https://github.com/Dao-AILab/flash-attention/releases/"
+                )
+
+            from indextts.accel import AccelInferenceEngine, GPT2AccelModel  # noqa: PLC0415
+
+            accel_gpt = GPT2AccelModel(gpt_config)
+            accel_gpt.load_state_dict(self.gpt.state_dict(), strict=False)
+            accel_gpt = (accel_gpt.half() if half else accel_gpt).cuda().eval()
+
+            lm_head_with_norm = nn.Sequential(self.final_norm, self.mel_head)
+            self.accel_engine = AccelInferenceEngine(
+                model=accel_gpt,
+                lm_head=lm_head_with_norm,
+                num_layers=self.config.layers,
+                num_heads=self.config.heads,
+                head_dim=self.config.head_dim,
+                block_size=256,
+                num_blocks=16,  # 16 * 256 = 4096 tokens capacity
+                use_cuda_graph=True,
+            )
+            logger.info("acceleration engine initialized")
 
         inference_model = GPT2InferenceModel(
             gpt_config,
@@ -236,43 +259,7 @@ class UnifiedVoice(nn.Module):
         )
         self.inference_model = inference_model
 
-        if use_deepspeed and torch.cuda.is_available():
-            self._apply_deepspeed(half)
-        else:
-            self.inference_model = inference_model.eval()
-        self.gpt.wte = self.mel_embedding
-
-    def _init_accel_engine(self, gpt_config: GPT2Config, half: bool) -> None:
-        """Initialize flash attention acceleration engine."""
-        if importlib.util.find_spec("flash_attn") is None:
-            msg = (
-                "flash_attn is required for acceleration but not installed. "
-                "Please install from https://github.com/Dao-AILab/flash-attention/releases/"
-            )
-            raise ImportError(msg)
-
-        from indextts.accel import AccelInferenceEngine, GPT2AccelModel  # noqa: PLC0415
-
-        accel_gpt = GPT2AccelModel(gpt_config)
-        accel_gpt.load_state_dict(self.gpt.state_dict(), strict=False)
-        accel_gpt = (accel_gpt.half() if half else accel_gpt).cuda().eval()
-
-        lm_head_with_norm = nn.Sequential(self.final_norm, self.mel_head)
-        self.accel_engine = AccelInferenceEngine(
-            model=accel_gpt,
-            lm_head=lm_head_with_norm,
-            num_layers=self.config.layers,
-            num_heads=self.config.heads,
-            head_dim=self.config.head_dim,
-            block_size=256,
-            num_blocks=16,  # 16 * 256 = 4096 tokens capacity
-            use_cuda_graph=True,
-        )
-        logger.info("acceleration engine initialized")
-
-    def _apply_deepspeed(self, half: bool) -> None:
-        """Apply DeepSpeed inference optimization."""
-        if not TYPE_CHECKING:
+        if use_deepspeed and torch.cuda.is_available() and not TYPE_CHECKING:
             import deepspeed  # noqa: PLC0415
 
             self.ds_engine = deepspeed.init_inference(
@@ -282,6 +269,10 @@ class UnifiedVoice(nn.Module):
                 dtype=torch.float16 if half else torch.float32,
             )
             self.inference_model = self.ds_engine.module.eval()
+
+        else:
+            self.inference_model = inference_model.eval()
+        self.gpt.wte = self.mel_embedding
 
     # -------------------------------------------------------------------------
     # Conditioning Extraction

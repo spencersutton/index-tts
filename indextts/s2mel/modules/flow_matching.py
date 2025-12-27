@@ -9,14 +9,13 @@ from indextts.s2mel.modules.diffusion_transformer import DiT
 
 class CFM(nn.Module, ABC):
     estimator: DiT
-    criterion: nn.L1Loss
+    criterion = nn.L1Loss()
     in_channels: int
     sigma_min = 1e-6
 
     def __init__(self, args: S2MelConfig) -> None:
         super().__init__()
 
-        self.criterion = nn.L1Loss()
         self.estimator = DiT(args)
         self.in_channels = args.DiT.in_channels
 

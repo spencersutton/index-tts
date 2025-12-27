@@ -201,6 +201,7 @@ ignore = [
   "PYI036",
   "PYI042",
   "PYI046",
+  "PYI021",
   "PYI047",
   "PYI048",
   "PYI049",

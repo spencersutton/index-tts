@@ -1,7 +1,7 @@
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, NotRequired
+from typing import Any, Literal, NotRequired
 
 from gradio.components import Component as GradioComponent, Timer
 from gradio.components.base import Component
@@ -108,8 +108,6 @@ class ChatMessage:
 class ChatbotDataMessages(GradioRootModel):
     root: list[Message]
 
-if TYPE_CHECKING: ...
-
 def import_component_and_data(component_name: str) -> type[Component] | None: ...
 
 @document()
@@ -164,8 +162,6 @@ class Chatbot(Component):
     ) -> ChatbotDataMessages: ...
     def example_payload(self) -> Any: ...
     def example_value(self) -> Any: ...
-
-    if TYPE_CHECKING: ...
     def change(
         self,
         fn: Callable[..., Any] | None = ...,

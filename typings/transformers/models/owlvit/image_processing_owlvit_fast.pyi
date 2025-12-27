@@ -1,11 +1,9 @@
-from typing import TYPE_CHECKING
-
 from ...image_processing_utils_fast import BaseImageProcessorFast
 from ...utils import TensorType, is_torch_available
 from .modeling_owlvit import OwlViTObjectDetectionOutput
 
 """Fast Image processor class for OwlViT"""
-if TYPE_CHECKING: ...
+
 if is_torch_available(): ...
 logger = ...
 

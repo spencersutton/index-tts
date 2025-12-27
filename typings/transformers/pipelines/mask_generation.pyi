@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, overload
+from typing import Any, overload
 
 from PIL import Image
 
@@ -6,7 +6,7 @@ from ..utils import is_torch_available
 from .base import ChunkPipeline
 
 if is_torch_available(): ...
-if TYPE_CHECKING: ...
+
 logger = ...
 
 class MaskGenerationPipeline(ChunkPipeline):

@@ -1,7 +1,7 @@
 import dataclasses
 import functools
 from collections.abc import Callable
-from typing import TYPE_CHECKING, TypeGuard, TypeVar, overload
+from typing import TypeGuard, TypeVar, overload
 
 import sympy
 from sympy.logic.boolalg import Boolean as SympyBoolean
@@ -29,10 +29,9 @@ type AllFn2 = ExprFn2 | BoolFn2
 
 @dataclasses.dataclass(frozen=True)
 class ValueRanges[T: (sympy.Expr, SympyBoolean)]:
-    if TYPE_CHECKING:
-        ExprVR = ...
-        BoolVR = ...
-        type AllVR = ExprVR | BoolVR
+    ExprVR = ...
+    BoolVR = ...
+    type AllVR = ExprVR | BoolVR
     lower: _T
     upper: _T
     is_bool: bool

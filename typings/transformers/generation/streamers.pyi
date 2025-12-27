@@ -1,8 +1,4 @@
-from typing import TYPE_CHECKING
-
 from ..models.auto import AutoTokenizer
-
-if TYPE_CHECKING: ...
 
 class BaseStreamer:
     def put(self, value): ...

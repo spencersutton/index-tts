@@ -1,12 +1,12 @@
 from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, BinaryIO, TypedDict
+from typing import BinaryIO, TypedDict
 
 from ._commit_api import CommitOperationAdd
 from .utils import validate_hf_hub_args
 
 """Git LFS related type definitions and utilities"""
-if TYPE_CHECKING: ...
+
 logger = ...
 OID_REGEX = ...
 LFS_MULTIPART_UPLOAD_COMMAND = ...

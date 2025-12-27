@@ -1,5 +1,3 @@
-from typing import TYPE_CHECKING
-
 import numpy as np
 
 from ...image_processing_utils import BaseImageProcessor
@@ -9,7 +7,7 @@ from ...utils.import_utils import requires
 from .modeling_depth_pro import DepthProDepthEstimatorOutput
 
 """Image processor class for DepthPro."""
-if TYPE_CHECKING: ...
+
 if is_torch_available(): ...
 if is_torchvision_available(): ...
 logger = ...

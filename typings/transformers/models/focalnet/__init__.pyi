@@ -1,6 +1,2 @@
-from typing import TYPE_CHECKING
-
 from .configuration_focalnet import *
 from .modeling_focalnet import *
-
-if TYPE_CHECKING: ...

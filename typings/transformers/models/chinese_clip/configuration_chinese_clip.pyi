@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from ...configuration_utils import PretrainedConfig
 from ...onnx import OnnxConfig
@@ -7,7 +7,7 @@ from ...processing_utils import ProcessorMixin
 from ...utils import TensorType
 
 """Chinese-CLIP model configuration"""
-if TYPE_CHECKING: ...
+
 logger = ...
 
 class ChineseCLIPTextConfig(PretrainedConfig):

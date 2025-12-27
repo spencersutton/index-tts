@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import datasets
 import torch
@@ -21,7 +21,7 @@ from .utils import is_datasets_available
 from .utils.deprecation import deprecate_kwarg
 
 if is_datasets_available(): ...
-if TYPE_CHECKING: ...
+
 logger = ...
 
 class Seq2SeqTrainer(Trainer):

@@ -1,7 +1,3 @@
-from typing import TYPE_CHECKING
-
 from .configuration_aya_vision import *
 from .modeling_aya_vision import *
 from .processing_aya_vision import *
-
-if TYPE_CHECKING: ...

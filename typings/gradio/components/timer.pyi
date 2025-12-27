@@ -1,11 +1,8 @@
-from typing import TYPE_CHECKING
-
 from gradio.components.base import Component
 from gradio.events import Dependency
 from gradio_client.documentation import document
 
 """gr.Timer() component."""
-if TYPE_CHECKING: ...
 
 @document()
 class Timer(Component):
@@ -17,8 +14,6 @@ class Timer(Component):
     def example_payload(self): ...
     def example_value(self): ...
     def breaks_grouping(self) -> bool: ...
-
-    if TYPE_CHECKING: ...
     def tick(
         self,
         fn: Callable[..., Any] | None = ...,

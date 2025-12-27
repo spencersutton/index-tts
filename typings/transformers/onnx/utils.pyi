@@ -1,10 +1,7 @@
 from ctypes import c_float
 from enum import Enum
-from typing import TYPE_CHECKING
 
 from .. import AutoFeatureExtractor, AutoProcessor, AutoTokenizer
-
-if TYPE_CHECKING: ...
 
 class ParameterFormat(Enum):
     Float = c_float

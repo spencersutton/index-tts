@@ -1,6 +1,6 @@
 import functools
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Protocol, TypeVar
+from typing import Any, Protocol, TypeVar
 
 import sympy
 import torch
@@ -134,5 +134,4 @@ class DtypePropagationOpsHandler:
     @staticmethod
     def device_assert_async(cond, msg: str) -> torch.dtype: ...
 
-if TYPE_CHECKING:
-    class _typecheck_DtypePropagation(DtypePropagationOpsHandler, OpsHandler[Any]): ...
+class _typecheck_DtypePropagation(DtypePropagationOpsHandler, OpsHandler[Any]): ...

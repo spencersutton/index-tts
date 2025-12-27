@@ -1,5 +1,5 @@
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from gradio.components import Timer
 from gradio.components.base import Component
@@ -8,7 +8,6 @@ from gradio.i18n import I18nData
 from gradio_client.documentation import document
 
 """gr.ColorPicker() component."""
-if TYPE_CHECKING: ...
 
 @document()
 class ColorPicker(Component):
@@ -38,8 +37,6 @@ class ColorPicker(Component):
     def api_info(self) -> dict[str, Any]: ...
     def preprocess(self, payload: str | None) -> str | None: ...
     def postprocess(self, value: str | None) -> str | None: ...
-
-    if TYPE_CHECKING: ...
     def change(
         self,
         fn: Callable[..., Any] | None = ...,

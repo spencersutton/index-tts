@@ -1,7 +1,6 @@
 import os
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 import torch
 
@@ -16,7 +15,6 @@ from .logits_process import LogitsProcessorList
 from .stopping_criteria import StoppingCriteriaList
 from .streamers import BaseStreamer
 
-if TYPE_CHECKING: ...
 logger = ...
 if is_accelerate_available(): ...
 ALL_CACHE_NAMES = ...

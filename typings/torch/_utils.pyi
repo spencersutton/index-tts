@@ -1,7 +1,7 @@
 from collections import UserString
 from collections.abc import Callable
 from types import ModuleType
-from typing import TYPE_CHECKING, ParamSpec
+from typing import ParamSpec
 from warnings import deprecated
 
 import torch
@@ -29,12 +29,10 @@ class _ClassPropertyDescriptor:
     def __get__(self, instance, owner=...): ...
 
 def classproperty(func): ...
-
-if TYPE_CHECKING:
-    @deprecated(
-        "`torch._utils.is_compiling` is deprecated. Use `torch.compiler.is_compiling` instead.", category=FutureWarning
-    )
-    def is_compiling() -> bool: ...
+@deprecated(
+    "`torch._utils.is_compiling` is deprecated. Use `torch.compiler.is_compiling` instead.", category=FutureWarning
+)
+def is_compiling() -> bool: ...
 
 class _LazySeedTracker:
     def __init__(self) -> None: ...

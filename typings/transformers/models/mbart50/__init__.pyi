@@ -1,6 +1,2 @@
-from typing import TYPE_CHECKING
-
 from .tokenization_mbart50 import *
 from .tokenization_mbart50_fast import *
-
-if TYPE_CHECKING: ...

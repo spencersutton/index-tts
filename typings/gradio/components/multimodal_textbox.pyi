@@ -1,5 +1,5 @@
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Literal, NotRequired, TypedDict
+from typing import Any, Literal, NotRequired, TypedDict
 
 from gradio.components import Timer
 from gradio.components.base import Component, FormComponent
@@ -10,7 +10,6 @@ from gradio.i18n import I18nData
 from gradio_client.documentation import document
 
 """gr.MultimodalTextbox() component."""
-if TYPE_CHECKING: ...
 
 class MultimodalData(GradioModel):
     text: str
@@ -66,8 +65,6 @@ class MultimodalTextbox(FormComponent):
     def postprocess(self, value: MultimodalValue | str | None) -> MultimodalData | None: ...
     def example_payload(self) -> Any: ...
     def example_value(self) -> Any: ...
-
-    if TYPE_CHECKING: ...
     def change(
         self,
         fn: Callable[..., Any] | None = ...,

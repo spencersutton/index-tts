@@ -1,13 +1,12 @@
 from collections.abc import Callable
-from typing import TYPE_CHECKING, TypeVar
+from typing import TypeVar
 
 import uvicorn
 from gradio.routes import App
 from gradio.utils import ServerReloader
 from uvicorn.config import Config
 
-if TYPE_CHECKING:
-    _ServerReloaderT = TypeVar("_ServerReloaderT", bound=ServerReloader)
+_ServerReloaderT = TypeVar("_ServerReloaderT", bound=ServerReloader)
 INITIAL_PORT_VALUE = ...
 TRY_NUM_PORTS = ...
 LOCALHOST_NAME = ...

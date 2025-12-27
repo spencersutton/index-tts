@@ -2,7 +2,7 @@ import os
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from ..configuration_utils import PretrainedConfig
 from ..modeling_utils import PreTrainedModel
@@ -10,7 +10,7 @@ from ..utils import ExplicitEnum, PushToHubMixin, is_torch_available
 from .logits_process import WatermarkLogitsProcessor
 
 """Generation configuration class and utilities."""
-if TYPE_CHECKING: ...
+
 logger = ...
 METADATA_FIELDS = ...
 NEED_SETUP_CACHE_CLASSES_MAPPING = ...

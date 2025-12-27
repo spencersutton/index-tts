@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import numpy as np
 import torch
@@ -12,7 +12,7 @@ from ...utils.import_utils import requires
 
 """Image processor class for MaskFormer."""
 logger = ...
-if TYPE_CHECKING: ...
+
 if is_torch_available(): ...
 
 def get_size_with_aspect_ratio(image_size, size, max_size=...) -> tuple[int, int]: ...

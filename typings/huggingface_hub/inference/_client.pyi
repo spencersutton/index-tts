@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any, Literal, overload
+from typing import Any, Literal, overload
 
 import numpy as np
 from huggingface_hub.inference._common import ContentT
@@ -48,7 +48,6 @@ from huggingface_hub.inference._generated.types import (
 from huggingface_hub.inference._providers import PROVIDER_OR_POLICY_T
 from PIL.Image import Image
 
-if TYPE_CHECKING: ...
 logger = ...
 MODEL_KWARGS_NOT_USED_REGEX = ...
 

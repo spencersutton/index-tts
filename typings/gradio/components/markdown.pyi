@@ -1,5 +1,5 @@
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from gradio.components import Timer
 from gradio.components.base import Component
@@ -8,7 +8,6 @@ from gradio.i18n import I18nData
 from gradio_client.documentation import document
 
 """gr.Markdown() component."""
-if TYPE_CHECKING: ...
 
 @document()
 class Markdown(Component):
@@ -44,8 +43,6 @@ class Markdown(Component):
     def example_payload(self) -> Any: ...
     def example_value(self) -> Any: ...
     def api_info(self) -> dict[str, Any]: ...
-
-    if TYPE_CHECKING: ...
     def change(
         self,
         fn: Callable[..., Any] | None = ...,

@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal
+from typing import Literal
 
 from gradio.components import Timer
 from gradio.components.base import Component
@@ -8,7 +8,6 @@ from gradio.components.button import Button
 from gradio_client.documentation import document
 
 """Predefined button to copy a shareable link to the current Gradio Space."""
-if TYPE_CHECKING: ...
 
 @document()
 class DeepLinkButton(Button):
@@ -37,5 +36,3 @@ class DeepLinkButton(Button):
     ) -> None: ...
     def activate(self): ...
     def get_share_link(self, value: str = ..., copied_value: str = ...): ...
-
-    if TYPE_CHECKING: ...

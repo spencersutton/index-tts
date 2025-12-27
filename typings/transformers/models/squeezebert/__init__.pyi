@@ -1,8 +1,4 @@
-from typing import TYPE_CHECKING
-
 from .configuration_squeezebert import *
 from .modeling_squeezebert import *
 from .tokenization_squeezebert import *
 from .tokenization_squeezebert_fast import *
-
-if TYPE_CHECKING: ...

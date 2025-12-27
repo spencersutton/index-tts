@@ -1,5 +1,5 @@
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from gradio.components import Timer
 from gradio.components.base import Component, FormComponent
@@ -8,7 +8,6 @@ from gradio.i18n import I18nData
 from gradio_client.documentation import document
 
 """gr.Number() component."""
-if TYPE_CHECKING: ...
 
 @document()
 class Number(FormComponent):
@@ -48,8 +47,6 @@ class Number(FormComponent):
     def example_payload(self) -> Any: ...
     def example_value(self) -> Any: ...
     def read_from_flag(self, payload: str): ...
-
-    if TYPE_CHECKING: ...
     def change(
         self,
         fn: Callable[..., Any] | None = ...,

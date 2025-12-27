@@ -1,6 +1,2 @@
-from typing import TYPE_CHECKING
-
 from .configuration_qwen2_moe import *
 from .modeling_qwen2_moe import *
-
-if TYPE_CHECKING: ...

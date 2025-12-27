@@ -3,7 +3,7 @@ from collections import UserDict
 from collections.abc import Callable, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, NamedTuple
+from typing import Any, NamedTuple
 
 import numpy as np
 import torch
@@ -21,7 +21,6 @@ Base classes common to both the slow and the fast tokenization classes: PreTrain
 fronting encoding methods) Special token mixing (host the special tokens logic) and BatchEncoding (wrap the dictionary
 of output with special method for the Fast tokenizers)
 """
-if TYPE_CHECKING: ...
 
 def import_protobuf_decode_error(error_message=...):  # -> type[DecodeError]:
     ...

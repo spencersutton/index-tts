@@ -1,5 +1,5 @@
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from gradio.components import Timer
 from gradio.components.base import Component, FormComponent
@@ -8,7 +8,6 @@ from gradio.i18n import I18nData
 from gradio_client.documentation import document
 
 """gr.Radio() component."""
-if TYPE_CHECKING: ...
 
 @document()
 class Radio(FormComponent):
@@ -41,8 +40,6 @@ class Radio(FormComponent):
     def preprocess(self, payload: str | float | None) -> str | int | float | None: ...
     def postprocess(self, value: str | float | None) -> str | int | float | None: ...
     def api_info(self) -> dict[str, Any]: ...
-
-    if TYPE_CHECKING: ...
     def select(
         self,
         fn: Callable[..., Any] | None = ...,

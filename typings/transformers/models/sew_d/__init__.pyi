@@ -1,6 +1,2 @@
-from typing import TYPE_CHECKING
-
 from .configuration_sew_d import *
 from .modeling_sew_d import *
-
-if TYPE_CHECKING: ...

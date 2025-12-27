@@ -6,7 +6,6 @@ class BlocksMeta(type):
     def __new__(cls, name, bases, attrs): ...
 
 class BlocksEvents:
-    if TYPE_CHECKING: ...
     def load(
         self,
         fn: Callable[..., Any] | None = ...,

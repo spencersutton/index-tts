@@ -6,7 +6,7 @@ import weakref
 from collections.abc import Generator, Mapping, Sequence
 from dataclasses import dataclass
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Literal, Self, TypeGuard, TypeVar
+from typing import Any, Literal, Self, TypeGuard, TypeVar
 from weakref import ReferenceType
 
 import torch
@@ -232,8 +232,7 @@ class _DispatchCacheValidEntry:
 class _DispatchCacheBypassEntry:
     reason: str
 
-if TYPE_CHECKING:
-    type _DispatchCacheEntry = _DispatchCacheValidEntry | _DispatchCacheBypassEntry
+type _DispatchCacheEntry = _DispatchCacheValidEntry | _DispatchCacheBypassEntry
 
 @dataclass_slots
 @dataclass(frozen=True)

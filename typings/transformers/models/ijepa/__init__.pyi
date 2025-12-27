@@ -1,6 +1,2 @@
-from typing import TYPE_CHECKING
-
 from .configuration_ijepa import *
 from .modeling_ijepa import *
-
-if TYPE_CHECKING: ...

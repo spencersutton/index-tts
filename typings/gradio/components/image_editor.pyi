@@ -1,7 +1,7 @@
 import dataclasses
 from collections.abc import Iterable, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 import numpy as np
 import PIL.Image
@@ -14,7 +14,7 @@ from gradio_client.documentation import document
 from typing_extensions import TypedDict
 
 r"""gr.ImageEditor() component."""
-if TYPE_CHECKING: ...
+
 type ImageType = np.ndarray | PIL.Image.Image | str
 
 class EditorValue(TypedDict):
@@ -130,8 +130,6 @@ class ImageEditor(Component):
     def example_value(self) -> Any: ...
     @server
     def accept_blobs(self, data: AcceptBlobs): ...
-
-    if TYPE_CHECKING: ...
     def clear(
         self,
         fn: Callable[..., Any] | None = ...,

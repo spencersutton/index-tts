@@ -1,6 +1,6 @@
 import dataclasses
 from collections.abc import Callable, Container
-from typing import TYPE_CHECKING, Any, Literal, TypeVar
+from typing import Any, Literal, TypeVar
 
 from torch._guards import CompileId
 from torch.utils._ordered_set import OrderedSet
@@ -18,8 +18,7 @@ class InductorConfig(Config):
 
 class NoTritonConfigsError(RuntimeError): ...
 
-if TYPE_CHECKING:
-    type LauncherType = Any
+type LauncherType = Any
 type _KernelType = CompiledKernel | StaticallyLaunchedCudaKernel
 _T = TypeVar("_T", bound=_KernelType)
 log = ...

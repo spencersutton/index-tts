@@ -1,5 +1,5 @@
 import collections
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import Any, TypeVar
 
 from torch._C._distributed_rpc import PyRRef
 
@@ -33,8 +33,8 @@ def shutdown(graceful=..., timeout=...) -> None: ...
 def get_worker_info(worker_name=...) -> WorkerInfo: ...
 
 T = TypeVar("T")
-if TYPE_CHECKING:
-    class RRef[T](PyRRef[T]): ...
+
+class RRef[T](PyRRef[T]): ...
 
 def method_factory(method_name, docstring) -> Callable[..., Any]: ...
 @_require_initialized

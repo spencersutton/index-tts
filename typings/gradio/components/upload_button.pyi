@@ -1,5 +1,5 @@
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from gradio.components import Timer
 from gradio.components.base import Component
@@ -9,7 +9,6 @@ from gradio.i18n import I18nData
 from gradio_client.documentation import document
 
 """gr.UploadButton() component."""
-if TYPE_CHECKING: ...
 
 @document()
 class UploadButton(Component):
@@ -44,8 +43,6 @@ class UploadButton(Component):
     def postprocess(self, value: str | list[str] | None) -> ListFiles | FileData | None: ...
     @property
     def skip_api(self): ...
-
-    if TYPE_CHECKING: ...
     def click(
         self,
         fn: Callable[..., Any] | None = ...,

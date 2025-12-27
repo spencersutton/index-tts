@@ -1,7 +1,7 @@
 import dataclasses
 from collections.abc import Callable, Sequence
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, TypeVar, Union
+from typing import Any, TypeVar, Union
 
 import sympy
 import torch
@@ -18,8 +18,7 @@ from .common import CSE, BlockShapeType, CSEVariable, IndentedBuffer, OpOverride
 from .simd import IterationRanges, IterationRangesEntry, IterationRangesRoot, SIMDKernel, SIMDScheduling
 from .simd_kernel_features import SIMDKernelFeatures
 
-if TYPE_CHECKING:
-    _T = TypeVar("_T")
+_T = TypeVar("_T")
 log = ...
 perf_hint_log = ...
 schedule_log = ...

@@ -1,9 +1,5 @@
-from typing import TYPE_CHECKING
-
 from .configuration_deberta import *
 from .modeling_deberta import *
 from .modeling_tf_deberta import *
 from .tokenization_deberta import *
 from .tokenization_deberta_fast import *
-
-if TYPE_CHECKING: ...

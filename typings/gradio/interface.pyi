@@ -1,5 +1,5 @@
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from diffusers import DiffusionPipeline
 from gradio.blocks import Blocks
@@ -14,7 +14,6 @@ from transformers.pipelines.base import Pipeline
 """
 This file defines two useful high-level abstractions to build Gradio apps: Interface and TabbedInterface.
 """
-if TYPE_CHECKING: ...
 
 @document("launch", "load", "from_pipeline", "integrate", "queue")
 class Interface(Blocks):

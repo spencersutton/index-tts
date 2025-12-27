@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import torch
 from sympy import Expr
@@ -8,8 +8,7 @@ from torch.utils._ordered_set import OrderedSet
 from ..scheduler import BaseSchedulerNode, BaseScheduling, FusedSchedulerNode, Scheduler, SchedulerNode
 from .common import BackendFeature
 
-if TYPE_CHECKING:
-    type _IntLike = int | Expr
+type _IntLike = int | Expr
 
 class CUDACombinedScheduling(BaseScheduling):
     def __init__(self, scheduler: Scheduler | None) -> None: ...

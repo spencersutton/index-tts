@@ -1,6 +1,6 @@
 import dataclasses
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Never
+from typing import Any, Never
 
 import sympy
 from torch import SymInt
@@ -16,13 +16,12 @@ from torch.fx.proxy import Proxy
 from torch.types import IntLikeType
 from triton._C.libtriton.ir import module as TritonIRModule
 
-if TYPE_CHECKING:
-    type TritonMetaParamsType = dict[str, int]
-    type TritonGridTupleType = tuple[int | sympy.Expr | SymInt, ...]
-    type TritonGridCallableType = Callable[[TritonMetaParamsType], tuple[int, ...]]
-    type TritonGridType = TritonGridTupleType | TritonGridCallableType
-    type TritonKernelType = Autotuner | JITFunction
-    type TritonAutotunerType = Autotuner
+type TritonMetaParamsType = dict[str, int]
+type TritonGridTupleType = tuple[int | sympy.Expr | SymInt, ...]
+type TritonGridCallableType = Callable[[TritonMetaParamsType], tuple[int, ...]]
+type TritonGridType = TritonGridTupleType | TritonGridCallableType
+type TritonKernelType = Autotuner | JITFunction
+type TritonAutotunerType = Autotuner
 log = ...
 type TMAExperimentalMetadata = tuple[str, tuple[list[IntLikeType], list[IntLikeType], IntLikeType]]
 type TMAStableMetadata = tuple[str, tuple[list[IntLikeType],]]

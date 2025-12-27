@@ -1,5 +1,3 @@
-from typing import TYPE_CHECKING
-
 from .bort import *
 from .deta import *
 from .efficientformer import *
@@ -24,5 +22,3 @@ from .tvlt import *
 from .van import *
 from .vit_hybrid import *
 from .xlm_prophetnet import *
-
-if TYPE_CHECKING: ...

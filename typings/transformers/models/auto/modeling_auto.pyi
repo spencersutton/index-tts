@@ -1,13 +1,12 @@
 import os
-from typing import TYPE_CHECKING
 
 from ...generation import GenerationMixin
 from ...modeling_utils import PreTrainedModel
 from .auto_factory import _BaseAutoBackboneClass, _BaseAutoModelClass
 
 """Auto Model class."""
-if TYPE_CHECKING:
-    class _BaseModelWithGenerate(PreTrainedModel, GenerationMixin): ...
+
+class _BaseModelWithGenerate(PreTrainedModel, GenerationMixin): ...
 
 logger = ...
 MODEL_MAPPING_NAMES = ...

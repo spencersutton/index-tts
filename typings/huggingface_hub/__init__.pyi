@@ -1,5 +1,4 @@
 import os
-from typing import TYPE_CHECKING
 
 from ._commit_scheduler import CommitScheduler
 from ._inference_endpoints import (
@@ -845,4 +844,3 @@ __all__ = [
     "whoami",
 ]
 if os.environ.get("EAGER_IMPORT", ""): ...
-if TYPE_CHECKING: ...

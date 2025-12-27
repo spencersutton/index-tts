@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 import torch
 import torch.nn as nn
@@ -22,7 +21,7 @@ from .configuration_musicgen import MusicgenConfig, MusicgenDecoderConfig
 
 """PyTorch Musicgen model."""
 if is_torch_flex_attn_available(): ...
-if TYPE_CHECKING: ...
+
 logger = ...
 
 @dataclass

@@ -1,14 +1,12 @@
 import os
 from collections import OrderedDict
-from typing import TYPE_CHECKING
 
 from ...utils.import_utils import requires
 from .configuration_auto import replace_list_option_in_docstrings
 
 """AutoVideoProcessor class."""
 logger = ...
-if TYPE_CHECKING:
-    VIDEO_PROCESSOR_MAPPING_NAMES: OrderedDict[str, tuple[str | None, str | None]] = ...
+VIDEO_PROCESSOR_MAPPING_NAMES: OrderedDict[str, tuple[str | None, str | None]] = ...
 VIDEO_PROCESSOR_MAPPING = ...
 
 def video_processor_class_from_name(class_name: str):  # -> Any | None:

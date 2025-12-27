@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import torch
 from torch import nn
@@ -19,7 +19,6 @@ from ..llama.modeling_llama import (
 )
 from ..llama.tokenization_llama import LlamaTokenizer
 
-if TYPE_CHECKING: ...
 VOCAB_FILES_NAMES = ...
 SPIECE_UNDERLINE = ...
 logger = ...

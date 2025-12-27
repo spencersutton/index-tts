@@ -1,7 +1,3 @@
-from typing import TYPE_CHECKING
-
 from .configuration_hubert import *
 from .modeling_hubert import *
 from .modeling_tf_hubert import *
-
-if TYPE_CHECKING: ...

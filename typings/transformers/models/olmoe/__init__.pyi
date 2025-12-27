@@ -1,6 +1,2 @@
-from typing import TYPE_CHECKING
-
 from .configuration_olmoe import *
 from .modeling_olmoe import *
-
-if TYPE_CHECKING: ...

@@ -1,6 +1,6 @@
 from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 import numpy as np
 import PIL.Image
@@ -12,7 +12,7 @@ from gradio.i18n import I18nData
 from gradio_client.documentation import document
 
 """gr.Gallery() component."""
-if TYPE_CHECKING: ...
+
 type GalleryMediaType = np.ndarray | PIL.Image.Image | Path | str
 type CaptionedGalleryMediaType = tuple[GalleryMediaType, str]
 
@@ -75,8 +75,6 @@ class Gallery(Component):
     def convert_to_type(img: str, type: Literal["filepath", "numpy", "pil"]): ...
     def example_payload(self) -> Any: ...
     def example_value(self) -> Any: ...
-
-    if TYPE_CHECKING: ...
     def select(
         self,
         fn: Callable[..., Any] | None = ...,

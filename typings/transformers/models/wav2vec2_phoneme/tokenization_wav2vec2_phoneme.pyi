@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import numpy as np
 
@@ -8,7 +8,7 @@ from ...utils import ModelOutput
 
 """Tokenization class for Wav2Vec2Phoneme."""
 logger = ...
-if TYPE_CHECKING: ...
+
 VOCAB_FILES_NAMES = ...
 type ListOfDict = list[dict[str, int | str]]
 

@@ -1,5 +1,3 @@
-from typing import TYPE_CHECKING
-
 from ...image_processing_utils import BatchFeature
 from ...image_utils import ImageInput
 from ...processing_utils import ImagesKwargs, ProcessingKwargs, ProcessorMixin, Unpack
@@ -10,7 +8,6 @@ from .modeling_owlvit import OwlViTImageGuidedObjectDetectionOutput, OwlViTObjec
 """
 Image/Text processor class for OWL-ViT
 """
-if TYPE_CHECKING: ...
 
 class OwlViTImagesKwargs(ImagesKwargs, total=False):
     query_images: ImageInput | None

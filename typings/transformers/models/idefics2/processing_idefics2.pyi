@@ -1,5 +1,3 @@
-from typing import TYPE_CHECKING
-
 from ...feature_extraction_utils import BatchFeature
 from ...image_utils import ImageInput
 from ...processing_utils import ImagesKwargs, ProcessingKwargs, ProcessorMixin, Unpack
@@ -8,7 +6,7 @@ from ...tokenization_utils_base import PreTokenizedInput, TextInput
 """
 Processor class for IDEFICS2.
 """
-if TYPE_CHECKING: ...
+
 logger = ...
 
 def is_url(val) -> bool: ...

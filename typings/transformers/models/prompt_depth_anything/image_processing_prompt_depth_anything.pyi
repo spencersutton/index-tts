@@ -1,5 +1,3 @@
-from typing import TYPE_CHECKING
-
 import numpy as np
 
 from ...image_processing_utils import BaseImageProcessor, BatchFeature
@@ -8,7 +6,7 @@ from ...modeling_outputs import DepthEstimatorOutput
 from ...utils import TensorType, filter_out_non_signature_kwargs
 
 """Image processor class for PromptDepthAnything."""
-if TYPE_CHECKING: ...
+
 if is_torch_available(): ...
 logger = ...
 

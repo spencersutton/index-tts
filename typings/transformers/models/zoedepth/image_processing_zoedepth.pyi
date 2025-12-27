@@ -1,5 +1,4 @@
 from collections.abc import Iterable
-from typing import TYPE_CHECKING
 
 import numpy as np
 import PIL
@@ -11,7 +10,7 @@ from ...utils import TensorType, filter_out_non_signature_kwargs, is_torch_avail
 from .modeling_zoedepth import ZoeDepthDepthEstimatorOutput
 
 """Image processor class for ZoeDepth."""
-if TYPE_CHECKING: ...
+
 if is_vision_available(): ...
 if is_torch_available(): ...
 logger = ...

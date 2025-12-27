@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 import numpy as np
 import PIL.Image
@@ -11,7 +11,6 @@ from gradio.i18n import I18nData
 from gradio_client.documentation import document
 
 """gr.AnnotatedImage() component."""
-if TYPE_CHECKING: ...
 
 class Annotation(GradioModel):
     image: FileData
@@ -68,8 +67,6 @@ class AnnotatedImage(Component):
     ) -> AnnotatedImageData | None: ...
     def example_payload(self) -> Any: ...
     def example_value(self) -> Any: ...
-
-    if TYPE_CHECKING: ...
     def select(
         self,
         fn: Callable[..., Any] | None = ...,

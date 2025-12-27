@@ -1,12 +1,10 @@
-from typing import TYPE_CHECKING
-
 from ...image_processing_utils_fast import BaseImageProcessorFast
 from ...utils import TensorType, is_torch_available, is_torchvision_available
 from ...utils.import_utils import requires
 from .modeling_depth_pro import DepthProDepthEstimatorOutput
 
 """Fast Image processor class for DepthPro."""
-if TYPE_CHECKING: ...
+
 logger = ...
 if is_torch_available(): ...
 if is_torchvision_available(): ...

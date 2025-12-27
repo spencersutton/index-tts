@@ -1,11 +1,8 @@
-from typing import TYPE_CHECKING
-
 import torch
 
 from ..utils import is_torch_available
 from .base import HfQuantizer
 
-if TYPE_CHECKING: ...
 if is_torch_available(): ...
 logger = ...
 

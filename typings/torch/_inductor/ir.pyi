@@ -2,7 +2,7 @@ import contextlib
 import dataclasses
 from collections.abc import Callable, Container, Generator, Iterable, Iterator, Sequence
 from enum import Enum
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, Never, ParamSpec, Self, TypeIs, TypeVar, overload, override
+from typing import Any, ClassVar, Literal, Never, ParamSpec, Self, TypeIs, TypeVar, overload, override
 
 import sympy
 import torch._export.serde.schema as export_schema
@@ -156,10 +156,8 @@ class IRNode:
     def get_mutation_names(self) -> Sequence[str]: ...
     def get_operation_name(self) -> str: ...
     def get_inputs_that_alias_output(self) -> Sequence[str]: ...
-
-    if TYPE_CHECKING:
-        @property
-        def dtype(self) -> torch.dtype: ...
+    @property
+    def dtype(self) -> torch.dtype: ...
 
 @ir_dataclass(frozen=False)
 class Operation:

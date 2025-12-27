@@ -1,5 +1,3 @@
-from typing import TYPE_CHECKING
-
 from torch import Tensor
 from torch.types import _dtype as DType
 
@@ -10,9 +8,7 @@ from .semi_structured import (
     to_sparse_semi_structured,
 )
 
-if TYPE_CHECKING:
-    type DimOrDims = int | tuple[int, ...] | list[int] | None
-    ...
+type DimOrDims = int | tuple[int, ...] | list[int] | None
 __all__ = [
     "SparseSemiStructuredTensor",
     "SparseSemiStructuredTensorCUSPARSELT",

@@ -1,8 +1,4 @@
-from typing import TYPE_CHECKING
-
 from .configuration_resnet import *
 from .modeling_flax_resnet import *
 from .modeling_resnet import *
 from .modeling_tf_resnet import *
-
-if TYPE_CHECKING: ...

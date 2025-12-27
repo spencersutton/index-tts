@@ -1,7 +1,3 @@
-from typing import TYPE_CHECKING
-
 from .configuration_textnet import *
 from .image_processing_textnet import *
 from .modeling_textnet import *
-
-if TYPE_CHECKING: ...

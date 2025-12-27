@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from gradio.components import Timer
 from gradio.components.base import Component
@@ -9,7 +9,6 @@ from gradio.i18n import I18nData
 from gradio_client.documentation import document
 
 """gr.Plot() component."""
-if TYPE_CHECKING: ...
 
 class PlotData(GradioModel):
     type: Literal["altair", "bokeh", "plotly", "matplotlib"]
@@ -47,8 +46,6 @@ class Plot(Component):
     def example_payload(self) -> Any: ...
     def example_value(self) -> Any: ...
     def postprocess(self, value: Any) -> PlotData | None: ...
-
-    if TYPE_CHECKING: ...
     def change(
         self,
         fn: Callable[..., Any] | None = ...,

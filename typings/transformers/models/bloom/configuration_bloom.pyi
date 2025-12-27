@@ -1,12 +1,12 @@
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from ... import PreTrainedTokenizer, TensorType
 from ...configuration_utils import PretrainedConfig
 from ...onnx import OnnxConfigWithPast, PatchingSpec
 
 """Bloom configuration"""
-if TYPE_CHECKING: ...
+
 logger = ...
 
 class BloomConfig(PretrainedConfig):

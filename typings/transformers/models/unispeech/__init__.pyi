@@ -1,6 +1,2 @@
-from typing import TYPE_CHECKING
-
 from .configuration_unispeech import *
 from .modeling_unispeech import *
-
-if TYPE_CHECKING: ...

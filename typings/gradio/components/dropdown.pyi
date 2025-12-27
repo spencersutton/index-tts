@@ -1,5 +1,5 @@
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from gradio.components import Timer
 from gradio.components.base import Component, FormComponent
@@ -8,7 +8,6 @@ from gradio.i18n import I18nData
 from gradio_client.documentation import document
 
 """gr.Dropdown() component."""
-if TYPE_CHECKING: ...
 
 class DefaultValue: ...
 
@@ -52,8 +51,6 @@ class Dropdown(FormComponent):
     def postprocess(
         self, value: str | float | list[str | int | float] | None
     ) -> str | int | float | list[str | int | float] | None: ...
-
-    if TYPE_CHECKING: ...
     def change(
         self,
         fn: Callable[..., Any] | None = ...,

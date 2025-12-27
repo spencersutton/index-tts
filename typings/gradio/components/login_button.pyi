@@ -1,12 +1,11 @@
 from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal
+from typing import Literal
 
 from gradio.components import Button, Component, Timer
 from gradio_client.documentation import document
 
 """Predefined button to sign in with Hugging Face in a Gradio Space."""
-if TYPE_CHECKING: ...
 
 @document()
 class LoginButton(Button):
@@ -33,7 +32,5 @@ class LoginButton(Button):
         min_width: int | None = ...,
     ) -> None: ...
     def activate(self): ...
-
-    if TYPE_CHECKING: ...
 
 _js_handle_redirect = ...

@@ -1,18 +1,17 @@
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar
+from typing import Any, ParamSpec, TypeVar
 from warnings import deprecated
 
 import torch
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
-if TYPE_CHECKING:
-    @deprecated(
-        "`torch._dynamo.external_utils.is_compiling` is deprecated. Use `torch.compiler.is_compiling` instead.",
-        category=FutureWarning,
-    )
-    def is_compiling() -> bool: ...
 
+@deprecated(
+    "`torch._dynamo.external_utils.is_compiling` is deprecated. Use `torch.compiler.is_compiling` instead.",
+    category=FutureWarning,
+)
+def is_compiling() -> bool: ...
 def wrap_inline[**P, R](fn: Callable[_P, _R]) -> Callable[_P, _R]: ...
 def call_hook(hook: Callable[..., torch.Tensor | None], *args: Any, **kwargs: Any) -> torch.Tensor: ...
 def wrap_numpy[**P, R](f: Callable[_P, _R]) -> Callable[_P, _R]: ...

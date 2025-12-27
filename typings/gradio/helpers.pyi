@@ -1,5 +1,5 @@
 from collections.abc import Callable, Iterable, Sequence
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from gradio import routes
 from gradio.components import Component
@@ -10,7 +10,7 @@ from gradio_client.documentation import document
 """
 Defines helper methods useful for loading and caching Interface examples.
 """
-if TYPE_CHECKING: ...
+
 LOG_FILE = ...
 
 def create_examples(

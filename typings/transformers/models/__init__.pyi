@@ -1,5 +1,3 @@
-from typing import TYPE_CHECKING
-
 from .aimv2 import *
 from .albert import *
 from .align import *
@@ -347,5 +345,3 @@ from .yoso import *
 from .zamba import *
 from .zamba2 import *
 from .zoedepth import *
-
-if TYPE_CHECKING: ...

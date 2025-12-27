@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Self
+from typing import Any, Self
 
 import gradio as gr
 from fastapi.responses import JSONResponse
@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from .utils import experimental, is_fastapi_available
 
 """Contains `WebhooksServer` and `webhook_endpoint` to create a webhook server easily."""
-if TYPE_CHECKING: ...
+
 if is_fastapi_available(): ...
 else:
     JSONResponse = ...

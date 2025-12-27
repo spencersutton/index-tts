@@ -1,5 +1,3 @@
-from typing import TYPE_CHECKING
-
 import numpy as np
 
 from ...image_processing_utils import BaseImageProcessor, BatchFeature
@@ -9,7 +7,7 @@ from ...utils.import_utils import requires
 from .modeling_owlvit import OwlViTObjectDetectionOutput
 
 """Image processor class for OwlViT"""
-if TYPE_CHECKING: ...
+
 if is_torch_available(): ...
 logger = ...
 

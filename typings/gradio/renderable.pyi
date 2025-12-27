@@ -1,12 +1,10 @@
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Literal
+from typing import Literal
 
 from gradio.blocks import Block
 from gradio.components import Component
 from gradio.events import EventListenerCallable
 from gradio_client.documentation import document
-
-if TYPE_CHECKING: ...
 
 class Renderable:
     def __init__(

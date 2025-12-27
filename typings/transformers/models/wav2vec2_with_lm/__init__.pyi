@@ -1,5 +1,1 @@
-from typing import TYPE_CHECKING
-
 from .processing_wav2vec2_with_lm import *
-
-if TYPE_CHECKING: ...

@@ -1,6 +1,5 @@
 import pathlib
 from collections import UserDict
-from typing import TYPE_CHECKING
 
 from ...image_utils import AnnotationFormat, ImageInput
 from ...processing_utils import ImagesKwargs, ProcessingKwargs, ProcessorMixin, Unpack
@@ -12,7 +11,7 @@ from .modeling_grounding_dino import GroundingDinoObjectDetectionOutput
 Processor class for Grounding DINO.
 """
 if is_torch_available(): ...
-if TYPE_CHECKING: ...
+
 type AnnotationType = dict[str, int | str | list[dict]]
 
 def get_phrases_from_posmap(posmaps, input_ids):  # -> list[Any]:

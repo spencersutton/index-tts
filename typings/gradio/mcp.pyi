@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from gradio.blocks import BlockContext, BlockFunction, Blocks
 from gradio.components import Component
@@ -10,7 +10,6 @@ from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-if TYPE_CHECKING: ...
 DEFAULT_TEMP_DIR = ...
 
 class GradioMCPServer:

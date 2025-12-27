@@ -1,7 +1,3 @@
-from typing import TYPE_CHECKING
-
 from .configuration_luke import *
 from .modeling_luke import *
 from .tokenization_luke import *
-
-if TYPE_CHECKING: ...

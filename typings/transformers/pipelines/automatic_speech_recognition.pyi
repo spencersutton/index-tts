@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import numpy as np
 import torch
@@ -10,7 +10,6 @@ from ..tokenization_utils import PreTrainedTokenizer
 from ..utils import is_torch_available
 from .base import ChunkPipeline
 
-if TYPE_CHECKING: ...
 logger = ...
 if is_torch_available(): ...
 

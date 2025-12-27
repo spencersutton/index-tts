@@ -1,6 +1,5 @@
 import os
 from collections import OrderedDict
-from typing import TYPE_CHECKING
 
 from ...utils.import_utils import requires
 from .configuration_auto import replace_list_option_in_docstrings
@@ -8,8 +7,7 @@ from .configuration_auto import replace_list_option_in_docstrings
 """AutoImageProcessor class."""
 logger = ...
 FORCE_FAST_IMAGE_PROCESSOR = ...
-if TYPE_CHECKING:
-    IMAGE_PROCESSOR_MAPPING_NAMES: OrderedDict[str, tuple[str | None, str | None]] = ...
+IMAGE_PROCESSOR_MAPPING_NAMES: OrderedDict[str, tuple[str | None, str | None]] = ...
 IMAGE_PROCESSOR_MAPPING = ...
 
 def get_image_processor_class_from_name(class_name: str):  # -> type[BaseImageProcessorFast] | Any | None:

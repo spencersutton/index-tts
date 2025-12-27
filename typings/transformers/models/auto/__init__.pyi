@@ -1,5 +1,3 @@
-from typing import TYPE_CHECKING
-
 from .auto_factory import *
 from .configuration_auto import *
 from .feature_extraction_auto import *
@@ -10,5 +8,3 @@ from .modeling_tf_auto import *
 from .processing_auto import *
 from .tokenization_auto import *
 from .video_processing_auto import *
-
-if TYPE_CHECKING: ...

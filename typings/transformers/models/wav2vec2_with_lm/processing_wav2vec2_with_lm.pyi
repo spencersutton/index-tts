@@ -2,7 +2,6 @@ from collections.abc import Iterable
 from contextlib import contextmanager
 from dataclasses import dataclass
 from multiprocessing import Pool
-from typing import TYPE_CHECKING
 
 import numpy as np
 from pyctcdecode import BeamSearchDecoderCTC
@@ -16,7 +15,7 @@ from ...utils import ModelOutput
 Speech processor class for Wav2Vec2
 """
 logger = ...
-if TYPE_CHECKING: ...
+
 type ListOfDict = list[dict[str, int | str]]
 
 @dataclass

@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from ...configuration_utils import PretrainedConfig
 from ...onnx import OnnxConfig
@@ -8,7 +8,7 @@ from ...tokenization_utils_base import PreTrainedTokenizerBase
 from ...utils import TensorType
 
 """Longformer configuration"""
-if TYPE_CHECKING: ...
+
 logger = ...
 
 class LongformerConfig(PretrainedConfig):

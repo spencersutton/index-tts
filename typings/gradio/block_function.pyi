@@ -1,12 +1,10 @@
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Literal
+from typing import Literal
 
 from gradio.components.base import Component
 from gradio.renderable import Renderable
 
 from .blocks import BlockContext
-
-if TYPE_CHECKING: ...
 
 class BlockFunction:
     def __init__(

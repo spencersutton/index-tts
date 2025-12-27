@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from gradio.components import Timer
 from gradio.components.base import Component
@@ -10,7 +10,6 @@ from gradio.i18n import I18nData
 from gradio_client.documentation import document
 
 """gr.SimpleImage() component."""
-if TYPE_CHECKING: ...
 
 @document()
 class SimpleImage(Component):
@@ -40,8 +39,6 @@ class SimpleImage(Component):
     def postprocess(self, value: str | Path | None) -> FileData | None: ...
     def example_payload(self) -> Any: ...
     def example_value(self) -> Any: ...
-
-    if TYPE_CHECKING: ...
     def clear(
         self,
         fn: Callable[..., Any] | None = ...,

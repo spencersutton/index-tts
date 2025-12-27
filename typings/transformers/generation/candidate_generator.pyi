@@ -1,5 +1,3 @@
-from typing import TYPE_CHECKING
-
 import torch
 import torch.nn as nn
 
@@ -10,7 +8,6 @@ from .configuration_utils import GenerationConfig
 from .logits_process import LogitsProcessorList
 
 if is_sklearn_available(): ...
-if TYPE_CHECKING: ...
 
 class CandidateGenerator:
     def get_candidates(self, input_ids: torch.LongTensor) -> tuple[torch.LongTensor, torch.FloatTensor | None]: ...

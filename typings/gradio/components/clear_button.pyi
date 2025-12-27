@@ -1,12 +1,11 @@
 from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from gradio.components import Button, Component, Timer
 from gradio_client.documentation import document
 
 """Predefined buttons with bound events that can be included in a gr.Blocks for convenience."""
-if TYPE_CHECKING: ...
 
 @document("add")
 class ClearButton(Button):
@@ -39,5 +38,3 @@ class ClearButton(Button):
     def postprocess(self, value: str | None) -> str | None: ...
     def example_payload(self) -> Any: ...
     def example_value(self) -> Any: ...
-
-    if TYPE_CHECKING: ...

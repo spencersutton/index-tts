@@ -1,12 +1,11 @@
 from functools import lru_cache
-from typing import TYPE_CHECKING
 
 import numpy as np
 
 from ...tokenization_utils import PreTrainedTokenizer
 
 """Tokenization classes for CodeGen"""
-if TYPE_CHECKING: ...
+
 logger = ...
 VOCAB_FILES_NAMES = ...
 

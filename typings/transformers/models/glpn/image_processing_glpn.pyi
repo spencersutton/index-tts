@@ -1,5 +1,3 @@
-from typing import TYPE_CHECKING
-
 import numpy as np
 import PIL.Image
 
@@ -10,7 +8,7 @@ from ...utils import TensorType, filter_out_non_signature_kwargs
 from ...utils.import_utils import requires
 
 """Image processor class for GLPN."""
-if TYPE_CHECKING: ...
+
 if is_torch_available(): ...
 logger = ...
 

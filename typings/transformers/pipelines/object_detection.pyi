@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, overload
+from typing import Any, overload
 
 from PIL import Image
 
@@ -7,7 +7,7 @@ from .base import Pipeline
 
 if is_vision_available(): ...
 if is_torch_available(): ...
-if TYPE_CHECKING: ...
+
 logger = ...
 
 class ObjectDetectionPipeline(Pipeline):

@@ -1,11 +1,9 @@
-from typing import TYPE_CHECKING
-
 import numpy as np
 
 from ...tokenization_utils_fast import PreTrainedTokenizerFast
 
 """Tokenization classes for OpenAI GPT."""
-if TYPE_CHECKING: ...
+
 logger = ...
 VOCAB_FILES_NAMES = ...
 

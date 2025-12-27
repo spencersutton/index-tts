@@ -1,9 +1,6 @@
-from typing import TYPE_CHECKING
-
 from ...configuration_utils import PretrainedConfig
 from ..superpoint import SuperPointConfig
 
-if TYPE_CHECKING: ...
 logger = ...
 
 class SuperGlueConfig(PretrainedConfig):

@@ -1,5 +1,5 @@
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from gradio.components import Timer
 from gradio.components.base import Component
@@ -8,7 +8,6 @@ from gradio.i18n import I18nData
 from gradio_client.documentation import document
 
 """gr.HTML() component."""
-if TYPE_CHECKING: ...
 
 @document()
 class HTML(Component):
@@ -45,8 +44,6 @@ class HTML(Component):
     def api_info(self) -> dict[str, Any]: ...
     def get_config(self) -> dict[str, Any]: ...
     def get_block_name(self): ...
-
-    if TYPE_CHECKING: ...
     def change(
         self,
         fn: Callable[..., Any] | None = ...,

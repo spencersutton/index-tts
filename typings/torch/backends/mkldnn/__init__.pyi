@@ -1,5 +1,4 @@
 from contextlib import contextmanager
-from typing import TYPE_CHECKING
 
 from torch.backends import ContextProp, PropModule
 
@@ -32,8 +31,6 @@ class MkldnnModule(PropModule):
     rnn = ...
     fp32_precision = ...
 
-if TYPE_CHECKING:
-    enabled: ContextProp
-    deterministic: ContextProp
-    allow_tf32: ContextProp
-    ...
+enabled: ContextProp
+deterministic: ContextProp
+allow_tf32: ContextProp

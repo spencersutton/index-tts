@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import torch
 
@@ -7,7 +7,7 @@ from ..utils import is_torch_available
 from .base import HfQuantizer
 
 if is_torch_available(): ...
-if TYPE_CHECKING: ...
+
 logger = ...
 
 class FineGrainedFP8HfQuantizer(HfQuantizer):

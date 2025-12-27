@@ -1,5 +1,4 @@
 from collections.abc import Iterable
-from typing import TYPE_CHECKING
 
 import numpy as np
 import PIL
@@ -11,7 +10,7 @@ from ...utils import TensorType, filter_out_non_signature_kwargs, is_vision_avai
 from ...utils.import_utils import requires
 
 """Image processor class for DPT."""
-if TYPE_CHECKING: ...
+
 if is_torch_available(): ...
 if is_vision_available(): ...
 logger = ...

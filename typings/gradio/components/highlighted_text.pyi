@@ -1,5 +1,5 @@
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from gradio.components import Timer
 from gradio.components.base import Component
@@ -9,7 +9,6 @@ from gradio.i18n import I18nData
 from gradio_client.documentation import document
 
 """gr.HighlightedText() component."""
-if TYPE_CHECKING: ...
 
 class HighlightedToken(GradioModel):
     token: str
@@ -51,8 +50,6 @@ class HighlightedText(Component):
     def example_value(self) -> Any: ...
     def preprocess(self, payload: HighlightedTextData | None) -> list[tuple[str, str | float | None]] | None: ...
     def postprocess(self, value: list[tuple[str, str | float | None]] | dict | None) -> HighlightedTextData | None: ...
-
-    if TYPE_CHECKING: ...
     def change(
         self,
         fn: Callable[..., Any] | None = ...,

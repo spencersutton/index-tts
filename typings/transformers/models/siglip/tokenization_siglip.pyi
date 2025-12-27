@@ -1,11 +1,11 @@
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from ...tokenization_utils import PreTrainedTokenizer
 from ...tokenization_utils_base import TextInput
 from ...utils.import_utils import requires
 
 """Tokenization class for SigLIP model."""
-if TYPE_CHECKING: ...
+
 logger = ...
 VOCAB_FILES_NAMES = ...
 SPIECE_UNDERLINE = ...

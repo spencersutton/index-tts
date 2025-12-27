@@ -1,12 +1,12 @@
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from ... import FeatureExtractionMixin, TensorType
 from ...configuration_utils import PretrainedConfig
 from ...onnx import OnnxConfig
 
 """OpenAI ImageGPT configuration"""
-if TYPE_CHECKING: ...
+
 logger = ...
 
 class ImageGPTConfig(PretrainedConfig):

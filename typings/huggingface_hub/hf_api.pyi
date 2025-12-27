@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import (
-    TYPE_CHECKING,
     Any,
     BinaryIO,
     Literal,
@@ -34,7 +33,6 @@ from .utils import SafetensorsFileMetadata, SafetensorsRepoMetadata, experimenta
 from .utils._deprecation import _deprecate_arguments, _deprecate_method
 from .utils._typing import CallableT
 
-if TYPE_CHECKING: ...
 R = TypeVar("R")
 type CollectionItemType_T = Literal["model", "dataset", "space", "paper", "collection"]
 type ExpandModelProperty_T = Literal[
@@ -176,7 +174,6 @@ class CommitInfo(UserString):
     def __new__(cls, *args, commit_url: str, _url: str | None = ..., **kwargs):  # -> Self:
         ...
     def __post_init__(self):  # -> None:
-
         ...
 
 @dataclass
@@ -727,7 +724,6 @@ class HfApi:
     def move_repo(
         self, from_id: str, to_id: str, *, repo_type: str | None = ..., token: str | bool | None = ...
     ):  # -> None:
-
         ...
     @overload
     def create_commit(
@@ -791,7 +787,6 @@ class HfApi:
         free_memory: bool = ...,
         gitignore_content: str | None = ...,
     ):  # -> None:
-
         ...
     @overload
     def upload_file(
@@ -1058,7 +1053,6 @@ class HfApi:
     def get_full_repo_name(
         self, model_id: str, *, organization: str | None = ..., token: bool | str | None = ...
     ):  # -> str:
-
         ...
     @validate_hf_hub_args
     def get_repo_discussions(
@@ -1137,7 +1131,6 @@ class HfApi:
         comment: str | None = ...,
         repo_type: str | None = ...,
     ):  # -> None:
-
         ...
     @validate_hf_hub_args
     def edit_discussion_comment(

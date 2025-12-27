@@ -1,6 +1,6 @@
 from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal
+from typing import Literal
 
 from gradio.components import Timer
 from gradio.components.base import Component
@@ -9,7 +9,6 @@ from gradio.events import Dependency
 from gradio_client.documentation import document
 
 """gr.DownloadButton() component."""
-if TYPE_CHECKING: ...
 
 @document()
 class DownloadButton(Component):
@@ -40,8 +39,6 @@ class DownloadButton(Component):
     def example_value(self) -> str: ...
     @property
     def skip_api(self): ...
-
-    if TYPE_CHECKING: ...
     def click(
         self,
         fn: Callable[..., Any] | None = ...,

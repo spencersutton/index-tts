@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Literal
+from typing import Literal
 
 from gradio.blocks import Blocks
 from gradio.chat_interface import ChatInterface
@@ -12,7 +12,6 @@ from huggingface_hub.inference._providers import PROVIDER_T
 
 """This module should not be used directly as its API is subject to change. Instead,
 use the `gr.Blocks.load()` or `gr.load()` functions."""
-if TYPE_CHECKING: ...
 
 @document()
 def load(

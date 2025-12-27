@@ -1,5 +1,3 @@
-from typing import TYPE_CHECKING
-
 import torch
 
 from ...image_processing_utils_fast import BaseImageProcessorFast, DefaultFastImageProcessorKwargs
@@ -9,7 +7,7 @@ from .modeling_superpoint import SuperPointKeypointDescriptionOutput
 
 """Fast Image processor class for Superpoint."""
 if is_torch_available(): ...
-if TYPE_CHECKING: ...
+
 if is_torchvision_v2_available(): ...
 
 def is_grayscale(image: torch.Tensor):  # -> Tensor | Literal[True]:

@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 import torch
 
@@ -9,7 +8,6 @@ from ...generation.stopping_criteria import StoppingCriteriaList
 from ...generation.streamers import BaseStreamer
 from ...generation.utils import GenerateNonBeamOutput
 
-if TYPE_CHECKING: ...
 logger = ...
 
 @dataclass

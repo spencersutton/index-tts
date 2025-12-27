@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 import fastapi
 from gradio import routes
@@ -9,8 +9,6 @@ from gradio.helpers import TrackedIterable
 from gradio.server_messages import EstimationMessage, EventMessage
 
 from .block_function import BlockFunction
-
-if TYPE_CHECKING: ...
 
 class Event:
     def __init__(

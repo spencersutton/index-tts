@@ -1,6 +1,6 @@
 import functools
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import Any, Protocol
 
 import sympy
 import torch
@@ -12,8 +12,7 @@ from ..utils import DeferredLineBase, LineContext
 from .common import IndentedBuffer
 from .wrapper import PythonWrapperCodegen
 
-if TYPE_CHECKING:
-    type _OUTPUT_ARGS_TYPE = list[str | None | list[str | None]]
+type _OUTPUT_ARGS_TYPE = list[str | None | list[str | None]]
 
 class HasWriteLine(Protocol):
     def writeline(self, line: LineContext | DeferredLineBase | str) -> None: ...

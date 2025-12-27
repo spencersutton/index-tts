@@ -1,12 +1,9 @@
 from contextvars import ContextVar
-from typing import TYPE_CHECKING
 
 from gradio.blocks import BlockContext, Blocks, BlocksConfig
 from gradio.helpers import Progress
 from gradio.renderable import Renderable
 from gradio.routes import Request
-
-if TYPE_CHECKING: ...
 
 class Context:
     root_block: Blocks | None = ...

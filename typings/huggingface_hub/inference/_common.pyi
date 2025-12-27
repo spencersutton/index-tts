@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, BinaryIO, NoReturn
+from typing import Any, BinaryIO, NoReturn
 
 from PIL.Image import Image
 from requests import HTTPError
 
 """Contains utilities used by both the sync and async inference clients."""
-if TYPE_CHECKING: ...
+
 UrlT = str
 type PathT = str | Path
 type ContentT = bytes | BinaryIO | PathT | UrlT | Image | bytearray | memoryview

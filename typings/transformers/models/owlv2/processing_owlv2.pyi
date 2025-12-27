@@ -1,5 +1,3 @@
-from typing import TYPE_CHECKING
-
 from ...image_processing_utils import BatchFeature
 from ...image_utils import ImageInput
 from ...processing_utils import ImagesKwargs, ProcessingKwargs, ProcessorMixin, Unpack
@@ -10,7 +8,6 @@ from .modeling_owlv2 import Owlv2ImageGuidedObjectDetectionOutput, Owlv2ObjectDe
 """
 Image/Text processor class for OWLv2
 """
-if TYPE_CHECKING: ...
 
 class Owlv2ImagesKwargs(ImagesKwargs, total=False):
     query_images: ImageInput | None

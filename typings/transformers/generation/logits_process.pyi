@@ -1,13 +1,11 @@
 from collections import UserList
 from collections.abc import Callable
-from typing import TYPE_CHECKING
 
 import torch
 
 from ..generation.configuration_utils import GenerationConfig
 from ..utils import add_start_docstrings
 
-if TYPE_CHECKING: ...
 logger = ...
 LOGITS_PROCESSOR_INPUTS_DOCSTRING = ...
 

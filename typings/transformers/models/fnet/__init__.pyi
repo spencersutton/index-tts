@@ -1,8 +1,4 @@
-from typing import TYPE_CHECKING
-
 from .configuration_fnet import *
 from .modeling_fnet import *
 from .tokenization_fnet import *
 from .tokenization_fnet_fast import *
-
-if TYPE_CHECKING: ...

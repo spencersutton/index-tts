@@ -1,5 +1,5 @@
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
@@ -13,7 +13,6 @@ from gradio_client.documentation import document
 from pandas.io.formats.style import Styler
 
 """gr.Dataframe() component"""
-if TYPE_CHECKING: ...
 
 class DataframeData(GradioModel):
     headers: list[Any]
@@ -96,8 +95,6 @@ class Dataframe(Component):
     ): ...
     def example_payload(self) -> Any: ...
     def example_value(self) -> Any: ...
-
-    if TYPE_CHECKING: ...
     def change(
         self,
         fn: Callable[..., Any] | None = ...,

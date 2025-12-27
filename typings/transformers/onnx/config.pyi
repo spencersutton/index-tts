@@ -1,7 +1,7 @@
 import dataclasses
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable, Mapping
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from ..configuration_utils import PretrainedConfig
 from ..feature_extraction_utils import FeatureExtractionMixin
@@ -9,7 +9,6 @@ from ..image_processing_utils import ImageProcessingMixin
 from ..tokenization_utils_base import PreTrainedTokenizerBase
 from ..utils import TensorType, is_vision_available
 
-if TYPE_CHECKING: ...
 if is_vision_available(): ...
 logger = ...
 DEFAULT_ONNX_OPSET = ...

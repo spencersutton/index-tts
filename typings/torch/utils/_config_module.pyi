@@ -2,7 +2,7 @@ import contextlib
 from collections.abc import Callable
 from dataclasses import dataclass
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, NoReturn, TypeVar
+from typing import Any, NoReturn, TypeVar
 from warnings import deprecated
 
 CONFIG_TYPES = ...
@@ -28,16 +28,14 @@ class _Config[T: int | float | bool | None | str | list | set | tuple | dict]:
     @staticmethod
     def string_or_list_of_string_to_list(val: str | list[str] | None) -> list[str] | None: ...
 
-if TYPE_CHECKING:
-    def Config[T: int | float | bool | None | str | list | set | tuple | dict](
-        default: T | object = ...,
-        justknob: str | None = ...,
-        env_name_default: str | list[str] | None = ...,
-        env_name_force: str | list[str] | None = ...,
-        value_type: type | None = ...,
-        alias: str | None = ...,
-    ) -> T: ...
-
+def Config[T: int | float | bool | None | str | list | set | tuple | dict](
+    default: T | object = ...,
+    justknob: str | None = ...,
+    env_name_default: str | list[str] | None = ...,
+    env_name_force: str | list[str] | None = ...,
+    value_type: type | None = ...,
+    alias: str | None = ...,
+) -> T: ...
 def install_config_module(module: ModuleType) -> None: ...
 
 COMPILE_IGNORED_MARKER = ...

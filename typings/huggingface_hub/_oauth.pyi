@@ -1,13 +1,12 @@
 import datetime
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from typing import Literal
 
 import fastapi
 
 from .utils import experimental
 
 logger = ...
-if TYPE_CHECKING: ...
 
 @dataclass
 class OAuthOrgInfo:
@@ -44,6 +43,5 @@ class OAuthInfo:
 
 @experimental
 def attach_huggingface_oauth(app: fastapi.FastAPI, route_prefix: str = ...):  # -> None:
-
     ...
 def parse_huggingface_oauth(request: fastapi.Request) -> OAuthInfo | None: ...

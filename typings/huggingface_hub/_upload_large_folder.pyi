@@ -1,12 +1,10 @@
 import enum
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from ._commit_api import CommitOperationAdd
 from ._local_folder import LocalUploadFileMetadata, LocalUploadFilePaths
 from .hf_api import HfApi
 
-if TYPE_CHECKING: ...
 logger = ...
 WAITING_TIME_IF_NO_TASKS = ...
 MAX_NB_FILES_FETCH_UPLOAD_MODE = ...
@@ -32,7 +30,6 @@ def upload_large_folder_internal(
     print_report: bool = ...,
     print_report_every: int = ...,
 ):  # -> None:
-
     ...
 
 class WorkerJob(enum.Enum):

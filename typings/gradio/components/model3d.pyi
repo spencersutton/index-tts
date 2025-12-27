@@ -1,6 +1,6 @@
 from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal
+from typing import Literal
 
 from gradio.components import Timer
 from gradio.components.base import Component
@@ -10,7 +10,6 @@ from gradio.i18n import I18nData
 from gradio_client.documentation import document
 
 """gr.Model3D() component."""
-if TYPE_CHECKING: ...
 
 @document()
 class Model3D(Component):
@@ -46,8 +45,6 @@ class Model3D(Component):
     def process_example(self, value: str | Path | None) -> str: ...
     def example_payload(self): ...
     def example_value(self): ...
-
-    if TYPE_CHECKING: ...
     def change(
         self,
         fn: Callable[..., Any] | None = ...,

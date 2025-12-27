@@ -1,5 +1,3 @@
-from typing import TYPE_CHECKING
-
 import numpy as np
 import torch
 
@@ -11,7 +9,7 @@ from .modeling_superpoint import SuperPointKeypointDescriptionOutput
 
 """Image processor class for SuperPoint."""
 if is_torch_available(): ...
-if TYPE_CHECKING: ...
+
 if is_vision_available(): ...
 logger = ...
 

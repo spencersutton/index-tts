@@ -1,6 +1,6 @@
 from collections.abc import Callable, Iterable, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 import numpy as np
 import PIL.Image
@@ -10,8 +10,6 @@ from gradio.components.audio import WaveformOptions
 from gradio.components.image_editor import Brush, Eraser, LayerOptions, WebcamOptions
 from gradio.components.textbox import InputHTMLAttributes
 from gradio.i18n import I18nData
-
-if TYPE_CHECKING: ...
 
 class TextArea(components.Textbox):
     is_template = ...
@@ -48,8 +46,6 @@ class TextArea(components.Textbox):
         stop_btn: str | bool | None = ...,
         html_attributes: InputHTMLAttributes | None = ...,
     ) -> None: ...
-
-    if TYPE_CHECKING: ...
 
 class Sketchpad(components.ImageEditor):
     is_template = ...
@@ -89,8 +85,6 @@ class Sketchpad(components.ImageEditor):
         layers: LayerOptions | bool = ...,
     ) -> None: ...
 
-    if TYPE_CHECKING: ...
-
 class Paint(components.ImageEditor):
     is_template = ...
     def __init__(
@@ -128,8 +122,6 @@ class Paint(components.ImageEditor):
         fixed_canvas: bool = ...,
         placeholder: str | None = ...,
     ) -> None: ...
-
-    if TYPE_CHECKING: ...
 
 class ImageMask(components.ImageEditor):
     is_template = ...
@@ -169,8 +161,6 @@ class ImageMask(components.ImageEditor):
         webcam_options: WebcamOptions | None = ...,
     ) -> None: ...
 
-    if TYPE_CHECKING: ...
-
 class PlayableVideo(components.Video):
     is_template = ...
     def __init__(
@@ -205,8 +195,6 @@ class PlayableVideo(components.Video):
         subtitles: str | Path | None = ...,
     ) -> None: ...
 
-    if TYPE_CHECKING: ...
-
 class Microphone(components.Audio):
     is_template = ...
     def __init__(
@@ -240,8 +228,6 @@ class Microphone(components.Audio):
         subtitles: str | Path | None = ...,
     ) -> None: ...
 
-    if TYPE_CHECKING: ...
-
 class Files(components.File):
     is_template = ...
     def __init__(
@@ -268,8 +254,6 @@ class Files(components.File):
         preserved_by_key: list[str] | str | None = ...,
         allow_reordering: bool = ...,
     ) -> None: ...
-
-    if TYPE_CHECKING: ...
 
 class Numpy(components.Dataframe):
     is_template = ...
@@ -314,8 +298,6 @@ class Numpy(components.Dataframe):
         buttons: list[Literal["fullscreen", "copy"]] | None = ...,
     ) -> None: ...
 
-    if TYPE_CHECKING: ...
-
 class Matrix(components.Dataframe):
     is_template = ...
     def __init__(
@@ -359,8 +341,6 @@ class Matrix(components.Dataframe):
         static_columns: list[int] | None = ...,
     ) -> None: ...
 
-    if TYPE_CHECKING: ...
-
 class List(components.Dataframe):
     is_template = ...
     def __init__(
@@ -403,7 +383,5 @@ class List(components.Dataframe):
         buttons: list[Literal["fullscreen", "copy"]] | None = ...,
         static_columns: list[int] | None = ...,
     ) -> None: ...
-
-    if TYPE_CHECKING: ...
 
 Mic = Microphone

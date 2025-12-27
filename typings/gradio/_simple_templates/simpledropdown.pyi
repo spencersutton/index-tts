@@ -1,12 +1,10 @@
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from gradio.components import Timer
 from gradio.components.base import Component, FormComponent
 from gradio.events import Dependency
 from gradio.i18n import I18nData
-
-if TYPE_CHECKING: ...
 
 class SimpleDropdown(FormComponent):
     EVENTS = ...
@@ -36,8 +34,6 @@ class SimpleDropdown(FormComponent):
     def preprocess(self, payload: str | float | None) -> str | int | float | None: ...
     def postprocess(self, value): ...
     def process_example(self, value): ...
-
-    if TYPE_CHECKING: ...
     def change(
         self,
         fn: Callable[..., Any] | None = ...,

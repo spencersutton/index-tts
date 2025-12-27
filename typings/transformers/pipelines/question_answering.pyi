@@ -1,5 +1,3 @@
-from typing import TYPE_CHECKING
-
 import numpy as np
 from torch.utils.data import Dataset
 
@@ -12,7 +10,7 @@ from ..utils import is_tf_available, is_torch_available
 from .base import ArgumentHandler, ChunkPipeline
 
 logger = ...
-if TYPE_CHECKING: ...
+
 if is_tf_available():
     Dataset = ...
 if is_torch_available(): ...

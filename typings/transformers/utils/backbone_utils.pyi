@@ -1,11 +1,9 @@
 import enum
 from collections.abc import Iterable
-from typing import TYPE_CHECKING
 
 from ..configuration_utils import PretrainedConfig
 
 """Collection of utils to be used by backbones and their components."""
-if TYPE_CHECKING: ...
 
 class BackboneType(enum.Enum):
     TIMM = ...

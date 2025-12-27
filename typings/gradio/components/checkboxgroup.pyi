@@ -1,5 +1,5 @@
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from gradio.components import Timer
 from gradio.components.base import Component, FormComponent
@@ -8,7 +8,6 @@ from gradio.i18n import I18nData
 from gradio_client.documentation import document
 
 """gr.CheckboxGroup() component"""
-if TYPE_CHECKING: ...
 
 @document()
 class CheckboxGroup(FormComponent):
@@ -41,8 +40,6 @@ class CheckboxGroup(FormComponent):
     def api_info(self) -> dict[str, Any]: ...
     def preprocess(self, payload: list[str | int | float]) -> list[str | int | float] | list[int | None]: ...
     def postprocess(self, value: list[str | int | float] | str | float | None) -> list[str | int | float]: ...
-
-    if TYPE_CHECKING: ...
     def change(
         self,
         fn: Callable[..., Any] | None = ...,

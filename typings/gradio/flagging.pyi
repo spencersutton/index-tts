@@ -1,14 +1,12 @@
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import gradio as gr
 from gradio.components import Component
 from gradio.events import LikeData
 from gradio_client.documentation import document
-
-if TYPE_CHECKING: ...
 
 class FlaggingCallback(ABC):
     @abstractmethod

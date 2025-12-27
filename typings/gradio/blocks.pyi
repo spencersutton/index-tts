@@ -2,7 +2,7 @@ import weakref
 from collections.abc import AsyncIterator, Callable, Sequence, Set as AbstractSet
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 import fastapi
 from gradio.block_function import BlockFunction
@@ -16,8 +16,6 @@ from gradio.routes import App, Request
 from gradio.state_holder import SessionState
 from gradio.themes import ThemeClass as Theme
 from gradio_client.documentation import document
-
-if TYPE_CHECKING: ...
 
 class Block:
     def __init__(

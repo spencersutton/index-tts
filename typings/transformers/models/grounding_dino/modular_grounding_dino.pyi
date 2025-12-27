@@ -1,11 +1,8 @@
-from typing import TYPE_CHECKING
-
 from transformers.models.detr.image_processing_detr_fast import DetrImageProcessorFast
 
 from ...utils import TensorType, is_torch_available
 from .modeling_grounding_dino import GroundingDinoObjectDetectionOutput
 
-if TYPE_CHECKING: ...
 if is_torch_available(): ...
 logger = ...
 

@@ -1,10 +1,8 @@
 from collections.abc import Iterator
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from gradio.blocks import Blocks
 from gradio.components import State
-
-if TYPE_CHECKING: ...
 
 class StateHolder:
     def __init__(self) -> None: ...

@@ -1,7 +1,7 @@
 import dataclasses
 from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 import numpy as np
 from gradio.components import Timer
@@ -12,7 +12,6 @@ from gradio.i18n import I18nData
 from gradio_client.documentation import document
 
 """gr.Audio() component."""
-if TYPE_CHECKING: ...
 
 @document()
 @dataclasses.dataclass
@@ -72,8 +71,6 @@ class Audio(StreamingInput, StreamingOutput, Component):
     ) -> FileData: ...
     def process_example(self, value: tuple[int, np.ndarray] | str | Path | bytes | None) -> str: ...
     def check_streamable(self): ...
-
-    if TYPE_CHECKING: ...
     def stream(
         self,
         fn: Callable[..., Any] | None = ...,

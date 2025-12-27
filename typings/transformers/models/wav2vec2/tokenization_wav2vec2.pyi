@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -9,7 +8,7 @@ from ...utils import ModelOutput, PaddingStrategy, TensorType
 
 """Tokenization class for Wav2Vec2."""
 logger = ...
-if TYPE_CHECKING: ...
+
 VOCAB_FILES_NAMES = ...
 WAV2VEC2_KWARGS_DOCSTRING = ...
 type ListOfDict = list[dict[str, int | str]]

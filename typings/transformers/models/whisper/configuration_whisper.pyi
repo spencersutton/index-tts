@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from ...configuration_utils import PretrainedConfig
 from ...feature_extraction_utils import FeatureExtractionMixin
@@ -8,7 +8,7 @@ from ...tokenization_utils_base import PreTrainedTokenizerBase
 from ...utils import TensorType
 
 """Whisper model configuration"""
-if TYPE_CHECKING: ...
+
 logger = ...
 NON_SPEECH_TOKENS = ...
 NON_SPEECH_TOKENS_MULTI = ...

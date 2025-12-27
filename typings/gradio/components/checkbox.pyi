@@ -1,5 +1,5 @@
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from gradio.components import Timer
 from gradio.components.base import Component, FormComponent
@@ -8,7 +8,6 @@ from gradio.i18n import I18nData
 from gradio_client.documentation import document
 
 """gr.Checkbox() component."""
-if TYPE_CHECKING: ...
 
 @document()
 class Checkbox(FormComponent):
@@ -39,8 +38,6 @@ class Checkbox(FormComponent):
     def example_value(self) -> bool: ...
     def preprocess(self, payload: bool | None) -> bool | None: ...
     def postprocess(self, value: bool | None) -> bool | None: ...
-
-    if TYPE_CHECKING: ...
     def change(
         self,
         fn: Callable[..., Any] | None = ...,

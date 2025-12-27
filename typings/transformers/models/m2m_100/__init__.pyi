@@ -1,7 +1,3 @@
-from typing import TYPE_CHECKING
-
 from .configuration_m2m_100 import *
 from .modeling_m2m_100 import *
 from .tokenization_m2m_100 import *
-
-if TYPE_CHECKING: ...

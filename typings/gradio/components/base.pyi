@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Sequence
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, TypedDict
+from typing import Any, Literal, TypedDict
 
 from gradio.blocks import Block
 from gradio.component_meta import ComponentMeta
@@ -16,10 +16,10 @@ from gradio.layouts import Form
 """Contains all of the components that can be used with Gradio Interface / Blocks.
 Along with the docs for each component, you can find the names of example demos that use
 each component. These demos are located in the `demo` directory."""
-if TYPE_CHECKING:
-    class DataframeData(TypedDict):
-        headers: list[str]
-        data: list[list[str | int | bool]]
+
+class DataframeData(TypedDict):
+    headers: list[str]
+    data: list[list[str | int | bool]]
 
 class _Keywords(Enum):
     NO_VALUE = ...
@@ -48,8 +48,6 @@ class ComponentBase(ABC, metaclass=ComponentMeta):
     def has_event(cls, event: str | EventListener) -> bool: ...
     @classmethod
     def get_component_class_id(cls) -> str: ...
-
-    if TYPE_CHECKING: ...
 
 def server(fn): ...
 
@@ -100,15 +98,11 @@ class Component(ComponentBase, Block):
     def flag(self, payload: Any, flag_dir: str | Path = ...) -> str: ...
     def read_from_flag(self, payload: Any): ...
 
-    if TYPE_CHECKING: ...
-
 class FormComponent(Component):
     def get_expected_parent(self) -> type[Form] | None: ...
     def preprocess(self, payload: Any) -> Any: ...
     def postprocess(self, value): ...
     value: Any
-
-    if TYPE_CHECKING: ...
 
 class StreamingOutput(ABC):
     def __init__(self, *args, **kwargs) -> None: ...

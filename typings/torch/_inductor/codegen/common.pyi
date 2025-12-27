@@ -6,7 +6,7 @@ import itertools
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterator, MutableMapping, Sequence
 from enum import Enum
-from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple, Self, TypeVar
+from typing import Any, ClassVar, NamedTuple, Self, TypeVar
 
 import sympy
 import torch
@@ -28,11 +28,10 @@ from ..utils import DeferredLineBase, IndentedBuffer, ir_dataclass
 from ..virtualized import OpsHandler, OpsValue, ReductionType, StoreMode
 from .wrapper import PythonWrapperCodegen
 
-if TYPE_CHECKING:
-    type SchedulingConstructor = Callable[[Scheduler | None], BaseScheduling]
-    type WrapperConstructor = type[PythonWrapperCodegen]
-    type SymbolLike = str | sympy.Symbol
-    OpVarT = str
+type SchedulingConstructor = Callable[[Scheduler | None], BaseScheduling]
+type WrapperConstructor = type[PythonWrapperCodegen]
+type SymbolLike = str | sympy.Symbol
+OpVarT = str
 schedule_log = ...
 log = ...
 
@@ -398,8 +397,7 @@ class CSEVariable:
 
 AugmentedKeyT = TypeVar("AugmentedKeyT", default=str)
 CSEVariableType = TypeVar("CSEVariableType", bound=CSEVariable, default=CSEVariable)
-if TYPE_CHECKING:
-    type ReductionCacheKey = tuple[torch.dtype, ReductionType, CSEVariable | tuple[CSEVariable, ...]]
+type ReductionCacheKey = tuple[torch.dtype, ReductionType, CSEVariable | tuple[CSEVariable, ...]]
 
 class CSE[CSEVariableType: CSEVariable = CSEVariable, AugmentedKeyT = str]:
     def __init__(

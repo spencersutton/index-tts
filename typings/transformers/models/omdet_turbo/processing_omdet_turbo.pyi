@@ -1,5 +1,4 @@
 from collections import UserDict
-from typing import TYPE_CHECKING
 
 from ...feature_extraction_utils import BatchFeature
 from ...image_utils import ImageInput
@@ -12,7 +11,6 @@ from .modeling_omdet_turbo import OmDetTurboObjectDetectionOutput
 """
 Processor class for OmDet-Turbo.
 """
-if TYPE_CHECKING: ...
 
 class OmDetTurboTextKwargs(TextKwargs, total=False):
     task: str | list[str] | TextInput | PreTokenizedInput | None

@@ -1,6 +1,6 @@
 from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 import fastapi
 import gradio
@@ -13,7 +13,7 @@ from gradio_client.documentation import document
 
 """Implements a FastAPI server to run the gradio interface. Note that some types in this
 module use the Optional/Union notation so that they work correctly with pydantic."""
-if TYPE_CHECKING: ...
+
 STATIC_TEMPLATE_LIB = ...
 STATIC_PATH_LIB = ...
 BUILD_PATH_LIB = ...

@@ -2,20 +2,19 @@ import typing
 from collections.abc import Callable, Sequence
 from contextlib import AbstractContextManager
 from enum import Enum
-from typing import TYPE_CHECKING, Any, TypeVar, overload
+from typing import Any, TypeVar, overload
 from warnings import deprecated
 
 import sympy
 import torch
 
-if TYPE_CHECKING:
-    class _WorksWithInt(typing.Protocol):
-        def __add__(self, other: Any) -> typing.Self: ...
-        def __radd__(self, other: Any) -> typing.Self: ...
-        def __mul__(self, other: Any) -> typing.Self: ...
-        def __rmul__(self, other: Any) -> typing.Self: ...
+class _WorksWithInt(typing.Protocol):
+    def __add__(self, other: Any) -> typing.Self: ...
+    def __radd__(self, other: Any) -> typing.Self: ...
+    def __mul__(self, other: Any) -> typing.Self: ...
+    def __rmul__(self, other: Any) -> typing.Self: ...
 
-    _IntLikeT = TypeVar("_IntLikeT", bound=_WorksWithInt)
+_IntLikeT = TypeVar("_IntLikeT", bound=_WorksWithInt)
 type ShapeType = torch.Size | list[int] | tuple[int, ...]
 type StrideType = list[int] | tuple[int, ...]
 type DimsType = int | list[int] | tuple[int, ...]

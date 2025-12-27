@@ -1,6 +1,2 @@
-from typing import TYPE_CHECKING
-
 from .configuration_rwkv import *
 from .modeling_rwkv import *
-
-if TYPE_CHECKING: ...

@@ -1,12 +1,12 @@
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from ... import FeatureExtractionMixin, PreTrainedTokenizerBase, TensorType
 from ...configuration_utils import PretrainedConfig
 from ...onnx import OnnxConfig
 
 """DeBERTa-v2 model configuration"""
-if TYPE_CHECKING: ...
+
 logger = ...
 
 class DebertaV2Config(PretrainedConfig):

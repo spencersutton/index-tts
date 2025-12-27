@@ -1,7 +1,7 @@
 import functools
 import os
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import numpy as np
 import tensorflow as tf
@@ -14,7 +14,7 @@ from .utils import PushToHubMixin, is_safetensors_available
 
 """TF general model utils."""
 if is_safetensors_available(): ...
-if TYPE_CHECKING: ...
+
 logger = ...
 if "TF_USE_LEGACY_KERAS" not in os.environ: ...
 tf_logger = ...

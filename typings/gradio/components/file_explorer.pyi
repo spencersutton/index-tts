@@ -1,6 +1,6 @@
 from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from gradio.components import Timer
 from gradio.components.base import Component, server
@@ -10,7 +10,6 @@ from gradio.i18n import I18nData
 from gradio_client.documentation import document
 
 """gr.FileExplorer() component"""
-if TYPE_CHECKING: ...
 
 class FileExplorerData(GradioRootModel):
     root: list[list[str]]
@@ -51,8 +50,6 @@ class FileExplorer(Component):
     def postprocess(self, value: str | list[str] | None) -> FileExplorerData | None: ...
     @server
     def ls(self, subdirectory: list[str] | None = ...) -> list[dict[str, str]] | None: ...
-
-    if TYPE_CHECKING: ...
     def change(
         self,
         fn: Callable[..., Any] | None = ...,

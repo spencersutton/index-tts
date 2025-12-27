@@ -1,6 +1,2 @@
-from typing import TYPE_CHECKING
-
 from .configuration_timm_backbone import *
 from .modeling_timm_backbone import *
-
-if TYPE_CHECKING: ...

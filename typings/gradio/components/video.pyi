@@ -1,6 +1,6 @@
 from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from gradio.components import Timer
 from gradio.components.base import Component, StreamingOutput
@@ -11,7 +11,6 @@ from gradio.i18n import I18nData
 from gradio_client.documentation import document
 
 """gr.Video() component."""
-if TYPE_CHECKING: ...
 
 @document()
 class Video(StreamingOutput, Component):
@@ -62,8 +61,6 @@ class Video(StreamingOutput, Component):
     async def stream_output(
         self, value: str | None, output_id: str, first_chunk: bool
     ) -> tuple[MediaStreamChunk | None, dict]: ...
-
-    if TYPE_CHECKING: ...
     def change(
         self,
         fn: Callable[..., Any] | None = ...,

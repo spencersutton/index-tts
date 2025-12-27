@@ -1,6 +1,2 @@
-from typing import TYPE_CHECKING
-
 from .configuration_table_transformer import *
 from .modeling_table_transformer import *
-
-if TYPE_CHECKING: ...

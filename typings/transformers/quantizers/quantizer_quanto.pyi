@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import torch
 
@@ -7,7 +7,6 @@ from ..utils import is_torch_available
 from ..utils.quantization_config import QuantoConfig
 from .base import HfQuantizer
 
-if TYPE_CHECKING: ...
 if is_torch_available(): ...
 logger = ...
 

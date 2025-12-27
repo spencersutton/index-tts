@@ -1,5 +1,4 @@
 from collections.abc import Iterable
-from typing import TYPE_CHECKING
 
 import torch
 from torchvision.transforms import functional as F
@@ -12,7 +11,6 @@ from ...modeling_outputs import DepthEstimatorOutput
 from ...processing_utils import Unpack
 from ...utils import TensorType, is_torch_available, is_torchvision_v2_available
 
-if TYPE_CHECKING: ...
 if is_torch_available(): ...
 if is_torchvision_v2_available(): ...
 

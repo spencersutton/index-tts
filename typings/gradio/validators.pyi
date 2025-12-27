@@ -1,9 +1,7 @@
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import numpy as np
 from gradio_client.documentation import document
-
-if TYPE_CHECKING: ...
 
 @document()
 def is_audio_correct_length(

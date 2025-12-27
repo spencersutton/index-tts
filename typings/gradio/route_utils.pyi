@@ -2,7 +2,7 @@ from collections import UserString, deque
 from collections.abc import AsyncGenerator, Callable
 from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass as python_dataclass
-from typing import TYPE_CHECKING, Any, BinaryIO
+from typing import Any, BinaryIO
 
 import fastapi
 import httpx
@@ -15,7 +15,6 @@ from starlette.datastructures import FormData, Headers, MutableHeaders, UploadFi
 from starlette.responses import Response
 from starlette.types import ASGIApp, Receive, Scope, Send
 
-if TYPE_CHECKING: ...
 config_lock = ...
 API_PREFIX = ...
 

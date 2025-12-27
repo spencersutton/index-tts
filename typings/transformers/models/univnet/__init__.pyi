@@ -1,7 +1,3 @@
-from typing import TYPE_CHECKING
-
 from .configuration_univnet import *
 from .feature_extraction_univnet import *
 from .modeling_univnet import *
-
-if TYPE_CHECKING: ...

@@ -1,6 +1,6 @@
 import os
 from collections import UserDict
-from typing import TYPE_CHECKING, Any, Self, TypeVar
+from typing import Any, Self, TypeVar
 
 import torch
 
@@ -9,7 +9,7 @@ from .utils import PushToHubMixin, TensorType
 """
 Feature extraction saving/loading class for common feature extractors.
 """
-if TYPE_CHECKING: ...
+
 type PreTrainedFeatureExtractor = SequenceFeatureExtractor
 SpecificFeatureExtractorType = TypeVar("SpecificFeatureExtractorType", bound=FeatureExtractionMixin)
 

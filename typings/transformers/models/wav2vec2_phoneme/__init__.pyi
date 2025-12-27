@@ -1,5 +1,1 @@
-from typing import TYPE_CHECKING
-
 from .tokenization_wav2vec2_phoneme import *
-
-if TYPE_CHECKING: ...

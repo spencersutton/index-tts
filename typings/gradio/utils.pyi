@@ -6,7 +6,7 @@ from collections.abc import Callable, Iterable, MutableMapping, Sequence
 from contextlib import contextmanager
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Literal, ParamSpec, TypeVar
+from typing import Any, Literal, ParamSpec, TypeVar
 
 from gradio.blocks import BlockContext, Blocks
 from gradio.components import Component
@@ -17,7 +17,7 @@ from gradio.themes import ThemeClass as Theme
 from gradio_client.documentation import document
 
 """Handy utility functions."""
-if TYPE_CHECKING: ...
+
 P = ParamSpec("P")
 T = TypeVar("T")
 BUILT_IN_THEMES: dict[str, Theme] = ...

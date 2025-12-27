@@ -1,5 +1,3 @@
-from typing import TYPE_CHECKING
-
 from .configuration_clip import *
 from .feature_extraction_clip import *
 from .image_processing_clip import *
@@ -10,5 +8,3 @@ from .modeling_tf_clip import *
 from .processing_clip import *
 from .tokenization_clip import *
 from .tokenization_clip_fast import *
-
-if TYPE_CHECKING: ...

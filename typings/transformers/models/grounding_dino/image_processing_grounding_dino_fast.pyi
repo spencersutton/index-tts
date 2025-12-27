@@ -1,5 +1,5 @@
 import pathlib
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import torch
 from torchvision.transforms import functional as F
@@ -13,7 +13,6 @@ from ...utils import TensorType, is_torch_available, is_torchvision_v2_available
 from ...utils.import_utils import requires
 from .modeling_grounding_dino import GroundingDinoObjectDetectionOutput
 
-if TYPE_CHECKING: ...
 if is_torch_available(): ...
 if is_torchvision_v2_available(): ...
 logger = ...

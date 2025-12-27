@@ -1,12 +1,11 @@
 from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal
+from typing import Literal
 
 from gradio.components import Button, Component, Timer
 from gradio_client.documentation import document
 
 """gr.DuplicateButton() component"""
-if TYPE_CHECKING: ...
 
 @document()
 class DuplicateButton(Button):
@@ -33,5 +32,3 @@ class DuplicateButton(Button):
         _activate: bool = ...,
     ) -> None: ...
     def activate(self): ...
-
-    if TYPE_CHECKING: ...

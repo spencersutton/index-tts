@@ -2,7 +2,7 @@ import contextlib
 from collections.abc import Callable, Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, NoReturn
+from typing import Any, NoReturn
 
 import sympy
 import torch
@@ -23,8 +23,7 @@ from .ir import Constant, GraphPartitionSignature, ShapeAsConstantBuffer, Tensor
 from .scheduler import BaseSchedulerNode
 from .utils import ValueWithLineMap
 
-if TYPE_CHECKING:
-    type CompiledModule = ModuleType | FileBackedGraphModule
+type CompiledModule = ModuleType | FileBackedGraphModule
 log = ...
 perf_hint_log = ...
 aten = ...

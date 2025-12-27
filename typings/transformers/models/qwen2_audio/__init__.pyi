@@ -1,7 +1,3 @@
-from typing import TYPE_CHECKING
-
 from .configuration_qwen2_audio import *
 from .modeling_qwen2_audio import *
 from .processing_qwen2_audio import *
-
-if TYPE_CHECKING: ...

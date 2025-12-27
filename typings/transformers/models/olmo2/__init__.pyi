@@ -1,6 +1,2 @@
-from typing import TYPE_CHECKING
-
 from .configuration_olmo2 import *
 from .modeling_olmo2 import *
-
-if TYPE_CHECKING: ...

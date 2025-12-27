@@ -1,5 +1,3 @@
-from typing import TYPE_CHECKING
-
 import torch
 
 from ...image_processing_utils_fast import BaseImageProcessorFast, DefaultFastImageProcessorKwargs
@@ -10,7 +8,7 @@ from .modeling_owlv2 import Owlv2ObjectDetectionOutput
 
 if is_torch_available(): ...
 if is_torchvision_v2_available(): ...
-if TYPE_CHECKING: ...
+
 if is_torch_available(): ...
 
 class Owlv2FastImageProcessorKwargs(DefaultFastImageProcessorKwargs):

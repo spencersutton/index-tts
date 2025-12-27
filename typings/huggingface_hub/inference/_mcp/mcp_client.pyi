@@ -1,14 +1,13 @@
 from collections.abc import AsyncIterable
 from datetime import timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, NotRequired, Unpack, overload
+from typing import Any, Literal, NotRequired, Unpack, overload
 
 from typing_extensions import TypedDict
 
 from .._generated.types import ChatCompletionInputMessage, ChatCompletionInputTool, ChatCompletionStreamOutput
 from .._providers import PROVIDER_OR_POLICY_T
 
-if TYPE_CHECKING: ...
 logger = ...
 type ToolName = str
 type ServerType = Literal["stdio", "sse", "http"]
@@ -42,13 +41,10 @@ class MCPClient:
         api_key: str | None = ...,
     ) -> None: ...
     async def __aenter__(self):  # -> Self:
-
         ...
     async def __aexit__(self, exc_type, exc_val, exc_tb):  # -> None:
-
         ...
     async def cleanup(self):  # -> None:
-
         ...
     @overload
     async def add_mcp_server(self, type: Literal["stdio"], **params: Unpack[StdioServerParameters_T]): ...
@@ -57,7 +53,6 @@ class MCPClient:
     @overload
     async def add_mcp_server(self, type: Literal["http"], **params: Unpack[StreamableHTTPParameters_T]): ...
     async def add_mcp_server(self, type: ServerType, **params: Any):  # -> None:
-
         ...
     async def process_single_turn_with_tools(
         self,

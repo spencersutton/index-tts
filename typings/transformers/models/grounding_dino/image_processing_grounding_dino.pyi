@@ -1,6 +1,6 @@
 import pathlib
 from collections.abc import Callable, Iterable
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import numpy as np
 
@@ -14,7 +14,7 @@ from .modeling_grounding_dino import GroundingDinoObjectDetectionOutput
 if is_torch_available(): ...
 if is_vision_available(): ...
 if is_scipy_available(): ...
-if TYPE_CHECKING: ...
+
 logger = ...
 type AnnotationType = dict[str, int | str | list[dict]]
 

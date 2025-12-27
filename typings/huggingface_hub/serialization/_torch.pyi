@@ -2,7 +2,7 @@ import os
 from collections import namedtuple
 from functools import lru_cache
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, NamedTuple
+from typing import Any, NamedTuple
 
 import torch
 
@@ -10,7 +10,6 @@ from ._base import StateDictSplit
 
 """Contains pytorch-specific helpers."""
 logger = ...
-if TYPE_CHECKING: ...
 
 def save_torch_model(
     model: torch.nn.Module,
@@ -24,7 +23,6 @@ def save_torch_model(
     is_main_process: bool = ...,
     shared_tensors_to_discard: list[str] | None = ...,
 ):  # -> None:
-
     ...
 def save_torch_state_dict(
     state_dict: dict[str, torch.Tensor],
@@ -62,7 +60,6 @@ def get_torch_storage_id(tensor: torch.Tensor) -> tuple[torch.device, int | tupl
 def get_torch_storage_size(tensor: torch.Tensor) -> int: ...
 @lru_cache
 def is_torch_tpu_available(check_device=...):  # -> bool:
-
     ...
 def storage_ptr(tensor: torch.Tensor) -> int | tuple[Any, ...]: ...
 

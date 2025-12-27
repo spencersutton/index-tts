@@ -1,6 +1,2 @@
-from typing import TYPE_CHECKING
-
 from .configuration_switch_transformers import *
 from .modeling_switch_transformers import *
-
-if TYPE_CHECKING: ...

@@ -1,5 +1,5 @@
 from functools import cached_property
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import torch
 
@@ -7,7 +7,6 @@ from ..modeling_utils import PreTrainedModel
 from ..utils import is_torch_available
 from .base import HfQuantizer
 
-if TYPE_CHECKING: ...
 if is_torch_available(): ...
 logger = ...
 

@@ -1,6 +1,6 @@
 from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 import numpy as np
 import PIL.Image
@@ -16,7 +16,6 @@ class SliderData(GradioRootModel):
     root: tuple[ImageData | None, ImageData | None] | None
 
 type image_tuple = tuple[str | PIL.Image.Image | np.ndarray | None, str | PIL.Image.Image | np.ndarray | None]
-if TYPE_CHECKING: ...
 
 @document()
 class ImageSlider(Component):
@@ -63,8 +62,6 @@ class ImageSlider(Component):
     def api_info_as_output(self) -> dict[str, Any]: ...
     def example_payload(self) -> Any: ...
     def example_value(self) -> Any: ...
-
-    if TYPE_CHECKING: ...
     def clear(
         self,
         fn: Callable[..., Any] | None = ...,

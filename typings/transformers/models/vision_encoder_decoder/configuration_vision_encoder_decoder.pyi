@@ -1,11 +1,10 @@
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from ... import PreTrainedTokenizerBase, TensorType
 from ...configuration_utils import PretrainedConfig
 from ...onnx import OnnxConfig
 
-if TYPE_CHECKING: ...
 logger = ...
 
 class VisionEncoderDecoderConfig(PretrainedConfig):

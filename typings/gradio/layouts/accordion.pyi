@@ -1,12 +1,10 @@
-from typing import TYPE_CHECKING, Literal
+from typing import Literal
 
 from gradio.blocks import BlockContext
 from gradio.component_meta import ComponentMeta
 from gradio.events import Dependency
 from gradio.i18n import I18nData
 from gradio_client.documentation import document
-
-if TYPE_CHECKING: ...
 
 @document()
 class Accordion(BlockContext, metaclass=ComponentMeta):
@@ -23,8 +21,6 @@ class Accordion(BlockContext, metaclass=ComponentMeta):
         key: int | str | tuple[int | str, ...] | None = ...,
         preserved_by_key: list[str] | str | None = ...,
     ) -> None: ...
-
-    if TYPE_CHECKING: ...
     def expand(
         self,
         fn: Callable[..., Any] | None = ...,

@@ -1,5 +1,5 @@
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from gradio.components import Timer
 from gradio.components.base import Component, FormComponent
@@ -8,7 +8,6 @@ from gradio.i18n import I18nData
 from gradio_client.documentation import document
 
 """gr.Slider() component."""
-if TYPE_CHECKING: ...
 
 @document()
 class Slider(FormComponent):
@@ -46,8 +45,6 @@ class Slider(FormComponent):
     def postprocess(self, value: float | None) -> float: ...
     def preprocess(self, payload: float) -> float: ...
     def read_from_flag(self, payload: Any): ...
-
-    if TYPE_CHECKING: ...
     def change(
         self,
         fn: Callable[..., Any] | None = ...,

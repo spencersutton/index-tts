@@ -1,7 +1,7 @@
 import dataclasses
 from collections import UserDict, UserString
 from collections.abc import Callable, Sequence, Set as AbstractSet
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from gradio.blocks import Block, BlockContext, Component
 from gradio.components import Timer
@@ -10,7 +10,6 @@ from gradio_client.documentation import document
 
 """Contains all of the events that can be triggered in a gr.Blocks() app, with the exception
 of the on-page-load event, which is defined in gr.Blocks().load()."""
-if TYPE_CHECKING: ...
 
 def set_cancel_events(
     triggers: Sequence[EventListenerMethod], cancels: None | dict[str, Any] | list[dict[str, Any]]
@@ -69,31 +68,30 @@ class EventListenerMethod:
     block: Block | None
     event_name: str
 
-if TYPE_CHECKING:
-    type EventListenerCallable = Callable[
-        [
-            Callable[..., Any] | None,
-            Component | Sequence[Component] | None,
-            Block | Sequence[Block] | Sequence[Component] | Component | None,
-            str | None | Literal[False],
-            bool,
-            Literal["full", "minimal", "hidden"],
-            Component | Sequence[Component] | None,
-            bool | None,
-            bool,
-            int,
-            bool,
-            bool,
-            dict[str, Any] | list[dict[str, Any]] | None,
-            float | None,
-            Literal["once", "multiple", "always_last"] | None,
-            str | None,
-            int | None | Literal["default"],
-            str | None,
-            bool,
-        ],
-        Dependency,
-    ]
+type EventListenerCallable = Callable[
+    [
+        Callable[..., Any] | None,
+        Component | Sequence[Component] | None,
+        Block | Sequence[Block] | Sequence[Component] | Component | None,
+        str | None | Literal[False],
+        bool,
+        Literal["full", "minimal", "hidden"],
+        Component | Sequence[Component] | None,
+        bool | None,
+        bool,
+        int,
+        bool,
+        bool,
+        dict[str, Any] | list[dict[str, Any]] | None,
+        float | None,
+        Literal["once", "multiple", "always_last"] | None,
+        str | None,
+        int | None | Literal["default"],
+        str | None,
+        bool,
+    ],
+    Dependency,
+]
 
 class EventListener(UserString):
     def __new__(cls, event_name, *_args, **_kwargs):  # -> Self:

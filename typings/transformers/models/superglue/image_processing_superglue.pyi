@@ -1,5 +1,3 @@
-from typing import TYPE_CHECKING
-
 import numpy as np
 import torch
 from PIL import Image
@@ -12,7 +10,7 @@ from .modeling_superglue import KeypointMatchingOutput
 
 """Image processor class for SuperPoint."""
 if is_torch_available(): ...
-if TYPE_CHECKING: ...
+
 if is_vision_available(): ...
 logger = ...
 

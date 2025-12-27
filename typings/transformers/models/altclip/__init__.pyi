@@ -1,7 +1,3 @@
-from typing import TYPE_CHECKING
-
 from .configuration_altclip import *
 from .modeling_altclip import *
 from .processing_altclip import *
-
-if TYPE_CHECKING: ...

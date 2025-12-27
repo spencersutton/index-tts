@@ -1,12 +1,10 @@
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Literal, TypedDict
+from typing import Literal, TypedDict
 
 from gradio.components import Timer
 from gradio.components.base import Component
 from gradio.events import Dependency
 from gradio_client.documentation import document
-
-if TYPE_CHECKING: ...
 
 class Parameter(TypedDict):
     type: str
@@ -35,8 +33,6 @@ class ParamViewer(Component):
     def example_payload(self): ...
     def example_value(self): ...
     def api_info(self): ...
-
-    if TYPE_CHECKING: ...
     def change(
         self,
         fn: Callable[..., Any] | None = ...,

@@ -1,12 +1,12 @@
 import os
-from typing import TYPE_CHECKING, Any, Self, TypeVar
+from typing import Any, Self, TypeVar
 
 import torch
 
 from .utils import PushToHubMixin
 
 """Configuration base class and utilities."""
-if TYPE_CHECKING: ...
+
 logger = ...
 SpecificPretrainedConfigType = TypeVar("SpecificPretrainedConfigType", bound=PretrainedConfig)
 

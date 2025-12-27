@@ -2,14 +2,14 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, BinaryIO, Literal
+from typing import BinaryIO, Literal
 
 from .lfs import UploadInfo
 
 """
 Type definitions and utilities for the `create_commit` API
 """
-if TYPE_CHECKING: ...
+
 logger = ...
 type UploadMode = Literal["lfs", "regular"]
 FETCH_LFS_BATCH_SIZE = ...

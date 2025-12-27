@@ -23,8 +23,6 @@ class Sidebar(BlockContext, metaclass=ComponentMeta):
         key: int | str | tuple[int | str, ...] | None = ...,
         preserved_by_key: list[str] | str | None = ...,
     ) -> None: ...
-
-    if TYPE_CHECKING: ...
     def expand(
         self,
         fn: Callable[..., Any] | None = ...,

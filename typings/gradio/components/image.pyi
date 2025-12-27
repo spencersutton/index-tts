@@ -1,6 +1,6 @@
 from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 import numpy as np
 import PIL.Image
@@ -13,7 +13,6 @@ from gradio.i18n import I18nData
 from gradio_client.documentation import document
 
 """gr.Image() component."""
-if TYPE_CHECKING: ...
 
 @document()
 class Image(StreamingInput, Component):
@@ -61,8 +60,6 @@ class Image(StreamingInput, Component):
     def check_streamable(self): ...
     def example_payload(self) -> Any: ...
     def example_value(self) -> Any: ...
-
-    if TYPE_CHECKING: ...
     def clear(
         self,
         fn: Callable[..., Any] | None = ...,

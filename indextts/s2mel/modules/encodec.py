@@ -5,7 +5,6 @@
 # LICENSE file in the root directory of this source tree.
 """Convolutional layers wrappers and utilities."""
 
-import math
 from typing import override
 
 from torch import Tensor, nn
@@ -17,6 +16,8 @@ from indextts.util import patch_call
 
 class Conv1dWrapper(nn.Module):
     """Wrapper around Conv1d"""
+
+    conv: nn.Conv1d
 
     def __init__(
         self,
@@ -44,9 +45,9 @@ class Conv1dWrapper(nn.Module):
 
 
 class SConv1d(nn.Module):
-    """Conv1d with some builtin handling of asymmetric or causal padding
-    and normalization.
-    """
+    """Conv1d with some builtin handling of asymmetric or causal padding and normalization."""
+
+    conv: Conv1dWrapper
 
     def __init__(
         self,
@@ -65,30 +66,29 @@ class SConv1d(nn.Module):
 
     @override
     def forward(self, x: Tensor) -> Tensor:
-        # B, C, T = x.shape
-        kernel_size = self.conv.conv.kernel_size[0]
-        stride = self.conv.conv.stride[0]
-        dilation = self.conv.conv.dilation[0]
+        conv = self.conv.conv
+        kernel_size = (conv.kernel_size[0] - 1) * conv.dilation[0] + 1  # effective kernel
+        stride = conv.stride[0]
 
-        kernel_size = (kernel_size - 1) * dilation + 1  # effective kernel size with dilations
         padding_total = kernel_size - stride
-
         length = x.shape[-1]
-        extra_padding = math.ceil(length / stride) * stride - length
-        # Asymmetric padding required for odd strides
-        padding_right = padding_total // 2
-        padding_left = padding_total - padding_right
-        padding_right += extra_padding
+
+        extra_padding = (-length) % stride  # same as ceil(length/stride)*stride - length
+        padding_right_base = padding_total // 2
+        padding_left = padding_total - padding_right_base
+        padding_right = padding_right_base + extra_padding
 
         assert padding_left >= 0 and padding_right >= 0, (padding_left, padding_right)
+
         max_pad = max(padding_left, padding_right)
-        extra_pad = 0
-        if length <= max_pad:
-            extra_pad = max_pad - length + 1
+        extra_pad = max(0, max_pad - length + 1)
+        if extra_pad:
             x = F.pad(x, (0, extra_pad))
-        padded = F.pad(x, (padding_left, padding_right), "reflect")
-        end = padded.shape[-1] - extra_pad
-        x = padded[..., :end]
+
+        x = F.pad(x, (padding_left, padding_right), "reflect")
+        if extra_pad:
+            x = x[..., :-extra_pad]
+
         return self.conv(x)
 
     @patch_call(forward)

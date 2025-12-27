@@ -1,5 +1,3 @@
-from abc import ABC
-
 import torch
 from torch import Tensor, nn
 
@@ -7,7 +5,7 @@ from indextts.config import S2MelConfig
 from indextts.s2mel.modules.diffusion_transformer import DiT
 
 
-class CFM(nn.Module, ABC):
+class CFM(nn.Module):
     estimator: DiT
     criterion = nn.L1Loss()
     in_channels: int
@@ -20,7 +18,7 @@ class CFM(nn.Module, ABC):
         self.in_channels = args.DiT.in_channels
 
     @torch.inference_mode()
-    def inference(
+    def forward(
         self,
         mu: Tensor,
         x_lens: Tensor,

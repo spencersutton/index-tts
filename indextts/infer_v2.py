@@ -712,7 +712,7 @@ class IndexTTS2:
             cond = self.length_regulator(S_infer, ylens=target_lengths)
             cat_condition = torch.cat([prompt_condition, cond], dim=1)
 
-            vc_target = self.cfm.inference(
+            vc_target = self.cfm(
                 cat_condition,
                 torch.tensor([cat_condition.size(1)], device=cat_condition.device),
                 ref_mel,

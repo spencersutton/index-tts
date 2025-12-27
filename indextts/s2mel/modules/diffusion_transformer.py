@@ -30,6 +30,7 @@ class TimestepEmbedder(nn.Module):
     """Embeds scalar timesteps into vector representations."""
 
     freqs: Tensor
+    mlp: nn.Sequential
 
     def __init__(self, hidden_size: int) -> None:
         super().__init__()
@@ -71,6 +72,10 @@ class TimestepEmbedder(nn.Module):
 class FinalLayer(nn.Module):
     """The final layer of DiT."""
 
+    norm_final: nn.LayerNorm
+    linear: nn.Linear
+    adaLN_modulation: nn.Sequential  # noqa: N815
+
     def __init__(self, hidden_size: int, patch_size: int, out_channels: int) -> None:
         super().__init__()
         self.norm_final = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
@@ -89,6 +94,17 @@ class FinalLayer(nn.Module):
 
 class DiT(nn.Module):
     input_pos: Tensor
+    transformer: Transformer
+    cond_projection: nn.Linear
+    t_embedder: TimestepEmbedder
+    t_embedder2: TimestepEmbedder
+    conv1: nn.Linear
+    conv2: nn.Conv1d
+    wavenet: WaveNet
+    final_layer: FinalLayer
+    res_projection: nn.Linear
+    skip_linear: nn.Linear
+    cond_x_merge_linear: nn.Linear
 
     def __init__(self, args: S2MelConfig) -> None:
         super().__init__()

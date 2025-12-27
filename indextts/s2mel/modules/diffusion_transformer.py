@@ -20,41 +20,43 @@ def modulate(x: Tensor, shift: Tensor, scale: Tensor) -> Tensor:
 #               Embedding Layers for Timesteps and Class Labels                 #
 #################################################################################
 
+CONTENT_DIM: Final = 512
+FREQUENCY_EMBEDDING_SIZE: Final = 256
+HIDDEN_DIM: Final = 512
+NUM_HEADS: Final = 8
+
 
 class TimestepEmbedder(nn.Module):
     """Embeds scalar timesteps into vector representations."""
 
     freqs: Tensor
 
-    def __init__(
-        self,
-        hidden_size: int,
-    ) -> None:
+    def __init__(self, hidden_size: int) -> None:
         super().__init__()
-        frequency_embedding_size: Final = 256
         self.mlp = nn.Sequential(
-            nn.Linear(frequency_embedding_size, hidden_size, bias=True),
+            nn.Linear(FREQUENCY_EMBEDDING_SIZE, hidden_size),
             nn.SiLU(),
-            nn.Linear(hidden_size, hidden_size, bias=True),
+            nn.Linear(hidden_size, hidden_size),
         )
         self.max_period: Final = 10000
         self.scale: Final = 1000
 
-        half = frequency_embedding_size // 2
+        half = FREQUENCY_EMBEDDING_SIZE // 2
         freqs = torch.exp(-math.log(self.max_period) * torch.arange(start=0, end=half, dtype=torch.float32) / half)
         self.register_buffer("freqs", freqs)
 
     def timestep_embedding(self, t: Tensor) -> Tensor:
-        """Create sinusoidal timestep embeddings.
-        :param t: a 1-D Tensor of N indices, one per batch element.
-                          These may be fractional.
-        :param dim: the dimension of the output.
-        :param max_period: controls the minimum frequency of the embeddings.
-        :return: an (N, D) Tensor of positional embeddings.
         """
-        # https://github.com/openai/glide-text2im/blob/main/glide_text2im/nn.py
+        Create sinusoidal timestep embeddings.
+        See: https://github.com/openai/glide-text2im/blob/main/glide_text2im/nn.py
 
-        args = self.scale * t[:, None].float() * self.freqs[None]
+        Args:
+            t (Tensor): a 1-D Tensor of N indices, one per batch element. These may be fractional.
+
+        Returns:
+            Tensor: an (N, D) Tensor of positional embeddings.
+        """
+        args = self.scale * t.unsqueeze(1) * self.freqs.unsqueeze(0)
         return torch.cat([torch.cos(args), torch.sin(args)], dim=-1)
 
     @override
@@ -72,8 +74,8 @@ class FinalLayer(nn.Module):
     def __init__(self, hidden_size: int, patch_size: int, out_channels: int) -> None:
         super().__init__()
         self.norm_final = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
-        self.linear = weight_norm(nn.Linear(hidden_size, patch_size * patch_size * out_channels, bias=True))
-        self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(hidden_size, 2 * hidden_size, bias=True))
+        self.linear = weight_norm(nn.Linear(hidden_size, patch_size * patch_size * out_channels))
+        self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(hidden_size, 2 * hidden_size))
 
     @override
     def forward(self, x: Tensor, c: Tensor) -> Tensor:
@@ -85,18 +87,13 @@ class FinalLayer(nn.Module):
     def __call__(self) -> None: ...
 
 
-HIDDEN_DIM: Final = 512
-NUM_HEADS: Final = 8
-CONTENT_DIM: Final = 512
-
-
 class DiT(nn.Module):
     input_pos: Tensor
 
     def __init__(self, args: S2MelConfig) -> None:
         super().__init__()
         model_args = ModelArgs(
-            block_size=16384,  # args.DiT.block_size,
+            block_size=args.DiT.block_size,
             n_layer=args.DiT.depth,
             n_head=NUM_HEADS,
             dim=HIDDEN_DIM,
@@ -109,11 +106,11 @@ class DiT(nn.Module):
         self.in_channels = args.DiT.in_channels
         self.out_channels = args.DiT.in_channels
 
-        self.cond_projection = nn.Linear(CONTENT_DIM, HIDDEN_DIM, bias=True)  # continuous content
+        self.cond_projection = nn.Linear(CONTENT_DIM, HIDDEN_DIM)  # continuous content
 
         self.t_embedder = TimestepEmbedder(HIDDEN_DIM)
 
-        input_pos = torch.arange(16384)
+        input_pos = torch.arange(args.DiT.block_size)
         if TYPE_CHECKING:
             self.input_pos = input_pos
         self.register_buffer("input_pos", input_pos)

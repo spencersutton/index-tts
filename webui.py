@@ -246,7 +246,11 @@ def gen_single(
                 wav = wav.clamp(-1.0, 1.0)
                 wav_i16 = (wav * float(np.iinfo(np.int16).max)).to(torch.int16)
                 wav_np = wav_i16.numpy().T  # (T, 1)
-                if True:
+                # If the current Gradio supports `Audio(streaming=True)`, it will
+                # append-play successive (sr, np.ndarray) yields. Otherwise, Gradio
+                # will treat each yield as a full replacement, so we must yield the
+                # cumulative audio to avoid producing only the last chunk.
+                if GR_AUDIO_STREAMING_SUPPORTED:
                     yield (OUTPUT_SR, wav_np)
                 else:
                     audio_chunks.append(wav_np)
@@ -444,7 +448,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
         with gr.Accordion(i18n("高级生成参数设置"), open=False, visible=True):
             stream_output = gr.Checkbox(
                 label=i18n("流式播放（实验）"),
-                value=True,
+                value=GR_AUDIO_STREAMING_SUPPORTED,
                 info=i18n("开启后将边生成边播放；关闭后生成完成再返回整段音频。"),
             )
             with gr.Row():

@@ -143,9 +143,8 @@ class DiT(nn.Module):
             p_dropout=args.wavenet.p_dropout,
         )
         self.final_layer = FinalLayer(HIDDEN_DIM, 1, HIDDEN_DIM)
-        self.res_projection = nn.Linear(
-            HIDDEN_DIM, HIDDEN_DIM
-        )  # residual connection from tranformer output to final output
+        # residual connection from transformer output to final output
+        self.res_projection = nn.Linear(HIDDEN_DIM, HIDDEN_DIM)
 
         self.skip_linear = nn.Linear(HIDDEN_DIM + args.DiT.in_channels, HIDDEN_DIM)
 
@@ -165,48 +164,40 @@ class DiT(nn.Module):
         cond: Tensor,
         mask_content: bool = False,
     ) -> Tensor:
-        """x (Tensor): random noise
-        prompt_x (Tensor): reference mel + zero mel
-            shape: (batch_size, 80, 795+1068)
-        x_lens (Tensor): mel frames output
-            shape: (batch_size, mel_timesteps)
-        t (Tensor): radshape:
-            shape: (batch_size)
-        style (Tensor): reference global style
-            shape: (batch_size, 192)
-        cond (Tensor): semantic info of reference audio and altered audio
-            shape: (batch_size, mel_timesteps(795+1069), 512)
-
+        """
+        Args:
+            x (Tensor): Random noise.
+            prompt_x (Tensor): Reference mel + zero mel. Shape: (batch_size, 80, 795+1068)
+            x_lens (Tensor): Mel frames output. Shape: (batch_size, mel_timesteps)
+            t (Tensor): Radshape. Shape: (batch_size)
+            style (Tensor): Reference global style. Shape: (batch_size, 192)
+            cond (Tensor): Semantic info of reference audio and altered audio. Shape: (batch_size, mel_timesteps(795+1069), 512)
         """
         cond_in_module = self.cond_projection
 
         _B, _, T = x.size()
 
         t1 = self.t_embedder(t)  # (N, D) # t1 [2, 512]
-        cond = cond_in_module(cond)  # cond [2,1863,512]->[2,1863,512]
+        cond = cond_in_module(cond)  # cond [2, 1863, 512] -> [2, 1863, 512]
 
-        x = x.transpose(1, 2)  # [2,1863,80]
-        prompt_x = prompt_x.transpose(1, 2)  # [2,1863,80]
+        x = x.mT  # [2, 1863, 80]
+        prompt_x = prompt_x.mT  # [2, 1863, 80]
 
-        x_in = torch.cat([x, prompt_x, cond], dim=-1)  # 80+80+512=672 [2, 1863, 672]
-
-        x_in = torch.cat([x_in, style[:, None, :].repeat(1, T, 1)], dim=-1)  # [2, 1863, 864]
-
+        x_in = torch.cat([x, prompt_x, cond], dim=-1)  # [2, 1863, 672]
+        x_in = torch.cat([x_in, style.unsqueeze(1).repeat(1, T, 1)], dim=-1)  # [2, 1863, 864]
         x_in = self.cond_x_merge_linear(x_in)  # (N, T, D) [2, 1863, 512]
 
-        x_mask = sequence_mask(x_lens, max_length=x_in.size(1)).unsqueeze(1)  # torch.Size([1, 1, 1863])
+        x_mask = sequence_mask(x_lens, max_length=x_in.size(1)).unsqueeze(1)  # [1, 1, 1863])
         input_pos = self.input_pos[: x_in.size(1)]  # (T,) range（0，1863）
-        x_mask_expanded = x_mask[:, None, :].repeat(1, 1, x_in.size(1), 1)  # torch.Size([1, 1, 1863, 1863]
+        x_mask_expanded = x_mask.unsqueeze(1).repeat(1, 1, x_in.size(1), 1)  # [1, 1, 1863, 1863]
         x_res = self.transformer(x_in, t1.unsqueeze(1), input_pos, x_mask_expanded)  # [2, 1863, 512]
 
         x_res = self.skip_linear(torch.cat([x_res, x], dim=-1))
         x = self.conv1(x_res)
-        x = x.transpose(1, 2)
+        x = x.mT
         t2 = self.t_embedder2(t)
-        x = self.wavenet(x, x_mask, g=t2.unsqueeze(2)).transpose(1, 2) + self.res_projection(
-            x_res
-        )  # long residual connection
-        x = self.final_layer(x, t1).transpose(1, 2)
+        x = self.wavenet(x, x_mask, g=t2.unsqueeze(2)).mT + self.res_projection(x_res)  # long residual connection
+        x = self.final_layer(x, t1).mT
         return self.conv2(x)
         # x [2,80,1863]
 

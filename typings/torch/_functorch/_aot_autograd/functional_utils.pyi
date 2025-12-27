@@ -1,3 +1,11 @@
+"""
+This file contains utilities related to functionalization in AOTAutograd:
+1. converting to/from functional tensors
+2. detecting Tensor mutations - both metadata and Tensor value
+3. regenerating/replaying views from their base
+4. checking if a graph is functional i.e. whether it contains any mutation ops
+"""
+
 from dataclasses import dataclass
 
 import torch
@@ -27,6 +35,8 @@ def has_same_metadata(t1, t2): ...
 
 @dataclass(frozen=True)
 class MetadataKey:
+    """This should be equal whenever has_same_metadata would return True"""
+
     size: tuple[SymIntEqByExpr, ...]
     layout: torch.layout
     is_sparse: bool

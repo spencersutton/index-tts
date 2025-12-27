@@ -5,6 +5,23 @@ from torch.distributions.transformed_distribution import TransformedDistribution
 __all__ = ["HalfNormal"]
 
 class HalfNormal(TransformedDistribution):
+    """
+    Creates a half-normal distribution parameterized by `scale` where::
+
+        X ~ Normal(0, scale)
+        Y = |X| ~ HalfNormal(scale)
+
+    Example::
+
+        >>> # xdoctest: +IGNORE_WANT("non-deterministic")
+        >>> m = HalfNormal(torch.tensor([1.0]))
+        >>> m.sample()  # half-normal distributed with scale=1
+        tensor([ 0.1046])
+
+    Args:
+        scale (float or Tensor): scale of the full Normal distribution
+    """
+
     arg_constraints = ...
     support = ...
     has_rsample = ...

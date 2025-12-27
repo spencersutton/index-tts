@@ -5,8 +5,20 @@ from typing import Any
 from torch.backends import PropModule
 
 @_lru_cache
-def is_available() -> bool: ...
-def get_opt_einsum() -> Any: ...
+def is_available() -> bool:
+    """
+    Return a bool indicating if opt_einsum is currently available.
+
+    You must install opt-einsum in order for torch to automatically optimize einsum. To
+    make opt-einsum available, you can install it along with torch: ``pip install torch[opt-einsum]``
+    or by itself: ``pip install opt-einsum``. If the package is installed, torch will import
+    it automatically and use it accordingly. Use this function to check whether opt-einsum
+    was installed and properly imported by torch.
+    """
+
+def get_opt_einsum() -> Any:
+    """Return the opt_einsum package if opt_einsum is currently available, else None."""
+
 def set_flags(_enabled=..., _strategy=...) -> tuple[ContextProp | bool, ContextProp | str | None]: ...
 @contextmanager
 def flags(enabled=..., strategy=...) -> Generator[None, Any, None]: ...

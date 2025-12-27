@@ -1,3 +1,5 @@
+"""Global flags for aot autograd"""
+
 from typing import Literal
 
 from torch.utils._config_typing import *

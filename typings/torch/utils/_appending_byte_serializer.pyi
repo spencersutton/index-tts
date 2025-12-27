@@ -21,6 +21,11 @@ class BytesReader:
     def read_bytes(self) -> bytes: ...
 
 class AppendingByteSerializer[T]:
+    """
+    Provides efficient serialization and deserialization of list of bytes
+    Note that this does not provide any guarantees around byte order
+    """
+
     _serialize_fn: Callable[[BytesWriter, T], None]
     _writer: BytesWriter
     def __init__(self, *, serialize_fn: Callable[[BytesWriter, T], None]) -> None: ...

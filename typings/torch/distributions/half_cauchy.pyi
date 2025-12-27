@@ -5,6 +5,23 @@ from torch.distributions.transformed_distribution import TransformedDistribution
 __all__ = ["HalfCauchy"]
 
 class HalfCauchy(TransformedDistribution):
+    """
+    Creates a half-Cauchy distribution parameterized by `scale` where::
+
+        X ~ Cauchy(0, scale)
+        Y = |X| ~ HalfCauchy(scale)
+
+    Example::
+
+        >>> # xdoctest: +IGNORE_WANT("non-deterministic")
+        >>> m = HalfCauchy(torch.tensor([1.0]))
+        >>> m.sample()  # half-cauchy distributed with scale=1
+        tensor([ 2.3214])
+
+    Args:
+        scale (float or Tensor): scale of the full Cauchy distribution
+    """
+
     arg_constraints = ...
     support = ...
     has_rsample = ...

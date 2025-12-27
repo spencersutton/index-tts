@@ -19,6 +19,8 @@ NO_OUT_DIMS = ...
 def wrap_outputs_maintaining_identity(outputs, unwrapped_inputs, orig_inputs, wrap_fn, out_dims=...): ...
 
 class VmapInfo(NamedTuple):
+    """VmapInfo(batch_size, randomness)"""
+
     batch_size: int
     randomness: str
 

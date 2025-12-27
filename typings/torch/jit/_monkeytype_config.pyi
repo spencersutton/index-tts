@@ -9,8 +9,18 @@ from monkeytype.tracing import CallTrace, CodeFilter
 _IS_MONKEYTYPE_INSTALLED = ...
 
 def is_torch_native_class(cls): ...
-def get_type(type): ...
-def get_optional_of_element_type(types): ...
+def get_type(type):
+    """Convert the given type to a torchScript acceptable format."""
+
+def get_optional_of_element_type(types):
+    """
+    Extract element type, return as `Optional[element type]` from consolidated types.
+
+    Helper function to extracts the type of the element to be annotated to Optional
+    from the list of consolidated types and returns `Optional[element type]`.
+    TODO: To remove this check once Union support lands.
+    """
+
 def get_qualified_name(func): ...
 
 if _IS_MONKEYTYPE_INSTALLED:
@@ -46,4 +56,15 @@ else:
 
     monkeytype_trace = ...
 
-def jit_code_filter(code: CodeType) -> bool: ...
+def jit_code_filter(code: CodeType) -> bool:
+    """
+    Codefilter for Torchscript to trace forward calls.
+
+    The custom CodeFilter is required while scripting a FX Traced forward calls.
+    FX Traced forward calls have `code.co_filename` start with '<' which is used
+    to exclude tracing of stdlib and site-packages in the default code filter.
+    Since we need all forward calls to be traced, this custom code filter
+    checks for code.co_name to be 'forward' and enables tracing for all such calls.
+    The code filter is similar to default code filter for monkeytype and
+    excludes tracing of stdlib and site-packages.
+    """

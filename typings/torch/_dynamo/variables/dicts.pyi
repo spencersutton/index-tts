@@ -1,3 +1,23 @@
+"""
+Dictionary-related variable tracking classes for PyTorch Dynamo.
+
+This module implements variable tracking for different types of dictionary-like objects:
+- Regular Python dictionaries (dict)
+- Ordered dictionaries (collections.OrderedDict)
+- Default dictionaries (collections.defaultdict)
+- Dictionary views (keys and values)
+- Sets and frozensets (implemented internally using dictionaries)
+
+These classes are responsible for tracking dictionary operations during graph compilation,
+maintaining proper guards for dictionary mutations and key existence checks. They handle
+dictionary creation, modification, key/value access, and view operations while ensuring
+correct behavior in the compiled code through appropriate guard installation.
+
+The implementation uses a special _HashableTracker wrapper to handle dictionary keys
+while preserving proper aliasing semantics. Sets are implemented as dictionaries with
+None values for efficiency and code reuse.
+"""
+
 from torch._dynamo.codegen import PyCodegen
 from torch._dynamo.symbolic_convert import InstructionTranslator
 
@@ -11,6 +31,11 @@ class ConstDictVariable(VariableTracker):
     CONTAINS_GUARD = ...
     _nonvar_fields = ...
     class _HashableTracker:
+        """
+        Auxiliary opaque internal class that wraps a VariableTracker and makes it hashable
+        This should not be seen or touched by anything outside of ConstDictVariable and its children
+        Note that it's also fine to put VTs into dictionaries and sets, but doing so does not take into account aliasing
+        """
         def __init__(self, vt) -> None: ...
         @property
         def underlying_value(self): ...
@@ -67,6 +92,8 @@ class DefaultDictVariable(ConstDictVariable):
     def reconstruct(self, codegen): ...
 
 class SetVariable(ConstDictVariable):
+    """We model a sets as dictionary with None values"""
+
     CONTAINS_GUARD = ...
     def __init__(self, items: list[VariableTracker], **kwargs) -> None: ...
     def debug_repr(self): ...
@@ -109,6 +136,12 @@ class DictKeySetVariable(SetVariable):
     ) -> VariableTracker: ...
 
 class DictViewVariable(VariableTracker):
+    """
+    Models _PyDictViewObject
+
+    This is an "abstract" class. Subclasses will override kv and the items method
+    """
+
     kv: str | None = ...
     def __init__(self, dv_dict: ConstDictVariable, **kwargs) -> None: ...
     @property

@@ -536,7 +536,22 @@ def rnn_tanh_data(data, batch_sizes, hx, params, has_biases, num_layers, dropout
 def lstm_cell(inp, hx, cx, hh_weight, hh_bias, hr_weight, chunk_dim): ...
 def one_layer_lstm(inp, hidden, params, has_biases, reverse=...): ...
 def one_layer_lstm_data(inp, hidden, params, has_biases, batch_sizes, reverse=...): ...
-def select_one_layer_lstm_function(input, hx, params): ...
+def select_one_layer_lstm_function(input, hx, params):
+    """
+    Check whether we could use decompose lstm with mkldnn_rnn_layer.
+    All the below conditions need to be met:
+        * ``torch._C._get_mkldnn_enabled()`` returns ``True``.
+        * All the input args are on CPU.
+        * The dtypes of args are either torch.float or torch.bfloat16.
+        * Inference.
+        * ``has_projections`` returns ``False``.
+
+    Args:
+        * input: the input sequence to LSTM
+        * hx: a tuple of the input hidden state and cell state ``(h_0, c_0)`` to LSTM
+        * params: the weight and bias tensors of LSTM
+    """
+
 @register_decomposition(aten.lstm.input)
 @aten.lstm.input.py_impl(DispatchKey.CompositeImplicitAutograd)
 @aten.lstm.input.py_impl(DispatchKey.Autograd)

@@ -1,3 +1,18 @@
+"""
+This module provides functionality for resuming Python execution at specific points in code,
+primarily used by PyTorch Dynamo for control flow handling and optimization. It implements
+bytecode transformation and execution state management to enable:
+
+- Resuming execution at arbitrary points in Python bytecode
+- Managing context managers and their state across execution boundaries
+- Transforming and generating new code objects with preserved execution state
+- Supporting Python 3.11+ exception handling and block management
+- Restoring torch function mode stacks and other execution context
+
+The module is critical for PyTorch Dynamo's ability to optimize code while preserving
+Python semantics and execution state.
+"""
+
 import dataclasses
 import types
 from typing import Any
@@ -19,18 +34,44 @@ IS_TRACING_RESUME_PROLOGUE_VARNAME = ...
 
 @dataclasses.dataclass(frozen=True)
 class ReenterWith:
+    """ReenterWith(stack_index: int, target_values: Optional[tuple[Any, ...]] = None)"""
+
     stack_index: int
     target_values: tuple[Any, ...] | None = ...
     def try_except_torch_function_mode(
         self, code_options: dict[str, Any], cleanup: list[Instruction]
-    ) -> list[Instruction]: ...
-    def try_finally(self, code_options: dict[str, Any], cleanup: list[Instruction]) -> list[Instruction]: ...
+    ) -> list[Instruction]:
+        """
+        Codegen based off of:
+        try:
+            (rest)
+        except:
+            (restore previous tf mode stack)
+            raise
+        """
+    def try_finally(self, code_options: dict[str, Any], cleanup: list[Instruction]) -> list[Instruction]:
+        """
+        Codegen based off of:
+        load args
+        enter context
+        try:
+            (rest)
+        finally:
+            exit context
+        """
     def __call__(
         self, code_options: dict[str, Any], cleanup: list[Instruction]
-    ) -> tuple[list[Instruction], Instruction | None]: ...
+    ) -> tuple[list[Instruction], Instruction | None]:
+        """
+        Codegen based off of:
+        with ctx(args):
+            (rest)
+        """
 
 @dataclasses.dataclass
 class ResumeFunctionMetadata:
+    """ResumeFunctionMetadata(code: code, instructions: list[torch._dynamo.bytecode_transformation.Instruction] = <factory>, prefix_block_target_offset_remap: list[int] = <factory>, block_target_offset_remap: dict[tuple[int, int], dict[int, int]] = <factory>)"""
+
     code: types.CodeType
     instructions: list[Instruction] = ...
     prefix_block_target_offset_remap: list[int] = ...
@@ -59,7 +100,8 @@ class ContinueExecutionCache:
         nested_code_objs: tuple[types.CodeType],
     ) -> types.CodeType: ...
     @staticmethod
-    def unreachable_codes(code_options: dict[str, Any]) -> list[Instruction]: ...
+    def unreachable_codes(code_options: dict[str, Any]) -> list[Instruction]:
+        """Codegen a `raise None` to make analysis work for unreachable code"""
     @classmethod
     def generate_based_on_original_code_object(
         cls,
@@ -69,4 +111,11 @@ class ContinueExecutionCache:
         resume_offset: int,
         setup_fn_target_offsets: tuple[int, ...],
         *args: Any,
-    ) -> types.CodeType: ...
+    ) -> types.CodeType:
+        """
+        This handles the case of generating a resume into code generated
+        to resume something else.  We want to always generate starting
+        from the original code object so that if control flow paths
+        converge we only generated 1 resume function (rather than 2^n
+        resume functions).
+        """

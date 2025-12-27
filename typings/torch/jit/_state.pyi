@@ -1,7 +1,21 @@
+"""
+JIT-related state.
+
+This module stores various pieces of Python-global state relating to the JIT.
+
+This is not intended to be imported directly; please the exposed
+functionalities in `torch.jit`.
+"""
+
 import weakref
 from typing import Any
 
 class EnabledProxy:
+    """
+    Stores whether the JIT is enabled or not.
+
+    This is just a wrapper for a bool, so that we get reference semantics
+    """
     def __init__(self) -> None: ...
     def parse_env(self, name, default, true_message, false_message): ...
     def __bool__(self) -> bool: ...

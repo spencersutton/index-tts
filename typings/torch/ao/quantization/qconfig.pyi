@@ -39,6 +39,25 @@ __all__ = [
 ]
 
 class QConfig(namedtuple("QConfig", ["activation", "weight"])):
+    """
+    Describes how to quantize a layer or a part of the network by providing
+    settings (observer classes) for activations and weights respectively.
+
+
+    Note that QConfig needs to contain observer **classes** (like MinMaxObserver) or a callable that returns
+    instances on invocation, not the concrete observer instances themselves.
+    Quantization preparation function will instantiate observers multiple times for each of the layers.
+
+
+    Observer classes have usually reasonable default arguments, but they can be overwritten with `with_args`
+    method (that behaves like functools.partial)::
+
+      my_qconfig = QConfig(
+          activation=MinMaxObserver.with_args(dtype=torch.qint8),
+          weight=default_observer.with_args(dtype=torch.qint8),
+      )
+    """
+
     __slots__ = ...
     def __new__(cls, activation, weight) -> Self: ...
 
@@ -46,6 +65,22 @@ class QConfig(namedtuple("QConfig", ["activation", "weight"])):
     "`QConfigDynamic` is going to be deprecated in PyTorch 1.12, please use `QConfig` instead", category=FutureWarning
 )
 class QConfigDynamic(namedtuple("QConfigDynamic", ["activation", "weight"])):
+    """
+    Describes how to dynamically quantize a layer or a part of the network by providing
+    settings (observer classes) for weights.
+
+    It's like QConfig, but for dynamic quantization.
+
+    Note that QConfigDynamic needs to contain observer **classes** (like MinMaxObserver) or a callable that returns
+    instances on invocation, not the concrete observer instances themselves.
+    Quantization function will instantiate observers multiple times for each of the layers.
+
+    Observer classes have usually reasonable default arguments, but they can be overwritten with `with_args`
+    method (that behaves like functools.partial)::
+
+      my_qconfig = QConfigDynamic(weight=default_observer.with_args(dtype=torch.qint8))
+    """
+
     __slots__ = ...
     def __new__(cls, activation=..., weight=...) -> Self: ...
 
@@ -65,7 +100,17 @@ default_activation_only_qconfig = ...
 default_qat_qconfig_v2 = ...
 default_reuse_input_qconfig = ...
 
-def get_default_qconfig(backend=..., version=...) -> QConfig: ...
+def get_default_qconfig(backend=..., version=...) -> QConfig:
+    """
+    Returns the default PTQ qconfig for the specified backend.
+
+    Args:
+      * `backend` (str): a string representing the target backend. Currently supports
+        `x86` (default), `fbgemm`, `qnnpack` and `onednn`.
+
+    Return:
+        qconfig
+    """
 
 default_symmetric_qnnpack_qconfig = ...
 default_per_channel_symmetric_qnnpack_qconfig = ...
@@ -73,7 +118,18 @@ default_embedding_qat_qconfig = ...
 default_embedding_qat_qconfig_4bit = ...
 default_quint8_weight_qconfig = ...
 
-def get_default_qat_qconfig(backend=..., version=...) -> QConfig: ...
+def get_default_qat_qconfig(backend=..., version=...) -> QConfig:
+    """
+    Returns the default QAT qconfig for the specified backend.
+
+    Args:
+      * `backend` (str): a string representing the target backend. Currently supports
+        `x86` (default), `fbgemm`, `qnnpack` and `onednn`.
+      * `version`: version, for backwards compatibility. Can be `None` or `1`.
+
+    Return:
+        qconfig
+    """
 
 default_symmetric_qnnpack_qat_qconfig = ...
 default_per_channel_symmetric_qnnpack_qat_qconfig = ...
@@ -94,4 +150,5 @@ def get_default_qat_qconfig_dict(backend=..., version=...) -> dict[str, Any]: ..
 type QConfigAny = QConfig | None
 type _ObserverOrFakeQuantizeConstructor = type[ObserverBase | FakeQuantizeBase] | _PartialWrapper
 
-def qconfig_equals(q1: QConfigAny, q2: QConfigAny) -> bool: ...
+def qconfig_equals(q1: QConfigAny, q2: QConfigAny) -> bool:
+    """Returns `True` if `q1` equals `q2`, and `False` otherwise."""

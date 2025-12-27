@@ -1,3 +1,11 @@
+"""
+Template heuristic registry system for PyTorch Inductor.
+
+This module provides a centralized registration system for template heuristics,
+allowing automatic registration based on device type and conditional registration
+for CUDA vs ROCm based on torch.version.hip.
+"""
+
 import contextlib
 from collections.abc import Iterator
 from typing import Any
@@ -10,8 +18,57 @@ log = ...
 
 def register_template_heuristic(
     template_name: str, device_type: str | None, register: bool = ..., op_name: str | None = ...
-) -> Any: ...
-def get_template_heuristic(template_name: str, device_type: str, op_name: str) -> TemplateConfigHeuristics: ...
-def clear_registry() -> None: ...
+) -> Any:
+    """
+    Decorator to register template heuristic classes.
+
+    Args:
+        template_name: Name of the template (e.g., "mm", "bmm", "scaled_mm")
+        device_type: Device type ("cuda", "cpu", "xpu")
+            Set this to None to indicate that the heuristic is applicable to all device types.
+        register: Whether to register this heuristic. Caller should pass the condition directly.
+        op_name: Name of the operator (e.g., "mm", "bmm", "scaled_mm"). This is optional
+            and is only used when a template uses different heuristics for different ops
+
+    Returns:
+        Decorator function that registers the class if conditions are met.
+
+    Example:
+        @register_template_heuristic("mm", "cuda", register=torch.version.hip is None)
+        class CUDAMMTemplateConfigHeuristic(MMTemplateConfigMixin, CUDAConfigHeuristic):
+            pass
+    """
+
+def get_template_heuristic(template_name: str, device_type: str, op_name: str) -> TemplateConfigHeuristics:
+    """
+    Retrieve a template heuristic instance for the given template and device type.
+
+    Args:
+        template_name: Name of the template (e.g., "mm", "bmm", "scaled_mm")
+        device_type: Device type ("cuda", "cpu", "xpu")
+        op_name: Name of the operator (e.g., "mm", "bmm", "scaled_mm")
+
+    Returns:
+        Template heuristic instance. If no specific heuristic is found,
+        returns a fallback TemplateConfigHeuristics() instance (uncached).
+    """
+
+def clear_registry() -> None:
+    """
+    Clear all registered template heuristics.
+
+    This is primarily useful for testing purposes to ensure a clean state.
+    """
+
 @contextlib.contextmanager
-def override_template_heuristics(device_type: str, template_op_pairs: list[tuple[str, str]]) -> Iterator[None]: ...
+def override_template_heuristics(device_type: str, template_op_pairs: list[tuple[str, str]]) -> Iterator[None]:
+    """
+    Context manager to temporarily override template heuristics with an empty heuristic.
+
+    This is useful for testing purposes, where we want to ensure a specific template/op pair
+    is not used
+
+    Args:
+        device_type: Device type ("cuda", "cpu", "xpu")
+        template_op_pairs: List of (template_name, op_name) pairs to override.
+    """

@@ -16,18 +16,42 @@ flop_registry: dict[Any, Any] = ...
 def shape_wrapper(f) -> _Wrapped[..., Any, ..., Any]: ...
 def register_flop_formula(targets, get_raw=...) -> Callable[[Callable[_P, _T]], Callable[_P, _T]]: ...
 @register_flop_formula(aten.mm)
-def mm_flop(a_shape, b_shape, *args, out_shape=..., **kwargs) -> int: ...
+def mm_flop(a_shape, b_shape, *args, out_shape=..., **kwargs) -> int:
+    """Count flops for matmul."""
+
 @register_flop_formula(aten.addmm)
-def addmm_flop(self_shape, a_shape, b_shape, out_shape=..., **kwargs) -> int: ...
+def addmm_flop(self_shape, a_shape, b_shape, out_shape=..., **kwargs) -> int:
+    """Count flops for addmm."""
+
 @register_flop_formula(aten.bmm)
-def bmm_flop(a_shape, b_shape, out_shape=..., **kwargs) -> int: ...
+def bmm_flop(a_shape, b_shape, out_shape=..., **kwargs) -> int:
+    """Count flops for the bmm operation."""
+
 @register_flop_formula(aten.baddbmm)
-def baddbmm_flop(self_shape, a_shape, b_shape, out_shape=..., **kwargs) -> int: ...
-def conv_flop_count(x_shape: list[int], w_shape: list[int], out_shape: list[int], transposed: bool = ...) -> int: ...
+def baddbmm_flop(self_shape, a_shape, b_shape, out_shape=..., **kwargs) -> int:
+    """Count flops for the baddbmm operation."""
+
+def conv_flop_count(x_shape: list[int], w_shape: list[int], out_shape: list[int], transposed: bool = ...) -> int:
+    """
+    Count flops for convolution.
+
+    Note only multiplication is
+    counted. Computation for bias are ignored.
+    Flops for a transposed convolution are calculated as
+    flops = (x_shape[2:] * prod(w_shape) * batch_size).
+    Args:
+        x_shape (list(int)): The input shape before convolution.
+        w_shape (list(int)): The filter shape.
+        out_shape (list(int)): The output shape after convolution.
+        transposed (bool): is the convolution transposed
+    Returns:
+        int: the number of flops
+    """
+
 @register_flop_formula([aten.convolution, aten._convolution, aten.cudnn_convolution, aten._slow_conv2d_forward])
-def conv_flop(
-    x_shape, w_shape, _bias, _stride, _padding, _dilation, transposed, *args, out_shape=..., **kwargs
-) -> int: ...
+def conv_flop(x_shape, w_shape, _bias, _stride, _padding, _dilation, transposed, *args, out_shape=..., **kwargs) -> int:
+    """Count flops for convolution."""
+
 @register_flop_formula(aten.convolution_backward)
 def conv_backward_flop(
     grad_out_shape,
@@ -43,20 +67,29 @@ def conv_backward_flop(
     output_mask,
     out_shape,
 ) -> int: ...
-def sdpa_flop_count(query_shape, key_shape, value_shape) -> int: ...
+def sdpa_flop_count(query_shape, key_shape, value_shape) -> int:
+    """
+    Count flops for self-attention.
+
+    NB: We can assume that value_shape == key_shape
+    """
+
 @register_flop_formula([
     aten._scaled_dot_product_efficient_attention,
     aten._scaled_dot_product_flash_attention,
     aten._scaled_dot_product_cudnn_attention,
 ])
-def sdpa_flop(query_shape, key_shape, value_shape, *args, out_shape=..., **kwargs) -> int: ...
+def sdpa_flop(query_shape, key_shape, value_shape, *args, out_shape=..., **kwargs) -> int:
+    """Count flops for self-attention."""
+
 def sdpa_backward_flop_count(grad_out_shape, query_shape, key_shape, value_shape) -> int: ...
 @register_flop_formula([
     aten._scaled_dot_product_efficient_attention_backward,
     aten._scaled_dot_product_flash_attention_backward,
     aten._scaled_dot_product_cudnn_attention_backward,
 ])
-def sdpa_backward_flop(grad_out_shape, query_shape, key_shape, value_shape, *args, out_shape=..., **kwargs) -> int: ...
+def sdpa_backward_flop(grad_out_shape, query_shape, key_shape, value_shape, *args, out_shape=..., **kwargs) -> int:
+    """Count flops for self-attention backward."""
 
 flop_registry = ...
 
@@ -69,6 +102,23 @@ def convert_num_with_suffix(number, suffix) -> str: ...
 def convert_to_percent_str(num, denom) -> str: ...
 
 class FlopCounterMode:
+    """
+    ``FlopCounterMode`` is a context manager that counts the number of flops within its context.
+
+    It does this using a ``TorchDispatchMode``.
+
+    It also supports hierarchical output by passing a module (or list of
+    modules) to FlopCounterMode on construction. If you do not need hierarchical
+    output, you do not need to use it with a module.
+
+    Example usage
+
+    .. code-block:: python
+
+        mod = ...
+        with FlopCounterMode(mod) as flop_counter:
+            mod.sum().backward()
+    """
     def __init__(
         self,
         mods: torch.nn.Module | list[torch.nn.Module] | None = ...,
@@ -77,7 +127,17 @@ class FlopCounterMode:
         custom_mapping: dict[Any, Any] | None = ...,
     ) -> None: ...
     def get_total_flops(self) -> int: ...
-    def get_flop_counts(self) -> dict[str, dict[Any, int]]: ...
+    def get_flop_counts(self) -> dict[str, dict[Any, int]]:
+        """
+        Return the flop counts as a dictionary of dictionaries.
+
+        The outer
+        dictionary is keyed by module name, and the inner dictionary is keyed by
+        operation name.
+
+        Returns:
+            Dict[str, Dict[Any, int]]: The flop counts as a dictionary.
+        """
     def get_table(self, depth=...) -> str: ...
     def __enter__(self) -> Self: ...
     def __exit__(self, *args) -> None: ...

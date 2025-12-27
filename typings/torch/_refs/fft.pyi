@@ -50,6 +50,8 @@ def hfft(input: TensorLikeType, n: int | None = ..., dim: int = ..., norm: NormT
 def ihfft(input: TensorLikeType, n: int | None = ..., dim: int = ..., norm: NormType = ...) -> TensorLikeType: ...
 
 class _ShapeAndDims(NamedTuple):
+    """_ShapeAndDims(shape, dims)"""
+
     shape: tuple[int, ...]
     dims: tuple[int, ...]
 
@@ -75,6 +77,8 @@ def ihfftn(
 ) -> TensorLikeType: ...
 
 class _CanonicalizeC2rReturn(NamedTuple):
+    """_CanonicalizeC2rReturn(shape, dim, last_dim_size)"""
+
     shape: tuple[int, ...]
     dim: tuple[int, ...]
     last_dim_size: int

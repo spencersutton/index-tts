@@ -54,15 +54,21 @@ kernel_side_table = ...
 
 @dataclasses.dataclass(frozen=True)
 class Param:
+    """Param(idx: int)"""
+
     idx: int
 
 @dataclasses.dataclass(frozen=True)
 class Intermediate:
+    """Intermediate(idx: int)"""
+
     idx: int
     def fake(self) -> bool: ...
 
 @dataclasses.dataclass(frozen=True)
 class Op:
+    """Op(name: str, fn_call_name: Optional[str], args: list[typing.Union[torch._higher_order_ops.triton_kernel_wrap.Param, torch._higher_order_ops.triton_kernel_wrap.Intermediate]], ret: torch._higher_order_ops.triton_kernel_wrap.Intermediate, sub_idx: Optional[int] = None, is_pure: bool = False)"""
+
     name: str
     fn_call_name: str | None
     args: list[Param | Intermediate]
@@ -73,8 +79,15 @@ class Op:
 
 def generate_ttir(
     kernel: TritonKernelType, kwargs: dict[str, Any], tma_descriptor_metadata: TMADescriptorMetadata
-) -> tuple[TritonIRModule, list[str]]: ...
-def ttir_to_functions(ttir_module: TritonIRModule) -> dict[str, dict[Intermediate, list[Op]]]: ...
+) -> tuple[TritonIRModule, list[str]]:
+    """Uses Triton's internal code generation to create TTIR"""
+
+def ttir_to_functions(ttir_module: TritonIRModule) -> dict[str, dict[Intermediate, list[Op]]]:
+    """
+    Walk the `ttir_module` bottom up to mine the `functions` from
+    the structured MLIR entities representing the Triton kernel
+    (mlir::Operation, mlir::Block, mlir::Region).
+    """
 
 class MemoizeWithCycleCheck:
     fn: Callable[..., Any]
@@ -91,7 +104,13 @@ def analyze_kernel_mutations(
 ) -> list[bool]: ...
 def identify_mutated_tensors(
     kernel: TritonKernelType, kwargs: dict[str, Any], tma_descriptor_metadata: TMADescriptorMetadata
-) -> list[str]: ...
+) -> list[str]:
+    """
+    Given a triton kernel and the arguments for this kernel, this function
+    1) Retrieves the TTIR converted version of the kernel from Triton's API.
+    2) Parses the TTIR and creates a control flow graph
+    3) Analyzes the graph to detect all input tensor mutations
+    """
 
 class TritonKernelWrapperMutation(HigherOrderOperator):
     def __init__(self) -> None: ...
@@ -217,6 +236,25 @@ def triton_kernel_wrapper_functional_functionalize(
 ) -> dict[str, Any]: ...
 
 class TritonHOPifier:
+    """
+    Orchestrator for converting a user-defined triton kernel into a call
+    to the triton_kernel_wrapper_mutation HOP.
+
+    It has two main use cases.
+
+    1. When Dynamo sees a triton kernel, it wraps it into a TritonKernelVariable
+    and uses the TritonHOPifier to convert calls to the TritonKernelVariable
+    into a call to the HOP.
+
+    2. In order to capture a user-defined triton kernel while performing
+    tracing (via make_fx or non-strict export), a user must annotate their
+    triton kernel with the `wrap_triton` decorator. The decorator uses
+    TritonHOPifier to convert calls to the triton kernel into a call
+    to the HOP (which can then be traced).
+
+    Because Dynamo has its own calling conventions for e.g. invoking a user-defined function
+    TritonHOPifier is an abstract class that can be overridden by its subclasses.
+    """
     def raise_unsupported(self, msg: str) -> Never: ...
     def is_callable(self, maybe_callable: Any) -> bool: ...
     def get_value(self, val: Any) -> Any: ...
@@ -304,7 +342,11 @@ class TracingTritonHOPifier(TritonHOPifier):
     ) -> list[TritonConfig]: ...
     def maybe_unpack_heuristic_result(self, result: Any) -> Any: ...
     def check_grid(self, grid: TritonGridType) -> tuple[int | sympy.Expr | SymInt, ...]: ...
-    def store_non_graphable_args(self, combined_args: dict[str, Any]) -> tuple[dict, int]: ...
+    def store_non_graphable_args(self, combined_args: dict[str, Any]) -> tuple[dict, int]:
+        """
+        Some args cannot be stored in the FX graph.
+        Put them in the side table.
+        """
     def call_HOP(
         self,
         variable: TraceableTritonKernelWrapper,

@@ -1,3 +1,18 @@
+"""
+This module provides iterator-related variable tracking functionality for Dynamo.
+It implements variable classes for handling Python iterators and itertools functions
+during symbolic execution and tracing.
+
+The module includes:
+- Base iterator variable classes for tracking iterator state
+- Implementations of built-in iterators (zip, map, filter)
+- Support for itertools functions (product, accumulate, combinations, etc.)
+- Mutation tracking and reconstruction capabilities for iterator operations
+
+These classes integrate with Dynamo's variable tracking system to enable proper
+handling of iterator operations during code transformation and optimization.
+"""
+
 from torch._dynamo.codegen import PyCodegen
 from torch._dynamo.symbolic_convert import InstructionTranslator
 
@@ -20,6 +35,18 @@ class IteratorVariable(VariableTracker):
     def has_force_unpack_var_sequence(self, tx) -> bool: ...
 
 class ObjectIteratorVariable(IteratorVariable):
+    """
+    VariableTracker for iter(obj) that implements the iterator protocol (i.e.,
+    has a `__next__` method).
+
+    We use this class to track the state of the iterator and handle the case
+    when the iterator is exhausted:
+
+    Example usage:
+        > b = iter(obj)
+        > list(b)  # exhaust the iterator
+        > list(b)  # empty list
+    """
     def __init__(self, obj: VariableTracker, **kwargs) -> None: ...
     def next_variable(self, tx): ...
 
@@ -34,6 +61,8 @@ class CountIteratorVariable(IteratorVariable):
     def reconstruct(self, codegen: PyCodegen): ...
 
 class ZipVariable(IteratorVariable):
+    """Represents zip(*iterables)"""
+
     _nonvar_fields = ...
     def __init__(self, iterables: list[VariableTracker], strict: bool = ..., **kwargs) -> None: ...
     def python_type(self): ...
@@ -44,6 +73,7 @@ class ZipVariable(IteratorVariable):
     def reconstruct(self, codegen: PyCodegen): ...
 
 class MapVariable(ZipVariable):
+    """Represents map(fn, *iterables)"""
     def __init__(
         self, fn: VariableTracker, iterables: list[list[VariableTracker] | VariableTracker], **kwargs
     ) -> None: ...
@@ -53,6 +83,8 @@ class MapVariable(ZipVariable):
     def reconstruct(self, codegen: PyCodegen): ...
 
 class FilterVariable(IteratorVariable):
+    """Represents filter(fn, iterable)"""
+
     _nonvar_fields = ...
     def __init__(self, fn: VariableTracker, iterable: list[VariableTracker] | VariableTracker, **kwargs) -> None: ...
     def python_type(self): ...

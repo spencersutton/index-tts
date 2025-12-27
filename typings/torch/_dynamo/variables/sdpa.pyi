@@ -6,6 +6,10 @@ from .base import VariableTracker
 PARAM_NAMES = ...
 
 class SDPAParamsVariable(VariableTracker):
+    """
+    Represents the c++ params struct for scaled dot product attention.
+    This is a read-only container.
+    """
     @staticmethod
     def create(tx: InstructionTranslator, value, source): ...
     def __init__(self, proxy, param_vars, **kwargs) -> None: ...

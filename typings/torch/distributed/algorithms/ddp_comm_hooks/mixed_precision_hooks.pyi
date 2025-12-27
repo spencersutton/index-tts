@@ -5,6 +5,13 @@ import torch
 
 @dataclass
 class _AllreduceUpcastHookState:
+    """
+    State to manage DDP mixed precision in backward / gradient communication.
+
+    This contains a weakref to the DDP module for access to reducer and process
+    group, and a stream to run parameter and gradient upcasts.
+    """
+
     ddp_weakref: Any
     upcast_stream: torch.Stream
     wait_for_stream_enqueued: bool = ...

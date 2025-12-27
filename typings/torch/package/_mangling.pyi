@@ -1,11 +1,27 @@
+"""
+Import mangling.
+See mangling.md for details.
+"""
+
 _mangle_index = ...
 
 class PackageMangler:
+    """Used on import, to ensure that all modules imported have a shared mangle parent."""
     def __init__(self) -> None: ...
     def mangle(self, name) -> str: ...
-    def demangle(self, mangled: str) -> str: ...
+    def demangle(self, mangled: str) -> str:
+        """
+        Note: This only demangles names that were mangled by this specific
+        PackageMangler. It will pass through names created by a different
+        PackageMangler instance.
+        """
     def parent_name(self): ...
 
 def is_mangled(name: str) -> bool: ...
-def demangle(name: str) -> str: ...
+def demangle(name: str) -> str:
+    """
+    Note: Unlike PackageMangler.demangle, this version works on any
+    mangled name, irrespective of which PackageMangler created it.
+    """
+
 def get_mangle_prefix(name: str) -> str: ...

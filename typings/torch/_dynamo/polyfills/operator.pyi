@@ -1,3 +1,5 @@
+"""Python polyfills for operator"""
+
 import operator
 from collections.abc import Callable, Iterable
 from typing import Any, TypeVar, TypeVarTuple, overload

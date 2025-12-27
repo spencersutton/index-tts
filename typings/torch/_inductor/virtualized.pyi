@@ -1,3 +1,59 @@
+"""
+This file provides a number of "global" variables/handlers that are actually
+thread local and dynamically scoped, with Inductor patching them to various
+implementations depending on the situation.
+
+These handlers are interacted with in a fairly stylized way.  Typically,
+we will import V from this module::
+
+    from .virtualized import V
+
+Various handlers are accessible as attributes on this module; for example,
+you might access ``V.graph.sizevars.size_hint`` to resolve a size hint associated with
+a number.
+
+There are a few distinct usage patterns for virtualized global variables:
+
+1. Implicit argument passing.  Examples: ``V.current_node``, ``V.aot_compilation``.
+   Use ``V.set_current_node`` to change what the current node is while we're
+   executing some region of code, so code inside that region can query ``V.current_node``
+   to find out what it is.  This is often more convenient than manually threading
+   the current node as an argument through all call stacks.
+
+2. Per-compilation global state.  Examples: ``V.fake_mode``, ``V.graph``.  For a
+   given ``compile_fx`` invocation, these typically don't change, but they are
+   associated with some internal state so they cannot just be global functions.
+   We install these objects at the beginning of compilation and then you can
+   conveniently access them without having to pass them around.
+
+3. Alternate define-by-run interpretations.  Examples: ``V.ops``, ``V.kernel``.
+   A commonly used IR in Inductor is define-by-run: instead of maintaining
+   explicit syntax data structures, we instead represent loop bodies as
+   callable functions, which internally invoke operations defined on
+   ``V.ops``.  To perform semantic analysis, print or code generate these
+   operations, we dynamically patch ``V.ops`` with an alternate handler with
+   the intended semantics and then run the callable function.  For example, to
+   extract out a traditional (FX) graph representation of the define-by-run
+   IR, simply install a handler that records each ``ops`` call to a graph.
+
+   TODO: Define a parent class / protocol that defines all of the operations
+   V.ops is expected to support.
+
+It is typically an error to access a virtualized global without having installed
+an appropriate handler (you will get a NullHandler), although in some cases we
+provide a default implementation.
+
+One last thing: although most virtualized globals are accessed via ``V``, ``ops`` is
+ubiquitous enough to have its own top level variable, so you will typically see
+``ops.constant(...)`` rather than ``V.ops.constant(...)``.  In fact, these are not
+equivalent; the former interface supports arithmetic overloads like ``x + y``
+instead of forcing ``ops.add(x, y)``, so it should be preferred.
+
+Some operators are seemingly unused, but they are implicitly used by ops_wrapper.
+In particular, we typically have an operator for every basic pointwise PyTorch operation
+supported.
+"""
+
 from collections.abc import Callable
 from contextlib import AbstractContextManager
 from typing import Any, TypeVar
@@ -16,15 +72,38 @@ from .ops_handler import DefaultHandler, KernelFormatterHandler, MockHandler, Op
 threadlocal = ...
 T = TypeVar("T")
 
-class NullHandler: ...
+class NullHandler:
+    """
+    Sentinel indicating that a global variable is unset ala None.  Typically,
+    attempting to access the global variable before it's set is an error, but with
+    NullHandler it won't fail until you try to access an attribute on it.
+    """
 
 _PoisonedVirtual = ...
 
 class Virtualized[T]:
+    """
+    Implements a global variable that redirects via thread local variable
+    (NB: construct this class to create the global variable; this is not
+    a singleton class!)
+
+    This allows us to swap in different op implementations in codegen.
+
+    NB: Despite the fact that we typically call these "handlers" (e.g., NullHandler is
+    the default value of the variable), we sometimes use these variables to
+    store other things, like booleans.
+    """
     def __init__(self, vname: str, default: Callable[[], T] | type[NullHandler]) -> None: ...
     def __getattr__(self, name: str) -> Any: ...
 
 class NullKernelHandler(NullHandler):
+    """
+    We need access `V.kernel.removed_buffers` in DeferredLine class when there
+    is no kernel in the context. This happens when codegening the wrapper.
+    Initialize `removed_buffers` and `inplaced_to_remove` explicitly so we don't
+    need call 'getattr' with default value which is error prone to typo in
+    attribute name.
+    """
     def __init__(self) -> None: ...
     def get_index_dtype_as_torch_dtype(self): ...
 
@@ -42,6 +121,19 @@ _local_buffer_context: Virtualized[LocalBufferContext] = ...
 _choices: Virtualized[InductorChoices] = ...
 
 class OpsValue:
+    """
+    The return type of most ops calls.
+
+    This exists so we can overload magic methods, and write mathematical
+    expressions much more fluently. So instead of
+
+        ops.add(ops.mul(ops.mul(ops.sub(ops.mul(_Ap2, x), _Ap3), x), x), _1)
+
+    we can write
+
+        (_Ap2 * x - _Ap3) * x * x + _1
+    """
+
     value: Any
     def __init__(self, value) -> None: ...
     def __add__(self, other): ...
@@ -66,6 +158,10 @@ class OpsValue:
     def __lshift__(self, n): ...
 
 class OpsWrapper(DefaultHandler):
+    """
+    This wraps any returned IR values into an `OpsValue` instance, so that we
+    can overload the magic methods for writing mathematical expressions fluently.
+    """
     @staticmethod
     def indirect_indexing(index, size, check=..., wrap_neg=...): ...
 
@@ -94,17 +190,27 @@ class _V:
     get_local_buffer_context: Callable[[], Any] = ...
     set_choices_handler: Callable[[Any], Any] = ...
     @property
-    def ops(self) -> OpsHandler[Any]: ...
+    def ops(self) -> OpsHandler[Any]:
+        """The operator handler specific to the current codegen task"""
     @property
-    def graph(self) -> GraphLowering: ...
+    def graph(self) -> GraphLowering:
+        """The graph currently being generated"""
     @property
-    def extern_kernel_nodes(self) -> list[ExternKernelNode]: ...
+    def extern_kernel_nodes(self) -> list[ExternKernelNode]:
+        """
+        The extern_kernel_nodes needed for the entire graph, including the
+        subgraphs.
+        See `ProxyExecutor Design Note` in ir.py for more details
+        """
     @property
-    def real_inputs(self): ...
+    def real_inputs(self):
+        """non-fake example inputs"""
     @property
-    def fake_mode(self): ...
+    def fake_mode(self):
+        """The graph currently being generated"""
     @property
-    def kernel(self): ...
+    def kernel(self):
+        """The kernel currently being generated"""
     @property
     def debug(self): ...
     @property

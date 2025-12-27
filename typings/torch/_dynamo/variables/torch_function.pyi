@@ -1,3 +1,30 @@
+"""
+TorchDynamo support for __torch_function__ tensor subclasses.
+
+This module implements support for tensor subclasses with __torch_function__ overrides.
+A tensor subclass instance is represented as a TensorWithTFOverrideVariable, which handles
+dispatching __torch_function__ on attribute accesses, method calls, and torch API calls.
+
+Unsupported features:
+- Triggering __torch_function__ on tensor subclass non-tensor custom attributes
+- Graph breaking on mutating guardable tensor properties within a __torch_function__ context
+  (can cause excessive recompiles in certain cases)
+- Matching exact eager behavior of ignoring __torch_function__ objects in non-tensor
+  argument positions of Torch API calls
+
+Supported features:
+- Static method implementations of __torch_function__ on custom objects (triggers on torch
+  API calls with the object as any argument)
+- Triggering __torch_function__ on torch API calls with tensor subclass arguments
+- __torch_function__ calls on base tensor attribute access and method calls for tensor
+  subclass instances
+- Matches dispatch ordering behavior of eager __torch_function__ with subclass/object
+  arguments in any position
+
+See https://docs.google.com/document/d/1WBxBSvW3NXhRp9ncmtokJloMLCtF4AYNhJaffvHe8Kw/edit#heading=h.vacn73lozd9w
+for more information on the design.
+"""
+
 import contextlib
 import functools
 
@@ -35,6 +62,8 @@ class SymbolicTorchFunctionState:
     def call_torch_function_mode(self, tx, fn, types, args, kwargs): ...
 
 class TorchFunctionModeStackVariable(VariableTracker):
+    """Fake VT to use as a dummy object, indicating the presence of torch function mode stack mutation"""
+
     stack_value_singleton = ...
     offset = ...
     def __init__(self, source, symbolic_stack) -> None: ...
@@ -69,9 +98,11 @@ class TorchFunctionModeVariable(GenericContextWrappingVariable):
 def call_torch_function(tx, torch_function_var, fn, types, args, kwargs): ...
 def get_torch_function_fn(tx: InstructionTranslator, vt): ...
 def can_dispatch_torch_function(tx: InstructionTranslator, args, kwargs): ...
-def dispatch_torch_function(tx: InstructionTranslator, fn, args, kwargs): ...
+def dispatch_torch_function(tx: InstructionTranslator, fn, args, kwargs):
+    """Gathers all args that are TensorWithTFOverrideVariable and dispatches based on the ordering in _get_overloaded_args"""
 
 class TensorWithTFOverrideVariable(TensorVariable):
+    """Represents a tensor subclass instance with a __torch_function__ override."""
     @classmethod
     def from_tensor_var(cls, tx, tensor_var, class_type, cls_source): ...
     def install_global(self, tx): ...

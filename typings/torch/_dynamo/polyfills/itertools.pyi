@@ -1,3 +1,5 @@
+"""Python polyfills for itertools"""
+
 import itertools
 from collections.abc import Callable, Iterable, Iterator
 from typing import TypeVar, overload

@@ -7,9 +7,22 @@ formatter = ...
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
 
-class StrobelightCLIProfilerError(Exception): ...
+class StrobelightCLIProfilerError(Exception):
+    """Raised when an error happens during strobelight profiling"""
 
 class StrobelightCLIFunctionProfiler:
+    """
+    Note: this is a Meta only tool.
+
+    StrobelightCLIFunctionProfiler can be used to profile a python function and
+    generate a strobelight link with the results. It works on meta servers but
+    does not requires an fbcode target.
+    When stop_at_error is false(default), error during profiling does not prevent
+    the work function from running.
+
+    Check function_profiler_example.py for an example.
+    """
+
     _lock = ...
     def __init__(
         self,

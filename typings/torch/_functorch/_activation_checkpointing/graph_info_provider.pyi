@@ -2,6 +2,11 @@ import networkx as nx
 from torch.fx import Graph, Node
 
 class GraphInfoProvider:
+    """
+    This class provides information about the graph, such as the nodes, edges, and their runtime and memory requirements.
+    It also provides methods to create graphs from the information provided.
+    """
+
     __RECOMPUTABLE_NODE_ONLY_GRAPH = ...
     __RECOMPUTABLE_NODE_ONLY_GRAPH_WITH_LARGER_GRAPH_CONTEXT = ...
     __FULL_NX_JOINT_GRAPH = ...
@@ -24,7 +29,8 @@ class GraphInfoProvider:
         all_recomputable_banned_nodes: list[Node],
         recorded_knapsack_input_memories: list[float],
         recorded_knapsack_input_runtimes: list[float],
-    ) -> GraphInfoProvider: ...
+    ) -> GraphInfoProvider:
+        """Enables initialization from a joint graph."""
     @property
     def recomputable_node_only_graph(self) -> nx.DiGraph: ...
     @property

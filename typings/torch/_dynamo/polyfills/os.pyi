@@ -1,3 +1,5 @@
+"""Python polyfills for os"""
+
 import os
 from typing import AnyStr
 

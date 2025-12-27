@@ -1,3 +1,5 @@
+"""Utilities for lowering subgraphs used by higher order operators"""
+
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, ParamSpec, TypeVar
@@ -16,6 +18,11 @@ type LoweringDict = dict[OpOverload | str, Callable[..., Any]]
 type TargetType = Callable[..., Any] | str
 
 class PointwiseSubgraphLowering(torch.fx.Interpreter):
+    """
+    Lowers a pointwise subgraph to a single set of buffers with a separate
+    lowering object. Errors if buffers are created unexpectedly
+    """
+
     graph_outputs: list[ir.IRNode] | None
     root_graph: GraphLowering
     _current_op: TargetType | None
@@ -38,6 +45,8 @@ class PointwiseSubgraphLowering(torch.fx.Interpreter):
 
 @dataclass
 class InputDescriptor:
+    """InputDescriptor(dtype: torch.dtype, device: torch.device)"""
+
     dtype: torch.dtype
     device: torch.device
 

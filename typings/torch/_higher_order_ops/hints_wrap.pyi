@@ -5,7 +5,22 @@ from torch.fx.experimental.proxy_tensor import ProxyTorchDispatchMode
 
 class HintsWrapper(HigherOrderOperator):
     def __init__(self) -> None: ...
-    def __call__(self, body_fn, args, kwargs, hints): ...
+    def __call__(self, body_fn, args, kwargs, hints):
+        """
+        Call implementation of hints_wrapper
+
+        Args:
+            body_fn (Callable): A callable function that is within the scope
+             that is being traced.
+
+            args (Tuple of torch.Tensor/int/float/bool): A tuple of inputs to
+             body_fn.
+
+            kwargs (dict): Keyword argument to the body_fn.
+
+            hints (dict): A dict of context hints which could be passed to
+             backend compiler.
+        """
 
 hints_wrapper = ...
 

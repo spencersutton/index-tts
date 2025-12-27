@@ -1,6 +1,7 @@
 import ast
 
 class _ExtractModuleReferences(ast.NodeVisitor):
+    """Extract the list of global variables a block of code will read and write"""
     @classmethod
     def run(cls, src: str, package: str) -> list[tuple[str, str | None]]: ...
     def __init__(self, package) -> None: ...

@@ -11,6 +11,14 @@ from .common import BackendFeature
 type _IntLike = int | Expr
 
 class CUDACombinedScheduling(BaseScheduling):
+    """
+    Scheduler for CUDA Kernels, which delegates calls as appropriate
+    to the CUDA-C++ and Triton Schedulers, which both work for CUDA devices
+    and use a unified-wrapper for codegen.
+
+    If Scheduling code needs to be specialized for the case of mixed Triton / CUDA C++ code,
+    this would also be the place to do it.
+    """
     def __init__(self, scheduler: Scheduler | None) -> None: ...
     def get_backend_features(self, device: torch.device) -> OrderedSet[BackendFeature]: ...
     def choose_node_backend(self, node: BaseSchedulerNode) -> BaseScheduling: ...

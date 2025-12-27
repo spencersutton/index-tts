@@ -1,3 +1,5 @@
+"""This file includes private common utilities for FSDP."""
+
 import weakref
 from enum import Enum
 from typing import Any
@@ -11,9 +13,20 @@ FSDP_FLATTENED = ...
 _MODULE_TO_INP_DTYPE: weakref.WeakKeyDictionary = ...
 
 class _FSDPDeviceHandle:
+    """
+    This is a simple abstraction for FSDP computing devices,
+    which enables custom backends that implement CUDA-like
+    semantics to be integrated with FSDP.
+    """
     def __init__(self, device: torch.device, backend: Any = ...) -> None: ...
     @classmethod
-    def from_device(cls, device: torch.device) -> _FSDPDeviceHandle: ...
+    def from_device(cls, device: torch.device) -> _FSDPDeviceHandle:
+        """
+        Return a device handle corresponding to the device, and through this handle,
+        operations with the same semantics as CUDA can be performed on the device.
+        Just return torch.cuda if the device is cuda to make attribute-access faster.
+        Custom backend must first register a module with the same name with {device.type} on torch.
+        """
     def __getattr__(self, name: str, /) -> Any: ...
 
 class _UninitializedDeviceHandle(_FSDPDeviceHandle):
@@ -24,15 +37,23 @@ class _FSDPState(_State):
     def __init__(self) -> None: ...
 
 class TrainingState(Enum):
+    """An enum that indicates the state of a ``FullyShardedDataParallel` instance."""
+
     IDLE = ...
     FORWARD_BACKWARD = ...
     SUMMON_FULL_PARAMS = ...
 
 class HandleTrainingState(Enum):
+    """An enum that indicates the state of a ``FlatParamHandle`."""
+
     IDLE = ...
     FORWARD = ...
     BACKWARD_PRE = ...
     BACKWARD_POST = ...
     SUMMON_FULL_PARAMS = ...
 
-def clean_tensor_name(tensor_name: str) -> str: ...
+def clean_tensor_name(tensor_name: str) -> str:
+    """
+    Cleans the parameter or buffer name by removing any module wrapper
+    prefixes.
+    """

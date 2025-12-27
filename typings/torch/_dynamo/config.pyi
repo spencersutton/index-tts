@@ -1,3 +1,14 @@
+"""
+Configuration module for TorchDynamo compiler and optimization settings.
+
+This module contains various configuration flags and settings that control TorchDynamo's
+behavior, including:
+- Runtime behavior flags (e.g., guard settings, specialization options)
+- Debugging and development options
+- Performance tuning parameters
+- Feature toggles for experimental features
+"""
+
 from collections.abc import Callable
 from typing import Any, Literal
 

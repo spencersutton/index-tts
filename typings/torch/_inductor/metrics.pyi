@@ -16,6 +16,8 @@ cpp_to_dtype_count = ...
 
 @dataclasses.dataclass
 class CppOuterLoopFusedCount:
+    """CppOuterLoopFusedCount(inner_kernel_number: 'int', local_buffer_number: 'int' = 0)"""
+
     inner_kernel_number: int
     local_buffer_number: int = ...
 
@@ -29,6 +31,11 @@ def reset() -> None: ...
 
 @dataclass
 class CachedMetricsDeltas:
+    """
+    The subset of metrics we want update across cache hits, e.g., the
+    FxGraphCache.
+    """
+
     generated_kernel_count: int
     generated_cpp_vec_kernel_count: int
     ir_nodes_pre_fusion: int
@@ -39,6 +46,11 @@ class CachedMetricsDeltas:
 def get_metric_fields() -> list[str]: ...
 
 class CachedMetricsHelper:
+    """
+    A helper class to help calculate and apply counter deltas for those
+    metrics we want to save with cache entries (e.g., FxGraphCache) and
+    apply on a cache hit.
+    """
     def __init__(self) -> None: ...
     def get_deltas(self) -> CachedMetricsDeltas: ...
     @staticmethod
@@ -48,6 +60,8 @@ REGISTERED_METRIC_TABLES: dict[str, MetricTable] = ...
 
 @dataclass
 class MetricTable:
+    """MetricTable(table_name: 'str', column_names: 'list[str]', num_rows_added: 'int' = 0)"""
+
     table_name: str
     column_names: list[str]
     num_rows_added: int = ...
@@ -57,8 +71,21 @@ class MetricTable:
     @staticmethod
     def register_table(name: str, column_names: list[str]) -> None: ...
 
-def log_kernel_metadata(kernel_name: str, kernel_path: str, kernel_module_code: str) -> None: ...
-def purge_old_log_files() -> None: ...
+def log_kernel_metadata(kernel_name: str, kernel_path: str, kernel_module_code: str) -> None:
+    """
+    An utility to log kernel metadata. We may parse metadata from kernel source code here.
+
+    It's fine to parse the generated kernel code here since the logging is
+    disabled by default. It would hurt compilation time.
+    """
+
+def purge_old_log_files() -> None:
+    """
+    Purge the old log file at the beginning when the benchmark script runs.
+    Should do it in the parent process rather than the child processes running
+    each individual model.
+    """
+
 def enabled_metric_tables() -> OrderedSet[str]: ...
 @lru_cache
 def enabled_metric_tables_impl(config_str: str) -> OrderedSet[str]: ...

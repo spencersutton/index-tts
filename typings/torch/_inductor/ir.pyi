@@ -51,6 +51,8 @@ type _NodeOrNodes = (
 
 @dataclasses.dataclass(frozen=True)
 class GraphPartitionSignature:
+    """GraphPartitionSignature(symbol_inputs: 'OrderedSet[sympy.Symbol]', input_nodes: 'dict[str, Union[IRNode, sympy.Expr, TorchBindObject]]', output_nodes: 'list[IRNode]', input_deallocation: 'dict[str, bool]', skip_cudagraph: 'bool', constant_names: 'list[str]')"""
+
     symbol_inputs: OrderedSet[sympy.Symbol]
     input_nodes: dict[str, IRNode | sympy.Expr | TorchBindObject]
     output_nodes: list[IRNode]
@@ -69,9 +71,20 @@ def fuse_reindexing(
 NHWC_STRIDE_ORDER = ...
 NHWDC_STRIDE_ORDER = ...
 
-def get_fill_order(seq: Sequence[int | torch.SymInt | Expr], shape_env: ShapeEnv | None = ...) -> Sequence[int]: ...
-def stride_order2fill_order(order: Sequence[int | Integer]) -> Sequence[int]: ...
-def get_stride_order(seq: Sequence[int | torch.SymInt | Expr], shape_env: ShapeEnv | None = ...) -> Sequence[int]: ...
+def get_fill_order(seq: Sequence[int | torch.SymInt | Expr], shape_env: ShapeEnv | None = ...) -> Sequence[int]:
+    """Convert strides to fill order (argsort)"""
+
+def stride_order2fill_order(order: Sequence[int | Integer]) -> Sequence[int]:
+    """
+    Convert stride order to fill order
+    For channel last format,
+
+    stride order = [3, 0, 2, 1] and fill order = [1, 3, 2, 0]
+    """
+
+def get_stride_order(seq: Sequence[int | torch.SymInt | Expr], shape_env: ShapeEnv | None = ...) -> Sequence[int]:
+    """Convert strides to stride order"""
+
 @overload
 def ir_node_to_tensor(x: None, guard_shape: bool = ...) -> None: ...
 @overload
@@ -84,12 +97,29 @@ def is_cpu(x: IRNode | torch.device | None | str) -> bool: ...
 def is_aligned_realized_tensor_hint(x: Buffer | TensorBox, alignment: int) -> bool: ...
 def significant_strides_equal(
     strides1: Sequence[_IntLike], strides2: Sequence[_IntLike], shape: Sequence[_IntLike]
-) -> bool: ...
-def try_match_insignificant_strides(tensor: IRNode, strides: Sequence[int | torch.SymInt]) -> IRNode: ...
+) -> bool:
+    """Returns true if the strides are equal, ignoring dimensions of size 1 ."""
+
+def try_match_insignificant_strides(tensor: IRNode, strides: Sequence[int | torch.SymInt]) -> IRNode:
+    """
+    Tries to match the strides of the tensor to those in the meta_strides. Strides of insignificant
+    dimensions - size 0 or 1 - will be updated.
+
+    If there are real stride differences (NHWC vs NCHW), or the tensor is not realized, then the input will be returned
+    """
+
 def gm_original_output_strides(gm: torch.fx.GraphModule) -> None: ...
 def get_symbolic_inputs(inputs: Sequence[IRNode]) -> list[Expr]: ...
 
 class IRNode:
+    """
+    Base class for all intermediate representation (IR) nodes in TorchInductor.
+
+    Note:
+        This is an abstract base class. Most methods raise NotImplementedError
+        and must be overridden by concrete subclasses.
+    """
+
     _current_origins: ClassVar[OrderedSet[Any]] = ...
     origins: OrderedSet[Any] = ...
     traceback: list[str] | None = ...
@@ -113,14 +143,30 @@ class IRNode:
     def maybe_get_layout(self) -> Layout | None: ...
     def get_output_spec(self) -> OutputSpec: ...
     def maybe_get_output_spec(self) -> OutputSpec | None: ...
-    def has_tensor_output(self) -> bool: ...
+    def has_tensor_output(self) -> bool:
+        """True for single tensor output (excludes MultiOutput)"""
     def get_size(self) -> Sequence[Expr]: ...
     def maybe_get_size(self) -> Sequence[_IntLike] | None: ...
     @property
     def shape(self) -> _IntLike | sympy.Rel | Sequence[_IntLike]: ...
     def get_numel(self) -> Expr: ...
     def is_zero_elements(self) -> bool: ...
-    def realize(self) -> str | None: ...
+    def realize(self) -> str | None:
+        """
+        If the IRNode refers to data which has not been materialized (e.g.,
+        it is a Pointwise/Reduction that could potentially have more
+        compute fused into it), realize the IRNode into physical memory,
+        ending the possibility of fusing into it, but allowing, e.g., multiple
+        users to access the data without having to recompute.
+
+        Check StorageBox.realize for a particularly notable implementation.
+
+        TODO(ezyang): I think, in principle, every IRNode should have an
+        implementation of this, and most of the time no-op is OK, but you
+        really do have to audit each IRNode for this, so for now, raise
+        an error if it's not implemented.  Note that some code in graph.py
+        will catch this thrown error and suppress it with a warning.
+        """
     def codegen_reference(self, writer: IndentedBuffer | None = ...) -> str: ...
     def get_device(self) -> torch.device | None: ...
     def get_device_or_error(self) -> torch.device: ...
@@ -161,6 +207,7 @@ class IRNode:
 
 @ir_dataclass(frozen=False)
 class Operation:
+    """Operation()"""
     def __post_init__(self) -> None: ...
     def get_device(self) -> torch.device | None: ...
     def get_origin_node(self) -> torch.fx.Node | None: ...
@@ -174,11 +221,36 @@ class Operation:
     def get_reads(self) -> OrderedSet[Dep]: ...
     def get_outputs(self) -> list[Buffer]: ...
     def get_unbacked_symbol_defs(self) -> OrderedSet[sympy.Symbol]: ...
-    def get_free_symbol_uses(self, unbacked_only: bool = ...) -> OrderedSet[sympy.Symbol]: ...
-    def get_workspace_size(self) -> int: ...
+    def get_free_symbol_uses(self, unbacked_only: bool = ...) -> OrderedSet[sympy.Symbol]:
+        """
+        When unbacked_only=True:
+        Returns the unbacked symbols which are required to be in scope in
+        order to successfully perform codegen for this buffer.  For example,
+        a buffer that corresponds to an extern kernel call that takes i0 as
+        an argument would return {i0} here.  This is used to generate necessary
+        dependencies that ensure we actually bind i0 in codegen before you
+        try to use it.
+
+        Note that this is NOT transitive; in particular, if this buffer takes
+        in as input another buffer with dynamic shape (e.g., (i0,)), we will
+        not report it here, because you will already have a dependency
+        on that buffer, which will eventually have a dependency on i0 if
+        necessary.
+
+        When unbacked_only=False:
+        Similar to `unbacked_only=True` but including all free symbols
+        instead of only free unbacked symbols.
+        """
+    def get_workspace_size(self) -> int:
+        """
+        Gets extra global memory size needed by this buffer.
+        Some algorithms (e.g. group gemm) may require extra global memory in the generated code.
+        """
 
 @ir_dataclass
 class Loops(IRNode):
+    """Loops(*, device: 'torch.device', dtype: 'torch.dtype', inner_fn: 'Callable[..., Any]', ranges: 'Sequence[_IntLike]')"""
+
     device: torch.device
     dtype: torch.dtype
     inner_fn: Callable[..., Any]
@@ -212,19 +284,24 @@ def nop_loader_fn(idx: Expr | Sequence[Expr], *, dtype: torch.dtype) -> OpsValue
 
 @ir_dataclass
 class Pointwise(Loops):
+    """Pointwise(*, device: 'torch.device', dtype: 'torch.dtype', inner_fn: 'Callable[..., Any]', ranges: 'Sequence[_IntLike]')"""
     def make_loader(self) -> Callable[[Sequence[Expr]], OpsValue]: ...
     def get_reduction_size(self) -> Sequence[sympy.Expr]: ...
     def get_reduction_type(self) -> str | None: ...
     def store_output(
         self, output_name: str | None, indexer: Callable[[Sequence[Expr]], Never], vars: Sequence[Expr]
     ) -> None: ...
-    def constant_to_device(self, device: torch.device) -> IRNode: ...
+    def constant_to_device(self, device: torch.device) -> IRNode:
+        """Move this to a given device. Requires that all reads are to constants."""
 
 @ir_dataclass
 class Scatter(Pointwise):
+    """Scatter(*, device: 'torch.device', dtype: 'torch.dtype', inner_fn: 'Callable[..., Any]', ranges: 'Sequence[_IntLike]', output_indexer: 'Callable[[Sequence[Expr]], Expr]', scatter_mode: 'StoreMode' = None)"""
+
     output_indexer: Callable[[Sequence[Expr]], Expr]
     scatter_mode: StoreMode = ...
-    def constant_to_device(self, device: torch.device) -> IRNode: ...
+    def constant_to_device(self, device: torch.device) -> IRNode:
+        """Move this to a given device. Requires that all reads are to constants."""
     def store_output(
         self, output_name: str | None, indexer: Callable[[Sequence[Expr]], Never], vars: Sequence[Expr]
     ) -> Any: ...
@@ -237,6 +314,8 @@ def get_reduction_combine_fn(
 
 @ir_dataclass
 class Reduction(Loops):
+    """Reduction(*, device: 'torch.device', dtype: 'torch.dtype', inner_fn: 'Callable[..., Any]', ranges: 'Sequence[_IntLike]', reduction_ranges: 'Sequence[_IntLike]', reduction_type: 'ReductionType', src_dtype: 'torch.dtype', reduction_hint: 'ReductionHint')"""
+
     reduction_ranges: Sequence[_IntLike]
     reduction_type: ReductionType
     src_dtype: torch.dtype
@@ -257,7 +336,8 @@ class Reduction(Loops):
     def index_length(self) -> int: ...
     def inner_fn_args(self) -> Sequence[Sequence[Expr]]: ...
     def inner_fn_free_symbols(self, unbacked_only: bool = ...) -> OrderedSet[Symbol]: ...
-    def constant_to_device(self, device: torch.device) -> IRNode: ...
+    def constant_to_device(self, device: torch.device) -> IRNode:
+        """Move this to a given device. Requires that all reads are to constants."""
     @staticmethod
     def num_splits(
         device: torch.device,
@@ -288,9 +368,12 @@ class Reduction(Loops):
     @staticmethod
     def default_value(reduction_type: str, dtype: torch.dtype) -> _NumLike | Sequence[_NumLike]: ...
     @classmethod
-    def check_for_split_dense_dim_reindexing(
-        cls, reduction_numel: _IntLike, input_node: IRNode | None
-    ) -> int | None: ...
+    def check_for_split_dense_dim_reindexing(cls, reduction_numel: _IntLike, input_node: IRNode | None) -> int | None:
+        """
+        If we are reducing over the full tensor, and it is non-dense in the last dimension,
+        reindex so we reduce over the dense dimension. initially just handle complete
+        reduction case
+        """
     @classmethod
     def create_multilayer_helper(
         cls,
@@ -305,7 +388,11 @@ class Reduction(Loops):
         reduction_type: ReductionType,
         split: _IntLike,
         reduction_hint: ReductionHint,
-    ) -> TensorBox | ShapeAsConstantBuffer: ...
+    ) -> TensorBox | ShapeAsConstantBuffer:
+        """
+        Break a large reduction up into multiple smaller reductions
+        recursively
+        """
     @classmethod
     def create_multilayer(
         cls,
@@ -319,7 +406,11 @@ class Reduction(Loops):
         split: _IntLike,
         reduction_hint: ReductionHint,
         input_node: IRNode | None = ...,
-    ) -> TensorBox | ShapeAsConstantBuffer: ...
+    ) -> TensorBox | ShapeAsConstantBuffer:
+        """
+        Break a large reduction up into multiple smaller reductions
+        recursively
+        """
     @classmethod
     def create_multilayer_existing_ranges(
         cls,
@@ -333,7 +424,11 @@ class Reduction(Loops):
         new_reduction_ranges: list[Integer],
         reduction_type: ReductionType,
         reduction_hint: ReductionHint,
-    ) -> TensorBox | ShapeAsConstantBuffer: ...
+    ) -> TensorBox | ShapeAsConstantBuffer:
+        """
+        Break a large reduction up into multiple smaller reductions
+        recursively
+        """
 
 type INNER_FN_TY = Callable[[Sequence[Expr], Sequence[Expr]], OpsValue]
 
@@ -372,7 +467,8 @@ class OnlineSoftmaxReduction(MultiOutputReduction):
         num_output: int,
         reduction_hint: ReductionHint = ...,
         input_node: IRNode | None = ...,
-    ) -> Sequence[TensorBox | ShapeAsConstantBuffer]: ...
+    ) -> Sequence[TensorBox | ShapeAsConstantBuffer]:
+        """Create the reduction disregarding splitting."""
 
 class WelfordReduction(MultiOutputReduction):
     @classmethod
@@ -399,10 +495,16 @@ class WelfordReduction(MultiOutputReduction):
         reduction_type: ReductionType,
         split: _IntLike,
         reduction_hint: ReductionHint,
-    ) -> Sequence[TensorBox | ShapeAsConstantBuffer]: ...
+    ) -> Sequence[TensorBox | ShapeAsConstantBuffer]:
+        """
+        Break a large reduction up into multiple smaller reductions
+        recursively
+        """
 
 @ir_dataclass
 class Scan(Loops):
+    """Scan(*, device: 'torch.device', dtype: 'torch.dtype', inner_fn: 'Callable[..., Any]', ranges: 'Sequence[_IntLike]', scan_ranges: 'list[Integer]', size: 'list[Integer]', combine_fn: 'Callable[[tuple[Any, ...], tuple[Any, ...]], tuple[Any, ...]]', reindex: 'Callable[[Sequence[_IntLike], Sequence[_IntLike]], Sequence[_IntLike]]', reduction_hint: 'ReductionHint', output_index: 'int', dtypes: 'tuple[torch.dtype, ...]', inner_fns: 'tuple[Callable[..., Any], ...]')"""
+
     scan_ranges: list[Integer]
     size: list[Integer]
     combine_fn: Callable[[tuple[Any, ...], tuple[Any, ...]], tuple[Any, ...]]
@@ -456,10 +558,13 @@ class Scan(Loops):
     ) -> tuple[ReductionHint, _IntLike]: ...
 
 @ir_dataclass
-class SplitScan(Scan): ...
+class SplitScan(Scan):
+    """SplitScan(*, device: 'torch.device', dtype: 'torch.dtype', inner_fn: 'Callable[..., Any]', ranges: 'Sequence[_IntLike]', scan_ranges: 'list[Integer]', size: 'list[Integer]', combine_fn: 'Callable[[tuple[Any, ...], tuple[Any, ...]], tuple[Any, ...]]', reindex: 'Callable[[Sequence[_IntLike], Sequence[_IntLike]], Sequence[_IntLike]]', reduction_hint: 'ReductionHint', output_index: 'int', dtypes: 'tuple[torch.dtype, ...]', inner_fns: 'tuple[Callable[..., Any], ...]')"""
 
 @ir_dataclass
 class Sort(Loops):
+    """Sort(*, device: 'torch.device', dtype: 'torch.dtype', inner_fn: 'Callable[..., Any]', ranges: 'Sequence[_IntLike]', sort_ranges: 'list[Integer]', size: 'list[Integer]', reindex: 'Callable[[Sequence[Expr], Sequence[Expr]], Sequence[Expr]]', reduction_hint: 'ReductionHint', output_index: 'int', dtypes: 'tuple[torch.dtype, ...]', inner_fns: 'tuple[Callable[..., Any], ...]', stable: 'bool', descending: 'bool')"""
+
     sort_ranges: list[Integer]
     size: list[Integer]
     reindex: Callable[[Sequence[Expr], Sequence[Expr]], Sequence[Expr]]
@@ -509,12 +614,21 @@ def as_storage_and_layout(
     stride_order: Sequence[int | Integer] | None = ...,
     allow_padding: bool = ...,
     exact_strides: Sequence[int | Integer] | None = ...,
-) -> tuple[StorageBox, Layout]: ...
+) -> tuple[StorageBox, Layout]:
+    """
+    Try to simplify x into a StorageBox and a Layout.
+
+    allow_padding only affect how we apply stride_order. When allow_padding
+    is True, we have the freedom to add padding when applying the stride_order.
+    """
+
 def is_stride_order_storage_and_layout(x: IRNode, stride_order: Sequence[int | Integer]) -> bool: ...
 def is_unaligned(node: IRNode) -> bool: ...
 
 @ir_dataclass
 class BaseView(IRNode):
+    """BaseView(*, data: 'IRNode')"""
+
     data: IRNode
     @cache_on_self_and_args("BaseView")
     def get_free_symbol_uses(self, unbacked_only: bool = ...) -> OrderedSet[Symbol]: ...
@@ -538,10 +652,13 @@ class BaseView(IRNode):
     def get_read_names(self) -> OrderedSet[str]: ...
     def get_reads(self) -> OrderedSet[Dep]: ...
     def unwrap_view(self) -> IRNode: ...
-    def constant_to_device(self, device: torch.device) -> IRNode: ...
+    def constant_to_device(self, device: torch.device) -> IRNode:
+        """Move this to a given device. Requires that all reads are to constants."""
 
 @ir_dataclass
 class ExpandView(BaseView):
+    """ExpandView(*, data: 'IRNode', size: 'Sequence[Expr]')"""
+
     size: Sequence[Expr]
     @classmethod
     def create(cls, x: IRNode, new_size: Sequence[_IntLike]) -> BaseView: ...
@@ -550,6 +667,8 @@ class ExpandView(BaseView):
 
 @ir_dataclass
 class PermuteView(BaseView):
+    """PermuteView(*, data: 'IRNode', dims: 'list[Expr]')"""
+
     dims: list[Expr]
     @classmethod
     def create(cls, x: IRNode, dims: Sequence[int]) -> BaseView: ...
@@ -558,6 +677,7 @@ class PermuteView(BaseView):
 
 @ir_dataclass
 class SqueezeView(BaseView):
+    """SqueezeView(data: 'Any') -> 'None'"""
     @classmethod
     def create(cls, x: IRNode, *, dim: int | None = ...) -> IRNode: ...
     @staticmethod
@@ -566,6 +686,8 @@ class SqueezeView(BaseView):
 
 @ir_dataclass
 class GenericView(BaseView):
+    """GenericView(*, data: 'IRNode', size: 'Sequence[Expr]', reindex: 'Callable[[Sequence[Expr]], Sequence[Expr]]')"""
+
     size: Sequence[Expr]
     reindex: Callable[[Sequence[Expr]], Sequence[Expr]]
     def make_reindexer(self) -> Callable[[Sequence[Expr]], Sequence[Expr]]: ...
@@ -580,6 +702,7 @@ class GenericView(BaseView):
 
 @ir_dataclass
 class View(GenericView):
+    """View(*, data: 'IRNode', size: 'Sequence[Expr]', reindex: 'Callable[[Sequence[Expr]], Sequence[Expr]]')"""
     @staticmethod
     def handle_negative_index(idx: Expr, size: Expr) -> Expr: ...
     @classmethod
@@ -593,6 +716,8 @@ class View(GenericView):
 
 @ir_dataclass
 class ReinterpretView(BaseView):
+    """Pretend our storage has a different layout"""
+
     layout: Layout
     def __post_init__(self) -> None: ...
 
@@ -615,6 +740,8 @@ class ReinterpretView(BaseView):
 
 @ir_dataclass
 class DtypeView(BaseView):
+    """Pretend our storage has a different type"""
+
     target_dtype: torch.dtype
     @classmethod
     def create(cls, x: IRNode, new_dtype: torch.dtype) -> BaseView: ...
@@ -627,12 +754,18 @@ class DtypeView(BaseView):
 
 class SliceView(View):
     @classmethod
-    def normalize_start_end(cls, x: IRNode, dim: int, start: int, end: int) -> tuple[int, int]: ...
+    def normalize_start_end(cls, x: IRNode, dim: int, start: int, end: int) -> tuple[int, int]:
+        """
+        Normalize start and end such that both are in the range
+        [0, x.get_size()[dim]] and start <= end.
+        """
     @classmethod
     def create(cls, x: IRNode, dim: int, start: int, end: int, step: int = ..., clamp: bool = ...) -> IRNode: ...
 
 @ir_dataclass
 class BaseConstant(IRNode):
+    """BaseConstant(*, dtype: 'torch.dtype', device: 'torch.device')"""
+
     dtype: torch.dtype
     device: torch.device
     def get_size(self) -> Sequence[Expr]: ...
@@ -642,6 +775,8 @@ class BaseConstant(IRNode):
 
 @ir_dataclass
 class Constant(BaseConstant):
+    """Constant(*, dtype: 'torch.dtype', device: 'torch.device', value: 'Any')"""
+
     value: Any
     dtype: torch.dtype
     device: torch.device
@@ -651,6 +786,8 @@ class Constant(BaseConstant):
 
 @ir_dataclass
 class IndexingConstant(BaseConstant):
+    """IndexingConstant(*, dtype: 'torch.dtype', device: 'torch.device', index: 'Any')"""
+
     index: Any
     dtype: torch.dtype
     device: torch.device
@@ -661,12 +798,22 @@ def is_contiguous_strides_for_shape(stride: Sequence[_IntLike], shape: Sequence[
 def get_align_for_dtype(dtype: torch.dtype) -> int: ...
 
 class OutputSpec:
+    """
+    Abstract base for Layout, MultiOutputLayout, NoneLayout.
+    Represents the memory layout of the output of an Operation.
+    """
     def get_device(self) -> torch.device | None: ...
     def storage_size(self) -> int: ...
     def get_free_symbol_uses(self, unbacked_only: bool = ...) -> OrderedSet[sympy.Symbol]: ...
 
 @ir_dataclass
 class Layout(OutputSpec):
+    """
+    Layout base class
+
+    Carries tensor meta-information including offset and
+    whether it is pinned.
+    """
     def __init__(
         self,
         device: torch.device,
@@ -708,22 +855,56 @@ class Layout(OutputSpec):
     def get_free_symbol_uses(self, unbacked_only: bool = ...) -> OrderedSet[sympy.Symbol]: ...
 
 class FixedLayout(Layout):
-    def make_indexer(self) -> Callable[[Sequence[Expr]], Expr]: ...
+    """A Tensor layout we cannot change"""
+    def make_indexer(self) -> Callable[[Sequence[Expr]], Expr]:
+        """A closure containing math to read a given element"""
 
 class FlexibleLayout(Layout):
+    """
+    A Tensor layout that we are allowed to change
+
+    Assumption: layout change should NOT add or remove free symbols
+    """
+
     allow_indexing = ...
     @staticmethod
     def contiguous_strides(sizes: Sequence[int]) -> list[Expr]: ...
     @staticmethod
-    def fill_ordered(sizes: Sequence[int], order: Sequence[int]) -> list[Expr]: ...
+    def fill_ordered(sizes: Sequence[int], order: Sequence[int]) -> list[Expr]:
+        """
+        Create a stride based on the order the dimensions should be filled in.
+
+        In this format, channels last would be:
+            [1, 3, 2, 0]
+        """
     @staticmethod
-    def stride_ordered(sizes: Sequence[int], order: Sequence[int]) -> Sequence[Expr]: ...
+    def stride_ordered(sizes: Sequence[int], order: Sequence[int]) -> Sequence[Expr]:
+        """
+        Create a stride based on the sorted order of a permuted range.
+
+        In this format, channels last would be:
+            [3, 0, 2, 1]
+        """
     @staticmethod
-    def stride_ordered_for_memory_format(
-        sizes: Sequence[int], memory_format: torch.memory_format
-    ) -> Sequence[Expr]: ...
+    def stride_ordered_for_memory_format(sizes: Sequence[int], memory_format: torch.memory_format) -> Sequence[Expr]:
+        """
+        Create a stride based on a memory format.
+
+        Memory format is translasted into a stride order,
+        so channels_last is the same as:
+            FlexibleLayout.stride_ordered(sizes, [3, 0, 2, 1])
+
+        This interface does not support memory_format `torch.preserve_format`
+        which should be used to deduce a format from another source
+        """
     @staticmethod
-    def same_ordered(sizes: Sequence[int], stride: Sequence[_IntLike]) -> Sequence[Expr]: ...
+    def same_ordered(sizes: Sequence[int], stride: Sequence[_IntLike]) -> Sequence[Expr]:
+        """
+        Create a stride that has the same stride order as given stride
+
+        For example, if given stride is [1000, 1, 100, 10],
+        the fill order should be [1, 3, 2, 0]
+        """
     @property
     def size(self) -> Sequence[Expr]: ...
     @size.setter
@@ -752,6 +933,7 @@ class FlexibleLayout(Layout):
     ) -> None: ...
 
 class NonOwningLayout(Layout):
+    """Is a view into the storage of another tensor"""
     def __init__(self, view: BaseView | TensorBox) -> None: ...
     def make_indexer(self) -> Callable[[Sequence[Expr]], Expr]: ...
     def maybe_guard_aligned(self) -> bool: ...
@@ -762,12 +944,25 @@ class CommBufferType(Enum):
     SYMM_MEM = ...
 
 class CommBufferLayout(FixedLayout):
+    """
+    A layout that signifies the buffer is a comm buffer.
+    In terms of striding, the layout is identical to `FixedLayout`.
+
+    Buffers with this layout do not participate in in-place reuse - it can be
+    neither the source nor the target for in-place reuse.
+
+    For detailed motivation and usage of this layout, see
+    NOTE [lowering-time collective optimization].
+    """
+
     comm_buffer_type: CommBufferType
     group_name: str
     def __init__(self, layout: FlexibleLayout, comm_buffer_type: CommBufferType, group_name: str) -> None: ...
 
 @ir_dataclass
 class NoneLayout(OutputSpec):
+    """NoneLayout(*, device: 'Optional[torch.device]', size: 'list[int]' = <factory>, stride: 'list[int]' = <factory>)"""
+
     device: torch.device | None
     size: list[int] = ...
     stride: list[int] = ...
@@ -791,6 +986,8 @@ class MutationLayoutSHOULDREMOVE(Layout):
 
 @ir_dataclass(frozen=False)
 class Buffer(IRNode, CodegenSymbol):
+    """Buffer(*, name: 'Optional[str]', layout: 'OutputSpec')"""
+
     name: str | None
     layout: OutputSpec
     def __post_init__(self) -> None: ...
@@ -828,6 +1025,7 @@ class Buffer(IRNode, CodegenSymbol):
 
 @ir_dataclass(frozen=False)
 class OperationBuffer(Buffer, Operation):
+    """OperationBuffer(*, name: 'Optional[str]', layout: 'OutputSpec')"""
     def get_outputs(self) -> list[Buffer]: ...
     def get_defining_op(self) -> Operation: ...
 
@@ -837,7 +1035,14 @@ class OperationBuffer(Buffer, Operation):
 class InputBuffer(Buffer):
     def num_reads(self) -> int: ...
 
-class DonatedBuffer(InputBuffer): ...
+class DonatedBuffer(InputBuffer):
+    """
+    Represents a donated buffer which is a saved tensor that is not alias to any
+    fwd inputs, fwd user outputs, and bwd outputs. We generally cannot inplace
+    reuse the input tensor memory during backward since it might be used in another
+    function. However, donated buffer can be inplace reused during backward
+    to save memory.
+    """
 
 class ConstantBuffer(InputBuffer):
     override_device: torch.device | None = ...
@@ -846,6 +1051,7 @@ class ConstantBuffer(InputBuffer):
 
 @ir_dataclass
 class NoneAsConstantBuffer(IRNode):
+    """NoneAsConstantBuffer()"""
     def get_reads(self) -> OrderedSet[Dep]: ...
     @cache_on_self_and_args("NoneAsConstantBuffer")
     def get_free_symbol_uses(self, unbacked_only: bool = ...) -> OrderedSet[sympy.Symbol]: ...
@@ -855,6 +1061,8 @@ class NoneAsConstantBuffer(IRNode):
 
 @ir_dataclass
 class ShapeAsConstantBuffer(IRNode):
+    """ShapeAsConstantBuffer(*, expr: 'Expr')"""
+
     expr: Expr
     @cache_on_self_and_args("ShapeAsConstantBuffer")
     def get_free_symbol_uses(self, unbacked_only: bool = ...) -> OrderedSet[sympy.Symbol]: ...
@@ -863,12 +1071,18 @@ class ShapeAsConstantBuffer(IRNode):
 
 @ir_dataclass(frozen=False)
 class ComputedBuffer(OperationBuffer):
+    """Represents a buffer that is computed during kernel execution rather than being an input."""
+
     data: Loops
     _force_realize: ClassVar[bool] = ...
     @staticmethod
     @contextlib.contextmanager
     def force_realize() -> Iterator[None]: ...
-    def get_computed_buffer_name(self) -> str | None: ...
+    def get_computed_buffer_name(self) -> str | None:
+        """
+        Returns self.name if it exists, otherwise returns the name of the data node if that exists.
+        If neither exist, returns None.
+        """
     def num_reads(self) -> int: ...
     def get_reads(self) -> OrderedSet[Dep]: ...
     def get_read_names(self) -> OrderedSet[str]: ...
@@ -878,7 +1092,14 @@ class ComputedBuffer(OperationBuffer):
     def make_loader(self) -> Callable[[Sequence[Expr]], OpsValue]: ...
     def has_store_function(self) -> bool: ...
     def get_store_function(self) -> Callable[..., None]: ...
-    def get_fill_order(self) -> list[int] | None: ...
+    def get_fill_order(self) -> list[int] | None:
+        """
+        If our layout is still flexible, try to determine the stride order based on stride orders of reads.
+
+        TODO(jansel): A better algorithm here would look at downstream consumers of this
+                      value and try to do global graph-level layout optimization.
+                      This is also something just begging to be autotuned.
+        """
     def decide_layout(self) -> None: ...
     @cache_on_self
     def get_default_sizes_body(
@@ -888,14 +1109,36 @@ class ComputedBuffer(OperationBuffer):
         self,
         extra_indexing_constraints: tuple[dict[Any, Any], list[Any]] | None = ...,
         recompute_sizes_body_func: Callable[..., Any] | None = ...,
-    ) -> tuple[tuple[list[Expr], list[Expr]], LoopBody | None]: ...
+    ) -> tuple[tuple[list[Expr], list[Expr]], LoopBody | None]:
+        """
+        This is a main place where we do loop transformations in a
+        backend-agnostic way.
+
+        Here we:
+            1) Remove any 1 dimensions
+            2) Fuse contiguous dimensions together
+            3) Reorder dimensions based on stride orders
+
+        Optional argument extra_indexing_constraints can be used to append additional
+        indexing expressions to existing ones derived from buffer's body. This can be useful
+        to fuse scheduler nodes with compatible ranges, e.g. (s0*s1*...,) and (s0, s1, s2, ...)
+        on CPU by preventing indexing simplifications and obtaining index/reduce ranges for
+        the scheduler node compatible with other nodes.
+        Optional argument recompute_sizes_body_func can be used to recompute sizes and body
+        on the default body. This can be useful to append additional loop transformations.
+        """
     def get_reduction_size(self) -> Sequence[Expr]: ...
     def get_reduction_type(self) -> str | None: ...
     def is_no_op(self) -> bool: ...
     def should_allocate(self) -> bool: ...
-    def constant_to_device(self, device: torch.device) -> IRNode: ...
+    def constant_to_device(self, device: torch.device) -> IRNode:
+        """Move this to a given device. Requires that all reads are to constants."""
 
 class TemplateBuffer(OperationBuffer):
+    """
+    Represents a Triton (in the future other type) of template operator
+    that we can fuse an epilogue onto.
+    """
     def __init__(
         self, layout: OutputSpec, inputs: Sequence[IRNode], make_kernel_render: Callable[..., Any] | None
     ) -> None: ...
@@ -918,7 +1161,16 @@ class TritonTemplateBuffer(TemplateBuffer):
         make_kernel_render: Callable[_P, _T] | None,
         mutated_inputs: Iterable[IRNode] | None = ...,
         allowed_prologue_inps: OrderedSet[str] | None = ...,
-    ) -> None: ...
+    ) -> None:
+        """
+        NOTE:[TritonTemplates with multiple outputs]
+        We want the ability for TritonTemplates to output multiple tensors. Triton
+        kernels have no notion of outputs and this is done by creating tensors that
+        are then mutated by the kernel. Currently our STORE_OUTPUT codegen doesn't
+        support creating multinode outputs for triton templates.
+        We work around this by creating an extra input buffer during the lowering
+        and we mark them as mutated inputs.
+        """
     @cache_on_self_and_args("TritonTemplateBuffer")
     def get_free_symbol_uses(self, unbacked_only: bool = ...) -> OrderedSet[sympy.Symbol]: ...
     def get_outputs(self) -> list[Buffer]: ...
@@ -927,20 +1179,39 @@ class TritonTemplateBuffer(TemplateBuffer):
 type PrimitiveInfoType = int | float | bool | str | list[int | str | float | bool]
 
 class ChoiceCaller:
+    """
+    Represents a possible choice used in autotune_process.py.
+    During autotuning, self.benchmark() is first called to get benchmark result,
+    and if this choice is selected, self.output_node() is called to get the output_node.
+
+    Children classes: TritonTemplateCaller, CUDATemplateCaller.
+    """
     def __init__(self, name: str, input_nodes: list[Buffer], layout: Layout, description: str) -> None: ...
     def benchmark(self, *args: Any, out: torch.Tensor) -> float: ...
     def call_name(self) -> str: ...
     def to_callable(self) -> Callable[..., Any]: ...
-    def kernel_hash_key(self) -> str: ...
+    def kernel_hash_key(self) -> str:
+        """
+        Hash key for the underlying kernel. By default, we assume there are no
+        runtime params, so kernel hash key defaults to choice caller's hash key.
+        """
     def hash_key(self) -> str: ...
     def output_node(self) -> TensorBox | ShapeAsConstantBuffer: ...
-    def info_dict(self) -> dict[str, PrimitiveInfoType | list[PrimitiveInfoType]]: ...
+    def info_dict(self) -> dict[str, PrimitiveInfoType | list[PrimitiveInfoType]]:
+        """Information returned here is logged to the autotune log file when that is enabled."""
     def autoheuristic_id(self) -> str: ...
 
 class TritonTemplateCallerBase(ChoiceCaller):
     def get_make_kernel_render(self) -> Any: ...
 
 class MultiTemplateBuffer(TritonTemplateBuffer):
+    """
+    Represents a Buffer with multiple backing implementation choices.
+
+    Choices can be TritonTemplates or ExternKernels. During scheduling if there is a potential
+    epilogue we will benchmark each of the choices with the epilogue to determine an implementation.
+    Otherwise, the fastest base choice will be chosen.
+    """
     def __init__(
         self,
         layout: Layout,
@@ -950,13 +1221,15 @@ class MultiTemplateBuffer(TritonTemplateBuffer):
         allowed_prologue_inps: OrderedSet[str],
     ) -> None: ...
     @property
-    def output_plannable(self) -> bool: ...
+    def output_plannable(self) -> bool:
+        """Are all possible choices TritonTemplates or Extern Kernels with out variants"""
     def choice_timings(self, hint_override: int | None = ...) -> dict[ChoiceCaller, float]: ...
     @contextlib.contextmanager
     def swap_as_triton_caller(self, caller: TritonTemplateCallerBase) -> Iterator[None]: ...
     def finalize_as_triton_caller(self, caller: TritonTemplateCallerBase) -> None: ...
     def get_min_choice(self, hint_override: int | None = ...) -> tuple[ChoiceCaller, float]: ...
-    def finalize_as_triton_callers(self, callers: dict[int | None, TritonTemplateCallerBase]) -> None: ...
+    def finalize_as_triton_callers(self, callers: dict[int | None, TritonTemplateCallerBase]) -> None:
+        """Finalize with multiple callers for different hint overrides"""
 
 class CUDATemplateBuffer(TemplateBuffer):
     def __init__(
@@ -983,6 +1256,10 @@ class CppTemplateBuffer(TemplateBuffer):
     def get_layout(self) -> Layout: ...
 
 class CuteDSLTemplateBuffer(TemplateBuffer):
+    """
+    Buffer for CuteDSL (CUTLASS Python DSL) template kernels.
+    Similar to other template buffers but specialized for CuteDSL operations.
+    """
     def __init__(
         self,
         layout: Layout,
@@ -997,6 +1274,8 @@ def is_node_sequence(nodes: Sequence[IRNode | Sequence[IRNode]]) -> TypeIs[Seque
 
 @ir_dataclass(frozen=False)
 class InputsKernel(OperationBuffer):
+    """InputsKernel(*, name: 'Optional[str]', layout: 'OutputSpec', inputs: 'Sequence[Union[IRNode, Sequence[IRNode]]]')"""
+
     inputs: Sequence[IRNode | Sequence[IRNode]]
     def input_name(self, i: int) -> str: ...
     def get_read_writes(self) -> dependencies.ReadWrites: ...
@@ -1015,8 +1294,13 @@ class NopKernel(InputsKernel):
     def get_reads(self) -> OrderedSet[Dep]: ...
 
 class ConcatKernel(NopKernel):
+    """
+    There isn't actually a real kernel for concat, we just change the
+    storage for the upstream data.
+    """
     @classmethod
-    def create(cls, inputs: Sequence[IRNode], dim: int) -> StorageBox: ...
+    def create(cls, inputs: Sequence[IRNode], dim: int) -> StorageBox:
+        """Create the concat kernel from inputs"""
     @classmethod
     def can_realize_into_without_copy(cls, src: IRNode, dst: IRNode | None = ...) -> bool: ...
     @cache_on_self_and_args("ConcatKernel")
@@ -1027,6 +1311,11 @@ class ConcatKernel(NopKernel):
 
 @ir_dataclass(frozen=False)
 class ExternKernel(InputsKernel):
+    """
+    A class that represents Kernels which are not directly lowered to Inductor
+    Loop Level IR, such as custom operators, or aten operators which we fallback to.
+    """
+
     constant_args: Sequence[Any] = ...
     kwargs: dict[str, Any] = ...
     output_view: ReinterpretView | None = ...
@@ -1068,7 +1357,12 @@ class ExternKernel(InputsKernel):
         cls, kernel: _OpOverloads, *args: Any, **kwargs: Any
     ) -> tuple[Any, list[Any], list[Any], Callable[[Any, Any], Any], dict[sympy.Symbol, pytree.KeyPath] | None]: ...
     @classmethod
-    def convert_to_reinterpret_view(cls, x: IRNode) -> ReinterpretView: ...
+    def convert_to_reinterpret_view(cls, x: IRNode) -> ReinterpretView:
+        """
+        In order to pass this to an extern kernel we need a
+        ReinterpretView not a View.  This allows us to avoid some
+        unneeded copies.
+        """
     @classmethod
     def realize_input(cls, x: IRNode) -> IRNode: ...
     @classmethod
@@ -1099,14 +1393,23 @@ class ExternKernel(InputsKernel):
     def fill_non_provided_args(self, args: Sequence[Any], kwargs: dict[str, Any]) -> Sequence[Any]: ...
     def codegen_const_args(self, names: list[str] | None = ...) -> list[str]: ...
     def codegen_args(self) -> list[str]: ...
-    def get_kwargs_value(self, arg_name: str, **kwargs: Any) -> Any: ...
+    def get_kwargs_value(self, arg_name: str, **kwargs: Any) -> Any:
+        """
+        Given an argument name, queries for values in (in order):
+        1. any provided kwargs for this function.
+        2. the class self.kwargs member.
+        3. any available default arguments in self.allarg_properties.
+        """
     def codegen_kwargs(self, skip_out: bool = ...) -> list[str]: ...
     def get_op_name(self) -> str: ...
     def codegen_size_asserts(self, wrapper: PythonWrapperCodegen) -> None: ...
     def codegen_alignment_asserts(self, wrapper: PythonWrapperCodegen) -> None: ...
-    def codegen_memory_tracking(self, wrapper: PythonWrapperCodegen) -> None: ...
-    def get_group_stride(self) -> tuple[list[Sequence[Expr]], list[Expr]]: ...
-    def canonicalize(self) -> tuple[Expr, Sequence[Expr]]: ...
+    def codegen_memory_tracking(self, wrapper: PythonWrapperCodegen) -> None:
+        """Track outputs of fallback operators if config.test_configs.track_memory_lifecycle"""
+    def get_group_stride(self) -> tuple[list[Sequence[Expr]], list[Expr]]:
+        """get output sizes and strides, for template_codegen"""
+    def canonicalize(self) -> tuple[Expr, Sequence[Expr]]:
+        """Manually get canonicalization of the output index"""
     @cache_on_self_and_args("ExternKernel")
     def get_free_symbol_uses(self, unbacked_only: bool = ...) -> OrderedSet[sympy.Symbol]: ...
 
@@ -1114,6 +1417,7 @@ class ExternKernel(InputsKernel):
 
 @ir_dataclass(frozen=False)
 class ExternKernelOut(ExternKernel):
+    """ExternKernelOut(layout: 'Layout', inputs: 'Sequence[IRNode]', constant_args: 'Sequence[Any]' = (), kwargs: 'Optional[dict[str, Any]]' = None, output_view: 'Optional[ReinterpretView]' = None, python_kernel_name: 'Optional[str]' = None, cpp_kernel_name: 'Optional[str]' = None, ordered_kwargs_for_cpp_kernel: 'Sequence[Any]' = (), op_overload: 'Optional[_OpOverloads]' = None) -> 'None'"""
     def codegen(self, wrapper: PythonWrapperCodegen) -> None: ...
     def __init__(
         self,
@@ -1149,6 +1453,7 @@ class ExternKernelAlloc(ExternKernel):
     def apply_constraint(self) -> None: ...
 
 class MutationOutput(Buffer):
+    """An output buffer that represents the mutation of a pre-existing buffer"""
     def __init__(self, layout: OutputSpec, mutated_node: IRNode, mutating_node: Operation) -> None: ...
     def get_defining_op(self) -> Operation: ...
     def get_mutation_names(self) -> Sequence[str]: ...
@@ -1156,6 +1461,15 @@ class MutationOutput(Buffer):
     def get_mutation_buffers(self) -> Sequence[IRNode]: ...
 
 class TMADescriptor(ExternKernel):
+    """
+    An IR node representing a generic host-side TMA descriptor in the Triton API
+    Mostly useful for user-defined Triton kernels relying on host-side TMA;
+    but can, in principle, be used for Inductor's Triton templates, too.
+
+    See TMADescriptorExperimental and TMADescriptorStable for the two implementations
+    (the old API and the new API)
+    """
+
     _CACHE: dict[Any, TMADescriptor] = ...
     @classmethod
     def create(cls, tensor: IRNode, tma_meta: tuple[str, tuple[Any, ...]]) -> TMADescriptor: ...
@@ -1164,6 +1478,12 @@ class TMADescriptor(ExternKernel):
     def get_tensor(self) -> IRNode: ...
 
 class TMADescriptorExperimental(TMADescriptor):
+    """
+    the new host-side TMA Descriptor API:
+    (the ones obtained via create_{1d,2d}_tma_descriptor calls).
+
+    See also TMADescriptorStable for the new API.
+    """
     def __init__(
         self,
         tensor: IRNode,
@@ -1173,6 +1493,12 @@ class TMADescriptorExperimental(TMADescriptor):
     ) -> None: ...
 
 class TMADescriptorStable(TMADescriptor):
+    """
+    the new host-side TMA descriptor API
+    (the ones obtained via TensorDescriptor.from_tensor).
+
+    See also TMADescriptorExperimental for the old API.
+    """
     def __init__(self, tensor: IRNode, block_shape: list[int | torch.SymInt]) -> None: ...
 
 class SubgraphBuffer(ExternKernel):
@@ -1189,7 +1515,11 @@ class SubgraphBuffer(ExternKernel):
 class UserDefinedTritonKernel(ExternKernel):
     def get_kernel_and_metadata(self) -> tuple[Kernel, Any, list[str], list[str]]: ...
     @override
-    def codegen(self, wrapper: PythonWrapperCodegen) -> None: ...
+    def codegen(self, wrapper: PythonWrapperCodegen) -> None:
+        """
+        Overrides the parent member.
+        See https://github.com/pytorch/pytorch/issues/151692
+        """
     @cache_on_self_and_args("UserDefinedTritonKernel")
     def get_free_symbol_uses(self, unbacked_only: bool = ...) -> OrderedSet[sympy.Symbol]: ...
     def get_unbacked_symbol_defs(self) -> OrderedSet[sympy.Symbol]: ...
@@ -1200,6 +1530,7 @@ class UserDefinedTritonKernel(ExternKernel):
     def get_device(self) -> torch.device | None: ...
 
 class InplaceBernoulliFallback(ExternKernel):
+    """This needs to be a custom class to handle mutation properly"""
     def codegen(self, wrapper: PythonWrapperCodegen) -> None: ...
     def should_allocate(self) -> bool: ...
     def get_mutation_names(self) -> Sequence[str]: ...
@@ -1207,6 +1538,7 @@ class InplaceBernoulliFallback(ExternKernel):
     def __init__(self, op_overload: _OpOverloads, x: IRNode, *constant_args: Any) -> None: ...
 
 class InplaceCopyFallback(ExternKernel):
+    """This needs to be a custom class to handle mutation properly"""
     def codegen(self, wrapper: PythonWrapperCodegen) -> None: ...
     def should_allocate(self) -> bool: ...
     def get_mutation_names(self) -> Sequence[str]: ...
@@ -1216,6 +1548,7 @@ class InplaceCopyFallback(ExternKernel):
     def create(cls, dst: IRNode, src: IRNode, non_blocking: bool = ...) -> InplaceCopyFallback: ...
 
 class MutatingFirstArgExternKernel(ExternKernel):
+    """This needs to be a custom class to handle mutation properly"""
     def codegen(self, wrapper: PythonWrapperCodegen) -> None: ...
     def should_allocate(self) -> bool: ...
     def get_mutation_names(self) -> Sequence[str]: ...
@@ -1230,6 +1563,11 @@ class SetSourceTensorKernel(ExternKernelAlloc):
     def get_inputs_that_alias_output(self) -> Sequence[str]: ...
 
 class ScatterFallback(ExternKernel):
+    """
+    This needs to be a custom class to handle mutation properly.
+    This class handles both aten.scatter_ and aten.scatter_reduce_.
+    It also handle the case `src` being a scalar properly.
+    """
     def codegen(self, wrapper: PythonWrapperCodegen) -> None: ...
     def should_allocate(self) -> bool: ...
     def get_mutation_names(self) -> list[str]: ...
@@ -1247,6 +1585,7 @@ class ScatterFallback(ExternKernel):
     ) -> None: ...
 
 class IndexPutFallback(ExternKernel):
+    """This needs to be a custom class to handle mutation and indices properly"""
     def codegen(self, wrapper: PythonWrapperCodegen) -> None: ...
     def should_allocate(self) -> bool: ...
     def get_mutation_names(self) -> Sequence[str]: ...
@@ -1261,6 +1600,13 @@ class DeviceCopy(ExternKernelOut):
     def codegen(self, wrapper: PythonWrapperCodegen) -> None: ...
 
 class DynamicSelectStorageOffset(ExternKernel):
+    """
+    The result of computing a dynamic selection index is determined as follows: when the index in the
+    select operation is unbacked, the actual index calculation is ambiguous for negative indices
+    (index + size) versus non-negative indices (just index). To resolve this, we allocate an unbacked
+    SymInt to represent the storage offset and decompose the select operation into a call to as_strided,
+    computing the storage offset at runtime with this node.
+    """
     def get_reads(self) -> OrderedSet[Dep]: ...
     def should_allocate(self) -> bool: ...
     def __init__(
@@ -1277,6 +1623,7 @@ class DynamicSelectStorageOffset(ExternKernel):
     def codegen(self, wrapper: PythonWrapperCodegen) -> None: ...
 
 class DynamicScalar(ExternKernel):
+    """The result of a call to aten._local_scalar_dense."""
     def get_reads(self) -> OrderedSet[Dep]: ...
     def should_allocate(self) -> bool: ...
     def __init__(self, sym: sympy.Symbol, keypath: pytree.KeyPath, data: IRNode) -> None: ...
@@ -1284,6 +1631,7 @@ class DynamicScalar(ExternKernel):
     def codegen(self, wrapper: PythonWrapperCodegen) -> None: ...
 
 class AssertScalar(ExternKernel):
+    """The result of a call to aten._assert_scalar"""
     def get_reads(self) -> OrderedSet[Dep]: ...
     def should_allocate(self) -> bool: ...
     def __init__(self, scalar: SympyBoolean, msg: str) -> None: ...
@@ -1294,10 +1642,17 @@ class AssertScalar(ExternKernel):
 
 @ir_dataclass(frozen=False)
 class ExternKernelNode:
+    """ExternKernelNode(*, name: 'str', node: 'export_schema.Node')"""
+
     name: str
     node: export_schema.Node
 
 class FallbackKernel(ExternKernelAlloc):
+    """
+    A class that represents a fallback kernel for handling operators that are not
+    directly support by inductor. It currently supports functional ops, view ops,
+    inplace aten ops, and mutating ops that are auto-functionalizable.
+    """
     def __init__(
         self,
         layout: OutputSpec,
@@ -1318,17 +1673,31 @@ class FallbackKernel(ExternKernelAlloc):
     def has_side_effects(self) -> bool: ...
     def get_inputs_that_alias_output(self) -> Sequence[str]: ...
     def get_mutation_names(self) -> Sequence[str]: ...
-    def export_extern_kernel_node(self): ...
+    def export_extern_kernel_node(self):
+        """
+        ProxyExecutor Design Note
+        We export the ExternFallbackNodes (for custom ops) into a serialized file
+        and run it with a host side proxy executor to address the ABI problem
+        This is currently only implemented for fbcode. Eventually, we will also make this work for OSS.
+        Detailed design doc can be found at
+        https://docs.google.com/document/d/1wC4DOZFaYym2t1Esz0X5yxlLI3RDnSiyRbUus3bkJ64/edit?usp=sharing
+        """
     @override
-    def codegen(self, wrapper: PythonWrapperCodegen) -> None: ...
+    def codegen(self, wrapper: PythonWrapperCodegen) -> None:
+        """
+        Overrides the parent member.
+        See https://github.com/pytorch/pytorch/issues/151692
+        """
     @staticmethod
     def tensor_to_layout(output: torch.Tensor) -> FixedLayout: ...
     @classmethod
-    def create(cls, kernel: _OpOverloads, *args: Any, **kwargs: Any) -> FallbackKernel: ...
+    def create(cls, kernel: _OpOverloads, *args: Any, **kwargs: Any) -> FallbackKernel:
+        """Create an instance of FallbackKernel from an _OpOverloads"""
     def apply_constraint(self) -> None: ...
 
 @ir_dataclass(frozen=False)
 class ComplexView(FallbackKernel):
+    """View a complex number as two dtyped numbers or vice versa"""
     def should_allocate(self) -> bool: ...
     def get_inputs_that_alias_output(self) -> Sequence[str]: ...
     def __init__(
@@ -1343,10 +1712,18 @@ class ComplexView(FallbackKernel):
     ) -> None: ...
 
 class MemoryCheckKernel(FallbackKernel):
-    def codegen(self, wrapper: PythonWrapperCodegen) -> None: ...
+    """
+    Custom kernel for memory checking that generates direct function calls
+
+    TODO - the custom op was erroring with str inputs. should be able to custom op directly.
+    """
+    def codegen(self, wrapper: PythonWrapperCodegen) -> None:
+        """Override codegen to write direct function call"""
 
 @ir_dataclass
 class MultiOutputLayout(OutputSpec):
+    """MultiOutputLayout(*, device: 'torch.device')"""
+
     device: torch.device
     def get_device(self) -> torch.device | None: ...
 
@@ -1366,6 +1743,8 @@ class MultiOutput(ExternKernel):
 
 @dataclasses.dataclass
 class MutableBox(IRNode):
+    """TensorBox / StorageBox allow in-place mutation of Tensors"""
+
     data: IRNode
     def has_exceeded_max_reads(self) -> bool: ...
     def get_device(self) -> torch.device | None: ...
@@ -1418,24 +1797,34 @@ class TensorBox(MutableBox):
     def create(data: IRNode) -> TensorBox | ShapeAsConstantBuffer: ...
 
 class StorageBox(MutableBox):
+    """StorageBox allow in-place mutation of Tensors"""
     def is_input_buffer(self) -> bool: ...
     def is_module_buffer(self) -> bool: ...
     def realize(self) -> str | None: ...
-    def realize_hint(self) -> None: ...
+    def realize_hint(self) -> None:
+        """Called on buffers we expect to be forced to realize later."""
     def has_accumulated_enough_reads_by_size(self, threshold: int) -> bool: ...
     def has_exceeded_max_reads(self) -> bool: ...
-    def should_realize_on_reuse(self, users: int) -> bool: ...
+    def should_realize_on_reuse(self, users: int) -> bool:
+        """
+        A heuristic to decide if we should realize a tensor
+        that is used multiple times.
+        """
     def mark_reuse(self, users: int) -> None: ...
     def num_reads(self) -> int: ...
 
 @ir_dataclass(frozen=False)
 class Subgraph(IRNode):
+    """Subgraph(*, name: 'str', graph_module: 'torch.fx.GraphModule', graph: 'Optional[GraphLowering]' = None)"""
+
     name: str
     graph_module: torch.fx.GraphModule
     graph: GraphLowering | None = ...
 
 @ir_dataclass(frozen=False)
 class InvokeSubgraph(ExternKernel):
+    """Ir node for the invoke_subgraph HOP."""
+
     subgraph: Subgraph | None = ...
     operands: Sequence[IRNode] | None = ...
     outputs: Sequence[IRNode] | None = ...
@@ -1443,11 +1832,17 @@ class InvokeSubgraph(ExternKernel):
     @classmethod
     def create(
         cls, subgraph: Subgraph, *operands: IRNode
-    ) -> list[ShapeAsConstantBuffer | NoneAsConstantBuffer | MultiOutput]: ...
+    ) -> list[ShapeAsConstantBuffer | NoneAsConstantBuffer | MultiOutput]:
+        """
+        For each operand, get a realized input, force it to have the same
+        strides as the subgraph inputs, then use an InvokeSubgraph
+        """
     def codegen(self, wrapper: PythonWrapperCodegen) -> None: ...
 
 @ir_dataclass(frozen=False)
 class Conditional(ExternKernel):
+    """Conditional(predicate: 'IRNode', operands: 'Sequence[IRNode]', true_subgraph: 'Subgraph', false_subgraph: 'Subgraph', layout: 'MultiOutputLayout', unbacked_bindings: 'Optional[dict[sympy.Symbol, pytree.KeyPath]]') -> 'None'"""
+
     predicate: IRNode | None = ...
     operands: Sequence[IRNode] | None = ...
     true_subgraph: Subgraph | None = ...
@@ -1469,12 +1864,15 @@ class Conditional(ExternKernel):
         true_fn: Subgraph,
         false_fn: Subgraph,
         operands: list[TensorBox | ShapeAsConstantBuffer],
-    ) -> Sequence[IRNode]: ...
+    ) -> Sequence[IRNode]:
+        """Create a Sequence of IRNodes from a conditional statement (see .lowering.cond)"""
     def codegen(self, wrapper: PythonWrapperCodegen) -> None: ...
     def get_unbacked_symbol_defs(self) -> OrderedSet[sympy.Symbol]: ...
 
 @ir_dataclass(frozen=False)
 class WhileLoop(ExternKernel):
+    """The IR node for while_loop and while_loop_stack_output. It supports input mutation."""
+
     carried_inputs: Sequence[IRNode] | None = ...
     additional_inputs: Sequence[IRNode] | None = ...
     cond_subgraph: Subgraph | None = ...
@@ -1498,7 +1896,11 @@ class WhileLoop(ExternKernel):
         carried_inputs: Sequence[IRNode],
         additional_inputs: Sequence[IRNode],
         stack_output: bool,
-    ) -> IRNode | Sequence[IRNode]: ...
+    ) -> IRNode | Sequence[IRNode]:
+        """
+        create the while_loop IR node. stack_output controls whether it stack
+        each iterations' output, which is necessary for training.
+        """
     def codegen(self, wrapper: PythonWrapperCodegen) -> None: ...
     def get_unbacked_symbol_defs(self) -> OrderedSet[sympy.Symbol]: ...
 
@@ -1523,6 +1925,8 @@ class NonTensorObj(IRNode):
 
 @ir_dataclass
 class TorchBindObject(NonTensorObj):
+    """TorchBindObject(*, name: 'str', value: 'Union[FakeScriptObject, torch.ScriptObject]')"""
+
     name: str
     value: FakeScriptObject | torch.ScriptObject
     def get_name(self) -> str: ...
@@ -1533,6 +1937,8 @@ class TorchBindObject(NonTensorObj):
 
 @ir_dataclass
 class GeneratorState(NonTensorObj):
+    """GeneratorState(*, name: 'str', device: 'torch.device')"""
+
     name: str
     device: torch.device
     def get_name(self) -> str: ...

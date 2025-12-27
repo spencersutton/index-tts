@@ -5,6 +5,20 @@ from torch.types import _size
 __all__ = ["Exponential"]
 
 class Exponential(ExponentialFamily):
+    """
+    Creates a Exponential distribution parameterized by :attr:`rate`.
+
+    Example::
+
+        >>> # xdoctest: +IGNORE_WANT("non-deterministic")
+        >>> m = Exponential(torch.tensor([1.0]))
+        >>> m.sample()  # Exponential distributed with rate=1
+        tensor([ 0.1046])
+
+    Args:
+        rate (float or Tensor): rate = 1 / scale of the distribution
+    """
+
     arg_constraints = ...
     support = ...
     has_rsample = ...

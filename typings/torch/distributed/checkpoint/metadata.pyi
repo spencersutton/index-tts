@@ -19,16 +19,25 @@ __all__ = [
 
 @dataclass
 class ChunkStorageMetadata:
+    """
+    Each chunk is expected to have the same properties of the TensorStorageMetadata
+    that includes it.
+    """
+
     offsets: torch.Size
     sizes: torch.Size
 
 class _MEM_FORMAT_ENCODING(Enum):
+    """Describe the memory format of a tensor."""
+
     TORCH_CONTIGUOUS_FORMAT = ...
     TORCH_CHANNELS_LAST = ...
     TORCH_PRESERVE_FORMAT = ...
 
 @dataclass
 class TensorProperties:
+    """Properties used to create :class:`Tensor`"""
+
     dtype: torch.dtype = ...
     layout: torch.layout = ...
     requires_grad: bool = ...
@@ -53,18 +62,23 @@ class TensorProperties:
 
 @dataclass
 class TensorStorageMetadata:
+    """TensorStorageMetadata(properties: torch.distributed.checkpoint.metadata.TensorProperties, size: torch.Size, chunks: list[torch.distributed.checkpoint.metadata.ChunkStorageMetadata])"""
+
     properties: TensorProperties
     size: torch.Size
     chunks: list[ChunkStorageMetadata]
 
 @dataclass
-class BytesStorageMetadata: ...
+class BytesStorageMetadata:
+    """BytesStorageMetadata()"""
 
 type STORAGE_TYPES = TensorStorageMetadata | BytesStorageMetadata
 type STATE_DICT_TYPE = dict[str, StatefulT | Any]
 
 @dataclass
 class StorageMeta:
+    """StorageMeta(checkpoint_id: Union[str, os.PathLike, NoneType] = None, save_id: Optional[str] = None, load_id: Optional[str] = None, modules: list[str] = <factory>)"""
+
     checkpoint_id: str | os.PathLike | None = ...
     save_id: str | None = ...
     load_id: str | None = ...
@@ -72,6 +86,8 @@ class StorageMeta:
 
 @dataclass
 class Metadata:
+    """This class represents the metadata of the checkpoint."""
+
     state_dict_metadata: dict[str, STORAGE_TYPES]
     planner_data: Any = ...
     storage_data: Any = ...
@@ -80,6 +96,8 @@ class Metadata:
 
 @dataclass(frozen=True)
 class MetadataIndex:
+    """This class represents a lookup key for items in a state dict or Metadata."""
+
     fqn: str
     offset: torch.Size | None = ...
     index: int | None = ...

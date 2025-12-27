@@ -89,8 +89,25 @@ def sort_with_index(
 def select_one(x, mask, dim, keep_dims=...): ...
 @triton.jit
 def x_grid_barrier(sem): ...
-def triton_builtin[T](f: Callable[..., _T]) -> Callable[..., _T]: ...
+def triton_builtin[T](f: Callable[..., _T]) -> Callable[..., _T]:
+    """
+    Decorator to mark a function as a Triton built-in function.  These functions
+    are evaluated at compile time.
+
+    Args:
+        f (function): The function to be marked as a Triton built-in.
+
+    Returns:
+        function: The same function, marked as a Triton built-in.
+    """
+
 @triton_builtin
-def constexpr_next_power_of_2(n: tl.constexpr, *, _builder: object = ...) -> tl.constexpr: ...
+def constexpr_next_power_of_2(n: tl.constexpr, *, _builder: object = ...) -> tl.constexpr:
+    """A version triton.next_power_of_two that can be used within a kernel on constants."""
+
 @triton_builtin
-def if_mask(mask: Any, val, *, _builder: object = ...) -> tl.constexpr: ...
+def if_mask(mask: Any, val, *, _builder: object = ...) -> tl.constexpr:
+    """
+    Work around triton compile error: `ValueError: `other` cannot be provided without `mask``
+    A compile-time to check to return either `val` or `None` depending on the value of mask.
+    """

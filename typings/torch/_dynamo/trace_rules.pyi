@@ -1,3 +1,24 @@
+"""
+Tracing rules and policies for TorchDynamo compilation decisions.
+
+This module defines the rules that govern what code TorchDynamo should trace and compile
+versus what should be executed eagerly. It contains functions and classes that determine:
+
+- Which modules, functions, and objects should be skipped during tracing
+- Which parts of the code should cause graph breaks
+- How to handle different Python libraries and third-party packages
+- Rules for determining when to inline functions vs calling them eagerly
+
+Key components:
+- Skip rules: Functions that return True if an object should be skipped during tracing
+- Inlining rules: Policies for when to inline function calls during compilation
+- Library-specific handling: Special cases for popular Python packages
+- Performance heuristics: Rules that balance compilation overhead vs runtime benefits
+
+These rules are critical for TorchDynamo's ability to automatically determine
+compilation boundaries and optimize PyTorch programs effectively.
+"""
+
 import dataclasses
 import functools
 import types
@@ -26,6 +47,15 @@ def get_tensor_method() -> frozenset[Any]: ...
 def is_aten_op_or_tensor_method(obj: Any) -> bool: ...
 
 class FunctionIdSet:
+    """
+    Track a set of `id()`s of objects which are either allowed or not
+    allowed to go into the generated FX graph.  Use to test for torch.*,
+    numpy.*, builtins.*, etc.
+
+    Support user modification to permit customization of what can be
+    added to the graph and what will cause a graph break.
+    """
+
     function_ids: set[int] | None = ...
     function_names: dict[int, str] | None = ...
     def __init__(self, lazy_initializer: Callable[[], dict[int, str] | set[int]]) -> None: ...
@@ -37,7 +67,9 @@ class FunctionIdSet:
 
 _lazy_module_init: dict[str, list[Callable[[], None]]] = ...
 
-def add_module_init_func(name: str, init_func: Callable[[], None]) -> None: ...
+def add_module_init_func(name: str, init_func: Callable[[], None]) -> None:
+    """Register a module without eagerly importing it"""
+
 def is_callable_allowed(obj: Any) -> bool: ...
 def is_nonstrict_trace_callable(obj: Any) -> bool: ...
 def is_callable_disallowed(obj: Any) -> bool: ...
@@ -80,13 +112,18 @@ def add(import_name: str) -> None: ...
 
 @dataclasses.dataclass
 class SkipResult:
+    """SkipResult(skipped: bool, reason: Optional[str])"""
+
     skipped: bool
     reason: str | None
 
-def check_file(filename: str | None, is_inlined_call: bool = ...) -> SkipResult: ...
+def check_file(filename: str | None, is_inlined_call: bool = ...) -> SkipResult:
+    """Should skip this file?"""
 
 @dataclasses.dataclass
 class FunctionInfo:
+    """FunctionInfo(py_obj: Optional[object], name: Optional[str], filename: str, code: Optional[code])"""
+
     py_obj: object | None
     name: str | None
     filename: str

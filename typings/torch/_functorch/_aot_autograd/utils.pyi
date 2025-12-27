@@ -1,3 +1,5 @@
+"""Contains various utils for AOTAutograd, including those for handling collections."""
+
 from collections.abc import Callable
 from typing import Any, ParamSpec, TypeVar
 
@@ -28,10 +30,36 @@ def is_with_effects(node): ...
 def is_with_effects_op(node, op): ...
 def unlift_tokens(fw_module, fw_metadata, aot_config, bw_module=...): ...
 def root_module_when_exporting_non_strict(flat_fn): ...
-def copy_fwd_metadata_to_bw_nodes(fx_g): ...
-def register_buffer_assignment_hook(mod, assigned_buffers): ...
-def contain_metadata_mutation_ops(module: torch.fx.GraphModule) -> bool: ...
-def get_cuda_generator_meta_val(device_idx: int): ...
+def copy_fwd_metadata_to_bw_nodes(fx_g):
+    """
+    Input: `fx_g` which contains the joint fwd+bwd FX graph created by
+    aot_autograd.
+
+    This function walks the graph and copies over metadata from forward nodes
+    to backward nodes, using the `seq_nr` field as a one-to-many mapping
+    from forward node to backward node. This metadata is useful for performance
+    profiling and debugging.
+    """
+
+def register_buffer_assignment_hook(mod, assigned_buffers):
+    """
+    Register a hook that intercepts buffer assignments.
+    This is used to detect when a buffer is assigned to, and then we can
+    map that buffer to the corresponding proxy node in the graph.
+    """
+
+def contain_metadata_mutation_ops(module: torch.fx.GraphModule) -> bool:
+    """Checks if the module contains any metadata mutation ops."""
+
+def get_cuda_generator_meta_val(device_idx: int):
+    """
+    Get a generator value to use as a meta val
+
+    newly cloned generator will not contain tensors. it is only Generators that are
+    registered to a CUDAGraph that contain tensors. since this does not contain Tensor
+    it is fine to use in the meta.
+    """
+
 def top_saved_tensors_hooks(): ...
 def saved_tensors_hooks_are_inlineable(hooks) -> bool: ...
 
@@ -39,12 +67,12 @@ _P = ParamSpec("_P")
 _T = TypeVar("_T")
 _S = TypeVar("_S")
 
-def without_output_descs[**P, T, S](f: Callable[_P, tuple[_T, _S]]) -> Callable[_P, _T]: ...
+def without_output_descs[P, T, S](f: Callable[_P, tuple[_T, _S]]) -> Callable[_P, _T]: ...
 
 _P2 = ParamSpec("_P2")
 _R = TypeVar("_R")
 _R2 = TypeVar("_R2")
 
-def simple_wraps[**P, R](f: Callable[_P, _R]) -> Callable[[Callable[_P2, _R2]], Callable[_P2, _R2]]: ...
+def simple_wraps[P, R](f: Callable[_P, _R]) -> Callable[[Callable[_P2, _R2]], Callable[_P2, _R2]]: ...
 def call_and_expect_output_descs(fn, args): ...
 def fn_wrappers(fn): ...

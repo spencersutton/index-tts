@@ -44,4 +44,8 @@ def run_and_get_constant_graph(
     skip_constructors: bool = ...,
     lifted_constant_names: list[str] | None = ...,
     skip_folding_node_fn: Callable[[torch.fx.Node], bool] | None = ...,
-) -> torch.fx.GraphModule: ...
+) -> torch.fx.GraphModule:
+    """
+    Construct a GraphModule which corresponds to the part which could be
+    constant folded in provided gm.
+    """

@@ -6,5 +6,6 @@ from torch.fx.passes.infra.pass_base import PassBase, PassResult
 __all__ = ["CollectTracepointsPass"]
 
 class CollectTracepointsPass(PassBase):
+    """Performs constant folding and constant propagation."""
     def __init__(self, specs: dict[str, ModuleCallSignature], sig: ExportGraphSignature) -> None: ...
     def call(self, gm: torch.fx.GraphModule) -> PassResult | None: ...

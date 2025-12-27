@@ -7,6 +7,8 @@ from torch.utils._sympy.value_ranges import ValueRanges
 __all__ = ["InputDim"]
 
 class InputDim(NamedTuple):
+    """InputDim(input_name, dim)"""
+
     input_name: str
     dim: int
 

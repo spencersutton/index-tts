@@ -1,3 +1,26 @@
+"""
+This module contains variable classes for handling user-defined objects in Dynamo's tracing system.
+
+The key classes are:
+- UserDefinedVariable: Base class for representing custom Python objects
+- UserDefinedClassVariable: Handles Python class objects/types
+- UserDefinedObjectVariable: Fallback class for instance objects, with support for method calls,
+  attribute access, and other Python object behaviors.
+- Specialized subclasses for common patterns:
+  - UserDefinedDictVariable: For dict subclasses
+  - UserDefinedSetVariable: For set subclasses
+  - UserDefinedTupleVariable: For tuple subclasses
+  - UserDefinedExceptionObjectVariable: For exception subclasses
+  - FrozenDataClassVariable: Special handling of frozen dataclasses
+  - MutableMappingVariable: For collections.abc.MutableMapping subclasses
+
+Dynamo specializes to VariableTracker subclasses like FrozenDataClassVariable if available; if no
+subclass qualifies, it falls back to UserDefinedObjectVariable.
+
+These classes help Dynamo track and handle arbitrary Python objects during tracing,
+maintaining proper semantics while enabling optimizations where possible.
+"""
+
 import functools
 
 from torch._dynamo.codegen import PyCodegen
@@ -33,7 +56,8 @@ class UserDefinedClassVariable(UserDefinedVariable):
     def call_function(
         self, tx: InstructionTranslator, args: list[VariableTracker], kwargs: dict[str, VariableTracker]
     ) -> VariableTracker: ...
-    def is_standard_new(self): ...
+    def is_standard_new(self):
+        """Check for __new__ being overridden"""
     def call_obj_hasattr(self, tx: InstructionTranslator, name: str) -> VariableTracker: ...
     def const_getattr(self, tx: InstructionTranslator, name): ...
 
@@ -47,6 +71,8 @@ class NO_SUCH_SUBOBJ: ...
 def call_random_fn(tx, fn, args, kwargs): ...
 
 class UserDefinedObjectVariable(UserDefinedVariable):
+    """Mostly objects of defined type.  Catch-all for something where we only know the type."""
+
     _nonvar_fields = ...
     def __init__(self, value, *, value_type=..., cls_source=..., base_cls_vt=..., init_args=..., **kwargs) -> None: ...
     def is_underlying_vt_modified(self, side_effects): ...
@@ -78,6 +104,10 @@ class UserDefinedObjectVariable(UserDefinedVariable):
 
 class FrozenDataClassVariable(UserDefinedObjectVariable):
     class HashWrapper:
+        """
+        This class is hashed if a dataclass is used as a key in a dict.
+        It's necessary to avoid side effects from calling the __init__ of the dataclass class when hashing
+        """
         def __init__(self, c, fields) -> None: ...
         def __eq__(self, other) -> bool: ...
         def __hash__(self) -> int: ...
@@ -129,6 +159,14 @@ class RemovableHandleVariable(VariableTracker):
     def python_type(self): ...
 
 class UserDefinedDictVariable(UserDefinedObjectVariable):
+    """
+    Represents user defined objects that are subclasses of dict/OrderedDict.
+
+    Internally, it uses a ConstDictVariable to represent the dict part of the
+    variable tracker. For everything else, it falls back to
+    UserDefinedObjectVariable.
+    """
+
     _nonvar_fields = ...
     def __init__(self, value, dict_vt=..., **kwargs) -> None: ...
     def call_method(
@@ -144,6 +182,14 @@ class UserDefinedDictVariable(UserDefinedObjectVariable):
     def install_dict_contains_guard(self): ...
 
 class UserDefinedSetVariable(UserDefinedObjectVariable):
+    """
+    Represents user defined objects that are subclasses of set.
+
+    Internally, it uses a SetVariable to represent the set part of the
+    variable tracker. For everything else, it falls back to
+    UserDefinedObjectVariable.
+    """
+
     _nonvar_fields = ...
     def __init__(self, value, set_vt=..., **kwargs) -> None: ...
     def call_method(
@@ -160,6 +206,14 @@ class UserDefinedSetVariable(UserDefinedObjectVariable):
     def install_dict_contains_guard(self): ...
 
 class UserDefinedListVariable(UserDefinedObjectVariable):
+    """
+    Represents user defined objects that are subclasses of lists.
+
+    Internally, it uses a ListVariable to represent the list part of the
+    variable tracker. For everything else, it falls back to
+    UserDefinedObjectVariable.
+    """
+
     _nonvar_fields = ...
     def __init__(self, value, list_vt=..., **kwargs) -> None: ...
     def call_method(
@@ -169,6 +223,14 @@ class UserDefinedListVariable(UserDefinedObjectVariable):
     def is_underlying_vt_modified(self, side_effects): ...
 
 class UserDefinedTupleVariable(UserDefinedObjectVariable):
+    """
+    Represents user defined objects that are subclasses of tuple.
+
+    Internally, it uses a TupleVariable to represent the tuple part of the
+    variable tracker. For everything else, it falls back to
+    UserDefinedObjectVariable.
+    """
+
     _nonvar_fields = ...
     def __init__(self, value, tuple_vt=..., init_args=..., **kwargs) -> None: ...
     def call_method(

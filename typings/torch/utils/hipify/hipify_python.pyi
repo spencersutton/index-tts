@@ -1,3 +1,29 @@
+"""
+The Python Hipify script.
+##
+# Copyright (c) 2015-2016 Advanced Micro Devices, Inc. All rights reserved.
+#               2017-2018 Advanced Micro Devices, Inc. and
+#                         Facebook Inc. All rights reserved.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+"""
+
 from collections.abc import Iterable, Iterator
 from enum import Enum
 
@@ -64,13 +90,16 @@ class bcolors:
     UNDERLINE = ...
 
 class GeneratedFileCleaner:
+    """Context Manager to clean up generated files"""
     def __init__(self, keep_intermediates=...) -> None: ...
     def __enter__(self) -> Self: ...
     def open(self, fn, *args, **kwargs): ...
     def makedirs(self, dn, exist_ok=...) -> None: ...
     def __exit__(self, type, value, traceback) -> None: ...
 
-def match_extensions(filename: str, extensions: Iterable) -> bool: ...
+def match_extensions(filename: str, extensions: Iterable) -> bool:
+    """Helper method to see if filename ends with certain extension"""
+
 def matched_files_iter(
     root_path: str,
     includes: Iterable = ...,
@@ -91,27 +120,71 @@ def preprocess_file_and_save_result(
     show_progress: bool,
 ) -> None: ...
 def compute_stats(stats) -> None: ...
-def add_dim3(kernel_string, cuda_kernel): ...
+def add_dim3(kernel_string, cuda_kernel):
+    """adds dim3() to the second and third arguments in the kernel launch"""
 
 RE_KERNEL_LAUNCH = ...
 
-def processKernelLaunches(string, stats) -> str: ...
-def find_closure_group(input_string, start, group) -> tuple[Any | Literal[-1], Any] | tuple[None, None]: ...
-def find_bracket_group(input_string, start) -> tuple[Any | Literal[-1], Any] | tuple[None, None]: ...
-def find_parentheses_group(input_string, start) -> tuple[Any | Literal[-1], Any] | tuple[None, None]: ...
+def processKernelLaunches(string, stats) -> str:
+    """Replace the CUDA style Kernel launches with the HIP style kernel launches."""
+
+def find_closure_group(input_string, start, group) -> tuple[Any | Literal[-1], Any] | tuple[None, None]:
+    """
+    Generalization for finding a balancing closure group
+
+         if group = ["(", ")"], then finds the first balanced parentheses.
+         if group = ["{", "}"], then finds the first balanced bracket.
+
+    Given an input string, a starting position in the input string, and the group type,
+    find_closure_group returns the positions of group[0] and group[1] as a tuple.
+
+    Example:
+        >>> find_closure_group("(hi)", 0, ["(", ")"])
+        (0, 3)
+    """
+
+def find_bracket_group(input_string, start) -> tuple[Any | Literal[-1], Any] | tuple[None, None]:
+    """Finds the first balanced parentheses."""
+
+def find_parentheses_group(input_string, start) -> tuple[Any | Literal[-1], Any] | tuple[None, None]:
+    """Finds the first balanced bracket."""
 
 RE_ASSERT = ...
 
-def replace_math_functions(input_string): ...
+def replace_math_functions(input_string):
+    """
+    FIXME: Temporarily replace std:: invocations of math functions
+    with non-std:: versions to prevent linker errors NOTE: This
+    can lead to correctness issues when running tests, since the
+    correct version of the math function (exp/expf) might not get
+    called.  Plan is to remove this function once HIP supports
+    std:: math function calls inside device code
+    """
 
 RE_SYNCTHREADS = ...
 
-def hip_header_magic(input_string): ...
+def hip_header_magic(input_string):
+    """
+    If the file makes kernel builtin calls and does not include the cuda_runtime.h header,
+    then automatically add an #include to match the "magic" includes provided by NVCC.
+    TODO:
+        Update logic to ignore cases where the cuda_runtime.h is included by another file.
+    """
 
 RE_EXTERN_SHARED = ...
 
-def replace_extern_shared(input_string) -> str: ...
-def get_hip_file_path(rel_filepath, is_pytorch_extension=...) -> str: ...
+def replace_extern_shared(input_string) -> str:
+    """
+    Match extern __shared__ type foo[]; syntax and use HIP_DYNAMIC_SHARED() MACRO instead.
+       https://github.com/ROCm/hip/blob/master/docs/markdown/hip_kernel_language.md#__shared__
+    Example:
+        "extern __shared__ char smemChar[];" => "HIP_DYNAMIC_SHARED( char, smemChar)"
+        "extern __shared__ unsigned char smem[];" => "HIP_DYNAMIC_SHARED( unsigned char, my_smem)"
+    """
+
+def get_hip_file_path(rel_filepath, is_pytorch_extension=...) -> str:
+    """Returns the new name of the hipified file"""
+
 def is_out_of_place(rel_filepath) -> bool: ...
 def is_pytorch_file(rel_filepath) -> bool: ...
 def is_cusparse_file(rel_filepath) -> bool: ...
@@ -119,16 +192,34 @@ def is_special_file(rel_filepath) -> bool: ...
 def is_caffe2_gpu_file(rel_filepath) -> bool: ...
 
 class TrieNode:
+    """
+    A Trie node whose children are represented as a directory of char: TrieNode.
+    A special char '' represents end of word
+    """
     def __init__(self) -> None: ...
 
 class Trie:
-    def __init__(self) -> None: ...
-    def add(self, word) -> None: ...
-    def dump(self) -> TrieNode: ...
-    def quote(self, char): ...
-    def search(self, word) -> bool: ...
-    def pattern(self) -> str | None: ...
-    def export_to_regex(self) -> str | None: ...
+    """
+    Creates a Trie out of a list of words. The trie can be exported to a Regex pattern.
+    The corresponding Regex should match much faster than a simple Regex union.
+    """
+    def __init__(self) -> None:
+        """Initialize the trie with an empty root node."""
+    def add(self, word) -> None:
+        """Add a word to the Trie."""
+    def dump(self) -> TrieNode:
+        """Return the root node of Trie."""
+    def quote(self, char):
+        """Escape a char for regex."""
+    def search(self, word) -> bool:
+        """
+        Search whether word is present in the Trie.
+        Returns True if yes, else return False
+        """
+    def pattern(self) -> str | None:
+        """Export the Trie to a regex pattern."""
+    def export_to_regex(self) -> str | None:
+        """Export the Trie to a regex pattern."""
 
 CAFFE2_TRIE = ...
 CAFFE2_MAP = ...
@@ -152,15 +243,34 @@ def preprocessor(
     is_pytorch_extension: bool,
     clean_ctx: GeneratedFileCleaner,
     show_progress: bool,
-) -> HipifyResult: ...
+) -> HipifyResult:
+    """Executes the CUDA -> HIP conversion on the specified file."""
+
 def file_specific_replacement(filepath, search_string, replace_string, strict=...) -> None: ...
 def file_add_header(filepath, header) -> None: ...
-def fix_static_global_kernels(in_txt): ...
+def fix_static_global_kernels(in_txt):
+    """Static global kernels in HIP results in a compilation error."""
 
 RE_INCLUDE = ...
 
-def extract_arguments(start, string) -> list[Any]: ...
-def str2bool(v) -> bool: ...
+def extract_arguments(start, string) -> list[Any]:
+    """
+    Return the list of arguments in the upcoming function parameter closure.
+    Example:
+    string (input): '(blocks, threads, 0, THCState_getCurrentStream(state))'
+    arguments (output):
+        '[{'start': 1, 'end': 7},
+        {'start': 8, 'end': 16},
+        {'start': 17, 'end': 19},
+        {'start': 20, 'end': 53}]'
+    """
+
+def str2bool(v) -> bool:
+    """
+    ArgumentParser doesn't support type=bool. Thus, this helper method will convert
+    from possible string types to True / False.
+    """
+
 def hipify(
     project_directory: str,
     show_detailed: bool = ...,

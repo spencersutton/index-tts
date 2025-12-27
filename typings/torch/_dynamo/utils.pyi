@@ -1,3 +1,17 @@
+"""
+Utility functions and classes used throughout the TorchDynamo system.
+
+This module contains a collection of helper utilities used by various parts of Dynamo for:
+- Performance metrics collection and reporting
+- Compilation timing and debugging
+- Graph manipulation and tensor operations
+- Runtime guards and checks
+- Common data structure operations
+- Testing and development tools
+
+This is an internal module that provides shared functionality used across the Dynamo codebase.
+"""
+
 import atexit
 import collections
 import contextlib
@@ -90,7 +104,15 @@ def reset_frame_count() -> None: ...
 
 _recompile_user_contexts: list[Callable[[], str]] | None = ...
 
-def register_hook_for_recompile_user_context(hook: Callable[[], str]) -> None: ...
+def register_hook_for_recompile_user_context(hook: Callable[[], str]) -> None:
+    """
+    Register a hook to be called when a recompile is triggered. The hook
+    should return a string describing user contexts that are not available
+    to the compiler, such as the current training epoch. This is useful for
+    debugging and data analysis for recompile. For data retention purposes,
+    the user context string is capped at 256 characters.
+    """
+
 def get_hook_for_recompile_user_context() -> list[Callable[[], str]] | None: ...
 
 op_count = ...
@@ -106,41 +128,110 @@ def get_metrics_context() -> MetricsContext: ...
 def get_runtime_metrics_context() -> RuntimeMetricsContext: ...
 
 class CompileEventLogLevel(enum.Enum):
+    """
+    Enum that loosely corresponds with a "log level" of a given event.
+
+    CHROMIUM_EVENT: Logs only to tlparse.
+    COMPILE_EVENT: Logs to tlparse + PT2 Compile Events
+    COMPILATION_METRIC: Logs to tlparse, PT2 Compile Events, and dynamo_compile
+    """
+
     CHROMIUM = ...
     PT2_COMPILE = ...
     COMPILATION_METRIC = ...
 
 class CompileEventLogger:
+    """
+    Helper class for representing adding metadata(i.e. columns) to various compile events.
+    Use CompileEventLogger to add event data to:
+    - Chromium events
+    - PT2 Compile Events
+    - CompilationMetrics
+
+    This should be used in conjunction with dynamo_timed() and metrics contexts, which create
+    timed spans and events. CompileEventLogger uses three log levels (described in CompileEventLogLevel),
+    where each log level logs to all sources below it in the hierarchy.
+
+    Example usages:
+    - I want to log to an existing chromium event within dynamo timed:
+    with dynamo_timed("my_event"):
+        CompileEventLogger.chromium("my_event", foo=bar)
+
+    - I want to log my event to both chromium + pt2_compile_events:
+    with dynamo_timed("my_event", log_pt2_compile_event=True):
+        CompileEventLogger.pt2_compile("my_event", foo=bar)
+
+    - I want to add information to dynamo events and dynamo_compile
+        CompileEventLogger.compilation_metric(foo=bar)
+    """
     @staticmethod
     def log_instant_event(
         event_name: str, metadata: dict[str, Any], time_ns: int | None = ..., log_level: CompileEventLogLevel = ...
     ) -> None: ...
     @staticmethod
-    def add_data(
-        event_name: str, log_level: CompileEventLogLevel, overwrite: bool = ..., **metadata: object
-    ) -> None: ...
+    def add_data(event_name: str, log_level: CompileEventLogLevel, overwrite: bool = ..., **metadata: object) -> None:
+        """
+        Centralized API for adding data to various events
+        Log an event to a toplevel "dynamo" event or metrics context
+        depending on log level.
+        """
     @staticmethod
-    def add_toplevel(log_level: CompileEventLogLevel, overwrite: bool = ..., **metadata: object) -> None: ...
+    def add_toplevel(log_level: CompileEventLogLevel, overwrite: bool = ..., **metadata: object) -> None:
+        """Syntactic sugar for logging to the toplevel event"""
     @staticmethod
-    def increment(event_name: str, log_level: CompileEventLogLevel, key: str, value: int) -> None: ...
+    def increment(event_name: str, log_level: CompileEventLogLevel, key: str, value: int) -> None:
+        """Increments an existing field, or adds it"""
     @staticmethod
-    def increment_toplevel(key: str, value: int = ..., log_level: CompileEventLogLevel = ...) -> None: ...
+    def increment_toplevel(key: str, value: int = ..., log_level: CompileEventLogLevel = ...) -> None:
+        """Increments a value on the toplevel metric. By default, logs to metric."""
     @staticmethod
-    def add_to_set(event_name: str, log_level: CompileEventLogLevel, key: str, value: Any) -> None: ...
+    def add_to_set(event_name: str, log_level: CompileEventLogLevel, key: str, value: Any) -> None:
+        """Add metadata <value> to a set of values with key <key>. Creates a set if it doesn't exist."""
     @staticmethod
-    def add_to_set_toplevel(key: str, value: Any, log_level: CompileEventLogLevel = ...) -> None: ...
+    def add_to_set_toplevel(key: str, value: Any, log_level: CompileEventLogLevel = ...) -> None:
+        """
+        Same as add to set, just does it automatically to the toplevel event instead of having to explicitly name it.
+        Defaults to COMPILATION_METRIC log level.
+        """
     @staticmethod
-    def chromium(event_name: str, **metadata: object) -> None: ...
+    def chromium(event_name: str, **metadata: object) -> None:
+        """
+        Add <metadata> to <event_name> in chromium. Each key/value of metadata will appear in the chromium trace.
+        <event_name> should be the name of a timed event span passed to `dynamo_timed`.
+        """
     @staticmethod
-    def pt2_compile(event_name: str, **metadata: object) -> None: ...
+    def pt2_compile(event_name: str, **metadata: object) -> None:
+        """
+        Add <metadata> to <event_name> in chromium and PT2 Compile Events.
+        Each key/value of metadata will appear in the chromium trace. Each kwarg name becomes
+        a column in PT2 Compile Events, with the corresponding kwarg value.
+        <event_name> should be the name of a timed event span passed to `dynamo_timed`,
+        with log_to_pt2_compile_events=True.
+        """
     @staticmethod
-    def compilation_metric(overwrite: bool = ..., **metadata: object) -> None: ...
+    def compilation_metric(overwrite: bool = ..., **metadata: object) -> None:
+        """
+        Add <metadata> to the CompilationMetrics context. Also logs to PT2 Compile Events
+        and chromium.
+        Each key/value of metadata will appear in the chromium trace. Each kwarg name becomes
+        a column in PT2 Compile Events and Dynamo Compile, with the corresponding kwarg value.
+        """
     @staticmethod
-    def instant(event_name: str, metadata: dict[str, Any], time_ns: int | None = ...) -> None: ...
+    def instant(event_name: str, metadata: dict[str, Any], time_ns: int | None = ...) -> None:
+        """
+        Log an instant event to chromium logs with name <event_name> at time <time_ns>. The `args` field in
+        Perfetto will point to metadata. <time_ns> should be a value obtained from time.time_ns().
+        """
     @staticmethod
-    def try_add_pt2_compile(event_name: str, **metadata: object) -> None: ...
+    def try_add_pt2_compile(event_name: str, **metadata: object) -> None:
+        """
+        Adds to an existing pt2_compile event, but silently returns if the event doesn't exist
+        or ChromiumEventLogger is not initialized.
+        This function is syntactic sugar for chromium_event_logger().try_add_event_data.
+        """
     @staticmethod
-    def try_(method_fn: Callable[_P, Any], *args: _P.args, **kwargs: _P.kwargs) -> None: ...
+    def try_(method_fn: Callable[_P, Any], *args: _P.args, **kwargs: _P.kwargs) -> None:
+        """Special function that quietly runs a given method, returning if CHROMIUM_EVENT_LOG is None or metrics context is not set"""
 
 _dynamo_timed_tls = ...
 
@@ -155,12 +246,93 @@ def dynamo_timed(
     is_backward: bool | None = ...,
     log_waitcounter: bool = ...,
     waitcounter_name_override: str | None = ...,
-) -> Generator[Any]: ...
+) -> Generator[Any]:
+    """
+    dynamo_timed is a context manager
+    By wrapping a function in dynamo_timed, we can get a few things:
+
+    1) Optionally log timings to pt2_compile_events.
+    2) Optionally log timings to CompilationMetrics (dynamo_compile).
+    3) Optionally log chromium events.
+    4) Optionally increment a WaitCounter.
+    5) Store a record in compilation_time_metrics
+       For example:
+
+        def _foo(...):
+            with dynamo_timed("_foo"):
+                ...
+
+        Would show up as an entry in our timing dict:
+        OrderedDict([('_foo', [0.083690, 0.23949, 3.1425e-05])])
+        This is extremely useful for granular debugging.
+
+    Although it is tempting to use dynamo_timed as a decorator, please do not.
+    In its decorator form it makes cProfile traces less useful as dynamo_timed
+    suddenly becomes a bottleneck for lots of function calls (as only one parent
+    pointer is recorded).
+
+    Params:
+    - key: key into compile_time_metrics. If phase_name is not provided, this is
+      also the event name used for pt2_compile_events logs and chromium events.
+    - phase_name: Optional override for the event name.
+    - log_pt2_compile_event: Whether to log a pt2 compile event internally.
+    - metadata: Extra metadata to put in pt2_compile_events.
+    - dynamo_compile_column_us: If provided, updates the specified CompilationMetrics
+      field to be logged to dyname_compile column. We expect all columns to be _us;
+      therefore, the field name must end with "_us".
+    - compile_id: In the typical case, this parameter should not be needed. Use to
+      supply the compile_id for those cases where we want to log a compile_id where
+      it's not naturally available, e.g., for runtime autotuning.
+    - is_backward: Specify forward/backward directly when not available in a
+      CompileContext, e.g., during runtime autotuning.
+      that support it.
+    - log_waitcounter: If set, we'll log a waitcounter of the form "pytorch.dynamo_timed.{key}"
+    """
+
 @overload
-def compile_times(repr: Literal["str"], aggregate: bool = ...) -> str: ...
+def compile_times(repr: Literal["str"], aggregate: bool = ...) -> str:
+    """
+    Get metrics about torchdynamo frontend/backend compilation times.
+
+    Accumulates information from functions tagged with `dynamo_timed`.
+
+    repr='str' returns a printable string for user interaction, and 'csv'
+    returns headers, rows which can be logged for output
+
+    aggregate causes values from multiple compilations (e.g. split graphs)
+    to be accumulated into one value.  If false, expect more than one value
+    per metric.
+    """
+
 @overload
-def compile_times(repr: Literal["csv"], aggregate: bool = ...) -> tuple[list[str], list[object]]: ...
-def compile_times(repr: str = ..., aggregate: bool = ...) -> str | None | tuple[list[str], list[str]]: ...
+def compile_times(repr: Literal["csv"], aggregate: bool = ...) -> tuple[list[str], list[object]]:
+    """
+    Get metrics about torchdynamo frontend/backend compilation times.
+
+    Accumulates information from functions tagged with `dynamo_timed`.
+
+    repr='str' returns a printable string for user interaction, and 'csv'
+    returns headers, rows which can be logged for output
+
+    aggregate causes values from multiple compilations (e.g. split graphs)
+    to be accumulated into one value.  If false, expect more than one value
+    per metric.
+    """
+
+def compile_times(repr: str = ..., aggregate: bool = ...) -> str | None | tuple[list[str], list[str]]:
+    """
+    Get metrics about torchdynamo frontend/backend compilation times.
+
+    Accumulates information from functions tagged with `dynamo_timed`.
+
+    repr='str' returns a printable string for user interaction, and 'csv'
+    returns headers, rows which can be logged for output
+
+    aggregate causes values from multiple compilations (e.g. split graphs)
+    to be accumulated into one value.  If false, expect more than one value
+    per metric.
+    """
+
 @atexit.register
 def dump_compile_times() -> None: ...
 
@@ -185,6 +357,7 @@ def hashable(x: Any) -> bool: ...
 def nothing(*args: Any, **kwargs: Any) -> None: ...
 
 class ExactWeakKeyDictionary:
+    """Similar to weakref.WeakKeyDictionary, but use `is`/`id` rather than `==` to compare equality"""
     def __init__(self) -> None: ...
     def __getitem__(self, key: Any) -> Any: ...
     def get(self, key: Any, default: Any = ...) -> Any: ...
@@ -193,12 +366,19 @@ class ExactWeakKeyDictionary:
     def clear(self) -> None: ...
 
 @overload
-def istype[T](obj: object, allowed_types: type[T]) -> TypeIs[T]: ...
+def istype[T](obj: object, allowed_types: type[T]) -> TypeIs[T]:
+    """isinstance() without subclasses"""
+
 @overload
-def istype(obj: object, allowed_types: tuple[type[list[T]], type[tuple[T, ...]]]) -> TypeIs[T]: ...
+def istype(obj: object, allowed_types: tuple[type[list[T]], type[tuple[T, ...]]]) -> TypeIs[T]:
+    """isinstance() without subclasses"""
+
 @overload
-def istype(obj: object, allowed_types: Iterable[type]) -> bool: ...
-def istype(obj: object, allowed_types: Any) -> bool: ...
+def istype(obj: object, allowed_types: Iterable[type]) -> bool:
+    """isinstance() without subclasses"""
+
+def istype(obj: object, allowed_types: Any) -> bool:
+    """isinstance() without subclasses"""
 
 _builtin_final_typing_classes = ...
 
@@ -233,11 +413,15 @@ def is_wrapper_or_member_descriptor(
 def unwrap_if_wrapper(fn: Any) -> Any: ...
 def unwrap_with_attr_name_if_wrapper(fn: Any) -> tuple[Any, str | None]: ...
 def is_numpy_ndarray(value: Any) -> TypeGuard[np.ndarray]: ...
-def istensor(obj: Any) -> bool: ...
+def istensor(obj: Any) -> bool:
+    """Check of obj is a tensor"""
+
 def is_lazy_module(mod: Any) -> bool: ...
 @functools.lru_cache(4096)
 def print_once(*args: Any) -> None: ...
-def make_cell(val: Any = ...) -> types.CellType: ...
+def make_cell(val: Any = ...) -> types.CellType:
+    """Some black magic to create a cell object that usually only exists in a closure"""
+
 def proxy_args_kwargs(args: Any, kwargs: Any) -> tuple[tuple[Any, ...], dict[str, Any]]: ...
 def to_int_ms(v: float | None) -> int | None: ...
 def to_int_us(v: float | None) -> int | None: ...
@@ -246,6 +430,8 @@ LOG_FORMAT_VERSION = ...
 
 @dataclasses.dataclass
 class CompilationMetrics:
+    """CompilationMetrics(compile_id: 'Optional[str]' = None, frame_key: 'Optional[str]' = None, co_name: 'Optional[str]' = None, co_filename: 'Optional[str]' = None, co_firstlineno: 'Optional[int]' = None, cache_size: 'Optional[int]' = None, accumulated_cache_size: 'Optional[int]' = None, guard_count: 'Optional[int]' = None, shape_env_guard_count: 'Optional[int]' = None, graph_op_count: 'Optional[int]' = None, graph_node_count: 'Optional[int]' = None, graph_input_count: 'Optional[int]' = None, start_time: 'Optional[float]' = None, entire_frame_compile_time_s: 'Optional[float]' = None, backend_compile_time_s: 'Optional[float]' = None, inductor_compile_time_s: 'Optional[float]' = None, code_gen_time_s: 'Optional[float]' = None, fail_type: 'Optional[str]' = None, fail_reason: 'Optional[str]' = None, fail_user_frame_filename: 'Optional[str]' = None, fail_user_frame_lineno: 'Optional[int]' = None, non_compliant_ops: 'Optional[set[str]]' = None, compliant_custom_ops: 'Optional[set[str]]' = None, restart_reasons: 'Optional[set[str]]' = None, dynamo_time_before_restart_s: 'Optional[float]' = None, stack_trace: 'Optional[list[str]]' = None, exception_stack_trace: 'Optional[list[str]]' = None, graph_node_shapes: 'Optional[str]' = None, has_guarded_code: 'Optional[bool]' = None, remote_cache_time_saved_s: 'Optional[float]' = None, structured_logging_overhead_s: 'Optional[float]' = None, config_suppress_errors: 'Optional[bool]' = None, config_inline_inbuilt_nn_modules: 'Optional[bool]' = None, specialize_float: 'Optional[bool]' = None, dynamo_config: 'Optional[str]' = None, is_forward: 'Optional[bool]' = None, num_triton_bundles: 'Optional[int]' = None, remote_fx_graph_cache_get_time_ms: 'Optional[int]' = None, remote_fx_graph_cache_put_time_ms: 'Optional[int]' = None, start_time_us: 'Optional[int]' = None, duration_us: 'Optional[int]' = None, dynamo_cumulative_compile_time_us: 'Optional[int]' = None, aot_autograd_cumulative_compile_time_us: 'Optional[int]' = None, inductor_cumulative_compile_time_us: 'Optional[int]' = None, inductor_code_gen_cumulative_compile_time_us: 'Optional[int]' = None, triton_compile_time_us: 'Optional[int]' = None, runtime_cudagraphify_time_us: 'Optional[int]' = None, runtime_triton_autotune_time_us: 'Optional[int]' = None, dynamo_compile_time_before_restart_us: 'Optional[int]' = None, distributed_ephemeral_timeout_us: 'Optional[int]' = None, structured_logging_overhead_us: 'Optional[int]' = None, remote_fx_graph_cache_get_time_us: 'Optional[int]' = None, remote_fx_graph_cache_put_time_us: 'Optional[int]' = None, backward_cumulative_compile_time_us: 'Optional[int]' = None, end_time_us: 'Optional[int]' = None, pre_grad_pass_time_us: 'Optional[int]' = None, post_grad_pass_time_us: 'Optional[int]' = None, joint_graph_pass_time_us: 'Optional[int]' = None, log_format_version: 'int' = 3, inductor_config: 'Optional[str]' = None, remote_cache_version: 'Optional[int]' = None, inductor_fx_remote_cache_hit_count: 'Optional[int]' = None, inductor_fx_remote_cache_miss_count: 'Optional[int]' = None, inductor_fx_remote_cache_backend_type: 'Optional[str]' = None, inductor_fx_remote_cache_hit_keys: 'Optional[str]' = None, inductor_fx_remote_cache_miss_keys: 'Optional[str]' = None, cuda_version: 'Optional[str]' = None, triton_version: 'Optional[str]' = None, feature_usage: 'Optional[dict[str, bool]]' = None, compile_time_autotune_time_us: 'Optional[int]' = None, is_runtime: 'Optional[bool]' = False, gc_time_us: 'Optional[int]' = None, tensorify_float_attempt: 'Optional[bool]' = None, tensorify_float_success: 'Optional[bool]' = None, tensorify_float_failure: 'Optional[set[str]]' = None, guard_latency_us: 'Optional[float]' = None, recompile_reason: 'Optional[str]' = None, num_graph_breaks: 'Optional[int]' = None, triton_kernel_compile_times_us: 'Optional[str]' = None, ir_count: 'Optional[int]' = None, cudagraph_skip_reason: 'Optional[str]' = None, python_version: 'Optional[str]' = None, pgo_put_remote_code_state_time_us: 'Optional[int]' = None, pgo_get_remote_code_state_time_us: 'Optional[int]' = None, param_numel: 'Optional[int]' = None, param_bytes: 'Optional[int]' = None, param_count: 'Optional[int]' = None, recompile_user_contexts: 'Optional[set[str]]' = None, inline_inbuilt_nn_modules_candidate: 'Optional[bool]' = False)"""
+
     compile_id: str | None = ...
     frame_key: str | None = ...
     co_name: str | None = ...
@@ -336,12 +522,28 @@ class CompilationMetrics:
     recompile_user_contexts: set[str] | None = ...
     inline_inbuilt_nn_modules_candidate: bool | None = ...
     @classmethod
-    def create(cls, metrics: dict[str, Any]) -> CompilationMetrics: ...
+    def create(cls, metrics: dict[str, Any]) -> CompilationMetrics:
+        """
+        Factory method to create a CompilationMetrics from a dict of fields.
+        Includes the logic to add legacy fields and any pre-processing, e.g.,
+        we transform some fields to comma-separated strings for scuba logging.
+        """
 
 DEFAULT_COMPILATION_METRICS_LIMIT = ...
 _compilation_metrics: collections.deque[CompilationMetrics] = ...
 
-def add_compilation_metrics_to_chromium(c: CompilationMetrics) -> None: ...
+def add_compilation_metrics_to_chromium(c: CompilationMetrics) -> None:
+    """
+    These are the common fields in CompilationMetrics that existed before
+    metrics_context, and aren't set by MetricsContext.set(). We add the subset
+    of them that make sense in `dynamo`/toplevel events in PT2 Compile Events
+    directly.
+
+    If you're tempted to add to this list, consider using CompileEventLogger.compilation_metric()
+    instead, which will automatically also add it to tlparse and PT2 Compile Events.
+    TODO: Get rid of this function and replace it with CompileEventLogger directly instead.
+    """
+
 def record_compilation_metrics(
     start_time_ns: int,
     end_time_ns: int,
@@ -358,15 +560,40 @@ def clear_compilation_metrics() -> None: ...
 def get_compilation_metrics() -> list[CompilationMetrics]: ...
 
 class ChromiumEventLogger:
-    def get_stack(self) -> list[str]: ...
-    def get_outermost_event(self) -> str | None: ...
-    def get_pt2_compile_substack(self) -> list[str]: ...
+    """
+    Logs chromium events to structured logs. tlparse will concatenate these into a perfetto UI link.
+
+    See https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview#heading=h.yr4qxyxotyw for
+    a specification of the Chromium Event JSON format.
+    """
+    def get_stack(self) -> list[str]:
+        """
+        The main event stack, with every chromium event.
+        Logged to tlparse.
+        """
+    def get_outermost_event(self) -> str | None:
+        """
+        Get the outermost event name (i.e. the longest running event)
+        or None if the stack is empty.
+        """
+    def get_pt2_compile_substack(self) -> list[str]:
+        """
+        A smaller subset of the main stack that gets used to log
+        PT2 Compile Events internally.
+        """
     def get_event_data(self) -> dict[str, Any]: ...
     def __init__(self) -> None: ...
-    def try_add_event_data(self, event_name: str, **kwargs: Any) -> None: ...
-    def add_event_data(self, event_name: str, **kwargs: Any) -> None: ...
-    def increment(self, event_name: str, key: str, value: int) -> None: ...
-    def add_to_set(self, event_name: str, key: str, value: Any) -> None: ...
+    def try_add_event_data(self, event_name: str, **kwargs: Any) -> None:
+        """Same as add_event_data, but will silently not log if the event isn't in the stack."""
+    def add_event_data(self, event_name: str, **kwargs: Any) -> None:
+        """
+        Adds additional metadata info to an in-progress event
+        This metadata is recorded in the END event
+        """
+    def increment(self, event_name: str, key: str, value: int) -> None:
+        """Increment an integer event data field by the given amount"""
+    def add_to_set(self, event_name: str, key: str, value: Any) -> None:
+        """Add a value to a set within a event_name's metadata if it exists"""
     def log_event_start(
         self,
         event_name: str,
@@ -374,7 +601,15 @@ class ChromiumEventLogger:
         metadata: dict[str, Any],
         log_pt2_compile_event: bool = ...,
         compile_id: CompileId | None = ...,
-    ) -> None: ...
+    ) -> None:
+        """
+        Logs the start of a single event.
+        :param str event_name Name of event to appear in trace
+        :param time_ns Timestamp in nanoseconds
+        :param metadata: Any extra metadata associated with this event
+        :param log_pt2_compile_event: If True, log to pt2_compile_events
+        :param compile_id: Explicit compile_id (rather than using the current context)
+        """
     def reset(self) -> None: ...
     def log_event_end(
         self,
@@ -384,10 +619,27 @@ class ChromiumEventLogger:
         start_time_ns: int,
         log_pt2_compile_event: bool,
         compile_id: CompileId | None = ...,
-    ) -> None: ...
+    ) -> None:
+        """
+        Logs the end of a single event. This function should only be
+        called after log_event_start with the same event_name.
+        :param event_name: Name of event to appear in trace
+        :param time_ns: Timestamp in nanoseconds
+        :param metadata: Any extra metadata associated with this event
+        :param start_time_ns: The start time timestamp in nanoseconds
+        :param log_pt_compile_event: If True, log to pt2_compile_events
+        :param compile_id: Explicit compile_id (rather than using the current context)
+        """
     def log_instant_event(
         self, event_name: str, time_ns: int, metadata: dict[str, Any] | None = ..., log_pt2_compile_event: bool = ...
-    ) -> None: ...
+    ) -> None:
+        """
+        Log an instant event with no associated duration.
+        :param str event_name: Name of event to appear in trace
+        :param int time_ns Timestamp in nanoseconds
+        :param Optional[Dict[str, Any]] metadata: Any extra metadata associated with this event
+        :param str cname optional color for the arrow in the trace
+        """
 
 CHROMIUM_EVENT_LOG: ChromiumEventLogger | None = ...
 
@@ -396,10 +648,17 @@ def chromium_event_log_active() -> bool: ...
 @contextmanager
 def chromium_event_timed(
     event_name: str, reset_event_log_on_exit: bool = ..., log_pt2_compile_event: bool = ...
-) -> Generator[Any]: ...
+) -> Generator[Any]:
+    """
+    Context manager that creates a chromium start and end event. Chromium event
+    logging is integrated with dynamo_timed, so you probably want to use that
+    instead. Use this context manager only if you want to avoid dynamo_timed.
+    """
 
 @dataclasses.dataclass
 class CleanupHook:
+    """Remove a global variable when hook is called"""
+
     scope: dict[str, Any]
     name: str
     def __call__(self, *args: Any) -> None: ...
@@ -410,8 +669,12 @@ class CleanupManager(ExactWeakKeyDictionary):
     count = ...
     instance: ClassVar[CleanupManager]
 
-def clone_tensor(x: torch.Tensor) -> torch.Tensor: ...
-def clone_input(x: torch.Tensor, *, dtype: torch.dtype | None = ...) -> torch.Tensor: ...
+def clone_tensor(x: torch.Tensor) -> torch.Tensor:
+    """Clone the tensor and its gradient"""
+
+def clone_input(x: torch.Tensor, *, dtype: torch.dtype | None = ...) -> torch.Tensor:
+    """copy while preserving strides"""
+
 @overload
 def clone_inputs(example_inputs: dict[str, T | tuple[T, ...]]) -> dict[str, list[T]]: ...
 @overload
@@ -430,10 +693,16 @@ def is_jit_model(
 ]: ...
 def torchscript(model: Any, example_inputs: Any, verbose: bool = ...) -> Any: ...
 def getfile(obj: Any) -> str | None: ...
-def is_namedtuple(obj: Any) -> bool: ...
-def is_namedtuple_cls(cls: Any) -> bool: ...
+def is_namedtuple(obj: Any) -> bool:
+    """Test if an object is a namedtuple or a torch.return_types.* quasi-namedtuple"""
+
+def is_namedtuple_cls(cls: Any) -> bool:
+    """Test if an object is a namedtuple or a (torch.return_types|torch.autograd.forward_ad).* quasi-namedtuple"""
+
 @functools.lru_cache(1)
-def namedtuple_fields(cls: type) -> tuple[str, ...]: ...
+def namedtuple_fields(cls: type) -> tuple[str, ...]:
+    """Get the fields of a namedtuple or a torch.return_types.* quasi-namedtuple"""
+
 def checkpoint_params(gm: torch.fx.GraphModule) -> Callable[[], None]: ...
 def timed(model: Any, example_inputs: Iterable[Any], times: int = ...) -> tuple[Any, float]: ...
 def check_is_cuda(gm: torch.fx.GraphModule, example_inputs: Iterable[Any]) -> bool: ...
@@ -498,7 +767,9 @@ def raise_args_mismatch(tx: InstructionTranslatorBase, name: str) -> None: ...
 def iter_contains(
     items: Iterable[Any], search: Any, tx: InstructionTranslator, check_tensor_identity: bool = ...
 ) -> Any: ...
-def key_is_id(k: Any) -> TypeIs[torch.Tensor | torch.nn.Module | MethodWrapperType]: ...
+def key_is_id(k: Any) -> TypeIs[torch.Tensor | torch.nn.Module | MethodWrapperType]:
+    """Returns whether it indexes dictionaries using its id"""
+
 def key_to_id(value: Any) -> list[Any]: ...
 def const_repr(x: Any, *, local: Any) -> str: ...
 def dict_keys_repr(const_keys: Any, *, local: Any) -> str: ...
@@ -507,10 +778,17 @@ GLOBAL_KEY_PREFIX = ...
 
 def get_safe_global_name(tx: InstructionTranslatorBase, root: str, obj: Any) -> str: ...
 def is_in(item: T, *containers: Container[T]) -> bool: ...
-def get_unique_name_wrt(prefix: str, *containers: Any, requires_suffix: bool = ...) -> str: ...
+def get_unique_name_wrt(prefix: str, *containers: Any, requires_suffix: bool = ...) -> str:
+    """
+    Return a name that starts with `prefix` and is not in any of the
+    `containers` (e.g., map, set).
+    """
+
 def wrap_fake_exception(fn: Callable[[], Any]) -> Any: ...
 def deepcopy_to_fake_tensor(obj: Any, fake_mode: torch._subclasses.fake_tensor.FakeTensorMode) -> Any: ...
-def rmse(ref: torch.Tensor, res: torch.Tensor) -> torch.Tensor: ...
+def rmse(ref: torch.Tensor, res: torch.Tensor) -> torch.Tensor:
+    """Calculate root mean squared error"""
+
 def same(
     ref: Any,
     res: Any,
@@ -524,7 +802,9 @@ def same(
     log_error: Callable[..., None] = ...,
     use_larger_multiplier_for_smaller_tensor: bool = ...,
     force_max_multiplier: bool = ...,
-) -> bool: ...
+) -> bool:
+    """Check correctness to see if ref and res match"""
+
 def format_func_info(code: CodeType) -> str: ...
 @contextlib.contextmanager
 def disable_cache_limit() -> Generator[None]: ...
@@ -538,19 +818,51 @@ def get_debug_dir() -> str: ...
 def extract_fake_example_value(node: torch.fx.Node, required: bool = ...) -> Any: ...
 def ensure_graph_fake(e: Any, tx: InstructionTranslatorBase) -> Any: ...
 def get_fake_values_from_nodes(tx: InstructionTranslatorBase, nodes: Any, allow_non_graph_fake: bool) -> Any: ...
-def get_fake_value(node: torch.fx.Node, tx: InstructionTranslatorBase, allow_non_graph_fake: bool = ...) -> Any: ...
+def get_fake_value(node: torch.fx.Node, tx: InstructionTranslatorBase, allow_non_graph_fake: bool = ...) -> Any:
+    """
+    Run the computation represented by `node` using fake tensors and return the result.
+
+    allow_non_graph_fake: whether to allow the return result to be:
+        1. non-fake or 2. fake that is not created by this instance of Dynamo.
+        If `True`, you must be prepared to deal with such return values, ideally
+        by further wrapping them as this graph's fakes.
+    """
 
 _current_node = ...
 
 def get_current_node() -> torch.fx.Node | None: ...
 @contextmanager
 def set_current_node(node: torch.fx.Node) -> Generator[None]: ...
-def run_node(tracer: Any, node: torch.fx.Node, args: Any, kwargs: Any, nnmodule: Any) -> Any: ...
-def get_real_value(node: torch.fx.Node, tracer: Any) -> Any: ...
+def run_node(tracer: Any, node: torch.fx.Node, args: Any, kwargs: Any, nnmodule: Any) -> Any:
+    """
+    Runs a given node, with the given args and kwargs.
+
+    Behavior is dictated by a node's op.
+
+    run_node is useful for extracting real values out of nodes.
+    See get_real_value for more info on common usage.
+
+    Note: The tracer arg is only used for 'get_attr' ops
+    Note: The nnmodule arg is only used for 'call_module' ops
+
+    Nodes that are not call_function, call_method, call_module, or get_attr will
+    raise an AssertionError.
+    """
+
+def get_real_value(node: torch.fx.Node, tracer: Any) -> Any:
+    """
+    Run the actual computation represented by `node` and return the result.
+    This will execute any dependent nodes in the graph as well.
+    """
+
 def assert_no_fake_params_or_buffers(gm: torch.fx.GraphModule) -> None: ...
-def fqn(obj: Any) -> str: ...
+def fqn(obj: Any) -> str:
+    """Returns the fully qualified name of the object."""
+
 def ifdynstaticdefault(count1: Any, count2: Any) -> Any: ...
-def import_submodule(mod: types.ModuleType) -> None: ...
+def import_submodule(mod: types.ModuleType) -> None:
+    """Ensure all the files in a given submodule are imported"""
+
 def object_has_getattribute(value: Any) -> bool: ...
 def object_setattr_ignore_descriptor(obj: Any, name: str, value: Any) -> None: ...
 def class_has_getattribute(cls: type) -> bool: ...
@@ -564,7 +876,19 @@ class TensorStaticReason(enum.Enum):
 def tensor_static_reason_to_message(reason: TensorStaticReason) -> str: ...
 def tensor_always_has_static_shape(
     tensor: torch.Tensor | Any, is_tensor: bool, tensor_source: Source
-) -> tuple[bool, TensorStaticReason | None]: ...
+) -> tuple[bool, TensorStaticReason | None]:
+    """
+    Given a tensor, source, and is_tensor flag, determine if a shape should be static.
+
+    Args:
+    tensor - the real tensor to evaluate, parameters force a static shape.
+    is_tensor - internal dynamo check, essentially "is_tensor": target_cls is TensorVariable,
+    tensors not in a TensorVariable for whatever reason are forced static.
+
+    Returns a tuple, where the first element is the bool of whether or not this tensor should have a static shape.
+    The second element is a TensorStaticReason, useful for passing to tensor_static_reason_to_message if needed.
+    """
+
 def lazy_format_graph_tabular(fn_name: str, gm: torch.fx.GraphModule) -> Any: ...
 def format_bytecode(prefix: str, name: str, filename: str, line_no: int, code: Any) -> str: ...
 
@@ -579,27 +903,39 @@ def nn_module_get_all_hooks(
     check_forward_hooks: bool = ...,
     check_backward_hooks: bool = ...,
     check_state_dict_hooks: bool = ...,
-) -> list[Any]: ...
+) -> list[Any]:
+    """
+    Sometimes its useful to differentiate between types of hooks such as forward/backward/pre
+    hooks executed during module.__call__, and state_dict hooks which are executed separately.
+    """
+
 def nnmodule_has_hooks(
     mod: torch.nn.Module,
     check_forward_hooks: bool = ...,
     check_backward_hooks: bool = ...,
     check_state_dict_hooks: bool = ...,
-) -> bool: ...
-def to_numpy_helper(value: Any) -> Any: ...
-def numpy_to_tensor(value: Any) -> Any: ...
+) -> bool:
+    """Helper function to check if a module has any hooks attached to it."""
 
-class numpy_to_tensor_wrapper[**P, R]:
+def to_numpy_helper(value: Any) -> Any:
+    """Convert tensor and tnp.ndarray to numpy.ndarray."""
+
+def numpy_to_tensor(value: Any) -> Any:
+    """Convert tnp.ndarray to tensor, leave other types intact. If a list/tuple, loop through it to convert."""
+
+class numpy_to_tensor_wrapper[P, R]:
     def __init__(self, f: Callable[_P, R]) -> None: ...
     def __call__(self, *args: _P.args, **kwargs: _P.kwargs) -> Any: ...
 
 def numpy_attr_wrapper(obj: Any, name: str) -> Any: ...
 
 class numpy_method_wrapper:
+    """Convert obj from torch.Tensor to tnp.ndarray and call method. Then convert result back to torch.Tensor."""
     def __init__(self, method: str) -> None: ...
     def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
-class numpy_operator_wrapper[**P, R]:
+class numpy_operator_wrapper[P, R]:
+    """Implements dunder methods for tnp.ndarray via functions from the operator library"""
     def __init__(self, op: Callable[..., Any]) -> None: ...
     def __call__(self, *args: _P.args, **kwargs: _P.kwargs) -> Any: ...
 
@@ -612,12 +948,29 @@ def is_compile_supported(device_type: DeviceLikeType) -> Any: ...
 
 @dataclasses.dataclass
 class _Anchors:
+    """_Anchors(left_end_lineno: 'int', left_end_offset: 'int', right_start_lineno: 'int', right_start_offset: 'int')"""
+
     left_end_lineno: int
     left_end_offset: int
     right_start_lineno: int
     right_start_offset: int
 
-def get_instruction_source_311(code: types.CodeType, inst: dis.Instruction) -> str: ...
+def get_instruction_source_311(code: types.CodeType, inst: dis.Instruction) -> str:
+    """
+    Python 3.11+ only. Returns lines of source code (from code object `code`)
+    corresponding to `inst`'s location data, and underlines relevant code to `inst`.
+
+    Example: CALL on `g`:
+    f(g(
+      ^^
+        h(x)))
+        ^^^^^
+
+    We need our own implementation in < 3.13 since `format_frame_summary` in
+    Python's `traceback` module doesn't handle multi-line expressions
+    (and their anchor extraction code is not completely correct).
+    """
+
 def get_static_address_type(t: Any) -> Any: ...
 def is_rng_state_getter_or_setter(value: Any) -> bool: ...
 def is_tensor_base_attr_getter(value: Any) -> bool: ...
@@ -626,7 +979,9 @@ def is_torch_function_object(value: Any) -> bool: ...
 def has_torch_function(vt: VariableTracker) -> bool: ...
 def to_fake_tensor(t: torch.Tensor, fake_mode: torch._subclasses.fake_tensor.FakeTensorMode) -> Any: ...
 def is_frozen_dataclass(value: Any) -> bool: ...
-def get_first_attr(obj: Any, *attrs: str) -> Any: ...
+def get_first_attr(obj: Any, *attrs: str) -> Any:
+    """Return the first available attribute or throw an exception if none is present."""
+
 @contextlib.contextmanager
 def maybe_enable_compiled_autograd(
     should_enable: bool, fullgraph: bool = ..., dynamic: bool = ...
@@ -640,7 +995,13 @@ class GmWrapper(torch.nn.Module):
 
 def flatten_graph_inputs(
     gm: torch.fx.GraphModule, inputs: Any, compile_gm: Callable[[Any, Any], Any]
-) -> Callable[..., Any]: ...
+) -> Callable[..., Any]:
+    """
+    Mutate inputs so that they are flat and wrap gm such that it
+    accepts those inputs.  This is needed for graphs that take
+    bumpy inputs.
+    """
+
 def get_locals_to_steal(maybe_gm: Any) -> list[Any]: ...
 def set_locals_to_steal(gm: torch.fx.GraphModule, locals_to_steal: list[Any]) -> None: ...
 
@@ -689,15 +1050,35 @@ class CompileTimeInstructionCounter:
 class CompileCounterInt(int):
     def __add__(self, other: Any) -> CompileCounterInt: ...
 
-def set_feature_use(feature: str, usage: bool) -> None: ...
+def set_feature_use(feature: str, usage: bool) -> None:
+    """
+    Records whether we are using a feature
+    Generally a feature is a JK.
+    """
 
 _ddp_optimization_mode: tuple[str, ...] = ...
 
 def get_optimize_ddp_mode() -> str: ...
 @contextmanager
-def maybe_disable_inference_mode() -> Generator[None]: ...
+def maybe_disable_inference_mode() -> Generator[None]:
+    """
+    Disables torch.inference_mode for the compilation (still on at runtime).
+    This simplifies the compile stack where we can assume that inference_mode
+    will always be off.
+
+    Since inference_mode is equivalent to no_grad + some optimizations (version
+    counts etc), we turn on no_grad here. The other optimizations are not
+    relevant to torch.compile.
+    """
+
 @contextmanager
-def maybe_disable_inference_mode_for_fake_prop() -> Generator[None]: ...
+def maybe_disable_inference_mode_for_fake_prop() -> Generator[None]:
+    """
+    Turns off tracking of inference_mode for fake tensor propagation. With this
+    context manager, when a real tensor is converted to fake tensor, the fake
+    tensor looses its inference-ness.
+    """
+
 def is_node_meta_valid(node: torch.fx.Node | None) -> bool: ...
 
 _error_on_graph_break = ...

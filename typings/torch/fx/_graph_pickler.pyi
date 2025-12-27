@@ -16,18 +16,26 @@ _SymNodeT = TypeVar("_SymNodeT", torch.SymInt, torch.SymFloat)
 
 @dataclasses.dataclass
 class Options:
+    """Options(ops_filter: Optional[Callable[[str], bool]] = <function _ops_filter_safe at 0x125c74f40>)"""
+
     ops_filter: Callable[[str], bool] | None = ...
 
 class GraphPickler(pickle.Pickler):
+    """
+    GraphPickler is a Pickler which helps pickling fx graph - in particular
+    GraphModule.
+    """
     def __init__(self, file: io.BytesIO, options: Options | None = ...) -> None: ...
     @override
     def reducer_override(self, obj: object) -> tuple[Callable[..., Any], tuple[Any, ...]]: ...
     @override
     def persistent_id(self, obj: object) -> str | None: ...
     @classmethod
-    def dumps(cls, obj: object, options: Options | None = ...) -> bytes: ...
+    def dumps(cls, obj: object, options: Options | None = ...) -> bytes:
+        """Pickle an object."""
     @staticmethod
-    def loads(data: bytes, fake_mode: FakeTensorMode) -> object: ...
+    def loads(data: bytes, fake_mode: FakeTensorMode) -> object:
+        """Unpickle an object."""
 
 class _UnpickleState:
     def __init__(self, fake_mode: FakeTensorMode) -> None: ...

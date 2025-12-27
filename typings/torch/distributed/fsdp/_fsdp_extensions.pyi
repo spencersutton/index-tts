@@ -7,10 +7,19 @@ from torch.distributed._shard.sharded_tensor.shard import Shard
 from torch.distributed.tensor import DeviceMesh, DTensor
 
 class FSDPExtensions(ABC):
+    """
+    This enables some customizable hooks to enable composability with tensor
+    parallelism. To activate these hooks, use :func:`_set_fsdp_extensions` to
+    set a custom :class:`FSDPExtensions` that implements the hooks.
+    """
     @abstractmethod
-    def pre_flatten_transform(self, tensor: torch.Tensor) -> tuple[torch.Tensor, Any | None]: ...
+    def pre_flatten_transform(self, tensor: torch.Tensor) -> tuple[torch.Tensor, Any | None]:
+        """E.g. converting ``DistributedTensor`` to local tensor."""
+        ...
     @abstractmethod
-    def post_unflatten_transform(self, tensor: torch.Tensor, param_extension: Any) -> torch.Tensor: ...
+    def post_unflatten_transform(self, tensor: torch.Tensor, param_extension: Any) -> torch.Tensor:
+        """E.g. converting local tensor to ``DistributedTensor``."""
+        ...
     @abstractmethod
     def chunk_tensor(
         self,
@@ -20,12 +29,27 @@ class FSDPExtensions(ABC):
         num_devices_per_node: int,
         pg: dist.ProcessGroup,
         device: torch.device | None = ...,
-    ) -> torch.Tensor: ...
+    ) -> torch.Tensor:
+        """Shards a tensor to chunks and returns the local chunk."""
+        ...
     @abstractmethod
-    def chunk_dtensor(self, tensor: torch.Tensor, rank: int, device_mesh: DeviceMesh) -> torch.Tensor: ...
+    def chunk_dtensor(self, tensor: torch.Tensor, rank: int, device_mesh: DeviceMesh) -> torch.Tensor:
+        """Shards a tensor/DTensor to DTensor and returns the local DTensor."""
+        ...
     @abstractmethod
-    def pre_load_state_dict_transform(self, tensor: torch.Tensor) -> tuple[torch.Tensor, list[Shard]]: ...
+    def pre_load_state_dict_transform(self, tensor: torch.Tensor) -> tuple[torch.Tensor, list[Shard]]:
+        """
+        This is to be called before loading a *sharded* model state dict and
+        should return the tensor and list of shards from which to load data.
+        """
+        ...
     @abstractmethod
-    def all_gather_dtensor(self, tensor: DTensor, parent_mesh: DeviceMesh | None) -> torch.Tensor: ...
+    def all_gather_dtensor(self, tensor: DTensor, parent_mesh: DeviceMesh | None) -> torch.Tensor:
+        """
+        This is to be called before loading a *sharded* DTensor state dict.
+        This gathers tensor in FSDP dimension and returns local tensor of
+        TP DTensor.
+        """
+        ...
 
 _extensions: FSDPExtensions | None = ...

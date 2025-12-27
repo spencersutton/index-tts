@@ -36,6 +36,8 @@ class AutotuneHint(Enum):
     __repr__ = ...
 
 class DeviceProperties(typing.NamedTuple):
+    """Copy device properties into a data structure not requiring torch to be imported"""
+
     type: str
     index: int
     multi_processor_count: int
@@ -49,6 +51,8 @@ class DeviceProperties(typing.NamedTuple):
     def create(cls, device) -> DeviceProperties: ...
 
 class HalideInputSpec(typing.NamedTuple):
+    """HalideInputSpec(ctype, name, shape, stride, offset, alias_of)"""
+
     ctype: str
     name: str
     shape: list[str] | None = ...
@@ -61,10 +65,13 @@ class HalideInputSpec(typing.NamedTuple):
     def is_buffer(self) -> bool: ...
 
 class HalideMeta(typing.NamedTuple):
+    """HalideMeta(argtypes, target, scheduler, scheduler_flags, cuda_device)"""
+
     argtypes: list[HalideInputSpec]
     target: str
     scheduler: str | None = ...
     scheduler_flags: dict[str, int | str] | None = ...
     cuda_device: int | None = ...
-    def args(self) -> list[str]: ...
+    def args(self) -> list[str]:
+        """Command line args to pass to halide generator"""
     def is_cuda(self) -> bool: ...

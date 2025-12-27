@@ -10,6 +10,8 @@ def compiled_autograd_enabled(): ...
 
 @dataclass
 class DataParallelMeshInfo:
+    """DataParallelMeshInfo(mesh: torch.distributed.device_mesh.DeviceMesh, shard_mesh_dim: Optional[int] = None, replicate_mesh_dim: Optional[int] = None)"""
+
     mesh: DeviceMesh
     shard_mesh_dim: int | None = ...
     replicate_mesh_dim: int | None = ...
@@ -17,17 +19,22 @@ class DataParallelMeshInfo:
 
 @dataclass
 class FSDPMeshInfo(DataParallelMeshInfo):
+    """FSDPMeshInfo(mesh: torch.distributed.device_mesh.DeviceMesh, shard_mesh_dim: Optional[int] = None, replicate_mesh_dim: Optional[int] = None)"""
     def __post_init__(self): ...
 
 @dataclass
 class DDPMeshInfo(DataParallelMeshInfo):
+    """DDPMeshInfo(mesh: torch.distributed.device_mesh.DeviceMesh, shard_mesh_dim: Optional[int] = None, replicate_mesh_dim: Optional[int] = None)"""
     def __post_init__(self): ...
 
 @dataclass
 class HSDPMeshInfo(FSDPMeshInfo, DDPMeshInfo):
+    """HSDPMeshInfo(mesh: torch.distributed.device_mesh.DeviceMesh, shard_mesh_dim: Optional[int] = None, replicate_mesh_dim: Optional[int] = None)"""
     def __post_init__(self): ...
 
 class TrainingState(Enum):
+    """Describes the training state of one FSDP state / parameter group."""
+
     FORWARD = ...
     PRE_BACKWARD = ...
     POST_BACKWARD = ...

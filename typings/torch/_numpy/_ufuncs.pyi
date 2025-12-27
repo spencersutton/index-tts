@@ -11,7 +11,14 @@ from ._normalizations import (
 _binary = ...
 NEP50_FUNCS = ...
 
-def deco_binary_ufunc(torch_func): ...
+def deco_binary_ufunc(torch_func):
+    """
+    Common infra for binary ufuncs.
+
+    Normalize arguments, sort out type casting, broadcasting and delegate to
+    the pytorch functions for the actual work.
+    """
+
 @normalizer
 def matmul(
     x1: ArrayLike,
@@ -66,6 +73,12 @@ _binary = ...
 _unary = ...
 _fp_unary = ...
 
-def deco_unary_ufunc(torch_func): ...
+def deco_unary_ufunc(torch_func):
+    """
+    Common infra for unary ufuncs.
+
+    Normalize arguments, sort out type casting, broadcasting and delegate to
+    the pytorch functions for the actual work.
+    """
 
 __all__ = _binary + _unary

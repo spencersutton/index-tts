@@ -1,3 +1,5 @@
+"""Python polyfills for torch.utils.pytree"""
+
 import builtins
 from collections import UserString
 from collections.abc import Callable, Iterable

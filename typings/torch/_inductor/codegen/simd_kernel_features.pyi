@@ -24,13 +24,24 @@ class NodeScheduleMarker:
 
 type NodeScheduleEntry = SchedulerNode | type[NodeScheduleMarker]
 
-class DisableReduction(NodeScheduleMarker): ...
+class DisableReduction(NodeScheduleMarker):
+    """
+    Marker to invoke `kernel.disable_reduction()`.  This closes a
+    reduction loop and allows for pointwise ops to occur on the output
+    of a reduction.
+    """
 
 class EnableReduction(NodeScheduleMarker):
+    """Marker to end a DisableReduction block."""
     @staticmethod
-    def filter(node_schedule: list[NodeScheduleEntry]) -> Iterable[SchedulerNode]: ...
+    def filter(node_schedule: list[NodeScheduleEntry]) -> Iterable[SchedulerNode]:
+        """
+        Get the nodes from node_schedule skipping those in a
+        DisableReduction block.
+        """
 
 class SIMDKernelFeatures:
+    """An ordered schedule of nodes that will become a single kernel."""
     def __init__(
         self,
         node_schedule: list[NodeScheduleEntry],
@@ -44,23 +55,32 @@ class SIMDKernelFeatures:
     def scheduler_nodes(self) -> Iterable[SchedulerNode]: ...
     def reduction_nodes(self) -> list[SchedulerNode]: ...
     @cache_on_self
-    def buf_accesses(self) -> dict[str, list[Dep]]: ...
+    def buf_accesses(self) -> dict[str, list[Dep]]:
+        """only needed for config.benchmark_kernel"""
     @cache_on_self
     def op_counts(self) -> collections.Counter[str]: ...
-    def contains_op(self, op_name: str) -> bool: ...
+    def contains_op(self, op_name: str) -> bool:
+        """True if V.ops.{op_name} is used in node_schedule"""
     def get_mutations(self) -> OrderedSet[str]: ...
     @cache_on_self
     def select_index_dtype(self) -> torch.dtype: ...
     @cache_on_self
     def get_reduction_hint(self) -> ReductionHint: ...
     @cache_on_self
-    def buffer_read_counts(self) -> dict[str, int]: ...
+    def buffer_read_counts(self) -> dict[str, int]:
+        """Counts how many times each buffer is read within the kernel"""
     def has_non_contiguous_pw_in_reduction_kernel(self) -> bool: ...
     @staticmethod
     def reduction_hint(node: Any) -> ReductionHint: ...
-    def memory_stats(self, groups_dict: dict[str, sympy.Expr] | None = ...) -> MemoryStats: ...
+    def memory_stats(self, groups_dict: dict[str, sympy.Expr] | None = ...) -> MemoryStats:
+        """Analysis to generate features that can be used in heuristics"""
 
 class MemoryEstimator:
+    """
+    Estimate various properties of the kernel for use in heuristics.
+    We simulate the memory effects of CSE/buffer elimination in codegen.
+    """
+
     kernel_sizes: tuple[sympy.Expr, ...]
     outside_loop: MemoryEstimate
     loops: list[MemoryEstimate]
@@ -69,7 +89,8 @@ class MemoryEstimator:
     def __init__(self, features: SIMDKernelFeatures, groups: Sequence[sympy.Expr]) -> None: ...
     def simulate_codegen(self) -> None: ...
     def remove_kernel_local(self) -> None: ...
-    def scope(self, dep: MemoryDep) -> MemoryEstimate: ...
+    def scope(self, dep: MemoryDep) -> MemoryEstimate:
+        """Determine how a read/write should be categorized"""
     def has_reduction_var(self, index: sympy.Expr) -> bool: ...
     def set_ranges(self, *lengths: list[list[sympy.Expr]]) -> list[list[sympy.Expr]]: ...
     @staticmethod
@@ -77,6 +98,8 @@ class MemoryEstimator:
 
 @dataclasses.dataclass
 class MemoryEstimate:
+    """Tracks the memory usage of a single loop in the generated kernel"""
+
     reads: dict[str, OrderedSet[MemoryDep]] = ...
     writes: dict[str, OrderedSet[MemoryDep]] = ...
     def remove(self, name: str) -> None: ...
@@ -84,6 +107,8 @@ class MemoryEstimate:
 
 @dataclasses.dataclass
 class StatsForDim:
+    """Memory usage stats for a block dimension in the generated kernel (different from user dimensions)"""
+
     count_per_thread_contiguous: int = ...
     count_per_thread_broadcast: int = ...
     count_per_thread_non_contiguous: int = ...
@@ -104,12 +129,16 @@ class StatsForDim:
 
 @dataclasses.dataclass
 class StatsForLoop:
+    """Memory usage stats for single loop in the generated kernel"""
+
     count_per_thread: int = ...
     bytes_per_thread: int = ...
     def __add__(self, other: typing.Self) -> StatsForLoop: ...
 
 @dataclasses.dataclass
 class StatsForReadsOrWrites:
+    """Memory usage stats that are collected for reads/writes/both"""
+
     dim: list[StatsForDim]
     loop: list[StatsForLoop]
     bytes_contiguous_or_broadcast: sympy.Expr = ...
@@ -128,6 +157,8 @@ class StatsForReadsOrWrites:
 
 @dataclasses.dataclass
 class StatsForKernelType:
+    """Memory usage stats that are collected for both persistent and looped kernels"""
+
     reads: StatsForReadsOrWrites
     writes: StatsForReadsOrWrites
     memory: StatsForReadsOrWrites
@@ -136,6 +167,8 @@ class StatsForKernelType:
 
 @dataclasses.dataclass
 class MemoryStats:
+    """Memory usage stats collected for each generated kernel"""
+
     persistent: StatsForKernelType
     looped: StatsForKernelType
     def get(self, persistent: bool) -> StatsForKernelType: ...

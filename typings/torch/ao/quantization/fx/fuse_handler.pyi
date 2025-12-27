@@ -11,6 +11,7 @@ from .custom_config import FuseCustomConfig
 __all__ = ["DefaultFuseHandler", "FuseHandler"]
 
 class FuseHandler(ABC):
+    """Base handler class for the fusion patterns"""
     @abstractmethod
     def __init__(self, node: Node) -> None: ...
     @abstractmethod

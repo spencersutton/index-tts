@@ -20,6 +20,7 @@ def get_broadcasted_shape(a: BlockShapeType, b: BlockShapeType) -> BlockShapeTyp
 def broadcast_shapes_for_args(args: Sequence[ShapeArg]) -> BlockShapeType: ...
 
 class ShapePropagationOpsHandler:
+    """Propagate shape from args to output"""
     @staticmethod
     def constant(value: torch.types.Number, dtype: torch.dtype) -> BlockShapeType: ...
     @staticmethod

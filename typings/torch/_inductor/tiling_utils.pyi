@@ -12,12 +12,31 @@ type Split = tuple[sympy.Expr, ...]
 type VarsAndRanges = tuple[list[sympy.Symbol], list[sympy.Expr]]
 loop_tiling_log = ...
 
-def solve_for_zero(expr: sympy.Expr) -> sympy.Expr | None: ...
-def solve_for_tiling(expr: sympy.Expr) -> sympy.Expr | None: ...
-def find_coalesced_var(index: sympy.Expr, var_ranges: dict[sympy.Expr, int]) -> sympy.Expr | None: ...
+def solve_for_zero(expr: sympy.Expr) -> sympy.Expr | None:
+    """
+    Given an expr with a single free symbol, solve for a constant relation that would make
+    this expression 0.
+    """
+
+def solve_for_tiling(expr: sympy.Expr) -> sympy.Expr | None:
+    """
+    Giving an expr with a single free symbol, try to find a tiling that would
+    make the expression coalesced with respect to that symbol.
+
+    Tiling an expression `x` by `y` means that the expression will now be indexed
+    by both the original (x) and by (x * y). So we are looking for a
+    multiplicative factor that will make ((x + 1) * y) - (x * y) == 1.
+
+    To simplify things for sympy, we'll try just x * y == 1, check x(1) and x(0).
+    """
+
+def find_coalesced_var(index: sympy.Expr, var_ranges: dict[sympy.Expr, int]) -> sympy.Expr | None:
+    """Try to find the symbol which coalesces this index"""
 
 @dataclasses.dataclass(frozen=True)
 class FusedNormalizedReadsWrites:
+    """Normalized reads and writes for nodes in the same FusedSchedulerNode."""
+
     index_vars: OrderedSet[sympy.Symbol]
     reduce_vars: OrderedSet[sympy.Symbol]
     reads: dict[sympy.Expr, OrderedSet[str]]
@@ -37,9 +56,15 @@ def get_pw_red_splits(
 ) -> tuple[VarsAndRanges, VarsAndRanges] | None: ...
 
 class NodeSplitGetter:
+    """Finds a Pointwise, Reduction Split that compatible with all nodes in a SchedulerNode."""
     def __init__(self, node: FusedSchedulerNode | SchedulerNode) -> None: ...
-    def get_node_splits(self) -> tuple[Split, Split]: ...
-    def try_split(self, pw: Split, red: Split) -> tuple[Split, Split] | None: ...
+    def get_node_splits(self) -> tuple[Split, Split]:
+        """Get a compatible pointwise, reduction split of the node"""
+    def try_split(self, pw: Split, red: Split) -> tuple[Split, Split] | None:
+        """
+        See if this split is compatible, and potentially returning a longer split
+        than the input.
+        """
 
 zip_equal = ...
 
@@ -50,21 +75,43 @@ def apply_var_mapping(
     norm_red_vars: list[sympy.Symbol],
     new_ranges: list[list[sympy.Expr]],
     return_getters_groups: list[list[Callable[[list[sympy.Expr]], sympy.Expr]]],
-) -> dict[sympy.Symbol, sympy.Expr]: ...
-def extract_normalized_read_writes(node: FusedSchedulerNode | SchedulerNode) -> FusedNormalizedReadsWrites | None: ...
-def get_score(addr: sympy.Expr, var_ranges: dict[sympy.Symbol, int]) -> int: ...
+) -> dict[sympy.Symbol, sympy.Expr]:
+    """Maps original variables to expressions using normalized variables."""
+
+def extract_normalized_read_writes(node: FusedSchedulerNode | SchedulerNode) -> FusedNormalizedReadsWrites | None:
+    """Extracts index variables, reduce variables, read/write expressions, and variable ranges from a fused node."""
+
+def get_score(addr: sympy.Expr, var_ranges: dict[sympy.Symbol, int]) -> int:
+    """Score addr according to its approximate size"""
+
 def get_hint(v: sympy.Expr | int) -> int: ...
 
 @dataclasses.dataclass(frozen=True)
 class VarTiling:
+    """Tiling of a var by `tiling_factor` that yields additional coalesced mem accesses by `benefit_score`"""
+
     var: sympy.Symbol
     tiling_factor: int
     score: int
 
 @dataclasses.dataclass(frozen=True)
 class CoalesceVarAnalysis:
+    """CoalesceVarAnalysis(coalesced_by_var: dict[sympy.core.expr.Expr, int], norm_read_writes: torch._inductor.tiling_utils.FusedNormalizedReadsWrites, suggested_split: Optional[torch._inductor.tiling_utils.VarTiling] = None)"""
+
     coalesced_by_var: dict[sympy.Expr, int]
     norm_read_writes: FusedNormalizedReadsWrites
     suggested_split: VarTiling | None = ...
 
-def analyze_memory_coalescing(fused_node: FusedSchedulerNode | SchedulerNode) -> CoalesceVarAnalysis | None: ...
+def analyze_memory_coalescing(fused_node: FusedSchedulerNode | SchedulerNode) -> CoalesceVarAnalysis | None:
+    """
+    Find variables that coalesce the reads and writes and score the total size.
+
+    If uncoalesced memory expressions are found, look for additionally tiling of variables
+    which will coalesce memory accesses.
+
+    For instance - for the following expression:
+
+    (32*p0) // 2048
+
+    Tiling p0 by 64 will make this expression coalesced.
+    """

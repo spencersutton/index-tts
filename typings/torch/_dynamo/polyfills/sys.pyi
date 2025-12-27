@@ -1,3 +1,5 @@
+"""Python polyfills for sys"""
+
 import sys
 
 from ..decorators import substitute_in_graph

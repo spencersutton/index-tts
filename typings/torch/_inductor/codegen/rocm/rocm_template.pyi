@@ -10,6 +10,8 @@ log = ...
 
 @dataclass(frozen=True)
 class ArgInfo:
+    """ArgInfo(name: str, ty: str)"""
+
     name: str
     ty: str
 
@@ -18,8 +20,27 @@ class ROCmTemplate(KernelTemplate):
     gfx9_threads_per_warp = ...
     def __init__(
         self, name: str, input_nodes: list[Buffer], layout: Layout, input_reorder: list[int] | None = ...
-    ) -> None: ...
-    def generate(self, **kwargs) -> ROCmTemplateCaller: ...
+    ) -> None:
+        """
+        Baseclass for ROCm C++ Templates, derived from KernelTemplate. Not to be instantiated directly.
+
+        Args:
+            name (str): The name of the ROCmTemplate object.
+            input_nodes (List[IRNode]): A list of input IRNodes.
+            layout (Layout): The layout of the output buffer / tensor.
+            input_reorder (Optional[List[int]]): An optional list that specifies the order of the input nodes.
+        """
+    def generate(self, **kwargs) -> ROCmTemplateCaller:
+        """
+        Generates the ROCm template caller object for the given GEMM template and operation. This ROCmTemplateCaller
+        may be used to call and benchmark the generated ROCm kernel in a standalone manner to enable Autotuning.
+
+        Args:
+            kwargs: Additional keyword arguments.
+
+        Returns:
+            A ROCmTemplateCaller object representing the generated ROCm template caller.
+        """
     def header(self) -> IndentedBuffer: ...
     def globals(self) -> IndentedBuffer: ...
     def render(self, **kwargs) -> str: ...

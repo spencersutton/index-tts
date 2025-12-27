@@ -45,6 +45,15 @@ _DescriberId = NewType("_DescriberId", int)
 DESCRIBER_NEXT_ID = ...
 
 class MetaTensorDescriber:
+    """
+    Given a Tensor/Storage, generate a MetaTensorDesc/MetaStorageDesc
+    for it, which is enough information to reconstruct a meta tensor/fake tensor
+    corresponding to a Tensor as faithfully as possible.
+
+    This is a stateful conversion object because we keep track of the IDs
+    of the tensors/storages passed to us, so we can consistently give
+    the same ID when we see the same tensor/storage.
+    """
     def __init__(self, *, copy_data: bool = ...) -> None: ...
     def get_tensor_id(self, t: torch.Tensor) -> MetaTensorId: ...
     def get_storage_id(self, s: torch.UntypedStorage) -> MetaStorageId: ...
@@ -53,6 +62,8 @@ class MetaTensorDescriber:
 
 @dataclass(frozen=True)
 class MetaStorageDesc:
+    """MetaStorageDesc(id: 'MetaStorageId', size: 'int', data: 'Optional[torch.UntypedStorage]')"""
+
     id: MetaStorageId
     size: int
     data: torch.UntypedStorage | None
@@ -60,6 +71,7 @@ class MetaStorageDesc:
 
 @dataclass(frozen=True)
 class ViewFunc[TensorT: torch.Tensor]:
+    """ViewFunc()"""
     @abstractmethod
     def apply(
         self,
@@ -73,6 +85,7 @@ class ViewFunc[TensorT: torch.Tensor]:
 
 @dataclass(frozen=True)
 class _FakeTensorViewFunc(ViewFunc["FakeTensor"]):
+    """_FakeTensorViewFunc()"""
     @override
     def apply(
         self,
@@ -84,6 +97,8 @@ class _FakeTensorViewFunc(ViewFunc["FakeTensor"]):
 
 @dataclass(frozen=True)
 class _CustomViewFunc[TensorT: torch.Tensor](ViewFunc[TensorT]):
+    """_CustomViewFunc(func: 'Callable[[torch.Tensor, Optional[Callable[[int], int]], Optional[Callable[[torch.Tensor], _TensorT]]], _TensorT]')"""
+
     func: Callable[[torch.Tensor, Callable[[int], int] | None, Callable[[torch.Tensor], _TensorT] | None], _TensorT]
     @override
     def apply(
@@ -107,6 +122,8 @@ class _MetaTensorCallbackOptDevice[TensorT_cov: torch.Tensor](Protocol):
 
 @dataclass(frozen=True)
 class MetaTensorDesc[TensorT: torch.Tensor]:
+    """MetaTensorDesc(id: 'MetaTensorId', ndim: 'int', dtype: 'torch.dtype', device: 'torch.device', size: 'tuple[int, ...]', dynamo_dynamic_indices: 'list[int]', dynamo_hint_overrides: 'dict[int, int]', layout: 'torch.layout' = torch.strided, is_inference: 'bool' = False, is_leaf: 'bool' = False, requires_grad: 'bool' = False, is_sparse: 'bool' = False, is_mkldnn: 'bool' = False, is_functorch_wrapped: 'bool' = False, is_batchedtensor: 'bool' = False, is_legacy_batchedtensor: 'bool' = False, is_gradtrackingtensor: 'bool' = False, is_view: 'bool' = False, is_nested: 'bool' = False, nested_int: 'Optional[int]' = None, is_traceable_wrapper_subclass: 'bool' = False, is_functional: 'bool' = False, is_conj: 'bool' = False, is_neg: 'bool' = False, is_parameter: 'bool' = False, stride: 'Optional[tuple[int, ...]]' = None, storage_offset: 'int' = 0, storage: 'Optional[MetaStorageDesc]' = None, sparse_dim: 'Optional[int]' = None, dense_dim: 'Optional[int]' = None, is_coalesced: 'Optional[bool]' = None, crow_indices: 'Optional[MetaTensorDesc]' = None, col_indices: 'Optional[MetaTensorDesc]' = None, ccol_indices: 'Optional[MetaTensorDesc]' = None, row_indices: 'Optional[MetaTensorDesc]' = None, values: 'Optional[MetaTensorDesc]' = None, unwrapped: 'Optional[MetaTensorDesc]' = None, bdim: 'Optional[int]' = None, base: 'Optional[MetaTensorDesc]' = None, attrs: 'Optional[dict[str, MetaTensorDesc]]' = None, creation_meta: 'Optional[CreationMeta]' = None, grad: 'Optional[MetaTensorDesc]' = None, ctx: 'Optional[object]' = None, type: 'Optional[type]' = None, fake_mode: 'Optional[FakeTensorMode]' = None, view_func: 'Optional[ViewFunc]' = None, level: 'Optional[int]' = None, current_level: 'Optional[int]' = None, functorch_stack: 'Optional[list[CInterpreter]]' = None, autograd_meta_from: 'Optional[torch.Tensor]' = None, data: 'Optional[torch.Tensor]' = None)"""
+
     id: MetaTensorId
     ndim: int
     dtype: torch.dtype

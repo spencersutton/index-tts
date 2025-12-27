@@ -7,6 +7,26 @@ from torch.types import Number
 __all__ = ["Bernoulli"]
 
 class Bernoulli(ExponentialFamily):
+    """
+    Creates a Bernoulli distribution parameterized by :attr:`probs`
+    or :attr:`logits` (but not both).
+
+    Samples are binary (0 or 1). They take the value `1` with probability `p`
+    and `0` with probability `1 - p`.
+
+    Example::
+
+        >>> # xdoctest: +IGNORE_WANT("non-deterministic")
+        >>> m = Bernoulli(torch.tensor([0.3]))
+        >>> m.sample()  # 30% chance 1; 70% chance 0
+        tensor([ 0.])
+
+    Args:
+        probs (Number, Tensor): the probability of sampling `1`
+        logits (Number, Tensor): the log-odds of sampling `1`
+        validate_args (bool, optional): whether to validate arguments, None by default
+    """
+
     arg_constraints = ...
     support = ...
     has_enumerate_support = ...

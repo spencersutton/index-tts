@@ -7,6 +7,32 @@ from torch.types import Number, _size
 __all__ = ["ContinuousBernoulli"]
 
 class ContinuousBernoulli(ExponentialFamily):
+    """
+    Creates a continuous Bernoulli distribution parameterized by :attr:`probs`
+    or :attr:`logits` (but not both).
+
+    The distribution is supported in [0, 1] and parameterized by 'probs' (in
+    (0,1)) or 'logits' (real-valued). Note that, unlike the Bernoulli, 'probs'
+    does not correspond to a probability and 'logits' does not correspond to
+    log-odds, but the same names are used due to the similarity with the
+    Bernoulli. See [1] for more details.
+
+    Example::
+
+        >>> # xdoctest: +IGNORE_WANT("non-deterministic")
+        >>> m = ContinuousBernoulli(torch.tensor([0.3]))
+        >>> m.sample()
+        tensor([ 0.2538])
+
+    Args:
+        probs (Number, Tensor): (0,1) valued parameters
+        logits (Number, Tensor): real valued parameters whose sigmoid matches 'probs'
+
+    [1] The continuous Bernoulli: fixing a pervasive error in variational
+    autoencoders, Loaiza-Ganem G and Cunningham JP, NeurIPS 2019.
+    https://arxiv.org/abs/1907.06845
+    """
+
     arg_constraints = ...
     support = ...
     _mean_carrier_measure = ...

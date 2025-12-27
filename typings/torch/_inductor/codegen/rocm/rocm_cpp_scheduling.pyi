@@ -5,6 +5,13 @@ from ...scheduler import BaseSchedulerNode, BaseScheduling
 log = ...
 
 class ROCmCPPScheduling(BaseScheduling):
+    """
+    Partial Scheduling implementation for ROCm C++ Kernels.
+    This class is intended to be used in combination with TritonScheduling,
+    and delegated to by CUDACombinedScheduling.
+
+    It handles fusion decisions and ROCm C++ specific template code generation.
+    """
     def group_fn(self, sizes): ...
     @staticmethod
     def is_rocm_cpp_template(node: BaseSchedulerNode) -> bool: ...
@@ -15,4 +22,5 @@ class ROCmCPPScheduling(BaseScheduling):
         template_node: BaseSchedulerNode,
         epilogue_nodes: Sequence[BaseSchedulerNode],
         prologue_nodes: Sequence[BaseSchedulerNode],
-    ): ...
+    ):
+        """Codegen a ROCm template, possibly with fused epilogues"""

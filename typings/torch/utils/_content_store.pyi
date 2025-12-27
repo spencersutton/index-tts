@@ -1,6 +1,12 @@
 import torch
 
-def lazy_compile(**compile_kwargs): ...
+def lazy_compile(**compile_kwargs):
+    """
+    Lazily wrap a function with torch.compile on the first call
+
+    This avoids eagerly importing dynamo.
+    """
+
 @lazy_compile(dynamic=True)
 def hash_storage_kernel(x): ...
 def hash_storage(storage: torch.UntypedStorage, *, stable_hash: bool = ...) -> str: ...

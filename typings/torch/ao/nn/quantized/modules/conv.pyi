@@ -1,3 +1,5 @@
+"""Quantized convolution modules."""
+
 from typing import ClassVar, Literal
 
 import torch
@@ -37,13 +39,56 @@ class _ConvNd(WeightedQuantizedModule):
     def __deepcopy__(self, memo) -> Self: ...
     def __copy__(self) -> Self: ...
     @classmethod
-    def get_qconv(cls, mod, activation_post_process, weight_post_process=...) -> Self: ...
+    def get_qconv(cls, mod, activation_post_process, weight_post_process=...) -> Self:
+        """Creates a qconv object and returns it."""
     @staticmethod
     def from_float(cls, mod, use_precomputed_fake_quant=...): ...
     @classmethod
-    def from_reference(cls, ref_qconv, output_scale, output_zero_point) -> Self: ...
+    def from_reference(cls, ref_qconv, output_scale, output_zero_point) -> Self:
+        """
+        Create a (fbgemm/qnnpack) quantized module from a reference quantized module
+        Args:
+            ref_qconv (Module): a reference quantized  module, either produced by torch.ao.quantization
+                                utilities or provided by the user
+            output_scale (float): scale for output Tensor
+            output_zero_point (int): zero point for output Tensor
+        """
 
 class Conv1d(_ConvNd):
+    """
+    Applies a 1D convolution over a quantized input signal composed of
+    several quantized input planes.
+
+    For details on input arguments, parameters, and implementation see
+    :class:`~torch.nn.Conv1d`.
+
+    .. note::
+        Only `zeros` is supported for the :attr:`padding_mode` argument.
+
+    .. note::
+        Only `torch.quint8` is supported for the input data type.
+
+
+    Attributes:
+        weight (Tensor):     packed tensor derived from the learnable weight
+                             parameter.
+        scale (Tensor):      scalar for the output scale
+        zero_point (Tensor): scalar for the output zero point
+
+    See :class:`~torch.nn.Conv1d` for other attributes.
+
+    Examples::
+
+        >>> # xdoctest: +REQUIRES(env:TORCH_DOCTEST_QENGINE)
+        >>> m = nn.quantized.Conv1d(16, 33, 3, stride=2)
+        >>> input = torch.randn(20, 16, 100)
+        >>> # quantize input to quint8
+        >>> # xdoctest: +SKIP
+        >>> q_input = torch.quantize_per_tensor(input, scale=1.0, zero_point=0,
+        ...                                     dtype=torch.quint8)
+        >>> output = m(q_input)
+    """
+
     _FLOAT_MODULE: ClassVar[type[nn.Conv1d]] = ...
     _NNIQAT_CONV_BN_MODULE: ClassVar[type[nn.Module] | None] = ...
     _NNI_CONV_RELU_MODULE: ClassVar[type[nn.Module] | None] = ...
@@ -68,9 +113,54 @@ class Conv1d(_ConvNd):
     def bias(self) -> Any: ...
     def forward(self, input) -> Any: ...
     @classmethod
-    def from_float(cls, mod, use_precomputed_fake_quant=...): ...
+    def from_float(cls, mod, use_precomputed_fake_quant=...):
+        """
+        Creates a quantized module from a float module or qparams_dict.
+
+        Args:
+            mod (Module): a float module, either produced by torch.ao.quantization
+              utilities or provided by the user
+        """
 
 class Conv2d(_ConvNd):
+    """
+    Applies a 2D convolution over a quantized input signal composed of
+    several quantized input planes.
+
+    For details on input arguments, parameters, and implementation see
+    :class:`~torch.nn.Conv2d`.
+
+    .. note::
+        Only `zeros` is supported for the :attr:`padding_mode` argument.
+
+    .. note::
+        Only `torch.quint8` is supported for the input data type.
+
+
+    Attributes:
+        weight (Tensor):     packed tensor derived from the learnable weight
+                             parameter.
+        scale (Tensor):      scalar for the output scale
+        zero_point (Tensor): scalar for the output zero point
+
+    See :class:`~torch.nn.Conv2d` for other attributes.
+
+    Examples::
+
+        >>> # xdoctest: +REQUIRES(env:TORCH_DOCTEST_QENGINE)
+        >>> # With square kernels and equal stride
+        >>> m = nn.quantized.Conv2d(16, 33, 3, stride=2)
+        >>> # non-square kernels and unequal stride and with padding
+        >>> m = nn.quantized.Conv2d(16, 33, (3, 5), stride=(2, 1), padding=(4, 2))
+        >>> # non-square kernels and unequal stride and with padding and dilation
+        >>> m = nn.quantized.Conv2d(16, 33, (3, 5), stride=(2, 1), padding=(4, 2), dilation=(3, 1))
+        >>> input = torch.randn(20, 16, 50, 100)
+        >>> # quantize input to quint8
+        >>> # xdoctest: +SKIP
+        >>> q_input = torch.quantize_per_tensor(input, scale=1.0, zero_point=0, dtype=torch.quint8)
+        >>> output = m(q_input)
+    """
+
     _FLOAT_MODULE: ClassVar[type[nn.Conv2d]] = ...
     _NNIQAT_CONV_BN_MODULE: ClassVar[type[nn.Module] | None] = ...
     _NNI_CONV_RELU_MODULE: ClassVar[type[nn.Module] | None] = ...
@@ -95,9 +185,54 @@ class Conv2d(_ConvNd):
     def bias(self) -> Any: ...
     def forward(self, input) -> Any: ...
     @classmethod
-    def from_float(cls, mod, use_precomputed_fake_quant=...): ...
+    def from_float(cls, mod, use_precomputed_fake_quant=...):
+        """
+        Creates a quantized module from a float module or qparams_dict.
+
+        Args:
+            mod (Module): a float module, either produced by torch.ao.quantization
+              utilities or provided by the user
+        """
 
 class Conv3d(_ConvNd):
+    """
+    Applies a 3D convolution over a quantized input signal composed of
+    several quantized input planes.
+
+    For details on input arguments, parameters, and implementation see
+    :class:`~torch.nn.Conv3d`.
+
+    .. note::
+        Only `zeros` is supported for the :attr:`padding_mode` argument.
+
+    .. note::
+        Only `torch.quint8` is supported for the input data type.
+
+
+    Attributes:
+        weight (Tensor):     packed tensor derived from the learnable weight
+                             parameter.
+        scale (Tensor):      scalar for the output scale
+        zero_point (Tensor): scalar for the output zero point
+
+    See :class:`~torch.nn.Conv3d` for other attributes.
+
+    Examples::
+
+        >>> # xdoctest: +REQUIRES(env:TORCH_DOCTEST_QENGINE)
+        >>> # With square kernels and equal stride
+        >>> m = nn.quantized.Conv3d(16, 33, 3, stride=2)
+        >>> # non-square kernels and unequal stride and with padding
+        >>> m = nn.quantized.Conv3d(16, 33, (3, 5, 5), stride=(1, 2, 2), padding=(1, 2, 2))
+        >>> # non-square kernels and unequal stride and with padding and dilation
+        >>> m = nn.quantized.Conv3d(16, 33, (3, 5, 5), stride=(1, 2, 2), padding=(1, 2, 2), dilation=(1, 2, 2))
+        >>> input = torch.randn(20, 16, 56, 56, 56)
+        >>> # quantize input to quint8
+        >>> # xdoctest: +SKIP
+        >>> q_input = torch.quantize_per_tensor(input, scale=1.0, zero_point=0, dtype=torch.quint8)
+        >>> output = m(q_input)
+    """
+
     _FLOAT_MODULE: ClassVar[type[nn.Conv3d]] = ...
     _NNIQAT_CONV_BN_MODULE: ClassVar[type[nn.Module] | None] = ...
     _NNI_CONV_RELU_MODULE: ClassVar[type[nn.Module] | None] = ...
@@ -122,7 +257,14 @@ class Conv3d(_ConvNd):
     def bias(self) -> Any: ...
     def forward(self, input) -> Any: ...
     @classmethod
-    def from_float(cls, mod, use_precomputed_fake_quant=...): ...
+    def from_float(cls, mod, use_precomputed_fake_quant=...):
+        """
+        Creates a quantized module from a float module or qparams_dict.
+
+        Args:
+            mod (Module): a float module, either produced by torch.ao.quantization
+              utilities or provided by the user
+        """
 
 class _ConvTransposeNd(_ConvNd):
     _FLOAT_MODULE: ClassVar[type[nn.modules.conv._ConvNd]]
@@ -143,11 +285,69 @@ class _ConvTransposeNd(_ConvNd):
         dtype=...,
     ) -> None: ...
     @classmethod
-    def from_float(cls, mod, use_precomputed_fake_quant=...) -> Self: ...
+    def from_float(cls, mod, use_precomputed_fake_quant=...) -> Self:
+        """
+        Creates a quantized module from a float module or qparams_dict.
+        Args:
+            mod (Module): a float module, either produced by torch.ao.quantization
+              utilities or provided by the user
+        """
     @staticmethod
-    def from_reference(cls, ref_qconvt, output_scale, output_zero_point): ...
+    def from_reference(cls, ref_qconvt, output_scale, output_zero_point):
+        """
+        Create a (fbgemm/qnnpack) quantized module from a reference quantized module
+        Args:
+            ref_qconvt (Module): a reference quantized  module, either produced by torch.ao.quantization
+                                 utilities or provided by the user
+            output_scale (float): scale for output Tensor
+            output_zero_point (int): zero point for output Tensor
+        """
 
 class ConvTranspose1d(_ConvTransposeNd):
+    """
+    Applies a 1D transposed convolution operator over an input image
+    composed of several input planes.
+    For details on input arguments, parameters, and implementation see
+    :class:`~torch.nn.ConvTranspose1d`.
+
+    .. note:: Currently only the QNNPACK engine is implemented.
+        Please, set the `torch.backends.quantized.engine = 'qnnpack'`
+
+    For special notes, please, see :class:`~torch.ao.nn.quantized.Conv1d`
+
+    Attributes:
+        weight (Tensor):     packed tensor derived from the learnable weight
+                             parameter.
+        scale (Tensor):      scalar for the output scale
+        zero_point (Tensor): scalar for the output zero point
+    See :class:`~torch.nn.ConvTranspose2d` for other attributes.
+
+    Examples::
+
+        >>> # xdoctest: +REQUIRES(env:TORCH_DOCTEST_QENGINE)
+        >>> torch.backends.quantized.engine = 'qnnpack'
+        >>> from torch.ao.nn import quantized as nnq
+        >>> # With square kernels and equal stride
+        >>> m = nnq.ConvTranspose1d(16, 33, 3, stride=2)
+        >>> # non-square kernels and unequal stride and with padding
+        >>> m = nnq.ConvTranspose1d(16, 33, (3, 5), stride=(2, 1), padding=(4, 2))
+        >>> input = torch.randn(20, 16, 50)
+        >>> q_input = torch.quantize_per_tensor(input, scale=1.0, zero_point=0, dtype=torch.quint8)
+        >>> output = m(q_input)
+        >>> # exact output size can be also specified as an argument
+        >>> input = torch.randn(1, 16, 12)
+        >>> q_input = torch.quantize_per_tensor(input, scale=1.0, zero_point=0, dtype=torch.quint8)
+        >>> downsample = nnq.Conv1d(16, 16, 3, stride=2, padding=1)
+        >>> upsample = nnq.ConvTranspose1d(16, 16, 3, stride=2, padding=1)
+        >>> h = downsample(q_input)
+        >>> h.size()
+        torch.Size([1, 16, 6])
+        >>> # xdoctest: +SKIP("FIXME: output_size is not a parameter)
+        >>> output = upsample(h, output_size=input.size())
+        >>> output.size()
+        torch.Size([1, 16, 12])
+    """
+
     _FLOAT_MODULE: ClassVar[type[nn.ConvTranspose1d]] = ...
     def __init__(
         self,
@@ -172,6 +372,48 @@ class ConvTranspose1d(_ConvTransposeNd):
     def from_reference(cls, ref_qconvt, output_scale, output_zero_point): ...
 
 class ConvTranspose2d(_ConvTransposeNd):
+    """
+    Applies a 2D transposed convolution operator over an input image
+    composed of several input planes.
+    For details on input arguments, parameters, and implementation see
+    :class:`~torch.nn.ConvTranspose2d`.
+
+    For special notes, please, see :class:`~torch.ao.nn.quantized.Conv2d`
+
+    Attributes:
+        weight (Tensor):     packed tensor derived from the learnable weight
+                             parameter.
+        scale (Tensor):      scalar for the output scale
+        zero_point (Tensor): scalar for the output zero point
+    See :class:`~torch.nn.ConvTranspose2d` for other attributes.
+
+    Examples::
+
+        >>> # xdoctest: +REQUIRES(env:TORCH_DOCTEST_QENGINE)
+        >>> # QNNPACK or FBGEMM as backend
+        >>> torch.backends.quantized.engine = 'qnnpack'
+        >>> # With square kernels and equal stride
+        >>> import torch.ao.nn.quantized as nnq
+        >>> m = nnq.ConvTranspose2d(16, 33, 3, stride=2)
+        >>> # non-square kernels and unequal stride and with padding
+        >>> m = nnq.ConvTranspose2d(16, 33, (3, 5), stride=(2, 1), padding=(4, 2))
+        >>> input = torch.randn(20, 16, 50, 100)
+        >>> q_input = torch.quantize_per_tensor(input, scale=1.0, zero_point=0, dtype=torch.quint8)
+        >>> output = m(q_input)
+        >>> # exact output size can be also specified as an argument
+        >>> input = torch.randn(1, 16, 12, 12)
+        >>> q_input = torch.quantize_per_tensor(input, scale=1.0, zero_point=0, dtype=torch.quint8)
+        >>> downsample = nnq.Conv2d(16, 16, 3, stride=2, padding=1)
+        >>> upsample = nnq.ConvTranspose2d(16, 16, 3, stride=2, padding=1)
+        >>> h = downsample(q_input)
+        >>> h.size()
+        torch.Size([1, 16, 6, 6])
+        >>> # xdoctest: +SKIP("FIXME: output_size is not a parameter)
+        >>> output = upsample(h, output_size=input.size())
+        >>> output.size()
+        torch.Size([1, 16, 12, 12])
+    """
+
     _FLOAT_MODULE: ClassVar[type[nn.ConvTranspose2d]] = ...
     def __init__(
         self,
@@ -196,6 +438,50 @@ class ConvTranspose2d(_ConvTransposeNd):
     def from_reference(cls, ref_qconvt, output_scale, output_zero_point): ...
 
 class ConvTranspose3d(_ConvTransposeNd):
+    """
+    Applies a 3D transposed convolution operator over an input image
+    composed of several input planes.
+    For details on input arguments, parameters, and implementation see
+    :class:`~torch.nn.ConvTranspose3d`.
+
+    .. note:: Currently only the FBGEMM engine is implemented.
+        Please, set the `torch.backends.quantized.engine = 'fbgemm'`
+
+    For special notes, please, see :class:`~torch.ao.nn.quantized.Conv3d`
+
+    Attributes:
+        weight (Tensor):     packed tensor derived from the learnable weight
+                             parameter.
+        scale (Tensor):      scalar for the output scale
+        zero_point (Tensor): scalar for the output zero point
+    See :class:`~torch.nn.ConvTranspose3d` for other attributes.
+
+    Examples::
+
+        >>> # xdoctest: +REQUIRES(env:TORCH_DOCTEST_QENGINE)
+        >>> torch.backends.quantized.engine = 'fbgemm'
+        >>> from torch.ao.nn import quantized as nnq
+        >>> # With cubic kernels and equal stride
+        >>> m = nnq.ConvTranspose3d(16, 33, 3, stride=2)
+        >>> # non-cubic kernels and unequal stride and with padding
+        >>> m = nnq.ConvTranspose3d(16, 33, (3, 3, 5), stride=(2, 1, 1), padding=(4, 2, 2))
+        >>> input = torch.randn(20, 16, 50, 100, 100)
+        >>> q_input = torch.quantize_per_tensor(input, scale=1.0, zero_point=0, dtype=torch.quint8)
+        >>> output = m(q_input)
+        >>> # exact output size can be also specified as an argument
+        >>> input = torch.randn(1, 16, 12, 12, 12)
+        >>> q_input = torch.quantize_per_tensor(input, scale=1.0, zero_point=0, dtype=torch.quint8)
+        >>> downsample = nnq.Conv3d(16, 16, 3, stride=2, padding=1)
+        >>> upsample = nnq.ConvTranspose3d(16, 16, 3, stride=2, padding=1)
+        >>> h = downsample(q_input)
+        >>> h.size()
+        torch.Size([1, 16, 6, 6, 6])
+        >>> # xdoctest: +SKIP("FIXME: output_size is not a parameter)
+        >>> output = upsample(h, output_size=input.size())
+        >>> output.size()
+        torch.Size([1, 16, 12, 12, 12])
+    """
+
     _FLOAT_MODULE: ClassVar[type[nn.ConvTranspose3d]] = ...
     def __init__(
         self,

@@ -1,1 +1,8 @@
-def get_cpp_backtrace(frames_to_skip=..., maximum_number_of_frames=...) -> str: ...
+def get_cpp_backtrace(frames_to_skip=..., maximum_number_of_frames=...) -> str:
+    """
+    Return a string containing the C++ stack trace of the current thread.
+
+    Args:
+        frames_to_skip (int): the number of frames to skip from the top of the stack
+        maximum_number_of_frames (int): the maximum number of frames to return
+    """

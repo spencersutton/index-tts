@@ -16,6 +16,8 @@ class LinearPackedParams(torch.nn.Module):
     def __setstate__(self, state) -> None: ...
 
 class Linear(torch.nn.Module):
+    """A quantized sparse linear module with quantized tensor as inputs and outputs."""
+
     _version = ...
     _FLOAT_MODULE = torch.nn.Linear
     def __init__(self, in_features, out_features, row_block_size, col_block_size, bias=..., dtype=...) -> None: ...
@@ -27,4 +29,11 @@ class Linear(torch.nn.Module):
         self, w: torch.Tensor, b: torch.Tensor | None, row_block_size: int | None, col_block_size: int | None
     ) -> None: ...
     @classmethod
-    def from_float(cls, mod, use_precomputed_fake_quant=...) -> Self: ...
+    def from_float(cls, mod, use_precomputed_fake_quant=...) -> Self:
+        """
+        Create a quantized sparse module from a float module.
+
+        We only care about the convert at this stage, no need for observers just yet.
+
+        TODO(zaf): Need to add the sparse params to the qconfig
+        """

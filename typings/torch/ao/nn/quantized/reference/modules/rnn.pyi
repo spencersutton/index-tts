@@ -23,6 +23,11 @@ class RNNCellBase(nn.RNNCellBase):
     def get_weight_hh(self) -> Tensor | None: ...
 
 class RNNCell(RNNCellBase):
+    """
+    We'll store weight_qparams for all the weights (weight_ih and weight_hh),
+    we need to pass in a `weight_qparams_dict` that maps from weight name,
+    e.g. weight_ih, to the weight_qparams for that weight
+    """
     def __init__(
         self,
         input_size: int,
@@ -38,6 +43,11 @@ class RNNCell(RNNCellBase):
     def from_float(cls, mod, weight_qparams_dict) -> Self: ...
 
 class LSTMCell(RNNCellBase):
+    """
+    We'll store weight_qparams for all the weights (weight_ih and weight_hh),
+    we need to pass in a `weight_qparams_dict` that maps from weight name,
+    e.g. weight_ih, to the weight_qparams for that weight
+    """
     def __init__(
         self,
         input_size: int,
@@ -52,6 +62,11 @@ class LSTMCell(RNNCellBase):
     def from_float(cls, mod, weight_qparams_dict, use_precomputed_fake_quant=...) -> Self: ...
 
 class GRUCell(RNNCellBase):
+    """
+    We'll store weight_qparams for all the weights (weight_ih and weight_hh),
+    we need to pass in a `weight_qparams_dict` that maps from weight name,
+    e.g. weight_ih, to the weight_qparams for that weight
+    """
     def __init__(
         self,
         input_size: int,
@@ -83,11 +98,26 @@ class RNNBase(nn.RNNBase):
     ) -> None: ...
 
 class LSTM(RNNBase):
+    """
+    Reference Quantized LSTM Module
+    We'll store weight_qparams for all the weights in _flat_weights, we need to pass in
+    a `weight_qparams_dict` that maps from weight name, e.g. weight_ih_l0,
+    to the weight_qparams for that weight
+    """
     def __init__(self, *args, **kwargs) -> None: ...
     def permute_hidden(self, hx: tuple[Tensor, Tensor], permutation: Tensor | None) -> tuple[Tensor, Tensor]: ...
     def get_expected_cell_size(self, input: Tensor, batch_sizes: Tensor | None) -> tuple[int, int, int]: ...
     def check_forward_args(self, input: Tensor, hidden: tuple[Tensor, Tensor], batch_sizes: Tensor | None) -> None: ...
-    def get_quantized_weight_bias_dict(self) -> dict[Any, Any]: ...
+    def get_quantized_weight_bias_dict(self) -> dict[Any, Any]:
+        """
+        dictionary from flat_weight_name to quantized weight or (unquantized) bias
+        e.g.
+        {
+          "weight_ih_l0": quantized_weight,
+          "bias_ih_l0": unquantized_bias,
+          ...
+        }
+        """
     def get_flat_weights(self) -> list[Any]: ...
     def forward(
         self, input, hx=...
@@ -96,8 +126,23 @@ class LSTM(RNNBase):
     def from_float(cls, mod, weight_qparams_dict) -> Self: ...
 
 class GRU(RNNBase):
+    """
+    Reference Quantized GRU Module
+    We'll store weight_qparams for all the weights in _flat_weights, we need to pass in
+    a `weight_qparams_dict` that maps from weight name, e.g. weight_ih_l0,
+    to the weight_qparams for that weight
+    """
     def __init__(self, *args, **kwargs) -> None: ...
-    def get_quantized_weight_bias_dict(self) -> dict[Any, Any]: ...
+    def get_quantized_weight_bias_dict(self) -> dict[Any, Any]:
+        """
+        dictionary from flat_weight_name to quantized weight or (unquantized) bias
+        e.g.
+        {
+          "weight_ih_l0": quantized_weight,
+          "bias_ih_l0": unquantized_bias,
+          ...
+        }
+        """
     def get_flat_weights(self) -> list[Any]: ...
     def forward(self, input, hx=...) -> tuple[PackedSequence, Tensor] | tuple[Tensor, Tensor]: ...
     @classmethod

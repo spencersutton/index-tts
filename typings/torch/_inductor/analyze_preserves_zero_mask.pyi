@@ -12,15 +12,22 @@ from .virtualized import StoreMode
 def construct_symbol(count: int, dtype: torch.dtype) -> sympy.Symbol: ...
 
 class PreservesZeros(SymPyOps, DefaultHandler):
+    """
+    For prologue kernels where the loads are masked, does the final store of this kernel preserve
+    the zeros.
+    """
     def __init__(self) -> None: ...
     def load(self, name: str, index: sympy.Expr) -> TypedExpr: ...
     def store(self, name: str, index: sympy.Expr, value: TypedExpr, mode: StoreMode = ...) -> None: ...
     def indirect_indexing(self, *args: Any, **kwargs: Any) -> sympy.Expr: ...
 
-def prologue_preserves_zero_mask(prologue: SchedulerNode) -> bool: ...
+def prologue_preserves_zero_mask(prologue: SchedulerNode) -> bool:
+    """Does this prologue preserve zero masks"""
 
 @dataclasses.dataclass
 class DTypeContainer:
+    """DTypeContainer(dtype: torch.dtype, is_scalar: bool = False)"""
+
     dtype: torch.dtype
     is_scalar: bool = ...
 
@@ -34,4 +41,11 @@ class RecordLowPrecisionOps(DefaultHandler):
     def indirect_indexing(*args: Any, **kwargs: Any) -> sympy.Expr: ...
 
 def low_prec_float(dtype: torch.dtype) -> bool: ...
-def can_codegen_without_upcasts(prologue: SchedulerNode, disallow_fp32_ops: bool = ...) -> bool: ...
+def can_codegen_without_upcasts(prologue: SchedulerNode, disallow_fp32_ops: bool = ...) -> bool:
+    """
+    Can this prologue be run without `upcast_to_fp32` while preserving numerics.
+
+    This is only true if the node only contains dtype conversions, indexing, and other non-arithmetic operators.
+
+    If disallow_fp32_ops is True, then we also disallow ops that are explicitly computed in fp32 or fp64.
+    """

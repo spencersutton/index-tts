@@ -25,8 +25,12 @@ GRAPHVIZ_COMMAND_SCALABLE = ...
 
 @functools.cache
 def has_dot() -> bool: ...
-def draw_buffers(nodes: list[BaseSchedulerNode], print_graph: bool = ..., fname: str | None = ...) -> None: ...
-def create_fx_from_snodes(snodes: list[BaseSchedulerNode]) -> fx.Graph: ...
+def draw_buffers(nodes: list[BaseSchedulerNode], print_graph: bool = ..., fname: str | None = ...) -> None:
+    """Draw a graph in fname.svg."""
+
+def create_fx_from_snodes(snodes: list[BaseSchedulerNode]) -> fx.Graph:
+    """Creates a FX Graph from a list of SchedulerNode objects."""
+
 def update_orig_fx_node_name_to_buf_name(
     nodes: SchedulerNodeList | None,
     node_name_to_buf_name: dict[str, str],
@@ -34,7 +38,9 @@ def update_orig_fx_node_name_to_buf_name(
     n_origins: int = ...,
 ) -> None: ...
 def get_node_name_to_buf_meta(node_name_to_buf_name: dict[str, str]) -> dict[str, BufMeta]: ...
-def annotate_orig_fx_with_snodes(gm: torch.fx.GraphModule, snodes: SchedulerNodeList) -> None: ...
+def annotate_orig_fx_with_snodes(gm: torch.fx.GraphModule, snodes: SchedulerNodeList) -> None:
+    """Creates a FX Graph from a list of SchedulerNode objects."""
+
 @contextlib.contextmanager
 def enable_aot_logging() -> Iterator[None]: ...
 
@@ -47,7 +53,11 @@ _inductor_kernel_provenance_debug_handle: int = ...
 
 def reset_inductor_kernel_provenance_debug_handle() -> None: ...
 @contextlib.contextmanager
-def reset_provenance_globals() -> Iterator[None]: ...
+def reset_provenance_globals() -> Iterator[None]:
+    """
+    Context manager that resets provenance tracking globals upon entering
+    and restores their original values when exiting.
+    """
 
 class DebugContext:
     _counter = ...
@@ -88,13 +98,20 @@ class DebugFormatter:
 def log_ir_pre_fusion(nodes: SchedulerNodeList) -> None: ...
 def log_ir_post_fusion(nodes: SchedulerNodeList) -> None: ...
 def log_collective_schedule(nodes: Sequence[BaseSchedulerNode]) -> None: ...
-def log_runtime_and_tensor_meta(node_runtimes: Sequence[tuple[Any, float]]) -> None: ...
-def log_graph_execution() -> None: ...
+def log_runtime_and_tensor_meta(node_runtimes: Sequence[tuple[Any, float]]) -> None:
+    """Log per-op runtime estimates and output tensor metadata for TLParse."""
+
+def log_graph_execution() -> None:
+    """Emit a structured artifact with the graph execution order."""
+
 @contextlib.contextmanager
-def record_and_log_graph_execution_order() -> Iterator[None]: ...
+def record_and_log_graph_execution_order() -> Iterator[None]:
+    """Record graph execution order and log it once on exit."""
 
 @dataclasses.dataclass
 class TensorMetadataHolder:
+    """TensorMetadataHolder(tensor_metadata: torch.fx.passes.shape_prop.TensorMetadata, device: torch.device)"""
+
     tensor_metadata: TensorMetadata
     device: torch.device
 
@@ -102,16 +119,40 @@ save_args_cnt = ...
 
 def create_mapping_pre_post_grad_nodes(
     pre_grad_graph_id: int | None, post_to_pre_grad_nodes_json: dict[str, Any]
-) -> dict[str, dict[str, list[str]]]: ...
+) -> dict[str, dict[str, list[str]]]:
+    """
+    Create bidirectional mappings between pre_grad graph nodes
+    and post_grad graph code nodes, and vice versa.
+    """
+
 def create_node_mapping_kernel_to_post_grad(
     triton_kernel_to_post_grad_json: dict[str, Any],
-) -> dict[str, dict[str, Any]]: ...
+) -> dict[str, dict[str, Any]]:
+    """
+    Create bidirectional mappings between triton kernel name and post_grad
+    graph code nodes, and vice versa.
+    """
+
 def dump_inductor_provenance_info() -> dict[str, Any]: ...
-def create_kernel_information_json() -> dict[str, dict[str, list[str]]]: ...
+def create_kernel_information_json() -> dict[str, dict[str, list[str]]]:
+    """Create kernel information JSON"""
+
 def set_kernel_post_grad_provenance_tracing(
     node_schedule: Sequence[BaseSchedulerNode] | ExternKernel, kernel_name: str, is_extern: bool = ...
-) -> int | None: ...
-def save_args_for_compile_fx_inner(*args: Any, **kwargs: Any) -> None: ...
+) -> int | None:
+    """
+    Set the mapping between `kernel_name` and the post_grad nodes in `node_schedule`.
+
+    Returns a unique int debug handler for each call to this function.
+    """
+
+def save_args_for_compile_fx_inner(*args: Any, **kwargs: Any) -> None:
+    """
+    This function is used to save arguments for a compile_fx_inner function call
+    to the file system.  Later on one can replay the compile_fx_inner call
+    with the saved arguments using load_args_and_run_compile_fx_inner.
+    """
+
 def load_args_and_run_compile_fx_inner(path: str) -> Any: ...
 def aot_inductor_minifier_wrapper(
     func: Callable[..., str],

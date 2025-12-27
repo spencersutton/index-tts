@@ -15,17 +15,26 @@ BUG_CACHES_DONT_WORK_WITH_ASYNC = ...
 
 @dataclass
 class _PostCompileData:
+    """_PostCompileData(example_inputs: 'Sequence[InputType]', constants: 'CompiledFxGraphConstants', graph_kwargs: '_CompileFxKwargs')"""
+
     example_inputs: Sequence[InputType]
     constants: CompiledFxGraphConstants
     graph_kwargs: _CompileFxKwargs
 
 @dataclass
 class ProgressiveCompilationState:
+    """ProgressiveCompilationState(progression_futures: 'deque[Future[_WireProtocolPickledOutput]]', callback: 'Callable[[_WireProtocolPickledOutput], OutputCode]', post_compile_data: 'Optional[_PostCompileData]')"""
+
     progression_futures: deque[Future[_WireProtocolPickledOutput]]
     callback: Callable[[_WireProtocolPickledOutput], OutputCode]
     post_compile_data: _PostCompileData | None
-    def check_and_get_ready_stage(self) -> int: ...
-    def switch_to_progression_stage(self, stage_index: int) -> tuple[OutputCode, bool]: ...
+    def check_and_get_ready_stage(self) -> int:
+        """Check if any progression stage is ready and return its index, or -1 if none are ready."""
+    def switch_to_progression_stage(self, stage_index: int) -> tuple[OutputCode, bool]:
+        """
+        Switch to the specified progression stage and return the optimized output code.
+        Returns a tuple of (optimized_output_code, should_clear_compilation_state).
+        """
 
 @final
 class _AsyncOutputCode(OutputCode):

@@ -1,9 +1,37 @@
+"""
+We will recreate all the RNN modules as we require the modules to be decomposed
+into its building blocks to be able to observe.
+"""
+
 import torch
 from torch import Tensor
 
 __all__ = ["LSTM", "LSTMCell"]
 
 class LSTMCell(torch.nn.Module):
+    """
+    A quantizable long short-term memory (LSTM) cell.
+
+    For the description and the argument types, please, refer to :class:`~torch.nn.LSTMCell`
+
+    `split_gates`: specify True to compute the input/forget/cell/output gates separately
+    to avoid an intermediate tensor which is subsequently chunk'd. This optimization can
+    be beneficial for on-device inference latency. This flag is cascaded down from the
+    parent classes.
+
+    Examples::
+
+        >>> import torch.ao.nn.quantizable as nnqa
+        >>> rnn = nnqa.LSTMCell(10, 20)
+        >>> input = torch.randn(6, 10)
+        >>> hx = torch.randn(3, 20)
+        >>> cx = torch.randn(3, 20)
+        >>> output = []
+        >>> for i in range(6):
+        ...     hx, cx = rnn(input[i], (hx, cx))
+        ...     output.append(hx)
+    """
+
     _FLOAT_MODULE = torch.nn.LSTMCell
     __constants__ = ...
     def __init__(
@@ -12,11 +40,24 @@ class LSTMCell(torch.nn.Module):
     def forward(self, x: Tensor, hidden: tuple[Tensor, Tensor] | None = ...) -> tuple[Tensor, Tensor]: ...
     def initialize_hidden(self, batch_size: int, is_quantized: bool = ...) -> tuple[Tensor, Tensor]: ...
     @classmethod
-    def from_params(cls, wi, wh, bi=..., bh=..., split_gates=...) -> Self: ...
+    def from_params(cls, wi, wh, bi=..., bh=..., split_gates=...) -> Self:
+        """
+        Uses the weights and biases to create a new LSTM cell.
+
+        Args:
+            wi, wh: Weights for the input and hidden layers
+            bi, bh: Biases for the input and hidden layers
+        """
     @classmethod
     def from_float(cls, other, use_precomputed_fake_quant=..., split_gates=...) -> Self: ...
 
 class _LSTMSingleLayer(torch.nn.Module):
+    """
+    A single one-directional LSTM layer.
+
+    The difference between a layer and a cell is that the layer can process a
+    sequence, while the cell only expects an instantaneous value.
+    """
     def __init__(
         self, input_dim: int, hidden_dim: int, bias: bool = ..., device=..., dtype=..., *, split_gates=...
     ) -> None: ...
@@ -27,6 +68,7 @@ class _LSTMSingleLayer(torch.nn.Module):
     def from_params(cls, *args, **kwargs) -> Self: ...
 
 class _LSTMLayer(torch.nn.Module):
+    """A single bi-directional LSTM layer."""
     def __init__(
         self,
         input_dim: int,
@@ -43,9 +85,42 @@ class _LSTMLayer(torch.nn.Module):
         self, x: Tensor, hidden: tuple[Tensor, Tensor] | None = ...
     ) -> tuple[Tensor | Any, tuple[Any | Tensor | None, Any | Tensor | None]]: ...
     @classmethod
-    def from_float(cls, other, layer_idx=..., qconfig=..., **kwargs) -> Self: ...
+    def from_float(cls, other, layer_idx=..., qconfig=..., **kwargs) -> Self:
+        """
+        There is no FP equivalent of this class. This function is here just to
+        mimic the behavior of the `prepare` within the `torch.ao.quantization`
+        flow.
+        """
 
 class LSTM(torch.nn.Module):
+    """
+    A quantizable long short-term memory (LSTM).
+
+    For the description and the argument types, please, refer to :class:`~torch.nn.LSTM`
+
+    Attributes:
+        layers : instances of the `_LSTMLayer`
+
+    .. note::
+        To access the weights and biases, you need to access them per layer.
+        See examples below.
+
+    Examples::
+
+        >>> import torch.ao.nn.quantizable as nnqa
+        >>> rnn = nnqa.LSTM(10, 20, 2)
+        >>> input = torch.randn(5, 3, 10)
+        >>> h0 = torch.randn(2, 3, 20)
+        >>> c0 = torch.randn(2, 3, 20)
+        >>> output, (hn, cn) = rnn(input, (h0, c0))
+        >>> # To get the weights:
+        >>> # xdoctest: +SKIP
+        >>> print(rnn.layers[0].weight_ih)
+        tensor([[...]])
+        >>> print(rnn.layers[0].weight_hh)
+        AssertionError: There is no reverse path in the non-bidirectional layer
+    """
+
     _FLOAT_MODULE = torch.nn.LSTM
     def __init__(
         self,

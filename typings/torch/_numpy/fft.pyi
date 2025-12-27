@@ -1,6 +1,8 @@
 from ._normalizations import ArrayLike, normalizer
 
-def upcast(func): ...
+def upcast(func):
+    """NumPy fft casts inputs to 64 bit and *returns 64-bit results*."""
+
 @normalizer
 @upcast
 def fft(a: ArrayLike, n=..., axis=..., norm=...): ...

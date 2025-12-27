@@ -6,7 +6,8 @@ from .gemm import GemmMaxAutotuneTemplateConfigHeuristics
 from .registry import register_template_heuristic
 
 @register_template_heuristic(decompose_k_subgraph_template.uid, None, op_name="mm")
-class EmptyDecomposeKConfigHeuristics(TemplateConfigHeuristics): ...
+class EmptyDecomposeKConfigHeuristics(TemplateConfigHeuristics):
+    """empty heuristics to skip decompose k on anything not cuda"""
 
 @register_template_heuristic(
     decompose_k_subgraph_template.uid, "cuda", register=torch.version.hip is None, op_name="mm"

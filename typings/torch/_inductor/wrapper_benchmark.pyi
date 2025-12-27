@@ -10,13 +10,40 @@ class BenchmarkCallableType(Protocol):
 
 _kernel_category_choices = ...
 
-def get_kernel_category_by_source_code(src_code: str) -> str: ...
-def get_kernel_category(kernel_mod: ModuleType) -> str: ...
+def get_kernel_category_by_source_code(src_code: str) -> str:
+    """
+    Similar to get_kernel_category but use the source code. Call this API
+    if we have not compile the src_code to module yet.
+    """
+
+def get_kernel_category(kernel_mod: ModuleType) -> str:
+    """
+    Given the module defining a triton kernel, return the category of the kernel.
+    Category can be one of:
+    - pointwise
+    - reduction
+    - persistent_reduction
+
+    Currently we simply decide the category depending on what decorator is imported
+    by the kernel.
+    """
+
 def get_triton_kernel(mod: ModuleType): ...
-def benchmark_all_kernels(benchmark_name: str, benchmark_all_configs: dict[Any, Any] | None) -> None: ...
+def benchmark_all_kernels(benchmark_name: str, benchmark_all_configs: dict[Any, Any] | None) -> None:
+    """
+    An experimental API used only when config.benchmark_kernel is true.
+
+    Run the kernel benchmarks for all the kernels cached in PyCodeCache.
+    Used in the compiled modules.
+
+    Put this method here rather than codegen it for convenience since its implementation
+    does not change based on different graph modules being compiled.
+    """
 
 @dataclass
 class ProfileEvent:
+    """ProfileEvent(category: str, key: str, self_device_time_ms: float, count: float)"""
+
     category: str
     key: str
     self_device_time_ms: float
@@ -28,7 +55,8 @@ def parse_profile_event_list(
     wall_time_ms: float,
     nruns: int,
     device_name: str,
-) -> None: ...
+) -> None:
+    """Parse and generate a report for an event_list."""
 
 PROFILE_DIR = ...
 PROFILE_PATH = ...
@@ -45,4 +73,5 @@ def ncu_analyzer(
 ) -> None: ...
 def collect_memory_snapshot(benchmark_compiled_module_fn: BenchmarkCallableType) -> None: ...
 @torch.compiler.disable
-def compiled_module_main(benchmark_name: str, benchmark_compiled_module_fn: BenchmarkCallableType) -> None: ...
+def compiled_module_main(benchmark_name: str, benchmark_compiled_module_fn: BenchmarkCallableType) -> None:
+    """This is the function called in __main__ block of a compiled module."""

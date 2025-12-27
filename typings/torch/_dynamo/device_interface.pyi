@@ -1,3 +1,20 @@
+"""
+Device abstraction layer for TorchDynamo and Inductor backends.
+
+This module provides a unified interface for different hardware backends (CUDA, XPU,
+CPU, MPS, MTIA) through a common device interface. Key components include:
+
+- DeviceInterface: Base class defining the common API for all device types
+- Device-specific implementations: CudaInterface, XpuInterface, CpuInterface, MpsInterface, MtiaInterface
+- Device registration system for managing available backends
+- Worker APIs for multi-processing scenarios
+- Stream and event management across different devices
+- Device property caching for worker processes
+
+The abstraction layer enables device-agnostic code in TorchDynamo while allowing
+specialized implementations for each hardware backend's unique features.
+"""
+
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from typing import Any, Literal
@@ -17,6 +34,10 @@ caching_worker_device_properties: dict[str, Any] = ...
 caching_worker_current_devices: dict[str, int] = ...
 
 class DeviceInterface:
+    """
+    This is a simple device runtime interface for Inductor. It enables custom
+    backends to be integrated with Inductor in a device-agnostic semantic.
+    """
     class device:
         def __new__(cls, device: torch.types.Device) -> Any: ...
 
@@ -27,6 +48,12 @@ class DeviceInterface:
         def __new__(cls, *args: Any, **kwargs: Any) -> Any: ...
 
     class Worker:
+        """
+        Worker API to query device properties that will work in multi processing
+        workers that cannot use the GPU APIs (due to processing fork() and
+        initialization time issues). Properties are recorded in the main process
+        before we fork the workers.
+        """
         @staticmethod
         def set_device(device: int) -> None: ...
         @staticmethod
@@ -67,11 +94,31 @@ class DeviceInterface:
     @staticmethod
     def memory_allocated(device: torch.types.Device = ...) -> int: ...
     @staticmethod
-    def is_triton_capable(device: torch.types.Device = ...) -> bool: ...
+    def is_triton_capable(device: torch.types.Device = ...) -> bool:
+        """
+        Returns True if the device has Triton support, False otherwise, even if
+        the appropriate Triton backend is not available.
+        """
     @classmethod
-    def raise_if_triton_unavailable(cls, device: torch.types.Device = ...) -> None: ...
+    def raise_if_triton_unavailable(cls, device: torch.types.Device = ...) -> None:
+        """
+        Raises a `RuntimeError` with the appropriate human-readable instructions
+        to resolve the issue if Triton is not available for the given device, or
+        the default device if `device` is `None`.
+
+        The caller should ensure the presence of the 'triton' package before
+        calling this method.
+        """
 
 class DeviceGuard:
+    """
+    This class provides a context manager for device switching. This is a stripped
+    down version of torch.{device_name}.device.
+
+    The context manager changes the current device to the given device index
+    on entering the context and restores the original device on exiting.
+    The device is switched using the provided device interface.
+    """
     def __init__(self, device_interface: type[DeviceInterface], index: int | None) -> None: ...
     def __enter__(self) -> None: ...
     def __exit__(self, type: Any, value: Any, traceback: Any) -> Literal[False]: ...
@@ -194,6 +241,8 @@ class XpuInterface(DeviceInterface):
 
 @dataclass
 class CpuDeviceProperties:
+    """CpuDeviceProperties(multi_processor_count: int)"""
+
     multi_processor_count: int
 
 class CpuInterface(DeviceInterface):

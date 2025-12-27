@@ -8,4 +8,8 @@ def lower_to_fbgemm(
     qconfig_map: dict[str, QConfigAny],
     node_name_to_scope: dict[str, tuple[str, type]],
     keep_original_weights: bool = ...,
-) -> GraphModule: ...
+) -> GraphModule:
+    """
+    Lower a quantized reference model (with reference quantized operator patterns)
+    to fbgemm
+    """

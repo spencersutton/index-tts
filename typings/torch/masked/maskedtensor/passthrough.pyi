@@ -1,2 +1,9 @@
+"""
+These are functions that should simply be applied to both mask and data.
+Take select or stack as an example. This operation can be applied to
+both the mask and data of a MaskedTensor and the result wrapped into
+a new MaskedTensor as a result.
+"""
+
 __all__ = []
 PASSTHROUGH_FNS = ...

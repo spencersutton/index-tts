@@ -16,24 +16,56 @@ log = ...
 _triton_kernel_metrics: dict[str, dict[str, Any]] | None = ...
 size_hints_regex = ...
 
-def pre_fork_setup(): ...
+def pre_fork_setup():
+    """Setup that must be done prior to forking with a process pool."""
+
 def caching_device_properties(): ...
 
 _IS_WINDOWS = ...
 log = ...
 _pool_set = ...
 
-def shutdown_compile_workers() -> None: ...
-def after_fork(): ...
-def get_compile_threads() -> int: ...
+def shutdown_compile_workers() -> None:
+    """Shut down all outstanding compile-worker pools."""
+
+def after_fork():
+    """Reset pools to initial state without shutting them down"""
+
+def get_compile_threads() -> int:
+    """
+    Temporary for internal rollout. Assign config.compile_threads lazily and return it.
+    TODO: remove after rollout.
+    """
 
 @clear_on_fresh_cache
 class CompiledTritonKernels:
+    """
+    In memory cache for storing compiled triton kernels.
+
+    Each triton kernel is keyed by the hash of its source code. Each value stored
+    in the cache is a return value of AsyncCompile.triton().
+
+    Currently, the cache stores Future objects, but it should be generalizable for any kernels.
+    """
+
     _cache: dict[str, CodeCacheFuture] = ...
     @staticmethod
-    def key(kernel_src: str): ...
+    def key(kernel_src: str):
+        """
+        Generates a cache key given a triton kernel's full source code.
+        This source includes the inductor meta, compilation metadata, the kernel itself, etc.
+        `kernel_src` should be the exact string passed to async_compile.triton()'s first argument.
+        """
     @staticmethod
-    def save(kernel_src: str, future: CodeCacheFuture): ...
+    def save(kernel_src: str, future: CodeCacheFuture):
+        """
+        Saves a compiled triton kernel to the cache.
+        TODO: We store a LambdaFuture as that's the callable returned by async_compile.triton,
+        but the real type we want to return here is actually an abstract triton kernel.
+
+        TODO: Source code here is not just the kernel's source code, but also includes the inductor preamble, etc.
+        so it could be less strict.
+        """
     @staticmethod
     def get(kernel_src: str) -> CodeCacheFuture | None: ...
     @staticmethod
@@ -42,9 +74,15 @@ class CompiledTritonKernels:
     def remove_future(kernel_src: str) -> None: ...
 
 @contextlib.contextmanager
-def async_compile_pool_manager(): ...
+def async_compile_pool_manager():
+    """
+    Context manager to quiesce the subproc pool at the end of compilation, i.e.,
+    when dynamo is done.
+    """
 
 class AsyncCompile:
+    """Utilities to compile in thread pools or subprocess pools (in the case of Triton)."""
+
     _ready_future: Future[Any] | None = ...
     def __init__(self) -> None: ...
     @staticmethod
@@ -62,17 +100,57 @@ class AsyncCompile:
     @classmethod
     def use_process_pool(cls): ...
     @classmethod
-    def quiesce(cls) -> None: ...
+    def quiesce(cls) -> None:
+        """
+        If using a SubprocPool, signal the sidecar process to shut down its
+        ProcessPoolExecutor.
+        """
     @classmethod
-    def wakeup(cls) -> None: ...
-    def triton(self, kernel_name: str, source_code: str, device_str: str = ...): ...
+    def wakeup(cls) -> None:
+        """
+        If using a SubprocPool, signal the sidecar process to start up its
+        ProcessPoolExecutor.
+        """
+    def triton(self, kernel_name: str, source_code: str, device_str: str = ...):
+        """
+        Async_compile.triton is more complicated than the other backends because
+        we're trying to optimize compile time as much as possible for this hot callsite.
+
+        First of all, the function is cached by CompiledTritonKernels; if there's a kernel
+        already compiled, we grab it directly from the cache and return.
+
+        Otherwise, if we have multiple compile threads, we kick off triton compilations on each
+        worker process by giving it a kernel and source code to compile. The worker initializes
+        a CachingAutotuner, runs triton compilation, and pickles the kernel back to us.
+        We use TritonCompileResult to represent the objects being pickled back to us by each
+        worker.
+
+        Some maybe not obvious things that are pickled back to us:
+        - Most of the time, we can avoid sending back CachingAutotuner.fn and other metadata
+          and do not have to pay the cost of loading the triton kernel on the parent. But certain
+          cases, like coordesc tuning and dynamic_scale_rblock, require us to reload the function
+          in the parent lazily when we require it.
+        - The AutotuneCache, if enabled, is constructed on each worker per triton config
+          and pickled by to us via `CachingAutotuner.save_cache_hook`.
+        """
     def multi_kernel(self, *args, **kwargs) -> Any: ...
     def cpp(self, source_code: str): ...
     def cpp_pybinding(self, argtypes: list[str], source_code: str): ...
     def cuda(self, source_code, dst_file_ext, aot_compile=...): ...
     def rocm(self, source_code, dst_file_ext, aot_compile=...): ...
     def halide(self, meta: HalideMeta, source_code: str): ...
-    def cutedsl(self, kernel_name: str, source_code: str): ...
+    def cutedsl(self, kernel_name: str, source_code: str):
+        """
+        Compile CuteDSL (CUTLASS Python DSL) kernels.
+
+        Args:
+            kernel_name: Name of the kernel to be defined
+            source_code: Source code of the CuteDSL kernel, as a string
+
+        Note:
+            CuteDSL currently requires source files to do its compilation, there we
+            use the PyCodeCache to write the source code to a file and load it.
+        """
     def wait(self, scope: dict[str, Any]) -> None: ...
 
 def maybe_warm_pool() -> None: ...

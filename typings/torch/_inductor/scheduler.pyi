@@ -25,6 +25,8 @@ type PartitionType = list[BaseSchedulerNode]
 
 @dataclasses.dataclass
 class SchedulerBuffer:
+    """SchedulerBuffer(scheduler: 'Scheduler', node: 'ir.Buffer', defining_op: 'Optional[BaseSchedulerNode]', users: 'list[NodeUser]' = <factory>, mpi_buffer: 'MemoryPlanningInfoForBuffer' = <factory>)"""
+
     scheduler: Scheduler
     node: ir.Buffer
     defining_op: BaseSchedulerNode | None
@@ -43,6 +45,8 @@ class SchedulerBuffer:
 
 @dataclasses.dataclass
 class SchedulerDonatedBuffer(SchedulerBuffer):
+    """SchedulerDonatedBuffer(scheduler: 'Scheduler', node: 'ir.Buffer', defining_op: 'Optional[BaseSchedulerNode]' = None, users: 'list[NodeUser]' = <factory>, mpi_buffer: 'MemoryPlanningInfoForBuffer' = <factory>)"""
+
     defining_op: BaseSchedulerNode | None = ...
 
 class BaseSchedulerNode:
@@ -54,7 +58,8 @@ class BaseSchedulerNode:
     mpi_node: MemoryPlanningInfoForNode
     override_estimated_runtime: float | None = ...
     def __init__(self, scheduler: Scheduler) -> None: ...
-    def debug_str(self) -> str: ...
+    def debug_str(self) -> str:
+        """Longer form printout for trace logs"""
     def debug_str_extra(self) -> str: ...
     def debug_str_short(self) -> str: ...
     def log_details(self) -> None: ...
@@ -93,7 +98,11 @@ class BaseSchedulerNode:
     def is_foreach(self) -> bool: ...
     def can_inplace(self, read_dep: dependencies.Dep) -> bool: ...
     def has_side_effects(self) -> bool: ...
-    def decide_inplace_update(self) -> None: ...
+    def decide_inplace_update(self) -> None:
+        """
+        Decide if there should be inplace updates for the node
+        and record the decision in the active kernel.
+        """
     def codegen_originating_info(self, buffer: IndentedBuffer, only_once: bool = ...) -> None: ...
     @cache_on_self
     def get_read_write_buffers_sizes(self) -> int: ...
@@ -102,7 +111,31 @@ class BaseSchedulerNode:
     @cache_on_self
     def get_write_buffer_sizes(self) -> int: ...
     def get_read_write_buffers_sizes_impl(self, include_reads: bool, include_writes: bool) -> int: ...
-    def get_read_write_buffer_accesses(self, include_reads: bool, include_writes: bool) -> dict[str, int]: ...
+    def get_read_write_buffer_accesses(self, include_reads: bool, include_writes: bool) -> dict[str, int]:
+        """
+        Counting the number of bytes accessed for a kernel is
+        surprisingly tricky. In particular, there is a differentiation
+        between 'theoretical' memory accesses and practical memory
+        accesses. For example, a layernorm kernel may actually access an
+        input 3 times, but in theory, it only needs to access its input
+        once (and may be optimized to do so through say, persistent
+        reductions)
+
+        Another example is that even though a buffer is passed in, we may
+        not access the entire buffer. This may occur if we are accessing
+        a slice of the buffer. Another tricky case is for indirect
+        indexing, where the amount of bytes accessed depends on the
+        values of the input.
+
+        What this function aims to compute is the memory accesses for
+        worst-case inputs, best-case optimization. What this means is
+        that for each buffer we compute the amount of potential accesses in two ways and take the minimum.
+
+        1. Numel in ranges multiplied by number of deps the buffer has
+        2. The buffer size
+
+        Returns memory accesses per buffer.
+        """
     @cache_on_self
     def estimate_flops(self) -> int | None: ...
     def get_estimated_runtime(self) -> float: ...
@@ -111,7 +144,8 @@ class BaseSchedulerNode:
     @staticmethod
     def get_prologue_template_epilogue(
         nodes: list[BaseSchedulerNode],
-    ) -> tuple[list[BaseSchedulerNode], BaseSchedulerNode, list[BaseSchedulerNode]]: ...
+    ) -> tuple[list[BaseSchedulerNode], BaseSchedulerNode, list[BaseSchedulerNode]]:
+        """For the list of nodes, get the prologue, template, and epilogue"""
 
 @functools.cache
 def get_estimate_runtime_cache() -> torch._inductor.codecache.LocalCache: ...
@@ -145,6 +179,11 @@ class NopKernelSchedulerNode(BaseSchedulerNode):
     def __init__(self, scheduler: Scheduler, node: ir.Operation) -> None: ...
 
 class SchedulerNode(BaseSchedulerNode):
+    """
+    A SchedulerNode is a node for scheduling that encapsulates either
+    a ComputedBuffer or a TemplateBuffer.
+    """
+
     _sizes: tuple[Sequence[sympy.Expr], ...]
     _body: LoopBody
     def __init__(self, scheduler: Scheduler, node: ir.ComputedBuffer | ir.TemplateBuffer) -> None: ...
@@ -166,12 +205,26 @@ class SchedulerNode(BaseSchedulerNode):
     def get_template_node(self) -> ir.TemplateBuffer | None: ...
     def run(self, *index_vars: Sequence[sympy.Expr]) -> None: ...
     def ranges_from_index_vars(self, index_vars: Sequence[Sequence[sympy.Expr]]) -> dict[sympy.Expr, sympy.Expr]: ...
-    def codegen(self, index_vars: Sequence[Sequence[sympy.Expr]]) -> None: ...
-    def pointwise_or_reduction_read_writes(self, pointwise: bool = ...) -> dependencies.ReadWrites: ...
+    def codegen(self, index_vars: Sequence[Sequence[sympy.Expr]]) -> None:
+        """
+        Generate code for this node using the provided index variables.
+
+        This method sets up the appropriate context for code generation, including
+        simplifying indexing expressions based on the variable ranges, and then
+        calls the node's body function with the index variables.
+
+        Args:
+            index_vars: A sequence of sequences of sympy expressions representing
+                        the index variables for each dimension of the computation.
+        """
+    def pointwise_or_reduction_read_writes(self, pointwise: bool = ...) -> dependencies.ReadWrites:
+        """Get the memory dependencies in either the pointwise or the reduction axes."""
     @cache_on_self
-    def pointwise_read_writes(self) -> dependencies.ReadWrites: ...
+    def pointwise_read_writes(self) -> dependencies.ReadWrites:
+        """Get the memory dependencies in the non-reduction axes."""
     @cache_on_self
-    def reduction_read_writes(self) -> dependencies.ReadWrites: ...
+    def reduction_read_writes(self) -> dependencies.ReadWrites:
+        """Get the memory dependencies in the reduction axes."""
     def can_inplace(self, read_dep: dependencies.Dep) -> bool: ...
     @cache_on_self
     def has_side_effects(self) -> bool: ...
@@ -182,12 +235,19 @@ def init_group_node(
 ) -> None: ...
 
 class FusedSchedulerNode(BaseSchedulerNode):
+    """
+    This is a "fake" scheduler node that represents a group of scheduler nodes
+    that are meant to be fused together. The way it does this is by maintaining
+    its unmet dependencies as the union of its constituent nodes.
+    """
+
     snodes: list[BaseSchedulerNode]
     @classmethod
     def fuse(cls, node1: BaseSchedulerNode, node2: BaseSchedulerNode) -> FusedSchedulerNode: ...
     @cache_on_self
     def estimate_flops(self) -> int | None: ...
-    def reorder_loops_by_dep_pair(self, self_dep: MemoryDep, other_dep: MemoryDep) -> bool: ...
+    def reorder_loops_by_dep_pair(self, self_dep: MemoryDep, other_dep: MemoryDep) -> bool:
+        """Return true if a loop reordering is performed."""
     def __init__(self, scheduler: Scheduler, snodes: list[BaseSchedulerNode]) -> None: ...
     @cache_on_self
     def get_name(self) -> str: ...
@@ -217,11 +277,16 @@ class FusedSchedulerNode(BaseSchedulerNode):
     def update_mutated_names(self, renames: dict[str, str]) -> None: ...
     def add_fake_dep(self, name: Dep) -> None: ...
     def can_inplace(self, read_dep: dependencies.Dep) -> bool: ...
-    def debug_str(self) -> str: ...
+    def debug_str(self) -> str:
+        """Longer form printout for trace logs"""
     @cache_on_self
     def has_side_effects(self) -> bool: ...
 
 class ForeachKernelSchedulerNode(FusedSchedulerNode):
+    """
+    This is a schedular node that consists of a set of scheduler nodes that
+    has no data dependencies among them and can be executed in parallel.
+    """
     def get_consumer_subnode_for(self, producer: BaseSchedulerNode) -> BaseSchedulerNode | None: ...
     def get_producer_subnode_for(self, consumer: BaseSchedulerNode) -> BaseSchedulerNode | None: ...
     @classmethod
@@ -250,17 +315,38 @@ class ForeachKernelSchedulerNode(FusedSchedulerNode):
     def mark_run(self) -> None: ...
     def codegen(self) -> None: ...
     def is_foreach(self) -> bool: ...
-    def get_subkernel_nodes(self) -> list[BaseSchedulerNode]: ...
-    def get_nodes(self) -> Sequence[BaseSchedulerNode]: ...
+    def get_subkernel_nodes(self) -> list[BaseSchedulerNode]:
+        """
+        Returns a list of nodes which comprise the combo kernel.
+        These nodes may be vertically fused.
+        """
+    def get_nodes(self) -> Sequence[BaseSchedulerNode]:
+        """
+        Returns all nodes contained in this kernel, unpacking fused nodes
+        into their constituent scheduler nodes.
+        """
     def get_first_name(self) -> str: ...
     def prune_redundant_deps(self, name_to_fused_node: dict[str, BaseSchedulerNode]) -> None: ...
 
 class GroupedSchedulerNode(BaseSchedulerNode):
+    """
+    This is a "fake" scheduler node that represents a group of scheduler nodes
+    that are meant to be *grouped* together (it does not allow another node to be scheduled
+    in between its constituent nodes, nor does it allow another node to fuse into any of its constituent nodes).
+    The way it does this is by maintaining its unmet dependencies as the union of its constituent nodes.
+    Fusion will still happen among the nodes within each GroupedSchedulerNode.
+    At codegen time, this scheduler node will be unpacked and codegen is called on each constituent node.
+    """
+
     snodes: list[BaseSchedulerNode]
     @classmethod
     def create(cls, snodes: list[BaseSchedulerNode]) -> GroupedSchedulerNode: ...
     def __init__(self, scheduler: Scheduler, snodes: list[BaseSchedulerNode], temp_grouping: bool = ...) -> None: ...
-    def unpack(self) -> list[BaseSchedulerNode]: ...
+    def unpack(self) -> list[BaseSchedulerNode]:
+        """
+        Do fusion among nodes within this GroupedSchedulerNode,
+        and then unpack this GroupedSchedulerNode into regular nodes.
+        """
     def add_fake_dep(self, fake_dep: Dep) -> None: ...
     @cache_on_self
     def get_name(self) -> str: ...
@@ -276,10 +362,16 @@ class GroupedSchedulerNode(BaseSchedulerNode):
 
 def pick_loop_order(
     stride_lengths: list[list[int]], sizes: Sequence[sympy.Expr], priority_idx: Sequence[int] = ...
-) -> list[int]: ...
+) -> list[int]:
+    """
+    A heuristic to decide loop iteration orders.  This has not been well
+    tuned and may be something we should autotune.
+    """
 
 @dataclasses.dataclass
 class NodeUser:
+    """NodeUser(node: 'Union[BaseSchedulerNode, OutputNode]', can_inplace: 'bool' = False, is_weak: 'bool' = False)"""
+
     node: BaseSchedulerNode | OutputNode
     can_inplace: bool = ...
     is_weak: bool = ...
@@ -293,91 +385,260 @@ _post_grad_graph_counter = ...
 def used_non_deterministic_runtime_estimations() -> bool: ...
 
 class Scheduler:
+    """
+    A Scheduler is a graph of BaseSchedulerNodes. It is responsible for
+    optimizations such as fusion, reorder, and graph partition.
+    """
     def __init__(self, nodes: list[ir.Operation]) -> None: ...
     def get_donated_buffers(self) -> dict[str, SchedulerDonatedBuffer]: ...
     @property
     def current_device(self) -> torch.device | None: ...
     @current_device.setter
     def current_device(self, device: torch.device | None) -> None: ...
-    def debug_draw_graph(self) -> None: ...
+    def debug_draw_graph(self) -> None:
+        """Generate an image of the graph for debugging"""
     def debug_print_nodes(self, label: str) -> None: ...
     def create_scheduler_node(self, node: ir.Operation) -> BaseSchedulerNode: ...
     def create_foreach_nodes(self) -> None: ...
-    def compute_dependencies(self) -> None: ...
+    def compute_dependencies(self) -> None:
+        """
+        Create dependency edges between nodes, handling aliasing and
+        mutation properly.
+        """
     def insert_memory_check_nodes(self) -> None: ...
-    def dead_node_elimination(self) -> None: ...
-    def topological_sort_schedule(self, nodes: list[BaseSchedulerNode]) -> list[BaseSchedulerNode]: ...
-    def compute_ancestors(self) -> None: ...
+    def dead_node_elimination(self) -> None:
+        """Remove any nodes without users"""
+    def topological_sort_schedule(self, nodes: list[BaseSchedulerNode]) -> list[BaseSchedulerNode]:
+        """Ensure nodes is in topologically sorted order"""
+    def compute_ancestors(self) -> None:
+        """Populate each node.ancestors"""
     def merge_loops(self) -> None: ...
-    def fuse_nodes(self, nodes: list[BaseSchedulerNode]) -> list[BaseSchedulerNode]: ...
-    def process_grouped_nodes(self) -> None: ...
-    def benchmark_fused_nodes(self, nodes: Sequence[BaseSchedulerNode]) -> tuple[float, str]: ...
+    def fuse_nodes(self, nodes: list[BaseSchedulerNode]) -> list[BaseSchedulerNode]:
+        """Combine eligible nodes into FusedSchedulerNodes."""
+    def process_grouped_nodes(self) -> None:
+        """Unpack GroupedSchedulerNode into regular nodes."""
+    def benchmark_fused_nodes(self, nodes: Sequence[BaseSchedulerNode]) -> tuple[float, str]:
+        """
+        Benchmark fused list of nodes and return the execution time
+        in milliseconds on randomly generated inputs.
+        """
     def generate_kernel_code_from_nodes(
         self, nodes: Sequence[BaseSchedulerNode], benchmark_kernel: bool, hint_override: int | None = ...
-    ) -> str: ...
-    def benchmark_codegened_module(self, module: ModuleType, device: torch.device) -> tuple[float, str]: ...
-    def finalize_multi_template_buffers(self) -> None: ...
-    def speedup_by_fusion(self, node1: BaseSchedulerNode, node2: BaseSchedulerNode) -> bool | Callable[[], bool]: ...
-    def get_fused_node(self, node: BaseSchedulerNode) -> BaseSchedulerNode: ...
-    def fuse_nodes_once(self, nodes: list[BaseSchedulerNode]) -> list[BaseSchedulerNode]: ...
-    def create_combo_kernel_nodes(self, num_ck_nodes: int | None = ...) -> None: ...
+    ) -> str:
+        """
+        Benchmark fused list of nodes and return the execution time
+        in milliseconds on randomly generated inputs.
+        """
+    def benchmark_codegened_module(self, module: ModuleType, device: torch.device) -> tuple[float, str]:
+        """
+        Benchmark fused list of nodes and return the execution time
+        in milliseconds on randomly generated inputs.
+        """
+    def finalize_multi_template_buffers(self) -> None:
+        """
+        Finalize a backing choice for MultiTemplateBuffers which did not already have a
+        choice finalized through fusion. In the case of an extern choice, this will result
+        in replacing the SchedulerNode.
+
+        If a MultiTemplateBuffer did not have any fusion opportunities, finalizing a choice
+        will force completion of compilation and benchmarking.
+        """
+    def speedup_by_fusion(self, node1: BaseSchedulerNode, node2: BaseSchedulerNode) -> bool | Callable[[], bool]:
+        """
+        If config.benchmark_fusion is False, always return True.
+        Otherwise, return True if fusion can brings speedup.
+        """
+    def get_fused_node(self, node: BaseSchedulerNode) -> BaseSchedulerNode:
+        """Look up the node in Scheduler name_to_fused_node"""
+    def fuse_nodes_once(self, nodes: list[BaseSchedulerNode]) -> list[BaseSchedulerNode]:
+        """
+        Combine eligible nodes into FusedSchedulerNodes.
+
+        This relies on two key functions to control the logic:
+            - self.can_fuse(): checks if a fusion is legal
+            - self.score_fusion(): assigns priority to a given fusion
+        """
+    def create_combo_kernel_nodes(self, num_ck_nodes: int | None = ...) -> None:
+        """Groups parallel nodes"""
     def prune_redundant_deps(self, nodes: list[BaseSchedulerNode]) -> None: ...
-    def get_possible_fusions(
-        self, nodes: list[BaseSchedulerNode]
-    ) -> list[tuple[BaseSchedulerNode, BaseSchedulerNode]]: ...
-    def will_fusion_create_cycle(self, node1: BaseSchedulerNode, node2: BaseSchedulerNode) -> bool: ...
-    def can_fusion_increase_peak_memory(self, node1: BaseSchedulerNode, node2: BaseSchedulerNode) -> bool: ...
+    def get_possible_fusions(self, nodes: list[BaseSchedulerNode]) -> list[tuple[BaseSchedulerNode, BaseSchedulerNode]]:
+        """Helper to find all legal fusion opportunities, sorted by self.score_fusion()"""
+    def will_fusion_create_cycle(self, node1: BaseSchedulerNode, node2: BaseSchedulerNode) -> bool:
+        """
+        Finds whether there's a path from node1 to node2 (or vice-versa)
+        caused indirectly by other fusions.
+        """
+    def can_fusion_increase_peak_memory(self, node1: BaseSchedulerNode, node2: BaseSchedulerNode) -> bool:
+        """
+        Return true if fusing the two nodes can potentially increasing peak memory.
+
+        The implementation is more like a heuristic since we don't really know if we are at peak
+        or not when trying to fuse these two nodes. The order of nodes may change later which makes the
+        peak memory estimation hard.
+
+        Here is how we decide the LOWER BOUND of extra memory allocation if we fuse these 2 nodes:
+        1. find all buffers read by each node with a single user. These buffers are supposed to
+           be reused if we don't fuses these 2 nodes
+        2. find the intersection of these buffers for the two node and sum the total buffer size.
+           If we don't fuse these two nodes, we can at lease avoid this much memory allocation.
+           Note that the extra memory allocation is not necessarily causing peak memory increase.
+           This is just a heuristic.
+
+        We return true only if the saving for fusion can not trade off the extra memory allocation.
+        """
     def fusion_accumulate_large_reads(
         self, node1: BaseSchedulerNode, node2: BaseSchedulerNode, threshold: int
     ) -> bool: ...
-    def are_long_distant_nodes(self, node1: BaseSchedulerNode, node2: BaseSchedulerNode) -> bool: ...
+    def are_long_distant_nodes(self, node1: BaseSchedulerNode, node2: BaseSchedulerNode) -> bool:
+        """
+        This function prevents fusion for nodes that can increase memory
+        footprint. This problem is more common in horizontal fusion, where nodes
+        that are far apart in the original order get fused, lengthening the live
+        intervals of tensors. This is very evident in models with activation
+        checkpointing, where the recomputed nodes from different checkpointed
+        regions get fused and significantly increase the memory footprint.
+
+        The current attempt is a quick, possibly hacky, heuristic to prevent the
+        fusion of nodes that are far away in the original order.
+
+        A better but difficult to implement heurisitic would be to use live
+        intervals of the buffers, find region of peak pressure in the original
+        program and prevent fusion that crosses that peak region. We might need
+        special care or good approximation in this implementation, as fusion of
+        node changes live intervals, and re-computing live intervals and peak
+        memory after each fusion can introduce large compilation overhead.
+        """
     def decide_fusion_fail_reason(
         self, node1: BaseSchedulerNode, node2: BaseSchedulerNode, common_buf_names: tuple[str] | OrderedSet[str]
-    ) -> str: ...
-    def shared_data_after_reordering_loop(self, node1: BaseSchedulerNode, node2: BaseSchedulerNode) -> int: ...
-    def unfusable_node(self, node: BaseSchedulerNode) -> bool: ...
+    ) -> str:
+        """
+        Try to decide reasons why fusion fail due to no shared memory even though
+        there are common buffers.
+        """
+    def shared_data_after_reordering_loop(self, node1: BaseSchedulerNode, node2: BaseSchedulerNode) -> int:
+        """
+        Right now just greedily reorder the loop of node1 to be compatible with node2,
+        but ideally we should have some heuristics to reorder the loop for node2
+        to be compatible with node1 if that's more efficient.
+
+        Return the amount of shared data re-computed in this method.
+        If no such recomputation happens, return -1 (not return 0 since 0 is a valid
+        amount of shared data).
+        """
+    def unfusable_node(self, node: BaseSchedulerNode) -> bool:
+        """Is this node unfusable under any conditions."""
     def check_prologue_fusion_heuristics_fusable(
         self, prologue_node: BaseSchedulerNode, template_node: BaseSchedulerNode, why: WhyNoFuse
-    ) -> bool: ...
+    ) -> bool:
+        """Heuristics to avoid benchmarking predictably slow prologue fusions"""
     def get_expand_dim_for_pointwise_nodes(
         self, node1: BaseSchedulerNode, node2: BaseSchedulerNode
-    ) -> tuple[int, SchedulerNode, sympy.Expr] | None: ...
-    def can_fuse(self, node1: BaseSchedulerNode, node2: BaseSchedulerNode) -> bool: ...
-    def can_fuse_vertical(self, node1: BaseSchedulerNode, node2: BaseSchedulerNode) -> bool: ...
+    ) -> tuple[int, SchedulerNode, sympy.Expr] | None:
+        """
+        Fusing two small pointwise nodes significantly reduces kernel overhead
+        and launch overhead. However, slightly different sizes would prevent fusion.
+        Here, we decide if expanding sizes of one node is profitible by allowing
+        fusion, and returns the dimension to expand, node with smaller sizes,
+        and new size after expand.
+        """
+    def can_fuse(self, node1: BaseSchedulerNode, node2: BaseSchedulerNode) -> bool:
+        """
+        Determine if it is possible to combine node1 and node2 into a
+        single fused node.
+        """
+    def can_fuse_vertical(self, node1: BaseSchedulerNode, node2: BaseSchedulerNode) -> bool:
+        """
+        Check if it is legal to fuse a consumer (node2) into a producer (node1).
+
+        We can fuse them if all the reads of node2 either match
+        corresponding writes in node1, or are written by nodes that can
+        be scheduled before the fusion of node1 and node2.
+        """
     def fusable_weak_dep(self, weak_dep: WeakDep, node1: BaseSchedulerNode, node2: BaseSchedulerNode) -> bool: ...
     def fusable_read_and_write(self, read: Dep, write: MemoryDep) -> bool: ...
     def dep_size_hint(self, dep: Dep) -> int: ...
-    def score_fusion_memory(self, node1: BaseSchedulerNode, node2: BaseSchedulerNode) -> int: ...
+    def score_fusion_memory(self, node1: BaseSchedulerNode, node2: BaseSchedulerNode) -> int:
+        """
+        The first term in our fusion score that estimates number of saved
+        memory operations.
+        """
     def get_possible_fusions_with_highest_priority(
         self, possible_fusions: list[tuple[BaseSchedulerNode, BaseSchedulerNode]]
     ) -> list[tuple[BaseSchedulerNode, BaseSchedulerNode]]: ...
-    def score_fusion_key(self, nodes: tuple[BaseSchedulerNode, BaseSchedulerNode]) -> Any: ...
-    def compute_last_usage(self) -> None: ...
-    def free_buffers(self) -> None: ...
+    def score_fusion_key(self, nodes: tuple[BaseSchedulerNode, BaseSchedulerNode]) -> Any:
+        """Shim for list.sort(key=...)"""
+    def compute_last_usage(self) -> None:
+        """Populate node.last_usage recursively (also for the nodes within a FusedSchedulerNode)"""
+    def free_buffers(self) -> None:
+        """Free any buffers that are no longer needed"""
     def flush(self) -> None: ...
     def codegen_extern_call(self, scheduler_node: ExternKernelSchedulerNode) -> None: ...
     def create_backend(self, device: torch.device) -> BaseScheduling: ...
     def get_backend(self, device: torch.device | None) -> BaseScheduling: ...
     def enter_context(self, node: BaseSchedulerNode) -> None: ...
     def can_buffer_be_removed_through_fusion(self, name: str, fused_node_names: OrderedSet[str]) -> bool: ...
-    def should_partition(self, node: BaseSchedulerNode, should_log: bool = ...) -> bool: ...
-    def get_name_to_nodes(self) -> dict[str, ir.IRNode | ir.TorchBindObject | sympy.Expr]: ...
-    def compute_graph_partition_maps(self, signatures: list[GraphPartitionSignature]) -> None: ...
+    def should_partition(self, node: BaseSchedulerNode, should_log: bool = ...) -> bool:
+        """Return True if we should partition the inductor graph on this node"""
+    def get_name_to_nodes(self) -> dict[str, ir.IRNode | ir.TorchBindObject | sympy.Expr]:
+        """
+        Return a mapping from name strings to the corresponding graph inputs or
+        base scheduler node outputs.
+        """
+    def compute_graph_partition_maps(self, signatures: list[GraphPartitionSignature]) -> None:
+        """
+        computes a mapping from partition input/output indices to graph input/output
+        indices for each partition.
+        """
     def get_graph_partition_symbol_inputs(
         self, partition: PartitionType, input_nodes: dict[str, ir.IRNode | ir.TorchBindObject | sympy.Expr]
-    ) -> OrderedSet[sympy.Symbol]: ...
+    ) -> OrderedSet[sympy.Symbol]:
+        """
+        Returns all symbol inputs which are required to be in scope to successfully
+        perform codegen for this graph partition, including:
+        - free symbols used in partition nodes
+        - free symbols in partition input/node shapes, strides, and offsets. This is needed
+          for recording cudagraphs for tensors with dynamic shapes.
+        """
     def get_graph_partition_signature(
         self, partitions: list[PartitionType], skip_cudagraphs: list[bool]
-    ) -> list[GraphPartitionSignature]: ...
+    ) -> list[GraphPartitionSignature]:
+        """
+        Gets signature for each graph partition, including input nodes, output nodes, and
+        whether deallocating an input within graph partition.
+        """
     def clean_removed_buffer_from_partition_signatures(
         self, signature: GraphPartitionSignature
-    ) -> GraphPartitionSignature: ...
-    def reorder_for_minimizing_partition(self, nodes: list[BaseSchedulerNode]) -> list[BaseSchedulerNode]: ...
-    def maybe_reorder_for_minimizing_partition(self, nodes: list[BaseSchedulerNode]) -> list[BaseSchedulerNode]: ...
-    def reorder_for_partition_with_simple_dependency(
-        self, nodes: list[BaseSchedulerNode]
-    ) -> list[BaseSchedulerNode]: ...
-    def graph_partition(self) -> tuple[list[PartitionType], list[GraphPartitionSignature]]: ...
+    ) -> GraphPartitionSignature:
+        """
+        Updates the partition signature by removing buffers specified in
+        V.graph.removed_buffers. See [Note: Removed Graph Partition Arguments]
+        """
+    def reorder_for_minimizing_partition(self, nodes: list[BaseSchedulerNode]) -> list[BaseSchedulerNode]:
+        """
+        Reorder nodes to minimize the number of partitions via a bfs
+        topological sort. This is the optimal reordering such that the
+        number of partitions cannot be reduced further. This may be
+        sub-optimal for other metrics such as peak memory. This does not
+        change relative orders of two cudagraphable nodes, nor the
+        relative order of two non_cudagraphable nodes.
+        """
+    def maybe_reorder_for_minimizing_partition(self, nodes: list[BaseSchedulerNode]) -> list[BaseSchedulerNode]:
+        """
+        Reorder nodes to minimize the number of partitions if this only slightly
+        increase peak memory.
+        """
+    def reorder_for_partition_with_simple_dependency(self, nodes: list[BaseSchedulerNode]) -> list[BaseSchedulerNode]:
+        """
+        Reorder a node if it should be partitioned and has simple dependency:
+        1. move a partitioned node to the front if it has no dependency
+        2. move a partitioned node to the back if it is only used by OutputNode
+        3. otherwise do not reorder
+        """
+    def graph_partition(self) -> tuple[list[PartitionType], list[GraphPartitionSignature]]:
+        """
+        Given a list of BaseSchedulerNodes, split into a list of
+        graph partitions and compute partition input/output signatures.
+        """
     def codegen(self) -> None: ...
     def use_default_device_context(
         self, partitions: list[PartitionType], signatures: list[GraphPartitionSignature]
@@ -385,38 +646,84 @@ class Scheduler:
     def update_graph_partition_default_device(
         self, partitions: list[PartitionType], signatures: list[GraphPartitionSignature]
     ) -> None: ...
-    def benchmark_combo_kernel(
-        self, node_list: Sequence[BaseSchedulerNode]
-    ) -> tuple[float, float, list[str | None]]: ...
-    def speedup_by_combo_kernel(self, nodes: list[BaseSchedulerNode]) -> bool: ...
+    def benchmark_combo_kernel(self, node_list: Sequence[BaseSchedulerNode]) -> tuple[float, float, list[str | None]]:
+        """
+        Benchmark fused list of nodes and return the execution time
+        in milliseconds on randomly generated inputs.
+        """
+    def speedup_by_combo_kernel(self, nodes: list[BaseSchedulerNode]) -> bool:
+        """
+        If config.benchmark_fusion is False, always return True.
+        Otherwise, return True if fusion can brings speedup.
+        """
     def get_buffer_layout(self, buf_name: str) -> ir.Layout: ...
     def update_zero_dim_cpu_tensor(self) -> None: ...
 
 class BaseScheduling:
     def __init__(self, scheduler: Scheduler | None) -> None: ...
     def free_buffers_in_scheduler(self) -> None: ...
-    def get_backend_features(self, device: torch.device) -> OrderedSet[BackendFeature]: ...
-    def can_fuse_vertical(self, node1: BaseSchedulerNode, node2: BaseSchedulerNode) -> bool: ...
-    def can_fuse_horizontal(self, node1: BaseSchedulerNode, node2: BaseSchedulerNode) -> bool: ...
-    def can_fuse_multi_outputs_template(self, node1: BaseSchedulerNode, node2: BaseSchedulerNode) -> bool: ...
-    def fuse(self, node1: BaseSchedulerNode, node2: BaseSchedulerNode) -> FusedSchedulerNode: ...
-    def group_fn(self, sizes: Sequence[Sequence[sympy.Expr]]) -> tuple[tuple[sympy.Expr, ...], ...]: ...
+    def get_backend_features(self, device: torch.device) -> OrderedSet[BackendFeature]:
+        """Return a set of .codegen.common.BackendFeature()"""
+    def can_fuse_vertical(self, node1: BaseSchedulerNode, node2: BaseSchedulerNode) -> bool:
+        """Check whether node1 and node2 can be vertically fused or not."""
+    def can_fuse_horizontal(self, node1: BaseSchedulerNode, node2: BaseSchedulerNode) -> bool:
+        """Check whether node1 and node2 can be horizontally fused or not."""
+    def can_fuse_multi_outputs_template(self, node1: BaseSchedulerNode, node2: BaseSchedulerNode) -> bool:
+        """
+        A Multi-Output Template (referenced in #144012) is a template node
+        with MultiOutputLayout, and its output buffers are instances of MultiOutput.
+        In this context, we verify whether node1 represents the Multi-Output Template
+        and node2 corresponds to one of its outputs. If so, we further check if
+        backend supports this fusion.
+        """
+    def fuse(self, node1: BaseSchedulerNode, node2: BaseSchedulerNode) -> FusedSchedulerNode:
+        """Fuse two nodes"""
+    def group_fn(self, sizes: Sequence[Sequence[sympy.Expr]]) -> tuple[tuple[sympy.Expr, ...], ...]:
+        """Process the iteration sizes in case a transformation needs to be applied."""
     def codegen_template(
         self,
         template_node: BaseSchedulerNode,
         epilogue_nodes: Sequence[BaseSchedulerNode],
         prologue_nodes: Sequence[BaseSchedulerNode],
-    ) -> str | None: ...
+    ) -> str | None:
+        """
+        Given a template node, generate a kernel.
+
+        This function is only available for triton now. If the third-party backend behaves as a sub-class
+        of TritonScheduling, it can override it or reuse it.
+        """
     def generate_kernel_code_from_nodes(
         self, nodes: Sequence[BaseSchedulerNode], benchmark_kernel: bool, hint_override: int | None = ...
-    ) -> str: ...
-    def codegen_node(self, node: FusedSchedulerNode | SchedulerNode) -> None: ...
-    def codegen_sync(self) -> None: ...
-    def ready_to_flush(self) -> bool: ...
-    def flush(self) -> None: ...
-    def benchmark_fused_nodes(self, nodes: Sequence[BaseSchedulerNode]) -> tuple[float, str]: ...
-    def benchmark_codegened_module(self, module: ModuleType) -> tuple[float, str]: ...
-    def get_fusion_pair_priority(self, node1: BaseSchedulerNode, node2: BaseSchedulerNode) -> int: ...
-    def benchmark_combo_kernel(
-        self, node_list: Sequence[BaseSchedulerNode]
-    ) -> tuple[float, float, list[str | None]]: ...
+    ) -> str:
+        """Generate a kernel given a list of pre-fused nodes."""
+    def codegen_node(self, node: FusedSchedulerNode | SchedulerNode) -> None:
+        """Generate a kernel given a list of pre-fused nodes."""
+    def codegen_sync(self) -> None:
+        """Generate synchronization code for the kernel. This method depends on the hardware characteristics."""
+    def ready_to_flush(self) -> bool:
+        """
+        Check whether the backend is requesting the scheduler to flush the generated kernel.
+        If not supported, please return False.
+        """
+    def flush(self) -> None:
+        """Flush the generated kernel and python wrapper code to the source code file."""
+    def benchmark_fused_nodes(self, nodes: Sequence[BaseSchedulerNode]) -> tuple[float, str]:
+        """
+        Benchmark fused list of nodes and return the execution time
+        in milliseconds on randomly generated inputs.
+        """
+    def benchmark_codegened_module(self, module: ModuleType) -> tuple[float, str]:
+        """
+        Benchmark a compiled module and return the execution time
+        in milliseconds on randomly generated inputs.
+        """
+    def get_fusion_pair_priority(self, node1: BaseSchedulerNode, node2: BaseSchedulerNode) -> int:
+        """
+        Return an unsigned integer which represents the priority of this fusion pair.
+        The smaller is with higher priority.
+        """
+    def benchmark_combo_kernel(self, node_list: Sequence[BaseSchedulerNode]) -> tuple[float, float, list[str | None]]:
+        """
+        Benchmark the list of nodes to combine and return the execution time
+        and memory copy time in milliseconds on randomly generated inputs.
+        """

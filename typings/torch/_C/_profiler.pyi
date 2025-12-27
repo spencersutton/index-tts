@@ -4,6 +4,30 @@ from typing import Literal
 from torch._C import device, dtype, layout
 
 class RecordScope(Enum):
+    """
+    Members:
+
+    FUNCTION
+
+    BACKWARD_FUNCTION
+
+    TORCHSCRIPT_FUNCTION
+
+    KERNEL_FUNCTION_DTYPE
+
+    CUSTOM_CLASS
+
+    BUILD_FEATURE
+
+    LITE_INTERPRETER
+
+    USER_SCOPE
+
+    STATIC_RUNTIME_OP
+
+    STATIC_RUNTIME_MODEL
+    """
+
     FUNCTION = ...
     BACKWARD_FUNCTION = ...
     TORCHSCRIPT_FUNCTION = ...
@@ -16,6 +40,28 @@ class RecordScope(Enum):
     STATIC_RUNTIME_MODEL = ...
 
 class ProfilerState(Enum):
+    """
+    Members:
+
+    Disabled
+
+    CPU
+
+    CUDA
+
+    NVTX
+
+    ITT
+
+    PRIVATEUSE1
+
+    KINETO
+
+    KINETO_GPU_FALLBACK
+
+    KINETO_PRIVATEUSE1_FALLBACK
+    """
+
     Disable = ...
     CPU = ...
     CUDA = ...
@@ -27,6 +73,22 @@ class ProfilerState(Enum):
     KINETO_PRIVATEUSE1 = ...
 
 class ActiveProfilerType(Enum):
+    """
+    Members:
+
+    NONE
+
+    LEGACY
+
+    KINETO
+
+    NVTX
+
+    ITT
+
+    PRIVATEUSE1
+    """
+
     NONE = ...
     LEGACY = ...
     KINETO = ...
@@ -34,6 +96,22 @@ class ActiveProfilerType(Enum):
     ITT = ...
 
 class ProfilerActivity(Enum):
+    """
+    Members:
+
+    CPU
+
+    XPU
+
+    MTIA
+
+    CUDA
+
+    HPU
+
+    PrivateUse1
+    """
+
     CPU = ...
     CUDA = ...
     XPU = ...
@@ -42,6 +120,24 @@ class ProfilerActivity(Enum):
     PrivateUse1 = ...
 
 class _EventType(Enum):
+    """
+    Members:
+
+    TorchOp
+
+    Backend
+
+    Vulkan
+
+    Allocation
+
+    PyCall
+
+    PyCCall
+
+    Kineto
+    """
+
     TorchOp = ...
     Backend = ...
     Allocation = ...
@@ -58,7 +154,29 @@ class _ExperimentalConfig:
         verbose: bool = ...,
         performance_events: list[str] = ...,
         enable_cuda_sync_events: bool = ...,
-    ) -> None: ...
+    ) -> None:
+        """
+        __init__(self: torch._C._profiler._ExperimentalConfig, profiler_metrics: collections.abc.Sequence[str] = [], profiler_measure_per_kernel: bool = False, verbose: bool = False, performance_events: collections.abc.Sequence[str] = [], enable_cuda_sync_events: bool = False, adjust_profiler_step: bool = False, disable_external_correlation: bool = False, profile_all_threads: bool = False, capture_overload_names: bool = False, record_python_gc_info: bool = False, custom_profiler_config: str = '') -> None
+
+        An experimental config for Kineto features. Please note thatbackward compatibility is not guaranteed.
+            profiler_metrics : a list of CUPTI profiler metrics used
+               to measure GPU performance events.
+               If this list contains values Kineto runs in CUPTI profiler mode
+            profiler_measure_per_kernel (bool) : whether to profile metrics per kernel
+               or for the entire measurement duration.
+            verbose (bool) : whether the trace file has `Call stack` field or not.
+            performance_events : a list of profiler events to be used for measurement.
+            enable_cuda_sync_events : for CUDA profiling mode, enable adding CUDA synchronization events
+               that expose CUDA device, stream and event synchronization activities. This feature is new
+               and currently disabled by default.
+            adjust_profiler_step (bool) : whether to adjust the profiler step to
+               match the parent python event duration. This feature is new and currently disabled by default.
+            disable_external_correlation (bool) : whether to disable external correlation
+            profile_all_threads (bool) : whether to profile all threads
+            capture_overload_names (bool) : whether to include ATen overload names in the profile
+            record_python_gc_info (bool) : adds python gc events to profile
+            custom_profiler_config (string) : Used to pass some configurations to the custom profiler backend.
+        """
 
 class ProfilerConfig:
     def __init__(
@@ -71,7 +189,8 @@ class ProfilerConfig:
         with_modules: bool,
         experimental_config: _ExperimentalConfig,
         trace_id: str | None = ...,
-    ) -> None: ...
+    ) -> None:
+        """__init__(self: torch._C._profiler.ProfilerConfig, state: torch._C._profiler.ProfilerState, report_input_shapes: bool, profile_memory: bool, with_stack: bool, with_flops: bool, with_modules: bool, experimental_config: torch._C._profiler._ExperimentalConfig, trace_id: str = '') -> None"""
 
 class _ProfilerEvent:
     start_tid: int
@@ -194,8 +313,11 @@ class _ExtraFields_PyCall:
 class _ExtraFields_Kineto: ...
 class CapturedTraceback: ...
 
-def gather_traceback(python: bool, script: bool, cpp: bool) -> CapturedTraceback: ...
-def symbolize_tracebacks(to_symbolize: list[CapturedTraceback]) -> list[list[dict[str, str]]]: ...
+def gather_traceback(python: bool, script: bool, cpp: bool) -> CapturedTraceback:
+    """gather_traceback(python: bool = True, script: bool = True, cpp: bool = True) -> torch._C._profiler.CapturedTraceback"""
+
+def symbolize_tracebacks(to_symbolize: list[CapturedTraceback]) -> list[list[dict[str, str]]]:
+    """symbolize_tracebacks(arg0: list) -> list[object]"""
 
 class _RecordFunctionFast:
     def __init__(

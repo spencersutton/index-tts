@@ -6,6 +6,23 @@ from torch.fx.experimental.proxy_tensor import ProxyTorchDispatchMode
 AOTI_LOWERED_MODULE = ...
 
 class AOTICallDelegate(HigherOrderOperator):
+    """
+    aoti_call_delegate is a HOP for calling AOTInductor lowered submodule in ExportedProgram.
+
+    It has the following signature:
+    aoti_call_delegate(
+        lowered_module: Union[AOTInductorEPModule, AOTInductorRunnerWrapper]
+        original_gm:fx.GraphModule,
+        weight_args: List[Tensor],
+        input_args: List[Tensor],
+    ) -> outputs: List[Tensor]
+
+    where,
+    - lowered_module is the AOTInductor lowered submodule, backed by compiled .so file, supporting real tensor inputs
+    - original_gm is the stateless version of the original GraphModule before lowering, allowing FakeTensor propagation
+    - weight_args is the list of weights in original GraphModule, including parameters and buffers
+    - input_args is the list of flatten inputs
+    """
     def __init__(self) -> None: ...
     def __call__(
         self,

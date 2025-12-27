@@ -1,3 +1,19 @@
+"""
+Provides functionality for compiling PyTorch's autograd (automatic differentiation) system.
+
+This module implements compiled autograd, which traces and optimizes backward pass
+computations at runtime. The key components are:
+
+- AutogradCompilerInstance: Traces and compiles autograd graphs using FX
+- Context managers (_enable/_disable): Control when compiled autograd is active
+- Utility functions: Support graph manipulation, tensor operations, and hooks
+
+Compiled autograd can significantly improve backward pass performance by removing
+Python overhead and enabling additional optimizations. It works by capturing
+backward computations into an FX graph that can be compiled and optimized,
+while maintaining the same semantics as eager mode autograd.
+"""
+
 from collections.abc import Callable, Sequence
 from typing import Any
 
@@ -87,18 +103,18 @@ class AutogradCompilerInstance:
         self, needs_input_grad: Sequence[bool], result: torch.Tensor, res: Sequence[Any], grad_slice: torch.Tensor
     ) -> Sequence[torch.Tensor]: ...
     def allocate_dummy(self) -> torch.Tensor: ...
-    def bind_function(
-        self, fn_name: str, fn: Callable[..., Any], is_custom_function: bool, is_traceable: bool
-    ) -> str: ...
+    def bind_function(self, fn_name: str, fn: Callable[..., Any], is_custom_function: bool, is_traceable: bool) -> str:
+        """Binds ops.fn_name = fn"""
     def apply_functional(
         self, fn_name: str, grads: Sequence[Any], args: Any, output_metadata: Sequence[Any]
-    ) -> Sequence[torch.Tensor]: ...
-    def proxy_call(
-        self, fn: Callable[..., Any], args: Any, output_metadata: Sequence[Any]
-    ) -> Sequence[torch.Tensor]: ...
+    ) -> Sequence[torch.Tensor]:
+        """Proxies a call to ops.fn_name(grads, *args) into the graph"""
+    def proxy_call(self, fn: Callable[..., Any], args: Any, output_metadata: Sequence[Any]) -> Sequence[torch.Tensor]:
+        """Proxies a call to fn(*args) into the graph"""
     def validate_outputs(
         self, _: Any, outputs: Sequence[Any], args: Any, output_metadata: Sequence[Any]
-    ) -> Sequence[torch.Tensor]: ...
+    ) -> Sequence[torch.Tensor]:
+        """Proxies a call to ops.validate_outputs(outputs, *args) into the graph"""
     def accumulate(self, old_var: Any, new_var: Any) -> torch.Tensor: ...
     def accumulate_grad(self, variable: torch.Tensor, grad: torch.Tensor, has_post_hooks: bool) -> None: ...
     def proxy_call_hook(self, hook: Callable[..., Any], *args: Any, **kwargs: Any) -> torch.fx.Proxy: ...
@@ -120,13 +136,50 @@ class AutogradCompilerInstance:
     def get_all_nodes(args: Sequence[Any]) -> list[torch.fx.Node]: ...
     @staticmethod
     def is_placeholder(node: torch.fx.Node) -> bool: ...
-    def reorder_accumulate_grad_nodes(self) -> None: ...
-    def delay_unpack_hook_nodes(self) -> None: ...
-    def reorder_tensor_pre_hook_nodes(self) -> None: ...
-    def reorder_pre_hook_nodes_to_schedule_asap(self) -> None: ...
-    def reorder_pre_hook_nodes_to_mimic_eager(self) -> None: ...
-    def reorder_post_acc_grad_hook_nodes(self) -> None: ...
-    def reorder_post_hook_nodes(self) -> None: ...
+    def reorder_accumulate_grad_nodes(self) -> None:
+        """
+        Usage of AOTAutograd causes all the accumulate_grad_ nodes to get pushed to the end of
+        the graph.  This differs from eager mode, which schedules them as soon as possible. This
+        pass attempts to reorder the graph to mimic eager behavior.
+        """
+    def delay_unpack_hook_nodes(self) -> None:
+        """We can delay unpack hooks until they are needed, even later than in the eager autograd engine."""
+    def reorder_tensor_pre_hook_nodes(self) -> None:
+        """
+        Usage of AOTAutograd causes all the tensor_pre_hook nodes to get pushed
+        to the end of the graph. This differs from eager mode, which schedules
+        them as soon as possible. This pass attempts to reorder the graph to
+        mimic eager behavior.
+        """
+    def reorder_pre_hook_nodes_to_schedule_asap(self) -> None:
+        """
+        In this function, we schedule the pre hooks as soon as possible. This
+        does not match eager behavior (schedule pre hook right before its
+        registered node), but it can make acc grad be scheduled properly when
+        the pre hooks are registered to them. After reordering acc grad node, we
+        will reorder the pre hooks again to mimic eager behavior.
+        """
+    def reorder_pre_hook_nodes_to_mimic_eager(self) -> None:
+        """
+        Usage of AOTAutograd causes all the pre_hook nodes to get pushed to the
+        end of the graph. This differs from eager mode, which schedules them
+        right before their registered node execution. This pass attempts to
+        reorder the graph to mimic eager behavior.
+        """
+    def reorder_post_acc_grad_hook_nodes(self) -> None:
+        """
+        Usage of AOTAutograd causes all the post_acc_grad_hook nodes to get
+        pushed to the end of the graph. This differs from eager mode, which
+        schedules them as soon as possible. This pass attempts to reorder the
+        graph to mimic eager behavior.
+        """
+    def reorder_post_hook_nodes(self) -> None:
+        """
+        Usage of AOTAutograd causes all the post_hook nodes to get pushed to the
+        end of the graph. This differs from eager mode, which schedules them as
+        soon as possible. This pass attempts to reorder the graph to mimic eager
+        behavior.
+        """
     def to_proxy(self, t: Any) -> Any: ...
     def bind_objects_to_proxies(
         self, objects: Sequence[Any], proxies: Any, origins: list[tuple[int, str]] | None = ...

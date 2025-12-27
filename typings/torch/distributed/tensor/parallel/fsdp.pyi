@@ -9,6 +9,12 @@ from torch.distributed.tensor import DeviceMesh, DTensor
 __all__ = ["DTensorExtensions"]
 
 class DTensorExtensions(FSDPExtensions):
+    """
+    DTensorExtension is the TensorFlattener extension needed for 2D FSDP + TP.
+
+    This is the implementation for FSDPExtensions defined in
+    https://github.com/pytorch/pytorch/blob/main/torch/distributed/fsdp/_fsdp_extensions.py
+    """
     def __init__(self, device_handle) -> None: ...
     def pre_flatten_transform(self, tensor: torch.Tensor) -> tuple[torch.Tensor, Any | None]: ...
     def post_unflatten_transform(self, tensor: torch.Tensor, param_extension: Any) -> torch.Tensor: ...

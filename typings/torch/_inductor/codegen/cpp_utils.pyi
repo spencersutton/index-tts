@@ -60,6 +60,14 @@ class LocalizeBufferHandler(V.WrapperHandler):
     def store_reduction(self, name, index, value): ...
 
 class LocalBufferContext:
+    """
+    This class creates a context that helps to generate code involving Inductor IR with
+    function local buffers. These buffers are constructed during the codegen process and
+    are used to store intermediate results such as local accumulators. We do not want to
+    add them to `V.graph` since they are not global and we do not want to add them as
+    function arguments either. So we patch the codegen processes under this scope to support
+    these buffers without exposure to the outside world.
+    """
     def __init__(self, kernel_args: KernelArgs) -> None: ...
     def __enter__(self): ...
     def __exit__(self, exc_type, exc_val, exc_tb): ...
@@ -73,10 +81,28 @@ class LocalBufferContext:
         self,
         nodes: list[ir.IRNode],
         rewrite_index: Callable[[LocalizeBufferHandler, sympy.Expr, str], sympy.Expr] = ...,
-    ) -> list[ir.IRNode]: ...
+    ) -> list[ir.IRNode]:
+        """
+        Given `local_buf` and `global_buf` registered in current `LocalBufferContext`
+        though the method of `add_local_buffer`, localizes the `global_buf` to `local_buf`
+        for the given `nodes` and returns a new list of IR nodes that work on `local_buf`
+        instead of `global_buf`, i.e., all the loads and stores are redirected to
+        `local_buf`. This helps the fused loops to work on smaller-sized local buffers
+        for better data locality.
 
-def unify_mask_base_type(buffer: IndentedBuffer, vars: tuple[CSEVariable, ...], dtype=...): ...
-def may_unify_binary_op_mask_type(a, b): ...
+        The the data access of `local_buf` is assumed to be contiguous with the
+        same order as the `global_buf`.
+        """
+
+def unify_mask_base_type(buffer: IndentedBuffer, vars: tuple[CSEVariable, ...], dtype=...):
+    """
+    Given list of cse variables,
+    Cast each to new mask base dtype and return casted cse variable.
+    """
+
+def may_unify_binary_op_mask_type(a, b):
+    """Given two cse variables, when dtype is bool, unify them to the same mask dtype and return casted cse variable."""
+
 def codegen_rand(offset, code, rand_function, dst_dtype=...): ...
 def get_gemm_template_output_and_compute_dtype(input_dtype): ...
 def create_epilogue_with_attr(input_buffer, attr, **kwargs): ...

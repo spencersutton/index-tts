@@ -1,3 +1,9 @@
+"""
+This file contains utilities for tracing through __torch_dispatch__ based tensor subclasses and modes.
+AOTAutograd's responsibility is to trace through all pytorch capabilities that live in the pytorch dispatcher,
+and this includes tensor subclasses that implement __torch_dispatch__.
+"""
+
 from collections.abc import Callable, Iterable
 from typing import Any, TypeVar
 
@@ -15,7 +21,12 @@ def requires_subclass_dispatch(args, fw_metadata: ViewAndMutationMeta) -> bool: 
 def maybe_suggest_memory_format(t, with_memory_format: bool) -> MemoryFormatMeta | None: ...
 def get_subclass_typing_container(
     tensor_subclass: torch.Tensor,
-) -> dict[type[torch.Tensor], list[type[torch.Tensor]]]: ...
+) -> dict[type[torch.Tensor], list[type[torch.Tensor]]]:
+    """
+    Given a subclass, returns a recursive dictionary mapping each
+    inner tensors to its' subclass types.
+    """
+
 def create_subclass_metadata(a: Any, start_idx: int, count_symints: bool, with_memory_format: bool = ...): ...
 def create_subclass_meta(
     curr_args: list[Any] | tuple[Any, ...], *, count_symints: bool = ..., with_memory_format: bool = ...

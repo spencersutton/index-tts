@@ -1,3 +1,25 @@
+"""
+This module contains utility functions that are explicitly allowed to be called during
+TorchDynamo compilation. These functions are carefully vetted to ensure they work
+correctly within the TorchDynamo tracing and compilation process.
+
+Key functionality groups:
+
+- Compilation State:
+  Functions for checking compilation state (is_compiling)
+
+- Function Wrapping:
+  Utilities for wrapping functions (wrap_inline, wrap_numpy) to work with
+  TorchDynamo compilation
+
+- Autograd Hooks:
+  Functions and classes for handling autograd hooks and backward passes
+  (call_hook, FakeBackwardCFunction, etc.)
+
+- Tensor Operations:
+  Utility functions for tensor operations and transformations
+"""
+
 from collections.abc import Callable
 from typing import Any, ParamSpec, TypeVar
 from warnings import deprecated
@@ -11,10 +33,20 @@ _R = TypeVar("_R")
     "`torch._dynamo.external_utils.is_compiling` is deprecated. Use `torch.compiler.is_compiling` instead.",
     category=FutureWarning,
 )
-def is_compiling() -> bool: ...
-def wrap_inline[**P, R](fn: Callable[_P, _R]) -> Callable[_P, _R]: ...
-def call_hook(hook: Callable[..., torch.Tensor | None], *args: Any, **kwargs: Any) -> torch.Tensor: ...
-def wrap_numpy[**P, R](f: Callable[_P, _R]) -> Callable[_P, _R]: ...
+def is_compiling() -> bool:
+    """Indicates whether we are tracing/compiling with torch.compile() or torch.export()."""
+
+def wrap_inline[P, R](fn: Callable[_P, _R]) -> Callable[_P, _R]:
+    """Create an extra frame around fn that is not in skipfiles."""
+
+def call_hook(hook: Callable[..., torch.Tensor | None], *args: Any, **kwargs: Any) -> torch.Tensor:
+    """Used by compiled autograd to handle hook returning None."""
+
+def wrap_numpy[P, R](f: Callable[_P, _R]) -> Callable[_P, _R]:
+    """
+    Decorator that turns a function from ``np.ndarray``s to ``np.ndarray``s into a function
+    from ``torch.Tensor``s to ``torch.Tensor``s.
+    """
 
 class FakeBackwardCFunction:
     def __init__(self, real: torch.autograd.function.BackwardCFunction, saved_tensors: list[torch.Tensor]) -> None: ...
@@ -36,14 +68,23 @@ def call_hook_from_backward_state(*args: Any, bw_state: Any, hook_name: str, **k
 def call_module_hooks_from_backward_state(
     _: Any, result: Any, *args: Any, bw_state: Any, hooks_name: str, module_name: str
 ) -> Any: ...
-def get_nonrecursive_disable_wrapper[**P, R](fn: Callable[_P, _R]) -> Callable[_P, _R]: ...
-def wrap_dunder_call_ctx_manager[**P, R](self: Any, func: Callable[_P, _R]) -> Callable[_P, _R]: ...
+def get_nonrecursive_disable_wrapper[P, R](fn: Callable[_P, _R]) -> Callable[_P, _R]: ...
+def wrap_dunder_call_ctx_manager[P, R](self: Any, func: Callable[_P, _R]) -> Callable[_P, _R]:
+    """Apply self as a ctx manager around a call to func"""
+
 def unwrap_maybe_dynamic_int(x: torch.Tensor | int) -> int: ...
 def call_accumulate_grad(variable: torch.Tensor, grad: torch.Tensor, has_post_hooks: bool) -> None: ...
-def wrap_inline_with_error_on_graph_break[**P, R](
+def wrap_inline_with_error_on_graph_break[P, R](
     fn: Callable[_P, _R], error_on_graph_break: bool
 ) -> Callable[_P, _R]: ...
-def filter_out_const_values(tup: tuple[Any, ...], masks: list[bool]) -> tuple[Any, ...]: ...
-def insert_const_values_with_mask(
-    tup: tuple[Any, ...], masks: list[bool], values: tuple[Any, ...]
-) -> tuple[Any, ...]: ...
+def filter_out_const_values(tup: tuple[Any, ...], masks: list[bool]) -> tuple[Any, ...]:
+    """
+    masks is a list of bools, where True means the corresponding element in tup
+    is a const value. Filter out the const values.
+    """
+
+def insert_const_values_with_mask(tup: tuple[Any, ...], masks: list[bool], values: tuple[Any, ...]) -> tuple[Any, ...]:
+    """
+    masks and values are of same length. For indices where the mask is True, use
+    the const_values to fill in.
+    """

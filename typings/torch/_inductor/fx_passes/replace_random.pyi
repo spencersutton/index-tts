@@ -6,8 +6,24 @@ log = ...
 patterns = ...
 aten = ...
 
-def replace_random_passes(gm: torch.fx.GraphModule): ...
-def fuse_seed_creation_pass(graph: torch.fx.Graph): ...
+def replace_random_passes(gm: torch.fx.GraphModule):
+    """Modify the given FX graph to use backend-native random ops"""
+
+def fuse_seed_creation_pass(graph: torch.fx.Graph):
+    """
+    Horizontally fuse all the seed generation on each device
+
+        a = inductor_seed(dev)
+        b = inductor_seed(dev)
+
+    Becomes:
+        seeds = inductor_seeds(2, dev)
+        a = inductor_lookup_seed(seeds, 0)
+        b = inductor_lookup_seed(seeds, 1)
+
+    We do this because seed creation is entirely launch overhead bound.
+    """
+
 def default_kwargs(device): ...
 def get_device(device): ...
 @register_graph_pattern(CallFunctionVarArgs(aten.rand.default), pass_dict=patterns)

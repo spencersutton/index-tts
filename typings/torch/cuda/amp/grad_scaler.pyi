@@ -5,6 +5,10 @@ import torch
 __all__ = ["GradScaler"]
 
 class GradScaler(torch.amp.GradScaler):
+    """
+    See :class:`torch.amp.GradScaler`.
+    ``torch.cuda.amp.GradScaler(args...)`` is deprecated. Please use ``torch.amp.GradScaler("cuda", args...)`` instead.
+    """
     @deprecated(
         "`torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.",
         category=FutureWarning,

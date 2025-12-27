@@ -1,3 +1,20 @@
+"""
+Core guard system for Dynamo that detects when compiled code needs to be recompiled due to
+changes in program state. Guards are conditions that must remain true for previously-compiled
+code to be valid for reuse.
+
+This module provides the infrastructure for creating, managing and checking guards, including:
+- Guard creation and composition
+- Guard state management and invalidation
+- Guard checking and failure handling
+- Utilities for guard optimization and debugging
+- Integration with Dynamo's compilation caching
+
+The guard system is critical for Dynamo's ability to efficiently reuse compiled code while
+maintaining correctness by detecting when recompilation is necessary due to changes in
+program state, tensor properties, or control flow.
+"""
+
 import ast
 import dataclasses
 import enum
@@ -36,11 +53,73 @@ class IndentedBufferWithPrefix(IndentedBuffer):
     def writeline(self, line: str, skip_prefix: bool = ...) -> None: ...
 
 class GuardManagerWrapper:
+    """
+    A helper class that contains the root guard manager. An instance of this
+    class is stored in the Dynamo cache entry, so that the cache entry can
+    access the RootGuardManager stored in the "root" attribute and directly call
+    the check_nopybind from C++.
+    """
     def __init__(self, root: RootGuardManager | None = ...) -> None: ...
     def collect_diff_guard_sources(self) -> OrderedSet[str]: ...
     def finalize(self) -> None: ...
     def prepare_diff_guard_manager(self) -> None: ...
-    def find_tag_safe_roots(self) -> None: ...
+    def find_tag_safe_roots(self) -> None:
+        """
+        Identify ``tag safe nodes`` and ``tag safe roots`` within a guard tree.
+
+        -----------------------------------------------------------------------
+        tag safe node
+        -----------------------------------------------------------------------
+        A *tag safe node* is a ``GuardManager`` whose guarded value satisfies one
+        of the following conditions:
+
+        1. Immutable value - The value is intrinsically immutable according to
+        ``is_immutable_object``. Tensors are considered immutable. To ensure
+        that symbolic guards run, we also check that the GuardManager has no
+        accessors.
+
+        2. Nested tag safe dictionary - The value is a ``dict`` whose keys and
+        values are all tag safe nodes  (checked recursively).  Such dictionaries
+        allow entire nested structures to be skipped once their identity tag
+        matches.
+
+        3. Pure ``nn.Module`` - The value is an ``nn.Module`` whose sole
+        accessor is ``GetGenericDictGuardAccessor``—i.e., it only exposes its
+        ``__dict__`` and nothing else that could mutate between runs.
+
+        For every tag safe node, verifying the identity/tag of just the top-level
+        dictionary is enough to guarantee the entire subtree is unchanged, enabling
+        a *fast-path* guard check.
+
+        -----------------------------------------------------------------------
+        tag safe root
+        -----------------------------------------------------------------------
+        A ``tag safe root`` is a tag safe node whose parent is not tag safe.
+        These boundary nodes mark the points where guard evaluation can safely
+        prune traversal: if a tag-safe root’s dictionary tag matches, the entire
+        subtree beneath it is skipped.
+
+        One strong requirement for tag safe root is for the guarded object to
+        support weakref. Refer to more details in the Recursive dict tag
+        matching note. In short, we need to save the weakref of the object on
+        first invocation, and check if it is still valid in later iterations, to
+        apply recursive dict tag optimizations. `dict` objects do NOT support
+        weakref. Therefore, as of now, we only mark nn module related guard
+        managers as tag safe roots.
+
+        Algorithm
+        ---------
+        The search runs in post-order traversal
+
+        1. Visit leaves and classify them as tag safe or not.
+        2. Propagate tag-safety upward: a parent dictionary becomes tag safe only if
+        all of its children are already tag-safe.
+        3. Propagate tag-safe-rootness upward: if the whole subtree is tag safe,
+        the current node becomes the new tag safe root, otherwise propagate the
+        subtree tag safe roots.
+        4. Collect every tag safe node and, by inspecting parent tags, label the
+        subset that are tag safe roots.
+        """
     def populate_diff_guard_manager(self) -> None: ...
     def clone_with_chosen_sources(self, chosen_sources: OrderedSet[str]) -> RootGuardManager: ...
     def get_guard_lines(self, guard: LeafGuard) -> list[str]: ...
@@ -79,6 +158,8 @@ def should_optimize_getattr_on_nn_module(value: Any) -> bool: ...
 
 @dataclasses.dataclass(frozen=True)
 class NNModuleAttrAccessorInfo:
+    """NNModuleAttrAccessorInfo(present_in_generic_dict: 'bool' = False, l1_key: 'Optional[str]' = None, l2_key: 'Optional[str]' = None)"""
+
     present_in_generic_dict: bool = ...
     l1_key: str | None = ...
     l2_key: str | None = ...
@@ -94,6 +175,8 @@ def match_on_id_for_tensor(guard: Guard) -> bool: ...
 
 @dataclasses.dataclass
 class GuardCodeList:
+    """GuardCodeList(code_list: 'list[str]', guard: 'Guard')"""
+
     code_list: list[str]
     guard: Guard
 
@@ -129,7 +212,23 @@ class GuardBuilder(GuardBuilderBase):
         base_source_name: str,
         source_name: str,
         guard_manager_enum: GuardManagerType,
-    ) -> GuardManager: ...
+    ) -> GuardManager:
+        """
+        This tries to avoid calling the expensive nn module custom getattr method by
+        checking if the attribute is accessible via __dict__. For attributes that
+        are not accessible via __dict__ (like descriptors), we fallback to
+        PyObject_GetAttr.
+
+        There are two cases that we optimize for
+        1) attributes present directly in __dict__, e.g training.
+        2) parameters/buffers/modules - they can be accessed via _parameters,
+        _buffers, _modules keys in __dict__. For example, mod.linear can be
+        accessed as mod.__dict__["_parameters"]["linear"]
+
+        The most common and expensive case for nn module guards is of type
+        mod.submod1.submod2.submod3.training. We avoid the python getattr of nn
+        modules by going through the __dict__.
+        """
     def requires_key_order_guarding(self, source: Source) -> bool: ...
     def get_guard_manager_type(
         self, source: Source, example_value: KeysView[Any] | set[Any] | frozenset[Any] | dict[Any, Any] | None
@@ -167,22 +266,28 @@ class GuardBuilder(GuardBuilderBase):
     def EQUALS_MATCH(self, guard: Guard, recompile_hint: str | None = ...) -> None: ...
     def CONSTANT_MATCH(self, guard: Guard) -> None: ...
     def NN_MODULE(self, guard: Guard) -> None: ...
-    def FUNCTION_MATCH(self, guard: Guard) -> None: ...
-    def CLOSURE_MATCH(self, guard: Guard) -> None: ...
+    def FUNCTION_MATCH(self, guard: Guard) -> None:
+        """things like torch.add and user defined functions"""
+    def CLOSURE_MATCH(self, guard: Guard) -> None:
+        """matches a closure by __code__ id."""
     def BUILTIN_MATCH(self, guard: Guard) -> None: ...
     def SEQUENCE_LENGTH(self, guard: Guard) -> None: ...
     def TUPLE_ITERATOR_LEN(self, guard: Guard) -> None: ...
     def RANGE_ITERATOR_MATCH(self, guard: Guard) -> None: ...
     def DUPLICATE_INPUT(self, guard: Guard, source_b: Source) -> None: ...
     def WEAKREF_ALIVE(self, guard: Guard) -> None: ...
-    def MAPPING_KEYS_CHECK(self, guard: Guard) -> None: ...
-    def DICT_KEYS_MATCH(self, guard: Guard) -> None: ...
-    def EMPTY_NN_MODULE_HOOKS_DICT(self, guard: Guard) -> None: ...
+    def MAPPING_KEYS_CHECK(self, guard: Guard) -> None:
+        """Guard on the key order of types.MappingProxyType object"""
+    def DICT_KEYS_MATCH(self, guard: Guard) -> None:
+        """Insert guard to check that the keys of a dict are same"""
+    def EMPTY_NN_MODULE_HOOKS_DICT(self, guard: Guard) -> None:
+        """Special guard to skip guards on empty hooks. This is controlled by skip_nnmodule_hook_guards"""
     def GRAD_MODE(self, guard: Guard) -> None: ...
     def DETERMINISTIC_ALGORITHMS(self, guard: Guard) -> None: ...
     def TORCH_FUNCTION_STATE(self, guard: Guard) -> None: ...
     def FSDP_TRAINING_STATE(self, guard: Guard) -> None: ...
-    def DEFAULT_DEVICE(self, guard: Guard) -> None: ...
+    def DEFAULT_DEVICE(self, guard: Guard) -> None:
+        """Guard on CURRENT_DEVICE per torch.utils._device"""
     def SHAPE_ENV(self, guard: Guard) -> None: ...
     def TENSOR_MATCH(self, guard: Guard, value: Any | None = ...) -> None: ...
 
@@ -191,6 +296,8 @@ class PyExprCSEPass:
     ALLOWED_NODE_TYPES = ...
     @dataclasses.dataclass
     class Config:
+        """Config(expr_count: 'dict[str, int]', expr_to_name: 'dict[str, str]')"""
+
         expr_count: dict[str, int]
         expr_to_name: dict[str, str]
 
@@ -214,6 +321,8 @@ class DeletedGuardManagerWrapper(GuardManagerWrapper):
 
 @dataclasses.dataclass
 class ShapeCodeParts:
+    """ShapeCodeParts(python_code_parts: '_ShapeGuardsHelper', verbose_code_parts: '_ShapeGuardsHelper', cpp_code_parts: 'Optional[_CppShapeGuardsHelper]', python_fallback: 'bool', shape_env_sources: 'list[Source]')"""
+
     python_code_parts: _ShapeGuardsHelper
     verbose_code_parts: _ShapeGuardsHelper
     cpp_code_parts: _CppShapeGuardsHelper | None
@@ -222,6 +331,8 @@ class ShapeCodeParts:
 
 @dataclasses.dataclass
 class GuardsState:
+    """GuardsState(output_graph: 'OutputGraphGuardsState', shape_code_parts: 'Optional[ShapeCodeParts]')"""
+
     output_graph: OutputGraphGuardsState
     shape_code_parts: ShapeCodeParts | None
 
@@ -263,8 +374,10 @@ class CheckFunctionManager:
         self, builder: GuardBuilder, guards_out: list[Guard], guard_fail_fn: Callable[[GuardFail], None] | None
     ) -> None: ...
     def invalidate(self, obj_str: str) -> None: ...
-    def id_ref(self, obj: object, obj_str: str) -> int: ...
-    def lookup_weakrefs(self, obj: object) -> weakref.ref[object] | None: ...
+    def id_ref(self, obj: object, obj_str: str) -> int:
+        """add a weakref, return the id"""
+    def lookup_weakrefs(self, obj: object) -> weakref.ref[object] | None:
+        """Lookup the _weakrefs created in id_ref function for ID_MATCH'd objects"""
 
 def build_guard_function(code_parts: list[str], closure_args: str) -> tuple[str, str]: ...
 def is_recompiles_enabled() -> bool: ...
@@ -278,10 +391,23 @@ type Scope = dict[str, object]
 def recompilation_reason_for_no_tensor_aliasing_guard(
     guard_manager: GuardManagerWrapper, scope: Scope
 ) -> list[str]: ...
-def strip_local_scope(s: str) -> str: ...
+def strip_local_scope(s: str) -> str:
+    """
+    Replace occurrences of L[...] with just the inner content.
+    Handles both single and double quotes.
+
+    This is to generate user friendly recompilation messages.
+    """
+
 def get_guard_fail_reason_helper(
     guard_manager: GuardManagerWrapper, f_locals: dict[str, object], compile_id: CompileId | None
-) -> str: ...
+) -> str:
+    """
+    Return the reason why `guard_manager` failed.
+    Updates `guard_failures` with the generated reason.
+    Only the first failed check of guard_manager is reported.
+    """
+
 def get_guard_fail_reason(
     guard_manager: GuardManagerWrapper,
     code: types.CodeType,
@@ -291,11 +417,24 @@ def get_guard_fail_reason(
 ) -> str: ...
 def get_and_maybe_log_recompilation_reasons(
     cache_entry: CacheEntry | None, frame: DynamoFrameType, skip_logging: bool = ...
-) -> list[str]: ...
+) -> list[str]:
+    """
+    Return the list of guard failure reasons using cache_entry.
+    Logs the recompilation reason if `recompiles` logging is enabled.
+    Raises a RecompileError if `config.error_on_recompile` is enabled.
+    """
+
 def update_diff_guard_managers_for_existing_cache_entries(cache_entry: CacheEntry | None) -> OrderedSet[str]: ...
 def guard_error_hook(
     guard_manager: GuardFn, code: types.CodeType, f_locals: dict[str, object], index: int, last: bool
 ) -> None: ...
 def unique[T](seq: Sequence[T]) -> Generator[T]: ...
 def make_dupe_guard(obj_source: Source, dupe_source: Source) -> functools.partial[Any] | None: ...
-def install_guard(*guards: Guard, skip: int = ...) -> None: ...
+def install_guard(*guards: Guard, skip: int = ...) -> None:
+    """
+    Add dynamo guards to the current tracing context.
+
+    Args:
+        guards: guard(s) to add
+        skip: number of stack frames to ignore for debug stack trace
+    """

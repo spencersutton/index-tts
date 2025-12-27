@@ -17,5 +17,41 @@ def export_tracepoint_fake_tensor_mode(mode, *args, **kwargs): ...
 def export_tracepoint_functional(ctx, *args, **kwargs): ...
 @_export_tracepoint.py_impl(DispatchKey.CPU)
 def export_tracepoint_cpu(*args, **kwargs): ...
-def mark_subclass_constructor_exportable_experimental(constructor_subclass): ...
-def allow_in_pre_dispatch_graph(func): ...
+def mark_subclass_constructor_exportable_experimental(constructor_subclass):
+    """
+    Experimental decorator that makes subclass to be traceable in export
+    with pre-dispatch IR. To make your subclass traceble in export, you need to:
+        1. Implement __init__ method for your subclass (Look at DTensor implementation)
+        2. Decorate your __init__ method with _mark_constructor_exportable_experimental
+        3. Put torch._dynamo_disable decorator to prevent dynamo from peeking into its' impl
+
+    Example:
+
+    class FooTensor(torch.Tensor):
+        @staticmethod
+        def __new__(cls, elem, *, requires_grad=False):
+            # ...
+            return torch.Tensor._make_subclass(cls, elem, requires_grad=requires_grad)
+
+        @torch._dynamo_disable
+        @mark_subclass_constructor_exportable_experimental
+        def __init__(self, elem, ...):
+            # ...
+    """
+
+def allow_in_pre_dispatch_graph(func):
+    """
+    Experimental decorator that adds user function to export pre-dispatch graph. Note that
+    we only support custom autograd function/subclass constructors today. To use this function:
+        1. For subclasses:
+            1. refer to instructions in mark_subclass_constructor_exportable_experimental
+        2. Define apply method on your custom autograd function and apply this decorator.
+
+    Example:
+
+    class MyCoolCustomAutogradFunc(autograd.Function):
+        @classmethod
+        @torch._export.wrappers.allow_in_pre_dispatch_graph
+        def apply(cls, *args, **kwargs):
+            return super(MyCoolCustomAutogradFunc, cls).apply(*args, **kwargs)
+    """

@@ -3,6 +3,21 @@ from torch import Tensor, nn
 __all__ = ["Embedding", "EmbeddingBag"]
 
 class Embedding(nn.Embedding):
+    """
+    An embedding bag module attached with FakeQuantize modules for weight,
+    used for quantization aware training.
+
+    We adopt the same interface as `torch.nn.Embedding`, please see
+    https://pytorch.org/docs/stable/generated/torch.nn.Embedding.html#torch.nn.Embedding
+    for documentation.
+
+    Similar to `torch.nn.Embedding`, with FakeQuantize modules initialized to
+    default.
+
+    Attributes:
+        weight: fake quant module for weight
+    """
+
     _FLOAT_MODULE = nn.Embedding
     def __init__(
         self,
@@ -20,10 +35,31 @@ class Embedding(nn.Embedding):
     ) -> None: ...
     def forward(self, input) -> Tensor: ...
     @classmethod
-    def from_float(cls, mod, use_precomputed_fake_quant=...) -> Self: ...
+    def from_float(cls, mod, use_precomputed_fake_quant=...) -> Self:
+        """
+        Create a qat module from a float module
+
+        Args: `mod` a float module, either produced by torch.ao.quantization utilities
+        or directly from user
+        """
     def to_float(self) -> Embedding: ...
 
 class EmbeddingBag(nn.EmbeddingBag):
+    """
+    An embedding bag module attached with FakeQuantize modules for weight,
+    used for quantization aware training.
+
+    We adopt the same interface as `torch.nn.EmbeddingBag`, please see
+    https://pytorch.org/docs/stable/generated/torch.nn.EmbeddingBag.html#torch.nn.EmbeddingBag
+    for documentation.
+
+    Similar to `torch.nn.EmbeddingBag`, with FakeQuantize modules initialized to
+    default.
+
+    Attributes:
+        weight: fake quant module for weight
+    """
+
     _FLOAT_MODULE = nn.EmbeddingBag
     def __init__(
         self,
@@ -43,5 +79,11 @@ class EmbeddingBag(nn.EmbeddingBag):
     ) -> None: ...
     def forward(self, input, offsets=..., per_sample_weights=...) -> Tensor: ...
     @classmethod
-    def from_float(cls, mod, use_precomputed_fake_quant=...) -> Self: ...
+    def from_float(cls, mod, use_precomputed_fake_quant=...) -> Self:
+        """
+        Create a qat module from a float module
+
+        Args: `mod` a float module, either produced by torch.ao.quantization utilities
+        or directly from user
+        """
     def to_float(self) -> EmbeddingBag: ...

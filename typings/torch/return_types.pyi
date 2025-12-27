@@ -53,7 +53,13 @@ class _fake_quantize_per_tensor_affine_cachemask_tensor_qparams(tuple[Tensor, Te
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class _fused_moving_avg_obs_fq_helper(tuple[Tensor, Tensor]):
     @property
@@ -65,7 +71,13 @@ class _fused_moving_avg_obs_fq_helper(tuple[Tensor, Tensor]):
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class _linalg_det(tuple[Tensor, Tensor, Tensor]):
     @property
@@ -79,7 +91,13 @@ class _linalg_det(tuple[Tensor, Tensor, Tensor]):
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class _linalg_eigh(tuple[Tensor, Tensor]):
     @property
@@ -91,7 +109,13 @@ class _linalg_eigh(tuple[Tensor, Tensor]):
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class _linalg_slogdet(tuple[Tensor, Tensor, Tensor, Tensor]):
     @property
@@ -107,7 +131,13 @@ class _linalg_slogdet(tuple[Tensor, Tensor, Tensor, Tensor]):
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class _linalg_solve_ex(tuple[Tensor, Tensor, Tensor, Tensor]):
     @property
@@ -123,7 +153,13 @@ class _linalg_solve_ex(tuple[Tensor, Tensor, Tensor, Tensor]):
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class _linalg_svd(tuple[Tensor, Tensor, Tensor]):
     @property
@@ -137,7 +173,13 @@ class _linalg_svd(tuple[Tensor, Tensor, Tensor]):
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class _lu_with_info(tuple[Tensor, Tensor, Tensor]):
     @property
@@ -151,7 +193,13 @@ class _lu_with_info(tuple[Tensor, Tensor, Tensor]):
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class _scaled_dot_product_cudnn_attention(
     tuple[Tensor, Tensor, Tensor, Tensor, _int | SymInt, _int | SymInt, Tensor, Tensor, Tensor]
@@ -181,7 +229,13 @@ class _scaled_dot_product_cudnn_attention(
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class _scaled_dot_product_efficient_attention(tuple[Tensor, Tensor, Tensor, Tensor]):
     @property
@@ -197,7 +251,13 @@ class _scaled_dot_product_efficient_attention(tuple[Tensor, Tensor, Tensor, Tens
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class _scaled_dot_product_flash_attention(
     tuple[Tensor, Tensor, Tensor, Tensor, _int | SymInt, _int | SymInt, Tensor, Tensor, Tensor]
@@ -227,7 +287,13 @@ class _scaled_dot_product_flash_attention(
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class _scaled_dot_product_flash_attention_for_cpu(tuple[Tensor, Tensor]):
     @property
@@ -239,7 +305,13 @@ class _scaled_dot_product_flash_attention_for_cpu(tuple[Tensor, Tensor]):
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class _unpack_dual(tuple[Tensor, Tensor]):
     @property
@@ -251,7 +323,13 @@ class _unpack_dual(tuple[Tensor, Tensor]):
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class aminmax(tuple[Tensor, Tensor]):
     @property
@@ -263,7 +341,13 @@ class aminmax(tuple[Tensor, Tensor]):
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class cummax(tuple[Tensor, Tensor]):
     @property
@@ -275,7 +359,13 @@ class cummax(tuple[Tensor, Tensor]):
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class cummin(tuple[Tensor, Tensor]):
     @property
@@ -287,7 +377,13 @@ class cummin(tuple[Tensor, Tensor]):
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class frexp(tuple[Tensor, Tensor]):
     @property
@@ -299,7 +395,13 @@ class frexp(tuple[Tensor, Tensor]):
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class geqrf(tuple[Tensor, Tensor]):
     @property
@@ -311,7 +413,13 @@ class geqrf(tuple[Tensor, Tensor]):
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class histogram(tuple[Tensor, Tensor]):
     @property
@@ -323,7 +431,13 @@ class histogram(tuple[Tensor, Tensor]):
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class histogramdd(tuple[Tensor, tuple[Tensor, ...]]):
     @property
@@ -335,7 +449,13 @@ class histogramdd(tuple[Tensor, tuple[Tensor, ...]]):
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class kthvalue(tuple[Tensor, Tensor]):
     @property
@@ -347,7 +467,13 @@ class kthvalue(tuple[Tensor, Tensor]):
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class lu_unpack(tuple[Tensor, Tensor, Tensor]):
     @property
@@ -361,7 +487,13 @@ class lu_unpack(tuple[Tensor, Tensor, Tensor]):
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class max(tuple[Tensor, Tensor]):
     @property
@@ -373,7 +505,13 @@ class max(tuple[Tensor, Tensor]):
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class median(tuple[Tensor, Tensor]):
     @property
@@ -385,7 +523,13 @@ class median(tuple[Tensor, Tensor]):
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class min(tuple[Tensor, Tensor]):
     @property
@@ -397,7 +541,13 @@ class min(tuple[Tensor, Tensor]):
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class mode(tuple[Tensor, Tensor]):
     @property
@@ -409,7 +559,13 @@ class mode(tuple[Tensor, Tensor]):
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class nanmedian(tuple[Tensor, Tensor]):
     @property
@@ -421,7 +577,13 @@ class nanmedian(tuple[Tensor, Tensor]):
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class qr(tuple[Tensor, Tensor]):
     @property
@@ -433,7 +595,13 @@ class qr(tuple[Tensor, Tensor]):
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class slogdet(tuple[Tensor, Tensor]):
     @property
@@ -445,7 +613,13 @@ class slogdet(tuple[Tensor, Tensor]):
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class sort(tuple[Tensor, Tensor]):
     @property
@@ -457,7 +631,13 @@ class sort(tuple[Tensor, Tensor]):
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class svd(tuple[Tensor, Tensor, Tensor]):
     @property
@@ -471,7 +651,13 @@ class svd(tuple[Tensor, Tensor, Tensor]):
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class topk(tuple[Tensor, Tensor]):
     @property
@@ -483,7 +669,13 @@ class topk(tuple[Tensor, Tensor]):
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 class triangular_solve(tuple[Tensor, Tensor]):
     @property
@@ -495,6 +687,12 @@ class triangular_solve(tuple[Tensor, Tensor]):
     n_fields: Final[_int] = ...
     n_sequence_fields: Final[_int] = ...
     n_unnamed_fields: Final[_int] = ...
-    def __init_subclass__(cls) -> NoReturn: ...
+    def __init_subclass__(cls) -> NoReturn:
+        """
+        This method is called when a class is subclassed.
+
+        The default implementation does nothing. It may be
+        overridden to extend subclasses.
+        """
 
 all_return_types: list[type] = ...

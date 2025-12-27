@@ -10,13 +10,30 @@ CHOICE_COL = ...
 FEEDBACK_COL = ...
 
 class AHFeature:
+    """
+    The context, that AutoHeuristic stores, is a list of features. AutoHeuristic needs to know whether a feature is
+    categorical (i.e., not a continuous variable) to learn a machine learning model.
+    """
     def __init__(self, name: str, value: Value, is_categorical: bool = ...) -> None: ...
 
 class AHOperation:
+    """
+    AHOperation can be used to augment the data collected by AutoHeuristic.
+    One might for example store features like m, k, n, but also want to use
+    features like m*n, or k*n, to learn a heuristic. Instead of storing features
+    that can be created from the collected data, one can use AHOperation to
+    create new features from the collected data.
+    """
     def __init__(self, name: str, func: Callable[[Any], Value], is_categorical: bool = ...) -> None: ...
     def apply_operation(self, data: Any) -> None: ...
 
 class AHContext:
+    """
+    This class is used to specify which information AutoHeuristic should store. For each choice, AutoHeursitic will
+    store the context and the collected feedback. The context could be something like the shape of a tensor, i.e.,
+    information that will help to learn a heuristic.
+    """
+
     features: list[AHFeature]
     context_dict: dict[str, Value]
     def __init__(self) -> None: ...

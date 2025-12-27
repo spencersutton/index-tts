@@ -9,6 +9,8 @@ from ._fsdp_api import _ReduceOp
 from ._fsdp_param import FSDPParam
 
 class AllGatherResult(NamedTuple):
+    """AllGatherResult(all_gather_output, all_gather_event, all_gather_work, param_all_gather_input_dtypes, param_all_gather_input_numels, all_gather_input_split_sizes)"""
+
     all_gather_output: torch.Tensor
     all_gather_event: torch.Event | None
     all_gather_work: dist.distributed_c10d.Work | None
@@ -131,7 +133,12 @@ def foreach_reduce(
     partial_reduce_output: torch.Tensor | None,
     all_reduce_hook: Callable[[torch.Tensor], None] | None,
     force_sum_reduction_for_comms: bool = ...,
-) -> tuple[torch.Tensor, torch.Event, torch.Event, torch.Tensor | None, torch.Event | None, torch.Tensor | None]: ...
+) -> tuple[torch.Tensor, torch.Event, torch.Event, torch.Tensor | None, torch.Event | None, torch.Tensor | None]:
+    """
+    ``unsharded_grads`` owns the references to the gradients computed by
+    autograd, so clearing the list frees the gradients.
+    """
+
 def foreach_reduce_scatter_copy_in(
     unsharded_grads: list[torch.Tensor], reduce_scatter_input: torch.Tensor, world_size: int
 ) -> None: ...

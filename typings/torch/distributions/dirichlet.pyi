@@ -14,6 +14,21 @@ class _Dirichlet(Function):
     def backward(ctx, grad_output): ...
 
 class Dirichlet(ExponentialFamily):
+    """
+    Creates a Dirichlet distribution parameterized by concentration :attr:`concentration`.
+
+    Example::
+
+        >>> # xdoctest: +IGNORE_WANT("non-deterministic")
+        >>> m = Dirichlet(torch.tensor([0.5, 0.5]))
+        >>> m.sample()  # Dirichlet distributed with concentration [0.5, 0.5]
+        tensor([ 0.1046,  0.8954])
+
+    Args:
+        concentration (Tensor): concentration parameter of the distribution
+            (often referred to as alpha)
+    """
+
     arg_constraints = ...
     support = ...
     has_rsample = ...

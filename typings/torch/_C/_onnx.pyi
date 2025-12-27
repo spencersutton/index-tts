@@ -3,6 +3,52 @@ from enum import Enum
 PRODUCER_VERSION: str
 
 class TensorProtoDataType(Enum):
+    """
+    Members:
+
+    UNDEFINED
+
+    FLOAT
+
+    UINT8
+
+    INT8
+
+    UINT16
+
+    INT16
+
+    INT32
+
+    INT64
+
+    STRING
+
+    BOOL
+
+    FLOAT16
+
+    DOUBLE
+
+    UINT32
+
+    UINT64
+
+    COMPLEX64
+
+    COMPLEX128
+
+    BFLOAT16
+
+    FLOAT8E4M3FN
+
+    FLOAT8E4M3FNUZ
+
+    FLOAT8E5M2
+
+    FLOAT8E5M2FNUZ
+    """
+
     UNDEFINED = ...
     FLOAT = ...
     UINT8 = ...
@@ -26,12 +72,34 @@ class TensorProtoDataType(Enum):
     FLOAT8E4M3FNUZ = ...
 
 class OperatorExportTypes(Enum):
+    """
+    Members:
+
+    ONNX
+
+    ONNX_ATEN
+
+    ONNX_ATEN_FALLBACK
+
+    ONNX_FALLTHROUGH
+    """
+
     ONNX = ...
     ONNX_ATEN = ...
     ONNX_ATEN_FALLBACK = ...
     ONNX_FALLTHROUGH = ...
 
 class TrainingMode(Enum):
+    """
+    Members:
+
+    EVAL
+
+    PRESERVE
+
+    TRAINING
+    """
+
     EVAL = ...
     PRESERVE = ...
     TRAINING = ...

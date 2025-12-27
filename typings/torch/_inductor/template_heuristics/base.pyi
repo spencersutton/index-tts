@@ -5,9 +5,37 @@ from ..ir import Layout
 from ..kernel_inputs import KernelInputs
 
 class TemplateConfigHeuristics:
-    def should_run(self, inputs: KernelInputs, layout: Layout) -> bool: ...
+    """Base class for generating sets of configs for an associated template."""
+    def should_run(self, inputs: KernelInputs, layout: Layout) -> bool:
+        """
+        hookup to check whether the configs are right to run at all e.g. you can check
+        max-autotune specific to your heuristic here or other things
+        If this returns False, get_template_configs will yield no configs
+
+        Args:
+            inputs: KernelInputs
+            layout: Layout
+        """
     def get_template_configs(
         self, kernel_inputs: KernelInputs, layout: Layout, op_name: str
-    ) -> Generator[dict[str, Any]]: ...
-    def get_extra_kwargs(self, kernel_inputs: KernelInputs, layout: Layout, op_name: str) -> dict[str, Any]: ...
-    def adjust_kernel_inputs(self, kernel_inputs: KernelInputs, op_name: str) -> KernelInputs: ...
+    ) -> Generator[dict[str, Any]]:
+        """
+        Get template configs for the given inputs.
+
+        Prefer to override the _get_template_configs_impl method
+        to leverage things like should_run
+        """
+    def get_extra_kwargs(self, kernel_inputs: KernelInputs, layout: Layout, op_name: str) -> dict[str, Any]:
+        """
+        Get extra kwargs for the given inputs/op for the template.
+
+        Use this to return kwargs that are needed for the template, but
+        do not change depending on the config/choice, but are rather
+        always the same, for all configs
+        """
+    def adjust_kernel_inputs(self, kernel_inputs: KernelInputs, op_name: str) -> KernelInputs:
+        """
+        Adjust kernel inputs for the given inputs/op for the template.
+
+        override this to adjust the kernel inputs e.g. (un)squeezing
+        """

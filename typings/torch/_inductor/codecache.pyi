@@ -37,7 +37,9 @@ output_code_log = ...
 autotuning_log = ...
 log = ...
 
-def use_re_build() -> bool: ...
+def use_re_build() -> bool:
+    """Use for CUTLASS compilation only right now."""
+
 def get_cpp_wrapper_cubin_path_name() -> str: ...
 def get_kernel_bin_format(device: str) -> str: ...
 
@@ -65,7 +67,17 @@ class PersistentCache(CacheBase):
         inputs: str,
         benchmark: Callable[[Any], dict[ChoiceCaller, float]] | None,
         hint_override: int | None = ...,
-    ) -> dict[ChoiceCaller, float]: ...
+    ) -> dict[ChoiceCaller, float]:
+        """
+        Check to see if we have benchmarked the given choice callers. For each
+        choice caller:
+
+            1. Check local_cache[op][inputs][choice][precision], return benchmark if cached.
+            2. If benchmark is not None:
+                a. `max_autotune_gemm=True`: benchmark the choice, update
+                    local_cache[op][inputs][choice], and return the benchmark.
+                b. `max_autotune_gemm=False`: don't benchmark the choice, return nothing.
+        """
 
 def get_lock_dir() -> str: ...
 def sha256_hash(data: bytes) -> str: ...
@@ -74,6 +86,16 @@ def get_path(basename: str, extension: str, specified_dir: str = ...) -> tuple[s
 def get_hash(content: str | bytes, extra: str = ..., hash_type: str = ...) -> str: ...
 
 class WritableTempFile:
+    """
+    Avoid "Permission denied error" on Windows:
+      with tempfile.NamedTemporaryFile("w", suffix=".gv") as temp_file:
+        # Not writable on Windows:
+        # https://docs.python.org/3/library/tempfile.html#tempfile.NamedTemporaryFile
+
+    Example:
+        with WritableTempFile("w", suffix=".gv") as temp_file:
+            tree.to_dotfile(temp_file.name)
+    """
     def __init__(self, mode: str = ..., *, encoding: Any = ..., suffix: Any = ...) -> None: ...
     def __enter__(self) -> _TemporaryFileWrapper[Any]: ...
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None: ...
@@ -86,35 +108,81 @@ def write(
     specified_dir: str = ...,
     key: str | None = ...,
 ) -> tuple[str, str]: ...
-def write_text(text: str) -> str: ...
+def write_text(text: str) -> str:
+    """Write the `text` to a file and return the path computed based on the hash."""
+
 def write_atomic(path_: str, content: str | bytes, make_dirs: bool = ..., encode_utf_8: bool = ...) -> None: ...
 
 @dataclasses.dataclass
 class TensorMetadataAndValues:
+    """
+    TensorMetadata plus the elements as a list of raw values.
+    Used for hashing inlined constants.
+    """
+
     tensor_metadata: TensorMetadata
     values: list[Any]
 
-def extract_tensor_metadata_for_cache_key(t: Tensor) -> TensorMetadata: ...
+def extract_tensor_metadata_for_cache_key(t: Tensor) -> TensorMetadata:
+    """
+    Extracts the tensor metadata and removes fields of the TensorMetadata
+    that are not needed for caching
+    """
 
 class FxGraphCachePickler(pickle.Pickler):
-    def __init__(self, gm: torch.fx.GraphModule, has_user_defined_triton_kernels: bool = ...) -> None: ...
-    def dumps(self, obj: Any) -> bytes: ...
-    def get_hash(self, obj: Any) -> str: ...
-    def debug_lines(self, inp: FxGraphHashDetails) -> list[str]: ...
+    """
+    Custom pickler to customize the pickling of some objects (Tensors), only for the
+    purpose of computing a hash for keying into the FxGraphCache. Tensors contain
+    objects that don't pickle and/or vary between runs, and we want to capture the
+    data that allow us to compute a stable, but safe hash.
+    """
+    def __init__(self, gm: torch.fx.GraphModule, has_user_defined_triton_kernels: bool = ...) -> None:
+        """
+        Create an FX graph pickler. If include_non_inlined=True, then pickling will
+        include the _values_ for all Tensors. (Note that any tensors are constants
+        attached as attributes to the GraphModule). Otherwise, pickling will include
+        only the metadata for these tensors.
+        """
+    def dumps(self, obj: Any) -> bytes:
+        """Pickle an object and return a byte string."""
+    def get_hash(self, obj: Any) -> str:
+        """Serialize an object and return a hash of the bytes."""
+    def debug_lines(self, inp: FxGraphHashDetails) -> list[str]:
+        """
+        Get a printable string describing in more detail all the attributes
+        comprising an object. Useful for debugging when one graph hashes
+        to a different value than another.
+        """
 
 def build_code_hash(roots: list[str] | None, prefix: str, hasher: hashlib._Hash) -> None: ...
-def torch_key_cache(func: Callable[[], bytes]) -> Callable[[], bytes]: ...
+def torch_key_cache(func: Callable[[], bytes]) -> Callable[[], bytes]:
+    """
+    This function is a reimplementation of functools.lru_cache with a
+    set function that allows prepopulating the cache.
+    """
+
 @torch_key_cache
 def torch_key() -> bytes: ...
 def get_inductor_root() -> str: ...
 
 @dataclasses.dataclass
 class OrderedSetHolder:
+    """
+    See FxGraphHashDetails. Holds a sorted list to support stable hashing
+    of set kwargs.
+    """
+
     items: list[Any]
 
-class BypassFxGraphCache(Exception): ...
+class BypassFxGraphCache(Exception):
+    """Exception to indicate that the FxGraphCache should be bypassed."""
 
 class FxGraphHashDetails:
+    """
+    Object to capture all the details for a compiled FX graph relevant to computing
+    a safe and stable cache key.
+    """
+
     EXCLUDED_KWARGS = ...
     def __init__(
         self,
@@ -129,10 +197,17 @@ def compiled_fx_graph_hash(
     example_inputs: Sequence[InputType],
     fx_kwargs: _CompileFxKwargs,
     inputs_to_check: Sequence[int],
-) -> tuple[str, list[str]]: ...
-def add_ephemeral_timeout_increase_for_distributed(time_saved_ns: int) -> int: ...
+) -> tuple[str, list[str]]:
+    """Generate a unique hash of the FX graph for caching."""
+
+def add_ephemeral_timeout_increase_for_distributed(time_saved_ns: int) -> int:
+    """
+    Ephemerally increases the NCCL timeout when compiling for a distributed job
+    Returns amount of seconds increased
+    """
 
 class GuardedCache[T]:
+    """Mixin for caches that have guards associated with their entries."""
     @classmethod
     def iterate_over_candidates(
         cls: type[GuardedCache[T]], local: bool, remote_cache: RemoteCache[JsonDataTy] | None, key: str
@@ -145,7 +220,21 @@ class GuardedCache[T]:
         remote_cache: RemoteCache[JsonDataTy] | None,
         evaluate_guards: Callable[[str, list[int] | list[torch.SymInt]], bool],
         hints: list[int],
-    ) -> tuple[T | None, bytes | None, dict[str, str]]: ...
+    ) -> tuple[T | None, bytes | None, dict[str, str]]:
+        """
+        Find the first cache entry in iterate_over_candidates that passes `evaluate_guards`.
+
+        Args:
+            key: The cache key to look up
+            local: Whether to check the local cache
+            remote_cache: The remote cache to check, if any
+            evaluate_guards: Function that evaluates whether a guard passes the check,
+                given a list of hint values and the guard expression.
+            hints: List of symint hints paired with evaluate_guards
+
+        Returns:
+            A tuple of (graph, pickled_content) if found, or (None, None) if not found
+        """
 
 @CacheArtifactFactory.register
 class InductorCacheArtifact(CacheArtifact):
@@ -156,10 +245,44 @@ class InductorCacheArtifact(CacheArtifact):
     def type() -> str: ...
 
 class FxGraphCache(GuardedCache[CompiledFxGraph]):
+    """
+    Supports caching and reusing compiled Fx graphs.
+
+    The overall strategy is as follows:
+    - This cache stores entries on disk. When saving an entry, we can't
+      serialize callables (that could be C++, Triton, etc.), so we serialize
+      their own disk cache location. We then recreate the compiled artifact
+      after fetching from disk.
+    - For indexing the cache, we gather the fields relevant to identifying an
+      FxGraph (the graph module, graph inputs, system settings etc.) into an
+      FxGraphCacheDetails object, pickle it, and compute a hash for the key.
+      See FxGraphCachePickler.
+    - Among the metadata we store, we also include a guards expression that's
+      appropriate for validating any symbols for Tensor arguments that have
+      symbolic bounds. On cache lookup then, we evaluate those guards in the
+      current context to validate that a cached entry can be served.
+    - A given graph could have multiple compiled versions, corresponding to
+      different sets of guards. Therefore, we store cache entries in the form:
+          <temp dir>/<fx graph hash>/<serialized metadata>
+    - On lookup, we compute the key from the graph details, iterate over all
+      leaf files in the corresponding subdirectory, deserialize the entry, and
+      evaluate its guards expression. If the evaluation succeeds, we have a
+      cache hit. If it fails, we compile the graph and store a new entry.
+    - Finally, on a cache hit, we need to make sure any guards that would
+      have been created during compilation are added to the current context.
+    """
     @staticmethod
     def cache_hit_post_compile(
         graph: CompiledFxGraph, cache_info: dict[str, Any], constants: CompiledFxGraphConstants
-    ) -> tuple[CompiledFxGraph | None, dict[str, Any]]: ...
+    ) -> tuple[CompiledFxGraph | None, dict[str, Any]]:
+        """
+        Cache specific post compile steps that need to run if we find a graph in the cache
+        This includes putting bundled triton artifacts in the right place,
+        reloading the PyCodeCache artifact, etc.
+
+        These don't always happen (i.e. on a cache miss, so they are in a separate function from
+        CompiledFxGraph.post_compile)
+        """
     @staticmethod
     def prepare_key(
         gm: torch.fx.GraphModule,
@@ -167,9 +290,20 @@ class FxGraphCache(GuardedCache[CompiledFxGraph]):
         fx_kwargs: _CompileFxKwargs,
         inputs_to_check: Sequence[int],
         remote: bool,
-    ) -> tuple[tuple[str, list[str]] | None, dict[str, Any]]: ...
+    ) -> tuple[tuple[str, list[str]] | None, dict[str, Any]]:
+        """
+        Checks that the inductor input is cacheable, then computes
+        and returns the cache key for the input.
+        Returns (key_info, cache_info) where:
+        - key_info is (hash_key, debug_lines), and
+        - cache_info will contain debug info in the event of BypassFxGraphCache.
+
+        NB: It is possible to have this function return a union instead. But
+        I personally believe it is more annoying/difficult to read in that format.
+        """
     @staticmethod
-    def get_remote_cache() -> RemoteCache[JsonDataTy] | None: ...
+    def get_remote_cache() -> RemoteCache[JsonDataTy] | None:
+        """Attempts to load the remote cache, returns None on error."""
     @staticmethod
     def load_with_key(
         key: str,
@@ -180,9 +314,15 @@ class FxGraphCache(GuardedCache[CompiledFxGraph]):
         is_backward: bool,
         constants: CompiledFxGraphConstants,
         evaluate_guards: Callable[[str, list[int] | list[torch.SymInt]], bool] | None = ...,
-    ) -> tuple[CompiledFxGraph | None, dict[str, Any]]: ...
+    ) -> tuple[CompiledFxGraph | None, dict[str, Any]]:
+        """
+        Lookup the graph with the given key, and return results and metadata.
+        Doesn't do any logging on its own, because AOTAutograd handles a cache miss
+        differently from FXGraphCache.
+        """
     @staticmethod
-    def clear() -> None: ...
+    def clear() -> None:
+        """Clear out the on-disk cache."""
 
 @functools.cache
 def split_aot_inductor_output_path(path: str) -> tuple[str, str]: ...
@@ -207,6 +347,7 @@ class CudaKernelParamCache:
     def get_keys(cls) -> KeysView[str]: ...
 
 class AotCodeCompiler:
+    """Compile AOT Inductor generated code."""
     @classmethod
     def compile(
         cls,
@@ -217,7 +358,11 @@ class AotCodeCompiler:
         *,
         device_type: str,
         additional_files: list[str],
-    ) -> list[str | Weights] | str: ...
+    ) -> list[str | Weights] | str:
+        """
+        Returns the .so path, or returns a list of files that were generated if
+        config.aot_inductor.package=True.
+        """
 
 _libgomp: CDLL | None = ...
 
@@ -228,6 +373,11 @@ _HEADER_LOCK_DIR = ...
 
 @clear_on_fresh_cache
 class CppCodeCache:
+    """
+    Compiles and caches C++ libraries.  Users of this class supply the source code to
+    be compiled, while compilation flags are set by CppBuilder.
+    """
+
     cache: dict[str, Callable[[], CDLL | ModuleType]] = ...
     cache_clear = ...
     cpp_compile_command_flags: dict[str, Any] = ...
@@ -239,7 +389,11 @@ class CppCodeCache:
         submit_fn: Any = ...,
         extra_flags: Sequence[str] = ...,
         optimized_code: str | None = ...,
-    ) -> Any: ...
+    ) -> Any:
+        """
+        Compile and load a C++ library.  Returns a callable that returns the loaded
+        library.
+        """
     @classmethod
     def load(cls, *args: Any, **kwargs: Any) -> Any: ...
 
@@ -262,7 +416,21 @@ class CppPythonBindingsCodeCache(CppCodeCache):
         submit_fn: Any = ...,
         extra_flags: Sequence[str] = ...,
         kernel_code: str | None = ...,
-    ) -> Any: ...
+    ) -> Any:
+        """
+        Wrap a C++ function in fast Python bindings.
+
+        Args:
+            argtypes: The types of args to ENTRY_FUNCTION(), e.g. ["float*", "long"]
+            main_code: C++ source code containing ENTRY_FUNCTION().  Will be built at
+                -O3 if kernel_code is None (to maximize performance in any kernels that
+                are present), or -O1 otherwise (to minimize compile time).
+            kernel_code: If present, C++ source code that will be built at -O3 and
+                linked to main_code.
+
+        Returns:
+            A python version of ENTRY_FUNCTION()
+        """
     @classmethod
     def load_pybinding(cls, *args: Any, **kwargs: Any) -> Any: ...
 
@@ -316,7 +484,11 @@ class PyCodeCache:
         cls, key: str, path: str, linemap: list[tuple[int, str]] | None = ..., attrs: dict[str, Any] | None = ...
     ) -> ModuleType: ...
     @classmethod
-    def cache_clear(cls, purge: bool = ...) -> None: ...
+    def cache_clear(cls, purge: bool = ...) -> None:
+        """
+        Clear the in-memory module cache. If purge=True, also delete all the
+        corresponding on-disk source files.
+        """
     @classmethod
     @functools.cache
     def stack_frames_for_code(cls, path: str, lineno: int) -> list[dict[str, Any]] | None: ...
@@ -328,6 +500,7 @@ def cuda_compile_command(
 ) -> str: ...
 
 class DLLWrapper:
+    """A wrapper for a dynamic library."""
     def __init__(self, lib_path: str) -> None: ...
     def close(self) -> None: ...
     def __getattr__(self, name: str) -> Callable[..., None]: ...
@@ -336,12 +509,21 @@ class DLLWrapper:
     def __del__(self) -> None: ...
 
 @lru_cache
-def binary_error_path(output_path: str) -> str: ...
+def binary_error_path(output_path: str) -> str:
+    """standard format for the error path"""
 
 @clear_on_fresh_cache
 class CUDACodeCache:
+    """
+    A cache for managing the compilation and loading of CUDA source code specifically for CUTLASS.
+    This class handles writing source code to files, compiling them into shared objects, and caching
+    the results to avoid redundant compilations. It also manages error handling and logging for the
+    compilation process.
+    """
     @dataclasses.dataclass
     class CacheEntry:
+        """CacheEntry(input_path: 'str', output_path: 'str', error_json: 'Optional[str]' = None)"""
+
         input_path: str
         output_path: str
         error_json: str | None = ...
@@ -353,21 +535,44 @@ class CUDACodeCache:
     def cache_clear() -> None: ...
     @staticmethod
     @lru_cache(maxsize=4)
-    def get_kernel_binary_remote_cache(caching_enabled: bool, caching_available: bool) -> Any | None: ...
+    def get_kernel_binary_remote_cache(caching_enabled: bool, caching_available: bool) -> Any | None:
+        """
+        Get or create the class instance of the CUTLASSKernelBinaryRemoteCache.
+
+        Args:
+            caching_enabled: Whether binary remote caching is enabled
+            caching_available: Whether we're in fbcode environment
+
+        Returns:
+            CUTLASSKernelBinaryRemoteCache: The class instance of the kernel binary remote cache
+        """
     @classmethod
     @lru_cache(None)
-    def write(cls, source_code: str, dst_file_ext: str) -> tuple[str, str]: ...
+    def write(cls, source_code: str, dst_file_ext: str) -> tuple[str, str]:
+        """
+        Writes source code into a file with dst_file_ext as the file extension.
+        Returns the hash key of source code, and the path to the file.
+        """
     @classmethod
-    def compile(
-        cls, source_code: str, dst_file_ext: str, extra_args: list[str] | None = ...
-    ) -> tuple[str, str, str]: ...
+    def compile(cls, source_code: str, dst_file_ext: str, extra_args: list[str] | None = ...) -> tuple[str, str, str]:
+        """
+        Compiles CUDA source_code into a file with dst_file_ext extension.
+        If dst_file_ext is "so", first compiles to ".o" and then links to ".so".
+        Returns a tuple of dst_file_path, hash_key, source_code_path
+        """
     @classmethod
-    def load(cls, source_code: str, dst_file_ext: str) -> tuple[DLLWrapper, str, str]: ...
+    def load(cls, source_code: str, dst_file_ext: str) -> tuple[DLLWrapper, str, str]:
+        """
+        Compiles source code and loads the generated .so file.
+        Returns a tuple of DLLWrapper, hash_key, source_code_path
+        """
 
 @clear_on_fresh_cache
 class ROCmCodeCache:
     @dataclasses.dataclass
     class CacheEntry:
+        """CacheEntry(input_path: 'str', output_path: 'str')"""
+
         input_path: str
         output_path: str
 
@@ -378,13 +583,24 @@ class ROCmCodeCache:
     @staticmethod
     def cache_clear() -> None: ...
     @classmethod
-    def write(cls, source_code: str, dst_file_ext: str) -> tuple[str, str]: ...
+    def write(cls, source_code: str, dst_file_ext: str) -> tuple[str, str]:
+        """
+        Writes source code into a file with dst_file_ext as the file extension.
+        Returns the hash key of source code, and the path to the file.
+        """
     @classmethod
-    def compile(
-        cls, source_code: str, dst_file_ext: str, extra_args: list[str] | None = ...
-    ) -> tuple[str, str, str]: ...
+    def compile(cls, source_code: str, dst_file_ext: str, extra_args: list[str] | None = ...) -> tuple[str, str, str]:
+        """
+        Compiles source_code into a file with dst_file_ext extension,
+        using the compile command specific for the ROCm platform.
+        Returns a tuple of dst_file_path, hash_key, source_code_path
+        """
     @classmethod
-    def load(cls, source_code: str, dst_file_ext: str) -> tuple[DLLWrapper, str, str]: ...
+    def load(cls, source_code: str, dst_file_ext: str) -> tuple[DLLWrapper, str, str]:
+        """
+        Compiles source code and loads the generated .so file.
+        Returns a tuple of DLLWrapper, hash_key, source_code_path
+        """
 
 class CodeCacheFuture:
     def result(self) -> Callable[..., Any]: ...
@@ -394,5 +610,6 @@ class LambdaFuture(CodeCacheFuture):
     def result(self) -> Callable[..., Any]: ...
 
 class StaticAutotunerFuture(CodeCacheFuture):
+    """A statically launchable CachingAutotuner, loaded from TritonBundler"""
     def __init__(self, static_autotuner: CachingAutotuner) -> None: ...
     def result(self) -> CachingAutotuner: ...

@@ -35,10 +35,21 @@ def set_custom_combo_kernel_horizontal_partition(
         ],
         list[list[BaseSchedulerNode]],
     ],
-) -> None: ...
+) -> None:
+    """
+    Sets the algorithm used to partition nodes into horizontal partitions. Nodes in different partitions
+    are implemented in different combo kernels. Nodes in the same partition are likely to be implemented
+    in the same combo kernel, but subject to subsequent restricts like CUDA limits for number of args.
+
+    The algorithm should take a list of nodes and return a list of list of nodes.
+
+    The default algorithm is to partition nodes based on number of block dimensions.
+    """
 
 @dataclass
 class PartitionState:
+    """PartitionState(partitions: list[list[torch._inductor.scheduler.BaseSchedulerNode]], cur_partition: list[torch._inductor.scheduler.BaseSchedulerNode], cur_count: int)"""
+
     partitions: list[list[BaseSchedulerNode]]
     cur_partition: list[BaseSchedulerNode]
     cur_count: int
@@ -53,14 +64,43 @@ class ComboKernel(Kernel):
         kernel_map: dict[BaseSchedulerNode, TritonKernel],
         node_info_map: dict[BaseSchedulerNode, tuple[Any, Any, Any, Any]],
         custom_algorithm: bool = ...,
-    ) -> list[list[BaseSchedulerNode]]: ...
+    ) -> list[list[BaseSchedulerNode]]:
+        """
+        Generates a list of lists of node info tuples which consist of (fused_nodes, tiling, numel, rnum)
+        for each subkernel node where each sublist forms a ComboKernel. It horizontally partitions nodes into
+        sublists in the following way:
+            1) call _custom_combo_kernel_horizontal_partition_algorithm() if custom_algorithm is True
+            2) then, call _base_horizontal_partition() to partition nodes into sublists, each sublist is
+               guaranteed to not exceed CUDA limits for number of args (read/writes) and to have the same
+               2D or 1D blocking strategy.
+        """
 
     class SequentialDispatch:
+        """
+        The dispatcher which dispatches the subkernels in a sequential manner:
+        the blocks are first dispatched to the 1st subkernel (until it is filled),
+        then to the 2nd subkernel, and so on.
+        The class defines the methods specific to the dispatch algorithm.
+        Methods:
+            codegen_pid_range(...): codegen the pid range for each subkernel.
+            grid(...): codegen the grid size for launching the combo kernel.
+        """
+
         grid_expr = SequentialComboKernelGrid
         @classmethod
         def codegen_pid_range(cls, kernel: ComboKernel, num: int, code: IndentedBuffer) -> None: ...
 
     class RoundRobinDispatch:
+        """
+        The dispatcher which dispatches the subkernels in a round robin manner:
+        the blocks are interleavedly dispatched to each subkernel to execute them
+        in parallel.
+        The class defines the methods specific to the dispatch algorithm.
+        Methods:
+            codegen_pid_range(...): codegen the pid range for each subkernel.
+            grid(...): codegen the grid size for launching the combo kernel.
+        """
+
         grid_expr = RoundRobinComboKernelGrid
         @classmethod
         def codegen_pid_range(cls, kernel: ComboKernel, num: int, code: IndentedBuffer) -> None: ...
@@ -70,11 +110,33 @@ class ComboKernel(Kernel):
     @staticmethod
     def create_triton_kernel(
         tiling: dict[str, sympy.Expr], features: SIMDKernelFeatures, optimize_mask: bool
-    ) -> TritonKernel: ...
-    def codegen_static_numels_sub_kernel(
-        self, code: IndentedBuffer, sub_kernel: TritonKernel, num: int
-    ) -> list[str]: ...
-    def min_x_blocks_sub_kernel(self, sub_kernel: TritonKernel, num: int) -> None: ...
+    ) -> TritonKernel:
+        """
+        Only allow optimize_mask=True when 1) sequential dispatch is used,
+        2) numels except x dimension are the same for each sub kernel.
+        """
+    def codegen_static_numels_sub_kernel(self, code: IndentedBuffer, sub_kernel: TritonKernel, num: int) -> list[str]:
+        """
+        We get a small speedup from hard coding numels if they are static.
+
+        This code stomps on the passed-in values by writing an constant to the top of the kernel.
+
+        In a kernel like:
+        def KERNEL_NAME(in_ptr0, in_ptr1, out_ptr2, xnumel, rnumel, XBLOCK : tl.constexpr, R0_BLOCK : tl.constexpr):
+
+        We would add
+        xnumel = 4096
+        rnumel = 768
+
+        After the signature, before the kernel code, if we decided to make these static. As its hardcoded, it becomes
+        a better signal to triton on how to unroll and do some static indexing. So, it's not so much that downstream
+        knows that its a static numel, as that you just plop a constant into the kernel.
+        """
+    def min_x_blocks_sub_kernel(self, sub_kernel: TritonKernel, num: int) -> None:
+        """
+        Kernels with no_x_dim being true has no tunable XBLOCK. They have a fixed number of X blocks.
+        Grid calculation needs to make sure that they are assigned with enough number of blocks.
+        """
     def select_heuristics(self, sub_kernel: TritonKernel) -> tuple[str, dict[str, int]]: ...
     def select_combo_heuristics(
         self, heuristics_list: list[str], size_hints_list: list[dict[str, int]]
@@ -91,7 +153,12 @@ class ComboKernel(Kernel):
         pointwise_with_reduce: bool = ...,
     ) -> str: ...
     def codegen_blocks(self, code: IndentedBuffer) -> None: ...
-    def get_block_args(self) -> list[ConstexprArg]: ...
+    def get_block_args(self) -> list[ConstexprArg]:
+        """
+        Calculate blocks from sub_kernels and range_trees.
+        **Update self.block_args**
+        Return the block args
+        """
     def add_numel_to_args(self, argdefs: list[ArgName], signature: list[Any]) -> list[ArgName]: ...
     def add_numel_to_call_args(self, name: str, call_args: list[Any], arg_types: list[Any]) -> None: ...
     def kernel_benchmark_extra_args(self) -> list[str]: ...

@@ -29,6 +29,19 @@ def get_max_tiles(default: int = ...) -> int: ...
 
 @dataclasses.dataclass
 class IterationRanges:
+    """
+    Each range tree represents multiple sets of iteration indexing
+    in a single tiled dimension in the output kernel.
+
+    If you have two loops ranges one (4, 3, 2) and another (4, 6),
+    then the range tree will be:
+            4 (i0)
+        3 (i1)  6 (i3)
+        2 (i2)
+    Where i0 is shared between both loops, but then the split into
+    different indexing vars.  All loop ranges must iterate over
+    the same number of elements.
+    """
     def __init__(
         self,
         name: str,
@@ -53,6 +66,11 @@ class IterationRanges:
     def symt(self) -> SymT: ...
 
 class IterationRangesRoot(IterationRanges):
+    """
+    Root of a iteration range tree that represents a single
+    tiled dimension in the output kernel. It contains multiple
+    sets of iteration represented with IterationRangesEntry.
+    """
     def __init__(
         self,
         name: str,
@@ -69,10 +87,12 @@ class IterationRangesRoot(IterationRanges):
     ) -> None: ...
     def cache_clear(self) -> None: ...
     def index_sym(self) -> sympy.Symbol: ...
-    def lookup(self, divisor: sympy.Expr, length: sympy.Expr) -> IterationRangesEntry: ...
+    def lookup(self, divisor: sympy.Expr, length: sympy.Expr) -> IterationRangesEntry:
+        """Lookup a given RangeTreeEntry, creating it if needed"""
     def construct_entries(self, lengths: list[sympy.Expr]) -> list[IterationRangesEntry]: ...
     def construct(self, lengths: list[sympy.Expr]) -> list[sympy.Symbol]: ...
-    def vars_and_sizes(self, index: sympy.Expr) -> tuple[list[sympy.Symbol], list[sympy.Expr]]: ...
+    def vars_and_sizes(self, index: sympy.Expr) -> tuple[list[sympy.Symbol], list[sympy.Expr]]:
+        """Figure out vars from this tree used in index"""
 
 class IterationRangesEntry(IterationRanges):
     def __init__(
@@ -89,6 +109,8 @@ def constant_repr(value: float) -> str: ...
 CSEVariableType = TypeVar("CSEVariableType", bound=CSEVariable, default=CSEVariable)
 
 class SIMDKernel[CSEVariableType: CSEVariable = CSEVariable](Kernel[CSEVariableType]):
+    """Common base class for Triton/Halide codegen which both use flattened indexing rather than loop nests."""
+
     sexpr: Callable[[sympy.Expr], str] = ...
     kexpr: Callable[[sympy.Expr], str]
     allow_block_ptr: bool = ...
@@ -120,7 +142,11 @@ class SIMDKernel[CSEVariableType: CSEVariable = CSEVariable](Kernel[CSEVariableT
         no_x_dim: bool,
     ) -> list[IterationRangesRoot]: ...
     def initialize_range_tree(self, pid_cache: dict[str, str]) -> None: ...
-    def finalize_indexing(self, indices: Sequence[sympy.Expr]) -> None: ...
+    def finalize_indexing(self, indices: Sequence[sympy.Expr]) -> None:
+        """
+        Hook called right before codegen with every index that will be
+        used in the fused kernel.
+        """
     def store_reduction(self, name: str, index: sympy.Expr, value: CSEVariable) -> None: ...
     def should_use_cooperative_reduction(self) -> bool: ...
     def should_use_persistent_reduction(self) -> bool: ...
@@ -136,30 +162,96 @@ class SIMDKernel[CSEVariableType: CSEVariable = CSEVariable](Kernel[CSEVariableT
     @classmethod
     def prepare_split_iteration_lengths(
         cls, groups: Iterable[sympy.Expr], lengths: Sequence[Sequence[sympy.Expr]], reduction_numel: sympy.Expr = ...
-    ) -> Sequence[Sequence[sympy.Expr]]: ...
+    ) -> Sequence[Sequence[sympy.Expr]]:
+        """Fill in the reduction numel of lengths if missing"""
     @classmethod
     def is_compatible(
         cls, groups: Iterable[sympy.Expr], lengths: Sequence[Sequence[sympy.Expr]], reduction_numel: sympy.Expr = ...
     ) -> bool: ...
-    def split_and_set_ranges(self, lengths: Sequence[Sequence[sympy.Expr]]) -> list[list[sympy.Expr]]: ...
+    def split_and_set_ranges(self, lengths: Sequence[Sequence[sympy.Expr]]) -> list[list[sympy.Expr]]:
+        """
+        Split and set iteration ranges for the kernel based on the provided lengths.
+
+        This method maps the kernel's tiling structure to the node's iteration space,
+        handling both pointwise and reduction dimensions appropriately.
+
+        Args:
+            lengths: A sequence of sequences of symbolic expressions representing
+                    the sizes of different dimensions for each node.
+
+        Returns:
+            A list of lists of symbolic expressions representing the mapped
+            iteration variables for each dimension.
+        """
     @classmethod
     def map_kernel_groups_to_node_sizes(
         cls, groups: Sequence[sympy.Expr], lengths: Sequence[Sequence[sympy.Expr]], set_ranges
-    ) -> list[list[sympy.Expr]]: ...
+    ) -> list[list[sympy.Expr]]:
+        """
+        We may want to fuse `for i0 in s0*s1` into a tiled kernel with groups (s0, s1).
+
+        To do this we need to split up the iteration space of i0 into something like:
+            for i1 in s0:
+              for i2 in s1:
+                i0 = i1*s1 + i2
+                ....
+
+        This function matches and resplits lengths to the groups of
+        this kernel to enable tiled + non-tiled fusions.
+        """
     def is_indirect_indexing(self, index: sympy.Expr) -> bool: ...
     def is_broadcasted(self, index: sympy.Expr) -> bool: ...
-    def index_to_str(self, index: sympy.Expr) -> str: ...
+    def index_to_str(self, index: sympy.Expr) -> str:
+        """
+        Convert an index expr to a string that can be used in output code.
+        e.g. a sympy expression "s2" may actually appear as "ks1" in the generated kernel.
+
+        Index expressions often need to be passed in as arguments to the triton kernel.
+        Rename_indexing and codegen_indexing keep track of the needed indices and add
+        new parameters to the function signature.
+        """
     def prepare_indexing(self, index: sympy.Expr) -> sympy.Expr: ...
     def active_range_trees(self) -> list[IterationRangesRoot]: ...
     def codegen_indexing(self, expr: sympy.Expr) -> sympy.Expr: ...
     def codegen_nan_check(self) -> None: ...
     def call_kernel(self, name: str, node: IRNode | None = ...) -> None: ...
     @contextlib.contextmanager
-    def mask_loads(self, mask: str | OpsWrapper, value: float) -> Iterator[str]: ...
-    def get_strides_of_load(self, index: sympy.Expr) -> dict[sympy.Symbol, sympy.Expr]: ...
+    def mask_loads(self, mask: str | OpsWrapper, value: float) -> Iterator[str]:
+        """Context manager to add an additional mask to tl.load/store"""
+    def get_strides_of_load(self, index: sympy.Expr) -> dict[sympy.Symbol, sympy.Expr]:
+        """
+        This gets the stride of the index for each of the tiling variables
+        (technically, it does it at index 0)
+
+        For example, if
+        xindex = x0 + 512*x1 + 1024*r0
+        x0 = (xindex//512)
+        x1 = (xindex % 512)
+        r0 = rindex // 1024
+
+        this function would return
+        {xindex: 512, rindex: 1024}
+        """
     def estimate_flops(self) -> int | None: ...
-    def estimate_kernel_num_bytes(self): ...
-    def warn_mix_layout(self, kernel_name): ...
+    def estimate_kernel_num_bytes(self):
+        """
+        Try the best to estimate the total size (in bytes) of the
+        kernel's inputs and outputs, which is used for estimating the memory
+        throughput of this kernel. This information is used for checking how
+        far we are from the peak memory bandwidth. It's important that
+        we want to avoid overestimating the sizes of the inputs and outputs,
+        because it can wrongfully give us a very large memory traffic value,
+        which may be even larger than the theoretical bandwidth and thus
+        become very misleading. This is particularly problematic for cases
+        where we slice some inputs. In those cases, we should only count
+        the size of the "slices" instead of the original inputs, because
+        only the slices contribute to the real memory traffic.
+        """
+    def warn_mix_layout(self, kernel_name):
+        """
+        Print message if the kernel have mixed layout inputs.
+        Only care about 4D tensor for now.
+        """
     def welford_reduce_fallback(self, dtype, value): ...
     def prepare_softmax_twopass_fallback(self, dtype, value): ...
     def codegen_kernel(self): ...
@@ -167,14 +259,25 @@ class SIMDKernel[CSEVariableType: CSEVariable = CSEVariable](Kernel[CSEVariableT
     def codegen_iteration_ranges_entry(self, entry: IterationRangesEntry): ...
 
 class SIMDScheduling(BaseScheduling):
+    """
+    Single Instruction Multiple Data parent class used for fusion across
+    multiple different backends.
+    """
+
     kernel_type: type[Any] = ...
     def group_fn(self, sizes): ...
-    def can_fuse(self, node1, node2): ...
+    def can_fuse(self, node1, node2):
+        """
+        Hook called by Scheduler to determine if the Triton backend
+        can fuse node1 and node2.  These nodes might already be
+        FusedSchedulerNodes.
+        """
 
     can_fuse_vertical = ...
     can_fuse_horizontal = ...
     def generate_node_schedule(self, nodes, numel, rnumel): ...
-    def codegen_node(self, node: scheduler.FusedSchedulerNode | scheduler.SchedulerNode): ...
+    def codegen_node(self, node: scheduler.FusedSchedulerNode | scheduler.SchedulerNode):
+        """Given a set of pre-fused nodes, generate a Triton kernel."""
     @staticmethod
     def can_use_32bit_indexing(
         numel: sympy.Expr, buffers: Iterable[ir.Buffer | ir.TensorBox | ir.TorchBindObject | ir.IRNode]
@@ -186,7 +289,13 @@ class SIMDScheduling(BaseScheduling):
     def codegen_node_schedule_with_kernel(self, node_schedule, kernel): ...
     def codegen_template(
         self, template_node, epilogue_nodes, prologue_nodes, *, only_gen_src_code=..., hint_override: int | None = ...
-    ) -> str | None: ...
+    ) -> str | None:
+        """
+        Codegen a triton template with multi-kernel dispatch support
+
+        If `only_gen_src_code=True` the src code will be returned instead of being
+        codegenned into the wrapper
+        """
     def codegen_sync(self): ...
     def generate_combo_kernel_code(
         self,
@@ -203,7 +312,8 @@ class SIMDScheduling(BaseScheduling):
     @classmethod
     def create_tiling(
         cls, pw_tiling: Sequence[sympy.Expr], reduction_tiling: Sequence[sympy.Expr]
-    ) -> immutable_dict[str, sympy.Expr]: ...
+    ) -> immutable_dict[str, sympy.Expr]:
+        """Create a tiling dict from pointwise and reduction splits."""
     @classmethod
     def create_partial_tiling(
         cls, tiling: Sequence[sympy.Expr], is_pointwise: bool
@@ -211,11 +321,16 @@ class SIMDScheduling(BaseScheduling):
     @classmethod
     def complete_partial_tiling(
         cls, tiling: dict[str, sympy.Expr], numel: sympy.Expr, reduction_numel: sympy.Expr
-    ) -> immutable_dict[str, sympy.Expr]: ...
+    ) -> immutable_dict[str, sympy.Expr]:
+        """Given a tiling for only pointwise or reduction dimensions, adds the missing one."""
     @classmethod
-    def get_nd_tilings(
-        cls, node_schedule, pointwise_numel, reduction_numel
-    ) -> list[immutable_dict[str, sympy.Expr]]: ...
+    def get_nd_tilings(cls, node_schedule, pointwise_numel, reduction_numel) -> list[immutable_dict[str, sympy.Expr]]:
+        """
+        Creates N-dimensional tiling candidates, attempting to simplify loads/stores
+        by tiling the kernel into higher dimensions.
+
+        Returns a list of tilings ranked by dimensionality.
+        """
     @classmethod
     def compute_tiling_strategy(
         cls,
@@ -223,7 +338,8 @@ class SIMDScheduling(BaseScheduling):
         pointwise_numel: sympy.Expr,
         reduction_numel: sympy.Expr,
         coalesce_analysis: CoalesceVarAnalysis,
-    ) -> tuple[dict[str, sympy.Expr], dict[str, sympy.Expr] | None]: ...
+    ) -> tuple[dict[str, sympy.Expr], dict[str, sympy.Expr] | None]:
+        """Generates a tiling, and a score of each tile according to each tile's coalesced memory accesses."""
     @classmethod
     def tiling_is_compatible(
         cls,
@@ -247,7 +363,14 @@ class SIMDScheduling(BaseScheduling):
     @classmethod
     def get_tiling_and_scores(
         cls, node_schedule, numel, reduction_numel=..., coalesce_analysis: CoalesceVarAnalysis | None = ...
-    ) -> tuple[dict[str, sympy.Expr], dict[str, sympy.Expr] | None]: ...
+    ) -> tuple[dict[str, sympy.Expr], dict[str, sympy.Expr] | None]:
+        """
+        Heuristics to decide how to tile kernels.
+        Currently, we tile based on stride-1 dimensions.
+
+        Returns:
+            `(tile1, tile2, reduction_numel)` s.t. `tile1 * tile2 == numel`
+        """
     def flush(self): ...
     def ready_to_flush(self) -> bool: ...
     def generate_kernel_code_from_nodes(self, nodes, benchmark_kernel=..., hint_override: int | None = ...): ...
@@ -256,10 +379,13 @@ class SIMDScheduling(BaseScheduling):
 
 @dataclasses.dataclass(frozen=True)
 class CandidateTiling:
+    """CandidateTiling(tiling: 'dict[str, sympy.Expr]', score: 'int', name: 'Optional[str]' = None)"""
+
     tiling: dict[str, sympy.Expr]
     score: int
     name: str | None = ...
     @staticmethod
-    def is_good_size(s): ...
+    def is_good_size(s):
+        """Somewhat arbitrary heuristic used to boost scores for some sizes"""
 
 class CantSplit(Exception): ...

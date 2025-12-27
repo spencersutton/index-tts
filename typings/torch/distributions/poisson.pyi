@@ -5,6 +5,25 @@ from torch.types import Number
 __all__ = ["Poisson"]
 
 class Poisson(ExponentialFamily):
+    r"""
+    Creates a Poisson distribution parameterized by :attr:`rate`, the rate parameter.
+
+    Samples are nonnegative integers, with a pmf given by
+
+    .. math::
+      \mathrm{rate}^k \frac{e^{-\mathrm{rate}}}{k!}
+
+    Example::
+
+        >>> # xdoctest: +SKIP("poisson_cpu not implemented for 'Long'")
+        >>> m = Poisson(torch.tensor([4]))
+        >>> m.sample()
+        tensor([ 3.])
+
+    Args:
+        rate (Number, Tensor): the rate parameter
+    """
+
     arg_constraints = ...
     support = ...
     @property

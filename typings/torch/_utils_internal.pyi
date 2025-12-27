@@ -30,11 +30,38 @@ def check_if_torch_exportable(): ...
 def export_training_ir_rollout_check() -> bool: ...
 def full_aoti_runtime_assert() -> bool: ...
 def log_torch_jit_trace_exportability(api: str, type_of_export: str, export_outcome: str, result: str): ...
-def justknobs_check(name: str, default: bool = ...) -> bool: ...
-def justknobs_getval_int(name: str) -> int: ...
+def justknobs_check(name: str, default: bool = ...) -> bool:
+    """
+    This function can be used to killswitch functionality in FB prod,
+    where you can toggle this value to False in JK without having to
+    do a code push.  In OSS, we always have everything turned on all
+    the time, because downstream users can simply choose to not update
+    PyTorch.  (If more fine-grained enable/disable is needed, we could
+    potentially have a map we lookup name in to toggle behavior.  But
+    the point is that it's all tied to source code in OSS, since there's
+    no live server to query.)
+
+    This is the bare minimum functionality I needed to do some killswitches.
+    We have a more detailed plan at
+    https://docs.google.com/document/d/1Ukerh9_42SeGh89J-tGtecpHBPwGlkQ043pddkKb3PU/edit
+    In particular, in some circumstances it may be necessary to read in
+    a knob once at process start, and then use it consistently for the
+    rest of the process.  Future functionality will codify these patterns
+    into a better high level API.
+
+    WARNING: Do NOT call this function at module import time, JK is not
+    fork safe and you will break anyone who forks the process and then
+    hits JK again.
+    """
+
+def justknobs_getval_int(name: str) -> int:
+    """Read warning on justknobs_check"""
+
 def is_fb_unit_test() -> bool: ...
 @functools.cache
-def max_clock_rate(): ...
+def max_clock_rate():
+    """unit: MHz"""
+
 def get_mast_job_name_version() -> tuple[str, int] | None: ...
 
 TEST_MASTER_ADDR = ...
@@ -47,7 +74,30 @@ def maybe_upload_prof_stats_to_manifold(profile_path: str) -> str | None: ...
 def log_chromium_event_internal(event: dict[str, Any], stack: list[str], logger_uuid: str, start_time_ns: int): ...
 def record_chromium_event_internal(event: dict[str, Any]): ...
 def profiler_allow_cudagraph_cupti_lazy_reinit_cuda12(): ...
-def deprecated(): ...
-def get_default_numa_options(): ...
+def deprecated():
+    """
+    When we deprecate a function that might still be in use, we make it internal
+    by adding a leading underscore. This decorator is used with a private function,
+    and creates a public alias without the leading underscore, but has a deprecation
+    warning. This tells users "THIS FUNCTION IS DEPRECATED, please use something else"
+    without breaking them, however, if they still really really want to use the
+    deprecated function without the warning, they can do so by using the internal
+    function name.
+    """
+
+def get_default_numa_options():
+    """
+    When using elastic agent, if no numa options are provided, we will use these
+    as the default.
+
+    For external use cases, we return None, i.e. no numa binding. If you would like
+    to use torch's automatic numa binding capabilities, you should provide
+    NumaOptions to your launch config directly or use the numa binding option
+    available in torchrun.
+
+    Must return None or NumaOptions, but not specifying to avoid circular import.
+    """
+
 def log_triton_builds(fail: str | None): ...
-def find_compile_subproc_binary() -> str | None: ...
+def find_compile_subproc_binary() -> str | None:
+    """Allows overriding the binary used for subprocesses"""

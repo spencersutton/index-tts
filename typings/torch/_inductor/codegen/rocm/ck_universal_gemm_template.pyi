@@ -25,10 +25,27 @@ class CKGemmTemplate(CKTemplate):
     def header(self) -> IndentedBuffer: ...
     def globals(self) -> IndentedBuffer: ...
     def inline_utils(self): ...
-    def filter_op(self, op_info: InductorROCmOp): ...
+    def filter_op(self, op_info: InductorROCmOp):
+        """
+        Determines whether a given op definition is suitable for the current
+        input / output of the operation that this template implements.
+
+        Filter is based on inputs' dtype, layout and statically inferred size.
+
+        Returns None if the op is not suitable, otherwise returns the op to be used.
+        """
     def emit_ck_instance(self, op: CKGemmOperation): ...
-    def render(self, kernel: ROCmTemplateKernel, op: CKGemmOperation, **kwargs) -> str: ...
-    def gen_ops(self) -> list[InductorROCmOp]: ...
+    def render(self, kernel: ROCmTemplateKernel, op: CKGemmOperation, **kwargs) -> str:
+        """The primary entry point for the code rendering process used in this template."""
+    def gen_ops(self) -> list[InductorROCmOp]:
+        """
+        Creates a list of `CKGemmOperation` instances that match the GEMM operation this template represents.
+        The instances are guaranteed to have the correct layout, dtype and dimension padding for the GEMM input arguments.
+
+        An instance may invalidate the GEMM configuration at runtime.
+        Such instances will be assigned +inf runtime by the autotune process.
+        """
     @staticmethod
-    def add_ck_gemm_choices(choices, layout, input_nodes, alpha=..., beta=..., input_reorder=...): ...
+    def add_ck_gemm_choices(choices, layout, input_nodes, alpha=..., beta=..., input_reorder=...):
+        """Add Composable Kernel Universal GEMM instance choices to the auto-tuning list."""
     def size_args(self): ...

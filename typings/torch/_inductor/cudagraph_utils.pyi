@@ -14,10 +14,18 @@ type ModelType = Callable[[list[InputType]], OutputType]
 
 @dataclasses.dataclass(frozen=True)
 class FunctionID:
+    """Unique counter of a function wrapped in cudagraphify_impl"""
+
     id: int
 
 @dataclasses.dataclass(frozen=True)
 class PlaceholderInfo:
+    """
+    A serializable version of torch.fx.Node that contains information
+    pertinent to placeholder stack traces. We use these in logging and error messages
+    related to cudagraphs, and will cache these results.
+    """
+
     name: str
     stack_trace: str | None
     users: list[PlaceholderInfo]
@@ -25,6 +33,12 @@ class PlaceholderInfo:
 
 @dataclasses.dataclass(frozen=True)
 class WrappedFunction:
+    """
+    Represents a function that you want to record for CUDA graph replay,
+    with a little more metadata so we can identify if we have an applicable
+    CUDA graph in our CUDA graph tree for it.
+    """
+
     model: Callable[..., Any]
     static_input_idxs: Sequence[int]
     id: FunctionID
@@ -49,6 +63,8 @@ def log_cudagraph_skip_and_bump_counter(msg: str) -> None: ...
 
 @dataclasses.dataclass
 class BoxedDeviceIndex:
+    """BoxedDeviceIndex(value: 'Optional[int]')"""
+
     value: int | None
     def set(self, device_idx: int | None) -> None: ...
 
@@ -58,7 +74,8 @@ def check_for_mutation_ignore_cuda_graph_managed_tensor(
     mutated_input_idxs: OrderedSet[int],
     static_input_idxs: Sequence[int],
 ) -> str | None: ...
-def get_placeholder_stack_trace(placeholder: PlaceholderInfo) -> str | None: ...
+def get_placeholder_stack_trace(placeholder: PlaceholderInfo) -> str | None:
+    """Gets the first non-empty stack trace of a placeholder or its users."""
 
 class CheckInvariantStatus(Enum):
     SUCCESS = ...
@@ -72,19 +89,28 @@ def log_data_ptr_mismatch(
     recorded_data_ptr: Sequence[int | None],
     target_idxs: Sequence[int],
     mismatch: CheckInvariantStatus,
-) -> str: ...
+) -> str:
+    """
+    Logs the mismatch between input data pointers and recorded data pointers.
+    This checks only idxs in target_idxs.
+    """
+
 def maybe_warning_due_to_dynamic_shape(
     fn_cache: dict[tuple[int, ...], Callable[..., Any]], new_int_key: Any
 ) -> bool: ...
 
 @dataclasses.dataclass(frozen=True)
 class CudagraphCachedInfo:
+    """Info needed to realign inputs"""
+
     placeholders: Sequence[PlaceholderInfo]
     stack_traces: list[str | None]
     cudagraph_fail_reasons: list[str]
 
 @dataclasses.dataclass(frozen=True)
 class CudagraphMetadata:
+    """Metadata for recording a CUDA graph."""
+
     placeholders: Sequence[PlaceholderInfo]
     static_input_idxs: OrderedSet[int]
     mutated_input_idxs: OrderedSet[int]
@@ -93,4 +119,9 @@ class CudagraphMetadata:
 
 def get_partition_cudagraph_metadata(
     partition_map: GraphPartitionMap, metadata: CudagraphMetadata
-) -> CudagraphMetadata: ...
+) -> CudagraphMetadata:
+    """
+    Convert the cudagraph metadata at the graph level to the graph partition level,
+    given the graph partition info (i.e., mapping from partition input/output index
+    to graph input/output index).
+    """

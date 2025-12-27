@@ -647,7 +647,16 @@ def meta_zero_(self): ...
 ])
 def meta_binop_inplace(self, other): ...
 @register_meta([aten.add_.Scalar, aten.sub_.Scalar, aten.add_.Tensor, aten.sub_.Tensor])
-def meta_binop_inplace_alpha(self, other, alpha=...): ...
+def meta_binop_inplace_alpha(self, other, alpha=...):
+    """
+    Some checks for inplace ops.
+    Checks for promotion rules for some dtypes.
+    int.add/sub_(float) and bool.add/sub_(others) are rejected.
+    Promoting in these in-place operations would require reallocating
+    and copying over elements, hence not allowed.
+    Checks for alpha param.
+    """
+
 @register_meta([aten.add.Scalar, aten.sub.Scalar])
 def meta_binop_alpha(self, other, alpha=...): ...
 @register_meta([aten.round.default, aten.round.decimals])

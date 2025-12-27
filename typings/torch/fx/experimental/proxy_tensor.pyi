@@ -50,7 +50,9 @@ _Ts = TypeVarTuple("_Ts")
 null_ctx_type = ...
 _pytree_subclasses_that_lose_info = ...
 
-def fake_signature[**P, R](fn: Callable[_P, R], nargs: int) -> Callable[_P, R]: ...
+def fake_signature[P, R](fn: Callable[_P, R], nargs: int) -> Callable[_P, R]:
+    """FX gets confused by varargs, de-confuse it"""
+
 @contextmanager
 def decompose(
     decomposition_table: Mapping[OpOverload, Callable] | None,
@@ -132,11 +134,34 @@ type _ExtractValType = (
 
 def extract_val(val: _ExtractValType, include_real: bool = ...) -> _ExtractValType: ...
 @contextmanager
-def maybe_disable_thunkify() -> Generator[None]: ...
+def maybe_disable_thunkify() -> Generator[None]:
+    """
+    Within a context, disable thunkification.  See :func:`maybe_enable_thunkify`
+    for more details.  This is helpful if you have a wrapper function which
+    you want to enable thunkification on, but in some segment on the inside (say,
+    the original user function), you want to disable thunkification as you know
+    it is not needed there.
+    """
+
 @contextmanager
-def maybe_enable_thunkify() -> Generator[None]: ...
+def maybe_enable_thunkify() -> Generator[None]:
+    """
+    Within this context manager, if you are doing make_fx tracing, we will thunkify
+    all SymNode compute and avoid tracing it into the graph unless it is actually needed.
+    You should prefer to avoid using this as much as possible, as lazy evaluation of
+    SymNode tracing can lead to long chains of thunks which will stack overflow
+    if you evaluate them.  However, this is currently sometimes necessary as there
+    are buggy parts of PT2 which will fail with "s0 is not tracked with proxy" error
+    due to insufficient tracing of SymNode computation.
+    """
+
 def set_meta(proxy: Proxy, val: _ExtractValType) -> Proxy: ...
-def thunkify(tracer: _ProxyTracer, f: Callable[_P, R], *args: _P.args, **kwargs: _P.kwargs) -> Thunk[R]: ...
+def thunkify(tracer: _ProxyTracer, f: Callable[_P, R], *args: _P.args, **kwargs: _P.kwargs) -> Thunk[R]:
+    """
+    Delays computation of f until it's called again
+    Also caches the result
+    """
+
 def track_tensor(tensor: Tensor, proxy: Proxy, *, constant: Tensor | None, tracer: _ProxyTracer) -> None: ...
 
 type _NestedProxys = Proxy | Sequence[_NestedProxys] | Mapping[object, _NestedProxys]
@@ -148,6 +173,8 @@ def track_tensor_tree[T](
 
 @dataclass
 class _ProxyTensor:
+    """_ProxyTensor(proxy: 'Proxy', constant: 'Optional[Tensor]')"""
+
     proxy: Proxy
     constant: Tensor | None
 
@@ -171,6 +198,7 @@ def proxy_call(
 ) -> object: ...
 
 class _SymNodeDict:
+    """Wrapper around a dictionary that will hash SymInts with their nodes"""
     def __init__(self) -> None: ...
     def __setitem__(self, key: PySymType, value: _PySymProxyType) -> None: ...
     def __getitem__(self, key: PySymType) -> _PySymProxyType: ...
@@ -317,15 +345,46 @@ class _AttrProxy:
     def reset_proxy_mapping(self, base: Module, path: str) -> None: ...
 
 class _ModuleStackTracer(PythonKeyTracer):
+    r"""
+    Customized version of PythonKeyTracer that retains module stack
+    information in node.meta["nn_module_stack"].
+
+    FX symbolic trace actually does this already, but it relies on `self.root`
+    being the actual module being traced. Since make_fx traces a lambda of our
+    creation, things don't work properly.
+
+    So for this version we hold onto a reference to the original module
+    (scope_root) and use that to match the path. Also when we see,
+            A
+           / \
+          B   C
+           \ /
+            D
+    we want to record the path as A.B.D by recording only one path.
+    See Note [Preserving the nn module stack metadata during export non-strict mode]  # noqa: W605
+    """
     def __init__(self, scope_root: GraphModule) -> None: ...
-    def path_of_module(self, mod: Module) -> str: ...
+    def path_of_module(self, mod: Module) -> str:
+        """
+        Use tracked access path during tracing instead of the default BFS behavior.
+        Still use all the possible module paths to verify the result.
+        """
     def getattr(self, attr: str, attr_val: object, parameter_proxy_cache: dict[str, Proxy]) -> object: ...
     def trace(self, root: Module | Callable, concrete_args: dict[str, object] | None) -> fx.Graph: ...
-    def call_module(
-        self, m: Module, forward: Callable, args: tuple[object, ...], kwargs: dict[str, object]
-    ) -> None: ...
+    def call_module(self, m: Module, forward: Callable, args: tuple[object, ...], kwargs: dict[str, object]) -> None:
+        """
+        PythonKeyTracer overrides call_module to avoid the scope handling,
+        but we actually want it.
+        """
     def is_leaf_module(self, m: Module, module_qualified_name: str) -> bool: ...
-    def create_node(self, *args: object, **kwargs: object) -> fx.node.Node: ...
+    def create_node(self, *args: object, **kwargs: object) -> fx.node.Node:
+        """
+        Create node and add on metadata.
+        Add nn_module_stack here instead of TracerBase,
+        since calls to make_fx() might not want to record module stack metadata.
+        Add torch_fn by looking at torch_fn_metadata and torch_fn_counts.
+        Add stack_trace by filtering out forward() stack frames.
+        """
 
 class _MakefxTracer:
     def __init__(
@@ -357,11 +416,31 @@ def make_fx(
     _allow_fake_constant: bool = ...,
     _error_on_data_dependent_ops: bool = ...,
     record_stack_traces: bool = ...,
-) -> Callable[..., GraphModule]: ...
+) -> Callable[..., GraphModule]:
+    """
+    Given a function f, return a new function which when executed with valid
+    arguments to f, returns an FX GraphModule representing the set of operations that
+    were executed during the course of execution.
+
+    If record_stack_traces is True, the stack trace will be preserved on node.meta["stack_trace"]
+    """
+
 def get_torch_dispatch_modes() -> list[TorchDispatchMode]: ...
 def get_innermost_proxy_mode() -> ProxyTorchDispatchMode | None: ...
-def get_proxy_mode() -> ProxyTorchDispatchMode | None: ...
-def handle_sym_dispatch(func: Callable[_P, R], args: _P.args, kwargs: _P.kwargs) -> R: ...
+def get_proxy_mode() -> ProxyTorchDispatchMode | None:
+    """
+    Current the currently active proxy tracing mode, or None if
+    we are not currently tracing.  This includes pre-dispatch proxy
+    tracing.
+    """
+
+def handle_sym_dispatch(func: Callable[_P, R], args: _P.args, kwargs: _P.kwargs) -> R:
+    """
+    Call into the currently active proxy tracing mode to do a
+    SymInt/SymFloat/SymBool dispatch trace on a function that operates on
+    these arguments.
+    """
+
 @contextmanager
 def disable_proxy_modes_tracing() -> Generator[ProxyTorchDispatchMode]: ...
 def maybe_handle_decomp(
@@ -373,4 +452,11 @@ def get_isolated_graphmodule(
     kwargs: dict[str, object],
     tracing_mode: str = ...,
     decomposition_table: Mapping[OpOverload, Callable] | None = ...,
-) -> GraphModule: ...
+) -> GraphModule:
+    """
+    A helper function used to get the GraphModule for the given func.
+
+    It's expected to be used in the ProxyTensor tracing context.
+    It detaches the args and kwargs from the current tracer so that the trace of
+    the current graph module can be created without any side-effects.
+    """

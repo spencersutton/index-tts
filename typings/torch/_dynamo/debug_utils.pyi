@@ -1,3 +1,21 @@
+"""
+Debug utilities for TorchDynamo compilation and execution.
+
+This module provides various debugging tools and utilities for TorchDynamo, including:
+
+- Minification support for reducing test cases while preserving bugs
+- Input/output handling via InputReader and InputWriter for reproducible testing
+- Accuracy checking between original and compiled models
+- Neural network module string conversion via NNModuleToString
+- Profiling tools and system information collection
+- Buck build system integration for Meta-internal testing
+
+Key classes:
+- InputReader/InputWriter: Handle serialization of model inputs/outputs
+- NNModuleToString: Converts nn.Modules to string representations
+- BuckTargetWriter: Manages Buck build system integration
+"""
+
 from collections.abc import Callable, Sequence
 from typing import Any, TypeVar
 
@@ -36,17 +54,32 @@ class NNModuleToString:
     @staticmethod
     def convert(gm: torch.fx.GraphModule) -> str: ...
 
-def generate_env_vars_string(*, stable_output: bool = ...) -> str: ...
+def generate_env_vars_string(*, stable_output: bool = ...) -> str:
+    """Generate a string configuration for environment variables related to Dynamo, Inductor, and Triton."""
+
 def generate_config_string(*, stable_output: bool = ...) -> str: ...
 def get_minifier_repro_path() -> str: ...
 def helper_for_dump_minify(contents: str) -> None: ...
 
 class AccuracyError(Exception): ...
 
-def clone_inputs_retaining_gradness(example_inputs: Sequence[Any]) -> list[Any]: ...
+def clone_inputs_retaining_gradness(example_inputs: Sequence[Any]) -> list[Any]:
+    """
+    This clone inputs is different from utils clone_input. In case of minifier,
+    all the tensors are leaf tensors while creating a new graph. So, we set the
+    requires_grad field w/o checking the leafness of the tensor.
+    """
+
 def run_fwd_maybe_bwd(
     gm: torch.fx.GraphModule, args: Sequence[Any], only_fwd: bool = ..., disable_clone: bool = ...
-) -> Any: ...
+) -> Any:
+    """
+    Runs a forward and possibly backward iteration for a given mod and args.
+
+    When disable_clone is True, we will use args as-is without cloning.
+    This is higher fidelity but we may destroy the args in the process.
+    """
+
 def same_two_models(
     gm: torch.fx.GraphModule,
     opt_gm: torch.fx.GraphModule,
@@ -55,7 +88,16 @@ def same_two_models(
     *,
     require_fp64: bool = ...,
     ignore_non_fp: bool = ...,
-) -> bool: ...
+) -> bool:
+    """
+    Check two models have same accuracy.
+
+    require_fp64: if True, raise an error if we unable to calculate the fp64 reference
+    ignore_non_fp: if True, do not compare outputs which are not floating point.  This
+        is mostly useful for the minifier (which wants to avoid quantizing floating point
+        error into integer/boolean error)
+    """
+
 def cast_dtype_args_to_fp64(model: torch.fx.GraphModule) -> torch.fx.GraphModule: ...
 def cast_to(
     dtype: torch.dtype, model: torch.fx.GraphModule, inputs: list[Any]
@@ -134,5 +176,26 @@ def aot_graph_input_parser(
     device: str = ...,
     sym_shapes: dict[str, int] | None = ...,
     default_sym_shape: int | None = ...,
-) -> dict[str, Any]: ...
-def profile_to_file(filename: str) -> Callable[[T], T]: ...
+) -> dict[str, Any]:
+    """
+    Takes in a function which has been printed with print_readable() and constructs kwargs to run it.
+
+    Handles Tensor inputs, Symints, and a graph module which might have tensor constants.
+
+    Consider a function `forward` defined as follows:
+
+    def forward(self, primals_1: "f32[1001, 6]", primals_2: "f32[s0]", primals_3: "Sym(s0)",):
+        _tensor_constant0: "i64[4190]" = self._tensor_constant0
+        # Further implementation
+
+    kwargs = aot_graph_input_parser(forward)
+    forward(**kwargs)
+    """
+
+def profile_to_file(filename: str) -> Callable[[T], T]:
+    """
+    Decorator to cProfile a given function and save the result to disk on process exit.
+
+    Args:
+        filename: filename to save profile to
+    """

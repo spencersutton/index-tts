@@ -24,12 +24,31 @@ def copy_(tensor, data): ...
 def copy__functionalize(tensor, data): ...
 
 class ShardedState(Enum):
+    """
+    - ``SHARDED``: The sharded parameter is registered to the module. It is the
+      only contributor to parameter memory.
+    - ``SHARDED_POST_FORWARD``: The unsharded parameter is resharded to a
+      smaller world size. Since this data should not be used for computation,
+      we do not register it to the module. Users should reshard the module
+      before any in-place modifications. Both it and the sharded parameter
+      contribute to parameter memory.
+    - ``UNSHARDED``: The unsharded parameter is registered to the module. Both
+      it and the sharded parameter contribute to parameter memory.
+    """
+
     SHARDED = ...
     SHARDED_POST_FORWARD = ...
     UNSHARDED = ...
 
 @dataclass
 class ParamModuleInfo:
+    """
+    For a parameter, this stores the module and the parameter name to be able
+    to do a parameter swap via ``setattr(module, param_name, ...)`` or to get
+    the parameter via ``getattr(module, param_name)``. We additionally save
+    shared modules and shared parameter names to update them accordingly.
+    """
+
     module: nn.Module
     param_name: str
     shared_modules: list[nn.Module] = ...
@@ -37,11 +56,18 @@ class ParamModuleInfo:
 
 @dataclass
 class ExtensionsData:
+    """ExtensionsData(all_gather_metadata: Optional[Any] = None, all_gather_input_sizes: collections.abc.Sequence[torch.Size] = ())"""
+
     all_gather_metadata: Any | None = ...
     all_gather_input_sizes: Sequence[torch.Size] = ...
     def clear(self): ...
 
 class FSDPParam:
+    """
+    This class manages a parameter with FSDP or FSDP variants applied,
+    implementing dim-0 per-parameter sharding.
+    """
+
     orig_dtype: torch.dtype
     param_dtype: torch.dtype | None
     reduce_dtype: torch.dtype | None
@@ -82,11 +108,30 @@ class FSDPParam:
         device: torch.device,
         force_recreate: bool = ...,
     ): ...
-    def init_unsharded_param(self): ...
+    def init_unsharded_param(self):
+        """
+        [Note: Invariants for torch.compile Traceable FSDP2]
+        1. Under compile, we always re-populate the content of `self._unsharded_param`
+           per AllGather using the slow path.
+        2. Under compile, we always recreate `self.all_gather_outputs` per AllGather.
+           This is to ensure the buffer creation is internal to the graph and
+           avoid `self.all_gather_outputs` being captured as a graph input.
+        3. Under compile, at the end of `free_unsharded_param()`, we always clean up
+           `self.all_gather_outputs` and `self._unsharded_inner_tensors`,
+           to avoid them being captured as graph output.
+
+        With these invariants, only these tensors will be inputs to the graph:
+        - Sharded parameters
+        - Placeholders for the `self._unsharded_param` nn.Parameter
+        """
     def to_sharded(self) -> None: ...
     def to_sharded_post_forward(self) -> None: ...
     def to_unsharded(self) -> None: ...
-    def to_sharded_dtensor(self, tensor: torch.Tensor) -> DTensor: ...
+    def to_sharded_dtensor(self, tensor: torch.Tensor) -> DTensor:
+        """
+        Converts a local tensor representing either the sharded parameter or
+        sharded gradient to DTensor.
+        """
     def to_sharded_post_forward_dtensor(self, tensor: torch.Tensor) -> DTensor: ...
     def to_accumulated_grad_if_needed(self) -> None: ...
     def accumulate_unsharded_grad_if_needed(self) -> None: ...

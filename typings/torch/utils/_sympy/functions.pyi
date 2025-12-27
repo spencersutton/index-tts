@@ -29,9 +29,32 @@ __all__ = [
 ]
 
 def fuzzy_eq(x: bool | None, y: bool | None) -> bool | None: ...
-def simple_floordiv_gcd(p: sympy.Basic, q: sympy.Basic) -> sympy.Basic: ...
+def simple_floordiv_gcd(p: sympy.Basic, q: sympy.Basic) -> sympy.Basic:
+    """
+    Fast path for sympy.gcd, using a simple factoring strategy.
+
+    We try to rewrite p and q in the form n*e*p1 + n*e*p2 and n*e*q0,
+    where n is the greatest common integer factor and e is the largest
+    syntactic common factor (i.e., common sub-expression) in p and q.
+    Then the gcd returned is n*e, cancelling which we would be left with
+    p1 + p2 and q0.
+
+    Note that further factoring of p1 + p2 and q0 might be possible with
+    sympy.factor (which uses domain-specific theories). E.g., we are unable
+    to find that x*y + x + y + 1 is divisible by x + 1. More generally,
+    when q is of the form q1 + q2 (instead of being already factored) it
+    might be necessary to fall back on sympy.gcd.
+    """
 
 class FloorDiv(sympy.Function):
+    """
+    We maintain this so that:
+    1. We can use divisibility guards to simplify FloorDiv(a, b) to a / b.
+    2. Printing out the expression is nicer (compared to say, representing a//b as (a - a % b) / b)
+
+    NB: This is Python-style floor division, round to -Inf
+    """
+
     nargs: tuple[int, ...] = ...
     precedence: int = ...
     is_integer: bool = ...
@@ -43,6 +66,8 @@ class FloorDiv(sympy.Function):
     def eval(cls, base: sympy.Integer, divisor: sympy.Integer) -> sympy.Basic | None: ...
 
 class ModularIndexing(sympy.Function):
+    """ModularIndexing(a, b, c) => (a // b) % c where % is the C modulus"""
+
     nargs: tuple[int, ...] = ...
     is_integer: bool = ...
     precedence: int = ...
@@ -50,6 +75,8 @@ class ModularIndexing(sympy.Function):
     def eval(cls, base: sympy.Integer, divisor: sympy.Integer, modulus: sympy.Integer) -> sympy.Basic | None: ...
 
 class Where(sympy.Function):
+    """Good ol' ternary operator"""
+
     nargs: tuple[int, ...] = ...
     precedence: int = ...
     @classmethod
@@ -70,7 +97,11 @@ class Mod(sympy.Function):
     @classmethod
     def eval(cls, p, q): ...
 
-class CleanDiv(FloorDiv): ...
+class CleanDiv(FloorDiv):
+    """
+    Div where we can assume no rounding.
+    This is to enable future optimizations.
+    """
 
 class CeilToInt(sympy.Function):
     is_integer = ...
@@ -83,6 +114,8 @@ class FloorToInt(sympy.Function):
     def eval(cls, number): ...
 
 class CeilDiv(sympy.Function):
+    """Div used in indexing that rounds up."""
+
     is_integer = ...
     def __new__(cls, base, divisor): ...
 
@@ -127,10 +160,14 @@ class MinMaxBase(Expr, LatticeOp):
     _eval_is_zero = ...
 
 class Max(MinMaxBase, Application):
+    """Return, if possible, the maximum value of the list."""
+
     zero = ...
     identity = ...
 
 class Min(MinMaxBase, Application):
+    """Return, if possible, the minimum value of the list."""
+
     zero = ...
     identity = ...
 
@@ -191,6 +228,8 @@ class ToFloat(sympy.Function):
     def eval(cls, number): ...
 
 class Identity(sympy.Function):
+    """Prevents expansion and other optimizations"""
+
     precedence = ...
     def __int__(self) -> int: ...
     def __float__(self) -> float: ...

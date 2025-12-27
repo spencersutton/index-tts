@@ -5,7 +5,22 @@ from torch._inductor import config as inductor_config
 from ..pattern_matcher import CallFunctionVarArgs, CallModuleVarArgs, Match, register_graph_pattern
 from .pre_grad import efficient_conv_bn_eval_pass
 
-def efficient_conv_bn_eval(bn: nn.modules.batchnorm._BatchNorm, conv: nn.modules.conv._ConvNd, x: torch.Tensor): ...
+def efficient_conv_bn_eval(bn: nn.modules.batchnorm._BatchNorm, conv: nn.modules.conv._ConvNd, x: torch.Tensor):
+    """
+    Implementation based on https://arxiv.org/abs/2305.11624
+    "Efficient ConvBN Blocks for Transfer Learning and Beyond"
+    It leverages the associative law between convolution and affine transform,
+    i.e., normalize (weight conv feature) = (normalize weight) conv feature.
+    It works for Eval mode of ConvBN blocks during validation, and can be used
+    for **training** as well, but only if one sets `bn.training=False`. It
+     reduces memory footprint and computation cost, at the cost of slightly
+     reduced numerical stability.
+    Args:
+        bn (nn.modules.batchnorm._BatchNorm): a BatchNorm module.
+        conv (nn.modules.conv._ConvNd): a conv module
+        x (torch.Tensor): Input feature map.
+    """
+
 def efficient_conv_bn_eval_decomposed(
     bn_weight,
     bn_bias,
@@ -17,7 +32,19 @@ def efficient_conv_bn_eval_decomposed(
     conv_bias,
     x,
     conv_remainging_args,
-): ...
+):
+    """
+    Implementation based on https://arxiv.org/abs/2305.11624
+    "Efficient ConvBN Blocks for Transfer Learning and Beyond"
+    It leverages the associative law between convolution and affine transform,
+    i.e., normalize (weight conv feature) = (normalize weight) conv feature.
+    It works for Eval mode of ConvBN blocks during validation, and can be used
+    for **training** as well, but only if one sets `bn.training=False`. It
+     reduces memory footprint and computation cost, at the cost of slightly
+     reduced numerical stability.
+    Args:
+    """
+
 @register_graph_pattern(
     CallFunctionVarArgs([torch.nn.functional.batch_norm]),
     pass_dict=efficient_conv_bn_eval_pass,

@@ -10,10 +10,14 @@ __all__ = ["GraphTransformObserver"]
 
 @compatibility(is_backward_compatible=False)
 class GraphTransformObserver:
+    """
+    .. warning::
+        This API is experimental and is *NOT* backward-compatible.
+    """
+
     __pass_count = ...
-    def __init__(
-        self, gm: GraphModule, passname: str, subsystem: str | None = ..., log_url: str | None = ...
-    ) -> None: ...
+    def __init__(self, gm: GraphModule, passname: str, subsystem: str | None = ..., log_url: str | None = ...) -> None:
+        """log_url is inferred to be torch._inductor.config.trace.log_url_for_graph_xform unless otherwise specified"""
     @classmethod
     def get_current_pass_count(cls) -> int: ...
     def apply_gm_pass(self, pass_fn: Callable[[GraphModule], T]) -> T | None: ...

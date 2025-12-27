@@ -1,3 +1,22 @@
+"""
+This module contains classes and utilities for building variable trackers in Dynamo.
+Variable trackers are used to convert Python values into symbolic representations
+that can be traced and transformed during graph capture.
+
+The key classes are:
+
+- VariableBuilder: Handles source-tracked objects that need guards and proper
+  reconstruction in the output graph. Used for inputs, module attributes, etc.
+
+- SourcelessBuilder: Handles ephemeral objects created during tracing that don't
+  need source tracking or guards. Used for temporary lists, intermediate values, etc.
+
+Variable trackers enable Dynamo to track the flow of values through the program,
+maintain guards for dynamic properties, and reconstruct values in the output graph.
+The builders in this module handle converting Python values into appropriate
+VariableTracker instances based on their type and usage context.
+"""
+
 import dataclasses
 import re
 import weakref
@@ -24,6 +43,8 @@ class _missing: ...
 
 @dataclasses.dataclass
 class GraphArg:
+    """GraphArg(source: torch._guards.Source, _example: Union[torch.utils.weak.TensorWeakRef, torch.SymInt], pass_arg_as_tensor: bool, fake_tensor: Optional[torch._subclasses.fake_tensor.FakeTensor], is_tensor: bool = True, example_strong_ref: Optional[torch.Tensor] = None)"""
+
     source: Source
     _example: TensorWeakRef | torch.SymInt
     pass_arg_as_tensor: bool
@@ -47,6 +68,7 @@ og_module_named_buffers_fn_ptr = ...
 og_module_named_parameters_fn_ptr = ...
 
 class VariableBuilder:
+    """Wrap a python value in a VariableTracker() instance"""
     def __init__(self, tx, source: Source) -> None: ...
     def __call__(self, value): ...
     def get_source(self): ...
@@ -77,7 +99,12 @@ def wrap_fx_proxy_cls(target_cls, tx, proxy, example_value=..., subclass_type=..
 def handle_traced_output(example_value, tx, proxy, options, subclass_type, target_cls): ...
 def infer_subclass_type(value): ...
 def get_specialized_props(target_cls, tx, example_value, subclass_type): ...
-def construct_tensor_variable(target_cls, tx, proxy, example_value, subclass_type, options): ...
+def construct_tensor_variable(target_cls, tx, proxy, example_value, subclass_type, options):
+    """
+    Actually construct a tensor variable after all the pre-processing from
+    wrapping a pre-existing or newly created tensor value.
+    """
+
 def get_automatic_dynamic_shapes_mark_as(): ...
 
 _DYNAMIC_SOURCES: set[str] | None = ...
@@ -95,6 +122,17 @@ def is_unbacked_source(source_name: str) -> bool: ...
 def wrap_to_fake_tensor_and_record(e, tx, *, source: Source | None, is_tensor: bool, parent_context=...): ...
 
 class SourcelessBuilder:
+    """
+    Like builder, but stateless and does not require a source. Useful for simple type->VT objects, or objects
+    that are being created/evaporated during inlining (ex: consider a locally made list of tensors we then iterate over
+    .), such a list should not show up as an artifact from inputs, nor in reconstruction, nor in the graph. However,
+    there may be reasons to represent it as a ListVariable internally.
+
+    NOTE - Objects produced here are born UNGUARDED due to the nature of sources!
+
+    NOTE - This class is very new! It will have some rough edges, but it was created to stem the bleeding of giant
+    if/else type->VariableTracker trees that were cropping up all over dynamo.
+    """
     def __init__(self) -> None: ...
     @staticmethod
     def create(tx: InstructionTranslator, value) -> VariableTracker: ...
@@ -104,6 +142,11 @@ class SourcelessBuilder:
     def make_type_handlers(): ...
 
 class SourcelessUserDefinedObjectBuilder:
+    """
+    SourceLessBuilder does not return a UserDefinedObjectVariable, but in some
+    cases it might be ok to return UserDefinedObjects. In such case, use this
+    builder.
+    """
     def __init__(self) -> None: ...
     @staticmethod
     def create(tx: InstructionTranslator, value) -> VariableTracker: ...

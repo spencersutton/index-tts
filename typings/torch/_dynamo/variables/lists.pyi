@@ -1,3 +1,19 @@
+"""
+Variable tracking implementations for list-like data structures in Dynamo.
+
+This module provides specialized variable tracking for various collection types:
+- Lists and list subclasses (including torch.nn.ModuleList, ParameterList)
+- Tuples and named tuples
+- Ranges and slices
+- Collections.deque
+- torch.Size with special proxy handling
+
+The implementations support both mutable and immutable collections, iteration,
+and common sequence operations. Each collection type has a dedicated Variable
+class that handles its unique behaviors while integrating with Dynamo's
+variable tracking system.
+"""
+
 import torch.fx
 from torch._dynamo.codegen import PyCodegen
 from torch._dynamo.symbolic_convert import InstructionTranslator
@@ -45,6 +61,7 @@ class RangeVariable(BaseListVariable):
     def var_getattr(self, tx: InstructionTranslator, name): ...
 
 class CommonListMethodsVariable(BaseListVariable):
+    """Implement methods common to List and other List-like things"""
     def call_method(
         self, tx, name, args: list[VariableTracker], kwargs: dict[str, VariableTracker]
     ) -> VariableTracker: ...
@@ -81,6 +98,8 @@ class TupleVariable(BaseListVariable):
     def call_obj_hasattr(self, tx: InstructionTranslator, name: str) -> VariableTracker: ...
 
 class SizeVariable(TupleVariable):
+    """torch.Size(...)"""
+
     _nonvar_fields = ...
     def __init__(self, items: list[VariableTracker], proxy: torch.fx.Proxy | None = ..., **kwargs) -> None: ...
     def debug_repr(self): ...

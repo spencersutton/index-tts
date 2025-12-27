@@ -14,4 +14,8 @@ def try_to_reduce_precision(
     indices: dict[Any, sympy.Expr],
     replacement_vals: dict[Any, ValueRanges[sympy.Expr]],
 ) -> None: ...
-def indexing_dtype_strength_reduction(loop_body: LoopBody) -> None: ...
+def indexing_dtype_strength_reduction(loop_body: LoopBody) -> None:
+    """
+    Performs Value Range Analysis on LoopBody's fx graph to reduce precision of
+    intermediaries from int64 to int32
+    """

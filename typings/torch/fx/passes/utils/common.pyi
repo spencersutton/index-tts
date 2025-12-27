@@ -7,11 +7,44 @@ __all__ = ["HolderModule", "compare_graphs", "lift_subgraph_as_module"]
 
 @compatibility(is_backward_compatible=False)
 class HolderModule(Module):
+    """
+    HolderModule is used to copy all the attributes from original module to submodules
+    that uses the attributes
+
+    .. warning::
+        This API is experimental and is *NOT* backward-compatible.
+    """
     def __init__(self, d) -> None: ...
 
 @compatibility(is_backward_compatible=False)
 def lift_subgraph_as_module(
     gm: GraphModule, subgraph: Graph, comp_name: str = ..., class_name: str = ...
-) -> tuple[GraphModule, dict[str, str]]: ...
+) -> tuple[GraphModule, dict[str, str]]:
+    """
+    Create a GraphModule for subgraph, which copies the necessary attributes from the original parent graph_module.
+
+    Args:
+        gm (GraphModule): parent graph module
+
+        subgraph (Graph): a valid subgraph that contains copied nodes from the parent graph
+
+        comp_name (str): name for the new component
+
+        class_name (str): name for the submodule
+
+
+    .. warning::
+        This API is experimental and is *NOT* backward-compatible.
+    """
+
 @compatibility(is_backward_compatible=False)
-def compare_graphs(left: Graph, right: Graph) -> bool: ...
+def compare_graphs(left: Graph, right: Graph) -> bool:
+    """
+    Return True if two graphs are identical, i.e they
+        - have the same number of outputs in the same order
+        - have the same number of inputs in the same order
+        - have the same set of nodes, and identical connectivity
+
+    .. warning::
+        This API is experimental and is *NOT* backward-compatible.
+    """

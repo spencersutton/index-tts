@@ -44,7 +44,16 @@ class WeakIdKeyDictionary(MutableMapping):
 
     __iter__ = ...
     def values(self) -> Generator[Any, Any, None]: ...
-    def keyrefs(self) -> list[Any]: ...
+    def keyrefs(self) -> list[Any]:
+        """
+        Return a list of weak references to the keys.
+
+        The references are not guaranteed to be 'live' at the time
+        they are used, so the result of calling the references needs
+        to be checked before being used.  This can be used to avoid
+        creating references that will cause the garbage collector to
+        keep the keys around longer than needed.
+        """
     def popitem(self) -> tuple[Any, Any]: ...
     def pop(self, key, *args): ...
     def setdefault(self, key, default=...) -> None: ...
@@ -57,6 +66,8 @@ class WeakIdKeyDictionary(MutableMapping):
 WeakTensorKeyDictionary = WeakIdKeyDictionary
 
 class TensorWeakRef:
+    """Wrapper around a weak ref of a Tensor that handles the _fix_weakref() call required when unwrapping a Tensor weakref."""
+
     ref: WeakRef[Tensor]
     def __init__(self, tensor: Tensor) -> None: ...
     def __call__(self) -> Tensor | None: ...

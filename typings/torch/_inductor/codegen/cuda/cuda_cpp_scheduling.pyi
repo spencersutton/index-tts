@@ -11,6 +11,13 @@ class WhyNoFuseNames(WhyNoFuse):
     def __init__(self, name1: str, name2: str) -> None: ...
 
 class CUDACPPScheduling(BaseScheduling):
+    """
+    Partial Scheduling implementation for CUDA C++ Kernels.
+    This class is intended to be used in combination with TritonScheduling,
+    and delegated to by CUDACombinedScheduling.
+
+    It handles fusion decisions and CUDA C++ specific template code generation.
+    """
     @classmethod
     def get_backend_features(cls, device) -> OrderedSet[BackendFeature]: ...
     def group_fn(self, sizes): ...
@@ -24,4 +31,5 @@ class CUDACPPScheduling(BaseScheduling):
         template_node: BaseSchedulerNode,
         epilogue_nodes: Sequence[BaseSchedulerNode],
         prologue_nodes: Sequence[BaseSchedulerNode],
-    ): ...
+    ):
+        """Codegen a CUDA template, possibly with fused epilogues"""

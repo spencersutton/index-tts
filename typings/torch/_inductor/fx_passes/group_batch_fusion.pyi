@@ -21,8 +21,11 @@ SEARCH_EXCLUSIONS = ...
 default_graph_search_options = ...
 graph_search_options = ...
 
-def update_stack_example_value(node, metadata, dim=..., op=...): ...
-def update_pointwise_example_value(pointwise_node, input, other, op): ...
+def update_stack_example_value(node, metadata, dim=..., op=...):
+    """Update the example value of the node in the graph to enable followup split cat opt."""
+
+def update_pointwise_example_value(pointwise_node, input, other, op):
+    """Update the example value of the add node in the graph to enable followup split cat opt."""
 
 class GroupBatchFusionBase:
     def __init__(self, **kwargs) -> None: ...
@@ -36,14 +39,18 @@ def register_fusion(name: str, pre_grad=...): ...
 def list_group_batch_fusions(pre_grad=...) -> list[str]: ...
 def decompose_stack(graph: torch.fx.GraphModule, input_tensors: list[Any]) -> Any: ...
 
-class GroupFusion(GroupBatchFusionBase): ...
-class BatchFusion(GroupBatchFusionBase): ...
+class GroupFusion(GroupBatchFusionBase):
+    """Fuse ops in a group way, e.g, fuse mm/addmm of arbitrary input shapes with fbgemm.gmm."""
+
+class BatchFusion(GroupBatchFusionBase):
+    """Fuse ops in a batch way, e.g, fuse mm/addmm of same input shapes with bmm."""
 
 class BatchPointwiseOpsFusionFactory(BatchFusion):
     def __init__(self, op, **kwargs) -> None: ...
 
 @register_fusion("batch_linear_post_grad", pre_grad=False)
 class PostGradBatchLinearFusion(BatchFusion):
+    """Fuse ops in a batch way in post grad (aten level)."""
     def match(self, node: torch.fx.Node) -> tuple[str, int, int, int, bool, str] | None: ...
     def fuse(self, graph: torch.fx.GraphModule, subset: list[torch.fx.Node]): ...
 
@@ -53,12 +60,21 @@ class GroupLinearFusion(GroupFusion):
     def fuse(self, graph: torch.fx.GraphModule, subset: list[torch.fx.Node]): ...
 
 class BatchPointwiseMathOpsPostGradFusion(BatchPointwiseOpsFusionFactory):
+    """Batch pointwise math operator (e.g., add, mul) in post grad pass."""
     def __init__(self, op, **kwargs) -> None: ...
     def match(self, node: torch.fx.Node): ...
     def fuse(self, graph: torch.fx.GraphModule, subset: list[torch.fx.Node]): ...
 
 @register_fusion("batch_linear_lhs")
 class BatchLinearLHSFusion(BatchFusion):
+    """
+    Batch linear left-hand side fusion. This pass tries to fuse the following patterns:
+
+        torch.nn.functional.linear(x, w1), linear(x, w2),... * linear(x, wn)
+        -> torch.mm(x, torch.cat([w1, w2,... * wn]).transpose(0, 1))
+
+    We have a separate pass to eliminate contiguous transpose in a generic way.
+    """
     def match(self, node: torch.fx.Node) -> tuple[str, bool, Any] | None: ...
     def fuse(self, graph: torch.fx.GraphModule, subset: list[torch.fx.Node]): ...
 
@@ -66,25 +82,39 @@ def is_linear_node_can_be_fused(node: torch.fx.Node): ...
 
 @register_fusion("batch_linear")
 class PreGradBatchLinearFusion(BatchFusion):
+    """
+    Batch linear fusion in pre grad pass.
+    Fuse linear with same size with torch.baddmm
+    """
     def match(self, node: torch.fx.Node): ...
     def fuse(self, graph: torch.fx.GraphModule, subset: list[torch.fx.Node]): ...
 
 @register_fusion("batch_layernorm")
 class BatchLayernormFusion(BatchFusion):
+    """Batch layer norm fusion in pre grad pass"""
     def match(self, node: torch.fx.Node): ...
     def fuse(self, graph: torch.fx.GraphModule, subset: list[torch.fx.Node]): ...
 
 class BatchPointwiseOpsPreGradFusion(BatchPointwiseOpsFusionFactory):
+    """
+    Batch pointwise ops (e.g., sigmoid, relu, tanh) fusion in pre grad pass.
+    We fuse it in random place, and the introduced stack node may be merged in split cat.
+    """
     def __init__(self, op, **kwargs) -> None: ...
     def match(self, node: torch.fx.Node): ...
     def fuse(self, graph: torch.fx.GraphModule, subset: list[torch.fx.Node]): ...
 
 class BatchPointwiseOpsPostGradFusion(BatchPointwiseOpsFusionFactory):
+    """
+    Batch pointwise ops (e.g., sigmoid, relu, tanh) fusion in post grad pass.
+    The introduced stack node may be merged in split cat.
+    """
     def __init__(self, op, **kwargs) -> None: ...
     def match(self, node: torch.fx.Node): ...
     def fuse(self, graph: torch.fx.GraphModule, subset: list[torch.fx.Node]): ...
 
 class BatchMathOpsPreGradFusion(BatchPointwiseOpsFusionFactory):
+    """Batch simple match related ops such as nan_to_num in pre grad pass."""
     def __init__(self, op, **kwargs) -> None: ...
     def match(self, node: torch.fx.Node): ...
     def fuse(self, graph: torch.fx.GraphModule, subset: list[torch.fx.Node]): ...
@@ -150,10 +180,33 @@ class _OrderedSet:
 
 def find_independent_subset_greedy(
     node_list: Iterable[torch.fx.Node], graph_search_options: dict[str, Any]
-) -> Iterator[Iterable[torch.fx.Node]]: ...
+) -> Iterator[Iterable[torch.fx.Node]]:
+    """
+    Yields a list of subsets of `node_list` where no element in the subset
+    depends on any other element in the subset. This results in a set of
+    independent nodes which can be fused together.
+
+    The order of `node_list` is preserved within each subset so we can benefit
+    from split-cat elimination in later passes.
+
+    During iteration it is only safe to mutate the graph by changing the nodes
+    that have been returned.
+
+    graph_search_options:
+      - min_fuse_set_size: Minimum size of the subset to consider. Subsets below
+        this size will be ignored.
+      - max_fuse_set_size: Maximum size of the subset to consider. Subsets will
+        be broken to be at most this size.
+    """
+
 def get_fusion_candidates(
     rule: GroupBatchFusionBase, root_node: torch.fx.Node, fused_set: OrderedSet[torch.fx.Node]
-) -> collections.defaultdict[Any, list[torch.fx.Node]]: ...
+) -> collections.defaultdict[Any, list[torch.fx.Node]]:
+    """
+    Search fusion candidates for a specific rule using BFS starting from the root node.
+    We only search the subgraph within graph_search_options["max_fuse_search_depth"].
+    """
+
 def apply_group_batch_fusion(graph: torch.fx.GraphModule, rule: GroupBatchFusionBase): ...
 def generate_fusion_from_config(config_options: dict[str, Any], pre_grad=...): ...
 def group_batch_fusion_passes(graph: torch.fx.Graph, pre_grad=...): ...

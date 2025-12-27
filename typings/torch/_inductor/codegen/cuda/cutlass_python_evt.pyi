@@ -37,13 +37,31 @@ class CutlassEVTOpsMixIn:
     @staticmethod
     def tanh(x0: str) -> str: ...
 
-class MockCutlassHandler(CutlassEVTOpsMixIn, WrapperHandler): ...
+class MockCutlassHandler(CutlassEVTOpsMixIn, WrapperHandler):
+    """Passthrough handler for cutlass ops, used for running epilogue nodes for memory planning"""
 
 class _AssignmentFormatter(DefaultHandler):
     def __init__(self, parent_handler: CutlassEVTCodegen) -> None: ...
 
 class CutlassEVTCodegen(CutlassEVTOpsMixIn):
-    def __init__(self, accumulator_node_name: str, removed_buffers: OrderedSet[str]) -> None: ...
+    """
+    Notes:
+        * Used by CUTLASSGemmTemplate.
+        * This class should not be instantiated by users, it is intended to be used
+            by calling CutlassEVTCodegen.ir_to_evt_python_code(...)
+            which instantiates this class as an ops handler for virtualized.V.ops.[op-name]
+        * Extend this with more _op_<whatever> nodes to add support for new pointwise operations.
+    """
+    def __init__(self, accumulator_node_name: str, removed_buffers: OrderedSet[str]) -> None:
+        """
+        Initializes a CutlassEVTEpilogueArgumentFormatter object. Do not instantiate directly.
+        Use the CutlassEVTCodegen.ir_to_evt_python_code static method.
+
+        Args:
+            accumulator_node_name: The name of the accumulator node which should contain
+                                          the Matmul result before fusion according to the IR graph.
+            epilogue_nodes: The list of scheduler nodes to be fused into the epilogue
+        """
     @staticmethod
     def ir_to_evt_python_code(
         cuda_template_node_name: str, epilogue_nodes: list[BaseSchedulerNode], removed_buffers: OrderedSet[str]

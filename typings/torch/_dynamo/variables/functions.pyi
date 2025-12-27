@@ -1,3 +1,26 @@
+"""
+Function-related variable tracking classes for Dynamo's symbolic execution.
+
+This module contains classes that track different types of functions during graph
+compilation, including:
+- User-defined functions and methods
+- Built-in functions and methods
+- Wrapped functions (e.g. from decorators)
+- Special function types (e.g. functools.partial)
+- Triton kernels and related function types
+
+These classes are responsible for:
+- Tracking function calls and their arguments
+- Managing function closures and cell variables
+- Handling function attributes and special methods
+- Maintaining guards for function identity and closure contents
+- Supporting function inlining and specialization
+- Enabling proper symbolic execution of different function types
+
+The variable trackers here work together with the rest of Dynamo to enable
+accurate graph capture while handling Python's various function-related behaviors.
+"""
+
 import builtins
 import types
 from collections.abc import Callable, Sequence
@@ -26,7 +49,12 @@ class FunctionSpec:
 def bind_args_cached(func, tx, fn_source, args, kwargs): ...
 def wrap_bound_arg(tx: InstructionTranslator, val, source=...): ...
 def wrap_args_kwargs(tx: InstructionTranslator, result): ...
-def init_cellvars(parent, result: dict[str, VariableTracker], code): ...
+def init_cellvars(parent, result: dict[str, VariableTracker], code):
+    """
+    Update `result` to add mapping from local name to new cells created
+    directly by `code`, or update SideEffects in `parent` if the a local cell is
+    already in `result` (cell argument).
+    """
 
 fn_known_dunder_attrs = ...
 
@@ -43,6 +71,8 @@ class BaseUserFunctionVariable(VariableTracker):
     def closure_vars(self, tx): ...
 
 class UserFunctionVariable(BaseUserFunctionVariable):
+    """Some unsupported user-defined global function"""
+
     _nonvar_fields = ...
     @classmethod
     def create_with_source(cls, value, source): ...
@@ -55,7 +85,11 @@ class UserFunctionVariable(BaseUserFunctionVariable):
     def has_self(self): ...
     def get_globals(self): ...
     def get_source(self): ...
-    def bind_args(self, parent, args, kwargs) -> dict[str, VariableTracker]: ...
+    def bind_args(self, parent, args, kwargs) -> dict[str, VariableTracker]:
+        """
+        Assume `args` and `kwargs` are VariableTracker arguments for a call to
+        this function, create new bindings for initial locals.
+        """
     def var_getattr(self, tx: InstructionTranslator, name: str): ...
     def call_obj_hasattr(self, tx: InstructionTranslator, name: str) -> VariableTracker: ...
     def call_function(
@@ -96,9 +130,24 @@ class LocalGeneratorObjectVariable(VariableTracker):
         self, tx: InstructionTranslator, name: str, args: list[VariableTracker], kwargs: dict[str, VariableTracker]
     ) -> VariableTracker: ...
 
-class ContextlibContextManagerLocalGeneratorObjectVariable(LocalGeneratorObjectVariable): ...
+class ContextlibContextManagerLocalGeneratorObjectVariable(LocalGeneratorObjectVariable):
+    """
+    .. note::
+
+        This is only used when the function is annotated with @contextlib.contextmanager
+
+        It is a special case of a generator function as we do not allow return a context manager
+        from a torch.compile function.
+    """
 
 class LocalGeneratorFunctionVariable(BaseUserFunctionVariable):
+    """
+    functions that behaves like iterators
+
+    .. note::
+
+        This is a wrapper around (Nested)UserFunctionVariable
+    """
     def __init__(self, vt: VariableTracker, *, generator_cls=..., **kwargs) -> None: ...
     def __getattr__(self, name): ...
     def call_function(
@@ -106,9 +155,15 @@ class LocalGeneratorFunctionVariable(BaseUserFunctionVariable):
     ) -> VariableTracker: ...
 
 class FunctionDecoratedByContextlibContextManagerVariable(LocalGeneratorFunctionVariable):
+    """
+    .. note::
+
+        This is only used when the function is annotated with @contextlib.contextmanager
+    """
     def __init__(self, vt, **kwargs) -> None: ...
 
 class UserMethodVariable(UserFunctionVariable):
+    """Some unsupported user-defined method"""
     def __init__(self, fn, obj, source_fn=..., **kwargs) -> None: ...
     def self_args(self): ...
     def python_type(self): ...
@@ -179,6 +234,12 @@ class WrappedSkipFunctionVariable(SkipFunctionVariable):
     def reconstruct(self, codegen): ...
 
 class WrapperUserFunctionVariable(VariableTracker):
+    """
+    Used to represent a wrapper object that contains the actual callable as an
+    attribute. For example, torch.jit.script/trace have the original function at
+    their _torchdynamo_inline attribute. Similarly, functions with
+    __script_if_tracing_wrapper have the original attr at "__original_fn".
+    """
     def __init__(self, wrapper_obj, attr_to_trace, **kwargs) -> None: ...
     def var_getattr(self, tx: InstructionTranslator, name): ...
     def self_args(self): ...
@@ -187,10 +248,24 @@ class WrapperUserFunctionVariable(VariableTracker):
     ) -> VariableTracker: ...
 
 class WrapperUserMethodVariable(WrapperUserFunctionVariable):
+    """
+    Similar to WrapperUserFunctionVariable, but for methods. The only delta is
+    saving the vt for `self` object of the method which is then used by
+    WrapperUserFunctionVariable in `call_function` method.
+    """
     def __init__(self, wrapper_obj, attr_to_trace, self_obj, **kwargs) -> None: ...
     def self_args(self): ...
 
 class CollectiveFunctionRewriteVariable(UserFunctionVariable):
+    """
+    Some of the torch.distributed.* collective APIs are possible to rewrite to 'traceable' collectives.
+
+    This class provides both a way to check if a function is remappable, and perform the remapping.
+
+    In the case that a function is 'remappable' but only for some combinations of call-time arguments,
+    we check the args at `call_function` time and fall back to graph-breaking if needed.  This is no worse
+    than status-quo as we currently graph-break on all distributed.* collectives.
+    """
     def __init__(self, fn, *, replacement_var, **kwargs) -> None: ...
     @staticmethod
     def create(tx: InstructionTranslator, old_fn, source, **options): ...
@@ -224,7 +299,8 @@ class FunctoolsPartialVariable(VariableTracker):
     def call_obj_hasattr(self, tx: InstructionTranslator, name: str) -> VariableTracker: ...
     def var_getattr(self, tx: InstructionTranslator, name: str): ...
     def as_python_constant(self): ...
-    def guard_as_python_constant(self): ...
+    def guard_as_python_constant(self):
+        """Similar to as_python_constant(), but add ID_MATCH guards to try to force things to become constants"""
 
 class PolyfilledFunctionVariable(VariableTracker):
     _nonvar_fields = ...

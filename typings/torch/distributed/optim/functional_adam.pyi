@@ -18,5 +18,9 @@ class _FunctionalAdam:
         fused: bool = ...,
         _allow_empty_param_list: bool = ...,
     ) -> None: ...
-    def step_param(self, param: Tensor, grad: Tensor | None) -> None: ...
+    def step_param(self, param: Tensor, grad: Tensor | None) -> None:
+        """
+        Similar to step, but operates on a single parameter and optionally a
+        gradient tensor.
+        """
     def step(self, gradients: list[Tensor | None]) -> None: ...

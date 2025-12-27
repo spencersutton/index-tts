@@ -1,3 +1,17 @@
+"""
+This module contains the core type definitions and protocols used throughout Dynamo.
+
+The types defined here fall into several categories:
+- Guard related types (GuardFn, GuardFail, GuardedCode): Used for tracking and managing guards that protect compiled code
+- Frame and cache types (FrameState, CacheEntry): Used for managing interpreter frame state and caching
+- Callback protocols (DynamoCallbackFn): Define the interface for frame evaluation callbacks
+- Hook protocols (DynamoGuardHook, ProfilerStartHook, ProfilerEndHook, BytecodeHook): Define various hook points for
+  instrumentation and customization
+
+These types provide the foundational interfaces that enable Dynamo's dynamic compilation and optimization system,
+ensuring type safety and clear contracts between different components of the system.
+"""
+
 import dataclasses
 import types
 from collections.abc import Callable
@@ -14,11 +28,15 @@ from torch._guards import CompileId, Guard
 type FrameState = dict[Any, Any]
 
 class GuardFail(NamedTuple):
+    """GuardFail(reason, orig_code)"""
+
     reason: str
     orig_code: types.CodeType
 
 @dataclasses.dataclass(frozen=True)
 class GuardFilterEntry:
+    """GuardFilterEntry(name: str, has_value: bool, value: object, guard_type: str, derived_guard_types: tuple[str, ...], is_global: bool, orig_guard: torch._guards.Guard)"""
+
     name: str
     has_value: bool
     value: object
@@ -40,6 +58,8 @@ class GuardFn(Protocol):
 
 @dataclasses.dataclass
 class GuardedCode:
+    """GuardedCode(code: code, guard_manager: torch._dynamo.types.GuardFn, compile_id: torch._guards.CompileId, trace_annotation: str = 'Unknown')"""
+
     code: types.CodeType
     guard_manager: GuardFn
     compile_id: CompileId
@@ -47,6 +67,8 @@ class GuardedCode:
 
 @dataclasses.dataclass
 class ConvertFrameReturn:
+    """ConvertFrameReturn(frame_exec_strategy: torch._C._dynamo.eval_frame._FrameExecStrategy = <factory>, apply_to_code: bool = True, guarded_code: Optional[torch._dynamo.types.GuardedCode] = None)"""
+
     frame_exec_strategy: FrameExecStrategy = ...
     apply_to_code: bool = ...
     guarded_code: GuardedCode | None = ...

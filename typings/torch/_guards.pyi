@@ -24,14 +24,22 @@ CA_COMPILE_ID_PATTERN = ...
 
 @dataclass(frozen=True)
 class CompileId:
+    """CompileId(frame_id: 'Optional[int]', frame_compile_id: 'Optional[int]', compiled_autograd_id: 'Optional[int]' = None)"""
+
     frame_id: int | None
     frame_compile_id: int | None
     compiled_autograd_id: int | None = ...
 
     @classmethod
-    def from_string(cls, compile_id: str | None) -> CompileId | None: ...
+    def from_string(cls, compile_id: str | None) -> CompileId | None:
+        """
+        Factory method that creates a CompileId from its string representation.
+        Keep this in sync with the __str__ method.
+        """
 
 class TraceId(NamedTuple):
+    """TraceId(compile_id, attempt)"""
+
     compile_id: CompileId
     attempt: int
 
@@ -62,10 +70,14 @@ class GuardBuilderBase: ...
 
 @dataclasses.dataclass(frozen=True)
 class SLoc:
+    """SLoc(framework_loc: 'Optional[Union[traceback.FrameSummary, str]]', maybe_user_loc: 'Optional[str]')"""
+
     framework_loc: traceback.FrameSummary | str | None
     maybe_user_loc: str | None
 
 class ShapeGuard(NamedTuple):
+    """ShapeGuard(expr, sloc, size_oblivious)"""
+
     expr: sympy.logic.boolalg.Boolean
     sloc: SLoc
     size_oblivious: bool
@@ -73,6 +85,8 @@ class ShapeGuard(NamedTuple):
 @dataclass_slots
 @dataclasses.dataclass
 class Guard:
+    """Guard(originating_source: 'Source', create_fn: 'Callable[[GuardBuilderBase, Guard], None]', guard_types: 'Optional[list[str]]' = None, code_list: 'Optional[list[str]]' = None, obj_weakref: 'Optional[object]' = None, guarded_class_weakref: 'Optional[weakref.ReferenceType[Any]]' = None, stack: 'Optional[CapturedTraceback]' = None, user_stack: 'Optional[traceback.StackSummary]' = None, _hash: 'Optional[int]' = None, _unserializable: 'bool' = False)"""
+
     originating_source: Source
     create_fn: Callable[[GuardBuilderBase, Guard], None]
     guard_types: list[str] | None = ...
@@ -92,7 +106,21 @@ class Guard:
     @property
     def source(self) -> GuardSource: ...
     @staticmethod
-    def weakref_to_str(obj_weakref: object) -> str: ...
+    def weakref_to_str(obj_weakref: object) -> str:
+        """
+        This is a workaround of a Python weakref bug.
+
+        `obj_weakref` is instance returned by `weakref.ref`,
+        `str(obj_weakref)` is buggy if the original obj overrides __getattr__, e.g:
+
+            class MyConfig(dict):
+                def __getattr__(self, x):
+                    return self[x]
+
+            obj = MyConfig(offset=5)
+            obj_weakref = weakref.ref(obj)
+            str(obj_weakref)  # raise error: KeyError: '__name__'
+        """
     def create(self, builder: GuardBuilderBase) -> Any: ...
     def is_specialized_nn_module(self) -> bool: ...
     def is_fsdp_module(self) -> bool: ...
@@ -109,16 +137,21 @@ class Guard:
 T = TypeVar("T")
 
 @dataclasses.dataclass(frozen=True)
-class GuardEnvExpr: ...
+class GuardEnvExpr:
+    """GuardEnvExpr()"""
 
 @dataclasses.dataclass(frozen=True)
 class DuplicateInputs(GuardEnvExpr):
+    """DuplicateInputs(input_source_a: 'Source', input_source_b: 'Source')"""
+
     input_source_a: Source
     input_source_b: Source
     def __post_init__(self) -> None: ...
 
 @dataclasses.dataclass(frozen=True)
 class StorageOverlap(GuardEnvExpr):
+    """StorageOverlap(overlapping_sources: 'list[Source]', non_overlapping_sources: 'list[Source]')"""
+
     overlapping_sources: list[Source]
     non_overlapping_sources: list[Source]
 
@@ -129,15 +162,29 @@ class Checkpointable[T]:
     def restore_graphstate(self, state: T) -> None: ...
 
 class GuardsCheckpointState:
+    """The GuardCheckpointState - it is the T of Checkpointable[T] for GuardsContext"""
+
     dynamo_guards: set[Guard] = ...
     def __init__(self, dynamo_guards: set[Guard]) -> None: ...
-    def diff(self, other: GuardsCheckpointState) -> set[Guard] | None: ...
+    def diff(self, other: GuardsCheckpointState) -> set[Guard] | None:
+        """
+        Produces a delta against another GuardsCheckpointState.
+
+        Returns None if no delta is found, otherwise, return a set() of mismatched
+        Guard type objects.
+        """
     def __eq__(self, other: object) -> bool: ...
 
 class ModuleContextCheckpointState:
     nn_modules: dict[str, torch.nn.Module] = ...
     def __init__(self, nn_modules: dict[str, torch.nn.Module]) -> None: ...
-    def diff(self, other: ModuleContextCheckpointState) -> set[str] | None: ...
+    def diff(self, other: ModuleContextCheckpointState) -> set[str] | None:
+        """
+        Produces a delta against another ModuleContextCheckpointState.
+
+        Returns None if no delta is found, otherwise, return a set() of mismatched
+        module key names.
+        """
     def __eq__(self, other: object) -> bool: ...
 
 class ModuleContext(Checkpointable[ModuleContextCheckpointState]):
@@ -148,10 +195,21 @@ class ModuleContext(Checkpointable[ModuleContextCheckpointState]):
 class GlobalContextCheckpointState:
     global_state: dict[str, tuple[Callable, Any]] = ...
     def __init__(self, global_states: dict[str, tuple[Callable, Any]]) -> None: ...
-    def diff(self, other: GlobalContextCheckpointState) -> set[str] | None: ...
+    def diff(self, other: GlobalContextCheckpointState) -> set[str] | None:
+        """
+        Produces a delta against another GlobalContextCheckpointState.
+
+        Returns None if no delta is found, otherwise, return a set() of mismatched
+        global key names.
+        """
     def __eq__(self, other: object) -> bool: ...
 
 class GlobalContext(Checkpointable[GlobalContextCheckpointState]):
+    """
+    This keeps track of the global torch state during tracing of a function.
+    For example, torch.is_grad_enabled.
+    """
+
     _supported_global_states = ...
     def __init__(self) -> None: ...
     def copy_graphstate(self) -> GlobalContextCheckpointState: ...
@@ -165,7 +223,8 @@ class GuardsSet:
     def __bool__(self) -> bool: ...
     def add(self, guard: Guard, *, collect_debug_stack: bool = ..., skip: int = ...) -> None: ...
     def update(self, *others: set[Guard]) -> None: ...
-    def remove_guards_with_source(self, source: Source) -> None: ...
+    def remove_guards_with_source(self, source: Source) -> None:
+        """Delete all guards that contains a given source"""
 
 class GuardsContext(Checkpointable[GuardsCheckpointState]):
     def __init__(self) -> None: ...
@@ -227,6 +286,12 @@ class CompileContext:
     def current_trace_id() -> TraceId | None: ...
 
 class TracingContext:
+    """
+    Provides the currently installed TracingContext, or None.
+
+    Note that it is a staticmethod, and invocations outside of `with tracing()` (see below), are valid but
+    will return None.
+    """
     @staticmethod
     def try_get() -> TracingContext | None: ...
     @staticmethod
@@ -255,10 +320,18 @@ class TracingContext:
 @contextmanager
 def compile_context(context: CompileContext | None) -> Generator[CompileContext | None]: ...
 @contextmanager
-def tracing(context: TracingContext | None) -> Generator[TracingContext | None]: ...
+def tracing(context: TracingContext | None) -> Generator[TracingContext | None]:
+    """
+    This function installs the passed in tracing context as a dynamic scoped
+    global variable.
+
+    Calls to TracingContext.get() while not under a `with tracing()` context
+    will return None.
+    """
 
 @dataclasses.dataclass(frozen=True)
 class Source:
+    """Source()"""
     def is_dict_key(self) -> bool: ...
     def is_ephemeral(self) -> bool: ...
     def reconstruct(self, codegen: PyCodegen) -> None: ...
@@ -266,14 +339,32 @@ class Source:
     def name(self) -> str: ...
     def make_guard(self, fn: Callable[..., Any]) -> Guard: ...
     def is_specialized_nn_module(self) -> bool: ...
-    def subguards_allowed(self) -> bool: ...
+    def subguards_allowed(self) -> bool:
+        """True if you can guard on attributes of this"""
 
 @dataclasses.dataclass(frozen=True)
 class ChainedSource(Source):
+    """ChainedSource(base: 'Source')"""
+
     base: Source
     def is_dict_key(self) -> bool: ...
     def is_ephemeral(self) -> bool: ...
     def get_base(self) -> Source: ...
 
-def detect_fake_mode(inputs: Any = ...) -> FakeTensorMode | None: ...
-def active_fake_mode() -> FakeTensorMode | None: ...
+def detect_fake_mode(inputs: Any = ...) -> FakeTensorMode | None:
+    """
+    Attempts to "detect" what the current fake mode is.  If there is one ambiently
+    available from TracingContext, we preferentially use that.  Otherwise, we
+    heuristically detect the fake mode via the following sources, in order of
+    priority:
+
+        - Currently active fake mode on stack
+        - Fake mode associated with passed in tensors (inputs does not
+          have to be flattened)
+    """
+
+def active_fake_mode() -> FakeTensorMode | None:
+    """
+    Inspects the dispatch mode stack for an active fake mode and returns it.
+    Returns None if no fake mode is active.
+    """

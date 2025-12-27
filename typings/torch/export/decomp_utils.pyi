@@ -7,6 +7,20 @@ __all__ = ["CustomDecompTable"]
 PRESERVED_ATEN_CIA_OPS = ...
 
 class CustomDecompTable(UserDict[torch._ops.OperatorBase, Callable]):
+    """
+    This is a custom dictionary that is specifically used for handling decomp_table in export.
+    The reason we need this is because in the new world, you can only *delete* an op from decomp
+    table to preserve it. This is problematic for custom ops because we don't know when the custom
+    op will actually be loaded to the dispatcher. As a result, we need to record the custom ops operations
+    until we really need to materialize it (which is when we run decomposition pass.)
+
+    Invariants we hold are:
+     1. All aten decomp is loaded at the init time
+     2. We materialize ALL ops when user ever reads from the table to make it more likely
+        that dispatcher picks up the custom op.
+     3. If it is write operation, we don't necessarily materialize
+     4. We load the final time during export, right before calling run_decompositions()
+    """
     def __init__(self) -> None: ...
     def __getitem__(self, key) -> Callable[..., Any]: ...
     def __setitem__(self, key, value) -> None: ...

@@ -1,3 +1,20 @@
+"""
+This module contains variable tracker classes for handling tensors and tensor-related operations in Dynamo.
+
+The main class is TensorVariable which represents torch.Tensor inputs and intermediate values in the FX graph.
+It handles tensor operations, method calls, and maintains metadata about tensor properties like dtype, device, etc.
+
+Other key classes include:
+- SymNodeVariable: Represents symbolic scalars (int/float/bool) used for size computation and unspecialized values
+- NumpyNdarrayVariable: Handles numpy array interop through torch._numpy
+- UnspecializedPythonVariable: Represents unspecialized Python numeric values as 1-element tensors
+- TensorSubclassVariable: Handles tensor subclasses with __torch_function__ overrides
+- UntypedStorageVariable: Represents tensor storage objects
+- DataPtrVariable: Handles tensor data pointer operations
+
+These classes work together to track tensor operations and properties during Dynamo's tracing process.
+"""
+
 import torch.fx
 from torch._dynamo.codegen import PyCodegen
 from torch._dynamo.symbolic_convert import InstructionTranslator
@@ -17,8 +34,16 @@ def is_bound_tensor_method(value): ...
 all_tensor_attrs = ...
 
 class TensorVariable(VariableTracker):
+    """A torch.Tensor input or an intermediate value in the FX graph"""
+
     _nonvar_fields = ...
-    def get_real_value(self): ...
+    def get_real_value(self):
+        """
+        Get the actual value represented by this variable if computation is run
+        using the user-provided inputs.
+        NOTE: this runs actual tensor computation and may be
+        slow and memory-intensive.
+        """
     def __init__(
         self,
         proxy: torch.fx.Proxy,
@@ -113,6 +138,12 @@ class TensorVariable(VariableTracker):
     def set_name_hint(self, name: str): ...
 
 class SymNodeVariable(VariableTracker):
+    """
+    Represents a symbolic scalar, either int, float or bool.  This is most commonly used to
+    handle symbolic size computation, e.g., tensor.size(0), but it is also used to
+    handle logic like float_tensor.item() or unspecialized float inputs.
+    """
+
     _nonvar_fields = ...
     def debug_repr(self): ...
     @classmethod
@@ -127,6 +158,10 @@ class SymNodeVariable(VariableTracker):
     ) -> VariableTracker: ...
 
 class NumpyNdarrayVariable(TensorVariable):
+    """
+    Represents a np.ndarray, but backed by torch Tensor via torch._numpy.ndarray.
+    Use this for Tensor.numpy() call.
+    """
     @staticmethod
     def create(tx: InstructionTranslator, proxy, **options): ...
     def var_getattr(self, tx: InstructionTranslator, name): ...
@@ -138,12 +173,19 @@ class NumpyNdarrayVariable(TensorVariable):
     def python_type(self): ...
 
 class UnspecializedPythonVariable(TensorVariable):
+    """This is a 1-element tensor represents unspecialized python float/int."""
+
     _nonvar_fields = ...
     def __init__(self, proxy: torch.fx.Proxy, *, raw_value=..., need_unwrap=..., **kwargs) -> None: ...
     @classmethod
     def from_tensor_variable(cls, tensor_variable, raw_value, need_unwrap=...): ...
 
 class FakeItemVariable(TensorVariable):
+    """
+    An unspecialized python variable which prevents access to the underlying raw value.
+    This is needed if item is called on a FakeTensor.
+    """
+
     _nonvar_fields = ...
     def __init__(self, proxy: torch.fx.Proxy, **kwargs) -> None: ...
     @classmethod

@@ -47,37 +47,51 @@ class MemoryFormat(IntEnum):
 
 @dataclass
 class Device:
+    """Device(type: Annotated[str, 10], index: Annotated[Optional[int], 20] = None)"""
+
     type: Annotated[str, 10]
     index: Annotated[int | None, 20] = ...
 
 @_union_dataclass
 class SymExprHint(_Union):
+    """SymExprHint(as_int: Annotated[int, 10], as_bool: Annotated[bool, 20], as_float: Annotated[float, 30])"""
+
     as_int: Annotated[int, 10]
     as_bool: Annotated[bool, 20]
     as_float: Annotated[float, 30]
 
 @dataclass
 class SymExpr:
+    """SymExpr(expr_str: Annotated[str, 10], hint: Annotated[Optional[torch._export.serde.schema.SymExprHint], 20] = None)"""
+
     expr_str: Annotated[str, 10]
     hint: Annotated[SymExprHint | None, 20] = ...
 
 @_union_dataclass
 class SymInt(_Union):
+    """SymInt(as_expr: Annotated[torch._export.serde.schema.SymExpr, 10], as_int: Annotated[int, 20])"""
+
     as_expr: Annotated[SymExpr, 10]
     as_int: Annotated[int, 20]
 
 @_union_dataclass
 class SymFloat(_Union):
+    """SymFloat(as_expr: Annotated[torch._export.serde.schema.SymExpr, 10], as_float: Annotated[float, 20])"""
+
     as_expr: Annotated[SymExpr, 10]
     as_float: Annotated[float, 20]
 
 @_union_dataclass
 class SymBool(_Union):
+    """SymBool(as_expr: Annotated[torch._export.serde.schema.SymExpr, 10], as_bool: Annotated[bool, 20])"""
+
     as_expr: Annotated[SymExpr, 10]
     as_bool: Annotated[bool, 20]
 
 @dataclass
 class TensorMeta:
+    """TensorMeta(dtype: Annotated[torch._export.serde.schema.ScalarType, 10], sizes: Annotated[list[torch._export.serde.schema.SymInt], 20], requires_grad: Annotated[bool, 30], device: Annotated[torch._export.serde.schema.Device, 40], strides: Annotated[list[torch._export.serde.schema.SymInt], 50], storage_offset: Annotated[torch._export.serde.schema.SymInt, 60], layout: Annotated[torch._export.serde.schema.Layout, 70])"""
+
     dtype: Annotated[ScalarType, 10]
     sizes: Annotated[list[SymInt], 20]
     requires_grad: Annotated[bool, 30]
@@ -88,49 +102,69 @@ class TensorMeta:
 
 @_union_dataclass
 class SymIntArgument(_Union):
+    """SymIntArgument(as_name: Annotated[str, 10], as_int: Annotated[int, 20])"""
+
     as_name: Annotated[str, 10]
     as_int: Annotated[int, 20]
 
 @_union_dataclass
 class SymFloatArgument(_Union):
+    """SymFloatArgument(as_name: Annotated[str, 10], as_float: Annotated[float, 20])"""
+
     as_name: Annotated[str, 10]
     as_float: Annotated[float, 20]
 
 @_union_dataclass
 class SymBoolArgument(_Union):
+    """SymBoolArgument(as_name: Annotated[str, 10], as_bool: Annotated[bool, 20])"""
+
     as_name: Annotated[str, 10]
     as_bool: Annotated[bool, 20]
 
 @dataclass
 class TensorArgument:
+    """TensorArgument(name: Annotated[str, 10])"""
+
     name: Annotated[str, 10]
 
 @dataclass
 class TokenArgument:
+    """TokenArgument(name: Annotated[str, 10])"""
+
     name: Annotated[str, 10]
 
 @_union_dataclass
 class OptionalTensorArgument(_Union):
+    """OptionalTensorArgument(as_tensor: Annotated[torch._export.serde.schema.TensorArgument, 20], as_none: Annotated[bool, 10])"""
+
     as_tensor: Annotated[TensorArgument, 20]
     as_none: Annotated[bool, 10]
 
 @dataclass
 class GraphArgument:
+    """GraphArgument(name: Annotated[str, 10], graph: Annotated[ForwardRef('Graph'), 20])"""
+
     name: Annotated[str, 10]
     graph: Annotated[Graph, 20]
 
 @dataclass
 class CustomObjArgument:
+    """CustomObjArgument(name: Annotated[str, 10], class_fqn: Annotated[str, 20])"""
+
     name: Annotated[str, 10]
     class_fqn: Annotated[str, 20]
 
 @dataclass
 class ComplexValue:
+    """ComplexValue(real: Annotated[float, 10], imag: Annotated[float, 20])"""
+
     real: Annotated[float, 10]
     imag: Annotated[float, 20]
 
 @_union_dataclass
 class Argument(_Union):
+    """Argument(as_none: Annotated[bool, 10], as_tensor: Annotated[torch._export.serde.schema.TensorArgument, 20], as_tensors: Annotated[list[torch._export.serde.schema.TensorArgument], 30], as_int: Annotated[int, 50], as_ints: Annotated[list[int], 70], as_float: Annotated[float, 80], as_floats: Annotated[list[float], 90], as_string: Annotated[str, 100], as_strings: Annotated[list[str], 101], as_sym_int: Annotated[torch._export.serde.schema.SymIntArgument, 110], as_sym_ints: Annotated[list[torch._export.serde.schema.SymIntArgument], 120], as_scalar_type: Annotated[torch._export.serde.schema.ScalarType, 130], as_memory_format: Annotated[torch._export.serde.schema.MemoryFormat, 140], as_layout: Annotated[torch._export.serde.schema.Layout, 150], as_device: Annotated[torch._export.serde.schema.Device, 160], as_bool: Annotated[bool, 170], as_bools: Annotated[list[bool], 180], as_sym_bool: Annotated[torch._export.serde.schema.SymBoolArgument, 182], as_sym_bools: Annotated[list[torch._export.serde.schema.SymBoolArgument], 184], as_graph: Annotated[torch._export.serde.schema.GraphArgument, 200], as_optional_tensors: Annotated[list[torch._export.serde.schema.OptionalTensorArgument], 190], as_custom_obj: Annotated[torch._export.serde.schema.CustomObjArgument, 210], as_operator: Annotated[str, 220], as_sym_float: Annotated[torch._export.serde.schema.SymFloatArgument, 230], as_sym_floats: Annotated[list[torch._export.serde.schema.SymFloatArgument], 240], as_optional_tensor: Annotated[torch._export.serde.schema.OptionalTensorArgument, 250], as_complex: Annotated[torch._export.serde.schema.ComplexValue, 260])"""
+
     as_none: Annotated[bool, 10]
     as_tensor: Annotated[TensorArgument, 20]
     as_tensors: Annotated[list[TensorArgument], 30]
@@ -166,12 +200,16 @@ class ArgumentKind(IntEnum):
 
 @dataclass
 class NamedArgument:
+    """NamedArgument(name: Annotated[str, 10], arg: Annotated[torch._export.serde.schema.Argument, 20], kind: Annotated[Optional[torch._export.serde.schema.ArgumentKind], 30] = None)"""
+
     name: Annotated[str, 10]
     arg: Annotated[Argument, 20]
     kind: Annotated[ArgumentKind | None, 30] = ...
 
 @dataclass
 class Node:
+    """Node(target: Annotated[str, 10], inputs: Annotated[list[torch._export.serde.schema.NamedArgument], 20], outputs: Annotated[list[torch._export.serde.schema.Argument], 30], metadata: Annotated[dict[str, str], 40], is_hop_single_tensor_return: Annotated[Optional[bool], 50] = None)"""
+
     target: Annotated[str, 10]
     inputs: Annotated[list[NamedArgument], 20]
     outputs: Annotated[list[Argument], 30]
@@ -180,6 +218,8 @@ class Node:
 
 @dataclass
 class Graph:
+    """Graph(inputs: Annotated[list[torch._export.serde.schema.Argument], 10], outputs: Annotated[list[torch._export.serde.schema.Argument], 20], nodes: Annotated[list[torch._export.serde.schema.Node], 30], tensor_values: Annotated[dict[str, torch._export.serde.schema.TensorMeta], 40], sym_int_values: Annotated[dict[str, torch._export.serde.schema.SymInt], 50], sym_bool_values: Annotated[dict[str, torch._export.serde.schema.SymBool], 60], is_single_tensor_return: Annotated[bool, 70] = False, custom_obj_values: Annotated[dict[str, torch._export.serde.schema.CustomObjArgument], 80] = <factory>, sym_float_values: Annotated[dict[str, torch._export.serde.schema.SymFloat], 90] = <factory>)"""
+
     inputs: Annotated[list[Argument], 10]
     outputs: Annotated[list[Argument], 20]
     nodes: Annotated[list[Node], 30]
@@ -192,10 +232,14 @@ class Graph:
 
 @dataclass
 class UserInputSpec:
+    """UserInputSpec(arg: Annotated[torch._export.serde.schema.Argument, 10])"""
+
     arg: Annotated[Argument, 10]
 
 @_union_dataclass
 class ConstantValue(_Union):
+    """ConstantValue(as_none: Annotated[bool, 10], as_int: Annotated[int, 20], as_float: Annotated[float, 30], as_string: Annotated[str, 40], as_bool: Annotated[bool, 50])"""
+
     as_none: Annotated[bool, 10]
     as_int: Annotated[int, 20]
     as_float: Annotated[float, 30]
@@ -204,36 +248,50 @@ class ConstantValue(_Union):
 
 @dataclass
 class InputToConstantInputSpec:
+    """InputToConstantInputSpec(name: Annotated[str, 10], value: Annotated[torch._export.serde.schema.ConstantValue, 20])"""
+
     name: Annotated[str, 10]
     value: Annotated[ConstantValue, 20]
 
 @dataclass
 class InputToParameterSpec:
+    """InputToParameterSpec(arg: Annotated[torch._export.serde.schema.TensorArgument, 10], parameter_name: Annotated[str, 20])"""
+
     arg: Annotated[TensorArgument, 10]
     parameter_name: Annotated[str, 20]
 
 @dataclass
 class InputToBufferSpec:
+    """InputToBufferSpec(arg: Annotated[torch._export.serde.schema.TensorArgument, 10], buffer_name: Annotated[str, 20], persistent: Annotated[bool, 30])"""
+
     arg: Annotated[TensorArgument, 10]
     buffer_name: Annotated[str, 20]
     persistent: Annotated[bool, 30]
 
 @dataclass
 class InputToTensorConstantSpec:
+    """InputToTensorConstantSpec(arg: Annotated[torch._export.serde.schema.TensorArgument, 10], tensor_constant_name: Annotated[str, 20])"""
+
     arg: Annotated[TensorArgument, 10]
     tensor_constant_name: Annotated[str, 20]
 
 @dataclass
 class InputToCustomObjSpec:
+    """InputToCustomObjSpec(arg: Annotated[torch._export.serde.schema.CustomObjArgument, 10], custom_obj_name: Annotated[str, 20])"""
+
     arg: Annotated[CustomObjArgument, 10]
     custom_obj_name: Annotated[str, 20]
 
 @dataclass
 class InputTokenSpec:
+    """InputTokenSpec(arg: Annotated[torch._export.serde.schema.TokenArgument, 10])"""
+
     arg: Annotated[TokenArgument, 10]
 
 @_union_dataclass
 class InputSpec(_Union):
+    """InputSpec(user_input: Annotated[torch._export.serde.schema.UserInputSpec, 10], parameter: Annotated[torch._export.serde.schema.InputToParameterSpec, 20], buffer: Annotated[torch._export.serde.schema.InputToBufferSpec, 30], tensor_constant: Annotated[torch._export.serde.schema.InputToTensorConstantSpec, 40], custom_obj: Annotated[torch._export.serde.schema.InputToCustomObjSpec, 50], token: Annotated[torch._export.serde.schema.InputTokenSpec, 70], constant_input: Annotated[torch._export.serde.schema.InputToConstantInputSpec, 60])"""
+
     user_input: Annotated[UserInputSpec, 10]
     parameter: Annotated[InputToParameterSpec, 20]
     buffer: Annotated[InputToBufferSpec, 30]
@@ -244,43 +302,61 @@ class InputSpec(_Union):
 
 @dataclass
 class UserOutputSpec:
+    """UserOutputSpec(arg: Annotated[torch._export.serde.schema.Argument, 10])"""
+
     arg: Annotated[Argument, 10]
 
 @dataclass
 class LossOutputSpec:
+    """LossOutputSpec(arg: Annotated[torch._export.serde.schema.TensorArgument, 10])"""
+
     arg: Annotated[TensorArgument, 10]
 
 @dataclass
 class BufferMutationSpec:
+    """BufferMutationSpec(arg: Annotated[torch._export.serde.schema.TensorArgument, 10], buffer_name: Annotated[str, 20])"""
+
     arg: Annotated[TensorArgument, 10]
     buffer_name: Annotated[str, 20]
 
 @dataclass
 class ParameterMutationSpec:
+    """ParameterMutationSpec(arg: Annotated[torch._export.serde.schema.TensorArgument, 10], parameter_name: Annotated[str, 20])"""
+
     arg: Annotated[TensorArgument, 10]
     parameter_name: Annotated[str, 20]
 
 @dataclass
 class GradientToParameterSpec:
+    """GradientToParameterSpec(arg: Annotated[torch._export.serde.schema.TensorArgument, 10], parameter_name: Annotated[str, 20])"""
+
     arg: Annotated[TensorArgument, 10]
     parameter_name: Annotated[str, 20]
 
 @dataclass
 class GradientToUserInputSpec:
+    """GradientToUserInputSpec(arg: Annotated[torch._export.serde.schema.TensorArgument, 10], user_input_name: Annotated[str, 20])"""
+
     arg: Annotated[TensorArgument, 10]
     user_input_name: Annotated[str, 20]
 
 @dataclass
 class UserInputMutationSpec:
+    """UserInputMutationSpec(arg: Annotated[torch._export.serde.schema.TensorArgument, 10], user_input_name: Annotated[str, 20])"""
+
     arg: Annotated[TensorArgument, 10]
     user_input_name: Annotated[str, 20]
 
 @dataclass
 class OutputTokenSpec:
+    """OutputTokenSpec(arg: Annotated[torch._export.serde.schema.TokenArgument, 10])"""
+
     arg: Annotated[TokenArgument, 10]
 
 @_union_dataclass
 class OutputSpec(_Union):
+    """OutputSpec(user_output: Annotated[torch._export.serde.schema.UserOutputSpec, 10], loss_output: Annotated[torch._export.serde.schema.LossOutputSpec, 20], buffer_mutation: Annotated[torch._export.serde.schema.BufferMutationSpec, 30], gradient_to_parameter: Annotated[torch._export.serde.schema.GradientToParameterSpec, 40], gradient_to_user_input: Annotated[torch._export.serde.schema.GradientToUserInputSpec, 50], user_input_mutation: Annotated[torch._export.serde.schema.UserInputMutationSpec, 60], token: Annotated[torch._export.serde.schema.OutputTokenSpec, 70], parameter_mutation: Annotated[torch._export.serde.schema.ParameterMutationSpec, 80])"""
+
     user_output: Annotated[UserOutputSpec, 10]
     loss_output: Annotated[LossOutputSpec, 20]
     buffer_mutation: Annotated[BufferMutationSpec, 30]
@@ -292,16 +368,22 @@ class OutputSpec(_Union):
 
 @dataclass
 class GraphSignature:
+    """GraphSignature(input_specs: Annotated[list[torch._export.serde.schema.InputSpec], 10], output_specs: Annotated[list[torch._export.serde.schema.OutputSpec], 20])"""
+
     input_specs: Annotated[list[InputSpec], 10]
     output_specs: Annotated[list[OutputSpec], 20]
 
 @dataclass
 class RangeConstraint:
+    """RangeConstraint(min_val: Annotated[Optional[int], 10], max_val: Annotated[Optional[int], 20])"""
+
     min_val: Annotated[int | None, 10]
     max_val: Annotated[int | None, 20]
 
 @dataclass
 class ModuleCallSignature:
+    """ModuleCallSignature(inputs: Annotated[list[torch._export.serde.schema.Argument], 10], outputs: Annotated[list[torch._export.serde.schema.Argument], 20], in_spec: Annotated[str, 30], out_spec: Annotated[str, 40], forward_arg_names: Annotated[Optional[list[str]], 50] = None)"""
+
     inputs: Annotated[list[Argument], 10]
     outputs: Annotated[list[Argument], 20]
     in_spec: Annotated[str, 30]
@@ -310,15 +392,21 @@ class ModuleCallSignature:
 
 @dataclass
 class ModuleCallEntry:
+    """ModuleCallEntry(fqn: Annotated[str, 10], signature: Annotated[Optional[torch._export.serde.schema.ModuleCallSignature], 30] = None)"""
+
     fqn: Annotated[str, 10]
     signature: Annotated[ModuleCallSignature | None, 30] = ...
 
 @dataclass
 class NamedTupleDef:
+    """NamedTupleDef(field_names: Annotated[list[str], 10])"""
+
     field_names: Annotated[list[str], 10]
 
 @dataclass
 class GraphModule:
+    """GraphModule(graph: Annotated[torch._export.serde.schema.Graph, 10], signature: Annotated[torch._export.serde.schema.GraphSignature, 50], module_call_graph: Annotated[list[torch._export.serde.schema.ModuleCallEntry], 60], metadata: Annotated[dict[str, str], 40] = <factory>, treespec_namedtuple_fields: Annotated[dict[str, torch._export.serde.schema.NamedTupleDef], 70] = <factory>)"""
+
     graph: Annotated[Graph, 10]
     signature: Annotated[GraphSignature, 50]
     module_call_graph: Annotated[list[ModuleCallEntry], 60]
@@ -327,11 +415,15 @@ class GraphModule:
 
 @dataclass
 class SchemaVersion:
+    """SchemaVersion(major: Annotated[int, 10], minor: Annotated[int, 20])"""
+
     major: Annotated[int, 10]
     minor: Annotated[int, 20]
 
 @dataclass
 class ExportedProgram:
+    """ExportedProgram(graph_module: Annotated[torch._export.serde.schema.GraphModule, 10], opset_version: Annotated[dict[str, int], 20], range_constraints: Annotated[dict[str, torch._export.serde.schema.RangeConstraint], 30], schema_version: Annotated[torch._export.serde.schema.SchemaVersion, 60], verifiers: Annotated[list[str], 70] = <factory>, torch_version: Annotated[str, 80] = '<=2.4', guards_code: Annotated[list[str], 90] = <factory>)"""
+
     graph_module: Annotated[GraphModule, 10]
     opset_version: Annotated[dict[str, int], 20]
     range_constraints: Annotated[dict[str, RangeConstraint], 30]
@@ -342,6 +434,8 @@ class ExportedProgram:
 
 @dataclass
 class PayloadMeta:
+    """PayloadMeta(path_name: Annotated[str, 10], is_param: Annotated[bool, 20], use_pickle: Annotated[bool, 30], tensor_meta: Annotated[Optional[torch._export.serde.schema.TensorMeta], 40])"""
+
     path_name: Annotated[str, 10]
     is_param: Annotated[bool, 20]
     use_pickle: Annotated[bool, 30]
@@ -349,10 +443,14 @@ class PayloadMeta:
 
 @dataclass
 class PayloadConfig:
+    """PayloadConfig(config: Annotated[dict[str, torch._export.serde.schema.PayloadMeta], 10])"""
+
     config: Annotated[dict[str, PayloadMeta], 10]
 
 @dataclass
 class AOTInductorModelPickleData:
+    """AOTInductorModelPickleData(library_basename: Annotated[str, 1], input_names: Annotated[list[str], 2], output_names: Annotated[list[str], 3], floating_point_input_dtype: Annotated[Optional[int], 4] = None, floating_point_output_dtype: Annotated[Optional[int], 5] = None, aot_inductor_model_is_cpu: Annotated[Optional[bool], 6] = None)"""
+
     library_basename: Annotated[str, 1]
     input_names: Annotated[list[str], 2]
     output_names: Annotated[list[str], 3]
@@ -362,9 +460,13 @@ class AOTInductorModelPickleData:
 
 @dataclass
 class ExternKernelNode:
+    """ExternKernelNode(name: Annotated[str, 10], node: Annotated[torch._export.serde.schema.Node, 20])"""
+
     name: Annotated[str, 10]
     node: Annotated[Node, 20]
 
 @dataclass
 class ExternKernelNodes:
+    """ExternKernelNodes(nodes: Annotated[list[torch._export.serde.schema.ExternKernelNode], 10])"""
+
     nodes: Annotated[list[ExternKernelNode], 10]

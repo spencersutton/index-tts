@@ -24,16 +24,24 @@ log = ...
 
 @functools.lru_cache(1)
 def cpp_compiler_search(search: str) -> str: ...
-def install_gcc_via_conda() -> str: ...
+def install_gcc_via_conda() -> str:
+    """On older systems, this is a quick way to get a modern compiler"""
+
 @functools.cache
-def check_compiler_exist_windows(compiler: str) -> None: ...
+def check_compiler_exist_windows(compiler: str) -> None:
+    """Check if compiler is ready, in case end user not activate MSVC environment."""
 
 class WinPeFileVersionInfo:
     def __init__(self, file_path: str) -> None: ...
     def get_language_id(self) -> int: ...
 
 @functools.cache
-def check_msvc_cl_language_id(compiler: str) -> None: ...
+def check_msvc_cl_language_id(compiler: str) -> None:
+    """
+    Torch.compile() is only work on MSVC with English language pack well.
+    Check MSVC's language pack: https://github.com/pytorch/pytorch/issues/157673#issuecomment-3051682766
+    """
+
 def get_cpp_compiler() -> str: ...
 def get_ld_and_objcopy(use_relative_path: bool) -> tuple[str, str]: ...
 def convert_cubin_to_obj(cubin_file: str, kernel_name: str, ld: str, objcopy: str) -> str: ...
@@ -53,6 +61,11 @@ def run_compile_cmd(cmd_line: str, cwd: str) -> None: ...
 def normalize_path_separator(orig_path: str) -> str: ...
 
 class BuildOptionsBase:
+    """
+    This is the Base class for store cxx build options, as a template.
+    Actually, to build a cxx shared library. We just need to select a compiler
+    and maintains the suitable args.
+    """
     def __init__(
         self,
         compiler: str = ...,
@@ -93,6 +106,15 @@ def get_cpp_options(
 ) -> tuple[list[str], list[str], list[str], list[str], list[str], list[str], list[str]]: ...
 
 class CppOptions(BuildOptionsBase):
+    """
+    This class is inherited from BuildOptionsBase, and as cxx build options.
+    This option need contains basic cxx build option, which contains:
+    1. OS related args.
+    2. Toolchains related args.
+    3. Cxx standard related args.
+    Note:
+    1. This Options is good for assist modules build, such as x86_isa_help.
+    """
     def __init__(
         self,
         compile_only: bool = ...,
@@ -121,9 +143,28 @@ def get_cpp_torch_options(
     aot_mode: bool,
     use_relative_path: bool,
     use_mmap_weights: bool,
-) -> tuple[list[str], list[str], list[str], list[str], list[str], list[str], list[str]]: ...
+) -> tuple[list[str], list[str], list[str], list[str], list[str], list[str], list[str]]:
+    """
+    This function is used to get the build args of torch related build options.
+    1. Torch include_directories, libraries, libraries_directories.
+    2. Python include_directories, libraries, libraries_directories.
+    3. OpenMP related.
+    4. Torch MACROs.
+    5. MISC
+    6. Return the build args
+    """
 
 class CppTorchOptions(CppOptions):
+    """
+    This class is inherited from CppTorchOptions, which automatic contains
+    base cxx build options. And then it will maintains torch related build
+    args.
+    1. Torch include_directories, libraries, libraries_directories.
+    2. Python include_directories, libraries, libraries_directories.
+    3. OpenMP related.
+    4. Torch MACROs.
+    5. MISC
+    """
     def __init__(
         self,
         vec_isa: VecISA = ...,
@@ -143,9 +184,21 @@ class CppTorchOptions(CppOptions):
 
 def get_cpp_torch_device_options(
     device_type: str, aot_mode: bool = ..., compile_only: bool = ...
-) -> tuple[list[str], list[str], list[str], list[str], list[str], list[str], list[str]]: ...
+) -> tuple[list[str], list[str], list[str], list[str], list[str], list[str], list[str]]:
+    """
+    This function is used to get the build args of device related build options.
+    1. Device include_directories, libraries, libraries_directories.
+    2. Device MACROs.
+    3. MISC
+    4. Return the build args
+    """
 
 class CppTorchDeviceOptions(CppTorchOptions):
+    """
+    This class is inherited from CppTorchOptions, which automatic contains
+    base cxx build options and torch common build options. And then it will
+    maintains cuda/xpu device related build args.
+    """
     def __init__(
         self,
         vec_isa: VecISA = ...,
@@ -162,17 +215,54 @@ class CppTorchDeviceOptions(CppTorchOptions):
         preprocessing: bool = ...,
     ) -> None: ...
 
-def get_name_and_dir_from_output_file_path(file_path: str) -> tuple[str, str]: ...
+def get_name_and_dir_from_output_file_path(file_path: str) -> tuple[str, str]:
+    """
+    This function help prepare parameters to new cpp_builder.
+    Example:
+        input_code: /tmp/tmpof1n5g7t/5c/c5crkkcdvhdxpktrmjxbqkqyq5hmxpqsfza4pxcf3mwk42lphygc.cpp
+        name, dir = get_name_and_dir_from_output_file_path(input_code)
+    Run result:
+        name = c5crkkcdvhdxpktrmjxbqkqyq5hmxpqsfza4pxcf3mwk42lphygc
+        dir = /tmp/tmpof1n5g7t/5c/
+
+    put 'name' and 'dir' to CppBuilder's 'name' and 'output_dir'.
+    CppBuilder --> get_target_file_path will format output path according OS:
+    Linux: /tmp/tmppu87g3mm/zh/czhwiz4z7ca7ep3qkxenxerfjxy42kehw6h5cjk6ven4qu4hql4i.so
+    Windows: [Windows temp path]/tmppu87g3mm/zh/czhwiz4z7ca7ep3qkxenxerfjxy42kehw6h5cjk6ven4qu4hql4i.dll
+    """
 
 class CppBuilder:
+    """
+    CppBuilder is a cpp jit builder, and it supports both Windows, Linux and MacOS.
+    Args:
+        name:
+            1. Build target name, the final target file will append extension type automatically.
+            2. Due to the CppBuilder is supports multiple OS, it will maintains ext for OS difference.
+        sources:
+            Source code file list to be built.
+        BuildOption:
+            Build options to the builder.
+        output_dir:
+            1. The output_dir the target file will output to.
+            2. The default value is empty string, and then the use current dir as output dir.
+            3. Final target file: output_dir/name.ext
+    """
     def __init__(
         self, name: str, sources: str | list[str], BuildOption: BuildOptionsBase, output_dir: str = ...
     ) -> None: ...
     def get_command_line(self) -> str: ...
     def get_target_file_path(self) -> str: ...
     def build_fbcode_re(self) -> None: ...
-    def build(self) -> None: ...
-    def save_compile_cmd_to_cmake(self, cmake_path: str, device_type: str) -> None: ...
+    def build(self) -> None:
+        """
+        It is must need a temporary directory to store object files in Windows.
+        After build completed, delete the temporary directory to save disk space.
+        """
+    def save_compile_cmd_to_cmake(self, cmake_path: str, device_type: str) -> None:
+        """
+        Save global cmake settings here, e.g. compiler options.
+        If targeting CUDA, also emit a custom function to embed CUDA kernels.
+        """
     def save_src_to_cmake(self, cmake_path: str, src_path: str) -> None: ...
     def save_kernel_asm_to_cmake(self, cmake_path: str, asm_files: list[str]) -> None: ...
     def save_link_cmd_to_cmake(self, cmake_path: str) -> None: ...

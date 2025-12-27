@@ -1,3 +1,5 @@
+"""Common utilities and functions for flex attention kernels"""
+
 from collections.abc import Sequence
 from typing import Any
 
@@ -7,27 +9,86 @@ from ...ir import ComputedBuffer, IRNode, ShapeAsConstantBuffer, Subgraph, Tenso
 
 type SubgraphResults = list[ComputedBuffer | None] | ComputedBuffer | None
 
-def zeros_and_scatter_lowering(shape: list[int], indices, values): ...
+def zeros_and_scatter_lowering(shape: list[int], indices, values):
+    """To support backwards on captured buffers we register a specific lowering for our specific custom up"""
+
 def get_fwd_subgraph_outputs(
     subgraph_buffer: SubgraphResults, mask_graph_buffer: SubgraphResults
 ) -> list[ComputedBuffer | None]: ...
 def build_subgraph_module_buffer(
     args: list[TensorBox | ShapeAsConstantBuffer], graph_module: torch.fx.GraphModule
-) -> SubgraphResults: ...
+) -> SubgraphResults:
+    """
+    This function's goal is to take in the required args and produce the subgraph buffer
+    The subgraph buffer is a ComputedBuffer that will be inlined into the triton template
+
+    Args:
+        args: The args that are passed into the subgraph. Contains both fixed and lifted inputs.
+        subgraph: The Subgraph ir for which to produce the output node
+    """
+
 def build_subgraph_buffer(args: list[TensorBox | ShapeAsConstantBuffer], subgraph: Subgraph) -> SubgraphResults: ...
-def maybe_realize(args: list[IRNode | None]): ...
+def maybe_realize(args: list[IRNode | None]):
+    """Accepts a list of optional IRNodes and returns a list of realized IRNodes"""
+
 def create_placeholder(
     name: str, dtype: torch.dtype, device: torch.device, size: list[int] | None = ...
-) -> TensorBox | ShapeAsConstantBuffer: ...
-def construct_strides(sizes: Sequence[int], fill_order: Sequence[int]) -> Sequence[int]: ...
-def infer_dense_strides(size: Sequence[int], orig_strides: Sequence[int]): ...
-def create_indices_fake(x) -> torch.Tensor: ...
-def create_num_blocks_fake_generator(sparse_indices): ...
-def contiguous_last_dim(x): ...
-def set_head_dim_values(kernel_options: dict[str, Any], qk_head_dim, v_head_dim, graph_sizevars): ...
+) -> TensorBox | ShapeAsConstantBuffer:
+    """Creates a placeholder input buffers for producing subgraph_output."""
+
+def construct_strides(sizes: Sequence[int], fill_order: Sequence[int]) -> Sequence[int]:
+    """From a list of sizes and a fill order, construct the strides of the permuted tensor."""
+
+def infer_dense_strides(size: Sequence[int], orig_strides: Sequence[int]):
+    """
+    This is a mirror of the same function in aten/src/ATen/ExpandUtils.cpp
+
+    Args:
+        size: The size of the output tensor
+        orig_strides: The strides of the input tensor
+    Returns:
+        List[int]: Dense non-overlapping strides that preserve the input tensor's layout permutation.
+        The returned strides follow the same stride propagation rules as TensorIterator. This matches
+        The behavior of empty_like()
+    """
+
+def create_indices_fake(x) -> torch.Tensor:
+    """Create a fake indices that is used for autotuning."""
+
+def create_num_blocks_fake_generator(sparse_indices):
+    """
+    Create a fake num_blocks that is used for autotuning.
+
+    The idea here is that we need to create a real tensor with real data
+    that's representative for benchmarking.
+    For example, returning all zeros for the `kv_num_blocks` input would mean
+    that we are computing 0 blocks for each row, which would provide bogus
+    autotuning results.
+
+    In this case, we choose to use min(16, max_block) blocks, because I
+    (Horace) think it'll probably result in pretty representative performance.
+    If it's too short then prefetching won't help. If it's too long then
+    autotuning will take longer for no good reason.
+    """
+
+def contiguous_last_dim(x):
+    """Ensure that realized IR node has a contiguous stride in the last dimension."""
+
+def set_head_dim_values(kernel_options: dict[str, Any], qk_head_dim, v_head_dim, graph_sizevars):
+    """
+    Mutates kernel options, adding head dimension calculations.
+
+    Args:
+        kernel_options: Dictionary to populate with options
+        qk_head_dim: Query/Key head dimension
+        v_head_dim: Value head dimension
+        graph_sizevars: Graph size variables object with guard_int method
+    """
+
 def is_power_of_2(n): ...
 def next_power_of_two(n): ...
 
 _TEMPLATE_DIR = ...
 
-def load_template(name: str) -> str: ...
+def load_template(name: str) -> str:
+    """Load a template file and return its content."""

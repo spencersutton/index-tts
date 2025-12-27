@@ -10,9 +10,26 @@ from torch.fx.passes.shape_prop import TensorMetadata
 
 @dataclass
 class UnsupportedAliasMutationException(RuntimeError):
+    """UnsupportedAliasMutationException(reason: str)"""
+
     reason: str
 
-def autograd_not_implemented_inner(operator: OperatorBase, delayed_error: bool, *args: Any, **kwargs: Any) -> Any: ...
+def autograd_not_implemented_inner(operator: OperatorBase, delayed_error: bool, *args: Any, **kwargs: Any) -> Any:
+    """
+    If autograd is enabled and any of the arguments require grad this will either
+    raise an error or return a DelayedError depending on the value of delayed.
+
+    Args:
+        operator: The Operator to call with the *args and **kwargs with
+        op_name: The name of the Operator
+        delayed_error: If True, return a DelayedError instead of raising an error
+        args: The flattened operands to the Operator
+        kwargs: The keyword arguments to the Operator
+
+    Raises:
+        RuntimeError: If autograd is enabled and any of the arguments to the Operator
+    """
+
 def autograd_not_implemented(op: OperatorBase, deferred_error: bool) -> Callable: ...
 def reenter_make_fx(fn): ...
 def check_meta_consistency(
@@ -25,18 +42,43 @@ def check_meta_consistency(
 def potential_input_alias_or_mutation(gm, inputs, pre_dispatch=...): ...
 def analyze_potential_input_alias_or_mutation(name, aliases, input_mutations): ...
 def has_potential_input_alias_or_mutation(gm, inputs, pre_dispatch=...): ...
-def unique_graph_id(proxy_mode, prefix): ...
+def unique_graph_id(proxy_mode, prefix):
+    """Returns a unique name and id for a graph to be added to a proxy_mode tracer"""
+
 def unique_graph_name_with_root(root: torch.fx.GraphModule, prefix: str) -> tuple[int, str]: ...
 def clone_outputs_aliasing_inputs(args): ...
 def prepare_fw_with_masks(fn): ...
 def prepare_fw_with_masks_all_requires_grad(fn): ...
 def unmask_none_gradients(grads, operands): ...
-def redirect_to_mode(hop: OperatorBase, mode): ...
+def redirect_to_mode(hop: OperatorBase, mode):
+    """
+    Utility for redispatching HOP to underlying mode
+
+    Args:
+        hop: The HOP to redispatch
+        mode: The mode to redispatch to
+
+    Returns:
+        A decorated function that implements the HOP for the given mode
+    """
+
 def create_fw_bw_graph(fn, use_output_and_grad_bw, fw_inputs, fw_outputs): ...
 def save_tensors_and_symints_for_backward(ctx, args): ...
 def saved_tensors_and_symints(ctx): ...
 def split_into_chunks(iterable: Sequence[Any], chunk_sizes: list[int]) -> list[Any]: ...
-def create_bw_fn(fn: Callable, args: tuple[Any]) -> Callable: ...
+def create_bw_fn(fn: Callable, args: tuple[Any]) -> Callable:
+    """
+    For a fn that accepts flat inputs and returns flat outputs:
+        fw_out = fn(*args),
+    this function returns:
+        grad_args = bw_fn(*args_and_grad_output)
+    with the following invariants:
+      1. args + fw_out has an 1-1 correspondence to args_and_grad_output
+      2. grad_args has an 1-1 corresponsence to args
+      3. for tensor arg whose requires_grad is False, its corresponding grad in
+         grad_args will be a zero tensor with the same shape.
+    """
+
 def get_dummy_aot_autograd_config(): ...
 def first_slice_copy(t: torch.Tensor, dim: int = ...) -> torch.Tensor: ...
 def get_tensor_mask(tensor_list: Iterable[Any]) -> list[bool]: ...
@@ -55,12 +97,40 @@ registered_hop_fake_fns: dict[torch._ops.OpOverload, Callable] = ...
 F = TypeVar("F", bound=Callable)
 
 @overload
-def register_fake(hop, fn: None = ...) -> Callable[[F], F]: ...
+def register_fake(hop, fn: None = ...) -> Callable[[F], F]:
+    """
+    Register a fake function for a HOP. This is conceptually equivalent of the
+    register_fake utility for the custom ops. The registered function is called
+    inside the fake_tensor _dispatch_impl.
+    """
+
 @overload
-def register_fake[F: Callable](hop, fn: F) -> F: ...
-def register_fake(hop, fn=...): ...
+def register_fake[F: Callable](hop, fn: F) -> F:
+    """
+    Register a fake function for a HOP. This is conceptually equivalent of the
+    register_fake utility for the custom ops. The registered function is called
+    inside the fake_tensor _dispatch_impl.
+    """
+
+def register_fake(hop, fn=...):
+    """
+    Register a fake function for a HOP. This is conceptually equivalent of the
+    register_fake utility for the custom ops. The registered function is called
+    inside the fake_tensor _dispatch_impl.
+    """
 
 class FunctionalizeCtxWrapper:
+    """
+    This is a dummy wrapper to facilitate fake tensor caching.
+
+    For AOT Dispatcher metadata collection pass, HOPs go from functionalization
+    key to fake tensor key. The functionalization key wraps the subgraphs in a
+    function, which changes from call to call even though the subgraph might
+    still be same.
+
+    To enable fake tensor caching, we just wrap the ctx and subgraph in this
+    class and then use the subgraph as the hash.
+    """
     @torch._disable_dynamo
     def __init__(self, ctx, subgraph) -> None: ...
     def __hash__(self) -> int: ...
@@ -81,6 +151,20 @@ def materialize_as_graph(
     force_enable_grad=...,
 ) -> torch.fx.GraphModule: ...
 def materialize_callable_in_args(op: HopInstance, args, kwargs): ...
-def has_user_subclass(args, allowed_subclasses): ...
+def has_user_subclass(args, allowed_subclasses):
+    """
+    Check if any tensor arguments are user subclasses.
+
+    This is used to determine if tensor subclasses should get a chance to run
+    their own implementation first before falling back to the default implementation.
+
+    Args:
+        args: Arguments to check (will be flattened with pytree)
+        allowed_subclasses: Tuple of allowed subclass types
+
+    Returns:
+        True if user tensor subclasses are found, False otherwise
+    """
+
 def filter_with_masks(data: list[torch.Tensor | None], masks: list[bool]): ...
 def fill_none_with_masks(data: list[torch.Tensor | None], masks: list[bool]): ...

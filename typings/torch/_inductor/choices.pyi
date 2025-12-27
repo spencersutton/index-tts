@@ -17,9 +17,21 @@ from .select_algorithm import ExternKernelChoice
 from .template_heuristics.triton import BaseConfigHeuristic
 
 class Sortable(typing.Protocol):
+    """Anything that can be used as a list.sort() key (int/tuple/etc)"""
     def __lt__(self, other: typing.Self) -> bool: ...
 
 class InductorChoices:
+    """
+    This class contains a collection of default heuristics that effect performance of our generated
+    code.  We try to not put correctness requirements in this file.
+
+    You can override the choices made here by doing:
+
+            class MyHeuristics(InductorChoices):
+                ...
+
+            torch._inductor.virtualized.V.set_choices_handler(MyHeuristics())
+    """
     def get_config_heuristics(self, device_type: str | None = ...) -> BaseConfigHeuristic: ...
     def get_conv_configs(self, device_type: str | None = ...) -> partial[Generator[TritonConfig]]: ...
     def get_flex_attention_fwd_configs(
@@ -38,33 +50,75 @@ class InductorChoices:
         templates: list[KernelTemplate | ExternKernelChoice],
         op_name: str,
         kwarg_overrides: dict[str, dict[str, Any]] | None = ...,
-    ) -> Generator[ChoiceCaller]: ...
+    ) -> Generator[ChoiceCaller]:
+        """
+        Get generator of ChoiceCallers for MM templates using template-specific heuristics.
+
+        Args:
+            kernel_inputs: MMKernelInputs containing input tensor nodes and matrix indices
+            layout: Output layout
+            templates: List of template objects (KernelTemplate or ExternKernelChoice)
+            op_name: Operation name (e.g., "bmm", "baddbmm", "addmm", "mm_plus_mm")
+            kwarg_overrides: Optional dict of kwargs to override for each template heuristic,
+                             indexed by template.uid. These only override the per config kwargs, not the extra kwargs
+        Yields:
+            ChoiceCaller objects from the templates
+        """
     def triton_kernel_kwargs(
         self,
         kernel_cls: type[TritonKernel],
         features: SIMDKernelFeatures,
         groups: list[sympy.Expr],
         kernel_kwargs: dict[str, Any],
-    ) -> dict[str, Any]: ...
+    ) -> dict[str, Any]:
+        """Hook to change the kwargs passed to TritonKernel, used to apply fixed configurations"""
     @staticmethod
-    def should_use_cooperative_reduction(features: SIMDKernelFeatures) -> bool: ...
+    def should_use_cooperative_reduction(features: SIMDKernelFeatures) -> bool:
+        """Heuristic to decide if a cooperative reduction should be used."""
     @staticmethod
-    def should_use_persistent_reduction(features: SIMDKernelFeatures, cooperative_reduction: bool) -> bool: ...
+    def should_use_persistent_reduction(features: SIMDKernelFeatures, cooperative_reduction: bool) -> bool:
+        """Heuristic to decide if a persistent reduction should be used."""
     @staticmethod
     def reduction_split_factor(
         device: torch.device, reduction_numel_hint: int, numel_hint: int, inner_reduction: bool
-    ) -> int: ...
+    ) -> int:
+        """
+        Heuristic to decide the RSPLIT used for split reductions.
+        When a reduction has a small number of outputs there is not enough parallelism,
+        so we will do the reduction in two phases.
+        """
     @staticmethod
     def can_fuse(
         scheduler: Scheduler, node1: BaseSchedulerNode, node2: BaseSchedulerNode, shared_data_score: int
-    ) -> bool: ...
+    ) -> bool:
+        """
+        Heuristics to prevent fusion applied to both horizontal and vertical fusions.  Heuristics here should not
+        be needed for correctness and tweaking them may yield additional performance.
+
+        See also some related heuristics that can be changed via config:
+            - config.triton.tiling_prevents_pointwise_fusion
+            - config.triton.tiling_prevents_reduction_fusion
+            - config.aggressive_fusion (will cause this function to be called more times)
+        """
     @staticmethod
     def can_fuse_vertical(
         scheduler: Scheduler, node1: BaseSchedulerNode, node2: BaseSchedulerNode, shared_data_score: int
-    ) -> bool: ...
+    ) -> bool:
+        """Hook for heuristics to prevent vertical (producer/consumer) fusions"""
     @staticmethod
     def can_fuse_horizontal(
         scheduler: Scheduler, node1: BaseSchedulerNode, node2: BaseSchedulerNode, shared_data_score: int
-    ) -> bool: ...
+    ) -> bool:
+        """Hook for heuristics to prevent horizontal (consumer/consumer) fusions"""
     @staticmethod
-    def score_fusion(scheduler: Scheduler, node1: BaseSchedulerNode, node2: BaseSchedulerNode) -> Sortable: ...
+    def score_fusion(scheduler: Scheduler, node1: BaseSchedulerNode, node2: BaseSchedulerNode) -> Sortable:
+        """
+        Assign a score (higher comes first) to the fusion of node1 and node2.
+        When different fusions conflict with each other, this is the way we
+        decide what order to run them in.
+
+        Our current score is based on:
+        - The type of fusion (template/reduction/etc)
+        - Estimate of the saved memory operations
+        - Fusions closer together in original graph order
+        """

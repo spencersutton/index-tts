@@ -3,6 +3,8 @@ import torch
 __all__ = ["Linear"]
 
 class Linear(torch.nn.Module):
+    """A dynamically quantized sparse linear module with float tensor as inputs and outputs."""
+
     _version = ...
     _op_type = ...
     _FLOAT_MODULE = torch.nn.Linear
@@ -15,4 +17,9 @@ class Linear(torch.nn.Module):
         self, w: torch.Tensor, b: torch.Tensor | None, row_block_size: int | None, col_block_size: int | None
     ) -> None: ...
     @classmethod
-    def from_float(cls, mod, use_precomputed_fake_quant=...) -> Self: ...
+    def from_float(cls, mod, use_precomputed_fake_quant=...) -> Self:
+        """
+        Create a quantized sparse dynamic module from a float module.
+
+        We only care about the convert at this stage, no need for observers just yet.
+        """

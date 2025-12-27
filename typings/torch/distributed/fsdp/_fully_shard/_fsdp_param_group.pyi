@@ -15,24 +15,33 @@ logger = ...
 type _ModuleToHandleDict = dict[nn.Module, RemovableHandle]
 
 class FSDPCommContext:
+    """This has the communication state shared across FSDP states/parameter groups."""
     def lazy_init(self, device: torch.device): ...
     def get_all_gather_streams(
         self, async_op: bool, training_state: TrainingState
     ) -> tuple[torch.Stream, torch.Stream]: ...
 
 class AllGatherState(NamedTuple):
+    """AllGatherState(all_gather_result, event)"""
+
     all_gather_result: AllGatherResult
     event: torch.Event | None
 
 class ReduceScatterState(NamedTuple):
+    """ReduceScatterState(reduce_scatter_input, event)"""
+
     reduce_scatter_input: torch.Tensor
     event: torch.Event | None
 
 class AllReduceState(NamedTuple):
+    """AllReduceState(all_reduce_input, event)"""
+
     all_reduce_input: torch.Tensor
     event: torch.Event | None
 
 class FSDPParamGroup:
+    """This class represents a parameter group to communicate together."""
+
     _orig_dtype: torch.dtype | None
     _reduce_dtype: torch.dtype | None
     def __init__(
@@ -47,9 +56,21 @@ class FSDPParamGroup:
         offload_policy: OffloadPolicy,
     ) -> None: ...
     def lazy_init(self): ...
-    def set_allocate_memory_from_process_group(self, enable: bool) -> None: ...
+    def set_allocate_memory_from_process_group(self, enable: bool) -> None:
+        """
+        Whether to (try to) use the ProcessGroup's allocate_tensor method for
+        the staging buffers for collective comms.
+        """
     def unshard(self, async_op: bool = ...): ...
-    def wait_for_unshard(self): ...
+    def wait_for_unshard(self):
+        """
+        1. In forward with implicit prefetching, to overlap the current copy-out
+        with the next all-gather, we save a reference to the current all-gather
+        result to free after the next copy-out.
+        2. Otherwise (explicit prefetching or in backward), we free the
+        all-gather result immediately after the current copy-out since we can
+        already overlap the current copy-out with the previous reduce-scatter.
+        """
     def reshard(self): ...
     def pre_forward(
         self, module: nn.Module, args: tuple[Any, ...], kwargs: dict[str, Any]

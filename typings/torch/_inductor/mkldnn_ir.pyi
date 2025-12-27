@@ -87,7 +87,17 @@ class ConvolutionTransposeUnary(ExternKernelAlloc):
     ): ...
 
 class QConvPointWisePT2E(ExternKernelAlloc):
-    def __init__(self, layout, inputs, constant_args=...) -> None: ...
+    def __init__(self, layout, inputs, constant_args=...) -> None:
+        """
+        if bias is not None
+            - inputs = [x, w, b, weight_scale, weight_zp]
+            - const_args is: [stride, padding, dilation, groups, x_scale, x_zp, o_scale, o_zp,
+              fp32_output, unary_attr, unary_scalars, unary_algorithm]
+        else
+            - inputs = [x, w, weight_scale, weight_zp]
+            - const_args is: [bias, stride, padding, dilation, groups, x_scale, x_zp, o_scale, o_zp,
+              fp32_output, unary_attr, unary_scalars, unary_algorithm]
+        """
     def codegen(self, wrapper): ...
     @classmethod
     def create(
@@ -112,7 +122,18 @@ class QConvPointWisePT2E(ExternKernelAlloc):
     ): ...
 
 class QConvPointWiseBinaryPT2E(ExternKernelAlloc):
-    def __init__(self, layout, inputs, constant_args=...) -> None: ...
+    def __init__(self, layout, inputs, constant_args=...) -> None:
+        """
+        Needs input/weight/output qparams
+        if bias is not None
+            - inputs = [x, x_scale, x_zp, w,  w_scale, w_zp, accum, b]
+            - const_args = [stride, padding, dilation, groups, o_scale, o_zp,
+            output_dtype, accum_scale, accum_zp, binary_attr, alpha, unary_attr, unary_scalars, unary_algorithm]
+        else
+            - inputs = [x, x_scale, x_zp, w,  w_scale, w_zp, accum]
+            - const_args [b, stride, padding, dilation, groups, o_scale, o_zp,
+             output_dtype, accum_scale, accum_zp, binary_attr, alpha, unary_attr, unary_scalars, unary_algorithm]
+        """
     def codegen(self, wrapper): ...
     def get_mutation_names(self) -> Sequence[str]: ...
     def get_unbacked_symbol_defs(self) -> OrderedSet[sympy.Symbol]: ...
@@ -165,7 +186,17 @@ class LinearBinary(ExternKernelAlloc):
     def apply_constraint(self): ...
 
 class QLinearPointwisePT2E(ExternKernelAlloc):
-    def __init__(self, layout, inputs, constant_args=..., has_bias=...) -> None: ...
+    def __init__(self, layout, inputs, constant_args=..., has_bias=...) -> None:
+        """
+        if bias is not None
+            - inputs = [x, w, b, weight_scale, weight_zp]
+            - const_args is: [x_scale, x_zp, o_scale, o_zp,
+              fp32_output, unary_attr, unary_scalars, unary_algorithm]
+        else
+            - inputs = [x, w, weight_scale, weight_zp]
+            - const_args is: [bias, x_scale, x_zp, o_scale, o_zp,
+              fp32_output, unary_attr, unary_scalars, unary_algorithm]
+        """
     def codegen(self, wrapper): ...
     @classmethod
     def create(
@@ -186,7 +217,17 @@ class QLinearPointwisePT2E(ExternKernelAlloc):
     ): ...
 
 class QLinearPointwiseBinaryPT2E(ExternKernelAlloc):
-    def __init__(self, layout, inputs, constant_args=..., has_bias=...) -> None: ...
+    def __init__(self, layout, inputs, constant_args=..., has_bias=...) -> None:
+        """
+        if bias is not None
+            - inputs = [x, w, x_scale, x_zp, weight_scale, weight_zp, x2, bias]
+            - const_args is: [o_scale, o_zp,
+              fp32_output, binary_attr, alpha, unary_attr, unary_scalars, unary_algorithm]
+        else
+            - inputs = [x, w, x_scale, x_zp, weight_scale, weight_zp, x2]
+            - const_args is: [bias, o_scale, o_zp,
+              fp32_output, binary_attr, alpha, unary_attr, unary_scalars, unary_algorithm]
+        """
     def codegen(self, wrapper): ...
     def get_mutation_names(self) -> Sequence[str]: ...
     @classmethod
@@ -237,7 +278,11 @@ class MkldnnRnnLayer(ExternKernelAlloc):
     def codegen(self, wrapper): ...
 
 class WeightInt4PackMatmul(ExternKernelAlloc):
-    def __init__(self, layout, inputs, constant_args=...) -> None: ...
+    def __init__(self, layout, inputs, constant_args=...) -> None:
+        """
+        inputs = [x, w, qGroupSize, qScalesAndZeros]
+        constant_args = ()
+        """
     def codegen(self, wrapper): ...
     @classmethod
     def create(cls, x: TensorBox, w: TensorBox, qGroupSize: TensorBox, qScalesAndZeros: TensorBox): ...

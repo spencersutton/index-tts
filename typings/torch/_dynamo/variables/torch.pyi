@@ -1,3 +1,30 @@
+"""
+This module implements variable tracking for torch functions and operations during Dynamo tracing.
+
+It provides classes to handle different types of torch operations:
+
+TorchInGraphFunctionVariable: Handles torch.* functions that should be captured in the FX graph.
+Provides special handling for constant folding, tensor methods, and torch function overrides.
+Manages complex cases like out= variants and parameter construction.
+
+TorchCtxManagerClassVariable: Handles torch context managers like torch.no_grad(), autocast, etc.
+Provides implementations for entering/exiting these contexts during tracing.
+
+DispatchKeySetVariable: Represents torch.DispatchKeySet for managing dispatch keys and
+device-specific operations during tracing.
+
+The module includes special handling for:
+- Constant folding of pure functions
+- Tensor method calls
+- torch.nn.Parameter construction
+- __torch_function__ overrides
+- Context manager state tracking
+- Device and dtype management
+
+This is a core part of Dynamo's tracing system, translating torch operations into
+traceable graph nodes while preserving correct semantics and handling edge cases.
+"""
+
 import functools
 from collections.abc import Callable, Sequence
 from typing import Any
@@ -26,6 +53,7 @@ dispatch_key_set_functions = ...
 def get_overridable_functions(): ...
 
 class BaseTorchVariable(VariableTracker):
+    """common base for all torch.* functions, classes, modules and other things"""
     @classmethod
     def create_with_source(cls, value, source): ...
     def __init__(self, value, **kwargs) -> None: ...
@@ -36,6 +64,7 @@ class BaseTorchVariable(VariableTracker):
     def can_constant_fold_through(self): ...
 
 class TorchCtxManagerClassVariable(BaseTorchVariable):
+    """Points to a context manager class in torch.* that dynamo has implementations"""
     @staticmethod
     def is_matching_cls(value): ...
     def call_function(
@@ -43,18 +72,21 @@ class TorchCtxManagerClassVariable(BaseTorchVariable):
     ) -> VariableTracker: ...
 
 class TorchInGraphFunctionVariable(BaseTorchVariable):
+    """Points to a torch function/method that should be put in FX graph"""
     def __init__(self, value, nonstrict_traceable=..., **kwargs) -> None: ...
     def get_function(self): ...
     def call_function(
         self, tx: InstructionTranslator, args: Sequence[VariableTracker], kwargs: dict[str, VariableTracker]
     ) -> VariableTracker: ...
     @classmethod
-    def call_nn_parameter(cls, tx, data=..., requires_grad=...): ...
+    def call_nn_parameter(cls, tx, data=..., requires_grad=...):
+        """A call to torch.nn.Parameter() gets lifted to before the graph"""
     def call_tensor_method(self, tx, args, kwargs): ...
     def is_tensor_method(self): ...
     def torch_function_override_enabled(self, tx, args, kwargs): ...
 
 class DispatchKeySetVariable(BaseTorchVariable):
+    """represents torch.DispatchKeySet"""
     @staticmethod
     def create(value, **kwargs): ...
     @classmethod
@@ -65,6 +97,7 @@ class DispatchKeySetVariable(BaseTorchVariable):
     ) -> VariableTracker: ...
 
 class FuncTorchInterpreterVariable(BaseTorchVariable):
+    """represents torch._functorch.pyfunctorch.FuncTorchInterpreter"""
     @classmethod
     def create_with_source(cls, value, source): ...
     def call_method(

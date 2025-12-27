@@ -1,3 +1,24 @@
+"""
+Core graph building functionality for PyTorch's Dynamo system. This module contains
+the essential components for constructing and managing FX graphs during compilation:
+
+- OutputGraph: Manages the overall graph construction and compilation process. It owns
+  a SubgraphTracer and handles graph compilation, execution, and state management.
+  OutputGraph also manages features like graph deduplication, symbolic shape handling,
+  and tracking of side effects.
+
+- SubgraphTracer: Handles the actual FX graph construction by tracing Python code.
+  It supports advanced features like higher-order operators through nested tracers,
+  lifting of free variables, and handling of symbolic shapes.
+
+The module supports key Dynamo features including:
+- Higher-order operators through nested SubgraphTracers
+- Graph deduplication for optimization
+- Symbolic shape handling and propagation
+- Side effect tracking and management
+- Guard insertion and management
+"""
+
 import contextlib
 import traceback
 from collections.abc import Callable, Generator, Sequence
@@ -33,16 +54,22 @@ RootGuardManager = guards.RootGuardManager
 
 @dataclass(frozen=True)
 class VariableTrackerCacheKey:
+    """VariableTrackerCacheKey(vt_id: int, source: torch._guards.Source)"""
+
     vt_id: int
     source: Source
 
 @dataclass(frozen=True)
 class AliasingInfo:
+    """AliasingInfo(has_aliasing: bool, msg: str)"""
+
     has_aliasing: bool
     msg: str
 
 @dataclass(frozen=True)
 class MutationInfo:
+    """MutationInfo(has_mutation: bool, msg: str)"""
+
     has_mutation: bool
     msg: str
 
@@ -55,12 +82,15 @@ class VariableTrackerCache:
 
 @dataclass
 class GraphCompileReason:
+    """Stores why a given output graph was compiled; i.e. what caused the graph break."""
+
     reason: str
     user_stack: list[traceback.FrameSummary]
     graph_break: bool = ...
     def __post_init__(self) -> None: ...
 
 class FakeRootModule(torch.nn.Module):
+    """Trick the constructor of fx.GraphModule"""
     def __init__(self, nn_modules: dict[str, torch.nn.Module]) -> None: ...
     def add_nn_modules(self, nn_modules: dict[str, torch.nn.Module]) -> None: ...
 
@@ -72,6 +102,14 @@ type Scope = dict[str, object]
 
 @dataclass
 class OutputGraphGuardsState:
+    """
+    A base class containing fields that are considered "persistent" when we
+    want to save all the important state for reconstrucing guards in a different
+    process. Normally we don't need to add states here, but we may have to when
+    the information is needed to serialize the guards, so the fields here are
+    supposed to be serializable as a requirement.
+    """
+
     local_scope: Scope
     global_scope: Scope
     torch_function_mode_stack: list[torch.overrides.TorchFunctionMode]
@@ -96,6 +134,8 @@ class OutputGraphGuardsState:
 
 @dataclass
 class StackLocalsMetadata:
+    """Stores metadata for a frame's stack and locals for the purposes of building resume functions"""
+
     num_stack: int = ...
     locals_names: dict[str, int] = ...
     stack_null_idxes: list[int] = ...
@@ -106,6 +146,8 @@ class StackLocalsMetadata:
 
 @dataclass
 class ExportMetaData:
+    """ExportMetaData(graph_input_idx_to_local_source: dict[int, torch._guards.Source] = <factory>, output_return_type: dict[int, tuple[str, typing.Any]] = <factory>, out_spec: Union[torch.utils._pytree.TreeSpec, torch.utils._pytree.LeafSpec] = *)"""
+
     graph_input_idx_to_local_source: dict[int, Source] = ...
     output_return_type: dict[int, tuple[str, Any]] = ...
     out_spec: torch.utils._pytree.TreeSpec | torch.utils._pytree.LeafSpec = ...
@@ -113,6 +155,16 @@ class ExportMetaData:
 def get_builtins_dict(global_scope: Scope) -> dict[str, Any]: ...
 
 class OutputGraph(OutputGraphGuardsState):
+    """
+    Wrapper class to hold outputs of InstructionTranslator.  Mainly the
+    generated fx.Graph.
+
+    OutputGraph is 1:1 with a frame being processed. Each frame is associated
+    with some root InstructionTranslator. When user code calls a function,
+    we construct a InliningInstructionTranslator that continues to write into
+    the root InstructionTranslator's OutputGraph.
+    """
+
     side_effects: SideEffects
     def __init__(
         self,
@@ -136,7 +188,8 @@ class OutputGraph(OutputGraphGuardsState):
     def init_ambient_guards(self) -> None: ...
     def maybe_install_saved_tensors_hooks_subgraphs(self) -> list[str] | None: ...
     def dump_guards_state(self) -> OutputGraphGuardsState: ...
-    def synthetic_graph_input(self, fn: Callable[..., Any], args: tuple[Any, ...]) -> VariableTracker: ...
+    def synthetic_graph_input(self, fn: Callable[..., Any], args: tuple[Any, ...]) -> VariableTracker:
+        """call fn(*args) before the graph runs and turn the result into a fake input."""
     def add_cleanup_hook(self, fn: Callable[[], Any]) -> None: ...
     def call_cleanup_hooks(self) -> None: ...
     @property
@@ -171,7 +224,8 @@ class OutputGraph(OutputGraphGuardsState):
     def nn_modules(self) -> dict[str, Any]: ...
     @property
     def aotautograd_guards(self) -> list[torch._guards.GuardEnvExpr]: ...
-    def save_global_state(self, out: dict[str, tuple[Callable[..., Any], bool]] | None = ...) -> None: ...
+    def save_global_state(self, out: dict[str, tuple[Callable[..., Any], bool]] | None = ...) -> None:
+        """Saves to out if it is provided. Else saves to the tracing context's global_state."""
     def push_tx(self, tx: InstructionTranslatorBase) -> None: ...
     def pop_tx(self) -> InstructionTranslatorBase: ...
     @property
@@ -181,7 +235,8 @@ class OutputGraph(OutputGraphGuardsState):
     def has_outputs(self) -> bool: ...
     def get_submodule(self, keys: str) -> torch.nn.Module | Any: ...
     def new_var(self, name: str = ...) -> str: ...
-    def update_co_names(self, name: str) -> None: ...
+    def update_co_names(self, name: str) -> None:
+        """Ensure self.code_options.co_names contains name"""
     @staticmethod
     def module_key_name(*names: Any) -> str: ...
     def register_static_attr_and_return_proxy(self, attr_prefix: str, attr_value: Any) -> fx.Proxy: ...
@@ -197,20 +252,50 @@ class OutputGraph(OutputGraphGuardsState):
         reason: GraphCompileReason,
         partial_convert: bool = ...,
         stack_pops: int = ...,
-    ) -> list[StackLocalsMetadata]: ...
+    ) -> list[StackLocalsMetadata]:
+        """
+        Compiles the current subgraph, with inputs w.r.t. self.root_tx, and codegens:
+            - Call the compiled subgraph
+            - Apply side effects
+            - Codegen stack and locals
+            - Store the locals
+
+        Python does not allow NULL to be an arg to a function, so we do not codegen NULLs on the stack,
+        unless the value is one of the top `stack_pops` values on the stack (these values are expected to be
+        popped immediately after this generated code. The prologue of the resume function is expected to restore
+        any dropped NULLs.
+
+        Returns stack indices and locals keys where we dropped NULLs, and where we found inactive context manager objects.
+        """
     def codegen_suffix(
         self, tx: InstructionTranslatorBase, stack_values: list[VariableTracker], cg: PyCodegen
     ) -> None: ...
-    def cleanup_graph(self) -> None: ...
-    def bypass_package(self, reason: str = ..., **kwargs: Any) -> None: ...
+    def cleanup_graph(self) -> None:
+        """
+        Remove "creation_timestamp" from node meta
+
+        Remove this pattern from the graph:
+            torch._C._set_grad_enabled(False)
+            torch._C._set_grad_enabled(True)
+        """
+    def bypass_package(self, reason: str = ..., **kwargs: Any) -> None:
+        """Do not save this output graph to the CompilePackage"""
     def get_graph_sizes_structured(self) -> dict[str, list[int | str]]: ...
     def get_graph_sizes(self, name: str) -> str: ...
     @contextlib.contextmanager
-    def restore_global_state(self) -> Any: ...
+    def restore_global_state(self) -> Any:
+        """Momentarily restores the global state to what it was prior to tracing the current output"""
     def run_compiler_collective(self) -> None: ...
     def compile_and_call_fx_graph(
         self, tx: InstructionTranslatorBase, rv: list[VariableTracker], root: FakeRootModule
-    ) -> list[Instruction]: ...
+    ) -> list[Instruction]:
+        """
+        Generate code from self.graph and return the Instruction()s to
+        call that generated code.
+
+        Code is generated w.r.t. self.root_tx.
+        tx is only used for preserving GraphModule metadata
+        """
     @property
     def placeholders(self) -> list[fx.Node]: ...
     @property
@@ -222,13 +307,36 @@ class OutputGraph(OutputGraphGuardsState):
     def remove_unused_get_attr_nodes(self) -> None: ...
     def remove_unused_graphargs(self) -> None: ...
     def remove_tensorify_specialized_graphargs(self) -> None: ...
-    def add_output_instructions(self, prefix: list[Instruction]) -> None: ...
-    def install_global_unsafe(self, name: str, value: Any) -> None: ...
-    def install_global_by_id(self, prefix: str, value: Any) -> str: ...
-    def install_global(self, prefix: str, value: Any) -> str: ...
+    def add_output_instructions(self, prefix: list[Instruction]) -> None:
+        """
+        We call this on the creation of a new compiled subgraph that is inserted
+        before user code.
+        """
+    def install_global_unsafe(self, name: str, value: Any) -> None:
+        """
+        WARNING: prefer the safer `install_global_by_id/install_global`.
+        torch.compile instances should be independent of each other;
+        one footgun is to have one instance depend on the existence of
+        a global installed by another instance. This can happen if we mangle
+        a global the same way across both instances.
+        """
+    def install_global_by_id(self, prefix: str, value: Any) -> str:
+        """
+        Installs a global if it hasn't been installed already.
+        This is determined by (prefix, id(value)) pair.
+
+        Returns the name of the newly installed global.
+        """
+    def install_global(self, prefix: str, value: Any) -> str:
+        """
+        Installs a global, generating a unique name for it.
+
+        Returns the name of the newly installed global.
+        """
     def cleanup(self) -> None: ...
     def add_graph_finalizer(self, register_finalizer: Callable[[fx.GraphModule], None]) -> None: ...
-    def example_value_from_input_node(self, node: torch.fx.Node) -> Any: ...
+    def example_value_from_input_node(self, node: torch.fx.Node) -> Any:
+        """Extract the non-fake example tensor"""
 
 class DynamoTracerOutput:
     error_on_graph_break: bool
@@ -249,6 +357,12 @@ class LazyProxy:
     def __call__(self) -> Any: ...
 
 class SubgraphTracer(fx.Tracer):
+    """
+    Holds an FX graph that is being traced. OutputGraph owns a SubgraphTracer
+    and the separation of responsibilities is that SubgraphTracer is
+    responsible for building the graph while OutputGraph is responsible for
+    compiling and executing the graph.
+    """
     def __init__(
         self,
         output_graph: OutputGraph,
@@ -280,7 +394,12 @@ class SubgraphTracer(fx.Tracer):
         self, name: str, type_expr: Any, example_value: Any, before: bool = ..., source: Source | None = ...
     ) -> fx.Proxy: ...
     def lift_tracked_freevar_to_input(self, proxy: fx.Proxy) -> LazyProxy | fx.Proxy: ...
-    def maybe_lift_tracked_freevar_to_input(self, arg: Any) -> Any: ...
+    def maybe_lift_tracked_freevar_to_input(self, arg: Any) -> Any:
+        """
+        If arg is a free variable, then lift it to be an input.
+        Returns the new lifted arg (if arg was a freevar), else the
+        original arg.
+        """
     def track_produced_symints(self, example_value: Any, e_proxy: LazyProxy | torch.fx.Proxy) -> None: ...
     def lookup_unbound_symbols(self, s: torch.SymInt) -> list[sympy.Symbol]: ...
     def has_input_mutation(self) -> MutationInfo: ...

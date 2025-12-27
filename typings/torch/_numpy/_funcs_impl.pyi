@@ -1,3 +1,10 @@
+"""
+A thin pytorch / numpy compat layer.
+
+Things imported from here have numpy-compatible signatures but operate on
+pytorch tensors.
+"""
+
 from collections.abc import Sequence
 
 from ._normalizations import (

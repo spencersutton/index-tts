@@ -31,6 +31,8 @@ class FxCompileMode(enum.Enum):
 
 @dataclass
 class FxCompileConfig:
+    """FxCompileConfig(mode: 'FxCompileMode', use_async: 'bool', use_progressive: 'bool')"""
+
     mode: FxCompileMode
     use_async: bool
     use_progressive: bool
@@ -53,13 +55,43 @@ def split_const_gm(
     skip_constructor: bool = ...,
     lifted_constant_names: list[str] | None = ...,
     skip_folding_node_fn: Callable[[torch.fx.Node], bool] | None = ...,
-) -> tuple[GraphModule, dict[str, int]]: ...
+) -> tuple[GraphModule, dict[str, int]]:
+    """
+    This function takes an GraphModule input "gm".
+    The gm will be split into 2 components,
+      1) const_gm, which consists the subgraph of gm that can be constant folded.
+      2) gm (being inplace modified,) which returns the graph after constant folding.
+
+    If an additional "lifted_constants" argument is passed in, we will assume the gm has
+    been lifted and run the transformation accordingly.
+
+    When a "skip_folding_node_fn" callback is passed, we will skip constant folding on
+    the nodes for which the callback returns True.
+
+    const_output_index is a mapping of corresponding node name from gm to the
+    output index of const_gm.
+    Returns (const_gm, const_output_index)
+    """
+
 def is_tf32_warning_applicable(gm: GraphModule) -> bool: ...
-def maybe_disable_comprehensive_padding(example_inputs: Sequence[InputType]) -> AbstractContextManager[None, None]: ...
-def maybe_disable_graph_partition(cpp_wrapper: bool, aot_mode: bool) -> AbstractContextManager[None, None]: ...
+def maybe_disable_comprehensive_padding(example_inputs: Sequence[InputType]) -> AbstractContextManager[None, None]:
+    """
+    For CPU backend, enable comprehensive padding causes some unit tests
+    fail due to changing number of generated kernels. Skip for now.
+    """
+
+def maybe_disable_graph_partition(cpp_wrapper: bool, aot_mode: bool) -> AbstractContextManager[None, None]:
+    """graph partition does not support cpp_wrapper and aot_mode yet."""
+
 def fake_tensor_prop(
     gm: GraphModule, example_inputs: Sequence[InputType], force_allow_non_fake_inputs: bool = ...
-) -> torch._subclasses.FakeTensorMode: ...
+) -> torch._subclasses.FakeTensorMode:
+    """
+    If we can not detect fake mode from the context of inputs, create one.
+
+    The created fake mode will be returned.
+    """
+
 def get_patched_config_dict(config_patches: str | dict[str, Any] | None = ...) -> dict[str, Any]: ...
 @contextlib.contextmanager
 def with_fresh_cache_if_config() -> Generator[None]: ...
@@ -90,6 +122,11 @@ class _FxCompileStat:
     codegen_and_compile: int = ...
 
 class FxCompile(ABC):
+    """
+    An FxCompile represents a mechanism that can turn a GraphModule into an
+    OutputCode.
+    """
+
     _compile_stats: dict[type[FxCompile], _FxCompileStat] = ...
     @abstractmethod
     def codegen_and_compile(
@@ -108,7 +145,8 @@ class _InProcessFxCompile(FxCompile):
         example_inputs: Sequence[InputType],
         inputs_to_check: Sequence[int],
         graph_kwargs: _CompileFxKwargs,
-    ) -> OutputCode: ...
+    ) -> OutputCode:
+        """Generates the OutputCode from the GraphModule and example_inputs."""
 
 def fx_codegen_and_compile(
     gm: GraphModule,
@@ -116,7 +154,12 @@ def fx_codegen_and_compile(
     inputs_to_check: Sequence[int],
     **graph_kwargs: Unpack[_CompileFxKwargs],
 ) -> OutputCode: ...
-def get_input_idxs_to_check(inputs: Sequence[InputType], static_input_idxs: Sequence[int]) -> Sequence[int]: ...
+def get_input_idxs_to_check(inputs: Sequence[InputType], static_input_idxs: Sequence[int]) -> Sequence[int]:
+    """
+    This function runs at compile time, and generates a list of indices for which we
+    might need to do a copy to preserve alignment requirements.
+    """
+
 def cudagraphify(
     model: Callable[..., Any],
     static_input_idxs: Sequence[int] = ...,
@@ -129,11 +172,17 @@ def cudagraphify(
     placeholders: Sequence[PlaceholderInfo] = ...,
     mutated_input_idxs: tuple[int, ...] = ...,
 ) -> Callable[..., Any]: ...
-def static_input(x: torch.Tensor) -> torch.Tensor: ...
-def index_expanded_dims_and_copy_(dst: torch.Tensor, src: torch.Tensor, expanded_dims: list[int]) -> None: ...
+def static_input(x: torch.Tensor) -> torch.Tensor:
+    """Copy and input while preserving strides"""
+
+def index_expanded_dims_and_copy_(dst: torch.Tensor, src: torch.Tensor, expanded_dims: list[int]) -> None:
+    """Index into expanded dimensions of both dst and src then copy_"""
+
 def cudagraphify_impl(
     model: Callable[..., Any], inputs: list[torch.Tensor], static_input_idxs: Sequence[int] = ...
-) -> Callable[[list[InputType]], Any]: ...
+) -> Callable[[list[InputType]], Any]:
+    """Assumes inputs[static_input_idxs[i]] are always the same memory address"""
+
 def compile_fx_aot(
     model_: GraphModule,
     example_inputs_: list[InputType],
@@ -154,7 +203,9 @@ def fw_compiler_freezing(
     forward_device: BoxedDeviceIndex,
 ) -> Callable[[list[object]], Sequence[torch.Tensor]]: ...
 def get_cpp_wrapper_config() -> dict[str, object]: ...
-def get_cuda_device_context(gm: torch.fx.GraphModule) -> AbstractContextManager[None]: ...
+def get_cuda_device_context(gm: torch.fx.GraphModule) -> AbstractContextManager[None]:
+    """Returns a cuda device context manager if there is a single device in the graph"""
+
 def partition_fn(
     gm: GraphModule, joint_inputs: Sequence[object], **kwargs: object
 ) -> tuple[GraphModule, GraphModule]: ...
@@ -162,6 +213,8 @@ def get_num_model_outputs(model: GraphModule) -> int: ...
 
 @dataclass(frozen=True)
 class CompilerConfigExtra:
+    """CompilerConfigExtra(cudagraphs: 'BoxedBool', graph_id: 'int', forward_device: 'BoxedDeviceIndex')"""
+
     cudagraphs: BoxedBool
     graph_id: int
     forward_device: BoxedDeviceIndex
@@ -175,13 +228,36 @@ def compile_fx_forward(
     compiler_config_extra: CompilerConfigExtra,
     inner_compile: Callable[..., OutputCode] = ...,
     is_inference: bool = ...,
-) -> OutputCode: ...
+) -> OutputCode:
+    """
+    Compile the forward graph of the given graph module.
+
+    Args:
+        gm: The graph module to compile.
+        example_inputs: The example inputs to use for compilation.
+        num_orig_model_outputs: The number of model outputs from the original dynamo graph.
+        num_example_inputs: The number of example inputs from the original dynamo graph.
+        compiler_config_extra: Extra configuration for the compiler.
+        inner_compile: The inner compile function to use.
+        is_inference: Whether this is an inference graph.
+    """
+
 def compile_fx_backward(
     gm: GraphModule,
     example_inputs: Sequence[InputType],
     compiler_config_extra: CompilerConfigExtra,
     inner_compile: Callable[..., OutputCode] = ...,
-) -> OutputCode: ...
+) -> OutputCode:
+    """
+    Compile the backward graph of the given graph module.
+
+    Args:
+        gm: The graph module to compile.
+        example_inputs: The example inputs to use for compilation.
+        compiler_config_extra: Extra configuration for the compiler.
+        inner_compile: The inner compile function to use.
+    """
+
 def run_pre_grad_passes(model_: GraphModule, example_inputs_: Sequence[InputType]) -> GraphModule: ...
 def compile_fx(
     model_: GraphModule,
@@ -190,11 +266,34 @@ def compile_fx(
     config_patches: dict[str, Any] | None = ...,
     decompositions: dict[OpOverload, Callable[..., Any]] | None = ...,
     ignore_shape_env: bool = ...,
-) -> Callable[[list[object]], Sequence[torch.Tensor]] | str | list[str] | Weights: ...
-def graph_returns_tuple(gm: GraphModule) -> bool: ...
+) -> Callable[[list[object]], Sequence[torch.Tensor]] | str | list[str] | Weights:
+    """
+    Main entry point for compiling given FX graph.  Despite the fact that this
+    lives in :mod:`torch._inductor`, this function is responsible for calling
+    into AOT Autograd (and we will eventually get a callback to
+    ``inner_compile`` to perform actual compilation.  In other words, this
+    function orchestrates end-to-end compilation for the inductor backend when
+    you use :func:`torch.compile`.
+
+    NB: This function TAKES OWNERSHIP of the input ``model_`` and can potentially
+    mutate it!  Make a copy if you need to preserve the original GraphModule.
+    """
+
+def graph_returns_tuple(gm: GraphModule) -> bool:
+    """True if a FX graph returns a tuple"""
+
 def make_graph_return_tuple(
     gm: GraphModule, inputs: Sequence[InputType], compile_gm: Callable[..., Any]
-) -> Callable[..., Any]: ...
+) -> Callable[..., Any]:
+    """
+    Mutate gm so it returns a tuple.  This is only needed for graphs
+    not created by torchdynamo that return non-tuples.
+    """
+
 def handle_dynamo_export_graph(
     gm: GraphModule, inputs: Sequence[InputType], compile_gm: Callable[..., Any]
-) -> Callable[..., Any]: ...
+) -> Callable[..., Any]:
+    """
+    `torch._dynamo.export` embeds pytrees in the FX graph codegen object,
+    convert that to a normal FX graph so inductor can compile it.
+    """

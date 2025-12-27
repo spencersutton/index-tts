@@ -1,3 +1,5 @@
+"""Python polyfills for struct"""
+
 import struct
 from collections.abc import Buffer
 from typing import Any

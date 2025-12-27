@@ -19,10 +19,48 @@ class FrontendTypeError(FrontendError): ...
 
 def build_withitems(ctx, items) -> list[Any]: ...
 def build_stmts(ctx, stmts) -> list[Any]: ...
-def get_class_properties(cls, self_name) -> list[Any]: ...
+def get_class_properties(cls, self_name) -> list[Any]:
+    """
+    Get a list of Property objects representing the properties of a class.
+
+    Args:
+        cls:  The class to get properties of.
+        self_name: The name of the class that the properties should belong to.
+    Returns:
+        A list of Property objects corresponding to the properties of cls. Property
+        here refers to the subclass of TreeView.
+    """
+
 def get_class_assigns(ctx, cls_ast) -> list[Any]: ...
-def get_jit_class_def(cls, self_name) -> ClassDef: ...
-def get_jit_def(fn, def_name, self_name=..., is_classmethod=...) -> Def: ...
+def get_jit_class_def(cls, self_name) -> ClassDef:
+    """
+    Get definitions for each method within the current class independently.
+
+    Args:
+        cls: The class to get definition of.
+        self_name: The name of the class that the properties should belong to.
+
+    Returns:
+        torch._C._jit_tree_views.ClassDef: A representation of the class,
+            the methods in the class and their definition as a tree.
+    """
+
+def get_jit_def(fn, def_name, self_name=..., is_classmethod=...) -> Def:
+    """
+    Build a JIT AST (TreeView) from the given function.
+
+    Args:
+        fn: A function object to compile or a pre-parsed ParsedDef object
+        def_name: The name to give to the resulting AST object. This is not
+            always the same as `fn.__name__`, for example:
+                def _forward(self):
+                    ...
+                forward = _forward
+            In this case, the `__name__` attribute of the function object is "_forward",
+            but we want the result AST to have the name "forward".
+        self_name: If this function is a method, what the type name of `self` is.
+    """
+
 def is_torch_jit_ignore_context_manager(stmt) -> bool: ...
 
 class Builder:
@@ -36,8 +74,27 @@ _vararg_kwarg_err = ...
 def build_param_list(ctx, py_args, self_name, pdt_arg_types=...) -> list[Param]: ...
 def build_param(ctx, py_arg, self_name, kwarg_only, pdt_arg_type=...) -> Param: ...
 def build_ignore_context_manager(ctx, stmt) -> stmt: ...
-def get_default_args(fn) -> dict[Any, Any] | dict[str, Any]: ...
-def get_default_args_for_class(cls) -> dict[str, dict[Any, Any] | dict[str, Any]]: ...
+def get_default_args(fn) -> dict[Any, Any] | dict[str, Any]:
+    """
+    Get a dictionary of default arguments for a function.
+
+    Args:
+        fn: Callable - The function to inspect for default arguments.
+    Returns:
+        (Dict[str, Any]): mapping argument names to their default values if
+        :attr:`fn` is not None, else empty dictionary.
+    """
+
+def get_default_args_for_class(cls) -> dict[str, dict[Any, Any] | dict[str, Any]]:
+    """
+    Get default arguments for all methods in a class (except for static methods).
+
+    Args:
+        cls: type - The class type to inspect for default arguments.
+    Returns:
+        A Dict[str, Dict[str, Any]] which maps each method name to a Dict[str, Any]
+        that maps each argument name to its default value.
+    """
 
 class WithItemBuilder(Builder):
     @staticmethod

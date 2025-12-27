@@ -25,10 +25,32 @@ def is_function_or_method(the_callable) -> TypeIs[FunctionType] | TypeIs[MethodT
 def is_vararg(the_callable) -> bool: ...
 def get_param_names(fn, n_args) -> list[str]: ...
 def check_fn(fn, loc) -> None: ...
-def parse_type_line(type_line, rcb, loc) -> tuple[list[Any], Any]: ...
-def get_type_line(source) -> None: ...
-def split_type_line(type_line) -> tuple[Any, Any]: ...
-def try_real_annotations(fn, loc) -> tuple[list[Any], Any] | None: ...
+def parse_type_line(type_line, rcb, loc) -> tuple[list[Any], Any]:
+    """
+    Parse a type annotation specified as a comment.
+
+    Example inputs:
+        # type: (Tensor, torch.Tensor) -> Tuple[Tensor]
+        # type: (Tensor, Tuple[Tensor, Tensor]) -> Tensor
+    """
+
+def get_type_line(source) -> None:
+    """Try to find the line containing a comment with the type annotation."""
+
+def split_type_line(type_line) -> tuple[Any, Any]:
+    """
+    Split the comment with the type annotation into parts for argument and return types.
+
+    For example, for an input of:
+        # type: (Tensor, torch.Tensor) -> Tuple[Tensor, Tensor]
+
+    This function will return:
+        ("(Tensor, torch.Tensor)", "Tuple[Tensor, Tensor]")
+    """
+
+def try_real_annotations(fn, loc) -> tuple[list[Any], Any] | None:
+    """Try to use the Py3.5+ annotation syntax to get the type."""
+
 def get_enum_value_type(e: type[enum.Enum], loc) -> AnyType | JitType: ...
 def is_tensor(ann) -> bool: ...
 def try_ann_to_type(ann, loc, rcb=...): ...

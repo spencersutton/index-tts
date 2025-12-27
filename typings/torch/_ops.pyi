@@ -15,9 +15,17 @@ _P = ParamSpec("_P", default=...)
 _SET_GLOBAL_FLAGS = ...
 
 @contextlib.contextmanager
-def dl_open_guard(): ...
+def dl_open_guard():
+    """
+    Context manager to set the RTLD_GLOBAL dynamic linker flag while we open a
+    shared library to load custom operators.
+    """
 
 class OperatorBase:
+    """
+    Base class for OpOverload (which represents C++ ATen operators) and HigherOrderOperator
+    (which represents Python-only operators that are unrepresentable in TorchScript).
+    """
     def __init__(self) -> None: ...
     def __call__(self, *args, **kwargs): ...
     def has_kernel_for_dispatch_key(self, k): ...
@@ -71,7 +79,7 @@ def add_cached_op(op_overload): ...
 def reset_cached_ops(): ...
 def get_cached_ops(): ...
 
-class OpOverload[**P = ..., T = Any](OperatorBase):
+class OpOverload[P = ..., T = Any](OperatorBase):
     def __init__(
         self,
         overloadpacket: OpOverloadPacket,
@@ -100,7 +108,7 @@ class OpOverload[**P = ..., T = Any](OperatorBase):
 class TorchBindOpOverload(OpOverload[_P, _T]):
     def __call__(self, /, *args: _P.args, **kwargs: _P.kwargs) -> _T: ...
 
-class OpOverloadPacket[**P = ..., T = Any]:
+class OpOverloadPacket[P = ..., T = Any]:
     __file__: ClassVar[str] = ...
     def __init__(
         self, qualified_op_name: str, op_name: str, op: Callable[_P, _T], overload_names: list[str]
@@ -115,6 +123,26 @@ class OpOverloadPacket[**P = ..., T = Any]:
     def overloads(self): ...
 
 class _OpNamespace(types.ModuleType):
+    """
+    An op namespace to dynamically bind Operators into Python.
+
+    Say a user has created a custom Operator called "my_namespace::my_op". To
+    call this op, the user will write torch.ops.my_namespace.my_op(...).
+    At startup, this operation will not yet be bound into Python. Instead, the
+    following sequence of magic tricks will occur:
+    1. `torch.ops.my_namespace` will invoke the `__getattr__` magic method
+       on the `torch.ops` object, which will create a new `_OpNamespace`
+       object called `my_namespace` and set it as an attribute on the `ops`
+       object.
+    2. `torch.ops.my_namespace.my_op` will then invoke `__getattr__` on
+       the `my_namespace` object, which will retrieve the operation via
+       `torch.get_operation`, a function bound from C++, and then in a similar
+       fashion bind this new object onto the `my_namespace` object.
+    3. `torch.ops.my_namespace.my_op(...)` then calls this new operation
+        and subsequent accesses will incur no further lookup (the namespace and
+        operation will already exist).
+    """
+
     __file__ = ...
     def __init__(self, name: str) -> None: ...
     def __iter__(self) -> Iterator[str]: ...
@@ -131,7 +159,39 @@ class _Ops(types.ModuleType):
     def __init__(self) -> None: ...
     def __getattr__(self, name: str) -> _OpNamespace: ...
     def __iter__(self) -> Iterator[str]: ...
-    def import_module(self, module): ...
-    def load_library(self, path): ...
+    def import_module(self, module):
+        """
+        Imports a Python module that has torch.library registrations.
+
+        Generally, to extend PyTorch with custom operators, a user will
+        create a Python module whose import triggers registration of
+        the custom operators via a torch.ops.load_library call or a call
+        to one or more torch.library.* APIs.
+
+        It is unexpected for Python modules to have side effects, so some
+        linters and formatters will complain. Use this API to import Python
+        modules that contain these torch.library side effects.
+
+        Args:
+            module (str): The name of the Python module to import
+        """
+    def load_library(self, path):
+        """
+        Loads a shared library from the given path into the current process.
+
+        The library being loaded may run global initialization code to register
+        custom operators with the PyTorch JIT runtime. This allows dynamically
+        loading custom operators. For this, you should compile your operator
+        and the static registration code into a shared library object, and then
+        call ``torch.ops.load_library('path/to/libcustom.so')`` to load the
+        shared object.
+
+        After the library is loaded, it is added to the
+        ``torch.ops.loaded_libraries`` attribute, a set that may be inspected
+        for the paths of all libraries loaded using this function.
+
+        Args:
+            path (str): A path to a shared library to load.
+        """
 
 ops: _Ops = ...

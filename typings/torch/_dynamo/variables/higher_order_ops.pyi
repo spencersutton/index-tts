@@ -1,3 +1,22 @@
+"""
+This module contains classes and utilities for handling higher-order operators in Dynamo.
+It provides functionality for tracing and transforming control flow constructs like
+conditions (torch.cond), loops (torch.while_loop), maps (torch.ops.higher_order.map),
+and other higher-order operations.
+
+The module includes specialized VariableTracker classes for different types of
+higher-order operations, along with utilities for:
+- Speculating and capturing subgraphs
+- Managing control flow
+- Handling autograd function applications
+- Supporting function transformations
+- Processing activation checkpoints
+
+These classes work together to enable Dynamo to correctly trace and compile code
+containing complex control flow patterns and higher-order functions while preserving
+their semantic behavior.
+"""
+
 import contextlib
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -16,6 +35,14 @@ hc_log = ...
 
 @dataclass
 class OutputSpec:
+    """
+    Contains the treespec of the output of the speculated subgraph, and the
+    information to mask out the constant values from the output during
+    flattening and inserting them back during unflattening. Cleaning up
+    constants from the graph makes the graph simpler for AOTDispatcher and
+    Inductor.
+    """
+
     treespec: pytree.TreeSpec
     masks_to_filter_const_values: list[bool] | None = ...
     const_values: list[Any] | None = ...
@@ -35,7 +62,17 @@ def check_meta_consistency_vt(
 def dynamo_enable_grad(tx: InstructionTranslator, enable=...): ...
 @contextlib.contextmanager
 def dynamo_under_activation_checkpoint(tx: InstructionTranslator): ...
-def find_mismatched_vars(var, types, allow_none=...): ...
+def find_mismatched_vars(var, types, allow_none=...):
+    """
+    Recursively finds variables whose type is not an instance of the specified types.
+    Args:
+        var: The variable to check.
+        types: A tuple of allowed types.
+        allow_none (bool): Whether to allow None values. Defaults to False.
+    Returns:
+        A set of variables whose type is not an instance of the specified types.
+    """
+
 def only_consist_of(var, types, allow_none=...): ...
 def are_same_graph_modules(fn_name, a_mod, b_mod, fake_mode): ...
 def validate_args_and_maybe_create_graph_inputs(
@@ -71,7 +108,8 @@ class TorchHigherOrderOperatorVariable(VariableTracker):
     ) -> VariableTracker: ...
     def as_python_constant(self): ...
 
-class CustomFunctionHigherOrderOperatorVariable(TorchHigherOrderOperatorVariable): ...
+class CustomFunctionHigherOrderOperatorVariable(TorchHigherOrderOperatorVariable):
+    """Wraps torch._functorch.autograd_function.custom_function_call"""
 
 class CondHigherOrderVariable(TorchHigherOrderOperatorVariable):
     supports_input_mutation = ...
@@ -80,7 +118,11 @@ class CondHigherOrderVariable(TorchHigherOrderOperatorVariable):
 class CallTorchbindHigherOrderVariable(TorchHigherOrderOperatorVariable):
     def __init__(self, hop, source, script_obj_var, method_name) -> None: ...
 
-def validate_subgraph_output_types(output: VariableTracker): ...
+def validate_subgraph_output_types(output: VariableTracker):
+    """
+    Verify that that the output of the subgraph is a tensor,
+    int, bool, SymBool, or SymInt.
+    """
 
 class WhileLoopHigherOrderVariable(TorchHigherOrderOperatorVariable):
     supports_input_mutation = ...
@@ -135,11 +177,19 @@ class WrapHigherOrderVariable(TorchHigherOrderOperatorVariable):
     ): ...
 
 class WrapWithSetGradEnabledHigherOrderVariable(TorchHigherOrderOperatorVariable):
+    """
+    This hop is not exposed to users but is inserted into the graph
+    after export as a post-processing step.
+    """
     def call_function(
         self, tx: InstructionTranslator, args: list[VariableTracker], kwargs: dict[str, VariableTracker]
     ) -> VariableTracker: ...
 
 class WrapWithAutocastHigherOrderVariable(TorchHigherOrderOperatorVariable):
+    """
+    This hop is not exposed to users but is inserted into the graph
+    after export as a post-processing step.
+    """
     def call_function(
         self, tx: InstructionTranslator, args: list[VariableTracker], kwargs: dict[str, VariableTracker]
     ) -> VariableTracker: ...
@@ -164,7 +214,13 @@ class FlexAttentionBackwardHighOrderVariable(TorchHigherOrderOperatorVariable):
     def proxy_submod(self, tx, arg): ...
     def to_proxy(self, tx, arg): ...
 
-class TraceWrappedHigherOrderOperatorVariable(TorchHigherOrderOperatorVariable): ...
+class TraceWrappedHigherOrderOperatorVariable(TorchHigherOrderOperatorVariable):
+    """
+    Handles torch._dynamo._trace_wrapped_higher_order_op.inner_trace
+    by unwrapping the higher order op and inlining through it.  This op
+    is created by dynamo to survive through AotAutograd, then unwrapped
+    here in the call to dynamo from compiled autograd.
+    """
 
 class FlexAttentionHigherOrderVariable(TorchHigherOrderOperatorVariable):
     @staticmethod

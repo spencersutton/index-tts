@@ -15,7 +15,8 @@ class TracableCreateParameter(torch.autograd.Function):
 def tracable_create_parameter(tensor: torch.Tensor, placeholder: torch.nn.Parameter) -> torch.nn.Parameter: ...
 def new_parameter_placeholder(
     size: tuple[int, ...], dtype: torch.dtype, device: torch.device, requires_grad: bool
-) -> torch.nn.Parameter: ...
+) -> torch.nn.Parameter:
+    """Create a placeholder to be passed to the above functions"""
 
 _TLS = ...
 

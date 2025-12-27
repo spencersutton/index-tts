@@ -1,6 +1,13 @@
 from collections import UserDict
 
 class StorageWeakRef:
+    """
+    A weak reference to a Storage.
+
+    The cdata member is a Python number containing the integer representation of
+    the Storage pointer.
+    """
+
     __slots__ = ...
     def __init__(self, storage) -> None: ...
     @classmethod
@@ -11,6 +18,7 @@ class StorageWeakRef:
     def __eq__(self, other) -> bool: ...
 
 class SharedCache(UserDict):
+    """Dictionary from multiprocessing handles to StorageWeakRef."""
     def __init__(self) -> None: ...
     def get(self, key) -> None: ...
     def __setitem__(self, key, storage_ref) -> None: ...

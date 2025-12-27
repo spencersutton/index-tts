@@ -9,21 +9,34 @@ SUPPORTED_DEVICE_TYPE_TO_KEY = ...
 RESERVED_NS = ...
 
 def warn_deprecated(): ...
-def custom_op(qualname: str, manual_schema: str | None = ...) -> typing.Callable: ...
+def custom_op(qualname: str, manual_schema: str | None = ...) -> typing.Callable:
+    """This API is deprecated, please use torch.library.custom_op instead"""
 
 global_registry: dict[str, CustomOp] = ...
 
 class CustomOp:
+    """This API is deprecated, please use torch.library.custom_op instead"""
     def __init__(self, lib, cpp_ns, schema, operator_name, ophandle, *, _private_access=...) -> None: ...
     def __call__(self, *args, **kwargs): ...
-    def impl(self, device_types: str | typing.Iterable[str], _stacklevel=...) -> typing.Callable: ...
-    def impl_factory(self) -> typing.Callable: ...
-    def impl_abstract(self, _stacklevel=...) -> typing.Callable: ...
-    def impl_save_for_backward(self, _stacklevel=...): ...
-    def impl_backward(self, output_differentiability=..., _stacklevel=...): ...
+    def impl(self, device_types: str | typing.Iterable[str], _stacklevel=...) -> typing.Callable:
+        """This API is deprecated, please use torch.library.custom_op instead"""
+    def impl_factory(self) -> typing.Callable:
+        """Register an implementation for a factory function."""
+    def impl_abstract(self, _stacklevel=...) -> typing.Callable:
+        """This API is deprecated, please use torch.library.custom_op instead"""
+    def impl_save_for_backward(self, _stacklevel=...):
+        """
+        Register a function that tells us what to save for backward.
+
+        Please see impl_backward for more details.
+        """
+    def impl_backward(self, output_differentiability=..., _stacklevel=...):
+        """This API is deprecated, please use torch.library.custom_op instead"""
 
 @dataclasses.dataclass
 class FuncAndLocation:
+    """FuncAndLocation(func: Callable, location: str)"""
+
     func: typing.Callable
     location: str
 

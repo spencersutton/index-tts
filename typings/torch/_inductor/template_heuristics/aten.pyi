@@ -15,7 +15,14 @@ from .registry import register_template_heuristic
 @register_template_heuristic(aten_bmm.uid, None)
 @register_template_heuristic(aten_mm_plus_mm.uid, None)
 @register_template_heuristic(aten_bmm_dtype.uid, "cuda")
-class ATenConfigHeuristics(TemplateConfigHeuristics): ...
+class ATenConfigHeuristics(TemplateConfigHeuristics):
+    """
+    Pseudo heuristic to make ATen choices go through the same flow as other templates
+
+    This is a single choice without kwargs
+
+    If you want to use this with an ATen choice that has kwargs, just subclass
+    """
 
 @register_template_heuristic(aten_addmm.uid, None, op_name="addmm")
 @register_template_heuristic(aten_baddbmm.uid, None, op_name="baddbmm")

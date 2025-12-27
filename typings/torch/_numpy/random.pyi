@@ -1,3 +1,11 @@
+"""
+Wrapper to mimic (parts of) np.random API surface.
+
+NumPy has strict guarantees on reproducibility etc; here we don't give any.
+
+Q: default dtype is float64 in numpy
+"""
+
 from ._normalizations import ArrayLike, normalizer
 
 __all__ = [

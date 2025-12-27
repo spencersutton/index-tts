@@ -1,3 +1,18 @@
+"""
+Mutation tracking and dynamic module detection system for Dynamo.
+
+This module provides mechanisms to track and respond to mutations in PyTorch modules
+and detect dynamically created or modified modules.
+
+Key components:
+- MutationTracker: Tracks mutations to objects and invalidates associated cached code
+- GenerationTracker: Tracks module creation timing to identify dynamic instances
+- Patching system for nn.Module to detect mutations and dynamic creation
+
+The system ensures that Dynamo's optimizations remain valid by detecting and responding
+to runtime changes in module state and structure.
+"""
+
 from typing import Any
 
 import torch.nn
@@ -12,7 +27,9 @@ class MutationTracker:
     def on_mutation(self, name: str) -> None: ...
     def track(self, guarded_code: Any) -> None: ...
 
-def watch(obj: Any, guarded_code: Any) -> None: ...
+def watch(obj: Any, guarded_code: Any) -> None:
+    """invalidate guarded_code when obj is mutated"""
+
 def ensure_patched(cls: Any) -> None: ...
 
 class GenerationTracker:
@@ -30,5 +47,11 @@ class GenerationTracker:
     @classmethod
     def clear(cls) -> None: ...
 
-def is_dynamic_nn_module(obj: Any, is_export: bool) -> bool: ...
-def install_generation_tagging_init() -> None: ...
+def is_dynamic_nn_module(obj: Any, is_export: bool) -> bool:
+    """Check for nn.Modules() created dynamically or mutated"""
+
+def install_generation_tagging_init() -> None:
+    """
+    Monkey patch torch.nn.Module.__init__ and torch.nn.Module.__setstate__
+    so we can detect nn.Module instances created dynamically inside forward methods.
+    """

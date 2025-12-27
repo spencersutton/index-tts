@@ -18,7 +18,46 @@ def map(
     f: Callable[[pytree.PyTree, tuple[pytree.PyTree, ...]], pytree.PyTree],
     xs: pytree.PyTree | torch.Tensor,
     *args: TypeVarTuple,
-): ...
+):
+    """
+    Performs a map of f with xs. Intuitively, you can think of the semantic being:
+
+    out = []
+    for idx in len(xs.size(0)):
+        xs_sliced = xs.select(0, idx)
+        out.append(f(xs_sliced, *args))
+    torch.stack(out)
+
+    .. warning::
+        `torch._higher_order_ops.map` is a prototype feature in PyTorch. It currently
+        does not support autograd and you may run into miscompiles.
+        Read more about feature classification at:
+        https://pytorch.org/blog/pytorch-feature-classification-changes/#prototype
+
+
+    Args:
+        f (Callable): a callable that takes an input x, that could either be a single Tensor
+            or a nested dict, list of tensors and some additional inputs
+        xs: the inputs that're to be mapped over. We'll iterate over the first dim of each x
+            and perform f on each slice.
+
+        *args: additional arguments provided to each step of f. They could also be omitted and
+            map is able to automatically figure out the read dependency.
+
+    Return:
+        the stacked output for each step of f
+
+    Example:
+
+        def f(xs):
+            return xs[0] + xs[1] + const1 + const2
+
+        xs = [torch.randn(2, 3), torch.randn(2, 3)]
+        const1 = torch.randn(2, 3)
+        const2 = torch.randn(2, 3)
+        # returns a tensor of shape [2, 2, 3]
+        torch._higher_order_ops.map(f, xs)
+    """
 
 class MapAutogradOp(torch.autograd.Function):
     @staticmethod

@@ -41,26 +41,38 @@ class IncrementRecursionCount:
 
 @dataclass
 class UnsupportedFakeTensorException(RuntimeError):
+    """UnsupportedFakeTensorException(reason: 'str')"""
+
     reason: str
 
 @dataclass
 class DynamicOutputShapeException(RuntimeError):
+    """DynamicOutputShapeException(func: 'OpOverload')"""
+
     func: OpOverload
 
 @dataclass
 class DataDependentOutputException(RuntimeError):
+    """DataDependentOutputException(func: 'OpOverload')"""
+
     func: OpOverload
 
 @dataclass
 class UnsupportedOperatorException(RuntimeError):
+    """UnsupportedOperatorException(func: 'OpOverload')"""
+
     func: OpOverload
 
 @dataclass
 class UnsupportedMutationAliasingException(RuntimeError):
+    """UnsupportedMutationAliasingException(reason: 'str')"""
+
     reason: str
 
 @dataclass
 class MetadataMismatchError(RuntimeError):
+    """MetadataMismatchError(reason: 'str')"""
+
     reason: str
 
 class FakeTensorTLS(threading.local):
@@ -134,6 +146,14 @@ class SymNumberMemoDescriptor:
     def __set__(self, obj: FakeTensor, value: torch.SymInt | torch.SymFloat | None) -> None: ...
 
 class FakeTensor(Tensor):
+    """
+    Meta tensors give you the ability to run PyTorch code without having to
+    actually do computation through tensors allocated on a `meta` device.
+    Because the device is `meta`, meta tensors do not model device propagation.
+    FakeTensor extends MetaTensors to also carry an additional `fake_device`
+    which tracks devices that would have been used.
+    """
+
     fake_device: torch.device
     fake_mode: FakeTensorMode
     constant: Tensor | None
@@ -181,6 +201,8 @@ type _MetadataIntLike = IntLikeType | _PySymInputStub | _SymIntOutputStub
 @dataclass_slots
 @dataclass
 class TensorMetadata:
+    """The Tensor metadata relevant to hashing FakeTensors when caching."""
+
     dtype: torch.dtype
     shape: tuple[_MetadataIntLike, ...]
     stride: tuple[_MetadataIntLike, ...]
@@ -199,11 +221,14 @@ class TensorMetadata:
     dense_dim: int | None
     sparse_dim: int | None
 
-def extract_tensor_metadata(t: Tensor) -> TensorMetadata: ...
+def extract_tensor_metadata(t: Tensor) -> TensorMetadata:
+    """Extract the TensorMetadata of a tensor."""
 
 @dataclass_slots
 @dataclass
 class _DispatchCacheKey:
+    """Key for the FakeTensor dispatch cache."""
+
     key: tuple[object, ...]
     hashvalue: int
     def __init__(self, tup: tuple[object, ...]) -> None: ...
@@ -216,6 +241,17 @@ class SingletonConstant: ...
 @dataclass_slots
 @dataclass(frozen=True)
 class _DispatchCacheEntryOutputInfo:
+    """
+    Entry type for the FakeTensor dispatch cache for an output. Accounts for three
+    possibilities:
+    1) The op is inplace, and a hit means we need to alias the argument at a
+       given index.
+    2) We need to synthesize a new FakeTensor given tensor metadata. For view
+       ops, we further capture the index of the arg to alias.
+    3) if the tensor related fields are None, then it is a constant value (e.g.
+    None or integer)
+    """
+
     inplace_idx: int | None
     metadata: TensorMetadata | None
     view_idx: int | None
@@ -224,12 +260,22 @@ class _DispatchCacheEntryOutputInfo:
 @dataclass_slots
 @dataclass(frozen=True)
 class _DispatchCacheValidEntry:
+    """
+    Entry type for the FakeTensor dispatch cache. It supports two types of outputs
+    1) tensor
+    2) tuple of tensors
+
+    is_output_tuple flag helps in differentiating the return type
+    """
+
     output_infos: tuple[_DispatchCacheEntryOutputInfo]
     is_output_tuple: bool = ...
 
 @dataclass_slots
 @dataclass(frozen=True)
 class _DispatchCacheBypassEntry:
+    """Entry type for a negative cache entry."""
+
     reason: str
 
 type _DispatchCacheEntry = _DispatchCacheValidEntry | _DispatchCacheBypassEntry
@@ -237,11 +283,15 @@ type _DispatchCacheEntry = _DispatchCacheValidEntry | _DispatchCacheBypassEntry
 @dataclass_slots
 @dataclass(frozen=True)
 class _BypassDispatchCache(Exception):
+    """Signals cases that should skip FakeTensor caching."""
+
     reason: str
 
 @dataclass_slots
 @dataclass(frozen=True)
 class DispatchCacheInfo:
+    """Information about the state of the FakeTensor dispatch cache."""
+
     hits: int
     misses: int
     bypasses: dict[str, int]
@@ -284,9 +334,11 @@ class FakeTensorMode(TorchDispatchMode):
     @classmethod
     def is_infra_mode(cls) -> bool: ...
     @classmethod
-    def cache_info(cls) -> DispatchCacheInfo: ...
+    def cache_info(cls) -> DispatchCacheInfo:
+        """Query the state of the dispatch cache."""
     @classmethod
-    def cache_clear(cls) -> None: ...
+    def cache_clear(cls) -> None:
+        """Clear the dispatch cache."""
     def dispatch(
         self, func: OpOverload, types: Sequence[type], args: Sequence[object] = ..., kwargs: Mapping[str, object] = ...
     ) -> object: ...
@@ -295,7 +347,12 @@ class FakeTensorMode(TorchDispatchMode):
     def can_run_unsafe_fallback(self, func: OpOverload) -> bool: ...
     def validate_and_convert_non_fake_tensors(
         self, func: OpOverload, converter: FakeTensorConverter, flat_args: Sequence[object], args_spec: TreeSpec
-    ) -> tuple[list[object], list[FakeTensor]]: ...
+    ) -> tuple[list[object], list[FakeTensor]]:
+        """
+        Checks if the list of tensors are fake tensors.
+        If not, try to convert them to fake tensors.
+        Returns the original args, kwargs, and a flattened list of (args, kwargs) that are fake tensors.
+        """
     def wrap_meta_outputs_with_default_device_logic(
         self, r: object, func: OpOverload, flat_args: Sequence[object], device: torch.device
     ) -> PyTree: ...

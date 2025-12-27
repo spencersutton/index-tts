@@ -12,10 +12,26 @@ def found_inf_reduce_handler(
 ) -> None: ...
 
 class OpDispatcher:
+    """
+    Op dispatching class instance to handle args/kwargs pre-processing (un-wrapping), sharding
+    propagation, redistribute local args, local compute, and post-processing (re-wrapping). It
+    also handles any op specific logic if necessary.
+
+    NOTE: Given the runtime overhead of Tensor subclass (__torch_dispatch__), the OpDispatcher
+    is designed to minimize the CPU overhead by using the tricks of proper unflattening, faster
+    pytree if needed, and leveraging various caching mechanisms implemented in the sharding
+    propagation and redistribute modules. The CPU overhead is critical to eager mode performance,
+    one need to carefully measure the CPU overhead when making significant changes to the
+    OpDispatcher and ShardingPropagator.
+    """
     def __init__(self) -> None: ...
-    def dispatch(
-        self, op_call: torch._ops.OpOverload, args: tuple[object, ...], kwargs: dict[str, object]
-    ) -> object: ...
+    def dispatch(self, op_call: torch._ops.OpOverload, args: tuple[object, ...], kwargs: dict[str, object]) -> object:
+        """
+        Main dispatching logic.  Follows precedence order:
+        (1) custom_op_handler
+        (2) registered sharding strategy, then rule
+        (3) composite implicit autograd decomposition
+        """
     @staticmethod
     def redistribute_local_args(
         op_info: OpInfo, suggested_input_schema: OpSchema, use_val_from_redistribute_schema: bool

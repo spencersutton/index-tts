@@ -10,6 +10,19 @@ from torch.utils._python_dispatch import TorchDispatchMode
 not_implemented_log = ...
 
 class FunctionalTensor(torch.Tensor):
+    """
+    Functional tensors represent tensors that will remove mutations
+    from a program. If you perform a mutable operation on a functional tensor,
+    it will re-dispatch to the functional variant of that operation.
+
+    Historically, functionalization is implemented in C++ in the dispatcher.
+    This class is a lightweight python shim around the C++ functionalization logic.
+
+    FunctionalTensor is required to be used with a corresponding
+    FunctionalTensormode active, because it relies
+    on using the mode for dispatch (which can properly handle factory functions).
+    """
+
     elem: torch.Tensor
     _mode_key = ...
     _extra_dispatch_keys = ...

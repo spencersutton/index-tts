@@ -39,6 +39,11 @@ def data_type_logger(msg: str) -> None: ...
 
 @dataclasses.dataclass
 class FileBackedGraphModule:
+    """
+    Output of FX wrapper codegen. Exposes the same methods as ModuleType, but these
+    map back to a GraphModule instead of Python source.
+    """
+
     gm: GraphModule
     compiled_fn: Callable[..., Any]
     def __post_init__(self) -> None: ...
@@ -58,6 +63,7 @@ class WorkspaceZeroMode(enum.Enum):
     def from_bool(zero_fill: bool) -> WorkspaceZeroMode: ...
 
 class CodegenSymbol(ABC):
+    """An IR object possibly corresponding to a variable in the wrapper code."""
     @abstractmethod
     def get_name(self) -> str: ...
     @abstractmethod
@@ -65,6 +71,17 @@ class CodegenSymbol(ABC):
 
 @ir_dataclass(frozen=True)
 class WorkspaceArg(CodegenSymbol):
+    """
+    A temporary buffer used for a single kernel, then discarded.
+
+    Not registered as a traditional buffer since there are no users,
+    so it would be dead code eliminated.
+
+    Args:
+        nbytes: The size of the buffer in bytes.
+        zero_fill: Whether the buffer should be initialized to zero.
+    """
+
     count: sympy.Expr
     zero_mode: WorkspaceZeroMode
     device: torch.device
@@ -104,6 +121,8 @@ class TritonScratchWorkspace:
 
 @dataclasses.dataclass
 class TensorArg:
+    """TensorArg(name: 'str', buffer: 'str', dtype: 'torch.dtype', offset: 'sympy.Expr' = 0, alias_of: 'Optional[str]' = None)"""
+
     name: str
     buffer: str
     dtype: torch.dtype
@@ -112,6 +131,8 @@ class TensorArg:
 
 @dataclasses.dataclass
 class SizeArg:
+    """SizeArg(name: 'str', expr: 'sympy.Expr')"""
+
     name: str
     expr: sympy.Expr
     @property
@@ -119,10 +140,14 @@ class SizeArg:
 
 @dataclasses.dataclass
 class ConstexprArg:
+    """ConstexprArg(name: 'str')"""
+
     name: str
 
 @dataclasses.dataclass
 class TMADescriptorArg:
+    """TMADescriptorArg(name: 'str', api_type: 'str', block_shape: 'Optional[list[sympy.Expr]]', dtype: 'Optional[torch.dtype]')"""
+
     name: str
     api_type: str
     block_shape: list[sympy.Expr] | None
@@ -130,6 +155,8 @@ class TMADescriptorArg:
 
 @dataclasses.dataclass
 class DeviceCodegen:
+    """DeviceCodegen(scheduling: 'SchedulingConstructor', wrapper_codegen: 'WrapperConstructor', cpp_wrapper_codegen: 'Optional[WrapperConstructor]' = None, fx_wrapper_codegen: 'Optional[WrapperConstructor]' = None)"""
+
     scheduling: SchedulingConstructor
     wrapper_codegen: WrapperConstructor
     cpp_wrapper_codegen: WrapperConstructor | None = ...
@@ -186,7 +213,9 @@ class BackendFeature(Enum):
     REDUCE_TO_SINGLE_ELEMENT = ...
 
 def get_backend_features(device: torch.device | str | None) -> OrderedSet[BackendFeature]: ...
-def has_backend_feature(device: torch.device | str | None, feature: BackendFeature) -> bool: ...
+def has_backend_feature(device: torch.device | str | None, feature: BackendFeature) -> bool:
+    """See also V.graph.has_feature"""
+
 def get_scheduling_for_device(device: str) -> SchedulingConstructor | None: ...
 def get_wrapper_codegen_for_device(
     device: str, cpp_wrapper: bool = ..., fx_wrapper: bool = ...
@@ -194,7 +223,12 @@ def get_wrapper_codegen_for_device(
 def get_custom_backend_pass_for_device(device: str) -> CustomGraphModulePass | None: ...
 def get_custom_backend_config_for_device(device: str) -> ConfigModule | None: ...
 @functools.cache
-def init_backend_registration() -> None: ...
+def init_backend_registration() -> None:
+    """
+    Register the backend for different devices, including the scheduling
+    for kernel code generation and the host side wrapper code generation.
+    """
+
 def index_prevent_reordering(
     index: Sequence[sympy.Expr], index_vars: Sequence[sympy.Expr], sizes: Sequence[sympy.Expr]
 ) -> list[sympy.Expr]: ...
@@ -203,7 +237,9 @@ def get_device_op_overrides(device: str) -> DeviceOpOverrides: ...
 
 DTYPE_TO_COMPUTATION_DTYPE: dict[torch.dtype, torch.dtype] = ...
 
-def deduce_output_dtype_by_name(op_name: str, *args: Any, **kwargs: Any) -> torch.dtype | None: ...
+def deduce_output_dtype_by_name(op_name: str, *args: Any, **kwargs: Any) -> torch.dtype | None:
+    """Given op name and a list of input dtypes, deduce the output dtype"""
+
 def check_dtype(buffer: IndentedBuffer, var: CSEVariableType, dtype: torch.dtype) -> None: ...
 
 class DataTypePropagation:
@@ -223,6 +259,7 @@ class PythonPrinter(_PythonPrinter):
     def parenthesize(self, item: sympy.Expr, level: int, strict: bool = ...) -> str: ...
 
 class OpDecompositions:
+    """Decomposes inductor ops"""
     @staticmethod
     def identity(value: OpVarT) -> OpVarT: ...
     @staticmethod
@@ -333,6 +370,8 @@ class OpOverrides(BasicMathOpsMixin, OpDecompositions, OpsHandler[Any]):
 
 @dataclasses.dataclass
 class OverridesData:
+    """OverridesData(name: 'str', cpp: 'Callable[..., str]', triton: 'Optional[Callable[..., str]]' = None, cppvec: 'Optional[Callable[..., str]]' = None, type_promotion_kind: 'ELEMENTWISE_TYPE_PROMOTION_KIND' = <ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT: (0,)>, halide: 'Optional[Callable[..., str]]' = None, mps: 'Optional[Callable[..., str]]' = None)"""
+
     name: str
     cpp: Callable[..., str]
     triton: Callable[..., str] | None = ...
@@ -346,6 +385,7 @@ pointwise_overrides_data: dict[str, OverridesData] = ...
 def is_buffer_removed(name: str) -> bool: ...
 
 class DeferredLine(DeferredLineBase):
+    """A line that can be 'unwritten' by adding name to V.graph.removed_buffers"""
     def __init__(self, name: str, line: str) -> None: ...
     def __call__(self) -> str | None: ...
 
@@ -353,11 +393,15 @@ class BracesBuffer(IndentedBuffer):
     def indent(self, offset: int = ...) -> contextlib.AbstractContextManager[None]: ...
 
 class InplacedBuffer(NamedTuple):
+    """InplacedBuffer(inner_name, other_names)"""
+
     inner_name: str
     other_names: list[str]
 
 @dataclasses.dataclass
 class ArgName:
+    """ArgName(name: 'str', is_constexpr: 'bool' = False)"""
+
     name: str
     is_constexpr: bool = ...
     def full_name(self) -> str: ...
@@ -371,12 +415,47 @@ class KernelArgs:
     def input(self, name: str) -> str: ...
     def output(self, name: str) -> str: ...
     def make_inplace(self, input_name: str, output_name: str) -> None: ...
-    def workspace(self, nbytes: sympy.Expr, zero_fill: bool) -> tuple[str, int]: ...
-    def semaphores(self, min_size: sympy.Expr) -> str: ...
+    def workspace(self, nbytes: sympy.Expr, zero_fill: bool) -> tuple[str, int]:
+        """
+        Allocate or extend a workspace buffer of nbytes bytes.
+
+        This function manages the allocation of a workspace buffer. It either creates
+        a new WorkspaceArg or extends an existing one.
+
+        Note:
+        - Calling this function will in-place mutate the args by adding or updating
+        a WorkspaceArg.
+        - The codegen for generating the Python argdefs and call_defs will check
+        this field and allocate the buffer accordingly.
+        - A new argument "ws_ptr" will be present in the generated code.
+
+        Args:
+            nbytes (sympy.Expr): The number of bytes to allocate.
+            zero_fill (bool): Whether to initialize the buffer to zero.
+
+        Returns:
+            Tuple[str, int]: A tuple containing:
+                - "ws_ptr": A string identifier for the workspace pointer.
+                - offset: An integer representing the byte offset in the workspace.
+        """
+    def semaphores(self, min_size: sympy.Expr) -> str:
+        """
+        Lazily allocate a graph-wide semaphores buffer with at least min_size.  This is a single buffer shared by
+        all kernels and zero initialized once at graph start.  Each kernel must leave the buffer zeroed on exit.
+
+        Warning: multiple calls to this function will return the same buffer.
+
+        Args:
+            min_size: the number of int32 semaphores required
+
+        Returns:
+            name of the semaphores buffer
+        """
     def seed_offset(self, name: str, value: int) -> str: ...
     def size(self, name: sympy.Symbol) -> str: ...
     def call_names(self) -> Iterator[str]: ...
-    def arg_name(self, name: str) -> str | None: ...
+    def arg_name(self, name: str) -> str | None:
+        """Returns inner name of a given outer name."""
     def wrap_ptr_arg(self, buf: str, dtype: torch.dtype) -> str: ...
     def wrap_size_arg(self, size: SymbolLike) -> str: ...
     def cpp_argdefs(
@@ -388,6 +467,12 @@ class KernelArgs:
     def live_output_buffers(self) -> OrderedSet[str]: ...
 
 class CSEVariable:
+    """
+    A CSEVariable is just a name for an expression but it is useful to be able to annotate them on a backend dependent basis.
+    To do so, the backends can simply overload `Kernel.create_cse_var`
+    The "CSEVariable.update_on_args" method gives you a hook for annotations
+    See example of TritonCSEVariable in triton.py
+    """
     def __init__(
         self, name: str, bounds: ValueRanges[Any], dtype: torch.dtype | None = ..., shape: BlockShapeType = ...
     ) -> None: ...
@@ -400,6 +485,7 @@ CSEVariableType = TypeVar("CSEVariableType", bound=CSEVariable, default=CSEVaria
 type ReductionCacheKey = tuple[torch.dtype, ReductionType, CSEVariable | tuple[CSEVariable, ...]]
 
 class CSE[CSEVariableType: CSEVariable = CSEVariable, AugmentedKeyT = str]:
+    """Common subexpression elimination"""
     def __init__(
         self,
         prefix: str = ...,
@@ -412,8 +498,10 @@ class CSE[CSEVariableType: CSEVariable = CSEVariable, AugmentedKeyT = str]:
     ) -> None: ...
     def invalidate(self, keep_vars: OrderedSet[CSEVariable]) -> None: ...
     def clone(self) -> Self: ...
-    def scoped_copy(self) -> Self: ...
-    def augment_key(self, cache_key: str) -> AugmentedKeyT: ...
+    def scoped_copy(self) -> Self:
+        """Return a copy of using ScopedDict so changes to *_cache aren't visible in self"""
+    def augment_key(self, cache_key: str) -> AugmentedKeyT:
+        """Override this method to augment cache key with backend specifics"""
     def put(self, cache_key: str, val: CSEVariableType) -> None: ...
     def contains(self, cache_key: str) -> bool: ...
     def try_get(self, cache_key: str) -> CSEVariableType | None: ...
@@ -453,7 +541,8 @@ class Kernel[CSEVariableType: CSEVariable = CSEVariable](CodeGen):
         self, lb: IndentedBuffer, cb: IndentedBuffer | None = ..., sb: IndentedBuffer | None = ...
     ) -> Iterator[None]: ...
     def load(self, name: str, index: sympy.Expr) -> CSEVariable: ...
-    def indirect_load(self, name: str, index: sympy.Expr) -> CSEVariable: ...
+    def indirect_load(self, name: str, index: sympy.Expr) -> CSEVariable:
+        """A load the depends on an index we have read"""
     def store_reduction(self, name: str, index: sympy.Expr, value: CSEVariable) -> None: ...
     def store(self, name: str, index: sympy.Expr, value: CSEVariable, mode: StoreMode = ...) -> None: ...
     def reduction(
@@ -482,7 +571,8 @@ class Kernel[CSEVariableType: CSEVariable = CSEVariable](CodeGen):
         right: bool,
         sorter: tuple[str, sympy.Expr] | None = ...,
         sorter_indices: CSEVariable | None = ...,
-    ) -> CSEVariable: ...
+    ) -> CSEVariable:
+        """See [Note: Inductor bucketize op]"""
     @property
     def assert_function(self) -> str: ...
     def indirect_assert(
@@ -492,15 +582,25 @@ class Kernel[CSEVariableType: CSEVariable = CSEVariable](CodeGen):
     def index_to_str(self, index: sympy.Expr) -> str: ...
     def __enter__(self) -> Self: ...
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None: ...
-    def remove_kernel_local_buffers(self) -> None: ...
+    def remove_kernel_local_buffers(self) -> None:
+        """
+        Any buffers that are both created and have a last use in the
+        same kernel can be removed.
+
+        Note that V.graph.scheduler can be None when codegening triton template
+        kernels.
+        """
     def remove_buffer(self, name: str) -> None: ...
     def remove_inplace_buffer(self, name: str) -> None: ...
     def rename_indexing(self, index: list[sympy.Expr] | tuple[sympy.Expr, ...] | sympy.Expr) -> sympy.Expr: ...
     def create_cse_var(self, *args: Any, **kwargs: Any) -> CSEVariable: ...
-    def arg_name(self, node: IRNode) -> str | None: ...
+    def arg_name(self, node: IRNode) -> str | None:
+        """Returns arg name of a given input or output node."""
 
 @dataclasses.dataclass
 class OptimizationContext:
+    """OptimizationContext(dtype: 'Optional[torch.dtype]' = None, ops_name: 'str' = '')"""
+
     key: ClassVar[str] = ...
     dtype: torch.dtype | None = ...
     ops_name: str = ...
@@ -509,14 +609,38 @@ class OptimizationContext:
 def jinja2_env() -> Any: ...
 
 class KernelTemplate:
+    """
+    Base class for defining kernel templates.
+
+    Children classes: TritonTemplate, CUDATemplate
+    """
     @staticmethod
     def indent_except_first(source: str, num_indents: int, indents_spacing: int = ...) -> str: ...
     def __init__(self, name: str) -> None: ...
     @property
-    def uid(self) -> str: ...
-    def choice_or_none(self, **kwargs: Any) -> ChoiceCaller | None: ...
-    def maybe_append_choice(self, choices: list[Any], **kwargs: Any) -> NotImplementedError | None: ...
-    def generate(self, **kwargs: Any) -> ChoiceCaller: ...
+    def uid(self) -> str:
+        """
+        entry point to override for templates to ensure a uid e.g. through a prefix
+
+        the purpose of this is that every KernelTemplate/ExternKernelChoice is unique
+        in the system, but reproducible e.g. restarting pytorch should yield the same id
+        """
+    def choice_or_none(self, **kwargs: Any) -> ChoiceCaller | None:
+        """
+        Maybe generates a new ChoiceCaller and returns it, or None if generation fails.
+
+        kwargs: Additional kwargs to be passed to self.generate() to generate a new ChoiceCaller.
+        """
+    def maybe_append_choice(self, choices: list[Any], **kwargs: Any) -> NotImplementedError | None:
+        """
+        Maybe generates a new ChoiceCaller and appends it into existing choices.
+        Returns None if success, otherwise returns the error.
+
+        choices: A list of ChoiceCallers.
+        kwargs: Additional kwargs to be passed to self.generate() to generate a new ChoiceCaller.
+        """
+    def generate(self, **kwargs: Any) -> ChoiceCaller:
+        """Generates a ChoiceCaller instance from the given arguments."""
 
 class CSEProxy(DefaultHandler):
     name = ...
@@ -553,4 +677,64 @@ class CSEProxy(DefaultHandler):
         right: bool,
         sorter: tuple[str, sympy.Expr] | None = ...,
         sorter_indices: CSEVariable | None = ...,
-    ) -> CSEVariable: ...
+    ) -> CSEVariable:
+        """
+        [Note: Inductor bucketize op]
+
+        Inputs:
+        -------
+        values: the values to be bucketized.
+        boundaries: a tuple containing
+          (a) the name of the boundaries tensor (which must be sorted, unless
+          the sorting tensor is present),
+          (b) the length of the tensor in the last dimension (i.e. the length of
+          one set of boundaries),
+          (c) the number of elements in the underlying storage (i.e. the length
+          of the flattened tensor, ignoring striding), and
+          (d) the stride of the tensor in the last dimension.
+        boundary_indices: indices into a flattened version of the boundaries
+        tensor, of the same size and shape as "values".  Each index points to
+        the first element in the set of boundaries to be used for the
+        corresponding value.
+        indexing_dtype: the dtype to use when indexing into the boundaries
+        tensor.  This must be int64 or int32.  This additionally specifies the
+        dtype of the return value.
+        right: see "Details" below.
+        sorter: an optional tuple containing
+          (a) the name of an optional sorting tensor, used to access unsorted
+          boundaries without reordering the boundaries tensor, and
+          (b) the stride of the tensor in the last dimension.
+        The values in the sorting tensor are used as indices into the *last*
+        dimension of the boundaries tensor, with all other indices matching.
+        The size of the sorting and boundaries tensors must be equivalent.
+        sorter_indices: must be present if the sorting array is present; see
+        "boundary_indices" for the equivalent definition for the boundaries
+        tensor.
+
+        Output:
+        -------
+        The buckets each value belongs in, within a given set of boundaries.  0
+        indicates a position before the first boundary, and len(boundaries_set)
+        represents a position after the last boundary.
+
+        Details:
+        --------
+        Given a value and a set of boundaries, calculate the bucket that each
+        value belongs to.  This works differently in 1-D and N-D cases.
+
+        for values [[-1, 0, 1, 2], [3, 4, 5, 9]], boundaries [0, 4, 4, 8], right=True
+        return =   [[ 0, 1, 1, 1], [1, 3, 3, 4]].
+
+        for values [[-1, 0, 1, 2], [3, 4, 5, 9]], boundaries [[0, 4], [4, 8]], right=True
+        return =   [[ 0, 1, 1, 1], [0, 1, 1, 2]]
+
+        Note that in the N-D boundaries case, the shape of "values" and
+        "boundaries" must match in every dimension _except_ the last.
+
+        When right == False, bucket i refers to range (boundaries[i], boundaries[i+1]].
+        When right == True,  bucket i refers to range [boundaries[i], boundaries[i+1]).
+
+        Boundaries must be non-decreasing, or a sorter must be provided which
+        would re-index offsets in a non-decreasing order (e.g. the second output
+        of torch.sort(offsets)).  Otherwise, the result is undefined.
+        """

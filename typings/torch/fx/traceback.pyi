@@ -25,11 +25,23 @@ should_preserve_node_meta = ...
 
 @compatibility(is_backward_compatible=False)
 class NodeSourceAction(Enum):
+    """
+    .. warning::
+        This API is experimental and is *NOT* backward-compatible.
+    """
+
     CREATE = ...
     REPLACE = ...
 
 @compatibility(is_backward_compatible=False)
 class NodeSource:
+    """
+    NodeSource is a data structure that contains the provenance information of a node.
+    If node `a` is created from node `b`, then `a.meta["from_node"]` may contain NodeSource(b).
+
+    .. warning::
+        This API is experimental and is *NOT* backward-compatible.
+    """
     class NodeInfo:
         def __init__(self, name: str, target: str, graph_id: int) -> None: ...
 
@@ -55,21 +67,67 @@ class NodeSource:
 
 @compatibility(is_backward_compatible=False)
 @contextmanager
-def preserve_node_meta(enable=...) -> Generator[None, Any, None]: ...
+def preserve_node_meta(enable=...) -> Generator[None, Any, None]:
+    """
+    .. warning::
+        This API is experimental and is *NOT* backward-compatible.
+    """
+
 @compatibility(is_backward_compatible=False)
-def set_stack_trace(stack: list[str]) -> None: ...
+def set_stack_trace(stack: list[str]) -> None:
+    """
+    .. warning::
+        This API is experimental and is *NOT* backward-compatible.
+    """
+
 @compatibility(is_backward_compatible=False)
-def set_grad_fn_seq_nr(seq_nr) -> None: ...
+def set_grad_fn_seq_nr(seq_nr) -> None:
+    """
+    .. warning::
+        This API is experimental and is *NOT* backward-compatible.
+    """
+
 @compatibility(is_backward_compatible=False)
-def reset_grad_fn_seq_nr() -> None: ...
+def reset_grad_fn_seq_nr() -> None:
+    """
+    .. warning::
+        This API is experimental and is *NOT* backward-compatible.
+    """
+
 @compatibility(is_backward_compatible=False)
-def format_stack() -> list[str]: ...
+def format_stack() -> list[str]:
+    """
+    .. warning::
+        This API is experimental and is *NOT* backward-compatible.
+    """
+
 @compatibility(is_backward_compatible=False)
-def has_preserved_node_meta() -> bool: ...
+def has_preserved_node_meta() -> bool:
+    """
+    .. warning::
+        This API is experimental and is *NOT* backward-compatible.
+    """
+
 @compatibility(is_backward_compatible=False)
 @contextmanager
-def set_current_meta(node, pass_name=...) -> Generator[None, Any, None]: ...
+def set_current_meta(node, pass_name=...) -> Generator[None, Any, None]:
+    """
+    .. warning::
+        This API is experimental and is *NOT* backward-compatible.
+    """
+
 @compatibility(is_backward_compatible=False)
-def get_current_meta() -> dict[str, Any]: ...
+def get_current_meta() -> dict[str, Any]:
+    """
+    .. warning::
+        This API is experimental and is *NOT* backward-compatible.
+    """
+
 @compatibility(is_backward_compatible=False)
-def get_graph_provenance_json(graph: Graph) -> dict[str, Any]: ...
+def get_graph_provenance_json(graph: Graph) -> dict[str, Any]:
+    """
+    Given an fx.Graph, return a json that contains the provenance information of each node.
+
+    .. warning::
+        This API is experimental and is *NOT* backward-compatible.
+    """

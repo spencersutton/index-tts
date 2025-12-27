@@ -25,9 +25,32 @@ class _ReplicateState(_State):
 def unimplemented_deepcopy(*args: Any, **kwargs: Any) -> NoReturn: ...
 
 class DDP:
-    def __new__(cls, *args, **kwargs): ...
-    def set_requires_gradient_sync(self, requires_gradient_sync: bool) -> None: ...
+    def __new__(cls, *args, **kwargs):
+        """
+        Override ``__new__`` to remove the DDP class and directly construct
+        the original class for cases like indexing into a container module.
+        """
+    def set_requires_gradient_sync(self, requires_gradient_sync: bool) -> None:
+        """
+        Sets if the module should sync gradients. This can be used to implement
+        gradient accumulation without communication.
+
+        Args:
+            requires_gradient_sync (bool): Whether to reduce gradients for the
+                module's parameters.
+        """
     def register_comm_hook(self, *args, **kwargs) -> None: ...
 
 @contract(state_cls=_ReplicateState)
-def replicate(module: nn.Module, ignored_modules: Iterable[torch.nn.Module] | None = ..., **kwargs) -> nn.Module: ...
+def replicate(module: nn.Module, ignored_modules: Iterable[torch.nn.Module] | None = ..., **kwargs) -> nn.Module:
+    """
+    Replicates a module
+
+    Args:
+        module (torch.nn.Module): module to replicate
+
+    Example::
+        >>> # xdoctest: +REQUIRES(module:torch._C._distributed_c10d)
+        >>> module = nn.Linear(3, 3)
+        >>> replicate(module)
+    """

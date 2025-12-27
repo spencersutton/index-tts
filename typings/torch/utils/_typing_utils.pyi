@@ -1,3 +1,5 @@
+"""Miscellaneous utilities to aid with typing."""
+
 from typing import TypeVar
 
 T = TypeVar("T")

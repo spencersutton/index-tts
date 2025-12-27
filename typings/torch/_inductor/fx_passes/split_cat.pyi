@@ -30,10 +30,17 @@ pre_grad_pass_names = ...
 post_grad_pass_names = ...
 backend = ...
 
-def construct_pattern_matcher_pass(pass_name: str): ...
+def construct_pattern_matcher_pass(pass_name: str):
+    """Return the specific pattern_matcher_pass given the pass name."""
+
 def normalize_split_base(
     match: Match, _get_split_args: Callable[[torch.fx.Node], tuple[torch.fx.Node | None, Any | None, int | None]]
-): ...
+):
+    """
+    Normalize split with split_size into split_with_sizes, so that we only deal with one type of split in
+    subsequent optimizations
+    """
+
 @register_graph_pattern(
     CallFunctionVarArgs(torch.split, users=MULTIPLE), pass_dict=construct_pattern_matcher_pass("normalization_pass")
 )
@@ -88,6 +95,10 @@ def normalize_clamp_default(match: Match, *args, **kwargs): ...
 def normalize_detach_default(match: Match, *args, **kwargs): ...
 
 class TorchSplit(CallFunction):
+    """
+    Matches a call to torch.split if it is in a normalized form. Ensures that all users of
+    splits are unique getitems.
+    """
     def __init__(self, arg, sizes, func=...) -> None: ...
 
 @register_graph_pattern(
@@ -108,15 +119,46 @@ def merge_splits(
 ): ...
 
 class SplitCatSimplifier:
+    """
+    Helper class to simplify split-cat pattern. In simple cases, both split and cat node can be removed in a "split->cat"
+    pattern. However, there are various cases where they can't and we need to simplify split/ add transforms before cat.
+    Some such cases are:
+        1. Final node has additional args (not coming from the initial split)
+        2. Shuffling of args between split/cat
+        3. Some final nodes are non-(cat/stack)
+        4. Split-dim != cat-dim (but equal split)
+
+    Note that any combination of the above cases can happen.
+
+    To deal with 1, 2, & 3 - we iterate over all users of split. And figure out common "ranges" that can be merged.
+    Then, we simplify the split accordingly. In the best case, split can be entirely removed.
+
+    To deal with 4, we add some transformations (unflatten + movedim) (See `get_transform_params`).
+
+    Finally, depending on final node being cat or stack, unsqueeze/flatten needs to be added.
+    """
     def simplify(self, graph: torch.fx.Graph, split_node: torch.fx.Node, split_sections: list[int]): ...
     def get_user_input_list(
         self, split_node: torch.fx.Node, next_users: list[torch.fx.Node]
-    ) -> list[list[torch.fx.Node | _Range]]: ...
+    ) -> list[list[torch.fx.Node | _Range]]:
+        """
+        Returns list of inputs to the following user nodes, in order. The outer list represents the user node. The inner
+        list represents the inputs to that particular node. This list can either contain
+          - a tuple representing the ranges of get_items that should go into the cat (closed interval)
+          - torch.fx.Node representing "other" inputs (which are not coming from our split)
+        """
     def get_merged_user_inputs(
         self, split_node: torch.fx.Node, cat_node: torch.fx.Node
     ) -> list[torch.fx.Node | _Range]: ...
-    def get_non_cat_node_input(self, split_node: torch.fx.Node, node: torch.fx.Node) -> list[_Range]: ...
-    def merge_consecutive_inputs(self, inputs: list[torch.fx.Node | int]) -> list[torch.fx.Node | _Range]: ...
+    def get_non_cat_node_input(self, split_node: torch.fx.Node, node: torch.fx.Node) -> list[_Range]:
+        """Get input for a non cat node in the same format as `get_merged_user_inputs`"""
+    def merge_consecutive_inputs(self, inputs: list[torch.fx.Node | int]) -> list[torch.fx.Node | _Range]:
+        """
+        Merge consecutive inputs going into a user node.
+
+        For e.g.
+        [arg0, 0, 1, 2, arg1] -> [arg0, (0, 2), arg1]
+        """
     def get_simplified_split_ranges(
         self, split_sections, next_users, user_inputs_list: list[list[torch.fx.Node | _Range]]
     ) -> list[_Range] | None: ...
@@ -127,7 +169,12 @@ class SplitCatSimplifier:
         split_node: torch.fx.Node,
         next_users: list[torch.fx.Node],
         user_inputs_list: list[list[torch.fx.Node | _Range]],
-    ) -> list[list[_TransformParam]] | None: ...
+    ) -> list[list[_TransformParam]] | None:
+        """
+        Figure out what transforms are needed for each input to each cat node.
+
+        We replace a split node with an unflatten followed by a movedim
+        """
     def replace_split(
         self,
         graph: torch.fx.Graph,
@@ -135,7 +182,13 @@ class SplitCatSimplifier:
         split_sections: list[int],
         user_inputs_list: list[list[torch.fx.Node | _Range]],
         split_ranges: list[_Range],
-    ) -> list[list[torch.fx.Node]]: ...
+    ) -> list[list[torch.fx.Node]]:
+        """
+        Replace the split node. It can either remove the split node if len(split_ranges) == 1, or simplify it
+        into a split with lesser sections if len(split_ranges) > 1.
+
+        Returns the new `user_inputs_list`, with tuples replaced with new getitems from the newer split node.
+        """
     def replace_cat(
         self,
         graph: torch.fx.Graph,
@@ -147,6 +200,13 @@ class SplitCatSimplifier:
     def erase_old_nodes(self, graph: torch.fx.Graph, split_node: torch.fx.Node, next_users: list[torch.fx.Node]): ...
 
 class UnbindCatRemover(SplitCatSimplifier):
+    """
+    Helper class to merge Unbind->Cat/Stack. Many of the cases are similar to SplitCatSimplifier.
+
+    Unbind can't be simplified like splits. So, we can only remove the unbind node. Other than this,
+    other cases like multiple users, additional args, dim mismatch are similar to `SplitCatSimplifier`,
+    hence we extend that class.
+    """
     def remove_unbind(self, graph: torch.fx.Graph, unbind_node: torch.fx.Node): ...
     def get_simplified_split_ranges(
         self,
@@ -159,7 +219,26 @@ class UnbindCatRemover(SplitCatSimplifier):
         split_node: torch.fx.Node,
         next_users: list[torch.fx.Node],
         user_inputs_list: list[list[torch.fx.Node | _Range]],
-    ) -> list[list[_TransformParam]] | None: ...
+    ) -> list[list[_TransformParam]] | None:
+        """
+        Figure out what transforms are needed for each input to each cat node.
+
+        Here is the rough transforms we apply:
+
+        x -> unbind -> stack => x -> movedim
+
+        x -> unbind -> cat => x -> movedim -> flatten
+
+        When cat/stack nodes have additional args:
+
+             addn ---|              addn -> unsqueeze ---|
+        x -> unbind -> stack  =>           x -> movedim  -> cat
+
+             addn ---|                            addn ---|
+        x -> unbind -> cat  =>   x -> movedim -> flatten  -> cat
+
+        (Note application of these depends on the dims as well)
+        """
 
 class GetItem(CallFunction):
     def __init__(self, arg, index, _users=...) -> None: ...
@@ -222,9 +301,16 @@ reshape_getitem_split = ...
 )
 def simplify_split_cat(match: Match, split_sections: list[int], dim: int): ...
 def has_same_parent_node(node: torch.fx.Node): ...
-def remove_zeros(split_sections: list[int]): ...
+def remove_zeros(split_sections: list[int]):
+    """
+    Remove zeros from the list and get the index mapping dict from getitem
+    in split node to getitem in new split node
+    """
+
 def is_sorted_and_consecutive(arr: list[int]) -> bool: ...
-def calculate_fused_tensor_size(split_node: torch.fx.Node, indices: list[int]) -> int: ...
+def calculate_fused_tensor_size(split_node: torch.fx.Node, indices: list[int]) -> int:
+    """Calculate the fused tensor size in the indices"""
+
 @register_graph_pattern(
     CallFunction(torch.cat, getitem_split, dim=Ignored(), _users=MULTIPLE),
     pass_dict=construct_pattern_matcher_pass("merge_getitem_cat_pass"),
@@ -356,7 +442,18 @@ view_getitem_split_aten = ...
     pass_dict=construct_pattern_matcher_pass("move_view_after_cat_aten_pass"),
 )
 def move_view_after_cat(match: Match, *args, **kwargs): ...
-def match_einsum_strings(s: str) -> bool: ...
+def match_einsum_strings(s: str) -> bool:
+    """
+    This function takes a string s as input, where s is in the format "3 letter string,
+    4 letter string -> 3 letter string".
+    It checks if the strings match the rule and returns True if they do, False otherwise.
+
+    The rule is:
+    - The three strings have the same first two characters.
+    - The first two strings have the same third character.
+    - The second and third strings have the same last character.
+    """
+
 @register_graph_pattern(
     CallFunctionVarArgs(torch.functional.einsum, users=MULTIPLE),
     pass_dict=construct_pattern_matcher_pass("einsum_to_pointwise_pass"),

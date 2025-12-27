@@ -1,3 +1,25 @@
+"""
+This file implements the IndexPropagation ops handler, which wraps an
+underlying handler to add a limited form of constant propagation, as well as
+propagation of sympy expressions downstream of ops.index_expr calls.
+
+For example, say we have the IR:
+
+    tmp0 = ops.index_expr(x, torch.int32)
+    tmp1 = ops.constant(2, torch.int32)
+    tmp2 = ops.mul(tmp0, tmp1)
+    tmp3 = ops.indirect_indexing(tmp2, x_size)
+    tmp4 = ops.load("buf0", tmp3)
+
+The underlying handler would just see:
+
+    ops.load("buf0", x * 2)
+
+This is limited by the set of operators handled in the sympy expression
+printers. So simple operations like minimum and maximum cannot be translated to
+SymPy expressions yet, despite sympy.Min and sympy.Max existing.
+"""
+
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, Literal, overload
@@ -13,12 +35,20 @@ def upper_bound(val: _ExprType): ...
 
 @dataclass
 class TypedExpr:
+    """A SymPy expression with associated type"""
+
     expr: _ExprType
     dtype: torch.dtype
     def is_constant(self): ...
     def __post_init__(self): ...
 
 class SymPyOps:
+    """
+    An ops handler where all IR values are SymPy expressions
+
+    When a value cannot be represented as a SymPy expression, the method is
+    either not defined, or returns NotImplemented
+    """
     @staticmethod
     def identity(value: Any) -> Any: ...
     @staticmethod
@@ -54,6 +84,8 @@ class SymPyOps:
 
 @dataclass
 class IndexPropVar:
+    """IndexPropVar(value: Any, is_symbolic: bool = False)"""
+
     value: Any
     is_symbolic: bool = ...
     @staticmethod
@@ -63,6 +95,12 @@ class IndexPropVar:
 type IndexPropResult = IndexPropVar | tuple[IndexPropResult, ...]
 
 class IndexPropagation(DefaultHandler):
+    """
+    Ops wrapper that tries to propagate constant and index_expr values through the computation.
+
+    This aims to maximize the compile time simplification possible, and convert
+    indirect indexing from arange into normal static indexing.
+    """
     def __init__(
         self,
         inner: Any,
@@ -80,5 +118,17 @@ class IndexPropagation(DefaultHandler):
     def fallback(self, name: str, args: Sequence[Any], kwargs: dict[str, Any]) -> IndexPropResult: ...
     def fallback(self, name: str, args: Sequence[Any], kwargs: dict[str, Any]) -> IndexPropResult: ...
     def propagate_sympy(self, name: str, args: Sequence[Any], kwargs: dict[str, Any]) -> IndexPropResult: ...
-    def statically_true(self, e): ...
+    def statically_true(self, e):
+        """
+        Given some iter_ranges, return a function that given an expression, returns whether
+        it is true or false using value ranges, guard knowledge and runtime_asserts.
+
+        FIXME I think this may not be entirely right, as we may not be able to use all runtime_asserts
+              If this is an issue, just use guards in `self.axioms`.
+
+              The proper way of handling this would be to have a global shape_env that adds
+              runtime_asserts as they happen in the code. Then, it should be used in SimplifyIndexing
+              to perform wrap_expr and in CSEProxy.check_bounds to elide upper / lower bounds also
+              for indirect_indexing
+        """
     def indirect_indexing(self, index: Any | IndexPropVar, size: Any, check: bool = ..., wrap_neg=...) -> Any: ...

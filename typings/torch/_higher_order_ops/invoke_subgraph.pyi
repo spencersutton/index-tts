@@ -11,6 +11,8 @@ invoke_subgraph_counter = ...
 
 @dataclass
 class OutputMetadata:
+    """OutputMetadata(num_fw_outs: Optional[int] = None, indexes_with_symint: set[int] = <factory>, indexes_with_no_grad: set[int] = <factory>)"""
+
     num_fw_outs: int | None = ...
     indexes_with_symint: set[int] = ...
     indexes_with_no_grad: set[int] = ...
@@ -23,14 +25,38 @@ class InvokeSubgraphHOP(HigherOrderOperator):
 invoke_subgraph = ...
 
 def invoke_subgraph_placeholder(func, *args, **kwargs): ...
-def mark_compile_region(fn=...): ...
+def mark_compile_region(fn=...):
+    """
+    This wrapper instructs torch.compile to compile the wrapped region once and
+    reuse the compiled artifact, instead of the usual way of aggressively
+    inlining the function.
+
+    Under the hood, it tells TorchDynamo to use InvokeSubgraph HOP for the
+    region. For PyTorch eager, this is a no-op.
+    """
+
 def get_invoke_subgraph_cache(): ...
-def trace_joint_graph(fn, fw_inputs, fw_outputs): ...
+def trace_joint_graph(fn, fw_inputs, fw_outputs):
+    """
+    Naively trace out a joint graph. This simplifies the reconstruction of joint
+    graph in the min-cut partitioner later on.
+    """
+
 def create_fw_bw_graph(subgraph, operands, grad_outputs=...): ...
 def get_output_metadata(subgraph, *operands): ...
-def trace_joint_graph_as_bwd(subgraph, num_primals, joint_operands, include_key_set, exclude_key_set): ...
+def trace_joint_graph_as_bwd(subgraph, num_primals, joint_operands, include_key_set, exclude_key_set):
+    """
+    Naively trace out a joint graph. This simplifies the reconstruction of joint
+    graph in the min-cut partitioner later on.
+    """
 
 class InvokeSubgraphAutogradOp(torch.autograd.Function):
+    """
+    Saves the subgraph, i.e. original callable, in the forward method. And then
+    traces out a joint graph in the backward. This delaying of tracing in
+    backward, also called as lazy backward, ensures that the assumptions about
+    the grad_out strides and tensor-subclass-ness are already accounted for.
+    """
     @staticmethod
     def forward(ctx, subgraph, identifier, output_metadata, *operands): ...
     @staticmethod

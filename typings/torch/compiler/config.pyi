@@ -1,3 +1,17 @@
+"""
+This is the top-level configuration module for the compiler, containing
+cross-cutting configuration options that affect all parts of the compiler
+stack.
+
+You may also be interested in the per-component configuration modules, which
+contain configuration options that affect only a specific part of the compiler:
+
+* :mod:`torch._dynamo.config`
+* :mod:`torch._inductor.config`
+* :mod:`torch._functorch.config`
+* :mod:`torch.fx.experimental.config`
+"""
+
 __all__ = ["job_id"]
 job_id: str | None = ...
 pgo_extra_read_key: str | None = ...

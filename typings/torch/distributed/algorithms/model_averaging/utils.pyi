@@ -5,10 +5,26 @@ from torch.distributed import ProcessGroup
 
 __all__ = ["average_parameters", "average_parameters_or_parameter_groups", "get_params_to_average"]
 
-def average_parameters(params: Iterator[torch.nn.Parameter], process_group: ProcessGroup) -> None: ...
+def average_parameters(params: Iterator[torch.nn.Parameter], process_group: ProcessGroup) -> None:
+    """
+    Averages all the given parameters.
+
+    For allreduce efficiency, all the parameters are flattened into a contiguous buffer.
+    Thus, it requires extra memory of the same size as the given parameters.
+    """
+
 def get_params_to_average(
     params: Iterable[torch.nn.Parameter] | Iterable[dict[str, torch.nn.Parameter]],
-) -> list[Any]: ...
+) -> list[Any]:
+    """
+    Return a list of parameters that need to average.
+
+    This filters out the parameters that do not contain any gradients.
+    Args:
+        params: The parameters of a model or parameter groups of an optimizer.
+    """
+
 def average_parameters_or_parameter_groups(
     params: Iterable[torch.nn.Parameter] | Iterable[dict[str, torch.nn.Parameter]], process_group: ProcessGroup
-) -> None: ...
+) -> None:
+    """Averages parameters of a model or parameter groups of an optimizer."""

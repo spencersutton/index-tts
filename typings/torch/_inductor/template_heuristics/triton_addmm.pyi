@@ -5,4 +5,5 @@ from ..kernel_inputs import KernelInputs
 from .base import TemplateConfigHeuristics
 
 class AddMMConfigMixin(TemplateConfigHeuristics):
+    """Simple mixin to handle scalars for addmm like operators (addmm, baddbmm)"""
     def get_extra_kwargs(self, kernel_inputs: KernelInputs, layout: Layout, op_name: str) -> dict[str, Any]: ...

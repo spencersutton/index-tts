@@ -11,6 +11,12 @@ _VT = TypeVar("_VT")
 
 @compatibility(is_backward_compatible=True)
 class immutable_list(UserList[_T]):
+    """
+    An immutable version of :class:`list`.
+    .. note::
+        Backwards-compatibility for this API is guaranteed.
+    """
+
     __delitem__ = ...
     __iadd__ = ...
     __imul__ = ...
@@ -28,6 +34,12 @@ class immutable_list(UserList[_T]):
 
 @compatibility(is_backward_compatible=True)
 class immutable_dict(UserDict[_KT, _VT]):
+    """
+    An immutable version of :class:`dict`.
+    .. note::
+        Backwards-compatibility for this API is guaranteed.
+    """
+
     __delitem__ = ...
     __ior__ = ...
     __setitem__ = ...

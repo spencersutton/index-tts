@@ -17,13 +17,23 @@ class MsgHeader(IntEnum):
 msg_bytes = ...
 
 class _SubprocExceptionInfo:
+    """
+    Carries exception info from subprocesses across the wire. traceback
+    objects are not pickleable, so we store the trace as a string and
+    use it for the message in the exception thrown in the main process.
+    """
     def __init__(self, details: str) -> None: ...
 
 class SubprocException(Exception):
+    """Thrown when a job in a subprocess raises an Exception."""
     def __init__(self, details: str, name: str = ...) -> None: ...
     def with_name(self, name: str) -> SubprocException: ...
 
 class SubprocPickler:
+    """
+    Allows a caller to provide a custom pickler for passing data with the
+    subprocess.
+    """
     def dumps(self, obj: object) -> bytes: ...
     def loads(self, data: bytes) -> object: ...
 
@@ -32,6 +42,10 @@ class SubprocKind(Enum):
     SPAWN = ...
 
 class SubprocPool:
+    """
+    Mimic a concurrent.futures.ProcessPoolExecutor, but wrap it in
+    a subprocess.Popen() to try to avoid issues with forking/spawning
+    """
     def __init__(self, nprocs: int, pickler: SubprocPickler | None = ..., kind: SubprocKind = ...) -> None: ...
     def submit(self, job_fn: Callable[_P, _T], *args: _P.args, **kwargs: _P.kwargs) -> Future[_T]: ...
     def quiesce(self) -> None: ...
@@ -39,6 +53,7 @@ class SubprocPool:
     def shutdown(self) -> None: ...
 
 class SubprocMain:
+    """Communicates with a SubprocPool in the parent process, called by __main__.py"""
     def __init__(
         self, pickler: SubprocPickler, kind: SubprocKind, nprocs: int, read_pipe: IO[bytes], write_pipe: IO[bytes]
     ) -> None: ...

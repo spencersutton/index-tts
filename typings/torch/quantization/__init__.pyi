@@ -9,7 +9,11 @@ from .quantize import *
 from .quantize_jit import *
 from .stubs import *
 
-def default_eval_fn(model, calib_data) -> None: ...
+def default_eval_fn(model, calib_data) -> None:
+    """
+    Default evaluation function takes a torch.utils.data.Dataset or a list of
+    input Tensors and run the model on the dataset
+    """
 
 __all__ = [
     "DeQuantStub",

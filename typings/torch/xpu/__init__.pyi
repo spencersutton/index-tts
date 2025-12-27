@@ -1,3 +1,11 @@
+"""
+This package introduces support for the XPU backend, specifically tailored for
+Intel GPU optimization.
+
+This package is lazily initialized, so you can always import it, and use
+:func:`is_available()` to determine if your system supports XPU.
+"""
+
 from collections.abc import Callable
 from functools import lru_cache
 from typing import Any
@@ -47,11 +55,25 @@ else:
     _XpuDeviceProperties = ...
 
 @lru_cache(maxsize=1)
-def device_count() -> int: ...
-def is_available() -> bool: ...
-def is_bf16_supported(including_emulation: bool = ...) -> bool: ...
-def is_initialized() -> bool: ...
-def init() -> None: ...
+def device_count() -> int:
+    """Return the number of XPU device available."""
+
+def is_available() -> bool:
+    """Return a bool indicating if XPU is currently available."""
+
+def is_bf16_supported(including_emulation: bool = ...) -> bool:
+    """Return a bool indicating if the current XPU device supports dtype bfloat16."""
+
+def is_initialized() -> bool:
+    """Return whether PyTorch's XPU state has been initialized."""
+
+def init() -> None:
+    """
+    Initialize PyTorch's XPU state.
+    This is a Python API about lazy initialization that avoids initializing
+    XPU until the first time it is accessed. Does nothing if the XPU state is
+    already initialized.
+    """
 
 class _DeviceGuard:
     def __init__(self, index: int) -> None: ...
@@ -59,33 +81,164 @@ class _DeviceGuard:
     def __exit__(self, type: Any, value: Any, traceback: Any) -> Literal[False]: ...
 
 class device:
+    """
+    Context-manager that changes the selected device.
+
+    Args:
+        device (torch.device or int or str): device index to select. It's a no-op if
+            this argument is a negative integer or ``None``.
+    """
     def __init__(self, device: Any) -> None: ...
     def __enter__(self) -> None: ...
     def __exit__(self, type: Any, value: Any, traceback: Any) -> Literal[False]: ...
 
 class device_of(device):
+    """
+    Context-manager that changes the current device to that of given object.
+
+    You can use both tensors and storages as arguments. If a given object is
+    not allocated on a XPU, this is a no-op.
+
+    Args:
+        obj (Tensor or Storage): object allocated on the selected device.
+    """
     def __init__(self, obj) -> None: ...
 
-def set_device(device: _device_t) -> None: ...
-def get_device_name(device: _device_t | None = ...) -> str: ...
+def set_device(device: _device_t) -> None:
+    """
+    Set the current device.
+
+    Args:
+        device (torch.device or int or str): selected device. This function is a
+            no-op if this argument is negative.
+    """
+
+def get_device_name(device: _device_t | None = ...) -> str:
+    """
+    Get the name of a device.
+
+    Args:
+        device (torch.device or int or str, optional): device for which to
+            return the name. This function is a no-op if this argument is a
+            negative integer. It uses the current device, given by :func:`~torch.xpu.current_device`,
+            if :attr:`device` is ``None`` (default).
+
+    Returns:
+        str: the name of the device
+    """
+
 @lru_cache(None)
-def get_device_capability(device: _device_t | None = ...) -> dict[str, Any]: ...
-def get_device_properties(device: _device_t | None = ...) -> _XpuDeviceProperties: ...
-def current_device() -> int: ...
+def get_device_capability(device: _device_t | None = ...) -> dict[str, Any]:
+    """
+    Get the xpu capability of a device.
+
+    Args:
+        device (torch.device or int or str, optional): device for which to
+            return the device capability. This function is a no-op if this
+            argument is a negative integer. It uses the current device, given by
+            :func:`~torch.xpu.current_device`, if :attr:`device` is ``None``
+            (default).
+
+    Returns:
+        Dict[str, Any]: the xpu capability dictionary of the device
+    """
+
+def get_device_properties(device: _device_t | None = ...) -> _XpuDeviceProperties:
+    """
+    Get the properties of a device.
+
+    Args:
+        device (torch.device or int or str): device for which to return the
+            properties of the device.
+
+    Returns:
+        _XpuDeviceProperties: the properties of the device
+    """
+
+def current_device() -> int:
+    """Return the index of a currently selected device."""
 
 class StreamContext:
+    """
+    Context-manager that selects a given stream.
+
+    All XPU kernels queued within its context will be enqueued on a selected
+    stream.
+
+    Args:
+        Stream (Stream): selected stream. This manager is a no-op if it's
+            ``None``.
+    .. note:: Streams are per-device.
+    """
+
     cur_stream: torch.xpu.Stream | None
     def __init__(self, stream: torch.xpu.Stream | None) -> None: ...
     def __enter__(self) -> None: ...
     def __exit__(self, type: Any, value: Any, traceback: Any) -> None: ...
 
-def stream(stream: torch.xpu.Stream | None) -> StreamContext: ...
-def set_stream(stream: Stream) -> None: ...
-def current_stream(device: _device_t | None = ...) -> Stream: ...
-def get_stream_from_external(data_ptr: int, device: _device_t | None = ...) -> Stream: ...
-def synchronize(device: _device_t = ...) -> None: ...
-def get_arch_list() -> list[str]: ...
-def get_gencode_flags() -> str: ...
+def stream(stream: torch.xpu.Stream | None) -> StreamContext:
+    """
+    Wrap around the Context-manager StreamContext that selects a given stream.
+
+    Arguments:
+        stream (Stream): selected stream. This manager is a no-op if it's ``None``.
+    """
+
+def set_stream(stream: Stream) -> None:
+    """
+    Set the current stream.This is a wrapper API to set the stream.
+        Usage of this function is discouraged in favor of the ``stream``
+        context manager.
+
+    Args:
+        stream (Stream): selected stream. This function is a no-op
+            if this argument is ``None``.
+    """
+
+def current_stream(device: _device_t | None = ...) -> Stream:
+    """
+    Return the currently selected :class:`Stream` for a given device.
+
+    Args:
+        device (torch.device or int, optional): selected device. Returns
+            the currently selected :class:`Stream` for the current device, given
+            by :func:`~torch.xpu.current_device`, if :attr:`device` is ``None``
+            (default).
+    """
+
+def get_stream_from_external(data_ptr: int, device: _device_t | None = ...) -> Stream:
+    """
+    Return a :class:`Stream` from an external SYCL queue.
+
+    This function is used to wrap SYCL queue created in other libraries in order
+    to facilitate data exchange and multi-library interactions.
+
+    .. note:: This function doesn't manage the queue life-cycle, it is the user
+       responsibility to keep the referenced queue alive while this returned stream is
+       being used. The different SYCL queue pointers will result in distinct
+       :class:`Stream` objects, even if the SYCL queues they dereference are equivalent.
+
+    Args:
+        data_ptr(int): Integer representation of the `sycl::queue*` value passed externally.
+        device(torch.device or int, optional): the device where the queue was originally created.
+            It is the user responsibility to ensure the device is specified correctly.
+    """
+
+def synchronize(device: _device_t = ...) -> None:
+    """
+    Wait for all kernels in all streams on a XPU device to complete.
+
+    Args:
+        device (torch.device or int, optional): device for which to synchronize.
+            It uses the current device, given by :func:`~torch.xpu.current_device`,
+            if :attr:`device` is ``None`` (default).
+    """
+
+def get_arch_list() -> list[str]:
+    """Return list XPU architectures this library was compiled for."""
+
+def get_gencode_flags() -> str:
+    """Return XPU AOT(ahead-of-time) build flags this library was compiled with."""
 
 __all__ = [
     "Event",

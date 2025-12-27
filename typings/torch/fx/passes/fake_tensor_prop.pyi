@@ -7,6 +7,21 @@ __all__ = ["FakeTensorProp"]
 
 @compatibility(is_backward_compatible=False)
 class FakeTensorProp(torch.fx.Interpreter):
+    """
+    Execute an FX graph Node-by-Node and record a fake tensor representing
+    the metadata for the node.  Unlike ShapeProp, (1) this propagation
+    is cheap--it does the propagation with meta tensors which do not actually
+    store data, and (2) the fake tensors have much more fine grained information,
+    e.g., they have accurate alias information that can be consulted by looking
+    at the storages.
+
+    Args:
+         module (GraphModule): The module to be executed
+         mode (Optional[FakeTensorMode]): The dispatch mode used to execute computation indicated by each FX Node.
+
+    .. warning::
+        This API is experimental and is *NOT* backward-compatible.
+    """
     def __init__(self, module: torch.fx.GraphModule, mode: FakeTensorMode | None = ...) -> None: ...
     def run_node(self, n: Node) -> Any: ...
     def propagate(self, *args) -> Any: ...

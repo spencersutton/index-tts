@@ -428,7 +428,9 @@ def view_as_complex(self: TensorLikeType) -> TensorLikeType: ...
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("a", "b"), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT
 )
-def add(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType, *, alpha: NumberType | None = ...): ...
+def add(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType, *, alpha: NumberType | None = ...):
+    """Reference implementation of torch.add"""
+
 @_make_elementwise_binary_reference(
     type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT,
     supports_lhs_python_scalar=False,
@@ -451,7 +453,9 @@ def bitwise_xor(a: TensorLikeType, b: TensorLikeType) -> TensorLikeType: ...
 def copysign(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType): ...
 @register_decomposition(aten.div)
 @out_wrapper()
-def div(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType, *, rounding_mode: str | None = ...): ...
+def div(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType, *, rounding_mode: str | None = ...):
+    """Reference implementation of torch.div"""
+
 @_make_elementwise_binary_reference(
     type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.ALWAYS_BOOL, supports_lhs_python_scalar=False
 )
@@ -590,7 +594,9 @@ def rsub(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType, alpha: 
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("a", "b"), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT
 )
-def sub(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType, *, alpha: NumberType = ...): ...
+def sub(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType, *, alpha: NumberType = ...):
+    """Reference implementation of torch.sub"""
+
 @_make_elementwise_binary_reference(
     type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT,
     name="true_divide",
@@ -615,7 +621,9 @@ def trunc_divide(a: TensorLikeType | NumberType, b: TensorLikeType | NumberType)
 )
 def addcdiv(
     self: TensorLikeType, tensor1: TensorLikeType, tensor2: TensorLikeType, *, value: NumberType = ...
-) -> TensorLikeType: ...
+) -> TensorLikeType:
+    """Reference implementation of torch.addcdiv"""
+
 @register_decomposition(aten.addcmul)
 @out_wrapper()
 @elementwise_type_promotion_wrapper(
@@ -623,7 +631,9 @@ def addcdiv(
 )
 def addcmul(
     self: TensorLikeType, tensor1: TensorLikeType, tensor2: TensorLikeType, *, value: NumberType = ...
-) -> TensorLikeType: ...
+) -> TensorLikeType:
+    """Reference implementation of torch.addcmul"""
+
 @register_decomposition(aten.clamp)
 @out_wrapper()
 @elementwise_type_promotion_wrapper(
@@ -733,13 +743,19 @@ def addr(
 ) -> TensorLikeType: ...
 def atleast_1d(
     arg: TensorLikeType | Sequence[TensorLikeType], *args: TensorLikeType
-) -> TensorLikeType | tuple[TensorLikeType, ...]: ...
+) -> TensorLikeType | tuple[TensorLikeType, ...]:
+    """Reference implementation of :func:`torch.atleast_1d`."""
+
 def atleast_2d(
     arg: TensorLikeType | Sequence[TensorLikeType], *args: TensorLikeType
-) -> TensorLikeType | tuple[TensorLikeType, ...]: ...
+) -> TensorLikeType | tuple[TensorLikeType, ...]:
+    """Reference implementation of :func:`torch.atleast_2d`."""
+
 def atleast_3d(
     arg: TensorLikeType | Sequence[TensorLikeType], *args: TensorLikeType
-) -> TensorLikeType | tuple[TensorLikeType, ...]: ...
+) -> TensorLikeType | tuple[TensorLikeType, ...]:
+    """Reference implementation of :func:`torch.atleast_3d`."""
+
 def as_strided(
     a: TensorLikeType, size: ShapeType, stride: StrideType, storage_offset: int | None = ...
 ) -> TensorLikeType: ...
@@ -836,10 +852,14 @@ def reshape(a: TensorLikeType, *shape: ShapeType) -> TensorLikeType: ...
 def reshape_as(self: TensorLikeType, other: TensorLikeType) -> TensorLikeType: ...
 @register_decomposition(aten.roll)
 @out_wrapper()
-def roll(a: TensorLikeType, shifts: DimsType, dims: DimsType = ...) -> TensorLikeType: ...
+def roll(a: TensorLikeType, shifts: DimsType, dims: DimsType = ...) -> TensorLikeType:
+    """Reference implementation of :func:`torch.roll`."""
+
 @register_decomposition(aten.rot90)
 @out_wrapper()
-def rot90(a: TensorLikeType, k: int = ..., dims: DimsSequenceType = ...) -> TensorLikeType: ...
+def rot90(a: TensorLikeType, k: int = ..., dims: DimsSequenceType = ...) -> TensorLikeType:
+    """Reference implementation of :func:`torch.rot90`."""
+
 @register_decomposition(aten.stack)
 @out_wrapper()
 def stack(tensors: TensorSequenceType, dim: int = ...) -> TensorLikeType: ...
@@ -883,11 +903,21 @@ def diagonal_scatter(
     input: TensorLikeType, src: TensorLikeType, offset: int = ..., dim1: int = ..., dim2: int = ...
 ) -> TensorLikeType: ...
 @register_decomposition(aten.diagonal)
-def diagonal(self: TensorLikeType, offset: int = ..., dim1: int = ..., dim2: int = ...) -> TensorLikeType: ...
+def diagonal(self: TensorLikeType, offset: int = ..., dim1: int = ..., dim2: int = ...) -> TensorLikeType:
+    """Reference implementation of torch.diagonal"""
+
 @register_decomposition(aten.diag_embed)
 @out_wrapper()
-def diag_embed(t: TensorLikeType, offset: int = ..., dim1: int = ..., dim2: int = ...) -> TensorLikeType: ...
-def block_diag(*tensors: list[TensorLikeType]) -> TensorLikeType: ...
+def diag_embed(t: TensorLikeType, offset: int = ..., dim1: int = ..., dim2: int = ...) -> TensorLikeType:
+    """Reference implementation of torch.diag_embed"""
+
+def block_diag(*tensors: list[TensorLikeType]) -> TensorLikeType:
+    """
+    This is used as an input to PythonRefInfo. `torch.block_diag`
+    expects arguments splatted, but `aten.block_diag` expects only
+    one argument that is a list of Tensors.
+    """
+
 def dsplit(a: TensorLikeType, sections: DimsType) -> TensorSequenceType: ...
 @register_decomposition(aten.t.default)
 def t(a: TensorLikeType): ...
@@ -962,7 +992,9 @@ def new_empty_strided(
     layout: torch.layout | None = ...,
     device: DeviceLikeType | None = ...,
     pin_memory: bool = ...,
-) -> TensorLikeType: ...
+) -> TensorLikeType:
+    """Reference implementation of torch.Tensor.new_empty_strided"""
+
 @register_decomposition(aten.zeros.default)
 @out_wrapper()
 def zeros(
@@ -1091,7 +1123,9 @@ def meshgrid(
 ) -> list[TensorLikeType]: ...
 def movedim(
     input: TensorLikeType, source: int | DimsSequenceType, destination: int | DimsSequenceType
-) -> TensorLikeType: ...
+) -> TensorLikeType:
+    """Reference implementation of torch.movedim"""
+
 @register_decomposition(aten.empty_strided)
 @out_wrapper()
 def empty_strided(
@@ -1115,7 +1149,9 @@ def eye(
     device: DeviceLikeType | None = ...,
     pin_memory: bool = ...,
     requires_grad: bool = ...,
-) -> TensorLikeType: ...
+) -> TensorLikeType:
+    """Reference implementation of torch.eye"""
+
 @register_decomposition([aten.full.default, aten.full.out])
 @out_wrapper()
 def full(
@@ -1186,9 +1222,9 @@ def scalar_tensor(
 def masked_fill(a: TensorLikeType, mask: TensorLikeType, value: TensorOrNumberLikeType): ...
 @register_decomposition(aten.masked_fill_)
 def masked_fill_(a: TensorLikeType, mask: TensorLikeType, value: TensorOrNumberLikeType) -> TensorLikeType: ...
-def allclose(
-    a: TensorLikeType, b: TensorLikeType, rtol: float = ..., atol: float = ..., equal_nan: bool = ...
-) -> bool: ...
+def allclose(a: TensorLikeType, b: TensorLikeType, rtol: float = ..., atol: float = ..., equal_nan: bool = ...) -> bool:
+    """Reference implementation of torch.allclose"""
+
 def equal(a: TensorLikeType, b: TensorLikeType) -> bool: ...
 @register_decomposition(aten.norm)
 @out_wrapper(exact_dtype=True)

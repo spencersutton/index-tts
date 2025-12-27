@@ -1,3 +1,5 @@
+"""Python polyfills for builtins"""
+
 import builtins
 from collections.abc import Iterable
 from typing import TypeVar

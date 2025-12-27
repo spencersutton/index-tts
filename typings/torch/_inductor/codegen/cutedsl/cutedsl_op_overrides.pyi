@@ -1,15 +1,31 @@
+"""
+CuteDSL-specific operation overrides for pointwise operations.
+
+This module provides CuteDSL implementations of common operations used in
+template kernels, particularly for flex attention modifications.
+"""
+
 import torch
 from torch._inductor.codegen.common import CSEVariable, OpOverrides
 
 type CuteDSLArg = CSEVariable | str
 
-def upcast_compute_type(dtype: torch.dtype) -> torch.dtype: ...
+def upcast_compute_type(dtype: torch.dtype) -> torch.dtype:
+    """Maybe upcast [b]float16 to float32"""
 
 class CuteDSLOpOverrides(OpOverrides):
+    """
+    CuteDSL-specific operation overrides that generate code using CuteDSL syntax.
+
+    CuteDSL TensorSSA objects have built-in operator overloads (__add__, __mul__, etc.)
+    and math functions (cute.math.exp, cute.math.sqrt, etc.)
+    """
+
     TORCH_TO_CUTE_DTYPE = ...
     LOG2_E = ...
     @staticmethod
-    def constant(value: bool | float, dtype: torch.dtype) -> str: ...
+    def constant(value: bool | float, dtype: torch.dtype) -> str:
+        """Generate CuteDSL constant representation."""
     @staticmethod
     def add(a: CuteDSLArg, b: CuteDSLArg) -> CuteDSLArg: ...
     @staticmethod
@@ -23,39 +39,58 @@ class CuteDSLOpOverrides(OpOverrides):
     @staticmethod
     def remainder(a, b): ...
     @staticmethod
-    def exp(x: CuteDSLArg) -> CuteDSLArg: ...
+    def exp(x: CuteDSLArg) -> CuteDSLArg:
+        """Exponential using CuteDSL cute.math.exp function."""
     @staticmethod
-    def sqrt(x: CuteDSLArg) -> CuteDSLArg: ...
+    def sqrt(x: CuteDSLArg) -> CuteDSLArg:
+        """Square root using CuteDSL cute.math.sqrt function."""
     @staticmethod
-    def log(x: CuteDSLArg) -> CuteDSLArg: ...
+    def log(x: CuteDSLArg) -> CuteDSLArg:
+        """Natural logarithm using CuteDSL cute.math.log function."""
     @staticmethod
-    def cos(x: CuteDSLArg) -> CuteDSLArg: ...
+    def cos(x: CuteDSLArg) -> CuteDSLArg:
+        """Cosine using CuteDSL cute.math.cos function."""
     @staticmethod
-    def sin(x: CuteDSLArg) -> CuteDSLArg: ...
+    def sin(x: CuteDSLArg) -> CuteDSLArg:
+        """Sine using CuteDSL cute.math.sin function."""
     @staticmethod
-    def erf(x: CuteDSLArg) -> CuteDSLArg: ...
+    def erf(x: CuteDSLArg) -> CuteDSLArg:
+        """Error function using CuteDSL cute.math.erf function."""
     @staticmethod
     def maximum(a: CuteDSLArg, b: CuteDSLArg) -> CuteDSLArg: ...
     @staticmethod
     def minimum(a: CuteDSLArg, b: CuteDSLArg) -> CuteDSLArg: ...
     @staticmethod
-    def where(condition: CuteDSLArg, a: CuteDSLArg, b: CuteDSLArg) -> CuteDSLArg: ...
+    def where(condition: CuteDSLArg, a: CuteDSLArg, b: CuteDSLArg) -> CuteDSLArg:
+        """Conditional selection - handles both CSEVariable and string inputs."""
     @staticmethod
     def pow(a: CuteDSLArg, b: CuteDSLArg): ...
     @staticmethod
-    def abs(x: CuteDSLArg) -> CuteDSLArg: ...
+    def abs(x: CuteDSLArg) -> CuteDSLArg:
+        """Absolute value using CuteDSL cute.math.abs function."""
     @staticmethod
-    def neg(x: CuteDSLArg) -> CuteDSLArg: ...
+    def neg(x: CuteDSLArg) -> CuteDSLArg:
+        """Negation using CuteDSL TensorSSA __neg__ operator."""
     @staticmethod
-    def to_dtype(x: CuteDSLArg, dtype: torch.dtype, src_dtype=..., use_compute_types=...) -> CuteDSLArg: ...
+    def to_dtype(x: CuteDSLArg, dtype: torch.dtype, src_dtype=..., use_compute_types=...) -> CuteDSLArg:
+        """
+        Type conversion using CuteDSL TensorSSA.to(Type[Numeric]).
+
+        Maps torch dtypes to cutlass.cute.typing numeric types and emits
+        `{x}.to(cute.typing.<Type>)`.
+
+        Raises NotImplementedError for unsigned integer and unsupported dtypes.
+        """
     @staticmethod
-    def tanh(x0: CuteDSLArg) -> CuteDSLArg: ...
+    def tanh(x0: CuteDSLArg) -> CuteDSLArg:
+        """Hyperbolic tangent using CuteDSL cute.math.tanh function."""
     @staticmethod
     def logical_and(x0: CuteDSLArg, x1: CuteDSLArg) -> CuteDSLArg: ...
     @staticmethod
     def logical_or(x0: CuteDSLArg, x1: CuteDSLArg) -> CuteDSLArg: ...
     @staticmethod
-    def logical_not(a): ...
+    def logical_not(a):
+        """Logical NOT."""
     @staticmethod
     def eq(a: CuteDSLArg, b: CuteDSLArg) -> CuteDSLArg: ...
     @staticmethod

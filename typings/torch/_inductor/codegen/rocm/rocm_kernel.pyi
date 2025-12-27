@@ -12,11 +12,21 @@ log = ...
 cexpr = ...
 
 class ROCmKernel(Kernel):
+    """Baseclass for ROCm based Kernels"""
+
     overrides = OpOverrides
 
 class ROCmTemplateKernel(ROCmKernel):
+    """Template kernels defined by ROCm in C++."""
+
     _EXTRA_CPP_ARGS = ...
-    def __init__(self, kernel_name: str, runtime_arg_info: list[ArgInfo], runtime_arg_values: list[Any]) -> None: ...
+    def __init__(self, kernel_name: str, runtime_arg_info: list[ArgInfo], runtime_arg_values: list[Any]) -> None:
+        """
+        Initializes a new instance of the ROCmTemplateKernel class.
+
+        Args:
+            kernel_name (str): The name of the kernel.
+        """
     def get_signature(self): ...
     def def_kernel(
         self,
@@ -25,10 +35,41 @@ class ROCmTemplateKernel(ROCmKernel):
         size_args: list[str],
         names_str: str = ...,
         input_reorder: list[int] | None = ...,
-    ) -> str: ...
-    def call_kernel(self, name: str, node: ROCmTemplateBuffer) -> None: ...
+    ) -> str:
+        """
+        Hook called from template code to generate function definition and
+        needed args.
+
+        Args:
+            inputs: List of input IRNodes
+            outputs: List of output IRNodes
+            names_str: Comma separated list of input + output argument names.
+            input_reorder: The actual order of input nodes.
+                           e.g. The template might have input argument defined as [X, W, Bias],
+                           and the actual input passed into this template could be [Bias, X, W].
+                           In this case, the `input_reorder` would be [2, 0, 1].
+        """
+    def call_kernel(self, name: str, node: ROCmTemplateBuffer) -> None:
+        """
+        Generates code to call the kernel through V.graph.wrapper_code.
+        used from within torch._inductor.wrapper.PythonWrapperCodegen
+
+        name: Name of kernel function.
+        node: The ROCmTemplateBuffer node which contains information about the kernel, it's fused epilogue nodes
+        as well as all required inputs and outputs.
+        """
 
 class ROCmTemplateCaller(ChoiceCaller):
+    """
+    ROCmTemplateCaller
+
+    This class represents a caller for ROCm template kernels. It is a subclass of ChoiceCaller.
+    Attributes:
+        name (str): The name of the caller.
+        category (str): The category of the caller.
+        bmreq (ROCmBenchmarkRequest): The benchmark request for the caller.
+        template_buffer (ROCmTemplateBuffer): The template buffer for the caller.
+    """
     def __init__(
         self,
         name: str,
@@ -44,5 +85,6 @@ class ROCmTemplateCaller(ChoiceCaller):
     def benchmark(self, *args, out) -> float: ...
     def call_name(self) -> str: ...
     def hash_key(self) -> str: ...
-    def info_dict(self) -> dict[str, PrimitiveInfoType | list[PrimitiveInfoType]]: ...
+    def info_dict(self) -> dict[str, PrimitiveInfoType | list[PrimitiveInfoType]]:
+        """Information returned here is logged to the autotune log file when that is enabled."""
     def output_node(self) -> TensorBox | ShapeAsConstantBuffer: ...

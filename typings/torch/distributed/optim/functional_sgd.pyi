@@ -18,5 +18,9 @@ class _FunctionalSGD:
         fused: bool = ...,
         _allow_empty_param_list: bool = ...,
     ) -> None: ...
-    def step_param(self, param: Tensor, grad: Tensor | None) -> None: ...
+    def step_param(self, param: Tensor, grad: Tensor | None) -> None:
+        """
+        Similar to self.step, but operates on a single parameter and
+        its gradient.
+        """
     def step(self, gradients: list[Tensor | None]) -> None: ...

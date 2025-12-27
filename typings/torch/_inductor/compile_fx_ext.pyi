@@ -19,6 +19,8 @@ from .compile_fx import FxCompile, _CompileFxKwargs
 
 @dataclass
 class _VirtualizedSerializer:
+    """This handles the data for serializing Virtualized."""
+
     aot_compilation: Any = ...
     choices: Any = ...
     local_buffer_context: Any = ...
@@ -26,26 +28,41 @@ class _VirtualizedSerializer:
     kernel: Any = ...
     current_node: Any = ...
     @classmethod
-    def serialize(cls) -> _VirtualizedSerializer: ...
-    def patch(self) -> _VirtualizedSerializerContextManager: ...
+    def serialize(cls) -> _VirtualizedSerializer:
+        """
+        Turn the current state of torch._inductor.virtualized.V into a
+        serializable structure.
+        """
+    def patch(self) -> _VirtualizedSerializerContextManager:
+        """
+        Returns a context manager which patches the saved values into the
+        current environment. While patched, any value not listed above will be
+        poisoned so that reads will raise an error.
+        """
 
 class _VirtualizedSerializerContextManager(contextlib.ExitStack):
+    """Helper for _VirtualizedSerializer.patch()"""
     def __init__(self, virtualized: _VirtualizedSerializer) -> None: ...
     @override
     def __enter__(self) -> Self: ...
 
 class _LoweringSerializer:
+    """This handles the data for serializing lowering.lowering"""
+
     fallbacks: OrderedSet[str]
     def __init__(self) -> None: ...
     def patch(self) -> _LoweringSerializerContextManager: ...
 
 class _LoweringSerializerContextManager(contextlib.ExitStack):
+    """Helper for _LoweringSerializer.patch()"""
     def __init__(self, lowering: _LoweringSerializer) -> None: ...
     @override
     def __enter__(self) -> Self: ...
 
 @dataclass
 class _FakeTensorModeSerializer:
+    """_FakeTensorModeSerializer(fake_mode: 'FakeTensorMode') -> 'None'"""
+
     allow_non_fake_inputs: bool
     def __init__(self, fake_mode: FakeTensorMode) -> None: ...
     @contextlib.contextmanager
@@ -53,6 +70,11 @@ class _FakeTensorModeSerializer:
 
 @dataclass
 class _WireProtocolInput:
+    """
+    For _SerializedFxCompile - encapsulates all the data being transferred
+    (sent) from the parent to the child.
+    """
+
     gm: torch.fx.GraphModule
     example_inputs: Sequence[InputType]
     inputs_to_check: Sequence[int]
@@ -64,28 +86,53 @@ class _WireProtocolInput:
     logger_state: _LoggerState
     lowering: _LoweringSerializer
     fake_tensor_mode: _FakeTensorModeSerializer
-    def serialize(self) -> _WireProtocolPickledInput: ...
+    def serialize(self) -> _WireProtocolPickledInput:
+        """
+        Turns this object into a _WireProtocolPickledInput which can be
+        directly transferred across a stream.
+        """
 
 @dataclass
 class _WireProtocolPickledInput:
+    """_WireProtocolPickledInput(value: 'bytes')"""
+
     value: bytes
-    def deserialize(self) -> _WireProtocolInput: ...
+    def deserialize(self) -> _WireProtocolInput:
+        """Turn this streamable object back into a _WireProtocolInput."""
 
 @dataclass
 class _WireProtocolOutput:
+    """
+    For _SerializedFxCompile - encapsulates all the data being transferred
+    (returned) back from the child to the parent.
+    """
+
     graph: OutputCode
     metrics: CachedMetricsDeltas
     logs: list[logging.LogRecord]
     warning_replay: list[warnings.WarningMessage] | None
     shape_env: torch.fx.experimental.symbolic_shapes.ShapeEnv | None
-    def serialize(self) -> _WireProtocolPickledOutput: ...
+    def serialize(self) -> _WireProtocolPickledOutput:
+        """
+        Turns this object into a _WireProtocolPickledOutput which can be
+        directly transferred across a stream.
+        """
 
 @dataclass
 class _WireProtocolPickledOutput:
+    """_WireProtocolPickledOutput(value: 'bytes')"""
+
     value: bytes
-    def deserialize(self, constants: CompiledFxGraphConstants) -> _WireProtocolOutput: ...
+    def deserialize(self, constants: CompiledFxGraphConstants) -> _WireProtocolOutput:
+        """Turn this streamable object back into a _WireProtocolOutput."""
 
 class _LoggerState:
+    """
+    This class is for tracking logging that happens during an out-of-process
+    compile so we can "replay" those messages when the compile is done. Used as
+    a context manager which returns the captured logs (object).
+    """
+
     loggers: dict[str, int]
     captured_logs: _CapturedLogs | None = ...
     def __init__(self) -> None: ...
@@ -98,6 +145,11 @@ class _LoggerState:
     ) -> None: ...
 
 class _CapturedLogs:
+    """
+    Helper for _LoggerState - this class actually attaches to the logger in
+    the child process and grabs the log messages themselves.
+    """
+
     state: _LoggerState
     queue: queue.Queue[logging.LogRecord]
     handlers: dict[str, logging.Handler] | None
@@ -107,6 +159,10 @@ class _CapturedLogs:
     def apply(self) -> None: ...
 
 class _SerializedFxCompile(FxCompile):
+    """
+    This is used to represent an FxCompile which occurs across a serialized
+    boundary.
+    """
     @override
     def codegen_and_compile(
         self,
@@ -121,12 +177,20 @@ class _SerializedFxCompile(FxCompile):
         example_inputs: Sequence[InputType],
         inputs_to_check: Sequence[int],
         graph_kwargs: _CompileFxKwargs,
-    ) -> tuple[_WireProtocolPickledInput, CompiledFxGraphConstantsWithGm] | None: ...
+    ) -> tuple[_WireProtocolPickledInput, CompiledFxGraphConstantsWithGm] | None:
+        """
+        Prepare a _WireProtocolInput to compile. If None is returned then it
+        wasn't possible to serialize and we should fallback to in-process.
+        """
 
 @final
 class _DebugSerdeFxCompile(_SerializedFxCompile): ...
 
-class _OutOfProcessFxCompile(_SerializedFxCompile): ...
+class _OutOfProcessFxCompile(_SerializedFxCompile):
+    """
+    Represents an FxCompile which is run outside the current process (in
+    either a subprocess or possibly even a separate machine).
+    """
 
 @final
 class _DebugFileFxCompile(_SerializedFxCompile):

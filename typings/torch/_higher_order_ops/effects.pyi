@@ -14,6 +14,18 @@ type OpType = torch._ops.HigherOrderOperator | torch._ops.OpOverload
 SIDE_EFFECTS = ...
 
 class WithEffects(HigherOrderOperator):
+    """
+    with_effects(token, op, args, kwargs) -> (new_token, op_results)
+
+    This HOP helps ensure ordering between side effectful ops like prints or ops
+    using torchbind objects. This is needed to ensure a traced graph from
+    AOTAutograd is functional so that future optimization passes do not reorder
+    these operators. This is done through threading "effect tokens" through the
+    graph to enforce data dependence between side effectful ops.
+
+    The tokens are basically dummy values (torch.tensor([])). We create a token
+    per "effect type", which are enumerated in the _EffectType enum.
+    """
     def __init__(self) -> None: ...
     def __call__(self, token, op: OpType, *args: tuple[Any, ...], **kwargs: dict[str, Any]) -> tuple[Any, ...]: ...
 
@@ -41,4 +53,16 @@ def handle_effects(
     op: OpType,
     args: tuple[Any, ...],
     kwargs: dict[str, Any],
-) -> Any: ...
+) -> Any:
+    """
+    Args:
+        allow_token_discovery: Whether or not we are discovering tokens. If this
+        is true, we will create a token for every side effect type seen that
+        does not have a token assigned yet.  If this is false, the tokens
+        should've all been created ahead of time, so we will error if there is
+        no token mapping to every effect type.
+
+        tokens: Map of effect type to tokens. This is to chain operators of the
+        same effects together so that they do not get reordered in later
+        optimization passes.
+    """

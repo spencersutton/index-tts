@@ -19,6 +19,8 @@ class _AttrKind(Enum):
 
 @dataclass(frozen=True)
 class _TensorID:
+    """Custom tensor identifier containing storage, stride, and size information."""
+
     untyped_storage: torch.UntypedStorage
     stride: tuple
     size: tuple
@@ -28,9 +30,20 @@ RUN_WITH_INTERPRETER = ...
 
 class _SubmoduleBase:
     _ty: str | None
-    def type_name(self) -> str | None: ...
+    def type_name(self) -> str | None:
+        """
+        Subclass of this class - InterpreterModule, InterpreterModuleDispatcher, represents
+        corresponding model in eager model. To get this type information for those modules
+        in eager model we need to use this method.
+        """
 
 class InterpreterModule(_SubmoduleBase, torch.nn.Module):
+    """
+    A module that uses torch.fx.Interpreter to execute instead of the usual
+    codegen that GraphModule uses. This provides better stack trace information
+    and makes it easier to debug execution.
+    """
+
     graph_module: torch.fx.GraphModule | None
     def __init__(self, graph: torch.fx.Graph, ty: str | None = ...) -> None: ...
     def forward(self, *args, **kwargs) -> Any: ...
@@ -38,6 +51,11 @@ class InterpreterModule(_SubmoduleBase, torch.nn.Module):
     def print_readable(self, print_output=..., include_stride=..., include_device=..., colored=...): ...
 
 class InterpreterModuleDispatcher(_SubmoduleBase, torch.nn.Module):
+    """
+    A module that carries a sequence of InterpreterModules corresponding to
+    a sequence of calls of that module. Each call to the module dispatches
+    to the next InterpreterModule, and wraps back around after the last.
+    """
     def __init__(self, attrs: set[str], call_modules: list[InterpreterModule]) -> None: ...
     def forward(self, *args, **kwargs) -> Any: ...
     def call_modules(self) -> list[InterpreterModule]: ...
@@ -46,6 +64,7 @@ class InterpreterModuleDispatcher(_SubmoduleBase, torch.nn.Module):
     ) -> LiteralString: ...
 
 class FlatArgsAdapter(abc.ABC):
+    """Adapts input arguments with ``input_spec`` to align ``target_spec``."""
     @abc.abstractmethod
     def adapt(
         self,
@@ -54,8 +73,11 @@ class FlatArgsAdapter(abc.ABC):
         input_args: list[Any],
         metadata: dict[str, Any] | None = ...,
         obj: Any | None = ...,
-    ) -> list[Any]: ...
-    def get_flat_arg_paths(self) -> list[str]: ...
+    ) -> list[Any]:
+        """NOTE: This adapter may mutate given ``input_args_with_path``."""
+        ...
+    def get_flat_arg_paths(self) -> list[str]:
+        """Returns a list of paths that are used to access the flat args."""
 
 class UnflattenedModule(torch.nn.Module):
     def __init__(self, export_module: ExportedProgram, flat_args_adapter: FlatArgsAdapter | None = ...) -> None: ...
@@ -64,7 +86,27 @@ class UnflattenedModule(torch.nn.Module):
     def finalize(self) -> None: ...
     def print_readable(self, print_output=..., include_stride=..., include_device=..., colored=...): ...
 
-def unflatten(module: ExportedProgram, flat_args_adapter: FlatArgsAdapter | None = ...) -> UnflattenedModule: ...
+def unflatten(module: ExportedProgram, flat_args_adapter: FlatArgsAdapter | None = ...) -> UnflattenedModule:
+    """
+    Unflatten an ExportedProgram, producing a module with the same module
+    hierarchy as the original eager module. This can be useful if you are trying
+    to use :mod:`torch.export` with another system that expects a module
+    hierarchy instead of the flat graph that :mod:`torch.export` usually produces.
+
+    .. note:: The args/kwargs of unflattened modules will not necessarily match
+        the eager module, so doing a module swap (e.g. :code:`self.submod =
+        new_mod`) will not necessarily work. If you need to swap a module out, you
+        need to set the :code:`preserve_module_call_signature` parameter of
+        :func:`torch.export.export`.
+
+    Args:
+        module (ExportedProgram): The ExportedProgram to unflatten.
+        flat_args_adapter (Optional[FlatArgsAdapter]): Adapt flat args if input TreeSpec does not match with exported module's.
+
+    Returns:
+        An instance of :class:`UnflattenedModule`, which has the same module
+        hierarchy as the original eager module pre-export.
+    """
 
 class _ModuleFrame:
     def __init__(
@@ -92,6 +134,8 @@ class _ModuleFrame:
 
 @dataclass
 class _SubmoduleEntry:
+    """_SubmoduleEntry(parent_fqn: str, parent_module: torch.nn.modules.module.Module, parent_call_module: torch.fx.node.Node, fqn: str, call_idx: int, module: torch.nn.modules.module.Module)"""
+
     parent_fqn: str
     parent_module: torch.nn.Module
     parent_call_module: torch.fx.Node
@@ -100,6 +144,27 @@ class _SubmoduleEntry:
     module: torch.nn.Module
 
 class _IVals:
+    """
+    Collect the intermediate values of mutations in a graph.
+
+    Example: in the following graph, suppose that buf_in and buf_out
+    are the input and output values of a buffer.
+
+        buf_in = placeholder()
+        ...
+        ival1 = f0(buf_in, ...)  # inside self.n0(...)
+        ...
+        ival2 = f1(ival1, ...)  # inside self.n1(...)
+        ...
+        buf_out = f2(ival2, ...)  # inside self.n2(...)
+        return buf_out, ...
+
+    Here ival1 and ival2 are intermediate values created inside
+    calls to n0 and n1 respectively, and used inside calls to
+    n1 and n2 respectively.
+    """
     def __init__(self) -> None: ...
-    def read(self, mf, node): ...
-    def update(self, partitions) -> None: ...
+    def read(self, mf, node):
+        """Read state corresponding to a given intermediate value."""
+    def update(self, partitions) -> None:
+        """Update states corresponding to intermediate values that were read."""

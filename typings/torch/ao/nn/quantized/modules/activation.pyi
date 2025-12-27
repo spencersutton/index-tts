@@ -3,12 +3,43 @@ import torch
 __all__ = ["ELU", "Hardswish", "LeakyReLU", "MultiheadAttention", "PReLU", "ReLU6", "Sigmoid", "Softmax"]
 
 class ReLU6(torch.nn.ReLU):
+    r"""
+    Applies the element-wise function:
+
+    :math:`\text{ReLU6}(x) = \min(\max(x_0, x), q(6))`, where :math:`x_0` is the
+    zero_point, and :math:`q(6)` is the quantized representation of number 6.
+
+    Args:
+        inplace: can optionally do the operation in-place. Default: ``False``
+
+    Shape:
+        - Input: :math:`(N, *)` where `*` means, any number of additional
+          dimensions
+        - Output: :math:`(N, *)`, same shape as the input
+
+    .. image:: ../scripts/activation_images/ReLU6.png
+
+    Examples::
+
+        >>> m = nn.quantized.ReLU6()
+        >>> input = torch.randn(2)
+        >>> # xdoctest: +SKIP
+        >>> input = torch.quantize_per_tensor(input, 1.0, 0, dtype=torch.qint32)
+        >>> output = m(input)
+    """
     def __init__(self, inplace=...) -> None: ...
     def forward(self, input) -> Any: ...
     @staticmethod
     def from_float(mod, use_precomputed_fake_quant=...) -> ReLU6: ...
 
 class Hardswish(torch.nn.Hardswish):
+    """
+    This is the quantized version of :class:`~torch.nn.Hardswish`.
+
+    Args:
+        scale: quantization scale of the output tensor
+        zero_point: quantization zero point of the output tensor
+    """
     def __init__(self, scale, zero_point, device=..., dtype=...) -> None: ...
     def forward(self, input) -> Any: ...
     @staticmethod
@@ -17,6 +48,14 @@ class Hardswish(torch.nn.Hardswish):
     def from_reference(cls, mod, scale, zero_point) -> Self: ...
 
 class ELU(torch.nn.ELU):
+    """
+    This is the quantized equivalent of :class:`~torch.nn.ELU`.
+
+    Args:
+        scale: quantization scale of the output tensor
+        zero_point: quantization zero point of the output tensor
+        alpha: the alpha constant
+    """
     def __init__(self, scale, zero_point, alpha=...) -> None: ...
     def forward(self, input) -> Tensor: ...
     @staticmethod
@@ -25,6 +64,14 @@ class ELU(torch.nn.ELU):
     def from_reference(cls, mod, scale, zero_point) -> Self: ...
 
 class LeakyReLU(torch.nn.LeakyReLU):
+    """
+    This is the quantized equivalent of :class:`~torch.nn.LeakyReLU`.
+
+    Args:
+        scale: quantization scale of the output tensor
+        zero_point: quantization zero point of the output tensor
+        negative_slope: Controls the angle of the negative slope. Default: 1e-2
+    """
     def __init__(
         self, scale: float, zero_point: int, negative_slope: float = ..., inplace: bool = ..., device=..., dtype=...
     ) -> None: ...
@@ -35,12 +82,27 @@ class LeakyReLU(torch.nn.LeakyReLU):
     def from_reference(cls, mod, scale, zero_point) -> Self: ...
 
 class Sigmoid(torch.nn.Sigmoid):
+    """
+    This is the quantized equivalent of :class:`~torch.nn.Sigmoid`.
+
+    Args:
+        scale: quantization scale of the output tensor
+        zero_point: quantization zero point of the output tensor
+    """
     def __init__(self, output_scale: float, output_zero_point: int) -> None: ...
     def forward(self, input) -> Any: ...
     @classmethod
     def from_float(cls, mod, use_precomputed_fake_quant=...) -> Self: ...
 
 class Softmax(torch.nn.Softmax):
+    """
+    This is the quantized version of :class:`~torch.nn.Softmax`.
+
+    Args:
+        dim: A dimension along which Softmax will be computed (so every slice along dim will sum to 1).
+        scale: quantization scale of the output tensor
+        zero_point: quantization zero point of the output tensor
+    """
     def __init__(self, dim=..., scale=..., zero_point=...) -> None: ...
     def forward(self, input) -> Any: ...
     @staticmethod
@@ -56,6 +118,14 @@ class MultiheadAttention(torch.ao.nn.quantizable.MultiheadAttention):
     def from_observed(cls, other): ...
 
 class PReLU(torch.nn.Module):
+    """
+    This is the quantized equivalent of :class:`~torch.nn.PReLU`.
+
+    Args:
+        scale: quantization scale of the output tensor
+        zero_point: quantization zero point of the output tensor
+        num_parameters: number of parameters: 1, or the number of channels at input. Default: 1
+    """
     def __init__(self, output_scale: float, output_zero_point: int, num_parameters: int = ...) -> None: ...
     def set_weight(self, w: torch.Tensor) -> None: ...
     def forward(self, input: torch.Tensor) -> torch.Tensor: ...

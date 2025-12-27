@@ -66,6 +66,8 @@ TMA_DESCRIPTOR_SIZE = ...
 ALIGN_BYTES = ...
 
 class align(sympy.Function):
+    """Symbolically round up to the nearest multiple of ALIGN_BYTES"""
+
     nargs = ...
     is_integer = ...
     @classmethod
@@ -73,13 +75,31 @@ class align(sympy.Function):
 
 @dataclasses.dataclass(frozen=True)
 class GraphPartitionMap:
+    """Mapping from the partition info (e.g., input/output) to the graph info"""
+
     id: int
     input_index_mapping: list[int | None]
     output_index_mapping: list[int | None]
     constant_names: list[str]
 
-def fp8_bench(fn: Callable[[], Any], warmup: int = ..., rep: int = ...) -> float: ...
-def do_bench_using_profiling(fn: Callable[[], Any], warmup: int = ..., rep: int = ...) -> float: ...
+def fp8_bench(fn: Callable[[], Any], warmup: int = ..., rep: int = ...) -> float:
+    """
+    Returns benchmark results by examining torch profiler events.
+    This could be more accurate as it doesn't count CPU side overhead.
+    However, this also requires manually excluding irrelevant event, e.g.
+    vectorized_elementwise_kernel which is used to fill L2 cache,
+    various CUDA events, etc, so could also be fragile.
+    """
+
+def do_bench_using_profiling(fn: Callable[[], Any], warmup: int = ..., rep: int = ...) -> float:
+    """
+    Returns benchmark results by examining torch profiler events.
+    This could be more accurate as it doesn't count CPU side overhead.
+    However, this also requires manually excluding irrelevant event, e.g.
+    vectorized_elementwise_kernel which is used to fill L2 cache,
+    various CUDA events, etc, so could also be fragile.
+    """
+
 @functools.cache
 def has_torchvision_roi_align() -> bool: ...
 def decode_device(device: torch.device | None | str) -> torch.device: ...
@@ -87,11 +107,32 @@ def sympy_product(it: Iterable[sympy.Expr]) -> sympy.Expr: ...
 def sympy_dot(seq1: Sequence[sympy.Expr], seq2: Sequence[sympy.Expr]) -> sympy.Expr: ...
 def unique[_T](it: Iterable[_T]) -> ValuesView[_T]: ...
 def ceildiv(number: int | sympy.Expr, denom: int | sympy.Expr) -> int | sympy.Expr: ...
-def convert_shape_to_inductor(lst: Iterable[int | torch.SymInt]) -> list[sympy.Expr]: ...
-def convert_to_symint(i: int | sympy.Expr) -> int | torch.SymInt: ...
-def convert_shape_to_symint(lst: Iterable[int | sympy.Expr]) -> list[int | torch.SymInt]: ...
-def is_view(op: torch._ops.OpOverload) -> bool: ...
-def is_pointwise_use(use: Node, is_pointwise_fn: Callable[[torch._ops.OpOverload], bool] = ...) -> bool: ...
+def convert_shape_to_inductor(lst: Iterable[int | torch.SymInt]) -> list[sympy.Expr]:
+    """
+    Gets the shape and stride of a tensor. For non-symbolic tensors, this is
+    trivial. But for symbolic tensors, we need to map from SymIntNode into
+    sympy.Expr.
+    """
+
+def convert_to_symint(i: int | sympy.Expr) -> int | torch.SymInt:
+    """Like convert_shape_to_symint, but operates on a single expression."""
+
+def convert_shape_to_symint(lst: Iterable[int | sympy.Expr]) -> list[int | torch.SymInt]:
+    """
+    Takes a list of shapes from Inductor and converts them into symints (or just
+    ints if all shapes are static).
+    """
+
+def is_view(op: torch._ops.OpOverload) -> bool:
+    """Does this op overload have aliasing"""
+
+def is_pointwise_use(use: Node, is_pointwise_fn: Callable[[torch._ops.OpOverload], bool] = ...) -> bool:
+    """
+    Do all uses of this op have torch.Tag.pointwise or return True for optional `is_pointwise_fn`
+
+    Uses in views ops will follow the views uses
+    """
+
 def gen_gm_and_inputs(
     target: Any, args: list[Any], kwargs: dict[str, Any]
 ) -> tuple[GraphModule, list[torch.Tensor]]: ...
@@ -105,23 +146,29 @@ def print_performance(
     baseline: float = ...,
     device: str = ...,
 ) -> float: ...
-def precompute_method(obj: Any, method: str) -> None: ...
-def precompute_methods(obj: Any, methods: list[str]) -> None: ...
+def precompute_method(obj: Any, method: str) -> None:
+    """Replace obj.method() with a new method that returns a precomputed constant."""
+
+def precompute_methods(obj: Any, methods: list[str]) -> None:
+    """Replace methods with new methods that returns a precomputed constants."""
+
 def cmp(a: int, b: int) -> int: ...
 def pad_listlike(x: int | Sequence[int], size: int) -> Sequence[int]: ...
 def tuple_sorted[_T](x: tuple[_T, ...]) -> list[_T]: ...
 
 P = ParamSpec("P")
 RV = TypeVar("RV", covariant=True)
-type FN_TYPE[**P, RV] = Callable[Concatenate[Any, P], RV]
+type FN_TYPE[P, RV] = Callable[Concatenate[Any, P], RV]
 
-class CachedMethod[**P, RV](Protocol):
+class CachedMethod[P, RV](Protocol):
     @staticmethod
     def clear_cache(cache: Any) -> None: ...
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> RV: ...
 
-def cache_on_self[**P, RV](fn: Callable[Concatenate[Any, P], RV]) -> CachedMethod[P, RV]: ...
-def cache_property_on_self[**P, RV](fn: Callable[P, RV]) -> CachedMethod[P, RV]: ...
+def cache_on_self[P, RV](fn: Callable[Concatenate[Any, P], RV]) -> CachedMethod[P, RV]: ...
+def cache_property_on_self[P, RV](fn: Callable[P, RV]) -> CachedMethod[P, RV]:
+    """Variant of cache_on_self for properties. The only difference is the type signature."""
+
 def cache_on_self_and_args(class_name: str) -> Callable[[FN_TYPE[P, RV]], FN_TYPE[P, RV]]: ...
 def aggregate_origins(node_schedule: Sequence[BaseSchedulerNode] | ExternKernel) -> OrderedSet[Node]: ...
 def get_fused_kernel_name(
@@ -130,33 +177,79 @@ def get_fused_kernel_name(
 ) -> str: ...
 def get_kernel_metadata(
     node_schedule: Sequence[BaseSchedulerNode] | ExternKernel, wrapper: PythonWrapperCodegen
-) -> tuple[str, str]: ...
+) -> tuple[str, str]:
+    """
+    Retrieves metadata information for a kernel.
+    Args:
+        node_schedule (Union[Sequence[BaseSchedulerNode], ExternKernel]):
+            Either a sequence of BaseSchedulerNode objects or an ExternKernel instance.
+        wrapper (PythonWrapperCodegen):
+            An instance of PythonWrapperCodegen, used to define the code comment format.
+    Returns:
+        tuple[str, str]:
+            A tuple containing two strings:
+                - The first string represents the kernel's metadata.
+                - The second string represent the kernel's detailed metadata.
+    """
+
 def dominated_nodes(
     initial_queue: Iterable[torch.fx.Node], skip_filter: Callable[[Any], bool] | None = ...
-) -> OrderedSet[torch.fx.Node]: ...
+) -> OrderedSet[torch.fx.Node]:
+    """Returns the set of nodes whose values depend on those within initial_queue"""
+
 def gather_origins(args: Sequence[IRNode], kwargs: dict[str, IRNode]) -> OrderedSet[torch.fx.Node]: ...
-def sympy_str(expr: sympy.Expr) -> str: ...
+def sympy_str(expr: sympy.Expr) -> str:
+    """
+    Normal sympy str is very slow, this is a lot faster.  The result are
+    somewhat worse, as it doesn't do as much simplification.  So don't
+    use this for final codegen.
+    """
+
 def get_bounds_index_expr(index: sympy.Expr) -> ValueRanges[Any]: ...
 def prefix_is_reduction(prefix: str) -> bool: ...
-def sympy_index_symbol_with_prefix(prefix: SymT, idx: int) -> sympy.Symbol: ...
+def sympy_index_symbol_with_prefix(prefix: SymT, idx: int) -> sympy.Symbol:
+    """Used to generate an integer-nonnegative symbol."""
+
 def generate_assert(check: bool) -> bool: ...
-def sympy_index_symbol(name: str) -> sympy.Symbol: ...
-def sympy_subs(expr: sympy.Expr, replacements: dict[sympy.Expr, Any]) -> sympy.Expr: ...
+def sympy_index_symbol(name: str) -> sympy.Symbol:
+    """Used to generate an integer-nonnegative symbol."""
+
+def sympy_subs(expr: sympy.Expr, replacements: dict[sympy.Expr, Any]) -> sympy.Expr:
+    """
+    When the passed replacement symbol v is a string, it is converted to a symbol with name v that
+    have the same replaced expression integer and nonnegative properties.
+    """
+
 def is_symbolic(a: Any) -> TypeGuard[torch.SymInt | torch.Tensor]: ...
 def any_is_symbolic(*args: Any) -> bool: ...
 def get_first_incompatible_cudagraph_node(gm: torch.fx.GraphModule) -> torch.fx.Node | None: ...
-def output_node(gm: torch.fx.GraphModule) -> Node: ...
+def output_node(gm: torch.fx.GraphModule) -> Node:
+    """Get the output node from an FX graph"""
+
 def get_all_devices(gm: torch.fx.GraphModule) -> OrderedSet[torch.device]: ...
 def unload_xpu_triton_pyds() -> None: ...
 
 _registered_caches: list[Any] = ...
 
-def clear_on_fresh_cache(obj: Any) -> Any: ...
-def clear_caches() -> None: ...
+def clear_on_fresh_cache(obj: Any) -> Any:
+    """
+    Use this decorator to register any caches that should be cache_clear'd
+    with fresh_cache().
+    """
+
+def clear_caches() -> None:
+    """Clear all registered caches."""
+
 @contextlib.contextmanager
 def fresh_cache(
     cache_entries: dict[str, Any] | None = ..., dir: str | None = ..., delete: bool = ...
-) -> Iterator[None]: ...
+) -> Iterator[None]:
+    """
+    Contextmanager that provides a clean tmp cachedir for pt2 caches.
+
+    Optionally, pass a dict as 'cache_entries' to get a list of filenames and sizes
+    generated with this cache instance.
+    """
 
 clear_on_fresh_inductor_cache = ...
 clear_inductor_caches = ...
@@ -168,10 +261,14 @@ def argsort_sym(shape_env: ShapeEnv, seq: Sequence[int | torch.SymInt | sympy.Ex
 def get_dtype_size(dtype: torch.dtype) -> int: ...
 
 class LineContext(NamedTuple):
+    """LineContext(context,)"""
+
     context: Any
 
 @dataclasses.dataclass
 class ValueWithLineMap:
+    """ValueWithLineMap(value: 'str', line_map: 'list[tuple[int, LineContext]]')"""
+
     value: str
     line_map: list[tuple[int, LineContext]]
 
@@ -205,8 +302,10 @@ class FakeIndentedBuffer(IndentedBuffer):
 def restore_stdout_stderr() -> Iterator[None]: ...
 
 class DeferredLineBase:
+    """A line that can be 'unwritten' at a later time"""
     def __init__(self, line: str) -> None: ...
-    def __call__(self) -> str | None: ...
+    def __call__(self) -> str | None:
+        """Returns either self.line or None to indicate the line has been 'unwritten'"""
     def with_prefix(self, prefix: str) -> Self: ...
     def lstrip(self) -> Self: ...
     def __getitem__(self, index: int | slice) -> Self: ...
@@ -214,6 +313,7 @@ class DeferredLineBase:
     def __len__(self) -> int: ...
 
 class DelayReplaceLine(DeferredLineBase):
+    """At end of codegen call `line.replace(key, value_fn())`"""
     def __init__(self, key: str, value_fn: Callable[[], str], line: str) -> None: ...
     def __call__(self) -> str: ...
 
@@ -222,15 +322,36 @@ def is_big_gpu(index_or_device: int | torch.device = ...) -> bool: ...
 @functools.lru_cache
 def get_max_num_sms() -> int: ...
 @functools.lru_cache
-def using_b200() -> bool: ...
-def get_num_sms() -> int: ...
+def using_b200() -> bool:
+    """Returns true if the device is a NVIDIA B200, otherwise returns false."""
+
+def get_num_sms() -> int:
+    """Handle experimental carveout if set otherwise return hardware SM count"""
+
 def get_tma_workspace_arg(
     num_tma_descriptors: int, device: torch.device, num_programs: int | None = ...
-) -> WorkspaceArg: ...
+) -> WorkspaceArg:
+    """Builds and returns a WorkspaceArg for the device side TMA workspace buffer."""
+
 def use_triton_template(
     layout: Layout, *, enable_int32: bool = ..., enable_float8: bool = ..., check_max_autotune: bool = ...
 ) -> bool: ...
-def can_use_tma(*matrices: IRNode, add_guards: bool = ...) -> bool: ...
+def can_use_tma(*matrices: IRNode, add_guards: bool = ...) -> bool:
+    """
+    Return True iff *all* supplied tensors satisfy the CUDA-12.9 TMA constraints
+    that Triton relies on today.
+    * https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__TENSOR__MEMORY.html
+
+    A tensor is accepted when:
+      * 2 ≤ rank ≤ 5
+      * dtype ∈ {FP16, BF16, FP8-E4M3FN}
+      * Every logical size ≥ 2
+      * Base pointer 16-byte aligned
+      * All "outer" dims have 16-byte aligned strides
+      * The “inner” dim has stride 1 (contiguous)
+      * For FP8 tensors, inner dim ≥ 32
+    """
+
 def use_triton_tma_template(*matrices: IRNode, add_guards: bool = ...) -> bool: ...
 def use_cutlass_template(layout: Layout, m: int, n: int, k: int) -> bool: ...
 
@@ -239,7 +360,12 @@ type _IntLike = int | sympy.Expr
 @functools.cache
 def use_decompose_k_choice(m: _IntLike, n: _IntLike, k: _IntLike) -> bool: ...
 @functools.cache
-def use_contiguous(m: _IntLike, n: _IntLike, k: _IntLike) -> bool: ...
+def use_contiguous(m: _IntLike, n: _IntLike, k: _IntLike) -> bool:
+    """
+    Check if we should use the contiguous subgraph transform.
+    This transform makes the second matrix contiguous before the matmul.
+    """
+
 @functools.cache
 def get_k_splits(m: _IntLike, n: _IntLike, k: _IntLike) -> list[int]: ...
 @functools.cache
@@ -270,17 +396,50 @@ class DebugDirManager:
 def run_and_get_code(fn: Callable[P, _T], *args: P.args, **kwargs: P.kwargs) -> tuple[_T, list[str]]: ...
 def run_and_get_kernels(fn: Callable[P, _T], *args: P.args, **kwargs: P.kwargs) -> tuple[_T, list[str]]: ...
 def run_fw_bw_and_get_code(fn: Callable[..., Any]) -> tuple[Any, list[str]]: ...
-def get_code(fn: Callable[P, _T], *args: P.args, **kwargs: P.kwargs) -> list[str]: ...
+def get_code(fn: Callable[P, _T], *args: P.args, **kwargs: P.kwargs) -> list[str]:
+    """Get the inductor-generated code, but skip any actual compilation or running."""
+
 def get_triton_code(fn: Callable[P, _T], *args: P.args, **kwargs: P.kwargs) -> str: ...
 def run_and_get_triton_code(fn: Callable[P, _T], *args: P.args, **kwargs: P.kwargs) -> str: ...
 def run_and_get_graph_lowering(
     fn: Callable[P, _T], *args: P.args, **kwargs: P.kwargs
 ) -> tuple[Any, list[GraphLowering]]: ...
 @contextlib.contextmanager
-def override_lowering(aten_op: Callable[..., Any], override_fn: Callable[..., Any]) -> Iterator[None]: ...
-def add_scheduler_init_hook(pre_fn: Callable[..., Any], post_fn: Callable[..., Any] | None = ...) -> Any: ...
-def developer_warning(msg: str) -> None: ...
-def get_benchmark_name() -> str | None: ...
+def override_lowering(aten_op: Callable[..., Any], override_fn: Callable[..., Any]) -> Iterator[None]:
+    """
+    Override the lowering of aten_op with override_fn.
+    The first argument of override_fn is the original lowering fn.
+    """
+
+def add_scheduler_init_hook(pre_fn: Callable[..., Any], post_fn: Callable[..., Any] | None = ...) -> Any:
+    """
+    Add hook functions to be called at the beginning and end of Scheduler.__init__.
+    Used for unit tests.
+    """
+
+def developer_warning(msg: str) -> None:
+    """
+    Warnings that will be actionable for PyTorch developers, but not
+    end users.  Allows us to easily disable them in stable releases but
+    keep them on for nightly builds.
+    """
+
+def get_benchmark_name() -> str | None:
+    """
+    An experimental API used only when config.benchmark_kernel is true.
+
+    The benchmark name is only available at codegen time. So we can not
+    directly call it in benchmark_all_kernels which is run after codegen.
+
+    The function assumes the argument after --only is the benchmark name.
+    It works for torchbench.py/hugginface.py/timm_models.py. But for ad-hoc
+    scripts, this function may return None.
+
+    There are 2 flavors of --only argument we need handle:
+    1. --only model_name
+    2. --only=model_name
+    """
+
 def is_ones(items: Sequence[Any]) -> bool: ...
 def is_zeros(items: Sequence[Any]) -> bool: ...
 def is_cpu_device(inputs: Sequence[torch.Tensor]) -> bool: ...
@@ -291,7 +450,12 @@ def parallel_num_threads() -> int: ...
 @functools.cache
 def get_backend_num_stages() -> int: ...
 @functools.cache
-def get_device_tflops(dtype: torch.dtype) -> float: ...
+def get_device_tflops(dtype: torch.dtype) -> float:
+    """
+    We don't want to throw errors in this function. First check to see if the device is in device_info.py,
+    then fall back to the inaccurate triton estimation.
+    """
+
 @functools.cache
 def get_gpu_dram_gbps() -> int: ...
 def get_gpu_shared_memory() -> int: ...
@@ -307,8 +471,12 @@ class Placeholder(enum.Enum):
     DESCRIPTIVE_NAME = ...
 
 def pass_execution_and_save(func: Callable[..., Any], gm: GraphModule, inp: Sequence[Any], msg: str) -> None: ...
-def is_multi_outputs_template(input_buf: Buffer | Operation | None) -> bool: ...
-def is_output_of_multi_outputs_template(input_buf: Buffer | Operation | None) -> bool: ...
+def is_multi_outputs_template(input_buf: Buffer | Operation | None) -> bool:
+    """Check if input buffer is a multi-outputs template buffer"""
+
+def is_output_of_multi_outputs_template(input_buf: Buffer | Operation | None) -> bool:
+    """Check if input buffer is a output of multi-outputs template buffer"""
+
 def is_collective(node: Node | Operation | None, op: torch._ops.OperatorBase | None = ...) -> bool: ...
 def is_wait(node: IRNode | Operation | None) -> bool: ...
 def contains_collective(snode: BaseSchedulerNode) -> bool: ...
@@ -329,11 +497,16 @@ def find_recursive_users_of_node(
     name_to_fused_node: dict[str, BaseSchedulerNode],
     criteria_cb: Callable[[Any], bool] = ...,
 ) -> None: ...
-def num_fw_fixed_arguments(dynamo_gm_num_inputs: int, aot_fw_gm_num_inputs: int) -> int: ...
-def count_tangents(fx_g: torch.fx.GraphModule) -> int: ...
+def num_fw_fixed_arguments(dynamo_gm_num_inputs: int, aot_fw_gm_num_inputs: int) -> int:
+    """Computes the number of inputs to the aot fw graph which have fixed addresses (params and buffers)"""
+
+def count_tangents(fx_g: torch.fx.GraphModule) -> int:
+    """Infers which inputs are static for a backwards graph"""
 
 @dataclasses.dataclass
 class BoxedBool:
+    """BoxedBool(value: 'bool')"""
+
     value: bool
     def __bool__(self) -> bool: ...
     @staticmethod
@@ -353,7 +526,12 @@ def use_scatter_fallback(
     src_device_type: str,
     src_is_tensor: bool,
 ) -> bool: ...
-def dump_node_schedule(node_schedule: Sequence[BaseSchedulerNode]) -> None: ...
+def dump_node_schedule(node_schedule: Sequence[BaseSchedulerNode]) -> None:
+    """
+    An API that can be used in pdb to dump a node_schedule.
+    Right mainly dump the read/write dependencies but can add more as needed.
+    """
+
 def tensor_is_aligned(tensor: torch.Tensor) -> bool: ...
 def should_assume_input_aligned(example_input: torch.Tensor) -> bool: ...
 def maybe_get_suppress_shape_guards_ctx() -> contextlib.AbstractContextManager[None]: ...
@@ -365,8 +543,18 @@ def align_inputs_from_check_idxs[_T](
 def clone_preserve_strides(x: torch.Tensor) -> torch.Tensor: ...
 def copy_misaligned_inputs(
     new_inputs: list[InputType], check_inputs_idxs: Sequence[int], return_pair_idxs: OrderedSet[int] | None = ...
-) -> tuple[list[torch.Tensor], list[torch.Tensor]]: ...
-def remove_unaligned_input_idxs(inputs: Sequence[InputType], static_input_idxs: Sequence[int]) -> Sequence[int]: ...
+) -> tuple[list[torch.Tensor], list[torch.Tensor]]:
+    """
+    Clones misaligned tensors which we inferred were aligned. Returns a tuple of [old_tensors], [new_tensors] for every
+    cloned tensor which is in `return_pair_idxs`.
+    """
+
+def remove_unaligned_input_idxs(inputs: Sequence[InputType], static_input_idxs: Sequence[int]) -> Sequence[int]:
+    """
+    We require all inputs to be aligned, so introduce a copy for any
+    that aren't.
+    """
+
 def expr_fits_within_32bit(e: sympy.Expr) -> bool: ...
 def set_tracing_context_output_strides(example_inputs: Sequence[Any], compiled_graph: CompiledFxGraph) -> None: ...
 def should_use_remote_fx_graph_cache() -> bool: ...
@@ -376,7 +564,9 @@ _triton_type_mapping = ...
 _torch_triton_mapping = ...
 _triton_type_re = ...
 
-def triton_type(dtype: torch.dtype) -> str: ...
+def triton_type(dtype: torch.dtype) -> str:
+    """Convert torch.dtype to triton type"""
+
 def triton_type_to_torch(dtype: str) -> torch.dtype: ...
 def is_same_tensor(data: torch.Tensor, value: torch.Tensor) -> bool: ...
 def is_same_mkldnn_tensor(data: torch.Tensor, value: torch.Tensor) -> bool: ...
@@ -385,6 +575,8 @@ def boolean_ops() -> tuple[str, ...]: ...
 
 @dataclasses.dataclass
 class OpDtypeRule:
+    """OpDtypeRule(type_promotion_kind: 'ELEMENTWISE_TYPE_PROMOTION_KIND', override_return_dtype: 'Optional[torch.dtype]')"""
+
     type_promotion_kind: ELEMENTWISE_TYPE_PROMOTION_KIND
     override_return_dtype: torch.dtype | None
 
@@ -398,12 +590,19 @@ op_requires_libdevice_fp64: OrderedSet[str] = ...
 
 def register_op_requires_libdevice_fp64(name: str) -> None: ...
 def get_current_backend() -> str: ...
-def upcast_compute_type(dtype: torch.dtype) -> torch.dtype: ...
+def upcast_compute_type(dtype: torch.dtype) -> torch.dtype:
+    """Maybe upcast [b]float16 to float32"""
 
 KeyType = TypeVar("KeyType")
 ValType = TypeVar("ValType")
 
 class ScopedDict(MutableMapping[KeyType, ValType]):
+    """
+    A dictionary-like object that allows for scoped updates. It maintains
+    an original dictionary and a set of new items that can override
+    the original items within the scope.  The original dictionary is
+    unmodified.
+    """
     def __init__(self, original_dict: Mapping[KeyType, ValType]) -> None: ...
     def __getitem__(self, key: KeyType) -> ValType: ...
     def __setitem__(self, key: KeyType, value: ValType) -> None: ...
@@ -428,7 +627,12 @@ class TritonAttrsDescriptorVersion(enum.Enum):
 @functools.cache
 def get_triton_attrs_descriptor_version() -> TritonAttrsDescriptorVersion: ...
 def triton_version_uses_attrs_dict() -> bool: ...
-def is_cudagraph_unsafe_op(node: Operation) -> bool: ...
+def is_cudagraph_unsafe_op(node: Operation) -> bool:
+    """
+    Returns True if the node is an op that is not cudagraphable.
+    Usually only custom ops have this tag.
+    """
+
 def get_ld_library_path() -> str: ...
 def is_codegen_graph_partition_subgraph(wrapper: PythonWrapperCodegen) -> bool: ...
 def is_using_cudagraph_partition() -> bool: ...
@@ -436,23 +640,72 @@ def dtype_from_size(size: int) -> torch.dtype: ...
 
 SUPPORTED_MKLDNN_DEVICES = ...
 
-def is_mkldnn_bf16_supported(device_type: str) -> bool: ...
-def is_mkldnn_fp16_supported(device_type: str) -> bool: ...
+def is_mkldnn_bf16_supported(device_type: str) -> bool:
+    """Returns True if the device supports MKL-DNN BF16."""
+
+def is_mkldnn_fp16_supported(device_type: str) -> bool:
+    """Returns True if the device supports MKL-DNN FP16."""
+
 def tabulate_2d(elements: Sequence[Sequence[T]], headers: Sequence[T]) -> str: ...
 def zip_dicts(
     dict1: Mapping[KeyType, ValType],
     dict2: Mapping[KeyType, ValType],
     d1_default: ValType | None = ...,
     d2_default: ValType | None = ...,
-) -> Generator[tuple[KeyType, ValType | None, ValType | None]]: ...
-def maybe_aoti_standalone_config(config_patches: dict[str, Any]) -> dict[str, Any]: ...
-def is_valid_aoti_model_name() -> bool: ...
+) -> Generator[tuple[KeyType, ValType | None, ValType | None]]:
+    """
+    Zip two dictionaries together, replacing missing keys with default values.
+
+    Args:
+        dict1 (dict): The first dictionary.
+        dict2 (dict): The second dictionary.
+        d1_default (Any): the default value for the first dictionary
+        d2_default (Any): the default value for the second dictionary
+
+    Yields:
+        tuple: A tuple containing the key, the value from dict1 (or d1_default if missing),
+               and the value from dict2 (or d2_default if missing).
+    """
+
+def maybe_aoti_standalone_config(config_patches: dict[str, Any]) -> dict[str, Any]:
+    """
+    Ensures the configuration is internally consistent for standalone AOTInductor.
+
+    If `aot_inductor.compile_standalone` is set to True in the provided
+    `config_patches` (or falls back to the global config), this function ensures
+    that the following configs are also enabled:
+        - `aot_inductor.package_cpp_only`
+
+    Args:
+        config_patches (dict[str, Any]): A dictionary of user-provided config
+            overrides for AOTInductor compilation.
+
+    Returns:
+        dict[str, Any]: The possibly-updated `config_patches` dictionary.
+    """
+
+def is_valid_aoti_model_name() -> bool:
+    """Validates if a model name is suitable for use in code generation."""
+
 def get_free_symbols(x: IterateExprs, unbacked_only: bool) -> OrderedSet[sympy.Symbol]: ...
-def maybe_log_cudagraph_partition(msg: str, prefix: str | None = ..., node: BaseSchedulerNode | None = ...) -> None: ...
-def python_subprocess_env() -> dict[str, str]: ...
+def maybe_log_cudagraph_partition(msg: str, prefix: str | None = ..., node: BaseSchedulerNode | None = ...) -> None:
+    """
+    Cudagraph partition may lead to extra memory overhead so we
+    log partition reasons to help users understand the overhead.
+    """
+
+def python_subprocess_env() -> dict[str, str]:
+    """Get a base environment for running Python subprocesses."""
 
 @dataclasses.dataclass(frozen=True)
 class CUDAGraphWrapperMetadata:
+    """
+    Metadata for Customized CUDAGraphWrapper.
+
+    Currently assumes there is 1 dynamo graph and will extend to
+    multiple graphs in the future.
+    """
+
     num_partitions: int
     partition_index: int
 

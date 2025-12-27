@@ -34,6 +34,8 @@ class Dep(abc.ABC):
 
 @dataclasses.dataclass(frozen=True)
 class MemoryDep(Dep):
+    """MemoryDep(name: str, index: sympy.core.expr.Expr, var_names: tuple[sympy.core.symbol.Symbol, ...], size: tuple[sympy.core.expr.Expr, ...], mode: Optional[str] = None)"""
+
     name: str
     index: sympy.Expr
     var_names: tuple[sympy.Symbol, ...]
@@ -42,24 +44,41 @@ class MemoryDep(Dep):
     def get_free_symbol_uses(self, unbacked_only: bool = ...) -> OrderedSet[sympy.Symbol]: ...
     @property
     def num_vars(self) -> int: ...
-    def decide_loop_order_to_match(self, other: MemoryDep) -> list[int] | None: ...
-    def get_offset(self) -> sympy.Expr: ...
-    def normalize(self) -> MemoryDep: ...
-    def normalize_with_stride_order(self, prefix: str = ...) -> MemoryDep: ...
+    def decide_loop_order_to_match(self, other: MemoryDep) -> list[int] | None:
+        """Can return None if not able to decide loop orders."""
+    def get_offset(self) -> sympy.Expr:
+        """Return the offset by setting every variable to be 0."""
+    def normalize(self) -> MemoryDep:
+        """
+        Normalize by merging loops. The different to normalize_with_stride_order is,
+        this method does not reorder loops while normalize_with_stride_order reorder
+        loops based on stride order.
+        """
+    def normalize_with_stride_order(self, prefix: str = ...) -> MemoryDep:
+        """
+        Used to decide if two MemoryDep does not equal due to different loop orders.
+        More specifically, when dep1 and dep2 are not equal, we can normalize
+        both and check if they are equal after that. If yes, then the mismatch is
+        caused by different loop orders.
+        """
     @property
-    def ranges(self) -> dict[sympy.Symbol, sympy.Expr]: ...
+    def ranges(self) -> dict[sympy.Symbol, sympy.Expr]:
+        """{c0: 128, c1: 512, ...}"""
     def simplify_with_ranges(self) -> MemoryDep: ...
     def get_numel(self) -> sympy.Expr: ...
     def rename(self, renames: dict[str, str]) -> MemoryDep: ...
     def numbytes_hint(self) -> int: ...
     def has_unbacked_symbols(self) -> bool: ...
     def is_contiguous(self) -> bool: ...
-    def stride1_for_last_dim(self, result_for_complex_expression: bool = ...) -> bool: ...
+    def stride1_for_last_dim(self, result_for_complex_expression: bool = ...) -> bool:
+        """Whether the stride for the last dimension is 1."""
     def is_scalar(self) -> bool: ...
     def is_indirect(self) -> bool: ...
 
 @dataclasses.dataclass(frozen=True)
 class StarDep(Dep):
+    """StarDep(name: str, mode: Optional[str] = None)"""
+
     name: str
     mode: str | None = ...
     @property
@@ -75,6 +94,8 @@ class StarDep(Dep):
 
 @dataclasses.dataclass(frozen=True)
 class WeakDep(Dep):
+    """WeakDep(name: str, mutating_buf: str, is_fake: bool = False)"""
+
     name: str
     mutating_buf: str
     is_fake: bool = ...
@@ -89,12 +110,16 @@ class WeakDep(Dep):
 
 @dataclasses.dataclass(frozen=True)
 class IndexExprDep:
+    """IndexExprDep(index: sympy.core.expr.Expr, var_names: tuple[sympy.core.symbol.Symbol, ...], size: tuple[sympy.core.expr.Expr, ...])"""
+
     index: sympy.Expr
     var_names: tuple[sympy.Symbol, ...]
     size: tuple[sympy.Expr, ...]
 
 @dataclasses.dataclass
 class ReadWrites:
+    """ReadWrites(reads: torch.utils._ordered_set.OrderedSet[torch._inductor.dependencies.Dep], writes: torch.utils._ordered_set.OrderedSet[torch._inductor.dependencies.Dep], index_exprs: torch.utils._ordered_set.OrderedSet[torch._inductor.dependencies.IndexExprDep], range_vars: Optional[list[sympy.core.expr.Expr]] = None, var_ranges: Optional[dict[sympy.core.expr.Expr, sympy.core.expr.Expr]] = None)"""
+
     reads: OrderedSet[Dep]
     writes: OrderedSet[Dep]
     index_exprs: OrderedSet[IndexExprDep]
@@ -107,13 +132,18 @@ class ReadWrites:
     def merge_list(read_writes: list[ReadWrites]) -> ReadWrites: ...
     def remove_reads(self, rem_reads: OrderedSet[Dep]) -> ReadWrites: ...
     def reads_and_writes(self) -> Iterable[Dep]: ...
-    def buffer_names(self, ignore_integer_index: bool = ...) -> OrderedSet[str]: ...
+    def buffer_names(self, ignore_integer_index: bool = ...) -> OrderedSet[str]:
+        """Integer index is used for load_seed."""
     def get_free_symbol_uses(self, unbacked_only: bool = ...) -> OrderedSet[sympy.Symbol]: ...
 
 class _RecordLoadStoreInner(V.MockHandler):
     def __init__(self, var_ranges: VarRanges, normalize: bool) -> None: ...
     @staticmethod
-    def drop_unused_symbols(index: int | sympy.Expr, var_names: list[sympy.Expr], sizes: list[sympy.Expr]) -> None: ...
+    def drop_unused_symbols(index: int | sympy.Expr, var_names: list[sympy.Expr], sizes: list[sympy.Expr]) -> None:
+        """
+        Reduction has last (reduced) dim in its sizes, but
+        downstream users won't.  Normalize this away.
+        """
     def canonicalize(
         self, index: sympy.Expr
     ) -> tuple[sympy.Expr, tuple[sympy.Symbol, ...], tuple[sympy.Expr, ...]]: ...
@@ -131,7 +161,8 @@ class _RecordLoadStoreInner(V.MockHandler):
         right: bool,
         sorter: tuple[str, sympy.Expr] | None = ...,
         sorter_indices: T | None = ...,
-    ) -> None: ...
+    ) -> None:
+        """Records the names of the buffers that bucketize will read from."""
 
 class RecordLoadStore(V.KernelFormatterHandler):
     def __init__(self, var_ranges: VarRanges, normalize: bool) -> None: ...
@@ -155,7 +186,14 @@ def extract_loop_body_with_args(
 ) -> _RecordLoadStoreInner: ...
 def extract_input_node_reduction_ranges(
     input_node: torch._inductor.ir.IRNode,
-) -> tuple[list[sympy.Expr] | None, list[sympy.Expr] | None]: ...
+) -> tuple[list[sympy.Expr] | None, list[sympy.Expr] | None]:
+    """
+    Returns the size and reduction size of all inputs, if the sizes and reduction_sizes (if exist) are all the same.
+    It's possible that a node has multiple inputs, some are Reduction nodes and others are Pointwise nodes.
+    In this case, reduction_sizes of the Reduction nodes need to be the same.
+    Otherwise returns (None, None).
+    """
+
 def canonicalization_prefix() -> str: ...
 
 class FreeSymbolsOpsHandler(DefaultHandler):

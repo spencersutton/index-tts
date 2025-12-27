@@ -9,4 +9,20 @@ graph_code_log = ...
 SUPPORTED_OPS = ...
 
 @torch.fx._compatibility.compatibility(is_backward_compatible=False)
-def tensorify_python_scalars(gm: GraphModule, shape_env: ShapeEnv, fake_mode: fake_tensor.FakeTensorMode) -> None: ...
+def tensorify_python_scalars(gm: GraphModule, shape_env: ShapeEnv, fake_mode: fake_tensor.FakeTensorMode) -> None:
+    """
+    Converts Python scalar operations into Tensor operations within the graph. This pass looks for
+    Tensor operations that involve SymFloat arguments and transforms them into equivalent operations
+    that use only Tensor inputs.
+
+    Args:
+        gm: The FX graph module representing the computation graph.
+        shape_env: The shape environment responsible for symbolic shape tracking and propagation
+        during graph transformations.
+
+    Returns:
+        None
+
+    .. warning::
+        This API is experimental and is *NOT* backward-compatible.
+    """

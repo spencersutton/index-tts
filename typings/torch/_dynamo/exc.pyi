@@ -67,6 +67,7 @@ class SideEffectsError(Unsupported):
     def __init__(self, msg: str) -> None: ...
 
 class CondOpArgsMismatchError(ArgsMismatchError):
+    """Internal error from cond() due to arguments mismatch."""
     def __init__(self, msg: str) -> None: ...
 
 class UserErrorType(Enum):
@@ -80,7 +81,15 @@ class UserErrorType(Enum):
     UNSUPPORTED_ALIASED_MUTATED_DYNAMIC_INPUTS = ...
 
 class UserError(Unsupported):
-    def __init__(self, error_type: UserErrorType, msg: str, case_name: str | None = ...) -> None: ...
+    def __init__(self, error_type: UserErrorType, msg: str, case_name: str | None = ...) -> None:
+        """
+        Type of errors that would be valid in Eager, but not supported in TorchDynamo.
+        The error message should tell user about next actions.
+
+        error_type: Type of user error
+        msg: Actionable error message
+        case_name: (Optional) Unique name (snake case) for the usage example in exportdb.
+        """
 
 class SkipCodeRecursiveException(TorchDynamoException): ...
 class RecompileLimitExceeded(Unsupported): ...
@@ -130,10 +139,29 @@ def unimplemented_v2_with_warning(
     e: Exception, code: types.CodeType, gb_type: str, context: str, explanation: str, hints: list[str]
 ) -> NoReturn: ...
 def format_graph_break_message(gb_type: str, context: str, explanation: str, hints: list[str]) -> str: ...
-def get_gbid_documentation_link(gb_type: str) -> str | None: ...
+def get_gbid_documentation_link(gb_type: str) -> str | None:
+    """
+    Retrieves the GBID documentation link for a given graph break type.
+
+    Args:
+        gb_type: The graph break type to look up.
+
+    Returns:
+        A string containing the documentation URL if found, otherwise None.
+    """
+
 def unimplemented_v2(
     gb_type: str, context: str, explanation: str, hints: list[str], *, from_exc: Any = ..., log_warning: bool = ...
-) -> NoReturn: ...
+) -> NoReturn:
+    """
+    Called within dynamo to cause a graph break.
+    Args:
+        gb_type: Context-free graph break type. It should be a short string without any
+                 information specific to the tracing context (i.e. no dynamically-generated strings)
+        context: Developer context for the graph break. It can contain tracing context/dynamic strings.
+        explanation: User-facing context-dependent explanation for the graph break. Can be dynamic.
+        hints: List of user-facing hints for the graph break.
+    """
 
 class KeyErrorMsg:
     def __init__(self, value: Any) -> None: ...
@@ -144,7 +172,26 @@ def get_stack_above_dynamo() -> StackSummary: ...
 def get_real_stack(exc: Exception, frame: DynamoFrameType | None = ...) -> StackSummary | None: ...
 def filter_stack(stack: StackSummary) -> StackSummary: ...
 def remove_resume_prefix(name: str) -> str | None: ...
-def collapse_resume_frames(stack: StackSummary) -> StackSummary: ...
+def collapse_resume_frames(stack: StackSummary) -> StackSummary:
+    """
+    When we graph break, we create a resume function and make a regular Python call
+    to it, which gets intercepted by Dynamo. This behavior is normally shown in the
+    traceback, which can be confusing to a user. So we can filter out resume frames
+    for better traceback clarity.
+
+    Example:
+    File "..." line 3, in f
+        <line 3>
+    File "..." line 5, in torch_dynamo_resume_in_f_at_80
+        <line 5>
+    File "..." line 10, in torch_dynamo_resume_in_f_at_120
+        <line 10>
+
+    becomes
+    File "..." line 10, in f
+        <line 10>
+    """
+
 def format_error_msg_verbose(
     exc: Exception, code: types.CodeType, record_filename: str | None = ..., frame: DynamoFrameType | None = ...
 ) -> str: ...

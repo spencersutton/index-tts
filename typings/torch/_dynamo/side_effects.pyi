@@ -1,3 +1,26 @@
+"""
+Side effect tracking and management for TorchDynamo's compilation system.
+
+This module provides infrastructure for tracking and managing side effects that occur
+during symbolic execution, including:
+
+- Tracking mutations to objects, attributes, and variables
+- Managing context changes (cell variables, global namespace modifications)
+- Handling aliasing and object identity preservation
+- Managing stack frame state and local variable changes
+- Tracking function calls with side effects
+
+Key classes:
+- SideEffects: Main container for tracking all side effects during execution
+- MutableSideEffects: Specialization for mutable object tracking
+- AttributeMutation/ValueMutation: Track specific types of mutations
+- Various specialized side effect classes for different scenarios
+
+The side effect system ensures that mutations performed during symbolic execution
+are properly replayed during runtime, maintaining the correctness of compiled code
+while enabling optimizations where safe.
+"""
+
 import contextlib
 from collections.abc import Generator
 from types import CellType
@@ -13,6 +36,25 @@ from .source import Source
 from .variables.base import VariableTracker
 
 class SideEffects:
+    """
+    Maintain records of mutations and provide methods to apply them during code generation.
+
+    Handles tracking and applying side effects during PyTorch Dynamo compilation,
+    maintaining Python semantics by managing mutations, attribute modifications,
+    and other side effects that occur during program execution.
+
+    Key responsibilities:
+    - Tracks mutations to Python objects, lists, and dictionaries that need to be
+    applied after an FX graph is run.
+    - Manages attribute modifications and deletions
+    - Handles tensor hooks and backward pass state
+    - Tracks cell variable mutations and global variable changes
+    - Ensures correct ordering and application of side effects after graph execution
+
+    This ensures that optimized code behaves identically to the original Python code with
+    respect to object mutations and other side effects.
+    """
+
     id_to_variable: dict[int, VariableTracker]
     store_attr_mutations: dict[VariableTracker, dict[str, VariableTracker]]
     keepalive: list[Any]
@@ -28,11 +70,17 @@ class SideEffects:
         ]
         | None = ...,
     ) -> None: ...
-    def ignore_mutations_on(self, var: VariableTracker) -> None: ...
-    def stop_ignoring_mutations_on(self, var: VariableTracker) -> None: ...
+    def ignore_mutations_on(self, var: VariableTracker) -> None:
+        """
+        Mutations to this variable will be executed but not not tracked,
+        typically used for temporary mutations that are later restored.
+        """
+    def stop_ignoring_mutations_on(self, var: VariableTracker) -> None:
+        """Remove a variable from the skip mutation set, restoring normal mutation tracking."""
     def __eq__(self, other: object) -> bool: ...
     def diff(self, other: SideEffects) -> str | None: ...
-    def clone(self) -> SideEffects: ...
+    def clone(self) -> SideEffects:
+        """Create a shallow copy"""
     def __contains__(self, item: Any) -> bool: ...
     def __getitem__(self, item: Any) -> VariableTracker: ...
     def should_allow_side_effects_under_checkpoint(self) -> bool: ...
@@ -65,7 +113,15 @@ class SideEffects:
     ) -> Any: ...
     def track_new_user_defined_object(
         self, base_cls_vt: VariableTracker, cls_vt: VariableTracker, init_args: list[VariableTracker]
-    ) -> VariableTracker: ...
+    ) -> VariableTracker:
+        """
+        Creates a UserDefinedObjectVariable (or its subclass) variable tracker
+        and mark it for attribute mutation tracking.
+
+        Also records the variable trackers to call __new__ method on
+        reconstruction. Roughly, the reconstruction looks like this
+            base_cls_vt.__new__(user_cls, *init_args)
+        """
     def track_cell_new(self) -> VariableTracker: ...
     def track_cell_existing(
         self, source: Source | None, cell: CellType, contents: VariableTracker

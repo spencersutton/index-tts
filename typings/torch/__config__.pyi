@@ -1,2 +1,8 @@
-def show() -> str: ...
-def parallel_info() -> str: ...
+def show() -> str:
+    """
+    Return a human-readable string with descriptions of the
+    configuration of PyTorch.
+    """
+
+def parallel_info() -> str:
+    """Returns detailed string with parallelization settings"""

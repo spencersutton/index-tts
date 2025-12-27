@@ -37,10 +37,16 @@ def user_defined_kernel_grid_fn_code(
     wrapper: PythonWrapperCodegen | None = ...,
     original_fxnode_name: str | None = ...,
 ) -> tuple[str, str]: ...
-def user_defined_triton_kernel_transitive_closure_source_code(kernel) -> str: ...
+def user_defined_triton_kernel_transitive_closure_source_code(kernel) -> str:
+    """
+    Given a triton kernel function pointer collect the transitive closure of
+    its dependencies
+    """
 
 @dataclasses.dataclass
 class SymbolicCallArg:
+    """SymbolicCallArg(inner: 'sympy.Symbol', inner_expr: 'sympy.Expr')"""
+
     inner: sympy.Symbol
     inner_expr: sympy.Expr
 
@@ -55,6 +61,8 @@ class WrapperLine:
 
 @dataclasses.dataclass
 class EnterSubgraphLine(WrapperLine):
+    """EnterSubgraphLine(wrapper: 'PythonWrapperCodegen', graph: 'GraphLowering')"""
+
     wrapper: PythonWrapperCodegen
     graph: GraphLowering
     def __post_init__(self) -> None: ...
@@ -63,6 +71,8 @@ class EnterSubgraphLine(WrapperLine):
 
 @dataclasses.dataclass
 class CommentLine(WrapperLine):
+    """CommentLine(line: 'LineContext')"""
+
     line: LineContext
     def codegen(self, code: IndentedBuffer) -> None: ...
     @staticmethod
@@ -70,6 +80,8 @@ class CommentLine(WrapperLine):
 
 @dataclasses.dataclass
 class ExitSubgraphLine(WrapperLine):
+    """ExitSubgraphLine(wrapper: 'PythonWrapperCodegen')"""
+
     wrapper: PythonWrapperCodegen
     def __post_init__(self) -> None: ...
     def codegen(self, code: IndentedBuffer) -> None: ...
@@ -77,6 +89,8 @@ class ExitSubgraphLine(WrapperLine):
 
 @dataclasses.dataclass
 class EnterDeviceContextManagerLine(WrapperLine):
+    """EnterDeviceContextManagerLine(device_idx: 'int', last_seen_device_guard_index: 'Optional[int]')"""
+
     device_idx: int
     last_seen_device_guard_index: int | None
     def codegen(self, code: IndentedBuffer) -> None: ...
@@ -88,6 +102,8 @@ class ExitDeviceContextManagerLine(WrapperLine):
 
 @dataclasses.dataclass
 class ExternKernelAllocLine(WrapperLine):
+    """ExternKernelAllocLine(wrapper: 'PythonWrapperCodegen', node: 'ir.ExternKernelAlloc')"""
+
     wrapper: PythonWrapperCodegen
     node: ir.ExternKernelAlloc
     def codegen(self, code: IndentedBuffer) -> None: ...
@@ -95,6 +111,8 @@ class ExternKernelAllocLine(WrapperLine):
 
 @dataclasses.dataclass
 class ExternKernelOutLine(WrapperLine):
+    """ExternKernelOutLine(wrapper: 'PythonWrapperCodegen', node: 'ir.ExternKernelOut')"""
+
     wrapper: PythonWrapperCodegen
     node: ir.ExternKernelOut
     def codegen(self, code: IndentedBuffer) -> None: ...
@@ -102,6 +120,8 @@ class ExternKernelOutLine(WrapperLine):
 
 @dataclasses.dataclass
 class FreeLine(WrapperLine):
+    """FreeLine(wrapper: 'PythonWrapperCodegen', node: 'Union[BufferLike, ir.TorchBindObject]')"""
+
     wrapper: PythonWrapperCodegen
     node: BufferLike | ir.TorchBindObject
     def codegen(self, code: IndentedBuffer) -> None: ...
@@ -109,6 +129,8 @@ class FreeLine(WrapperLine):
 
 @dataclasses.dataclass
 class KernelCallLine(WrapperLine):
+    """KernelCallLine(wrapper: 'PythonWrapperCodegen', kernel_name: 'str', call_args: 'tuple[Any, ...]', raw_keys: 'tuple[Any, ...]', raw_args: 'tuple[Any, ...]', arg_types: 'list[str]', triton: 'bool', triton_meta: 'dict[str, Any]', device: 'torch.device', graph_name: 'str', original_fxnode_name: 'str')"""
+
     wrapper: PythonWrapperCodegen
     kernel_name: str
     call_args: tuple[Any, ...]
@@ -125,6 +147,8 @@ class KernelCallLine(WrapperLine):
 
 @dataclasses.dataclass
 class KernelDefinitionLine(WrapperLine):
+    """KernelDefinitionLine(wrapper: 'PythonWrapperCodegen', kernel_name: 'str', kernel_body: 'str', metadata: 'Optional[str]' = None, gpu: 'bool' = True, cpp_definition: 'Optional[str]' = None)"""
+
     wrapper: PythonWrapperCodegen
     kernel_name: str
     kernel_body: str
@@ -136,9 +160,13 @@ class KernelDefinitionLine(WrapperLine):
 
 @dataclasses.dataclass
 class MemoryPlanningLine(WrapperLine):
+    """MemoryPlanningLine(wrapper: 'PythonWrapperCodegen')"""
+
     wrapper: PythonWrapperCodegen
-    def plan(self, state: MemoryPlanningState) -> MemoryPlanningLine: ...
-    def codegen(self, code: IndentedBuffer) -> None: ...
+    def plan(self, state: MemoryPlanningState) -> MemoryPlanningLine:
+        """First pass to find reuse"""
+    def codegen(self, code: IndentedBuffer) -> None:
+        """Second pass to output code"""
 
 class EfficientPeakEstimate:
     def __init__(self) -> None: ...
@@ -147,6 +175,8 @@ class EfficientPeakEstimate:
 
 @dataclasses.dataclass
 class AllocateLine(MemoryPlanningLine):
+    """AllocateLine(wrapper: 'PythonWrapperCodegen', node: 'BufferLike')"""
+
     node: BufferLike
     def __post_init__(self): ...
     def should_reuse_buffer(self, free_line: FreeIfNotReusedLine, size: int) -> bool: ...
@@ -156,6 +186,8 @@ class AllocateLine(MemoryPlanningLine):
 
 @dataclasses.dataclass
 class FreeIfNotReusedLine(MemoryPlanningLine):
+    """FreeIfNotReusedLine(wrapper: 'PythonWrapperCodegen', node: 'BufferLike', is_reused: 'bool' = False)"""
+
     node: BufferLike
     is_reused: bool = ...
     def __post_init__(self): ...
@@ -165,6 +197,8 @@ class FreeIfNotReusedLine(MemoryPlanningLine):
 
 @dataclasses.dataclass
 class ReinterpretLine(MemoryPlanningLine):
+    """ReinterpretLine(wrapper: 'PythonWrapperCodegen', node: 'BufferLike', reused_as: 'BufferLike', layout: 'ir.Layout')"""
+
     node: BufferLike
     reused_as: BufferLike
     layout: ir.Layout
@@ -174,6 +208,8 @@ class ReinterpretLine(MemoryPlanningLine):
 
 @dataclasses.dataclass
 class ReuseLine(MemoryPlanningLine):
+    """ReuseLine(wrapper: 'PythonWrapperCodegen', node: 'BufferLike', reused_as: 'BufferLike', delete_old: 'bool' = True)"""
+
     node: BufferLike
     reused_as: BufferLike
     delete_old: bool = ...
@@ -186,6 +222,8 @@ class NullLine(MemoryPlanningLine):
 
 @dataclasses.dataclass
 class CommBufferLine(WrapperLine):
+    """CommBufferLine(wrapper: 'PythonWrapperCodegen', node: 'ir.Buffer')"""
+
     wrapper: PythonWrapperCodegen
     node: ir.Buffer
     @property
@@ -197,6 +235,7 @@ class CommBufferLine(WrapperLine):
 
 @dataclasses.dataclass
 class CommBufferAllocateLine(CommBufferLine):
+    """CommBufferAllocateLine(wrapper: 'PythonWrapperCodegen', node: 'ir.Buffer')"""
     def codegen(self, code: IndentedBuffer) -> None: ...
     @staticmethod
     def make_allocation_line(comm_buffer_type, group_name, wrapper, name, device, dtype, shape, stride): ...
@@ -204,11 +243,14 @@ class CommBufferAllocateLine(CommBufferLine):
 
 @dataclasses.dataclass
 class CommBufferFreeLine(CommBufferLine):
+    """CommBufferFreeLine(wrapper: 'PythonWrapperCodegen', node: 'ir.Buffer')"""
     def codegen(self, code: IndentedBuffer) -> None: ...
     def codegen_fx(self, converter: FxConverter) -> FxConversionFunc: ...
 
 @dataclasses.dataclass
 class MultiOutputLine(WrapperLine):
+    """Given a MultiOutputLayout buffer, indexes actual buffer(s) from the result."""
+
     wrapper: PythonWrapperCodegen
     result_name: str
     arg_name: str
@@ -218,6 +260,8 @@ class MultiOutputLine(WrapperLine):
 
 @dataclasses.dataclass
 class SymbolicCallArgLine(WrapperLine):
+    """SymbolicCallArgLine(wrapper: 'PythonWrapperCodegen', arg: 'SymbolicCallArg', graph: 'GraphLowering')"""
+
     wrapper: PythonWrapperCodegen
     arg: SymbolicCallArg
     graph: GraphLowering
@@ -228,6 +272,8 @@ BufferName = str
 type Line = MemoryPlanningLine | LineContext
 
 class PythonWrapperCodegen(CodeGen):
+    """Generate outer wrapper in Python that calls the kernels."""
+
     supports_caching = ...
     def __init__(self) -> None: ...
     @staticmethod
@@ -295,12 +341,17 @@ class PythonWrapperCodegen(CodeGen):
     def get_wrapper_call_indent(self) -> int: ...
     @contextlib.contextmanager
     def set_writeline(self, new: Callable[..., None]) -> Iterator[Callable[..., None]]: ...
-    def generate_and_run_autotune_block(self): ...
+    def generate_and_run_autotune_block(self):
+        """
+        Compose self.kernel_autotune_defs and self.kernel_autotune_calls into a single block of
+        code and execute it to trigger Triton kernel compilation and auto-tuning
+        """
     def memory_plan(self): ...
     def memory_plan_reuse(self): ...
     def run_wrapper_ir_passes(self, is_inference: bool): ...
     def codegen_input_symbol_assignment(self, name: str, value: ir.TensorBox, bound_vars: OrderedSet[sympy.Symbol]): ...
-    def codegen_inputs(self): ...
+    def codegen_inputs(self):
+        """Assign all symbolic shapes to locals"""
     def ensure_size_computed(self, sym: sympy.Symbol): ...
     def finalize_prefix(self): ...
     def codegen_cpp_sizevar(self, x: Expr, *, simplify: bool = ...) -> str: ...
@@ -318,7 +369,8 @@ class PythonWrapperCodegen(CodeGen):
     def codegen_dynamic_select_index(self, node): ...
     def codegen_dynamic_scalar(self, node): ...
     def benchmark_compiled_module(self, output): ...
-    def add_benchmark_harness(self, output): ...
+    def add_benchmark_harness(self, output):
+        """Append a benchmark harness to generated code for debugging"""
     def define_kernel(
         self,
         kernel_name: str,
@@ -340,7 +392,17 @@ class PythonWrapperCodegen(CodeGen):
     def generate_start_graph(self): ...
     def generate_end_graph(self): ...
     def generate_reset_kernel_saved_flags(self): ...
-    def generate_save_uncompiled_kernels(self): ...
+    def generate_save_uncompiled_kernels(self):
+        """
+        Precompile and save the CUBINs of the Triton kernels that haven't
+        been precompiled and saved as a side effect of running the generated
+        JIT model (Python wrapper). This can happen when the model contains
+        control flow: only one pass through the control flow operators covers
+        the kernels that are saved, the remaining kernels are not launched,
+        hence not saved. The main purpose of this codegen is to compile and
+        save the Triton kernels outside the active control flow path for
+        subsequent AOTInductor code generation and compilation.
+        """
     def prepare_triton_kernel_call(self, call_args): ...
     def generate_example_arg_value(self, arg, arg_type, raw_arg=...): ...
     def generate_kernel_call(
@@ -356,7 +418,13 @@ class PythonWrapperCodegen(CodeGen):
         triton_meta=...,
         original_fxnode_name=...,
         debug_handle: int | None = ...,
-    ): ...
+    ):
+        """
+        Generates kernel call code.
+
+        triton: Defines whether the backend uses Triton for codegen. Otherwise it uses the CUDA language when gpu=True,
+                and C++ when gpu=False.
+        """
     def writeline(self, line): ...
     def writelines(self, lines): ...
     def enter_context(self, ctx): ...
@@ -383,7 +451,8 @@ class PythonWrapperCodegen(CodeGen):
         self, output_name: str, outputs: Any, unbacked_bindings: dict[sympy.Symbol, pytree.KeyPath] | None
     ) -> None: ...
     def codegen_subgraph_by_inlining(self, subgraph, outer_inputs, outer_outputs): ...
-    def codegen_partition_call(self, partition_id: int, partition_signatures: ir.GraphPartitionSignature): ...
+    def codegen_partition_call(self, partition_id: int, partition_signatures: ir.GraphPartitionSignature):
+        """Generate code to call a graph partition"""
     def set_all_partition_names(self, num_partitions: int): ...
     def codegen_subgraph_call_with_flattened_outputs(self, subgraph, outer_inputs, outer_flattened_outputs): ...
     def codegen_subgraph_call(self, subgraph, outer_inputs, outer_buffer_name): ...
@@ -392,7 +461,8 @@ class PythonWrapperCodegen(CodeGen):
     def codegen_subgraph(self, subgraph, outer_inputs, outer_buffer_name): ...
     def codegen_invoke_subgraph(self, invoke_subgraph): ...
     def codegen_conditional(self, conditional): ...
-    def codegen_while_loop(self, while_loop, stack_output): ...
+    def codegen_while_loop(self, while_loop, stack_output):
+        """while_loop is codegened as a host side while_loop"""
     @staticmethod
     def statically_known_int_or_none(x): ...
     @staticmethod
@@ -405,6 +475,12 @@ class PythonWrapperCodegen(CodeGen):
     def can_prove_buffer_has_static_shape(buffer): ...
 
 class SubgraphPythonWrapperCodegen(PythonWrapperCodegen):
+    """
+    A wrapper codegen that generates code for a subgraph. For most of the
+    methods, we rely on the implementation in the PythonWrapperCodegen. But we
+    override a few functions to produce cleaner code (like avoiding writing
+    imports twice in the output code)
+    """
     def __init__(
         self,
         subgraph_name: str,

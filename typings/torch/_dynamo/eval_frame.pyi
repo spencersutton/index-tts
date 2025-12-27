@@ -1,3 +1,25 @@
+"""
+This module implements the core frame evaluation handler for TorchDynamo's compilation system.
+The eval frame handler intercepts Python bytecode execution at runtime to enable dynamic
+compilation and optimization of PyTorch code.
+
+Key components defined here:
+- Frame evaluation handlers that intercept and analyze Python execution frames
+- Guards management for tracking dependencies and invalidating compiled code
+- Optimization contexts and decorators (optimize, run_once, disable, etc.)
+- Export functionality for saving optimized graphs
+- Backend compiler integrations and callback management
+
+Functions in this file are responsible for modifying the eval frame handler at RUNTIME.
+Therefore, all functions in this file are hot and performance-critical. Functions that
+only execute at compile time should be placed in torch._dynamo.convert_frame.
+
+The eval frame handler is the core mechanism that enables TorchDynamo to dynamically
+intercept, analyze and optimize PyTorch code during execution. It works by registering
+a custom frame evaluation function that gets called for every Python frame, allowing
+us to detect PyTorch operations and trigger compilation as needed.
+"""
+
 import contextlib
 import functools
 import inspect
@@ -35,6 +57,8 @@ unset = ...
 
 @dataclass
 class DynamoStance:
+    """DynamoStance(stance: 'str' = 'default', skip_guard_eval_unsafe: 'bool' = False, backend: 'Union[str, Callable[..., Any], None]' = None)"""
+
     stance: str = ...
     skip_guard_eval_unsafe: bool = ...
     backend: str | Callable[..., Any] | None = ...
@@ -47,6 +71,11 @@ def get_example_inputs(key: str) -> list[Any]: ...
 DONT_WRAP_FILES = ...
 
 class OptimizedModule(torch.nn.Module):
+    """
+    Wraps the original nn.Module object and later patches its
+    forward method to optimized self.forward method.
+    """
+
     _torchdynamo_orig_callable: Callable[..., Any]
     get_compiler_config: Callable[[], Any]
     _opt_mod_attributes = ...
@@ -64,10 +93,18 @@ class OptimizedModule(torch.nn.Module):
     def __delattr__(self, name: str) -> None: ...
     def __dir__(self) -> list[str]: ...
 
-def remove_from_cache(f: Any) -> None: ...
+def remove_from_cache(f: Any) -> None:
+    """Make sure f.__code__ is not cached to force a recompile"""
+
 def nothing() -> None: ...
 def always_false() -> bool: ...
-def innermost_fn(fn: Callable[..., Any], unaltered_fn_attr: str = ...) -> Callable[..., Any]: ...
+def innermost_fn(fn: Callable[..., Any], unaltered_fn_attr: str = ...) -> Callable[..., Any]:
+    """
+    In case of nesting of _TorchDynamoContext calls, find the innermost
+    function. TorchDynamo caches on fn.__code__ object, so its necessary to find
+    the innermost function to pass on the optimize, run, disable etc.
+    """
+
 def make_set_enable_dynamic(enable: bool) -> Any: ...
 
 class DynamoTLS(threading.local):
@@ -163,6 +200,8 @@ class FlattenInputOutputSignature(torch.fx.Transformer):
     def transform(self) -> torch.fx.GraphModule: ...
 
 class ExportResult(NamedTuple):
+    """ExportResult(graph_module, guards)"""
+
     graph_module: torch.fx.GraphModule
     guards: _guards.GuardsSet
 
@@ -195,7 +234,61 @@ def export(
     _log_export_usage: bool = ...,
     constraints: list[Constraint] | None = ...,
     **extra_kwargs: Any,
-) -> Callable[..., ExportResult]: ...
+) -> Callable[..., ExportResult]:
+    """
+    Export an input function f to a format that can be executed outside of PyTorch using the FX graph.
+
+    Args:
+        f (callable): A PyTorch function to be exported.
+
+        aten_graph (bool): If True, exports a graph with ATen operators.
+        If False, exports a graph with Python operators. Default is False.
+
+        pre_dispatch (bool): If True, exports a graph with ATen operators,
+        but before any logic in the PyTorch dispatcher has run.
+        This can be useful if you want to apply further transformations on a graph before running it
+        through autograd, autocast, or any other functionalities that are integrated into the dispatcher.
+        This flag is only valid if aten_graph=True is set.
+        Default is False.
+
+        decomposition_table (dict): A dictionary that maps operators to their decomposition functions.
+        Required if aten_graph or tracing_mode is specified. Default is None.
+
+        tracing_mode (str): If "symbolic", turn on dynamic shapes support. Default is "symbolic".
+
+        dynamic_shapes:
+         An optional argument where the type should either be:
+         1) a dict from argument names of ``f`` to their dynamic shape specifications,
+         2) a tuple that specifies dynamic shape specifications for each input in original order.
+         If you are specifying dynamism on keyword args, you will need to pass them in the order that
+         is defined in the original function signature.
+
+         The dynamic shape of a tensor argument can be specified as either
+         (1) a dict from dynamic dimension indices to :func:`Dim` types, where it is
+         not required to include static dimension indices in this dict, but when they are,
+         they should be mapped to None; or (2) a tuple / list of :func:`Dim` types or None,
+         where the :func:`Dim` types correspond to dynamic dimensions, and static dimensions
+         are denoted by None. Arguments that are dicts or tuples / lists of tensors are
+         recursively specified by using mappings or sequences of contained specifications.
+
+        same_signature (bool): If True, rewrite the returned graph's signature to be the same as f.
+
+        disable_constraint_solver (bool): Whether the dim constraint solver must be disabled.
+
+    Returns:
+        A function that given args and kwargs, returns a tuple of (graph, guards)
+        Graph: An FX graph representing the execution of the input PyTorch function with the provided arguments and options.
+        Guards: The guards we accumulated during tracing f above
+
+    Raises:
+        AssertionError: If decomposition_table is specified without setting aten_graph=True,
+        or if graph breaks during tracing in export.
+
+        AssertionError: If Dynamo input and output is not consistent with traced input/output.
+
+    Note - this headerdoc was authored by ChatGPT, with slight modifications by the author.
+    """
+
 def optimize_assert(*args: Any, **kwargs: Any) -> OptimizeContext: ...
 
 class TorchPatcher:

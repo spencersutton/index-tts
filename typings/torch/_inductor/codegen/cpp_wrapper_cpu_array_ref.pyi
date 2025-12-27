@@ -12,6 +12,12 @@ BufferName = str
 MAX_STACK_ALLOCATION_SIZE = ...
 
 class CppWrapperCpuArrayRef(CppWrapperCpu):
+    """
+    Generates cpp wrapper for running on CPU and calls cpp kernels
+
+    This class is forked from CppWrapperCpu, with a difference that tensors may be
+    represented as ArrayRef, see torch/csrc/inductor/aoti_runtime/arrayref_tensor.h
+    """
     def __init__(self) -> None: ...
     @staticmethod
     def create(
@@ -53,8 +59,11 @@ class CppWrapperCpuArrayRef(CppWrapperCpu):
         outputs: Sequence[ir.Buffer],
     ) -> None: ...
     def codegen_device_copy(self, src, dst, non_blocking: bool | str): ...
-    def codegen_reinterpret_view(
-        self, data, size, stride, offset, writeline: Callable[..., None], dtype=...
-    ) -> str: ...
+    def codegen_reinterpret_view(self, data, size, stride, offset, writeline: Callable[..., None], dtype=...) -> str:
+        """
+        Returns a newly-created, temporary RAII tensor handle containing the
+        reinterpreted tensor data.  Callers of this function are responsible for saving
+        the handle if persistent access is needed.
+        """
     def val_to_arg_str(self, val, type_=...) -> str: ...
     def codegen_tensor_item(self, dtype: torch.dtype, tensor: str, scalar: str, indented_buffer=...): ...

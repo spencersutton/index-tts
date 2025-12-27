@@ -18,6 +18,7 @@ class HasWriteLine(Protocol):
     def writeline(self, line: LineContext | DeferredLineBase | str) -> None: ...
 
 class CppWrapperCpu(PythonWrapperCodegen):
+    """Generates cpp wrapper for running on CPU and calls cpp kernels"""
     def __init__(self) -> None: ...
     @staticmethod
     def create(
@@ -35,7 +36,12 @@ class CppWrapperCpu(PythonWrapperCodegen):
     def write_prefix(self): ...
     def write_input_output_info(self, info_kind: str, idx: int, name: str): ...
     def codegen_input_symbol_assignment(self, name: str, value: ir.TensorBox, bound_vars: OrderedSet[sympy.Symbol]): ...
-    def generate_input_output_runtime_checks(self): ...
+    def generate_input_output_runtime_checks(self):
+        """
+        In debug_compile mode, we generate checks to ensure the dtype/shape/stride/device of each
+        real input/output tensor match ones provided at compile time via sample
+        input/output.
+        """
     def write_wrapper_decl(self): ...
     def codegen_tensor_dtype_var_decl(self, code: IndentedBuffer, name): ...
     def codegen_input_size_var_decl(self, code: IndentedBuffer, name): ...
@@ -48,15 +54,49 @@ class CppWrapperCpu(PythonWrapperCodegen):
     def codegen_write_arg_with_large_length_string(
         self, arg_name: str, arg_str_val: str, max_truncate_length: int = ...
     ): ...
-    def codegen_model_constructor(self): ...
-    def codegen_const_run_driver(self): ...
+    def codegen_model_constructor(self):
+        """
+        // Generated code example
+        AOTInductorModel::AOTInductorModel()
+            : AOTInductorModelBase(4, 1) {
+        inputs_info_[0].name = "input0";
+        inputs_info_[0].dtype = "torch.float16";
+        ...
+        constants_info_[0].name = "L__self___weight";
+        constants_info_[0].dtype = at::kFloat;
+        constants_info_[0].offset = 0;
+        constants_info_[0].data_size = 8192;
+        constants_info_[0].shape = {64, 32};
+        constants_info_[0].stride = {32, 1};
+        ...
+        outputs_info_[0].name = "output0";
+        outputs_info_[0].dtype = "torch.float16";
+        }
+        """
+    def codegen_const_run_driver(self):
+        """
+        // Generated code example
+        std::unordered_map<std::string, AtenTensorHandle> AOTInductorModel::const_run_impl(
+            DeviceStreamType stream,
+            AOTIProxyExecutorHandle proxy_executor,
+            bool initialization
+        ) {
+            std::unordered_map<std::string, AtenTensorHandle> folded_constants_map;
+            std::vector<AtenTensorHandle> output_handles;
+            // build up output_handles over here.
+            _const_run_impl(output_handles, stream, proxy_executor);
+            // build up folded_constants_map
+            return folded_constants_map;
+        }
+        """
     def generate(self, is_inference): ...
     def finalize_prefix(self): ...
     def codegen_scalar_to_tensor(self, output: str): ...
     def codegen_tensor_item(self, dtype: torch.dtype, tensor: str, scalar: str, indented_buffer=...): ...
     def generate_return(self, output_refs: list[str]): ...
     def generate_before_suffix(self, result): ...
-    def generate_end(self, result): ...
+    def generate_end(self, result):
+        """Generates the end of the code block, and any code needed to call it."""
     @staticmethod
     def get_c_shim_func_name(kernel: str, device: str) -> str: ...
     def generate_c_shim_extern_kernel_call(
@@ -67,7 +107,11 @@ class CppWrapperCpu(PythonWrapperCodegen):
         *,
         debug_args: list[str] | None = ...,
         debug_handle: int | None = ...,
-    ) -> None: ...
+    ) -> None:
+        """
+        debug_args kwarg allows CppWrapperCpuArrayRef to pass in wrapped arguments in
+        place of args while preserving debug printer output.
+        """
     def generate_c_shim_extern_kernel_alloc(self, extern_kernel: ir.ExternKernelAlloc, args: list[str]) -> None: ...
     def generate_c_shim_fallback_kernel(self, fallback_kernel: ir.FallbackKernel, args: list[str]) -> None: ...
     def generate_scatter_fallback(
@@ -100,10 +144,17 @@ class CppWrapperCpu(PythonWrapperCodegen):
     def make_buffer_allocation(self, buffer): ...
     def make_allocation(self, name, device, dtype, shape, stride, allocation_shape=..., is_pinned=...): ...
     def codegen_alloc_from_pool(self, name, offset, dtype, shape, stride) -> tuple[str, list[str]]: ...
-    def codegen_reinterpret_view(
-        self, data, size, stride, offset, writeline: Callable[..., None], dtype=...
-    ) -> str: ...
-    def codegen_device_copy(self, src, dst, non_blocking: bool | str): ...
+    def codegen_reinterpret_view(self, data, size, stride, offset, writeline: Callable[..., None], dtype=...) -> str:
+        """
+        Returns a newly-created, temporary RAII tensor handle containing the
+        reinterpreted tensor data.  Callers of this function are responsible for saving
+        the handle if persistent access is needed.
+        """
+    def codegen_device_copy(self, src, dst, non_blocking: bool | str):
+        """
+        This function is overridden by cpp_wrapper_cpu_array_ref, so we don't need to
+        handle cases where dst is not an AtenTensorHandle.
+        """
     def codegen_multi_output(self, node: ir.MultiOutput): ...
     def codegen_subgraph_prefix(self, subgraph, outer_inputs, outer_outputs): ...
     def codegen_subgraph_suffix(self, subgraph, outer_inputs, outer_outputs): ...
@@ -117,7 +168,12 @@ class CppWrapperCpu(PythonWrapperCodegen):
         raw_args: Sequence[Any],
         output_args: _OUTPUT_ARGS_TYPE,
         raw_outputs: Sequence[ir.Buffer],
-    ): ...
+    ):
+        """
+        Generates declarations for external kernel arguments if needed, based on the provided
+        operator and its arguments. It processes both input and output arguments, categorizing
+        them into tensor and integer arguments for further code generation.
+        """
     def generate_fallback_kernel_with_runtime_lookup(
         self,
         buf_name: str,
@@ -126,7 +182,11 @@ class CppWrapperCpu(PythonWrapperCodegen):
         op_overload: torch._ops.OpOverload | torch._ops.HigherOrderOperator,
         raw_args: Sequence[Any],
         outputs: Sequence[ir.Buffer],
-    ) -> None: ...
+    ) -> None:
+        """
+        Generate a call to a kernel not contained in the C-shim.  This results in
+        different code paths for AOT Inductor vs cpp_wrapper Inductor mode.
+        """
     def generate_scoped_gil_acquire(self, declarations_before_scope, lines_in_scope): ...
     def load_custom_op_wrapper(self): ...
     def generate_float_value(self, val): ...
@@ -137,7 +197,15 @@ class CppWrapperCpu(PythonWrapperCodegen):
         op_overload: torch._ops.OpOverload,
         output_args: Sequence[str | None],
         raw_outputs: Sequence[ir.Buffer],
-    ) -> None: ...
+    ) -> None:
+        """
+        Generate fallback kernel calls with runtime (non-AOT) dispatch.  This can
+        only be called in cpp_wrapper mode, and assumes that the input is a non-None
+        OpOverload.
+
+        In the future, we may switch over to directly calling c10::Dispatcher if we need
+        to support more datatypes.
+        """
     def generate_fallback_kernel_with_runtime_lookup_python(
         self,
         buf_name: str,
@@ -146,7 +214,15 @@ class CppWrapperCpu(PythonWrapperCodegen):
         raw_args: Sequence[Any],
         output_args: Sequence[str | None],
         raw_outputs: Sequence[ir.Buffer],
-    ) -> None: ...
+    ) -> None:
+        """
+        Generate fallback kernel calls with runtime (non-AOT) dispatch.  This can
+        only be called in cpp_wrapper mode, and assumes that the input is a non-None
+        OpOverload.
+
+        This function calls into Python to dispatch, which allows it to handle datatypes
+        that cannot be contained in StableIValue, at the cost of some performance.
+        """
     def generate_fallback_kernel_with_runtime_lookup_aot(
         self,
         op_overload: torch._ops.OpOverload | torch._ops.HigherOrderOperator,
@@ -159,6 +235,8 @@ class CppWrapperCpu(PythonWrapperCodegen):
     def c_type_for_prim_type(self, val, type_) -> str: ...
     def val_to_arg_str_for_prim_type(self, val, type_) -> str: ...
     def val_to_arg_str(self, val, type_=...) -> str: ...
-    def create_tmp_raii_handle_var_if_needed(
-        self, handle: str, writer: HasWriteLine | list[str] | None = ...
-    ) -> str: ...
+    def create_tmp_raii_handle_var_if_needed(self, handle: str, writer: HasWriteLine | list[str] | None = ...) -> str:
+        """
+        If the input handle is an rvalue RAII tensor, creates an lvalue variable for
+        it in writer.  Returns a variable name that can be used to access handle.
+        """

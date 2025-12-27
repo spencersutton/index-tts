@@ -6,6 +6,31 @@ from torch.types import Number
 __all__ = ["Geometric"]
 
 class Geometric(Distribution):
+    r"""
+    Creates a Geometric distribution parameterized by :attr:`probs`,
+    where :attr:`probs` is the probability of success of Bernoulli trials.
+
+    .. math::
+
+        P(X=k) = (1-p)^{k} p, k = 0, 1, ...
+
+    .. note::
+        :func:`torch.distributions.geometric.Geometric` :math:`(k+1)`-th trial is the first success
+        hence draws samples in :math:`\{0, 1, \ldots\}`, whereas
+        :func:`torch.Tensor.geometric_` `k`-th trial is the first success hence draws samples in :math:`\{1, 2, \ldots\}`.
+
+    Example::
+
+        >>> # xdoctest: +IGNORE_WANT("non-deterministic")
+        >>> m = Geometric(torch.tensor([0.3]))
+        >>> m.sample()  # underlying Bernoulli has 30% chance 1; 70% chance 0
+        tensor([ 2.])
+
+    Args:
+        probs (Number, Tensor): the probability of sampling `1`. Must be in range (0, 1]
+        logits (Number, Tensor): the log-odds of sampling `1`.
+    """
+
     arg_constraints = ...
     support = ...
     def __init__(

@@ -21,6 +21,8 @@ def call_function(
 
 @dataclass(unsafe_hash=True)
 class CommBlock:
+    """CommBlock(shape: Union[torch.Size, list[torch.Size]], node_list: list[torch.fx.node.Node], inputs: list[torch.fx.node.Node], wait_nodes: list[torch.fx.node.Node], comm_node: torch.fx.node.Node, outputs: torch.utils._ordered_set.OrderedSet[torch.fx.node.Node])"""
+
     shape: torch.Size | list[torch.Size]
     node_list: list[fx.Node]
     inputs: list[fx.Node]
@@ -28,11 +30,30 @@ class CommBlock:
     comm_node: fx.Node
     outputs: OrderedSet[fx.Node]
 
-def get_comm_block(comm_node: fx.Node) -> CommBlock | None: ...
+def get_comm_block(comm_node: fx.Node) -> CommBlock | None:
+    """
+    Given a collective node (e.g., allreduce), find out all the nodes belong to
+    this communication.
+
+    Args:
+        comm_node(fx.Node): The target communication/collective node.
+    Returns:
+        The CommBlock that encapsulates the related nodes (e.g., wait_node) of
+        the given comm_node.
+    """
+
 def get_all_comm_blocks(
     graph: fx.Graph, comm_ops: tuple[torch._ops.OpOverload, ...], comm_filter: Callable[..., bool] | None = ...
 ) -> list[CommBlock]: ...
 def fuse_ddp_with_coalesced_op(graph: fx.Graph, bucket_size_mb: int) -> None: ...
 def fuse_ddp_with_concat_op(graph: fx.Graph, bucket_size_mb: int) -> None: ...
-def schedule_comm_wait(graph: fx.Graph) -> None: ...
+def schedule_comm_wait(graph: fx.Graph) -> None:
+    """
+    Delay the execution of wait tensors of allreduce until its first user.
+
+    This algorithm considers the intermediate users, like split, getitem,
+    of the wait node and schedule those intermediate users as well.
+    This will result in a better overlapping result.
+    """
+
 def fuse_ddp_communication(graph: fx.Graph, passes: list[Callable[..., None] | str], bucket_size_mb: int) -> None: ...

@@ -1,3 +1,20 @@
+"""
+This module contains miscellaneous variable tracker implementations for various Python types
+and features used in Dynamo's symbolic execution. These classes help track and propagate
+information about different kinds of variables during graph capture.
+
+Key classes include:
+- SuperVariable: Handles super() calls and method resolution
+- ExceptionVariable: Tracks exception objects
+- RandomVariable: Manages random number generators
+- GetAttrVariable: Tracks attribute access
+- MethodWrapperVariable: Handles method wrappers
+- PythonModuleVariable: Tracks Python modules
+- NumpyVariable: Handles numpy functions and types
+- StringFormatVariable: Manages string formatting
+- DebuggingVariable: Handles print and logging
+"""
+
 import dataclasses
 import functools
 import random
@@ -31,15 +48,21 @@ class ExceptionVariable(VariableTracker):
 
     __repr__ = ...
 
-class UnknownVariable(VariableTracker): ...
+class UnknownVariable(VariableTracker):
+    """It could be anything!"""
 
 class DelayGraphBreakVariable(UnknownVariable):
+    """Used to insert a dummy variable in the stack to do the graph break at CALL_FUNCTION."""
     def __init__(self, msg=..., **kwargs) -> None: ...
     def call_function(
         self, tx: InstructionTranslator, args: list[VariableTracker], kwargs: dict[str, VariableTracker]
     ) -> VariableTracker: ...
 
 class ComptimeVariable(VariableTracker):
+    """
+    This variable is special, it lets you execute arbitrary code at
+    Dynamo compile time
+    """
     def reconstruct(self, codegen: PyCodegen): ...
     def var_getattr(self, tx: InstructionTranslator, name: str) -> VariableTracker: ...
     def call_function(
@@ -57,6 +80,8 @@ class NewGlobalVariable(VariableTracker):
 def produce_trampoline_autograd_apply(fn_cls): ...
 
 class AutogradFunctionVariable(VariableTracker):
+    """represents a torch.autograd.Function subclass"""
+
     _nonvar_fields = ...
     def __init__(self, fn_cls, **kwargs) -> None: ...
     def call_apply(self, tx: InstructionTranslator, args, kwargs): ...
@@ -68,9 +93,13 @@ class AutogradFunctionVariable(VariableTracker):
 
 @dataclasses.dataclass
 class SavedTensorBox:
+    """SavedTensorBox(tensors: list[torch._dynamo.variables.base.VariableTracker] = <factory>)"""
+
     tensors: list[VariableTracker] = ...
 
 class AutogradFunctionContextVariable(UserDefinedObjectVariable):
+    """Tracks an autograd.Function() context using mutation tracking in side_effects.py"""
+
     _nonvar_fields = ...
     def __init__(
         self,
@@ -91,6 +120,7 @@ class AutogradFunctionContextVariable(UserDefinedObjectVariable):
     def var_getattr(self, tx: InstructionTranslator, name): ...
 
 class AutogradEngineVariable(UserDefinedObjectVariable):
+    """Represents a torch._C._ImperativeEngine instance."""
     def __init__(self, value, value_type=..., **kwargs) -> None: ...
     def call_method(
         self, tx: InstructionTranslator, name, args: list[VariableTracker], kwargs: dict[str, VariableTracker]
@@ -152,11 +182,22 @@ class TypingVariable(VariableTracker):
     def reconstruct(self, codegen: PyCodegen) -> None: ...
 
 @functools.lru_cache(maxsize=1)
-def get_np_to_tnp_map(): ...
+def get_np_to_tnp_map():
+    """
+    This generates a mapping from numpy modules to their torch._numpy
+    modules equivalents.
+    """
+
 @functools.lru_cache(maxsize=1)
-def get_tnp_to_np_map(): ...
+def get_tnp_to_np_map():
+    """
+    This is just the reverse mapping of get_np_to_tnp_map() - mapping from
+    torch._numpy modules to numpy equivalents.
+    """
 
 class NumpyVariable(VariableTracker):
+    """Wrapper around `numpy.*`. Currently, is able to trace a small subset of numpy functions as well as numpy dtypes."""
+
     constant_fold_functions = ...
     def __init__(self, value, **kwargs) -> None: ...
     @classmethod
@@ -176,9 +217,12 @@ class NullVariable(VariableTracker):
     def __init__(self, **kwargs) -> None: ...
     def reconstruct(self, codegen: PyCodegen): ...
 
-class DeletedVariable(VariableTracker): ...
+class DeletedVariable(VariableTracker):
+    """Marker used to implement delattr()"""
 
 class StringFormatVariable(VariableTracker):
+    """Represents a call to str.format(), we delay calling format until after the graph."""
+
     _nonvar_fields = ...
     @classmethod
     def create(cls, format_string, sym_args, sym_kwargs): ...
@@ -186,21 +230,32 @@ class StringFormatVariable(VariableTracker):
     def reconstruct(self, codegen: PyCodegen): ...
 
 class DebuggingVariable(VariableTracker):
+    """
+    Represents a call to a debugging function like print(), or something
+    registered to config.reorderable_logging_functions.
+    """
     def __init__(self, value, **kwargs) -> None: ...
     @staticmethod
     def is_reorderable_logging_function(obj): ...
     def call_function(self, tx: InstructionTranslator, args, kwargs): ...
     def reconstruct(self, codegen: PyCodegen): ...
     @staticmethod
-    def can_reorder_logs(fn, args, kwargs) -> True: ...
+    def can_reorder_logs(fn, args, kwargs) -> True:
+        """
+        Run some additional checks for what sort of function calls can we
+        actually reorder.
+        """
 
 class LoggingLoggerVariable(VariableTracker):
+    """Represents a call to any of logging.Logger methods"""
     def __init__(self, value, **kwargs) -> None: ...
     def call_method(
         self, tx: InstructionTranslator, name, args: list[VariableTracker], kwargs: dict[str, VariableTracker]
     ) -> VariableTracker: ...
 
 class ConstantLikeVariable(VariableTracker):
+    """self.value is a compile-time constant, but not a literal"""
+
     _error_prefix = ...
     def __init__(self, value, **kwargs) -> None: ...
     def as_python_constant(self): ...
@@ -224,15 +279,30 @@ class NumpyTypeInfoVariable(ConstantLikeVariable):
 
 class NumpyDTypeVariable(ConstantLikeVariable):
     _error_prefix = ...
-    def as_proxy(self): ...
+    def as_proxy(self):
+        """
+        Similar to how numpy dtype descriptors (e.g. np.float32 ) are handled by NumpyVariable:
+
+        np.dtype() objects are serialized as strings, torch._numpy wrappers will normalize to the torch dtype.
+        This also handles unsupported things nicely (i.e. structured arrays and object arrays).
+        """
 
 np_constant_collections_map = ...
 
 class RandomClassVariable(VariableTracker):
+    """random.Random"""
     def __init__(self, **kwargs) -> None: ...
     def call_function(self, tx: InstructionTranslator, args, kwargs): ...
 
 class RandomVariable(VariableTracker):
+    """
+    random.Random()
+
+    Implemented by wrapping a VariableTracker around a random.Random object.
+    The supported methods for the random.Random object cannot be overridden.
+    Assumes that random objects behave the same given a set seed or state.
+    """
+
     _nonvar_fields = ...
     _supported_fn_names = ...
     def __init__(self, rand: random.Random | None = ..., seed: VariableTracker | None = ..., **kwargs) -> None: ...

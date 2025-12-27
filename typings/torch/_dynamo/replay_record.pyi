@@ -1,3 +1,18 @@
+"""
+Python execution state recording and replay functionality.
+
+This module provides mechanisms for capturing and replaying Python execution state:
+
+- ModuleRecord: Tracks module access patterns and attribute usage
+- DummyModule: Lightweight module substitute for replay
+- ExecutionRecord: Manages execution context including globals, locals and builtins
+- ExecutionRecorder: Records variable states and module access during execution
+
+The module enables serialization and reproduction of Python execution environments,
+particularly useful for debugging and testing frameworks that need to capture
+and recreate specific program states.
+"""
+
 import dataclasses
 from io import BufferedReader, BufferedWriter
 from types import CellType, CodeType, ModuleType
@@ -7,11 +22,15 @@ dill = ...
 
 @dataclasses.dataclass
 class ModuleRecord:
+    """ModuleRecord(module: module, accessed_attrs: dict[str, typing.Any] = <factory>)"""
+
     module: ModuleType
     accessed_attrs: dict[str, Any] = ...
 
 @dataclasses.dataclass
 class DummyModule:
+    """DummyModule(name: str, is_torch: bool = False, value: object = None)"""
+
     name: str
     is_torch: bool = ...
     value: object = ...
@@ -20,6 +39,8 @@ class DummyModule:
 
 @dataclasses.dataclass
 class ExecutionRecord:
+    """ExecutionRecord(code: code, closure: tuple[cell], globals: dict[str, typing.Any] = <factory>, locals: dict[str, typing.Any] = <factory>, builtins: dict[str, typing.Any] = <factory>, code_options: dict[str, typing.Any] = <factory>)"""
+
     code: CodeType
     closure: tuple[CellType]
     globals: dict[str, Any] = ...
@@ -32,6 +53,8 @@ class ExecutionRecord:
 
 @dataclasses.dataclass
 class ExecutionRecorder:
+    """ExecutionRecorder(code: code, closure: tuple[cell], globals: dict[str, typing.Any] = <factory>, locals: dict[str, typing.Any] = <factory>, builtins: dict[str, typing.Any] = <factory>, code_options: dict[str, typing.Any] = <factory>, name_to_modrec: dict[str, torch._dynamo.replay_record.ModuleRecord] = <factory>)"""
+
     LOCAL_MOD_PREFIX = ...
     code: CodeType
     closure: tuple[CellType]

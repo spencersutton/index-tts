@@ -64,7 +64,9 @@ def alpha_dropout(
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("a",), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT
 )
-def celu(a: TensorLikeType, alpha: NumberType | None = ..., inplace: bool = ...) -> TensorLikeType: ...
+def celu(a: TensorLikeType, alpha: NumberType | None = ..., inplace: bool = ...) -> TensorLikeType:
+    """Reference implementation of torch.nn.functional.celu"""
+
 @_inplace_wrapper
 @out_wrapper()
 def dropout(a: TensorLikeType, p: float = ..., training: bool = ..., inplace: bool = ...) -> TensorLikeType: ...
@@ -80,44 +82,60 @@ def elu(
     scale: NumberType = ...,
     input_scale: NumberType = ...,
     inplace: bool = ...,
-) -> TensorLikeType: ...
+) -> TensorLikeType:
+    """Reference implementation of torch.nn.functional.elu"""
+
 @register_decomposition(aten.relu)
 @_inplace_wrapper
 @out_wrapper()
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("a",), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT
 )
-def relu(a: TensorLikeType, inplace: bool = ...) -> TensorLikeType: ...
+def relu(a: TensorLikeType, inplace: bool = ...) -> TensorLikeType:
+    """Reference implementation of torch.nn.functional.relu"""
+
 @register_decomposition(aten.channel_shuffle)
 @out_wrapper()
-def channel_shuffle(input: TensorLikeType, groups: int) -> TensorLikeType: ...
+def channel_shuffle(input: TensorLikeType, groups: int) -> TensorLikeType:
+    """Reference implementation of :func:`torch.nn.functional.channel_shuffle`."""
+
 def group_norm(
     input: Tensor, num_groups: int, weight: Tensor | None = ..., bias: Tensor | None = ..., eps: float = ...
-) -> Tensor: ...
+) -> Tensor:
+    """Reference implementation of :func:`torch.nn.functional.group_norm`."""
+
 def layer_norm(
     input: Tensor, normalized_shape: ShapeType, weight: Tensor | None = ..., bias: Tensor | None = ..., eps: float = ...
-) -> Tensor: ...
+) -> Tensor:
+    """Reference implementation of :func:`torch.nn.functional.layer_norm`."""
+
 @register_decomposition(aten.leaky_relu)
 @_inplace_wrapper
 @out_wrapper()
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("a",), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT
 )
-def leaky_relu(a: TensorLikeType, negative_slope: float = ..., inplace: bool = ...) -> TensorLikeType: ...
+def leaky_relu(a: TensorLikeType, negative_slope: float = ..., inplace: bool = ...) -> TensorLikeType:
+    """Reference implementation of torch.nn.functional.leaky_relu"""
+
 @register_decomposition(aten.mish)
 @_inplace_wrapper
 @out_wrapper()
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("a",), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT
 )
-def mish(a: TensorLikeType, inplace: bool = ...) -> TensorLikeType: ...
+def mish(a: TensorLikeType, inplace: bool = ...) -> TensorLikeType:
+    """Reference implementation of torch.nn.functional.mish"""
+
 @register_decomposition(aten.selu)
 @_inplace_wrapper
 @out_wrapper()
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("a",), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT
 )
-def selu(a: TensorLikeType, inplace: bool = ...) -> TensorLikeType: ...
+def selu(a: TensorLikeType, inplace: bool = ...) -> TensorLikeType:
+    """Reference implementation of torch.nn.functional.selu"""
+
 def softmax(
     a: TensorLikeType, dim: int | None = ..., _stacklevel: int = ..., dtype: torch.dtype | None = ...
 ) -> TensorLikeType: ...
@@ -132,7 +150,9 @@ def softmin(
 )
 def softplus(
     a: TensorLikeType, beta: NumberType | None = ..., threshold: NumberType = ..., inplace: bool = ...
-) -> TensorLikeType: ...
+) -> TensorLikeType:
+    """Reference implementation of torch.nn.functional.softplus"""
+
 @aten.hardshrink.default.py_impl(DispatchKey.Autograd)
 @register_decomposition(aten.hardshrink)
 @out_wrapper()
@@ -150,7 +170,9 @@ def l1_loss(
     size_average: bool | None = ...,
     reduce: bool | None = ...,
     reduction: str = ...,
-) -> TensorLikeType: ...
+) -> TensorLikeType:
+    """Reference implementation of torch.nn.functional.l1_loss"""
+
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("input", "target"), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.COMPLEX_TO_FLOAT
 )
@@ -161,7 +183,9 @@ def smooth_l1_loss(
     reduce: bool | None = ...,
     reduction: str = ...,
     beta: float = ...,
-) -> TensorLikeType: ...
+) -> TensorLikeType:
+    """Reference implementation of torch.nn.functional.smooth_l1_loss"""
+
 def log_softmax(
     a: TensorLikeType, dim: int | None = ..., _stacklevel: int = ..., dtype: torch.dtype | None = ...
 ) -> TensorLikeType: ...
@@ -196,7 +220,9 @@ def nll_loss(
     ignore_index: int = ...,
     reduce: bool | None = ...,
     reduction: str = ...,
-) -> TensorLikeType: ...
+) -> TensorLikeType:
+    """Reference implementation of torch.nn.functional.nll_loss"""
+
 @register_decomposition(aten.huber_loss)
 @out_wrapper()
 @elementwise_type_promotion_wrapper(
@@ -204,19 +230,25 @@ def nll_loss(
 )
 def huber_loss(
     input: TensorLikeType, target: TensorLikeType, reduction: str | int = ..., delta: float = ...
-) -> TensorLikeType: ...
+) -> TensorLikeType:
+    """Reference implementation of torch.nn.functional.huber_loss"""
+
 @elementwise_unary_scalar_wrapper
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("a",), type_promotion_kind=utils.ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT
 )
-def tanhshrink(a: TensorLikeType) -> TensorLikeType: ...
+def tanhshrink(a: TensorLikeType) -> TensorLikeType:
+    """Reference implementation of torch.nn.functional.tanhshrink"""
+
 @register_decomposition(aten.threshold)
 @_inplace_wrapper
 @out_wrapper()
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("a",), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT
 )
-def threshold(a: TensorLikeType, threshold: NumberType, value: bool | float, inplace: bool = ...) -> TensorLikeType: ...
+def threshold(a: TensorLikeType, threshold: NumberType, value: bool | float, inplace: bool = ...) -> TensorLikeType:
+    """Reference implementation of torch.nn.functional.threshold"""
+
 def triplet_margin_loss(
     anchor: TensorLikeType,
     positive: TensorLikeType,
@@ -238,14 +270,18 @@ def triplet_margin_loss(
 )
 def hardtanh(
     a: TensorLikeType, min_val: NumberType = ..., max_val: NumberType = ..., inplace: bool = ...
-) -> TensorLikeType: ...
+) -> TensorLikeType:
+    """Reference implementation of torch.nn.functional.hardtanh"""
+
 @register_decomposition(aten.gelu)
 @out_wrapper()
 @elementwise_unary_scalar_wrapper
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("a",), type_promotion_kind=utils.ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT
 )
-def gelu(a: TensorLikeType, approximate: str = ...) -> TensorLikeType: ...
+def gelu(a: TensorLikeType, approximate: str = ...) -> TensorLikeType:
+    """Reference implementation of torch.nn.functional.gelu"""
+
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("input", "target"), type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.INT_TO_FLOAT
 )
@@ -258,16 +294,22 @@ def poisson_nll_loss(
     eps: float = ...,
     reduce: bool | None = ...,
     reduction: str = ...,
-) -> TensorLikeType: ...
+) -> TensorLikeType:
+    """Reference implementation of torch.nn.functional.poisson_nll_loss"""
+
 @register_decomposition(aten.prelu)
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("a", "weight"), type_promotion_kind=utils.ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT
 )
-def prelu(a: TensorLikeType, weight: TensorLikeType) -> TensorLikeType: ...
+def prelu(a: TensorLikeType, weight: TensorLikeType) -> TensorLikeType:
+    """Reference implementation of torch.nn.functional.prelu"""
+
 @register_decomposition(aten.relu6)
 @_inplace_wrapper
 @out_wrapper()
-def relu6(a: TensorLikeType, inplace: bool = ...) -> TensorLikeType: ...
+def relu6(a: TensorLikeType, inplace: bool = ...) -> TensorLikeType:
+    """Reference implementation of torch.nn.functional.relu6"""
+
 @register_decomposition(aten.glu)
 @out_wrapper()
 @elementwise_type_promotion_wrapper(

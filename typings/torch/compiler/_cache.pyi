@@ -12,6 +12,8 @@ log = ...
 
 @dataclasses.dataclass(frozen=True)
 class CacheArtifact(ABC):
+    """Data for each cache artifact that will be serialized and deserialized"""
+
     key: str
     content: bytes = ...
     @staticmethod
@@ -24,9 +26,17 @@ class CacheArtifact(ABC):
     def populate_cache(self) -> None: ...
     def precompile_compatible(self) -> bool: ...
     @staticmethod
-    def type() -> str: ...
+    def type() -> str:
+        """
+        Returns the type of the artifact. Must be unique across all CacheArtifact classes.
+
+        CacheArtifactFactory.register will add property method to CacheInfo based on this (def {type}_artifacts)
+        that returns all artifacts for specific cache.
+        """
 
 class CacheArtifactFactory:
+    """Factory for creating CacheArtifact objects based on their type"""
+
     _artifact_types: dict[str, type[CacheArtifact]] = ...
     @classmethod
     def register(cls, artifact_cls: type[CacheArtifact]) -> type[CacheArtifact]: ...
@@ -37,6 +47,11 @@ class CacheArtifactFactory:
 
 @dataclasses.dataclass
 class CacheInfo:
+    """
+    Return value of serialization and deserialization for the purpose of
+    instrumentation
+    """
+
     artifacts: defaultdict[str, list[str]] = ...
     @property
     def inductor_artifacts(self) -> list[str]: ...
@@ -57,6 +72,22 @@ class CacheInfo:
 type CacheArtifactsResult = dict[str, list[CacheArtifact]]
 
 class CacheArtifactManager:
+    """
+    Lightweight manager class for collecting and processing cache artifacts for
+    hot loading
+
+    Intended Lifecycle:
+    - Execute code via torch.compile, this will call
+        CacheArtifactManager.record_artifact on each cache artifact
+    - Call CacheArtifactManager.serialize to convert all the cache artifacts
+        to portable format
+    - Call CacheArtifactManager.deserialize to hot load the cache artifacts on
+        a potentially different process
+
+    NOTE: There's no FB/FC guarantees, results of cache artifacts will not be
+          used unless code version matches.
+    """
+
     _new_cache_artifacts: CacheArtifactsResult = ...
     _seen_artifacts: OrderedSet[CacheArtifact] = ...
     _serializer: AppendingByteSerializer[tuple[str, list[CacheArtifact]]] = ...
@@ -67,12 +98,19 @@ class CacheArtifactManager:
     @contextmanager
     def with_fresh_cache(cls) -> Generator[None]: ...
     @classmethod
-    def record_artifact(cls, artifact_type: str, key: str, content: Any) -> None: ...
+    def record_artifact(cls, artifact_type: str, key: str, content: Any) -> None:
+        """
+        Called from each caching operation to record the artifact in this
+        "mega" list
+        """
     @classmethod
-    def need_serialize(cls) -> bool: ...
+    def need_serialize(cls) -> bool:
+        """Have we seen new artifacts since last serialize call?"""
     @classmethod
-    def serialize(cls) -> tuple[bytes, CacheInfo] | None: ...
+    def serialize(cls) -> tuple[bytes, CacheInfo] | None:
+        """Converts the "mega" list into portable format"""
     @staticmethod
-    def deserialize(serialized_artifacts: bytes) -> CacheArtifactsResult | None: ...
+    def deserialize(serialized_artifacts: bytes) -> CacheArtifactsResult | None:
+        """Converts the portable format back into CacheArtifacts"""
     @staticmethod
     def populate_caches(artifacts: CacheArtifactsResult) -> CacheInfo: ...

@@ -25,18 +25,33 @@ def get_padded_n(n, block_n): ...
 
 _T = TypeVar("_T", ir.IRNode, torch.Tensor)
 
-def transpose_w[T: (ir.IRNode, torch.Tensor)](W: _T, trans_w: bool) -> _T: ...
-def expand_bias(B: _T | None, X: _T) -> _T | None: ...
-def prune_tensors(input_nodes: list[ir.IRNode], new_input_nodes: list[ir.IRNode]): ...
+def transpose_w[T: (ir.IRNode, torch.Tensor)](W: _T, trans_w: bool) -> _T:
+    """Transpose W based on the trans_w flag."""
+
+def expand_bias(B: _T | None, X: _T) -> _T | None:
+    """Expand Bias to the same size of X."""
+
+def prune_tensors(input_nodes: list[ir.IRNode], new_input_nodes: list[ir.IRNode]):
+    """Prune unused tensors from `V.graph` since the GEMM Template use new packed weight."""
+
 def gen_2d_view_of_epilogue_buf(
     Y: ir.Buffer,
     template_buffer: ir.Buffer,
     epilogue_nodes: list[ir.IRNode],
     reindexers: list[Callable[[list[Any]], list[Any]] | None],
     default_reindexers: list[Callable[[list[Any]], list[Any]] | None],
-) -> tuple[ir.Buffer | ir.ReinterpretView, list[Callable[[list[Any]], list[Any]] | None]]: ...
+) -> tuple[ir.Buffer | ir.ReinterpretView, list[Callable[[list[Any]], list[Any]] | None]]:
+    """
+    The dimension and the indexing could be different between the GEMM output, i.e. `template_buffer`, which is
+    2D with MxN) and the output from the template after epilogues, i.e. `Y`. In the GEMM template code,
+    we are not aware of the dimension and the indexing of the epilogues and always work on 2D tiles according to
+    the indexing of the GEMM output.
+    In this function, we return a 2D buffer (`Y_2d`) according to GEMM output (reinterpreted from `Y` if needed) and
+    build a reindexer that converts the indexing of `Y` into `Y_2d`.
+    """
 
 class CppGemmTemplate(CppTemplate):
+    """GEMM Template for Inductor CPP Backend."""
     def __init__(
         self,
         input_nodes,
@@ -67,7 +82,8 @@ class CppGemmTemplate(CppTemplate):
         input_indices=...,
         epilogue_creator: Callable[[ir.Buffer], ir.Pointwise] | None = ...,
         act_mapping: dict[int, ir.IRNode] | None = ...,
-    ): ...
+    ):
+        """Add choices for the GEMM template."""
     @staticmethod
     def get_padded_size(n, block_n, k, should_block_weight): ...
     @classmethod
@@ -79,7 +95,28 @@ class CppGemmTemplate(CppTemplate):
         should_block_weight: bool,
         use_int8_fast_compensation_path: bool = ...,
         skip_int8_compensation: bool = ...,
-    ): ...
+    ):
+        """
+        NOTE Weight prep consists of 2 separate steps:
+        1. Blocking the weight tensor into a 3D shape: [n//block_n, k, block_n]
+           This is always done if the weight tensor is constant, i.e. for all GEMM and some BMM.
+           For BMM, we also block non-contiguous weight tensors, since they would be reshaped anyway.
+           This assumes that blocked, contiguous weights will be more efficient for the GEMM kernel,
+           and is worth the overhead of reshape and blocking.
+
+           This blocking includes additional padding, when n is not a multiple of block_n.
+           This padding allows a more efficient microkernel implementation. For BMM, this is only done
+           if reshape would happen anyway, i.e.  if the weight tensor is constant, is not contiguous,
+           or is using AMX VNNI layout.
+        2. Packing the weight tensor into a VNNI-friendly shape. For constant input,
+           this is done at the same time as the weight blocking.
+
+        At compile time, the constant weight tensors are blocked and packed. For non-constant tensors (e.g. BMM)
+        which will be blocked (non-contiguous or VNNI-layout tensors), the weight tensor is blocked and packed at runtime.
+
+        CppBmmTemplate overrides the methods get_padded_size, and block_weight in order to accommodate
+        an additional dimension for the batch size and to determine if the weight tensor should be blocked.
+        """
     @staticmethod
     def check_if_block_weight(W, micro_gemm): ...
     @classmethod
@@ -94,7 +131,8 @@ class CppGemmTemplate(CppTemplate):
         flag_template_buffer_has_other_users: bool | None = ...,
         epilogue_nodes: list[ir.IRNode] | None = ...,
     ) -> dict[str, Any]: ...
-    def is_int8_woq_gemm_small_m_dim(self, X: ir.ReinterpretView, W: ir.ReinterpretView, N, K, micro_gemm): ...
+    def is_int8_woq_gemm_small_m_dim(self, X: ir.ReinterpretView, W: ir.ReinterpretView, N, K, micro_gemm):
+        """Use SMALL_M_GEMM_TEMPLATE"""
     def render(
         self,
         kernel: CppTemplateKernel,

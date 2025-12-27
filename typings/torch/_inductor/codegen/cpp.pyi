@@ -37,21 +37,74 @@ def reduction_combine(
 def reduction_project(reduction_type, acc): ...
 def move_code_under_inner_loop(
     code: IndentedBuffer, iter_var: sympy.Expr, new_iter_var: str, loop_start: sympy.Expr, loop_end: sympy.Expr
-) -> BracesBuffer: ...
+) -> BracesBuffer:
+    r"""
+    f(iter_var) is transformed to f(new_iter_var) under the inner loop
+      \/
+    for (new_iter_var = loop_start; new_iter_var < loop_end; new_iter_var++) {
+        f(new_iter_var)
+    }
+    Please be careful while using this function,
+    as the variable defined in f(iter_var) will be invalid outside the for loop.
+    For example:
+    auto tmp0 = in_ptr[x0]; ->
+    for (new_x0 = start; new_x0 < end; new_x0++){
+        auto tmp0 = in_ptr[new_x0];
+    }
+    The tmp0 is invalid outside the loop.
+    """
+
 def reduction_prefix_array(
     acc_var: str | CSEVariable, acc_type: str, reduction_type: str, dtype: torch.dtype, len: str | int, init_fn
-): ...
+):
+    """
+    MSVC don't support dynamic array(VLA). So we use std::unique_ptr here.
+    Ref: https://stackoverflow.com/questions/56555406/creating-dynamic-sized-array-using-msvc-c-compiler
+    MSVC is the only one compiler without VLA. support. Since MSVC can't get good performance here.
+    We just use unique_ptr make it works on MSVC.
+    For other compilers, we continue to use VLA to get best performance.
+    """
+
 def replace_acc_name(buffer: IndentedBuffer, name: str, new_name: str): ...
-def replace_cascade_sum_with_add(buffer: IndentedBuffer): ...
+def replace_cascade_sum_with_add(buffer: IndentedBuffer):
+    """Replaces `acc = cascade_sum_combine(value, ...)` with `acc = acc + value;`"""
+
 @functools.lru_cache
 def stride_at(index: sympy.Expr, var: sympy.Symbol): ...
 @functools.lru_cache
-def simplify_index_in_vec_range(index: sympy.Expr, var: sympy.Expr, vec_length: int): ...
+def simplify_index_in_vec_range(index: sympy.Expr, var: sympy.Expr, vec_length: int):
+    """
+    Simplifies the index expression within the range of a vectorized loop.
+    Given a vectorized loop variable `var` in the range of a loop with `vec_length`,
+    this function transforms the `index` into an equivalent form. It handles
+    simplifications for cases where `var` can be expressed as `vec_length * a + b`,
+    where `b` ranges from 0 to `vec_length - 1`. The function reduces occurrences
+    of `FloorDiv` and `ModularIndexing` in the `index` with best-effort optimizations.
+
+    NOTE:
+    The simplified index expression is intended for analysis purposes only, not
+    for code generation. It replaces `FloorDiv` and `ModularIndexing` with free variables
+    which are not dependent on the loop variable `var` in the vectorized range. Check
+    https://github.com/pytorch/pytorch/pull/117221#discussion_r1449746217 for more details.
+
+    Examples:
+    1. If `var` is `x3` and `vec_length` is 16, and `x3 = 16*a + b`, then
+       `FloorDiv(x3, div)` or `ModularIndexing(x3, div, mod)` becomes a free variable
+       when `div` is divisible by 16.
+    2. `ModularIndexing(x3, 1, mod)` can be simplified to `x3 + c` where `c` is a free
+       variable when `mod` is divisible by 16.
+    """
+
 @functools.lru_cache
 def stride_at_vec_range(index: sympy.Expr, var: sympy.Symbol, vec_length: int | None = ...): ...
 
 @dataclasses.dataclass
 class ParallelDepth:
+    """
+    A class representing parallel depth.
+    Includes the starting depth of parallelism and the depth of parallelism.
+    """
+
     parallel_depth: int
     start_depth: int
 
@@ -75,6 +128,7 @@ class RecordOptimizationContext:
 def decltype_promoted(*args): ...
 
 class CppOverrides(OpOverrides):
+    """Map element-wise ops to C++"""
     @staticmethod
     def add(a, b): ...
     @staticmethod
@@ -116,7 +170,11 @@ class CppOverrides(OpOverrides):
     @staticmethod
     def tanh(x): ...
     @staticmethod
-    def signbit(x): ...
+    def signbit(x):
+        """
+        On windows std::signbit only support float type.
+        Ref: https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/signbit?view=msvc-170
+        """
     @staticmethod
     def pow(a, b): ...
     @staticmethod
@@ -221,6 +279,7 @@ class CppOverrides(OpOverrides):
     def device_assert_async(cond, msg): ...
 
 class CppVecOverrides(CppOverrides):
+    """Map element-wise ops to aten vectorization C++"""
     def __new__(cls, *args, **kargs): ...
     @staticmethod
     def add(a, b): ...
@@ -382,6 +441,15 @@ class CppTile2DOverrides(CppVecOverrides):
     def index_expr(expr, dtype): ...
 
 class CppKernel(Kernel):
+    """
+    Base class for C++ kernel code generation in PyTorch Inductor.
+    This class is responsible for generating C++ code from the intermediate representation.
+
+    Args:
+        args: Kernel arguments used for code generation
+        num_threads: Number of threads for parallel execution
+    """
+
     overrides = CppOverrides
     sexpr = ...
     newvar_prefix = ...
@@ -390,10 +458,16 @@ class CppKernel(Kernel):
     def update_stores_with_parallel_reduction(self): ...
     def gen_body(self, code: BracesBuffer | None = ...): ...
     @contextlib.contextmanager
-    def masked(self, mask): ...
+    def masked(self, mask):
+        """Context manager to add an additional mask to loads and stores."""
     def scale_index_with_offset(self, index: sympy.Expr, scale=..., itervar_idx=..., offset=...): ...
-    def index_to_str(self, index: sympy.Expr) -> str: ...
-    def index_indirect_depends_on(self, index: sympy.Expr, itervar: sympy.Symbol): ...
+    def index_to_str(self, index: sympy.Expr) -> str:
+        """
+        Convert an index expr to a string that can be used in cpp code.
+        e.g. a sympy expression "s2" may actually appear as "ks1" in the cpp kernel.
+        """
+    def index_indirect_depends_on(self, index: sympy.Expr, itervar: sympy.Symbol):
+        """Check if an index has free symbol CppCSEVariable that depends on `itervar`."""
     def index_depends_on(self, index: sympy.Expr, itervar: sympy.Symbol): ...
     def var_ranges(self): ...
     def check_bounds(self, expr: sympy.Expr, size: sympy.Expr, lower: bool, upper: bool): ...
@@ -423,7 +497,23 @@ class CppVecKernel(CppKernel):
     def __init__(self, args, num_threads, tiling_factor, tiling_idx, tail_size=...) -> None: ...
     def load(self, name: str, index: sympy.Expr): ...
     def store(self, name, index, value, mode=...): ...
-    def reduction(self, dtype, src_dtype, reduction_type, value): ...
+    def reduction(self, dtype, src_dtype, reduction_type, value):
+        """
+        Perform vectorized reduction operation.
+
+        This method handles vectorized reduction for different reduction types.
+        It manages special cases for low-precision floating point types and
+        employs precision improvement techniques for certain reduction operations.
+
+        Args:
+            dtype: The output data type for the reduction result
+            src_dtype: The source data type of the input value
+            reduction_type: Type of reduction operation (sum, min, max, etc.)
+            value: The input value to reduce
+
+        Returns:
+            The result of the reduction operation
+        """
     def store_reduction(self, name, index, value): ...
     def broadcast(self, scalar_var: CppCSEVariable) -> CppCSEVariable: ...
     def arange(self, index: CppCSEVariable, stride: sympy.Symbol) -> CppCSEVariable: ...
@@ -443,6 +533,36 @@ class CppVecKernel(CppKernel):
     def get_to_dtype_expr(self, src, dtype, src_dtype): ...
 
 class CppTile2DKernel(CppVecKernel):
+    """
+    A vector kernel that handles the 2d tiles with the tile size defined in `tiling_factor` on
+    the inner-most loop level and one of the outer loop level (`outer_tiling_idx`). When the data
+    tile is accessed in a contiguous way from the outer loop axis, a transposition is applied on the
+    tile to make the access contiguous from the inner-most loop axis. Then, the same vectorization
+    logic from its parent `CppVecKernel` is leveraged for load/store/compute. The transposed tile load
+    and store are generated into kernel.preloads and kernel.poststores buffers.
+
+    The loop structure looks like below:
+    for ...
+      for i_outer ...
+        for ...
+          for inner_most ...
+            // generated by CppTile2DKernel
+            float tmp0[16*16]; at::vec::transpose_mxn<...>(tmp0, in_ptr0 + ..., ...); // into kernel.preloads
+            float tmp1[16*16]; // into kernel.preloads
+            for i_inner ... { // the kernel inner loop
+              vectorized loads/compute/stores (e.g., load tmp0, store tmp1) // into kernel.loads/compute/stores
+            }
+            at::vec::transpose_mxn(out_ptr0 + ..., tmp1, ...) // into kernel.poststores
+          for inner_most ... (tail)
+            // generated by CppVecKernel
+            ...
+      for i_outer ... (tail)
+        for ...
+          for ...
+            // generated by CppKernel
+            ...
+    """
+
     overrides = CppTile2DOverrides
     def __init__(
         self, args, num_threads, tiling_factor, tiling_indices, inner_tail_size=..., outer_tail_size=...
@@ -456,9 +576,18 @@ class CppTile2DKernel(CppVecKernel):
     def set_ranges(self, group, reduction_group): ...
     def transform_indexing(self, index: sympy.Expr) -> sympy.Expr: ...
 
-def get_loop_body_lowp_fp(_body: LoopBody) -> tuple[torch.dtype | None, bool]: ...
+def get_loop_body_lowp_fp(_body: LoopBody) -> tuple[torch.dtype | None, bool]:
+    """
+    Returns the low precision data type (torch.float16/torch.bfloat16) contained in the nodes
+    and if all the nodes can codegen with this data type without converting to float.
+    Otherwise returns None and True.
+    """
 
 class TilingSelect:
+    """
+    Implement the heuristic to select the tiling factors and tiling indices.
+    In the future, we can implement advanced heuristic in a subclass.
+    """
     def __init__(self) -> None: ...
     def select_tiling(self, fn_list, var_sizes_list) -> tuple[list[int], list[int]]: ...
 
@@ -477,7 +606,12 @@ class CppKernelProxy(CppKernel):
     def codegen_loops(self, code, worksharing): ...
     def update_stores_with_parallel_reduction(self): ...
     def gen_body(self, code: BracesBuffer | None = ...): ...
-    def aggregate_reduction_buffers(self, inner_loop_reduction_outer_not: bool, outer_loop: LoopLevel | None): ...
+    def aggregate_reduction_buffers(self, inner_loop_reduction_outer_not: bool, outer_loop: LoopLevel | None):
+        """
+        CppKernel/CppVecKernel/CppTile2dKernel have reduction buffers themselves.
+        Here, we decide how to aggregate them together and place new reduction buffers
+        under CppKernelProxy.
+        """
 
 class OuterLoopFusedKernel(CppKernel):
     def __init__(self, kernel_group) -> None: ...
@@ -503,16 +637,40 @@ class CppScheduling(BaseScheduling):
     def can_fuse_vertical_outer_loop(self, node1, node2): ...
     def get_fusion_pair_priority(self, node1, node2): ...
     def can_fuse_vertical(self, node1, node2): ...
-    def try_loop_split(self, nodes: list[SchedulerNode]): ...
-    def codegen_outer_loop_node(self, node: OuterLoopFusedSchedulerNode): ...
-    def codegen_node(self, node: OuterLoopFusedSchedulerNode | FusedSchedulerNode | SchedulerNode): ...
+    def try_loop_split(self, nodes: list[SchedulerNode]):
+        """
+        Apply loop split optimization.
+        When one of the indexing_exprs contains a division, we eliminate the division by splitting the loop
+        to avoid non-contiguous loads, subject to the following conditions:
+            1. No reduction and no mudular index for all nodes.
+            2. The indexing_exprs of all nodes contain only one (or more, but all the same) division,
+               where the divisor is an integer and not too small (the divisor > 8), the dividend is
+               one of the iter_vars, and this var, i.e. the dimension that needs to be split, is
+               contiguous in all other indexing_exprs.
+
+        For example, if the node's var_ranges: {z0: 2, z1: 9216, z2: 960} and indexing_exprs:
+        {'index0': 8847360*z0 + 960*z1 + z2, 'index1': 32*z0 + (z2//30), 'index2': z2},
+        we will split z2 -> 30*z2 + z3, then the node's var_ranges will be changed to
+        {z0: 2, z1: 9216, z2: 32, z3: 30} and indexing_exprs will be changed to
+        {'index0': 8847360*z0 + 960*z1 + 30*z2 + z3, 'index1': 32*z0 + z2, 'index2': 30*z2 + z3}.
+        """
+    def codegen_outer_loop_node(self, node: OuterLoopFusedSchedulerNode):
+        """
+        Generate the code for the outer loop fused scheduler node.
+        1. Codegen with fused outer loop: depends on the analysis of
+            the outer loop fused scheduler node, with or without the local buffer.
+        2. If failed, fallback to standard codegen.
+        """
+    def codegen_node(self, node: OuterLoopFusedSchedulerNode | FusedSchedulerNode | SchedulerNode):
+        """Turn an set of pre-fused nodes into a C++ kernel."""
     def is_cpp_template(self, node: BaseSchedulerNode) -> bool: ...
     def codegen_template(
         self,
         template_node: BaseSchedulerNode,
         epilogue_nodes: Sequence[BaseSchedulerNode],
         prologue_nodes: Sequence[BaseSchedulerNode],
-    ): ...
+    ):
+        """Codegen a CPP template, possibly with fused epilogues"""
     def ready_to_flush(self): ...
     def codegen_sync(self): ...
     def define_kernel(self, src_code, nodes, kernel_args=...): ...
@@ -536,6 +694,8 @@ class WorkSharing:
 
 @dataclasses.dataclass
 class LoopLevel:
+    """LoopLevel(var: Optional[sympy.core.expr.Expr] = None, size: Optional[sympy.core.expr.Expr] = None, offset: sympy.core.expr.Expr = 0, tiled_size: sympy.core.expr.Expr = 0, steps: sympy.core.expr.Expr = 1, parallel: int = 0, simd_omp: bool = False, simd_vec: bool = False, collapsed: bool = False, is_reduction: bool = False)"""
+
     var: sympy.Expr | None = ...
     size: sympy.Expr | None = ...
     offset: sympy.Expr = ...
@@ -552,15 +712,39 @@ class LoopLevel:
 
 @dataclasses.dataclass
 class LoopNest:
+    """
+    A loop-nest-like structure. It is built with the `build` method
+    as a loop nest and then will perform loop-tiling at some depth.
+
+    A typical case is for vectorization, where we typically do loop-tiling
+    at the innermost loop level. A more complicated case is when we do
+    2D tiling at both the innermost and outer levels.
+    """
+
     loops: list[LoopLevel] | None = ...
     kernel: CppKernel | None = ...
     @staticmethod
-    def build(kernel: CppKernel): ...
+    def build(kernel: CppKernel):
+        """Build a LoopNest with the given `kernel` as the leaf"""
     def __bool__(self) -> bool: ...
     @cache_on_self
-    def max_parallel_depth(self): ...
+    def max_parallel_depth(self):
+        """
+        Maximal allowed depth for parallelism: All reduction or non-reduction levels.
+        When the range of the first inner loop beyond the maximum parallel depth is much
+        larger than the range of all outer loops within the maximum parallel depth,
+        change the starting depth of parallelism to the first inner loop and recalculate
+        the maximum parallel depth.
+        """
     def mark_parallel(self, par_depth): ...
-    def tile(self, depth, factor): ...
+    def tile(self, depth, factor):
+        """
+        Do loop-tiling at the `depth` level with `factor`.
+            for (x0 = 0; x0 < x0_end; x0++)
+            ->
+            for (x0 = 0; x0 < x0_end; x0 += factor)
+        See details in Note [tiled_size].
+        """
     def get_kernel(self) -> CppKernel: ...
     def set_kernel(self, kernel): ...
     def from_loop_level(self, level: int): ...

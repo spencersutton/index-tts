@@ -14,6 +14,8 @@ autotuning_log = ...
 
 @dataclass(frozen=True)
 class ArgInfo:
+    """ArgInfo(name: str, ty: str)"""
+
     name: str
     ty: str
 
@@ -24,13 +26,36 @@ class CUDATemplate(KernelTemplate):
     cache_clear = ...
     def __init__(
         self, name: str, input_nodes: list[Buffer], layout: Layout, input_reorder: list[int] | None = ...
-    ) -> None: ...
+    ) -> None:
+        """
+        Baseclass for CUDA C++ Templates, derived from KernelTemplate.
+        Not to be instantiated directly.
+
+        Args:
+            name (str): The name of the CUDATemplate object.
+            input_nodes (List[IRNode]): A list of input IRNodes.
+            layout (Layout): The layout of the output buffer / tensor.
+            input_reorder (Optional[List[int]]): An optional list that specifies
+                the order of the input nodes.
+        """
     @staticmethod
     def supports_epilogue_fusion(op: GemmOperation) -> bool: ...
-    def make_key(self, name: str, input_key: str, layout_repr: str) -> str: ...
+    def make_key(self, name: str, input_key: str, layout_repr: str) -> str:
+        """
+        Make a key for the code cache. The idea of the method is to cache
+        everything that matters but doesn't include runtime param values, i.e.,
+        self.get_runtime_arg_values().
+
+        Args:
+            kwargs: Additional keyword arguments. Including op (GemmOperation).
+        """
     def generate_code_and_args(
         self, name: str, input_key: str, layout_repr: str, **kwargs
-    ) -> tuple[str, tuple[int, ...]]: ...
+    ) -> tuple[str, tuple[int, ...]]:
+        """
+        Generate code and args with caching. We cache the code even if runtime
+        args are different.
+        """
     def generate(
         self,
         name: str,
@@ -40,7 +65,19 @@ class CUDATemplate(KernelTemplate):
         input_tensor_meta: TensorMeta | list[TensorMeta],
         output_tensor_meta: TensorMeta | list[TensorMeta],
         **kwargs,
-    ) -> CUDATemplateCaller: ...
+    ) -> CUDATemplateCaller:
+        """
+        Generates the CUDA template caller object for the given GEMM template and operation.
+        This CUDATemplateCaller may be used to call and benchmark the generated CUDA kernel
+        in a standalone manner to enable Autotuning.
+
+        Args:
+            description: op name followed by swizzle.
+            kwargs: Additional keyword arguments.
+
+        Returns:
+            A CUDATemplateCaller object representing the generated CUDA template caller.
+        """
     def header(self) -> IndentedBuffer: ...
     def globals(self) -> IndentedBuffer: ...
     def render(self, **kwargs) -> str: ...
@@ -48,6 +85,10 @@ class CUDATemplate(KernelTemplate):
     def get_runtime_arg_values(self, **kwargs) -> list[Any]: ...
 
 class CUTLASSTemplate(CUDATemplate):
+    """
+    CUTLASSTemplate is a class that provides a template for generating CUTLASS Templates. Used as a baseclass for the
+    CUTLASSGemmTemplate, providing functionality that might also be relevant for non-GEMM CUTLASS Kernels.
+    """
     def header(self) -> IndentedBuffer: ...
     def globals(self) -> IndentedBuffer: ...
     def cute_int(self, int_str: str, var_name: str) -> str: ...
@@ -59,4 +100,5 @@ class CUTLASSTemplate(CUDATemplate):
     @override
     def get_runtime_arg_info(self) -> list[ArgInfo]: ...
     @override
-    def get_runtime_arg_values(self, **kwargs) -> list[Any]: ...
+    def get_runtime_arg_values(self, **kwargs) -> list[Any]:
+        """Helper method to retrieve runtime args from generate kwargs"""

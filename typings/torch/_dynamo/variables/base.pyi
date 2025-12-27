@@ -1,3 +1,18 @@
+"""
+Core variable tracking functionality for Dynamo. This module defines the fundamental
+classes and systems used to track and manage variables during Dynamo's operation.
+
+The module provides:
+1. VariableTracker - The base class for tracking variables during compilation
+2. MutationType system - Classes for tracking and managing mutations to variables
+3. Source type management - Utilities for tracking variable origins and scope
+4. Variable state management - Tools for managing variable state and transformations
+
+These components form the foundation of Dynamo's variable handling system,
+enabling accurate tracking and transformation of Python code into optimized
+computations.
+"""
+
 from collections.abc import Callable, Sequence
 from enum import Enum
 from typing import Any
@@ -7,28 +22,93 @@ from ..source import Source
 from ..symbolic_convert import InstructionTranslator, InstructionTranslatorBase
 
 class SourceType(Enum):
+    """
+    This Enum divides VariableTracker into 2 cases, depending on the variable
+    it represents:
+    - already existed that Dynamo began tracking while introspection (Existing)
+    - is a new variable that is created during Dynamo introspection (New)
+
+    In general, we have these invariants:
+    1. for `VariableTracker` associated with `Existing`, its `source` field must not be None.
+    2. for `VariableTracker` associated with `New`, most of the time its
+       `source` field is None, except for cases like side effect codegen for
+       `AttributeMutationNew`, during which we generate a
+       `LocalSource('tmp...')` for such variable, to facilitate codegen.
+    """
+
     Existing = ...
     New = ...
 
 class MutationType:
+    """
+    Base class for Variable.mutation_type. It encodes information about
+    1. The type of mutation Dynamo allows on the variable.
+    2. Whether the value represented by this variable already existed before
+    Dynamo tracing.
+    """
     def __init__(self, typ: SourceType) -> None: ...
 
 class ValueMutationNew(MutationType):
+    """
+    This case of VariableTracker.mutation_type marker indicates
+    1. Dynamo allows mutation on the value itself (rather than its attributes).
+    2. The value is created by the bytecode Dynamo is tracing through.
+
+    For instance, Dynamo could model a newly created list with this marker,
+    indicating that while we need to model mutations to this list, we don't have
+    to emit bytecode for these mutations if the list doesn't escape into the
+    Python world.
+    """
     def __init__(self) -> None: ...
     def __hash__(self) -> int: ...
     def __eq__(self, other) -> bool: ...
 
 class ValueMutationExisting(MutationType):
+    """
+    This case of VariableTracker.mutation_type marker indicates
+    1. Dynamo allows mutation on the value itself (rather than its attributes).
+    2. The value exists before Dynamo tracing started.
+
+    For instance, Dynamo could model a pre-existing list with this marker,
+    indicating that if we encounter mutations to this list, we need to buffer
+    and re-apply those mutations after the graph runs, since the list might be
+    used afterwards in Python.
+    """
+
     is_modified: bool
     def __init__(self, is_modified: bool = ...) -> None: ...
 
 class AttributeMutation(MutationType):
+    """
+    This case of VariableTracker.mutation_type marker indicates that Dynamo
+    allows mutation on the value's attributes.
+    """
     def __init__(self, typ: SourceType) -> None: ...
 
 class AttributeMutationExisting(AttributeMutation):
+    """
+    This case of VariableTracker.mutation_type marker indicates
+    1. Dynamo allows mutation on the value's attributes.
+    2. The value exists before Dynamo tracing started.
+
+    For instance, Dynamo could model a pre-existing object with this marker,
+    indicating that if we encounter mutations to this object, we need to buffer
+    then re-apply those mutations after the graph runs, since the object might
+    be used afterwards in Python.
+    """
     def __init__(self) -> None: ...
 
 class AttributeMutationNew(AttributeMutation):
+    """
+    This case of VariableTracker.mutation_type marker indicates
+    1. Dynamo allows mutation on the value's attributes.
+    2. The value is created by the bytecode Dynamo is tracing through.
+
+    For instance, Dynamo could model a newly created object with this marker,
+    indicating that while we need to model mutations to this object, we don't
+    have to emit bytecode for these mutations if the object doesn't escape into
+    the Python world.
+    """
     def __init__(self, cls_source: Source | None = ...) -> None: ...
 
 def is_side_effect_safe(m: MutationType): ...
@@ -39,23 +119,62 @@ class AsPythonConstantNotImplementedError(NotImplementedError):
 
 class VariableTrackerMeta(type):
     all_subclasses = ...
-    def __instancecheck__(cls, instance) -> bool: ...
+    def __instancecheck__(cls, instance) -> bool:
+        """Make isinstance work with LazyVariableTracker"""
     def __init__(cls, name, bases, attrs) -> None: ...
 
 class VariableTracker(metaclass=VariableTrackerMeta):
+    """
+    Base class for tracked locals and stack values
+
+    VariableTracker instances are immutable and should be copied in
+    order to change them.
+
+    Prefer the factory function VariableTracker.build() over VariableTracker.__init__().
+    """
+
     _nonvar_fields = ...
-    def clone(self, **kwargs): ...
+    def clone(self, **kwargs):
+        """Shallow copy with some (optional) changes"""
     @classmethod
-    def visit(cls, fn: Callable[[VariableTracker], None], value: Any, cache: dict[int, Any] | None = ...) -> None: ...
+    def visit(cls, fn: Callable[[VariableTracker], None], value: Any, cache: dict[int, Any] | None = ...) -> None:
+        """Walk value and call fn on all the VariableTracker instances"""
     def debug_repr(self): ...
-    def python_type(self): ...
+    def python_type(self):
+        """
+        Abstract method to be implemented by subclasses of VariableTracker.
+
+        This method should return the type represented by the instance of the subclass.
+        The purpose is to provide a standardized way to retrieve the Python type information
+        of the variable being tracked.
+
+        Returns:
+            type: The Python type (such as int, str, list, etc.) of the variable tracked by
+                the subclass. If the type cannot be determined or is not relevant,
+                leaving it undefined or invoking super() is always sound.
+
+        Note:
+            This is an abstract method and may be overridden in subclasses.
+
+        Example:
+            class SetVariable(VariableTracker):
+                def python_type(self):
+                    return set
+
+        Raises:
+            NotImplementedError: If the method is not implemented in a subclass.
+        """
     def python_type_name(self): ...
-    def as_python_constant(self): ...
-    def guard_as_python_constant(self): ...
+    def as_python_constant(self):
+        """For constants"""
+    def guard_as_python_constant(self):
+        """Similar to as_python_constant(), but add ID_MATCH guards to try to force things to become constants"""
     def is_python_constant(self): ...
     def make_guard(self, fn): ...
-    def const_getattr(self, tx: InstructionTranslator, name: str) -> Any: ...
-    def var_getattr(self, tx: InstructionTranslator, name: str) -> VariableTracker: ...
+    def const_getattr(self, tx: InstructionTranslator, name: str) -> Any:
+        """getattr(self, name) returning a python constant"""
+    def var_getattr(self, tx: InstructionTranslator, name: str) -> VariableTracker:
+        """getattr(self, name) returning a new variable"""
     def is_proxy(self): ...
     def as_proxy(self): ...
     def maybe_fx_node(self): ...
@@ -74,15 +193,21 @@ class VariableTracker(metaclass=VariableTrackerMeta):
         self, tx, name, args: list[VariableTracker], kwargs: dict[str, VariableTracker]
     ) -> VariableTracker: ...
     def set_name_hint(self, name): ...
-    def realize(self) -> VariableTracker: ...
-    def unwrap(self) -> VariableTracker: ...
-    def is_realized(self): ...
+    def realize(self) -> VariableTracker:
+        """Used by LazyVariableTracker to build the real VariableTracker"""
+    def unwrap(self) -> VariableTracker:
+        """Used by LazyVariableTracker to return the real VariableTracker if it already exists"""
+    def is_realized(self):
+        """Used by LazyVariableTracker to indicate an unrealized node"""
     def next_variable(self, tx): ...
     def is_strict_mode(self, tx): ...
-    def is_mutable(self): ...
-    def is_immutable(self): ...
+    def is_mutable(self):
+        """Whether Dynamo allows mutation on this variable."""
+    def is_immutable(self):
+        """Whether Dynamo bans mutation on this variable."""
     @staticmethod
-    def build(tx: InstructionTranslatorBase, value: Any, source: Source | None = ...) -> Any: ...
+    def build(tx: InstructionTranslatorBase, value: Any, source: Source | None = ...) -> Any:
+        """Create a new VariableTracker from a value and optional Source"""
     def __init__(self, *, source: Source = ..., mutation_type: MutationType = ...) -> None: ...
 
 def typestr(*objs): ...

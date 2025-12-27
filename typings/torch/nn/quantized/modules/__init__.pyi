@@ -1,3 +1,11 @@
+"""
+Quantized Modules.
+
+Note::
+    The `torch.nn.quantized` namespace is in the process of being deprecated.
+    Please, use `torch.ao.nn.quantized` instead.
+"""
+
 from torch.ao.nn.quantized.modules import DeQuantize, Quantize
 from torch.ao.nn.quantized.modules.activation import (
     ELU,

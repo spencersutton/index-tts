@@ -1,3 +1,27 @@
+"""
+Core module responsible for converting Python bytecode into TorchDynamo's symbolic execution format.
+
+This module implements the bytecode-level tracing system that allows TorchDynamo to analyze
+and transform Python code. It converts Python bytecode instructions into a symbolic format
+that tracks the flow of tensors and other values through the program.
+
+Key components:
+- InstructionTranslatorBase: Base class for converting bytecode to symbolic execution
+- InstructionTranslator: Main translator for function bytecode
+- InliningInstructionTranslator: Handles inlining of called functions
+- SpeculationLog: Manages state for speculative execution and rollback
+
+The symbolic conversion process handles:
+- Control flow (loops, conditionals, etc.)
+- Function inlining and call stack management
+- Tracking of program values and side effects
+- Graph breaks and resumption points
+- Exception handling and stack frame management
+
+This is a core part of TorchDynamo's tracing system that enables ahead-of-time
+optimization of PyTorch programs.
+"""
+
 import contextlib
 import dataclasses
 import functools
@@ -42,6 +66,8 @@ type ExceptionVals = (
 
 @dataclasses.dataclass
 class SpeculationEntry:
+    """SpeculationEntry(filename: 'str', lineno: 'int', instruction_pointer: 'int', inst: 'Instruction', _failed: 'bool' = False, error_on_graph_break: 'Optional[bool]' = None, reason: 'Optional[GraphCompileReason]' = None)"""
+
     filename: str
     lineno: int
     instruction_pointer: int
@@ -49,24 +75,41 @@ class SpeculationEntry:
     _failed: bool = ...
     error_on_graph_break: bool | None = ...
     reason: GraphCompileReason | None = ...
-    def fail_and_restart_analysis(self, error_on_graph_break: bool) -> None: ...
+    def fail_and_restart_analysis(self, error_on_graph_break: bool) -> None:
+        """Start tracing of the current frame over again, and don't take this branch."""
     def failed(self, tx: InstructionTranslatorBase) -> bool: ...
 
 @dataclasses.dataclass
 class SpeculationLog:
+    """
+    SpeculationLog replaces the prior copy_graphstate/restore_graphstate
+    checkpointing.  Rather than saving/restoring state, we restart the
+    dynamo conversion process over from the beginning -- but when we
+    hit the start of the speculation that failed, we instead generate
+    a graph break.
+    """
+
     entries: list[SpeculationEntry] = ...
     index: int = ...
     def restart(self) -> None: ...
     def clear(self) -> None: ...
-    def next(self, filename: str, lineno: int, instruction_pointer: int, inst: Instruction) -> SpeculationEntry: ...
+    def next(self, filename: str, lineno: int, instruction_pointer: int, inst: Instruction) -> SpeculationEntry:
+        """
+        Lookup or create a SpeculationEntry() that is shared across
+        RestartAnalysis calls.  Args are used only for debug checks.
+        """
 
 @dataclasses.dataclass
 class LocalState:
+    """LocalState(automatic_dynamic: 'dict[str, FrameStateSizeEntry]' = <factory>)"""
+
     automatic_dynamic: dict[str, FrameStateSizeEntry] = ...
     def render(self) -> str: ...
 
 @dataclasses.dataclass
 class DistributedState:
+    """DistributedState(compile_pg: 'Any', local_state: 'LocalState', all_states: 'Optional[list[LocalState]]' = None)"""
+
     compile_pg: Any
     local_state: LocalState
     all_states: list[LocalState] | None = ...
@@ -89,6 +132,8 @@ def temporarely_allow_writes_to_output_graph(tx: InstructionTranslatorBase) -> G
 
 @dataclasses.dataclass
 class BlockStackEntry:
+    """BlockStackEntry(inst: 'Instruction', target: 'Instruction', stack_index: 'int', with_context: 'Optional[Union[ContextWrappingVariable, GenericContextWrappingVariable]]' = None)"""
+
     inst: Instruction
     target: Instruction
     stack_index: int
@@ -99,7 +144,12 @@ class BlockStackEntry:
 
 class SpeculationLogDivergence(AssertionError): ...
 class ReturnValueOp(Exception): ...
-class YieldValueOp(Exception): ...
+
+class YieldValueOp(Exception):
+    """
+    Signal to the symbolic tracer to stop and return control flow to the
+    caller
+    """
 
 def stack_op(fn: Callable[..., object]) -> Callable[..., Any]: ...
 def is_stdlib(mod: object) -> bool: ...
@@ -117,10 +167,13 @@ def break_graph_if_unsupported(
 ) -> Callable[[Callable[..., None]], Callable[[InstructionTranslatorBase, Instruction], None]]: ...
 
 class BytecodeDistpatchTableMeta(type):
+    """Installs a `cls.dispatch_table` on every subclass to speed up calls to self.OPCODE()"""
     def __init__(cls: type, name: str, bases: Any, dct: Any) -> None: ...
 
 @dataclasses.dataclass
 class ExceptionStack:
+    """Exception stack that it is shared among all InstructionTranslator instances"""
+
     _exc_stack: list[ExceptionVals] = ...
     _current_exception: ExceptionVals | None = ...
     def clear_current_exception(self) -> None: ...
@@ -160,7 +213,12 @@ class InstructionTranslatorBase(metaclass=BytecodeDistpatchTableMeta):
     parent: InstructionTranslatorBase | None
     debug_locals: list[tuple[VariableTracker, list[VariableTracker]]]
     package: CompilePackage | None
-    def mark_inconsistent_side_effects(self) -> None: ...
+    def mark_inconsistent_side_effects(self) -> None:
+        """
+        InstructionTranslator has encountered instructions which may cause
+        dynamo to see a different version of history from eager
+        See: https://github.com/pytorch/pytorch/issues/110765
+        """
     def maybe_has_backedge(self) -> bool: ...
     def cellvars(self) -> list[str]: ...
     def freevars(self) -> list[str]: ...
@@ -169,12 +227,15 @@ class InstructionTranslatorBase(metaclass=BytecodeDistpatchTableMeta):
     def call_function(
         self, fn: VariableTracker, args: list[VariableTracker], kwargs: dict[str, VariableTracker]
     ) -> None: ...
-    def inline_generator_function(self, fn: VariableTracker, args: Sequence[Any], kwargs: dict[str, Any]) -> Any: ...
-    def inline_user_function_return(self, fn: VariableTracker, args: Sequence[Any], kwargs: dict[str, Any]) -> Any: ...
+    def inline_generator_function(self, fn: VariableTracker, args: Sequence[Any], kwargs: dict[str, Any]) -> Any:
+        """Redirect the call to the generator "call_function\""""
+    def inline_user_function_return(self, fn: VariableTracker, args: Sequence[Any], kwargs: dict[str, Any]) -> Any:
+        """A call to some user defined function by inlining it."""
     def get_line_of_code_header(self, lineno: int | None = ...) -> str: ...
     def get_log_starts_line_log_str(self) -> str: ...
     def starts_line(self, lineno: int) -> None: ...
-    def step(self) -> bool: ...
+    def step(self) -> bool:
+        """Process exactly one instruction, return False we should exit"""
     def update_block_stack(self, inst: Instruction) -> None: ...
     @property
     def next_instruction(self) -> Instruction: ...
@@ -198,9 +259,19 @@ class InstructionTranslatorBase(metaclass=BytecodeDistpatchTableMeta):
     def LOAD_GLOBAL(self, inst: Instruction) -> None: ...
     def STORE_GLOBAL(self, inst: Instruction) -> None: ...
     @cache_method
-    def import_source(self, module_name: str) -> GlobalSource: ...
-    def resolve_name(self, name: str, package: str, level: int) -> str: ...
-    def calc_package(self) -> str: ...
+    def import_source(self, module_name: str) -> GlobalSource:
+        """Create an alias to a module for use in guards"""
+    def resolve_name(self, name: str, package: str, level: int) -> str:
+        """
+        Copied from the Cpython implementation of __import__
+        Resolve a relative module name to an absolute one.
+        https://github.com/python/cpython/blob/5a094f0255eea1db58fb2cf14c200971e64ec36e/Lib/importlib/_bootstrap.py#L902
+        """
+    def calc_package(self) -> str:
+        """
+        Copied from the Cpython implementation of __import__
+        https://github.com/python/cpython/blob/5a094f0255eea1db58fb2cf14c200971e64ec36e/Lib/importlib/_bootstrap.py#L1090
+        """
     def IMPORT_NAME(self, inst: Instruction) -> None: ...
 
     EAGER_IMPORT_NAME = ...
@@ -253,7 +324,26 @@ class InstructionTranslatorBase(metaclass=BytecodeDistpatchTableMeta):
     def DELETE_ATTR(self, inst: Instruction) -> None: ...
     def create_call_resume_at(
         self, inst: Instruction, all_stack_locals_metadata: Any, disable_current_frame_resume: bool
-    ) -> list[Instruction]: ...
+    ) -> list[Instruction]:
+        """
+        Codegen resume function(s) and call it.
+        Assumes that the unsupported instruction has already been run.
+
+        Expects the stack to be in the state:
+            [
+                frame N locals,
+                frame N-1 stack + locals,
+                ...,
+                frame 1 stack + locals
+            ], frame N stack (post-instruction)
+
+        Args:
+            - inst: the instruction of the current (deepest) frame to resume at
+            - all_stack_locals_metadata: metadata returned from OutputGraph.compile_subgraph - contains
+                metadata such as local names, NULL positions, stack length, etc.
+            - disable_current_frame_resume: If True, disable tracing on the current frame's resume function.
+                Used for implementing nested step_graph_break.
+        """
     def should_compile_partial_graph(self) -> bool: ...
     @break_graph_if_unsupported(push=0)
     def STORE_SUBSCR(self, inst: Instruction) -> None: ...
@@ -382,7 +472,8 @@ class InstructionTranslatorBase(metaclass=BytecodeDistpatchTableMeta):
     @property
     def fake_mode(self) -> FakeTensorMode | None: ...
     @contextlib.contextmanager
-    def strict_translation_mode(self, check_fn: Callable[[VariableTracker], bool]) -> Any: ...
+    def strict_translation_mode(self, check_fn: Callable[[VariableTracker], bool]) -> Any:
+        """Strict mode is enabled on a per-VariableTracker level depending on the return value of check_fn(node)."""
     def speculate(self) -> SpeculationEntry: ...
     def __init__(
         self,
@@ -439,6 +530,8 @@ class InstructionTranslator(InstructionTranslatorBase):
 _binary_op_lookup = ...
 
 class InliningInstructionTranslator(InstructionTranslatorBase):
+    """Trace and inline a called method"""
+
     symbolic_result: VariableTracker | None
     parent: InstructionTranslatorBase
     @classmethod

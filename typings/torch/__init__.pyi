@@ -1,3 +1,13 @@
+"""
+The torch package contains data structures for multi-dimensional
+tensors and defines mathematical operations over these tensors.
+Additionally, it provides many utilities for efficient serialization of
+Tensors and arbitrary types, and other useful utilities.
+
+It has a CUDA counterpart, that enables you to run your tensor computations
+on an NVIDIA GPU with compute capability >= 3.0.
+"""
+
 import builtins
 import functools
 import os
@@ -1468,6 +1478,11 @@ if (USE_RTLD_GLOBAL_WITH_LIBTORCH or os.getenv("TORCH_USE_RTLD_GLOBAL")) and (pl
     old_flags = ...
 
 class SymInt:
+    """
+    Like an int (including magic methods), but redirects all operations on the
+    wrapped node. This is used in particular to symbolically record operations
+    in the symbolic shape workflow.
+    """
     def __init__(self, node) -> None: ...
     def __bool__(self) -> bool: ...
     def __int__(self) -> int: ...
@@ -1504,11 +1519,17 @@ class SymInt:
     def __and__(self, other) -> SymInt: ...
     def __or__(self, other) -> SymInt: ...
     def __hash__(self) -> builtins.int: ...
-    def as_integer_ratio(self) -> tuple[SymInt, builtins.int]: ...
+    def as_integer_ratio(self) -> tuple[SymInt, builtins.int]:
+        """Represent this int as an exact integer ratio"""
     def bit_length(self) -> builtins.int: ...
     def conjugate(self) -> SymInt: ...
 
 class SymFloat:
+    """
+    Like a float (including magic methods), but redirects all operations on the
+    wrapped node. This is used in particular to symbolically record operations
+    in the symbolic shape workflow.
+    """
     def __init__(self, node) -> None: ...
     def __truediv__(self, other) -> _NotImplementedType | SymFloat: ...
     def __rtruediv__(self, other) -> _NotImplementedType | SymFloat: ...
@@ -1531,13 +1552,25 @@ class SymFloat:
     def __sym_max__(self, other): ...
     def __sym_min__(self, other): ...
     def __sym_int__(self): ...
-    def is_integer(self): ...
-    def as_integer_ratio(self) -> tuple[builtins.int, builtins.int]: ...
+    def is_integer(self):
+        """Return True if the float is an integer."""
+    def as_integer_ratio(self) -> tuple[builtins.int, builtins.int]:
+        """Represent this float as an exact integer ratio"""
     def __hash__(self) -> int: ...
-    def conjugate(self) -> SymFloat: ...
-    def hex(self) -> str: ...
+    def conjugate(self) -> SymFloat:
+        """Returns the complex conjugate of the float."""
+    def hex(self) -> str:
+        """Returns the hexadecimal representation of the float."""
 
 class SymBool:
+    """
+    Like a bool (including magic methods), but redirects all operations on the
+    wrapped node. This is used in particular to symbolically record operations
+    in the symbolic shape workflow.
+
+    Unlike regular bools, regular boolean operators will force extra guards instead
+    of symbolically evaluate.  Use the bitwise operators instead to handle this.
+    """
     def __init__(self, node) -> None: ...
     def __bool__(self) -> bool: ...
     def __int__(self) -> int: ...
@@ -1548,39 +1581,485 @@ class SymBool:
     def __eq__(self, other) -> builtins.bool: ...
     def __hash__(self) -> int: ...
 
-def sym_not(a) -> Any | bool: ...
-def sym_float(a) -> Any | SymFloat | float: ...
-def sym_int(a) -> Any | SymInt | int: ...
-def sym_max(a, b) -> Any | float: ...
-def sym_min(a, b) -> Any | float: ...
-def sym_sum(args) -> Any | int | float | bool | SymInt | SymFloat | SymBool: ...
+def sym_not(a) -> Any | bool:
+    """
+    SymInt-aware utility for logical negation.
+
+    Args:
+        a (SymBool or bool): Object to negate
+    """
+
+def sym_float(a) -> Any | SymFloat | float:
+    """
+    SymInt-aware utility for float casting.
+
+    Args:
+        a (SymInt, SymFloat, or object): Object to cast
+    """
+
+def sym_int(a) -> Any | SymInt | int:
+    """
+    SymInt-aware utility for int casting.
+
+    Args:
+        a (SymInt, SymFloat, or object): Object to cast
+    """
+
+def sym_max(a, b) -> Any | float:
+    """
+    SymInt-aware utility for max which avoids branching on a < b.
+    Unlike builtins.max(), this only works for int/float, and it always
+    promotes to float if any argument is float (unlike builtins.max, which
+    will faithfully preserve the type of the input argument).
+    """
+
+def sym_min(a, b) -> Any | float:
+    """SymInt-aware utility for min()."""
+
+def sym_sum(args) -> Any | int | float | bool | SymInt | SymFloat | SymBool:
+    """
+    N-ary add which is faster to compute for long lists than iterated binary
+    addition.  Only does something special for integers.
+    """
 
 sym_sqrt = ...
 
-def sym_ite(b, t, f) -> Any: ...
+def sym_ite(b, t, f) -> Any:
+    """SymInt-aware utility for ternary operator (``t if b else f``.)"""
+
 def sym_fresh_size(expr) -> Number: ...
 
 if not TYPE_CHECKING: ...
 
-def typename(obj: Any, /) -> str: ...
-def is_tensor(obj: Any, /) -> _TypeIs[torch.Tensor]: ...
-def is_storage(obj: Any, /) -> _TypeIs[TypedStorage | UntypedStorage]: ...
+def typename(obj: Any, /) -> str:
+    """
+    String representation of the type of an object.
+
+    This function returns a fully qualified string representation of an object's type.
+    Args:
+        obj (object): The object whose type to represent
+    Returns:
+        str: the type of the object `o`
+    Example:
+        >>> x = torch.tensor([1, 2, 3])
+        >>> torch.typename(x)
+        'torch.LongTensor'
+        >>> torch.typename(torch.nn.Parameter)
+        'torch.nn.parameter.Parameter'
+    """
+
+def is_tensor(obj: Any, /) -> _TypeIs[torch.Tensor]:
+    """
+    Returns True if `obj` is a PyTorch tensor.
+
+    Note that this function is simply doing ``isinstance(obj, Tensor)``.
+    Using that ``isinstance`` check is better for type checking with mypy,
+    and more explicit - so it's recommended to use that instead of
+    ``is_tensor``.
+
+    Args:
+        obj (object): Object to test
+    Example::
+
+        >>> x = torch.tensor([1, 2, 3])
+        >>> torch.is_tensor(x)
+        True
+    """
+
+def is_storage(obj: Any, /) -> _TypeIs[TypedStorage | UntypedStorage]:
+    """
+    Returns True if `obj` is a PyTorch storage object.
+
+    Args:
+        obj (Object): Object to test
+    """
 
 _GLOBAL_DEVICE_CONTEXT = ...
 
-def get_default_device() -> torch.device: ...
-def set_default_device(device: Device) -> None: ...
-def set_default_tensor_type(t: type[torch.Tensor] | str, /) -> None: ...
-def set_default_dtype(d: torch.dtype, /) -> None: ...
-def use_deterministic_algorithms(mode: builtins.bool, *, warn_only: builtins.bool = ...) -> None: ...
-def are_deterministic_algorithms_enabled() -> builtins.bool: ...
-def is_deterministic_algorithms_warn_only_enabled() -> builtins.bool: ...
-def set_deterministic_debug_mode(debug_mode: builtins.int | str) -> None: ...
-def get_deterministic_debug_mode() -> builtins.int: ...
-def get_float32_matmul_precision() -> str: ...
-def set_float32_matmul_precision(precision: str) -> None: ...
-def set_warn_always(b: builtins.bool, /) -> None: ...
-def is_warn_always_enabled() -> builtins.bool: ...
+def get_default_device() -> torch.device:
+    """Gets the default ``torch.Tensor`` to be allocated on ``device``"""
+
+def set_default_device(device: Device) -> None:
+    """
+    Sets the default ``torch.Tensor`` to be allocated on ``device``.  This
+    does not affect factory function calls which are called with an explicit
+    ``device`` argument.  Factory calls will be performed as if they
+    were passed ``device`` as an argument.
+
+    To only temporarily change the default device instead of setting it
+    globally, use ``with torch.device(device):`` instead.
+
+    The default device is initially ``cpu``.  If you set the default tensor
+    device to another device (e.g., ``cuda``) without a device index, tensors
+    will be allocated on whatever the current device for the device type,
+    even after :func:`torch.cuda.set_device` is called.
+
+    .. warning::
+
+        This function imposes a slight performance cost on every Python
+        call to the torch API (not just factory functions).  If this
+        is causing problems for you, please comment on
+        https://github.com/pytorch/pytorch/issues/92701
+
+    .. note::
+
+        This doesn't affect functions that create tensors that share the same memory as the input, like:
+        :func:`torch.from_numpy` and :func:`torch.frombuffer`
+
+    Args:
+        device (device or string): the device to set as default
+
+    Example::
+
+        >>> # xdoctest: +SKIP("requires cuda, changes global state")
+        >>> torch.get_default_device()
+        device(type='cpu')
+        >>> torch.set_default_device('cuda')  # current device is 0
+        >>> torch.get_default_device()
+        device(type='cuda', index=0)
+        >>> torch.set_default_device('cuda')
+        >>> torch.cuda.set_device('cuda:1')  # current device is 1
+        >>> torch.get_default_device()
+        device(type='cuda', index=1)
+        >>> torch.set_default_device('cuda:1')
+        >>> torch.get_default_device()
+        device(type='cuda', index=1)
+    """
+
+def set_default_tensor_type(t: type[torch.Tensor] | str, /) -> None:
+    """
+    .. warning::
+
+        This function is deprecated as of PyTorch 2.1, please use :func:`torch.set_default_dtype()` and
+        :func:`torch.set_default_device()` as alternatives.
+
+    Sets the default ``torch.Tensor`` type to floating point tensor type
+    ``t``. This type will also be used as default floating point type for
+    type inference in :func:`torch.tensor`.
+
+    The default floating point tensor type is initially ``torch.FloatTensor``.
+
+    Args:
+        t (type or string): the floating point tensor type or its name
+
+    Example::
+
+        >>> # xdoctest: +SKIP("Other tests may have changed the default type. Can we reset it?")
+        >>> torch.tensor([1.2, 3]).dtype    # initial default for floating point is torch.float32
+        torch.float32
+        >>> torch.set_default_tensor_type(torch.DoubleTensor)
+        >>> torch.tensor([1.2, 3]).dtype    # a new floating point tensor
+        torch.float64
+    """
+
+def set_default_dtype(d: torch.dtype, /) -> None:
+    """
+    Sets the default floating point dtype to :attr:`d`. Supports floating point dtype
+    as inputs. Other dtypes will cause torch to raise an exception.
+
+    When PyTorch is initialized its default floating point dtype is torch.float32,
+    and the intent of set_default_dtype(torch.float64) is to facilitate NumPy-like
+    type inference. The default floating point dtype is used to:
+
+    1. Implicitly determine the default complex dtype. When the default floating type is float16,
+       the default complex dtype is complex32. For float32, the default complex dtype is complex64.
+       For float64, it is complex128. For bfloat16, an exception will be raised because
+       there is no corresponding complex type for bfloat16.
+    2. Infer the dtype for tensors constructed using Python floats or complex Python
+       numbers. See examples below.
+    3. Determine the result of type promotion between bool and integer tensors and
+       Python floats and complex Python numbers.
+
+    Args:
+        d (:class:`torch.dtype`): the floating point dtype to make the default.
+
+    Example:
+        >>> # xdoctest: +SKIP("Other tests may have changed the default type. Can we reset it?")
+        >>> # initial default for floating point is torch.float32
+        >>> # Python floats are interpreted as float32
+        >>> torch.tensor([1.2, 3]).dtype
+        torch.float32
+        >>> # initial default for floating point is torch.complex64
+        >>> # Complex Python numbers are interpreted as complex64
+        >>> torch.tensor([1.2, 3j]).dtype
+        torch.complex64
+
+        >>> torch.set_default_dtype(torch.float64)
+        >>> # Python floats are now interpreted as float64
+        >>> torch.tensor([1.2, 3]).dtype  # a new floating point tensor
+        torch.float64
+        >>> # Complex Python numbers are now interpreted as complex128
+        >>> torch.tensor([1.2, 3j]).dtype  # a new complex tensor
+        torch.complex128
+
+        >>> torch.set_default_dtype(torch.float16)
+        >>> # Python floats are now interpreted as float16
+        >>> torch.tensor([1.2, 3]).dtype  # a new floating point tensor
+        torch.float16
+        >>> # Complex Python numbers are now interpreted as complex128
+        >>> torch.tensor([1.2, 3j]).dtype  # a new complex tensor
+        torch.complex32
+    """
+
+def use_deterministic_algorithms(mode: builtins.bool, *, warn_only: builtins.bool = ...) -> None:
+    """
+    Sets whether PyTorch operations must use "deterministic"
+    algorithms. That is, algorithms which, given the same input, and when
+    run on the same software and hardware, always produce the same output.
+    When enabled, operations will use deterministic algorithms when available,
+    and if only nondeterministic algorithms are available they will throw a
+    :class:`RuntimeError` when called.
+
+    .. note:: This setting alone is not always enough to make an application
+        reproducible. Refer to :ref:`reproducibility` for more information.
+
+    .. note:: :func:`torch.set_deterministic_debug_mode` offers an alternative
+        interface for this feature.
+
+    The following normally-nondeterministic operations will act
+    deterministically when ``mode=True``:
+
+        * :class:`torch.nn.Conv1d` when called on CUDA tensor
+        * :class:`torch.nn.Conv2d` when called on CUDA tensor
+        * :class:`torch.nn.Conv3d` when called on CUDA tensor
+        * :class:`torch.nn.ConvTranspose1d` when called on CUDA tensor
+        * :class:`torch.nn.ConvTranspose2d` when called on CUDA tensor
+        * :class:`torch.nn.ConvTranspose3d` when called on CUDA tensor
+        * :class:`torch.nn.ReplicationPad1d` when attempting to differentiate a CUDA tensor
+        * :class:`torch.nn.ReplicationPad2d` when attempting to differentiate a CUDA tensor
+        * :class:`torch.nn.ReplicationPad3d` when attempting to differentiate a CUDA tensor
+        * :func:`torch.bmm` when called on sparse-dense CUDA tensors
+        * :func:`torch.Tensor.__getitem__` when attempting to differentiate a CPU tensor
+          and the index is a list of tensors
+        * :func:`torch.Tensor.index_put` with ``accumulate=False``
+        * :func:`torch.Tensor.index_put` with ``accumulate=True`` when called on a CPU
+          tensor
+        * :func:`torch.Tensor.put_` with ``accumulate=True`` when called on a CPU
+          tensor
+        * :func:`torch.Tensor.scatter_add_` when called on a CUDA tensor
+        * :func:`torch.gather` when called on a CUDA tensor that requires grad
+        * :func:`torch.index_add` when called on CUDA tensor
+        * :func:`torch.index_select` when attempting to differentiate a CUDA tensor
+        * :func:`torch.repeat_interleave` when attempting to differentiate a CUDA tensor
+        * :func:`torch.Tensor.index_copy` when called on a CPU or CUDA tensor
+        * :func:`torch.Tensor.scatter` when `src` type is Tensor and called on CUDA tensor
+        * :func:`torch.Tensor.scatter_reduce` when ``reduce='sum'`` or ``reduce='mean'`` and called on CUDA tensor
+
+    The following normally-nondeterministic operations will throw a
+    :class:`RuntimeError` when ``mode=True``:
+
+        * :class:`torch.nn.AvgPool3d` when attempting to differentiate a CUDA tensor
+        * :class:`torch.nn.AdaptiveAvgPool2d` when attempting to differentiate a CUDA tensor
+        * :class:`torch.nn.AdaptiveAvgPool3d` when attempting to differentiate a CUDA tensor
+        * :class:`torch.nn.MaxPool3d` when attempting to differentiate a CUDA tensor
+        * :class:`torch.nn.AdaptiveMaxPool2d` when attempting to differentiate a CUDA tensor
+        * :class:`torch.nn.FractionalMaxPool2d` when attempting to differentiate a CUDA tensor
+        * :class:`torch.nn.FractionalMaxPool3d` when attempting to differentiate a CUDA tensor
+        * :class:`torch.nn.MaxUnpool1d`
+        * :class:`torch.nn.MaxUnpool2d`
+        * :class:`torch.nn.MaxUnpool3d`
+        * :func:`torch.nn.functional.interpolate` when attempting to differentiate a CUDA tensor
+          and one of the following modes is used:
+
+          - ``linear``
+          - ``bilinear``
+          - ``bicubic``
+          - ``trilinear``
+
+        * :class:`torch.nn.ReflectionPad1d` when attempting to differentiate a CUDA tensor
+        * :class:`torch.nn.ReflectionPad2d` when attempting to differentiate a CUDA tensor
+        * :class:`torch.nn.ReflectionPad3d` when attempting to differentiate a CUDA tensor
+        * :class:`torch.nn.NLLLoss` when called on a CUDA tensor
+        * :class:`torch.nn.CTCLoss` when attempting to differentiate a CUDA tensor
+        * :class:`torch.nn.EmbeddingBag` when attempting to differentiate a CUDA tensor when
+          ``mode='max'``
+        * :func:`torch.Tensor.put_` when ``accumulate=False``
+        * :func:`torch.Tensor.put_` when ``accumulate=True`` and called on a CUDA tensor
+        * :func:`torch.histc` when called on a CUDA tensor
+        * :func:`torch.bincount` when called on a CUDA tensor and ``weights``
+          tensor is given
+        * :func:`torch.kthvalue` with called on a CUDA tensor
+        * :func:`torch.median` with indices output when called on a CUDA tensor
+        * :func:`torch.nn.functional.grid_sample` when attempting to differentiate a CUDA tensor
+        * :func:`torch.cumsum` when called on a CUDA tensor when dtype is floating point or complex
+        * :func:`torch.Tensor.scatter_reduce` when ``reduce='prod'`` and called on CUDA tensor
+        * :func:`torch.Tensor.resize_` when called with a quantized tensor
+
+    In addition, several operations fill uninitialized memory when this setting
+    is turned on and when
+    :attr:`torch.utils.deterministic.fill_uninitialized_memory` is turned on.
+    See the documentation for that attribute for more information.
+
+    A handful of CUDA operations are nondeterministic if the CUDA version is
+    10.2 or greater, unless the environment variable ``CUBLAS_WORKSPACE_CONFIG=:4096:8``
+    or ``CUBLAS_WORKSPACE_CONFIG=:16:8`` is set. See the CUDA documentation for more
+    details: `<https://docs.nvidia.com/cuda/cublas/index.html#results-reproducibility>`_
+    If one of these environment variable configurations is not set, a :class:`RuntimeError`
+    will be raised from these operations when called with CUDA tensors:
+
+        * :func:`torch.mm`
+        * :func:`torch.mv`
+        * :func:`torch.bmm`
+
+    Note that deterministic operations tend to have worse performance than
+    nondeterministic operations.
+
+    .. note::
+
+        This flag does not detect or prevent nondeterministic behavior caused
+        by calling an inplace operation on a tensor with an internal memory
+        overlap or by giving such a tensor as the :attr:`out` argument for an
+        operation. In these cases, multiple writes of different data may target
+        a single memory location, and the order of writes is not guaranteed.
+
+    Args:
+        mode (:class:`bool`): If True, makes potentially nondeterministic
+            operations switch to a deterministic algorithm or throw a runtime
+            error. If False, allows nondeterministic operations.
+
+    Keyword args:
+        warn_only (:class:`bool`, optional): If True, operations that do not
+            have a deterministic implementation will throw a warning instead of
+            an error. Default: ``False``
+
+    Example::
+
+        >>> # xdoctest: +SKIP
+        >>> torch.use_deterministic_algorithms(True)
+
+        # Forward mode nondeterministic error
+        >>> torch.randn(10, device='cuda').kthvalue(1)
+        ...
+        RuntimeError: kthvalue CUDA does not have a deterministic implementation...
+
+        # Backward mode nondeterministic error
+        >>> torch.nn.AvgPool3d(1)(torch.randn(3, 4, 5, 6, requires_grad=True).cuda()).sum().backward()
+        ...
+        RuntimeError: avg_pool3d_backward_cuda does not have a deterministic implementation...
+    """
+
+def are_deterministic_algorithms_enabled() -> builtins.bool:
+    """
+    Returns True if the global deterministic flag is turned on. Refer to
+    :func:`torch.use_deterministic_algorithms` documentation for more details.
+    """
+
+def is_deterministic_algorithms_warn_only_enabled() -> builtins.bool:
+    """
+    Returns True if the global deterministic flag is set to warn only.
+    Refer to :func:`torch.use_deterministic_algorithms` documentation for more
+    details.
+    """
+
+def set_deterministic_debug_mode(debug_mode: builtins.int | str) -> None:
+    """
+    Sets the debug mode for deterministic operations.
+
+    .. note:: This is an alternative interface for
+        :func:`torch.use_deterministic_algorithms`. Refer to that function's
+        documentation for details about affected operations.
+
+    Args:
+        debug_mode(str or int): If "default" or 0, don't error or warn on
+            nondeterministic operations. If "warn" or 1, warn on
+            nondeterministic operations. If "error" or 2, error on
+            nondeterministic operations.
+    """
+
+def get_deterministic_debug_mode() -> builtins.int:
+    """
+    Returns the current value of the debug mode for deterministic
+    operations. Refer to :func:`torch.set_deterministic_debug_mode`
+    documentation for more details.
+    """
+
+def get_float32_matmul_precision() -> str:
+    """
+    Returns the current value of float32 matrix multiplication precision. Refer to
+    :func:`torch.set_float32_matmul_precision` documentation for more details.
+    """
+
+def set_float32_matmul_precision(precision: str) -> None:
+    """
+    Sets the internal precision of float32 matrix multiplications.
+
+    Running float32 matrix multiplications in lower precision may significantly increase
+    performance, and in some programs the loss of precision has a negligible impact.
+
+    Supports three settings:
+
+        * "highest", float32 matrix multiplications use the float32 datatype (24 mantissa
+          bits with 23 bits explicitly stored) for internal computations.
+        * "high", float32 matrix multiplications either use the TensorFloat32 datatype (10
+          mantissa bits explicitly stored) or treat each float32 number as the sum of two bfloat16 numbers
+          (approximately 16 mantissa bits with 14 bits explicitly stored), if the appropriate fast matrix multiplication
+          algorithms are available.  Otherwise float32 matrix multiplications are computed
+          as if the precision is "highest".  See below for more information on the bfloat16
+          approach.
+        * "medium", float32 matrix multiplications use the bfloat16 datatype (8 mantissa
+          bits with 7 bits explicitly stored) for internal computations, if a fast matrix multiplication algorithm
+          using that datatype internally is available. Otherwise float32
+          matrix multiplications are computed as if the precision is "high".
+
+    When using "high" precision, float32 multiplications may use a bfloat16-based algorithm
+    that is more complicated than simply truncating to some smaller number mantissa bits
+    (e.g. 10 for TensorFloat32, 7 for bfloat16 explicitly stored).  Refer to [Henry2019]_ for a complete
+    description of this algorithm.  To briefly explain here, the first step is to realize
+    that we can perfectly encode a single float32 number as the sum of three bfloat16
+    numbers (because float32 has 23 mantissa bits while bfloat16 has 7 explicitly stored, and both have the
+    same number of exponent bits).  This means that the product of two float32 numbers can
+    be exactly given by the sum of nine products of bfloat16 numbers.  We can then trade
+    accuracy for speed by dropping some of these products.  The "high" precision algorithm
+    specifically keeps only the three most significant products, which conveniently excludes
+    all of the products involving the last 8 mantissa bits of either input.  This means that
+    we can represent our inputs as the sum of two bfloat16 numbers rather than three.
+    Because bfloat16 fused-multiply-add (FMA) instructions are typically >10x faster than
+    float32 ones, it's faster to do three multiplications and 2 additions with bfloat16
+    precision than it is to do a single multiplication with float32 precision.
+
+    .. [Henry2019] http://arxiv.org/abs/1904.06376
+
+    .. note::
+
+        This does not change the output dtype of float32 matrix multiplications,
+        it controls how the internal computation of the matrix multiplication is performed.
+
+    .. note::
+
+        This does not change the precision of convolution operations. Other flags,
+        like `torch.backends.cudnn.allow_tf32`, may control the precision of convolution
+        operations.
+
+    .. note::
+
+        This flag currently only affects one native device type: CUDA.
+        If "high" or "medium" are set then the TensorFloat32 datatype will be used
+        when computing float32 matrix multiplications, equivalent to setting
+        `torch.backends.cuda.matmul.allow_tf32 = True`. When "highest" (the default)
+        is set then the float32 datatype is used for internal computations, equivalent
+        to setting `torch.backends.cuda.matmul.allow_tf32 = False`.
+
+    Args:
+        precision(str): can be set to "highest" (default), "high", or "medium" (see above).
+    """
+
+def set_warn_always(b: builtins.bool, /) -> None:
+    """
+    When this flag is False (default) then some PyTorch warnings may only
+    appear once per process. This helps avoid excessive warning information.
+    Setting it to True causes these warnings to always appear, which may be
+    helpful when debugging.
+
+    Args:
+        b (:class:`bool`): If True, force warnings to always be emitted
+                           If False, set to the default behaviour
+    """
+
+def is_warn_always_enabled() -> builtins.bool:
+    """
+    Returns True if the global warn_always flag is turned on. Refer to
+    :func:`torch.set_warn_always` documentation for more details.
+    """
 
 newaxis: None = ...
 
@@ -1657,7 +2136,8 @@ _tensor_classes: set[type[torch.Tensor]] = ...
 _segment_reduce = ...
 PRIVATE_OPS = ...
 
-def compiled_with_cxx11_abi() -> builtins.bool: ...
+def compiled_with_cxx11_abi() -> builtins.bool:
+    """Returns whether PyTorch was built with _GLIBCXX_USE_CXX11_ABI=1"""
 
 legacy_contiguous_format = ...
 quantized_lstm = ...
@@ -1689,7 +2169,100 @@ def compile[T: Callable](
     mode: str | None = ...,
     options: dict[str, str | builtins.int | builtins.bool | Callable[..., Any]] | None = ...,
     disable: builtins.bool = ...,
-) -> T: ...
+) -> T:
+    """
+    Optimizes given model/function using TorchDynamo and specified backend.
+    If you are compiling an :class:`torch.nn.Module`, you can also use :meth:`torch.nn.Module.compile`
+    to compile the module inplace without changing its structure.
+
+    Concretely, for every frame executed within the compiled region, we will attempt
+    to compile it and cache the compiled result on the code object for future
+    use.  A single frame may be compiled multiple times if previous compiled
+    results are not applicable for subsequent calls (this is called a "guard
+    failure), you can use TORCH_LOGS=guards to debug these situations.
+    Multiple compiled results can be associated with a frame up to
+    ``torch._dynamo.config.recompile_limit``, which defaults to 8; at which
+    point we will fall back to eager.  Note that compile caches are per
+    *code object*, not frame; if you dynamically create multiple copies of a
+    function, they will all share the same code cache.
+
+    Args:
+       model (Callable or None): Module/function to optimize
+       fullgraph (bool): If False (default), torch.compile attempts to discover compilable regions
+        in the function that it will optimize. If True, then we require that the entire function be
+        capturable into a single graph. If this is not possible (that is, if there are graph breaks),
+        then this will raise an error.
+       dynamic (bool or None): Use dynamic shape tracing.  When this is True, we will up-front attempt
+        to generate a kernel that is as dynamic as possible to avoid recompilations when
+        sizes change.  This may not always work as some operations/optimizations will
+        force specialization; use TORCH_LOGS=dynamic to debug overspecialization.
+        When this is False, we will NEVER generate dynamic kernels, we will always specialize.
+        By default (None), we automatically detect if dynamism has occurred and compile a more
+        dynamic kernel upon recompile.
+       backend (str or Callable): backend to be used
+
+        - "inductor" is the default backend, which is a good balance between performance and overhead
+
+        - Non experimental in-tree backends can be seen with `torch._dynamo.list_backends()`
+
+        - Experimental or debug in-tree backends can be seen with `torch._dynamo.list_backends(None)`
+
+        - To register an out-of-tree custom backend:
+          https://pytorch.org/docs/main/torch.compiler_custom_backends.html#registering-custom-backends
+       mode (str): Can be either "default", "reduce-overhead", "max-autotune" or "max-autotune-no-cudagraphs"
+
+        - "default" is the default mode, which is a good balance between performance and overhead
+
+        - "reduce-overhead" is a mode that reduces the overhead of python with CUDA graphs,
+          useful for small batches.  Reduction of overhead can come at the cost of more memory
+          usage, as we will cache the workspace memory required for the invocation so that we
+          do not have to reallocate it on subsequent runs.  Reduction of overhead is not guaranteed
+          to work; today, we only reduce overhead for CUDA only graphs which do not mutate inputs.
+          There are other circumstances where CUDA graphs are not applicable; use TORCH_LOG=perf_hints
+          to debug.
+
+        - "max-autotune" is a mode that leverages Triton or template based matrix multiplications
+          on supported devices and Triton based convolutions on GPU.
+          It enables CUDA graphs by default on GPU.
+
+        - "max-autotune-no-cudagraphs" is a mode similar to "max-autotune" but without CUDA graphs
+
+        - To see the exact configs that each mode sets you can call `torch._inductor.list_mode_options()`
+
+       options (dict): A dictionary of options to pass to the backend. Some notable ones to try out are
+
+        - `epilogue_fusion` which fuses pointwise ops into templates. Requires `max_autotune` to also be set
+
+        - `max_autotune` which will profile to pick the best matmul configuration
+
+        - `fallback_random` which is useful when debugging accuracy issues
+
+        - `shape_padding` which pads matrix shapes to better align loads on GPUs especially for tensor cores
+
+        - `triton.cudagraphs` which will reduce the overhead of python with CUDA graphs
+
+        - `trace.enabled` which is the most useful debugging flag to turn on
+
+        - `trace.graph_diagram` which will show you a picture of your graph after fusion
+
+        - `guard_filter_fn` that controls which dynamo guards are saved with compilations.
+          This is an unsafe feature and there is no backward compatibility guarantee provided
+          for dynamo guards as data types.
+          For stable helper functions to use, see the documentations in `torch.compiler`, for example:
+          - `torch.compiler.skip_guard_on_inbuilt_nn_modules_unsafe`
+          - `torch.compiler.skip_guard_on_all_nn_modules_unsafe`
+          - `torch.compiler.keep_tensor_guards_unsafe`
+
+        - For inductor you can see the full list of configs that it supports by calling `torch._inductor.list_options()`
+       disable (bool): Turn torch.compile() into a no-op for testing
+
+    Example::
+
+        @torch.compile(options={"triton.cudagraphs": True}, fullgraph=True)
+        def foo(x):
+            return torch.sin(x) + torch.cos(x)
+    """
+
 @overload
 def compile[T: Callable](
     model: None = ...,
@@ -1700,7 +2273,100 @@ def compile[T: Callable](
     mode: str | None = ...,
     options: dict[str, str | builtins.int | builtins.bool | Callable[..., Any]] | None = ...,
     disable: builtins.bool = ...,
-) -> T: ...
+) -> T:
+    """
+    Optimizes given model/function using TorchDynamo and specified backend.
+    If you are compiling an :class:`torch.nn.Module`, you can also use :meth:`torch.nn.Module.compile`
+    to compile the module inplace without changing its structure.
+
+    Concretely, for every frame executed within the compiled region, we will attempt
+    to compile it and cache the compiled result on the code object for future
+    use.  A single frame may be compiled multiple times if previous compiled
+    results are not applicable for subsequent calls (this is called a "guard
+    failure), you can use TORCH_LOGS=guards to debug these situations.
+    Multiple compiled results can be associated with a frame up to
+    ``torch._dynamo.config.recompile_limit``, which defaults to 8; at which
+    point we will fall back to eager.  Note that compile caches are per
+    *code object*, not frame; if you dynamically create multiple copies of a
+    function, they will all share the same code cache.
+
+    Args:
+       model (Callable or None): Module/function to optimize
+       fullgraph (bool): If False (default), torch.compile attempts to discover compilable regions
+        in the function that it will optimize. If True, then we require that the entire function be
+        capturable into a single graph. If this is not possible (that is, if there are graph breaks),
+        then this will raise an error.
+       dynamic (bool or None): Use dynamic shape tracing.  When this is True, we will up-front attempt
+        to generate a kernel that is as dynamic as possible to avoid recompilations when
+        sizes change.  This may not always work as some operations/optimizations will
+        force specialization; use TORCH_LOGS=dynamic to debug overspecialization.
+        When this is False, we will NEVER generate dynamic kernels, we will always specialize.
+        By default (None), we automatically detect if dynamism has occurred and compile a more
+        dynamic kernel upon recompile.
+       backend (str or Callable): backend to be used
+
+        - "inductor" is the default backend, which is a good balance between performance and overhead
+
+        - Non experimental in-tree backends can be seen with `torch._dynamo.list_backends()`
+
+        - Experimental or debug in-tree backends can be seen with `torch._dynamo.list_backends(None)`
+
+        - To register an out-of-tree custom backend:
+          https://pytorch.org/docs/main/torch.compiler_custom_backends.html#registering-custom-backends
+       mode (str): Can be either "default", "reduce-overhead", "max-autotune" or "max-autotune-no-cudagraphs"
+
+        - "default" is the default mode, which is a good balance between performance and overhead
+
+        - "reduce-overhead" is a mode that reduces the overhead of python with CUDA graphs,
+          useful for small batches.  Reduction of overhead can come at the cost of more memory
+          usage, as we will cache the workspace memory required for the invocation so that we
+          do not have to reallocate it on subsequent runs.  Reduction of overhead is not guaranteed
+          to work; today, we only reduce overhead for CUDA only graphs which do not mutate inputs.
+          There are other circumstances where CUDA graphs are not applicable; use TORCH_LOG=perf_hints
+          to debug.
+
+        - "max-autotune" is a mode that leverages Triton or template based matrix multiplications
+          on supported devices and Triton based convolutions on GPU.
+          It enables CUDA graphs by default on GPU.
+
+        - "max-autotune-no-cudagraphs" is a mode similar to "max-autotune" but without CUDA graphs
+
+        - To see the exact configs that each mode sets you can call `torch._inductor.list_mode_options()`
+
+       options (dict): A dictionary of options to pass to the backend. Some notable ones to try out are
+
+        - `epilogue_fusion` which fuses pointwise ops into templates. Requires `max_autotune` to also be set
+
+        - `max_autotune` which will profile to pick the best matmul configuration
+
+        - `fallback_random` which is useful when debugging accuracy issues
+
+        - `shape_padding` which pads matrix shapes to better align loads on GPUs especially for tensor cores
+
+        - `triton.cudagraphs` which will reduce the overhead of python with CUDA graphs
+
+        - `trace.enabled` which is the most useful debugging flag to turn on
+
+        - `trace.graph_diagram` which will show you a picture of your graph after fusion
+
+        - `guard_filter_fn` that controls which dynamo guards are saved with compilations.
+          This is an unsafe feature and there is no backward compatibility guarantee provided
+          for dynamo guards as data types.
+          For stable helper functions to use, see the documentations in `torch.compiler`, for example:
+          - `torch.compiler.skip_guard_on_inbuilt_nn_modules_unsafe`
+          - `torch.compiler.skip_guard_on_all_nn_modules_unsafe`
+          - `torch.compiler.keep_tensor_guards_unsafe`
+
+        - For inductor you can see the full list of configs that it supports by calling `torch._inductor.list_options()`
+       disable (bool): Turn torch.compile() into a no-op for testing
+
+    Example::
+
+        @torch.compile(options={"triton.cudagraphs": True}, fullgraph=True)
+        def foo(x):
+            return torch.sin(x) + torch.cos(x)
+    """
+
 def compile[T: Callable](
     model: T | None = ...,
     *,
@@ -1710,7 +2376,99 @@ def compile[T: Callable](
     mode: str | None = ...,
     options: dict[str, str | builtins.int | builtins.bool | Callable[..., Any]] | None = ...,
     disable: builtins.bool = ...,
-) -> T: ...
+) -> T:
+    """
+    Optimizes given model/function using TorchDynamo and specified backend.
+    If you are compiling an :class:`torch.nn.Module`, you can also use :meth:`torch.nn.Module.compile`
+    to compile the module inplace without changing its structure.
+
+    Concretely, for every frame executed within the compiled region, we will attempt
+    to compile it and cache the compiled result on the code object for future
+    use.  A single frame may be compiled multiple times if previous compiled
+    results are not applicable for subsequent calls (this is called a "guard
+    failure), you can use TORCH_LOGS=guards to debug these situations.
+    Multiple compiled results can be associated with a frame up to
+    ``torch._dynamo.config.recompile_limit``, which defaults to 8; at which
+    point we will fall back to eager.  Note that compile caches are per
+    *code object*, not frame; if you dynamically create multiple copies of a
+    function, they will all share the same code cache.
+
+    Args:
+       model (Callable or None): Module/function to optimize
+       fullgraph (bool): If False (default), torch.compile attempts to discover compilable regions
+        in the function that it will optimize. If True, then we require that the entire function be
+        capturable into a single graph. If this is not possible (that is, if there are graph breaks),
+        then this will raise an error.
+       dynamic (bool or None): Use dynamic shape tracing.  When this is True, we will up-front attempt
+        to generate a kernel that is as dynamic as possible to avoid recompilations when
+        sizes change.  This may not always work as some operations/optimizations will
+        force specialization; use TORCH_LOGS=dynamic to debug overspecialization.
+        When this is False, we will NEVER generate dynamic kernels, we will always specialize.
+        By default (None), we automatically detect if dynamism has occurred and compile a more
+        dynamic kernel upon recompile.
+       backend (str or Callable): backend to be used
+
+        - "inductor" is the default backend, which is a good balance between performance and overhead
+
+        - Non experimental in-tree backends can be seen with `torch._dynamo.list_backends()`
+
+        - Experimental or debug in-tree backends can be seen with `torch._dynamo.list_backends(None)`
+
+        - To register an out-of-tree custom backend:
+          https://pytorch.org/docs/main/torch.compiler_custom_backends.html#registering-custom-backends
+       mode (str): Can be either "default", "reduce-overhead", "max-autotune" or "max-autotune-no-cudagraphs"
+
+        - "default" is the default mode, which is a good balance between performance and overhead
+
+        - "reduce-overhead" is a mode that reduces the overhead of python with CUDA graphs,
+          useful for small batches.  Reduction of overhead can come at the cost of more memory
+          usage, as we will cache the workspace memory required for the invocation so that we
+          do not have to reallocate it on subsequent runs.  Reduction of overhead is not guaranteed
+          to work; today, we only reduce overhead for CUDA only graphs which do not mutate inputs.
+          There are other circumstances where CUDA graphs are not applicable; use TORCH_LOG=perf_hints
+          to debug.
+
+        - "max-autotune" is a mode that leverages Triton or template based matrix multiplications
+          on supported devices and Triton based convolutions on GPU.
+          It enables CUDA graphs by default on GPU.
+
+        - "max-autotune-no-cudagraphs" is a mode similar to "max-autotune" but without CUDA graphs
+
+        - To see the exact configs that each mode sets you can call `torch._inductor.list_mode_options()`
+
+       options (dict): A dictionary of options to pass to the backend. Some notable ones to try out are
+
+        - `epilogue_fusion` which fuses pointwise ops into templates. Requires `max_autotune` to also be set
+
+        - `max_autotune` which will profile to pick the best matmul configuration
+
+        - `fallback_random` which is useful when debugging accuracy issues
+
+        - `shape_padding` which pads matrix shapes to better align loads on GPUs especially for tensor cores
+
+        - `triton.cudagraphs` which will reduce the overhead of python with CUDA graphs
+
+        - `trace.enabled` which is the most useful debugging flag to turn on
+
+        - `trace.graph_diagram` which will show you a picture of your graph after fusion
+
+        - `guard_filter_fn` that controls which dynamo guards are saved with compilations.
+          This is an unsafe feature and there is no backward compatibility guarantee provided
+          for dynamo guards as data types.
+          For stable helper functions to use, see the documentations in `torch.compiler`, for example:
+          - `torch.compiler.skip_guard_on_inbuilt_nn_modules_unsafe`
+          - `torch.compiler.skip_guard_on_all_nn_modules_unsafe`
+          - `torch.compiler.keep_tensor_guards_unsafe`
+
+        - For inductor you can see the full list of configs that it supports by calling `torch._inductor.list_options()`
+       disable (bool): Turn torch.compile() into a no-op for testing
+
+    Example::
+
+        @torch.compile(options={"triton.cudagraphs": True}, fullgraph=True)
+        def foo(x):
+            return torch.sin(x) + torch.cos(x)
+    """
 
 if not TYPE_CHECKING: ...
 if "TORCH_CUDA_SANITIZER" in os.environ: ...
@@ -1724,6 +2482,10 @@ class _TritonLibrary:
 _deprecated_attrs = ...
 
 @functools.cache
-def get_device_module(device: torch.device | str | None = ...) -> Any: ...
+def get_device_module(device: torch.device | str | None = ...) -> Any:
+    """
+    Returns the module associated with a given device(e.g., torch.device('cuda'), "mtia:0", "xpu", ...).
+    If no device is given, return the module for the current accelerator or CPU if none is present.
+    """
 
 if _is_device_backend_autoload_enabled(): ...

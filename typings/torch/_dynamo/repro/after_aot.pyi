@@ -1,3 +1,22 @@
+"""
+Utilities for reproducing and debugging issues in PyTorch's Dynamo AOT compilation.
+
+This module provides tools and infrastructure for:
+1. Generating minimal reproducible test cases ("repros") from failing compilations
+2. Analyzing accuracy issues between eager and compiled execution
+3. Minifying large models/inputs to isolate problematic patterns
+4. Debugging compiler errors and accuracy divergences
+
+The main components include:
+- Repro generation: Creates standalone Python files that reproduce compiler issues
+- Minification: Reduces large graphs to minimal failing examples
+- Accuracy analysis: Compares compiled vs eager execution, with fp64 reference
+- Debug tools: Dumps graph state, tracks intermediates, analyzes divergences
+
+This is primarily used by PyTorch developers and researchers to debug issues in
+the Dynamo AOT compilation pipeline, particularly for the Inductor backend.
+"""
+
 from collections.abc import Callable, Sequence
 from typing import IO, Any
 
@@ -9,7 +28,15 @@ log = ...
 inductor_config = ...
 use_buck = ...
 
-def wrap_compiler_debug(unconfigured_compiler_fn: _CompileFxCallable, compiler_name: str) -> _CompileFxCallable: ...
+def wrap_compiler_debug(unconfigured_compiler_fn: _CompileFxCallable, compiler_name: str) -> _CompileFxCallable:
+    """
+    Minifier for Fx Graph modules after Aot Autograd has finished. We wrap both
+    forward and backward call separately with the backend compiler_fn - like
+    inductor or nvfuser. Intercepting after Aot Autograd presents neat
+    abstraction, where all the params are lifted as graph inputs, making it easy
+    to save the graph as a string.
+    """
+
 def maybe_fbcode_instructions() -> str: ...
 def generate_compiler_repro_string(
     gm: torch.fx.GraphModule,

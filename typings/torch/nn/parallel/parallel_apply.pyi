@@ -12,4 +12,17 @@ def parallel_apply(
     inputs: Sequence[Any],
     kwargs_tup: Sequence[dict[str, Any]] | None = ...,
     devices: Sequence[int | torch.device | None] | None = ...,
-) -> list[Any]: ...
+) -> list[Any]:
+    """
+    Apply each `module` in :attr:`modules` in parallel on each of :attr:`devices`.
+
+    Args:
+        modules (Module): modules to be parallelized
+        inputs (tensor): inputs to the modules
+        devices (list of int or torch.device): CUDA devices
+
+    :attr:`modules`, :attr:`inputs`, :attr:`kwargs_tup` (if given), and
+    :attr:`devices` (if given) should all have same length. Moreover, each
+    element of :attr:`inputs` can either be a single object as the only argument
+    to a module, or a collection of positional arguments.
+    """

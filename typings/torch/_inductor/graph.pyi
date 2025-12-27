@@ -36,7 +36,15 @@ def may_get_constant_buffer_dtype(constant_buffer: sympy.Expr) -> torch.dtype | 
 def is_magic_method(op: Any) -> bool: ...
 def getattr_recursive(obj: GraphModule, target: str) -> Tensor | torch._C.ScriptObject | GraphModule: ...
 def get_user_visible_output_strides(g: Graph) -> dict[Node, tuple[int, ...]]: ...
-def mark_nodes_dislike_padding(g: Graph, user_visible_output_strides: dict[Node, tuple[int, ...]]) -> None: ...
+def mark_nodes_dislike_padding(g: Graph, user_visible_output_strides: dict[Node, tuple[int, ...]]) -> None:
+    """
+    Nodes like convolution/convolution_backward want its input to be dense.
+    If we pad their inputs, we result in extra calls to copy kernels!  On the other hand, padding usually helps reduction.
+
+    The pass finds nodes that dislike padding. These are nodes that can be reached
+    from a convolution/convolution_backward in the backward direction without
+    going thru a reduction.
+    """
 
 class GraphLowering(torch.fx.Interpreter):
     graph_outputs: list[ir.IRNode]
@@ -62,25 +70,63 @@ class GraphLowering(torch.fx.Interpreter):
         fx_wrapper: bool = ...,
     ) -> None: ...
     def freeze_runtime_asserts(self) -> None: ...
-    def symbolic_sizes_strides(self, ex: torch.Tensor) -> tuple[Sequence[int | Expr], Sequence[int | Expr]]: ...
-    def static_sizes_strides(self, ex: torch.Tensor) -> tuple[list[sympy.Expr], list[sympy.Expr]]: ...
+    def symbolic_sizes_strides(self, ex: torch.Tensor) -> tuple[Sequence[int | Expr], Sequence[int | Expr]]:
+        """
+        Support dynamic shapes and dynamic strides by assigning variables
+        to each dimension.  We duck-shape tensors, so if two tensors
+        have the same size they get assigned the same symbolic variable.
+        """
+    def static_sizes_strides(self, ex: torch.Tensor) -> tuple[list[sympy.Expr], list[sympy.Expr]]:
+        """Primarily used to weights"""
     def get_allocation_size(
         self, node: ir.TensorBox | ir.StorageBox | ir.Buffer | WorkspaceArg | ir.TorchBindObject
     ) -> Sequence[Expr]: ...
     def get_allocation_storage_size(self, node: ir.Buffer | WorkspaceArg | ir.TorchBindObject) -> Expr: ...
     def has_feature(self, device: torch._inductor.ir.IRNode | device | None, feature: BackendFeature) -> bool: ...
-    def get_dep_size_hint(self, dep: Dep) -> int: ...
+    def get_dep_size_hint(self, dep: Dep) -> int:
+        """Get the size hint for a dependency with caching to avoid expensive recomputation."""
     def get_current_device_or_throw(self) -> torch.device: ...
     @contextlib.contextmanager
     def set_current_device(self, device: torch.device) -> Iterator[None]: ...
     def get_training_phase(self) -> str: ...
     @staticmethod
-    def decide_layout_opt(gm: GraphModule, *, is_inference: bool) -> bool: ...
-    def qualify_name(self, name: str) -> str: ...
+    def decide_layout_opt(gm: GraphModule, *, is_inference: bool) -> bool:
+        """
+        Decide if we should enable layout optimization for this graph based on
+        heuristics.
+        """
+    def qualify_name(self, name: str) -> str:
+        """Prepend the given name with the graph name if any."""
     def make_subgraph(
         self, gm: torch.fx.GraphModule, example_inputs: list[torch.Tensor], subgraph_name: str
-    ) -> SubgraphLowering: ...
-    def find_nodes_prefer_channels_last(self) -> OrderedSet[Node]: ...
+    ) -> SubgraphLowering:
+        """
+        Make a subgraph of the current graph with all inherited parts, except
+        the graph module (`gm`) and `example_inputs`.  The subgraphs are lowered
+        separately and lifted into a separate function in the parent output
+        wrapper code.  The subgraph name is qualified by the parent graph's
+        name. Note that the lifting of subgraph is supported for python wrapper
+        only. For cpp wrapper, we inline the subgraphs in the parent wrapper.
+        """
+    def find_nodes_prefer_channels_last(self) -> OrderedSet[Node]:
+        """
+        The rule to decide if an node prefer channels last is simple.
+        1. if it's input/output of a convolution
+        2. if one of its user prefers channels last
+
+        We have rule 1 because cudnn runs a faster convolution kernel for channels last inputs;
+        Rule 2 is also important. It makes sure that indirect inputs to convolution also prefers
+        channels last.
+
+        Consider the scenario: conv -> batch-norm -> relu -> conv
+        Without rule 2, batch-norm output may use a contiguous layout. That will cause 2 extra copies:
+        1. the output of batch-norm should be channels last initially since its input is a conv's output.
+           Forcing the batch-norm's output to be contiguous results in the first copy
+        2. The second conv's input is initially contiguous. This layout is propagated from the batch-norm's output.
+           We need convert it to channels last layout which results in the second copy.
+        With rule 2, we makes sure all the tensors in the chain uses channels last layout. So both copies
+        can be saved.
+        """
     def warn_fallback(self, name: str) -> None: ...
     def add_device_info(self, device: torch.device) -> None: ...
     @property
@@ -95,15 +141,30 @@ class GraphLowering(torch.fx.Interpreter):
     def register_buffer(self, buffer: ir.Buffer, *, set_name: bool = ...) -> str: ...
     def register_operation_list(self, operation_names: list[str]) -> str: ...
     def register_users_of(self, node_output: Iterable[ir.IRNode] | ir.IRNode) -> None: ...
-    def mark_buffer_mutated(self, name: str) -> None: ...
-    def get_original_value_of_constant(self, name: str) -> torch.Tensor: ...
+    def mark_buffer_mutated(self, name: str) -> None:
+        """
+        When a buffer is mutated we need to make sure all the reads to
+        the old version are realized before the mutation happens.
+        """
+    def get_original_value_of_constant(self, name: str) -> torch.Tensor:
+        """
+        In AOTI, module buffers may have been mutated during the tracing and compilation.
+        Thus we need to read from previously stored original buffers, to make sure the
+        generated model.so uses correct initial values.
+        """
     def allocate_non_dup_const_name(self, name: str | None, data: Tensor) -> str: ...
     def add_tensor_constant(self, data: Tensor, name: str | None = ...) -> TensorBox | ir.ShapeAsConstantBuffer: ...
-    def constant_name(self, name: str, device_override: torch.device | None) -> str: ...
+    def constant_name(self, name: str, device_override: torch.device | None) -> str:
+        """
+        We AOT copy constants to the devices they are needed on.
+        If device_override doesn't match the constant's device, then
+        copy it and return a different name.
+        """
     def placeholder(self, target: str, args: tuple[object], kwargs: dict[str, object]) -> Expr | TensorBox | None: ...
     def call_function(self, target: Callable, args: Any, kwargs: dict[str, Any]) -> Any: ...
     @staticmethod
-    def can_inline_constant(t: torch.Tensor) -> bool: ...
+    def can_inline_constant(t: torch.Tensor) -> bool:
+        """True if this is a small constant attr that will be inlined."""
     def get_attr(
         self, target: str, args: tuple[()], kwargs: dict[str, object]
     ) -> Constant | TensorBox | ShapeAsConstantBuffer | ir.Subgraph | TorchBindObject: ...
@@ -122,7 +183,16 @@ class GraphLowering(torch.fx.Interpreter):
         old_kwargs: dict[str, Any],
         new_args: tuple[Any],
         new_kwargs: dict[str, Any],
-    ) -> None: ...
+    ) -> None:
+        """
+        Propagate mutations on new_args/new_kwargs back to old_args/old_kwargs.
+
+        Assumes we may have cloned old_args/old_kwargs into new_args/new_kwargs
+        and then called fx_node(*new_args, **new_kwargs).
+
+        If fx_node mutates any of new_args/new_kwargs, and they are different from
+        old_args/old_kwargs, then we need to update the original tensor.
+        """
     def run_node(self, n: torch.fx.Node) -> object: ...
     def create_deferred_runtime_asserts(
         self, n: torch.fx.Node, new_unbacked_defs: OrderedSet[sympy.Symbol]
@@ -136,9 +206,19 @@ class GraphLowering(torch.fx.Interpreter):
         partition_signatures: GraphPartitionSignature | None = ...,
     ) -> None: ...
     def extract_autotune_inputs(self, example_inputs: list[int | float | torch.Tensor]) -> None: ...
-    def codegen_with_cpp_wrapper(self) -> tuple[ValueWithLineMap, ValueWithLineMap]: ...
+    def codegen_with_cpp_wrapper(self) -> tuple[ValueWithLineMap, ValueWithLineMap]:
+        """For GPU, Triton kernels are autotuned and stored as cubin files"""
     def codegen(self) -> tuple[ValueWithLineMap, ValueWithLineMap]: ...
-    def codegen_subgraph(self, parent_graph: GraphLowering) -> None: ...
+    def codegen_subgraph(self, parent_graph: GraphLowering) -> None:
+        """
+        This is a more compact version of the `codegen()` above
+        where we codegen this graph as a subgraph of some parent
+        graph. The parent graph is passed as an argument: the
+        intention is to inline codegening of the subgraph in
+        the parent graph's wrapper code (including the generated
+        kernels). The wrapper code is not finalized (via `.generate()`
+        call), as this will be done in the parent graph's `codegen()`.
+        """
     def count_bytes(self) -> tuple[int, list[tuple[BaseSchedulerNode, int]], list[tuple[BaseSchedulerNode, float]]]: ...
 
     save_output_code: Callable[[str], None] | None = ...
@@ -147,6 +227,10 @@ class GraphLowering(torch.fx.Interpreter):
     def is_unspec_arg(self, name: str) -> bool: ...
 
 class SubgraphLowering(GraphLowering):
+    """
+    Mostly a helper class for the subgraph lowering. The main goal is to call
+    init_wrapper_code with the subgraph related arguments.
+    """
     def __init__(self, parent: GraphLowering, *args: Any, **kwargs: Any) -> None: ...
     def init_wrapper_code(
         self,

@@ -46,11 +46,26 @@ def pre_grad_passes(
     example_inputs: Sequence[object] = ...,
     add_passes: str | None = ...,
     remove_passes: str | None = ...,
-) -> torch.fx.GraphModule: ...
+) -> torch.fx.GraphModule:
+    """
+    Apply passes on the input FX graph using Torch IR.
+
+    WARNING:
+    The IR before grad is not functional or normalized, so it is harder
+    to write passes on this IR.  Passes must be safe with respect to
+    aliasing and mutation and need to handle all possible arg schemas.
+
+    Consider adding a new pass to post_grad.py or joint_graph.py which
+    are after functionalization and normalization.
+    """
+
 def fuse_fx(gm: torch.fx.GraphModule, example_inputs) -> torch.fx.GraphModule: ...
 def fetch_attr(target: str, mod): ...
-def remove_identity(gm: torch.fx.GraphModule) -> torch.fx.GraphModule: ...
-def fuse_conv_bn(gm: torch.fx.GraphModule, inplace=...) -> torch.fx.GraphModule: ...
+def remove_identity(gm: torch.fx.GraphModule) -> torch.fx.GraphModule:
+    """Removes all identity layers from the module."""
+
+def fuse_conv_bn(gm: torch.fx.GraphModule, inplace=...) -> torch.fx.GraphModule:
+    """Fuses Convolution/BN layers for inference purposes."""
 
 class NormalizedLinearNode:
     def __init__(self, node: torch.fx.Node) -> None: ...

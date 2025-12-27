@@ -7,6 +7,25 @@ _T = TypeVar("_T")
 _P = ParamSpec("_P")
 
 class elementwise_type_promotion_wrapper:
+    """
+    Adds elementwise type promotion to a Python reference implementation.
+
+    Takes two kwargs, type_promoting_args and type_promotion_kind.
+
+    type_promoting_args must be a string Sequence specifying the argument names of all
+    arguments that participate in type promotion (and should be type promoted). If the
+    arg specifies a Sequence-type then every element of the Sequence will participate in
+    type promotion.
+
+    type_promotion_kind must be one of the kinds specified by ELEMENTWISE_TYPE_PROMOTION_KIND.
+    See its documentation for details.
+
+    The return_dtype will be coerced to the wrapped function's dtype arg if it is available and
+    not None.
+
+    Other type promotion behavior, like validating the Python type of scalar arguments, must
+    be handled separately.
+    """
     def __init__(
         self, *, type_promotion_kind: ELEMENTWISE_TYPE_PROMOTION_KIND, type_promoting_args: Sequence[str] | None = ...
     ) -> None: ...
@@ -18,4 +37,5 @@ def out_wrapper(
     *out_names: str, exact_dtype: bool = ..., pass_is_out: bool = ..., preserve_memory_format: bool = ...
 ) -> Callable[[Callable[_P, _T]], Callable[_P, _T]]: ...
 def backwards_not_supported(prim) -> None: ...
-def elementwise_unary_scalar_wrapper[**P, T](fn: Callable[_P, _T]) -> Callable[_P, _T | NumberType]: ...
+def elementwise_unary_scalar_wrapper[P, T](fn: Callable[_P, _T]) -> Callable[_P, _T | NumberType]:
+    """Allows unary operators that accept tensors to work with Python numbers."""

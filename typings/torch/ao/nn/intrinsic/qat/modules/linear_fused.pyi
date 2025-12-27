@@ -4,6 +4,20 @@ from torch import nn
 __all__ = ["LinearBn1d"]
 
 class LinearBn1d(nn.modules.linear.Linear, nni._FusedModule):
+    """
+    A LinearBn1d module is a module fused from Linear and BatchNorm1d, attached
+    with FakeQuantize modules for weight, used in quantization aware training.
+
+    We combined the interface of :class:`torch.nn.Linear` and
+    :class:torch.nn.BatchNorm1d`.
+
+    Similar to :class:`torch.nn.Linear`, with FakeQuantize modules initialized
+    to default.
+
+    Attributes:
+        freeze_bn:
+        weight_fake_quant: fake quant module for weight
+    """
     def __init__(
         self, in_features, out_features, bias=..., eps=..., momentum=..., freeze_bn=..., qconfig=...
     ) -> None: ...
@@ -13,7 +27,18 @@ class LinearBn1d(nn.modules.linear.Linear, nni._FusedModule):
     def update_bn_stats(self) -> Self: ...
     def freeze_bn_stats(self) -> Self: ...
     def forward(self, input) -> Any: ...
-    def train(self, mode=...) -> Self: ...
+    def train(self, mode=...) -> Self:
+        """
+        Batchnorm's training behavior is using the self.training flag. Prevent
+        changing it if BN is frozen. This makes sure that calling `model.train()`
+        on a model with a frozen BN will behave properly.
+        """
     @classmethod
-    def from_float(cls, mod, use_precomputed_fake_quant=...) -> Self: ...
+    def from_float(cls, mod, use_precomputed_fake_quant=...) -> Self:
+        """
+        Create a qat module from a float module or qparams_dict
+
+        Args: `mod' a float module, either produced by torch.ao.quantization
+        utilities or directly from user
+        """
     def to_float(self) -> Linear: ...

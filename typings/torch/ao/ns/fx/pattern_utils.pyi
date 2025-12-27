@@ -17,7 +17,24 @@ type NSFusionType = (
     tuple[NSFusionElType, NSFusionElType] | tuple[NSFusionElType, NSFusionElType, NSFusionElType, NSFusionElType]
 )
 
-def get_reversed_fusions() -> list[tuple[NSFusionType, int]]: ...
+def get_reversed_fusions() -> list[tuple[NSFusionType, int]]:
+    """
+    Set of potential fusions, in reverse order.  The order is reversed
+    to match how fusion patterns are defined in quantization code.
+
+    Fusion format:
+    ((fusion_op_0, fusion_op_1), base_op_idx)
+
+    Where base_op_idx is the idx of the op we should use to match other related
+    ops. Note: base_op_idx is specified in non-reverse order, i.e. a base_op_idx
+    of 0 represents the first op in regular (non-reverse) order, 1 represents the
+    second op, etc.
+    """
+
 def end_node_matches_reversed_fusion(
     end_node: Node, reversed_fusion: NSFusionType, gm: GraphModule, seen_nodes: set[Node]
-) -> bool: ...
+) -> bool:
+    """
+    Returns true if a pattern ending with `end_node` matches
+    the fusion pattern.
+    """

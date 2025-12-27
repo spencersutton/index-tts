@@ -1,3 +1,15 @@
+"""
+This module is responsible for transforming functions to be traced into a form
+that is easier for the downstream infra (e.g. Autograd, FX, AOTAutograd analysis)
+to handle.
+
+It does so by:
+1. functionalization (including RNG functionalzation)
+2. creating a joint graph when required
+3. transforming mutations into extra outputs
+4. dispatching subclasses
+"""
+
 from collections.abc import Callable
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -27,6 +39,8 @@ def fn_prepped_for_autograd(
 
 @dataclass
 class JointFnHandle:
+    """JointFnHandle(post_forward: Optional[Callable] = None)"""
+
     post_forward: Callable | None = ...
 
 def create_joint(fn: Any, primals_descs: list[AOTInput] | None = ..., *, aot_config: AOTConfig) -> Any: ...
@@ -39,6 +53,8 @@ def set_partitioner_tag_must_be_in_forward(): ...
 
 @dataclass
 class MutationCounters:
+    """MutationCounters(mc_data: int, mc_storage: int, mc_inductor_storage_resized: int)"""
+
     mc_data: int
     mc_storage: int
     mc_inductor_storage_resized: int

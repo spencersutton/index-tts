@@ -4,6 +4,38 @@ import torch
 from torch._ops import HigherOrderOperator
 
 class BaseHOP(HigherOrderOperator, abc.ABC):
+    """
+    This is the "Base" HOP implementation for a HOP that looks like:
+
+        call_subgraph_hop(subgraph, *operands, **kwargs)
+
+    That is:
+    1) the HOP stays alive until Inductor
+    2) the HOP's semantics are subgraph(*operands)
+    3) kwargs may be some config options but aren't passed directly to the subgraph.
+
+    To use this, please subclass this class and override methods as necessary:
+    ```
+    class InvokeQuant(BaseHOP):
+        def __init__(self):
+            return super().__init__("invoke_quant")
+
+
+    invoke_quant = InvokeQuant()
+
+
+    def g(x):
+        return x.sin().cos()
+
+
+    @torch.compile(backend="aot_eager")
+    def f(x):
+        return invoke_quant(g, x, scheme="nf4")
+    ```
+
+    NOTE: don't subclass BaseHOP out of tree! That is not allowed. All
+    usages must be in tree.
+    """
     def __init__(self, hop_name) -> None: ...
     def __call__(self, subgraph, *operands, **kwargs): ...
     def gen_schema(self, subgraph, *operands, **kwargs): ...

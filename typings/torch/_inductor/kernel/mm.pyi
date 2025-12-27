@@ -26,7 +26,13 @@ aten__int_mm = ...
 aten__sparse_semi_structured_mm = ...
 aten__fp8_mm = ...
 
-def bias_addmm(inp, mat1, mat2, *, out=..., alpha=..., beta=...): ...
+def bias_addmm(inp, mat1, mat2, *, out=..., alpha=..., beta=...):
+    """
+    Giving torch.addmm a 1D tensor calls a different (faster) cublasLt
+    kernel under the hood.  There are a few shapes where this is slower,
+    but they are rare.
+    """
+
 def check_supported_striding(mat_a, mat_b) -> None: ...
 
 aten_bias_addmm = ...
@@ -50,17 +56,37 @@ mm_contiguous_subgraph_template = ...
 addmm_contiguous_subgraph_template = ...
 
 @register_lowering(aten.mm, type_promotion_kind=None)
-def tuned_mm(mat1, mat2, *, layout=...): ...
+def tuned_mm(mat1, mat2, *, layout=...):
+    """Lowering for autotuning aten.mm with different backends (Aten, Triton, CUTLASS, etc.)"""
+
 @register_lowering(aten._int_mm, type_promotion_kind=None)
 def tuned_int_mm(mat1, mat2, *, layout=...): ...
 @register_lowering(aten.addmm, type_promotion_kind=None)
-def tuned_addmm(inp, mat1, mat2, *, alpha=..., beta=..., layout=...): ...
+def tuned_addmm(inp, mat1, mat2, *, alpha=..., beta=..., layout=...):
+    """Lowering for autotuning aten.addmm with different backends (Aten, Triton, CUTLASS, etc.)"""
+
 @register_lowering(aten._sparse_semi_structured_mm, type_promotion_kind=None)
 def tuned_sparse_semi_structured_mm(mat1, mat1_meta, mat2, *, out_dtype=..., layout=...): ...
 @register_lowering(aten._scaled_mm.default, type_promotion_kind=None)
 def tuned_scaled_mm(
     mat_a, mat_b, scale_a, scale_b, bias=..., scale_result=..., out_dtype=..., use_fast_accum=..., layout=...
-): ...
+):
+    """
+    Performs an optimized matrix multiplication where scaling factors are applied
+    to the inputs and/or output.
+
+    Args:
+        mat1 (Tensor): First input matrix
+        mat2 (Tensor): Second input matrix
+        scale1 (Tensor): Scale factor applied to mat1 (supports broadcasting)
+        scale2 (Tensor): Scale factor applied to mat2 (supports broadcasting)
+        bias (Tensor, optional): Optional bias tensor to add to the result
+        layout: Layout hint for optimization
+
+    Returns:
+        Tensor: The result of the scaled matrix multiplication
+    """
+
 def dims_are_int(dims): ...
 def mm_autoheuristic(
     mat1, mat2, m, n, k, choices, name, input_nodes, ops, precondition, top_k: int | None = ..., always_included=...

@@ -1,3 +1,14 @@
+"""
+Profile Guided Optimization (PGO) implementation for Dynamo.
+
+This module provides functionality for caching and managing code state profiles
+that guide optimization decisions in Dynamo. It implements both local and remote
+caching mechanisms for storing profile information across runs, handles profile
+merging across distributed ranks, and manages the lifecycle of profile data
+during compilation. The profiles track dynamic vs static properties of tensors
+and help Dynamo make better specialization decisions.
+"""
+
 import dataclasses
 import enum
 import types
@@ -15,6 +26,8 @@ LOCK_TIMEOUT = ...
 
 @dataclasses.dataclass(frozen=True)
 class CodeId:
+    """CodeId(filename: 'str', firstlineno: 'int', name: 'str', file_hash: 'str')"""
+
     filename: str
     firstlineno: int
     name: str
@@ -26,6 +39,8 @@ class CodeId:
 
 @dataclasses.dataclass
 class CodeState:
+    """CodeState(automatic_dynamic: 'defaultdict[str, FrameStateSizeEntry]' = <factory>)"""
+
     automatic_dynamic: defaultdict[str, FrameStateSizeEntry] = ...
 
 _INIT_CODE_STATE: defaultdict[CodeId, CodeState] | None = ...
@@ -34,20 +49,48 @@ _LOGGED_DYNAMIC_ALLOWLIST: bool = ...
 
 @dataclasses.dataclass(frozen=True)
 class InferStride:
+    """
+    Denotes the quantity stride[dim] * size[dim], which is what the stride would
+    be for the next physical dimension that results in a contiguous layout.
+
+    For example, given size = [2, 3], stride = [3, 1], we can replace this with
+    stride = [InferStride(1), 1], because InferStride(1) = stride[1] * size[1] = 1 * 3 = 3
+
+    Indirecting the representation in this way is important for the join operation
+    on strides as if we join [2, 3][3, 1] and [2, 4][4, 1],
+    we don't want [2, None][None, 1] which would get eventually symbolized into
+    [2, s0][s1, 1] (notice that the relationship between s0 and s1 is broken).
+    If we instead rewrite the expressions as InferStride so we have [2, 3][InferStride(1), 1]
+    and [2, 4][InferStride(1), 1] we now join to [2, None][InferStride(1), 1] will
+    result in [2, s0][s0, 1], as desired.
+    """
+
     dim: int
 
 class AutoUnset(enum.Enum):
+    """
+    The identity element of our semilattice, a generic "don't know" element that
+    is always subsumed when we get more information.
+    """
+
     token = ...
 
 auto_unset = ...
 
 class AutoDynamic(enum.Enum):
+    """
+    The top element of our (bounded) semilattice, whenever you merge this with
+    any other element you always get it again
+    """
+
     token = ...
 
 auto_dynamic = ...
 
 @dataclasses.dataclass
 class FrameStateSizeEntry:
+    """FrameStateSizeEntry(scalar: 'Union[int, AutoDynamic, AutoUnset]' = <AutoUnset.token: 0>, size: 'Union[AutoDynamic, AutoUnset, tuple[Union[int, AutoDynamic], ...]]' = <AutoUnset.token: 0>, stride: 'Union[AutoDynamic, AutoUnset, tuple[Union[int, AutoDynamic, InferStride], ...]]' = <AutoUnset.token: 0>)"""
+
     scalar: int | AutoDynamic | AutoUnset = ...
     size: AutoDynamic | AutoUnset | tuple[int | AutoDynamic, ...] = ...
     stride: AutoDynamic | AutoUnset | tuple[int | AutoDynamic | InferStride, ...] = ...
@@ -93,7 +136,9 @@ def lookup_remote_cache_entry(
     remote_cache: RemoteCache[JsonDataTy], cache_key: str, event_name: str | None = ...
 ) -> defaultdict[CodeId, CodeState] | None: ...
 def get_remote_code_state(cache_key: str) -> defaultdict[CodeId, CodeState] | None: ...
-def add_extra_remote_code_state(cache_key: str) -> None: ...
+def add_extra_remote_code_state(cache_key: str) -> None:
+    """Reads an additional PGO profile from the given cache key, and merges it with the default PGO profile."""
+
 def get_code_state() -> defaultdict[CodeId, CodeState]: ...
 def put_code_state() -> None: ...
 def write_local_impl(cache_key: str, pickled_code: bytes) -> tuple[str, int] | None: ...

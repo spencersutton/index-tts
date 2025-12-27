@@ -9,6 +9,13 @@ from .utils import ReferenceQuantizedModule
 __all__ = ["Conv1d", "Conv2d", "Conv3d", "ConvTranspose1d", "ConvTranspose2d", "ConvTranspose3d"]
 
 class _ConvNd(torch.nn.modules.conv._ConvNd, ReferenceQuantizedModule):
+    """
+    A reference version of nn.quantized.Conv2d
+    we will not pack the parameters in this module, since weight packing is an
+    optimization for quantized backends supported in PyTorch (fbgemm/qnnpack),
+    this is useful when user want to use this module in other backends like Glow.
+    """
+
     __annotations__ = ...
     _IS_REFERENCE = ...
     @staticmethod
@@ -30,7 +37,15 @@ class Conv1d(_ConvNd, nn.Conv1d):
         dtype=...,
         weight_qparams: dict[str, Any] | None = ...,
     ) -> None: ...
-    def forward(self, x: torch.Tensor) -> torch.Tensor: ...
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        we have:
+        w(float) -- quant - dequant         x(float) ------------- F.conv1d ---
+
+        In the full model, we will see
+        w(float) -- quant - *dequant         x -- quant --- *dequant --  *F.conv1d --- *quant - dequant
+        and the backend should be able to fuse the ops with `*` into a quantized conv1d
+        """
     @classmethod
     def from_float(cls, float_conv, weight_qparams): ...
 
@@ -50,7 +65,15 @@ class Conv2d(_ConvNd, nn.Conv2d):
         dtype=...,
         weight_qparams: dict[str, Any] | None = ...,
     ) -> None: ...
-    def forward(self, x: torch.Tensor) -> torch.Tensor: ...
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        we have:
+        w(float) -- quant - dequant         x(float) ------------- F.conv2d ---
+
+        In the full model, we will see
+        w(float) -- quant - *dequant         x -- quant --- *dequant --  *F.conv2d --- *quant - dequant
+        and the backend should be able to fuse the ops with `*` into a quantized conv2d
+        """
     @classmethod
     def from_float(cls, float_conv, weight_qparams): ...
 
@@ -70,11 +93,25 @@ class Conv3d(_ConvNd, nn.Conv3d):
         dtype=...,
         weight_qparams: dict[str, Any] | None = ...,
     ) -> None: ...
-    def forward(self, x: torch.Tensor) -> torch.Tensor: ...
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        we have:
+        w(float) -- quant - dequant         x(float) ------------- F.conv3d ---
+
+        In the full model, we will see
+        w(float) -- quant - *dequant         x -- quant --- *dequant --  *F.conv3d --- *quant - dequant
+        and the backend should be able to fuse the ops with `*` into a quantized conv3d
+        """
     @classmethod
     def from_float(cls, float_conv, weight_qparams): ...
 
 class _ConvTransposeNd(_ConvNd, torch.nn.modules.conv._ConvTransposeNd):
+    """
+    A reference version of nn.quantized.ConvTranspose2d
+    we will not pack the parameters in this module, since weight packing is an
+    optimization for quantized backends supported in PyTorch (fbgemm/qnnpack),
+    this is useful when user want to use this module in other backends like Glow.
+    """
     @staticmethod
     def from_float(cls, float_conv, weight_qparams): ...
 
@@ -95,7 +132,14 @@ class ConvTranspose1d(_ConvTransposeNd, nn.ConvTranspose1d):
         dtype=...,
         weight_qparams: dict[str, Any] | None = ...,
     ) -> None: ...
-    def forward(self, x: torch.Tensor, output_size: list[int] | None = ...) -> torch.Tensor: ...
+    def forward(self, x: torch.Tensor, output_size: list[int] | None = ...) -> torch.Tensor:
+        """
+        we have:
+        w(float) -- quant - dequant         x(float) ------------- F.convTranspose1d ---
+        In the full model, we will see
+        w(float) -- quant - *dequant         x -- quant --- *dequant --  *F.convTranspose1d --- *quant - dequant
+        and the backend should be able to fuse the ops with `*` into a quantized conv1d
+        """
     @classmethod
     def from_float(cls, float_conv, weight_qparams): ...
 
@@ -116,7 +160,14 @@ class ConvTranspose2d(_ConvTransposeNd, nn.ConvTranspose2d):
         dtype=...,
         weight_qparams: dict[str, Any] | None = ...,
     ) -> None: ...
-    def forward(self, x: torch.Tensor, output_size: list[int] | None = ...) -> torch.Tensor: ...
+    def forward(self, x: torch.Tensor, output_size: list[int] | None = ...) -> torch.Tensor:
+        """
+        we have:
+        w(float) -- quant - dequant         x(float) ------------- F.convTranspose2d ---
+        In the full model, we will see
+        w(float) -- quant - *dequant         x -- quant --- *dequant --  *F.convTranspose2d --- *quant - dequant
+        and the backend should be able to fuse the ops with `*` into a quantized conv2d
+        """
     @classmethod
     def from_float(cls, float_conv, weight_qparams): ...
 
@@ -137,6 +188,13 @@ class ConvTranspose3d(_ConvTransposeNd, nn.ConvTranspose3d):
         dtype=...,
         weight_qparams: dict[str, Any] | None = ...,
     ) -> None: ...
-    def forward(self, x: torch.Tensor, output_size: list[int] | None = ...) -> torch.Tensor: ...
+    def forward(self, x: torch.Tensor, output_size: list[int] | None = ...) -> torch.Tensor:
+        """
+        we have:
+        w(float) -- quant - dequant         x(float) ------------- F.convTranspose3d ---
+        In the full model, we will see
+        w(float) -- quant - *dequant         x -- quant --- *dequant --  *F.convTranspose3d --- *quant - dequant
+        and the backend should be able to fuse the ops with `*` into a quantized conv3d
+        """
     @classmethod
     def from_float(cls, float_conv, weight_qparams): ...

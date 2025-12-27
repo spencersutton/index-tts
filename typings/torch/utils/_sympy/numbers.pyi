@@ -3,6 +3,18 @@ from sympy.core.numbers import Number
 from sympy.core.singleton import Singleton
 
 class IntInfinity(Number, metaclass=Singleton):
+    """
+    Positive integer infinite quantity.
+
+    Integer infinity is a value in an extended integers which
+    is greater than all other integers.  We distinguish it from
+    sympy's existing notion of infinity in that it reports that
+    it is_integer.
+
+    Infinity is a singleton, and can be accessed by ``S.IntInfinity``,
+    or can be imported as ``int_oo``.
+    """
+
     is_integer = ...
     is_commutative = ...
     is_number = ...
@@ -46,6 +58,18 @@ class IntInfinity(Number, metaclass=Singleton):
 int_oo = ...
 
 class NegativeIntInfinity(Number, metaclass=Singleton):
+    """
+    Negative integer infinite quantity.
+
+    NegativeInfinity is a singleton, and can be accessed
+    by ``S.NegativeInfinity``.
+
+    See Also
+    ========
+
+    IntInfinity
+    """
+
     _op_priority = ...
     is_integer = ...
     is_extended_real = ...

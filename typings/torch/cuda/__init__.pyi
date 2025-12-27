@@ -1,3 +1,15 @@
+"""
+This package adds support for CUDA tensor types.
+
+It implements the same function as CPU tensors, but they utilize
+GPUs for computation.
+
+It is lazily initialized, so you can always import it, and use
+:func:`is_available()` to determine if your system supports CUDA.
+
+:ref:`cuda-semantics` has more details about working with CUDA.
+"""
+
 import ctypes
 from collections.abc import Callable
 from pathlib import Path
@@ -42,18 +54,97 @@ has_half: bool = ...
 has_magma: bool = ...
 default_generators: tuple[torch._C.Generator] = ...
 
-def is_available() -> bool: ...
-def is_bf16_supported(including_emulation: bool = ...) -> bool: ...
-def is_tf32_supported() -> bool: ...
-def is_initialized() -> bool: ...
+def is_available() -> bool:
+    """
+    Return a bool indicating if CUDA is currently available.
+
+    .. note:: This function will NOT poison fork if the environment variable
+        ``PYTORCH_NVML_BASED_CUDA_CHECK=1`` is set. For more details, see
+        :ref:`multiprocessing-poison-fork-note`.
+    """
+
+def is_bf16_supported(including_emulation: bool = ...) -> bool:
+    """Return a bool indicating if the current CUDA/ROCm device supports dtype bfloat16."""
+
+def is_tf32_supported() -> bool:
+    """Return a bool indicating if the current CUDA/ROCm device supports dtype tf32."""
+
+def is_initialized() -> bool:
+    """Return whether PyTorch's CUDA state has been initialized."""
 
 class DeferredCudaCallError(Exception): ...
 
 AcceleratorError = torch._C.AcceleratorError
 OutOfMemoryError = torch._C.OutOfMemoryError
 
-def init() -> None: ...
-def cudart() -> None: ...
+def init() -> None:
+    """
+    Initialize PyTorch's CUDA state.
+
+    You may need to call this explicitly if you are interacting with
+    PyTorch via its C API, as Python bindings for CUDA functionality
+    will not be available until this initialization takes place.
+    Ordinary users should not need this, as all of PyTorch's CUDA methods
+    automatically initialize CUDA state on-demand.
+
+    Does nothing if the CUDA state is already initialized.
+    """
+
+def cudart() -> None:
+    """
+    Retrieves the CUDA runtime API module.
+
+
+    This function initializes the CUDA runtime environment if it is not already
+    initialized and returns the CUDA runtime API module (_cudart). The CUDA
+    runtime API module provides access to various CUDA runtime functions.
+
+    Args:
+        ``None``
+
+    Returns:
+        module: The CUDA runtime API module (_cudart).
+
+    Raises:
+        RuntimeError: If CUDA cannot be re-initialized in a forked subprocess.
+        AssertionError: If PyTorch is not compiled with CUDA support or if libcudart functions are unavailable.
+
+    Example of CUDA operations with profiling:
+        >>> import torch
+        >>> from torch.cuda import cudart, check_error
+        >>> import os
+        >>>
+        >>> os.environ["CUDA_PROFILE"] = "1"
+        >>>
+        >>> def perform_cuda_operations_with_streams():
+        >>>     stream = torch.cuda.Stream()
+        >>>     with torch.cuda.stream(stream):
+        >>>         x = torch.randn(100, 100, device='cuda')
+        >>>         y = torch.randn(100, 100, device='cuda')
+        >>>         z = torch.mul(x, y)
+        >>>     return z
+        >>>
+        >>> torch.cuda.synchronize()
+        >>> print("====== Start nsys profiling ======")
+        >>> check_error(cudart().cudaProfilerStart())
+        >>> with torch.autograd.profiler.emit_nvtx():
+        >>>     result = perform_cuda_operations_with_streams()
+        >>>     print("CUDA operations completed.")
+        >>> check_error(torch.cuda.cudart().cudaProfilerStop())
+        >>> print("====== End nsys profiling ======")
+
+    To run this example and save the profiling information, execute:
+        >>> $ nvprof --profile-from-start off --csv --print-summary -o trace_name.prof -f -- python cudart_test.py
+
+    This command profiles the CUDA operations in the provided script and saves
+    the profiling information to a file named `trace_name.prof`.
+    The `--profile-from-start off` option ensures that profiling starts only
+    after the `cudaProfilerStart` call in the script.
+    The `--csv` and `--print-summary` options format the profiling output as a
+    CSV file and print a summary, respectively.
+    The `-o` option specifies the output file name, and the `-f` option forces the
+    overwrite of the output file if it already exists.
+    """
 
 class cudaStatus:
     SUCCESS: int = ...
@@ -70,50 +161,309 @@ class _DeviceGuard:
     def __exit__(self, type: Any, value: Any, traceback: Any) -> Literal[False]: ...
 
 class device:
+    """
+    Context-manager that changes the selected device.
+
+    Args:
+        device (torch.device or int): device index to select. It's a no-op if
+            this argument is a negative integer or ``None``.
+    """
     def __init__(self, device: Any) -> None: ...
     def __enter__(self) -> None: ...
     def __exit__(self, type: Any, value: Any, traceback: Any) -> Literal[False]: ...
 
 class device_of(device):
+    """
+    Context-manager that changes the current device to that of given object.
+
+    You can use both tensors and storages as arguments. If a given object is
+    not allocated on a GPU, this is a no-op.
+
+    Args:
+        obj (Tensor or Storage): object allocated on the selected device.
+    """
     def __init__(self, obj) -> None: ...
 
 type _CudaDeviceProperties = torch._C._CudaDeviceProperties
 
-def set_device(device: Device) -> None: ...
-def get_device_name(device: Device = ...) -> str: ...
-def get_device_capability(device: Device = ...) -> tuple[int, int]: ...
-def get_device_properties(device: Device = ...) -> _CudaDeviceProperties: ...
-def can_device_access_peer(device: Device, peer_device: Device) -> bool: ...
+def set_device(device: Device) -> None:
+    """
+    Set the current device.
+
+    Usage of this function is discouraged in favor of :any:`device`. In most
+    cases it's better to use ``CUDA_VISIBLE_DEVICES`` environmental variable.
+
+    Args:
+        device (torch.device or int): selected device. This function is a no-op
+            if this argument is negative.
+    """
+
+def get_device_name(device: Device = ...) -> str:
+    """
+    Get the name of a device.
+
+    Args:
+        device (torch.device or int or str, optional): device for which to return the
+            name. This function is a no-op if this argument is a negative
+            integer. It uses the current device, given by :func:`~torch.cuda.current_device`,
+            if :attr:`device` is ``None`` (default).
+
+    Returns:
+        str: the name of the device
+    """
+
+def get_device_capability(device: Device = ...) -> tuple[int, int]:
+    """
+    Get the cuda capability of a device.
+
+    Args:
+        device (torch.device or int or str, optional): device for which to return the
+            device capability. This function is a no-op if this argument is
+            a negative integer. It uses the current device, given by
+            :func:`~torch.cuda.current_device`, if :attr:`device` is ``None``
+            (default).
+
+    Returns:
+        tuple(int, int): the major and minor cuda capability of the device
+    """
+
+def get_device_properties(device: Device = ...) -> _CudaDeviceProperties:
+    """
+    Get the properties of a device.
+
+    Args:
+        device (torch.device or int or str, optional): device for which to return the
+            properties of the device.  It uses the current device, given by
+            :func:`~torch.cuda.current_device`, if :attr:`device` is ``None``
+            (default).
+
+    Returns:
+        _CudaDeviceProperties: the properties of the device
+    """
+
+def can_device_access_peer(device: Device, peer_device: Device) -> bool:
+    """Check if peer access between two devices is possible."""
 
 class StreamContext:
+    """
+    Context-manager that selects a given stream.
+
+    All CUDA kernels queued within its context will be enqueued on a selected
+    stream.
+
+    Args:
+        Stream (Stream): selected stream. This manager is a no-op if it's
+            ``None``.
+    .. note:: Streams are per-device.
+    """
+
     cur_stream: torch.cuda.Stream | None
     def __init__(self, stream: torch.cuda.Stream | None) -> None: ...
     def __enter__(self) -> None: ...
     def __exit__(self, type: Any, value: Any, traceback: Any) -> None: ...
 
-def stream(stream: torch.cuda.Stream | None) -> StreamContext: ...
-def set_stream(stream: Stream) -> None: ...
+def stream(stream: torch.cuda.Stream | None) -> StreamContext:
+    """
+    Wrap around the Context-manager StreamContext that selects a given stream.
+
+    Arguments:
+        stream (Stream): selected stream. This manager is a no-op if it's
+            ``None``.
+    .. note::
+        In eager mode stream is of type Stream class while in JIT it is
+        an object of the custom class ``torch.classes.cuda.Stream``.
+    """
+
+def set_stream(stream: Stream) -> None:
+    """
+    Set the current stream.This is a wrapper API to set the stream.
+        Usage of this function is discouraged in favor of the ``stream``
+        context manager.
+
+    Args:
+        stream (Stream): selected stream. This function is a no-op
+            if this argument is ``None``.
+    """
 
 _cached_device_count: int | None = ...
 
-def device_count() -> int: ...
-def get_arch_list() -> list[str]: ...
-def get_gencode_flags() -> str: ...
-def current_device() -> int: ...
-def synchronize(device: Device = ...) -> None: ...
-def ipc_collect() -> None: ...
-def current_stream(device: Device = ...) -> Stream: ...
-def default_stream(device: Device = ...) -> Stream: ...
-def get_stream_from_external(data_ptr: int, device: Device = ...) -> Stream: ...
-def current_blas_handle() -> int: ...
-def set_sync_debug_mode(debug_mode: int | str) -> None: ...
-def get_sync_debug_mode() -> int: ...
-def device_memory_used(device: Device = ...) -> int: ...
-def memory_usage(device: Device = ...) -> int: ...
-def utilization(device: Device = ...) -> int: ...
-def temperature(device: Device = ...) -> int: ...
-def power_draw(device: Device = ...) -> int: ...
-def clock_rate(device: Device = ...) -> int: ...
+def device_count() -> int:
+    """
+    Return the number of GPUs available.
+
+    .. note:: This API will NOT poison fork if NVML discovery succeeds.
+        See :ref:`multiprocessing-poison-fork-note` for more details.
+    """
+
+def get_arch_list() -> list[str]:
+    """Return list CUDA architectures this library was compiled for."""
+
+def get_gencode_flags() -> str:
+    """Return NVCC gencode flags this library was compiled with."""
+
+def current_device() -> int:
+    """Return the index of a currently selected device."""
+
+def synchronize(device: Device = ...) -> None:
+    """
+    Wait for all kernels in all streams on a CUDA device to complete.
+
+    Args:
+        device (torch.device or int, optional): device for which to synchronize.
+            It uses the current device, given by :func:`~torch.cuda.current_device`,
+            if :attr:`device` is ``None`` (default).
+    """
+
+def ipc_collect() -> None:
+    """
+    Force collects GPU memory after it has been released by CUDA IPC.
+
+    .. note::
+        Checks if any sent CUDA tensors could be cleaned from the memory. Force
+        closes shared memory file used for reference counting if there is no
+        active counters. Useful when the producer process stopped actively sending
+        tensors and want to release unused memory.
+    """
+
+def current_stream(device: Device = ...) -> Stream:
+    """
+    Return the currently selected :class:`Stream` for a given device.
+
+    Args:
+        device (torch.device or int, optional): selected device. Returns
+            the currently selected :class:`Stream` for the current device, given
+            by :func:`~torch.cuda.current_device`, if :attr:`device` is ``None``
+            (default).
+    """
+
+def default_stream(device: Device = ...) -> Stream:
+    """
+    Return the default :class:`Stream` for a given device.
+
+    Args:
+        device (torch.device or int, optional): selected device. Returns
+            the default :class:`Stream` for the current device, given by
+            :func:`~torch.cuda.current_device`, if :attr:`device` is ``None``
+            (default).
+    """
+
+def get_stream_from_external(data_ptr: int, device: Device = ...) -> Stream:
+    """
+    Return a :class:`Stream` from an externally allocated CUDA stream.
+
+    This function is used to wrap streams allocated in other libraries in order
+    to facilitate data exchange and multi-library interactions.
+
+    .. note:: This function doesn't manage the stream life-cycle, it is the user
+       responsibility to keep the referenced stream alive while this returned
+       stream is being used.
+
+    Args:
+        data_ptr(int): Integer representation of the `cudaStream_t` value that
+            is allocated externally.
+        device(torch.device or int, optional): the device where the stream
+            was originally allocated. If device is specified incorrectly,
+            subsequent launches using this stream may fail.
+    """
+
+def current_blas_handle() -> int:
+    """Return cublasHandle_t pointer to current cuBLAS handle"""
+
+def set_sync_debug_mode(debug_mode: int | str) -> None:
+    """
+    Set the debug mode for cuda synchronizing operations.
+
+    Args:
+        debug_mode(str or int): if "default" or 0, don't error or warn on synchronizing operations,
+            if "warn" or 1, warn on synchronizing operations, if "error" or 2, error out synchronizing operations.
+
+    Warning:
+        This is an experimental feature, and not all synchronizing operations will trigger warning or error. In
+        particular, operations in torch.distributed and torch.sparse namespaces are not covered yet.
+    """
+
+def get_sync_debug_mode() -> int:
+    """Return current value of debug mode for cuda synchronizing operations."""
+
+def device_memory_used(device: Device = ...) -> int:
+    """
+    Return used global (device) memory in bytes as given by `nvidia-smi` or `amd-smi`.
+
+    Args:
+        device (torch.device or int, optional): selected device. Returns
+            statistic for the current device, given by :func:`~torch.cuda.current_device`,
+            if :attr:`device` is ``None`` (default).
+    """
+
+def memory_usage(device: Device = ...) -> int:
+    """
+    Return the percent of time over the past sample period during which global (device)
+    memory was being read or written as given by `nvidia-smi`.
+
+    Args:
+        device (torch.device or int, optional): selected device. Returns
+            statistic for the current device, given by :func:`~torch.cuda.current_device`,
+            if :attr:`device` is ``None`` (default).
+
+    Warning: Each sample period may be between 1 second and 1/6 second,
+    depending on the product being queried.
+    """
+
+def utilization(device: Device = ...) -> int:
+    """
+    Return the percent of time over the past sample period during which one or
+    more kernels was executing on the GPU as given by `nvidia-smi`.
+
+    Args:
+        device (torch.device or int, optional): selected device. Returns
+            statistic for the current device, given by :func:`~torch.cuda.current_device`,
+            if :attr:`device` is ``None`` (default).
+
+    Warning: Each sample period may be between 1 second and 1/6 second,
+    depending on the product being queried.
+    """
+
+def temperature(device: Device = ...) -> int:
+    """
+    Return the average temperature of the GPU sensor in Degrees C (Centigrades).
+
+    The average temperature is computed based on past sample period as given by `nvidia-smi`.
+
+    Args:
+        device (torch.device or int, optional): selected device. Returns
+            statistic for the current device, given by :func:`~torch.cuda.current_device`,
+            if :attr:`device` is ``None`` (default).
+
+    Warning: Each sample period may be between 1 second and 1/6 second,
+    depending on the product being queried.
+    """
+
+def power_draw(device: Device = ...) -> int:
+    """
+    Return the average power draw of the GPU sensor in mW (MilliWatts)
+        over the past sample period as given by `nvidia-smi` for Fermi or newer fully supported devices.
+
+    Args:
+        device (torch.device or int, optional): selected device. Returns
+            statistic for the current device, given by :func:`~torch.cuda.current_device`,
+            if :attr:`device` is ``None`` (default).
+
+    Warning: Each sample period may be between 1 second and 1/6 second,
+    depending on the product being queried.
+    """
+
+def clock_rate(device: Device = ...) -> int:
+    """
+    Return the clock speed of the GPU SM in MHz (megahertz) over the past sample period as given by `nvidia-smi`.
+
+    Args:
+        device (torch.device or int, optional): selected device. Returns
+            statistic for the current device, given by :func:`~torch.cuda.current_device`,
+            if :attr:`device` is ``None`` (default).
+
+    Warning: Each sample period may be between 1 second and 1/6 second,
+    depending on the product being queried.
+    """
 
 class _CudaBase:
     is_cuda = ...
@@ -175,6 +525,7 @@ class ComplexFloatStorage(_CudaLegacyStorage):
     def dtype(self): ...
 
 class _WrappedTritonKernel:
+    """Just a simple wrapper to store some metadata for testing purposes."""
     def __init__(self, kernel) -> None: ...
     def __call__(self, *args, **kwargs): ...
 

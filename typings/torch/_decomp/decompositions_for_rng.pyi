@@ -14,6 +14,12 @@ def rand(shape, dtype=..., layout=..., device=..., pin_memory=...): ...
 def rand_like(x: torch.Tensor, dtype=..., layout=..., device=..., pin_memory=..., memory_format=...): ...
 
 class PhiloxState:
+    """
+    Represents a PhiloxRngState - (seed, offset) where offset = base_offset +
+    relative_offset. seed and base_offset basically point to the rng state just
+    before tracing starts. relative offset tracks the totally consumed offset at
+    trace time.
+    """
     def __init__(self) -> None: ...
     def reset(self): ...
     def validate_state(self): ...
@@ -24,6 +30,16 @@ class PhiloxState:
     def set_state_from_tensor(self, state): ...
 
 class PhiloxStateTracker:
+    """
+    Singleton class to track the philox rng state during AOT Autograd tracing.
+    For each aot tracing instance, AOT Autograd resets this tracker and keeps
+    track of both forward and backward offsets. At runtime, we only care about
+    the total consumed forward and backward offsets. For dynamic shapes, these
+    offsets are a function of input shapes. Therefore, the AOT generated graphs
+    have additional outputs that compute total consumed forward and backward
+    offsets.
+    """
+
     running_state: PhiloxState
     fwd_state: PhiloxState
     bwd_state: PhiloxState

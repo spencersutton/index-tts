@@ -1,3 +1,13 @@
+"""
+Functions in this module do most of the "work" of AOTAutograd.
+An aot_dispatch_* function:
+- Takes in the input flat_fn, flat_args, and some metadata
+- Runs a set of pre compile wrappers (e.g. argument deduping)
+- Runs the actual compiler
+- Wraps the returned callable in a set of post compile wrappers
+- Returns the wrapped callable and metadata.
+"""
+
 import dataclasses
 from collections.abc import Callable
 from typing import Any
@@ -18,19 +28,33 @@ def aot_stage1_graph_capture(aot_state: AOTState, orig_flat_fn: FlatFn) -> AOTGr
 def aot_stage2_export(aot_state: AOTState, aot_graph_capture: AOTGraphCapture) -> DispatchReturn: ...
 def sanitize_aot_config(input: AOTConfig) -> AOTConfig: ...
 def aot_stage2_compile(aot_state: AOTState, aot_graph_capture: AOTGraphCapture) -> DispatchReturn: ...
-def aot_stage2_inference(aot_state: AOTState, aot_graph_capture: AOTGraphCapture) -> DispatchReturn: ...
+def aot_stage2_inference(aot_state: AOTState, aot_graph_capture: AOTGraphCapture) -> DispatchReturn:
+    """Handles functions that don't need autograd. Runs wrappers and compiles with fw_compiler."""
+
 def collect_fw_donated_buffer_idxs(
     fw_ins: list[FakeTensor | None],
     user_fw_outs: list[FakeTensor | None],
     bw_outs: list[FakeTensor | None],
     saved_tensors: list[FakeTensor],
-) -> list[int]: ...
+) -> list[int]:
+    """
+    Checks if the saved tensors are donated buffers, which means a saved tensor is not
+    an alias of any tensors in fw_ins, user_fw_outs, and bw_outs.
+    """
+
 def collect_bw_donated_buffer_idxs(
     fw_module: torch.fx.GraphModule, bw_module: torch.fx.GraphModule, fw_metadata: ViewAndMutationMeta
-) -> list[int]: ...
+) -> list[int]:
+    """Collects backward donated buffer indexes from fw_module and bw_module."""
 
 @dataclasses.dataclass
 class InvokeSubgraphHopGraphs:
+    """
+    A data structure to hold all the information needed to partition the
+    `joint_hop_gm` and joint graph and the restitch the `new_fw_hop_gm` and
+    `new_bw_hop_gm` into the bigger `joint_gm`.
+    """
+
     partitioning_done: bool = ...
     old_num_fw_outputs: int | None = ...
     old_num_fw_inputs: int | None = ...
@@ -42,7 +66,32 @@ class InvokeSubgraphHopGraphs:
 def prepare_for_partitioner(mod, num_primals, num_fw_outputs): ...
 def run_joint_graph_passes_on_hops(
     joint_gm: torch.fx.GraphModule, joint_inputs: Any, aot_config: AOTConfig
-) -> torch.fx.GraphModule: ...
+) -> torch.fx.GraphModule:
+    """
+    This pass runs the joint graph passes on the HOP graph. In torch.compile, we
+    typically have many passes which work on the joint graph and then end with a
+    partitioner.
+
+
+    The partitioner part is quite mechanical to handle. HOP have their own
+    forward and backward graph. The process can be broken into following steps
+
+    1) Get a `joint_hop_gm` from the `fw_hop_gm` and `bw_hop_gm`
+    2) Run joint graph passes on the `joint_hop_gm` to get `new_fw_hop_gm` and `new_bw_hop_gm`
+    3) Stitch the `new_fw_hop_gm` and `new_bw_hop_gm` back into the `joint_gm`.
+
+    The terminology used in the code is
+    `joint_graph/joint_gm` : Refers to the main graph. This may contain many HOPs which have their own `hop_graph`
+    `fw_hop_graph/fw_hop_gm` : Refers to the forward graph associated with a HOP.
+    `bw_hop_graph/bw_hop_gm` : Refers to the backward graph associated with a HOP.
+    `joint_hop_graph/joint_hop_gm` : Refers to the subgraph associated with the HOP like invoke_subgraph.
+    `new_fw_hop_graph/new_fw_hop_gm` : Refers to the forward graph after partitioning is applied to `joint_hop_gm`.
+    `new_bw_hop_graph/new_bw_hop_gm` : Refers to the backward graph after partitioning is applied to `joint_hop_gm`.
+
+    NB: This pass works for invoke_subgraph today because we took extra care in
+    the Autograd.Dispatch key of invoke_subgraph to vastly simplify Step 1.
+    """
+
 def maybe_log_graph(
     gm, graph_name, aot_config, structured_log_prefix_fn, out_structured_logs: list[str] | None = ...
 ): ...
@@ -51,4 +100,8 @@ def prepare_hook_gm(aot_config, fn, args): ...
 def maybe_inline_graph_saved_tensors_hooks(
     fw_module, bw_module, num_inner_fwd_outputs, inner_meta, aot_config, static_input_indices
 ): ...
-def aot_stage2_autograd(aot_state: AOTState, aot_graph_capture: AOTGraphCapture) -> DispatchReturn: ...
+def aot_stage2_autograd(aot_state: AOTState, aot_graph_capture: AOTGraphCapture) -> DispatchReturn:
+    """
+    Autograd logic. Generates a joint graph, partitions it, manipulates the input with various wrappers,
+    and returns a wrapped torch.autograd.Function with a forward and backward.
+    """

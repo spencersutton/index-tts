@@ -24,7 +24,15 @@ class CppGroupedGemmTemplate(CppGemmTemplate):
         epilogue_creator: Callable[[ir.Buffer], ir.Pointwise] | None = ...,
         act_mapping: dict[int, ir.IRNode] | None = ...,
         gemm_grouped_num: int = ...,
-    ) -> None: ...
+    ) -> None:
+        """
+        Template for Group of GEMMs:
+        * Each GEMM has the same dimensions (m, n, k) and the same leading dimensions (lda, ldb, ldc)
+          for their A, B, and C matrices.
+        * Each GEMM has distinct or shared activations, has distinct weight, has unique bias or no bias, has distinct epilogues.
+        * In the current implementation, the outputs of all GEMMs are accumulated using pointwise epilogues.
+          This behavior can be extended in the future if needed.
+        """
     @classmethod
     def add_choices(
         cls,

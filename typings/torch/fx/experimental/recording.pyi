@@ -17,6 +17,8 @@ __all__ = [
 
 @dataclass
 class ShapeEnvEvent:
+    """ShapeEnvEvent(f: Callable, args: Optional[list[Any]] = None, kwargs: Optional[dict[str, Any]] = None, tracked_fakes: Optional[list[Any]] = None, name: Optional[str] = None)"""
+
     f: Callable
     args: list[Any] | None = ...
     kwargs: dict[str, Any] | None = ...
@@ -34,6 +36,8 @@ def replay_shape_env_events(events): ...
 
 @dataclass
 class FakeTensorMeta:
+    """FakeTensorMeta(tensor_size: tuple[typing.Union[int, torch.SymInt], ...], tensor_stride: tuple[typing.Union[int, torch.SymInt], ...], tensor_storage_offset: Union[int, torch.SymInt], is_nested: bool)"""
+
     tensor_size: tuple[int | torch.SymInt, ...]
     tensor_stride: tuple[int | torch.SymInt, ...]
     tensor_storage_offset: int | torch.SymInt

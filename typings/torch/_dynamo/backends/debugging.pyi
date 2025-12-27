@@ -1,3 +1,28 @@
+"""
+This module provides debugging backends for TorchDynamo to help diagnose and troubleshoot
+compilation and execution issues. It includes:
+
+Key Debugging Backends:
+- eager: Simple pass-through backend that runs models in eager mode
+- eager_noexcept: Similar to eager but with additional exception handling
+- eager_debug: Adds schema validation checks for custom operators
+- aot_eager: Uses AOT Autograd with nop compiler for debugging
+- aot_eager_decomp_partition: Uses TorchInductor decompositions for debugging
+- torchscript: Compiles using TorchScript for debugging JIT-related issues
+
+Testing and Development Tools:
+- Backends for inducing specific errors (compile/runtime/accuracy)
+- ExplainOutput class for detailed graph compilation analysis
+- Utilities for cross-referencing and mode management
+- Tools for graph detail inspection and break reason analysis
+
+These backends are primarily used for:
+1. Debugging graph breaks and compilation failures
+2. Testing error handling and recovery mechanisms
+3. Analyzing performance bottlenecks
+4. Validating operator schemas and decompositions
+"""
+
 import dataclasses
 from collections.abc import Callable, Iterable
 from typing import Any
@@ -16,7 +41,13 @@ def eager(gm: torch.fx.GraphModule, fake_tensor_inputs: list[torch.Tensor], **kw
 def make_eager_backend_with_torch_function_mode(mode: torch.overrides.TorchFunctionMode) -> Callable[..., Any]: ...
 def make_eager_backend_with_torch_function_modes(
     modes: Iterable[torch.overrides.TorchFunctionMode],
-) -> Callable[..., Any]: ...
+) -> Callable[..., Any]:
+    """
+    Used to trace HOPs (cond and while) for eager execution, the metadata
+    TF mode mutates vars outside of the scope of the HOP, and we can't have graph breaks
+    in the HOP, so we need to externally run this mode and not trace it.
+    """
+
 @register_backend
 def eager_noexcept(
     gm: torch.fx.GraphModule, fake_tensor_inputs: list[torch.Tensor], **kwargs: Any
@@ -86,6 +117,11 @@ def non_leaf_compile_error_TESTING_ONLY(
 
 @dataclasses.dataclass
 class ExplainOutput:
+    """
+    This is the output of :func:`torch._dynamo.explain()`
+    There is no reason to create this class directly.
+    """
+
     graphs: list[torch.fx.GraphModule]
     graph_count: int
     graph_break_count: int
@@ -96,6 +132,29 @@ class ExplainOutput:
     compile_times: str | None = ...
 
 class ExplainWithBackend:
+    """
+    This class is intended to be used as a backend for `torch.compile`. It is
+    composable with other backends. When used in this way, it accumulates
+    information about graph breaks, ops, and other info and provides a string
+    representation summarizing this information.
+
+    Attributes:
+        backend (str): The name of the backend to use for optimization.
+        graphs (list): A list of the graphs captured by TorchDynamo.
+        op_count (int): The total number of operations in all optimized graphs.
+        break_reasons (list): A list of graph break reasons with stack traces.
+
+    Example Usage:
+        def fn(x):
+            x = torch.sigmoid(x)
+            return x
+
+        torch._dynamo.reset()
+        eb = ExplainWithBackend("inductor")
+        optimized_fn = torch.compile(fn, backend=eb)
+        result = optimized_fn(torch.randn(5))
+        print(eb.output())
+    """
     def __init__(self, backend: CompilerFn | str) -> None: ...
     def __call__(self, gm: torch.fx.GraphModule, example_inputs: list[torch.Tensor]) -> CompiledFn: ...
     def output(self) -> ExplainOutput: ...

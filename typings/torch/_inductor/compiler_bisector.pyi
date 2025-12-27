@@ -7,16 +7,22 @@ SUBDIR_NAME = ...
 
 @dataclass
 class Subsystem:
+    """Subsystem(name: str)"""
+
     name: str
 
 @dataclass
-class BisectSubsystem(Subsystem): ...
+class BisectSubsystem(Subsystem):
+    """BisectSubsystem(name: str)"""
 
 @dataclass
-class BinarySubsystem(Subsystem): ...
+class BinarySubsystem(Subsystem):
+    """BinarySubsystem(name: str)"""
 
 @dataclass
 class ConfigChange(BinarySubsystem):
+    """ConfigChange(config_name: str, config_field: str, config_value: object)"""
+
     name: str = ...
     config_name: str
     config_field: str
@@ -33,12 +39,35 @@ def get_env_val(env_str: str) -> str | None: ...
 
 @dataclasses.dataclass
 class BisectionResult:
+    """
+    backend: torch.compile backend responsible for failure
+    subsystem: optional, registered component identified for failure
+    bisect_number: optional, number of times the subsystem needed to be applied to trigger failure
+    debug_info: associated info of the triggering bisect application of subsystem
+    """
+
     backend: str
     subsystem: str | None = ...
     bisect_number: int | None = ...
     debug_info: str | None = ...
 
 class CompilerBisector:
+    """
+    This class iteratively runs torch.compile backends (eager, aot_eager, inductor) to find the
+    first backend that can repro an issue.
+
+    Once it discovers the offending backend it will iteratively disable subsystems within the backend.
+    For subsystems which are applied repeatedly, such as the number of post grad passes or number
+    of lowering of nodes to inductor ir, it will bisect to find the offending application.
+
+    The idiomatic way to run it is with `do_bisect`. You can also use it by setting the env flags
+    `TORCH_BISECT_BACKEND`, `TORCH_BISECT_SUBSYSTEM` and `TORCH_BISECT_MAX`.
+
+    It also supports a CLI interface, although this is less well tested.
+
+    You must run python compiler_bisector.py [start | good | bad | end]
+    """
+
     bisection_enabled: bool = ...
     in_process_cache: str | None = ...
     @classmethod
@@ -56,13 +85,16 @@ class CompilerBisector:
     @classmethod
     def update_bisect_range(cls, backend_name: str, subsystem_name: str, low: int, high: int) -> None: ...
     @classmethod
-    def get_backend(cls) -> str | None: ...
+    def get_backend(cls) -> str | None:
+        """Returns the active backend, if any"""
     @classmethod
-    def get_subsystem(cls) -> str | None: ...
+    def get_subsystem(cls) -> str | None:
+        """Returns the active subsystem, if any"""
     @classmethod
     def get_subsystem_object(cls, backend_name: str, subsystem_name: str) -> Subsystem: ...
     @classmethod
-    def get_run_state(cls, backend_name: str, subsystem_name: str) -> str | None: ...
+    def get_run_state(cls, backend_name: str, subsystem_name: str) -> str | None:
+        """Returns the current stage of bisecting, if Any"""
     @classmethod
     def get_bisect_range(cls, backend_name: str, subsystem_name: str) -> tuple[int, int]: ...
     @classmethod
@@ -76,17 +108,21 @@ class CompilerBisector:
     @classmethod
     def disable_subsystem(cls, backend: str, subsystem: str, debug_info: Callable[[], str] | None = ...) -> bool: ...
     @classmethod
-    def advance_subsystem(cls, curr_backend: str, curr_subsystem: Subsystem) -> Subsystem | None: ...
+    def advance_subsystem(cls, curr_backend: str, curr_subsystem: Subsystem) -> Subsystem | None:
+        """Tries to move to the next subsystem within the current system."""
     @classmethod
-    def advance_backend(cls, curr_backend: str) -> str | None: ...
+    def advance_backend(cls, curr_backend: str) -> str | None:
+        """Tries Move to the next backend."""
     @classmethod
     def process_subsystem(
         cls, curr_backend: str, curr_subsystem: Subsystem, fn: Callable[[], bool], cli_interface: bool = ...
-    ) -> bool: ...
+    ) -> bool:
+        """Process the current subsystem. Returns True if the issue is found, False otherwise."""
     @classmethod
     def initialize_system(cls) -> None: ...
     @classmethod
-    def do_bisect(cls, fn: Callable[[], bool], cli_interface: bool = ...) -> BisectionResult | None: ...
+    def do_bisect(cls, fn: Callable[[], bool], cli_interface: bool = ...) -> BisectionResult | None:
+        """Run fn repeatedly attempting to bisect torch.compile. fn should return True on success and False on failure."""
 
 def command_line_usage() -> None: ...
 def get_is_bisection_enabled() -> bool: ...

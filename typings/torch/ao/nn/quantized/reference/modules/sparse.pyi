@@ -7,6 +7,13 @@ from .utils import ReferenceQuantizedModule
 __all__ = ["Embedding", "EmbeddingBag"]
 
 class Embedding(nn.Embedding, ReferenceQuantizedModule):
+    """
+    A reference quantized Embedding module that fits into the
+    FX Graph Mode Quantization workflow, activation will be floating point Tensor,
+    we will store floating point weight as well in the module, but in forward we'll
+    quantize and dequantize the weight before running the floating point functional
+    embedding operator.
+    """
     def __init__(
         self,
         num_embeddings: int,
@@ -26,6 +33,13 @@ class Embedding(nn.Embedding, ReferenceQuantizedModule):
     def from_float(cls, mod, weight_qparams) -> Self: ...
 
 class EmbeddingBag(nn.EmbeddingBag, ReferenceQuantizedModule):
+    """
+    A reference quantized EmbeddingBag module that fits into the
+    FX Graph Mode Quantization workflow, activation will be floating point Tensor,
+    we will store floating point weight as well in the module, but in forward we'll
+    quantize and dequantize the weight before running the floating point functional
+    embedding operator.
+    """
     def __init__(
         self,
         num_embeddings: int,

@@ -15,6 +15,15 @@ class _ShardingIterDataPipe(IterDataPipe):
 
 @functional_datapipe("sharding_filter")
 class ShardingFilterIterDataPipe(_ShardingIterDataPipe):
+    """
+    Wrapper that allows DataPipe to be sharded (functional name: ``sharding_filter``).
+
+    After ``apply_sharding`` is called, each instance of the DataPipe (on different workers) will have every `n`-th element of the
+    original DataPipe, where `n` equals to the number of instances.
+
+    Args:
+        source_datapipe: Iterable DataPipe that will be sharded
+    """
     def __init__(self, source_datapipe: IterDataPipe, sharding_group_filter=...) -> None: ...
     def apply_sharding(self, num_of_instances, instance_id, sharding_group=...) -> None: ...
     def __iter__(self) -> Generator[Any, Any, None]: ...

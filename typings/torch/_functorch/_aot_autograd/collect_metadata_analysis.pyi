@@ -1,3 +1,12 @@
+"""
+This module is one of the analysis modules - it takes as input a function or graph
+and some preexisting properties, and returns some data that is useful for deciding
+how to further proceed with compilation or construct runtime wrappers.
+
+In particular, the analysis here constructs view and mutation metadata from running
+a functionalized version of the graph under compilation.
+"""
+
 from collections.abc import Callable
 
 from torch import Tensor

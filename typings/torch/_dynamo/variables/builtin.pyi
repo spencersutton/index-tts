@@ -1,3 +1,24 @@
+"""
+Built-in function and type variable tracking for TorchDynamo's symbolic execution.
+
+This module contains variable tracker classes for Python built-in functions, types,
+and operations during graph compilation. It handles symbolic execution of:
+
+- Built-in functions (len, getattr, isinstance, etc.)
+- Type constructors (int, float, str, list, dict, etc.)
+- Built-in operators and methods
+- Special Python constructs (super, hasattr, etc.)
+
+Key classes:
+- BuiltinVariable: Tracks built-in functions and handles their execution
+- TypeVariable: Manages type constructor calls and type checking
+- SuperVariable: Handles super() calls in class hierarchies
+
+These variable trackers ensure that built-in Python operations are correctly
+handled during symbolic execution, either by executing them directly when safe
+or by creating appropriate graph nodes when needed.
+"""
+
 import contextlib
 import typing
 from collections.abc import Callable, Sequence
@@ -24,6 +45,16 @@ BUILTIN_TO_TENSOR_RFN_MAP: dict[Callable[..., Any], Callable[..., Any]] = ...
 def populate_builtin_to_tensor_fn_map() -> None: ...
 
 class BuiltinVariable(VariableTracker):
+    """
+    A VariableTracker that represents a built-in value (functions and operators).
+    A lot of the code here assumes it will be a function object.
+
+    The BuiltinVariable class wraps Python built-in functions (like len, isinstance, etc.)
+    and operators (like +, -, *, etc.) to enable symbolic execution during tracing. This allows
+    Dynamo to properly handle these operations when converting Python code to FX graphs while
+    maintaining correct semantics and enabling optimizations.
+    """
+
     _SENTINEL = ...
     _nonvar_fields = ...
     @classmethod
@@ -85,7 +116,8 @@ class BuiltinVariable(VariableTracker):
     def call_len(self, tx: InstructionTranslator, *args, **kwargs): ...
     def call_getitem(self, tx: InstructionTranslator, *args, **kwargs): ...
     def call_isinstance(self, tx: InstructionTranslator, arg, isinstance_type): ...
-    def call_issubclass(self, tx: InstructionTranslator, left_ty, right_ty): ...
+    def call_issubclass(self, tx: InstructionTranslator, left_ty, right_ty):
+        """Checks if first arg is subclass of right arg"""
     def call_super(self, tx: InstructionTranslator, a, b): ...
     def call_next(self, tx: InstructionTranslator, *args): ...
     def call_hasattr(self, tx: InstructionTranslator, obj, attr): ...

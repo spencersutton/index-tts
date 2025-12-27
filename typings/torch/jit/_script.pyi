@@ -1,3 +1,13 @@
+"""
+TorchScript.
+
+This module contains functionality to support the JIT's scripting frontend, notably:
+    - torch.jit.script
+
+This is not intended to be imported directly; please use the exposed
+functionalities in `torch.jit`.
+"""
+
 from collections.abc import Callable
 from typing import Any, NamedTuple, Never, TypeVar, overload
 
@@ -13,6 +23,81 @@ type ResolutionCallback = Callable[[str], Callable[..., Any]]
 _ClassVar = TypeVar("_ClassVar", bound=type)
 
 class Attribute(NamedTuple):
+    """
+    This method is a pass-through function that returns `value`, mostly
+    used to indicate to the TorchScript compiler that the left-hand side
+    expression is a class instance attribute with type of `type`. Note that
+    `torch.jit.Attribute` should only be used in `__init__` method of `jit.ScriptModule`
+    subclasses.
+
+    Though TorchScript can infer correct type for most Python expressions, there are some cases where
+    type inference can be wrong, including:
+
+    - Empty containers like `[]` and `{}`, which TorchScript assumes to be container of `Tensor`
+    - Optional types like `Optional[T]` but assigned a valid value of type `T`, TorchScript would assume
+      it is type `T` rather than `Optional[T]`
+
+    In eager mode, it is simply a pass-through function that returns `value`
+    without other implications.
+
+    Example:
+
+    .. testcode::
+
+        import torch
+        from typing import Dict
+
+        class AttributeModule(torch.jit.ScriptModule):
+            def __init__(self) -> None:
+                super().__init__()
+                self.foo = torch.jit.Attribute(0.1, float)
+
+                # we should be able to use self.foo as a float here
+                assert 0.0 < self.foo
+
+                self.names_ages = torch.jit.Attribute({}, Dict[str, int])
+                self.names_ages["someone"] = 20
+                assert isinstance(self.names_ages["someone"], int)
+
+        m = AttributeModule()
+        # m will contain two attributes
+        # 1. foo of type float
+        # 2. names_ages of type Dict[str, int]
+
+    .. testcleanup::
+
+        del AttributeModule
+        del m
+
+    Note: it's now preferred to instead use type annotations instead of `torch.jit.Attribute`:
+
+    .. testcode::
+
+        import torch
+        from typing import Dict
+
+        class AttributeModule(torch.nn.Module):
+            names: Dict[str, int]
+
+            def __init__(self) -> None:
+                super().__init__()
+                self.names = {}
+
+        m = AttributeModule()
+
+    .. testcleanup::
+
+        del AttributeModule
+        del m
+
+    Args:
+        value: An initial value to be assigned to attribute.
+        type: A Python type
+
+    Returns:
+        Returns `value`
+    """
+
     value: Incomplete
     type: Incomplete
 
@@ -51,11 +136,30 @@ class ConstMap:
     def __init__(self, const_mapping) -> None: ...
     def __getattr__(self, attr): ...
 
-def unpackage_script_module(importer: PackageImporter, script_module_id: str) -> torch.nn.Module: ...
+def unpackage_script_module(importer: PackageImporter, script_module_id: str) -> torch.nn.Module:
+    """
+    Call by ``torch.package.PackageImporter``'s Pickler's ``persistent_load`` function.
+
+    Performs work of loading and returning a ScriptModule from a ``torch.package`` archive.
+    """
 
 _magic_methods: Incomplete
 
 class RecursiveScriptClass:
+    """
+    Wrapper for a TorchScript class instance for use in Python.
+
+    An analogue of RecursiveScriptModule for regular objects that are not modules.
+    This class is a wrapper around a torch._C.ScriptObject that represents an instance
+    of a TorchScript class and allows it to be used in Python.
+
+    Attributes:
+        _c [torch._C.ScriptObject]: The C++ object to which attribute lookups and method
+            calls are forwarded.
+        _props [Dict[str, property]]: A dictionary of properties fetched from self._c and
+            exposed on this wrppaer.
+    """
+
     _c: Incomplete
     _props: Incomplete
     def __init__(self, cpp_class) -> None: ...
@@ -68,6 +172,14 @@ class RecursiveScriptClass:
 def method_template(self, *args, **kwargs): ...
 
 class ScriptModule(Module, metaclass=ScriptMeta):
+    r"""
+    Wrapper for C++ torch::jit::Module with methods, attributes, and parameters.
+
+    A wrapper around C++ ``torch::jit::Module``. ``ScriptModule``\s
+    contain methods, attributes, parameters, and
+    constants. These can be accessed the same way as on a normal ``nn.Module``.
+    """
+
     __jit_unused_properties__: Incomplete
     def __init__(self) -> None: ...
 
@@ -75,19 +187,71 @@ class ScriptModule(Module, metaclass=ScriptMeta):
     def __getattr__(self, attr): ...
     def __setattr__(self, attr, value) -> None: ...
     def define(self, src): ...
-    def __reduce_package__(self, exporter: PackageExporter): ...
+    def __reduce_package__(self, exporter: PackageExporter):
+        """
+        Save a ScriptModule inside of a ``torch.package`` archive.
+
+        Called by ``torch.package.PackageExporter``'s Pickler's ``persistent_id`` when
+        saving TorchScript objects. Performs act of saving a ScriptModule inside of
+        a ``torch.package`` archive.
+
+        Returns method to load the ScriptModule from a ``torch.package.PackageImporter``'s
+        Pickler's ``persistent_load`` function.
+        """
     @property
-    def code(self) -> str: ...
+    def code(self) -> str:
+        """Return a pretty-printed representation (as valid Python syntax) of the internal graph for the ``forward`` method."""
     @property
-    def code_with_constants(self) -> tuple[str, ConstMap]: ...
+    def code_with_constants(self) -> tuple[str, ConstMap]:
+        """
+        Return a tuple.
+
+        Returns a tuple of:
+
+        [0] a pretty-printed representation (as valid Python syntax) of
+        the internal graph for the ``forward`` method. See `code`.
+        [1] a ConstMap following the CONSTANT.cN format of the output in [0].
+        The indices in the [0] output are keys to the underlying constant's values.
+        """
     @property
-    def graph(self) -> torch.Graph: ...
+    def graph(self) -> torch.Graph:
+        """Return a string representation of the internal graph for the ``forward`` method."""
     @property
-    def inlined_graph(self) -> torch.Graph: ...
+    def inlined_graph(self) -> torch.Graph:
+        """
+        Return a string representation of the internal graph for the ``forward`` method.
+
+        This graph will be preprocessed to inline all function and method calls.
+        """
     @property
     def original_name(self) -> str: ...
 
 class RecursiveScriptModule(ScriptModule):
+    r"""
+    Retain the existing isinstance(ScriptModule) behavior.
+
+    The core data structure in TorchScript is the ``ScriptModule``. It is an
+    analogue of torch's ``nn.Module`` and represents an entire model as a tree of
+    submodules. Like normal modules, each individual module in a ``ScriptModule`` can
+    have submodules, parameters, and methods. In ``nn.Module``\s methods are implemented
+    as Python functions, but in ``ScriptModule``\s methods are implemented as
+    TorchScript functions, a statically-typed subset of Python that contains all
+    of PyTorch's built-in Tensor operations. This difference allows your
+    ``ScriptModule``\s code to run without the need for a Python interpreter.
+
+    ``ScriptModule``\s should not be created manually, instead use
+    either :func:`tracing <torch.jit.trace>` or :func:`scripting <torch.jit.script>`.
+    Tracing and scripting can be applied incrementally and :ref:`composed as necessary <Types>`.
+
+    * Tracing records the tensor operations as executed with a set of example inputs and uses these
+      operations to construct a computation graph. You can use the full dynamic behavior of Python with tracing,
+      but values other than Tensors and control flow aren't captured in the graph.
+
+    * Scripting inspects the Python code of the model
+      and compiles it to TorchScript. Scripting allows the use of many `types`_ of values and supports dynamic control flow.
+      Many, but not all features of Python are supported by the compiler, so changes to the source code may be necessary.
+    """
+
     _disable_script_meta: bool
     _c: Incomplete
     def __init__(self, cpp_module) -> None: ...
@@ -97,7 +261,16 @@ class RecursiveScriptModule(ScriptModule):
     _parameters: Incomplete
     _buffers: Incomplete
     __dict__: Incomplete
-    def save(self, f, **kwargs): ...
+    def save(self, f, **kwargs):
+        """
+        Save with a file-like object.
+
+        save(f, _extra_files={})
+
+        See :func:`torch.jit.save <torch.jit.save>` which accepts a file-like object.
+        This function, torch.save(), converts the object to a string, treating it as a path.
+        DO NOT confuse these two functions when it comes to the 'f' parameter functionality.
+        """
     def save_to_buffer(self, *args, **kwargs): ...
     def get_debug_state(self, *args, **kwargs): ...
     def extra_repr(self): ...
@@ -119,8 +292,33 @@ _compiled_methods_allowlist: Incomplete
 
 def call_prepare_scriptable_func_impl(obj, memo): ...
 def call_prepare_scriptable_func(obj): ...
-def create_script_dict(obj): ...
-def create_script_list(obj, type_hint: Incomplete | None = ...): ...
+def create_script_dict(obj):
+    """
+    Create a ``torch._C.ScriptDict`` instance with the data from ``obj``.
+
+    Args:
+        obj (dict): The Python dictionary that is used to initialize the ``ScriptDict``
+                    returned by this function.
+
+    Returns:
+        An instance of ``torch._C.ScriptDict`` that has the same data as ``obj``
+        and can be passed between Python and TorchScript with reference semantics and
+        zero copy overhead.
+    """
+
+def create_script_list(obj, type_hint: Incomplete | None = ...):
+    """
+    Create a ``torch._C.ScriptList`` instance with the data from ``obj``.
+
+    Args:
+        obj (dict): The Python list that is used to initialize the ``ScriptList``
+                    returned by this function.
+    Returns:
+        An instance of ``torch._C.ScriptList`` that has the same data as ``obj``
+        and can be passed between Python and TorchScript with reference semantics and
+        zero copy overhead.
+    """
+
 @overload
 def script(
     obj: type[Module],
@@ -128,7 +326,210 @@ def script(
     _frames_up: int = ...,
     _rcb: ResolutionCallback | None = ...,
     example_inputs: list[tuple] | dict[Callable, list[tuple]] | None = ...,
-) -> Never: ...
+) -> Never:
+    """
+    Script the function.
+
+    Scripting a function or ``nn.Module`` will inspect the source code, compile
+    it as TorchScript code using the TorchScript compiler, and return a :class:`ScriptModule` or
+    :class:`ScriptFunction`. TorchScript itself is a subset of the Python language, so not all
+    features in Python work, but we provide enough functionality to compute on
+    tensors and do control-dependent operations. For a complete guide, see the
+    :ref:`language-reference`.
+
+    Scripting a dictionary or list copies the data inside it into a TorchScript instance than can be
+    subsequently passed by reference between Python and TorchScript with zero copy overhead.
+
+    ``torch.jit.script`` can be used as a function for modules, functions, dictionaries and lists
+     and as a decorator ``@torch.jit.script`` for torchscript-classes and functions.
+
+    Args:
+        obj (Callable, class, or nn.Module):  The ``nn.Module``, function, class type,
+                                                  dictionary, or list to compile.
+        example_inputs (Union[List[Tuple], Dict[Callable, List[Tuple]], None]): Provide example inputs
+            to annotate the arguments for a function or ``nn.Module``.
+
+    Returns:
+        If ``obj`` is ``nn.Module``, ``script`` returns
+        a :class:`ScriptModule` object. The returned :class:`ScriptModule` will
+        have the same set of sub-modules and parameters as the
+        original ``nn.Module``. If ``obj`` is a standalone function,
+        a :class:`ScriptFunction` will be returned. If ``obj`` is a ``dict``, then
+        ``script`` returns an instance of `torch._C.ScriptDict`. If ``obj`` is a ``list``,
+        then ``script`` returns an instance of `torch._C.ScriptList`.
+
+    **Scripting a function**
+        The ``@torch.jit.script`` decorator will construct a :class:`ScriptFunction`
+        by compiling the body of the function.
+
+        Example (scripting a function):
+
+        .. testcode::
+
+            import torch
+
+            @torch.jit.script
+            def foo(x, y):
+                if x.max() > y.max():
+                    r = x
+                else:
+                    r = y
+                return r
+
+            print(type(foo))  # torch.jit.ScriptFunction
+
+            # See the compiled graph as Python code
+            print(foo.code)
+
+            # Call the function using the TorchScript interpreter
+            foo(torch.ones(2, 2), torch.ones(2, 2))
+
+        .. testoutput::
+            :hide:
+
+            ...
+
+    ****Scripting a function using example_inputs**
+        Example inputs can be used to annotate a function arguments.
+
+        Example (annotating a function before scripting):
+
+        .. testcode::
+
+            import torch
+
+            def test_sum(a, b):
+                return a + b
+
+            # Annotate the arguments to be int
+            scripted_fn = torch.jit.script(test_sum, example_inputs=[(3, 4)])
+
+            print(type(scripted_fn))  # torch.jit.ScriptFunction
+
+            # See the compiled graph as Python code
+            print(scripted_fn.code)
+
+            # Call the function using the TorchScript interpreter
+            scripted_fn(20, 100)
+
+        .. testoutput::
+            :hide:
+
+            ...
+
+    **Scripting an nn.Module**
+        Scripting an ``nn.Module`` by default will compile the ``forward`` method and recursively
+        compile any methods, submodules, and functions called by ``forward``. If a ``nn.Module`` only uses
+        features supported in TorchScript, no changes to the original module code should be necessary. ``script``
+        will construct :class:`ScriptModule` that has copies of the attributes, parameters, and methods of
+        the original module.
+
+        Example (scripting a simple module with a Parameter):
+
+        .. testcode::
+
+            import torch
+
+            class MyModule(torch.nn.Module):
+                def __init__(self, N, M):
+                    super().__init__()
+                    # This parameter will be copied to the new ScriptModule
+                    self.weight = torch.nn.Parameter(torch.rand(N, M))
+
+                    # When this submodule is used, it will be compiled
+                    self.linear = torch.nn.Linear(N, M)
+
+                def forward(self, input):
+                    output = self.weight.mv(input)
+
+                    # This calls the `forward` method of the `nn.Linear` module, which will
+                    # cause the `self.linear` submodule to be compiled to a `ScriptModule` here
+                    output = self.linear(output)
+                    return output
+
+            scripted_module = torch.jit.script(MyModule(2, 3))
+
+        Example (scripting a module with traced submodules):
+
+        .. testcode::
+
+            import torch
+            import torch.nn as nn
+            import torch.nn.functional as F
+
+            class MyModule(nn.Module):
+                def __init__(self) -> None:
+                    super().__init__()
+                    # torch.jit.trace produces a ScriptModule's conv1 and conv2
+                    self.conv1 = torch.jit.trace(nn.Conv2d(1, 20, 5), torch.rand(1, 1, 16, 16))
+                    self.conv2 = torch.jit.trace(nn.Conv2d(20, 20, 5), torch.rand(1, 20, 16, 16))
+
+                def forward(self, input):
+                    input = F.relu(self.conv1(input))
+                    input = F.relu(self.conv2(input))
+                    return input
+
+            scripted_module = torch.jit.script(MyModule())
+
+        To compile a method other than ``forward`` (and recursively compile anything it calls), add
+        the :func:`@torch.jit.export <torch.jit.export>` decorator to the method. To opt out of compilation
+        use :func:`@torch.jit.ignore <torch.jit.ignore>` or :func:`@torch.jit.unused <torch.jit.unused>`.
+
+        Example (an exported and ignored method in a module)::
+
+            import torch
+            import torch.nn as nn
+
+
+            class MyModule(nn.Module):
+                def __init__(self) -> None:
+                    super().__init__()
+
+                @torch.jit.export
+                def some_entry_point(self, input):
+                    return input + 10
+
+                @torch.jit.ignore
+                def python_only_fn(self, input):
+                    # This function won't be compiled, so any
+                    # Python APIs can be used
+                    import pdb
+
+                    pdb.set_trace()
+
+                def forward(self, input):
+                    if self.training:
+                        self.python_only_fn(input)
+                    return input * 99
+
+
+            scripted_module = torch.jit.script(MyModule())
+            print(scripted_module.some_entry_point(torch.randn(2, 2)))
+            print(scripted_module(torch.randn(2, 2)))
+
+        Example ( Annotating forward of nn.Module using example_inputs)::
+
+            import torch
+            import torch.nn as nn
+            from typing import NamedTuple
+
+            class MyModule(NamedTuple):
+            result: List[int]
+
+            class TestNNModule(torch.nn.Module):
+                def forward(self, a) -> MyModule:
+                    result = MyModule(result=a)
+                    return result
+
+            pdt_model = TestNNModule()
+
+            # Runs the pdt_model in eager model with the inputs provided and annotates the arguments of forward
+            scripted_model = torch.jit.script(pdt_model, example_inputs={pdt_model: [([10, 20, ], ), ], })
+
+            # Run the scripted_model with actual inputs
+            print(scripted_model([20]))
+    """
+
 @overload
 def script(
     obj: dict,
@@ -136,7 +537,210 @@ def script(
     _frames_up: int = ...,
     _rcb: ResolutionCallback | None = ...,
     example_inputs: list[tuple] | dict[Callable, list[tuple]] | None = ...,
-) -> torch.ScriptDict: ...
+) -> torch.ScriptDict:
+    """
+    Script the function.
+
+    Scripting a function or ``nn.Module`` will inspect the source code, compile
+    it as TorchScript code using the TorchScript compiler, and return a :class:`ScriptModule` or
+    :class:`ScriptFunction`. TorchScript itself is a subset of the Python language, so not all
+    features in Python work, but we provide enough functionality to compute on
+    tensors and do control-dependent operations. For a complete guide, see the
+    :ref:`language-reference`.
+
+    Scripting a dictionary or list copies the data inside it into a TorchScript instance than can be
+    subsequently passed by reference between Python and TorchScript with zero copy overhead.
+
+    ``torch.jit.script`` can be used as a function for modules, functions, dictionaries and lists
+     and as a decorator ``@torch.jit.script`` for torchscript-classes and functions.
+
+    Args:
+        obj (Callable, class, or nn.Module):  The ``nn.Module``, function, class type,
+                                                  dictionary, or list to compile.
+        example_inputs (Union[List[Tuple], Dict[Callable, List[Tuple]], None]): Provide example inputs
+            to annotate the arguments for a function or ``nn.Module``.
+
+    Returns:
+        If ``obj`` is ``nn.Module``, ``script`` returns
+        a :class:`ScriptModule` object. The returned :class:`ScriptModule` will
+        have the same set of sub-modules and parameters as the
+        original ``nn.Module``. If ``obj`` is a standalone function,
+        a :class:`ScriptFunction` will be returned. If ``obj`` is a ``dict``, then
+        ``script`` returns an instance of `torch._C.ScriptDict`. If ``obj`` is a ``list``,
+        then ``script`` returns an instance of `torch._C.ScriptList`.
+
+    **Scripting a function**
+        The ``@torch.jit.script`` decorator will construct a :class:`ScriptFunction`
+        by compiling the body of the function.
+
+        Example (scripting a function):
+
+        .. testcode::
+
+            import torch
+
+            @torch.jit.script
+            def foo(x, y):
+                if x.max() > y.max():
+                    r = x
+                else:
+                    r = y
+                return r
+
+            print(type(foo))  # torch.jit.ScriptFunction
+
+            # See the compiled graph as Python code
+            print(foo.code)
+
+            # Call the function using the TorchScript interpreter
+            foo(torch.ones(2, 2), torch.ones(2, 2))
+
+        .. testoutput::
+            :hide:
+
+            ...
+
+    ****Scripting a function using example_inputs**
+        Example inputs can be used to annotate a function arguments.
+
+        Example (annotating a function before scripting):
+
+        .. testcode::
+
+            import torch
+
+            def test_sum(a, b):
+                return a + b
+
+            # Annotate the arguments to be int
+            scripted_fn = torch.jit.script(test_sum, example_inputs=[(3, 4)])
+
+            print(type(scripted_fn))  # torch.jit.ScriptFunction
+
+            # See the compiled graph as Python code
+            print(scripted_fn.code)
+
+            # Call the function using the TorchScript interpreter
+            scripted_fn(20, 100)
+
+        .. testoutput::
+            :hide:
+
+            ...
+
+    **Scripting an nn.Module**
+        Scripting an ``nn.Module`` by default will compile the ``forward`` method and recursively
+        compile any methods, submodules, and functions called by ``forward``. If a ``nn.Module`` only uses
+        features supported in TorchScript, no changes to the original module code should be necessary. ``script``
+        will construct :class:`ScriptModule` that has copies of the attributes, parameters, and methods of
+        the original module.
+
+        Example (scripting a simple module with a Parameter):
+
+        .. testcode::
+
+            import torch
+
+            class MyModule(torch.nn.Module):
+                def __init__(self, N, M):
+                    super().__init__()
+                    # This parameter will be copied to the new ScriptModule
+                    self.weight = torch.nn.Parameter(torch.rand(N, M))
+
+                    # When this submodule is used, it will be compiled
+                    self.linear = torch.nn.Linear(N, M)
+
+                def forward(self, input):
+                    output = self.weight.mv(input)
+
+                    # This calls the `forward` method of the `nn.Linear` module, which will
+                    # cause the `self.linear` submodule to be compiled to a `ScriptModule` here
+                    output = self.linear(output)
+                    return output
+
+            scripted_module = torch.jit.script(MyModule(2, 3))
+
+        Example (scripting a module with traced submodules):
+
+        .. testcode::
+
+            import torch
+            import torch.nn as nn
+            import torch.nn.functional as F
+
+            class MyModule(nn.Module):
+                def __init__(self) -> None:
+                    super().__init__()
+                    # torch.jit.trace produces a ScriptModule's conv1 and conv2
+                    self.conv1 = torch.jit.trace(nn.Conv2d(1, 20, 5), torch.rand(1, 1, 16, 16))
+                    self.conv2 = torch.jit.trace(nn.Conv2d(20, 20, 5), torch.rand(1, 20, 16, 16))
+
+                def forward(self, input):
+                    input = F.relu(self.conv1(input))
+                    input = F.relu(self.conv2(input))
+                    return input
+
+            scripted_module = torch.jit.script(MyModule())
+
+        To compile a method other than ``forward`` (and recursively compile anything it calls), add
+        the :func:`@torch.jit.export <torch.jit.export>` decorator to the method. To opt out of compilation
+        use :func:`@torch.jit.ignore <torch.jit.ignore>` or :func:`@torch.jit.unused <torch.jit.unused>`.
+
+        Example (an exported and ignored method in a module)::
+
+            import torch
+            import torch.nn as nn
+
+
+            class MyModule(nn.Module):
+                def __init__(self) -> None:
+                    super().__init__()
+
+                @torch.jit.export
+                def some_entry_point(self, input):
+                    return input + 10
+
+                @torch.jit.ignore
+                def python_only_fn(self, input):
+                    # This function won't be compiled, so any
+                    # Python APIs can be used
+                    import pdb
+
+                    pdb.set_trace()
+
+                def forward(self, input):
+                    if self.training:
+                        self.python_only_fn(input)
+                    return input * 99
+
+
+            scripted_module = torch.jit.script(MyModule())
+            print(scripted_module.some_entry_point(torch.randn(2, 2)))
+            print(scripted_module(torch.randn(2, 2)))
+
+        Example ( Annotating forward of nn.Module using example_inputs)::
+
+            import torch
+            import torch.nn as nn
+            from typing import NamedTuple
+
+            class MyModule(NamedTuple):
+            result: List[int]
+
+            class TestNNModule(torch.nn.Module):
+                def forward(self, a) -> MyModule:
+                    result = MyModule(result=a)
+                    return result
+
+            pdt_model = TestNNModule()
+
+            # Runs the pdt_model in eager model with the inputs provided and annotates the arguments of forward
+            scripted_model = torch.jit.script(pdt_model, example_inputs={pdt_model: [([10, 20, ], ), ], })
+
+            # Run the scripted_model with actual inputs
+            print(scripted_model([20]))
+    """
+
 @overload
 def script(
     obj: list,
@@ -144,7 +748,210 @@ def script(
     _frames_up: int = ...,
     _rcb: ResolutionCallback | None = ...,
     example_inputs: list[tuple] | dict[Callable, list[tuple]] | None = ...,
-) -> torch.ScriptList: ...
+) -> torch.ScriptList:
+    """
+    Script the function.
+
+    Scripting a function or ``nn.Module`` will inspect the source code, compile
+    it as TorchScript code using the TorchScript compiler, and return a :class:`ScriptModule` or
+    :class:`ScriptFunction`. TorchScript itself is a subset of the Python language, so not all
+    features in Python work, but we provide enough functionality to compute on
+    tensors and do control-dependent operations. For a complete guide, see the
+    :ref:`language-reference`.
+
+    Scripting a dictionary or list copies the data inside it into a TorchScript instance than can be
+    subsequently passed by reference between Python and TorchScript with zero copy overhead.
+
+    ``torch.jit.script`` can be used as a function for modules, functions, dictionaries and lists
+     and as a decorator ``@torch.jit.script`` for torchscript-classes and functions.
+
+    Args:
+        obj (Callable, class, or nn.Module):  The ``nn.Module``, function, class type,
+                                                  dictionary, or list to compile.
+        example_inputs (Union[List[Tuple], Dict[Callable, List[Tuple]], None]): Provide example inputs
+            to annotate the arguments for a function or ``nn.Module``.
+
+    Returns:
+        If ``obj`` is ``nn.Module``, ``script`` returns
+        a :class:`ScriptModule` object. The returned :class:`ScriptModule` will
+        have the same set of sub-modules and parameters as the
+        original ``nn.Module``. If ``obj`` is a standalone function,
+        a :class:`ScriptFunction` will be returned. If ``obj`` is a ``dict``, then
+        ``script`` returns an instance of `torch._C.ScriptDict`. If ``obj`` is a ``list``,
+        then ``script`` returns an instance of `torch._C.ScriptList`.
+
+    **Scripting a function**
+        The ``@torch.jit.script`` decorator will construct a :class:`ScriptFunction`
+        by compiling the body of the function.
+
+        Example (scripting a function):
+
+        .. testcode::
+
+            import torch
+
+            @torch.jit.script
+            def foo(x, y):
+                if x.max() > y.max():
+                    r = x
+                else:
+                    r = y
+                return r
+
+            print(type(foo))  # torch.jit.ScriptFunction
+
+            # See the compiled graph as Python code
+            print(foo.code)
+
+            # Call the function using the TorchScript interpreter
+            foo(torch.ones(2, 2), torch.ones(2, 2))
+
+        .. testoutput::
+            :hide:
+
+            ...
+
+    ****Scripting a function using example_inputs**
+        Example inputs can be used to annotate a function arguments.
+
+        Example (annotating a function before scripting):
+
+        .. testcode::
+
+            import torch
+
+            def test_sum(a, b):
+                return a + b
+
+            # Annotate the arguments to be int
+            scripted_fn = torch.jit.script(test_sum, example_inputs=[(3, 4)])
+
+            print(type(scripted_fn))  # torch.jit.ScriptFunction
+
+            # See the compiled graph as Python code
+            print(scripted_fn.code)
+
+            # Call the function using the TorchScript interpreter
+            scripted_fn(20, 100)
+
+        .. testoutput::
+            :hide:
+
+            ...
+
+    **Scripting an nn.Module**
+        Scripting an ``nn.Module`` by default will compile the ``forward`` method and recursively
+        compile any methods, submodules, and functions called by ``forward``. If a ``nn.Module`` only uses
+        features supported in TorchScript, no changes to the original module code should be necessary. ``script``
+        will construct :class:`ScriptModule` that has copies of the attributes, parameters, and methods of
+        the original module.
+
+        Example (scripting a simple module with a Parameter):
+
+        .. testcode::
+
+            import torch
+
+            class MyModule(torch.nn.Module):
+                def __init__(self, N, M):
+                    super().__init__()
+                    # This parameter will be copied to the new ScriptModule
+                    self.weight = torch.nn.Parameter(torch.rand(N, M))
+
+                    # When this submodule is used, it will be compiled
+                    self.linear = torch.nn.Linear(N, M)
+
+                def forward(self, input):
+                    output = self.weight.mv(input)
+
+                    # This calls the `forward` method of the `nn.Linear` module, which will
+                    # cause the `self.linear` submodule to be compiled to a `ScriptModule` here
+                    output = self.linear(output)
+                    return output
+
+            scripted_module = torch.jit.script(MyModule(2, 3))
+
+        Example (scripting a module with traced submodules):
+
+        .. testcode::
+
+            import torch
+            import torch.nn as nn
+            import torch.nn.functional as F
+
+            class MyModule(nn.Module):
+                def __init__(self) -> None:
+                    super().__init__()
+                    # torch.jit.trace produces a ScriptModule's conv1 and conv2
+                    self.conv1 = torch.jit.trace(nn.Conv2d(1, 20, 5), torch.rand(1, 1, 16, 16))
+                    self.conv2 = torch.jit.trace(nn.Conv2d(20, 20, 5), torch.rand(1, 20, 16, 16))
+
+                def forward(self, input):
+                    input = F.relu(self.conv1(input))
+                    input = F.relu(self.conv2(input))
+                    return input
+
+            scripted_module = torch.jit.script(MyModule())
+
+        To compile a method other than ``forward`` (and recursively compile anything it calls), add
+        the :func:`@torch.jit.export <torch.jit.export>` decorator to the method. To opt out of compilation
+        use :func:`@torch.jit.ignore <torch.jit.ignore>` or :func:`@torch.jit.unused <torch.jit.unused>`.
+
+        Example (an exported and ignored method in a module)::
+
+            import torch
+            import torch.nn as nn
+
+
+            class MyModule(nn.Module):
+                def __init__(self) -> None:
+                    super().__init__()
+
+                @torch.jit.export
+                def some_entry_point(self, input):
+                    return input + 10
+
+                @torch.jit.ignore
+                def python_only_fn(self, input):
+                    # This function won't be compiled, so any
+                    # Python APIs can be used
+                    import pdb
+
+                    pdb.set_trace()
+
+                def forward(self, input):
+                    if self.training:
+                        self.python_only_fn(input)
+                    return input * 99
+
+
+            scripted_module = torch.jit.script(MyModule())
+            print(scripted_module.some_entry_point(torch.randn(2, 2)))
+            print(scripted_module(torch.randn(2, 2)))
+
+        Example ( Annotating forward of nn.Module using example_inputs)::
+
+            import torch
+            import torch.nn as nn
+            from typing import NamedTuple
+
+            class MyModule(NamedTuple):
+            result: List[int]
+
+            class TestNNModule(torch.nn.Module):
+                def forward(self, a) -> MyModule:
+                    result = MyModule(result=a)
+                    return result
+
+            pdt_model = TestNNModule()
+
+            # Runs the pdt_model in eager model with the inputs provided and annotates the arguments of forward
+            scripted_model = torch.jit.script(pdt_model, example_inputs={pdt_model: [([10, 20, ], ), ], })
+
+            # Run the scripted_model with actual inputs
+            print(scripted_model([20]))
+    """
+
 @overload
 def script(
     obj: Module,
@@ -152,7 +959,210 @@ def script(
     _frames_up: int = ...,
     _rcb: ResolutionCallback | None = ...,
     example_inputs: list[tuple] | dict[Callable, list[tuple]] | None = ...,
-) -> RecursiveScriptModule: ...
+) -> RecursiveScriptModule:
+    """
+    Script the function.
+
+    Scripting a function or ``nn.Module`` will inspect the source code, compile
+    it as TorchScript code using the TorchScript compiler, and return a :class:`ScriptModule` or
+    :class:`ScriptFunction`. TorchScript itself is a subset of the Python language, so not all
+    features in Python work, but we provide enough functionality to compute on
+    tensors and do control-dependent operations. For a complete guide, see the
+    :ref:`language-reference`.
+
+    Scripting a dictionary or list copies the data inside it into a TorchScript instance than can be
+    subsequently passed by reference between Python and TorchScript with zero copy overhead.
+
+    ``torch.jit.script`` can be used as a function for modules, functions, dictionaries and lists
+     and as a decorator ``@torch.jit.script`` for torchscript-classes and functions.
+
+    Args:
+        obj (Callable, class, or nn.Module):  The ``nn.Module``, function, class type,
+                                                  dictionary, or list to compile.
+        example_inputs (Union[List[Tuple], Dict[Callable, List[Tuple]], None]): Provide example inputs
+            to annotate the arguments for a function or ``nn.Module``.
+
+    Returns:
+        If ``obj`` is ``nn.Module``, ``script`` returns
+        a :class:`ScriptModule` object. The returned :class:`ScriptModule` will
+        have the same set of sub-modules and parameters as the
+        original ``nn.Module``. If ``obj`` is a standalone function,
+        a :class:`ScriptFunction` will be returned. If ``obj`` is a ``dict``, then
+        ``script`` returns an instance of `torch._C.ScriptDict`. If ``obj`` is a ``list``,
+        then ``script`` returns an instance of `torch._C.ScriptList`.
+
+    **Scripting a function**
+        The ``@torch.jit.script`` decorator will construct a :class:`ScriptFunction`
+        by compiling the body of the function.
+
+        Example (scripting a function):
+
+        .. testcode::
+
+            import torch
+
+            @torch.jit.script
+            def foo(x, y):
+                if x.max() > y.max():
+                    r = x
+                else:
+                    r = y
+                return r
+
+            print(type(foo))  # torch.jit.ScriptFunction
+
+            # See the compiled graph as Python code
+            print(foo.code)
+
+            # Call the function using the TorchScript interpreter
+            foo(torch.ones(2, 2), torch.ones(2, 2))
+
+        .. testoutput::
+            :hide:
+
+            ...
+
+    ****Scripting a function using example_inputs**
+        Example inputs can be used to annotate a function arguments.
+
+        Example (annotating a function before scripting):
+
+        .. testcode::
+
+            import torch
+
+            def test_sum(a, b):
+                return a + b
+
+            # Annotate the arguments to be int
+            scripted_fn = torch.jit.script(test_sum, example_inputs=[(3, 4)])
+
+            print(type(scripted_fn))  # torch.jit.ScriptFunction
+
+            # See the compiled graph as Python code
+            print(scripted_fn.code)
+
+            # Call the function using the TorchScript interpreter
+            scripted_fn(20, 100)
+
+        .. testoutput::
+            :hide:
+
+            ...
+
+    **Scripting an nn.Module**
+        Scripting an ``nn.Module`` by default will compile the ``forward`` method and recursively
+        compile any methods, submodules, and functions called by ``forward``. If a ``nn.Module`` only uses
+        features supported in TorchScript, no changes to the original module code should be necessary. ``script``
+        will construct :class:`ScriptModule` that has copies of the attributes, parameters, and methods of
+        the original module.
+
+        Example (scripting a simple module with a Parameter):
+
+        .. testcode::
+
+            import torch
+
+            class MyModule(torch.nn.Module):
+                def __init__(self, N, M):
+                    super().__init__()
+                    # This parameter will be copied to the new ScriptModule
+                    self.weight = torch.nn.Parameter(torch.rand(N, M))
+
+                    # When this submodule is used, it will be compiled
+                    self.linear = torch.nn.Linear(N, M)
+
+                def forward(self, input):
+                    output = self.weight.mv(input)
+
+                    # This calls the `forward` method of the `nn.Linear` module, which will
+                    # cause the `self.linear` submodule to be compiled to a `ScriptModule` here
+                    output = self.linear(output)
+                    return output
+
+            scripted_module = torch.jit.script(MyModule(2, 3))
+
+        Example (scripting a module with traced submodules):
+
+        .. testcode::
+
+            import torch
+            import torch.nn as nn
+            import torch.nn.functional as F
+
+            class MyModule(nn.Module):
+                def __init__(self) -> None:
+                    super().__init__()
+                    # torch.jit.trace produces a ScriptModule's conv1 and conv2
+                    self.conv1 = torch.jit.trace(nn.Conv2d(1, 20, 5), torch.rand(1, 1, 16, 16))
+                    self.conv2 = torch.jit.trace(nn.Conv2d(20, 20, 5), torch.rand(1, 20, 16, 16))
+
+                def forward(self, input):
+                    input = F.relu(self.conv1(input))
+                    input = F.relu(self.conv2(input))
+                    return input
+
+            scripted_module = torch.jit.script(MyModule())
+
+        To compile a method other than ``forward`` (and recursively compile anything it calls), add
+        the :func:`@torch.jit.export <torch.jit.export>` decorator to the method. To opt out of compilation
+        use :func:`@torch.jit.ignore <torch.jit.ignore>` or :func:`@torch.jit.unused <torch.jit.unused>`.
+
+        Example (an exported and ignored method in a module)::
+
+            import torch
+            import torch.nn as nn
+
+
+            class MyModule(nn.Module):
+                def __init__(self) -> None:
+                    super().__init__()
+
+                @torch.jit.export
+                def some_entry_point(self, input):
+                    return input + 10
+
+                @torch.jit.ignore
+                def python_only_fn(self, input):
+                    # This function won't be compiled, so any
+                    # Python APIs can be used
+                    import pdb
+
+                    pdb.set_trace()
+
+                def forward(self, input):
+                    if self.training:
+                        self.python_only_fn(input)
+                    return input * 99
+
+
+            scripted_module = torch.jit.script(MyModule())
+            print(scripted_module.some_entry_point(torch.randn(2, 2)))
+            print(scripted_module(torch.randn(2, 2)))
+
+        Example ( Annotating forward of nn.Module using example_inputs)::
+
+            import torch
+            import torch.nn as nn
+            from typing import NamedTuple
+
+            class MyModule(NamedTuple):
+            result: List[int]
+
+            class TestNNModule(torch.nn.Module):
+                def forward(self, a) -> MyModule:
+                    result = MyModule(result=a)
+                    return result
+
+            pdt_model = TestNNModule()
+
+            # Runs the pdt_model in eager model with the inputs provided and annotates the arguments of forward
+            scripted_model = torch.jit.script(pdt_model, example_inputs={pdt_model: [([10, 20, ], ), ], })
+
+            # Run the scripted_model with actual inputs
+            print(scripted_model([20]))
+    """
+
 @overload
 def script[ClassVar: type](
     obj: _ClassVar,
@@ -160,7 +1170,210 @@ def script[ClassVar: type](
     _frames_up: int = ...,
     _rcb: ResolutionCallback | None = ...,
     example_inputs: list[tuple] | dict[Callable, list[tuple]] | None = ...,
-) -> _ClassVar: ...
+) -> _ClassVar:
+    """
+    Script the function.
+
+    Scripting a function or ``nn.Module`` will inspect the source code, compile
+    it as TorchScript code using the TorchScript compiler, and return a :class:`ScriptModule` or
+    :class:`ScriptFunction`. TorchScript itself is a subset of the Python language, so not all
+    features in Python work, but we provide enough functionality to compute on
+    tensors and do control-dependent operations. For a complete guide, see the
+    :ref:`language-reference`.
+
+    Scripting a dictionary or list copies the data inside it into a TorchScript instance than can be
+    subsequently passed by reference between Python and TorchScript with zero copy overhead.
+
+    ``torch.jit.script`` can be used as a function for modules, functions, dictionaries and lists
+     and as a decorator ``@torch.jit.script`` for torchscript-classes and functions.
+
+    Args:
+        obj (Callable, class, or nn.Module):  The ``nn.Module``, function, class type,
+                                                  dictionary, or list to compile.
+        example_inputs (Union[List[Tuple], Dict[Callable, List[Tuple]], None]): Provide example inputs
+            to annotate the arguments for a function or ``nn.Module``.
+
+    Returns:
+        If ``obj`` is ``nn.Module``, ``script`` returns
+        a :class:`ScriptModule` object. The returned :class:`ScriptModule` will
+        have the same set of sub-modules and parameters as the
+        original ``nn.Module``. If ``obj`` is a standalone function,
+        a :class:`ScriptFunction` will be returned. If ``obj`` is a ``dict``, then
+        ``script`` returns an instance of `torch._C.ScriptDict`. If ``obj`` is a ``list``,
+        then ``script`` returns an instance of `torch._C.ScriptList`.
+
+    **Scripting a function**
+        The ``@torch.jit.script`` decorator will construct a :class:`ScriptFunction`
+        by compiling the body of the function.
+
+        Example (scripting a function):
+
+        .. testcode::
+
+            import torch
+
+            @torch.jit.script
+            def foo(x, y):
+                if x.max() > y.max():
+                    r = x
+                else:
+                    r = y
+                return r
+
+            print(type(foo))  # torch.jit.ScriptFunction
+
+            # See the compiled graph as Python code
+            print(foo.code)
+
+            # Call the function using the TorchScript interpreter
+            foo(torch.ones(2, 2), torch.ones(2, 2))
+
+        .. testoutput::
+            :hide:
+
+            ...
+
+    ****Scripting a function using example_inputs**
+        Example inputs can be used to annotate a function arguments.
+
+        Example (annotating a function before scripting):
+
+        .. testcode::
+
+            import torch
+
+            def test_sum(a, b):
+                return a + b
+
+            # Annotate the arguments to be int
+            scripted_fn = torch.jit.script(test_sum, example_inputs=[(3, 4)])
+
+            print(type(scripted_fn))  # torch.jit.ScriptFunction
+
+            # See the compiled graph as Python code
+            print(scripted_fn.code)
+
+            # Call the function using the TorchScript interpreter
+            scripted_fn(20, 100)
+
+        .. testoutput::
+            :hide:
+
+            ...
+
+    **Scripting an nn.Module**
+        Scripting an ``nn.Module`` by default will compile the ``forward`` method and recursively
+        compile any methods, submodules, and functions called by ``forward``. If a ``nn.Module`` only uses
+        features supported in TorchScript, no changes to the original module code should be necessary. ``script``
+        will construct :class:`ScriptModule` that has copies of the attributes, parameters, and methods of
+        the original module.
+
+        Example (scripting a simple module with a Parameter):
+
+        .. testcode::
+
+            import torch
+
+            class MyModule(torch.nn.Module):
+                def __init__(self, N, M):
+                    super().__init__()
+                    # This parameter will be copied to the new ScriptModule
+                    self.weight = torch.nn.Parameter(torch.rand(N, M))
+
+                    # When this submodule is used, it will be compiled
+                    self.linear = torch.nn.Linear(N, M)
+
+                def forward(self, input):
+                    output = self.weight.mv(input)
+
+                    # This calls the `forward` method of the `nn.Linear` module, which will
+                    # cause the `self.linear` submodule to be compiled to a `ScriptModule` here
+                    output = self.linear(output)
+                    return output
+
+            scripted_module = torch.jit.script(MyModule(2, 3))
+
+        Example (scripting a module with traced submodules):
+
+        .. testcode::
+
+            import torch
+            import torch.nn as nn
+            import torch.nn.functional as F
+
+            class MyModule(nn.Module):
+                def __init__(self) -> None:
+                    super().__init__()
+                    # torch.jit.trace produces a ScriptModule's conv1 and conv2
+                    self.conv1 = torch.jit.trace(nn.Conv2d(1, 20, 5), torch.rand(1, 1, 16, 16))
+                    self.conv2 = torch.jit.trace(nn.Conv2d(20, 20, 5), torch.rand(1, 20, 16, 16))
+
+                def forward(self, input):
+                    input = F.relu(self.conv1(input))
+                    input = F.relu(self.conv2(input))
+                    return input
+
+            scripted_module = torch.jit.script(MyModule())
+
+        To compile a method other than ``forward`` (and recursively compile anything it calls), add
+        the :func:`@torch.jit.export <torch.jit.export>` decorator to the method. To opt out of compilation
+        use :func:`@torch.jit.ignore <torch.jit.ignore>` or :func:`@torch.jit.unused <torch.jit.unused>`.
+
+        Example (an exported and ignored method in a module)::
+
+            import torch
+            import torch.nn as nn
+
+
+            class MyModule(nn.Module):
+                def __init__(self) -> None:
+                    super().__init__()
+
+                @torch.jit.export
+                def some_entry_point(self, input):
+                    return input + 10
+
+                @torch.jit.ignore
+                def python_only_fn(self, input):
+                    # This function won't be compiled, so any
+                    # Python APIs can be used
+                    import pdb
+
+                    pdb.set_trace()
+
+                def forward(self, input):
+                    if self.training:
+                        self.python_only_fn(input)
+                    return input * 99
+
+
+            scripted_module = torch.jit.script(MyModule())
+            print(scripted_module.some_entry_point(torch.randn(2, 2)))
+            print(scripted_module(torch.randn(2, 2)))
+
+        Example ( Annotating forward of nn.Module using example_inputs)::
+
+            import torch
+            import torch.nn as nn
+            from typing import NamedTuple
+
+            class MyModule(NamedTuple):
+            result: List[int]
+
+            class TestNNModule(torch.nn.Module):
+                def forward(self, a) -> MyModule:
+                    result = MyModule(result=a)
+                    return result
+
+            pdt_model = TestNNModule()
+
+            # Runs the pdt_model in eager model with the inputs provided and annotates the arguments of forward
+            scripted_model = torch.jit.script(pdt_model, example_inputs={pdt_model: [([10, 20, ], ), ], })
+
+            # Run the scripted_model with actual inputs
+            print(scripted_model([20]))
+    """
+
 @overload
 def script(
     obj: Callable,
@@ -168,7 +1381,210 @@ def script(
     _frames_up: int = ...,
     _rcb: ResolutionCallback | None = ...,
     example_inputs: list[tuple] | dict[Callable, list[tuple]] | None = ...,
-) -> ScriptFunction: ...
+) -> ScriptFunction:
+    """
+    Script the function.
+
+    Scripting a function or ``nn.Module`` will inspect the source code, compile
+    it as TorchScript code using the TorchScript compiler, and return a :class:`ScriptModule` or
+    :class:`ScriptFunction`. TorchScript itself is a subset of the Python language, so not all
+    features in Python work, but we provide enough functionality to compute on
+    tensors and do control-dependent operations. For a complete guide, see the
+    :ref:`language-reference`.
+
+    Scripting a dictionary or list copies the data inside it into a TorchScript instance than can be
+    subsequently passed by reference between Python and TorchScript with zero copy overhead.
+
+    ``torch.jit.script`` can be used as a function for modules, functions, dictionaries and lists
+     and as a decorator ``@torch.jit.script`` for torchscript-classes and functions.
+
+    Args:
+        obj (Callable, class, or nn.Module):  The ``nn.Module``, function, class type,
+                                                  dictionary, or list to compile.
+        example_inputs (Union[List[Tuple], Dict[Callable, List[Tuple]], None]): Provide example inputs
+            to annotate the arguments for a function or ``nn.Module``.
+
+    Returns:
+        If ``obj`` is ``nn.Module``, ``script`` returns
+        a :class:`ScriptModule` object. The returned :class:`ScriptModule` will
+        have the same set of sub-modules and parameters as the
+        original ``nn.Module``. If ``obj`` is a standalone function,
+        a :class:`ScriptFunction` will be returned. If ``obj`` is a ``dict``, then
+        ``script`` returns an instance of `torch._C.ScriptDict`. If ``obj`` is a ``list``,
+        then ``script`` returns an instance of `torch._C.ScriptList`.
+
+    **Scripting a function**
+        The ``@torch.jit.script`` decorator will construct a :class:`ScriptFunction`
+        by compiling the body of the function.
+
+        Example (scripting a function):
+
+        .. testcode::
+
+            import torch
+
+            @torch.jit.script
+            def foo(x, y):
+                if x.max() > y.max():
+                    r = x
+                else:
+                    r = y
+                return r
+
+            print(type(foo))  # torch.jit.ScriptFunction
+
+            # See the compiled graph as Python code
+            print(foo.code)
+
+            # Call the function using the TorchScript interpreter
+            foo(torch.ones(2, 2), torch.ones(2, 2))
+
+        .. testoutput::
+            :hide:
+
+            ...
+
+    ****Scripting a function using example_inputs**
+        Example inputs can be used to annotate a function arguments.
+
+        Example (annotating a function before scripting):
+
+        .. testcode::
+
+            import torch
+
+            def test_sum(a, b):
+                return a + b
+
+            # Annotate the arguments to be int
+            scripted_fn = torch.jit.script(test_sum, example_inputs=[(3, 4)])
+
+            print(type(scripted_fn))  # torch.jit.ScriptFunction
+
+            # See the compiled graph as Python code
+            print(scripted_fn.code)
+
+            # Call the function using the TorchScript interpreter
+            scripted_fn(20, 100)
+
+        .. testoutput::
+            :hide:
+
+            ...
+
+    **Scripting an nn.Module**
+        Scripting an ``nn.Module`` by default will compile the ``forward`` method and recursively
+        compile any methods, submodules, and functions called by ``forward``. If a ``nn.Module`` only uses
+        features supported in TorchScript, no changes to the original module code should be necessary. ``script``
+        will construct :class:`ScriptModule` that has copies of the attributes, parameters, and methods of
+        the original module.
+
+        Example (scripting a simple module with a Parameter):
+
+        .. testcode::
+
+            import torch
+
+            class MyModule(torch.nn.Module):
+                def __init__(self, N, M):
+                    super().__init__()
+                    # This parameter will be copied to the new ScriptModule
+                    self.weight = torch.nn.Parameter(torch.rand(N, M))
+
+                    # When this submodule is used, it will be compiled
+                    self.linear = torch.nn.Linear(N, M)
+
+                def forward(self, input):
+                    output = self.weight.mv(input)
+
+                    # This calls the `forward` method of the `nn.Linear` module, which will
+                    # cause the `self.linear` submodule to be compiled to a `ScriptModule` here
+                    output = self.linear(output)
+                    return output
+
+            scripted_module = torch.jit.script(MyModule(2, 3))
+
+        Example (scripting a module with traced submodules):
+
+        .. testcode::
+
+            import torch
+            import torch.nn as nn
+            import torch.nn.functional as F
+
+            class MyModule(nn.Module):
+                def __init__(self) -> None:
+                    super().__init__()
+                    # torch.jit.trace produces a ScriptModule's conv1 and conv2
+                    self.conv1 = torch.jit.trace(nn.Conv2d(1, 20, 5), torch.rand(1, 1, 16, 16))
+                    self.conv2 = torch.jit.trace(nn.Conv2d(20, 20, 5), torch.rand(1, 20, 16, 16))
+
+                def forward(self, input):
+                    input = F.relu(self.conv1(input))
+                    input = F.relu(self.conv2(input))
+                    return input
+
+            scripted_module = torch.jit.script(MyModule())
+
+        To compile a method other than ``forward`` (and recursively compile anything it calls), add
+        the :func:`@torch.jit.export <torch.jit.export>` decorator to the method. To opt out of compilation
+        use :func:`@torch.jit.ignore <torch.jit.ignore>` or :func:`@torch.jit.unused <torch.jit.unused>`.
+
+        Example (an exported and ignored method in a module)::
+
+            import torch
+            import torch.nn as nn
+
+
+            class MyModule(nn.Module):
+                def __init__(self) -> None:
+                    super().__init__()
+
+                @torch.jit.export
+                def some_entry_point(self, input):
+                    return input + 10
+
+                @torch.jit.ignore
+                def python_only_fn(self, input):
+                    # This function won't be compiled, so any
+                    # Python APIs can be used
+                    import pdb
+
+                    pdb.set_trace()
+
+                def forward(self, input):
+                    if self.training:
+                        self.python_only_fn(input)
+                    return input * 99
+
+
+            scripted_module = torch.jit.script(MyModule())
+            print(scripted_module.some_entry_point(torch.randn(2, 2)))
+            print(scripted_module(torch.randn(2, 2)))
+
+        Example ( Annotating forward of nn.Module using example_inputs)::
+
+            import torch
+            import torch.nn as nn
+            from typing import NamedTuple
+
+            class MyModule(NamedTuple):
+            result: List[int]
+
+            class TestNNModule(torch.nn.Module):
+                def forward(self, a) -> MyModule:
+                    result = MyModule(result=a)
+                    return result
+
+            pdt_model = TestNNModule()
+
+            # Runs the pdt_model in eager model with the inputs provided and annotates the arguments of forward
+            scripted_model = torch.jit.script(pdt_model, example_inputs={pdt_model: [([10, 20, ], ), ], })
+
+            # Run the scripted_model with actual inputs
+            print(scripted_model([20]))
+    """
+
 @overload
 def script(
     obj: Any,
@@ -176,7 +1592,210 @@ def script(
     _frames_up: int = ...,
     _rcb: ResolutionCallback | None = ...,
     example_inputs: list[tuple] | dict[Callable, list[tuple]] | None = ...,
-) -> RecursiveScriptClass: ...
+) -> RecursiveScriptClass:
+    """
+    Script the function.
+
+    Scripting a function or ``nn.Module`` will inspect the source code, compile
+    it as TorchScript code using the TorchScript compiler, and return a :class:`ScriptModule` or
+    :class:`ScriptFunction`. TorchScript itself is a subset of the Python language, so not all
+    features in Python work, but we provide enough functionality to compute on
+    tensors and do control-dependent operations. For a complete guide, see the
+    :ref:`language-reference`.
+
+    Scripting a dictionary or list copies the data inside it into a TorchScript instance than can be
+    subsequently passed by reference between Python and TorchScript with zero copy overhead.
+
+    ``torch.jit.script`` can be used as a function for modules, functions, dictionaries and lists
+     and as a decorator ``@torch.jit.script`` for torchscript-classes and functions.
+
+    Args:
+        obj (Callable, class, or nn.Module):  The ``nn.Module``, function, class type,
+                                                  dictionary, or list to compile.
+        example_inputs (Union[List[Tuple], Dict[Callable, List[Tuple]], None]): Provide example inputs
+            to annotate the arguments for a function or ``nn.Module``.
+
+    Returns:
+        If ``obj`` is ``nn.Module``, ``script`` returns
+        a :class:`ScriptModule` object. The returned :class:`ScriptModule` will
+        have the same set of sub-modules and parameters as the
+        original ``nn.Module``. If ``obj`` is a standalone function,
+        a :class:`ScriptFunction` will be returned. If ``obj`` is a ``dict``, then
+        ``script`` returns an instance of `torch._C.ScriptDict`. If ``obj`` is a ``list``,
+        then ``script`` returns an instance of `torch._C.ScriptList`.
+
+    **Scripting a function**
+        The ``@torch.jit.script`` decorator will construct a :class:`ScriptFunction`
+        by compiling the body of the function.
+
+        Example (scripting a function):
+
+        .. testcode::
+
+            import torch
+
+            @torch.jit.script
+            def foo(x, y):
+                if x.max() > y.max():
+                    r = x
+                else:
+                    r = y
+                return r
+
+            print(type(foo))  # torch.jit.ScriptFunction
+
+            # See the compiled graph as Python code
+            print(foo.code)
+
+            # Call the function using the TorchScript interpreter
+            foo(torch.ones(2, 2), torch.ones(2, 2))
+
+        .. testoutput::
+            :hide:
+
+            ...
+
+    ****Scripting a function using example_inputs**
+        Example inputs can be used to annotate a function arguments.
+
+        Example (annotating a function before scripting):
+
+        .. testcode::
+
+            import torch
+
+            def test_sum(a, b):
+                return a + b
+
+            # Annotate the arguments to be int
+            scripted_fn = torch.jit.script(test_sum, example_inputs=[(3, 4)])
+
+            print(type(scripted_fn))  # torch.jit.ScriptFunction
+
+            # See the compiled graph as Python code
+            print(scripted_fn.code)
+
+            # Call the function using the TorchScript interpreter
+            scripted_fn(20, 100)
+
+        .. testoutput::
+            :hide:
+
+            ...
+
+    **Scripting an nn.Module**
+        Scripting an ``nn.Module`` by default will compile the ``forward`` method and recursively
+        compile any methods, submodules, and functions called by ``forward``. If a ``nn.Module`` only uses
+        features supported in TorchScript, no changes to the original module code should be necessary. ``script``
+        will construct :class:`ScriptModule` that has copies of the attributes, parameters, and methods of
+        the original module.
+
+        Example (scripting a simple module with a Parameter):
+
+        .. testcode::
+
+            import torch
+
+            class MyModule(torch.nn.Module):
+                def __init__(self, N, M):
+                    super().__init__()
+                    # This parameter will be copied to the new ScriptModule
+                    self.weight = torch.nn.Parameter(torch.rand(N, M))
+
+                    # When this submodule is used, it will be compiled
+                    self.linear = torch.nn.Linear(N, M)
+
+                def forward(self, input):
+                    output = self.weight.mv(input)
+
+                    # This calls the `forward` method of the `nn.Linear` module, which will
+                    # cause the `self.linear` submodule to be compiled to a `ScriptModule` here
+                    output = self.linear(output)
+                    return output
+
+            scripted_module = torch.jit.script(MyModule(2, 3))
+
+        Example (scripting a module with traced submodules):
+
+        .. testcode::
+
+            import torch
+            import torch.nn as nn
+            import torch.nn.functional as F
+
+            class MyModule(nn.Module):
+                def __init__(self) -> None:
+                    super().__init__()
+                    # torch.jit.trace produces a ScriptModule's conv1 and conv2
+                    self.conv1 = torch.jit.trace(nn.Conv2d(1, 20, 5), torch.rand(1, 1, 16, 16))
+                    self.conv2 = torch.jit.trace(nn.Conv2d(20, 20, 5), torch.rand(1, 20, 16, 16))
+
+                def forward(self, input):
+                    input = F.relu(self.conv1(input))
+                    input = F.relu(self.conv2(input))
+                    return input
+
+            scripted_module = torch.jit.script(MyModule())
+
+        To compile a method other than ``forward`` (and recursively compile anything it calls), add
+        the :func:`@torch.jit.export <torch.jit.export>` decorator to the method. To opt out of compilation
+        use :func:`@torch.jit.ignore <torch.jit.ignore>` or :func:`@torch.jit.unused <torch.jit.unused>`.
+
+        Example (an exported and ignored method in a module)::
+
+            import torch
+            import torch.nn as nn
+
+
+            class MyModule(nn.Module):
+                def __init__(self) -> None:
+                    super().__init__()
+
+                @torch.jit.export
+                def some_entry_point(self, input):
+                    return input + 10
+
+                @torch.jit.ignore
+                def python_only_fn(self, input):
+                    # This function won't be compiled, so any
+                    # Python APIs can be used
+                    import pdb
+
+                    pdb.set_trace()
+
+                def forward(self, input):
+                    if self.training:
+                        self.python_only_fn(input)
+                    return input * 99
+
+
+            scripted_module = torch.jit.script(MyModule())
+            print(scripted_module.some_entry_point(torch.randn(2, 2)))
+            print(scripted_module(torch.randn(2, 2)))
+
+        Example ( Annotating forward of nn.Module using example_inputs)::
+
+            import torch
+            import torch.nn as nn
+            from typing import NamedTuple
+
+            class MyModule(NamedTuple):
+            result: List[int]
+
+            class TestNNModule(torch.nn.Module):
+                def forward(self, a) -> MyModule:
+                    result = MyModule(result=a)
+                    return result
+
+            pdt_model = TestNNModule()
+
+            # Runs the pdt_model in eager model with the inputs provided and annotates the arguments of forward
+            scripted_model = torch.jit.script(pdt_model, example_inputs={pdt_model: [([10, 20, ], ), ], })
+
+            # Run the scripted_model with actual inputs
+            print(scripted_model([20]))
+    """
+
 @overload
 def script(
     obj,
@@ -184,8 +1803,259 @@ def script(
     _frames_up: int = ...,
     _rcb: Incomplete | None = ...,
     example_inputs: list[tuple] | dict[Callable, list[tuple]] | None = ...,
-): ...
-def interface(obj): ...
+):
+    """
+    Script the function.
+
+    Scripting a function or ``nn.Module`` will inspect the source code, compile
+    it as TorchScript code using the TorchScript compiler, and return a :class:`ScriptModule` or
+    :class:`ScriptFunction`. TorchScript itself is a subset of the Python language, so not all
+    features in Python work, but we provide enough functionality to compute on
+    tensors and do control-dependent operations. For a complete guide, see the
+    :ref:`language-reference`.
+
+    Scripting a dictionary or list copies the data inside it into a TorchScript instance than can be
+    subsequently passed by reference between Python and TorchScript with zero copy overhead.
+
+    ``torch.jit.script`` can be used as a function for modules, functions, dictionaries and lists
+     and as a decorator ``@torch.jit.script`` for torchscript-classes and functions.
+
+    Args:
+        obj (Callable, class, or nn.Module):  The ``nn.Module``, function, class type,
+                                                  dictionary, or list to compile.
+        example_inputs (Union[List[Tuple], Dict[Callable, List[Tuple]], None]): Provide example inputs
+            to annotate the arguments for a function or ``nn.Module``.
+
+    Returns:
+        If ``obj`` is ``nn.Module``, ``script`` returns
+        a :class:`ScriptModule` object. The returned :class:`ScriptModule` will
+        have the same set of sub-modules and parameters as the
+        original ``nn.Module``. If ``obj`` is a standalone function,
+        a :class:`ScriptFunction` will be returned. If ``obj`` is a ``dict``, then
+        ``script`` returns an instance of `torch._C.ScriptDict`. If ``obj`` is a ``list``,
+        then ``script`` returns an instance of `torch._C.ScriptList`.
+
+    **Scripting a function**
+        The ``@torch.jit.script`` decorator will construct a :class:`ScriptFunction`
+        by compiling the body of the function.
+
+        Example (scripting a function):
+
+        .. testcode::
+
+            import torch
+
+            @torch.jit.script
+            def foo(x, y):
+                if x.max() > y.max():
+                    r = x
+                else:
+                    r = y
+                return r
+
+            print(type(foo))  # torch.jit.ScriptFunction
+
+            # See the compiled graph as Python code
+            print(foo.code)
+
+            # Call the function using the TorchScript interpreter
+            foo(torch.ones(2, 2), torch.ones(2, 2))
+
+        .. testoutput::
+            :hide:
+
+            ...
+
+    ****Scripting a function using example_inputs**
+        Example inputs can be used to annotate a function arguments.
+
+        Example (annotating a function before scripting):
+
+        .. testcode::
+
+            import torch
+
+            def test_sum(a, b):
+                return a + b
+
+            # Annotate the arguments to be int
+            scripted_fn = torch.jit.script(test_sum, example_inputs=[(3, 4)])
+
+            print(type(scripted_fn))  # torch.jit.ScriptFunction
+
+            # See the compiled graph as Python code
+            print(scripted_fn.code)
+
+            # Call the function using the TorchScript interpreter
+            scripted_fn(20, 100)
+
+        .. testoutput::
+            :hide:
+
+            ...
+
+    **Scripting an nn.Module**
+        Scripting an ``nn.Module`` by default will compile the ``forward`` method and recursively
+        compile any methods, submodules, and functions called by ``forward``. If a ``nn.Module`` only uses
+        features supported in TorchScript, no changes to the original module code should be necessary. ``script``
+        will construct :class:`ScriptModule` that has copies of the attributes, parameters, and methods of
+        the original module.
+
+        Example (scripting a simple module with a Parameter):
+
+        .. testcode::
+
+            import torch
+
+            class MyModule(torch.nn.Module):
+                def __init__(self, N, M):
+                    super().__init__()
+                    # This parameter will be copied to the new ScriptModule
+                    self.weight = torch.nn.Parameter(torch.rand(N, M))
+
+                    # When this submodule is used, it will be compiled
+                    self.linear = torch.nn.Linear(N, M)
+
+                def forward(self, input):
+                    output = self.weight.mv(input)
+
+                    # This calls the `forward` method of the `nn.Linear` module, which will
+                    # cause the `self.linear` submodule to be compiled to a `ScriptModule` here
+                    output = self.linear(output)
+                    return output
+
+            scripted_module = torch.jit.script(MyModule(2, 3))
+
+        Example (scripting a module with traced submodules):
+
+        .. testcode::
+
+            import torch
+            import torch.nn as nn
+            import torch.nn.functional as F
+
+            class MyModule(nn.Module):
+                def __init__(self) -> None:
+                    super().__init__()
+                    # torch.jit.trace produces a ScriptModule's conv1 and conv2
+                    self.conv1 = torch.jit.trace(nn.Conv2d(1, 20, 5), torch.rand(1, 1, 16, 16))
+                    self.conv2 = torch.jit.trace(nn.Conv2d(20, 20, 5), torch.rand(1, 20, 16, 16))
+
+                def forward(self, input):
+                    input = F.relu(self.conv1(input))
+                    input = F.relu(self.conv2(input))
+                    return input
+
+            scripted_module = torch.jit.script(MyModule())
+
+        To compile a method other than ``forward`` (and recursively compile anything it calls), add
+        the :func:`@torch.jit.export <torch.jit.export>` decorator to the method. To opt out of compilation
+        use :func:`@torch.jit.ignore <torch.jit.ignore>` or :func:`@torch.jit.unused <torch.jit.unused>`.
+
+        Example (an exported and ignored method in a module)::
+
+            import torch
+            import torch.nn as nn
+
+
+            class MyModule(nn.Module):
+                def __init__(self) -> None:
+                    super().__init__()
+
+                @torch.jit.export
+                def some_entry_point(self, input):
+                    return input + 10
+
+                @torch.jit.ignore
+                def python_only_fn(self, input):
+                    # This function won't be compiled, so any
+                    # Python APIs can be used
+                    import pdb
+
+                    pdb.set_trace()
+
+                def forward(self, input):
+                    if self.training:
+                        self.python_only_fn(input)
+                    return input * 99
+
+
+            scripted_module = torch.jit.script(MyModule())
+            print(scripted_module.some_entry_point(torch.randn(2, 2)))
+            print(scripted_module(torch.randn(2, 2)))
+
+        Example ( Annotating forward of nn.Module using example_inputs)::
+
+            import torch
+            import torch.nn as nn
+            from typing import NamedTuple
+
+            class MyModule(NamedTuple):
+            result: List[int]
+
+            class TestNNModule(torch.nn.Module):
+                def forward(self, a) -> MyModule:
+                    result = MyModule(result=a)
+                    return result
+
+            pdt_model = TestNNModule()
+
+            # Runs the pdt_model in eager model with the inputs provided and annotates the arguments of forward
+            scripted_model = torch.jit.script(pdt_model, example_inputs={pdt_model: [([10, 20, ], ), ], })
+
+            # Run the scripted_model with actual inputs
+            print(scripted_model([20]))
+    """
+
+def interface(obj):
+    """
+    Decorate to annotate classes or modules of different types.
+
+    This decorator can be used to define an interface that can be used to annotate
+    classes or modules of different types. This can be used for to annotate a submodule
+    or attribute class that could have different types that implement the same
+    interface, or which could be swapped at runtime; or to store a list of modules or
+    classes of varying types.
+
+    It is sometimes used to implement "Callables" - functions or modules that implement
+    an interface but whose implementations differ and which can be swapped out.
+
+    Example:
+    .. testcode::
+
+        import torch
+        from typing import List
+
+        @torch.jit.interface
+        class InterfaceType:
+            def run(self, x: torch.Tensor) -> torch.Tensor:
+                pass
+
+        # implements InterfaceType
+        @torch.jit.script
+        class Impl1:
+            def run(self, x: torch.Tensor) -> torch.Tensor:
+                return x.relu()
+
+        class Impl2(torch.nn.Module):
+            def __init__(self) -> None:
+                super().__init__()
+                self.val = torch.rand(())
+
+            @torch.jit.export
+            def run(self, x: torch.Tensor) -> torch.Tensor:
+                return x + self.val
+
+        def user_fn(impls: List[InterfaceType], idx: int, val: torch.Tensor) -> torch.Tensor:
+            return impls[idx].run(val)
+
+        user_fn_jit = torch.jit.script(user_fn)
+
+        impls = [Impl1(), torch.jit.script(Impl2())]
+        val = torch.rand(4, 4)
+        user_fn_jit(impls, 0, val)
+        user_fn_jit(impls, 1, val)
+    """
 
 CompilationUnit: Incomplete
 

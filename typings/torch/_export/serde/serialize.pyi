@@ -64,6 +64,8 @@ _SYM_OPS = ...
 
 @dataclass
 class SerializedArtifact:
+    """SerializedArtifact(exported_program: bytes, state_dict: bytes, constants: bytes, example_inputs: bytes)"""
+
     exported_program: bytes
     state_dict: bytes
     constants: bytes
@@ -71,12 +73,18 @@ class SerializedArtifact:
 
 @dataclass
 class _SerializedProgram:
+    """_SerializedProgram(exported_program: torch._export.serde.schema.ExportedProgram, state_dict: bytes, constants: bytes, example_inputs: bytes)"""
+
     exported_program: ExportedProgram
     state_dict: bytes
     constants: bytes
     example_inputs: bytes
 
 class LazyMap(UserDict):
+    """
+    Dictionary class for deferred instantiation of node metadata values.
+    Purpose is to avoid creation of symbolic-shape tensors before relevant shape guards are parsed.
+    """
     def __init__(self) -> None: ...
     def __setitem__(self, k, v) -> None: ...
     def __getitem__(self, k): ...
@@ -89,7 +97,8 @@ def deserialize_storage_offset(offset: SymInt) -> int: ...
 def serialize_sym_int(s: int | torch.SymInt) -> SymInt: ...
 def serialize_sym_float(s: float | torch.SymFloat) -> SymFloat: ...
 def serialize_sym_bool(s: bool | torch.SymBool) -> SymBool: ...
-def serialize_tensor_meta(t: torch.Tensor) -> TensorMeta: ...
+def serialize_tensor_meta(t: torch.Tensor) -> TensorMeta:
+    """Extract a TensorMeta describing `t`."""
 
 _CURRENT_DESERIALIZER: GraphModuleDeserializer | None = ...
 
@@ -99,6 +108,8 @@ def serialize_range_constraints(range_constraints: dict[sympy.Symbol, ValueRange
 
 @dataclass
 class GraphState:
+    """GraphState(inputs: list[torch._export.serde.schema.Argument] = <factory>, outputs: list[torch._export.serde.schema.Argument] = <factory>, nodes: list[torch._export.serde.schema.Node] = <factory>, tensor_values: dict[str, torch._export.serde.schema.TensorMeta] = <factory>, sym_int_values: dict[str, torch._export.serde.schema.SymInt] = <factory>, sym_bool_values: dict[str, torch._export.serde.schema.SymBool] = <factory>, sym_float_values: dict[str, torch._export.serde.schema.SymFloat] = <factory>, is_single_tensor_return: bool = False, custom_obj_values: dict[str, torch._export.serde.schema.CustomObjArgument] = <factory>)"""
+
     inputs: list[Argument] = ...
     outputs: list[Argument] = ...
     nodes: list[Node] = ...
@@ -128,7 +139,8 @@ class GraphModuleSerializer(metaclass=Final):
     def serialize_script_obj_meta(self, script_obj_meta: ep.CustomObjArgument) -> CustomObjArgument: ...
     def serialize_sym_op_inputs(self, op, args) -> list[NamedArgument]: ...
     def serialize_inputs(self, target: Any, args, kwargs=...) -> list[NamedArgument]: ...
-    def serialize_hoo_inputs(self, args, kwargs) -> list[NamedArgument]: ...
+    def serialize_hoo_inputs(self, args, kwargs) -> list[NamedArgument]:
+        """For serializing HOO inputs since HOOs do not have a schema."""
     def is_inductor_sym_int_arg(self, arg) -> bool: ...
     def is_sym_int_arg(self, arg) -> bool: ...
     def is_sym_float_arg(self, arg) -> bool: ...
@@ -145,8 +157,28 @@ class GraphModuleSerializer(metaclass=Final):
     def serialize_treespec(self, treespec): ...
     def serialize_module_call_signature(self, module_call_signature: ep.ModuleCallSignature) -> ModuleCallSignature: ...
     def serialize_module_call_graph(self, module_call_graph: list[ep.ModuleCallEntry]) -> list[ModuleCallEntry]: ...
-    def serialize_outputs(self, node: torch.fx.Node) -> list[Argument]: ...
-    def serialize_hoo_outputs(self, node: torch.fx.Node) -> list[Argument]: ...
+    def serialize_outputs(self, node: torch.fx.Node) -> list[Argument]:
+        """
+        For a given node, return the dataclass representing its output values.
+
+        [NOTE: Multiple outputs] We handle aggregates differently than FX. For
+        FX, it looks like:
+
+            x = call_function("multiple_return", ...)
+            element0 = call_function(getitem, x, 0)
+            foo = call_function("use_output", element0)
+
+        We do not want the intermediate `getitem` call, so our serialized thing looks like:
+
+            element0, element1, element2 = call_function("multiple_return", ...)
+            foo = call_function("use_output", element0)
+
+        We want names to be consistent across these two schemes, so that we can
+        mostly reuse the names coming from FX. This function computes a mapping from
+        the FX representation to our representation, preserving the names.
+        """
+    def serialize_hoo_outputs(self, node: torch.fx.Node) -> list[Argument]:
+        """For serializing HOO outputs since HOOs do not have a schema."""
     def serialize_output(self, name: str, meta_val: Any) -> Argument: ...
     def serialize_graph(self, graph_module: torch.fx.GraphModule) -> Graph: ...
     def serialize_graph_module_metadata(self, meta: dict[str, Any]): ...
@@ -155,12 +187,18 @@ class GraphModuleSerializer(metaclass=Final):
 @final
 class ExportedProgramSerializer(metaclass=Final):
     def __init__(self, opset_version: dict[str, int] | None = ..., pickle_protocol: int = ...) -> None: ...
-    def serialize(self, exported_program: ep.ExportedProgram) -> _SerializedProgram: ...
+    def serialize(self, exported_program: ep.ExportedProgram) -> _SerializedProgram:
+        """
+        Args:
+            exported_program: Exported Program to serialize
+        """
 
 @final
 class GraphModuleDeserializer(metaclass=Final):
     @dataclasses.dataclass
     class Result:
+        """Result(graph_module: torch.fx.graph_module.GraphModule, signature: torch.export.graph_signature.ExportGraphSignature, module_call_graph: list[torch.export.exported_program.ModuleCallEntry], names_to_symbols: dict[str, sympy.core.symbol.Symbol], state_dict: dict[str, typing.Union[torch.Tensor, torch.nn.parameter.Parameter]], constants: dict[str, typing.Union[torch.Tensor, torch.ScriptObject, torch._library.fake_class_registry.FakeScriptObject, torch.utils._pytree.TreeSpec]], example_inputs: Optional[tuple[tuple[torch.Tensor, ...], dict[str, Any]]])"""
+
         graph_module: torch.fx.GraphModule
         signature: ep.ExportGraphSignature
         module_call_graph: list[ep.ModuleCallEntry]
@@ -196,7 +234,8 @@ class GraphModuleDeserializer(metaclass=Final):
     def sync_fx_node(self, name: str, fx_node: torch.fx.Node): ...
     def deserialize_sym_op_inputs(self, inputs): ...
     def deserialize_inputs(self, target, serialized_node: Node): ...
-    def deserialize_hoo_inputs(self, inputs: list[NamedArgument]): ...
+    def deserialize_hoo_inputs(self, inputs: list[NamedArgument]):
+        """For deserializing HOO inputs since HOOs do not have a schema."""
     def deserialize_input(self, inp: Argument) -> Any: ...
     def deserialize_constant_input(self, inp: ConstantValue) -> Any: ...
     def deserialize_sym_argument(self, sym_arg): ...
@@ -246,9 +285,29 @@ def serialize(
 def deserialize(
     artifact: SerializedArtifact, expected_opset_version: dict[str, int] | None = ..., *, _unsafe_skip_version_check=...
 ) -> ep.ExportedProgram: ...
-def canonicalize(ep: ExportedProgram, constants: set[str] | None = ...) -> ExportedProgram: ...
+def canonicalize(ep: ExportedProgram, constants: set[str] | None = ...) -> ExportedProgram:
+    """
+    Normalize a serialized ExportedProgram, so that different eager program which
+    shares the same semantics can get a single representation on disk.
+
+    This function canonicalizes an ExportedProgram by:
+
+    1. Sorting nodes in topological order.
+    2. Rename nodes to have unique names.
+    3. Remove unstable fields.
+    4. Aggregate the above program fields.
+    5. Recurse in subgraphs.
+
+    Args:
+        ep (ExportedProgram): The ExportedProgram to canonicalize.
+        constants (Optional[set[str]]): Set of constants names
+
+    Returns:
+        ExportedProgram: The canonicalized exported program.
+    """
 
 class ExtensionHandler:
+    """Base class for handling extension operators."""
     @classmethod
     def namespace(cls) -> str: ...
     @classmethod
@@ -258,7 +317,8 @@ class ExtensionHandler:
     @classmethod
     def op_schema(cls, op) -> torch.FunctionSchema: ...
 
-def register_extension(op_type: type[Any], extension_handler: type[ExtensionHandler]): ...
+def register_extension(op_type: type[Any], extension_handler: type[ExtensionHandler]):
+    """Register custom de/serialization method for a node with non-standard type."""
 
 _serialization_registry: dict[type[Any], type[ExtensionHandler]] = ...
 _deserialization_registry: dict[str, type[ExtensionHandler]] = ...

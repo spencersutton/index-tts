@@ -1,3 +1,8 @@
+"""
+Define analogs of numpy dtypes supported by pytorch.
+Define the scalar types and supported dtypes and numpy <--> torch dtype mappings.
+"""
+
 class generic:
     name = ...
     def __new__(cls, value): ...
@@ -103,7 +108,9 @@ _torch_dtypes = ...
 _aliases = ...
 _python_types = ...
 
-def sctype_from_string(s): ...
+def sctype_from_string(s):
+    """Normalize a string value: a type 'name' or a typecode or a width alias."""
+
 def sctype_from_torch_dtype(torch_dtype): ...
 def dtype(arg): ...
 
@@ -130,7 +137,39 @@ class DType:
 
 typecodes = ...
 
-def set_default_dtype(fp_dtype=..., int_dtype=...): ...
+def set_default_dtype(fp_dtype=..., int_dtype=...):
+    """
+    Set the (global) defaults for fp, complex, and int dtypes.
+
+    The complex dtype is inferred from the float (fp) dtype. It has
+    a width at least twice the width of the float dtype,
+    i.e., it's complex128 for float64 and complex64 for float32.
+
+    Parameters
+    ----------
+    fp_dtype
+        Allowed values are "numpy", "pytorch" or dtype_like things which
+        can be converted into a DType instance.
+        Default is "numpy" (i.e. float64).
+    int_dtype
+        Allowed values are "numpy", "pytorch" or dtype_like things which
+        can be converted into a DType instance.
+        Default is "numpy" (i.e. int64).
+
+    Returns
+    -------
+    The old default dtype state: a namedtuple with attributes ``float_dtype``,
+    ``complex_dtypes`` and ``int_dtype``. These attributes store *pytorch*
+    dtypes.
+
+    Notes
+    ------------
+    This functions has a side effect: it sets the global state with the provided dtypes.
+
+    The complex dtype has bit width of at least twice the width of the float
+    dtype, i.e. it's complex128 for float64 and complex64 for float32.
+    """
+
 def issubclass_(arg, klass): ...
 def issubdtype(arg1, arg2): ...
 

@@ -1,3 +1,8 @@
 from typing import Any
 
-def is_from_package(obj: Any) -> bool: ...
+def is_from_package(obj: Any) -> bool:
+    """
+    Return whether an object was loaded from a package.
+
+    Note: packaged objects from externed modules will return ``False``.
+    """

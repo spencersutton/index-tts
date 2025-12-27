@@ -10,6 +10,8 @@ class NSSingleResultValuesType(enum.StrEnum):
     NODE_INPUT = ...
 
 class NSSubgraph(NamedTuple):
+    """NSSubgraph(start_node, end_node, base_op_node)"""
+
     start_node: Node
     end_node: Node
     base_op_node: Node

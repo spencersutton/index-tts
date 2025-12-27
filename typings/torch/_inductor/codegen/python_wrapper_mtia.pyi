@@ -5,6 +5,7 @@ from torch._inductor import ir
 from .wrapper import PythonWrapperCodegen
 
 class PythonWrapperMtia(PythonWrapperCodegen):
+    """A thin wrapper of PythonWrapperCodegen with MTIA specific logic"""
     @override
     def write_header(self) -> None: ...
     @override

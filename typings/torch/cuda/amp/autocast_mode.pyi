@@ -6,6 +6,11 @@ import torch
 __all__ = ["autocast", "custom_bwd", "custom_fwd"]
 
 class autocast(torch.amp.autocast_mode.autocast):
+    """
+    See :class:`torch.autocast`.
+
+    ``torch.cuda.amp.autocast(args...)`` is deprecated. Please use ``torch.amp.autocast("cuda", args...)`` instead.
+    """
     @deprecated(
         "`torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.",
         category=FutureWarning,
@@ -19,9 +24,18 @@ class autocast(torch.amp.autocast_mode.autocast):
     "`torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.",
     category=FutureWarning,
 )
-def custom_fwd(fwd=..., *, cast_inputs=...) -> partial[Any] | _Wrapped[..., Any, ..., Any]: ...
+def custom_fwd(fwd=..., *, cast_inputs=...) -> partial[Any] | _Wrapped[..., Any, ..., Any]:
+    """
+    ``torch.cuda.amp.custom_fwd(args...)`` is deprecated. Please use
+    ``torch.amp.custom_fwd(args..., device_type='cuda')`` instead.
+    """
+
 @deprecated(
     "`torch.cuda.amp.custom_bwd(args...)` is deprecated. Please use `torch.amp.custom_bwd(args..., device_type='cuda')` instead.",
     category=FutureWarning,
 )
-def custom_bwd(bwd) -> partial[Any] | _Wrapped[..., Any, ..., Any]: ...
+def custom_bwd(bwd) -> partial[Any] | _Wrapped[..., Any, ..., Any]:
+    """
+    ``torch.cuda.amp.custom_bwd(args...)`` is deprecated. Please use
+    ``torch.amp.custom_bwd(args..., device_type='cuda')`` instead.
+    """

@@ -5,6 +5,7 @@ import torch
 __all__ = ["WeightedQuantizedModule"]
 
 class WeightedQuantizedModule(torch.nn.Module, abc.ABC):
+    """Wrapper for quantized modules than can be lowered from reference modules."""
     @classmethod
     @abc.abstractmethod
     def from_reference(cls, ref_module, output_scale, output_zero_point): ...

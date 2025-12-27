@@ -4,7 +4,17 @@ from torch.types import FileLike
 log = ...
 
 def compile_so(aoti_dir: str, aoti_files: list[str], so_path: str) -> str: ...
-def package_aoti(archive_file: FileLike, aoti_files: AOTI_FILES) -> FileLike: ...
+def package_aoti(archive_file: FileLike, aoti_files: AOTI_FILES) -> FileLike:
+    """
+    Saves the AOTInductor generated files to the PT2Archive format.
+
+    Args:
+        archive_file: The file name to save the package to.
+        aoti_files: This can either be a singular path to a directory containing
+        the AOTInductor files, or a dictionary mapping the model name to the
+        path to its AOTInductor generated files.
+    """
+
 def load_package(
     path: FileLike,
     model_name: str = ...,

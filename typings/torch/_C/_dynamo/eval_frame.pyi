@@ -1,3 +1,5 @@
+"""Module containing hooks to override eval_frame"""
+
 import enum
 import types
 from typing import overload
@@ -18,7 +20,8 @@ def raise_sigtrap() -> None: ...
 
 class _CacheEntry:
     def check_fn(self, *args: object, **kwargs: object) -> bool: ...
-    def update_diff_guard_root_manager(self) -> None: ...
+    def update_diff_guard_root_manager(self) -> None:
+        """update_diff_guard_root_manager(self: torch._C._dynamo.eval_frame._CacheEntry) -> None"""
 
     code: types.CodeType
     compile_id: CompileId
@@ -29,9 +32,20 @@ class _PrecompileEntry:
     guard_manager: GuardManagerWrapper
 
 class _ExtraState:
-    def invalidate(self, cache_entry: _CacheEntry, guard_manager: GuardManagerWrapper) -> None: ...
+    def invalidate(self, cache_entry: _CacheEntry, guard_manager: GuardManagerWrapper) -> None:
+        """invalidate(self: torch._C._dynamo.eval_frame._ExtraState, arg0: torch._C._dynamo.eval_frame._CacheEntry, arg1: object) -> None"""
 
 class _FrameAction(enum.IntEnum):
+    """
+    Members:
+
+    DEFAULT
+
+    SKIP
+
+    RUN_ONLY
+    """
+
     DEFAULT = ...
     SKIP = ...
     RUN_ONLY = ...
@@ -40,9 +54,25 @@ class _FrameExecStrategy:
     cur_action: _FrameAction
     recursive_action: _FrameAction
     @overload
-    def __init__(self) -> None: ...
+    def __init__(self) -> None:
+        """
+        __init__(*args, **kwargs)
+        Overloaded function.
+
+        1. __init__(self: torch._C._dynamo.eval_frame._FrameExecStrategy) -> None
+
+        2. __init__(self: torch._C._dynamo.eval_frame._FrameExecStrategy, arg0: torch._C._dynamo.eval_frame._FrameAction, arg1: torch._C._dynamo.eval_frame._FrameAction) -> None
+        """
     @overload
-    def __init__(self, cur_action: _FrameAction, recursive_action: _FrameAction) -> None: ...
+    def __init__(self, cur_action: _FrameAction, recursive_action: _FrameAction) -> None:
+        """
+        __init__(*args, **kwargs)
+        Overloaded function.
+
+        1. __init__(self: torch._C._dynamo.eval_frame._FrameExecStrategy) -> None
+
+        2. __init__(self: torch._C._dynamo.eval_frame._FrameExecStrategy, arg0: torch._C._dynamo.eval_frame._FrameAction, arg1: torch._C._dynamo.eval_frame._FrameAction) -> None
+        """
 
 class _PyInterpreterFrame:
     f_code: types.CodeType
@@ -56,4 +86,5 @@ class _PyInterpreterFrame:
 
 py_opcode_caches: list[int]
 
-def code_framelocals_names(code: types.CodeType) -> tuple[str]: ...
+def code_framelocals_names(code: types.CodeType) -> tuple[str]:
+    """code_framelocals_names(arg0: object) -> tuple"""

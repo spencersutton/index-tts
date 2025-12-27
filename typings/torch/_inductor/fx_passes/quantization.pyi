@@ -34,5 +34,49 @@ class PostOpAttr:
         self, binary_op_name: str = ..., alpha=..., unary_op_name: str = ..., scalars_attr=..., algorithm_attr=...
     ) -> None: ...
 
-def concat_linear_woq_int4(gm: torch.fx.GraphModule): ...
-def quant_lift_up(graph_module: torch.fx.GraphModule): ...
+def concat_linear_woq_int4(gm: torch.fx.GraphModule):
+    """
+    Concat Linear optimization pass for WOQ int4
+    This pass fuses the original pattern:
+    def ...
+        return (woq_int4(x, w1, group_size, scale_zp1), woq_int4(x, w2, group_size, scale_zp1) ...)
+    into a single operation:
+    def ...
+        concat_res = woq_int4(x, concat_w, group_size, concat_scale_zp)
+        return split(concat_res, split_size_list)
+    """
+
+def quant_lift_up(graph_module: torch.fx.GraphModule):
+    """
+    Lift up the quant node before view like nodes. It can benefit performance
+    of Attention like block. For example, we have the pattern as:
+
+             DQ
+    DQ       LINEAR
+    LINEAR   VIEW
+    VIEW     PERMUTE
+    PERMUTE  TRANSPOSE
+    Q        Q
+    DQ       DQ
+       Matmul
+        DIV
+        ADD
+      SOFTMAX
+
+    We want to lift up the the quant nodes from matmul before view like nodes
+    as the output of Linear node.
+
+             DQ
+    DQ       LINEAR
+    LINEAR   Q
+    Q        VIEW
+    VIEW     PERMUTE
+    PERMUTE  TRANSPOSE
+    DQ       DQ
+       Matmul
+        DIV
+        ADD
+      SOFTMAX
+
+    It produces a DQ->LINEAR->Q pattern which can be fused by backend.
+    """

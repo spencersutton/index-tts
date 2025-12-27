@@ -6,6 +6,10 @@ import torch
 __all__ = ["autocast"]
 
 class autocast(torch.amp.autocast_mode.autocast):
+    """
+    See :class:`torch.autocast`.
+    ``torch.cpu.amp.autocast(args...)`` is deprecated. Please use ``torch.amp.autocast("cpu", args...)`` instead.
+    """
     @deprecated(
         "`torch.cpu.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cpu', args...)` instead.",
         category=FutureWarning,

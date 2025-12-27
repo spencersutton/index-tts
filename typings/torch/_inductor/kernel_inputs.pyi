@@ -5,30 +5,159 @@ import sympy
 import torch
 
 class KernelInputs:
-    def __init__(self, input_nodes: list[Any], scalars: dict[str, float | int] | None = ...) -> None: ...
-    def nodes(self, reorder: Sequence[int] | None = ...) -> list[Any]: ...
+    """
+    Class to store and provide access to input nodes for kernels.
+    This class takes in a tuple of input nodes and provides methods to access
+    information about these nodes, such as their device type and device.
+    """
+    def __init__(self, input_nodes: list[Any], scalars: dict[str, float | int] | None = ...) -> None:
+        """
+        Initialize with a tuple of input nodes.
+
+        Args:
+            input_nodes: A tuple of input nodes to store
+        """
+    def nodes(self, reorder: Sequence[int] | None = ...) -> list[Any]:
+        """
+        Return the stored input nodes, optionally reordered.
+
+        Args:
+            reorder: Optional sequence of indices to reorder the nodes.
+                    For example, (2, 0, 1) would return nodes in that order.
+
+        Returns:
+            The tuple of input nodes, optionally reordered
+        """
     @property
-    def count(self) -> int: ...
+    def count(self) -> int:
+        """
+        Get the number of input nodes.
+
+        Returns:
+            The number of input nodes
+        """
     @property
-    def device_type(self) -> str | None: ...
-    def device(self) -> torch.device: ...
-    def device_name(self) -> str | None: ...
-    def shapes_symbolic(self) -> tuple[tuple[Any, ...], ...]: ...
-    def shapes_hinted(self) -> tuple[tuple[int, ...], ...]: ...
-    def strides_symbolic(self) -> tuple[tuple[sympy.Integer, ...], ...]: ...
-    def strides_hinted(self) -> tuple[tuple[int, ...], ...]: ...
-    def dtypes(self) -> tuple[torch.dtype, ...]: ...
-    def dtype(self, idx: int = ...) -> torch.dtype: ...
-    def get_scalar(self, name: str) -> float | int: ...
+    def device_type(self) -> str | None:
+        """
+        Get the device type of the first node.
+
+        Returns:
+            The device type (e.g., 'cuda', 'cpu')
+        """
+    def device(self) -> torch.device:
+        """
+        Get the device of the first node.
+
+        Returns:
+            The device of the first node
+        """
+    def device_name(self) -> str | None:
+        """
+        Get the device name information.
+
+        Returns:
+            A tuple of (gpu_name, vendor, model)
+        """
+    def shapes_symbolic(self) -> tuple[tuple[Any, ...], ...]:
+        """
+        Get the symbolic shapes of all input nodes.
+
+        Returns:
+            A tuple of shape tuples for each input node
+        """
+    def shapes_hinted(self) -> tuple[tuple[int, ...], ...]:
+        """
+        Get the size hints for shapes of all input nodes.
+
+        Returns:
+            A tuple of shape tuples with integer hints for each input node
+        """
+    def strides_symbolic(self) -> tuple[tuple[sympy.Integer, ...], ...]:
+        """
+        Get the symbolic strides of all input nodes.
+
+        Returns:
+            A tuple of stride tuples for each input node
+        """
+    def strides_hinted(self) -> tuple[tuple[int, ...], ...]:
+        """
+        Get the size hints for strides of all input nodes.
+
+        Returns:
+            A tuple of stride tuples with integer hints for each input node
+        """
+    def dtypes(self) -> tuple[torch.dtype, ...]:
+        """
+        Get the dtypes of all input nodes.
+
+        Returns:
+            A tuple of dtypes for each input node
+        """
+    def dtype(self, idx: int = ...) -> torch.dtype:
+        """
+        Get the dtype of a specific input node.
+
+        Args:
+            idx: Index of the node to get the dtype from (default: 0)
+
+        Returns:
+            The dtype of the specified input node
+        """
+    def get_scalar(self, name: str) -> float | int:
+        """
+        Get the scalar value for a given name.
+
+        Args:
+            name: Name of the scalar to get
+
+        Returns:
+            The scalar value
+        """
 
 class MMKernelInputs(KernelInputs):
+    """
+    Specialized KernelInputs for matrix multiplication operations.
+    Provides additional methods to access M, N, K dimensions.
+    """
     def __init__(
         self,
         input_nodes: list[Any],
         scalars: dict[str, float | int] | None = ...,
         mat1_idx: int = ...,
         mat2_idx: int = ...,
-    ) -> None: ...
-    def mnk_symbolic(self) -> tuple[sympy.Integer, sympy.Integer, sympy.Integer]: ...
-    def mat1mat2(self) -> tuple[Any, Any]: ...
-    def mnk_hinted(self) -> tuple[int, int, int]: ...
+    ) -> None:
+        """
+        Initialize with a tuple of input nodes.
+
+        By default, we assume the last 2 input nodes are mat1 and mat2, but
+        the caller can adjust when necessary
+        """
+    def mnk_symbolic(self) -> tuple[sympy.Integer, sympy.Integer, sympy.Integer]:
+        """
+        Get the symbolic M, N, K dimensions for matrix multiplication.
+        Handles both 2D (MM) and 3D (BMM) tensors.
+
+        M is extracted from the second-to-last dimension of the first operand (mat1).
+        N is extracted from the last dimension of the second operand (mat2).
+        K is extracted from the last dimension of the first operand (mat1).
+
+        Returns:
+            A tuple of (M, N, K) dimensions
+        """
+    def mat1mat2(self) -> tuple[Any, Any]:
+        """
+        Get the mat1 and mat2 nodes.
+
+        Returns:
+            A tuple of (mat1, mat2) nodes
+        """
+    def mnk_hinted(self) -> tuple[int, int, int]:
+        """
+        Get the hinted M, N, K dimensions for matrix multiplication.
+        Handles both 2D (MM) and 3D (BMM) tensors.
+
+        Uses shapes_hinted from the base class to get integer hints for dimensions.
+
+        Returns:
+            A tuple of (M, N, K) dimensions as integers
+        """

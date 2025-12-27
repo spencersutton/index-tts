@@ -169,9 +169,19 @@ __all__ = [
     "weight_observer_range_neg_127_to_127",
 ]
 
-def default_eval_fn(model, calib_data) -> None: ...
+def default_eval_fn(model, calib_data) -> None:
+    """
+    Define the default evaluation function.
+
+    Default evaluation function takes a torch.utils.data.Dataset or a list of
+    input Tensors and run the model on the dataset
+    """
 
 class _DerivedObserverOrFakeQuantize(ObserverBase):
+    """
+    This observer is used to describe an observer whose quantization parameters
+    are derived from other observers
+    """
     def __init__(
         self,
         dtype: torch.dtype,

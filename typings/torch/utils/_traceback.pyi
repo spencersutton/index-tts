@@ -2,9 +2,18 @@ import contextlib
 
 @contextlib.contextmanager
 def report_compile_source_on_error(): ...
-def shorten_filename(fn, *, base=...): ...
-def format_frame(frame, *, base=..., line=...): ...
-def format_traceback_short(tb): ...
+def shorten_filename(fn, *, base=...):
+    """Shorten a source filepath, with the assumption that torch/ subdirectories don't need to be shown to user."""
+
+def format_frame(frame, *, base=..., line=...):
+    """
+    Format a FrameSummary in a short way, without printing full absolute path or code.
+
+    The idea is the result fits on a single line.
+    """
+
+def format_traceback_short(tb):
+    """Format a TracebackType in a short way, printing only the inner-most frame."""
 
 class CapturedTraceback:
     __slots__ = ...
@@ -13,7 +22,25 @@ class CapturedTraceback:
     def summary(self): ...
     def __getstate__(self): ...
     @staticmethod
-    def extract(*, script=..., cpp=..., skip=...): ...
-    def format(self): ...
+    def extract(*, script=..., cpp=..., skip=...):
+        """
+        Like traceback.extract_stack(), but faster (approximately 20x faster); it
+        is fast enough that you can unconditionally log stacks this way as part of
+        normal execution.  It returns a torch._C._profiler.CapturedTraceback
+        object that must be formatted specially with format_captured_tb.
+
+        By default, this only reports Python backtraces (like extract_stack).  You
+        can set the script/cpp kwargs to also turn on TorchScript/C++ trace
+        reporting.
+        """
+    def format(self):
+        """
+        Formats a single torch._C._profiler.CapturedTraceback into a list of
+        strings equivalent to the output of traceback.format_list.  Note that if
+        pass it CapturedTraceback with C++ traces,  it is better not to use this
+        function and use the batch formatting API format_captured_tbs to amortize
+        the cost of symbolization
+        """
     @staticmethod
-    def format_all(tbs): ...
+    def format_all(tbs):
+        """Bulk version of CapturedTraceback.format.  Returns a list of list of strings."""

@@ -2,9 +2,39 @@ from contextlib import contextmanager
 
 __all__ = ["is_available", "mark", "range", "range_pop", "range_push"]
 
-def is_available() -> bool | None: ...
-def range_push(msg) -> None: ...
-def range_pop() -> None: ...
-def mark(msg) -> None: ...
+def is_available() -> bool | None:
+    """Check if ITT feature is available or not"""
+
+def range_push(msg) -> None:
+    """
+    Pushes a range onto a stack of nested range span.  Returns zero-based
+    depth of the range that is started.
+
+    Arguments:
+        msg (str): ASCII message to associate with range
+    """
+
+def range_pop() -> None:
+    """
+    Pops a range off of a stack of nested range spans. Returns the
+    zero-based depth of the range that is ended.
+    """
+
+def mark(msg) -> None:
+    """
+    Describe an instantaneous event that occurred at some point.
+
+    Arguments:
+        msg (str): ASCII message to associate with the event.
+    """
+
 @contextmanager
-def range(msg, *args, **kwargs) -> Generator[None, Any, None]: ...
+def range(msg, *args, **kwargs) -> Generator[None, Any, None]:
+    """
+    Context manager / decorator that pushes an ITT range at the beginning
+    of its scope, and pops it at the end. If extra arguments are given,
+    they are passed as arguments to msg.format().
+
+    Args:
+        msg (str): message to associate with the range
+    """

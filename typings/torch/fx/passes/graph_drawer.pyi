@@ -10,6 +10,10 @@ _WEIGHT_TEMPLATE = ...
 if HAS_PYDOT:
     @compatibility(is_backward_compatible=False)
     class FxGraphDrawer:
+        """
+        .. warning::
+            This API is experimental and is *NOT* backward-compatible.
+        """
         def __init__(
             self,
             graph_module: torch.fx.GraphModule,

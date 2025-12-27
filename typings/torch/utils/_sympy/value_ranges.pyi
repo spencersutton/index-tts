@@ -29,6 +29,8 @@ type AllFn2 = ExprFn2 | BoolFn2
 
 @dataclasses.dataclass(frozen=True)
 class ValueRanges[T: (sympy.Expr, SympyBoolean)]:
+    """ValueRanges(lower: 'AllIn', upper: 'AllIn') -> 'None'"""
+
     ExprVR = ...
     BoolVR = ...
     type AllVR = ExprVR | BoolVR
@@ -46,7 +48,8 @@ class ValueRanges[T: (sympy.Expr, SympyBoolean)]:
     def boolify(self) -> ValueRanges[SympyBoolean]: ...
     def __contains__(self, x: AllIn) -> bool: ...
     def issubset(self, other): ...
-    def tighten(self, other) -> ValueRanges: ...
+    def tighten(self, other) -> ValueRanges:
+        """Given two ValueRanges, returns their intersection"""
     @overload
     def __and__(self: ValueRanges[sympy.Expr], other: ValueRanges[sympy.Expr]) -> ValueRanges[sympy.Expr]: ...
     @overload
@@ -76,31 +79,63 @@ class ValueRanges[T: (sympy.Expr, SympyBoolean)]:
     @staticmethod
     def wrap(arg: AllIn | AllVR) -> AllVR: ...
     @staticmethod
-    def increasing_map(x: ExprIn | ExprVR, fn: ExprFn) -> ExprVR: ...
+    def increasing_map(x: ExprIn | ExprVR, fn: ExprFn) -> ExprVR:
+        """Increasing: x <= y => f(x) <= f(y)."""
     @overload
     @staticmethod
-    def decreasing_map(x: ExprIn | ExprVR, fn: ExprFn) -> ExprVR: ...
+    def decreasing_map(x: ExprIn | ExprVR, fn: ExprFn) -> ExprVR:
+        """Decreasing: x <= y => f(x) >= f(y)."""
     @overload
     @staticmethod
-    def decreasing_map(x: BoolIn | BoolVR, fn: BoolFn) -> BoolVR: ...
+    def decreasing_map(x: BoolIn | BoolVR, fn: BoolFn) -> BoolVR:
+        """Decreasing: x <= y => f(x) >= f(y)."""
     @staticmethod
-    def decreasing_map(x: AllIn | AllVR, fn: AllFn) -> AllVR: ...
+    def decreasing_map(x: AllIn | AllVR, fn: AllFn) -> AllVR:
+        """Decreasing: x <= y => f(x) >= f(y)."""
     @staticmethod
-    def monotone_map(x: ExprIn | ExprVR, fn: ExprFn) -> ExprVR: ...
+    def monotone_map(x: ExprIn | ExprVR, fn: ExprFn) -> ExprVR:
+        """It's increasing or decreasing."""
     @staticmethod
-    def convex_min_zero_map(x: ExprIn | ExprVR, fn: ExprFn) -> ExprVR: ...
+    def convex_min_zero_map(x: ExprIn | ExprVR, fn: ExprFn) -> ExprVR:
+        """Fn is convex and has a minimum at 0."""
     @overload
     @staticmethod
-    def coordinatewise_increasing_map(x: ExprIn | ExprVR, y: ExprIn | ExprVR, fn: ExprFn2) -> ExprVR: ...
+    def coordinatewise_increasing_map(x: ExprIn | ExprVR, y: ExprIn | ExprVR, fn: ExprFn2) -> ExprVR:
+        """
+        It's increasing on each coordinate.
+
+        Mathematically:
+        For every 1 <= i <= n and x_i <= y_i we have that
+        f(x1, .., xn) <= f(x1, , yi, ..., xn)
+        """
     @overload
     @staticmethod
-    def coordinatewise_increasing_map(x: BoolIn | BoolVR, y: BoolIn | BoolVR, fn: BoolFn2) -> BoolVR: ...
+    def coordinatewise_increasing_map(x: BoolIn | BoolVR, y: BoolIn | BoolVR, fn: BoolFn2) -> BoolVR:
+        """
+        It's increasing on each coordinate.
+
+        Mathematically:
+        For every 1 <= i <= n and x_i <= y_i we have that
+        f(x1, .., xn) <= f(x1, , yi, ..., xn)
+        """
     @staticmethod
-    def coordinatewise_increasing_map(x: AllIn | AllVR, y: AllIn | AllVR, fn: AllFn2) -> AllVR: ...
+    def coordinatewise_increasing_map(x: AllIn | AllVR, y: AllIn | AllVR, fn: AllFn2) -> AllVR:
+        """
+        It's increasing on each coordinate.
+
+        Mathematically:
+        For every 1 <= i <= n and x_i <= y_i we have that
+        f(x1, .., xn) <= f(x1, , yi, ..., xn)
+        """
     @classmethod
-    def coordinatewise_monotone_map(cls, x, y, fn): ...
+    def coordinatewise_monotone_map(cls, x, y, fn):
+        """It's increasing or decreasing on each coordinate."""
 
 class SymPyValueRangeAnalysis:
+    """
+    It gives bounds on a SymPy operator given bounds on its arguments
+    See the function `bound_sympy` for a function that applies this logic to a full SymPy expression
+    """
     @staticmethod
     def constant(value, dtype): ...
     @staticmethod
@@ -152,7 +187,8 @@ class SymPyValueRangeAnalysis:
     @classmethod
     def pow(cls, a, b): ...
     @staticmethod
-    def reciprocal(x): ...
+    def reciprocal(x):
+        """Needed as it's used in pow, but it won't appear on a SymPy expression"""
     @staticmethod
     def abs(x): ...
     @staticmethod

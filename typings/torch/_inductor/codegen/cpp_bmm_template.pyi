@@ -23,14 +23,31 @@ class CppBmmTemplate(CppGemmTemplate):
         epilogue_creator: Callable[[ir.Buffer], ir.Pointwise] | None = ...,
         should_block_weights: bool = ...,
         name=...,
-    ) -> None: ...
+    ) -> None:
+        """
+        In order to simplify the implementation and increase code reuse, the BMM template implements
+        two versions of the GEMM kernel: a single-threaded version and a multi-threaded version.
+        GEMM kernels are called in a loop over the batch dimension, with single-threaded GEMM calls
+        for all but the last (B % num_threads), which are handled by the multi-threaded GEMM kernel.
+
+        We use an extra sizevar `b_index` to index the batch dimension, which we pass into the GEMM
+        template as a sympy.Symbol. This allows us to slice the 3D batch tensors in the GEMM template
+        without any changes to the GEMM template itself.
+        """
     @staticmethod
     def get_padded_size(n, block_n, k, should_block_weight): ...
     @staticmethod
     def check_if_block_weight(W, micro_gemm): ...
     def get_gemm_function_call(
         self, kernel: CppTemplateKernel, function_name: str, placeholder: str, b_index: str
-    ) -> str: ...
+    ) -> str:
+        """
+        Similar to 'def_kernel' in cpp_template_kernel, but instead of generating a function definition,
+        generate a function call for the GEMM kernel.
+        Args:
+            placeholder: The string to replace the function call with
+            b_index: The index for slicing the 3D batch tensors
+        """
     def get_default_reindexers(self, epilogue_nodes): ...
     def get_options(
         self,

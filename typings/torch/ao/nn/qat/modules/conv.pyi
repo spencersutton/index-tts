@@ -26,10 +26,34 @@ class _ConvNd(nn.modules.conv._ConvNd):
     ) -> None: ...
     def forward(self, input) -> Tensor: ...
     @staticmethod
-    def from_float(cls, mod, use_precomputed_fake_quant=...): ...
-    def to_float(self) -> _ConvNd: ...
+    def from_float(cls, mod, use_precomputed_fake_quant=...):
+        """
+        Create a qat module from a float module
+
+        Args:
+           `mod`: a float module, either produced by torch.ao.quantization utilities
+           or directly from user
+        """
+    def to_float(self) -> _ConvNd:
+        """
+        This works for both single qat conv, and the qat conv - relu modules
+        to convert the qat module to a floating point module
+        """
 
 class Conv1d(_ConvNd, nn.Conv1d):
+    """
+    A Conv1d module attached with FakeQuantize modules for weight,
+    used for quantization aware training.
+
+    We adopt the same interface as :class:`~torch.nn.Conv1d`
+
+    Similar to :class:`~torch.nn.Conv2d`, with FakeQuantize modules initialized to
+    default.
+
+    Attributes:
+        weight_fake_quant: fake quant module for weight
+    """
+
     _FLOAT_MODULE: ClassVar[type[nn.Conv1d]] = ...
     _FLOAT_CONV_MODULE: ClassVar[type[nn.Conv1d]] = ...
     def __init__(
@@ -51,6 +75,21 @@ class Conv1d(_ConvNd, nn.Conv1d):
     def from_float(cls, mod, use_precomputed_fake_quant=...): ...
 
 class Conv2d(_ConvNd, nn.Conv2d):
+    """
+    A Conv2d module attached with FakeQuantize modules for weight,
+    used for quantization aware training.
+
+    We adopt the same interface as `torch.nn.Conv2d`, please see
+    https://pytorch.org/docs/stable/nn.html?highlight=conv2d#torch.nn.Conv2d
+    for documentation.
+
+    Similar to `torch.nn.Conv2d`, with FakeQuantize modules initialized to
+    default.
+
+    Attributes:
+        weight_fake_quant: fake quant module for weight
+    """
+
     _FLOAT_MODULE: ClassVar[type[nn.Conv2d]] = ...
     _FLOAT_CONV_MODULE: ClassVar[type[nn.Conv2d]] = ...
     def __init__(
@@ -73,6 +112,21 @@ class Conv2d(_ConvNd, nn.Conv2d):
     def from_float(cls, mod, use_precomputed_fake_quant=...): ...
 
 class Conv3d(_ConvNd, nn.Conv3d):
+    """
+    A Conv3d module attached with FakeQuantize modules for weight,
+    used for quantization aware training.
+
+    We adopt the same interface as `torch.nn.Conv3d`, please see
+    https://pytorch.org/docs/stable/nn.html?highlight=conv3d#torch.nn.Conv3d
+    for documentation.
+
+    Similar to `torch.nn.Conv3d`, with FakeQuantize modules initialized to
+    default.
+
+    Attributes:
+        weight_fake_quant: fake quant module for weight
+    """
+
     _FLOAT_MODULE: ClassVar[type[nn.Conv3d]] = ...
     _FLOAT_CONV_MODULE: ClassVar[type[nn.Conv3d]] = ...
     def __init__(

@@ -5,10 +5,53 @@ logger = ...
 __all__ = ["OffsetBasedRNGTracker", "is_rng_supported_mesh", "manual_seed"]
 _rng_tracker: _RNGStateTracker | None = ...
 
-def is_rng_supported_mesh(device_mesh: DeviceMesh) -> bool: ...
-def manual_seed(seed: int, device_mesh: DeviceMesh) -> None: ...
+def is_rng_supported_mesh(device_mesh: DeviceMesh) -> bool:
+    """
+    Checks if the current device of ``device_mesh`` supports DTensor's random APIs.
+    Currently DTensor Random APIs only supports cuda/cuda-like devices. We suggest
+    users call this API to test the availability before using our random APIs.
+
+    Args:
+        device_mesh (:class:`DeviceMesh`): The device mesh on which we check if the
+            random ops APIs are supported.
+
+    Returns:
+        A bool value. True if ``device_mesh`` supports DTensor Random APIs; False otherwise.
+
+    .. warning::
+        Currently we only support correct RNG on cuda/cuda-like devices.
+    """
+
+def manual_seed(seed: int, device_mesh: DeviceMesh) -> None:
+    """
+    Sets the seed for generating random numbers for the calling rank.
+
+    Args:
+        seed (int): The desired seed.
+        device_mesh (:class:`DeviceMesh`): The device mesh to set the seed. It is
+            required that the ``device_mesh`` include the calling rank. This is
+            to ensure that the SPMD region maintains a synchronous RNG state, which
+            means no ranks should be initialized with values other than ``seed``.
+
+    Returns:
+        None
+
+    .. warning::
+        :func:`manual_seed` does not check the ``seed`` value correctness. Users must
+        ensure on their own that the value passed in is the desired ``seed`` for ranks
+        within ``device_mesh``.
+        If ``device_mesh`` is a sub-mesh and the calling rank is not a part of it,
+        ``manual_seed`` will throw an error.
+        Current implementation only supports a GPU device mesh.
+    """
 
 class _PhiloxState:
+    """
+    Convenience accessor for interpreting the packed bits of (seed: uint64, offset: uint64) in the philox state,
+    which for some reason is actually exposed as a size-16 uint8 tensor.
+
+    The state is always moved to .cpu since it is necessary for it to be on CPU before applying it back to a generator.
+    """
     def __init__(self, state: torch.Tensor) -> None: ...
     @property
     def state(self): ...
@@ -22,6 +65,13 @@ class _PhiloxState:
     def seed(self, seed: int) -> None: ...
 
 class _RNGStateTracker:
+    """
+    _RNGStateTracker stores Random Number Generator (RNG) state (a ByteTensor object)
+    in a dict, mapping from a corresponding tag to each state tensor. It also provides
+    a set of convenient utility methods to help access/modify the state tensors. The most
+    important interface is _distribute_region which will be used when DTensor executes
+    a random op (an operator that calls RNG).
+    """
     def __init__(self, device: torch.device) -> None: ...
     @property
     def distribute_region_enabled(self) -> bool: ...
@@ -29,4 +79,11 @@ class _RNGStateTracker:
     def distribute_region_enabled(self, value) -> None: ...
 
 class OffsetBasedRNGTracker(_RNGStateTracker):
+    """
+    This subclass of ``_RNGStateTracker`` defines the default policy of how RNG states
+    should be shared and synchronized among all ranks to respect the semantics of DTensor
+    random operators.
+
+    note: _RNGStateTracker only supports cuda/cuda-like device.
+    """
     def __init__(self, device_mesh: DeviceMesh, run_state_sync: bool = ...) -> None: ...

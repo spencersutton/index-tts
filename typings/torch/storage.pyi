@@ -27,8 +27,32 @@ class _StorageBase:
     def nbytes(self) -> _int: ...
     def size(self) -> _int: ...
     def type(self, dtype: str | None = ..., non_blocking: _bool = ...) -> _StorageBase | TypedStorage: ...
-    def cuda(self, device=..., non_blocking=...) -> _StorageBase | TypedStorage: ...
-    def hpu(self, device=..., non_blocking=...) -> _StorageBase | TypedStorage: ...
+    def cuda(self, device=..., non_blocking=...) -> _StorageBase | TypedStorage:
+        """
+        Returns a copy of this object in CUDA memory.
+
+        If this object is already in CUDA memory and on the correct device, then
+        no copy is performed and the original object is returned.
+
+        Args:
+            device (int): The destination GPU id. Defaults to the current device.
+            non_blocking (bool): If ``True`` and the source is in pinned memory,
+                the copy will be asynchronous with respect to the host. Otherwise,
+                the argument has no effect.
+        """
+    def hpu(self, device=..., non_blocking=...) -> _StorageBase | TypedStorage:
+        """
+        Returns a copy of this object in HPU memory.
+
+        If this object is already in HPU memory and on the correct device, then
+        no copy is performed and the original object is returned.
+
+        Args:
+            device (int): The destination HPU id. Defaults to the current device.
+            non_blocking (bool): If ``True`` and the source is in pinned memory,
+                the copy will be asynchronous with respect to the host. Otherwise,
+                the argument has no effect.
+        """
     def element_size(self) -> _int: ...
     def get_device(self) -> _int: ...
     def data_ptr(self) -> _int: ...
@@ -48,32 +72,74 @@ class _StorageBase:
     def __deepcopy__(self, memo) -> Self: ...
     def __reduce__(self) -> tuple[Callable[..., Any], tuple[bytes]]: ...
     def __sizeof__(self) -> int: ...
-    def clone(self) -> Self: ...
-    def tolist(self) -> list[Any]: ...
-    def cpu(self) -> Self: ...
-    def mps(self) -> Self: ...
+    def clone(self) -> Self:
+        """Return a copy of this storage."""
+    def tolist(self) -> list[Any]:
+        """Return a list containing the elements of this storage."""
+    def cpu(self) -> Self:
+        """Return a CPU copy of this storage if it's not already on the CPU."""
+    def mps(self) -> Self:
+        """Return a MPS copy of this storage if it's not already on the MPS."""
     def to(self, *, device: DeviceLikeType, non_blocking: _bool = ...) -> UntypedStorage | Any: ...
-    def double(self) -> TypedStorage: ...
-    def float(self) -> TypedStorage: ...
-    def half(self) -> TypedStorage: ...
-    def long(self) -> TypedStorage: ...
-    def int(self) -> TypedStorage: ...
-    def short(self) -> TypedStorage: ...
-    def char(self) -> TypedStorage: ...
-    def byte(self) -> TypedStorage: ...
-    def bool(self) -> TypedStorage: ...
-    def bfloat16(self) -> TypedStorage: ...
-    def complex_double(self) -> TypedStorage: ...
-    def complex_float(self) -> TypedStorage: ...
-    def float8_e5m2(self) -> TypedStorage: ...
-    def float8_e4m3fn(self) -> TypedStorage: ...
-    def float8_e5m2fnuz(self) -> TypedStorage: ...
-    def float8_e4m3fnuz(self) -> TypedStorage: ...
-    def is_pinned(self, device: str | torch.device = ...) -> bool: ...
-    def pin_memory(self, device: str | torch.device = ...) -> UntypedStorage: ...
-    def share_memory_(self) -> Self: ...
+    def double(self) -> TypedStorage:
+        """Casts this storage to double type."""
+    def float(self) -> TypedStorage:
+        """Casts this storage to float type."""
+    def half(self) -> TypedStorage:
+        """Casts this storage to half type."""
+    def long(self) -> TypedStorage:
+        """Casts this storage to long type."""
+    def int(self) -> TypedStorage:
+        """Casts this storage to int type."""
+    def short(self) -> TypedStorage:
+        """Casts this storage to short type."""
+    def char(self) -> TypedStorage:
+        """Casts this storage to char type."""
+    def byte(self) -> TypedStorage:
+        """Casts this storage to byte type."""
+    def bool(self) -> TypedStorage:
+        """Casts this storage to bool type."""
+    def bfloat16(self) -> TypedStorage:
+        """Casts this storage to bfloat16 type."""
+    def complex_double(self) -> TypedStorage:
+        """Casts this storage to complex double type."""
+    def complex_float(self) -> TypedStorage:
+        """Casts this storage to complex float type."""
+    def float8_e5m2(self) -> TypedStorage:
+        """Casts this storage to float8_e5m2 type"""
+    def float8_e4m3fn(self) -> TypedStorage:
+        """Casts this storage to float8_e4m3fn type"""
+    def float8_e5m2fnuz(self) -> TypedStorage:
+        """Casts this storage to float8_e5m2fnuz type"""
+    def float8_e4m3fnuz(self) -> TypedStorage:
+        """Casts this storage to float8_e4m3fnuz type"""
+    def is_pinned(self, device: str | torch.device = ...) -> bool:
+        """
+        Determine whether the CPU storage is already pinned on device.
+
+        Args:
+            device (str or torch.device): The device to pin memory on (default: ``'cuda'``).
+                This argument is discouraged and subject to deprecated.
+
+        Returns:
+            A boolean variable.
+        """
+    def pin_memory(self, device: str | torch.device = ...) -> UntypedStorage:
+        """
+        Copy the CPU storage to pinned memory, if it's not already pinned.
+
+        Args:
+            device (str or torch.device): The device to pin memory on (default: ``'cuda'``).
+                This argument is discouraged and subject to deprecated.
+
+        Returns:
+            A pinned CPU storage.
+        """
+    def share_memory_(self) -> Self:
+        """See :meth:`torch.UntypedStorage.share_memory_`"""
     def untyped(self) -> Self: ...
-    def byteswap(self, dtype) -> None: ...
+    def byteswap(self, dtype) -> None:
+        """Swap bytes in underlying data."""
 
 class UntypedStorage(torch._C.StorageBase, _StorageBase):
     def __getitem__(self, *args, **kwargs): ...
@@ -82,9 +148,46 @@ class UntypedStorage(torch._C.StorageBase, _StorageBase):
     @property
     def is_hpu(self) -> bool: ...
     @property
-    def filename(self) -> str | None: ...
+    def filename(self) -> str | None:
+        """
+        Returns the file name associated with this storage.
+
+        The file name will be a string if the storage is on CPU and was created via
+        :meth:`~torch.from_file()` with ``shared`` as ``True``. This attribute is ``None`` otherwise.
+        """
     @_share_memory_lock_protected
-    def share_memory_(self, *args, **kwargs) -> Self: ...
+    def share_memory_(self, *args, **kwargs) -> Self:
+        """
+        Moves the storage to shared memory.
+
+        This is a no-op for storages already in shared memory and for CUDA
+        storages, which do not need to be moved for sharing across processes.
+        Storages in shared memory cannot be resized.
+
+        Note that to mitigate issues like `this <https://github.com/pytorch/pytorch/issues/95606>`_
+        it is thread safe to call this function from multiple threads on the same object.
+        It is NOT thread safe though to call any other function on self without proper
+        synchronization. Please see :doc:`/notes/multiprocessing` for more details.
+
+        .. note::
+            When all references to a storage in shared memory are deleted, the associated shared memory
+            object will also be deleted. PyTorch has a special cleanup process to ensure that this happens
+            even if the current process exits unexpectedly.
+
+            It is worth noting the difference between :meth:`share_memory_` and :meth:`from_file` with ``shared = True``
+
+            #. ``share_memory_`` uses `shm_open(3) <https://man7.org/linux/man-pages/man3/shm_open.3.html>`_ to create a
+               POSIX shared memory object while :meth:`from_file` uses
+               `open(2) <https://man7.org/linux/man-pages/man2/open.2.html>`_ to open the filename passed by the user.
+            #. Both use an `mmap(2) call <https://man7.org/linux/man-pages/man2/mmap.2.html>`_ with ``MAP_SHARED``
+               to map the file/object into the current virtual address space
+            #. ``share_memory_`` will call ``shm_unlink(3)`` on the object after mapping it to make sure the shared memory
+               object is freed when no process has the object open. ``torch.from_file(shared=True)`` does not unlink the
+               file. This file is persistent and will remain until it is deleted by the user.
+
+        Returns:
+            ``self``
+        """
 
 _always_warn_typed_storage_removal = ...
 
@@ -93,7 +196,11 @@ class TypedStorage:
     _fake_device: torch.device | None = ...
     dtype: torch.dtype
     @property
-    def filename(self) -> str | None: ...
+    def filename(self) -> str | None:
+        """
+        Returns the file name associated with this storage if the storage was memory mapped from a file.
+        or ``None`` if the storage was not created by memory mapping a file.
+        """
     def fill_(self, value) -> Self: ...
     def __new__(cls, *args, wrap_storage=..., dtype=..., device=..., _internal=...) -> Self | TypedStorage: ...
     def __init__(self, *args, device=..., dtype=..., wrap_storage=..., _internal=...) -> None: ...
@@ -101,28 +208,105 @@ class TypedStorage:
     def is_cuda(self) -> bool: ...
     @property
     def is_hpu(self) -> bool: ...
-    def untyped(self) -> UntypedStorage: ...
+    def untyped(self) -> UntypedStorage:
+        """Return the internal :class:`torch.UntypedStorage`."""
     def __len__(self) -> int: ...
     def __setitem__(self, idx, value) -> None: ...
     def __getitem__(self, idx) -> Number: ...
     def copy_(self, source: T, non_blocking: bool | None = ...) -> Self: ...
     def nbytes(self) -> int: ...
-    def type(self, dtype: str | None = ..., non_blocking: bool = ...) -> _StorageBase | TypedStorage | str: ...
-    def cuda(self, device=..., non_blocking=...) -> Self: ...
-    def hpu(self, device=..., non_blocking=...) -> Self: ...
-    def to(self, *, device: DeviceLikeType, non_blocking: bool = ...) -> Self: ...
+    def type(self, dtype: str | None = ..., non_blocking: bool = ...) -> _StorageBase | TypedStorage | str:
+        """
+        Returns the type if `dtype` is not provided, else casts this object to
+        the specified type.
+
+        If this is already of the correct type, no copy is performed and the
+        original object is returned.
+
+        Args:
+            dtype (type or string): The desired type
+            non_blocking (bool): If ``True``, and the source is in pinned memory
+                and destination is on the GPU or vice versa, the copy is performed
+                asynchronously with respect to the host. Otherwise, the argument
+                has no effect.
+            **kwargs: For compatibility, may contain the key ``async`` in place of
+                the ``non_blocking`` argument. The ``async`` arg is deprecated.
+        """
+    def cuda(self, device=..., non_blocking=...) -> Self:
+        """
+        Returns a copy of this object in CUDA memory.
+
+        If this object is already in CUDA memory and on the correct device, then
+        no copy is performed and the original object is returned.
+
+        Args:
+            device (int): The destination GPU id. Defaults to the current device.
+            non_blocking (bool): If ``True`` and the source is in pinned memory,
+                the copy will be asynchronous with respect to the host. Otherwise,
+                the argument has no effect.
+        """
+    def hpu(self, device=..., non_blocking=...) -> Self:
+        """
+        Returns a copy of this object in HPU memory.
+
+        If this object is already in HPU memory and on the correct device, then
+        no copy is performed and the original object is returned.
+
+        Args:
+            device (int): The destination HPU id. Defaults to the current device.
+            non_blocking (bool): If ``True`` and the source is in pinned memory,
+                the copy will be asynchronous with respect to the host. Otherwise,
+                the argument has no effect.
+        """
+    def to(self, *, device: DeviceLikeType, non_blocking: bool = ...) -> Self:
+        """
+        Returns a copy of this object in device memory.
+
+        If this object is already on the correct device, then no copy is performed
+        and the original object is returned.
+
+        Args:
+            device (int): The destination device.
+            non_blocking (bool): If ``True`` and the source is in pinned memory,
+                the copy will be asynchronous with respect to the host. Otherwise,
+                the argument has no effect.
+        """
     def element_size(self): ...
     def get_device(self) -> _int: ...
     def __iter__(self) -> Generator[Number | Any, None, None]: ...
     def __copy__(self) -> Self: ...
     def __deepcopy__(self, memo) -> Self: ...
     def __sizeof__(self) -> int: ...
-    def clone(self) -> Self: ...
-    def tolist(self) -> list[Number | Any]: ...
-    def cpu(self) -> Self: ...
-    def is_pinned(self, device: str | torch.device = ...) -> bool: ...
-    def pin_memory(self, device: str | torch.device = ...) -> Self: ...
-    def share_memory_(self) -> Self: ...
+    def clone(self) -> Self:
+        """Return a copy of this storage."""
+    def tolist(self) -> list[Number | Any]:
+        """Return a list containing the elements of this storage."""
+    def cpu(self) -> Self:
+        """Return a CPU copy of this storage if it's not already on the CPU."""
+    def is_pinned(self, device: str | torch.device = ...) -> bool:
+        """
+        Determine whether the CPU TypedStorage is already pinned on device.
+
+        Args:
+            device (str or torch.device): The device to pin memory on (default: ``'cuda'``).
+                This argument is discouraged and subject to deprecated.
+
+        Returns:
+            A boolean variable.
+        """
+    def pin_memory(self, device: str | torch.device = ...) -> Self:
+        """
+        Copy the CPU TypedStorage to pinned memory, if it's not already pinned.
+
+        Args:
+            device (str or torch.device): The device to pin memory on (default: ``'cuda'``).
+                This argument is discouraged and subject to deprecated.
+
+        Returns:
+            A pinned CPU storage.
+        """
+    def share_memory_(self) -> Self:
+        """See :meth:`torch.UntypedStorage.share_memory_`"""
     @property
     def device(self) -> device: ...
     def size(self): ...
@@ -133,24 +317,59 @@ class TypedStorage:
     def resize_(self, size) -> None: ...
     @classmethod
     def from_buffer(cls, *args, **kwargs) -> TypedStorage: ...
-    def double(self) -> TypedStorage: ...
-    def float(self) -> TypedStorage: ...
-    def half(self) -> TypedStorage: ...
-    def long(self) -> TypedStorage: ...
-    def int(self) -> TypedStorage: ...
-    def short(self) -> TypedStorage: ...
-    def char(self) -> TypedStorage: ...
-    def byte(self) -> TypedStorage: ...
-    def bool(self) -> TypedStorage: ...
-    def bfloat16(self) -> TypedStorage: ...
-    def complex_double(self) -> TypedStorage: ...
-    def complex_float(self) -> TypedStorage: ...
-    def float8_e5m2(self) -> TypedStorage: ...
-    def float8_e4m3fn(self) -> TypedStorage: ...
-    def float8_e5m2fnuz(self) -> TypedStorage: ...
-    def float8_e4m3fnuz(self) -> TypedStorage: ...
+    def double(self) -> TypedStorage:
+        """Casts this storage to double type."""
+    def float(self) -> TypedStorage:
+        """Casts this storage to float type."""
+    def half(self) -> TypedStorage:
+        """Casts this storage to half type."""
+    def long(self) -> TypedStorage:
+        """Casts this storage to long type."""
+    def int(self) -> TypedStorage:
+        """Casts this storage to int type."""
+    def short(self) -> TypedStorage:
+        """Casts this storage to short type."""
+    def char(self) -> TypedStorage:
+        """Casts this storage to char type."""
+    def byte(self) -> TypedStorage:
+        """Casts this storage to byte type."""
+    def bool(self) -> TypedStorage:
+        """Casts this storage to bool type."""
+    def bfloat16(self) -> TypedStorage:
+        """Casts this storage to bfloat16 type."""
+    def complex_double(self) -> TypedStorage:
+        """Casts this storage to complex double type."""
+    def complex_float(self) -> TypedStorage:
+        """Casts this storage to complex float type."""
+    def float8_e5m2(self) -> TypedStorage:
+        """Casts this storage to float8_e5m2 type"""
+    def float8_e4m3fn(self) -> TypedStorage:
+        """Casts this storage to float8_e4m3fn type"""
+    def float8_e5m2fnuz(self) -> TypedStorage:
+        """Casts this storage to float8_e5m2fnuz type"""
+    def float8_e4m3fnuz(self) -> TypedStorage:
+        """Casts this storage to float8_e4m3fnuz type"""
     @classmethod
-    def from_file(cls, filename, shared, size) -> Self: ...
+    def from_file(cls, filename, shared, size) -> Self:
+        """
+        from_file(filename, shared=False, size=0) -> Storage
+
+        Creates a CPU storage backed by a memory-mapped file.
+
+        If ``shared`` is ``True``, then memory is shared between all processes.
+        All changes are written to the file. If ``shared`` is ``False``, then the changes on
+        the storage do not affect the file.
+
+        ``size`` is the number of elements in the storage. If ``shared`` is ``False``,
+        then the file must contain at least ``size * sizeof(Type)`` bytes
+        (``Type`` is the type of storage). If ``shared`` is ``True`` the file will be created if needed.
+
+        Args:
+            filename (str): file name to map
+            shared (bool): whether to share memory (whether ``MAP_SHARED`` or ``MAP_PRIVATE`` is passed to the
+                            underlying `mmap(2) call <https://man7.org/linux/man-pages/man2/mmap.2.html>`_)
+            size (int): number of elements in the storage
+        """
     def is_shared(self) -> bool: ...
 
 class _LegacyStorageMeta(type):

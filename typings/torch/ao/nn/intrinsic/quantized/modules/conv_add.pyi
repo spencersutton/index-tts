@@ -3,6 +3,15 @@ import torch.ao.nn.quantized as nnq
 _reverse_repeat_padding = ...
 
 class ConvAdd2d(nnq.Conv2d):
+    """
+    A ConvAdd2d module is a fused module of Conv2d and Add
+
+    We adopt the same interface as :class:`torch.ao.nn.quantized.Conv2d`.
+
+    Attributes:
+        Same as torch.ao.nn.quantized.Conv2d
+    """
+
     _FLOAT_MODULE = ...
     def __init__(
         self,
@@ -25,6 +34,15 @@ class ConvAdd2d(nnq.Conv2d):
     def from_reference(cls, ref_qconv, output_scale, output_zero_point) -> Self: ...
 
 class ConvAddReLU2d(nnq.Conv2d):
+    """
+    A ConvAddReLU2d module is a fused module of Conv2d, Add and Relu
+
+    We adopt the same interface as :class:`torch.ao.nn.quantized.Conv2d`.
+
+    Attributes:
+        Same as torch.ao.nn.quantized.Conv2d
+    """
+
     _FLOAT_MODULE = ...
     def __init__(
         self,

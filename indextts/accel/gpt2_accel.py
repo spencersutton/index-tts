@@ -37,7 +37,7 @@ class GPT2AccelAttention(nn.Module):
         )
         self.register_buffer("masked_bias", torch.tensor(-1e4), persistent=False)
 
-        self.embed_dim = cast(int, config.hidden_size)
+        self.embed_dim = config.hidden_size
         self.num_heads = cast(int, config.num_attention_heads)
         self.head_dim = self.embed_dim // self.num_heads
         self.split_size = self.embed_dim

@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import sys
-from typing import cast
+from collections.abc import MutableMapping
+from typing import cast, override
 
 import torch
 from torch import Tensor, nn
@@ -16,6 +19,7 @@ class Sampler(nn.Module):
         super().__init__()
 
     @torch.compile
+    @override
     def forward(self, logits: Tensor, temperatures: Tensor) -> Tensor:
         temperatures = temperatures.to(logits.device).clamp(min=1e-8)
         greedy_mask = temperatures < 1e-5
@@ -33,7 +37,7 @@ class AccelInferenceEngine:
     def __init__(
         self,
         model: GPT2AccelModel,
-        lm_head: nn.Module | None,
+        lm_head: nn.Sequential[nn.LayerNorm | nn.Linear] | None,
         num_layers: int,
         num_heads: int,
         head_dim: int,
@@ -57,7 +61,7 @@ class AccelInferenceEngine:
         self.block_size = block_size
         self.num_blocks = num_blocks
         self.use_cuda_graph = use_cuda_graph and torch.cuda.is_available()
-        self.hidden_size = model.config.hidden_size if hasattr(model, "config") else head_dim * num_heads
+        self.hidden_size = model.config.hidden_size
         self.kv_manager = KVCacheManager(
             num_layers=num_layers,
             num_heads=num_heads,
@@ -69,10 +73,11 @@ class AccelInferenceEngine:
         self.kv_manager.wire_kv_cache_to_model(model)
         self.sampler = Sampler()
         self.current_sequences = []
-        self.graphs = {}
+        self.graphs: MutableMapping[object, object] = {}
         self.graph_vars = None
         self.graph_pool = None
         self.graph_captured = False
+        self.graph_bs = [1, 2, 4, 8]
 
     def _prepare_prefill(self, requests: list[Seq]) -> tuple[Tensor, Tensor]:
         input_ids: list[int] = []
@@ -226,12 +231,16 @@ class AccelInferenceEngine:
                 pos_clamped = torch.clamp(positions[:bs], min=0)
                 pos_emb = tts_text_pos_embedding.emb(pos_clamped)
                 inputs_embeds_buffer[:bs] = emb + pos_emb
-                out = self.model(
+                model_output = self.model(
                     inputs_embeds=inputs_embeds_buffer[:bs].unsqueeze(1),
                     return_dict=True,
-                ).last_hidden_state
+                )
             else:
-                out = self.model(input_ids=input_ids[:bs].unsqueeze(1), return_dict=True).last_hidden_state
+                model_output = self.model(input_ids=input_ids[:bs].unsqueeze(1), return_dict=True)
+
+            assert not isinstance(model_output, tuple)
+            out = model_output.last_hidden_state
+            assert out is not None
             outputs[:bs] = out.squeeze(1) if out.dim() == 3 else out
 
             with torch.cuda.graph(graph, self.graph_pool):
@@ -242,12 +251,15 @@ class AccelInferenceEngine:
                     pos_clamped = torch.clamp(positions[:bs], min=0)
                     pos_emb = tts_text_pos_embedding.emb(pos_clamped)
                     inputs_embeds_buffer[:bs] = emb + pos_emb
-                    out = self.model(
+                    model_output = self.model(
                         inputs_embeds=inputs_embeds_buffer[:bs].unsqueeze(1),
                         return_dict=True,
-                    ).last_hidden_state
+                    )
                 else:
-                    out = self.model(input_ids=input_ids[:bs].unsqueeze(1), return_dict=True).last_hidden_state
+                    model_output = self.model(input_ids=input_ids[:bs].unsqueeze(1), return_dict=True)
+                assert not isinstance(model_output, tuple)
+                out = model_output.last_hidden_state
+                assert out is not None
                 outputs[:bs] = out.squeeze(1) if out.dim() == 3 else out
 
             if self.graph_pool is None:

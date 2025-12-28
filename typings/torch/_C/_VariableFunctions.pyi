@@ -5,29 +5,19 @@
 
 from collections.abc import Sequence
 from types import EllipsisType
-from typing import Any, Callable, Literal, TypeVar, overload
+from typing import Any, Generator, Literal, overload
 
 import torch
-from torch import (
-    Generator,
-    SymInt,
-    Tensor,
-    contiguous_format,
-    inf,
-    memory_format,
-    strided,
-)
+from torch import SymInt, Tensor, layout, memory_format
 from torch._prims_common import DeviceLikeType
 from torch.types import (
     Device,
     Number,
-    _bool,
     _complex,
     _device,
     _dtype,
     _float,
     _int,
-    _layout,
     _qscheme,
     _size,
 )
@@ -1062,7 +1052,7 @@ def _addmm_activation(
     *,
     beta: Number | _complex = 1,
     alpha: Number | _complex = 1,
-    use_gelu: _bool = False,
+    use_gelu: bool = False,
     out: Tensor | None = None,
 ) -> Tensor: ...
 @overload
@@ -1071,7 +1061,7 @@ def _aminmax(input: Tensor) -> tuple[Tensor, Tensor]: ...
 def _aminmax(
     input: Tensor,
     dim: _int,
-    keepdim: _bool = False,
+    keepdim: bool = False,
 ) -> tuple[Tensor, Tensor]: ...
 def _amp_foreach_non_finite_check_and_unscale_(
     self: tuple[Tensor, ...] | list[Tensor] | None,
@@ -1132,7 +1122,7 @@ def _assert_tensor_metadata(
     dtype: _dtype | None = None,
     *,
     device: DeviceLikeType | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
 ) -> None: ...
 def _batch_norm_impl_index(
     input: Tensor,
@@ -1140,22 +1130,22 @@ def _batch_norm_impl_index(
     bias: Tensor | None,
     running_mean: Tensor | None,
     running_var: Tensor | None,
-    training: _bool,
+    training: bool,
     momentum: _float,
     eps: _float,
-    cudnn_enabled: _bool,
+    cudnn_enabled: bool,
 ) -> tuple[Tensor, Tensor, Tensor, Tensor, _int]: ...
-def _cast_Byte(input: Tensor, non_blocking: _bool = False) -> Tensor: ...
-def _cast_Char(input: Tensor, non_blocking: _bool = False) -> Tensor: ...
-def _cast_Double(input: Tensor, non_blocking: _bool = False) -> Tensor: ...
-def _cast_Float(input: Tensor, non_blocking: _bool = False) -> Tensor: ...
-def _cast_Half(input: Tensor, non_blocking: _bool = False) -> Tensor: ...
-def _cast_Int(input: Tensor, non_blocking: _bool = False) -> Tensor: ...
-def _cast_Long(input: Tensor, non_blocking: _bool = False) -> Tensor: ...
-def _cast_Short(input: Tensor, non_blocking: _bool = False) -> Tensor: ...
+def _cast_Byte(input: Tensor, non_blocking: bool = False) -> Tensor: ...
+def _cast_Char(input: Tensor, non_blocking: bool = False) -> Tensor: ...
+def _cast_Double(input: Tensor, non_blocking: bool = False) -> Tensor: ...
+def _cast_Float(input: Tensor, non_blocking: bool = False) -> Tensor: ...
+def _cast_Half(input: Tensor, non_blocking: bool = False) -> Tensor: ...
+def _cast_Int(input: Tensor, non_blocking: bool = False) -> Tensor: ...
+def _cast_Long(input: Tensor, non_blocking: bool = False) -> Tensor: ...
+def _cast_Short(input: Tensor, non_blocking: bool = False) -> Tensor: ...
 def _choose_qparams_per_tensor(
     input: Tensor,
-    reduce_range: _bool = False,
+    reduce_range: bool = False,
 ) -> tuple[_float, _int]: ...
 def _chunk_cat(
     tensors: tuple[Tensor, ...] | list[Tensor] | None,
@@ -1178,15 +1168,15 @@ def _convert_indices_from_coo_to_csr(
     input: Tensor,
     size: _int,
     *,
-    out_int32: _bool = False,
+    out_int32: bool = False,
     out: Tensor | None = None,
 ) -> Tensor: ...
 def _convert_indices_from_csr_to_coo(
     crow_indices: Tensor,
     col_indices: Tensor,
     *,
-    out_int32: _bool = False,
-    transpose: _bool = False,
+    out_int32: bool = False,
+    transpose: bool = False,
     out: Tensor | None = None,
 ) -> Tensor: ...
 def _convert_weight_to_int4pack(input: Tensor, innerKTiles: _int) -> Tensor: ...
@@ -1202,12 +1192,12 @@ def _convolution(
     stride: Sequence[_int | SymInt],
     padding: Sequence[_int | SymInt],
     dilation: Sequence[_int | SymInt],
-    transposed: _bool,
+    transposed: bool,
     output_padding: _size,
     groups: _int | SymInt,
-    benchmark: _bool,
-    deterministic: _bool,
-    cudnn_enabled: _bool,
+    benchmark: bool,
+    deterministic: bool,
+    cudnn_enabled: bool,
 ) -> Tensor: ...
 @overload
 def _convolution(
@@ -1217,13 +1207,13 @@ def _convolution(
     stride: Sequence[_int | SymInt],
     padding: Sequence[_int | SymInt],
     dilation: Sequence[_int | SymInt],
-    transposed: _bool,
+    transposed: bool,
     output_padding: Sequence[_int | SymInt],
     groups: _int | SymInt,
-    benchmark: _bool,
-    deterministic: _bool,
-    cudnn_enabled: _bool,
-    allow_tf32: _bool,
+    benchmark: bool,
+    deterministic: bool,
+    cudnn_enabled: bool,
+    allow_tf32: bool,
 ) -> Tensor: ...
 def _convolution_mode(
     input: Tensor,
@@ -1237,7 +1227,7 @@ def _convolution_mode(
 def _copy_from(
     input: Tensor,
     dst: Tensor,
-    non_blocking: _bool = False,
+    non_blocking: bool = False,
 ) -> Tensor: ...
 def _copy_from_and_resize(input: Tensor, dst: Tensor) -> Tensor: ...
 def _cslt_compress(input: Tensor) -> Tensor: ...
@@ -1247,7 +1237,7 @@ def _cslt_sparse_mm(
     bias: Tensor | None = None,
     alpha: Tensor | None = None,
     out_dtype: _dtype | None = None,
-    transpose_result: _bool = False,
+    transpose_result: bool = False,
     alg_id: _int = 0,
     split_k: _int = 1,
     split_k_mode: _int = -1,
@@ -1258,7 +1248,7 @@ def _cslt_sparse_mm_search(
     bias: Tensor | None = None,
     alpha: Tensor | None = None,
     out_dtype: _dtype | None = None,
-    transpose_result: _bool = False,
+    transpose_result: bool = False,
 ) -> _int: ...
 @overload
 def _ctc_loss(
@@ -1267,7 +1257,7 @@ def _ctc_loss(
     input_lengths: _size,
     target_lengths: _size,
     blank: _int = 0,
-    zero_infinity: _bool = False,
+    zero_infinity: bool = False,
 ) -> tuple[Tensor, Tensor]: ...
 @overload
 def _ctc_loss(
@@ -1276,7 +1266,7 @@ def _ctc_loss(
     input_lengths: Tensor,
     target_lengths: Tensor,
     blank: _int = 0,
-    zero_infinity: _bool = False,
+    zero_infinity: bool = False,
 ) -> tuple[Tensor, Tensor]: ...
 @overload
 def _cudnn_ctc_loss(
@@ -1285,8 +1275,8 @@ def _cudnn_ctc_loss(
     input_lengths: _size,
     target_lengths: _size,
     blank: _int,
-    deterministic: _bool,
-    zero_infinity: _bool,
+    deterministic: bool,
+    zero_infinity: bool,
 ) -> tuple[Tensor, Tensor]: ...
 @overload
 def _cudnn_ctc_loss(
@@ -1295,19 +1285,19 @@ def _cudnn_ctc_loss(
     input_lengths: Tensor,
     target_lengths: Tensor,
     blank: _int,
-    deterministic: _bool,
-    zero_infinity: _bool,
+    deterministic: bool,
+    zero_infinity: bool,
 ) -> tuple[Tensor, Tensor]: ...
 def _cudnn_init_dropout_state(
     dropout: _float,
-    train: _bool,
+    train: bool,
     dropout_seed: _int,
     *,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor: ...
 def _cudnn_rnn(
     input: Tensor,
@@ -1320,10 +1310,10 @@ def _cudnn_rnn(
     hidden_size: _int | SymInt,
     proj_size: _int | SymInt,
     num_layers: _int,
-    batch_first: _bool,
+    batch_first: bool,
     dropout: _float,
-    train: _bool,
-    bidirectional: _bool,
+    train: bool,
+    bidirectional: bool,
     batch_sizes: Sequence[_int | SymInt],
     dropout_state: Tensor | None,
 ) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor]: ...
@@ -1335,8 +1325,8 @@ def _cudnn_rnn_flatten_weight(
     hidden_size: _int | SymInt,
     proj_size: _int | SymInt,
     num_layers: _int,
-    batch_first: _bool,
-    bidirectional: _bool,
+    batch_first: bool,
+    bidirectional: bool,
 ) -> Tensor: ...
 def _cufft_clear_plan_cache(device_index: _int) -> None: ...
 def _cufft_get_plan_cache_max_size(device_index: _int) -> _int: ...
@@ -1381,40 +1371,40 @@ def _efficientzerotensor(
     size: Sequence[_int | SymInt],
     *,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor: ...
 @overload
 def _efficientzerotensor(
     *size: _int | SymInt,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor: ...
 def _embedding_bag(
     weight: Tensor,
     indices: Tensor,
     offsets: Tensor,
-    scale_grad_by_freq: _bool = False,
+    scale_grad_by_freq: bool = False,
     mode: _int = 0,
-    sparse: _bool = False,
+    sparse: bool = False,
     per_sample_weights: Tensor | None = None,
-    include_last_offset: _bool = False,
+    include_last_offset: bool = False,
     padding_idx: _int = -1,
 ) -> tuple[Tensor, Tensor, Tensor, Tensor]: ...
 def _embedding_bag_forward_only(
     weight: Tensor,
     indices: Tensor,
     offsets: Tensor,
-    scale_grad_by_freq: _bool = False,
+    scale_grad_by_freq: bool = False,
     mode: _int = 0,
-    sparse: _bool = False,
+    sparse: bool = False,
     per_sample_weights: Tensor | None = None,
-    include_last_offset: _bool = False,
+    include_last_offset: bool = False,
     padding_idx: _int = -1,
 ) -> tuple[Tensor, Tensor, Tensor, Tensor]: ...
 @overload
@@ -1425,10 +1415,10 @@ def _empty_affine_quantized(
     zero_point: _int = 0,
     memory_format: memory_format | None = ...,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor: ...
 @overload
 def _empty_affine_quantized(
@@ -1437,10 +1427,10 @@ def _empty_affine_quantized(
     zero_point: _int = 0,
     memory_format: memory_format | None = ...,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor: ...
 @overload
 def _empty_per_channel_affine_quantized(
@@ -1451,10 +1441,10 @@ def _empty_per_channel_affine_quantized(
     axis: _int,
     memory_format: memory_format | None = ...,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor: ...
 @overload
 def _empty_per_channel_affine_quantized(
@@ -1464,12 +1454,12 @@ def _empty_per_channel_affine_quantized(
     axis: _int,
     memory_format: memory_format | None = ...,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor: ...
-def _enable_functionalization(*, reapply_views: _bool = False) -> None: ...
+def _enable_functionalization(*, reapply_views: bool = False) -> None: ...
 def _euclidean_dist(x1: Tensor, x2: Tensor) -> Tensor: ...
 def _fake_quantize_learnable_per_channel_affine(
     input: Tensor,
@@ -1501,7 +1491,7 @@ def _fft_c2c(
     input: Tensor,
     dim: Sequence[_int | SymInt],
     normalization: _int,
-    forward: _bool,
+    forward: bool,
     *,
     out: Tensor | None = None,
 ) -> Tensor: ...
@@ -1517,7 +1507,7 @@ def _fft_r2c(
     input: Tensor,
     dim: _size,
     normalization: _int,
-    onesided: _bool,
+    onesided: bool,
     *,
     out: Tensor | None = None,
 ) -> Tensor: ...
@@ -1529,10 +1519,10 @@ def _fill_mem_eff_dropout_mask_(
 ) -> Tensor: ...
 def _foobar(
     input: Tensor,
-    arg1: _bool = True,
-    arg2: _bool = True,
+    arg1: bool = True,
+    arg2: bool = True,
     *,
-    arg3: _bool = True,
+    arg3: bool = True,
 ) -> Tensor: ...
 def _foreach_abs(
     self: tuple[Tensor, ...] | list[Tensor] | None,
@@ -1809,7 +1799,7 @@ def _foreach_clamp_min_(
 def _foreach_copy_(
     self: tuple[Tensor, ...] | list[Tensor] | None,
     src: tuple[Tensor, ...] | list[Tensor] | None,
-    non_blocking: _bool = False,
+    non_blocking: bool = False,
 ) -> None: ...
 def _foreach_cos(
     self: tuple[Tensor, ...] | list[Tensor] | None,
@@ -2479,23 +2469,23 @@ def _functional_sym_constrain_range_for_size(
 def _functionalize_apply_view_metas(tensor: Tensor, base: Tensor) -> Tensor: ...
 def _functionalize_are_all_mutations_hidden_from_autograd(
     t: Tensor,
-) -> _bool: ...
+) -> bool: ...
 def _functionalize_are_all_mutations_under_no_grad_or_inference_mode(
     t: Tensor,
-) -> _bool: ...
+) -> bool: ...
 def _functionalize_commit_update(t: Tensor) -> None: ...
-def _functionalize_has_metadata_mutation(tensor: Tensor) -> _bool: ...
+def _functionalize_has_metadata_mutation(tensor: Tensor) -> bool: ...
 def _functionalize_inductor_storage_resized_counter(t: Tensor) -> _int: ...
-def _functionalize_is_symbolic(tensor: Tensor) -> _bool: ...
+def _functionalize_is_symbolic(tensor: Tensor) -> bool: ...
 def _functionalize_mark_mutation_hidden_from_autograd(t: Tensor) -> None: ...
-def _functionalize_mark_storage_changed(tensor: Tensor) -> _bool: ...
+def _functionalize_mark_storage_changed(tensor: Tensor) -> bool: ...
 def _functionalize_mutation_counter(t: Tensor) -> _int: ...
 def _functionalize_replace(self_: Tensor, other: Tensor) -> None: ...
 def _functionalize_storage_changed_counter(t: Tensor) -> _int: ...
 def _functionalize_sync(t: Tensor) -> None: ...
 def _functionalize_unsafe_set(dst: Tensor, src: Tensor) -> None: ...
-def _functionalize_was_inductor_storage_resized(t: Tensor) -> _bool: ...
-def _functionalize_was_storage_changed(tensor: Tensor) -> _bool: ...
+def _functionalize_was_inductor_storage_resized(t: Tensor) -> bool: ...
+def _functionalize_was_storage_changed(tensor: Tensor) -> bool: ...
 @overload
 def _fused_adagrad_(
     self: tuple[Tensor, ...] | list[Tensor] | None,
@@ -2507,7 +2497,7 @@ def _fused_adagrad_(
     lr_decay: _float,
     weight_decay: _float,
     eps: _float,
-    maximize: _bool,
+    maximize: bool,
     grad_scale: Tensor | None = None,
     found_inf: Tensor | None = None,
 ) -> None: ...
@@ -2522,7 +2512,7 @@ def _fused_adagrad_(
     lr_decay: _float,
     weight_decay: _float,
     eps: _float,
-    maximize: _bool,
+    maximize: bool,
     grad_scale: Tensor | None = None,
     found_inf: Tensor | None = None,
 ) -> None: ...
@@ -2540,8 +2530,8 @@ def _fused_adam_(
     beta2: _float,
     weight_decay: _float,
     eps: _float,
-    amsgrad: _bool,
-    maximize: _bool,
+    amsgrad: bool,
+    maximize: bool,
     grad_scale: Tensor | None = None,
     found_inf: Tensor | None = None,
 ) -> None: ...
@@ -2559,8 +2549,8 @@ def _fused_adam_(
     beta2: _float,
     weight_decay: _float,
     eps: _float,
-    amsgrad: _bool,
-    maximize: _bool,
+    amsgrad: bool,
+    maximize: bool,
     grad_scale: Tensor | None = None,
     found_inf: Tensor | None = None,
 ) -> None: ...
@@ -2578,8 +2568,8 @@ def _fused_adamw_(
     beta2: _float,
     weight_decay: _float,
     eps: _float,
-    amsgrad: _bool,
-    maximize: _bool,
+    amsgrad: bool,
+    maximize: bool,
     grad_scale: Tensor | None = None,
     found_inf: Tensor | None = None,
 ) -> None: ...
@@ -2597,8 +2587,8 @@ def _fused_adamw_(
     beta2: _float,
     weight_decay: _float,
     eps: _float,
-    amsgrad: _bool,
-    maximize: _bool,
+    amsgrad: bool,
+    maximize: bool,
     grad_scale: Tensor | None = None,
     found_inf: Tensor | None = None,
 ) -> None: ...
@@ -2619,8 +2609,8 @@ def _fused_moving_avg_obs_fq_helper(
     quant_min: _int,
     quant_max: _int,
     ch_axis: _int,
-    per_row_fake_quant: _bool = False,
-    symmetric_quant: _bool = False,
+    per_row_fake_quant: bool = False,
+    symmetric_quant: bool = False,
 ) -> torch.return_types._fused_moving_avg_obs_fq_helper: ...
 def _fused_rms_norm(
     input: Tensor,
@@ -2634,10 +2624,10 @@ def _fused_sdp_choice(
     value: Tensor,
     attn_mask: Tensor | None = None,
     dropout_p: _float = 0.0,
-    is_causal: _bool = False,
+    is_causal: bool = False,
     *,
     scale: _float | None = None,
-    enable_gqa: _bool = False,
+    enable_gqa: bool = False,
 ) -> _int: ...
 @overload
 def _fused_sgd_(
@@ -2649,9 +2639,9 @@ def _fused_sgd_(
     momentum: _float,
     lr: Tensor,
     dampening: _float,
-    nesterov: _bool,
-    maximize: _bool,
-    is_first_step: _bool,
+    nesterov: bool,
+    maximize: bool,
+    is_first_step: bool,
     grad_scale: Tensor | None = None,
     found_inf: Tensor | None = None,
 ) -> None: ...
@@ -2665,9 +2655,9 @@ def _fused_sgd_(
     momentum: _float,
     lr: _float,
     dampening: _float,
-    nesterov: _bool,
-    maximize: _bool,
-    is_first_step: _bool,
+    nesterov: bool,
+    maximize: bool,
+    is_first_step: bool,
     grad_scale: Tensor | None = None,
     found_inf: Tensor | None = None,
 ) -> None: ...
@@ -2682,7 +2672,7 @@ def _grid_sampler_2d_cpu_fallback(
     grid: Tensor,
     interpolation_mode: _int,
     padding_mode: _int,
-    align_corners: _bool,
+    align_corners: bool,
 ) -> Tensor: ...
 def _grouped_mm(
     input: Tensor,
@@ -2694,14 +2684,14 @@ def _grouped_mm(
 def _has_compatible_shallow_copy_type(
     input: Tensor,
     from_: Tensor,
-) -> _bool: ...
+) -> bool: ...
 def _histogramdd_bin_edges(
     input: Tensor,
     bins: _size,
     *,
     range: Sequence[_float] | None = None,
     weight: Tensor | None = None,
-    density: _bool = False,
+    density: bool = False,
 ) -> tuple[Tensor, ...]: ...
 def _histogramdd_from_bin_cts(
     input: Tensor,
@@ -2709,21 +2699,21 @@ def _histogramdd_from_bin_cts(
     *,
     range: Sequence[_float] | None = None,
     weight: Tensor | None = None,
-    density: _bool = False,
+    density: bool = False,
 ) -> Tensor: ...
 def _histogramdd_from_bin_tensors(
     input: Tensor,
     bins: tuple[Tensor, ...] | list[Tensor] | None,
     *,
     weight: Tensor | None = None,
-    density: _bool = False,
+    density: bool = False,
 ) -> Tensor: ...
 def _index_put_impl_(
     input: Tensor,
     indices: tuple[Tensor, ...] | list[Tensor] | None,
     values: Tensor,
-    accumulate: _bool = False,
-    unsafe: _bool = False,
+    accumulate: bool = False,
+    unsafe: bool = False,
 ) -> Tensor: ...
 def _indices_copy(input: Tensor, *, out: Tensor | None = None) -> Tensor: ...
 def _int_mm(
@@ -2734,15 +2724,15 @@ def _int_mm(
 ) -> Tensor: ...
 def _is_all_true(input: Tensor) -> Tensor: ...
 def _is_any_true(input: Tensor) -> Tensor: ...
-def _is_functional_tensor(t: Tensor) -> _bool: ...
-def _is_functional_tensor_base(t: Tensor) -> _bool: ...
-def _is_zerotensor(input: Tensor) -> _bool: ...
+def _is_functional_tensor(t: Tensor) -> bool: ...
+def _is_functional_tensor_base(t: Tensor) -> bool: ...
+def _is_zerotensor(input: Tensor) -> bool: ...
 def _lazy_clone(input: Tensor) -> Tensor: ...
 def _linalg_check_errors(
     info: Tensor,
     api_name: str,
     *,
-    is_matrix: _bool,
+    is_matrix: bool,
 ) -> None: ...
 def _linalg_det(
     A: Tensor,
@@ -2752,7 +2742,7 @@ def _linalg_det(
 def _linalg_eigh(
     A: Tensor,
     UPLO: str = "L",
-    compute_v: _bool = True,
+    compute_v: bool = True,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = None,
 ) -> torch.return_types._linalg_eigh: ...
@@ -2765,14 +2755,14 @@ def _linalg_solve_ex(
     A: Tensor,
     B: Tensor,
     *,
-    left: _bool = True,
-    check_errors: _bool = False,
+    left: bool = True,
+    check_errors: bool = False,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = None,
 ) -> torch.return_types._linalg_solve_ex: ...
 def _linalg_svd(
     A: Tensor,
-    full_matrices: _bool = False,
-    compute_uv: _bool = True,
+    full_matrices: bool = False,
+    compute_uv: bool = True,
     *,
     driver: str | None = None,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = None,
@@ -2780,7 +2770,7 @@ def _linalg_svd(
 def _log_softmax(
     input: Tensor,
     dim: _int,
-    half_to_float: _bool,
+    half_to_float: bool,
     *,
     out: Tensor | None = None,
 ) -> Tensor: ...
@@ -2802,26 +2792,26 @@ def _lstm_mps(
     input: Tensor,
     hx: tuple[Tensor, ...] | list[Tensor] | None,
     params: tuple[Tensor, ...] | list[Tensor] | None,
-    has_biases: _bool,
+    has_biases: bool,
     num_layers: _int,
     dropout: _float,
-    train: _bool,
-    bidirectional: _bool,
-    batch_first: _bool,
+    train: bool,
+    bidirectional: bool,
+    batch_first: bool,
 ) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]: ...
 def _lu_with_info(
     input: Tensor,
-    pivot: _bool = True,
-    check_errors: _bool = True,
+    pivot: bool = True,
+    check_errors: bool = True,
 ) -> torch.return_types._lu_with_info: ...
 def _make_dep_token(
     *,
     memory_format: memory_format | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor: ...
 def _make_dual(primal: Tensor, tangent: Tensor, level: _int) -> Tensor: ...
 def _make_dual_copy(
@@ -2885,7 +2875,7 @@ def _native_batch_norm_legit(
     bias: Tensor | None,
     running_mean: Tensor,
     running_var: Tensor,
-    training: _bool,
+    training: bool,
     momentum: _float,
     eps: _float,
     *,
@@ -2896,7 +2886,7 @@ def _native_batch_norm_legit(
     input: Tensor,
     weight: Tensor | None,
     bias: Tensor | None,
-    training: _bool,
+    training: bool,
     momentum: _float,
     eps: _float,
     *,
@@ -2922,8 +2912,8 @@ def _native_multi_head_attention(
     proj_weight: Tensor,
     proj_bias: Tensor,
     mask: Tensor | None = None,
-    need_weights: _bool = True,
-    average_attn_weights: _bool = True,
+    need_weights: bool = True,
+    average_attn_weights: bool = True,
     mask_type: _int | None = None,
 ) -> tuple[Tensor, Tensor]: ...
 def _neg_view(input: Tensor) -> Tensor: ...
@@ -2934,7 +2924,7 @@ def _nested_compute_contiguous_strides_offsets(
 def _nested_from_padded(
     padded: Tensor,
     cpu_nested_shape_example: Tensor,
-    fuse_transform_0213: _bool = False,
+    fuse_transform_0213: bool = False,
 ) -> Tensor: ...
 def _nested_from_padded_and_nested_example(
     padded: Tensor,
@@ -2964,15 +2954,15 @@ def _nested_get_values_copy(
 def _nested_tensor_from_mask(
     t: Tensor,
     mask: Tensor,
-    mask_check: _bool = True,
+    mask_check: bool = True,
 ) -> Tensor: ...
-def _nested_tensor_from_mask_left_aligned(t: Tensor, mask: Tensor) -> _bool: ...
+def _nested_tensor_from_mask_left_aligned(t: Tensor, mask: Tensor) -> bool: ...
 def _nested_tensor_from_tensor_list(
     list: tuple[Tensor, ...] | list[Tensor] | None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = None,
+    pin_memory: bool | None = None,
 ) -> Tensor: ...
 def _nested_tensor_softmax_with_shape(
     input: Tensor,
@@ -3012,7 +3002,7 @@ def _nested_view_from_jagged_copy(
     *,
     out: Tensor | None = None,
 ) -> Tensor: ...
-def _nnpack_available() -> _bool: ...
+def _nnpack_available() -> bool: ...
 def _nnpack_spatial_convolution(
     input: Tensor,
     weight: Tensor,
@@ -3023,12 +3013,12 @@ def _nnpack_spatial_convolution(
 def _pack_padded_sequence(
     input: Tensor,
     lengths: Tensor,
-    batch_first: _bool,
+    batch_first: bool,
 ) -> tuple[Tensor, Tensor]: ...
 def _pad_packed_sequence(
     data: Tensor,
     batch_sizes: Tensor,
-    batch_first: _bool,
+    batch_first: bool,
     padding_value: Number | _complex,
     total_length: _int,
 ) -> tuple[Tensor, Tensor]: ...
@@ -3079,11 +3069,11 @@ def _scaled_dot_product_attention_math(
     value: Tensor,
     attn_mask: Tensor | None = None,
     dropout_p: _float = 0.0,
-    is_causal: _bool = False,
+    is_causal: bool = False,
     dropout_mask: Tensor | None = None,
     *,
     scale: _float | None = None,
-    enable_gqa: _bool = False,
+    enable_gqa: bool = False,
 ) -> tuple[Tensor, Tensor]: ...
 def _scaled_dot_product_attention_math_for_mps(
     query: Tensor,
@@ -3091,7 +3081,7 @@ def _scaled_dot_product_attention_math_for_mps(
     value: Tensor,
     attn_mask: Tensor | None = None,
     dropout_p: _float = 0.0,
-    is_causal: _bool = False,
+    is_causal: bool = False,
     dropout_mask: Tensor | None = None,
     *,
     scale: _float | None = None,
@@ -3101,10 +3091,10 @@ def _scaled_dot_product_cudnn_attention(
     key: Tensor,
     value: Tensor,
     attn_bias: Tensor | None,
-    compute_log_sumexp: _bool,
+    compute_log_sumexp: bool,
     dropout_p: _float = 0.0,
-    is_causal: _bool = False,
-    return_debug_mask: _bool = False,
+    is_causal: bool = False,
+    return_debug_mask: bool = False,
     *,
     scale: _float | None = None,
 ) -> torch.return_types._scaled_dot_product_cudnn_attention: ...
@@ -3113,9 +3103,9 @@ def _scaled_dot_product_efficient_attention(
     key: Tensor,
     value: Tensor,
     attn_bias: Tensor | None,
-    compute_log_sumexp: _bool,
+    compute_log_sumexp: bool,
     dropout_p: _float = 0.0,
-    is_causal: _bool = False,
+    is_causal: bool = False,
     *,
     scale: _float | None = None,
 ) -> torch.return_types._scaled_dot_product_efficient_attention: ...
@@ -3124,8 +3114,8 @@ def _scaled_dot_product_flash_attention(
     key: Tensor,
     value: Tensor,
     dropout_p: _float = 0.0,
-    is_causal: _bool = False,
-    return_debug_mask: _bool = False,
+    is_causal: bool = False,
+    return_debug_mask: bool = False,
     *,
     scale: _float | None = None,
 ) -> torch.return_types._scaled_dot_product_flash_attention: ...
@@ -3134,7 +3124,7 @@ def _scaled_dot_product_flash_attention_for_cpu(
     key: Tensor,
     value: Tensor,
     dropout_p: _float = 0.0,
-    is_causal: _bool = False,
+    is_causal: bool = False,
     *,
     attn_mask: Tensor | None = None,
     scale: _float | None = None,
@@ -3148,7 +3138,7 @@ def _scaled_grouped_mm(
     bias: Tensor | None = None,
     scale_result: Tensor | None = None,
     out_dtype: _dtype | None = None,
-    use_fast_accum: _bool = False,
+    use_fast_accum: bool = False,
 ) -> Tensor: ...
 def _scaled_mm(
     input: Tensor,
@@ -3158,7 +3148,7 @@ def _scaled_mm(
     bias: Tensor | None = None,
     scale_result: Tensor | None = None,
     out_dtype: _dtype | None = None,
-    use_fast_accum: _bool = False,
+    use_fast_accum: bool = False,
     *,
     out: Tensor | None = None,
 ) -> Tensor: ...
@@ -3190,7 +3180,7 @@ def _sobol_engine_scramble_(
 def _softmax(
     input: Tensor,
     dim: _int,
-    half_to_float: _bool,
+    half_to_float: bool,
     *,
     out: Tensor | None = None,
 ) -> Tensor: ...
@@ -3212,14 +3202,14 @@ def _sparse_broadcast_to_copy(
 def _sparse_csr_prod(
     input: Tensor,
     dim: _int | _size,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     dtype: _dtype | None = None,
 ) -> Tensor: ...
 def _sparse_csr_sum(
     input: Tensor,
     dim: _int | _size,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     dtype: _dtype | None = None,
 ) -> Tensor: ...
@@ -3266,7 +3256,7 @@ def _sparse_semi_structured_mm(
 def _sparse_semi_structured_tile(
     input: Tensor,
     algorithm: str = "",
-    use_cutlass: _bool = True,
+    use_cutlass: bool = True,
 ) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor]: ...
 def _sparse_softmax_backward_data(
     grad_output: Tensor,
@@ -3303,7 +3293,7 @@ def _sync(t: Tensor) -> None: ...
 @overload
 def _test_autograd_multiple_dispatch(input: Tensor) -> Tensor: ...
 @overload
-def _test_autograd_multiple_dispatch(input: Tensor, b: _bool) -> Tensor: ...
+def _test_autograd_multiple_dispatch(input: Tensor, b: bool) -> Tensor: ...
 def _test_autograd_multiple_dispatch_view(input: Tensor) -> Tensor: ...
 def _test_autograd_multiple_dispatch_view_copy(
     input: Tensor,
@@ -3315,7 +3305,7 @@ def _test_functorch_fallback(input: Tensor, other: Tensor) -> Tensor: ...
 def _test_parallel_materialize(
     input: Tensor,
     num_parallel: _int,
-    skip_first: _bool = False,
+    skip_first: bool = False,
 ) -> Tensor: ...
 def _test_serialization_subcmul(
     input: Tensor,
@@ -3340,8 +3330,8 @@ def _transformer_encoder_layer_fwd(
     qkv_bias: Tensor,
     proj_weight: Tensor,
     proj_bias: Tensor,
-    use_gelu: _bool,
-    norm_first: _bool,
+    use_gelu: bool,
+    norm_first: bool,
     eps: _float,
     norm_weight_1: Tensor,
     norm_bias_1: Tensor,
@@ -3384,14 +3374,14 @@ def _triton_scaled_dot_attention(
 ) -> Tensor: ...
 def _unique(
     input: Tensor,
-    sorted: _bool = True,
-    return_inverse: _bool = False,
+    sorted: bool = True,
+    return_inverse: bool = False,
 ) -> tuple[Tensor, Tensor]: ...
 def _unique2(
     input: Tensor,
-    sorted: _bool = True,
-    return_inverse: _bool = False,
-    return_counts: _bool = False,
+    sorted: bool = True,
+    return_inverse: bool = False,
+    return_counts: bool = False,
 ) -> tuple[Tensor, Tensor, Tensor]: ...
 def _unpack_dual(
     dual: Tensor,
@@ -3405,7 +3395,7 @@ def _unsafe_index_put(
     input: Tensor,
     indices: tuple[Tensor, ...] | list[Tensor] | None,
     values: Tensor,
-    accumulate: _bool = False,
+    accumulate: bool = False,
 ) -> Tensor: ...
 def _unsafe_masked_index(
     input: Tensor,
@@ -3426,7 +3416,7 @@ def _use_cudnn_ctc_loss(
     input_lengths: Tensor,
     target_lengths: Tensor,
     blank: _int,
-) -> _bool: ...
+) -> bool: ...
 @overload
 def _use_cudnn_ctc_loss(
     log_probs: Tensor,
@@ -3434,10 +3424,10 @@ def _use_cudnn_ctc_loss(
     input_lengths: _size,
     target_lengths: _size,
     blank: _int,
-) -> _bool: ...
-def _use_cudnn_rnn_flatten_weight() -> _bool: ...
+) -> bool: ...
+def _use_cudnn_rnn_flatten_weight() -> bool: ...
 def _validate_compressed_sparse_indices(
-    is_crow: _bool,
+    is_crow: bool,
     compressed_idx: Tensor,
     plain_idx: Tensor,
     cdim: _int,
@@ -3449,43 +3439,43 @@ def _validate_sparse_bsc_tensor_args(
     row_indices: Tensor,
     values: Tensor,
     size: _size,
-    check_pinning: _bool | None = None,
+    check_pinning: bool | None = None,
 ) -> None: ...
 def _validate_sparse_bsr_tensor_args(
     crow_indices: Tensor,
     col_indices: Tensor,
     values: Tensor,
     size: _size,
-    check_pinning: _bool | None = None,
+    check_pinning: bool | None = None,
 ) -> None: ...
 def _validate_sparse_compressed_tensor_args(
     compressed_indices: Tensor,
     plain_indices: Tensor,
     values: Tensor,
     size: _size,
-    layout: _layout,
-    check_pinning: _bool | None = None,
+    layout: layout,
+    check_pinning: bool | None = None,
 ) -> None: ...
 def _validate_sparse_coo_tensor_args(
     indices: Tensor,
     values: Tensor,
     size: _size,
-    is_coalesced: _bool | None = None,
-    check_pinning: _bool | None = None,
+    is_coalesced: bool | None = None,
+    check_pinning: bool | None = None,
 ) -> None: ...
 def _validate_sparse_csc_tensor_args(
     ccol_indices: Tensor,
     row_indices: Tensor,
     values: Tensor,
     size: _size,
-    check_pinning: _bool | None = None,
+    check_pinning: bool | None = None,
 ) -> None: ...
 def _validate_sparse_csr_tensor_args(
     crow_indices: Tensor,
     col_indices: Tensor,
     values: Tensor,
     size: _size,
-    check_pinning: _bool | None = None,
+    check_pinning: bool | None = None,
 ) -> None: ...
 def _values_copy(input: Tensor, *, out: Tensor | None = None) -> Tensor: ...
 def _weight_int4pack_mm(
@@ -5348,7 +5338,7 @@ def adjoint(input: Tensor) -> Tensor:
 def affine_grid_generator(
     theta: Tensor,
     size: Sequence[_int | SymInt],
-    align_corners: _bool,
+    align_corners: bool,
 ) -> Tensor: ...
 def alias_copy(input: Tensor, *, out: Tensor | None = None) -> Tensor:
     r"""
@@ -5430,7 +5420,7 @@ def all(input: Tensor, *, out: Tensor | None = None) -> Tensor:
 def all(
     input: Tensor,
     dim: _size | None = None,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     out: Tensor | None = None,
 ) -> Tensor:
@@ -5506,7 +5496,7 @@ def all(
 def all(
     input: Tensor,
     dim: _int,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     out: Tensor | None = None,
 ) -> Tensor:
@@ -5582,7 +5572,7 @@ def all(
 def all(
     input: Tensor,
     dim: str | EllipsisType | None,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     out: Tensor | None = None,
 ) -> Tensor:
@@ -5659,8 +5649,8 @@ def allclose(
     other: Tensor,
     rtol: _float = 1e-05,
     atol: _float = 1e-08,
-    equal_nan: _bool = False,
-) -> _bool:
+    equal_nan: bool = False,
+) -> bool:
     r"""
     allclose(input: Tensor, other: Tensor, rtol: float = 1e-05, atol: float = 1e-08, equal_nan: bool = False) -> bool
 
@@ -5691,12 +5681,12 @@ def allclose(
         True
     """
 
-def alpha_dropout(input: Tensor, p: _float, train: _bool) -> Tensor: ...
-def alpha_dropout_(input: Tensor, p: _float, train: _bool) -> Tensor: ...
+def alpha_dropout(input: Tensor, p: _float, train: bool) -> Tensor: ...
+def alpha_dropout_(input: Tensor, p: _float, train: bool) -> Tensor: ...
 def amax(
     input: Tensor,
     dim: _int | _size = (),
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     out: Tensor | None = None,
 ) -> Tensor:
@@ -5753,7 +5743,7 @@ def amax(
 def amin(
     input: Tensor,
     dim: _int | _size = (),
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     out: Tensor | None = None,
 ) -> Tensor:
@@ -5811,7 +5801,7 @@ def aminmax(
     input: Tensor,
     *,
     dim: _int | None = None,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = None,
 ) -> torch.return_types.aminmax:
     r"""
@@ -5975,7 +5965,7 @@ def any(input: Tensor, *, out: Tensor | None = None) -> Tensor:
 def any(
     input: Tensor,
     dim: _size | None = None,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     out: Tensor | None = None,
 ) -> Tensor:
@@ -6051,7 +6041,7 @@ def any(
 def any(
     input: Tensor,
     dim: _int,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     out: Tensor | None = None,
 ) -> Tensor:
@@ -6127,7 +6117,7 @@ def any(
 def any(
     input: Tensor,
     dim: str | EllipsisType | None,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     out: Tensor | None = None,
 ) -> Tensor:
@@ -6208,8 +6198,8 @@ def arange(
     out: Tensor | None = None,
     dtype: _dtype | None = None,
     device: DeviceLikeType | None = None,
-    requires_grad: _bool = False,
-    pin_memory: _bool = False,
+    requires_grad: bool = False,
+    pin_memory: bool = False,
 ) -> Tensor:
     r"""
     arange(start=0, end, step=1, *, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -6271,8 +6261,8 @@ def arange(
     out: Tensor | None = None,
     dtype: _dtype | None = None,
     device: DeviceLikeType | None = None,
-    requires_grad: _bool = False,
-    pin_memory: _bool = False,
+    requires_grad: bool = False,
+    pin_memory: bool = False,
 ) -> Tensor:
     r"""
     arange(start=0, end, step=1, *, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -6333,8 +6323,8 @@ def arange(
     out: Tensor | None = None,
     dtype: _dtype | None = None,
     device: DeviceLikeType | None = None,
-    requires_grad: _bool = False,
-    pin_memory: _bool = False,
+    requires_grad: bool = False,
+    pin_memory: bool = False,
 ) -> Tensor:
     r"""
     arange(start=0, end, step=1, *, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -6394,10 +6384,10 @@ def arange(
     *,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     arange(start=0, end, step=1, *, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -6457,10 +6447,10 @@ def arange(
     end: Number | _complex,
     *,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     arange(start=0, end, step=1, *, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -6522,10 +6512,10 @@ def arange(
     *,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     arange(start=0, end, step=1, *, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -6641,7 +6631,7 @@ def arctanh_(input: Tensor) -> Tensor: ...
 def argmax(
     input: Tensor,
     dim: _int | None = None,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     out: Tensor | None = None,
 ) -> Tensor:
@@ -6701,7 +6691,7 @@ def argmax(
 def argmin(
     input: Tensor,
     dim: _int | None = None,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     out: Tensor | None = None,
 ) -> Tensor:
@@ -6747,9 +6737,9 @@ def argmin(
 def argsort(
     input: Tensor,
     *,
-    stable: _bool,
+    stable: bool,
     dim: _int = -1,
-    descending: _bool = False,
+    descending: bool = False,
     out: Tensor | None = None,
 ) -> Tensor:
     r"""
@@ -6794,7 +6784,7 @@ def argsort(
 def argsort(
     input: Tensor,
     dim: _int = -1,
-    descending: _bool = False,
+    descending: bool = False,
 ) -> Tensor:
     r"""
     argsort(input, dim=-1, descending=False, *, stable=False) -> Tensor
@@ -6838,7 +6828,7 @@ def argsort(
 def argsort(
     input: Tensor,
     dim: str | EllipsisType | None,
-    descending: _bool = False,
+    descending: bool = False,
 ) -> Tensor:
     r"""
     argsort(input, dim=-1, descending=False, *, stable=False) -> Tensor
@@ -7086,8 +7076,8 @@ def asarray(
     *,
     dtype: _dtype | None = None,
     device: DeviceLikeType | None = None,
-    copy: _bool | None = None,
-    requires_grad: _bool = False,
+    copy: bool | None = None,
+    requires_grad: bool = False,
 ) -> Tensor:
     r"""
     asarray(obj: Any, *, dtype: Optional[dtype], device: Optional[DeviceLikeType], copy: Optional[bool] = None, requires_grad: bool = False) -> Tensor # noqa: B950
@@ -7343,8 +7333,8 @@ def avg_pool1d(
     kernel_size: _int | _size,
     stride: _int | _size = (),
     padding: _int | _size = 0,
-    ceil_mode: _bool = False,
-    count_include_pad: _bool = True,
+    ceil_mode: bool = False,
+    count_include_pad: bool = True,
 ) -> Tensor: ...
 @overload
 def baddbmm(
@@ -7718,10 +7708,10 @@ def bartlett_window(
     window_length: _int,
     *,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     bartlett_window(window_length, periodic=True, *, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -7772,13 +7762,13 @@ def bartlett_window(
 @overload
 def bartlett_window(
     window_length: _int,
-    periodic: _bool,
+    periodic: bool,
     *,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     bartlett_window(window_length, periodic=True, *, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -7832,10 +7822,10 @@ def batch_norm(
     bias: Tensor | None,
     running_mean: Tensor | None,
     running_var: Tensor | None,
-    training: _bool,
+    training: bool,
     momentum: _float,
     eps: _float,
-    cudnn_enabled: _bool,
+    cudnn_enabled: bool,
 ) -> Tensor: ...
 def batch_norm_backward_elemt(
     grad_out: Tensor,
@@ -7853,9 +7843,9 @@ def batch_norm_backward_reduce(
     mean: Tensor,
     invstd: Tensor,
     weight: Tensor | None,
-    input_g: _bool,
-    weight_g: _bool,
-    bias_g: _bool,
+    input_g: bool,
+    weight_g: bool,
+    bias_g: bool,
 ) -> tuple[Tensor, Tensor, Tensor, Tensor]: ...
 def batch_norm_elemt(
     input: Tensor,
@@ -8535,10 +8525,10 @@ def blackman_window(
     window_length: _int,
     *,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     blackman_window(window_length, periodic=True, *, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -8586,13 +8576,13 @@ def blackman_window(
 @overload
 def blackman_window(
     window_length: _int,
-    periodic: _bool,
+    periodic: bool,
     *,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     blackman_window(window_length, periodic=True, *, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -8761,8 +8751,8 @@ def bucketize(
     input: Tensor,
     boundaries: Tensor,
     *,
-    out_int32: _bool = False,
-    right: _bool = False,
+    out_int32: bool = False,
+    right: bool = False,
     out: Tensor | None = None,
 ) -> Tensor:
     r"""
@@ -8819,8 +8809,8 @@ def bucketize(
     self: Number | _complex,
     boundaries: Tensor,
     *,
-    out_int32: _bool = False,
-    right: _bool = False,
+    out_int32: bool = False,
+    right: bool = False,
 ) -> Tensor:
     r"""
     bucketize(input, boundaries, *, out_int32=False, right=False, out=None) -> Tensor
@@ -8871,7 +8861,7 @@ def bucketize(
                 [2, 3, 5]])
     """
 
-def can_cast(from_: _dtype, to: _dtype) -> _bool:
+def can_cast(from_: _dtype, to: _dtype) -> bool:
     r"""
     can_cast(from_, to) -> bool
 
@@ -9033,7 +9023,7 @@ def celu_(input: Tensor, alpha: Number | _complex = 1.0) -> Tensor: ...
 def channel_shuffle(input: Tensor, groups: _int | SymInt) -> Tensor: ...
 def cholesky(
     input: Tensor,
-    upper: _bool = False,
+    upper: bool = False,
     *,
     out: Tensor | None = None,
 ) -> Tensor:
@@ -9118,7 +9108,7 @@ def cholesky(
 
 def cholesky_inverse(
     input: Tensor,
-    upper: _bool = False,
+    upper: bool = False,
     *,
     out: Tensor | None = None,
 ) -> Tensor:
@@ -9178,7 +9168,7 @@ def cholesky_inverse(
 def cholesky_solve(
     input: Tensor,
     input2: Tensor,
-    upper: _bool = False,
+    upper: bool = False,
     *,
     out: Tensor | None = None,
 ) -> Tensor:
@@ -9558,7 +9548,7 @@ def column_stack(
 def combinations(
     input: Tensor,
     r: _int = 2,
-    with_replacement: _bool = False,
+    with_replacement: bool = False,
 ) -> Tensor:
     r"""
     combinations(input: Tensor, r: int = 2, with_replacement: bool = False) -> seq
@@ -9853,7 +9843,7 @@ def convolution(
     stride: Sequence[_int | SymInt],
     padding: Sequence[_int | SymInt],
     dilation: Sequence[_int | SymInt],
-    transposed: _bool,
+    transposed: bool,
     output_padding: Sequence[_int | SymInt],
     groups: _int | SymInt,
 ) -> Tensor: ...
@@ -10308,7 +10298,7 @@ def ctc_loss(
     target_lengths: _size,
     blank: _int = 0,
     reduction: _int = 1,
-    zero_infinity: _bool = False,
+    zero_infinity: bool = False,
 ) -> Tensor: ...
 @overload
 def ctc_loss(
@@ -10318,7 +10308,7 @@ def ctc_loss(
     target_lengths: Tensor,
     blank: _int = 0,
     reduction: _int = 1,
-    zero_infinity: _bool = False,
+    zero_infinity: bool = False,
 ) -> Tensor: ...
 def cudnn_affine_grid_generator(
     theta: Tensor,
@@ -10333,7 +10323,7 @@ def cudnn_batch_norm(
     bias: Tensor | None,
     running_mean: Tensor | None,
     running_var: Tensor | None,
-    training: _bool,
+    training: bool,
     exponential_average_factor: _float,
     epsilon: _float,
     *,
@@ -10346,9 +10336,9 @@ def cudnn_convolution(
     stride: Sequence[_int | SymInt],
     dilation: Sequence[_int | SymInt],
     groups: _int | SymInt,
-    benchmark: _bool,
-    deterministic: _bool,
-    allow_tf32: _bool,
+    benchmark: bool,
+    deterministic: bool,
+    allow_tf32: bool,
     *,
     out: Tensor | None = None,
 ) -> Tensor: ...
@@ -10380,12 +10370,12 @@ def cudnn_convolution_transpose(
     stride: Sequence[_int | SymInt],
     dilation: Sequence[_int | SymInt],
     groups: _int | SymInt,
-    benchmark: _bool,
-    deterministic: _bool,
-    allow_tf32: _bool,
+    benchmark: bool,
+    deterministic: bool,
+    allow_tf32: bool,
 ) -> Tensor: ...
 def cudnn_grid_sampler(input: Tensor, grid: Tensor) -> Tensor: ...
-def cudnn_is_acceptable(input: Tensor) -> _bool: ...
+def cudnn_is_acceptable(input: Tensor) -> bool: ...
 @overload
 def cummax(
     input: Tensor,
@@ -11583,8 +11573,8 @@ def dot(
         tensor(3)
     """
 
-def dropout(input: Tensor, p: _float, train: _bool) -> Tensor: ...
-def dropout_(input: Tensor, p: _float, train: _bool) -> Tensor: ...
+def dropout(input: Tensor, p: _float, train: bool) -> Tensor: ...
+def dropout_(input: Tensor, p: _float, train: bool) -> Tensor: ...
 def dsmm(input: Tensor, mat2: Tensor) -> Tensor: ...
 @overload
 def dsplit(input: Tensor, sections: _int) -> tuple[Tensor, ...]:
@@ -11722,19 +11712,19 @@ def embedding(
     weight: Tensor,
     indices: Tensor,
     padding_idx: _int | SymInt = -1,
-    scale_grad_by_freq: _bool = False,
-    sparse: _bool = False,
+    scale_grad_by_freq: bool = False,
+    sparse: bool = False,
 ) -> Tensor: ...
 @overload
 def embedding_bag(
     weight: Tensor,
     indices: Tensor,
     offsets: Tensor,
-    scale_grad_by_freq: _bool,
+    scale_grad_by_freq: bool,
     mode: _int,
-    sparse: _bool,
+    sparse: bool,
     per_sample_weights: Tensor | None,
-    include_last_offset: _bool,
+    include_last_offset: bool,
     padding_idx: _int | None,
 ) -> tuple[Tensor, Tensor, Tensor, Tensor]: ...
 @overload
@@ -11742,11 +11732,11 @@ def embedding_bag(
     weight: Tensor,
     indices: Tensor,
     offsets: Tensor,
-    scale_grad_by_freq: _bool = False,
+    scale_grad_by_freq: bool = False,
     mode: _int = 0,
-    sparse: _bool = False,
+    sparse: bool = False,
     per_sample_weights: Tensor | None = None,
-    include_last_offset: _bool = False,
+    include_last_offset: bool = False,
 ) -> tuple[Tensor, Tensor, Tensor, Tensor]: ...
 def embedding_renorm_(
     input: Tensor,
@@ -11761,10 +11751,10 @@ def empty(
     memory_format: memory_format | None = None,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     empty(*size, *, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False, pin_memory=False, memory_format=torch.contiguous_format) -> Tensor
@@ -11814,10 +11804,10 @@ def empty(
     memory_format: memory_format | None = None,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     empty(*size, *, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False, pin_memory=False, memory_format=torch.contiguous_format) -> Tensor
@@ -11868,10 +11858,10 @@ def empty(
     names: Sequence[str | EllipsisType | None] | None,
     memory_format: memory_format | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     empty(*size, *, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False, pin_memory=False, memory_format=torch.contiguous_format) -> Tensor
@@ -11921,10 +11911,10 @@ def empty(
     names: Sequence[str | EllipsisType | None] | None,
     memory_format: memory_format | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     empty(*size, *, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False, pin_memory=False, memory_format=torch.contiguous_format) -> Tensor
@@ -11973,10 +11963,10 @@ def empty_like(
     *,
     memory_format: memory_format | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     empty_like(input, *, dtype=None, layout=None, device=None, requires_grad=False, memory_format=torch.preserve_format) -> Tensor
@@ -12027,10 +12017,10 @@ def empty_permuted(
     physical_layout: _size,
     *,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     empty_permuted(size, physical_layout, *, dtype=None, layout=None, device=None, requires_grad=False, pin_memory=False) -> Tensor
@@ -12095,20 +12085,20 @@ def empty_quantized(
     *,
     memory_format: memory_format | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor: ...
 def empty_strided(
     size: Sequence[_int | SymInt],
     stride: Sequence[_int | SymInt],
     *,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     empty_strided(size, stride, *, dtype=None, layout=None, device=None, requires_grad=False, pin_memory=False) -> Tensor
@@ -12221,7 +12211,7 @@ def eq(
                 [False, True]])
     """
 
-def equal(input: Tensor, other: Tensor) -> _bool:
+def equal(input: Tensor, other: Tensor) -> bool:
     r"""
     equal(input, other) -> bool
 
@@ -12301,7 +12291,7 @@ def expand_copy(
     input: Tensor,
     size: Sequence[_int | SymInt],
     *,
-    implicit: _bool = False,
+    implicit: bool = False,
     out: Tensor | None = None,
 ) -> Tensor:
     r"""
@@ -12323,10 +12313,10 @@ def eye(
     *,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     eye(n, m=None, *, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -12368,10 +12358,10 @@ def eye(
     *,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     eye(n, m=None, *, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -12609,14 +12599,14 @@ def fbgemm_pack_gemm_matrix_fp16(input: Tensor) -> Tensor: ...
 def fbgemm_pack_quantized_matrix(input: Tensor) -> Tensor: ...
 @overload
 def fbgemm_pack_quantized_matrix(input: Tensor, K: _int, N: _int) -> Tensor: ...
-def feature_alpha_dropout(input: Tensor, p: _float, train: _bool) -> Tensor: ...
+def feature_alpha_dropout(input: Tensor, p: _float, train: bool) -> Tensor: ...
 def feature_alpha_dropout_(
     input: Tensor,
     p: _float,
-    train: _bool,
+    train: bool,
 ) -> Tensor: ...
-def feature_dropout(input: Tensor, p: _float, train: _bool) -> Tensor: ...
-def feature_dropout_(input: Tensor, p: _float, train: _bool) -> Tensor: ...
+def feature_dropout(input: Tensor, p: _float, train: bool) -> Tensor: ...
+def feature_dropout_(input: Tensor, p: _float, train: bool) -> Tensor: ...
 @overload
 def fill(input: Tensor, value: Tensor) -> Tensor: ...
 @overload
@@ -13325,20 +13315,20 @@ def frexp(
 def frobenius_norm(
     input: Tensor,
     dim: _int | _size,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     out: Tensor | None = None,
 ) -> Tensor: ...
 def from_file(
     filename: str,
-    shared: _bool | None = None,
+    shared: bool | None = None,
     size: _int | None = 0,
     *,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     from_file(filename, shared=None, size=0, *, dtype=None, layout=None, device=None, pin_memory=False)
@@ -13418,7 +13408,7 @@ def frombuffer(
     dtype: _dtype,
     count: int = -1,
     offset: int = 0,
-    requires_grad: _bool = False,
+    requires_grad: bool = False,
 ) -> Tensor:
     r"""
     frombuffer(buffer, *, dtype, count=-1, offset=0, requires_grad=False) -> Tensor
@@ -13498,11 +13488,11 @@ def full(
     fill_value: Number | _complex,
     *,
     out: Tensor | None = None,
-    layout: _layout = ...,
+    layout: layout = ...,
     dtype: _dtype | None = None,
     device: DeviceLikeType | None = None,
-    requires_grad: _bool = False,
-    pin_memory: _bool = False,
+    requires_grad: bool = False,
+    pin_memory: bool = False,
 ) -> Tensor:
     r"""
     full(size, fill_value, *, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -13541,11 +13531,11 @@ def full(
     fill_value: Number | _complex,
     *,
     names: list[str | None],
-    layout: _layout = ...,
+    layout: layout = ...,
     dtype: _dtype | None = None,
     device: DeviceLikeType | None = None,
-    requires_grad: _bool = False,
-    pin_memory: _bool = False,
+    requires_grad: bool = False,
+    pin_memory: bool = False,
 ) -> Tensor:
     r"""
     full(size, fill_value, *, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -13585,10 +13575,10 @@ def full(
     *,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     full(size, fill_value, *, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -13628,10 +13618,10 @@ def full(
     *,
     names: Sequence[str | EllipsisType | None] | None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     full(size, fill_value, *, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -13670,10 +13660,10 @@ def full_like(
     *,
     memory_format: memory_format | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     full_like(input, fill_value, \*, dtype=None, layout=torch.strided, device=None, requires_grad=False, memory_format=torch.preserve_format) -> Tensor
@@ -13729,8 +13719,8 @@ def fused_moving_avg_obs_fake_quant(
     quant_min: _int,
     quant_max: _int,
     ch_axis: _int,
-    per_row_fake_quant: _bool = False,
-    symmetric_quant: _bool = False,
+    per_row_fake_quant: bool = False,
+    symmetric_quant: bool = False,
 ) -> Tensor: ...
 @overload
 def gather(
@@ -13738,7 +13728,7 @@ def gather(
     dim: _int,
     index: Tensor,
     *,
-    sparse_grad: _bool = False,
+    sparse_grad: bool = False,
     out: Tensor | None = None,
 ) -> Tensor:
     r"""
@@ -13782,7 +13772,7 @@ def gather(
     dim: str | EllipsisType | None,
     index: Tensor,
     *,
-    sparse_grad: _bool = False,
+    sparse_grad: bool = False,
     out: Tensor | None = None,
 ) -> Tensor:
     r"""
@@ -14975,21 +14965,21 @@ def grid_sampler(
     grid: Tensor,
     interpolation_mode: _int,
     padding_mode: _int,
-    align_corners: _bool,
+    align_corners: bool,
 ) -> Tensor: ...
 def grid_sampler_2d(
     input: Tensor,
     grid: Tensor,
     interpolation_mode: _int,
     padding_mode: _int,
-    align_corners: _bool,
+    align_corners: bool,
 ) -> Tensor: ...
 def grid_sampler_3d(
     input: Tensor,
     grid: Tensor,
     interpolation_mode: _int,
     padding_mode: _int,
-    align_corners: _bool,
+    align_corners: bool,
 ) -> Tensor: ...
 def group_norm(
     input: Tensor,
@@ -14997,7 +14987,7 @@ def group_norm(
     weight: Tensor | None = None,
     bias: Tensor | None = None,
     eps: _float = 1e-05,
-    cudnn_enabled: _bool = True,
+    cudnn_enabled: bool = True,
 ) -> Tensor: ...
 @overload
 def gru(
@@ -15005,23 +14995,23 @@ def gru(
     batch_sizes: Tensor,
     hx: Tensor,
     params: tuple[Tensor, ...] | list[Tensor] | None,
-    has_biases: _bool,
+    has_biases: bool,
     num_layers: _int,
     dropout: _float,
-    train: _bool,
-    bidirectional: _bool,
+    train: bool,
+    bidirectional: bool,
 ) -> tuple[Tensor, Tensor]: ...
 @overload
 def gru(
     input: Tensor,
     hx: Tensor,
     params: tuple[Tensor, ...] | list[Tensor] | None,
-    has_biases: _bool,
+    has_biases: bool,
     num_layers: _int,
     dropout: _float,
-    train: _bool,
-    bidirectional: _bool,
-    batch_first: _bool,
+    train: bool,
+    bidirectional: bool,
+    batch_first: bool,
 ) -> tuple[Tensor, Tensor]: ...
 def gru_cell(
     input: Tensor,
@@ -15100,10 +15090,10 @@ def hamming_window(
     window_length: _int,
     *,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     hamming_window(window_length, *, dtype=None, layout=None, device=None, pin_memory=False, requires_grad=False) -> Tensor
@@ -15241,13 +15231,13 @@ def hamming_window(
 @overload
 def hamming_window(
     window_length: _int,
-    periodic: _bool,
+    periodic: bool,
     *,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     hamming_window(window_length, *, dtype=None, layout=None, device=None, pin_memory=False, requires_grad=False) -> Tensor
@@ -15385,14 +15375,14 @@ def hamming_window(
 @overload
 def hamming_window(
     window_length: _int,
-    periodic: _bool,
+    periodic: bool,
     alpha: _float,
     *,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     hamming_window(window_length, *, dtype=None, layout=None, device=None, pin_memory=False, requires_grad=False) -> Tensor
@@ -15530,15 +15520,15 @@ def hamming_window(
 @overload
 def hamming_window(
     window_length: _int,
-    periodic: _bool,
+    periodic: bool,
     alpha: _float,
     beta: _float,
     *,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     hamming_window(window_length, *, dtype=None, layout=None, device=None, pin_memory=False, requires_grad=False) -> Tensor
@@ -15678,10 +15668,10 @@ def hann_window(
     window_length: _int,
     *,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     hann_window(window_length, periodic=True, *, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -15730,13 +15720,13 @@ def hann_window(
 @overload
 def hann_window(
     window_length: _int,
-    periodic: _bool,
+    periodic: bool,
     *,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     hann_window(window_length, periodic=True, *, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -15792,7 +15782,7 @@ def hash_tensor(
     input: Tensor,
     dim: _int | _size = (),
     *,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     mode: _int = 0,
     out: Tensor | None = None,
 ) -> Tensor:
@@ -15944,7 +15934,7 @@ def histogram(
     bins: Tensor,
     *,
     weight: Tensor | None = None,
-    density: _bool = False,
+    density: bool = False,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = None,
 ) -> torch.return_types.histogram:
     r"""
@@ -15996,7 +15986,7 @@ def histogram(
     *,
     range: Sequence[_float] | None = None,
     weight: Tensor | None = None,
-    density: _bool = False,
+    density: bool = False,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = None,
 ) -> torch.return_types.histogram:
     r"""
@@ -16047,7 +16037,7 @@ def histogramdd(
     bins: _int,
     range: Sequence[_float] | None = None,
     weight: Tensor | None = None,
-    density: _bool = False,
+    density: bool = False,
 ) -> torch.return_types.histogramdd:
     r"""
     histogramdd(input, bins, *, range=None, weight=None, density=False, out=None) -> (Tensor, Tensor[])
@@ -16144,7 +16134,7 @@ def histogramdd(
     bins: _size,
     range: Sequence[_float] | None = None,
     weight: Tensor | None = None,
-    density: _bool = False,
+    density: bool = False,
 ) -> torch.return_types.histogramdd:
     r"""
     histogramdd(input, bins, *, range=None, weight=None, density=False, out=None) -> (Tensor, Tensor[])
@@ -16241,7 +16231,7 @@ def histogramdd(
     bins: tuple[Tensor, ...] | list[Tensor] | None,
     range: Sequence[_float] | None = None,
     weight: Tensor | None = None,
-    density: _bool = False,
+    density: bool = False,
 ) -> torch.return_types.histogramdd:
     r"""
     histogramdd(input, bins, *, range=None, weight=None, density=False, out=None) -> (Tensor, Tensor[])
@@ -16664,13 +16654,13 @@ def index_put(
     input: Tensor,
     indices: tuple[Tensor, ...] | list[Tensor] | None,
     values: Tensor,
-    accumulate: _bool = False,
+    accumulate: bool = False,
 ) -> Tensor: ...
 def index_put_(
     input: Tensor,
     indices: tuple[Tensor, ...] | list[Tensor] | None,
     values: Tensor,
-    accumulate: _bool = False,
+    accumulate: bool = False,
 ) -> Tensor: ...
 def index_reduce(
     input: Tensor,
@@ -16679,7 +16669,7 @@ def index_reduce(
     source: Tensor,
     reduce: str,
     *,
-    include_self: _bool = True,
+    include_self: bool = True,
     out: Tensor | None = None,
 ) -> Tensor:
     r"""
@@ -16861,10 +16851,10 @@ def instance_norm(
     bias: Tensor | None,
     running_mean: Tensor | None,
     running_var: Tensor | None,
-    use_input_stats: _bool,
+    use_input_stats: bool,
     momentum: _float,
     eps: _float,
-    cudnn_enabled: _bool,
+    cudnn_enabled: bool,
 ) -> Tensor: ...
 def int_repr(input: Tensor) -> Tensor: ...
 def inverse(input: Tensor, *, out: Tensor | None = None) -> Tensor:
@@ -16874,7 +16864,7 @@ def inverse(input: Tensor, *, out: Tensor | None = None) -> Tensor:
     Alias for :func:`torch.linalg.inv`
     """
 
-def is_complex(input: Tensor) -> _bool:
+def is_complex(input: Tensor) -> bool:
     r"""
     is_complex(input: Tensor) -> bool
 
@@ -16896,7 +16886,7 @@ def is_complex(input: Tensor) -> _bool:
         False
     """
 
-def is_conj(input: Tensor) -> _bool:
+def is_conj(input: Tensor) -> bool:
     r"""
     is_conj(input) -> (bool)
 
@@ -16906,8 +16896,8 @@ def is_conj(input: Tensor) -> _bool:
         input (Tensor): the input tensor.
     """
 
-def is_distributed(input: Tensor) -> _bool: ...
-def is_floating_point(input: Tensor) -> _bool:
+def is_distributed(input: Tensor) -> bool: ...
+def is_floating_point(input: Tensor) -> bool:
     r"""
     is_floating_point(input: Tensor) -> bool
 
@@ -16929,14 +16919,14 @@ def is_floating_point(input: Tensor) -> _bool:
         False
     """
 
-def is_grad_enabled() -> _bool:
+def is_grad_enabled() -> bool:
     r"""
     is_grad_enabled() -> (bool)
 
     Returns True if grad mode is currently enabled.
     """
 
-def is_inference(input: Tensor) -> _bool:
+def is_inference(input: Tensor) -> bool:
     r"""
     is_inference(input) -> (bool)
 
@@ -16953,15 +16943,15 @@ def is_inference(input: Tensor) -> _bool:
         input (Tensor): the input tensor.
     """
 
-def is_inference_mode_enabled() -> _bool:
+def is_inference_mode_enabled() -> bool:
     r"""
     is_inference_mode_enabled() -> (bool)
 
     Returns True if inference mode is currently enabled.
     """
 
-def is_neg(input: Tensor) -> _bool: ...
-def is_nonzero(input: Tensor) -> _bool:
+def is_neg(input: Tensor) -> bool: ...
+def is_nonzero(input: Tensor) -> bool:
     r"""
     is_nonzero(input) -> (bool)
 
@@ -16995,15 +16985,15 @@ def is_nonzero(input: Tensor) -> _bool:
         RuntimeError: Boolean value of Tensor with no values is ambiguous
     """
 
-def is_same_size(input: Tensor, other: Tensor) -> _bool: ...
-def is_signed(input: Tensor) -> _bool: ...
-def is_vulkan_available() -> _bool: ...
+def is_same_size(input: Tensor, other: Tensor) -> bool: ...
+def is_signed(input: Tensor) -> bool: ...
+def is_vulkan_available() -> bool: ...
 def isclose(
     input: Tensor,
     other: Tensor,
     rtol: _float = 1e-05,
     atol: _float = 1e-08,
-    equal_nan: _bool = False,
+    equal_nan: bool = False,
 ) -> Tensor:
     r"""
     isclose(input, other, rtol=1e-05, atol=1e-08, equal_nan=False) -> Tensor
@@ -17062,8 +17052,8 @@ def isin(
     elements: Tensor,
     test_elements: Tensor,
     *,
-    assume_unique: _bool = False,
-    invert: _bool = False,
+    assume_unique: bool = False,
+    invert: bool = False,
     out: Tensor | None = None,
 ) -> Tensor:
     r"""
@@ -17100,8 +17090,8 @@ def isin(
     element: Number | _complex,
     test_elements: Tensor,
     *,
-    assume_unique: _bool = False,
-    invert: _bool = False,
+    assume_unique: bool = False,
+    invert: bool = False,
     out: Tensor | None = None,
 ) -> Tensor:
     r"""
@@ -17138,8 +17128,8 @@ def isin(
     elements: Tensor,
     test_element: Number | _complex,
     *,
-    assume_unique: _bool = False,
-    invert: _bool = False,
+    assume_unique: bool = False,
+    invert: bool = False,
     out: Tensor | None = None,
 ) -> Tensor:
     r"""
@@ -17275,21 +17265,21 @@ def istft(
     hop_length: _int | None = None,
     win_length: _int | None = None,
     window: Tensor | None = None,
-    center: _bool = True,
-    normalized: _bool = False,
-    onesided: _bool | None = None,
+    center: bool = True,
+    normalized: bool = False,
+    onesided: bool | None = None,
     length: _int | None = None,
-    return_complex: _bool = False,
+    return_complex: bool = False,
 ) -> Tensor: ...
 @overload
 def kaiser_window(
     window_length: _int,
     *,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     kaiser_window(window_length, periodic=True, beta=12.0, *, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -17334,13 +17324,13 @@ def kaiser_window(
 @overload
 def kaiser_window(
     window_length: _int,
-    periodic: _bool,
+    periodic: bool,
     *,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     kaiser_window(window_length, periodic=True, beta=12.0, *, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -17385,14 +17375,14 @@ def kaiser_window(
 @overload
 def kaiser_window(
     window_length: _int,
-    periodic: _bool,
+    periodic: bool,
     beta: _float,
     *,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     kaiser_window(window_length, periodic=True, beta=12.0, *, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -17439,7 +17429,7 @@ def kl_div(
     target: Tensor,
     reduction: _int = 1,
     *,
-    log_target: _bool = False,
+    log_target: bool = False,
 ) -> Tensor: ...
 def kron(
     input: Tensor,
@@ -17509,7 +17499,7 @@ def kthvalue(
     input: Tensor,
     k: _int | SymInt,
     dim: _int = -1,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = None,
 ) -> torch.return_types.kthvalue:
@@ -17566,7 +17556,7 @@ def kthvalue(
     input: Tensor,
     k: _int | SymInt,
     dim: str | EllipsisType | None,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = None,
 ) -> torch.return_types.kthvalue:
@@ -17624,7 +17614,7 @@ def layer_norm(
     weight: Tensor | None = None,
     bias: Tensor | None = None,
     eps: _float = 1e-05,
-    cudnn_enable: _bool = True,
+    cudnn_enable: bool = True,
 ) -> Tensor: ...
 def lcm(
     input: Tensor,
@@ -17931,8 +17921,8 @@ def linspace(
     out: Tensor | None = None,
     dtype: _dtype | None = None,
     device: DeviceLikeType | None = None,
-    requires_grad: _bool = False,
-    pin_memory: _bool = False,
+    requires_grad: bool = False,
+    pin_memory: bool = False,
 ) -> Tensor:
     r"""
     linspace(start, end, steps, *, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -17991,10 +17981,10 @@ def linspace(
     *,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     linspace(start, end, steps, *, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -18053,10 +18043,10 @@ def linspace(
     *,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     linspace(start, end, steps, *, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -18115,10 +18105,10 @@ def linspace(
     *,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     linspace(start, end, steps, *, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -18177,10 +18167,10 @@ def linspace(
     *,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     linspace(start, end, steps, *, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -18681,8 +18671,8 @@ def logspace(
     out: Tensor | None = None,
     dtype: _dtype | None = None,
     device: DeviceLikeType | None = None,
-    requires_grad: _bool = False,
-    pin_memory: _bool = False,
+    requires_grad: bool = False,
+    pin_memory: bool = False,
 ) -> Tensor:
     r"""
     logspace(start, end, steps, base=10.0, *,          out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -18746,10 +18736,10 @@ def logspace(
     *,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     logspace(start, end, steps, base=10.0, *,          out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -18813,10 +18803,10 @@ def logspace(
     *,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     logspace(start, end, steps, base=10.0, *,          out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -18880,10 +18870,10 @@ def logspace(
     *,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     logspace(start, end, steps, base=10.0, *,          out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -18947,10 +18937,10 @@ def logspace(
     *,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     logspace(start, end, steps, base=10.0, *,          out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -19009,7 +18999,7 @@ def logspace(
 def logsumexp(
     input: Tensor,
     dim: _int | _size,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     out: Tensor | None = None,
 ) -> Tensor:
@@ -19055,7 +19045,7 @@ def logsumexp(
 def logsumexp(
     input: Tensor,
     dim: Sequence[str | EllipsisType | None],
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     out: Tensor | None = None,
 ) -> Tensor:
@@ -19103,23 +19093,23 @@ def lstm(
     batch_sizes: Tensor,
     hx: tuple[Tensor, ...] | list[Tensor] | None,
     params: tuple[Tensor, ...] | list[Tensor] | None,
-    has_biases: _bool,
+    has_biases: bool,
     num_layers: _int,
     dropout: _float,
-    train: _bool,
-    bidirectional: _bool,
+    train: bool,
+    bidirectional: bool,
 ) -> tuple[Tensor, Tensor, Tensor]: ...
 @overload
 def lstm(
     input: Tensor,
     hx: tuple[Tensor, ...] | list[Tensor] | None,
     params: tuple[Tensor, ...] | list[Tensor] | None,
-    has_biases: _bool,
+    has_biases: bool,
     num_layers: _int,
     dropout: _float,
-    train: _bool,
-    bidirectional: _bool,
-    batch_first: _bool,
+    train: bool,
+    bidirectional: bool,
+    batch_first: bool,
 ) -> tuple[Tensor, Tensor, Tensor]: ...
 def lstm_cell(
     input: Tensor,
@@ -19245,8 +19235,8 @@ def lu_solve(
 def lu_unpack(
     LU_data: Tensor,
     LU_pivots: Tensor,
-    unpack_data: _bool = True,
-    unpack_pivots: _bool = True,
+    unpack_data: bool = True,
+    unpack_pivots: bool = True,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = None,
 ) -> torch.return_types.lu_unpack:
@@ -19645,7 +19635,7 @@ def max(
 def max(
     input: Tensor,
     dim: _int,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = None,
 ) -> torch.return_types.max:
@@ -19738,7 +19728,7 @@ def max(
 def max(
     input: Tensor,
     dim: str | EllipsisType | None,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = None,
 ) -> torch.return_types.max:
@@ -19833,7 +19823,7 @@ def max_pool1d(
     stride: _int | _size = (),
     padding: _int | _size = 0,
     dilation: _int | _size = 1,
-    ceil_mode: _bool = False,
+    ceil_mode: bool = False,
 ) -> Tensor: ...
 def max_pool1d_with_indices(
     input: Tensor,
@@ -19841,7 +19831,7 @@ def max_pool1d_with_indices(
     stride: _int | _size = (),
     padding: _int | _size = 0,
     dilation: _int | _size = 1,
-    ceil_mode: _bool = False,
+    ceil_mode: bool = False,
 ) -> tuple[Tensor, Tensor]: ...
 def max_pool2d(
     input: Tensor,
@@ -19849,7 +19839,7 @@ def max_pool2d(
     stride: _int | _size = (),
     padding: _int | _size = 0,
     dilation: _int | _size = 1,
-    ceil_mode: _bool = False,
+    ceil_mode: bool = False,
 ) -> Tensor: ...
 def max_pool3d(
     input: Tensor,
@@ -19857,7 +19847,7 @@ def max_pool3d(
     stride: _int | _size = (),
     padding: _int | _size = 0,
     dilation: _int | _size = 1,
-    ceil_mode: _bool = False,
+    ceil_mode: bool = False,
 ) -> Tensor: ...
 def maximum(
     input: Tensor,
@@ -19979,7 +19969,7 @@ def mean(
 def mean(
     input: Tensor,
     dim: _int | _size | None,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     dtype: _dtype | None = None,
     out: Tensor | None = None,
@@ -20067,7 +20057,7 @@ def mean(
 def mean(
     input: Tensor,
     dim: Sequence[str | EllipsisType | None],
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     dtype: _dtype | None = None,
     out: Tensor | None = None,
@@ -20234,7 +20224,7 @@ def median(input: Tensor) -> Tensor:
 def median(
     input: Tensor,
     dim: _int,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = None,
 ) -> torch.return_types.median:
@@ -20319,7 +20309,7 @@ def median(
 def median(
     input: Tensor,
     dim: str | EllipsisType | None,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = None,
 ) -> torch.return_types.median:
@@ -20565,7 +20555,7 @@ def min(
 def min(
     input: Tensor,
     dim: _int,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = None,
 ) -> torch.return_types.min:
@@ -20649,7 +20639,7 @@ def min(
 def min(
     input: Tensor,
     dim: str | EllipsisType | None,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = None,
 ) -> torch.return_types.min:
@@ -20765,7 +20755,7 @@ def miopen_batch_norm(
     bias: Tensor | None,
     running_mean: Tensor | None,
     running_var: Tensor | None,
-    training: _bool,
+    training: bool,
     exponential_average_factor: _float,
     epsilon: _float,
 ) -> tuple[Tensor, Tensor, Tensor]: ...
@@ -20777,8 +20767,8 @@ def miopen_convolution(
     stride: Sequence[_int | SymInt],
     dilation: Sequence[_int | SymInt],
     groups: _int | SymInt,
-    benchmark: _bool,
-    deterministic: _bool,
+    benchmark: bool,
+    deterministic: bool,
 ) -> Tensor: ...
 def miopen_convolution_add_relu(
     input: Tensor,
@@ -20809,8 +20799,8 @@ def miopen_convolution_transpose(
     stride: Sequence[_int | SymInt],
     dilation: Sequence[_int | SymInt],
     groups: _int | SymInt,
-    benchmark: _bool,
-    deterministic: _bool,
+    benchmark: bool,
+    deterministic: bool,
 ) -> Tensor: ...
 def miopen_depthwise_convolution(
     input: Tensor,
@@ -20820,8 +20810,8 @@ def miopen_depthwise_convolution(
     stride: Sequence[_int | SymInt],
     dilation: Sequence[_int | SymInt],
     groups: _int | SymInt,
-    benchmark: _bool,
-    deterministic: _bool,
+    benchmark: bool,
+    deterministic: bool,
 ) -> Tensor: ...
 def miopen_rnn(
     input: Tensor,
@@ -20832,10 +20822,10 @@ def miopen_rnn(
     mode: _int,
     hidden_size: _int,
     num_layers: _int,
-    batch_first: _bool,
+    batch_first: bool,
     dropout: _float,
-    train: _bool,
-    bidirectional: _bool,
+    train: bool,
+    bidirectional: bool,
     batch_sizes: _size,
     dropout_state: Tensor | None,
 ) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor]: ...
@@ -20858,7 +20848,7 @@ def mkldnn_linear_backward_weights(
     grad_output: Tensor,
     input: Tensor,
     weight: Tensor,
-    bias_defined: _bool,
+    bias_defined: bool,
 ) -> tuple[Tensor, Tensor]: ...
 def mkldnn_max_pool2d(
     input: Tensor,
@@ -20866,7 +20856,7 @@ def mkldnn_max_pool2d(
     stride: _int | _size = (),
     padding: _int | _size = 0,
     dilation: _int | _size = 1,
-    ceil_mode: _bool = False,
+    ceil_mode: bool = False,
 ) -> Tensor: ...
 def mkldnn_max_pool3d(
     input: Tensor,
@@ -20874,7 +20864,7 @@ def mkldnn_max_pool3d(
     stride: _int | _size = (),
     padding: _int | _size = 0,
     dilation: _int | _size = 1,
-    ceil_mode: _bool = False,
+    ceil_mode: bool = False,
 ) -> Tensor: ...
 def mkldnn_rnn_layer(
     input: Tensor,
@@ -20884,15 +20874,15 @@ def mkldnn_rnn_layer(
     weight3: Tensor,
     hx_: Tensor,
     cx_: Tensor,
-    reverse: _bool,
+    reverse: bool,
     batch_sizes: _size,
     mode: _int,
     hidden_size: _int,
     num_layers: _int,
-    has_biases: _bool,
-    bidirectional: _bool,
-    batch_first: _bool,
-    train: _bool,
+    has_biases: bool,
+    bidirectional: bool,
+    batch_first: bool,
+    train: bool,
 ) -> tuple[Tensor, Tensor, Tensor, Tensor]: ...
 @overload
 def mm(input: Tensor, mat2: Tensor, *, out: Tensor | None = None) -> Tensor:
@@ -21002,7 +20992,7 @@ def mm(
 def mode(
     input: Tensor,
     dim: _int = -1,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = None,
 ) -> torch.return_types.mode:
@@ -21052,7 +21042,7 @@ def mode(
 def mode(
     input: Tensor,
     dim: str | EllipsisType | None,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = None,
 ) -> torch.return_types.mode:
@@ -21350,7 +21340,7 @@ def mul(
 def multinomial(
     input: Tensor,
     num_samples: _int | SymInt,
-    replacement: _bool = False,
+    replacement: bool = False,
     *,
     generator: Generator | None = None,
     out: Tensor | None = None,
@@ -21517,7 +21507,7 @@ def nan_to_num_(
 def nanmean(
     input: Tensor,
     dim: _int | _size | None = None,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     dtype: _dtype | None = None,
     out: Tensor | None = None,
@@ -21642,7 +21632,7 @@ def nanmedian(input: Tensor) -> Tensor:
 def nanmedian(
     input: Tensor,
     dim: _int,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = None,
 ) -> torch.return_types.nanmedian:
@@ -21709,7 +21699,7 @@ def nanmedian(
 def nanmedian(
     input: Tensor,
     dim: str | EllipsisType | None,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = None,
 ) -> torch.return_types.nanmedian:
@@ -21777,7 +21767,7 @@ def nanquantile(
     input: Tensor,
     q: Tensor,
     dim: _int | None = None,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     interpolation: str = "linear",
     out: Tensor | None = None,
@@ -21829,7 +21819,7 @@ def nanquantile(
     input: Tensor,
     q: _float,
     dim: _int | None = None,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     interpolation: str = "linear",
     out: Tensor | None = None,
@@ -21879,7 +21869,7 @@ def nanquantile(
 def nansum(
     input: Tensor,
     dim: _int | _size | None = None,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     dtype: _dtype | None = None,
     out: Tensor | None = None,
@@ -22078,7 +22068,7 @@ def native_batch_norm(
     bias: Tensor | None,
     running_mean: Tensor | None,
     running_var: Tensor | None,
-    training: _bool,
+    training: bool,
     momentum: _float,
     eps: _float,
     *,
@@ -22088,7 +22078,7 @@ def native_channel_shuffle(input: Tensor, groups: _int | SymInt) -> Tensor: ...
 def native_dropout(
     input: Tensor,
     p: _float,
-    train: _bool | None,
+    train: bool | None,
 ) -> tuple[Tensor, Tensor]: ...
 def native_group_norm(
     input: Tensor,
@@ -22112,7 +22102,7 @@ def native_norm(
     input: Tensor,
     p: Number | _complex | None,
     dim: _int | _size,
-    keepdim: _bool,
+    keepdim: bool,
     dtype: _dtype | None,
 ) -> Tensor: ...
 @overload
@@ -22727,10 +22717,10 @@ def normal(
     generator: Generator | None = None,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     normal(mean, std, *, generator=None, out=None) -> Tensor
@@ -22853,14 +22843,14 @@ def not_equal(
 def nuclear_norm(
     input: Tensor,
     dim: _int | _size,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     out: Tensor | None = None,
 ) -> Tensor: ...
 @overload
 def nuclear_norm(
     input: Tensor,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     out: Tensor | None = None,
 ) -> Tensor: ...
@@ -22889,10 +22879,10 @@ def ones(
     *,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     ones(*size, *, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -22932,10 +22922,10 @@ def ones(
     *size: _int | SymInt,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     ones(*size, *, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -22976,10 +22966,10 @@ def ones(
     *,
     names: Sequence[str | EllipsisType | None] | None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     ones(*size, *, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -23019,10 +23009,10 @@ def ones(
     *size: _int,
     names: Sequence[str | EllipsisType | None] | None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     ones(*size, *, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -23062,10 +23052,10 @@ def ones_like(
     *,
     memory_format: memory_format | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     ones_like(input, *, dtype=None, layout=None, device=None, requires_grad=False, memory_format=torch.preserve_format) -> Tensor
@@ -23118,8 +23108,8 @@ def ormqr(
     input: Tensor,
     input2: Tensor,
     input3: Tensor,
-    left: _bool = True,
-    transpose: _bool = False,
+    left: bool = True,
+    transpose: bool = False,
     *,
     out: Tensor | None = None,
 ) -> Tensor:
@@ -23202,7 +23192,7 @@ def pairwise_distance(
     x2: Tensor,
     p: _float = 2,
     eps: _float = 1e-06,
-    keepdim: _bool = False,
+    keepdim: bool = False,
 ) -> Tensor: ...
 def pdist(input: Tensor, p: _float = 2) -> Tensor: ...
 def permute(input: Tensor, dims: _size) -> Tensor:
@@ -23275,8 +23265,8 @@ def poisson(input: Tensor, generator: Generator | None = None) -> Tensor:
 def poisson_nll_loss(
     input: Tensor,
     target: Tensor,
-    log_input: _bool,
-    full: _bool,
+    log_input: bool,
+    full: bool,
     eps: _float,
     reduction: _int,
 ) -> Tensor: ...
@@ -23659,7 +23649,7 @@ def prod(input: Tensor, *, dtype: _dtype | None = None) -> Tensor:
 def prod(
     input: Tensor,
     dim: _int,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     dtype: _dtype | None = None,
     out: Tensor | None = None,
@@ -23727,7 +23717,7 @@ def prod(
 def prod(
     input: Tensor,
     dim: str | EllipsisType | None,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     dtype: _dtype | None = None,
     out: Tensor | None = None,
@@ -23816,7 +23806,7 @@ def put(
     input: Tensor,
     index: Tensor,
     source: Tensor,
-    accumulate: _bool = False,
+    accumulate: bool = False,
 ) -> Tensor: ...
 def q_per_channel_axis(input: Tensor) -> _int: ...
 def q_per_channel_scales(input: Tensor) -> Tensor: ...
@@ -23825,7 +23815,7 @@ def q_scale(input: Tensor) -> _float: ...
 def q_zero_point(input: Tensor) -> _int: ...
 def qr(
     input: Tensor,
-    some: _bool = True,
+    some: bool = True,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = None,
 ) -> torch.return_types.qr:
@@ -23915,7 +23905,7 @@ def quantile(
     input: Tensor,
     q: Tensor,
     dim: _int | None = None,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     interpolation: str = "linear",
     out: Tensor | None = None,
@@ -23998,7 +23988,7 @@ def quantile(
     input: Tensor,
     q: _float,
     dim: _int | None = None,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     interpolation: str = "linear",
     out: Tensor | None = None,
@@ -24236,7 +24226,7 @@ def quantize_per_tensor(
 def quantize_per_tensor_dynamic(
     input: Tensor,
     dtype: _dtype,
-    reduce_range: _bool,
+    reduce_range: bool,
 ) -> Tensor:
     r"""
     quantize_per_tensor_dynamic(input, dtype, reduce_range) -> Tensor
@@ -24354,7 +24344,7 @@ def quantized_max_pool1d(
     stride: _int | _size = (),
     padding: _int | _size = 0,
     dilation: _int | _size = 1,
-    ceil_mode: _bool = False,
+    ceil_mode: bool = False,
 ) -> Tensor:
     r"""
     quantized_max_pool1d(input, kernel_size, stride=[], padding=0, dilation=1, ceil_mode=False) -> Tensor
@@ -24389,7 +24379,7 @@ def quantized_max_pool2d(
     stride: _int | _size = (),
     padding: _int | _size = 0,
     dilation: _int | _size = 1,
-    ceil_mode: _bool = False,
+    ceil_mode: bool = False,
 ) -> Tensor:
     r"""
     quantized_max_pool2d(input, kernel_size, stride=[], padding=0, dilation=1, ceil_mode=False) -> Tensor
@@ -24430,7 +24420,7 @@ def quantized_max_pool3d(
     stride: _int | _size = (),
     padding: _int | _size = 0,
     dilation: _int | _size = 1,
-    ceil_mode: _bool = False,
+    ceil_mode: bool = False,
 ) -> Tensor: ...
 def quantized_rnn_relu_cell(
     input: Tensor,
@@ -24494,10 +24484,10 @@ def rand(
     generator: Generator | None,
     names: Sequence[str | EllipsisType | None] | None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     rand(*size, *, generator=None, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False, pin_memory=False) -> Tensor
@@ -24542,10 +24532,10 @@ def rand(
     generator: Generator | None,
     names: Sequence[str | EllipsisType | None] | None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     rand(*size, *, generator=None, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False, pin_memory=False) -> Tensor
@@ -24591,10 +24581,10 @@ def rand(
     generator: Generator | None,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     rand(*size, *, generator=None, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False, pin_memory=False) -> Tensor
@@ -24639,10 +24629,10 @@ def rand(
     generator: Generator | None,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     rand(*size, *, generator=None, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False, pin_memory=False) -> Tensor
@@ -24687,10 +24677,10 @@ def rand(
     *,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     rand(*size, *, generator=None, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False, pin_memory=False) -> Tensor
@@ -24734,10 +24724,10 @@ def rand(
     *size: _int | SymInt,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     rand(*size, *, generator=None, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False, pin_memory=False) -> Tensor
@@ -24782,10 +24772,10 @@ def rand(
     *,
     names: Sequence[str | EllipsisType | None] | None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     rand(*size, *, generator=None, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False, pin_memory=False) -> Tensor
@@ -24829,10 +24819,10 @@ def rand(
     *size: _int | SymInt,
     names: Sequence[str | EllipsisType | None] | None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     rand(*size, *, generator=None, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False, pin_memory=False) -> Tensor
@@ -24876,10 +24866,10 @@ def rand_like(
     *,
     memory_format: memory_format | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     rand_like(input, *, dtype=None, layout=None, device=None, requires_grad=False, memory_format=torch.preserve_format) -> Tensor
@@ -24914,8 +24904,8 @@ def randint(
     generator: Generator | None = None,
     dtype: _dtype | None = None,
     device: DeviceLikeType | None = None,
-    requires_grad: _bool = False,
-    pin_memory: _bool = False,
+    requires_grad: bool = False,
+    pin_memory: bool = False,
 ) -> Tensor:
     r"""
     randint(low=0, high, size, \*, generator=None, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -24972,8 +24962,8 @@ def randint(
     generator: Generator | None = None,
     dtype: _dtype | None = None,
     device: DeviceLikeType | None = None,
-    requires_grad: _bool = False,
-    pin_memory: _bool = False,
+    requires_grad: bool = False,
+    pin_memory: bool = False,
 ) -> Tensor:
     r"""
     randint(low=0, high, size, \*, generator=None, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -25030,10 +25020,10 @@ def randint(
     generator: Generator | None,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     randint(low=0, high, size, \*, generator=None, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -25089,10 +25079,10 @@ def randint(
     *,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     randint(low=0, high, size, \*, generator=None, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -25150,10 +25140,10 @@ def randint(
     generator: Generator | None,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     randint(low=0, high, size, \*, generator=None, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -25210,10 +25200,10 @@ def randint(
     *,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     randint(low=0, high, size, \*, generator=None, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -25270,10 +25260,10 @@ def randint_like(
     *,
     memory_format: memory_format | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     randint_like(input, low=0, high, \*, dtype=None, layout=torch.strided, device=None, requires_grad=False, memory_format=torch.preserve_format) -> Tensor
@@ -25311,10 +25301,10 @@ def randint_like(
     *,
     memory_format: memory_format | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     randint_like(input, low=0, high, \*, dtype=None, layout=torch.strided, device=None, requires_grad=False, memory_format=torch.preserve_format) -> Tensor
@@ -25352,10 +25342,10 @@ def randint_like(
     *,
     memory_format: memory_format | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     randint_like(input, low=0, high, \*, dtype=None, layout=torch.strided, device=None, requires_grad=False, memory_format=torch.preserve_format) -> Tensor
@@ -25393,10 +25383,10 @@ def randn(
     generator: Generator | None,
     names: Sequence[str | EllipsisType | None] | None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     randn(*size, *, generator=None, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False, pin_memory=False) -> Tensor
@@ -25462,10 +25452,10 @@ def randn(
     generator: Generator | None,
     names: Sequence[str | EllipsisType | None] | None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     randn(*size, *, generator=None, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False, pin_memory=False) -> Tensor
@@ -25532,10 +25522,10 @@ def randn(
     generator: Generator | None,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     randn(*size, *, generator=None, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False, pin_memory=False) -> Tensor
@@ -25601,10 +25591,10 @@ def randn(
     generator: Generator | None,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     randn(*size, *, generator=None, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False, pin_memory=False) -> Tensor
@@ -25670,10 +25660,10 @@ def randn(
     *,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     randn(*size, *, generator=None, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False, pin_memory=False) -> Tensor
@@ -25738,10 +25728,10 @@ def randn(
     *size: _int | SymInt,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     randn(*size, *, generator=None, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False, pin_memory=False) -> Tensor
@@ -25807,10 +25797,10 @@ def randn(
     *,
     names: Sequence[str | EllipsisType | None] | None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     randn(*size, *, generator=None, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False, pin_memory=False) -> Tensor
@@ -25875,10 +25865,10 @@ def randn(
     *size: _int | SymInt,
     names: Sequence[str | EllipsisType | None] | None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     randn(*size, *, generator=None, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False, pin_memory=False) -> Tensor
@@ -25943,10 +25933,10 @@ def randn_like(
     *,
     memory_format: memory_format | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     randn_like(input, *, dtype=None, layout=None, device=None, requires_grad=False, memory_format=torch.preserve_format) -> Tensor
@@ -25979,10 +25969,10 @@ def randperm(
     generator: Generator | None,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     randperm(n, *, generator=None, out=None, dtype=torch.int64,layout=torch.strided, device=None, requires_grad=False, pin_memory=False) -> Tensor
@@ -26020,10 +26010,10 @@ def randperm(
     *,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     randperm(n, *, generator=None, out=None, dtype=torch.int64,layout=torch.strided, device=None, requires_grad=False, pin_memory=False) -> Tensor
@@ -26063,8 +26053,8 @@ def range(
     out: Tensor | None = None,
     dtype: _dtype | None = None,
     device: DeviceLikeType | None = None,
-    requires_grad: _bool = False,
-    pin_memory: _bool = False,
+    requires_grad: bool = False,
+    pin_memory: bool = False,
 ) -> Tensor:
     r"""
     range(start=0, end, step=1, *, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -26768,23 +26758,23 @@ def rnn_relu(
     batch_sizes: Tensor,
     hx: Tensor,
     params: tuple[Tensor, ...] | list[Tensor] | None,
-    has_biases: _bool,
+    has_biases: bool,
     num_layers: _int,
     dropout: _float,
-    train: _bool,
-    bidirectional: _bool,
+    train: bool,
+    bidirectional: bool,
 ) -> tuple[Tensor, Tensor]: ...
 @overload
 def rnn_relu(
     input: Tensor,
     hx: Tensor,
     params: tuple[Tensor, ...] | list[Tensor] | None,
-    has_biases: _bool,
+    has_biases: bool,
     num_layers: _int,
     dropout: _float,
-    train: _bool,
-    bidirectional: _bool,
-    batch_first: _bool,
+    train: bool,
+    bidirectional: bool,
+    batch_first: bool,
 ) -> tuple[Tensor, Tensor]: ...
 def rnn_relu_cell(
     input: Tensor,
@@ -26800,23 +26790,23 @@ def rnn_tanh(
     batch_sizes: Tensor,
     hx: Tensor,
     params: tuple[Tensor, ...] | list[Tensor] | None,
-    has_biases: _bool,
+    has_biases: bool,
     num_layers: _int,
     dropout: _float,
-    train: _bool,
-    bidirectional: _bool,
+    train: bool,
+    bidirectional: bool,
 ) -> tuple[Tensor, Tensor]: ...
 @overload
 def rnn_tanh(
     input: Tensor,
     hx: Tensor,
     params: tuple[Tensor, ...] | list[Tensor] | None,
-    has_biases: _bool,
+    has_biases: bool,
     num_layers: _int,
     dropout: _float,
-    train: _bool,
-    bidirectional: _bool,
-    batch_first: _bool,
+    train: bool,
+    bidirectional: bool,
+    batch_first: bool,
 ) -> tuple[Tensor, Tensor]: ...
 def rnn_tanh_cell(
     input: Tensor,
@@ -27049,14 +27039,14 @@ def rrelu(
     input: Tensor,
     lower: Number | _complex = 0.125,
     upper: Number | _complex = 0.3333333333333333,
-    training: _bool = False,
+    training: bool = False,
     generator: Generator | None = None,
 ) -> Tensor: ...
 def rrelu_(
     input: Tensor,
     lower: Number | _complex = 0.125,
     upper: Number | _complex = 0.3333333333333333,
-    training: _bool = False,
+    training: bool = False,
     generator: Generator | None = None,
 ) -> Tensor: ...
 def rsqrt(input: Tensor, *, out: Tensor | None = None) -> Tensor:
@@ -27111,10 +27101,10 @@ def scalar_tensor(
     s: Number | _complex,
     *,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor: ...
 @overload
 def scatter(
@@ -27239,7 +27229,7 @@ def scatter_reduce(
     src: Tensor,
     reduce: str,
     *,
-    include_self: _bool = True,
+    include_self: bool = True,
     out: Tensor | None = None,
 ) -> Tensor:
     r"""
@@ -27253,8 +27243,8 @@ def searchsorted(
     sorted_sequence: Tensor,
     input: Tensor,
     *,
-    out_int32: _bool = False,
-    right: _bool = False,
+    out_int32: bool = False,
+    right: bool = False,
     side: str | None = None,
     sorter: Tensor | None = None,
     out: Tensor | None = None,
@@ -27344,8 +27334,8 @@ def searchsorted(
     sorted_sequence: Tensor,
     self: Number | _complex,
     *,
-    out_int32: _bool = False,
-    right: _bool = False,
+    out_int32: bool = False,
+    right: bool = False,
     side: str | None = None,
     sorter: Tensor | None = None,
     out: Tensor | None = None,
@@ -27438,11 +27428,11 @@ def segment_reduce(
     indices: Tensor | None = None,
     offsets: Tensor | None = None,
     axis: _int = 0,
-    unsafe: _bool = False,
+    unsafe: bool = False,
     initial: Number | _complex | None = None,
 ) -> Tensor:
     r"""
-    segment_reduce(data: Tensor, reduce: str, *, lengths: Tensor | None = None, indices: Tensor | None = None, offsets: Tensor | None = None, axis: _int = 0, unsafe: _bool = False, initial: Number | _complex | None = None) -> Tensor # noqa: B950
+    segment_reduce(data: Tensor, reduce: str, *, lengths: Tensor | None = None, indices: Tensor | None = None, offsets: Tensor | None = None, axis: _int = 0, unsafe: bool = False, initial: Number | _complex | None = None) -> Tensor # noqa: B950
 
     Perform a segment reduction operation on the input tensor along the specified axis.
 
@@ -27568,7 +27558,7 @@ def select_scatter(
 
 def selu(input: Tensor) -> Tensor: ...
 def selu_(input: Tensor) -> Tensor: ...
-def set_flush_denormal(mode: _bool) -> _bool:
+def set_flush_denormal(mode: bool) -> bool:
     r"""
     set_flush_denormal(mode) -> bool
 
@@ -27896,9 +27886,9 @@ def softmax(
 def sort(
     input: Tensor,
     *,
-    stable: _bool | None,
+    stable: bool | None,
     dim: _int = -1,
-    descending: _bool = False,
+    descending: bool = False,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = None,
 ) -> torch.return_types.sort:
     r"""
@@ -27967,7 +27957,7 @@ def sort(
 def sort(
     input: Tensor,
     dim: _int = -1,
-    descending: _bool = False,
+    descending: bool = False,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = None,
 ) -> torch.return_types.sort:
@@ -28037,9 +28027,9 @@ def sort(
 def sort(
     input: Tensor,
     *,
-    stable: _bool | None,
+    stable: bool | None,
     dim: str | EllipsisType | None,
-    descending: _bool = False,
+    descending: bool = False,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = None,
 ) -> torch.return_types.sort:
     r"""
@@ -28108,7 +28098,7 @@ def sort(
 def sort(
     input: Tensor,
     dim: str | EllipsisType | None,
-    descending: _bool = False,
+    descending: bool = False,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = None,
 ) -> torch.return_types.sort:
@@ -28182,8 +28172,8 @@ def sparse_bsc_tensor(
     *,
     dtype: _dtype | None = None,
     device: DeviceLikeType | None = None,
-    requires_grad: _bool = False,
-    check_invariants: _bool | None = None,
+    requires_grad: bool = False,
+    check_invariants: bool | None = None,
 ) -> Tensor:
     r"""
     sparse_bsc_tensor(ccol_indices, row_indices, values, size=None, *, dtype=None, device=None, pin_memory=False, requires_grad=False, check_invariants=None) -> Tensor
@@ -28267,8 +28257,8 @@ def sparse_bsr_tensor(
     *,
     dtype: _dtype | None = None,
     device: DeviceLikeType | None = None,
-    requires_grad: _bool = False,
-    check_invariants: _bool | None = None,
+    requires_grad: bool = False,
+    check_invariants: bool | None = None,
 ) -> Tensor:
     r"""
     sparse_bsr_tensor(crow_indices, col_indices, values, size=None, *, dtype=None, device=None, pin_memory=False, requires_grad=False, check_invariants=None) -> Tensor
@@ -28352,10 +28342,10 @@ def sparse_compressed_tensor(
     size: _size | None = None,
     *,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    requires_grad: _bool = False,
-    check_invariants: _bool | None = None,
+    requires_grad: bool = False,
+    check_invariants: bool | None = None,
 ) -> Tensor:
     r"""
     sparse_compressed_tensor(compressed_indices, plain_indices, values, size=None, *, dtype=None, layout=None, device=None, pin_memory=False, requires_grad=False, check_invariants=None) -> Tensor
@@ -28444,9 +28434,9 @@ def sparse_coo_tensor(
     *,
     dtype: _dtype | None = None,
     device: DeviceLikeType | None = None,
-    requires_grad: _bool = False,
-    check_invariants: _bool | None = None,
-    is_coalesced: _bool | None = None,
+    requires_grad: bool = False,
+    check_invariants: bool | None = None,
+    is_coalesced: bool | None = None,
 ) -> Tensor:
     r"""
     sparse_coo_tensor(indices, values, size=None, *, dtype=None, device=None, pin_memory=False, requires_grad=False, check_invariants=None, is_coalesced=None) -> Tensor
@@ -28561,8 +28551,8 @@ def sparse_csc_tensor(
     *,
     dtype: _dtype | None = None,
     device: DeviceLikeType | None = None,
-    requires_grad: _bool = False,
-    check_invariants: _bool | None = None,
+    requires_grad: bool = False,
+    check_invariants: bool | None = None,
 ) -> Tensor:
     r"""
     sparse_csc_tensor(ccol_indices, row_indices, values, size=None, *, dtype=None, device=None, pin_memory=False, requires_grad=False, check_invariants=None) -> Tensor
@@ -28642,8 +28632,8 @@ def sparse_csr_tensor(
     *,
     dtype: _dtype | None = None,
     device: DeviceLikeType | None = None,
-    requires_grad: _bool = False,
-    check_invariants: _bool | None = None,
+    requires_grad: bool = False,
+    check_invariants: bool | None = None,
 ) -> Tensor:
     r"""
     sparse_csr_tensor(crow_indices, col_indices, values, size=None, *, dtype=None, device=None, pin_memory=False, requires_grad=False, check_invariants=None) -> Tensor
@@ -29169,8 +29159,8 @@ def stack(
 def std(
     input: Tensor,
     dim: _int | _size | None,
-    unbiased: _bool = True,
-    keepdim: _bool = False,
+    unbiased: bool = True,
+    keepdim: bool = False,
     *,
     out: Tensor | None = None,
 ) -> Tensor:
@@ -29240,7 +29230,7 @@ def std(
     dim: _int | _size | None = None,
     *,
     correction: Number | _complex | None = None,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     out: Tensor | None = None,
 ) -> Tensor:
     r"""
@@ -29304,7 +29294,7 @@ def std(
     """
 
 @overload
-def std(input: Tensor, unbiased: _bool = True) -> Tensor:
+def std(input: Tensor, unbiased: bool = True) -> Tensor:
     r"""
     std(input, dim=None, *, correction=1, keepdim=False, out=None) -> Tensor
 
@@ -29371,7 +29361,7 @@ def std(
     dim: Sequence[str | EllipsisType | None],
     *,
     correction: Number | _complex | None = None,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     out: Tensor | None = None,
 ) -> Tensor:
     r"""
@@ -29438,8 +29428,8 @@ def std(
 def std(
     input: Tensor,
     dim: Sequence[str | EllipsisType | None],
-    unbiased: _bool = True,
-    keepdim: _bool = False,
+    unbiased: bool = True,
+    keepdim: bool = False,
     *,
     out: Tensor | None = None,
 ) -> Tensor:
@@ -29507,8 +29497,8 @@ def std(
 def std_mean(
     input: Tensor,
     dim: _int | _size | None,
-    unbiased: _bool = True,
-    keepdim: _bool = False,
+    unbiased: bool = True,
+    keepdim: bool = False,
 ) -> tuple[Tensor, Tensor]:
     r"""
     std_mean(input, dim=None, *, correction=1, keepdim=False, out=None) -> (Tensor, Tensor)
@@ -29578,7 +29568,7 @@ def std_mean(
     dim: _int | _size | None = None,
     *,
     correction: Number | _complex | None = None,
-    keepdim: _bool = False,
+    keepdim: bool = False,
 ) -> tuple[Tensor, Tensor]:
     r"""
     std_mean(input, dim=None, *, correction=1, keepdim=False, out=None) -> (Tensor, Tensor)
@@ -29645,7 +29635,7 @@ def std_mean(
 @overload
 def std_mean(
     input: Tensor,
-    unbiased: _bool = True,
+    unbiased: bool = True,
 ) -> tuple[Tensor, Tensor]:
     r"""
     std_mean(input, dim=None, *, correction=1, keepdim=False, out=None) -> (Tensor, Tensor)
@@ -29715,7 +29705,7 @@ def std_mean(
     dim: Sequence[str | EllipsisType | None],
     *,
     correction: Number | _complex | None = None,
-    keepdim: _bool = False,
+    keepdim: bool = False,
 ) -> tuple[Tensor, Tensor]:
     r"""
     std_mean(input, dim=None, *, correction=1, keepdim=False, out=None) -> (Tensor, Tensor)
@@ -29783,8 +29773,8 @@ def std_mean(
 def std_mean(
     input: Tensor,
     dim: Sequence[str | EllipsisType | None],
-    unbiased: _bool = True,
-    keepdim: _bool = False,
+    unbiased: bool = True,
+    keepdim: bool = False,
 ) -> tuple[Tensor, Tensor]:
     r"""
     std_mean(input, dim=None, *, correction=1, keepdim=False, out=None) -> (Tensor, Tensor)
@@ -30050,7 +30040,7 @@ def sum(input: Tensor, *, dtype: _dtype | None = None) -> Tensor:
 def sum(
     input: Tensor,
     dim: _int | _size | None,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     dtype: _dtype | None = None,
     out: Tensor | None = None,
@@ -30127,7 +30117,7 @@ def sum(
 def sum(
     input: Tensor,
     dim: Sequence[str | EllipsisType | None],
-    keepdim: _bool = False,
+    keepdim: bool = False,
     *,
     dtype: _dtype | None = None,
     out: Tensor | None = None,
@@ -30202,8 +30192,8 @@ def sum(
 
 def svd(
     input: Tensor,
-    some: _bool = True,
-    compute_uv: _bool = True,
+    some: bool = True,
+    compute_uv: bool = True,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = None,
 ) -> torch.return_types.svd:
@@ -30576,8 +30566,8 @@ def tensor(
     data: Any,
     dtype: _dtype | None = None,
     device: DeviceLikeType | None = None,
-    requires_grad: _bool = False,
-    pin_memory: _bool = False,
+    requires_grad: bool = False,
+    pin_memory: bool = False,
 ) -> Tensor:
     r"""
     tensor(data, *, dtype=None, device=None, requires_grad=False, pin_memory=False) -> Tensor
@@ -30893,8 +30883,8 @@ def topk(
     input: Tensor,
     k: _int | SymInt,
     dim: _int = -1,
-    largest: _bool = True,
-    sorted: _bool = True,
+    largest: bool = True,
+    sorted: bool = True,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = None,
 ) -> torch.return_types.topk:
@@ -31316,9 +31306,9 @@ def trapz(y: Tensor, x: Tensor, *, dim: _int = -1) -> Tensor:
 def triangular_solve(
     input: Tensor,
     A: Tensor,
-    upper: _bool = True,
-    transpose: _bool = False,
-    unitriangular: _bool = False,
+    upper: bool = True,
+    transpose: bool = False,
+    unitriangular: bool = False,
     *,
     out: Tensor | tuple[Tensor, ...] | list[Tensor] | None = None,
 ) -> torch.return_types.triangular_solve:
@@ -31459,10 +31449,10 @@ def tril_indices(
     offset: _int = 0,
     *,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     tril_indices(row, col, offset=0, *, dtype=torch.long, device='cpu', layout=torch.strided) -> Tensor
@@ -31527,7 +31517,7 @@ def triplet_margin_loss(
     margin: _float = 1.0,
     p: _float = 2,
     eps: _float = 1e-06,
-    swap: _bool = False,
+    swap: bool = False,
     reduction: _int = 1,
 ) -> Tensor: ...
 def triu(
@@ -31604,10 +31594,10 @@ def triu_indices(
     offset: _int = 0,
     *,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     triu_indices(row, col, offset=0, *, dtype=torch.long, device='cpu', layout=torch.strided) -> Tensor
@@ -31848,9 +31838,9 @@ def unfold_copy(
 def unique_dim(
     input: Tensor,
     dim: _int,
-    sorted: _bool = True,
-    return_inverse: _bool = False,
-    return_counts: _bool = False,
+    sorted: bool = True,
+    return_inverse: bool = False,
+    return_counts: bool = False,
 ) -> tuple[Tensor, Tensor, Tensor]: ...
 def unsafe_chunk(
     input: Tensor,
@@ -31944,7 +31934,7 @@ def values_copy(input: Tensor, *, out: Tensor | None = None) -> Tensor:
 def vander(
     x: Tensor,
     N: _int | None = None,
-    increasing: _bool = False,
+    increasing: bool = False,
 ) -> Tensor:
     r"""
     vander(x, N=None, increasing=False) -> Tensor
@@ -31991,8 +31981,8 @@ def vander(
 def var(
     input: Tensor,
     dim: _int | _size | None,
-    unbiased: _bool = True,
-    keepdim: _bool = False,
+    unbiased: bool = True,
+    keepdim: bool = False,
     *,
     out: Tensor | None = None,
 ) -> Tensor:
@@ -32062,7 +32052,7 @@ def var(
     dim: _int | _size | None = None,
     *,
     correction: Number | _complex | None = None,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     out: Tensor | None = None,
 ) -> Tensor:
     r"""
@@ -32126,7 +32116,7 @@ def var(
     """
 
 @overload
-def var(input: Tensor, unbiased: _bool = True) -> Tensor:
+def var(input: Tensor, unbiased: bool = True) -> Tensor:
     r"""
     var(input, dim=None, *, correction=1, keepdim=False, out=None) -> Tensor
 
@@ -32193,7 +32183,7 @@ def var(
     dim: Sequence[str | EllipsisType | None],
     *,
     correction: Number | _complex | None = None,
-    keepdim: _bool = False,
+    keepdim: bool = False,
     out: Tensor | None = None,
 ) -> Tensor:
     r"""
@@ -32260,8 +32250,8 @@ def var(
 def var(
     input: Tensor,
     dim: Sequence[str | EllipsisType | None],
-    unbiased: _bool = True,
-    keepdim: _bool = False,
+    unbiased: bool = True,
+    keepdim: bool = False,
     *,
     out: Tensor | None = None,
 ) -> Tensor:
@@ -32329,8 +32319,8 @@ def var(
 def var_mean(
     input: Tensor,
     dim: _int | _size | None,
-    unbiased: _bool = True,
-    keepdim: _bool = False,
+    unbiased: bool = True,
+    keepdim: bool = False,
 ) -> tuple[Tensor, Tensor]:
     r"""
     var_mean(input, dim=None, *, correction=1, keepdim=False, out=None) -> (Tensor, Tensor)
@@ -32399,7 +32389,7 @@ def var_mean(
     dim: _int | _size | None = None,
     *,
     correction: Number | _complex | None = None,
-    keepdim: _bool = False,
+    keepdim: bool = False,
 ) -> tuple[Tensor, Tensor]:
     r"""
     var_mean(input, dim=None, *, correction=1, keepdim=False, out=None) -> (Tensor, Tensor)
@@ -32465,7 +32455,7 @@ def var_mean(
 @overload
 def var_mean(
     input: Tensor,
-    unbiased: _bool = True,
+    unbiased: bool = True,
 ) -> tuple[Tensor, Tensor]:
     r"""
     var_mean(input, dim=None, *, correction=1, keepdim=False, out=None) -> (Tensor, Tensor)
@@ -32534,7 +32524,7 @@ def var_mean(
     dim: Sequence[str | EllipsisType | None],
     *,
     correction: Number | _complex | None = None,
-    keepdim: _bool = False,
+    keepdim: bool = False,
 ) -> tuple[Tensor, Tensor]:
     r"""
     var_mean(input, dim=None, *, correction=1, keepdim=False, out=None) -> (Tensor, Tensor)
@@ -32601,8 +32591,8 @@ def var_mean(
 def var_mean(
     input: Tensor,
     dim: Sequence[str | EllipsisType | None],
-    unbiased: _bool = True,
-    keepdim: _bool = False,
+    unbiased: bool = True,
+    keepdim: bool = False,
 ) -> tuple[Tensor, Tensor]:
     r"""
     var_mean(input, dim=None, *, correction=1, keepdim=False, out=None) -> (Tensor, Tensor)
@@ -33327,10 +33317,10 @@ def zeros(
     *,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     zeros(*size, *, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -33370,10 +33360,10 @@ def zeros(
     *size: _int | SymInt,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     zeros(*size, *, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -33414,10 +33404,10 @@ def zeros(
     *,
     names: Sequence[str | EllipsisType | None] | None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     zeros(*size, *, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -33457,10 +33447,10 @@ def zeros(
     *size: _int,
     names: Sequence[str | EllipsisType | None] | None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     zeros(*size, *, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False) -> Tensor
@@ -33500,10 +33490,10 @@ def zeros_like(
     *,
     memory_format: memory_format | None = None,
     dtype: _dtype | None = None,
-    layout: _layout | None = None,
+    layout: layout | None = None,
     device: DeviceLikeType | None = None,
-    pin_memory: _bool | None = False,
-    requires_grad: _bool | None = False,
+    pin_memory: bool | None = False,
+    requires_grad: bool | None = False,
 ) -> Tensor:
     r"""
     zeros_like(input, *, dtype=None, layout=None, device=None, requires_grad=False, memory_format=torch.preserve_format) -> Tensor

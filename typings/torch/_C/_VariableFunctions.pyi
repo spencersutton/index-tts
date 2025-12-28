@@ -25380,7 +25380,7 @@ def randint_like(
 def randn(
     size: Sequence[_int | SymInt],
     *,
-    generator: Generator | None,
+    generator: Generator[float] | None,
     names: Sequence[str | EllipsisType | None] | None,
     dtype: _dtype | None = None,
     layout: layout | None = None,
@@ -25449,7 +25449,7 @@ def randn(
 @overload
 def randn(
     *size: _int | SymInt,
-    generator: Generator | None,
+    generator: Generator[float] | None,
     names: Sequence[str | EllipsisType | None] | None,
     dtype: _dtype | None = None,
     layout: layout | None = None,
@@ -25519,7 +25519,7 @@ def randn(
 def randn(
     size: Sequence[_int | SymInt],
     *,
-    generator: Generator | None,
+    generator: Generator[float] | None,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
     layout: layout | None = None,
@@ -25588,7 +25588,7 @@ def randn(
 @overload
 def randn(
     *size: _int | SymInt,
-    generator: Generator | None,
+    generator: Generator[float] | None,
     out: Tensor | None = None,
     dtype: _dtype | None = None,
     layout: layout | None = None,

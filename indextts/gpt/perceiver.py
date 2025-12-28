@@ -7,7 +7,6 @@ import torch
 import torch.nn.functional as F
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
-from packaging import version
 from torch import Tensor, einsum, nn
 from torch.nn.attention import SDPBackend, sdpa_kernel
 
@@ -44,9 +43,6 @@ class _Attend(nn.Module):
         self.register_buffer("mask", None, persistent=False)
 
         self.use_flash = use_flash
-        assert not (use_flash and version.parse(torch.__version__) < version.parse("2.0.0")), (
-            "in order to use flash attention, you must be using pytorch 2.0 or above"
-        )
 
         # determine efficient attention configs for cuda and cpu
         self.config = _EfficientAttentionConfig

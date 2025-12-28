@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import math
 from typing import TYPE_CHECKING, Final, override
 
@@ -74,7 +76,7 @@ class FinalLayer(nn.Module):
 
     norm_final: nn.LayerNorm
     linear: nn.Linear
-    adaLN_modulation: nn.Sequential  # noqa: N815
+    adaLN_modulation: nn.Sequential[nn.SiLU | nn.Linear]  # noqa: N815
 
     def __init__(self, hidden_size: int, patch_size: int, out_channels: int) -> None:
         super().__init__()

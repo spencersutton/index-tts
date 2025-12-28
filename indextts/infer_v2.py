@@ -11,7 +11,7 @@ import typing
 from collections.abc import Collection, Generator, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, cast, no_type_check
 
 import safetensors.torch
 import torch
@@ -44,6 +44,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+@no_type_check
 def _strip_dead_functorch_predispatch_calls(gm: torch.fx.GraphModule) -> int:
     """Remove dead functorch predispatch calls that break torch.export.save().
 
@@ -87,6 +88,7 @@ def _strip_dead_functorch_predispatch_calls(gm: torch.fx.GraphModule) -> int:
     return removed
 
 
+@no_type_check
 def _safe_torch_export_save(program: Any, path: str | Path) -> None:
     """Save an ExportedProgram, retrying after sanitizing known bad nodes."""
     gm = getattr(program, "graph_module", None)
@@ -94,7 +96,7 @@ def _safe_torch_export_save(program: Any, path: str | Path) -> None:
     for _ in range(5):
         try:
             torch.export.save(program, path)
-            return
+            return  # noqa: TRY300
         except Exception as e:
             msg = str(e)
             if gm is None:
@@ -323,7 +325,7 @@ class IndexTTS2:
         self.semantic_codec = _load_model(RepCodec(), checkpoint, self.device)
 
         # S2Mel model
-        self.cfm = torch._inductor.aoti_load_package(  # noqa: SLF001  # ty:ignore[invalid-assignment]
+        self.cfm = torch._inductor.aoti_load_package(  # noqa: SLF001  # type: ignore
             "checkpoints/co37qe6tcc3go3nf6rhe43sytjkoyza6dgmjltjypezp7uo3stco.wrapper.pt2"
         )
         self.gpt_layer = _load_model(
@@ -492,7 +494,7 @@ class IndexTTS2:
             interval_silence=interval_silence,
             max_text_tokens_per_segment=max_text_tokens_per_segment,
             stream_return=stream_return,
-            **generation_kwargs,  # ty:ignore[invalid-argument-type]
+            **generation_kwargs,  # type: ignore
         )
 
         if stream_return:
@@ -520,6 +522,14 @@ class IndexTTS2:
         stream_return: bool = False,
         quick_streaming_tokens: int = 0,
         cfm_steps: int = 25,
+        num_beams: int = 3,
+        max_mel_tokens: int = 1500,
+        temperature: float = 0.8,
+        do_sample: bool = True,
+        top_p: float = 0.8,
+        top_k: int = 30,
+        length_penalty: float = 0.0,
+        repetition_penalty: float = 10.0,
         **generation_kwargs: Any,
     ) -> Generator[Tensor | Path | tuple[int, np.ndarray] | None]:
         """Generator-based inference for streaming synthesis.
@@ -616,8 +626,6 @@ class IndexTTS2:
             emovec = emovec_mat + (1 - weight_vector.sum()) * emovec
 
         # Run batch inference
-        max_mel_tokens = cast(int, generation_kwargs.pop("max_mel_tokens", 1500))
-
         if not batch_text_tokens:
             return
 
@@ -645,16 +653,16 @@ class IndexTTS2:
             cond_lengths=torch.tensor([spk_cond_emb.shape[-1]] * batch_size, device=spk_cond_emb.device),
             emo_cond_lengths=torch.tensor([emo_cond_emb.shape[-1]] * batch_size, device=emo_cond_emb.device),
             emo_vec=emovec,
-            do_sample=generation_kwargs.pop("do_sample", True),
-            top_p=generation_kwargs.pop("top_p", 0.8),
-            top_k=generation_kwargs.pop("top_k", 30),
-            temperature=generation_kwargs.pop("temperature", 0.8),
+            do_sample=do_sample,
+            top_p=top_p,
+            top_k=top_k,
+            temperature=temperature,
             num_return_sequences=1,
-            length_penalty=generation_kwargs.pop("length_penalty", 0.0),
-            num_beams=generation_kwargs.pop("num_beams", 3),
-            repetition_penalty=generation_kwargs.pop("repetition_penalty", 10.0),
+            length_penalty=length_penalty,
+            num_beams=num_beams,
+            repetition_penalty=repetition_penalty,
             max_generate_length=max_mel_tokens,
-            **generation_kwargs,
+            **generation_kwargs,  # pyright: ignore[reportAny]
         )
         gpt_gen_time = time.perf_counter() - t0
 

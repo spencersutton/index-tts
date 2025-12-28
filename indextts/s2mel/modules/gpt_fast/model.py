@@ -76,10 +76,10 @@ class ModelArgs:
 class Transformer(nn.Module):
     max_batch_size: Final = 1
     max_seq_length: Final = 8192
-    freqs_cis: Tensor
+    freqs_cis: Tensor  # pyright: ignore[reportUninitializedInstanceVariable]
     mask_cache: Tensor | None = None
     layers: "Iterable[TransformerBlock]"
-    causal_mask: Tensor
+    causal_mask: Tensor  # pyright: ignore[reportUninitializedInstanceVariable]
     use_kv_cache: bool = False
     uvit_skip_connection: bool = False
     layers_emit_skip: Sequence[int]

@@ -1,8 +1,11 @@
+from typing import override
+
 import torch
 from torch import Tensor, nn
 
 from indextts.config import S2MelConfig
 from indextts.s2mel.modules.diffusion_transformer import DiT
+from indextts.util import patch_call
 
 
 class CFM(nn.Module):
@@ -18,6 +21,7 @@ class CFM(nn.Module):
         self.in_channels = args.DiT.in_channels
 
     @torch.inference_mode()
+    @override
     def forward(
         self,
         mu: Tensor,
@@ -127,3 +131,6 @@ class CFM(nn.Module):
             x[:, :, :prompt_len] = 0
 
         return x
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...

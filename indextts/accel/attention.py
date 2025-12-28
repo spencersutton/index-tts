@@ -21,40 +21,40 @@ class ForwardContext:
     context_lens: Tensor | None = None
     block_tables: Tensor | None = None
 
+    _instance: "ForwardContext | None" = None
 
-_FORWARD_CONTEXT = ForwardContext()
+    @classmethod
+    def get(cls) -> "ForwardContext":
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
 
+    @classmethod
+    def reset(cls) -> None:
+        cls._instance = None
 
-def get_forward_context():
-    return _FORWARD_CONTEXT
-
-
-def set_forward_context(
-    is_prefill,
-    cu_seqlens_q=None,
-    cu_seqlens_k=None,
-    max_seqlen_q=0,
-    max_seqlen_k=0,
-    slot_mapping=None,
-    context_lens=None,
-    block_tables=None,
-) -> None:
-    global _FORWARD_CONTEXT
-    _FORWARD_CONTEXT = ForwardContext(
-        is_prefill,
-        cu_seqlens_q,
-        cu_seqlens_k,
-        max_seqlen_q,
-        max_seqlen_k,
-        slot_mapping,
-        context_lens,
-        block_tables,
-    )
-
-
-def reset_forward_context() -> None:
-    global _FORWARD_CONTEXT
-    _FORWARD_CONTEXT = ForwardContext()
+    @classmethod
+    def set(
+        cls,
+        is_prefill: bool,
+        cu_seqlens_q: Tensor | None = None,
+        cu_seqlens_k: Tensor | None = None,
+        max_seqlen_q: int = 0,
+        max_seqlen_k: int = 0,
+        slot_mapping: Tensor | None = None,
+        context_lens: Tensor | None = None,
+        block_tables: Tensor | None = None,
+    ) -> None:
+        cls._instance = cls(
+            is_prefill,
+            cu_seqlens_q,
+            cu_seqlens_k,
+            max_seqlen_q,
+            max_seqlen_k,
+            slot_mapping,
+            context_lens,
+            block_tables,
+        )
 
 
 @triton.jit
@@ -122,7 +122,7 @@ class Attention(nn.Module):
 
     @override
     def forward(self, q: Tensor, k: Tensor, v: Tensor) -> Tensor:
-        context = get_forward_context()
+        context = ForwardContext.get()
         k_cache, v_cache = self.k_cache, self.v_cache
 
         if k_cache.numel() and v_cache.numel() and context.slot_mapping is not None:

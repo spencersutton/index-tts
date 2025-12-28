@@ -170,11 +170,6 @@ class UnifiedVoice(nn.Module):
                 use_cache=False,
             )
         )
-        # `GPT2Model` initialization may sanitize config fields; set this after model
-        # construction so the attribute is reliably present for downstream checks/tests.
-        gpt.config.gradient_checkpointing = True
-        if hasattr(gpt, "gradient_checkpointing_enable"):
-            gpt.gradient_checkpointing_enable()
 
         # Override the built in positional embeddings
         del gpt.wpe

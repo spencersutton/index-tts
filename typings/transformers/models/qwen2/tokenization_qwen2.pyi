@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Any, Sequence
 
 from ...tokenization_utils import PreTrainedTokenizer
 
@@ -43,11 +44,11 @@ class Qwen2Tokenizer(PreTrainedTokenizer):
         ...
     def decode(
         self,
-        token_ids,
+        token_ids: int | Sequence[int],
         skip_special_tokens: bool = ...,
         clean_up_tokenization_spaces: bool | None = ...,
         spaces_between_special_tokens: bool = ...,
-        **kwargs,
+        **kwargs: Any,
     ) -> str: ...
     def save_vocabulary(self, save_directory: str, filename_prefix: str | None = ...) -> tuple[str]: ...
     def prepare_for_tokenization(self, text, **kwargs):  # -> tuple[str, dict[str, Any]]:

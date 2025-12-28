@@ -9,7 +9,7 @@ from typing import IO, Any, Literal, ParamSpec, Protocol, Self, SupportsIndex, T
 
 import numpy as np
 import torch
-from torch import SymInt, Tensor
+from torch import SymInt, Tensor, dtype as _dtype
 from torch._prims_common import DeviceLikeType
 from torch.autograd.graph import Node as _Node
 from torch.cuda import _POOL_HANDLE
@@ -21,7 +21,6 @@ from torch.types import (
     Storage,
     _device,
     _dispatchkey,
-    _dtype,
     _layout,
     _qscheme,
     _size,

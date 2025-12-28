@@ -1,14 +1,15 @@
 import json
 import re
+from collections.abc import Mapping, Sequence, Sized
 from functools import cache
 from pathlib import Path
-from typing import Final, cast
+from typing import Any, Final, cast
 
 from torch import Tensor
 from transformers import Qwen2Tokenizer, Qwen3ForCausalLM
 from transformers.generation.utils import GenerateOutput
 
-MELANCHOLIC_WORDS: Final[set[str]] = {
+MELANCHOLIC_WORDS: Final = {
     # emotion text phrases that will force QwenEmotion's "悲伤" (sad) detection
     # to become "低落" (melancholic) instead, to fix limitations mentioned above.
     "低落",
@@ -18,8 +19,8 @@ MELANCHOLIC_WORDS: Final[set[str]] = {
     "depressed",
     "gloomy",
 }
-PROMPT: Final[str] = "文本情感分类"
-CN_KEY_TO_EN: Final[dict[str, str]] = {
+PROMPT: Final = "文本情感分类"
+CN_KEY_TO_EN: Final = {
     "高兴": "happy",
     "愤怒": "angry",
     "悲伤": "sad",
@@ -33,9 +34,9 @@ CN_KEY_TO_EN: Final[dict[str, str]] = {
     "惊讶": "surprised",
     "自然": "calm",
 }
-DESIRED_VECTOR_ORDER: Final[list[str]] = ["高兴", "愤怒", "悲伤", "恐惧", "反感", "低落", "惊讶", "自然"]
-MAX_SCORE: Final[float] = 1.2
-MIN_SCORE: Final[float] = 0.0
+DESIRED_VECTOR_ORDER: Final = ["高兴", "愤怒", "悲伤", "恐惧", "反感", "低落", "惊讶", "自然"]
+MAX_SCORE: Final = 1.2
+MIN_SCORE: Final = 0.0
 
 
 def clamp_score(value: float) -> float:
@@ -91,19 +92,20 @@ class QwenEmotion:
             enable_thinking=False,
         )
         assert isinstance(text, str)
-        model_inputs = self.tokenizer([text], return_tensors="pt")
+        model_inputs: Mapping[str, Any] = self.tokenizer([text], return_tensors="pt")
         # conduct text completion
         generated_ids = cast(
             GenerateOutput | Tensor,
             self.model.generate(
-                **model_inputs,
+                **model_inputs,  # type: ignore
                 max_new_tokens=32768,
                 pad_token_id=self.tokenizer.eos_token_id,
             ),
         )
-        input_ids = model_inputs.input_ids
-        assert isinstance(generated_ids, Tensor)
+        input_ids = cast(Sequence[Sized], model_inputs.input_ids)
+        generated_ids = cast(Tensor, generated_ids)
         output_ids = generated_ids[0][len(input_ids[0]) :].tolist()
+        output_ids = [int(i) for i in output_ids]
 
         # parsing thinking content
         try:

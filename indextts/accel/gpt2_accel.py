@@ -5,8 +5,10 @@ from typing import TYPE_CHECKING, cast, override
 
 import torch
 import torch.nn as nn
+from torch import Tensor
+from transformers import Conv1D
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions
-from transformers.models.gpt2.modeling_gpt2 import Conv1D, GPT2Block, GPT2Model
+from transformers.models.gpt2.modeling_gpt2 import GPT2Block, GPT2Model
 
 from indextts.util import patch_call
 
@@ -14,6 +16,7 @@ from .attention import Attention
 
 if TYPE_CHECKING:
     from transformers import GPT2Config
+    from transformers.cache_utils import Cache
 
 
 class GPT2AccelAttention(nn.Module):
@@ -59,17 +62,17 @@ class GPT2AccelAttention(nn.Module):
     @override
     def forward(
         self,
-        hidden_states: torch.Tensor,
-        layer_past=None,
-        attention_mask=None,
-        head_mask=None,
-        encoder_hidden_states=None,
-        encoder_attention_mask=None,
-        use_cache=False,
-        output_attentions=False,
-        past_key_value=None,
-        **kwargs,
-    ):
+        hidden_states: Tensor,
+        layer_past: tuple[Tensor, Tensor] | None = None,
+        attention_mask: Tensor | None = None,
+        head_mask: Tensor | None = None,
+        encoder_hidden_states: Tensor | None = None,
+        encoder_attention_mask: Tensor | None = None,
+        use_cache: bool = False,
+        output_attentions: bool = False,
+        past_key_value: tuple[Tensor, Tensor] | None = None,
+        **kwargs: object,
+    ) -> tuple[Tensor, None, None] | tuple[Tensor, None]:
         if encoder_hidden_states is not None:
             raise NotImplementedError("Cross attention not supported in accel mode")
 
@@ -118,53 +121,58 @@ class GPT2AccelAttention(nn.Module):
     @patch_call(forward)
     def __call__(self) -> None: ...
 
-    def _split_heads(self, tensor, num_heads, head_dim):
+    def _split_heads(self, tensor: Tensor, num_heads: int, head_dim: int) -> Tensor:
         new_shape = (*tensor.size()[:-1], num_heads, head_dim)
         tensor = tensor.view(new_shape)
         return tensor.permute(0, 2, 1, 3)  # (batch, head, seq_length, head_features)
 
-    def _merge_heads(self, tensor, num_heads, head_dim):
+    def _merge_heads(self, tensor: Tensor, num_heads: int, head_dim: int) -> Tensor:
         tensor = tensor.permute(0, 2, 1, 3).contiguous()
         new_shape = (*tensor.size()[:-2], num_heads * head_dim)
         return tensor.view(new_shape)
 
 
 class GPT2AccelBlock(GPT2Block):
-    def __init__(self, config, layer_idx=None) -> None:
+    def __init__(self, config: GPT2Config, layer_idx: int | None = None) -> None:
         super().__init__(config, layer_idx)
         self.attn = GPT2AccelAttention(config, layer_idx)
 
 
 class GPT2AccelModel(GPT2Model):
     if typing.TYPE_CHECKING:
-        h: nn.ModuleList[GPT2AccelBlock]
+        h: nn.ModuleList[nn.Module]
 
-    def __init__(self, config) -> None:
+    def __init__(self, config: GPT2Config) -> None:
         super().__init__(config)
         self.h = nn.ModuleList([GPT2AccelBlock(config, layer_idx=i) for i in range(config.num_hidden_layers)])
 
     @override
     def forward(
         self,
-        input_ids=None,
-        past_key_values=None,
-        attention_mask=None,
-        token_type_ids=None,
-        position_ids=None,
-        head_mask=None,
-        inputs_embeds=None,
-        encoder_hidden_states=None,
-        encoder_attention_mask=None,
-        use_cache=None,
-        output_attentions=None,
-        output_hidden_states=None,
-        return_dict=None,
-    ):
+        input_ids: Tensor | None = None,
+        past_key_values: tuple[tuple[Tensor]] | Cache | None = None,
+        cache_position: Tensor | None = None,
+        attention_mask: Tensor | None = None,
+        token_type_ids: Tensor | None = None,
+        position_ids: Tensor | None = None,
+        head_mask: Tensor | None = None,
+        inputs_embeds: Tensor | None = None,
+        encoder_hidden_states: Tensor | None = None,
+        encoder_attention_mask: Tensor | None = None,
+        use_cache: bool | None = None,
+        output_attentions: bool | None = None,
+        output_hidden_states: bool | None = None,
+        return_dict: bool | None = None,
+        **kwargs: object,
+    ) -> tuple[Tensor, ...] | BaseModelOutputWithPastAndCrossAttentions:
         if inputs_embeds is not None:
             hidden_states = inputs_embeds
 
             for block in self.h:
-                hidden_states = block(hidden_states)[0]
+                assert isinstance(block, GPT2AccelBlock)
+                block_output = block(hidden_states)
+                assert block_output is not None
+                hidden_states = block_output[0]
 
             hidden_states = self.ln_f(hidden_states)
 
@@ -178,15 +186,16 @@ class GPT2AccelModel(GPT2Model):
             return (hidden_states,)
         return super().forward(
             input_ids=input_ids,
-            past_key_values=None,
+            past_key_values=past_key_values,
             attention_mask=attention_mask,
             token_type_ids=token_type_ids,
             position_ids=position_ids,
             head_mask=head_mask,
-            inputs_embeds=None,
+            inputs_embeds=inputs_embeds,
             encoder_hidden_states=encoder_hidden_states,
             encoder_attention_mask=encoder_attention_mask,
-            use_cache=False,
+            cache_position=cache_position,
+            use_cache=use_cache,
             output_attentions=output_attentions,
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,

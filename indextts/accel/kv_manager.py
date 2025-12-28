@@ -46,7 +46,7 @@ class Seq(Sequence[int]):
         self.num_tokens = len(self.token_ids)
         self.num_prompt_tokens = len(token_ids)
         self.num_cached_tokens = 0
-        self.block_table: list[int] = []
+        self.block_table = []
         self.block_size = block_size
 
     @override

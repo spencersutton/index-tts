@@ -244,7 +244,8 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         lm_logits = cast(torch.FloatTensor, self.lm_head(hidden_states))
 
         if not return_dict:
-            return (lm_logits, *transformer_outputs[1:])
+            transformer_outputs_tuple = cast(Tensor, transformer_outputs[1:])
+            return (lm_logits, *transformer_outputs_tuple)
 
         return CausalLMOutputWithCrossAttentions(
             loss=None,

@@ -77,8 +77,8 @@ class AccelInferenceEngine:
     def _prepare_prefill(self, requests: list[Seq]) -> tuple[Tensor, Tensor]:
         input_ids: list[int] = []
         positions: list[int] = []
-        cu_seqlens_q: list[int] = [0]
-        cu_seqlens_k: list[int] = [0]
+        cu_seqlens_q = [0]
+        cu_seqlens_k = [0]
         max_seqlen_q = 0
         max_seqlen_k = 0
         slot_mapping: list[int] = []
@@ -105,16 +105,16 @@ class AccelInferenceEngine:
                     slot_idx = block_id * self.block_size + block_offset
                     slot_mapping.append(slot_idx)
 
-        input_ids: Tensor = torch.tensor(input_ids, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
-        positions: Tensor = torch.tensor(positions, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
-        cu_seqlens_q: Tensor = torch.tensor(cu_seqlens_q, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
-        cu_seqlens_k: Tensor = torch.tensor(cu_seqlens_k, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
-        slot_mapping: Tensor = torch.tensor(slot_mapping, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
+        input_ids_t: Tensor = torch.tensor(input_ids, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
+        positions_t: Tensor = torch.tensor(positions, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
+        cu_seqlens_q_t: Tensor = torch.tensor(cu_seqlens_q, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
+        cu_seqlens_k_t: Tensor = torch.tensor(cu_seqlens_k, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
+        slot_mapping_t: Tensor = torch.tensor(slot_mapping, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
 
         block_tables: Tensor | None = None
         if cu_seqlens_k[-1] > cu_seqlens_q[-1]:
             max_len = max(len(req.block_table) for req in requests)
-            block_tables_list = []
+            block_tables_list: list[list[int]] = []
             for req in requests:
                 table = req.block_table + [-1] * (max_len - len(req.block_table))
                 block_tables_list.append(table)
@@ -122,16 +122,16 @@ class AccelInferenceEngine:
 
         ForwardContext.set(
             True,
-            cu_seqlens_q,
-            cu_seqlens_k,
+            cu_seqlens_q_t,
+            cu_seqlens_k_t,
             max_seqlen_q,
             max_seqlen_k,
-            slot_mapping,
+            slot_mapping_t,
             None,
             block_tables,
         )
 
-        return input_ids, positions
+        return input_ids_t, positions_t
 
     def _prepare_decode(self, requests: list[Seq]) -> tuple[Tensor, Tensor]:
         if not requests:
@@ -185,7 +185,7 @@ class AccelInferenceEngine:
 
     def _capture_cuda_graphs(
         self,
-        tts_mel_embedding: torch.nn.Module | None = None,
+        tts_mel_embedding: nn.Embedding | None = None,
         tts_text_pos_embedding: LearnedPositionEmbeddings | None = None,
     ) -> None:
         print("Capturing CUDA graphs for decode optimization...")
@@ -335,8 +335,8 @@ class AccelInferenceEngine:
         stop_tokens: list[int] | None = None,
         attention_mask: torch.Tensor | None = None,
         tts_embeddings: torch.Tensor | None = None,  # TTS: [pad][cond][text] embeddings (87 tokens, NO start_mel)
-        tts_mel_embedding: torch.nn.Module | None = None,  # TTS: mel_embedding layer
-        tts_text_pos_embedding: torch.nn.Module | None = None,  # TTS: text_pos_embedding layer
+        tts_mel_embedding: nn.Embedding | None = None,  # TTS: mel_embedding layer
+        tts_text_pos_embedding: LearnedPositionEmbeddings | None = None,  # TTS: text_pos_embedding layer
     ) -> torch.Tensor:
         """
         Generate tokens.
@@ -534,7 +534,7 @@ class AccelInferenceEngine:
             self.kv_manager.remove_seq(req)
         self.current_sequences = []
 
-        pad_token = cast(int, stop_tokens[0] if stop_tokens else 0)
+        pad_token = stop_tokens[0] if stop_tokens else 0
 
         if is_varlen_batch:
             max_prompt_len = attention_mask.size(1)

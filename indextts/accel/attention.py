@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import ClassVar, override
+from typing import ClassVar, no_type_check, override
 
 import torch
 import triton
@@ -57,16 +57,17 @@ class ForwardContext:
         )
 
 
-@triton.jit
+@triton.jit  # type: ignore
+@no_type_check
 def store_kvcache_kernel(
-    key_ptr,
-    key_stride,
-    value_ptr,
-    value_stride,
-    k_cache_ptr,
-    v_cache_ptr,
-    slot_mapping_ptr,
-    D: tl.constexpr,
+    key_ptr: tl.pointer_type,
+    key_stride: int,
+    value_ptr: tl.pointer_type,
+    value_stride: int,
+    k_cache_ptr: tl.pointer_type,
+    v_cache_ptr: tl.pointer_type,
+    slot_mapping_ptr: tl.pointer_type,
+    d: tl.constexpr,
 ) -> None:
     BLOCK_SIZE: tl.constexpr = 2048
     idx = tl.program_id(0)
@@ -74,11 +75,11 @@ def store_kvcache_kernel(
     if slot == -1:
         return
     d_offset = 0
-    while d_offset < D:
-        cur_block_size = min(BLOCK_SIZE, D - d_offset)
+    while d_offset < d:
+        cur_block_size = min(BLOCK_SIZE, d - d_offset)
         key_offsets = idx * key_stride + d_offset + tl.arange(0, BLOCK_SIZE)
         value_offsets = idx * value_stride + d_offset + tl.arange(0, BLOCK_SIZE)
-        cache_offsets = slot * D + d_offset + tl.arange(0, BLOCK_SIZE)
+        cache_offsets = slot * d + d_offset + tl.arange(0, BLOCK_SIZE)
 
         mask = tl.arange(0, BLOCK_SIZE) < cur_block_size
         key = tl.load(key_ptr + key_offsets, mask=mask, other=0.0)
@@ -102,7 +103,7 @@ def store_kvcache(
     assert key.stride(1) == head_dim and value.stride(1) == head_dim
     assert k_cache.stride(1) == D and v_cache.stride(1) == D
     assert slot_mapping.numel() == N
-    store_kvcache_kernel[N,](key, key.stride(0), value, value.stride(0), k_cache, v_cache, slot_mapping, D)  # ty:ignore[invalid-argument-type]
+    store_kvcache_kernel[N,](key, key.stride(0), value, value.stride(0), k_cache, v_cache, slot_mapping, D)
 
 
 class Attention(nn.Module):

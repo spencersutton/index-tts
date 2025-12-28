@@ -493,7 +493,9 @@ class UnifiedVoice(nn.Module):
         max_generate_length: int | None = None,
         typical_sampling: bool = False,
         typical_mass: float = 0.9,
-        **hf_generate_kwargs: Any,
+        num_beams: int = 1,
+        temperature: float = 1.0,
+        **hf_generate_kwargs: Any,  # pyright: ignore[reportAny]
     ) -> tuple[Tensor, Tensor]:
         """Generate speech tokens from text and conditioning.
 
@@ -587,7 +589,7 @@ class UnifiedVoice(nn.Module):
             if not (0.0 < typical_mass < 1.0):
                 msg = f"`typical_mass` must be > 0 and < 1, got {typical_mass}"
                 raise ValueError(msg)
-            min_tokens = 2 if hf_generate_kwargs.get("num_beams", 1) > 1 else 1
+            min_tokens = 2 if num_beams > 1 else 1
             logits_processor.append(TypicalLogitsWarper(mass=typical_mass, min_tokens_to_keep=min_tokens))
 
         max_length = (
@@ -604,7 +606,7 @@ class UnifiedVoice(nn.Module):
                 inputs,
                 max_new_tokens=max_length - trunc_index,
                 attention_mask=attention_mask,
-                temperature=hf_generate_kwargs.get("temperature", 1),
+                temperature=temperature,
                 stop_tokens=[self.config.stop_mel_token],
                 tts_embeddings=inputs_embeds,
                 tts_mel_embedding=inference_model.embeddings,
@@ -620,7 +622,7 @@ class UnifiedVoice(nn.Module):
                 max_length=max_length,
                 logits_processor=logits_processor,
                 num_return_sequences=num_return_sequences,
-                **hf_generate_kwargs,
+                **hf_generate_kwargs,  # pyright: ignore[reportAny]
             )
 
         assert isinstance(output, Tensor)

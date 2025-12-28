@@ -2,8 +2,7 @@ import os
 from typing import Any, Self, TypeVar
 
 import torch
-
-from .utils import PushToHubMixin
+from transformers.utils.hub import PushToHubMixin
 
 """Configuration base class and utilities."""
 

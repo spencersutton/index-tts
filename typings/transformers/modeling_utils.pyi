@@ -10,20 +10,12 @@ import torch
 from torch import Tensor, nn
 from torch._C import dtype
 from torch._prims_common import DeviceLikeType
-from transformers.utils import is_torchao_available
+from transformers.integrations.peft import PeftAdapterMixin
+from transformers.utils.hub import PushToHubMixin
 
 from .configuration_utils import PretrainedConfig
 from .generation import CompileConfig
-from .integrations import PeftAdapterMixin
 from .quantizers import HfQuantizer
-from .utils import (
-    PushToHubMixin,
-    is_accelerate_available,
-    is_kernels_available,
-    is_peft_available,
-    is_safetensors_available,
-    is_torch_greater_or_equal,
-)
 from .utils.generic import GeneralInterface, OutputRecorder
 from .utils.import_utils import is_sagemaker_mp_enabled
 

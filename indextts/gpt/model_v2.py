@@ -251,7 +251,7 @@ class UnifiedVoice(nn.Module):
             self.mel_head,
             kv_cache=True,
         )
-        self.inference_model = cast(GPT2InferenceModel, inference_model.eval())
+        self.inference_model = inference_model.eval()
 
         self.gpt.wte = self.mel_embedding
 

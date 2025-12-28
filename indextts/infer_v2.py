@@ -295,7 +295,7 @@ class IndexTTS2:
                 torch.set_float32_matmul_precision("high")
 
         # Load configuration
-        self.cfg = CheckpointsConfig(**cast(Mapping[str, Any], OmegaConf.load(cfg_path)))
+        self.cfg = CheckpointsConfig(**cast(Mapping[str, Any], OmegaConf.load(cfg_path)))  # pyright: ignore[reportAny]
         self.stop_mel_token = self.cfg.gpt.stop_mel_token
         self.model_version = self.cfg.version
 
@@ -528,9 +528,9 @@ class IndexTTS2:
         do_sample: bool = True,
         top_p: float = 0.8,
         top_k: int = 30,
-        length_penalty: float = 0.0,
+        length_penalty: float | None = None,
         repetition_penalty: float = 10.0,
-        **generation_kwargs: Any,
+        **generation_kwargs: Any,  # pyright: ignore[reportAny]
     ) -> Generator[Tensor | Path | tuple[int, np.ndarray] | None]:
         """Generator-based inference for streaming synthesis.
 
@@ -576,10 +576,11 @@ class IndexTTS2:
             weight_vector = torch.tensor(list(emo_vector))
 
             # Select emotion indices
+            indices: list[int] | list[Tensor]
             if use_random:
-                indices: list[int | Tensor] = [random.randint(0, n - 1) for n in self.emo_num]  # noqa: S311
+                indices = [random.randint(0, n - 1) for n in self.emo_num]  # noqa: S311
             else:
-                indices: list[Tensor] = [_find_most_similar_cosine(style, mat) for mat in self.spk_matrix]
+                indices = [_find_most_similar_cosine(style, mat) for mat in self.spk_matrix]
 
             # Build weighted emotion matrix
             emo_vecs = [self.emo_matrix[i][idx].unsqueeze(0) for i, idx in enumerate(indices)]

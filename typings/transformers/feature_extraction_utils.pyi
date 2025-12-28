@@ -3,8 +3,9 @@ from collections import UserDict
 from typing import Any, Self, TypeVar
 
 import torch
-
-from .utils import PushToHubMixin, TensorType
+from transformers.feature_extraction_sequence_utils import SequenceFeatureExtractor
+from transformers.utils.generic import TensorType
+from transformers.utils.hub import PushToHubMixin
 
 """
 Feature extraction saving/loading class for common feature extractors.

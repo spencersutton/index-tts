@@ -26,17 +26,20 @@ from indextts.util import patch_call
 
 
 class PositionalEncoding(nn.Module):
-    """Positional encoding.
+    """
+    Positional encoding module.
 
-    :param int d_model: embedding dim
-    :param float dropout_rate: dropout rate
-    :param int max_len: maximum input length
+    Args:
+        d_model (int): Embedding dimension.
+        dropout_rate (float): Dropout rate.
+        max_len (int): Maximum input length.
 
-    PE(pos, 2i)   = sin(pos/(10000^(2i/dmodel)))
-    PE(pos, 2i+1) = cos(pos/(10000^(2i/dmodel)))
+    Formula:
+        PE(pos, 2i)   = sin(pos / (10000^(2i/d_model)))
+        PE(pos, 2i+1) = cos(pos / (10000^(2i/d_model)))
     """
 
-    pe: Tensor
+    pe: Tensor  # pyright: ignore[reportUninitializedInstanceVariable]
     d_model: int
     xscale: float
     dropout: nn.Dropout

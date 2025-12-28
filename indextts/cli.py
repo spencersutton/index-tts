@@ -3,6 +3,7 @@ import sys
 import time
 import warnings
 from pathlib import Path
+from typing import cast
 
 import pyinstrument
 
@@ -78,18 +79,18 @@ def main() -> None:
     parser.add_argument("--warmup", type=int, default=0, help="Number of warmup runs to perform")
     args = parser.parse_args()
 
-    assert isinstance(args.text, str)
-    assert isinstance(args.voice, str)
-    assert isinstance(args.config, str)
-    assert isinstance(args.output_path, str)
-    assert isinstance(args.model_dir, str)
-    assert isinstance(args.device, (str, type(None)))
-    assert isinstance(args.fp16, bool)
-    assert isinstance(args.force, bool)
-    assert isinstance(args.use_accel, bool)
-    assert isinstance(args.use_cuda_kernel, bool)
-    assert isinstance(args.profile, bool)
-    assert isinstance(args.warmup, int)
+    args.text = cast(str, args.text)
+    args.voice = cast(str, args.voice)
+    args.config = cast(str, args.config)
+    args.output_path = cast(str, args.output_path)
+    args.model_dir = cast(str, args.model_dir)
+    args.device = cast(str | None, args.device)
+    args.fp16 = cast(bool, args.fp16)
+    args.force = cast(bool, args.force)
+    args.use_accel = cast(bool, args.use_accel)
+    args.use_cuda_kernel = cast(bool, args.use_cuda_kernel)
+    args.profile = cast(bool, args.profile)
+    args.warmup = cast(int, args.warmup)
 
     if len(args.text.strip()) == 0:
         print("ERROR: Text is empty.")

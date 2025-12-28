@@ -194,15 +194,15 @@ class PreTrainedTokenizerBase(SpecialTokensMixin, PushToHubMixin):
     @classmethod
     def from_pretrained(
         cls,
-        pretrained_model_name_or_path: str | os.PathLike,
-        *init_inputs,
-        cache_dir: str | os.PathLike | None = ...,
+        pretrained_model_name_or_path: str | os.PathLike[str],
+        *init_inputs: Any,
+        cache_dir: str | os.PathLike[str] | None = ...,
         force_download: bool = ...,
         local_files_only: bool = ...,
         token: str | bool | None = ...,
         revision: str = ...,
-        trust_remote_code=...,
-        **kwargs,
+        trust_remote_code: bool = ...,
+        **kwargs: Any,
     ) -> PreTrainedTokenizerBase: ...
     @classmethod
     def convert_added_tokens(cls, obj: AddedToken | Any, save=..., add_type_field=...): ...

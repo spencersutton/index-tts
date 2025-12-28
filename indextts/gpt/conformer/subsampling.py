@@ -15,6 +15,8 @@
 
 """Subsampling layer definition."""
 
+from __future__ import annotations
+
 from typing import override
 
 from torch import Tensor, nn
@@ -34,8 +36,8 @@ class Conv2dSubsampling2(nn.Module):
     """
 
     positional_encoder: PositionalEncoding  # Module with position_encoding method
-    conv: nn.Sequential
-    out: nn.Sequential
+    conv: nn.Sequential[nn.Conv2d | nn.ReLU]
+    out: nn.Sequential[nn.Linear]
 
     def __init__(self, idim: int, odim: int, dropout_rate: float) -> None:
         super().__init__()

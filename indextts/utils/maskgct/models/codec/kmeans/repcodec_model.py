@@ -48,7 +48,6 @@ class FactorizedVectorQuantize(nn.Module):
             Codebook indices (quantized discrete representation of input)
         z_e: Tensor[B x D x T]
             Projected latents (continuous representation of input before quantization)
-
         """
         # Factorized codes project input into low-dimensional space if self.input_dim != self.codebook_dim
         z_e = self._in_project(z)

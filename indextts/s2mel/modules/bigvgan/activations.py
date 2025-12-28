@@ -1,6 +1,8 @@
 # Implementation adapted from https://github.com/EdwardDixon/snake under the MIT license.
 #   LICENSE is in incl_licenses directory.
 
+from typing import override
+
 import torch
 from torch import Tensor, nn, pow, sin  # noqa: A004
 from torch.nn import Parameter
@@ -52,6 +54,7 @@ class Snake(nn.Module):
 
         self.no_div_by_zero = 0.000000001
 
+    @override
     def forward(self, x: Tensor) -> Tensor:
         """Forward pass of the function.
         Applies the function to the input elementwise.
@@ -116,6 +119,7 @@ class SnakeBeta(nn.Module):
 
         self.no_div_by_zero = 0.000000001
 
+    @override
     def forward(self, x: Tensor) -> Tensor:
         """Forward pass of the function.
         Applies the function to the input elementwise.

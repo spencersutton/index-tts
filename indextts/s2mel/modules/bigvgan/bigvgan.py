@@ -6,7 +6,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any, TypedDict
+from typing import Any, TypedDict, cast, override
 
 import torch
 from huggingface_hub import PyTorchModelHubMixin, hf_hub_download
@@ -23,8 +23,18 @@ from .utils import get_padding, init_weights
 logger = logging.getLogger(__name__)
 
 
-def load_hparams_from_json(path: Path) -> dict[str, Any]:
-    return json.loads(path.read_text())
+class BigVGANParams(TypedDict):
+    num_mels: int
+    upsample_initial_channel: int
+    upsample_rates: list[int]
+    upsample_kernel_sizes: list[int]
+    resblock_kernel_sizes: list[int]
+    resblock_dilation_sizes: list[tuple[int, ...]]
+    resblock: str
+    activation: str
+    snake_logscale: bool
+    use_bias_at_final: bool
+    use_tanh_at_final: bool
 
 
 class AMPBlock1(nn.Module):
@@ -41,7 +51,7 @@ class AMPBlock1(nn.Module):
 
     def __init__(
         self,
-        h: dict[str, Any],
+        h: BigVGANParams,
         channels: int,
         kernel_size: int = 3,
         dilation: tuple[int, ...] = (1, 3, 5),
@@ -107,6 +117,7 @@ class AMPBlock1(nn.Module):
                 "activation incorrectly specified. check the config file and look for 'activation'."
             )
 
+    @override
     def forward(self, x: Tensor) -> Tensor:
         acts1, acts2 = self.activations[::2], self.activations[1::2]
         for c1, c2, a1, a2 in zip(self.convs1, self.convs2, acts1, acts2):
@@ -142,10 +153,10 @@ class AMPBlock2(nn.Module):
 
     def __init__(
         self,
-        h: dict[str, Any],
+        h: BigVGANParams,
         channels: int,
         kernel_size: int = 3,
-        dilation: tuple = (1, 3, 5),
+        dilation: tuple[int, ...] = (1, 3, 5),
         activation: str | None = None,
     ) -> None:
         super().__init__()
@@ -193,6 +204,7 @@ class AMPBlock2(nn.Module):
                 "activation incorrectly specified. check the config file and look for 'activation'."
             )
 
+    @override
     def forward(self, x: Tensor) -> Tensor:
         for c, a in zip(self.convs, self.activations):
             xt = a(x)
@@ -206,20 +218,6 @@ class AMPBlock2(nn.Module):
 
     @patch_call(forward)
     def __call__(self) -> None: ...
-
-
-class BigVGANParams(TypedDict):
-    num_mels: int
-    upsample_initial_channel: int
-    upsample_rates: list[int]
-    upsample_kernel_sizes: list[int]
-    resblock_kernel_sizes: list[int]
-    resblock_dilation_sizes: list[tuple[int, ...]]
-    resblock: str
-    activation: str
-    snake_logscale: bool
-    use_bias_at_final: bool
-    use_tanh_at_final: bool
 
 
 class BigVGAN(
@@ -250,7 +248,6 @@ class BigVGAN(
     def __init__(self, h: BigVGANParams, use_cuda_kernel: bool = False) -> None:
         super().__init__()
         self.h = h
-        ch = 0
 
         # Select which Activation1d, lazy-load cuda version to ensure backward compatibility
         if use_cuda_kernel:
@@ -262,9 +259,10 @@ class BigVGAN(
 
         self.num_kernels = len(h["resblock_kernel_sizes"])
         self.num_upsamples = len(h["upsample_rates"])
+        initial_channel = h["upsample_initial_channel"]
 
         # Pre-conv
-        self.conv_pre = weight_norm(Conv1d(h["num_mels"], h["upsample_initial_channel"], 7, 1, padding=3))
+        self.conv_pre = weight_norm(Conv1d(h["num_mels"], initial_channel, 7, 1, padding=3))
 
         # Define which AMPBlock to use. BigVGAN uses AMPBlock1 as default
         if h["resblock"] == "1":
@@ -275,27 +273,22 @@ class BigVGAN(
             raise ValueError(f"Incorrect resblock class specified in hyperparameters. Got {h['resblock']}")
 
         # Transposed conv-based upsamplers. does not apply anti-aliasing
-        self.ups: nn.ModuleList[nn.ModuleList[nn.Module]] = nn.ModuleList()
+        self.ups: nn.ModuleList[nn.ModuleList[ConvTranspose1d]] = nn.ModuleList()
         for i, (u, k) in enumerate(zip(h["upsample_rates"], h["upsample_kernel_sizes"])):
-            assert isinstance(u, int) and isinstance(k, int)
-            self.ups.append(
-                nn.ModuleList([
-                    weight_norm(
-                        ConvTranspose1d(
-                            h["upsample_initial_channel"] // (2**i),
-                            h["upsample_initial_channel"] // (2 ** (i + 1)),
-                            k,
-                            u,
-                            padding=(k - u) // 2,
-                        ),
-                    ),
-                ]),
+            module = ConvTranspose1d(
+                int(initial_channel // (2**i)),
+                int(initial_channel // (2 ** (i + 1))),
+                k,
+                u,
+                padding=(k - u) // 2,
             )
+            self.ups.append(nn.ModuleList([weight_norm(module)]))
 
         # Residual blocks using anti-aliased multi-periodicity composition modules (AMP)
         self.resblocks: nn.ModuleList[AMPBlock1 | AMPBlock2] = nn.ModuleList()
+        ch = 0
         for i in range(len(self.ups)):
-            ch = h["upsample_initial_channel"] // (2 ** (i + 1))
+            ch = int(initial_channel // (2 ** (i + 1)))
             for k, d in zip(h["resblock_kernel_sizes"], h["resblock_dilation_sizes"]):
                 self.resblocks.append(resblock_class(h, ch, k, d, activation=h["activation"]))
 
@@ -324,6 +317,7 @@ class BigVGAN(
         # Final tanh activation. Defaults to True for backward compatibility
         self.use_tanh_at_final = h.get("use_tanh_at_final", True)
 
+    @override
     def forward(self, x: Tensor) -> Tensor:
         # Pre-conv
         x = self.conv_pre(x)
@@ -384,7 +378,7 @@ class BigVGAN(
         revision: str | None,
         cache_dir: str | Path | None,
         force_download: bool,
-        proxies: dict | None,
+        proxies: dict[str, str] | None,
         resume_download: bool | None,
         local_files_only: bool,
         token: str | bool | None,
@@ -412,7 +406,7 @@ class BigVGAN(
                 token=token,
                 local_files_only=local_files_only,
             )
-        h = json.loads(Path(config_file).read_text())
+        h = cast(BigVGANParams, json.loads(Path(config_file).read_text()))
 
         # instantiate BigVGAN using h
         if use_cuda_kernel:
@@ -445,7 +439,7 @@ class BigVGAN(
                 local_files_only=local_files_only,
             )
 
-        checkpoint_dict = torch.load(model_file, map_location=map_location)
+        checkpoint_dict = cast(dict[str, dict[str, Any]], torch.load(model_file, map_location=map_location))
 
         try:
             model.load_state_dict(checkpoint_dict["generator"])

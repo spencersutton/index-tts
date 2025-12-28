@@ -11,7 +11,7 @@ from .filter import LowPassFilter1d, kaiser_sinc_filter1d
 
 
 class UpSample1d(nn.Module):
-    filter: Tensor
+    filter: Tensor  # pyright: ignore[reportUninitializedInstanceVariable]
 
     def __init__(self, ratio: int = 2, kernel_size: int | None = None) -> None:
         super().__init__()

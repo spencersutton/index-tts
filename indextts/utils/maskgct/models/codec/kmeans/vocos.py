@@ -76,7 +76,7 @@ class VocosBackbone(nn.Module):
 
     embed: nn.Conv1d
     norm: nn.LayerNorm
-    convnext: nn.ModuleList[nn.Module]
+    convnext: nn.ModuleList[ConvNeXtBlock]
     final_layer_norm: nn.LayerNorm
 
     def __init__(

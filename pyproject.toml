@@ -222,7 +222,7 @@ ignore = [
 ]
 
 [tool.pyright]
-exclude = [".venv", "**/__pycache__/**"]
+enableTypeIgnoreComments = true
 ignore = ["./tools", "./tests"]
 reportCallInDefaultInitializer = false
 reportExplicitAny = false
@@ -231,8 +231,8 @@ reportImplicitStringConcatenation = false
 reportUnannotatedClassAttribute = false
 reportUnusedCallResult = false
 stubPath = "./typings"
+typeshedPath = "../typeshed"
 useLibraryCodeForTypes = false
-enableTypeIgnoreComments = true
 
 [tool.ty.rules]
 unused-ignore-comment = "warn"

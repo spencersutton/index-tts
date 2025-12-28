@@ -29,6 +29,7 @@ def kaiser_sinc_filter1d(
         beta = 0.5842 * (A - 21) ** 0.4 + 0.07886 * (A - 21.0)
     else:
         beta = 0.0
+    assert not isinstance(beta, complex)
 
     window = torch.kaiser_window(kernel_size, beta=beta, periodic=False, device="cpu")
 
@@ -50,7 +51,7 @@ def kaiser_sinc_filter1d(
 
 
 class LowPassFilter1d(nn.Module):
-    filter: Tensor
+    filter: Tensor  # pyright: ignore[reportUninitializedInstanceVariable]
 
     def __init__(
         self,

@@ -1,6 +1,6 @@
 # Copyright (c) 2024 NVIDIA CORPORATION.
 #   Licensed under the MIT license.
-from typing import Any, override
+from typing import Never, override
 
 import torch
 from torch import Tensor, nn
@@ -12,7 +12,7 @@ from ..torch.resample import DownSample1d, UpSample1d
 from . import load
 
 # load fused CUDA kernel: this enables importing anti_alias_activation_cuda
-anti_alias_activation_cuda = load.load()
+anti_alias_activation_cuda: nn.Module = load.load()
 
 
 class FusedAntiAliasActivation(torch.autograd.Function):
@@ -22,13 +22,14 @@ class FusedAntiAliasActivation(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx: Any, inputs: Tensor, up_ftr: Tensor, down_ftr: Tensor, alpha: Tensor, beta: Tensor) -> Tensor:  # noqa: ARG004
-        return anti_alias_activation_cuda.forward(inputs, up_ftr, down_ftr, alpha, beta)
+    @override
+    def forward(ctx: object, inputs: Tensor, up_ftr: Tensor, down_ftr: Tensor, alpha: Tensor, beta: Tensor) -> Tensor:
+        return anti_alias_activation_cuda.forward(inputs, up_ftr, down_ftr, alpha, beta)  # pyright: ignore[reportAny]
 
     @staticmethod
-    def backward(ctx: Any, *output_grads: Any) -> Any:  # noqa: ARG004
+    @override
+    def backward(ctx: object, *output_grads: object) -> Never:
         raise NotImplementedError
-        return output_grads, None, None
 
 
 class Activation1d(nn.Module):
@@ -72,7 +73,13 @@ class Activation1d(nn.Module):
             alpha = torch.log(alpha)
             beta = torch.log(beta)
 
-        return FusedAntiAliasActivation.apply(x, self.upsample.filter, self.downsample.lowpass.filter, alpha, beta)
+        return FusedAntiAliasActivation.apply(
+            x,
+            self.upsample.filter,
+            self.downsample.lowpass.filter,
+            alpha,
+            beta,
+        )  # pyright: ignore[reportAny]
 
     @patch_call(forward)
     def __call__(self) -> None: ...

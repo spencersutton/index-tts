@@ -3,8 +3,9 @@
 import os
 import subprocess
 from pathlib import Path
-from typing import Any
+from typing import cast
 
+from torch import nn
 from torch.utils import cpp_extension
 
 """
@@ -14,7 +15,7 @@ Set it to empty stringo avoid recompilation and assign arch flags explicity in e
 os.environ["TORCH_CUDA_ARCH_LIST"] = ""
 
 
-def load() -> Any:
+def load() -> nn.Module:
     # Check if cuda 11 is installed for compute capability 8.0
     cc_flag: list[str] = []
     assert cpp_extension.CUDA_HOME is not None, (
@@ -30,23 +31,24 @@ def load() -> Any:
     _create_build_dir(buildpath)
 
     # Helper function to build the kernels.
-    def _cpp_extention_load_helper(name: str, sources: list[str], extra_cuda_flags: list[str]) -> Any:
-        return cpp_extension.load(
-            name=name,
-            sources=sources,
-            build_directory=buildpath,
-            extra_cflags=[
-                "-O3",
-            ],
-            extra_cuda_cflags=[
-                "-O3",
-                "-gencode",
-                "arch=compute_70,code=sm_70",
-                "--use_fast_math",
-                *extra_cuda_flags,
-                *cc_flag,
-            ],
-            verbose=True,
+    def _cpp_extention_load_helper(name: str, sources: list[str], extra_cuda_flags: list[str]) -> nn.Module:
+        return cast(
+            nn.Module,
+            cpp_extension.load(
+                name=name,
+                sources=sources,
+                build_directory=buildpath,
+                extra_cflags=["-O3"],
+                extra_cuda_cflags=[
+                    "-O3",
+                    "-gencode",
+                    "arch=compute_70,code=sm_70",
+                    "--use_fast_math",
+                    *extra_cuda_flags,
+                    *cc_flag,
+                ],
+                verbose=True,
+            ),
         )
 
     extra_cuda_flags = [

@@ -54,3 +54,6 @@ class DownSample1d(nn.Module):
     @override
     def forward(self, x: Tensor) -> Tensor:
         return self.lowpass(x)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...

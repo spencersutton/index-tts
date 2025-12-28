@@ -1,8 +1,11 @@
 # Adapted from https://github.com/junjun3518/alias-free-torch under the Apache License 2.0
 #   LICENSE is in incl_licenses directory.
 
+from typing import override
+
 from torch import Tensor, nn
 
+from indextts.s2mel.modules.bigvgan.activations import Snake, SnakeBeta
 from indextts.util import patch_call
 
 from .resample import DownSample1d, UpSample1d
@@ -11,7 +14,7 @@ from .resample import DownSample1d, UpSample1d
 class Activation1d(nn.Module):
     def __init__(
         self,
-        activation: nn.Module,
+        activation: Snake | SnakeBeta,
         up_ratio: int = 2,
         down_ratio: int = 2,
         up_kernel_size: int = 12,
@@ -25,6 +28,7 @@ class Activation1d(nn.Module):
         self.downsample = DownSample1d(down_ratio, down_kernel_size)
 
     # x: [B,C,T]
+    @override
     def forward(self, x: Tensor) -> Tensor:
         x = self.upsample(x)
         x = self.act(x)

@@ -2160,7 +2160,7 @@ class _TorchCompileWrapper:
     def reset(self) -> None: ...
 
 @overload
-def compile[T: Callable](
+def compile[T: Callable[..., Any]](
     model: T,
     *,
     fullgraph: builtins.bool = ...,
@@ -2264,7 +2264,7 @@ def compile[T: Callable](
     """
 
 @overload
-def compile[T: Callable](
+def compile[T: Callable[..., Any]](
     model: None = ...,
     *,
     fullgraph: builtins.bool = ...,
@@ -2367,7 +2367,7 @@ def compile[T: Callable](
             return torch.sin(x) + torch.cos(x)
     """
 
-def compile[T: Callable](
+def compile[T: Callable[..., Any]](
     model: T | None = ...,
     *,
     fullgraph: builtins.bool = ...,

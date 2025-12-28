@@ -620,7 +620,7 @@ class UnifiedVoice(nn.Module):
                 **hf_generate_kwargs,  # pyright: ignore[reportAny]
             )
 
-        assert isinstance(output, Tensor)
+        output = cast(Tensor, output)
 
         logger.info(f"generation: {time.perf_counter() - t3:.4f}s")
         logger.info(f"total inference_speech: {time.perf_counter() - t0:.4f}s")

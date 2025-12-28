@@ -1,6 +1,5 @@
-import typing
 from dataclasses import dataclass
-from typing import Any, ClassVar, Self, override
+from typing import override
 
 import torch
 import triton
@@ -13,8 +12,6 @@ from indextts.util import patch_call
 
 @dataclass
 class ForwardContext:
-    _instance: ClassVar[Any]
-
     is_prefill: bool = False
     cu_seqlens_q: Tensor | None = None
     cu_seqlens_k: Tensor | None = None
@@ -24,61 +21,61 @@ class ForwardContext:
     context_lens: Tensor | None = None
     block_tables: Tensor | None = None
 
-    @classmethod
-    def set(
-        cls,
-        is_prefill: bool,
-        cu_seqlens_q: Tensor | None = None,
-        cu_seqlens_k: Tensor | None = None,
-        max_seqlen_q: int = 0,
-        max_seqlen_k: int = 0,
-        slot_mapping: Tensor | None = None,
-        context_lens: Tensor | None = None,
-        block_tables: Tensor | None = None,
-    ) -> None:
-        cls._instance = cls(
-            is_prefill,
-            cu_seqlens_q,
-            cu_seqlens_k,
-            max_seqlen_q,
-            max_seqlen_k,
-            slot_mapping,
-            context_lens,
-            block_tables,
-        )
 
-    @classmethod
-    def get(cls) -> Self:
-        return cls._instance
-
-    @classmethod
-    def reset(cls) -> None:
-        cls._instance = cls()
+_FORWARD_CONTEXT = ForwardContext()
 
 
-ForwardContext.reset()
+def get_forward_context():
+    return _FORWARD_CONTEXT
+
+
+def set_forward_context(
+    is_prefill,
+    cu_seqlens_q=None,
+    cu_seqlens_k=None,
+    max_seqlen_q=0,
+    max_seqlen_k=0,
+    slot_mapping=None,
+    context_lens=None,
+    block_tables=None,
+) -> None:
+    global _FORWARD_CONTEXT
+    _FORWARD_CONTEXT = ForwardContext(
+        is_prefill,
+        cu_seqlens_q,
+        cu_seqlens_k,
+        max_seqlen_q,
+        max_seqlen_k,
+        slot_mapping,
+        context_lens,
+        block_tables,
+    )
+
+
+def reset_forward_context() -> None:
+    global _FORWARD_CONTEXT
+    _FORWARD_CONTEXT = ForwardContext()
 
 
 @triton.jit
-@typing.no_type_check
 def store_kvcache_kernel(
-    key_ptr: tl.pointer_type,
-    key_stride: int,
-    value_ptr: tl.pointer_type,
-    value_stride: int,
-    k_cache_ptr: tl.pointer_type,
-    v_cache_ptr: tl.pointer_type,
-    slot_mapping_ptr: tl.pointer_type,
-    D: tl.constexpr,  # noqa: N803
+    key_ptr,
+    key_stride,
+    value_ptr,
+    value_stride,
+    k_cache_ptr,
+    v_cache_ptr,
+    slot_mapping_ptr,
+    D: tl.constexpr,
 ) -> None:
-    BLOCK_SIZE: tl.constexpr = 2048  # ty:ignore[invalid-assignment]
-    idx: int = tl.program_id(0)
-    slot: int = tl.load(slot_mapping_ptr + idx)
+    BLOCK_SIZE: tl.constexpr = 2048
+    idx = tl.program_id(0)
+    slot = tl.load(slot_mapping_ptr + idx)
     if slot == -1:
         return
-    d_offset: int = 0
+    d_offset = 0
     while d_offset < D:
-        cur_block_size: int = min(BLOCK_SIZE, D - d_offset)  # ty:ignore[invalid-assignment]
+        cur_block_size = min(BLOCK_SIZE, D - d_offset)
         key_offsets = idx * key_stride + d_offset + tl.arange(0, BLOCK_SIZE)
         value_offsets = idx * value_stride + d_offset + tl.arange(0, BLOCK_SIZE)
         cache_offsets = slot * D + d_offset + tl.arange(0, BLOCK_SIZE)
@@ -105,16 +102,7 @@ def store_kvcache(
     assert key.stride(1) == head_dim and value.stride(1) == head_dim
     assert k_cache.stride(1) == D and v_cache.stride(1) == D
     assert slot_mapping.numel() == N
-    store_kvcache_kernel[N,](
-        key,  # ty:ignore[invalid-argument-type]
-        key.stride(0),
-        value,  # ty:ignore[invalid-argument-type]
-        value.stride(0),
-        k_cache,  # ty:ignore[invalid-argument-type]
-        v_cache,  # ty:ignore[invalid-argument-type]
-        slot_mapping,  # ty:ignore[invalid-argument-type]
-        D,  # ty:ignore[invalid-argument-type]
-    )
+    store_kvcache_kernel[N,](key, key.stride(0), value, value.stride(0), k_cache, v_cache, slot_mapping, D)
 
 
 class Attention(nn.Module):
@@ -134,7 +122,7 @@ class Attention(nn.Module):
 
     @override
     def forward(self, q: Tensor, k: Tensor, v: Tensor) -> Tensor:
-        context = ForwardContext.get()
+        context = get_forward_context()
         k_cache, v_cache = self.k_cache, self.v_cache
 
         if k_cache.numel() and v_cache.numel() and context.slot_mapping is not None:

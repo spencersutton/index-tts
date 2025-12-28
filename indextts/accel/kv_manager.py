@@ -1,9 +1,8 @@
 import hashlib
 import pickle  # noqa: S403
 from collections import deque
-from collections.abc import Iterable, MutableSequence, Sequence
-from copy import copy
-from typing import cast, overload, override
+from collections.abc import Iterable, Sequence
+from typing import overload, override
 
 import torch
 from torch.types import Number
@@ -34,8 +33,16 @@ class KVCacheBlock:
 
 
 class Seq(Sequence[int]):
+    token_ids: list[Number]
+    last_token: Number
+    num_tokens: int
+    num_prompt_tokens: int
+    num_cached_tokens: int
+    block_table: list[int]
+    block_size: int
+
     def __init__(self, token_ids: Sequence[Number], block_size: int = 256) -> None:
-        self.token_ids = cast(MutableSequence[Number], copy(token_ids))
+        self.token_ids = list(token_ids)
         self.last_token = token_ids[-1] if token_ids else 0
         self.num_tokens = len(self.token_ids)
         self.num_prompt_tokens = len(token_ids)

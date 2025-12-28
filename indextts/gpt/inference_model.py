@@ -64,6 +64,8 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
     cached_mel_emb: Tensor | None
     device_map: dict[int, int] | None
     model_parallel: bool
+    embeddings: nn.Embedding
+    final_norm: nn.LayerNorm
 
     def __init__(
         self,

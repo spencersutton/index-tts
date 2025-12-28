@@ -1,7 +1,11 @@
 import sys
+from typing import cast
 
 import torch
-from torch import nn
+from torch import Tensor, nn
+
+from indextts.accel.gpt2_accel import GPT2AccelModel
+from indextts.gpt import LearnedPositionEmbeddings
 
 from .attention import ForwardContext
 from .kv_manager import KVCacheManager, Seq
@@ -12,7 +16,7 @@ class Sampler(nn.Module):
         super().__init__()
 
     @torch.compile
-    def forward(self, logits: torch.Tensor, temperatures: torch.Tensor):
+    def forward(self, logits: Tensor, temperatures: Tensor) -> Tensor:
         temperatures = temperatures.to(logits.device).clamp(min=1e-8)
         greedy_mask = temperatures < 1e-5
         temp_for_scaling = torch.where(greedy_mask, 1.0, temperatures)
@@ -28,8 +32,8 @@ class Sampler(nn.Module):
 class AccelInferenceEngine:
     def __init__(
         self,
-        model,
-        lm_head,
+        model: GPT2AccelModel,
+        lm_head: nn.Module | None,
         num_layers: int,
         num_heads: int,
         head_dim: int,
@@ -70,14 +74,14 @@ class AccelInferenceEngine:
         self.graph_pool = None
         self.graph_captured = False
 
-    def _prepare_prefill(self, requests: list[Seq]):
-        input_ids = []
-        positions = []
-        cu_seqlens_q = [0]
-        cu_seqlens_k = [0]
+    def _prepare_prefill(self, requests: list[Seq]) -> tuple[Tensor, Tensor]:
+        input_ids: list[int] = []
+        positions: list[int] = []
+        cu_seqlens_q: list[int] = [0]
+        cu_seqlens_k: list[int] = [0]
         max_seqlen_q = 0
         max_seqlen_k = 0
-        slot_mapping = []
+        slot_mapping: list[int] = []
 
         for req in requests:
             seqlen = len(req)
@@ -101,13 +105,13 @@ class AccelInferenceEngine:
                     slot_idx = block_id * self.block_size + block_offset
                     slot_mapping.append(slot_idx)
 
-        input_ids = torch.tensor(input_ids, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
-        positions = torch.tensor(positions, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
-        cu_seqlens_q = torch.tensor(cu_seqlens_q, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
-        cu_seqlens_k = torch.tensor(cu_seqlens_k, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
-        slot_mapping = torch.tensor(slot_mapping, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
+        input_ids: Tensor = torch.tensor(input_ids, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
+        positions: Tensor = torch.tensor(positions, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
+        cu_seqlens_q: Tensor = torch.tensor(cu_seqlens_q, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
+        cu_seqlens_k: Tensor = torch.tensor(cu_seqlens_k, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
+        slot_mapping: Tensor = torch.tensor(slot_mapping, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
 
-        block_tables = None
+        block_tables: Tensor | None = None
         if cu_seqlens_k[-1] > cu_seqlens_q[-1]:
             max_len = max(len(req.block_table) for req in requests)
             block_tables_list = []
@@ -129,7 +133,7 @@ class AccelInferenceEngine:
 
         return input_ids, positions
 
-    def _prepare_decode(self, requests: list[Seq]):
+    def _prepare_decode(self, requests: list[Seq]) -> tuple[Tensor, Tensor]:
         if not requests:
             raise RuntimeError("FATAL: No requests provided to _prepare_decode!")
 
@@ -175,11 +179,15 @@ class AccelInferenceEngine:
 
         return input_ids, positions
 
-    def _prepare_sample(self, requests: list[Seq], temperature: float):
+    def _prepare_sample(self, requests: list[Seq], temperature: float) -> Tensor:
         temperatures = [temperature] * len(requests)
         return torch.tensor(temperatures, dtype=torch.float32, pin_memory=True).cuda(non_blocking=True)
 
-    def _capture_cuda_graphs(self, tts_mel_embedding=None, tts_text_pos_embedding=None) -> None:
+    def _capture_cuda_graphs(
+        self,
+        tts_mel_embedding: torch.nn.Module | None = None,
+        tts_text_pos_embedding: LearnedPositionEmbeddings | None = None,
+    ) -> None:
         print("Capturing CUDA graphs for decode optimization...")
         max_bs = 8  # Support up to batch size 8
         max_num_blocks = (2048 + self.block_size - 1) // self.block_size
@@ -262,19 +270,17 @@ class AccelInferenceEngine:
 
     def _run_decode_with_graph(
         self,
-        input_ids: torch.Tensor,
-        positions: torch.Tensor,
+        input_ids: Tensor,
+        positions: Tensor,
         context: ForwardContext,
-        tts_mel_embedding: torch.nn.Module | None = None,
-        tts_text_pos_embedding: torch.nn.Module | None = None,
-    ) -> torch.Tensor:
+        tts_mel_embedding: nn.Embedding,
+        tts_text_pos_embedding: LearnedPositionEmbeddings,
+    ) -> Tensor:
         bs = input_ids.size(0)
         use_tts_embedding = hasattr(self, "_tts_mode") and self._tts_mode
 
         if not self.use_cuda_graph or not self.graphs:
             if use_tts_embedding:
-                assert tts_mel_embedding is not None
-                assert tts_text_pos_embedding is not None
                 inputs_embeds = tts_mel_embedding(input_ids)
                 pos_clamped = torch.clamp(positions, min=0)
                 pos_emb = tts_text_pos_embedding.emb(pos_clamped)
@@ -304,6 +310,9 @@ class AccelInferenceEngine:
         if graph_vars is None:
             raise RuntimeError("Graph variables not initialized")
 
+        assert context.block_tables is not None
+        assert context.context_lens is not None
+        assert context.slot_mapping is not None
         graph_vars["input_ids"][:bs] = input_ids
         graph_vars["positions"][:bs] = positions
         graph_vars["slot_mapping"].fill_(-1)
@@ -379,18 +388,18 @@ class AccelInferenceEngine:
         )
 
         if is_varlen_batch:
-            seq_lens = [attention_mask[i].sum().item() for i in range(batch_size)]
+            seq_lens: list[int] = [int(attention_mask[i].sum().item()) for i in range(batch_size)]
         else:
-            seq_lens = [actual_seq_len] * batch_size
+            seq_lens = cast(list[int], [actual_seq_len] * batch_size)
 
-        sequences = []
+        sequences: list[Seq] = []
         for i in range(batch_size):
             seq_len = seq_lens[i]
-            token_ids = [1] * seq_len
+            token_ids = cast(list[int], [1] * seq_len)
             if tts_embeddings is not None and seq_len > 0:
-                token_ids[-1] = input_ids[i, -1].item() if input_ids.size(1) > 0 else 1
+                token_ids[-1] = int(input_ids[i, -1].item() if input_ids.size(1) > 0 else 1)
             else:
-                token_ids = input_ids[i].tolist()
+                token_ids = cast(list[int], input_ids[i].tolist())
             req = Seq(token_ids)
             self.kv_manager.allocate(req)
             sequences.append(req)
@@ -433,6 +442,7 @@ class AccelInferenceEngine:
 
         if is_varlen_batch:
             context = ForwardContext.get()
+            assert context.cu_seqlens_q is not None
             cu_seqlens = context.cu_seqlens_q.cpu().tolist()
             last_hidden = torch.stack([hidden_states[0, cu_seqlens[i + 1] - 1] for i in range(batch_size)])
         else:
@@ -524,7 +534,7 @@ class AccelInferenceEngine:
             self.kv_manager.remove_seq(req)
         self.current_sequences = []
 
-        pad_token = stop_tokens[0] if stop_tokens else 0
+        pad_token = cast(int, stop_tokens[0] if stop_tokens else 0)
 
         if is_varlen_batch:
             max_prompt_len = attention_mask.size(1)
@@ -533,7 +543,7 @@ class AccelInferenceEngine:
             for i in range(batch_size):
                 padding_len = max_prompt_len - seq_lens[i]
                 initial_tokens = sequences[i].token_ids[: sequences[i].num_prompt_tokens]
-                padded_prompt = [pad_token] * padding_len + initial_tokens
+                padded_prompt = [pad_token] * padding_len + list(initial_tokens)
                 full_sequence = padded_prompt + generated_tokens[i]
                 output_ids.append(full_sequence)
         else:
@@ -550,14 +560,3 @@ class AccelInferenceEngine:
         assert output.size(0) == batch_size, f"Output batch size mismatch: {output.size(0)} != {batch_size}"
 
         return output
-
-
-class Sampler(nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
-
-    @torch.compile
-    def forward(self, logits: torch.Tensor, temperatures: torch.Tensor):
-        logits = logits.float().div_(temperatures.unsqueeze(dim=1))
-        probs = torch.softmax(logits, dim=-1)
-        return probs.div_(torch.empty_like(probs).exponential_(1).clamp_min_(1e-10)).argmax(dim=-1)

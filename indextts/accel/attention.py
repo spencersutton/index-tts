@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import override
+from typing import ClassVar, override
 
 import torch
 import triton
@@ -21,7 +21,7 @@ class ForwardContext:
     context_lens: Tensor | None = None
     block_tables: Tensor | None = None
 
-    _instance: "ForwardContext | None" = None
+    _instance: "ClassVar[ForwardContext | None]" = None
 
     @classmethod
     def get(cls) -> "ForwardContext":
@@ -102,7 +102,7 @@ def store_kvcache(
     assert key.stride(1) == head_dim and value.stride(1) == head_dim
     assert k_cache.stride(1) == D and v_cache.stride(1) == D
     assert slot_mapping.numel() == N
-    store_kvcache_kernel[N,](key, key.stride(0), value, value.stride(0), k_cache, v_cache, slot_mapping, D)
+    store_kvcache_kernel[N,](key, key.stride(0), value, value.stride(0), k_cache, v_cache, slot_mapping, D)  # ty:ignore[invalid-argument-type]
 
 
 class Attention(nn.Module):

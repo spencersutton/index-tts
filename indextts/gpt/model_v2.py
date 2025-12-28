@@ -4,7 +4,7 @@ import importlib.util
 import logging
 import time
 from dataclasses import dataclass
-from typing import Any, override
+from typing import Any, cast, override
 
 import torch
 import torch.nn.functional as F
@@ -13,6 +13,7 @@ from transformers import GPT2Config, GPT2Model, LogitsProcessorList
 from transformers.generation.logits_process import TypicalLogitsWarper
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions
 
+from indextts.accel.accel_engine import AccelInferenceEngine
 from indextts.gpt import GPT2InferenceModel, LearnedPositionEmbeddings, NullPositionEmbedding
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.perceiver import PerceiverResampler
@@ -74,7 +75,7 @@ class UnifiedVoice(nn.Module):
 
     inference_model: GPT2InferenceModel | None
     use_accel: bool
-    accel_engine: Any | None = None
+    accel_engine: AccelInferenceEngine | None = None
     config: VoiceModelConfig
     conditioning_encoder: ConformerEncoder
     emo_conditioning_encoder: ConformerEncoder
@@ -250,7 +251,7 @@ class UnifiedVoice(nn.Module):
             self.mel_head,
             kv_cache=True,
         )
-        self.inference_model = inference_model.eval()
+        self.inference_model = cast(GPT2InferenceModel, inference_model.eval())
 
         self.gpt.wte = self.mel_embedding
 
@@ -549,8 +550,9 @@ class UnifiedVoice(nn.Module):
         # Prepare GPT inputs
         t2 = time.perf_counter()
         input_ids, inputs_embeds, attention_mask = self.prepare_gpt_inputs(conds_latent, text_inputs)
-        assert self.inference_model is not None
-        self.inference_model.store_mel_emb(inputs_embeds)
+        inference_model = cast(GPT2InferenceModel, self.inference_model)  # Workaround for ty
+        assert inference_model is not None
+        inference_model.store_mel_emb(inputs_embeds)
         logger.info(f"prepare_gpt_inputs: {time.perf_counter() - t2:.4f}s")
 
         # Handle additional input tokens
@@ -605,11 +607,11 @@ class UnifiedVoice(nn.Module):
                 temperature=hf_generate_kwargs.get("temperature", 1),
                 stop_tokens=[self.config.stop_mel_token],
                 tts_embeddings=inputs_embeds,
-                tts_mel_embedding=self.inference_model.embeddings,
-                tts_text_pos_embedding=self.inference_model.text_pos_embedding,
+                tts_mel_embedding=inference_model.embeddings,
+                tts_text_pos_embedding=inference_model.text_pos_embedding,
             )
         else:
-            output = self.inference_model.generate(
+            output = inference_model.generate(
                 inputs,
                 bos_token_id=self.config.start_mel_token,
                 pad_token_id=self.config.stop_mel_token,

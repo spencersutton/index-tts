@@ -11,7 +11,6 @@ from typing import (
     Callable,
     Generator,
     Generic,
-    Optional,
     Protocol,
     Self,
     TypedDict,
@@ -64,7 +63,7 @@ class env_int(env_base[int, int]):
 
 ClassType = TypeVar("ClassType")
 
-class env_class(env_base[Optional[type[ClassType]], Optional[type[ClassType]]], Generic[ClassType]):
+class env_class(env_base[type[ClassType] | None, type[ClassType] | None], Generic[ClassType]):
     def __init__(self, key: str, type: str) -> None: ...
     def get(self) -> type[ClassType] | None: ...
 
@@ -81,7 +80,7 @@ class env_nvidia_tool(env_base[str, NvidiaTool]):
     def get(self) -> NvidiaTool: ...
     def transform(self, path: str) -> NvidiaTool: ...
 
-class env_opt_str(env_base[Optional[str], Optional[str]]):
+class env_opt_str(env_base[str | None, str | None]):
     def get(self) -> str | None: ...
 
 class env_opt_bool(env_base):

@@ -1,3 +1,4 @@
+# noqa: INP001
 import ast
 import json
 from collections import OrderedDict
@@ -11,7 +12,7 @@ SHOW_KEYS: bool = False  # 是否显示键信息
 SORT_KEYS: bool = False  # 是否按全局键名写入文件
 
 
-def extract_i18n_strings(node):
+def extract_i18n_strings(node: ast.AST) -> list[str]:
     i18n_strings = []
 
     if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "i18n":
@@ -23,7 +24,7 @@ def extract_i18n_strings(node):
     return i18n_strings
 
 
-def scan_i18n_strings():
+def scan_i18n_strings() -> set[str]:
     """
     scan the directory for all .py files (recursively)
     for each file, parse the code into an AST
@@ -42,7 +43,7 @@ def scan_i18n_strings():
                     if SHOW_KEYS:
                         print("\n".join(list(i18n_strings)))
                     strings.extend(i18n_strings)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             print(f"\033[31m[Failed] Error occur at {filename}: {e}\033[0m")
 
     code_keys = set(strings)
@@ -50,7 +51,7 @@ def scan_i18n_strings():
     return code_keys
 
 
-def update_i18n_json(json_file, standard_keys) -> None:
+def update_i18n_json(json_file: str, standard_keys: set[str]) -> None:
     standard_keys = sorted(standard_keys)
     print(f" Process {json_file} ".center(TITLE_LEN, "="))
     # 读取 JSON 文件

@@ -1,3 +1,4 @@
+# noqa: INP001
 import json
 import locale
 from pathlib import Path
@@ -5,17 +6,17 @@ from pathlib import Path
 I18N_JSON_DIR = Path(__file__).parent / "locale"
 
 
-def load_language_list(language):
+def load_language_list(language: str) -> dict[str, str]:
     with (I18N_JSON_DIR / f"{language}.json").open(encoding="utf-8") as f:
         return json.load(f)
 
 
-def scan_language_list():
+def scan_language_list() -> list[str]:
     return [p.stem for p in I18N_JSON_DIR.iterdir() if p.suffix == ".json"]
 
 
 class I18nAuto:
-    def __init__(self, language=None) -> None:
+    def __init__(self, language: str | None = None) -> None:
         if language in {"Auto", None}:
             language = locale.getdefaultlocale()[0]
             # getlocale can't identify the system's language ((None, None))
@@ -24,7 +25,7 @@ class I18nAuto:
         self.language = language
         self.language_map = load_language_list(language)
 
-    def __call__(self, key) -> str:
+    def __call__(self, key: str) -> str:
         return self.language_map.get(key, key)
 
     def __repr__(self) -> str:

@@ -420,9 +420,8 @@ class UnifiedVoice(nn.Module):
         speech_condition: Tensor,
         text_inputs: Tensor,
         emo_vec: Tensor,
-        emo_speech_condition: Tensor | None = None,
+        emo_speech_condition: Tensor,
         input_tokens: Tensor | None = None,
-        num_return_sequences: int = 1,
         max_generate_length: int | None = None,
         typical_sampling: bool = False,
         typical_mass: float = 0.9,
@@ -438,7 +437,6 @@ class UnifiedVoice(nn.Module):
             emo_speech_condition: Optional emotion conditioning
             emo_vec: Pre-computed emotion vector
             input_tokens: Additional tokens for generation
-            num_return_sequences: Number of sequences to generate
             max_generate_length: Maximum generation length
             typical_sampling: Use typical sampling
             typical_mass: Mass for typical sampling
@@ -460,42 +458,28 @@ class UnifiedVoice(nn.Module):
         speech_conditioning_latent = self.get_conditioning(speech_condition.transpose(1, 2))
         logger.info(f"get_conditioning: {time.perf_counter() - t0:.4f}s")
 
-        # Build conditioning latent
-        conds_latent = self._build_conditioning_concat(
-            speech_conditioning_latent,
-            emo_vec,
-            torch.zeros(text_inputs.size(0), dtype=torch.long, device=text_inputs.device),
-        )
-
         # Prepare GPT inputs
         t2 = time.perf_counter()
-        input_ids, inputs_embeds, attention_mask = self.prepare_gpt_inputs(conds_latent, text_inputs)
-        inference_model = cast(GPT2InferenceModel, self.inference_model)  # Workaround for ty
-        assert inference_model is not None
-        inference_model.store_mel_emb(inputs_embeds)
+        input_ids, inputs_embeds, attention_mask = self.prepare_gpt_inputs(
+            self._build_conditioning_concat(
+                speech_conditioning_latent,
+                emo_vec,
+                torch.zeros(text_inputs.size(0), dtype=torch.long, device=text_inputs.device),
+            ),
+            text_inputs,
+        )
+        assert self.inference_model is not None
+        self.inference_model.store_mel_emb(inputs_embeds)
         logger.info(f"prepare_gpt_inputs: {time.perf_counter() - t2:.4f}s")
 
         # Handle additional input tokens
         if input_tokens is None:
             inputs = input_ids
         else:
-            batch_size = text_inputs.shape[0]
             if input_tokens.ndim == 1:
                 input_tokens = input_tokens.unsqueeze(0)
 
-            assert num_return_sequences % input_tokens.shape[0] == 0, (
-                "num_return_sequences must be divisible by input_tokens batch size"
-            )
-            assert num_return_sequences % batch_size == 0, (
-                "num_return_sequences must be divisible by text_inputs batch size"
-            )
-
-            repeat_factor = num_return_sequences // input_ids.shape[0]
-            if repeat_factor > 1:
-                input_ids = input_ids.repeat(repeat_factor, 1)
-                attention_mask = attention_mask.repeat(repeat_factor, 1)
-
-            input_tokens = input_tokens.repeat(num_return_sequences // input_tokens.shape[0], 1)
+            input_tokens = input_tokens.repeat(1, 1)
             inputs = torch.cat([input_ids, input_tokens], dim=1)
             attention_mask = F.pad(attention_mask, (0, input_tokens.shape[1]), value=1)
 
@@ -505,8 +489,7 @@ class UnifiedVoice(nn.Module):
 
         if typical_sampling:
             if not (0.0 < typical_mass < 1.0):
-                msg = f"`typical_mass` must be > 0 and < 1, got {typical_mass}"
-                raise ValueError(msg)
+                raise ValueError(f"`typical_mass` must be > 0 and < 1, got {typical_mass}")
             min_tokens = 2 if num_beams > 1 else 1
             logits_processor.append(TypicalLogitsWarper(mass=typical_mass, min_tokens_to_keep=min_tokens))
 
@@ -519,7 +502,7 @@ class UnifiedVoice(nn.Module):
         # Generate
         t3 = time.perf_counter()
 
-        if self.accel_engine is not None and num_return_sequences == 1:
+        if self.accel_engine is not None and 1 == 1:
             output = self.accel_engine.generate(
                 inputs,
                 max_new_tokens=max_length - trunc_index,
@@ -527,11 +510,11 @@ class UnifiedVoice(nn.Module):
                 temperature=temperature,
                 stop_tokens=[self.config.stop_mel_token],
                 tts_embeddings=inputs_embeds,
-                tts_mel_embedding=inference_model.embeddings,
-                tts_text_pos_embedding=inference_model.text_pos_embedding,
+                tts_mel_embedding=self.inference_model.embeddings,
+                tts_text_pos_embedding=self.inference_model.text_pos_embedding,
             )
         else:
-            output = inference_model.generate(
+            output = self.inference_model.generate(
                 inputs,
                 bos_token_id=self.config.start_mel_token,
                 pad_token_id=self.config.stop_mel_token,
@@ -539,7 +522,7 @@ class UnifiedVoice(nn.Module):
                 attention_mask=attention_mask,
                 max_length=max_length,
                 logits_processor=logits_processor,
-                num_return_sequences=num_return_sequences,
+                num_return_sequences=1,
                 **hf_generate_kwargs,  # pyright: ignore[reportAny]
             )
 

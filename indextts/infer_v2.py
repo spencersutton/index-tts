@@ -545,7 +545,7 @@ class IndexTTS2:
         if emo_vector is None:
             emovec_mat, weight_vector = None, None
         else:
-            weight_vector = torch.tensor(list(emo_vector))
+            weight_vector = torch.tensor(emo_vector)
 
             # Select emotion indices
             if use_random:
@@ -611,7 +611,6 @@ class IndexTTS2:
             top_p=generation_kwargs.pop("top_p", 0.8),
             top_k=generation_kwargs.pop("top_k", 30),
             temperature=generation_kwargs.pop("temperature", 0.8),  # pyright: ignore[reportAny]
-            num_return_sequences=1,
             length_penalty=generation_kwargs.pop("length_penalty", 0.0),
             num_beams=generation_kwargs.pop("num_beams", 3),  # pyright: ignore[reportAny]
             repetition_penalty=generation_kwargs.pop("repetition_penalty", 10.0),
@@ -637,46 +636,47 @@ class IndexTTS2:
 
             # Trim code at stop token
             if self.stop_mel_token in code:
-                stop_idx = (code == self.stop_mel_token).nonzero(as_tuple=False)
-                code_len = stop_idx[0, 0].item() if stop_idx.numel() > 0 else len(code)
+                stop_idx = (code == self.stop_mel_token).nonzero()
+                code_len = stop_idx.item() if stop_idx.numel() > 0 else len(code)
             else:
                 code_len = len(code)
 
             code = code[:code_len].unsqueeze(0)  # noqa: PLW2901
 
-            # GPT forward pass
-            latent = self.gpt(
-                speech_conditioning_latent=speech_conditioning_latent[seg_idx : seg_idx + 1],
-                text_inputs=batch_text_tokens[seg_idx].unsqueeze(0),
-                mel_codes=code,
-                emo_vec=emovec,
-                use_speed=torch.zeros(spk_cond_emb.size(0), device=device).long(),
+            wav = (
+                self.bigvgan(
+                    self.cfm(
+                        torch.cat(
+                            [
+                                prompt_condition,
+                                self.length_regulator(
+                                    self.semantic_codec.quantizer.vq2emb(code.unsqueeze(1)).transpose(1, 2)
+                                    + self.gpt_layer(
+                                        self.gpt(
+                                            speech_conditioning_latent=speech_conditioning_latent[
+                                                seg_idx : seg_idx + 1
+                                            ],
+                                            text_inputs=batch_text_tokens[seg_idx].unsqueeze(0),
+                                            mel_codes=code,
+                                            emo_vec=emovec,
+                                            use_speed=torch.zeros(spk_cond_emb.size(0), device=device).long(),
+                                        )
+                                    ),
+                                    ylens=int(code_len * 1.72),
+                                ),
+                            ],
+                            dim=1,
+                        ),
+                        ref_mel,
+                        style,
+                        cfm_steps,
+                        inference_cfg_rate=0.7,
+                    )[:, :, ref_mel.size(-1) :].float()
+                )
+                .squeeze()
+                .unsqueeze(0)
+                .squeeze(1)
             )
-
-            # S2Mel conversion
-            cat_condition = torch.cat(
-                [
-                    prompt_condition,
-                    self.length_regulator(
-                        self.semantic_codec.quantizer.vq2emb(code.unsqueeze(1)).transpose(1, 2)
-                        + self.gpt_layer(latent),
-                        ylens=(torch.tensor([code_len], device=device) * 1.72).long(),
-                    ),
-                ],
-                dim=1,
-            )
-
-            vc_target = self.cfm(
-                cat_condition,
-                ref_mel,
-                style,
-                cfm_steps,
-                inference_cfg_rate=0.7,
-            )
-            vc_target = vc_target[:, :, ref_mel.size(-1) :]
-
-            # BigVGAN vocoder
-            wav = self.bigvgan(vc_target.float()).squeeze().unsqueeze(0).squeeze(1)
 
             if stream_return:
                 yield wav.cpu()

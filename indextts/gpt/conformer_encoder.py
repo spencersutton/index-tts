@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import override
 
+import torch
 from torch import Tensor, nn
 
 from indextts.gpt.conformer.attention import RelPositionMultiHeadedAttention
@@ -9,7 +10,6 @@ from indextts.gpt.conformer.encoder_layer import ConformerEncoderLayer
 from indextts.gpt.conformer.modules import ConvolutionModule, PositionwiseFeedForward
 from indextts.gpt.conformer.subsampling import Conv2dSubsampling2
 from indextts.util import patch_call
-from indextts.utils.common import make_pad_mask
 
 
 class ConformerEncoder(nn.Module):
@@ -48,24 +48,20 @@ class ConformerEncoder(nn.Module):
         ])
 
     @override
-    def forward(
-        self,
-        xs: Tensor,
-        xs_lens: Tensor,
-    ) -> tuple[Tensor, Tensor]:
+    def forward(self, xs: Tensor) -> tuple[Tensor, Tensor]:
         """Embed positions in tensor.
 
         Args:
             xs: padded input tensor (B, T, D)
-            xs_lens: input length (B)
         Returns:
             encoder output tensor xs, and subsampled masks
             xs: padded output tensor (B, T' ~= T/subsample_rate, D)
             masks: Tensor batch padding mask after subsample
                 (B, 1, T' ~= T/subsample_rate)
         """
-        T = xs.size(1)
-        masks = ~make_pad_mask(xs_lens, T).unsqueeze(1)  # (B, 1, T)
+        _B, T, D = xs.shape
+        seq_range = torch.arange(0, T, dtype=torch.int64, device=xs.device).unsqueeze(0)
+        masks = (seq_range < D).unsqueeze(1)  # (B, 1, T)
         xs, pos_emb, masks = self.embed(xs, masks)
         chunk_masks = masks
         mask_pad = masks  # (B, 1, T/subsample_rate)

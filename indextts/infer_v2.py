@@ -603,8 +603,6 @@ class IndexTTS2:
         emovec = self.gpt.merge_emovec(
             spk_cond_emb,
             emo_cond_emb,
-            torch.tensor([spk_cond_emb.shape[-1]], device=device),
-            torch.tensor([emo_cond_emb.shape[-1]], device=device),
             alpha=emo_alpha,
         )
 
@@ -638,8 +636,6 @@ class IndexTTS2:
             spk_cond_emb.expand(batch_size, -1, -1),
             text_tokens_batch,
             emo_cond_emb.expand(batch_size, -1, -1),
-            cond_lengths=torch.tensor([spk_cond_emb.shape[-1]] * batch_size, device=device),
-            emo_cond_lengths=torch.tensor([emo_cond_emb.shape[-1]] * batch_size, device=device),
             emo_vec=emovec,
             do_sample=generation_kwargs.pop("do_sample", True),
             top_p=generation_kwargs.pop("top_p", 0.8),
@@ -689,8 +685,6 @@ class IndexTTS2:
                 text_tokens,
                 code,
                 emo_cond_emb,
-                cond_mel_lengths=torch.tensor([spk_cond_emb.shape[-1]], device=device),
-                emo_cond_mel_lengths=torch.tensor([emo_cond_emb.shape[-1]], device=device),
                 emo_vec=emovec,
                 use_speed=torch.zeros(spk_cond_emb.size(0), device=device).long(),
             )

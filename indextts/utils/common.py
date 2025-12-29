@@ -1,9 +1,6 @@
 import re
 from typing import cast
 
-import torch
-from torch import Tensor
-
 
 def tokenize_by_CJK_char(line: str, do_upper_case: bool = True) -> str:  # noqa: N802
     """Tokenize a line of text with CJK char.
@@ -56,28 +53,3 @@ def de_tokenized_by_CJK_char(line: str, do_lower_case: bool = False) -> str:  # 
             if do_lower_case:
                 words[i] = words[i].lower()
     return "".join(words)
-
-
-def make_pad_mask(lengths: Tensor, max_len: int = 0) -> Tensor:
-    """Make mask tensor containing indices of padded part.
-
-    See description of make_non_pad_mask.
-
-    Args:
-        lengths (Tensor): Batch of lengths (B,).
-    Returns:
-        Tensor: Mask tensor containing indices of padded part.
-
-    Examples:
-        >>> lengths = [5, 3, 2]
-        >>> make_pad_mask(lengths)
-        masks = [[0, 0, 0, 0 ,0],
-                 [0, 0, 0, 1, 1],
-                 [0, 0, 1, 1, 1]]
-    """
-    batch_size = lengths.size(0)
-    max_len = max_len if max_len > 0 else int(lengths.max().item())
-    seq_range = torch.arange(0, max_len, dtype=torch.int64, device=lengths.device)
-    seq_range_expand = seq_range.unsqueeze(0).expand(batch_size, max_len)
-    seq_length_expand = lengths.unsqueeze(-1)
-    return seq_range_expand >= seq_length_expand

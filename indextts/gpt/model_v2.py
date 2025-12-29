@@ -255,51 +255,47 @@ class UnifiedVoice(nn.Module):
     # Conditioning Extraction
     # -------------------------------------------------------------------------
 
-    def get_conditioning(self, speech_conditioning_input: Tensor, cond_mel_lengths: Tensor) -> Tensor:
+    def get_conditioning(self, speech_conditioning_input: Tensor) -> Tensor:
         """Extract speaker conditioning latents from speech input.
 
         Args:
             speech_conditioning_input: (batch, frames, dim) speech features
-            cond_mel_lengths: (batch,) lengths of each conditioning sequence
 
         Returns:
             (batch, cond_num, model_dim) conditioning latents
         """
-        encoded, mask = self.conditioning_encoder(speech_conditioning_input.transpose(1, 2), cond_mel_lengths)
+        encoded, mask = self.conditioning_encoder(speech_conditioning_input.transpose(1, 2))
         conds_mask = self.cond_mask_pad(mask.squeeze(1))
         return self.perceiver_encoder(encoded, conds_mask)
 
-    def get_emo_conditioning(self, speech_conditioning_input: Tensor, cond_mel_lengths: Tensor) -> Tensor:
+    def get_emo_conditioning(self, speech_conditioning_input: Tensor) -> Tensor:
         """Extract emotion conditioning from speech input.
 
         Args:
             speech_conditioning_input: (batch, frames, dim) speech features
-            cond_mel_lengths: (batch,) lengths of each conditioning sequence
 
         Returns:
             (batch, dim) emotion conditioning vector
         """
-        encoded, mask = self.emo_conditioning_encoder(speech_conditioning_input.transpose(1, 2), cond_mel_lengths)
+        encoded, mask = self.emo_conditioning_encoder(speech_conditioning_input.transpose(1, 2))
         conds_mask = self.emo_cond_mask_pad(mask.squeeze(1))
         conds = self.emo_perceiver_encoder(encoded, conds_mask)
         return conds.squeeze(1)
 
-    def get_emovec(self, emo_speech_conditioning_latent: Tensor, emo_cond_lengths: Tensor) -> Tensor:
+    def get_emovec(self, emo_speech_conditioning_latent: Tensor) -> Tensor:
         """Extract and project emotion vector from speech conditioning."""
-        emo_vec = self.get_emo_conditioning(emo_speech_conditioning_latent.transpose(1, 2), emo_cond_lengths)
+        emo_vec = self.get_emo_conditioning(emo_speech_conditioning_latent.transpose(1, 2))
         return self.emo_layer(self.emovec_layer(emo_vec))
 
     def merge_emovec(
         self,
         speech_conditioning_latent: Tensor,
         emo_speech_conditioning_latent: Tensor,
-        cond_lengths: Tensor,
-        emo_cond_lengths: Tensor,
         alpha: float = 1.0,
     ) -> Tensor:
         """Blend base and emotion vectors using linear interpolation."""
-        emo_vec = self.get_emovec(emo_speech_conditioning_latent, emo_cond_lengths)
-        base_vec = self.get_emovec(speech_conditioning_latent, cond_lengths)
+        emo_vec = self.get_emovec(emo_speech_conditioning_latent)
+        base_vec = self.get_emovec(speech_conditioning_latent)
         return base_vec + alpha * (emo_vec - base_vec)
 
     def _build_conditioning_concat(
@@ -327,8 +323,6 @@ class UnifiedVoice(nn.Module):
         text_inputs: Tensor,
         mel_codes: Tensor,
         emo_speech_conditioning_latent: Tensor,
-        cond_mel_lengths: Tensor,
-        emo_cond_mel_lengths: Tensor,
         emo_vec: Tensor | None = None,
         use_speed: Tensor | None = None,
         do_spk_cond: bool = False,
@@ -338,12 +332,8 @@ class UnifiedVoice(nn.Module):
         Args:
             speech_conditioning_latent: Speaker conditioning (batch, dim, frames) or (batch, cond_num, dim)
             text_inputs: Text token IDs (batch, text_len)
-            text_lengths: Actual text lengths (batch,)
             mel_codes: Mel token codes (batch, mel_len)
-            mel_codes_lengths: Actual mel lengths (batch,)
             emo_speech_conditioning_latent: Emotion conditioning (batch, dim, frames)
-            cond_mel_lengths: Conditioning mel lengths (batch,)
-            emo_cond_mel_lengths: Emotion conditioning lengths (batch,)
             emo_vec: Pre-computed emotion vector or None
             use_speed: Speed control tensor (batch,)
             do_spk_cond: If True, compute speaker conditioning from raw input
@@ -353,16 +343,11 @@ class UnifiedVoice(nn.Module):
         """
         # Compute speaker conditioning if needed
         if do_spk_cond:
-            speech_conditioning_latent = self.get_conditioning(
-                speech_conditioning_latent.transpose(1, 2), cond_mel_lengths
-            )
+            speech_conditioning_latent = self.get_conditioning(speech_conditioning_latent.transpose(1, 2))
 
         # Compute emotion vector if not provided
         if emo_vec is None:
-            emo_vec = self.get_emo_conditioning(
-                emo_speech_conditioning_latent.transpose(1, 2),
-                emo_cond_mel_lengths,
-            )
+            emo_vec = self.get_emo_conditioning(emo_speech_conditioning_latent.transpose(1, 2))
             emo_vec = self.emo_layer(self.emovec_layer(emo_vec))
 
         # Prepare text and mel tokens
@@ -479,8 +464,6 @@ class UnifiedVoice(nn.Module):
         speech_condition: Tensor,
         text_inputs: Tensor,
         emo_speech_condition: Tensor | None = None,
-        cond_lengths: Tensor | None = None,
-        emo_cond_lengths: Tensor | None = None,
         emo_vec: Tensor | None = None,
         input_tokens: Tensor | None = None,
         num_return_sequences: int = 1,
@@ -497,8 +480,6 @@ class UnifiedVoice(nn.Module):
             speech_condition: (batch, dim, frames) or (dim, frames) speaker conditioning
             text_inputs: (batch, text_len) text token IDs
             emo_speech_condition: Optional emotion conditioning
-            cond_lengths: Lengths of conditioning sequences
-            emo_cond_lengths: Lengths of emotion conditioning sequences
             emo_vec: Pre-computed emotion vector
             input_tokens: Additional tokens for generation
             num_return_sequences: Number of sequences to generate
@@ -518,19 +499,15 @@ class UnifiedVoice(nn.Module):
             speech_condition = speech_condition.unsqueeze(0)
         if emo_speech_condition is None:
             emo_speech_condition = speech_condition
-        if cond_lengths is None:
-            cond_lengths = torch.tensor([speech_condition.shape[-1]], device=speech_condition.device)
-        if emo_cond_lengths is None:
-            emo_cond_lengths = torch.tensor([emo_speech_condition.shape[-1]], device=emo_speech_condition.device)
 
         # Compute conditioning latents
-        speech_conditioning_latent = self.get_conditioning(speech_condition.transpose(1, 2), cond_lengths)
+        speech_conditioning_latent = self.get_conditioning(speech_condition.transpose(1, 2))
         logger.info(f"get_conditioning: {time.perf_counter() - t0:.4f}s")
 
         # Compute or use provided emotion vector
         if emo_vec is None:
             t1 = time.perf_counter()
-            emo_vec = self.get_emo_conditioning(emo_speech_condition.transpose(1, 2), emo_cond_lengths)
+            emo_vec = self.get_emo_conditioning(emo_speech_condition.transpose(1, 2))
             emo_vec = self.emo_layer(self.emovec_layer(emo_vec))
             logger.info(f"get_emo_conditioning: {time.perf_counter() - t1:.4f}s")
         else:

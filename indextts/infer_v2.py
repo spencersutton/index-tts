@@ -96,7 +96,6 @@ def _safe_torch_export_save(program: Any, path: str | Path) -> None:
     for _ in range(5):
         try:
             torch.export.save(program, path)
-            return  # noqa: TRY300
         except Exception as e:
             msg = str(e)
             if gm is None:
@@ -645,10 +644,10 @@ class IndexTTS2:
             do_sample=generation_kwargs.pop("do_sample", True),
             top_p=generation_kwargs.pop("top_p", 0.8),
             top_k=generation_kwargs.pop("top_k", 30),
-            temperature=generation_kwargs.pop("temperature", 0.8),
+            temperature=generation_kwargs.pop("temperature", 0.8),  # pyright: ignore[reportAny]
             num_return_sequences=1,
             length_penalty=generation_kwargs.pop("length_penalty", 0.0),
-            num_beams=generation_kwargs.pop("num_beams", 3),
+            num_beams=generation_kwargs.pop("num_beams", 3),  # pyright: ignore[reportAny]
             repetition_penalty=generation_kwargs.pop("repetition_penalty", 10.0),
             max_generate_length=max_mel_tokens,
             **generation_kwargs,  # pyright: ignore[reportAny]
@@ -678,7 +677,7 @@ class IndexTTS2:
             else:
                 code_len = len(code)
 
-            code = code[:code_len].unsqueeze(0)
+            code = code[:code_len].unsqueeze(0)  # noqa: PLW2901
             text_tokens = batch_text_tokens[seg_idx].unsqueeze(0)
 
             code_lens = torch.tensor([code_len], device=device)

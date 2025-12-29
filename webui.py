@@ -4,7 +4,7 @@ import inspect
 import json
 import sys
 import time
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from pathlib import Path
 from typing import Any, cast
 
@@ -18,7 +18,9 @@ from tools.i18n.i18n import I18nAuto
 
 def _gradio_audio_supports_streaming_output() -> bool:
     try:
-        sig = inspect.signature(gr.Audio.__init__)
+        # Gradio stubs differ across versions; cast keeps runtime behavior the
+        # same while avoiding 'partially unknown' types in static checkers.
+        sig = inspect.signature(cast(Callable[..., object], gr.Audio.__init__))
     except (TypeError, ValueError):
         return False
     else:
@@ -60,7 +62,14 @@ parser.add_argument(
 )
 cmd_args = parser.parse_args()
 
-model_dir = Path(cmd_args.model_dir)
+# argparse.Namespace attributes are typed as Any; normalize to concrete types so
+# static type checking doesn't leak Any throughout the file.
+verbose = bool(cmd_args.verbose)  # pyright: ignore[reportAny]
+gui_seg_tokens = int(cmd_args.gui_seg_tokens)  # pyright: ignore[reportAny]
+host = str(cmd_args.host)  # pyright: ignore[reportAny]
+port = int(cmd_args.port)  # pyright: ignore[reportAny]
+
+model_dir = Path(cmd_args.model_dir)  # pyright: ignore[reportAny]
 if not model_dir.exists():
     print(f"Model directory {model_dir} does not exist. Please download the model first.")
     sys.exit(1)
@@ -81,8 +90,8 @@ i18n = I18nAuto(language="Auto")
 tts = IndexTTS2(
     model_dir=model_dir,
     cfg_path=model_dir / "config.yaml",
-    use_fp16=cmd_args.fp16,
-    use_cuda_kernel=cmd_args.cuda_kernel,
+    use_fp16=bool(cmd_args.fp16),  # pyright: ignore[reportAny]
+    use_cuda_kernel=bool(cmd_args.cuda_kernel),  # pyright: ignore[reportAny]
 )
 # 支持的语言列表
 EMO_CHOICES_ALL = [
@@ -93,13 +102,13 @@ EMO_CHOICES_ALL = [
 ]
 EMO_CHOICES_OFFICIAL = EMO_CHOICES_ALL[:-1]  # skip experimental features
 
-example_cases = []
+example_cases: list[list[Any]] = []
 with Path("examples/cases.jsonl").open(encoding="utf-8") as f:
     for line in f:
         line = line.strip()  # noqa: PLW2901
         if not line:
             continue
-        example = json.loads(line)
+        example = cast(dict[str, Any], json.loads(line))
         emo_audio_path = Path("examples") / example["emo_audio"] if example.get("emo_audio", None) else None
 
         example_cases.append([
@@ -128,7 +137,7 @@ def get_example_cases(include_experimental: bool = False) -> list[list[Any]]:
     return [x for x in example_cases if x[1] != EMO_CHOICES_ALL[3]]
 
 
-def gen_single(
+def gen_single(  # pyright: ignore[reportAny]
     emo_control_method: int | gr.Radio,
     prompt: str | Path,
     text: str,
@@ -167,7 +176,7 @@ def gen_single(
         max_mel_tokens,
     ) = args
     if not isinstance(emo_control_method, int):
-        emo_control_method = int(emo_control_method.value)
+        emo_control_method = int(emo_control_method.value)  # pyright: ignore[reportAny]
     match emo_control_method:
         case 0:  # emotion from speaker
             emo_ref_path = None  # remove external reference audio
@@ -198,7 +207,7 @@ def gen_single(
             use_emo_text=(emo_control_method == 3),
             emo_text=emo_text,
             use_random=emo_random,
-            verbose=cmd_args.verbose,
+            verbose=verbose,
             max_text_tokens_per_segment=int(max_text_tokens_per_segment),
             stream_return=True,
             do_sample=bool(do_sample),
@@ -211,7 +220,8 @@ def gen_single(
             max_mel_tokens=int(max_mel_tokens),
         )
 
-        stream_iter = cast(Iterable[Any], stream_gen)
+        # Use `object` instead of `Any` to keep type narrowing effective below.
+        stream_iter = cast(Iterable[object], stream_gen)
 
         # Some Gradio versions can append-play streamed audio chunks when
         # `gr.Audio(streaming=True)` is supported; otherwise we fall back to
@@ -223,12 +233,13 @@ def gen_single(
         for chunk in stream_iter:
             if chunk is None:
                 continue
-            print("CHUNK")
 
-            if isinstance(chunk, tuple) and len(chunk) == 2:
-                # Just in case upstream ever yields (sr, np.ndarray) directly.
-                yield chunk
-                continue
+            if isinstance(chunk, tuple):
+                chunk_tuple = cast(tuple[object, ...], chunk)
+                if len(chunk_tuple) == 2:
+                    # Just in case upstream ever yields (sr, np.ndarray) directly.
+                    yield cast(Any, chunk_tuple)
+                    continue
 
             if isinstance(chunk, Path):
                 # Shouldn't happen in stream_return mode, but handle gracefully.
@@ -281,7 +292,7 @@ def gen_single(
         top_p=float(top_p),
         use_emo_text=(emo_control_method == 3),
         use_random=emo_random,
-        verbose=cast(bool, cmd_args.verbose),
+        verbose=verbose,
     )
     # Non-streaming: yield once (Path or (sr, np.ndarray))
     yield output
@@ -301,7 +312,8 @@ def create_experimental_warning_message() -> gr.HTML:
     return create_warning_message(i18n("提示：此功能为实验版，结果尚不稳定，我们正在持续优化中。"))
 
 
-with gr.Blocks(title="IndexTTS Demo") as demo:
+demo = gr.Blocks(title="IndexTTS Demo")
+with demo:
     gr.HTML("""
     <h2><center>IndexTTS2: A Breakthrough in Emotionally Expressive and Duration-Controlled Auto-Regressive Zero-Shot Text-to-Speech</h2>
 <p align="center">
@@ -326,16 +338,17 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
                 )
                 gen_button = gr.Button(i18n("生成语音"), key="gen_button", interactive=True)
             # Enable streaming playback in Gradio when supported by the installed version.
-            audio_kwargs: dict[str, Any] = {"label": i18n("生成结果"), "visible": True, "key": "output_audio"}
+            audio_kwargs: dict[str, object] = {"label": i18n("生成结果"), "visible": True, "key": "output_audio"}
             try:
-                sig = inspect.signature(gr.Audio.__init__)
+                sig = inspect.signature(cast(Callable[..., object], gr.Audio.__init__))
                 if "autoplay" in sig.parameters:
                     audio_kwargs["autoplay"] = True
                 if "streaming" in sig.parameters:
                     audio_kwargs["streaming"] = True
             except (TypeError, ValueError):
                 pass
-            output_audio = gr.Audio(**audio_kwargs)
+            # Dynamic kwargs across Gradio versions; cast to avoid type checker noise.
+            output_audio: gr.Audio = cast(gr.Audio, cast(Any, gr.Audio)(**audio_kwargs))
 
         experimental_checkbox = gr.Checkbox(label=i18n("显示实验功能"), value=False)
 
@@ -358,15 +371,18 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
                 visible=False,
             )  # do not render
         # 情感参考音频部分
-        with gr.Group(visible=False) as emotion_reference_group, gr.Row():
+        emotion_reference_group = gr.Group(visible=False)
+        with emotion_reference_group, gr.Row():
             emo_upload = gr.Audio(label=i18n("上传情感参考音频"), type="filepath")
 
         # 情感随机采样
-        with gr.Row(visible=False) as emotion_randomize_group:
+        emotion_randomize_group = gr.Row(visible=False)
+        with emotion_randomize_group:
             emo_random = gr.Checkbox(label=i18n("情感随机采样"), value=False)
 
         # 情感向量控制部分
-        with gr.Group(visible=False) as emotion_vector_group, gr.Row():
+        emotion_vector_group = gr.Group(visible=False)
+        with emotion_vector_group, gr.Row():
             with gr.Column():
                 vec1 = gr.Slider(
                     label=i18n("喜"),
@@ -426,7 +442,8 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
                     step=0.05,
                 )
 
-        with gr.Group(visible=False) as emo_text_group:
+        emo_text_group = gr.Group(visible=False)
+        with emo_text_group:
             create_experimental_warning_message()
             with gr.Row():
                 emo_text = gr.Textbox(
@@ -436,7 +453,8 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
                     info=i18n("例如：委屈巴巴、危险在悄悄逼近"),
                 )
 
-        with gr.Row(visible=False) as emo_weight_group:
+        emo_weight_group = gr.Row(visible=False)
+        with emo_weight_group:
             emo_weight = gr.Slider(
                 label=i18n("情感权重"),
                 minimum=0.0,
@@ -524,7 +542,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
                             20,
                             min(
                                 tts.cfg.gpt.max_text_tokens,
-                                cmd_args.gui_seg_tokens,
+                                gui_seg_tokens,
                             ),
                         )
                         max_text_tokens_per_segment = gr.Slider(
@@ -608,7 +626,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
         )
 
     # click() event works on both desktop and mobile UI
-    example_table.click(
+    example_table.click(  # pyright: ignore[reportUnknownMemberType]
         on_example_click,
         inputs=[example_table],
         outputs=[
@@ -637,7 +655,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
                 text_tokens_list,
                 max_text_tokens_per_segment=int(max_text_tokens_per_segment),
             )
-            data = []
+            data: list[list[object]] = []
             for i, s in enumerate(segments):
                 segment_str = "".join(s)
                 tokens_count = len(s)
@@ -685,7 +703,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
                     gr.update(visible=False),
                 )
 
-    emo_control_method.change(
+    emo_control_method.change(  # pyright: ignore[reportUnknownMemberType]
         on_method_change,
         inputs=[emo_control_method],
         outputs=[
@@ -709,27 +727,27 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
             gr.update(samples=get_example_cases(include_experimental=is_experimental)),
         )
 
-    experimental_checkbox.change(
+    experimental_checkbox.change(  # pyright: ignore[reportUnknownMemberType]
         on_experimental_change,
         inputs=[experimental_checkbox, emo_control_method],
         outputs=[emo_control_method, example_table],
     )
 
-    input_text_single.change(
+    input_text_single.change(  # pyright: ignore[reportUnknownMemberType]
         on_input_text_change,
         inputs=[input_text_single, max_text_tokens_per_segment],
         outputs=[segments_preview],
     )
 
-    max_text_tokens_per_segment.change(
+    max_text_tokens_per_segment.change(  # pyright: ignore[reportUnknownMemberType]
         on_input_text_change,
         inputs=[input_text_single, max_text_tokens_per_segment],
         outputs=[segments_preview],
     )
 
-    prompt_audio.upload(update_prompt_audio, inputs=[], outputs=[gen_button])
+    prompt_audio.upload(update_prompt_audio, inputs=[], outputs=[gen_button])  # pyright: ignore[reportUnknownMemberType]
 
-    gen_button.click(
+    gen_button.click(  # pyright: ignore[reportUnknownMemberType]
         gen_single,
         inputs=[
             emo_control_method,
@@ -756,5 +774,5 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
 
 
 if __name__ == "__main__":
-    demo.queue(20)
-    demo.launch(server_name=cmd_args.host, server_port=cmd_args.port)
+    demo.queue(20)  # pyright: ignore[reportUnknownMemberType]
+    demo.launch(server_name=host, server_port=port)

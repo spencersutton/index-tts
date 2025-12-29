@@ -1,3 +1,4 @@
+# noqa: INP001
 import torch
 
 
@@ -48,14 +49,14 @@ def show_device_list(backend: str) -> int:
                 device_name = backend_module.get_device_name(i)
                 print(f'  * Device {i}: "{device_name}"')
 
-        return device_count
-
     except AttributeError:
         print(
             f'Error: The PyTorch backend "{backend}" does not exist, or is missing the necessary APIs (is_available, device_count, get_device_name).'
         )
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"Error: {e}")
+    else:
+        return device_count
 
     return 0
 

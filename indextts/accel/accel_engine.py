@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sys
-from collections.abc import MutableMapping
+from collections.abc import MutableMapping, Sequence
 from typing import cast, override
 
 import torch
@@ -83,7 +83,7 @@ class AccelInferenceEngine:
         self.graph_bs = [1, 2, 4, 8]
         self._tts_prompt_len = 0
 
-    def _prepare_prefill(self, requests: list[Seq]) -> tuple[Tensor, Tensor]:
+    def _prepare_prefill(self, requests: Sequence[Seq]) -> tuple[Tensor, Tensor]:
         input_ids: list[int] = []
         positions: list[int] = []
         cu_seqlens_q = [0]
@@ -142,7 +142,7 @@ class AccelInferenceEngine:
 
         return input_ids_t, positions_t
 
-    def _prepare_decode(self, requests: list[Seq]) -> tuple[Tensor, Tensor]:
+    def _prepare_decode(self, requests: Sequence[Seq]) -> tuple[Tensor, Tensor]:
         if not requests:
             raise RuntimeError("FATAL: No requests provided to _prepare_decode!")
 

@@ -1,7 +1,7 @@
-from .accel_engine import AccelInferenceEngine
-from .attention import Attention
-from .gpt2_accel import GPT2AccelAttention, GPT2AccelModel
-from .kv_manager import KVCacheManager, Seq
+from indextts.accel.accel_engine import AccelInferenceEngine
+from indextts.accel.attention import Attention
+from indextts.accel.gpt2_accel import GPT2AccelAttention, GPT2AccelModel
+from indextts.accel.kv_manager import KVCacheManager, Seq
 
 __all__ = [
     "AccelInferenceEngine",

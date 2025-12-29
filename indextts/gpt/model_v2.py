@@ -14,8 +14,9 @@ from transformers.generation.logits_process import TypicalLogitsWarper
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions
 
 from indextts.accel.accel_engine import AccelInferenceEngine
-from indextts.gpt import GPT2InferenceModel, LearnedPositionEmbeddings, NullPositionEmbedding
 from indextts.gpt.conformer_encoder import ConformerEncoder
+from indextts.gpt.inference_model import GPT2InferenceModel, NullPositionEmbedding
+from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
 from indextts.gpt.perceiver import PerceiverResampler
 from indextts.gpt.utils import set_token_padding
 from indextts.util import patch_call

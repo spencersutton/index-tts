@@ -7,12 +7,11 @@ from typing import cast, override
 import torch
 from torch import Tensor, nn
 
+from indextts.accel.attention import ForwardContext
 from indextts.accel.gpt2_accel import GPT2AccelModel
-from indextts.gpt import LearnedPositionEmbeddings
+from indextts.accel.kv_manager import KVCacheManager, Seq
+from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
 from indextts.util import patch_call
-
-from .attention import ForwardContext
-from .kv_manager import KVCacheManager, Seq
 
 
 class Sampler(nn.Module):

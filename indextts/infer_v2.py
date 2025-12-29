@@ -539,7 +539,7 @@ class IndexTTS2:
         style = self.campplus_model(feat.unsqueeze(0)).to(self.device)
 
         # Generate prompt condition
-        prompt_condition = self.length_regulator(S_ref, ylens=torch.tensor([ref_mel.size(2)], device=self.device))
+        prompt_condition = self.length_regulator(S_ref, ylens=ref_mel.size(2))
 
         # Compute emotion matrix if using explicit vectors
         if emo_vector is None:
@@ -668,7 +668,6 @@ class IndexTTS2:
 
             vc_target = self.cfm(
                 cat_condition,
-                torch.tensor([cat_condition.size(1)], device=device),
                 ref_mel,
                 style,
                 cfm_steps,

@@ -153,7 +153,7 @@ class TransformerBlock(nn.Module):
     ) -> Tensor:
         if skip_in_x is not None:
             x = self.skip_in_linear(torch.cat([x, skip_in_x], dim=-1))
-        h = x + self.attention(self.attention_norm(x, c), freqs_cis, mask, input_pos)
+        h = x + self.attention(self.attention_norm(x, c), freqs_cis, mask)
         return h + self.feed_forward(self.ffn_norm(h, c))
 
     @patch_call(forward)
@@ -176,13 +176,7 @@ class Attention(nn.Module):
         self.dim = config.dim
 
     @override
-    def forward(
-        self,
-        x: Tensor,
-        freqs_cis: Tensor,
-        mask: Tensor | None,
-        input_pos: Tensor,
-    ) -> Tensor:
+    def forward(self, x: Tensor, freqs_cis: Tensor, mask: Tensor | None) -> Tensor:
         bsz, seqlen, _ = x.shape
 
         kv_size = self.n_local_heads * self.head_dim

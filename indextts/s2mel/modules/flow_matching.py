@@ -25,7 +25,6 @@ class CFM(nn.Module):
     def forward(
         self,
         mu: Tensor,
-        x_lens: Tensor,
         prompt: Tensor,
         style: Tensor,
         n_timesteps: int,
@@ -53,12 +52,11 @@ class CFM(nn.Module):
         B, T = mu.size(0), mu.size(1)
         z = torch.randn([B, self.in_channels, T], device=mu.device) * temperature
         t_span = torch.linspace(0, 1, n_timesteps + 1, device=mu.device)
-        return self.solve_euler(z, x_lens, prompt, mu, style, t_span, inference_cfg_rate)
+        return self.solve_euler(z, prompt, mu, style, t_span, inference_cfg_rate)
 
     def solve_euler(
         self,
         x: Tensor,
-        x_lens: Tensor,
         prompt: Tensor,
         mu: Tensor,
         style: Tensor,
@@ -112,7 +110,7 @@ class CFM(nn.Module):
             stacked_dphi_dt = self.estimator(
                 stacked_x,
                 stacked_prompt_x,
-                x_lens,
+                mu.size(1),
                 stacked_t,
                 stacked_style,
                 stacked_mu,

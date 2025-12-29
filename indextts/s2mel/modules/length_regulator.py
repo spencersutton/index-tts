@@ -3,10 +3,10 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import override
 
+import torch
 from torch import Tensor, nn
 from torch.nn import functional as F
 
-from indextts.s2mel.modules.commons import sequence_mask
 from indextts.util import patch_call
 
 
@@ -35,21 +35,15 @@ class InterpolateRegulator(nn.Module):
         self.content_in_proj = nn.Linear(in_channels, channels)
 
     @override
-    def forward(
-        self,
-        x: Tensor,
-        ylens: Tensor,
-        n_quantizers: int = 3,
-    ) -> Tensor:
+    def forward(self, x: Tensor, ylens: int) -> Tensor:
         x = self.content_in_proj(x)  # x in (B, T, D)
-
-        mask = sequence_mask(ylens).unsqueeze(-1)
         x = F.interpolate(
             x.transpose(1, 2).contiguous(),
-            size=int(ylens.max()),
+            size=ylens,
             mode="nearest",
         )
 
+        mask = torch.full((1, ylens, 1), True, device=x.device)
         return self.model(x).transpose(1, 2).contiguous() * mask
 
     @patch_call(forward)

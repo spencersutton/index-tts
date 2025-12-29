@@ -8,7 +8,6 @@ from torch import Tensor, nn
 from torch.nn.utils import weight_norm
 
 from indextts.config import S2MelConfig
-from indextts.s2mel.modules.commons import sequence_mask
 from indextts.s2mel.modules.gpt_fast.model import ModelArgs, Transformer
 from indextts.s2mel.modules.wavenet import WaveNet
 from indextts.util import patch_call
@@ -160,7 +159,7 @@ class DiT(nn.Module):
         self,
         x: Tensor,
         prompt_x: Tensor,
-        x_lens: Tensor,
+        x_lens: int,
         t: Tensor,
         style: Tensor,
         cond: Tensor,
@@ -189,7 +188,7 @@ class DiT(nn.Module):
         x_in = torch.cat([x_in, style.unsqueeze(1).repeat(1, T, 1)], dim=-1)  # [2, 1863, 864]
         x_in = self.cond_x_merge_linear(x_in)  # (N, T, D) [2, 1863, 512]
 
-        x_mask = sequence_mask(x_lens, max_length=x_in.size(1)).unsqueeze(1)  # [1, 1, 1863])
+        x_mask = (torch.arange(x_in.size(1), device=x_in.device, dtype=x_in.dtype).unsqueeze(0) < x_lens).unsqueeze(1)
         input_pos = self.input_pos[: x_in.size(1)]  # (T,) range（0，1863）
         x_mask_expanded = x_mask.unsqueeze(1).repeat(1, 1, x_in.size(1), 1)  # [1, 1, 1863, 1863]
         x_res = self.transformer(x_in, t1.unsqueeze(1), input_pos, x_mask_expanded)  # [2, 1863, 512]

@@ -419,7 +419,6 @@ class UnifiedVoice(nn.Module):
         speech_condition: Tensor,
         text_inputs: Tensor,
         emo_vec: Tensor,
-        emo_speech_condition: Tensor,
         input_tokens: Tensor | None = None,
         max_generate_length: int | None = None,
         typical_sampling: bool = False,

@@ -605,7 +605,6 @@ class IndexTTS2:
         codes_batch, speech_conditioning_latent = self.gpt.inference_speech(
             speech_condition=spk_cond_emb.expand(batch_size, -1, -1),
             text_inputs=text_tokens_batch,
-            emo_speech_condition=emo_cond_emb.expand(batch_size, -1, -1),
             emo_vec=emovec,
             do_sample=generation_kwargs.pop("do_sample", True),
             top_p=generation_kwargs.pop("top_p", 0.8),

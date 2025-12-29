@@ -455,6 +455,14 @@ class IndexTTS2:
 
         return next(iter(gen))
 
+    def get_emo_vec(self, emb: Tensor) -> Tensor:
+        encoded, mask = self.gpt.emo_conditioning_encoder(emb)
+        conditioning = self.gpt.emo_perceiver_encoder(
+            encoded,
+            self.gpt.emo_cond_mask_pad(mask.squeeze(1)),
+        ).squeeze(1)
+        return self.gpt.emo_layer(self.gpt.emovec_layer(conditioning))
+
     @torch.inference_mode()
     def infer_generator(
         self,
@@ -570,18 +578,9 @@ class IndexTTS2:
             self.extract_features(audio.data, sampling_rate=audio.sample_rate, return_tensors="pt").to(device)
         )
 
-        b: list[Tensor] = []
-        for emb in [emo_cond_emb, spk_cond_emb]:
-            encoded, mask = self.gpt.emo_conditioning_encoder(emb.transpose(1, 2).transpose(1, 2))
-            conditioning = self.gpt.emo_perceiver_encoder(
-                encoded,
-                self.gpt.emo_cond_mask_pad(mask.squeeze(1)),
-            ).squeeze(1)
-            b.append(self.gpt.emo_layer(self.gpt.emovec_layer(conditioning)))
-
         # Pre-calculate emotion vector
-        emo_vec, base_vec = b
-        emovec = base_vec + emo_alpha * (emo_vec - base_vec)
+        base_vec = self.get_emo_vec(spk_cond_emb)
+        emovec = base_vec + emo_alpha * (self.get_emo_vec(emo_cond_emb) - base_vec)
 
         if emovec_mat is not None and weight_vector is not None:
             emovec = emovec_mat + (1 - weight_vector.sum()) * emovec

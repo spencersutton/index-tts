@@ -643,40 +643,29 @@ class IndexTTS2:
 
             code = code[:code_len].unsqueeze(0)  # noqa: PLW2901
 
-            wav = (
-                self.bigvgan(
-                    self.cfm(
-                        torch.cat(
-                            [
-                                prompt_condition,
-                                self.length_regulator(
-                                    self.semantic_codec.quantizer.vq2emb(code.unsqueeze(1)).transpose(1, 2)
-                                    + self.gpt_layer(
-                                        self.gpt(
-                                            speech_conditioning_latent=speech_conditioning_latent[
-                                                seg_idx : seg_idx + 1
-                                            ],
-                                            text_inputs=batch_text_tokens[seg_idx].unsqueeze(0),
-                                            mel_codes=code,
-                                            emo_vec=emovec,
-                                            use_speed=torch.zeros(spk_cond_emb.size(0), device=device).long(),
-                                        )
-                                    ),
-                                    ylens=int(code_len * 1.72),
-                                ),
-                            ],
-                            dim=1,
-                        ),
-                        ref_mel,
-                        style,
-                        cfm_steps,
-                        inference_cfg_rate=0.7,
-                    )[:, :, ref_mel.size(-1) :].float()
-                )
-                .squeeze()
-                .unsqueeze(0)
-                .squeeze(1)
+            gpt_output = self.gpt(
+                speech_conditioning_latent=speech_conditioning_latent[seg_idx : seg_idx + 1],
+                text_inputs=batch_text_tokens[seg_idx].unsqueeze(0),
+                mel_codes=code,
+                emo_vec=emovec,
+                use_speed=torch.zeros(spk_cond_emb.size(0), device=device).long(),
             )
+
+            quantized_audio_embeddings = self.semantic_codec.quantizer.vq2emb(code.unsqueeze(1)).transpose(1, 2)
+            processed_audio_features = self.length_regulator(
+                quantized_audio_embeddings + self.gpt_layer(gpt_output),
+                ylens=int(code_len * 1.72),
+            )
+            processed_audio_features = self.cfm(
+                torch.cat([prompt_condition, processed_audio_features], dim=1),
+                ref_mel,
+                style,
+                cfm_steps,
+                inference_cfg_rate=0.7,
+            )
+
+            audio_features = self.bigvgan(processed_audio_features[:, :, ref_mel.size(-1) :].float())
+            wav = audio_features.squeeze().unsqueeze(0).squeeze(1)
 
             if stream_return:
                 yield wav.cpu()
@@ -692,9 +681,9 @@ class IndexTTS2:
             return
 
         # Save or return audio
-        wav = torch.cat(
-            [w.detach().cpu() for w in insert_interval_silence(wavs, interval_silence, sample_rate=OUTPUT_SR)], dim=1
-        )
+        silence_inserted_audio = insert_interval_silence(wavs, interval_silence, sample_rate=OUTPUT_SR)
+        processed_audio_segments = [w.detach().cpu() for w in silence_inserted_audio]
+        wav = torch.cat(processed_audio_segments, dim=1)
 
         if output_path:
             output_path.unlink(missing_ok=True)

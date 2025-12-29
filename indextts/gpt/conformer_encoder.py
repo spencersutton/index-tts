@@ -27,7 +27,6 @@ class ConformerEncoder(nn.Module):
         linear_units: int = 2048,
         num_blocks: int = 6,
         dropout_rate: float = 0.0,
-        macaron_style: bool = False,
         cnn_module_kernel: int = 15,
     ) -> None:
         super().__init__()
@@ -59,19 +58,17 @@ class ConformerEncoder(nn.Module):
             masks: Tensor batch padding mask after subsample
                 (B, 1, T' ~= T/subsample_rate)
         """
-        _B, T, D = xs.shape
-        seq_range = torch.arange(0, T, dtype=torch.int64, device=xs.device).unsqueeze(0)
-        masks = (seq_range < D).unsqueeze(1)  # (B, 1, T)
-        xs, pos_emb, masks = self.embed(xs, masks)
+        xs, pos_emb, masks = self.embed(
+            xs,
+            (torch.arange(0, xs.size(1), device=xs.device).unsqueeze(0) < xs.size(2)).unsqueeze(1),
+        )
         chunk_masks = masks
-        mask_pad = masks  # (B, 1, T/subsample_rate)
         for layer in self.encoders:
-            xs, chunk_masks, _, _ = layer(xs, chunk_masks, pos_emb, mask_pad)
-        xs = self.after_norm(xs)
+            xs, chunk_masks, _, _ = layer(xs, chunk_masks, pos_emb, masks)
         # Here we assume the mask is not changed in encoder layers, so just
         # return the masks before encoder layers, and the masks will be used
         # for cross attention with decoder later
-        return xs, masks
+        return self.after_norm(xs), masks
 
     @patch_call(forward)
     def __call__(self) -> None: ...

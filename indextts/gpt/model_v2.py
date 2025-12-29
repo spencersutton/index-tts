@@ -265,8 +265,7 @@ class UnifiedVoice(nn.Module):
             (batch, cond_num, model_dim) conditioning latents
         """
         encoded, mask = self.conditioning_encoder(speech_conditioning_input.transpose(1, 2))
-        conds_mask = self.cond_mask_pad(mask.squeeze(1))
-        return self.perceiver_encoder(encoded, conds_mask)
+        return self.perceiver_encoder(encoded, self.cond_mask_pad(mask.squeeze(1)))
 
     def _build_conditioning_concat(
         self,
@@ -451,11 +450,10 @@ class UnifiedVoice(nn.Module):
         # Normalize input dimensions
         if speech_condition.ndim == 2:
             speech_condition = speech_condition.unsqueeze(0)
-        if emo_speech_condition is None:
-            emo_speech_condition = speech_condition
 
         # Compute conditioning latents
-        speech_conditioning_latent = self.get_conditioning(speech_condition.transpose(1, 2))
+        encoded, mask = self.conditioning_encoder(speech_condition)
+        speech_conditioning_latent = self.perceiver_encoder(encoded, self.cond_mask_pad(mask.squeeze(1)))
         logger.info(f"get_conditioning: {time.perf_counter() - t0:.4f}s")
 
         # Prepare GPT inputs

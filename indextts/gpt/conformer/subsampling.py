@@ -62,11 +62,9 @@ class Conv2dSubsampling2(nn.Module):
             Tensor: positional encoding
 
         """
-        x = x.unsqueeze(1)  # (b, c=1, t, f)
-        x = self.conv(x)
+        x = self.conv(x.unsqueeze(1))
         b, c, t, f = x.size()
-        x = self.out(x.transpose(1, 2).contiguous().view(b, t, c * f))
-        x, pos_emb = self.positional_encoder(x, offset)
+        x, pos_emb = self.positional_encoder(self.out(x.transpose(1, 2).contiguous().view(b, t, c * f)), offset)
         return x, pos_emb, x_mask[:, :, 2::2]
 
     @patch_call(forward)

@@ -500,8 +500,20 @@ class IndexTTS2:
 
         try:
             return next(iter(gen))
-        except (StopIteration, IndexError):
-            return None
+        except StopIteration as e:
+            # This indicates the generator returned without yielding anything.
+            # In practice this is almost always a bug or an invalid input
+            # (e.g., text tokenization produced no segments).
+            raise RuntimeError(
+                "Inference produced no output (generator yielded nothing). "
+                "This usually means the input text could not be tokenized into any segments."
+            ) from e
+        except IndexError as e:
+            # Avoid silently swallowing indexing bugs (commonly out-of-range codebook ids).
+            raise RuntimeError(
+                "Inference failed due to an IndexError (likely out-of-range codebook indices). "
+                "Enable verbose logging and/or check your checkpoints/config compatibility."
+            ) from e
 
     @torch.inference_mode()
     def infer_generator(

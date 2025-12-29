@@ -480,64 +480,41 @@ class IndexTTS2:
             logging.basicConfig(level=logging.DEBUG)
 
         gen = self.infer_generator(
-            emo_alpha=emo_alpha,
+            spk_audio_prompt=spk_audio_prompt,
+            text=text,
+            output_path=output_path,
             emo_audio_prompt=emo_audio_prompt,
-            emo_text=emo_text,
+            emo_alpha=emo_alpha,
             emo_vector=emo_vector,
+            use_emo_text=use_emo_text,
+            emo_text=emo_text,
+            use_random=use_random,
             interval_silence=interval_silence,
             max_text_tokens_per_segment=max_text_tokens_per_segment,
-            output_path=output_path,
-            spk_audio_prompt=spk_audio_prompt,
             stream_return=stream_return,
-            text=text,
-            use_emo_text=use_emo_text,
-            use_random=use_random,
             **generation_kwargs,  # type: ignore
         )
 
         if stream_return:
             return gen
 
-        try:
-            return next(iter(gen))
-        except StopIteration as e:
-            # This indicates the generator returned without yielding anything.
-            # In practice this is almost always a bug or an invalid input
-            # (e.g., text tokenization produced no segments).
-            raise RuntimeError(
-                "Inference produced no output (generator yielded nothing). "
-                "This usually means the input text could not be tokenized into any segments."
-            ) from e
-        except IndexError as e:
-            # Avoid silently swallowing indexing bugs (commonly out-of-range codebook ids).
-            raise RuntimeError(
-                "Inference failed due to an IndexError (likely out-of-range codebook indices). "
-                "Enable verbose logging and/or check your checkpoints/config compatibility."
-            ) from e
+        return next(iter(gen))
 
     @torch.inference_mode()
     def infer_generator(
         self,
+        output_path: Path | None,
         spk_audio_prompt: Path,
         text: str,
-        output_path: Path | None,
         cfm_steps: int = 25,
-        do_sample: bool = True,
         emo_alpha: float = 1.0,
         emo_audio_prompt: Path | None = None,
         emo_text: str | None = None,
         emo_vector: Collection[float] | None = None,
         interval_silence: int = 200,
-        length_penalty: float | None = None,
-        max_mel_tokens: int = 1500,
         max_text_tokens_per_segment: int = 120,
-        num_beams: int = 3,
         quick_streaming_tokens: int = 0,
-        repetition_penalty: float = 10.0,
         stream_return: bool = False,
-        temperature: float = 0.8,
-        top_k: int = 30,
-        top_p: float = 0.8,
         use_emo_text: bool = False,
         use_random: bool = False,
         **generation_kwargs: Any,  # pyright: ignore[reportAny]
@@ -636,6 +613,8 @@ class IndexTTS2:
             emovec = emovec_mat + (1 - weight_vector.sum()) * emovec
 
         # Run batch inference
+        max_mel_tokens = cast(int, generation_kwargs.pop("max_mel_tokens", 1500))
+
         if not batch_text_tokens:
             return
 
@@ -663,14 +642,14 @@ class IndexTTS2:
             cond_lengths=torch.tensor([spk_cond_emb.shape[-1]] * batch_size, device=device),
             emo_cond_lengths=torch.tensor([emo_cond_emb.shape[-1]] * batch_size, device=device),
             emo_vec=emovec,
-            do_sample=do_sample,
-            top_p=top_p,
-            top_k=top_k,
-            temperature=temperature,
+            do_sample=generation_kwargs.pop("do_sample", True),
+            top_p=generation_kwargs.pop("top_p", 0.8),
+            top_k=generation_kwargs.pop("top_k", 30),
+            temperature=generation_kwargs.pop("temperature", 0.8),
             num_return_sequences=1,
-            length_penalty=length_penalty,
-            num_beams=num_beams,
-            repetition_penalty=repetition_penalty,
+            length_penalty=generation_kwargs.pop("length_penalty", 0.0),
+            num_beams=generation_kwargs.pop("num_beams", 3),
+            repetition_penalty=generation_kwargs.pop("repetition_penalty", 10.0),
             max_generate_length=max_mel_tokens,
             **generation_kwargs,  # pyright: ignore[reportAny]
         )
@@ -699,7 +678,7 @@ class IndexTTS2:
             else:
                 code_len = len(code)
 
-            trimmed_code = code[:code_len].unsqueeze(0)
+            code = code[:code_len].unsqueeze(0)
             text_tokens = batch_text_tokens[seg_idx].unsqueeze(0)
 
             code_lens = torch.tensor([code_len], device=device)
@@ -710,8 +689,8 @@ class IndexTTS2:
                 seg_speech_conditioning_latent,
                 text_tokens,
                 torch.tensor([text_tokens.shape[-1]], device=device),
-                trimmed_code,
-                torch.tensor([trimmed_code.shape[-1]], device=device),
+                code,
+                torch.tensor([code.shape[-1]], device=device),
                 emo_cond_emb,
                 cond_mel_lengths=torch.tensor([spk_cond_emb.shape[-1]], device=device),
                 emo_cond_mel_lengths=torch.tensor([emo_cond_emb.shape[-1]], device=device),

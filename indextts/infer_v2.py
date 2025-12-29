@@ -325,9 +325,7 @@ class IndexTTS2:
         self.semantic_codec = _load_model(RepCodec(), checkpoint, self.device)
 
         # S2Mel model
-        self.cfm = torch._inductor.aoti_load_package(  # noqa: SLF001  # type: ignore
-            "checkpoints/co37qe6tcc3go3nf6rhe43sytjkoyza6dgmjltjypezp7uo3stco.wrapper.pt2"
-        )
+        self.cfm = _load_model(CFM(cfg.s2mel), model_dir / cfg.cfm_checkpoint, self.device)
         self.gpt_layer = _load_model(
             nn.Sequential(
                 nn.Linear(1280, 256),

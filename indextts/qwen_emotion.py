@@ -97,7 +97,7 @@ class QwenEmotion:
         generated_ids = cast(
             GenerateOutput | Tensor,
             self.model.generate(
-                **model_inputs,  # pyright: ignore[reportArgumentType]
+                **model_inputs,
                 max_new_tokens=32768,
                 pad_token_id=self.tokenizer.eos_token_id,
             ),

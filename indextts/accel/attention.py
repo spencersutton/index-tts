@@ -57,7 +57,7 @@ class ForwardContext:
         )
 
 
-@triton.jit  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
+@triton.jit
 @no_type_check
 def store_kvcache_kernel(
     key_ptr: tl.pointer_type,

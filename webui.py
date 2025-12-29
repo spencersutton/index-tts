@@ -64,12 +64,12 @@ cmd_args = parser.parse_args()
 
 # argparse.Namespace attributes are typed as Any; normalize to concrete types so
 # static type checking doesn't leak Any throughout the file.
-verbose = bool(cmd_args.verbose)  # pyright: ignore[reportAny]
-gui_seg_tokens = int(cmd_args.gui_seg_tokens)  # pyright: ignore[reportAny]
-host = str(cmd_args.host)  # pyright: ignore[reportAny]
-port = int(cmd_args.port)  # pyright: ignore[reportAny]
+verbose = bool(cmd_args.verbose)
+gui_seg_tokens = int(cmd_args.gui_seg_tokens)
+host = str(cmd_args.host)
+port = int(cmd_args.port)
 
-model_dir = Path(cmd_args.model_dir)  # pyright: ignore[reportAny]
+model_dir = Path(cmd_args.model_dir)
 if not model_dir.exists():
     print(f"Model directory {model_dir} does not exist. Please download the model first.")
     sys.exit(1)
@@ -90,8 +90,8 @@ i18n = I18nAuto(language="Auto")
 tts = IndexTTS2(
     model_dir=model_dir,
     cfg_path=model_dir / "config.yaml",
-    use_fp16=bool(cmd_args.fp16),  # pyright: ignore[reportAny]
-    use_cuda_kernel=bool(cmd_args.cuda_kernel),  # pyright: ignore[reportAny]
+    use_fp16=bool(cmd_args.fp16),
+    use_cuda_kernel=bool(cmd_args.cuda_kernel),
 )
 # 支持的语言列表
 EMO_CHOICES_ALL = [
@@ -137,7 +137,7 @@ def get_example_cases(include_experimental: bool = False) -> list[list[Any]]:
     return [x for x in example_cases if x[1] != EMO_CHOICES_ALL[3]]
 
 
-def gen_single(  # pyright: ignore[reportAny]
+def gen_single(
     emo_control_method: int | gr.Radio,
     prompt: str | Path,
     text: str,
@@ -176,7 +176,7 @@ def gen_single(  # pyright: ignore[reportAny]
         max_mel_tokens,
     ) = args
     if not isinstance(emo_control_method, int):
-        emo_control_method = int(emo_control_method.value)  # pyright: ignore[reportAny]
+        emo_control_method = int(emo_control_method.value)
     match emo_control_method:
         case 0:  # emotion from speaker
             emo_ref_path = None  # remove external reference audio
@@ -626,7 +626,7 @@ with demo:
         )
 
     # click() event works on both desktop and mobile UI
-    example_table.click(  # pyright: ignore[reportUnknownMemberType]
+    example_table.click(
         on_example_click,
         inputs=[example_table],
         outputs=[
@@ -703,7 +703,7 @@ with demo:
                     gr.update(visible=False),
                 )
 
-    emo_control_method.change(  # pyright: ignore[reportUnknownMemberType]
+    emo_control_method.change(
         on_method_change,
         inputs=[emo_control_method],
         outputs=[
@@ -727,27 +727,27 @@ with demo:
             gr.update(samples=get_example_cases(include_experimental=is_experimental)),
         )
 
-    experimental_checkbox.change(  # pyright: ignore[reportUnknownMemberType]
+    experimental_checkbox.change(
         on_experimental_change,
         inputs=[experimental_checkbox, emo_control_method],
         outputs=[emo_control_method, example_table],
     )
 
-    input_text_single.change(  # pyright: ignore[reportUnknownMemberType]
+    input_text_single.change(
         on_input_text_change,
         inputs=[input_text_single, max_text_tokens_per_segment],
         outputs=[segments_preview],
     )
 
-    max_text_tokens_per_segment.change(  # pyright: ignore[reportUnknownMemberType]
+    max_text_tokens_per_segment.change(
         on_input_text_change,
         inputs=[input_text_single, max_text_tokens_per_segment],
         outputs=[segments_preview],
     )
 
-    prompt_audio.upload(update_prompt_audio, inputs=[], outputs=[gen_button])  # pyright: ignore[reportUnknownMemberType]
+    prompt_audio.upload(update_prompt_audio, inputs=[], outputs=[gen_button])
 
-    gen_button.click(  # pyright: ignore[reportUnknownMemberType]
+    gen_button.click(
         gen_single,
         inputs=[
             emo_control_method,
@@ -774,5 +774,5 @@ with demo:
 
 
 if __name__ == "__main__":
-    demo.queue(20)  # pyright: ignore[reportUnknownMemberType]
+    demo.queue(20)
     demo.launch(server_name=host, server_port=port)

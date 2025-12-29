@@ -331,7 +331,7 @@ class AccelInferenceEngine:
         graph_vars["context_lens"][:bs] = context.context_lens
         graph_vars["block_tables"][:bs, :].fill_(-1)
         graph_vars["block_tables"][:bs, : context.block_tables.size(1)] = context.block_tables
-        graph.replay()  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
+        graph.replay()
 
         return graph_vars["outputs"][:bs]
 

@@ -24,7 +24,7 @@ class FusedAntiAliasActivation(torch.autograd.Function):
     @staticmethod
     @override
     def forward(ctx: object, inputs: Tensor, up_ftr: Tensor, down_ftr: Tensor, alpha: Tensor, beta: Tensor) -> Tensor:
-        return anti_alias_activation_cuda.forward(inputs, up_ftr, down_ftr, alpha, beta)  # pyright: ignore[reportAny]
+        return anti_alias_activation_cuda.forward(inputs, up_ftr, down_ftr, alpha, beta)
 
     @staticmethod
     @override
@@ -79,7 +79,7 @@ class Activation1d(nn.Module):
             self.downsample.lowpass.filter,
             alpha,
             beta,
-        )  # pyright: ignore[reportAny]
+        )
 
     @patch_call(forward)
     def __call__(self) -> None: ...

@@ -30,7 +30,7 @@ NUM_HEADS: Final = 8
 class TimestepEmbedder(nn.Module):
     """Embeds scalar timesteps into vector representations."""
 
-    freqs: Tensor  # pyright: ignore[reportUninitializedInstanceVariable]
+    freqs: Tensor
     mlp: nn.Sequential[nn.Linear | nn.SiLU]
 
     def __init__(self, hidden_size: int) -> None:

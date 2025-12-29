@@ -51,7 +51,7 @@ def kaiser_sinc_filter1d(
 
 
 class LowPassFilter1d(nn.Module):
-    filter: Tensor  # pyright: ignore[reportUninitializedInstanceVariable]
+    filter: Tensor
 
     def __init__(
         self,

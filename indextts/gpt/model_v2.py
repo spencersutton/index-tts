@@ -425,7 +425,7 @@ class UnifiedVoice(nn.Module):
         typical_mass: float = 0.9,
         num_beams: int = 1,
         temperature: float = 1.0,
-        **hf_generate_kwargs: Any,  # pyright: ignore[reportAny]
+        **hf_generate_kwargs: Any,
     ) -> tuple[Tensor, Tensor]:
         """Generate speech tokens from text and conditioning.
 
@@ -520,7 +520,7 @@ class UnifiedVoice(nn.Module):
                 max_length=max_length,
                 logits_processor=logits_processor,
                 num_return_sequences=1,
-                **hf_generate_kwargs,  # pyright: ignore[reportAny]
+                **hf_generate_kwargs,
             )
 
         output = cast(Tensor, output)

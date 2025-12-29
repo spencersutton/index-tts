@@ -17,7 +17,7 @@ from indextts.util import patch_call
 PLANES = 32
 
 
-def get_nonlinear(channels: int = 128) -> nn.Sequential[nn.Module]:
+def get_nonlinear(channels: int = 128) -> nn.Sequential[nn.BatchNorm1d | nn.ReLU]:
     return nn.Sequential(
         OrderedDict({
             "batchnorm": nn.BatchNorm1d(channels),

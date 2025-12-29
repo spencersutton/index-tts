@@ -39,7 +39,7 @@ class PositionalEncoding(nn.Module):
         PE(pos, 2i+1) = cos(pos / (10000^(2i/d_model)))
     """
 
-    pe: Tensor  # pyright: ignore[reportUninitializedInstanceVariable]
+    pe: Tensor
     d_model: int
     xscale: float
     dropout: nn.Dropout

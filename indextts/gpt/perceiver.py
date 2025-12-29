@@ -5,8 +5,6 @@ from typing import TYPE_CHECKING, NamedTuple, cast, override
 
 import torch
 import torch.nn.functional as F
-from einops import rearrange, repeat
-from einops.layers.torch import Rearrange
 from torch import Tensor, einsum, nn
 from torch.nn.attention import SDPBackend, sdpa_kernel
 
@@ -16,6 +14,31 @@ if TYPE_CHECKING:
     from torch.nn.modules import Sequential
 
 warning_printed = False
+
+
+class _Transpose(nn.Module):
+    def __init__(self, dim0: int, dim1: int) -> None:
+        super().__init__()
+        self.dim0 = dim0
+        self.dim1 = dim1
+
+    @override
+    def forward(self, x: Tensor) -> Tensor:
+        return x.transpose(self.dim0, self.dim1)
+
+
+def _split_heads(x: Tensor, heads: int) -> Tensor:
+    """(b, n, h*d) -> (b, h, n, d)"""
+    b, n, inner = x.shape
+    assert inner % heads == 0
+    d = inner // heads
+    return x.reshape(b, n, heads, d).permute(0, 2, 1, 3)
+
+
+def _merge_heads(x: Tensor) -> Tensor:
+    """(b, h, n, d) -> (b, n, h*d)"""
+    b, h, n, d = x.shape
+    return x.permute(0, 2, 1, 3).reshape(b, n, h * d)
 
 
 class _EfficientAttentionConfig(NamedTuple):
@@ -85,16 +108,16 @@ class _Attend(nn.Module):
         # kv shape torch.Size([1, 512, 64]) -> torch.Size([1, 8, 512, 64])
 
         if k.ndim == 3:
-            k = rearrange(k, "b ... -> b 1 ...").expand_as(q)
+            k = k.unsqueeze(1).expand_as(q)
 
         if v.ndim == 3:
-            v = rearrange(v, "b ... -> b 1 ...").expand_as(q)
+            v = v.unsqueeze(1).expand_as(q)
 
         # Check if mask exists and expand to compatible shape
         # The mask is B L, so it would have to be expanded to B H N L
 
         if mask is not None:
-            mask = rearrange(mask, "b j -> b 1 1 j")
+            mask = mask[:, None, None, :]
             mask = mask.expand(-1, heads, q_len, -1)
 
         # Check if there is a compatible device for flash attention
@@ -153,7 +176,7 @@ class _Attend(nn.Module):
         # key padding mask
 
         if mask is not None:
-            mask = rearrange(mask, "b j -> b 1 1 j")
+            mask = mask[:, None, None, :]
             sim = sim.masked_fill(~mask, -torch.finfo(sim.dtype).max)
 
         # causal mask
@@ -195,7 +218,8 @@ class _RMSNorm(nn.Module):
         assert cond is not None
         assert self.to_gamma_beta is not None
         gamma, beta = self.to_gamma_beta(cond).chunk(2, dim=-1)
-        gamma, beta = (rearrange(t, "b d -> b 1 d") for t in (gamma, beta))
+        gamma = gamma.unsqueeze(1)
+        beta = beta.unsqueeze(1)
         return out * gamma + beta
 
     @patch_call(forward)
@@ -231,17 +255,15 @@ class GEGLU(nn.Module):
     def __call__(self) -> None: ...
 
 
-def _feed_forward(
-    dim: int, mult: int = 4, causal_conv: bool = False
-) -> Sequential[nn.Linear | GEGLU | Sequential[Rearrange | CausalConv1d]]:
+def _feed_forward(dim: int, mult: int = 4, causal_conv: bool = False) -> Sequential[nn.Module]:
     dim_inner = int(dim * mult * 2 / 3)
 
     conv = None
     if causal_conv:
         conv = nn.Sequential(
-            Rearrange("b n d -> b d n"),
+            _Transpose(1, 2),
             CausalConv1d(dim_inner, dim_inner, 3),
-            Rearrange("b d n -> b n d"),
+            _Transpose(1, 2),
         )
 
     mods = (nn.Linear(dim, dim_inner * 2), GEGLU(), conv, nn.Linear(dim_inner, dim))
@@ -290,7 +312,7 @@ class PerceiverResampler(nn.Module):
 
         x = self.proj_context(x)
 
-        latents = repeat(self.latents, "n d -> b n d", b=batch)
+        latents = self.latents.unsqueeze(0).expand(batch, -1, -1)
 
         for item in self.layers:
             attn, ff = item
@@ -340,11 +362,13 @@ class Attention(nn.Module):
 
         k, v = self.to_kv(context).chunk(2, dim=-1)
         q = self.to_q(x)
-        q, k, v = (rearrange(t, "b n (h d) -> b h n d", h=h) for t in (q, k, v))
+        q = _split_heads(q, h)
+        k = _split_heads(k, h)
+        v = _split_heads(v, h)
 
         out = self.attend(q, k, v, mask=mask)
 
-        out = rearrange(out, "b h n d -> b n (h d)")
+        out = _merge_heads(out)
         return self.to_out(out)
 
     @patch_call(forward)

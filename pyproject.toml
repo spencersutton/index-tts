@@ -39,7 +39,6 @@ dependencies = [
   "tqdm>=4.67.1",
   "transformers>=4.52.1,<4.56",
   "wetext>=0.0.9",
-  "einops>=0.8.1",
 ]
 
 [dependency-groups]

@@ -541,6 +541,7 @@ class IndexTTS2:
         logger.info("Starting inference...")
         self._set_gr_progress(0, "starting inference...")
         start_time = time.perf_counter()
+        device = self.device
 
         # Process emotion configuration
         # Clear emo_audio_prompt if using text/vector guidance
@@ -576,7 +577,6 @@ class IndexTTS2:
             weight_vector = torch.tensor(list(emo_vector))
 
             # Select emotion indices
-            indices: list[int] | list[Tensor]
             if use_random:
                 indices = [random.randint(0, n - 1) for n in self.emo_num]  # noqa: S311
             else:
@@ -591,7 +591,7 @@ class IndexTTS2:
         decoder = AudioDecoder(emo_audio_prompt, num_channels=1, sample_rate=SEMANTIC_SR)
         audio = decoder.get_samples_played_in_range(0, MAX_LEN)
         inputs = self.extract_features(audio.data, sampling_rate=audio.sample_rate, return_tensors="pt")
-        emo_cond_emb = self.get_emb(inputs.to(self.device))
+        emo_cond_emb = self.get_emb(inputs.to(device))
 
         # Tokenize and segment text
         self._set_gr_progress(0.1, "text processing...")
@@ -609,12 +609,11 @@ class IndexTTS2:
 
         # Convert segments to tensors
         batch_text_tokens = [
-            torch.tensor(self.tokenizer.convert_tokens_to_ids(seg), dtype=torch.int32, device=self.device)
+            torch.tensor(self.tokenizer.convert_tokens_to_ids(seg), dtype=torch.int32, device=device)
             for seg in segments
         ]
 
         # Pre-calculate emotion vector
-        device = spk_cond_emb.device
         emovec = self.gpt.merge_emovec(
             spk_cond_emb,
             emo_cond_emb,
@@ -651,8 +650,8 @@ class IndexTTS2:
             spk_cond_emb.expand(batch_size, -1, -1),
             text_tokens_batch,
             emo_cond_emb.expand(batch_size, -1, -1),
-            cond_lengths=torch.tensor([spk_cond_emb.shape[-1]] * batch_size, device=spk_cond_emb.device),
-            emo_cond_lengths=torch.tensor([emo_cond_emb.shape[-1]] * batch_size, device=emo_cond_emb.device),
+            cond_lengths=torch.tensor([spk_cond_emb.shape[-1]] * batch_size, device=device),
+            emo_cond_lengths=torch.tensor([emo_cond_emb.shape[-1]] * batch_size, device=device),
             emo_vec=emovec,
             do_sample=do_sample,
             top_p=top_p,
@@ -690,24 +689,24 @@ class IndexTTS2:
             else:
                 code_len = len(code)
 
-            code = code[:code_len].unsqueeze(0)
+            trimmed_code = code[:code_len].unsqueeze(0)
             text_tokens = batch_text_tokens[seg_idx].unsqueeze(0)
 
-            code_lens = torch.tensor([code_len], device=code.device)
+            code_lens = torch.tensor([code_len], device=device)
 
             # GPT forward pass
             t0 = time.perf_counter()
             latent = self.gpt(
                 seg_speech_conditioning_latent,
                 text_tokens,
-                torch.tensor([text_tokens.shape[-1]], device=text_tokens.device),
-                code,
-                torch.tensor([code.shape[-1]], device=code.device),
+                torch.tensor([text_tokens.shape[-1]], device=device),
+                trimmed_code,
+                torch.tensor([trimmed_code.shape[-1]], device=device),
                 emo_cond_emb,
-                cond_mel_lengths=torch.tensor([spk_cond_emb.shape[-1]], device=spk_cond_emb.device),
-                emo_cond_mel_lengths=torch.tensor([emo_cond_emb.shape[-1]], device=emo_cond_emb.device),
+                cond_mel_lengths=torch.tensor([spk_cond_emb.shape[-1]], device=device),
+                emo_cond_mel_lengths=torch.tensor([emo_cond_emb.shape[-1]], device=device),
                 emo_vec=emovec,
-                use_speed=torch.zeros(spk_cond_emb.size(0), device=spk_cond_emb.device).long(),
+                use_speed=torch.zeros(spk_cond_emb.size(0), device=device).long(),
             )
             seg_gpt_time = time.perf_counter() - t0
 
@@ -725,7 +724,7 @@ class IndexTTS2:
 
             vc_target = self.cfm(
                 cat_condition,
-                torch.tensor([cat_condition.size(1)], device=cat_condition.device),
+                torch.tensor([cat_condition.size(1)], device=device),
                 ref_mel,
                 style,
                 cfm_steps,

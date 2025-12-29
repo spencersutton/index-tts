@@ -6,7 +6,6 @@ import contextlib
 import functools
 import logging
 import random
-import time
 import typing
 from collections.abc import Collection, Generator, Mapping, Sequence
 from dataclasses import dataclass
@@ -526,7 +525,6 @@ class IndexTTS2:
         """
         logger.info("Starting inference...")
         self._set_gr_progress(0, "starting inference...")
-        start_time = time.perf_counter()
         device = self.device
 
         # Process emotion configuration
@@ -573,12 +571,6 @@ class IndexTTS2:
             emo_mat = torch.cat(emo_vecs, dim=0)
             emovec_mat = (weight_vector.unsqueeze(1) * emo_mat).sum(dim=0, keepdim=True)
 
-        # Get emotion conditioning embedding
-        decoder = AudioDecoder(emo_audio_prompt, num_channels=1, sample_rate=SEMANTIC_SR)
-        audio = decoder.get_samples_played_in_range(0, MAX_LEN)
-        inputs = self.extract_features(audio.data, sampling_rate=audio.sample_rate, return_tensors="pt")
-        emo_cond_emb = self.get_emb(inputs.to(device))
-
         # Tokenize and segment text
         self._set_gr_progress(0.1, "text processing...")
 
@@ -599,12 +591,26 @@ class IndexTTS2:
             for seg in segments
         ]
 
-        # Pre-calculate emotion vector
-        emovec = self.gpt.merge_emovec(
-            spk_cond_emb,
-            emo_cond_emb,
-            alpha=emo_alpha,
+        # Get emotion conditioning embedding
+        audio = AudioDecoder(emo_audio_prompt, num_channels=1, sample_rate=SEMANTIC_SR).get_samples_played_in_range(
+            0, MAX_LEN
         )
+        emo_cond_emb = self.get_emb(
+            self.extract_features(audio.data, sampling_rate=audio.sample_rate, return_tensors="pt").to(device)
+        )
+
+        b: list[Tensor] = []
+        for emb in [emo_cond_emb, spk_cond_emb]:
+            encoded, mask = self.gpt.emo_conditioning_encoder(emb.transpose(1, 2).transpose(1, 2))
+            conditioning = self.gpt.emo_perceiver_encoder(
+                encoded,
+                self.gpt.emo_cond_mask_pad(mask.squeeze(1)),
+            ).squeeze(1)
+            b.append(self.gpt.emo_layer(self.gpt.emovec_layer(conditioning)))
+
+        # Pre-calculate emotion vector
+        emo_vec, base_vec = b
+        emovec = base_vec + emo_alpha * (emo_vec - base_vec)
 
         if emovec_mat is not None and weight_vector is not None:
             emovec = emovec_mat + (1 - weight_vector.sum()) * emovec
@@ -616,13 +622,7 @@ class IndexTTS2:
             return
 
         # Timing accumulators
-        gpt_gen_time = 0.0
-        gpt_forward_time = 0.0
-        s2mel_time = 0.0
-        bigvgan_time = 0.0
-        wavs: list[Tensor] = []
         silence: Tensor | None = None
-        has_warned = False
 
         # Pad batch
         text_tokens_batch = pad_sequence(
@@ -631,11 +631,10 @@ class IndexTTS2:
         batch_size = text_tokens_batch.size(0)
 
         # Generate mel codes
-        t0 = time.perf_counter()
         codes_batch, speech_conditioning_latent = self.gpt.inference_speech(
-            spk_cond_emb.expand(batch_size, -1, -1),
-            text_tokens_batch,
-            emo_cond_emb.expand(batch_size, -1, -1),
+            speech_condition=spk_cond_emb.expand(batch_size, -1, -1),
+            text_inputs=text_tokens_batch,
+            emo_speech_condition=emo_cond_emb.expand(batch_size, -1, -1),
             emo_vec=emovec,
             do_sample=generation_kwargs.pop("do_sample", True),
             top_p=generation_kwargs.pop("top_p", 0.8),
@@ -648,24 +647,22 @@ class IndexTTS2:
             max_generate_length=max_mel_tokens,
             **generation_kwargs,  # pyright: ignore[reportAny]
         )
-        gpt_gen_time = time.perf_counter() - t0
 
         # Warn if generation was truncated
-        if (codes_batch[:, -1] != self.stop_mel_token).any() and not has_warned:
+        if (codes_batch[:, -1] != self.stop_mel_token).any():
             logger.warning(
                 "Generation exceeded max_mel_tokens (%d). Consider adjusting parameters.",
                 max_mel_tokens,
             )
-            has_warned = True
 
         # Process each segment
+        wavs: list[Tensor] = []
         for seg_idx, code in enumerate(codes_batch):
             self._set_gr_progress(
                 0.2 + 0.7 * seg_idx / len(segments),
                 f"Synthesizing segment {seg_idx + 1}/{len(segments)}...",
             )
 
-            seg_speech_conditioning_latent = speech_conditioning_latent[seg_idx : seg_idx + 1]
             # Trim code at stop token
             if self.stop_mel_token in code:
                 stop_idx = (code == self.stop_mel_token).nonzero(as_tuple=False)
@@ -674,33 +671,28 @@ class IndexTTS2:
                 code_len = len(code)
 
             code = code[:code_len].unsqueeze(0)  # noqa: PLW2901
-            text_tokens = batch_text_tokens[seg_idx].unsqueeze(0)
-
-            code_lens = torch.tensor([code_len], device=device)
 
             # GPT forward pass
-            t0 = time.perf_counter()
             latent = self.gpt(
-                seg_speech_conditioning_latent,
-                text_tokens,
-                code,
-                emo_cond_emb,
+                speech_conditioning_latent=speech_conditioning_latent[seg_idx : seg_idx + 1],
+                text_inputs=batch_text_tokens[seg_idx].unsqueeze(0),
+                mel_codes=code,
                 emo_vec=emovec,
                 use_speed=torch.zeros(spk_cond_emb.size(0), device=device).long(),
             )
-            seg_gpt_time = time.perf_counter() - t0
 
             # S2Mel conversion
-            t0 = time.perf_counter()
-            latent = self.gpt_layer(latent)
-
-            S_infer = self.semantic_codec.quantizer.vq2emb(code.unsqueeze(1)).transpose(1, 2)
-            S_infer += latent
-
-            target_lengths = (code_lens * 1.72).long()
-
-            cond = self.length_regulator(S_infer, ylens=target_lengths)
-            cat_condition = torch.cat([prompt_condition, cond], dim=1)
+            cat_condition = torch.cat(
+                [
+                    prompt_condition,
+                    self.length_regulator(
+                        self.semantic_codec.quantizer.vq2emb(code.unsqueeze(1)).transpose(1, 2)
+                        + self.gpt_layer(latent),
+                        ylens=(torch.tensor([code_len], device=device) * 1.72).long(),
+                    ),
+                ],
+                dim=1,
+            )
 
             vc_target = self.cfm(
                 cat_condition,
@@ -711,52 +703,27 @@ class IndexTTS2:
                 inference_cfg_rate=0.7,
             )
             vc_target = vc_target[:, :, ref_mel.size(-1) :]
-            seg_s2mel_time = time.perf_counter() - t0
 
             # BigVGAN vocoder
-            t0 = time.perf_counter()
             wav = self.bigvgan(vc_target.float()).squeeze().unsqueeze(0).squeeze(1)
-            seg_bigvgan_time = time.perf_counter() - t0
-
-            gpt_forward_time += seg_gpt_time
-            s2mel_time += seg_s2mel_time
-            bigvgan_time += seg_bigvgan_time
-            wavs.append(wav.cpu())
 
             if stream_return:
                 yield wav.cpu()
                 if silence is None:
                     silence = generate_silence_interval(wavs, interval_silence, sample_rate=OUTPUT_SR).cpu()
                 yield silence
-
-        end_time = time.perf_counter()
+            else:
+                wavs.append(wav.cpu())
 
         self._set_gr_progress(0.9, "saving audio...")
-
-        all_wavs = insert_interval_silence(wavs, interval_silence, sample_rate=OUTPUT_SR)
-        # `insert_interval_silence()` and other helpers may create tensors on the
-        # current default device (e.g., CUDA) even if `wavs` are on CPU.
-        # Normalize to CPU before concatenation to avoid device-mismatch errors.
-        all_wavs = [w.detach().cpu() for w in all_wavs]
-        wav = torch.cat(all_wavs, dim=1)
-        wav_length = wav.shape[-1] / OUTPUT_SR
-        total_time = end_time - start_time
-
-        logger.info(f"gpt_gen_time: {gpt_gen_time:.2f}s")
-        logger.info(f"gpt_forward_time: {gpt_forward_time:.2f}s")
-        logger.info(f"s2mel_time: {s2mel_time:.2f}s")
-        logger.info(f"bigvgan_time: {bigvgan_time:.2f}s")
-        logger.info(f"Total inference time: {total_time:.2f}s")
-        logger.info(f"Generated audio length: {wav_length:.2f}s")
-        logger.info(f"RTF: {total_time / wav_length if wav_length > 0 else 0:.4f}")
 
         if stream_return:
             return
 
         # Save or return audio
-        all_wavs = insert_interval_silence(wavs, interval_silence, sample_rate=OUTPUT_SR)
-        all_wavs = [w.detach().cpu() for w in all_wavs]
-        wav = torch.cat(all_wavs, dim=1)
+        wav = torch.cat(
+            [w.detach().cpu() for w in insert_interval_silence(wavs, interval_silence, sample_rate=OUTPUT_SR)], dim=1
+        )
 
         if output_path:
             output_path.unlink(missing_ok=True)

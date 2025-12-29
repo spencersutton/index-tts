@@ -69,7 +69,7 @@ def store_kvcache_kernel(
     slot_mapping_ptr: tl.pointer_type,
     d: tl.constexpr,
 ) -> None:
-    BLOCK_SIZE: tl.constexpr = 2048
+    BLOCK_SIZE: tl.constexpr = 2048  # type: ignore
     idx = tl.program_id(0)
     slot = tl.load(slot_mapping_ptr + idx)
     if slot == -1:
@@ -90,6 +90,7 @@ def store_kvcache_kernel(
         d_offset += BLOCK_SIZE
 
 
+@no_type_check
 def store_kvcache(
     key: Tensor,
     value: Tensor,

@@ -20,7 +20,18 @@ if TYPE_CHECKING:
 
 
 class GPT2AccelAttention(nn.Module):
+    accel_attn: Attention
+    attn_dropout: nn.Dropout
     c_attn: Conv1D
+    c_proj: Conv1D
+    config: GPT2Config
+    embed_dim: int
+    head_dim: int
+    layer_idx: int | None
+    num_heads: int
+    resid_dropout: nn.Dropout
+    scale_attn_weights: bool
+    split_size: int
 
     def __init__(self, config: GPT2Config, layer_idx: int | None = None) -> None:
         super().__init__()
@@ -72,7 +83,7 @@ class GPT2AccelAttention(nn.Module):
         output_attentions: bool = False,
         past_key_value: tuple[Tensor, Tensor] | None = None,
         **kwargs: object,
-    ) -> tuple[Tensor, None, None] | tuple[Tensor, None]:
+    ) -> Tensor:
         if encoder_hidden_states is not None:
             raise NotImplementedError("Cross attention not supported in accel mode")
 
@@ -110,13 +121,7 @@ class GPT2AccelAttention(nn.Module):
         attn_output = self._merge_heads(attn_output, self.num_heads, self.head_dim)
 
         attn_output = self.c_proj(attn_output)
-        attn_output = self.resid_dropout(attn_output)
-
-        outputs = (attn_output, None)
-        if output_attentions:
-            outputs += (None,)
-
-        return outputs
+        return self.resid_dropout(attn_output)
 
     @patch_call(forward)
     def __call__(self) -> None: ...

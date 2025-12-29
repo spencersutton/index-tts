@@ -249,7 +249,7 @@ class AccelInferenceEngine:
             assert out is not None
             outputs[:bs] = out.squeeze(1) if out.dim() == 3 else out
 
-            with torch.cuda.graph(graph, self.graph_pool):
+            with torch.cuda.graph(graph, self.graph_pool):  # type: ignore
                 emb = tts_mel_embedding(input_ids[:bs])
                 pos_clamped = torch.clamp(positions[:bs], min=0)
                 pos_emb = tts_text_pos_embedding.emb(pos_clamped)

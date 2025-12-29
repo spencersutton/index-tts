@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import contextlib
-import functools
 import logging
 import random
 import typing
@@ -18,7 +17,6 @@ import torchaudio
 from huggingface_hub import hf_hub_download
 from omegaconf import OmegaConf
 from torch import Tensor, nn
-from torch.nn.utils.rnn import pad_sequence
 from torchcodec.decoders import AudioDecoder
 from torchcodec.encoders import AudioEncoder
 from transformers import BatchFeature, SeamlessM4TFeatureExtractor, Wav2Vec2BertModel
@@ -372,47 +370,6 @@ class IndexTTS2:
         self.spk_matrix = torch.split(spk_matrix, self.emo_num)
 
     # -------------------------------------------------------------------------
-    # Audio Prompt Processing
-    # -------------------------------------------------------------------------
-
-    @functools.lru_cache
-    def process_audio_prompt(self, prompt: Path) -> tuple[Tensor, Tensor, Tensor, Tensor]:
-        """Process audio prompt to extract conditioning features.
-
-        Args:
-            prompt: Path to audio file
-
-        Returns:
-            Tuple of (spk_cond_emb, style, prompt_condition, ref_mel)
-        """
-        # Load audio at both sample rates
-        decoder_22k = AudioDecoder(prompt, num_channels=1, sample_rate=OUTPUT_SR)
-        audio_22k = decoder_22k.get_samples_played_in_range(0, MAX_LEN)
-
-        decoder_16k = AudioDecoder(prompt, num_channels=1, sample_rate=SEMANTIC_SR)
-        audio_16k = decoder_16k.get_samples_played_in_range(0, MAX_LEN)
-
-        # Extract speaker conditioning embedding
-        inputs = self.extract_features(audio_16k.data, sampling_rate=audio_16k.sample_rate, return_tensors="pt")
-        spk_cond_emb = self.get_emb(inputs.to(self.device))
-        _, S_ref = self.semantic_codec.quantize(spk_cond_emb)
-
-        # Extract mel spectrogram
-        ref_mel = mel_spectrogram(audio_22k.data.float())
-
-        # Extract speaker style
-        feat = torchaudio.compliance.kaldi.fbank(
-            audio_16k.data, num_mel_bins=80, dither=0, sample_frequency=SEMANTIC_SR
-        )
-        feat -= feat.mean(dim=0, keepdim=True)
-        style = self.campplus_model(feat.unsqueeze(0)).to(self.device)
-
-        # Generate prompt condition
-        prompt_condition = self.length_regulator(S_ref, ylens=torch.tensor([ref_mel.size(2)], device=self.device))
-
-        return spk_cond_emb, style, prompt_condition, ref_mel
-
-    # -------------------------------------------------------------------------
     # Semantic Embedding
     # -------------------------------------------------------------------------
 
@@ -551,8 +508,30 @@ class IndexTTS2:
             emo_audio_prompt = spk_audio_prompt
             emo_alpha = 1.0
 
-        # Load speaker conditioning
-        spk_cond_emb, style, prompt_condition, ref_mel = self.process_audio_prompt(spk_audio_prompt)
+        # Load audio at both sample rates
+        decoder_22k = AudioDecoder(spk_audio_prompt, num_channels=1, sample_rate=OUTPUT_SR)
+        audio_22k = decoder_22k.get_samples_played_in_range(0, MAX_LEN)
+
+        decoder_16k = AudioDecoder(spk_audio_prompt, num_channels=1, sample_rate=SEMANTIC_SR)
+        audio_16k = decoder_16k.get_samples_played_in_range(0, MAX_LEN)
+
+        # Extract speaker conditioning embedding
+        inputs = self.extract_features(audio_16k.data, sampling_rate=audio_16k.sample_rate, return_tensors="pt")
+        spk_cond_emb = self.get_emb(inputs.to(self.device))
+        _, S_ref = self.semantic_codec.quantize(spk_cond_emb)
+
+        # Extract mel spectrogram
+        ref_mel = mel_spectrogram(audio_22k.data.float())
+
+        # Extract speaker style
+        feat = torchaudio.compliance.kaldi.fbank(
+            audio_16k.data, num_mel_bins=80, dither=0, sample_frequency=SEMANTIC_SR
+        )
+        feat -= feat.mean(dim=0, keepdim=True)
+        style = self.campplus_model(feat.unsqueeze(0)).to(self.device)
+
+        # Generate prompt condition
+        prompt_condition = self.length_regulator(S_ref, ylens=torch.tensor([ref_mel.size(2)], device=self.device))
 
         # Compute emotion matrix if using explicit vectors
         if emo_vector is None:
@@ -567,29 +546,21 @@ class IndexTTS2:
                 indices = [_find_most_similar_cosine(style, mat) for mat in self.spk_matrix]
 
             # Build weighted emotion matrix
-            emo_vecs = [self.emo_matrix[i][idx].unsqueeze(0) for i, idx in enumerate(indices)]
-            emo_mat = torch.cat(emo_vecs, dim=0)
-            emovec_mat = (weight_vector.unsqueeze(1) * emo_mat).sum(dim=0, keepdim=True)
+            emovec_mat = (
+                weight_vector.unsqueeze(1)
+                * torch.cat([self.emo_matrix[i][idx].unsqueeze(0) for i, idx in enumerate(indices)], dim=0)
+            ).sum(dim=0, keepdim=True)
 
         # Tokenize and segment text
         self._set_gr_progress(0.1, "text processing...")
 
         tokens = self.tokenizer.tokenize(text)
-        segments = self.tokenizer.split_segments(
-            tokens, max_text_tokens_per_segment, quick_streaming_tokens=quick_streaming_tokens
-        )
 
         # Check for unknown tokens
         token_ids = self.tokenizer.convert_tokens_to_ids(tokens)
         if self.tokenizer.unk_token_id in token_ids:
             unk_tokens = [t for t, tid in zip(tokens, token_ids) if tid == self.tokenizer.unk_token_id]
             logger.warning(f"Text contains {len(unk_tokens)} unknown tokens: {unk_tokens}")
-
-        # Convert segments to tensors
-        batch_text_tokens = [
-            torch.tensor(self.tokenizer.convert_tokens_to_ids(seg), dtype=torch.int32, device=device)
-            for seg in segments
-        ]
 
         # Get emotion conditioning embedding
         audio = AudioDecoder(emo_audio_prompt, num_channels=1, sample_rate=SEMANTIC_SR).get_samples_played_in_range(
@@ -618,14 +589,15 @@ class IndexTTS2:
         # Run batch inference
         max_mel_tokens = cast(int, generation_kwargs.pop("max_mel_tokens", 1500))
 
-        if not batch_text_tokens:
-            return
-
-        # Timing accumulators
-        silence: Tensor | None = None
-
+        # Convert segments to tensors
+        batch_text_tokens = [
+            torch.tensor(self.tokenizer.convert_tokens_to_ids(seg), dtype=torch.int32, device=device)
+            for seg in self.tokenizer.split_segments(
+                tokens, max_text_tokens_per_segment, quick_streaming_tokens=quick_streaming_tokens
+            )
+        ]
         # Pad batch
-        text_tokens_batch = pad_sequence(
+        text_tokens_batch = nn.utils.rnn.pad_sequence(
             batch_text_tokens, batch_first=True, padding_value=self.gpt.config.stop_text_token
         )
         batch_size = text_tokens_batch.size(0)
@@ -657,10 +629,11 @@ class IndexTTS2:
 
         # Process each segment
         wavs: list[Tensor] = []
+        silence: Tensor | None = None
         for seg_idx, code in enumerate(codes_batch):
             self._set_gr_progress(
-                0.2 + 0.7 * seg_idx / len(segments),
-                f"Synthesizing segment {seg_idx + 1}/{len(segments)}...",
+                0.2 + 0.7 * seg_idx / len(codes_batch),
+                f"Synthesizing segment {seg_idx + 1}/{len(codes_batch)}...",
             )
 
             # Trim code at stop token

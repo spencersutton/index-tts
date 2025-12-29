@@ -325,9 +325,7 @@ class UnifiedVoice(nn.Module):
         self,
         speech_conditioning_latent: Tensor,
         text_inputs: Tensor,
-        text_lengths: Tensor,
         mel_codes: Tensor,
-        mel_codes_lengths: Tensor,
         emo_speech_conditioning_latent: Tensor,
         cond_mel_lengths: Tensor,
         emo_cond_mel_lengths: Tensor,
@@ -368,10 +366,10 @@ class UnifiedVoice(nn.Module):
             emo_vec = self.emo_layer(self.emovec_layer(emo_vec))
 
         # Prepare text and mel tokens
-        text_inputs = set_token_padding(text_inputs, text_lengths, self.config.stop_text_token)
+        text_inputs = set_token_padding(text_inputs, self.config.stop_text_token)
         text_inputs = F.pad(text_inputs, (0, 1), value=self.config.stop_text_token)
 
-        mel_codes = set_token_padding(mel_codes, mel_codes_lengths, self.config.stop_mel_token)
+        mel_codes = set_token_padding(mel_codes, self.config.stop_mel_token)
         mel_codes = F.pad(mel_codes, (0, 1), value=self.config.stop_mel_token)
 
         # Build conditioning

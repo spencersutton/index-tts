@@ -16,7 +16,6 @@ if TYPE_CHECKING:
 
 def set_token_padding(
     input_tokens: Tensor,
-    lengths: Tensor,
     stop_token: int,
 ) -> Tensor:
     """Set padding tokens in a batch of sequences.
@@ -48,6 +47,6 @@ def set_token_padding(
     # lengths:      (B,)
     seq_len = input_tokens.shape[-1]
     positions = torch.arange(seq_len, device=input_tokens.device).unsqueeze(0)
-    mask = positions >= lengths.to(device=input_tokens.device).unsqueeze(1)
+    mask = positions >= seq_len
     input_tokens.masked_fill_(mask, stop_token)
     return input_tokens

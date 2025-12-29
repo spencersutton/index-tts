@@ -126,12 +126,12 @@ def main() -> None:
 
     if args.profile:
         for _ in range(args.warmup):
-            tts.infer(spk_audio_prompt=voice_file, text=args.text, output_path=output_path)
+            tts.infer(output_path=output_path, spk_audio_prompt=voice_file, text=args.text)
         with pyinstrument.Profiler() as profiler:
-            tts.infer(spk_audio_prompt=voice_file, text=args.text, output_path=output_path)
+            tts.infer(output_path=output_path, spk_audio_prompt=voice_file, text=args.text)
         profiler.write_html(f"outputs/profile_{int(time.time())}.html")
     else:
-        tts.infer(spk_audio_prompt=voice_file, text=args.text, output_path=output_path)
+        tts.infer(output_path=output_path, spk_audio_prompt=voice_file, text=args.text)
 
 
 if __name__ == "__main__":

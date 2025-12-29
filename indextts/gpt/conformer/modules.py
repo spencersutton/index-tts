@@ -26,6 +26,11 @@ class PositionwiseFeedForward(nn.Module):
         activation (nn.Module): Activation function
     """
 
+    activation: nn.SiLU
+    dropout: nn.Dropout
+    w_1: nn.Linear
+    w_2: nn.Linear
+
     def __init__(self, idim: int, hidden_units: int, dropout_rate: float, activation: nn.SiLU) -> None:
         """Construct a PositionwiseFeedForward object."""
         super().__init__()
@@ -57,6 +62,13 @@ class ConvolutionModule(nn.Module):
     Implements a depth-wise separable convolution with gating mechanism
     used in the Conformer architecture.
     """
+
+    activation: nn.SiLU
+    depthwise_conv: nn.Conv1d
+    norm: nn.LayerNorm
+    pointwise_conv1: nn.Conv1d
+    pointwise_conv2: nn.Conv1d
+    use_layer_norm: bool
 
     def __init__(
         self,
@@ -115,7 +127,6 @@ class ConvolutionModule(nn.Module):
         self,
         x: Tensor,
         mask_pad: Tensor = torch.ones((0, 0, 0), dtype=torch.bool),
-        cache: Tensor = torch.zeros((0, 0, 0)),
     ) -> tuple[Tensor, Tensor]:
         """Compute convolution module.
 

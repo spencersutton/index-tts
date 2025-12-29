@@ -37,6 +37,22 @@ class Sampler(nn.Module):
 
 
 class AccelInferenceEngine:
+    model: GPT2AccelModel
+    lm_head: nn.Sequential[nn.LayerNorm | nn.Linear]
+    kv_manager: KVCacheManager
+    sampler: Sampler
+    current_sequences: list[Seq]
+    graphs: MutableMapping[object, object]
+    graph_vars: object | None = None
+    graph_pool: object | None = None
+    graph_captured: bool = False
+    graph_bs: list[int]
+    _tts_prompt_len: int = 0
+    block_size: int
+    num_blocks: int
+    use_cuda_graph: bool
+    hidden_size: int
+
     def __init__(
         self,
         model: GPT2AccelModel,
@@ -76,12 +92,8 @@ class AccelInferenceEngine:
         self.kv_manager.wire_kv_cache_to_model(model)
         self.sampler = Sampler()
         self.current_sequences = []
-        self.graphs: MutableMapping[object, object] = {}
-        self.graph_vars = None
-        self.graph_pool = None
-        self.graph_captured = False
+        self.graphs = {}
         self.graph_bs = [1, 2, 4, 8]
-        self._tts_prompt_len = 0
 
     def _prepare_prefill(self, requests: Sequence[Seq]) -> tuple[Tensor, Tensor]:
         input_ids: list[int] = []
@@ -114,11 +126,11 @@ class AccelInferenceEngine:
                     slot_idx = block_id * self.block_size + block_offset
                     slot_mapping.append(slot_idx)
 
-        input_ids_t: Tensor = torch.tensor(input_ids, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
-        positions_t: Tensor = torch.tensor(positions, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
-        cu_seqlens_q_t: Tensor = torch.tensor(cu_seqlens_q, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
-        cu_seqlens_k_t: Tensor = torch.tensor(cu_seqlens_k, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
-        slot_mapping_t: Tensor = torch.tensor(slot_mapping, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
+        input_ids_t = torch.tensor(input_ids, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
+        positions_t = torch.tensor(positions, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
+        cu_seqlens_q_t = torch.tensor(cu_seqlens_q, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
+        cu_seqlens_k_t = torch.tensor(cu_seqlens_k, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
+        slot_mapping_t = torch.tensor(slot_mapping, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
 
         block_tables: Tensor | None = None
         if cu_seqlens_k[-1] > cu_seqlens_q[-1]:
@@ -319,7 +331,7 @@ class AccelInferenceEngine:
         graph_vars["context_lens"][:bs] = context.context_lens
         graph_vars["block_tables"][:bs, :].fill_(-1)
         graph_vars["block_tables"][:bs, : context.block_tables.size(1)] = context.block_tables
-        graph.replay()  # type: ignore
+        graph.replay()  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
 
         return graph_vars["outputs"][:bs]
 

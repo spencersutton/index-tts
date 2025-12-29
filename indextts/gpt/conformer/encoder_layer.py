@@ -96,7 +96,7 @@ class ConformerEncoderLayer(nn.Module):
         new_cnn_cache = torch.zeros((0, 0, 0), dtype=x.dtype)
         residual = x
         x = self.norm_conv(x)
-        x, new_cnn_cache = self.conv_module(x, mask_pad, cnn_cache)
+        x, new_cnn_cache = self.conv_module(x, mask_pad)
         x = residual + self.dropout(x)
 
         # Feed forward module

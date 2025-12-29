@@ -140,6 +140,9 @@ def _init_weights(m: nn.Module) -> None:
 
 
 class RepCodec(nn.Module):
+    encoder: nn.Sequential[VocosBackbone | nn.Linear]
+    quantizer: ResidualVQ
+
     def __init__(self) -> None:
         super().__init__()
 

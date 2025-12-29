@@ -81,7 +81,7 @@ class QwenEmotion:
         return emotion_dict
 
     def inference(self, text_input: str) -> dict[str, float]:
-        messages = [
+        messages: list[dict[str, str]] = [
             {"role": "system", "content": f"{PROMPT}"},
             {"role": "user", "content": f"{text_input}"},
         ]
@@ -97,7 +97,7 @@ class QwenEmotion:
         generated_ids = cast(
             GenerateOutput | Tensor,
             self.model.generate(
-                **model_inputs,
+                **model_inputs,  # type: ignore
                 max_new_tokens=32768,
                 pad_token_id=self.tokenizer.eos_token_id,
             ),

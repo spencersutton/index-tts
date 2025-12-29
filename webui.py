@@ -234,12 +234,9 @@ def gen_single(
             if chunk is None:
                 continue
 
-            if isinstance(chunk, tuple):
-                chunk_tuple = cast(tuple[object, ...], chunk)
-                if len(chunk_tuple) == 2:
-                    # Just in case upstream ever yields (sr, np.ndarray) directly.
-                    yield cast(Any, chunk_tuple)
-                    continue
+            if isinstance(chunk, tuple) and len(chunk) == 2:
+                yield chunk
+                continue
 
             if isinstance(chunk, Path):
                 # Shouldn't happen in stream_return mode, but handle gracefully.

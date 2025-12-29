@@ -447,7 +447,7 @@ class IndexTTS2:
             interval_silence=interval_silence,
             max_text_tokens_per_segment=max_text_tokens_per_segment,
             stream_return=stream_return,
-            **generation_kwargs,
+            **generation_kwargs,  # type: ignore
         )
 
         if stream_return:

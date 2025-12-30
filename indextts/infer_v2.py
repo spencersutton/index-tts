@@ -7,6 +7,7 @@ import logging
 import random
 import typing
 from collections.abc import Collection, Generator, Mapping, Sequence
+from functools import cache
 from pathlib import Path
 from typing import Any, cast, no_type_check
 
@@ -195,6 +196,53 @@ class IndexTTS2:
         gr_progress: Progress | None
     model_version: float
 
+    @property
+    @cache
+    def bigvgan(self) -> BigVGAN:
+        name = self.cfg.vocoder.name
+        model = BigVGAN.from_pretrained(name, use_cuda_kernel=self.use_cuda_kernel)
+        model.remove_weight_norm()
+        model = model.eval().to(self.device)
+        if self.use_fp16:
+            model.half()
+        logger.info(f"bigvgan weights restored from: {name}")
+        return model
+
+    @property
+    @cache
+    def length_regulator(self) -> InterpolateRegulator:
+        path = self.model_dir / self.cfg.len_reg_checkpoint
+        config = self.cfg.s2mel.length_regulator
+        model = InterpolateRegulator(
+            channels=config.channels,
+            sampling_ratios=config.sampling_ratios,
+            in_channels=config.in_channels,
+        )
+        model = _load_model(model, path, self.device)
+        if self.use_fp16:
+            model.half()
+        return model
+
+    @property
+    @cache
+    def gpt_layer(self) -> nn.Sequential[nn.Linear]:
+        path = self.model_dir / self.cfg.gpt_layer_checkpoint
+        model = nn.Sequential(nn.Linear(1280, 256), nn.Linear(256, 128), nn.Linear(128, 1024))
+        model = _load_model(model, path, self.device)
+        if self.use_fp16:
+            model.half()
+        return model
+
+    @property
+    @cache
+    def tokenizer(self) -> TextTokenizer:
+        path = self.model_dir / self.cfg.dataset.bpe_model
+        normalizer = TextNormalizer()
+        normalizer.load()
+        tokenizer = TextTokenizer(path, normalizer)
+        logger.info("TextTokenizer loaded")
+        return tokenizer
+
     def __init__(
         self,
         cfg_path: Path = Path("checkpoints/config.yaml"),
@@ -237,6 +285,8 @@ class IndexTTS2:
         logger.info("Running on device: %s", self.device)
         self.gr_progress = None
 
+        self.model_dir = model_dir
+
         # Load configuration
         self.cfg = CheckpointsConfig(**cast(Mapping[str, Any], OmegaConf.load(cfg_path)))
         self.stop_mel_token = self.cfg.gpt.stop_mel_token
@@ -264,57 +314,22 @@ class IndexTTS2:
         self.semantic_std = torch.sqrt(stat_mean_var.get_tensor("var"))
 
         # Semantic codec model
-        checkpoint = hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
-        self.semantic_codec = _load_model(RepCodec(), checkpoint, self.device)
+        self.semantic_codec = _load_model(
+            RepCodec(),
+            hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors"),
+            self.device,
+        )
 
         # S2Mel model
         self.cfm = _load_model(CFM(cfg.s2mel), model_dir / cfg.cfm_checkpoint, self.device)
-        self.gpt_layer = _load_model(
-            nn.Sequential(
-                nn.Linear(1280, 256),
-                nn.Linear(256, 128),
-                nn.Linear(128, 1024),
-            ),
-            model_dir / cfg.gpt_layer_checkpoint,
-            self.device,
-        )
-        self.length_regulator = _load_model(
-            InterpolateRegulator(
-                channels=cfg.s2mel.length_regulator.channels,
-                sampling_ratios=cfg.s2mel.length_regulator.sampling_ratios,
-                in_channels=cfg.s2mel.length_regulator.in_channels,
-            ),
-            model_dir / cfg.len_reg_checkpoint,
-            self.device,
-        )
-        if self.use_fp16:
-            self.cfm.half()
-            self.gpt_layer.half()
-            self.length_regulator.half()
 
         # CAMPPlus model
         self.campplus_model = _load_model(CAMPPlus(), "checkpoints/campplus_cn_common.safetensors")
 
-        # BigVGAN vocoder
-        self.bigvgan = BigVGAN.from_pretrained(cfg.vocoder.name, use_cuda_kernel=self.use_cuda_kernel)
-        self.bigvgan.remove_weight_norm()
-        self.bigvgan = self.bigvgan.eval().to(self.device)
-        if self.use_fp16:
-            self.bigvgan.half()
-        logger.info(f"bigvgan weights restored from: {cfg.vocoder.name}")
-
-        # Text processing
-        normalizer = TextNormalizer()
-        normalizer.load()
-        self.tokenizer = TextTokenizer(model_dir / cfg.dataset.bpe_model, normalizer)
-        logger.info("TextTokenizer loaded")
-
         # Emotion matrices
-        emo_matrix = cast(Tensor, torch.load(model_dir / cfg.emo_matrix))
-        spk_matrix = cast(Tensor, torch.load(model_dir / cfg.spk_matrix))
         self.emo_num = tuple(cfg.emo_num)
-        self.emo_matrix = torch.split(emo_matrix, self.emo_num)
-        self.spk_matrix = torch.split(spk_matrix, self.emo_num)
+        self.emo_matrix = torch.split(torch.load(model_dir / cfg.emo_matrix), self.emo_num)
+        self.spk_matrix = torch.split(torch.load(model_dir / cfg.spk_matrix), self.emo_num)
 
     # -------------------------------------------------------------------------
     # Semantic Embedding

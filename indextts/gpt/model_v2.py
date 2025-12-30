@@ -355,8 +355,8 @@ class UnifiedVoice(nn.Module):
             attention_masks.append(attn_mask)
 
         # Stack batched outputs
-        batched_mel_emb = torch.stack(batched_mel_embs, dim=0)
-        attention_mask = torch.stack(attention_masks, dim=0)
+        batched_mel_emb = torch.stack(batched_mel_embs)
+        attention_mask = torch.stack(attention_masks)
 
         # Create fake input IDs with start_mel_token at the end
         fake_inputs = torch.ones((batch_size, target_len + 1), dtype=torch.long, device=batched_mel_emb.device)

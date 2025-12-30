@@ -153,6 +153,7 @@ ignore = [
   "N812",    # lowercase-imported-as-non-lowercase
   "N999",    # invalid-module-name
   "PLW1514", # unspecified-encoding
+  "RET504",
   "RET507",  # superfluous-else-continue
   "RUF001",  # ambiguous-unicode-character-string
   "RUF002",  # ambiguous-unicode-character-docstring
@@ -231,12 +232,13 @@ stubPath = "./typings"
 typeshedPath = "../typeshed"
 useLibraryCodeForTypes = false
 
+[tool.ty.environment]
+typeshed = "../typeshed"
+extra-paths = ["./typings"]
+
 [tool.ty.rules]
 unused-ignore-comment = "warn"
 possibly-unresolved-reference = "warn"
 
 [tool.ty.src]
-exclude = ["./typings", "./tools", "./override", "./tests"]
-
-[tool.ty.environment]
-extra-paths = ["./typings"]
+exclude = ["./typings", "./tools", "./tests"]

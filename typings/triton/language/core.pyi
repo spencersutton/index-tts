@@ -1000,9 +1000,7 @@ def make_block_ptr(base: tensor, shape, strides, offsets, block_shape, order, _s
     :param order: The order of the original data format
     """
 
-@must_use_result(
-    ...
-)
+@must_use_result(...)
 @_tensor_member_fn
 @builtin
 def advance(base, offsets, _semantic=...):

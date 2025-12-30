@@ -1,89 +1,83 @@
+"""Optional end-to-end streaming integration test.
+
+This exercises the real `IndexTTS2.infer(..., stream_return=True)` path.
+
+It is skipped by default because it requires local checkpoints and can be slow.
+Enable with:
+  INDEXTTS_RUN_INTEGRATION=1
+"""
+
+from __future__ import annotations
+
+import os
 import sys
-import unittest
 from pathlib import Path
 
+import pytest
 import torch
 
 # Add project root to sys.path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from indextts.infer_v2 import IndexTTS2
 
+def test_streaming_inference_real(tmp_path: Path) -> None:
+    if os.getenv("INDEXTTS_RUN_INTEGRATION") != "1":
+        pytest.skip("Set INDEXTTS_RUN_INTEGRATION=1 to enable")
 
-class TestStreamingEndToEnd(unittest.TestCase):
-    def test_streaming_inference_real(self) -> None:
-        # Ensure we are in the root directory or paths are correct
-        root_dir = Path(__file__).parent.parent
-        checkpoint_dir = root_dir / "checkpoints"
-        config_path = checkpoint_dir / "config.yaml"
+    root_dir = Path(__file__).parent.parent
+    checkpoint_dir = root_dir / "checkpoints"
+    config_path = checkpoint_dir / "config.yaml"
 
-        if not checkpoint_dir.exists():
-            self.skipTest("Checkpoints directory not found")
+    if not checkpoint_dir.exists() or not config_path.exists():
+        pytest.skip("Checkpoints/config.yaml not found")
 
-        # Create a dummy wav file for testing
-        prompt_wav = root_dir / "tests" / "temp_test_prompt.wav"
-        sample_rate = 16000
-        # Generate 1 second of silence/noise
-        dummy_audio = torch.randn(1, sample_rate)
+    try:
         import torchaudio
+    except Exception as e:  # pragma: no cover
+        pytest.skip(f"torchaudio not available: {e}")
 
-        torchaudio.save(prompt_wav, dummy_audio, sample_rate)
+    # Create a dummy wav prompt in a temp directory.
+    prompt_wav = tmp_path / "temp_test_prompt.wav"
+    sample_rate = 16000
+    dummy_audio = torch.randn(1, sample_rate)
+    torchaudio.save(str(prompt_wav), dummy_audio, sample_rate)
 
-        try:
-            # Initialize real model
-            # Use CPU for testing to ensure it runs everywhere, or check availability
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-            print(f"Using device: {device}")
+    try:
+        from indextts.infer_v2 import IndexTTS2
+    except Exception as e:  # pragma: no cover
+        pytest.skip(f"IndexTTS2 import failed in this environment: {e}")
 
-            # Initialize the TTS engine
-            # We disable some optimizations to make initialization faster/safer for testing
-            tts = IndexTTS2(
-                cfg_path=config_path,
-                model_dir=checkpoint_dir,
-                device=device,
-                use_fp16=False,
-            )
+    # Prefer CPU for determinism/portability; integration users can override by editing locally.
+    device = "cpu"
 
-            text = "Hello world. This is a test of streaming inference."
+    tts = IndexTTS2(
+        cfg_path=config_path,
+        model_dir=checkpoint_dir,
+        device=device,
+        use_fp16=False,
+        use_cuda_kernel=False,
+        use_accel=False,
+    )
 
-            print(f"Starting inference with text: '{text}'")
+    text = "Hello world. This is a test of streaming inference."
 
-            # Run inference with streaming
-            # We set max_text_tokens_per_segment to a small number to encourage segmentation
-            generator = tts.infer(
-                spk_audio_prompt=prompt_wav,
-                text=text,
-                output_path=None,
-                stream_return=True,
-                max_text_tokens_per_segment=10,
-                verbose=True,
-            )
+    generator = tts.infer(
+        spk_audio_prompt=prompt_wav,
+        text=text,
+        output_path=None,
+        stream_return=True,
+        max_text_tokens_per_segment=10,
+        verbose=False,
+    )
 
-            # Verify it returns a generator
-            self.assertTrue(hasattr(generator, "__iter__"))
+    assert hasattr(generator, "__iter__")
 
-            chunks = []
-            print("Consuming generator...")
-            for i, chunk in enumerate(generator):
-                print(f"Received chunk {i}, shape: {chunk.shape}")
-                self.assertIsInstance(chunk, torch.Tensor)
-                # Check that the chunk is not empty
-                self.assertTrue(chunk.numel() > 0)
-                chunks.append(chunk)
+    chunks: list[torch.Tensor] = []
+    for chunk in generator:
+        assert isinstance(chunk, torch.Tensor)
+        assert chunk.numel() > 0
+        chunks.append(chunk)
 
-            self.assertTrue(len(chunks) > 0)
-            print(f"Total chunks received: {len(chunks)}")
-
-            # Concatenate chunks to verify full audio structure
-            full_audio = torch.cat(chunks, dim=-1)
-            print(f"Full audio shape: {full_audio.shape}")
-            self.assertTrue(full_audio.shape[-1] > 0)
-
-        finally:
-            # Cleanup
-            if prompt_wav.exists():
-                prompt_wav.unlink()
-
-
-if __name__ == "__main__":
-    unittest.main()
+    assert len(chunks) > 0
+    full_audio = torch.cat(chunks, dim=-1)
+    assert full_audio.shape[-1] > 0

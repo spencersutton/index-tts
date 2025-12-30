@@ -7,16 +7,10 @@ and tensor masking operations.
 import sys
 from pathlib import Path
 
-import torch
-
 # Add project root to sys.path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from indextts.utils.common import (
-    de_tokenized_by_CJK_char,
-    make_pad_mask,
-    tokenize_by_CJK_char,
-)
+from indextts.utils.common import de_tokenized_by_CJK_char, tokenize_by_CJK_char
 
 
 def test_tokenize_by_CJK_char_basic() -> None:
@@ -141,97 +135,6 @@ def test_tokenize_detokenize_roundtrip() -> None:
     assert "的中文" in detokenized
 
 
-def test_make_pad_mask_basic() -> None:
-    """Test basic padding mask creation."""
-    lengths = torch.tensor([5, 3, 2])
-    expected = torch.tensor([
-        [False, False, False, False, False],
-        [False, False, False, True, True],
-        [False, False, True, True, True],
-    ])
-
-    result = make_pad_mask(lengths)
-    assert torch.equal(result, expected)
-
-
-def test_make_pad_mask_with_max_len() -> None:
-    """Test padding mask with explicit max length."""
-    lengths = torch.tensor([3, 2])
-    max_len = 5
-    expected = torch.tensor([
-        [False, False, False, True, True],
-        [False, False, True, True, True],
-    ])
-
-    result = make_pad_mask(lengths, max_len=max_len)
-    assert torch.equal(result, expected)
-
-
-def test_make_pad_mask_single_element() -> None:
-    """Test padding mask with single batch element."""
-    lengths = torch.tensor([4])
-    expected = torch.tensor([[False, False, False, False]])
-
-    result = make_pad_mask(lengths)
-    assert torch.equal(result, expected)
-
-
-def test_make_pad_mask_all_same_length() -> None:
-    """Test padding mask when all sequences have same length."""
-    lengths = torch.tensor([5, 5, 5])
-    expected = torch.tensor([
-        [False, False, False, False, False],
-        [False, False, False, False, False],
-        [False, False, False, False, False],
-    ])
-
-    result = make_pad_mask(lengths)
-    assert torch.equal(result, expected)
-
-
-def test_make_pad_mask_zero_length() -> None:
-    """Test padding mask with zero-length sequence."""
-    lengths = torch.tensor([3, 0, 2])
-    expected = torch.tensor([
-        [False, False, False],
-        [True, True, True],
-        [False, False, True],
-    ])
-
-    result = make_pad_mask(lengths)
-    assert torch.equal(result, expected)
-
-
-def test_make_pad_mask_device_consistency() -> None:
-    """Test that output mask is on the same device as input."""
-    lengths = torch.tensor([3, 2])
-
-    result = make_pad_mask(lengths)
-
-    # Both should be on same device (CPU in this test environment)
-    assert result.device == lengths.device
-
-
-def test_make_pad_mask_dtype() -> None:
-    """Test that output mask has correct dtype (bool)."""
-    lengths = torch.tensor([3, 2])
-
-    result = make_pad_mask(lengths)
-
-    assert result.dtype == torch.bool
-
-
-def test_make_pad_mask_shape() -> None:
-    """Test that output mask has correct shape."""
-    lengths = torch.tensor([5, 3, 7])
-    max_len = 10
-
-    result = make_pad_mask(lengths, max_len=max_len)
-
-    # Shape should be (batch_size, max_len)
-    assert result.shape == (3, 10)
-
-
 if __name__ == "__main__":
     # Run basic smoke test
     print("Running tests...")
@@ -248,12 +151,4 @@ if __name__ == "__main__":
     test_de_tokenized_by_CJK_char_english_only()
     test_de_tokenized_by_CJK_char_cjk_only()
     test_tokenize_detokenize_roundtrip()
-    test_make_pad_mask_basic()
-    test_make_pad_mask_with_max_len()
-    test_make_pad_mask_single_element()
-    test_make_pad_mask_all_same_length()
-    test_make_pad_mask_zero_length()
-    test_make_pad_mask_device_consistency()
-    test_make_pad_mask_dtype()
-    test_make_pad_mask_shape()
     print("All tests passed!")

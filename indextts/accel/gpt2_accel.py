@@ -83,7 +83,7 @@ class GPT2AccelAttention(nn.Module):
         output_attentions: bool = False,
         past_key_value: tuple[Tensor, Tensor] | None = None,
         **kwargs: object,
-    ) -> Tensor:
+    ) -> tuple[Tensor, None] | tuple[Tensor, None, None]:
         if encoder_hidden_states is not None:
             raise NotImplementedError("Cross attention not supported in accel mode")
 
@@ -121,7 +121,11 @@ class GPT2AccelAttention(nn.Module):
         attn_output = self._merge_heads(attn_output, self.num_heads, self.head_dim)
 
         attn_output = self.c_proj(attn_output)
-        return self.resid_dropout(attn_output)
+        attn_output = self.resid_dropout(attn_output)
+        if output_attentions:
+            return (attn_output, None, None)
+
+        return (attn_output, None)
 
     @patch_call(forward)
     def __call__(self) -> None: ...

@@ -60,7 +60,6 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
 
     text_pos_embedding: LearnedPositionEmbeddings
     transformer: GPT2Model
-    kv_cache: bool
     cached_mel_emb: Tensor | None
     device_map: dict[int, int] | None
     model_parallel: bool
@@ -71,31 +70,28 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         self,
         config: GPT2Config,
         gpt: GPT2Model,
-        text_pos_emb: LearnedPositionEmbeddings,
+        mel_pos_emb: LearnedPositionEmbeddings,
         embeddings: nn.Embedding,
         norm: nn.LayerNorm,
         linear: nn.Linear,
-        kv_cache: bool = False,
     ) -> None:
         """Initialize the inference model.
 
         Args:
             config: GPT-2 configuration.
             gpt: The underlying GPT-2 model.
-            text_pos_emb: Position embeddings for mel tokens (despite the name).
+            mel_pos_emb: Position embeddings for mel tokens.
             embeddings: Token embeddings for mel tokens.
             norm: Layer normalization before the output head.
             linear: Linear projection to mel vocabulary.
-            kv_cache: Whether to use key-value caching for faster generation.
         """
         super().__init__(config)
         # Note: the argument named `text_pos_emb` here actually represents the mel position embedding
         self.transformer = gpt
-        self.text_pos_embedding = text_pos_emb
+        self.text_pos_embedding = mel_pos_emb
         self.embeddings = embeddings
         self.final_norm = norm
         self.lm_head = nn.Sequential(norm, linear)
-        self.kv_cache = kv_cache
 
         # Model parallel
         self.model_parallel = False
@@ -128,8 +124,6 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         **kwargs: Tensor,
     ) -> dict[str, Any]:
         inputs_embeds = kwargs.get("inputs_embeds")  # usually None
-        if not self.kv_cache:
-            past_key_values = None
         # only last token for inputs_ids if past is defined in kwargs
         if past_key_values:
             input_ids = input_ids[:, -1].unsqueeze(-1)

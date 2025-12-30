@@ -74,13 +74,8 @@ class ModelArgs:
 
 
 class Transformer(nn.Module):
-    max_batch_size = 1
-    max_seq_length = 8192
     freqs_cis: Tensor
-    mask_cache: Tensor | None = None
     layers: "Iterable[TransformerBlock]"
-    causal_mask: Tensor
-    use_kv_cache: bool = False
     uvit_skip_connection: bool = False
     layers_emit_skip: Sequence[int]
     layers_receive_skip: Sequence[int]
@@ -100,11 +95,7 @@ class Transformer(nn.Module):
             persistent=False,
         )
         n_layer = config.n_layer
-        self.register_buffer(
-            "causal_mask",
-            torch.tril(torch.ones(self.max_seq_length, self.max_seq_length, dtype=torch.bool)),
-            persistent=False,
-        )
+
         self.layers_emit_skip = [i for i in range(n_layer) if i < n_layer // 2]
         self.layers_receive_skip = [i for i in range(n_layer) if i > n_layer // 2]
 

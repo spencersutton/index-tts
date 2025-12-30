@@ -216,7 +216,6 @@ class UnifiedVoice(nn.Module):
             self.mel_embedding,
             self.final_norm,
             self.mel_head,
-            kv_cache=True,
         )
         self.inference_model = inference_model.eval()
 

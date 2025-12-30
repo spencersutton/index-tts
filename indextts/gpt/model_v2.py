@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import logging
 import time
+import typing
 from dataclasses import dataclass
 from typing import Any, cast, override
 
@@ -13,13 +14,15 @@ from transformers import GPT2Config, GPT2Model, LogitsProcessorList
 from transformers.generation.logits_process import TypicalLogitsWarper
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions
 
-from indextts.accel.accel_engine import AccelInferenceEngine
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.inference_model import GPT2InferenceModel, NullPositionEmbedding
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
 from indextts.gpt.perceiver import PerceiverResampler
 from indextts.gpt.utils import set_token_padding
 from indextts.util import patch_call
+
+if typing.TYPE_CHECKING:
+    from indextts.accel.accel_engine import AccelInferenceEngine
 
 logger = logging.getLogger(__name__)
 
@@ -66,9 +69,12 @@ class VoiceModelConfig:
         return self.max_mel_tokens + self.max_text_tokens + 2
 
 
-# =============================================================================
-# Unified Voice Model
-# =============================================================================
+def _set_token_padding(input_tokens: Tensor, start_token: int, stop_token: int) -> Tensor:
+    mask = (input_tokens == stop_token).cummax(dim=-1).values
+    tokens = input_tokens.masked_fill_(mask, stop_token)
+    tokens = F.pad(tokens, (0, 1), value=stop_token)
+    tokens = F.pad(tokens, (1, 0), value=start_token)
+    return tokens
 
 
 class UnifiedVoice(nn.Module):
@@ -195,10 +201,6 @@ class UnifiedVoice(nn.Module):
         self.accel_engine = None
         self.inference_model = None
 
-    # -------------------------------------------------------------------------
-    # Post-initialization for Inference
-    # -------------------------------------------------------------------------
-
     def post_init_gpt2_config(self, half: bool = False) -> None:
         """Initialize inference components after model loading."""
         gpt_config = GPT2Config(
@@ -250,10 +252,6 @@ class UnifiedVoice(nn.Module):
         self.inference_model = inference_model.eval()
 
         self.gpt.wte = self.mel_embedding
-
-    # -------------------------------------------------------------------------
-    # Conditioning Extraction
-    # -------------------------------------------------------------------------
 
     def get_conditioning(self, speech_conditioning_input: Tensor) -> Tensor:
         """Extract speaker conditioning latents from speech input.

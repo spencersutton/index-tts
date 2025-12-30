@@ -198,29 +198,19 @@ class _Attend(nn.Module):
     def __call__(self) -> None: ...
 
 
-class _RMSNorm(nn.Module):
-    def __init__(self, dim: int, scale: bool = True, dim_cond: int | None = None) -> None:
+class RMSNorm(nn.Module):
+    scale: float
+    gamma: nn.Parameter
+
+    def __init__(self, dim: int) -> None:
         super().__init__()
-        self.cond = dim_cond is not None
-        self.to_gamma_beta = nn.Linear(dim_cond, dim * 2) if dim_cond is not None else None
 
         self.scale = cast(float, dim**0.5)
-        self.gamma = nn.Parameter(torch.ones(dim)) if scale else None
+        self.gamma = nn.Parameter(torch.ones(dim))
 
     @override
-    def forward(self, x: Tensor, cond: Tensor | None = None) -> Tensor:
-        gamma = self.gamma if self.gamma is not None else 1
-        out = F.normalize(x, dim=-1) * self.scale * gamma
-
-        if not self.cond:
-            return out
-
-        assert cond is not None
-        assert self.to_gamma_beta is not None
-        gamma, beta = self.to_gamma_beta(cond).chunk(2, dim=-1)
-        gamma = gamma.unsqueeze(1)
-        beta = beta.unsqueeze(1)
-        return out * gamma + beta
+    def forward(self, x: Tensor) -> Tensor:
+        return F.normalize(x, dim=-1) * self.scale * self.gamma
 
     @patch_call(forward)
     def __call__(self) -> None: ...
@@ -266,6 +256,11 @@ def _feed_forward(dim: int) -> Sequential[nn.Module]:
 
 
 class PerceiverResampler(nn.Module):
+    proj_context: nn.Linear
+    latents: nn.Parameter
+    layers: nn.ModuleList[nn.ModuleList[nn.Module]]
+    norm: RMSNorm
+
     def __init__(
         self,
         dim: int = 512,
@@ -300,7 +295,7 @@ class PerceiverResampler(nn.Module):
             for _ in range(depth)
         ])
 
-        self.norm = _RMSNorm(dim)
+        self.norm = RMSNorm(dim)
 
     @override
     def forward(self, x: Tensor, mask: Tensor) -> Tensor:

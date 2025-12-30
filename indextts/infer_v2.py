@@ -116,6 +116,11 @@ MAX_LEN = 15
 _EMO_BIAS = (0.9375, 0.875, 1.0, 1.0, 0.9375, 0.9375, 0.6875, 0.5625)
 _MAX_EMO_SUM = 0.8
 
+GPT_LAYER_CHECKPOINT = "gpt_layer.safetensors"
+TOKENIZER_MODEL = "bpe.model"
+LENGTH_REGULATOR_CHECKPOINT = "length_regulator.safetensors"
+VOCODER_NAME = "nvidia/bigvgan_v2_22khz_80band_256x"
+
 
 def _load_model[T: nn.Module](
     model: T,
@@ -223,24 +228,22 @@ class IndexTTS2:
     @property
     @cache
     def bigvgan(self) -> BigVGAN:
-        name = self.cfg.vocoder.name
-        model = BigVGAN.from_pretrained(name, use_cuda_kernel=self.use_cuda_kernel)
+        model = BigVGAN.from_pretrained(VOCODER_NAME, use_cuda_kernel=self.use_cuda_kernel)
         model.remove_weight_norm()
         model = model.eval().to(self.device)
         if self.use_fp16:
             model.half()
-        logger.info(f"bigvgan weights restored from: {name}")
+        logger.info(f"bigvgan weights restored from: {VOCODER_NAME}")
         return model
 
     @property
     @cache
     def length_regulator(self) -> InterpolateRegulator:
-        path = self.model_dir / self.cfg.len_reg_checkpoint
-        config = self.cfg.s2mel.length_regulator
+        path = self.model_dir / LENGTH_REGULATOR_CHECKPOINT
         model = InterpolateRegulator(
-            channels=config.channels,
-            sampling_ratios=config.sampling_ratios,
-            in_channels=config.in_channels,
+            channels=512,
+            sampling_ratios=4,
+            in_channels=1024,
         )
         model = _load_model(model, path, self.device)
         if self.use_fp16:
@@ -250,7 +253,7 @@ class IndexTTS2:
     @property
     @cache
     def gpt_layer(self) -> nn.Sequential[nn.Linear]:
-        path = self.model_dir / self.cfg.gpt_layer_checkpoint
+        path = self.model_dir / GPT_LAYER_CHECKPOINT
         model = nn.Sequential(nn.Linear(1280, 256), nn.Linear(256, 128), nn.Linear(128, 1024))
         model = _load_model(model, path, self.device)
         if self.use_fp16:
@@ -260,7 +263,7 @@ class IndexTTS2:
     @property
     @cache
     def tokenizer(self) -> TextTokenizer:
-        path = self.model_dir / self.cfg.dataset.bpe_model
+        path = self.model_dir / TOKENIZER_MODEL
         normalizer = TextNormalizer()
         normalizer.load()
         tokenizer = TextTokenizer(path, normalizer)

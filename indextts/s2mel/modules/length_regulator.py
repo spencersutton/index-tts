@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
 from typing import override
 
 import torch
@@ -17,14 +16,14 @@ class InterpolateRegulator(nn.Module):
     def __init__(
         self,
         channels: int,
-        sampling_ratios: Sequence[int],
+        sampling_ratios: int,
         in_channels: int,
         groups: int = 1,
     ) -> None:
         super().__init__()
 
         self.model = nn.Sequential()
-        for _ in sampling_ratios:
+        for _ in range(sampling_ratios):
             self.model.extend([
                 nn.Conv1d(channels, channels, 3, 1, 1),
                 nn.GroupNorm(groups, channels),

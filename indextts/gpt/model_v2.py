@@ -68,12 +68,19 @@ class VoiceModelConfig:
         return self.max_mel_tokens + self.max_text_tokens + 2
 
 
-def set_token_padding(tokens: Tensor, start_token: int, stop_token: int) -> Tensor:
+def get_embedding(
+    tokens: Tensor,
+    start_token: int,
+    stop_token: int,
+    embeddings: nn.Embedding,
+    positional_embeddings: LearnedPositionEmbeddings,
+) -> Tensor:
     mask = (tokens == stop_token).cummax(dim=-1).values
     tokens = tokens.masked_fill_(mask, stop_token)
     tokens = F.pad(tokens, (0, 1), value=stop_token)
     tokens = F.pad(tokens, (1, 0), value=start_token)
-    return tokens
+    text_emb = embeddings(tokens) + positional_embeddings(tokens)
+    return text_emb
 
 
 class UnifiedVoice(nn.Module):
@@ -304,11 +311,20 @@ class UnifiedVoice(nn.Module):
             Mel latent representations (batch, mel_len, dim)
         """
         # Prepare text and mel tokens
-        text_inputs = set_token_padding(text_inputs, self.config.start_text_token, self.config.stop_text_token)
-        text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs)
-
-        mel_codes = set_token_padding(mel_codes, self.config.start_mel_token, self.config.stop_mel_token)
-        mel_emb = self.mel_embedding(mel_codes) + self.mel_pos_embedding(mel_codes)
+        text_emb = get_embedding(
+            text_inputs,
+            self.config.start_text_token,
+            self.config.stop_text_token,
+            self.text_embedding,
+            self.text_pos_embedding,
+        )
+        mel_emb = get_embedding(
+            mel_codes,
+            self.config.start_mel_token,
+            self.config.stop_mel_token,
+            self.mel_embedding,
+            self.mel_pos_embedding,
+        )
 
         # Get latent representations
         conds = self._build_conditioning_concat(speech_conditioning_latent, emo_vec, use_speed)
@@ -488,10 +504,10 @@ class UnifiedVoice(nn.Module):
         if self.accel_engine is not None and 1 == 1:
             output = self.accel_engine.generate(
                 inputs,
-                max_new_tokens=max_length - trunc_index,
                 attention_mask=attention_mask,
-                temperature=temperature,
+                max_new_tokens=max_length - trunc_index,
                 stop_tokens=[self.config.stop_mel_token],
+                temperature=temperature,
                 tts_embeddings=inputs_embeds,
                 tts_mel_embedding=self.inference_model.embeddings,
                 tts_text_pos_embedding=self.inference_model.text_pos_embedding,
@@ -499,13 +515,13 @@ class UnifiedVoice(nn.Module):
         else:
             output = self.inference_model.generate(
                 inputs,
-                bos_token_id=self.config.start_mel_token,
-                pad_token_id=self.config.stop_mel_token,
-                eos_token_id=self.config.stop_mel_token,
                 attention_mask=attention_mask,
-                max_length=max_length,
+                bos_token_id=self.config.start_mel_token,
+                eos_token_id=self.config.stop_mel_token,
                 logits_processor=logits_processor,
+                max_length=max_length,
                 num_return_sequences=1,
+                pad_token_id=self.config.stop_mel_token,
                 **hf_generate_kwargs,
             )
 

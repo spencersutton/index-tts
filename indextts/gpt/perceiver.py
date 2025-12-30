@@ -12,9 +12,10 @@ from indextts.util import patch_call
 warning_printed = False
 
 
-class _Transpose(nn.Module):
+class Transpose(nn.Module):
     def __init__(self, dim0: int, dim1: int) -> None:
         super().__init__()
+
         self.dim0 = dim0
         self.dim1 = dim1
 
@@ -147,7 +148,7 @@ class PerceiverResampler(nn.Module):
         latents = self.latents.unsqueeze(0).expand(batch, -1, -1)
 
         for item in self.layers:
-            attn, ff = item
+            attn, ff = cast(tuple[Attention, nn.Sequential], item)
             latents = attn(latents, x, mask=mask) + latents
             latents = ff(latents) + latents
 
@@ -158,11 +159,15 @@ class PerceiverResampler(nn.Module):
 
 
 class Attention(nn.Module):
+    heads: int
+    attend: Attend
+    to_q: nn.Linear
+    to_kv: nn.Linear
+    to_out: nn.Linear
+
     def __init__(self, dim: int, heads: int = 8) -> None:
         super().__init__()
-        self.scale = float(64**-0.5)
         self.heads = heads
-        self.cross_attn_include_queries = True
 
         dim_inner = 64 * heads
         self.attend = Attend()
@@ -171,13 +176,10 @@ class Attention(nn.Module):
         self.to_out = nn.Linear(dim_inner, dim, bias=False)
 
     @override
-    def forward(self, x: Tensor, context: Tensor | None = None, mask: Tensor | None = None) -> Tensor:
-        h, has_context = self.heads, context is not None
+    def forward(self, x: Tensor, context: Tensor, mask: Tensor) -> Tensor:
+        h = self.heads
 
-        context = context if context is not None else x
-
-        if has_context:
-            context = torch.cat((x, context), dim=-2)
+        context = torch.cat((x, context), dim=-2)
 
         k, v = self.to_kv(context).chunk(2, dim=-1)
         q = self.to_q(x)
@@ -187,7 +189,8 @@ class Attention(nn.Module):
 
         out = self.attend(q, k, v, mask=mask)
 
-        out = _merge_heads(out)
+        b, h, n, d = out.shape
+        out = out.permute(0, 2, 1, 3).reshape(b, n, h * d)
         return self.to_out(out)
 
     @patch_call(forward)

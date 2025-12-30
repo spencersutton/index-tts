@@ -90,6 +90,8 @@ class UnifiedVoice(nn.Module):
     final_norm: nn.LayerNorm
     text_head: nn.Linear
     mel_head: nn.Linear
+    cond_mask_pad: nn.ConstantPad1d
+    emo_cond_mask_pad: nn.ConstantPad1d
 
     def __init__(self, *, use_accel: bool = False) -> None:
         super().__init__()

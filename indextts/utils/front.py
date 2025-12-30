@@ -1,7 +1,7 @@
 import re
 import traceback
 import warnings
-from collections.abc import Collection, Iterable, Sequence
+from collections.abc import Callable, Collection, Iterable, Sequence
 from pathlib import Path
 from typing import ClassVar, cast
 
@@ -12,6 +12,11 @@ from indextts.utils.common import tokenize_by_CJK_char
 
 
 class TextNormalizer:
+    zh_normalizer: Normalizer | None
+    en_normalizer: Normalizer | None
+    char_rep_map: dict[str, str]
+    zh_char_rep_map: dict[str, str]
+
     def __init__(self) -> None:
         self.zh_normalizer = None
         self.en_normalizer = None
@@ -213,6 +218,11 @@ class TextNormalizer:
 
 
 class TextTokenizer:
+    sp_model: SentencePieceProcessor
+    normalizer: TextNormalizer | None
+    vocab_file: Path
+    pre_tokenizers: list[Callable[[str], str]]
+
     def __init__(self, vocab_file: Path, normalizer: TextNormalizer | None = None) -> None:
         self.vocab_file = vocab_file
         self.normalizer = normalizer

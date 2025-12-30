@@ -240,11 +240,7 @@ class IndexTTS2:
     @cache
     def length_regulator(self) -> InterpolateRegulator:
         path = self.model_dir / LENGTH_REGULATOR_CHECKPOINT
-        model = InterpolateRegulator(
-            channels=512,
-            sampling_ratios=4,
-            in_channels=1024,
-        )
+        model = InterpolateRegulator()
         model = _load_model(model, path, self.device)
         if self.use_fp16:
             model.half()

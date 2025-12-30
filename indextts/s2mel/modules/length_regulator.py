@@ -8,30 +8,27 @@ from torch.nn import functional as F
 
 from indextts.util import patch_call
 
+CHANNELS = 512
+LAYERS = 4
+IN_CHANNELS = 1024
+
 
 class InterpolateRegulator(nn.Module):
     model: nn.Sequential[nn.Module]
     content_in_proj: nn.Linear
 
-    def __init__(
-        self,
-        channels: int,
-        sampling_ratios: int,
-        in_channels: int,
-        groups: int = 1,
-    ) -> None:
+    def __init__(self) -> None:
         super().__init__()
 
         self.model = nn.Sequential()
-        for _ in range(sampling_ratios):
+        for _ in range(LAYERS):
             self.model.extend([
-                nn.Conv1d(channels, channels, 3, 1, 1),
-                nn.GroupNorm(groups, channels),
+                nn.Conv1d(CHANNELS, CHANNELS, 3, 1, 1),
+                nn.GroupNorm(1, CHANNELS),
                 nn.Mish(),
             ])
-        self.model.append(nn.Conv1d(channels, channels, 1, 1))
-
-        self.content_in_proj = nn.Linear(in_channels, channels)
+        self.model.append(nn.Conv1d(CHANNELS, CHANNELS, 1, 1))
+        self.content_in_proj = nn.Linear(IN_CHANNELS, CHANNELS)
 
     @override
     def forward(self, x: Tensor, ylens: int) -> Tensor:

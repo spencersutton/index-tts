@@ -164,37 +164,61 @@ def _find_most_similar_cosine(query_vector: Tensor, matrix: Tensor) -> Tensor:
 class IndexTTS2:
     """IndexTTS v2 text-to-speech synthesis engine."""
 
-    # Type annotations
     device: torch.device
+    """Compute device."""
     use_fp16: bool
+    """Use FP16 precision."""
     use_cuda_kernel: bool
+    """Use custom CUDA kernels for BigVGAN."""
     use_accel: bool
+    """Use acceleration engine (FlashAttention) for GPT."""
     stop_mel_token: int
+    """Token indicating end of mel code generation."""
     cfg: CheckpointsConfig
+    """Configuration for model checkpoints."""
+    model_dir: Path
+    """Directory containing model checkpoints."""
 
     # Models
     qwen_emo: QwenEmotion
+    """"Emotion recognition model."""
     gpt: UnifiedVoice
+    """GPT-based speech generation model."""
     extract_features: SeamlessM4TFeatureExtractor
+    """Feature extractor for semantic embeddings."""
     semantic_model: Wav2Vec2BertModel
+    """Semantic embedding extraction model."""
     semantic_codec: RepCodec
+    """Semantic codec model."""
     campplus_model: CAMPPlus
+    """CAMPPlus speaker style extraction model."""
     bigvgan: BigVGAN
+    """BigVGAN vocoder model."""
     tokenizer: TextTokenizer
+    """Text tokenizer and segmenter."""
     gpt_layer: nn.Sequential[nn.Module]
+    """Additional GPT linear layers for mel code refinement."""
     cfm: CFM
+    """CFM diffusion model for mel spectrogram generation."""
     length_regulator: InterpolateRegulator
+    """Length regulator for temporal alignment."""
 
     # Tensors
     semantic_mean: Tensor
+    """Mean for semantic embedding normalization."""
     semantic_std: Tensor
+    """Standard deviation for semantic embedding normalization."""
     emo_matrix: tuple[Tensor, ...]
+    """Emotion style matrices for emotion selection."""
     emo_num: tuple[int, ...]
+    """Number of emotion styles."""
     spk_matrix: tuple[Tensor, ...]
+    """Speaker style matrices for emotion selection."""
 
     if typing.TYPE_CHECKING:
         gr_progress: Progress | None
     model_version: float
+    """Model version identifier."""
 
     @property
     @cache

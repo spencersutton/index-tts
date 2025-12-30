@@ -23,7 +23,7 @@ from transformers import BatchFeature, SeamlessM4TFeatureExtractor, Wav2Vec2Bert
 
 from indextts.audio_utils import generate_silence_interval, insert_interval_silence
 from indextts.config import CheckpointsConfig
-from indextts.gpt.model_v2 import UnifiedVoice
+from indextts.gpt.model_v2 import STOP_TEXT_TOKEN, UnifiedVoice
 from indextts.qwen_emotion import QwenEmotion
 from indextts.s2mel.modules.audio import mel_spectrogram
 from indextts.s2mel.modules.bigvgan import BigVGAN
@@ -582,7 +582,7 @@ class IndexTTS2:
         ]
         # Pad batch
         text_tokens_batch = nn.utils.rnn.pad_sequence(
-            batch_text_tokens, batch_first=True, padding_value=self.gpt.stop_text_token
+            batch_text_tokens, batch_first=True, padding_value=STOP_TEXT_TOKEN
         )
         batch_size = text_tokens_batch.size(0)
 

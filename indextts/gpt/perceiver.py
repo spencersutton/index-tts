@@ -1,17 +1,13 @@
 # Adapted from https://github.com/lucidrains/naturalspeech2-pytorch/blob/659bec7f7543e7747e809e950cc2f84242fbeec7/naturalspeech2_pytorch/naturalspeech2_pytorch.py#L532
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, NamedTuple, cast, override
+from typing import TYPE_CHECKING, cast, override
 
 import torch
 import torch.nn.functional as F
 from torch import Tensor, einsum, nn
-from torch.nn.attention import SDPBackend, sdpa_kernel
 
 from indextts.util import patch_call
-
-if TYPE_CHECKING:
-    from torch.nn.modules import Sequential
 
 warning_printed = False
 
@@ -41,117 +37,20 @@ def _merge_heads(x: Tensor) -> Tensor:
     return x.permute(0, 2, 1, 3).reshape(b, n, h * d)
 
 
-class _EfficientAttentionConfig(NamedTuple):
-    enable_flash: bool
-    enable_math: bool
-    enable_mem_efficient: bool
-
-
 # main class
-class _Attend(nn.Module):
+class Attend(nn.Module):
     if TYPE_CHECKING:
         mask: Tensor | None = None
+    attn_dropout: nn.Dropout
 
-    def __init__(
-        self,
-        dropout: float = 0.0,
-        causal: bool = False,
-        use_flash: bool = False,
-    ) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.dropout = dropout
-        self.attn_dropout = nn.Dropout(dropout)
+        self.attn_dropout = nn.Dropout(0.0)
 
-        self.causal = causal
         self.register_buffer("mask", None, persistent=False)
 
-        self.use_flash = use_flash
-
-        # determine efficient attention configs for cuda and cpu
-        self.config = _EfficientAttentionConfig
-        self.cpu_config = self.config(True, True, True)
-        self.cuda_config = None
-
-        if not torch.cuda.is_available() or not use_flash:
-            return
-
-        device_properties = torch.cuda.get_device_properties(torch.device("cuda"))
-
-        if device_properties.major == 8 and device_properties.minor == 0:
-            if not warning_printed:
-                print("A100 GPU detected, using flash attention always")
-            self.cuda_config = self.config(True, False, False)
-        else:
-            if not warning_printed:
-                print("Non-A100 GPU detected, using math or mem efficient attention if input tensor is on cuda")
-            self.cuda_config = self.config(False, True, True)
-
-    def get_mask(self, n: int, device: torch.device) -> Tensor:
-        if self.mask is not None and self.mask.shape[-1] >= n:
-            return self.mask[:n, :n]
-
-        mask = torch.ones((n, n), device=device, dtype=torch.bool).triu(1)
-        self.register_buffer("mask", mask, persistent=False)
-        return mask
-
-    def flash_attn(
-        self,
-        q: Tensor,
-        k: Tensor,
-        v: Tensor,
-        mask: Tensor | None = None,
-    ) -> Tensor:
-        _batch, heads, q_len, _dim = q.shape
-        _k_len, is_cuda = k.shape[-2], q.is_cuda
-
-        # Recommended for multi-query single-key-value attention by Tri Dao
-        # kv shape torch.Size([1, 512, 64]) -> torch.Size([1, 8, 512, 64])
-
-        if k.ndim == 3:
-            k = k.unsqueeze(1).expand_as(q)
-
-        if v.ndim == 3:
-            v = v.unsqueeze(1).expand_as(q)
-
-        # Check if mask exists and expand to compatible shape
-        # The mask is B L, so it would have to be expanded to B H N L
-
-        if mask is not None:
-            mask = mask[:, None, None, :]
-            mask = mask.expand(-1, heads, q_len, -1)
-
-        # Check if there is a compatible device for flash attention
-
-        config = self.cuda_config if is_cuda else self.cpu_config
-
-        # pytorch 2.0 flash attn: q, k, v, mask, dropout, causal, softmax_scale
-        assert config is not None
-        backends: list[SDPBackend] = []
-        if config.enable_flash:
-            backends.append(SDPBackend.FLASH_ATTENTION)
-        if config.enable_math:
-            backends.append(SDPBackend.MATH)
-        if config.enable_mem_efficient:
-            backends.append(SDPBackend.EFFICIENT_ATTENTION)
-
-        with sdpa_kernel(backends):
-            return F.scaled_dot_product_attention(
-                q,
-                k,
-                v,
-                attn_mask=mask,
-                dropout_p=self.dropout if self.training else 0.0,
-                is_causal=self.causal,
-            )
-
     @override
-    def forward(
-        self,
-        q: Tensor,
-        k: Tensor,
-        v: Tensor,
-        mask: Tensor | None = None,
-    ) -> Tensor:
+    def forward(self, q: Tensor, k: Tensor, v: Tensor, mask: Tensor | None = None) -> Tensor:
         """
         einstein notation
         b - batch
@@ -159,39 +58,23 @@ class _Attend(nn.Module):
         n, i, j - sequence length (base sequence length, source, target)
         d - feature dimension.
         """
-
-        n, device = q.shape[-2], q.device
-
         scale = cast(float, q.shape[-1] ** -0.5)
-
-        if self.use_flash:
-            return self.flash_attn(q, k, v, mask=mask)
 
         kv_einsum_eq = "b j d" if k.ndim == 3 else "b h j d"
 
         # similarity
-
         sim = einsum(f"b h i d, {kv_einsum_eq} -> b h i j", q, k) * scale
 
         # key padding mask
-
         if mask is not None:
             mask = mask[:, None, None, :]
             sim = sim.masked_fill(~mask, -torch.finfo(sim.dtype).max)
 
-        # causal mask
-
-        if self.causal:
-            causal_mask = self.get_mask(n, device)
-            sim = sim.masked_fill(causal_mask, -torch.finfo(sim.dtype).max)
-
         # attention
-
         attn = sim.softmax(dim=-1)
         attn = self.attn_dropout(attn)
 
         # aggregate values
-
         return einsum(f"b h i j, {kv_einsum_eq} -> b h i d", attn, v)
 
     @patch_call(forward)
@@ -205,31 +88,12 @@ class RMSNorm(nn.Module):
     def __init__(self, dim: int) -> None:
         super().__init__()
 
-        self.scale = cast(float, dim**0.5)
+        self.scale = float(dim**0.5)
         self.gamma = nn.Parameter(torch.ones(dim))
 
     @override
     def forward(self, x: Tensor) -> Tensor:
         return F.normalize(x, dim=-1) * self.scale * self.gamma
-
-    @patch_call(forward)
-    def __call__(self) -> None: ...
-
-
-class CausalConv1d(nn.Conv1d):
-    def __init__(self, in_channels: int, out_channels: int, kernel_size: int) -> None:
-        super().__init__(in_channels, out_channels, kernel_size)
-        (kernel_size,) = self.kernel_size
-        (dilation,) = self.dilation
-        (stride,) = self.stride
-
-        assert stride == 1
-        self.causal_padding = dilation * (kernel_size - 1)
-
-    @override
-    def forward(self, input: Tensor) -> Tensor:
-        causal_padded_x = F.pad(input, (self.causal_padding, 0), value=0.0)
-        return super().forward(causal_padded_x)
 
     @patch_call(forward)
     def __call__(self) -> None: ...
@@ -245,34 +109,16 @@ class GEGLU(nn.Module):
     def __call__(self) -> None: ...
 
 
-def _feed_forward(dim: int) -> Sequential[nn.Module]:
-    dim_inner = int(dim * 4 / 3)
-
-    return nn.Sequential(
-        nn.Linear(dim, dim_inner * 2),
-        GEGLU(),
-        nn.Linear(dim_inner, dim),
-    )
-
-
 class PerceiverResampler(nn.Module):
     proj_context: nn.Linear
     latents: nn.Parameter
     layers: nn.ModuleList[nn.ModuleList[nn.Module]]
     norm: RMSNorm
 
-    def __init__(
-        self,
-        dim: int = 512,
-        heads: int = 8,
-        num_latents: int = 32,
-    ) -> None:
-        depth: int = 2
-        dim_context: int = 512
-        dim_head: int = 64
+    def __init__(self, dim: int = 512, heads: int = 8, num_latents: int = 32) -> None:
         super().__init__()
 
-        self.proj_context = nn.Linear(dim_context, dim)
+        self.proj_context = nn.Linear(512, dim)
 
         self.latents = nn.Parameter(torch.randn(num_latents, dim))
         nn.init.normal_(self.latents, std=0.02)
@@ -280,19 +126,14 @@ class PerceiverResampler(nn.Module):
         dim_inner = int(dim * 4 / 3)
         self.layers = nn.ModuleList([
             nn.ModuleList([
-                Attention(
-                    dim=dim,
-                    dim_head=dim_head,
-                    heads=heads,
-                    cross_attn_include_queries=True,
-                ),
+                Attention(dim=dim, heads=heads),
                 nn.Sequential(
                     nn.Linear(dim, dim_inner * 2),
                     GEGLU(),
                     nn.Linear(dim_inner, dim),
                 ),
             ])
-            for _ in range(depth)
+            for _ in range(2)
         ])
 
         self.norm = RMSNorm(dim)
@@ -317,29 +158,16 @@ class PerceiverResampler(nn.Module):
 
 
 class Attention(nn.Module):
-    def __init__(
-        self,
-        dim: int,
-        *,
-        dim_context: int | None = None,
-        causal: bool = False,
-        dim_head: int = 64,
-        heads: int = 8,
-        dropout: float = 0.0,
-        use_flash: bool = False,
-        cross_attn_include_queries: bool = False,
-    ) -> None:
+    def __init__(self, dim: int, heads: int = 8) -> None:
         super().__init__()
-        self.scale = cast(float, dim_head**-0.5)
+        self.scale = float(64**-0.5)
         self.heads = heads
-        self.cross_attn_include_queries = cross_attn_include_queries
+        self.cross_attn_include_queries = True
 
-        dim_inner = dim_head * heads
-        dim_context = dim_context if dim_context is not None else dim
-
-        self.attend = _Attend(causal=causal, dropout=dropout, use_flash=use_flash)
+        dim_inner = 64 * heads
+        self.attend = Attend()
         self.to_q = nn.Linear(dim, dim_inner, bias=False)
-        self.to_kv = nn.Linear(dim_context, dim_inner * 2, bias=False)
+        self.to_kv = nn.Linear(dim, dim_inner * 2, bias=False)
         self.to_out = nn.Linear(dim_inner, dim, bias=False)
 
     @override
@@ -348,7 +176,7 @@ class Attention(nn.Module):
 
         context = context if context is not None else x
 
-        if has_context and self.cross_attn_include_queries:
+        if has_context:
             context = torch.cat((x, context), dim=-2)
 
         k, v = self.to_kv(context).chunk(2, dim=-1)

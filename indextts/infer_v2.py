@@ -7,7 +7,6 @@ import logging
 import random
 import typing
 from collections.abc import Collection, Generator, Mapping, Sequence
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast, no_type_check
 
@@ -108,10 +107,6 @@ def _safe_torch_export_save(program: Any, path: str | Path) -> None:
     torch.export.save(program, path)
 
 
-# =============================================================================
-# Constants
-# =============================================================================
-
 OUTPUT_SR = 22050
 SEMANTIC_SR = 16000
 MAX_LEN = 15
@@ -121,70 +116,15 @@ _EMO_BIAS = (0.9375, 0.875, 1.0, 1.0, 0.9375, 0.9375, 0.6875, 0.5625)
 _MAX_EMO_SUM = 0.8
 
 
-# =============================================================================
-# Device Detection
-# =============================================================================
-
-
-@dataclass
-class DeviceConfig:
-    """Configuration for compute device and precision."""
-
-    device: str
-    use_fp16: bool
-    use_cuda_kernel: bool
-
-    @classmethod
-    def auto_detect(
-        cls,
-        device: str | None = None,
-        use_fp16: bool = False,
-        use_cuda_kernel: bool | None = None,
-    ) -> DeviceConfig:
-        """Auto-detect optimal device configuration.
-
-        Args:
-            device: Explicit device string or None for auto-detection
-            use_fp16: Whether to use FP16 precision
-            use_cuda_kernel: Whether to use custom CUDA kernels for BigVGAN
-
-        Returns:
-            DeviceConfig with optimal settings for the available hardware
-        """
-        if device is not None:
-            return cls(
-                device=device,
-                use_fp16=False if device == "cpu" else use_fp16,
-                use_cuda_kernel=(use_cuda_kernel is not None and use_cuda_kernel and device.startswith("cuda")),
-            )
-
-        # Auto-detect device
-        if torch.cuda.is_available():
-            return cls(
-                device="cuda:0",
-                use_fp16=use_fp16,
-                use_cuda_kernel=use_cuda_kernel is None or use_cuda_kernel,
-            )
-        if hasattr(torch, "xpu") and torch.xpu.is_available():
-            return cls(device="xpu", use_fp16=use_fp16, use_cuda_kernel=False)
-        if hasattr(torch, "mps") and torch.backends.mps.is_available():
-            # FP16 on MPS has overhead vs FP32
-            return cls(device="mps", use_fp16=False, use_cuda_kernel=False)
-
-        logger.info("Running on CPU - inference will be slow")
-        return cls(device="cpu", use_fp16=False, use_cuda_kernel=False)
-
-
-def _load_model[T: nn.Module](model: T, path: Path | str, device: str = "cpu") -> T:
+def _load_model[T: nn.Module](
+    model: T,
+    filename: Path | str,
+    device: torch.device = torch.get_default_device(),
+) -> T:
     """Load model weights from safetensors file."""
-    safetensors.torch.load_model(model, path, device=device, strict=False)
-    logger.info(f"{model.__class__.__name__} weights restored from: {path}")
+    safetensors.torch.load_model(model, filename, device=str(device), strict=False)
+    logger.info(f"{model.__class__.__name__} weights restored from: {filename}")
     return model.eval().to(device)
-
-
-# =============================================================================
-# Emotion Processing
-# =============================================================================
 
 
 def normalize_emo_vec(emo_vector: Sequence[float], apply_bias: bool = True) -> list[float]:
@@ -202,7 +142,8 @@ def normalize_emo_vec(emo_vector: Sequence[float], apply_bias: bool = True) -> l
 
     # Apply bias to de-emphasize problematic emotions
     if apply_bias:
-        result = [v * b for v, b in zip(result, _EMO_BIAS)]
+        pairs = zip[tuple[float, float]](result, _EMO_BIAS)
+        result: list[float] = [v * b for v, b in pairs]
 
     # Cap total sum at 0.8
     emo_sum = sum(result)
@@ -219,16 +160,11 @@ def _find_most_similar_cosine(query_vector: Tensor, matrix: Tensor) -> Tensor:
     return torch.argmax(similarities)
 
 
-# =============================================================================
-# IndexTTS2 Main Class
-# =============================================================================
-
-
 class IndexTTS2:
     """IndexTTS v2 text-to-speech synthesis engine."""
 
     # Type annotations
-    device: str
+    device: torch.device
     use_fp16: bool
     use_cuda_kernel: bool
     use_accel: bool
@@ -265,7 +201,7 @@ class IndexTTS2:
         model_dir: Path = Path("checkpoints"),
         use_fp16: bool = False,
         device: str | None = None,
-        use_cuda_kernel: bool | None = None,
+        use_cuda_kernel: bool = False,
         use_accel: bool = False,
     ) -> None:
         """Initialize IndexTTS2 synthesis engine.
@@ -279,16 +215,27 @@ class IndexTTS2:
             use_accel: Enable flash attention acceleration
         """
         # Configure device
-        dev_cfg = DeviceConfig.auto_detect(device, use_fp16, use_cuda_kernel)
-        self.device = dev_cfg.device
-        self.use_fp16 = dev_cfg.use_fp16
-        self.use_cuda_kernel = dev_cfg.use_cuda_kernel
+        self.use_cuda_kernel = use_cuda_kernel
+        self.use_fp16 = use_fp16
         self.use_accel = use_accel
-        self.gr_progress = None
+        if device is not None:
+            self.device = torch.device(device)
+        else:
+            self.device = torch.accelerator.current_accelerator() or torch.get_default_device()
 
-        if self.device.startswith("cuda"):
+        if self.device.type == "cuda":
+            # Enable high precision matmul on CUDA
             with contextlib.suppress(AttributeError):
                 torch.set_float32_matmul_precision("high")
+        else:
+            # Only allow CUDA kernels on CUDA devices
+            self.use_cuda_kernel = False
+        if self.device.type in ("cpu", "mps"):
+            # Don't use FP16 on CPU/MPS
+            self.use_fp16 = False
+
+        logger.info("Running on device: %s", self.device)
+        self.gr_progress = None
 
         # Load configuration
         self.cfg = CheckpointsConfig(**cast(Mapping[str, Any], OmegaConf.load(cfg_path)))
@@ -312,7 +259,7 @@ class IndexTTS2:
         self.extract_features = SeamlessM4TFeatureExtractor.from_pretrained("facebook/w2v-bert-2.0")
         self.semantic_model = Wav2Vec2BertModel.from_pretrained("facebook/w2v-bert-2.0").eval().to(self.device)
 
-        stat_mean_var = safetensors.safe_open(model_dir / cfg.w2v_stat, framework="pt", device=self.device)
+        stat_mean_var = safetensors.safe_open(model_dir / cfg.w2v_stat, framework="pt", device=str(self.device))
         self.semantic_mean = stat_mean_var.get_tensor("mean")
         self.semantic_std = torch.sqrt(stat_mean_var.get_tensor("var"))
 

@@ -99,14 +99,14 @@ class UnifiedVoice(nn.Module):
     text_head: nn.Linear
     mel_head: nn.Linear
 
-    def __init__(self, use_accel: bool = False, config: VoiceModelConfig | None = None) -> None:
+    def __init__(self, use_accel: bool = False, config: VoiceModelConfig = VoiceModelConfig()) -> None:
         super().__init__()
-        self.config = config or VoiceModelConfig()
+        self.config = config
 
         # -----------------------------------------------------------------
         # Conditioning encoders
         # -----------------------------------------------------------------
-        self.cond_mask_pad = nn.ConstantPad1d((self.config.cond_num, 0), True)
+        self.cond_mask_pad = nn.ConstantPad1d((config.cond_num, 0), True)
         self.emo_cond_mask_pad = nn.ConstantPad1d((1, 0), True)
 
         # Speaker conditioning encoder
@@ -118,11 +118,11 @@ class UnifiedVoice(nn.Module):
             num_blocks=6,
         )
         self.perceiver_encoder = PerceiverResampler(
-            self.config.model_dim,
+            config.model_dim,
             dim_context=512,
             ff_mult=2,
             heads=8,
-            num_latents=self.config.cond_num,
+            num_latents=config.cond_num,
         )
 
         # Emotion conditioning encoder (smaller architecture)
@@ -144,15 +144,15 @@ class UnifiedVoice(nn.Module):
         # -----------------------------------------------------------------
         # Embeddings
         # -----------------------------------------------------------------
-        self.text_embedding = nn.Embedding(self.config.number_text_tokens + 1, self.config.model_dim)
-        self.mel_embedding = nn.Embedding(self.config.number_mel_codes, self.config.model_dim)
+        self.text_embedding = nn.Embedding(config.number_text_tokens + 1, config.model_dim)
+        self.mel_embedding = nn.Embedding(config.number_mel_codes, config.model_dim)
 
         # Emotion projection layers
-        self.emo_layer = nn.Linear(self.config.model_dim, self.config.model_dim)
-        self.emovec_layer = nn.Linear(1024, self.config.model_dim)
+        self.emo_layer = nn.Linear(config.model_dim, config.model_dim)
+        self.emovec_layer = nn.Linear(1024, config.model_dim)
 
         # Speed/duration embedding (initialized to zero)
-        self.speed_emb = nn.Embedding(2, self.config.model_dim)
+        self.speed_emb = nn.Embedding(2, config.model_dim)
         self.speed_emb.weight.data.zero_()
 
         # GPT-2 style initialization
@@ -162,38 +162,38 @@ class UnifiedVoice(nn.Module):
         # -----------------------------------------------------------------
         # GPT-2 transformer + positional embeddings
         # -----------------------------------------------------------------
-        max_mel_seq_len = self.config.max_mel_tokens + 2 + self.config.max_conditioning_inputs
-        max_text_seq_len = self.config.max_text_tokens + 2
+        max_mel_sequence_len = config.max_mel_tokens + 2 + config.max_conditioning_inputs
+        max_text_sequence_len = config.max_text_tokens + 2
 
         gpt = GPT2Model(
             GPT2Config(
                 vocab_size=256,  # Unused.
-                n_positions=max_mel_seq_len + max_text_seq_len,
-                n_ctx=max_mel_seq_len + max_text_seq_len,
-                n_embd=self.config.model_dim,
-                n_layer=self.config.layers,
-                n_head=self.config.heads,
+                n_positions=max_mel_sequence_len + max_text_sequence_len,
+                n_ctx=max_mel_sequence_len + max_text_sequence_len,
+                n_embd=config.model_dim,
+                n_layer=config.layers,
+                n_head=config.heads,
                 use_cache=False,
             )
         )
 
         # Override the built in positional embeddings
         del gpt.wpe
-        gpt.wpe = NullPositionEmbedding(self.config.model_dim)
+        gpt.wpe = NullPositionEmbedding(config.model_dim)
 
         # Built-in token embeddings are unused.
         del gpt.wte
 
         self.gpt = gpt
-        self.mel_pos_embedding = LearnedPositionEmbeddings(max_mel_seq_len, self.config.model_dim)
-        self.text_pos_embedding = LearnedPositionEmbeddings(max_text_seq_len, self.config.model_dim)
+        self.mel_pos_embedding = LearnedPositionEmbeddings(max_mel_sequence_len, config.model_dim)
+        self.text_pos_embedding = LearnedPositionEmbeddings(max_text_sequence_len, config.model_dim)
 
         # -----------------------------------------------------------------
         # Output heads
         # -----------------------------------------------------------------
-        self.final_norm = nn.LayerNorm(self.config.model_dim)
-        self.text_head = nn.Linear(self.config.model_dim, self.config.number_text_tokens + 1)
-        self.mel_head = nn.Linear(self.config.model_dim, self.config.number_mel_codes)
+        self.final_norm = nn.LayerNorm(config.model_dim)
+        self.text_head = nn.Linear(config.model_dim, config.number_text_tokens + 1)
+        self.mel_head = nn.Linear(config.model_dim, config.number_mel_codes)
 
         # Runtime state
         self.use_accel = use_accel

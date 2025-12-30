@@ -18,7 +18,6 @@ from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.inference_model import GPT2InferenceModel, NullPositionEmbedding
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
 from indextts.gpt.perceiver import PerceiverResampler
-from indextts.gpt.utils import set_token_padding
 from indextts.util import patch_call
 
 if typing.TYPE_CHECKING:
@@ -69,9 +68,9 @@ class VoiceModelConfig:
         return self.max_mel_tokens + self.max_text_tokens + 2
 
 
-def _set_token_padding(input_tokens: Tensor, start_token: int, stop_token: int) -> Tensor:
-    mask = (input_tokens == stop_token).cummax(dim=-1).values
-    tokens = input_tokens.masked_fill_(mask, stop_token)
+def set_token_padding(tokens: Tensor, start_token: int, stop_token: int) -> Tensor:
+    mask = (tokens == stop_token).cummax(dim=-1).values
+    tokens = tokens.masked_fill_(mask, stop_token)
     tokens = F.pad(tokens, (0, 1), value=stop_token)
     tokens = F.pad(tokens, (1, 0), value=start_token)
     return tokens
@@ -305,26 +304,15 @@ class UnifiedVoice(nn.Module):
             Mel latent representations (batch, mel_len, dim)
         """
         # Prepare text and mel tokens
-        text_inputs = set_token_padding(text_inputs, self.config.stop_text_token)
-        text_inputs = F.pad(text_inputs, (0, 1), value=self.config.stop_text_token)
-
-        mel_codes = set_token_padding(mel_codes, self.config.stop_mel_token)
-        mel_codes = F.pad(mel_codes, (0, 1), value=self.config.stop_mel_token)
-
-        # Build conditioning
-        conds = self._build_conditioning_concat(speech_conditioning_latent, emo_vec, use_speed)
-
-        # Build aligned inputs
-        text_inputs = F.pad(text_inputs, (1, 0), value=self.config.start_text_token)
+        text_inputs = set_token_padding(text_inputs, self.config.start_text_token, self.config.stop_text_token)
         text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs)
 
-        mel_codes = F.pad(mel_codes, (1, 0), value=self.config.start_mel_token)
-
+        mel_codes = set_token_padding(mel_codes, self.config.start_mel_token, self.config.stop_mel_token)
         mel_emb = self.mel_embedding(mel_codes) + self.mel_pos_embedding(mel_codes)
 
         # Get latent representations
-        parts = [conds, text_emb, mel_emb]
-        emb = torch.cat(parts, dim=1)
+        conds = self._build_conditioning_concat(speech_conditioning_latent, emo_vec, use_speed)
+        emb = torch.cat([conds, text_emb, mel_emb], dim=1)
 
         # GPT forward pass
         gpt_out = self.gpt(inputs_embeds=emb, return_dict=True)

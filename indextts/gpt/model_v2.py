@@ -319,7 +319,7 @@ class UnifiedVoice(nn.Module):
         target_len = conditional_latents.shape[1] + text_len + 2
         batched_mel_embs: list[Tensor] = []
         attention_masks: list[Tensor] = []
-        with conditional_latents.device:
+        with text_inputs.device, torch.autocast(device_type=text_inputs.device.type, dtype=torch.long):
             for i in range(batch_size):
                 cond_latent = conditional_latents.squeeze(0) if single_cond else conditional_latents[i]
                 text_input = text_inputs[i]
@@ -330,17 +330,17 @@ class UnifiedVoice(nn.Module):
                 text_input = F.pad(text_input, (0, 1), value=STOP_TEXT_TOKEN)
 
                 # Compute text embeddings
-                text_pos = torch.arange(text_input.size(-1), dtype=torch.long)
+                text_pos = torch.arange(text_input.size(-1))
                 text_emb = self.text_embedding(text_input) + self.text_pos_embedding.emb(text_pos)
 
                 # Build sequence: [optional_pad][cond][text]
                 parts: list[Tensor] = [cond_latent, text_emb]
-                attn_mask = torch.ones(target_len + 1, dtype=torch.long)
+                attn_mask = torch.ones(target_len + 1)
 
                 # Add left padding if needed
                 padding = text_len + 2 - text_input.size(-1)
                 if padding > 0:
-                    pad = torch.zeros((padding, cond_latent.size(-1)), dtype=text_emb.dtype)
+                    pad = torch.zeros((padding, cond_latent.size(-1)))
                     parts.insert(0, pad)
                     attn_mask[:padding] = 0
 
@@ -355,7 +355,7 @@ class UnifiedVoice(nn.Module):
             attention_mask = torch.stack(attention_masks)
 
             # Create fake input IDs with start_mel_token at the end
-            fake_inputs = torch.ones((batch_size, target_len + 1), dtype=torch.long)
+            fake_inputs = torch.ones((batch_size, target_len + 1))
             fake_inputs[:, -1] = START_MEL_TOKEN
 
         return fake_inputs, batched_mel_emb, attention_mask

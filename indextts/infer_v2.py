@@ -593,7 +593,7 @@ class IndexTTS2:
                 speech_conditioning_latent=speech_conditioning_latent[seg_idx : seg_idx + 1],
                 text_inputs=batch_text_tokens[seg_idx].unsqueeze(0),
                 mel_codes=code,
-                emo_vec=emovec,
+                emotion_vector=emovec,
                 use_speed=torch.zeros(spk_cond_emb.size(0), device=device).long(),
             )
 

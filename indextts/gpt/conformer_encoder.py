@@ -21,8 +21,8 @@ class ConformerEncoder(nn.Module):
 
     def __init__(
         self,
-        input_size: int,
-        output_size: int = 256,
+        input_size: int = 1024,
+        output_size: int = 512,
         attention_heads: int = 4,
         linear_units: int = 2048,
         num_blocks: int = 6,

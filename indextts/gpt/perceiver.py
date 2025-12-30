@@ -255,51 +255,47 @@ class GEGLU(nn.Module):
     def __call__(self) -> None: ...
 
 
-def _feed_forward(dim: int, mult: int = 4, causal_conv: bool = False) -> Sequential[nn.Module]:
-    dim_inner = int(dim * mult * 2 / 3)
+def _feed_forward(dim: int) -> Sequential[nn.Module]:
+    dim_inner = int(dim * 4 / 3)
 
-    conv = None
-    if causal_conv:
-        conv = nn.Sequential(
-            _Transpose(1, 2),
-            CausalConv1d(dim_inner, dim_inner, 3),
-            _Transpose(1, 2),
-        )
-
-    mods = (nn.Linear(dim, dim_inner * 2), GEGLU(), conv, nn.Linear(dim_inner, dim))
-    return nn.Sequential(*(m for m in mods if m is not None))
+    return nn.Sequential(
+        nn.Linear(dim, dim_inner * 2),
+        GEGLU(),
+        nn.Linear(dim_inner, dim),
+    )
 
 
 class PerceiverResampler(nn.Module):
     def __init__(
         self,
-        dim: int,
-        depth: int = 2,
-        dim_context: int | None = None,
-        num_latents: int = 32,
-        dim_head: int = 64,
+        dim: int = 512,
         heads: int = 8,
-        ff_mult: int = 4,
-        use_flash_attn: bool = False,
+        num_latents: int = 32,
     ) -> None:
+        depth: int = 2
+        dim_context: int = 512
+        dim_head: int = 64
         super().__init__()
-        dim_context = dim_context if dim_context is not None else dim
 
-        self.proj_context = nn.Linear(dim_context, dim) if dim_context != dim else nn.Identity()
+        self.proj_context = nn.Linear(dim_context, dim)
 
         self.latents = nn.Parameter(torch.randn(num_latents, dim))
         nn.init.normal_(self.latents, std=0.02)
 
+        dim_inner = int(dim * 4 / 3)
         self.layers = nn.ModuleList([
             nn.ModuleList([
                 Attention(
                     dim=dim,
                     dim_head=dim_head,
                     heads=heads,
-                    use_flash=use_flash_attn,
                     cross_attn_include_queries=True,
                 ),
-                _feed_forward(dim=dim, mult=ff_mult),
+                nn.Sequential(
+                    nn.Linear(dim, dim_inner * 2),
+                    GEGLU(),
+                    nn.Linear(dim_inner, dim),
+                ),
             ])
             for _ in range(depth)
         ])

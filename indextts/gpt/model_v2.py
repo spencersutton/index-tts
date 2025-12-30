@@ -103,36 +103,12 @@ class UnifiedVoice(nn.Module):
         self.emo_cond_mask_pad = nn.ConstantPad1d((1, 0), True)
 
         # Speaker conditioning encoder
-        self.conditioning_encoder = ConformerEncoder(
-            input_size=1024,
-            output_size=512,
-            linear_units=2048,
-            attention_heads=8,
-            num_blocks=6,
-        )
-        self.perceiver_encoder = PerceiverResampler(
-            MODEL_DIM,
-            dim_context=512,
-            ff_mult=2,
-            heads=8,
-            num_latents=COND_NUM,
-        )
+        self.conditioning_encoder = ConformerEncoder(linear_units=2048, attention_heads=8, num_blocks=6)
+        self.perceiver_encoder = PerceiverResampler(MODEL_DIM, heads=8, num_latents=COND_NUM)
 
         # Emotion conditioning encoder (smaller architecture)
-        self.emo_conditioning_encoder = ConformerEncoder(
-            input_size=1024,
-            output_size=512,
-            linear_units=1024,
-            attention_heads=4,
-            num_blocks=4,
-        )
-        self.emo_perceiver_encoder = PerceiverResampler(
-            1024,
-            dim_context=512,
-            ff_mult=2,
-            heads=4,
-            num_latents=1,
-        )
+        self.emo_conditioning_encoder = ConformerEncoder(linear_units=1024, attention_heads=4, num_blocks=4)
+        self.emo_perceiver_encoder = PerceiverResampler(1024, heads=4, num_latents=1)
 
         # -----------------------------------------------------------------
         # Embeddings

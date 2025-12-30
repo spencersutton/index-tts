@@ -4,7 +4,6 @@ import importlib.util
 import logging
 import time
 import typing
-from dataclasses import dataclass
 from typing import Any, override
 
 import torch
@@ -27,45 +26,8 @@ logger = logging.getLogger(__name__)
 
 
 # =============================================================================
-# Model Configuration
+# Model helpers
 # =============================================================================
-
-
-@dataclass(frozen=True)
-class VoiceModelConfig:
-    """Configuration constants for UnifiedVoice model."""
-
-    # Token vocabulary sizes
-    number_text_tokens: int = 12000
-    number_mel_codes: int = 8194
-
-    # Special tokens
-    start_text_token: int = 0
-    stop_text_token: int = 1
-    start_mel_token: int = 8192
-    stop_mel_token: int = 8193
-
-    # Model architecture
-    layers: int = 24
-    heads: int = 20
-    model_dim: int = 1280
-
-    # Sequence lengths
-    max_mel_tokens: int = 1815
-    max_text_tokens: int = 600
-    max_conditioning_inputs: int = 1
-
-    # Conditioning
-    cond_num: int = 32
-    mel_length_compression: int = 1024
-
-    @property
-    def head_dim(self) -> int:
-        return self.model_dim // self.heads
-
-    @property
-    def seq_length(self) -> int:
-        return self.max_mel_tokens + self.max_text_tokens + 2
 
 
 def get_embedding(
@@ -89,7 +51,21 @@ class UnifiedVoice(nn.Module):
     inference_model: GPT2InferenceModel | None
     use_accel: bool
     accel_engine: AccelInferenceEngine | None = None
-    config: VoiceModelConfig
+
+    number_text_tokens: int
+    number_mel_codes: int
+    start_text_token: int
+    stop_text_token: int
+    start_mel_token: int
+    stop_mel_token: int
+    layers: int
+    heads: int
+    model_dim: int
+    max_mel_tokens: int
+    max_text_tokens: int
+    max_conditioning_inputs: int
+    cond_num: int
+    mel_length_compression: int
     conditioning_encoder: ConformerEncoder
     emo_conditioning_encoder: ConformerEncoder
     perceiver_encoder: PerceiverResampler
@@ -106,14 +82,54 @@ class UnifiedVoice(nn.Module):
     text_head: nn.Linear
     mel_head: nn.Linear
 
-    def __init__(self, use_accel: bool = False, config: VoiceModelConfig = VoiceModelConfig()) -> None:
+    def __init__(
+        self,
+        *,
+        use_accel: bool = False,
+        # Token vocabulary sizes
+        number_text_tokens: int = 12000,
+        number_mel_codes: int = 8194,
+        # Special tokens
+        start_text_token: int = 0,
+        stop_text_token: int = 1,
+        start_mel_token: int = 8192,
+        stop_mel_token: int = 8193,
+        # Model architecture
+        layers: int = 24,
+        heads: int = 20,
+        model_dim: int = 1280,
+        # Sequence lengths
+        max_mel_tokens: int = 1815,
+        max_text_tokens: int = 600,
+        max_conditioning_inputs: int = 1,
+        # Conditioning
+        cond_num: int = 32,
+        mel_length_compression: int = 1024,
+    ) -> None:
         super().__init__()
-        self.config = config
+
+        self.use_accel = use_accel
+
+        # Store configuration values
+        self.number_text_tokens = number_text_tokens
+        self.number_mel_codes = number_mel_codes
+        self.start_text_token = start_text_token
+        self.stop_text_token = stop_text_token
+        self.start_mel_token = start_mel_token
+        self.stop_mel_token = stop_mel_token
+        self.layers = layers
+        self.heads = heads
+        self.model_dim = model_dim
+        self.max_mel_tokens = max_mel_tokens
+        self.max_text_tokens = max_text_tokens
+        self.max_conditioning_inputs = max_conditioning_inputs
+        self.cond_num = cond_num
+        self.mel_length_compression = mel_length_compression
 
         # -----------------------------------------------------------------
         # Conditioning encoders
         # -----------------------------------------------------------------
-        self.cond_mask_pad = nn.ConstantPad1d((config.cond_num, 0), True)
+        self.cond_mask_pad = nn.ConstantPad1d((cond_num, 0), True)
         self.emo_cond_mask_pad = nn.ConstantPad1d((1, 0), True)
 
         # Speaker conditioning encoder
@@ -125,11 +141,11 @@ class UnifiedVoice(nn.Module):
             num_blocks=6,
         )
         self.perceiver_encoder = PerceiverResampler(
-            config.model_dim,
+            model_dim,
             dim_context=512,
             ff_mult=2,
             heads=8,
-            num_latents=config.cond_num,
+            num_latents=cond_num,
         )
 
         # Emotion conditioning encoder (smaller architecture)
@@ -151,15 +167,15 @@ class UnifiedVoice(nn.Module):
         # -----------------------------------------------------------------
         # Embeddings
         # -----------------------------------------------------------------
-        self.text_embedding = nn.Embedding(config.number_text_tokens + 1, config.model_dim)
-        self.mel_embedding = nn.Embedding(config.number_mel_codes, config.model_dim)
+        self.text_embedding = nn.Embedding(number_text_tokens + 1, model_dim)
+        self.mel_embedding = nn.Embedding(number_mel_codes, model_dim)
 
         # Emotion projection layers
-        self.emo_layer = nn.Linear(config.model_dim, config.model_dim)
-        self.emovec_layer = nn.Linear(1024, config.model_dim)
+        self.emo_layer = nn.Linear(model_dim, model_dim)
+        self.emovec_layer = nn.Linear(1024, model_dim)
 
         # Speed/duration embedding (initialized to zero)
-        self.speed_emb = nn.Embedding(2, config.model_dim)
+        self.speed_emb = nn.Embedding(2, model_dim)
         self.speed_emb.weight.data.zero_()
 
         # GPT-2 style initialization
@@ -169,53 +185,60 @@ class UnifiedVoice(nn.Module):
         # -----------------------------------------------------------------
         # GPT-2 transformer + positional embeddings
         # -----------------------------------------------------------------
-        max_mel_sequence_len = config.max_mel_tokens + 2 + config.max_conditioning_inputs
-        max_text_sequence_len = config.max_text_tokens + 2
+        max_mel_sequence_len = max_mel_tokens + 2 + max_conditioning_inputs
+        max_text_sequence_len = max_text_tokens + 2
 
         gpt = GPT2Model(
             GPT2Config(
                 vocab_size=256,  # Unused.
                 n_positions=max_mel_sequence_len + max_text_sequence_len,
                 n_ctx=max_mel_sequence_len + max_text_sequence_len,
-                n_embd=config.model_dim,
-                n_layer=config.layers,
-                n_head=config.heads,
+                n_embd=model_dim,
+                n_layer=layers,
+                n_head=heads,
                 use_cache=False,
             )
         )
 
         # Override the built in positional embeddings
         del gpt.wpe
-        gpt.wpe = NullPositionEmbedding(config.model_dim)
+        gpt.wpe = NullPositionEmbedding(model_dim)
 
         # Built-in token embeddings are unused.
         del gpt.wte
 
         self.gpt = gpt
-        self.mel_pos_embedding = LearnedPositionEmbeddings(max_mel_sequence_len, config.model_dim)
-        self.text_pos_embedding = LearnedPositionEmbeddings(max_text_sequence_len, config.model_dim)
+        self.mel_pos_embedding = LearnedPositionEmbeddings(max_mel_sequence_len, model_dim)
+        self.text_pos_embedding = LearnedPositionEmbeddings(max_text_sequence_len, model_dim)
 
         # -----------------------------------------------------------------
         # Output heads
         # -----------------------------------------------------------------
-        self.final_norm = nn.LayerNorm(config.model_dim)
-        self.text_head = nn.Linear(config.model_dim, config.number_text_tokens + 1)
-        self.mel_head = nn.Linear(config.model_dim, config.number_mel_codes)
+        self.final_norm = nn.LayerNorm(model_dim)
+        self.text_head = nn.Linear(model_dim, number_text_tokens + 1)
+        self.mel_head = nn.Linear(model_dim, number_mel_codes)
 
         # Runtime state
-        self.use_accel = use_accel
         self.accel_engine = None
         self.inference_model = None
+
+    @property
+    def head_dim(self) -> int:
+        return self.model_dim // self.heads
+
+    @property
+    def seq_length(self) -> int:
+        return self.max_mel_tokens + self.max_text_tokens + 2
 
     def post_init_gpt2_config(self, half: bool = False) -> None:
         """Initialize inference components after model loading."""
         gpt_config = GPT2Config(
-            vocab_size=self.config.number_mel_codes,
-            n_positions=self.config.seq_length,
-            n_ctx=self.config.seq_length,
-            n_embd=self.config.model_dim,
-            n_layer=self.config.layers,
-            n_head=self.config.heads,
+            vocab_size=self.number_mel_codes,
+            n_positions=self.seq_length,
+            n_ctx=self.seq_length,
+            n_embd=self.model_dim,
+            n_layer=self.layers,
+            n_head=self.heads,
             gradient_checkpointing=False,
             use_cache=True,
         )
@@ -237,9 +260,9 @@ class UnifiedVoice(nn.Module):
             self.accel_engine = AccelInferenceEngine(
                 model=accel_gpt,
                 lm_head=lm_head_with_norm,
-                num_layers=self.config.layers,
-                num_heads=self.config.heads,
-                head_dim=self.config.head_dim,
+                num_layers=self.layers,
+                num_heads=self.heads,
+                head_dim=self.head_dim,
                 block_size=256,
                 num_blocks=16,  # 16 * 256 = 4096 tokens capacity
                 use_cuda_graph=True,
@@ -299,15 +322,15 @@ class UnifiedVoice(nn.Module):
         # Prepare text and mel tokens
         text_emb = get_embedding(
             text_inputs,
-            self.config.start_text_token,
-            self.config.stop_text_token,
+            self.start_text_token,
+            self.stop_text_token,
             self.text_embedding,
             self.text_pos_embedding,
         )
         mel_emb = get_embedding(
             mel_codes,
-            self.config.start_mel_token,
-            self.config.stop_mel_token,
+            self.start_mel_token,
+            self.stop_mel_token,
             self.mel_embedding,
             self.mel_pos_embedding,
         )
@@ -362,10 +385,10 @@ class UnifiedVoice(nn.Module):
             cond_latent = conditional_latents.squeeze(0) if single_cond else conditional_latents[i]
             text_input = text_inputs[i]
             # Filter out special tokens and add start/stop
-            valid_mask = (text_input != self.config.stop_text_token) & (text_input != self.config.start_text_token)
+            valid_mask = (text_input != self.stop_text_token) & (text_input != self.start_text_token)
             text_input = text_input[valid_mask]
-            text_input = F.pad(text_input, (1, 0), value=self.config.start_text_token)
-            text_input = F.pad(text_input, (0, 1), value=self.config.stop_text_token)
+            text_input = F.pad(text_input, (1, 0), value=self.start_text_token)
+            text_input = F.pad(text_input, (0, 1), value=self.stop_text_token)
 
             # Compute text embeddings
             text_pos = torch.arange(text_input.size(-1), device=cond_latent.device, dtype=torch.long)
@@ -398,7 +421,7 @@ class UnifiedVoice(nn.Module):
 
         # Create fake input IDs with start_mel_token at the end
         fake_inputs = torch.ones((batch_size, target_len + 1), dtype=torch.long, device=batched_mel_emb.device)
-        fake_inputs[:, -1] = self.config.start_mel_token
+        fake_inputs[:, -1] = self.start_mel_token
 
         return fake_inputs, batched_mel_emb, attention_mask
 
@@ -479,9 +502,7 @@ class UnifiedVoice(nn.Module):
 
         trunc_index = inputs.shape[1]
         max_length = (
-            trunc_index + self.config.max_mel_tokens - 1
-            if max_generate_length is None
-            else trunc_index + max_generate_length
+            trunc_index + self.max_mel_tokens - 1 if max_generate_length is None else trunc_index + max_generate_length
         )
 
         # Generate
@@ -492,7 +513,7 @@ class UnifiedVoice(nn.Module):
                 inputs,
                 attention_mask=attention_mask,
                 max_new_tokens=max_length - trunc_index,
-                stop_tokens=[self.config.stop_mel_token],
+                stop_tokens=[self.stop_mel_token],
                 temperature=temperature,
                 tts_embeddings=inputs_embeds,
                 tts_mel_embedding=self.inference_model.embeddings,
@@ -502,12 +523,12 @@ class UnifiedVoice(nn.Module):
             output = self.inference_model.generate(
                 inputs,
                 attention_mask=attention_mask,
-                bos_token_id=self.config.start_mel_token,
-                eos_token_id=self.config.stop_mel_token,
+                bos_token_id=self.start_mel_token,
+                eos_token_id=self.stop_mel_token,
                 logits_processor=logits_processor,
                 max_length=max_length,
                 num_return_sequences=1,
-                pad_token_id=self.config.stop_mel_token,
+                pad_token_id=self.stop_mel_token,
                 **hf_generate_kwargs,
             )
 

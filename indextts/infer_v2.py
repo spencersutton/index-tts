@@ -544,7 +544,7 @@ class IndexTTS2:
         ]
         # Pad batch
         text_tokens_batch = nn.utils.rnn.pad_sequence(
-            batch_text_tokens, batch_first=True, padding_value=self.gpt.config.stop_text_token
+            batch_text_tokens, batch_first=True, padding_value=self.gpt.stop_text_token
         )
         batch_size = text_tokens_batch.size(0)
 

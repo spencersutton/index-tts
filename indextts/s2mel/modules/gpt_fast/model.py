@@ -8,7 +8,7 @@
 
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from typing import Final, override
+from typing import override
 
 import torch
 from torch import Tensor, nn
@@ -74,8 +74,8 @@ class ModelArgs:
 
 
 class Transformer(nn.Module):
-    max_batch_size: Final = 1
-    max_seq_length: Final = 8192
+    max_batch_size = 1
+    max_seq_length = 8192
     freqs_cis: Tensor
     mask_cache: Tensor | None = None
     layers: "Iterable[TransformerBlock]"

@@ -207,9 +207,14 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
             emb = torch.cat([mel_emb, text_emb], dim=1)
         else:
             assert attention_mask is not None
-            emb = self.embeddings(input_ids) + self.text_pos_embedding.emb(
-                torch.tensor([attention_mask.shape[1] - mel_len], device=input_ids.device)
-            ).unsqueeze(0)
+            # Decode step (past_key_values active): `input_ids` contains only the last token.
+            # During the initial step (prompt + START_MEL), the generated-part positions start at 0
+            # (see the branch above using arange over `text_inputs`). For subsequent steps, the
+            # current position is (total_seq_len - prompt_len - 1).
+            pos_idx = attention_mask.shape[1] - mel_len - 1
+            # Avoid per-step tensor allocation by indexing the embedding table with a Python int.
+            pos_emb = self.text_pos_embedding.emb.weight[pos_idx].unsqueeze(0)
+            emb = self.embeddings(input_ids) + pos_emb
 
         transformer_outputs = self.transformer(
             inputs_embeds=emb,

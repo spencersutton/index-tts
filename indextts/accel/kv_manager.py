@@ -1,5 +1,6 @@
 import hashlib
-import pickle  # noqa: S403
+import sys
+from array import array
 from collections import deque
 from collections.abc import Iterable, Sequence
 from typing import overload, override
@@ -124,12 +125,18 @@ class KVCacheManager:
 
     @classmethod
     def compute_block_hash(cls, token_ids: Iterable[int], parent_hash: bytes | None = None) -> bytes:
-        hash_input: list[bytes | int] = []
+        # Fast, deterministic hash for KV blocks.
+        # The previous implementation used pickle, which is significantly slower and adds overhead
+        # during repeated block lookups/allocations.
+        h = hashlib.sha256()
         if parent_hash is not None:
-            hash_input.append(parent_hash)
-        hash_input.extend(token_ids)
-        input_bytes = pickle.dumps(tuple(hash_input), protocol=pickle.HIGHEST_PROTOCOL)
-        return hashlib.sha256(input_bytes).digest()
+            h.update(parent_hash)
+        # Pack ints into bytes efficiently. Ensure a stable byte order across platforms.
+        arr = array("I", token_ids)
+        if sys.byteorder != "little":
+            arr.byteswap()
+        h.update(arr.tobytes())
+        return h.digest()
 
     def _allocate_block(self, block_id: int) -> KVCacheBlock:
         block = self.blocks[block_id]

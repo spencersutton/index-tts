@@ -27,14 +27,7 @@ class Conv1dWrapper(nn.Module):
         dilation: int = 1,
     ) -> None:
         super().__init__()
-        self.conv = weight_norm(
-            nn.Conv1d(
-                in_channels,
-                out_channels,
-                kernel_size,
-                dilation=dilation,
-            )
-        )
+        self.conv = weight_norm(nn.Conv1d(in_channels, out_channels, kernel_size, dilation=dilation))
 
     @override
     def forward(self, x: Tensor) -> Tensor:
@@ -57,12 +50,7 @@ class SConv1d(nn.Module):
         dilation: int = 1,
     ) -> None:
         super().__init__()
-        self.conv = Conv1dWrapper(
-            in_channels,
-            out_channels,
-            kernel_size,
-            dilation=dilation,
-        )
+        self.conv = Conv1dWrapper(in_channels, out_channels, kernel_size, dilation)
 
     @override
     def forward(self, x: Tensor) -> Tensor:

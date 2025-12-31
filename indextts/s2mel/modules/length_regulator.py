@@ -14,8 +14,8 @@ IN_CHANNELS = 1024
 
 
 class InterpolateRegulator(nn.Module):
-    model: nn.Sequential[nn.Module]
     content_in_proj: nn.Linear
+    model: nn.Sequential[nn.Module]
 
     def __init__(self) -> None:
         super().__init__()

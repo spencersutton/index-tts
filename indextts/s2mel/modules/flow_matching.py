@@ -9,8 +9,8 @@ from indextts.util import patch_call
 
 
 class CFM(nn.Module):
-    estimator: DiT
     criterion = nn.L1Loss()
+    estimator: DiT
     in_channels: int
     sigma_min = 1e-6
 

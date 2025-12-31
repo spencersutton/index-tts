@@ -221,24 +221,13 @@ ignore = [
   "UP049",
 ]
 
-[tool.pyright]
-enableTypeIgnoreComments = true
-ignore = ["./tools", "./tests"]
-reportCallInDefaultInitializer = false
-reportExplicitAny = false
-reportImplicitStringConcatenation = false
-reportUnusedCallResult = false
-stubPath = "./typings"
-typeshedPath = "../typeshed"
-useLibraryCodeForTypes = false
-
 [tool.ty.environment]
-typeshed = "../typeshed"
 extra-paths = ["./typings"]
+typeshed = "../typeshed"
 
 [tool.ty.rules]
-unused-ignore-comment = "warn"
 possibly-unresolved-reference = "warn"
+unused-ignore-comment = "warn"
 
 [tool.ty.src]
-exclude = ["./tools", "./tests"]
+exclude = ["./tools", "./tests", "./typings"]

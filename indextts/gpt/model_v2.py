@@ -319,43 +319,43 @@ class UnifiedVoice(nn.Module):
         target_len = cond_latents.shape[1] + input_len + 2
         batched_mel_embs: list[Tensor] = []
         attn_masks: list[Tensor] = []
-        with inputs.device, torch.autocast(device_type=inputs.device.type, dtype=torch.long):
-            for i in range(batch_size):
-                cond_latent = cond_latents.squeeze(0) if single_cond else cond_latents[i]
-                input = inputs[i]
-                # Filter out special tokens and add start/stop
-                valid_mask = (input != STOP_TEXT_TOKEN) & (input != START_TEXT_TOKEN)
-                input = input[valid_mask]
-                input = F.pad(input, (1, 0), value=START_TEXT_TOKEN)
-                input = F.pad(input, (0, 1), value=STOP_TEXT_TOKEN)
+        device = inputs.device
+        for i in range(batch_size):
+            cond_latent = cond_latents.squeeze(0) if single_cond else cond_latents[i]
+            input = inputs[i]
+            # Filter out special tokens and add start/stop
+            valid_mask = (input != STOP_TEXT_TOKEN) & (input != START_TEXT_TOKEN)
+            input = input[valid_mask]
+            input = F.pad(input, (1, 0), value=START_TEXT_TOKEN)
+            input = F.pad(input, (0, 1), value=STOP_TEXT_TOKEN)
 
-                # Compute text embeddings
-                pos = torch.arange(input.size(-1))
-                embeddings = self.text_embedding(input) + self.text_pos_embedding.emb(pos)
+            # Compute text embeddings
+            pos = torch.arange(input.size(-1), device=device, dtype=torch.long)
+            embeddings = self.text_embedding(input) + self.text_pos_embedding.emb(pos)
 
-                # Build sequence: [optional_pad][cond][text]
-                parts: list[Tensor] = [cond_latent, embeddings]
-                attn_mask = torch.ones(target_len + 1)
+            # Build sequence: [optional_pad][cond][text]
+            parts: list[Tensor] = [cond_latent, embeddings]
+            attn_mask = torch.ones(target_len + 1, device=device, dtype=torch.long)
 
-                # Add left padding if needed
-                padding = input_len + 2 - input.size(-1)
-                if padding > 0:
-                    parts.insert(0, torch.zeros((padding, cond_latent.size(-1))))
-                    attn_mask[:padding] = 0
+            # Add left padding if needed
+            padding = input_len + 2 - input.size(-1)
+            if padding > 0:
+                parts.insert(0, cond_latent.new_zeros((padding, cond_latent.size(-1))))
+                attn_mask[:padding] = 0
 
-                mel_emb = torch.cat(parts)
-                assert mel_emb.shape[0] == target_len, f"mel_emb.shape: {mel_emb.shape}, target_len: {target_len}"
+            mel_emb = torch.cat(parts)
+            assert mel_emb.shape[0] == target_len, f"mel_emb.shape: {mel_emb.shape}, target_len: {target_len}"
 
-                batched_mel_embs.append(mel_emb)
-                attn_masks.append(attn_mask)
+            batched_mel_embs.append(mel_emb)
+            attn_masks.append(attn_mask)
 
-            # Stack batched outputs
-            batched_mel_emb = torch.stack(batched_mel_embs)
-            attn_mask = torch.stack(attn_masks)
+        # Stack batched outputs
+        batched_mel_emb = torch.stack(batched_mel_embs)
+        attn_mask = torch.stack(attn_masks)
 
-            # Create fake input IDs with start_mel_token at the end
-            fake_inputs = torch.ones((batch_size, target_len + 1))
-            fake_inputs[:, -1] = START_MEL_TOKEN
+        # Create fake input IDs with start_mel_token at the end
+        fake_inputs = torch.ones((batch_size, target_len + 1), device=device, dtype=torch.long)
+        fake_inputs[:, -1] = START_MEL_TOKEN
 
         return fake_inputs, batched_mel_emb, attn_mask
 

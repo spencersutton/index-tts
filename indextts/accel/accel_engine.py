@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import sys
+import logging
 from collections.abc import MutableMapping, Sequence
 from typing import cast, override
 
@@ -12,6 +12,8 @@ from indextts.accel.gpt2_accel import GPT2AccelModel
 from indextts.accel.kv_manager import KVCacheManager, Seq
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
 from indextts.util import patch_call
+
+logger = logging.getLogger(__name__)
 
 
 class Sampler(nn.Module):
@@ -107,7 +109,7 @@ class AccelInferenceEngine:
         for req in requests:
             seqlen = len(req)
             input_ids.extend(req[req.num_cached_tokens :])
-            positions.extend(list(range(req.num_cached_tokens, seqlen)))
+            positions.extend(range(req.num_cached_tokens, seqlen))
             seqlen_q = seqlen - req.num_cached_tokens
             seqlen_k = seqlen
             cu_seqlens_q.append(cu_seqlens_q[-1] + seqlen_q)
@@ -207,7 +209,7 @@ class AccelInferenceEngine:
         tts_mel_embedding: nn.Embedding,
         tts_text_pos_embedding: LearnedPositionEmbeddings,
     ) -> None:
-        print("Capturing CUDA graphs for decode optimization...")
+        logger.info("Capturing CUDA graphs for decode optimization...")
         max_bs = 8  # Support up to batch size 8
         max_num_blocks = (2048 + self.block_size - 1) // self.block_size
         model_dtype = next(self.model.parameters()).dtype
@@ -279,7 +281,7 @@ class AccelInferenceEngine:
             "outputs": outputs,
             "inputs_embeds": inputs_embeds_buffer,
         }
-        print(f"CUDA graphs captured for batch sizes: {self.graph_bs}")
+        logger.info(f"CUDA graphs captured for batch sizes: {self.graph_bs}")
 
     def _run_decode_with_graph(
         self,
@@ -366,21 +368,13 @@ class AccelInferenceEngine:
         self._tts_prompt_len = input_ids.size(1)
 
         if self.use_cuda_graph and not self.graph_captured:
-            print(
-                f"[CAPTURE] use_cuda_graph={self.use_cuda_graph}, graph_captured={self.graph_captured}",
-                file=sys.stderr,
-                flush=True,
-            )
+            logger.info(f"[CAPTURE] use_cuda_graph={self.use_cuda_graph}, graph_captured={self.graph_captured}")
             self._capture_cuda_graphs(
                 tts_mel_embedding=tts_mel_embedding,
                 tts_text_pos_embedding=tts_text_pos_embedding,
             )
             self.graph_captured = True
-            print(
-                f"[CAPTURE] Completed! graphs={list(self.graphs.keys())}",
-                file=sys.stderr,
-                flush=True,
-            )
+            logger.info(f"[CAPTURE] Completed! graphs={list(self.graphs.keys())}")
 
         actual_seq_len = tts_embeddings.size(1) + 1  # embeddings + start_mel_token
 
@@ -429,7 +423,8 @@ class AccelInferenceEngine:
         else:
             full_embeddings = torch.cat([tts_embeddings, start_emb], dim=1)  # [batch_size, seq_len, hidden_dim]
 
-        model_dtype = next(self.model.parameters()).dtype
+        a = self.model.parameters()
+        model_dtype = next(a).dtype
         if full_embeddings.dtype != model_dtype:
             full_embeddings = full_embeddings.to(model_dtype)
 

@@ -62,10 +62,19 @@ class TextNormalizer:
             **self.char_rep_map,
         }
 
+        # Pre-compile regex patterns (normalization runs frequently and should avoid re-compilation).
+        self._email_re = re.compile(r"^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]+$")
+        self._en_contraction_re = re.compile(TextNormalizer.ENGLISH_CONTRACTION_PATTERN, re.IGNORECASE)
+        self._name_re = re.compile(TextNormalizer.NAME_PATTERN, re.IGNORECASE)
+        self._pinyin_tone_re = re.compile(TextNormalizer.PINYIN_TONE_PATTERN, re.IGNORECASE)
+
+        # Compile replacement patterns once; relies on dict insertion order for deterministic behavior.
+        self._char_rep_re = re.compile("|".join(re.escape(p) for p in self.char_rep_map))
+        self._zh_char_rep_re = re.compile("|".join(re.escape(p) for p in self.zh_char_rep_map))
+
     def match_email(self, email: str) -> bool:
         # 正则表达式匹配邮箱格式：数字英文@数字英文.英文
-        pattern = r"^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]+$"
-        return re.match(pattern, email) is not None
+        return self._email_re.match(email) is not None
 
     PINYIN_TONE_PATTERN = r"(?<![a-z])((?:[bpmfdtnlgkhjqxzcsryw]|[zcs]h)?(?:[aeiouüv]|[ae]i|u[aio]|ao|ou|i[aue]|[uüv]e|[uvü]ang?|uai|[aeiuv]n|[aeio]ng|ia[no]|i[ao]ng)|ng|er)([1-5])"
     """
@@ -103,12 +112,7 @@ class TextNormalizer:
             print("Error, text normalizer is not initialized !!!")
             return ""
         if self.use_chinese(text):
-            text = re.sub(
-                TextNormalizer.ENGLISH_CONTRACTION_PATTERN,
-                r"\1 is",
-                text,
-                flags=re.IGNORECASE,
-            )
+            text = self._en_contraction_re.sub(r"\1 is", text)
             replaced_text, pinyin_list = self.save_pinyin_tones(text.rstrip())
 
             replaced_text, original_name_list = self.save_names(replaced_text)
@@ -121,22 +125,15 @@ class TextNormalizer:
             result = self.restore_names(result, original_name_list)
             # 恢复拼音声调
             result = self.restore_pinyin_tones(result, pinyin_list)
-            pattern = re.compile("|".join(re.escape(p) for p in self.zh_char_rep_map))
-            result = pattern.sub(lambda x: self.zh_char_rep_map[x.group()], result)
+            result = self._zh_char_rep_re.sub(lambda x: self.zh_char_rep_map[x.group()], result)
         else:
             try:
-                text = re.sub(
-                    TextNormalizer.ENGLISH_CONTRACTION_PATTERN,
-                    r"\1 is",
-                    text,
-                    flags=re.IGNORECASE,
-                )
+                text = self._en_contraction_re.sub(r"\1 is", text)
                 result = self.en_normalizer.normalize(text)
             except Exception:  # noqa: BLE001
                 result = text
                 print(traceback.format_exc())
-            pattern = re.compile("|".join(re.escape(p) for p in self.char_rep_map))
-            result = pattern.sub(lambda x: self.char_rep_map[x.group()], result)
+            result = self._char_rep_re.sub(lambda x: self.char_rep_map[x.group()], result)
         return result
 
     def correct_pinyin(self, pinyin: str) -> str:
@@ -156,8 +153,7 @@ class TextNormalizer:
         例如：克里斯托弗·诺兰 -> <n_a>
         """
         # 人名
-        name_pattern = re.compile(TextNormalizer.NAME_PATTERN, re.IGNORECASE)
-        original_name_list = cast(list[str], re.findall(name_pattern, original_text))
+        original_name_list = cast(list[str], re.findall(self._name_re, original_text))
         if len(original_name_list) == 0:
             return (original_text, None)
         original_name_list = list({"".join(n) for n in original_name_list})
@@ -188,8 +184,7 @@ class TextNormalizer:
         例如：xuan4 -> <pinyin_a>
         """
         # 声母韵母+声调数字
-        origin_pinyin_pattern = re.compile(TextNormalizer.PINYIN_TONE_PATTERN, re.IGNORECASE)
-        original_pinyin_list = cast(list[str], re.findall(origin_pinyin_pattern, original_text))
+        original_pinyin_list = cast(list[str], re.findall(self._pinyin_tone_re, original_text))
         if len(original_pinyin_list) == 0:
             return (original_text, None)
         original_pinyin_list = {"".join(p) for p in original_pinyin_list}

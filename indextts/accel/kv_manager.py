@@ -135,7 +135,11 @@ class KVCacheManager:
         block = self.blocks[block_id]
         assert block.ref_cnt == 0
         block.reset()
-        self.free_block_ids.remove(block_id)
+        # Fast-path: we almost always allocate from the left.
+        if self.free_block_ids and block_id == self.free_block_ids[0]:
+            self.free_block_ids.popleft()
+        else:
+            self.free_block_ids.remove(block_id)
         self.used_block_ids.add(block_id)
         return block
 

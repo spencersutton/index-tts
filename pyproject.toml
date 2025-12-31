@@ -241,4 +241,4 @@ unused-ignore-comment = "warn"
 possibly-unresolved-reference = "warn"
 
 [tool.ty.src]
-exclude = ["./typings", "./tools", "./tests"]
+exclude = ["./tools", "./tests"]

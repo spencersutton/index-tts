@@ -25,6 +25,32 @@ def regen(request):
     return request.config.getoption("--regen")
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def artifact(request):
-    return Path(__file__).parent / "artifacts" / f"{request.module.__name__}.pt"
+    artifacts_dir = Path(__file__).parent / "artifacts"
+    module_name = Path(request.fspath).stem
+    function_name = request.node.name
+
+    # Prefer unique, module-scoped artifact names to avoid collisions between
+    # identically named tests that live in different files (e.g., multiple
+    # `test_stable_result` functions).
+    specific_artifact = artifacts_dir / f"{module_name}__{function_name}.pt"
+    module_artifact = artifacts_dir / f"{module_name}.pt"
+    function_artifact = artifacts_dir / f"{function_name}.pt"
+
+    if specific_artifact.exists():
+        return specific_artifact
+
+    # For common test names like `test_stable_result`, prefer the module-scoped
+    # artifact to prevent cross-module clashes. Fall back to a unique name if no
+    # module artifact is available yet.
+    if function_name == "test_stable_result":
+        return module_artifact if module_artifact.exists() else specific_artifact
+
+    if function_artifact.exists():
+        return function_artifact
+    if module_artifact.exists():
+        return module_artifact
+
+    # Default to the unique, module-scoped path when no artifact exists yet.
+    return specific_artifact

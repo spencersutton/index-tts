@@ -220,6 +220,7 @@ ignore = [
   "UP046",
   "UP049",
 ]
+"tests/**" = ["ANN", "INP001"]
 
 [tool.ty.environment]
 extra-paths = ["./typings"]

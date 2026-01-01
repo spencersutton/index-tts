@@ -121,33 +121,6 @@ class PositionalEncoding(nn.Module):
     def __call__(self) -> None: ...
 
 
-class RelPositionalEncoding(PositionalEncoding):
-    """Relative positional encoding module.
-    See : Appendix B in https://arxiv.org/abs/1901.02860
-    Args:
-        d_model (int): Embedding dimension.
-        dropout_rate (float): Dropout rate.
-        max_len (int): Maximum input length.
-    """
-
-    def __init__(self, d_model: int, dropout_rate: float, max_len: int = 5000) -> None:
-        """Initialize class."""
-        super().__init__(d_model, dropout_rate, max_len, reverse=True)
-
-    @override
-    def forward(self, x: Tensor, offset: int | Tensor = 0) -> tuple[Tensor, Tensor]:
-        """Compute positional encoding.
-        Args:
-            x (Tensor): Input tensor (batch, time, `*`).
-        Returns:
-            Tensor: Encoded tensor (batch, time, `*`).
-            Tensor: Positional embedding tensor (1, time, `*`).
-        """
-        x *= self.xscale
-        pos_emb = self.position_encoding(offset, x.size(1), False)
-        return self.dropout(x), self.dropout(pos_emb)
-
-
 class NoPositionalEncoding(nn.Module):
     """No position encoding."""
 
@@ -164,7 +137,3 @@ class NoPositionalEncoding(nn.Module):
 
     @patch_call(forward)
     def __call__(self) -> None: ...
-
-    def position_encoding(self, _offset: int | Tensor, size: int) -> Tensor:
-        device = _offset.device if isinstance(_offset, Tensor) else None
-        return torch.zeros(1, size, self.d_model, device=device)

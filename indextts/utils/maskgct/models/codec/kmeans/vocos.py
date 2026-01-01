@@ -48,13 +48,13 @@ class ConvNeXtBlock(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         residual = x
         x = self.dwconv(x)
-        x = x.mT  # (B, C, T) -> (B, T, C)
+        x = x.transpose(1, 2)  # (B, C, T) -> (B, T, C)
         x = self.norm(x)
         x = self.pwconv1(x)
         x = self.act(x)
         x = self.pwconv2(x)
         x *= self.gamma
-        x = x.mT  # (B, T, C) -> (B, C, T)
+        x = x.transpose(1, 2)  # (B, T, C) -> (B, C, T)
 
         return residual + x
 
@@ -109,10 +109,10 @@ class VocosBackbone(nn.Module):
     @override
     def forward(self, x: Tensor, **kwargs: object) -> Tensor:
         x = self.embed(x)
-        x = self.norm(x.mT).mT
+        x = self.norm(x.transpose(1, 2)).transpose(1, 2)
         for conv_block in self.convnext:
             x = conv_block(x)
-        return self.final_layer_norm(x.mT)
+        return self.final_layer_norm(x.transpose(1, 2))
 
     @patch_call(forward)
     def __call__(self) -> None: ...

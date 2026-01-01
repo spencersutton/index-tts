@@ -181,8 +181,8 @@ class DiT(nn.Module):
         t1 = self.t_embedder(t)  # (N, D) # t1 [2, 512]
         cond = cond_in_module(cond)  # cond [2, 1863, 512] -> [2, 1863, 512]
 
-        x = x.mT  # [2, 1863, 80]
-        prompt_x = prompt_x.mT  # [2, 1863, 80]
+        x = x.transpose(1, 2)  # [2, 1863, 80]
+        prompt_x = prompt_x.transpose(1, 2)  # [2, 1863, 80]
 
         x_in = torch.cat([x, prompt_x, cond], dim=-1)  # [2, 1863, 672]
         x_in = torch.cat([x_in, style.unsqueeze(1).repeat(1, T, 1)], dim=-1)  # [2, 1863, 864]
@@ -195,10 +195,12 @@ class DiT(nn.Module):
 
         x_res = self.skip_linear(torch.cat([x_res, x], dim=-1))
         x = self.conv1(x_res)
-        x = x.mT
+        x = x.transpose(1, 2)
         t2 = self.t_embedder2(t)
-        x = self.wavenet(x, x_mask, g=t2.unsqueeze(2)).mT + self.res_projection(x_res)  # long residual connection
-        x = self.final_layer(x, t1).mT
+        x = self.wavenet(x, x_mask, g=t2.unsqueeze(2)).transpose(1, 2) + self.res_projection(
+            x_res
+        )  # long residual connection
+        x = self.final_layer(x, t1).transpose(1, 2)
         return self.conv2(x)
         # x [2,80,1863]
 

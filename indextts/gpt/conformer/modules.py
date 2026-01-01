@@ -142,7 +142,7 @@ class ConvolutionModule(nn.Module):
             Tensor: New cache tensor.
         """
         # Exchange the temporal dimension and the feature dimension
-        x = x.transpose(1, 2)  # (#batch, channels, time)
+        x = x.mT  # (#batch, channels, time)
 
         # Mask batch padding
         if mask_pad.size(2) > 0:  # time > 0
@@ -157,16 +157,16 @@ class ConvolutionModule(nn.Module):
 
         # 1D Depthwise Conv
         x = self.depthwise_conv(x)
-        x = x.transpose(1, 2)
+        x = x.mT
         x = self.activation(self.norm(x))
-        x = x.transpose(1, 2)
+        x = x.mT
         x = self.pointwise_conv2(x)
 
         # Mask batch padding
         if mask_pad.size(2) > 0:  # time > 0
             x.masked_fill_(~mask_pad, 0.0)
 
-        return x.transpose(1, 2), new_cache
+        return x.mT, new_cache
 
     @patch_call(forward)
     def __call__(self) -> None: ...

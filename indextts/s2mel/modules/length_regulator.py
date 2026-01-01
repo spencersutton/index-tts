@@ -33,7 +33,7 @@ class InterpolateRegulator(nn.Module):
     @override
     def forward(self, x: Tensor, ylens: int) -> Tensor:
         x = self.content_in_proj(x)  # x in (B, T, D)
-        x = F.interpolate(x.mT.contiguous(), mode="nearest")
+        x = F.interpolate(x.mT.contiguous(), size=ylens)
 
         mask = torch.full((1, ylens, 1), True, device=x.device)
         return self.model(x).mT.contiguous() * mask

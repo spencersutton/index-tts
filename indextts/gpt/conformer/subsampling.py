@@ -63,8 +63,9 @@ class Conv2dSubsampling2(nn.Module):
 
         """
         x = self.conv(x.unsqueeze(1))
-        b, c, t, f = x.size()
-        x, pos_emb = self.positional_encoder(self.out(x.transpose(1, 2).contiguous().view(b, t, c * f)), offset)
+        b, _, t, _ = x.size()
+        x = self.out(x.transpose(1, 2).reshape(b, t, -1))
+        x, pos_emb = self.positional_encoder(x, offset)
         return x, pos_emb, x_mask[:, :, 2::2]
 
     @patch_call(forward)

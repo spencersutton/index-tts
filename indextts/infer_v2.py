@@ -511,7 +511,6 @@ class IndexTTS2:
         # Extract speaker conditioning embedding
         inputs = self.extract_features(audio_16k.data, sampling_rate=audio_16k.sample_rate, return_tensors="pt")
         spk_cond_emb = self.get_emb(inputs.to(self.device))
-        _, S_ref = self.semantic_codec.quantize(spk_cond_emb)
 
         # Extract mel spectrogram
         ref_mel = mel_spectrogram(audio_22k.data.float())
@@ -524,6 +523,7 @@ class IndexTTS2:
         style = self.campplus_model(feat.unsqueeze(0)).to(self.device)
 
         # Generate prompt condition
+        _, S_ref = self.semantic_codec.quantize(spk_cond_emb)
         prompt_condition = self.length_regulator(S_ref, ylens=ref_mel.size(2))
 
         # Compute emotion matrix if using explicit vectors

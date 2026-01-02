@@ -1,3 +1,8 @@
+from transformers.models.seamless_m4t import (  # noqa: I001
+    SeamlessM4TFeatureExtractor as SeamlessM4TFeatureExtractor,
+)
+from .models.wav2vec2_bert import Wav2Vec2BertModel as Wav2Vec2BertModel
+
 from .cache_utils import (
     Cache as Cache,
     CacheConfig as CacheConfig,

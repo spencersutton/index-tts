@@ -44,10 +44,6 @@ class FactorizedVectorQuantize(nn.Module):
         -------
         z_q: Tensor[B x D x T]
             Quantized continuous representation of input
-        indices: Tensor[B x T]
-            Codebook indices (quantized discrete representation of input)
-        z_e: Tensor[B x D x T]
-            Projected latents (continuous representation of input before quantization)
         """
         # Factorized codes project input into low-dimensional space if self.input_dim != self.codebook_dim
         z_e = self._in_project(z)
@@ -104,7 +100,7 @@ class ResidualVQ(nn.Module):
         self.quantizer = FactorizedVectorQuantize()
 
     @override
-    def forward(self, z: Tensor) -> tuple[Tensor, Tensor]:
+    def forward(self, z: Tensor) -> Tensor:
         """Parameters
         ----------
         z : Tensor[B x D x T]
@@ -118,12 +114,12 @@ class ResidualVQ(nn.Module):
             (quantized discrete representation of input)
 
         """
-        z_q_i, indices_i, _z_e_i = self.quantizer(z)
+        z_q_i, _, _ = self.quantizer(z)
 
         # Create mask to apply quantizer dropout
         mask = torch.full((z.shape[0],), fill_value=0, device=z.device) < 1
 
-        return (z_q_i * mask[:, None, None], torch.stack([indices_i]))
+        return z_q_i * mask[:, None, None]
 
     @patch_call(forward)
     def __call__(self) -> None: ...
@@ -160,11 +156,9 @@ class RepCodec(nn.Module):
 
         self.apply(_init_weights)
 
-    def quantize(self, x: Tensor) -> tuple[Tensor, Tensor]:
+    def quantize(self, x: Tensor) -> Tensor:
         x = self.encoder(x.transpose(1, 2)).transpose(1, 2)
 
-        (quantized_out, all_indices) = self.quantizer(x)
+        quantized_out = self.quantizer(x)
 
-        if all_indices.shape[0] == 1:
-            return all_indices.squeeze(0), quantized_out.transpose(1, 2)
-        return all_indices, quantized_out.transpose(1, 2)
+        return quantized_out.transpose(1, 2)

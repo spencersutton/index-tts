@@ -1,4 +1,5 @@
 import argparse
+import os
 import sys
 import time
 import warnings
@@ -6,6 +7,7 @@ from pathlib import Path
 from typing import cast
 
 import pyinstrument
+import torch
 
 from indextts.infer_v2 import IndexTTS2
 
@@ -75,6 +77,15 @@ def main() -> None:
         default=False,
         help="Use custom CUDA kernel for BigVGAN",
     )
+    parser.add_argument(
+        "--deterministic",
+        action="store_true",
+        default=False,
+        help=(
+            "Enable best-effort deterministic generation (same output every run on the same machine). "
+            "This will disable acceleration kernels that may be nondeterministic."
+        ),
+    )
     parser.add_argument("--profile", action="store_true", default=False, help="Enable profiling")
     parser.add_argument("--warmup", type=int, default=0, help="Number of warmup runs to perform")
     args = parser.parse_args()
@@ -89,6 +100,7 @@ def main() -> None:
     args.force = cast(bool, args.force)
     args.use_accel = cast(bool, args.use_accel)
     args.use_cuda_kernel = cast(bool, args.use_cuda_kernel)
+    args.deterministic = cast(bool, args.deterministic)
     args.profile = cast(bool, args.profile)
     args.warmup = cast(int, args.warmup)
 
@@ -114,10 +126,18 @@ def main() -> None:
         else:
             output_path.unlink()
 
+    if args.deterministic:
+        os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+        torch.manual_seed(0)
+        torch.use_deterministic_algorithms(True)
+        torch.set_num_threads(1)
+        torch.set_default_device("cpu")
+
     tts = IndexTTS2(
         cfg_path=Path(args.config),
         model_dir=Path(args.model_dir),
         use_fp16=args.fp16,
+        device=args.device,
         use_accel=args.use_accel,
         use_cuda_kernel=args.use_cuda_kernel,
     )

@@ -219,7 +219,7 @@ ignore = [
   "UP046",
   "UP049",
 ]
-"tests/**" = ["ANN", "INP001"]
+"tests/**" = ["ANN", "INP001", "PLC2701"]
 
 [tool.ty.environment]
 extra-paths = ["./typings"]

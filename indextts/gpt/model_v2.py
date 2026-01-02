@@ -41,8 +41,7 @@ def get_embedding(
     tokens = tokens.masked_fill_(mask, stop_token)
     tokens = F.pad(tokens, (0, 1), value=stop_token)
     tokens = F.pad(tokens, (1, 0), value=start_token)
-    text_emb = embeddings(tokens) + positional_embeddings(tokens)
-    return text_emb
+    return embeddings(tokens) + positional_embeddings(tokens)
 
 
 # Token vocabulary sizes

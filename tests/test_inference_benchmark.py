@@ -15,6 +15,8 @@ from pathlib import Path
 
 import pytest
 
+from indextts.infer_v2 import IndexTTS2
+
 
 def test_inference_benchmark(request: pytest.FixtureRequest, tmp_path: Path) -> None:
     if os.getenv("INDEXTTS_RUN_BENCHMARKS") != "1":
@@ -29,11 +31,6 @@ def test_inference_benchmark(request: pytest.FixtureRequest, tmp_path: Path) -> 
         pytest.skip("Checkpoints/config.yaml not found")
     if not prompt_wav.exists():
         pytest.skip("tests/sample_prompt.wav not found")
-
-    try:
-        from indextts.infer_v2 import IndexTTS2
-    except Exception as e:  # pragma: no cover
-        pytest.skip(f"IndexTTS2 import failed in this environment: {e}")
 
     tts = IndexTTS2(
         cfg_path=config_path,

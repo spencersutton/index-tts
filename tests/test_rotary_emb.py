@@ -19,16 +19,6 @@ from pathlib import Path
 import pytest
 import torch
 
-# `_apply_rotary_emb` is decorated with `torch.compile`. Some environments
-# (e.g., missing/unsupported toolchains) can cause Inductor compilation to fail.
-# For test robustness, let Dynamo fall back to eager rather than hard-failing.
-try:  # pragma: no cover
-    import torch._dynamo  # type: ignore
-
-    torch._dynamo.config.suppress_errors = True
-except Exception:
-    pass
-
 # Add project root to sys.path (repo tests follow this pattern)
 sys.path.insert(0, str(Path(__file__).parent.parent))
 

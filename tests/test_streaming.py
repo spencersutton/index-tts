@@ -15,6 +15,9 @@ from pathlib import Path
 
 import pytest
 import torch
+import torchaudio
+
+from indextts.infer_v2 import IndexTTS2
 
 # Add project root to sys.path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -31,21 +34,11 @@ def test_streaming_inference_real(tmp_path: Path) -> None:
     if not checkpoint_dir.exists() or not config_path.exists():
         pytest.skip("Checkpoints/config.yaml not found")
 
-    try:
-        import torchaudio
-    except Exception as e:  # pragma: no cover
-        pytest.skip(f"torchaudio not available: {e}")
-
     # Create a dummy wav prompt in a temp directory.
     prompt_wav = tmp_path / "temp_test_prompt.wav"
     sample_rate = 16000
     dummy_audio = torch.randn(1, sample_rate)
     torchaudio.save(str(prompt_wav), dummy_audio, sample_rate)
-
-    try:
-        from indextts.infer_v2 import IndexTTS2
-    except Exception as e:  # pragma: no cover
-        pytest.skip(f"IndexTTS2 import failed in this environment: {e}")
 
     # Prefer CPU for determinism/portability; integration users can override by editing locally.
     device = "cpu"

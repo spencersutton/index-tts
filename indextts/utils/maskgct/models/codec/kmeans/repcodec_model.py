@@ -47,22 +47,7 @@ class FactorizedVectorQuantize(nn.Module):
         """
         # Factorized codes project input into low-dimensional space if self.input_dim != self.codebook_dim
         z_e = self._in_project(z)
-        z_q = self._decode_latents(z_e)
-
-        z_q = z_e + (z_q - z_e).detach()
-
-        z_q = self._out_project(z_q)
-
-        return z_q
-
-    @patch_call(forward)
-    def __call__(self) -> None: ...
-
-    def _decode_code(self, embed_id: Tensor) -> Tensor:
-        return F.embedding(embed_id, self.codebook.weight).transpose(1, 2)
-
-    def _decode_latents(self, latents: Tensor) -> Tensor:
-        encodings = latents.transpose(1, 2).reshape(-1, latents.size(1))
+        encodings = z_e.transpose(1, 2).reshape(-1, z_e.size(1))
         codebook = self.codebook.weight
 
         # L2 normalize encodings and codebook
@@ -76,14 +61,18 @@ class FactorizedVectorQuantize(nn.Module):
             - 2 * encodings @ codebook.t()
             + codebook.pow(2).sum(1, keepdim=True).t()
         )
-        indices = (-dist).max(1)[1].reshape(latents.size(0), latents.size(2))
-        z_q = self._decode_code(indices)
+        indices = (-dist).max(1)[1].reshape(z_e.size(0), z_e.size(2))
+        z_q = F.embedding(indices, self.codebook.weight).transpose(1, 2)
 
-        return z_q
+        z_q = z_e + (z_q - z_e).detach()
+
+        return self._out_project(z_q)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
     def vq2emb(self, vq: Tensor) -> Tensor:
-        emb = self._decode_code(vq)
-        return self._out_project(emb)
+        return self._out_project(F.embedding(vq, self.codebook.weight).transpose(1, 2))
 
 
 class ResidualVQ(nn.Module):
@@ -109,10 +98,6 @@ class ResidualVQ(nn.Module):
         -------
         "quantized_out" : Tensor[B x D x T]
             Quantized continuous representation of input
-        "all_indices" : Tensor[N x B x T]
-            Codebook indices for each codebook
-            (quantized discrete representation of input)
-
         """
         z_q_i = self.quantizer(z)
 
@@ -123,9 +108,6 @@ class ResidualVQ(nn.Module):
 
     @patch_call(forward)
     def __call__(self) -> None: ...
-
-    def vq2emb(self, vq: Tensor) -> Tensor:
-        return self.quantizer.vq2emb(vq[0])
 
 
 def _init_weights(m: nn.Module) -> None:

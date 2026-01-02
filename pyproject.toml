@@ -153,7 +153,6 @@ ignore = [
   "N812",    # lowercase-imported-as-non-lowercase
   "N999",    # invalid-module-name
   "PLW1514", # unspecified-encoding
-  "RET504",
   "RET507",  # superfluous-else-continue
   "RUF001",  # ambiguous-unicode-character-string
   "RUF002",  # ambiguous-unicode-character-docstring

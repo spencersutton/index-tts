@@ -635,7 +635,9 @@ class IndexTTS2:
                 use_speed=torch.zeros(spk_cond_emb.size(0), device=device).long(),
             )
 
-            quantized_audio_embeddings = self.semantic_codec.quantizer.vq2emb(code.unsqueeze(1)).transpose(1, 2)
+            quantized_audio_embeddings = self.semantic_codec.quantizer.quantizer.vq2emb(code.unsqueeze(1)[0]).transpose(
+                1, 2
+            )
             processed_audio_features = self.length_regulator(
                 quantized_audio_embeddings + self.gpt_layer(gpt_output),
                 ylens=int(code_len * 1.72),

@@ -122,6 +122,44 @@ LENGTH_REGULATOR_CHECKPOINT = "length_regulator.safetensors"
 VOCODER_NAME = "nvidia/bigvgan_v2_22khz_80band_256x"
 
 
+def _build_prompt_condition(
+    *,
+    spk_cond_emb: Tensor,
+    ref_mel_len: int,
+    length_regulator: Any,
+    semantic_codec: Any | None = None,
+    use_semantic_codec: bool = False,
+) -> Tensor:
+    """Build prompt conditioning for CFM.
+
+    This optionally routes the speaker conditioning embedding through the
+    (MaskGCT) semantic codec quantizer before length regulation.
+
+    When enabled, we log a cosine similarity diagnostic to confirm whether
+    quantization materially changes the embedding.
+    """
+
+    src = spk_cond_emb
+    if use_semantic_codec:
+        if semantic_codec is None:
+            raise ValueError("semantic_codec must be provided when use_semantic_codec=True")
+
+        semantic_reference = semantic_codec.quantize(spk_cond_emb)
+
+        # Best-effort diagnostic: if quantization is ~identity, it likely won't
+        # change audio perceptibly once downstream conditioning dominates.
+        with contextlib.suppress(Exception):
+            a = spk_cond_emb.reshape(-1, spk_cond_emb.shape[-1]).float()
+            b = semantic_reference.reshape(-1, semantic_reference.shape[-1]).float()
+            if a.numel() > 0 and b.numel() > 0:
+                cos = torch.cosine_similarity(a, b, dim=1).mean().item()
+                logger.info("Prompt semantic_codec.quantize cosine similarity: %.4f", cos)
+
+        src = semantic_reference
+
+    return length_regulator(src, ylens=ref_mel_len)
+
+
 def _load_model[T: nn.Module](
     model: T,
     filename: Path | str,
@@ -393,6 +431,7 @@ class IndexTTS2:
         interval_silence: int = 200,
         max_text_tokens_per_segment: int = 120,
         stream_return: bool = False,
+        use_semantic_prompt_codec: bool = False,
         verbose: bool = False,
         **generation_kwargs: object,
     ) -> Tensor | Generator[Tensor | Path | tuple[int, np.ndarray] | None] | Path | tuple[int, np.ndarray] | None:
@@ -432,6 +471,7 @@ class IndexTTS2:
             interval_silence=interval_silence,
             max_text_tokens_per_segment=max_text_tokens_per_segment,
             stream_return=stream_return,
+            use_semantic_prompt_codec=use_semantic_prompt_codec,
             **generation_kwargs,  # type: ignore
         )
 
@@ -463,6 +503,7 @@ class IndexTTS2:
         max_text_tokens_per_segment: int = 120,
         quick_streaming_tokens: int = 0,
         stream_return: bool = False,
+        use_semantic_prompt_codec: bool = False,
         use_emo_text: bool = False,
         use_random: bool = False,
         **generation_kwargs: Any,
@@ -522,9 +563,16 @@ class IndexTTS2:
         feat -= feat.mean(dim=0, keepdim=True)
         style = self.campplus_model(feat.unsqueeze(0)).to(self.device)
 
-        # Generate prompt condition
-        semantic_reference = self.semantic_codec.quantize(spk_cond_emb)
-        prompt_condition = self.length_regulator(semantic_reference, ylens=ref_mel.size(2))
+        # Generate prompt condition.
+        # NOTE: Semantic-codec quantization is optional. In practice it is often
+        # near-identity and can be skipped for speed.
+        prompt_condition = _build_prompt_condition(
+            spk_cond_emb=spk_cond_emb,
+            ref_mel_len=ref_mel.size(2),
+            length_regulator=self.length_regulator,
+            semantic_codec=self.semantic_codec,
+            use_semantic_codec=use_semantic_prompt_codec,
+        )
 
         # Compute emotion matrix if using explicit vectors
         if emo_vector is None:

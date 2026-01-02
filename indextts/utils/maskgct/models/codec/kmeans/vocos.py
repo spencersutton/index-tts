@@ -98,13 +98,6 @@ class VocosBackbone(nn.Module):
             for _ in range(num_layers)
         ])
         self.final_layer_norm = nn.LayerNorm(dim, eps=1e-6)
-        self.apply(self._init_weights)
-
-    def _init_weights(self, m: nn.Module) -> None:
-        if isinstance(m, (nn.Conv1d, nn.Linear)):
-            assert m.bias is not None
-            nn.init.trunc_normal_(m.weight, std=0.02)
-            nn.init.constant_(m.bias, 0)
 
     @override
     def forward(self, x: Tensor, **kwargs: object) -> Tensor:

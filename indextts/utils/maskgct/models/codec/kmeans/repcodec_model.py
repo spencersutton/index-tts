@@ -110,13 +110,6 @@ class ResidualVQ(nn.Module):
     def __call__(self) -> None: ...
 
 
-def _init_weights(m: nn.Module) -> None:
-    if isinstance(m, (nn.Linear, nn.Conv1d)):
-        nn.init.trunc_normal_(m.weight, std=0.02)
-        assert m.bias is not None
-        nn.init.constant_(m.bias, 0)
-
-
 class RepCodec(nn.Module):
     encoder: nn.Sequential[VocosBackbone | nn.Linear]
     quantizer: ResidualVQ
@@ -135,8 +128,6 @@ class RepCodec(nn.Module):
         )
 
         self.quantizer = ResidualVQ()
-
-        self.apply(_init_weights)
 
     def quantize(self, x: Tensor) -> Tensor:
         x = self.encoder(x.transpose(1, 2)).transpose(1, 2)

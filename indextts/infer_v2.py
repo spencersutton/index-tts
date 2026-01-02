@@ -523,8 +523,8 @@ class IndexTTS2:
         style = self.campplus_model(feat.unsqueeze(0)).to(self.device)
 
         # Generate prompt condition
-        S_ref = self.semantic_codec.quantize(spk_cond_emb)
-        prompt_condition = self.length_regulator(S_ref, ylens=ref_mel.size(2))
+        semantic_reference = self.semantic_codec.quantize(spk_cond_emb)
+        prompt_condition = self.length_regulator(semantic_reference, ylens=ref_mel.size(2))
 
         # Compute emotion matrix if using explicit vectors
         if emo_vector is None:

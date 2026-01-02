@@ -130,8 +130,4 @@ class RepCodec(nn.Module):
         self.quantizer = ResidualVQ()
 
     def quantize(self, x: Tensor) -> Tensor:
-        x = self.encoder(x.transpose(1, 2)).transpose(1, 2)
-
-        quantized_out = self.quantizer(x)
-
-        return quantized_out.transpose(1, 2)
+        return self.quantizer(self.encoder(x.mT).mT).mT

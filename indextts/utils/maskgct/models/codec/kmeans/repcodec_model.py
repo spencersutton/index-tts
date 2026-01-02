@@ -35,7 +35,7 @@ class FactorizedVectorQuantize(nn.Module):
         self.codebook = nn.Embedding(CODEBOOK_SIZE, CODEBOOK_DIM)
 
     @override
-    def forward(self, z: Tensor) -> tuple[Tensor, Tensor, Tensor]:
+    def forward(self, z: Tensor) -> Tensor:
         """Parameters
         ----------
         z: Tensor[B x D x T]
@@ -47,13 +47,13 @@ class FactorizedVectorQuantize(nn.Module):
         """
         # Factorized codes project input into low-dimensional space if self.input_dim != self.codebook_dim
         z_e = self._in_project(z)
-        z_q, indices = self._decode_latents(z_e)
+        z_q = self._decode_latents(z_e)
 
         z_q = z_e + (z_q - z_e).detach()
 
         z_q = self._out_project(z_q)
 
-        return z_q, indices, z_e
+        return z_q
 
     @patch_call(forward)
     def __call__(self) -> None: ...
@@ -61,7 +61,7 @@ class FactorizedVectorQuantize(nn.Module):
     def _decode_code(self, embed_id: Tensor) -> Tensor:
         return F.embedding(embed_id, self.codebook.weight).transpose(1, 2)
 
-    def _decode_latents(self, latents: Tensor) -> tuple[Tensor, Tensor]:
+    def _decode_latents(self, latents: Tensor) -> Tensor:
         encodings = latents.transpose(1, 2).reshape(-1, latents.size(1))
         codebook = self.codebook.weight
 
@@ -79,7 +79,7 @@ class FactorizedVectorQuantize(nn.Module):
         indices = (-dist).max(1)[1].reshape(latents.size(0), latents.size(2))
         z_q = self._decode_code(indices)
 
-        return z_q, indices
+        return z_q
 
     def vq2emb(self, vq: Tensor) -> Tensor:
         emb = self._decode_code(vq)
@@ -114,7 +114,7 @@ class ResidualVQ(nn.Module):
             (quantized discrete representation of input)
 
         """
-        z_q_i, _, _ = self.quantizer(z)
+        z_q_i = self.quantizer(z)
 
         # Create mask to apply quantizer dropout
         mask = torch.full((z.shape[0],), fill_value=0, device=z.device) < 1

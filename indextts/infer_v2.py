@@ -7,7 +7,7 @@ import logging
 import random
 import typing
 from collections.abc import Collection, Generator, Mapping, Sequence
-from functools import cache
+from functools import cached_property
 from pathlib import Path
 from typing import Any, cast, no_type_check
 
@@ -225,8 +225,7 @@ class IndexTTS2:
     model_version: float
     """Model version identifier."""
 
-    @property
-    @cache
+    @cached_property
     def bigvgan(self) -> BigVGAN:
         model = BigVGAN.from_pretrained(VOCODER_NAME, use_cuda_kernel=self.use_cuda_kernel)
         model.remove_weight_norm()
@@ -236,8 +235,7 @@ class IndexTTS2:
         logger.info(f"bigvgan weights restored from: {VOCODER_NAME}")
         return model
 
-    @property
-    @cache
+    @cached_property
     def length_regulator(self) -> InterpolateRegulator:
         path = self.model_dir / LENGTH_REGULATOR_CHECKPOINT
         model = InterpolateRegulator()
@@ -246,8 +244,7 @@ class IndexTTS2:
             model.half()
         return model
 
-    @property
-    @cache
+    @cached_property
     def gpt_layer(self) -> nn.Sequential[nn.Linear]:
         path = self.model_dir / GPT_LAYER_CHECKPOINT
         model = nn.Sequential(nn.Linear(1280, 256), nn.Linear(256, 128), nn.Linear(128, 1024))
@@ -256,8 +253,7 @@ class IndexTTS2:
             model.half()
         return model
 
-    @property
-    @cache
+    @cached_property
     def tokenizer(self) -> TextTokenizer:
         path = self.model_dir / TOKENIZER_MODEL
         normalizer = TextNormalizer()

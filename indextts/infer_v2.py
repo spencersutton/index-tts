@@ -122,44 +122,6 @@ LENGTH_REGULATOR_CHECKPOINT = "length_regulator.safetensors"
 VOCODER_NAME = "nvidia/bigvgan_v2_22khz_80band_256x"
 
 
-def _build_prompt_condition(
-    *,
-    spk_cond_emb: Tensor,
-    ref_mel_len: int,
-    length_regulator: Any,
-    semantic_codec: Any | None = None,
-    use_semantic_codec: bool = False,
-) -> Tensor:
-    """Build prompt conditioning for CFM.
-
-    This optionally routes the speaker conditioning embedding through the
-    (MaskGCT) semantic codec quantizer before length regulation.
-
-    When enabled, we log a cosine similarity diagnostic to confirm whether
-    quantization materially changes the embedding.
-    """
-
-    src = spk_cond_emb
-    if use_semantic_codec:
-        if semantic_codec is None:
-            raise ValueError("semantic_codec must be provided when use_semantic_codec=True")
-
-        semantic_reference = semantic_codec.quantize(spk_cond_emb)
-
-        # Best-effort diagnostic: if quantization is ~identity, it likely won't
-        # change audio perceptibly once downstream conditioning dominates.
-        with contextlib.suppress(Exception):
-            a = spk_cond_emb.reshape(-1, spk_cond_emb.shape[-1]).float()
-            b = semantic_reference.reshape(-1, semantic_reference.shape[-1]).float()
-            if a.numel() > 0 and b.numel() > 0:
-                cos = torch.cosine_similarity(a, b, dim=1).mean().item()
-                logger.info("Prompt semantic_codec.quantize cosine similarity: %.4f", cos)
-
-        src = semantic_reference
-
-    return length_regulator(src, ylens=ref_mel_len)
-
-
 def _load_model[T: nn.Module](
     model: T,
     filename: Path | str,
@@ -563,17 +525,6 @@ class IndexTTS2:
         feat -= feat.mean(dim=0, keepdim=True)
         style = self.campplus_model(feat.unsqueeze(0)).to(self.device)
 
-        # Generate prompt condition.
-        # NOTE: Semantic-codec quantization is optional. In practice it is often
-        # near-identity and can be skipped for speed.
-        prompt_condition = _build_prompt_condition(
-            spk_cond_emb=spk_cond_emb,
-            ref_mel_len=ref_mel.size(2),
-            length_regulator=self.length_regulator,
-            semantic_codec=self.semantic_codec,
-            use_semantic_codec=use_semantic_prompt_codec,
-        )
-
         # Compute emotion matrix if using explicit vectors
         if emo_vector is None:
             emovec_mat, weight_vector = None, None
@@ -690,6 +641,7 @@ class IndexTTS2:
                 quantized_audio_embeddings + self.gpt_layer(gpt_output),
                 ylens=int(code_len * 1.72),
             )
+            prompt_condition = self.length_regulator(spk_cond_emb, ylens=ref_mel.size(2))
             processed_audio_features = self.cfm(
                 torch.cat([prompt_condition, processed_audio_features], dim=1),
                 ref_mel,

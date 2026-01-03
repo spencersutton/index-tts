@@ -10,7 +10,7 @@ from pathlib import Path
 # Add project root to sys.path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from indextts.utils.common import de_tokenized_by_cjk_char, tokenize_by_cjk_char
+from indextts.utils.common import de_tokenized_by_CJK_char, tokenize_by_CJK_char
 
 
 def test_tokenize_by_cjk_char_basic() -> None:
@@ -18,7 +18,7 @@ def test_tokenize_by_cjk_char_basic() -> None:
     input_text = "你好世界是 hello world 的中文"
     expected = "你 好 世 界 是 HELLO WORLD 的 中 文"
 
-    result = tokenize_by_cjk_char(input_text)
+    result = tokenize_by_CJK_char(input_text)
     assert result == expected
 
 
@@ -27,7 +27,7 @@ def test_tokenize_by_cjk_char_preserve_case() -> None:
     input_text = "你好 hello 世界"
     expected = "你 好 hello 世 界"
 
-    result = tokenize_by_cjk_char(input_text, do_upper_case=False)
+    result = tokenize_by_CJK_char(input_text, do_upper_case=False)
     assert result == expected
 
 
@@ -36,7 +36,7 @@ def test_tokenize_by_cjk_char_english_only() -> None:
     input_text = "hello world"
     expected = "HELLO WORLD"
 
-    result = tokenize_by_cjk_char(input_text)
+    result = tokenize_by_CJK_char(input_text)
     assert result == expected
 
 
@@ -45,7 +45,7 @@ def test_tokenize_by_cjk_char_cjk_only() -> None:
     input_text = "你好世界"
     expected = "你 好 世 界"
 
-    result = tokenize_by_cjk_char(input_text)
+    result = tokenize_by_CJK_char(input_text)
     assert result == expected
 
 
@@ -54,7 +54,7 @@ def test_tokenize_by_cjk_char_with_punctuation() -> None:
     input_text = "你好，世界！"
     expected = "你 好 ， 世 界 ！"
 
-    result = tokenize_by_cjk_char(input_text)
+    result = tokenize_by_CJK_char(input_text)
     assert result == expected
 
 
@@ -63,7 +63,7 @@ def test_tokenize_by_cjk_char_empty_string() -> None:
     input_text = ""
     expected = ""
 
-    result = tokenize_by_cjk_char(input_text)
+    result = tokenize_by_CJK_char(input_text)
     assert result == expected
 
 
@@ -72,7 +72,7 @@ def test_tokenize_by_cjk_char_whitespace_handling() -> None:
     input_text = "你好   世界"
     expected = "你 好 世 界"
 
-    result = tokenize_by_cjk_char(input_text)
+    result = tokenize_by_CJK_char(input_text)
     assert result == expected
 
 
@@ -81,7 +81,7 @@ def test_de_tokenized_by_cjk_char_basic() -> None:
     input_text = "你 好 世 界 是 HELLO WORLD 的 中 文"
     expected = "你好世界是HELLO WORLD的中文"
 
-    result = de_tokenized_by_cjk_char(input_text)
+    result = de_tokenized_by_CJK_char(input_text)
     assert result == expected
 
 
@@ -90,7 +90,7 @@ def test_de_tokenized_by_cjk_char_with_lowercase() -> None:
     input_text = "SEE YOU!"
     expected = "see you!"
 
-    result = de_tokenized_by_cjk_char(input_text, do_lower_case=True)
+    result = de_tokenized_by_CJK_char(input_text, do_lower_case=True)
     assert result == expected
 
 
@@ -99,7 +99,7 @@ def test_de_tokenized_by_cjk_char_mixed_content() -> None:
     input_text = "你 好 HELLO 世 界"
     expected = "你好HELLO世界"
 
-    result = de_tokenized_by_cjk_char(input_text)
+    result = de_tokenized_by_CJK_char(input_text)
     assert result == expected
 
 
@@ -108,7 +108,7 @@ def test_de_tokenized_by_cjk_char_english_only() -> None:
     input_text = "HELLO WORLD"
     expected = "HELLO WORLD"
 
-    result = de_tokenized_by_cjk_char(input_text)
+    result = de_tokenized_by_CJK_char(input_text)
     assert result == expected
 
 
@@ -117,7 +117,7 @@ def test_de_tokenized_by_cjk_char_cjk_only() -> None:
     input_text = "你 好 世 界"
     expected = "你好世界"
 
-    result = de_tokenized_by_cjk_char(input_text)
+    result = de_tokenized_by_CJK_char(input_text)
     assert result == expected
 
 
@@ -126,8 +126,8 @@ def test_tokenize_detokenize_roundtrip() -> None:
     original = "你好世界 hello world 的中文"
 
     # Tokenize then de-tokenize
-    tokenized = tokenize_by_cjk_char(original, do_upper_case=False)
-    detokenized = de_tokenized_by_cjk_char(tokenized)
+    tokenized = tokenize_by_CJK_char(original, do_upper_case=False)
+    detokenized = de_tokenized_by_CJK_char(tokenized)
 
     # Result should be similar (spaces may differ)
     assert "你好世界" in detokenized

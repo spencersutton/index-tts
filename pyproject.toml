@@ -117,6 +117,7 @@ explicit = true
 line-length = 120
 preview = true
 show-fixes = true
+unsafe-fixes = false
 
 [tool.ruff.format]
 docstring-code-format = true
@@ -125,3 +126,4 @@ skip-magic-trailing-comma = true
 [tool.ruff.lint]
 extend-select = ["I", "UP", "SIM"]
 isort.split-on-trailing-comma = false
+ignore = ["SIM108"]

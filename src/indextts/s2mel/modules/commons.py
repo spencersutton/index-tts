@@ -171,7 +171,6 @@ def generate_path(duration, mask):
     duration: [b, 1, t_x]
     mask: [b, 1, t_y, t_x]
     """
-    device = duration.device
 
     b, _, t_y, t_x = mask.shape
     cum_duration = torch.cumsum(duration, -1)
@@ -265,7 +264,7 @@ def modify_w2v_forward(self, output_layer=15):
             # add LayerDrop (see https://arxiv.org/abs/1909.11556 for description)
             dropout_probability = torch.rand([])
 
-            skip_the_layer = True if self.training and (dropout_probability < self.config.layerdrop) else False
+            skip_the_layer = bool(self.training and dropout_probability < self.config.layerdrop)
             if not skip_the_layer or deepspeed_zero3_is_enabled:
                 # under deepspeed zero3 all gpus must run in sync
                 if self.gradient_checkpointing and self.training:
@@ -526,7 +525,7 @@ def load_checkpoint(
             skipped_keys = set(params[key].keys()) - set(filtered_state_dict.keys())
             if skipped_keys:
                 print(f"Warning: Skipped loading some keys due to shape mismatch: {skipped_keys}")
-            print("%s loaded" % key)
+            print(f"{key} loaded")
             model[key].load_state_dict(filtered_state_dict, strict=False)
     _ = [model[key].eval() for key in model]
 
@@ -574,7 +573,7 @@ def load_checkpoint2(
             skipped_keys = set(params[key].keys()) - set(filtered_state_dict.keys())
             if skipped_keys:
                 print(f"Warning: Skipped loading some keys due to shape mismatch: {skipped_keys}")
-            print("%s loaded" % key)
+            print(f"{key} loaded")
             model.models[key].load_state_dict(filtered_state_dict, strict=False)
     model.eval()
     #     _ = [model[key].eval() for key in model]

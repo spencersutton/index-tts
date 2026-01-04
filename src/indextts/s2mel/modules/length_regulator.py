@@ -1,7 +1,6 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from indextts.s2mel.dac.nn.quantize import VectorQuantize
 from torch.nn import functional as F
 
 from indextts.s2mel.modules.commons import sequence_mask
@@ -33,7 +32,6 @@ class InterpolateRegulator(nn.Module):
         sampling_ratios: tuple,
         is_discrete: bool = False,
         in_channels: int = None,  # only applies to continuous input
-        vector_quantize: bool = False,  # whether to use vector quantization, only applies to continuous input
         codebook_size: int = 1024,  # for discrete only
         out_channels: int = None,
         groups: int = 1,
@@ -83,8 +81,6 @@ class InterpolateRegulator(nn.Module):
 
         if not is_discrete:
             self.content_in_proj = nn.Linear(in_channels, channels)
-            if vector_quantize:
-                self.vq = VectorQuantize(channels, codebook_size, 8)
 
     def forward(self, x, ylens=None, n_quantizers=None, f0=None):
         # apply token drop

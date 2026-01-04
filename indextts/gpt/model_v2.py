@@ -219,7 +219,6 @@ class ConditioningEncoder(nn.Module):
             return h.mean(dim=2)
         else:
             return h
-            # return h[:, :, 0]
 
 
 class LearnedPositionEmbeddings(nn.Module):
@@ -513,7 +512,6 @@ class UnifiedVoice(nn.Module):
         else:
             self.inference_model = self.inference_model.eval()
 
-        # self.inference_model = PrunedGPT2InferenceModel(gpt_config, self.gpt, self.mel_pos_embedding, self.mel_embedding, self.final_norm, self.mel_head)
         self.gpt.wte = self.mel_embedding
 
     def build_aligned_inputs_and_targets(self, input, start_token, stop_token):

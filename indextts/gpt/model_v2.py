@@ -4,7 +4,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-import transformers
 from transformers import GPT2Config, LogitsProcessorList
 from transformers import GPT2PreTrainedModel, GPT2Model
 from transformers.generation.utils import GenerationMixin
@@ -244,7 +243,7 @@ def build_hf_gpt_transformer(layers, model_dim, heads, max_mel_seq_len, max_text
     """
     GPT-2 implemented by the HuggingFace library.
     """
-    from transformers import GPT2Config, GPT2Model
+    from transformers import GPT2Config
 
     gpt_config = GPT2Config(
         vocab_size=256,  # Unused.

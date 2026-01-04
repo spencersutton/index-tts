@@ -10,8 +10,8 @@ import torch.nn as nn
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize.factorized_vector_quantize import (
     FactorizedVectorQuantize,
 )
-from indextts.utils.maskgct.models.codec.amphion_codec.quantize.vector_quantize import VectorQuantize
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize.lookup_free_quantize import LookupFreeQuantize
+from indextts.utils.maskgct.models.codec.amphion_codec.quantize.vector_quantize import VectorQuantize
 
 
 class ResidualVQ(nn.Module):

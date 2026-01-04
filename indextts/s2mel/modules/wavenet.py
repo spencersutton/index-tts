@@ -2,9 +2,8 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from indextts.s2mel.modules.encodec import SConv1d
-
 from indextts.s2mel.modules import commons
+from indextts.s2mel.modules.encodec import SConv1d
 
 LRELU_SLOPE = 0.1
 

@@ -1,12 +1,12 @@
-import torch
-from torch import nn
 import math
 
+import torch
+from torch import nn
+from torch.nn.utils import weight_norm
+
+from indextts.s2mel.modules.commons import sequence_mask
 from indextts.s2mel.modules.gpt_fast.model import ModelArgs, Transformer
 from indextts.s2mel.modules.wavenet import WN
-from indextts.s2mel.modules.commons import sequence_mask
-
-from torch.nn.utils import weight_norm
 
 
 def modulate(x, shift, scale):

@@ -5,7 +5,6 @@
 
 import torch
 import torch.nn as nn
-
 from torch.nn import functional as F
 
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize import ResidualVQ

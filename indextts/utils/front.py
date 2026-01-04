@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
-from functools import lru_cache
 import os
 import re
 import traceback
 import warnings
+from functools import lru_cache
 from typing import overload
 
 from sentencepiece import SentencePieceProcessor
@@ -162,7 +161,7 @@ class TextNormalizer:
             result = self.restore_pinyin_tones(result, pinyin_list)
             # 恢复技术术语
             result = self.restore_tech_terms(result, tech_list)
-            pattern = re.compile("|".join(re.escape(p) for p in self.zh_char_rep_map.keys()))
+            pattern = re.compile("|".join(re.escape(p) for p in self.zh_char_rep_map))
             result = pattern.sub(lambda x: self.zh_char_rep_map[x.group()], result)
         else:
             try:
@@ -178,7 +177,7 @@ class TextNormalizer:
             except Exception:
                 result = text
                 print(traceback.format_exc())
-            pattern = re.compile("|".join(re.escape(p) for p in self.char_rep_map.keys()))
+            pattern = re.compile("|".join(re.escape(p) for p in self.char_rep_map))
             result = pattern.sub(lambda x: self.char_rep_map[x.group()], result)
         return result
 
@@ -341,7 +340,7 @@ class TextNormalizer:
         if glossary_path and os.path.exists(glossary_path):
             import yaml
 
-            with open(glossary_path, "r", encoding="utf-8") as f:
+            with open(glossary_path, encoding="utf-8") as f:
                 external_glossary = yaml.safe_load(f)
                 if external_glossary and isinstance(external_glossary, dict):
                     self.term_glossary = external_glossary
@@ -553,11 +552,10 @@ class TextTokenizer:
                 )
             elif current_segment_tokens_len <= max_text_tokens_per_segment:
                 if token in split_tokens and current_segment_tokens_len > 2:
-                    if i < len(tokenized_str) - 1:
-                        if tokenized_str[i + 1] in ["'", "▁'"]:
-                            # 后续token是'，则不切分
-                            current_segment.append(tokenized_str[i + 1])
-                            i += 1
+                    if i < len(tokenized_str) - 1 and tokenized_str[i + 1] in ["'", "▁'"]:
+                        # 后续token是'，则不切分
+                        current_segment.append(tokenized_str[i + 1])
+                        i += 1
                     segments.append(current_segment)
                     current_segment = []
                     current_segment_tokens_len = 0

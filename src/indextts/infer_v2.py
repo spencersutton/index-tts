@@ -255,8 +255,6 @@ class IndexTTS2:
                     elif code[k] == silent_token and n < 10:
                         ncode_idx.append(k)
                         n += 1
-                    # if (k == 0 and code[k] == 52) or (code[k] == 52 and code[k-1] == 52):
-                    #    n += 1
                 # new code
                 len_ = len(ncode_idx)
                 codes_list.append(code[ncode_idx])
@@ -613,7 +611,6 @@ class IndexTTS2:
 
                     if emo_vector is not None:
                         emovec = emovec_mat + (1 - torch.sum(weight_vector)) * emovec
-                        # emovec = emovec_mat
 
                     codes, speech_conditioning_latent = self.gpt.inference_speech(
                         spk_cond_emb,
@@ -645,10 +642,6 @@ class IndexTTS2:
                     has_warned = True
 
                 code_lens = torch.tensor([codes.shape[-1]], device=codes.device, dtype=codes.dtype)
-                #                 if verbose:
-                #                     print(codes, type(codes))
-                #                     print(f"codes shape: {codes.shape}, codes type: {codes.dtype}")
-                #                     print(f"code len: {code_lens}")
 
                 code_lens = []
                 max_code_len = 0
@@ -721,7 +714,6 @@ class IndexTTS2:
                 wav = torch.clamp(32767 * wav, -32767.0, 32767.0)
                 if verbose:
                     print(f"wav shape: {wav.shape}", "min:", wav.min(), "max:", wav.max())
-                # wavs.append(wav[:, :-512])
                 wavs.append(wav.cpu())  # to cpu before saving
                 if stream_return:
                     yield wav.cpu()
@@ -862,18 +854,14 @@ class QwenEmotion:
             content = json.loads(content)
         except json.decoder.JSONDecodeError:
             # invalid JSON; fallback to manual string parsing
-            # print(">> parsing QwenEmotion response", content)
             content = {m.group(1): float(m.group(2)) for m in re.finditer(r'([^\s":.,]+?)"?\s*:\s*([\d.]+)', content)}
-            # print(">> dict result", content)
 
         # workaround for QwenEmotion's inability to distinguish "悲伤" (sad) vs "低落" (melancholic).
         # if we detect any of the IndexTTS "melancholic" words, we swap those vectors
         # to encode the "sad" emotion as "melancholic" (instead of sadness).
         text_input_lower = text_input.lower()
         if any(word in text_input_lower for word in self.melancholic_words):
-            # print(">> before vec swap", content)
             content["悲伤"], content["低落"] = content.get("低落", 0.0), content.get("悲伤", 0.0)
-            # print(">>  after vec swap", content)
 
         return self.convert(content)
 

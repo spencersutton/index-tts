@@ -18,7 +18,6 @@ def f0_to_coarse(f0, f0_bin):
     a = (f0_bin - 2) / (f0_mel_max - f0_mel_min)
     b = f0_mel_min * a - 1.0
     f0_mel = torch.where(f0_mel > 0, f0_mel * a - b, f0_mel)
-    # torch.clip_(f0_mel, min=1., max=float(f0_bin - 1))
     f0_coarse = torch.round(f0_mel).long()
     f0_coarse = f0_coarse * (f0_coarse > 0)
     f0_coarse = f0_coarse + ((f0_coarse < 1) * 1)
@@ -106,8 +105,6 @@ class InterpolateRegulator(nn.Module):
                 x_emb = self.embedding(x[:, 0])
                 for i, emb in enumerate(self.extra_codebooks):
                     x_emb = x_emb + (n_quantizers > i + 1)[..., None, None] * emb(x[:, i + 1])
-                    # add mask token if not using this codebook
-                    # x_emb = x_emb + (n_quantizers <= i+1)[..., None, None] * self.extra_codebook_mask_tokens[i]
                 x = x_emb
             elif self.n_codebooks == 1:
                 if len(x.size()) == 2:
@@ -128,7 +125,6 @@ class InterpolateRegulator(nn.Module):
             if f0 is None:
                 x = x + self.f0_mask.unsqueeze(-1)
             else:
-                # quantized_f0 = torch.bucketize(f0, self.f0_bins.to(f0.device))  # (N, T)
                 quantized_f0 = f0_to_coarse(f0, self.n_f0_bins)
                 quantized_f0 = quantized_f0.clamp(0, self.n_f0_bins - 1).long()
                 f0_emb = self.f0_embedding(quantized_f0)

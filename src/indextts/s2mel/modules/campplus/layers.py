@@ -9,17 +9,11 @@ from torch import nn
 
 def get_nonlinear(config_str, channels):
     nonlinear = nn.Sequential()
-    for name in config_str.split("-"):
-        if name == "relu":
-            nonlinear.add_module("relu", nn.ReLU(inplace=True))
-        elif name == "prelu":
-            nonlinear.add_module("prelu", nn.PReLU(channels))
-        elif name == "batchnorm":
-            nonlinear.add_module("batchnorm", nn.BatchNorm1d(channels))
-        elif name == "batchnorm_":
-            nonlinear.add_module("batchnorm", nn.BatchNorm1d(channels, affine=False))
-        else:
-            raise ValueError(f"Unexpected module ({name}).")
+    if config_str == "batchnorm-relu":
+        nonlinear.add_module("batchnorm", nn.BatchNorm1d(channels))
+        nonlinear.add_module("relu", nn.ReLU(inplace=True))
+    elif config_str == "batchnorm_":
+        nonlinear.add_module("batchnorm", nn.BatchNorm1d(channels, affine=False))
     return nonlinear
 
 
@@ -38,17 +32,7 @@ class StatsPool(nn.Module):
 
 
 class TDNNLayer(nn.Module):
-    def __init__(
-        self,
-        in_channels,
-        out_channels,
-        kernel_size,
-        stride=1,
-        padding=0,
-        dilation=1,
-        bias=False,
-        config_str="batchnorm-relu",
-    ):
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, bias=False):
         super().__init__()
         if padding < 0:
             assert kernel_size % 2 == 1, f"Expect equal paddings, but got even kernel size ({kernel_size})"
@@ -56,7 +40,7 @@ class TDNNLayer(nn.Module):
         self.linear = nn.Conv1d(
             in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias
         )
-        self.nonlinear = get_nonlinear(config_str, out_channels)
+        self.nonlinear = get_nonlinear("batchnorm-relu", out_channels)
 
     def forward(self, x):
         x = self.linear(x)
@@ -96,25 +80,14 @@ class CAMLayer(nn.Module):
 
 
 class CAMDenseTDNNLayer(nn.Module):
-    def __init__(
-        self,
-        in_channels,
-        out_channels,
-        bn_channels,
-        kernel_size,
-        stride=1,
-        dilation=1,
-        bias=False,
-        config_str="batchnorm-relu",
-        memory_efficient=False,
-    ):
+    def __init__(self, in_channels, out_channels, bn_channels, kernel_size, stride=1, dilation=1, bias=False):
         super().__init__()
         assert kernel_size % 2 == 1, f"Expect equal paddings, but got even kernel size ({kernel_size})"
         padding = (kernel_size - 1) // 2 * dilation
-        self.memory_efficient = memory_efficient
-        self.nonlinear1 = get_nonlinear(config_str, in_channels)
+        self.memory_efficient = False
+        self.nonlinear1 = get_nonlinear("batchnorm-relu", in_channels)
         self.linear1 = nn.Conv1d(in_channels, bn_channels, 1, bias=False)
-        self.nonlinear2 = get_nonlinear(config_str, bn_channels)
+        self.nonlinear2 = get_nonlinear("batchnorm-relu", bn_channels)
         self.cam_layer = CAMLayer(
             bn_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias
         )
@@ -133,17 +106,7 @@ class CAMDenseTDNNLayer(nn.Module):
 
 class CAMDenseTDNNBlock(nn.ModuleList):
     def __init__(
-        self,
-        num_layers,
-        in_channels,
-        out_channels,
-        bn_channels,
-        kernel_size,
-        stride=1,
-        dilation=1,
-        bias=False,
-        config_str="batchnorm-relu",
-        memory_efficient=False,
+        self, num_layers, in_channels, out_channels, bn_channels, kernel_size, stride=1, dilation=1, bias=False
     ):
         super().__init__()
         for i in range(num_layers):
@@ -155,10 +118,8 @@ class CAMDenseTDNNBlock(nn.ModuleList):
                 stride=stride,
                 dilation=dilation,
                 bias=bias,
-                config_str=config_str,
-                memory_efficient=memory_efficient,
             )
-            self.add_module("tdnnd%d" % (i + 1), layer)
+            self.add_module(f"tdnnd{i + 1}", layer)
 
     def forward(self, x):
         for layer in self:
@@ -167,9 +128,9 @@ class CAMDenseTDNNBlock(nn.ModuleList):
 
 
 class TransitLayer(nn.Module):
-    def __init__(self, in_channels, out_channels, bias=True, config_str="batchnorm-relu"):
+    def __init__(self, in_channels, out_channels, bias=True):
         super().__init__()
-        self.nonlinear = get_nonlinear(config_str, in_channels)
+        self.nonlinear = get_nonlinear("batchnorm-relu", in_channels)
         self.linear = nn.Conv1d(in_channels, out_channels, 1, bias=bias)
 
     def forward(self, x):
@@ -179,10 +140,10 @@ class TransitLayer(nn.Module):
 
 
 class DenseLayer(nn.Module):
-    def __init__(self, in_channels, out_channels, bias=False, config_str="batchnorm-relu"):
+    def __init__(self, in_channels, out_channels, bias=False):
         super().__init__()
         self.linear = nn.Conv1d(in_channels, out_channels, 1, bias=bias)
-        self.nonlinear = get_nonlinear(config_str, out_channels)
+        self.nonlinear = get_nonlinear("batchnorm_", out_channels)
 
     def forward(self, x):
         if len(x.shape) == 2:

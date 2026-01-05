@@ -1,6 +1,8 @@
 # Copyright 3D-Speaker (https://github.com/alibaba-damo-academy/3D-Speaker). All Rights Reserved.
 # Licensed under the Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
 
+from collections import OrderedDict
+
 import torch
 import torch.nn.functional as F
 import torch.utils.checkpoint as cp
@@ -8,13 +10,15 @@ from torch import nn
 
 
 def get_nonlinear(config_str, channels):
-    nonlinear = nn.Sequential()
     if config_str == "batchnorm-relu":
-        nonlinear.add_module("batchnorm", nn.BatchNorm1d(channels))
-        nonlinear.add_module("relu", nn.ReLU(inplace=True))
+        modules: OrderedDict[str, nn.Module] = OrderedDict({
+            "batchnorm": nn.BatchNorm1d(channels),
+            "relu": nn.ReLU(inplace=True),
+        })
+        return nn.Sequential(modules)
     elif config_str == "batchnorm_":
-        nonlinear.add_module("batchnorm", nn.BatchNorm1d(channels, affine=False))
-    return nonlinear
+        modules: OrderedDict[str, nn.Module] = OrderedDict({"batchnorm": nn.BatchNorm1d(channels, affine=False)})
+        return nn.Sequential(modules)
 
 
 def statistics_pooling(x, dim=-1, keepdim=False, unbiased=True, eps=1e-2):

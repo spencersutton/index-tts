@@ -52,25 +52,14 @@ class FCM(nn.Module):
 
 
 class CAMPPlus(nn.Module):
-    def __init__(
-        self,
-        feat_dim=80,
-        embedding_size=512,
-        growth_rate=32,
-        bn_size=4,
-        init_channels=128,
-        config_str="batchnorm-relu",
-        memory_efficient=True,
-    ):
+    def __init__(self, feat_dim=80, embedding_size=512, growth_rate=32, bn_size=4, init_channels=128):
         super().__init__()
 
         self.head = FCM(feat_dim=feat_dim)
         channels = self.head.out_channels
 
         self.xvector = nn.Sequential(
-            OrderedDict([
-                ("tdnn", TDNNLayer(channels, init_channels, 5, stride=2, dilation=1, padding=-1, config_str=config_str))
-            ])
+            OrderedDict([("tdnn", TDNNLayer(channels, init_channels, 5, stride=2, dilation=1, padding=-1))])
         )
         channels = init_channels
         for i, (num_layers, kernel_size, dilation) in enumerate(zip((12, 24, 16), (3, 3, 3), (1, 2, 2))):
@@ -81,20 +70,16 @@ class CAMPPlus(nn.Module):
                 bn_channels=bn_size * growth_rate,
                 kernel_size=kernel_size,
                 dilation=dilation,
-                config_str=config_str,
-                memory_efficient=memory_efficient,
             )
-            self.xvector.add_module("block%d" % (i + 1), block)
+            self.xvector.add_module(f"block{i + 1}", block)
             channels = channels + num_layers * growth_rate
-            self.xvector.add_module(
-                "transit%d" % (i + 1), TransitLayer(channels, channels // 2, bias=False, config_str=config_str)
-            )
+            self.xvector.add_module(f"transit{i + 1}", TransitLayer(channels, channels // 2, bias=False))
             channels //= 2
 
-        self.xvector.add_module("out_nonlinear", get_nonlinear(config_str, channels))
+        self.xvector.add_module("out_nonlinear", get_nonlinear("batchnorm-relu", channels))
 
         self.xvector.add_module("stats", StatsPool())
-        self.xvector.add_module("dense", DenseLayer(channels * 2, embedding_size, config_str="batchnorm_"))
+        self.xvector.add_module("dense", DenseLayer(channels * 2, embedding_size))
 
         for m in self.modules():
             if isinstance(m, (nn.Conv1d, nn.Linear)):

@@ -246,12 +246,36 @@ class BaseEncoder(torch.nn.Module):
             linear_units (int): the hidden units number of position-wise feed
                 forward
             num_blocks (int): the number of decoder blocks
+            dropout_rate (float): dropout rate
+            attention_dropout_rate (float): dropout rate in attention
+            positional_dropout_rate (float): dropout rate after adding
+                positional encoding
+            pos_enc_layer_type (str): Encoder positional encoding layer type.
+                opitonal [abs_pos, scaled_abs_pos, rel_pos, no_pos]
+            normalize_before (bool):
+                True: use layer_norm before each sub-block of a layer.
+                False: use layer_norm after each sub-block of a layer.
+            concat_after (bool): whether to concat attention layer's input
+                and output.
+                True: x -> x + linear(concat(x, att(x)))
+                False: x -> x + att(x)
+            static_chunk_size (int): chunk size for static chunk training and
+                decoding
+            use_dynamic_chunk (bool): whether use dynamic chunk size for
+                training or not, You can only use fixed chunk(chunk_size > 0)
+                or dyanmic chunk size(use_dynamic_chunk = True)
+            global_cmvn (Optional[torch.nn.Module]): Optional GlobalCMVN module
+            use_dynamic_left_chunk (bool): whether use dynamic left chunk in
+                dynamic chunk training
         """
         super().__init__()
         self._output_size = output_size
 
         self.embed = Conv2dSubsampling2(input_size, output_size, RelPositionalEncoding(output_size))
 
+        self.embed = Conv2dSubsampling2(input_size, output_size, dropout_rate, pos_enc_class(output_size, dropout_rate))
+
+        self.normalize_before = normalize_before
         self.after_norm = torch.nn.LayerNorm(output_size, eps=1e-5)
 
     def output_size(self) -> int:

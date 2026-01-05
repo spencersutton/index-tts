@@ -333,28 +333,20 @@ class UnifiedVoice(nn.Module):
         self.cond_num = condition_num_latent
         self.cond_mask_pad = nn.ConstantPad1d((self.cond_num, 0), True)
         self.emo_cond_mask_pad = nn.ConstantPad1d((1, 0), True)
-        if condition_type == "perceiver":
-            self.conditioning_encoder = ConditioningEncoder(1024, model_dim, num_attn_heads=heads)
-            self.perceiver_encoder = PerceiverResampler(model_dim, dim_context=model_dim, num_latents=self.cond_num)
-        elif condition_type == "conformer_perceiver" or condition_type == "conformer_encoder":
-            self.conditioning_encoder = ConformerEncoder(
-                input_size=1024,
-                output_size=condition_module["output_size"],
-                linear_units=condition_module["linear_units"],
-                attention_heads=condition_module["attention_heads"],
-                num_blocks=condition_module["num_blocks"],
-                input_layer=condition_module["input_layer"],
-            )
-            if condition_type == "conformer_perceiver":
-                self.perceiver_encoder = PerceiverResampler(
-                    model_dim,
-                    dim_context=condition_module["output_size"],
-                    ff_mult=condition_module["perceiver_mult"],
-                    heads=condition_module["attention_heads"],
-                    num_latents=self.cond_num,
-                )
-        else:
-            self.conditioning_encoder = ConditioningEncoder(1024, model_dim, num_attn_heads=heads, mean=True)
+        self.conditioning_encoder = ConformerEncoder(
+            input_size=1024,
+            output_size=condition_module["output_size"],
+            linear_units=condition_module["linear_units"],
+            attention_heads=condition_module["attention_heads"],
+            num_blocks=condition_module["num_blocks"],
+        )
+        self.perceiver_encoder = PerceiverResampler(
+            model_dim,
+            dim_context=condition_module["output_size"],
+            ff_mult=condition_module["perceiver_mult"],
+            heads=condition_module["attention_heads"],
+            num_latents=self.cond_num,
+        )
 
         self.emo_conditioning_encoder = ConformerEncoder(
             input_size=1024,
@@ -362,7 +354,6 @@ class UnifiedVoice(nn.Module):
             linear_units=emo_condition_module["linear_units"],
             attention_heads=emo_condition_module["attention_heads"],
             num_blocks=emo_condition_module["num_blocks"],
-            input_layer=emo_condition_module["input_layer"],
         )
         self.emo_perceiver_encoder = PerceiverResampler(
             1024,

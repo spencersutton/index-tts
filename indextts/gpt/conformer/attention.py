@@ -28,11 +28,9 @@ class MultiHeadedAttention(nn.Module):
     Args:
         n_head (int): The number of heads.
         n_feat (int): The number of features.
-        dropout_rate (float): Dropout rate.
-
     """
 
-    def __init__(self, n_head: int, n_feat: int, dropout_rate: float):
+    def __init__(self, n_head: int, n_feat: int):
         """Construct an MultiHeadedAttention object."""
         super().__init__()
         assert n_feat % n_head == 0
@@ -43,7 +41,7 @@ class MultiHeadedAttention(nn.Module):
         self.linear_k = nn.Linear(n_feat, n_feat)
         self.linear_v = nn.Linear(n_feat, n_feat)
         self.linear_out = nn.Linear(n_feat, n_feat)
-        self.dropout = nn.Dropout(p=dropout_rate)
+        self.dropout = nn.Dropout(0.0)
 
     def forward_qkv(
         self, query: torch.Tensor, key: torch.Tensor, value: torch.Tensor
@@ -190,12 +188,11 @@ class RelPositionMultiHeadedAttention(MultiHeadedAttention):
     Args:
         n_head (int): The number of heads.
         n_feat (int): The number of features.
-        dropout_rate (float): Dropout rate.
     """
 
-    def __init__(self, n_head, n_feat, dropout_rate):
+    def __init__(self, n_head, n_feat):
         """Construct an RelPositionMultiHeadedAttention object."""
-        super().__init__(n_head, n_feat, dropout_rate)
+        super().__init__(n_head, n_feat)
         # linear transformation for positional encoding
         self.linear_pos = nn.Linear(n_feat, n_feat, bias=False)
         # these two learnable bias are used in matrix c and matrix d

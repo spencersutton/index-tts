@@ -25,19 +25,18 @@ class PositionalEncoding(torch.nn.Module):
     """Positional encoding.
 
     :param int d_model: embedding dim
-    :param float dropout_rate: dropout rate
     :param int max_len: maximum input length
 
     PE(pos, 2i)   = sin(pos/(10000^(2i/dmodel)))
     PE(pos, 2i+1) = cos(pos/(10000^(2i/dmodel)))
     """
 
-    def __init__(self, d_model: int, dropout_rate: float, max_len: int = 5000, reverse: bool = False):
+    def __init__(self, d_model: int, max_len: int = 5000, reverse: bool = False):
         """Construct an PositionalEncoding object."""
         super().__init__()
         self.d_model = d_model
         self.xscale = math.sqrt(self.d_model)
-        self.dropout = torch.nn.Dropout(p=dropout_rate)
+        self.dropout = torch.nn.Dropout(0.0)
         self.max_len = max_len
 
         pe = torch.zeros(self.max_len, self.d_model)
@@ -104,13 +103,12 @@ class RelPositionalEncoding(PositionalEncoding):
     See : Appendix B in https://arxiv.org/abs/1901.02860
     Args:
         d_model (int): Embedding dimension.
-        dropout_rate (float): Dropout rate.
         max_len (int): Maximum input length.
     """
 
-    def __init__(self, d_model: int, dropout_rate: float, max_len: int = 5000):
+    def __init__(self, d_model: int, max_len: int = 5000):
         """Initialize class."""
-        super().__init__(d_model, dropout_rate, max_len, reverse=True)
+        super().__init__(d_model, max_len, reverse=True)
 
     def forward(self, x: torch.Tensor, offset: int | torch.Tensor = 0) -> tuple[torch.Tensor, torch.Tensor]:
         """Compute positional encoding.

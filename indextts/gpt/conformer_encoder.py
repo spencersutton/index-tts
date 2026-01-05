@@ -16,18 +16,15 @@ class PositionwiseFeedForward(torch.nn.Module):
     Args:
         idim (int): Input dimenstion.
         hidden_units (int): The number of hidden units.
-        dropout_rate (float): Dropout rate.
         activation (torch.nn.Module): Activation function
     """
 
-    def __init__(
-        self, idim: int, hidden_units: int, dropout_rate: float, activation: torch.nn.Module = torch.nn.ReLU()
-    ):
+    def __init__(self, idim: int, hidden_units: int, activation: torch.nn.Module = torch.nn.ReLU()):
         """Construct a PositionwiseFeedForward object."""
         super().__init__()
         self.w_1 = torch.nn.Linear(idim, hidden_units)
         self.activation = activation
-        self.dropout = torch.nn.Dropout(dropout_rate)
+        self.dropout = torch.nn.Dropout(0.0)
         self.w_2 = torch.nn.Linear(hidden_units, idim)
 
     def forward(self, xs: torch.Tensor) -> torch.Tensor:
@@ -44,7 +41,7 @@ class PositionwiseFeedForward(torch.nn.Module):
 class ConvolutionModule(nn.Module):
     """ConvolutionModule in Conformer model."""
 
-    def __init__(self, channels: int, kernel_size: int = 15, activation: nn.Module = nn.ReLU(), bias: bool = True):
+    def __init__(self, channels: int, activation: nn.Module = nn.ReLU(), bias: bool = True):
         """Construct an ConvolutionModule object.
         Args:
             channels (int): The number of channels of conv layers.
@@ -59,12 +56,12 @@ class ConvolutionModule(nn.Module):
         #    padded with self.lorder frames on the left in forward.
         # else: it's a symmetrical convolution
         # kernel_size should be an odd number for none causal convolution
-        assert (kernel_size - 1) % 2 == 0
-        padding = (kernel_size - 1) // 2
+        assert (15 - 1) % 2 == 0
+        padding = (15 - 1) // 2
         self.lorder = 0
 
         self.depthwise_conv = nn.Conv1d(
-            channels, channels, kernel_size, stride=1, padding=padding, groups=channels, bias=bias
+            channels, channels, kernel_size=15, stride=1, padding=padding, groups=channels, bias=bias
         )
 
         self.use_layer_norm = True
@@ -140,12 +137,8 @@ class ConformerEncoderLayer(nn.Module):
             instance can be used as the argument.
         feed_forward (torch.nn.Module): Feed-forward module instance.
             `PositionwiseFeedForward` instance can be used as the argument.
-        feed_forward_macaron (torch.nn.Module): Additional feed-forward module
-             instance.
-            `PositionwiseFeedForward` instance can be used as the argument.
         conv_module (torch.nn.Module): Convolution module instance.
             `ConvlutionModule` instance can be used as the argument.
-        dropout_rate (float): Dropout rate.
     """
 
     def __init__(
@@ -153,19 +146,16 @@ class ConformerEncoderLayer(nn.Module):
         size: int,
         self_attn: torch.nn.Module,
         feed_forward: nn.Module | None = None,
-        feed_forward_macaron: nn.Module | None = None,
         conv_module: nn.Module | None = None,
-        dropout_rate: float = 0.1,
     ):
         """Construct an EncoderLayer object."""
         super().__init__()
         self.self_attn = self_attn
         self.feed_forward = feed_forward
-        self.feed_forward_macaron = feed_forward_macaron
         self.conv_module = conv_module
         self.norm_ff = nn.LayerNorm(size, eps=1e-5)  # for the FNN module
         self.norm_mha = nn.LayerNorm(size, eps=1e-5)  # for the MHA module
-        if feed_forward_macaron is not None:
+        if None is not None:
             self.norm_ff_macaron = nn.LayerNorm(size, eps=1e-5)
             self.ff_scale = 0.5
         else:
@@ -173,7 +163,7 @@ class ConformerEncoderLayer(nn.Module):
         if self.conv_module is not None:
             self.norm_conv = nn.LayerNorm(size, eps=1e-5)  # for the CNN module
             self.norm_final = nn.LayerNorm(size, eps=1e-5)  # for the final output of the block
-        self.dropout = nn.Dropout(dropout_rate)
+        self.dropout = nn.Dropout(0.0)
         self.size = size
         if False:
             self.concat_linear = nn.Linear(size + size, size)
@@ -211,12 +201,6 @@ class ConformerEncoderLayer(nn.Module):
             torch.Tensor: cnn_cache tensor (#batch, size, cache_t2).
         """
 
-        # whether to use macaron style
-        if self.feed_forward_macaron is not None:
-            residual = x
-            x = self.norm_ff_macaron(x)
-            x = residual + self.ff_scale * self.dropout(self.feed_forward_macaron(x))
-
         # multi-headed self-attention module
         residual = x
         x = self.norm_mha(x)
@@ -253,7 +237,6 @@ class BaseEncoder(torch.nn.Module):
         attention_heads: int = 4,
         linear_units: int = 2048,
         num_blocks: int = 6,
-        dropout_rate: float = 0.0,
     ):
         """
         Args:
@@ -263,25 +246,11 @@ class BaseEncoder(torch.nn.Module):
             linear_units (int): the hidden units number of position-wise feed
                 forward
             num_blocks (int): the number of decoder blocks
-            dropout_rate (float): dropout rate
-            attention_dropout_rate (float): dropout rate in attention
-            positional_dropout_rate (float): dropout rate after adding
-                positional encoding
-            static_chunk_size (int): chunk size for static chunk training and
-                decoding
-            use_dynamic_chunk (bool): whether use dynamic chunk size for
-                training or not, You can only use fixed chunk(chunk_size > 0)
-                or dyanmic chunk size(use_dynamic_chunk = True)
-            global_cmvn (Optional[torch.nn.Module]): Optional GlobalCMVN module
-            use_dynamic_left_chunk (bool): whether use dynamic left chunk in
-                dynamic chunk training
         """
         super().__init__()
         self._output_size = output_size
 
-        self.embed = Conv2dSubsampling2(
-            input_size, output_size, dropout_rate, RelPositionalEncoding(output_size, dropout_rate)
-        )
+        self.embed = Conv2dSubsampling2(input_size, output_size, RelPositionalEncoding(output_size))
 
         self.after_norm = torch.nn.LayerNorm(output_size, eps=1e-5)
 
@@ -332,40 +301,17 @@ class ConformerEncoder(BaseEncoder):
         attention_heads: int = 4,
         linear_units: int = 2048,
         num_blocks: int = 6,
-        dropout_rate: float = 0.0,
-        macaron_style: bool = False,
-        use_cnn_module: bool = True,
-        cnn_module_kernel: int = 15,
     ):
-        """Construct ConformerEncoder
-
-        Args:
-            input_size to use_dynamic_chunk, see in BaseEncoder
-            positionwise_conv_kernel_size (int): Kernel size of positionwise
-                conv1d layer.
-            macaron_style (bool): Whether to use macaron style for
-                positionwise layer.
-            selfattention_layer_type (str): Encoder attention layer type,
-                the parameter has no effect now, it's just for configure
-                compatibility.
-            activation_type (str): Encoder activation function type.
-            use_cnn_module (bool): Whether to use convolution module.
-            cnn_module_kernel (int): Kernel size of convolution module.
-            causal (bool): whether to use causal convolution or not.
-        """
-
-        super().__init__(input_size, output_size, attention_heads, linear_units, num_blocks, dropout_rate)
+        super().__init__(input_size, output_size, attention_heads, linear_units, num_blocks)
 
         activation = torch.nn.SiLU()
 
         self.encoders = torch.nn.ModuleList([
             ConformerEncoderLayer(
                 output_size,
-                RelPositionMultiHeadedAttention(attention_heads, output_size, dropout_rate),
-                PositionwiseFeedForward(output_size, linear_units, dropout_rate, activation),
-                PositionwiseFeedForward(output_size, linear_units, dropout_rate, activation) if macaron_style else None,
-                ConvolutionModule(output_size, cnn_module_kernel, activation) if use_cnn_module else None,
-                dropout_rate,
+                RelPositionMultiHeadedAttention(attention_heads, output_size),
+                PositionwiseFeedForward(output_size, linear_units, activation=activation),
+                ConvolutionModule(output_size, activation),
             )
             for _ in range(num_blocks)
         ])

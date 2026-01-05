@@ -146,13 +146,6 @@ class ConformerEncoderLayer(nn.Module):
         conv_module (torch.nn.Module): Convolution module instance.
             `ConvlutionModule` instance can be used as the argument.
         dropout_rate (float): Dropout rate.
-        normalize_before (bool):
-            True: use layer_norm before each sub-block.
-            False: use layer_norm after each sub-block.
-        concat_after (bool): Whether to concat attention layer's input and
-            output.
-            True: x -> x + linear(concat(x, att(x)))
-            False: x -> x + att(x)
     """
 
     def __init__(
@@ -163,8 +156,6 @@ class ConformerEncoderLayer(nn.Module):
         feed_forward_macaron: nn.Module | None = None,
         conv_module: nn.Module | None = None,
         dropout_rate: float = 0.1,
-        normalize_before: bool = True,
-        concat_after: bool = False,
     ):
         """Construct an EncoderLayer object."""
         super().__init__()
@@ -184,9 +175,7 @@ class ConformerEncoderLayer(nn.Module):
             self.norm_final = nn.LayerNorm(size, eps=1e-5)  # for the final output of the block
         self.dropout = nn.Dropout(dropout_rate)
         self.size = size
-        self.normalize_before = normalize_before
-        self.concat_after = concat_after
-        if self.concat_after:
+        if False:
             self.concat_linear = nn.Linear(size + size, size)
         else:
             self.concat_linear = nn.Identity()
@@ -225,47 +214,30 @@ class ConformerEncoderLayer(nn.Module):
         # whether to use macaron style
         if self.feed_forward_macaron is not None:
             residual = x
-            if self.normalize_before:
-                x = self.norm_ff_macaron(x)
+            x = self.norm_ff_macaron(x)
             x = residual + self.ff_scale * self.dropout(self.feed_forward_macaron(x))
-            if not self.normalize_before:
-                x = self.norm_ff_macaron(x)
 
         # multi-headed self-attention module
         residual = x
-        if self.normalize_before:
-            x = self.norm_mha(x)
+        x = self.norm_mha(x)
 
         x_att, new_att_cache = self.self_attn(x, x, x, mask, pos_emb, att_cache)
-        if self.concat_after:
-            x_concat = torch.cat((x, x_att), dim=-1)
-            x = residual + self.concat_linear(x_concat)
-        else:
-            x = residual + self.dropout(x_att)
-        if not self.normalize_before:
-            x = self.norm_mha(x)
+        x = residual + self.dropout(x_att)
 
         # convolution module
         # Fake new cnn cache here, and then change it in conv_module
         new_cnn_cache = torch.zeros((0, 0, 0), dtype=x.dtype, device=x.device)
         if self.conv_module is not None:
             residual = x
-            if self.normalize_before:
-                x = self.norm_conv(x)
+            x = self.norm_conv(x)
             x, new_cnn_cache = self.conv_module(x, mask_pad, cnn_cache)
             x = residual + self.dropout(x)
 
-            if not self.normalize_before:
-                x = self.norm_conv(x)
-
         # feed forward module
         residual = x
-        if self.normalize_before:
-            x = self.norm_ff(x)
+        x = self.norm_ff(x)
 
         x = residual + self.ff_scale * self.dropout(self.feed_forward(x))
-        if not self.normalize_before:
-            x = self.norm_ff(x)
 
         if self.conv_module is not None:
             x = self.norm_final(x)
@@ -282,8 +254,6 @@ class BaseEncoder(torch.nn.Module):
         linear_units: int = 2048,
         num_blocks: int = 6,
         dropout_rate: float = 0.0,
-        normalize_before: bool = True,
-        concat_after: bool = False,
     ):
         """
         Args:
@@ -297,13 +267,6 @@ class BaseEncoder(torch.nn.Module):
             attention_dropout_rate (float): dropout rate in attention
             positional_dropout_rate (float): dropout rate after adding
                 positional encoding
-            normalize_before (bool):
-                True: use layer_norm before each sub-block of a layer.
-                False: use layer_norm after each sub-block of a layer.
-            concat_after (bool): whether to concat attention layer's input
-                and output.
-                True: x -> x + linear(concat(x, att(x)))
-                False: x -> x + att(x)
             static_chunk_size (int): chunk size for static chunk training and
                 decoding
             use_dynamic_chunk (bool): whether use dynamic chunk size for
@@ -320,7 +283,6 @@ class BaseEncoder(torch.nn.Module):
             input_size, output_size, dropout_rate, RelPositionalEncoding(output_size, dropout_rate)
         )
 
-        self.normalize_before = normalize_before
         self.after_norm = torch.nn.LayerNorm(output_size, eps=1e-5)
 
     def output_size(self) -> int:
@@ -353,8 +315,7 @@ class BaseEncoder(torch.nn.Module):
         mask_pad = masks  # (B, 1, T/subsample_rate)
         for layer in self.encoders:
             xs, chunk_masks, _, _ = layer(xs, chunk_masks, pos_emb, mask_pad)
-        if self.normalize_before:
-            xs = self.after_norm(xs)
+        xs = self.after_norm(xs)
         # Here we assume the mask is not changed in encoder layers, so just
         # return the masks before encoder layers, and the masks will be used
         # for cross attention with decoder later
@@ -372,8 +333,6 @@ class ConformerEncoder(BaseEncoder):
         linear_units: int = 2048,
         num_blocks: int = 6,
         dropout_rate: float = 0.0,
-        normalize_before: bool = True,
-        concat_after: bool = False,
         macaron_style: bool = False,
         use_cnn_module: bool = True,
         cnn_module_kernel: int = 15,
@@ -395,16 +354,7 @@ class ConformerEncoder(BaseEncoder):
             causal (bool): whether to use causal convolution or not.
         """
 
-        super().__init__(
-            input_size,
-            output_size,
-            attention_heads,
-            linear_units,
-            num_blocks,
-            dropout_rate,
-            normalize_before,
-            concat_after,
-        )
+        super().__init__(input_size, output_size, attention_heads, linear_units, num_blocks, dropout_rate)
 
         activation = torch.nn.SiLU()
 
@@ -416,8 +366,6 @@ class ConformerEncoder(BaseEncoder):
                 PositionwiseFeedForward(output_size, linear_units, dropout_rate, activation) if macaron_style else None,
                 ConvolutionModule(output_size, cnn_module_kernel, activation) if use_cnn_module else None,
                 dropout_rate,
-                normalize_before,
-                concat_after,
             )
             for _ in range(num_blocks)
         ])

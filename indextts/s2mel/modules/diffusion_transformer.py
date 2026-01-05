@@ -117,32 +117,25 @@ class DiT(torch.nn.Module):
         input_pos = torch.arange(16384)
         self.register_buffer("input_pos", input_pos)
 
-        self.final_layer_type = args.DiT.final_layer_type  # mlp or wavenet
-        if self.final_layer_type == "wavenet":
-            self.t_embedder2 = TimestepEmbedder(args.wavenet.hidden_dim)
-            self.conv1 = nn.Linear(args.DiT.hidden_dim, args.wavenet.hidden_dim)
-            self.conv2 = nn.Conv1d(args.wavenet.hidden_dim, args.DiT.in_channels, 1)
-            self.wavenet = WN(
-                hidden_channels=args.wavenet.hidden_dim,
-                kernel_size=args.wavenet.kernel_size,
-                dilation_rate=args.wavenet.dilation_rate,
-                n_layers=args.wavenet.num_layers,
-                gin_channels=args.wavenet.hidden_dim,
-                p_dropout=args.wavenet.p_dropout,
-                causal=False,
-            )
-            self.final_layer = FinalLayer(args.wavenet.hidden_dim, 1, args.wavenet.hidden_dim)
-            self.res_projection = nn.Linear(
-                args.DiT.hidden_dim, args.wavenet.hidden_dim
-            )  # residual connection from tranformer output to final output
-            self.wavenet_style_condition = args.wavenet.style_condition
-            assert args.DiT.style_condition == args.wavenet.style_condition
-        else:
-            self.final_mlp = nn.Sequential(
-                nn.Linear(args.DiT.hidden_dim, args.DiT.hidden_dim),
-                nn.SiLU(),
-                nn.Linear(args.DiT.hidden_dim, args.DiT.in_channels),
-            )
+        self.t_embedder2 = TimestepEmbedder(args.wavenet.hidden_dim)
+        self.conv1 = nn.Linear(args.DiT.hidden_dim, args.wavenet.hidden_dim)
+        self.conv2 = nn.Conv1d(args.wavenet.hidden_dim, args.DiT.in_channels, 1)
+        self.wavenet = WN(
+            hidden_channels=args.wavenet.hidden_dim,
+            kernel_size=args.wavenet.kernel_size,
+            dilation_rate=args.wavenet.dilation_rate,
+            n_layers=args.wavenet.num_layers,
+            gin_channels=args.wavenet.hidden_dim,
+            p_dropout=args.wavenet.p_dropout,
+            causal=False,
+        )
+        self.final_layer = FinalLayer(args.wavenet.hidden_dim, 1, args.wavenet.hidden_dim)
+        self.res_projection = nn.Linear(
+            args.DiT.hidden_dim, args.wavenet.hidden_dim
+        )  # residual connection from tranformer output to final output
+        self.wavenet_style_condition = args.wavenet.style_condition
+        assert args.DiT.style_condition == args.wavenet.style_condition
+
         self.transformer_style_condition = args.DiT.style_condition
 
         self.class_dropout_prob = args.DiT.class_dropout_prob
@@ -226,17 +219,13 @@ class DiT(torch.nn.Module):
 
         if self.long_skip_connection:  # True
             x_res = self.skip_linear(torch.cat([x_res, x], dim=-1))
-        if self.final_layer_type == "wavenet":
-            x = self.conv1(x_res)
-            x = x.transpose(1, 2)
-            t2 = self.t_embedder2(t)
-            x = self.wavenet(x, x_mask, g=t2.unsqueeze(2)).transpose(1, 2) + self.res_projection(
-                x_res
-            )  # long residual connection
-            x = self.final_layer(x, t1).transpose(1, 2)
-            x = self.conv2(x)
-        else:
-            x = self.final_mlp(x_res)
-            x = x.transpose(1, 2)
+        x = self.conv1(x_res)
+        x = x.transpose(1, 2)
+        t2 = self.t_embedder2(t)
+        x = self.wavenet(x, x_mask, g=t2.unsqueeze(2)).transpose(1, 2) + self.res_projection(
+            x_res
+        )  # long residual connection
+        x = self.final_layer(x, t1).transpose(1, 2)
+        x = self.conv2(x)
         # x [2,80,1863]
         return x

@@ -250,8 +250,6 @@ class BaseEncoder(torch.nn.Module):
             attention_dropout_rate (float): dropout rate in attention
             positional_dropout_rate (float): dropout rate after adding
                 positional encoding
-            pos_enc_layer_type (str): Encoder positional encoding layer type.
-                opitonal [abs_pos, scaled_abs_pos, rel_pos, no_pos]
             normalize_before (bool):
                 True: use layer_norm before each sub-block of a layer.
                 False: use layer_norm after each sub-block of a layer.
@@ -271,9 +269,9 @@ class BaseEncoder(torch.nn.Module):
         super().__init__()
         self._output_size = output_size
 
-        self.embed = Conv2dSubsampling2(input_size, output_size, RelPositionalEncoding(output_size))
-
-        self.embed = Conv2dSubsampling2(input_size, output_size, dropout_rate, pos_enc_class(output_size, dropout_rate))
+        self.embed = Conv2dSubsampling2(
+            input_size, output_size, dropout_rate, RelPositionalEncoding(output_size, dropout_rate)
+        )
 
         self.normalize_before = normalize_before
         self.after_norm = torch.nn.LayerNorm(output_size, eps=1e-5)
@@ -326,16 +324,29 @@ class ConformerEncoder(BaseEncoder):
         linear_units: int = 2048,
         num_blocks: int = 6,
     ):
-        super().__init__(input_size, output_size, attention_heads, linear_units, num_blocks)
+        super().__init__(
+            input_size,
+            output_size,
+            attention_heads,
+            linear_units,
+            num_blocks,
+            dropout_rate,
+            normalize_before,
+            concat_after,
+        )
 
         activation = torch.nn.SiLU()
 
         self.encoders = torch.nn.ModuleList([
             ConformerEncoderLayer(
                 output_size,
-                RelPositionMultiHeadedAttention(attention_heads, output_size),
-                PositionwiseFeedForward(output_size, linear_units, activation=activation),
-                ConvolutionModule(output_size, activation),
+                RelPositionMultiHeadedAttention(attention_heads, output_size, dropout_rate),
+                PositionwiseFeedForward(output_size, linear_units, dropout_rate, activation),
+                PositionwiseFeedForward(output_size, linear_units, dropout_rate, activation) if macaron_style else None,
+                ConvolutionModule(output_size, cnn_module_kernel, activation) if use_cnn_module else None,
+                dropout_rate,
+                normalize_before,
+                concat_after,
             )
             for _ in range(num_blocks)
         ])

@@ -60,18 +60,12 @@ class PositionalEncoding(torch.nn.Module):
         """
 
         self.pe = self.pe.to(x.device)
-        pos_emb = self.position_encoding(offset, x.size(1), False)
+        pos_emb = self.position_encoding(offset, x.size(1))
         x = x * self.xscale + pos_emb
         return self.dropout(x), self.dropout(pos_emb)
 
-    def position_encoding(self, offset: int | torch.Tensor, size: int, apply_dropout: bool = True) -> torch.Tensor:
+    def position_encoding(self, offset: int | torch.Tensor, size: int) -> torch.Tensor:
         """For getting encoding in a streaming fashion
-
-        Attention!!!!!
-        we apply dropout only once at the whole utterance level in a none
-        streaming way, but will call this function several times with
-        increasing input size in a streaming scenario, so the dropout will
-        be applied several times.
 
         Args:
             offset (int or torch.tensor): start offset
@@ -93,8 +87,6 @@ class PositionalEncoding(torch.nn.Module):
             index = index * flag
             pos_emb = F.embedding(index, self.pe[0])  # B X T X d_model
 
-        if apply_dropout:
-            pos_emb = self.dropout(pos_emb)
         return pos_emb
 
 
@@ -120,5 +112,5 @@ class RelPositionalEncoding(PositionalEncoding):
         """
         self.pe = self.pe.to(x.device)
         x = x * self.xscale
-        pos_emb = self.position_encoding(offset, x.size(1), False)
+        pos_emb = self.position_encoding(offset, x.size(1))
         return self.dropout(x), self.dropout(pos_emb)

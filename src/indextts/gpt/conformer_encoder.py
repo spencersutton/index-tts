@@ -3,13 +3,7 @@ import torch.nn as nn
 
 from indextts.gpt.conformer.attention import MultiHeadedAttention, RelPositionMultiHeadedAttention
 from indextts.gpt.conformer.embedding import NoPositionalEncoding, PositionalEncoding, RelPositionalEncoding
-from indextts.gpt.conformer.subsampling import (
-    Conv2dSubsampling2,
-    Conv2dSubsampling4,
-    Conv2dSubsampling6,
-    Conv2dSubsampling8,
-    LinearNoSubsampling,
-)
+from indextts.gpt.conformer.subsampling import Conv2dSubsampling2
 from indextts.utils.common import make_pad_mask
 
 
@@ -288,7 +282,6 @@ class BaseEncoder(torch.nn.Module):
         linear_units: int = 2048,
         num_blocks: int = 6,
         dropout_rate: float = 0.0,
-        input_layer: str = "conv2d",
         pos_enc_layer_type: str = "abs_pos",
         normalize_before: bool = True,
         concat_after: bool = False,
@@ -305,8 +298,6 @@ class BaseEncoder(torch.nn.Module):
             attention_dropout_rate (float): dropout rate in attention
             positional_dropout_rate (float): dropout rate after adding
                 positional encoding
-            input_layer (str): input layer type.
-                optional [linear, conv2d, conv2d6, conv2d8]
             pos_enc_layer_type (str): Encoder positional encoding layer type.
                 opitonal [abs_pos, scaled_abs_pos, rel_pos, no_pos]
             normalize_before (bool):
@@ -337,20 +328,7 @@ class BaseEncoder(torch.nn.Module):
         else:
             raise ValueError("unknown pos_enc_layer: " + pos_enc_layer_type)
 
-        if input_layer == "linear":
-            subsampling_class = LinearNoSubsampling
-        elif input_layer == "conv2d2":
-            subsampling_class = Conv2dSubsampling2
-        elif input_layer == "conv2d":
-            subsampling_class = Conv2dSubsampling4
-        elif input_layer == "conv2d6":
-            subsampling_class = Conv2dSubsampling6
-        elif input_layer == "conv2d8":
-            subsampling_class = Conv2dSubsampling8
-        else:
-            raise ValueError("unknown input_layer: " + input_layer)
-
-        self.embed = subsampling_class(input_size, output_size, dropout_rate, pos_enc_class(output_size, dropout_rate))
+        self.embed = Conv2dSubsampling2(input_size, output_size, dropout_rate, pos_enc_class(output_size, dropout_rate))
 
         self.normalize_before = normalize_before
         self.after_norm = torch.nn.LayerNorm(output_size, eps=1e-5)
@@ -404,7 +382,6 @@ class ConformerEncoder(BaseEncoder):
         linear_units: int = 2048,
         num_blocks: int = 6,
         dropout_rate: float = 0.0,
-        input_layer: str = "conv2d",
         pos_enc_layer_type: str = "rel_pos",
         normalize_before: bool = True,
         concat_after: bool = False,
@@ -436,7 +413,6 @@ class ConformerEncoder(BaseEncoder):
             linear_units,
             num_blocks,
             dropout_rate,
-            input_layer,
             pos_enc_layer_type,
             normalize_before,
             concat_after,

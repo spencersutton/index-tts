@@ -35,11 +35,9 @@ class Conv2dSubsampling2(BaseSubsampling):
     Args:
         idim (int): Input dimension.
         odim (int): Output dimension.
-        dropout_rate (float): Dropout rate.
-
     """
 
-    def __init__(self, idim: int, odim: int, dropout_rate: float, pos_enc_class: torch.nn.Module):
+    def __init__(self, idim: int, odim: int, pos_enc_class: torch.nn.Module):
         """Construct an Conv2dSubsampling4 object."""
         super().__init__()
         self.conv = torch.nn.Sequential(torch.nn.Conv2d(1, odim, 3, 2), torch.nn.ReLU())

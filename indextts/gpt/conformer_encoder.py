@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 
-from indextts.gpt.conformer.attention import MultiHeadedAttention, RelPositionMultiHeadedAttention
-from indextts.gpt.conformer.embedding import NoPositionalEncoding, PositionalEncoding, RelPositionalEncoding
+from indextts.gpt.conformer.attention import RelPositionMultiHeadedAttention
+from indextts.gpt.conformer.embedding import RelPositionalEncoding
 from indextts.gpt.conformer.subsampling import Conv2dSubsampling2
 from indextts.utils.common import make_pad_mask
 
@@ -282,7 +282,6 @@ class BaseEncoder(torch.nn.Module):
         linear_units: int = 2048,
         num_blocks: int = 6,
         dropout_rate: float = 0.0,
-        pos_enc_layer_type: str = "abs_pos",
         normalize_before: bool = True,
         concat_after: bool = False,
     ):
@@ -298,8 +297,6 @@ class BaseEncoder(torch.nn.Module):
             attention_dropout_rate (float): dropout rate in attention
             positional_dropout_rate (float): dropout rate after adding
                 positional encoding
-            pos_enc_layer_type (str): Encoder positional encoding layer type.
-                opitonal [abs_pos, scaled_abs_pos, rel_pos, no_pos]
             normalize_before (bool):
                 True: use layer_norm before each sub-block of a layer.
                 False: use layer_norm after each sub-block of a layer.
@@ -319,16 +316,9 @@ class BaseEncoder(torch.nn.Module):
         super().__init__()
         self._output_size = output_size
 
-        if pos_enc_layer_type == "abs_pos":
-            pos_enc_class = PositionalEncoding
-        elif pos_enc_layer_type == "rel_pos":
-            pos_enc_class = RelPositionalEncoding
-        elif pos_enc_layer_type == "no_pos":
-            pos_enc_class = NoPositionalEncoding
-        else:
-            raise ValueError("unknown pos_enc_layer: " + pos_enc_layer_type)
-
-        self.embed = Conv2dSubsampling2(input_size, output_size, dropout_rate, pos_enc_class(output_size, dropout_rate))
+        self.embed = Conv2dSubsampling2(
+            input_size, output_size, dropout_rate, RelPositionalEncoding(output_size, dropout_rate)
+        )
 
         self.normalize_before = normalize_before
         self.after_norm = torch.nn.LayerNorm(output_size, eps=1e-5)
@@ -382,7 +372,6 @@ class ConformerEncoder(BaseEncoder):
         linear_units: int = 2048,
         num_blocks: int = 6,
         dropout_rate: float = 0.0,
-        pos_enc_layer_type: str = "rel_pos",
         normalize_before: bool = True,
         concat_after: bool = False,
         macaron_style: bool = False,
@@ -413,34 +402,19 @@ class ConformerEncoder(BaseEncoder):
             linear_units,
             num_blocks,
             dropout_rate,
-            pos_enc_layer_type,
             normalize_before,
             concat_after,
         )
 
         activation = torch.nn.SiLU()
 
-        # self-attention module definition
-        if pos_enc_layer_type != "rel_pos":
-            encoder_selfattn_layer = MultiHeadedAttention
-        else:
-            encoder_selfattn_layer = RelPositionMultiHeadedAttention
-        encoder_selfattn_layer_args = (attention_heads, output_size, dropout_rate)
-
-        # feed-forward module definition
-        positionwise_layer = PositionwiseFeedForward
-        positionwise_layer_args = (output_size, linear_units, dropout_rate, activation)
-        # convolution module definition
-        convolution_layer = ConvolutionModule
-        convolution_layer_args = (output_size, cnn_module_kernel, activation)
-
         self.encoders = torch.nn.ModuleList([
             ConformerEncoderLayer(
                 output_size,
-                encoder_selfattn_layer(*encoder_selfattn_layer_args),
-                positionwise_layer(*positionwise_layer_args),
-                positionwise_layer(*positionwise_layer_args) if macaron_style else None,
-                convolution_layer(*convolution_layer_args) if use_cnn_module else None,
+                RelPositionMultiHeadedAttention(attention_heads, output_size, dropout_rate),
+                PositionwiseFeedForward(output_size, linear_units, dropout_rate, activation),
+                PositionwiseFeedForward(output_size, linear_units, dropout_rate, activation) if macaron_style else None,
+                ConvolutionModule(output_size, cnn_module_kernel, activation) if use_cnn_module else None,
                 dropout_rate,
                 normalize_before,
                 concat_after,

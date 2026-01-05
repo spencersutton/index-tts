@@ -85,7 +85,6 @@ class RepCodec(nn.Module):
             num_quantizers=num_quantizers,
             codebook_size=codebook_size,
             codebook_dim=codebook_dim,
-            quantizer_dropout=0.0,
             commitment=0.15,
             codebook_loss_weight=1.0,
             use_l2_normlize=True,

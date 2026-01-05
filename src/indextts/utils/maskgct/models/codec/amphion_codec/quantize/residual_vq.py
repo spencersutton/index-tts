@@ -24,7 +24,6 @@ class ResidualVQ(nn.Module):
         num_quantizers: int = 8,
         codebook_size: int = 1024,
         codebook_dim: int = 256,
-        quantizer_dropout: float = 0.5,
         **kwargs,
     ):
         super().__init__()
@@ -33,7 +32,6 @@ class ResidualVQ(nn.Module):
         self.num_quantizers = num_quantizers
         self.codebook_size = codebook_size
         self.codebook_dim = codebook_dim
-        self.quantizer_dropout = quantizer_dropout
 
         self.quantizers = nn.ModuleList([
             FactorizedVectorQuantize(
@@ -50,8 +48,6 @@ class ResidualVQ(nn.Module):
         n_quantizers : int, optional
             No. of quantizers to use
             (n_quantizers < self.n_codebooks ex: for quantizer dropout)
-            Note: if `self.quantizer_dropout` is True, this argument is ignored
-                when in training mode, and a random number of quantizers is used.
         Returns
         -------
         "quantized_out" : Tensor[B x D x T]
@@ -77,9 +73,6 @@ class ResidualVQ(nn.Module):
 
         if self.training:
             n_quantizers = torch.ones((z.shape[0],)) * self.num_quantizers + 1
-            dropout = torch.randint(1, self.num_quantizers + 1, (z.shape[0],))
-            n_dropout = int(z.shape[0] * self.quantizer_dropout)
-            n_quantizers[:n_dropout] = dropout[:n_dropout]
             n_quantizers = n_quantizers.to(z.device)
 
         for i, quantizer in enumerate(self.quantizers):

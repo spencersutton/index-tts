@@ -36,9 +36,6 @@ class InterpolateRegulator(nn.Module):
         out_channels: int = None,
         groups: int = 1,
         n_codebooks: int = 1,  # number of codebooks
-        quantizer_dropout: float = 0.0,  # dropout for quantizer
-        f0_condition: bool = False,
-        n_f0_bins: int = 512,
     ):
         super().__init__()
         self.sampling_ratios = sampling_ratios
@@ -68,16 +65,6 @@ class InterpolateRegulator(nn.Module):
             self.extra_codebook_mask_tokens = nn.ParameterList([
                 nn.Parameter(torch.zeros(1, channels)) for _ in range(n_codebooks - 1)
             ])
-        self.quantizer_dropout = quantizer_dropout
-
-        if f0_condition:
-            self.f0_embedding = nn.Embedding(n_f0_bins, channels)
-            self.f0_condition = f0_condition
-            self.n_f0_bins = n_f0_bins
-            self.f0_bins = torch.arange(2, 1024, 1024 // n_f0_bins)
-            self.f0_mask = nn.Parameter(torch.zeros(1, channels))
-        else:
-            self.f0_condition = False
 
         if not is_discrete:
             self.content_in_proj = nn.Linear(in_channels, channels)
@@ -86,9 +73,6 @@ class InterpolateRegulator(nn.Module):
         # apply token drop
         if self.training:
             n_quantizers = torch.ones((x.shape[0],)) * self.n_codebooks
-            dropout = torch.randint(1, self.n_codebooks + 1, (x.shape[0],))
-            n_dropout = int(x.shape[0] * self.quantizer_dropout)
-            n_quantizers[:n_dropout] = dropout[:n_dropout]
             n_quantizers = n_quantizers.to(x.device)
             # decide whether to drop for each sample in batch
         else:
@@ -117,15 +101,7 @@ class InterpolateRegulator(nn.Module):
             x = x.transpose(1, 2).contiguous()
             mask = mask[:, : x.size(2), :]
             ylens = ylens.clamp(max=x.size(2)).long()
-        if self.f0_condition:
-            if f0 is None:
-                x = x + self.f0_mask.unsqueeze(-1)
-            else:
-                quantized_f0 = f0_to_coarse(f0, self.n_f0_bins)
-                quantized_f0 = quantized_f0.clamp(0, self.n_f0_bins - 1).long()
-                f0_emb = self.f0_embedding(quantized_f0)
-                f0_emb = F.interpolate(f0_emb.transpose(1, 2).contiguous(), size=ylens.max(), mode="nearest")
-                x = x + f0_emb
+
         out = self.model(x).transpose(1, 2).contiguous()
         if hasattr(self, "vq"):
             out_q, commitment_loss, codebook_loss, codes, out = self.vq(out.transpose(1, 2))

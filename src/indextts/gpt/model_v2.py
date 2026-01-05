@@ -334,12 +334,26 @@ class UnifiedVoice(nn.Module):
         self.cond_mask_pad = nn.ConstantPad1d((self.cond_num, 0), True)
         self.emo_cond_mask_pad = nn.ConstantPad1d((1, 0), True)
         self.conditioning_encoder = ConformerEncoder(
-            input_size=1024, output_size=512, linear_units=2048, attention_heads=8, num_blocks=6
+            input_size=1024,
+            output_size=condition_module["output_size"],
+            linear_units=condition_module["linear_units"],
+            attention_heads=condition_module["attention_heads"],
+            num_blocks=condition_module["num_blocks"],
         )
-        self.perceiver_encoder = PerceiverResampler(model_dim, heads=8, num_latents=self.cond_num)
+        self.perceiver_encoder = PerceiverResampler(
+            model_dim,
+            dim_context=condition_module["output_size"],
+            ff_mult=condition_module["perceiver_mult"],
+            heads=condition_module["attention_heads"],
+            num_latents=self.cond_num,
+        )
 
         self.emo_conditioning_encoder = ConformerEncoder(
-            input_size=1024, output_size=512, linear_units=1024, attention_heads=4, num_blocks=4
+            input_size=1024,
+            output_size=emo_condition_module["output_size"],
+            linear_units=emo_condition_module["linear_units"],
+            attention_heads=emo_condition_module["attention_heads"],
+            num_blocks=emo_condition_module["num_blocks"],
         )
         self.emo_perceiver_encoder = PerceiverResampler(1024, heads=4, num_latents=1)
 
@@ -530,8 +544,7 @@ class UnifiedVoice(nn.Module):
             second_logits = second_head(second_logits)
             second_logits = second_logits.permute(0, 2, 1)
             return first_logits, second_logits
-        else:
-            return first_logits
+        return first_logits
 
     def get_conditioning(self, speech_conditioning_input, cond_mel_lengths=None):
         if self.condition_type == "perceiver":

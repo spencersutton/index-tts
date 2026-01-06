@@ -94,7 +94,7 @@ class IndexTTS2:
 
         if use_deepspeed:
             try:
-                import deepspeed
+                import deepspeed  # type: ignore  # noqa: F401
             except (ImportError, OSError, CalledProcessError) as e:
                 use_deepspeed = False
                 print(f">> Failed to load DeepSpeed. Falling back to normal inference. Error: {e}")
@@ -147,7 +147,7 @@ class IndexTTS2:
 
         # load campplus_model
         campplus_ckpt_path = hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
-        campplus_model = CAMPPlus(feat_dim=80, embedding_size=192)
+        campplus_model = CAMPPlus()
         campplus_model.load_state_dict(torch.load(campplus_ckpt_path, map_location="cpu"))
         self.campplus_model = campplus_model.to(self.device)
         self.campplus_model.eval()

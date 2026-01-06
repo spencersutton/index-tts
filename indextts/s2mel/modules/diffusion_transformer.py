@@ -2,7 +2,7 @@ import math
 
 import torch
 from torch import nn
-from torch.nn.utils import weight_norm
+from torch.nn.utils.parametrizations import weight_norm
 
 from indextts.s2mel.modules.commons import sequence_mask
 from indextts.s2mel.modules.gpt_fast.model import ModelArgs, Transformer

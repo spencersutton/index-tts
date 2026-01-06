@@ -63,13 +63,12 @@ class CAMPPlus(nn.Module):
         })
         self.xvector = nn.Sequential(modules)
         channels = init_channels
-        for i, (num_layers, kernel_size, dilation) in enumerate(zip((12, 24, 16), (3, 3, 3), (1, 2, 2))):
+        for i, (num_layers, dilation) in enumerate(zip((12, 24, 16), (1, 2, 2))):
             block = CAMDenseTDNNBlock(
                 num_layers=num_layers,
                 in_channels=channels,
                 out_channels=growth_rate,
                 bn_channels=bn_size * growth_rate,
-                kernel_size=kernel_size,
                 dilation=dilation,
             )
             self.xvector.add_module(f"block{i + 1}", block)

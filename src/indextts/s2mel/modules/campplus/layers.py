@@ -5,8 +5,8 @@ from collections import OrderedDict
 
 import torch
 import torch.nn.functional as F
-import torch.utils.checkpoint as cp
 from torch import nn
+from typing_extensions import assert_never
 
 
 def get_nonlinear(config_str, channels):
@@ -19,6 +19,7 @@ def get_nonlinear(config_str, channels):
     elif config_str == "batchnorm_":
         modules: OrderedDict[str, nn.Module] = OrderedDict({"batchnorm": nn.BatchNorm1d(channels, affine=False)})
         return nn.Sequential(modules)
+    assert_never(config_str)
 
 
 def statistics_pooling(x, dim=-1, keepdim=False, unbiased=True, eps=1e-2):
@@ -84,41 +85,33 @@ class CAMLayer(nn.Module):
 
 
 class CAMDenseTDNNLayer(nn.Module):
-    def __init__(self, in_channels, out_channels, bn_channels, kernel_size, stride=1, dilation=1, bias=False):
+    def __init__(self, in_channels, out_channels, bn_channels, stride=1, dilation=1, bias=False):
         super().__init__()
-        assert kernel_size % 2 == 1, f"Expect equal paddings, but got even kernel size ({kernel_size})"
-        padding = (kernel_size - 1) // 2 * dilation
         self.memory_efficient = False
         self.nonlinear1 = get_nonlinear("batchnorm-relu", in_channels)
         self.linear1 = nn.Conv1d(in_channels, bn_channels, 1, bias=False)
         self.nonlinear2 = get_nonlinear("batchnorm-relu", bn_channels)
         self.cam_layer = CAMLayer(
-            bn_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias
+            bn_channels, out_channels, 3, stride=stride, padding=dilation, dilation=dilation, bias=bias
         )
 
     def bn_function(self, x):
         return self.linear1(self.nonlinear1(x))
 
     def forward(self, x):
-        if self.training and self.memory_efficient:
-            x = cp.checkpoint(self.bn_function, x)
-        else:
-            x = self.bn_function(x)
+        x = self.bn_function(x)
         x = self.cam_layer(self.nonlinear2(x))
         return x
 
 
 class CAMDenseTDNNBlock(nn.ModuleList):
-    def __init__(
-        self, num_layers, in_channels, out_channels, bn_channels, kernel_size, stride=1, dilation=1, bias=False
-    ):
+    def __init__(self, num_layers, in_channels, out_channels, bn_channels, stride=1, dilation=1, bias=False):
         super().__init__()
         for i in range(num_layers):
             layer = CAMDenseTDNNLayer(
                 in_channels=in_channels + i * out_channels,
                 out_channels=out_channels,
                 bn_channels=bn_channels,
-                kernel_size=kernel_size,
                 stride=stride,
                 dilation=dilation,
                 bias=bias,

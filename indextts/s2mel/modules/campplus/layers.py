@@ -54,14 +54,12 @@ class TDNNLayer(nn.Module):
 
 
 class CAMLayer(nn.Module):
-    def __init__(self, bn_channels, out_channels, kernel_size, stride, padding, dilation, bias, reduction=2):
+    def __init__(self, stride, padding, dilation, bias, reduction=2):
         super().__init__()
-        self.linear_local = nn.Conv1d(
-            bn_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias
-        )
-        self.linear1 = nn.Conv1d(bn_channels, bn_channels // reduction, 1)
+        self.linear_local = nn.Conv1d(128, 32, 3, stride=stride, padding=padding, dilation=dilation, bias=bias)
+        self.linear1 = nn.Conv1d(128, 128 // reduction, 1)
         self.relu = nn.ReLU(inplace=True)
-        self.linear2 = nn.Conv1d(bn_channels // reduction, out_channels, 1)
+        self.linear2 = nn.Conv1d(128 // reduction, 32, 1)
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
@@ -85,15 +83,13 @@ class CAMLayer(nn.Module):
 
 
 class CAMDenseTDNNLayer(nn.Module):
-    def __init__(self, in_channels, out_channels, bn_channels, stride=1, dilation=1, bias=False):
+    def __init__(self, in_channels, stride=1, dilation=1, bias=False):
         super().__init__()
         self.memory_efficient = False
         self.nonlinear1 = get_nonlinear("batchnorm-relu", in_channels)
-        self.linear1 = nn.Conv1d(in_channels, bn_channels, 1, bias=False)
-        self.nonlinear2 = get_nonlinear("batchnorm-relu", bn_channels)
-        self.cam_layer = CAMLayer(
-            bn_channels, out_channels, 3, stride=stride, padding=dilation, dilation=dilation, bias=bias
-        )
+        self.linear1 = nn.Conv1d(in_channels, 128, 1, bias=False)
+        self.nonlinear2 = get_nonlinear("batchnorm-relu", 128)
+        self.cam_layer = CAMLayer(stride=stride, padding=dilation, dilation=dilation, bias=bias)
 
     def bn_function(self, x):
         return self.linear1(self.nonlinear1(x))
@@ -105,17 +101,10 @@ class CAMDenseTDNNLayer(nn.Module):
 
 
 class CAMDenseTDNNBlock(nn.ModuleList):
-    def __init__(self, num_layers, in_channels, out_channels, bn_channels, stride=1, dilation=1, bias=False):
+    def __init__(self, num_layers, in_channels, stride=1, dilation=1, bias=False):
         super().__init__()
         for i in range(num_layers):
-            layer = CAMDenseTDNNLayer(
-                in_channels=in_channels + i * out_channels,
-                out_channels=out_channels,
-                bn_channels=bn_channels,
-                stride=stride,
-                dilation=dilation,
-                bias=bias,
-            )
+            layer = CAMDenseTDNNLayer(in_channels=in_channels + i * 32, stride=stride, dilation=dilation, bias=bias)
             self.add_module(f"tdnnd{i + 1}", layer)
 
     def forward(self, x):

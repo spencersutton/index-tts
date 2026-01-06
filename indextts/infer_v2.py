@@ -1,12 +1,10 @@
-import os
-from subprocess import CalledProcessError
-
-os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 import json
+import os
 import random
 import re
 import time
 import warnings
+from subprocess import CalledProcessError
 
 import librosa
 import safetensors
@@ -26,6 +24,8 @@ from indextts.s2mel.modules.commons import MyModel, load_checkpoint2
 from indextts.utils.checkpoint import load_checkpoint
 from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.maskgct_utils import build_semantic_codec, build_semantic_model
+
+os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 
 
 class IndexTTS2:

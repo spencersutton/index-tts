@@ -58,9 +58,10 @@ class CAMPPlus(nn.Module):
         self.head = FCM(feat_dim=feat_dim)
         channels = self.head.out_channels
 
-        self.xvector = nn.Sequential(
-            OrderedDict([("tdnn", TDNNLayer(channels, init_channels, 5, stride=2, dilation=1, padding=-1))])
-        )
+        modules: OrderedDict[str, nn.Module] = OrderedDict({
+            "tdnn": TDNNLayer(channels, init_channels, 5, stride=2, dilation=1, padding=-1)
+        })
+        self.xvector = nn.Sequential(modules)
         channels = init_channels
         for i, (num_layers, kernel_size, dilation) in enumerate(zip((12, 24, 16), (3, 3, 3), (1, 2, 2))):
             block = CAMDenseTDNNBlock(

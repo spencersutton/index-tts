@@ -16,8 +16,6 @@
 
 """Subsampling layer definition."""
 
-from typing import Tuple, Union
-
 import torch
 
 
@@ -27,7 +25,7 @@ class BaseSubsampling(torch.nn.Module):
         self.right_context = 0
         self.subsampling_rate = 1
 
-    def position_encoding(self, offset: Union[int, torch.Tensor], size: int) -> torch.Tensor:
+    def position_encoding(self, offset: int | torch.Tensor, size: int) -> torch.Tensor:
         return self.pos_enc.position_encoding(offset, size)
 
 
@@ -52,8 +50,8 @@ class LinearNoSubsampling(BaseSubsampling):
         self.subsampling_rate = 1
 
     def forward(
-        self, x: torch.Tensor, x_mask: torch.Tensor, offset: Union[int, torch.Tensor] = 0
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        self, x: torch.Tensor, x_mask: torch.Tensor, offset: int | torch.Tensor = 0
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Input x.
 
         Args:
@@ -95,8 +93,8 @@ class Conv2dSubsampling3(BaseSubsampling):
         self.right_context = 4
 
     def forward(
-        self, x: torch.Tensor, x_mask: torch.Tensor, offset: Union[int, torch.Tensor] = 0
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        self, x: torch.Tensor, x_mask: torch.Tensor, offset: int | torch.Tensor = 0
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Subsample x.
 
         Args:
@@ -142,8 +140,8 @@ class Conv2dSubsampling2(BaseSubsampling):
         self.right_context = 2
 
     def forward(
-        self, x: torch.Tensor, x_mask: torch.Tensor, offset: Union[int, torch.Tensor] = 0
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        self, x: torch.Tensor, x_mask: torch.Tensor, offset: int | torch.Tensor = 0
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Subsample x.
 
         Args:
@@ -191,8 +189,8 @@ class Conv2dSubsampling4(BaseSubsampling):
         self.right_context = 6
 
     def forward(
-        self, x: torch.Tensor, x_mask: torch.Tensor, offset: Union[int, torch.Tensor] = 0
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        self, x: torch.Tensor, x_mask: torch.Tensor, offset: int | torch.Tensor = 0
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Subsample x.
 
         Args:
@@ -237,8 +235,8 @@ class Conv2dSubsampling6(BaseSubsampling):
         self.right_context = 10
 
     def forward(
-        self, x: torch.Tensor, x_mask: torch.Tensor, offset: Union[int, torch.Tensor] = 0
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        self, x: torch.Tensor, x_mask: torch.Tensor, offset: int | torch.Tensor = 0
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Subsample x.
         Args:
             x (torch.Tensor): Input tensor (#batch, time, idim).
@@ -287,8 +285,8 @@ class Conv2dSubsampling8(BaseSubsampling):
         self.right_context = 14
 
     def forward(
-        self, x: torch.Tensor, x_mask: torch.Tensor, offset: Union[int, torch.Tensor] = 0
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        self, x: torch.Tensor, x_mask: torch.Tensor, offset: int | torch.Tensor = 0
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Subsample x.
 
         Args:

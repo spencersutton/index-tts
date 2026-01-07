@@ -123,5 +123,5 @@ docstring-code-format = true
 skip-magic-trailing-comma = true
 
 [tool.ruff.lint]
-extend-select = ["I"]
+extend-select = ["I", "UP"]
 isort.split-on-trailing-comma = false

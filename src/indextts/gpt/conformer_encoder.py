@@ -1,5 +1,3 @@
-from typing import Optional, Tuple
-
 import torch
 import torch.nn as nn
 
@@ -32,7 +30,7 @@ class PositionwiseFeedForward(torch.nn.Module):
         self, idim: int, hidden_units: int, dropout_rate: float, activation: torch.nn.Module = torch.nn.ReLU()
     ):
         """Construct a PositionwiseFeedForward object."""
-        super(PositionwiseFeedForward, self).__init__()
+        super().__init__()
         self.w_1 = torch.nn.Linear(idim, hidden_units)
         self.activation = activation
         self.dropout = torch.nn.Dropout(dropout_rate)
@@ -86,7 +84,7 @@ class ConvolutionModule(nn.Module):
         x: torch.Tensor,
         mask_pad: torch.Tensor = torch.ones((0, 0, 0), dtype=torch.bool),
         cache: torch.Tensor = torch.zeros((0, 0, 0)),
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """Compute convolution module.
         Args:
             x (torch.Tensor): Input tensor (#batch, time, channels).
@@ -167,9 +165,9 @@ class ConformerEncoderLayer(nn.Module):
         self,
         size: int,
         self_attn: torch.nn.Module,
-        feed_forward: Optional[nn.Module] = None,
-        feed_forward_macaron: Optional[nn.Module] = None,
-        conv_module: Optional[nn.Module] = None,
+        feed_forward: nn.Module | None = None,
+        feed_forward_macaron: nn.Module | None = None,
+        conv_module: nn.Module | None = None,
         dropout_rate: float = 0.1,
         normalize_before: bool = True,
         concat_after: bool = False,
@@ -207,7 +205,7 @@ class ConformerEncoderLayer(nn.Module):
         mask_pad: torch.Tensor = torch.ones((0, 0, 0), dtype=torch.bool),
         att_cache: torch.Tensor = torch.zeros((0, 0, 0, 0)),
         cnn_cache: torch.Tensor = torch.zeros((0, 0, 0, 0)),
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         """Compute encoded features.
 
         Args:
@@ -360,7 +358,7 @@ class BaseEncoder(torch.nn.Module):
     def output_size(self) -> int:
         return self._output_size
 
-    def forward(self, xs: torch.Tensor, xs_lens: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, xs: torch.Tensor, xs_lens: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """Embed positions in tensor.
 
         Args:

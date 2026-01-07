@@ -155,7 +155,7 @@ class LearnedPositionEmbeddings(nn.Module):
         return self.emb(torch.tensor([ind], device=dev)).unsqueeze(0)
 
 
-def build_hf_gpt_transformer(layers, model_dim, heads, max_mel_seq_len, max_text_seq_len, checkpointing):
+def build_hf_gpt_transformer(layers, model_dim, heads, max_mel_seq_len, max_text_seq_len):
     """
     GPT-2 implemented by the HuggingFace library.
     """
@@ -168,8 +168,6 @@ def build_hf_gpt_transformer(layers, model_dim, heads, max_mel_seq_len, max_text
         n_embd=model_dim,
         n_layer=layers,
         n_head=heads,
-        gradient_checkpointing=checkpointing,
-        use_cache=not checkpointing,
     )
     gpt = GPT2Model(gpt_config)
     # Override the built in positional embeddings
@@ -228,12 +226,9 @@ class UnifiedVoice(nn.Module):
         stop_mel_token=8193,
         train_solo_embeddings=False,
         use_mel_codes_as_input=True,
-        checkpointing=True,
         types=1,
         condition_num_latent=32,
         condition_type="perceiver",
-        condition_module=None,
-        emo_condition_module=None,
         use_accel=False,
     ) -> None:
         """
@@ -253,7 +248,6 @@ class UnifiedVoice(nn.Module):
             stop_mel_token:
             train_solo_embeddings:
             use_mel_codes_as_input:
-            checkpointing:
             condition_type: perceiver, gst or default encoder
         """
         super().__init__()
@@ -313,12 +307,7 @@ class UnifiedVoice(nn.Module):
             self.mel_layer_pos_embedding,
             self.text_layer_pos_embedding,
         ) = build_hf_gpt_transformer(
-            layers,
-            model_dim,
-            heads,
-            self.max_mel_tokens + 2 + self.max_conditioning_inputs,
-            self.max_text_tokens + 2,
-            checkpointing,
+            layers, model_dim, heads, self.max_mel_tokens + 2 + self.max_conditioning_inputs, self.max_text_tokens + 2
         )
         if train_solo_embeddings:
             self.mel_solo_embedding = nn.Parameter(torch.randn(1, 1, model_dim) * 0.02, requires_grad=True)
@@ -353,8 +342,6 @@ class UnifiedVoice(nn.Module):
             n_embd=self.model_dim,
             n_layer=self.layers,
             n_head=self.heads,
-            gradient_checkpointing=False,
-            use_cache=True,
         )
 
         if self.use_accel and torch.cuda.is_available():

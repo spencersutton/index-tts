@@ -228,7 +228,6 @@ class UnifiedVoice(nn.Module):
         use_mel_codes_as_input=True,
         types=1,
         condition_num_latent=32,
-        condition_type="perceiver",
         use_accel=False,
     ) -> None:
         """
@@ -248,7 +247,6 @@ class UnifiedVoice(nn.Module):
             stop_mel_token:
             train_solo_embeddings:
             use_mel_codes_as_input:
-            condition_type: perceiver, gst or default encoder
         """
         super().__init__()
         self.number_text_tokens = number_text_tokens
@@ -264,7 +262,6 @@ class UnifiedVoice(nn.Module):
         self.model_dim = model_dim
         self.max_conditioning_inputs = max_conditioning_inputs
         self.mel_length_compression = mel_length_compression
-        self.condition_type = condition_type
         self.cond_num = condition_num_latent
         self.cond_mask_pad = nn.ConstantPad1d((self.cond_num, 0), True)
         self.emo_cond_mask_pad = nn.ConstantPad1d((1, 0), True)
@@ -475,35 +472,11 @@ class UnifiedVoice(nn.Module):
         return first_logits
 
     def get_conditioning(self, speech_conditioning_input, cond_mel_lengths=None):
-        if self.condition_type == "perceiver":
-            if speech_conditioning_input.ndim == 4:
-                speech_conditioning_input = speech_conditioning_input.squeeze(1)
-            speech_conditioning_input = self.conditioning_encoder(speech_conditioning_input)  # (b, d, s)
-            conds = self.perceiver_encoder(speech_conditioning_input.transpose(1, 2))  # (b, 32, d)
-        elif self.condition_type == "conformer_perceiver":
-            speech_conditioning_input, mask = self.conditioning_encoder(
-                speech_conditioning_input.transpose(1, 2), cond_mel_lengths
-            )  # (b, s, d), (b, 1, s)
-            if self.condition_type == "conformer_perceiver":
-                # conds_mask = torch.cat([torch.ones((mask.shape[0], self.cond_num), dtype=torch.bool), mask.squeeze(1)], dim=1)
-                conds_mask = self.cond_mask_pad(mask.squeeze(1))
-                conds = self.perceiver_encoder(speech_conditioning_input, conds_mask)  # (b, 32, d)
-        elif self.condition_type == "gst":
-            if speech_conditioning_input.ndim == 4:
-                speech_conditioning_input = speech_conditioning_input.squeeze(1)
-            conds = self.gst_encoder(speech_conditioning_input.transpose(1, 2))  # (b, 1, d)
-        else:
-            speech_conditioning_input = (
-                speech_conditioning_input.unsqueeze(1)
-                if len(speech_conditioning_input.shape) == 3
-                else speech_conditioning_input
-            )
-            conds = []
-            for j in range(speech_conditioning_input.shape[1]):
-                conds.append(self.conditioning_encoder(speech_conditioning_input[:, j]))
-            conds = torch.stack(conds, dim=1)
-            conds = conds.mean(dim=1)
-            conds = conds.unsqueeze(1)
+        speech_conditioning_input, mask = self.conditioning_encoder(
+            speech_conditioning_input.transpose(1, 2), cond_mel_lengths
+        )  # (b, s, d), (b, 1, s)
+        conds_mask = self.cond_mask_pad(mask.squeeze(1))
+        conds = self.perceiver_encoder(speech_conditioning_input, conds_mask)  # (b, 32, d)
         return conds
 
     def get_emo_conditioning(self, speech_conditioning_input, cond_mel_lengths=None):

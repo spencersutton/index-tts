@@ -20,6 +20,9 @@ resolution-markers = [
     "python_full_version < '3.11' and sys_platform != 'darwin' and sys_platform != 'linux' and sys_platform != 'win32'",
 ]
 
+[manifest]
+overrides = [{ name = "huggingface-hub", specifier = ">=0.30.0" }]
+
 [[package]]
 name = "absl-py"
 version = "2.3.1"
@@ -169,6 +172,24 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/db/d2/87016ca9f083acadffb2d8da59bfa3253e4da7eeb9f71fb8e7708dc97ecd/audioread-3.0.1.tar.gz", hash = "sha256:ac5460a5498c48bdf2e8e767402583a4dcd13f4414d286f42ce4379e8b35066d", size = 116513, upload-time = "2023-09-27T19:27:53.084Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/57/8d/30aa32745af16af0a9a650115fbe81bde7c610ed5c21b381fca0196f3a7f/audioread-3.0.1-py3-none-any.whl", hash = "sha256:4cdce70b8adc0da0a3c9e0d85fb10b3ace30fbdf8d1670fd443929b61d117c33", size = 23492, upload-time = "2023-09-27T19:27:51.334Z" },
+]
+
+[[package]]
+name = "bigvganinference"
+version = "0.0.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "huggingface-hub" },
+    { name = "librosa" },
+    { name = "ninja" },
+    { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "scipy", version = "1.16.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "torch", version = "2.8.0", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'linux' and sys_platform != 'win32'" },
+    { name = "torch", version = "2.8.0+cu128", source = { registry = "https://download.pytorch.org/whl/cu128" }, marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/23/44/0c1c7b74f87bef7446d590b1237e5547f356fef163e82271825833b13ce2/bigvganinference-0.0.3.tar.gz", hash = "sha256:d2eb998ac17e5fa275b3a46f6253881f0752a37648c3fc50c34128c41dbae0e6", size = 17282, upload-time = "2024-11-25T22:33:42.044Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/54/75/4ccf5db5f1763318e91bfd1461f952d4c554f45a81182d2c1eb7bc52bb73/bigvganinference-0.0.3-py3-none-any.whl", hash = "sha256:290cbe4077e08230ce7ee67998f7ec527543efee15b7c3ae016bb0eb3dd81b2e", size = 24697, upload-time = "2024-11-25T22:33:40.267Z" },
 ]
 
 [[package]]
@@ -1165,6 +1186,7 @@ version = "2.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "accelerate" },
+    { name = "bigvganinference" },
     { name = "cn2an" },
     { name = "cython" },
     { name = "descript-audiotools" },
@@ -1209,6 +1231,7 @@ webui = [
 [package.metadata]
 requires-dist = [
     { name = "accelerate", specifier = "==1.8.1" },
+    { name = "bigvganinference", specifier = ">=0.0.3" },
     { name = "cn2an", specifier = "==0.5.22" },
     { name = "cython", specifier = "==3.0.7" },
     { name = "deepspeed", marker = "extra == 'deepspeed'", specifier = "==0.17.1" },

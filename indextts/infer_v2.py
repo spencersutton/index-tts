@@ -15,10 +15,9 @@ import torch.nn.functional as F
 import torchaudio
 from bigvganinference import bigvgan
 from huggingface_hub import hf_hub_download
-from modelscope import AutoModelForCausalLM
 from omegaconf import OmegaConf
 from torch.nn.utils.rnn import pad_sequence
-from transformers import AutoTokenizer, SeamlessM4TFeatureExtractor
+from transformers import AutoModelForCausalLM, AutoTokenizer, SeamlessM4TFeatureExtractor
 
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.s2mel.modules.audio import mel_spectrogram

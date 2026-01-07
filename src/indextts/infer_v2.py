@@ -3,26 +3,21 @@ from subprocess import CalledProcessError
 
 os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 import json
+import random
 import re
 import time
 import warnings
 
 import librosa
+import safetensors
 import torch
+import torch.nn.functional as F
 import torchaudio
 from bigvganinference import bigvgan
-from torch.nn.utils.rnn import pad_sequence
-
-warnings.filterwarnings("ignore", category=FutureWarning)
-warnings.filterwarnings("ignore", category=UserWarning)
-
-import random
-
-import safetensors
-import torch.nn.functional as F
 from huggingface_hub import hf_hub_download
 from modelscope import AutoModelForCausalLM
 from omegaconf import OmegaConf
+from torch.nn.utils.rnn import pad_sequence
 from transformers import AutoTokenizer, SeamlessM4TFeatureExtractor
 
 from indextts.gpt.model_v2 import UnifiedVoice

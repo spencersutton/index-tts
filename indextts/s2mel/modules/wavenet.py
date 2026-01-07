@@ -26,7 +26,6 @@ class WN(nn.Module):
         self, hidden_channels, kernel_size, dilation_rate, n_layers, gin_channels=0, p_dropout=0, causal=False
     ) -> None:
         super().__init__()
-        conv1d_type = SConv1d
         assert kernel_size % 2 == 1
         self.hidden_channels = hidden_channels
         self.kernel_size = (kernel_size,)
@@ -40,19 +39,13 @@ class WN(nn.Module):
         self.drop = nn.Dropout(p_dropout)
 
         if gin_channels != 0:
-            self.cond_layer = conv1d_type(gin_channels, 2 * hidden_channels * n_layers, 1, norm="weight_norm")
+            self.cond_layer = SConv1d(gin_channels, 2 * hidden_channels * n_layers, 1)
 
         for i in range(n_layers):
             dilation = dilation_rate**i
             padding = int((kernel_size * dilation - dilation) / 2)
-            in_layer = conv1d_type(
-                hidden_channels,
-                2 * hidden_channels,
-                kernel_size,
-                dilation=dilation,
-                padding=padding,
-                norm="weight_norm",
-                causal=causal,
+            in_layer = SConv1d(
+                hidden_channels, 2 * hidden_channels, kernel_size, dilation=dilation, padding=padding, causal=causal
             )
             self.in_layers.append(in_layer)
 
@@ -62,7 +55,7 @@ class WN(nn.Module):
             else:
                 res_skip_channels = hidden_channels
 
-            res_skip_layer = conv1d_type(hidden_channels, res_skip_channels, 1, norm="weight_norm", causal=causal)
+            res_skip_layer = SConv1d(hidden_channels, res_skip_channels, 1, causal=causal)
             self.res_skip_layers.append(res_skip_layer)
 
     def forward(self, x, x_mask, g=None, **kwargs):

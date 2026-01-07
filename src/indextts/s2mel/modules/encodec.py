@@ -7,47 +7,12 @@
 """Convolutional layers wrappers and utilities."""
 
 import math
-import typing as tp
 import warnings
 
 import torch
 from torch import nn
 from torch.nn import functional as F
-from torch.nn.utils import spectral_norm
 from torch.nn.utils.parametrizations import weight_norm
-
-CONV_NORMALIZATIONS = frozenset([
-    "none",
-    "weight_norm",
-    "spectral_norm",
-    "time_layer_norm",
-    "layer_norm",
-    "time_group_norm",
-])
-
-
-def apply_parametrization_norm(module: nn.Module, norm: str = "none") -> nn.Module:
-    assert norm in CONV_NORMALIZATIONS
-    if norm == "weight_norm":
-        return weight_norm(module)
-    if norm == "spectral_norm":
-        return spectral_norm(module)
-    # We already check was in CONV_NORMALIZATION, so any other choice
-    # doesn't need reparametrization.
-    return module
-
-
-def get_norm_module(module: nn.Module, causal: bool = False, norm: str = "none", **norm_kwargs) -> nn.Module:
-    """Return the proper normalization module. If causal is True, this will ensure the returned
-    module is causal, or return an error if the normalization doesn't support causal evaluation.
-    """
-    assert norm in CONV_NORMALIZATIONS
-    if norm == "time_group_norm":
-        if causal:
-            raise ValueError("GroupNorm doesn't support causal evaluation.")
-        assert isinstance(module, nn.modules.conv._ConvNd)
-        return nn.GroupNorm(1, module.out_channels, **norm_kwargs)
-    return nn.Identity()
 
 
 def get_extra_padding_for_conv1d(x: torch.Tensor, kernel_size: int, stride: int, padding_total: int = 0) -> int:
@@ -82,17 +47,15 @@ class NormConv1d(nn.Module):
     to provide a uniform interface across normalization approaches.
     """
 
-    def __init__(
-        self, *args, causal: bool = False, norm: str = "none", norm_kwargs: dict[str, tp.Any] = {}, **kwargs
-    ) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__()
-        self.conv = apply_parametrization_norm(nn.Conv1d(*args, **kwargs), norm)
-        self.norm = get_norm_module(self.conv, causal, norm, **norm_kwargs)
-        self.norm_type = norm
+        self.conv = weight_norm(nn.Conv1d(*args, **kwargs))
+        self.norm = nn.Identity()
 
     def forward(self, x):
         x = self.conv(x)
-        return self.norm(x)
+        x = self.norm(x)
+        return x
 
 
 class SConv1d(nn.Module):
@@ -110,8 +73,6 @@ class SConv1d(nn.Module):
         groups: int = 1,
         bias: bool = True,
         causal: bool = False,
-        norm: str = "none",
-        norm_kwargs: dict[str, tp.Any] = {},
         pad_mode: str = "reflect",
         **kwargs,
     ) -> None:
@@ -123,22 +84,13 @@ class SConv1d(nn.Module):
                 f" (kernel_size={kernel_size} stride={stride}, dilation={dilation})."
             )
         self.conv = NormConv1d(
-            in_channels,
-            out_channels,
-            kernel_size,
-            stride,
-            dilation=dilation,
-            groups=groups,
-            bias=bias,
-            causal=causal,
-            norm=norm,
-            norm_kwargs=norm_kwargs,
+            in_channels, out_channels, kernel_size, stride, dilation=dilation, groups=groups, bias=bias
         )
         self.causal = causal
         self.pad_mode = pad_mode
 
     def forward(self, x):
-        _B, _C, _T = x.shape
+        B, C, T = x.shape
         kernel_size = self.conv.conv.kernel_size[0]
         stride = self.conv.conv.stride[0]
         dilation = self.conv.conv.dilation[0]

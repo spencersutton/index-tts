@@ -44,9 +44,7 @@ class WN(nn.Module):
         for i in range(n_layers):
             dilation = dilation_rate**i
             padding = int((kernel_size * dilation - dilation) / 2)
-            in_layer = SConv1d(
-                hidden_channels, 2 * hidden_channels, kernel_size, dilation=dilation, padding=padding, causal=causal
-            )
+            in_layer = SConv1d(hidden_channels, 2 * hidden_channels, kernel_size, dilation=dilation, padding=padding)
             self.in_layers.append(in_layer)
 
             # last one is not necessary
@@ -55,7 +53,7 @@ class WN(nn.Module):
             else:
                 res_skip_channels = hidden_channels
 
-            res_skip_layer = SConv1d(hidden_channels, res_skip_channels, 1, causal=causal)
+            res_skip_layer = SConv1d(hidden_channels, res_skip_channels, 1)
             self.res_skip_layers.append(res_skip_layer)
 
     def forward(self, x, x_mask, g=None, **kwargs):

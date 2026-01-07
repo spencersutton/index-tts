@@ -8,6 +8,7 @@ import time
 import librosa
 import torch
 import torchaudio
+from bigvganinference import bigvgan
 from torch.nn.utils.rnn import pad_sequence
 
 import warnings
@@ -23,7 +24,6 @@ from indextts.utils.checkpoint import load_checkpoint
 from indextts.utils.front import TextNormalizer, TextTokenizer
 
 from indextts.s2mel.modules.commons import load_checkpoint2, MyModel
-from indextts.s2mel.modules.bigvgan import bigvgan
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
 from indextts.s2mel.modules.audio import mel_spectrogram
 
@@ -112,7 +112,7 @@ class IndexTTS2:
         if self.use_cuda_kernel:
             # preload the CUDA kernel for BigVGAN
             try:
-                from indextts.s2mel.modules.bigvgan.alias_free_activation.cuda import activation1d
+                from bigvganinference.alias_free_activation.cuda import activation1d
 
                 print(">> Preload custom CUDA kernel for BigVGAN", activation1d.anti_alias_activation_cuda)
             except Exception as e:

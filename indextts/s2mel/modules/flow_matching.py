@@ -18,10 +18,7 @@ class BASECFM(nn.Module, ABC):
 
         self.criterion = nn.MSELoss() if args.reg_loss_type == "l2" else nn.L1Loss()
 
-        if hasattr(args.DiT, "zero_prompt_speech_token"):
-            self.zero_prompt_speech_token = args.DiT.zero_prompt_speech_token
-        else:
-            self.zero_prompt_speech_token = False
+        self.zero_prompt_speech_token = args.DiT.zero_prompt_speech_token
 
     @torch.inference_mode()
     def inference(self, mu, x_lens, prompt, style, f0, n_timesteps, temperature=1.0, inference_cfg_rate=0.5):
@@ -160,10 +157,7 @@ class BASECFM(nn.Module, ABC):
 class CFM(BASECFM):
     def __init__(self, args) -> None:
         super().__init__(args)
-        if args.dit_type == "DiT":
-            self.estimator = DiT(args)
-        else:
-            raise NotImplementedError(f"Unknown diffusion type {args.dit_type}")
+        self.estimator = DiT(args)
 
     def enable_torch_compile(self) -> None:
         """Enable torch.compile optimization for the estimator model.

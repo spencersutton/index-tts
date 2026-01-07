@@ -59,8 +59,8 @@ class NormConv1d(nn.Module):
 
 
 class SConv1d(nn.Module):
-    """Conv1d with some builtin handling of asymmetric or causal padding
-    and normalization.
+    """
+    Conv1d layer with built-in handling of asymmetric padding and normalization.
     """
 
     def __init__(
@@ -72,7 +72,6 @@ class SConv1d(nn.Module):
         dilation: int = 1,
         groups: int = 1,
         bias: bool = True,
-        causal: bool = False,
         pad_mode: str = "reflect",
         **kwargs,
     ) -> None:
@@ -86,7 +85,6 @@ class SConv1d(nn.Module):
         self.conv = NormConv1d(
             in_channels, out_channels, kernel_size, stride, dilation=dilation, groups=groups, bias=bias
         )
-        self.causal = causal
         self.pad_mode = pad_mode
 
     def forward(self, x):
@@ -97,12 +95,8 @@ class SConv1d(nn.Module):
         kernel_size = (kernel_size - 1) * dilation + 1  # effective kernel size with dilations
         padding_total = kernel_size - stride
         extra_padding = get_extra_padding_for_conv1d(x, kernel_size, stride, padding_total)
-        if self.causal:
-            # Left padding for causal
-            x = pad1d(x, (padding_total, extra_padding), mode=self.pad_mode)
-        else:
-            # Asymmetric padding required for odd strides
-            padding_right = padding_total // 2
-            padding_left = padding_total - padding_right
-            x = pad1d(x, (padding_left, padding_right + extra_padding), mode=self.pad_mode)
+        # Asymmetric padding required for odd strides
+        padding_right = padding_total // 2
+        padding_left = padding_total - padding_right
+        x = pad1d(x, (padding_left, padding_right + extra_padding), mode=self.pad_mode)
         return self.conv(x)

@@ -28,14 +28,7 @@ class MyModel(nn.Module):
 
         self.models = nn.ModuleDict({
             "cfm": CFM(args),
-            "length_regulator": InterpolateRegulator(
-                channels=512,
-                sampling_ratios=(1, 1, 1, 1),
-                is_discrete=False,
-                in_channels=1024,
-                codebook_size=2048,
-                n_codebooks=1,
-            ),
+            "length_regulator": InterpolateRegulator(),
             "gpt_layer": nn.Sequential(nn.Linear(1280, 256), nn.Linear(256, 128), nn.Linear(128, 1024)),
         })
 

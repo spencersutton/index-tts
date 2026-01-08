@@ -4,6 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 
 
+from collections.abc import Iterable
+from typing import cast
+
 import torch
 from torch import nn
 
@@ -33,14 +36,14 @@ class ResidualVQ(nn.Module):
         self.codebook_size = codebook_size
         self.codebook_dim = codebook_dim
 
-        self.quantizers = nn.ModuleList([
-            FactorizedVectorQuantize(
-                input_dim=input_dim, codebook_size=codebook_size, codebook_dim=codebook_dim, **kwargs
-            )
-            for _ in range(num_quantizers)
-        ])
+        quantizers = [
+            FactorizedVectorQuantize(input_dim, codebook_size, codebook_dim, **kwargs) for _ in range(num_quantizers)
+        ]
+        self.quantizers = cast(Iterable[FactorizedVectorQuantize], nn.ModuleList(quantizers))
 
-    def forward(self, z, n_quantizers: int | None = None):
+    def forward(
+        self, z: torch.Tensor, n_quantizers: int | None = None
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Parameters
         ----------
@@ -71,10 +74,6 @@ class ResidualVQ(nn.Module):
         if n_quantizers is None:
             n_quantizers = self.num_quantizers
 
-        if self.training:
-            n_quantizers = torch.ones((z.shape[0],)) * self.num_quantizers + 1
-            n_quantizers = n_quantizers.to(z.device)
-
         for i, quantizer in enumerate(self.quantizers):
             if self.training is False and i >= n_quantizers:
                 break
@@ -100,7 +99,7 @@ class ResidualVQ(nn.Module):
 
         return (quantized_out, all_indices, all_commit_losses, all_codebook_losses, all_quantized)
 
-    def vq2emb(self, vq, n_quantizers=None):
+    def vq2emb(self, vq, n_quantizers: int | None = None) -> torch.Tensor:
         quantized_out = 0.0
         if n_quantizers is None:
             n_quantizers = self.num_quantizers
@@ -108,7 +107,7 @@ class ResidualVQ(nn.Module):
             if idx >= n_quantizers:
                 break
             quantized_out += quantizer.vq2emb(vq[idx])
-        return quantized_out
+        return torch.as_tensor(quantized_out)
 
     def latent2dist(self, z, n_quantizers=None):
         quantized_out = 0.0

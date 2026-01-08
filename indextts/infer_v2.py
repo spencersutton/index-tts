@@ -8,7 +8,7 @@ import warnings
 from subprocess import CalledProcessError
 
 import librosa
-import safetensors
+import safetensors.torch
 import torch
 import torch.nn.functional as F
 import torchaudio
@@ -130,7 +130,7 @@ class IndexTTS2:
         print(f">> semantic_codec weights restored from: {semantic_code_ckpt}")
 
         s2mel_path = os.path.join(self.model_dir, self.cfg.s2mel_checkpoint)
-        s2mel = MyModel(self.cfg.s2mel, use_gpt_latent=True)
+        s2mel = MyModel(self.cfg.s2mel)
         s2mel, _, _, _ = load_checkpoint2(
             s2mel, None, s2mel_path, load_only_params=True, ignore_modules=[], is_distributed=False
         )
@@ -258,7 +258,9 @@ class IndexTTS2:
         if self.gr_progress is not None:
             self.gr_progress(value, desc=desc)
 
-    def _load_and_cut_audio(self, audio_path, max_audio_length_seconds, verbose=False, sr=None):
+    def _load_and_cut_audio(
+        self, audio_path, max_audio_length_seconds, verbose=False, sr=None
+    ) -> tuple[torch.Tensor, int]:
         if not sr:
             audio, sr = librosa.load(audio_path)
         else:
@@ -270,7 +272,7 @@ class IndexTTS2:
             if verbose:
                 print(f"Audio too long ({audio.shape[1]} samples), truncating to {max_audio_samples} samples")
             audio = audio[:, :max_audio_samples]
-        return audio, sr
+        return audio, int(sr)
 
     def normalize_emo_vec(self, emo_vector, apply_bias=True):
         # apply biased emotion factors for better user experience,
@@ -438,7 +440,7 @@ class IndexTTS2:
             feat = feat - feat.mean(dim=0, keepdim=True)  # feat2另外一个滤波器能量组特征[922, 80]
             style = self.campplus_model(feat.unsqueeze(0))  # 参考音频的全局style2[1,192]
 
-            prompt_condition = self.s2mel.models["length_regulator"](S_ref, ylens=ref_target_lengths)[0]
+            prompt_condition: torch.Tensor = self.s2mel.models["length_regulator"](S_ref, ylens=ref_target_lengths)[0]
 
             self.cache_spk_cond = spk_cond_emb
             self.cache_s2mel_style = style
@@ -451,6 +453,8 @@ class IndexTTS2:
             spk_cond_emb = self.cache_spk_cond
             ref_mel = self.cache_mel
 
+        weight_vector = None
+        emovec_mat = None
         if emo_vector is not None:
             weight_vector = torch.tensor(emo_vector, device=self.device)
             if use_random:
@@ -515,13 +519,13 @@ class IndexTTS2:
         max_mel_tokens = generation_kwargs.pop("max_mel_tokens", 1500)
         sampling_rate = 22050
 
-        wavs = []
-        gpt_gen_time = 0
-        gpt_forward_time = 0
-        s2mel_time = 0
-        bigvgan_time = 0
+        wavs: list[torch.Tensor] = []
+        gpt_gen_time: float = 0
+        gpt_forward_time: float = 0
+        s2mel_time: float = 0
+        bigvgan_time: float = 0
         has_warned = False
-        silence = None  # for stream_return
+        silence: torch.Tensor | None = None  # for stream_return
         for seg_idx, sent in enumerate(segments):
             self._set_gr_progress(
                 0.2 + 0.7 * seg_idx / segments_count, f"speech synthesis {seg_idx + 1}/{segments_count}..."
@@ -547,7 +551,7 @@ class IndexTTS2:
                         alpha=emo_alpha,
                     )
 
-                    if emo_vector is not None:
+                    if weight_vector is not None:
                         emovec = emovec_mat + (1 - torch.sum(weight_vector)) * emovec
 
                     codes, speech_conditioning_latent = self.gpt.inference_speech(
@@ -568,6 +572,7 @@ class IndexTTS2:
                         max_generate_length=max_mel_tokens,
                         **generation_kwargs,
                     )
+                    assert isinstance(codes, torch.Tensor)
 
                 gpt_gen_time += time.perf_counter() - m_start_time
                 if not has_warned and (codes[:, -1] != self.stop_mel_token).any():
@@ -609,7 +614,6 @@ class IndexTTS2:
                         codes,
                         torch.tensor([codes.shape[-1]], device=text_tokens.device),
                         emo_cond_emb,
-                        cond_mel_lengths=torch.tensor([spk_cond_emb.shape[-1]], device=text_tokens.device),
                         emo_cond_mel_lengths=torch.tensor([emo_cond_emb.shape[-1]], device=text_tokens.device),
                         emo_vec=emovec,
                         use_speed=use_speed,
@@ -644,7 +648,6 @@ class IndexTTS2:
 
                     m_start_time = time.perf_counter()
                     wav = self.bigvgan(vc_target.float()).squeeze().unsqueeze(0)
-                    print(wav.shape)
                     bigvgan_time += time.perf_counter() - m_start_time
                     wav = wav.squeeze(1)
 

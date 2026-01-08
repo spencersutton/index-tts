@@ -3,8 +3,10 @@ from torch import nn
 
 
 @torch.jit.script
-def fused_add_tanh_sigmoid_multiply(input_a, input_b, n_channels):
-    n_channels_int = n_channels[0]
+def fused_add_tanh_sigmoid_multiply(
+    input_a: torch.Tensor, input_b: torch.Tensor, n_channels: torch.Tensor
+) -> torch.Tensor:
+    n_channels_int = int(n_channels[0])
     in_act = input_a + input_b
     # use torch.split to avoid dynamic slicing
     t_act_part, s_act_part = torch.split(in_act, n_channels_int, dim=1)
@@ -13,9 +15,9 @@ def fused_add_tanh_sigmoid_multiply(input_a, input_b, n_channels):
     return t_act * s_act
 
 
-def sequence_mask(length, max_length=None):
+def sequence_mask(length: torch.Tensor, max_length: int | None = None):
     if max_length is None:
-        max_length = length.max()
+        max_length = int(length.max())
     x = torch.arange(max_length, dtype=length.dtype, device=length.device)
     return x.unsqueeze(0) < length.unsqueeze(1)
 

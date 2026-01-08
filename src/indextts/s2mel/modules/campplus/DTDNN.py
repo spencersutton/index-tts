@@ -57,9 +57,7 @@ class CAMPPlus(nn.Module):
         self.head = FCM(feat_dim=80)
         channels = self.head.out_channels
 
-        modules: OrderedDict[str, nn.Module] = OrderedDict({
-            "tdnn": TDNNLayer(channels, 128, 5, stride=2, dilation=1, padding=-1)
-        })
+        modules: OrderedDict[str, nn.Module] = OrderedDict({"tdnn": TDNNLayer(channels)})
         self.xvector = nn.Sequential(modules)
         channels = 128
         for i, (num_layers, dilation) in enumerate(zip((12, 24, 16), (1, 2, 2))):
@@ -69,7 +67,7 @@ class CAMPPlus(nn.Module):
             self.xvector.add_module(f"transit{i + 1}", TransitLayer(channels, channels // 2, bias=False))
             channels //= 2
 
-        self.xvector.add_module("out_nonlinear", get_nonlinear("batchnorm-relu", channels))
+        self.xvector.add_module("out_nonlinear", get_nonlinear(channels))
 
         self.xvector.add_module("stats", StatsPool())
         self.xvector.add_module("dense", DenseLayer(channels * 2, 192))

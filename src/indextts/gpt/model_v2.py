@@ -66,24 +66,25 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
 
     def forward(
         self,
-        input_ids=None,
-        past_key_values=None,
-        attention_mask=None,
-        token_type_ids=None,
-        position_ids=None,
-        head_mask=None,
-        inputs_embeds=None,
-        encoder_hidden_states=None,
-        encoder_attention_mask=None,
-        labels=None,
-        use_cache=None,
-        output_attentions=None,
-        output_hidden_states=None,
-        return_dict=None,
+        input_ids: torch.Tensor | None = None,
+        past_key_values: tuple[tuple[torch.Tensor]] | None = None,
+        attention_mask: torch.Tensor | None = None,
+        token_type_ids: torch.Tensor | None = None,
+        position_ids: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        inputs_embeds: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        labels: None = None,
+        use_cache: bool | None = None,
+        output_attentions: bool | None = None,
+        output_hidden_states: bool | None = None,
+        return_dict: bool | None = None,
     ):
         assert self.cached_mel_emb is not None
         assert inputs_embeds is None  # Not supported by this inference model.
         assert labels is None  # Training not supported by this inference model.
+        assert input_ids is not None and attention_mask is not None
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
         # Create embedding
         mel_len = self.cached_mel_emb.shape[1]
@@ -128,7 +129,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         lm_logits = self.lm_head(hidden_states)
 
         if not return_dict:
-            return (lm_logits, *transformer_outputs[1:])
+            return (lm_logits,) + transformer_outputs[1:]
 
         return CausalLMOutputWithCrossAttentions(
             loss=None,
@@ -147,7 +148,7 @@ class LearnedPositionEmbeddings(nn.Module):
         # Initializing this way is standard for GPT-2
         self.emb.weight.data.normal_(mean=0.0, std=init)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         sl = x.shape[1]
         return self.emb(torch.arange(0, sl, device=x.device))
 
@@ -306,12 +307,6 @@ class UnifiedVoice(nn.Module):
         ) = build_hf_gpt_transformer(
             layers, model_dim, heads, self.max_mel_tokens + 2 + self.max_conditioning_inputs, self.max_text_tokens + 2
         )
-        if train_solo_embeddings:
-            self.mel_solo_embedding = nn.Parameter(torch.randn(1, 1, model_dim) * 0.02, requires_grad=True)
-            self.text_solo_embedding = nn.Parameter(torch.randn(1, 1, model_dim) * 0.02, requires_grad=True)
-        else:
-            self.mel_solo_embedding = 0
-            self.text_solo_embedding = 0
 
         self.final_norm = nn.LayerNorm(model_dim)
         self.text_head = nn.Linear(model_dim, self.number_text_tokens * types + 1)
@@ -344,7 +339,7 @@ class UnifiedVoice(nn.Module):
         if self.use_accel and torch.cuda.is_available():
             # Check if flash attention is available
             try:
-                import flash_attn
+                import flash_attn  # noqa: F401 # type: ignore
             except ImportError:
                 raise ImportError(
                     "flash_attn is required for acceleration but not installed. Please install from https://github.com/Dao-AILab/flash-attention/releases/"
@@ -360,6 +355,7 @@ class UnifiedVoice(nn.Module):
                 accel_gpt = accel_gpt.half().cuda()
             else:
                 accel_gpt = accel_gpt.cuda()
+            assert accel_gpt is not None
             accel_gpt.eval()
 
             lm_head_with_norm = nn.Sequential(self.final_norm, self.mel_head)
@@ -384,14 +380,14 @@ class UnifiedVoice(nn.Module):
             kv_cache=kv_cache,
         )
         if use_deepspeed and half and torch.cuda.is_available():
-            import deepspeed
+            import deepspeed  # noqa: F401 # type: ignore
 
             self.ds_engine = deepspeed.init_inference(
                 model=self.inference_model, mp_size=1, replace_with_kernel_inject=True, dtype=torch.float16
             )
             self.inference_model = self.ds_engine.module.eval()
         elif use_deepspeed and torch.cuda.is_available():
-            import deepspeed
+            import deepspeed  # noqa: F401 # type: ignore
 
             self.ds_engine = deepspeed.init_inference(
                 model=self.inference_model, mp_size=1, replace_with_kernel_inject=True, dtype=torch.float32
@@ -437,39 +433,22 @@ class UnifiedVoice(nn.Module):
 
     def get_logits(
         self,
-        speech_conditioning_inputs,
-        first_inputs,
-        first_head,
-        second_inputs=None,
-        second_head=None,
-        get_attns=False,
-        return_latent=False,
+        speech_conditioning_inputs: torch.Tensor,
+        first_inputs: torch.Tensor,
+        second_inputs: torch.Tensor | None = None,
     ):
         if second_inputs is not None:
             emb = torch.cat([speech_conditioning_inputs, first_inputs, second_inputs], dim=1)
         else:
             emb = torch.cat([speech_conditioning_inputs, first_inputs], dim=1)
 
-        gpt_out = self.gpt(inputs_embeds=emb, return_dict=True, output_attentions=get_attns)
-        if get_attns:
-            return gpt_out.attentions
+        gpt_out = self.gpt(inputs_embeds=emb, return_dict=True, output_attentions=False)
 
         offset = speech_conditioning_inputs.shape[1]
         enc = gpt_out.last_hidden_state[:, offset:]
         enc = self.final_norm(enc)
 
-        if return_latent:
-            return enc[:, : first_inputs.shape[1]], enc[:, -second_inputs.shape[1] :]
-
-        first_logits = enc[:, : first_inputs.shape[1]]
-        first_logits = first_head(first_logits)
-        first_logits = first_logits.permute(0, 2, 1)
-        if second_inputs is not None:
-            second_logits = enc[:, -second_inputs.shape[1] :]
-            second_logits = second_head(second_logits)
-            second_logits = second_logits.permute(0, 2, 1)
-            return first_logits, second_logits
-        return first_logits
+        return enc[:, : first_inputs.shape[1]], enc[:, -second_inputs.shape[1] :]
 
     def get_conditioning(self, speech_conditioning_input, cond_mel_lengths=None):
         speech_conditioning_input, mask = self.conditioning_encoder(
@@ -489,17 +468,15 @@ class UnifiedVoice(nn.Module):
 
     def forward(
         self,
-        speech_conditioning_latent,
-        text_inputs,
-        text_lengths,
-        mel_codes,
-        mel_codes_lengths,
-        emo_speech_conditioning_latent,
-        cond_mel_lengths=None,
-        emo_cond_mel_lengths=None,
-        emo_vec=None,
-        use_speed=None,
-        do_spk_cond=False,
+        speech_conditioning_latent: torch.Tensor,
+        text_inputs: torch.Tensor,
+        text_lengths: torch.Tensor,
+        mel_codes: torch.Tensor,
+        mel_codes_lengths: torch.Tensor,
+        emo_speech_conditioning_latent: torch.Tensor,
+        emo_cond_mel_lengths: torch.Tensor,
+        emo_vec: torch.Tensor,
+        use_speed: torch.Tensor,
     ):
         """
         Forward pass that uses both text and voice in either text conditioning mode or voice conditioning mode
@@ -513,13 +490,6 @@ class UnifiedVoice(nn.Module):
         If return_attentions is specified, only logits are returned.
         If return_latent is specified, loss & logits are not computed or returned. Only the predicted latents are returned.
         """
-
-        if do_spk_cond:
-            speech_conditioning_latent = self.get_conditioning(
-                speech_conditioning_latent.transpose(1, 2), cond_mel_lengths
-            )
-        else:
-            speech_conditioning_latent = speech_conditioning_latent
 
         if emo_vec is None:
             emo_vec_syn_ori = self.get_emo_conditioning(
@@ -544,20 +514,18 @@ class UnifiedVoice(nn.Module):
             ),
             1,
         )
-        text_inputs, _text_targets = self.build_aligned_inputs_and_targets(
+        text_inputs, text_targets = self.build_aligned_inputs_and_targets(
             text_inputs, self.start_text_token, self.stop_text_token
         )
         text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs)
-        mel_codes, _mel_targets = self.build_aligned_inputs_and_targets(
+        mel_codes, mel_targets = self.build_aligned_inputs_and_targets(
             mel_codes, self.start_mel_token, self.stop_mel_token
         )
 
-        mel_emb = self.mel_embedding(mel_codes)
-        mel_emb = mel_emb + self.mel_pos_embedding(mel_codes)
+        mel_emb: torch.Tensor = self.mel_embedding(mel_codes)
+        mel_emb = mel_emb + self.mel_pos_embedding.forward(mel_codes)
 
-        _text_logits, mel_logits = self.get_logits(
-            conds, text_emb, self.text_head, mel_emb, self.mel_head, get_attns=False, return_latent=True
-        )
+        text_logits, mel_logits = self.get_logits(conds, text_emb, mel_emb)
         return mel_logits[
             :, :-2
         ]  # Despite the name, these are not logits. Strip off the two tokens added by this forward pass.
@@ -736,7 +704,8 @@ class UnifiedVoice(nn.Module):
     def get_emovec(self, emo_speech_conditioning_latent, emo_cond_lengths):
         emo_vec_syn_ori = self.get_emo_conditioning(emo_speech_conditioning_latent.transpose(1, 2), emo_cond_lengths)
         emo_vec_syn = self.emovec_layer(emo_vec_syn_ori)
-        return self.emo_layer(emo_vec_syn)
+        emo_vec = self.emo_layer(emo_vec_syn)
+        return emo_vec
 
     def merge_emovec(
         self, speech_conditioning_latent, emo_speech_conditioning_latent, cond_lengths, emo_cond_lengths, alpha=1.0
@@ -744,4 +713,5 @@ class UnifiedVoice(nn.Module):
         emo_vec = self.get_emovec(emo_speech_conditioning_latent, emo_cond_lengths)
         base_vec = self.get_emovec(speech_conditioning_latent, cond_lengths)
 
-        return base_vec + alpha * (emo_vec - base_vec)
+        out = base_vec + alpha * (emo_vec - base_vec)
+        return out

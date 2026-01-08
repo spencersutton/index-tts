@@ -2,24 +2,18 @@
 # Licensed under the Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
 
 from collections import OrderedDict
-from typing import assert_never
 
 import torch
 import torch.nn.functional as F
 from torch import nn
 
 
-def get_nonlinear(config_str, channels):
-    if config_str == "batchnorm-relu":
-        modules: OrderedDict[str, nn.Module] = OrderedDict({
-            "batchnorm": nn.BatchNorm1d(channels),
-            "relu": nn.ReLU(inplace=True),
-        })
-        return nn.Sequential(modules)
-    if config_str == "batchnorm_":
-        modules: OrderedDict[str, nn.Module] = OrderedDict({"batchnorm": nn.BatchNorm1d(channels, affine=False)})
-        return nn.Sequential(modules)
-    assert_never(config_str)
+def get_nonlinear(channels: int):
+    modules: OrderedDict[str, nn.Module] = OrderedDict({
+        "batchnorm": nn.BatchNorm1d(channels),
+        "relu": nn.ReLU(inplace=True),
+    })
+    return nn.Sequential(modules)
 
 
 def statistics_pooling(x, dim=-1, keepdim=False, unbiased=True, eps=1e-2):
@@ -37,28 +31,24 @@ class StatsPool(nn.Module):
 
 
 class TDNNLayer(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, bias=False) -> None:
+    def __init__(self, in_channels) -> None:
         super().__init__()
-        if padding < 0:
-            assert kernel_size % 2 == 1, f"Expect equal paddings, but got even kernel size ({kernel_size})"
-            padding = (kernel_size - 1) // 2 * dilation
-        self.linear = nn.Conv1d(
-            in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation, bias=bias
-        )
-        self.nonlinear = get_nonlinear("batchnorm-relu", out_channels)
+        self.linear = nn.Conv1d(in_channels, 128, 5, stride=2, padding=2, bias=False)
+        self.nonlinear = get_nonlinear(128)
 
     def forward(self, x):
         x = self.linear(x)
-        return self.nonlinear(x)
+        x = self.nonlinear(x)
+        return x
 
 
 class CAMLayer(nn.Module):
-    def __init__(self, stride, padding, dilation, bias, reduction=2) -> None:
+    def __init__(self, dilation) -> None:
         super().__init__()
-        self.linear_local = nn.Conv1d(128, 32, 3, stride=stride, padding=padding, dilation=dilation, bias=bias)
-        self.linear1 = nn.Conv1d(128, 128 // reduction, 1)
+        self.linear_local = nn.Conv1d(128, 32, 3, padding=dilation, dilation=dilation, bias=False)
+        self.linear1 = nn.Conv1d(128, 64, 1)
         self.relu = nn.ReLU(inplace=True)
-        self.linear2 = nn.Conv1d(128 // reduction, 32, 1)
+        self.linear2 = nn.Conv1d(64, 32, 1)
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
@@ -77,31 +67,33 @@ class CAMLayer(nn.Module):
             raise ValueError("Wrong segment pooling type.")
         shape = seg.shape
         seg = seg.unsqueeze(-1).expand(*shape, seg_len).reshape(*shape[:-1], -1)
-        return seg[..., : x.shape[-1]]
+        seg = seg[..., : x.shape[-1]]
+        return seg
 
 
 class CAMDenseTDNNLayer(nn.Module):
-    def __init__(self, in_channels, stride=1, dilation=1, bias=False) -> None:
+    def __init__(self, in_channels: int, dilation: int) -> None:
         super().__init__()
         self.memory_efficient = False
-        self.nonlinear1 = get_nonlinear("batchnorm-relu", in_channels)
+        self.nonlinear1 = get_nonlinear(in_channels)
         self.linear1 = nn.Conv1d(in_channels, 128, 1, bias=False)
-        self.nonlinear2 = get_nonlinear("batchnorm-relu", 128)
-        self.cam_layer = CAMLayer(stride=stride, padding=dilation, dilation=dilation, bias=bias)
+        self.nonlinear2 = get_nonlinear(128)
+        self.cam_layer = CAMLayer(dilation=dilation)
 
     def bn_function(self, x):
         return self.linear1(self.nonlinear1(x))
 
     def forward(self, x):
         x = self.bn_function(x)
-        return self.cam_layer(self.nonlinear2(x))
+        x = self.cam_layer(self.nonlinear2(x))
+        return x
 
 
 class CAMDenseTDNNBlock(nn.ModuleList):
-    def __init__(self, num_layers, in_channels, stride=1, dilation=1, bias=False) -> None:
+    def __init__(self, num_layers: int, in_channels: int, dilation: int) -> None:
         super().__init__()
         for i in range(num_layers):
-            layer = CAMDenseTDNNLayer(in_channels=in_channels + i * 32, stride=stride, dilation=dilation, bias=bias)
+            layer = CAMDenseTDNNLayer(in_channels=in_channels + i * 32, dilation=dilation)
             self.add_module(f"tdnnd{i + 1}", layer)
 
     def forward(self, x):
@@ -113,26 +105,30 @@ class CAMDenseTDNNBlock(nn.ModuleList):
 class TransitLayer(nn.Module):
     def __init__(self, in_channels, out_channels, bias=True) -> None:
         super().__init__()
-        self.nonlinear = get_nonlinear("batchnorm-relu", in_channels)
+        self.nonlinear = get_nonlinear(in_channels)
         self.linear = nn.Conv1d(in_channels, out_channels, 1, bias=bias)
 
     def forward(self, x):
         x = self.nonlinear(x)
-        return self.linear(x)
+        x = self.linear(x)
+        return x
 
 
 class DenseLayer(nn.Module):
     def __init__(self, in_channels, out_channels, bias=False) -> None:
         super().__init__()
         self.linear = nn.Conv1d(in_channels, out_channels, 1, bias=bias)
-        self.nonlinear = get_nonlinear("batchnorm_", out_channels)
+
+        modules: OrderedDict[str, nn.Module] = OrderedDict({"batchnorm": nn.BatchNorm1d(out_channels, affine=False)})
+        self.nonlinear = nn.Sequential(modules)
 
     def forward(self, x):
         if len(x.shape) == 2:
             x = self.linear(x.unsqueeze(dim=-1)).squeeze(dim=-1)
         else:
             x = self.linear(x)
-        return self.nonlinear(x)
+        x = self.nonlinear(x)
+        return x
 
 
 class BasicResBlock(nn.Module):
@@ -156,4 +152,5 @@ class BasicResBlock(nn.Module):
         out = F.relu(self.bn1(self.conv1(x)))
         out = self.bn2(self.conv2(out))
         out += self.shortcut(x)
-        return F.relu(out)
+        out = F.relu(out)
+        return out

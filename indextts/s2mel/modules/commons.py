@@ -21,46 +21,30 @@ def sequence_mask(length, max_length=None):
 
 
 class MyModel(nn.Module):
-    def __init__(self, args, use_emovec=False, use_gpt_latent=False):
+    def __init__(self, args):
         super().__init__()
         from indextts.s2mel.modules.flow_matching import CFM
         from indextts.s2mel.modules.length_regulator import InterpolateRegulator
 
-        length_regulator = InterpolateRegulator(
-            channels=args.length_regulator.channels,
-            sampling_ratios=args.length_regulator.sampling_ratios,
-            is_discrete=args.length_regulator.is_discrete,
-            in_channels=args.length_regulator.in_channels if hasattr(args.length_regulator, "in_channels") else None,
-            codebook_size=args.length_regulator.content_codebook_size,
-            n_codebooks=args.length_regulator.n_codebooks if hasattr(args.length_regulator, "n_codebooks") else 1,
-        )
-
-        if use_gpt_latent:
-            self.models = nn.ModuleDict({
-                "cfm": CFM(args),
-                "length_regulator": length_regulator,
-                "gpt_layer": torch.nn.Sequential(
-                    torch.nn.Linear(1280, 256), torch.nn.Linear(256, 128), torch.nn.Linear(128, 1024)
-                ),
-            })
-
-        else:
-            self.models = nn.ModuleDict({"cfm": CFM(args), "length_regulator": length_regulator})
+        self.models = nn.ModuleDict({
+            "cfm": CFM(args),
+            "length_regulator": InterpolateRegulator(
+                channels=args.length_regulator.channels,
+                sampling_ratios=args.length_regulator.sampling_ratios,
+                is_discrete=args.length_regulator.is_discrete,
+                in_channels=args.length_regulator.in_channels
+                if hasattr(args.length_regulator, "in_channels")
+                else None,
+                codebook_size=args.length_regulator.content_codebook_size,
+                n_codebooks=args.length_regulator.n_codebooks if hasattr(args.length_regulator, "n_codebooks") else 1,
+            ),
+            "gpt_layer": torch.nn.Sequential(
+                torch.nn.Linear(1280, 256), torch.nn.Linear(256, 128), torch.nn.Linear(128, 1024)
+            ),
+        })
 
     def forward(self, x, target_lengths, prompt_len, cond, y):
         return self.models["cfm"](x, target_lengths, prompt_len, cond, y)
-
-    def forward2(self, S_ori, target_lengths, F0_ori):
-        return self.models["length_regulator"](S_ori, ylens=target_lengths, f0=F0_ori)
-
-    def forward_emovec(self, x):
-        return self.models["emo_layer"](x)
-
-    def forward_emo_encoder(self, x):
-        return self.models["emo_encoder"](x)
-
-    def forward_gpt(self, x):
-        return self.models["gpt_layer"](x)
 
     def enable_torch_compile(self):
         """Enable torch.compile optimization.
@@ -70,54 +54,6 @@ class MyModel(nn.Module):
         """
         if "cfm" in self.models:
             self.models["cfm"].enable_torch_compile()
-
-
-def load_checkpoint(
-    model, optimizer, path, load_only_params=True, ignore_modules=[], is_distributed=False, load_ema=False
-):
-    state = torch.load(path, map_location="cpu")
-    params = state["net"]
-    if load_ema and "ema" in state:
-        print("Loading EMA")
-        for key in model:
-            i = 0
-            for param_name in params[key]:
-                if "input_pos" in param_name:
-                    continue
-                assert params[key][param_name].shape == state["ema"][key][0][i].shape
-                params[key][param_name] = state["ema"][key][0][i].clone()
-                i += 1
-    for key in model:
-        if key in params and key not in ignore_modules:
-            if not is_distributed:
-                # strip prefix of DDP (module.), create a new OrderedDict that does not contain the prefix
-                for k in list(params[key].keys()):
-                    if k.startswith("module."):
-                        params[key][k[len("module.") :]] = params[key][k]
-                        del params[key][k]
-            model_state_dict = model[key].state_dict()
-            # 过滤出形状匹配的键值对
-            filtered_state_dict = {
-                k: v for k, v in params[key].items() if k in model_state_dict and v.shape == model_state_dict[k].shape
-            }
-            skipped_keys = set(params[key].keys()) - set(filtered_state_dict.keys())
-            if skipped_keys:
-                print(f"Warning: Skipped loading some keys due to shape mismatch: {skipped_keys}")
-            print(f"{key} loaded")
-            model[key].load_state_dict(filtered_state_dict, strict=False)
-    _ = [model[key].eval() for key in model]
-
-    if not load_only_params:
-        epoch = state["epoch"] + 1
-        iters = state["iters"]
-        optimizer.load_state_dict(state["optimizer"])
-        optimizer.load_scheduler_state_dict(state["scheduler"])
-
-    else:
-        epoch = 0
-        iters = 0
-
-    return model, optimizer, epoch, iters
 
 
 def load_checkpoint2(

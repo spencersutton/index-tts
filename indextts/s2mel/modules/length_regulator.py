@@ -12,24 +12,22 @@ CHANNELS: Final = 512
 class InterpolateRegulator(nn.Module):
     def __init__(self) -> None:
         super().__init__()
-        model = [
-            layer
-            for _ in range(4)
-            for layer in (nn.Conv1d(CHANNELS, CHANNELS, 3, padding=1), nn.GroupNorm(1, CHANNELS), nn.Mish())
-        ] + [nn.Conv1d(CHANNELS, CHANNELS, 1)]
-        self.model = nn.Sequential(*model)
+
+        self.model = nn.Sequential()
+        for _ in range(4):
+            self.model.extend([nn.Conv1d(CHANNELS, CHANNELS, 3, padding=1), nn.GroupNorm(1, CHANNELS), nn.Mish()])
+        self.model.append(nn.Conv1d(CHANNELS, CHANNELS, 1))
+
         self.embedding = nn.Embedding(2048, CHANNELS)
-
         self.mask_token = nn.Parameter(torch.zeros(1, CHANNELS))
-
         self.content_in_proj = nn.Linear(1024, CHANNELS)
 
     def forward(self, x: torch.Tensor, ylens: torch.Tensor):
-        x: torch.Tensor = self.content_in_proj(x)
-        # x in (B, T, D)
-        mask = sequence_mask(ylens).unsqueeze(-1)
-        x = F.interpolate(x.transpose(1, 2).contiguous(), size=ylens.max(), mode="nearest")
+        x: torch.Tensor = self.content_in_proj(x)  # (B, T, C)
+        mask = sequence_mask(ylens).unsqueeze(-1)  # (B, T, 1)
 
-        model_output: torch.Tensor = self.model(x)
-        out = model_output.transpose(1, 2).contiguous()
+        x = x.mT.contiguous()  # (B, C, T)
+        x = F.interpolate(x, size=ylens.max(), mode="nearest")
+
+        out = self.model(x).mT.contiguous()  # (B, T, C)
         return out * mask, ylens, None, None, None

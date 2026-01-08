@@ -1,27 +1,8 @@
-import numpy as np
 import torch
 from torch import nn
 from torch.nn import functional as F
 
 from indextts.s2mel.modules.commons import sequence_mask
-
-# f0_bin = 256
-f0_max = 1100.0
-f0_min = 50.0
-f0_mel_min = 1127 * np.log(1 + f0_min / 700)
-f0_mel_max = 1127 * np.log(1 + f0_max / 700)
-
-
-def f0_to_coarse(f0, f0_bin):
-    f0_mel = 1127 * (1 + f0 / 700).log()
-    a = (f0_bin - 2) / (f0_mel_max - f0_mel_min)
-    b = f0_mel_min * a - 1.0
-    f0_mel = torch.where(f0_mel > 0, f0_mel * a - b, f0_mel)
-    f0_coarse = torch.round(f0_mel).long()
-    f0_coarse = f0_coarse * (f0_coarse > 0)
-    f0_coarse = f0_coarse + ((f0_coarse < 1) * 1)
-    f0_coarse = f0_coarse * (f0_coarse < f0_bin)
-    return f0_coarse + ((f0_coarse >= f0_bin) * (f0_bin - 1))
 
 
 class InterpolateRegulator(nn.Module):
@@ -30,9 +11,9 @@ class InterpolateRegulator(nn.Module):
         channels: int,
         sampling_ratios: tuple,
         is_discrete: bool = False,
-        in_channels: int | None = None,  # only applies to continuous input
+        in_channels: int = None,  # only applies to continuous input
         codebook_size: int = 1024,  # for discrete only
-        out_channels: int | None = None,
+        out_channels: int = None,
         groups: int = 1,
         n_codebooks: int = 1,  # number of codebooks
     ) -> None:

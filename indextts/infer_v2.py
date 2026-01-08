@@ -438,9 +438,7 @@ class IndexTTS2:
             feat = feat - feat.mean(dim=0, keepdim=True)  # feat2另外一个滤波器能量组特征[922, 80]
             style = self.campplus_model(feat.unsqueeze(0))  # 参考音频的全局style2[1,192]
 
-            prompt_condition = self.s2mel.models["length_regulator"](
-                S_ref, ylens=ref_target_lengths, n_quantizers=3, f0=None
-            )[0]
+            prompt_condition = self.s2mel.models["length_regulator"](S_ref, ylens=ref_target_lengths)[0]
 
             self.cache_spk_cond = spk_cond_emb
             self.cache_s2mel_style = style
@@ -630,8 +628,7 @@ class IndexTTS2:
                     target_lengths = (code_lens * 1.72).long()
 
                     cond = self.s2mel.models["length_regulator"](
-                        s_infer, ylens=target_lengths, n_quantizers=3, f0=None
-                    )[0]
+                        s_infer, ylens=target_lengths)[0]
                     cat_condition = torch.cat([prompt_condition, cond], dim=1)
                     vc_target = self.s2mel.models["cfm"].inference(
                         cat_condition,

@@ -29,14 +29,12 @@ class MyModel(nn.Module):
         self.models = nn.ModuleDict({
             "cfm": CFM(args),
             "length_regulator": InterpolateRegulator(
-                channels=args.length_regulator.channels,
-                sampling_ratios=args.length_regulator.sampling_ratios,
-                is_discrete=args.length_regulator.is_discrete,
-                in_channels=args.length_regulator.in_channels
-                if hasattr(args.length_regulator, "in_channels")
-                else None,
-                codebook_size=args.length_regulator.content_codebook_size,
-                n_codebooks=args.length_regulator.n_codebooks if hasattr(args.length_regulator, "n_codebooks") else 1,
+                channels=512,
+                sampling_ratios=(1, 1, 1, 1),
+                is_discrete=False,
+                in_channels=1024,
+                codebook_size=2048,
+                n_codebooks=1,
             ),
             "gpt_layer": nn.Sequential(nn.Linear(1280, 256), nn.Linear(256, 128), nn.Linear(128, 1024)),
         })

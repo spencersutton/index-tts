@@ -4,15 +4,15 @@
 # LICENSE file in the root directory of this source tree.
 
 from torch import nn
-from torch.nn import functional as F
 
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize import ResidualVQ
 from indextts.utils.maskgct.models.codec.kmeans.vocos import VocosBackbone
 
 
-def init_weights(m) -> None:
+def init_weights(m: nn.Module) -> None:
     if isinstance(m, nn.Conv1d):
         nn.init.trunc_normal_(m.weight, std=0.02)
+        assert m.bias is not None
         nn.init.constant_(m.bias, 0)
     if isinstance(m, nn.Linear):
         nn.init.trunc_normal_(m.weight, std=0.02)
@@ -31,20 +31,16 @@ class RepCodec(nn.Module):
         num_quantizers=1,
         downsample_scale=1,
         cfg=None,
-    ) -> None:
+    ):
         super().__init__()
-        codebook_size = cfg.codebook_size if cfg is not None and hasattr(cfg, "codebook_size") else codebook_size
-        codebook_dim = cfg.codebook_dim if cfg is not None and hasattr(cfg, "codebook_dim") else codebook_dim
-        hidden_size = cfg.hidden_size if cfg is not None and hasattr(cfg, "hidden_size") else hidden_size
-        vocos_dim = cfg.vocos_dim if cfg is not None and hasattr(cfg, "vocos_dim") else vocos_dim
-        vocos_intermediate_dim = (
-            cfg.vocos_intermediate_dim if cfg is not None and hasattr(cfg, "vocos_dim") else vocos_intermediate_dim
-        )
-        vocos_num_layers = cfg.vocos_num_layers if cfg is not None and hasattr(cfg, "vocos_dim") else vocos_num_layers
-        num_quantizers = cfg.num_quantizers if cfg is not None and hasattr(cfg, "num_quantizers") else num_quantizers
-        downsample_scale = (
-            cfg.downsample_scale if cfg is not None and hasattr(cfg, "downsample_scale") else downsample_scale
-        )
+        codebook_size = 8192
+        codebook_dim = 8
+        hidden_size = 1024
+        vocos_dim = 384
+        vocos_intermediate_dim = 2048
+        vocos_num_layers = 12
+        num_quantizers = 1
+        downsample_scale = 1
 
         self.codebook_size = codebook_size
         self.codebook_dim = codebook_dim
@@ -54,10 +50,6 @@ class RepCodec(nn.Module):
         self.vocos_num_layers = vocos_num_layers
         self.num_quantizers = num_quantizers
         self.downsample_scale = downsample_scale
-
-        if self.downsample_scale is not None and self.downsample_scale > 1:
-            self.down = nn.Conv1d(self.hidden_size, self.hidden_size, kernel_size=3, stride=2, padding=1)
-            self.up = nn.Conv1d(self.hidden_size, self.hidden_size, kernel_size=3, stride=1, padding=1)
 
         self.encoder = nn.Sequential(
             VocosBackbone(
@@ -90,43 +82,9 @@ class RepCodec(nn.Module):
             use_l2_normlize=True,
         )
 
-        self.reset_parameters()
-
-    def forward(self, x):
-        # downsample
-        if self.downsample_scale is not None and self.downsample_scale > 1:
-            x = x.transpose(1, 2)
-            x = self.down(x)
-            x = F.gelu(x)
-            x = x.transpose(1, 2)
-
-        # encoder
-        x = self.encoder(x.transpose(1, 2)).transpose(1, 2)
-
-        # vq
-        (quantized_out, all_indices, all_commit_losses, all_codebook_losses, _) = self.quantizer(x)
-
-        # decoder
-        x = self.decoder(quantized_out)
-
-        # up
-        if self.downsample_scale is not None and self.downsample_scale > 1:
-            x = x.transpose(1, 2)
-            x = F.interpolate(x, scale_factor=2, mode="nearest")
-            x_rec = self.up(x).transpose(1, 2)
-
-        codebook_loss = (all_codebook_losses + all_commit_losses).mean()
-        all_indices = all_indices
-
-        return x_rec, codebook_loss, all_indices
+        self.apply(init_weights)
 
     def quantize(self, x):
-        if self.downsample_scale is not None and self.downsample_scale > 1:
-            x = x.transpose(1, 2)
-            x = self.down(x)
-            x = F.gelu(x)
-            x = x.transpose(1, 2)
-
         x = self.encoder(x.transpose(1, 2)).transpose(1, 2)
 
         (quantized_out, all_indices, _all_commit_losses, _all_codebook_losses, _) = self.quantizer(x)
@@ -134,6 +92,3 @@ class RepCodec(nn.Module):
         if all_indices.shape[0] == 1:
             return all_indices.squeeze(0), quantized_out.transpose(1, 2)
         return all_indices, quantized_out.transpose(1, 2)
-
-    def reset_parameters(self) -> None:
-        self.apply(init_weights)

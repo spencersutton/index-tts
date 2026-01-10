@@ -5,7 +5,7 @@ from typing import cast
 import torch
 import torch.nn.functional as F
 from einops import rearrange, repeat
-from torch import einsum, nn
+from torch import nn
 
 
 # main class
@@ -28,7 +28,7 @@ class Attend(nn.Module):
         kv_einsum_eq = "b j d" if k.ndim == 3 else "b h j d"
 
         # similarity
-        sim = einsum(f"b h i d, {kv_einsum_eq} -> b h i j", q, k) * scale
+        sim = torch.einsum(f"b h i d, {kv_einsum_eq} -> b h i j", q, k) * scale
 
         # key padding mask
         if mask is not None:
@@ -40,7 +40,7 @@ class Attend(nn.Module):
         attn = self.attn_dropout(attn)
 
         # aggregate values
-        return einsum(f"b h i j, {kv_einsum_eq} -> b h i d", attn, v)
+        return torch.einsum(f"b h i j, {kv_einsum_eq} -> b h i d", attn, v)
 
 
 class RMSNorm(nn.Module):

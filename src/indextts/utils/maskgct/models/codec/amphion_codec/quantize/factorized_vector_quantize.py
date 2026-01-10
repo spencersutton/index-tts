@@ -10,10 +10,6 @@ from torch import nn
 from torch.nn.utils.parametrizations import weight_norm
 
 
-def WNConv1d(*args, **kwargs):
-    return weight_norm(nn.Conv1d(*args, **kwargs))
-
-
 class FactorizedVectorQuantize(nn.Module):
     def __init__(
         self, input_dim, codebook_size, codebook_dim, commitment=0.005, codebook_loss_weight=1.0, use_l2_normlize=True
@@ -27,8 +23,8 @@ class FactorizedVectorQuantize(nn.Module):
         self.use_l2_normlize = use_l2_normlize
 
         if self.input_dim != self.codebook_dim:
-            self.in_project = WNConv1d(self.input_dim, self.codebook_dim, kernel_size=1)
-            self.out_project = WNConv1d(self.codebook_dim, self.input_dim, kernel_size=1)
+            self.in_project = weight_norm(nn.Conv1d(self.input_dim, self.codebook_dim, kernel_size=1))
+            self.out_project = weight_norm(nn.Conv1d(self.codebook_dim, self.input_dim, kernel_size=1))
 
         else:
             self.in_project = nn.Identity()

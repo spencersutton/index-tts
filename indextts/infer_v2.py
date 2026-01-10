@@ -122,9 +122,9 @@ class IndexTTS2:
         self.semantic_mean = self.semantic_mean.to(self.device)
         self.semantic_std = self.semantic_std.to(self.device)
 
-        semantic_codec = RepCodec(self.cfg.semantic_codec).eval()
+        semantic_codec = RepCodec().eval()
         semantic_code_ckpt = hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
-        safetensors.torch.load_model(semantic_codec, semantic_code_ckpt)
+        safetensors.torch.load_model(semantic_codec, semantic_code_ckpt, strict=False)
         self.semantic_codec = semantic_codec.to(self.device)
         self.semantic_codec.eval()
         print(f">> semantic_codec weights restored from: {semantic_code_ckpt}")
@@ -430,7 +430,7 @@ class IndexTTS2:
             attention_mask = attention_mask.to(self.device)
             spk_cond_emb = self.get_emb(input_features, attention_mask)
 
-            _, S_ref = self.semantic_codec.quantize(spk_cond_emb)
+            S_ref = self.semantic_codec.quantize(spk_cond_emb)
             ref_mel = self.mel_fn(audio_22k.to(spk_cond_emb.device).float())
             ref_target_lengths = torch.tensor([ref_mel.size(2)], dtype=torch.long).to(ref_mel.device)
             feat = torchaudio.compliance.kaldi.fbank(

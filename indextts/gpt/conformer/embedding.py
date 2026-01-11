@@ -85,7 +85,7 @@ class PositionalEncoding(nn.Module):
             index = offset.unsqueeze(1) + torch.arange(0, size).to(offset.device)  # B X T
             flag = index > 0
             # remove negative offset
-            index = index * flag
+            index *= flag
             pos_emb = F.embedding(index, self.pe[0])  # B X T X d_model
 
         return pos_emb
@@ -112,6 +112,6 @@ class RelPositionalEncoding(PositionalEncoding):
             torch.Tensor: Positional embedding tensor (1, time, `*`).
         """
         self.pe = self.pe.to(x.device)
-        x = x * self.xscale
+        x *= self.xscale
         pos_emb = self.position_encoding(offset, x.size(1))
         return self.dropout(x), self.dropout(pos_emb)

@@ -429,10 +429,10 @@ class IndexTTS2:
                 self.cache_mel = None
                 torch.cuda.empty_cache()
             audio, sr = self._load_and_cut_audio(spk_audio_prompt, 15, verbose)
-            audio_22k = torchaudio.transforms.Resample(sr, SAMPLING_RATE)(audio)
-            audio_16k = torchaudio.transforms.Resample(sr, 16000)(audio)
+            audio_22k: torch.Tensor = torchaudio.transforms.Resample(sr, SAMPLING_RATE)(audio)
+            audio_16k: torch.Tensor = torchaudio.transforms.Resample(sr, 16000)(audio)
 
-            inputs = self.extract_features(audio_16k, sampling_rate=16000, return_tensors="pt")
+            inputs = self.extract_features(audio_16k.tolist(), sampling_rate=16000, return_tensors="pt")
             input_features = inputs["input_features"]
             attention_mask = inputs["attention_mask"]
             input_features = input_features.to(self.device)
@@ -481,7 +481,7 @@ class IndexTTS2:
                 self.cache_emo_cond = None
                 torch.cuda.empty_cache()
             emo_audio, _ = self._load_and_cut_audio(emo_audio_prompt, 15, verbose, sr=16000)
-            emo_inputs = self.extract_features(emo_audio, sampling_rate=16000, return_tensors="pt")
+            emo_inputs = self.extract_features(emo_audio.tolist(), sampling_rate=16000, return_tensors="pt")
             emo_input_features = emo_inputs["input_features"]
             emo_attention_mask = emo_inputs["attention_mask"]
             emo_input_features = emo_input_features.to(self.device)
@@ -638,6 +638,7 @@ class IndexTTS2:
 
                     cond = self.s2mel.length_regulator(s_infer, ylens=target_lengths)[0]
                     cat_condition = torch.cat([prompt_condition, cond], dim=1)
+                    assert ref_mel is not None
                     vc_target = self.s2mel.cfm.inference(cat_condition, ref_mel, style)
                     vc_target = vc_target[:, :, ref_mel.size(-1) :]
                     s2mel_time += time.perf_counter() - m_start_time

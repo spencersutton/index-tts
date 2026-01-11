@@ -30,7 +30,7 @@ class MyModel(nn.Module):
         from indextts.s2mel.modules.length_regulator import InterpolateRegulator
 
         self.models = nn.ModuleDict({
-            "cfm": CFM(args),
+            "cfm": CFM(),
             "length_regulator": InterpolateRegulator(),
             "gpt_layer": nn.Sequential(nn.Linear(1280, 256), nn.Linear(256, 128), nn.Linear(128, 1024)),
         })

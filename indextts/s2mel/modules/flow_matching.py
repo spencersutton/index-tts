@@ -1,4 +1,5 @@
 import torch
+from torch import nn
 from tqdm import tqdm
 
 from indextts.s2mel.modules.constants import IN_CHANNELS
@@ -7,11 +8,11 @@ from indextts.s2mel.modules.diffusion_transformer import DiT
 INFERENCE_CFG_RATE = 0.7
 
 
-class CFM(torch.nn.Module):
+class CFM(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-        self.criterion = torch.nn.L1Loss()
+        self.criterion = nn.L1Loss()
         self.estimator = DiT()
 
     @torch.inference_mode()

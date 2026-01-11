@@ -1,5 +1,5 @@
 import torch
-from torch import Tensor, nn
+from torch import nn
 
 
 @torch.jit.script
@@ -15,7 +15,7 @@ def fused_add_tanh_sigmoid_multiply(
     return t_act * s_act
 
 
-def sequence_mask(length: torch.Tensor | int, max_length: int | None = None) -> Tensor:
+def sequence_mask(length: torch.Tensor | int, max_length: int | None = None) -> torch.Tensor:
     length = torch.as_tensor(length)
     if max_length is None:
         max_length = int(length.max())

@@ -1,7 +1,7 @@
 import sys
 
 import torch
-from torch import Tensor, nn
+from torch import nn
 
 from indextts.accel.attention import ForwardContext, get_forward_context, reset_forward_context, set_forward_context
 from indextts.accel.kv_manager import KVCacheManager, Seq
@@ -14,7 +14,7 @@ class Sampler(nn.Module):
         super().__init__()
 
     @torch.compile
-    def forward(self, logits: torch.Tensor, temperatures: torch.Tensor) -> Tensor:
+    def forward(self, logits: torch.Tensor, temperatures: torch.Tensor) -> torch.Tensor:
         temperatures = temperatures.to(logits.device).clamp(min=1e-8)
         greedy_mask = temperatures < 1e-5
         temp_for_scaling = torch.where(greedy_mask, 1.0, temperatures)
@@ -75,7 +75,7 @@ class AccelInferenceEngine:
         self.graph_pool = None
         self.graph_captured = False
 
-    def _prepare_decode(self, requests: list[Seq]) -> tuple[Tensor, Tensor]:
+    def _prepare_decode(self, requests: list[Seq]) -> tuple[torch.Tensor, torch.Tensor]:
         if not requests:
             raise RuntimeError("FATAL: No requests provided to _prepare_decode!")
 
@@ -116,7 +116,7 @@ class AccelInferenceEngine:
 
         return input_ids, positions
 
-    def _prepare_sample(self, requests: list[Seq], temperature: float) -> Tensor:
+    def _prepare_sample(self, requests: list[Seq], temperature: float) -> torch.Tensor:
         temperatures = [temperature] * len(requests)
         return torch.tensor(temperatures, dtype=torch.float32, pin_memory=True).cuda(non_blocking=True)
 

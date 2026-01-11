@@ -18,17 +18,15 @@ def find_multiple(n: int, k: int) -> int:
 class AdaptiveLayerNorm(nn.Module):
     r"""Adaptive Layer Normalization"""
 
-    def __init__(self, d_model, norm) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.project_layer = nn.Linear(d_model, 2 * d_model)
-        self.norm = norm
-        self.d_model = d_model
-        self.eps = self.norm.eps
+        self.project_layer = nn.Linear(DIM, 2 * DIM)
+        self.norm = RMSNorm()
 
     def forward(self, input: torch.Tensor, embedding: torch.Tensor | None = None) -> torch.Tensor:
         if embedding is None:
             return self.norm(input)
-        weight, bias = torch.split(self.project_layer(embedding), split_size_or_sections=self.d_model, dim=-1)
+        weight, bias = torch.split(self.project_layer(embedding), DIM, dim=-1)
         return weight * self.norm(input) + bias
 
 
@@ -76,50 +74,30 @@ class Transformer(nn.Module):
         super().__init__()
 
         self.layers = nn.ModuleList(TransformerBlock() for _ in range(N_LAYER))
-        self.norm = AdaptiveLayerNorm(DIM, RMSNorm(eps=NORM_EPS))
+        self.norm = AdaptiveLayerNorm()
 
         self.freqs_cis: torch.Tensor | None = None
         self.mask_cache: torch.Tensor | None = None
         self.max_batch_size = -1
         self.max_seq_length = -1
 
-    def setup_caches(self, max_batch_size, max_seq_length, use_kv_cache=True) -> None:
+    def setup_caches(self, max_batch_size, max_seq_length) -> None:
         if self.max_seq_length >= max_seq_length and self.max_batch_size >= max_batch_size:
             return
-        head_dim = DIM // N_HEAD
         max_seq_length = find_multiple(max_seq_length, 8)
         self.max_seq_length = max_seq_length
         self.max_batch_size = max_batch_size
         dtype = self.norm.project_layer.weight.dtype
         device = self.norm.project_layer.weight.device
 
-        if not self.training and use_kv_cache:
-            for b in self.layers:
-                b.attention.kv_cache = KVCache(max_batch_size, max_seq_length, N_HEAD, head_dim, dtype).to(device)
-
         self.freqs_cis = precompute_freqs_cis(BLOCK_SIZE, HEAD_DIM, dtype).to(device)
         self.causal_mask = torch.tril(torch.ones(self.max_seq_length, self.max_seq_length, dtype=torch.bool)).to(device)
-        self.use_kv_cache = use_kv_cache
+        self.use_kv_cache = False
         self.layers_emit_skip = [i for i in range(N_LAYER) if i < N_LAYER // 2]
         self.layers_receive_skip = [i for i in range(N_LAYER) if i > N_LAYER // 2]
 
-    def forward(
-        self,
-        x: torch.Tensor,
-        c: torch.Tensor,
-        input_pos: torch.Tensor | None = None,
-        mask: torch.Tensor | None = None,
-        context: torch.Tensor | None = None,
-        context_input_pos: torch.Tensor | None = None,
-        cross_attention_mask: torch.Tensor | None = None,
-    ) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, c: torch.Tensor, input_pos: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
         assert self.freqs_cis is not None, "Caches must be initialized first"
-        if mask is None:  # in case of non-causal model
-            if not self.training and self.use_kv_cache:
-                mask = self.causal_mask[None, None, input_pos]
-            else:
-                mask = self.causal_mask[None, None, input_pos]
-                mask = mask[..., input_pos]
         freqs_cis = self.freqs_cis[input_pos]
         skip_in_x_list = []
         for i, layer in enumerate(self.layers):
@@ -138,8 +116,8 @@ class TransformerBlock(nn.Module):
         super().__init__()
         self.attention = Attention()
         self.feed_forward = FeedForward()
-        self.ffn_norm = AdaptiveLayerNorm(DIM, RMSNorm(eps=NORM_EPS))
-        self.attention_norm = AdaptiveLayerNorm(DIM, RMSNorm(eps=NORM_EPS))
+        self.ffn_norm = AdaptiveLayerNorm()
+        self.attention_norm = AdaptiveLayerNorm()
 
         self.skip_in_linear = nn.Linear(DIM * 2, DIM)
 
@@ -170,41 +148,29 @@ class Attention(nn.Module):
         # key, query, value projections for all heads, but in a batch
         self.wqkv = nn.Linear(DIM, total_head_dim, bias=False)
         self.wo = nn.Linear(HEAD_DIM * N_HEAD, DIM, bias=False)
-        self.kv_cache = None
-
-        self.dim = DIM
 
     def forward(
         self,
         x: torch.Tensor,
         freqs_cis: torch.Tensor,
         mask: torch.Tensor,
-        input_pos: torch.Tensor | None = None,
-        context: torch.Tensor | None = None,
-        context_freqs_cis: torch.Tensor | None = None,
+        context: None = None,
+        context_freqs_cis: None = None,
     ) -> torch.Tensor:
         bsz, seqlen, _ = x.shape
 
         kv_size = N_HEAD * HEAD_DIM
-        if context is None:
-            q, k, v = self.wqkv(x).split([kv_size, kv_size, kv_size], dim=-1)
-            context_seqlen = seqlen
-        else:
-            q = self.wq(x)
-            k, v = self.wkv(context).split([kv_size, kv_size], dim=-1)
-            context_seqlen = context.shape[1]
+        query_key_value: torch.Tensor = self.wqkv(x)
+        q, k, v = query_key_value.split((kv_size, kv_size, kv_size), dim=-1)
 
         q = q.view(bsz, seqlen, N_HEAD, HEAD_DIM)
-        k = k.view(bsz, context_seqlen, N_HEAD, HEAD_DIM)
-        v = v.view(bsz, context_seqlen, N_HEAD, HEAD_DIM)
+        k = k.view(bsz, seqlen, N_HEAD, HEAD_DIM)
+        v = v.view(bsz, seqlen, N_HEAD, HEAD_DIM)
 
         q = apply_rotary_emb(q, freqs_cis)
         k = apply_rotary_emb(k, context_freqs_cis if context_freqs_cis is not None else freqs_cis)
 
         q, k, v = [x.transpose(1, 2) for x in (q, k, v)]
-
-        if self.kv_cache is not None:
-            k, v = self.kv_cache.update(input_pos, k, v)
 
         k = k.repeat_interleave(1, dim=1)
         v = v.repeat_interleave(1, dim=1)

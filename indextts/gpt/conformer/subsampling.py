@@ -19,20 +19,11 @@
 import torch
 from torch import nn
 
+from indextts.gpt.conformer.embedding import RelPositionalEncoding
 from indextts.util import patch_call
 
 
-class BaseSubsampling(nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
-        self.right_context = 0
-        self.subsampling_rate = 1
-
-    def position_encoding(self, offset: int | torch.Tensor, size: int) -> torch.Tensor:
-        return self.pos_enc.position_encoding(offset, size)
-
-
-class Conv2dSubsampling2(BaseSubsampling):
+class Conv2dSubsampling2(nn.Module):
     """Convolutional 2D subsampling (to 1/2 length).
 
     Args:
@@ -40,17 +31,12 @@ class Conv2dSubsampling2(BaseSubsampling):
         odim (int): Output dimension.
     """
 
-    def __init__(self, idim: int, odim: int, pos_enc_class: nn.Module) -> None:
-        """Construct an Conv2dSubsampling4 object."""
+    def __init__(self, input_dim: int, output_dim: int) -> None:
         super().__init__()
-        self.conv = nn.Sequential(nn.Conv2d(1, odim, 3, 2), nn.ReLU())
-        self.out = nn.Sequential(nn.Linear(odim * ((idim - 1) // 2), odim))
-        self.pos_enc = pos_enc_class
-        # The right context for every conv layer is computed by:
-        # (kernel_size - 1) * frame_rate_of_this_layer
-        self.subsampling_rate = 2
-        # 2 = (3 - 1) * 1
-        self.right_context = 2
+
+        self.conv = nn.Sequential(nn.Conv2d(1, output_dim, 3, 2), nn.ReLU())
+        self.out = nn.Sequential(nn.Linear(output_dim * ((input_dim - 1) // 2), output_dim))
+        self.pos_enc = RelPositionalEncoding(output_dim)
 
     def forward(
         self, x: torch.Tensor, x_mask: torch.Tensor, offset: int | torch.Tensor = 0

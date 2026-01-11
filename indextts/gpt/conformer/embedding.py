@@ -21,6 +21,8 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
+from indextts.util import patch_call
+
 
 class PositionalEncoding(nn.Module):
     """Positional encoding.
@@ -115,3 +117,6 @@ class RelPositionalEncoding(PositionalEncoding):
         x *= self.xscale
         pos_emb = self.position_encoding(offset, x.size(1))
         return self.dropout(x), self.dropout(pos_emb)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...

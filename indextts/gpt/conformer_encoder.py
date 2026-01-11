@@ -5,7 +5,6 @@ import torch
 from torch import nn
 
 from indextts.gpt.conformer.attention import RelPositionMultiHeadedAttention
-from indextts.gpt.conformer.embedding import RelPositionalEncoding
 from indextts.gpt.conformer.subsampling import Conv2dSubsampling2
 from indextts.util import patch_call
 from indextts.utils.common import make_pad_mask
@@ -71,7 +70,6 @@ class ConvolutionModule(nn.Module):
             channels, channels, kernel_size=15, stride=1, padding=padding, groups=channels, bias=bias
         )
 
-        self.use_layer_norm = True
         self.norm = nn.LayerNorm(channels)
 
         self.pointwise_conv2 = nn.Conv1d(channels, channels, kernel_size=1, stride=1, padding=0, bias=bias)
@@ -95,7 +93,7 @@ class ConvolutionModule(nn.Module):
             torch.Tensor: Output tensor (#batch, time, channels).
         """
         # exchange the temporal dimension and the feature dimension
-        x = x.transpose(1, 2)  # (#batch, channels, time)
+        x = x.mT  # (#batch, channels, time)
 
         # mask batch padding
         if mask_pad.size(2) > 0:  # time > 0
@@ -121,18 +119,14 @@ class ConvolutionModule(nn.Module):
         x = nn.functional.glu(x, dim=1)  # (batch, channel, dim)
 
         # 1D Depthwise Conv
-        x = self.depthwise_conv(x)
-        if self.use_layer_norm:
-            x = x.transpose(1, 2)
-        x = self.activation(self.norm(x))
-        if self.use_layer_norm:
-            x = x.transpose(1, 2)
+        x = self.depthwise_conv(x).mT
+        x = self.activation(self.norm(x)).mT
         x = self.pointwise_conv2(x)
         # mask batch padding
         if mask_pad.size(2) > 0:  # time > 0
             x.masked_fill_(~mask_pad, 0.0)
 
-        return x.transpose(1, 2), new_cache
+        return x.mT, new_cache
 
     @patch_call(forward)
     def __call__(self) -> None: ...
@@ -264,7 +258,7 @@ class ConformerEncoder(torch.nn.Module):
         """
         super().__init__()
 
-        self.embed = Conv2dSubsampling2(input_size, output_size, RelPositionalEncoding(output_size))
+        self.embed = Conv2dSubsampling2(input_size, output_size)
 
         self.after_norm = nn.LayerNorm(output_size, eps=1e-5)
 

@@ -487,7 +487,7 @@ class IndexTTS2:
 
             _, S_ref = self.semantic_codec.quantize(spk_cond_emb)
             ref_mel = self.mel_fn(audio_22k.to(spk_cond_emb.device).float())
-            ref_target_lengths = torch.tensor([ref_mel.size(2)]).to(ref_mel.device)
+            ref_target_lengths = torch.tensor([ref_mel.size(2)], dtype=torch.long).to(ref_mel.device)
             feat = torchaudio.compliance.kaldi.fbank(
                 audio_16k.to(ref_mel.device), num_mel_bins=80, dither=0, sample_frequency=16000
             )
@@ -650,7 +650,7 @@ class IndexTTS2:
                     code_lens.append(code_len)
                     max_code_len = max(max_code_len, code_len)
                 codes = codes[:, :max_code_len]
-                code_lens = torch.tensor(code_lens)
+                code_lens = torch.tensor(code_lens, dtype=torch.long)
                 code_lens = code_lens.to(self.device)
                 if verbose:
                     print(codes, type(codes))

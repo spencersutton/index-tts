@@ -596,7 +596,7 @@ class IndexTTS2:
 
             m_start_time = time.perf_counter()
             with torch.no_grad():
-                with torch.amp.autocast(text_tokens.device.type, enabled=self.dtype is not None, dtype=self.dtype):
+                with torch.autocast(text_tokens.device.type, enabled=self.dtype is not None, dtype=self.dtype):
                     emovec = self.gpt.merge_emovec(
                         spk_cond_emb,
                         emo_cond_emb,
@@ -659,7 +659,7 @@ class IndexTTS2:
 
                 m_start_time = time.perf_counter()
                 use_speed = torch.zeros(spk_cond_emb.size(0)).to(spk_cond_emb.device).long()
-                with torch.amp.autocast(text_tokens.device.type, enabled=self.dtype is not None, dtype=self.dtype):
+                with torch.autocast(text_tokens.device.type, enabled=self.dtype is not None, dtype=self.dtype):
                     latent = self.gpt(
                         speech_conditioning_latent,
                         text_tokens,
@@ -675,7 +675,7 @@ class IndexTTS2:
                     gpt_forward_time += time.perf_counter() - m_start_time
 
                 dtype = None
-                with torch.amp.autocast(text_tokens.device.type, enabled=dtype is not None, dtype=dtype):
+                with torch.autocast(text_tokens.device.type, enabled=dtype is not None, dtype=dtype):
                     m_start_time = time.perf_counter()
                     diffusion_steps = 25
                     inference_cfg_rate = 0.7

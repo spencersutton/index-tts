@@ -8,6 +8,15 @@ from indextts.s2mel.modules.commons import sequence_mask
 from indextts.s2mel.modules.gpt_fast.model import ModelArgs, Transformer
 from indextts.s2mel.modules.wavenet import WN
 
+hidden_dim = 512
+num_heads = 8
+depth = 13
+class_dropout_prob = 0.1
+block_size = 16384
+in_channels = 80
+content_dim = 512
+content_codebook_size = 1024
+
 
 def modulate(x, shift, scale):
     return x * (1 + scale.unsqueeze(1)) + shift.unsqueeze(1)
@@ -82,43 +91,29 @@ class DiT(nn.Module):
 
     def __init__(self, args) -> None:
         super().__init__()
-        self.time_as_token = False
-        self.uvit_skip_connection = (
-            args.DiT.uvit_skip_connection if hasattr(args.DiT, "uvit_skip_connection") else False
-        )
         model_args = ModelArgs(
-            block_size=16384,  # args.DiT.block_size,
-            n_layer=args.DiT.depth,
-            n_head=args.DiT.num_heads,
-            dim=args.DiT.hidden_dim,
-            head_dim=args.DiT.hidden_dim // args.DiT.num_heads,
+            block_size=block_size,
+            n_layer=depth,
+            n_head=num_heads,
+            dim=hidden_dim,
+            head_dim=hidden_dim // num_heads,
             vocab_size=1024,
-            uvit_skip_connection=self.uvit_skip_connection,
-            time_as_token=self.time_as_token,
         )
         self.transformer = Transformer(model_args)
-        self.in_channels = args.DiT.in_channels
-        self.out_channels = args.DiT.in_channels
-        self.num_heads = args.DiT.num_heads
 
-        self.x_embedder = weight_norm(nn.Linear(args.DiT.in_channels, args.DiT.hidden_dim, bias=True))
+        self.x_embedder = weight_norm(nn.Linear(in_channels, hidden_dim, bias=True))
 
-        self.content_type = args.DiT.content_type  # 'discrete' or 'continuous'
-        self.content_codebook_size = args.DiT.content_codebook_size  # for discrete content
-        self.content_dim = args.DiT.content_dim  # for continuous content
-        self.cond_embedder = nn.Embedding(args.DiT.content_codebook_size, args.DiT.hidden_dim)  # discrete content
-        self.cond_projection = nn.Linear(args.DiT.content_dim, args.DiT.hidden_dim, bias=True)  # continuous content
+        self.cond_embedder = nn.Embedding(content_codebook_size, hidden_dim)  # discrete content
+        self.cond_projection = nn.Linear(content_dim, hidden_dim, bias=True)  # continuous content
 
-        self.is_causal = args.DiT.is_causal
+        self.t_embedder = TimestepEmbedder(hidden_dim)
 
-        self.t_embedder = TimestepEmbedder(args.DiT.hidden_dim)
-
-        input_pos = torch.arange(16384)
+        input_pos = torch.arange(block_size)
         self.register_buffer("input_pos", input_pos)
 
         self.t_embedder2 = TimestepEmbedder(args.wavenet.hidden_dim)
-        self.conv1 = nn.Linear(args.DiT.hidden_dim, args.wavenet.hidden_dim)
-        self.conv2 = nn.Conv1d(args.wavenet.hidden_dim, args.DiT.in_channels, 1)
+        self.conv1 = nn.Linear(hidden_dim, args.wavenet.hidden_dim)
+        self.conv2 = nn.Conv1d(args.wavenet.hidden_dim, in_channels, 1)
         self.wavenet = WN(
             hidden_channels=args.wavenet.hidden_dim,
             kernel_size=args.wavenet.kernel_size,
@@ -130,30 +125,20 @@ class DiT(nn.Module):
         )
         self.final_layer = FinalLayer(args.wavenet.hidden_dim, 1, args.wavenet.hidden_dim)
         self.res_projection = nn.Linear(
-            args.DiT.hidden_dim, args.wavenet.hidden_dim
+            hidden_dim, args.wavenet.hidden_dim
         )  # residual connection from tranformer output to final output
-        self.wavenet_style_condition = args.wavenet.style_condition
-        assert args.DiT.style_condition == args.wavenet.style_condition
 
-        self.transformer_style_condition = args.DiT.style_condition
+        self.class_dropout_prob = class_dropout_prob
+        self.content_mask_embedder = nn.Embedding(1, hidden_dim)
 
-        self.class_dropout_prob = args.DiT.class_dropout_prob
-        self.content_mask_embedder = nn.Embedding(1, args.DiT.hidden_dim)
+        self.skip_linear = nn.Linear(hidden_dim + in_channels, hidden_dim)
 
-        self.long_skip_connection = args.DiT.long_skip_connection
-        self.skip_linear = nn.Linear(args.DiT.hidden_dim + args.DiT.in_channels, args.DiT.hidden_dim)
-
-        self.cond_x_merge_linear = nn.Linear(
-            args.DiT.hidden_dim + args.DiT.in_channels * 2 + args.style_encoder.dim * self.transformer_style_condition,
-            args.DiT.hidden_dim,
-        )
-        if False:
-            self.style_in = nn.Linear(args.style_encoder.dim, args.DiT.hidden_dim)
+        self.cond_x_merge_linear = nn.Linear(hidden_dim + in_channels * 2 + args.style_encoder.dim, hidden_dim)
 
     def setup_caches(self, max_batch_size, max_seq_length) -> None:
         self.transformer.setup_caches(max_batch_size, max_seq_length, use_kv_cache=False)
 
-    def forward(self, x, prompt_x, x_lens, t, style, cond, mask_content=False):
+    def forward(self, x, prompt_x, x_lens, t, style, cond):
         """
         x (torch.Tensor): random noise
         prompt_x (torch.Tensor): reference mel + zero mel
@@ -168,17 +153,10 @@ class DiT(nn.Module):
             shape: (batch_size, mel_timesteps(795+1069), 512)
 
         """
-        class_dropout = False
-        if self.training and torch.rand(1) < self.class_dropout_prob:
-            class_dropout = True
-        if not self.training and mask_content:
-            class_dropout = True
-        cond_in_module = self.cond_projection
-
         _, _, T = x.size()
 
         t1 = self.t_embedder(t)  # (N, D) # t1 [2, 512]
-        cond = cond_in_module(cond)  # cond [2,1863,512]->[2,1863,512]
+        cond = self.cond_projection(cond)  # cond [2,1863,512]->[2,1863,512]
 
         x = x.transpose(1, 2)  # [2,1863,80]
         prompt_x = prompt_x.transpose(1, 2)  # [2,1863,80]
@@ -186,22 +164,16 @@ class DiT(nn.Module):
         x_in = torch.cat([x, prompt_x, cond], dim=-1)  # 80+80+512=672 [2, 1863, 672]
         x_in = torch.cat([x_in, style[:, None, :].repeat(1, T, 1)], dim=-1)  # [2, 1863, 864]
 
-        if class_dropout:  # False
-            x_in[..., self.in_channels :] = x_in[..., self.in_channels :] * 0  # 80维后全置为0
-
         x_in = self.cond_x_merge_linear(x_in)  # (N, T, D) [2, 1863, 512]
 
         x_mask = (
             sequence_mask(x_lens, max_length=x_in.size(1)).to(x.device).unsqueeze(1)
         )  # torch.Size([1, 1, 1863])True
         input_pos = self.input_pos[: x_in.size(1)]  # (T,) range（0，1863）
-        x_mask_expanded = (
-            x_mask[:, None, :].repeat(1, 1, x_in.size(1), 1) if not self.is_causal else None
-        )  # torch.Size([1, 1, 1863, 1863]
+        x_mask_expanded = x_mask[:, None, :].repeat(1, 1, x_in.size(1), 1)  # torch.Size([1, 1, 1863, 1863]
         x_res = self.transformer(x_in, t1.unsqueeze(1), input_pos, x_mask_expanded)  # [2, 1863, 512]
 
-        if self.long_skip_connection:  # True
-            x_res = self.skip_linear(torch.cat([x_res, x], dim=-1))
+        x_res = self.skip_linear(torch.cat([x_res, x], dim=-1))
         x = self.conv1(x_res)
         x = x.transpose(1, 2)
         t2 = self.t_embedder2(t)

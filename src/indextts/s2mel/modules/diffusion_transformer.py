@@ -5,25 +5,15 @@ from torch import nn
 from torch.nn.utils.parametrizations import weight_norm
 
 from indextts.s2mel.modules.commons import sequence_mask
+from indextts.s2mel.modules.constants import BLOCK_SIZE, HIDDEN_DIM, IN_CHANNELS
 from indextts.s2mel.modules.gpt_fast.model import Transformer
 from indextts.s2mel.modules.wavenet import WN
 from indextts.util import patch_call
 
-BLOCK_SIZE = 16384
-CLASS_DROPOUT_PROB = 0.1
-CONTENT_CODEBOOK_SIZE = 1024
 CONTENT_DIM = 512
-DEPTH = 13
-FREQUENCY_EMBEDDING_SIZE = 256
-HIDDEN_DIM = 512
-IN_CHANNELS = 80
-NUM_HEADS = 8
-
 DILATION_RATE = 1
+FREQUENCY_EMBEDDING_SIZE = 256
 KERNEL_SIZE = 5
-NUM_LAYERS = 8
-P_DROPOUT = 0.2
-
 STYLE_ENCODER_DIM = 192
 
 
@@ -119,15 +109,7 @@ class DiT(nn.Module):
         self.t_embedder2 = TimestepEmbedder(HIDDEN_DIM)
         self.conv1 = nn.Linear(HIDDEN_DIM, HIDDEN_DIM)
         self.conv2 = nn.Conv1d(HIDDEN_DIM, IN_CHANNELS, 1)
-        self.wavenet = WN(
-            hidden_channels=HIDDEN_DIM,
-            kernel_size=KERNEL_SIZE,
-            dilation_rate=DILATION_RATE,
-            n_layers=NUM_LAYERS,
-            gin_channels=HIDDEN_DIM,
-            p_dropout=P_DROPOUT,
-            causal=False,
-        )
+        self.wavenet = WN()
         self.final_layer = FinalLayer(HIDDEN_DIM, 1, HIDDEN_DIM)
         # residual connection from tranformer output to final output
         self.res_projection = nn.Linear(HIDDEN_DIM, HIDDEN_DIM)

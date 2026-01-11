@@ -627,8 +627,6 @@ class IndexTTS2:
                 dtype = None
                 with torch.autocast(text_tokens.device.type, enabled=dtype is not None, dtype=dtype):
                     m_start_time = time.perf_counter()
-                    diffusion_steps = 25
-                    inference_cfg_rate = 0.7
                     latent = self.s2mel.models["gpt_layer"](latent)
                     s_infer = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1))
                     s_infer = s_infer.transpose(1, 2)
@@ -637,15 +635,7 @@ class IndexTTS2:
 
                     cond = self.s2mel.models["length_regulator"](s_infer, ylens=target_lengths)[0]
                     cat_condition = torch.cat([prompt_condition, cond], dim=1)
-                    vc_target = self.s2mel.models["cfm"].inference(
-                        cat_condition,
-                        torch.tensor([cat_condition.size(1)]).to(cond.device),
-                        ref_mel,
-                        style,
-                        None,
-                        diffusion_steps,
-                        inference_cfg_rate=inference_cfg_rate,
-                    )
+                    vc_target = self.s2mel.models["cfm"].inference(cat_condition, ref_mel, style)
                     vc_target = vc_target[:, :, ref_mel.size(-1) :]
                     s2mel_time += time.perf_counter() - m_start_time
 

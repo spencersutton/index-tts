@@ -1,49 +1,54 @@
+
+
 import torch
 from torch import nn
 from tqdm import tqdm
 
 from indextts.s2mel.modules.diffusion_transformer import DiT
 
+SIGMA_MIN = 1e-6
+IN_CHANNELS = 80
+inference_cfg_rate = 0.7
+
 
 class CFM(nn.Module):
     def __init__(self, args):
         super().__init__()
-        self.sigma_min = 1e-6
 
-        self.in_channels = args.DiT.in_channels
-
-        self.criterion = nn.MSELoss() if args.reg_loss_type == "l2" else nn.L1Loss()
-
-        self.zero_prompt_speech_token = args.DiT.zero_prompt_speech_token
+        self.criterion = torch.nn.L1Loss()
         self.estimator = DiT(args)
 
     @torch.inference_mode()
-    def inference(self, mu, x_lens, prompt, style, f0, n_timesteps, temperature=1.0, inference_cfg_rate=0.5):
+    def inference(self, mu: torch.Tensor, prompt: torch.Tensor, style: torch.Tensor) -> torch.Tensor:
         """Forward diffusion
 
         Args:
             mu (torch.Tensor): semantic info of reference audio and altered audio
                 shape: (batch_size, mel_timesteps(795+1069), 512)
-            x_lens (torch.Tensor): mel frames output
-                shape: (batch_size, mel_timesteps)
             prompt (torch.Tensor): reference mel
                 shape: (batch_size, 80, 795)
             style (torch.Tensor): reference global style
                 shape: (batch_size, 192)
-            f0: None
-            n_timesteps (int): number of diffusion steps
-            temperature (float, optional): temperature for scaling noise. Defaults to 1.0.
 
         Returns:
             sample: generated mel-spectrogram
                 shape: (batch_size, 80, mel_timesteps)
         """
         B, T = mu.size(0), mu.size(1)
-        z = torch.randn([B, self.in_channels, T], device=mu.device) * temperature
-        t_span = torch.linspace(0, 1, n_timesteps + 1, device=mu.device)
-        return self.solve_euler(z, x_lens, prompt, mu, style, f0, t_span, inference_cfg_rate)
+        x_lens = torch.tensor([mu.size(1)]).long().to(mu.device)
+        z = torch.randn([B, IN_CHANNELS, T], device=mu.device)
+        t_span = torch.linspace(0, 1, 26, device=mu.device)
+        return self.solve_euler(z, x_lens, prompt, mu, style, t_span)
 
-    def solve_euler(self, x, x_lens, prompt, mu, style, f0, t_span, inference_cfg_rate=0.5):
+    def solve_euler(
+        self,
+        x: torch.Tensor,
+        x_lens: torch.Tensor,
+        prompt: torch.Tensor,
+        mu: torch.Tensor,
+        style: torch.Tensor,
+        t_span: torch.Tensor,
+    ) -> torch.Tensor:
         """
         Fixed euler solver for ODEs.
         Args:
@@ -59,7 +64,7 @@ class CFM(nn.Module):
             style (torch.Tensor): reference global style
                 shape: (batch_size, 192)
         """
-        t, _, _ = t_span[0], t_span[-1], t_span[1] - t_span[0]
+        t = t_span[0]
 
         # I am storing this because I can later plot it by putting a debugger here and saving it to a file
         # Or in future might add like a return_all_steps flag
@@ -69,8 +74,6 @@ class CFM(nn.Module):
         prompt_x = torch.zeros_like(x)
         prompt_x[..., :prompt_len] = prompt[..., :prompt_len]
         x[..., :prompt_len] = 0
-        if self.zero_prompt_speech_token:
-            mu[..., :prompt_len] = 0
         for step in tqdm(range(1, len(t_span))):
             dt = t_span[step] - t_span[step - 1]
             if inference_cfg_rate > 0:
@@ -103,7 +106,9 @@ class CFM(nn.Module):
 
         return sol[-1]
 
-    def forward(self, x1, x_lens, prompt_lens, mu, style):
+    def forward(
+        self, x1: torch.Tensor, x_lens: torch.Tensor, prompt_lens: torch.Tensor, mu: torch.Tensor, style: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """Computes diffusion loss
 
         Args:
@@ -129,16 +134,14 @@ class CFM(nn.Module):
         # sample noise p(x_0)
         z = torch.randn_like(x1)
 
-        y = (1 - (1 - self.sigma_min) * t) * z + t * x1
-        u = x1 - (1 - self.sigma_min) * z
+        y = (1 - (1 - SIGMA_MIN) * t) * z + t * x1
+        u = x1 - (1 - SIGMA_MIN) * z
 
         prompt = torch.zeros_like(x1)
         for bib in range(b):
             prompt[bib, :, : prompt_lens[bib]] = x1[bib, :, : prompt_lens[bib]]
             # range covered by prompt are set to 0
             y[bib, :, : prompt_lens[bib]] = 0
-            if self.zero_prompt_speech_token:
-                mu[bib, :, : prompt_lens[bib]] = 0
 
         estimator_out = self.estimator(y, prompt, x_lens, t.squeeze(1).squeeze(1), style, mu, prompt_lens)
         loss = 0
@@ -148,7 +151,7 @@ class CFM(nn.Module):
             )
         loss /= b
 
-        return loss, estimator_out + (1 - self.sigma_min) * z
+        return loss, estimator_out + (1 - SIGMA_MIN) * z
 
     def enable_torch_compile(self):
         """Enable torch.compile optimization for the estimator model.

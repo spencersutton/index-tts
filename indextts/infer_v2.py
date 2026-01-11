@@ -215,8 +215,7 @@ class IndexTTS2:
             input_features=input_features, attention_mask=attention_mask, output_hidden_states=True
         )
         feat = vq_emb.hidden_states[17]  # (B, T, C)
-        feat = (feat - self.semantic_mean) / self.semantic_std
-        return feat
+        return (feat - self.semantic_mean) / self.semantic_std
 
     def interval_silence(self, wavs, sampling_rate=22050, interval_silence=200):
         """
@@ -704,8 +703,7 @@ def find_most_similar_cosine(query_vector, matrix):
     matrix = matrix.float()
 
     similarities = F.cosine_similarity(query_vector, matrix, dim=1)
-    most_similar_index = torch.argmax(similarities)
-    return most_similar_index
+    return torch.argmax(similarities)
 
 
 class QwenEmotion:

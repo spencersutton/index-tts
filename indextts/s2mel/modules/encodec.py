@@ -54,8 +54,7 @@ class NormConv1d(nn.Module):
 
     def forward(self, x):
         x = self.conv(x)
-        x = self.norm(x)
-        return x
+        return self.norm(x)
 
 
 class SConv1d(nn.Module):

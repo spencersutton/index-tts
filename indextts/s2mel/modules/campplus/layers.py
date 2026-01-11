@@ -38,8 +38,7 @@ class TDNNLayer(nn.Module):
 
     def forward(self, x):
         x = self.linear(x)
-        x = self.nonlinear(x)
-        return x
+        return self.nonlinear(x)
 
 
 class CAMLayer(nn.Module):
@@ -67,8 +66,7 @@ class CAMLayer(nn.Module):
             raise ValueError("Wrong segment pooling type.")
         shape = seg.shape
         seg = seg.unsqueeze(-1).expand(*shape, seg_len).reshape(*shape[:-1], -1)
-        seg = seg[..., : x.shape[-1]]
-        return seg
+        return seg[..., : x.shape[-1]]
 
 
 class CAMDenseTDNNLayer(nn.Module):
@@ -85,8 +83,7 @@ class CAMDenseTDNNLayer(nn.Module):
 
     def forward(self, x):
         x = self.bn_function(x)
-        x = self.cam_layer(self.nonlinear2(x))
-        return x
+        return self.cam_layer(self.nonlinear2(x))
 
 
 class CAMDenseTDNNBlock(nn.ModuleList):
@@ -110,8 +107,7 @@ class TransitLayer(nn.Module):
 
     def forward(self, x):
         x = self.nonlinear(x)
-        x = self.linear(x)
-        return x
+        return self.linear(x)
 
 
 class DenseLayer(nn.Module):
@@ -127,8 +123,7 @@ class DenseLayer(nn.Module):
             x = self.linear(x.unsqueeze(dim=-1)).squeeze(dim=-1)
         else:
             x = self.linear(x)
-        x = self.nonlinear(x)
-        return x
+        return self.nonlinear(x)
 
 
 class BasicResBlock(nn.Module):
@@ -152,5 +147,4 @@ class BasicResBlock(nn.Module):
         out = F.relu(self.bn1(self.conv1(x)))
         out = self.bn2(self.conv2(out))
         out += self.shortcut(x)
-        out = F.relu(out)
-        return out
+        return F.relu(out)

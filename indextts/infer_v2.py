@@ -329,8 +329,7 @@ class IndexTTS2:
                 **generation_kwargs,
             )
         try:
-            return list(
-                self.infer_generator(
+            return next(iter(self.infer_generator(
                     spk_audio_prompt,
                     text,
                     output_path,
@@ -346,8 +345,7 @@ class IndexTTS2:
                     stream_return,
                     more_segment_before,
                     **generation_kwargs,
-                )
-            )[0]
+                )))
         except IndexError:
             return None
 

@@ -129,7 +129,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         lm_logits = self.lm_head(hidden_states)
 
         if not return_dict:
-            return (lm_logits,) + transformer_outputs[1:]
+            return (lm_logits, *transformer_outputs[1:])
 
         return CausalLMOutputWithCrossAttentions(
             loss=None,
@@ -400,8 +400,7 @@ class UnifiedVoice(nn.Module):
 
     def build_aligned_inputs_and_targets(self, input, start_token, stop_token):
         inp = F.pad(input, (1, 0), value=start_token)
-        tar = F.pad(input, (0, 1), value=stop_token)
-        return inp, tar
+        return inp
 
     def set_mel_padding(self, mel_input_tokens, mel_lengths):
         """
@@ -514,18 +513,14 @@ class UnifiedVoice(nn.Module):
             ),
             1,
         )
-        text_inputs, text_targets = self.build_aligned_inputs_and_targets(
-            text_inputs, self.start_text_token, self.stop_text_token
-        )
+        text_inputs = self.build_aligned_inputs_and_targets(text_inputs, self.start_text_token, self.stop_text_token)
         text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs)
-        mel_codes, mel_targets = self.build_aligned_inputs_and_targets(
-            mel_codes, self.start_mel_token, self.stop_mel_token
-        )
+        mel_codes = self.build_aligned_inputs_and_targets(mel_codes, self.start_mel_token, self.stop_mel_token)
 
         mel_emb: torch.Tensor = self.mel_embedding(mel_codes)
         mel_emb = mel_emb + self.mel_pos_embedding.forward(mel_codes)
 
-        text_logits, mel_logits = self.get_logits(conds, text_emb, mel_emb)
+        _text_logits, mel_logits = self.get_logits(conds, text_emb, mel_emb)
         return mel_logits[
             :, :-2
         ]  # Despite the name, these are not logits. Strip off the two tokens added by this forward pass.

@@ -399,8 +399,7 @@ class UnifiedVoice(nn.Module):
         self.gpt.wte = self.mel_embedding
 
     def build_aligned_inputs_and_targets(self, input, start_token, stop_token):
-        inp = F.pad(input, (1, 0), value=start_token)
-        return inp
+        return F.pad(input, (1, 0), value=start_token)
 
     def set_mel_padding(self, mel_input_tokens, mel_lengths):
         """
@@ -454,8 +453,7 @@ class UnifiedVoice(nn.Module):
             speech_conditioning_input.transpose(1, 2), cond_mel_lengths
         )  # (b, s, d), (b, 1, s)
         conds_mask = self.cond_mask_pad(mask.squeeze(1))
-        conds = self.perceiver_encoder(speech_conditioning_input, conds_mask)  # (b, 32, d)
-        return conds
+        return self.perceiver_encoder(speech_conditioning_input, conds_mask)  # (b, 32, d)
 
     def get_emo_conditioning(self, speech_conditioning_input, cond_mel_lengths=None):
         speech_conditioning_input, mask = self.emo_conditioning_encoder(
@@ -699,8 +697,7 @@ class UnifiedVoice(nn.Module):
     def get_emovec(self, emo_speech_conditioning_latent, emo_cond_lengths):
         emo_vec_syn_ori = self.get_emo_conditioning(emo_speech_conditioning_latent.transpose(1, 2), emo_cond_lengths)
         emo_vec_syn = self.emovec_layer(emo_vec_syn_ori)
-        emo_vec = self.emo_layer(emo_vec_syn)
-        return emo_vec
+        return self.emo_layer(emo_vec_syn)
 
     def merge_emovec(
         self, speech_conditioning_latent, emo_speech_conditioning_latent, cond_lengths, emo_cond_lengths, alpha=1.0
@@ -708,5 +705,4 @@ class UnifiedVoice(nn.Module):
         emo_vec = self.get_emovec(emo_speech_conditioning_latent, emo_cond_lengths)
         base_vec = self.get_emovec(speech_conditioning_latent, cond_lengths)
 
-        out = base_vec + alpha * (emo_vec - base_vec)
-        return out
+        return base_vec + alpha * (emo_vec - base_vec)

@@ -41,8 +41,7 @@ class ConvNeXtBlock(nn.Module):
         x = self.gamma * x
         x = x.mT  # (B, T, C) -> (B, C, T)
 
-        x = residual + x
-        return x
+        return residual + x
 
 
 class VocosBackbone(nn.Module):
@@ -70,5 +69,4 @@ class VocosBackbone(nn.Module):
         x = x.mT
         for conv_block in self.convnext:
             x = conv_block(x)
-        x = self.final_layer_norm(x.mT)
-        return x
+        return self.final_layer_norm(x.mT)

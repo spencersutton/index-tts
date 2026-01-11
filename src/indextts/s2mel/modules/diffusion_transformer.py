@@ -57,8 +57,7 @@ class TimestepEmbedder(nn.Module):
 
     def forward(self, t):
         t_freq = self.timestep_embedding(t)
-        t_emb = self.mlp(t_freq)
-        return t_emb
+        return self.mlp(t_freq)
 
 
 class FinalLayer(nn.Module):
@@ -75,8 +74,7 @@ class FinalLayer(nn.Module):
     def forward(self, x, c):
         shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
         x = modulate(self.norm_final(x), shift, scale)
-        x = self.linear(x)
-        return x
+        return self.linear(x)
 
 
 class DiT(nn.Module):
@@ -226,6 +224,5 @@ class DiT(nn.Module):
             x_res
         )  # long residual connection
         x = self.final_layer(x, t1).transpose(1, 2)
-        x = self.conv2(x)
         # x [2,80,1863]
-        return x
+        return self.conv2(x)

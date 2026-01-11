@@ -36,9 +36,7 @@ class FactorizedVectorQuantize(nn.Module):
 
         z_q = z_e + (z_q - z_e).detach()
 
-        z_q = self.out_project(z_q)
-
-        return z_q
+        return self.out_project(z_q)
 
     def decode_code(self, embed_id):
         return F.embedding(embed_id, self.codebook.weight).mT
@@ -59,11 +57,8 @@ class FactorizedVectorQuantize(nn.Module):
             + codebook.pow(2).sum(1, keepdim=True).t()
         )
         indices = rearrange((-dist).max(1)[1], "(b t) -> b t", b=latents.size(0))
-        z_q = self.decode_code(indices)
-
-        return z_q
+        return self.decode_code(indices)
 
     def vq2emb(self, vq):
         emb = self.decode_code(vq)
-        emb = self.out_project(emb)
-        return emb
+        return self.out_project(emb)

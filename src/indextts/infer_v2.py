@@ -630,8 +630,7 @@ class IndexTTS2:
                     s_infer = s_infer + latent
                     target_lengths = (code_lens * 1.72).long()
 
-                    cond = self.s2mel.models["length_regulator"](
-                        s_infer, ylens=target_lengths)[0]
+                    cond = self.s2mel.models["length_regulator"](s_infer, ylens=target_lengths)[0]
                     cat_condition = torch.cat([prompt_condition, cond], dim=1)
                     vc_target = self.s2mel.models["cfm"].inference(
                         cat_condition,

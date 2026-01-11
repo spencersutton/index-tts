@@ -1,5 +1,3 @@
-from abc import ABC
-
 import torch
 from torch import nn
 from tqdm import tqdm
@@ -7,18 +5,17 @@ from tqdm import tqdm
 from indextts.s2mel.modules.diffusion_transformer import DiT
 
 
-class BASECFM(nn.Module, ABC):
-    def __init__(self, args) -> None:
+class CFM(nn.Module):
+    def __init__(self, args):
         super().__init__()
         self.sigma_min = 1e-6
-
-        self.estimator = None
 
         self.in_channels = args.DiT.in_channels
 
         self.criterion = nn.MSELoss() if args.reg_loss_type == "l2" else nn.L1Loss()
 
         self.zero_prompt_speech_token = args.DiT.zero_prompt_speech_token
+        self.estimator = DiT(args)
 
     @torch.inference_mode()
     def inference(self, mu, x_lens, prompt, style, f0, n_timesteps, temperature=1.0, inference_cfg_rate=0.5):
@@ -153,13 +150,7 @@ class BASECFM(nn.Module, ABC):
 
         return loss, estimator_out + (1 - self.sigma_min) * z
 
-
-class CFM(BASECFM):
-    def __init__(self, args) -> None:
-        super().__init__(args)
-        self.estimator = DiT(args)
-
-    def enable_torch_compile(self) -> None:
+    def enable_torch_compile(self):
         """Enable torch.compile optimization for the estimator model.
 
         This method applies torch.compile to the estimator (DiT model) for significant

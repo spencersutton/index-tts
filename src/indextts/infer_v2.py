@@ -130,6 +130,7 @@ class IndexTTS2:
                 self.use_cuda_kernel = False
 
         self.extract_features = SeamlessM4TFeatureExtractor.from_pretrained("facebook/w2v-bert-2.0")
+
         self.semantic_model, self.semantic_mean, self.semantic_std = build_semantic_model(model_dir / self.cfg.w2v_stat)
         self.semantic_model = self.semantic_model.to(self.device)
         self.semantic_model.eval()
@@ -143,6 +144,7 @@ class IndexTTS2:
         self.semantic_codec.eval()
         print(f">> semantic_codec weights restored from: {semantic_code_ckpt}")
 
+        assert isinstance(self.cfg.s2mel_checkpoint, str)
         s2mel_path = model_dir / self.cfg.s2mel_checkpoint
         s2mel = MyModel()
         s2mel = cast(MyModel, load_checkpoint2(s2mel, s2mel_path))

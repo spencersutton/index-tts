@@ -309,7 +309,7 @@ class AccelInferenceEngine:
             and (attention_mask.sum(dim=1) != attention_mask.size(1)).any()
         )
 
-        if is_varlen_batch:
+        if is_varlen_batch and attention_mask is not None:
             seq_lens = [attention_mask[i].sum().item() for i in range(batch_size)]
         else:
             seq_lens = [actual_seq_len] * batch_size

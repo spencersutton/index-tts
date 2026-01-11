@@ -130,7 +130,7 @@ class DiT(nn.Module):
         self.cond_x_merge_linear = nn.Linear(HIDDEN_DIM + IN_CHANNELS * 2 + STYLE_ENCODER_DIM, HIDDEN_DIM)
 
     def setup_caches(self, max_batch_size, max_seq_length) -> None:
-        self.transformer.setup_caches(max_batch_size, max_seq_length, use_kv_cache=False)
+        self.transformer.setup_caches(max_batch_size, max_seq_length)
 
     def forward(self, x, prompt_x, x_lens, t, style, cond):
         """

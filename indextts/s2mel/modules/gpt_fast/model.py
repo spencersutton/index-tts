@@ -3,7 +3,6 @@
 
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
-from dataclasses import dataclass
 
 import torch
 from torch import nn
@@ -26,85 +25,31 @@ class AdaptiveLayerNorm(nn.Module):
         self.d_model = d_model
         self.eps = self.norm.eps
 
-    def forward(self, input: torch.Tensor, embedding: torch.Tensor = None) -> torch.Tensor:
+    def forward(self, input: torch.Tensor, embedding: torch.Tensor | None = None) -> torch.Tensor:
         if embedding is None:
             return self.norm(input)
         weight, bias = torch.split(self.project_layer(embedding), split_size_or_sections=self.d_model, dim=-1)
         return weight * self.norm(input) + bias
 
 
-@dataclass
-class ModelArgs:
-    block_size: int = 2048
-    vocab_size: int = 32000
-    n_layer: int = 32
-    n_head: int = 32
-    dim: int = 4096
-    intermediate_size: int = None
-    n_local_heads: int = -1
-    head_dim: int = 64
-    rope_base: float = 10000
-    norm_eps: float = 1e-5
-    has_cross_attention: bool = False
-    context_dim: int = 0
+BLOCK_SIZE = 16384
+CLASS_DROPOUT_PROB = 0.1
+CONTENT_CODEBOOK_SIZE = 1024
+CONTENT_DIM = 512
+DEPTH = 13
+FREQUENCY_EMBEDDING_SIZE = 256
+HIDDEN_DIM = 512
+IN_CHANNELS = 80
+NUM_HEADS = 8
 
-    def __post_init__(self):
-        if self.n_local_heads == -1:
-            self.n_local_heads = self.n_head
-        if self.intermediate_size is None:
-            hidden_dim = 4 * self.dim
-            n_hidden = int(2 * hidden_dim / 3)
-            self.intermediate_size = find_multiple(n_hidden, 256)
-
-    @classmethod
-    def from_name(cls, name: str):
-        if name in transformer_configs:
-            return cls(**transformer_configs[name])
-        # fuzzy search
-        config = [config for config in transformer_configs if config.lower() in str(name).lower()]
-
-        # We may have two or more configs matched (e.g. "7B" and "Mistral-7B"). Find the best config match,
-        # take longer name (as it have more symbols matched)
-        if len(config) > 1:
-            config.sort(key=len, reverse=True)
-            assert len(config[0]) != len(config[1]), name  # make sure only one 'best' match
-
-        return cls(**transformer_configs[config[0]])
-
-
-transformer_configs = {
-    "CodeLlama-7b-Python-hf": dict(block_size=16384, vocab_size=32000, n_layer=32, dim=4096, rope_base=1000000),
-    "7B": dict(n_layer=32, n_head=32, dim=4096),
-    "13B": dict(n_layer=40, n_head=40, dim=5120),
-    "30B": dict(n_layer=60, n_head=52, dim=6656),
-    "34B": dict(
-        n_layer=48, n_head=64, dim=8192, vocab_size=32000, n_local_heads=8, intermediate_size=22016, rope_base=1000000
-    ),  # CodeLlama-34B-Python-hf
-    "70B": dict(n_layer=80, n_head=64, dim=8192, n_local_heads=8, intermediate_size=28672),
-    "Mistral-7B": dict(n_layer=32, n_head=32, n_local_heads=8, dim=4096, intermediate_size=14336, vocab_size=32000),
-    "stories15M": dict(n_layer=6, n_head=6, dim=288),
-    "stories110M": dict(n_layer=12, n_head=12, dim=768),
-    "llama-3-8b": dict(
-        block_size=8192,
-        n_layer=32,
-        n_head=32,
-        n_local_heads=8,
-        dim=4096,
-        intermediate_size=14336,
-        vocab_size=128256,
-        rope_base=500000,
-    ),
-    "llama-3-70b": dict(
-        block_size=8192,
-        n_layer=80,
-        n_head=64,
-        n_local_heads=8,
-        dim=8192,
-        intermediate_size=28672,
-        vocab_size=128256,
-        rope_base=500000,
-    ),
-}
+ROPE_BASE = 10000
+NORM_EPS = 1e-5
+DIM = HIDDEN_DIM
+HEAD_DIM = HIDDEN_DIM // NUM_HEADS
+INTERMEDIATE_SIZE = find_multiple(int((8 * HIDDEN_DIM) / 3), 256)
+N_HEAD = NUM_HEADS
+N_LAYER = DEPTH
+VOCAB_SIZE = 1024
 
 
 class KVCache(nn.Module):
@@ -127,12 +72,11 @@ class KVCache(nn.Module):
 
 
 class Transformer(nn.Module):
-    def __init__(self, config: ModelArgs) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.config = config
 
-        self.layers = nn.ModuleList(TransformerBlock(config) for _ in range(config.n_layer))
-        self.norm = AdaptiveLayerNorm(config.dim, RMSNorm(config.dim, eps=config.norm_eps))
+        self.layers = nn.ModuleList(TransformerBlock() for _ in range(N_LAYER))
+        self.norm = AdaptiveLayerNorm(DIM, RMSNorm(eps=NORM_EPS))
 
         self.freqs_cis: torch.Tensor | None = None
         self.mask_cache: torch.Tensor | None = None
@@ -142,7 +86,7 @@ class Transformer(nn.Module):
     def setup_caches(self, max_batch_size, max_seq_length, use_kv_cache=True) -> None:
         if self.max_seq_length >= max_seq_length and self.max_batch_size >= max_batch_size:
             return
-        head_dim = self.config.dim // self.config.n_head
+        head_dim = DIM // N_HEAD
         max_seq_length = find_multiple(max_seq_length, 8)
         self.max_seq_length = max_seq_length
         self.max_batch_size = max_batch_size
@@ -151,17 +95,13 @@ class Transformer(nn.Module):
 
         if not self.training and use_kv_cache:
             for b in self.layers:
-                b.attention.kv_cache = KVCache(
-                    max_batch_size, max_seq_length, self.config.n_local_heads, head_dim, dtype
-                ).to(device)
+                b.attention.kv_cache = KVCache(max_batch_size, max_seq_length, N_HEAD, head_dim, dtype).to(device)
 
-        self.freqs_cis = precompute_freqs_cis(
-            self.config.block_size, self.config.head_dim, self.config.rope_base, dtype
-        ).to(device)
+        self.freqs_cis = precompute_freqs_cis(BLOCK_SIZE, HEAD_DIM, dtype).to(device)
         self.causal_mask = torch.tril(torch.ones(self.max_seq_length, self.max_seq_length, dtype=torch.bool)).to(device)
         self.use_kv_cache = use_kv_cache
-        self.layers_emit_skip = [i for i in range(self.config.n_layer) if i < self.config.n_layer // 2]
-        self.layers_receive_skip = [i for i in range(self.config.n_layer) if i > self.config.n_layer // 2]
+        self.layers_emit_skip = [i for i in range(N_LAYER) if i < N_LAYER // 2]
+        self.layers_receive_skip = [i for i in range(N_LAYER) if i > N_LAYER // 2]
 
     def forward(
         self,
@@ -181,42 +121,27 @@ class Transformer(nn.Module):
                 mask = self.causal_mask[None, None, input_pos]
                 mask = mask[..., input_pos]
         freqs_cis = self.freqs_cis[input_pos]
-        if context is not None:
-            context_freqs_cis = self.freqs_cis[context_input_pos]
-        else:
-            context_freqs_cis = None
         skip_in_x_list = []
         for i, layer in enumerate(self.layers):
-            if True and i in self.layers_receive_skip:
+            if i in self.layers_receive_skip:
                 skip_in_x = skip_in_x_list.pop(-1)
             else:
                 skip_in_x = None
-            x = layer(x, c, input_pos, freqs_cis, mask, context, context_freqs_cis, cross_attention_mask, skip_in_x)
-            if True and i in self.layers_emit_skip:
+            x = layer(x, c, input_pos, freqs_cis, mask, skip_in_x)
+            if i in self.layers_emit_skip:
                 skip_in_x_list.append(x)
         return self.norm(x, c)
 
-    @classmethod
-    def from_name(cls, name: str):
-        return cls(ModelArgs.from_name(name))
-
 
 class TransformerBlock(nn.Module):
-    def __init__(self, config: ModelArgs) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.attention = Attention(config)
-        self.feed_forward = FeedForward(config)
-        self.ffn_norm = AdaptiveLayerNorm(config.dim, RMSNorm(config.dim, eps=config.norm_eps))
-        self.attention_norm = AdaptiveLayerNorm(config.dim, RMSNorm(config.dim, eps=config.norm_eps))
+        self.attention = Attention()
+        self.feed_forward = FeedForward()
+        self.ffn_norm = AdaptiveLayerNorm(DIM, RMSNorm(eps=NORM_EPS))
+        self.attention_norm = AdaptiveLayerNorm(DIM, RMSNorm(eps=NORM_EPS))
 
-        if config.has_cross_attention:
-            self.has_cross_attention = True
-            self.cross_attention = Attention(config, is_cross_attention=True)
-            self.cross_attention_norm = AdaptiveLayerNorm(config.dim, RMSNorm(config.dim, eps=config.norm_eps))
-        else:
-            self.has_cross_attention = False
-
-        self.skip_in_linear = nn.Linear(config.dim * 2, config.dim)
+        self.skip_in_linear = nn.Linear(DIM * 2, DIM)
 
     def forward(
         self,
@@ -233,32 +158,21 @@ class TransformerBlock(nn.Module):
         if skip_in_x is not None:
             x = self.skip_in_linear(torch.cat([x, skip_in_x], dim=-1))
         h = x + self.attention(self.attention_norm(x, c), freqs_cis, mask, input_pos)
-        if self.has_cross_attention:
-            h = h + self.cross_attention(
-                self.cross_attention_norm(h, c), freqs_cis, cross_attention_mask, input_pos, context, context_freqs_cis
-            )
         return h + self.feed_forward(self.ffn_norm(h, c))
 
 
 class Attention(nn.Module):
-    def __init__(self, config: ModelArgs, is_cross_attention: bool = False) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        assert config.dim % config.n_head == 0
+        assert DIM % N_HEAD == 0
 
-        total_head_dim = (config.n_head + 2 * config.n_local_heads) * config.head_dim
+        total_head_dim = (N_HEAD + 2 * N_HEAD) * HEAD_DIM
         # key, query, value projections for all heads, but in a batch
-        if is_cross_attention:
-            self.wq = nn.Linear(config.dim, config.n_head * config.head_dim, bias=False)
-            self.wkv = nn.Linear(config.context_dim, 2 * config.n_local_heads * config.head_dim, bias=False)
-        else:
-            self.wqkv = nn.Linear(config.dim, total_head_dim, bias=False)
-        self.wo = nn.Linear(config.head_dim * config.n_head, config.dim, bias=False)
+        self.wqkv = nn.Linear(DIM, total_head_dim, bias=False)
+        self.wo = nn.Linear(HEAD_DIM * N_HEAD, DIM, bias=False)
         self.kv_cache = None
 
-        self.n_head = config.n_head
-        self.head_dim = config.head_dim
-        self.n_local_heads = config.n_local_heads
-        self.dim = config.dim
+        self.dim = DIM
 
     def forward(
         self,
@@ -271,7 +185,7 @@ class Attention(nn.Module):
     ) -> torch.Tensor:
         bsz, seqlen, _ = x.shape
 
-        kv_size = self.n_local_heads * self.head_dim
+        kv_size = N_HEAD * HEAD_DIM
         if context is None:
             q, k, v = self.wqkv(x).split([kv_size, kv_size, kv_size], dim=-1)
             context_seqlen = seqlen
@@ -280,57 +194,52 @@ class Attention(nn.Module):
             k, v = self.wkv(context).split([kv_size, kv_size], dim=-1)
             context_seqlen = context.shape[1]
 
-        q = q.view(bsz, seqlen, self.n_head, self.head_dim)
-        k = k.view(bsz, context_seqlen, self.n_local_heads, self.head_dim)
-        v = v.view(bsz, context_seqlen, self.n_local_heads, self.head_dim)
+        q = q.view(bsz, seqlen, N_HEAD, HEAD_DIM)
+        k = k.view(bsz, context_seqlen, N_HEAD, HEAD_DIM)
+        v = v.view(bsz, context_seqlen, N_HEAD, HEAD_DIM)
 
         q = apply_rotary_emb(q, freqs_cis)
         k = apply_rotary_emb(k, context_freqs_cis if context_freqs_cis is not None else freqs_cis)
 
-        q, k, v = map(lambda x: x.transpose(1, 2), (q, k, v))
+        q, k, v = [x.transpose(1, 2) for x in (q, k, v)]
 
         if self.kv_cache is not None:
             k, v = self.kv_cache.update(input_pos, k, v)
 
-        k = k.repeat_interleave(self.n_head // self.n_local_heads, dim=1)
-        v = v.repeat_interleave(self.n_head // self.n_local_heads, dim=1)
+        k = k.repeat_interleave(1, dim=1)
+        v = v.repeat_interleave(1, dim=1)
         y = F.scaled_dot_product_attention(q, k, v, attn_mask=mask, dropout_p=0.0)
 
-        y = y.transpose(1, 2).contiguous().view(bsz, seqlen, self.head_dim * self.n_head)
-
+        y = y.transpose(1, 2).contiguous().view(bsz, seqlen, HEAD_DIM * N_HEAD)
         return self.wo(y)
 
 
 class FeedForward(nn.Module):
-    def __init__(self, config: ModelArgs) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.w1 = nn.Linear(config.dim, config.intermediate_size, bias=False)
-        self.w3 = nn.Linear(config.dim, config.intermediate_size, bias=False)
-        self.w2 = nn.Linear(config.intermediate_size, config.dim, bias=False)
+        self.w1 = nn.Linear(DIM, INTERMEDIATE_SIZE, bias=False)
+        self.w3 = nn.Linear(DIM, INTERMEDIATE_SIZE, bias=False)
+        self.w2 = nn.Linear(INTERMEDIATE_SIZE, DIM, bias=False)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.w2(F.silu(self.w1(x)) * self.w3(x))
 
 
 class RMSNorm(nn.Module):
-    def __init__(self, dim: int, eps: float = 1e-5) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.eps = eps
-        self.weight = nn.Parameter(torch.ones(dim))
+        self.weight = nn.Parameter(torch.ones(DIM))
 
-    def _norm(self, x):
-        return x * torch.rsqrt(torch.mean(x * x, dim=-1, keepdim=True) + self.eps)
+    def _norm(self, x: torch.Tensor) -> torch.Tensor:
+        return x * torch.rsqrt(torch.mean(x * x, dim=-1, keepdim=True) + NORM_EPS)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        output = self._norm(x.float()).type_as(x)
-        return output * self.weight
+        return self._norm(x.float()).type_as(x) * self.weight
 
 
-def precompute_freqs_cis(
-    seq_len: int, n_elem: int, base: int = 10000, dtype: torch.dtype = torch.bfloat16
-) -> torch.Tensor:
-    freqs = 1.0 / (base ** (torch.arange(0, n_elem, 2)[: (n_elem // 2)].float() / n_elem))
-    t = torch.arange(seq_len, device=freqs.device)
+def precompute_freqs_cis(seq_len: int, n_elem: int, dtype: torch.dtype = torch.bfloat16) -> torch.Tensor:
+    freqs = torch.as_tensor(1.0 / (ROPE_BASE ** (torch.arange(0, n_elem, 2)[: (n_elem // 2)].float() / n_elem)))
+    t = torch.arange(seq_len)
     freqs = torch.outer(t, freqs)
     freqs_cis = torch.polar(torch.ones_like(freqs), freqs)
     cache = torch.stack([freqs_cis.real, freqs_cis.imag], dim=-1)

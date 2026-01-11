@@ -9,7 +9,6 @@ from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.perceiver import PerceiverResampler
-from indextts.utils.typical_sampling import TypicalLogitsWarper
 
 
 def null_position_embeddings(range, dim):
@@ -693,7 +692,6 @@ class UnifiedVoice(nn.Module):
         input_tokens=None,
         num_return_sequences=1,
         max_generate_length=None,
-        typical_sampling=False,
         typical_mass=0.9,
         **hf_generate_kwargs,
     ):
@@ -758,12 +756,6 @@ class UnifiedVoice(nn.Module):
             attention_mask = F.pad(attention_mask, (0, input_tokens.shape[1]), value=1)
         trunc_index = inputs.shape[1]
         logits_processor = LogitsProcessorList()
-        if typical_sampling:
-            # employ custom typical sampling
-            if not (typical_mass > 0.0 and typical_mass < 1.0):
-                raise ValueError(f"`typical_mass` has to be a float > 0 and < 1, but is {typical_mass}")
-            min_tokens_to_keep = 2 if hf_generate_kwargs.get("num_beams", 1) > 1 else 1
-            logits_processor.append(TypicalLogitsWarper(mass=typical_mass, min_tokens_to_keep=min_tokens_to_keep))
         max_length = (
             (trunc_index + self.max_mel_tokens - 1)
             if max_generate_length is None

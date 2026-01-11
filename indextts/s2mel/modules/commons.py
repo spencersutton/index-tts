@@ -15,7 +15,8 @@ def fused_add_tanh_sigmoid_multiply(
     return t_act * s_act
 
 
-def sequence_mask(length: torch.Tensor, max_length: int | None = None):
+def sequence_mask(length: torch.Tensor | int, max_length: int | None = None):
+    length = torch.as_tensor(length)
     if max_length is None:
         max_length = int(length.max())
     x = torch.arange(max_length, dtype=length.dtype, device=length.device)

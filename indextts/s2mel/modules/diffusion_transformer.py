@@ -78,10 +78,11 @@ class FinalLayer(nn.Module):
 
 
 class DiT(nn.Module):
+    input_pos: torch.Tensor
+
     def __init__(self, args) -> None:
         super().__init__()
-        self.time_as_token = args.DiT.time_as_token if hasattr(args.DiT, "time_as_token") else False
-        self.style_as_token = args.DiT.style_as_token if hasattr(args.DiT, "style_as_token") else False
+        self.time_as_token = False
         self.uvit_skip_connection = (
             args.DiT.uvit_skip_connection if hasattr(args.DiT, "uvit_skip_connection") else False
         )
@@ -143,12 +144,10 @@ class DiT(nn.Module):
         self.skip_linear = nn.Linear(args.DiT.hidden_dim + args.DiT.in_channels, args.DiT.hidden_dim)
 
         self.cond_x_merge_linear = nn.Linear(
-            args.DiT.hidden_dim
-            + args.DiT.in_channels * 2
-            + args.style_encoder.dim * self.transformer_style_condition * (not self.style_as_token),
+            args.DiT.hidden_dim + args.DiT.in_channels * 2 + args.style_encoder.dim * self.transformer_style_condition,
             args.DiT.hidden_dim,
         )
-        if self.style_as_token:
+        if False:
             self.style_in = nn.Linear(args.style_encoder.dim, args.DiT.hidden_dim)
 
     def setup_caches(self, max_batch_size, max_seq_length) -> None:
@@ -185,35 +184,21 @@ class DiT(nn.Module):
         prompt_x = prompt_x.transpose(1, 2)  # [2,1863,80]
 
         x_in = torch.cat([x, prompt_x, cond], dim=-1)  # 80+80+512=672 [2, 1863, 672]
-
-        if self.transformer_style_condition and not self.style_as_token:  # True and True
-            x_in = torch.cat([x_in, style[:, None, :].repeat(1, T, 1)], dim=-1)  # [2, 1863, 864]
+        x_in = torch.cat([x_in, style[:, None, :].repeat(1, T, 1)], dim=-1)  # [2, 1863, 864]
 
         if class_dropout:  # False
             x_in[..., self.in_channels :] = x_in[..., self.in_channels :] * 0  # 80维后全置为0
 
         x_in = self.cond_x_merge_linear(x_in)  # (N, T, D) [2, 1863, 512]
 
-        if self.style_as_token:  # False
-            style = self.style_in(style)
-            style = torch.zeros_like(style) if class_dropout else style
-            x_in = torch.cat([style.unsqueeze(1), x_in], dim=1)
-
-        if self.time_as_token:  # False
-            x_in = torch.cat([t1.unsqueeze(1), x_in], dim=1)
-
         x_mask = (
-            sequence_mask(x_lens + self.style_as_token + self.time_as_token, max_length=x_in.size(1))
-            .to(x.device)
-            .unsqueeze(1)
+            sequence_mask(x_lens, max_length=x_in.size(1)).to(x.device).unsqueeze(1)
         )  # torch.Size([1, 1, 1863])True
         input_pos = self.input_pos[: x_in.size(1)]  # (T,) range（0，1863）
         x_mask_expanded = (
             x_mask[:, None, :].repeat(1, 1, x_in.size(1), 1) if not self.is_causal else None
         )  # torch.Size([1, 1, 1863, 1863]
         x_res = self.transformer(x_in, t1.unsqueeze(1), input_pos, x_mask_expanded)  # [2, 1863, 512]
-        x_res = x_res[:, 1:] if self.time_as_token else x_res
-        x_res = x_res[:, 1:] if self.style_as_token else x_res
 
         if self.long_skip_connection:  # True
             x_res = self.skip_linear(torch.cat([x_res, x], dim=-1))

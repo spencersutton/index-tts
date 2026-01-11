@@ -34,7 +34,7 @@ class CFM(nn.Module):
             sample: generated mel-spectrogram
                 shape: (batch_size, 80, mel_timesteps)
         """
-        B, T = mu.size(0), mu.size(1)
+        B, T, _ = mu.shape
         z = torch.randn([B, IN_CHANNELS, T], device=mu.device)
         t_span = torch.linspace(0, 1, 26, device=mu.device)
         return self.solve_euler(z, prompt, mu, style, t_span)
@@ -42,8 +42,6 @@ class CFM(nn.Module):
     def solve_euler(
         self, x: torch.Tensor, prompt: torch.Tensor, mu: torch.Tensor, style: torch.Tensor, t_span: torch.Tensor
     ) -> torch.Tensor:
-        x_lens = torch.tensor([mu.size(1)]).long().to(mu.device)
-
         """
         Fixed euler solver for ODEs.
         Args:
@@ -59,6 +57,7 @@ class CFM(nn.Module):
             style (torch.Tensor): reference global style
                 shape: (batch_size, 192)
         """
+        x_lens = torch.tensor([mu.size(1)]).long().to(mu.device)
         t = t_span[0]
 
         # I am storing this because I can later plot it by putting a debugger here and saving it to a file

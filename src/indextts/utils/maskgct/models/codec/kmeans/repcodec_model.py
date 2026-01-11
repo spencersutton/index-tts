@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from torch import nn
-from torch import Tensor
+from torch import Tensor, nn
 
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize import ResidualVQ
 from indextts.utils.maskgct.models.codec.kmeans.vocos import VocosBackbone

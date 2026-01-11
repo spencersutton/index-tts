@@ -61,7 +61,7 @@ class CAMPPlus(nn.Module):
         for i, (num_layers, dilation) in enumerate(zip((12, 24, 16), (1, 2, 2))):
             block = CAMDenseTDNNBlock(num_layers=num_layers, in_channels=channels, dilation=dilation)
             self.xvector.add_module(f"block{i + 1}", block)
-            channels = channels + num_layers * 32
+            channels += num_layers * 32
             self.xvector.add_module(f"transit{i + 1}", TransitLayer(channels, channels // 2, bias=False))
             channels //= 2
 

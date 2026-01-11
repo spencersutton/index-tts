@@ -68,9 +68,9 @@ class WN(nn.Module):
             if i < NUM_LAYERS - 1:
                 res_acts = res_skip_acts[:, :HIDDEN_DIM, :]
                 x = (x + res_acts) * x_mask
-                output = output + res_skip_acts[:, HIDDEN_DIM:, :]
+                output += res_skip_acts[:, HIDDEN_DIM:, :]
             else:
-                output = output + res_skip_acts
+                output += res_skip_acts
         return output * x_mask
 
     @patch_call(forward)

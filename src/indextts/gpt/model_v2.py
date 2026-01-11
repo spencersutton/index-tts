@@ -92,7 +92,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         if input_ids.shape[1] != 1:
             text_inputs = input_ids[:, mel_len:]
             text_emb = self.embeddings(text_inputs)
-            text_emb = text_emb + self.text_pos_embedding(text_emb)
+            text_emb += self.text_pos_embedding(text_emb)
             if self.cached_mel_emb.shape[0] != text_emb.shape[0]:
                 mel_emb = self.cached_mel_emb.repeat_interleave(text_emb.shape[0] // self.cached_mel_emb.shape[0], 0)
             else:  # this outcome only occurs once per loop in most cases
@@ -100,7 +100,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
             emb = torch.cat([mel_emb, text_emb], dim=1)
         else:
             emb = self.embeddings(input_ids)
-            emb = emb + self.text_pos_embedding.get_fixed_embedding(
+            emb += self.text_pos_embedding.get_fixed_embedding(
                 attention_mask.shape[1] - mel_len, attention_mask.device
             )
         transformer_outputs = self.transformer(
@@ -528,7 +528,7 @@ class UnifiedVoice(nn.Module):
         mel_codes = self.build_aligned_inputs_and_targets(mel_codes, self.start_mel_token, self.stop_mel_token)
 
         mel_emb: torch.Tensor = self.mel_embedding(mel_codes)
-        mel_emb = mel_emb + self.mel_pos_embedding.forward(mel_codes)
+        mel_emb += self.mel_pos_embedding.forward(mel_codes)
 
         _text_logits, mel_logits = self.get_logits(conds, text_emb, mel_emb)
         return mel_logits[

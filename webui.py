@@ -55,23 +55,25 @@ EMO_CHOICES_ALL = [
 EMO_CHOICES_OFFICIAL = EMO_CHOICES_ALL[:-1]  # skip experimental features
 
 Path("outputs/tasks").mkdir(exist_ok=True, parents=True)
-Path("prompts").mkdir(exist_ok=True, parents=True)
+prompts_dir = Path("prompts")
+prompts_dir.mkdir(exist_ok=True, parents=True)
+examples_dir = Path("examples")
 
 MAX_LENGTH_TO_USE_SPEED = 70
 example_cases = []
-with Path("examples/cases.jsonl").open(encoding="utf-8") as f:
+with (examples_dir / "cases.jsonl").open(encoding="utf-8") as f:
     for line in f:
         line = line.strip()
         if not line:
             continue
         example = json.loads(line)
         if example.get("emo_audio", None):
-            emo_audio_path = Path("examples") / example["emo_audio"]
+            emo_audio_path = examples_dir / example["emo_audio"]
         else:
             emo_audio_path = None
 
         example_cases.append([
-            Path("examples") / example.get("prompt_audio", "sample_prompt.wav"),
+            examples_dir / example.get("prompt_audio", "sample_prompt.wav"),
             EMO_CHOICES_ALL[example.get("emo_mode", 0)],
             example.get("text"),
             emo_audio_path,
@@ -208,11 +210,11 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
 
     with gr.Tab(i18n("音频生成")):
         with gr.Row():
-            Path("prompts").mkdir(exist_ok=True, parents=True)
+            prompts_dir.mkdir(exist_ok=True, parents=True)
             prompt_audio = gr.Audio(
                 label=i18n("音色参考音频"), key="prompt_audio", sources=["upload", "microphone"], type="filepath"
             )
-            prompt_list = [p.name for p in Path("prompts").iterdir() if p.is_file()]
+            prompt_list = [p.name for p in prompts_dir.iterdir() if p.is_file()]
             default = ""
             if prompt_list:
                 default = prompt_list[0]

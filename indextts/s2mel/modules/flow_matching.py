@@ -8,7 +8,7 @@ from indextts.s2mel.modules.diffusion_transformer import DiT
 
 SIGMA_MIN = 1e-6
 IN_CHANNELS = 80
-inference_cfg_rate = 0.7
+INFERENCE_CFG_RATE = 0.7
 
 
 class CFM(nn.Module):
@@ -35,20 +35,15 @@ class CFM(nn.Module):
                 shape: (batch_size, 80, mel_timesteps)
         """
         B, T = mu.size(0), mu.size(1)
-        x_lens = torch.tensor([mu.size(1)]).long().to(mu.device)
         z = torch.randn([B, IN_CHANNELS, T], device=mu.device)
         t_span = torch.linspace(0, 1, 26, device=mu.device)
-        return self.solve_euler(z, x_lens, prompt, mu, style, t_span)
+        return self.solve_euler(z, prompt, mu, style, t_span)
 
     def solve_euler(
-        self,
-        x: torch.Tensor,
-        x_lens: torch.Tensor,
-        prompt: torch.Tensor,
-        mu: torch.Tensor,
-        style: torch.Tensor,
-        t_span: torch.Tensor,
+        self, x: torch.Tensor, prompt: torch.Tensor, mu: torch.Tensor, style: torch.Tensor, t_span: torch.Tensor
     ) -> torch.Tensor:
+        x_lens = torch.tensor([mu.size(1)]).long().to(mu.device)
+
         """
         Fixed euler solver for ODEs.
         Args:
@@ -76,24 +71,24 @@ class CFM(nn.Module):
         x[..., :prompt_len] = 0
         for step in tqdm(range(1, len(t_span))):
             dt = t_span[step] - t_span[step - 1]
-            if inference_cfg_rate > 0:
+            if INFERENCE_CFG_RATE > 0:
                 # Stack original and CFG (null) inputs for batched processing
-                stacked_prompt_x = torch.cat([prompt_x, torch.zeros_like(prompt_x)], dim=0)
-                stacked_style = torch.cat([style, torch.zeros_like(style)], dim=0)
-                stacked_mu = torch.cat([mu, torch.zeros_like(mu)], dim=0)
-                stacked_x = torch.cat([x, x], dim=0)
-                stacked_t = torch.cat([t.unsqueeze(0), t.unsqueeze(0)], dim=0)
+                stacked_prompt_x = torch.cat([prompt_x, torch.zeros_like(prompt_x)])
+                stacked_style = torch.cat([style, torch.zeros_like(style)])
+                stacked_mu = torch.cat([mu, torch.zeros_like(mu)])
+                stacked_x = torch.cat([x, x])
+                stacked_t = torch.stack([t, t])
 
                 # Perform a single forward pass for both original and CFG inputs
-                stacked_dphi_dt = self.estimator(
+                stacked_dphi_dt: torch.Tensor = self.estimator(
                     stacked_x, stacked_prompt_x, x_lens, stacked_t, stacked_style, stacked_mu
                 )
 
                 # Split the output back into the original and CFG components
-                dphi_dt, cfg_dphi_dt = stacked_dphi_dt.chunk(2, dim=0)
+                dphi_dt, cfg_dphi_dt = stacked_dphi_dt.chunk(2)
 
                 # Apply CFG formula
-                dphi_dt = (1.0 + inference_cfg_rate) * dphi_dt - inference_cfg_rate * cfg_dphi_dt
+                dphi_dt = (1.0 + INFERENCE_CFG_RATE) * dphi_dt - INFERENCE_CFG_RATE * cfg_dphi_dt
             else:
                 dphi_dt = self.estimator(x, prompt_x, x_lens, t.unsqueeze(0), style, mu)
 

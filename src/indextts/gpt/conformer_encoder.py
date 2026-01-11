@@ -22,7 +22,7 @@ class PositionwiseFeedForward(nn.Module):
         activation (nn.Module): Activation function
     """
 
-    def __init__(self, idim: int, hidden_units: int, activation: torch.nn.Module = torch.nn.ReLU()) -> None:
+    def __init__(self, idim: int, hidden_units: int, activation: nn.Module = nn.ReLU()) -> None:
         """Construct a PositionwiseFeedForward object."""
         super().__init__()
         self.w_1 = nn.Linear(idim, hidden_units)
@@ -236,7 +236,7 @@ class ConformerEncoderLayer(nn.Module):
     def __call__(self) -> None: ...
 
 
-class ConformerEncoder(torch.nn.Module):
+class ConformerEncoder(nn.Module):
     """Conformer encoder module."""
 
     def __init__(
@@ -259,14 +259,12 @@ class ConformerEncoder(torch.nn.Module):
         super().__init__()
 
         self.embed = Conv2dSubsampling2(input_size, output_size)
-
         self.after_norm = nn.LayerNorm(output_size, eps=1e-5)
-
-        activation = torch.nn.SiLU()
+        activation = nn.SiLU()
 
         self.encoders = cast(
             Sequence[ConformerEncoderLayer],
-            torch.nn.ModuleList([
+            nn.ModuleList([
                 ConformerEncoderLayer(
                     output_size,
                     RelPositionMultiHeadedAttention(attention_heads, output_size),

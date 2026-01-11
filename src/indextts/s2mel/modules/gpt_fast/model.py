@@ -49,8 +49,8 @@ INTERMEDIATE_SIZE = find_multiple(int((8 * HIDDEN_DIM) / 3), 256)
 
 
 class KVCache(nn.Module):
-    k_cache: Tensor
-    v_cache: Tensor
+    k_cache: torch.Tensor
+    v_cache: torch.Tensor
 
     def __init__(self, max_batch_size, max_seq_length, n_heads, head_dim, dtype: torch.dtype = torch.bfloat16) -> None:
         super().__init__()
@@ -58,7 +58,9 @@ class KVCache(nn.Module):
         self.register_buffer("k_cache", torch.zeros(cache_shape, dtype=dtype))
         self.register_buffer("v_cache", torch.zeros(cache_shape, dtype=dtype))
 
-    def update(self, input_pos: Tensor, k_val: Tensor, v_val: Tensor) -> tuple[Tensor, Tensor]:
+    def update(
+        self, input_pos: torch.Tensor, k_val: torch.Tensor, v_val: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         # input_pos: [S], k_val: [B, H, S, D]
         assert input_pos.shape[0] == k_val.shape[2]
 
@@ -82,7 +84,7 @@ class Transformer(nn.Module):
         self.max_batch_size = -1
         self.max_seq_length = -1
 
-    def setup_caches(self, max_batch_size, max_seq_length) -> None:
+    def setup_caches(self, max_batch_size: int, max_seq_length: int) -> None:
         if self.max_seq_length >= max_seq_length and self.max_batch_size >= max_batch_size:
             return
         max_seq_length = find_multiple(max_seq_length, 8)
@@ -132,9 +134,6 @@ class TransformerBlock(nn.Module):
         input_pos: torch.Tensor,
         freqs_cis: torch.Tensor,
         mask: torch.Tensor,
-        context: torch.Tensor | None = None,
-        context_freqs_cis: torch.Tensor | None = None,
-        cross_attention_mask: torch.Tensor | None = None,
         skip_in_x: torch.Tensor | None = None,
     ) -> torch.Tensor:
         if skip_in_x is not None:

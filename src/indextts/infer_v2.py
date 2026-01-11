@@ -34,7 +34,7 @@ checkpoint_dir = Path("checkpoints")
 sampling_rate = 22050
 
 
-def mel_fn(x: Tensor) -> Tensor:
+def mel_fn(x: torch.Tensor) -> torch.Tensor:
     return mel_spectrogram(
         x,
         n_fft=1024,

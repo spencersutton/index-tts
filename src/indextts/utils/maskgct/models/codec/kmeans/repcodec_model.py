@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from torch import nn
-from torch import Tensor, nn
+import torch
 
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize import ResidualVQ
 from indextts.utils.maskgct.models.codec.kmeans.vocos import VocosBackbone
@@ -29,7 +29,7 @@ class RepCodec(nn.Module):
 
         self.apply(init_weights)
 
-    def quantize(self, x) -> Tensor:
+    def quantize(self, x) -> torch.Tensor:
         x = self.encoder(x.mT).mT
 
         quantized_out = self.quantizer(x)

@@ -50,7 +50,7 @@ class WN(nn.Module):
             res_skip_layer = SConv1d(HIDDEN_DIM, res_skip_channels, 1)
             self.res_skip_layers.append(res_skip_layer)
 
-    def forward(self, x: Tensor, x_mask: Tensor, g: Tensor) -> Tensor:
+    def forward(self, x: torch.Tensor, x_mask: torch.Tensor, g: torch.Tensor) -> torch.Tensor:
         output = torch.zeros_like(x)
         n_channels_tensor = torch.tensor([HIDDEN_DIM])
 

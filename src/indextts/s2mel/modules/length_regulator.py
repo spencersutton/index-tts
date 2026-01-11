@@ -1,6 +1,7 @@
 from typing import Final
 
 import torch
+from torch import nn
 from torch.nn import functional as F
 
 from indextts.s2mel.modules.commons import sequence_mask

@@ -7,11 +7,20 @@ import re
 import traceback
 import warnings
 from functools import lru_cache
-from typing import overload
+from typing import Final, overload
 
 from sentencepiece import SentencePieceProcessor
 
 from indextts.utils.common import de_tokenized_by_CJK_char, tokenize_by_CJK_char
+
+punctuation_marks_tokens: Final = [
+    ".",
+    "!",
+    "?",
+    "▁.",
+    "▁?",
+    "▁...",  # ellipsis
+]
 
 
 class TextNormalizer:
@@ -594,22 +603,12 @@ class TextTokenizer:
                 merged_segments.append(segment)
         return merged_segments
 
-    punctuation_marks_tokens = [
-        ".",
-        "!",
-        "?",
-        "▁.",
-        # "▁!", # unk
-        "▁?",
-        "▁...",  # ellipsis
-    ]
-
     def split_segments(
         self, tokenized: list[str], max_text_tokens_per_segment=120, quick_streaming_tokens=0
     ) -> list[list[str]]:
         return TextTokenizer.split_segments_by_token(
             tokenized,
-            self.punctuation_marks_tokens,
+            punctuation_marks_tokens,
             max_text_tokens_per_segment=max_text_tokens_per_segment,
             quick_streaming_tokens=quick_streaming_tokens,
         )

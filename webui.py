@@ -1,3 +1,4 @@
+import argparse
 import html
 import json
 import os
@@ -6,12 +7,10 @@ import sys
 import threading
 import time
 
-current_dir = pathlib.Path(pathlib.Path(__file__).resolve()).parent
-sys.path.append(current_dir)
-sys.path.append(os.path.join(current_dir, "indextts"))
+import gradio as gr
 
-import argparse
-import pathlib
+from indextts.infer_v2 import IndexTTS2
+from tools.i18n.i18n import I18nAuto
 
 parser = argparse.ArgumentParser(description="IndexTTS WebUI", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("--verbose", action="store_true", default=False, help="Enable verbose mode")
@@ -37,11 +36,6 @@ for file in ["bpe.model", "gpt.pth", "config.yaml", "s2mel.pth", "wav2vec2bert_s
         sys.exit(1)
 
 import pathlib
-
-import gradio as gr
-
-from indextts.infer_v2 import IndexTTS2
-from tools.i18n.i18n import I18nAuto
 
 i18n = I18nAuto(language="Auto")
 MODE = "local"

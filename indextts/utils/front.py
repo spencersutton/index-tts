@@ -7,6 +7,7 @@ import re
 import traceback
 import warnings
 from functools import lru_cache
+from pathlib import Path
 from typing import Final, overload
 
 from sentencepiece import SentencePieceProcessor
@@ -139,7 +140,7 @@ class TextNormalizer:
             cache_dir = os.path.join(pathlib.Path(pathlib.Path(__file__).resolve()).parent, "tagger_cache")
             if not pathlib.Path(cache_dir).exists():
                 pathlib.Path(cache_dir).mkdir(parents=True)
-                pathlib.Path(os.path.join(cache_dir, ".gitignore")).write_text("*\n")
+                Path(os.path.join(cache_dir, ".gitignore")).write_text("*\n")
             self.zh_normalizer = NormalizerZh(
                 cache_dir=cache_dir, remove_interjections=False, remove_erhua=False, overwrite_cache=False
             )

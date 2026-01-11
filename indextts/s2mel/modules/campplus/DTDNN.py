@@ -16,9 +16,8 @@ from indextts.s2mel.modules.campplus.layers import (
     TransitLayer,
     get_nonlinear,
 )
+from indextts.s2mel.modules.constants import M_CHANNELS
 from indextts.util import patch_call
-
-M_CHANNELS = 32
 
 
 class FCM(nn.Module):

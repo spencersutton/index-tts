@@ -8,9 +8,8 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
+from indextts.s2mel.modules.constants import M_CHANNELS
 from indextts.util import patch_call
-
-M_CHANNELS = 32
 
 
 def get_nonlinear(channels: int) -> nn.Sequential:

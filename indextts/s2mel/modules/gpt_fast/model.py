@@ -8,7 +8,17 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from indextts.s2mel.modules.constants import BLOCK_SIZE, HIDDEN_DIM
 from indextts.util import patch_call
+
+NUM_HEADS = 8
+DEPTH = 13
+HEAD_DIM = HIDDEN_DIM // NUM_HEADS
+ROPE_BASE = 10000
+NORM_EPS = 1e-5
+N_LAYER = DEPTH
+N_HEAD = NUM_HEADS
+DIM = HIDDEN_DIM
 
 
 def find_multiple(n: int, k: int) -> int:
@@ -35,24 +45,7 @@ class AdaptiveLayerNorm(nn.Module):
     def __call__(self) -> None: ...
 
 
-BLOCK_SIZE = 16384
-CLASS_DROPOUT_PROB = 0.1
-CONTENT_CODEBOOK_SIZE = 1024
-CONTENT_DIM = 512
-DEPTH = 13
-FREQUENCY_EMBEDDING_SIZE = 256
-HIDDEN_DIM = 512
-IN_CHANNELS = 80
-NUM_HEADS = 8
-
-ROPE_BASE = 10000
-NORM_EPS = 1e-5
-DIM = HIDDEN_DIM
-HEAD_DIM = HIDDEN_DIM // NUM_HEADS
 INTERMEDIATE_SIZE = find_multiple(int((8 * HIDDEN_DIM) / 3), 256)
-N_HEAD = NUM_HEADS
-N_LAYER = DEPTH
-VOCAB_SIZE = 1024
 
 
 class KVCache(nn.Module):

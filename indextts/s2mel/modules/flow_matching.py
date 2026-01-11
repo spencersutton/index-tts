@@ -1,10 +1,9 @@
 import torch
 from tqdm import tqdm
 
+from indextts.s2mel.modules.constants import IN_CHANNELS
 from indextts.s2mel.modules.diffusion_transformer import DiT
 
-SIGMA_MIN = 1e-6
-IN_CHANNELS = 80
 INFERENCE_CFG_RATE = 0.7
 
 

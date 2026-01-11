@@ -31,11 +31,20 @@ from indextts.utils.maskgct_utils import build_semantic_model
 os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 
 checkpoint_dir = Path("checkpoints")
+sampling_rate = 22050
 
 
 def mel_fn(x: Tensor) -> Tensor:
     return mel_spectrogram(
-        x, n_fft=1024, win_size=1024, hop_size=256, num_mels=80, sampling_rate=22050, fmin=0, fmax=None, center=False
+        x,
+        n_fft=1024,
+        win_size=1024,
+        hop_size=256,
+        num_mels=80,
+        sampling_rate=sampling_rate,
+        fmin=0,
+        fmax=None,
+        center=False,
     )
 
 
@@ -88,20 +97,18 @@ class IndexTTS2:
         self.model_dir = model_dir
         self.dtype = torch.float16 if self.use_fp16 else None
         self.stop_mel_token = self.cfg.gpt.stop_mel_token
-        self.use_accel = use_accel
-        self.use_torch_compile = use_torch_compile
 
         self.qwen_emo = QwenEmotion(self.model_dir / self.cfg.qwen_emo_path)
 
-        self.gpt = UnifiedVoice(**self.cfg.gpt, use_accel=self.use_accel)
-        self.gpt_path = self.model_dir / self.cfg.gpt_checkpoint
-        load_checkpoint(self.gpt, self.gpt_path)
+        self.gpt = UnifiedVoice(**self.cfg.gpt, use_accel=use_accel)
+        gpt_path = self.model_dir / self.cfg.gpt_checkpoint
+        load_checkpoint(self.gpt, gpt_path)
         self.gpt = self.gpt.to(self.device)
         if self.use_fp16:
             self.gpt.eval().half()
         else:
             self.gpt.eval()
-        print(">> GPT weights restored from:", self.gpt_path)
+        print(">> GPT weights restored from:", gpt_path)
 
         if use_deepspeed:
             try:
@@ -146,7 +153,7 @@ class IndexTTS2:
         self.s2mel.cfm.estimator.setup_caches(max_batch_size=1, max_seq_length=8192)
 
         # Enable torch.compile optimization if requested
-        if self.use_torch_compile:
+        if use_torch_compile:
             print(">> Enabling torch.compile optimization")
             self.s2mel.enable_torch_compile()
             print(">> torch.compile optimization enabled successfully")
@@ -207,10 +214,12 @@ class IndexTTS2:
 
     @torch.no_grad()
     def get_emb(self, input_features, attention_mask):
-        vq_emb = self.semantic_model(
-            input_features=input_features, attention_mask=attention_mask, output_hidden_states=True
+        vq_emb = self.semantic_model(  # type: ignore
+            input_features=input_features,  # type: ignore
+            attention_mask=attention_mask,  # type: ignore
+            output_hidden_states=True,  # type: ignore
         )
-        feat = vq_emb.hidden_states[17]  # (B, T, C)
+        feat = vq_emb.hidden_states[17]  # (B, T, C) # type: ignore
         return (feat - self.semantic_mean) / self.semantic_std
 
     def remove_long_silence(self, codes: torch.Tensor, silent_token: int = 52, max_consecutive: int = 30):
@@ -268,7 +277,7 @@ class IndexTTS2:
         code_lens = torch.tensor(code_lens, dtype=torch.long, device=device)
         return codes, code_lens
 
-    def interval_silence(self, wavs: list[torch.Tensor], sampling_rate=22050, interval_silence=200):
+    def interval_silence(self, wavs: list[torch.Tensor], interval_silence=200):
         """
         Silences to be insert between generated segments.
         """
@@ -282,7 +291,7 @@ class IndexTTS2:
         sil_dur = int(sampling_rate * interval_silence / 1000.0)
         return torch.zeros(channel_size, sil_dur)
 
-    def insert_interval_silence(self, wavs: list[torch.Tensor], sampling_rate=22050, interval_silence=200):
+    def insert_interval_silence(self, wavs: list[torch.Tensor], interval_silence=200):
         """
         Insert silences between generated segments.
         wavs: List[torch.tensor]
@@ -476,7 +485,7 @@ class IndexTTS2:
                 self.cache_mel = None
                 torch.cuda.empty_cache()
             audio, sr = self._load_and_cut_audio(spk_audio_prompt, 15, verbose)
-            audio_22k = torchaudio.transforms.Resample(sr, 22050)(audio)
+            audio_22k = torchaudio.transforms.Resample(sr, sampling_rate)(audio)
             audio_16k = torchaudio.transforms.Resample(sr, 16000)(audio)
 
             inputs = self.extract_features(audio_16k, sampling_rate=16000, return_tensors="pt")
@@ -572,7 +581,6 @@ class IndexTTS2:
         num_beams = generation_kwargs.pop("num_beams", 3)
         repetition_penalty = generation_kwargs.pop("repetition_penalty", 10.0)
         max_mel_tokens = generation_kwargs.pop("max_mel_tokens", 1500)
-        sampling_rate = 22050
 
         wavs: list[torch.Tensor] = []
         gpt_gen_time: float = 0
@@ -606,7 +614,7 @@ class IndexTTS2:
                         alpha=emo_alpha,
                     )
 
-                    if weight_vector is not None:
+                    if weight_vector is not None and emovec_mat is not None:
                         emovec = emovec_mat + (1 - torch.sum(weight_vector)) * emovec
 
                     codes, speech_conditioning_latent = self.gpt.inference_speech(
@@ -702,14 +710,12 @@ class IndexTTS2:
                 if stream_return:
                     yield wav.cpu()
                     if silence is None:
-                        silence = self.interval_silence(
-                            wavs, sampling_rate=sampling_rate, interval_silence=interval_silence
-                        )
+                        silence = self.interval_silence(wavs, interval_silence=interval_silence)
                     yield silence
         end_time = time.perf_counter()
 
         self._set_gr_progress(0.9, "saving audio...")
-        wavs = self.insert_interval_silence(wavs, sampling_rate=sampling_rate, interval_silence=interval_silence)
+        wavs = self.insert_interval_silence(wavs, interval_silence=interval_silence)
         wav = torch.cat(wavs, dim=1)
         wav_length = wav.shape[-1] / sampling_rate
         print(f">> gpt_gen_time: {gpt_gen_time:.2f} seconds")

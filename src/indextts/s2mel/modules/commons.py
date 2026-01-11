@@ -35,9 +35,6 @@ class MyModel(nn.Module):
             "gpt_layer": nn.Sequential(nn.Linear(1280, 256), nn.Linear(256, 128), nn.Linear(128, 1024)),
         })
 
-    def forward(self, x, target_lengths, prompt_len, cond, y) -> tuple[Tensor, Tensor]:
-        return self.models["cfm"](x, target_lengths, prompt_len, cond, y)
-
     def enable_torch_compile(self) -> None:
         """Enable torch.compile optimization.
 

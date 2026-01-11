@@ -313,46 +313,27 @@ class IndexTTS2:
         more_segment_before: int = 0,
         **generation_kwargs,
     ):
+        gen = self.infer_generator(
+            spk_audio_prompt,
+            text,
+            output_path,
+            emo_audio_prompt,
+            emo_alpha,
+            emo_vector,
+            use_emo_text,
+            emo_text,
+            use_random,
+            interval_silence,
+            verbose,
+            max_text_tokens_per_segment,
+            stream_return,
+            more_segment_before,
+            **generation_kwargs,
+        )
         if stream_return:
-            return self.infer_generator(
-                spk_audio_prompt,
-                text,
-                output_path,
-                emo_audio_prompt,
-                emo_alpha,
-                emo_vector,
-                use_emo_text,
-                emo_text,
-                use_random,
-                interval_silence,
-                verbose,
-                max_text_tokens_per_segment,
-                stream_return,
-                more_segment_before,
-                **generation_kwargs,
-            )
+            return gen
         try:
-            return next(
-                iter(
-                    self.infer_generator(
-                        spk_audio_prompt,
-                        text,
-                        output_path,
-                        emo_audio_prompt,
-                        emo_alpha,
-                        emo_vector,
-                        use_emo_text,
-                        emo_text,
-                        use_random,
-                        interval_silence,
-                        verbose,
-                        max_text_tokens_per_segment,
-                        stream_return,
-                        more_segment_before,
-                        **generation_kwargs,
-                    )
-                )
-            )
+            return next(iter(gen))
         except IndexError:
             return None
 

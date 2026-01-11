@@ -27,27 +27,31 @@ def main() -> None:
         "-d", "--device", type=str, default=None, help="Device to run the model on (cpu, cuda, mps, xpu)."
     )
     args = parser.parse_args()
+    voice_file = Path(args.voice)
+    config_path = Path(args.config)
+    output_path = Path(args.output_path)
+    model_dir = Path(args.model_dir)
+
     if len(args.text.strip()) == 0:
         print("ERROR: Text is empty.")
         parser.print_help()
         sys.exit(1)
-    if not Path(args.voice).exists():
-        print(f"Audio prompt file {args.voice} does not exist.")
+    if not voice_file.exists():
+        print(f"Audio prompt file {voice_file} does not exist.")
         parser.print_help()
         sys.exit(1)
-    if not Path(args.config).exists():
-        print(f"Config file {args.config} does not exist.")
+    if not config_path.exists():
+        print(f"Config file {config_path} does not exist.")
         parser.print_help()
         sys.exit(1)
 
-    output_path = args.output_path
-    if Path(output_path).exists():
+    if output_path.exists():
         if not args.force:
             print(f"ERROR: Output file {output_path} already exists. Use --force to overwrite.")
             parser.print_help()
             sys.exit(1)
         else:
-            Path(output_path).unlink()
+            output_path.unlink()
 
     try:
         import torch
@@ -70,8 +74,8 @@ def main() -> None:
     # TODO: Add CLI support for IndexTTS2.
     from indextts.infer_v2 import IndexTTS2
 
-    tts = IndexTTS2(cfg_path=args.config, model_dir=args.model_dir, use_fp16=args.fp16, device=args.device)
-    tts.infer(spk_audio_prompt=args.voice, text=args.text.strip(), output_path=output_path)
+    tts = IndexTTS2(cfg_path=config_path, model_dir=model_dir, use_fp16=args.fp16, device=args.device)
+    tts.infer(spk_audio_prompt=voice_file, text=args.text.strip(), output_path=output_path)
 
 
 if __name__ == "__main__":

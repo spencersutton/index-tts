@@ -4,6 +4,7 @@ import random
 import re
 import time
 import warnings
+from collections.abc import Sequence
 from pathlib import Path
 from subprocess import CalledProcessError
 
@@ -29,11 +30,14 @@ from indextts.utils.maskgct_utils import build_semantic_model
 os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 
 
+checkpoint_dir = Path("checkpoints")
+
+
 class IndexTTS2:
     def __init__(
         self,
-        cfg_path: Path = Path("checkpoints/config.yaml"),
-        model_dir: Path = Path("checkpoints"),
+        cfg_path: Path = checkpoint_dir / "config.yaml",
+        model_dir: Path = checkpoint_dir,
         use_fp16: bool = False,
         device=None,
         use_cuda_kernel=None,
@@ -75,7 +79,7 @@ class IndexTTS2:
             print(">> Be patient, it may take a while to run in CPU mode.")
 
         self.cfg = OmegaConf.load(cfg_path)
-        self.model_dir = Path(model_dir)
+        self.model_dir = model_dir
         self.dtype = torch.float16 if self.use_fp16 else None
         self.stop_mel_token = self.cfg.gpt.stop_mel_token
         self.use_accel = use_accel
@@ -348,9 +352,9 @@ class IndexTTS2:
     # 原始推理模式
     def infer(
         self,
-        spk_audio_prompt,
-        text,
-        output_path,
+        spk_audio_prompt: Path,
+        text: str,
+        output_path: Path,
         emo_audio_prompt=None,
         emo_alpha: float = 1.0,
         emo_vector=None,
@@ -409,14 +413,14 @@ class IndexTTS2:
 
     def infer_generator(
         self,
-        spk_audio_prompt,
-        text,
-        output_path,
+        spk_audio_prompt: Path,
+        text: str,
+        output_path: Path,
         emo_audio_prompt=None,
         emo_alpha: float = 1.0,
-        emo_vector=None,
+        emo_vector: Sequence[float] | None = None,
         use_emo_text: bool = False,
-        emo_text=None,
+        emo_text: str | None = None,
         use_random: bool = False,
         interval_silence: int = 200,
         verbose: bool = False,
@@ -728,11 +732,11 @@ class IndexTTS2:
         wav = wav.cpu()  # to cpu
         if output_path:
             # 直接保存音频到指定路径中
-            if Path(output_path).is_file():
-                Path(output_path).unlink()
+            if output_path.is_file():
+                output_path.unlink()
                 print(">> remove old wav file:", output_path)
-            if Path(output_path).parent != Path():
-                Path(output_path).parent.mkdir(exist_ok=True, parents=True).mkdir(exist_ok=True, parents=True)
+            if output_path.parent != Path():
+                output_path.parent.mkdir(exist_ok=True, parents=True)
             torchaudio.save(output_path, wav.type(torch.int16), sampling_rate)
             print(">> wav file saved to:", output_path)
             if stream_return:

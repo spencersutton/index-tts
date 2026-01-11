@@ -22,21 +22,24 @@ from torch import nn
 from indextts.gpt.conformer.embedding import RelPositionalEncoding
 from indextts.util import patch_call
 
+INPUT_DIM = 1024
+OUTPUT_DIM = 512
+
 
 class Conv2dSubsampling2(nn.Module):
     """Convolutional 2D subsampling (to 1/2 length).
 
     Args:
-        idim (int): Input dimension.
-        odim (int): Output dimension.
+        input_dim (int): Input dimension.
+        output_dim (int): Output dimension.
     """
 
-    def __init__(self, input_dim: int, output_dim: int) -> None:
+    def __init__(self) -> None:
         super().__init__()
 
-        self.conv = nn.Sequential(nn.Conv2d(1, output_dim, 3, 2), nn.ReLU())
-        self.out = nn.Sequential(nn.Linear(output_dim * ((input_dim - 1) // 2), output_dim))
-        self.pos_enc = RelPositionalEncoding(output_dim)
+        self.conv = nn.Sequential(nn.Conv2d(1, OUTPUT_DIM, 3, 2), nn.ReLU())
+        self.out = nn.Sequential(nn.Linear(OUTPUT_DIM * ((INPUT_DIM - 1) // 2), OUTPUT_DIM))
+        self.pos_enc = RelPositionalEncoding(OUTPUT_DIM)
 
     def forward(
         self, x: torch.Tensor, x_mask: torch.Tensor, offset: int | torch.Tensor = 0

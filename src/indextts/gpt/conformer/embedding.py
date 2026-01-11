@@ -23,8 +23,11 @@ from torch import nn
 
 from indextts.util import patch_call
 
+MAX_LEN = 5000
+DIM = 512
 
-class PositionalEncoding(nn.Module):
+
+class RelPositionalEncoding(nn.Module):
     """Positional encoding.
 
     :param int d_model: embedding dim
@@ -32,40 +35,27 @@ class PositionalEncoding(nn.Module):
 
     PE(pos, 2i)   = sin(pos/(10000^(2i/dmodel)))
     PE(pos, 2i+1) = cos(pos/(10000^(2i/dmodel)))
+
+    Relative positional encoding module.
+    See : Appendix B in https://arxiv.org/abs/1901.02860
+    Args:
+        d_model (int): Embedding dimension.
+        max_len (int): Maximum input length.
     """
 
-    def __init__(self, d_model: int, max_len: int = 5000, reverse: bool = False) -> None:
+    def __init__(self, d_model: int) -> None:
         """Construct an PositionalEncoding object."""
         super().__init__()
-        self.d_model = d_model
-        self.xscale = math.sqrt(self.d_model)
+        self.xscale = math.sqrt(DIM)
         self.dropout = nn.Dropout(0.0)
-        self.max_len = max_len
 
-        pe = torch.zeros(self.max_len, self.d_model)
-        position = torch.arange(0, self.max_len).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, self.d_model, 2) * -(math.log(10000.0) / self.d_model))
+        pe = torch.zeros(MAX_LEN, DIM)
+        position = torch.arange(0, MAX_LEN).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, DIM, 2) * -(math.log(10000.0) / DIM))
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
         pe = pe.unsqueeze(0)
         self.register_buffer("pe", pe)
-
-    def forward(self, x: torch.Tensor, offset: int | torch.Tensor = 0) -> tuple[torch.Tensor, torch.Tensor]:
-        """Add positional encoding.
-
-        Args:
-            x (torch.Tensor): Input. Its shape is (batch, time, ...)
-            offset (int, torch.tensor): position offset
-
-        Returns:
-            torch.Tensor: Encoded tensor. Its shape is (batch, time, ...)
-            torch.Tensor: for compatibility to RelPositionalEncoding
-        """
-
-        self.pe = self.pe.to(x.device)
-        pos_emb = self.position_encoding(offset, x.size(1))
-        x = x * self.xscale + pos_emb
-        return self.dropout(x), self.dropout(pos_emb)
 
     def position_encoding(self, offset: int | torch.Tensor, size: int) -> torch.Tensor:
         """For getting encoding in a streaming fashion
@@ -80,10 +70,10 @@ class PositionalEncoding(nn.Module):
         # How to subscript a Union type:
         #   https://github.com/pytorch/pytorch/issues/69434
         if isinstance(offset, int) or (isinstance(offset, torch.Tensor) and offset.dim() == 0):
-            assert offset + size < self.max_len
+            assert offset + size < MAX_LEN
             pos_emb = self.pe[:, offset : offset + size]
         else:  # for batched streaming decoding on GPU
-            assert torch.max(offset) + size < self.max_len
+            assert torch.max(offset) + size < MAX_LEN
             index = offset.unsqueeze(1) + torch.arange(0, size).to(offset.device)  # B X T
             flag = index > 0
             # remove negative offset
@@ -91,19 +81,6 @@ class PositionalEncoding(nn.Module):
             pos_emb = F.embedding(index, self.pe[0])  # B X T X d_model
 
         return pos_emb
-
-
-class RelPositionalEncoding(PositionalEncoding):
-    """Relative positional encoding module.
-    See : Appendix B in https://arxiv.org/abs/1901.02860
-    Args:
-        d_model (int): Embedding dimension.
-        max_len (int): Maximum input length.
-    """
-
-    def __init__(self, d_model: int, max_len: int = 5000) -> None:
-        """Initialize class."""
-        super().__init__(d_model, max_len, reverse=True)
 
     def forward(self, x: torch.Tensor, offset: int | torch.Tensor = 0) -> tuple[torch.Tensor, torch.Tensor]:
         """Compute positional encoding.

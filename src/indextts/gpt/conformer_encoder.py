@@ -9,6 +9,8 @@ from indextts.gpt.conformer.subsampling import Conv2dSubsampling2
 from indextts.util import patch_call
 from indextts.utils.common import make_pad_mask
 
+OUTPUT_DIM = 512
+
 
 class PositionwiseFeedForward(nn.Module):
     """Positionwise feed forward layer.
@@ -239,18 +241,9 @@ class ConformerEncoderLayer(nn.Module):
 class ConformerEncoder(nn.Module):
     """Conformer encoder module."""
 
-    def __init__(
-        self,
-        input_size: int,
-        output_size: int = 256,
-        attention_heads: int = 4,
-        linear_units: int = 2048,
-        num_blocks: int = 6,
-    ) -> None:
+    def __init__(self, attention_heads: int = 4, linear_units: int = 2048, num_blocks: int = 6) -> None:
         """
         Args:
-            input_size (int): input dim
-            output_size (int): dimension of attention
             attention_heads (int): the number of heads of multi head attention
             linear_units (int): the hidden units number of position-wise feed
                 forward
@@ -258,18 +251,18 @@ class ConformerEncoder(nn.Module):
         """
         super().__init__()
 
-        self.embed = Conv2dSubsampling2(input_size, output_size)
-        self.after_norm = nn.LayerNorm(output_size, eps=1e-5)
+        self.embed = Conv2dSubsampling2()
+        self.after_norm = nn.LayerNorm(OUTPUT_DIM, eps=1e-5)
         activation = nn.SiLU()
 
         self.encoders = cast(
             Sequence[ConformerEncoderLayer],
             nn.ModuleList([
                 ConformerEncoderLayer(
-                    output_size,
-                    RelPositionMultiHeadedAttention(attention_heads, output_size),
-                    PositionwiseFeedForward(output_size, linear_units, activation=activation),
-                    ConvolutionModule(output_size, activation),
+                    OUTPUT_DIM,
+                    RelPositionMultiHeadedAttention(attention_heads, OUTPUT_DIM),
+                    PositionwiseFeedForward(OUTPUT_DIM, linear_units, activation=activation),
+                    ConvolutionModule(OUTPUT_DIM, activation),
                 )
                 for _ in range(num_blocks)
             ]),

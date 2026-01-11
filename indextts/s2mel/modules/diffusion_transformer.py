@@ -8,14 +8,22 @@ from indextts.s2mel.modules.commons import sequence_mask
 from indextts.s2mel.modules.gpt_fast.model import ModelArgs, Transformer
 from indextts.s2mel.modules.wavenet import WN
 
-hidden_dim = 512
-num_heads = 8
-depth = 13
-class_dropout_prob = 0.1
-block_size = 16384
-in_channels = 80
-content_dim = 512
-content_codebook_size = 1024
+BLOCK_SIZE = 16384
+CLASS_DROPOUT_PROB = 0.1
+CONTENT_CODEBOOK_SIZE = 1024
+CONTENT_DIM = 512
+DEPTH = 13
+FREQUENCY_EMBEDDING_SIZE = 256
+HIDDEN_DIM = 512
+IN_CHANNELS = 80
+NUM_HEADS = 8
+
+DILATION_RATE = 1
+KERNEL_SIZE = 5
+NUM_LAYERS = 8
+P_DROPOUT = 0.2
+
+style_encoder_dim = 192
 
 
 def modulate(x, shift, scale):
@@ -32,18 +40,17 @@ class TimestepEmbedder(nn.Module):
     Embeds scalar timesteps into vector representations.
     """
 
-    def __init__(self, hidden_size, frequency_embedding_size=256) -> None:
+    freqs: torch.Tensor
+
+    def __init__(self, hidden_size) -> None:
         super().__init__()
         self.mlp = nn.Sequential(
-            nn.Linear(frequency_embedding_size, hidden_size, bias=True),
-            nn.SiLU(),
-            nn.Linear(hidden_size, hidden_size, bias=True),
+            nn.Linear(FREQUENCY_EMBEDDING_SIZE, hidden_size), nn.SiLU(), nn.Linear(hidden_size, hidden_size)
         )
-        self.frequency_embedding_size = frequency_embedding_size
         self.max_period = 10000
         self.scale = 1000
 
-        half = frequency_embedding_size // 2
+        half = FREQUENCY_EMBEDDING_SIZE // 2
         freqs = torch.exp(-math.log(self.max_period) * torch.arange(start=0, end=half, dtype=torch.float32) / half)
         self.register_buffer("freqs", freqs)
 
@@ -60,7 +67,7 @@ class TimestepEmbedder(nn.Module):
 
         args = self.scale * t[:, None].float() * self.freqs[None]
         embedding = torch.cat([torch.cos(args), torch.sin(args)], dim=-1)
-        if self.frequency_embedding_size % 2:
+        if FREQUENCY_EMBEDDING_SIZE % 2:
             embedding = torch.cat([embedding, torch.zeros_like(embedding[:, :1])], dim=-1)
         return embedding
 
@@ -77,8 +84,8 @@ class FinalLayer(nn.Module):
     def __init__(self, hidden_size, patch_size, out_channels) -> None:
         super().__init__()
         self.norm_final = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
-        self.linear = weight_norm(nn.Linear(hidden_size, patch_size * patch_size * out_channels, bias=True))
-        self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(hidden_size, 2 * hidden_size, bias=True))
+        self.linear = weight_norm(nn.Linear(hidden_size, patch_size * patch_size * out_channels))
+        self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(hidden_size, 2 * hidden_size))
 
     def forward(self, x, c):
         shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
@@ -89,51 +96,46 @@ class FinalLayer(nn.Module):
 class DiT(nn.Module):
     input_pos: torch.Tensor
 
-    def __init__(self, args) -> None:
+    def __init__(self) -> None:
         super().__init__()
         model_args = ModelArgs(
-            block_size=block_size,
-            n_layer=depth,
-            n_head=num_heads,
-            dim=hidden_dim,
-            head_dim=hidden_dim // num_heads,
+            block_size=BLOCK_SIZE,
+            n_layer=DEPTH,
+            n_head=NUM_HEADS,
+            dim=HIDDEN_DIM,
+            head_dim=HIDDEN_DIM // NUM_HEADS,
             vocab_size=1024,
         )
         self.transformer = Transformer(model_args)
 
-        self.x_embedder = weight_norm(nn.Linear(in_channels, hidden_dim, bias=True))
+        self.x_embedder = weight_norm(nn.Linear(IN_CHANNELS, HIDDEN_DIM))
 
-        self.cond_embedder = nn.Embedding(content_codebook_size, hidden_dim)  # discrete content
-        self.cond_projection = nn.Linear(content_dim, hidden_dim, bias=True)  # continuous content
+        self.cond_projection = nn.Linear(CONTENT_DIM, HIDDEN_DIM)  # continuous content
 
-        self.t_embedder = TimestepEmbedder(hidden_dim)
+        self.t_embedder = TimestepEmbedder(HIDDEN_DIM)
 
-        input_pos = torch.arange(block_size)
+        input_pos = torch.arange(BLOCK_SIZE)
         self.register_buffer("input_pos", input_pos)
 
-        self.t_embedder2 = TimestepEmbedder(args.wavenet.hidden_dim)
-        self.conv1 = nn.Linear(hidden_dim, args.wavenet.hidden_dim)
-        self.conv2 = nn.Conv1d(args.wavenet.hidden_dim, in_channels, 1)
+        self.t_embedder2 = TimestepEmbedder(HIDDEN_DIM)
+        self.conv1 = nn.Linear(HIDDEN_DIM, HIDDEN_DIM)
+        self.conv2 = nn.Conv1d(HIDDEN_DIM, IN_CHANNELS, 1)
         self.wavenet = WN(
-            hidden_channels=args.wavenet.hidden_dim,
-            kernel_size=args.wavenet.kernel_size,
-            dilation_rate=args.wavenet.dilation_rate,
-            n_layers=args.wavenet.num_layers,
-            gin_channels=args.wavenet.hidden_dim,
-            p_dropout=args.wavenet.p_dropout,
+            hidden_channels=HIDDEN_DIM,
+            kernel_size=KERNEL_SIZE,
+            dilation_rate=DILATION_RATE,
+            n_layers=NUM_LAYERS,
+            gin_channels=HIDDEN_DIM,
+            p_dropout=P_DROPOUT,
             causal=False,
         )
-        self.final_layer = FinalLayer(args.wavenet.hidden_dim, 1, args.wavenet.hidden_dim)
-        self.res_projection = nn.Linear(
-            hidden_dim, args.wavenet.hidden_dim
-        )  # residual connection from tranformer output to final output
+        self.final_layer = FinalLayer(HIDDEN_DIM, 1, HIDDEN_DIM)
+        # residual connection from tranformer output to final output
+        self.res_projection = nn.Linear(HIDDEN_DIM, HIDDEN_DIM)
 
-        self.class_dropout_prob = class_dropout_prob
-        self.content_mask_embedder = nn.Embedding(1, hidden_dim)
+        self.skip_linear = nn.Linear(HIDDEN_DIM + IN_CHANNELS, HIDDEN_DIM)
 
-        self.skip_linear = nn.Linear(hidden_dim + in_channels, hidden_dim)
-
-        self.cond_x_merge_linear = nn.Linear(hidden_dim + in_channels * 2 + args.style_encoder.dim, hidden_dim)
+        self.cond_x_merge_linear = nn.Linear(HIDDEN_DIM + IN_CHANNELS * 2 + style_encoder_dim, HIDDEN_DIM)
 
     def setup_caches(self, max_batch_size, max_seq_length) -> None:
         self.transformer.setup_caches(max_batch_size, max_seq_length, use_kv_cache=False)

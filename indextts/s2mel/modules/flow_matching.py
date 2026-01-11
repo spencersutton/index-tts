@@ -12,11 +12,11 @@ INFERENCE_CFG_RATE = 0.7
 
 
 class CFM(nn.Module):
-    def __init__(self, args):
+    def __init__(self):
         super().__init__()
 
         self.criterion = torch.nn.L1Loss()
-        self.estimator = DiT(args)
+        self.estimator = DiT()
 
     @torch.inference_mode()
     def inference(self, mu: torch.Tensor, prompt: torch.Tensor, style: torch.Tensor) -> torch.Tensor:

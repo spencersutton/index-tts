@@ -7,6 +7,7 @@ import warnings
 from collections.abc import Sequence
 from pathlib import Path
 from subprocess import CalledProcessError
+from typing import cast
 
 import librosa
 import safetensors.torch
@@ -134,12 +135,10 @@ class IndexTTS2:
         print(f">> semantic_codec weights restored from: {semantic_code_ckpt}")
 
         s2mel_path = self.model_dir / self.cfg.s2mel_checkpoint
-        s2mel = MyModel(self.cfg.s2mel)
-        s2mel, _, _, _ = load_checkpoint2(
-            s2mel, None, s2mel_path, load_only_params=True, ignore_modules=[], is_distributed=False
-        )
+        s2mel = MyModel()
+        s2mel = cast(MyModel, load_checkpoint2(s2mel, s2mel_path))
         self.s2mel = s2mel.to(self.device)
-        self.s2mel.models["cfm"].estimator.setup_caches(max_batch_size=1, max_seq_length=8192)
+        self.s2mel.cfm.estimator.setup_caches(max_batch_size=1, max_seq_length=8192)
 
         # Enable torch.compile optimization if requested
         if self.use_torch_compile:
@@ -503,7 +502,7 @@ class IndexTTS2:
             feat -= feat.mean(dim=0, keepdim=True)  # feat2另外一个滤波器能量组特征[922, 80]
             style = self.campplus_model(feat.unsqueeze(0))  # 参考音频的全局style2[1,192]
 
-            prompt_condition: torch.Tensor = self.s2mel.models["length_regulator"](S_ref, ylens=ref_target_lengths)[0]
+            prompt_condition = self.s2mel.length_regulator(S_ref, ylens=ref_target_lengths)[0]
 
             self.cache_spk_cond = spk_cond_emb
             self.cache_s2mel_style = style
@@ -686,15 +685,15 @@ class IndexTTS2:
                 dtype = None
                 with torch.autocast(text_tokens.device.type, enabled=dtype is not None, dtype=dtype):
                     m_start_time = time.perf_counter()
-                    latent = self.s2mel.models["gpt_layer"](latent)
+                    latent = self.s2mel.gpt_layer(latent)
                     s_infer = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1))
                     s_infer = s_infer.transpose(1, 2)
                     s_infer += latent
                     target_lengths = (code_lens * 1.72).long()
 
-                    cond = self.s2mel.models["length_regulator"](s_infer, ylens=target_lengths)[0]
+                    cond = self.s2mel.length_regulator(s_infer, ylens=target_lengths)[0]
                     cat_condition = torch.cat([prompt_condition, cond], dim=1)
-                    vc_target = self.s2mel.models["cfm"].inference(cat_condition, ref_mel, style)
+                    vc_target = self.s2mel.cfm.inference(cat_condition, ref_mel, style)
                     vc_target = vc_target[:, :, ref_mel.size(-1) :]
                     s2mel_time += time.perf_counter() - m_start_time
 

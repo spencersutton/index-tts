@@ -30,8 +30,13 @@ from indextts.utils.maskgct_utils import build_semantic_model
 
 os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 
-
 checkpoint_dir = Path("checkpoints")
+
+
+def mel_fn(x: Tensor) -> Tensor:
+    return mel_spectrogram(
+        x, n_fft=1024, win_size=1024, hop_size=256, num_mels=80, sampling_rate=22050, fmin=0, fmax=None, center=False
+    )
 
 
 class IndexTTS2:
@@ -186,18 +191,6 @@ class IndexTTS2:
 
         self.emo_matrix = torch.split(self.emo_matrix, self.emo_num)
         self.spk_matrix = torch.split(self.spk_matrix, self.emo_num)
-
-        mel_fn_args = {
-            "n_fft": self.cfg.s2mel["preprocess_params"]["spect_params"]["n_fft"],
-            "win_size": self.cfg.s2mel["preprocess_params"]["spect_params"]["win_length"],
-            "hop_size": self.cfg.s2mel["preprocess_params"]["spect_params"]["hop_length"],
-            "num_mels": self.cfg.s2mel["preprocess_params"]["spect_params"]["n_mels"],
-            "sampling_rate": self.cfg.s2mel["preprocess_params"]["sr"],
-            "fmin": self.cfg.s2mel["preprocess_params"]["spect_params"].get("fmin", 0),
-            "fmax": None if self.cfg.s2mel["preprocess_params"]["spect_params"].get("fmax", "None") == "None" else 8000,
-            "center": False,
-        }
-        self.mel_fn = lambda x: mel_spectrogram(x, **mel_fn_args)
 
         # 缓存参考音频：
         self.cache_spk_cond = None
@@ -493,8 +486,8 @@ class IndexTTS2:
             attention_mask = attention_mask.to(self.device)
             spk_cond_emb = self.get_emb(input_features, attention_mask)
 
-            S_ref = self.semantic_codec.quantize(spk_cond_emb)
-            ref_mel = self.mel_fn(audio_22k.to(spk_cond_emb.device).float())
+            s_ref = self.semantic_codec.quantize(spk_cond_emb)
+            ref_mel = mel_fn(audio_22k.to(spk_cond_emb.device).float())
             ref_target_lengths = torch.tensor([ref_mel.size(2)], dtype=torch.long).to(ref_mel.device)
             feat = torchaudio.compliance.kaldi.fbank(
                 audio_16k.to(ref_mel.device), num_mel_bins=80, dither=0, sample_frequency=16000
@@ -502,7 +495,7 @@ class IndexTTS2:
             feat -= feat.mean(dim=0, keepdim=True)  # feat2另外一个滤波器能量组特征[922, 80]
             style = self.campplus_model(feat.unsqueeze(0))  # 参考音频的全局style2[1,192]
 
-            prompt_condition = self.s2mel.length_regulator(S_ref, ylens=ref_target_lengths)[0]
+            prompt_condition = self.s2mel.length_regulator(s_ref, ylens=ref_target_lengths)[0]
 
             self.cache_spk_cond = spk_cond_emb
             self.cache_s2mel_style = style

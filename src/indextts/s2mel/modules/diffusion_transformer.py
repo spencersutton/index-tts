@@ -5,7 +5,7 @@ from torch import nn
 from torch.nn.utils.parametrizations import weight_norm
 
 from indextts.s2mel.modules.commons import sequence_mask
-from indextts.s2mel.modules.gpt_fast.model import ModelArgs, Transformer
+from indextts.s2mel.modules.gpt_fast.model import Transformer
 from indextts.s2mel.modules.wavenet import WN
 
 BLOCK_SIZE = 16384
@@ -23,7 +23,7 @@ KERNEL_SIZE = 5
 NUM_LAYERS = 8
 P_DROPOUT = 0.2
 
-style_encoder_dim = 192
+STYLE_ENCODER_DIM = 192
 
 
 def modulate(x, shift, scale):
@@ -98,15 +98,7 @@ class DiT(nn.Module):
 
     def __init__(self) -> None:
         super().__init__()
-        model_args = ModelArgs(
-            block_size=BLOCK_SIZE,
-            n_layer=DEPTH,
-            n_head=NUM_HEADS,
-            dim=HIDDEN_DIM,
-            head_dim=HIDDEN_DIM // NUM_HEADS,
-            vocab_size=1024,
-        )
-        self.transformer = Transformer(model_args)
+        self.transformer = Transformer()
 
         self.x_embedder = weight_norm(nn.Linear(IN_CHANNELS, HIDDEN_DIM))
 
@@ -135,7 +127,7 @@ class DiT(nn.Module):
 
         self.skip_linear = nn.Linear(HIDDEN_DIM + IN_CHANNELS, HIDDEN_DIM)
 
-        self.cond_x_merge_linear = nn.Linear(HIDDEN_DIM + IN_CHANNELS * 2 + style_encoder_dim, HIDDEN_DIM)
+        self.cond_x_merge_linear = nn.Linear(HIDDEN_DIM + IN_CHANNELS * 2 + STYLE_ENCODER_DIM, HIDDEN_DIM)
 
     def setup_caches(self, max_batch_size, max_seq_length) -> None:
         self.transformer.setup_caches(max_batch_size, max_seq_length, use_kv_cache=False)

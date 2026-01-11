@@ -47,8 +47,6 @@ class ModelArgs:
     norm_eps: float = 1e-5
     has_cross_attention: bool = False
     context_dim: int = 0
-    uvit_skip_connection: bool = False
-    time_as_token: bool = False
 
     def __post_init__(self):
         if self.n_local_heads == -1:
@@ -162,13 +160,8 @@ class Transformer(nn.Module):
         ).to(device)
         self.causal_mask = torch.tril(torch.ones(self.max_seq_length, self.max_seq_length, dtype=torch.bool)).to(device)
         self.use_kv_cache = use_kv_cache
-        self.uvit_skip_connection = self.config.uvit_skip_connection
-        if self.uvit_skip_connection:
-            self.layers_emit_skip = [i for i in range(self.config.n_layer) if i < self.config.n_layer // 2]
-            self.layers_receive_skip = [i for i in range(self.config.n_layer) if i > self.config.n_layer // 2]
-        else:
-            self.layers_emit_skip = []
-            self.layers_receive_skip = []
+        self.layers_emit_skip = [i for i in range(self.config.n_layer) if i < self.config.n_layer // 2]
+        self.layers_receive_skip = [i for i in range(self.config.n_layer) if i > self.config.n_layer // 2]
 
     def forward(
         self,
@@ -194,12 +187,12 @@ class Transformer(nn.Module):
             context_freqs_cis = None
         skip_in_x_list = []
         for i, layer in enumerate(self.layers):
-            if self.uvit_skip_connection and i in self.layers_receive_skip:
+            if True and i in self.layers_receive_skip:
                 skip_in_x = skip_in_x_list.pop(-1)
             else:
                 skip_in_x = None
             x = layer(x, c, input_pos, freqs_cis, mask, context, context_freqs_cis, cross_attention_mask, skip_in_x)
-            if self.uvit_skip_connection and i in self.layers_emit_skip:
+            if True and i in self.layers_emit_skip:
                 skip_in_x_list.append(x)
         return self.norm(x, c)
 
@@ -223,13 +216,7 @@ class TransformerBlock(nn.Module):
         else:
             self.has_cross_attention = False
 
-        if config.uvit_skip_connection:
-            self.skip_in_linear = nn.Linear(config.dim * 2, config.dim)
-            self.uvit_skip_connection = True
-        else:
-            self.uvit_skip_connection = False
-
-        self.time_as_token = config.time_as_token
+        self.skip_in_linear = nn.Linear(config.dim * 2, config.dim)
 
     def forward(
         self,
@@ -243,8 +230,7 @@ class TransformerBlock(nn.Module):
         cross_attention_mask: torch.Tensor | None = None,
         skip_in_x: torch.Tensor | None = None,
     ) -> torch.Tensor:
-        c = None if self.time_as_token else c
-        if self.uvit_skip_connection and skip_in_x is not None:
+        if skip_in_x is not None:
             x = self.skip_in_linear(torch.cat([x, skip_in_x], dim=-1))
         h = x + self.attention(self.attention_norm(x, c), freqs_cis, mask, input_pos)
         if self.has_cross_attention:

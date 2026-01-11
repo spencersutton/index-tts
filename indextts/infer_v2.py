@@ -30,8 +30,8 @@ from indextts.utils.maskgct_utils import build_semantic_model
 
 os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 
-checkpoint_dir = Path("checkpoints")
-sampling_rate = 22050
+CHECKPOINT_DIR = Path("checkpoints")
+SAMPLING_RATE = 22050
 
 
 def mel_fn(x: torch.Tensor) -> torch.Tensor:
@@ -41,7 +41,7 @@ def mel_fn(x: torch.Tensor) -> torch.Tensor:
         win_size=1024,
         hop_size=256,
         num_mels=80,
-        sampling_rate=sampling_rate,
+        sampling_rate=SAMPLING_RATE,
         fmin=0,
         fmax=None,
         center=False,
@@ -51,8 +51,8 @@ def mel_fn(x: torch.Tensor) -> torch.Tensor:
 class IndexTTS2:
     def __init__(
         self,
-        cfg_path: Path = checkpoint_dir / "config.yaml",
-        model_dir: Path = checkpoint_dir,
+        cfg_path: Path = CHECKPOINT_DIR / "config.yaml",
+        model_dir: Path = CHECKPOINT_DIR,
         use_fp16: bool = False,
         device=None,
         use_cuda_kernel=None,
@@ -94,14 +94,13 @@ class IndexTTS2:
             print(">> Be patient, it may take a while to run in CPU mode.")
 
         self.cfg = OmegaConf.load(cfg_path)
-        self.model_dir = model_dir
         self.dtype = torch.float16 if self.use_fp16 else None
         self.stop_mel_token = self.cfg.gpt.stop_mel_token
 
-        self.qwen_emo = QwenEmotion(self.model_dir / self.cfg.qwen_emo_path)
+        self.qwen_emo = QwenEmotion(model_dir / self.cfg.qwen_emo_path)
 
         self.gpt = UnifiedVoice(**self.cfg.gpt, use_accel=use_accel)
-        gpt_path = self.model_dir / self.cfg.gpt_checkpoint
+        gpt_path = model_dir / self.cfg.gpt_checkpoint
         load_checkpoint(self.gpt, gpt_path)
         self.gpt = self.gpt.to(self.device)
         if self.use_fp16:
@@ -131,9 +130,7 @@ class IndexTTS2:
                 self.use_cuda_kernel = False
 
         self.extract_features = SeamlessM4TFeatureExtractor.from_pretrained("facebook/w2v-bert-2.0")
-        self.semantic_model, self.semantic_mean, self.semantic_std = build_semantic_model(
-            self.model_dir / self.cfg.w2v_stat
-        )
+        self.semantic_model, self.semantic_mean, self.semantic_std = build_semantic_model(model_dir / self.cfg.w2v_stat)
         self.semantic_model = self.semantic_model.to(self.device)
         self.semantic_model.eval()
         self.semantic_mean = self.semantic_mean.to(self.device)
@@ -146,7 +143,7 @@ class IndexTTS2:
         self.semantic_codec.eval()
         print(f">> semantic_codec weights restored from: {semantic_code_ckpt}")
 
-        s2mel_path = self.model_dir / self.cfg.s2mel_checkpoint
+        s2mel_path = model_dir / self.cfg.s2mel_checkpoint
         s2mel = MyModel()
         s2mel = cast(MyModel, load_checkpoint2(s2mel, s2mel_path))
         self.s2mel = s2mel.to(self.device)
@@ -176,7 +173,7 @@ class IndexTTS2:
         self.bigvgan.eval()
         print(">> bigvgan weights restored from:", bigvgan_name)
 
-        self.bpe_path = self.model_dir / self.cfg.dataset["bpe_model"]
+        self.bpe_path = model_dir / self.cfg.dataset["bpe_model"]
         self.normalizer = TextNormalizer(enable_glossary=True)
         self.normalizer.load()
         print(">> TextNormalizer loaded")
@@ -189,11 +186,11 @@ class IndexTTS2:
             self.normalizer.load_glossary_from_yaml(self.glossary_path)
             print(">> Glossary loaded from:", self.glossary_path)
 
-        emo_matrix = torch.load(self.model_dir / self.cfg.emo_matrix)
+        emo_matrix = torch.load(model_dir / self.cfg.emo_matrix)
         self.emo_matrix = emo_matrix.to(self.device)
         self.emo_num = list(self.cfg.emo_num)
 
-        spk_matrix = torch.load(self.model_dir / self.cfg.spk_matrix)
+        spk_matrix = torch.load(model_dir / self.cfg.spk_matrix)
         self.spk_matrix = spk_matrix.to(self.device)
 
         self.emo_matrix = torch.split(self.emo_matrix, self.emo_num)
@@ -233,7 +230,7 @@ class IndexTTS2:
         # get channel_size
         channel_size = wavs[0].size(0)
         # get silence tensor
-        sil_dur = int(sampling_rate * interval_silence / 1000.0)
+        sil_dur = int(SAMPLING_RATE * interval_silence / 1000.0)
         return torch.zeros(channel_size, sil_dur)
 
     def insert_interval_silence(self, wavs: list[torch.Tensor], interval_silence=200):
@@ -248,7 +245,7 @@ class IndexTTS2:
         # get channel_size
         channel_size = wavs[0].size(0)
         # get silence tensor
-        sil_dur = int(sampling_rate * interval_silence / 1000.0)
+        sil_dur = int(SAMPLING_RATE * interval_silence / 1000.0)
         sil_tensor = torch.zeros(channel_size, sil_dur)
 
         wavs_list = []
@@ -430,7 +427,7 @@ class IndexTTS2:
                 self.cache_mel = None
                 torch.cuda.empty_cache()
             audio, sr = self._load_and_cut_audio(spk_audio_prompt, 15, verbose)
-            audio_22k = torchaudio.transforms.Resample(sr, sampling_rate)(audio)
+            audio_22k = torchaudio.transforms.Resample(sr, SAMPLING_RATE)(audio)
             audio_16k = torchaudio.transforms.Resample(sr, 16000)(audio)
 
             inputs = self.extract_features(audio_16k, sampling_rate=16000, return_tensors="pt")
@@ -662,7 +659,7 @@ class IndexTTS2:
         self._set_gr_progress(0.9, "saving audio...")
         wavs = self.insert_interval_silence(wavs, interval_silence=interval_silence)
         wav = torch.cat(wavs, dim=1)
-        wav_length = wav.shape[-1] / sampling_rate
+        wav_length = wav.shape[-1] / SAMPLING_RATE
         print(f">> gpt_gen_time: {gpt_gen_time:.2f} seconds")
         print(f">> gpt_forward_time: {gpt_forward_time:.2f} seconds")
         print(f">> s2mel_time: {s2mel_time:.2f} seconds")
@@ -680,7 +677,7 @@ class IndexTTS2:
                 print(">> remove old wav file:", output_path)
             if output_path.parent != Path():
                 output_path.parent.mkdir(exist_ok=True, parents=True)
-            torchaudio.save(output_path, wav.type(torch.int16), sampling_rate)
+            torchaudio.save(output_path, wav.type(torch.int16), SAMPLING_RATE)
             print(">> wav file saved to:", output_path)
             if stream_return:
                 return None
@@ -691,7 +688,7 @@ class IndexTTS2:
             # 返回以符合Gradio的格式要求
             wav_data = wav.type(torch.int16)
             wav_data = wav_data.numpy().T
-            yield (sampling_rate, wav_data)
+            yield (SAMPLING_RATE, wav_data)
 
 
 def find_most_similar_cosine(query_vector, matrix) -> torch.Tensor:
@@ -704,10 +701,9 @@ def find_most_similar_cosine(query_vector, matrix) -> torch.Tensor:
 
 class QwenEmotion:
     def __init__(self, model_dir) -> None:
-        self.model_dir = model_dir
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_dir)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_dir)
         self.model = AutoModelForCausalLM.from_pretrained(
-            self.model_dir,
+            model_dir,
             torch_dtype="float16",  # "auto"
             device_map="auto",
         )

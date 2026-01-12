@@ -131,7 +131,7 @@ class IndexTTS2:
 
         self.extract_features = SeamlessM4TFeatureExtractor.from_pretrained("facebook/w2v-bert-2.0")
 
-        self.semantic_model, self.semantic_mean, self.semantic_std = build_semantic_model(model_dir / self.cfg.w2v_stat)
+        self.semantic_model, self.semantic_mean, self.semantic_std = build_semantic_model(self.cfg.w2v_stat)
         self.semantic_model = self.semantic_model.to(self.device)
         self.semantic_model.eval()
         self.semantic_mean = self.semantic_mean.to(self.device)

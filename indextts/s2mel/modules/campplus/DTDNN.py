@@ -24,7 +24,7 @@ class FCM(nn.Module):
     def __init__(self) -> None:
         super().__init__()
         self.in_planes = M_CHANNELS
-        self.conv1 = nn.Conv2d(1, M_CHANNELS, kernel_size=3, stride=1, padding=1, bias=False)
+        self.conv1 = nn.Conv2d(1, M_CHANNELS, kernel_size=3, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(M_CHANNELS)
 
         self.layer1 = nn.Sequential(*[BasicResBlock(x) for x in (2, 1)])

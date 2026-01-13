@@ -49,7 +49,7 @@ class PositionwiseFeedForward(nn.Module):
 class ConvolutionModule(nn.Module):
     """ConvolutionModule in Conformer model."""
 
-    def __init__(self, channels: int, activation: nn.Module = nn.ReLU(), bias: bool = True) -> None:
+    def __init__(self, activation: nn.Module = nn.ReLU(), bias: bool = True) -> None:
         """Construct an ConvolutionModule object.
         Args:
             channels (int): The number of channels of conv layers.
@@ -58,23 +58,12 @@ class ConvolutionModule(nn.Module):
         """
         super().__init__()
 
-        self.pointwise_conv1 = nn.Conv1d(channels, 2 * channels, kernel_size=1, stride=1, padding=0, bias=bias)
-        # self.lorder is used to distinguish if it's a causal convolution,
-        # if self.lorder > 0: it's a causal convolution, the input will be
-        #    padded with self.lorder frames on the left in forward.
-        # else: it's a symmetrical convolution
-        # kernel_size should be an odd number for none causal convolution
-        assert (15 - 1) % 2 == 0
-        padding = (15 - 1) // 2
-        self.lorder = 0
+        self.pointwise_conv1 = nn.Conv1d(OUTPUT_DIM, 2 * OUTPUT_DIM, kernel_size=1, padding=0, bias=bias)
+        self.depthwise_conv = nn.Conv1d(OUTPUT_DIM, OUTPUT_DIM, kernel_size=15, padding=7, groups=OUTPUT_DIM, bias=bias)
 
-        self.depthwise_conv = nn.Conv1d(
-            channels, channels, kernel_size=15, stride=1, padding=padding, groups=channels, bias=bias
-        )
+        self.norm = nn.LayerNorm(OUTPUT_DIM)
 
-        self.norm = nn.LayerNorm(channels)
-
-        self.pointwise_conv2 = nn.Conv1d(channels, channels, kernel_size=1, stride=1, padding=0, bias=bias)
+        self.pointwise_conv2 = nn.Conv1d(OUTPUT_DIM, OUTPUT_DIM, kernel_size=1, padding=0, bias=bias)
         self.activation = activation
 
     def forward(
@@ -101,20 +90,10 @@ class ConvolutionModule(nn.Module):
         if mask_pad.size(2) > 0:  # time > 0
             x.masked_fill_(~mask_pad, 0.0)
 
-        if self.lorder > 0:
-            if cache.size(2) == 0:  # cache_t == 0
-                x = nn.functional.pad(x, (self.lorder, 0), "constant", 0.0)
-            else:
-                assert cache.size(0) == x.size(0)  # equal batch
-                assert cache.size(1) == x.size(1)  # equal channel
-                x = torch.cat((cache, x), dim=2)
-            assert x.size(2) > self.lorder
-            new_cache = x[:, :, -self.lorder :]
-        else:
-            # It's better we just return None if no cache is required,
-            # However, for JIT export, here we just fake one tensor instead of
-            # None.
-            new_cache = torch.zeros((0, 0, 0), dtype=x.dtype, device=x.device)
+        # It's better we just return None if no cache is required,
+        # However, for JIT export, here we just fake one tensor instead of
+        # None.
+        new_cache = torch.zeros((0, 0, 0), dtype=x.dtype, device=x.device)
 
         # GLU mechanism
         x = self.pointwise_conv1(x)  # (batch, 2*channel, dim)
@@ -262,7 +241,7 @@ class ConformerEncoder(nn.Module):
                     OUTPUT_DIM,
                     RelPositionMultiHeadedAttention(attention_heads, OUTPUT_DIM),
                     PositionwiseFeedForward(OUTPUT_DIM, linear_units, activation=activation),
-                    ConvolutionModule(OUTPUT_DIM, activation),
+                    ConvolutionModule(activation),
                 )
                 for _ in range(num_blocks)
             ]),

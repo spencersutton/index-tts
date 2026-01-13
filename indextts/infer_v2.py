@@ -51,7 +51,7 @@ def mel_fn(x: torch.Tensor) -> torch.Tensor:
 
 
 @cache
-def get_interval_silence(size, interval_silence: int = 200) -> torch.Tensor:
+def get_silence_interval(size: int, interval_silence: int = 200) -> torch.Tensor:
     """Silences to be insert between generated segments."""
 
     return torch.zeros(size, (SAMPLING_RATE * interval_silence) // 1000)
@@ -229,29 +229,6 @@ class IndexTTS2:
         )
         feat = vq_emb.hidden_states[17]  # (B, T, C) # type: ignore
         return (feat - self.semantic_mean) / self.semantic_std
-
-    def insert_interval_silence(self, wavs: list[torch.Tensor], interval_silence=200):
-        """
-        Insert silences between generated segments.
-        wavs: List[torch.tensor]
-        """
-
-        if not wavs or interval_silence <= 0:
-            return wavs
-
-        # get channel_size
-        channel_size = wavs[0].size(0)
-        # get silence tensor
-        sil_dur = int(SAMPLING_RATE * interval_silence / 1000.0)
-        sil_tensor = torch.zeros(channel_size, sil_dur)
-
-        wavs_list = []
-        for i, wav in enumerate(wavs):
-            wavs_list.append(wav)
-            if i < len(wavs) - 1:
-                wavs_list.append(sil_tensor)
-
-        return wavs_list
 
     def _set_gr_progress(self, value: float, desc: str) -> None:
         if self.gr_progress is not None:
@@ -629,11 +606,13 @@ class IndexTTS2:
                 wavs.append(wav.cpu())  # to cpu before saving
                 if stream_return:
                     yield wav.cpu()
-                    yield get_interval_silence(wavs[0].size(0), interval_silence)
+                    yield get_silence_interval(wavs[0].size(0), interval_silence)
         end_time = time.perf_counter()
 
         self._set_gr_progress(0.9, "saving audio...")
-        wavs = self.insert_interval_silence(wavs, interval_silence=interval_silence)
+        silence_tensor = get_silence_interval(wavs[0].size(0), interval_silence)
+        # Insert silences between segments
+        wavs = [item for x in wavs for item in (x, silence_tensor)][:-1]
         wav = torch.cat(wavs, dim=1)
         wav_length = wav.shape[-1] / SAMPLING_RATE
         print(f">> gpt_gen_time: {gpt_gen_time:.2f} seconds")

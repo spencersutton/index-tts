@@ -1,6 +1,5 @@
 import json
 import re
-from pathlib import Path
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -10,7 +9,7 @@ def clamp(value: float, min_val: float, max_val: float) -> float:
 
 
 class QwenEmotion:
-    def __init__(self, model_dir: Path) -> None:
+    def __init__(self, model_dir: str) -> None:
         self.tokenizer = AutoTokenizer.from_pretrained(model_dir)
         self.model = AutoModelForCausalLM.from_pretrained(
             model_dir,

@@ -19,6 +19,7 @@ from huggingface_hub import hf_hub_download
 from omegaconf import OmegaConf
 from transformers import AutoModelForCausalLM, AutoTokenizer, SeamlessM4TFeatureExtractor
 
+from indextts.config import IndexTTSConfig
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.s2mel.modules.audio import mel_spectrogram
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
@@ -93,7 +94,7 @@ class IndexTTS2:
             self.use_cuda_kernel = False
             print(">> Be patient, it may take a while to run in CPU mode.")
 
-        self.cfg = OmegaConf.load(cfg_path)
+        self.cfg = cast(IndexTTSConfig, OmegaConf.load(cfg_path))
         self.dtype = torch.float16 if self.use_fp16 else None
         self.stop_mel_token = self.cfg.gpt.stop_mel_token
 
@@ -175,7 +176,7 @@ class IndexTTS2:
         self.bigvgan.eval()
         print(">> bigvgan weights restored from:", bigvgan_name)
 
-        self.bpe_path = model_dir / self.cfg.dataset["bpe_model"]
+        self.bpe_path = Path(hf_hub_download(**self.cfg.dataset.bpe_model))
         self.normalizer = TextNormalizer(enable_glossary=True)
         self.normalizer.load()
         print(">> TextNormalizer loaded")
@@ -188,11 +189,11 @@ class IndexTTS2:
             self.normalizer.load_glossary_from_yaml(self.glossary_path)
             print(">> Glossary loaded from:", self.glossary_path)
 
-        emo_matrix = torch.load(model_dir / self.cfg.emo_matrix)
+        emo_matrix = torch.load(hf_hub_download(repo_id="IndexTeam/IndexTTS-2", filename=self.cfg.emo_matrix))
         self.emo_matrix = emo_matrix.to(self.device)
         self.emo_num = list(self.cfg.emo_num)
 
-        spk_matrix = torch.load(model_dir / self.cfg.spk_matrix)
+        spk_matrix = torch.load(hf_hub_download(repo_id="IndexTeam/IndexTTS-2", filename=self.cfg.spk_matrix))
         self.spk_matrix = spk_matrix.to(self.device)
 
         self.emo_matrix = torch.split(self.emo_matrix, self.emo_num)
@@ -723,7 +724,7 @@ class QwenEmotion:
     def clamp_score(self, value) -> float:
         return max(self.min_score, min(self.max_score, value))
 
-    def convert(self, content) -> dict[str, float]:
+    def convert(self, content: dict[str, float]) -> dict[str, float]:
         # generate emotion vector dictionary:
         # - insert values in desired order (Python 3.7+ `dict` remembers insertion order)
         # - convert Chinese keys to English
@@ -741,7 +742,7 @@ class QwenEmotion:
 
         return emotion_dict
 
-    def inference(self, text_input) -> dict[str, float]:
+    def inference(self, text_input: str) -> dict[str, float]:
         messages = [{"role": "system", "content": f"{self.prompt}"}, {"role": "user", "content": f"{text_input}"}]
         text = self.tokenizer.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True, enable_thinking=False

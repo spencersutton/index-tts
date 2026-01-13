@@ -199,33 +199,6 @@ def build_hf_gpt_transformer(
     )
 
 
-class MelEncoder(nn.Module):
-    def __init__(self, channels, mel_channels: int = 80, resblocks_per_reduction: int = 2) -> None:
-        super().__init__()
-        self.channels = channels
-        self.encoder = nn.Sequential(
-            nn.Conv1d(mel_channels, channels // 4, kernel_size=3, padding=1),
-            nn.Sequential(*[ResBlock(channels // 4) for _ in range(resblocks_per_reduction)]),
-            nn.Conv1d(channels // 4, channels // 2, kernel_size=3, stride=2, padding=1),
-            nn.GroupNorm(channels // 16, channels // 2),
-            nn.ReLU(),
-            nn.Sequential(*[ResBlock(channels // 2) for _ in range(resblocks_per_reduction)]),
-            nn.Conv1d(channels // 2, channels, kernel_size=3, stride=2, padding=1),
-            nn.GroupNorm(channels // 8, channels),
-            nn.ReLU(),
-            nn.Sequential(*[ResBlock(channels) for _ in range(resblocks_per_reduction)]),
-        )
-        self.reduction = 4
-
-    def forward(self, x):
-        for e in self.encoder:
-            x = e(x)
-        return x.permute(0, 2, 1)
-
-    @patch_call(forward)
-    def __call__(self) -> None: ...
-
-
 class UnifiedVoice(nn.Module):
     def __init__(
         self,
@@ -242,9 +215,6 @@ class UnifiedVoice(nn.Module):
         number_mel_codes: int = 8194,
         start_mel_token: int = 8192,
         stop_mel_token: int = 8193,
-        train_solo_embeddings: bool = False,
-        use_mel_codes_as_input: bool = True,
-        types: int = 1,
         condition_num_latent: int = 32,
         use_accel: bool = False,
     ) -> None:
@@ -264,7 +234,6 @@ class UnifiedVoice(nn.Module):
             start_mel_token:
             stop_mel_token:
             train_solo_embeddings:
-            use_mel_codes_as_input:
         """
         super().__init__()
         self.number_text_tokens = number_text_tokens
@@ -289,14 +258,11 @@ class UnifiedVoice(nn.Module):
         self.emo_conditioning_encoder = ConformerEncoder(linear_units=1024, attention_heads=4, num_blocks=4)
         self.emo_perceiver_encoder = PerceiverResampler(1024, heads=4, num_latents=1)
 
-        self.text_embedding = nn.Embedding(self.number_text_tokens * types + 1, model_dim)
+        self.text_embedding = nn.Embedding(self.number_text_tokens + 1, model_dim)
         self.emo_layer = nn.Linear(model_dim, model_dim)
         self.emovec_layer = nn.Linear(1024, model_dim)
 
-        if use_mel_codes_as_input:
-            self.mel_embedding = nn.Embedding(self.number_mel_codes, model_dim)
-        else:
-            self.mel_embedding = MelEncoder(model_dim, resblocks_per_reduction=1)
+        self.mel_embedding = nn.Embedding(self.number_mel_codes, model_dim)
         (
             self.gpt,
             self.mel_pos_embedding,
@@ -308,7 +274,7 @@ class UnifiedVoice(nn.Module):
         )
 
         self.final_norm = nn.LayerNorm(model_dim)
-        self.text_head = nn.Linear(model_dim, self.number_text_tokens * types + 1)
+        self.text_head = nn.Linear(model_dim, self.number_text_tokens + 1)
         self.mel_head = nn.Linear(model_dim, self.number_mel_codes)
 
         self.speed_emb = nn.Embedding(2, model_dim)
@@ -316,8 +282,7 @@ class UnifiedVoice(nn.Module):
 
         # Initialize the embeddings per the GPT-2 scheme
         embeddings = [self.text_embedding]
-        if use_mel_codes_as_input:
-            embeddings.append(self.mel_embedding)
+        embeddings.append(self.mel_embedding)
         for module in embeddings:
             module.weight.data.normal_(mean=0.0, std=0.02)
 

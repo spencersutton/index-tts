@@ -158,7 +158,7 @@ def gen_single(
         pass
     if emo_control_method == 2:  # emotion from custom vectors
         vec = [vec1, vec2, vec3, vec4, vec5, vec6, vec7, vec8]
-        vec = normalize_emo_vec(vec, apply_bias=True)
+        vec = normalize_emo_vec(vec)
     else:
         # don't use the emotion vector inputs for the other modes
         vec = None

@@ -73,8 +73,8 @@ class AdaLayerNorm(nn.Module):
         self.dim = embedding_dim
         self.scale = nn.Embedding(num_embeddings=num_embeddings, embedding_dim=embedding_dim)
         self.shift = nn.Embedding(num_embeddings=num_embeddings, embedding_dim=embedding_dim)
-        torch.nn.init.ones_(self.scale.weight)
-        torch.nn.init.zeros_(self.shift.weight)
+        nn.init.ones_(self.scale.weight)
+        nn.init.zeros_(self.shift.weight)
 
     def forward(self, x: torch.Tensor, cond_embedding_id: torch.Tensor) -> torch.Tensor:
         scale = self.scale(cond_embedding_id)

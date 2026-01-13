@@ -19,9 +19,10 @@ import math
 
 import torch
 import torch.nn.functional as F
+from torch import nn
 
 
-class PositionalEncoding(torch.nn.Module):
+class PositionalEncoding(nn.Module):
     """Positional encoding.
 
     :param int d_model: embedding dim
@@ -36,7 +37,7 @@ class PositionalEncoding(torch.nn.Module):
         super().__init__()
         self.d_model = d_model
         self.xscale = math.sqrt(self.d_model)
-        self.dropout = torch.nn.Dropout(0.0)
+        self.dropout = nn.Dropout(0.0)
         self.max_len = max_len
 
         pe = torch.zeros(self.max_len, self.d_model)

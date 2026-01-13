@@ -51,7 +51,6 @@ class GptConfig(ConfigMapping):
     max_mel_tokens: int
     max_text_tokens: int
     heads: int
-    use_mel_codes_as_input: bool
     mel_length_compression: int
     layers: int
     number_text_tokens: int
@@ -60,7 +59,6 @@ class GptConfig(ConfigMapping):
     stop_mel_token: int
     start_text_token: int
     stop_text_token: int
-    train_solo_embeddings: bool
 
 
 @dataclass

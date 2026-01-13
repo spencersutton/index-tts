@@ -233,7 +233,6 @@ class UnifiedVoice(nn.Module):
             number_mel_codes:
             start_mel_token:
             stop_mel_token:
-            train_solo_embeddings:
         """
         super().__init__()
         self.number_text_tokens = number_text_tokens

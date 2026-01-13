@@ -1,7 +1,9 @@
 import functools
+from typing import override
 
 import torch
 import torch.nn.functional as F
+import transformers
 from torch import nn
 from transformers import GPT2Config, GPT2Model, GPT2PreTrainedModel, LogitsProcessorList
 from transformers.generation.utils import GenerationMixin
@@ -34,6 +36,44 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
 
     def store_mel_emb(self, mel_emb: torch.Tensor) -> None:
         self.cached_mel_emb = mel_emb
+
+    @override
+    def prepare_inputs_for_generation(
+        self,
+        input_ids: torch.Tensor,
+        past_key_values: transformers.Cache | None = None,
+        attention_mask: torch.Tensor | None = None,
+        inputs_embeds: torch.Tensor | None = None,
+        cache_position: torch.Tensor | None = None,
+        **kwargs,
+    ) -> dict[str, transformers.Cache | torch.Tensor | bool | None]:
+        token_type_ids = kwargs.get("token_type_ids")  # usually None
+        position_ids = kwargs.get("position_ids")
+        if not self.kv_cache:
+            past_key_values = None
+        # only last token for inputs_ids if past is defined in kwargs
+        if past_key_values:
+            input_ids = input_ids[:, -1].unsqueeze(-1)
+            if token_type_ids is not None:
+                token_type_ids = token_type_ids[:, -1].unsqueeze(-1)
+
+        if attention_mask is not None and position_ids is None:
+            # create position_ids on the fly for batch generation
+            position_ids = attention_mask.long().cumsum(-1) - 1
+            position_ids.masked_fill_(attention_mask == 0, 0)
+            if past_key_values:
+                position_ids = position_ids[:, -1].unsqueeze(-1)
+        else:
+            position_ids = None
+
+        return {
+            "input_ids": input_ids,
+            "past_key_values": past_key_values,
+            "use_cache": kwargs.get("use_cache"),
+            "position_ids": position_ids,
+            "attention_mask": attention_mask,
+            "token_type_ids": token_type_ids,
+        }
 
     def forward(
         self,

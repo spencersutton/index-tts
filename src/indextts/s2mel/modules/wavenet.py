@@ -38,7 +38,7 @@ class WN(nn.Module):
         self.cond_layer = SConv1d(HIDDEN_DIM, 2 * HIDDEN_DIM * NUM_LAYERS, 1)
 
         for i in range(NUM_LAYERS):
-            in_layer = SConv1d(HIDDEN_DIM, 2 * HIDDEN_DIM, KERNEL_SIZE, dilation=1, padding=2)
+            in_layer = SConv1d(HIDDEN_DIM, 2 * HIDDEN_DIM, KERNEL_SIZE)
             self.in_layers.append(in_layer)
 
             # last one is not necessary

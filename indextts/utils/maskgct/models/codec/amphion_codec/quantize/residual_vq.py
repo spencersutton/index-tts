@@ -44,20 +44,20 @@ class ResidualVQ(nn.Module):
         """
         Parameters
         ----------
-        z : Tensor[B x D x T]
+        z : torch.Tensor[B x D x T]
         n_quantizers : int, optional
             No. of quantizers to use
             (n_quantizers < self.n_codebooks ex: for quantizer dropout)
         Returns
         -------
-        "quantized_out" : Tensor[B x D x T]
+        "quantized_out" : torch.Tensor[B x D x T]
             Quantized continuous representation of input
-        "all_indices" : Tensor[N x B x T]
+        "all_indices" : torch.Tensor[N x B x T]
             Codebook indices for each codebook
             (quantized discrete representation of input)
-        "all_commit_losses" : Tensor[N]
-        "all_codebook_losses" : Tensor[N]
-        "all_quantized" : Tensor[N x B x D x T]
+        "all_commit_losses" : torch.Tensor[N]
+        "all_codebook_losses" : torch.Tensor[N]
+        "all_quantized" : torch.Tensor[N x B x D x T]
         """
 
         quantized_out = 0.0

@@ -1,4 +1,5 @@
 import sys
+from collections.abc import Mapping, Sequence
 
 import torch
 from torch import Tensor, nn
@@ -33,8 +34,8 @@ class Sampler(nn.Module):
 class AccelInferenceEngine:
     def __init__(
         self,
-        model,
-        lm_head,
+        model: nn.Module,
+        lm_head: nn.Module,
         num_layers: int,
         num_heads: int,
         head_dim: int,
@@ -71,8 +72,8 @@ class AccelInferenceEngine:
         self.sampler = Sampler()
         self.current_sequences = []
         self.graphs = {}
-        self.graph_vars = None
-        self.graph_pool = None
+        self.graph_vars: Mapping[str, Tensor] | None = None
+        self.graph_pool: Sequence[int] | None = None
         self.graph_captured = False
 
     def _prepare_decode(self, requests: list[Seq]) -> tuple[Tensor, Tensor]:
@@ -120,7 +121,11 @@ class AccelInferenceEngine:
         temperatures = [temperature] * len(requests)
         return torch.tensor(temperatures, dtype=torch.float32, pin_memory=True).cuda(non_blocking=True)
 
-    def _capture_cuda_graphs(self, tts_mel_embedding=None, tts_text_pos_embedding=None) -> None:
+    def _capture_cuda_graphs(
+        self,
+        tts_mel_embedding: LearnedPositionEmbeddings | None = None,
+        tts_text_pos_embedding: LearnedPositionEmbeddings | None = None,
+    ) -> None:
         print("Capturing CUDA graphs for decode optimization...")
         max_bs = 8  # Support up to batch size 8
         max_num_blocks = (2048 + self.block_size - 1) // self.block_size
@@ -240,13 +245,15 @@ class AccelInferenceEngine:
         if graph_vars is None:
             raise RuntimeError("Graph variables not initialized")
 
+        assert graph_vars is not None
         graph_vars["input_ids"][:bs] = input_ids
         graph_vars["positions"][:bs] = positions
         graph_vars["slot_mapping"].fill_(-1)
-        graph_vars["slot_mapping"][:bs] = context.slot_mapping
+        graph_vars["slot_mapping"][:bs] = torch.as_tensor(context.slot_mapping)
         graph_vars["context_lens"].zero_()
-        graph_vars["context_lens"][:bs] = context.context_lens
+        graph_vars["context_lens"][:bs] = torch.as_tensor(context.context_lens)
         graph_vars["block_tables"][:bs, :].fill_(-1)
+        assert context.block_tables is not None
         graph_vars["block_tables"][:bs, : context.block_tables.size(1)] = context.block_tables
         graph.replay()
 
@@ -317,9 +324,9 @@ class AccelInferenceEngine:
         sequences = []
         for i in range(batch_size):
             seq_len = seq_lens[i]
-            token_ids = [1] * seq_len
+            token_ids = [1] * int(seq_len)
             if tts_embeddings is not None and seq_len > 0:
-                token_ids[-1] = input_ids[i, -1].item() if input_ids.size(1) > 0 else 1
+                token_ids[-1] = int(input_ids[i, -1].item()) if input_ids.size(1) > 0 else 1
             else:
                 token_ids = input_ids[i].tolist()
             req = Seq(token_ids)
@@ -362,6 +369,7 @@ class AccelInferenceEngine:
 
         if is_varlen_batch:
             context = get_forward_context()
+            assert context.cu_seqlens_q is not None
             cu_seqlens = context.cu_seqlens_q.cpu().tolist()
             last_hidden = torch.stack([hidden_states[0, cu_seqlens[i + 1] - 1] for i in range(batch_size)])
         else:
@@ -456,13 +464,14 @@ class AccelInferenceEngine:
         pad_token = stop_tokens[0] if stop_tokens else 0
 
         if is_varlen_batch:
+            assert attention_mask is not None
             max_prompt_len = attention_mask.size(1)
             output_ids = []
 
             for i in range(batch_size):
                 padding_len = max_prompt_len - seq_lens[i]
                 initial_tokens = sequences[i].token_ids[: sequences[i].num_prompt_tokens]
-                padded_prompt = [pad_token] * padding_len + initial_tokens
+                padded_prompt = [pad_token] * int(padding_len) + initial_tokens
                 full_sequence = padded_prompt + generated_tokens[i]
                 output_ids.append(full_sequence)
         else:

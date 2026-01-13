@@ -1,14 +1,12 @@
-import json
 import os
 import random
-import re
 import time
 import warnings
 from collections.abc import Sequence
 from functools import cache
 from pathlib import Path
 from subprocess import CalledProcessError
-from typing import cast
+from typing import Any, cast
 
 import librosa
 import safetensors.torch
@@ -19,10 +17,11 @@ from bigvganinference import bigvgan
 from huggingface_hub import hf_hub_download
 from omegaconf import OmegaConf
 from torch import Tensor
-from transformers import AutoModelForCausalLM, AutoTokenizer, SeamlessM4TFeatureExtractor
+from transformers import SeamlessM4TFeatureExtractor
 
 from indextts.config import IndexTTSConfig
 from indextts.gpt.model_v2 import UnifiedVoice
+from indextts.qwen import QwenEmotion
 from indextts.s2mel.modules.audio import mel_spectrogram
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
 from indextts.s2mel.modules.commons import MyModel, load_checkpoint2
@@ -82,8 +81,8 @@ class IndexTTS2:
         cfg_path: Path = CHECKPOINT_DIR / "config.yaml",
         model_dir: Path = CHECKPOINT_DIR,
         use_fp16: bool = False,
-        device=None,
-        use_cuda_kernel=None,
+        device: str | None = None,
+        use_cuda_kernel: bool | None = None,
         use_deepspeed: bool = False,
         use_accel: bool = False,
         use_torch_compile: bool = False,
@@ -125,7 +124,7 @@ class IndexTTS2:
         self.dtype = torch.float16 if self.use_fp16 else None
         self.stop_mel_token = self.cfg.gpt.stop_mel_token
 
-        self.qwen_emo = QwenEmotion(self.cfg.qwen_emo_path)
+        self.qwen_emo = QwenEmotion(Path(self.cfg.qwen_emo_path))
 
         self.gpt = UnifiedVoice(**self.cfg.gpt, use_accel=use_accel)
         gpt_path = model_dir / self.cfg.gpt_checkpoint
@@ -227,20 +226,20 @@ class IndexTTS2:
         self.spk_matrix = torch.split(self.spk_matrix, self.emo_num)
 
         # 缓存参考音频：
-        self.cache_spk_cond = None
-        self.cache_s2mel_style = None
+        self.cache_spk_cond: Tensor | None = None
+        self.cache_s2mel_style: Tensor | None = None
         self.cache_s2mel_prompt: Tensor | None = None
-        self.cache_spk_audio_prompt = None
-        self.cache_emo_cond = None
-        self.cache_emo_audio_prompt = None
-        self.cache_mel = None
+        self.cache_spk_audio_prompt: Path | None = None
+        self.cache_emo_cond: Tensor | None = None
+        self.cache_emo_audio_prompt: Path | None = None
+        self.cache_mel: Tensor | None = None
 
         # 进度引用显示（可选）
         self.gr_progress = None
         self.model_version = self.cfg.version if hasattr(self.cfg, "version") else None
 
     @torch.no_grad()
-    def get_emb(self, input_features, attention_mask):
+    def get_emb(self, input_features: Tensor, attention_mask: Tensor) -> Tensor:
         vq_emb = self.semantic_model(  # type: ignore
             input_features=input_features,  # type: ignore
             attention_mask=attention_mask,  # type: ignore
@@ -275,18 +274,18 @@ class IndexTTS2:
         spk_audio_prompt: Path,
         text: str,
         output_path: Path,
-        emo_audio_prompt=None,
+        emo_audio_prompt: Path | None = None,
         emo_alpha: float = 1.0,
-        emo_vector=None,
+        emo_vector: Sequence[float] | None = None,
         use_emo_text: bool = False,
-        emo_text=None,
+        emo_text: str | None = None,
         use_random: bool = False,
         interval_silence: int = 200,
         verbose: bool = False,
         max_text_tokens_per_segment: int = 120,
         stream_return: bool = False,
         more_segment_before: int = 0,
-        **generation_kwargs,
+        **generation_kwargs: Any,
     ):
         gen = self.infer_generator(
             spk_audio_prompt,
@@ -317,7 +316,7 @@ class IndexTTS2:
         spk_audio_prompt: Path,
         text: str,
         output_path: Path,
-        emo_audio_prompt=None,
+        emo_audio_prompt: Path | None = None,
         emo_alpha: float = 1.0,
         emo_vector: Sequence[float] | None = None,
         use_emo_text: bool = False,
@@ -328,7 +327,7 @@ class IndexTTS2:
         max_text_tokens_per_segment: int = 120,
         stream_return: bool = False,
         quick_streaming_tokens: int = 0,
-        **generation_kwargs,
+        **generation_kwargs: Any,
     ):
         print(">> starting inference...")
         self._set_gr_progress(0, "starting inference...")
@@ -424,6 +423,7 @@ class IndexTTS2:
             if use_random:
                 random_index = [random.randint(0, x - 1) for x in self.emo_num]
             else:
+                assert style is not None
                 random_index = [find_most_similar_cosine(style, tmp) for tmp in self.spk_matrix]
 
             emo_matrix = [tmp[index].unsqueeze(0) for index, tmp in zip(random_index, self.emo_matrix)]
@@ -649,106 +649,9 @@ class IndexTTS2:
             yield (SAMPLING_RATE, wav_data)
 
 
-def find_most_similar_cosine(query_vector, matrix) -> Tensor:
+def find_most_similar_cosine(query_vector: Tensor, matrix: Tensor) -> Tensor:
     query_vector = query_vector.float()
     matrix = matrix.float()
 
     similarities = F.cosine_similarity(query_vector, matrix, dim=1)
     return torch.argmax(similarities)
-
-
-class QwenEmotion:
-    def __init__(self, model_dir) -> None:
-        self.tokenizer = AutoTokenizer.from_pretrained(model_dir)
-        self.model = AutoModelForCausalLM.from_pretrained(
-            model_dir,
-            torch_dtype="float16",  # "auto"
-            device_map="auto",
-        )
-        self.prompt = "文本情感分类"
-        self.cn_key_to_en = {
-            "高兴": "happy",
-            "愤怒": "angry",
-            "悲伤": "sad",
-            "恐惧": "afraid",
-            "反感": "disgusted",
-            # TODO: the "低落" (melancholic) emotion will always be mapped to
-            # "悲伤" (sad) by QwenEmotion's text analysis. it doesn't know the
-            # difference between those emotions even if user writes exact words.
-            # SEE: `self.melancholic_words` for current workaround.
-            "低落": "melancholic",
-            "惊讶": "surprised",
-            "自然": "calm",
-        }
-        self.desired_vector_order = ["高兴", "愤怒", "悲伤", "恐惧", "反感", "低落", "惊讶", "自然"]
-        self.melancholic_words = {
-            # emotion text phrases that will force QwenEmotion's "悲伤" (sad) detection
-            # to become "低落" (melancholic) instead, to fix limitations mentioned above.
-            "低落",
-            "melancholy",
-            "melancholic",
-            "depression",
-            "depressed",
-            "gloomy",
-        }
-        self.max_score = 1.2
-        self.min_score = 0.0
-
-    def clamp_score(self, value) -> float:
-        return max(self.min_score, min(self.max_score, value))
-
-    def convert(self, content: dict[str, float]) -> dict[str, float]:
-        # generate emotion vector dictionary:
-        # - insert values in desired order (Python 3.7+ `dict` remembers insertion order)
-        # - convert Chinese keys to English
-        # - clamp all values to the allowed min/max range
-        # - use 0.0 for any values that were missing in `content`
-        emotion_dict = {
-            self.cn_key_to_en[cn_key]: self.clamp_score(content.get(cn_key, 0.0))
-            for cn_key in self.desired_vector_order
-        }
-
-        # default to a calm/neutral voice if all emotion vectors were empty
-        if all(val <= 0.0 for val in emotion_dict.values()):
-            print(">> no emotions detected; using default calm/neutral voice")
-            emotion_dict["calm"] = 1.0
-
-        return emotion_dict
-
-    def inference(self, text_input: str) -> dict[str, float]:
-        messages = [{"role": "system", "content": f"{self.prompt}"}, {"role": "user", "content": f"{text_input}"}]
-        text = self.tokenizer.apply_chat_template(
-            messages, tokenize=False, add_generation_prompt=True, enable_thinking=False
-        )
-        model_inputs = self.tokenizer([text], return_tensors="pt").to(self.model.device)
-
-        # conduct text completion
-        generated_ids = self.model.generate(
-            **model_inputs, max_new_tokens=32768, pad_token_id=self.tokenizer.eos_token_id
-        )
-        output_ids = generated_ids[0][len(model_inputs.input_ids[0]) :].tolist()
-
-        # parsing thinking content
-        try:
-            # rindex finding 151668 (</think>)
-            index = len(output_ids) - output_ids[::-1].index(151668)
-        except ValueError:
-            index = 0
-
-        content = self.tokenizer.decode(output_ids[index:], skip_special_tokens=True)
-
-        # decode the JSON emotion detections as a dictionary
-        try:
-            content = json.loads(content)
-        except json.decoder.JSONDecodeError:
-            # invalid JSON; fallback to manual string parsing
-            content = {m.group(1): float(m.group(2)) for m in re.finditer(r'([^\s":.,]+?)"?\s*:\s*([\d.]+)', content)}
-
-        # workaround for QwenEmotion's inability to distinguish "悲伤" (sad) vs "低落" (melancholic).
-        # if we detect any of the IndexTTS "melancholic" words, we swap those vectors
-        # to encode the "sad" emotion as "melancholic" (instead of sadness).
-        text_input_lower = text_input.lower()
-        if any(word in text_input_lower for word in self.melancholic_words):
-            content["悲伤"], content["低落"] = content.get("低落", 0.0), content.get("悲伤", 0.0)
-
-        return self.convert(content)

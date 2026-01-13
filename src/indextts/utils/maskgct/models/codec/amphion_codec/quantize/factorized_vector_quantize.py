@@ -20,7 +20,7 @@ class FactorizedVectorQuantize(nn.Module):
 
         self.codebook = nn.Embedding(8192, 8)
 
-    def forward(self, z) -> Tensor:
+    def forward(self, z: Tensor) -> Tensor:
         """
         Parameters
         ----------
@@ -61,7 +61,7 @@ class FactorizedVectorQuantize(nn.Module):
         indices = rearrange((-dist).max(1)[1], "(b t) -> b t", b=latents.size(0))
         return self.decode_code(indices)
 
-    def vq2emb(self, vq) -> Tensor:
+    def vq2emb(self, vq: Tensor) -> Tensor:
         emb = self.decode_code(vq)
         return self.out_project(emb)
 

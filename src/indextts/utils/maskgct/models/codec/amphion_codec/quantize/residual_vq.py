@@ -46,7 +46,7 @@ class ResidualVQ(nn.Module):
 
         return z_q_i * mask[:, None, None]
 
-    def vq2emb(self, vq) -> Tensor:
+    def vq2emb(self, vq: Tensor) -> Tensor:
         return self.quantizers[0].vq2emb(vq[0])
 
     @patch_call(forward)

@@ -28,7 +28,7 @@ class RepCodec(nn.Module):
 
         self.apply(init_weights)
 
-    def quantize(self, x) -> Tensor:
+    def quantize(self, x: Tensor) -> Tensor:
         x = self.encoder(x.mT).mT
 
         quantized_out = self.quantizer(x)

@@ -29,14 +29,14 @@ def get_forward_context() -> ForwardContext:
 
 
 def set_forward_context(
-    is_prefill,
-    cu_seqlens_q=None,
-    cu_seqlens_k=None,
+    is_prefill: bool,
+    cu_seqlens_q: Tensor | None = None,
+    cu_seqlens_k: Tensor | None = None,
     max_seqlen_q: int = 0,
     max_seqlen_k: int = 0,
-    slot_mapping=None,
-    context_lens=None,
-    block_tables=None,
+    slot_mapping: Tensor | None = None,
+    context_lens: Tensor | None = None,
+    block_tables: Tensor | None = None,
 ) -> None:
     global _FORWARD_CONTEXT
     _FORWARD_CONTEXT = ForwardContext(

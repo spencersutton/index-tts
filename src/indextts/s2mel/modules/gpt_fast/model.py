@@ -52,7 +52,9 @@ class KVCache(nn.Module):
     k_cache: Tensor
     v_cache: Tensor
 
-    def __init__(self, max_batch_size, max_seq_length, n_heads, head_dim, dtype: torch.dtype = torch.bfloat16) -> None:
+    def __init__(
+        self, max_batch_size: int, max_seq_length: int, n_heads: int, head_dim: int, dtype: torch.dtype = torch.bfloat16
+    ) -> None:
         super().__init__()
         cache_shape = (max_batch_size, n_heads, max_seq_length, head_dim)
         self.register_buffer("k_cache", torch.zeros(cache_shape, dtype=dtype))

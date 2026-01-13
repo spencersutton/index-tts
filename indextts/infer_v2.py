@@ -32,14 +32,14 @@ os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 class IndexTTS2:
     def __init__(
         self,
-        cfg_path="checkpoints/config.yaml",
-        model_dir="checkpoints",
-        use_fp16=False,
+        cfg_path: str = "checkpoints/config.yaml",
+        model_dir: str = "checkpoints",
+        use_fp16: bool = False,
         device=None,
         use_cuda_kernel=None,
-        use_deepspeed=False,
-        use_accel=False,
-        use_torch_compile=False,
+        use_deepspeed: bool = False,
+        use_accel: bool = False,
+        use_torch_compile: bool = False,
     ) -> None:
         """
         Args:
@@ -217,7 +217,62 @@ class IndexTTS2:
         feat = vq_emb.hidden_states[17]  # (B, T, C)
         return (feat - self.semantic_mean) / self.semantic_std
 
-    def interval_silence(self, wavs, sampling_rate=22050, interval_silence=200):
+    def remove_long_silence(self, codes: torch.Tensor, silent_token: int = 52, max_consecutive: int = 30):
+        """
+        Shrink special tokens (silent_token and stop_mel_token) in codes
+        codes: [B, T]
+        """
+        code_lens = []
+        codes_list = []
+        device = codes.device
+        isfix = False
+        for i in range(0, codes.shape[0]):
+            code = codes[i]
+            if not torch.any(code == self.stop_mel_token).item():
+                len_ = code.size(0)
+            else:
+                stop_mel_idx = (code == self.stop_mel_token).nonzero(as_tuple=False)
+                len_ = stop_mel_idx[0].item() if len(stop_mel_idx) > 0 else code.size(0)
+
+            count = torch.sum(code == silent_token).item()
+            if count > max_consecutive:
+                # code = code.cpu().tolist()
+                ncode_idx = []
+                n = 0
+                for k in range(len_):
+                    assert code[k] != self.stop_mel_token, (
+                        f"stop_mel_token {self.stop_mel_token} should be shrinked here"
+                    )
+                    if code[k] != silent_token:
+                        ncode_idx.append(k)
+                        n = 0
+                    elif code[k] == silent_token and n < 10:
+                        ncode_idx.append(k)
+                        n += 1
+                # new code
+                len_ = len(ncode_idx)
+                codes_list.append(code[ncode_idx])
+                isfix = True
+            else:
+                # shrink to len_
+                codes_list.append(code[:len_])
+            code_lens.append(len_)
+        if isfix:
+            if len(codes_list) > 1:
+                codes = pad_sequence(codes_list, batch_first=True, padding_value=self.stop_mel_token)
+            else:
+                codes = codes_list[0].unsqueeze(0)
+        else:
+            # unchanged
+            pass
+        # clip codes to max length
+        max_len = max(code_lens)
+        if max_len < codes.shape[1]:
+            codes = codes[:, :max_len]
+        code_lens = torch.tensor(code_lens, dtype=torch.long, device=device)
+        return codes, code_lens
+
+    def interval_silence(self, wavs: list[torch.Tensor], sampling_rate=22050, interval_silence=200):
         """
         Silences to be insert between generated segments.
         """
@@ -231,7 +286,7 @@ class IndexTTS2:
         sil_dur = int(sampling_rate * interval_silence / 1000.0)
         return torch.zeros(channel_size, sil_dur)
 
-    def insert_interval_silence(self, wavs, sampling_rate=22050, interval_silence=200):
+    def insert_interval_silence(self, wavs: list[torch.Tensor], sampling_rate=22050, interval_silence=200):
         """
         Insert silences between generated segments.
         wavs: List[torch.tensor]
@@ -254,12 +309,12 @@ class IndexTTS2:
 
         return wavs_list
 
-    def _set_gr_progress(self, value, desc) -> None:
+    def _set_gr_progress(self, value: float, desc: str) -> None:
         if self.gr_progress is not None:
             self.gr_progress(value, desc=desc)
 
     def _load_and_cut_audio(
-        self, audio_path, max_audio_length_seconds, verbose=False, sr=None
+        self, audio_path, max_audio_length_seconds: int, verbose: bool = False, sr=None
     ) -> tuple[torch.Tensor, int]:
         if not sr:
             audio, sr = librosa.load(audio_path)
@@ -274,7 +329,7 @@ class IndexTTS2:
             audio = audio[:, :max_audio_samples]
         return audio, int(sr)
 
-    def normalize_emo_vec(self, emo_vector, apply_bias=True):
+    def normalize_emo_vec(self, emo_vector, apply_bias: bool = True):
         # apply biased emotion factors for better user experience,
         # by de-emphasizing emotions that can cause strange results
         if apply_bias:
@@ -297,16 +352,16 @@ class IndexTTS2:
         text,
         output_path,
         emo_audio_prompt=None,
-        emo_alpha=1.0,
+        emo_alpha: float = 1.0,
         emo_vector=None,
-        use_emo_text=False,
+        use_emo_text: bool = False,
         emo_text=None,
-        use_random=False,
-        interval_silence=200,
-        verbose=False,
-        max_text_tokens_per_segment=120,
-        stream_return=False,
-        more_segment_before=0,
+        use_random: bool = False,
+        interval_silence: int = 200,
+        verbose: bool = False,
+        max_text_tokens_per_segment: int = 120,
+        stream_return: bool = False,
+        more_segment_before: int = 0,
         **generation_kwargs,
     ):
         if stream_return:
@@ -358,16 +413,16 @@ class IndexTTS2:
         text,
         output_path,
         emo_audio_prompt=None,
-        emo_alpha=1.0,
+        emo_alpha: float = 1.0,
         emo_vector=None,
-        use_emo_text=False,
+        use_emo_text: bool = False,
         emo_text=None,
-        use_random=False,
-        interval_silence=200,
-        verbose=False,
-        max_text_tokens_per_segment=120,
-        stream_return=False,
-        quick_streaming_tokens=0,
+        use_random: bool = False,
+        interval_silence: int = 200,
+        verbose: bool = False,
+        max_text_tokens_per_segment: int = 120,
+        stream_return: bool = False,
+        quick_streaming_tokens: int = 0,
         **generation_kwargs,
     ):
         print(">> starting inference...")
@@ -692,7 +747,7 @@ class IndexTTS2:
             yield (sampling_rate, wav_data)
 
 
-def find_most_similar_cosine(query_vector, matrix):
+def find_most_similar_cosine(query_vector, matrix) -> torch.Tensor:
     query_vector = query_vector.float()
     matrix = matrix.float()
 
@@ -738,10 +793,10 @@ class QwenEmotion:
         self.max_score = 1.2
         self.min_score = 0.0
 
-    def clamp_score(self, value):
+    def clamp_score(self, value) -> float:
         return max(self.min_score, min(self.max_score, value))
 
-    def convert(self, content):
+    def convert(self, content) -> dict[str, float]:
         # generate emotion vector dictionary:
         # - insert values in desired order (Python 3.7+ `dict` remembers insertion order)
         # - convert Chinese keys to English
@@ -759,7 +814,7 @@ class QwenEmotion:
 
         return emotion_dict
 
-    def inference(self, text_input):
+    def inference(self, text_input) -> dict[str, float]:
         messages = [{"role": "system", "content": f"{self.prompt}"}, {"role": "user", "content": f"{text_input}"}]
         text = self.tokenizer.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True, enable_thinking=False

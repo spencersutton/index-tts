@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import torch
 import torch.nn.functional as F
 from einops import rearrange
 from torch import nn
@@ -20,7 +21,7 @@ class FactorizedVectorQuantize(nn.Module):
 
         self.codebook = nn.Embedding(8192, 8)
 
-    def forward(self, z):
+    def forward(self, z) -> torch.Tensor:
         """
         Parameters
         ----------
@@ -40,10 +41,10 @@ class FactorizedVectorQuantize(nn.Module):
 
         return self.out_project(z_q)
 
-    def decode_code(self, embed_id):
+    def decode_code(self, embed_id: torch.Tensor) -> torch.Tensor:
         return F.embedding(embed_id, self.codebook.weight).mT
 
-    def decode_latents(self, latents):
+    def decode_latents(self, latents: torch.Tensor) -> torch.Tensor:
         encodings = rearrange(latents, "b d t -> (b t) d")
         codebook = self.codebook.weight
 
@@ -61,9 +62,9 @@ class FactorizedVectorQuantize(nn.Module):
         indices = rearrange((-dist).max(1)[1], "(b t) -> b t", b=latents.size(0))
         return self.decode_code(indices)
 
-    def vq2emb(self, vq):
+    def vq2emb(self, vq) -> torch.Tensor:
         emb = self.decode_code(vq)
         return self.out_project(emb)
 
     @patch_call(forward)
-    def __call__(self): ...
+    def __call__(self) -> None: ...

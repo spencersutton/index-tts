@@ -3,7 +3,7 @@ import re
 import torch
 
 
-def tokenize_by_CJK_char(line: str, do_upper_case=True) -> str:
+def tokenize_by_CJK_char(line: str, do_upper_case: bool = True) -> str:
     """
     Tokenize a line of text with CJK char.
 
@@ -28,7 +28,7 @@ def tokenize_by_CJK_char(line: str, do_upper_case=True) -> str:
     return " ".join([w.strip().upper() if do_upper_case else w.strip() for w in chars if w.strip()])
 
 
-def de_tokenized_by_CJK_char(line: str, do_lower_case=False) -> str:
+def de_tokenized_by_CJK_char(line: str, do_lower_case: bool = False) -> str:
     """
     Example:
       input = "你 好 世 界 是 HELLO WORLD 的 中 文"

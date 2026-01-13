@@ -90,7 +90,7 @@ with pathlib.Path("examples/cases.jsonl").open(encoding="utf-8") as f:
         ])
 
 
-def get_example_cases(include_experimental=False):
+def get_example_cases(include_experimental: bool = False):
     if include_experimental:
         return example_cases  # show every example
 
@@ -130,7 +130,7 @@ def gen_single(
     vec8,
     emo_text,
     emo_random,
-    max_text_tokens_per_segment=120,
+    max_text_tokens_per_segment: int = 120,
     *args,
     progress=gr.Progress(),
 ):

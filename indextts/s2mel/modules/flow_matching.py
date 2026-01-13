@@ -1,5 +1,4 @@
 import torch
-from torch import nn
 from tqdm import tqdm
 
 from indextts.s2mel.modules.diffusion_transformer import DiT
@@ -10,8 +9,8 @@ IN_CHANNELS = 80
 INFERENCE_CFG_RATE = 0.7
 
 
-class CFM(nn.Module):
-    def __init__(self):
+class CFM(torch.nn.Module):
+    def __init__(self) -> None:
         super().__init__()
 
         self.criterion = torch.nn.L1Loss()
@@ -146,7 +145,7 @@ class CFM(nn.Module):
 
         return loss, estimator_out + (1 - SIGMA_MIN) * z
 
-    def enable_torch_compile(self):
+    def enable_torch_compile(self) -> None:
         """Enable torch.compile optimization for the estimator model.
 
         This method applies torch.compile to the estimator (DiT model) for significant
@@ -158,4 +157,4 @@ class CFM(nn.Module):
         self.estimator = torch.compile(self.estimator, fullgraph=True, dynamic=True)
 
     @patch_call(forward)
-    def __call__(self): ...
+    def __call__(self) -> None: ...

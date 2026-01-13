@@ -23,7 +23,7 @@ class PositionwiseFeedForward(nn.Module):
         activation (nn.Module): Activation function
     """
 
-    def __init__(self, idim: int, hidden_units: int, activation: nn.Module = nn.ReLU()):
+    def __init__(self, idim: int, hidden_units: int, activation: torch.nn.Module = torch.nn.ReLU()) -> None:
         """Construct a PositionwiseFeedForward object."""
         super().__init__()
         self.w_1 = nn.Linear(idim, hidden_units)
@@ -42,13 +42,13 @@ class PositionwiseFeedForward(nn.Module):
         return self.w_2(self.dropout(self.activation(self.w_1(xs))))
 
     @patch_call(forward)
-    def __call__(self): ...
+    def __call__(self) -> None: ...
 
 
 class ConvolutionModule(nn.Module):
     """ConvolutionModule in Conformer model."""
 
-    def __init__(self, channels: int, activation: nn.Module = nn.ReLU(), bias: bool = True):
+    def __init__(self, channels: int, activation: nn.Module = nn.ReLU(), bias: bool = True) -> None:
         """Construct an ConvolutionModule object.
         Args:
             channels (int): The number of channels of conv layers.
@@ -135,7 +135,7 @@ class ConvolutionModule(nn.Module):
         return x.transpose(1, 2), new_cache
 
     @patch_call(forward)
-    def __call__(self): ...
+    def __call__(self) -> None: ...
 
 
 class ConformerEncoderLayer(nn.Module):
@@ -157,7 +157,7 @@ class ConformerEncoderLayer(nn.Module):
         self_attn: RelPositionMultiHeadedAttention,
         feed_forward: PositionwiseFeedForward,
         conv_module: ConvolutionModule | None = None,
-    ):
+    ) -> None:
         """Construct an EncoderLayer object."""
         super().__init__()
         self.self_attn = self_attn
@@ -239,7 +239,7 @@ class ConformerEncoderLayer(nn.Module):
         return x, mask, new_att_cache, new_cnn_cache
 
     @patch_call(forward)
-    def __call__(self): ...
+    def __call__(self) -> None: ...
 
 
 class ConformerEncoder(torch.nn.Module):
@@ -252,7 +252,7 @@ class ConformerEncoder(torch.nn.Module):
         attention_heads: int = 4,
         linear_units: int = 2048,
         num_blocks: int = 6,
-    ):
+    ) -> None:
         """
         Args:
             input_size (int): input dim
@@ -317,4 +317,4 @@ class ConformerEncoder(torch.nn.Module):
         return xs, masks
 
     @patch_call(forward)
-    def __call__(self): ...
+    def __call__(self) -> None: ...

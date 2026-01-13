@@ -1,7 +1,7 @@
 from typing import Final
 
 import torch
-from torch import nn
+from torch import Tensor, nn
 from torch.nn import functional as F
 
 from indextts.s2mel.modules.commons import sequence_mask
@@ -23,8 +23,8 @@ class InterpolateRegulator(nn.Module):
         self.mask_token = nn.Parameter(torch.zeros(1, CHANNELS))
         self.content_in_proj = nn.Linear(1024, CHANNELS)
 
-    def forward(self, x: torch.Tensor, ylens: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, None, None, None]:
-        x: torch.Tensor = self.content_in_proj(x)  # (B, T, C)
+    def forward(self, x: Tensor, ylens: Tensor) -> tuple[Tensor, Tensor, None, None, None]:
+        x: Tensor = self.content_in_proj(x)  # (B, T, C)
         mask = sequence_mask(ylens).unsqueeze(-1)  # (B, T, 1)
 
         x = x.mT.contiguous()  # (B, C, T)

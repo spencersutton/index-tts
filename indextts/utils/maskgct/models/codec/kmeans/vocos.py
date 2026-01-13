@@ -8,7 +8,7 @@ from collections.abc import Sequence
 from typing import cast
 
 import torch
-from torch import nn
+from torch import Tensor, nn
 
 from indextts.util import patch_call
 
@@ -32,7 +32,7 @@ class ConvNeXtBlock(nn.Module):
         self.pwconv2 = nn.Linear(2048, 384)
         self.gamma = nn.Parameter(1 / 12 * torch.ones(384))
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         residual = x
         x = self.dwconv(x)
         x = x.mT  # (B, C, T) -> (B, T, C)
@@ -68,7 +68,7 @@ class VocosBackbone(nn.Module):
             assert m.bias is not None
             nn.init.constant_(m.bias, 0)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         x = self.embed(x)
         x = self.norm(x.mT)
         x = x.mT

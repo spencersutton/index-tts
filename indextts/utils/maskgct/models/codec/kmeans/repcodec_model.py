@@ -3,8 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from torch import nn
-import torch
+from torch import Tensor, nn
 
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize import ResidualVQ
 from indextts.utils.maskgct.models.codec.kmeans.vocos import VocosBackbone
@@ -29,7 +28,7 @@ class RepCodec(nn.Module):
 
         self.apply(init_weights)
 
-    def quantize(self, x) -> torch.Tensor:
+    def quantize(self, x) -> Tensor:
         x = self.encoder(x.mT).mT
 
         quantized_out = self.quantizer(x)

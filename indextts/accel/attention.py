@@ -4,7 +4,7 @@ import torch
 import triton
 import triton.language as tl
 from flash_attn import flash_attn_varlen_func, flash_attn_with_kvcache
-from torch import nn
+from torch import Tensor, nn
 
 from indextts.util import patch_call
 
@@ -12,13 +12,13 @@ from indextts.util import patch_call
 @dataclass
 class ForwardContext:
     is_prefill: bool = False
-    cu_seqlens_q: torch.Tensor | None = None
-    cu_seqlens_k: torch.Tensor | None = None
+    cu_seqlens_q: Tensor | None = None
+    cu_seqlens_k: Tensor | None = None
     max_seqlen_q: int = 0
     max_seqlen_k: int = 0
-    slot_mapping: torch.Tensor | None = None
-    context_lens: torch.Tensor | None = None
-    block_tables: torch.Tensor | None = None
+    slot_mapping: Tensor | None = None
+    context_lens: Tensor | None = None
+    block_tables: Tensor | None = None
 
 
 _FORWARD_CONTEXT = ForwardContext()
@@ -51,13 +51,13 @@ def reset_forward_context() -> None:
 
 @triton.jit
 def store_kvcache_kernel(
-    key_ptr: torch.Tensor,
+    key_ptr: Tensor,
     key_stride: int,
-    value_ptr: torch.Tensor,
+    value_ptr: Tensor,
     value_stride: int,
-    k_cache_ptr: torch.Tensor,
-    v_cache_ptr: torch.Tensor,
-    slot_mapping_ptr: torch.Tensor,
+    k_cache_ptr: Tensor,
+    v_cache_ptr: Tensor,
+    slot_mapping_ptr: Tensor,
     D: tl.constexpr,
 ) -> None:
     BLOCK_SIZE: tl.constexpr = 2048
@@ -81,9 +81,7 @@ def store_kvcache_kernel(
         d_offset += BLOCK_SIZE
 
 
-def store_kvcache(
-    key: torch.Tensor, value: torch.Tensor, k_cache: torch.Tensor, v_cache: torch.Tensor, slot_mapping: torch.Tensor
-) -> None:
+def store_kvcache(key: Tensor, value: Tensor, k_cache: Tensor, v_cache: Tensor, slot_mapping: Tensor) -> None:
     N, num_heads, head_dim = key.shape
     D = num_heads * head_dim
     assert key.stride(-1) == 1 and value.stride(-1) == 1
@@ -102,7 +100,7 @@ class Attention(nn.Module):
         self.num_kv_heads = num_kv_heads
         self.k_cache = self.v_cache = torch.tensor([])
 
-    def forward(self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor):
+    def forward(self, q: Tensor, k: Tensor, v: Tensor):
         context = get_forward_context()
         k_cache, v_cache = self.k_cache, self.v_cache
 

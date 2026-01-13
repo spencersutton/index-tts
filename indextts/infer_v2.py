@@ -436,7 +436,7 @@ class IndexTTS2:
             if self.cache_emo_cond is not None:
                 self.cache_emo_cond = None
                 torch.cuda.empty_cache()
-            emo_audio, _ = self._load_and_cut_audio(emo_audio_prompt, verbose, sr=16000)
+            emo_audio, _ = self._load_and_cut_audio(emo_audio_prompt, verbose, sample_rate=16000)
             emo_inputs = self.extract_features(emo_audio.tolist(), sampling_rate=16000, return_tensors="pt")
             emo_input_features = emo_inputs["input_features"]
             emo_attention_mask = emo_inputs["attention_mask"]

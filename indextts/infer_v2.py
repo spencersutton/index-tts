@@ -5,6 +5,7 @@ import re
 import time
 import warnings
 from collections.abc import Sequence
+from functools import cache
 from pathlib import Path
 from subprocess import CalledProcessError
 from typing import cast
@@ -47,6 +48,13 @@ def mel_fn(x: torch.Tensor) -> torch.Tensor:
         fmax=None,
         center=False,
     )
+
+
+@cache
+def get_interval_silence(size, interval_silence: int = 200) -> torch.Tensor:
+    """Silences to be insert between generated segments."""
+
+    return torch.zeros(size, (SAMPLING_RATE * interval_silence) // 1000)
 
 
 class IndexTTS2:
@@ -221,20 +229,6 @@ class IndexTTS2:
         )
         feat = vq_emb.hidden_states[17]  # (B, T, C) # type: ignore
         return (feat - self.semantic_mean) / self.semantic_std
-
-    def interval_silence(self, wavs: list[torch.Tensor], interval_silence=200):
-        """
-        Silences to be insert between generated segments.
-        """
-
-        if not wavs or interval_silence <= 0:
-            return wavs
-
-        # get channel_size
-        channel_size = wavs[0].size(0)
-        # get silence tensor
-        sil_dur = int(SAMPLING_RATE * interval_silence / 1000.0)
-        return torch.zeros(channel_size, sil_dur)
 
     def insert_interval_silence(self, wavs: list[torch.Tensor], interval_silence=200):
         """
@@ -514,7 +508,6 @@ class IndexTTS2:
         s2mel_time: float = 0
         bigvgan_time: float = 0
         has_warned = False
-        silence: torch.Tensor | None = None  # for stream_return
         for seg_idx, sent in enumerate(segments):
             self._set_gr_progress(
                 0.2 + 0.7 * seg_idx / segments_count, f"speech synthesis {seg_idx + 1}/{segments_count}..."
@@ -584,7 +577,7 @@ class IndexTTS2:
                         len_ = (code == self.stop_mel_token).nonzero(as_tuple=False)[0]
                         code_len = len_[0].item() if len_.numel() > 0 else len(code)
                     code_lens.append(code_len)
-                    max_code_len = max(max_code_len, code_len)
+                    max_code_len = max(int(max_code_len), int(code_len))
                 codes = codes[:, :max_code_len]
                 code_lens = torch.tensor(code_lens, dtype=torch.long)
                 code_lens = code_lens.to(self.device)
@@ -620,7 +613,7 @@ class IndexTTS2:
 
                     cond = self.s2mel.length_regulator(s_infer, ylens=target_lengths)[0]
                     cat_condition = torch.cat([prompt_condition, cond], dim=1)
-                    assert ref_mel is not None
+                    assert ref_mel is not None and style is not None
                     vc_target = self.s2mel.cfm.inference(cat_condition, ref_mel, style)
                     vc_target = vc_target[:, :, ref_mel.size(-1) :]
                     s2mel_time += time.perf_counter() - m_start_time
@@ -636,9 +629,7 @@ class IndexTTS2:
                 wavs.append(wav.cpu())  # to cpu before saving
                 if stream_return:
                     yield wav.cpu()
-                    if silence is None:
-                        silence = self.interval_silence(wavs, interval_silence=interval_silence)
-                    yield silence
+                    yield get_interval_silence(wavs[0].size(0), interval_silence)
         end_time = time.perf_counter()
 
         self._set_gr_progress(0.9, "saving audio...")

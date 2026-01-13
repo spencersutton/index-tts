@@ -2,7 +2,7 @@ import torch
 from torch import nn
 
 
-@torch.jit.script
+@torch.compile
 def fused_add_tanh_sigmoid_multiply(
     input_a: torch.Tensor, input_b: torch.Tensor, n_channels: torch.Tensor
 ) -> torch.Tensor:

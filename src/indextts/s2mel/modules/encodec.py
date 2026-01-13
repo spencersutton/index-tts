@@ -7,6 +7,7 @@
 """Convolutional layers wrappers and utilities."""
 
 from torch import nn
+from torch.nn import functional as F
 from torch.nn.utils.parametrizations import weight_norm
 
 from indextts.util import patch_call
@@ -41,15 +42,9 @@ class SConv1d(nn.Module):
 
         self.conv = NormConv1d(in_channels, out_channels, kernel_size)
 
-    def forward(self, x) -> torch.Tensor:
-        kernel_size = self.conv.conv.kernel_size[0]
-        kernel_size = (kernel_size - 1) * 1 + 1  # effective kernel size with dilations
-        padding_total = kernel_size - 1
-        extra_padding = get_extra_padding_for_conv1d(x, kernel_size, 1, padding_total)
-        # Asymmetric padding required for odd strides
-        padding_right = padding_total // 2
-        padding_left = padding_total - padding_right
-        x = pad1d(x, padding_left, padding_right + extra_padding)
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if x.shape[-1] > 1:
+            x = F.pad(x, (2, 2), "reflect")
         return self.conv(x)
 
     @patch_call(forward)

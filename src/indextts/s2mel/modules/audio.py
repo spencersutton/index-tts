@@ -1,13 +1,14 @@
 import torch
 from librosa.filters import mel as librosa_mel_fn
 from torch import nn
+from torch import Tensor
 
 
-def dynamic_range_compression_torch(x, C=1, clip_val=1e-5):
+def dynamic_range_compression_torch(x, C=1, clip_val=1e-5) -> Tensor:
     return torch.log(torch.clamp(x, min=clip_val) * C)
 
 
-def spectral_normalize_torch(magnitudes):
+def spectral_normalize_torch(magnitudes: Tensor) -> Tensor:
     return dynamic_range_compression_torch(magnitudes)
 
 
@@ -15,7 +16,7 @@ mel_basis = {}
 hann_window = {}
 
 
-def mel_spectrogram(y, n_fft, num_mels, sampling_rate, hop_size, win_size, fmin, fmax, center=False):
+def mel_spectrogram(y, n_fft, num_mels, sampling_rate, hop_size, win_size, fmin, fmax, center: bool = False) -> Tensor:
     global mel_basis, hann_window  # pylint: disable=global-statement
     if f"{sampling_rate!s}_{fmax!s}_{y.device!s}" not in mel_basis:
         mel = librosa_mel_fn(sr=sampling_rate, n_fft=n_fft, n_mels=num_mels, fmin=fmin, fmax=fmax)

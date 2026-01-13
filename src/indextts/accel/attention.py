@@ -24,7 +24,7 @@ class ForwardContext:
 _FORWARD_CONTEXT = ForwardContext()
 
 
-def get_forward_context():
+def get_forward_context() -> ForwardContext:
     return _FORWARD_CONTEXT
 
 
@@ -32,8 +32,8 @@ def set_forward_context(
     is_prefill,
     cu_seqlens_q=None,
     cu_seqlens_k=None,
-    max_seqlen_q=0,
-    max_seqlen_k=0,
+    max_seqlen_q: int = 0,
+    max_seqlen_k: int = 0,
     slot_mapping=None,
     context_lens=None,
     block_tables=None,
@@ -51,7 +51,14 @@ def reset_forward_context() -> None:
 
 @triton.jit
 def store_kvcache_kernel(
-    key_ptr, key_stride, value_ptr, value_stride, k_cache_ptr, v_cache_ptr, slot_mapping_ptr, D: tl.constexpr
+    key_ptr: torch.Tensor,
+    key_stride: int,
+    value_ptr: torch.Tensor,
+    value_stride: int,
+    k_cache_ptr: torch.Tensor,
+    v_cache_ptr: torch.Tensor,
+    slot_mapping_ptr: torch.Tensor,
+    D: tl.constexpr,
 ) -> None:
     BLOCK_SIZE: tl.constexpr = 2048
     idx = tl.program_id(0)
@@ -130,4 +137,4 @@ class Attention(nn.Module):
         return o
 
     @patch_call(forward)
-    def __call__(self): ...
+    def __call__(self) -> None: ...

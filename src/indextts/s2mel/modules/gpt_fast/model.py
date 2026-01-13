@@ -32,7 +32,7 @@ class AdaptiveLayerNorm(nn.Module):
         return weight * self.norm(input) + bias
 
     @patch_call(forward)
-    def __call__(self): ...
+    def __call__(self) -> None: ...
 
 
 BLOCK_SIZE = 16384
@@ -56,13 +56,16 @@ VOCAB_SIZE = 1024
 
 
 class KVCache(nn.Module):
-    def __init__(self, max_batch_size, max_seq_length, n_heads, head_dim, dtype=torch.bfloat16) -> None:
+    k_cache: Tensor
+    v_cache: Tensor
+
+    def __init__(self, max_batch_size, max_seq_length, n_heads, head_dim, dtype: torch.dtype = torch.bfloat16) -> None:
         super().__init__()
         cache_shape = (max_batch_size, n_heads, max_seq_length, head_dim)
         self.register_buffer("k_cache", torch.zeros(cache_shape, dtype=dtype))
         self.register_buffer("v_cache", torch.zeros(cache_shape, dtype=dtype))
 
-    def update(self, input_pos, k_val, v_val):
+    def update(self, input_pos: Tensor, k_val: Tensor, v_val: Tensor) -> tuple[Tensor, Tensor]:
         # input_pos: [S], k_val: [B, H, S, D]
         assert input_pos.shape[0] == k_val.shape[2]
 
@@ -116,7 +119,7 @@ class Transformer(nn.Module):
         return self.norm(x, c)
 
     @patch_call(forward)
-    def __call__(self): ...
+    def __call__(self) -> None: ...
 
 
 class TransformerBlock(nn.Module):
@@ -147,7 +150,7 @@ class TransformerBlock(nn.Module):
         return h + self.feed_forward(self.ffn_norm(h, c))
 
     @patch_call(forward)
-    def __call__(self): ...
+    def __call__(self) -> None: ...
 
 
 class Attention(nn.Module):
@@ -184,7 +187,7 @@ class Attention(nn.Module):
         return self.wo(y)
 
     @patch_call(forward)
-    def __call__(self): ...
+    def __call__(self) -> None: ...
 
 
 class FeedForward(nn.Module):
@@ -198,7 +201,7 @@ class FeedForward(nn.Module):
         return self.w2(F.silu(self.w1(x)) * self.w3(x))
 
     @patch_call(forward)
-    def __call__(self): ...
+    def __call__(self) -> None: ...
 
 
 class RMSNorm(nn.Module):
@@ -213,7 +216,7 @@ class RMSNorm(nn.Module):
         return self._norm(x.float()).type_as(x) * self.weight
 
     @patch_call(forward)
-    def __call__(self): ...
+    def __call__(self) -> None: ...
 
 
 def precompute_freqs_cis(seq_len: int, n_elem: int, dtype: torch.dtype = torch.bfloat16) -> torch.Tensor:

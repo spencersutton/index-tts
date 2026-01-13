@@ -24,12 +24,12 @@ class NormConv1d(nn.Module):
         self.conv = weight_norm(nn.Conv1d(*args, **kwargs))
         self.norm = nn.Identity()
 
-    def forward(self, x):
+    def forward(self, x) -> torch.Tensor:
         x = self.conv(x)
         return self.norm(x)
 
     @patch_call(forward)
-    def __call__(self): ...
+    def __call__(self) -> None: ...
 
 
 class SConv1d(nn.Module):
@@ -61,7 +61,7 @@ class SConv1d(nn.Module):
         )
         self.pad_mode = pad_mode
 
-    def forward(self, x):
+    def forward(self, x) -> torch.Tensor:
         kernel_size = self.conv.conv.kernel_size[0]
         stride = self.conv.conv.stride[0]
         dilation = self.conv.conv.dilation[0]
@@ -75,4 +75,4 @@ class SConv1d(nn.Module):
         return self.conv(x)
 
     @patch_call(forward)
-    def __call__(self): ...
+    def __call__(self) -> None: ...

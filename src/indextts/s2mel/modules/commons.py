@@ -1,5 +1,5 @@
 import torch
-from torch import nn
+from torch import Tensor, nn
 
 
 @torch.jit.script
@@ -15,7 +15,7 @@ def fused_add_tanh_sigmoid_multiply(
     return t_act * s_act
 
 
-def sequence_mask(length: torch.Tensor | int, max_length: int | None = None):
+def sequence_mask(length: torch.Tensor | int, max_length: int | None = None) -> Tensor:
     length = torch.as_tensor(length)
     if max_length is None:
         max_length = int(length.max())
@@ -35,7 +35,7 @@ class MyModel(nn.Module):
             "gpt_layer": nn.Sequential(nn.Linear(1280, 256), nn.Linear(256, 128), nn.Linear(128, 1024)),
         })
 
-    def forward(self, x, target_lengths, prompt_len, cond, y):
+    def forward(self, x, target_lengths, prompt_len, cond, y) -> tuple[Tensor, Tensor]:
         return self.models["cfm"](x, target_lengths, prompt_len, cond, y)
 
     def enable_torch_compile(self) -> None:
@@ -50,7 +50,7 @@ class MyModel(nn.Module):
 
 def load_checkpoint2(
     model, optimizer, path, load_only_params=True, ignore_modules=[], is_distributed=False, load_ema=False
-):
+) -> nn.Module:
     state = torch.load(path, map_location="cpu")
     params = state["net"]
     if load_ema and "ema" in state:

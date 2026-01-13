@@ -16,7 +16,7 @@ class Attend(nn.Module):
         super().__init__()
         self.attn_dropout = nn.Dropout(0.0)
 
-    def forward(self, q, k, v, mask=None):
+    def forward(self, q, k, v, mask=None) -> torch.Tensor:
         """
         einstein notation
         b - batch
@@ -45,7 +45,7 @@ class Attend(nn.Module):
         return torch.einsum(f"b h i j, {kv_einsum_eq} -> b h i d", attn, v)
 
     @patch_call(forward)
-    def __call__(self): ...
+    def __call__(self) -> None: ...
 
 
 class RMSNorm(nn.Module):
@@ -59,7 +59,7 @@ class RMSNorm(nn.Module):
         return F.normalize(x, dim=-1) * self.scale * self.gamma
 
     @patch_call(forward)
-    def __call__(self): ...
+    def __call__(self) -> None: ...
 
 
 class GEGLU(nn.Module):
@@ -68,11 +68,11 @@ class GEGLU(nn.Module):
         return F.gelu(gate) * x
 
     @patch_call(forward)
-    def __call__(self): ...
+    def __call__(self) -> None: ...
 
 
 class PerceiverResampler(nn.Module):
-    def __init__(self, dim, num_latents=32, heads=8) -> None:
+    def __init__(self, dim, num_latents: int = 32, heads: int = 8) -> None:
         super().__init__()
 
         self.proj_context = nn.Linear(512, dim) if dim != 512 else nn.Identity()
@@ -105,11 +105,11 @@ class PerceiverResampler(nn.Module):
         return self.norm(latents)
 
     @patch_call(forward)
-    def __call__(self): ...
+    def __call__(self) -> None: ...
 
 
 class Attention(nn.Module):
-    def __init__(self, dim, heads=8) -> None:
+    def __init__(self, dim, heads: int = 8) -> None:
         super().__init__()
         self.heads = heads
 
@@ -120,7 +120,7 @@ class Attention(nn.Module):
         self.to_kv = nn.Linear(dim, dim_inner * 2, bias=False)
         self.to_out = nn.Linear(dim_inner, dim, bias=False)
 
-    def forward(self, x, context=None, mask=None):
+    def forward(self, x, context=None, mask=None) -> torch.Tensor:
         h = self.heads
 
         context = context if context is not None else x
@@ -137,4 +137,4 @@ class Attention(nn.Module):
         return self.to_out(out)
 
     @patch_call(forward)
-    def __call__(self): ...
+    def __call__(self) -> None: ...

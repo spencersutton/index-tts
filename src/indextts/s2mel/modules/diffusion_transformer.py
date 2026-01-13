@@ -27,7 +27,7 @@ P_DROPOUT = 0.2
 STYLE_ENCODER_DIM = 192
 
 
-def modulate(x, shift, scale):
+def modulate(x: torch.Tensor, shift: torch.Tensor, scale: torch.Tensor):
     return x * (1 + scale.unsqueeze(1)) + shift.unsqueeze(1)
 
 
@@ -55,7 +55,7 @@ class TimestepEmbedder(nn.Module):
         freqs = torch.exp(-math.log(self.max_period) * torch.arange(start=0, end=half, dtype=torch.float32) / half)
         self.register_buffer("freqs", freqs)
 
-    def timestep_embedding(self, t):
+    def timestep_embedding(self, t) -> torch.Tensor:
         """
         Create sinusoidal timestep embeddings.
         :param t: a 1-D Tensor of N indices, one per batch element.
@@ -72,12 +72,12 @@ class TimestepEmbedder(nn.Module):
             embedding = torch.cat([embedding, torch.zeros_like(embedding[:, :1])], dim=-1)
         return embedding
 
-    def forward(self, t):
+    def forward(self, t) -> torch.Tensor:
         t_freq = self.timestep_embedding(t)
         return self.mlp(t_freq)
 
     @patch_call(forward)
-    def __call__(self): ...
+    def __call__(self) -> None: ...
 
 
 class FinalLayer(nn.Module):
@@ -91,13 +91,13 @@ class FinalLayer(nn.Module):
         self.linear = weight_norm(nn.Linear(hidden_size, patch_size * patch_size * out_channels))
         self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(hidden_size, 2 * hidden_size))
 
-    def forward(self, x, c):
+    def forward(self, x, c) -> torch.Tensor:
         shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
         x = modulate(self.norm_final(x), shift, scale)
         return self.linear(x)
 
     @patch_call(forward)
-    def __call__(self): ...
+    def __call__(self) -> None: ...
 
 
 class DiT(nn.Module):
@@ -139,7 +139,7 @@ class DiT(nn.Module):
     def setup_caches(self, max_batch_size, max_seq_length) -> None:
         self.transformer.setup_caches(max_batch_size, max_seq_length)
 
-    def forward(self, x, prompt_x, x_lens, t, style, cond):
+    def forward(self, x, prompt_x, x_lens, t, style, cond) -> torch.Tensor:
         """
         x (torch.Tensor): random noise
         prompt_x (torch.Tensor): reference mel + zero mel
@@ -186,4 +186,4 @@ class DiT(nn.Module):
         return self.conv2(x)
 
     @patch_call(forward)
-    def __call__(self): ...
+    def __call__(self) -> None: ...

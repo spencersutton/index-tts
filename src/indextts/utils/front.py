@@ -84,7 +84,7 @@ class TextNormalizer:
         # }
         self.term_glossary = dict()
 
-    def match_email(self, email):
+    def match_email(self, email: str) -> bool:
         # 正则表达式匹配邮箱格式：数字英文@数字英文.英文
         pattern = r"^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]+$"
         return re.match(pattern, email) is not None
@@ -112,7 +112,7 @@ class TextNormalizer:
     # 匹配常见英语缩写 's，仅用于替换为 is，不匹配所有 's
     ENGLISH_CONTRACTION_PATTERN = r"(what|where|who|which|how|t?here|it|s?he|that|this)'s"
 
-    def use_chinese(self, s):
+    def use_chinese(self, s: str) -> bool:
         has_chinese = bool(re.search(r"[\u4e00-\u9fff]", s))
         has_alpha = bool(re.search(r"[a-zA-Z]", s))
         is_email = self.match_email(s)
@@ -190,7 +190,7 @@ class TextNormalizer:
             result = pattern.sub(lambda x: self.char_rep_map[x.group()], result)
         return result
 
-    def correct_pinyin(self, pinyin: str):
+    def correct_pinyin(self, pinyin: str) -> str:
         """
         将 jqx 的韵母为 u/ü 的拼音转换为 v
         如：ju -> jv , que -> qve, xün -> xvn
@@ -203,7 +203,7 @@ class TextNormalizer:
         pinyin = re.sub(pattern, repl, pinyin, flags=re.IGNORECASE)
         return pinyin.upper()
 
-    def save_names(self, original_text):
+    def save_names(self, original_text: str):
         """
         替换人名为占位符 <n_a>、 <n_b>, ...
         例如：克里斯托弗·诺兰 -> <n_a>
@@ -368,7 +368,7 @@ class TextNormalizer:
         with open(glossary_path, "w", encoding="utf-8") as f:
             yaml.dump(self.term_glossary, f, allow_unicode=True, default_flow_style=False)
 
-    def save_pinyin_tones(self, original_text):
+    def save_pinyin_tones(self, original_text: str):
         """
         替换拼音声调为占位符 <pinyin_a>, <pinyin_b>, ...
         例如：xuan4 -> <pinyin_a>
@@ -405,7 +405,7 @@ class TextNormalizer:
 
 
 class TextTokenizer:
-    def __init__(self, vocab_file: str, normalizer: TextNormalizer = None) -> None:
+    def __init__(self, vocab_file: str, normalizer: TextNormalizer) -> None:
         self.vocab_file = vocab_file
         self.normalizer = normalizer
 
@@ -460,7 +460,7 @@ class TextTokenizer:
         return self.sp_model.unk_id()
 
     @property
-    def special_tokens_map(self):
+    def special_tokens_map(self) -> dict[str, str | None]:
         return {
             "unk_token": self.unk_token,
             "pad_token": self.pad_token,
@@ -468,7 +468,7 @@ class TextTokenizer:
             "eos_token": self.eos_token,
         }
 
-    def get_vocab(self):
+    def get_vocab(self) -> dict[str, int]:
         return {self.convert_ids_to_tokens(i): i for i in range(self.vocab_size)}
 
     @overload
@@ -510,7 +510,7 @@ class TextTokenizer:
                 texts = [pre_tokenizer(text) for text in texts]
         return self.sp_model.Encode(texts, out_type=kwargs.pop("out_type", int), **kwargs)
 
-    def decode(self, ids: list[int] | int, do_lower_case=False, **kwargs):
+    def decode(self, ids: list[int] | int, do_lower_case: bool = False, **kwargs) -> str:
         if isinstance(ids, int):
             ids = [ids]
         decoded = self.sp_model.Decode(ids, out_type=kwargs.pop("out_type", str), **kwargs)
@@ -604,7 +604,7 @@ class TextTokenizer:
         return merged_segments
 
     def split_segments(
-        self, tokenized: list[str], max_text_tokens_per_segment=120, quick_streaming_tokens=0
+        self, tokenized: list[str], max_text_tokens_per_segment: int = 120, quick_streaming_tokens: int = 0
     ) -> list[list[str]]:
         return TextTokenizer.split_segments_by_token(
             tokenized,

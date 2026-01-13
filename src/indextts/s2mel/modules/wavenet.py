@@ -8,7 +8,7 @@ from indextts.util import patch_call
 
 
 class LayerNorm(nn.Module):
-    def __init__(self, channels, eps=1e-5) -> None:
+    def __init__(self, channels, eps: float = 1e-5) -> None:
         super().__init__()
         self.channels = channels
         self.eps = eps
@@ -16,18 +16,25 @@ class LayerNorm(nn.Module):
         self.gamma = nn.Parameter(torch.ones(channels))
         self.beta = nn.Parameter(torch.zeros(channels))
 
-    def forward(self, x):
+    def forward(self, x) -> torch.Tensor:
         x = x.transpose(1, -1)
         x = F.layer_norm(x, (self.channels,), self.gamma, self.beta, self.eps)
         return x.transpose(1, -1)
 
     @patch_call(forward)
-    def __call__(self): ...
+    def __call__(self) -> None: ...
 
 
 class WN(nn.Module):
     def __init__(
-        self, hidden_channels, kernel_size, dilation_rate, n_layers, gin_channels=0, p_dropout=0, causal=False
+        self,
+        hidden_channels,
+        kernel_size,
+        dilation_rate,
+        n_layers,
+        gin_channels: int = 0,
+        p_dropout: int = 0,
+        causal: bool = False,
     ) -> None:
         super().__init__()
         assert kernel_size % 2 == 1
@@ -88,4 +95,4 @@ class WN(nn.Module):
         return output * x_mask
 
     @patch_call(forward)
-    def __call__(self): ...
+    def __call__(self) -> None: ...

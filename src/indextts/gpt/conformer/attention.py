@@ -184,7 +184,7 @@ class MultiHeadedAttention(nn.Module):
         return self.forward_attention(v, scores, mask), new_cache
 
     @patch_call(forward)
-    def __call__(self): ...
+    def __call__(self) -> None: ...
 
 
 class RelPositionMultiHeadedAttention(MultiHeadedAttention):
@@ -207,7 +207,7 @@ class RelPositionMultiHeadedAttention(MultiHeadedAttention):
         nn.init.xavier_uniform_(self.pos_bias_u)
         nn.init.xavier_uniform_(self.pos_bias_v)
 
-    def rel_shift(self, x, zero_triu: bool = False):
+    def rel_shift(self, x, zero_triu: bool = False) -> torch.Tensor:
         """Compute relative positinal encoding.
         Args:
             x (torch.Tensor): Input tensor (batch, time, size).
@@ -310,4 +310,4 @@ class RelPositionMultiHeadedAttention(MultiHeadedAttention):
         return self.forward_attention(v, scores, mask), new_cache
 
     @patch_call(forward)
-    def __call__(self): ...
+    def __call__(self) -> None: ...

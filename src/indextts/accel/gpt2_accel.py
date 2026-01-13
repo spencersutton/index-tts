@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+from torch import Tensor
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions
 from transformers.models.gpt2.modeling_gpt2 import Conv1D, GPT2Block, GPT2Model
 
@@ -52,11 +53,11 @@ class GPT2AccelAttention(nn.Module):
         head_mask=None,
         encoder_hidden_states=None,
         encoder_attention_mask=None,
-        use_cache=False,
-        output_attentions=False,
+        use_cache: bool = False,
+        output_attentions: bool = False,
         past_key_value=None,
         **kwargs,
-    ):
+    ) -> tuple[Tensor, None] | tuple[Tensor, None, None]:
         if encoder_hidden_states is not None:
             raise NotImplementedError("Cross attention not supported in accel mode")
 
@@ -102,12 +103,12 @@ class GPT2AccelAttention(nn.Module):
 
         return outputs
 
-    def _split_heads(self, tensor, num_heads, head_dim):
+    def _split_heads(self, tensor: Tensor, num_heads, head_dim):
         new_shape = (*tensor.size()[:-1], num_heads, head_dim)
         tensor = tensor.view(new_shape)
         return tensor.permute(0, 2, 1, 3)  # (batch, head, seq_length, head_features)
 
-    def _merge_heads(self, tensor, num_heads, head_dim):
+    def _merge_heads(self, tensor: Tensor, num_heads, head_dim):
         tensor = tensor.permute(0, 2, 1, 3).contiguous()
         new_shape = (*tensor.size()[:-2], num_heads * head_dim)
         return tensor.view(new_shape)

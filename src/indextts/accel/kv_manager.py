@@ -44,15 +44,15 @@ class Seq:
         return self.token_ids[key]
 
     @property
-    def num_blocks(self):
+    def num_blocks(self) -> int:
         return (self.num_tokens + self.block_size - 1) // self.block_size
 
     @property
-    def num_cached_blocks(self):
+    def num_cached_blocks(self) -> int:
         return self.num_cached_tokens // self.block_size
 
     @property
-    def last_block_num_tokens(self):
+    def last_block_num_tokens(self) -> int:
         return self.num_tokens - (self.num_blocks - 1) * self.block_size
 
     def get_block_tokens(self, block_idx: int) -> list[int]:

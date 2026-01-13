@@ -23,7 +23,7 @@ class ConvNeXtBlock(nn.Module):
             Defaults to None.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.dwconv = nn.Conv1d(384, 384, kernel_size=7, padding=3, groups=384)  # depthwise conv
         self.norm = nn.LayerNorm(384, eps=1e-6)
@@ -46,7 +46,7 @@ class ConvNeXtBlock(nn.Module):
         return residual + x
 
     @patch_call(forward)
-    def __call__(self): ...
+    def __call__(self) -> None: ...
 
 
 class VocosBackbone(nn.Module):
@@ -54,7 +54,7 @@ class VocosBackbone(nn.Module):
     Vocos backbone module built with ConvNeXt blocks. Supports additional conditioning with Adaptive Layer Normalization
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.embed = nn.Conv1d(1024, 384, kernel_size=7, padding=3)
         self.norm = nn.LayerNorm(384, eps=1e-6)
@@ -62,7 +62,7 @@ class VocosBackbone(nn.Module):
         self.final_layer_norm = nn.LayerNorm(384, eps=1e-6)
         self.apply(self._init_weights)
 
-    def _init_weights(self, m):
+    def _init_weights(self, m) -> None:
         if isinstance(m, (nn.Conv1d, nn.Linear)):
             nn.init.trunc_normal_(m.weight, std=0.02)
             assert m.bias is not None
@@ -77,4 +77,4 @@ class VocosBackbone(nn.Module):
         return self.final_layer_norm(x.mT)
 
     @patch_call(forward)
-    def __call__(self): ...
+    def __call__(self) -> None: ...

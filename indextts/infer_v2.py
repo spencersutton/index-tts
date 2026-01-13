@@ -38,21 +38,21 @@ SAMPLING_RATE = 22050
 MAX_AUDIO_LENGTH_SECONDS = 15
 
 
-def normalize_emo_vec(emo_vector, apply_bias: bool = True):
+def normalize_emo_vec(vector: Sequence[float]) -> list[float]:
     # apply biased emotion factors for better user experience,
     # by de-emphasizing emotions that can cause strange results
-    if apply_bias:
-        # [happy, angry, sad, afraid, disgusted, melancholic, surprised, calm]
-        emo_bias = [0.9375, 0.875, 1.0, 1.0, 0.9375, 0.9375, 0.6875, 0.5625]
-        emo_vector = [vec * bias for vec, bias in zip(emo_vector, emo_bias)]
+
+    # [happy, angry, sad, afraid, disgusted, melancholic, surprised, calm]
+    biases = [0.9375, 0.875, 1.0, 1.0, 0.9375, 0.9375, 0.6875, 0.5625]
+    vector = [vec * bias for vec, bias in zip(vector, biases)]
 
     # the total emotion sum must be 0.8 or less
-    emo_sum = sum(emo_vector)
-    if emo_sum > 0.8:
-        scale_factor = 0.8 / emo_sum
-        emo_vector = [vec * scale_factor for vec in emo_vector]
+    total = sum(vector)
+    if total > 0.8:
+        scale_factor = 0.8 / total
+        vector = [vec * scale_factor for vec in vector]
 
-    return emo_vector
+    return list(vector)
 
 
 def mel_fn(x: Tensor) -> Tensor:

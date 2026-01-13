@@ -1,3 +1,5 @@
+from typing import Any
+
 import torch
 from torch import Tensor, nn
 
@@ -30,11 +32,6 @@ class MyModel(nn.Module):
         self.cfm = CFM()
         self.length_regulator = InterpolateRegulator()
         self.gpt_layer = nn.Sequential(nn.Linear(1280, 256), nn.Linear(256, 128), nn.Linear(128, 1024))
-        self.models = nn.ModuleDict({
-            "cfm": self.cfm,
-            "length_regulator": self.length_regulator,
-            "gpt_layer": self.gpt_layer,
-        })
 
     def enable_torch_compile(self) -> None:
         """Enable torch.compile optimization.
@@ -42,14 +39,13 @@ class MyModel(nn.Module):
         This method applies torch.compile to the model for significant
         performance improvements during inference.
         """
-        if "cfm" in self.models:
-            self.models["cfm"].enable_torch_compile()
+        self.cfm.enable_torch_compile()
 
 
 def load_checkpoint2(
     model, optimizer, path, load_only_params=True, ignore_modules=[], is_distributed=False, load_ema=False
 ) -> nn.Module:
-    state = torch.load(path, map_location="cpu")
+    state: dict[str, Any] = torch.load(path, map_location="cpu")
     params = state["net"]
     if load_ema and "ema" in state:
         print("Loading EMA")

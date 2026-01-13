@@ -20,7 +20,7 @@ class NormConv1d(nn.Module):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__()
 
-        self.conv = weight_norm(nn.Conv1d(*args, **kwargs))
+        self.conv: nn.Conv1d = weight_norm(nn.Conv1d(*args, **kwargs))
         self.norm = nn.Identity()
 
     def forward(self, x) -> torch.Tensor:
@@ -43,11 +43,9 @@ class SConv1d(nn.Module):
 
     def forward(self, x) -> torch.Tensor:
         kernel_size = self.conv.conv.kernel_size[0]
-        stride = self.conv.conv.stride[0]
-        dilation = self.conv.conv.dilation[0]
-        kernel_size = (kernel_size - 1) * dilation + 1  # effective kernel size with dilations
-        padding_total = kernel_size - stride
-        extra_padding = get_extra_padding_for_conv1d(x, kernel_size, stride, padding_total)
+        kernel_size = (kernel_size - 1) * 1 + 1  # effective kernel size with dilations
+        padding_total = kernel_size - 1
+        extra_padding = get_extra_padding_for_conv1d(x, kernel_size, 1, padding_total)
         # Asymmetric padding required for odd strides
         padding_right = padding_total // 2
         padding_left = padding_total - padding_right

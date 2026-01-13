@@ -34,9 +34,6 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         self.device_map = None
         self.cached_mel_emb = None
 
-    def store_mel_emb(self, mel_emb: torch.Tensor) -> None:
-        self.cached_mel_emb = mel_emb
-
     @override
     def prepare_inputs_for_generation(
         self,
@@ -641,7 +638,7 @@ class UnifiedVoice(nn.Module):
             1,
         )
         input_ids, inputs_embeds, attention_mask = self.prepare_gpt_inputs(conds_latent, text_inputs)
-        self.inference_model.store_mel_emb(inputs_embeds)
+        self.inference_model.cached_mel_emb = inputs_embeds
         if input_tokens is None:
             inputs = input_ids
         else:

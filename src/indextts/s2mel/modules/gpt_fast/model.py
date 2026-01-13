@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import torch
-from torch import nn
+from torch import Tensor, nn
 from torch.nn import functional as F
 
 from indextts.s2mel.modules.constants import BLOCK_SIZE, HIDDEN_DIM
@@ -35,7 +35,7 @@ class AdaptiveLayerNorm(nn.Module):
         self.project_layer = nn.Linear(DIM, 2 * DIM)
         self.norm = RMSNorm()
 
-    def forward(self, input: torch.Tensor, embedding: torch.Tensor | None = None) -> torch.Tensor:
+    def forward(self, input: Tensor, embedding: Tensor | None = None) -> Tensor:
         if embedding is None:
             return self.norm(input)
         weight, bias = torch.split(self.project_layer(embedding), DIM, dim=-1)
@@ -49,8 +49,8 @@ INTERMEDIATE_SIZE = find_multiple(int((8 * HIDDEN_DIM) / 3), 256)
 
 
 class KVCache(nn.Module):
-    k_cache: torch.Tensor
-    v_cache: torch.Tensor
+    k_cache: Tensor
+    v_cache: Tensor
 
     def __init__(self, max_batch_size, max_seq_length, n_heads, head_dim, dtype: torch.dtype = torch.bfloat16) -> None:
         super().__init__()
@@ -58,9 +58,7 @@ class KVCache(nn.Module):
         self.register_buffer("k_cache", torch.zeros(cache_shape, dtype=dtype))
         self.register_buffer("v_cache", torch.zeros(cache_shape, dtype=dtype))
 
-    def update(
-        self, input_pos: torch.Tensor, k_val: torch.Tensor, v_val: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    def update(self, input_pos: Tensor, k_val: Tensor, v_val: Tensor) -> tuple[Tensor, Tensor]:
         # input_pos: [S], k_val: [B, H, S, D]
         assert input_pos.shape[0] == k_val.shape[2]
 
@@ -79,8 +77,8 @@ class Transformer(nn.Module):
         self.layers = nn.ModuleList(TransformerBlock() for _ in range(N_LAYER))
         self.norm = AdaptiveLayerNorm()
 
-        self.freqs_cis: torch.Tensor | None = None
-        self.mask_cache: torch.Tensor | None = None
+        self.freqs_cis: Tensor | None = None
+        self.mask_cache: Tensor | None = None
         self.max_batch_size = -1
         self.max_seq_length = -1
 
@@ -99,7 +97,7 @@ class Transformer(nn.Module):
         self.layers_emit_skip = [i for i in range(N_LAYER) if i < N_LAYER // 2]
         self.layers_receive_skip = [i for i in range(N_LAYER) if i > N_LAYER // 2]
 
-    def forward(self, x: torch.Tensor, c: torch.Tensor, input_pos: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor, c: Tensor, input_pos: Tensor, mask: Tensor) -> Tensor:
         assert self.freqs_cis is not None, "Caches must be initialized first"
         freqs_cis = self.freqs_cis[input_pos]
         skip_in_x_list = []
@@ -128,14 +126,8 @@ class TransformerBlock(nn.Module):
         self.skip_in_linear = nn.Linear(DIM * 2, DIM)
 
     def forward(
-        self,
-        x: torch.Tensor,
-        c: torch.Tensor,
-        input_pos: torch.Tensor,
-        freqs_cis: torch.Tensor,
-        mask: torch.Tensor,
-        skip_in_x: torch.Tensor | None = None,
-    ) -> torch.Tensor:
+        self, x: Tensor, c: Tensor, input_pos: Tensor, freqs_cis: Tensor, mask: Tensor, skip_in_x: Tensor | None = None
+    ) -> Tensor:
         if skip_in_x is not None:
             x = self.skip_in_linear(torch.cat([x, skip_in_x], dim=-1))
         h = x + self.attention(self.attention_norm(x, c), freqs_cis, mask)
@@ -155,11 +147,11 @@ class Attention(nn.Module):
         self.wqkv = nn.Linear(DIM, total_head_dim, bias=False)
         self.wo = nn.Linear(HEAD_DIM * N_HEAD, DIM, bias=False)
 
-    def forward(self, x: torch.Tensor, freqs_cis: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor, freqs_cis: Tensor, mask: Tensor) -> Tensor:
         bsz, seqlen, _ = x.shape
 
         kv_size = N_HEAD * HEAD_DIM
-        query_key_value: torch.Tensor = self.wqkv(x)
+        query_key_value: Tensor = self.wqkv(x)
         q, k, v = query_key_value.split((kv_size, kv_size, kv_size), dim=-1)
 
         q = q.view(bsz, seqlen, N_HEAD, HEAD_DIM)
@@ -189,7 +181,7 @@ class FeedForward(nn.Module):
         self.w3 = nn.Linear(DIM, INTERMEDIATE_SIZE, bias=False)
         self.w2 = nn.Linear(INTERMEDIATE_SIZE, DIM, bias=False)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         return self.w2(F.silu(self.w1(x)) * self.w3(x))
 
     @patch_call(forward)
@@ -201,17 +193,17 @@ class RMSNorm(nn.Module):
         super().__init__()
         self.weight = nn.Parameter(torch.ones(DIM))
 
-    def _norm(self, x: torch.Tensor) -> torch.Tensor:
+    def _norm(self, x: Tensor) -> Tensor:
         return x * torch.rsqrt(torch.mean(x * x, dim=-1, keepdim=True) + NORM_EPS)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         return self._norm(x.float()).type_as(x) * self.weight
 
     @patch_call(forward)
     def __call__(self) -> None: ...
 
 
-def precompute_freqs_cis(seq_len: int, n_elem: int, dtype: torch.dtype = torch.bfloat16) -> torch.Tensor:
+def precompute_freqs_cis(seq_len: int, n_elem: int, dtype: torch.dtype = torch.bfloat16) -> Tensor:
     freqs = torch.as_tensor(1.0 / (ROPE_BASE ** (torch.arange(0, n_elem, 2)[: (n_elem // 2)].float() / n_elem)))
     t = torch.arange(seq_len)
     freqs = torch.outer(t, freqs)
@@ -220,7 +212,7 @@ def precompute_freqs_cis(seq_len: int, n_elem: int, dtype: torch.dtype = torch.b
     return cache.to(dtype=dtype)
 
 
-def apply_rotary_emb(x: torch.Tensor, freqs_cis: torch.Tensor) -> torch.Tensor:
+def apply_rotary_emb(x: Tensor, freqs_cis: Tensor) -> Tensor:
     xshaped = x.float().reshape(*x.shape[:-1], -1, 2)
     freqs_cis = freqs_cis.view(1, xshaped.size(1), 1, xshaped.size(3), 2)
     x_out2 = torch.stack(

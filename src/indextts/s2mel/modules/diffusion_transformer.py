@@ -1,7 +1,7 @@
 import math
 
 import torch
-from torch import nn
+from torch import Tensor, nn
 from torch.nn.utils.parametrizations import weight_norm
 
 from indextts.s2mel.modules.commons import sequence_mask
@@ -17,7 +17,7 @@ KERNEL_SIZE = 5
 STYLE_ENCODER_DIM = 192
 
 
-def modulate(x: torch.Tensor, shift: torch.Tensor, scale: torch.Tensor):
+def modulate(x: Tensor, shift: Tensor, scale: Tensor):
     return x * (1 + scale.unsqueeze(1)) + shift.unsqueeze(1)
 
 
@@ -31,7 +31,7 @@ class TimestepEmbedder(nn.Module):
     Embeds scalar timesteps into vector representations.
     """
 
-    freqs: torch.Tensor
+    freqs: Tensor
 
     def __init__(self, hidden_size) -> None:
         super().__init__()
@@ -45,7 +45,7 @@ class TimestepEmbedder(nn.Module):
         freqs = torch.exp(-math.log(self.max_period) * torch.arange(start=0, end=half, dtype=torch.float32) / half)
         self.register_buffer("freqs", freqs)
 
-    def timestep_embedding(self, t) -> torch.Tensor:
+    def timestep_embedding(self, t) -> Tensor:
         """
         Create sinusoidal timestep embeddings.
         :param t: a 1-D Tensor of N indices, one per batch element.
@@ -62,7 +62,7 @@ class TimestepEmbedder(nn.Module):
             embedding = torch.cat([embedding, torch.zeros_like(embedding[:, :1])], dim=-1)
         return embedding
 
-    def forward(self, t) -> torch.Tensor:
+    def forward(self, t) -> Tensor:
         t_freq = self.timestep_embedding(t)
         return self.mlp(t_freq)
 
@@ -81,7 +81,7 @@ class FinalLayer(nn.Module):
         self.linear = weight_norm(nn.Linear(hidden_size, patch_size * patch_size * out_channels))
         self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(hidden_size, 2 * hidden_size))
 
-    def forward(self, x, c) -> torch.Tensor:
+    def forward(self, x, c) -> Tensor:
         shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
         x = modulate(self.norm_final(x), shift, scale)
         return self.linear(x)
@@ -91,7 +91,7 @@ class FinalLayer(nn.Module):
 
 
 class DiT(nn.Module):
-    input_pos: torch.Tensor
+    input_pos: Tensor
 
     def __init__(self) -> None:
         super().__init__()
@@ -121,18 +121,18 @@ class DiT(nn.Module):
     def setup_caches(self, max_batch_size, max_seq_length) -> None:
         self.transformer.setup_caches(max_batch_size, max_seq_length)
 
-    def forward(self, x, prompt_x, x_lens, t, style, cond) -> torch.Tensor:
+    def forward(self, x, prompt_x, x_lens, t, style, cond) -> Tensor:
         """
-        x (torch.Tensor): random noise
-        prompt_x (torch.Tensor): reference mel + zero mel
+        x (Tensor): random noise
+        prompt_x (Tensor): reference mel + zero mel
             shape: (batch_size, 80, 795+1068)
-        x_lens (torch.Tensor): mel frames output
+        x_lens (Tensor): mel frames output
             shape: (batch_size, mel_timesteps)
-        t (torch.Tensor): radshape:
+        t (Tensor): radshape:
             shape: (batch_size)
-        style (torch.Tensor): reference global style
+        style (Tensor): reference global style
             shape: (batch_size, 192)
-        cond (torch.Tensor): semantic info of reference audio and altered audio
+        cond (Tensor): semantic info of reference audio and altered audio
             shape: (batch_size, mel_timesteps(795+1069), 512)
 
         """

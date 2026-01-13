@@ -3,10 +3,9 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import torch
 import torch.nn.functional as F
 from einops import rearrange
-from torch import nn
+from torch import Tensor, nn
 from torch.nn.utils.parametrizations import weight_norm
 
 from indextts.util import patch_call
@@ -21,15 +20,15 @@ class FactorizedVectorQuantize(nn.Module):
 
         self.codebook = nn.Embedding(8192, 8)
 
-    def forward(self, z) -> torch.Tensor:
+    def forward(self, z) -> Tensor:
         """
         Parameters
         ----------
-        z: torch.Tensor[B x D x T]
+        z: Tensor[B x D x T]
 
         Returns
         -------
-        z_q: torch.Tensor[B x D x T]
+        z_q: Tensor[B x D x T]
             Quantized continuous representation of input
         """
 
@@ -41,10 +40,10 @@ class FactorizedVectorQuantize(nn.Module):
 
         return self.out_project(z_q)
 
-    def decode_code(self, embed_id: torch.Tensor) -> torch.Tensor:
+    def decode_code(self, embed_id: Tensor) -> Tensor:
         return F.embedding(embed_id, self.codebook.weight).mT
 
-    def decode_latents(self, latents: torch.Tensor) -> torch.Tensor:
+    def decode_latents(self, latents: Tensor) -> Tensor:
         encodings = rearrange(latents, "b d t -> (b t) d")
         codebook = self.codebook.weight
 
@@ -62,7 +61,7 @@ class FactorizedVectorQuantize(nn.Module):
         indices = rearrange((-dist).max(1)[1], "(b t) -> b t", b=latents.size(0))
         return self.decode_code(indices)
 
-    def vq2emb(self, vq) -> torch.Tensor:
+    def vq2emb(self, vq) -> Tensor:
         emb = self.decode_code(vq)
         return self.out_project(emb)
 

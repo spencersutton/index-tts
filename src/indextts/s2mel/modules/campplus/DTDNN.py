@@ -1,11 +1,9 @@
 # Copyright 3D-Speaker (https://github.com/alibaba-damo-academy/3D-Speaker). All Rights Reserved.
 # Licensed under the Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
-
 from collections import OrderedDict
 
-import torch
 import torch.nn.functional as F
-from torch import nn
+from torch import Tensor, nn
 
 from indextts.s2mel.modules.campplus.layers import (
     BasicResBlock,
@@ -34,7 +32,7 @@ class FCM(nn.Module):
         self.bn2 = nn.BatchNorm2d(M_CHANNELS)
         self.out_channels = M_CHANNELS * 10
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         x = x.unsqueeze(1)
         out = F.relu(self.bn1(self.conv1(x)))
         out = self.layer1(out)
@@ -76,7 +74,7 @@ class CAMPPlus(nn.Module):
                 if m.bias is not None:
                     nn.init.zeros_(m.bias)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         x = x.permute(0, 2, 1)  # (B,T,F) => (B,F,T)
         x = self.head(x)
         return self.xvector(x)

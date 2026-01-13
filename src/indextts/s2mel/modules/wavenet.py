@@ -1,5 +1,5 @@
 import torch
-from torch import nn
+from torch import Tensor, nn
 from torch.nn import functional as F
 
 from indextts.s2mel.modules import commons
@@ -19,7 +19,7 @@ class LayerNorm(nn.Module):
         self.gamma = nn.Parameter(torch.ones(channels))
         self.beta = nn.Parameter(torch.zeros(channels))
 
-    def forward(self, x) -> torch.Tensor:
+    def forward(self, x) -> Tensor:
         x = x.transpose(1, -1)
         x = F.layer_norm(x, (self.channels,), self.gamma, self.beta, self.eps)
         return x.transpose(1, -1)
@@ -50,7 +50,7 @@ class WN(nn.Module):
             res_skip_layer = SConv1d(HIDDEN_DIM, res_skip_channels, 1)
             self.res_skip_layers.append(res_skip_layer)
 
-    def forward(self, x: torch.Tensor, x_mask: torch.Tensor, g: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor, x_mask: Tensor, g: Tensor) -> Tensor:
         output = torch.zeros_like(x)
         n_channels_tensor = torch.tensor([HIDDEN_DIM])
 

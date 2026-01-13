@@ -8,7 +8,7 @@ from collections.abc import Sequence
 from typing import cast
 
 import torch
-from torch import nn
+from torch import Tensor, nn
 
 from indextts.util import patch_call
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize.factorized_vector_quantize import (
@@ -28,14 +28,14 @@ class ResidualVQ(nn.Module):
         quantizers = [FactorizedVectorQuantize()]
         self.quantizers = cast(Sequence[FactorizedVectorQuantize], nn.ModuleList(quantizers))
 
-    def forward(self, z: torch.Tensor) -> torch.Tensor:
+    def forward(self, z: Tensor) -> Tensor:
         """
         Parameters
         ----------
-        z : torch.Tensor[B x D x T]
+        z : Tensor[B x D x T]
         Returns
         -------
-        "quantized_out" : torch.Tensor[B x D x T]
+        "quantized_out" : Tensor[B x D x T]
             Quantized continuous representation of input
         """
 
@@ -46,7 +46,7 @@ class ResidualVQ(nn.Module):
 
         return z_q_i * mask[:, None, None]
 
-    def vq2emb(self, vq) -> torch.Tensor:
+    def vq2emb(self, vq) -> Tensor:
         return self.quantizers[0].vq2emb(vq[0])
 
     @patch_call(forward)

@@ -6,7 +6,7 @@
 
 """Convolutional layers wrappers and utilities."""
 
-from torch import nn
+from torch import Tensor, nn
 from torch.nn import functional as F
 from torch.nn.utils.parametrizations import weight_norm
 
@@ -24,7 +24,7 @@ class NormConv1d(nn.Module):
         self.conv: nn.Conv1d = weight_norm(nn.Conv1d(*args, **kwargs))
         self.norm = nn.Identity()
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         return self.norm(self.conv(x))
 
     @patch_call(forward)
@@ -42,7 +42,7 @@ class SConv1d(nn.Module):
         self.kernel_size = kernel_size
         self.conv = NormConv1d(in_channels, out_channels, kernel_size)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         if self.kernel_size > 1:
             x = F.pad(x, (2, 2), "reflect")
         return self.conv(x)

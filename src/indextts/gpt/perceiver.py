@@ -5,7 +5,7 @@ from typing import cast
 import torch
 import torch.nn.functional as F
 from einops import rearrange, repeat
-from torch import nn
+from torch import Tensor, nn
 
 from indextts.util import patch_call
 
@@ -16,7 +16,7 @@ class Attend(nn.Module):
         super().__init__()
         self.attn_dropout = nn.Dropout(0.0)
 
-    def forward(self, q, k, v, mask=None) -> torch.Tensor:
+    def forward(self, q, k, v, mask=None) -> Tensor:
         """
         einstein notation
         b - batch
@@ -93,7 +93,7 @@ class PerceiverResampler(nn.Module):
         self.norm = RMSNorm(dim)
 
     def forward(self, x, mask=None):
-        x: torch.Tensor = self.proj_context(x)
+        x: Tensor = self.proj_context(x)
 
         latents = repeat(self.latents, "n d -> b n d", b=x.shape[0])
 
@@ -120,7 +120,7 @@ class Attention(nn.Module):
         self.to_kv = nn.Linear(dim, dim_inner * 2, bias=False)
         self.to_out = nn.Linear(dim_inner, dim, bias=False)
 
-    def forward(self, x, context=None, mask=None) -> torch.Tensor:
+    def forward(self, x, context=None, mask=None) -> Tensor:
         h = self.heads
 
         context = context if context is not None else x

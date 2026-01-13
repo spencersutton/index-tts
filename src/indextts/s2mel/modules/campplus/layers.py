@@ -6,7 +6,7 @@ from typing import Final, Literal
 
 import torch
 import torch.nn.functional as F
-from torch import nn
+from torch import Tensor, nn
 
 from indextts.s2mel.modules.constants import M_CHANNELS
 from indextts.util import patch_call
@@ -21,7 +21,7 @@ def get_nonlinear(channels: int) -> nn.Sequential:
 
 
 class StatsPool(nn.Module):
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         mean = x.mean(dim=-1)
         std = x.std(dim=-1, unbiased=True)
         return torch.cat([mean, std], dim=-1)
@@ -36,7 +36,7 @@ class TDNNLayer(nn.Module):
         self.linear = nn.Conv1d(in_channels, 128, 5, stride=2, padding=2, bias=False)
         self.nonlinear = get_nonlinear(128)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         x = self.linear(x)
         return self.nonlinear(x)
 
@@ -53,14 +53,14 @@ class CAMLayer(nn.Module):
         self.linear2 = nn.Conv1d(64, 32, 1)
         self.sigmoid = nn.Sigmoid()
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         y = self.linear_local(x)
         context = x.mean(-1, keepdim=True) + self.seg_pooling(x)
         context = self.relu(self.linear1(context))
         m = self.sigmoid(self.linear2(context))
         return y * m
 
-    def seg_pooling(self, x: torch.Tensor) -> torch.Tensor:
+    def seg_pooling(self, x: Tensor) -> Tensor:
         seg_len: Final = 100
         seg = F.avg_pool1d(x, kernel_size=seg_len, stride=seg_len, ceil_mode=True)
         shape = seg.shape
@@ -80,10 +80,10 @@ class CAMDenseTDNNLayer(nn.Module):
         self.nonlinear2 = get_nonlinear(128)
         self.cam_layer = CAMLayer(dilation=dilation)
 
-    def bn_function(self, x) -> torch.Tensor:
+    def bn_function(self, x) -> Tensor:
         return self.linear1(self.nonlinear1(x))
 
-    def forward(self, x) -> torch.Tensor:
+    def forward(self, x) -> Tensor:
         x = self.bn_function(x)
         return self.cam_layer(self.nonlinear2(x))
 
@@ -113,7 +113,7 @@ class TransitLayer(nn.Module):
         self.nonlinear = get_nonlinear(in_channels)
         self.linear = nn.Conv1d(in_channels, out_channels, 1, bias=bias)
 
-    def forward(self, x) -> torch.Tensor:
+    def forward(self, x) -> Tensor:
         x = self.nonlinear(x)
         return self.linear(x)
 
@@ -129,7 +129,7 @@ class DenseLayer(nn.Module):
         modules: OrderedDict[str, nn.Module] = OrderedDict({"batchnorm": nn.BatchNorm1d(out_channels, affine=False)})
         self.nonlinear = nn.Sequential(modules)
 
-    def forward(self, x) -> torch.Tensor:
+    def forward(self, x) -> Tensor:
         if len(x.shape) == 2:
             x = self.linear(x.unsqueeze(dim=-1)).squeeze(dim=-1)
         else:
@@ -155,7 +155,7 @@ class BasicResBlock(nn.Module):
                 nn.BatchNorm2d(M_CHANNELS),
             )
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         out = F.relu(self.bn1(self.conv1(x)))
         out = self.bn2(self.conv2(out))
         out += self.shortcut(x)

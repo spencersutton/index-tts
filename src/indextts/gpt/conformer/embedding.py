@@ -19,7 +19,7 @@ import math
 
 import torch
 import torch.nn.functional as F
-from torch import nn
+from torch import Tensor, nn
 
 from indextts.util import patch_call
 
@@ -57,7 +57,7 @@ class RelPositionalEncoding(nn.Module):
         pe = pe.unsqueeze(0)
         self.register_buffer("pe", pe)
 
-    def position_encoding(self, offset: int | torch.Tensor, size: int) -> torch.Tensor:
+    def position_encoding(self, offset: int | Tensor, size: int) -> Tensor:
         """For getting encoding in a streaming fashion
 
         Args:
@@ -65,11 +65,11 @@ class RelPositionalEncoding(nn.Module):
             size (int): required size of position encoding
 
         Returns:
-            torch.Tensor: Corresponding encoding
+            Tensor: Corresponding encoding
         """
         # How to subscript a Union type:
         #   https://github.com/pytorch/pytorch/issues/69434
-        if isinstance(offset, int) or (isinstance(offset, torch.Tensor) and offset.dim() == 0):
+        if isinstance(offset, int) or (isinstance(offset, Tensor) and offset.dim() == 0):
             assert offset + size < MAX_LEN
             pos_emb = self.pe[:, offset : offset + size]
         else:  # for batched streaming decoding on GPU
@@ -82,13 +82,13 @@ class RelPositionalEncoding(nn.Module):
 
         return pos_emb
 
-    def forward(self, x: torch.Tensor, offset: int | torch.Tensor = 0) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: Tensor, offset: int | Tensor = 0) -> tuple[Tensor, Tensor]:
         """Compute positional encoding.
         Args:
-            x (torch.Tensor): Input tensor (batch, time, `*`).
+            x (Tensor): Input tensor (batch, time, `*`).
         Returns:
-            torch.Tensor: Encoded tensor (batch, time, `*`).
-            torch.Tensor: Positional embedding tensor (1, time, `*`).
+            Tensor: Encoded tensor (batch, time, `*`).
+            Tensor: Positional embedding tensor (1, time, `*`).
         """
         self.pe = self.pe.to(x.device)
         x *= self.xscale

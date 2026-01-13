@@ -18,6 +18,7 @@ import torchaudio
 from bigvganinference import bigvgan
 from huggingface_hub import hf_hub_download
 from omegaconf import OmegaConf
+from torch import Tensor
 from transformers import AutoModelForCausalLM, AutoTokenizer, SeamlessM4TFeatureExtractor
 
 from indextts.config import IndexTTSConfig
@@ -36,7 +37,7 @@ CHECKPOINT_DIR = Path("checkpoints")
 SAMPLING_RATE = 22050
 
 
-def mel_fn(x: torch.Tensor) -> torch.Tensor:
+def mel_fn(x: Tensor) -> Tensor:
     return mel_spectrogram(
         x,
         n_fft=1024,
@@ -51,7 +52,7 @@ def mel_fn(x: torch.Tensor) -> torch.Tensor:
 
 
 @cache
-def get_silence_interval(size: int, interval_silence: int = 200) -> torch.Tensor:
+def get_silence_interval(size: int, interval_silence: int = 200) -> Tensor:
     """Silences to be insert between generated segments."""
 
     return torch.zeros(size, (SAMPLING_RATE * interval_silence) // 1000)
@@ -210,7 +211,7 @@ class IndexTTS2:
         # 缓存参考音频：
         self.cache_spk_cond = None
         self.cache_s2mel_style = None
-        self.cache_s2mel_prompt: torch.Tensor | None = None
+        self.cache_s2mel_prompt: Tensor | None = None
         self.cache_spk_audio_prompt = None
         self.cache_emo_cond = None
         self.cache_emo_audio_prompt = None
@@ -236,7 +237,7 @@ class IndexTTS2:
 
     def _load_and_cut_audio(
         self, audio_path, max_audio_length_seconds: int, verbose: bool = False, sr=None
-    ) -> tuple[torch.Tensor, int]:
+    ) -> tuple[Tensor, int]:
         if not sr:
             audio, sr = librosa.load(audio_path)
         else:
@@ -382,8 +383,8 @@ class IndexTTS2:
                 self.cache_mel = None
                 torch.cuda.empty_cache()
             audio, sr = self._load_and_cut_audio(spk_audio_prompt, 15, verbose)
-            audio_22k: torch.Tensor = torchaudio.transforms.Resample(sr, SAMPLING_RATE)(audio)
-            audio_16k: torch.Tensor = torchaudio.transforms.Resample(sr, 16000)(audio)
+            audio_22k: Tensor = torchaudio.transforms.Resample(sr, SAMPLING_RATE)(audio)
+            audio_16k: Tensor = torchaudio.transforms.Resample(sr, 16000)(audio)
 
             inputs = self.extract_features(audio_16k.tolist(), sampling_rate=16000, return_tensors="pt")
             input_features = inputs["input_features"]
@@ -479,7 +480,7 @@ class IndexTTS2:
         repetition_penalty = generation_kwargs.pop("repetition_penalty", 10.0)
         max_mel_tokens = generation_kwargs.pop("max_mel_tokens", 1500)
 
-        wavs: list[torch.Tensor] = []
+        wavs: list[Tensor] = []
         gpt_gen_time: float = 0
         gpt_forward_time: float = 0
         s2mel_time: float = 0
@@ -531,7 +532,7 @@ class IndexTTS2:
                         max_generate_length=max_mel_tokens,
                         **generation_kwargs,
                     )
-                    assert isinstance(codes, torch.Tensor)
+                    assert isinstance(codes, Tensor)
 
                 gpt_gen_time += time.perf_counter() - m_start_time
                 if not has_warned and (codes[:, -1] != self.stop_mel_token).any():
@@ -646,7 +647,7 @@ class IndexTTS2:
             yield (SAMPLING_RATE, wav_data)
 
 
-def find_most_similar_cosine(query_vector, matrix) -> torch.Tensor:
+def find_most_similar_cosine(query_vector, matrix) -> Tensor:
     query_vector = query_vector.float()
     matrix = matrix.float()
 
